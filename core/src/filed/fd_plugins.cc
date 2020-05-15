@@ -2538,7 +2538,7 @@ static bRC bareosCheckChanges(PluginContext* ctx, struct save_pkt* sp)
   ff_pkt = jcr->impl->ff;
   /*
    * Copy fname and link because SaveFile() zaps them.
-   * This avoids zaping the plugin's strings.
+   * This avoids zapping the plugin's strings.
    */
   ff_pkt->type = sp->type;
   if (!sp->fname) {

@@ -102,7 +102,8 @@ static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype)
                             (char*)"OOO", type, value == NULL ? Py_None : value,
                             traceback == NULL ? Py_None : traceback);
 
-    emptyString = PyString_FromString("");
+    // emptyString = PyString_FromString("");
+    emptyString = PyUnicode_FromString("");
     strRetval =
         PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 

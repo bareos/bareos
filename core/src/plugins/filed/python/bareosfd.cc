@@ -124,7 +124,8 @@ static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pPluginDefinition, *pRetVal;
 
-    pPluginDefinition = PyString_FromString((char*)value);
+    // pPluginDefinition = PyString_FromString((char*)value);
+    pPluginDefinition = PyUnicode_FromString((char*)value);
     if (!pPluginDefinition) { goto bail_out; }
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
@@ -252,21 +253,8 @@ static inline PySavePacket* NativeToPySavePacket(struct save_pkt* sp)
   PySavePacket* pSavePkt = PyObject_New(PySavePacket, &PySavePacketType);
 
   if (pSavePkt) {
-    /*
-     * Initialize the Python SavePkt with the data we got passed in.
-     */
-    if (sp->fname) {
-      pSavePkt->fname = PyString_FromString(sp->fname);
-    } else {
-      pSavePkt->fname = NULL;
-    }
-
-    if (sp->link) {
-      pSavePkt->link = PyString_FromString(sp->link);
-    } else {
-      pSavePkt->link = NULL;
-    }
-
+    pSavePkt->fname = PyUnicode_FromString(sp->fname ? sp->fname : "");
+    pSavePkt->link = PyUnicode_FromString(sp->link ? sp->link : "");
     if (sp->statp.st_mode) {
       pSavePkt->statp = (PyObject*)NativeToPyStatPacket(&sp->statp);
     } else {
@@ -289,7 +277,7 @@ static inline PySavePacket* NativeToPySavePacket(struct save_pkt* sp)
   }
 
   return pSavePkt;
-}
+}  // namespace filedaemon
 
 static inline bool PySavePacketToNative(
     PySavePacket* pSavePkt,
@@ -309,9 +297,9 @@ static inline bool PySavePacketToNative(
        * As this has to linger as long as the backup is running we save it in
        * our plugin context.
        */
-      if (PyString_Check(pSavePkt->fname)) {
+      if (PyUnicode_Check(pSavePkt->fname)) {
         if (plugin_priv_ctx->fname) { free(plugin_priv_ctx->fname); }
-        plugin_priv_ctx->fname = strdup(PyString_AsString(pSavePkt->fname));
+        plugin_priv_ctx->fname = strdup(PyUnicode_AsUTF8(pSavePkt->fname));
         sp->fname = plugin_priv_ctx->fname;
       }
     } else {
@@ -328,7 +316,7 @@ static inline bool PySavePacketToNative(
        */
       if (PyString_Check(pSavePkt->link)) {
         if (plugin_priv_ctx->link) { free(plugin_priv_ctx->link); }
-        plugin_priv_ctx->link = strdup(PyString_AsString(pSavePkt->link));
+        plugin_priv_ctx->link = strdup(PyUnicode_AsUTF8(pSavePkt->link));
         sp->link = plugin_priv_ctx->link;
       }
     }
@@ -381,7 +369,7 @@ static inline bool PySavePacketToNative(
             free(plugin_priv_ctx->object_name);
           }
           plugin_priv_ctx->object_name =
-              strdup(PyString_AsString(pSavePkt->object_name));
+              strdup(PyUnicode_AsUTF8(pSavePkt->object_name));
           sp->object_name = plugin_priv_ctx->object_name;
 
           sp->object_len = pSavePkt->object_len;
@@ -667,7 +655,7 @@ static bRC PyStartRestoreFile(PluginContext* plugin_ctx, const char* cmd)
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pCmd, *pRetVal;
 
-    pCmd = PyString_FromString(cmd);
+    pCmd = PyUnicode_FromString(cmd);
     if (!pCmd) { goto bail_out; }
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pCmd, NULL);
@@ -882,7 +870,7 @@ static bRC PyCheckFile(PluginContext* plugin_ctx, char* fname)
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pFname, *pRetVal;
 
-    pFname = PyString_FromString(fname);
+    pFname = PyUnicode_FromString(fname);
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pFname, NULL);
     Py_DECREF(pFname);
 
@@ -1328,7 +1316,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
                                                 &value) == bRC_OK) {
-        if (value) { pRetVal = PyString_FromString(value); }
+        if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
     }
@@ -1356,7 +1344,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
                                                 &value) == bRC_OK) {
-        if (value) { pRetVal = PyString_FromString(value); }
+        if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
     }
@@ -1405,7 +1393,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
       break;
     }
     case bVarFileSeen: {
-      const char* value = PyString_AsString(pyValue);
+      const char* value = PyUnicode_AsUTF8(pyValue);
       if (value) {
         retval = bareos_core_functions->setBareosValue(
             plugin_ctx, (bVariable)var,
@@ -1757,7 +1745,7 @@ static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
   sp.type = pSavePkt->type;
   if (pSavePkt->fname) {
     if (PyString_Check(pSavePkt->fname)) {
-      sp.fname = const_cast<char*>(PyString_AsString(pSavePkt->fname));
+      sp.fname = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->fname));
     } else {
       goto bail_out;
     }
@@ -1766,7 +1754,7 @@ static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
   }
   if (pSavePkt->link) {
     if (PyString_Check(pSavePkt->link)) {
-      sp.link = const_cast<char*>(PyString_AsString(pSavePkt->link));
+      sp.link = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->link));
     } else {
       goto bail_out;
     }
@@ -1808,7 +1796,7 @@ static PyObject* PyBareosAcceptFile(PyObject* self, PyObject* args)
    */
   if (pSavePkt->fname) {
     if (PyString_Check(pSavePkt->fname)) {
-      sp.fname = const_cast<char*>(PyString_AsString(pSavePkt->fname));
+      sp.fname = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->fname));
     } else {
       goto bail_out;
     }
@@ -1884,7 +1872,7 @@ static inline char* PyGetStringValue(PyObject* object)
 {
   if (!object || !PyString_Check(object)) { return (char*)""; }
 
-  return const_cast<char*>(PyString_AsString(object));
+  return const_cast<char*>(PyUnicode_AsUTF8(object));
 }
 
 static inline char* PyGetByteArrayValue(PyObject* object)
@@ -1914,7 +1902,7 @@ static PyObject* PyRestoreObject_repr(PyRestoreObject* self)
        self->plugin_name, self->object_type, self->object_len,
        self->object_full_len, self->object_index, self->object_compression,
        self->stream, self->JobId);
-  s = PyString_FromString(buf.c_str());
+  s = PyUnicode_FromString(buf.c_str());
 
   return s;
 }
@@ -1990,7 +1978,7 @@ static PyObject* PyStatPacket_repr(PyStatPacket* self)
        self->gid, self->rdev, self->size, self->atime, self->mtime, self->ctime,
        self->blksize, self->blocks);
 
-  s = PyString_FromString(buf.c_str());
+  s = PyUnicode_FromString(buf.c_str());
 
   return s;
 }
@@ -2090,7 +2078,7 @@ static PyObject* PySavePacket_repr(PySavePacket* self)
        PyGetStringValue(self->object_name), PyGetByteArrayValue(self->object),
        self->object_len, self->object_index);
 
-  s = PyString_FromString(buf.c_str());
+  s = PyUnicode_FromString(buf.c_str());
 
   return s;
 }
@@ -2106,7 +2094,6 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
       (char*)"accurate_found", (char*)"cmd",          (char*)"save_time",
       (char*)"delta_seq",      (char*)"object_name",  (char*)"object",
       (char*)"object_len",     (char*)"object_index", NULL};
-
   self->fname = NULL;
   self->link = NULL;
   self->type = 0;
@@ -2122,15 +2109,20 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   self->object_len = 0;
   self->object_index = 0;
 
+
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|ooiocccsiiooii", kwlist, &self->fname, &self->link,
+          args, kwds, "|OOiOpppsiiOOii", kwlist, &self->fname, &self->link,
           &self->type, &self->flags, &self->no_read, &self->portable,
           &self->accurate_found, &self->cmd, &self->save_time, &self->delta_seq,
           &self->object_name, &self->object, &self->object_len,
           &self->object_index)) {
+    //  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist,
+    //  &self->fname)) {
     return -1;
   }
-
+  int a;
+  a = a + a;
+  printf("hello\n");
   return 0;
 }
 
@@ -2170,7 +2162,7 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
        self->ofname, self->olname, self->where, self->RegexWhere, self->replace,
        self->create_status);
 
-  s = PyString_FromString(buf.c_str());
+  s = PyUnicode_FromString(buf.c_str());
   Py_DECREF(stat_repr);
 
   return s;
@@ -2244,7 +2236,7 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
        self->func, self->count, self->flags, (self->mode & ~S_IFMT),
        PyGetByteArrayValue(self->buf), self->fname, self->status,
        self->io_errno, self->lerror, self->whence, self->offset, self->win32);
-  s = PyString_FromString(buf.c_str());
+  s = PyUnicode_FromString(buf.c_str());
 
   return s;
 }
@@ -2315,7 +2307,7 @@ static PyObject* PyAclPacket_repr(PyAclPacket* self)
 
   Mmsg(buf, "AclPacket(fname=\"%s\", content=\"%s\")", self->fname,
        PyGetByteArrayValue(self->content));
-  s = PyString_FromString(buf.c_str());
+  s = PyUnicode_FromString(buf.c_str());
 
   return s;
 }
@@ -2361,7 +2353,7 @@ static PyObject* PyXattrPacket_repr(PyXattrPacket* self)
 
   Mmsg(buf, "XattrPacket(fname=\"%s\", name=\"%s\", value=\"%s\")", self->fname,
        PyGetByteArrayValue(self->name), PyGetByteArrayValue(self->value));
-  s = PyString_FromString(buf.c_str());
+  s = PyUnicode_FromString(buf.c_str());
 
   return s;
 }
