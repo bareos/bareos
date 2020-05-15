@@ -71,8 +71,9 @@ class PythonBareosBase(unittest.TestCase):
 
 
 class PythonBareosModuleTest(PythonBareosBase):
-    def versiontuple(self, v):
-        return tuple(map(int, (v.split("."))))
+    def versiontuple(self, versionstring):
+        version, separator, suffix = versionstring.partition('~')
+        return tuple(map(int, (version.split("."))))
 
     def test_exception_connection_error(self):
         """

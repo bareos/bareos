@@ -11,7 +11,9 @@ def get_version():
         with open(
             os.path.join(base_dir, "bareos", "VERSION.txt")
         ) as version_file:
-            __version__ = version_file.read().strip()
+            # read version
+            # and adapt it according to https://www.python.org/dev/peps/pep-0440/.
+            __version__ = version_file.read().strip().replace('~pre','.dev')
     except IOError:
         # Fallback version.
         # First protocol implemented
