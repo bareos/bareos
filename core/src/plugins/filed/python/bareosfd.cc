@@ -1184,7 +1184,8 @@ static inline PyRestoreObject* NativeToPyRestoreObject(
       PyObject_New(PyRestoreObject, &PyRestoreObjectType);
 
   if (pRestoreObject) {
-    pRestoreObject->object_name = PyString_FromString(rop->object_name);
+    // pRestoreObject->object_name = PyString_FromString(rop->object_name);
+    pRestoreObject->object_name = PyUnicode_FromString(rop->object_name);
     pRestoreObject->object =
         PyByteArray_FromStringAndSize(rop->object, rop->object_len);
     pRestoreObject->plugin_name = rop->plugin_name;
