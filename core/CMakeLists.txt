@@ -868,7 +868,13 @@ message(
   "   CEPHFS support:               ${CEPHFS_FOUND} ${CEPHFS_LIBRARIES} ${CEPHFS_INCLUDE_DIRS} "
 )
 message(
-  "   Python support:               ${Python_FOUND} ${Python_VERSION} ${Python_INCLUDE_DIRS}"
+  "   Python support:               ${Python_FOUND} ${Python_VERSION} ${Python_INCLUDE_DIRS} ${Python_EXECUTABLE}"
+)
+message(
+  "   Python2 support:              ${Python2_FOUND} ${Python2_VERSION} ${Python2_INCLUDE_DIRS} ${Python2_EXECUTABLE}"
+)
+message(
+  "   Python3 support:              ${Python3_FOUND} ${Python3_VERSION} ${Python3_INCLUDE_DIRS} ${Python3_EXECUTABLE}"
 )
 message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")

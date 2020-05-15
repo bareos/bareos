@@ -27,6 +27,9 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(${Python_FOUND})
     set(HAVE_PYTHON 1)
   endif()
+  find_package (Python2 COMPONENTS Interpreter Development)
+  find_package (Python3 COMPONENTS Interpreter Development)
+
 endif()
 
 

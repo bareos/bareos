@@ -94,7 +94,7 @@ if(NOT HAVE_WIN32)
   set_target_properties(example-plugin-fd PROPERTIES PREFIX "")
 endif()
 
-if(HAVE_PYTHON)
+if(Python2_FOUND)
   add_library(python-fd MODULE python/python-fd.cc)
   set_target_properties(python-fd PROPERTIES PREFIX "")
   install(
@@ -102,50 +102,115 @@ if(HAVE_PYTHON)
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )
-  target_link_libraries(python-fd ${Python_LIBRARIES} bareos)
-  add_dependencies(python-fd bareosfd-pymod)
+  target_link_libraries(python-fd ${Python3_LIBRARIES} bareos)
+  add_dependencies(python-fd bareosfd-pymod2)
 endif()
 
-if(HAVE_PYTHON AND NOT HAVE_WIN32)
-  add_executable(bareos-fd-module-tester python/test/python-fd-module-tester.cc)
-  target_link_libraries(bareos-fd-module-tester ${Python_LIBRARIES} bareos)
+if(Python3_FOUND)
+  add_library(python3-fd MODULE python/python-fd.cc)
+  set_target_properties(python3-fd PROPERTIES PREFIX "")
+  install(
+    TARGETS python3-fd
+    DESTINATION ${plugindir}
+    COMPONENT filedaemon
+  )
+  target_link_libraries(python3-fd ${Python3_LIBRARIES} bareos)
+  add_dependencies(python3-fd bareosfd-pymod3)
+endif()
 
-  add_test(NAME bareosfd-python-module-tester
-           COMMAND ${CMAKE_CURRENT_BINARY_DIR}/bareos-fd-module-tester
+if(Python2_FOUND AND NOT HAVE_WIN22)
+  add_executable(
+    bareosfd-python2-module-tester python/test/python-fd-module-tester.cc
+  )
+  target_link_libraries(
+    bareosfd-python2-module-tester ${Python2_LIBRARIES} bareos
+  )
+
+  add_test(NAME bareosfd-python2-module-tester
+           COMMAND ${CMAKE_CURRENT_BINARY_DIR}/bareosfd-python2-module-tester
   )
   set_property(
-    TEST bareosfd-python-module-tester
+    TEST bareosfd-python2-module-tester
     PROPERTY
       ENVIRONMENT
       PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/python/test/:${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/pyfiles
   )
-
 endif()
 
-if(HAVE_PYTHON AND NOT HAVE_WIN32)
-  configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
+if(Python3_FOUND AND NOT HAVE_WIN32)
+  add_executable(
+    bareosfd-python3-module-tester python/test/python-fd-module-tester.cc
+  )
+  target_link_libraries(
+    bareosfd-python3-module-tester ${Python3_LIBRARIES} bareos
+  )
+
+  add_test(NAME bareosfd-python3-module-tester
+           COMMAND ${CMAKE_CURRENT_BINARY_DIR}/bareosfd-python3-module-tester
+  )
+  set_property(
+    TEST bareosfd-python3-module-tester
+    PROPERTY
+      ENVIRONMENT
+      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/python/test/:${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/pyfiles
+  )
+endif()
+
+if(Python2_FOUND AND NOT HAVE_WIN22)
+  configure_file(
+    python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup_py2.py
+  )
   add_custom_command(
     OUTPUT pythonmodules/bareosfd.so
     MAIN_DEPENDENCY ./python/bareosfd.cc
     DEPENDS ./python/bareosfd.h
     DEPENDS bareos
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup_py2.py
     COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMAND ${Python_EXECUTABLE} python/setup.py build
-    COMMAND ${Python_EXECUTABLE} python/setup.py install --install-lib
+    COMMAND ${Python_EXECUTABLE} python/setup_py2.py build
+    COMMAND ${Python_EXECUTABLE} python/setup_py2.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMENT "building python module pythonmodules/bareosfd.so"
+    COMMENT "building python2 module pythonmodules/bareosfd.so"
   )
-
-  add_custom_target(bareosfd-pymod DEPENDS pythonmodules/bareosfd.so)
-
-  add_test(NAME bareosfd-python-module
-           COMMAND ${Python_EXECUTABLE}
+  add_custom_target(bareosfd-pymod2 DEPENDS pythonmodules/bareosfd.so)
+  add_test(NAME bareosfd-python2-module
+           COMMAND ${Python2_EXECUTABLE}
                    ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareosfd_test.py
   )
   set_property(
-    TEST bareosfd-python-module
+    TEST bareosfd-python2-module
+    PROPERTY
+      ENVIRONMENT
+      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"
+      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
+  )
+endif()
+
+if(Python3_FOUND AND NOT HAVE_WIN32)
+  configure_file(
+    python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup_py3.py
+  )
+  add_custom_command(
+    OUTPUT pythonmodules/bareosfd.so
+    MAIN_DEPENDENCY ./python/bareosfd.cc
+    DEPENDS ./python/bareosfd.h
+    DEPENDS bareos
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup_py3.py
+    COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
+    COMMAND ${Python_EXECUTABLE} python/setup_py3.py build
+    COMMAND ${Python_EXECUTABLE} python/setup_py3.py install --install-lib
+            ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+    COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
+    COMMENT "building python3 module pythonmodules/bareosfd.so"
+  )
+  add_custom_target(bareosfd-pymod3 DEPENDS pythonmodules/bareosfd.so)
+  add_test(NAME bareosfd-python3-module
+           COMMAND ${Python3_EXECUTABLE}
+                   ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareosfd_test.py
+  )
+  set_property(
+    TEST bareosfd-python3-module
     PROPERTY
       ENVIRONMENT
       "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"
