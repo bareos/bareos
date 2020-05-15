@@ -183,7 +183,7 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pEventType, *pRetVal;
 
-    pEventType = PyInt_FromLong(event->eventType);
+    pEventType = PyLong_FromLong(event->eventType);
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pEventType, NULL);
     Py_DECREF(pEventType);
@@ -314,7 +314,7 @@ static inline bool PySavePacketToNative(
        * As this has to linger as long as the backup is running we save it in
        * our plugin context.
        */
-      if (PyString_Check(pSavePkt->link)) {
+      if (PyUnicode_Check(pSavePkt->link)) {
         if (plugin_priv_ctx->link) { free(plugin_priv_ctx->link); }
         plugin_priv_ctx->link = strdup(PyUnicode_AsUTF8(pSavePkt->link));
         sp->link = plugin_priv_ctx->link;
@@ -361,7 +361,7 @@ static inline bool PySavePacketToNative(
          * in our plugin context.
          */
         if (pSavePkt->object_name && pSavePkt->object &&
-            PyString_Check(pSavePkt->object_name) &&
+            PyUnicode_Check(pSavePkt->object_name) &&
             PyByteArray_Check(pSavePkt->object)) {
           char* buf;
 
@@ -1332,7 +1332,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
                                                 &value) == bRC_OK) {
-        pRetVal = PyInt_FromLong(value);
+        pRetVal = PyLong_FromLong(value);
       }
       break;
     }
@@ -1386,7 +1386,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     case bVarLevel: {
       int value = 0;
 
-      value = PyInt_AsLong(pyValue);
+      value = PyLong_AsLong(pyValue);
       if (value) {
         retval = bareos_core_functions->setBareosValue(plugin_ctx,
                                                        (bVariable)var, &value);
@@ -1481,7 +1481,7 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
-    event = PyInt_AsLong(pyEvent);
+    event = PyLong_AsLong(pyEvent);
 
     if (event >= bEventJobStart && event <= FD_NR_EVENTS) {
       Dmsg(plugin_ctx, debuglevel,
@@ -1522,7 +1522,7 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
   len = PySequence_Fast_GET_SIZE(pySeq);
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
-    event = PyInt_AsLong(pyEvent);
+    event = PyLong_AsLong(pyEvent);
 
     if (event >= bEventJobStart && event <= FD_NR_EVENTS) {
       Dmsg(plugin_ctx, debuglevel,
@@ -1553,7 +1553,7 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   if (bareos_core_functions->getInstanceCount(plugin_ctx, &value) == bRC_OK) {
-    pRetVal = PyInt_FromLong(value);
+    pRetVal = PyLong_FromLong(value);
   }
 
   if (!pRetVal) {
@@ -1745,7 +1745,7 @@ static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
    */
   sp.type = pSavePkt->type;
   if (pSavePkt->fname) {
-    if (PyString_Check(pSavePkt->fname)) {
+    if (PyUnicode_Check(pSavePkt->fname)) {
       sp.fname = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->fname));
     } else {
       goto bail_out;
@@ -1754,7 +1754,7 @@ static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
     goto bail_out;
   }
   if (pSavePkt->link) {
-    if (PyString_Check(pSavePkt->link)) {
+    if (PyUnicode_Check(pSavePkt->link)) {
       sp.link = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->link));
     } else {
       goto bail_out;
@@ -1796,7 +1796,7 @@ static PyObject* PyBareosAcceptFile(PyObject* self, PyObject* args)
    * that here separately and don't call PySavePacketToNative().
    */
   if (pSavePkt->fname) {
-    if (PyString_Check(pSavePkt->fname)) {
+    if (PyUnicode_Check(pSavePkt->fname)) {
       sp.fname = const_cast<char*>(PyUnicode_AsUTF8(pSavePkt->fname));
     } else {
       goto bail_out;
@@ -1871,7 +1871,7 @@ bail_out:
  */
 static inline char* PyGetStringValue(PyObject* object)
 {
-  if (!object || !PyString_Check(object)) { return (char*)""; }
+  if (!object || !PyUnicode_Check(object)) { return (char*)""; }
 
   return const_cast<char*>(PyUnicode_AsUTF8(object));
 }

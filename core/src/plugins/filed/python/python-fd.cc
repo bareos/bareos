@@ -146,7 +146,7 @@ static void PyErrorHandler()
     strRetval =
         PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 
-    error_string = strdup(PyString_AsString(strRetval));
+    error_string = strdup(PyUnicode_AsUTF8(strRetval));
 
     Py_DECREF(tbList);
     Py_DECREF(emptyString);

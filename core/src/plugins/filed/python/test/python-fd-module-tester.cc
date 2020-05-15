@@ -48,12 +48,12 @@ static void PyErrorHandler()
                             (char*)"OOO", type, value == NULL ? Py_None : value,
                             traceback == NULL ? Py_None : traceback);
 
-    // emptyString = PyString_FromString("");
+    // emptyString = PyUnicode_FromString("");
     emptyString = PyUnicode_FromString("");
     strRetval =
         PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 
-    error_string = strdup(PyString_AsString(strRetval));
+    error_string = strdup(PyUnicode_AsUTF8(strRetval));
 
     Py_DECREF(tbList);
     Py_DECREF(emptyString);
@@ -239,7 +239,7 @@ int main(int argc, char* argv[])
     PyObject *pPluginDefinition, *pRetVal;
 
 
-    pPluginDefinition = PyString_FromString((char*)"PluginDefinition");
+    pPluginDefinition = PyUnicode_FromString((char*)"PluginDefinition");
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
 

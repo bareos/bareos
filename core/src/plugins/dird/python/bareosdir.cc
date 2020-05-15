@@ -108,7 +108,7 @@ static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pPluginDefinition, *pRetVal;
 
-    pPluginDefinition = PyString_FromString((char*)value);
+    pPluginDefinition = PyUnicode_FromString((char*)value);
     if (!pPluginDefinition) { goto bail_out; }
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
@@ -166,7 +166,7 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pEventType, *pRetVal;
 
-    pEventType = PyInt_FromLong(event->eventType);
+    pEventType = PyLong_FromLong(event->eventType);
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pEventType, NULL);
     Py_DECREF(pEventType);
@@ -217,7 +217,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (brDirVariable)var,
                                                 &value) == bRC_OK) {
-        pRetVal = PyInt_FromLong(value);
+        pRetVal = PyLong_FromLong(value);
       }
       break;
     }
@@ -250,7 +250,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (brDirVariable)var,
                                                 &value) == bRC_OK) {
-        if (value) { pRetVal = PyString_FromString(value); }
+        if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
     }
@@ -259,7 +259,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 
       if (bareos_core_functions->getBareosValue(NULL, (brDirVariable)var,
                                                 &value) == bRC_OK) {
-        if (value) { pRetVal = PyString_FromString(value); }
+        if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
     }
@@ -298,7 +298,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     case bwDirVarVolumeName: {
       const char* value;
 
-      value = PyString_AsString(pyValue);
+      value = PyUnicode_AsUTF8(pyValue);
       if (value) {
         retval = bareos_core_functions->setBareosValue(
             plugin_ctx, (bwDirVariable)var,
@@ -311,7 +311,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     case bwDirVarJobLevel: {
       int value;
 
-      value = PyInt_AsLong(pyValue);
+      value = PyLong_AsLong(pyValue);
       if (value >= 0) {
         retval = bareos_core_functions->setBareosValue(
             plugin_ctx, (bwDirVariable)var, &value);
@@ -396,7 +396,7 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
-    event = PyInt_AsLong(pyEvent);
+    event = PyLong_AsLong(pyEvent);
 
     if (event >= bDirEventJobStart && event <= bDirEventGetScratch) {
       Dmsg(plugin_ctx, debuglevel,
@@ -438,7 +438,7 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
 
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
-    event = PyInt_AsLong(pyEvent);
+    event = PyLong_AsLong(pyEvent);
 
     if (event >= bDirEventJobStart && event <= bDirEventGetScratch) {
       Dmsg(plugin_ctx, debuglevel,
@@ -471,7 +471,7 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   if (bareos_core_functions->getInstanceCount(plugin_ctx, &value) == bRC_OK) {
-    pRetVal = PyInt_FromLong(value);
+    pRetVal = PyLong_FromLong(value);
   }
 
   if (!pRetVal) {
@@ -505,7 +505,7 @@ static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pPluginDefinition, *pRetVal;
 
-    pPluginDefinition = PyString_FromString((char*)value);
+    pPluginDefinition = PyUnicode_FromString((char*)value);
     if (!pPluginDefinition) { goto bail_out; }
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
@@ -563,7 +563,7 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pEventType, *pRetVal;
 
-    pEventType = PyInt_FromLong(event->eventType);
+    pEventType = PyLong_FromLong(event->eventType);
 
     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pEventType, NULL);
     Py_DECREF(pEventType);
@@ -613,7 +613,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (brDirVariable)var,
                                                 &value) == bRC_OK) {
-        pRetVal = PyInt_FromLong(value);
+        pRetVal = PyLong_FromLong(value);
       }
       break;
     }
@@ -646,7 +646,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (brDirVariable)var,
                                                 &value) == bRC_OK) {
-        if (value) { pRetVal = PyString_FromString(value); }
+        if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
     }
@@ -655,7 +655,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 
       if (bareos_core_functions->getBareosValue(NULL, (brDirVariable)var,
                                                 &value) == bRC_OK) {
-        if (value) { pRetVal = PyString_FromString(value); }
+        if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
     }
@@ -693,7 +693,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     case bwDirVarVolumeName: {
       char* value;
 
-      value = PyString_AsString(pyValue);
+      value = PyUnicode_AsUTF8(pyValue);
       if (value) {
         retval = bareos_core_functions->setBareosValue(
             plugin_ctx, (bwDirVariable)var, value);
@@ -705,7 +705,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     case bwDirVarJobLevel: {
       int value;
 
-      value = PyInt_AsLong(pyValue);
+      value = PyLong_AsLong(pyValue);
       if (value >= 0) {
         retval = bareos_core_functions->setBareosValue(
             plugin_ctx, (bwDirVariable)var, &value);
@@ -790,7 +790,7 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
-    event = PyInt_AsLong(pyEvent);
+    event = PyLong_AsLong(pyEvent);
 
     if (event >= bDirEventJobStart && event <= bDirEventGetScratch) {
       Dmsg(plugin_ctx, debuglevel,
@@ -832,7 +832,7 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
 
   for (int i = 0; i < len; i++) {
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
-    event = PyInt_AsLong(pyEvent);
+    event = PyLong_AsLong(pyEvent);
 
     if (event >= bDirEventJobStart && event <= bDirEventGetScratch) {
       Dmsg(plugin_ctx, debuglevel,
@@ -865,7 +865,7 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   if (bareos_core_functions->getInstanceCount(plugin_ctx, &value) == bRC_OK) {
-    pRetVal = PyInt_FromLong(value);
+    pRetVal = PyLong_FromLong(value);
   }
 
   if (!pRetVal) {

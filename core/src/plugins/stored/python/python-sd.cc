@@ -165,12 +165,12 @@ static void PyErrorHandler()
                             (char*)"OOO", type, value == NULL ? Py_None : value,
                             traceback == NULL ? Py_None : traceback);
 
-    // emptyString = PyString_FromString("");
+    // emptyString = PyUnicode_FromString("");
     emptyString = PyUnicode_FromString("");
     strRetval =
         PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 
-    error_string = strdup(PyString_AsString(strRetval));
+    error_string = strdup(PyUnicode_AsUTF8(strRetval));
 
     Py_DECREF(tbList);
     Py_DECREF(emptyString);
@@ -539,7 +539,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
     /* Extend the Python search path with the given module_path */
     if (plugin_priv_ctx->module_path) {
       sysPath = PySys_GetObject((char*)"path");
-      mPath = PyString_FromString(plugin_priv_ctx->module_path);
+      mPath = PyUnicode_FromString(plugin_priv_ctx->module_path);
       PyList_Append(sysPath, mPath);
       Py_DECREF(mPath);
       plugin_priv_ctx->python_path_set = true;
@@ -551,7 +551,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
     Dmsg(plugin_ctx, debuglevel,
          "python-sd: Trying to load module with name %s\n",
          plugin_priv_ctx->module_name);
-    pName = PyString_FromString(plugin_priv_ctx->module_name);
+    pName = PyUnicode_FromString(plugin_priv_ctx->module_name);
     plugin_priv_ctx->pModule = PyImport_Import(pName);
     Py_DECREF(pName);
 
@@ -582,7 +582,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
     if (pFunc && PyCallable_Check(pFunc)) {
       PyObject *pPluginDefinition, *pRetVal;
 
-      pPluginDefinition = PyString_FromString((char*)value);
+      pPluginDefinition = PyUnicode_FromString((char*)value);
       if (!pPluginDefinition) { goto bail_out; }
 
       pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);

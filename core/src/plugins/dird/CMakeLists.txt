@@ -30,7 +30,9 @@ if(HAVE_WIN32)
   add_definitions(-DMS_WIN${WINDOWS_BITS})
 endif()
 
-if(HAVE_PYTHON)
+if(Python2_FOUND)
+  include_directories(SYSTEM ${Python2_INCLUDE_DIRS})
+
   add_library(python-dir MODULE python/python-dir.cc)
   # do not prefix with "lib"
   set_target_properties(python-dir PROPERTIES PREFIX "")

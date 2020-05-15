@@ -107,7 +107,7 @@ static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype)
     strRetval =
         PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 
-    error_string = strdup(PyString_AsString(strRetval));
+    error_string = strdup(PyUnicode_AsUTF8(strRetval));
 
     Py_DECREF(tbList);
     Py_DECREF(emptyString);
@@ -157,7 +157,7 @@ static PluginContext* GetPluginContextFromPythonModule()
  */
 static inline bRC ConvertPythonRetvalTobRCRetval(PyObject* pRetVal)
 {
-  return (bRC)PyInt_AsLong(pRetVal);
+  return (bRC)PyLong_AsLong(pRetVal);
 }
 
 /**
@@ -165,5 +165,5 @@ static inline bRC ConvertPythonRetvalTobRCRetval(PyObject* pRetVal)
  */
 static inline PyObject* ConvertbRCRetvalToPythonRetval(bRC retval)
 {
-  return (PyObject*)PyInt_FromLong((int)retval);
+  return (PyObject*)PyLong_FromLong((int)retval);
 }

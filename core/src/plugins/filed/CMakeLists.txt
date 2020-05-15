@@ -102,8 +102,10 @@ if(Python2_FOUND)
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )
-  target_link_libraries(python-fd ${Python3_LIBRARIES} bareos)
+  target_link_libraries(python-fd ${Python2_LIBRARIES} bareos)
+  target_include_directories(python-fd PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
   add_dependencies(python-fd bareosfd-pymod2)
+  add_dependencies(bareos-fd python-fd)
 endif()
 
 if(Python3_FOUND)
@@ -115,7 +117,9 @@ if(Python3_FOUND)
     COMPONENT filedaemon
   )
   target_link_libraries(python3-fd ${Python3_LIBRARIES} bareos)
+  target_include_directories(python3-fd PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})
   add_dependencies(python3-fd bareosfd-pymod3)
+  add_dependencies(bareos-fd python3-fd)
 endif()
 
 if(Python2_FOUND AND NOT HAVE_WIN22)
@@ -124,6 +128,9 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
   )
   target_link_libraries(
     bareosfd-python2-module-tester ${Python2_LIBRARIES} bareos
+  )
+  target_include_directories(
+    bareosfd-python2-module-tester PUBLIC SYSTEM ${Python2_INCLUDE_DIRS}
   )
 
   add_test(NAME bareosfd-python2-module-tester
@@ -143,6 +150,9 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
   )
   target_link_libraries(
     bareosfd-python3-module-tester ${Python3_LIBRARIES} bareos
+  )
+  target_include_directories(
+    bareosfd-python3-module-tester PUBLIC SYSTEM ${Python3_INCLUDE_DIRS}
   )
 
   add_test(NAME bareosfd-python3-module-tester
@@ -167,8 +177,8 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
     DEPENDS bareos
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup_py2.py
     COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMAND ${Python_EXECUTABLE} python/setup_py2.py build
-    COMMAND ${Python_EXECUTABLE} python/setup_py2.py install --install-lib
+    COMMAND ${Python2_EXECUTABLE} python/setup_py2.py build
+    COMMAND ${Python2_EXECUTABLE} python/setup_py2.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python2 module pythonmodules/bareosfd.so"
@@ -198,8 +208,8 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     DEPENDS bareos
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup_py3.py
     COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMAND ${Python_EXECUTABLE} python/setup_py3.py build
-    COMMAND ${Python_EXECUTABLE} python/setup_py3.py install --install-lib
+    COMMAND ${Python3_EXECUTABLE} python/setup_py3.py build
+    COMMAND ${Python3_EXECUTABLE} python/setup_py3.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python3 module pythonmodules/bareosfd.so"
