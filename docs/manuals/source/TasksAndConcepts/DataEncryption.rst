@@ -88,9 +88,9 @@ Generate a File Daemon Key Pair for each FD:
 
 ::
 
-     openssl genrsa -out fd-example.key 2048
-     openssl req -new -key fd-example.key -x509 -out fd-example.cert
-     cat fd-example.key fd-example.cert >fd-example.pem
+     openssl genrsa -out example-fd.key 2048
+     openssl req -new -key example-fd.key -x509 -out example-fd.cert
+     cat example-fd.key example-fd.cert >example-fd.pem
 
 
 
