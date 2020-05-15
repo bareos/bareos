@@ -38,7 +38,7 @@ if(Python2_FOUND)
   set_target_properties(python-dir PROPERTIES PREFIX "")
   install(TARGETS python-dir DESTINATION ${plugindir})
   target_link_libraries(python-dir ${Python_LIBRARIES} bareos)
-  add_dependencies(python-dir bareosdir-pymod)
+  add_dependencies(python-dir bareosdir-python2-module)
 
   set(PYFILES
       python/pyfiles/bareos-dir.py.template
@@ -50,7 +50,7 @@ if(Python2_FOUND)
   install(FILES ${PYFILES} DESTINATION ${plugindir})
 endif()
 
-if(HAVE_PYTHON AND NOT HAVE_WIN32)
+if(Python2_FOUND AND NOT HAVE_WIN32)
   configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
   add_custom_command(
     OUTPUT pythonmodules/bareosdir.so
@@ -59,21 +59,70 @@ if(HAVE_PYTHON AND NOT HAVE_WIN32)
     DEPENDS bareos
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
     COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMAND ${Python_EXECUTABLE} python/setup.py build
-    COMMAND ${Python_EXECUTABLE} python/setup.py install --install-lib
+    COMMAND ${Python2_EXECUTABLE} python/setup.py build
+    COMMAND ${Python2_EXECUTABLE} python/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMENT "building python module pythonmodules/bareosdir.so"
+    COMMENT "building python2 module pythonmodules/bareosdir.so"
   )
+  add_custom_target(bareosdir-python2-module DEPENDS pythonmodules/bareosdir.so)
 
-  add_custom_target(bareosdir-pymod DEPENDS pythonmodules/bareosdir.so)
-
-  add_test(NAME bareosdir-python-module
-           COMMAND ${Python_EXECUTABLE}
+  add_test(NAME bareosdir-python2-module
+           COMMAND ${Python2_EXECUTABLE}
                    ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareosdir_test.py
   )
   set_property(
-    TEST bareosdir-python-module
+    TEST bareosdir-python2-module
+    PROPERTY
+      ENVIRONMENT
+      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"
+      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
+  )
+endif()
+
+if(Python3_FOUND)
+  include_directories(SYSTEM ${Python2_INCLUDE_DIRS})
+
+  add_library(python3-dir MODULE python/python-dir.cc)
+  # do not prefix with "lib"
+  set_target_properties(python3-dir PROPERTIES PREFIX "")
+  install(TARGETS python3-dir DESTINATION ${plugindir})
+  target_link_libraries(python3-dir ${Python_LIBRARIES} bareos)
+  add_dependencies(python3-dir bareosdir-python2-module)
+
+  set(PYFILES
+      python/pyfiles/bareos-dir.py.template
+      python/pyfiles/bareos-dir-class-plugin.py
+      python/pyfiles/BareosDirPluginBaseclass.py
+      python/pyfiles/BareosDirWrapper.py
+  )
+
+  install(FILES ${PYFILES} DESTINATION ${plugindir})
+endif()
+
+if(Python3_FOUND AND NOT HAVE_WIN32)
+  configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
+  add_custom_command(
+    OUTPUT pythonmodules/bareosdir.so
+    MAIN_DEPENDENCY ./python/bareosdir.cc
+    DEPENDS ./python/bareosdir.h
+    DEPENDS bareos
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
+    COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
+    COMMAND ${Python3_EXECUTABLE} python/setup.py build
+    COMMAND ${Python3_EXECUTABLE} python/setup.py install --install-lib
+            ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+    COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
+    COMMENT "building python3 module pythonmodules/bareosdir.so"
+  )
+  add_custom_target(bareosdir-python3-module DEPENDS pythonmodules/bareosdir.so)
+
+  add_test(NAME bareosdir-python3-module
+           COMMAND ${Python3_EXECUTABLE}
+                   ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareosdir_test.py
+  )
+  set_property(
+    TEST bareosdir-python3-module
     PROPERTY
       ENVIRONMENT
       "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"

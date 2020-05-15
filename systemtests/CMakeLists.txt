@@ -330,6 +330,10 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
                                              /usr/lib64/bareos/plugins
   )
   find_program(
+    PYTHON_PLUGIN_TO_TEST python3-fd.so PATHS /usr/lib/bareos/plugins
+                                              /usr/lib64/bareos/plugins
+  )
+  find_program(
     CREATE_BAREOS_DATABASE_TO_TEST create_bareos_database
     PATHS /usr/lib/bareos/scripts
   )
@@ -435,13 +439,13 @@ set(python_plugin_module_src_test_dir_relative "python-modules")
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
 
-if(TARGET python-dir)
+if(TARGET python-dir OR TARGET python3-dir)
   set(dir_plugin_binary_path ${DIR_PLUGINS_DIR_TO_TEST})
 endif()
-if(TARGET python-sd)
+if(TARGET python-sd OR TARGET python3-sd)
   set(sd_plugin_binary_path ${SD_PLUGINS_DIR_TO_TEST})
 endif()
-if(TARGET python-fd)
+if(TARGET python-fd OR TARGET python3-fd)
   set(fd_plugin_binary_path ${FD_PLUGINS_DIR_TO_TEST})
 endif()
 
@@ -650,6 +654,11 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-postgres")
   message("NOT OK, disabling pyplug-fd-postgres:")
 endif()
+if(TARGET python3-fd)
+  list(APPEND SYSTEM_TESTS "python3-fd-plugin-local-fileset-test")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "python3-fd-plugin-local-fileset-test")
+endif()
 
 if(TARGET python-fd AND ovirt_server)
   list(APPEND SYSTEM_TESTS "pyplug-fd-ovirt")
@@ -789,6 +798,11 @@ endif()
 
 foreach(TEST_NAME ${SYSTEM_TESTS})
   message(STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}")
+  # string(REGEX MATCH "^python[^-]?-(fd|sd|dir)" PLUGIN_NAME "${TEST_NAME}")
+  string(REGEX MATCH "^python[^-]?" plugin_name "${TEST_NAME}")
+  if(plugin_name)
+    message(STATUS "plugin_name:" ${plugin_name})
+  endif()
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")

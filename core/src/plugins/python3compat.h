@@ -8,10 +8,10 @@
 #define PyLong_AsLong PyInt_AsLong
 
 #define PyBytes_FromString PyString_FromString
-#define PyUnicode_FromString PyString_FromString
+//#define PyUnicode_FromString PyString_FromString
 
 #define PyUnicode_AsUTF8 PyString_AsString
-#define PyUnicode_Check PyString_Check
+//#define PyUnicode_Check PyString_Check
 #endif
 
 #endif  // BAREOS_CORE_SRC_PLUGINS_PYTHON3COMPAT_H_

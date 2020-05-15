@@ -23,13 +23,12 @@ if(${SYSTEMD_FOUND})
 endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  find_package (Python COMPONENTS Interpreter Development)
-  if(${Python_FOUND})
-    set(HAVE_PYTHON 1)
-  endif()
+  #find_package (Python COMPONENTS Interpreter Development)
   find_package (Python2 COMPONENTS Interpreter Development)
   find_package (Python3 COMPONENTS Interpreter Development)
-
+  if(${Python2_FOUND} OR ${Python3_FOUND})
+    set(HAVE_PYTHON 1)
+  endif()
 endif()
 
 

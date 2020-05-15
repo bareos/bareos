@@ -53,8 +53,8 @@ if(Python2_FOUND)
   add_library(python-sd MODULE python/python-sd.cc)
   set_target_properties(python-sd PROPERTIES PREFIX "")
   install(TARGETS python-sd DESTINATION ${plugindir})
-  target_link_libraries(python-sd ${Python_LIBRARIES} bareos)
-  add_dependencies(python-sd bareossd-pymod)
+  target_link_libraries(python-sd ${Python2_LIBRARIES} bareos)
+  add_dependencies(python-sd bareossd-python2-module)
 
   set(PYFILES
       python/pyfiles/bareos-sd-class-plugin.py
@@ -65,7 +65,7 @@ if(Python2_FOUND)
   install(FILES ${PYFILES} DESTINATION ${plugindir})
 endif()
 
-if(HAVE_PYTHON AND NOT HAVE_WIN32)
+if(Python2_FOUND AND NOT HAVE_WIN32)
   configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
   add_custom_command(
     OUTPUT pythonmodules/bareossd.so
@@ -74,21 +74,69 @@ if(HAVE_PYTHON AND NOT HAVE_WIN32)
     DEPENDS bareos
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
     COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMAND ${Python_EXECUTABLE} python/setup.py build
-    COMMAND ${Python_EXECUTABLE} python/setup.py install --install-lib
+    COMMAND ${Python2_EXECUTABLE} python/setup.py build
+    COMMAND ${Python2_EXECUTABLE} python/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python module pythonmodules/bareossd.so"
   )
 
-  add_custom_target(bareossd-pymod DEPENDS pythonmodules/bareossd.so)
+  add_custom_target(bareossd-python2-module DEPENDS pythonmodules/bareossd.so)
 
-  add_test(NAME bareossd-python-module
-           COMMAND ${Python_EXECUTABLE}
+  add_test(NAME bareossd-python2-module
+           COMMAND ${Python2_EXECUTABLE}
                    ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareossd_test.py
   )
   set_property(
-    TEST bareossd-python-module
+    TEST bareossd-python2-module
+    PROPERTY
+      ENVIRONMENT
+      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"
+      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
+  )
+endif()
+
+if(Python3_FOUND)
+  include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
+  add_library(python3-sd MODULE python/python-sd.cc)
+  set_target_properties(python3-sd PROPERTIES PREFIX "")
+  install(TARGETS python3-sd DESTINATION ${plugindir})
+  target_link_libraries(python3-sd ${Python3_LIBRARIES} bareos)
+  add_dependencies(python3-sd bareossd-python3-module)
+
+  set(PYFILES
+      python/pyfiles/bareos-sd-class-plugin.py
+      python/pyfiles/BareosSdPluginBaseclass.py
+      python/pyfiles/bareos-sd.py.template python/pyfiles/BareosSdWrapper.py
+  )
+
+  install(FILES ${PYFILES} DESTINATION ${plugindir})
+endif()
+
+if(Python3_FOUND AND NOT HAVE_WIN32)
+  configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
+  add_custom_command(
+    OUTPUT pythonmodules/bareossd.so
+    MAIN_DEPENDENCY ./python/bareossd.cc
+    DEPENDS ./python/bareossd.h
+    DEPENDS bareos
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py
+    COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
+    COMMAND ${Python3_EXECUTABLE} python/setup.py build
+    COMMAND ${Python3_EXECUTABLE} python/setup.py install --install-lib
+            ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+    COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
+    COMMENT "building python module pythonmodules/bareossd.so"
+  )
+
+  add_custom_target(bareossd-python3-module DEPENDS pythonmodules/bareossd.so)
+
+  add_test(NAME bareossd-python3-module
+           COMMAND ${Python3_EXECUTABLE}
+                   ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareossd_test.py
+  )
+  set_property(
+    TEST bareossd-python3-module
     PROPERTY
       ENVIRONMENT
       "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"
