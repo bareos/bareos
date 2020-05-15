@@ -37,7 +37,7 @@ if(Python2_FOUND)
   # do not prefix with "lib"
   set_target_properties(python-dir PROPERTIES PREFIX "")
   install(TARGETS python-dir DESTINATION ${plugindir})
-  target_link_libraries(python-dir ${Python_LIBRARIES} bareos)
+  target_link_libraries(python-dir ${Python2_LIBRARIES} bareos)
   add_dependencies(python-dir bareosdir-python2-module)
 
   set(PYFILES
@@ -87,7 +87,7 @@ if(Python3_FOUND)
   # do not prefix with "lib"
   set_target_properties(python3-dir PROPERTIES PREFIX "")
   install(TARGETS python3-dir DESTINATION ${plugindir})
-  target_link_libraries(python3-dir ${Python_LIBRARIES} bareos)
+  target_link_libraries(python3-dir ${Python3_LIBRARIES} bareos)
   add_dependencies(python3-dir bareosdir-python3-module)
 
   set(PYFILES

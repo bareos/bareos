@@ -788,10 +788,11 @@ MOD_INIT(bareosfd)
   c_api_object = PyCapsule_New((void*)Bareosfd_API,
                                PYTHON_MODULE_NAME_QUOTED "._C_API", NULL);
 
-  if (c_api_object != NULL)
+  if (c_api_object != NULL) {
     PyModule_AddObject(m, "_C_API", c_api_object);
-  else
+  } else {
     return MOD_ERROR_VAL;
+  }
 
   PyRestoreObjectType.tp_new = PyType_GenericNew;
   if (PyType_Ready(&PyRestoreObjectType) < 0) { return MOD_ERROR_VAL; }

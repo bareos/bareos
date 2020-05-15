@@ -690,10 +690,16 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "pyplug-dir")
 endif()
 
-if(TARGET python-sd)
-  list(APPEND SYSTEM_TESTS "pyplug-sd")
+if(TARGET python3-dir)
+  list(APPEND SYSTEM_TESTS "python3-dir-plugin-test")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-sd")
+  list(APPEND SYSTEM_TESTS_DISABLED "python3-dir-plugin-test")
+endif()
+
+if(TARGET python3-sd)
+  list(APPEND SYSTEM_TESTS "python3-sd-plugin-test")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "python3-sd-plugin-test")
 endif()
 
 message(STATUS "Looking for pam test requirements ...")
@@ -800,9 +806,8 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   message(STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}")
   # string(REGEX MATCH "^python[^-]?-(fd|sd|dir)" PLUGIN_NAME "${TEST_NAME}")
   string(REGEX MATCH "^python[^-]?" python_version "${TEST_NAME}")
-  if(python_version)
-    message(STATUS "python_version:" ${python_version}) # python or python3
-  endif()
+  # if(python_version) message(STATUS "python_version:" ${python_version}) #
+  # python or python3 endif()
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")

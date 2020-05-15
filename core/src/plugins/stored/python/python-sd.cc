@@ -182,7 +182,6 @@ static void PyErrorHandler()
   Py_DECREF(type);
   Py_XDECREF(value);
   Py_XDECREF(traceback);
-  printf("%s", error_string);
 
   free(error_string);
   exit(1);
@@ -206,9 +205,9 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   /* import the bareossd module */
   PyObject* bareossdModule = PyImport_ImportModule("bareossd");
   if (bareossdModule) {
-    printf("loaded bareossd successfully\n");
+    // printf("loaded bareossd successfully\n");
   } else {
-    printf("loading of bareossd failed\n");
+    // printf("loading of bareossd failed\n");
     if (PyErr_Occurred()) { PyErrorHandler(); }
   }
 

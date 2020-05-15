@@ -92,7 +92,6 @@ using namespace directordaemon;
 
 /* variables storing bareos pointers */
 PluginContext* plugin_context = NULL;
-static void* bareos_core_functions = NULL;
 
 MOD_INIT(bareosdir)
 {
@@ -108,26 +107,11 @@ MOD_INIT(bareosdir)
   c_api_object = PyCapsule_New((void*)Bareosdir_API,
                                PYTHON_MODULE_NAME_QUOTED "._C_API", NULL);
 
-  if (c_api_object != NULL) PyModule_AddObject(m, "_C_API", c_api_object);
-
-  /* add bPluginFunctions Capsule */
-  PyObject* PyModulePluginFuncs =
-      PyCapsule_New((void*)&bareos_core_functions,
-                    PYTHON_MODULE_NAME_QUOTED ".CoreFunctions", NULL);
-  if (!PyModulePluginFuncs) {
-    printf(PYTHON_MODULE_NAME_QUOTED ":CoreFunctions PyCapsule_New failed\n");
-    return MOD_ERROR_VAL;
-  }
-  if (PyModulePluginFuncs) {
-    PyModule_AddObject(m, "CoreFunctions", PyModulePluginFuncs);
-    printf(PYTHON_MODULE_NAME_QUOTED ": added    CoreFunctions@%p\n",
-           &bareos_core_functions);
+  if (c_api_object != NULL) {
+    PyModule_AddObject(m, "_C_API", c_api_object);
   } else {
-    printf(PYTHON_MODULE_NAME_QUOTED
-           ":CoreFunctions PyModule_AddObject failed\n");
     return MOD_ERROR_VAL;
   }
-
 
   /* module dictionaries */
   DEFINE_bRCs_DICT();

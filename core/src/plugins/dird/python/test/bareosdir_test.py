@@ -2,7 +2,7 @@ import unittest
 import bareosdir
 import time
 
-print help(bareosdir)
+print (help(bareosdir))
 
 class TestBareosFd(unittest.TestCase):
 
