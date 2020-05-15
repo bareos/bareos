@@ -5,3 +5,7 @@ config.ini
 Makefile
 config.log
 config.status
+global.php
+layout.phtml
+login.phtml
+version.php
