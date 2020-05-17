@@ -578,6 +578,7 @@ function jobActionButtonsFormatter(value, row, index, basePath) {
             case 'C':
                return jobDetailsButton + '&nbsp;' + jobRestoreButton;
             case 'R':
+            case 'O':
                return jobDetailsButton;
          }
          break;
