@@ -577,8 +577,7 @@ function jobActionButtonsFormatter(value, row, index, basePath) {
                return jobDetailsButton + '&nbsp;' + jobRerunButton + '&nbsp;' + jobRestoreButton;
             case 'C':
                return jobDetailsButton + '&nbsp;' + jobRestoreButton;
-            case 'R':
-            case 'O':
+            default:
                return jobDetailsButton;
          }
          break;
@@ -589,6 +588,8 @@ function jobActionButtonsFormatter(value, row, index, basePath) {
          switch(row.type) {
             case 'B':
                return jobDetailsButton + '&nbsp;' + jobRerunButton;
+            default:
+               return jobDetailsButton;
          }
          break;
       case 'F':
@@ -623,7 +624,7 @@ function jobActionButtonsFormatter(value, row, index, basePath) {
          }
          break;
       default:
-         return '';
+         return jobDetailsButton;
    }
 }
 
