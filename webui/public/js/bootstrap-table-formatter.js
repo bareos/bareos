@@ -490,18 +490,11 @@ function formatFilesetName(value, row, index, basePath) {
 function formatLogMessage(value) {
    var msg = (value).replace(/\n/g, "<br />");
 
-   if(msg.search("Error") > 0) {
-      return msg.replace(/Error/g, '<span class="bg-danger text-danger">Error</span>');
-   }
-   else if(msg.search("error") > 0) {
-      return msg.replace(/error/g, '<span class="bg-danger text-danger">error</span>');
-   }
-   else if(msg.search("Warning") > 0) {
-      return msg.replace(/Warning/g, '<span class="bg-warning text-warning">Warning</span>');
-   }
-   else {
-      return msg;
-   }
+   msg = msg.replace(/(e)rror(s?)/gi, '<span class="bg-danger text-danger">$1rror$2</span>');
+   msg = msg.replace(/(w)arning(s?)/gi, '<span class="bg-warning text-warning">$1arning$2</span>');
+   msg = msg.replace(/jobid=([0-9]*)/gi, '<a class="bg-info text-info" href="' +  basePath + '/job/details/$1">JobId=$1</a>');
+
+   return msg;
 }
 
 function formatAutochangerStatus(value) {
