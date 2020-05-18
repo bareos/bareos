@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -69,9 +69,7 @@ void SetWorkingDirectory(const char* wd);
 const char* last_path_separator(const char* str);
 void SortCaseInsensitive(std::vector<std::string>& v);
 std::string getenv_std_string(std::string env_var);
-void ToLowerCase(const std::string& i1,
-                 const std::string& i2,
-                 std::string& o1,
-                 std::string& o2);
+void StringToLowerCase(std::string& s);
+void StringToLowerCase(std::string& out, const std::string& in);
 
 #endif  // BAREOS_LIB_UTIL_H_

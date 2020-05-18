@@ -28,39 +28,42 @@
 #include <algorithm>
 #include <iostream>
 
-DatabaseColumnDescriptions::DatabaseColumnDescriptions(BareosDb* db) : db_{db}
+void DatabaseColumnDescriptions::SelectColumnDescriptionsAndAddToMap(
+    const std::string& sql_query)
 {
-}
-
-void DatabaseColumnDescriptions::SelectColumnDescriptions(
-    const std::string& sql_query,
-    DB_RESULT_HANDLER* ResultHandler)
-{
-  if (!db_->SqlQuery(sql_query.c_str(), ResultHandler, this)) {
+  if (!db_->SqlQuery(sql_query.c_str(), ResultHandler_, this)) {
     std::string err{"Could not select table names: "};
     err += sql_query;
     throw std::runtime_error(err);
   }
-  std::sort(column_descriptions.begin(), column_descriptions.end(),
-            [](const std::unique_ptr<ColumnDescription>& v1,
-               const std::unique_ptr<ColumnDescription>& v2) {
-              std::string l1, l2;
-              ToLowerCase(v1->column_name, v2->column_name, l1, l2);
-              return l1 < l2;
-            });
 }
 
-int DatabaseColumnDescriptionsPostgresql::ResultHandler(void* ctx,
-                                                        int /*fields*/,
-                                                        char** row)
+int DatabaseColumnDescriptions::ResultHandler_(void* ctx,
+                                               int /*fields*/,
+                                               char** row)
 {
   auto t = static_cast<DatabaseColumnDescriptions*>(ctx);
 
-  t->column_descriptions.emplace_back(std::make_unique<ColumnDescription>(
-      row[RowIndex::kColumnName], row[RowIndex::kDataType],
-      row[RowIndex::kCharMaxLenght]));
+  t->AddToMap(row[RowIndex::kColumnName], row[RowIndex::kDataType],
+              row[RowIndex::kCharMaxLenght]);
 
   return 0;
+}
+
+void DatabaseColumnDescriptions::AddToMap(const char* column_name_in,
+                                          const char* data_type_in,
+                                          const char* max_length_in)
+
+{
+  std::string column_name_lower_case;
+  std::string column_name{column_name_in};
+
+  StringToLowerCase(column_name_lower_case, column_name_in);
+
+  column_descriptions.emplace(  // std::map sorts keys ascending by default
+      std::piecewise_construct, std::forward_as_tuple(column_name_lower_case),
+      std::forward_as_tuple(column_name, column_name_lower_case, data_type_in,
+                            max_length_in));
 }
 
 DatabaseColumnDescriptionsPostgresql::DatabaseColumnDescriptionsPostgresql(
@@ -77,20 +80,7 @@ DatabaseColumnDescriptionsPostgresql::DatabaseColumnDescriptionsPostgresql(
 
   std::cout << "--> " << table_name << std::endl;
 
-  SelectColumnDescriptions(query, ResultHandler);
-}
-
-int DatabaseColumnDescriptionsMysql::ResultHandler(void* ctx,
-                                                   int /*fields*/,
-                                                   char** row)
-{
-  auto t = static_cast<DatabaseColumnDescriptions*>(ctx);
-
-  t->column_descriptions.emplace_back(std::make_unique<ColumnDescription>(
-      row[RowIndex::kColumnName], row[RowIndex::kDataType],
-      row[RowIndex::kCharMaxLenght]));
-
-  return 0;
+  SelectColumnDescriptionsAndAddToMap(query);
 }
 
 DatabaseColumnDescriptionsMysql::DatabaseColumnDescriptionsMysql(
@@ -108,5 +98,6 @@ DatabaseColumnDescriptionsMysql::DatabaseColumnDescriptionsMysql(
   query += " table_schema='";
   query += db->get_db_name();
   query += "'";
-  SelectColumnDescriptions(query, ResultHandler);
+
+  SelectColumnDescriptionsAndAddToMap(query);
 }
