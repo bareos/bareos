@@ -141,7 +141,6 @@ static void PyErrorHandler()
                             (char*)"OOO", type, value == NULL ? Py_None : value,
                             traceback == NULL ? Py_None : traceback);
 
-    // emptyString = PyString_FromString("");
     emptyString = PyUnicode_FromString("");
     strRetval =
         PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
@@ -968,7 +967,6 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
     Dmsg(plugin_ctx, debuglevel,
          "python-fd: Trying to load module with name %s\n",
          plugin_priv_ctx->module_name);
-    // pName = PyString_FromString(plugin_priv_ctx->module_name);
     pName = PyUnicode_FromString(plugin_priv_ctx->module_name);
     plugin_priv_ctx->pModule = PyImport_Import(pName);
     Py_DECREF(pName);
@@ -988,7 +986,6 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
     plugin_priv_ctx->pyModuleFunctionsDict =
         PyModule_GetDict(plugin_priv_ctx->pModule); /* Borrowed reference */
 
-    // StorePluginContextInPythonModule(plugin_ctx);
 
     /* Lookup the load_bareos_plugin() function in the python module.  */
     pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,

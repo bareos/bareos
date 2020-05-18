@@ -81,7 +81,7 @@ if(Python2_FOUND AND NOT HAVE_WIN32)
 endif()
 
 if(Python3_FOUND)
-  include_directories(SYSTEM ${Python2_INCLUDE_DIRS})
+  include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
 
   add_library(python3-dir MODULE python/python-dir.cc)
   # do not prefix with "lib"
