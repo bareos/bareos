@@ -696,6 +696,12 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "python3-dir-plugin-test")
 endif()
 
+if(TARGET python-sd)
+  list(APPEND SYSTEM_TESTS "python-sd-plugin-test")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-sd-plugin-test")
+endif()
+
 if(TARGET python3-sd)
   list(APPEND SYSTEM_TESTS "python3-sd-plugin-test")
 else()

@@ -58,43 +58,43 @@ def parse_plugin_definition(plugindef):
         elif key == "module_name":
             continue
         else:
-            return bRCs["bRC_Error"]
+            return bRC_Error
         toFile(outputfile)
 
-    return bRCs["bRC_OK"]
+    return bRC_OK
 
 
 def handle_plugin_event(event):
-    if event == bsdEventType["bsdEventJobStart"]:
+    if event == bsdEventJobStart:
         toFile("bsdEventJobStart\n")
-    elif event == bsdEventType["bsdEventDeviceReserve"]:
+    elif event == bsdEventDeviceReserve:
         toFile("bsdEventDeviceReserve\n")
-    elif event == bsdEventType["bsdEventVolumeUnload"]:
+    elif event == bsdEventVolumeUnload:
         toFile("bsdEventVolumeUnload\n")
-    elif event == bsdEventType["bsdEventVolumeLoad"]:
+    elif event == bsdEventVolumeLoad:
         toFile("bsdEventVolumeLoad\n")
-    elif event == bsdEventType["bsdEventDeviceOpen"]:
+    elif event == bsdEventDeviceOpen:
         toFile("bsdEventDeviceOpen\n")
-    elif event == bsdEventType["bsdEventDeviceMount"]:
+    elif event == bsdEventDeviceMount:
         toFile("bsdEventDeviceMount\n")
-    elif event == bsdEventType["bsdEventLabelRead"]:
+    elif event == bsdEventLabelRead:
         toFile("bsdEventLabelRead\n")
-    elif event == bsdEventType["bsdEventLabelVerified"]:
+    elif event == bsdEventLabelVerified:
         toFile("bsdEventLabelVerified\n")
-    elif event == bsdEventType["bsdEventLabelWrite"]:
+    elif event == bsdEventLabelWrite:
         toFile("bsdEventLabelWrite\n")
-    elif event == bsdEventType["bsdEventSetupRecordTranslation"]:
+    elif event == bsdEventSetupRecordTranslation:
         toFile("bsdEventSetupRecordTranslation\n")
-    elif event == bsdEventType["bsdEventWriteRecordTranslation"]:
+    elif event == bsdEventWriteRecordTranslation:
         toFile("bsdEventWriteRecordTranslation\n")
-    elif event == bsdEventType["bsdEventDeviceUnmount"]:
+    elif event == bsdEventDeviceUnmount:
         toFile("bsdEventDeviceUnmount\n")
-    elif event == bsdEventType["bsdEventDeviceClose"]:
+    elif event == bsdEventDeviceClose:
         toFile("bsdEventDeviceClose\n")
-    elif event == bsdEventType["bsdEventJobEnd"]:
+    elif event == bsdEventJobEnd:
         toFile("bsdEventJobEnd\n")
 
-    return bRCs["bRC_OK"]
+    return bRC_OK
 
 
 def toFile(text):
