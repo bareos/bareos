@@ -19,7 +19,9 @@
 
 if(Python2_FOUND)
   add_library(python-sd MODULE python-sd.cc)
-  set_target_properties(python-sd PROPERTIES PREFIX "")
+  set_target_properties(
+    python-sd PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY ..
+  )
   install(TARGETS python-sd DESTINATION ${plugindir})
   target_link_libraries(python-sd ${Python2_LIBRARIES} bareos)
   target_include_directories(python-sd PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
@@ -66,7 +68,9 @@ endif()
 
 if(Python3_FOUND)
   add_library(python3-sd MODULE python-sd.cc)
-  set_target_properties(python3-sd PROPERTIES PREFIX "")
+  set_target_properties(
+    python3-sd PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY ..
+  )
   install(TARGETS python3-sd DESTINATION ${plugindir})
   target_link_libraries(python3-sd ${Python3_LIBRARIES} bareos)
   target_include_directories(python3-sd PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})

@@ -842,9 +842,9 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/filed/${python_version}modules:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/stored/${python_version}modules:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/dird/${python_version}modules:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_version}modules:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_version}modules:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_version}modules:"
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
   )
 
