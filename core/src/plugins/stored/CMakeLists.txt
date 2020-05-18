@@ -53,7 +53,7 @@ if(Python2_FOUND)
   set_target_properties(python-sd PROPERTIES PREFIX "")
   install(TARGETS python-sd DESTINATION ${plugindir})
   target_link_libraries(python-sd ${Python2_LIBRARIES} bareos)
-  target_include_directories(python-sd PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})
+  target_include_directories(python-sd PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
   add_dependencies(python-sd bareossd-python2-module)
 
   set(PYFILES

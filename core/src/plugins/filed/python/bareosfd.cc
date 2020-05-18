@@ -2109,16 +2109,11 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   self->object_index = 0;
 
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds,
-#if PY_VERSION_HEX < 0x03000000
-          "|OOiOpppsiiOOii",
-#else
-          "|ooiocccsiiooii",
-#endif
-          kwlist, &self->fname, &self->link, &self->type, &self->flags,
-          &self->no_read, &self->portable, &self->accurate_found, &self->cmd,
-          &self->save_time, &self->delta_seq, &self->object_name, &self->object,
-          &self->object_len, &self->object_index)) {
+          args, kwds, "|OOiOpppsiiOOii", kwlist, &self->fname, &self->link,
+          &self->type, &self->flags, &self->no_read, &self->portable,
+          &self->accurate_found, &self->cmd, &self->save_time, &self->delta_seq,
+          &self->object_name, &self->object, &self->object_len,
+          &self->object_index)) {
     return -1;
   }
   return 0;
