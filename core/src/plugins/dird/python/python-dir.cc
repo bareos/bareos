@@ -47,9 +47,9 @@ namespace directordaemon {
 static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE "Bareos AGPLv3"
-#define PLUGIN_AUTHOR "Marco van Wieringen"
-#define PLUGIN_DATE "October 2013"
-#define PLUGIN_VERSION "3"
+#define PLUGIN_AUTHOR "Bareos GmbH & Co. KG"
+#define PLUGIN_DATE "May 2020"
+#define PLUGIN_VERSION "4"
 #define PLUGIN_DESCRIPTION "Python Director Daemon Plugin"
 #define PLUGIN_USAGE                                                           \
   "python:instance=<instance_id>:module_path=<path-to-python-modules>:module_" \
