@@ -872,6 +872,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       }
       rop.FileIndex = mjcr->FileId;
       rop.JobId = mjcr->JobId;
+      rop.FileType = FT_RESTORE_FIRST;
 
 
       if (update_db) { db->CreateRestoreObjectRecord(mjcr, &rop); }
