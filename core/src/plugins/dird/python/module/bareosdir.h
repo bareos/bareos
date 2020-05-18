@@ -35,7 +35,7 @@
 
 
 /* include automatically generated C API */
-#include "capi_1.inc"
+#include "c_api/capi_1.inc"
 
 
 #ifdef BAREOSDIR_MODULE
@@ -101,7 +101,7 @@ MOD_INIT(bareosdir)
   PyObject* c_api_object;
 
   /* Initialize the C API pointer array */
-#include "capi_3.inc"
+#include "c_api/capi_3.inc"
 
   /* Create a Capsule containing the API pointer array's address */
   c_api_object = PyCapsule_New((void*)Bareosdir_API,
@@ -196,7 +196,7 @@ MOD_INIT(bareosdir)
 static void** Bareosdir_API;
 
 /* include automatically generated C API */
-#include "capi_2.inc"
+#include "c_api/capi_2.inc"
 
 static int import_bareosdir()
 {
