@@ -1438,16 +1438,16 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
  */
 static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 {
-  int type;
+  int level;
   char* jobmsg = NULL;
   PluginContext* plugin_ctx = plugin_context;
 
-  if (!PyArg_ParseTuple(args, "i|z:BareosJobMessage", &type, &jobmsg)) {
+  if (!PyArg_ParseTuple(args, "i|z:BareosJobMessage", &level, &jobmsg)) {
     return NULL;
   }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
-  if (jobmsg) { Jmsg(plugin_ctx, type, "python-fd: %s", jobmsg); }
+  if (jobmsg) { Jmsg(plugin_ctx, level, "python-fd: %s", jobmsg); }
 
   Py_RETURN_NONE;
 }

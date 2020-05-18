@@ -48,7 +48,6 @@ static void PyErrorHandler()
                             (char*)"OOO", type, value == NULL ? Py_None : value,
                             traceback == NULL ? Py_None : traceback);
 
-    // emptyString = PyUnicode_FromString("");
     emptyString = PyUnicode_FromString("");
     strRetval =
         PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
@@ -204,33 +203,7 @@ int main(int argc, char* argv[])
 
   PyObject* pModule = PyImport_ImportModule("bareosfd-module-test");
 
-  // Extract capsules pointer from bareosfd module
-  /* void* ctx_from_bareosfd_module = */
-  /*     PyCapsule_Import("bareosfd.PluginContext", 0); */
-  /* if (!ctx_from_bareosfd_module) { */
-  /*   printf("importing bareosfd.PluginContext failed \n"); */
-  /* } */
-
-  // Extract capsules pointer from bareosfd module
-  /* void* bareos_core_functions_from_bareosfd_module = */
-  /*     PyCapsule_Import("bareosfd.CoreFunctions", 0); */
-  /* if (!bareos_core_functions_from_bareosfd_module) { */
-  /*   printf("importing bareosfd.CoreFunctions failed \n"); */
-  /* } */
-
-  /* *(void**)ctx_from_bareosfd_module = &bareos_PluginContext; */
-  /* *(void**)bareos_core_functions_from_bareosfd_module =
-   * &bareos_core_functions; */
-
-
-  /* printf("ctx_from_bareosfd_module contains    %p\n", */
-  /*        *(void**)ctx_from_bareosfd_module); */
-  /* printf("bareos_core_functions_from_bareosfd_module contains %p\n", */
-  /*        *(void**)bareos_core_functions_from_bareosfd_module); */
-
-
   if (PyErr_Occurred()) { PyErrorHandler(); }
-
   PyObject* pDict = PyModule_GetDict(pModule);
   PyObject* pFunc = PyDict_GetItemString(pDict, "load_bareos_plugin");
 
@@ -251,6 +224,8 @@ int main(int argc, char* argv[])
   }
   Py_DECREF(pDict);
   Py_DECREF(pFunc);
+
+  Py_DECREF(pModule);
   Py_Finalize();
   return 0;
 }

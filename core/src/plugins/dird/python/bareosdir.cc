@@ -474,4 +474,4 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
   return pRetVal;
 }
 
-#} /* namespace directordaemon */
+} /* namespace directordaemon */
