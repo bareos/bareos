@@ -33,7 +33,7 @@
 #include "plugins/include/python_plugins_common.h"
 #include "plugins/include/common.h"
 
-#include "capi_1.inc"
+#include "c_api/capi_1.inc"
 
 
 #ifdef BAREOSSD_MODULE
@@ -97,7 +97,7 @@ MOD_INIT(bareossd)
   PyObject* c_api_object;
 
   /* Initialize the C API pointer array */
-#include "capi_3.inc"
+#include "c_api/capi_3.inc"
 
   /* Create a Capsule containing the API pointer array's address */
   c_api_object = PyCapsule_New((void*)Bareossd_API,
@@ -196,7 +196,7 @@ MOD_INIT(bareossd)
 static void** Bareossd_API;
 
 /* include automatically generated C API */
-#include "capi_2.inc"
+#include "c_api/capi_2.inc"
 
 static int import_bareossd()
 {
