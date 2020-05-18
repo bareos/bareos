@@ -22,7 +22,6 @@
 # Uses Percona's xtrabackup for backup and restore of MySQL / MariaDB databases
 
 from bareosfd import *
-from bareos_fd_consts import *
 import os
 from subprocess import *
 from BareosFdPluginBaseclass import *
@@ -183,7 +182,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
         We will check, if database has changed since last backup
         in the incremental case
         """
-        check_option_bRC = self.check_plugin_options(context)
+        check_option_bRC = self.check_plugin_options()
         if check_option_bRC != bRCs["bRC_OK"]:
             return check_option_bRC
         bareosfd.DebugMessage(

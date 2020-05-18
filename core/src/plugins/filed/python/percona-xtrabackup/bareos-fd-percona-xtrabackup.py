@@ -20,7 +20,6 @@
 
 # Provided by the Bareos FD Python plugin interface
 from bareosfd import *
-from bareos_fd_consts import *
 
 # This module contains the wrapper functions called by the Bareos-FD, the functions call the corresponding
 # methods from your plugin class
