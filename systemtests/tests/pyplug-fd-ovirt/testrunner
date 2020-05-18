@@ -49,7 +49,7 @@ messages
 @#
 @$out $tmp/log2.out
 wait
-restore client=bareos-fd fileset=OvirtTest where=$tmp/bareos-restores pluginoptions=python:local=yes select all done
+restore client=bareos-fd fileset=OvirtTest where=$tmp/bareos-restores pluginoptions=@python_version@:local=yes select all done
 yes
 wait
 messages
