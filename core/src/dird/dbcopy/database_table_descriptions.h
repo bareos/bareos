@@ -35,37 +35,40 @@ class BareosDb;
 
 struct TableDescription {
   TableDescription() = delete;
-  TableDescription(std::string&& t,
-                   std::vector<std::unique_ptr<ColumnDescription>>&& r)
-      : table_name(t), column_descriptions(std::move(r)){};
+  TableDescription(const std::string& tn,
+                   const std::string& tn_lc,
+                   DatabaseColumnDescriptions::ColumnDescriptions&& c)
+      : table_name{tn}, table_name_lower_case{tn_lc}, column_descriptions{c} {};
 
   std::string table_name;
-  DatabaseColumnDescriptions::VectorOfColumnDescriptions column_descriptions;
+  std::string table_name_lower_case;
+  DatabaseColumnDescriptions::ColumnDescriptions column_descriptions;
 };
 
 class DatabaseTableDescriptions {
  public:
-  std::vector<TableDescription> tables;
+  std::map<std::string, TableDescription> tables;
 
+ public:
   static std::unique_ptr<DatabaseTableDescriptions> Create(
       const DatabaseConnection& connection);
+  virtual ~DatabaseTableDescriptions() = default;
 
-  const TableDescription* GetTableDescription(
-      const std::string& table_name) const;
-
-  const ColumnDescription* GetColumnDescription(
-      const std::string& table_name,
-      const std::string& column_name) const;
-
+ public:
   void SetAllConverterCallbacks(const ColumnDescription::DataTypeConverterMap&);
 
-  virtual ~DatabaseTableDescriptions() = default;
+  const TableDescription* GetTableDescription(
+      const std::string& table_name_lower_case) const;
+
+  const ColumnDescription* GetColumnDescription(
+      const std::string& table_name_lower_case,
+      const std::string& column_name_lower_case) const;
 
  protected:
   DatabaseTableDescriptions(BareosDb* db) : db_{db} {}
 
   void SelectTableNames(const std::string& sql_query,
-                        std::vector<std::string>& table_names);
+                        std::vector<std::string>& table_names_out);
 
  private:
   BareosDb* db_{};

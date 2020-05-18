@@ -33,18 +33,14 @@
 using TableNames = std::vector<std::string>;
 
 void DatabaseTableDescriptions::SelectTableNames(const std::string& sql_query,
-                                                 TableNames& table_names)
+                                                 TableNames& table_names_out)
 {
   if (!db_->SqlQuery(sql_query.c_str(),
                      DatabaseTableDescriptions::ResultHandler,
-                     std::addressof(table_names))) {
+                     std::addressof(table_names_out))) {
     std::string err{"Could not select table names: "};
     err += sql_query;
     throw std::runtime_error(err);
-  }
-
-  if (!table_names.empty()) {
-    std::sort(table_names.begin(), table_names.end());
   }
 }
 
@@ -52,8 +48,8 @@ int DatabaseTableDescriptions::ResultHandler(void* ctx,
                                              int /*fields*/,
                                              char** row)
 {
-  auto table_names = static_cast<TableNames*>(ctx);
-  if (row[0] != nullptr) { table_names->emplace_back(row[0]); }
+  auto table_names_out = static_cast<TableNames*>(ctx);
+  if (row[0] != nullptr) { table_names_out->emplace_back(row[0]); }
   return 0;
 }
 
@@ -68,9 +64,16 @@ DatabaseTablesPostgresql::DatabaseTablesPostgresql(BareosDb* db)
   SelectTableNames(query, table_names);
 
   std::cout << "getting column descriptions..." << std::endl;
-  for (auto t : table_names) {
-    DatabaseColumnDescriptionsPostgresql p(db, t);
-    tables.emplace_back(std::move(t), std::move(p.column_descriptions));
+  for (const auto& table_name : table_names) {
+    DatabaseColumnDescriptionsPostgresql cdesc(db, table_name);
+
+    std::string table_name_lower_case;
+    StringToLowerCase(table_name_lower_case, table_name);
+
+    tables.emplace(  // std::map sorts keys ascending by default
+        std::piecewise_construct, std::forward_as_tuple(table_name_lower_case),
+        std::forward_as_tuple(table_name, table_name_lower_case,
+                              std::move(cdesc.column_descriptions)));
   }
 }
 
@@ -85,51 +88,58 @@ DatabaseTablesMysql::DatabaseTablesMysql(BareosDb* db)
   std::vector<std::string> table_names;
   SelectTableNames(query, table_names);
 
-  for (auto t : table_names) {
-    DatabaseColumnDescriptionsMysql p(db, t);
-    tables.emplace_back(std::move(t), std::move(p.column_descriptions));
+  for (const auto& table_name : table_names) {
+    DatabaseColumnDescriptionsMysql cdesc(db, table_name);
+
+    std::string table_name_lower_case;
+    StringToLowerCase(table_name_lower_case, table_name);
+
+    tables.emplace(  // std::map sorts keys ascending by default
+        std::piecewise_construct, std::forward_as_tuple(table_name_lower_case),
+        std::forward_as_tuple(table_name, table_name_lower_case,
+                              std::move(cdesc.column_descriptions)));
   }
 }
 
 const TableDescription* DatabaseTableDescriptions::GetTableDescription(
-    const std::string& table_name) const
+    const std::string& table_name_lower_case) const
 {
-  auto tr = std::find_if(tables.begin(), tables.end(),
-                         [&table_name](const TableDescription& t) {
-                           std::string l1;
-                           std::string l2;
-                           ToLowerCase(table_name, t.table_name, l1, l2);
-                           return l1 == l2;
-                         });
-  return tr == tables.end() ? nullptr : std::addressof(*tr);
+  try {
+    const auto& t = tables.at(table_name_lower_case);
+    return std::addressof(t);
+  } catch (std::out_of_range&) {
+    return nullptr;
+  }
 }
 
 const ColumnDescription* DatabaseTableDescriptions::GetColumnDescription(
-    const std::string& table_name,
-    const std::string& column_name) const
+    const std::string& table_name_lower_case,
+    const std::string& column_name_lower_case) const
 {
-  const TableDescription* table = GetTableDescription(table_name);
-  if (table == nullptr) {
-    std::cout << "Could not get table description for table: " << table_name
-              << std::endl;
+  const auto table_description = GetTableDescription(table_name_lower_case);
+
+  if (table_description == nullptr) {
+    std::cout << "Could not get table description for table: "
+              << table_name_lower_case << std::endl;
     return nullptr;
   }
-  auto c = std::find_if(
-      table->column_descriptions.cbegin(), table->column_descriptions.cend(),
-      [&column_name](const std::unique_ptr<ColumnDescription>& c) {
-        std::string l1, l2;
-        ToLowerCase(column_name, c->column_name, l1, l2);
-        return l1 == l2;
-      });
-  return (c == table->column_descriptions.cend()) ? nullptr : c->get();
+  try {
+    const auto& c =
+        table_description->column_descriptions.at(column_name_lower_case);
+    return std::addressof(c);
+  } catch (std::out_of_range&) {
+    std::cout << "Could not get columnd description for column: "
+              << column_name_lower_case << std::endl;
+    return nullptr;
+  }
 }
 
 void DatabaseTableDescriptions::SetAllConverterCallbacks(
     const ColumnDescription::DataTypeConverterMap& map)
 {
-  for (auto& table : tables) {
-    for (auto& column : table.column_descriptions) {
-      column->RegisterConverterCallbackFromMap(map);
+  for (auto& t : tables) {
+    for (auto& c : t.second.column_descriptions) {
+      c.second.RegisterConverterCallbackFromMap(map);
     }
   }
 }

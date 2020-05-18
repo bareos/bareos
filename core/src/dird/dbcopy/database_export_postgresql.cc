@@ -148,7 +148,7 @@ DatabaseExportPostgresql::DatabaseExportPostgresql(
 
   if (clear_tables) {
     for (const auto& t : table_descriptions_->tables) {
-      ClearTable(db_, t.table_name);
+      ClearTable(db_, t.second.table_name);
     }
   }
 }
@@ -160,15 +160,15 @@ DatabaseExportPostgresql::~DatabaseExportPostgresql()
 
 void DatabaseExportPostgresql::DoCopyInsertion(RowData& source_data_row)
 {
-  for (std::size_t i = 0; i < source_data_row.column_descriptions.size(); i++) {
+  size_t i = 0;
+  for (const auto& c : source_data_row.column_descriptions) {
     const ColumnDescription* column_description =
         table_descriptions_->GetColumnDescription(
-            source_data_row.table_name,
-            source_data_row.column_descriptions[i]->column_name);
+            source_data_row.table_name, c.second.column_name_lower_case);
 
     if (column_description == nullptr) {
       std::string err{"Could not get column description for: "};
-      err += source_data_row.column_descriptions[i]->column_name;
+      err += c.second.column_name;
       throw std::runtime_error(err);
     }
 
@@ -177,6 +177,7 @@ void DatabaseExportPostgresql::DoCopyInsertion(RowData& source_data_row)
     } else {
       throw std::runtime_error("Row number does not match column description");
     }
+    ++i;
   }
   if (!db_->SqlCopyInsert(source_data_row.data_fields)) {
     std::string err{"DatabaseExportPostgresql: Could not execute query: "};
@@ -193,15 +194,15 @@ void DatabaseExportPostgresql::DoInsertInsertion(RowData& source_data_row)
 
   std::string query_values = " VALUES (";
 
-  for (std::size_t i = 0; i < source_data_row.column_descriptions.size(); i++) {
+  size_t i = 0;
+  for (const auto& c : source_data_row.column_descriptions) {
     const ColumnDescription* column_description =
         table_descriptions_->GetColumnDescription(
-            source_data_row.table_name,
-            source_data_row.column_descriptions[i]->column_name);
+            source_data_row.table_name, c.second.column_name_lower_case);
 
     if (column_description == nullptr) {
       std::string err{"Could not get column description for: "};
-      err += source_data_row.column_descriptions[i]->column_name;
+      err += c.second.column_name_lower_case;
       throw std::runtime_error(err);
     }
 
@@ -216,6 +217,7 @@ void DatabaseExportPostgresql::DoInsertInsertion(RowData& source_data_row)
     } else {
       throw std::runtime_error("Row number does not match column description");
     }
+    ++i;
   }
 
   query_values.resize(query_values.size() - 1);
@@ -295,7 +297,7 @@ static bool TableIsEmtpy(BareosDb* db, const std::string& table_name)
   return db->SqlNumRows() <= 0;
 }
 
-bool DatabaseExportPostgresql::TableExists(
+bool DatabaseExportPostgresql::TableExistsAndGetColumns(
     const std::string& table_name,
     std::vector<std::string>& column_names)
 {
@@ -303,7 +305,7 @@ bool DatabaseExportPostgresql::TableExists(
   if (found == nullptr) { return false; }
 
   for (const auto& col : found->column_descriptions) {
-    column_names.push_back(col->column_name);
+    column_names.push_back(col.second.column_name);
   }
 
   return true;
@@ -316,7 +318,7 @@ bool DatabaseExportPostgresql::StartTable(const std::string& table_name)
 
   std::vector<std::string> column_names;
 
-  if (!TableExists(table_name, column_names)) {
+  if (!TableExistsAndGetColumns(table_name, column_names)) {
     std::cout << "--> destination table does not exist" << std::endl;
     return false;
   }

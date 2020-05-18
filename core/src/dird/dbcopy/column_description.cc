@@ -27,10 +27,14 @@
 #include <string>
 #include <vector>
 
-ColumnDescription::ColumnDescription(const char* column_name_in,
-                                     const char* data_type_in,
-                                     const char* max_length_in)
-    : column_name(column_name_in), data_type(data_type_in)
+ColumnDescription::ColumnDescription(
+    const std::string& column_name_in,
+    const std::string& column_name_lower_case_in,
+    const char* data_type_in,
+    const char* max_length_in)
+    : column_name(column_name_in)
+    , column_name_lower_case(column_name_lower_case_in)
+    , data_type(data_type_in)
 {
   std::string field;
   try {
