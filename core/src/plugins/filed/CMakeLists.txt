@@ -168,18 +168,19 @@ endif()
 
 if(Python2_FOUND AND NOT HAVE_WIN22)
   configure_file(
-    python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup_py2.py
+    python/module/setup.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/python/module/setup_py2.py
   )
   add_custom_command(
     OUTPUT pythonmodules/bareosfd.so
-    MAIN_DEPENDENCY ./python/bareosfd.cc
-    DEPENDS ./python/bareosfd.h
+    MAIN_DEPENDENCY python/module/bareosfd.cc
+    DEPENDS python/module/bareosfd.h
     DEPENDS bareos
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup_py2.py
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/module/setup_py2.py
     COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMAND ${Python2_EXECUTABLE} python/setup_py2.py build
-    COMMAND ${Python2_EXECUTABLE} python/setup_py2.py install --install-lib
-            ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+    COMMAND ${Python2_EXECUTABLE} python/module/setup_py2.py build
+    COMMAND ${Python2_EXECUTABLE} python/module/setup_py2.py install
+            --install-lib ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python2 module pythonmodules/bareosfd.so"
   )
@@ -199,18 +200,19 @@ endif()
 
 if(Python3_FOUND AND NOT HAVE_WIN32)
   configure_file(
-    python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup_py3.py
+    python/module/setup.py.in
+    ${CMAKE_CURRENT_BINARY_DIR}/python/module/setup_py3.py
   )
   add_custom_command(
     OUTPUT python3modules/bareosfd.so
-    MAIN_DEPENDENCY ./python/bareosfd.cc
-    DEPENDS ./python/bareosfd.h
+    MAIN_DEPENDENCY python/module/bareosfd.cc
+    DEPENDS python/module/bareosfd.h
     DEPENDS bareos
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/setup_py3.py
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python/module/setup_py3.py
     COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMAND ${Python3_EXECUTABLE} python/setup_py3.py build
-    COMMAND ${Python3_EXECUTABLE} python/setup_py3.py install --install-lib
-            ${CMAKE_CURRENT_BINARY_DIR}/python3modules
+    COMMAND ${Python3_EXECUTABLE} python/module/setup_py3.py build
+    COMMAND ${Python3_EXECUTABLE} python/module/setup_py3.py install
+            --install-lib ${CMAKE_CURRENT_BINARY_DIR}/python3modules
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python3 module python3modules/bareosfd.so"
   )

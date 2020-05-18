@@ -674,6 +674,15 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-vmware")
 endif()
 
+if(TARGET python3-fd AND ovirt_server)
+  list(APPEND SYSTEM_TESTS "python3-fd-ovirt-plugin-test")
+else()
+  message(
+    STATUS "disabling python3-fd-ovirt-plugin-test as ovirt_server is not set"
+  )
+  list(APPEND SYSTEM_TESTS_DISABLED "python3-fd-ovirt-plugin-test")
+endif()
+
 if(TARGET python-fd AND XTRABACKUP)
   list(APPEND SYSTEM_TESTS "pyplug-fd-percona-xtrabackup")
 else()
@@ -682,6 +691,16 @@ else()
       "disabling pyplug-fd-percona-xtrabackup-test as XTRABACKUP was not found"
   )
   list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-percona-xtrabackup")
+endif()
+
+if(TARGET python3-fd AND XTRABACKUP)
+  list(APPEND SYSTEM_TESTS "python3-fd-percona-xtrabackup-plugin-test")
+else()
+  message(
+    STATUS
+      "disabling python3-fd-percona-xtrabackup-plugin-test as XTRABACKUP was not found"
+  )
+  list(APPEND SYSTEM_TESTS_DISABLED "python3-fd-percona-xtrabackup-plugin-test")
 endif()
 
 if(TARGET python-dir)

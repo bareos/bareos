@@ -79,7 +79,7 @@ static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
 /* Pointers to Bareos functions */
 static CoreFunctions* bareos_core_functions = NULL;
 
-#include "plugin_private_context.h"
+#include "plugins/filed/python/plugin_private_context.h"
 
 #define NOPLUGINSETGETVALUE 1
 /* functions common to all plugins */

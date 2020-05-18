@@ -29,7 +29,7 @@ typedef off_t boffset_t;
 
 #include "lib/plugins.h"
 #include "filed/fd_plugins.h"
-#include "plugins/filed/python/bareosfd.h"
+#include "../module/bareosfd.h"
 static void PyErrorHandler()
 {
   PyObject *type, *value, *traceback;
