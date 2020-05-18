@@ -35,7 +35,7 @@
 #endif
 
 #include "filed/fd_plugins.h"
-#include "plugins/python3compat.h"
+#include "plugins/include/python3compat.h"
 
 #include "python-fd.h"
 #include "module/bareosfd.h"
@@ -117,7 +117,7 @@ static PluginFunctions pluginFuncs = {
 static PyThreadState* mainThreadState;
 
 /* functions common to all plugins */
-#include "plugins/python_plugins_common.inc"
+#include "plugins/include/python_plugins_common.inc"
 
 #ifdef __cplusplus
 extern "C" {

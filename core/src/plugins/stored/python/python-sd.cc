@@ -35,7 +35,7 @@
 #endif
 #include "stored/stored.h"
 
-#include "plugins/python3compat.h"
+#include "plugins/include/python3compat.h"
 
 #include "python-sd.h"
 #include "module/bareossd.h"
@@ -104,7 +104,7 @@ static PluginFunctions pluginFuncs = {
 static PyThreadState* mainThreadState;
 
 /* functions common to all plugins */
-#include "plugins/python_plugins_common.inc"
+#include "plugins/include/python_plugins_common.inc"
 
 /* Common functions used in all python plugins.  */
 static bRC getPluginValue(PluginContext* bareos_plugin_ctx,

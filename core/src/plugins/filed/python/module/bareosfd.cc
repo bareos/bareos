@@ -35,11 +35,11 @@
 
 #include "filed/fd_plugins.h"
 
-#include "plugins/python3compat.h"
+#include "plugins/include/python3compat.h"
 
 #define BAREOSFD_MODULE
 #include "bareosfd.h"
-#include "plugins/python3compat.h"
+#include "plugins/include/python3compat.h"
 #include "lib/edit.h"
 
 namespace filedaemon {
@@ -83,7 +83,7 @@ static CoreFunctions* bareos_core_functions = NULL;
 
 #define NOPLUGINSETGETVALUE 1
 /* functions common to all plugins */
-#include "plugins/python_plugins_common.inc"
+#include "plugins/include/python_plugins_common.inc"
 
 
 /* set the bareos_core_functions pointer to the given value */

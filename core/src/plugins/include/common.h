@@ -24,8 +24,8 @@
  * access to some common tools and utilities provided by Bareos
  */
 
-#ifndef BAREOS_PLUGINS_FILED_FD_COMMON_H_
-#define BAREOS_PLUGINS_FILED_FD_COMMON_H_
+#ifndef BAREOS_PLUGINS_INCLUDE_COMMON_H_
+#define BAREOS_PLUGINS_INCLUDE_COMMON_H_
 
 
 #define JT_BACKUP 'B'  /* Backup Job */
@@ -56,4 +56,4 @@
             "before Jmsg call\n",                                             \
             bareos_core_functions, context);                                  \
   }
-#endif
+#endif  // BAREOS_PLUGINS_INCLUDE_COMMON_H_

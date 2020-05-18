@@ -31,7 +31,7 @@
 #define PYTHON_MODULE_NAME_QUOTED "bareosdir"
 
 /* common code for all python plugins */
-#include "plugins/python_plugins_common.h"
+#include "plugins/include/python_plugins_common.h"
 
 
 /* include automatically generated C API */

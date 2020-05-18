@@ -22,7 +22,7 @@
 /* Load the python-fd plugin and test it */
 
 #include "Python.h"
-#include "plugins/python3compat.h"
+#include "plugins/include/python3compat.h"
 class PoolMem;
 #define NbytesForBits(n) ((((n)-1) >> 3) + 1)
 typedef off_t boffset_t;

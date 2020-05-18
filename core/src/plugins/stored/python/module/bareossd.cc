@@ -37,7 +37,7 @@
 
 #define BAREOSSD_MODULE
 #include "bareossd.h"
-#include "plugins/python3compat.h"
+#include "plugins/include/python3compat.h"
 #include "lib/edit.h"
 
 namespace storagedaemon {
@@ -65,7 +65,7 @@ static CoreFunctions* bareos_core_functions = NULL;
 
 #define NOPLUGINSETGETVALUE 1
 /* functions common to all plugins */
-#include "plugins/python_plugins_common.inc"
+#include "plugins/include/python_plugins_common.inc"
 
 
 /* set the bareos_core_functions pointer to the given value */
