@@ -1,8 +1,8 @@
 from distutils.core import setup, Extension
 
 module1 = Extension('bareosdir',
-                    sources = ['@CMAKE_CURRENT_SOURCE_DIR@/python/module/bareosdir.cc'],
-                    include_dirs =  ['@CMAKE_CURRENT_SOURCE_DIR@/../..'],
+                    sources = ['@CMAKE_CURRENT_SOURCE_DIR@/module/bareosdir.cc'],
+                    include_dirs =  ['@PROJECT_SOURCE_DIR@/src'],
                     libraries = ['bareos'],
                     library_dirs = ['@PROJECT_BINARY_DIR@/src/lib/'],
                     extra_compile_args=['-std=c++11'],
