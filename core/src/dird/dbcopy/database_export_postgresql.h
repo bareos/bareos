@@ -59,8 +59,8 @@ class DatabaseExportPostgresql : public DatabaseExport {
   SequenceSchemaVector sequence_schema_vector_;
 
   void SelectSequenceSchema();
-  bool TableExists(const std::string& table_name,
-                   std::vector<std::string>& column_names);
+  bool TableExistsAndGetColumns(const std::string& table_name,
+                                std::vector<std::string>& column_names);
   bool UseCopyInsertion();
   void DoCopyInsertion(RowData& source_data_row);
   void DoInsertInsertion(RowData& source_data_row);

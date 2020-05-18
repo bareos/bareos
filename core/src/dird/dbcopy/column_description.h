@@ -31,7 +31,8 @@ class BareosDb;
 
 class ColumnDescription {
  public:
-  ColumnDescription(const char* column_name_in,
+  ColumnDescription(const std::string& column_name_in,
+                    const std::string& column_name_lower_case_in,
                     const char* data_type_in,
                     const char* max_length_in);
   virtual ~ColumnDescription() = default;
@@ -43,6 +44,7 @@ class ColumnDescription {
   void RegisterConverterCallbackFromMap(const DataTypeConverterMap&);
 
   std::string column_name;
+  std::string column_name_lower_case;
   std::string data_type;
   std::size_t character_maximum_length{};
 

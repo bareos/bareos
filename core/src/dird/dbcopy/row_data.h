@@ -30,9 +30,9 @@
 class BareosDb;
 
 struct RowData {
-  RowData(const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
-              column_descriptions_in,
-          const std::string& table_name_in)
+  RowData(const std::string& table_name_in,
+          const DatabaseColumnDescriptions::ColumnDescriptions&
+              column_descriptions_in)
       : table_name(table_name_in), column_descriptions(column_descriptions_in)
   {
     data_fields.resize(column_descriptions.size());
@@ -41,8 +41,7 @@ struct RowData {
   std::string table_name;
 
   std::vector<DatabaseField> data_fields;  // same index as column_descriptions
-  const DatabaseColumnDescriptions::VectorOfColumnDescriptions&
-      column_descriptions;
+  const DatabaseColumnDescriptions::ColumnDescriptions& column_descriptions;
 
  public:
   ~RowData() = default;

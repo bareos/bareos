@@ -32,13 +32,15 @@ class BareosDb;
 
 class DatabaseColumnDescriptions {
  public:
-  DatabaseColumnDescriptions(BareosDb* db);
+  DatabaseColumnDescriptions(BareosDb* db) : db_{db} {};
   virtual ~DatabaseColumnDescriptions() = default;
+  void AddToMap(const char* column_name_in,
+                const char* data_type_in,
+                const char* max_length_in);
 
-  using VectorOfColumnDescriptions =
-      std::vector<std::unique_ptr<ColumnDescription>>;
+  using ColumnDescriptions = std::map<std::string, ColumnDescription>;
 
-  VectorOfColumnDescriptions column_descriptions;
+  ColumnDescriptions column_descriptions;
 
  protected:
   enum RowIndex : int
@@ -47,24 +49,22 @@ class DatabaseColumnDescriptions {
     kDataType = 1,
     kCharMaxLenght = 2
   };
-  void SelectColumnDescriptions(const std::string& sql_query,
-                                DB_RESULT_HANDLER* ResultHandler);
+  void SelectColumnDescriptionsAndAddToMap(const std::string& sql_query);
 
  private:
-  BareosDb* db_;
+  BareosDb* db_{};
+  static int ResultHandler_(void* ctx, int fields, char** row);
 };
 
 class DatabaseColumnDescriptionsPostgresql : public DatabaseColumnDescriptions {
  public:
   DatabaseColumnDescriptionsPostgresql(BareosDb* db,
                                        const std::string& table_name);
-  static int ResultHandler(void* ctx, int fields, char** row);
 };
 
 class DatabaseColumnDescriptionsMysql : public DatabaseColumnDescriptions {
  public:
   DatabaseColumnDescriptionsMysql(BareosDb* db, const std::string& table_name);
-  static int ResultHandler(void* ctx, int fields, char** row);
 };
 
 #endif  // BAREOS_SRC_DIRD_DBCOPY_DATABASE_COLUMN_DESCRIPTIONS_H_
