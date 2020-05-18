@@ -840,6 +840,8 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
     CONCAT
       pythonpath
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
       "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_version}modules:"
