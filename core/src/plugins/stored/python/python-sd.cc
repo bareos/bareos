@@ -38,7 +38,7 @@
 #include "plugins/python3compat.h"
 
 #include "python-sd.h"
-#include "bareossd.h"
+#include "module/bareossd.h"
 #include "lib/edit.h"
 
 namespace storagedaemon {

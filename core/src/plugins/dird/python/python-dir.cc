@@ -38,7 +38,7 @@
 #include "plugins/python3compat.h"
 
 #include "python-dir.h"
-#include "bareosdir.h"
+#include "module/bareosdir.h"
 #include "lib/plugins.h"
 #include "lib/edit.h"
 

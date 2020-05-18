@@ -20,7 +20,7 @@
 */
 /**
  * @file
- * Python module for the Bareos director plugin
+ * Python module for the Bareos storagedaemon plugin
  */
 #define PY_SSIZE_T_CLEAN
 #define BUILD_PLUGIN
@@ -32,26 +32,22 @@
 #include <Python.h>
 #include "include/bareos.h"
 #endif
-#include "dird/dird.h"
-#include "dird/dir_plugins.h"
 
+#include "stored/sd_plugins.h"
 
-#include "plugins/filed/fd_common.h"  // for Dmsg Macro
-#include "plugin_private_context.h"
-
+#define BAREOSSD_MODULE
+#include "bareossd.h"
 #include "plugins/python3compat.h"
-
-#define BAREOSDIR_MODULE
-#include "bareosdir.h"
 #include "lib/edit.h"
 
-namespace directordaemon {
+namespace storagedaemon {
+
 static const int debuglevel = 150;
 
 static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions);
 static bRC set_plugin_context(PluginContext* new_plugin_context);
-
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);
+
 static bRC PyGetPluginValue(PluginContext* plugin_ctx,
                             pVariable var,
                             void* value);
@@ -59,12 +55,13 @@ static bRC PySetPluginValue(PluginContext* plugin_ctx,
                             pVariable var,
                             void* value);
 static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
-                               bDirEvent* event,
+                               bSdEvent* event,
                                void* value);
 
 /* Pointers to Bareos functions */
 static CoreFunctions* bareos_core_functions = NULL;
 
+#include "plugins/stored/python/plugin_private_context.h"
 
 #define NOPLUGINSETGETVALUE 1
 /* functions common to all plugins */
@@ -85,11 +82,10 @@ static bRC set_plugin_context(PluginContext* new_plugin_context)
   return bRC_OK;
 }
 
-
 /**
- * Any plugin options which are passed in are dispatched here to a Python
- * method and it can parse the plugin options. This function is also called
- * after PyLoadModule() has loaded the Python module and made sure things are
+ * Any plugin options which are passed in are dispatched here to a Python method
+ * and it can parse the plugin options. This function is also called after
+ * PyLoadModule() has loaded the Python module and made sure things are
  * operational.
  */
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
@@ -123,9 +119,9 @@ static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
 
     return retval;
   } else {
-    Dmsg(plugin_ctx, debuglevel,
-         "python-dir: Failed to find function named "
-         "parse_plugin_definition()\n");
+    Dmsg(
+        plugin_ctx, debuglevel,
+        "python-sd: Failed to find function named parse_plugin_definition()\n");
     return bRC_Error;
   }
 
@@ -150,12 +146,12 @@ static bRC PySetPluginValue(PluginContext* plugin_ctx,
 }
 
 static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
-                               bDirEvent* event,
+                               bSdEvent* event,
                                void* value)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  plugin_private_context* plugin_priv_ctx =
+      (plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -179,7 +175,7 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-dir: Failed to find function named handle_plugin_event()\n");
+         "python-sd: Failed to find function named handle_plugin_event()\n");
   }
 
   return retval;
@@ -191,9 +187,8 @@ bail_out:
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods
- * which allow a Python plugin to get certain internal values of the current
- * Job.
+ * Callback function which is exposed as a part of the additional methods which
+ * allow a Python plugin to get certain internal values of the current Job.
  */
 static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 {
@@ -205,59 +200,61 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   switch (var) {
-    case bDirVarJobId:
-    case bDirVarLevel:
-    case bDirVarType:
-    case bDirVarNumVols:
-    case bDirVarJobStatus:
-    case bDirVarPriority:
-    case bDirVarFDJobStatus:
-    case bDirVarSDJobStatus: {
-      int value = 0;
+    case bsdVarJobId:
+    case bsdVarLevel:
+    case bsdVarType:
+    case bsdVarJobStatus: {
+      int value;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (brDirVariable)var,
+      if (bareos_core_functions->getBareosValue(plugin_ctx, (bsdrVariable)var,
                                                 &value) == bRC_OK) {
         pRetVal = PyLong_FromLong(value);
       }
       break;
     }
-    case bDirVarJobErrors:
-    case bDirVarSDErrors:
-    case bDirVarJobFiles:
-    case bDirVarSDJobFiles:
-    case bDirVarLastRate:
-    case bDirVarJobBytes:
-    case bDirVarReadBytes: {
+    case bsdVarJobErrors:
+    case bsdVarJobFiles:
+    case bsdVarJobBytes: {
       uint64_t value = 0;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (brDirVariable)var,
+      if (bareos_core_functions->getBareosValue(plugin_ctx, (bsdrVariable)var,
                                                 &value) == bRC_OK) {
         pRetVal = PyLong_FromUnsignedLong(value);
       }
       break;
     }
-    case bDirVarJobName:
-    case bDirVarJob:
-    case bDirVarClient:
-    case bDirVarPool:
-    case bDirVarStorage:
-    case bDirVarWriteStorage:
-    case bDirVarReadStorage:
-    case bDirVarCatalog:
-    case bDirVarMediaType:
-    case bDirVarVolumeName: {
+    case bsdVarJobName:
+    case bsdVarJob:
+    case bsdVarClient:
+    case bsdVarPool:
+    case bsdVarPoolType:
+    case bsdVarStorage:
+    case bsdVarMediaType:
+    case bsdVarVolumeName: {
       char* value = NULL;
 
-      if (bareos_core_functions->getBareosValue(plugin_ctx, (brDirVariable)var,
+      if (bareos_core_functions->getBareosValue(plugin_ctx, (bsdrVariable)var,
                                                 &value) == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
     }
-    case bDirVarPluginDir: {
+    case bsdVarCompatible: {
+      bool value;
+
+      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var,
+                                                &value) == bRC_OK) {
+        long bool_value;
+
+        bool_value = (value) ? 1 : 0;
+        pRetVal = PyBool_FromLong(bool_value);
+      }
+      break;
+    }
+    case bsdVarPluginDir: {
       char* value = NULL;
 
-      if (bareos_core_functions->getBareosValue(NULL, (brDirVariable)var,
+      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var,
                                                 &value) == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
@@ -265,7 +262,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     }
     default:
       Dmsg(plugin_ctx, debuglevel,
-           "python-dir: PyBareosGetValue unknown variable requested %d\n", var);
+           "python-sd: PyBareosGetValue unknown variable requested %d\n", var);
       break;
   }
 
@@ -275,9 +272,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods
- * which allow a Python plugin to set certain internal values of the current
- * Job.
+ * Callback function which is exposed as a part of the additional methods which
+ * allow a Python plugin to get certain internal values of the current Job.
  */
 static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
 {
@@ -292,32 +288,30 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   switch (var) {
-    case bwDirVarVolumeName: {
-      const char* value;
-
-      value = PyUnicode_AsUTF8(pyValue);
+    case bsdwVarVolumeName: {
+      const char* value = PyUnicode_AsUTF8(pyValue);
       if (value) {
-        retval = bareos_core_functions->setBareosValue(
-            plugin_ctx, (bwDirVariable)var,
+        bareos_core_functions->setBareosValue(
+            plugin_ctx, (bsdwVariable)var,
             static_cast<void*>(const_cast<char*>(value)));
       }
 
       break;
     }
-    case bwDirVarPriority:
-    case bwDirVarJobLevel: {
+    case bsdwVarPriority:
+    case bsdwVarJobLevel: {
       int value;
 
       value = PyLong_AsLong(pyValue);
       if (value >= 0) {
         retval = bareos_core_functions->setBareosValue(
-            plugin_ctx, (bwDirVariable)var, &value);
+            plugin_ctx, (bsdwVariable)var, &value);
       }
       break;
     }
     default:
       Dmsg(plugin_ctx, debuglevel,
-           "python-dir: PyBareosSetValue unknown variable requested %d\n", var);
+           "python-sd: PyBareosSetValue unknown variable requested %d\n", var);
       break;
   }
 
@@ -326,9 +320,9 @@ bail_out:
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods
- * which allow a Python plugin to issue debug messages using the Bareos debug
- * message facility.
+ * Callback function which is exposed as a part of the additional methods which
+ * allow a Python plugin to issue debug messages using the Bareos debug message
+ * facility.
  */
 static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
 {
@@ -341,15 +335,15 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
   }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
-  if (dbgmsg) { Dmsg(plugin_ctx, level, "python-dir: %s", dbgmsg); }
+  if (dbgmsg) { Dmsg(plugin_ctx, level, "python-sd: %s", dbgmsg); }
 
   Py_RETURN_NONE;
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods
- * which allow a Python plugin to issue Job messages using the Bareos Job
- * message facility.
+ * Callback function which is exposed as a part of the additional methods which
+ * allow a Python plugin to issue Job messages using the Bareos Job message
+ * facility.
  */
 static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 {
@@ -362,15 +356,15 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
   }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
-  if (jobmsg) { Jmsg(plugin_ctx, type, "python-dir: %s", jobmsg); }
+  if (jobmsg) { Jmsg(plugin_ctx, type, "python-sd: %s", jobmsg); }
 
   Py_RETURN_NONE;
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods
- * which allow a Python plugin to issue a Register Event to register
- * additional events it wants to receive.
+ * Callback function which is exposed as a part of the additional methods which
+ * allow a Python plugin to issue a Register Event to register additional events
+ * it wants to receive.
  */
 static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 {
@@ -393,9 +387,9 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyLong_AsLong(pyEvent);
 
-    if (event >= bDirEventJobStart && event <= bDirEventGetScratch) {
+    if (event >= bSdEventJobStart && event <= bSdEventWriteRecordTranslation) {
       Dmsg(plugin_ctx, debuglevel,
-           "python-dir: PyBareosRegisterEvents registering event %d\n", event);
+           "python-sd: PyBareosRegisterEvents registering event %d\n", event);
       retval =
           bareos_core_functions->registerBareosEvents(plugin_ctx, 1, event);
 
@@ -410,9 +404,9 @@ bail_out:
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods
- * which allow a Python plugin to issue an Unregister Event to unregister
- * events it doesn't want to receive anymore.
+ * Callback function which is exposed as a part of the additional methods which
+ * allow a Python plugin to issue an Unregister Event to unregister events it
+ * doesn't want to receive anymore.
  */
 static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
 {
@@ -435,7 +429,7 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyLong_AsLong(pyEvent);
 
-    if (event >= bDirEventJobStart && event <= bDirEventGetScratch) {
+    if (event >= bSdEventJobStart && event <= bSdEventWriteRecordTranslation) {
       Dmsg(plugin_ctx, debuglevel,
            "PyBareosUnRegisterEvents: registering event %d\n", event);
       retval =
@@ -452,9 +446,9 @@ bail_out:
 }
 
 /**
- * Callback function which is exposed as a part of the additional methods
- * which allow a Python plugin to issue a GetInstanceCount to retrieve the
- * number of instances of the current plugin being loaded into the daemon.
+ * Callback function which is exposed as a part of the additional methods which
+ * allow a Python plugin to issue a GetInstanceCount to retrieve the number of
+ * instances of the current plugin being loaded into the daemon.
  */
 static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
 {
@@ -465,6 +459,14 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
   if (!PyArg_ParseTuple(args, ":BareosGetInstanceCount")) { return NULL; }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
+  if (!plugin_ctx) {
+    PyErr_SetString(PyExc_ValueError, "plugin_ctx is unset");
+    return NULL;
+  }
+  if (!bareos_core_functions) {
+    PyErr_SetString(PyExc_ValueError, "bareos_core_functions is unset");
+    return NULL;
+  }
   if (bareos_core_functions->getInstanceCount(plugin_ctx, &value) == bRC_OK) {
     pRetVal = PyLong_FromLong(value);
   }
@@ -474,4 +476,5 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
   return pRetVal;
 }
 
-} /* namespace directordaemon */
+
+} /* namespace storagedaemon*/
