@@ -60,6 +60,12 @@ $this->headTitle($title);
       <?php echo $this->translate("Name"); ?>
    </th>
    <th
+      data-field="description"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Description"); ?>">
+      <?php echo $this->translate("Description"); ?>
+   </th>
+   <th
       data-field="uname"
       data-filter-control="input"
       data-filter-control-placeholder="<?php echo $this->translate("OS"); ?>">
@@ -150,6 +156,9 @@ $this->headTitle($title);
                formatter: function(value) {
                   return formatClientName(value, basePath);
                }
+            },
+            {
+               field: 'description'
             },
             {
                field: 'uname',

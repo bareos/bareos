@@ -213,4 +213,27 @@ class ClientModel
          throw new \Exception('Missing argument.');
       }
    }
+
+   /**
+    * Get the Clients description from its definition
+    *
+    * @param $bsock
+    * @param $pool
+    *
+    * @return array
+    */
+   public function getClientDescription(&$bsock=null, $client=null)
+   {
+      if(isset($bsock, $client)) {
+         $cmd = 'show client="'.$client.'"';
+         $result = $bsock->send_command($cmd, 0);
+         
+         $matches = [];
+         preg_match('/\s*Description\s*=\s*("|\')?(?<value>.*)(?(1)\1|)/i', $result, $matches);
+         return $matches["value"];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
 }

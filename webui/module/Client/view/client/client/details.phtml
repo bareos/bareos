@@ -50,6 +50,7 @@ $this->headTitle($title);
 <table class="table table-no-bordered table-hover" id="clientdetails">
 <thead class="bg-primary">
    <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Description"); ?></th>
    <th><?php echo $this->translate("Version"); ?></th>
    <th><?php echo $this->translate("Autoprune"); ?></th>
    <th><?php echo $this->translate("Fileretention"); ?></th>
@@ -178,6 +179,9 @@ $this->headTitle($title);
          columns: [
             {
                field: 'name',
+            },
+            {
+               field: 'description',
             },
             {
                field: 'uname',

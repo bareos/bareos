@@ -288,7 +288,6 @@ class ClientController extends AbstractActionController
         $clients = $this->getClientModel()->getClients($this->bsock);
         $dot_clients = $this->getClientModel()->getDotClients($this->bsock);
         $dird_version = $this->getDirectorModel()->getDirectorVersion($this->bsock);
-        $this->bsock->disconnect();
       }
       catch(Exception $e) {
         echo $e->getMessage();
@@ -332,122 +331,130 @@ class ClientController extends AbstractActionController
       }
 
       $result = array();
-      for($i = 0; $i < count($clients); $i++) {
-        $result[$i]['clientid'] = $clients[$i]['clientid'];
-        $result[$i]['uname'] = $clients[$i]['uname'];
-        $result[$i]['name'] = $clients[$i]['name'];
-        $result[$i]['autoprune'] = $clients[$i]['autoprune'];
-        $result[$i]['fileretention'] = $clients[$i]['fileretention'];
-        $result[$i]['jobretention'] = $clients[$i]['jobretention'];
-        $result[$i]['installed_fd'] = "";
-        $result[$i]['available_fd'] = "";
-        $result[$i]['installed_dird'] = "";
-        $result[$i]['available_dird'] = "";
-        $result[$i]['enabled'] = "";
-
-        for($j = 0; $j < count($dot_clients); $j++) {
-          if($result[$i]['name'] == $dot_clients[$j]['name']) {
-            $result[$i]['enabled'] = $dot_clients[$j]['enabled'];
-          }
-        }
-
-        if(isset($dird_vers)) {
-          $result[$i]['installed_dird'] = $dird_vers;
-        }
-        else {
+      try {
+        for($i = 0; $i < count($clients); $i++) {
+          $result[$i]['clientid'] = $clients[$i]['clientid'];
+          $result[$i]['uname'] = $clients[$i]['uname'];
+          $result[$i]['name'] = $clients[$i]['name'];
+          $result[$i]['autoprune'] = $clients[$i]['autoprune'];
+          $result[$i]['fileretention'] = $clients[$i]['fileretention'];
+          $result[$i]['jobretention'] = $clients[$i]['jobretention'];
+          $result[$i]['description'] = $this->getClientModel()->getClientDescription($this->bsock, $clients[$i]['name']);
+          $result[$i]['installed_fd'] = "";
+          $result[$i]['available_fd'] = "";
           $result[$i]['installed_dird'] = "";
-        }
+          $result[$i]['available_dird'] = "";
+          $result[$i]['enabled'] = "";
 
-        if(isset($bareos_updates) && $bareos_updates != NULL) {
-          if(array_key_exists('product', $bareos_updates) &&
-            array_key_exists($dird_dist, $bareos_updates['product']['bareos-director']['distribution']) &&
-            array_key_exists($dird_arch, $bareos_updates['product']['bareos-director']['distribution'][$dird_dist])) {
-            foreach($bareos_updates['product']['bareos-director']['distribution'][$dird_dist][$dird_arch] as $key => $value) {
-              if( version_compare($dird_vers, $key, '>=') ) {
-                $result[$i]['update_dird'] = false;
-                $result[$i]['available_dird'] = $key;
-              }
-              if( version_compare($dird_vers, $key, '<') ) {
-                $result[$i]['update_dird'] = true;
-                $result[$i]['available_dird'] = $key;
-              }
+          for($j = 0; $j < count($dot_clients); $j++) {
+            if($result[$i]['name'] == $dot_clients[$j]['name']) {
+              $result[$i]['enabled'] = $dot_clients[$j]['enabled'];
             }
           }
-        }
-        else {
-          $result[$i]['update_dird'] = false;
-          $result[$i]['available_dird'] = NULL;
-        }
 
-        $uname = explode(",", $clients[$i]['uname']);
-        $v = explode(" ", $uname[0]);
-        $fd_vers = $v[0];
-
-        if(array_key_exists(3, $uname)) {
-          $fd_dist = $uname[3];
-        }
-        else {
-          $fd_dist = "";
-        }
-
-        if(array_key_exists(4, $uname)) {
-          if(preg_match("/debian/i", $fd_dist) && $uname[4] == "x86_64") {
-            $fd_arch = "amd64";
-          }
-          elseif(preg_match("/ubuntu/i", $fd_dist) && $uname[4] == "x86_64") {
-            $fd_arch = "amd64";
-          }
-          elseif(preg_match("/windows/i", $fd_dist) && $uname[4] == "Win32") {
-            $fd_arch = "32";
-          }
-          elseif(preg_match("/windows/i", $fd_dist) && $uname[4] == "Win64") {
-            $fd_arch = "64";
+          if(isset($dird_vers)) {
+            $result[$i]['installed_dird'] = $dird_vers;
           }
           else {
-            $fd_arch = $uname[4];
+            $result[$i]['installed_dird'] = "";
           }
-        }
-        else {
-          $fd_arch = NULL;
-        }
 
-        $result[$i]['installed_fd'] = $fd_vers;
-
-        if(isset($bareos_updates) && $bareos_updates != NULL) {
-          if(array_key_exists('product', $bareos_updates) &&
-            array_key_exists($fd_dist, $bareos_updates['product']['bareos-filedaemon']['distribution']) &&
-            array_key_exists($fd_arch, $bareos_updates['product']['bareos-filedaemon']['distribution'][$fd_dist])) {
-            foreach($bareos_updates['product']['bareos-filedaemon']['distribution'][$fd_dist][$fd_arch] as $key => $value) {
-              if( version_compare($fd_vers, $key, '>=') ) {
-                $result[$i]['available_fd'] = $key;
-                $result[$i]['update_fd'] = false;
-              }
-              if( version_compare($fd_vers, $key, '<') ) {
-                if( version_compare($key, $dird_version['version'], '<=') ) {
-                  $result[$i]['available_fd'] = $key;
-                  $result[$i]['update_fd'] = true;
-                  $result[$i]['url_package'] = $bareos_updates['product']['bareos-filedaemon']['distribution'][$fd_dist][$fd_arch][$key]['url_package'];
-                  break;
+          if(isset($bareos_updates) && $bareos_updates != NULL) {
+            if(array_key_exists('product', $bareos_updates) &&
+              array_key_exists($dird_dist, $bareos_updates['product']['bareos-director']['distribution']) &&
+              array_key_exists($dird_arch, $bareos_updates['product']['bareos-director']['distribution'][$dird_dist])) {
+              foreach($bareos_updates['product']['bareos-director']['distribution'][$dird_dist][$dird_arch] as $key => $value) {
+                if( version_compare($dird_vers, $key, '>=') ) {
+                  $result[$i]['update_dird'] = false;
+                  $result[$i]['available_dird'] = $key;
                 }
-                elseif( version_compare($key, $dird_version['version'], '>') ) {
-                  $result[$i]['available_fd'] = $key;
-                  $result[$i]['update_fd'] = false;
-                  break;
+                if( version_compare($dird_vers, $key, '<') ) {
+                  $result[$i]['update_dird'] = true;
+                  $result[$i]['available_dird'] = $key;
                 }
               }
             }
           }
+          else {
+            $result[$i]['update_dird'] = false;
+            $result[$i]['available_dird'] = NULL;
+          }
+
+          $uname = explode(",", $clients[$i]['uname']);
+          $v = explode(" ", $uname[0]);
+          $fd_vers = $v[0];
+
+          if(array_key_exists(3, $uname)) {
+            $fd_dist = $uname[3];
+          }
+          else {
+            $fd_dist = "";
+          }
+
+          if(array_key_exists(4, $uname)) {
+            if(preg_match("/debian/i", $fd_dist) && $uname[4] == "x86_64") {
+              $fd_arch = "amd64";
+            }
+            elseif(preg_match("/ubuntu/i", $fd_dist) && $uname[4] == "x86_64") {
+              $fd_arch = "amd64";
+            }
+            elseif(preg_match("/windows/i", $fd_dist) && $uname[4] == "Win32") {
+              $fd_arch = "32";
+            }
+            elseif(preg_match("/windows/i", $fd_dist) && $uname[4] == "Win64") {
+              $fd_arch = "64";
+            }
+            else {
+              $fd_arch = $uname[4];
+            }
+          }
+          else {
+            $fd_arch = NULL;
+          }
+
+          $result[$i]['installed_fd'] = $fd_vers;
+
+          if(isset($bareos_updates) && $bareos_updates != NULL) {
+            if(array_key_exists('product', $bareos_updates) &&
+              array_key_exists($fd_dist, $bareos_updates['product']['bareos-filedaemon']['distribution']) &&
+              array_key_exists($fd_arch, $bareos_updates['product']['bareos-filedaemon']['distribution'][$fd_dist])) {
+              foreach($bareos_updates['product']['bareos-filedaemon']['distribution'][$fd_dist][$fd_arch] as $key => $value) {
+                if( version_compare($fd_vers, $key, '>=') ) {
+                  $result[$i]['available_fd'] = $key;
+                  $result[$i]['update_fd'] = false;
+                }
+                if( version_compare($fd_vers, $key, '<') ) {
+                  if( version_compare($key, $dird_version['version'], '<=') ) {
+                    $result[$i]['available_fd'] = $key;
+                    $result[$i]['update_fd'] = true;
+                    $result[$i]['url_package'] = $bareos_updates['product']['bareos-filedaemon']['distribution'][$fd_dist][$fd_arch][$key]['url_package'];
+                    break;
+                  }
+                  elseif( version_compare($key, $dird_version['version'], '>') ) {
+                    $result[$i]['available_fd'] = $key;
+                    $result[$i]['update_fd'] = false;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+          else {
+            $result[$i]['available_fd'] = NULL;
+            $result[$i]['update_fd'] = false;
+          }
         }
-        else {
-          $result[$i]['available_fd'] = NULL;
-          $result[$i]['update_fd'] = false;
-        }
+        $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+        echo $e->getMessage();
       }
     }
     elseif($data == "details" && isset($client)) {
       try {
         $this->bsock = $this->getServiceLocator()->get('director');
         $result = $this->getClientModel()->getClient($this->bsock, $client);
+        $result[0]["description"] = $this->getClientModel()->getClientDescription($this->bsock, $client);
         $this->bsock->disconnect();
       }
       catch(Exception $e) {
