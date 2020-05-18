@@ -162,7 +162,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     TEST bareosfd-python3-module-tester
     PROPERTY
       ENVIRONMENT
-      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/python/test/:${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/pyfiles
+      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/python/test/:${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/python/pyfiles
   )
 endif()
 

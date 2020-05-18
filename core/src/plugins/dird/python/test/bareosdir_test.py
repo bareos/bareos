@@ -2,18 +2,15 @@ import unittest
 import bareosdir
 import time
 
-print (help(bareosdir))
+# print (help(bareosdir))
 
 class TestBareosFd(unittest.TestCase):
 
     def test_GetValue(self):
         self.assertRaises(RuntimeError, bareosdir.GetValue, 1)
-        self.assertRaises(RuntimeError, bareosdir.GetValue, 1)
 
     def test_SetValue(self):
-        bareosdir.SetValue()
-        # self.assertRaises(RuntimeError, bareosdir.SetValue)
-        # self.assertRaises(RuntimeError, bareosdir.SetValue, 2)
+        self.assertRaises(RuntimeError, bareosdir.SetValue, 2, 2)
 
     def test_DebugMessage(self):
         self.assertRaises(TypeError, bareosdir.DebugMessage, "This is a debug message")

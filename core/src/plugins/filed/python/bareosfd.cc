@@ -1355,10 +1355,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
       break;
   }
 
-  if (!pRetVal) {
-    Py_INCREF(Py_None);
-    pRetVal = Py_None;
-  }
+  if (!pRetVal) { Py_RETURN_NONE; }
 
   return pRetVal;
 }
@@ -1430,8 +1427,8 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BAREOS_PLUGIN_CTX_UNSET()
 
   if (dbgmsg) { Dmsg(plugin_ctx, level, "python-fd: %s", dbgmsg); }
-  Py_INCREF(Py_None);
-  return Py_None;
+
+  Py_RETURN_NONE;
 }
 
 /**
@@ -1452,8 +1449,7 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
 
   if (jobmsg) { Jmsg(plugin_ctx, type, "python-fd: %s", jobmsg); }
 
-  Py_INCREF(Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 /**
@@ -1554,10 +1550,7 @@ static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args)
     pRetVal = PyLong_FromLong(value);
   }
 
-  if (!pRetVal) {
-    Py_INCREF(Py_None);
-    pRetVal = Py_None;
-  }
+  if (!pRetVal) { Py_RETURN_NONE; }
 
   return pRetVal;
 }
