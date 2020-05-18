@@ -49,10 +49,10 @@ def parse_plugin_definition(plugindef):
         elif key == "module_name":
             continue
         else:
-            return bRCs["bRC_Error"]
+            return bRC_Error
         toFile(outputfile)
 
-    return bRCs["bRC_OK"]
+    return bRC_OK
 
 
 def handle_plugin_event(event):
@@ -68,7 +68,7 @@ def handle_plugin_event(event):
     elif event == bDirEventJobRun:
         toFile("bDirEventJobRun\n")
 
-    return bRCs["bRC_OK"]
+    return bRC_OK
 
 
 def toFile(text):
