@@ -49,11 +49,11 @@ if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
 endif()
 
 if(Python2_FOUND)
-  include_directories(SYSTEM ${Python2_INCLUDE_DIRS})
   add_library(python-sd MODULE python/python-sd.cc)
   set_target_properties(python-sd PROPERTIES PREFIX "")
   install(TARGETS python-sd DESTINATION ${plugindir})
   target_link_libraries(python-sd ${Python2_LIBRARIES} bareos)
+  target_include_directories(python-sd PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})
   add_dependencies(python-sd bareossd-python2-module)
 
   set(PYFILES
@@ -97,11 +97,11 @@ if(Python2_FOUND AND NOT HAVE_WIN32)
 endif()
 
 if(Python3_FOUND)
-  include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
   add_library(python3-sd MODULE python/python-sd.cc)
   set_target_properties(python3-sd PROPERTIES PREFIX "")
   install(TARGETS python3-sd DESTINATION ${plugindir})
   target_link_libraries(python3-sd ${Python3_LIBRARIES} bareos)
+  target_include_directories(python3-sd PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})
   add_dependencies(python3-sd bareossd-python3-module)
 
   set(PYFILES

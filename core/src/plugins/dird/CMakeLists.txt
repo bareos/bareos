@@ -31,13 +31,12 @@ if(HAVE_WIN32)
 endif()
 
 if(Python2_FOUND)
-  include_directories(SYSTEM ${Python2_INCLUDE_DIRS})
-
   add_library(python-dir MODULE python/python-dir.cc)
   # do not prefix with "lib"
   set_target_properties(python-dir PROPERTIES PREFIX "")
   install(TARGETS python-dir DESTINATION ${plugindir})
   target_link_libraries(python-dir ${Python2_LIBRARIES} bareos)
+  target_include_directories(python-dir PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
   add_dependencies(python-dir bareosdir-python2-module)
 
   set(PYFILES
@@ -81,13 +80,12 @@ if(Python2_FOUND AND NOT HAVE_WIN32)
 endif()
 
 if(Python3_FOUND)
-  include_directories(SYSTEM ${Python3_INCLUDE_DIRS})
-
   add_library(python3-dir MODULE python/python-dir.cc)
   # do not prefix with "lib"
   set_target_properties(python3-dir PROPERTIES PREFIX "")
   install(TARGETS python3-dir DESTINATION ${plugindir})
   target_link_libraries(python3-dir ${Python3_LIBRARIES} bareos)
+  target_include_directories(python3-dir PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})
   add_dependencies(python3-dir bareosdir-python3-module)
 
   set(PYFILES
