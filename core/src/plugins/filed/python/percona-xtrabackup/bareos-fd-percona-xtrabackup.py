@@ -36,7 +36,7 @@ def load_bareos_plugin(plugindef):
     """
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that holds the plugin class object
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdPercona(plugindef)
-    return bRCs["bRC_OK"]
+    return bRC_OK
 
 
 # the rest is done in the Plugin module
