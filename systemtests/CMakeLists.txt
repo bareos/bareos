@@ -250,6 +250,7 @@ macro(prepare_test)
   math(EXPR sd_port "${BASEPORT} + 2")
   math(EXPR sd2_port "${BASEPORT} + 3")
   math(EXPR php_port "${BASEPORT} + 4")
+  math(EXPR test_db_port "${BASEPORT} + 5")
 
   # skip for tests without etc/bareos ("catalog" test)
   if(EXISTS ${current_test_source_directory}/etc/bareos)

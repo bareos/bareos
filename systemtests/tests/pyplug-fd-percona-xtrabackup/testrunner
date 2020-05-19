@@ -7,6 +7,8 @@
 TestName="$(basename "$(pwd)")"
 export TestName
 
+MYSQL="mysql --defaults-file=mysqldefaults --user=root"
+
 JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
@@ -17,14 +19,24 @@ JobName=backup-bareos-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
+
+mkdir -p mysql/data/
+# initialize mysql db
+mysqld --defaults-file=mysqldefaults --user=pstorz --initialize-insecure > mysql/mysql_init.log 2>1
+
+# start mysql server
+mysqld --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
+
+sleep 4
+
 xtrabackup_test_db="${db_name}_xtrabackup"
 
 start_test
 
-echo "drop database ${xtrabackup_test_db}" | mysql
-echo "create database ${xtrabackup_test_db}" | mysql
-echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | mysql ${xtrabackup_test_db}
-echo "insert into test (data) VALUES ('test entry 1') " | mysql ${xtrabackup_test_db}
+echo "drop database ${xtrabackup_test_db}" | $MYSQL
+echo "create database ${xtrabackup_test_db}" | $MYSQL
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYSQL ${xtrabackup_test_db}
+echo "insert into test (data) VALUES ('test entry 1') " | $MYSQL ${xtrabackup_test_db}
 
 
 run_bareos "$@"
@@ -36,7 +48,7 @@ echo "$COMMAND yes" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
 echo "wait JobName=$JobName" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
 echo "status dir" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf
 # insert data and run incremental
-echo "insert into test (data) VALUES ('test entry 2') " | mysql ${xtrabackup_test_db}
+echo "insert into test (data) VALUES ('test entry 2') " | $MYSQL ${xtrabackup_test_db}
 
 COMMAND="$COMMAND level=Incremental"
 echo "$COMMAND yes" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf #| grep "Job queued. JobId="
@@ -73,7 +85,9 @@ fi
 
 
 
-
+# shutdown mysql
+kill $(cat mysql/data/*.pid)
+rm -Rvf $current_test_directory/mysql/data/*
 
 check_for_zombie_jobs storage=File
 stop_bareos

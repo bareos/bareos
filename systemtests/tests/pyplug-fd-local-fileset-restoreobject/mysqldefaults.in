@@ -1,0 +1,14 @@
+[client]
+# TCP port to use to connect to mysqld server
+port=@test_db_port@
+# Socket to use to connect to mysqld server
+socket=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mysql/mysql.sock
+[mysqld]
+# TCP port to make available for clients
+bind-address=127.0.0.1
+port=@test_db_port@
+#  Socket to make available for clients
+socket=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mysql/mysql.sock
+# Where MariaDB should store all its data
+datadir=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mysql/data
+
