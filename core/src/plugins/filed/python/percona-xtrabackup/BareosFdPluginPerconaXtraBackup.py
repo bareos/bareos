@@ -174,7 +174,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
             100,
             'Restore using xbstream to extract files with "%s"\n' % self.restorecommand,
         )
-        restorepkt.create_status = bCFs["CF_EXTRACT"]
+        restorepkt.create_status = CF_EXTRACT
         return bRC_OK
 
     def start_backup_job(self):
@@ -311,7 +311,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
             savepkt.fname = "/_percona/xtrabackup_checkpoints"
             savepkt.type = FT_RESTORE_FIRST
             savepkt.object_name = savepkt.fname
-            savepkt.object = bytearray(json.dumps(checkpoints))
+            savepkt.object = bytearray(json.dumps(checkpoints) ,encoding='utf8')
             savepkt.object_len = len(savepkt.object)
             savepkt.object_index = int(time.time())
             shutil.rmtree(self.tempdir)
@@ -511,10 +511,10 @@ class BareosFdPercona(BareosFdPluginBaseclass):
         """
         # Improve: sanity / consistence check of restore object
         self.row_rop_raw = ROP.object
-        self.rop_data[ROP.jobid] = json.loads(str(self.row_rop_raw))
+        self.rop_data[ROP.jobid] = json.loads((self.row_rop_raw.decode('utf-8')))
         if (
             "to_lsn" in self.rop_data[ROP.jobid]
-            and self.rop_data[ROP.jobid]["to_lsn"] > self.max_to_lsn
+            and int(self.rop_data[ROP.jobid]["to_lsn"]) > self.max_to_lsn
         ):
             self.max_to_lsn = int(self.rop_data[ROP.jobid]["to_lsn"])
             JobMessage(
