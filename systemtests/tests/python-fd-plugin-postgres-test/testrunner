@@ -2,13 +2,9 @@
 #
 # This systemtest tests the plugin functionality
 # of the Bareos FD by using the supplied module
-#   bareos-fd-local-fileset.py
+#   bareos-fd-postgres
 #
-# The module will backup some files.
-# This plugin is not intended for production,
-# but is only a minimal example that shows
-# how to use the python plugin interface.
-# File attributes like uses and times will not be saved.
+# The module will backup a postgresql databaseome.
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -33,17 +29,6 @@ popd > /dev/null
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
-# Directory to backup.
-# This directory will be created by setup_data "$@"().
-BackupDirectory="${tmp}/data"
-
-# Use a tgz to setup data to be backed up.
-# Data will be placed at "${tmp}/data/".
-setup_data "$@"
-
-# this test does not work with links because of the restore objects
-#rm -r "${tmp}"/data/weird-files >/dev/null 2>&1
 
 # Create Test DB with table and 1 statement
 echo "CREATE DATABASE $DBNAME" | ${PSQL} postgres
@@ -73,7 +58,6 @@ END_OF_DATA
 run_bareos "$@"
 
 # Now add data to the database and run an incremental job
-
 echo "INSERT INTO t (text, created_on) values ('test for INCR backup', current_timestamp)" | ${PSQL} ${DBNAME}
 
 cat <<END_OF_DATA >$tmp/bconcmds
@@ -90,8 +74,6 @@ run_bconsole
 
 
 # Now stop database and try a restore
-# ...
-# shut down database and delete directories
 pushd database/ > /dev/null
 local_db_stop_server "$TESTPGHOST"
 rm -Rf data
@@ -123,7 +105,6 @@ echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'"
 
 # start DB again - shall recover to latest possible state
 pushd database > /dev/null
-echo "------------ to be started"
 ps -e | grep postgres
 local_db_start_server "$TESTPGHOST" || exit 1
 popd > /dev/null
@@ -134,7 +115,7 @@ if (grep -q "for INCR" $tmp/sql.log)
 then
    estat=0
 else
-   echo "key not found"
+   echo "Error: Database rows not found"
    estat=1
 fi
 
