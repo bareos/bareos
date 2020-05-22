@@ -88,6 +88,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.number_of_objects_to_backup = 0
         self.FILE = None
         self.active = True
+        self.api = None
 
     def __parse_options(self, context):
         accurate = bareos_fd_consts.bVariable["bVarAccurate"]
@@ -213,7 +214,6 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "Connected, last backup: %s (ts: %s)" % (self.last_run, self.since),
         )
 
-        self.api = None
         try:
             self.api = BareosLibcloudApi(
                 self.options, self.last_run, self.options["temporary_download_directory"]
@@ -356,7 +356,6 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     % (self.current_backup_task["bucket"], self.current_backup_task["name"], e),
                 )
                 IOP.status = 0
-                IOP.io_errno = e.errno
                 return bRCs["bRC_Error"]
 
         elif IOP.func == bIOPS["IO_WRITE"]:
