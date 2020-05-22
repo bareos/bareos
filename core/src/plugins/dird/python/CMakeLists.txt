@@ -20,7 +20,9 @@
 if(Python2_FOUND)
   add_library(python-dir MODULE python-dir.cc)
   # do not prefix with "lib"
-  set_target_properties(python-dir PROPERTIES PREFIX "")
+  set_target_properties(
+    python-dir PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY ..
+  )
   install(TARGETS python-dir DESTINATION ${plugindir})
   target_link_libraries(python-dir ${Python2_LIBRARIES} bareos)
   target_include_directories(python-dir PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
@@ -66,7 +68,9 @@ endif()
 if(Python3_FOUND)
   add_library(python3-dir MODULE python-dir.cc)
   # do not prefix with "lib"
-  set_target_properties(python3-dir PROPERTIES PREFIX "")
+  set_target_properties(
+    python3-dir PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY ..
+  )
   install(TARGETS python3-dir DESTINATION ${plugindir})
   target_link_libraries(python3-dir ${Python3_LIBRARIES} bareos)
   target_include_directories(python3-dir PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})
