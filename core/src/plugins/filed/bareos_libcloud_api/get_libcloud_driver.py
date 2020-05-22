@@ -72,7 +72,7 @@ def get_driver(options):
         pass
 
     print(
-        "Could not connect to libcloud driver: %s:%d"
+        "Could not connect to libcloud driver: %s:%s"
         % (driver_opt["host"], driver_opt["port"])
     )
 
