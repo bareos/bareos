@@ -378,11 +378,7 @@ else() # run systemtests on source and compiled files
     get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-gfapi BINARY_DIR)
   endif()
 
-  if(TARGET python-dir)
-    get_target_property(DIR_PLUGINS_DIR_TO_TEST python-dir BINARY_DIR)
-  else()
-    set(DIR_PLUGINS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/src/plugins/dird)
-  endif()
+  set(DIR_PLUGINS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/src/plugins/dird)
 
   get_target_property(BACKEND_DIR_TO_TEST bareoscats BINARY_DIR)
   set(SCRIPTS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/scripts)
