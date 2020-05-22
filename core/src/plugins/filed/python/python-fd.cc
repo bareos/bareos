@@ -34,6 +34,13 @@
 #include "include/bareos.h"
 #endif
 
+#if PY_VERSION_HEX < 0x03000000
+#define LOGPREFIX "python-fd: "
+#else
+#define LOGPREFIX "python3-fd: "
+#endif
+
+
 #include "filed/fd_plugins.h"
 #include "plugins/include/python3compat.h"
 
@@ -770,7 +777,7 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
    */
   if (bstrcmp((char*)value, "*all*")) {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Got plugin definition %s, skipping to ignore\n",
+         LOGPREFIX "Got plugin definition %s, skipping to ignore\n",
          (char*)value);
     return bRC_Skip;
   }
@@ -796,9 +803,9 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
     bp = strchr((char*)value, ':');
     if (!bp) {
-      Jmsg(plugin_ctx, M_FATAL, "python-fd: Illegal plugin definition %s\n",
+      Jmsg(plugin_ctx, M_FATAL, LOGPREFIX "Illegal plugin definition %s\n",
            (char*)value);
-      Dmsg(plugin_ctx, debuglevel, "python-fd: Illegal plugin definition %s\n",
+      Dmsg(plugin_ctx, debuglevel, LOGPREFIX "Illegal plugin definition %s\n",
            (char*)value);
       goto bail_out;
     }
@@ -817,9 +824,9 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
   bp = strchr(plugin_definition.c_str(), ':');
   if (!bp) {
-    Jmsg(plugin_ctx, M_FATAL, "python-fd: Illegal plugin definition %s\n",
+    Jmsg(plugin_ctx, M_FATAL, LOGPREFIX "Illegal plugin definition %s\n",
          plugin_definition.c_str());
-    Dmsg(plugin_ctx, debuglevel, "python-fd: Illegal plugin definition %s\n",
+    Dmsg(plugin_ctx, debuglevel, LOGPREFIX "Illegal plugin definition %s\n",
          plugin_definition.c_str());
     goto bail_out;
   }
@@ -843,10 +850,10 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
     argument = bp;
     argument_value = strchr(bp, '=');
     if (!argument_value) {
-      Jmsg(plugin_ctx, M_FATAL,
-           "python-fd: Illegal argument %s without value\n", argument);
+      Jmsg(plugin_ctx, M_FATAL, LOGPREFIX "Illegal argument %s without value\n",
+           argument);
       Dmsg(plugin_ctx, debuglevel,
-           "python-fd: Illegal argument %s without value\n", argument);
+           LOGPREFIX "Illegal argument %s without value\n", argument);
       goto bail_out;
     }
     *argument_value++ = '\0';
@@ -965,7 +972,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
   /* Try to load the Python module by name. */
   if (plugin_priv_ctx->module_name) {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Trying to load module with name %s\n",
+         LOGPREFIX "Trying to load module with name %s\n",
          plugin_priv_ctx->module_name);
     pName = PyUnicode_FromString(plugin_priv_ctx->module_name);
     plugin_priv_ctx->pModule = PyImport_Import(pName);
@@ -973,13 +980,13 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
 
     if (!plugin_priv_ctx->pModule) {
       Dmsg(plugin_ctx, debuglevel,
-           "python-fd: Failed to load module with name %s\n",
+           LOGPREFIX "Failed to load module with name %s\n",
            plugin_priv_ctx->module_name);
       goto bail_out;
     }
 
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Successfully loaded module with name %s\n",
+         LOGPREFIX "Successfully loaded module with name %s\n",
          plugin_priv_ctx->module_name);
 
     /* Get the Python dictionary for lookups in the Python namespace.  */
@@ -997,8 +1004,6 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
       if (!pPluginDefinition) { goto bail_out; }
 
       pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
-      /* pFunc, plugin_priv_ctx->py_PluginContext, pPluginDefinition,
-       * NULL); */
       Py_DECREF(pPluginDefinition);
 
       if (!pRetVal) {
@@ -1009,7 +1014,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
       }
     } else {
       Dmsg(plugin_ctx, debuglevel,
-           "python-fd: Failed to find function named load_bareos_plugins()\n");
+           LOGPREFIX "Failed to find function named load_bareos_plugins()\n");
       goto bail_out;
     }
 

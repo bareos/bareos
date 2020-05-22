@@ -33,7 +33,6 @@
 /* common code for all python plugins */
 #include "plugins/include/python_plugins_common.h"
 #include "plugins/include/common.h"
-
 #include "structmember.h"
 
 namespace filedaemon {

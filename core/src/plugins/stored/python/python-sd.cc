@@ -33,6 +33,14 @@
 #include <Python.h>
 #include "include/bareos.h"
 #endif
+
+#if PY_VERSION_HEX < 0x03000000
+#define LOGPREFIX "python-sd: "
+#else
+#define LOGPREFIX "python3-sd: "
+#endif
+
+
 #include "stored/stored.h"
 
 #include "plugins/include/python3compat.h"
@@ -405,9 +413,9 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
   bp = strchr(plugin_definition.c_str(), ':');
   if (!bp) {
-    Jmsg(plugin_ctx, M_FATAL, "python-sd: Illegal plugin definition %s\n",
+    Jmsg(plugin_ctx, M_FATAL, LOGPREFIX "Illegal plugin definition %s\n",
          plugin_definition.c_str());
-    Dmsg(plugin_ctx, debuglevel, "python-sd: Illegal plugin definition %s\n",
+    Dmsg(plugin_ctx, debuglevel, LOGPREFIX "Illegal plugin definition %s\n",
          plugin_definition.c_str());
     goto bail_out;
   }
@@ -431,10 +439,10 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
     argument = bp;
     argument_value = strchr(bp, '=');
     if (!argument_value) {
-      Jmsg(plugin_ctx, M_FATAL,
-           "python-sd: Illegal argument %s without value\n", argument);
+      Jmsg(plugin_ctx, M_FATAL, LOGPREFIX "Illegal argument %s without value\n",
+           argument);
       Dmsg(plugin_ctx, debuglevel,
-           "python-sd: Illegal argument %s without value\n", argument);
+           LOGPREFIX "Illegal argument %s without value\n", argument);
       goto bail_out;
     }
     *argument_value++ = '\0';
@@ -547,7 +555,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
   /* Try to load the Python module by name. */
   if (plugin_priv_ctx->module_name) {
     Dmsg(plugin_ctx, debuglevel,
-         "python-sd: Trying to load module with name %s\n",
+         LOGPREFIX "Trying to load module with name %s\n",
          plugin_priv_ctx->module_name);
     pName = PyUnicode_FromString(plugin_priv_ctx->module_name);
     plugin_priv_ctx->pModule = PyImport_Import(pName);
@@ -555,26 +563,21 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
 
     if (!plugin_priv_ctx->pModule) {
       Dmsg(plugin_ctx, debuglevel,
-           "python-sd: Failed to load module with name %s\n",
+           LOGPREFIX "Failed to load module with name %s\n",
            plugin_priv_ctx->module_name);
       goto bail_out;
     }
 
     Dmsg(plugin_ctx, debuglevel,
-         "python-sd: Successfully loaded module with name %s\n",
+         LOGPREFIX "Successfully loaded module with name %s\n",
          plugin_priv_ctx->module_name);
 
-    /*
-     * Get the Python dictionary for lookups in the Python namespace.
-     */
+    /* Get the Python dictionary for lookups in the Python namespace.  */
     plugin_priv_ctx->pyModuleFunctionsDict =
         PyModule_GetDict(plugin_priv_ctx->pModule); /* Borrowed reference */
 
-    //    StorePluginContextInPythonModule(plugin_ctx);
 
-    /*
-     * Lookup the load_bareos_plugin() function in the python module.
-     */
+    /* Lookup the load_bareos_plugin() function in the python module.  */
     pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                  "load_bareos_plugin"); /* Borrowed reference */
     if (pFunc && PyCallable_Check(pFunc)) {
@@ -594,7 +597,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
       }
     } else {
       Dmsg(plugin_ctx, debuglevel,
-           "python-sd: Failed to find function named load_bareos_plugins()\n");
+           LOGPREFIX "Failed to find function named load_bareos_plugins()\n");
       goto bail_out;
     }
 

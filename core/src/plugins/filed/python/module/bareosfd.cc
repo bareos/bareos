@@ -33,6 +33,13 @@
 #include "include/bareos.h"
 #endif
 
+#if PY_VERSION_HEX < 0x03000000
+#define LOGPREFIX "python-fd-mod: "
+#else
+#define LOGPREFIX "python3-fd-mod: "
+#endif
+
+
 #include "filed/fd_plugins.h"
 
 #include "plugins/include/python3compat.h"
@@ -140,7 +147,8 @@ static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
     return retval;
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named "
+         LOGPREFIX
+         "Failed to find function named "
          "parse_plugin_definition()\n");
     return bRC_Error;
   }
@@ -195,7 +203,7 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named handle_plugin_event()\n");
+         LOGPREFIX "Failed to find function named handle_plugin_event()\n");
   }
 
   return retval;
@@ -461,7 +469,7 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp)
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named start_backup_file()\n");
+         LOGPREFIX "Failed to find function named start_backup_file()\n");
   }
 
   return retval;
@@ -501,7 +509,7 @@ static bRC PyEndBackupFile(PluginContext* plugin_ctx)
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named end_backup_file()\n");
+         LOGPREFIX "Failed to find function named end_backup_file()\n");
   }
 
   return retval;
@@ -622,7 +630,7 @@ static bRC PyPluginIO(PluginContext* plugin_ctx, struct io_pkt* io)
     Py_DECREF((PyObject*)pIoPkt);
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named plugin_io()\n");
+         LOGPREFIX "Failed to find function named plugin_io()\n");
   }
 
   return retval;
@@ -668,7 +676,7 @@ static bRC PyStartRestoreFile(PluginContext* plugin_ctx, const char* cmd)
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named start_restore_file()\n");
+         LOGPREFIX "Failed to find function named start_restore_file()\n");
   }
 
   return retval;
@@ -705,7 +713,7 @@ static bRC PyEndRestoreFile(PluginContext* plugin_ctx)
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named end_restore_file()\n");
+         LOGPREFIX "Failed to find function named end_restore_file()\n");
   }
 
   return retval;
@@ -797,7 +805,7 @@ static bRC PyCreateFile(PluginContext* plugin_ctx, struct restore_pkt* rp)
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named create_file()\n");
+         LOGPREFIX "Failed to find function named create_file()\n");
   }
 
   return retval;
@@ -841,7 +849,7 @@ static bRC PySetFileAttributes(PluginContext* plugin_ctx,
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named set_file_attributes()\n");
+         LOGPREFIX "Failed to find function named set_file_attributes()\n");
   }
 
   return retval;
@@ -881,7 +889,7 @@ static bRC PyCheckFile(PluginContext* plugin_ctx, char* fname)
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named check_file()\n");
+         LOGPREFIX "Failed to find function named check_file()\n");
   }
 
   return retval;
@@ -969,7 +977,7 @@ static bRC PyGetAcl(PluginContext* plugin_ctx, acl_pkt* ap)
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named get_acl()\n");
+         LOGPREFIX "Failed to find function named get_acl()\n");
   }
 
   return retval;
@@ -1012,7 +1020,7 @@ static bRC PySetAcl(PluginContext* plugin_ctx, acl_pkt* ap)
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named set_acl()\n");
+         LOGPREFIX "Failed to find function named set_acl()\n");
   }
 
   return retval;
@@ -1123,7 +1131,7 @@ static bRC PyGetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named get_xattr()\n");
+         LOGPREFIX "Failed to find function named get_xattr()\n");
   }
 
   return retval;
@@ -1166,7 +1174,7 @@ static bRC PySetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named set_xattr()\n");
+         LOGPREFIX "Failed to find function named set_xattr()\n");
   }
 
   return retval;
@@ -1232,7 +1240,7 @@ static bRC PyRestoreObjectData(PluginContext* plugin_ctx,
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named start_restore_file()\n");
+         LOGPREFIX "Failed to find function named start_restore_file()\n");
   }
 
   return retval;
@@ -1280,7 +1288,7 @@ static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp)
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-fd: Failed to find function named handle_backup_file()\n");
+         LOGPREFIX "Failed to find function named handle_backup_file()\n");
   }
 
   return retval;
@@ -1351,7 +1359,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
       break; /* a write only variable, ignore read request */
     default:
       Dmsg(plugin_ctx, debuglevel,
-           "python-fd: PyBareosGetValue unknown variable requested %d\n", var);
+           LOGPREFIX "PyBareosGetValue unknown variable requested %d\n", var);
       break;
   }
 
@@ -1399,7 +1407,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     }
     default:
       Dmsg(plugin_ctx, debuglevel,
-           "python-fd: PyBareosSetValue unknown variable requested %d\n", var);
+           LOGPREFIX "PyBareosSetValue unknown variable requested %d\n", var);
       break;
   }
 
@@ -1426,7 +1434,7 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
   }
   RETURN_RUNTIME_ERROR_IF_BAREOS_PLUGIN_CTX_UNSET()
 
-  if (dbgmsg) { Dmsg(plugin_ctx, level, "python-fd: %s", dbgmsg); }
+  if (dbgmsg) { Dmsg(plugin_ctx, level, LOGPREFIX "%s", dbgmsg); }
 
   Py_RETURN_NONE;
 }
@@ -1447,7 +1455,7 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
   }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
-  if (jobmsg) { Jmsg(plugin_ctx, level, "python-fd: %s", jobmsg); }
+  if (jobmsg) { Jmsg(plugin_ctx, level, LOGPREFIX "%s", jobmsg); }
 
   Py_RETURN_NONE;
 }
@@ -1479,7 +1487,7 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 
     if (event >= bEventJobStart && event <= FD_NR_EVENTS) {
       Dmsg(plugin_ctx, debuglevel,
-           "python-fd: PyBareosRegisterEvents registering event %d\n", event);
+           LOGPREFIX "PyBareosRegisterEvents registering event %d\n", event);
       retval =
           bareos_core_functions->registerBareosEvents(plugin_ctx, 1, event);
 

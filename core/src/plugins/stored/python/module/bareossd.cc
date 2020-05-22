@@ -33,6 +33,15 @@
 #include "include/bareos.h"
 #endif
 
+#if PY_VERSION_HEX < 0x03000000
+#define LOGPREFIX "python-sd-mod: "
+#else
+#define LOGPREFIX "python3-sd-mod: "
+#endif
+
+
+#include "filed/fd_plugins.h"
+
 #include "stored/sd_plugins.h"
 
 #define BAREOSSD_MODULE
@@ -119,9 +128,8 @@ static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
 
     return retval;
   } else {
-    Dmsg(
-        plugin_ctx, debuglevel,
-        "python-sd: Failed to find function named parse_plugin_definition()\n");
+    Dmsg(plugin_ctx, debuglevel,
+         LOGPREFIX "Failed to find function named parse_plugin_definition()\n");
     return bRC_Error;
   }
 
@@ -175,7 +183,7 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
     }
   } else {
     Dmsg(plugin_ctx, debuglevel,
-         "python-sd: Failed to find function named handle_plugin_event()\n");
+         LOGPREFIX "Failed to find function named handle_plugin_event()\n");
   }
 
   return retval;
@@ -262,7 +270,7 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     }
     default:
       Dmsg(plugin_ctx, debuglevel,
-           "python-sd: PyBareosGetValue unknown variable requested %d\n", var);
+           LOGPREFIX "PyBareosGetValue unknown variable requested %d\n", var);
       break;
   }
 
@@ -311,7 +319,7 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
     }
     default:
       Dmsg(plugin_ctx, debuglevel,
-           "python-sd: PyBareosSetValue unknown variable requested %d\n", var);
+           LOGPREFIX "PyBareosSetValue unknown variable requested %d\n", var);
       break;
   }
 
@@ -335,7 +343,7 @@ static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args)
   }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
-  if (dbgmsg) { Dmsg(plugin_ctx, level, "python-sd: %s", dbgmsg); }
+  if (dbgmsg) { Dmsg(plugin_ctx, level, LOGPREFIX "%s", dbgmsg); }
 
   Py_RETURN_NONE;
 }
@@ -356,7 +364,7 @@ static PyObject* PyBareosJobMessage(PyObject* self, PyObject* args)
   }
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
-  if (jobmsg) { Jmsg(plugin_ctx, type, "python-sd: %s", jobmsg); }
+  if (jobmsg) { Jmsg(plugin_ctx, type, LOGPREFIX "%s", jobmsg); }
 
   Py_RETURN_NONE;
 }
@@ -389,7 +397,7 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
 
     if (event >= bSdEventJobStart && event <= bSdEventWriteRecordTranslation) {
       Dmsg(plugin_ctx, debuglevel,
-           "python-sd: PyBareosRegisterEvents registering event %d\n", event);
+           LOGPREFIX "PyBareosRegisterEvents registering event %d\n", event);
       retval =
           bareos_core_functions->registerBareosEvents(plugin_ctx, 1, event);
 
