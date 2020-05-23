@@ -29,7 +29,7 @@ if(Python2_FOUND)
   )
   target_link_libraries(python-fd ${Python2_LIBRARIES} bareos)
   target_include_directories(python-fd PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
-  add_dependencies(python-fd bareosfd-pymod2)
+  add_dependencies(python-fd bareosfd-pymod)
   add_dependencies(bareos-fd python-fd)
 endif()
 
@@ -106,17 +106,17 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
     COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python2 module pythonmodules/bareosfd.so"
   )
-  add_custom_target(bareosfd-pymod2 DEPENDS pythonmodules/bareosfd.so)
-  add_test(NAME bareosfd-python2-module
+  add_custom_target(bareosfd-pymod DEPENDS pythonmodules/bareosfd.so)
+  add_test(NAME bareosfd-python-module
            COMMAND ${Python2_EXECUTABLE}
                    ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosfd_test.py
   )
   set_property(
-    TEST bareosfd-python2-module
+    TEST bareosfd-python-module
     PROPERTY
       ENVIRONMENT
       "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/test"
-      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
+      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../../lib
   )
 endif()
 
@@ -147,7 +147,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     PROPERTY
       ENVIRONMENT
       "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/test"
-      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
+      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../../lib
   )
 endif()
 
