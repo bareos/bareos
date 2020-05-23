@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+set -e
+set -u
 #
 # run multiple jobs and verify that the pruning mechanism
 # logs the jobs being pruned

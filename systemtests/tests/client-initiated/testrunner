@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+set -u
 
 TestName="$(basename "$(pwd)")"
 export TestName

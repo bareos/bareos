@@ -1,6 +1,6 @@
-#!/bin/sh
-#
-#set -x
+#!/bin/bash
+set -e
+set -u
 #trap read debug
 
 TestName="$(basename "$(pwd)")"
