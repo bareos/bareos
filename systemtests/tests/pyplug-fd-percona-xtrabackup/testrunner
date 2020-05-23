@@ -22,9 +22,11 @@ JobName=backup-bareos-fd
 "${rscripts}"/setup
 
 
+[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)"
+rm -Rf mysql/data/*
 mkdir -p mysql/data/
 # initialize mysql db
-mysqld --defaults-file=mysqldefaults --user=pstorz --initialize-insecure > mysql/mysql_init.log 2>1
+mysqld --defaults-file=mysqldefaults --user=pstorz --initialize-insecure > mysql/mysql_init.log 2>&1
 
 # start mysql server
 mysqld --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
@@ -35,12 +37,11 @@ xtrabackup_test_db="${db_name}_xtrabackup"
 
 start_test
 
-echo "drop database ${xtrabackup_test_db}" | $MYSQL
 echo "create database ${xtrabackup_test_db}" | $MYSQL
-echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYSQL ${xtrabackup_test_db}
-echo "insert into test (data) VALUES ('test entry 1') " | $MYSQL ${xtrabackup_test_db}
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYSQL "${xtrabackup_test_db}"
+echo "insert into test (data) VALUES ('test entry 1') " | $MYSQL "${xtrabackup_test_db}"
 
-cat <<END_OF_DATA >$tmp/bconcmds
+cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $tmp/log1.out
 run job=$JobName yes
 wait JobName=$JobName
@@ -87,8 +88,8 @@ run_bareos "$@"
 
 # Check if xtrabackup has extracted some files at least
 # TODO: verify that xtrabackup --prepare works and eventually do complete datbase restore
-ls -lR  $tmp/bareos-restores/_percona/
-if [ -z "$(ls -A $tmp/bareos-restores/_percona/)" ]; then
+ls -lR  "$tmp/bareos-restores/_percona/"
+if [ -z "$(ls -A "$tmp"/bareos-restores/_percona/)" ]; then
        echo "No restore data found"
        estat=1
 fi
@@ -96,8 +97,8 @@ fi
 
 
 # shutdown mysql
-kill $(cat mysql/data/*.pid)
-rm -Rvf $current_test_directory/mysql/data/*
+[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)"
+rm -Rf mysql/data
 
 check_for_zombie_jobs storage=File
 stop_bareos
