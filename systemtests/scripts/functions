@@ -630,7 +630,7 @@ check_restore_diff()
        result=$?
    fi
    OUT="$(diff --no-dereference -ur --exclude="fifo*" "${dest}" "${tmp}/bareos-restores/${dest}")"
-   result=$((result + $?))
+   result=$(( result + $?))
    if is_debug; then
        printf "%s\n" "$OUT"
    fi
