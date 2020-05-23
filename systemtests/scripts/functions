@@ -625,10 +625,11 @@ check_restore_diff()
    #   * ${src}
    dest=${1:-${BackupDirectory:-$src}}
 
-   "$rscripts/diff.pl" -s "${dest}" -d "${tmp}/bareos-restores/${dest}"
-   result=$?
+   if "$rscripts/diff.pl" -s "${dest}" -d "${tmp}/bareos-restores/${dest}"; then
+       result=$?
+   fi
    OUT="$(diff --no-dereference -ur --exclude="fifo*" "${dest}" "${tmp}/bareos-restores/${dest}")"
-   result="$(expr "$result" + $?)"
+   result=$(( result + $?))
    if is_debug; then
        printf "%s\n" "$OUT"
    fi
@@ -718,12 +719,12 @@ end_test()
    # End of test.
    # Remove exit trap (set in start_test)
    trap '' EXIT
-
+   notracedump="${notracedump:-no}"
    if [ "$notracedump" != "yes" ]; then
-      cat "${working}"/bareos.*.traceback 2>/dev/null
-      cp -f  "${working}"/bareos.*.traceback "${dumps}" 2>/dev/null
-      cat "${working}"/*.bactrace 2>/dev/null
-      cp -f "${working}"/*.bactrace "${dumps}" 2>/dev/null
+      cat "${working}"/bareos.*.traceback 2>/dev/null || :
+      cp -f  "${working}"/bareos.*.traceback "${dumps}" 2>/dev/null || :
+      cat "${working}"/*.bactrace 2>/dev/null || :
+      cp -f "${working}"/*.bactrace "${dumps}" 2>/dev/null || :
    fi
    if [ -f "$tmp/err.log" ]; then
       cat "$tmp/err.log"
@@ -809,6 +810,7 @@ update_win32()
 
 debug_wait()
 {
+  REGRESS_WAIT=${REGRESS_WAIT:-0}
   if test "${REGRESS_WAIT}" = "1"; then
      echo "Start Bareos under debugger and enter anything when ready ..."
      read -r
@@ -876,7 +878,7 @@ case $1 in
 esac
 }
 
-
+REGRESS_DEBUG=${REGRESS_DEBUG:-0}
 if test "x${REGRESS_DEBUG}" = "x1"; then
    set_debug 1
 else
@@ -959,9 +961,11 @@ mkdir -p "${tmp}"
 mkdir -p "${plugindirtmp}"
 touch "${tmp}/dir.out" "${tmp}/fd.out" "${tmp}/sd.out"
 
+HOST=${HOST:-bareos}
 CLIENT="${HOST}-fd"
 
 AUTOCHANGER_SCRIPT=${AUTOCHANGER_SCRIPT:-mtx-changer}
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
 LD_LIBRARY_PATH=$bin:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
 
