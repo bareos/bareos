@@ -5,6 +5,6 @@ FileSet {
     Options {
       signature = MD5
     }
-    Plugin = "@python_version@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-percona-xtrabackup:dumpbinary=@XTRABACKUP@ --defaults-file=mysqldefaults:extradumpoptions=--user=root@extradumpoptions@:mysqlcmd=mysql --defaults-file=mysqldefaults --user=root"
+    Plugin = "@python_version@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-percona-xtrabackup:dumpbinary=@XTRABACKUP@ --defaults-file=mysqldefaults:extradumpoptions=--user=root@extradumpoptions@:mysqlcmd=mysql --defaults-file=mysqldefaults --user=root --raw"
   }
 }
