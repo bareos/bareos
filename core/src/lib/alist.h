@@ -44,39 +44,40 @@
   for ((var) = list ? (typeof((var)))(list)->first() : 0; (var); \
        (var) = (typeof(var))(list)->next())
 
-#define foreach_alist_null(var, list)                               \
-  for ((var) = list ? (typeof((var)))(list)->first() : NULL; (var); \
+#define foreach_alist_null(var, list)                                  \
+  for ((var) = list ? (typeof((var)))(list)->first() : nullptr; (var); \
        (var) = (typeof(var))(list)->next())
-
-#define foreach_alist_index(inx, var, list)                              \
-  for ((inx) = 0;                                                        \
-       (list != NULL) ? ((var) = (typeof((var)))(list)->get((inx))) : 0; \
-       (inx)++)
-
-#define foreach_alist_rindex(inx, var, list)                             \
-  for ((list != NULL) ? (inx) = ((list)->size() - 1) : 0;                \
-       (list != NULL) ? ((var) = (typeof((var)))(list)->get((inx))) : 0; \
-       (inx)--)
-
-#else
-#define foreach_alist(var, list)                                         \
-  for (list ? (*((void**)&(var)) = (void*)((list)->first())) : 0; (var); \
-       (*((void**)&(var)) = (void*)((list)->next())))
-
-#define foreach_alist_null(var, list)                                       \
-  for (list ? (*((void**)&(var)) = (void*)((list)->first())) : NULL; (var); \
-       (*((void**)&(var)) = (void*)((list)->next())))
 
 #define foreach_alist_index(inx, var, list)                                 \
   for ((inx) = 0;                                                           \
-       (list != NULL) ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) \
-                      : 0;                                                  \
+       (list != nullptr) ? ((var) = (typeof((var)))(list)->get((inx))) : 0; \
        (inx)++)
 
 #define foreach_alist_rindex(inx, var, list)                                \
-  for ((list != NULL) ? (inx) = ((list)->size() - 1) : 0;                   \
-       (list != NULL) ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) \
-                      : 0;                                                  \
+  for ((list != nullptr) ? (inx) = ((list)->size() - 1) : 0;                \
+       (list != nullptr) ? ((var) = (typeof((var)))(list)->get((inx))) : 0; \
+       (inx)--)
+
+#else
+#define foreach_alist(var, list)                                          \
+  for ((void)(list ? (*((void**)&(var)) = (void*)((list)->first())) : 0); \
+       (var); (*((void**)&(var)) = (void*)((list)->next())))
+
+#define foreach_alist_null(var, list)                               \
+  for ((void)(list ? (*((void**)&(var)) = (void*)((list)->first())) \
+                   : nullptr);                                      \
+       (var); (*((void**)&(var)) = (void*)((list)->next())))
+
+#define foreach_alist_index(inx, var, list)                                    \
+  for ((inx) = 0;                                                              \
+       (list != nullptr) ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) \
+                         : 0;                                                  \
+       (inx)++)
+
+#define foreach_alist_rindex(inx, var, list)                                   \
+  for ((list != nullptr) ? (inx) = ((list)->size() - 1) : 0;                   \
+       (list != nullptr) ? ((*((void**)&(var)) = (void*)((list)->get((inx))))) \
+                         : 0;                                                  \
        (inx)--)
 #endif
 
@@ -133,7 +134,7 @@ class alist {
  */
 inline void* alist::operator[](int index) const
 {
-  if (index < 0 || index >= num_items) { return NULL; }
+  if (index < 0 || index >= num_items) { return nullptr; }
   return items[index];
 }
 

@@ -1,7 +1,6 @@
 #
 # Default Bareos File Daemon Configuration file
 #
-#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
 #
 # You have to add this client to the Bareos director (bareos-dir.conf, Client resource).
 # In this file (bareos-fd.conf) you have to

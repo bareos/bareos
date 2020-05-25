@@ -1,6 +1,6 @@
 Storage {
   Name = RemoteFile
-  Address = @hostname@                # N.B. Use a fully qualified name here (do not use "localhost" here).
+  Address = @hostname@
   Password = "@sd_password@"
   Device = RemoteFileStorage
   Media Type = File
@@ -9,7 +9,7 @@ Storage {
 
 Storage {
   Name = RemoteFile2
-  Address = @hostname@                # N.B. Use a fully qualified name here (do not use "localhost" here).
+  Address = @hostname@
   Password = "@sd_password@"
   Device = RemoteFileStorage2
   Media Type = File

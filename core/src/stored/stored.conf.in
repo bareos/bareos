@@ -1,8 +1,6 @@
 #
 # Bareos Storage Daemon Configuration file
 #
-# For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
-#
 # "Global" Storage daemon configuration specifications
 #
 Storage {

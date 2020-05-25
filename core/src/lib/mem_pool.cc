@@ -40,10 +40,6 @@
 
 #define HEAD_SIZE BALIGN(sizeof(struct abufhead))
 
-#ifdef HAVE_MALLOC_TRIM
-extern "C" int malloc_trim(size_t pad);
-#endif
-
 struct s_pool_ctl {
   int32_t size;              /* default size */
   int32_t max_allocated;     /* max allocated */
@@ -110,10 +106,10 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  * the normal error reporting which uses dynamic memory e.g. recursivly calls
  * these routines again leading to deadlocks.
  */
-static void MemPoolErrorMessage(const char* file,
-                                int line,
-                                const char* fmt,
-                                ...)
+[[noreturn]] static void MemPoolErrorMessage(const char* file,
+                                             int line,
+                                             const char* fmt,
+                                             ...)
 {
   char buf[256];
   va_list arg_ptr;
@@ -127,9 +123,7 @@ static void MemPoolErrorMessage(const char* file,
   va_end(arg_ptr);
 
   DispatchMessage(NULL, M_ABORT, 0, buf);
-
-  char* p = 0;
-  p[0] = 0; /* Generate segmentation violation */
+  abort();
 }
 
 POOLMEM* GetPoolMemory(int pool)
@@ -313,15 +307,7 @@ void CloseMemoryPool()
  * Garbage collect and trim memory if possible
  * This should be called after all big memory usages if possible.
  */
-void GarbageCollectMemory()
-{
-  CloseMemoryPool(); /* release free chain */
-#ifdef HAVE_MALLOC_TRIM
-  P(mutex);
-  malloc_trim(8192);
-  V(mutex);
-#endif
-}
+void GarbageCollectMemory() { CloseMemoryPool(); /* release free chain */ }
 
 static const char* pool_name(int pool)
 {
@@ -565,7 +551,6 @@ int PoolMem::bsprintf(const char* fmt, ...)
   return len;
 }
 
-#ifdef HAVE_VA_COPY
 int PoolMem::Bvsprintf(const char* fmt, va_list arg_ptr)
 {
   int maxlen, len;
@@ -582,19 +567,3 @@ again:
   }
   return len;
 }
-
-#else /* no va_copy() -- brain damaged version of variable arguments */
-
-int PoolMem::Bvsprintf(const char* fmt, va_list arg_ptr)
-{
-  int maxlen, len;
-
-  ReallocPm(5000);
-  maxlen = MaxSize() - 1;
-  len = ::Bvsnprintf(mem, maxlen, fmt, arg_ptr);
-  if (len < 0 || len >= maxlen) {
-    if (len >= maxlen) { len = -len; }
-  }
-  return len;
-}
-#endif

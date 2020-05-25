@@ -63,7 +63,7 @@ BASEPORT=@dir_port@
 #  create a unique name here for each of your test machines.
 # We recommend that you prefix it by your name, and if you have multiple
 #  test machines, add some indication of the machine.
-SITE_NAME="pkg-bareos-@VERSION@-@host@-@DISTVER@"
+SITE_NAME="pkg-bareos-@BAREOS_FULL_VERSION@-@DISTVER@"
 
 # Bareos binaries path
 bin=@sbindir@

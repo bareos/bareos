@@ -42,18 +42,14 @@
 #include "include/jcr.h"
 #include <signal.h>
 
-static void signal_handler(int arg) { return; }
-
 namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
 static void InitSignalHandler()
 {
-  struct sigaction sig {
-    (0)
-  };
-  sig.sa_handler = signal_handler;
+  struct sigaction sig{};
+  sig.sa_handler = SIG_IGN;
   sigaction(SIGUSR2, &sig, nullptr);
   sigaction(SIGPIPE, &sig, nullptr);
 }

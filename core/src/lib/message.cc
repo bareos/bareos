@@ -47,15 +47,13 @@
 
 // globals
 const char* working_directory = NULL; /* working directory path stored here */
-const char* assert_msg = (char*)NULL; /* ASSERT2 error message */
 int verbose = 0;                      /* increase User messages */
 int debug_level = 0;                  /* debug level */
 bool dbg_timestamp = false;           /* print timestamp in debug output */
 bool prt_kaboom = false;              /* Print kaboom output */
 utime_t daemon_start_time = 0;        /* Daemon start time */
-const char* dist_name = DISTNAME " " DISTVER;
-char my_name[128] = {0};   /* daemon name is stored here */
-char host_name[256] = {0}; /* host machine name */
+char my_name[128] = {0};              /* daemon name is stored here */
+char host_name[256] = {0};            /* host machine name */
 char* exepath = (char*)NULL;
 char* exename = (char*)NULL;
 int console_msg_pending = false;
@@ -78,11 +76,6 @@ static bool trace = true;
 static bool trace = false;
 #endif
 static bool hangup = false;
-
-/* Constants */
-const char* host_os = HOST_OS;
-const char* distname = DISTNAME;
-const char* distver = DISTVER;
 
 /*
  * Walk back in a string from end looking for a
@@ -1288,11 +1281,10 @@ void e_msg(const char* file,
   DispatchMessage(NULL, type, 0, buf.c_str());
 
   if (type == M_ABORT) {
-    char* p = 0;
-    p[0] = 0; /* generate segmentation violation */
+    abort();
+  } else if (type == M_ERROR_TERM) {
+    exit(1);
   }
-
-  if (type == M_ERROR_TERM) { exit(1); }
 }
 
 /*
@@ -1418,14 +1410,12 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
   DispatchMessage(jcr, type, mtime, buf.c_str());
 
   if (type == M_ABORT) {
-    char* p = 0;
-    printf("BAREOS forced SEG FAULT to obtain traceback.\n");
-    syslog(LOG_DAEMON | LOG_ERR,
-           "BAREOS forced SEG FAULT to obtain traceback.\n");
-    p[0] = 0; /* generate segmentation violation */
+    printf("BAREOS aborting to obtain traceback.\n");
+    syslog(LOG_DAEMON | LOG_ERR, "BAREOS aborting to obtain traceback.\n");
+    abort();
+  } else if (type == M_ERROR_TERM) {
+    exit(1);
   }
-
-  if (type == M_ERROR_TERM) { exit(1); }
 }
 
 /*

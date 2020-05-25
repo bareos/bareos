@@ -82,11 +82,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(docdir default_for_docdir)
   endif()
 
-  # htmldir
-  if(NOT DEFINED htmldir)
-    set(htmldir default_for_htmldir)
-  endif()
-
   # archivedir
   if(NOT DEFINED archivedir)
     set(
@@ -189,11 +184,6 @@ else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # docdir
   if(NOT DEFINED docdir)
     set(docdir default_for_docdir)
-  endif()
-
-  # htmldir
-  if(NOT DEFINED htmldir)
-    set(htmldir default_for_htmldir)
   endif()
 
   # archivedir
@@ -533,11 +523,6 @@ if(NOT client-only)
   set(DEFAULT_DB_TYPE ${default_db_backend})
 endif()
 
-# tcp-wrappers
-if(NOT DEFINED tcp-wrappers)
-  set(tcp-wrappers OFF)
-endif()
-
 # systemd
 if(NOT DEFINED systemd)
   set(systemd OFF)
@@ -616,33 +601,18 @@ if(${CMAKE_COMPILER_IS_GNUCC})
   set(HAVE_GCC 1)
 endif()
 
-set(lld "\"lld\"")
-set(llu "\"llu\"")
-
 set(HAVE_MYSQL_THREAD_SAFE 1)
-set(HAVE_POSIX_SIGNALS 1)
 set(HAVE_SHA2 1)
 set(HAVE_PQISTHREADSAFE 1)
-set(HAVE_PQ_COPY 1)
-
-set(PROTOTYPES 1)
-set(RETSIGTYPE void)
-set(SETPGRP_VOID 1)
-set(SSTDC_HEADERS 1)
 
 set(_LARGEFILE_SOURCE 1)
 set(_LARGE_FILES 1)
 set(_FILE_OFFSET_BITS 64)
 set(HAVE_COMPRESS_BOUND 1)
-set(STDC_HEADERS 1)
 set(HAVE_SQLITE3_THREADSAFE 1)
-set(FSTYPE_MNTENT 1)
 
-set(PACKAGE_BUGREPORT "\"\"")
 set(PACKAGE_NAME "\"${CMAKE_PROJECT_NAME}\"")
 set(PACKAGE_STRING "\"${CMAKE_PROJECT_NAME} ${BAREOS_NUMERIC_VERSION}\"")
-set(PACKAGE_TARNAME "\"\"")
-set(PACKAGE_URL "\"\"")
 set(PACKAGE_VERSION "\"${BAREOS_NUMERIC_VERSION}\"")
 
 set(ENABLE_NLS 1)

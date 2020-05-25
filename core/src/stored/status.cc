@@ -44,9 +44,6 @@
 #include "lib/recent_job_results_list.h"
 #include "lib/util.h"
 
-/* Imported functions */
-extern bool GetWindowsVersionString(char* buf, int maxsiz);
-
 namespace storagedaemon {
 
 /* Imported variables */
@@ -448,13 +445,10 @@ static void ListStatusHeader(StatusPacket* sp)
   PoolMem msg(PM_MESSAGE);
   char dt[MAX_TIME_LENGTH];
   char b1[35];
-#if defined(HAVE_WIN32)
-  char buf[300];
-#endif
 
-  len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s\n"), my_name,
-             kBareosVersionStrings.Full, kBareosVersionStrings.Date, HOST_OS,
-             DISTNAME, DISTVER);
+  len = Mmsg(msg, _("%s Version: %s (%s) %s \n"), my_name,
+             kBareosVersionStrings.Full, kBareosVersionStrings.Date,
+             kBareosVersionStrings.GetOsInfo());
   sp->send(msg, len);
 
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
@@ -464,11 +458,6 @@ static void ListStatusHeader(StatusPacket* sp)
   sp->send(msg, len);
 
 #if defined(HAVE_WIN32)
-  if (GetWindowsVersionString(buf, sizeof(buf))) {
-    len = Mmsg(msg, "%s\n", buf);
-    sp->send(msg, len);
-  }
-
   if (debug_level > 0) {
     len =
         Mmsg(msg, "APIs=%sOPT,%sATP,%sLPV,%sCFA,%sCFW,\n",

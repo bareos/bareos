@@ -28,13 +28,7 @@
 
 #define STORAGE_DAEMON 1
 
-/* Set to debug mutexes */
-//#define SD_DEBUG_LOCK
-#ifdef SD_DEBUG_LOCK
-const int sd_debuglevel = 3;
-#else
 const int sd_debuglevel = 300;
-#endif
 
 #ifdef HAVE_MTIO_H
 #include <mtio.h>
@@ -69,10 +63,8 @@ const int sd_debuglevel = 300;
 #else
 #include "lib/fnmatch.h"
 #endif
-#ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
-#endif
 #ifndef HAVE_READDIR_R
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
 #endif

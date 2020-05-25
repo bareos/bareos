@@ -87,16 +87,10 @@ IPADDR::IPADDR(int af) : IPADDR()
   switch (af) {
     case AF_INET:
       saddr4->sin_port = 0xffff;
-#ifdef HAVE_SA_LEN
-      saddr->sa_len = sizeof(sockaddr_in);
-#endif
       break;
 #ifdef HAVE_IPV6
     case AF_INET6:
       saddr6->sin6_port = 0xffff;
-#ifdef HAVE_SA_LEN
-      saddr->sa_len = sizeof(sockaddr_in6);
-#endif
       break;
 #endif
   }

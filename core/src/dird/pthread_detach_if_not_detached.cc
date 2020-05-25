@@ -18,7 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#include "include/hostconfig.h"
+#include "include/config.h"
 #include <pthread.h>
 #if defined(HAVE_PTHREAD_NP_H)
 #include <pthread_np.h>

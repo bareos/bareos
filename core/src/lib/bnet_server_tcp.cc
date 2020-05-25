@@ -58,13 +58,6 @@
 #include <atomic>
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-#ifdef HAVE_LIBWRAP
-#include "tcpd.h"
-int allow_severity = LOG_NOTICE;
-int deny_severity = LOG_WARNING;
-#endif
-
 static std::atomic<bool> quit{false};
 
 struct s_sockfd {
@@ -152,9 +145,6 @@ void BnetThreadServerTcp(
   struct sockaddr_storage cli_addr; /* client's address */
   int tlog;
   int value;
-#ifdef HAVE_LIBWRAP
-  struct request_info request;
-#endif
   IPADDR *ipaddr, *next, *to_free;
   s_sockfd* fd_ptr = NULL;
   char buf[128];
@@ -360,22 +350,6 @@ void BnetThreadServerTcp(
                              &clilen);
         } while (newsockfd < 0 && errno == EINTR);
         if (newsockfd < 0) { continue; }
-#ifdef HAVE_LIBWRAP
-        P(mutex); /* HostsAccess is not thread safe */
-        request_init(&request, RQ_DAEMON, my_name, RQ_FILE, newsockfd, 0);
-        fromhost(&request);
-        if (!HostsAccess(&request)) {
-          V(mutex);
-          Jmsg2(NULL, M_SECURITY, 0,
-                _("Connection from %s:%d refused by hosts.access\n"),
-                SockaddrToAscii(reinterpret_cast<sockaddr*>(&cli_addr), buf,
-                                sizeof(buf)),
-                SockaddrGetPort(reinterpret_cast<sockaddr*>(&cli_addr)));
-          close(newsockfd);
-          continue;
-        }
-        V(mutex);
-#endif
 
         /*
          * Receive notification when connection dies.

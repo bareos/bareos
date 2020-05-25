@@ -112,7 +112,6 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dacl=yes\
   -Dxattr=yes\
   -Dpostgresql=yes\
-  -Dtcp-wrappers=yes\
   -Ddir-password="XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX" \
   -Dfd-password="XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX" \
   -Dsd-password="XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX" \

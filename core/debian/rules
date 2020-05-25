@@ -60,7 +60,6 @@ define CONFIGURE_COMMON
   -Dpostgresql=yes \
   -Dmysql=yes \
   -Dsqlite3=yes \
-  -Dtcp-wrappers=yes \
   -Dopenssl=yes \
   -Ddir-user=$(DIRECTOR_DAEMON_USER) \
   -Ddir-group=$(DAEMON_GROUP) \

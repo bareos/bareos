@@ -1,9 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,16 +18,11 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Define Host machine
- */
-#define HOST_OS "@host@@post_host@"
-#define BAREOS "@BAREOS@"
-#define DISTNAME "@DISTNAME@"
-#define DISTVER "@DISTVER@"
-#define HELPDIR "@htmldir@"
 
-#define FD_DEFAULT_PORT "@fd_port@"
-#define SD_DEFAULT_PORT "@sd_port@"
-#define DIR_DEFAULT_PORT "@dir_port@"
-#define NDMP_DEFAULT_PORT "10000"
+#include "include/config.h"
+#include "osinfo.h"
+
+const char* GetOsInfoString()
+{
+  return DISTVER;
+}

@@ -47,9 +47,6 @@ if(${HAVE_DROPLET})
   install(TARGETS bareossd-droplet DESTINATION ${backenddir})
 endif()
 
-add_library(bareossd-elasto MODULE elasto_device.cc)
-# INSTALL(TARGETS bareossd-elasto DESTINATION ${backenddir})
-
 add_library(bareossd-fifo MODULE unix_fifo_device.cc)
 install(TARGETS bareossd-fifo DESTINATION ${backenddir})
 if(HAVE_DARWIN_OS)

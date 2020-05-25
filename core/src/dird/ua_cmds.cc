@@ -2805,7 +2805,6 @@ static bool DotHelpCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-#if 1
 static bool VersionCmd(UaContext* ua, const char* cmd)
 {
   ua->send->ObjectStart("version");
@@ -2814,33 +2813,13 @@ static bool VersionCmd(UaContext* ua, const char* cmd)
   ua->send->ObjectKeyValue("Version", "%s: ", kBareosVersionStrings.Full,
                            "%s ");
   ua->send->ObjectKeyValue("bdate", kBareosVersionStrings.Date, "(%s) ");
-  ua->send->ObjectKeyValue("operatingsystem", HOST_OS, "%s ");
-  ua->send->ObjectKeyValue("distname", DISTNAME, "%s ");
-  ua->send->ObjectKeyValue("distversion", DISTVER, "%s ");
+  ua->send->ObjectKeyValue("operatingsystem", kBareosVersionStrings.GetOsInfo(), "%s ");
+  ua->send->ObjectKeyValue("distname", PLATFORM, "%s ");
+  ua->send->ObjectKeyValue("distversion", kBareosVersionStrings.GetOsInfo(), "%s ");
   ua->send->ObjectKeyValue("CustomVersionId", NPRTB(me->verid), "%s\n");
   ua->send->ObjectEnd("version");
 
   return true;
 }
-#else
-/**
- *  Test code -- turned on only for debug testing
- */
-static bool VersionCmd(UaContext* ua, const char* cmd)
-{
-  dbid_list ids;
-  PoolMem query(PM_MESSAGE);
-  OpenDb(ua);
-  Mmsg(query,
-       "select MediaId from Media,Pool where Pool.PoolId=Media.PoolId and "
-       "Pool.Name='Full'");
-  GetQueryDbids(ua->jcr, ua->db, query, ids);
-  ua->SendMsg("num_ids=%d max_ids=%d tot_ids=%d\n", ids.num_ids, ids.max_ids,
-              ids.tot_ids);
-  for (int i = 0; i < ids.num_ids; i++) { ua->SendMsg("id=%d\n", ids.DBId[i]); }
-  CloseDb(ua);
 
-  return true;
-}
-#endif
 } /* namespace directordaemon */

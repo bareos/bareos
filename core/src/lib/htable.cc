@@ -41,7 +41,7 @@
  */
 
 #include <cinttypes>
-#include "include/hostconfig.h"
+#include "include/config.h"
 
 #ifdef HAVE_HPUX_OS
 #pragma pack(4)

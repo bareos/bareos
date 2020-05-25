@@ -1,7 +1,6 @@
 #
 # Default Bareos Director configuration file for disk-only backup
 #
-#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
 #
 # Each configuration item has a reference number that shows
 # where this property can be changed in the configuration file.
@@ -45,7 +44,6 @@
 #
 #
 #
-#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
 #
 #
 Director {                            # define myself

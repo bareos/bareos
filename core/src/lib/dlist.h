@@ -49,18 +49,14 @@
  * Loop var through each member of list
  */
 #ifdef HAVE_TYPEOF
-#define foreach_dlist(var, list)                                        \
-  _Pragma("GCC diagnostic push")                                        \
-      _Pragma("GCC diagnostic ignored \"-Wconversion-null\"") for (     \
-          (var) = NULL; list ? ((var) = (typeof(var))(list)->next(var)) \
-                             : NULL;) _Pragma("GCC diagnostic pop")
+#define foreach_dlist(var, list)                                         \
+  for ((var) = nullptr; (list ? ((var) = (typeof(var))(list)->next(var)) \
+                              : nullptr) != nullptr;)
 #else
-#define foreach_dlist(var, list)                                           \
-  _Pragma("GCC diagnostic push")                                           \
-      _Pragma("GCC diagnostic ignored \"-Wconversion-null\"") for (        \
-          (var) = NULL;                                                    \
-          list ? (*((void**)&(var)) = (void*)((list)->next(var))) : NULL;) \
-          _Pragma("GCC diagnostic pop")
+#define foreach_dlist(var, list)                                              \
+  for ((var) = nullptr;                                                       \
+       (list ? (*((void**)&(var)) = (void*)((list)->next(var))) : nullptr) != \
+       nullptr;)
 #endif
 
 class dlist {
@@ -149,7 +145,7 @@ inline dlink* dlist::get_link(void* item)
 }
 
 
-inline bool dlist::empty() const { return head == NULL; }
+inline bool dlist::empty() const { return head == nullptr; }
 
 inline int dlist::size() const { return num_items; }
 

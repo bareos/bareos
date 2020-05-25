@@ -55,10 +55,8 @@
 #else
 #include <regex.h>
 #endif
-#ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
-#endif
 #ifndef HAVE_READDIR_R
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
 #endif
@@ -371,8 +369,6 @@ int main(int argc, char* argv[])
   }
 
   SetJcrInThreadSpecificData(nullptr);
-  SetThreadConcurrency(me->MaxConcurrentJobs * 2 + 4 /* UA */ +
-                       5 /* sched+watchdog+jobsvr+misc */);
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
   for (const auto& backend_dir : me->backend_directories) {

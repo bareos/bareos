@@ -6,7 +6,6 @@
 # chkconfig: 2345 90 9
 # description: Backup Archiving REcovery Open Sourced.
 #
-#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 # Copyright (C) 2011 Free Software Foundation Europe e.V.
 # Modified to work on SuSE 1/31/2004 D. Scott Barninger <barninger at fairfieldcomputers.com>
 # Added rc.status functions 3/13/2004 D. Scott Barninger <barninger at fairfieldcomputers.com>

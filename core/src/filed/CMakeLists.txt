@@ -69,6 +69,7 @@ add_executable(bareos-fd filed.cc)
 
 set(BAREOS_FD_LIBRARIES bareosfind bareos pthread ${LMDB_LIBS})
 if(HAVE_WIN32)
+  target_sources(bareos-fd PRIVATE ../win32/generic/main.cc)
   list(APPEND BAREOS_FD_LIBRARIES comctl32)
 
   set(FD_COMPILE_DEFINITIONS -DWIN32_VSS)

@@ -50,13 +50,6 @@ Vendor: 	The Bareos Team
 # cmake build directory
 %define CMAKE_BUILDDIR       cmake-build
 
-# fedora 28 deprecated libwrap
-%if 0%{?fedora} >= 28 || 0%{?rhel} > 7
-%define use_libwrap 0
-%else
-%define use_libwrap 1
-%endif
-
 # rhel/centos 6 must not be built with libtirpc installed
 %if 0%{?rhel} == 6
 BuildConflicts: libtirpc-devel
@@ -270,10 +263,6 @@ BuildRequires: lsb-release
 BuildRequires: libtermcap-devel
 BuildRequires: passwd
 
-%if %{use_libwrap}
-BuildRequires: tcp_wrappers
-%endif
-
 # Some magic to be able to determine what platform we are running on.
 %if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
 
@@ -294,9 +283,6 @@ BuildRequires: fedora-release
 
 %if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version} >= 14
 BuildRequires: jansson-devel
-%if %{use_libwrap}
-BuildRequires: tcp_wrappers-devel
-%endif
 %endif
 %else
 # non suse, non redhat: eg. mandriva.
@@ -521,19 +507,6 @@ Requires:   sqlite-devel
 Requires:   openssl-devel
 %else
 Requires:   libopenssl-devel
-%endif
-%if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version}
-%if %{use_libwrap}
-Requires:   tcp_wrappers-devel
-%endif
-%else
-%if 0%{?rhel_version} || 0%{?centos_version}
-%if %{use_libwrap}
-Requires:   tcp_wrappers
-%endif
-%else
-Requires:   tcpd-devel
-%endif
 %endif
 %if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 19
 Requires:   mariadb-devel
@@ -861,9 +834,6 @@ cmake  .. \
   -Dmysql=yes \
 %if 0%{?build_sqlite3}
   -Dsqlite3=yes \
-%endif
-%if %{use_libwrap}
-  -Dtcp-wrappers=yes \
 %endif
   -Ddir-user=%{director_daemon_user} \
   -Ddir-group=%{daemon_group} \

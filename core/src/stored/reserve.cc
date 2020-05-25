@@ -48,11 +48,7 @@ namespace storagedaemon {
 const int debuglevel = 150;
 
 /* Global static variables */
-#ifdef SD_DEBUG_LOCK
-int reservations_lock_count = 0;
-#else
 static int reservations_lock_count = 0;
-#endif
 
 static brwlock_t reservation_lock;
 
@@ -428,7 +424,7 @@ static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
 bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
 {
   bool ok = false;
-  DirectorStorage* store;
+  DirectorStorage* store = nullptr;
   char* device_name = nullptr;
   alist* dirstore;
   DeviceControlRecord* dcr = jcr->impl->dcr;

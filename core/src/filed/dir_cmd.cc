@@ -245,7 +245,7 @@ static char OKsecureerase[] = "2000 OK FDSecureEraseCmd %s\n";
 static char OKsession[] = "2000 OK session\n";
 static char OKstore[] = "2000 OK storage\n";
 static char OKstoreend[] = "2000 OK storage end\n";
-static char OKjob[] = "2000 OK Job %s (%s) %s,%s,%s";
+static char OKjob[] = "2000 OK Job %s (%s) %s,%s";
 static char OKsetdebugv0[] =
     "2000 OK setdebug=%d trace=%d hangup=%d tracefile=%s\n";
 static char OKsetdebugv1[] =
@@ -994,16 +994,13 @@ static bool job_cmd(JobControlRecord* jcr)
   NewPlugins(jcr); /* instantiate plugins for this jcr */
   GeneratePluginEvent(jcr, bEventJobStart, (void*)jcr->errmsg);
 
-  const char* os_version;
-#ifdef HAVE_WIN32
-  os_version = win_os;
-#else
-  os_version = HOST_OS;
-#endif
-
+  /*
+   * the director will treat any text after the "2000 OK Job" as the client's
+   * uname and will update the client's catalog record with that value.
+   */
   return dir->fsend(OKjob, kBareosVersionStrings.Full,
-                    kBareosVersionStrings.ShortDate, os_version, DISTNAME,
-                    DISTVER);
+                    kBareosVersionStrings.ShortDate,
+                    kBareosVersionStrings.GetOsInfo(), PLATFORM);
 }
 
 static bool RunbeforeCmd(JobControlRecord* jcr)

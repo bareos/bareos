@@ -6,7 +6,6 @@
 # chkconfig: 2345 91 99
 # description: Backup Archiving REcovery Open Sourced.
 #
-#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 #
 
 # Source function library

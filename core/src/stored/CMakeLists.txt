@@ -55,10 +55,6 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
     list(APPEND AVAILABLE_DEVICE_API_SRCS backends/gfapi_device.cc)
   endif()
 
-  if(${HAVE_ELASTO})
-    list(APPEND AVAILABLE_DEVICE_API_SRCS backends/elasto_device.cc)
-  endif()
-
   if(${HAVE_RADOS})
     list(APPEND AVAILABLE_DEVICE_API_SRCS backends/rados_device.cc)
   endif()
@@ -212,6 +208,7 @@ add_executable(bareos-sd stored.cc)
 set(BAREOS_SD_LIBRARIES bareos bareossd bareosfind ${NDMP_LIBS})
 
 if(HAVE_WIN32)
+  target_sources(bareos-sd PRIVATE ../win32/generic/main.cc)
   list(APPEND BAREOS_SD_LIBRARIES comctl32)
 endif()
 

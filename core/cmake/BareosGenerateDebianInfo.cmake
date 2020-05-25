@@ -45,7 +45,7 @@ if(GENERATE_DEBIAN_CONTROL)
          DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN)
   endif()
 
-  if(${DISTNAME} MATCHES "univention")
+  if(${PLATFORM} MATCHES "univention")
     # only required for univention
     file(READ ./debian/control.univention-bareos
          DEBIAN_CONTROL_UNIVENTION_BAREOS)

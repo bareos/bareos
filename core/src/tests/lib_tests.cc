@@ -191,6 +191,7 @@ static void do_get_name_from_hello_test(const char* client_string_fmt,
                                         const BareosVersionNumber& version_test)
 {
   char bashed_client_name[20];
+  assert(strlen(client_name) <= 20);
   strncpy(bashed_client_name, client_name, 20);
   BashSpaces(bashed_client_name);
 

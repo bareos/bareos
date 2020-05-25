@@ -202,11 +202,11 @@ int main(int margc, char* margv[])
   x64 = 123456789;
   x64 = x64 << 32;
   x64 += 123456789;
-  Bsnprintf(buf, sizeof(buf), "%" llu, x64);
+  Bsnprintf(buf, sizeof(buf), "%llu", x64);
   i = bsscanf(buf, "%llu", &y64);
   if (i != 1 || x64 != y64) {
     Pmsg3(-1,
-          _("64 bit printf/scanf problem. i=%d x64=%" llu " y64=%" llu "\n"), i,
+          _("64 bit printf/scanf problem. i=%d x64=%llu y64=%llu\n"), i,
           x64, y64);
     exit(1);
   }

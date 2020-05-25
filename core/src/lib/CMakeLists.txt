@@ -172,7 +172,7 @@ set(BAREOS_SRCS
 
 if(HAVE_WIN32)
   list(APPEND BAREOS_SRCS ../win32/compat/compat.cc ../win32/compat/glob.cc
-              ../win32/compat/print.cc ../win32/compat/winapi.cc
+              ../win32/compat/winapi.cc
   )
 else()
   list(APPEND BAREOS_SRCS scsi_tapealert.cc)
@@ -193,9 +193,15 @@ set(BAREOSCFG_SRCS
 )
 list(APPEND BAREOS_SRCS ${BAREOSCFG_SRCS})
 
+if(HAVE_WIN32)
+  list(APPEND BAREOS_SRCS osinfo_win32.cc)
+else()
+  list(APPEND BAREOS_SRCS osinfo.cc)
+endif()
+
 add_library(bareos SHARED ${BAREOS_SRCS} $<TARGET_OBJECTS:version-obj>)
 
-add_library(version-obj OBJECT version.c)
+add_library(version-obj OBJECT version.cc)
 target_compile_definitions(
   version-obj
   PRIVATE
@@ -206,10 +212,6 @@ target_compile_definitions(
   -DBAREOS_YEAR="${BAREOS_YEAR}"
 )
 set_target_properties(version-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-if(HAVE_LIBDL)
-  target_link_libraries(bareos dl)
-endif()
 
 target_link_libraries(
   bareos

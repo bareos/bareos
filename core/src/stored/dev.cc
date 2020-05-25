@@ -98,9 +98,6 @@
 #ifdef HAVE_CEPHFS
 #include "backends/cephfs_device.h"
 #endif
-#ifdef HAVE_ELASTO
-#include "backends/elasto_device.h"
-#endif
 #include "backends/generic_tape_device.h"
 #ifdef HAVE_WIN32
 #include "backends/win32_tape_device.h"
@@ -210,11 +207,6 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 #ifdef HAVE_CEPHFS
     case DeviceType::B_CEPHFS_DEV:
       dev = new cephfs_device;
-      break;
-#endif
-#ifdef HAVE_ELASTO
-    case DeviceType::B_ELASTO_DEV:
-      dev = new elasto_device;
       break;
 #endif
 #ifdef HAVE_WIN32

@@ -41,8 +41,6 @@
 #include "findlib/enable_priv.h"
 #include "lib/util.h"
 
-extern bool GetWindowsVersionString(char* buf, int maxsiz);
-
 namespace filedaemon {
 
 /* Forward referenced functions */
@@ -86,13 +84,10 @@ static void ListStatusHeader(StatusPacket* sp)
   char dt[MAX_TIME_LENGTH];
   PoolMem msg(PM_MESSAGE);
   char b1[32];
-#if defined(HAVE_WIN32)
-  char buf[300];
-#endif
 
-  len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s %s\n"), my_name,
+  len = Mmsg(msg, _("%s Version: %s (%s) %s %s\n"), my_name,
              kBareosVersionStrings.Full, kBareosVersionStrings.Date, VSS,
-             HOST_OS, DISTNAME, DISTVER);
+             kBareosVersionStrings.GetOsInfo());
   sp->send(msg, len);
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d, %s binary\n"),
@@ -100,11 +95,6 @@ static void ListStatusHeader(StatusPacket* sp)
   sp->send(msg, len);
 
 #if defined(HAVE_WIN32)
-  if (GetWindowsVersionString(buf, sizeof(buf))) {
-    len = Mmsg(msg, "%s\n", buf);
-    sp->send(msg, len);
-  }
-
   if (debug_level > 0) {
     if (!privs) { privs = EnableBackupPrivileges(NULL, 1); }
     len = Mmsg(msg, "Priv 0x%x\n", privs);
@@ -235,7 +225,7 @@ static void ListRunningJobsPlain(StatusPacket* sp)
 
     found = true;
     if (njcr->store_bsock) {
-      len = Mmsg(msg, "    SDReadSeqNo=%" lld " fd=%d\n",
+      len = Mmsg(msg, "    SDReadSeqNo=%lld fd=%d\n",
                  njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
       sp->send(msg, len);
     } else {
@@ -306,7 +296,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
     }
 
     if (njcr->store_bsock) {
-      len = Mmsg(msg, " SDReadSeqNo=%" lld "\n fd=%d\n",
+      len = Mmsg(msg, " SDReadSeqNo=%lld\n fd=%d\n",
                  njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
       sp->send(msg, len);
     } else {

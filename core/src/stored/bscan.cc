@@ -114,7 +114,7 @@ static Attributes* attr;
 
 static time_t lasttime = 0;
 
-static const char* backend_directory = _PATH_BAREOS_BACKENDDIR;
+static const char* backend_directory = PATH_BAREOS_BACKENDDIR;
 static const char* db_driver = "NULL";
 static const char* db_name = "bareos";
 static const char* db_user = "bareos";

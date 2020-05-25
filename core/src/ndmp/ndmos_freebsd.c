@@ -174,11 +174,11 @@ ndmp9_error ndmos_scsi_execute_cdb(struct ndm_session* sess,
   struct ndm_robot_agent* robot = sess->robot_acb;
   struct cam_device* camdev = robot->camdev;
   union ccb* ccb;
-  u_int32_t flags;
-  u_int8_t* data_ptr = 0;
-  u_int8_t* data_in_ptr = 0;
-  u_int32_t data_len = 0;
-  u_int32_t data_done;
+  uint32_t flags;
+  uint8_t* data_ptr = 0;
+  uint8_t* data_in_ptr = 0;
+  uint32_t data_len = 0;
+  uint32_t data_done;
   int rc;
 
   NDMOS_MACRO_ZEROFILL(reply);
@@ -203,7 +203,7 @@ ndmp9_error ndmos_scsi_execute_cdb(struct ndm_session* sess,
       }
 
       data_len = request->datain_len;
-      data_in_ptr = (u_int8_t*)malloc(data_len);
+      data_in_ptr = (uint8_t*)malloc(data_len);
 
       if (!data_in_ptr) {
         reply->error = NDMP9_NO_MEM_ERR;
@@ -215,7 +215,7 @@ ndmp9_error ndmos_scsi_execute_cdb(struct ndm_session* sess,
 
     case NDMP9_SCSI_DATA_DIR_OUT:
       data_len = request->dataout.dataout_len;
-      data_ptr = (u_int8_t*)request->dataout.dataout_val;
+      data_ptr = (uint8_t*)request->dataout.dataout_val;
       flags = CAM_DIR_OUT;
       break;
 

@@ -61,7 +61,6 @@ extern boffset_t (*plugin_blseek)(BareosWinFilePacket* bfd,
                                   int whence);
 
 extern char* exepath;
-extern char* dist_name;
 
 namespace filedaemon {
 
@@ -2077,8 +2076,8 @@ static bRC bareosGetValue(bpContext* ctx, bVariable var, void* value)
       *(const char**)value = kBareosVersionStrings.FullWithDate;
       break;
     case bVarDistName:
-      *(char**)value = dist_name;
-      break;
+      /* removed, as this value was never used by any plugin */
+      return bRC_Error;
     default:
       if (!ctx) { /* Other variables need context */
         return bRC_Error;

@@ -282,7 +282,7 @@ ok_out:
 
   FreePoolMemory(fname);
   FreePoolMemory(lname);
-  Dmsg2(050, "End Verify-Vol. Files=%d Bytes=%" lld "\n", jcr->JobFiles,
+  Dmsg2(050, "End Verify-Vol. Files=%d Bytes=%lld\n", jcr->JobFiles,
         jcr->JobBytes);
 }
 } /* namespace filedaemon */

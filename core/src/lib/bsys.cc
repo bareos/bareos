@@ -217,15 +217,6 @@ char* bstrinlinecpy(char* dest, const char* src)
   if (src <= dest) { return NULL; }
 
   len = strlen(src);
-#if HAVE_BCOPY
-  /*
-   * Cannot use strcpy or memcpy as those functions are not
-   * allowed on overlapping data and this is inline replacement
-   * for sure is. So we use bcopy which is allowed on overlapping
-   * data.
-   */
-  bcopy(src, dest, len + 1);
-#else
   /*
    * Cannot use strcpy or memcpy as those functions are not
    * allowed on overlapping data and this is inline replacement
@@ -233,7 +224,7 @@ char* bstrinlinecpy(char* dest, const char* src)
    * overlapping data.
    */
   memmove(dest, src, len + 1);
-#endif
+
   return dest;
 }
 
@@ -664,14 +655,6 @@ void WriteStateFile(char* dir, const char* progname, int port)
   erase_on_scope_exit.Release();
 }
 
-/* BSDI does not have this.  This is a *poor* simulation */
-#ifndef HAVE_STRTOLL
-long long int strtoll(const char* ptr, char** endptr, int base)
-{
-  return (long long int)strtod(ptr, endptr);
-}
-#endif
-
 /*
  * BAREOS's implementation of fgets(). The difference is that it handles
  *   being interrupted by a signal (e.g. a SIGCHLD).
@@ -1043,41 +1026,6 @@ bool PathCreate(PoolMem& path, mode_t mode)
  * Some Solaris specific support needed for Solaris 10 and lower.
  */
 #if defined(HAVE_SUN_OS)
-
-/*
- * If libc doesn't have Addrtosymstr emulate it.
- * Solaris 11 has Addrtosymstr in libc older
- * Solaris versions don't have this.
- */
-#ifndef HAVE_ADDRTOSYMSTR
-
-#include <dlfcn.h>
-
-#ifdef _LP64
-#define _ELF64
-#endif
-#include <sys/machelf.h>
-
-static int Addrtosymstr(void* pc, char* buffer, int size)
-{
-  Dl_info info;
-  Sym* sym;
-
-  if (dladdr1(pc, &info, (void**)&sym, RTLD_DL_SYMENT) == 0) {
-    return (Bsnprintf(buffer, size, "[0x%p]", pc));
-  }
-
-  if ((info.dli_fname != NULL && info.dli_sname != NULL) &&
-      ((uintptr_t)pc - (uintptr_t)info.dli_saddr < sym->st_size)) {
-    return (Bsnprintf(buffer, size, "%s'%s+0x%x [0x%p]", info.dli_fname,
-                      info.dli_sname,
-                      (unsigned long)pc - (unsigned long)info.dli_saddr, pc));
-  } else {
-    return (Bsnprintf(buffer, size, "%s'0x%p [0x%p]", info.dli_fname,
-                      (unsigned long)pc - (unsigned long)info.dli_fbase, pc));
-  }
-}
-#endif /* HAVE_ADDRTOSYMSTR */
 
 /*
  * If libc doesn't have backtrace_symbols emulate it.

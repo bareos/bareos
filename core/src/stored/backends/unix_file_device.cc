@@ -318,7 +318,7 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
   /*
    * Reset proper owner
    */
-  chown(archive_name.c_str(), st.st_uid, st.st_gid);
+  (void)!chown(archive_name.c_str(), st.st_uid, st.st_gid);
 
 bail_out:
   return true;

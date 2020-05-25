@@ -5,7 +5,6 @@
 #
 # description: Backup Archiving REcovery Open Sourced.
 #
-# For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 #
 
 DIR_USER=@dir_user@

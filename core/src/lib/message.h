@@ -63,7 +63,6 @@ extern bool dbg_timestamp; /* print timestamp in debug output */
 extern bool prt_kaboom;    /* Print kaboom output */
 extern int verbose;
 extern char my_name[];
-extern const char* assert_msg; /* Assert error message */
 extern const char* working_directory;
 extern utime_t daemon_start_time;
 

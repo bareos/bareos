@@ -817,7 +817,7 @@ void MakeSessionKey(char* key, char* seed, int mode)
     FILETIME ft;
 
     Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetCurrentProcessId());
-    (void)getcwd(s + strlen(s), 256);
+    (void)!getcwd(s + strlen(s), 256);
     Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)GetTickCount());
     QueryPerformanceCounter(&li);
     Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)li.LowPart);
@@ -832,14 +832,11 @@ void MakeSessionKey(char* key, char* seed, int mode)
 #else
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getpid());
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getppid());
-  (void)getcwd(s + strlen(s), 256);
+  (void)!getcwd(s + strlen(s), 256);
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)clock());
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)time(NULL));
 #if defined(Solaris)
   sysinfo(SI_HW_SERIAL, s + strlen(s), 12);
-#endif
-#if defined(HAVE_GETHOSTID)
-  Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)gethostid());
 #endif
   gethostname(s + strlen(s), 256);
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getuid());

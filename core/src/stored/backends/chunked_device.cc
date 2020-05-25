@@ -33,12 +33,6 @@
 #include "stored/stored.h"
 #include "chunked_device.h"
 
-#ifdef HAVE_MMAP
-#ifdef HAVE_SYS_MMAN_H
-#include <sys/mman.h>
-#endif
-#endif
-
 #include "stored/stored_globals.h"
 
 namespace storagedaemon {
@@ -109,21 +103,7 @@ static void* io_thread(void* data)
  */
 char* chunked_device::allocate_chunkbuffer()
 {
-  char* buffer = NULL;
-
-#ifdef HAVE_MMAP
-  if (use_mmap_) {
-    buffer = (char*)::mmap(NULL, current_chunk_->chunk_size,
-                           (PROT_READ | PROT_WRITE),
-                           (MAP_SHARED | MAP_ANONYMOUS), -1, 0);
-    Dmsg1(100, "Mapped %ld bytes for chunk buffer\n",
-          current_chunk_->chunk_size);
-  } else {
-#endif
-    buffer = (char*)malloc(current_chunk_->chunk_size);
-#ifdef HAVE_MMAP
-  }
-#endif
+  char* buffer = (char*)malloc(current_chunk_->chunk_size);
 
   Dmsg2(100, "New allocated buffer of %d bytes at %p\n",
         current_chunk_->chunk_size, buffer);
@@ -139,22 +119,12 @@ void chunked_device::FreeChunkbuffer(char* buffer)
   Dmsg2(100, "Freeing buffer of %d bytes at %p\n", current_chunk_->chunk_size,
         buffer);
 
-#ifdef HAVE_MMAP
-  if (use_mmap_) {
-    ::munmap(buffer, current_chunk_->chunk_size);
-    Dmsg1(100, "Unmapped %ld bytes used as chunk buffer\n",
-          current_chunk_->chunk_size);
-  } else {
-#endif
-    free(buffer);
+  free(buffer);
 
-    /*
-     * As we released a big memory chunk let the garbage collector run.
-     */
-    GarbageCollectMemory();
-#ifdef HAVE_MMAP
-  }
-#endif
+  /*
+   * As we released a big memory chunk let the garbage collector run.
+   */
+  GarbageCollectMemory();
 }
 
 /*

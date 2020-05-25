@@ -23,15 +23,6 @@ These notices must be retained in any copies of any part of this
 documentation and/or software.
  */
 
-/* PROTOTYPES should be set to one if and only if the compiler supports
-  function argument prototyping.
-The following makes PROTOTYPES default to 0 if it has not already
-  been defined with C compiler flags.
- */
-#ifndef PROTOTYPES
-#define PROTOTYPES 1
-#endif
-
 #define MD5_LEN 16
 
 /* POINTER defines a generic pointer type */
@@ -48,16 +39,6 @@ typedef unsigned long int UINT4;
 typedef unsigned int UINT4;
 #endif
 
-/* PROTO_LIST is defined depending on how PROTOTYPES is defined above.
-If using PROTOTYPES, then PROTO_LIST returns the list, otherwise it
-  returns an empty list.
- */
-#if PROTOTYPES
-#define PROTO_LIST(list) list
-#else
-#define PROTO_LIST(list) ()
-#endif
-
 /* MD5 context. */
 typedef struct MD5Context {
   UINT4 state[4];           /* state (ABCD) */
@@ -65,6 +46,6 @@ typedef struct MD5Context {
   unsigned char buffer[64]; /* input buffer */
 } MD5_CTX;
 
-void MD5Init PROTO_LIST((MD5_CTX*));
-void MD5Update PROTO_LIST((MD5_CTX*, unsigned char*, unsigned int));
-void MD5Final PROTO_LIST((unsigned char[16], MD5_CTX*));
+void MD5Init (MD5_CTX*);
+void MD5Update (MD5_CTX*, unsigned char*, unsigned int);
+void MD5Final (unsigned char[16], MD5_CTX*);

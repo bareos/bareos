@@ -34,13 +34,6 @@
 
 namespace storagedaemon {
 
-#ifdef SD_DEBUG_LOCK
-#define r_dlock() _r_dlock(__FILE__, __LINE__);     /* in lock.c */
-#define r_dunlock() _r_dunlock(__FILE__, __LINE__); /* in lock.c */
-#define dlock() _dlock(__FILE__, __LINE__);         /* in lock.c */
-#define dunlock() _dunlock(__FILE__, __LINE__);     /* in lock.c */
-#endif
-
 #define BlockDevice(d, s) _blockDevice(__FILE__, __LINE__, (d), s)
 #define UnblockDevice(d) _unBlockDevice(__FILE__, __LINE__, (d))
 #define StealDeviceLock(d, p, s) \

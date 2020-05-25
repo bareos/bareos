@@ -60,7 +60,6 @@ else
     -Ddb_user=@db_user@ \
     ${PASSWD} \
     ${OPENSSL} \
-    ${TCPWRAPPERS} \
     ${SCSICRYPTO} \
     ${TESTPLUGIN} \
     ${WHICHDB} \

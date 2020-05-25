@@ -55,8 +55,8 @@ enum get_vol_info_rw
 
 class Device;
 class DeviceResource;
-class DeviceBlock;
-class DeviceRecord;
+struct DeviceBlock;
+struct DeviceRecord;
 
 /* clang-format off */
 
@@ -160,13 +160,8 @@ class DeviceControlRecord {
    * Methods in lock.c
    */
   void dblock(int why);
-#ifdef SD_DEBUG_LOCK
-  void dbg_mLock(const char*, int, bool locked);
-  void dbg_mUnlock(const char*, int);
-#else
   void mLock(bool locked);
   void mUnlock();
-#endif
 
   /*
    * Methods in record.c

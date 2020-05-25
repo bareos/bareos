@@ -62,10 +62,7 @@ TEST(dir, dir_plugins)
   InitMsg(NULL, NULL);
 
   OSDependentInit();
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-  char* cwd = getcwd(plugin_dir, sizeof(plugin_dir) - 1);
-#pragma GCC diagnostic pop
+  (void)!getcwd(plugin_dir, sizeof(plugin_dir) - 1);
 
   LoadDirPlugins(plugin_dir, NULL);
 

@@ -339,6 +339,7 @@ void DumpCryptoCache(int fd)
 
   len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, _("Volumename"),
              max_key_length, _("EncryptionKey"), _("Added"), _("Expires"));
+
   write(fd, msg.c_str(), len);
 
   foreach_dlist (cce, cached_crypto_keys) {

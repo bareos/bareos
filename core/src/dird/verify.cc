@@ -552,7 +552,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
                        sizeof(sd_term_msg));
       Jmsg(jcr, msg_type, 0,
            _("%s %s %s (%s):\n"
-             "  Build OS:               %s %s %s\n"
+             "  Build OS:               %s\n"
              "  JobId:                  %d\n"
              "  Job:                    %s\n"
              "  FileSet:                %s\n"
@@ -570,7 +570,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
-           kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
+           kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->impl->jr.JobId, jcr->impl->jr.Job,
            jcr->impl->res.fileset->resource_name_, JobLevelToString(JobLevel),
            jcr->impl->res.client->resource_name_, jcr->impl->previous_jr.JobId,
@@ -583,7 +583,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
     default:
       Jmsg(jcr, msg_type, 0,
            _("%s %s %s (%s):\n"
-             "  Build:                  %s %s %s\n"
+             "  Build:                  %s\n"
              "  JobId:                  %d\n"
              "  Job:                    %s\n"
              "  FileSet:                %s\n"
@@ -599,7 +599,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  Bareos binary info:     %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
-           kBareosVersionStrings.ShortDate, HOST_OS, DISTNAME, DISTVER,
+           kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
            jcr->impl->jr.JobId, jcr->impl->jr.Job,
            jcr->impl->res.fileset->resource_name_, JobLevelToString(JobLevel),
            jcr->impl->res.client->resource_name_, jcr->impl->previous_jr.JobId,

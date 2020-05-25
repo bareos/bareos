@@ -45,6 +45,7 @@ struct BareosVersionStrings {
   void (*PrintCopyrightWithFsfAndPlanets)(FILE* fh, int FsfYear);
   void (*FormatCopyright)(char* out, size_t len, int StartYear);
   void (*PrintCopyright)(FILE* fh, int StartYear);
+  const char* (*GetOsInfo)(void);
 };
 
 extern const struct BareosVersionStrings kBareosVersionStrings;

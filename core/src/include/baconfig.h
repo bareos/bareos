@@ -56,31 +56,15 @@
 #define ioctl_req_t int
 #endif
 
-
-#ifdef PROTOTYPES
-#define __PROTO(p) p
-#else
-#define __PROTO(p) ()
-#endif
-
 /**
  * In DEBUG mode an assert that is triggered generates a segmentation
  * fault so we can capture the debug info using btraceback.
  */
 #define ASSERT(x)                                    \
   if (!(x)) {                                        \
-    char* fatal = NULL;                              \
     Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
     Pmsg1(000, _("Failed ASSERT: %s\n"), #x);        \
-    fatal[0] = 0;                                    \
-  }
-#define ASSERT2(x, y)                                \
-  if (!(x)) {                                        \
-    assert_msg = y;                                  \
-    Emsg1(M_ERROR, 0, _("Failed ASSERT: %s\n"), #x); \
-    Pmsg1(000, _("Failed ASSERT: %s\n"), #x);        \
-    char* fatal = NULL;                              \
-    fatal[0] = 0;                                    \
+    abort();                                         \
   }
 
 /**
@@ -233,12 +217,6 @@ void InitWinAPIWrapper();
 typedef void(HANDLER)();
 typedef int(INTHANDLER)();
 
-#ifdef SETPGRP_VOID
-#define SETPGRP_ARGS(x, y) /* No arguments */
-#else
-#define SETPGRP_ARGS(x, y) (x, y)
-#endif
-
 #ifndef S_ISLNK
 #define S_ISLNK(m) (((m)&S_IFM) == S_IFLNK)
 #endif
@@ -314,6 +292,25 @@ inline bool IsSlotNumberValid(slot_number_t slot)
       e_msg(__FILE__, __LINE__, M_ABORT, 0,                            \
             "Write lock unlock failure. ERR=%s\n", strerror(errstat)); \
   } while (0)
+
+
+/**
+ * In modern versions of C/C++ we can use attributes to express intentions
+ * as not all compilers are modern enough for the attribute we want to use
+ * we add macros for the attributes that will be automatically disabled on
+ * older compilers that don't understand the attribute yet
+ */
+#if !defined(FALLTHROUGH_INTENDED)
+#if defined(__clang__)
+#define FALLTHROUGH_INTENDED [[clang::fallthrough]]
+#elif defined(__GNUC__) && __GNUC__ >= 7
+#define FALLTHROUGH_INTENDED [[gnu::fallthrough]]
+#else
+#define FALLTHROUGH_INTENDED \
+  do {                       \
+  } while (0)
+#endif
+#endif
 
 /**
  * As of C++11 varargs macros are part of the standard.
@@ -531,28 +528,6 @@ int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...);
 #endif /* __digital__ && __unix__ */
 #endif /* HAVE_WIN32 */
 
-#ifdef HAVE_SUN_OS
-/**
- * On Solaris 2.5/2.6/7 and 8, threads are not timesliced by default,
- * so we need to explictly increase the concurrency level.
- */
-#ifdef USE_THR_SETCONCURRENCY
-#include <thread.h>
-#define SetThreadConcurrency(x) ThrSetconcurrency(x)
-extern int ThrSetconcurrency(int);
-#define SunOS 1
-#else
-#define SetThreadConcurrency(x)
-#endif
-
-#else
-/**
- * Not needed on most systems
- */
-#define SetThreadConcurrency(x)
-
-#endif
-
 #ifdef HAVE_DARWIN_OS
 /* Apparently someone forgot to wrap Getdomainname as a C function */
 #ifdef __cplusplus
@@ -640,21 +615,6 @@ int Getdomainname(char* name, int len);
 }
 #endif /* __cplusplus */
 #endif /* HAVE_OSF1_OS */
-
-
-/** Disabled because it breaks internationalisation...
-#undef HAVE_SETLOCALE
-#ifdef HAVE_SETLOCALE
-#include <locale.h>
-#else
-#define setlocale(x, y) ("ANSI_X3.4-1968")
-#endif
-#ifdef HAVE_NL_LANGINFO
-#include <langinfo.h>
-#else
-#define nl_langinfo(x) ("ANSI_X3.4-1968")
-#endif
-*/
 
 /** Determine endianes */
 static inline bool bigendian() { return htonl(1) == 1L; }

@@ -139,13 +139,6 @@ set(host ${CMAKE_SYSTEM})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# run git-info to collect sourcecode info
-file(MAKE_DIRECTORY build)
-execute_process(
-  COMMAND ${PROJECT_SOURCE_DIR}/scripts/git-info.sh
-  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/build
-)
-
 include(BareosExtractVersionInfo)
 
 include(BareosGetDistInfo)
@@ -392,15 +385,10 @@ set(LOCALEDIR \"${CMAKE_INSTALL_LOCALEDIR}\")
 
 set(HAVE_CRYPTO 1)
 
-include(BareosTypeSizes)
-
 include(TestBigEndian)
 test_big_endian(IS_BIGENDIAN)
 if(IS_BIGENDIAN)
-  # SET(WORDS_BIGENDIAN 1)
   set(HAVE_BIG_ENDIAN 1)
-else()
-  set(HAVE_LITTLE_ENDIAN 1)
 endif()
 
 message(STATUS "VERSION: " ${CMAKE_MATCH_1})
@@ -414,8 +402,6 @@ include(BareosCheckFunctions)
 
 include(BareosCheckSymbols)
 
-include(BareosCheckStructHasMembers)
-
 include(BareosDetermineHaveLowLevelScsiInterface)
 
 include(acltypes)
@@ -425,13 +411,6 @@ include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
 include_directories(SYSTEM ${PYTHON_INCLUDE_PATH})
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
-
-# trick for socklen_t
-set(CMAKE_EXTRA_INCLUDE_FILES "sys/socket.h")
-check_type_size("socklen_t" HAVE_SOCKLEN_T)
-set(CMAKE_EXTRA_INCLUDE_FILES)
-
-set(CMAKE_EXTRA_INCLUDE_FILES sys/socket.h)
 
 # ------------------------- Begin Generic CMake Variable Logging
 # ------------------
@@ -624,11 +603,6 @@ endif()
 
 set(largefile_support "")
 
-set(got_readline "${READLINE_FOUND}")
-if("${READLINE_FOUND}")
-  set(HAVE_READLINE 1)
-endif()
-
 if("${PAM_FOUND}")
   set(HAVE_PAM 1)
 endif()
@@ -738,14 +712,13 @@ else()
   endif()
 endif()
 
-set(have_elasto "")
 set(support_systemd "")
 set(batch_insert_db_backends "")
 set(have_cmocka "")
 
-set(_PATH_BAREOS_BACKENDDIR \"${backenddir}\")
-set(_PATH_BAREOS_PIDDIR \"${piddir}\")
-set(_PATH_BAREOS_WORKINGDIR \"${workingdir}\")
+set(PATH_BAREOS_BACKENDDIR \"${backenddir}\")
+set(PATH_BAREOS_PIDDIR \"${piddir}\")
+set(PATH_BAREOS_WORKINGDIR \"${workingdir}\")
 
 if(HAVE_WIN32)
   install(DIRECTORY DESTINATION var/log)
@@ -772,12 +745,12 @@ message(" ")
 message("Configuration on ${NOW} : ")
 message(" ")
 
-message("   Host:                         ${host} -- ${DISTNAME} ${DISTVER} ")
+message("   Host:                         ${host} -- ${PLATFORM} ${DISTVER} ")
 message(
   "   Bareos version:               ${BAREOS} ${BAREOS_FULL_VERSION} (${DATE}) "
 )
 message(
-  "   Distribution:                 ${DISTNAME}"
+  "   Build platform:               ${PLATFORM}"
 )
 message("   Source code location:         ${srcdir} ")
 message("   Modify Debian Control file:   ${GENERATE_DEBIAN_CONTROL} ")
@@ -834,7 +807,7 @@ message("   File Daemon Group:            ${fd_group} ")
 message(" ")
 message("   Large file support:           ${largefile_support}")
 message(
-  "   readline support:             ${got_readline} ROOT_DIR:${Readline_ROOT_DIR} INCLUDE_DIR:${Readline_INCLUDE_DIR} LIBRARY:${Readline_LIBRARY}
+  "   readline support:             ROOT_DIR:${Readline_ROOT_DIR} INCLUDE_DIR:${Readline_INCLUDE_DIR} LIBRARY:${Readline_LIBRARY}
  "
 )
 message(
@@ -889,7 +862,6 @@ message(
 message(
   "   CEPHFS support:               ${CEPHFS_FOUND} ${CEPHFS_LIBRARIES} ${CEPHFS_INCLUDE_DIRS} "
 )
-message("   ELASTO support:               ${have_elasto} ")
 message(
   "   Python support:               ${PYTHONLIBS_FOUND} ${PYTHONLIBS_VERSION_STRING} ${PYTHON_INCLUDE_PATH}"
 )

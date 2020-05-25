@@ -69,19 +69,12 @@
 #ifndef BAREOS_INCLUDE_BAREOS_H_
 #define BAREOS_INCLUDE_BAREOS_H_ 1
 
-/* Disable FORTIFY_SOURCE, because bareos uses is own memory
- * manager
- */
-#ifdef _FORTIFY_SOURCE
-#undef _FORTIFY_SOURCE
-#endif
-
 #ifdef __cplusplus
 /* Workaround for SGI IRIX 6.5 */
 #define _LANGUAGE_C_PLUS_PLUS 1
 #endif
 
-#include "hostconfig.h"
+#include "config.h"
 
 #if HAVE_AIX_OS
 #define _LINUX_SOURCE_COMPAT 1
@@ -98,21 +91,13 @@
 #define _POSIX_PTHREAD_SEMANTICS 1
 
 /* System includes */
-#if HAVE_STDINT_H
 #ifndef __sgi
 #include <stdint.h>
 #endif
-#endif
-#if HAVE_STDARG_H
 #include <stdarg.h>
-#endif
 #include <stdio.h>
-#if HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
-#if HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 #if HAVE_UMEM_H
 #include <umem.h>
 #endif
@@ -145,9 +130,7 @@ extern "C" {
 #ifndef _SPLINT_
 #include <syslog.h>
 #endif
-#if HAVE_LIMITS_H
 #include <limits.h>
-#endif
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
@@ -157,9 +140,7 @@ extern "C" {
 #include <sys/bitypes.h>
 #endif
 #include <sys/ioctl.h>
-#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif
 #if defined(HAVE_WIN32) & !defined(HAVE_MINGW)
 #include <winsock2.h>
 #endif
@@ -167,9 +148,7 @@ extern "C" {
 #include <sys/stat.h>
 #endif
 #include <sys/time.h>
-#if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
-#endif
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
@@ -224,9 +203,6 @@ extern "C" {
 
 #if defined(HAVE_WIN32)
 #include "winapi.h"
-#include "winhost.h"
-#else
-#include "host.h"
 #endif
 
 #ifndef HAVE_ZLIB_H

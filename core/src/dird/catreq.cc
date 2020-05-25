@@ -68,7 +68,7 @@ static char Update_media[] =
 static char Create_job_media[] =
     "CatReq Job=%127s CreateJobMedia "
     " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
-    " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%" lld "\n";
+    " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%lld\n";
 
 /*
  * Responses sent to Storage daemon
