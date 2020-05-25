@@ -499,7 +499,7 @@ class SeleniumTest(unittest.TestCase):
         #)
         self.enter_input("consolename", self.username)
         self.enter_input("password", self.password)
-        driver.find_element_by_xpath('(//button[@type="button"])[2]').click()
+        driver.find_element_by_xpath('(//button[@type="button"])[1]').click()
         driver.find_element_by_link_text("English").click()
         driver.find_element_by_xpath('//input[@id="submit"]').click()
         try:
