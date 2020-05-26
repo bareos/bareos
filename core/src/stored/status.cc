@@ -320,7 +320,7 @@ static void ListDevices(JobControlRecord* jcr,
       }
 
       get_device_specific_status(device_resource, sp);
-      trigger_device_status_hook(jcr, device_resource, sp, bsdEventDriveStatus);
+      trigger_device_status_hook(jcr, device_resource, sp, bSdEventDriveStatus);
 
       SendBlockedStatus(dev, sp);
 
@@ -355,7 +355,7 @@ static void ListDevices(JobControlRecord* jcr,
       sp->send(msg, len);
 
       trigger_device_status_hook(jcr, device_resource, sp,
-                                 bsdEventVolumeStatus);
+                                 bSdEventVolumeStatus);
     } else {
       if (dev) {
         len = Mmsg(msg, _("\nDevice %s is not open.\n"), dev->print_name());
