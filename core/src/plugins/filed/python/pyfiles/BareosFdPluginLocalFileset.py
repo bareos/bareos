@@ -25,7 +25,7 @@
 # the backup fileset
 
 import bareosfd
-from bareos_fd_consts import bJobMessageType, bFileType, bRCs, bCFs
+from bareosfd import *
 import os
 import re
 import BareosFdPluginBaseclass
@@ -81,7 +81,7 @@ class BareosFdPluginLocalFileset(
                  100, "File %s denied by configuration\n" % (filename)
             )
             bareosfd.JobMessage(
-                bJobMessageType["M_ERROR"],
+                M_ERROR,
                 "File %s denied by configuration\n" % (filename),
             )
             return False
@@ -115,12 +115,12 @@ class BareosFdPluginLocalFileset(
                     100,
                     "Could not open file %s\n" % (self.options["filename"]),
                 )
-                return bRCs["bRC_Error"]
+                return bRC_Error
         else:
             bareosfd.DebugMessage(
                  100, "File %s does not exist\n" % (self.options["filename"])
             )
-            return bRCs["bRC_Error"]
+            return bRC_Error
         # Check, if we have allow or deny regular expressions defined
         if "allow" in self.options:
             self.allow = re.compile(self.options["allow"])
@@ -155,12 +155,12 @@ class BareosFdPluginLocalFileset(
 
         if not self.files_to_backup:
             bareosfd.JobMessage(
-                bJobMessageType["M_ERROR"],
+                M_ERROR,
                 "No (allowed) files to backup found\n",
             )
-            return bRCs["bRC_Error"]
+            return bRC_Error
         else:
-            return bRCs["bRC_OK"]
+            return bRC_OK
 
     def start_backup_file(self,  savepkt):
         """
@@ -170,7 +170,7 @@ class BareosFdPluginLocalFileset(
         bareosfd.DebugMessage( 100, "start_backup_file() called\n")
         if not self.files_to_backup:
             bareosfd.DebugMessage( 100, "No files to backup\n")
-            return bRCs["bRC_Skip"]
+            return bRC_Skip
 
         self.file_to_backup = self.files_to_backup.pop().decode("string_escape")
         bareosfd.DebugMessage(100, "file: " + self.file_to_backup + "\n")
@@ -183,7 +183,7 @@ class BareosFdPluginLocalFileset(
                 statp = os.stat(self.file_to_backup)
         except Exception as e:
             bareosfd.JobMessage(
-                bJobMessageType["M_ERROR"],
+                M_ERROR,
                 'Could net get stat-info for file %s: "%s"'
                 % (self.file_to_backup, e.message),
             )
@@ -209,16 +209,16 @@ class BareosFdPluginLocalFileset(
         # there is no trailing slash - we need to perform checks
         # on the stripped name but use it with trailing / for the backup itself
         if os.path.islink(self.file_to_backup.rstrip("/")):
-            savepkt.type = bFileType["FT_LNK"]
+            savepkt.type = FT_LNK
             savepkt.link = os.readlink(
                 self.file_to_backup.rstrip("/").encode("string_escape")
             )
             bareosfd.DebugMessage(150, "file type is: FT_LNK\n")
         elif os.path.isfile(self.file_to_backup):
-            savepkt.type = bFileType["FT_REG"]
+            savepkt.type = FT_REG
             bareosfd.DebugMessage(150, "file type is: FT_REG\n")
         elif os.path.isdir(self.file_to_backup):
-            savepkt.type = bFileType["FT_DIREND"]
+            savepkt.type = FT_DIREND
             savepkt.link = self.file_to_backup
             bareosfd.DebugMessage(
                 150, "file %s type is: FT_DIREND\n" % self.file_to_backup
@@ -228,15 +228,15 @@ class BareosFdPluginLocalFileset(
             bareosfd.DebugMessage(150, "file type is: FT_FIFO\n")
         else:
             bareosfd.JobMessage(
-                bJobMessageType["M_WARNING"],
+                M_WARNING,
                 "File %s of unknown type" % (self.file_to_backup),
             )
-            return bRCs["bRC_Skip"]
+            return bRC_Skip
 
         savepkt.statp = mystatp
         bareosfd.DebugMessage(150, "file statpx " + str(savepkt.statp) + "\n")
 
-        return bRCs["bRC_OK"]
+        return bRC_OK
 
     def create_file(self, restorepkt):
         """
@@ -333,11 +333,11 @@ class BareosFdPluginLocalFileset(
 
         except Exception as e:
             bareosfd.JobMessage(
-                bJobMessageType["M_WARNING"],
+                M_WARNING,
                 'Could net set attributes for file %s: "%s"' % (file_name, e.message),
             )
 
-        return bRCs["bRC_OK"]
+        return bRC_OK
 
     def end_restore_file(self):
         bareosfd.DebugMessage(
@@ -377,9 +377,9 @@ class BareosFdPluginLocalFileset(
              100, "end_backup_file() entry point in Python called\n"
         )
         if self.files_to_backup:
-            return bRCs["bRC_More"]
+            return bRC_More
         else:
-            return bRCs["bRC_OK"]
+            return bRC_OK
 
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4
