@@ -328,7 +328,7 @@ class BareosFdPluginPostgres(
 
     def parseBackupLabelFile(self):
         try:
-            labelFile = open(self.labelFileName, "rb")
+            labelFile = open(self.labelFileName, "r")
         except:
             bareosfd.JobMessage(
                 M_ERROR,
@@ -368,7 +368,7 @@ class BareosFdPluginPostgres(
             savepkt.object_name = savepkt.fname
             bareosfd.DebugMessage(150, "fname: " + savepkt.fname + "\n")
             bareosfd.DebugMessage(150, "rop " + str(self.rop_data) + "\n")
-            savepkt.object = bytearray(json.dumps(self.rop_data))
+            savepkt.object = bytearray(json.dumps(self.rop_data),"utf-8")
             savepkt.object_len = len(savepkt.object)
             savepkt.object_index = int(time.time())
         else:

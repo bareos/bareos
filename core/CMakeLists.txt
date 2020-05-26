@@ -878,6 +878,7 @@ message(
 )
 message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
+message("   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ")
 if(GTEST_FOUND)
   message(
     "   gtest support:                ${GTEST_FOUND} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} "
