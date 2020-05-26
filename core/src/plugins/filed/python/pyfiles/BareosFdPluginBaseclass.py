@@ -259,7 +259,7 @@ class BareosFdPluginBaseclass(object):
             "plugin_io called with function %s filename %s\n" % (IOP.func, IOP.fname),
         )
         bareosfd.DebugMessage(250, "self.FNAME is set to %s\n" % (self.FNAME))
-        if IOP.func == O_OPEN:
+        if IOP.func == IO_OPEN:
             return self.plugin_io_open(IOP)
         elif IOP.func == IO_CLOSE:
             return self.plugin_io_close(IOP)
@@ -315,7 +315,7 @@ class BareosFdPluginBaseclass(object):
         """
         return bRC_OK
 
-    def end_job(self:
+    def end_job(self):
         """
         Called if job ends regularyly (not for cancelled jobs)
         Overload this to arrange whatever you have to do at this time.
