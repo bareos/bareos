@@ -22,7 +22,7 @@ JobName=backup-bareos-fd
 "${rscripts}"/setup
 
 
-[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)"
+[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
 rm -Rf mysql/data/*
 mkdir -p mysql/data/
 # initialize mysql db
