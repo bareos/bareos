@@ -95,6 +95,7 @@ messages
 @$out $tmp/log1.out
 restore client=bareos-fd where=/ select all done yes
 wait
+messages
 END_OF_DATA
 run_bconsole
 

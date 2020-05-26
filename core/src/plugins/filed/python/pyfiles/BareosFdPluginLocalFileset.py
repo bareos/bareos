@@ -191,19 +191,19 @@ class BareosFdPluginLocalFileset(
         # In this case we have to translate names
         # For future releases consistent names are planned, allowing to assign the
         # complete stat object in one rush
-        if hasattr(mystatp, "st_uid"):
-            mystatp = statp
-        else:
-            mystatp.mode = statp.st_mode
-            mystatp.ino = statp.st_ino
-            mystatp.dev = statp.st_dev
-            mystatp.nlink = statp.st_nlink
-            mystatp.uid = statp.st_uid
-            mystatp.gid = statp.st_gid
-            mystatp.size = statp.st_size
-            mystatp.atime = statp.st_atime
-            mystatp.mtime = statp.st_mtime
-            mystatp.ctime = statp.st_ctime
+        # if hasattr(mystatp, "st_uid"):
+        #     mystatp = statp
+        # else:
+        mystatp.st_mode = statp.st_mode
+        mystatp.st_ino = statp.st_ino
+        mystatp.st_dev = statp.st_dev
+        mystatp.st_nlink = statp.st_nlink
+        mystatp.st_uid = statp.st_uid
+        mystatp.st_gid = statp.st_gid
+        mystatp.st_size = statp.st_size
+        mystatp.st_atime = statp.st_atime
+        mystatp.st_mtime = statp.st_mtime
+        mystatp.st_ctime = statp.st_ctime
         savepkt.fname = self.file_to_backup.encode("string_escape")
         # os.islink will detect links to directories only when
         # there is no trailing slash - we need to perform checks
@@ -224,7 +224,7 @@ class BareosFdPluginLocalFileset(
                 150, "file %s type is: FT_DIREND\n" % self.file_to_backup
             )
         elif stat.S_ISFIFO(os.stat(self.file_to_backup).st_mode):
-            savepkt.type = bFileType["FT_FIFO"]
+            savepkt.type = FT_FIFO
             bareosfd.DebugMessage(150, "file type is: FT_FIFO\n")
         else:
             bareosfd.JobMessage(
@@ -250,7 +250,7 @@ class BareosFdPluginLocalFileset(
         )
         FNAME = restorepkt.ofname.decode("string_escape")
         if not FNAME:
-            return bRCs["bRC_Error"]
+            return bRC_Error
         dirname = os.path.dirname(FNAME.rstrip("/"))
         if not os.path.exists(dirname):
             bareosfd.DebugMessage(
@@ -259,42 +259,42 @@ class BareosFdPluginLocalFileset(
             os.makedirs(dirname)
         # open creates the file, if not yet existing, we close it again right
         # aways it will be opened again in plugin_io.
-        if restorepkt.type == bFileType["FT_REG"]:
+        if restorepkt.type == FT_REG:
             open(FNAME, "wb").close()
-            restorepkt.create_status = bCFs["CF_EXTRACT"]
-        elif restorepkt.type == bFileType["FT_LNK"]:
+            restorepkt.create_status = CF_EXTRACT
+        elif restorepkt.type == FT_LNK:
             linkNameEnc = restorepkt.olname
             linkNameClear = linkNameEnc.decode("string_escape")
             if not os.path.islink(FNAME.rstrip("/")):
                 # if not os.path.exists(linkNameClear):
                 os.symlink(linkNameClear, FNAME.rstrip("/"))
-            restorepkt.create_status = bCFs["CF_CREATED"]
-        elif restorepkt.type == bFileType["FT_LNKSAVED"]:
+            restorepkt.create_status = CF_CREATED
+        elif restorepkt.type == FT_LNKSAVED:
             linkNameEnc = restorepkt.olname
             linkNameClear = linkNameEnc.decode("string_escape")
             if not os.path.exists(linkNameClear):
                 os.link(linkNameClear, FNAME.rstrip("/"))
-            restorepkt.create_status = bCFs["CF_CREATED"]
-        elif restorepkt.type == bFileType["FT_DIREND"]:
+            restorepkt.create_status = CF_CREATED
+        elif restorepkt.type == FT_DIREND:
             if not os.path.exists(FNAME):
                 os.makedirs(FNAME)
-            restorepkt.create_status = bCFs["CF_CREATED"]
-        elif restorepkt.type == bFileType["FT_FIFO"]:
+            restorepkt.create_status = CF_CREATED
+        elif restorepkt.type == FT_FIFO:
             if not os.path.exists(FNAME):
                 try:
                     os.mkfifo(FNAME, 0o600)
                 except Exception as e:
                     bareosfd.JobMessage(
-                        bJobMessageType["M_ERROR"],
+                        M_ERROR,
                         'Could net create fifo %s: "%s"' % (FNAME, e.message),
                     )
-            restorepkt.create_status = bCFs["CF_CREATED"]
+            restorepkt.create_status = CF_CREATED
         else:
             bareosfd.JobMessage(
-                bJobMessageType["M_ERROR"],
+                M_ERROR,
                 "Unknown type %s of file %s" % (restorepkt.type, FNAME),
             )
-        return bRCs["bRC_OK"]
+        return bRC_OK
 
     def set_file_attributes(self, restorepkt):
         """
@@ -336,7 +336,6 @@ class BareosFdPluginLocalFileset(
                 M_WARNING,
                 'Could net set attributes for file %s: "%s"' % (file_name, e.message),
             )
-
         return bRC_OK
 
     def end_restore_file(self):
