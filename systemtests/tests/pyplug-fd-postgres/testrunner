@@ -18,7 +18,7 @@ JobName=backup-bareos-fd
 
 # setup local database server
 DBNAME="backuptest"
-TESTPGHOST="/tmp/${TestName}"
+TESTPGHOST="${current_test_directory}/tmp"
 PSQL="psql --host $TESTPGHOST"
 
 [ -d "$TESTPGHOST" ] && rm -R  "$TESTPGHOST"
@@ -41,7 +41,11 @@ CREATE TABLE t(id serial PRIMARY KEY, text VARCHAR(20), created_on TIMESTAMP);
 INSERT INTO t (text, created_on) values ('test for FULL backup', current_timestamp);
 SELECT * FROM t;
 "
+<<<<<<< HEAD:systemtests/tests/pyplug-fd-postgres/testrunner
 PSQL_VERSION=$(${PSQL} -qtAX ${DBNAME} <<< "SHOW server_version;" | sed 's/\..*//g')
+=======
+PSQL_VERSION=$(${PSQL} -qtAX ${DBNAME} <<< "SHOW server_version;")
+>>>>>>> d3ff81156... fix postgres to also work on psql 12:systemtests/tests/python-fd-plugin-postgres-test/testrunner
 
 start_test
 
@@ -83,6 +87,11 @@ pushd database/ > /dev/null
 local_db_stop_server "$TESTPGHOST"
 rm -Rf data
 rm -Rf wal_archive
+<<<<<<< HEAD:systemtests/tests/pyplug-fd-postgres/testrunner
+=======
+echo "------------ stopped"
+
+>>>>>>> d3ff81156... fix postgres to also work on psql 12:systemtests/tests/python-fd-plugin-postgres-test/testrunner
 popd > /dev/null
 
 cat <<END_OF_DATA >$tmp/bconcmds
