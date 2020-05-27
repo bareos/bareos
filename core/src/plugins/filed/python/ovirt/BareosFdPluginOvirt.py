@@ -803,13 +803,13 @@ class BareosOvirtWrapper(object):
             # Locate the service that manages the virtual machine:
             self.vm_service = self.vms_service.vm_service(self.vm.id)
 
-            # check if vm have snapshosts
+            # check if vm have snapshots
             snaps_service = self.vm_service.snapshots_service()
             if len(snaps_service.list()) > 1:
                 bareosfd.JobMessage(
                     M_FATAL,
-                    "Error '%s' already have snapshosts. This is not supported\n"
-                    % (self.vm.name),
+                    "Error '%s' already has %d snapshots. This is not supported\n"
+                    % (self.vm.name, len(snaps_service.list())),
                 )
                 return bRC_Error
 
@@ -982,7 +982,7 @@ class BareosOvirtWrapper(object):
         snap_disks_service = self.snap_service.disks_service()
         snap_disks = snap_disks_service.list()
 
-        # download disk snaphost
+        # download disk snapshot
         for snap_disk in snap_disks:
             disk_id = snap_disk.id
             disk_alias = snap_disk.alias
@@ -1718,14 +1718,14 @@ class BareosOvirtWrapper(object):
                             bareosfd.JobMessage(
                                 M_WARNING,
                                 "Remove snapshot timed out after %s s, reason: %s! Please remove it manually.\n"
-                                % (elapsed, e.message),
+                                % (elapsed, e),
                             )
                             return bRC_Error
 
                         bareosfd.DebugMessage(
                             100,
                             "Could not remove snapshot, reason: %s, retrying until timeout (%s seconds left).\n"
-                            % (e.message, self.snapshot_remove_timeout - elapsed),
+                            % (e, self.snapshot_remove_timeout - elapsed),
                         )
                         bareosfd.JobMessage(
                             M_INFO,
@@ -1736,7 +1736,7 @@ class BareosOvirtWrapper(object):
                         bareosfd.JobMessage(
                             M_WARNING,
                             "Unexpected error removing snapshot: %s, Please remove it manually.\n"
-                            % e.message,
+                            % e,
                         )
                         return bRC_Error
 
