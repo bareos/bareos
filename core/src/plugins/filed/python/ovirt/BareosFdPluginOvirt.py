@@ -185,7 +185,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             except Exception as e:
                 bareosfd.JobMessage(
                     M_ERROR,
-                    "BareosFdPluginOvirt:start_backup_file() Error: %s" % str(e),
+                    "BareosFdPluginOvirt:start_backup_file() Error: %s\n" % str(e),
                 )
                 self.ovirt.end_transfer()
                 return bRC_Error
