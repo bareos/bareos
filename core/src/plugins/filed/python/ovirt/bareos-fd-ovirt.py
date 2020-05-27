@@ -7,7 +7,7 @@ libdirs = ["/usr/lib64/bareos/plugins/", "/usr/lib/bareos/plugins/"]
 sys.path.extend([l for l in libdirs if os.path.isdir(l)])
 
 # Provided by the Bareos FD Python plugin interface
-from bareos_fd_consts import bRCs
+from bareosfd import *
 
 # This module contains the wrapper functions called by the Bareos-FD, the
 # functions call the corresponding
@@ -46,7 +46,7 @@ def load_bareos_plugin(plugindef):
         plugindef
     )
 
-    return bRCs["bRC_OK"]
+    return bRC_OK
 
 
 # the rest is done in the Plugin module
