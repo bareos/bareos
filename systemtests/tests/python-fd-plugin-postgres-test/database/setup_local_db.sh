@@ -45,6 +45,15 @@ local_db_start_server() {
     sleep 0.1
   done
 
+  tries=10
+  while ! echo "select pg_is_in_recovery()" | psql --host="$1" postgres | grep -q -e "^ f$" ; do
+    [ $((tries-=1)) -eq 0 ] && {
+      echo "Could not start postgres server (still recovering)"
+      return 1
+    }
+    sleep 0.1
+  done  
+
   return 0
 }
 
