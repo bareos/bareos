@@ -1193,6 +1193,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         "%s"                                        /* Daemon status info */
         "%s"                                        /* SecureErase status */
         "  Bareos binary info:     %s\n"
+        "  Job triggered by:       %s\n"
         "  Termination:            %s\n\n"),
         BAREOS, my_name, kBareosVersionStrings.Full,
         kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
@@ -1221,6 +1222,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
         daemon_status.c_str(),
         secure_erase_status.c_str(),
         kBareosVersionStrings.JoblogMessage,
+        JobTriggerToString(jcr->impl->job_trigger).c_str(),
         TermMsg);
 
   /* clang-format on */

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,8 @@
 #include "dird/dird_conf.h"
 #include "dird/get_database_connection.h"
 #include "dird/job.h"
+#include "dird/job_trigger.h"
+#include "dird/jcr_private.h"
 #include "dird/run_on_incoming_connect_interval.h"
 #include "dird/scheduler.h"
 
@@ -115,7 +117,7 @@ void RunOnIncomingConnectInterval::RunJobIfIntervalExceeded(
 
   if (!job_ran_before || interval_time_exceeded) {
     Dmsg1(800, "Add job %s to scheduler queue.", job->resource_name_);
-    scheduler_.AddJobWithNoRunResourceToQueue(job);
+    scheduler_.AddJobWithNoRunResourceToQueue(job, JobTrigger::kClient);
   }
 }
 

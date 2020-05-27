@@ -41,6 +41,7 @@ set(DIRD_OBJECTS_SRCS
     inc_conf.cc
     job.cc
     jobq.cc
+    job_trigger.cc
     migrate.cc
     msgchan.cc
     ndmp_dma_storage.cc

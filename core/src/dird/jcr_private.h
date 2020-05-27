@@ -26,6 +26,7 @@
 
 #include "cats/cats.h"
 #include "dird/client_connection_handshake_mode.h"
+#include "dird/job_trigger.h"
 
 typedef struct s_tree_root TREE_ROOT;
 
@@ -158,6 +159,7 @@ struct JobControlRecordPrivate {
   bool HasSelectedJobs{};               /**< Migration/Copy Job did actually select some JobIds */
   directordaemon::ClientConnectionHandshakeMode connection_handshake_try_{
     directordaemon::ClientConnectionHandshakeMode::kUndefined};
+  JobTrigger job_trigger{JobTrigger::kUndefined};
 };
 /* clang-format on */
 

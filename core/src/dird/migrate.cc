@@ -1765,6 +1765,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
            "  SD Errors:              %d\n"
            "  SD termination status:  %s\n"
            "  Bareos binary info:     %s\n"
+           "  Job triggered by:       %s\n"
            "  Termination:            %s\n\n"),
          BAREOS, my_name, kBareosVersionStrings.Full,
          kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
@@ -1798,7 +1799,8 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
          mig_jcr ? mig_jcr->VolumeName : _("*None*"), jcr->VolSessionId,
          jcr->VolSessionTime, edit_uint64_with_commas(mr->VolBytes, ec4),
          edit_uint64_with_suffix(mr->VolBytes, ec5), jcr->impl->SDErrors,
-         sd_term_msg, kBareosVersionStrings.JoblogMessage, term_code);
+         sd_term_msg, kBareosVersionStrings.JoblogMessage,
+         JobTriggerToString(jcr->impl->job_trigger).c_str(), term_code);
   } else {
     /*
      * Copy/Migrate selection only Job.
@@ -1814,13 +1816,15 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
            "  Elapsed time:           %s\n"
            "  Priority:               %d\n"
            "  Bareos binary info:     %s\n"
+           "  Job triggered by:       %s\n"
            "  Termination:            %s\n\n"),
          BAREOS, my_name, kBareosVersionStrings.Full,
          kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
          edit_uint64(jcr->impl->jr.JobId, ec8), jcr->impl->jr.Job,
          jcr->impl->res.catalog->resource_name_, jcr->impl->res.catalog_source,
          sdt, edt, edit_utime(RunTime, elapsed, sizeof(elapsed)),
-         jcr->JobPriority, kBareosVersionStrings.JoblogMessage, term_code);
+         jcr->JobPriority, kBareosVersionStrings.JoblogMessage,
+         JobTriggerToString(jcr->impl->job_trigger).c_str(), term_code);
   }
 }
 

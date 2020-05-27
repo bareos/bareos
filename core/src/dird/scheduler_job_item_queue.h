@@ -23,6 +23,7 @@
 #define BAREOS_SRC_DIRD_SCHEDULER_JOB_ITEM_QUEUE_H_
 
 #include "include/bareos.h"
+#include "dird/job_trigger.h"
 
 #include <queue>
 #include <vector>
@@ -45,8 +46,13 @@ struct SchedulerJobItem {
   SchedulerJobItem(JobResource* job_in,
                    RunResource* run_in,
                    time_t runtime_in,
-                   int priority_in) noexcept
-      : job(job_in), run(run_in), runtime(runtime_in), priority(priority_in)
+                   int priority_in,
+                   JobTrigger job_kickoff_in) noexcept
+      : job(job_in)
+      , run(run_in)
+      , runtime(runtime_in)
+      , priority(priority_in)
+      , job_trigger(job_kickoff_in)
   {
     is_valid = job && runtime;
   };
@@ -64,6 +70,7 @@ struct SchedulerJobItem {
   time_t runtime{0};
   int priority{10};
   bool is_valid{false};
+  JobTrigger job_trigger{JobTrigger::kUndefined};
 };
 
 class SchedulerJobItemQueue {
@@ -73,7 +80,10 @@ class SchedulerJobItemQueue {
 
   SchedulerJobItem TopItem() const;
   SchedulerJobItem TakeOutTopItem();
-  void EmplaceItem(JobResource* job, RunResource* run, time_t runtime);
+  void EmplaceItem(JobResource* job,
+                   RunResource* run,
+                   time_t runtime,
+                   JobTrigger job_trigger);
   bool Empty() const;
   void Clear();
 

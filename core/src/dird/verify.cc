@@ -568,6 +568,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  FD termination status:  %s\n"
              "  SD termination status:  %s\n"
              "  Bareos binary info:     %s\n"
+             "  Job triggered by:       %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
@@ -578,7 +579,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
            edit_uint64_with_commas(jcr->impl->ExpectedFiles, ec1),
            edit_uint64_with_commas(jcr->JobFiles, ec2), jcr->JobErrors,
            fd_term_msg, sd_term_msg, kBareosVersionStrings.JoblogMessage,
-           TermMsg);
+           JobTriggerToString(jcr->impl->job_trigger).c_str(), TermMsg);
       break;
     default:
       Jmsg(jcr, msg_type, 0,
@@ -597,6 +598,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
              "  Non-fatal FD errors:    %d\n"
              "  FD termination status:  %s\n"
              "  Bareos binary info:     %s\n"
+             "  Job triggered by:       %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
@@ -605,7 +607,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
            jcr->impl->res.client->resource_name_, jcr->impl->previous_jr.JobId,
            Name, sdt, edt, edit_uint64_with_commas(jcr->JobFiles, ec1),
            jcr->JobErrors, fd_term_msg, kBareosVersionStrings.JoblogMessage,
-           TermMsg);
+           JobTriggerToString(jcr->impl->job_trigger).c_str(), TermMsg);
       break;
   }
 
