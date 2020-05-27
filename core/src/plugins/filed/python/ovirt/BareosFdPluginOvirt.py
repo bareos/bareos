@@ -17,7 +17,7 @@ except ImportError:
 
 #import ConfigParser as configparser
 
-import lxml.etree
+import xml.etree
 
 
 import ovirtsdk4 as sdk
@@ -1843,7 +1843,7 @@ class Ovf(object):
         """
 
         # Parse the OVF as XML document:
-        self.ovf = lxml.etree.fromstring(ovf_data)
+        self.ovf = xml.etree.fromstring(ovf_data)
 
     def get_element(self, element_name):
         """
