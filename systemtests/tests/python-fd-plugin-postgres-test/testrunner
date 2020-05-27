@@ -2,13 +2,9 @@
 #
 # This systemtest tests the plugin functionality
 # of the Bareos FD by using the supplied module
-#   bareos-fd-local-fileset.py
+#   bareos-fd-postgres
 #
-# The module will backup some files.
-# This plugin is not intended for production,
-# but is only a minimal example that shows
-# how to use the python plugin interface.
-# File attributes like uses and times will not be saved.
+# The module will backup a postgresql databaseome.
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -16,35 +12,23 @@ export TestName
 JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
-
-JobName=backup-bareos-fd
+. ./database/setup_local_db.sh
 
 # setup local database server
-pushd "$current_test_directory"/database || exit 1
-sh -x setup_local_db.sh
-popd
-
-TESTPGHOST="$current_test_directory"/database/tmp
-PSQL="psql -h $TESTPGHOST"
 DBNAME="backuptest"
+TESTPGHOST="/tmp/${TestName}"
+PSQL="psql --host $TESTPGHOST"
+
+[ -d "$TESTPGHOST" ] || mkdir -p "$TESTPGHOST"
+
+pushd database > /dev/null || exit 1
+setup_local_db "$TESTPGHOST" || exit
+popd > /dev/null
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
-
-
-# Directory to backup.
-# This directory will be created by setup_data "$@"().
-BackupDirectory="${tmp}/data"
-
-# Use a tgz to setup data to be backed up.
-# Data will be placed at "${tmp}/data/".
-setup_data "$@"
-
-# this test does not work with links because of the restore objects
-#rm -r "${tmp}"/data/weird-files >/dev/null 2>&1
 
 # Create Test DB with table and 1 statement
 echo "CREATE DATABASE $DBNAME" | ${PSQL} postgres
@@ -74,7 +58,6 @@ END_OF_DATA
 run_bareos "$@"
 
 # Now add data to the database and run an incremental job
-
 echo "INSERT INTO t (text, created_on) values ('test for INCR backup', current_timestamp)" | ${PSQL} ${DBNAME}
 
 cat <<END_OF_DATA >$tmp/bconcmds
@@ -91,11 +74,13 @@ run_bconsole
 
 
 # Now stop database and try a restore
-# ...
-# shut down database and delete directories
-pg_ctl -D database/data stop
-rm -Rf database/data
-rm -Rf database/wal_archive
+pushd database/ > /dev/null
+local_db_stop_server "$TESTPGHOST"
+rm -Rf data
+rm -Rf wal_archive
+echo "------------ stopped"
+ps -e | grep postgres
+popd > /dev/null
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
@@ -109,21 +94,28 @@ run_bconsole
 
 check_for_zombie_jobs storage=File
 stop_bareos
+sleep 1
+
+#sometimes the pid file remains
+rm -f database/data/postmaster.pid
 
 # Create a recovery.conf
 # This may become a plugin feature later on
 echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'" > $current_test_directory/database/data/recovery.conf
 
 # start DB again - shall recover to latest possible state
-pg_ctl -D database/data -l database/log/logfile start
-sleep 10
+pushd database > /dev/null
+ps -e | grep postgres
+local_db_start_server "$TESTPGHOST" || exit 1
+popd > /dev/null
 echo "SELECT * FROM t" | ${PSQL} ${DBNAME} > $tmp/sql.log
 
 check_two_logs
 if (grep -q "for INCR" $tmp/sql.log)
-then 
+then
    estat=0
 else
+   echo "Error: Database rows not found"
    estat=1
 fi
 
