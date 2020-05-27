@@ -1,7 +1,7 @@
 #!/bin/bash
 
 local_db_stop_server() {
-  echo "Stop db server"
+  echo "stop db server"
   pg_ctl --silent --pgdata=data stop
   tries=10
   while psql --host="$1" --list > /dev/null 2>&1; do
@@ -33,7 +33,7 @@ local_db_prepare_files() {
 }
 
 local_db_start_server() {
-  echo "Start db server"
+  echo "start db server"
   pg_ctl --silent --pgdata=data --log=log/logfile start
 
   tries=10
@@ -52,7 +52,7 @@ local_db_start_server() {
       return 1
     }
     sleep 0.1
-  done  
+  done
 
   return 0
 }

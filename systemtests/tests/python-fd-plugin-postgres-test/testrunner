@@ -22,7 +22,7 @@ PSQL="psql --host $TESTPGHOST"
 [ -d "$TESTPGHOST" ] || mkdir -p "$TESTPGHOST"
 
 pushd database > /dev/null || exit 1
-setup_local_db "$TESTPGHOST" || exit
+setup_local_db "$TESTPGHOST" || exit 1
 popd > /dev/null
 
 #shellcheck source=../scripts/functions
@@ -78,8 +78,6 @@ pushd database/ > /dev/null
 local_db_stop_server "$TESTPGHOST"
 rm -Rf data
 rm -Rf wal_archive
-echo "------------ stopped"
-ps -e | grep postgres
 popd > /dev/null
 
 cat <<END_OF_DATA >$tmp/bconcmds
@@ -105,10 +103,14 @@ echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'"
 
 # start DB again - shall recover to latest possible state
 pushd database > /dev/null
-ps -e | grep postgres
 local_db_start_server "$TESTPGHOST" || exit 1
 popd > /dev/null
+
 echo "SELECT * FROM t" | ${PSQL} ${DBNAME} > $tmp/sql.log
+
+pushd database/ > /dev/null
+local_db_stop_server "$TESTPGHOST"
+popd > /dev/null
 
 check_two_logs
 if (grep -q "for INCR" $tmp/sql.log)
