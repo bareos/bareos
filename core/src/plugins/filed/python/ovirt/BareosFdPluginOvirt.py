@@ -221,7 +221,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 snapshot_id,
             )
             savepkt.object_name = savepkt.fname
-            savepkt.object = bytearray(disk_metadata_json)
+            savepkt.object = bytearray(disk_metadata_json, 'utf-8')
             savepkt.object_len = len(savepkt.object)
             savepkt.object_index = int(time.time())
 
@@ -443,7 +443,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 except Exception as e:
                     bareosfd.JobMessage(
                         M_ERROR,
-                        "BareosFdPluginOvirt:plugin_io() Error: %s" % str(e),
+                        "BareosFdPluginOvirt:plugin_io() Error: %s\n" % str(e),
                     )
                     self.ovirt.end_transfer()
                     return bRC_Error
@@ -809,7 +809,7 @@ class BareosOvirtWrapper(object):
                 bareosfd.JobMessage(
                     M_FATAL,
                     "Error '%s' already has %d snapshots. This is not supported\n"
-                    % (self.vm.name, len(snaps_service.list())),
+                    % (self.vm.name, len(snaps_service.list()) - 1),
                 )
                 return bRC_Error
 
@@ -1137,7 +1137,7 @@ class BareosOvirtWrapper(object):
 
     def process_download(self, chunk_size):
 
-        chunk = ""
+        chunk = b""
 
         bareosfd.DebugMessage(
             100,
