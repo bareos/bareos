@@ -115,7 +115,7 @@ setup_data()
   data_dir="${tmp}/data"
 
   [ -d "$data_dir" ] || mkdir "$data_dir"
-  echo "${data_dir}" >"${tmp}/file-list"
+  echo "$data_dir" >"$tmp/file-list"
 
   for tar in "../../data/small.tgz" "../../data/weird-files.tar.gz"; do
    if [ ! -f "$tar" ]; then
