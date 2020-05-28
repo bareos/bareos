@@ -812,9 +812,11 @@ exclude_disk_aliases
    Also note that disk alias names are not unique, so if two disks of a VM have the same
    alias name, they will be excluded both. Excluded disks will be already excluded from
    the snapshot.
+   On *local* restore, both **include_disk_aliases** and **exclude_disk_aliases** are ignored
+   and *all* disk that were backed up will be restored.
 
 overwrite
-   When restoring disks of an existing VM, the option **overwrite=yes** must be explictly
+   When restoring disks of an existing VM, the option **overwrite=yes** must be explicitly
    passed to force overwriting. To prevent from accidentally overwriting an existing VM,
    the plugin will return an error message if this option is not passed.
 
