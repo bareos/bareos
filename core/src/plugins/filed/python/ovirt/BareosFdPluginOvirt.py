@@ -1071,13 +1071,13 @@ class BareosOvirtWrapper(object):
         # At this stage, the SDK granted the permission to start transferring the disk, and the
         # user should choose its preferred tool for doing it - regardless of the SDK.
         # In this example, we will use Python's httplib.HTTPSConnection for transferring the data.
-        context = ssl.create_default_context()
+        sslcontext = ssl.create_default_context()
 
         # Note that ovirt-imageio-proxy by default checks the certificates, so if you don't have
         # your CA certificate of the engine in the system, you need to pass it to HTTPSConnection.
-        context.load_verify_locations(cafile=self.ca)
+        sslcontext.load_verify_locations(cafile=self.ca)
 
-        return HTTPSConnection(proxy_url.hostname, proxy_url.port)
+        return HTTPSConnection(proxy_url.hostname, proxy_url.port, context = sslcontext)
 
     def start_download(self, snapshot, disk):
 
