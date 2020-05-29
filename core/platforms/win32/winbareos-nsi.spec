@@ -263,7 +263,7 @@ for flavor in %{flavors}; do
 
       mkdir $RPM_BUILD_ROOT/$flavor/release${BITS}/Plugins
 
-      cp -rv /bareos*/src/plugins/*/pyfiles/*.py $RPM_BUILD_ROOT/$flavor/release${BITS}/Plugins
+      cp -rv /bareos*/src/plugins/*/*/*/*.py $RPM_BUILD_ROOT/$flavor/release${BITS}/Plugins
 
       cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 \
                %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release${BITS}
