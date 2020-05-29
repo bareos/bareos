@@ -1542,7 +1542,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %if 0%{?python_plugins}
 %files filedaemon-python-plugin
 %defattr(-, root, root)
-%{plugin_dir}/python-fd.so
+%{plugin_dir}/python*-fd.so
 %{plugin_dir}/bareos-fd.py*
 %{plugin_dir}/bareos-fd-local-fileset.py*
 %{plugin_dir}/bareos-fd-mock-test.py*
@@ -1580,7 +1580,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 
 %files director-python-plugin
 %defattr(-, root, root)
-%{plugin_dir}/python-dir.so
+%{plugin_dir}/python*-dir.so
 %{plugin_dir}/bareos-dir.py*
 %{plugin_dir}/BareosDirPluginBaseclass.py*
 %{plugin_dir}/bareos-dir-class-plugin.py*
@@ -1588,7 +1588,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 
 %files storage-python-plugin
 %defattr(-, root, root)
-%{plugin_dir}/python-sd.so
+%{plugin_dir}/python*-sd.so
 %{plugin_dir}/bareos-sd.py*
 %{plugin_dir}/BareosSdPluginBaseclass.py*
 %{plugin_dir}/BareosSdWrapper.py*
