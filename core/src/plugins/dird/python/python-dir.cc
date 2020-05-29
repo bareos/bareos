@@ -31,6 +31,7 @@
 #include <Python.h>
 #else
 #include <Python.h>
+#include "plugins/include/capsulethunk.h"
 #include "include/bareos.h"
 #endif
 
