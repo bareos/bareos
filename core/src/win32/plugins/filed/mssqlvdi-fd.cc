@@ -26,7 +26,7 @@
  */
 #include "include/bareos.h"
 #include "fd_plugins.h"
-#include "fd_common.h"
+#include "plugins/include/common.h"
 
 /**
  * Microsoft® Component Object Model (COM)
