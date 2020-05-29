@@ -259,11 +259,16 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "create_file() entry point in Python called with %s\n" % (restorepkt),
         )
 
-        # process includes/excludes for restore, note that it is more
-        # efficient to mark only the disks to restore, as skipping
-        # here can not prevent from receiving the data from bareos-sd
-        # which is useless for excluded disks.
-        if not restorepkt.ofname.endswith(".ovf"):
+        # Process includes/excludes for restore to oVirt.  Note that it is more
+        # efficient to mark only the disks to restore, as skipping here can not
+        # prevent from receiving the data from bareos-sd which is useless for
+        # excluded disks.
+        #
+        # When restoring locally, all disks will be restored without filtering.
+        if (
+            not restorepkt.ofname.endswith(".ovf")
+            and not self.options.get("local") == "yes"
+        ):
             disk_alias = self.ovirt.get_ovf_disk_alias_by_basename(
                 context, restorepkt.ofname
             )
