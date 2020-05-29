@@ -99,11 +99,11 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
     DEPENDS module/bareosfd.h
     DEPENDS bareos
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/module/setup_py2.py
-    COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
+    # COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMAND ${Python2_EXECUTABLE} module/setup_py2.py build
     COMMAND ${Python2_EXECUTABLE} module/setup_py2.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
-    COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
+    # COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python2 module pythonmodules/bareosfd.so"
   )
   add_custom_target(bareosfd-pymod DEPENDS pythonmodules/bareosfd.so)
@@ -130,11 +130,11 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     DEPENDS module/bareosfd.h
     DEPENDS bareos
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/module/setup_py3.py
-    COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
+    # COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMAND ${Python3_EXECUTABLE} module/setup_py3.py build
     COMMAND ${Python3_EXECUTABLE} module/setup_py3.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/python3modules
-    COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
+    # COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python3 module python3modules/bareosfd.so"
   )
   add_custom_target(bareosfd-pymod3 DEPENDS python3modules/bareosfd.so)

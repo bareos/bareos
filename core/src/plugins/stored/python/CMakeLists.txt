@@ -43,11 +43,11 @@ if(Python2_FOUND AND NOT HAVE_WIN32)
     DEPENDS module/bareossd.h
     DEPENDS bareos
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/module/setup.py
-    COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
+    # COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMAND ${Python2_EXECUTABLE} module/setup.py build
     COMMAND ${Python2_EXECUTABLE} module/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
-    COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
+    # COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python module pythonmodules/bareossd.so"
   )
 
@@ -92,11 +92,11 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     DEPENDS module/bareossd.h
     DEPENDS bareos
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/module/setup.py
-    COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
+    # COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMAND ${Python3_EXECUTABLE} module/setup.py build
     COMMAND ${Python3_EXECUTABLE} module/setup.py install --install-lib
             ${CMAKE_CURRENT_BINARY_DIR}/python3modules
-    COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
+    # COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
     COMMENT "building python module python3modules/bareossd.so"
   )
 
