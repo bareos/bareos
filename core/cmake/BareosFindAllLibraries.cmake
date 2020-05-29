@@ -49,6 +49,9 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(${Python2_FOUND} OR ${Python3_FOUND})
     set(HAVE_PYTHON 1)
   endif()
+else() # windows
+    set(HAVE_PYTHON 1)
+    set(Python2_FOUND 1)
 endif()
 
 
