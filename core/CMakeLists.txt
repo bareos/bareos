@@ -300,10 +300,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   set(WINDOWS_LIBRARIES ws2_32)
 
-  set(Python_LIBRARIES
+  set(Python2_LIBRARIES
       ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}/python27.dll
   )
-  set(Python_INCLUDE_DIRS
+  set(Python2_INCLUDE_DIRS
       ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
   )
   set(PostgreSQL_LIBRARY
@@ -864,9 +864,6 @@ message(
 )
 message(
   "   CEPHFS support:               ${CEPHFS_FOUND} ${CEPHFS_LIBRARIES} ${CEPHFS_INCLUDE_DIRS} "
-)
-message(
-  "   Python support:               ${Python_FOUND} ${Python_VERSION} ${Python_INCLUDE_DIRS} ${Python_EXECUTABLE}"
 )
 message(
   "   Python2 support:              ${Python2_FOUND} ${Python2_VERSION} ${Python2_INCLUDE_DIRS} ${Python2_EXECUTABLE}"
