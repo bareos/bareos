@@ -27,7 +27,7 @@
  */
 #include "include/bareos.h"
 #include "fd_plugins.h"
-#include "plugins/filed/fd_common.h"
+#include "plugins/include/common.h"
 
 namespace filedaemon {
 

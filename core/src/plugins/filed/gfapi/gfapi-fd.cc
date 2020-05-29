@@ -25,7 +25,7 @@
  */
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
-#include "plugins/filed/fd_common.h"
+#include "plugins/include/common.h"
 #include "include/fileopts.h"
 #include "lib/alist.h"
 #include "lib/path_list.h"
