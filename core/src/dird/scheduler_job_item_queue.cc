@@ -84,7 +84,8 @@ SchedulerJobItem SchedulerJobItemQueue::TopItem() const
 
 void SchedulerJobItemQueue::EmplaceItem(JobResource* job,
                                         RunResource* run,
-                                        time_t runtime)
+                                        time_t runtime,
+                                        JobTrigger job_trigger)
 {
   if (job == nullptr) {
     throw std::invalid_argument("Invalid Argument: JobResource is undefined");
@@ -97,7 +98,7 @@ void SchedulerJobItemQueue::EmplaceItem(JobResource* job,
                      : default_priority;
 
   std::lock_guard<std::mutex> lg(impl_->mutex);
-  impl_->priority_queue.emplace(job, run, runtime, priority);
+  impl_->priority_queue.emplace(job, run, runtime, priority, job_trigger);
 }
 
 bool SchedulerJobItemQueue::Empty() const

@@ -523,6 +523,8 @@ try_again:
           (int)jcr->JobId, JobId, jcr->impl->res.pool->resource_name_,
           jcr->JobPriority);
 
+    jcr->impl->job_trigger = JobTrigger::kUser;
+
     /*
      * For interactive runs we send a message to the audit log
      */

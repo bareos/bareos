@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -153,6 +153,7 @@ void SchedulerPrivate::WaitForJobsToRun()
       if (jcr != nullptr) {
         Dmsg1(local_debuglevel, "Scheduler: Running job %s.",
               run_job.job->resource_name_);
+        jcr->impl->job_trigger = next_job.job_trigger;
         ExecuteJobCallback_(jcr);
       }
 
@@ -219,11 +220,13 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
       if (run_this_hour || run_next_hour) {
         time_t runtime = CalculateRuntime(this_hour.Time(), run->minute);
         if (run_this_hour) {
-          AddJobToQueue(job, run, this_hour.Time(), runtime);
+          AddJobToQueue(job, run, this_hour.Time(), runtime,
+                        JobTrigger::kScheduler);
         }
         if (run_next_hour) {
           AddJobToQueue(job, run, this_hour.Time(),
-                        runtime + seconds_per_hour.count());
+                        runtime + seconds_per_hour.count(),
+                        JobTrigger::kScheduler);
         }
       }
     }
@@ -235,7 +238,8 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 void SchedulerPrivate::AddJobToQueue(JobResource* job,
                                      RunResource* run,
                                      time_t now,
-                                     time_t runtime)
+                                     time_t runtime,
+                                     JobTrigger job_trigger)
 {
   Dmsg1(local_debuglevel + 100, "Scheduler: Try AddJobToQueue %s.",
         job->resource_name_);
@@ -250,17 +254,18 @@ void SchedulerPrivate::AddJobToQueue(JobResource* job,
     Dmsg1(local_debuglevel + 100, "Scheduler: Put job %s into queue.",
           job->resource_name_);
 
-    prioritised_job_item_queue.EmplaceItem(job, run, runtime);
+    prioritised_job_item_queue.EmplaceItem(job, run, runtime, job_trigger);
 
   } catch (const std::invalid_argument& e) {
     Dmsg1(local_debuglevel + 100, "Could not emplace job: %s\n", e.what());
   }
 }
 
-void SchedulerPrivate::AddJobWithNoRunResourceToQueue(JobResource* job)
+void SchedulerPrivate::AddJobWithNoRunResourceToQueue(JobResource* job,
+                                                      JobTrigger job_trigger)
 {
   time_t now = time_adapter->time_source_->SystemTime();
-  AddJobToQueue(job, nullptr, now, now);
+  AddJobToQueue(job, nullptr, now, now, job_trigger);
 }
 
 class DefaultSchedulerTimeAdapter : public SchedulerTimeAdapter {

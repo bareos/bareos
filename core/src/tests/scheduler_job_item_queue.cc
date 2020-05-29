@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,7 @@
 #endif
 
 #include "dird/dird_globals.h"
+#include "dird/job_trigger.h"
 #include "dird/scheduler.h"
 #include "dird/scheduler_job_item_queue.h"
 #include "dird/run_hour_validator.h"
@@ -45,7 +46,8 @@ TEST(scheduler_job_item_queue, job_item)
   JobResource job;
   RunResource run;
 
-  SchedulerJobItem item_unitialised(&job, &run, time(nullptr), 0);
+  SchedulerJobItem item_unitialised(&job, &run, time(nullptr), 0,
+                                    JobTrigger::kUndefined);
   EXPECT_TRUE(item_unitialised.is_valid);
 }
 
@@ -54,9 +56,11 @@ TEST(scheduler_job_item_queue, compare_job_items)
   JobResource job[2];
   RunResource run[2];
 
-  SchedulerJobItem item1(&job[0], &run[0], time(nullptr), 10);
+  SchedulerJobItem item1(&job[0], &run[0], time(nullptr), 10,
+                         JobTrigger::kUndefined);
   SchedulerJobItem item2 = item1;
-  SchedulerJobItem item3(&job[1], &run[1], time(nullptr) + 3600, 11);
+  SchedulerJobItem item3(&job[1], &run[1], time(nullptr) + 3600, 11,
+                         JobTrigger::kUndefined);
 
   EXPECT_EQ(item1, item2);
   EXPECT_NE(item1, item3);
@@ -76,22 +80,22 @@ TEST(scheduler_job_item_queue, priority_and_time)
   run_resources[0].Priority = 10;
   job_resources[0].selection_type = 1;  // runs first (see above)
   scheduler_job_item_queue.EmplaceItem(&job_resources[0], &run_resources[0],
-                                       runtime);
+                                       runtime, JobTrigger::kUndefined);
   runtime = now + 1;
   run_resources[1].Priority = 10;
   job_resources[1].selection_type = 3;
   scheduler_job_item_queue.EmplaceItem(&job_resources[1], &run_resources[1],
-                                       runtime);
+                                       runtime, JobTrigger::kUndefined);
   runtime = now + 1;
   run_resources[2].Priority = 11;
   job_resources[2].selection_type = 4;  // runs last
   scheduler_job_item_queue.EmplaceItem(&job_resources[2], &run_resources[2],
-                                       runtime);
+                                       runtime, JobTrigger::kUndefined);
   runtime = now + 1;
   run_resources[3].Priority = 9;
   job_resources[3].selection_type = 2;
   scheduler_job_item_queue.EmplaceItem(&job_resources[3], &run_resources[3],
-                                       runtime);
+                                       runtime, JobTrigger::kUndefined);
 
   int item_position = 1;
   while (!scheduler_job_item_queue.Empty()) {
@@ -110,7 +114,8 @@ TEST(scheduler_job_item_queue, job_resource_undefined)
   bool failed{false};
   RunResource run;
   try {
-    scheduler_job_item_queue.EmplaceItem(nullptr, &run, 123);
+    scheduler_job_item_queue.EmplaceItem(nullptr, &run, 123,
+                                         JobTrigger::kUndefined);
   } catch (const std::invalid_argument& e) {
     EXPECT_STREQ(e.what(), "Invalid Argument: JobResource is undefined");
     failed = true;
@@ -124,7 +129,7 @@ TEST(scheduler_job_item_queue, runtime_undefined)
   JobResource job;
   RunResource run;
   try {
-    scheduler_job_item_queue.EmplaceItem(&job, &run, 0);
+    scheduler_job_item_queue.EmplaceItem(&job, &run, 0, JobTrigger::kUndefined);
   } catch (const std::invalid_argument& e) {
     EXPECT_STREQ(e.what(), "Invalid Argument: runtime is invalid");
     failed = true;

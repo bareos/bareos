@@ -563,6 +563,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  Rate:                   %.1f KB/s\n"
              "  SD termination status:  %s\n"
              "  Bareos binary info:     %s\n"
+             "  Job triggered by:       %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
@@ -572,7 +573,8 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
            edit_uint64_with_commas((uint64_t)jcr->impl->ExpectedFiles, ec1),
            edit_uint64_with_commas((uint64_t)jcr->impl->jr.JobFiles, ec2),
            edit_uint64_with_commas(jcr->impl->jr.JobBytes, ec3), (float)kbps,
-           sd_term_msg, kBareosVersionStrings.JoblogMessage, TermMsg);
+           sd_term_msg, kBareosVersionStrings.JoblogMessage,
+           JobTriggerToString(jcr->impl->job_trigger).c_str(), TermMsg);
       break;
     default:
       if (me->secure_erase_cmdline) {
@@ -608,6 +610,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
              "  SD termination status:  %s\n"
              "%s"
              "  Bareos binary info:     %s\n"
+             "  Job triggered by:       %s\n"
              "  Termination:            %s\n\n"),
            BAREOS, my_name, kBareosVersionStrings.Full,
            kBareosVersionStrings.ShortDate, kBareosVersionStrings.GetOsInfo(),
@@ -619,7 +622,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
            edit_uint64_with_commas(jcr->impl->jr.JobBytes, ec3), (float)kbps,
            jcr->JobErrors, fd_term_msg, sd_term_msg,
            secure_erase_status.c_str(), kBareosVersionStrings.JoblogMessage,
-           TermMsg);
+           JobTriggerToString(jcr->impl->job_trigger).c_str(), TermMsg);
       break;
   }
 }

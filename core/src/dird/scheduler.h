@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,8 @@
 
 #ifndef BAREOS_DIRD_SCHEDULER_H_
 #define BAREOS_DIRD_SCHEDULER_H_
+
+#include "dird/job_trigger.h"
 
 #include <memory>
 #include <functional>
@@ -45,7 +47,7 @@ class Scheduler {
   void Run();
   void Terminate();
   void ClearQueue();
-  void AddJobWithNoRunResourceToQueue(JobResource* job);
+  void AddJobWithNoRunResourceToQueue(JobResource* job, JobTrigger job_trigger);
   static Scheduler& GetMainScheduler() noexcept;
 
  private:
