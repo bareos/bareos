@@ -412,9 +412,6 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
     V(dcr->dev->spool_mutex);
   }
 
-  FreeMemory(rdev->dev_name);
-  FreePoolMemory(rdev->errmsg);
-
   /*
    * null the jcr
    * rdev will be freed by its smart pointer
