@@ -165,9 +165,8 @@ extern "C" void SignalHandler(int sig)
     }
     if (*working_directory == 0) { strcpy((char*)working_directory, "/tmp/"); }
     if (chdir(working_directory) != 0) { /* dump in working directory */
-      BErrNo be;
       Pmsg2(000, "chdir to %s failed. ERR=%s\n", working_directory,
-            be.bstrerror());
+            strerror(errno));
       strcpy((char*)working_directory, "/tmp/");
     }
     SecureErase(NULL, "./core"); /* get rid of any old core file */
@@ -196,8 +195,7 @@ extern "C" void SignalHandler(int sig)
         fprintf(stderr, _("Calling: %s %s %s %s\n"), btpath, exepath, pid_buf,
                 working_directory);
         if (execv(btpath, argv) != 0) {
-          BErrNo be;
-          printf(_("execv: %s failed: ERR=%s\n"), btpath, be.bstrerror());
+          printf(_("execv: %s failed: ERR=%s\n"), btpath, strerror(errno));
         }
         exit(-1);
       default: /* parent */
