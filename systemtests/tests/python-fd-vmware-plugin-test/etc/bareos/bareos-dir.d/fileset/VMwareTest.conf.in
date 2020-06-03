@@ -1,0 +1,21 @@
+FileSet {
+  Name = "VMwareTest"
+  Description = "Test the Plugin functionality of the VMware Plugin."
+  Include {
+    Options {
+      signature = MD5
+    }
+#    Pugin = "python
+#:module_path=/usr/lib64/bareos/plugins
+#:module_name=bareos-fd-vmware
+#:dc=mydc1
+#:folder=/webservers
+#:vmname=websrv1
+#:vcserver=vcenter.example.org
+#:vcuser=bakadm@vsphere.local
+#:vcpass=Bak.Adm-1234"
+   Plugin = "python:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-vmware:dc=@vmware_datacenter@:folder=@vmware_folder@:vmname=@vmware_vm_name@:vcserver=@vmware_server@:vcuser=@vmware_user@:vcpass=@vmware_password@"
+
+
+  }
+}

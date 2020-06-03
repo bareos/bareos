@@ -24,14 +24,7 @@ endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   # make sure we get python 2 not 3
-  set(
-    Python_ADDITIONAL_VERSIONS
-    2.5
-    2.6
-    2.7
-    2.8
-    2.9
-  )
+  set(Python_ADDITIONAL_VERSIONS 2.5 2.6 2.7 2.8 2.9)
   find_package(PythonInterp)
   include(FindPythonLibs)
 
@@ -55,18 +48,58 @@ endif()
 
 include(BareosFindLibraryAndHeaders)
 
-bareosfindlibraryandheaders("jansson" "jansson.h")
-bareosfindlibraryandheaders("rados" "rados/librados.h")
-bareosfindlibraryandheaders("radosstriper" "radosstriper/libradosstriper.h")
-bareosfindlibraryandheaders("cephfs" "cephfs/libcephfs.h")
-bareosfindlibraryandheaders("pthread" "pthread.h")
-bareosfindlibraryandheaders("cap" "sys/capability.h")
-bareosfindlibraryandheaders("gfapi" "glusterfs/api/glfs.h")
-bareosfindlibraryandheaders("droplet" "droplet.h")
+bareosfindlibraryandheaders(
+  "vixDiskLib" "vixDiskLib.h" "/usr/lib/vmware-vix-disklib-distrib;/usr/lib/vmware-vix-disklib"
+)
 
-bareosfindlibraryandheaders("pam" "security/pam_appl.h")
+if(VIXDISKLIB_FOUND)
+  if((NOT DEFINED vmware_server)
+     OR (NOT DEFINED vmware_user)
+     OR (NOT DEFINED vmware_password)
+     OR (NOT DEFINED vmware_datacenter)
+     OR (NOT DEFINED vmware_folder)
+  )
+    string(
+      CONCAT
+        MSG
+        "VMware Vix Disklib was found. To enable the vmware plugin test, "
+        "please provide the required information:"
+        "example:"
+        " -Dvmware_user=Administrator@vsphere.local "
+        " -Dvmware_password=\"@one2threeBareos\" "
+        " -Dvmware_vm_name=testvm1 "
+        " -Dvmware_datacenter=mydc1 "
+        " -Dvmware_folder=\"/webservers\" "
+        " -Dvmware_server=139.178.73.195"
+    )
+    message(WARNING ${MSG})
+  else()
+    set(enable_vmware_test 1)
+  endif()
+elseif(
+  (DEFINED vmware_server)
+  OR (DEFINED vmware_user)
+  OR (DEFINED vmware_password)
+  OR (DEFINED vmware_datacenter)
+  OR (DEFINED vmware_folder)
+)
+  message(
+    FATAL_ERROR "vmware options were set but VMware Vix Disklib was not found. Cannot run vmware tests."
+  )
+endif()
 
-bareosfindlibraryandheaders("lzo2" "lzo/lzoconf.h")
+bareosfindlibraryandheaders("jansson" "jansson.h" "")
+bareosfindlibraryandheaders("rados" "rados/librados.h" "")
+bareosfindlibraryandheaders("radosstriper" "radosstriper/libradosstriper.h" "")
+bareosfindlibraryandheaders("cephfs" "cephfs/libcephfs.h" "")
+bareosfindlibraryandheaders("pthread" "pthread.h" "")
+bareosfindlibraryandheaders("cap" "sys/capability.h" "")
+bareosfindlibraryandheaders("gfapi" "glusterfs/api/glfs.h" "")
+bareosfindlibraryandheaders("droplet" "droplet.h" "")
+
+bareosfindlibraryandheaders("pam" "security/pam_appl.h" "")
+
+bareosfindlibraryandheaders("lzo2" "lzo/lzoconf.h" "")
 if(${LZO2_FOUND})
   set(HAVE_LZO 1)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -74,7 +107,6 @@ if(${LZO2_FOUND})
   endif()
 endif()
 
-# MESSAGE(FATAL_ERROR "exit")
 include(BareosFindLibrary)
 
 bareosfindlibrary("tirpc")
@@ -82,7 +114,7 @@ bareosfindlibrary("util")
 bareosfindlibrary("dl")
 bareosfindlibrary("acl")
 # BareosFindLibrary("wrap")
-if (NOT ${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
+if(NOT ${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
   bareosfindlibrary("gtest")
   bareosfindlibrary("gtest_main")
   bareosfindlibrary("gmock")

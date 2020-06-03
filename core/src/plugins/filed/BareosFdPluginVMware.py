@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2017 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -819,6 +819,11 @@ class BareosVADPWrapper(object):
 
         # check if the VM supports CBT and that CBT is enabled
         if not self.vm.capability.changeTrackingSupported:
+            bareosfd.DebugMessage(
+                context,
+                100,
+                "Error VM %s does not support CBT\n" % (vmname.encode("utf-8")),
+            )
             bareosfd.JobMessage(
                 context,
                 bJobMessageType["M_FATAL"],
@@ -827,10 +832,15 @@ class BareosVADPWrapper(object):
             return bRCs["bRC_Error"]
 
         if not self.vm.config.changeTrackingEnabled:
+            bareosfd.DebugMessage(
+                context,
+                100,
+                "Error vm %s is not cbt enabled\n" % (vmname.encode("utf-8")),
+            )
             bareosfd.JobMessage(
                 context,
                 bJobMessageType["M_FATAL"],
-                "Error VM %s is not CBT enabled\n" % (vmname.encode("utf-8")),
+                "Error vm %s is not cbt enabled\n" % (vmname.encode("utf-8")),
             )
             return bRCs["bRC_Error"]
 
@@ -839,6 +849,11 @@ class BareosVADPWrapper(object):
         )
 
         if not self.create_vm_snapshot(context):
+            bareosfd.DebugMessage(
+                context,
+                100,
+                "Error creating snapshot on VM %s\n" % (vmname.encode("utf-8")),
+            )
             bareosfd.JobMessage(
                 context,
                 bJobMessageType["M_FATAL"],
@@ -859,6 +874,12 @@ class BareosVADPWrapper(object):
         )
         self.get_vm_snap_disk_devices(context)
         if not self.disk_devices:
+            bareosfd.DebugMessage(
+                context,
+                100,
+                "Error getting Disk Devices on VM %s from snapshot\n"
+                % (vmname.encode("utf-8")),
+            )
             bareosfd.JobMessage(
                 context,
                 bJobMessageType["M_FATAL"],
