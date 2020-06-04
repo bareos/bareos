@@ -49,6 +49,27 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(${Python2_FOUND} OR ${Python3_FOUND})
     set(HAVE_PYTHON 1)
   endif()
+
+  if(${Python2_FOUND})
+      execute_process(
+        COMMAND ${Python2_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/get_python_compile_settings.py
+        OUTPUT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/py2settings.cmake
+     )
+   include(${CMAKE_CURRENT_SOURCE_DIR}/py2settings.cmake)
+   message("Python2_CC is ${Python2_CC}")
+  endif()
+
+  if(${Python3_FOUND})
+      execute_process(
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/get_python_compile_settings.py
+        OUTPUT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/py3settings.cmake
+     )
+   include(${CMAKE_CURRENT_SOURCE_DIR}/py3settings.cmake)
+   message("Python3_CC is ${Python3_CC}")
+  endif()
+
+
+
 else() # windows
     set(HAVE_PYTHON 1)
     set(Python2_FOUND 1)
