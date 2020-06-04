@@ -29,7 +29,7 @@ if(Python2_FOUND)
   )
   target_link_libraries(python-fd ${Python2_LIBRARIES} bareos)
   target_include_directories(python-fd PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
-  add_dependencies(python-fd bareosfd-pymod)
+  # add_dependencies(python-fd bareosfd-pymod)
   add_dependencies(bareos-fd python-fd)
 endif()
 
@@ -90,23 +90,24 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
 endif()
 
 if(Python2_FOUND AND NOT HAVE_WIN22)
-  configure_file(
-    module/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/module/setup_py2.py
+  # configure_file( module/setup.py.in
+  # ${CMAKE_CURRENT_BINARY_DIR}/module/setup_py2.py ) add_custom_command( OUTPUT
+  # pythonmodules/bareosfd.so MAIN_DEPENDENCY module/bareosfd.cc DEPENDS
+  # module/bareosfd.h DEPENDS bareos DEPENDS
+  # ${CMAKE_CURRENT_BINARY_DIR}/module/setup_py2.py # COMMAND rm -Rfv
+  # ${CMAKE_CURRENT_BINARY_DIR}/build COMMAND ${Python2_EXECUTABLE}
+  # module/setup_py2.py build COMMAND ${Python2_EXECUTABLE} module/setup_py2.py
+  # install --install-lib ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules # COMMAND rm
+  # -Rf ${CMAKE_CURRENT_BINARY_DIR}/build COMMENT "building python2 module
+  # pythonmodules/bareosfd.so" ) add_custom_target(bareosfd-pymod DEPENDS
+  # pythonmodules/bareosfd.so)
+
+  add_library(bareosfd MODULE module/bareosfd.cc)
+  target_link_libraries(bareosfd bareos)
+  set_target_properties(
+    bareosfd PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY ..
   )
-  add_custom_command(
-    OUTPUT pythonmodules/bareosfd.so
-    MAIN_DEPENDENCY module/bareosfd.cc
-    DEPENDS module/bareosfd.h
-    DEPENDS bareos
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/module/setup_py2.py
-    # COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMAND ${Python2_EXECUTABLE} module/setup_py2.py build
-    COMMAND ${Python2_EXECUTABLE} module/setup_py2.py install --install-lib
-            ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
-    # COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMENT "building python2 module pythonmodules/bareosfd.so"
-  )
-  add_custom_target(bareosfd-pymod DEPENDS pythonmodules/bareosfd.so)
+
   add_test(NAME bareosfd-python-module
            COMMAND ${Python2_EXECUTABLE}
                    ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosfd_test.py
