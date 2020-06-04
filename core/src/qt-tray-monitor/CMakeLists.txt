@@ -97,4 +97,4 @@ install(FILES bareos-tray-monitor.desktop
 install(FILES bareos-tray-monitor.desktop
         DESTINATION ${sysconfdir}/xdg/autostart/
 )
-install(FILES bareos-tray-monitor.xpm DESTINATION ${datarootdir}/pixmaps/)
+install(FILES ${PROJECT_SOURCE_DIR}/src/images/bareos-logo_128x128.png DESTINATION ${datarootdir}/pixmaps/ RENAME bareos-tray-monitor.png)
