@@ -3,7 +3,7 @@
 Data Encryption
 ===============
 
-:index:`\ <single: Data Encryption>`\  :index:`\ <single: Encryption; Data>`\ 
+:index:`\ <single: Data Encryption>`\  :index:`\ <single: Encryption; Data>`\
 
 Bareos permits file data encryption and signing within the File Daemon (or Client) prior to sending data to the Storage Daemon. Upon restoration, file signatures are validated and any mismatches are reported. At no time does the Director or the Storage Daemon have access to unencrypted file contents.
 
@@ -69,35 +69,34 @@ The various algorithms are exposed via an entirely re-usable, OpenSSL-agnostic A
 Generating Private/Public Encryption Keys
 -----------------------------------------
 
-:index:`\ <single: Encryption; Generating Private/Public Encryption Keypairs>`\ 
+:index:`\ <single: Encryption; Generating Private/Public Encryption Keypairs>`\
 
-Generate a Master Key Pair with:
-
-
-
-::
-
-     openssl genrsa -out master.key 2048
-     openssl req -new -key master.key -x509 -out master.cert
-
-
-
-Generate a File Daemon Key Pair for each FD:
+Generate a Master public/private key-pair with:
 
 
 
 ::
 
-     openssl genrsa -out example-fd.key 2048
-     openssl req -new -key example-fd.key -x509 -out example-fd.cert
-     cat example-fd.key example-fd.cert >example-fd.pem
+     openssl genrsa -out master.priv.key 2048
+     openssl req -new -key master.priv.key -x509 -out master.pub.key
 
 
 
-Note, there seems to be a lot of confusion around the file extensions given to these keys. For example, a .pem file can contain all the following: private keys (RSA and DSA), public keys (RSA and DSA) and (x509) certificates. It is the default format for OpenSSL. It stores data Base64 encoded DER format, surrounded by ASCII headers, so is suitable for text mode transfers between systems. A .pem file may contain any number of keys either public or private. We use it in cases where there is both a
-public and a private key.
+Generate the File Daemon public/private key-pairs for each FD with:
 
-Above we have used the .cert extension to refer to X509 certificate encoding that contains only a single public key.
+
+
+::
+
+     openssl genrsa -out example-fd.priv.key 2048
+     openssl req -new -key example-fd.priv.key -x509 -out example-fd.pub.key
+     cat example-fd.priv.key example-fd.pub.key >example-fd.pem
+
+
+
+Please note the extensions given to these key-files. For example, a .pem file can contain all the following: private keys (RSA and DSA), public keys (RSA and DSA) and (x509) certificates. It is the default format for OpenSSL. It stores data Base64 encoded DER format, surrounded by ASCII headers, so is suitable for text mode transfers between systems. A .pem file may contain any number of keys either public or private. We use it in cases where there is both, a public and a private key.
+
+Above we have used the .pub.key extension to refer to X509 certificate encoding that contains only a single public key.
 
 Example Data Encryption Configurations (bareos-fd.conf)
 -------------------------------------------------------
@@ -124,7 +123,7 @@ You must:
 
    ::
 
-      cat master.key master.cert > master.keypair
+      cat master.priv.key master.pub.key > master.keypair
 
 -  Set the PKI Keypair statement in your bareos configuration file:
 
@@ -133,7 +132,6 @@ You must:
          PKI Keypair = master.keypair
 
 -  Start the restore. The master keypair will be used to decrypt the file data.
-
 
 
 
