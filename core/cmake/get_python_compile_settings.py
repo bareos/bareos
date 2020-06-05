@@ -1,16 +1,43 @@
+#!/usr/bin/env python
+"""
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation, which is
+   listed in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+"""
+""" This program extracts the  build configuration from the python interpreter.
+    The output is consumed by cmake where appropriate variables are set.
+    This is required to build python modules without setuptools.
+"""
 import sys
 import sysconfig
 for var in ("CC", "BLDSHARED"):
-    print ("message(STATUS \"Python{}_{}\ is\  {}\")" . format(sys.version_info.major, var, sysconfig.get_config_var(var)))
-    print ("set(Python{}_{} \"{}\")" . format(sys.version_info.major, var, sysconfig.get_config_var(var)))
+    value = sysconfig.get_config_var(var)
+    print ("message(STATUS \"Python{}_{}\ is\  {}\")" . format(sys.version_info.major, var, value))
+    print ("set(Python{}_{} \"{}\")" . format(sys.version_info.major, var, value))
 
     # as these vars contain the compiler itself, we remove the first word and return it as _FLAGS
-    print ("message(STATUS \"Python{}_{}_FLAGS\ is\  {}\")" . format(sys.version_info.major, var, sysconfig.get_config_var(var).split(' ',1)[1]))
-    print ("set(Python{}_{}_FLAGS \"{}\")" . format(sys.version_info.major, var, sysconfig.get_config_var(var).split(' ',1)[1]))
+    print ("message(STATUS \"Python{}_{}_FLAGS\ is\  {}\")" . format(sys.version_info.major, var, value.split(' ',1)[1]))
+    print ("set(Python{}_{}_FLAGS \"{}\")" . format(sys.version_info.major, var, value.split(' ',1)[1]))
 
 for var in ("CFLAGS","CCSHARED","INCLUDEPY","LDFLAGS"):
-    print ("message(STATUS \"Python{}_{}\ is\  {}\")" . format(sys.version_info.major, var, sysconfig.get_config_var(var)))
-    print ("set(Python{}_{} \"{}\")" . format(sys.version_info.major, var, sysconfig.get_config_var(var)))
+    value = sysconfig.get_config_var(var)
+    print ("message(STATUS \"Python{}_{}\ is\  {}\")" . format(sys.version_info.major, var, value))
+    print ("set(Python{}_{} \"{}\")" . format(sys.version_info.major, var, value))
 
 for var in ("EXT_SUFFIX",):
     value = sysconfig.get_config_var(var)
