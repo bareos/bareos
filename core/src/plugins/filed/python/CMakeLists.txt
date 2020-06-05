@@ -17,7 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-if(Python2_FOUND_)
+if(Python2_FOUND)
   add_library(python-fd MODULE python-fd.cc)
   set_target_properties(
     python-fd PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY ..
@@ -29,11 +29,10 @@ if(Python2_FOUND_)
   )
   target_link_libraries(python-fd ${Python2_LIBRARIES} bareos)
   target_include_directories(python-fd PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
-  # add_dependencies(python-fd bareosfd-pymod)
   add_dependencies(bareos-fd python-fd)
 endif()
 
-if(Python3_FOUND_)
+if(Python3_FOUND)
   add_library(python3-fd MODULE python-fd.cc)
   set_target_properties(
     python3-fd PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY ..
@@ -49,7 +48,7 @@ if(Python3_FOUND_)
   add_dependencies(bareos-fd python3-fd)
 endif()
 
-if(Python2_FOUND_ AND NOT HAVE_WIN22)
+if(Python2_FOUND AND NOT HAVE_WIN22)
   add_executable(bareosfd-python2-module-tester test/python-fd-module-tester.cc)
   target_link_libraries(
     bareosfd-python2-module-tester ${Python2_LIBRARIES} bareos
@@ -69,7 +68,7 @@ if(Python2_FOUND_ AND NOT HAVE_WIN22)
   )
 endif()
 
-if(Python3_FOUND_ AND NOT HAVE_WIN32)
+if(Python3_FOUND AND NOT HAVE_WIN32)
   add_executable(bareosfd-python3-module-tester test/python-fd-module-tester.cc)
   target_link_libraries(
     bareosfd-python3-module-tester ${Python3_LIBRARIES} bareos
@@ -90,6 +89,7 @@ if(Python3_FOUND_ AND NOT HAVE_WIN32)
 endif()
 
 if(Python2_FOUND AND NOT HAVE_WIN22)
+  # with setuptools externally
 
   # configure_file( module/setup.py.in
   # ${CMAKE_CURRENT_BINARY_DIR}/module/setup_py2.py ) add_custom_command( OUTPUT
@@ -104,17 +104,14 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
   # pythonmodules/bareosfd.so" ) add_custom_target(bareosfd-pymod DEPENDS
   # pythonmodules/bareosfd.so)
 
-  # COMPILE IS: Python2_CC Python2_CFLAGS Python2_CCSHARED  INCLUDES
-
-  # LINK IS :  g++ Python2_BLDSHARED
-
+  # build ourselves emulating setuptools
   set_property(SOURCE module/bareosfd.cc PROPERTY LANGUAGE C)
-  add_library(bareosfd_self MODULE module/bareosfd.cc)
+  add_library(bareosfd-pymod2 MODULE module/bareosfd.cc)
   set_target_properties(
-    bareosfd_self
+    bareosfd-pymod2
     PROPERTIES
       PREFIX ""
-      # LIBRARY_OUTPUT_DIRECTORY pythonmodules
+      LIBRARY_OUTPUT_DIRECTORY pythonmodules
       LIBRARY_OUTPUT_NAME bareosfd
       LINK_FLAGS "${Python2_BLDSHARED_FLAGS}"
       LINKER_LANGUAGE CXX
@@ -138,28 +135,42 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
   )
 endif()
 
-if(Python3_FOUND_ AND NOT HAVE_WIN32)
-  configure_file(
-    module/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/module/setup_py3.py
+if(Python3_FOUND AND NOT HAVE_WIN32)
+  # configure_file( module/setup.py.in
+  # ${CMAKE_CURRENT_BINARY_DIR}/module/setup_py3.py ) add_custom_command( OUTPUT
+  # python3modules/bareosfd.so MAIN_DEPENDENCY module/bareosfd.cc DEPENDS
+  # module/bareosfd.h DEPENDS bareos DEPENDS
+  # ${CMAKE_CURRENT_BINARY_DIR}/module/setup_py3.py # COMMAND rm -Rfv
+  # ${CMAKE_CURRENT_BINARY_DIR}/build COMMAND ${Python3_EXECUTABLE}
+  # module/setup_py3.py build COMMAND ${Python3_EXECUTABLE} module/setup_py3.py
+  # install --install-lib ${CMAKE_CURRENT_BINARY_DIR}/python3modules # COMMAND
+  # rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build COMMENT "building python3 module
+  # python3modules/bareosfd.so" ) add_custom_target(bareosfd-pymod3 DEPENDS
+  # python3modules/bareosfd.so)
+
+  # build ourselves emulating setuptools
+  set_property(SOURCE module/bareosfd.cc PROPERTY LANGUAGE C)
+  add_library(bareosfd-pymod3 MODULE module/bareosfd.cc)
+  set_target_properties(
+    bareosfd-pymod3
+    PROPERTIES
+      PREFIX ""
+      LIBRARY_OUTPUT_DIRECTORY python3modules
+      LIBRARY_OUTPUT_NAME bareosfd
+      LINK_FLAGS "${Python3_BLDSHARED_FLAGS}"
+      LINKER_LANGUAGE CXX
+      COMPILE_OPTIONS ${Python3_CCSHARED}
+      INCLUDE_DIRECTORIES
+      "${Python3_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
+      LINK_LIBRARIES "bareos ${Python3_LIBRARIES}"
+      LINK_DIRECTORIES ${PROJECT_BINARY_DIR}/src/lib
   )
-  add_custom_command(
-    OUTPUT python3modules/bareosfd.so
-    MAIN_DEPENDENCY module/bareosfd.cc
-    DEPENDS module/bareosfd.h
-    DEPENDS bareos
-    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/module/setup_py3.py
-    # COMMAND rm -Rfv ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMAND ${Python3_EXECUTABLE} module/setup_py3.py build
-    COMMAND ${Python3_EXECUTABLE} module/setup_py3.py install --install-lib
-            ${CMAKE_CURRENT_BINARY_DIR}/python3modules
-    # COMMAND rm -Rf ${CMAKE_CURRENT_BINARY_DIR}/build
-    COMMENT "building python3 module python3modules/bareosfd.so"
-  )
-  add_custom_target(bareosfd-pymod3 DEPENDS python3modules/bareosfd.so)
+
   add_test(NAME bareosfd-python3-module
            COMMAND ${Python3_EXECUTABLE}
                    ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosfd_test.py
   )
+
   set_property(
     TEST bareosfd-python3-module
     PROPERTY
