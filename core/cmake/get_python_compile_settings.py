@@ -30,9 +30,14 @@ for var in ("CC", "BLDSHARED"):
     print ("message(STATUS \"Python{}_{}\ is\  {}\")" . format(sys.version_info.major, var, value))
     print ("set(Python{}_{} \"{}\")" . format(sys.version_info.major, var, value))
 
+    # if nothing comes after the compile command, the flags are empty
+    try:
+        value = value.split(' ',1)[1]
+    except:
+        value = ''
     # as these vars contain the compiler itself, we remove the first word and return it as _FLAGS
-    print ("message(STATUS \"Python{}_{}_FLAGS\ is\  {}\")" . format(sys.version_info.major, var, value.split(' ',1)[1]))
-    print ("set(Python{}_{}_FLAGS \"{}\")" . format(sys.version_info.major, var, value.split(' ',1)[1]))
+    print ("message(STATUS \"Python{}_{}_FLAGS\ is\  {}\")" . format(sys.version_info.major, var, value))
+    print ("set(Python{}_{}_FLAGS \"{}\")" . format(sys.version_info.major, var, value))
 
 for var in ("CFLAGS","CCSHARED","INCLUDEPY","LDFLAGS"):
     value = sysconfig.get_config_var(var)
