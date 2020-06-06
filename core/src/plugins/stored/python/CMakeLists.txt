@@ -42,7 +42,7 @@ if(Python2_FOUND AND NOT HAVE_WIN32)
     bareossd-python2-module
     PROPERTIES
       PREFIX ""
-      CXX_STANDARD 11
+      C_STANDARD 11
       # SUFFIX ${Python2_EXT_SUFFIX}
       LIBRARY_OUTPUT_DIRECTORY pythonmodules
       LIBRARY_OUTPUT_NAME bareossd
@@ -94,7 +94,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     bareossd-python3-module
     PROPERTIES
       PREFIX ""
-      CXX_STANDARD 11
+      C_STANDARD 11
       SUFFIX ${Python3_EXT_SUFFIX}
       LIBRARY_OUTPUT_DIRECTORY python3modules
       LIBRARY_OUTPUT_NAME bareossd
