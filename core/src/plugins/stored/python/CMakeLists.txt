@@ -36,7 +36,7 @@ if(Python2_FOUND)
 endif()
 
 if(Python2_FOUND AND NOT HAVE_WIN32)
-  set_property(SOURCE module/bareossd.cc PROPERTY LANGUAGE C)
+  # set_property(SOURCE module/bareossd.cc PROPERTY LANGUAGE C)
   add_library(bareossd-python2-module MODULE module/bareossd.cc)
   set_target_properties(
     bareossd-python2-module
@@ -88,7 +88,7 @@ if(Python3_FOUND)
 endif()
 
 if(Python3_FOUND AND NOT HAVE_WIN32)
-  set_property(SOURCE module/bareossd.cc PROPERTY LANGUAGE C)
+  # set_property(SOURCE module/bareossd.cc PROPERTY LANGUAGE C)
   add_library(bareossd-python3-module MODULE module/bareossd.cc)
   set_target_properties(
     bareossd-python3-module

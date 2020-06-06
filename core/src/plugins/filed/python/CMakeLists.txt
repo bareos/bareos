@@ -90,7 +90,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
 endif()
 
 if(Python2_FOUND AND NOT HAVE_WIN22)
-  set_property(SOURCE module/bareosfd.cc PROPERTY LANGUAGE C)
+  # set_property(SOURCE module/bareosfd.cc PROPERTY LANGUAGE C)
   add_library(bareosfd-python2-module MODULE module/bareosfd.cc)
   set_target_properties(
     bareosfd-python2-module
@@ -124,7 +124,7 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
 endif()
 
 if(Python3_FOUND AND NOT HAVE_WIN32)
-  set_property(SOURCE module/bareosfd.cc PROPERTY LANGUAGE C)
+  # set_property(SOURCE module/bareosfd.cc PROPERTY LANGUAGE C)
   add_library(bareosfd-python3-module MODULE module/bareosfd.cc)
   set_target_properties(
     bareosfd-python3-module
