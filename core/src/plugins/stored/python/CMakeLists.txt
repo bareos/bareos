@@ -51,10 +51,9 @@ if(Python2_FOUND AND NOT HAVE_WIN32)
       COMPILE_OPTIONS ${Python2_CCSHARED}
       INCLUDE_DIRECTORIES
       "${Python2_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
-      LINK_LIBRARIES "bareos ${Python2_LIBRARIES}"
       LINK_DIRECTORIES ${PROJECT_BINARY_DIR}/src/lib
   )
-  add_dependencies(bareossd-python2-module bareos)
+  target_link_libraries(bareossd-python2-module bareos ${Python2_LIBRARIES})
 
   add_test(NAME bareossd-python2-module
            COMMAND ${Python2_EXECUTABLE}
@@ -103,10 +102,9 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
       COMPILE_OPTIONS ${Python3_CCSHARED}
       INCLUDE_DIRECTORIES
       "${Python3_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
-      LINK_LIBRARIES "bareos ${Python3_LIBRARIES}"
       LINK_DIRECTORIES ${PROJECT_BINARY_DIR}/src/lib
   )
-  add_dependencies(bareossd-python3-module bareos)
+  target_link_libraries(bareossd-python3-module bareos ${Python3_LIBRARIES})
 
   add_test(NAME bareossd-python3-module
            COMMAND ${Python3_EXECUTABLE}
