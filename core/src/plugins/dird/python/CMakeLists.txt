@@ -17,7 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-if(Python2_FOUND)
+if(Python2_FOUND AND NOT HAVE_WIN32)
   add_library(python-dir MODULE python-dir.cc)
   # do not prefix with "lib"
   set_target_properties(

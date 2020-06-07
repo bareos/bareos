@@ -86,8 +86,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    include(${CMAKE_CURRENT_SOURCE_DIR}/py3settings.cmake)
   endif()
 
-
-
 else() # windows
     set(HAVE_PYTHON 1)
     set(Python2_FOUND 1)

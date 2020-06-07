@@ -17,7 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-if(Python2_FOUND)
+if(Python2_FOUND AND NOT HAVE_WIN32)
   add_library(python-sd MODULE python-sd.cc)
   set_target_properties(
     python-sd PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY ..
