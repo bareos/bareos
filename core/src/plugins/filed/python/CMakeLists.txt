@@ -103,7 +103,7 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
       LINKER_LANGUAGE CXX
       COMPILE_OPTIONS ${Python2_CCSHARED}
       INCLUDE_DIRECTORIES
-      "${Python2_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${INTLINCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
+      "${Python2_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
   )
   target_link_libraries(bareosfd-python2-module bareos ${Python2_LIBRARIES})
 
@@ -134,7 +134,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
       LINKER_LANGUAGE CXX
       COMPILE_OPTIONS ${Python3_CCSHARED}
       INCLUDE_DIRECTORIES
-      "${Python3_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${INTLINCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
+      "${Python3_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
   )
   target_link_libraries(bareosfd-python3-module bareos ${Python3_LIBRARIES})
 
