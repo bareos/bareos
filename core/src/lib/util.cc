@@ -34,6 +34,7 @@
 #include "include/version_numbers.h"
 
 #include <algorithm>
+#include <string>
 
 /*
  * Various BAREOS Utility subroutines
@@ -136,10 +137,11 @@ void BashSpaces(char* str)
   }
 }
 
-/*
- * Convert spaces to non-space character.
- * This makes scanf of fields containing spaces easier.
- */
+void BashSpaces(std::string& str)
+{
+  std::replace(str.begin(), str.end(), ' ', static_cast<char>(0x1));
+}
+
 void BashSpaces(PoolMem& pm)
 {
   char* str = pm.c_str();
@@ -148,7 +150,6 @@ void BashSpaces(PoolMem& pm)
     str++;
   }
 }
-
 
 /*
  * Convert non-space characters (0x1) back into spaces
