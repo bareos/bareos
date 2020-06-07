@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,7 @@
 #include "include/bareos.h"
 #include "lib/cram_md5.h"
 #include "lib/bsock.h"
+#include "lib/util.h"
 
 
 CramMd5Handshake::CramMd5Handshake(BareosSocket* bs,
@@ -39,10 +40,34 @@ CramMd5Handshake::CramMd5Handshake(BareosSocket* bs,
     , password_(password)
     , local_tls_policy_(local_tls_policy)
     , own_qualified_name_(own_qualified_name)
+    , own_qualified_name_bashed_spaces_(own_qualified_name_)
 {
-  return;
+  BashSpaces(own_qualified_name_bashed_spaces_);
 }
 
+CramMd5Handshake::ComparisonResult
+CramMd5Handshake::CompareChallengeWithOwnQualifiedName(
+    const char* challenge) const
+{
+  uint32_t a, b;
+  char buffer[128]{"?"};  // at least one character
+
+  bool scan_success = sscanf(challenge, "<%u.%u@%s", &a, &b, buffer) == 3;
+
+  // string contains the closing ">" of the challange
+  std::string challenge_qualified_name(buffer, strlen(buffer) - 1);
+
+  Dmsg1(debuglevel_, "my_name: <%s> - challenge_name: <%s>",
+        own_qualified_name_bashed_spaces_.c_str(),
+        challenge_qualified_name.c_str());
+
+  if (!scan_success) { return ComparisonResult::FAILURE; }
+
+  // check if the name in the challange matches the daemons name
+  return own_qualified_name_bashed_spaces_ == challenge_qualified_name
+             ? ComparisonResult::IS_SAME
+             : ComparisonResult::IS_DIFFERENT;
+}
 
 /* Authorize other end
  * Codes that tls_local_need and tls_remote_need can take:
@@ -60,12 +85,10 @@ bool CramMd5Handshake::CramMd5Challenge()
 
   InitRandom();
 
-  host.check_size(MAXHOSTNAMELEN);
-  if (!gethostname(host.c_str(), MAXHOSTNAMELEN)) { PmStrcpy(host, my_name); }
 
   /* Send challenge -- no hashing yet */
   Mmsg(chal, "<%u.%u@%s>", (uint32_t)random(), (uint32_t)time(NULL),
-       host.c_str());
+       own_qualified_name_bashed_spaces_.c_str());
 
   if (bs_->IsBnetDumpEnabled()) {
     Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%d qualified-name=%s\n",
@@ -165,6 +188,15 @@ bool CramMd5Handshake::CramMd5Response()
         return false;
       }
     }
+  }
+
+  auto result = CompareChallengeWithOwnQualifiedName(chal.c_str());
+
+  if (result == ComparisonResult::IS_SAME ||
+      result == ComparisonResult::FAILURE) {
+    bs_->fsend(_("1999 Authorization failed.\n"));
+    Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
+    return false;
   }
 
   hmac_md5((uint8_t*)chal.c_str(), strlen(chal.c_str()), (uint8_t*)password_,

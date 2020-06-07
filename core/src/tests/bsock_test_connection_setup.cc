@@ -42,18 +42,14 @@
 #include "include/jcr.h"
 #include <signal.h>
 
-static void signal_handler(int arg) { return; }
-
 namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
 static void InitSignalHandler()
 {
-  struct sigaction sig {
-    (0)
-  };
-  sig.sa_handler = signal_handler;
+  struct sigaction sig = {};
+  sig.sa_handler = SIG_IGN;
   sigaction(SIGUSR2, &sig, nullptr);
   sigaction(SIGPIPE, &sig, nullptr);
 }
@@ -92,8 +88,10 @@ static PConfigParser ConsolePrepareResources(const std::string& path_to_config)
   console::director_resource = dynamic_cast<console::DirectorResource*>(
       console_config->GetNextRes(console::R_DIRECTOR, NULL));
   EXPECT_NE(console::director_resource, nullptr);
+
   console::console_resource = dynamic_cast<console::ConsoleResource*>(
       console_config->GetNextRes(console::R_CONSOLE, NULL));
+  console::my_config->own_resource_ = console::console_resource;
   EXPECT_EQ(console::console_resource, nullptr);  // no console resource present
 
   return console_config;
@@ -117,6 +115,7 @@ static PConfigParser DirectorPrepareResources(const std::string& path_to_config)
   directordaemon::me =
       (directordaemon::DirectorResource*)director_config->GetNextRes(
           directordaemon::R_DIRECTOR, nullptr);
+  directordaemon::my_config->own_resource_ = directordaemon::me;
 
   return director_config;
 }
