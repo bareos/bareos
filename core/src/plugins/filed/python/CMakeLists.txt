@@ -101,7 +101,7 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
       LIBRARY_OUTPUT_NAME bareosfd
       LINK_FLAGS "${Python2_BLDSHARED_FLAGS}"
       LINKER_LANGUAGE CXX
-      COMPILE_OPTIONS ${Python2_CCSHARED}
+      #COMPILE_OPTIONS ${Python2_CCSHARED}
       INCLUDE_DIRECTORIES
       "${Python2_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
   )
@@ -132,7 +132,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
       LIBRARY_OUTPUT_NAME bareosfd
       LINK_FLAGS "${Python3_BLDSHARED_FLAGS}"
       LINKER_LANGUAGE CXX
-      COMPILE_OPTIONS ${Python3_CCSHARED}
+      #COMPILE_OPTIONS ${Python3_CCSHARED}
       INCLUDE_DIRECTORIES
       "${Python3_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
   )
