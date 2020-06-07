@@ -56,7 +56,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         OUTPUT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/py2settings.cmake
      )
    include(${CMAKE_CURRENT_SOURCE_DIR}/py2settings.cmake)
-   message("Python2_CC is ${Python2_CC}")
   endif()
 
   if(${Python3_FOUND})
@@ -65,7 +64,6 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         OUTPUT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/py3settings.cmake
      )
    include(${CMAKE_CURRENT_SOURCE_DIR}/py3settings.cmake)
-   message("Python3_CC is ${Python3_CC}")
   endif()
 
 
