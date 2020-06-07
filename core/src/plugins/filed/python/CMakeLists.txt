@@ -106,8 +106,8 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
   )
   if(NOT "${Python2_CCSHARED}" STREQUAL "")
     set_property(
-      TARGET bareosdir-python2-module PROPERTY COMPILE_OPTIONS
-                                               ${Python2_CCSHARED}
+      TARGET bareosfd-python2-module PROPERTY COMPILE_OPTIONS
+                                              ${Python2_CCSHARED}
     )
   endif()
   target_link_libraries(bareosfd-python2-module bareos ${Python2_LIBRARIES})
@@ -142,8 +142,8 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
   )
   if(NOT "${Python3_CCSHARED}" STREQUAL "")
     set_property(
-      TARGET bareosdir-python3-module PROPERTY COMPILE_OPTIONS
-                                               ${Python3_CCSHARED}
+      TARGET bareosfd-python3-module PROPERTY COMPILE_OPTIONS
+                                              ${Python3_CCSHARED}
     )
   endif()
   target_link_libraries(bareosfd-python3-module bareos ${Python3_LIBRARIES})
