@@ -54,6 +54,7 @@ if(Python2_FOUND AND NOT HAVE_WIN32)
       TARGET bareosdir-python2-module PROPERTY COMPILE_OPTIONS
                                                ${Python2_CCSHARED}
     )
+  endif()
   target_link_libraries(bareossd-python2-module bareos ${Python2_LIBRARIES})
 
   add_test(NAME bareossd-python2-module
@@ -108,6 +109,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
       TARGET bareosdir-python3-module PROPERTY COMPILE_OPTIONS
                                                ${Python3_CCSHARED}
     )
+  endif()
   target_link_libraries(bareossd-python3-module bareos ${Python3_LIBRARIES})
 
   add_test(NAME bareossd-python3-module
