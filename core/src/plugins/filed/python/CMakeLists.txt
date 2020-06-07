@@ -90,7 +90,6 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
 endif()
 
 if(Python2_FOUND AND NOT HAVE_WIN22)
-  # set_property(SOURCE module/bareosfd.cc PROPERTY LANGUAGE C)
   add_library(bareosfd-python2-module MODULE module/bareosfd.cc)
   set_target_properties(
     bareosfd-python2-module
@@ -105,7 +104,6 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
       COMPILE_OPTIONS ${Python2_CCSHARED}
       INCLUDE_DIRECTORIES
       "${Python2_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;/usr/local/include;/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
-      # LINK_DIRECTORIES ${PROJECT_BINARY_DIR}/src/lib
   )
   target_link_libraries(bareosfd-python2-module bareos ${Python2_LIBRARIES})
 
@@ -123,7 +121,6 @@ if(Python2_FOUND AND NOT HAVE_WIN22)
 endif()
 
 if(Python3_FOUND AND NOT HAVE_WIN32)
-  # set_property(SOURCE module/bareosfd.cc PROPERTY LANGUAGE C)
   add_library(bareosfd-python3-module MODULE module/bareosfd.cc)
   set_target_properties(
     bareosfd-python3-module
@@ -138,7 +135,6 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
       COMPILE_OPTIONS ${Python3_CCSHARED}
       INCLUDE_DIRECTORIES
       "${Python3_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;/usr/local/include;/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
-      # LINK_DIRECTORIES ${PROJECT_BINARY_DIR}/src/lib
   )
   target_link_libraries(bareosfd-python3-module bareos ${Python3_LIBRARIES})
 
