@@ -39,16 +39,14 @@ if(Python2_FOUND)
   add_library(bareosdir-python2-module MODULE module/bareosdir.cc)
   set_target_properties(
     bareosdir-python2-module
-    PROPERTIES
-      PREFIX ""
-      C_STANDARD 11
-      # SUFFIX ${Python2_EXT_SUFFIX}
-      LIBRARY_OUTPUT_DIRECTORY pythonmodules
-      LIBRARY_OUTPUT_NAME bareosdir
-      LINK_FLAGS "${Python2_BLDSHARED_FLAGS}"
-      LINKER_LANGUAGE CXX
-      INCLUDE_DIRECTORIES
-      "${Python2_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include;${PROJECT_SOURCE_DIR}/src/win32/compat/include;${PROJECT_SOURCE_DIR}/src/win32/include"
+    PROPERTIES PREFIX ""
+               C_STANDARD 11
+               # SUFFIX ${Python2_EXT_SUFFIX}
+               LIBRARY_OUTPUT_DIRECTORY pythonmodules
+               LIBRARY_OUTPUT_NAME bareosdir
+               LINK_FLAGS "${Python2_BLDSHARED_FLAGS}"
+               LINKER_LANGUAGE CXX
+               INCLUDE_DIRECTORIES "${pymod2_include_dirs}"
   )
   if(NOT "${Python2_CCSHARED}" STREQUAL "")
     set_property(
@@ -93,16 +91,14 @@ if(Python3_FOUND)
   add_library(bareosdir-python3-module MODULE module/bareosdir.cc)
   set_target_properties(
     bareosdir-python3-module
-    PROPERTIES
-      PREFIX ""
-      C_STANDARD 11
-      SUFFIX ${Python3_EXT_SUFFIX}
-      LIBRARY_OUTPUT_DIRECTORY python3modules
-      LIBRARY_OUTPUT_NAME bareosdir
-      LINK_FLAGS "${Python3_BLDSHARED_FLAGS}"
-      LINKER_LANGUAGE CXX
-      INCLUDE_DIRECTORIES
-      "${Python3_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include;${PROJECT_SOURCE_DIR}/src/win32/compat/include;${PROJECT_SOURCE_DIR}/src/win32/include"
+    PROPERTIES PREFIX ""
+               C_STANDARD 11
+               SUFFIX ${Python3_EXT_SUFFIX}
+               LIBRARY_OUTPUT_DIRECTORY python3modules
+               LIBRARY_OUTPUT_NAME bareosdir
+               LINK_FLAGS "${Python3_BLDSHARED_FLAGS}"
+               LINKER_LANGUAGE CXX
+               INCLUDE_DIRECTORIES "${pymod3_include_dirs}"
   )
   if(NOT "${Python3_CCSHARED}" STREQUAL "")
     set_property(
