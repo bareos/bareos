@@ -49,7 +49,7 @@ if(Python3_FOUND)
   add_dependencies(python3-fd bareosfd-python3-module)
 endif()
 
-if(Python2_FOUND AND NOT HAVE_WIN22)
+if(Python2_FOUND)
   add_executable(bareosfd-python2-module-tester test/python-fd-module-tester.cc)
   target_link_libraries(
     bareosfd-python2-module-tester ${Python2_LIBRARIES} bareos
@@ -89,7 +89,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
   )
 endif()
 
-if(Python2_FOUND AND NOT HAVE_WIN22)
+if(Python2_FOUND)
   add_library(bareosfd-python2-module MODULE module/bareosfd.cc)
   set_target_properties(
     bareosfd-python2-module

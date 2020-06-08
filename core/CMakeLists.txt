@@ -300,19 +300,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   set(WINDOWS_LIBRARIES ws2_32)
 
-  set(Python2_LIBRARIES
-      ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}/python27.dll
-  )
-  set(Python2_INCLUDE_DIRS
-      ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
-  )
-  set(PostgreSQL_LIBRARY
-      ${PROJECT_SOURCE_DIR}/src/win32/cats/pgsql/lib/${WINDOWS_BITS}/libpq.dll
-  )
-  set(PostgreSQL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/win32/cats/pgsql/include)
-  set(PostgreSQL_TYPE_INCLUDE_DIR
-      ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
-  )
+  set(Python2_LIBRARIES python27.dll)
+  set(Python2_INCLUDE_DIRS )
+
+  set(PostgreSQL_LIBRARY libpq.dll)
+  set(PostgreSQL_INCLUDE_DIR "")
+  set(PostgreSQL_TYPE_INCLUDE_DIR "")
 
   set(dynamic-storage-backends OFF)
   set(HAVE_DYNAMIC_SD_BACKENDS 0)

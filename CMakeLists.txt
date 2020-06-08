@@ -24,10 +24,10 @@ project(bareos NONE)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
 
-add_custom_target(uninstall
-	"${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
+add_custom_target(
+  uninstall "${CMAKE_COMMAND}" -P
+            "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
 )
-
 
 set(default_build_type "Debug")
 
@@ -74,7 +74,7 @@ endif()
 if(BUILD_BAREOS_BINARIES)
   add_subdirectory(core)
   add_subdirectory(webui)
-  if(NOT client-only AND NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  if(NOT client-only AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     add_subdirectory(systemtests)
   endif()
 endif()

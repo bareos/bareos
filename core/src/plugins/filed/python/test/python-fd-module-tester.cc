@@ -21,6 +21,10 @@
 
 /* Load the python-fd plugin and test it */
 
+#if defined(HAVE_MINGW)
+#include "include/bareos.h"
+#endif
+
 #include "Python.h"
 #include "plugins/include/capsulethunk.h"
 #include "plugins/include/python3compat.h"
