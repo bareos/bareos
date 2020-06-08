@@ -301,7 +301,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(WINDOWS_LIBRARIES ws2_32)
 
   set(Python2_LIBRARIES python27.dll)
-  set(Python2_INCLUDE_DIRS )
+  set(Python2_INCLUDE_DIRS /usr/x86_64-w64-mingw32/include/python2/)
 
   set(PostgreSQL_LIBRARY libpq.dll)
   set(PostgreSQL_INCLUDE_DIR "")
