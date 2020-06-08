@@ -92,7 +92,7 @@ else() # windows
     set(Python2_EXT_SUFFIX ".dll")
 
     set(Python3_FOUND 1)
-    set(Python3_EXT_SUFFIX ".dll")
+    set(Python3_EXT_SUFFIX ".pyd")
 endif()
 
 
