@@ -125,7 +125,7 @@ if(Python2_FOUND)
   )
 endif()
 
-if(Python3_FOUND AND NOT HAVE_WIN32)
+if(Python3_FOUND)
   add_library(bareosfd-python3-module MODULE module/bareosfd.cc)
   set_target_properties(
     bareosfd-python3-module
@@ -138,7 +138,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
       LINK_FLAGS "${Python3_BLDSHARED_FLAGS}"
       LINKER_LANGUAGE CXX
       INCLUDE_DIRECTORIES
-      "${Python3_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
+      "${Python3_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include;${PROJECT_SOURCE_DIR}/src/win32/compat/include;${PROJECT_SOURCE_DIR}/src/win32/include"
   )
   if(NOT "${Python3_CCSHARED}" STREQUAL "")
     set_property(

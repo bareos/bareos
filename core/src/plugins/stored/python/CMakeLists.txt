@@ -17,7 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-if(Python2_FOUND AND NOT HAVE_WIN32)
+if(Python2_FOUND)
   add_library(python-sd MODULE python-sd.cc)
   set_target_properties(
     python-sd PROPERTIES PREFIX "" LIBRARY_OUTPUT_DIRECTORY ..
@@ -35,7 +35,7 @@ if(Python2_FOUND AND NOT HAVE_WIN32)
   install(FILES ${PYFILES} DESTINATION ${plugindir})
 endif()
 
-if(Python2_FOUND AND NOT HAVE_WIN32)
+if(Python2_FOUND)
   add_library(bareossd-python2-module MODULE module/bareossd.cc)
   set_target_properties(
     bareossd-python2-module
@@ -47,7 +47,7 @@ if(Python2_FOUND AND NOT HAVE_WIN32)
       LINK_FLAGS "${Python2_BLDSHARED_FLAGS}"
       LINKER_LANGUAGE CXX
       INCLUDE_DIRECTORIES
-      "${Python2_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
+      "${Python2_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include;${PROJECT_SOURCE_DIR}/src/win32/compat/include;${PROJECT_SOURCE_DIR}/src/win32/include"
   )
   if(NOT "${Python2_CCSHARED}" STREQUAL "")
     set_property(
@@ -88,7 +88,7 @@ if(Python3_FOUND)
   install(FILES ${PYFILES} DESTINATION ${plugindir})
 endif()
 
-if(Python3_FOUND AND NOT HAVE_WIN32)
+if(Python3_FOUND)
   # set_property(SOURCE module/bareossd.cc PROPERTY LANGUAGE C)
   add_library(bareossd-python3-module MODULE module/bareossd.cc)
   set_target_properties(
@@ -102,7 +102,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
       LINK_FLAGS "${Python3_BLDSHARED_FLAGS}"
       LINKER_LANGUAGE CXX
       INCLUDE_DIRECTORIES
-      "${Python3_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
+      "${Python3_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include;${PROJECT_SOURCE_DIR}/src/win32/compat/include;${PROJECT_SOURCE_DIR}/src/win32/include"
   )
   if(NOT "${Python3_CCSHARED}" STREQUAL "")
     set_property(

@@ -301,7 +301,16 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(WINDOWS_LIBRARIES ws2_32)
 
   set(Python2_LIBRARIES python27.dll)
-  set(Python2_INCLUDE_DIRS /usr/x86_64-w64-mingw32/include/python2/)
+  set(Python3_LIBRARIES python38.dll)
+
+  if(${WINDOWS_BITS} MATCHES "32")
+    set(cross-prefix i686-w64-mingw32)
+  else()
+    set(cross-prefix x86_64-w64-mingw32)
+  endif()
+
+  set(Python2_INCLUDE_DIRS /usr/${cross-prefix}/include/python2/)
+  set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
 
   set(PostgreSQL_LIBRARY libpq.dll)
   set(PostgreSQL_INCLUDE_DIR "")

@@ -89,6 +89,10 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 else() # windows
     set(HAVE_PYTHON 1)
     set(Python2_FOUND 1)
+    set(Python2_EXT_SUFFIX ".dll")
+
+    set(Python3_FOUND 1)
+    set(Python3_EXT_SUFFIX ".dll")
 endif()
 
 
