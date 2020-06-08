@@ -102,7 +102,7 @@ if(Python2_FOUND)
       LINK_FLAGS "${Python2_BLDSHARED_FLAGS}"
       LINKER_LANGUAGE CXX
       INCLUDE_DIRECTORIES
-      "${Python2_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include"
+      "${Python2_INCLUDE_DIRS};${PROJECT_SOURCE_DIR}/src;${Intl_INCLUDE_DIRS};/usr/local/opt/gettext/include;/usr/local/opt/openssl/include;${PROJECT_SOURCE_DIR}/src/win32/compat/include;${PROJECT_SOURCE_DIR}/src/win32/include"
   )
   if(NOT "${Python2_CCSHARED}" STREQUAL "")
     set_property(
