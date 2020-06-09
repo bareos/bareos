@@ -37,6 +37,7 @@ endif()
 
 if(Python2_FOUND)
   add_library(bareosdir-python2-module MODULE module/bareosdir.cc)
+  install(TARGETS bareosdir-python2-module DESTINATION ${plugindir})
   set_target_properties(
     bareosdir-python2-module
     PROPERTIES PREFIX ""
@@ -89,6 +90,7 @@ endif()
 
 if(Python3_FOUND)
   add_library(bareosdir-python3-module MODULE module/bareosdir.cc)
+  install(TARGETS bareosdir-python3-module DESTINATION ${plugindir})
   set_target_properties(
     bareosdir-python3-module
     PROPERTIES PREFIX ""
