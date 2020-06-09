@@ -621,6 +621,7 @@ set(SYSTEM_TESTS
     backup-bareos-encrypt-signature-test-with-tls-cert
     backup-bareos-notls
     backup-bareos-passive-test
+    backup-bareos-spool-test
     backup-bareos-test
     backup-bscan
     bconsole-status-client
