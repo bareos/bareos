@@ -35,6 +35,18 @@ class CramMd5Handshake {
   TlsPolicy RemoteTlsPolicy() const { return remote_tls_policy_; }
   std::string destination_qualified_name_;
 
+  enum class HandshakeResult
+  {
+    NOT_INITIALIZED,
+    SUCCESS,
+    FORMAT_MISMATCH,
+    NETWORK_ERROR,
+    WRONG_HASH,
+    CHALLENGE_ATTACK
+  };
+
+  mutable HandshakeResult result{HandshakeResult::NOT_INITIALIZED};
+
  private:
   static constexpr int debuglevel_ = 50;
   bool compatible_ = true;
