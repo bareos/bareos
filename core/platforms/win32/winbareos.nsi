@@ -620,7 +620,7 @@ SectionIn 1 2 3 4
   #File "bpipe-fd.dll"
   #File "mssqlvdi-fd.dll"
   #File "python-fd.dll"
-  File "*-fd.dll"
+  File "*fd*"
 
   File "Plugins\BareosFd*.py"
   File "Plugins\bareos-fd*.py"
@@ -683,7 +683,7 @@ SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-  File "*-sd.dll"
+  File "*sd*"
   File "Plugins\BareosSd*.py"
   File "Plugins\bareos-sd*.py"
 SectionEnd
@@ -898,7 +898,7 @@ SectionIn 2 3
   SetOverwrite ifnewer
 
   #File "python-dir.dll"
-  File "*-dir.dll"
+  File "*dir*"
   File "Plugins\BareosDir*.py"
   File "Plugins\bareos-dir*.py"
 SectionEnd
