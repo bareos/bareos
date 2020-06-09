@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,6 +45,8 @@
 #include "lib/bstringlist.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+
+#include <array>
 
 namespace directordaemon {
 
@@ -166,16 +168,12 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
       client->password_, client);
 
   if (!auth_success) {
-    Dmsg2(debuglevel, "Unable to authenticate with File daemon at \"%s:%d\"\n",
-          fd->host(), fd->port());
-    Jmsg(jcr, M_FATAL, 0,
-         _("Unable to authenticate with File daemon at \"%s:%d\". Possible "
-           "causes:\n"
-           "Passwords or names not the same or\n"
-           "TLS negotiation failed or\n"
-           "Maximum Concurrent Jobs exceeded on the FD or\n"
-           "FD networking messed up (restart daemon).\n"),
-         fd->host(), fd->port());
+    std::array<char, 1024> msg;
+    const char* fmt =
+        _("Unable to authenticate with File daemon at \"%s:%d\"\n");
+    snprintf(msg.data(), msg.size(), fmt, fd->host(), fd->port());
+    Dmsg0(debuglevel, msg.data());
+    Jmsg(jcr, M_FATAL, 0, msg.data());
     return false;
   }
 
