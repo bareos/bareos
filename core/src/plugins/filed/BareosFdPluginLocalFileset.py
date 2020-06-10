@@ -268,9 +268,6 @@ class BareosFdPluginLocalFileset(
             os.makedirs(dirname)
         # open creates the file, if not yet existing, we close it again right
         # aways it will be opened again in plugin_io.
-        # But: only do this for regular files, prevent from
-        # IOError: (21, 'Is a directory', '/tmp/bareos-restores/my/dir/')
-        # if it's a directory
         if restorepkt.type == bFileType["FT_REG"]:
             open(FNAME, "wb").close()
             restorepkt.create_status = bCFs["CF_EXTRACT"]
