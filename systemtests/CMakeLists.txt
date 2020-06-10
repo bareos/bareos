@@ -125,57 +125,56 @@ macro(handle_python_plugin_modules test_name)
   set(PYMODULES_TO_LINK_TO_SRC)
 
   string(REGEX MATCH ^dbcopy.* starts_with_dbcopy ${test_name})
-  string(REGEX MATCH ^python-fd.* starts_with_python-fd ${test_name})
-  if(starts_with_python-fd OR starts_with_dbcopy)
+  string(REGEX MATCH ^pyplug-fd.* starts_with_pyplug-fd ${test_name})
+  if(starts_with_pyplug-fd OR starts_with_dbcopy)
     list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdWrapper.py
-                filed/BareosFdPluginBaseclass.py filed/bareos_fd_consts.py
-                filed/bareos-fd-mock-test.py
+         filed/BareosFdPluginBaseclass.py filed/bareos_fd_consts.py
+         filed/bareos-fd-mock-test.py
     )
   endif()
 
-  string(REGEX MATCH ^python-sd.* starts_with_python-sd ${test_name})
-  if(starts_with_python-sd)
+  string(REGEX MATCH ^pyplug-sd.* starts_with_pyplug-sd ${test_name})
+  if(starts_with_pyplug-sd)
     list(APPEND SD_PYMODULES_TO_LINK_TO_SRC bareos_sd_consts.py
-                bareos-sd-class-plugin.py BareosSdPluginBaseclass.py
-                BareosSdWrapper.py
+         bareos-sd-class-plugin.py BareosSdPluginBaseclass.py
+         BareosSdWrapper.py
     )
   endif()
 
-  string(REGEX MATCH ^python-dir.* starts_with_python-dir ${test_name})
-  if(starts_with_python-dir)
+  string(REGEX MATCH ^pyplug-dir.* starts_with_pyplug-dir ${test_name})
+  if(starts_with_pyplug-dir)
     list(APPEND DIR_PYMODULES_TO_LINK_TO_SRC bareos_dir_consts.py
-                BareosDirPluginBaseclass.py bareos-dir-class-plugin.py
-                BareosDirWrapper.py
+         BareosDirPluginBaseclass.py bareos-dir-class-plugin.py
+         BareosDirWrapper.py
     )
   endif()
 
-  if(${test_name} STREQUAL python-dir-plugin-test)
+  if(${test_name} STREQUAL pyplug-dir)
     list(APPEND DIR_PYMODULES_TO_LINK_TO_SRC)
   endif()
 
-  if(${test_name} STREQUAL python-fd-percona-xtrabackup-plugin-test)
+  if(${test_name} STREQUAL pyplug-fd-percona-xtrabackup)
     list(APPEND FD_PYMODULES_TO_LINK_TO_SRC BareosFdPluginPerconaXtraBackup.py
-                bareos-fd-percona-xtrabackup.py
+         bareos-fd-percona-xtrabackup.py
     )
   endif()
 
-  if(${test_name} STREQUAL python-fd-ovirt-plugin-test)
+  if(${test_name} STREQUAL pyplug-fd-ovirt)
     list(APPEND FD_PYMODULES_TO_LINK_TO_SRC BareosFdPluginOvirt.py
-                bareos-fd-ovirt.py
+         bareos-fd-ovirt.py
     )
   endif()
 
-  if(${test_name} STREQUAL python-fd-plugin-local-fileset-test)
+  if(${test_name} STREQUAL pyplug-fd-local-fileset)
     list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-local-fileset.py
-                BareosFdPluginLocalFileset.py
+         BareosFdPluginLocalFileset.py
     )
   endif()
 
-  if(${test_name} STREQUAL python-fd-plugin-postgres-test)
-        list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-postgres.py 
-                BareosFdPluginLocalFileset.py 
-		BareosFdPluginPostgres.py
-		BareosFdPluginBaseclass.py
+  if(${test_name} STREQUAL pyplug-fd-postgres)
+    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-postgres.py
+         BareosFdPluginLocalFileset.py BareosFdPluginPostgres.py
+         BareosFdPluginBaseclass.py
     )
   endif()
 
@@ -188,9 +187,10 @@ macro(handle_python_plugin_modules test_name)
   foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
     get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
     execute_process(
-      COMMAND ${CMAKE_COMMAND} -E create_symlink
-              ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
-              ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
+      COMMAND
+        ${CMAKE_COMMAND} -E create_symlink
+        ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
+        ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
     )
   endforeach()
 
@@ -205,7 +205,6 @@ macro(handle_python_plugin_modules test_name)
       ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
     )
   endforeach()
-
 
   foreach(PYMODULE ${FD_PYMODULES_TO_LINK_TO_SRC})
     get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
@@ -234,34 +233,31 @@ macro(handle_python_plugin_modules test_name)
 endmacro()
 
 # set the data encryption and signature keys
-set(pki_keypair
-  ${CMAKE_CURRENT_SOURCE_DIR}/pki/fd.pem)
-set(pki_master_key
-  ${CMAKE_CURRENT_SOURCE_DIR}/pki/master.cert)
+set(pki_keypair ${CMAKE_CURRENT_SOURCE_DIR}/pki/fd.pem)
+set(pki_master_key ${CMAKE_CURRENT_SOURCE_DIR}/pki/master.cert)
 
 # set the tls ca keys
-set(tls_ca_certificate
-  ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-ca.pem)
+set(tls_ca_certificate ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-ca.pem)
 
 set(tls_fd_certificate
-  ${CMAKE_CURRENT_SOURCE_DIR}/tls/client1.bareos.org-cert.pem)
-set(tls_fd_key
-  ${CMAKE_CURRENT_SOURCE_DIR}/tls/client1.bareos.org-key.pem)
+    ${CMAKE_CURRENT_SOURCE_DIR}/tls/client1.bareos.org-cert.pem
+)
+set(tls_fd_key ${CMAKE_CURRENT_SOURCE_DIR}/tls/client1.bareos.org-key.pem)
 
 set(tls_sd_certificate
-  ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-sd1.bareos.org-cert.pem)
-set(tls_sd_key
-  ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-sd1.bareos.org-key.pem)
+    ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-sd1.bareos.org-cert.pem
+)
+set(tls_sd_key ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-sd1.bareos.org-key.pem)
 
 set(tls_dir_certificate
-  ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-dir.bareos.org-cert.pem)
-set(tls_dir_key
-  ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-dir.bareos.org-key.pem)
+    ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-dir.bareos.org-cert.pem
+)
+set(tls_dir_key ${CMAKE_CURRENT_SOURCE_DIR}/tls/bareos-dir.bareos.org-key.pem)
 
 set(tls_con_certificate
-  ${CMAKE_CURRENT_SOURCE_DIR}/tls/console.bareos.org-cert.pem)
-set(tls_con_key
-  ${CMAKE_CURRENT_SOURCE_DIR}/tls/console.bareos.org-key.pem)
+    ${CMAKE_CURRENT_SOURCE_DIR}/tls/console.bareos.org-cert.pem
+)
+set(tls_con_key ${CMAKE_CURRENT_SOURCE_DIR}/tls/console.bareos.org-key.pem)
 
 macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
   foreach(binary_name ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
@@ -269,7 +265,7 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     string(REPLACE "-" "_" binary_name ${binary_name})
     string(TOUPPER ${binary_name} binary_name_upcase)
     string(CONCAT bareos_XXX_binary ${binary_name_upcase} "_BINARY")
-    #message (STATUS "${bareos_XXX_binary}")
+    # message (STATUS "${bareos_XXX_binary}")
     set(${bareos_XXX_binary} ${CURRENT_SBIN_DIR}/${binary_name}-${TEST_NAME})
     # message( "creating symlink ${${bareos_XXX_binary}}  ->
     # ${${binary_name_to_test_upcase}}" )
@@ -572,7 +568,9 @@ configurefilestosystemtest("systemtests" "data" "*.tgz" COPYONLY "")
 configurefilestosystemtest("systemtests" "data" "*.gz" COPYONLY "")
 
 configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
-configurefilestosystemtest("systemtests" "scripts" "reload_test_functions" @ONLY "")
+configurefilestosystemtest(
+  "systemtests" "scripts" "reload_test_functions" @ONLY ""
+)
 configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
 configurefilestosystemtest("systemtests" "scripts" "setup" @ONLY "")
 configurefilestosystemtest(
@@ -616,108 +614,115 @@ endforeach()
 
 set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
-    backup-bareos-client-initiated-test
-    backup-bareos-encrypt-signature-test
-    backup-bareos-encrypt-signature-test-with-tls-cert
-    backup-bareos-notls
-    backup-bareos-passive-test
-    backup-bareos-spool-test
-    backup-bareos-test
-    backup-bscan
+    client-initiated
+    encrypt-signature
+    encrypt-signature-tls-cert
+    notls
+    passive
+    spool
+    bareos
+    bscan
     bconsole-status-client
     config-syntax-crash
     copy-bscan
     copy-remote-bscan
-    messages-resource
-    multiplied-device-test
-    reload-works-on-adding-client-resource
-    reload-works-on-adding-duplicate-job-resource
-    reload-works-on-adding-empty-job-resource
-    reload-works-on-adding-second-director-resource
-    reload-works-on-adding-uncommented-string
-    reload-works-on-unchanged-config
-    scheduler-backup-test
-    upgrade-database-test
+    messages
+    multiplied-device
+    reload-add-client
+    reload-add-duplicate-job
+    reload-add-empty-job
+    reload-add-second-director
+    reload-add-uncommented-string
+    reload-unchanged-config
+    scheduler-backup
+    upgrade-database
     virtualfull
     virtualfull-bscan
-    volume-pruning-test
+    volume-pruning
 )
 
 set(SYSTEM_TESTS_DISABLED # initially empty
 )
 
-set(glusterfs_uri "" CACHE STRING "URI for GlusterFS backend test")
+set(glusterfs_uri
+    ""
+    CACHE STRING "URI for GlusterFS backend test"
+)
 mark_as_advanced(glusterfs_uri)
 
-if(SD_GFAPI_DIR_TO_TEST AND glusterfs_uri) 
+if(SD_GFAPI_DIR_TO_TEST AND glusterfs_uri)
   list(APPEND SYSTEM_TESTS glusterfs-backend)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED glusterfs-backend)
 endif()
 
-if(mysql AND postgresql AND dynamic-cats-backends)
-  list(APPEND SYSTEM_TESTS "dbcopy-mysql-postgresql-test")
+if(mysql
+   AND postgresql
+   AND dynamic-cats-backends
+)
+  list(APPEND SYSTEM_TESTS "dbcopy-mysql-postgresql")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "dbcopy-mysql-postgresql-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "dbcopy-mysql-postgresql")
 endif()
 
 # python-bareos-test does not work on installed files
 if(PYTHON AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-  list(APPEND SYSTEM_TESTS "python-bareos-test")
+  list(APPEND SYSTEM_TESTS "python-bareos")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "python-bareos-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "python-bareos")
 endif()
 
 bareosfindlibrary("gtest")
 if(GTEST_FOUND AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   list(APPEND SYSTEM_TESTS "catalog")
-  message(STATUS "adding catalog test as gtest was found and not testing installed files")
+  message(
+    STATUS
+      "adding catalog test as gtest was found and not testing installed files"
+  )
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "catalog")
   message(STATUS "disabling catalog test as gtest was not found")
 endif()
 
 if(TARGET python-fd)
-  list(APPEND SYSTEM_TESTS "python-fd-plugin-local-fileset-test")
+  list(APPEND SYSTEM_TESTS "pyplug-fd-local-fileset")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-local-fileset-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-local-fileset")
 endif()
 
 if(TARGET python-fd)
-  list(APPEND SYSTEM_TESTS "python-fd-plugin-postgres-test")
+  list(APPEND SYSTEM_TESTS "pyplug-fd-postgres")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-postgres-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-postgres")
 endif()
 
 if(TARGET python-fd AND ovirt_server)
-  list(APPEND SYSTEM_TESTS "python-fd-ovirt-plugin-test")
+  list(APPEND SYSTEM_TESTS "pyplug-fd-ovirt")
 else()
-  message(
-    STATUS "disabling python-fd-ovirt-plugin-test as ovirt_server is not set"
-  )
-  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-ovirt-plugin-test")
+  message(STATUS "disabling pyplug-fd-ovirt-test as ovirt_server is not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-ovirt")
 endif()
 
 if(TARGET python-fd AND XTRABACKUP)
-  list(APPEND SYSTEM_TESTS "python-fd-percona-xtrabackup-plugin-test")
+  list(APPEND SYSTEM_TESTS "pyplug-fd-percona-xtrabackup")
 else()
   message(
     STATUS
-      "disabling python-fd-percona-xtrabackup-plugin-test as XTRABACKUP was not found"
+      "disabling pyplug-fd-percona-xtrabackup-test as XTRABACKUP was not found"
   )
-  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-percona-xtrabackup-plugin-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-percona-xtrabackup")
 endif()
 
 if(TARGET python-dir)
-  list(APPEND SYSTEM_TESTS "python-dir-plugin-test")
+  list(APPEND SYSTEM_TESTS "pyplug-dir")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "python-dir-plugin-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-dir")
 endif()
 
 if(TARGET python-sd)
-  list(APPEND SYSTEM_TESTS "python-sd-plugin-test")
+  list(APPEND SYSTEM_TESTS "pyplug-sd")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "python-sd-plugin-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-sd")
 endif()
 
 message(STATUS "Looking for pam test requirements ...")
@@ -797,18 +802,13 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
 else()
   set(WEBUI_SELENIUM_TESTS)
   foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
-    add_test(
-      NAME ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}
-      COMMAND empty_command
+    add_test(NAME ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}
+             COMMAND empty_command
     )
     set_tests_properties(
-      ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}
-      PROPERTIES DISABLED true
+      ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED} PROPERTIES DISABLED true
     )
-    message(
-      STATUS
-        "Disabled test: ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}"
-    )
+    message(STATUS "Disabled test: ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}")
   endforeach()
 endif()
 
@@ -822,12 +822,8 @@ else()
   set(TEST_INFO_TEXT "running system tests on the sourcetree")
 endif()
 
-
 foreach(TEST_NAME ${SYSTEM_TESTS})
-  message(
-    STATUS
-      "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}"
-  )
+  message(STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}")
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
@@ -851,10 +847,7 @@ set(WEBUI_TEST_PREFIX "webui:")
 # webui specific settings
 if(ENABLE_WEBUI_SELENIUM_TEST)
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
-    message(
-      STATUS
-        "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}"
-    )
+    message(STATUS "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}")
 
     prepare_test()
     prepare_testdir_for_daemon_run()
@@ -912,20 +905,17 @@ endif()
 
 foreach(TEST_NAME_DISABLED ${SYSTEM_TESTS_DISABLED})
   checkforenabledanddisabledlistentry(${TEST_NAME_DISABLED})
-  add_test(
-    NAME ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}
-    COMMAND empty_command
-  )
+  add_test(NAME ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED} COMMAND empty_command)
   set_tests_properties(
-    ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}
-    PROPERTIES DISABLED true
+    ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED} PROPERTIES DISABLED true
   )
-  message(
-    STATUS
-      "Disabled test: ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}"
-  )
+  message(STATUS "Disabled test: ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}")
 endforeach()
 
-
-configure_file("CTestCustom.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY)
-configure_file("ctest_custom_pretest.sh.in" "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY)
+configure_file(
+  "CTestCustom.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY
+)
+configure_file(
+  "ctest_custom_pretest.sh.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY
+)
