@@ -34,8 +34,10 @@
 #include "gtest/gtest.h"
 #include "include/bareos.h"
 #endif
+#include "include/make_unique.h"
 #include "lib/dlist.h"
 
+#include <memory>
 
 struct MYJCR {
   char* buf;
@@ -289,8 +291,8 @@ TEST(dlist, dlist)
    *  allocates a dlist node and stores the string directly in
    *  it.
    */
-  dlist chain;
-  chain.append(new_dlistString("This is a long test line"));
+  auto chain = std::make_unique<dlist>();
+  chain->append(new_dlistString("This is a long test line"));
 #define CNT 6
   strcpy(buf, "ZZZ");
   count = 0;
@@ -298,7 +300,7 @@ TEST(dlist, dlist)
     for (int j = 0; j < CNT; j++) {
       for (int k = 0; k < CNT; k++) {
         count++;
-        chain.append(new_dlistString(buf));
+        chain->append(new_dlistString(buf));
         buf[1]--;
       }
       buf[1] = 'Z';
@@ -308,9 +310,9 @@ TEST(dlist, dlist)
     buf[0]--;
   }
   dlistString* node;
-  foreach_dlist (node, &chain) {
+  foreach_dlist (node, chain) {
   }
-  chain.destroy();
+  chain->destroy();
 
   test_dlist_dynamic();
 }
