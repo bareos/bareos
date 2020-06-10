@@ -1345,7 +1345,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_bindir}/bareos-tray-monitor
 %{_mandir}/man1/bareos-tray-monitor.1.gz
 /usr/share/applications/bareos-tray-monitor.desktop
-/usr/share/pixmaps/bareos-tray-monitor.xpm
+/usr/share/pixmaps/bareos-tray-monitor.png
 %endif
 
 

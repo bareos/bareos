@@ -1,5 +1,5 @@
 Storage {
-  Name = bareos-sd
+  Name = StorageDaemon-local
   Address = localhost
   Password = "@mon_sd_password@"          # password for StorageDaemon
 }

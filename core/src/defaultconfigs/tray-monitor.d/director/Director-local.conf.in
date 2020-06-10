@@ -1,4 +1,4 @@
 Director {
-  Name = bareos-dir
+  Name = Director-local
   Address = localhost
 }
