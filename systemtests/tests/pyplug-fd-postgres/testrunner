@@ -85,7 +85,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 messages
 @$out $tmp/log1.out
-restore client=bareos-fd fileset=pgtest where=/ select all done yes
+restore client=bareos-fd where=/ select all done yes
 wait
 END_OF_DATA
 run_bconsole
