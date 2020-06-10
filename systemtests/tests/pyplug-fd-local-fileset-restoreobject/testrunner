@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This systemtest tests the plugin functionality 
+# This systemtest tests the plugin functionality
 # of the Bareos FD by using the supplied module
 #   bareos-fd-local-fileset.py
 #

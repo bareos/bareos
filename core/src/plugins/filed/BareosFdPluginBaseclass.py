@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -339,7 +339,7 @@ class BareosFdPluginBaseclass(object):
 
     def end_backup_job(self, context):
         """
-        Called if backup job ends, before ClientAfterJob 
+        Called if backup job ends, before ClientAfterJob
         Overload this to arrange whatever you have to do at this time.
         """
         return bRCs["bRC_OK"]

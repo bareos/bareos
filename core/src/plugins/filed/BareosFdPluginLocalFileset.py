@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -311,7 +311,7 @@ class BareosFdPluginLocalFileset(
         """
         Need to verify: we set attributes here but on plugin_io close
         the mtime will be modified again.
-        approach: save stat-packet here and set it on 
+        approach: save stat-packet here and set it on
         end_restore_file
         """
         # restorepkt.create_status = bCFs["CF_CORE"]
