@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,6 +51,10 @@
 #include "lib/recent_job_results_list.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+
+#include "include/make_unique.h"
+
+#include <memory>
 
 #define DEFAULT_STATUS_SCHED_DAYS 7
 
@@ -869,7 +873,7 @@ static void ListScheduledJobs(UaContext* ua)
   int level, num_jobs = 0;
   int priority;
   bool hdr_printed = false;
-  dlist sched;
+  auto sched = std::make_unique<dlist>();
   sched_pkt* sp;
   int days, i;
 
@@ -918,12 +922,12 @@ static void ListScheduledJobs(UaContext* ua)
       } else {
         Dmsg1(250, "job=%s could not get job storage\n", job->resource_name_);
       }
-      sched.BinaryInsertMultiple(sp, CompareByRuntimePriority);
+      sched->BinaryInsertMultiple(sp, CompareByRuntimePriority);
       num_jobs++;
     }
   } /* end for loop over resources */
   UnlockRes(my_config);
-  foreach_dlist (sp, &sched) {
+  foreach_dlist (sp, sched) {
     PrtRuntime(ua, sp);
   }
   if (num_jobs == 0 && !ua->api) { ua->SendMsg(_("No Scheduled Jobs.\n")); }

@@ -62,8 +62,10 @@
 #include "include/auth_types.h"
 #include "include/jcr.h"
 
+#include <algorithm>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <vector>
 #include <arpa/inet.h>
 #include <netdb.h>
 #ifdef HAVE_ARPA_NAMESER_H
@@ -1266,7 +1268,7 @@ extern "C" void* ndmp_thread_server(void* arg)
     int port;
   }* fd_ptr = NULL;
   char buf[128];
-  alist sockfds(10, not_owned_by_alist);
+  std::vector<s_sockfd*> sockfds;
 #ifdef HAVE_POLL
   nfds_t nfds;
   struct pollfd* pfds;
@@ -1348,7 +1350,7 @@ extern "C" void* ndmp_thread_server(void* arg)
       }
     }
     listen(fd_ptr->fd, me->MaxConnections); /* tell system we are ready */
-    sockfds.append(fd_ptr);
+    sockfds.push_back(fd_ptr);
 #ifdef HAVE_POLL
     nfds++;
 #endif
@@ -1364,12 +1366,12 @@ extern "C" void* ndmp_thread_server(void* arg)
   memset(pfds, 0, sizeof(struct pollfd) * nfds);
 
   nfds = 0;
-  foreach_alist_null(fd_ptr, &sockfds)
-  {
-    pfds[nfds].fd = fd_ptr->fd;
-    pfds[nfds].events |= POLL_IN;
-    nfds++;
-  }
+  std::for_each(sockfds.begin(), sockfds.end(),
+                [&pfds, &nfds](const s_sockfd* fd_ptr) {
+                  pfds[nfds].fd = fd_ptr->fd;
+                  pfds[nfds].events |= POLL_IN;
+                  nfds++;
+                });
 #endif
 
   /*
@@ -1381,7 +1383,7 @@ extern "C" void* ndmp_thread_server(void* arg)
     fd_set sockset;
     FD_ZERO(&sockset);
 
-    foreach_alist (fd_ptr, &sockfds) {
+    for (auto fd_ptr : sockfds) {
       FD_SET((unsigned)fd_ptr->fd, &sockset);
       maxfd = maxfd > (unsigned)fd_ptr->fd ? maxfd : fd_ptr->fd;
     }
@@ -1394,7 +1396,7 @@ extern "C" void* ndmp_thread_server(void* arg)
       break;
     }
 
-    foreach_alist (fd_ptr, &sockfds) {
+    for (auto fd_ptr : sockfds) {
       if (FD_ISSET(fd_ptr->fd, &sockset)) {
 #else
     int cnt;
@@ -1408,8 +1410,7 @@ extern "C" void* ndmp_thread_server(void* arg)
     }
 
     cnt = 0;
-    foreach_alist_null(fd_ptr, &sockfds)
-    {
+    for (auto fd_ptr : sockfds) {
       if (pfds[cnt++].revents & POLLIN) {
 #endif
         /*
@@ -1459,10 +1460,8 @@ extern "C" void* ndmp_thread_server(void* arg)
   /*
    * Cleanup open files.
    */
-  fd_ptr = (s_sockfd*)sockfds.first();
-  while (fd_ptr) {
-    close(fd_ptr->fd);
-    fd_ptr = (s_sockfd*)sockfds.next();
+  for (auto fd_ptr : sockfds) {
+    if (fd_ptr) { close(fd_ptr->fd); }
   }
 
   if (!ntsa->thread_list->ShutdownAndWaitForThreadsToFinish()) {
