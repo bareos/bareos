@@ -101,6 +101,10 @@ rm -f database/data/postmaster.pid
 # This may become a plugin feature later on
 echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'" > $current_test_directory/database/data/recovery.conf
 
+# if postgres runs as postgresql when we are root
+chown 777 $current_test_directory/database/data/recovery.conf
+
+
 # start DB again - shall recover to latest possible state
 pushd database > /dev/null
 local_db_start_server "$TESTPGHOST" || exit 1
