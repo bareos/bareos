@@ -73,9 +73,17 @@ echo "Director is running"
 "${rscripts}"/bareos-ctl-fd start
 
 echo "Check if the filedaemon is connected to the director"
-if ! echo "status dir" | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf  | grep --quiet --word-regexp "${TestName}-fd"; then
-  exit_with_error "Filedaemon ${TestName} could not connect to director"
-fi
+i=0
+until ! echo "status dir" | \
+  "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf | \
+  grep --quiet --word-regexp "${TestName}-fd"; do
+  echo "waiting for client to connect (#$i)... "
+  sleep 1
+  if [ $i -gt 10 ]; then
+    exit_with_error "Filedaemon ${TestName} could not connect to director"
+  fi
+done
+
 echo "Filedaemon is connected, running backup and restore"
 
 run_bconsole "$tmp/bconcmds"
