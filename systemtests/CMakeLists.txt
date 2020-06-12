@@ -90,23 +90,28 @@ function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
 endfunction()
 
 # generic function to probe for a python module
-function(PythonModuleStatus module)
+function(check_pymodule_available module)
+  if(NOT PYTHON_EXECUTABLE)
+    message(FATAL_ERROR "PYTHON_EXECUTABLE ist not set")
+  endif()
   execute_process(
-    COMMAND "${PYTHON}" "-c" "import ${module}"
+    COMMAND "${PYTHON_EXECUTABLE}" "-c" "import ${module}"
     RESULT_VARIABLE ${module}_status
     ERROR_QUIET
   )
   string(TOUPPER ${module} module_uppercase)
   if(${module}_status EQUAL 0)
-    set("PYTHON_${module_uppercase}_FOUND"
+    set("PYMODULE_${module_uppercase}_FOUND"
         TRUE
         PARENT_SCOPE
     )
+    message(STATUS "python module ${module} found")
   else()
-    set("PYTHON_${module_uppercase}_FOUND"
+    set("PYMODULE_${module_uppercase}_FOUND"
         FALSE
         PARENT_SCOPE
     )
+    message(STATUS "python module ${module} NOT found")
   endif()
 endfunction()
 
@@ -344,7 +349,7 @@ macro(prepare_test)
   string(REPLACE "-" "_" db_name "regress-${TEST_NAME}")
   # set(db_name "regress-${TEST_NAME}")
   set(db_user "regress")
-  set(db_address "$current_test_directory"/database/tmp)
+  set(db_address "$current_test_directory/database/tmp")
 
   set(job_email root@localhost)
 
@@ -672,7 +677,10 @@ else()
 endif()
 
 # python-bareos-test does not work on installed files
-if(PYTHON AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+if(PYTHON_EXECUTABLE
+   AND PYTHON
+   AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES
+)
   list(APPEND SYSTEM_TESTS "python-bareos")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-bareos")
@@ -702,10 +710,19 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-local-fileset-restoreobject")
 endif()
 
-if(TARGET python-fd)
+message("checking for requirements of pyplug-fd-postgres:")
+check_pymodule_available("psycopg2")
+check_pymodule_available("dateutil")
+
+if(TARGET python-fd
+   AND PYMODULE_PSYCOPG2_FOUND
+   AND PYMODULE_DATEUTIL_FOUND
+)
+  message("OK, enabling pyplug-fd-postgres:")
   list(APPEND SYSTEM_TESTS "pyplug-fd-postgres")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-postgres")
+  message("NOT OK, disabling pyplug-fd-postgres:")
 endif()
 
 if(TARGET python-fd AND ovirt_server)
@@ -761,6 +778,7 @@ if(PAM_WRAPPER_LIBRARIES
    AND PAMTESTER
    AND PAM_EXEC_AVAILABLE
    AND PAM_FOUND
+   AND PYTHON
 )
   set(ENABLE_BCONSOLE_PAM_TEST TRUE)
   message(STATUS "OK: all requirements for pam tests were met.")
@@ -788,16 +806,17 @@ message(STATUS "Looking for webui test requirements ...")
 
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
-pythonmodulestatus("selenium") # sets PYTHON_SELENIUM_FOUND to TRUE or FALSE
+check_pymodule_available("selenium") # sets PYMODULE_SELENIUM_FOUND to TRUE or
+# FALSE
 
 message("   PHP:                    " ${PHP})
-message("   PYTHON:                 " ${PYTHON})
-message("   PYTHON_SELENIUM_FOUND:  " ${PYTHON_SELENIUM_FOUND})
+message("   PYTHON_EXECUTABLE:      " ${PYTHON_EXECUTABLE})
+message("   PYMODULE_SELENIUM_FOUND:" ${PYMOD_SELENIUM_FOUND})
 message("   CHROMEDRIVER:           " ${CHROMEDRIVER})
 
 if(PHP
-   AND PYTHON
-   AND PYTHON_SELENIUM_FOUND
+   AND PYTHON_EXECUTABLE
+   AND PYMODULE_SELENIUM_FOUND
    AND CHROMEDRIVER
 )
   set(ENABLE_WEBUI_SELENIUM_TEST TRUE)
@@ -809,6 +828,7 @@ else()
   )
 endif()
 
+set(WEBUI_TEST_PREFIX "webui:")
 if(ENABLE_WEBUI_SELENIUM_TEST)
   set(WEBUI_SELENIUM_TESTS ${AVAILABLE_WEBUI_SELENIUM_TESTS})
 else()
@@ -855,7 +875,6 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
 
 endforeach()
 
-set(WEBUI_TEST_PREFIX "webui:")
 # webui specific settings
 if(ENABLE_WEBUI_SELENIUM_TEST)
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})

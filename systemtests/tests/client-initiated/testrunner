@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -78,6 +78,7 @@ until ! echo "status dir" | \
   "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf | \
   grep --quiet --word-regexp "${TestName}-fd"; do
   echo "waiting for client to connect (#$i)... "
+  ((i=i+1))
   sleep 1
   if [ $i -gt 10 ]; then
     exit_with_error "Filedaemon ${TestName} could not connect to director"

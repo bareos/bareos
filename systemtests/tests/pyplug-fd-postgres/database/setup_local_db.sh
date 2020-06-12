@@ -10,7 +10,7 @@ local_db_stop_server() {
       echo "Could not stop postgres server"
       return 1
     }
-    sleep 0.3
+    sleep 1
   done
 }
 
@@ -36,22 +36,22 @@ local_db_start_server() {
   echo "start db server"
   pg_ctl --silent --pgdata=data --log=log/logfile start
 
-  tries=10
+  tries=60
   while ! psql --host="$1" --list > /dev/null 2>&1; do
     [ $((tries-=1)) -eq 0 ] && {
       echo "Could not start postgres server"
       return 1
     }
-    sleep 0.1
+    sleep 1
   done
 
-  tries=10
+  tries=60
   while ! echo "select pg_is_in_recovery()" | psql --host="$1" postgres | grep -q -e "^ f$" ; do
     [ $((tries-=1)) -eq 0 ] && {
       echo "Could not start postgres server (still recovering)"
       return 1
     }
-    sleep 0.1
+    sleep 1
   done
 
   return 0
