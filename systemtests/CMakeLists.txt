@@ -685,10 +685,19 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "dbcopy-mysql-postgresql")
 endif()
 
+# python-bareos fails inside of container
+if(EXISTS /run/.containerenv)
+  message(STATUS "detected container environment, disabling python-bareos")
+  set(in_container TRUE)
+else()
+  set(in_container FALSE)
+endif()
+
 # python-bareos-test does not work on installed files
 if(PYTHON_EXECUTABLE
    AND PYTHON
    AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES
+   AND NOT in_container
 )
   list(APPEND SYSTEM_TESTS "python-bareos")
 else()
