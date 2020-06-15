@@ -181,7 +181,7 @@ BuildRequires: ceph-devel
 BuildRequires: git-core
 %endif
 
-Source0: %{name}-%{version}.tar.bz2
+Source0: %{name}-%{version}.tar.gz
 
 BuildRequires: pam-devel
 
