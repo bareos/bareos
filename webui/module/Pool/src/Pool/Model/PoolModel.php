@@ -132,4 +132,27 @@ class PoolModel
          throw new \Exception('Missing argument.');
       }
    }
+
+   /**
+    * Get the NextPool value from a Pool model definition
+    *
+    * @param $bsock
+    * @param $pool
+    *
+    * @return array
+    */
+   public function getPoolNextPool(&$bsock=null, $pool=null)
+   {
+      if(isset($bsock, $pool)) {
+         $cmd = 'show pool="'.$pool.'"';
+         $result = $bsock->send_command($cmd, 0);
+         
+         $matches = [];
+         preg_match('/\s*Next\s*Pool\s*=\s*("|\')?(?<value>.*)(?(1)\1|)/i', $result, $matches);
+         return $matches["value"];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
 }

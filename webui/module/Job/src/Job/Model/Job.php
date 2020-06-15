@@ -144,6 +144,17 @@ class Job implements InputFilterAwareInterface
          ));
 
          $inputFilter->add(array(
+            'name' => 'nextpool',
+            'required' => false,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+            )
+         ));
+
+         $inputFilter->add(array(
             'name' => 'priority',
             'required' => false,
             'filters' => array(

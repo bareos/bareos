@@ -105,6 +105,13 @@ $this->headTitle($title);
    </div>
 
    <div class="form-group">
+      <label class="control-label col-md-2"><?php echo $this->formLabel($form->get('nextpool')); ?></label>
+      <div class="control-input col-md-6">
+         <?php echo $this->formSelect($form->get('nextpool')); ?>
+      </div>
+   </div>
+
+   <div class="form-group">
       <label class="control-label col-md-2"><?php echo $this->formLabel($form->get('priority')); ?></label>
       <div class="control-input col-md-6">
          <?php echo $this->formInput($form->get('priority')); ?>
@@ -162,6 +169,8 @@ $this->headTitle($title);
 
 <script type="text/javascript">
 
+   let pool_nextpool_mapping = JSON.parse('<?php echo $form->getPoolNextPoolMapping(); ?>');
+
    function updateQueryParams(k, v) {
       var p = [];
       var params = [];
@@ -177,8 +186,34 @@ $this->headTitle($title);
       return params.join('&');
    }
 
+   function hasNextPoolOption() {
+      return $('#level').selectpicker('val') == "VirtualFull" || 
+         $('#type').val() == "Copy" ||
+         $('#type').val() == "Migrate"
+   }
+
    $('#job').change(function(event) {
       window.location.href = window.location.pathname + '?' + updateQueryParams('jobname', this.value);
+   });
+
+   $('#pool').change(function(event) {
+      if(hasNextPoolOption()) {
+         let nextpool = pool_nextpool_mapping[$('#pool').selectpicker('val')];
+
+         if(nextpool) {
+            $('#nextpool').selectpicker('val', nextpool);
+         }
+      }
+   });
+
+   $('#level').change(function() {
+      if(hasNextPoolOption()) {
+         $("#nextpool").parents(".form-group").fadeIn();
+         $('#pool').change();
+      } else {
+         $("#nextpool").parents(".form-group").hide();
+         $('#nextpool').selectpicker('val', '');
+      }
    });
 
    $(function() {
@@ -186,6 +221,9 @@ $this->headTitle($title);
          format: 'YYYY-MM-DD HH:mm:ss',
          sideBySide: true
       });
+
+      // This will enable/disable the Next Pool select based on the Level value on load
+      $('#level').change();
    });
 
 </script>
