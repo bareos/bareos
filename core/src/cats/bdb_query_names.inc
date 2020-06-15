@@ -78,5 +78,7 @@ const char *BareosDb::query_names[] = {
 "bvfs_ls_sub_dirs_5",
 "list_volumes_select_0",
 "list_volumes_select_long_0",
+"bvfs_lock_pathhierarchy_0",
+"bvfs_unlock_tables_0",
 NULL
 };

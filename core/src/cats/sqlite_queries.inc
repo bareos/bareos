@@ -565,9 +565,9 @@ const char *BareosDbSqlite::query_definitions[] = {
        "Path.Path||File.Name AS Name, "
        "StartTime, "
        "TYPE AS JobType, "
-               "JobStatus, "
-               "JobFiles, "
-               "JobBytes "
+       "JobStatus, "
+       "JobFiles, "
+       "JobBytes "
 "FROM Client, "
      "Job, "
      "File, "
@@ -991,6 +991,14 @@ const char *BareosDbSqlite::query_definitions[] = {
           "Storage.Name AS Storage "
 "FROM      Media "
 "LEFT JOIN Storage USING(StorageId) "
+,
+
+/* 0078_bvfs_lock_pathhierarchy_0 */
+"BEGIN "
+,
+
+/* 0079_bvfs_unlock_tables_0 */
+"COMMIT "
 ,
 
 NULL
