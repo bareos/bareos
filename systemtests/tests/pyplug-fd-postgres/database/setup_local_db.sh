@@ -32,8 +32,7 @@ local_db_prepare_files() {
   sed -i.bak "s@#unix_socket_directories.*@unix_socket_directories = \'$1\'@g" data/postgresql.conf
 
   {
-  # fo
-r online backups we need wal_archiving
+  # for online backups we need wal_archiving
     echo "wal_level = archive"
     echo "archive_mode = on"
     echo "archive_command = 'cp %p ../wal_archive'"

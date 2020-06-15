@@ -108,5 +108,5 @@ export OVIRT_SERVER=@ovirt_server@
 # which we do not want for our tests
 if [ -d /usr/lib/postgresql  ]; then
   POSTGRES_BINARY_DIR=$(dirname $(find /usr/lib/postgresql | grep psql))
+  export PATH=$POSTGRES_BINARY_DIR:$PATH
 fi
-export PATH=$POSTGRES_BINARY_DIR:$PATH
