@@ -209,6 +209,10 @@ bareos_add_test(
                                     ${GTEST_MAIN_LIBRARIES}
 )
 
+bareos_add_test(cram_md5
+  LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
+)
+
 if(NOT client-only)
   bareos_add_test(multiplied_device_test LINK_LIBRARIES ${LINK_LIBRARIES})
 endif()
