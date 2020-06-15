@@ -1005,7 +1005,14 @@ for F in  \
     %{script_dir}/btraceback.dbx \
     %{script_dir}/btraceback.mdb \
     %{_docdir}/%{name}/INSTALL \
-    %{_sbindir}/%{name}
+    %{_sbindir}/%{name} \
+    %{_sysconfdir}/bareos-webui/configuration.ini \
+    %{_sysconfdir}/bareos-webui/directors.ini \
+    %{_sysconfdir}/bareos/bareos-dir.d/console/admin.conf.example \
+    %{_sysconfdir}/bareos/bareos-dir.d/profile/webui-admin.conf \
+    %{_sysconfdir}/bareos/bareos-dir.d/profile/webui-limited.conf.example \
+    %{_sysconfdir}/bareos/bareos-dir.d/profile/webui-readonly.conf \
+    %{_sysconfdir}/httpd/conf.d/bareos-webui.conf
 do
 rm -f "%{buildroot}/$F"
 done
@@ -1049,6 +1056,8 @@ rm -f %{buildroot}%{plugin_dir}/bareos-fd-vmware.py*
 
 
 
+# cleanup bareos-webui
+rm -Rf %{buildroot}/usr/share/bareos-webui
 
 # install systemd service files
 %if 0%{?systemd_support}
