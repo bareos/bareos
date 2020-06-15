@@ -928,8 +928,8 @@ make clean
 ctest --timeout 60 -R gtest: -D Continuous || result=$?
 result=$?
 if [ $result -eq 1 ]; then
-  echo "ctest result $result is expected and OK"
-  exit 0
+echo "ctest result $result is expected and OK"
+exit 0
 else
   echo "ctest result $result is not 1, ERROR"
 fi
