@@ -6,6 +6,9 @@
 #
 # The module will backup a postgresql databaseome.
 #
+
+export PATH=/usr/lib/postgresql/11/bin/:$PATH
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -102,7 +105,7 @@ rm -f database/data/postmaster.pid
 echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'" > $current_test_directory/database/data/recovery.conf
 
 # if postgres runs as postgresql when we are root
-chown 777 $current_test_directory/database/data/recovery.conf
+chmod 777 $current_test_directory/database/data/recovery.conf
 
 
 # start DB again - shall recover to latest possible state
@@ -110,7 +113,13 @@ pushd database > /dev/null
 local_db_start_server "$TESTPGHOST" || exit 1
 popd > /dev/null
 
-echo "SELECT * FROM t" | ${PSQL} ${DBNAME} > $tmp/sql.log
+i=0
+until ${PSQL} ${DBNAME} <<< "SELECT * FROM t" | tee $tmp/sql.log  ; do
+	echo "waiting for query to succeed"
+	sleep 1
+  i=$((i+1))
+  if [ $i -gt 30 ]; then echo "timout waiting for query after recovery"; exit 1; fi
+done
 
 pushd database/ > /dev/null
 local_db_stop_server "$TESTPGHOST"
