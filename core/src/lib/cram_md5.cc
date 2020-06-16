@@ -202,7 +202,7 @@ bool CramMd5Handshake::CramMd5Response()
   auto comparison_result = CompareChallengeWithOwnQualifiedName(chal.c_str());
 
   if (comparison_result == ComparisonResult::IS_SAME) {
-    result = HandshakeResult::CHALLENGE_ATTACK;
+    result = HandshakeResult::REPLAY_ATTACK;
     return false;
   }
 
