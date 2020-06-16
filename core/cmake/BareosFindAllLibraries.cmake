@@ -74,7 +74,7 @@ if(VIXDISKLIB_FOUND)
     )
     message(WARNING ${MSG})
   else()
-    set(enable_vmware_test 1)
+    set(enable_vmware_test 1 PARENT_SCOPE)
   endif()
 elseif(
   (DEFINED vmware_server)
