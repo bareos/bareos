@@ -110,4 +110,6 @@ export OVIRT_SERVER=@ovirt_server@
 if [ -d /usr/lib/postgresql  ]; then
   POSTGRES_BINARY_DIR=$(dirname $(find /usr/lib/postgresql | grep psql))
   export PATH=$POSTGRES_BINARY_DIR:$PATH
+else
+  export PATH=/sbin:/usr/sbin:$PATH
 fi
