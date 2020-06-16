@@ -213,84 +213,137 @@ static std::string CreateQualifiedResourceName(const char* r_type_str,
   return std::string(r_type_str) + static_cast<char>(0x1e) + std::string(name);
 }
 
+class CramSockets {
+ public:
+  CramSockets(const char* r_code_str_1,
+              const char* name_1,
+              const char* r_code_str_2,
+              const char* name_2)
+      : s1(std::make_unique<TestSocket>())
+      , s2(std::make_unique<TestSocket>())
+      , cram1(
+            CramMd5Handshake(s1.get(),
+                             "Secret-Password",
+                             TlsPolicy::kBnetTlsNone,
+                             CreateQualifiedResourceName(r_code_str_1, name_1)))
+      , cram2(
+            CramMd5Handshake(s2.get(),
+                             "Secret-Password",
+                             TlsPolicy::kBnetTlsNone,
+                             CreateQualifiedResourceName(r_code_str_1, name_2)))
+  {
+    s1->connect(*s2);
+
+    auto future1 = std::async(&CramMd5Handshake::DoHandshake, &cram1, true);
+    auto future2 = std::async(&CramMd5Handshake::DoHandshake, &cram2, false);
+
+    future1.wait();
+    future2.wait();
+
+    handshake_ok_1 = future1.get();
+    handshake_ok_2 = future2.get();
+  }
+  std::unique_ptr<TestSocket> s1;
+  std::unique_ptr<TestSocket> s2;
+  CramMd5Handshake cram1;
+  CramMd5Handshake cram2;
+  bool handshake_ok_1, handshake_ok_2;
+};
+
 TEST(cram_md5, same_director_qualified_name)
 {
-  auto s1(std::make_unique<TestSocket>());
-  auto s2(std::make_unique<TestSocket>());
+  // should NOT pass cram
+  CramSockets cs("R_DIRECTOR", "Test1", "R_DIRECTOR", "Test1");
 
-  s1->connect(*s2);
-
-  CramMd5Handshake cram1(s1.get(), "Secret", TlsPolicy::kBnetTlsNone,
-                         CreateQualifiedResourceName("BAREOS_DIR", "Test1"));
-
-  CramMd5Handshake cram2(s2.get(), "Secret", TlsPolicy::kBnetTlsNone,
-                         CreateQualifiedResourceName("BAREOS_DIR", "Test1"));
-
-  auto handshake_ok_1 =
-      std::async(&CramMd5Handshake::DoHandshake, &cram1, true);
-  auto handshake_ok_2 =
-      std::async(&CramMd5Handshake::DoHandshake, &cram2, false);
-
-  handshake_ok_1.wait();
-  handshake_ok_2.wait();
-
-  EXPECT_FALSE(handshake_ok_1.get());
-  EXPECT_EQ(cram1.result, CramMd5Handshake::HandshakeResult::NETWORK_ERROR)
+  EXPECT_FALSE(cs.handshake_ok_1);
+  EXPECT_EQ(cs.cram1.result, CramMd5Handshake::HandshakeResult::NETWORK_ERROR)
       << "  CramMd5Handshake::HandshakeResult::"
-      << cram_result_to_string.at(cram1.result) << std::endl
-      << "  Wich is probably a side effect of a challange replay attack."
-      << std::endl;
+      << cram_result_to_string.at(cs.cram1.result) << std::endl
+      << "  Wich is probably a side effect of a challange attack." << std::endl;
 
-  EXPECT_FALSE(handshake_ok_2.get());
-  EXPECT_EQ(cram2.result, CramMd5Handshake::HandshakeResult::REPLAY_ATTACK)
+  EXPECT_FALSE(cs.handshake_ok_2);
+  EXPECT_EQ(cs.cram2.result,
+            CramMd5Handshake::HandshakeResult::REPLAY_ATTACK)
       << "  CramMd5Handshake::HandshakeResult::"
-      << cram_result_to_string.at(cram2.result) << std::endl;
+      << cram_result_to_string.at(cs.cram2.result) << std::endl;
 
-  EXPECT_EQ(s1->result, TestSocket::Result::kReceiveTimeout)
+  EXPECT_EQ(cs.s1->result, TestSocket::Result::kReceiveTimeout)
       << "---> Outbound TestSocket Error: "
-      << socket_result_to_string.at(s1->result);
-  EXPECT_EQ(s2->result, TestSocket::Result::kSuccess)
+      << socket_result_to_string.at(cs.s1->result);
+  EXPECT_EQ(cs.s2->result, TestSocket::Result::kSuccess)
       << "---> Inbound TestSocket Error: "
-      << socket_result_to_string.at(s2->result);
+      << socket_result_to_string.at(cs.s2->result);
 }
 
 TEST(cram_md5, different_director_qualified_name)
 {
-  auto s1(std::make_unique<TestSocket>());
-  auto s2(std::make_unique<TestSocket>());
+  // should pass cram
+  CramSockets cs("R_DIRECTOR", "Test1", "R_DIRECTOR", "Test2");
 
-  s1->connect(*s2);
-
-  CramMd5Handshake cram1(s1.get(), "Secret", TlsPolicy::kBnetTlsNone,
-                         CreateQualifiedResourceName("BAREOS_DIR", "Test1"));
-
-  CramMd5Handshake cram2(s2.get(), "Secret", TlsPolicy::kBnetTlsNone,
-                         CreateQualifiedResourceName("BAREOS_DIR", "Test1"));
-
-  auto handshake_ok_1 =
-      std::async(&CramMd5Handshake::DoHandshake, &cram1, true);
-  auto handshake_ok_2 =
-      std::async(&CramMd5Handshake::DoHandshake, &cram2, false);
-
-  handshake_ok_1.wait();
-  handshake_ok_2.wait();
-
-  EXPECT_TRUE(handshake_ok_1.get());
-  EXPECT_EQ(cram1.result, CramMd5Handshake::HandshakeResult::SUCCESS)
+  EXPECT_TRUE(cs.handshake_ok_1);
+  EXPECT_EQ(cs.cram1.result, CramMd5Handshake::HandshakeResult::SUCCESS)
       << "  CramMd5Handshake::HandshakeResult::"
-      << cram_result_to_string.at(cram1.result) << std::endl
-      << "  Wich is probably a side effect of a challange replay attack."
-      << std::endl;
+      << cram_result_to_string.at(cs.cram1.result) << std::endl
+      << "  Wich is probably a side effect of a challange attack." << std::endl;
 
-  EXPECT_TRUE(handshake_ok_2.get());
-  EXPECT_EQ(cram2.result, CramMd5Handshake::HandshakeResult::SUCCESS)
+  EXPECT_TRUE(cs.handshake_ok_2);
+  EXPECT_EQ(cs.cram2.result, CramMd5Handshake::HandshakeResult::SUCCESS)
       << "  CramMd5Handshake::HandshakeResult::"
-      << cram_result_to_string.at(cram2.result) << std::endl;
+      << cram_result_to_string.at(cs.cram2.result) << std::endl;
 
-  EXPECT_EQ(s1->result, TestSocket::Result::kSuccess)
+  EXPECT_EQ(cs.s1->result, TestSocket::Result::kSuccess)
       << "---> Outbound TestSocket Error: "
-      << socket_result_to_string.at(s1->result);
-  EXPECT_EQ(s2->result, TestSocket::Result::kSuccess)
+      << socket_result_to_string.at(cs.s1->result);
+  EXPECT_EQ(cs.s2->result, TestSocket::Result::kSuccess)
       << "---> Inbound TestSocket Error: "
-      << socket_result_to_string.at(s2->result);
+      << socket_result_to_string.at(cs.s2->result);
 }
+
+TEST(cram_md5, same_stored_qualified_name)
+{
+  // should pass cram
+  CramSockets cs("R_STORAGE", "Test1", "R_STORAGE", "Test1");
+
+  EXPECT_TRUE(cs.handshake_ok_1);
+  EXPECT_EQ(cs.cram1.result, CramMd5Handshake::HandshakeResult::SUCCESS)
+      << "  CramMd5Handshake::HandshakeResult::"
+      << cram_result_to_string.at(cs.cram1.result) << std::endl
+      << "  Wich is probably a side effect of a challange attack." << std::endl;
+
+  EXPECT_TRUE(cs.handshake_ok_2);
+  EXPECT_EQ(cs.cram2.result, CramMd5Handshake::HandshakeResult::SUCCESS)
+      << "  CramMd5Handshake::HandshakeResult::"
+      << cram_result_to_string.at(cs.cram2.result) << std::endl;
+
+  EXPECT_EQ(cs.s1->result, TestSocket::Result::kSuccess)
+      << "---> Outbound TestSocket Error: "
+      << socket_result_to_string.at(cs.s1->result);
+  EXPECT_EQ(cs.s2->result, TestSocket::Result::kSuccess)
+      << "---> Inbound TestSocket Error: "
+      << socket_result_to_string.at(cs.s2->result);
+}
+
+TEST(cram_md5, different_stored_qualified_name)
+{
+  // should pass cram
+  CramSockets cs("R_STORAGE", "Test1", "R_STORAGE", "Test2");
+
+  EXPECT_TRUE(cs.handshake_ok_1);
+  EXPECT_EQ(cs.cram1.result, CramMd5Handshake::HandshakeResult::SUCCESS)
+      << "  CramMd5Handshake::HandshakeResult::"
+      << cram_result_to_string.at(cs.cram1.result) << std::endl
+      << "  Wich is probably a side effect of a challange attack." << std::endl;
+
+  EXPECT_TRUE(cs.handshake_ok_2);
+  EXPECT_EQ(cs.cram2.result, CramMd5Handshake::HandshakeResult::SUCCESS)
+      << "  CramMd5Handshake::HandshakeResult::"
+      << cram_result_to_string.at(cs.cram2.result) << std::endl;
+
+  EXPECT_EQ(cs.s1->result, TestSocket::Result::kSuccess)
+      << "---> Outbound TestSocket Error: "
+      << socket_result_to_string.at(cs.s1->result);
+  EXPECT_EQ(cs.s2->result, TestSocket::Result::kSuccess)
+      << "---> Inbound TestSocket Error: "
+      << socket_result_to_string.at(cs.s2->result);
+}
+
