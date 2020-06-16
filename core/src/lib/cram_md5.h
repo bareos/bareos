@@ -42,7 +42,7 @@ class CramMd5Handshake {
     FORMAT_MISMATCH,
     NETWORK_ERROR,
     WRONG_HASH,
-    CHALLENGE_ATTACK
+    REPLAY_ATTACK
   };
 
   mutable HandshakeResult result{HandshakeResult::NOT_INITIALIZED};

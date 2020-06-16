@@ -187,29 +187,44 @@ class TestSocket : public BareosSocket {
 Fifo<char> TestSocket::fifo1;
 Fifo<char> TestSocket::fifo2;
 
+/* clang-format off */
 // translation table for error codes
-static std::map<TestSocket::Result, std::string> result_to_string{
-    {TestSocket::Result::kInit, "still in init state"},
-    {TestSocket::Result::kSuccess, "success"},
-    {TestSocket::Result::kReceiveTimeout, "receive timeout"}};
+static std::map<TestSocket::Result, std::string>
+    socket_result_to_string {
+        {TestSocket::Result::kInit, "still in init state"},
+        {TestSocket::Result::kSuccess, "success"},
+        {TestSocket::Result::kReceiveTimeout, "receive timeout"}};
 
+static std::map<CramMd5Handshake::HandshakeResult, std::string>
+    cram_result_to_string {
+        {CramMd5Handshake::HandshakeResult::NOT_INITIALIZED, "NOT_INITIALIZED"},
+        {CramMd5Handshake::HandshakeResult::SUCCESS, "SUCCESS"},
+        {CramMd5Handshake::HandshakeResult::FORMAT_MISMATCH, "FORMAT_MISMATCH"},
+        {CramMd5Handshake::HandshakeResult::NETWORK_ERROR, "NETWORK_ERROR"},
+        {CramMd5Handshake::HandshakeResult::WRONG_HASH, "NETWORK_ERROR"},
+        {CramMd5Handshake::HandshakeResult::REPLAY_ATTACK,"REPLAY_ATTACK"}};
+/* clang-format on */
 
 /********************** Tests *****************************/
 
-TEST(cram_md5, same_qualified_name)
+static std::string CreateQualifiedResourceName(const char* r_type_str,
+                                               const char* name)
+{
+  return std::string(r_type_str) + static_cast<char>(0x1e) + std::string(name);
+}
+
+TEST(cram_md5, same_director_qualified_name)
 {
   auto s1(std::make_unique<TestSocket>());
   auto s2(std::make_unique<TestSocket>());
 
   s1->connect(*s2);
 
-  std::string qualified_name_1{"BAREOS_SD::Test1"};
   CramMd5Handshake cram1(s1.get(), "Secret", TlsPolicy::kBnetTlsNone,
-                         qualified_name_1);
+                         CreateQualifiedResourceName("BAREOS_DIR", "Test1"));
 
-  std::string qualified_name_2{"BAREOS_SD::Test1"};
   CramMd5Handshake cram2(s2.get(), "Secret", TlsPolicy::kBnetTlsNone,
-                         qualified_name_2);
+                         CreateQualifiedResourceName("BAREOS_DIR", "Test1"));
 
   auto handshake_ok_1 =
       std::async(&CramMd5Handshake::DoHandshake, &cram1, true);
@@ -220,28 +235,37 @@ TEST(cram_md5, same_qualified_name)
   handshake_ok_2.wait();
 
   EXPECT_FALSE(handshake_ok_1.get());
+  EXPECT_EQ(cram1.result, CramMd5Handshake::HandshakeResult::NETWORK_ERROR)
+      << "  CramMd5Handshake::HandshakeResult::"
+      << cram_result_to_string.at(cram1.result) << std::endl
+      << "  Wich is probably a side effect of a challange replay attack."
+      << std::endl;
+
   EXPECT_FALSE(handshake_ok_2.get());
+  EXPECT_EQ(cram2.result, CramMd5Handshake::HandshakeResult::REPLAY_ATTACK)
+      << "  CramMd5Handshake::HandshakeResult::"
+      << cram_result_to_string.at(cram2.result) << std::endl;
 
   EXPECT_EQ(s1->result, TestSocket::Result::kReceiveTimeout)
-      << "---> Outbound TestSocket Error: " << result_to_string.at(s1->result);
+      << "---> Outbound TestSocket Error: "
+      << socket_result_to_string.at(s1->result);
   EXPECT_EQ(s2->result, TestSocket::Result::kSuccess)
-      << "---> Inbound TestSocket Error: " << result_to_string.at(s2->result);
+      << "---> Inbound TestSocket Error: "
+      << socket_result_to_string.at(s2->result);
 }
 
-TEST(cram_md5, different_qualified_name)
+TEST(cram_md5, different_director_qualified_name)
 {
   auto s1(std::make_unique<TestSocket>());
   auto s2(std::make_unique<TestSocket>());
 
   s1->connect(*s2);
 
-  std::string qualified_name_1{"BAREOS_SD::Test1"};
   CramMd5Handshake cram1(s1.get(), "Secret", TlsPolicy::kBnetTlsNone,
-                         qualified_name_1);
+                         CreateQualifiedResourceName("BAREOS_DIR", "Test1"));
 
-  std::string qualified_name_2{"BAREOS_SD::Test2"};
   CramMd5Handshake cram2(s2.get(), "Secret", TlsPolicy::kBnetTlsNone,
-                         qualified_name_2);
+                         CreateQualifiedResourceName("BAREOS_DIR", "Test1"));
 
   auto handshake_ok_1 =
       std::async(&CramMd5Handshake::DoHandshake, &cram1, true);
@@ -252,10 +276,21 @@ TEST(cram_md5, different_qualified_name)
   handshake_ok_2.wait();
 
   EXPECT_TRUE(handshake_ok_1.get());
+  EXPECT_EQ(cram1.result, CramMd5Handshake::HandshakeResult::SUCCESS)
+      << "  CramMd5Handshake::HandshakeResult::"
+      << cram_result_to_string.at(cram1.result) << std::endl
+      << "  Wich is probably a side effect of a challange replay attack."
+      << std::endl;
+
   EXPECT_TRUE(handshake_ok_2.get());
+  EXPECT_EQ(cram2.result, CramMd5Handshake::HandshakeResult::SUCCESS)
+      << "  CramMd5Handshake::HandshakeResult::"
+      << cram_result_to_string.at(cram2.result) << std::endl;
 
   EXPECT_EQ(s1->result, TestSocket::Result::kSuccess)
-      << "---> Outbound TestSocket Error: " << result_to_string.at(s1->result);
+      << "---> Outbound TestSocket Error: "
+      << socket_result_to_string.at(s1->result);
   EXPECT_EQ(s2->result, TestSocket::Result::kSuccess)
-      << "---> Inbound TestSocket Error: " << result_to_string.at(s2->result);
+      << "---> Inbound TestSocket Error: "
+      << socket_result_to_string.at(s2->result);
 }

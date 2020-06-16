@@ -420,7 +420,7 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
       SockaddrToAscii(&(client_addr), ipaddr_str, sizeof(ipaddr_str));
 
       switch (cram_md5_handshake.result) {
-        case CramMd5Handshake::HandshakeResult::CHALLENGE_ATTACK: {
+        case CramMd5Handshake::HandshakeResult::REPLAY_ATTACK: {
           const char* fmt =
               "Warning! Attack detected: "
               "I will not answer to my own challenge. "
