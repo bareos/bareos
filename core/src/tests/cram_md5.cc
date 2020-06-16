@@ -213,6 +213,8 @@ static std::string CreateQualifiedResourceName(const char* r_type_str,
   return std::string(r_type_str) + static_cast<char>(0x1e) + std::string(name);
 }
 
+static constexpr bool InitiatedByRemote = true;
+
 class CramSockets {
  public:
   CramSockets(const char* r_code_str_1,
@@ -234,8 +236,10 @@ class CramSockets {
   {
     s1->connect(*s2);
 
-    auto future1 = std::async(&CramMd5Handshake::DoHandshake, &cram1, true);
-    auto future2 = std::async(&CramMd5Handshake::DoHandshake, &cram2, false);
+    auto future1 =
+        std::async(&CramMd5Handshake::DoHandshake, &cram1, InitiatedByRemote);
+    auto future2 =
+        std::async(&CramMd5Handshake::DoHandshake, &cram2, !InitiatedByRemote);
 
     future1.wait();
     future2.wait();
