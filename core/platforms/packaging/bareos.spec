@@ -925,7 +925,7 @@ cmake  .. \
 # run unit tests
 pushd %{CMAKE_BUILDDIR}
 make clean
-ctest --timeout 60 -R gtest: -D Continuous || result=$?
+REGRESS_DEBUG=1 ctest -j 10 -D Continuous || result=$?
 result=$?
 if [ $result -eq 1 ]; then
 echo "ctest result $result is expected and OK"
