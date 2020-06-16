@@ -399,7 +399,7 @@ start_bareos()
    if test "$debug" -eq 1 ; then
      "${rscripts}/bareos-ctl-dir" start -m -d 100
      "${rscripts}/bareos-ctl-sd" start -m -d 100
-     "${rscripts}/bareos-ctl-fd" start -m "$1" -d 100
+     "${rscripts}/bareos-ctl-fd" start -m -d 100
    else
      "${rscripts}/bareos" start >/dev/null 2>&1
    fi
