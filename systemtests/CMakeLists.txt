@@ -307,6 +307,7 @@ macro(prepare_testdir_for_daemon_run)
   set(piddir ${current_test_directory}/piddir)
 
   set(backenddir ${BACKEND_DIR_TO_TEST})
+  set(sd_backenddir ${SD_BACKEND_DIR})
   set(BAREOS_WEBUI_PUBLIC_DIR ${WEBUI_PUBLIC_DIR_TO_TEST})
 
   if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
@@ -487,6 +488,7 @@ else() # run systemtests on source and compiled files
 
   get_target_property(FD_PLUGINS_DIR_TO_TEST bpipe-fd BINARY_DIR)
   get_target_property(SD_PLUGINS_DIR_TO_TEST autoxflate-sd BINARY_DIR)
+  get_target_property(SD_BACKEND_DIR bareossd-droplet BINARY_DIR)
   if(TARGET bareossd-gfapi)
     get_target_property(SD_GFAPI_DIR_TO_TEST bareossd-gfapi BINARY_DIR)
   endif()
