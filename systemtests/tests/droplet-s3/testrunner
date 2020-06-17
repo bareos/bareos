@@ -6,7 +6,7 @@
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=backup-bareos-fd
+JobName=backup-s3-fd
 
 #shellcheck source=../environment.in
 . ./environment
@@ -23,8 +23,6 @@ fi
 
 s3cmd --config=etc/s3cfg-local-minio mb S3://backup
 
-exit 0
-
 # Directory to backup.
 # This directory will be created by setup_data "$@"().
 BackupDirectory="${tmp}/data"
@@ -32,6 +30,8 @@ BackupDirectory="${tmp}/data"
 # Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
 setup_data "$@"
+
+exit 0
 
 start_test
 
