@@ -35,6 +35,7 @@ archivedir=@archivedir@
 logdir=@logdir@
 
 export backenddir=@backenddir@
+export sd_backenddir=@sd_backenddir@
 
 export dir_password=@dir_password@
 export sd_password=@sd_password@
