@@ -46,6 +46,7 @@ if(${HAVE_DROPLET})
   add_library(bareossd-droplet MODULE droplet_device.cc)
   target_link_libraries(bareossd-droplet bareossd-chunked ${DROPLET_LIBRARIES})
   install(TARGETS bareossd-droplet DESTINATION ${backenddir})
+  message(STATUS "Binary Path == ${backenddir}")
 endif()
 
 add_library(bareossd-fifo MODULE unix_fifo_device.cc)
