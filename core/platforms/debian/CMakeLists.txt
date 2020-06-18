@@ -75,7 +75,7 @@ macro(bareos_install_sql_files_to_dbconfig_common)
 
   install(
     FILES
-      "${CMAKE_SOURCE_DIR}/src/cats/ddl/creates/${DB_CONFIG_COMMON_BAREOS_DB_NAME}.sql"
+      "${CMAKE_SOURCE_DIR}/core/src/cats/ddl/creates/${DB_CONFIG_COMMON_BAREOS_DB_NAME}.sql"
     DESTINATION
       "${CMAKE_INSTALL_FULL_DATAROOTDIR}/dbconfig-common/data/bareos-database-common/install/"
     RENAME "${DB_CONFIG_COMMON_DEBIAN_DB_NAME}"
@@ -83,7 +83,7 @@ macro(bareos_install_sql_files_to_dbconfig_common)
   file(
     GLOB
     SQLFILES
-    "${CMAKE_SOURCE_DIR}/src/cats/ddl/updates/${DB_CONFIG_COMMON_BAREOS_DB_NAME}.*_*.sql"
+    "${CMAKE_SOURCE_DIR}/core/src/cats/ddl/updates/${DB_CONFIG_COMMON_BAREOS_DB_NAME}.*_*.sql"
   )
   foreach(SQLFILE ${SQLFILES})
     get_filename_component(BASENAME ${SQLFILE} NAME)
