@@ -82,7 +82,7 @@ until ! echo "status dir" | \
   echo "waiting for client to connect (#$i)... "
   ((i=i+1))
   sleep 1
-  if [ $i -gt 10 ]; then
+  if [ $i -gt 60 ]; then
     exit_with_error "Filedaemon ${TestName} could not connect to director"
   fi
 done
