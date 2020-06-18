@@ -52,6 +52,13 @@ bareosfindlibraryandheaders(
   "vixDiskLib" "vixDiskLib.h" "/usr/lib/vmware-vix-disklib-distrib;/usr/lib/vmware-vix-disklib"
 )
 
+# check for structmember physicalSectorSize in struct VixDiskLibCreateParams
+if(VIXDISKLIB_FOUND)
+  include(CheckStructHasMember)
+  CHECK_STRUCT_HAS_MEMBER("VixDiskLibCreateParams" physicalSectorSize
+    ${VIXDISKLIB_INCLUDE_DIRS}/vixDiskLib.h VIXDISKLIBCREATEPARAMS_HAS_PHYSICALSECTORSIZE)
+endif()
+
 if(VIXDISKLIB_FOUND)
   if((NOT DEFINED vmware_server)
      OR (NOT DEFINED vmware_user)

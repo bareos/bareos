@@ -8,6 +8,12 @@ add_executable(bareos_vadp_dumper bareos_vadp_dumper.cc cbuf.cc copy_thread.cc)
 
 target_link_libraries(bareos_vadp_dumper vixDiskLib pthread jansson)
 
+if(VIXDISKLIBCREATEPARAMS_HAS_PHYSICALSECTORSIZE)
+  target_compile_definitions(
+    bareos_vadp_dumper PUBLIC VIXDISKLIBCREATEPARAMS_HAS_PHYSICALSECTORSIZE
+  )
+endif()
+
 install(TARGETS bareos_vadp_dumper DESTINATION "${CMAKE_INSTALL_SBINDIR}")
 install(
   FILES bareos_vadp_dumper_wrapper.sh
