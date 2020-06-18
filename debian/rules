@@ -127,7 +127,7 @@ override_dh_makeshlibs:
 	dh_makeshlibs -n
 
 override_dh_auto_test:
-	cd obj-x86_64-linux-gnu && make clean && REGRESS_DEBUG=1 ctest -E '.*encrypt.*' -E '.*client-initiated.*' -V -D Continuous || echo "ctest failed"
+	cd obj-x86_64-linux-gnu && make clean && REGRESS_DEBUG=1 ctest -R system:bareos -V -D Continuous || echo "ctest failed"
 
 
 override_dh_shlibdeps:
