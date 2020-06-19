@@ -1012,7 +1012,7 @@ for F in  \
     %{_sysconfdir}/bareos/bareos-dir.d/profile/webui-admin.conf \
     %{_sysconfdir}/bareos/bareos-dir.d/profile/webui-limited.conf.example \
     %{_sysconfdir}/bareos/bareos-dir.d/profile/webui-readonly.conf \
-    %{_sysconfdir}/httpd/conf.d/bareos-webui.conf
+    %{_sysconfdir}/httpd/conf.d/bareos-webui.conf \
     %{_sysconfdir}/apache2/conf.d/bareos-webui.conf
 do
 rm -f "%{buildroot}/$F"
