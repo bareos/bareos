@@ -30,7 +30,7 @@ class BareosLibcloudApi(object):
         return "failed"
 
     def __init__(self, options, last_run, tmp_dir_path):
-        self.tmp_dir_path = tmp_dir_path
+        self.tmp_dir_path = tmp_dir_path + "/" + str(uuid.uuid4())
         self.count_worker_ready = 0
         self.count_bucket_explorer_ready = 0
 
@@ -157,7 +157,7 @@ class BareosLibcloudApi(object):
         except:
             pass
         jobmessage("M_INFO", "Try to create temporary directory: %s" % (self.tmp_dir_path))
-        os.mkdir(self.tmp_dir_path)
+        os.makedirs(self.tmp_dir_path)
 
     def __remove_tmp_dir(self):
         jobmessage("M_INFO", "Try to remove old files from: %s" % (self.tmp_dir_path))
