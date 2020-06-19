@@ -83,6 +83,11 @@ class Worker(ProcessBase):
 
         if job["size"] < 1024 * 10:
             try:
+                self.debug_message(
+                    110,
+                    "%3d: Put complete file %s into queue"
+                    % (self.worker_id, job["bucket"] + job["name"]),
+                )
                 stream = obj.as_stream()
                 content = b"".join(list(stream))
 
@@ -104,6 +109,11 @@ class Worker(ProcessBase):
                 return CONTINUE
         elif job["size"] < self.options["prefetch_size"]:
             try:
+                self.debug_message(
+                    110,
+                    "%3d: Prefetch file %s"
+                    % (self.worker_id, job["bucket"] + job["name"]),
+                )
                 tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
                 obj.download(tmpfilename)
                 job["data"] = None
@@ -131,6 +141,11 @@ class Worker(ProcessBase):
                 return CONTINUE
         else:
             try:
+                self.debug_message(
+                    110,
+                    "%3d: Prepare file as stream for download %s"
+                    % (self.worker_id, job["bucket"] + job["name"]),
+                )
                 job["data"] = obj
                 job["type"] = TASK_TYPE.STREAM
             except LibcloudError:

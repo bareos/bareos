@@ -140,7 +140,12 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         mandatory_options = {}
         mandatory_options["credentials"] = ["username", "password"]
         mandatory_options["host"] = ["hostname", "port", "provider", "tls"]
-        mandatory_options["misc"] = ["nb_worker", "queue_size", "prefetch_size", "temporary_download_directory"]
+        mandatory_options["misc"] = [
+            "nb_worker",
+            "queue_size",
+            "prefetch_size",
+            "temporary_download_directory",
+        ]
 
         # this maps config file options to libcloud options
         option_map = {
@@ -216,7 +221,9 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         try:
             self.api = BareosLibcloudApi(
-                self.options, self.last_run, self.options["temporary_download_directory"]
+                self.options,
+                self.last_run,
+                self.options["temporary_download_directory"],
             )
             debugmessage(100, "BareosLibcloudApi started")
         except Exception as e:
@@ -241,7 +248,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         jobmessage(
             "M_INFO",
             "BareosFdPluginLibcloud finished with %d files"
-            % (self.number_of_objects_to_backup)
+            % (self.number_of_objects_to_backup),
         )
 
         if self.api == None:
@@ -279,7 +286,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "%s/%s"
             % (self.current_backup_task["bucket"], self.current_backup_task["name"],)
         )
-        jobmessage("M_INFO", "Backup file: %s" % (filename,))
+        debugmessage(100, "Backup file: %s" % (filename,))
 
         statp = bareosfd.StatPacket()
         statp.size = self.current_backup_task["size"]
@@ -322,9 +329,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         FNAME = FilenameConverter.BackupToBucket(restorepkt.ofname)
         dirname = os.path.dirname(FNAME)
         if not os.path.exists(dirname):
-            jobmessage(
-                "M_INFO", "Directory %s does not exist, creating it\n" % dirname
-            )
+            jobmessage("M_INFO", "Directory %s does not exist, creating it\n" % dirname)
             os.makedirs(dirname)
         if restorepkt.type == bFileType["FT_REG"]:
             restorepkt.create_status = bCFs["CF_EXTRACT"]
@@ -353,7 +358,11 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 jobmessage(
                     "M_ERROR",
                     "Cannot read from %s/%s: %s"
-                    % (self.current_backup_task["bucket"], self.current_backup_task["name"], e),
+                    % (
+                        self.current_backup_task["bucket"],
+                        self.current_backup_task["name"],
+                        e,
+                    ),
                 )
                 IOP.status = 0
                 return bRCs["bRC_Error"]
@@ -370,6 +379,20 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         elif IOP.func == bIOPS["IO_CLOSE"]:
             if self.FILE:
                 self.FILE.close()
+            if self.current_backup_task["type"] == TASK_TYPE.TEMP_FILE:
+                debugmessage(
+                    110,
+                    "Removing temporary file: %s"
+                    % (self.current_backup_task["tmpfile"]),
+                )
+                try:
+                    os.remove(self.current_backup_task["tmpfile"])
+                except:
+                    debugmessage(
+                        110,
+                        "Could not remove temporary file: %s"
+                        % (self.current_backup_task["tmpfile"]),
+                    )
             return bRCs["bRC_OK"]
 
         return bRCs["bRC_OK"]

@@ -17,6 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+
 class MESSAGE_TYPE(object):
     INFO_MESSAGE = 1
     ERROR_MESSAGE = 2
