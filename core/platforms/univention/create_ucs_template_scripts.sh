@@ -1,4 +1,6 @@
 #!/bin/sh
+set -x
+echo "$0: SOURCE=$1, DEST=$2"
 
 SOURCE=$1
 DEST=$2
