@@ -55,7 +55,7 @@ def get_driver(options):
 
     try:
         driver.get_container("bareos-libcloud-invalidname-bareos-libcloud")
-        return driver # success if bucket accidentally matches
+        return driver  # success if bucket accidentally matches
 
     # success
     except libcloud.storage.types.ContainerDoesNotExistError:

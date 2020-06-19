@@ -116,7 +116,8 @@ class BucketExplorer(ProcessBase):
             object_name = "%s/%s" % (obj.container.name, obj.name)
 
             if self.last_run > mtime:
-                self.info_message(
+                self.debug_message(
+                    100,
                     "File %s not changed, skipped (%s > %s)"
                     % (object_name, self.last_run, mtime),
                 )
@@ -130,7 +131,8 @@ class BucketExplorer(ProcessBase):
 
                 continue
 
-            self.info_message(
+            self.debug_message(
+                100,
                 "File %s was changed or is new, put to queue (%s < %s)"
                 % (object_name, self.last_run, mtime),
             )

@@ -149,23 +149,32 @@ class BareosLibcloudApi(object):
         except:
             pass
 
-        jobmessage("M_INFO", "Shutdown of worker processes is ready")
+        jobmessage("M_INFO", "Finished shutdown of worker processes")
 
     def __create_tmp_dir(self):
-        try:
-            self.__remove_tmp_dir()
-        except:
-            pass
-        jobmessage("M_INFO", "Try to create temporary directory: %s" % (self.tmp_dir_path))
+        debugmessage(100, "Try to create temporary directory: %s" % (self.tmp_dir_path))
         os.makedirs(self.tmp_dir_path)
+        debugmessage(100, "Created temporary directory: %s" % (self.tmp_dir_path))
 
     def __remove_tmp_dir(self):
-        jobmessage("M_INFO", "Try to remove old files from: %s" % (self.tmp_dir_path))
+        debugmessage(100, "Try to remove leftover files from: %s" % (self.tmp_dir_path))
         try:
             files = glob.glob(self.tmp_dir_path + "/*")
+            cnt = 0
             for f in files:
                 os.remove(f)
+                cnt += 1
+            if cnt != 0:
+                debugmessage(
+                    100,
+                    "Removed %d leftover files from: %s" % (cnt, self.tmp_dir_path),
+                )
+            else:
+                debugmessage(
+                    100, "No leftover files to remove from: %s" % (self.tmp_dir_path),
+                )
             os.rmdir(self.tmp_dir_path)
+            debugmessage(100, "Removed temporary directory: %s" % (self.tmp_dir_path))
         except:
             pass
 
