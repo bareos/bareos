@@ -20,7 +20,7 @@ JobName=backup-bareos-fd
 "${rscripts}"/setup
 
 
-ln -sf ../sbin/bareos_vadp_dumper-python-fd-vmware-plugin-test bin/bareos_vadp_dumper_wrapper.sh
+ln -sf ../sbin/bareos_vadp_dumper-$TestName bin/bareos_vadp_dumper_wrapper.sh
 export PATH=${current_test_directory}/bin:$PATH
 ./reset_cbt.sh
 
