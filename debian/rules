@@ -91,7 +91,7 @@ ifeq ($(DEB_HOST_ARCH_OS),hurd)
 CONFIGURE_COMMON       += -Dscsi-crypto=no -Dndmp=no
 endif
 CONFIGURE_CLIENT_ONLY = $(CONFIGURE_COMMON) -Dclient-only=yes
-CONFIGURE_FULL        = $(CONFIGURE_COMMON) -Dpython=yes -Dtraymonitor=yes
+CONFIGURE_FULL        = $(CONFIGURE_COMMON) -Dpython=yes -Dtraymonitor=yes -DSHARE_INSTALL_PREFIX:PATH=/usr/share -Dwebuiconfdir=/etc/bareos-webui
 
 override_dh_auto_configure:
 	@if [ "`lsb_release --short  --id`" = "Ubuntu" ] && [ "`lsb_release --short  --release`" = "8.04" ]; then \

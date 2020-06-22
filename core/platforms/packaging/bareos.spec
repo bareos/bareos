@@ -293,7 +293,6 @@ BuildRequires: lsb-release
 
 %endif
 
-
 # dependency tricks for vixdisklib
 # Note: __requires_exclude only works for dists with rpm version >= 4.9
 #       SLES12 has suse_version 1315, SLES11 has 1110
@@ -303,8 +302,6 @@ BuildRequires: lsb-release
 %define _use_internal_dependency_generator 0
 %define our_find_requires %{_builddir}/%{name}-%{version}/find_requires
 %endif
-
-
 
 
 
@@ -683,12 +680,131 @@ Summary:    CEPH plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 
+
 %description filedaemon-ceph-plugin
 %{dscr}
 
 This package contains the CEPH plugins for the file daemon
 
 %endif
+
+### bareos-webui start
+
+%package webui
+Summary:       Bareos Web User Interface
+Group:         Productivity/Archiving/Backup
+
+# ZendFramework 2.4 says it required php >= 5.3.23.
+# However, it works on SLES 11 with php 5.3.17
+# while it does not work with php 5.3.3 (RHEL6).
+Requires: php >= 5.3.17
+
+Requires: php-bz2
+Requires: php-ctype
+Requires: php-curl
+Requires: php-date
+Requires: php-dom
+Requires: php-fileinfo
+Requires: php-filter
+Requires: php-gettext
+Requires: php-gd
+Requires: php-hash
+Requires: php-iconv
+Requires: php-intl
+Requires: php-json
+
+%if 0%{?suse_version}
+%else
+Requires: php-libxml
+%endif
+
+Requires: php-mbstring
+Requires: php-openssl
+Requires: php-pcre
+Requires: php-reflection
+Requires: php-session
+Requires: php-simplexml
+Requires: php-spl
+Requires: php-xml
+Requires: php-xmlreader
+Requires: php-xmlwriter
+Requires: php-zip
+
+%if 0%{?suse_version} || 0%{?sle_version}
+BuildRequires: apache2
+# /usr/sbin/apxs2
+BuildRequires: apache2-devel
+BuildRequires: mod_php_any
+#define _apache_conf_dir #(/usr/sbin/apxs2 -q SYSCONFDIR)
+%define _apache_conf_dir /etc/apache2/conf.d/
+%define daemon_user  wwwrun
+%define daemon_group www
+Requires: apache
+Recommends: mod_php_any
+%else
+#if 0#{?fedora} || 0#{?rhel_version} || 0#{?centos_version}
+BuildRequires: httpd
+# apxs2
+BuildRequires: httpd-devel
+%define _apache_conf_dir /etc/httpd/conf.d/
+%define daemon_user  apache
+%define daemon_group apache
+Requires:   httpd
+Requires:   mod_php
+%endif
+
+
+%description webui
+Bareos - Backup Archiving Recovery Open Sourced. \
+Bareos is a set of computer programs that permit you (or the system \
+administrator) to manage backup, recovery, and verification of computer \
+data across a network of computers of different kinds. In technical terms, \
+it is a network client/server based backup program. Bareos is relatively \
+easy to use and efficient, while offering many advanced storage management \
+features that make it easy to find and recover lost or damaged files. \
+Bareos source code has been released under the AGPL version 3 license.
+
+This package contains the webui (Bareos Web User Interface).
+
+
+%post webui
+
+%if 0%{?suse_version} >= 1110
+a2enmod setenv &> /dev/null || true
+a2enmod rewrite &> /dev/null || true
+%endif
+
+%if 0%{?suse_version} >= 1315
+# 1315:
+#   SLES12 (PHP 7)
+#   openSUSE Leap 42.1 (PHP 5)
+if php -v | grep -q "PHP 7"; then
+  a2enmod php7 &> /dev/null || true
+else
+  a2enmod php5 &> /dev/null || true
+fi
+%else
+a2enmod php5 &> /dev/null || true
+%endif
+
+%files webui
+%defattr(-,root,root,-)
+%doc webui/README.md webui/LICENSE
+%doc webui/doc/README-TRANSLATION.md
+%doc webui/tests/selenium
+%{_datadir}/%{name}-webui/
+# attr(-, #daemon_user, #daemon_group) #{_datadir}/#{name}/data
+%dir /etc/bareos-webui
+%config(noreplace) /etc/bareos-webui/directors.ini
+%config(noreplace) /etc/bareos-webui/configuration.ini
+%config %attr(644,root,root) /etc/bareos/bareos-dir.d/console/admin.conf.example
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-admin.conf
+%config %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-limited.conf.example
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-readonly.conf
+%config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
+
+### bareos-webui end
+
 
 %description client
 %{dscr}
@@ -916,6 +1032,7 @@ cmake  .. \
 %endif
   -Dincludes=yes \
   -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
+  -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
   -DVERSION_STRING=%version
 
 #Add flags
@@ -1005,15 +1122,8 @@ for F in  \
     %{script_dir}/btraceback.dbx \
     %{script_dir}/btraceback.mdb \
     %{_docdir}/%{name}/INSTALL \
-    %{_sbindir}/%{name} \
-    %{_sysconfdir}/bareos-webui/configuration.ini \
-    %{_sysconfdir}/bareos-webui/directors.ini \
-    %{_sysconfdir}/bareos/bareos-dir.d/console/admin.conf.example \
-    %{_sysconfdir}/bareos/bareos-dir.d/profile/webui-admin.conf \
-    %{_sysconfdir}/bareos/bareos-dir.d/profile/webui-limited.conf.example \
-    %{_sysconfdir}/bareos/bareos-dir.d/profile/webui-readonly.conf \
-    %{_sysconfdir}/httpd/conf.d/bareos-webui.conf \
-    %{_sysconfdir}/apache2/conf.d/bareos-webui.conf
+    %{_sbindir}/%{name}
+
 do
 rm -f "%{buildroot}/$F"
 done
