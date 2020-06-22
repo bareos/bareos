@@ -688,7 +688,6 @@ This package contains the CEPH plugins for the file daemon
 
 %endif
 
-### bareos-webui start
 
 %package webui
 Summary:       Bareos Web User Interface
@@ -754,6 +753,9 @@ Requires:   mod_php
 %endif
 
 
+
+
+
 %description webui
 Bareos - Backup Archiving Recovery Open Sourced. \
 Bareos is a set of computer programs that permit you (or the system \
@@ -765,45 +767,6 @@ features that make it easy to find and recover lost or damaged files. \
 Bareos source code has been released under the AGPL version 3 license.
 
 This package contains the webui (Bareos Web User Interface).
-
-
-%post webui
-
-%if 0%{?suse_version} >= 1110
-a2enmod setenv &> /dev/null || true
-a2enmod rewrite &> /dev/null || true
-%endif
-
-%if 0%{?suse_version} >= 1315
-# 1315:
-#   SLES12 (PHP 7)
-#   openSUSE Leap 42.1 (PHP 5)
-if php -v | grep -q "PHP 7"; then
-  a2enmod php7 &> /dev/null || true
-else
-  a2enmod php5 &> /dev/null || true
-fi
-%else
-a2enmod php5 &> /dev/null || true
-%endif
-
-%files webui
-%defattr(-,root,root,-)
-%doc webui/README.md webui/LICENSE
-%doc webui/doc/README-TRANSLATION.md
-%doc webui/tests/selenium
-%{_datadir}/%{name}-webui/
-# attr(-, #daemon_user, #daemon_group) #{_datadir}/#{name}/data
-%dir /etc/bareos-webui
-%config(noreplace) /etc/bareos-webui/directors.ini
-%config(noreplace) /etc/bareos-webui/configuration.ini
-%config %attr(644,root,root) /etc/bareos/bareos-dir.d/console/admin.conf.example
-%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-admin.conf
-%config %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-limited.conf.example
-%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-readonly.conf
-%config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
-
-### bareos-webui end
 
 
 %description client
@@ -1193,6 +1156,23 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files
 %defattr(-, root, root)
 %{_docdir}/%{name}/README.bareos
+
+%files webui
+%defattr(-,root,root,-)
+%doc webui/README.md webui/LICENSE
+%doc webui/doc/README-TRANSLATION.md
+%doc webui/tests/selenium
+%{_datadir}/%{name}-webui/
+# attr(-, #daemon_user, #daemon_group) #{_datadir}/#{name}/data
+%dir /etc/bareos-webui
+%config(noreplace) /etc/bareos-webui/directors.ini
+%config(noreplace) /etc/bareos-webui/configuration.ini
+%config %attr(644,root,root) /etc/bareos/bareos-dir.d/console/admin.conf.example
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-admin.conf
+%config %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-limited.conf.example
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-readonly.conf
+%config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
+
 
 %files client
 %defattr(-, root, root)
@@ -1789,6 +1769,29 @@ if [ -e %1.rpmupdate.%{version}.keep ]; then \
    rm %1.rpmupdate.%{version}.keep; \
 fi; \
 %nil
+
+
+%post webui
+
+%if 0%{?suse_version} >= 1110
+a2enmod setenv &> /dev/null || true
+a2enmod rewrite &> /dev/null || true
+%endif
+
+%if 0%{?suse_version} >= 1315
+# 1315:
+#   SLES12 (PHP 7)
+#   openSUSE Leap 42.1 (PHP 5)
+if php -v | grep -q "PHP 7"; then
+  a2enmod php7 &> /dev/null || true
+else
+  a2enmod php5 &> /dev/null || true
+fi
+%else
+a2enmod php5 &> /dev/null || true
+%endif
+
+
 
 
 %post director
