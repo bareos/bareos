@@ -51,6 +51,8 @@ if(GENERATE_DEBIAN_CONTROL)
          DEBIAN_CONTROL_UNIVENTION_BAREOS)
   endif()
 
+  file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-webui DEBIAN_CONTROL_BAREOS_WEBUI)
+
   if (VIXDISKLIB_FOUND)
     file(READ ./debian/control.vmware
       DEBIAN_CONTROL_VMWARE)
