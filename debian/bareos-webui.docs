@@ -1,4 +1,4 @@
-README.md
-doc/README-TRANSLATION.md
-tests/selenium
-LICENSE
+webui/README.md
+webui/doc/README-TRANSLATION.md
+webui/tests/selenium
+webui/LICENSE
