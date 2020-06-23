@@ -51,14 +51,14 @@ static constexpr auto seconds_per_minute = seconds(60);
 static bool IsAutomaticSchedulerJob(JobResource* job)
 {
   Dmsg1(local_debuglevel + 100,
-        "Scheduler: Check if job IsAutomaticSchedulerJob %s.",
+        "Scheduler: Check if job IsAutomaticSchedulerJob %s.\n",
         job->resource_name_);
   if (job->schedule == nullptr) { return false; }
   if (!job->schedule->enabled) { return false; }
   if (!job->enabled) { return false; }
   if ((job->client != nullptr) && !job->client->enabled) { return false; }
   Dmsg1(local_debuglevel + 100,
-        "Scheduler: Check if job IsAutomaticSchedulerJob %s: Yes.",
+        "Scheduler: Check if job IsAutomaticSchedulerJob %s: Yes.\n",
         job->resource_name_);
   return true;
 }
