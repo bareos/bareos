@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -74,7 +74,7 @@ struct backend_shared_library_t {
 #endif
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-void DbSetBackendDirs(std::vector<std::string>&& new_backend_dirs);
+void DbSetBackendDirs(std::vector<std::string>& new_backend_dirs);
 #endif
 void DbFlushBackends(void);
 BareosDb* db_init_database(JobControlRecord* jcr,

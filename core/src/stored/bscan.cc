@@ -357,7 +357,7 @@ int main(int argc, char* argv[])
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
   backend_directories.emplace_back(backend_directory);
-  DbSetBackendDirs(std::move(backend_directories));
+  DbSetBackendDirs(backend_directories);
 #endif
 
   db = db_init_database(NULL, db_driver, db_name, db_user, db_password, db_host,

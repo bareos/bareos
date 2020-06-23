@@ -63,9 +63,9 @@ static struct backend_interface_mapping_t {
 static alist* loaded_backends = NULL;
 static std::vector<std::string> backend_dirs;
 
-void DbSetBackendDirs(std::vector<std::string>&& new_backend_dirs)
+void DbSetBackendDirs(std::vector<std::string>& new_backend_dirs)
 {
-  backend_dirs = std::move(new_backend_dirs);
+  backend_dirs = new_backend_dirs;
 }
 
 static inline backend_interface_mapping_t* lookup_backend_interface_mapping(
