@@ -712,8 +712,7 @@ Requires: php-iconv
 Requires: php-intl
 Requires: php-json
 
-%if 0%{?suse_version}
-%else
+%if !0%{?suse_version}
 Requires: php-libxml
 %endif
 
@@ -734,25 +733,21 @@ BuildRequires: apache2
 # /usr/sbin/apxs2
 BuildRequires: apache2-devel
 BuildRequires: mod_php_any
-#define _apache_conf_dir #(/usr/sbin/apxs2 -q SYSCONFDIR)
 %define _apache_conf_dir /etc/apache2/conf.d/
-%define daemon_user  wwwrun
-%define daemon_group www
+%define www_daemon_user  wwwrun
+%define www_daemon_group www
 Requires: apache
 Recommends: mod_php_any
 %else
-#if 0#{?fedora} || 0#{?rhel_version} || 0#{?centos_version}
 BuildRequires: httpd
 # apxs2
 BuildRequires: httpd-devel
 %define _apache_conf_dir /etc/httpd/conf.d/
-%define daemon_user  apache
-%define daemon_group apache
+%define www_daemon_user  apache
+%define www_daemon_group apache
 Requires:   httpd
 Requires:   mod_php
 %endif
-
-
 
 
 
