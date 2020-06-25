@@ -866,10 +866,12 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
 
     if (!VolumeIsNowEmtpy) {
       Jmsg(ua->jcr, M_INFO, 0,
-           _("Volume \"%s\" still contains jobs after pruning.\n"));
+           _("Volume \"%s\" still contains jobs after pruning.\n"),
+           mr->VolumeName);
     } else {
       Jmsg(ua->jcr, M_INFO, 0,
-           _("Volume \"%s\" contains no jobs after pruning.\n"));
+           _("Volume \"%s\" contains no jobs after pruning.\n"),
+           mr->VolumeName);
     }
   }
 
