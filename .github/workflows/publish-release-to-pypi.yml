@@ -45,6 +45,5 @@ jobs:
     - name: "Publish to pypi.org"
       uses: pypa/gh-action-pypi-publish@v1.1.0
       with:
-        repository_url: https://pypi.org/legacy/
         password: ${{ secrets.pypi_password }}
         packages_dir: python-bareos/dist/
