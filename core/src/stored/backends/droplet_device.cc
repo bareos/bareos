@@ -49,6 +49,8 @@
 #include "droplet_device.h"
 #include "lib/edit.h"
 
+#include <string>
+
 namespace storagedaemon {
 
 /**
@@ -341,13 +343,12 @@ dpl_status_t droplet_device::check_path(const char* path)
                        path,   /* locator */
                        NULL,   /* metadata */
                        sysmd); /* sysmd */
-  Dmsg4(100, "check_path(device=%s, bucket=%s, path=%s): %s\n", prt_name,
-        ctx_->cur_bucket, path, dpl_status_str(status));
+  Dmsg4(100, "check_path: path=<%s> (device=%s, bucket=%s): Result %s\n", path,
+        prt_name, ctx_->cur_bucket, dpl_status_str(status));
   dpl_sysmd_free(sysmd);
 
   return status;
 }
-
 
 /**
  * Checks if the connection to the backend storage system is possible.
@@ -361,14 +362,26 @@ bool droplet_device::CheckRemote()
     if (!initialize()) { return false; }
   }
 
-  if (check_path("/") != DPL_SUCCESS) {
-    Dmsg1(100, "CheckRemote(%s): failed\n", prt_name);
-    return false;
+  auto status = check_path("/");
+
+  const char* h = dpl_addrlist_get(ctx_->addrlist);
+  std::string hostaddr{h != nullptr ? h : "???"};
+
+  switch (status) {
+    case DPL_SUCCESS:
+      Dmsg1(100, "Host is accessible: %s\n", hostaddr.c_str());
+      return true;
+    case DPL_ENOENT:
+      Dmsg2(100,
+            "Host is accessible: %s (%s), but should be configured to accept "
+            "virtual-host-style requests\n",
+            hostaddr.c_str(), dpl_status_str(status));
+      return true;
+    default:
+      Dmsg2(100, "Cannot reach host: %s (%s)\n ", hostaddr.c_str(),
+            dpl_status_str(status));
+      return false;
   }
-
-  Dmsg1(100, "CheckRemote(%s): ok\n", prt_name);
-
-  return true;
 }
 
 
@@ -385,13 +398,13 @@ bool droplet_device::remote_chunked_volume_exists()
 
   switch (status) {
     case DPL_SUCCESS:
-      Dmsg1(100, "remote_chunked_volume %s exists\n", chunk_dir.c_str());
+      Dmsg1(100, "Remote chunked volume %s exists\n", chunk_dir.c_str());
       retval = true;
       break;
     case DPL_ENOENT:
     case DPL_FAILURE:
     default:
-      Dmsg1(100, "remote_chunked_volume %s does not exists\n",
+      Dmsg1(100, "Remote chunked volume %s does not exist\n",
             chunk_dir.c_str());
       break;
   }
@@ -1023,8 +1036,7 @@ droplet_device::~droplet_device()
 
 class Backend : public BackendInterface {
  public:
-  Device* GetDevice(JobControlRecord* jcr,
-                              DeviceType device_type) override
+  Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) override
   {
     switch (device_type) {
       case DeviceType::B_DROPLET_DEV:

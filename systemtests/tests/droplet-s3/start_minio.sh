@@ -27,6 +27,7 @@ while pidof minio > /dev/null; do
     && { echo "$0: could not stop minio server"; exit 2; }
 done
 
+export MINIO_DOMAIN=localhost,127.0.0.1
 minio server "$minio_tmp_data_dir" > "$logdir"/minio.log 2>&1 &
 
 if ! pidof minio > /dev/null; then
