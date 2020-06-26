@@ -111,7 +111,7 @@ class DbCopy {
       throw std::runtime_error("Could not find director resource.");
     }
 
-    DbSetBackendDirs(std::move(directordaemon::me->backend_directories));
+    DbSetBackendDirs(directordaemon::me->backend_directories);
   }
 
   void ConnectToDatabases()

@@ -1089,7 +1089,7 @@ int main(int argc, char* argv[])
 
       SetWorkingDirectory(me->working_directory);
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-      DbSetBackendDirs(std::move(me->backend_directories));
+      DbSetBackendDirs(me->backend_directories);
 #endif
 
       /*
@@ -1156,7 +1156,7 @@ int main(int argc, char* argv[])
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
     backend_directories.emplace_back(backend_directory);
-    DbSetBackendDirs(std::move(backend_directories));
+    DbSetBackendDirs(backend_directories);
 #endif
   }
 
