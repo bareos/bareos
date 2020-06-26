@@ -12,6 +12,7 @@ JobName=backup-s3-fd
 . ./environment
 
 if ! ./start_postgres_server.sh; then
+  echo "Could not start postgres server"
   export estat=1
   exit 1
 fi
@@ -22,6 +23,7 @@ fi
 "${rscripts}"/setup
 
 if ! ./start_minio.sh; then
+  echo "Could not start minio server"
   export estat=1
   exit 1
 fi
@@ -36,7 +38,9 @@ BackupDirectory="${tmp}/data"
 # Data will be placed at "${tmp}/data/".
 setup_data "$@"
 
-exit 0
+if [ "$1" == "init" ]; then
+  exit 0
+fi
 
 start_test
 
