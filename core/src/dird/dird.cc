@@ -375,7 +375,7 @@ int main(int argc, char* argv[])
     Dmsg1(100, "backend path: %s\n", backend_dir.c_str());
   }
 
-  DbSetBackendDirs(std::move(me->backend_directories));
+  DbSetBackendDirs(me->backend_directories);
 #endif
   LoadDirPlugins(me->plugin_directory, me->plugin_names);
 
