@@ -205,8 +205,8 @@ bool CramMd5Handshake::CramMd5Response()
     std::string c(chal.c_str());
     // same sd-sd connection should be possible i.e. for copy jobs
     if (c.rfind("R_STORAGE") == std::string::npos) {
-    result = HandshakeResult::REPLAY_ATTACK;
-    return false;
+      result = HandshakeResult::REPLAY_ATTACK;
+      return false;
     }
   }
 
