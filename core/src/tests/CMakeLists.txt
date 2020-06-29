@@ -211,6 +211,7 @@ bareos_add_test(
 
 bareos_add_test(cram_md5
   LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
+  ADDITIONAL_SOURCES bareos_test_sockets.cc
 )
 
 if(NOT client-only)
