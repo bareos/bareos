@@ -39,9 +39,9 @@ Description: vStorage APIs for Data Protection Dumper program
 # This package only contains the distributable code to comply with
 # https://communities.vmware.com/viewwebdoc.jspa?documentID=DOC-10141
 
-Package: bareos-vmware-plugin-compat
-Architecture: any
-Depends:  bareos-vmware-plugin
-Description: Bareos VMware plugin compatibility
- Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos <= 16.2.
+#Package: bareos-vmware-plugin-compat
+#Architecture: any
+#Depends:  bareos-vmware-plugin
+#Description: Bareos VMware plugin compatibility
+# Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos <= 16.2.
 
