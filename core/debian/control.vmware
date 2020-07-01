@@ -1,17 +1,3 @@
-Source: bareos-vmware
-Section: admin
-Priority: extra
-Maintainer: packager@bareos.com
-Build-Depends:
-  cmake (>= 3.0.0) | cmake-mozilla,
-  debhelper (>= 8.0.0),
-  libjansson-dev,
-  bareos-vmware-vix-disklib-dev
-Standards-Version: 3.9.3
-Homepage: http://www.bareos.org/
-Vcs-Git: git://github.com/bareos/bareos.git
-Vcs-Browser: https://github.com/bareos/bareos-vmware
-
 Package: bareos-vmware-plugin
 Architecture: any
 Depends:  bareos-vadp-dumper, bareos-filedaemon-python-plugin (>= 15.2), python-pyvmomi
