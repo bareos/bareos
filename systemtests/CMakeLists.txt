@@ -781,7 +781,7 @@ endif()
 
 message(STATUS "Looking for pam test requirements ...")
 find_program(PYTHON python python2 python3)
-bareosfindlibraryandheaders("pam" "security/pam_appl.h")
+bareosfindlibraryandheaders("pam" "security/pam_appl.h" "")
 find_program(PAMTESTER pamtester)
 
 set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
