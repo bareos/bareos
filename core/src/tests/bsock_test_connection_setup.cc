@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,7 +48,7 @@ bool DoReloadConfig() { return false; }
 
 static void InitSignalHandler()
 {
-  struct sigaction sig{};
+  struct sigaction sig = {};
   sig.sa_handler = SIG_IGN;
   sigaction(SIGUSR2, &sig, nullptr);
   sigaction(SIGPIPE, &sig, nullptr);
@@ -88,8 +88,10 @@ static PConfigParser ConsolePrepareResources(const std::string& path_to_config)
   console::director_resource = dynamic_cast<console::DirectorResource*>(
       console_config->GetNextRes(console::R_DIRECTOR, NULL));
   EXPECT_NE(console::director_resource, nullptr);
+
   console::console_resource = dynamic_cast<console::ConsoleResource*>(
       console_config->GetNextRes(console::R_CONSOLE, NULL));
+  console::my_config->own_resource_ = console::console_resource;
   EXPECT_EQ(console::console_resource, nullptr);  // no console resource present
 
   return console_config;
@@ -113,6 +115,7 @@ static PConfigParser DirectorPrepareResources(const std::string& path_to_config)
   directordaemon::me =
       (directordaemon::DirectorResource*)director_config->GetNextRes(
           directordaemon::R_DIRECTOR, nullptr);
+  directordaemon::my_config->own_resource_ = directordaemon::me;
 
   return director_config;
 }

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,7 @@
 #include "include/bareos.h"
 #include "lib/cram_md5.h"
 #include "lib/bsock.h"
+#include "lib/util.h"
 
 
 CramMd5Handshake::CramMd5Handshake(BareosSocket* bs,
@@ -39,10 +40,34 @@ CramMd5Handshake::CramMd5Handshake(BareosSocket* bs,
     , password_(password)
     , local_tls_policy_(local_tls_policy)
     , own_qualified_name_(own_qualified_name)
+    , own_qualified_name_bashed_spaces_(own_qualified_name_)
 {
-  return;
+  BashSpaces(own_qualified_name_bashed_spaces_);
 }
 
+CramMd5Handshake::ComparisonResult
+CramMd5Handshake::CompareChallengeWithOwnQualifiedName(
+    const char* challenge) const
+{
+  uint32_t a, b;
+  char buffer[MAXHOSTNAMELEN]{"?"};  // at least one character
+
+  bool scan_success = sscanf(challenge, "<%u.%u@%s", &a, &b, buffer) == 3;
+
+  // string contains the closing ">" of the challenge
+  std::string challenge_qualified_name(buffer, strlen(buffer) - 1);
+
+  Dmsg1(debuglevel_, "my_name: <%s> - challenge_name: <%s>\n",
+        own_qualified_name_bashed_spaces_.c_str(),
+        challenge_qualified_name.c_str());
+
+  if (!scan_success) { return ComparisonResult::FAILURE; }
+
+  // check if the name in the challenge matches the daemons name
+  return own_qualified_name_bashed_spaces_ == challenge_qualified_name
+             ? ComparisonResult::IS_SAME
+             : ComparisonResult::IS_DIFFERENT;
+}
 
 /* Authorize other end
  * Codes that tls_local_need and tls_remote_need can take:
@@ -60,12 +85,10 @@ bool CramMd5Handshake::CramMd5Challenge()
 
   InitRandom();
 
-  host.check_size(MAXHOSTNAMELEN);
-  if (!gethostname(host.c_str(), MAXHOSTNAMELEN)) { PmStrcpy(host, my_name); }
 
   /* Send challenge -- no hashing yet */
   Mmsg(chal, "<%u.%u@%s>", (uint32_t)random(), (uint32_t)time(NULL),
-       host.c_str());
+       own_qualified_name_bashed_spaces_.c_str());
 
   if (bs_->IsBnetDumpEnabled()) {
     Dmsg2(debuglevel_, "send: auth cram-md5 %s ssl=%d qualified-name=%s\n",
@@ -75,6 +98,7 @@ bool CramMd5Handshake::CramMd5Challenge()
                     local_tls_policy_, own_qualified_name_.c_str())) {
       Dmsg1(debuglevel_, "Bnet send challenge comm error. ERR=%s\n",
             bs_->bstrerror());
+      result = HandshakeResult::NETWORK_ERROR;
       return false;
     }
   } else {  // network dump disabled
@@ -85,6 +109,7 @@ bool CramMd5Handshake::CramMd5Challenge()
                     local_tls_policy_)) {
       Dmsg1(debuglevel_, "Bnet send challenge comm error. ERR=%s\n",
             bs_->bstrerror());
+      result = HandshakeResult::NETWORK_ERROR;
       return false;
     }
   }
@@ -94,6 +119,7 @@ bool CramMd5Handshake::CramMd5Challenge()
     Dmsg1(debuglevel_, "Bnet receive challenge response comm error. ERR=%s\n",
           bs_->bstrerror());
     Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
+    result = HandshakeResult::NETWORK_ERROR;
     return false;
   }
 
@@ -102,6 +128,7 @@ bool CramMd5Handshake::CramMd5Challenge()
   hmac_md5((uint8_t*)chal.c_str(), strlen(chal.c_str()), (uint8_t*)password_,
            strlen(password_), hmac);
   BinToBase64(host.c_str(), MAXHOSTNAMELEN, (char*)hmac, 16, compatible_);
+
   bool ok = bstrcmp(bs_->msg, host.c_str());
   if (ok) {
     Dmsg1(debuglevel_, "Authenticate OK %s\n", host.c_str());
@@ -114,8 +141,10 @@ bool CramMd5Handshake::CramMd5Challenge()
     }
   }
   if (ok) {
+    result = HandshakeResult::SUCCESS;
     bs_->fsend("1000 OK auth\n");
   } else {
+    result = HandshakeResult::WRONG_HASH;
     bs_->fsend(_("1999 Authorization failed.\n"));
     Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
   }
@@ -130,6 +159,7 @@ bool CramMd5Handshake::CramMd5Response()
   compatible_ = false;
   if (bs_->recv() <= 0) {
     Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
+    result = HandshakeResult::NETWORK_ERROR;
     return false;
   }
 
@@ -148,6 +178,7 @@ bool CramMd5Handshake::CramMd5Response()
         Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
         bs_->fsend(_("1999 Authorization failed.\n"));
         Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
+        result = HandshakeResult::FORMAT_MISMATCH;
         return false;
       }
     }
@@ -162,9 +193,26 @@ bool CramMd5Handshake::CramMd5Response()
         Dmsg1(debuglevel_, "Cannot scan challenge: %s", bs_->msg);
         bs_->fsend(_("1999 Authorization failed.\n"));
         Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
+        result = HandshakeResult::FORMAT_MISMATCH;
         return false;
       }
     }
+  }
+
+  auto comparison_result = CompareChallengeWithOwnQualifiedName(chal.c_str());
+
+  if (comparison_result == ComparisonResult::IS_SAME) {
+    std::string c(chal.c_str());
+    // same sd-sd connection should be possible i.e. for copy jobs
+    if (c.rfind("R_STORAGE") == std::string::npos) {
+      result = HandshakeResult::REPLAY_ATTACK;
+      return false;
+    }
+  }
+
+  if (comparison_result == ComparisonResult::FAILURE) {
+    result = HandshakeResult::FORMAT_MISMATCH;
+    return false;
   }
 
   hmac_md5((uint8_t*)chal.c_str(), strlen(chal.c_str()), (uint8_t*)password_,
@@ -172,6 +220,7 @@ bool CramMd5Handshake::CramMd5Response()
   bs_->message_length =
       BinToBase64(bs_->msg, 50, (char*)hmac, 16, compatible_) + 1;
   if (!bs_->send()) {
+    result = HandshakeResult::NETWORK_ERROR;
     Dmsg1(debuglevel_, "Send challenge failed. ERR=%s\n", bs_->bstrerror());
     return false;
   }
@@ -180,9 +229,14 @@ bool CramMd5Handshake::CramMd5Response()
     Dmsg1(debuglevel_, "Receive challenge response failed. ERR=%s\n",
           bs_->bstrerror());
     Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
+    result = HandshakeResult::NETWORK_ERROR;
     return false;
   }
-  if (bstrcmp(bs_->msg, "1000 OK auth\n")) { return true; }
+  if (bstrcmp(bs_->msg, "1000 OK auth\n")) {
+    result = HandshakeResult::SUCCESS;
+    return true;
+  }
+  result = HandshakeResult::WRONG_HASH;
   Dmsg1(debuglevel_, "Received bad response: %s\n", bs_->msg);
   Bmicrosleep(bs_->sleep_time_after_authentication_error, 0);
   return false;

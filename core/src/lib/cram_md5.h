@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,18 @@ class CramMd5Handshake {
   TlsPolicy RemoteTlsPolicy() const { return remote_tls_policy_; }
   std::string destination_qualified_name_;
 
+  enum class HandshakeResult
+  {
+    NOT_INITIALIZED,
+    SUCCESS,
+    FORMAT_MISMATCH,
+    NETWORK_ERROR,
+    WRONG_HASH,
+    REPLAY_ATTACK
+  };
+
+  mutable HandshakeResult result{HandshakeResult::NOT_INITIALIZED};
+
  private:
   static constexpr int debuglevel_ = 50;
   bool compatible_ = true;
@@ -43,9 +55,20 @@ class CramMd5Handshake {
   TlsPolicy local_tls_policy_ = kBnetTlsUnknown;
   TlsPolicy remote_tls_policy_ = kBnetTlsUnknown;
   const std::string own_qualified_name_;
+  std::string own_qualified_name_bashed_spaces_;
   bool CramMd5Challenge();
   bool CramMd5Response();
   void InitRandom() const;
+
+  enum class ComparisonResult
+  {
+    FAILURE,
+    IS_SAME,
+    IS_DIFFERENT
+  };
+
+  ComparisonResult CompareChallengeWithOwnQualifiedName(
+      const char* challenge) const;
 };
 
 void hmac_md5(uint8_t* text,

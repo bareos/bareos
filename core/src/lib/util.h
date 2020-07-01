@@ -33,6 +33,7 @@ void EscapeString(PoolMem& snew, const char* old, int len);
 bool IsBufZero(char* buf, int len);
 void lcase(char* str);
 void BashSpaces(char* str);
+void BashSpaces(std::string& str);
 void BashSpaces(PoolMem& pm);
 void UnbashSpaces(char* str);
 void UnbashSpaces(PoolMem& pm);
