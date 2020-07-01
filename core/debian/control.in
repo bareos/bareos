@@ -333,3 +333,5 @@ Description: Backup Archiving Recovery Open Sourced - common tools
 @DEBIAN_CONTROL_TRAYMONITOR@
 
 @DEBIAN_CONTROL_UNIVENTION_BAREOS@
+
+@DEBIAN_CONTROL_VMWARE@

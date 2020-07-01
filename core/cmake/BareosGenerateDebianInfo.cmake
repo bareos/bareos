@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -49,6 +49,11 @@ if(GENERATE_DEBIAN_CONTROL)
     # only required for univention
     file(READ ./debian/control.univention-bareos
          DEBIAN_CONTROL_UNIVENTION_BAREOS)
+  endif()
+
+  if (VIXDISKLIB_FOUND)
+    file(READ ./debian/control.vmware
+      DEBIAN_CONTROL_VMWARE)
   endif()
 
 endif()
