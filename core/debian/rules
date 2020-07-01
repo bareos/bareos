@@ -126,7 +126,7 @@ override_dh_makeshlibs:
 	dh_makeshlibs -n
 
 override_dh_auto_test:
-	cd obj-x86_64-linux-gnu && make clean && make -j4 Continuous || echo "ctest failed"
+	cd obj-x86_64-linux-gnu && make clean && REGRESS_DEBUG=1 ctest -j 1 -V -D Continuous || echo "ctest failed"
 
 override_dh_shlibdeps:
 	dh_shlibdeps -l$(shell pwd)/debian/tmp/usr/lib/bareos

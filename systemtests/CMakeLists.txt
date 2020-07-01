@@ -187,6 +187,12 @@ macro(handle_python_plugin_modules test_name)
          BareosFdPluginLocalFileset.py BareosFdPluginPostgres.py
          BareosFdPluginBaseclass.py
     )
+
+  endif()
+  if(${test_name} STREQUAL pyplug-fd-vmware)
+    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-vmware.py
+         BareosFdPluginVMware.py
+    )
   endif()
 
   # still missing: filed/BareosFdPluginLDAP.py filed/bareos-fd-ldap.py
@@ -410,6 +416,9 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     fstype
     bregex
 )
+if(TARGET bareos_vadp_dumper)
+  list(APPEND bareos_vadp_dumper)
+endif()
 
 set(AVAILABLE_WEBUI_SELENIUM_TESTS
     "admin-client_disabling"
@@ -732,6 +741,13 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-ovirt")
 endif()
 
+if(TARGET python-fd AND enable_vmware_test)
+  list(APPEND SYSTEM_TESTS "pyplug-fd-vmware")
+else()
+  message(STATUS "disabling pyplug-fd-vmware as vmware_server was not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-vmware")
+endif()
+
 if(TARGET python-fd AND XTRABACKUP)
   list(APPEND SYSTEM_TESTS "pyplug-fd-percona-xtrabackup")
 else()
@@ -756,7 +772,7 @@ endif()
 
 message(STATUS "Looking for pam test requirements ...")
 find_program(PYTHON python)
-bareosfindlibraryandheaders("pam" "security/pam_appl.h")
+bareosfindlibraryandheaders("pam" "security/pam_appl.h" "")
 find_program(PAMTESTER pamtester)
 
 set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")

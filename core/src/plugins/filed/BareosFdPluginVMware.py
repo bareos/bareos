@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2017 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,7 @@ import signal
 import ssl
 import socket
 import hashlib
+import ConfigParser as configparser
 
 from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
@@ -80,7 +81,17 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.RegisterEvents(context, self.events)
         self.mandatory_options_default = ["vcserver", "vcuser", "vcpass"]
         self.mandatory_options_vmname = ["dc", "folder", "vmname"]
+        self.optional_options = [
+            "uuid",
+            "vcthumbprint",
+            "transport",
+            "log_path",
+            "localvmdk",
+            "vadp_dumper_verbose",
+        ]
         self.utf8_options = ["vmname", "folder"]
+        self.config = None
+        self.config_parsed = False
 
         self.vadp = BareosVADPWrapper()
         self.vadp.plugin = self
@@ -95,9 +106,92 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "parse_plugin_definition() was called in module %s\n" % (__name__),
         )
         super(BareosFdPluginVMware, self).parse_plugin_definition(context, plugindef)
+
+        # if the option config_file is present, parse the given file
+        config_file = self.options.get("config_file")
+        if config_file:
+            if not self.parse_config_file(context):
+                return bRCs["bRC_Error"]
+
         self.vadp.options = self.options
 
         return bRCs["bRC_OK"]
+
+    def parse_config_file(self, context):
+        """
+        Parse the config file given in the config_file plugin option
+        """
+        if self.config_parsed:
+            return True
+
+        bareosfd.DebugMessage(
+            context,
+            100,
+            "BareosFdPluginVMware: parse_config_file(): parse %s\n"
+            % (self.options["config_file"]),
+        )
+
+        self.config = configparser.ConfigParser()
+
+        try:
+            self.config.readfp(open(self.options["config_file"]))
+        except IOError as err:
+            bareosfd.JobMessage(
+                context,
+                bJobMessageType["M_FATAL"],
+                "BareosFdPluginVMware: Error reading config file %s: %s\n"
+                % (self.options["config_file"], err.strerror),
+            )
+            return False
+
+        self.config_parsed = True
+
+        return self.check_config(context)
+
+    def check_config(self, context):
+        """
+        Check the configuration and set or override options if necessary
+        """
+        bareosfd.DebugMessage(context, 100, "BareosFdPluginVMware: check_config()\n")
+        mandatory_sections = ["vmware_plugin_options"]
+        allowed_options = (
+            self.mandatory_options_default
+            + self.mandatory_options_vmname
+            + self.optional_options
+        )
+
+        for section in mandatory_sections:
+            if not self.config.has_section(section):
+                bareosfd.JobMessage(
+                    context,
+                    bJobMessageType["M_FATAL"],
+                    "BareosFdPluginVMware: Section [%s] missing in config file %s\n"
+                    % (section, self.options["config_file"]),
+                )
+                return False
+
+            for option in self.config.options(section):
+                if option not in allowed_options:
+                    bareosfd.JobMessage(
+                        context,
+                        bJobMessageType["M_FATAL"],
+                        "BareosFdPluginVMware: Invalid option %s in Section [%s] in config file %s\n"
+                        % (option, section, self.options["config_file"]),
+                    )
+                    return False
+
+                plugin_option = self.options.get(option)
+                if plugin_option:
+                    bareosfd.JobMessage(
+                        context,
+                        bJobMessageType["M_WARNING"],
+                        "BareosFdPluginVMware: Overriding plugin option %s:%s from config file %s\n"
+                        % (option, repr(plugin_option), self.options["config_file"]),
+                    )
+
+                self.options[option] = self.config.get(section, option)
+
+        return True
 
     def check_options(self, context, mandatory_options=None):
         """
@@ -819,6 +913,11 @@ class BareosVADPWrapper(object):
 
         # check if the VM supports CBT and that CBT is enabled
         if not self.vm.capability.changeTrackingSupported:
+            bareosfd.DebugMessage(
+                context,
+                100,
+                "Error VM %s does not support CBT\n" % (vmname.encode("utf-8")),
+            )
             bareosfd.JobMessage(
                 context,
                 bJobMessageType["M_FATAL"],
@@ -827,10 +926,15 @@ class BareosVADPWrapper(object):
             return bRCs["bRC_Error"]
 
         if not self.vm.config.changeTrackingEnabled:
+            bareosfd.DebugMessage(
+                context,
+                100,
+                "Error vm %s is not cbt enabled\n" % (vmname.encode("utf-8")),
+            )
             bareosfd.JobMessage(
                 context,
                 bJobMessageType["M_FATAL"],
-                "Error VM %s is not CBT enabled\n" % (vmname.encode("utf-8")),
+                "Error vm %s is not cbt enabled\n" % (vmname.encode("utf-8")),
             )
             return bRCs["bRC_Error"]
 
@@ -839,6 +943,11 @@ class BareosVADPWrapper(object):
         )
 
         if not self.create_vm_snapshot(context):
+            bareosfd.DebugMessage(
+                context,
+                100,
+                "Error creating snapshot on VM %s\n" % (vmname.encode("utf-8")),
+            )
             bareosfd.JobMessage(
                 context,
                 bJobMessageType["M_FATAL"],
@@ -859,6 +968,12 @@ class BareosVADPWrapper(object):
         )
         self.get_vm_snap_disk_devices(context)
         if not self.disk_devices:
+            bareosfd.DebugMessage(
+                context,
+                100,
+                "Error getting Disk Devices on VM %s from snapshot\n"
+                % (vmname.encode("utf-8")),
+            )
             bareosfd.JobMessage(
                 context,
                 bJobMessageType["M_FATAL"],
@@ -1398,6 +1513,7 @@ class BareosVADPWrapper(object):
         # -C: Create local VMDK
         # -d: Specify local VMDK name
         # -f: Specify forced transport method
+        # -v - Verbose output
         bareos_vadp_dumper_opts = {}
         bareos_vadp_dumper_opts["dump"] = "-S -D -M"
         if "transport" in self.options:
@@ -1421,6 +1537,9 @@ class BareosVADPWrapper(object):
                 bareos_vadp_dumper_opts["restore"] += (
                     " -f %s" % self.options["transport"]
                 )
+
+        if self.options.get("vadp_dumper_verbose") == "yes":
+            bareos_vadp_dumper_opts[cmd] = "-v " + bareos_vadp_dumper_opts[cmd]
 
         bareosfd.DebugMessage(
             context,
@@ -1449,7 +1568,11 @@ class BareosVADPWrapper(object):
             "start_dumper(): bareos_vadp_dumper_command_args: %s\n"
             % (repr(bareos_vadp_dumper_command_args)),
         )
+
         log_path = "/var/log/bareos"
+        if self.options.get("log_path"):
+            log_path = self.options["log_path"]
+
         stderr_log_fd = tempfile.NamedTemporaryFile(dir=log_path, delete=False)
 
         bareos_vadp_dumper_process = None

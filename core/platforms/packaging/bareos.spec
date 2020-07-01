@@ -294,6 +294,21 @@ BuildRequires: lsb-release
 %endif
 
 
+# dependency tricks for vixdisklib
+# Note: __requires_exclude only works for dists with rpm version >= 4.9
+#       SLES12 has suse_version 1315, SLES11 has 1110
+%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 16 || 0%{?suse_version} >= 1110
+%global __requires_exclude ^.*libvixDiskLib.*$
+%else
+%define _use_internal_dependency_generator 0
+%define our_find_requires %{_builddir}/%{name}-%{version}/find_requires
+%endif
+
+
+
+
+
+
 Summary:    Backup Archiving REcovery Open Sourced - metapackage
 Requires:   %{name}-director = %{version}
 Requires:   %{name}-storage = %{version}
@@ -567,6 +582,50 @@ Summary:    Python plugin for Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-storage = %{version}
 
+
+# vmware switch is set via --define="vmware 1" in build script when
+# vix disklib is detected
+
+%if 0%{?vmware}
+# VMware Plugin BEGIN
+
+%package -n     bareos-vadp-dumper
+Summary:        VADP Dumper - vStorage APIs for Data Protection Dumper program
+Group:          Productivity/Archiving/Backup
+Requires:       bareos-vmware-vix-disklib
+
+%description -n bareos-vadp-dumper
+Uses vStorage API to connect to VMWare and dump data like virtual disks snapshots
+to be used by other programs.
+
+
+%package -n     bareos-vmware-plugin
+Summary:        Bareos VMware plugin
+Group:          Productivity/Archiving/Backup
+Requires:       bareos-vadp-dumper
+Requires:       bareos-filedaemon-python-plugin >= 15.2
+Requires:       python-pyvmomi
+%if 0%{?suse_version} == 1110
+Requires:       python-ordereddict
+%endif
+
+%description -n bareos-vmware-plugin
+Uses the VMware API to take snapshots of running VMs and takes
+full and incremental backup so snapshots. Restore of a snapshot
+is currently supported to the origin VM.
+
+%package -n     bareos-vmware-plugin-compat
+Summary:        Bareos VMware plugin compatibility
+Group:          Productivity/Archiving/Backup
+Requires:       bareos-vmware-plugin
+
+%description -n bareos-vmware-plugin-compat
+Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos <= 16.2.
+
+# VMware Plugin END
+%endif
+
+
 %description director-python-plugin
 %{dscr}
 
@@ -756,6 +815,7 @@ This package contains required files for Bareos regression testing.
 %setup -c -n bareos
 mv bareos-*/* .
 
+
 %build
 # Cleanup defined in Fedora Packaging:Guidelines
 # and required repetitive local build of at least CentOS 5.
@@ -770,6 +830,7 @@ export MTX=/usr/sbin/mtx
 
 mkdir %{CMAKE_BUILDDIR}
 pushd %{CMAKE_BUILDDIR}
+
 
 # use Developer Toolset 7 compiler as standard is too old
 %if 0%{?centos_version} == 600 || 0%{?rhel_version} == 600
@@ -934,6 +995,11 @@ for F in  \
     %{_sysconfdir}/init.d/bareos-sd \
     %{_sysconfdir}/init.d/bareos-fd \
 %endif
+%if !0%{?vmware}
+    %{_sbindir}/bareos_vadp_dumper \
+    %{_sbindir}/bareos_vadp_dumper_wrapper.sh \
+    %{_sbindir}/vmware_cbt_tool.py \
+%endif
     %{script_dir}/bareos_config \
     %{script_dir}/btraceback.dbx \
     %{script_dir}/btraceback.mdb \
@@ -947,6 +1013,7 @@ done
 # for i in #{buildroot}/#{_libdir}/libbareos*; do printf "$i: "; readelf -a $i | grep SONAME; done
 find %{buildroot}/%{library_dir} -type l -name "libbareos*.so" -maxdepth 1 -exec rm {} \;
 ls -la %{buildroot}/%{library_dir}
+
 
 %if ! 0%{?python_plugins}
 rm -f %{buildroot}/%{plugin_dir}/python-*.so
@@ -973,6 +1040,15 @@ rm -f %{buildroot}/%{script_dir}/bareos-glusterfind-wrapper
 rm %{buildroot}%{_mandir}/man1/bareos-tray-monitor.*
 %endif
 
+# remove vmware plugin files when vmware is not built
+%if  !0%{?vmware}
+rm -f %{buildroot}%{plugin_dir}/BareosFdPluginVMware.py*
+rm -f %{buildroot}%{plugin_dir}/bareos-fd-vmware.py*
+%endif
+
+
+
+
 # install systemd service files
 %if 0%{?systemd_support}
 install -d -m 755 %{buildroot}%{_unitdir}
@@ -991,6 +1067,12 @@ ln -sf service %{buildroot}%{_sbindir}/rcbareos-sd
 echo "This meta package emulates the former bareos-client package" > %{buildroot}%{_docdir}/%{name}/README.bareos-client
 echo "This is a meta package to install a full bareos system" > %{buildroot}%{_docdir}/%{name}/README.bareos
 
+
+# create dir for bareos-vmware-plugin-compat
+mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
+
+
+
 %files
 %defattr(-, root, root)
 %{_docdir}/%{name}/README.bareos
@@ -1000,6 +1082,29 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %dir %{_docdir}/%{name}
 %{_docdir}/%{name}/README.bareos-client
 
+
+%if 0%{?vmware}
+# VMware Plugin BEGIN
+
+%files -n bareos-vadp-dumper
+%defattr(-,root,root)
+%{_sbindir}/bareos_vadp_dumper*
+%doc src/vmware/LICENSE.vadp
+
+%files -n bareos-vmware-plugin
+%defattr(-,root,root)
+%dir %{_libdir}/bareos/
+%{_sbindir}/vmware_cbt_tool.py
+%{plugin_dir}/BareosFdPluginVMware.py*
+%{plugin_dir}/bareos-fd-vmware.py*
+%doc src/vmware/LICENSE src/vmware/README.md
+
+%files -n bareos-vmware-plugin-compat
+%defattr(-,root,root)
+%{_libdir}/bareos/plugins/vmware_plugin/
+
+#VMware Plugin END
+%endif
 
 %files bconsole
 # console package

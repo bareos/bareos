@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,7 +19,7 @@
 
 # generic macro to find libraries and headers
 
-macro(BareosFindLibraryAndHeaders LIBNAME HEADERFILE)
+macro(BareosFindLibraryAndHeaders LIBNAME HEADERFILE ADDITIONAL_PATHS)
   message(STATUS "checking for library ${LIBNAME} and ${HEADERFILE} header ...")
 
   string(TOUPPER ${LIBNAME} LIBNAME_UPCASE)
@@ -28,8 +28,8 @@ macro(BareosFindLibraryAndHeaders LIBNAME HEADERFILE)
   set(FOUND_VAR_NAME ${LIBNAME_UPCASE}_FOUND)
   set(HAVE_VAR_NAME HAVE_${LIBNAME_UPCASE})
 
-  find_path(${INCLUDE_VAR_NAME} NAMES ${HEADERFILE})
-  find_library(${LIB_VAR_NAME} NAMES ${LIBNAME})
+  find_path(${INCLUDE_VAR_NAME} NAMES ${HEADERFILE} PATHS ${ADDITIONAL_PATHS} PATH_SUFFIXES include)
+  find_library(${LIB_VAR_NAME} NAMES ${LIBNAME} PATHS ${ADDITIONAL_PATHS} PATH_SUFFIXES lib64)
 
   # MESSAGE(STATUS "find path result for ${INCLUDE_VAR_NAME} is
   # ${${INCLUDE_VAR_NAME}}") MESSAGE(STATUS "find library result for

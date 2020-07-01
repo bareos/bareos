@@ -405,6 +405,39 @@ Before this, it was only possible specify VMs contained in vApps by using the in
 
 Note that it must be the so called vSphere instance UUID, not the BIOS UUID which is shown inside a VM when using for example :command:`dmidecode`. The :command:`vmware_cbt_tool.py` utility was adapted accordingly (see below for details).
 
+Since :sinceVersion:`20.2.0: VMware Plugin: config file` it is optionally possible to use a configuration file on the system running the Bareos File Daemon. This can be useful to specify common plugin options instead of having to repeat them in every Fileset. Options which are specifed in the config file will override options from the Fileset, if the same option is given there, too. A warning will be issued in that case. Use the plugin option **config_file** to specify the config file name as in the following example:
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.conf: VMware Plugin Job and FileSet definition with config_file
+
+   FileSet {
+     Name = "vm-websrv1_fileset"
+
+     Include {
+       Options {
+            signature = MD5
+            Compression = GZIP
+       }
+       Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:config_file=/etc/bareos/vmware-plugin.ini"
+     }
+   }
+
+And the config file as follows:
+
+.. code-block:: bareosconfig
+   :caption: /etc/bareos/vmware-plugin.ini
+
+   [vmware_plugin_options]
+   vcserver=vcenter.example.org
+   vcuser=bakadm@vsphere.local
+   vcpass=Bak.Adm-1234
+
+.. note::
+
+   Do not use quotes in the above config file, it is processed by the Python ConfigParser module and the quotes would not be stripped from the string.
+
+
+
 Backup
 ^^^^^^
 

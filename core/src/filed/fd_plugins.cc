@@ -606,10 +606,21 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
   sp->accurate_found = ff_pkt->accurate_found;
 
   plugin_ctx_list = jcr->plugin_ctx_list;
-  if (!fd_plugin_list || !plugin_ctx_list || jcr->IsJobCanceled()) {
+
+  if (!fd_plugin_list || !plugin_ctx_list) {
     Jmsg1(jcr, M_FATAL, 0,
-          "Command plugin \"%s\" requested, but is not loaded.\n", cmd);
+          "PluginOptionHandleFile: Command plugin \"%s\" requested, but is not "
+          "loaded.\n",
+          cmd);
     goto bail_out; /* Return if no plugins loaded */
+  }
+
+  if (jcr->IsJobCanceled()) {
+    Jmsg1(jcr, M_FATAL, 0,
+          "PluginOptionHandleFile: Command plugin \"%s\" requested, but job is "
+          "already cancelled.\n",
+          cmd);
+    goto bail_out; /* Return if job is cancelled */
   }
 
   if (!GetPluginName(jcr, cmd, &len)) { goto bail_out; }
@@ -670,11 +681,23 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
 
   cmd = ff_pkt->top_fname;
   plugin_ctx_list = jcr->plugin_ctx_list;
-  if (!fd_plugin_list || !plugin_ctx_list || jcr->IsJobCanceled()) {
+
+  if (!fd_plugin_list || !plugin_ctx_list) {
     Jmsg1(jcr, M_FATAL, 0,
-          "Command plugin \"%s\" requested, but is not loaded.\n", cmd);
-    return 1; /* Return if no plugins loaded */
+          "PluginSave: Command plugin \"%s\" requested, but is not "
+          "loaded.\n",
+          cmd);
+    goto bail_out; /* Return if no plugins loaded */
   }
+
+  if (jcr->IsJobCanceled()) {
+    Jmsg1(jcr, M_FATAL, 0,
+          "PluginSave: Command plugin \"%s\" requested, but job is "
+          "already cancelled.\n",
+          cmd);
+    goto bail_out; /* Return if job is cancelled */
+  }
+
 
   jcr->cmd_plugin = true;
   eventType = bEventBackupCommand;
@@ -692,8 +715,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
 
     /*
      * We put the current plugin pointer, and the plugin context into the jcr,
-     * because during SaveFile(), the plugin will be called many times and these
-     * values are needed.
+     * because during SaveFile(), the plugin will be called many times and
+     * these values are needed.
      */
     if (!IsEventEnabled(ctx, eventType)) {
       Dmsg1(debuglevel, "Event %d disabled for this plugin.\n", eventType);
@@ -770,10 +793,10 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
         ff_pkt->object_len = sp.object_len;
       } else {
         if (!sp.fname) {
-          Jmsg1(
-              jcr, M_FATAL, 0,
-              _("Command plugin \"%s\": no fname in startBackupFile packet.\n"),
-              cmd);
+          Jmsg1(jcr, M_FATAL, 0,
+                _("Command plugin \"%s\": no fname in startBackupFile "
+                  "packet.\n"),
+                cmd);
           goto bail_out;
         }
 
@@ -796,8 +819,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
       /*
        * Handle hard linked files
        *
-       * Maintain a list of hard linked files already backed up. This allows us
-       * to ensure that the data of each file gets backed up only once.
+       * Maintain a list of hard linked files already backed up. This allows
+       * us to ensure that the data of each file gets backed up only once.
        */
       ff_pkt->LinkFI = 0;
       if (!BitIsSet(FO_NO_HARDLINK, ff_pkt->flags) &&
@@ -935,8 +958,8 @@ int PluginEstimate(JobControlRecord* jcr,
 
     /*
      * We put the current plugin pointer, and the plugin context into the jcr,
-     * because during SaveFile(), the plugin will be called many times and these
-     * values are needed.
+     * because during SaveFile(), the plugin will be called many times and
+     * these values are needed.
      */
     if (!IsEventEnabled(ctx, eventType)) {
       Dmsg1(debuglevel, "Event %d disabled for this plugin.\n", eventType);
@@ -984,10 +1007,10 @@ int PluginEstimate(JobControlRecord* jcr,
 
       if (!IS_FT_OBJECT(sp.type)) {
         if (!sp.fname) {
-          Jmsg1(
-              jcr, M_FATAL, 0,
-              _("Command plugin \"%s\": no fname in startBackupFile packet.\n"),
-              cmd);
+          Jmsg1(jcr, M_FATAL, 0,
+                _("Command plugin \"%s\": no fname in startBackupFile "
+                  "packet.\n"),
+                cmd);
           goto bail_out;
         }
 
@@ -1100,8 +1123,8 @@ bool SendPluginName(JobControlRecord* jcr, BareosSocket* sd, bool start)
 }
 
 /**
- * Plugin name stream found during restore.  The record passed in argument name
- * was generated in SendPluginName() above.
+ * Plugin name stream found during restore.  The record passed in argument
+ * name was generated in SendPluginName() above.
  *
  * Returns: true  if start of stream
  *          false if end of steam
@@ -1677,8 +1700,8 @@ static void DumpFdPlugin(Plugin* plugin, FILE* fp)
 static void DumpFdPlugins(FILE* fp) { DumpPlugins(fd_plugin_list, fp); }
 
 /**
- * This entry point is called internally by Bareos to ensure that the plugin IO
- * calls come into this code.
+ * This entry point is called internally by Bareos to ensure that the plugin
+ * IO calls come into this code.
  */
 void LoadFdPlugins(const char* plugin_dir, alist* plugin_names)
 {
@@ -1734,8 +1757,8 @@ void UnloadFdPlugins(void)
 int ListFdPlugins(PoolMem& msg) { return ListPlugins(fd_plugin_list, msg); }
 
 /**
- * Check if a plugin is compatible.  Called by the load_plugin function to allow
- * us to verify the plugin.
+ * Check if a plugin is compatible.  Called by the load_plugin function to
+ * allow us to verify the plugin.
  */
 static bool IsPluginCompatible(Plugin* plugin)
 {
@@ -1867,8 +1890,8 @@ void FreePlugins(JobControlRecord* jcr)
 }
 
 /**
- * Entry point for opening the file this is a wrapper around the pluginIO entry
- * point in the plugin.
+ * Entry point for opening the file this is a wrapper around the pluginIO
+ * entry point in the plugin.
  */
 static int MyPluginBopen(BareosWinFilePacket* bfd,
                          const char* fname,
@@ -1908,8 +1931,8 @@ static int MyPluginBopen(BareosWinFilePacket* bfd,
 }
 
 /**
- * Entry point for closing the file this is a wrapper around the pluginIO entry
- * point in the plugin.
+ * Entry point for closing the file this is a wrapper around the pluginIO
+ * entry point in the plugin.
  */
 static int MyPluginBclose(BareosWinFilePacket* bfd)
 {
@@ -2331,7 +2354,8 @@ static void bareosFree(bpContext* ctx, const char* fname, int line, void* mem)
 }
 
 /**
- * Let the plugin define files/directories to be excluded from the main backup.
+ * Let the plugin define files/directories to be excluded from the main
+ * backup.
  */
 static bRC bareosAddExclude(bpContext* ctx, const char* fname)
 {
@@ -2372,7 +2396,8 @@ static bRC bareosAddExclude(bpContext* ctx, const char* fname)
 }
 
 /**
- * Let the plugin define files/directories to be excluded from the main backup.
+ * Let the plugin define files/directories to be excluded from the main
+ * backup.
  */
 static bRC bareosAddInclude(bpContext* ctx, const char* fname)
 {

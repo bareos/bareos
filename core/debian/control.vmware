@@ -1,21 +1,7 @@
-Source: bareos-vmware
-Section: admin
-Priority: extra
-Maintainer: packager@bareos.com
-Build-Depends:
-  cmake (>= 3.0.0) | cmake-mozilla,
-  debhelper (>= 8.0.0),
-  libjansson-dev,
-  bareos-vmware-vix-disklib-dev
-Standards-Version: 3.9.3
-Homepage: http://www.bareos.org/
-Vcs-Git: git://github.com/bareos/bareos.git
-Vcs-Browser: https://github.com/bareos/bareos-vmware
-
 Package: bareos-vmware-plugin
 Architecture: any
 Depends:  bareos-vadp-dumper, bareos-filedaemon-python-plugin (>= 15.2), python-pyvmomi
-Description: Bareos VMware plugin 
+Description: Bareos VMware plugin
  Uses the VMware API to take snapshots of running VMs and takes
  full and incremental backup so snapshots. Restore of a snapshot
  is currently supported to the origin VM.
@@ -39,9 +25,9 @@ Description: vStorage APIs for Data Protection Dumper program
 # This package only contains the distributable code to comply with
 # https://communities.vmware.com/viewwebdoc.jspa?documentID=DOC-10141
 
-Package: bareos-vmware-plugin-compat
-Architecture: any
-Depends:  bareos-vmware-plugin
-Description: Bareos VMware plugin compatibility
- Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos <= 16.2.
+#Package: bareos-vmware-plugin-compat
+#Architecture: any
+#Depends:  bareos-vmware-plugin
+#Description: Bareos VMware plugin compatibility
+# Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos <= 16.2.
 

@@ -23,12 +23,17 @@ if(NOT client-only)
   if(NOT HAVE_WIN32 AND ndmp)
     add_subdirectory(ndmp)
   endif()
+  if(VIXDISKLIB_FOUND)
+    add_subdirectory(vmware)
+  endif()
   add_subdirectory(dird)
   add_subdirectory(stored)
 endif()
 
 if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-  message(status "Skipping unit tests as testing on installed files is requested")
+  message(
+    status "Skipping unit tests as testing on installed files is requested"
+  )
 elseif(NOT GTEST_FOUND)
   message(status "Skipping unit tests as gtest was not found")
 else()
