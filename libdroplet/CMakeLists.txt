@@ -20,6 +20,7 @@
 cmake_minimum_required(VERSION 3.0)
 include(FindLibXml2)
 include(Findjsonc)
+include(FindOpenSSL)
 add_library(
   droplet SHARED
   src/conn.c
@@ -100,5 +101,8 @@ add_library(
 
 target_include_directories(
   droplet PUBLIC include ${LIBXML2_INCLUDE_DIR} ${JSONC_INCLUDE_DIRS}
+                 ${OPENSSL_INCLUDE_DIR}
 )
-target_link_libraries(droplet ${LIBXML2_LIBRARIES} ${JSONC_LIBRARIES})
+target_link_libraries(
+  droplet ${LIBXML2_LIBRARIES} ${JSONC_LIBRARIES} ${OPENSSL_LIBRARIES}
+)
