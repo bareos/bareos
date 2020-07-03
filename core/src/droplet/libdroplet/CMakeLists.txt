@@ -20,7 +20,6 @@
 cmake_minimum_required(VERSION 3.0)
 include(FindLibXml2)
 include(Findjsonc)
-include_directories(include ${LIBXML2_INCLUDE_DIR} ${JSONC_INCLUDE_DIRS})
 add_library(
   droplet SHARED
   src/conn.c
@@ -98,3 +97,8 @@ add_library(
   src/backend/posix/reqbuilder.c
   src/backend/posix/replyparser.c
 )
+
+target_include_directories(
+  droplet PUBLIC include ${LIBXML2_INCLUDE_DIR} ${JSONC_INCLUDE_DIRS}
+)
+target_link_libraries(droplet ${LIBXML2_LIBRARIES} ${JSONC_LIBRARIES})
