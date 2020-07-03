@@ -9,7 +9,7 @@ Storage {
   # Plugin Directory = "@python_plugin_module_src_sd@"
   # Plugin Names = ""
   Working Directory =  "@working_dir@"
-  Backend Directory = "@SD_GFAPI_DIR_TO_TEST@"
+  Backend Directory = "@sd_backenddir@"
   Pid Directory =  "@piddir@"
   SD Port = @sd_port@
 }
