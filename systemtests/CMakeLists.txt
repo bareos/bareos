@@ -477,7 +477,6 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   set(SD_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
   set(DIR_PLUGINS_DIR_TO_TEST ${PLUGINS_DIR_TO_TEST})
   set(BACKEND_DIR_TO_TEST ${BACKEND_DIR_TO_TEST})
-  set(SD_GFAPI_DIR_TO_TEST ${BACKEND_DIR_TO_TEST})
   set(WEBUI_PUBLIC_DIR_TO_TEST /usr/share/bareos-webui/public)
 
 else() # run systemtests on source and compiled files
@@ -493,7 +492,7 @@ else() # run systemtests on source and compiled files
     get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-droplet BINARY_DIR)
   endif()
   if(TARGET bareossd-gfapi)
-    get_target_property(SD_GFAPI_DIR_TO_TEST bareossd-gfapi BINARY_DIR)
+    get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-gfapi BINARY_DIR)
   endif()
   if(TARGET python-dir)
     get_target_property(DIR_PLUGINS_DIR_TO_TEST python-dir BINARY_DIR)
@@ -676,13 +675,13 @@ set(glusterfs_uri
 )
 mark_as_advanced(glusterfs_uri)
 
-if(TARGET bareossd-droplet)
+if(SD_BACKEND_DIR_TO_TEST AND TARGET bareossd-droplet)
   list(APPEND SYSTEM_TESTS droplet-s3)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED droplet-s3)
 endif()
 
-if(SD_GFAPI_DIR_TO_TEST AND glusterfs_uri)
+if(SD_BACKEND_DIR_TO_TEST AND glusterfs_uri)
   list(APPEND SYSTEM_TESTS glusterfs-backend)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED glusterfs-backend)
