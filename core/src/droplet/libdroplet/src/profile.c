@@ -47,6 +47,10 @@ struct ssl_method_authorized {
 #endif
 };
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#define X509_STORE_CTX_get0_cert(ctx) (ctx->cert)
+#endif
+
 static struct ssl_method_authorized
 list_ssl_method_authorized[] = {
 #ifndef OPENSSL_NO_SSL2
@@ -54,8 +58,10 @@ list_ssl_method_authorized[] = {
   { .name = SSL_TXT_SSLV2,   .fn = SSLv2_method   },
 #endif
 #endif
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
 #ifdef SSL_TXT_SSLV3
   { .name = SSL_TXT_SSLV3,   .fn = SSLv3_method   },
+#endif
 #endif
   { .name = "SSLv23",        .fn = SSLv23_method  },
 #ifdef SSL_TXT_TLSV1
@@ -811,10 +817,10 @@ ssl_verify_cert(X509_STORE_CTX *cert, void *arg)
 
   DPL_TRACE(ctx, DPL_TRACE_SSL, "Server certificates:");
 
-  X509_NAME_oneline(X509_get_subject_name(cert->cert), buffer, sizeof(buffer));
+  X509_NAME_oneline(X509_get_subject_name(X509_STORE_CTX_get0_cert(cert)), buffer, sizeof(buffer));
   DPL_TRACE(ctx, DPL_TRACE_SSL, "Subject: %s", buffer);
 
-  X509_NAME_oneline(X509_get_issuer_name(cert->cert), buffer, sizeof(buffer));
+  X509_NAME_oneline(X509_get_issuer_name(X509_STORE_CTX_get0_cert(cert)), buffer, sizeof(buffer));
   DPL_TRACE(ctx, DPL_TRACE_SSL, "Issuer: %s", buffer);
 
   return 1;
