@@ -11,12 +11,6 @@ JobName=backup-s3-fd
 #shellcheck source=../environment.in
 . ./environment
 
-if ! ./start_postgres_server.sh; then
-  echo "Could not start postgres server"
-  export estat=1
-  exit 1
-fi
-
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
