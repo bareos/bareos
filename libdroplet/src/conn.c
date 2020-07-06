@@ -32,6 +32,7 @@
  * https://github.com/scality/Droplet
  */
 #include "dropletp.h"
+#include "sys/uio.h"
 
 /** @file */
 
