@@ -29,7 +29,6 @@
 #include "lib/edit.h"
 #include "stored/device_status_information.h"
 
-#if defined(HAVE_DROPLET)
 #include "stored/stored.h"
 #include "chunked_device.h"
 
@@ -1511,4 +1510,3 @@ chunked_device::chunked_device()
 
 } /* namespace storagedaemon */
 
-#endif /* HAVE_DROPLET */
