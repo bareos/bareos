@@ -67,12 +67,12 @@ class droplet_device : public chunked_device {
   /*
    * Interface from chunked_device
    */
-  bool CheckRemote();
-  bool remote_chunked_volume_exists();
-  bool FlushRemoteChunk(chunk_io_request* request);
-  bool ReadRemoteChunk(chunk_io_request* request);
-  ssize_t chunked_remote_volume_size();
-  bool TruncateRemoteChunkedVolume(DeviceControlRecord* dcr);
+  bool CheckRemote() override;
+  bool remote_chunked_volume_exists() override;
+  bool FlushRemoteChunk(chunk_io_request* request) override;
+  bool ReadRemoteChunk(chunk_io_request* request) override;
+  ssize_t chunked_remote_volume_size() override;
+  bool TruncateRemoteChunkedVolume(DeviceControlRecord* dcr) override;
 
   bool walk_directory(const char* dirname,
                       t_dpl_walk_directory_call_back callback,
@@ -89,14 +89,16 @@ class droplet_device : public chunked_device {
   /*
    * Interface from Device
    */
-  int d_close(int fd);
-  int d_open(const char* pathname, int flags, int mode);
-  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL);
-  boffset_t d_lseek(DeviceControlRecord* dcr, boffset_t offset, int whence);
-  ssize_t d_read(int fd, void* buffer, size_t count);
-  ssize_t d_write(int fd, const void* buffer, size_t count);
-  bool d_truncate(DeviceControlRecord* dcr);
-  bool d_flush(DeviceControlRecord* dcr);
+  int d_close(int fd) override;
+  int d_open(const char* pathname, int flags, int mode) override;
+  int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;
+  boffset_t d_lseek(DeviceControlRecord* dcr,
+                    boffset_t offset,
+                    int whence) override;
+  ssize_t d_read(int fd, void* buffer, size_t count) override;
+  ssize_t d_write(int fd, const void* buffer, size_t count) override;
+  bool d_truncate(DeviceControlRecord* dcr) override;
+  bool d_flush(DeviceControlRecord* dcr) override;
 };
 } /* namespace storagedaemon */
 #endif /* OBJECTSTORE_DEVICE_H */

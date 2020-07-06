@@ -847,9 +847,6 @@ message(
   "   GFAPI(GLUSTERFS) support:     ${GFAPI_FOUND} ${GFAPI_LIBRARIES} ${GFAPI_INCLUDE_DIRS} "
 )
 message(
-  "   DROPLET support:              ${DROPLET_FOUND} ${DROPLET_LIBRARIES} ${DROPLET_INCLUDE_DIRS} "
-)
-message(
   "   CEPH RADOS support:           ${RADOS_FOUND} ${RADOS_LIBRARIES} ${RADOS_INCLUDE_DIRS} "
 )
 message(
