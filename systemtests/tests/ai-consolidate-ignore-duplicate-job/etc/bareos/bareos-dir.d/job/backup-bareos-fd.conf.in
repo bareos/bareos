@@ -1,0 +1,10 @@
+Job {
+  Name = "ai-backup-bareos-fd"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  Accurate = yes
+  AlwaysIncremental = yes
+  AlwaysIncrementalJobRetention = 1 seconds
+  AlwaysIncrementalKeepNumber = 1
+  AlwaysIncrementalMaxFullAge = 1 seconds
+}
