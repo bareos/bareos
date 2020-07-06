@@ -44,7 +44,7 @@ add_library(
   src/task.c
   src/async.c
   src/addrlist.c
-  src/getdate.y
+  src/getdate.c
   src/vfs.c
   src/uks.c
   src/gc.c
