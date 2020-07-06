@@ -362,9 +362,6 @@ extern char win_os[];
 // Define to 1 to when walkcontext does not work
 #cmakedefine HAVE_NON_WORKING_WALKCONTEXT @HAVE_NON_WORKING_WALKCONTEXT@
 
-// Define to 1 if you have libdroplet lib
-#cmakedefine HAVE_DROPLET @HAVE_DROPLET@
-
 // Define to 1 to use the old sockopt option
 #cmakedefine HAVE_OLD_SOCKOPT @HAVE_OLD_SOCKOPT@
 

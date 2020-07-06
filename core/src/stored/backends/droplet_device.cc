@@ -42,7 +42,6 @@
 
 #include "include/bareos.h"
 
-#ifdef HAVE_DROPLET
 #include "stored/stored.h"
 #include "stored/sd_backends.h"
 #include "chunked_device.h"
@@ -1054,4 +1053,3 @@ class Backend : public BackendInterface {
 extern "C" BackendInterface* GetBackend(void) { return new Backend; }
 #endif
 } /* namespace storagedaemon */
-#endif /* HAVE_DROPLET */
