@@ -675,13 +675,13 @@ set(glusterfs_uri
 )
 mark_as_advanced(glusterfs_uri)
 
-if(SD_BACKEND_DIR_TO_TEST AND TARGET bareossd-droplet)
+if(TARGET bareossd-droplet AND TARGET bareossd-chunked)
   list(APPEND SYSTEM_TESTS droplet-s3)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED droplet-s3)
 endif()
 
-if(SD_BACKEND_DIR_TO_TEST AND glusterfs_uri)
+if(glusterfs_uri)
   list(APPEND SYSTEM_TESTS glusterfs-backend)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED glusterfs-backend)

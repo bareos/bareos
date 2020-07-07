@@ -102,7 +102,6 @@ bareosfindlibraryandheaders("cephfs" "cephfs/libcephfs.h" "")
 bareosfindlibraryandheaders("pthread" "pthread.h" "")
 bareosfindlibraryandheaders("cap" "sys/capability.h" "")
 bareosfindlibraryandheaders("gfapi" "glusterfs/api/glfs.h" "")
-bareosfindlibraryandheaders("droplet" "droplet.h" "")
 
 bareosfindlibraryandheaders("pam" "security/pam_appl.h" "")
 
