@@ -18,9 +18,7 @@
 #   02110-1301, USA.
 
 cmake_minimum_required(VERSION 3.0)
-include(FindLibXml2)
-include(Findjsonc)
-include(FindOpenSSL)
+
 add_library(
   droplet SHARED
   src/conn.c
