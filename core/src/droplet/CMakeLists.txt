@@ -23,4 +23,15 @@ project(droplet C)
 
 set(default_build_type "Debug")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-add_subdirectory(libdroplet)
+
+include(FindLibXml2)
+include(Findjsonc)
+include(FindOpenSSL)
+
+if(${JSONC_FOUND} AND ${OPENSSL_FOUND} AND ${LIBXML2_FOUND})
+  message(STATUS "Configuring LibDroplet")
+  add_subdirectory(libdroplet)
+  message(STATUS "LibDroplet ready to be built")
+else()
+  message(STATUS "LibDroplet not configured to be built")
+endif(${JSONC_FOUND} AND ${OPENSSL_FOUND} AND ${LIBXML2_FOUND})

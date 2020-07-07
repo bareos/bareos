@@ -7,27 +7,22 @@
 # JSONC__LIBRARIES    - jsonc libraries directories
 
 if(JSONC_INCLUDE_DIRS AND JSONC_LIBRARIES)
-set(JSONC_FIND_QUIETLY TRUE)
+  set(JSONC_FIND_QUIETLY TRUE)
 endif(JSONC_INCLUDE_DIRS AND JSONC_LIBRARIES)
 
-find_path(JSONC_INCLUDE_DIR json.h
-                           HINTS
-                           /usr/include/json-c/
-                           /usr/local/include/json-c/
-			   )
-find_library(JSONC_LIBRARY json-c
-			  HINTS
-			  /usr/lib/
-                          /usr/local/lib
-			  )
+find_path(JSONC_INCLUDE_DIR json.h HINTS /usr/include/json-c/
+                                         /usr/local/include/json-c/
+)
+find_library(JSONC_LIBRARY json-c HINTS /usr/lib/ /usr/local/lib)
 
 set(JSONC_INCLUDE_DIRS ${JSONC_INCLUDE_DIR})
 set(JSONC_LIBRARIES ${JSONC_LIBRARY})
 
-# handle the QUIETLY and REQUIRED arguments and set JSONC_FOUND to TRUE if
-# all listed variables are TRUE
+# handle the QUIETLY and REQUIRED arguments and set JSONC_FOUND to TRUE if all
+# listed variables are TRUE
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(jsonc DEFAULT_MSG JSONC_INCLUDE_DIRS JSONC_LIBRARIES)
+find_package_handle_standard_args(
+  jsonc DEFAULT_MSG JSONC_INCLUDE_DIRS JSONC_LIBRARIES
+)
 
 mark_as_advanced(JSONC_INCLUDE_DIRS JSONC_LIBRARIES)
-

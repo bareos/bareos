@@ -192,9 +192,11 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
       dev = new gfapi_device;
       break;
 #endif
+#ifdef HAVE_BAREOSSD_DROPLET_DEVICE
     case DeviceType::B_DROPLET_DEV:
       dev = new droplet_device;
       break;
+#endif
 #ifdef HAVE_RADOS
     case DeviceType::B_RADOS_DEV:
       dev = new rados_device;
