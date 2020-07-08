@@ -105,4 +105,4 @@ target_link_libraries(
   droplet ${LIBXML2_LIBRARIES} ${JSONC_LIBRARIES} ${OPENSSL_LIBRARIES}
 )
 
-install(TARGETS droplet DESTINATION ${libdir})
+install(TARGETS droplet LIBRARY DESTINATION ${libdir})

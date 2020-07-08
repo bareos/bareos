@@ -30,11 +30,18 @@ include(FindLibXml2)
 include(Findjsonc)
 include(FindOpenSSL)
 
-if(${JSONC_FOUND} AND ${OPENSSL_FOUND} AND ${LIBXML2_FOUND})
+if(${JSONC_FOUND}
+   AND ${OPENSSL_FOUND}
+   AND ${LIBXML2_FOUND}
+)
   add_subdirectory(libdroplet)
   message(STATUS "LibDroplet ready to be built")
 else()
   message(STATUS "LibDroplet not configured to be built")
-endif(${JSONC_FOUND} AND ${OPENSSL_FOUND} AND ${LIBXML2_FOUND})
+endif(
+  ${JSONC_FOUND}
+  AND ${OPENSSL_FOUND}
+  AND ${LIBXML2_FOUND}
+)
 
 list(REMOVE_AT CMAKE_MESSAGE_INDENT -1)
