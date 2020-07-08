@@ -18,6 +18,7 @@
 #   02110-1301, USA.
 
 if(NOT client-only)
+  add_subdirectory(droplet)
   add_subdirectory(tools)
   add_subdirectory(cats)
   if(NOT HAVE_WIN32 AND ndmp)
