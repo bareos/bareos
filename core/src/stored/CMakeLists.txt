@@ -32,18 +32,15 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
   if(HAVE_WIN32)
     list(
       APPEND
-        AVAILABLE_DEVICE_API_SRCS
-        ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_fifo_device.cc
-        ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_file_device.cc
-        ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_tape_device.cc
+      AVAILABLE_DEVICE_API_SRCS
+      ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_fifo_device.cc
+      ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_file_device.cc
+      ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_tape_device.cc
     )
   else()
-    list(
-      APPEND AVAILABLE_DEVICE_API_SRCS
-             backends/unix_fifo_device.cc
-             # backends/droplet_device.cc
-             backends/unix_tape_device.cc
-             backends/unix_file_device.cc
+    list(APPEND AVAILABLE_DEVICE_API_SRCS backends/unix_fifo_device.cc
+         # backends/droplet_device.cc
+         backends/unix_tape_device.cc backends/unix_file_device.cc
     )
   endif()
 
@@ -118,7 +115,7 @@ set(SDSRCS
 
 if(HAVE_WIN32)
   list(APPEND SDSRCS stored.cc ../win32/generic/main.cc
-              ../win32/generic/service.cc ../win32/stored/storedres.rc
+       ../win32/generic/service.cc ../win32/stored/storedres.rc
   )
 endif()
 
@@ -232,8 +229,8 @@ target_link_libraries(bcopy bareossd bareos)
 
 install(TARGETS bareossd DESTINATION ${libdir})
 
-install(TARGETS bareos-sd bls bextract bscan btape bcopy DESTINATION
-                "${sbindir}"
+install(TARGETS bareos-sd bls bextract bscan btape bcopy
+        DESTINATION "${sbindir}"
 )
 
 install(CODE "set(PLUGINS \"${PLUGINS}\")")
