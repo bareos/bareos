@@ -17,8 +17,10 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-cmake_minimum_required(VERSION 3.0)
+message(STATUS "Try to configure LibDroplet")
+list(APPEND CMAKE_MESSAGE_INDENT "   ")
 
+cmake_minimum_required(VERSION 3.0)
 project(droplet C)
 
 set(default_build_type "Debug")
@@ -29,9 +31,10 @@ include(Findjsonc)
 include(FindOpenSSL)
 
 if(${JSONC_FOUND} AND ${OPENSSL_FOUND} AND ${LIBXML2_FOUND})
-  message(STATUS "Configuring LibDroplet")
   add_subdirectory(libdroplet)
   message(STATUS "LibDroplet ready to be built")
 else()
   message(STATUS "LibDroplet not configured to be built")
 endif(${JSONC_FOUND} AND ${OPENSSL_FOUND} AND ${LIBXML2_FOUND})
+
+list(REMOVE_AT CMAKE_MESSAGE_INDENT -1)
