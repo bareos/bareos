@@ -259,7 +259,7 @@ New Features
   It uses the command line tool *Percona XtraBackup* to create backups. The plugin was formerly part of the bareos-contrib source code repository.
 * :program:`bareos-dbcopy` command line tool: The new :ref:`program-bareos-dbcopy` command line
   tool can copy the bareos database from MySQL to PostgreSQL.
-  As :ref:`bareos-dbcopy` is still in an early stage of development, we currently
+  As :ref:`program-bareos-dbcopy` is still in an early stage of development, we currently
   see it as technical preview and are interested in feedback and ask for special
   care when using it. Do not delete your old catalog database before you are
   really sure that everything works on the new catalog!
@@ -1021,8 +1021,9 @@ Bareos-16.2
 -----------
 
 .. _bareos-16.2.10:
+
 bareos-16.2.10
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 :index:`\ <single: bareos-16.2.9; Release Notes>`\
 
