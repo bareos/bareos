@@ -240,3 +240,7 @@ install(DIRECTORY DESTINATION "${archivedir}")
 if(${HAVE_DYNAMIC_SD_BACKENDS})
   add_subdirectory(backends)
 endif()
+
+if(TARGET bareossd-droplet AND TARGET bareossd-chunked)
+  target_compile_definitions(bareossd PRIVATE HAVE_BAREOSSD_DROPLET_DEVICE)
+endif()
