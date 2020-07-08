@@ -253,10 +253,10 @@ bool droplet_device::walk_chunks(const char* dirname,
         break;
       case DPL_ENOENT:
         if (ignore_gaps) {
-          Dmsg1(1000, "chunk %s does not exists. Skipped.\n", path.c_str());
+          Dmsg1(1000, "chunk %s does not exist. Skipped.\n", path.c_str());
           i++;
         } else {
-          Dmsg1(100, "chunk %s does not exists. Exiting.\n", path.c_str());
+          Dmsg1(100, "chunk %s does not exist. Exiting.\n", path.c_str());
           found = false;
         }
         break;

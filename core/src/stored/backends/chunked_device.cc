@@ -545,6 +545,8 @@ bool chunked_device::DequeueChunk()
  * Internal method for flushing a chunk to the backing store.
  * The retry logic is in the io-threads but if those are not
  * used we give this one try and otherwise drop the chunk and
+ * Like the retry logic in the io-threads this tries to upload
+ * several times and otherwise drop the chunk and
  * return an IO error to the upper level callers. That way the
  * volume will go into error.
  */
