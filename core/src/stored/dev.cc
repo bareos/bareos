@@ -88,8 +88,10 @@
 #ifdef HAVE_GFAPI
 #include "backends/gfapi_device.h"
 #endif
+#ifdef HAVE_BAREOSSD_DROPLET_DEVICE
 #include "backends/chunked_device.h"
 #include "backends/droplet_device.h"
+#endif
 #ifdef HAVE_RADOS
 #include "backends/rados_device.h"
 #endif
