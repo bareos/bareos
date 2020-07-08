@@ -580,6 +580,13 @@ bool droplet_device::ReadRemoteChunk(chunk_io_request* request)
   /*
    * See if chunk exists.
    */
+   int tries = 0;
+   bool success = false;
+
+   do {
+     if (sysmd) {
+        dpl_sysmd_free(sysmd);
+     }
   sysmd = dpl_sysmd_dup(&sysmd_);
   status = dpl_getattr(ctx_,               /* context */
                        chunk_name.c_str(), /* locator */
@@ -588,21 +595,35 @@ bool droplet_device::ReadRemoteChunk(chunk_io_request* request)
 
   switch (status) {
     case DPL_SUCCESS:
+       if (sysmd->size > request->wbuflen) {
+           Mmsg3(errmsg, _("Failed to read %s (%ld) to big to fit in chunksize of %ld bytes\n"),
+                 chunk_name.c_str(), sysmd->size, request->wbuflen);
+           Dmsg1(100, "%s", errmsg);
+           dev_errno = EINVAL;
+           goto bail_out;
+        } else {
+          success = true;
+          dev_errno = 0;
+        }
       break;
-    default:
+     case DPL_ENOENT:
+     case DPL_EINVAL:
       Mmsg1(errmsg, _("Failed to open %s doesn't exist\n"), chunk_name.c_str());
       Dmsg1(100, "%s", errmsg);
       dev_errno = EIO;
       goto bail_out;
+     default:
+        Mmsg2(errmsg, _("Failed to open %s (Droplet error: %d)\n"), chunk_name.c_str(), status);
+        Dmsg1(100, "%s", errmsg);
+        dev_errno = EIO;
+        Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+        tries++;
   }
 
-  if (sysmd->size > request->wbuflen) {
-    Mmsg3(
-        errmsg,
-        _("Failed to read %s (%ld) to big to fit in chunksize of %ld bytes\n"),
-        chunk_name.c_str(), sysmd->size, request->wbuflen);
-    Dmsg1(100, "%s", errmsg);
-    dev_errno = EINVAL;
+   } while (!success && tries < 5);
+
+   if (tries == 5) {
+      Dmsg0(100, "dpl_getattr timed out");
     goto bail_out;
   }
 
@@ -613,6 +634,10 @@ bool droplet_device::ReadRemoteChunk(chunk_io_request* request)
    *                      no need to let the library allocate memory we
    *                      need to free after copying the data.
    */
+   tries = 0;
+   success = false;
+
+   do {
   memset(&dpl_options, 0, sizeof(dpl_options));
   dpl_options.mask |= DPL_OPTION_NOALLOC;
 
@@ -633,20 +658,29 @@ bool droplet_device::ReadRemoteChunk(chunk_io_request* request)
 
   switch (status) {
     case DPL_SUCCESS:
+        success = true;
+        dev_errno = 0;
       break;
     case DPL_ENOENT:
       Mmsg1(errmsg, _("Failed to open %s doesn't exist\n"), chunk_name.c_str());
       Dmsg1(100, "%s", errmsg);
       dev_errno = EIO;
-      goto bail_out;
+        Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+        ++tries;
     default:
       Mmsg2(errmsg, _("Failed to read %s using dpl_fget(): ERR=%s.\n"),
             chunk_name.c_str(), dpl_status_str(status));
       dev_errno = DropletErrnoToSystemErrno(status);
-      goto bail_out;
+        Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+        ++tries;
   }
+   } while (!success && tries < 5);
 
-  retval = true;
+   if (tries == 5) {
+      Dmsg0(100, "dpl_getattr timed out");
+   }
+
+   retval = success;
 
 bail_out:
   if (sysmd) { dpl_sysmd_free(sysmd); }
