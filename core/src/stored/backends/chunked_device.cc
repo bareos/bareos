@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -505,14 +505,22 @@ bool chunked_device::DequeueChunk()
       /*
        * See if the enqueue succeeded.
        */
-      if (!enqueued_request) { return false; }
+      if (!enqueued_request) {
+        Dmsg2(100, "Error: Chunk %d of volume %s not appended to queue\n",
+              new_request->chunk, new_request->volname);
+        return false;
+      }
 
       /*
        * Compare the return value from the enqueue against our new_request.
        * If it is different there was already a chunk io request for the
        * same chunk on the ordered circular buffer.
        */
-      if (enqueued_request != new_request) { FreeChunkIoRequest(new_request); }
+      if (enqueued_request != new_request) {
+        Dmsg2(100, "Attempted to append chunk %d of volume %s twice\n",
+              new_request->chunk, new_request->volname);
+        FreeChunkIoRequest(new_request);
+      }
 
       requeued = true;
       continue;
@@ -557,6 +565,8 @@ bool chunked_device::FlushChunk(bool release_chunk, bool move_to_next_chunk)
   if (io_threads_) {
     retval = EnqueueChunk(&request);
   } else {
+    // no multithreading
+    Dmsg1(100, "Try to flush chunk number: %d", request.chunk);
     retval = FlushRemoteChunk(&request);
   }
 
@@ -1219,13 +1229,13 @@ bool chunked_device::is_written()
   }
 
   /* compare expected to written volume size */
-  ssize_t remote_volume_size = chunked_remote_volume_size();
+  size_t remote_volume_size = chunked_remote_volume_size();
   Dmsg3(100,
         "volume: %s, chunked_remote_volume_size = %lld, VolCatInfo.VolCatBytes "
         "= %lld\n",
         current_volname_, remote_volume_size, VolCatInfo.VolCatBytes);
 
-  if (remote_volume_size < static_cast<ssize_t>(VolCatInfo.VolCatBytes)) {
+  if (remote_volume_size < VolCatInfo.VolCatBytes) {
     Dmsg3(100,
           "volume %s is pending, as 'remote volume size' = %lld < 'catalog "
           "volume size' = %lld\n",
@@ -1509,4 +1519,3 @@ chunked_device::chunked_device()
 }
 
 } /* namespace storagedaemon */
-

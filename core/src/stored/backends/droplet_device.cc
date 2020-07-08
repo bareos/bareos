@@ -431,111 +431,127 @@ bool droplet_device::FlushRemoteChunk(chunk_io_request* request)
   /*
    * Set that we are uploading the chunk.
    */
-  if (!SetInflightChunk(request)) { goto bail_out; }
+  if (!SetInflightChunk(request)) { return false; }
 
-  Dmsg1(100, "Flushing chunk %s\n", chunk_name.c_str());
+  int tries = 0;
+  bool success = false;
 
-  /*
-   * Check on the remote backing store if the chunk already exists.
-   * We only upload this chunk if it is bigger then the chunk that exists
-   * on the remote backing store. When using io-threads it could happen
-   * that there are multiple flush requests for the same chunk when a
-   * chunk is reused in a next backup job. We only want the chunk with
-   * the biggest amount of valid data to persist as we only append to
-   * chunks.
-   */
-  sysmd = dpl_sysmd_dup(&sysmd_);
-  status = dpl_getattr(ctx_,               /* context */
-                       chunk_name.c_str(), /* locator */
-                       NULL,               /* metadata */
-                       sysmd);             /* sysmd */
+  do {
+    Dmsg1(100, "Flushing chunk %s\n", chunk_name.c_str());
 
-  switch (status) {
-    case DPL_SUCCESS:
-      if (sysmd->size > request->wbuflen) {
-        retval = true;
-        goto bail_out;
-      }
-      break;
-    default:
-      /*
-       * Check on the remote backing store if the chunkdir exists.
-       */
-      dpl_sysmd_free(sysmd);
-      sysmd = dpl_sysmd_dup(&sysmd_);
-      status = dpl_getattr(ctx_,              /* context */
-                           chunk_dir.c_str(), /* locator */
-                           NULL,              /* metadata */
-                           sysmd);            /* sysmd */
+    /*
+     * Check on the remote backing store if the chunk already exists.
+     * We only upload this chunk if it is bigger then the chunk that exists
+     * on the remote backing store. When using io-threads it could happen
+     * that there are multiple flush requests for the same chunk when a
+     * chunk is reused in a next backup job. We only want the chunk with
+     * the biggest amount of valid data to persist as we only append to
+     * chunks.
+     */
+    sysmd = dpl_sysmd_dup(&sysmd_);
+    status = dpl_getattr(ctx_,               /* context */
+                         chunk_name.c_str(), /* locator */
+                         NULL,               /* metadata */
+                         sysmd);             /* sysmd */
 
-      switch (status) {
-        case DPL_SUCCESS:
-          break;
-        case DPL_ENOENT:
-        case DPL_FAILURE:
-          /*
-           * Make sure the chunk directory with the name of the volume exists.
-           */
-          dpl_sysmd_free(sysmd);
-          sysmd = dpl_sysmd_dup(&sysmd_);
-          status = dpl_mkdir(ctx_,              /* context */
+    switch (status) {
+      case DPL_SUCCESS:
+        if (sysmd->size > request->wbuflen) {
+          success = true;
+          goto bail_out;
+        }
+        break;
+      default:
+        /*
+         * Check on the remote backing store if the chunkdir exists.
+         */
+        dpl_sysmd_free(sysmd);
+        sysmd = dpl_sysmd_dup(&sysmd_);
+        status = dpl_getattr(ctx_,              /* context */
                              chunk_dir.c_str(), /* locator */
                              NULL,              /* metadata */
                              sysmd);            /* sysmd */
 
-          switch (status) {
-            case DPL_SUCCESS:
-              break;
-            default:
-              Mmsg2(errmsg,
-                    _("Failed to create directory %s using dpl_mkdir(): "
-                      "ERR=%s.\n"),
-                    chunk_dir.c_str(), dpl_status_str(status));
-              dev_errno = DropletErrnoToSystemErrno(status);
-              goto bail_out;
-          }
-          break;
-        default:
-          break;
-      }
-      break;
-  }
+        switch (status) {
+          case DPL_SUCCESS:
+            break;
+          case DPL_ENOENT:
+          case DPL_FAILURE:
+            /*
+             * Make sure the chunk directory with the name of the volume exists.
+             */
+            dpl_sysmd_free(sysmd);
+            sysmd = dpl_sysmd_dup(&sysmd_);
+            status = dpl_mkdir(ctx_,              /* context */
+                               chunk_dir.c_str(), /* locator */
+                               NULL,              /* metadata */
+                               sysmd);            /* sysmd */
 
-  /*
-   * Create some options for libdroplet.
-   *
-   * DPL_OPTION_NOALLOC - we provide the buffer to copy the data into
-   *                      no need to let the library allocate memory we
-   *                      need to free after copying the data.
-   */
-  memset(&dpl_options, 0, sizeof(dpl_options));
-  dpl_options.mask |= DPL_OPTION_NOALLOC;
+            switch (status) {
+              case DPL_SUCCESS:
+                break;
+              default:
+                Mmsg2(errmsg,
+                      _("Failed to create directory %s using dpl_mkdir(): "
+                        "ERR=%s.\n"),
+                      chunk_dir.c_str(), dpl_status_str(status));
+                dev_errno = DropletErrnoToSystemErrno(status);
+                Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+                tries++;
+                goto again1;
+            }
+            break;
+          default:
+            break;
+        }
+        break;
+    }
 
-  dpl_sysmd_free(sysmd);
-  sysmd = dpl_sysmd_dup(&sysmd_);
-  status = dpl_fput(ctx_,                   /* context */
-                    chunk_name.c_str(),     /* locator */
-                    &dpl_options,           /* options */
-                    NULL,                   /* condition */
-                    NULL,                   /* range */
-                    NULL,                   /* metadata */
-                    sysmd,                  /* sysmd */
-                    (char*)request->buffer, /* data_buf */
-                    request->wbuflen);      /* data_len */
+    /*
+     * Create some options for libdroplet.
+     *
+     * DPL_OPTION_NOALLOC - we provide the buffer to copy the data into
+     *                      no need to let the library allocate memory we
+     *                      need to free after copying the data.
+     */
+    memset(&dpl_options, 0, sizeof(dpl_options));
+    dpl_options.mask |= DPL_OPTION_NOALLOC;
 
-  switch (status) {
-    case DPL_SUCCESS:
-      break;
-    default:
-      Mmsg2(errmsg, _("Failed to flush %s using dpl_fput(): ERR=%s.\n"),
-            chunk_name.c_str(), dpl_status_str(status));
-      dev_errno = DropletErrnoToSystemErrno(status);
-      goto bail_out;
-  }
+    dpl_sysmd_free(sysmd);
+    sysmd = dpl_sysmd_dup(&sysmd_);
+    status = dpl_fput(ctx_,                   /* context */
+                      chunk_name.c_str(),     /* locator */
+                      &dpl_options,           /* options */
+                      NULL,                   /* condition */
+                      NULL,                   /* range */
+                      NULL,                   /* metadata */
+                      sysmd,                  /* sysmd */
+                      (char*)request->buffer, /* data_buf */
+                      request->wbuflen);      /* data_len */
 
-  retval = true;
+    switch (status) {
+      case DPL_SUCCESS:
+        success = true;
+        goto bail_out;
+      default:
+        Mmsg2(errmsg, _("Failed to flush %s using dpl_fput(): ERR=%s.\n"),
+              chunk_name.c_str(), dpl_status_str(status));
+        dev_errno = DropletErrnoToSystemErrno(status);
+        Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+        tries++;
+        goto again1;
+    }
+
+  again1:
+    Dmsg1(100, "Flushing start over again (%d)\n", status);
+
+  } while (!success && tries < 5);
+
+  if (tries == 5) { Dmsg0(100, "dpl_fput timed out\n"); }
+
 
 bail_out:
+  retval = success;
   /*
    * Clear that we are uploading the chunk.
    */
