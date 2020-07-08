@@ -115,7 +115,7 @@ if(${HAVE_GLUSTERFS})
     COMPONENT filedaemon
   )
   target_link_libraries(gfapi-fd gfapi)
-  target_include_directories(gfapi-fd PRIVATE /usr/include/glusterfs)
+  target_include_directories(gfapi-fd PUBLIC ${GFAPI_INCLUDE_DIRS})
 endif()
 
 if(${HAVE_TEST_PLUGIN})
