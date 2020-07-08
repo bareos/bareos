@@ -338,6 +338,43 @@ Internal Project Changes
 Bareos-18.2
 -----------
 
+.. _bareos-1829-releasenotes:
+
+.. _bareos-18.2.9:
+
+Bareos-18.2.9
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+
+.. list-table:: Bareos 18.2.9 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 09 July 2020
+   * - **Database Version**
+     -  2171
+   * - **URL**
+     - https://download.bareos.com/bareos/release/18.2/
+
+   * - **Release Ticket**
+     - :mantis:`1226`
+
+Security
+^^^^^^^^
+This release contains a fix for `CVE-2020-11061`_ (:mantis:`1210`).
+Please make sure you implement the workaround described in `CVE-2020-4042`_ (:mantis:`1250`), because this release does not contain a fix for the problem.
+
+.. _CVE-2020-4042:  https://github.com/bareos/bareos/security/advisories/GHSA-vqpj-2vhj-h752
+.. _CVE-2020-11061: https://github.com/bareos/bareos/security/advisories/GHSA-mm45-cg35-54j4
+
+Bugfixes and Changes
+^^^^^^^^^^^^^^^^^^^^
+* :mantis:`1210`: Security vulnerability results in heap overflow in director when doing a Verify job against a file daemon.
+
+
 .. _bareos-1828-releasenotes:
 
 .. _bareos-18.2.8:
