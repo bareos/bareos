@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,7 @@
 #include "lib/berrno.h"
 #include "lib/edit.h"
 
-#include <api/glfs.h>
+#include <glusterfs/api/glfs.h>
 
 
 /* avoid missing config.h problem on Debian 8 and Ubuntu 16:
@@ -1436,8 +1436,8 @@ static inline bool parse_gfapi_devicename(char* devicename,
        * path specified for the unix socket.
        * It can happen if there is no subdirectory in the URI
        */
-      char *before_parameter = strchr(bp, '?');
-      char *before_dir = strchr(bp, '/');
+      char* before_parameter = strchr(bp, '?');
+      char* before_dir = strchr(bp, '/');
 
       if (before_dir && (!before_parameter || before_parameter > before_dir)) {
         bp = before_dir;
