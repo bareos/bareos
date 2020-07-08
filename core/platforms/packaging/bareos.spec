@@ -139,10 +139,6 @@ BuildRequires: systemd-rpm-macros
 %{?systemd_requires}
 %endif
 
-%if 0%{?droplet}
-BuildRequires: libdroplet-devel
-%endif
-
 %if 0%{?glusterfs}
 BuildRequires: glusterfs-devel glusterfs-api-devel
 %endif
