@@ -41,10 +41,10 @@
  */
 #ifndef _CONFIG_H
 #define _CONFIG_H
-#include <compat-errno.h>
+#include <glusterfs/compat-errno.h>
 #undef _CONFIG_H
 #else
-#include <compat-errno.h>
+#include <glusterfs/compat-errno.h>
 #endif
 
 namespace filedaemon {
