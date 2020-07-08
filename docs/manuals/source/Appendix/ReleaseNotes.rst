@@ -21,6 +21,54 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 Bareos-19.2
 -----------
 
+.. _bareos-1928-releasenotes:
+
+.. _bareos-19.2.8:
+
+Bareos-19.2.8
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+.. list-table:: Bareos 19.2.8 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 2020-07-09
+   * - **Database Version**
+     -  2192
+   * - **URL**
+     - https://download.bareos.com/bareos/release/19.2/
+   * - **Release Ticket**
+     - :mantis:`1230`
+
+Security
+^^^^^^^^
+This release contains fixes for `CVE-2020-4042`_ (:mantis:`1250`) and `CVE-2020-11061`_ (:mantis:`1210`).
+
+.. _CVE-2020-4042:  https://github.com/bareos/bareos/security/advisories/GHSA-vqpj-2vhj-h752
+.. _CVE-2020-11061: https://github.com/bareos/bareos/security/advisories/GHSA-mm45-cg35-54j4
+
+
+Bugs Fixed
+^^^^^^^^^^
+* :mantis:`1171`: Backup the VM using UUID in oVirt-Plugin for Bareos.
+* :mantis:`1210`: Security vulnerability results in heap overflow in director when doing a Verify job against a file daemon.
+* :mantis:`1219`: Shell example script for Bareos installation on Debian / Ubuntu has wrong dist name.
+* :mantis:`1246`: oVirt plugin fails to restore to local disk with KeyError.
+* :mantis:`1250`: Authentication bypass in Director when allowing client and director initiated connections.
+* :mantis:`1257`: Prune volume command may crash the director.
+
+Other Improvements
+^^^^^^^^^^^^^^^^^^
+* the performance of :program:`bareos-dbcopy` has been improved.
+
+Internal Project Changes
+^^^^^^^^^^^^^^^^^^^^^^^^
+* python-bareos is now automatically published on PyPI.org, so it can be installed using :program:`pip`.
+
+
 .. _bareos-1927-releasenotes:
 
 .. _bareos-19.2.7:
