@@ -409,6 +409,48 @@ Internal Project Changes
 Bareos-17.2
 -----------
 
+.. _bareos-17.2.10:
+
+bareos-17.2.10
+~~~~~~~~~~~~~~
+:index:`\ <single: bareos-17.2.10; Release Notes>`\
+
+================ ===============================================
+Code Release     2020-07-09
+Database Version 2171 (unchanged)
+Release Ticket   :mantis:`1225`
+Url              http://download.bareos.com/bareos/release/17.2/
+================ ===============================================
+
+Security
+^^^^^^^^
+This release contains a fix for `CVE-2020-11061`_ (:mantis:`1210`).
+Please make sure you implement the workaround described in `CVE-2020-4042`_ (:mantis:`1250`), because this release does not contain a fix for the problem.
+
+.. _CVE-2020-4042:  https://github.com/bareos/bareos/security/advisories/GHSA-vqpj-2vhj-h752
+.. _CVE-2020-11061: https://github.com/bareos/bareos/security/advisories/GHSA-mm45-cg35-54j4
+
+
+Bugfixes and Changes
+^^^^^^^^^^^^^^^^^^^^
+* :mantis:`1210`: Security vulnerability results in heap overflow in director when doing a Verify job against a file daemon.
+
+.. _bareos-17.2.9:
+
+bareos-17.2.9
+~~~~~~~~~~~~~
+:index:`\ <single: bareos-17.2.9; Release Notes>`\
+
+================ ===============================================
+Code Release     2020-04-09
+Database Version 2171 (unchanged)
+Release Ticket   :mantis:`1158`
+Url              http://download.bareos.com/bareos/release/17.2/
+================ ===============================================
+
+- :mantis:`1162`: When restoring files without directories, the permissions of the immediate parent directory are wrong
+- fix a problem with GlusterFS Backend on CentOS 7/RHEL 7
+
 .. _bareos-17.2.8:
 
 bareos-17.2.8
