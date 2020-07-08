@@ -71,10 +71,9 @@ else()
 endif()
 
 if(BUILD_BAREOS_BINARIES)
-  add_subdirectory(core/src/droplet) #libdroplet
   add_subdirectory(core)
   add_subdirectory(webui)
-  if (NOT client-only)
+  if(NOT client-only)
     add_subdirectory(systemtests)
   endif()
 endif()
