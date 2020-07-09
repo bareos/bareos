@@ -25,6 +25,23 @@ if(HAVE_WIN32)
   )
 endif()
 
+# BACKENDS  ####
+if(build_client_only)
+  set(BACKENDS "")
+else()
+  set(BACKENDS unix_tape_device.d)
+  list(APPEND BACKENDS unix_fifo_device.d)
+  if(${HAVE_CEPHFS})
+    list(APPEND BACKENDS rados_device.d)
+  endif()
+  if(${HAVE_GLUSTERFS})
+    list(APPEND BACKENDS gfapi_device.d)
+  endif()
+  if(TARGET bareossd-droplet AND TARGET bareossd-chunked)
+    list(APPEND BACKENDS droplet_device.d)
+  endif()
+endif()
+
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
 
   set(AVAILABLE_DEVICE_API_SRCS backends/generic_tape_device.cc)
