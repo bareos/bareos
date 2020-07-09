@@ -27,7 +27,10 @@ endif()
 
 # BACKENDS  ####
 if(build_client_only)
-  set(BACKENDS "")
+  set(BACKENDS
+      ""
+      PARENT_SCOPE
+  )
 else()
   set(BACKENDS unix_tape_device.d)
   list(APPEND BACKENDS unix_fifo_device.d)
