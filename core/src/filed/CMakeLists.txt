@@ -105,6 +105,12 @@ if(${HAVE_GLUSTERFS})
   list(APPEND PLUGINS gfapi-conf.d)
 endif()
 
+set(PLUGINS
+    ${PLUGINS}
+    PARENT_SCOPE
+)
+message("PLUGINS: ${PLUGINS}")
+
 install(
   TARGETS bareos-fd
   DESTINATION "${sbindir}"
@@ -112,7 +118,6 @@ install(
 )
 
 install(CODE "set(PLUGINS \"${PLUGINS}\")" COMPONENT filedaemon)
-install(CODE "set(BACKENDS \"${BACKENDS}\")" COMPONENT filedaemon)
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")"
         COMPONENT filedaemon
 )

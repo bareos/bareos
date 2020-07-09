@@ -28,10 +28,7 @@ endif()
 
 # BACKENDS  ####
 if(NOT build_client_only)
-  set(BACKENDS
-      ""
-      PARENT_SCOPE
-  )
+  set(BACKENDS "")
   list(APPEND BACKENDS unix_tape_device.d)
   list(APPEND BACKENDS unix_fifo_device.d)
   if(${HAVE_CEPHFS})
@@ -43,6 +40,11 @@ if(NOT build_client_only)
   if(TARGET droplet)
     list(APPEND BACKENDS droplet_device.d)
   endif()
+  set(BACKENDS
+      ${BACKENDS}
+      PARENT_SCOPE
+  )
+  message("Backends are now ${BACKENDS}")
 endif()
 
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
@@ -248,7 +250,6 @@ install(TARGETS bareos-sd bls bextract bscan btape bcopy
         DESTINATION "${sbindir}"
 )
 
-install(CODE "set(PLUGINS \"${PLUGINS}\")")
 install(CODE "set(BACKENDS \"${BACKENDS}\")")
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
