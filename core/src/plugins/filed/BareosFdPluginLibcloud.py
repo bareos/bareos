@@ -379,20 +379,21 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         elif IOP.func == bIOPS["IO_CLOSE"]:
             if self.FILE:
                 self.FILE.close()
-            if self.current_backup_task["type"] == TASK_TYPE.TEMP_FILE:
-                debugmessage(
-                    110,
-                    "Removing temporary file: %s"
-                    % (self.current_backup_task["tmpfile"]),
-                )
-                try:
-                    os.remove(self.current_backup_task["tmpfile"])
-                except:
+            if "type" in self.current_backup_task:
+                if self.current_backup_task["type"] == TASK_TYPE.TEMP_FILE:
                     debugmessage(
                         110,
-                        "Could not remove temporary file: %s"
+                        "Removing temporary file: %s"
                         % (self.current_backup_task["tmpfile"]),
                     )
+                    try:
+                        os.remove(self.current_backup_task["tmpfile"])
+                    except:
+                        debugmessage(
+                            110,
+                            "Could not remove temporary file: %s"
+                            % (self.current_backup_task["tmpfile"]),
+                        )
             return bRCs["bRC_OK"]
 
         return bRCs["bRC_OK"]
