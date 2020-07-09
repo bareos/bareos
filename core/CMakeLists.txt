@@ -874,6 +874,7 @@ message(
 message(
   "   Dynamic storage backends:     ${dynamic-storage-backends} ${HAVE_DYNAMIC_SD_BACKENDS} ${BACKENDS} "
 )
+message("   PLUGINS:                      ${PLUGINS} ")
 message("   Build for Test Coverage :     ${coverage} ")
 
 message("   PSCMD:                        ${PSCMD}")

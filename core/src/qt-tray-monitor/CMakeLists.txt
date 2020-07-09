@@ -83,8 +83,6 @@ target_link_libraries(${TRAYMON_LIBRARIES})
 
 install(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
 
-install(CODE "set(PLUGINS \"${PLUGINS}\")")
-install(CODE "set(BACKENDS \"${BACKENDS}\")")
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
 
