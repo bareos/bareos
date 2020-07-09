@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include_directories(${MYSQL_INCLUDE_DIR} ${PostgreSQL_INCLUDE_DIR})
 
@@ -45,8 +46,8 @@ set(POSTGRESQL_SRCS postgresql.cc postgresql_batch.cc ${LIBBAREOSCATS_SRCS})
 add_library(bareossql SHARED ${LIBBAREOSSQL_SRCS})
 
 set_target_properties(
-  bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
-                       "${BAREOS_VERSION_MAJOR}"
+  bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                       SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
 target_link_libraries(bareossql bareoscats bareos)
 
@@ -60,8 +61,8 @@ list(LENGTH db_backends nr_db_backends)
 add_library(bareoscats SHARED ${LIBBAREOSCATS_SRCS})
 target_link_libraries(bareoscats bareos)
 set_target_properties(
-  bareoscats PROPERTIES VERSION ${BAREOS_NUMERIC_VERSION} SOVERSION
-                        "${BAREOS_VERSION_MAJOR}"
+  bareoscats PROPERTIES VERSION ${BAREOS_NUMERIC_VERSION}
+                        SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
 install(TARGETS bareoscats DESTINATION ${libdir})
 

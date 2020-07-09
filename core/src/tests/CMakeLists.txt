@@ -16,11 +16,16 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 macro(bareos_gtest_add_tests testname)
-  gtest_add_tests(TARGET ${testname} TEST_PREFIX gtest: TEST_LIST found_tests)
+  gtest_add_tests(
+    TARGET ${testname}
+    TEST_PREFIX gtest:
+    TEST_LIST found_tests
+  )
   if(HAVE_WIN32)
     set_tests_properties(
       ${found_tests} PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}"
@@ -209,7 +214,8 @@ bareos_add_test(
                                     ${GTEST_MAIN_LIBRARIES}
 )
 
-bareos_add_test(cram_md5
+bareos_add_test(
+  cram_md5
   LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
   ADDITIONAL_SOURCES bareos_test_sockets.cc
 )
@@ -408,6 +414,6 @@ if(NOT client-only)
       ${LMDB_LIBS}
       ${GTEST_LIBRARIES}
       ${GTEST_MAIN_LIBRARIES}
-    SKIP_GTEST
+      SKIP_GTEST
   )
 endif() # NOT client-only
