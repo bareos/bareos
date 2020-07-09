@@ -30,6 +30,14 @@
 
 #include <api/glfs.h>
 
+/*
+ * GLFS_STAT_ALL is introduced in v6.0 which also introduces two additional
+ * parameters for glfs_truncate()
+ */
+#if defined GLFS_STAT_ALL
+#define glfs_ftruncate(fd, offset) glfs_ftruncate(fd, offset, NULL, NULL)
+#endif
+
 class gfapi_device: public DEVICE {
 private:
    char *m_gfapi_configstring;
