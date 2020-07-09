@@ -79,7 +79,7 @@ static char* DirectorName = NULL;
 static DirectorResource* director = NULL;
 
 static struct acl_data_t acl_data;
-static struct xattr_data_t xattr_data;
+static struct XattrData xattr_data;
 static alist* delayed_streams = NULL;
 
 static char* wbuf;            /* write buffer address */

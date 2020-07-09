@@ -46,6 +46,7 @@
 #include "lib/bsock.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include "include/make_unique.h"
 
 #ifdef HAVE_WIN32
 #include "win32/findlib/win32.h"
@@ -271,11 +272,11 @@ static inline bool do_restore_xattr(JobControlRecord* jcr,
   jcr->impl->xattr_data->last_fname = jcr->impl->last_fname;
   switch (stream) {
     case STREAM_XATTR_PLUGIN:
-      retval = PluginParseXattrStreams(jcr, jcr->impl->xattr_data, stream,
+      retval = PluginParseXattrStreams(jcr, jcr->impl->xattr_data.get(), stream,
                                        content, content_length);
       break;
     default:
-      retval = ParseXattrStreams(jcr, jcr->impl->xattr_data, stream, content,
+      retval = ParseXattrStreams(jcr, jcr->impl->xattr_data.get(), stream, content,
                                  content_length);
       break;
   }
@@ -497,8 +498,11 @@ void DoRestore(JobControlRecord* jcr)
     memset(jcr->impl->acl_data->u.parse, 0, sizeof(acl_parse_data_t));
   }
   if (have_xattr) {
+    jcr->impl->xattr_data = std::make_unique<XattrData>();
+    /*
     jcr->impl->xattr_data = (xattr_data_t*)malloc(sizeof(xattr_data_t));
     memset(jcr->impl->xattr_data, 0, sizeof(xattr_data_t));
+    */
     jcr->impl->xattr_data->u.parse =
         (xattr_parse_data_t*)malloc(sizeof(xattr_parse_data_t));
     memset(jcr->impl->xattr_data->u.parse, 0, sizeof(xattr_parse_data_t));
@@ -1201,8 +1205,6 @@ ok_out:
 
   if (have_xattr && jcr->impl->xattr_data) {
     free(jcr->impl->xattr_data->u.parse);
-    free(jcr->impl->xattr_data);
-    jcr->impl->xattr_data = NULL;
   }
 
   /*
