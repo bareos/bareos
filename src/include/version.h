@@ -1,7 +1,7 @@
 #undef  VERSION
-#define VERSION "17.2.9"
-#define BDATE   "09 April 2020"
-#define LSMDATE "09Apr20"
+#define VERSION "17.2.10"
+#define BDATE   "09 July 2020"
+#define LSMDATE "09Jul20"
 
 #define PROG_COPYRIGHT "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
                        "Copyright (C) 2010-2017 Planets Communications B.V.\n" \
