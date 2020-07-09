@@ -21,6 +21,54 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 Bareos-19.2
 -----------
 
+.. _bareos-1928-releasenotes:
+
+.. _bareos-19.2.8:
+
+Bareos-19.2.8
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+.. list-table:: Bareos 19.2.8 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 2020-07-09
+   * - **Database Version**
+     -  2192
+   * - **URL**
+     - https://download.bareos.com/bareos/release/19.2/
+   * - **Release Ticket**
+     - :mantis:`1230`
+
+Security
+^^^^^^^^
+This release contains fixes for `CVE-2020-4042`_ (:mantis:`1250`) and `CVE-2020-11061`_ (:mantis:`1210`).
+
+.. _CVE-2020-4042:  https://github.com/bareos/bareos/security/advisories/GHSA-vqpj-2vhj-h752
+.. _CVE-2020-11061: https://github.com/bareos/bareos/security/advisories/GHSA-mm45-cg35-54j4
+
+
+Bugs Fixed
+^^^^^^^^^^
+* :mantis:`1171`: Backup the VM using UUID in oVirt-Plugin for Bareos.
+* :mantis:`1210`: Security vulnerability results in heap overflow in director when doing a Verify job against a file daemon.
+* :mantis:`1219`: Shell example script for Bareos installation on Debian / Ubuntu has wrong dist name.
+* :mantis:`1246`: oVirt plugin fails to restore to local disk with KeyError.
+* :mantis:`1250`: Authentication bypass in Director when allowing client and director initiated connections.
+* :mantis:`1257`: Prune volume command may crash the director.
+
+Other Improvements
+^^^^^^^^^^^^^^^^^^
+* the performance of :program:`bareos-dbcopy` has been improved.
+
+Internal Project Changes
+^^^^^^^^^^^^^^^^^^^^^^^^
+* python-bareos is now automatically published on PyPI.org, so it can be installed using :program:`pip`.
+
+
 .. _bareos-1927-releasenotes:
 
 .. _bareos-19.2.7:
@@ -211,7 +259,7 @@ New Features
   It uses the command line tool *Percona XtraBackup* to create backups. The plugin was formerly part of the bareos-contrib source code repository.
 * :program:`bareos-dbcopy` command line tool: The new :ref:`program-bareos-dbcopy` command line
   tool can copy the bareos database from MySQL to PostgreSQL.
-  As :ref:`bareos-dbcopy` is still in an early stage of development, we currently
+  As :ref:`program-bareos-dbcopy` is still in an early stage of development, we currently
   see it as technical preview and are interested in feedback and ask for special
   care when using it. Do not delete your old catalog database before you are
   really sure that everything works on the new catalog!
@@ -289,6 +337,43 @@ Internal Project Changes
 
 Bareos-18.2
 -----------
+
+.. _bareos-1829-releasenotes:
+
+.. _bareos-18.2.9:
+
+Bareos-18.2.9
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+
+.. list-table:: Bareos 18.2.9 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 09 July 2020
+   * - **Database Version**
+     -  2171
+   * - **URL**
+     - https://download.bareos.com/bareos/release/18.2/
+
+   * - **Release Ticket**
+     - :mantis:`1226`
+
+Security
+^^^^^^^^
+This release contains a fix for `CVE-2020-11061`_ (:mantis:`1210`).
+Please make sure you implement the workaround described in `CVE-2020-4042`_ (:mantis:`1250`), because this release does not contain a fix for the problem.
+
+.. _CVE-2020-4042:  https://github.com/bareos/bareos/security/advisories/GHSA-vqpj-2vhj-h752
+.. _CVE-2020-11061: https://github.com/bareos/bareos/security/advisories/GHSA-mm45-cg35-54j4
+
+Bugfixes and Changes
+^^^^^^^^^^^^^^^^^^^^
+* :mantis:`1210`: Security vulnerability results in heap overflow in director when doing a Verify job against a file daemon.
+
 
 .. _bareos-1828-releasenotes:
 
@@ -675,6 +760,32 @@ Internal Project Changes
 Bareos-17.2
 -----------
 
+.. _bareos-17.2.10:
+
+bareos-17.2.10
+~~~~~~~~~~~~~~
+:index:`\ <single: bareos-17.2.10; Release Notes>`\
+
+================ ===============================================
+Code Release     2020-07-09
+Database Version 2171 (unchanged)
+Release Ticket   :mantis:`1225`
+Url              http://download.bareos.com/bareos/release/17.2/
+================ ===============================================
+
+Security
+^^^^^^^^
+This release contains a fix for `CVE-2020-11061`_ (:mantis:`1210`).
+Please make sure you implement the workaround described in `CVE-2020-4042`_ (:mantis:`1250`), because this release does not contain a fix for the problem.
+
+.. _CVE-2020-4042:  https://github.com/bareos/bareos/security/advisories/GHSA-vqpj-2vhj-h752
+.. _CVE-2020-11061: https://github.com/bareos/bareos/security/advisories/GHSA-mm45-cg35-54j4
+
+
+Bugfixes and Changes
+^^^^^^^^^^^^^^^^^^^^
+* :mantis:`1210`: Security vulnerability results in heap overflow in director when doing a Verify job against a file daemon.
+
 .. _bareos-17.2.9:
 
 bareos-17.2.9
@@ -910,8 +1021,9 @@ Bareos-16.2
 -----------
 
 .. _bareos-16.2.10:
+
 bareos-16.2.10
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 :index:`\ <single: bareos-16.2.9; Release Notes>`\
 
