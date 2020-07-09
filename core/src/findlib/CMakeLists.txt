@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(BAREOSFIND_SRCS
     acl.cc
@@ -44,11 +45,17 @@ add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
 
 target_link_libraries(bareosfind bareos ${ACL_LIBS})
 
-install(TARGETS bareosfind DESTINATION ${libdir} COMPONENT filedaemon)
+install(
+  TARGETS bareosfind
+  DESTINATION ${libdir}
+  COMPONENT filedaemon
+)
 
 set_target_properties(
-  bareosfind PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
-                        "${BAREOS_VERSION_MAJOR}" DEFINE_SYMBOL "BUILDING_DLL"
+  bareosfind
+  PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
+                                                 "${BAREOS_VERSION_MAJOR}"
+             DEFINE_SYMBOL "BUILDING_DLL"
 )
 if(HAVE_WIN32)
   set_target_properties(bareosfind PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")

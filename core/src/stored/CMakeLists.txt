@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(HAVE_WIN32)
   include_directories(
@@ -31,7 +32,7 @@ if(NOT build_client_only)
       ""
       PARENT_SCOPE
   )
-  set(BACKENDS unix_tape_device.d)
+  list(APPEND BACKENDS unix_tape_device.d)
   list(APPEND BACKENDS unix_fifo_device.d)
   if(${HAVE_CEPHFS})
     list(APPEND BACKENDS rados_device.d)
@@ -73,7 +74,7 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
   if(${HAVE_RADOS})
     list(APPEND AVAILABLE_DEVICE_API_SRCS backends/rados_device.cc)
   endif()
-  if(TARGET bareossd-droplet AND TARGET bareossd-chunked)
+  if(TARGET droplet)
     list(APPEND AVAILABLE_DEVICE_API_SRCS backends/droplet_device.cc)
     list(APPEND AVAILABLE_DEVICE_API_SRCS backends/chunked_device.cc)
   endif()
@@ -172,7 +173,7 @@ if(${HAVE_DYNAMIC_SD_BACKENDS})
     list(APPEND BACKEND_OBJECTS libbareossd-gfapi)
   endif()
 
-  if(TARGET bareossd-droplet AND TARGET bareossd-chunked)
+  if(TARGET droplet)
     list(APPEND BACKEND_OBJECTS libbareossd-droplet)
     list(APPEND BACKEND_OBJECTS libbareossd-chunked)
   endif()
@@ -259,6 +260,6 @@ if(${HAVE_DYNAMIC_SD_BACKENDS})
   add_subdirectory(backends)
 endif()
 
-if(TARGET bareossd-droplet AND TARGET bareossd-chunked)
+if(TARGET droplet)
   target_compile_definitions(bareossd PRIVATE HAVE_BAREOSSD_DROPLET_DEVICE)
 endif()

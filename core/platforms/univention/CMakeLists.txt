@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/AppCenter/")
 
@@ -57,9 +58,9 @@ install(
 )
 
 install(
-  # This file contains the Bareos repository signature public.
-  # During the automatic build process, It will be added.
-  # For manual builds, download the file from
+  # This file contains the Bareos repository signature public. During the
+  # automatic build process, It will be added. For manual builds, download the
+  # file from
   # http://download.bareos.org/bareos/release/<RELEASE>/<DISTRIBUTION>/Release.k
   # ey
   FILES "bareos-release.key"

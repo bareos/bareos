@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(HAVE_FREEBSD_OS)
   add_definitions(-D_WANT_SEMUN=1)
@@ -28,8 +29,8 @@ target_compile_options(bareoslmdb PRIVATE -Wno-missing-braces)
 set_property(TARGET bareoslmdb PROPERTY INCLUDE_DIRECTORIES "")
 
 set_target_properties(
-  bareoslmdb PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
-                        "${BAREOS_VERSION_MAJOR}"
+  bareoslmdb PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                        SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
 if(HAVE_WIN32)
   set_target_properties(bareoslmdb PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")

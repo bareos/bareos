@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(NOT client-only)
   set(INCLUDE_FILES
@@ -172,7 +173,7 @@ set(BAREOS_SRCS
 
 if(HAVE_WIN32)
   list(APPEND BAREOS_SRCS ../win32/compat/compat.cc ../win32/compat/glob.cc
-              ../win32/compat/winapi.cc
+       ../win32/compat/winapi.cc
   )
 else()
   list(APPEND BAREOS_SRCS scsi_tapealert.cc)
@@ -204,12 +205,11 @@ add_library(bareos SHARED ${BAREOS_SRCS} $<TARGET_OBJECTS:version-obj>)
 add_library(version-obj OBJECT version.cc)
 target_compile_definitions(
   version-obj
-  PRIVATE
-  -DBAREOS_VERSION="${BAREOS_FULL_VERSION}"
-  -DBAREOS_DATE="${DATE}"
-  -DBAREOS_SHORT_DATE="${BAREOS_SHORT_DATE}"
-  -DBAREOS_PROG_DATE_TIME="${BAREOS_PROG_DATE_TIME}"
-  -DBAREOS_YEAR="${BAREOS_YEAR}"
+  PRIVATE -DBAREOS_VERSION="${BAREOS_FULL_VERSION}"
+          -DBAREOS_DATE="${DATE}"
+          -DBAREOS_SHORT_DATE="${BAREOS_SHORT_DATE}"
+          -DBAREOS_PROG_DATE_TIME="${BAREOS_PROG_DATE_TIME}"
+          -DBAREOS_YEAR="${BAREOS_YEAR}"
 )
 set_target_properties(version-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -231,8 +231,8 @@ target_link_libraries(
 install(TARGETS bareos DESTINATION ${libdir})
 
 set_target_properties(
-  bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
-                    "${BAREOS_VERSION_MAJOR}"
+  bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                    SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
 
 if(HAVE_WIN32)
