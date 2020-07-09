@@ -904,7 +904,7 @@ message(
   "   Dynamic cats backends:        ${dynamic-cats-backends} ${HAVE_DYNAMIC_CATS_BACKENDS} "
 )
 message(
-  "   Dynamic storage backends:     ${dynamic-storage-backends} ${HAVE_DYNAMIC_SD_BACKENDS} "
+  "   Dynamic storage backends:     ${dynamic-storage-backends} ${HAVE_DYNAMIC_SD_BACKENDS} ${BACKENDS} "
 )
 message("   Build for Test Coverage :     ${coverage} ")
 
