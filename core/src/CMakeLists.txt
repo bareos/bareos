@@ -18,7 +18,11 @@
 #   02110-1301, USA.
 
 if(NOT client-only)
-  add_subdirectory(droplet)
+  # droplet does not build on solaris because of sys/cdefs.h: No such file or
+  # directory
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    add_subdirectory(droplet)
+  endif()
   add_subdirectory(tools)
   add_subdirectory(cats)
   if(NOT HAVE_WIN32 AND ndmp)
