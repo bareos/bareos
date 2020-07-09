@@ -29,7 +29,7 @@
 #include <atomic>
 
 struct acl_data_t;
-struct xattr_data_t;
+struct XattrData;
 
 namespace filedaemon {
 class BareosAccurateFilelist;
@@ -54,7 +54,7 @@ struct JobControlRecordPrivate {
   POOLMEM* last_fname{};          /**< Last file saved/verified */
   POOLMEM* job_metadata{};        /**< VSS job metadata */
   acl_data_t* acl_data{};         /**< ACLs for backup/restore */
-  xattr_data_t* xattr_data{};     /**< Extended Attributes for backup/restore */
+  std::unique_ptr<XattrData> xattr_data{};     /**< Extended Attributes for backup/restore */
   int32_t last_type{};            /**< Type of last file saved/verified */
   bool incremental{};             /**< Set if incremental for SINCE */
   utime_t since_time{};           /**< Begin time for SINCE */
