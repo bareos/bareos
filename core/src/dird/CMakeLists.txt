@@ -174,18 +174,12 @@ target_link_libraries(bareos-dbcheck ${DBCHECK_LIBRARIES})
 # add_executable(testfind ${TSTFNDSRCS}) target_link_libraries(testfind bareos
 # bareosfind jansson ${OPENSSL_LIBS} acl cap lzo2 )
 
-install(TARGETS
-  bareos-dir
-  bareos-dbcheck
-  DESTINATION "${sbindir}"
-)
+install(TARGETS bareos-dir bareos-dbcheck DESTINATION "${sbindir}")
 
 install(FILES query.sql DESTINATION "${scriptdir}")
 
-install(CODE "set(PLUGINS \"${PLUGINS}\")")
 install(CODE "set(BACKENDS \"${BACKENDS}\")")
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
 
 install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-dird-configfiles.cmake)
-
