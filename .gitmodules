@@ -1,0 +1,4 @@
+[submodule "core/src/droplet"]
+	path = core/src/droplet
+	url = https://github.com/bareos/Droplet.git
+	branch = bareos-master
