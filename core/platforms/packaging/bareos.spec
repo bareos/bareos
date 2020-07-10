@@ -1181,7 +1181,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files -n bareos-vadp-dumper
 %defattr(-,root,root)
 %{_sbindir}/bareos_vadp_dumper*
-%doc src/vmware/LICENSE.vadp
+%doc core/src/vmware/LICENSE.vadp
 
 %files -n bareos-vmware-plugin
 %defattr(-,root,root)
