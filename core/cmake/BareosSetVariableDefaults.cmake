@@ -84,7 +84,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # archivedir
   if(NOT DEFINED archivedir)
-    if(HAVE_WIN32)
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         # windows install scripts replace the string "/var/lib/bareos/storage"
       set(
         archivedir
