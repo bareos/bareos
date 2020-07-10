@@ -304,7 +304,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             try:
                 self.FILE = io.open(self.current_backup_task["tmpfile"], "rb")
             except Exception as e:
-                jobmessage("M_FATAL", "Could not open temporary file for reading." % e)
+                jobmessage("M_FATAL", "Could not open temporary file for reading.")
                 self.__shutdown()
                 return bRCs["bRC_Error"]
         elif self.current_backup_task["type"] == TASK_TYPE.STREAM:
