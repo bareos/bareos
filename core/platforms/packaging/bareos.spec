@@ -1189,7 +1189,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_sbindir}/vmware_cbt_tool.py
 %{plugin_dir}/BareosFdPluginVMware.py*
 %{plugin_dir}/bareos-fd-vmware.py*
-%doc src/vmware/LICENSE src/vmware/README.md
+%doc core/src/vmware/LICENSE core/src/vmware/README.md
 
 %files -n bareos-vmware-plugin-compat
 %defattr(-,root,root)
