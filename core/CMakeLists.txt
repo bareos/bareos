@@ -724,8 +724,19 @@ if(HAVE_WIN32)
   install(DIRECTORY DESTINATION var/log)
 endif()
 
-install(DIRECTORY DESTINATION ${logdir})
-install(DIRECTORY DESTINATION ${workingdir})
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  message(status "installing var/log/bareos")
+  install(DIRECTORY DESTINATION var/log/bareos)
+
+  message(status "installing var/lib/bareos")
+  install(DIRECTORY DESTINATION var/lib/bareos)
+else()
+  install(DIRECTORY DESTINATION ${logdir})
+  message(status "installing ${logdir}")
+
+  install(DIRECTORY DESTINATION ${workingdir})
+  message(status "installing ${woringdir}")
+endif()
 
 include(BareosConfigureFile)
 

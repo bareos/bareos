@@ -20,7 +20,7 @@ FileSet {
   # You have to exclude @archivedir@
   # on your bareos server
   Exclude {
-    File = @working_dir@
+    File = @workingdir@
     File = @archivedir@
     File = /proc
     File = /tmp

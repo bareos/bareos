@@ -86,7 +86,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   if(NOT DEFINED archivedir)
     set(
       archivedir
-      "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
+      "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
     )
   endif()
 
@@ -102,7 +102,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # workingdir
   if(NOT DEFINED workingdir)
-    set(workingdir "${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
+    set(workingdir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
   endif()
   set(working_dir "${workingdir}")
 
@@ -123,7 +123,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # logdir
   if(NOT DEFINED logdir)
-    set(logdir "${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
+    set(logdir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
   endif()
 
   # datarootdir
@@ -190,7 +190,7 @@ else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   if(NOT DEFINED archivedir)
     set(
       archivedir
-      "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
+      "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
     )
   endif()
 
@@ -206,7 +206,7 @@ else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # workingdir
   if(NOT DEFINED workingdir)
-    set(workingdir "/${CMAKE_INSTALL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
+    set(workingdir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
   endif()
   set(working_dir "${workingdir}")
 
@@ -227,7 +227,7 @@ else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # logdir
   if(NOT DEFINED logdir)
-    set(logdir "${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
+    set(logdir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}")
   endif()
 
   # datarootdir
