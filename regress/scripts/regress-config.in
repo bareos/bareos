@@ -69,6 +69,7 @@ else
     -Ddynamic-cats-backends=yes \
     -Ddynamic-storage-backends=yes \
     ${TRAYMON}\
+    -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
     ${VERSION_STRING}
 
 fi

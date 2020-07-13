@@ -522,8 +522,10 @@ if(NOT client-only)
     list(APPEND db_backends mysql)
   endif()
 
-  # set first entry as default db backend
-  list(GET db_backends 0 default_db_backend)
+  if (NOT DEFINED default_db_backend)
+    # set first entry as default db backend if not already defined
+    list(GET db_backends 0 default_db_backend)
+  endif()
   get_directory_property(hasParent PARENT_DIRECTORY)
   if(hasParent)
     set(DEFAULT_DB_TYPE ${default_db_backend} PARENT_SCOPE)

@@ -915,6 +915,7 @@ cmake  .. \
   -Dsystemd=yes \
 %endif
   -Dincludes=yes \
+  -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
   -DVERSION_STRING=%version
 
 #Add flags
