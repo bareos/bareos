@@ -372,8 +372,8 @@ bool droplet_device::CheckRemote()
       return true;
     case DPL_ENOENT:
       Dmsg2(100,
-            "Host is accessible: %s (%s), but should be configured to accept "
-            "virtual-host-style requests\n",
+            "Host is accessible: %s (%s), probably the host should be"
+            " configured to accept virtual-host-style requests\n",
             hostaddr.c_str(), dpl_status_str(status));
       return true;
     default:
