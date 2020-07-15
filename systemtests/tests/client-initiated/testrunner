@@ -64,7 +64,7 @@ END_OF_DATA
 sleep 1
 
 echo "Waiting for the director to start"
-if ! echo echo "status dir" | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf > /dev/null 2>&1; then
+if ! echo "status dir" | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf > /dev/null 2>&1; then
   exit_with_error "Director did not start"
 fi
 echo "Director is running"
@@ -74,7 +74,7 @@ echo "Director is running"
 
 echo "Check if the filedaemon is connected to the director"
 i=0
-until ! echo "status dir" | \
+until echo "status dir" | \
   "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf | \
   grep --quiet --word-regexp "${TestName}-fd"; do
   echo "waiting for client to connect (#$i)... "
