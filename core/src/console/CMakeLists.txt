@@ -60,7 +60,6 @@ install(
   CODE "
   message(STATUS \"DESTDIR is \$ENV{DESTDIR}\")
   set(DESTDIR \$ENV{DESTDIR})
-  #if(EXISTS \$ENV{DESTDIR}${configtemplatedir} AND NOT EXISTS \$ENV{DESTDIR}${configtemplatedir}/bconsole.conf)
   if(NOT EXISTS \$ENV{DESTDIR}${configtemplatedir}/bconsole.conf)
     message(STATUS \"Installing: \$ENV{DESTDIR}${configtemplatedir}/bconsole.conf\")
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bconsole.conf DESTINATION \$ENV{DESTDIR}${configtemplatedir})
