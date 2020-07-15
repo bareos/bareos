@@ -93,9 +93,9 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Darchivedir=/var/lib/bareos/storage \
   -Dbackenddir=/usr/local/lib \
   -Dscriptdir=/usr/lib/bareos/scripts \
-  -Dworking-dir=/var/lib/bareos \
+  -Dworkingdir=/var/lib/bareos \
   -Dplugindir=/usr/local/lib/bareos/plugins \
-  -Dpid-dir=/var/lib/bareos \
+  -Dpiddir=/var/lib/bareos \
   -Dbsrdir=/var/lib/bareos \
   -Dlogdir=/var/log/bareos \
   -Dsubsys-dir=/var/lock \
@@ -129,6 +129,7 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dsd-group=$(STORAGE_DAEMON_GROUP) \
   -Dfd-user=$(FILE_DAEMON_USER) \
   -Dfd-group=$(DAEMON_GROUP) \
+  -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
   -DVERSION_STRING=$(DISTVERSION)
 
 post-install:

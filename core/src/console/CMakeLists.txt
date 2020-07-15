@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -45,10 +45,29 @@ endif()
 
 target_link_libraries(bconsole ${CONSOLE_LINK_LIBRARIES})
 
-install(TARGETS bconsole DESTINATION "${bindir}" COMPONENT bconsole)
-install(TARGETS bconsole DESTINATION "${sbindir}" COMPONENT bconsole)
 install(
-  FILES bconsole.conf
-  DESTINATION "${configtemplatedir}"
+  TARGETS bconsole
+  DESTINATION "${bindir}"
   COMPONENT bconsole
+)
+install(
+  TARGETS bconsole
+  DESTINATION "${sbindir}"
+  COMPONENT bconsole
+)
+
+install(
+  CODE "
+  message(STATUS \"DESTDIR is \$ENV{DESTDIR}\")
+  set(DESTDIR \$ENV{DESTDIR})
+  if(NOT EXISTS \$ENV{DESTDIR}${configtemplatedir}/bconsole.conf)
+    message(STATUS \"Installing: \$ENV{DESTDIR}${configtemplatedir}/bconsole.conf\")
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bconsole.conf DESTINATION \$ENV{DESTDIR}${configtemplatedir})
+  else()
+    message(STATUS \"Installing: \$ENV{DESTDIR}${configtemplatedir}/bconsole.conf.new\")
+    file(RENAME ${CMAKE_CURRENT_SOURCE_DIR}/bconsole.conf ${CMAKE_CURRENT_SOURCE_DIR}/bconsole.conf.new)
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bconsole.conf.new DESTINATION \$ENV{DESTDIR}${configtemplatedir})
+    file(RENAME ${CMAKE_CURRENT_SOURCE_DIR}/bconsole.conf.new ${CMAKE_CURRENT_SOURCE_DIR}/bconsole.conf)
+  endif()
+"
 )

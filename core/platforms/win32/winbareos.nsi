@@ -1224,12 +1224,15 @@ Section -ConfigureConfiguration
 
 #  Install system binaries:      /usr/x86_64-w64-mingw32/sys-root/mingw/sbin
   FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/sbin#$BareosInstdir#g$\r$\n"
+
 #  Install binaries:             /usr/x86_64-w64-mingw32/sys-root/mingw/bin
   FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/bin#$BareosInstdir#g$\r$\n"
-#  Archive directory:            /var/lib/bareos/storage
-  FileWrite $R1 "s#/var/lib/bareos/storage#C:/bareos-storage#g$\r$\n"
 
-  FileWrite $R1 "s#var/log/bareos/#$BareosAppdata/logs#g$\r$\n"
+#  Archive directory:            /usr/i686-w64-mingw32/sys-root/mingw/var/lib/bareos/storage
+  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/var/lib/bareos/storage#C:/bareos-storage#g$\r$\n"
+
+# Log directory:                /usr/i686-w64-mingw32/sys-root/mingw/var/log/bareos
+  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/var/log/bareos#$BareosAppdata/logs#g$\r$\n"
 
 #  Backend directory:            /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos/backends
   FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/lib/bareos/backends#$BareosInstdir#g$\r$\n"
@@ -1247,14 +1250,6 @@ Section -ConfigureConfiguration
   FileWrite $R1 "s#/var/lib/bareos#$BareosAppdata/working#g$\r$\n"
 
   FileWrite $R1 "s#dbpassword = .*#dbpassword = $DbPassword#g$\r$\n"
-#
-#  Install libraries:            /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos
-#  Install system config files:  /usr/x86_64-w64-mingw32/sys-root/mingw/etc
-#  Install Bareos config files:  /usr/x86_64-w64-mingw32/sys-root/mingw/etc/bareos
-#  PID directory:                /var/lib/bareos
-#  Subsys directory:             /usr/x86_64-w64-mingw32/sys-root/mingw/var/lock/subsys
-#  Man directory:                /usr/x86_64-w64-mingw32/sys-root/mingw/share/man
-#  Data directory:               /usr/x86_64-w64-mingw32/sys-root/mingw/share
 
 
 

@@ -242,7 +242,7 @@ install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
 install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-stored-configfiles.cmake)
 
-install(DIRECTORY DESTINATION "../${archivedir}")
+install(DIRECTORY DESTINATION "${archivedir}")
 
 if(${HAVE_DYNAMIC_SD_BACKENDS})
   add_subdirectory(backends)

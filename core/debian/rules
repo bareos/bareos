@@ -77,6 +77,7 @@ define CONFIGURE_COMMON
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Dincludes=yes \
   -Drpath=no \
+  -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
   -DVERSION_STRING=$(BAREOS_VERSION)
 endef
 
@@ -126,7 +127,7 @@ override_dh_makeshlibs:
 	dh_makeshlibs -n
 
 override_dh_auto_test:
-	cd obj-x86_64-linux-gnu && make clean && REGRESS_DEBUG=1 ctest -j 1 -V -D Continuous || echo "ctest failed"
+	cd obj-x86_64-linux-gnu && make clean && REGRESS_DEBUG=1 ctest --timeout 60 -j 1 -V -D Continuous || echo "ctest failed"
 
 override_dh_shlibdeps:
 	dh_shlibdeps -l$(shell pwd)/debian/tmp/usr/lib/bareos

@@ -109,7 +109,7 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/module/Application/view/layout/login.phtml @ONLY
 )
 
-set(WEBUI_DIR ${SHARE_INSTALL_PREFIX}/bareos-webui)
+set(WEBUI_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui)
 set(WEBUI_TESTS_DIR ${WEBUI_DIR}/tests/regress)
 if(PHP)
   configure_file(
@@ -132,10 +132,10 @@ endif()
 
 if(NOT client-only)
   install(FILES version.php init_autoloader.php
-          DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui
+          DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui
   )
   install(DIRECTORY tests config data module public vendor
-          DESTINATION ${SHARE_INSTALL_PREFIX}/bareos-webui
+          DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui
   )
 
   install(FILES install/bareos/bareos-dir.d/console/admin.conf.example
