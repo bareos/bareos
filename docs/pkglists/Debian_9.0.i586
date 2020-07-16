@@ -1,6 +1,5 @@
 all/bareos-webui
 all/python-bareos
-all/python3-bareos
 i386/bareos
 i386/bareos-bconsole
 i386/bareos-client
@@ -17,7 +16,6 @@ i386/bareos-director-python-plugin
 i386/bareos-filedaemon
 i386/bareos-filedaemon-ceph-plugin
 i386/bareos-filedaemon-ldap-python-plugin
-i386/bareos-filedaemon-percona-xtrabackup-python-plugin
 i386/bareos-filedaemon-python-plugin
 i386/bareos-regress-config
 i386/bareos-storage
@@ -27,3 +25,6 @@ i386/bareos-storage-python-plugin
 i386/bareos-storage-tape
 i386/bareos-tools
 i386/bareos-traymonitor
+i386/libfastlz
+i386/libfastlz-dbgsym
+i386/libfastlz-dev

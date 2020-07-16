@@ -24,13 +24,14 @@ debug/x86_64/bareos-tools-debuginfo
 debug/x86_64/bareos-traymonitor-debuginfo
 debug/x86_64/bareos-vadp-dumper-debuginfo
 debug/x86_64/bareos-vadp-dumper-debugsource
+debug/x86_64/libfastlz-debuginfo
+debug/x86_64/libfastlz-debugsource
 noarch/bareos-webui
-noarch/python-bareos
-noarch/python3-bareos
 src/bareos
 src/bareos-vadp-dumper
 src/bareos-vmware-vix-disklib
 src/bareos-webui
+src/libfastlz
 src/python-bareos
 x86_64/bareos
 x86_64/bareos-bconsole
@@ -48,8 +49,6 @@ x86_64/bareos-filedaemon
 x86_64/bareos-filedaemon-ceph-plugin
 x86_64/bareos-filedaemon-glusterfs-plugin
 x86_64/bareos-filedaemon-ldap-python-plugin
-x86_64/bareos-filedaemon-ovirt-python-plugin
-x86_64/bareos-filedaemon-percona-xtrabackup-python-plugin
 x86_64/bareos-filedaemon-python-plugin
 x86_64/bareos-regress-config
 x86_64/bareos-storage
@@ -64,3 +63,6 @@ x86_64/bareos-vadp-dumper
 x86_64/bareos-vmware-plugin
 x86_64/bareos-vmware-plugin-compat
 x86_64/bareos-vmware-vix-disklib
+x86_64/libfastlz
+x86_64/libfastlz-devel
+x86_64/python-bareos
