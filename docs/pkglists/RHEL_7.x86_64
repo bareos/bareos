@@ -1,4 +1,3 @@
-+ cat current_packages
 debug/x86_64/bareos-debuginfo
 debug/x86_64/bareos-vadp-dumper-debuginfo
 debug/x86_64/libdroplet-debuginfo
