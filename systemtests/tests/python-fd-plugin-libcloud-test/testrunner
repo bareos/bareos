@@ -12,6 +12,7 @@
 #
 TestName="$(basename "$(pwd)")"
 export TestName
+bucket_name=bareos-test
 
 JobName=backup-bareos-fd
 #shellcheck source=../environment.in
@@ -36,13 +37,13 @@ BackupDirectory="${tmp}/data"
 setup_data "$@"
 
 # create s3 content for test
-${S3} rb --recursive --force s3://test || echo "s3://test does not exist"
-${S3} mb s3://test
+${S3} rb --recursive --force s3://$bucket_name || echo "s3://$bucket_name does not exist"
+${S3} mb s3://$bucket_name
 
 
 # this test does not work with links because of the restore objects
 rm -r "${tmp}"/data/weird-files >/dev/null 2>&1
-${S3} sync "$BackupDirectory" s3://test
+${S3} sync "$BackupDirectory" s3://$bucket_name
 
 start_test
 
@@ -80,7 +81,7 @@ list=( $(find "${BackupDirectory}" -type f) )
 # to don'"t diff the file attributes, because they are not saved
 #check_restore_only_files_diff "${list[@]}"
 
-if ! diff -r tmp/data tmp/bareos-restores/test/data; then
+if ! diff -r tmp/data tmp/bareos-restores/$bucket_name/data; then
   export estat=1
 fi
 
