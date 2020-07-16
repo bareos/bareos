@@ -19,10 +19,17 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_subdirectory(filed)
+
 if(NOT client-only)
   # droplet does not build on solaris because of sys/cdefs.h: No such file or
   # directory
   if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/droplet/CMakeLists.txt)
+      message(
+        FATAL_ERROR
+        "Please checkout the libdroplet submodule via \n \"git submodule update --init --recursive\""
+      )
+    endif()
     add_subdirectory(droplet)
   endif()
   add_subdirectory(tools)
