@@ -28,5 +28,3 @@ amd64/bareos-storage-python-plugin
 amd64/bareos-storage-tape
 amd64/bareos-tools
 amd64/bareos-traymonitor
-amd64/bareos-vadp-dumper
-amd64/bareos-vmware-plugin
