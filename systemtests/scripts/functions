@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 #
 # A set of useful functions to be sourced in each test
 #
