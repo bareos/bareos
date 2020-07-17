@@ -23,12 +23,10 @@ debug/x86_64/bareos-storage-tape-debuginfo
 debug/x86_64/bareos-tools-debuginfo
 debug/x86_64/bareos-traymonitor-debuginfo
 debug/x86_64/bareos-vadp-dumper-debuginfo
-noarch/bareos-webui
 noarch/python-bareos
 noarch/python3-bareos
 src/bareos
 src/bareos-vmware-vix-disklib
-src/bareos-webui
 src/python-bareos
 x86_64/bareos
 x86_64/bareos-bconsole
@@ -63,3 +61,4 @@ x86_64/bareos-vadp-dumper
 x86_64/bareos-vmware-plugin
 x86_64/bareos-vmware-plugin-compat
 x86_64/bareos-vmware-vix-disklib
+x86_64/bareos-webui

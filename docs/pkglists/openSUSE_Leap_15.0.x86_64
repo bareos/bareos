@@ -23,8 +23,6 @@ debug/x86_64/bareos-traymonitor-debuginfo
 noarch/python2-bareos
 noarch/python3-bareos
 src/bareos
-src/bareos
-src/bareos-webui
 src/python-bareos
 x86_64/bareos
 x86_64/bareos-bconsole

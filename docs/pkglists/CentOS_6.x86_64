@@ -27,3 +27,4 @@ x86_64/bareos-storage-python-plugin
 x86_64/bareos-storage-tape
 x86_64/bareos-tools
 x86_64/bareos-traymonitor
+x86_64/bareos-webui

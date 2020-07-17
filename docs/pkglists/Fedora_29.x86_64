@@ -22,8 +22,8 @@ debug/x86_64/bareos-tools-debuginfo
 debug/x86_64/bareos-traymonitor-debuginfo
 debug/x86_64/libdroplet-debuginfo
 debug/x86_64/libdroplet-debugsource
-noarch/python-bareos
 noarch/python3-bareos
+noarch/python-bareos
 src/bareos
 src/libdroplet
 src/python-bareos
