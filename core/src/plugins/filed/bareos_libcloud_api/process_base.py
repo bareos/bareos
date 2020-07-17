@@ -38,6 +38,7 @@ class ProcessBase(Process):
         self.worker_id = worker_id
 
     def run_process(self):
+        # implementation of derived class
         pass
 
     def run(self):

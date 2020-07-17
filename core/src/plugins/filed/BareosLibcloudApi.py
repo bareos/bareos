@@ -19,7 +19,7 @@ import uuid
 
 SUCCESS = 0
 ERROR = 1
-
+ABORT = 2
 
 class BareosLibcloudApi(object):
     @staticmethod
@@ -94,7 +94,7 @@ class BareosLibcloudApi(object):
                     else:
                         self.count_worker_ready += 1
                 elif message.type == MESSAGE_TYPE.ABORT_MESSAGE:
-                    return ERROR
+                    return ABORT
                 elif message.type == MESSAGE_TYPE.DEBUG_MESSAGE:
                     debugmessage(message.level, message.message_string)
                 else:

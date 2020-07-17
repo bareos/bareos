@@ -121,6 +121,7 @@ class Worker(ProcessBase):
                 job["type"] = TASK_TYPE.TEMP_FILE
             except OSError as e:
                 self.error_message("Could not open temporary file %s" % e.filename)
+                self.abort_message()
                 return FINISH
             except ObjectDoesNotExistError as e:
                 self.error_message(
