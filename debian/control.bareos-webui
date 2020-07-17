@@ -1,14 +1,3 @@
-Source: bareos-webui
-Section: web
-Priority: extra
-Maintainer: Bareos Packager <packager@bareos.com>
-Build-Depends: debhelper (>= 7.0.50~),
-  apache2-dev | apache2-prefork-dev, apache2
-Standards-Version: 3.9.1
-Homepage: https://github.com/bareos/bareos
-Vcs-Git: git://github.com/bareos/bareos-webui.git
-Vcs-Browser: https://github.com/bareos/bareos.git
-
 Package: bareos-webui
 Architecture: all
 Depends: apache2 | httpd, libapache2-mod-php | libapache2-mod-php5 | libapache2-mod-php7 | php | php5 | php7 | php-cgi,

@@ -507,15 +507,17 @@ endif()
 set(db_backends "")
 
 if(NOT client-only)
-  if(${sqlite3})
-    set(HAVE_SQLITE3 1)
-    list(APPEND db_backends sqlite3)
-  endif()
 
   if(${postgresql})
     set(HAVE_POSTGRESQL 1)
     list(APPEND db_backends postgresql)
   endif()
+
+  if(${sqlite3})
+    set(HAVE_SQLITE3 1)
+    list(APPEND db_backends sqlite3)
+  endif()
+
 
   if(${mysql})
     set(HAVE_MYSQL 1)

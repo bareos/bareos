@@ -181,7 +181,7 @@ BuildRequires: ceph-devel
 BuildRequires: git-core
 %endif
 
-Source0: %{name}-%{version}.tar.bz2
+Source0: %{name}-%{version}.tar.gz
 
 BuildRequires: pam-devel
 
@@ -293,7 +293,6 @@ BuildRequires: lsb-release
 
 %endif
 
-
 # dependency tricks for vixdisklib
 # Note: __requires_exclude only works for dists with rpm version >= 4.9
 #       SLES12 has suse_version 1315, SLES11 has 1110
@@ -303,8 +302,6 @@ BuildRequires: lsb-release
 %define _use_internal_dependency_generator 0
 %define our_find_requires %{_builddir}/%{name}-%{version}/find_requires
 %endif
-
-
 
 
 
@@ -683,12 +680,89 @@ Summary:    CEPH plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 
+
 %description filedaemon-ceph-plugin
 %{dscr}
 
 This package contains the CEPH plugins for the file daemon
 
 %endif
+
+
+%package webui
+Summary:       Bareos Web User Interface
+Group:         Productivity/Archiving/Backup
+
+# ZendFramework 2.4 says it required php >= 5.3.23.
+# However, it works on SLES 11 with php 5.3.17
+# while it does not work with php 5.3.3 (RHEL6).
+Requires: php >= 5.3.17
+
+Requires: php-bz2
+Requires: php-ctype
+Requires: php-curl
+Requires: php-date
+Requires: php-dom
+Requires: php-fileinfo
+Requires: php-filter
+Requires: php-gettext
+Requires: php-gd
+Requires: php-hash
+Requires: php-iconv
+Requires: php-intl
+Requires: php-json
+
+%if !0%{?suse_version}
+Requires: php-libxml
+%endif
+
+Requires: php-mbstring
+Requires: php-openssl
+Requires: php-pcre
+Requires: php-reflection
+Requires: php-session
+Requires: php-simplexml
+Requires: php-spl
+Requires: php-xml
+Requires: php-xmlreader
+Requires: php-xmlwriter
+Requires: php-zip
+
+%if 0%{?suse_version} || 0%{?sle_version}
+BuildRequires: apache2
+# /usr/sbin/apxs2
+BuildRequires: apache2-devel
+BuildRequires: mod_php_any
+%define _apache_conf_dir /etc/apache2/conf.d/
+%define www_daemon_user  wwwrun
+%define www_daemon_group www
+Requires: apache
+Recommends: mod_php_any
+%else
+BuildRequires: httpd
+# apxs2
+BuildRequires: httpd-devel
+%define _apache_conf_dir /etc/httpd/conf.d/
+%define www_daemon_user  apache
+%define www_daemon_group apache
+Requires:   httpd
+Requires:   mod_php
+%endif
+
+
+
+%description webui
+Bareos - Backup Archiving Recovery Open Sourced. \
+Bareos is a set of computer programs that permit you (or the system \
+administrator) to manage backup, recovery, and verification of computer \
+data across a network of computers of different kinds. In technical terms, \
+it is a network client/server based backup program. Bareos is relatively \
+easy to use and efficient, while offering many advanced storage management \
+features that make it easy to find and recover lost or damaged files. \
+Bareos source code has been released under the AGPL version 3 license.
+
+This package contains the webui (Bareos Web User Interface).
+
 
 %description client
 %{dscr}
@@ -916,6 +990,7 @@ cmake  .. \
 %endif
   -Dincludes=yes \
   -Ddefault_db_backend="XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" \
+  -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
   -DVERSION_STRING=%version
 
 #Add flags
@@ -925,11 +1000,11 @@ cmake  .. \
 # run unit tests
 pushd %{CMAKE_BUILDDIR}
 make clean
-ctest --timeout 60 -R gtest: -D Continuous || result=$?
+REGRESS_DEBUG=1 ctest -j 1 -V -D Continuous || result=$?
 result=$?
 if [ $result -eq 1 ]; then
-  echo "ctest result $result is expected and OK"
-  exit 0
+echo "ctest result $result is expected and OK"
+exit 0
 else
   echo "ctest result $result is not 1, ERROR"
 fi
@@ -1006,6 +1081,7 @@ for F in  \
     %{script_dir}/btraceback.mdb \
     %{_docdir}/%{name}/INSTALL \
     %{_sbindir}/%{name}
+
 do
 rm -f "%{buildroot}/$F"
 done
@@ -1048,14 +1124,12 @@ rm -f %{buildroot}%{plugin_dir}/bareos-fd-vmware.py*
 %endif
 
 
-
-
 # install systemd service files
 %if 0%{?systemd_support}
 install -d -m 755 %{buildroot}%{_unitdir}
-install -m 644 platforms/systemd/bareos-dir.service %{buildroot}%{_unitdir}
-install -m 644 platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}
-install -m 644 platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}
+install -m 644 core/platforms/systemd/bareos-dir.service %{buildroot}%{_unitdir}
+install -m 644 core/platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}
+install -m 644 core/platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}
 %if 0%{?suse_version}
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-dir
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-fd
@@ -1078,6 +1152,23 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{_docdir}/%{name}/README.bareos
 
+%files webui
+%defattr(-,root,root,-)
+%doc webui/README.md webui/LICENSE
+%doc webui/doc/README-TRANSLATION.md
+%doc webui/tests/selenium
+%{_datadir}/%{name}-webui/
+# attr(-, #daemon_user, #daemon_group) #{_datadir}/#{name}/data
+%dir /etc/bareos-webui
+%config(noreplace) /etc/bareos-webui/directors.ini
+%config(noreplace) /etc/bareos-webui/configuration.ini
+%config %attr(644,root,root) /etc/bareos/bareos-dir.d/console/admin.conf.example
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-admin.conf
+%config %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-limited.conf.example
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-readonly.conf
+%config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
+
+
 %files client
 %defattr(-, root, root)
 %dir %{_docdir}/%{name}
@@ -1090,7 +1181,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files -n bareos-vadp-dumper
 %defattr(-,root,root)
 %{_sbindir}/bareos_vadp_dumper*
-%doc src/vmware/LICENSE.vadp
+%doc core/src/vmware/LICENSE.vadp
 
 %files -n bareos-vmware-plugin
 %defattr(-,root,root)
@@ -1098,7 +1189,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_sbindir}/vmware_cbt_tool.py
 %{plugin_dir}/BareosFdPluginVMware.py*
 %{plugin_dir}/bareos-fd-vmware.py*
-%doc src/vmware/LICENSE src/vmware/README.md
+%doc core/src/vmware/LICENSE core/src/vmware/README.md
 
 %files -n bareos-vmware-plugin-compat
 %defattr(-,root,root)
@@ -1370,7 +1461,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_mandir}/man8/btraceback.8.gz
 %attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/%{name}
-%doc AGPL-3.0.txt LICENSE README.*
+%doc core/AGPL-3.0.txt core/LICENSE core/README.*
 #TODO: cmake does not create build directory
 #doc build/
 
@@ -1673,6 +1764,29 @@ if [ -e %1.rpmupdate.%{version}.keep ]; then \
    rm %1.rpmupdate.%{version}.keep; \
 fi; \
 %nil
+
+
+%post webui
+
+%if 0%{?suse_version} >= 1110
+a2enmod setenv &> /dev/null || true
+a2enmod rewrite &> /dev/null || true
+%endif
+
+%if 0%{?suse_version} >= 1315
+# 1315:
+#   SLES12 (PHP 7)
+#   openSUSE Leap 42.1 (PHP 5)
+if php -v | grep -q "PHP 7"; then
+  a2enmod php7 &> /dev/null || true
+else
+  a2enmod php5 &> /dev/null || true
+fi
+%else
+a2enmod php5 &> /dev/null || true
+%endif
+
+
 
 
 %post director

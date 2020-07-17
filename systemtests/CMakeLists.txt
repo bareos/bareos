@@ -685,10 +685,19 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "dbcopy-mysql-postgresql")
 endif()
 
+# python-bareos fails inside of container
+if(EXISTS /run/.containerenv)
+  message(STATUS "detected container environment, disabling python-bareos")
+  set(in_container TRUE)
+else()
+  set(in_container FALSE)
+endif()
+
 # python-bareos-test does not work on installed files
 if(PYTHON_EXECUTABLE
    AND PYTHON
    AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES
+   AND NOT in_container
 )
   list(APPEND SYSTEM_TESTS "python-bareos")
 else()
@@ -771,7 +780,7 @@ else()
 endif()
 
 message(STATUS "Looking for pam test requirements ...")
-find_program(PYTHON python)
+find_program(PYTHON python python2 python3)
 bareosfindlibraryandheaders("pam" "security/pam_appl.h" "")
 find_program(PAMTESTER pamtester)
 
@@ -886,7 +895,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
   )
-
+  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 90)
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
@@ -946,6 +955,7 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
       COMMAND ${tests_dir}/${TEST_NAME}/testrunner
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
+    set_tests_properties(${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 90)
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()
 endif()

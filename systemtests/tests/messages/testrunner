@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+set -u
 #
 # This test runs the messages unittest
 #  to examine all message directions

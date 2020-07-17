@@ -1,11 +1,13 @@
 #!/bin/bash
+set -e
+set -u
 #
-# This systemtest tests the plugin functionality 
+# This systemtest tests the plugin functionality
 # of the Bareos SD by using the module
 #   bareos-sd-test.py
 #
-# This test will backup some files. While the 
-# backup some events of the storage daemon 
+# This test will backup some files. While the
+# backup some events of the storage daemon
 # will be logged from the python module.
 # This testrunner will check if all events
 # have been logged.

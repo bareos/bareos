@@ -1,7 +1,7 @@
 #!/bin/bash
-
+set -x
 # include set_config_param()
-. scripts/bareos-config-lib.sh
+. core/scripts/bareos-config-lib.sh
 
 create_config_resource_template()
 {
@@ -15,7 +15,7 @@ create_config_resource_template()
 
    DEST="$DEST_DIR/etc/bareos/${RESPATH}"
    if ! [ -e "$DEST" ]; then
-      SOURCE="src/defaultconfigs/${RESPATH}"
+      SOURCE="core/src/defaultconfigs/${RESPATH}"
       mkdir -p `dirname $DEST`
       printf '%s\n' '@%@UCRWARNING=# @%@' > $DEST
       cat $SOURCE >> $DEST
@@ -31,6 +31,7 @@ create_config_resource_template()
 
 DEST_DIR=$1
 
+echo "DEST_DIR=$DEST_DIR"
 #
 # bareos-sd
 #

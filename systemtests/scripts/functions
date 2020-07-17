@@ -1,5 +1,4 @@
-#!/bin/sh
-
+#!/bin/bash
 #
 # A set of useful functions to be sourced in each test
 #
@@ -243,8 +242,7 @@ set_debug()
 
 print_debug()
 {
-   echo "$*" | grep -q ERROR > /dev/null
-   if test $? -eq 0; then
+   if echo "$*" | grep -q ERROR > /dev/null; then
      echo "$*" >> "$tmp/err.log"
    fi
    if is_debug; then
@@ -400,7 +398,7 @@ start_bareos()
    if test "$debug" -eq 1 ; then
      "${rscripts}/bareos-ctl-dir" start -m -d 100
      "${rscripts}/bareos-ctl-sd" start -m -d 100
-     "${rscripts}/bareos-ctl-fd" start -m "$1" -d 100
+     "${rscripts}/bareos-ctl-fd" start -m -d 100
    else
      "${rscripts}/bareos" start >/dev/null 2>&1
    fi
@@ -473,13 +471,15 @@ run_python_unittests()
 {
     PYTHON_UNITTEST_SCRIPT=${1:-python-bareos-unittest.py}
     if [ "${PROJECT_SOURCE_DIR}" ] && [ -e "${PROJECT_SOURCE_DIR}/../python-bareos/" ]; then
+        PYTHONPATH=${PYTHONPATH:-}
         if [ "$PYTHONPATH" ]; then
             export PYTHONPATH=${PROJECT_SOURCE_DIR}/../python-bareos/:$PYTHONPATH
         else
             export PYTHONPATH=${PROJECT_SOURCE_DIR}/../python-bareos/
         fi
+        PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python}
         print_debug "PYTHONPATH=$PYTHONPATH"
-        if PYTHONRESULT=$("${cwd}/${PYTHON_UNITTEST_SCRIPT}" -v); then
+        if  PYTHONRESULT=$($PYTHON_EXECUTABLE "${cwd}/${PYTHON_UNITTEST_SCRIPT}" -v); then
             print_debug "$PYTHONRESULT"
         else
             set_error "$PYTHONRESULT"
@@ -552,28 +552,28 @@ change_jobname()
 
 check_two_logs()
 {
-   grep "^  Termination: *Backup OK" "${tmp}/log1.out" >/dev/null 2>&1
-   bstat=${bstat:-$?}
-   grep "^  Termination: .*Backup Error" "${tmp}/log1.out" >/dev/null 2>&1
-   if test $? -eq 0; then
+   if grep "^  Termination: *Backup OK" "${tmp}/log1.out" >/dev/null 2>&1; then
+     bstat=${bstat:-$?}
+   fi
+
+   if grep "^  Termination: .*Backup Error" "${tmp}/log1.out" >/dev/null 2>&1; then
       bstat=2
    fi
-   grep "^  Termination: *Restore OK" "${tmp}/log2.out" >/dev/null 2>&1
-   rstat=${rstat:-$?}
-   grep "^  Termination: .*Restore Error" "${tmp}/log2.out" >/dev/null 2>&1
-   if test $? -eq 0; then
+
+   if grep "^  Termination: *Restore OK" "${tmp}/log2.out" >/dev/null 2>&1; then
+     rstat=${rstat:-$?}
+   fi
+
+   if grep "^  Termination: .*Restore Error" "${tmp}/log2.out" >/dev/null 2>&1; then
       rstat=2
    fi
-   grep "^  Termination: *Restore OK -- warning file count mismatch" "${tmp}/log2.out" >/dev/null 2>&1
-   if test $? -eq 0; then
+   if grep "^  Termination: *Restore OK -- warning file count mismatch" "${tmp}/log2.out" >/dev/null 2>&1; then
       rstat=3
    fi
-   grep "^  Termination: .*Verify Differences" "${tmp}/log2.out" >/dev/null 2>&1
-   if test $? -eq 0; then
+   if grep "^  Termination: .*Verify Differences" "${tmp}/log2.out" >/dev/null 2>&1; then
       rstat=4
    fi
-   grep "Encoding error for database" "${tmp}/log1.out" > /dev/null
-   if test $? -eq 0; then
+   if grep "Encoding error for database" "${tmp}/log1.out" > /dev/null; then
       print_debug "Found database encoding error"
       bstat=2
    fi
@@ -626,10 +626,11 @@ check_restore_diff()
    #   * ${src}
    dest=${1:-${BackupDirectory:-$src}}
 
-   "$rscripts/diff.pl" -s "${dest}" -d "${tmp}/bareos-restores/${dest}"
-   result=$?
+   if "$rscripts/diff.pl" -s "${dest}" -d "${tmp}/bareos-restores/${dest}"; then
+       result=$?
+   fi
    OUT="$(diff --no-dereference -ur --exclude="fifo*" "${dest}" "${tmp}/bareos-restores/${dest}")"
-   result="$(expr "$result" + $?)"
+   result=$((result + $?))
    if is_debug; then
        printf "%s\n" "$OUT"
    fi
@@ -719,12 +720,12 @@ end_test()
    # End of test.
    # Remove exit trap (set in start_test)
    trap '' EXIT
-
+   notracedump="${notracedump:-no}"
    if [ "$notracedump" != "yes" ]; then
-      cat "${working}"/bareos.*.traceback 2>/dev/null
-      cp -f  "${working}"/bareos.*.traceback "${dumps}" 2>/dev/null
-      cat "${working}"/*.bactrace 2>/dev/null
-      cp -f "${working}"/*.bactrace "${dumps}" 2>/dev/null
+      cat "${working}"/bareos.*.traceback 2>/dev/null || :
+      cp -f  "${working}"/bareos.*.traceback "${dumps}" 2>/dev/null || :
+      cat "${working}"/*.bactrace 2>/dev/null || :
+      cp -f "${working}"/*.bactrace "${dumps}" 2>/dev/null || :
    fi
    if [ -f "$tmp/err.log" ]; then
       cat "$tmp/err.log"
@@ -810,6 +811,7 @@ update_win32()
 
 debug_wait()
 {
+  REGRESS_WAIT=${REGRESS_WAIT:-0}
   if test "${REGRESS_WAIT}" = "1"; then
      echo "Start Bareos under debugger and enter anything when ready ..."
      read -r
@@ -877,7 +879,7 @@ case $1 in
 esac
 }
 
-
+REGRESS_DEBUG=${REGRESS_DEBUG:-0}
 if test "x${REGRESS_DEBUG}" = "x1"; then
    set_debug 1
 else
@@ -960,9 +962,11 @@ mkdir -p "${tmp}"
 mkdir -p "${plugindirtmp}"
 touch "${tmp}/dir.out" "${tmp}/fd.out" "${tmp}/sd.out"
 
+HOST=${HOST:-bareos}
 CLIENT="${HOST}-fd"
 
 AUTOCHANGER_SCRIPT=${AUTOCHANGER_SCRIPT:-mtx-changer}
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
 LD_LIBRARY_PATH=$bin:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
 

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,11 +19,11 @@
 
 message(
   STATUS
-    "${PROJECT_SOURCE_DIR}/platform/univention/create_ucs_template_scripts.sh ${PROJECT_SOURCE_DIR} $ENV{DESTDIR}/etc/univention/templates/scripts/"
+    "${CMAKE_SOURCE_DIR}/core/platform/univention/create_ucs_template_scripts.sh ${CMAKE_SOURCE_DIR} $ENV{DESTDIR}/etc/univention/templates/scripts/"
 )
 
 execute_process(
   COMMAND
-    ${PROJECT_SOURCE_DIR}/platforms/univention/create_ucs_template_scripts.sh
-    ${PROJECT_SOURCE_DIR} $ENV{DESTDIR}/etc/univention/templates/scripts/
+    ${CMAKE_SOURCE_DIR}/core/platforms/univention/create_ucs_template_scripts.sh
+    ${CMAKE_SOURCE_DIR} $ENV{DESTDIR}/etc/univention/templates/scripts/
 )

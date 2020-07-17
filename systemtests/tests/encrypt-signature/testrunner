@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+set -e
+set -u
 #
 # Run a simple backup
 #   then restore it.
@@ -27,7 +29,7 @@ setup_data "$@"
 
 start_test
 
-cat <<END_OF_DATA >$tmp/bconcmds
+cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $tmp/log1.out
@@ -56,5 +58,5 @@ check_for_zombie_jobs storage=File
 stop_bareos
 
 check_two_logs
-check_restore_diff ${BackupDirectory}
+check_restore_diff "${BackupDirectory}"
 end_test

@@ -28,9 +28,9 @@ scripts=@scripts@
 cats=${PROJECT_BINARY_DIR}/cats
 src=${PROJECT_BINARY_DIR}/src
 tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
-if [ -z "$DBTYPE" ]; then
-  DBTYPE=@DEFAULT_DB_TYPE@
-fi
+
+DBTYPE=${DBTYPE:-@DEFAULT_DB_TYPE@}
+
 archivedir=@archivedir@
 logdir=@logdir@
 
@@ -97,9 +97,19 @@ export BAREOS_WEBUI_LOG_PATH=${logdir}
 export BAREOS_WEBUI_DELAY=1
 export BAREOS_WEBUI_PUBLIC_DIR=@BAREOS_WEBUI_PUBLIC_DIR@
 
+export PYTHON_EXECUTABLE=@PYTHON_EXECUTABLE@
 
 #
 # oVirt Plugin Test
 #
 
 export OVIRT_SERVER=@ovirt_server@
+
+# real postgres binaries are hidden on debian, instead there are wrappers
+# which we do not want for our tests
+if [ -d /usr/lib/postgresql  ]; then
+  POSTGRES_BINARY_DIR=$(dirname $(find /usr/lib/postgresql | grep psql))
+  export PATH=$POSTGRES_BINARY_DIR:$PATH
+else
+  export PATH=/sbin:/usr/sbin:$PATH
+fi

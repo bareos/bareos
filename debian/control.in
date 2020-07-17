@@ -334,4 +334,6 @@ Description: Backup Archiving Recovery Open Sourced - common tools
 
 @DEBIAN_CONTROL_UNIVENTION_BAREOS@
 
+@DEBIAN_CONTROL_BAREOS_WEBUI@
+
 @DEBIAN_CONTROL_VMWARE@
