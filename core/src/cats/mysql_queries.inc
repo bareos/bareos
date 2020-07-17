@@ -1008,5 +1008,13 @@ const char *BareosDbMysql::query_definitions[] = {
 "LEFT JOIN Storage USING(StorageId) "
 ,
 
+/* 0078_bvfs_lock_pathhierarchy_0.mysql */
+"LOCK TABLES PathHierarchy write, Path write "
+,
+
+/* 0079_bvfs_unlock_tables_0.mysql */
+"UNLOCK TABLES "
+,
+
 NULL
 };

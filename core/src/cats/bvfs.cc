@@ -283,6 +283,14 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
       result[i++] = strdup(row[1]);
     }
 
+    /* The PathHierarchy table needs exclusive write lock here to
+     * prevent from unique key constraint violations (PostgreSQL)
+     * or duplicate entry errors (MySQL/MariaDB) when multiple
+     * bvfs update operations are run simultaneously.
+     */
+    FillQuery(cmd, SQL_QUERY::bvfs_lock_pathhierarchy_0);
+    if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+
     i = 0;
     while (num > 0) {
       BuildPathHierarchy(jcr, ppathid_cache, result[i], result[i + 1]);
@@ -291,6 +299,9 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
       num--;
     }
     free(result);
+
+    FillQuery(cmd, SQL_QUERY::bvfs_unlock_tables_0);
+    if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
   }
 
   StartTransaction(jcr);
