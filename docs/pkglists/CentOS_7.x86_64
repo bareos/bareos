@@ -1,9 +1,11 @@
 debug/x86_64/bareos-debuginfo
 debug/x86_64/libdroplet-debuginfo
+noarch/bareos-webui
 noarch/python3-bareos
 noarch/python-bareos
 src/bareos
 src/bareos-vmware-vix-disklib
+src/bareos-webui
 src/libdroplet
 src/python-bareos
 x86_64/bareos
