@@ -1287,7 +1287,7 @@ And the plugin config file as follows:
 
 Mandatory Plugin Options:
 
-All options in the config file are mandatory:
+These options in the config file are mandatory:
 
 hostname
    The hostname/ip address of the storage backend server
@@ -1322,6 +1322,16 @@ prefetch_size
 temporary_download_directory
    The local path where the worker processes put their temporarily downloaded files to;
    the filedaemon process needs read and write access to this path
+
+
+Optional Plugin Options:
+
+This option in the config file is optional:
+
+treat_download_errors_as_warnings
+   This parameter can be set to True to keep a job running if for some reason a file cannot
+   be downloaded from a bucket because it is either deleted or moved to another space during
+   download. The default for this value is False.
 
 
 .. _PerconaXtrabackupPlugin:

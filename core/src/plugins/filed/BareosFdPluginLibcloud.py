@@ -39,6 +39,7 @@ from time import sleep
 
 from BareosLibcloudApi import SUCCESS
 from BareosLibcloudApi import ERROR
+from BareosLibcloudApi import ABORT
 from BareosLibcloudApi import BareosLibcloudApi
 from bareos_fd_consts import bRCs, bCFs, bIOPS, bJobMessageType, bFileType
 from libcloud.storage.types import Provider
@@ -76,6 +77,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         super(BareosFdPluginLibcloud, self).__init__(context, plugindef)
         super(BareosFdPluginLibcloud, self).parse_plugin_definition(context, plugindef)
+        self.options["treat_download_errors_as_warnings"] = False
         self.__parse_options(context)
 
         self.last_run = datetime.datetime.fromtimestamp(self.since)
@@ -146,6 +148,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "prefetch_size",
             "temporary_download_directory",
         ]
+        optional_options = {}
+        optional_options["misc"] = ["treat_download_errors_as_warnings"]
 
         # this maps config file options to libcloud options
         option_map = {
@@ -189,6 +193,19 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                         self.options["temporary_download_directory"] = value
                     else:
                         self.options[option_map[option]] = value
+                except:
+                    debugmessage(
+                        100,
+                        "Could not evaluate: %s in config file %s"
+                        % (value, config_filename),
+                    )
+                    return False
+
+        for option in optional_options["misc"]:
+            if self.config.has_option(section, option):
+                try:
+                    value = self.config.get(section, option)
+                    self.options["treat_download_errors_as_warnings"] = strtobool(value)
                 except:
                     debugmessage(
                         100,
@@ -261,7 +278,14 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def start_backup_file(self, context, savepkt):
         error = False
         while self.active:
-            if self.api.check_worker_messages() != SUCCESS:
+            worker_result = self.api.check_worker_messages()
+            if worker_result == ERROR:
+                if self.options["treat_download_errors_as_warnings"]:
+                    pass
+                else:
+                    self.active = False
+                    error = True
+            elif worker_result == ABORT:
                 self.active = False
                 error = True
             else:
@@ -311,12 +335,21 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             try:
                 self.FILE = IterStringIO(self.current_backup_task["data"].as_stream())
             except ObjectDoesNotExistError:
-                jobmessage(
-                    "M_WARNING",
-                    "Skipped file %s because it does not exist anymore"
-                    % (self.current_backup_task["name"]),
-                )
-                return bRCs["bRC_Skip"]
+                if self.options["treat_download_errors_as_warnings"]:
+                    jobmessage(
+                        "M_WARNING",
+                        "Skipped file %s because it does not exist anymore"
+                        % (self.current_backup_task["name"]),
+                    )
+                    return bRCs["bRC_Skip"]
+                else:
+                    jobmessage(
+                        "M_ERROR",
+                        "File %s does not exist anymore"
+                        % (self.current_backup_task["name"]),
+                    )
+                    return bRCs["bRC_Error"]
+
         else:
             raise Exception(value='Wrong argument for current_backup_task["type"]')
 
@@ -365,7 +398,10 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     ),
                 )
                 IOP.status = 0
-                return bRCs["bRC_Error"]
+                if self.options["treat_download_errors_as_warnings"]:
+                    return bRCs["bRC_Skip"]
+                else:
+                    return bRCs["bRC_Error"]
 
         elif IOP.func == bIOPS["IO_WRITE"]:
             try:
