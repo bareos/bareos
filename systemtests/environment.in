@@ -29,7 +29,7 @@ cats=${PROJECT_BINARY_DIR}/cats
 src=${PROJECT_BINARY_DIR}/src
 tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
 
-DBTYPE=${DBTYPE:-@DEFAULT_DB_TYPE@}
+DBTYPE=${DBTYPE:-@db_backend_to_test@}
 
 archivedir=@archivedir@
 logdir=@logdir@

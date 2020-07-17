@@ -528,6 +528,8 @@ if(NOT client-only)
     # set first entry as default db backend if not already defined
     list(GET db_backends 0 default_db_backend)
   endif()
+  # set first backend to be tested by systemtests
+  list(GET db_backends 0 db_backend_to_test)
   get_directory_property(hasParent PARENT_DIRECTORY)
   if(hasParent)
     set(DEFAULT_DB_TYPE ${default_db_backend} PARENT_SCOPE)
