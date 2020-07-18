@@ -22,10 +22,12 @@ DBNAME="backuptest"
 TESTPGHOST="/tmp/${TestName}"
 PSQL="psql --host $TESTPGHOST"
 
-[ -d "$TESTPGHOST" ] || mkdir -p "$TESTPGHOST"
+[ -d "$TESTPGHOST" ] && rm -R  "$TESTPGHOST"
+mkdir -p "$TESTPGHOST"
+[ $EUID -eq 0 ] && chown postgres "$TESTPGHOST"
 
 pushd database > /dev/null || exit 1
-setup_local_db "$TESTPGHOST" || exit 1
+setup_local_db "$TESTPGHOST" || exit
 popd > /dev/null
 
 #shellcheck source=../scripts/functions
@@ -35,11 +37,12 @@ popd > /dev/null
 
 # Create Test DB with table and 1 statement
 echo "CREATE DATABASE $DBNAME" | ${PSQL} postgres
-cat <<EOF | ${PSQL} ${DBNAME}
+${PSQL} ${DBNAME} <<<"
 CREATE TABLE t(id serial PRIMARY KEY, text VARCHAR(20), created_on TIMESTAMP);
 INSERT INTO t (text, created_on) values ('test for FULL backup', current_timestamp);
 SELECT * FROM t;
-EOF
+"
+PSQL_VERSION=$(${PSQL} -qtAX ${DBNAME} <<< "SHOW server_version;" | sed 's/\..*//g')
 
 start_test
 
@@ -102,12 +105,19 @@ rm -f database/data/postmaster.pid
 
 # Create a recovery.conf
 # This may become a plugin feature later on
-echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'" > $current_test_directory/database/data/recovery.conf
-
-# if postgres runs as postgresql when we are root
-chmod 777 $current_test_directory/database/data/recovery.conf
-
-
+# postgres 11 and lower
+# bc returns 1 if true, 0 if false so we need to negate
+if [ $(bc -l <<< "${PSQL_VERSION} < 12") -eq "1" ]; then
+  echo "PSQL is ${PSQL_VERSION} so lower than 12, using recovery.conf"
+  echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'" > $current_test_directory/database/data/recovery.conf
+  [ $EUID -eq 0 ] &&  chown postgres database/data/recovery.conf
+else
+  # postgres 12+
+  echo "PSQL is ${PSQL_VERSION} so 12+, using postgresql.conf and recovery.signal"
+  touch $current_test_directory/database/data/recovery.signal
+  echo "restore_command = 'cp $current_test_directory/database/wal_archive/%f %p'" >> database/data/postgresql.conf
+  [ $EUID -eq 0 ] &&  chown postgres database/data/postgresql.conf
+fi
 # start DB again - shall recover to latest possible state
 pushd database > /dev/null
 local_db_start_server "$TESTPGHOST" || exit 1
