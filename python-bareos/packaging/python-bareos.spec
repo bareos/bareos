@@ -49,7 +49,7 @@ Summary:        Backup Archiving REcovery Open Sourced - Python module
 Url:            https://github.com/bareos/python-bareos/
 Group:          Productivity/Archiving/Backup
 Vendor:         The Bareos Team
-Source:         %{name}-%{version}.tar.gz
+Source:         %{name}-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-root
 
 BuildArch:      noarch
