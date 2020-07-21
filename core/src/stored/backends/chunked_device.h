@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -171,20 +171,7 @@ class chunked_device : public Device {
   virtual ~chunked_device();
 
   bool DequeueChunk();
-  bool DeviceStatus(DeviceStatusInformation* dst);
-
-  /*
-   * Interface from Device
-   */
-  virtual int d_close(int fd) = 0;
-  virtual int d_open(const char* pathname, int flags, int mode) = 0;
-  virtual int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) = 0;
-  virtual boffset_t d_lseek(DeviceControlRecord* dcr,
-                            boffset_t offset,
-                            int whence) = 0;
-  virtual ssize_t d_read(int fd, void* buffer, size_t count) = 0;
-  virtual ssize_t d_write(int fd, const void* buffer, size_t count) = 0;
-  virtual bool d_truncate(DeviceControlRecord* dcr) = 0;
+  bool DeviceStatus(DeviceStatusInformation* dst) override;
 };
 
 } /* namespace storagedaemon */

@@ -16,8 +16,22 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
+
+add_subdirectory(filed)
 
 if(NOT client-only)
+  # droplet does not build on solaris because of sys/cdefs.h: No such file or
+  # directory
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/droplet/CMakeLists.txt)
+      message(
+        FATAL_ERROR
+        "Please checkout the libdroplet submodule via \n \"git submodule update --init --recursive\""
+      )
+    endif()
+    add_subdirectory(droplet)
+  endif()
   add_subdirectory(tools)
   add_subdirectory(cats)
   if(NOT HAVE_WIN32 AND ndmp)
@@ -26,8 +40,8 @@ if(NOT client-only)
   if(VIXDISKLIB_FOUND)
     add_subdirectory(vmware)
   endif()
-  add_subdirectory(dird)
   add_subdirectory(stored)
+  add_subdirectory(dird)
 endif()
 
 if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
@@ -46,10 +60,8 @@ if(${HAVE_LMDB})
 endif()
 add_subdirectory(lib)
 add_subdirectory(findlib)
-add_subdirectory(filed)
 add_subdirectory(plugins)
 add_subdirectory(fastlz)
-
 if(${traymonitor})
   add_subdirectory(qt-tray-monitor)
 endif()

@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 cmake_minimum_required(VERSION 3.0)
 project(bareos C CXX)
@@ -664,9 +665,6 @@ if(${HAVE_GLUSTERFS_API_GLFS_H})
   set(HAVE_GLUSTERFS 1)
 endif()
 set(have_glusterfs ${HAVE_GLUSTERFS_API_GLFS_H})
-if(${HAVE_GLUSTERFS})
-  include_directories(/usr/include/glusterfs)
-endif()
 
 if(NOT HAVE_WIN32)
   if(${ndmp})
@@ -681,36 +679,6 @@ if(${lmdb})
 endif()
 
 # info what the config files need to be installed PLUGINS  ############
-set(PLUGINS python-ldap-conf.d)
-list(APPEND PLUGINS python-ovirt-conf.d)
-
-if(${HAVE_CEPHFS})
-  list(APPEND PLUGINS cephfs-conf.d)
-endif()
-if(${HAVE_CEPH_RADOS})
-  list(APPEND PLUGINS rados-conf.d)
-endif()
-
-if(${HAVE_GLUSTERFS})
-  list(APPEND PLUGINS gfapi-conf.d)
-endif()
-
-# BACKENDS  ####
-if(build_client_only)
-  set(BACKENDS "")
-else()
-  set(BACKENDS unix_tape_device.d)
-  list(APPEND BACKENDS unix_fifo_device.d)
-  if(${HAVE_CEPHFS})
-    list(APPEND BACKENDS rados_device.d)
-  endif()
-  if(${HAVE_GLUSTERFS})
-    list(APPEND BACKENDS gfapi_device.d)
-  endif()
-  if(${HAVE_DROPLET})
-    list(APPEND BACKENDS droplet_device.d)
-  endif()
-endif()
 
 set(support_systemd "")
 set(batch_insert_db_backends "")
@@ -865,9 +833,6 @@ message(
   "   GFAPI(GLUSTERFS) support:     ${GFAPI_FOUND} ${GFAPI_LIBRARIES} ${GFAPI_INCLUDE_DIRS} "
 )
 message(
-  "   DROPLET support:              ${DROPLET_FOUND} ${DROPLET_LIBRARIES} ${DROPLET_INCLUDE_DIRS} "
-)
-message(
   "   CEPH RADOS support:           ${RADOS_FOUND} ${RADOS_LIBRARIES} ${RADOS_INCLUDE_DIRS} "
 )
 message(
@@ -907,8 +872,9 @@ message(
   "   Dynamic cats backends:        ${dynamic-cats-backends} ${HAVE_DYNAMIC_CATS_BACKENDS} "
 )
 message(
-  "   Dynamic storage backends:     ${dynamic-storage-backends} ${HAVE_DYNAMIC_SD_BACKENDS} "
+  "   Dynamic storage backends:     ${dynamic-storage-backends} ${HAVE_DYNAMIC_SD_BACKENDS} ${BACKENDS} "
 )
+message("   PLUGINS:                      ${PLUGINS} ")
 message("   Build for Test Coverage :     ${coverage} ")
 
 message("   PSCMD:                        ${PSCMD}")

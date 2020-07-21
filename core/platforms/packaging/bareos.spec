@@ -40,7 +40,7 @@ Vendor: 	The Bareos Team
 %define build_qt_monitor 1
 %define build_sqlite3 1
 %define glusterfs 0
-%define droplet 0
+%define droplet 1
 %define have_git 1
 %define ceph 0
 %define install_suse_fw 0
@@ -81,11 +81,6 @@ BuildRequires: libtirpc-devel
 %define systemd_support 1
 %endif
 
-# SLE 12
-# SLE_15: droplet is not available due to SSL build problems
-%if 0%{?sle_version} >= 120000 && 0%{?sle_version} < 150000
-%define droplet 1
-%endif
 
 %if 0%{?sle_version} >= 120000
 %define ceph 1
@@ -117,13 +112,9 @@ BuildRequires: libtirpc-devel
 
 %if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
 %define glusterfs 1
-%define droplet 1
 %define systemd_support 1
 %endif
 
-%if 0%{?rhel_version} == 800
-%define droplet 0
-%endif
 
 %if 0%{?rhel_version} >= 700 && !0%{?centos_version}
 %define ceph 1
@@ -146,10 +137,6 @@ BuildRequires: systemd
 BuildRequires: systemd-rpm-macros
 %endif
 %{?systemd_requires}
-%endif
-
-%if 0%{?droplet}
-BuildRequires: libdroplet-devel
 %endif
 
 %if 0%{?glusterfs}
@@ -1341,6 +1328,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-chunked*.so
 %{backend_dir}/libbareossd-droplet*.so
+%{library_dir}/libdroplet*.so
 %attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir.d/storage/S3_Object.conf.example
 %attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/S3_ObjectStorage.conf.example
 %dir %{_sysconfdir}/%{name}/bareos-sd.d/device/droplet/

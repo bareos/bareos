@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(HAVE_WIN32)
   include_directories(
@@ -25,25 +26,42 @@ if(HAVE_WIN32)
   )
 endif()
 
-if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
+# BACKENDS  ####
+if(NOT build_client_only)
+  set(BACKENDS "")
+  list(APPEND BACKENDS unix_tape_device.d)
+  list(APPEND BACKENDS unix_fifo_device.d)
+  if(${HAVE_CEPHFS})
+    list(APPEND BACKENDS rados_device.d)
+  endif()
+  if(${HAVE_GLUSTERFS})
+    list(APPEND BACKENDS gfapi_device.d)
+  endif()
+  if(TARGET droplet)
+    list(APPEND BACKENDS droplet_device.d)
+  endif()
+  set(BACKENDS
+      ${BACKENDS}
+      PARENT_SCOPE
+  )
+  message("Backends are now ${BACKENDS}")
+endif()
 
+if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
   set(AVAILABLE_DEVICE_API_SRCS backends/generic_tape_device.cc)
 
   if(HAVE_WIN32)
     list(
       APPEND
-        AVAILABLE_DEVICE_API_SRCS
-        ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_fifo_device.cc
-        ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_file_device.cc
-        ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_tape_device.cc
+      AVAILABLE_DEVICE_API_SRCS
+      ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_fifo_device.cc
+      ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_file_device.cc
+      ${PROJECT_SOURCE_DIR}/src/win32/stored/backends/win32_tape_device.cc
     )
   else()
-    list(
-      APPEND AVAILABLE_DEVICE_API_SRCS
-             backends/unix_fifo_device.cc
-             # backends/droplet_device.cc
-             backends/unix_tape_device.cc
-             backends/unix_file_device.cc
+    list(APPEND AVAILABLE_DEVICE_API_SRCS backends/unix_fifo_device.cc
+         # backends/droplet_device.cc
+         backends/unix_tape_device.cc backends/unix_file_device.cc
     )
   endif()
 
@@ -58,10 +76,8 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
   if(${HAVE_RADOS})
     list(APPEND AVAILABLE_DEVICE_API_SRCS backends/rados_device.cc)
   endif()
-  if(${HAVE_DROPLET})
+  if(TARGET droplet)
     list(APPEND AVAILABLE_DEVICE_API_SRCS backends/droplet_device.cc)
-  endif()
-  if(${HAVE_DROPLET})
     list(APPEND AVAILABLE_DEVICE_API_SRCS backends/chunked_device.cc)
   endif()
 endif()
@@ -118,7 +134,7 @@ set(SDSRCS
 
 if(HAVE_WIN32)
   list(APPEND SDSRCS stored.cc ../win32/generic/main.cc
-              ../win32/generic/service.cc ../win32/stored/storedres.rc
+       ../win32/generic/service.cc ../win32/stored/storedres.rc
   )
 endif()
 
@@ -158,18 +174,19 @@ if(${HAVE_DYNAMIC_SD_BACKENDS})
   if(GFAPI_LIBRARIES)
     list(APPEND BACKEND_OBJECTS libbareossd-gfapi)
   endif()
-  if(${HAVE_DROPLET})
+
+  if(TARGET droplet)
     list(APPEND BACKEND_OBJECTS libbareossd-droplet)
-  endif()
-  if(${HAVE_DROPLET})
     list(APPEND BACKEND_OBJECTS libbareossd-chunked)
   endif()
+
   set(LIBBAREOSSD_LIBRARIES bareos ${BACKEND_OBJECTS})
   message(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
 else()
-  if(${HAVE_DROPLET})
-    list(APPEND LIBBAREOSSD_LIBRARIES ${DROPLET_LIBRARIES})
+  if(TARGET droplet)
+    list(APPEND LIBBAREOSSD_LIBRARIES droplet)
   endif()
+
   if(${HAVE_RADOS})
     list(APPEND LIBBAREOSSD_LIBRARIES ${RADOS_LIBRARIES})
   endif()
@@ -178,9 +195,6 @@ else()
   endif()
   if(${HAVE_GFAPI})
     list(APPEND LIBBAREOSSD_LIBRARIES ${GFAPI_LIBRARIES})
-  endif()
-  if(${HAVE_DROPLET})
-    list(APPEND LIBBAREOSSD_LIBRARIES ${DROPLET_LIBRARIES})
   endif()
   set(LIBBAREOSSD_LIBRARIES bareos ${LIBBAREOSSD_LIBRARIES})
   message(STATUS "LIBBAREOSSD_LIBRARIES ARE ${LIBBAREOSSD_LIBRARIES}")
@@ -232,11 +246,10 @@ target_link_libraries(bcopy bareossd bareos)
 
 install(TARGETS bareossd DESTINATION ${libdir})
 
-install(TARGETS bareos-sd bls bextract bscan btape bcopy DESTINATION
-                "${sbindir}"
+install(TARGETS bareos-sd bls bextract bscan btape bcopy
+        DESTINATION "${sbindir}"
 )
 
-install(CODE "set(PLUGINS \"${PLUGINS}\")")
 install(CODE "set(BACKENDS \"${BACKENDS}\")")
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
@@ -246,4 +259,8 @@ install(DIRECTORY DESTINATION "${archivedir}")
 
 if(${HAVE_DYNAMIC_SD_BACKENDS})
   add_subdirectory(backends)
+endif()
+
+if(TARGET droplet)
+  target_compile_definitions(bareossd PRIVATE HAVE_BAREOSSD_DROPLET_DEVICE)
 endif()

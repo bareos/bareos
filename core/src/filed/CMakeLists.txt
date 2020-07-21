@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(HAVE_WIN32)
   include_directories(
@@ -51,8 +52,8 @@ set(FDSRCS
 
 if(HAVE_WIN32)
   list(APPEND FDSRCS ../win32/filed/vss.cc ../win32/filed/vss_XP.cc
-              ../win32/filed/vss_W2K3.cc ../win32/filed/vss_Vista.cc
-              ../win32/generic/service.cc ../win32/generic/main.cc
+       ../win32/filed/vss_W2K3.cc ../win32/filed/vss_Vista.cc
+       ../win32/generic/service.cc ../win32/generic/main.cc
   )
 endif()
 
@@ -90,10 +91,33 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   )
 endif()
 
-install(TARGETS bareos-fd DESTINATION "${sbindir}" COMPONENT filedaemon)
+set(PLUGINS python-ldap-conf.d)
+list(APPEND PLUGINS python-ovirt-conf.d)
+
+if(${HAVE_CEPHFS})
+  list(APPEND PLUGINS cephfs-conf.d)
+endif()
+if(${HAVE_CEPH_RADOS})
+  list(APPEND PLUGINS rados-conf.d)
+endif()
+
+if(${HAVE_GLUSTERFS})
+  list(APPEND PLUGINS gfapi-conf.d)
+endif()
+
+set(PLUGINS
+    ${PLUGINS}
+    PARENT_SCOPE
+)
+message("PLUGINS: ${PLUGINS}")
+
+install(
+  TARGETS bareos-fd
+  DESTINATION "${sbindir}"
+  COMPONENT filedaemon
+)
 
 install(CODE "set(PLUGINS \"${PLUGINS}\")" COMPONENT filedaemon)
-install(CODE "set(BACKENDS \"${BACKENDS}\")" COMPONENT filedaemon)
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")"
         COMPONENT filedaemon
 )

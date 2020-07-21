@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 list(APPEND CMAKE_INSTALL_RPATH ${backenddir})
 
@@ -34,16 +35,17 @@ endif()
 if(${HAVE_GLUSTERFS})
   add_library(bareossd-gfapi MODULE gfapi_device.cc)
   install(TARGETS bareossd-gfapi DESTINATION ${backenddir})
+  target_include_directories(bareossd-gfapi PUBLIC ${GFAPI_INCLUDE_DIRS})
   target_link_libraries(bareossd-gfapi ${GFAPI_LIBRARIES})
 endif()
 
-if(${HAVE_DROPLET})
+if(TARGET droplet)
   add_library(bareossd-chunked SHARED ordered_cbuf.cc chunked_device.cc)
-  target_link_libraries(bareossd-chunked ${DROPLET_LIBRARIES})
+  target_link_libraries(bareossd-chunked droplet)
   install(TARGETS bareossd-chunked DESTINATION ${backenddir})
 
   add_library(bareossd-droplet MODULE droplet_device.cc)
-  target_link_libraries(bareossd-droplet bareossd-chunked ${DROPLET_LIBRARIES})
+  target_link_libraries(bareossd-droplet bareossd-chunked droplet)
   install(TARGETS bareossd-droplet DESTINATION ${backenddir})
 endif()
 

@@ -88,7 +88,7 @@
 #ifdef HAVE_GFAPI
 #include "backends/gfapi_device.h"
 #endif
-#ifdef HAVE_DROPLET
+#ifdef HAVE_BAREOSSD_DROPLET_DEVICE
 #include "backends/chunked_device.h"
 #include "backends/droplet_device.h"
 #endif
@@ -194,7 +194,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
       dev = new gfapi_device;
       break;
 #endif
-#ifdef HAVE_DROPLET
+#ifdef HAVE_BAREOSSD_DROPLET_DEVICE
     case DeviceType::B_DROPLET_DEV:
       dev = new droplet_device;
       break;

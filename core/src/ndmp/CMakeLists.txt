@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DNDMOS_OPTION_NO_TEST_AGENTS")
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}
@@ -187,8 +188,8 @@ target_link_libraries(bareosndmp ${WRAP_LIBS} ${TIRPC_LIBRARIES})
 install(TARGETS bareosndmp DESTINATION ${libdir})
 
 set_target_properties(
-  bareosndmp PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
-                        "${BAREOS_VERSION_MAJOR}"
+  bareosndmp PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                        SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
 if(build_ndmjob)
   add_executable(ndmjob ${NDMJOB_SRCS})
