@@ -76,6 +76,8 @@ bool Connection::check(int timeout_data)
   }
   unlock();
 
+  if (!ok) { socket_->close(); }
+
   return ok;
 }
 
@@ -133,7 +135,7 @@ void ConnectionPool::cleanup()
   int i = 0;
   for (i = connections_->size() - 1; i >= 0; i--) {
     connection = (Connection*)connections_->get(i);
-    Dmsg2(120, "checking connection %s (%d)\n", connection->name(), i);
+    Dmsg2(800, "checking connection %s (%d)\n", connection->name(), i);
     if (!connection->check()) {
       Dmsg2(120, "connection %s (%d) is terminated => removed\n",
             connection->name(), i);

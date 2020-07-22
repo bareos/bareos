@@ -138,7 +138,8 @@ void BnetThreadServerTcp(
     void* HandleConnectionRequest(ConfigurationParser* config, void* bsock),
     ConfigurationParser* config,
     std::atomic<BnetServerState>* const server_state,
-    void* UserAgentShutdownCallback(void* bsock))
+    void* UserAgentShutdownCallback(void* bsock),
+    void CustomCallback())
 {
   int newsockfd;
   socklen_t clilen;
@@ -292,6 +293,7 @@ void BnetThreadServerTcp(
   if (server_state) { server_state->store(BnetServerState::kStarted); }
 
   while (!quit) {
+    if (CustomCallback) { CustomCallback(); }
 #ifndef HAVE_POLL
     unsigned int maxfd = 0;
     fd_set sockset;

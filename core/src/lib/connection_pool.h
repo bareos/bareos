@@ -75,6 +75,7 @@ class ConnectionPool {
                              bool authenticated = true);
   Connection* remove(const char* name, int timeout_in_seconds = 0);
   alist* get_as_alist();
+  void cleanup();
 
  private:
   alist* connections_;
@@ -82,7 +83,6 @@ class ConnectionPool {
   bool add(Connection* connection);
   bool remove(Connection* connection);
   bool exists(const char* name);
-  void cleanup();
   Connection* get_connection(const char* name);
   Connection* get_connection(const char* name, int timeout_seconds);
   Connection* get_connection(const char* name, timespec& timeout);

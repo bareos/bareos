@@ -47,7 +47,8 @@ void BnetThreadServerTcp(
     void* HandleConnectionRequest(ConfigurationParser* config, void* bsock),
     ConfigurationParser* config,
     std::atomic<BnetServerState>* const server_state = nullptr,
-    void* UserAgentShutdownCallback(void* bsock) = nullptr);
+    void* UserAgentShutdownCallback(void* bsock) = nullptr,
+    void CustomCallback() = nullptr);
 void BnetStopAndWaitForThreadServerTcp(pthread_t tid);
 
 #endif  // BAREOS_LIB_BNET_SEVER_TCP_H_
