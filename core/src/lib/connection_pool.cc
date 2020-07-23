@@ -39,13 +39,13 @@ Connection::Connection(const char* name,
                        bool authenticated)
 {
   tid_ = pthread_self();
-  connect_time_ = time(NULL);
+  connect_time_ = time(nullptr);
   in_use_ = false;
   authenticated_ = authenticated;
   bstrncpy(name_, name, sizeof(name_));
   protocol_version_ = protocol_version;
   socket_ = socket;
-  pthread_mutex_init(&mutex_, NULL);
+  pthread_mutex_init(&mutex_, nullptr);
 }
 
 Connection::~Connection() { pthread_mutex_destroy(&mutex_); }
@@ -82,18 +82,6 @@ bool Connection::check(int timeout_data)
 }
 
 /*
- * Wait until an error occurs
- * or the connection is requested by some other thread.
- */
-bool Connection::wait(int timeout)
-{
-  bool ok = true;
-
-  while (ok && (!in_use_)) { ok = check(timeout); }
-  return ok;
-}
-
-/*
  * Request to take over the connection (socket) from another thread.
  */
 bool Connection::take()
@@ -118,8 +106,8 @@ ConnectionPool::ConnectionPool()
   /*
    * Initialize mutex and condition variable objects.
    */
-  pthread_mutex_init(&add_mutex_, NULL);
-  pthread_cond_init(&add_cond_var_, NULL);
+  pthread_mutex_init(&add_mutex_, nullptr);
+  pthread_cond_init(&add_cond_var_, nullptr);
 }
 
 ConnectionPool::~ConnectionPool()
@@ -131,7 +119,7 @@ ConnectionPool::~ConnectionPool()
 
 void ConnectionPool::cleanup()
 {
-  Connection* connection = NULL;
+  Connection* connection = nullptr;
   int i = 0;
   for (i = connections_->size() - 1; i >= 0; i--) {
     connection = (Connection*)connections_->get(i);
@@ -147,13 +135,13 @@ void ConnectionPool::cleanup()
 
 alist* ConnectionPool::get_as_alist()
 {
-  this->cleanup();
+  cleanup();
   return connections_;
 }
 
 bool ConnectionPool::add(Connection* connection)
 {
-  this->cleanup();
+  cleanup();
   Dmsg1(120, "add connection: %s\n", connection->name());
   P(add_mutex_);
   connections_->append(connection);
@@ -171,20 +159,15 @@ Connection* ConnectionPool::add_connection(const char* name,
       new Connection(name, fd_protocol_version, socket, authenticated);
   if (!add(connection)) {
     delete (connection);
-    return NULL;
+    return nullptr;
   }
   return connection;
 }
 
-bool ConnectionPool::exists(const char* name)
-{
-  return (get_connection(name) != NULL);
-}
-
 Connection* ConnectionPool::get_connection(const char* name)
 {
-  Connection* connection = NULL;
-  if (!name) { return NULL; }
+  Connection* connection = nullptr;
+  if (!name) { return nullptr; }
   foreach_alist (connection, connections_) {
     if (connection->check() && connection->authenticated() &&
         connection->bsock() && (!connection->in_use()) &&
@@ -193,24 +176,15 @@ Connection* ConnectionPool::get_connection(const char* name)
       return connection;
     }
   }
-  return NULL;
-}
-
-Connection* ConnectionPool::get_connection(const char* name,
-                                           int timeout_in_seconds)
-{
-  struct timespec timeout;
-
-  ConvertTimeoutToTimespec(timeout, timeout_in_seconds);
-  return get_connection(name, timeout);
+  return nullptr;
 }
 
 Connection* ConnectionPool::get_connection(const char* name, timespec& timeout)
 {
-  Connection* connection = NULL;
+  Connection* connection = nullptr;
   int errstat = 0;
 
-  if (!name) { return NULL; }
+  if (!name) { return nullptr; }
 
   while ((!connection) && (errstat == 0)) {
     connection = get_connection(name);
@@ -246,8 +220,7 @@ int ConnectionPool::WaitForNewConnection(timespec& timeout)
 bool ConnectionPool::remove(Connection* connection)
 {
   bool removed = false;
-  int i = 0;
-  for (i = connections_->size() - 1; i >= 0; i--) {
+  for (int i = connections_->size() - 1; i >= 0; i--) {
     if (connections_->get(i) == connection) {
       connections_->remove(i);
       removed = true;
@@ -261,8 +234,8 @@ bool ConnectionPool::remove(Connection* connection)
 Connection* ConnectionPool::remove(const char* name, int timeout_in_seconds)
 {
   bool done = false;
-  Connection* result = NULL;
-  Connection* connection = NULL;
+  Connection* result = nullptr;
+  Connection* connection = nullptr;
   struct timespec timeout;
 
   ConvertTimeoutToTimespec(timeout, timeout_in_seconds);
@@ -274,9 +247,9 @@ Connection* ConnectionPool::remove(const char* name, int timeout_in_seconds)
     connection = get_connection(name, timeout);
     if (!connection) {
       /*
-       * NULL is returned only on timeout (or other internal errors).
+       * nullptr is returned only on timeout (or other internal errors).
        */
-      return NULL;
+      return nullptr;
     }
     if (connection->take()) {
       result = connection;
