@@ -183,7 +183,6 @@ read_line(dpl_conn_t *conn)
 
           DPL_TRACE(conn->ctx, DPL_TRACE_IO, "read conn=%p https=%d size=%ld", conn, conn->ctx->use_https, conn->read_buf_size);
 
-          if (0 == conn->ctx->use_https)
             {
               struct pollfd fds;
 
@@ -215,23 +214,26 @@ read_line(dpl_conn_t *conn)
                   return NULL;
                 }
 
-              conn->cc = read(conn->fd, conn->read_buf, conn->read_buf_size);
-              if (conn->cc == -1)
+              if (0 == conn->ctx->use_https)
                 {
-                  free(line);
-                  conn->status = DPL_EIO;
-                  return NULL;
-                }
-            }
-          else
-            {
-              conn->cc = SSL_read(conn->ssl, conn->read_buf, conn->read_buf_size);
-              if (conn->cc <= 0)
+                  conn->cc = read(conn->fd, conn->read_buf, conn->read_buf_size);
+                  if (conn->cc == -1)
+                    {
+                      free(line);
+                      conn->status = DPL_EIO;
+                      return NULL;
+                    }
+                 }
+              else
                 {
-                  DPL_SSL_PERROR(conn->ctx, "SSL_read");
-                  free(line);
-                  conn->status = DPL_EIO;
-                  return NULL;
+                  conn->cc = SSL_read(conn->ssl, conn->read_buf, conn->read_buf_size);
+                  if (conn->cc <= 0)
+                    {
+                      DPL_SSL_PERROR(conn->ctx, "SSL_read");
+                      free(line);
+                      conn->status = DPL_EIO;
+                      return NULL;
+                    }
                 }
             }
 
