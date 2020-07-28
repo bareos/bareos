@@ -52,6 +52,8 @@ class BareosResource {
                            const ConfigurationParser& my_config,
                            bool hide_sensitive_data = false,
                            bool verbose = false);
+
+  virtual bool Validate();
 };
 
 #endif /* BAREOS_LIB_BAREOS_RESOURCE_H_ */

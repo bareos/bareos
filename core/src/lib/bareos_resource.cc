@@ -48,6 +48,10 @@ BareosResource::BareosResource(const BareosResource& other)
   ::memcpy(inherit_content_, other.inherit_content_, MAX_RES_ITEMS);
 }
 
+bool BareosResource::Validate() {
+  return true;
+}
+
 BareosResource& BareosResource::operator=(const BareosResource& rhs)
 {
   next_ = rhs.next_;

@@ -535,7 +535,7 @@ class JobResource : public BareosResource {
   runtime_job_status_t* rjs = nullptr; /**< Runtime Job Status */
 
   /* Methods */
-  bool Validate();
+  virtual bool Validate() override;
 };
 /* clang-format on */
 

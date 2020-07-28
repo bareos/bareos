@@ -1260,8 +1260,8 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
      * a jobdef don't have to be fully defined.
      */
     return true;
-  } else if (res_type == R_JOB) {
-    if (!((JobResource*)res)->Validate()) { return false; }
+  } else if (!res->Validate()) {
+    return false;
   }
 
   for (int i = 0; items[i].name; i++) {
