@@ -60,7 +60,9 @@ MariaDB/MySQL
    It is contained in package **bareos-database-mysql**.
    **This is not the right choice for a new deployment.**
 
-Sqlite
+SQLite
+   .. deprecated:: 20.0.0
+
    This backend is for testing purposes only.
    It is contained in package **bareos-database-sqlite3**.
    **Do not use this in production.**
