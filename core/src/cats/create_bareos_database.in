@@ -81,15 +81,12 @@ fi
 
 case ${db_type} in
    sqlite3)
-      sqlite3 $* ${working_dir}/${db_name}.db ".tables"
-      # Allow non root access
-      chown ${dir_user}:${dir_group} ${working_dir}/${db_name}.db
-      chmod 0640 ${working_dir}/${db_name}.db
-      retval=0
+      echo "The SQLite database backend is deprecated. Please use PostgreSQL instead."
+      retval=1
       ;;
    mysql)
-      mysql $* -e "CREATE DATABASE ${db_name};"
-      retval=$?
+      echo "The MySQL database backend is deprecated. Please use PostgreSQL instead."
+      retval=1
       ;;
    postgresql)
       #
