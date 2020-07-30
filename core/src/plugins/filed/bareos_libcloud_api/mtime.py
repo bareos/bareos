@@ -41,7 +41,7 @@ class ModificationTime(object):
         mtime = mtime - self.timezone_delta
         mtime = mtime.replace(tzinfo=None)
 
-        ts = time.mktime(mtime.timetuple())
+        ts = int(time.mktime(mtime.timetuple()))
         return mtime, ts
 
     def get_last_run(self):
