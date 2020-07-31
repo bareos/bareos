@@ -23,8 +23,9 @@ from bareos_libcloud_api.get_libcloud_driver import get_driver
 import io
 from libcloud.common.types import LibcloudError
 from libcloud.storage.types import ObjectDoesNotExistError
-import uuid
+from utils import silentremove
 from time import sleep
+import uuid
 
 FINISH = 0
 CONTINUE = 1
@@ -72,6 +73,7 @@ class Worker(ProcessBase):
         return CONTINUE
 
     def __run_job(self, job):
+        success = False
         try:
             obj = self.driver.get_object(job["bucket"], job["name"])
         except ObjectDoesNotExistError:
@@ -101,6 +103,7 @@ class Worker(ProcessBase):
 
                 job["data"] = io.BytesIO(content)
                 job["type"] = TASK_TYPE.DOWNLOADED
+                success = True
             except LibcloudError:
                 self.error_message("Libcloud error, could not download file")
                 return CONTINUE
@@ -119,22 +122,26 @@ class Worker(ProcessBase):
                 job["data"] = None
                 job["tmpfile"] = tmpfilename
                 job["type"] = TASK_TYPE.TEMP_FILE
+                success = True
             except OSError as e:
                 self.error_message("Could not open temporary file %s" % e.filename)
                 self.abort_message()
                 return FINISH
             except ObjectDoesNotExistError as e:
+                silentremove(tmpfilename)
                 self.error_message(
                     "Could not open object, skipping: %s" % e.object_name
                 )
                 return CONTINUE
             except LibcloudError:
+                silentremove(tmpfilename)
                 self.error_message(
                     "Error downloading object, skipping: %s/%s"
                     % (job["bucket"], job["name"])
                 )
                 return CONTINUE
             except Exception:
+                silentremove(tmpfilename)
                 self.error_message(
                     "Error using temporary file for, skipping: %s/%s"
                     % (job["bucket"], job["name"])
@@ -149,6 +156,7 @@ class Worker(ProcessBase):
                 )
                 job["data"] = obj
                 job["type"] = TASK_TYPE.STREAM
+                success = True
             except LibcloudError:
                 self.error_message(
                     "Libcloud error preparing stream object, skipping: %s/%s"
@@ -162,7 +170,7 @@ class Worker(ProcessBase):
                 )
                 return CONTINUE
 
-        self.queue_try_put(self.output_queue, job)
+        if success == True:
+            self.queue_try_put(self.output_queue, job)
 
-        # success
         return CONTINUE

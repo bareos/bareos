@@ -187,6 +187,7 @@ macro(handle_python_plugin_modules test_name)
       bareos_libcloud_api/mtime.py
       bareos_libcloud_api/process_base.py
       bareos_libcloud_api/queue_message.py
+      bareos_libcloud_api/utils.py
       bareos_libcloud_api/worker.py
     )
   endif()
