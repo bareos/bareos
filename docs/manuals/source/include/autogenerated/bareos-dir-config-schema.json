@@ -1943,8 +1943,8 @@
         "DbDriver": {
           "datatype": "STRING",
           "code": 0,
-          "equals": true,
-          "required": true
+          "default_value": "postgresql",
+          "equals": true
         },
         "DbSocket": {
           "datatype": "STRING",
