@@ -263,7 +263,7 @@ bool droplet_device::walk_chunks(const char* dirname,
         break;
       default:
         ++tries;
-        if (tries < 5) {
+        if (tries < NUMBER_OF_RETRIES) {
           Dmsg2(100, "chunk %s failure: %s. Try again (%d).\n", path.c_str(),
                 dpl_status_str(callback_status), tries);
           Bmicrosleep(INFLIGT_RETRY_TIME, 0);
@@ -365,7 +365,7 @@ dpl_status_t droplet_device::check_path(const char* path)
       Bmicrosleep(INFLIGT_RETRY_TIME, 0);
     }
 
-  } while (tries < 5 && !success);
+  } while (tries < NUMBER_OF_RETRIES && !success);
 
   return status;
 }
@@ -567,9 +567,9 @@ bool droplet_device::FlushRemoteChunk(chunk_io_request* request)
   again1:
     Dmsg1(100, "Flushing start over again (%d)\n", status);
 
-  } while (!success && tries < 5);
+  } while (!success && tries < NUMBER_OF_RETRIES);
 
-  if (tries == 5) { Dmsg0(100, "dpl_fput timed out\n"); }
+  if (tries == NUMBER_OF_RETRIES) { Dmsg0(100, "dpl_fput timed out\n"); }
 
 
 bail_out:
@@ -644,9 +644,9 @@ bool droplet_device::ReadRemoteChunk(chunk_io_request* request)
         tries++;
     }
 
-  } while (!success && tries < 5);
+  } while (!success && tries < NUMBER_OF_RETRIES);
 
-  if (tries == 5) {
+  if (tries == NUMBER_OF_RETRIES) {
     Dmsg0(100, "dpl_getattr timed out");
     goto bail_out;
   }
@@ -699,9 +699,9 @@ bool droplet_device::ReadRemoteChunk(chunk_io_request* request)
         Bmicrosleep(INFLIGT_RETRY_TIME, 0);
         ++tries;
     }
-  } while (!success && tries < 5);
+  } while (!success && tries < NUMBER_OF_RETRIES);
 
-  if (tries == 5) { Dmsg0(100, "dpl_getattr timed out"); }
+  if (tries == NUMBER_OF_RETRIES) { Dmsg0(100, "dpl_getattr timed out"); }
 
   retval = success;
 
