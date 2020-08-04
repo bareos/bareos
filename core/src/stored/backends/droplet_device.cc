@@ -223,18 +223,19 @@ bool droplet_device::walk_chunks(const char* dirname,
   bool retval = true;
   dpl_status_t status;
   dpl_status_t callback_status;
-  dpl_sysmd_t* sysmd = NULL;
   PoolMem path(PM_NAME);
 
-  sysmd = dpl_sysmd_dup(&sysmd_);
   bool found = true;
   int i = 0;
+  int tries = 0;
+
   while ((i < max_chunks_) && (found) && (retval)) {
     path.bsprintf("%s/%04d", dirname, i);
 
+    auto sysmd = dpl_sysmd_dup(&sysmd_);
     status = dpl_getattr(ctx_,         /* context */
                          path.c_str(), /* locator */
-                         NULL,         /* metadata */
+                         nullptr,      /* metadata */
                          sysmd);       /* sysmd */
 
     switch (status) {
@@ -261,16 +262,22 @@ bool droplet_device::walk_chunks(const char* dirname,
         }
         break;
       default:
-        Dmsg2(100, "chunk %s failure: %s. Exiting.\n", path.c_str(),
-              dpl_status_str(callback_status));
-        found = false;
+        ++tries;
+        if (tries < 5) {
+          Dmsg2(100, "chunk %s failure: %s. Try again (%d).\n", path.c_str(),
+                dpl_status_str(callback_status), tries);
+          Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+        } else {
+          Dmsg2(100, "chunk %s failure: %s. Exiting after %d tries.\n",
+                path.c_str(), dpl_status_str(callback_status), tries);
+          found = false;
+        }
         break;
     }
-  }
-
-  if (sysmd) {
-    dpl_sysmd_free(sysmd);
-    sysmd = NULL;
+    if (sysmd) {
+      dpl_sysmd_free(sysmd);
+      sysmd = nullptr;
+    }
   }
 
   return retval;
@@ -358,7 +365,7 @@ dpl_status_t droplet_device::check_path(const char* path)
       Bmicrosleep(INFLIGT_RETRY_TIME, 0);
     }
 
-  } while (tries < 3 && !success);
+  } while (tries < 5 && !success);
 
   return status;
 }
