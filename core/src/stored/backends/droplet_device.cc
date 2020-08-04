@@ -335,16 +335,30 @@ bool droplet_device::walk_chunks(const char* dirname,
 dpl_status_t droplet_device::check_path(const char* path)
 {
   dpl_status_t status;
-  dpl_sysmd_t* sysmd = NULL;
+  const char* retry = "";
 
-  sysmd = dpl_sysmd_dup(&sysmd_);
-  status = dpl_getattr(ctx_,   /* context */
-                       path,   /* locator */
-                       NULL,   /* metadata */
-                       sysmd); /* sysmd */
-  Dmsg4(100, "check_path: path=<%s> (device=%s, bucket=%s): Result %s\n", path,
-        prt_name, ctx_->cur_bucket, dpl_status_str(status));
-  dpl_sysmd_free(sysmd);
+  int tries = 0;
+  bool success = false;
+
+  do {
+    auto sysmd = dpl_sysmd_dup(&sysmd_);
+    status = dpl_getattr(ctx_,   /* context */
+                         path,   /* locator */
+                         NULL,   /* metadata */
+                         sysmd); /* sysmd */
+    Dmsg4(100, "%scheck_path: path=<%s> (device=%s, bucket=%s): Result %s\n",
+          retry, path, prt_name, ctx_->cur_bucket, dpl_status_str(status));
+    dpl_sysmd_free(sysmd);
+
+    if (status == DPL_SUCCESS || status == DPL_ENOENT) {
+      success = true;
+    } else {
+      retry = "Retry: ";
+      ++tries;
+      Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+    }
+
+  } while (tries < 3 && !success);
 
   return status;
 }
@@ -478,7 +492,8 @@ bool droplet_device::FlushRemoteChunk(chunk_io_request* request)
           case DPL_ENOENT:
           case DPL_FAILURE:
             /*
-             * Make sure the chunk directory with the name of the volume exists.
+             * Make sure the chunk directory with the name of the volume
+             * exists.
              */
             dpl_sysmd_free(sysmd);
             sysmd = dpl_sysmd_dup(&sysmd_);
@@ -690,7 +705,8 @@ bail_out:
 }
 
 /*
- * Internal method for truncating a chunked volume on the remote backing store.
+ * Internal method for truncating a chunked volume on the remote backing
+ * store.
  */
 bool droplet_device::TruncateRemoteChunkedVolume(DeviceControlRecord* dcr)
 {
