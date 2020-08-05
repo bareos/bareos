@@ -60,7 +60,9 @@ MariaDB/MySQL
    It is contained in package **bareos-database-mysql**.
    **This is not the right choice for a new deployment.**
 
-Sqlite
+SQLite
+   .. deprecated:: 20.0.0
+
    This backend is for testing purposes only.
    It is contained in package **bareos-database-sqlite3**.
    **Do not use this in production.**
@@ -358,9 +360,8 @@ If you are not interested in this additional functionality, the commands describ
 Prepare Bareos database
 -----------------------
 
-We assume that you have already your database installed and basically running. Using the PostgreSQL database backend is recommended.
-
-The easiest way to set up a database is using an system account that have passwordless local access to the database. Often this is the user **root** for MySQL and the user **postgres** for PostgreSQL.
+We assume that you have already your database installed and basically running.
+Using the PostgreSQL database backend is recommended.
 
 For details, see chapter :ref:`CatMaintenanceChapter`.
 
@@ -402,30 +403,6 @@ If your are using PostgreSQL and your PostgreSQL administration user is **postgr
    su postgres -c /usr/lib/bareos/scripts/create_bareos_database
    su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
    su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
-
-MySQL/MariaDB
-^^^^^^^^^^^^^
-
-Make sure, that **root** has direct access to the local MySQL server. Check if the command :command:`mysql` connects to the database without defining the password. This is the default on RedHat and SUSE distributions. On other systems (Debian, Ubuntu), create the file :file:`~/.my.cnf` with your authentication informations:
-
-.. code-block:: cfg
-   :caption: MySQL credentials file .my.cnf
-
-   [client]
-   host=localhost
-   user=root
-   password=<input>YourPasswordForAccessingMysqlAsRoot</input>
-
-It is recommended to secure the Bareos database connection with a password. See :ref:`Catalog Maintenance -- MySQL <catalog-maintenance-mysql>` on how to achieve this. For testing, using a password-less MySQL connection is probably okay. Setup the Bareos database tables using the following commands:
-
-.. code-block:: shell-session
-   :caption: Setup Bareos catalog with MySQL
-
-   /usr/lib/bareos/scripts/create_bareos_database
-   /usr/lib/bareos/scripts/make_bareos_tables
-   /usr/lib/bareos/scripts/grant_bareos_privileges
-
-As some Bareos updates require a database schema update, the file :file:`/root/.my.cnf` might also be useful in the future.
 
 .. _section-StartDaemons:
 
