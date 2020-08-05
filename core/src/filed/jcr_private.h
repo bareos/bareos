@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,8 @@
 #define BAREOS_SRC_FILED_JCR_H_
 
 #include "include/bareos.h"
+
+#include <atomic>
 
 struct AclData;
 struct XattrData;
@@ -68,7 +70,8 @@ struct JobControlRecordPrivate {
   uint32_t StartBlock{};
   uint32_t EndBlock{};
   pthread_t heartbeat_id{};       /**< Id of heartbeat thread */
-  volatile bool hb_started{};     /**< Heartbeat running */
+  std::atomic<bool> hb_initialized_once{};    /**< Heartbeat initialized */
+  std::atomic<bool> hb_started{};             /**< Heartbeat running */
   std::shared_ptr<BareosSocket> hb_bsock;     /**< Duped SD socket */
   std::shared_ptr<BareosSocket> hb_dir_bsock; /**< Duped DIR socket */
   alist* RunScripts{};            /**< Commands to run before and after job */
