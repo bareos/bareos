@@ -26,6 +26,8 @@
 
 #include "include/bareos.h"
 
+#include <atomic>
+
 struct acl_data_t;
 struct xattr_data_t;
 
@@ -68,7 +70,8 @@ struct JobControlRecordPrivate {
   uint32_t StartBlock{};
   uint32_t EndBlock{};
   pthread_t heartbeat_id{};       /**< Id of heartbeat thread */
-  volatile bool hb_started{};     /**< Heartbeat running */
+  std::atomic<bool> hb_initialized_once{};    /**< Heartbeat initialized */
+  std::atomic<bool> hb_started{};             /**< Heartbeat running */
   std::shared_ptr<BareosSocket> hb_bsock;     /**< Duped SD socket */
   std::shared_ptr<BareosSocket> hb_dir_bsock; /**< Duped DIR socket */
   alist* RunScripts{};            /**< Commands to run before and after job */
