@@ -21,7 +21,14 @@
 # configure file all *.in files
 #
 
-file(GLOB_RECURSE IN_FILES "${CMAKE_SOURCE_DIR}/*.in")
+# if we're not the toplevel project, then we want to glob in core and debian subdirectories only
+get_directory_property(have_parent PARENT_DIRECTORY)
+if(have_parent)
+  file(GLOB_RECURSE IN_FILES "${CMAKE_SOURCE_DIR}/core/*.in" "${CMAKE_SOURCE_DIR}/debian/*.in")
+else()
+  file(GLOB_RECURSE IN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.in")
+endif()
+
 foreach(in_file ${IN_FILES})
   string(
     REGEX

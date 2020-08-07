@@ -652,6 +652,7 @@ set(SYSTEM_TESTS
     config-syntax-crash
     copy-bscan
     copy-remote-bscan
+    deprecation
     messages
     multiplied-device
     reload-add-client

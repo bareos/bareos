@@ -322,7 +322,7 @@ static ResourceItem cat_items[] = {
   { "User", CFG_TYPE_STR, ITEM(res_cat, db_user), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
   { "DbName", CFG_TYPE_STR, ITEM(res_cat, db_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
-  { "DbDriver", CFG_TYPE_STR, ITEM(res_cat, db_driver), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "DbDriver", CFG_TYPE_STR, ITEM(res_cat, db_driver), 0, CFG_ITEM_DEFAULT, "postgresql", NULL, NULL },
 #else
   { "DbDriver", CFG_TYPE_STR, ITEM(res_cat, db_driver), 0, 0, NULL, NULL, NULL },
 #endif
@@ -1260,8 +1260,8 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
      * a jobdef don't have to be fully defined.
      */
     return true;
-  } else if (res_type == R_JOB) {
-    if (!((JobResource*)res)->Validate()) { return false; }
+  } else if (!res->Validate()) {
+    return false;
   }
 
   for (int i = 0; items[i].name; i++) {
@@ -1329,6 +1329,18 @@ bool JobResource::Validate()
       break;
   }
 
+  return true;
+}
+
+bool CatalogResource::Validate()
+{
+  /* during 1st pass, db_driver is nullptr and we skip the check */
+  if (db_driver != nullptr &&
+      (std::string(db_driver) == "mysql" ||
+       std::string(db_driver) == "sqlite3")) {
+    my_config->AddWarning(std::string("Deprecated DB driver ") + db_driver +
+                          " for Catalog " + resource_name_);
+  }
   return true;
 }
 

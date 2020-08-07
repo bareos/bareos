@@ -1,0 +1,42 @@
+#!/bin/bash
+set -e
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+invoke_dir() {
+  options=("$@")
+  if [ -n "${BAREOS_DIRECTOR_USER:-}" ]; then
+    options+=(-u "${BAREOS_DIRECTOR_USER}")
+  fi
+  if [ -n "${BAREOS_DIRECTOR_GROUP:-}" ]; then
+    options+=(-g "${BAREOS_DIRECTOR_GROUP}")
+  fi
+  if [ -n "${BAREOS_CONFIG_DIR:-}" ]; then
+    options+=(-c "${BAREOS_CONFIG_DIR}")
+  fi
+  "${BAREOS_DIRECTOR_BINARY}" "${options[@]}"
+}
+
+
+start_test
+
+# check for deprecated database if applicable
+if [ "$DBTYPE" = mysql -o "$DBTYPE" = sqlite3 ]; then
+  invoke_dir -t -v 2>&1 \
+    | grep "Deprecated DB driver ${DBTYPE} for Catalog MyCatalog"
+fi
+
+end_test

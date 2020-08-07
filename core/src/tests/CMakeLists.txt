@@ -160,7 +160,7 @@ endif() # NOT client-only
 if(NOT client-only)
   bareos_add_test(
     scheduler_job_item_queue
-    LINK_LIBRARIES dird_objects bareos ${GTEST_LIBRARIES}
+    LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql ${GTEST_LIBRARIES}
                    ${GTEST_MAIN_LIBRARIES}
   )
 endif() # NOT client-only

@@ -5,7 +5,7 @@ FileSet {
     Options {
       signature = MD5
     }
-    File = "/var/lib/bareos/bareos.sql" # database dump
-    File = "/usr/local/etc/bareos"                   # configuration
+    File = "@working_dir@/@db_name@.sql" # database dump
+    File = "@confdir@"                   # configuration
   }
 }

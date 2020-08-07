@@ -259,6 +259,7 @@ class CatalogResource : public BareosResource {
  public:
   CatalogResource() = default;
   virtual ~CatalogResource() = default;
+  virtual bool Validate() override;
 
   uint32_t db_port = 0;       /**< Port */
   char* db_address = nullptr; /**< Hostname for remote access */
@@ -535,7 +536,7 @@ class JobResource : public BareosResource {
   runtime_job_status_t* rjs = nullptr; /**< Runtime Job Status */
 
   /* Methods */
-  bool Validate();
+  virtual bool Validate() override;
 };
 /* clang-format on */
 
