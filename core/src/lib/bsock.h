@@ -264,8 +264,6 @@ class BareosSocket {
   bool UseBwlimit() { return bwlimit_ > 0; }
   void SetBwlimitBursting() { use_bursting_ = true; }
   void clear_bwlimit_bursting() { use_bursting_ = false; }
-  void SetKeepalive() { use_keepalive_ = true; }
-  void ClearKeepalive() { use_keepalive_ = false; }
   void SetSpooling() { spool_ = true; }
   void ClearSpooling() { spool_ = false; }
   void SetTimedOut() { timed_out_ = true; }

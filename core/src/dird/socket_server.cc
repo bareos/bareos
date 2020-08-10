@@ -145,9 +145,8 @@ extern "C" void* connect_thread(void* arg)
    */
   sock_fds = new alist(10, not_owned_by_alist);
   BnetThreadServerTcp((dlist*)arg, me->MaxConnections, sock_fds, thread_list,
-                      me->nokeepalive, HandleConnectionRequest, my_config,
-                      &server_state, UserAgentShutdownCallback,
-                      CleanupConnectionPool);
+                      HandleConnectionRequest, my_config, &server_state,
+                      UserAgentShutdownCallback, CleanupConnectionPool);
 
   return NULL;
 }

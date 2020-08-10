@@ -116,7 +116,6 @@ class ClientResource
   alist* pki_signing_key_files = nullptr;          /* PKI Signing Key Files */
   alist* pki_master_key_files = nullptr;           /* PKI Master Key Files */
   crypto_cipher_t pki_cipher = CRYPTO_CIPHER_NONE; /* PKI Cipher to use */
-  bool nokeepalive = false;     /* Don't use SO_KEEPALIVE on sockets */
   bool always_use_lmdb = false; /* Use LMDB for accurate data */
   uint32_t lmdb_threshold = 0;  /* Switch to using LDMD when number of accurate
                                entries exceeds treshold. */

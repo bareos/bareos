@@ -44,7 +44,6 @@ void BnetThreadServerTcp(
     int max_clients,
     alist* sockfds,
     ThreadList& thread_list,
-    bool nokeepalive,
     std::function<void*(ConfigurationParser* config, void* bsock)>
         HandleConnectionRequest,
     ConfigurationParser* config,

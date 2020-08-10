@@ -222,7 +222,6 @@ void BnetThreadServerTcp(
     int max_clients,
     alist* sockfds,
     ThreadList& thread_list,
-    bool nokeepalive,
     std::function<void*(ConfigurationParser* config, void* bsock)>
         HandleConnectionRequest,
     ConfigurationParser* config,
@@ -237,8 +236,6 @@ void BnetThreadServerTcp(
 
   RemoveDuplicateAddresses(addr_list);
   LogAllAddresses(addr_list);
-
-  int keepalive = nokeepalive ? 0 : 1;
 
 #ifdef HAVE_POLL
   nfds_t number_of_filedescriptors = 0;
@@ -356,9 +353,6 @@ void BnetThreadServerTcp(
         socklen_t clilen;
         struct sockaddr_storage cli_addr; /* client's address */
 
-        /*
-         * Got a connection, now accept it.
-         */
         do {
           clilen = sizeof(cli_addr);
           newsockfd = accept(fd_ptr->fd, reinterpret_cast<sockaddr*>(&cli_addr),
@@ -366,9 +360,7 @@ void BnetThreadServerTcp(
         } while (newsockfd < 0 && errno == EINTR);
         if (newsockfd < 0) { continue; }
 
-        /*
-         * Receive notification when connection dies.
-         */
+        int keepalive = 1;
         if (setsockopt(newsockfd, SOL_SOCKET, SO_KEEPALIVE,
                        (sockopt_val_t)&keepalive, sizeof(keepalive)) < 0) {
           BErrNo be;
@@ -388,7 +380,6 @@ void BnetThreadServerTcp(
 
         BareosSocket* bs;
         bs = new BareosSocketTCP;
-        if (nokeepalive) { bs->ClearKeepalive(); }
 
         bs->fd_ = newsockfd;
         bs->SetWho(strdup("client"));

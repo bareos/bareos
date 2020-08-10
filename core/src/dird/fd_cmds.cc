@@ -134,7 +134,6 @@ static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
   }
 
   fd = new BareosSocketTCP;
-  if (me->nokeepalive) { fd->ClearKeepalive(); }
   heart_beat = get_heartbeat_interval(jcr->impl->res.client);
 
   char name[MAX_NAME_LENGTH + 100];

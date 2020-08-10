@@ -126,7 +126,6 @@ class StorageResource
   bool allow_bw_bursting = false; /**< Allow bursting with bandwidth limiting */
   bool ndmp_enable = false;       /**< Enable NDMP protocol listener */
   bool ndmp_snooping = false;     /**< Enable NDMP protocol snooping */
-  bool nokeepalive = false;       /**< Don't use SO_KEEPALIVE on sockets */
   bool collect_dev_stats = false; /**< Collect Device Statistics */
   bool collect_job_stats = false; /**< Collect Job Statistics */
   bool device_reserve_by_mediatype = false; /**< Allow device reservation based
