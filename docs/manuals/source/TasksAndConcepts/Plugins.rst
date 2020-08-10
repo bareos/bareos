@@ -9,7 +9,7 @@ The functionality of Bareos can be extended by plugins. They do exists plugins f
 
 To use plugins, they must be enabled in the configuration (:strong:`Plugin Directory`\  and optionally :strong:`Plugin Names`\ ).
 
-If a :strong:`Plugin Directory`\  is specified :strong:`Plugin Names`\  defines, which plugins get loaded.
+If a :strong:`Plugin Directory`\  is specified, :strong:`Plugin Names`\  defines which plugins get loaded.
 
 If :strong:`Plugin Names`\  is not defined, all plugins get loaded.
 
