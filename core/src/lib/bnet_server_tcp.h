@@ -22,6 +22,7 @@
 #define BAREOS_LIB_BNET_SEVER_TCP_H_
 
 #include <atomic>
+#include <functional>
 
 class ConfigurationParser;
 class ThreadList;
@@ -44,11 +45,13 @@ void BnetThreadServerTcp(
     alist* sockfds,
     ThreadList& thread_list,
     bool nokeepalive,
-    void* HandleConnectionRequest(ConfigurationParser* config, void* bsock),
+    std::function<void*(ConfigurationParser* config, void* bsock)>
+        HandleConnectionRequest,
     ConfigurationParser* config,
     std::atomic<BnetServerState>* const server_state = nullptr,
-    void* UserAgentShutdownCallback(void* bsock) = nullptr,
-    void CustomCallback() = nullptr);
+    std::function<void*(void* bsock)> UserAgentShutdownCallback = nullptr,
+    std::function<void()> CustomCallback = nullptr);
+
 void BnetStopAndWaitForThreadServerTcp(pthread_t tid);
 
 #endif  // BAREOS_LIB_BNET_SEVER_TCP_H_

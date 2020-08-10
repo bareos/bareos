@@ -135,11 +135,12 @@ void BnetThreadServerTcp(
     alist* sockfds,
     ThreadList& thread_list,
     bool nokeepalive,
-    void* HandleConnectionRequest(ConfigurationParser* config, void* bsock),
+    std::function<void*(ConfigurationParser* config, void* bsock)>
+        HandleConnectionRequest,
     ConfigurationParser* config,
     std::atomic<BnetServerState>* const server_state,
-    void* UserAgentShutdownCallback(void* bsock),
-    void CustomCallback())
+    std::function<void*(void* bsock)> UserAgentShutdownCallback,
+    std::function<void()> CustomCallback)
 {
   int newsockfd;
   socklen_t clilen;
