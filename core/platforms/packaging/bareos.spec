@@ -234,7 +234,6 @@ BuildRequires: python-devel >= 2.6
 BuildRequires: distribution-release
 BuildRequires: pwdutils
 BuildRequires: tcpd-devel
-BuildRequires: termcap
 BuildRequires: update-desktop-files
 
 %if 0%{?suse_version} > 1010
@@ -247,7 +246,6 @@ BuildRequires: lsb-release
 %else
 # non suse
 
-BuildRequires: libtermcap-devel
 BuildRequires: passwd
 
 # Some magic to be able to determine what platform we are running on.
