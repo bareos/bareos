@@ -158,7 +158,7 @@ int cephfs_device::d_open(const char* pathname, int flags, int mode)
    * See if we store in an explicit directory.
    */
   if (basedir_) {
-#if HAVE_CEPHFS_CEPH_STATX_H
+#if HAVE_CEPH_STATX
     struct ceph_statx stx;
 #else
     struct stat st;
@@ -167,7 +167,7 @@ int cephfs_device::d_open(const char* pathname, int flags, int mode)
     /*
      * Make sure the dir exists if one is defined.
      */
-#if HAVE_CEPHFS_CEPH_STATX_H
+#if HAVE_CEPH_STATX
     status = ceph_statx(cmount_, basedir_, &stx, CEPH_STATX_SIZE,
                         AT_SYMLINK_NOFOLLOW);
 #else
@@ -189,7 +189,7 @@ int cephfs_device::d_open(const char* pathname, int flags, int mode)
           goto bail_out;
       }
     } else {
-#if HAVE_CEPHFS_CEPH_STATX_H
+#if HAVE_CEPH_STATX
       if (!S_ISDIR(stx.stx_mode)) {
 #else
       if (!S_ISDIR(st.st_mode)) {
@@ -290,7 +290,7 @@ boffset_t cephfs_device::d_lseek(DeviceControlRecord* dcr,
 bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
 {
   int status;
-#if HAVE_CEPHFS_CEPH_STATX_H
+#if HAVE_CEPH_STATX
   struct ceph_statx stx;
 #else
   struct stat st;
@@ -316,7 +316,7 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
      * 3. open new file with same mode
      * 4. change ownership to original
      */
-#if HAVE_CEPHFS_CEPH_STATX_H
+#if HAVE_CEPH_STATX
     status = ceph_fstatx(cmount_, fd_, &stx, CEPH_STATX_MODE, 0);
 #else
     status = ceph_fstat(cmount_, fd_, &st);
@@ -324,7 +324,7 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
     if (status < 0) {
       BErrNo be;
 
-#if HAVE_CEPHFS_CEPH_STATX_H
+#if HAVE_CEPH_STATX
       Mmsg2(errmsg, _("Unable to ceph_statx device %s. ERR=%s\n"), prt_name,
             be.bstrerror(-status));
 #else
@@ -335,7 +335,7 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
       return false;
     }
 
-#if HAVE_CEPHFS_CEPH_STATX_H
+#if HAVE_CEPH_STATX
     if (stx.stx_size != 0) { /* ceph_ftruncate() didn't work */
 #else
     if (st.st_size != 0) { /* ceph_ftruncate() didn't work */
@@ -347,7 +347,7 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
        * Recreate the file -- of course, empty
        */
       oflags = O_CREAT | O_RDWR | O_BINARY;
-#if HAVE_CEPHFS_CEPH_STATX_H
+#if HAVE_CEPH_STATX
       fd_ = ceph_open(cmount_, virtual_filename_, oflags, stx.stx_mode);
 #else
       fd_ = ceph_open(cmount_, virtual_filename_, oflags, st.st_mode);
@@ -368,7 +368,7 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
       /*
        * Reset proper owner
        */
-#if HAVE_CEPHFS_CEPH_STATX_H
+#if HAVE_CEPH_STATX
       ceph_chown(cmount_, virtual_filename_, stx.stx_uid, stx.stx_gid);
 #else
       ceph_chown(cmount_, virtual_filename_, st.st_uid, st.st_gid);

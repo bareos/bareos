@@ -106,7 +106,7 @@ include(CheckSymbolExists)
 include(CMakePushCheckState)
 cmake_push_check_state()
 set(CMAKE_REQUIRED_LIBRARIES cephfs)
-check_symbol_exists(ceph_statx "sys/stat.h;cephfs/libcephfs.h" HAVE_CEPHFS_CEPH_STATX_H)
+check_symbol_exists(ceph_statx "sys/stat.h;cephfs/libcephfs.h" HAVE_CEPH_STATX)
 cmake_pop_check_state()
 
 check_include_files(rados/librados.h HAVE_RADOS_LIBRADOS_H)
