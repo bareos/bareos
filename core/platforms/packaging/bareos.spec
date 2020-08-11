@@ -234,7 +234,6 @@ BuildRequires: python-devel >= 2.6
 BuildRequires: distribution-release
 BuildRequires: pwdutils
 BuildRequires: tcpd-devel
-BuildRequires: termcap
 BuildRequires: update-desktop-files
 
 %if 0%{?suse_version} > 1010
@@ -247,7 +246,6 @@ BuildRequires: lsb-release
 %else
 # non suse
 
-BuildRequires: libtermcap-devel
 BuildRequires: passwd
 
 # Some magic to be able to determine what platform we are running on.
@@ -1352,7 +1350,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/%{name}/bareos-sd.d/device/RadosStorage.conf.example
 %endif
 
-%endif # not client_only
+# not client_only
+%endif
 
 %files filedaemon
 # fd package (bareos-fd, plugins)
@@ -1533,8 +1532,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 /usr/share/pixmaps/bareos-tray-monitor.png
 %endif
 
-
-%endif # client_only
+# client_only
+%endif
 
 %files devel
 %defattr(-, root, root)
@@ -1598,7 +1597,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{plugin_dir}/BareosSdWrapper.py*
 %{plugin_dir}/bareos-sd-class-plugin.py*
 
-%endif # python_plugins
+# python_plugins
+%endif
 
 %if 0%{?glusterfs}
 %files filedaemon-glusterfs-plugin
