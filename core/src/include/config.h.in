@@ -114,7 +114,7 @@ extern char win_os[];
 #cmakedefine HAVE_CEPHFS @HAVE_CEPHFS@
 
 // Define to 1 if you have cephfs/ceph_stat_x.h header
-#cmakedefine HAVE_CEPHFS_CEPH_STATX_H @HAVE_CEPHFS_CEPH_STATX_H@
+#cmakedefine HAVE_CEPH_STATX @HAVE_CEPH_STATX@
 
 // Define to 1 if you have the `chflags' function
 #cmakedefine HAVE_CHFLAGS @HAVE_CHFLAGS@
