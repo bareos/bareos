@@ -178,17 +178,17 @@ set(PYFILES
     python/pyfiles/BareosFdPluginBaseclass.py
     python/pyfiles/BareosFdPluginLocalFileset.py
     python/pyfiles/BareosFdWrapper.py
-    python/pyfiles/bareos_fd_consts.py
-    python/pyfiles/bareos-fd-ldap.py
-    python/pyfiles/BareosFdPluginLDAP.py
-    python/pyfiles/bareos-fd-ovirt.py
-    python/pyfiles/BareosFdPluginOvirt.py
-    python/pyfiles/bareos-fd-percona-xtrabackup.py
-    python/pyfiles/BareosFdPluginPerconaXtraBackup.py
-    python/pyfiles/BareosFdPluginPostgres.py
+    python/pyfiles/bareos-fd.py.template
     python/pyfiles/bareos-fd-postgres.py
-    python/pyfiles/BareosFdPluginVMware.py
+    python/pyfiles/BareosFdPluginPostgres.py
     python/pyfiles/bareos-fd-vmware.py
+    python/pyfiles/BareosFdPluginVMware.py
+    python/pyfiles/ldap/BareosFdPluginLDAP.py
+    python/pyfiles/ldap/bareos-fd-ldap.py
+    python/pyfiles/ovirt/BareosFdPluginOvirt.py
+    python/pyfiles/ovirt/bareos-fd-ovirt.py
+    python/pyfiles/percona-xtrabackup/BareosFdPluginPerconaXtraBackup.py
+    python/pyfiles/percona-xtrabackup/bareos-fd-percona-xtrabackup.py
 )
 if(${HAVE_VIXDISKLIB})
   list(APPEND PYFILES BareosFdPluginVMware.py bareos-fd-vmware.py)

@@ -56,7 +56,6 @@ if(HAVE_PYTHON)
 
   set(PYFILES
       python/pyfiles/bareos-sd-class-plugin.py
-      python/pyfiles/bareos_sd_consts.py
       python/pyfiles/BareosSdPluginBaseclass.py
       python/pyfiles/bareos-sd.py.template
       python/pyfiles/BareosSdWrapper.py

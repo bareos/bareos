@@ -204,9 +204,6 @@ lib/bareos/plugins/bareos-fd-mock-test.py
 lib/bareos/plugins/bareos-fd.py.template
 lib/bareos/plugins/bareos-sd-class-plugin.py
 lib/bareos/plugins/bareos-sd.py.template
-lib/bareos/plugins/bareos_dir_consts.py
-lib/bareos/plugins/bareos_fd_consts.py
-lib/bareos/plugins/bareos_sd_consts.py
 lib/bareos/plugins/bpipe-fd.so
 lib/bareos/plugins/python-dir.so
 lib/bareos/plugins/python-fd.so

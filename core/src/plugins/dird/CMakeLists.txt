@@ -39,7 +39,7 @@ if(HAVE_PYTHON)
 
   set(PYFILES
       python/pyfiles/bareos-dir.py.template python/pyfiles/bareos-dir-class-plugin.py
-      python/pyfiles/bareos_dir_consts.py python/pyfiles/BareosDirPluginBaseclass.py
+      python/pyfiles/BareosDirPluginBaseclass.py
       python/pyfiles/BareosDirWrapper.py
   )
 

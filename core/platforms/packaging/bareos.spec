@@ -1549,7 +1549,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{plugin_dir}/BareosFdPluginBaseclass.py*
 %{plugin_dir}/BareosFdPluginLocalFileset.py*
 %{plugin_dir}/BareosFdWrapper.py*
-%{plugin_dir}/bareos_fd_consts.py*
 
 %files filedaemon-ldap-python-plugin
 %defattr(-, root, root)
@@ -1583,7 +1582,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{plugin_dir}/python-dir.so
 %{plugin_dir}/bareos-dir.py*
-%{plugin_dir}/bareos_dir_consts.py*
 %{plugin_dir}/BareosDirPluginBaseclass.py*
 %{plugin_dir}/bareos-dir-class-plugin.py*
 %{plugin_dir}/BareosDirWrapper.py*
@@ -1592,7 +1590,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{plugin_dir}/python-sd.so
 %{plugin_dir}/bareos-sd.py*
-%{plugin_dir}/bareos_sd_consts.py*
 %{plugin_dir}/BareosSdPluginBaseclass.py*
 %{plugin_dir}/BareosSdWrapper.py*
 %{plugin_dir}/bareos-sd-class-plugin.py*
