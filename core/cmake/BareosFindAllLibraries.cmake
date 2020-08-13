@@ -71,6 +71,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   endif()
 
   if(${Python2_FOUND})
+    set(PYTHON_EXECUTABLE ${Python2_EXECUTABLE} PARENT_SCOPE)
       execute_process(
         COMMAND ${Python2_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/get_python_compile_settings.py
         OUTPUT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/py2settings.cmake
@@ -79,6 +80,7 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   endif()
 
   if(${Python3_FOUND})
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE} PARENT_SCOPE)
       execute_process(
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/get_python_compile_settings.py
         OUTPUT_FILE ${CMAKE_CURRENT_SOURCE_DIR}/py3settings.cmake

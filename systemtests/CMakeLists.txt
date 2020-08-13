@@ -626,24 +626,24 @@ else()
 endif()
 
 if(TARGET python-fd)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-local-fileset")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-local-fileset")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-local-fileset")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-local-fileset")
 endif()
 
 if(TARGET python3-fd)
-  list(APPEND SYSTEM_TESTS "python3-fd-plugin-local-fileset-test")
+  list(APPEND SYSTEM_TESTS "py3plug-fd-local-fileset")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "python3-fd-plugin-local-fileset-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-local-fileset")
 endif()
 
 if(TARGET python-fd)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-local-fileset-restoreobject")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-local-fileset-restoreobject")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-local-fileset-restoreobject")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-local-fileset-restoreobject")
 endif()
 
-message("checking for requirements of pyplug-fd-postgres:")
+message("checking for requirements of py2plug-fd-postgres:")
 check_pymodule_available("psycopg2")
 check_pymodule_available("dateutil")
 
@@ -651,11 +651,11 @@ if(TARGET python-fd
    AND PYMODULE_PSYCOPG2_FOUND
    AND PYMODULE_DATEUTIL_FOUND
 )
-  message("OK, enabling pyplug-fd-postgres:")
-  list(APPEND SYSTEM_TESTS "pyplug-fd-postgres")
+  message("OK, enabling py2plug-fd-postgres:")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-postgres")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-postgres")
-  message("NOT OK, disabling pyplug-fd-postgres:")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-postgres")
+  message("NOT OK, disabling py2plug-fd-postgres:")
 endif()
 if(TARGET python3-fd)
   list(APPEND SYSTEM_TESTS "python3-fd-plugin-postgres-test")
@@ -664,70 +664,67 @@ else()
 endif()
 
 if(TARGET python-fd AND ovirt_server)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-ovirt")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-ovirt")
 else()
-  message(STATUS "disabling pyplug-fd-ovirt-test as ovirt_server is not set")
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-ovirt")
+  message(STATUS "disabling py2plug-fd-ovirt-test as ovirt_server is not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-ovirt")
 endif()
 
 if(TARGET python-fd AND enable_vmware_test)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-vmware")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-vmware")
 else()
-  message(STATUS "disabling pyplug-fd-vmware as vmware_server was not set")
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-vmware")
+  message(STATUS "disabling py2plug-fd-vmware as vmware_server was not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-vmware")
 endif()
 
 if(TARGET python3-fd AND ovirt_server)
-  list(APPEND SYSTEM_TESTS "python3-fd-ovirt-plugin-test")
+  list(APPEND SYSTEM_TESTS "py3plug-fd-ovirt")
 else()
-  message(
-    STATUS "disabling python3-fd-ovirt-plugin-test as ovirt_server is not set"
-  )
-  list(APPEND SYSTEM_TESTS_DISABLED "python3-fd-ovirt-plugin-test")
+  message(STATUS "disabling py3plug-fd-ovirt as ovirt_server is not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-ovirt")
 endif()
 
 if(TARGET python-fd AND XTRABACKUP)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-percona-xtrabackup")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-percona-xtrabackup")
 else()
   message(
     STATUS
-      "disabling pyplug-fd-percona-xtrabackup-test as XTRABACKUP was not found"
+      "disabling py2plug-fd-percona-xtrabackup-test as XTRABACKUP was not found"
   )
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-percona-xtrabackup")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-percona-xtrabackup")
 endif()
 
 if(TARGET python3-fd AND XTRABACKUP)
-  list(APPEND SYSTEM_TESTS "python3-fd-percona-xtrabackup-plugin-test")
+  list(APPEND SYSTEM_TESTS "py3plug-fd-percona-xtrabackup")
 else()
   message(
-    STATUS
-      "disabling python3-fd-percona-xtrabackup-plugin-test as XTRABACKUP was not found"
+    STATUS "disabling py3plug-fd-percona-xtrabackup as XTRABACKUP was not found"
   )
-  list(APPEND SYSTEM_TESTS_DISABLED "python3-fd-percona-xtrabackup-plugin-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-percona-xtrabackup")
 endif()
 
 if(TARGET python-dir)
-  list(APPEND SYSTEM_TESTS "pyplug-dir")
+  list(APPEND SYSTEM_TESTS "py2plug-dir")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-dir")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-dir")
 endif()
 
 if(TARGET python3-dir)
-  list(APPEND SYSTEM_TESTS "python3-dir-plugin-test")
+  list(APPEND SYSTEM_TESTS "py3plug-dir")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "python3-dir-plugin-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-dir")
 endif()
 
 if(TARGET python-sd)
-  list(APPEND SYSTEM_TESTS "python-sd-plugin-test")
+  list(APPEND SYSTEM_TESTS "py2plug-sd")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "python-sd-plugin-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-sd")
 endif()
 
 if(TARGET python3-sd)
-  list(APPEND SYSTEM_TESTS "python3-sd-plugin-test")
+  list(APPEND SYSTEM_TESTS "py3plug-sd")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "python3-sd-plugin-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-sd")
 endif()
 
 message(STATUS "Looking for pam test requirements ...")
@@ -832,8 +829,7 @@ endif()
 
 foreach(TEST_NAME ${SYSTEM_TESTS})
   message(STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}")
-  # string(REGEX MATCH "^python[^-]?-(fd|sd|dir)" PLUGIN_NAME "${TEST_NAME}")
-  string(REGEX MATCH "^python[^-]?" python_version "${TEST_NAME}")
+  string(REGEX MATCH "^pyplug[^-]?" python_version "${TEST_NAME}")
   # if(python_version) message(STATUS "python_version:" ${python_version}) #
   # python or python3 endif()
   prepare_test()
