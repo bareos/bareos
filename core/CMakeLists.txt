@@ -674,6 +674,36 @@ if(${lmdb})
 endif()
 
 # info what the config files need to be installed PLUGINS  ############
+set(PLUGINS python-ldap)
+list(APPEND PLUGINS python-ovirt)
+
+if(${HAVE_CEPHFS})
+  list(APPEND PLUGINS cephfs)
+endif()
+if(${HAVE_CEPH_RADOS})
+  list(APPEND PLUGINS rados)
+endif()
+
+if(${HAVE_GLUSTERFS})
+  list(APPEND PLUGINS gfapi)
+endif()
+
+# BACKENDS  ####
+if(build_client_only)
+  set(BACKENDS "")
+else()
+  set(BACKENDS unix_tape_device.d)
+  list(APPEND BACKENDS unix_fifo_device.d)
+  if(${HAVE_CEPHFS})
+    list(APPEND BACKENDS rados_device.d)
+  endif()
+  if(${HAVE_GLUSTERFS})
+    list(APPEND BACKENDS gfapi_device.d)
+  endif()
+  if(${HAVE_DROPLET})
+    list(APPEND BACKENDS droplet_device.d)
+  endif()
+endif()
 
 set(support_systemd "")
 set(batch_insert_db_backends "")
