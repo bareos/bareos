@@ -114,6 +114,7 @@ if [ -d /usr/lib/postgresql  ]; then
 else
   export PATH=/sbin:/usr/sbin:$PATH
 fi
+export PYTHONPATH=@pythonpath@
 
 # enable deprecated database handling in scripts
 export BAREOS_TEST_RUNNING=yes

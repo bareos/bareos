@@ -30,17 +30,17 @@ if(HAVE_WIN32)
   add_definitions(-DMS_WIN${WINDOWS_BITS})
 endif()
 
-add_library(autoxflate-sd MODULE autoxflate-sd.cc)
+add_library(autoxflate-sd MODULE autoxflate/autoxflate-sd.cc)
 set_target_properties(autoxflate-sd PROPERTIES PREFIX "")
 target_link_libraries(autoxflate-sd bareos)
 install(TARGETS autoxflate-sd DESTINATION ${plugindir})
 
 if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
-  add_library(scsicrypto-sd MODULE scsicrypto-sd.cc)
+  add_library(scsicrypto-sd MODULE scsicrypto/scsicrypto-sd.cc)
   set_target_properties(scsicrypto-sd PROPERTIES PREFIX "")
   install(TARGETS scsicrypto-sd DESTINATION ${plugindir})
 
-  add_library(scsitapealert-sd MODULE scsitapealert-sd.cc)
+  add_library(scsitapealert-sd MODULE scsitapealert/scsitapealert-sd.cc)
   set_target_properties(scsitapealert-sd PROPERTIES PREFIX "")
   install(TARGETS scsitapealert-sd DESTINATION ${plugindir})
   if(HAVE_DARWIN_OS)
@@ -49,7 +49,7 @@ if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
 endif()
 
 if(HAVE_PYTHON)
-  add_library(python-sd MODULE python-sd.cc)
+  add_library(python-sd MODULE python/python-sd.cc)
   set_target_properties(python-sd PROPERTIES PREFIX "")
   install(TARGETS python-sd DESTINATION ${plugindir})
   target_link_libraries(python-sd ${PYTHON_LIBRARIES} bareos)
@@ -62,18 +62,17 @@ if(HAVE_PYTHON)
   install(FILES ${PYFILES} DESTINATION ${plugindir})
 endif()
 
-
 if(HAVE_PYTHON)
-  configure_file(setup.py.in setup.py)
+  configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
   add_custom_target(bareossd-pymodule ALL
     COMMENT "building python module pythonmodules/bareossd.so"
-    COMMAND ${PYTHON_EXECUTABLE} setup.py build
-    COMMAND ${PYTHON_EXECUTABLE} setup.py install --install-lib ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+    COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
+    COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
     DEPENDS python-sd
     )
 
   add_test(NAME bareossd-python-module
-    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/bareossd_test.py
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareossd_test.py
     )
-  set_property(TEST bareossd-python-module PROPERTY ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/test" LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib)
+  set_property(TEST bareossd-python-module PROPERTY ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test" LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib)
 endif()

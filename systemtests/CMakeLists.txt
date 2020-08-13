@@ -127,129 +127,6 @@ macro(CheckForEnabledAndDisabledListEntry TEST_NAME_TO_CHECK)
   endif()
 endmacro()
 
-macro(handle_python_plugin_modules test_name)
-  set(PYMODULES_TO_LINK_TO_SRC)
-
-  string(REGEX MATCH ^dbcopy.* starts_with_dbcopy ${test_name})
-  string(REGEX MATCH ^pyplug-fd.* starts_with_pyplug-fd ${test_name})
-  if(starts_with_pyplug-fd OR starts_with_dbcopy)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdWrapper.py
-         filed/BareosFdPluginBaseclass.py filed/bareos_fd_consts.py
-         filed/bareos-fd-mock-test.py
-    )
-  endif()
-
-  string(REGEX MATCH ^pyplug-sd.* starts_with_pyplug-sd ${test_name})
-  if(starts_with_pyplug-sd)
-    list(APPEND SD_PYMODULES_TO_LINK_TO_SRC bareos_sd_consts.py
-         bareos-sd-class-plugin.py BareosSdPluginBaseclass.py
-         BareosSdWrapper.py
-    )
-  endif()
-
-  string(REGEX MATCH ^pyplug-dir.* starts_with_pyplug-dir ${test_name})
-  if(starts_with_pyplug-dir)
-    list(APPEND DIR_PYMODULES_TO_LINK_TO_SRC bareos_dir_consts.py
-         BareosDirPluginBaseclass.py bareos-dir-class-plugin.py
-         BareosDirWrapper.py
-    )
-  endif()
-
-  if(${test_name} STREQUAL pyplug-dir)
-    list(APPEND DIR_PYMODULES_TO_LINK_TO_SRC)
-  endif()
-
-  if(${test_name} STREQUAL pyplug-fd-percona-xtrabackup)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC BareosFdPluginPerconaXtraBackup.py
-         bareos-fd-percona-xtrabackup.py
-    )
-  endif()
-
-  if(${test_name} STREQUAL pyplug-fd-ovirt)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC BareosFdPluginOvirt.py
-         bareos-fd-ovirt.py
-    )
-  endif()
-
-  if(${test_name} STREQUAL pyplug-fd-local-fileset)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-local-fileset.py
-         BareosFdPluginLocalFileset.py
-    )
-  endif()
-
-  if(${test_name} STREQUAL pyplug-fd-local-fileset-restoreobject)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-local-fileset.py
-         BareosFdPluginLocalFileset.py
-    )
-  endif()
-
-  if(${test_name} STREQUAL pyplug-fd-postgres)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-postgres.py
-         BareosFdPluginLocalFileset.py BareosFdPluginPostgres.py
-         BareosFdPluginBaseclass.py
-    )
-
-  endif()
-  if(${test_name} STREQUAL pyplug-fd-vmware)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-vmware.py
-         BareosFdPluginVMware.py
-    )
-  endif()
-
-  # still missing: filed/BareosFdPluginLDAP.py filed/bareos-fd-ldap.py
-
-  if(NOT EXISTS ${python_plugin_module_src_test_dir})
-    file(MAKE_DIRECTORY ${python_plugin_module_src_test_dir})
-  endif()
-
-  foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
-    get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
-    execute_process(
-      COMMAND
-        ${CMAKE_COMMAND} -E create_symlink
-        ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
-        ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
-    )
-  endforeach()
-
-  foreach(PYMODULE ${DIR_PYMODULES_TO_LINK_TO_SRC})
-    get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
-    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/${PYMODULE})
-    else()
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/dird/${PYMODULE})
-    endif()
-    create_symlink(
-      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
-    )
-  endforeach()
-
-  foreach(PYMODULE ${FD_PYMODULES_TO_LINK_TO_SRC})
-    get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
-    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/${PYMODULE})
-    else()
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/filed/${PYMODULE})
-    endif()
-    create_symlink(
-      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
-    )
-  endforeach()
-
-  foreach(PYMODULE ${SD_PYMODULES_TO_LINK_TO_SRC})
-    get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
-    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/${PYMODULE})
-    else()
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/stored/${PYMODULE})
-    endif()
-    create_symlink(
-      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
-    )
-  endforeach()
-
-endmacro()
-
 # set the data encryption and signature keys
 set(pki_keypair ${CMAKE_CURRENT_SOURCE_DIR}/pki/fd.pem)
 set(pki_master_key ${CMAKE_CURRENT_SOURCE_DIR}/pki/master.cert)
@@ -700,7 +577,7 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED droplet-s3)
 endif()
 
-if(glusterfs_uri)
+if(SD_GFAPI_DIR_TO_TEST AND glusterfs_uri)
   list(APPEND SYSTEM_TESTS glusterfs-backend)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED glusterfs-backend)
@@ -719,6 +596,7 @@ endif()
 if(EXISTS /run/.containerenv)
   message(STATUS "detected container environment, disabling python-bareos")
   set(in_container TRUE)
+  list(APPEND SYSTEM_TESTS "dbcopy-mysql-postgresql-test")
 else()
   set(in_container FALSE)
 endif()
@@ -914,7 +792,6 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
-  handle_python_plugin_modules(${TEST_NAME})
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
 

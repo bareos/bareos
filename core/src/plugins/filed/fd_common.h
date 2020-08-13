@@ -39,7 +39,8 @@
   if (bfuncs && context) {                                                    \
     bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__);    \
   } else {                                                                    \
-    printf(                                                                   \
+    fprintf(                                                                  \
+        stderr,                                                               \
         "Dmsg: bfuncs(%p) and context(%p) need to be set before Dmsg call\n", \
         bfuncs, context);                                                     \
   }
@@ -48,7 +49,8 @@
   if (bfuncs && context) {                                                    \
     bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__);    \
   } else {                                                                    \
-    printf(                                                                   \
+    fprintf(                                                                  \
+        stderr,                                                               \
         "Jmsg: bfuncs(%p) and context(%p) need to be set before Jmsg call\n", \
         bfuncs, context);                                                     \
   }

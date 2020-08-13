@@ -9,6 +9,9 @@
 # Python compiled files
 *.pyc
 
+# vim swap file
+*.swp
+
 # Compiled Dynamic libraries
 *.so
 *.dylib
@@ -80,3 +83,6 @@ compile_commands.json
 
 # JetBrains Pycharm
 .idea
+
+# ctest testing subdirs
+*/Testing/*
