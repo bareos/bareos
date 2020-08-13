@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,9 @@
 #
 
 # Provided by the Bareos FD Python plugin interface
-import bareos_fd_consts
+#import bareos_fd_consts
+import bareosfd
+from bareosfd import *
 
 # This module contains the wrapper functions called by the Bareos-FD, the
 # functions call the corresponding methods from your plugin class
@@ -43,6 +45,7 @@ from BareosFdWrapper import *  # noqa
 import BareosFdPluginLocalFilesetWithRestoreObjects
 
 
+
 def load_bareos_plugin(plugindef):
     """
     This function is called by the Bareos-FD to load the plugin
@@ -53,7 +56,9 @@ def load_bareos_plugin(plugindef):
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginLocalFilesetWithRestoreObjects.BareosFdPluginLocalFilesetWithRestoreObjects(
         plugindef
     )
-    return bareos_fd_consts.bRCs["bRC_OK"]
+    return bRC_OK
+    # return bareosfd.bRC_OK
+    # return bareosfd.bRCs["bRC_OK"]
 
 
 # the rest is done in the Plugin module
