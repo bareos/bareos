@@ -112,33 +112,41 @@ if(HAVE_PYTHON)
   target_link_libraries(bareos-fd-module-tester ${PYTHON_LIBRARIES} bareos)
 
   add_test(NAME bareosfd-python-module-tester
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/bareos-fd-module-tester
-    )
-  set_property(TEST bareosfd-python-module-tester
-    PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/python/test/:${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/pyfiles)
+           COMMAND ${CMAKE_CURRENT_BINARY_DIR}/bareos-fd-module-tester
+  )
+  set_property(
+    TEST bareosfd-python-module-tester
+    PROPERTY
+      ENVIRONMENT
+      PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/python/test/:${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/pyfiles
+  )
 
 endif()
 
 if(HAVE_PYTHON)
   configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
-  add_custom_command( TARGET python-fd
+  add_custom_command(
+    TARGET python-fd
     POST_BUILD
     COMMENT "building python module pythonmodules/bareosfd.so"
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
-    COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
-    COMMAND rm -R  ${CMAKE_CURRENT_BINARY_DIR}/build
-    DEPENDS python-fd
-    )
+    COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
+            ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+    COMMAND rm -R ${CMAKE_CURRENT_BINARY_DIR}/build DEPENDS python-fd
+  )
 
   add_test(NAME bareosfd-python-module
-    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareosfd_test.py
-    )
-  set_property(TEST bareosfd-python-module PROPERTY ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test" LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib)
+           COMMAND ${PYTHON_EXECUTABLE}
+                   ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareosfd_test.py
+  )
+  set_property(
+    TEST bareosfd-python-module
+    PROPERTY
+      ENVIRONMENT
+      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"
+      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
+  )
 endif()
-
-
-
-
 
 if(${HAVE_GLUSTERFS})
   add_library(gfapi-fd MODULE gfapi/gfapi-fd.cc)
@@ -164,23 +172,23 @@ if(${HAVE_TEST_PLUGIN})
 endif()
 
 set(PYFILES
-    bareos-fd.py.template
-    bareos-fd-local-fileset.py
-    bareos-fd-mock-test.py
-    BareosFdPluginBaseclass.py
-    BareosFdPluginLocalFileset.py
-    BareosFdWrapper.py
-    bareos_fd_consts.py
-    bareos-fd-ldap.py
-    BareosFdPluginLDAP.py
-    bareos-fd-ovirt.py
-    BareosFdPluginOvirt.py
-    bareos-fd-percona-xtrabackup.py
-    BareosFdPluginPerconaXtraBackup.py
-    BareosFdPluginPostgres.py
-    bareos-fd-postgres.py
-    BareosFdPluginVMware.py
-    bareos-fd-vmware.py
+    python/pyfiles/bareos-fd.py.template
+    python/pyfiles/bareos-fd-local-fileset.py
+    python/pyfiles/bareos-fd-mock-test.py
+    python/pyfiles/BareosFdPluginBaseclass.py
+    python/pyfiles/BareosFdPluginLocalFileset.py
+    python/pyfiles/BareosFdWrapper.py
+    python/pyfiles/bareos_fd_consts.py
+    python/pyfiles/bareos-fd-ldap.py
+    python/pyfiles/BareosFdPluginLDAP.py
+    python/pyfiles/bareos-fd-ovirt.py
+    python/pyfiles/BareosFdPluginOvirt.py
+    python/pyfiles/bareos-fd-percona-xtrabackup.py
+    python/pyfiles/BareosFdPluginPerconaXtraBackup.py
+    python/pyfiles/BareosFdPluginPostgres.py
+    python/pyfiles/bareos-fd-postgres.py
+    python/pyfiles/BareosFdPluginVMware.py
+    python/pyfiles/bareos-fd-vmware.py
 )
 if(${HAVE_VIXDISKLIB})
   list(APPEND PYFILES BareosFdPluginVMware.py bareos-fd-vmware.py)

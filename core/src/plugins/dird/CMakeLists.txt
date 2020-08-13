@@ -38,9 +38,9 @@ if(HAVE_PYTHON)
   target_link_libraries(python-dir ${PYTHON_LIBRARIES} bareos)
 
   set(PYFILES
-      pyfiles/bareos-dir.py.template pyfiles/bareos-dir-class-plugin.py
-      pyfiles/bareos_dir_consts.py pyfiles/BareosDirPluginBaseclass.py
-      pyfiles/BareosDirWrapper.py
+      python/pyfiles/bareos-dir.py.template python/pyfiles/bareos-dir-class-plugin.py
+      python/pyfiles/bareos_dir_consts.py python/pyfiles/BareosDirPluginBaseclass.py
+      python/pyfiles/BareosDirWrapper.py
   )
 
   install(FILES ${PYFILES} DESTINATION ${plugindir})
@@ -48,17 +48,25 @@ endif()
 
 if(HAVE_PYTHON)
   configure_file(python/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/python/setup.py)
-  add_custom_command( TARGET python-dir
+  add_custom_command(
+    TARGET python-dir
     POST_BUILD
     COMMENT "building python module pythonmodules/bareosdir.so"
     COMMAND ${PYTHON_EXECUTABLE} python/setup.py build
-    COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
-    COMMAND rm -R  ${CMAKE_CURRENT_BINARY_DIR}/build
-    DEPENDS python-dir
-    )
+    COMMAND ${PYTHON_EXECUTABLE} python/setup.py install --install-lib
+            ${CMAKE_CURRENT_BINARY_DIR}/pythonmodules
+    COMMAND rm -R ${CMAKE_CURRENT_BINARY_DIR}/build DEPENDS python-dir
+  )
 
   add_test(NAME bareosdir-python-module
-    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareosdir_test.py
-    )
-  set_property(TEST bareosdir-python-module PROPERTY ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test" LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib)
+           COMMAND ${PYTHON_EXECUTABLE}
+                   ${CMAKE_CURRENT_SOURCE_DIR}/python/test/bareosdir_test.py
+  )
+  set_property(
+    TEST bareosdir-python-module
+    PROPERTY
+      ENVIRONMENT
+      "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/python/test"
+      LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
+  )
 endif()
