@@ -23,17 +23,17 @@ from bareosdir import *
 from bareos_dir_consts import *
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     events = []
     events.append(bDirEventType["bDirEventJobStart"])
     events.append(bDirEventType["bDirEventJobEnd"])
     events.append(bDirEventType["bDirEventJobInit"])
     events.append(bDirEventType["bDirEventJobRun"])
-    RegisterEvents(context, events)
+    RegisterEvents(events)
     return bRCs["bRC_OK"]
 
 
-def parse_plugin_definition(context, plugindef):
+def parse_plugin_definition(plugindef):
     plugin_options = plugindef.split(":")
     for current_option in plugin_options:
         key, sep, val = current_option.partition("=")
@@ -56,7 +56,7 @@ def parse_plugin_definition(context, plugindef):
     return bRCs["bRC_OK"]
 
 
-def handle_plugin_event(context, event):
+def handle_plugin_event(event):
     if event == bDirEventType["bDirEventJobStart"]:
         toFile("bDirEventJobStart\n")
 

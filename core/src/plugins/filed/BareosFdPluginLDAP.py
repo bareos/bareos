@@ -44,30 +44,28 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     LDAP related backup and restore stuff
     """
 
-    def __init__(self, context, plugindef):
+    def __init__(self, plugindef):
         bareosfd.DebugMessage(
-            context,
             100,
             "Constructor called in module %s with plugindef=%s\n"
             % (__name__, plugindef),
         )
-        super(BareosFdPluginLDAP, self).__init__(context, plugindef, ["uri", "basedn"])
+        super(BareosFdPluginLDAP, self).__init__(plugindef, ["uri", "basedn"])
         self.ldap = BareosLDAPWrapper()
 
-    def parse_plugin_definition(self, context, plugindef):
+    def parse_plugin_definition(self, plugindef):
         """
         Parses the plugin arguments and validates the options.
         """
         bareosfd.DebugMessage(
-            context,
             100,
             "parse_plugin_definition() was called in module %s\n" % (__name__),
         )
-        super(BareosFdPluginLDAP, self).parse_plugin_definition(context, plugindef)
+        super(BareosFdPluginLDAP, self).parse_plugin_definition(plugindef)
 
         return bRCs["bRC_OK"]
 
-    def start_backup_job(self, context):
+    def start_backup_job(self):
         """
         Start of Backup Job
         """
@@ -75,19 +73,19 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if check_option_bRC != bRCs["bRC_OK"]:
             return check_option_bRC
 
-        return self.ldap.prepare_backup(context, self.options)
+        return self.ldap.prepare_backup(self.options)
 
-    def start_backup_file(self, context, savepkt):
+    def start_backup_file(self, savepkt):
         """
         Defines the file to backup and creates the savepkt.
         """
         bareosfd.DebugMessage(
-            context, 100, "BareosFdPluginLDAP:start_backup_file() called\n"
+            100, "BareosFdPluginLDAP:start_backup_file() called\n"
         )
 
-        return self.ldap.get_next_file_to_backup(context, savepkt)
+        return self.ldap.get_next_file_to_backup(savepkt)
 
-    def start_restore_job(self, context):
+    def start_restore_job(self):
         """
         Start of Restore Job
         """
@@ -95,11 +93,10 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if check_option_bRC != bRCs["bRC_OK"]:
             return check_option_bRC
 
-        return self.ldap.prepare_restore(context, self.options)
+        return self.ldap.prepare_restore(self.options)
 
-    def start_restore_file(self, context, cmd):
+    def start_restore_file(self, cmd):
         bareosfd.DebugMessage(
-            context,
             100,
             "BareosFdPluginLDAP:start_restore_file() called with %s\n" % (cmd),
         )
@@ -113,13 +110,12 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         else:
             return bRCs["bRC_OK"]
 
-    def create_file(self, context, restorepkt):
+    def create_file(self, restorepkt):
         """
         Directories are placeholders only we use the data.ldif files
         to get the actual DN of the LDAP record
         """
         bareosfd.DebugMessage(
-            context,
             100,
             "BareosFdPluginVMware:create_file() called with %s\n" % (restorepkt),
         )
@@ -130,7 +126,6 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             restorepkt.create_status = bCFs["CF_EXTRACT"]
         else:
             bareosfd.JobMessage(
-                context,
                 bJobMessageType["M_FATAL"],
                 "Request to restore illegal filetype %s\n" % (restorepkt.type),
             )
@@ -138,9 +133,8 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         return bRCs["bRC_OK"]
 
-    def plugin_io(self, context, IOP):
+    def plugin_io(self, IOP):
         bareosfd.DebugMessage(
-            context,
             100,
             "BareosFdPluginLDAP:plugin_io() called with function %s\n" % (IOP.func),
         )
@@ -173,16 +167,16 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
             return bRCs["bRC_OK"]
 
-    def end_backup_file(self, context):
+    def end_backup_file(self):
         bareosfd.DebugMessage(
-            context, 100, "BareosFdPluginLDAP:end_backup_file() called\n"
+            100, "BareosFdPluginLDAP:end_backup_file() called\n"
         )
 
         return self.ldap.has_next_file(context)
 
-    def end_restore_file(self, context):
+    def end_restore_file(self):
         bareosfd.DebugMessage(
-            context, 100, "BareosFdPluginLDAP:end_restore_file() called\n"
+            100, "BareosFdPluginLDAP:end_restore_file() called\n"
         )
 
         return self.ldap.restore_entry(context)
@@ -211,7 +205,7 @@ class BareosLDAPWrapper:
         self.unix_modify_time = None
         self.msg_id = None
 
-    def connect_and_bind(self, context, options, bulk=False):
+    def connect_and_bind(self, options, bulk=False):
         """
         Bind to LDAP URI using the given authentication tokens
         """
@@ -228,7 +222,6 @@ class BareosLDAPWrapper:
                 self.ld.simple_bind_s("", "")
         except ldap.INVALID_CREDENTIALS:
             bareosfd.JobMessage(
-                context,
                 bJobMessageType["M_FATAL"],
                 "Failed to bind to LDAP uri %s\n" % (options["uri"]),
             )
@@ -237,34 +230,31 @@ class BareosLDAPWrapper:
         except ldap.LDAPError as e:
             if type(e.message) == dict and "desc" in e.message:
                 bareosfd.JobMessage(
-                    context,
                     bJobMessageType["M_FATAL"],
                     "Failed to bind to LDAP uri %s: %s\n"
                     % (options["uri"], e.message["desc"]),
                 )
             else:
                 bareosfd.JobMessage(
-                    context,
                     bJobMessageType["M_FATAL"],
                     "Failed to bind to LDAP uri %s: %s\n" % (options["uri"], e),
                 )
 
             return bRCs["bRC_Error"]
 
-        bareosfd.DebugMessage(context, 100, "connected to LDAP server\n")
+        bareosfd.DebugMessage(100, "connected to LDAP server\n")
 
         return bRCs["bRC_OK"]
 
-    def prepare_backup(self, context, options):
+    def prepare_backup(self, options):
         """
         Prepare a LDAP backup
         """
-        connect_bRC = self.connect_and_bind(context, options, True)
+        connect_bRC = self.connect_and_bind(options, True)
         if connect_bRC != bRCs["bRC_OK"]:
             return connect_bRC
 
         bareosfd.DebugMessage(
-            context,
             100,
             "Creating search filter and attribute filter to perform LDAP search\n",
         )
@@ -289,14 +279,12 @@ class BareosLDAPWrapper:
         except ldap.LDAPError as e:
             if type(e.message) == dict and "desc" in e.message:
                 bareosfd.JobMessage(
-                    context,
                     bJobMessageType["M_FATAL"],
                     "Failed to execute LDAP search on LDAP uri %s: %s\n"
                     % (options["uri"], e.message["desc"]),
                 )
             else:
                 bareosfd.JobMessage(
-                    context,
                     bJobMessageType["M_FATAL"],
                     "Failed to execute LDAP search on LDAP uri %s: %s\n"
                     % (options["uri"], e),
@@ -304,21 +292,21 @@ class BareosLDAPWrapper:
 
             return bRCs["bRC_Error"]
 
-        bareosfd.DebugMessage(context, 100, "Successfully performed LDAP search\n")
+        bareosfd.DebugMessage(100, "Successfully performed LDAP search\n")
 
         return bRCs["bRC_OK"]
 
-    def prepare_restore(self, context, options):
+    def prepare_restore(self, options):
         """
         Prepare a LDAP restore
         """
-        connect_bRC = self.connect_and_bind(context, options)
+        connect_bRC = self.connect_and_bind(options)
         if connect_bRC != bRCs["bRC_OK"]:
             return connect_bRC
 
         return bRCs["bRC_OK"]
 
-    def to_unix_timestamp(self, context, timestamp):
+    def to_unix_timestamp(self, timestamp):
         if timestamp:
             unix_time = timegm(
                 time.strptime(timestamp.replace("Z", "GMT"), "%Y%m%d%H%M%S%Z")
@@ -327,7 +315,7 @@ class BareosLDAPWrapper:
         else:
             return None
 
-    def get_next_file_to_backup(self, context, savepkt):
+    def get_next_file_to_backup(self, savepkt):
         """
         Find out the next file that should be backed up
         """
@@ -393,7 +381,7 @@ class BareosLDAPWrapper:
                         pass
                     else:
                         self.unix_create_time = self.to_unix_timestamp(
-                            context, createTimestamp
+                            createTimestamp
                         )
 
                     self.unix_modify_time = None
@@ -403,7 +391,7 @@ class BareosLDAPWrapper:
                         pass
                     else:
                         self.unix_modify_time = self.to_unix_timestamp(
-                            context, modifyTimestamp
+                            modifyTimestamp
                         )
 
                     # Convert the DN into a PATH e.g. reverse the elements.
@@ -437,11 +425,11 @@ class BareosLDAPWrapper:
         # Remove the ',@LDAP,' in the DN which is an internal placeholder
         self.dn = new_dn.replace(",@LDAP,", "")
 
-    def has_next_file(self, context):
+    def has_next_file(self):
         # See if we are currently handling the LDIF file or
         # if there is still data in the result set
         if self.file_to_backup or self.ldap_entries:
-            bareosfd.DebugMessage(context, 100, "has_next_file(): returning bRC_More\n")
+            bareosfd.DebugMessage(100, "has_next_file(): returning bRC_More\n")
             return bRCs["bRC_More"]
         else:
             # See if there are more result sets.
@@ -454,7 +442,7 @@ class BareosLDAPWrapper:
                     # We expect something to be in the result set but better check
                     if self.ldap_entries:
                         bareosfd.DebugMessage(
-                            context, 100, "has_next_file(): returning bRC_More\n"
+                            100, "has_next_file(): returning bRC_More\n"
                         )
                         return bRCs["bRC_More"]
                 except StopIteration:
@@ -462,7 +450,7 @@ class BareosLDAPWrapper:
 
         return bRCs["bRC_OK"]
 
-    def restore_entry(self, context):
+    def restore_entry(self):
         # Restore the entry
         if self.ldif:
             # Parse the LDIF back to an attribute list
@@ -474,7 +462,6 @@ class BareosLDAPWrapper:
 
             if self.dn != dn:
                 bareosfd.JobMessage(
-                    context,
                     bJobMessageType["M_INFO"],
                     "Restoring original DN %s as %s\n" % (dn, self.dn),
                 )
@@ -493,14 +480,12 @@ class BareosLDAPWrapper:
                         except ldap.LDAPError as e:
                             if type(e.message) == dict and "desc" in e.message:
                                 bareosfd.JobMessage(
-                                    context,
                                     bJobMessageType["M_ERROR"],
                                     "Failed to restore LDAP DN %s: %s\n"
                                     % (self.dn, e.message["desc"]),
                                 )
                             else:
                                 bareosfd.JobMessage(
-                                    context,
                                     bJobMessageType["M_ERROR"],
                                     "Failed to restore LDAP DN %s: %s\n" % (self.dn, e),
                                 )
@@ -508,7 +493,6 @@ class BareosLDAPWrapper:
                             return bRCs["bRC_Error"]
                 else:
                     bareosfd.JobMessage(
-                        context,
                         bJobMessageType["M_ERROR"],
                         "Failed to restore LDAP DN %s no writable binding to LDAP exists\n"
                         % (self.dn),
@@ -521,7 +505,7 @@ class BareosLDAPWrapper:
 
         return bRCs["bRC_OK"]
 
-    def cleanup(self, context):
+    def cleanup(self):
         if self.ld:
             self.ld.unbind_s()
 

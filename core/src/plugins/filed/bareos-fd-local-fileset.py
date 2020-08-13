@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -40,7 +40,7 @@ from BareosFdWrapper import *  # noqa
 import BareosFdPluginLocalFileset
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     """
     This function is called by the Bareos-FD to load the plugin
     We use it to instantiate the plugin class
@@ -48,7 +48,7 @@ def load_bareos_plugin(context, plugindef):
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that
     # holds the plugin class object
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginLocalFileset.BareosFdPluginLocalFileset(
-        context, plugindef
+        plugindef
     )
     return bareos_fd_consts.bRCs["bRC_OK"]
 

@@ -34,7 +34,7 @@ from BareosDirWrapper import *  # noqa
 import BareosDirPluginBaseclass
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     """
     This function is called by the Bareos-Dir to load the plugin
     We use it to instantiate the plugin class
@@ -42,7 +42,7 @@ def load_bareos_plugin(context, plugindef):
     # BareosDirWrapper.bareos_dir_plugin_object is the module attribute that
     # holds the plugin class object
     BareosDirWrapper.bareos_dir_plugin_object = BareosDirPluginBaseclass.BareosDirPluginBaseclass(
-        context, plugindef
+        plugindef
     )
     return bareos_dir_consts.bRCs["bRC_OK"]
 

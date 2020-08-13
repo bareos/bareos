@@ -39,13 +39,13 @@ from BareosFdWrapper import *  # noqa
 import BareosFdPluginLDAP
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     """
     This function is called by the Bareos-FD to load the plugin
     We use it to intantiate the plugin class
     """
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginLDAP.BareosFdPluginLDAP(
-        context, plugindef
+        plugindef
     )
 
     return bRCs["bRC_OK"]

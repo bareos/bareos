@@ -30,13 +30,13 @@ from BareosFdWrapper import *
 from BareosFdPluginPerconaXtraBackup import *
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     """
     This function is called by the Bareos-FD to load the plugin
     We use it to instantiate the plugin class
     """
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that holds the plugin class object
-    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPercona(context, plugindef)
+    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPercona(plugindef)
     return bRCs["bRC_OK"]
 
 

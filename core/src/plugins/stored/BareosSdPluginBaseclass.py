@@ -33,23 +33,22 @@ class BareosSdPluginBaseclass(object):
 
     """ Bareos storage python plugin base class """
 
-    def __init__(self, context, plugindef):
+    def __init__(self, plugindef):
         bareossd.DebugMessage(
-            context, 100, "Constructor called in module %s\n" % (__name__)
+            100, "Constructor called in module %s\n" % (__name__)
         )
         events = []
 
         events.append(bsdEventType["bsdEventJobStart"])
         events.append(bsdEventType["bsdEventJobEnd"])
-        bareossd.RegisterEvents(context, events)
+        bareossd.RegisterEvents(events)
 
         # get some static Bareos values
-        self.jobName = bareossd.GetValue(context, bsdrVariable["bsdVarJobName"])
-        self.jobLevel = chr(bareossd.GetValue(context, bsdrVariable["bsdVarLevel"]))
-        self.jobId = int(bareossd.GetValue(context, bsdrVariable["bsdVarJobId"]))
+        self.jobName = bareossd.GetValue(bsdrVariable["bsdVarJobName"])
+        self.jobLevel = chr(bareossd.GetValue(bsdrVariable["bsdVarLevel"]))
+        self.jobId = int(bareossd.GetValue(bsdrVariable["bsdVarJobId"]))
 
         bareossd.DebugMessage(
-            context,
             100,
             "JobName = %s - Level = %s - Id = %s - BareosSdPluginBaseclass\n"
             % (self.jobName, self.jobLevel, self.jobId),
@@ -63,7 +62,7 @@ class BareosSdPluginBaseclass(object):
             self.jobLevel,
         )
 
-    def parse_plugin_definition(self, context, plugindef):
+    def parse_plugin_definition(self, plugindef):
         """
         Called with the plugin options from the bareos configfiles
         You should overload this method with your own and do option checking
@@ -72,21 +71,21 @@ class BareosSdPluginBaseclass(object):
         make sanity check on self.options afterwards
         """
         bareossd.DebugMessage(
-            context, 100, "plugin def parser called with %s\n" % (plugindef)
+            100, "plugin def parser called with %s\n" % (plugindef)
         )
         # Parse plugin options into a dict
         self.options = dict()
         plugin_options = plugindef.split(":")
         for current_option in plugin_options:
             key, sep, val = current_option.partition("=")
-            bareossd.DebugMessage(context, 100, "key:val = %s:%s" % (key, val))
+            bareossd.DebugMessage(100, "key:val = %s:%s" % (key, val))
             if val == "":
                 continue
             else:
                 self.options[key] = val
         return bRCs["bRC_OK"]
 
-    def handle_plugin_event(self, context, event):
+    def handle_plugin_event(self, event):
         """
         This method is called for each of the above registered events
         Overload this method to implement your actions for the events,
@@ -96,7 +95,6 @@ class BareosSdPluginBaseclass(object):
         if event == bsdEventType["bsdEventJobStart"]:
             self.jobStartTime = time.time()
             bareossd.DebugMessage(
-                context,
                 100,
                 "bsdEventJobStart event triggered at Unix time %s\n"
                 % (self.jobStartTime),
@@ -105,22 +103,20 @@ class BareosSdPluginBaseclass(object):
         elif event == bsdEventType["bsdEventJobEnd"]:
             self.jobEndTime = time.time()
             bareossd.DebugMessage(
-                context,
                 100,
                 "bsdEventJobEnd event triggered at Unix time %s\n" % (self.jobEndTime),
             )
             self.jobBytes = int(
-                bareossd.GetValue(context, bsdrVariable["bsdVarJobBytes"])
+                bareossd.GetValue(bsdrVariable["bsdVarJobBytes"])
             )
             self.jobFiles = int(
-                bareossd.GetValue(context, bsdrVariable["bsdVarJobFiles"])
+                bareossd.GetValue(bsdrVariable["bsdVarJobFiles"])
             )
             self.jobRunningTime = self.jobEndTime - self.jobStartTime
             self.throughput = 0
             if self.jobRunningTime > 0:
                 self.throughput = self.jobBytes / self.jobRunningTime
                 bareossd.DebugMessage(
-                    context,
                     100,
                     "jobRunningTime: %s s, Throughput: %s Bytes/s\n"
                     % (self.jobRunningTime, self.throughput),

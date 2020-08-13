@@ -23,7 +23,7 @@ from bareossd import *
 from bareos_sd_consts import *
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     events = []
     events.append(bsdEventType["bsdEventJobStart"])
     events.append(bsdEventType["bsdEventDeviceReserve"])
@@ -39,11 +39,11 @@ def load_bareos_plugin(context, plugindef):
     events.append(bsdEventType["bsdEventDeviceUnmount"])
     events.append(bsdEventType["bsdEventDeviceClose"])
     events.append(bsdEventType["bsdEventJobEnd"])
-    RegisterEvents(context, events)
+    RegisterEvents(events)
     return bRCs["bRC_OK"]
 
 
-def parse_plugin_definition(context, plugindef):
+def parse_plugin_definition(plugindef):
     plugin_options = plugindef.split(":")
     for current_option in plugin_options:
         key, sep, val = current_option.partition("=")
@@ -66,7 +66,7 @@ def parse_plugin_definition(context, plugindef):
     return bRCs["bRC_OK"]
 
 
-def handle_plugin_event(context, event):
+def handle_plugin_event(event):
     if event == bsdEventType["bsdEventJobStart"]:
         toFile("bsdEventJobStart\n")
     elif event == bsdEventType["bsdEventDeviceReserve"]:

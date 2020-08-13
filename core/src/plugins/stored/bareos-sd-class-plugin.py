@@ -37,7 +37,7 @@ from BareosSdWrapper import *  # noqa
 import BareosSdPluginBaseclass
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     """
     This function is called by the Bareos-SD to load the plugin
     We use it to instantiate the plugin class
@@ -45,7 +45,7 @@ def load_bareos_plugin(context, plugindef):
     # BareosSdWrapper.bareos_sd_plugin_object is the module attribute that
     # holds the plugin class object
     BareosSdWrapper.bareos_sd_plugin_object = BareosSdPluginBaseclass.BareosSdPluginBaseclass(
-        context, plugindef
+        plugindef
     )
     return bareos_sd_consts.bRCs["bRC_OK"]
 

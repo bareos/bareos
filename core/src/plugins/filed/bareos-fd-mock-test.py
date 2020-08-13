@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -34,12 +34,12 @@ from BareosFdWrapper import *  # noqa
 import BareosFdPluginBaseclass
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     bareosfd.DebugMessage(
-        context, 100, "------ Plugin loader called with " + plugindef + "\n"
+        100, "------ Plugin loader called with " + plugindef + "\n"
     )
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginBaseclass.BareosFdPluginBaseclass(
-        context, plugindef
+        plugindef
     )
     return bareos_fd_consts.bRCs["bRC_OK"]
 

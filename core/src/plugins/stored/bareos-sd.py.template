@@ -23,20 +23,20 @@ from bareossd import *
 from bareos_sd_consts import *
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     DebugMessage(
-        context, 100, "load_bareos_plugin called with param: " + plugindef + "\n"
+        100, "load_bareos_plugin called with param: " + plugindef + "\n"
     )
     events = []
     events.append(bsdEventType["bsdEventJobStart"])
     events.append(bsdEventType["bsdEventJobEnd"])
-    RegisterEvents(context, events)
+    RegisterEvents(events)
     return bRCs["bRC_OK"]
 
 
-def parse_plugin_definition(context, plugindef):
+def parse_plugin_definition(plugindef):
     DebugMessage(
-        context, 100, "parse_plugin_definition called with param: " + plugindef + "\n"
+        100, "parse_plugin_definition called with param: " + plugindef + "\n"
     )
     plugin_options = plugindef.split(":")
     for current_option in plugin_options:
@@ -55,7 +55,6 @@ def parse_plugin_definition(context, plugindef):
 
         else:
             DebugMessage(
-                context,
                 100,
                 "parse_plugin_definition unknown option "
                 + key
@@ -68,15 +67,15 @@ def parse_plugin_definition(context, plugindef):
     return bRCs["bRC_OK"]
 
 
-def handle_plugin_event(context, event):
+def handle_plugin_event(event):
     if event == bsdEventType["bsdEventJobStart"]:
-        DebugMessage(context, 100, "bsdEventJobStart event triggered\n")
-        jobname = GetValue(context, bsdrVariable["bsdVarJobName"])
-        DebugMessage(context, 100, "Job " + jobname + " starting\n")
+        DebugMessage(100, "bsdEventJobStart event triggered\n")
+        jobname = GetValue(bsdrVariable["bsdVarJobName"])
+        DebugMessage(100, "Job " + jobname + " starting\n")
 
     elif event == bsdEventType["bsdEventJobEnd"]:
-        DebugMessage(context, 100, "bsdEventJobEnd event triggered\n")
-        jobname = GetValue(context, bsdrVariable["bsdVarJobName"])
-        DebugMessage(context, 100, "Job " + jobname + " stopped\n")
+        DebugMessage(100, "bsdEventJobEnd event triggered\n")
+        jobname = GetValue(bsdrVariable["bsdVarJobName"])
+        DebugMessage(100, "Job " + jobname + " stopped\n")
 
     return bRCs["bRC_OK"]

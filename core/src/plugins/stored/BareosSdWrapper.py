@@ -30,12 +30,12 @@
 bareos_sd_plugin_object = None
 
 
-def parse_plugin_definition(context, plugindef):
-    return bareos_sd_plugin_object.parse_plugin_definition(context, plugindef)
+def parse_plugin_definition(plugindef):
+    return bareos_sd_plugin_object.parse_plugin_definition(plugindef)
 
 
-def handle_plugin_event(context, event):
-    return bareos_sd_plugin_object.handle_plugin_event(context, event)
+def handle_plugin_event(event):
+    return bareos_sd_plugin_object.handle_plugin_event(event)
 
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4

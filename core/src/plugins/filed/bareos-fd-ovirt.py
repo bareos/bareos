@@ -36,14 +36,14 @@ from BareosFdWrapper import (
 import BareosFdPluginOvirt
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     """
     This function is called by the Bareos-FD to load the plugin
     We use it to intantiate the plugin class
     """
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that holds the plugin class object
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginOvirt.BareosFdPluginOvirt(
-        context, plugindef
+        plugindef
     )
 
     return bRCs["bRC_OK"]

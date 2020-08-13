@@ -43,7 +43,7 @@ from BareosFdWrapper import *  # noqa
 import BareosFdPluginLocalFilesetWithRestoreObjects
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     """
     This function is called by the Bareos-FD to load the plugin
     We use it to instantiate the plugin class
@@ -51,7 +51,7 @@ def load_bareos_plugin(context, plugindef):
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that
     # holds the plugin class object
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginLocalFilesetWithRestoreObjects.BareosFdPluginLocalFilesetWithRestoreObjects(
-        context, plugindef
+        plugindef
     )
     return bareos_fd_consts.bRCs["bRC_OK"]
 
