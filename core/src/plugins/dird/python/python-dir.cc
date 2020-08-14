@@ -602,7 +602,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
       }
     } else {
       Dmsg(plugin_ctx, debuglevel,
-           LOGPREFIX "Failed to find function named load_bareos_plugins()\n");
+           LOGPREFIX "Failed to find function named load_bareos_plugin()\n");
       goto bail_out;
     }
 
