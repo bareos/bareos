@@ -658,9 +658,9 @@ else()
   message("NOT OK, disabling py2plug-fd-postgres:")
 endif()
 if(TARGET python3-fd)
-  list(APPEND SYSTEM_TESTS "python3-fd-plugin-postgres-test")
+  list(APPEND SYSTEM_TESTS "py3plug-fd-postgres")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "python3-fd-plugin-postgres-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-postgres")
 endif()
 
 if(TARGET python-fd AND ovirt_server)
@@ -829,9 +829,20 @@ endif()
 
 foreach(TEST_NAME ${SYSTEM_TESTS})
   message(STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}")
-  string(REGEX MATCH "^pyplug[^-]?" python_version "${TEST_NAME}")
-  # if(python_version) message(STATUS "python_version:" ${python_version}) #
-  # python or python3 endif()
+  string(REGEX MATCH "py2plug" py_v2 "${TEST_NAME}")
+  string(REGEX MATCH "py3plug" py_v3 "${TEST_NAME}")
+  if(py_v2)
+    set(python_module_name python)
+    message(ERROR
+            "python_module_name: ${python_module_name}, TEST_NAME: ${TEST_NAME}"
+    )
+  endif()
+  if(py_v3)
+    set(python_module_name python3)
+    message(ERROR
+            "python_module_name: ${python_module_name}, TEST_NAME: ${TEST_NAME}"
+    )
+  endif()
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
@@ -844,9 +855,9 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_version}modules:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_version}modules:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_version}modules:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules:"
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
   )
 
