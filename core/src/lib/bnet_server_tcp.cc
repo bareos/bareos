@@ -55,8 +55,10 @@
 #elif HAVE_SYS_POLL_H
 #include <sys/poll.h>
 #endif
+
 #include <atomic>
 #include <array>
+#include <vector>
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static std::atomic<bool> quit{false};
@@ -150,10 +152,10 @@ static void RemoveDuplicateAddresses(dlist* addr_list)
 
 static void LogAllAddresses(dlist* addr_list)
 {
-  std::array<char, 256 * 10> allbuf;
+  std::vector<char> buf(256 * addr_list->size());
 
   Dmsg1(100, "Addresses %s\n",
-        BuildAddressesString(addr_list, allbuf.data(), allbuf.size()));
+        BuildAddressesString(addr_list, buf.data(), buf.size()));
 }
 
 static int OpenSocketAndBind(IPADDR* ipaddr,
@@ -173,11 +175,13 @@ static int OpenSocketAndBind(IPADDR* ipaddr,
   if (fd < 0) {
     BErrNo be;
     std::array<char, 256> buf1;
-    std::array<char, 256 * 10> buf2;
+    std::vector<char> buf2(256 * addr_list->size());
+
     Emsg3(M_ABORT, 0,
           _("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
           be.bstrerror(), ipaddr->build_address_str(buf1.data(), buf1.size()),
           BuildAddressesString(addr_list, buf2.data(), buf2.size()));
+
     return -1;
   }
 
