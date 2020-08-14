@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2017 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -57,13 +57,13 @@ from BareosFdWrapper import *  # noqa
 import BareosFdPluginVMware
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     """
     This function is called by the Bareos-FD to load the plugin
     We use it to intantiate the plugin class
     """
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginVMware.BareosFdPluginVMware(
-        context, plugindef
+        plugindef
     )
 
     return bRCs["bRC_OK"]

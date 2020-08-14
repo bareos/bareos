@@ -643,6 +643,12 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-local-fileset-restoreobject")
 endif()
 
+if(TARGET python3-fd)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-local-fileset-restoreobject")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-local-fileset-restoreobject")
+endif()
+
 message("checking for requirements of py2plug-fd-postgres:")
 check_pymodule_available("psycopg2")
 check_pymodule_available("dateutil")
@@ -833,15 +839,9 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   string(REGEX MATCH "py3plug" py_v3 "${TEST_NAME}")
   if(py_v2)
     set(python_module_name python)
-    message(ERROR
-            "python_module_name: ${python_module_name}, TEST_NAME: ${TEST_NAME}"
-    )
   endif()
   if(py_v3)
     set(python_module_name python3)
-    message(ERROR
-            "python_module_name: ${python_module_name}, TEST_NAME: ${TEST_NAME}"
-    )
   endif()
   prepare_test()
 
@@ -849,10 +849,10 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   string(
     CONCAT
       pythonpath
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
       "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"

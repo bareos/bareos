@@ -138,7 +138,7 @@ class BareosFdPluginBaseclass(object):
     def plugin_io_open(self, IOP):
         self.FNAME = IOP.fname.decode("string_escape")
         bareosfd.DebugMessage(
-            context, 250, "io_open: self.FNAME is set to %s\n" % (self.FNAME)
+            250, "io_open: self.FNAME is set to %s\n" % (self.FNAME)
         )
         if os.path.isdir(self.FNAME):
             bareosfd.DebugMessage(100, "%s is a directory\n" % (self.FNAME))
@@ -154,7 +154,7 @@ class BareosFdPluginBaseclass(object):
                 100,
                 "Did not open file %s of type %s\n" % (self.FNAME, self.fileType),
             )
-            return bRC_OK"
+            return bRC_OK
         elif os.path.exists(self.FNAME) and stat.S_ISFIFO(os.stat(self.FNAME).st_mode):
             self.fileType = "FT_FIFO"
             bareosfd.DebugMessage(
