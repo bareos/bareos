@@ -136,7 +136,7 @@ class BareosFdPluginBaseclass(object):
         return bRC_OK
 
     def plugin_io_open(self, IOP):
-        self.FNAME = IOP.fname.decode("string_escape")
+        self.FNAME = IOP.fname
         bareosfd.DebugMessage(
             250, "io_open: self.FNAME is set to %s\n" % (self.FNAME)
         )
