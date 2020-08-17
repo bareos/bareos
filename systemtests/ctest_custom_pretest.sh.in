@@ -1,5 +1,19 @@
-#!/bin/sh
+#!/bin/bash
+set -e
+set -u
 echo "PRETEST: running $0 script"
 echo "PRETEST: @TEST_INFO_TEXT@"
 echo "PRETEST: executing @BAREOS_DIR_TO_TEST@ -?"
-@BAREOS_DIR_TO_TEST@ -? 2>&1 | grep Version >/dev/null
+if ! @BAREOS_DIR_TO_TEST@ -? 2>&1 | grep Version >/dev/null; then
+    echo "PRETEST:  ERROR: could not start director. Forgot to build before testing?"
+    exit 1
+fi
+nr_killed=0
+for pidfile in $(find . -name bareos-\*.pid); do
+  ((nr_killed=nr_killed+1))
+  kill -9 "$(cat "$pidfile")" >/dev/null 2>&1 || :
+  rm -f "$pidfile"
+done
+if [ $nr_killed -gt 0 ]; then
+  echo "PRETEST: killed $nr_killed dangling systemtest processes"
+fi
