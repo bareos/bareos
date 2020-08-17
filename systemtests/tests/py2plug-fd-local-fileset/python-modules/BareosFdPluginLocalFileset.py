@@ -108,7 +108,7 @@ class BareosFdPluginLocalFileset(
         )
         if os.path.exists(self.options["filename"]):
             try:
-                config_file = open(self.options["filename"], "rb")
+                config_file = open(self.options["filename"], "r")
             except:
                 bareosfd.DebugMessage(
                     100,
@@ -134,7 +134,7 @@ class BareosFdPluginLocalFileset(
             if os.path.isdir(listItem):
                 fullDirName = listItem
                 # FD requires / at the end of a directory name
-                if not fullDirName.endswith("/"):
+                if not fullDirName.endswith(tuple("/")):
                     fullDirName += "/"
                 self.append_file_to_backup(fullDirName)
                 for topdir, dirNames, fileNames in os.walk(listItem):
