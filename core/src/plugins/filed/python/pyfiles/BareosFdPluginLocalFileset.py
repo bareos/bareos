@@ -109,7 +109,7 @@ class BareosFdPluginLocalFileset(
         )
         if os.path.exists(self.options["filename"]):
             try:
-                config_file = open(self.options["filename"], "rb")
+                config_file = open(self.options["filename"], "r")
             except:
                 bareosfd.DebugMessage(
                     100,
@@ -135,7 +135,7 @@ class BareosFdPluginLocalFileset(
             if os.path.isdir(listItem):
                 fullDirName = listItem
                 # FD requires / at the end of a directory name
-                if not fullDirName.endswith("/"):
+                if not fullDirName.endswith(tuple("/")):
                     fullDirName += "/"
                 self.append_file_to_backup(fullDirName)
                 for topdir, dirNames, fileNames in os.walk(listItem):
@@ -172,7 +172,7 @@ class BareosFdPluginLocalFileset(
             bareosfd.DebugMessage( 100, "No files to backup\n")
             return bRC_Skip
 
-        self.file_to_backup = self.files_to_backup.pop().decode("string_escape")
+        self.file_to_backup = self.files_to_backup.pop()
         bareosfd.DebugMessage(100, "file: " + self.file_to_backup + "\n")
 
         mystatp = bareosfd.StatPacket()
@@ -185,7 +185,7 @@ class BareosFdPluginLocalFileset(
             bareosfd.JobMessage(
                 M_ERROR,
                 'Could net get stat-info for file %s: "%s"'
-                % (self.file_to_backup, e.message),
+                % (self.file_to_backup, e),
             )
         # As of Bareos 19.2.7 attribute names in bareosfd.StatPacket differ from os.stat
         # In this case we have to translate names
@@ -211,7 +211,7 @@ class BareosFdPluginLocalFileset(
         if os.path.islink(self.file_to_backup.rstrip("/")):
             savepkt.type = FT_LNK
             savepkt.link = os.readlink(
-                self.file_to_backup.rstrip("/").encode("string_escape")
+                self.file_to_backup.rstrip("/")#.encode("string_escape")
             )
             bareosfd.DebugMessage(150, "file type is: FT_LNK\n")
         elif os.path.isfile(self.file_to_backup):
@@ -248,7 +248,7 @@ class BareosFdPluginLocalFileset(
             100,
             "create_file() entry point in Python called with %s\n" % (restorepkt),
         )
-        FNAME = restorepkt.ofname.decode("string_escape")
+        FNAME = restorepkt.ofname
         if not FNAME:
             return bRC_Error
         dirname = os.path.dirname(FNAME.rstrip("/"))
@@ -264,14 +264,14 @@ class BareosFdPluginLocalFileset(
             restorepkt.create_status = CF_EXTRACT
         elif restorepkt.type == FT_LNK:
             linkNameEnc = restorepkt.olname
-            linkNameClear = linkNameEnc.decode("string_escape")
+            linkNameClear = linkNameEnc#.decode("string_escape")
             if not os.path.islink(FNAME.rstrip("/")):
                 # if not os.path.exists(linkNameClear):
                 os.symlink(linkNameClear, FNAME.rstrip("/"))
             restorepkt.create_status = CF_CREATED
         elif restorepkt.type == FT_LNKSAVED:
             linkNameEnc = restorepkt.olname
-            linkNameClear = linkNameEnc.decode("string_escape")
+            linkNameClear = linkNameEnc#.decode("string_escape")
             if not os.path.exists(linkNameClear):
                 os.link(linkNameClear, FNAME.rstrip("/"))
             restorepkt.create_status = CF_CREATED
@@ -286,7 +286,7 @@ class BareosFdPluginLocalFileset(
                 except Exception as e:
                     bareosfd.JobMessage(
                         M_ERROR,
-                        'Could net create fifo %s: "%s"' % (FNAME, e.message),
+                        'Could net create fifo %s: "%s"' % (FNAME, e),
                     )
             restorepkt.create_status = CF_CREATED
         else:
@@ -309,7 +309,7 @@ class BareosFdPluginLocalFileset(
         # Python attribute setting does not work properly with links
         #        if restorepkt.type in [bFileType["FT_LNK"],bFileType["FT_LNKSAVED"]]:
         #            return bRCs["bRC_OK"]
-        file_name = restorepkt.ofname.decode("string_escape")
+        file_name = restorepkt.ofname#.decode("string_escape")
         file_attr = restorepkt.statp
         self.statp[file_name] = file_attr
 
@@ -334,7 +334,7 @@ class BareosFdPluginLocalFileset(
         except Exception as e:
             bareosfd.JobMessage(
                 M_WARNING,
-                'Could net set attributes for file %s: "%s"' % (file_name, e.message),
+                'Could net set attributes for file %s: "%s"' % (file_name, e),
             )
         return bRC_OK
 
@@ -362,10 +362,10 @@ class BareosFdPluginLocalFileset(
             # del self.statp[self.FNAME]
         except Exception as e:
             bareosfd.JobMessage(
-                bJobMessageType["M_WARNING"],
-                'Could net set attributes for file %s: "%s"' % (self.FNAME, e.message),
+                M_WARNING,
+                'Could net set attributes for file %s: "%s"' % (self.FNAME, e),
             )
-        return bRCs["bRC_OK"]
+        return bRC_OK
 
     def end_backup_file(self):
         """
