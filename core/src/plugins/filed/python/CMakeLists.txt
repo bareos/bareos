@@ -111,12 +111,12 @@ if(Python2_FOUND)
   endif()
   target_link_libraries(bareosfd-python2-module bareos ${Python2_LIBRARIES})
 
-  add_test(NAME bareosfd-python-module
+  add_test(NAME bareosfd-python2-module
            COMMAND ${Python2_EXECUTABLE}
                    ${CMAKE_CURRENT_SOURCE_DIR}/test/bareosfd_test.py
   )
   set_property(
-    TEST bareosfd-python-module
+    TEST bareosfd-python2-module
     PROPERTY
       ENVIRONMENT
       "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/test"

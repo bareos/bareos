@@ -171,7 +171,7 @@ class BareosFdPluginLocalFileset(
             bareosfd.DebugMessage(100, "No files to backup\n")
             return bareosfd.bRC_Skip
 
-        self.file_to_backup = self.files_to_backup.pop().decode("string_escape")
+        self.file_to_backup = self.files_to_backup.pop()
         bareosfd.DebugMessage(100, "file: " + self.file_to_backup + "\n")
 
         mystatp = bareosfd.StatPacket()
@@ -184,33 +184,36 @@ class BareosFdPluginLocalFileset(
             bareosfd.JobMessage(
                 bareosfd.M_ERROR,
                 'Could net get stat-info for file %s: "%s"'
-                % (self.file_to_backup, e.message),
+                % (self.file_to_backup, e),
             )
         # As of Bareos 19.2.7 attribute names in bareosfd.StatPacket differ from os.stat
         # In this case we have to translate names
         # For future releases consistent names are planned, allowing to assign the
         # complete stat object in one rush
-        if hasattr(mystatp, "st_uid"):
-            mystatp = statp
-        else:
-            mystatp.mode = statp.st_mode
-            mystatp.ino = statp.st_ino
-            mystatp.dev = statp.st_dev
-            mystatp.nlink = statp.st_nlink
-            mystatp.uid = statp.st_uid
-            mystatp.gid = statp.st_gid
-            mystatp.size = statp.st_size
-            mystatp.atime = statp.st_atime
-            mystatp.mtime = statp.st_mtime
-            mystatp.ctime = statp.st_ctime
-        savepkt.fname = self.file_to_backup.encode("string_escape")
+        # if hasattr(mystatp, "st_uid"):
+        #     mystatp = statp
+        # else:
+
+        mystatp.st_mode = statp.st_mode
+        mystatp.st_ino = statp.st_ino
+        mystatp.st_dev = statp.st_dev
+        mystatp.st_nlink = statp.st_nlink
+        mystatp.st_uid = statp.st_uid
+        mystatp.st_gid = statp.st_gid
+        mystatp.st_size = statp.st_size
+        mystatp.st_atime = statp.st_atime
+        mystatp.st_mtime = statp.st_mtime
+        mystatp.st_ctime = statp.st_ctime
+        bareosfd.JobMessage( bareosfd.M_ERROR, '\nmystatp: %s\nstatp: %s\n' % (mystatp,statp))
+
+        savepkt.fname = self.file_to_backup
         # os.islink will detect links to directories only when
         # there is no trailing slash - we need to perform checks
         # on the stripped name but use it with trailing / for the backup itself
         if os.path.islink(self.file_to_backup.rstrip("/")):
             savepkt.type = bareosfd.FT_LNK
             savepkt.link = os.readlink(
-                self.file_to_backup.rstrip("/").encode("string_escape")
+                self.file_to_backup.rstrip("/")
             )
             bareosfd.DebugMessage(150, "file type is: FT_LNK\n")
         elif os.path.isfile(self.file_to_backup):
@@ -247,7 +250,7 @@ class BareosFdPluginLocalFileset(
             100,
             "create_file() entry point in Python called with %s\n" % (restorepkt),
         )
-        FNAME = restorepkt.ofname.decode("string_escape")
+        FNAME = restorepkt.ofname
         if not FNAME:
             return bareosfd.bRC_Error
         dirname = os.path.dirname(FNAME.rstrip("/"))
@@ -263,14 +266,14 @@ class BareosFdPluginLocalFileset(
             restorepkt.create_status = bareosfd.CF_EXTRACT
         elif restorepkt.type == bareosfd.FT_LNK:
             linkNameEnc = restorepkt.olname
-            linkNameClear = linkNameEnc.decode("string_escape")
+            linkNameClear = linkNameEnc
             if not os.path.islink(FNAME.rstrip("/")):
                 # if not os.path.exists(linkNameClear):
                 os.symlink(linkNameClear, FNAME.rstrip("/"))
             restorepkt.create_status = bareosfd.CF_CREATED
         elif restorepkt.type == bareosfd.FT_LNKSAVED:
             linkNameEnc = restorepkt.olname
-            linkNameClear = linkNameEnc.decode("string_escape")
+            linkNameClear = linkNameEnc
             if not os.path.exists(linkNameClear):
                 os.link(linkNameClear, FNAME.rstrip("/"))
             restorepkt.create_status = bareosfd.CF_CREATED
@@ -285,7 +288,7 @@ class BareosFdPluginLocalFileset(
                 except Exception as e:
                     bareosfd.JobMessage(
                         bareosfd.M_ERROR,
-                        'Could net create fifo %s: "%s"' % (FNAME, e.message),
+                        'Could net create fifo %s: "%s"' % (FNAME, e),
                     )
             restorepkt.create_status = bareosfd.CF_CREATED
         else:
@@ -308,7 +311,7 @@ class BareosFdPluginLocalFileset(
         # Python attribute setting does not work properly with links
         #        if restorepkt.type in [bareosfd.FT_LNK,bareosfd.FT_LNKSAVED]:
         #            return bareosfd.bRC_OK
-        file_name = restorepkt.ofname.decode("string_escape")
+        file_name = restorepkt.ofname
         file_attr = restorepkt.statp
         self.statp[file_name] = file_attr
 
@@ -317,9 +320,9 @@ class BareosFdPluginLocalFileset(
             "Set file attributes " + file_name + " with stat " + str(file_attr) + "\n",
         )
         try:
-            os.chown(file_name, file_attr.uid, file_attr.gid)
-            os.chmod(file_name, file_attr.mode)
-            os.utime(file_name, (file_attr.atime, file_attr.mtime))
+            os.chown(file_name, file_attr.st_uid, file_attr.st_gid)
+            os.chmod(file_name, file_attr.st_mode)
+            os.utime(file_name, (file_attr.st_atime, file_attr.st_mtime))
             newStat = os.stat(file_name)
             bareosfd.DebugMessage(
                 150,
@@ -333,7 +336,7 @@ class BareosFdPluginLocalFileset(
         except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                'Could net set attributes for file %s: "%s"' % (file_name, e.message),
+                'Could net set attributes for file %s: "%s"' % (file_name, e),
             )
 
         return bareosfd.bRC_OK
@@ -363,7 +366,7 @@ class BareosFdPluginLocalFileset(
         except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
-                'Could net set attributes for file %s: "%s"' % (self.FNAME, e.message),
+                'Could net set attributes for file %s: "%s"' % (self.FNAME, e),
             )
         return bareosfd.bRC_OK
 
