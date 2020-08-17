@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2014 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -19,20 +19,15 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-# bareos_fd_local_fileset_with_restoreobjects.py is a python Bareos FD Plugin using
-# BareosFdPluginLocalFilesetWithRestoreObjects which was made for automated testing
-# purposes.
-#
-# The plugin argument 'filename' is used to read all files listed in that file and
-# add it to the fileset
+# Bareos-fd-local-fileset a simple example for a python Bareos FD Plugin using
+# BareosFdPluginLocalFileset. The plugin argument 'filename' is used to read
+# all files listed in that file and add it to the fileset
 #
 # Author: Maik Aussendorf
 #
 
 # Provided by the Bareos FD Python plugin interface
-#import bareos_fd_consts
-import bareosfd
-from bareosfd import *
+import bareos_fd_consts
 
 # This module contains the wrapper functions called by the Bareos-FD, the
 # functions call the corresponding methods from your plugin class
@@ -42,23 +37,20 @@ import BareosFdWrapper
 from BareosFdWrapper import *  # noqa
 
 # This module contains the used plugin class
-import BareosFdPluginLocalFilesetWithRestoreObjects
+import BareosFdPluginLocalFileset
 
 
-
-def load_bareos_plugin(plugindef):
+def load_bareos_plugin(context, plugindef):
     """
     This function is called by the Bareos-FD to load the plugin
     We use it to instantiate the plugin class
     """
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that
     # holds the plugin class object
-    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginLocalFilesetWithRestoreObjects.BareosFdPluginLocalFilesetWithRestoreObjects(
-        plugindef
+    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginLocalFileset.BareosFdPluginLocalFileset(
+        context, plugindef
     )
-    return bRC_OK
-    # return bareosfd.bRC_OK
-    # return bareosfd.bRCs["bRC_OK"]
+    return bareos_fd_consts.bRCs["bRC_OK"]
 
 
 # the rest is done in the Plugin module
