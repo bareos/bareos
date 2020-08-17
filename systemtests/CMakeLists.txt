@@ -82,11 +82,21 @@ function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
     string(REGEX REPLACE ".in$" "" TARGET_FILE ${TARGET_FILE}) # do not mess
                                                                # with .ini files
     string(REPLACE "${srcbasedir}/${srcdirname}" "" TARGET_FILE ${TARGET_FILE})
-    # MESSAGE(STATUS "configuring  ${TARGET_FILE}" )
-    configure_file(
-      ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
-      ${configure_option}
-    )
+    get_filename_component(DIR_NAME ${TARGET_FILE} DIRECTORY)
+    if(DIR_NAME MATCHES "python-modules$")
+      message(
+        STATUS
+          "symlinking ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}"
+      )
+      create_symlink(
+        ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
+      )
+    else()
+      configure_file(
+        ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
+        ${configure_option}
+      )
+    endif()
   endforeach()
 endfunction()
 

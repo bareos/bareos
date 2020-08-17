@@ -162,10 +162,8 @@ endif()
 
 set(PYFILES
     pyfiles/bareos-fd.py.template
-    pyfiles/bareos-fd-local-fileset.py
     pyfiles/bareos-fd-mock-test.py
     pyfiles/BareosFdPluginBaseclass.py
-    pyfiles/BareosFdPluginLocalFileset.py
     pyfiles/BareosFdWrapper.py
     ldap/bareos-fd-ldap.py
     ldap/BareosFdPluginLDAP.py
