@@ -84,10 +84,11 @@ function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
     string(REPLACE "${srcbasedir}/${srcdirname}" "" TARGET_FILE ${TARGET_FILE})
     get_filename_component(DIR_NAME ${TARGET_FILE} DIRECTORY)
     if(DIR_NAME MATCHES "python-modules$")
-      message(
-        STATUS
-          "symlinking ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}"
-      )
+      if(NOT EXISTS ${PROJECT_BINARY_DIR}/${dirname}/${DIR_NAME})
+        file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${dirname}/${DIR_NAME})
+      endif()
+      # message( STATUS "symlinking ${CURRENT_FILE}
+      # ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}" )
       create_symlink(
         ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
       )
