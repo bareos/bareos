@@ -204,7 +204,7 @@ class BareosFdPluginLocalFileset(
         mystatp.st_atime = statp.st_atime
         mystatp.st_mtime = statp.st_mtime
         mystatp.st_ctime = statp.st_ctime
-        bareosfd.JobMessage( bareosfd.M_ERROR, '\nmystatp: %s\nstatp: %s\n' % (mystatp,statp))
+        #bareosfd.JobMessage( bareosfd.M_ERROR, '\nmystatp: %s\nstatp: %s\n' % (mystatp,statp))
 
         savepkt.fname = self.file_to_backup
         # os.islink will detect links to directories only when
@@ -355,10 +355,10 @@ class BareosFdPluginLocalFileset(
             + "\n",
         )
         try:
-            os.chown(self.FNAME, self.statp[self.FNAME].uid, self.statp[self.FNAME].gid)
-            os.chmod(self.FNAME, self.statp[self.FNAME].mode)
+            os.chown(self.FNAME, self.statp[self.FNAME].st_uid, self.statp[self.FNAME].st_gid)
+            os.chmod(self.FNAME, self.statp[self.FNAME].st_mode)
             os.utime(
-                self.FNAME, (self.statp[self.FNAME].atime, self.statp[self.FNAME].mtime)
+                self.FNAME, (self.statp[self.FNAME].st_atime, self.statp[self.FNAME].st_mtime)
             )
             # del sometimes leads to no-key errors, it seams that end_restore_file is sometimes called
             # multipl times.
