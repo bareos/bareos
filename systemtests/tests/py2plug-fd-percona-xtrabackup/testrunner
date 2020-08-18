@@ -26,10 +26,10 @@ JobName=backup-bareos-fd
 rm -Rf mysql/data/*
 mkdir -p mysql/data/
 # initialize mysql db
-mysqld --defaults-file=mysqldefaults --user=pstorz --initialize-insecure > mysql/mysql_init.log 2>&1
+mysql_install_db --user="$USER" --defaults-file=mysqldefaults > mysql/mysql_init.log
 
 # start mysql server
-mysqld --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
+mysqld_safe --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
 
 sleep 4
 
