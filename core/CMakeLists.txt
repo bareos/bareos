@@ -457,6 +457,7 @@ message(STATUS "CMAKE_MODULE_PATH: " ${CMAKE_MODULE_PATH})
 # this is the complete path of the cmake which runs currently (e.g.
 # /usr/local/bin/cmake)
 message(STATUS "CMAKE_COMMAND: " ${CMAKE_COMMAND})
+message(STATUS "CMAKE_VERSION: " ${CMAKE_VERSION})
 
 # this is the CMake installation directory
 message(STATUS "CMAKE_ROOT: " ${CMAKE_ROOT})
@@ -542,12 +543,6 @@ message(STATUS "CMAKE_SUPPRESS_REGENERATION: " ${CMAKE_SUPPRESS_REGENERATION})
 # A simple way to get switches to the compiler is to use ADD_DEFINITIONS(). But
 # there are also two variables exactly for this purpose:
 
-# the compiler flags for compiling C sources
-message(STATUS "CMAKE_C_FLAGS: " ${CMAKE_C_FLAGS})
-
-# the compiler flags for compiling C++ sources
-message(STATUS "CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS})
-
 # wheter or not
 message(STATUS "CCACHE_FOUND: " ${CCACHE_FOUND})
 
@@ -559,16 +554,16 @@ message(STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
 message(STATUS "BUILD_SHARED_LIBS: " ${BUILD_SHARED_LIBS})
 
 # the compiler used for C files
-message(STATUS "CMAKE_C_COMPILER: " ${CMAKE_C_COMPILER})
+message(STATUS "CMAKE_C_COMPILER:           " ${CMAKE_C_COMPILER})
+message(STATUS "CMAKE_C_FLAGS:              " ${CMAKE_C_FLAGS})
+message(STATUS "CMAKE_C_COMPILER_ID:        " ${CMAKE_C_COMPILER_ID})
+message(STATUS "CMAKE_C_COMPILER_VERSION:   " ${CMAKE_C_COMPILER_VERSION})
 
 # the compiler used for C++ files
-message(STATUS "CMAKE_CXX_COMPILER: " ${CMAKE_CXX_COMPILER})
-
-# if the compiler is a variant of gcc, this should be set to 1
-message(STATUS "CMAKE_COMPILER_IS_GNUCC: " ${CMAKE_COMPILER_IS_GNUCC})
-
-# if the compiler is a variant of g++, this should be set to 1
-message(STATUS "CMAKE_COMPILER_IS_GNUCXX : " ${CMAKE_COMPILER_IS_GNUCXX})
+message(STATUS "CMAKE_CXX_COMPILER:         " ${CMAKE_CXX_COMPILER})
+message(STATUS "CMAKE_CXX_FLAGS:            " ${CMAKE_CXX_FLAGS})
+message(STATUS "CMAKE_CXX_COMPILER_ID:      " ${CMAKE_CXX_COMPILER_ID})
+message(STATUS "CMAKE_CXX_COMPILER_VERSION: " ${CMAKE_CXX_COMPILER_VERSION})
 
 # the tools for creating libraries
 message(STATUS "CMAKE_AR: " ${CMAKE_AR})
