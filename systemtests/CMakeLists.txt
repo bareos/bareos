@@ -101,29 +101,40 @@ function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
   endforeach()
 endfunction()
 
-# generic function to probe for a python module
-function(check_pymodule_available module)
-  if(NOT PYTHON_EXECUTABLE)
-    message(FATAL_ERROR "PYTHON_EXECUTABLE ist not set")
+# generic function to probe for a python module for the given python version (2
+# or 3)
+function(check_pymodule_available python_version module)
+  if(NOT python_version)
+    message(FATAL_ERROR "python_version ist not set")
   endif()
+  if(${python_version} EQUAL 2)
+    set(python_exe ${Python2_EXECUTABLE})
+  elseif(${python_version} EQUAL 3)
+    set(python_exe ${Python3_EXECUTABLE})
+  else()
+    message(FATAL_ERROR "unsupported python_version ${python_version}")
+  endif()
+  # message(STATUS "running  ${python_exe} -c import ${module}")
   execute_process(
-    COMMAND "${PYTHON_EXECUTABLE}" "-c" "import ${module}"
+    COMMAND "${python_exe}" "-c" "import ${module}"
     RESULT_VARIABLE ${module}_status
     ERROR_QUIET
   )
   string(TOUPPER ${module} module_uppercase)
   if(${module}_status EQUAL 0)
-    set("PYMODULE_${module_uppercase}_FOUND"
+    set("PYMODULE_${python_version}_${module_uppercase}_FOUND"
         TRUE
         PARENT_SCOPE
     )
-    message(STATUS "python module ${module} found")
+    message(STATUS "python module pyversion ${python_version} ${module} found")
   else()
-    set("PYMODULE_${module_uppercase}_FOUND"
+    set("PYMODULE_${python_version}_${module_uppercase}_FOUND"
         FALSE
         PARENT_SCOPE
     )
-    message(STATUS "python module ${module} NOT found")
+    message(
+      STATUS "python module pyversion ${python_version} ${module} NOT found"
+    )
   endif()
 endfunction()
 
@@ -661,12 +672,11 @@ else()
 endif()
 
 message("checking for requirements of py2plug-fd-postgres:")
-check_pymodule_available("psycopg2")
-check_pymodule_available("dateutil")
-
+check_pymodule_available(2 psycopg2)
+check_pymodule_available(2 dateutil)
 if(TARGET python-fd
-   AND PYMODULE_PSYCOPG2_FOUND
-   AND PYMODULE_DATEUTIL_FOUND
+   AND PYMODULE_2_PSYCOPG2_FOUND
+   AND PYMODULE_2_DATEUTIL_FOUND
 )
   message("OK, enabling py2plug-fd-postgres:")
   list(APPEND SYSTEM_TESTS "py2plug-fd-postgres")
@@ -674,7 +684,14 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-postgres")
   message("NOT OK, disabling py2plug-fd-postgres:")
 endif()
-if(TARGET python3-fd)
+
+message("checking for requirements of py3plug-fd-postgres:")
+check_pymodule_available(3 psycopg2)
+check_pymodule_available(3 dateutil)
+if(TARGET python-fd
+   AND PYMODULE_3_PSYCOPG2_FOUND
+   AND PYMODULE_3_DATEUTIL_FOUND
+)
   list(APPEND SYSTEM_TESTS "py3plug-fd-postgres")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-postgres")
@@ -803,17 +820,18 @@ message(STATUS "Looking for webui test requirements ...")
 
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
-check_pymodule_available("selenium") # sets PYMODULE_SELENIUM_FOUND to TRUE or
+check_pymodule_available(2 selenium) # sets PYMODULE_2_SELENIUM_FOUND to TRUE or
+check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
 
 message("   PHP:                    " ${PHP})
 message("   PYTHON_EXECUTABLE:      " ${PYTHON_EXECUTABLE})
-message("   PYMODULE_SELENIUM_FOUND:" ${PYMOD_SELENIUM_FOUND})
+message("   PYMODULE_2_SELENIUM_FOUND:" ${PYMODULE_2_SELENIUM_FOUND})
 message("   CHROMEDRIVER:           " ${CHROMEDRIVER})
 
 if(PHP
    AND PYTHON_EXECUTABLE
-   AND PYMODULE_SELENIUM_FOUND
+   AND PYMODULE_2_SELENIUM_FOUND
    AND CHROMEDRIVER
 )
   set(ENABLE_WEBUI_SELENIUM_TEST TRUE)
