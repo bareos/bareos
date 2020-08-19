@@ -605,6 +605,13 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED xattr)
 endif()
 
+include(BareosCheckAcl)
+if(SETFACL_WORKS)
+  list(APPEND SYSTEM_TESTS acl)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED acl)
+endif()
+
 if(mysql
    AND postgresql
    AND dynamic-cats-backends
