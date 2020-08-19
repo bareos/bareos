@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,12 +21,6 @@
 
 #include "include/bareos.h"
 #include "lib/tls_conf.h"
-
-TlsResource::TlsResource()
-    : authenticate_(false), tls_enable_(false), tls_require_(false)
-{
-  return;
-}
 
 bool TlsResource::IsTlsConfigured() const
 {

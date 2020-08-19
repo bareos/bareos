@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,6 +38,7 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <algorithm>
+#include <array>
 
 /* static private */
 std::map<const SSL_CTX*, PskCredentials>
@@ -55,17 +56,46 @@ const std::string TlsOpenSslPrivate::tls_default_ciphers_{
 TlsOpenSslPrivate::TlsOpenSslPrivate()
     : openssl_(nullptr)
     , openssl_ctx_(nullptr)
+    , openssl_conf_ctx_(nullptr)
     , tcp_file_descriptor_(0)
     , pem_callback_(nullptr)
     , pem_userdata_(nullptr)
     , verify_peer_(false)
 {
   Dmsg0(100, "Construct TlsOpenSslPrivate\n");
+
+  /* the SSL_CTX object is the factory that creates
+   * openssl objects, so initialize this first */
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+  openssl_ctx_ = SSL_CTX_new(TLS_method());
+#else
+  openssl_ctx_ = SSL_CTX_new(SSLv23_method());
+#endif
+
+  if (!openssl_ctx_) {
+    OpensslPostErrors(M_FATAL, _("Error initializing SSL context"));
+    return;
+  }
+
+  openssl_conf_ctx_ = SSL_CONF_CTX_new();
+
+  if (!openssl_conf_ctx_) {
+    OpensslPostErrors(M_FATAL, _("Error initializing SSL conf context"));
+    return;
+  }
+
+  SSL_CONF_CTX_set_ssl_ctx(openssl_conf_ctx_, openssl_ctx_);
 }
 
 TlsOpenSslPrivate::~TlsOpenSslPrivate()
 {
   Dmsg0(100, "Destruct TlsOpenSslPrivate\n");
+
+  if (openssl_conf_ctx_) {
+    SSL_CONF_CTX_free(openssl_conf_ctx_);
+    openssl_conf_ctx_ = nullptr;
+  }
 
   /* Free in this order:
    * 1. openssl object
@@ -94,6 +124,29 @@ bool TlsOpenSslPrivate::init()
                       _("Error initializing TlsOpenSsl (no SSL_CTX)\n"));
     return false;
   }
+
+  if (!protocol_.empty()) {
+    SSL_CONF_CTX_set_flags(openssl_conf_ctx_,
+                           SSL_CONF_FLAG_FILE | SSL_CONF_FLAG_SHOW_ERRORS |
+                               SSL_CONF_FLAG_CLIENT | SSL_CONF_FLAG_SERVER);
+
+    bool err =
+        SSL_CONF_cmd(openssl_conf_ctx_, "Protocol", protocol_.c_str()) != 2;
+
+    if (err) {
+      std::string err{_("Error setting OpenSSL Protocol options:\n")};
+      std::array<char, 256> buffer;
+      ERR_error_string(ERR_get_error(), buffer.data());
+      err += buffer.data();
+      err += "\n";
+      Dmsg1(100, err.c_str());
+      return false;
+    }
+  }
+
+  SSL_CTX_set_options(openssl_ctx_, SSL_OP_ALL);
+
+  SSL_CTX_set_options(openssl_ctx_, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
   if (cipherlist_.empty()) { cipherlist_ = tls_default_ciphers_; }
 
@@ -555,4 +608,10 @@ void TlsOpenSsl::SetCipherList(const std::string& cipherlist)
 {
   Dmsg1(100, "Set cipherlist:\t<%s>\n", cipherlist.c_str());
   d_->cipherlist_ = cipherlist;
+}
+
+void TlsOpenSsl::SetProtocol(std::string protocol)
+{
+  Dmsg1(100, "Set protocol:\t<%s>\n", protocol.c_str());
+  d_->protocol_ = protocol;
 }

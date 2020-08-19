@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,31 +47,9 @@
 
 #include "parse_conf.h"
 
-TlsOpenSsl::TlsOpenSsl() : d_(new TlsOpenSslPrivate)
-{
-  /* the SSL_CTX object is the factory that creates
-   * openssl objects, so initialize this first */
+TlsOpenSsl::TlsOpenSsl() : d_(new TlsOpenSslPrivate) {}
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
-  d_->openssl_ctx_ = SSL_CTX_new(TLS_method());
-#else
-  d_->openssl_ctx_ = SSL_CTX_new(SSLv23_method());
-#endif
-
-  if (!d_->openssl_ctx_) {
-    OpensslPostErrors(M_FATAL, _("Error initializing SSL context"));
-    return;
-  }
-
-  SSL_CTX_set_options(d_->openssl_ctx_, SSL_OP_ALL);
-
-  SSL_CTX_set_options(d_->openssl_ctx_, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
-}
-
-TlsOpenSsl::~TlsOpenSsl()
-{
-  Dmsg0(100, "Destruct TLsOpenSsl Implementation Object\n");
-}
+TlsOpenSsl::~TlsOpenSsl() = default;
 
 bool TlsOpenSsl::init() { return d_->init(); }
 
@@ -110,12 +88,13 @@ void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser* config)
 
 std::string TlsOpenSsl::TlsCipherGetName() const
 {
-  if (!d_->openssl_) { return std::string(); }
-
-  const SSL_CIPHER* cipher = SSL_get_current_cipher(d_->openssl_);
-
-  if (cipher) { return std::string(SSL_CIPHER_get_name(cipher)); }
-
+  if (d_->openssl_) {
+    const SSL_CIPHER* cipher = SSL_get_current_cipher(d_->openssl_);
+    const char* protocol_name = SSL_get_cipher_version(d_->openssl_);
+    if (cipher) {
+      return std::string(SSL_CIPHER_get_name(cipher)) + " " + protocol_name;
+    }
+  }
   return std::string();
 }
 
@@ -135,7 +114,8 @@ void TlsOpenSsl::TlsLogConninfo(JobControlRecord* jcr,
 }
 
 /*
- * Verifies a list of common names against the certificate commonName attribute.
+ * Verifies a list of common names against the certificate commonName
+ * attribute.
  *
  * Returns: true on success
  *          false on failure
@@ -355,7 +335,8 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
     case SSL_ERROR_NONE:
       break;
     case SSL_ERROR_ZERO_RETURN:
-      /* TLS connection was shut down on us via a TLS protocol-level closure */
+      /* TLS connection was shut down on us via a TLS protocol-level closure
+       */
       OpensslPostErrors(jcr, M_ERROR, message.c_str());
       break;
     default:

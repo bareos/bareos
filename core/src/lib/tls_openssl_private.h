@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@
 #include "include/bareos.h"
 #include <string>
 
+#include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
 class TlsOpenSslPrivate {
@@ -69,6 +70,7 @@ class TlsOpenSslPrivate {
   /* each TCP connection has its own SSL_CTX object and SSL object */
   SSL* openssl_;
   SSL_CTX* openssl_ctx_;
+  SSL_CONF_CTX* openssl_conf_ctx_;
 
   /* PskCredentials lookup map for all connections */
   static std::map<const SSL_CTX*, PskCredentials> psk_client_credentials_;
@@ -77,6 +79,9 @@ class TlsOpenSslPrivate {
 
   /* tls_default_ciphers_ if no user ciphers given  */
   static const std::string tls_default_ciphers_;
+
+  /* openssl protocol command */
+  std::string protocol_;
 
   /* cert attributes */
   int tcp_file_descriptor_;

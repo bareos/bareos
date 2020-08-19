@@ -270,6 +270,13 @@
           "equals": true,
           "description": "Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications."
         },
+        "TlsProtocol": {
+          "datatype": "STRING",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "OpenSSL Configuration: Protocol"
+        },
         "TlsVerifyPeer": {
           "datatype": "BOOLEAN",
           "code": 0,
@@ -550,6 +557,13 @@
           "code": 0,
           "equals": true,
           "description": "Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications."
+        },
+        "TlsProtocol": {
+          "datatype": "STRING",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
           "datatype": "BOOLEAN",
@@ -1839,6 +1853,13 @@
           "equals": true,
           "description": "Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications."
         },
+        "TlsProtocol": {
+          "datatype": "STRING",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "OpenSSL Configuration: Protocol"
+        },
         "TlsVerifyPeer": {
           "datatype": "BOOLEAN",
           "code": 0,
@@ -2582,6 +2603,13 @@
           "code": 0,
           "equals": true,
           "description": "Path to PEM encoded Diffie-Hellman parameter file. If this directive is specified, DH key exchange will be used for the ephemeral keying, allowing for forward secrecy of communications."
+        },
+        "TlsProtocol": {
+          "datatype": "STRING",
+          "code": 0,
+          "platform_specific": true,
+          "equals": true,
+          "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
           "datatype": "BOOLEAN",

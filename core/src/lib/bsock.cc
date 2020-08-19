@@ -527,6 +527,8 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(
     return false;
   }
 
+  tls_conn_init->SetProtocol(tls_resource->protocol_);
+
   ParameterizeTlsCert(tls_conn_init.get(), tls_resource);
 
   tls_conn_init->SetTlsPskServerContext(config);
@@ -600,6 +602,8 @@ bool BareosSocket::ParameterizeAndInitTlsConnection(TlsResource* tls_resource,
   }
 
   tls_conn_init->SetTcpFileDescriptor(fd_);
+
+  tls_conn_init->SetProtocol(tls_resource->protocol_);
 
   ParameterizeTlsCert(tls_conn_init.get(), tls_resource);
 

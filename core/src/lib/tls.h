@@ -72,6 +72,7 @@ class Tls {
   virtual std::string TlsCipherGetName() const { return std::string(); }
 
   virtual void SetCipherList(const std::string& cipherlist) = 0;
+  virtual void SetProtocol(std::string version) = 0;
 
   virtual void Setca_certfile_(const std::string& ca_certfile) = 0;
   virtual void SetCaCertdir(const std::string& ca_certdir) = 0;
