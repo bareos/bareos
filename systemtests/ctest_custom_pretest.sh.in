@@ -8,6 +8,29 @@ if ! @BAREOS_DIR_TO_TEST@ -? 2>&1 | grep Version >/dev/null; then
     echo "PRETEST:  ERROR: could not start director. Forgot to build before testing?"
     exit 1
 fi
+
+postgresql=@postgresql@
+if [ -n "$postgresql" ]; then
+  echo -n "PRETEST: checking postgresql connection ..."
+  if ! psql <<< "SELECT version()" 2>&1 >/dev/null; then
+    echo "could not connect postgresql server"
+    exit 1
+  else
+    echo "OK"
+  fi
+fi
+
+mysql=@mysql@
+if [ -n "$mysql" ]; then
+  echo -n "PRETEST: checking mysql connection ..."
+  if ! mysql <<< "SELECT version()" 2>&1 >/dev/null; then
+    echo "could not connect mysql server"
+    exit 1
+  else
+    echo "OK"
+  fi
+fi
+
 nr_killed=0
 for pidfile in $(find . -name bareos-\*.pid); do
   ((nr_killed=nr_killed+1))
