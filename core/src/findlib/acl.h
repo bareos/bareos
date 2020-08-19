@@ -95,11 +95,12 @@ struct acl_parse_data_t {
 /**
  * Internal tracking data.
  */
-struct acl_data_t {
+struct AclData {
   int filetype;
   POOLMEM* last_fname;
-  uint32_t flags; /* See BACL_FLAG_* */
-  uint32_t current_dev;
+  uint32_t flags{}; /* See BACL_FLAG_* */
+  uint32_t current_dev{0};
+  bool first_dev{true};
   union {
     struct acl_build_data_t* build;
     struct acl_parse_data_t* parse;
@@ -107,13 +108,13 @@ struct acl_data_t {
 };
 
 bacl_exit_code SendAclStream(JobControlRecord* jcr,
-                             acl_data_t* acl_data,
+                             AclData* acl_data,
                              int stream);
 bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
-                               acl_data_t* acl_data,
+                               AclData* acl_data,
                                FindFilesPacket* ff_pkt);
 bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
-                                 acl_data_t* acl_data,
+                                 AclData* acl_data,
                                  int stream,
                                  char* content,
                                  uint32_t content_length);
