@@ -1383,7 +1383,7 @@ bool PluginSetAttributes(JobControlRecord* jcr,
  * Plugin specific callback for getting ACL information.
  */
 bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
-                                     acl_data_t* acl_data,
+                                     AclData* acl_data,
                                      FindFilesPacket* ff_pkt)
 {
   Plugin* plugin;
@@ -1430,7 +1430,7 @@ bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
  * Plugin specific callback for setting ACL information.
  */
 bacl_exit_code plugin_parse_acl_streams(JobControlRecord* jcr,
-                                        acl_data_t* acl_data,
+                                        AclData* acl_data,
                                         int stream,
                                         char* content,
                                         uint32_t content_length)

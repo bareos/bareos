@@ -227,12 +227,12 @@ static inline bool do_reStoreAcl(JobControlRecord* jcr,
   jcr->impl->acl_data->last_fname = jcr->impl->last_fname;
   switch (stream) {
     case STREAM_ACL_PLUGIN:
-      retval = plugin_parse_acl_streams(jcr, jcr->impl->acl_data, stream,
+      retval = plugin_parse_acl_streams(jcr, jcr->impl->acl_data.get(), stream,
                                         content, content_length);
       break;
     default:
-      retval = parse_acl_streams(jcr, jcr->impl->acl_data, stream, content,
-                                 content_length);
+      retval = parse_acl_streams(jcr, jcr->impl->acl_data.get(), stream,
+                                 content, content_length);
       break;
   }
 
@@ -276,8 +276,8 @@ static inline bool do_restore_xattr(JobControlRecord* jcr,
                                        content, content_length);
       break;
     default:
-      retval = ParseXattrStreams(jcr, jcr->impl->xattr_data.get(), stream, content,
-                                 content_length);
+      retval = ParseXattrStreams(jcr, jcr->impl->xattr_data.get(), stream,
+                                 content, content_length);
       break;
   }
 
@@ -491,18 +491,13 @@ void DoRestore(JobControlRecord* jcr)
   binit(&rctx.forkbfd);
   attr = rctx.attr = new_attr(jcr);
   if (have_acl) {
-    jcr->impl->acl_data = (acl_data_t*)malloc(sizeof(acl_data_t));
-    memset(jcr->impl->acl_data, 0, sizeof(acl_data_t));
+    jcr->impl->acl_data = std::make_unique<AclData>();
     jcr->impl->acl_data->u.parse =
         (acl_parse_data_t*)malloc(sizeof(acl_parse_data_t));
     memset(jcr->impl->acl_data->u.parse, 0, sizeof(acl_parse_data_t));
   }
   if (have_xattr) {
     jcr->impl->xattr_data = std::make_unique<XattrData>();
-    /*
-    jcr->impl->xattr_data = (xattr_data_t*)malloc(sizeof(xattr_data_t));
-    memset(jcr->impl->xattr_data, 0, sizeof(xattr_data_t));
-    */
     jcr->impl->xattr_data->u.parse =
         (xattr_parse_data_t*)malloc(sizeof(xattr_parse_data_t));
     memset(jcr->impl->xattr_data->u.parse, 0, sizeof(xattr_parse_data_t));
@@ -1197,11 +1192,7 @@ ok_out:
     rctx.fork_cipher_ctx.buf = NULL;
   }
 
-  if (have_acl && jcr->impl->acl_data) {
-    free(jcr->impl->acl_data->u.parse);
-    free(jcr->impl->acl_data);
-    jcr->impl->acl_data = NULL;
-  }
+  if (have_acl && jcr->impl->acl_data) { free(jcr->impl->acl_data->u.parse); }
 
   if (have_xattr && jcr->impl->xattr_data) {
     free(jcr->impl->xattr_data->u.parse);
