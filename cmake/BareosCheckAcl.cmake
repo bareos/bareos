@@ -22,7 +22,7 @@ find_program(GETFACL_PROG getfacl)
 
 set(SETFACL_WORKS NO)
 if(SETFACL_PROG AND GETFACL_PROG)
-  file(TOUCH "${CMAKE_CURRENT_BINARY_DIR}/acl-test-file.txt")
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/acl-test-file.txt" "Just a testfile")
   exec_program(${SETFACL_PROG}
     ${CMAKE_CURRENT_BINARY_DIR}
     ARGS "-m user:0:rw- acl-test-file.txt"
