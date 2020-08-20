@@ -91,26 +91,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   )
 endif()
 
-set(PLUGINS python-ldap-conf.d)
-list(APPEND PLUGINS python-ovirt-conf.d)
-
-if(${HAVE_CEPHFS})
-  list(APPEND PLUGINS cephfs-conf.d)
-endif()
-if(${HAVE_CEPH_RADOS})
-  list(APPEND PLUGINS rados-conf.d)
-endif()
-
-if(${HAVE_GLUSTERFS})
-  list(APPEND PLUGINS gfapi-conf.d)
-endif()
-
-set(PLUGINS
-    ${PLUGINS}
-    PARENT_SCOPE
-)
-message("PLUGINS: ${PLUGINS}")
-
 install(
   TARGETS bareos-fd
   DESTINATION "${sbindir}"
@@ -118,6 +98,7 @@ install(
 )
 
 install(CODE "set(PLUGINS \"${PLUGINS}\")" COMPONENT filedaemon)
+install(CODE "set(BACKENDS \"${BACKENDS}\")" COMPONENT filedaemon)
 install(CODE "set(configtemplatedir \"${configtemplatedir}\")"
         COMPONENT filedaemon
 )
