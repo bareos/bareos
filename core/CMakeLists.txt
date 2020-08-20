@@ -694,6 +694,11 @@ if(${HAVE_GLUSTERFS})
   list(APPEND PLUGINS gfapi)
 endif()
 
+set(PLUGINS
+    ${PLUGINS}
+    PARENT_SCOPE
+)
+
 # BACKENDS  ####
 if(build_client_only)
   set(BACKENDS "")
