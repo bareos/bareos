@@ -33,8 +33,7 @@ Director {
   NdmpLogLevel = 40
   AbsoluteJobTimeout = 10
   Auditing = Yes
-  AuditEvents = "item11", "item12"
-  AuditEvents = "item21", "item22", ".*"
+  AuditEvents = "item11", "item12", ".*"
   # SecureEraseCommand = 
   # LogTimestampFormat = 
   # TlsAuthenticate = No
@@ -42,6 +41,7 @@ Director {
   TlsRequire = Yes
   # TlsCipherList = ""
   # TlsDhFile = ""
+  # TlsProtocol = ""
   # TlsVerifyPeer = No
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
@@ -78,13 +78,14 @@ Client {
   # MaximumConcurrentJobs = 1
   # MaximumBandwidthPerJob = 0
   # NdmpLogLevel = 4
-  # NdmpBlockSize = 63 k 
+  # NdmpBlockSize = 63 k
   # NdmpUseLmdb = Yes
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = No
   # TlsCipherList = ""
   # TlsDhFile = ""
+  # TlsProtocol = ""
   # TlsVerifyPeer = No
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
@@ -121,13 +122,14 @@ Client {
   # MaximumConcurrentJobs = 1
   # MaximumBandwidthPerJob = 0
   # NdmpLogLevel = 4
-  # NdmpBlockSize = 63 k 
+  # NdmpBlockSize = 63 k
   # NdmpUseLmdb = Yes
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = No
   # TlsCipherList = ""
   # TlsDhFile = ""
+  # TlsProtocol = ""
   # TlsVerifyPeer = No
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
@@ -152,8 +154,8 @@ Client {
   ConnectionFromDirectorToClient = No
   ConnectionFromClientToDirector = Yes
   Enabled = No
-  HardQuota = 10 k 
-  SoftQuota = 10 k 
+  HardQuota = 10 k
+  SoftQuota = 10 k
   SoftQuotaGracePeriod = 1 weeks 2 days 
   StrictQuotas = Yes
   QuotaIncludeFailedJobs = No
@@ -164,13 +166,14 @@ Client {
   MaximumConcurrentJobs = 10
   MaximumBandwidthPerJob = 10000
   NdmpLogLevel = 40
-  NdmpBlockSize = 163 k 
+  NdmpBlockSize = 163 k
   NdmpUseLmdb = No
   # TlsAuthenticate = No
   # TlsEnable = Yes
   # TlsRequire = No
   # TlsCipherList = ""
   # TlsDhFile = ""
+  # TlsProtocol = ""
   # TlsVerifyPeer = No
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
@@ -247,7 +250,7 @@ JobDefs {
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
-  # FileHistorySize = 9 m 549 k 640  
+  # FileHistorySize = 9 m 549 k 640
   # FdPluginOptions = 
   # SdPluginOptions = 
   # DirPluginOptions = 
@@ -289,7 +292,7 @@ Job {
   # AddPrefix = 
   # AddSuffix = 
   # Bootstrap = 
-  # WriteBootstrap = 
+  # WriteBootstrap = "/var/lib/bareos/%c.bsr"
   # WriteVerifyList = 
   # Replace = Always
   # MaximumBandwidth = 0
@@ -328,7 +331,7 @@ Job {
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
-  # FileHistorySize = 9 m 549 k 640  
+  # FileHistorySize = 9 m 549 k 640
   # FdPluginOptions = 
   # SdPluginOptions = 
   # DirPluginOptions = 
@@ -409,7 +412,7 @@ Job {
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
-  # FileHistorySize = 9 m 549 k 640  
+  # FileHistorySize = 9 m 549 k 640
   # FdPluginOptions = 
   # SdPluginOptions = 
   # DirPluginOptions = 
@@ -444,12 +447,11 @@ Job {
   # JobToVerify = ""
   # Catalog = ""
   JobDefs = "DefaultJob"
-  Run = "job=job-min level=%l since=\"%s\"", "job=job12"
-  Run = "job=job21", "job=job22"
+  Run = "job=job-min level=%l since=\"%s\""
+  Run = "job=job21"
   # Where = 
   RegexWhere = "!/olddir/!/newdir/!,/.ini$/.ini.new/"
   StripPrefix = "/usr/local1"
-  StripPrefix = "/usr/local2"
   AddPrefix = "/usr"
   AddSuffix = ".bak"
   Bootstrap = "/tmp/used_for_restore/"
@@ -475,7 +477,7 @@ Job {
   Enabled = No
   SpoolAttributes = Yes
   SpoolData = Yes
-  SpoolSize = 10 m 
+  SpoolSize = 10 m
   RerunFailedLevels = Yes
   PreferMountedVolumes = No
   MaximumConcurrentJobs = 10
@@ -500,13 +502,13 @@ Job {
   CancelQueuedDuplicates = Yes
   CancelRunningDuplicates = Yes
   SaveFileHistory = No
-  FileHistorySize = 10 m 
-  FdPluginOptions = "Option 11", "Option 12"
-  FdPluginOptions = "Option 21", "Option 22"
-  SdPluginOptions = "Option 11", "Option 12"
-  SdPluginOptions = "Option 21", "Option 22"
-  DirPluginOptions = "Option 11", "Option 12"
-  DirPluginOptions = "Option 21", "Option 22"
+  FileHistorySize = 10 m
+  FdPluginOptions = "Option 11"
+  FdPluginOptions = "Option 21"
+  SdPluginOptions = "Option 11"
+  SdPluginOptions = "Option 21"
+  DirPluginOptions = "Option 11"
+  DirPluginOptions = "Option 21"
   Base = "job-min"
   Base = "job-max"
   MaxConcurrentCopies = 10
@@ -585,7 +587,7 @@ Job {
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
-  # FileHistorySize = 9 m 549 k 640  
+  # FileHistorySize = 9 m 549 k 640
   # FdPluginOptions = 
   # SdPluginOptions = 
   # DirPluginOptions = 
@@ -668,7 +670,7 @@ Job {
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
-  # FileHistorySize = 9 m 549 k 640  
+  # FileHistorySize = 9 m 549 k 640
   # FdPluginOptions = 
   # SdPluginOptions = 
   # DirPluginOptions = 
@@ -710,7 +712,7 @@ Job {
   # AddPrefix = 
   # AddSuffix = 
   # Bootstrap = 
-  # WriteBootstrap = 
+  # WriteBootstrap = "/var/lib/bareos/%c.bsr"
   # WriteVerifyList = 
   # Replace = Always
   # MaximumBandwidth = 0
@@ -752,9 +754,13 @@ Job {
     FailJobOnError = No
   }
   RunScript {
-    Command = "/tmp/RunScript2.sh"
-    RunsWhen = "before"
+    Command = "/tmp/RunScript21.sh"
+    RunsWhen = "after"
     FailJobOnError = No
+  }
+  RunScript {
+    Command = "/tmp/RunScript22.sh"
+    RunsWhen = "before"
   }
   # Accurate = No
   # AllowDuplicateJobs = Yes
@@ -763,7 +769,7 @@ Job {
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
-  # FileHistorySize = 9 m 549 k 640  
+  # FileHistorySize = 9 m 549 k 640
   # FdPluginOptions = 
   # SdPluginOptions = 
   # DirPluginOptions = 
@@ -805,7 +811,7 @@ Job {
   # AddPrefix = 
   # AddSuffix = 
   # Bootstrap = 
-  # WriteBootstrap = 
+  # WriteBootstrap = "/var/lib/bareos/%c.bsr"
   # WriteVerifyList = 
   # Replace = Always
   # MaximumBandwidth = 0
@@ -862,7 +868,7 @@ Job {
   # CancelQueuedDuplicates = No
   # CancelRunningDuplicates = No
   # SaveFileHistory = Yes
-  # FileHistorySize = 9 m 549 k 640  
+  # FileHistorySize = 9 m 549 k 640
   # FdPluginOptions = 
   # SdPluginOptions = 
   # DirPluginOptions = 
@@ -904,6 +910,7 @@ Storage {
   # TlsRequire = No
   # TlsCipherList = ""
   # TlsDhFile = ""
+  # TlsProtocol = ""
   # TlsVerifyPeer = No
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
@@ -1037,10 +1044,10 @@ FileSet {
       XattrSupport = Yes
     }
     File = "/tmp/dir"
-    File = "<includefile-server"
-    File = "\<includefile-client"
+    File = "\<includefile-server"
+    File = "\\\<includefile-client"
     File = "|command-server"
-    File = "\|command-client"
+    File = "\\|command-client"
   }
 }
 
@@ -1172,7 +1179,7 @@ Pool {
   MaximumVolumes = 100
   # MaximumVolumeJobs = 0
   # MaximumVolumeFiles = 0
-  MaximumVolumeBytes = 1 g 
+  MaximumVolumeBytes = 1 g
   # CatalogFiles = Yes
   VolumeRetention = 1 months 
   # VolumeUseDuration = 0
@@ -1207,7 +1214,7 @@ Pool {
   MaximumVolumes = 200
   MaximumVolumeJobs = 10
   MaximumVolumeFiles = 1000
-  MaximumVolumeBytes = 50 g 
+  MaximumVolumeBytes = 50 g
   CatalogFiles = No
   VolumeRetention = 2 years 
   VolumeUseDuration = 12 hours 
@@ -1223,8 +1230,8 @@ Pool {
   # Catalog = ""
   FileRetention = 1 years 
   JobRetention = 2 years 
-  MinimumBlockSize = 80 k 
-  MaximumBlockSize = 1 m 
+  MinimumBlockSize = 80 k
+  MaximumBlockSize = 1 m
 }
 
 Pool {
@@ -1242,7 +1249,7 @@ Pool {
   MaximumVolumes = 100
   # MaximumVolumeJobs = 0
   # MaximumVolumeFiles = 0
-  MaximumVolumeBytes = 10 g 
+  MaximumVolumeBytes = 10 g
   # CatalogFiles = Yes
   VolumeRetention = 3 months 
   # VolumeUseDuration = 0
@@ -1348,6 +1355,7 @@ Console {
   # TlsRequire = No
   # TlsCipherList = ""
   # TlsDhFile = ""
+  # TlsProtocol = ""
   # TlsVerifyPeer = No
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
@@ -1378,6 +1386,7 @@ Console {
   # TlsRequire = No
   # TlsCipherList = ""
   # TlsDhFile = ""
+  # TlsProtocol = ""
   # TlsVerifyPeer = No
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""
@@ -1408,6 +1417,7 @@ Console {
   # TlsRequire = No
   # TlsCipherList = ""
   # TlsDhFile = ""
+  # TlsProtocol = ""
   # TlsVerifyPeer = No
   # TlsCaCertificateFile = ""
   # TlsCaCertificateDir = ""

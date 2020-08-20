@@ -1,0 +1,25 @@
+Director {
+  Name = "bareos-dir"
+  DirAddresses = {
+    ipv4 = {
+      addr = 0.0.0.0
+      port = @dir_port@
+    }
+  }
+  QueryFile = "@scriptdir@/query.sql"
+  WorkingDirectory = "@working_dir@"
+  PidDirectory = "@piddir@"
+  Password = "@dir_password@"
+
+  #
+  # not working
+  #
+  PluginNames = "plugin11", "plugin12"
+  PluginNames = "plugin21", "plugin22"
+
+  #
+  # working
+  #
+  AuditEvents = "item11", "item12"
+  AuditEvents = "item21", "item22"
+}

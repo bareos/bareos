@@ -33,6 +33,21 @@ remove_bconsole_commands_from_output()
     sed -i -e '1d' -e '$ d' ${FILE}
 }
 
+strip_config()
+{
+    # removes files that are known to differ.
+    # Password: will be shown as MD5
+    # DbDriver: postgresql is default, therefore verbose prepend a comment sign.
+    source="$1"
+
+    if ! [ -e "${configfile}" ]; then
+        set_error "strip_config: File \"${configfile}\" does not exist."
+        exit 1
+    fi
+
+    grep -v -e "Password = " -e "DbDriver = " "${source}"
+}
+
 dump_config()
 {
     # start bareos-dir with config file
@@ -85,6 +100,23 @@ END_OF_DATA
     fi
 }
 
+diff_files()
+{
+    file1="$1"
+    file2="$2"
+    base1="$(basename "$file1" .conf)"
+    base2="$(basename "$file2" .conf)"
+    difffile="${tmp}/${base1}_${base2}.diff"
+    DIFF_CMD='diff "${file1}" "${file2}"'
+    if ! eval "$DIFF_CMD" > "${difffile}"; then
+        echo "Differences found. Output of:"
+        eval "echo $DIFF_CMD"
+        cat "${difffile}"
+        set_error "Differences between $file1 and $file2."
+        exit 1
+    fi
+}
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -126,46 +158,23 @@ dump_config "${tmp}/bareos-dir-show-verbose-full1.conf" "full2"
 # compare config export from
 # bareos-dir-19.2.7-xc
 # with re-exported version.
-if ! diff "$tmp/bareos-dir-show-1.conf" "$tmp/bareos-dir-show-2.conf"; then
-  set_error "Configuration dumped (1), re-read (1) and dumped (2) differs. This should not happen."
-  exit 1
-fi
+diff_files "$tmp/bareos-dir-show-1.conf" "$tmp/bareos-dir-show-2.conf"
 
 # compare verbose config export from
 # bareos-dir-19.2.7-xc
 # with re-exported version.
-if ! diff "$tmp/bareos-dir-show-verbose-1.conf" "$tmp/bareos-dir-show-verbose-2.conf"; then
-  set_error "Configuration dumped (1), re-read (1) and dumped (2) differs. This should not happen."
-  exit 1
-fi
+diff_files "$tmp/bareos-dir-show-verbose-1.conf" "$tmp/bareos-dir-show-verbose-2.conf"
 
 # Don't compare directly,
 # as there are known differences.
-#if ! diff "${conf}/bareos-dir-full.conf" "$tmp/bareos-dir-show-full1.conf"; then
-#  set_error "Configuration dumped (full1) differs. This should not happen."
-#  exit 1
-#fi
-DIFF_CMD='diff "${conf}/bareos-dir-full.conf" "$tmp/bareos-dir-show-verbose-full1.conf"'
-if ! eval "$DIFF_CMD" > "$tmp/bareos-dir-full_bareos-dir-show-verbose-full1.diff"; then
-    if is_debug; then
-        # There are known problems.
-        # These must be fixed in the config parser.
-        echo "Known differences between bareos-dir-full.conf and bareos-dir-show-verbose-full1.conf:"
-        echo $DIFF_CMD
-        cat "$tmp/bareos-dir-full_bareos-dir-show-verbose-full1.diff"
-    fi
-fi
+strip_config "${conf}/bareos-dir-full.conf" > "${tmp}/bareos-dir-full-stripped.conf"
+strip_config "${tmp}/bareos-dir-show-verbose-full1.conf" > "${tmp}/bareos-dir-show-verbose-full1-stripped.conf"
+diff_files "${tmp}/bareos-dir-full-stripped.conf" "${tmp}/bareos-dir-show-verbose-full1-stripped.conf"
 
 # Compare export and re-export from bareos-dir-full.conf.
-if ! diff "${tmp}/bareos-dir-show-full1.conf" "$tmp/bareos-dir-show-full2.conf"; then
-  set_error "Configuration dumped (full1), reread (full1) and dumped (full2) differs. This should not happen."
-  exit 1
-fi
+diff_files "${tmp}/bareos-dir-show-full1.conf" "$tmp/bareos-dir-show-full2.conf"
 
 # Compare export and re-export from bareos-dir-full.conf(verbose versions).
-if ! diff "${tmp}/bareos-dir-show-verbose-full1.conf" "$tmp/bareos-dir-show-verbose-full2.conf"; then
-  set_error "Verbose configuration dumped (full1), reread (full1) and dumped (full2) differs. This should not happen."
-  exit 1
-fi
+diff_files "${tmp}/bareos-dir-show-verbose-full1.conf" "$tmp/bareos-dir-show-verbose-full2.conf"
 
 end_test
