@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,6 +56,7 @@
 #include <sys/poll.h>
 #endif
 
+#include <algorithm>
 #include <atomic>
 #include <array>
 #include <vector>
@@ -303,14 +304,14 @@ void BnetThreadServerTcp(
   while (!quit) {
     if (CustomCallback) { CustomCallback(); }
 #ifndef HAVE_POLL
-    unsigned int maxfd = 0;
+    int maxfd = 0;
     fd_set sockset;
     FD_ZERO(&sockset);
 
     s_sockfd* fd_ptr = nullptr;
     foreach_alist (fd_ptr, sockfds) {
       FD_SET((unsigned)fd_ptr->fd, &sockset);
-      if ((unsigned)fd_ptr->fd > maxfd) { maxfd = fd_ptr->fd; }
+      maxfd = std::max(fd_ptr->fd, maxfd);
     }
 
     struct timeval timeout {
