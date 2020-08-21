@@ -185,16 +185,18 @@ read_line(dpl_conn_t *conn)
 
             {
               struct pollfd fds;
+              int tries = 0;
 
             retry:
               memset(&fds, 0, sizeof (fds));
               fds.fd = conn->fd;
               fds.events = POLLIN;
 
+              ++tries;
               ret = poll(&fds, 1, conn->ctx->read_timeout*1000);
               if (-1 == ret)
                 {
-                  if (errno == EINTR)
+                  if (tries < 3 && errno == EINTR)
                     goto retry;
                   free(line);
                   conn->status = DPL_ESYS;
@@ -203,6 +205,8 @@ read_line(dpl_conn_t *conn)
 
               if (0 == ret)
                 {
+                  if (tries < 3)
+                    goto retry;
                   free(line);
                   conn->status = DPL_ETIMEOUT;
                   return NULL;
@@ -356,13 +360,14 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
 
               DPL_TRACE(conn->ctx, DPL_TRACE_IO, "read conn=%p https=%d size=%ld (remain %ld)", conn, conn->ctx->use_https, conn->read_buf_size, chunk_remain);
 
-              if (0 == conn->ctx->use_https)
+                // poll for new data on the socket
                 {
                   struct pollfd fds;
 
-                  int recvfl = 0;
+                  int tries = 0;
 
                 retry:
+                  ++tries;
                   memset(&fds, 0, sizeof (fds));
                   fds.fd = conn->fd;
                   fds.events = POLLIN;
@@ -370,19 +375,20 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                   ret2 = poll(&fds, 1, conn->ctx->read_timeout*1000);
                   if (-1 == ret2)
                     {
-                      if (errno == EINTR)
+                      if (tries < 3 && errno == EINTR)
                         goto retry;
                       DPL_LOG(conn->ctx, DPL_ERROR, "poll failed: %s", strerror(errno));
                       ret = DPL_FAILURE;
                       goto end;
                     }
-
-                  if (0 == ret2)
+                  else if (0 == ret2)
                     {
-		      DPL_LOG(conn->ctx, DPL_ERROR,
-			      "Timed out waiting to read from server %s:%s",
-			      conn->host, conn->port);
-                      ret = DPL_FAILURE;
+                      if (tries < 3)
+                        goto retry;
+                      DPL_LOG(conn->ctx, DPL_ERROR,
+                        "Timed out waiting to read from server %s:%s",
+                        conn->host, conn->port);
+                        ret = DPL_FAILURE;
                       goto end;
                     }
                   else if (!(fds.revents & POLLIN))
@@ -391,19 +397,23 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                       ret = DPL_FAILURE;
                       goto end;
                     }
+                }
+
+              if (0 == conn->ctx->use_https)
+                {
 
                   /*
                    * We want to read as much as possible in a connclose case,
                    * since we do not know the size of the body in advance.
                    */
-                  recvfl = (chunk_remain >= conn->read_buf_size || connclose) ? MSG_WAITALL : 0;
+                  int recvfl = (chunk_remain >= conn->read_buf_size || connclose) ? MSG_WAITALL : 0;
 
                   conn->cc = recv(conn->fd, conn->read_buf, conn->read_buf_size, recvfl);
                   if (-1 == conn->cc)
                     {
                       DPL_LOG(conn->ctx, DPL_ERROR,
-			      "Failed to read from server %s:%s: %s",
-			      conn->host, conn->port, strerror(errno));
+                        "Failed to read from server %s:%s: %s",
+                        conn->host, conn->port, strerror(errno));
                       ret = DPL_FAILURE;
                       goto end;
                     }
