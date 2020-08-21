@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include "include/bareos.h"
+#include "include/make_unique.h"
 #include "lib/bpoll.h"
 #include "lib/crypto_openssl.h"
 
@@ -47,7 +48,7 @@
 
 #include "parse_conf.h"
 
-TlsOpenSsl::TlsOpenSsl() : d_(new TlsOpenSslPrivate) {}
+TlsOpenSsl::TlsOpenSsl() : d_(std::make_unique<TlsOpenSslPrivate>()) {}
 
 TlsOpenSsl::~TlsOpenSsl() = default;
 

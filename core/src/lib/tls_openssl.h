@@ -50,7 +50,7 @@ class TlsOpenSsl : public Tls {
 
   std::string TlsCipherGetName() const override;
   void SetCipherList(const std::string& cipherlist) override;
-  void SetProtocol(std::string protocol) override;
+  void SetProtocol(const std::string& protocol) override;
   void TlsLogConninfo(JobControlRecord* jcr,
                       const char* host,
                       int port,

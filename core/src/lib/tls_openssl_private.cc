@@ -610,7 +610,7 @@ void TlsOpenSsl::SetCipherList(const std::string& cipherlist)
   d_->cipherlist_ = cipherlist;
 }
 
-void TlsOpenSsl::SetProtocol(std::string protocol)
+void TlsOpenSsl::SetProtocol(const std::string& protocol)
 {
   Dmsg1(100, "Set protocol:\t<%s>\n", protocol.c_str());
   d_->protocol_ = protocol;
