@@ -104,7 +104,7 @@ static void ClosePlugin(Plugin* plugin)
 
 /*
  * Load a specific plugin and check if the plugin had the correct
- * entry points, the license is compatible and the initialize the plugin.
+ * entry points, the license is compatible and initialize the plugin.
  */
 static bool load_a_plugin(void* bareos_plugin_interface_version,
                           void* bareos_core_functions,

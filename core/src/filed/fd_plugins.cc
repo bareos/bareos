@@ -223,10 +223,10 @@ static bool IsCtxGood(PluginContext* ctx,
 /**
  * Test if event is for this plugin
  */
-static bool for_thIsPlugin(Plugin* plugin, char* name, int len)
+static bool IsEventForThisPlugin(Plugin* plugin, char* name, int len)
 {
-  Dmsg4(debuglevel, "name=%s len=%d plugin=%s plen=%d\n", name, len,
-        plugin->file, plugin->file_len);
+  Dmsg4(debuglevel, "IsEventForThisPlugin? name=%s len=%d plugin=%s plen=%d\n",
+        name, len, plugin->file, plugin->file_len);
   if (!name) { /* if no plugin name, all plugins get it */
     return true;
   }
@@ -246,8 +246,24 @@ static bool for_thIsPlugin(Plugin* plugin, char* name, int len)
    * Check if this is the correct plugin
    */
   if (len == plugin->file_len && bstrncmp(plugin->file, name, len)) {
+    Dmsg4(debuglevel,
+          "IsEventForThisPlugin: yes, full match (plugin=%s, name=%s)\n",
+          plugin->file, name);
     return true;
   }
+  // To be able to restore "python" plugin streams with the "python3" plugin,
+  // we check if the required name is the same as the plugin name without the
+  // last character
+  if (len == plugin->file_len - 1 && bstrncmp(plugin->file, name, len)) {
+    Dmsg4(debuglevel,
+          "IsEventForThisPlugin: yes, without last character: (plugin=%s, "
+          "name=%s)\n",
+          plugin->file, name);
+    return true;
+  }
+
+  Dmsg4(debuglevel, "IsEventForThisPlugin: no (plugin=%s, name=%s)\n",
+        plugin->file, name);
 
   return false;
 }
@@ -433,7 +449,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   if (reverse) {
     int i{};
     foreach_alist_rindex (i, ctx, plugin_ctx_list) {
-      if (!for_thIsPlugin(ctx->plugin, name, len)) {
+      if (!IsEventForThisPlugin(ctx->plugin, name, len)) {
         Dmsg2(debuglevel, "Not for this plugin name=%s NULL=%d\n", name,
               (name == NULL) ? 1 : 0);
         continue;
@@ -447,7 +463,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   } else {
     int i{};
     foreach_alist_index (i, ctx, plugin_ctx_list) {
-      if (!for_thIsPlugin(ctx->plugin, name, len)) {
+      if (!IsEventForThisPlugin(ctx->plugin, name, len)) {
         Dmsg2(debuglevel, "Not for this plugin name=%s NULL=%d\n", name,
               (name == NULL) ? 1 : 0);
         continue;
@@ -507,7 +523,7 @@ bool PluginCheckFile(JobControlRecord* jcr, char* fname)
  * Get the first part of the the plugin command
  *  systemstate:/@SYSTEMSTATE/
  * => ret = 11
- * => can use for_thIsPlugin(plug, cmd, ret);
+ * => can use IsEventForThisPlugin(plug, cmd, ret);
  *
  * The plugin command can contain only the plugin name
  *  Plugin = alldrives
@@ -635,7 +651,7 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
   foreach_alist (ctx, plugin_ctx_list) {
     Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd, len);
-    if (!for_thIsPlugin(ctx->plugin, cmd, len)) { continue; }
+    if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
 
     if (!IsEventEnabled(ctx, eventType)) {
       Dmsg1(debuglevel, "Event %d disabled for this plugin.\n", eventType);
@@ -715,7 +731,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
   foreach_alist (ctx, plugin_ctx_list) {
     Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd, len);
-    if (!for_thIsPlugin(ctx->plugin, cmd, len)) { continue; }
+    if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
 
     /*
      * We put the current plugin pointer, and the plugin context into the jcr,
@@ -958,7 +974,7 @@ int PluginEstimate(JobControlRecord* jcr,
   foreach_alist (ctx, plugin_ctx_list) {
     Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd, len);
-    if (!for_thIsPlugin(ctx->plugin, cmd, len)) { continue; }
+    if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
 
     /*
      * We put the current plugin pointer, and the plugin context into the jcr,
@@ -1202,7 +1218,7 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
     b_plugin_ctx* b_ctx;
 
     Dmsg3(debuglevel, "plugin=%s cmd=%s len=%d\n", ctx->plugin->file, cmd, len);
-    if (!for_thIsPlugin(ctx->plugin, cmd, len)) { continue; }
+    if (!IsEventForThisPlugin(ctx->plugin, cmd, len)) { continue; }
 
     if (IsPluginDisabled(ctx)) {
       Dmsg1(debuglevel, "Plugin %s disabled\n", cmd);
