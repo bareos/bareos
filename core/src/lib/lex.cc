@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -389,6 +389,9 @@ int LexGetChar(LEX* lf)
   lf->ch = (uint8_t)lf->line[lf->col_no];
   if (lf->ch == 0) {
     lf->ch = L_EOL;
+  } else if (lf->ch == '\n') {
+    lf->ch = L_EOL;
+    lf->col_no++;
   } else {
     lf->col_no++;
   }
