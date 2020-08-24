@@ -585,6 +585,17 @@ static bool NextLineContinuesWithQuotes(LEX* lf)
   return false;
 }
 
+static bool CurrentLineContinuesWithQuotes(LEX* lf)
+{
+  int i = lf->col_no;
+  while (lf->line[i] != '\0') {
+    if (lf->line[i] == '"') { return true; }
+    if (lf->line[i] != ' ' && lf->line[i] != '\t') { return false; }
+    ++i;
+  };
+  return false;
+}
+
 /*
  *
  * Get the next token from the input
@@ -647,10 +658,7 @@ int LexGetToken(LEX* lf, int expect)
             BeginStr(lf, ch);
             break;
           case ' ':
-            if (continue_string) {
-              //
-              continue;
-            }
+            if (continue_string) { continue; }
             break;
           case '"':
             lf->state = lex_quoted_string;
@@ -810,7 +818,8 @@ int LexGetToken(LEX* lf, int expect)
           break;
         }
         if (ch == '"') {
-          if (NextLineContinuesWithQuotes(lf)) {
+          if (NextLineContinuesWithQuotes(lf) ||
+              CurrentLineContinuesWithQuotes(lf)) {
             continue_string = true;
             lf->state = lex_none;
             continue;
