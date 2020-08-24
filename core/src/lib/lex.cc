@@ -552,6 +552,39 @@ static uint64_t scan_pint64(LEX* lf, char* str)
   return val;
 }
 
+class TemporaryBuffer {
+ public:
+  TemporaryBuffer(FILE* fd) : buf(GetPoolMemory(PM_NAME)), fd_(fd)
+  {
+    pos_ = ftell(fd_);
+  }
+  ~TemporaryBuffer()
+  {
+    FreePoolMemory(buf);
+    fseek(fd_, pos_, SEEK_SET);
+  }
+  POOLMEM* buf;
+
+ private:
+  FILE* fd_;
+  long pos_;
+};
+
+static bool NextLineContinuesWithQuotes(LEX* lf)
+{
+  TemporaryBuffer t(lf->fd);
+
+  if (bfgets(t.buf, lf->fd) != NULL) {
+    int i = 0;
+    while (t.buf[i] != '\0') {
+      if (t.buf[i] == '"') { return true; }
+      if (t.buf[i] != ' ' && t.buf[i] != '\t') { return false; }
+      ++i;
+    };
+  }
+  return false;
+}
+
 /*
  *
  * Get the next token from the input
@@ -561,6 +594,7 @@ int LexGetToken(LEX* lf, int expect)
 {
   int ch;
   int token = BCT_NONE;
+  bool continue_string = false;
   bool esc_next = false;
   /* Unicode files, especially on Win32, may begin with a "Byte Order Mark"
      to indicate which transmission format the file is in. The codepoint for
@@ -612,9 +646,15 @@ int LexGetToken(LEX* lf, int expect)
             token = BCT_EOB;
             BeginStr(lf, ch);
             break;
+          case ' ':
+            if (continue_string) {
+              //
+              continue;
+            }
+            break;
           case '"':
             lf->state = lex_quoted_string;
-            BeginStr(lf, 0);
+            if (!continue_string) { BeginStr(lf, 0); }
             break;
           case '=':
             token = BCT_EQUALS;
@@ -630,8 +670,12 @@ int LexGetToken(LEX* lf, int expect)
             }
             break;
           case L_EOL:
-            Dmsg0(debuglevel, "got L_EOL set token=BCT_EOL\n");
-            if (expect != BCT_SKIP_EOL) { token = BCT_EOL; }
+            if (continue_string) {
+              continue;
+            } else {
+              Dmsg0(debuglevel, "got L_EOL set token=BCT_EOL\n");
+              if (expect != BCT_SKIP_EOL) { token = BCT_EOL; }
+            }
             break;
           case '@':
             /* In NO_EXTERN mode, @ is part of a string */
@@ -766,17 +810,24 @@ int LexGetToken(LEX* lf, int expect)
           break;
         }
         if (ch == '"') {
-          token = BCT_QUOTED_STRING;
-          /*
-           * Since we may be scanning a quoted list of names,
-           *  we get the next character (a comma indicates another
-           *  one), then we put it back for rescanning.
-           */
-          LexGetChar(lf);
-          LexUngetChar(lf);
-          lf->state = lex_none;
+          if (NextLineContinuesWithQuotes(lf)) {
+            continue_string = true;
+            lf->state = lex_none;
+            continue;
+          } else {
+            token = BCT_QUOTED_STRING;
+            /*
+             * Since we may be scanning a quoted list of names,
+             *  we get the next character (a comma indicates another
+             *  one), then we put it back for rescanning.
+             */
+            LexGetChar(lf);
+            LexUngetChar(lf);
+            lf->state = lex_none;
+          }
           break;
         }
+        continue_string = false;
         add_str(lf, ch);
         break;
       case lex_include_quoted_string:
