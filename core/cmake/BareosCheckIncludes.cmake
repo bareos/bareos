@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -104,7 +104,14 @@ CHECK_INCLUDE_FILES(sys/xattr.h HAVE_SYS_XATTR_H)
 CHECK_INCLUDE_FILES(api/glfs.h HAVE_API_GLFS_H)
 
 CHECK_INCLUDE_FILES(cephfs/libcephfs.h HAVE_CEPHFS_LIBCEPHFS_H)
-CHECK_INCLUDE_FILES("sys/stat.h;cephfs/ceph_statx.h" HAVE_CEPHFS_CEPH_STATX_H)
+
+include(CheckSymbolExists)
+include(CMakePushCheckState)
+cmake_push_check_state()
+set(CMAKE_REQUIRED_LIBRARIES cephfs)
+check_symbol_exists(ceph_statx "sys/stat.h;cephfs/libcephfs.h" HAVE_CEPHFS_CEPH_STATX_H)
+cmake_pop_check_state()
+
 CHECK_INCLUDE_FILES(rados/librados.h HAVE_RADOS_LIBRADOS_H)
 CHECK_INCLUDE_FILES(radosstriper/libradosstriper.h HAVE_RADOSSTRIPER_LIBRADOSSTRIPER_H)
 
