@@ -1,0 +1,287 @@
+Director {
+  Name = "bareos-dir"
+  Messages = "Daemon"
+  QueryFile = "@scriptdir@/query.sql"
+  WorkingDirectory = "@working_dir@"
+  PidDirectory = "@piddir@"
+  BackendDirectory = "@backenddir@"
+  MaximumConcurrentJobs = 10
+  Password = "@dir_password@"
+  Auditing = yes
+  DirPort = @dir_port@  
+}
+
+Client {
+  Name = "bareos-fd"
+  Description = "Client resource of the Director itself."
+  Address = "localhost"
+  Password = "[md5]97a3419152ff86bedac46016e0c97271"
+}
+
+JobDefs {
+  Name = "DefaultJob"
+  Type = Backup
+  Level = Incremental
+  Messages = "Standard"
+  Storage = "File"
+  Pool = "Incremental"
+  FullBackupPool = "Full"
+  IncrementalBackupPool = "Incremental"
+  DifferentialBackupPool = "Differential"
+  Client = "bareos-fd"
+  FileSet = "SelfTest"
+  Schedule = "WeeklyCycle"
+  WriteBootstrap = "/var/lib/bareos/%c.bsr"
+  Priority = 10
+}
+
+Job {
+  Name = "backup-bareos-fd"
+  Client = "bareos-fd"
+  JobDefs = "DefaultJob"
+}
+
+Job {
+  Name = "RestoreFiles"
+  Description = "Standard Restore template. Only one such job is needed for all standard Jobs/Clients/Storage ..."
+  Type = Restore
+  Messages = "Standard"
+  Storage = "File"
+  Pool = "Incremental"
+  Client = "bareos-fd"
+  FileSet = "LinuxAll"
+  Where = "/tmp/bareos-restores"
+}
+
+Job {
+  Name = "BackupCatalog"
+  Description = "Backup the catalog database (after the nightly save)"
+  Level = Full
+  FileSet = "Catalog"
+  Schedule = "WeeklyCycleAfterBackup"
+  JobDefs = "DefaultJob"
+  WriteBootstrap = "|/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root"
+  Priority = 11
+  run before job = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+  run after job = "/usr/lib/bareos/scripts/delete_catalog_backup"  
+}
+
+Storage {
+  Name = "File"
+  Address = "vagrant"
+  Password = "[md5]4f389409b83d78959bc9fd95292fb63a"
+  Device = "FileStorage"
+  MediaType = "File"
+}
+
+Catalog {
+  Name = "MyCatalog"
+  DbPassword = "@db_password@"
+  DbUser = "@db_user@"
+  DbName = "@db_name@"
+  DbDriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
+}
+
+Schedule {
+  Name = "WeeklyCycleAfterBackup"
+  Description = "This schedule does the catalog. It starts after the WeeklyCycle."
+  run = Full Mon-Fri at 21:10
+}
+
+Schedule {
+  Name = "WeeklyCycle"
+  run = Full 1st Sat at 21:00
+  run = Differential 2nd-5th Sat at 21:00
+  run = Incremental Mon-Fri at 21:00
+}
+
+FileSet {
+  Name = "Windows All Drives"
+  Include {
+    Options {
+      Signature = MD5
+      IgnoreCase = Yes
+      Exclude = Yes
+      AclSupport = Yes
+      XattrSupport = Yes
+      Wild Dir = "[A-Z]:/RECYCLER"
+      Wild Dir = "[A-Z]:/$RECYCLE.BIN"
+      Wild Dir = "[A-Z]:/System Volume Information"
+      Wild File = "[A-Z]:/pagefile.sys"
+      Drive Type = "fixed"
+    }
+    File = "/"
+  }
+}
+
+FileSet {
+  Name = "SelfTest"
+  Description = "fileset just to backup some files for selftest"
+  Include {
+    Options {
+      Signature = MD5
+      AclSupport = Yes
+      XattrSupport = Yes
+    }
+    File = "/usr/sbin"
+  }
+}
+
+FileSet {
+  Name = "LinuxAll"
+  Description = "Backup all regular filesystems, determined by filesystem type."
+  Include {
+    Options {
+      Signature = MD5
+      OneFS = No
+      AclSupport = Yes
+      XattrSupport = Yes
+      Fs Type = "btrfs"
+      Fs Type = "ext2"
+      Fs Type = "ext3"
+      Fs Type = "ext4"
+      Fs Type = "reiserfs"
+      Fs Type = "jfs"
+      Fs Type = "xfs"
+      Fs Type = "zfs"
+    }
+    File = "/"
+  }
+  Exclude {
+    File = "/var/lib/bareos"
+    File = "/var/lib/bareos/storage"
+    File = "/proc"
+    File = "/tmp"
+    File = "/var/tmp"
+    File = "/.journal"
+    File = "/.fsck"
+  }
+}
+
+FileSet {
+  Name = "Catalog"
+  Description = "Backup the catalog dump and Bareos configuration files."
+  Include {
+    Options {
+      Signature = MD5
+      AclSupport = Yes
+      XattrSupport = Yes
+    }
+    File = "/var/lib/bareos/bareos.sql"
+    File = "/etc/bareos"
+  }
+}
+
+Pool {
+  Name = "Scratch"
+  PoolType = Scratch
+}
+
+Pool {
+  Name = "Incremental"
+  PoolType = Backup
+  LabelFormat = "Incremental-"
+  MaximumVolumes = 100
+  MaximumVolumeBytes = 1 g 
+  VolumeRetention = 1 months 
+  AutoPrune = yes
+  Recycle = yes
+}
+
+Pool {
+  Name = "Full"
+  PoolType = Backup
+  LabelFormat = "Full-"
+  MaximumVolumes = 100
+  MaximumVolumeBytes = 50 g 
+  VolumeRetention = 1 years 
+  AutoPrune = yes
+  Recycle = yes
+}
+
+Pool {
+  Name = "Differential"
+  PoolType = Backup
+  LabelFormat = "Differential-"
+  MaximumVolumes = 100
+  MaximumVolumeBytes = 10 g 
+  VolumeRetention = 3 months 
+  AutoPrune = yes
+  Recycle = yes
+}
+
+Messages {
+  Name = "Standard"
+  MailCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
+  OperatorCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
+  catalog = all,!saved,!skipped,!audit
+  append = @logdir@/bareos.log = all,!saved,!skipped,!audit
+  console = all,!saved,!skipped,!audit
+  mail = root = all,!saved,!skipped,!audit
+  operator = root = mount
+}
+
+Messages {
+  Name = "Daemon"
+  MailCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
+  append = @logdir@/bareos-audit.log = audit
+  append = @logdir@/bareos.log = all,!skipped,!audit
+  console = all,!saved,!skipped,!audit
+  mail = root = all,!skipped,!audit
+}
+
+Profile {
+  Name = "webui-readonly"
+  JobACL = "*all*"
+  ClientACL = "*all*"
+  StorageACL = "*all*"
+  ScheduleACL = "*all*"
+  PoolACL = "*all*"
+  CommandACL = ".api", ".help", "use", "version", "status", "list", "llist", ".clients", ".jobs", ".filesets", ".pools", ".storages", ".defaults", ".schedule", ".bvfs_lsdirs", ".bvfs_lsfiles", ".bvfs_update", ".bvfs_get_jobids", ".bvfs_versions", ".bvfs_restore"
+  FileSetACL = "*all*"
+  CatalogACL = "*all*"
+  WhereACL = "*all*"
+}
+
+Profile {
+  Name = "webui-admin"
+  JobACL = "*all*"
+  ClientACL = "*all*"
+  StorageACL = "*all*"
+  ScheduleACL = "*all*"
+  PoolACL = "*all*"
+  CommandACL = "!.bvfs_clear_cache", "!.exit", "!.sql", "!configure", "!create", "!delete", "!purge", "!prune", "!sqlquery", "!umount", "!unmount", "*all*"
+  FileSetACL = "*all*"
+  CatalogACL = "*all*"
+  WhereACL = "*all*"
+}
+
+Profile {
+  Name = "operator"
+  Description = "Profile allowing normal Bareos operations."
+  JobACL = "*all*"
+  ClientACL = "*all*"
+  StorageACL = "*all*"
+  ScheduleACL = "*all*"
+  PoolACL = "*all*"
+  CommandACL = "!.bvfs_clear_cache", "!.exit", "!.sql", "!configure", "!create", "!delete", "!purge", "!prune", "!sqlquery", "!umount", "!unmount", "*all*"
+  FileSetACL = "*all*"
+  CatalogACL = "*all*"
+  WhereACL = "*all*"
+  PluginOptionsACL = "*all*"
+}
+
+Console {
+  Name = "bareos-mon"
+  Description = "Restricted console used by tray-monitor to get the status of the director."
+  Password = "[md5]4cf5943929b8447731b086f0f43f7f99"
+  JobACL = "*all*"
+  CommandACL = "status", ".status"
+}
+
+Console {
+  Name = "admin"
+  Password = "[md5]5ebe2294ecd0e0f08eab7690d2a6ee69"
+  Profile = "webui-admin"
+  TlsEnable = no
+}

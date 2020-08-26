@@ -6,7 +6,7 @@
 sed \
   -i \
   -e 's/dbdriver =.*/dbdriver = XXX_REPLACE_WITH_DATABASE_DRIVER_XXX/' \
-  etc/bareos/bareos-dir.d/catalog/*.conf
+  etc/bareos/bareos-dir.d/catalog/*.conf 2>/dev/null
 
 ${scripts}/bareos-config initialize_database_driver
 . ${rscripts}/functions
