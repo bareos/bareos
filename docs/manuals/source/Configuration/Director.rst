@@ -494,16 +494,25 @@ Please take note of the following items in the FileSet syntax:
    
    Subdirectories will not be backed up. That is, the directive applies to the two directories in question and any children (be they files, directories, etc).
 
+.. # define a hard line break for HTML
+.. |br| raw:: html
+
+   <br />
 
 .. _directive-fileset-plugin:
 
 .. config:option:: dir/fileset/include/Plugin
 
-   :type: plugin-name:plugin-parameter1:plugin-parameter2:...
+   :type: "plugin-name" |br|
+          ":plugin-parameter1" |br|
+          ":plugin-parameter2" |br|
+          ":..."
 
    Instead of only specifying files, a file set can also use plugins. Plugins are additional libraries that handle specific requirements. The purpose of plugins is to provide an interface to any system program for backup and restore. That allows you, for example, to do database backups without a local dump.
 
    The syntax and semantics of the Plugin directive require the first part of the string up to the colon to be the name of the plugin. Everything after the first colon is ignored by the File daemon but is passed to the plugin. Thus the plugin writer may define the meaning of the rest of the string as he wishes.
+
+   Since :sinceVersion:`20: Multiline Strings` the plugin string can be spread over multiple lines using quotes as shown above.
 
    For more information, see :ref:`fdPlugins`.
    

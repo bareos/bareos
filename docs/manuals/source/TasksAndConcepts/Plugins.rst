@@ -27,7 +27,6 @@ File Daemon plugins are configured by the :strong:`Plugin`\  directive of a :ref
 
    Currently the plugin command is being stored as part of the backup. The restore command in your directive should be flexible enough if things might change in future, otherwise you could run into trouble.
 
-
 .. _bpipe:
 
 bpipe Plugin
@@ -54,11 +53,16 @@ The bpipe plugin is specified in the Include section of your Job’s FileSet res
          signature = MD5
          compression = gzip
        }
-       Plugin = "bpipe:file=<filepath>:reader=<readprogram>:writer=<writeprogram>
+       Plugin = "bpipe"
+                ":file=<filepath>"
+                ":reader=<readprogram>"
+                ":writer=<writeprogram>"
      }
    }
 
 The syntax and semantics of the Plugin directive require the first part of the string up to the colon to be the name of the plugin. Everything after the first colon is ignored by the File daemon but is passed to the plugin. Thus the plugin writer may define the meaning of the rest of the string as he wishes. The full syntax of the plugin directive as interpreted by the bpipe plugin is:
+
+Since Bareos :sinceVersion:`20: Multiline Strings` the plugin string can be spread over multiple lines using quotes as shown above.
 
 .. code-block:: bareosconfig
    :caption: bpipe directive
@@ -156,7 +160,9 @@ Command plugins are used to replace or extend the FileSet definition in the File
          Signature = MD5 # calculate md5 checksum per file
        }
        File = "/etc"
-       Plugin = "python:module_path=/usr/lib/bareos/plugins:module_name=bareos-fd-mysql"
+       Plugin = "python"
+                ":module_path=/usr/lib/bareos/plugins"
+                ":module_name=bareos-fd-mysql"
      }
    }
 
@@ -177,7 +183,9 @@ Example:
      Include {
        Options {
          Signature = MD5 # calculate md5 checksum per file
-         Plugin = "python:module_path=/usr/lib/bareos/plugins:module_name=bareos-fd-file-interact"
+         Plugin = "python"
+                  ":module_path=/usr/lib/bareos/plugins"
+                  ":module_name=bareos-fd-file-interact"
        }
        File = "/etc"
        File = "/usr/lib/bareos/plugins"
@@ -294,7 +302,14 @@ To define the backup of a VM in Bareos, a job definition and a fileset resource 
             signature = MD5
             Compression = GZIP
        }
-       Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234"
+       Plugin = "python"
+                ":module_path=/usr/lib64/bareos/plugins"
+                ":module_name=bareos-fd-vmware"
+                ":dc=mydc1:folder=/webservers"
+                ":vmname=websrv1"
+                ":vcserver=vcenter.example.org"
+                ":vcuser=bakadm@vsphere.local"
+                ":vcpass=Bak.Adm-1234"
      }
    }
 
@@ -305,7 +320,10 @@ Since Bareos :sinceVersion:`17.2.4: bareos-vmware-plugin: module\_path without v
 .. code-block:: bareosconfig
    :caption: python:module\_path for Bareos < 17.2.0
 
-   Plugin = "python:module_path=/usr/lib64/bareos/plugins/vmware_plugin:module_name=bareos-fd-vmware:...
+   Plugin = "python"
+            ":module_path=/usr/lib64/bareos/plugins/vmware_plugin"
+            ":module_name=bareos-fd-vmware"
+            ":..."
 
 to
 
@@ -336,7 +354,15 @@ For additional security, there is a now plugin option :command:`vcthumbprint`, t
    :caption: bareos-dir.conf: VMware Plugin Options with vcthumbprint
 
        ...
-       Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:vcthumbprint=56F597FE60521773D073A2ED47CE07282CE6FE9C"
+       Plugin = "pythoni"
+                ":module_path=/usr/lib64/bareos/plugins"
+                ":module_name=bareos-fd-vmware"
+                ":dc=mydc1:folder=/webservers"
+                ":vmname=websrv1"
+                ":vcserver=vcenter.example.org"
+                ":vcuser=bakadm@vsphere.local"
+                ":vcpass=Bak.Adm-1234"
+                ":vcthumbprint=56F597FE60521773D073A2ED47CE07282CE6FE9C"
        ...
 
 For ease of use (but less secure) when the :command:`vcthumbprint` is not given, the plugin will retrieve the thumbprint.
@@ -353,7 +379,16 @@ To try forcing a given transport method, the plugin option :command:`transport` 
    :caption: bareos-dir.conf: VMware Plugin options with transport
 
        ...
-       Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:transport=nbdssl"
+       Plugin = "python"
+                ":module_path=/usr/lib64/bareos/plugins"
+                ":module_name=bareos-fd-vmware"
+                ":dc=mydc1"
+                ":folder=/webservers"
+                ":vmname=websrv1"
+                ":vcserver=vcenter.example.org"
+                ":vcuser=bakadm@vsphere.local"
+                ":vcpass=Bak.Adm-1234"
+                ":transport=nbdssl"
        ...
 
 Note that the backup will fail when specifying a transport method that is not available.
@@ -372,7 +407,15 @@ Since :sinceVersion:`17.2.8: VMware Plugin: non-ascii characters` it is possible
             signature = MD5
             Compression = GZIP
        }
-       Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/Test/Test Folder/Test vApp:vmname=Test VM 01:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234"
+       Plugin = "python"
+                ":module_path=/usr/lib64/bareos/plugins"
+                ":module_name=bareos-fd-vmware"
+                ":dc=mydc1"
+                ":folder=/Test/Test Folder/Test vApp"
+                ":vmname=Test VM 01"
+                ":vcserver=vcenter.example.org"
+                ":vcuser=bakadm@vsphere.local"
+                ":vcpass=Bak.Adm-1234"
      }
    }
 
@@ -384,7 +427,15 @@ Since :sinceVersion:`17.2.8: VMware Plugin: non-ascii characters` it is possible
             signature = MD5
             Compression = GZIP
        }
-       Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/Test/Test Folder/Test vApp:vmname=Test VM 02:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234"
+       Plugin = "python"
+                ":module_path=/usr/lib64/bareos/plugins"
+                ":module_name=bareos-fd-vmware"
+                ":dc=mydc1"
+                ":folder=/Test/Test Folder/Test vApp"
+                ":vmname=Test VM 02"
+                ":vcserver=vcenter.example.org"
+                ":vcuser=bakadm@vsphere.local"
+                ":vcpass=Bak.Adm-1234"
      }
    }
 
@@ -399,7 +450,14 @@ Before this, it was only possible specify VMs contained in vApps by using the in
      Name = "vApp_Test_vm_Test_VM_01_fileset"
        ...
 
-       Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:uuid=502b112f-3954-d761-be08-5570c8a780e2:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234"
+       Plugin = "python"
+                ":module_path=/usr/lib64/bareos/plugins"
+                ":module_name=bareos-fd-vmware"
+                ":dc=mydc1"
+                ":uuid=502b112f-3954-d761-be08-5570c8a780e2"
+                ":vcserver=vcenter.example.org"
+                ":vcuser=bakadm@vsphere.local"
+                ":vcpass=Bak.Adm-1234"
      }
    }
 
@@ -418,7 +476,13 @@ Since :sinceVersion:`20.2.0: VMware Plugin: config file` it is optionally possib
             signature = MD5
             Compression = GZIP
        }
-       Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:config_file=/etc/bareos/vmware-plugin.ini"
+       Plugin = "python"
+                ":module_path=/usr/lib64/bareos/plugins"
+                ":module_name=bareos-fd-vmware"
+                ":dc=mydc1"
+                ":folder=/webservers"
+                ":vmname=websrv1"
+                ":config_file=/etc/bareos/vmware-plugin.ini"
      }
    }
 
@@ -612,7 +676,21 @@ Note: Since Bareos :sinceVersion:`15.2.3: Add additional python plugin options` 
 
 :strong:`python:localvmdk=yes`
 
-Before, all Python plugin must be repeated and the additional be added, like: :file:`python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=dass5:folder=/:vmname=stephand-test02:vcserver=virtualcenter5.dass-it:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:localvmdk=yes`
+Before, all Python plugin must be repeated and the additional be added, like:
+
+.. code-block:: bareosconfig
+   :caption: /etc/bareos/vmware-plugin.ini
+
+   "python"
+   ":module_path=/usr/lib64/bareos/plugins"
+   ":module_name=bareos-fd-vmware"
+   ":dc=dass5"
+   ":folder=/"
+   ":vmname=stephand-test02"
+   ":vcserver=virtualcenter5.dass-it"
+   ":vcuser=bakadm@vsphere.local"
+   ":vcpass=Bak.Adm-1234"
+   ":localvmdk=yes"
 
 After the restore process has finished, the restored VMDK files can be found under \path{/tmp/bareos-restores/}:
 
@@ -749,7 +827,14 @@ example to backup the VM **testvm1**, configure the fileset as follows:
             signature = MD5
             Compression = LZ4
          }
-         Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-ovirt:ca=/etc/bareos/ovirt-ca.cert:server=engine.example.com:username=admin@internal:password=secret:vm_name=testvm1"
+         Plugin = "python"
+                  ":module_path=/usr/lib64/bareos/plugins"
+                  ":module_name=bareos-fd-ovirt"
+                  ":ca=/etc/bareos/ovirt-ca.cert"
+                  ":server=engine.example.com"
+                  ":username=admin@internal"
+                  ":password=secret"
+                  ":vm_name=testvm1"
       }
    }
 
@@ -781,7 +866,13 @@ Optionally, it is possible to use a configuration file on the system running the
             signature = MD5
             Compression = LZ4
          }
-         Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-ovirt:ca=/etc/bareos/ovirt-ca.cert:server=engine.example.com:config_file=/etc/bareos/ovirt-plugin.ini:vm_name=testvm1"
+         Plugin = "python"
+                  ":module_path=/usr/lib64/bareos/plugins"
+                  ":module_name=bareos-fd-ovirt"
+                  ":ca=/etc/bareos/ovirt-ca.cert"
+                  ":server=engine.example.com"
+                  ":config_file=/etc/bareos/ovirt-plugin.ini"
+                  ":vm_name=testvm1"
       }
    }
 
@@ -1145,7 +1236,10 @@ Now include the plugin as command-plugin in the Fileset resource:
            }
            File = /etc
            #...
-           Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona-xtrabackup:mycnf=/root/.my.cnf"
+           Plugin = "python"
+                    ":module_path=/usr/lib64/bareos/plugins"
+                    ":module_name=bareos-fd-percona-xtrabackup"
+                    ":mycnf=/root/.my.cnf"
        }
    }
 
@@ -1286,7 +1380,11 @@ Now include the plugin as command-plugin in the fileset resource and define a jo
                compression=GZIP
                signature = MD5
            }
-           Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-postgres:postgresDataDir=/var/lib/pgsql/data:walArchive=/var/lib/pgsql/wal_archive/"
+           Plugin = "python"
+                    ":module_path=/usr/lib64/bareos/plugins"
+                    ":module_name=bareos-fd-postgres"
+                    ":postgresDataDir=/var/lib/pgsql/data"
+                    ":walArchive=/var/lib/pgsql/wal_archive/"
        }
    }
 
@@ -1691,7 +1789,11 @@ Single Python Plugin Loading Example:
      Type = Backup
      # ...
      # Load the class based plugin with testoption=testparam
-     Dir Plugin Options = "python:instance=0:module_path=/usr/lib64/bareos/plugins:module_name=bareos-dir-class-plugins:testoption=testparam
+     Dir Plugin Options = "python"
+                          ":instance=0"
+                          ":module_path=/usr/lib64/bareos/plugins"
+                          ":module_name=bareos-dir-class-plugins"
+                          ":testoption=testparam"
      # ...
    }
 
@@ -1713,8 +1815,16 @@ Multiple Python Plugin Loading Example:
      Type = Backup
      # ...
      # Load the class based plugin with testoption=testparam
-     Dir Plugin Options = "python:instance=0:module_path=/usr/lib64/bareos/plugins:module_name=bareos-dir-class-plugins:testoption=testparam1
-     Dir Plugin Options = "python:instance=1:module_path=/usr/lib64/bareos/plugins:module_name=bareos-dir-class-plugins:testoption=testparam2
+     Dir Plugin Options = "python"
+                          ":instance=0"
+                          ":module_path=/usr/lib64/bareos/plugins"
+                          ":module_name=bareos-dir-class-plugins"
+                          ":testoption=testparam1"
+     Dir Plugin Options = "python"
+                          ":instance=1"
+                          ":module_path=/usr/lib64/bareos/plugins"
+                          ":module_name=bareos-dir-class-plugins"
+                          ":testoption=testparam2"
      # ...
    }
 

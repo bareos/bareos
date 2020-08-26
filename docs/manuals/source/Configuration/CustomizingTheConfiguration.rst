@@ -415,6 +415,17 @@ In general, if you want spaces in a name to the right of the first equal sign (=
 
 Within a quoted string, any character following a backslash (\) is taken as itself (handy for inserting backslashes and double quotes (")).
 
+.. note::
+
+   Since Bareos :sinceVersion:`20: Multiline Strings` strings can be spread over multiple lines using quotes like this:
+
+   .. code-block:: bareosconfig
+      :caption: Multiline string values
+
+      FooBar = "This is the first line of text"
+               "  This is another line"
+        "This is the third line   "
+
 .. warning::
 
    If the configure directive is used to define a number, the number is never to be put between surrounding quotes. This is even true if the number is specified together with its unit, like :strong:`365 days`.
@@ -616,6 +627,7 @@ string
 
    A quoted string containing virtually any character including spaces, or a non-quoted string. A string may be of any length. Strings are typically values that correspond to filenames, directories, or system command names. A backslash (\) turns the next character into itself, so to include a double quote in a string, you precede the double quote with a backslash. Likewise to include a backslash.
 
+   Since Bareos :sinceVersion:`20: Multiline Strings` strings can be spread over multiple lines using quotes as shown in the example above.
 
 .. _DataTypeStringList:
 
