@@ -234,7 +234,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                     conn.close()
                     for line in info.split("\n"):
                         if line.startswith("Log sequence number"):
-                            last_lsn = int(line.split(" ")[3])
+                            last_lsn = int(line.split(" ")[-1])
                 except Exception as e:
                     JobMessage(
                         context,
