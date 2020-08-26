@@ -66,6 +66,9 @@ TlsOpenSslPrivate::TlsOpenSslPrivate()
 
   /* the SSL_CTX object is the factory that creates
    * openssl objects, so initialize this first */
+#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
+  #error "OPENSSL VERSION < 1.0.2 not supported"
+#endif
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
   openssl_ctx_ = SSL_CTX_new(TLS_method());

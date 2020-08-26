@@ -44,6 +44,9 @@ include(FindOpenSSL)
 
 if(${OPENSSL_FOUND})
   set(HAVE_OPENSSL 1)
+  if(OPENSSL_VERSION VERSION_LESS "1.0.2")
+    message(FATAL_ERROR "Need at least OpenSSL version 1.0.2")
+  endif()
 endif()
 
 include(BareosFindLibraryAndHeaders)
