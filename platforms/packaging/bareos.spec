@@ -803,6 +803,13 @@ export MTX=/usr/sbin/mtx
   --with-openssl \
   --with-basename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   --with-hostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+%if 0%{?ceph}
+  --with-rados \
+  --with-cephfs \
+%else
+  --without-rados \
+  --without-cephfs \
+%endif
 %if 0%{?systemd_support}
   --with-systemd \
 %endif
