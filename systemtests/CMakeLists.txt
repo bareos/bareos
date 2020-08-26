@@ -677,6 +677,20 @@ set(glusterfs_uri
 )
 mark_as_advanced(glusterfs_uri)
 
+include(BareosCheckXattr)
+if(SETFATTR_WORKS)
+  list(APPEND SYSTEM_TESTS xattr)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED xattr)
+endif()
+
+include(BareosCheckAcl)
+if(SETFACL_WORKS)
+  list(APPEND SYSTEM_TESTS acl)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED acl)
+endif()
+
 if(TARGET droplet)
   list(APPEND SYSTEM_TESTS droplet-s3)
 else()

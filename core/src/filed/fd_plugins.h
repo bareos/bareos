@@ -282,18 +282,18 @@ bool PluginSetAttributes(JobControlRecord* jcr,
                          Attributes* attr,
                          BareosWinFilePacket* ofd);
 bacl_exit_code PluginBuildAclStreams(JobControlRecord* jcr,
-                                     acl_data_t* acl_data,
+                                     AclData* acl_data,
                                      FindFilesPacket* ff_pkt);
 bacl_exit_code plugin_parse_acl_streams(JobControlRecord* jcr,
-                                        acl_data_t* acl_data,
+                                        AclData* acl_data,
                                         int stream,
                                         char* content,
                                         uint32_t content_length);
 BxattrExitCode PluginBuildXattrStreams(JobControlRecord* jcr,
-                                       struct xattr_data_t* xattr_data,
+                                       struct XattrData* xattr_data,
                                        FindFilesPacket* ff_pkt);
 BxattrExitCode PluginParseXattrStreams(JobControlRecord* jcr,
-                                       struct xattr_data_t* xattr_data,
+                                       struct XattrData* xattr_data,
                                        int stream,
                                        char* content,
                                        uint32_t content_length);

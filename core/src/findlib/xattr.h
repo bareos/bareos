@@ -86,10 +86,11 @@ struct xattr_parse_data_t {
 /*
  * Internal tracking data.
  */
-struct xattr_data_t {
+struct XattrData {
   POOLMEM* last_fname;
-  uint32_t flags; /* See BXATTR_FLAG_* */
-  uint32_t current_dev;
+  uint32_t flags{0}; /* See BXATTR_FLAG_* */
+  uint32_t current_dev{0};
+  bool first_dev{true};
   union {
     struct xattr_build_data_t* build;
     struct xattr_parse_data_t* parse;
@@ -108,23 +109,23 @@ struct xattr_data_t {
 class alist;
 
 BxattrExitCode SendXattrStream(JobControlRecord* jcr,
-                               xattr_data_t* xattr_data,
+                               XattrData* xattr_data,
                                int stream);
 void XattrDropInternalTable(alist* xattr_value_list);
 uint32_t SerializeXattrStream(JobControlRecord* jcr,
-                              xattr_data_t* xattr_data,
+                              XattrData* xattr_data,
                               uint32_t expected_serialize_len,
                               alist* xattr_value_list);
 BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
-                                      xattr_data_t* xattr_data,
+                                      XattrData* xattr_data,
                                       char* content,
                                       uint32_t content_length,
                                       alist* xattr_value_list);
 BxattrExitCode BuildXattrStreams(JobControlRecord* jcr,
-                                 struct xattr_data_t* xattr_data,
+                                 struct XattrData* xattr_data,
                                  FindFilesPacket* ff_pkt);
 BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
-                                 struct xattr_data_t* xattr_data,
+                                 struct XattrData* xattr_data,
                                  int stream,
                                  char* content,
                                  uint32_t content_length);
