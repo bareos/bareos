@@ -91,7 +91,7 @@ BuildRequires: libtirpc-devel
 %define droplet 1
 %endif
 
-%if 0%{?sle_version} >= 120000
+%if 0%{?sle_version} >= 120000 && 0%{?sle_version} < 150000
 %define ceph 1
 %endif
 
