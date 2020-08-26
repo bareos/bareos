@@ -35,7 +35,11 @@ class AutochangerResource : public BareosResource {
   AutochangerResource();
   virtual ~AutochangerResource() = default;
   AutochangerResource& operator=(const AutochangerResource& rhs);
-  bool PrintConfigToBuffer(PoolMem& buf);
+  bool PrintConfig(OutputFormatterResource& send,
+                   const ConfigurationParser&,
+                   bool hide_sensitive_data,
+                   bool verbose = false) override;
+
 
   alist* device_resources; /**< List of DeviceResource device pointers */
   char* changer_name;      /**< Changer device name */

@@ -44,6 +44,7 @@
 #include "lib/tls_resource_items.h"
 #define NEED_JANSSON_NAMESPACE 1
 #include "lib/output_formatter.h"
+#include "lib/output_formatter_resource.h"
 #include "lib/json.h"
 #include "include/auth_types.h"
 #include "include/jcr.h"
@@ -57,7 +58,7 @@ static void FreeResource(BareosResource* sres, int type);
 static bool SaveResource(int type, ResourceItem* items, int pass);
 static void DumpResource(int type,
                          BareosResource* reshdr,
-                         void sendit(void* sock, const char* fmt, ...),
+                         bool sendit(void* sock, const char* fmt, ...),
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose);
@@ -660,13 +661,17 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
 static bool DumpResource_(int type,
                           BareosResource* res,
-                          void sendit(void* sock, const char* fmt, ...),
+                          bool sendit(void* sock, const char* fmt, ...),
                           void* sock,
                           bool hide_sensitive_data,
                           bool verbose)
 {
   PoolMem buf;
   bool recurse = true;
+  OutputFormatter output_formatter =
+      OutputFormatter(sendit, sock, nullptr, nullptr);
+  OutputFormatterResource output_formatter_resource =
+      OutputFormatterResource(&output_formatter);
 
   if (!res) {
     sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
@@ -679,43 +684,43 @@ static bool DumpResource_(int type,
     recurse = false;
   }
 
-  bool buffer_is_valid = true;
-
   switch (type) {
     case R_MSGS: {
       MessagesResource* resclass = dynamic_cast<MessagesResource*>(res);
       assert(resclass);
-      resclass->PrintConfig(buf, *my_config);
+      resclass->PrintConfig(output_formatter_resource, *my_config,
+                            hide_sensitive_data, verbose);
       break;
     }
     case R_DEVICE: {
       DeviceResource* d = dynamic_cast<DeviceResource*>(res);
       assert(d);
-      buffer_is_valid = d->PrintConfig(buf, *my_config);
+      d->PrintConfig(output_formatter_resource, *my_config, hide_sensitive_data,
+                     verbose);
       break;
     }
     case R_AUTOCHANGER: {
       AutochangerResource* autochanger =
           dynamic_cast<AutochangerResource*>(res);
       assert(autochanger);
-      autochanger->PrintConfigToBuffer(buf);
+      autochanger->PrintConfig(output_formatter_resource, *my_config,
+                               hide_sensitive_data, verbose);
       break;
     }
     default:
       BareosResource* p = dynamic_cast<BareosResource*>(res);
       assert(p);
-      p->PrintConfig(buf, *my_config);
+      p->PrintConfig(output_formatter_resource, *my_config, hide_sensitive_data,
+                     verbose);
       break;
   }
-
-  if (buffer_is_valid) { sendit(sock, "%s", buf.c_str()); }
 
   return recurse;
 }
 
 static void DumpResource(int type,
                          BareosResource* res,
-                         void sendit(void* sock, const char* fmt, ...),
+                         bool sendit(void* sock, const char* fmt, ...),
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose)

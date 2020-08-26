@@ -138,6 +138,7 @@ set(BAREOS_SRCS
     messages_resource.cc
     mntent_cache.cc
     output_formatter.cc
+    output_formatter_resource.cc
     passphrase.cc
     path_list.cc
     plugins.cc

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,8 @@
 
 class PoolMem;
 class ConfigurationParser;
+class OutputFormatterResource;
+class ResourceItem;
 
 #define MAX_RES_ITEMS 95 /* maximum resource items per BareosResource */
 
@@ -41,19 +43,27 @@ class BareosResource {
   std::string rcode_str_;
   char item_present_[MAX_RES_ITEMS]; /* Set if item is present in conf file */
   char inherit_content_[MAX_RES_ITEMS]; /* Set if item has inherited content */
+  bool internal_{false};
 
   BareosResource();
   BareosResource(const BareosResource& other);
   BareosResource& operator=(const BareosResource& rhs);
 
   virtual ~BareosResource() = default;
-
-  virtual bool PrintConfig(PoolMem& buf,
+  virtual bool PrintConfig(OutputFormatterResource& send,
                            const ConfigurationParser& my_config,
                            bool hide_sensitive_data = false,
                            bool verbose = false);
 
   virtual bool Validate();
+  virtual void PrintResourceItem(ResourceItem& item,
+                                 const ConfigurationParser& my_config,
+                                 OutputFormatterResource& send,
+                                 bool hide_sensitive_data,
+                                 bool inherited,
+                                 bool verbose);
 };
+
+const char* GetResourceName(void* resource);
 
 #endif /* BAREOS_LIB_BAREOS_RESOURCE_H_ */

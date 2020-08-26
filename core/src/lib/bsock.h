@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -180,6 +180,7 @@ class BareosSocket {
   virtual int WaitData(int sec, int usec = 0) = 0;
   virtual int WaitDataIntr(int sec, int usec = 0) = 0;
   bool fsend(const char*, ...);
+  bool vfsend(const char* fmt, va_list ap);
   bool send(const char* msg_in, uint32_t nbytes);
   void SetKillable(bool killable);
   bool signal(int signal);

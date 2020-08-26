@@ -29,7 +29,7 @@ class ConfigurationParser;
 typedef bool (*SaveResourceCb_t)(int type, ResourceItem* item, int pass);
 typedef void (*DumpResourceCb_t)(int type,
                                  BareosResource* res,
-                                 void sendmsg(void* sock, const char* fmt, ...),
+                                 bool sendmsg(void* sock, const char* fmt, ...),
                                  void* sock,
                                  bool hide_sensitive_data,
                                  bool verbose);

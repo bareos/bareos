@@ -33,11 +33,11 @@
 
 #include "include/bareos.h"
 #include "lib/bsock.h"
-#include "lib/output_formatter.h"
 
 class JobControlRecord;
 class BareosDb;
 class guid_list;
+class OutputFormatter;
 typedef struct s_tree_root TREE_ROOT;
 typedef struct s_tree_node TREE_NODE;
 

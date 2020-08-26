@@ -48,7 +48,10 @@ AutochangerResource& AutochangerResource::operator=(
   return *this;
 }
 
-bool AutochangerResource::PrintConfigToBuffer(PoolMem& buf)
+bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
+                                      const ConfigurationParser&,
+                                      bool hide_sensitive_data,
+                                      bool verbose)
 {
   alist* original_alist = device_resources;
   alist* temp_alist = new alist(original_alist->size(), not_owned_by_alist);
@@ -66,7 +69,7 @@ bool AutochangerResource::PrintConfigToBuffer(PoolMem& buf)
     }
   }
   device_resources = temp_alist;
-  PrintConfig(buf, *my_config);
+  BareosResource::PrintConfig(send, *my_config, hide_sensitive_data, verbose);
   device_resources = original_alist;
   foreach_alist (device_resource, temp_alist) {
     delete device_resource;

@@ -81,7 +81,7 @@ static JobControlRecord* PrepareJobToRun(const char* job_name);
 
 /* Exported subroutines */
 extern bool ParseDirConfig(const char* configfile, int exit_code);
-extern void PrintMessage(void* sock, const char* fmt, ...);
+extern bool PrintMessage(void* sock, const char* fmt, ...);
 
 /* Imported subroutines */
 void StoreJobtype(LEX* lc, ResourceItem* item, int index, int pass);

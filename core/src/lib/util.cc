@@ -85,6 +85,15 @@ void EscapeString(PoolMem& snew, const char* old, int len)
   *n = 0;
 }
 
+
+std::string EscapeString(const char* old)
+{
+  PoolMem snew;
+  EscapeString(snew, old, strlen(old));
+  return std::string(snew.c_str());
+}
+
+
 /*
  * Return true of buffer has all zero bytes
  */
@@ -1136,4 +1145,20 @@ std::string getenv_std_string(std::string env_var)
 {
   const char* v = (std::getenv(env_var.c_str()));
   return v ? std::string(v) : std::string();
+}
+
+
+bool pm_append(void* pm_string, const char* fmt, ...)
+{
+  PoolMem additionalstring;
+  PoolMem* pm = static_cast<PoolMem*>(pm_string);
+
+  va_list arg_ptr;
+  va_start(arg_ptr, fmt);
+  additionalstring.Bvsprintf(fmt, arg_ptr);
+  va_end(arg_ptr);
+
+  pm->strcat(additionalstring);
+
+  return true;
 }

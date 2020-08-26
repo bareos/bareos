@@ -65,6 +65,7 @@
 #include "cats/sql_pooling.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
+#include "lib/output_formatter_resource.h"
 #include "lib/parse_bsr.h"
 #include "lib/parse_conf.h"
 #include "lib/thread_specific_data.h"
@@ -1434,8 +1435,14 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
   if (!jcr->impl->res.fileset->ignore_fs_changes ||
       !jcr->db->GetFilesetRecord(jcr, &fsr)) {
     PoolMem FileSetText(PM_MESSAGE);
+    OutputFormatter output_formatter =
+        OutputFormatter(pm_append, (void*)&FileSetText, nullptr, nullptr);
+    OutputFormatterResource output_formatter_resource =
+        OutputFormatterResource(&output_formatter);
 
-    jcr->impl->res.fileset->PrintConfig(FileSetText, *my_config, false, false);
+    jcr->impl->res.fileset->PrintConfig(output_formatter_resource, *my_config,
+                                        false, false);
+
     fsr.FileSetText = FileSetText.c_str();
 
     if (!jcr->db->CreateFilesetRecord(jcr, &fsr)) {

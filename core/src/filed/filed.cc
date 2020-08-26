@@ -46,7 +46,7 @@ using namespace filedaemon;
 
 /* Imported Functions */
 extern void* handle_connection_request(void* dir_sock);
-extern void PrintMessage(void* sock, const char* fmt, ...);
+extern bool PrintMessage(void* sock, const char* fmt, ...);
 
 /* Forward referenced functions */
 static bool CheckResources();

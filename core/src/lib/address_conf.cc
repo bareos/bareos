@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,7 @@
 #include "lib/bnet.h"
 #include "lib/bsys.h"
 #include "lib/edit.h"
+#include "lib/output_formatter_resource.h"
 
 
 #ifdef HAVE_ARPA_NAMESER_H
@@ -204,33 +205,29 @@ const char* IPADDR::GetAddress(char* outputbuf, int outlen)
   return outputbuf;
 }
 
-const char* IPADDR::BuildConfigString(char* buf, int blen)
+void IPADDR::BuildConfigString(OutputFormatterResource& send, bool as_comment)
 {
   char tmp[1024];
+  std::string formatstring;
 
   switch (GetFamily()) {
     case AF_INET:
-      Bsnprintf(buf, blen,
-                "      ipv4 = {\n"
-                "         addr = %s\n"
-                "         port = %hu\n"
-                "      }",
-                GetAddress(tmp, sizeof(tmp) - 1), GetPortHostOrder());
+      send.SubResourceStart("ipv4", as_comment, "%s = {\n");
+      send.KeyString("addr", GetAddress(tmp, sizeof(tmp) - 1), as_comment);
+      send.KeyUnsignedInt("port", GetPortHostOrder(), as_comment);
+      send.SubResourceEnd("ipv4", as_comment);
       break;
     case AF_INET6:
-      Bsnprintf(buf, blen,
-                "      ipv6 = {\n"
-                "         addr = %s\n"
-                "         port = %hu\n"
-                "      }",
-                GetAddress(tmp, sizeof(tmp) - 1), GetPortHostOrder());
+      send.SubResourceStart("ipv6", as_comment, "%s = {\n");
+      send.KeyString("addr", GetAddress(tmp, sizeof(tmp) - 1), as_comment);
+      send.KeyUnsignedInt("port", GetPortHostOrder(), as_comment);
+      send.SubResourceEnd("ipv6", as_comment);
       break;
     default:
       break;
   }
-
-  return buf;
 }
+
 
 const char* IPADDR::build_address_str(char* buf,
                                       int blen,

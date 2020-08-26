@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,7 @@
 #include "qualified_resource_name_type_converter.h"
 #include "lib/parse_conf.h"
 #include "lib/messages_resource.h"
+#include "lib/output_formatter_resource.h"
 #include "lib/resource_item.h"
 #include "lib/util.h"
 #include "lib/address_conf.h"
@@ -1327,6 +1328,8 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
   if (token != BCT_EOB) {
     scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
   }
+  SetBit(index, (*item->allocated_resource)->item_present_);
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 void ConfigurationParser::StoreAddressesAddress(LEX* lc,
@@ -1475,6 +1478,9 @@ bool ConfigurationParser::StoreResource(int type,
     case CFG_TYPE_PLUGIN_NAMES:
       StorePluginNames(lc, item, index, pass);
       break;
+    case CFG_TYPE_DIR_OR_CMD:
+      StoreDir(lc, item, index, pass);
+      break;
     default:
       return false;
   }
@@ -1495,10 +1501,7 @@ void IndentConfigItem(PoolMem& cfg_str,
   PmStrcat(cfg_str, config_item);
 }
 
-static void PrintNumberSiPrefixFormat(ResourceItem* item,
-                                      PoolMem& cfg_str,
-                                      bool inherited,
-                                      uint64_t value_in)
+std::string PrintNumberSiPrefixFormat(ResourceItem* item, uint64_t value_in)
 {
   PoolMem temp;
   PoolMem volspec; /* vol specification string*/
@@ -1532,29 +1535,22 @@ static void PrintNumberSiPrefixFormat(ResourceItem* item,
     }
   }
 
-  Mmsg(temp, "%s = %s\n", item->name, volspec.c_str());
-  IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
+  return std::string(volspec.c_str());
 }
 
-static void Print32BitConfigNumberSiPrefixFormat(ResourceItem* item,
-                                                 PoolMem& cfg_str,
-                                                 bool inherited)
+std::string Print32BitConfigNumberSiPrefixFormat(ResourceItem* item)
 {
   uint32_t value_32_bit = GetItemVariable<uint32_t>(*item);
-  PrintNumberSiPrefixFormat(item, cfg_str, inherited, value_32_bit);
+  return PrintNumberSiPrefixFormat(item, value_32_bit);
 }
 
-static void Print64BitConfigNumberSiPrefixFormat(ResourceItem* item,
-                                                 PoolMem& cfg_str,
-                                                 bool inherited)
+std::string Print64BitConfigNumberSiPrefixFormat(ResourceItem* item)
 {
   uint64_t value_64_bit = GetItemVariable<uint64_t>(*item);
-  PrintNumberSiPrefixFormat(item, cfg_str, inherited, value_64_bit);
+  return PrintNumberSiPrefixFormat(item, value_64_bit);
 }
 
-static void PrintConfigTime(ResourceItem* item,
-                            PoolMem& cfg_str,
-                            bool inherited)
+std::string PrintConfigTime(ResourceItem* item)
 {
   PoolMem temp;
   PoolMem timespec;
@@ -1591,8 +1587,7 @@ static void PrintConfigTime(ResourceItem* item,
     }
   }
 
-  Mmsg(temp, "%s = %s\n", item->name, timespec.c_str());
-  IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
+  return std::string(timespec.c_str());
 }
 
 // message destinations
@@ -1615,7 +1610,47 @@ static std::map<MessageDestinationCode, s_mdestination> msg_destinations = {
     {MessageDestinationCode::kMailOnSuccess, {"mailonsuccess", true}},
     {MessageDestinationCode::kCatalog, {"catalog", false}}};
 
-bool MessagesResource::PrintConfig(PoolMem& buff,
+
+std::string MessagesResource::GetMessageTypesAsSring(MessageDestinationInfo* d,
+                                                     bool verbose)
+{
+  std::string cfg_str; /* configuration as string  */
+  PoolMem temp;
+
+  int nr_set = 0;
+  int nr_unset = 0;
+  PoolMem t; /* set   types */
+  PoolMem u; /* unset types */
+
+  for (int j = 0; j < M_MAX - 1; j++) {
+    if (BitIsSet(msg_types[j].token, d->msg_types_)) {
+      nr_set++;
+      Mmsg(temp, ",%s", msg_types[j].name);
+      PmStrcat(t, temp.c_str());
+    } else {
+      Mmsg(temp, ",!%s", msg_types[j].name);
+      nr_unset++;
+      PmStrcat(u, temp.c_str());
+    }
+  }
+
+  if (verbose) {
+    /* show all message types */
+    cfg_str += t.c_str() + 1; /* skip first comma */
+    cfg_str += u.c_str();
+  } else {
+    if (nr_set > nr_unset) { /* if more is set than is unset */
+      cfg_str += "all";      /* all, but not ... */
+      cfg_str += u.c_str();
+    } else {                    /* only print set types */
+      cfg_str += t.c_str() + 1; /* skip first comma */
+    }
+  }
+
+  return cfg_str.c_str();
+}
+
+bool MessagesResource::PrintConfig(OutputFormatterResource& send,
                                    const ConfigurationParser& /* unused */,
                                    bool hide_sensitive_data,
                                    bool verbose)
@@ -1623,19 +1658,20 @@ bool MessagesResource::PrintConfig(PoolMem& buff,
   PoolMem cfg_str; /* configuration as string  */
   PoolMem temp;
   MessagesResource* msgres;
+  OutputFormatter* of = send.GetOutputFormatter();
 
   msgres = this;
 
-  PmStrcat(cfg_str, "Messages {\n");
-  Mmsg(temp, "   %s = \"%s\"\n", "Name", msgres->resource_name_);
-  PmStrcat(cfg_str, temp.c_str());
+  send.ResourceTypeStart("Messages");
+  send.ResourceStart(resource_name_);
+
+  send.KeyQuotedString("Name", resource_name_);
 
   if (!msgres->mail_cmd_.empty()) {
     PoolMem esc;
 
     EscapeString(esc, msgres->mail_cmd_.c_str(), msgres->mail_cmd_.size());
-    Mmsg(temp, "   MailCommand = \"%s\"\n", esc.c_str());
-    PmStrcat(cfg_str, temp.c_str());
+    send.KeyQuotedString("MailCommand", esc.c_str());
   }
 
   if (!msgres->operator_cmd_.empty()) {
@@ -1643,8 +1679,7 @@ bool MessagesResource::PrintConfig(PoolMem& buff,
 
     EscapeString(esc, msgres->operator_cmd_.c_str(),
                  msgres->operator_cmd_.size());
-    Mmsg(temp, "   OperatorCommand = \"%s\"\n", esc.c_str());
-    PmStrcat(cfg_str, temp.c_str());
+    send.KeyQuotedString("OperatorCommand", esc.c_str());
   }
 
   if (!msgres->timestamp_format_.empty()) {
@@ -1652,163 +1687,168 @@ bool MessagesResource::PrintConfig(PoolMem& buff,
 
     EscapeString(esc, msgres->timestamp_format_.c_str(),
                  msgres->timestamp_format_.size());
-    Mmsg(temp, "   TimestampFormat = \"%s\"\n", esc.c_str());
-    PmStrcat(cfg_str, temp.c_str());
+    send.KeyQuotedString("TimestampFormat", esc.c_str());
   }
 
   for (MessageDestinationInfo* d : msgres->dest_chain_) {
-    int nr_set = 0;
-    int nr_unset = 0;
-    PoolMem t; /* number of set   types */
-    PoolMem u; /* number of unset types */
-
     auto msg_dest_iter = msg_destinations.find(d->dest_code_);
 
     if (msg_dest_iter != msg_destinations.end()) {
+      of->ObjectStart(msg_dest_iter->second.destination,
+                      send.GetKeyFormatString(false, "%s").c_str());
+
       if (msg_dest_iter->second.where) {
-        Mmsg(temp, "   %s = %s = ", msg_dest_iter->second.destination,
-             d->where_.c_str());
-      } else {
-        Mmsg(temp, "   %s = ", msg_dest_iter->second.destination);
+        of->ObjectKeyValue("where", d->where_.c_str(), " = %s");
       }
-      PmStrcat(cfg_str, temp.c_str());
+      of->ObjectKeyValue("what", GetMessageTypesAsSring(d, verbose).c_str(),
+                         " = %s");
+      of->ObjectEnd(msg_dest_iter->second.destination, "\n");
     }
-
-    for (int j = 0; j < M_MAX - 1; j++) {
-      if (BitIsSet(msg_types[j].token, d->msg_types_)) {
-        nr_set++;
-        Mmsg(temp, ",%s", msg_types[j].name);
-        PmStrcat(t, temp.c_str());
-      } else {
-        Mmsg(temp, ",!%s", msg_types[j].name);
-        nr_unset++;
-        PmStrcat(u, temp.c_str());
-      }
-    }
-
-    if (nr_set > nr_unset) {    /* if more is set than is unset */
-      PmStrcat(cfg_str, "all"); /* all, but not ... */
-      PmStrcat(cfg_str, u.c_str());
-    } else {                            /* only print set types */
-      PmStrcat(cfg_str, t.c_str() + 1); /* skip first comma */
-    }
-    PmStrcat(cfg_str, "\n");
   }
 
-  PmStrcat(cfg_str, "}\n\n");
-  PmStrcat(buff, cfg_str.c_str());
+  send.ResourceEnd(resource_name_);
+  send.ResourceTypeEnd("Messages");
 
   return true;
 }
 
-static bool HasDefaultValue(ResourceItem* item)
+const char* GetName(ResourceItem& item, s_kw* keywords)
+{
+  uint32_t value = GetItemVariable<uint32_t>(item);
+  for (int j = 0; keywords[j].name; j++) {
+    if (keywords[j].token == value) { return keywords[j].name; }
+  }
+  return nullptr;
+}
+
+
+bool HasDefaultValue(ResourceItem& item, s_kw* keywords)
+{
+  bool is_default = false;
+  const char* name = GetName(item, keywords);
+  if (item.flags & CFG_ITEM_DEFAULT) {
+    is_default = Bstrcasecmp(name, item.default_value);
+  } else {
+    if (name == nullptr) { is_default = true; }
+  }
+  return is_default;
+}
+
+static bool HasDefaultValue(ResourceItem& item)
 {
   bool is_default = false;
 
-  if (item->flags & CFG_ITEM_DEFAULT) {
+  if (item.flags & CFG_ITEM_DEFAULT) {
     /*
      * Check for default values.
      */
-    switch (item->type) {
+    switch (item.type) {
       case CFG_TYPE_STR:
       case CFG_TYPE_DIR:
+      case CFG_TYPE_DIR_OR_CMD:
       case CFG_TYPE_NAME:
       case CFG_TYPE_STRNAME:
-        is_default =
-            bstrcmp(GetItemVariable<char*>(*item), item->default_value);
+        is_default = bstrcmp(GetItemVariable<char*>(item), item.default_value);
         break;
       case CFG_TYPE_STDSTR:
       case CFG_TYPE_STDSTRDIR:
-        is_default = bstrcmp(GetItemVariable<std::string&>(*item).c_str(),
-                             item->default_value);
+        is_default = bstrcmp(GetItemVariable<std::string&>(item).c_str(),
+                             item.default_value);
+        break;
+      case CFG_TYPE_LABEL:
+        is_default = HasDefaultValue(item, tapelabels);
         break;
       case CFG_TYPE_INT16:
-        is_default = (GetItemVariable<int16_t>(*item) ==
-                      (int16_t)str_to_int32(item->default_value));
+        is_default = (GetItemVariable<int16_t>(item) ==
+                      (int16_t)str_to_int32(item.default_value));
         break;
       case CFG_TYPE_PINT16:
-        is_default = (GetItemVariable<uint16_t>(*item) ==
-                      (uint16_t)str_to_int32(item->default_value));
+        is_default = (GetItemVariable<uint16_t>(item) ==
+                      (uint16_t)str_to_int32(item.default_value));
         break;
       case CFG_TYPE_INT32:
-        is_default = (GetItemVariable<int32_t>(*item) ==
-                      str_to_int32(item->default_value));
+        is_default = (GetItemVariable<int32_t>(item) ==
+                      str_to_int32(item.default_value));
         break;
       case CFG_TYPE_PINT32:
-        is_default = (GetItemVariable<uint32_t>(*item) ==
-                      (uint32_t)str_to_int32(item->default_value));
+        is_default = (GetItemVariable<uint32_t>(item) ==
+                      (uint32_t)str_to_int32(item.default_value));
         break;
       case CFG_TYPE_INT64:
-        is_default = (GetItemVariable<int64_t>(*item) ==
-                      str_to_int64(item->default_value));
+        is_default = (GetItemVariable<int64_t>(item) ==
+                      str_to_int64(item.default_value));
         break;
       case CFG_TYPE_SPEED:
-        is_default = (GetItemVariable<uint64_t>(*item) ==
-                      (uint64_t)str_to_int64(item->default_value));
+        is_default = (GetItemVariable<uint64_t>(item) ==
+                      (uint64_t)str_to_int64(item.default_value));
         break;
       case CFG_TYPE_SIZE64:
-        is_default = (GetItemVariable<uint64_t>(*item) ==
-                      (uint64_t)str_to_int64(item->default_value));
+        is_default = (GetItemVariable<uint64_t>(item) ==
+                      (uint64_t)str_to_int64(item.default_value));
         break;
       case CFG_TYPE_SIZE32:
-        is_default = (GetItemVariable<uint32_t>(*item) ==
-                      (uint32_t)str_to_int32(item->default_value));
+        is_default = (GetItemVariable<uint32_t>(item) ==
+                      (uint32_t)str_to_int32(item.default_value));
         break;
       case CFG_TYPE_TIME:
-        is_default = (GetItemVariable<uint64_t>(*item) ==
-                      (uint64_t)str_to_int64(item->default_value));
+        is_default = (GetItemVariable<uint64_t>(item) ==
+                      (uint64_t)str_to_int64(item.default_value));
         break;
       case CFG_TYPE_BOOL: {
-        bool default_value = Bstrcasecmp(item->default_value, "true") ||
-                             Bstrcasecmp(item->default_value, "yes");
+        bool default_value = Bstrcasecmp(item.default_value, "true") ||
+                             Bstrcasecmp(item.default_value, "yes");
 
-        is_default = (GetItemVariable<bool>(*item) == default_value);
+        is_default = (GetItemVariable<bool>(item) == default_value);
         break;
       }
       default:
         break;
     }
   } else {
-    switch (item->type) {
+    switch (item.type) {
       case CFG_TYPE_STR:
       case CFG_TYPE_DIR:
+      case CFG_TYPE_DIR_OR_CMD:
       case CFG_TYPE_NAME:
       case CFG_TYPE_STRNAME:
-        is_default = (GetItemVariable<char*>(*item) == nullptr);
+        is_default = (GetItemVariable<char*>(item) == nullptr);
         break;
       case CFG_TYPE_STDSTR:
       case CFG_TYPE_STDSTRDIR:
-        is_default = GetItemVariable<std::string&>(*item).empty();
+        is_default = GetItemVariable<std::string&>(item).empty();
+        break;
+      case CFG_TYPE_LABEL:
+        is_default = HasDefaultValue(item, tapelabels);
         break;
       case CFG_TYPE_INT16:
-        is_default = (GetItemVariable<int16_t>(*item) == 0);
+        is_default = (GetItemVariable<int16_t>(item) == 0);
         break;
       case CFG_TYPE_PINT16:
-        is_default = (GetItemVariable<uint16_t>(*item) == 0);
+        is_default = (GetItemVariable<uint16_t>(item) == 0);
         break;
       case CFG_TYPE_INT32:
-        is_default = (GetItemVariable<int32_t>(*item) == 0);
+        is_default = (GetItemVariable<int32_t>(item) == 0);
         break;
       case CFG_TYPE_PINT32:
-        is_default = (GetItemVariable<uint32_t>(*item) == 0);
+        is_default = (GetItemVariable<uint32_t>(item) == 0);
         break;
       case CFG_TYPE_INT64:
-        is_default = (GetItemVariable<int64_t>(*item) == 0);
+        is_default = (GetItemVariable<int64_t>(item) == 0);
         break;
       case CFG_TYPE_SPEED:
-        is_default = (GetItemVariable<uint64_t>(*item) == 0);
+        is_default = (GetItemVariable<uint64_t>(item) == 0);
         break;
       case CFG_TYPE_SIZE64:
-        is_default = (GetItemVariable<uint64_t>(*item) == 0);
+        is_default = (GetItemVariable<uint64_t>(item) == 0);
         break;
       case CFG_TYPE_SIZE32:
-        is_default = (GetItemVariable<uint32_t>(*item) == 0);
+        is_default = (GetItemVariable<uint32_t>(item) == 0);
         break;
       case CFG_TYPE_TIME:
-        is_default = (GetItemVariable<uint64_t>(*item) == 0);
+        is_default = (GetItemVariable<uint64_t>(item) == 0);
         break;
       case CFG_TYPE_BOOL:
-        is_default = (GetItemVariable<bool>(*item) == false);
+        is_default = (GetItemVariable<bool>(item) == false);
         break;
       default:
         break;
@@ -1818,17 +1858,249 @@ static bool HasDefaultValue(ResourceItem* item)
   return is_default;
 }
 
-bool BareosResource::PrintConfig(PoolMem& buff,
+
+void BareosResource::PrintResourceItem(ResourceItem& item,
+                                       const ConfigurationParser& my_config,
+                                       OutputFormatterResource& send,
+                                       bool hide_sensitive_data,
+                                       bool inherited,
+                                       bool verbose)
+{
+  PoolMem value;
+  PoolMem temp;
+  bool print_item = false;
+
+  Dmsg3(200, "%s (inherited: %d, verbose: %d):\n", item.name, inherited,
+        verbose);
+
+  /*
+   * If this is an alias for another config keyword suppress it.
+   */
+  if (item.flags & CFG_ITEM_ALIAS) { return; }
+
+  if (inherited && (!verbose)) {
+    /*
+     * If not in verbose mode, skip inherited directives.
+     */
+    return;
+  }
+
+  if ((item.flags & CFG_ITEM_REQUIRED) || !my_config.omit_defaults_) {
+    /*
+     * Always print required items or if my_config.omit_defaults_ is false
+     */
+    print_item = true;
+  }
+
+  if (HasDefaultValue(item)) {
+    Dmsg1(200, "%s: default value\n", item.name);
+
+    if ((verbose) && (!(item.flags & CFG_ITEM_DEPRECATED))) {
+      /*
+       * If value has a expliciet default value and verbose mode is on,
+       * display directive as inherited.
+       */
+      print_item = true;
+      inherited = true;
+    }
+  } else {
+    print_item = true;
+  }
+
+  if (!print_item) {
+    Dmsg1(200, "%s: not shown\n", item.name);
+    return;
+  }
+
+  switch (item.type) {
+    case CFG_TYPE_STR:
+    case CFG_TYPE_DIR:
+    case CFG_TYPE_NAME:
+    case CFG_TYPE_STRNAME: {
+      char* p = GetItemVariable<char*>(item);
+      send.KeyQuotedString(item.name, p, inherited);
+      break;
+    }
+    case CFG_TYPE_DIR_OR_CMD: {
+      char* p = GetItemVariable<char*>(item);
+      if (p == nullptr) {
+        send.KeyQuotedString(item.name, nullptr, inherited);
+      } else {
+        EscapeString(temp, p, strlen(p));
+        send.KeyQuotedString(item.name, temp.c_str(), inherited);
+      }
+      break;
+    }
+    case CFG_TYPE_STDSTR:
+    case CFG_TYPE_STDSTRDIR: {
+      const std::string& p = GetItemVariable<std::string&>(item);
+      send.KeyQuotedString(item.name, p, inherited);
+      break;
+    }
+    case CFG_TYPE_MD5PASSWORD:
+    case CFG_TYPE_CLEARPASSWORD:
+    case CFG_TYPE_AUTOPASSWORD: {
+      s_password* password = GetItemVariablePointer<s_password*>(item);
+
+      if (password && password->value != NULL) {
+        if (hide_sensitive_data) {
+          Mmsg(value, "****************");
+        } else {
+          switch (password->encoding) {
+            case p_encoding_clear:
+              Dmsg2(200, "%s = \"%s\"\n", item.name, password->value);
+              Mmsg(value, "%s", password->value);
+              break;
+            case p_encoding_md5:
+              Dmsg2(200, "%s = \"[md5]%s\"\n", item.name, password->value);
+              Mmsg(value, "[md5]%s", password->value);
+              break;
+            default:
+              break;
+          }
+        }
+        send.KeyQuotedString(item.name, value.c_str(), inherited);
+      }
+      break;
+    }
+    case CFG_TYPE_LABEL:
+      send.KeyQuotedString(item.name, GetName(item, tapelabels), inherited);
+      break;
+    case CFG_TYPE_INT16:
+      send.KeySignedInt(item.name, GetItemVariable<int16_t>(item), inherited);
+      break;
+    case CFG_TYPE_PINT16:
+      send.KeyUnsignedInt(item.name, GetItemVariable<uint16_t>(item),
+                          inherited);
+      break;
+    case CFG_TYPE_INT32:
+      send.KeySignedInt(item.name, GetItemVariable<int32_t>(item), inherited);
+      break;
+    case CFG_TYPE_PINT32:
+      send.KeyUnsignedInt(item.name, GetItemVariable<uint32_t>(item),
+                          inherited);
+      break;
+    case CFG_TYPE_INT64:
+      send.KeySignedInt(item.name, GetItemVariable<int64_t>(item), inherited);
+      break;
+    case CFG_TYPE_SPEED:
+      send.KeyUnsignedInt(item.name, GetItemVariable<uint64_t>(item),
+                          inherited);
+      break;
+    case CFG_TYPE_SIZE64: {
+      const std::string& value = Print64BitConfigNumberSiPrefixFormat(&item);
+      send.KeyString(item.name, value, inherited);
+      break;
+    }
+    case CFG_TYPE_SIZE32: {
+      const std::string& value = Print32BitConfigNumberSiPrefixFormat(&item);
+      send.KeyString(item.name, value, inherited);
+      break;
+    }
+    case CFG_TYPE_TIME: {
+      const std::string& value = PrintConfigTime(&item);
+      send.KeyString(item.name, value, inherited);
+      break;
+    }
+    case CFG_TYPE_BOOL: {
+      send.KeyBool(item.name, GetItemVariable<bool>(item), inherited);
+      break;
+    }
+    case CFG_TYPE_STR_VECTOR:
+    case CFG_TYPE_STR_VECTOR_OF_DIRS: {
+      /*
+       * One line for each member of the list
+       */
+      const std::vector<std::string>& list =
+          GetItemVariable<std::vector<std::string>&>(item);
+      send.KeyMultipleStringsOnePerLine(item.name, list, inherited);
+      break;
+    }
+    case CFG_TYPE_ALIST_STR:
+    case CFG_TYPE_ALIST_DIR:
+    case CFG_TYPE_PLUGIN_NAMES: {
+      /*
+       * One line for each member of the list
+       */
+      send.KeyMultipleStringsOnePerLine(
+          item.name, GetItemVariable<alist*>(item), inherited);
+      break;
+    }
+    case CFG_TYPE_ALIST_RES: {
+      /*
+       * Each member of the list is comma-separated
+       */
+      send.KeyMultipleStringsOnePerLine(item.name,
+                                        GetItemVariable<alist*>(item),
+                                        GetResourceName, inherited, true);
+      break;
+    }
+    case CFG_TYPE_RES: {
+      BareosResource* res;
+
+      res = GetItemVariable<BareosResource*>(item);
+      if (res != NULL && res->resource_name_ != NULL) {
+        send.KeyQuotedString(item.name, res->resource_name_, inherited);
+      } else {
+        send.KeyQuotedString(item.name, "", inherited);
+      }
+      break;
+    }
+    case CFG_TYPE_BIT: {
+      send.KeyBool(item.name,
+                   BitIsSet(item.code, GetItemVariablePointer<char*>(item)),
+                   inherited);
+      break;
+    }
+    case CFG_TYPE_MSGS:
+      /*
+       * We ignore these items as they are printed in a special way in
+       * MessagesResource::PrintConfig()
+       */
+      break;
+    case CFG_TYPE_ADDRESSES: {
+      dlist* addrs = GetItemVariable<dlist*>(item);
+      IPADDR* adr;
+      send.ArrayStart(item.name, inherited, "%s = {\n");
+      foreach_dlist (adr, addrs) {
+        send.SubResourceStart(NULL, inherited, "");
+        adr->BuildConfigString(send, inherited);
+        send.SubResourceEnd(NULL, inherited, "");
+      }
+      send.ArrayEnd(item.name, inherited, "}\n");
+      break;
+    }
+    case CFG_TYPE_ADDRESSES_PORT:
+      /*
+       * Is stored in CFG_TYPE_ADDRESSES and printed there.
+       */
+      break;
+    case CFG_TYPE_ADDRESSES_ADDRESS:
+      /*
+       * Is stored in CFG_TYPE_ADDRESSES and printed there.
+       */
+      break;
+    default:
+      /*
+       * This is a non-generic type call back to the daemon to get things
+       * printed.
+       */
+      if (my_config.print_res_) {
+        my_config.print_res_(item, send, hide_sensitive_data, inherited,
+                             verbose);
+      }
+      break;
+  }
+}
+
+
+bool BareosResource::PrintConfig(OutputFormatterResource& send,
                                  const ConfigurationParser& my_config,
                                  bool hide_sensitive_data,
                                  bool verbose)
 {
-  PoolMem cfg_str;
-  PoolMem temp;
   ResourceItem* items;
-  int i = 0;
   int rindex;
-  bool inherited = false;
 
   /*
    * If entry is not used, then there is nothing to print.
@@ -1838,331 +2110,33 @@ bool BareosResource::PrintConfig(PoolMem& buff,
   rindex = rcode_ - my_config.r_first_;
 
   /*
+   * don't dump internal resources.
+   */
+  if ((internal_) && (!verbose)) { return true; }
+  /*
    * Make sure the resource class has any items.
    */
   if (!my_config.resources_[rindex].items) { return true; }
+  items = my_config.resources_[rindex].items;
 
   *my_config.resources_[rindex].allocated_resource_ = this;
 
-  PmStrcat(cfg_str, my_config.ResToStr(rcode_));
-  PmStrcat(cfg_str, " {\n");
+  send.ResourceTypeStart(my_config.ResToStr(rcode_), internal_);
+  send.ResourceStart(resource_name_);
 
-  items = my_config.resources_[rindex].items;
-
-  for (i = 0; items[i].name; i++) {
-    bool print_item = false;
-    inherited = BitIsSet(i, inherit_content_);
-
-    /*
-     * If this is an alias for another config keyword suppress it.
-     */
-    if ((items[i].flags & CFG_ITEM_ALIAS)) { continue; }
-
-    if ((!verbose) && inherited) {
-      /*
-       * If not in verbose mode, skip inherited directives.
-       */
-      continue;
-    }
-
-    if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config.omit_defaults_) {
-      /*
-       * Always print required items or if my_config.omit_defaults_ is false
-       */
-      print_item = true;
-    }
-
-    if (!HasDefaultValue(&items[i])) {
-      print_item = true;
-    } else {
-      if ((items[i].flags & CFG_ITEM_DEFAULT) && verbose) {
-        /*
-         * If value has a expliciet default value and verbose mode is on,
-         * display directive as inherited.
-         */
-        print_item = true;
-        inherited = true;
-      }
-    }
-
-    switch (items[i].type) {
-      case CFG_TYPE_STR:
-      case CFG_TYPE_DIR:
-      case CFG_TYPE_NAME:
-      case CFG_TYPE_STRNAME: {
-        char* p = GetItemVariable<char*>(items[i]);
-        if (print_item && p != NULL) {
-          Dmsg2(200, "%s = \"%s\"\n", items[i].name, p);
-          Mmsg(temp, "%s = \"%s\"\n", items[i].name, p);
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        }
-        break;
-      }
-      case CFG_TYPE_STDSTR:
-      case CFG_TYPE_STDSTRDIR: {
-        const std::string& p = GetItemVariable<std::string&>(items[i]);
-        if (print_item) {
-          if (!p.empty()) {
-            Dmsg2(200, "%s = \"%s\"\n", items[i].name, p.c_str());
-            Mmsg(temp, "%s = \"%s\"\n", items[i].name, p.c_str());
-            IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-          }
-        }
-        break;
-      }
-
-      case CFG_TYPE_MD5PASSWORD:
-      case CFG_TYPE_CLEARPASSWORD:
-      case CFG_TYPE_AUTOPASSWORD:
-        if (print_item) {
-          s_password* password = GetItemVariablePointer<s_password*>(items[i]);
-
-          if (password && password->value != NULL) {
-            if (hide_sensitive_data) {
-              Dmsg1(200, "%s = \"****************\"\n", items[i].name);
-              Mmsg(temp, "%s = \"****************\"\n", items[i].name);
-            } else {
-              switch (password->encoding) {
-                case p_encoding_clear:
-                  Dmsg2(200, "%s = \"%s\"\n", items[i].name, password->value);
-                  Mmsg(temp, "%s = \"%s\"\n", items[i].name, password->value);
-                  break;
-                case p_encoding_md5:
-                  Dmsg2(200, "%s = \"[md5]%s\"\n", items[i].name,
-                        password->value);
-                  Mmsg(temp, "%s = \"[md5]%s\"\n", items[i].name,
-                       password->value);
-                  break;
-                default:
-                  break;
-              }
-            }
-            IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-          }
-        }
-        break;
-      case CFG_TYPE_LABEL:
-        for (int j = 0; tapelabels[j].name; j++) {
-          if (GetItemVariable<uint32_t>(items[i]) == tapelabels[j].token) {
-            /*
-             * Supress printing default value.
-             */
-            if (items[i].flags & CFG_ITEM_DEFAULT) {
-              if (Bstrcasecmp(items[i].default_value, tapelabels[j].name)) {
-                break;
-              }
-            }
-
-            Mmsg(temp, "%s = \"%s\"\n", items[i].name, tapelabels[j].name);
-            IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-            break;
-          }
-        }
-        break;
-      case CFG_TYPE_INT16:
-        if (print_item) {
-          Mmsg(temp, "%s = %hd\n", items[i].name,
-               GetItemVariable<int16_t>(items[i]));
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        }
-        break;
-      case CFG_TYPE_PINT16:
-        if (print_item) {
-          Mmsg(temp, "%s = %hu\n", items[i].name,
-               GetItemVariable<uint16_t>(items[i]));
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        }
-        break;
-      case CFG_TYPE_INT32:
-        if (print_item) {
-          Mmsg(temp, "%s = %d\n", items[i].name,
-               GetItemVariable<int32_t>(items[i]));
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        }
-        break;
-      case CFG_TYPE_PINT32:
-        if (print_item) {
-          Mmsg(temp, "%s = %u\n", items[i].name,
-               GetItemVariable<uint32_t>(items[i]));
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        }
-        break;
-      case CFG_TYPE_INT64:
-        if (print_item) {
-          Mmsg(temp, "%s = %d\n", items[i].name,
-               GetItemVariable<int64_t>(items[i]));
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        }
-        break;
-      case CFG_TYPE_SPEED:
-        if (print_item) {
-          Mmsg(temp, "%s = %u\n", items[i].name,
-               GetItemVariable<uint64_t>(items[i]));
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        }
-        break;
-      case CFG_TYPE_SIZE64:
-        if (print_item) {
-          Print64BitConfigNumberSiPrefixFormat(&items[i], cfg_str, inherited);
-        }
-        break;
-      case CFG_TYPE_SIZE32:
-        if (print_item) {
-          Print32BitConfigNumberSiPrefixFormat(&items[i], cfg_str, inherited);
-        }
-        break;
-      case CFG_TYPE_TIME:
-        if (print_item) { PrintConfigTime(&items[i], cfg_str, inherited); }
-        break;
-      case CFG_TYPE_BOOL:
-        if (print_item) {
-          if (GetItemVariable<bool>(items[i])) {
-            Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
-          } else {
-            Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
-          }
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        }
-        break;
-      case CFG_TYPE_STR_VECTOR:
-      case CFG_TYPE_STR_VECTOR_OF_DIRS: {
-        /*
-         * One line for each member of the list
-         */
-        const std::vector<std::string>& list =
-            GetItemVariable<std::vector<std::string>&>(items[i]);
-
-        for (const std::string& s : list) {
-          if (items[i].flags & CFG_ITEM_DEFAULT) {
-            if (s == items[i].default_value) { continue; }
-          }
-          Mmsg(temp, "%s = \"%s\"\n", items[i].name, s.c_str());
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        }
-        break;
-      }
-      case CFG_TYPE_ALIST_STR:
-      case CFG_TYPE_ALIST_DIR:
-      case CFG_TYPE_PLUGIN_NAMES: {
-        /*
-         * One line for each member of the list
-         */
-        char* value = nullptr;
-        alist* list = GetItemVariable<alist*>(items[i]);
-
-        if (list != NULL) {
-          foreach_alist (value, list) {
-            /*
-             * If this is the default value skip it.
-             */
-            if (items[i].flags & CFG_ITEM_DEFAULT) {
-              if (bstrcmp(value, items[i].default_value)) { continue; }
-            }
-            Mmsg(temp, "%s = \"%s\"\n", items[i].name, value);
-            IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-          }
-        }
-        break;
-      }
-      case CFG_TYPE_ALIST_RES: {
-        /*
-         * Each member of the list is comma-separated
-         */
-        int cnt = 0;
-        BareosResource* res = nullptr;
-        alist* list;
-        PoolMem res_names;
-
-        list = GetItemVariable<alist*>(items[i]);
-        if (list != NULL) {
-          Mmsg(temp, "%s = ", items[i].name);
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-
-          PmStrcpy(res_names, "");
-          foreach_alist (res, list) {
-            if (cnt) {
-              Mmsg(temp, ",\"%s\"", res->resource_name_);
-            } else {
-              Mmsg(temp, "\"%s\"", res->resource_name_);
-            }
-            PmStrcat(res_names, temp.c_str());
-            cnt++;
-          }
-
-          PmStrcat(cfg_str, res_names.c_str());
-          PmStrcat(cfg_str, "\n");
-        }
-        break;
-      }
-      case CFG_TYPE_RES: {
-        BareosResource* res;
-
-        res = GetItemVariable<BareosResource*>(items[i]);
-        if (res != NULL && res->resource_name_ != NULL) {
-          Mmsg(temp, "%s = \"%s\"\n", items[i].name, res->resource_name_);
-          IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        }
-        break;
-      }
-      case CFG_TYPE_BIT:
-        if (BitIsSet(items[i].code, GetItemVariablePointer<char*>(items[i]))) {
-          Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
-        } else {
-          Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
-        }
-        IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        break;
-      case CFG_TYPE_MSGS:
-        /*
-         * We ignore these items as they are printed in a special way in
-         * MessagesResource::PrintConfig()
-         */
-        break;
-      case CFG_TYPE_ADDRESSES: {
-        dlist* addrs = GetItemVariable<dlist*>(items[i]);
-        IPADDR* adr;
-
-        Mmsg(temp, "%s = {\n", items[i].name);
-        IndentConfigItem(cfg_str, 1, temp.c_str(), inherited);
-        foreach_dlist (adr, addrs) {
-          char tmp[1024];
-
-          adr->BuildConfigString(tmp, sizeof(tmp));
-          PmStrcat(cfg_str, tmp);
-          PmStrcat(cfg_str, "\n");
-        }
-
-        IndentConfigItem(cfg_str, 1, "}\n");
-        break;
-      }
-      case CFG_TYPE_ADDRESSES_PORT:
-        /*
-         * Is stored in CFG_TYPE_ADDRESSES and printed there.
-         */
-        break;
-      case CFG_TYPE_ADDRESSES_ADDRESS:
-        /*
-         * Is stored in CFG_TYPE_ADDRESSES and printed there.
-         */
-        break;
-      default:
-        /*
-         * This is a non-generic type call back to the daemon to get things
-         * printed.
-         */
-        if (my_config.print_res_) {
-          my_config.print_res_(items, i, cfg_str, hide_sensitive_data,
-                               inherited);
-        }
-        break;
-    }
+  for (int i = 0; items[i].name; i++) {
+    bool inherited = BitIsSet(i, inherit_content_);
+    if (internal_) { inherited = true; }
+    PrintResourceItem(items[i], my_config, send, hide_sensitive_data, inherited,
+                      verbose);
   }
 
-  PmStrcat(cfg_str, "}\n\n");
-  PmStrcat(buff, cfg_str.c_str());
+  send.ResourceEnd(resource_name_);
+  send.ResourceTypeEnd(my_config.ResToStr(rcode_), internal_);
 
   return true;
 }
+
 
 #ifdef HAVE_JANSSON
 /*
@@ -2284,6 +2258,7 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_PLUGIN_NAMES, "PLUGIN_NAMES", "Plugin Name(s)"},
     {CFG_TYPE_STR_VECTOR, "STRING_LIST", "string list"},
     {CFG_TYPE_STR_VECTOR_OF_DIRS, "DIRECTORY_LIST", "directory list"},
+    {CFG_TYPE_DIR_OR_CMD, "DIRECTORY_OR_COMMAND", "Directory or command"},
 
     /*
      * Director resource types. handlers in dird_conf.

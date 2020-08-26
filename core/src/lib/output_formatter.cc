@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -72,6 +72,7 @@ OutputFormatter::OutputFormatter(SEND_HANDLER* send_func_arg,
 #endif
 }
 
+
 OutputFormatter::~OutputFormatter()
 {
   if (hidden_columns) { free(hidden_columns); }
@@ -86,13 +87,38 @@ OutputFormatter::~OutputFormatter()
 #endif
 }
 
-void OutputFormatter::ObjectStart(const char* name)
+void OutputFormatter::Decoration(const char* fmt, ...)
 {
+  PoolMem string;
+  va_list arg_ptr;
+
+  switch (api) {
+    case API_MODE_ON:
+    case API_MODE_JSON:
+      break;
+    default:
+      va_start(arg_ptr, fmt);
+      string.Bvsprintf(fmt, arg_ptr);
+      result_message_plain->strcat(string);
+      va_end(arg_ptr);
+      break;
+  }
+}
+
+
+void OutputFormatter::ObjectStart(const char* name,
+                                  const char* fmt,
+                                  bool case_sensitiv_name)
+{
+  PoolMem string;
 #if HAVE_JANSSON
   json_t* json_object_current = NULL;
   json_t* json_object_existing = NULL;
   json_t* json_object_new = NULL;
 #endif
+
+  PoolMem lname(name);
+  if (!case_sensitiv_name) { lname.toLower(); }
 
   Dmsg1(800, "obj start: %s\n", name);
   switch (api) {
@@ -125,32 +151,35 @@ void OutputFormatter::ObjectStart(const char* name)
           result_stack_json->push(json_object_current);
         }
       } else {
-        json_object_existing = json_object_get(json_object_current, name);
+        json_object_existing =
+            json_object_get(json_object_current, lname.c_str());
         if (json_object_existing) {
-          Emsg2(M_ERROR, 0,
-                "Failed to add JSON reference %s (stack size: %d) already "
-                "exists.\n"
-                "This should not happen. Ignoring.\n",
-                name, result_stack_json->size());
-          return;
+          Dmsg1(800, "obj %s already exists. Reusing it.\n", lname.c_str());
+          result_stack_json->push(json_object_existing);
         } else {
-          Dmsg2(800, "create new json object %s (stack size: %d)\n", name,
-                result_stack_json->size());
+          Dmsg2(800, "create new json object %s (stack size: %d)\n",
+                lname.c_str(), result_stack_json->size());
           json_object_new = json_object();
-          json_object_set_new(json_object_current, name, json_object_new);
+          json_object_set_new(json_object_current, lname.c_str(),
+                              json_object_new);
+          result_stack_json->push(json_object_new);
         }
-        result_stack_json->push(json_object_new);
       }
       Dmsg1(800, "result stack: %d\n", result_stack_json->size());
       break;
 #endif
     default:
+      if (fmt) {
+        string.bsprintf(fmt, name);
+        result_message_plain->strcat(string);
+      }
       break;
   }
 }
 
-void OutputFormatter::ObjectEnd(const char* name)
+void OutputFormatter::ObjectEnd(const char* name, const char* fmt)
 {
+  PoolMem string;
   Dmsg1(800, "obj end:   %s\n", name);
   switch (api) {
 #if HAVE_JANSSON
@@ -160,20 +189,28 @@ void OutputFormatter::ObjectEnd(const char* name)
       break;
 #endif
     default:
+      if (fmt) {
+        string.bsprintf(fmt, name);
+        result_message_plain->strcat(string);
+      }
       ProcessTextBuffer();
       break;
   }
 }
 
-void OutputFormatter::ArrayStart(const char* name)
+void OutputFormatter::ArrayStart(const char* name, const char* fmt)
 {
+  PoolMem string;
 #if HAVE_JANSSON
   json_t* json_object_current = NULL;
   json_t* json_object_existing = NULL;
   json_t* json_new = NULL;
 #endif
 
-  Dmsg1(800, "array start: %s\n", name);
+  PoolMem lname(name);
+  lname.toLower();
+
+  Dmsg1(800, "array start:  %s\n", name);
   switch (api) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
@@ -192,29 +229,36 @@ void OutputFormatter::ArrayStart(const char* name)
         return;
       }
 
-      json_object_existing = json_object_get(json_object_current, name);
+      json_object_existing =
+          json_object_get(json_object_current, lname.c_str());
       if (json_object_existing) {
-        Emsg2(
-            M_ERROR, 0,
-            "Failed to add JSON reference %s (stack size: %d) already exists.\n"
-            "This should not happen. Ignoring.\n",
-            name, result_stack_json->size());
+        Emsg2(M_ERROR, 0,
+              "Failed to add JSON reference '%s' (stack size: %d) already "
+              "exists.\n"
+              "This should not happen.\n",
+              lname.c_str(), result_stack_json->size());
         return;
+      } else {
+        json_new = json_array();
+        json_object_set_new(json_object_current, lname.c_str(), json_new);
+        result_stack_json->push(json_new);
       }
-      json_new = json_array();
-      json_object_set_new(json_object_current, name, json_new);
-      result_stack_json->push(json_new);
       Dmsg1(800, "result stack: %d\n", result_stack_json->size());
       break;
 #endif
     default:
+      if (fmt) {
+        string.bsprintf(fmt, name);
+        result_message_plain->strcat(string);
+      }
       break;
   }
 }
 
-void OutputFormatter::ArrayEnd(const char* name)
+void OutputFormatter::ArrayEnd(const char* name, const char* fmt)
 {
-  Dmsg1(800, "array end:   %s\n", name);
+  PoolMem string;
+  Dmsg1(800, "array end:    %s\n", name);
   switch (api) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
@@ -223,25 +267,86 @@ void OutputFormatter::ArrayEnd(const char* name)
       break;
 #endif
     default:
+      if (fmt) {
+        string.bsprintf(fmt, name);
+        result_message_plain->strcat(string);
+      }
       // process_text_buffer();
       break;
   }
 }
 
-void OutputFormatter::Decoration(const char* fmt, ...)
+void OutputFormatter::ArrayItem(bool value, const char* value_fmt)
 {
   PoolMem string;
-  va_list arg_ptr;
+#if HAVE_JANSSON
+  json_t* jsonvalue;
+#endif
 
   switch (api) {
-    case API_MODE_ON:
+#if HAVE_JANSSON
     case API_MODE_JSON:
+      jsonvalue = json_boolean(value);
+      JsonArrayItemAdd(jsonvalue);
       break;
+#endif
     default:
-      va_start(arg_ptr, fmt);
-      string.Bvsprintf(fmt, arg_ptr);
-      result_message_plain->strcat(string);
-      va_end(arg_ptr);
+      if (value_fmt) {
+        string.bsprintf(value_fmt, value);
+        result_message_plain->strcat(string);
+      }
+      break;
+  }
+}
+
+void OutputFormatter::ArrayItem(uint64_t value, const char* value_fmt)
+{
+  PoolMem string;
+#if HAVE_JANSSON
+  json_t* jsonvalue;
+#endif
+
+  switch (api) {
+#if HAVE_JANSSON
+    case API_MODE_JSON:
+      jsonvalue = json_integer(value);
+      JsonArrayItemAdd(jsonvalue);
+      break;
+#endif
+    default:
+      if (value_fmt) {
+        string.bsprintf(value_fmt, value);
+        result_message_plain->strcat(string);
+      }
+      break;
+  }
+}
+
+void OutputFormatter::ArrayItem(const char* value,
+                                const char* value_fmt,
+                                bool format)
+{
+  PoolMem string;
+#if HAVE_JANSSON
+  json_t* jsonvalue;
+#endif
+
+  switch (api) {
+#if HAVE_JANSSON
+    case API_MODE_JSON:
+      jsonvalue = json_string(value);
+      JsonArrayItemAdd(jsonvalue);
+      break;
+#endif
+    default:
+      if (value_fmt) {
+        if (format) {
+          string.bsprintf(value_fmt, value);
+        } else {
+          string.strcat(value_fmt);
+        }
+        result_message_plain->strcat(string);
+      }
       break;
   }
 }
@@ -310,6 +415,45 @@ void OutputFormatter::ObjectKeyValue(const char* key,
   switch (api) {
 #if HAVE_JANSSON
     case API_MODE_JSON:
+      JsonKeyValueAdd(key, value);
+      break;
+#endif
+    default:
+      if (key_fmt) {
+        string.bsprintf(key_fmt, key);
+        result_message_plain->strcat(string);
+      }
+      if (value_fmt) {
+        string.bsprintf(value_fmt, value);
+        result_message_plain->strcat(string);
+      }
+      break;
+  }
+}
+
+void OutputFormatter::ObjectKeyValueSignedInt(const char* key, int64_t value)
+{
+  ObjectKeyValueSignedInt(key, NULL, value, NULL);
+}
+
+void OutputFormatter::ObjectKeyValueSignedInt(const char* key,
+                                              int64_t value,
+                                              const char* value_fmt)
+{
+  ObjectKeyValueSignedInt(key, NULL, value, value_fmt);
+}
+
+void OutputFormatter::ObjectKeyValueSignedInt(const char* key,
+                                              const char* key_fmt,
+                                              int64_t value,
+                                              const char* value_fmt)
+{
+  PoolMem string;
+
+  switch (api) {
+#if HAVE_JANSSON
+    case API_MODE_JSON:
+      /* json only supports one type of integer */
       JsonKeyValueAdd(key, value);
       break;
 #endif
@@ -626,7 +770,7 @@ bool OutputFormatter::ProcessTextBuffer()
 
   string_length = result_message_plain->strlen();
   if (string_length > 0) {
-    retval = send_func(send_ctx, result_message_plain->c_str());
+    retval = send_func(send_ctx, "%s", result_message_plain->c_str());
     if (!retval) {
       /*
        * If send failed, include short messages in error messages.
@@ -665,7 +809,7 @@ void OutputFormatter::message(const char* type, PoolMem& message)
        * Send message immediately.
        * Type is not relevant here (handled before).
        */
-      send_func(send_ctx, message.c_str());
+      send_func(send_ctx, "%s", message.c_str());
       break;
   }
 }
@@ -713,6 +857,34 @@ void OutputFormatter::FinalizeResult(bool result)
 }
 
 #if HAVE_JANSSON
+bool OutputFormatter::JsonArrayItemAdd(json_t* value)
+{
+  json_t* json_array_current = NULL;
+
+  json_array_current = (json_t*)result_stack_json->last();
+  if (json_array_current == NULL) {
+    Emsg0(M_ERROR, 0,
+          "Failed to retrieve current JSON reference from stack.\n"
+          "This should not happen. Giving up.\n");
+    return false;
+  }
+  if (json_is_array(json_array_current)) {
+    json_array_append_new(json_array_current, value);
+  } else {
+    /*
+     * nameless objects only are indented to be added to arrays.
+     * We do a workaround here, but this will only keep the last added
+     * entry (others will be overwritten).
+     */
+    Dmsg0(800,
+          "Warning: requested to add a nameless object to another "
+          "object. This does not match.\n");
+    return false;
+  }
+
+  return true;
+}
+
 bool OutputFormatter::JsonKeyValueAddBool(const char* key, bool value)
 {
   json_t* json_obj = NULL;
@@ -807,7 +979,7 @@ bool OutputFormatter::JsonSendErrorMessage(const char* message)
   PoolMem json_error_message;
 
   json_error_message.bsprintf(json_error_message_template, message);
-  return send_func(send_ctx, json_error_message.c_str());
+  return send_func(send_ctx, "%s", json_error_message.c_str());
 }
 
 void OutputFormatter::JsonFinalizeResult(bool result)
@@ -878,7 +1050,7 @@ void OutputFormatter::JsonFinalizeResult(bool result)
     /*
      * send json string, on failure, send json error message
      */
-    if (!send_func(send_ctx, string)) {
+    if (!send_func(send_ctx, "%s", string)) {
       /*
        * If send failed, include short messages in error messages.
        * As messages can get quite long, don't show long messages.

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -116,7 +116,8 @@ class OutputFormatter {
   /*
    * Typedefs.
    */
-  typedef bool(SEND_HANDLER)(void* ctx, const char* msg);
+  typedef bool(SEND_HANDLER)(void* ctx, const char* fmt, ...);
+
   typedef of_filter_state(FILTER_HANDLER)(void* ctx,
                                           void* data,
                                           of_filter_tuple* tuple);
@@ -175,6 +176,7 @@ class OutputFormatter {
                   FILTER_HANDLER* filter_func,
                   void* filter_ctx,
                   int api_mode = API_MODE_OFF);
+
   ~OutputFormatter();
 
   void SetMode(int mode) { api = mode; }
@@ -187,11 +189,22 @@ class OutputFormatter {
   void SetCompact(bool value) { compact = value; }
   bool GetCompact() { return compact; }
 
-  void ObjectStart(const char* name = NULL);
-  void ObjectEnd(const char* name = NULL);
-  void ArrayStart(const char* name);
-  void ArrayEnd(const char* name);
   void Decoration(const char* fmt, ...);
+
+  void ArrayStart(const char* name, const char* fmt = NULL);
+  void ArrayEnd(const char* name, const char* fmt = NULL);
+
+  void ArrayItem(bool value, const char* value_fmt = NULL);
+  void ArrayItem(uint64_t value, const char* value_fmt = NULL);
+  void ArrayItem(const char* value,
+                 const char* value_fmt = NULL,
+                 bool format = true);
+
+  void ObjectStart(const char* name = NULL,
+                   const char* fmt = NULL,
+                   bool case_sensitiv_name = false);
+  void ObjectEnd(const char* name = NULL, const char* fmt = NULL);
+
   /*
    * boolean and integer can not be used to distinguish overloading functions,
    * therefore the bool function have the postfix _bool.
@@ -210,6 +223,14 @@ class OutputFormatter {
                       const char* key_fmt,
                       uint64_t value,
                       const char* value_fmt);
+  void ObjectKeyValueSignedInt(const char* key, int64_t value);
+  void ObjectKeyValueSignedInt(const char* key,
+                               int64_t value,
+                               const char* value_fmt);
+  void ObjectKeyValueSignedInt(const char* key,
+                               const char* key_fmt,
+                               int64_t value,
+                               const char* value_fmt);
   void ObjectKeyValue(const char* key, const char* value, int wrap = -1);
   void ObjectKeyValue(const char* key,
                       const char* value,
@@ -257,7 +278,7 @@ class OutputFormatter {
   void FinalizeResult(bool result);
 
 #if HAVE_JANSSON
-  void JsonAddResult(json_t* json);
+  bool JsonArrayItemAdd(json_t* value);
   bool JsonKeyValueAddBool(const char* key, bool value);
   bool JsonKeyValueAdd(const char* key, uint64_t value);
   bool JsonKeyValueAdd(const char* key, const char* value);

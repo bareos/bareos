@@ -284,6 +284,18 @@ const char* BareosSocket::bstrerror()
  */
 bool BareosSocket::fsend(const char* fmt, ...)
 {
+  bool result = false;
+
+  va_list arg_ptr;
+  va_start(arg_ptr, fmt);
+  result = vfsend(fmt, arg_ptr);
+  va_end(arg_ptr);
+
+  return result;
+}
+
+bool BareosSocket::vfsend(const char* fmt, va_list ap)
+{
   va_list arg_ptr;
   int maxlen;
 
@@ -295,7 +307,7 @@ bool BareosSocket::fsend(const char* fmt, ...)
    */
   for (;;) {
     maxlen = SizeofPoolMemory(msg) - 1;
-    va_start(arg_ptr, fmt);
+    va_copy(arg_ptr, ap);
     message_length = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
     va_end(arg_ptr);
     if (message_length >= 0 && message_length < (maxlen - 5)) { break; }
@@ -391,9 +403,9 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
     Dmsg0(debuglevel, fmt);
   } else if (password.encoding != p_encoding_md5) {
     const char* fmt =
-         _("Password encoding is not MD5. You are probably restoring a NDMP "
-           "Backup "
-           "with a restore job not configured for NDMP protocol.\n");
+        _("Password encoding is not MD5. You are probably restoring a NDMP "
+          "Backup "
+          "with a restore job not configured for NDMP protocol.\n");
     Jmsg(jcr, M_FATAL, 0, fmt);
     Dmsg0(debuglevel, fmt);
   } else {
