@@ -30,8 +30,8 @@ bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force = false);
 bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr);
 void PurgeFilesFromVolume(UaContext* ua, MediaDbRecord* mr);
 bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force = false);
-void PurgeFilesFromJobs(UaContext* ua, char* jobs);
-void PurgeJobsFromCatalog(UaContext* ua, char* jobs);
+void PurgeFilesFromJobs(UaContext* ua, const char* jobs);
+void PurgeJobsFromCatalog(UaContext* ua, const char* jobs);
 void PurgeJobListFromCatalog(UaContext* ua, del_ctx& del);
 void PurgeFilesFromJobList(UaContext* ua, del_ctx& del);
 

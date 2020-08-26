@@ -73,14 +73,14 @@
  * platform.
  */
 bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
-                               acl_data_t* acl_data,
+                               AclData* acl_data,
                                FindFilesPacket* ff_pkt)
 {
   return bacl_exit_fatal;
 }
 
 bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
-                                 acl_data_t* acl_data,
+                                 AclData* acl_data,
                                  int stream,
                                  char* content,
                                  uint32_t content_length)
@@ -92,7 +92,7 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
  * Send an ACL stream to the SD.
  */
 bacl_exit_code SendAclStream(JobControlRecord* jcr,
-                             acl_data_t* acl_data,
+                             AclData* acl_data,
                              int stream)
 {
   BareosSocket* sd = jcr->store_bsock;
@@ -188,7 +188,7 @@ static int os_access_acl_streams[3] = {STREAM_ACL_AIX_TEXT, STREAM_ACL_AIX_AIXC,
 static int os_default_acl_streams[1] = {-1};
 
 static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
-                                            acl_data_t* acl_data,
+                                            AclData* acl_data,
                                             FindFilesPacket* ff_pkt)
 {
   mode_t mode;
@@ -345,7 +345,7 @@ bail_out:
  * the file is located on.
  */
 static inline bool aix_query_acl_support(JobControlRecord* jcr,
-                                         acl_data_t* acl_data,
+                                         AclData* acl_data,
                                          uint64_t aclType,
                                          acl_type_t* pacl_type_info)
 {
@@ -368,7 +368,7 @@ static inline bool aix_query_acl_support(JobControlRecord* jcr,
 }
 
 static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
-                                            acl_data_t* acl_data,
+                                            AclData* acl_data,
                                             int stream,
                                             char* content,
                                             uint32_t content_length)
@@ -508,7 +508,7 @@ static int os_access_acl_streams[1] = {STREAM_ACL_AIX_TEXT};
 static int os_default_acl_streams[1] = {-1};
 
 static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
-                                            acl_data_t* acl_data,
+                                            AclData* acl_data,
                                             FindFilesPacket* ff_pkt)
 {
   char* acl_text;
@@ -523,7 +523,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
 }
 
 static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
-                                            acl_data_t* acl_data,
+                                            AclData* acl_data,
                                             int stream,
                                             char* content,
                                             uint32_t content_length)
@@ -540,11 +540,11 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
  * functions.
  */
 static bacl_exit_code (*os_build_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               FindFilesPacket* ff_pkt) =
     aix_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               int stream,
                                               char* content,
                                               uint32_t content_length) =
@@ -759,7 +759,7 @@ static bool AclIsTrivial(acl_t acl)
  * Generic wrapper around acl_get_file call.
  */
 static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               bacl_type acltype)
 {
   acl_t acl;
@@ -870,7 +870,7 @@ bail_out:
  * Generic wrapper around acl_set_file call.
  */
 static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
-                                            acl_data_t* acl_data,
+                                            AclData* acl_data,
                                             bacl_type acltype,
                                             char* content,
                                             uint32_t content_length)
@@ -1005,7 +1005,7 @@ static int os_access_acl_streams[1] = {STREAM_ACL_DARWIN_ACCESS_ACL};
 static int os_default_acl_streams[1] = {-1};
 
 static bacl_exit_code darwin_build_acl_streams(JobControlRecord* jcr,
-                                               acl_data_t* acl_data,
+                                               AclData* acl_data,
                                                FindFilesPacket* ff_pkt)
 {
 #if defined(HAVE_ACL_TYPE_EXTENDED)
@@ -1037,7 +1037,7 @@ static bacl_exit_code darwin_build_acl_streams(JobControlRecord* jcr,
 }
 
 static bacl_exit_code darwin_parse_acl_streams(JobControlRecord* jcr,
-                                               acl_data_t* acl_data,
+                                               AclData* acl_data,
                                                int stream,
                                                char* content,
                                                uint32_t content_length)
@@ -1056,11 +1056,11 @@ static bacl_exit_code darwin_parse_acl_streams(JobControlRecord* jcr,
  * functions.
  */
 static bacl_exit_code (*os_build_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               FindFilesPacket* ff_pkt) =
     darwin_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               int stream,
                                               char* content,
                                               uint32_t content_length) =
@@ -1075,7 +1075,7 @@ static int os_access_acl_streams[2] = {STREAM_ACL_FREEBSD_ACCESS_ACL,
 static int os_default_acl_streams[1] = {STREAM_ACL_FREEBSD_DEFAULT_ACL};
 
 static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
-                                                acl_data_t* acl_data,
+                                                AclData* acl_data,
                                                 FindFilesPacket* ff_pkt)
 {
   int acl_enabled = 0;
@@ -1204,7 +1204,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
 }
 
 static bacl_exit_code freebsd_parse_acl_streams(JobControlRecord* jcr,
-                                                acl_data_t* acl_data,
+                                                AclData* acl_data,
                                                 int stream,
                                                 char* content,
                                                 uint32_t content_length)
@@ -1292,11 +1292,11 @@ static bacl_exit_code freebsd_parse_acl_streams(JobControlRecord* jcr,
  * functions.
  */
 static bacl_exit_code (*os_build_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               FindFilesPacket* ff_pkt) =
     freebsd_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               int stream,
                                               char* content,
                                               uint32_t content_length) =
@@ -1318,7 +1318,7 @@ static int os_default_acl_streams[1] = {STREAM_ACL_HURD_DEFAULT_ACL};
 #endif
 
 static bacl_exit_code generic_build_acl_streams(JobControlRecord* jcr,
-                                                acl_data_t* acl_data,
+                                                AclData* acl_data,
                                                 FindFilesPacket* ff_pkt)
 {
   /*
@@ -1351,7 +1351,7 @@ static bacl_exit_code generic_build_acl_streams(JobControlRecord* jcr,
 }
 
 static bacl_exit_code generic_parse_acl_streams(JobControlRecord* jcr,
-                                                acl_data_t* acl_data,
+                                                AclData* acl_data,
                                                 int stream,
                                                 char* content,
                                                 uint32_t content_length)
@@ -1391,11 +1391,11 @@ static bacl_exit_code generic_parse_acl_streams(JobControlRecord* jcr,
  * functions.
  */
 static bacl_exit_code (*os_build_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               FindFilesPacket* ff_pkt) =
     generic_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               int stream,
                                               char* content,
                                               uint32_t content_length) =
@@ -1411,7 +1411,7 @@ static int os_default_acl_streams[2] = {STREAM_ACL_TRU64_DEFAULT_ACL,
                                         STREAM_ACL_TRU64_DEFAULT_DIR_ACL};
 
 static bacl_exit_code tru64_build_acl_streams(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               FindFilesPacket* ff_pkt)
 {
   /*
@@ -1451,8 +1451,8 @@ static bacl_exit_code tru64_build_acl_streams(JobControlRecord* jcr,
       }
 
       static bacl_exit_code tru64_parse_acl_streams(
-          JobControlRecord * jcr, acl_data_t * acl_data, int stream,
-          char* content, uint32_t content_length)
+          JobControlRecord * jcr, AclData * acl_data, int stream, char* content,
+          uint32_t content_length)
       {
         switch (stream) {
           case STREAM_UNIX_ACCESS_ACL:
@@ -1473,10 +1473,10 @@ static bacl_exit_code tru64_build_acl_streams(JobControlRecord* jcr,
          * specific functions.
          */
         static bacl_exit_code (*os_build_acl_streams)(
-            JobControlRecord * jcr, acl_data_t * acl_data,
+            JobControlRecord * jcr, AclData * acl_data,
             FindFilesPacket * ff_pkt) = tru64_build_acl_streams;
         static bacl_exit_code (*os_parse_acl_streams)(
-            JobControlRecord * jcr, acl_data_t * acl_data, int stream,
+            JobControlRecord * jcr, AclData * acl_data, int stream,
             char* content, uint32_t content_length) = tru64_parse_acl_streams;
 
 #endif
@@ -1523,7 +1523,7 @@ static bool AclIsTrivial(int count, struct acl_entry* entries, struct stat sb)
  * OS specific functions for handling different types of acl streams.
  */
 static bacl_exit_code hpux_build_acl_streams(JobControlRecord* jcr,
-                                             acl_data_t* acl_data
+                                             AclData* acl_data
                                                  FindFilesPacket* ff_pkt)
 {
   int n;
@@ -1598,7 +1598,7 @@ static bacl_exit_code hpux_build_acl_streams(JobControlRecord* jcr,
 }
 
 static bacl_exit_code hpux_parse_acl_streams(JobControlRecord* jcr,
-                                             acl_data_t* acl_data,
+                                             AclData* acl_data,
                                              int stream,
                                              char* content,
                                              uint32_t content_length)
@@ -1674,11 +1674,11 @@ static bacl_exit_code hpux_parse_acl_streams(JobControlRecord* jcr,
  * functions.
  */
 static bacl_exit_code (*os_build_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               FindFilesPacket* ff_pkt) =
     hpux_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               int stream,
                                               char* content,
                                               uint32_t content_length) =
@@ -1736,7 +1736,7 @@ static int os_default_acl_streams[1] = {-1};
  * code)
  */
 static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
-                                                acl_data_t* acl_data,
+                                                AclData* acl_data,
                                                 FindFilesPacket* ff_pkt)
 {
   int acl_enabled, flags;
@@ -1837,7 +1837,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
 }
 
 static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
-                                                acl_data_t* acl_data,
+                                                AclData* acl_data,
                                                 int stream,
                                                 char* content,
                                                 uint32_t content_length)
@@ -2022,7 +2022,7 @@ static bool AclIsTrivial(int count, aclent_t* entries)
  * OS specific functions for handling different types of acl streams.
  */
 static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
-                                                acl_data_t* acl_data,
+                                                AclData* acl_data,
                                                 FindFilesPacket* ff_pkt)
 {
   int n;
@@ -2065,7 +2065,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
 }
 
 static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
-                                                acl_data_t* acl_data,
+                                                AclData* acl_data,
                                                 int stream,
                                                 char* content,
                                                 uint32_t content_length)
@@ -2115,11 +2115,11 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
  * functions.
  */
 static bacl_exit_code (*os_build_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               FindFilesPacket* ff_pkt) =
     solaris_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
-                                              acl_data_t* acl_data,
+                                              AclData* acl_data,
                                               int stream,
                                               char* content,
                                               uint32_t content_length) =
@@ -2147,7 +2147,7 @@ long pioctl(char* pathp, long opcode, struct ViceIoctl* blobp, int follow);
 }
 
 static bacl_exit_code afs_build_acl_streams(JobControlRecord* jcr,
-                                            acl_data_t* acl_data,
+                                            AclData* acl_data,
                                             FindFilesPacket* ff_pkt)
 {
   int error;
@@ -2181,7 +2181,7 @@ static bacl_exit_code afs_build_acl_streams(JobControlRecord* jcr,
 }
 
 static bacl_exit_code afs_parse_acl_stream(JobControlRecord* jcr,
-                                           acl_data_t* acl_data,
+                                           AclData* acl_data,
                                            int stream,
                                            char* content,
                                            uint32_t content_length)
@@ -2216,7 +2216,7 @@ static bacl_exit_code afs_parse_acl_stream(JobControlRecord* jcr,
  * Read and send an ACL for the last encountered file.
  */
 bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
-                               acl_data_t* acl_data,
+                               AclData* acl_data,
                                FindFilesPacket* ff_pkt)
 {
   /*
@@ -2225,11 +2225,9 @@ bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
    * it with the current st_dev in the last stat performed on
    * the file we are currently storing.
    */
-  if (acl_data->current_dev != ff_pkt->statp.st_dev) {
-    /*
-     * Reset the acl save flags.
-     */
+  if (acl_data->first_dev || acl_data->current_dev != ff_pkt->statp.st_dev) {
     acl_data->flags = 0;
+    acl_data->first_dev = false;
 
 #if defined(HAVE_AFS_ACL)
     /*
@@ -2281,7 +2279,7 @@ bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
 }
 
 bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
-                                 acl_data_t* acl_data,
+                                 AclData* acl_data,
                                  int stream,
                                  char* content,
                                  uint32_t content_length)
@@ -2316,11 +2314,9 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
     case 0:
       break;
   }
-  if (acl_data->current_dev != st.st_dev) {
-    /*
-     * Reset the acl save flags.
-     */
+  if (acl_data->first_dev || acl_data->current_dev != st.st_dev) {
     acl_data->flags = 0;
+    acl_data->first_dev = false;
 
 #if defined(HAVE_AFS_ACL)
     /*

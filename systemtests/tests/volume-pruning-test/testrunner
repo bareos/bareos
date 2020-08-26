@@ -46,6 +46,7 @@ run job=$JobName Level=Full yes
 run job=$JobName Level=Full yes
 run job=$JobName Level=Full yes
 run job=$JobName Level=Full yes
+wait
 @sleep 10
 run job=$JobName Level=Full yes
 

@@ -44,8 +44,11 @@
 #include "dird/ua_prune.h"
 #include "dird/ua_purge.h"
 #include "include/auth_protocol_types.h"
+#include "lib/bstringlist.h"
 #include "lib/edit.h"
 #include "lib/util.h"
+
+#include <algorithm>
 
 namespace directordaemon {
 
@@ -326,7 +329,7 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 /**
  * Remove File records from a list of JobIds
  */
-void PurgeFilesFromJobs(UaContext* ua, char* jobs)
+void PurgeFilesFromJobs(UaContext* ua, const char* jobs)
 {
   PoolMem query(PM_MESSAGE);
 
@@ -355,28 +358,31 @@ void PurgeFilesFromJobs(UaContext* ua, char* jobs)
  */
 void PurgeJobListFromCatalog(UaContext* ua, del_ctx& del)
 {
-  PoolMem jobids(PM_MESSAGE);
-  char ed1[50];
-
   for (int i = 0; del.num_ids;) {
+    std::vector<JobId_t> jobid_list{};
     Dmsg1(150, "num_ids=%d\n", del.num_ids);
-    PmStrcat(jobids, "");
     for (int j = 0; j < 1000 && del.num_ids > 0; j++) {
       del.num_ids--;
       if (del.JobId[i] == 0 || ua->jcr->JobId == del.JobId[i]) {
-        Dmsg2(150, "skip JobId[%d]=%d\n", i, (int)del.JobId[i]);
-        i++;
+        Dmsg2(150, "skip JobId[%d]=%llu\n", i, del.JobId[i]);
+        ++i;
         continue;
       }
-      if (*jobids.c_str() != 0) { PmStrcat(jobids, ","); }
-      PmStrcat(jobids, edit_int64(del.JobId[i++], ed1));
-      Dmsg1(150, "Add id=%s\n", ed1);
-      del.num_del++;
+      jobid_list.push_back(del.JobId[i]);
+      Dmsg1(150, "Add id=%llu\n", del.JobId[i]);
+      ++i;
+      ++del.num_del;
     }
     Dmsg1(150, "num_ids=%d\n", del.num_ids);
+    std::sort(jobid_list.begin(), jobid_list.end());
+    BStringList jobids{};
+    std::transform(jobid_list.begin(), jobid_list.end(),
+                   std::back_inserter(jobids),
+                   [](JobId_t jobid) { return std::to_string(jobid); });
+
     Jmsg(ua->jcr, M_INFO, 0, _("Purging the following JobIds: %s\n"),
-         jobids.c_str());
-    PurgeJobsFromCatalog(ua, jobids.c_str());
+         jobids.Join(',').c_str());
+    PurgeJobsFromCatalog(ua, jobids.Join(',').c_str());
   }
 }
 
@@ -449,7 +455,7 @@ static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client)
  *  => Search through PriorJobId in jobid and
  *                    PriorJobId in PriorJobId (jobid)
  */
-void UpgradeCopies(UaContext* ua, char* jobs)
+void UpgradeCopies(UaContext* ua, const char* jobs)
 {
   PoolMem query(PM_MESSAGE);
 
@@ -478,7 +484,7 @@ void UpgradeCopies(UaContext* ua, char* jobs)
 /**
  * Remove all records from catalog for a list of JobIds
  */
-void PurgeJobsFromCatalog(UaContext* ua, char* jobs)
+void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
 {
   PoolMem query(PM_MESSAGE);
 

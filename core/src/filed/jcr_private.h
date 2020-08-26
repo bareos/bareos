@@ -26,8 +26,8 @@
 
 #include "include/bareos.h"
 
-struct acl_data_t;
-struct xattr_data_t;
+struct AclData;
+struct XattrData;
 
 namespace filedaemon {
 class BareosAccurateFilelist;
@@ -51,8 +51,8 @@ struct JobControlRecordPrivate {
   uint32_t num_files_examined{};  /**< Files examined this job */
   POOLMEM* last_fname{};          /**< Last file saved/verified */
   POOLMEM* job_metadata{};        /**< VSS job metadata */
-  acl_data_t* acl_data{};         /**< ACLs for backup/restore */
-  xattr_data_t* xattr_data{};     /**< Extended Attributes for backup/restore */
+  std::unique_ptr<AclData> acl_data{};         /**< ACLs for backup/restore */
+  std::unique_ptr<XattrData> xattr_data{};     /**< Extended Attributes for backup/restore */
   int32_t last_type{};            /**< Type of last file saved/verified */
   bool incremental{};             /**< Set if incremental for SINCE */
   utime_t mtime{};                /**< Begin time for SINCE */

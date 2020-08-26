@@ -598,8 +598,25 @@ set(SYSTEM_TESTS
 set(SYSTEM_TESTS_DISABLED # initially empty
 )
 
-if(mysql AND postgresql AND dynamic-cats-backends)
-  list(APPEND SYSTEM_TESTS "dbcopy-mysql-postgresql-test")
+include(BareosCheckXattr)
+if(SETFATTR_WORKS)
+  list(APPEND SYSTEM_TESTS xattr)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED xattr)
+endif()
+
+include(BareosCheckAcl)
+if(SETFACL_WORKS)
+  list(APPEND SYSTEM_TESTS acl)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED acl)
+endif()
+
+if(mysql
+   AND postgresql
+   AND dynamic-cats-backends
+)
+  list(APPEND SYSTEM_TESTS "dbcopy-mysql-postgresql")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "dbcopy-mysql-postgresql-test")
 endif()

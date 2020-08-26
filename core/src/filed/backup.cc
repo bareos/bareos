@@ -47,6 +47,7 @@
 #include "lib/btimers.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "include/make_unique.h"
 
 namespace filedaemon {
 
@@ -144,8 +145,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   StartHeartbeatMonitor(jcr);
 
   if (have_acl) {
-    jcr->impl->acl_data = (acl_data_t*)malloc(sizeof(acl_data_t));
-    memset(jcr->impl->acl_data, 0, sizeof(acl_data_t));
+    jcr->impl->acl_data = std::make_unique<AclData>();
     jcr->impl->acl_data->u.build =
         (acl_build_data_t*)malloc(sizeof(acl_build_data_t));
     memset(jcr->impl->acl_data->u.build, 0, sizeof(acl_build_data_t));
@@ -153,8 +153,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   }
 
   if (have_xattr) {
-    jcr->impl->xattr_data = (xattr_data_t*)malloc(sizeof(xattr_data_t));
-    memset(jcr->impl->xattr_data, 0, sizeof(xattr_data_t));
+    jcr->impl->xattr_data = std::make_unique<XattrData>();
     jcr->impl->xattr_data->u.build =
         (xattr_build_data_t*)malloc(sizeof(xattr_build_data_t));
     memset(jcr->impl->xattr_data->u.build, 0, sizeof(xattr_build_data_t));
@@ -191,15 +190,11 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   if (have_acl && jcr->impl->acl_data) {
     FreePoolMemory(jcr->impl->acl_data->u.build->content);
     free(jcr->impl->acl_data->u.build);
-    free(jcr->impl->acl_data);
-    jcr->impl->acl_data = NULL;
   }
 
   if (have_xattr && jcr->impl->xattr_data) {
     FreePoolMemory(jcr->impl->xattr_data->u.build->content);
     free(jcr->impl->xattr_data->u.build);
-    free(jcr->impl->xattr_data);
-    jcr->impl->xattr_data = NULL;
   }
 
   if (jcr->impl->big_buf) {
@@ -467,9 +462,9 @@ static inline bool DoBackupAcl(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   jcr->impl->acl_data->last_fname = jcr->impl->last_fname;
 
   if (jcr->IsPlugin()) {
-    retval = PluginBuildAclStreams(jcr, jcr->impl->acl_data, ff_pkt);
+    retval = PluginBuildAclStreams(jcr, jcr->impl->acl_data.get(), ff_pkt);
   } else {
-    retval = BuildAclStreams(jcr, jcr->impl->acl_data, ff_pkt);
+    retval = BuildAclStreams(jcr, jcr->impl->acl_data.get(), ff_pkt);
   }
 
   switch (retval) {
@@ -493,9 +488,9 @@ static inline bool DoBackupXattr(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   jcr->impl->xattr_data->last_fname = jcr->impl->last_fname;
 
   if (jcr->IsPlugin()) {
-    retval = PluginBuildXattrStreams(jcr, jcr->impl->xattr_data, ff_pkt);
+    retval = PluginBuildXattrStreams(jcr, jcr->impl->xattr_data.get(), ff_pkt);
   } else {
-    retval = BuildXattrStreams(jcr, jcr->impl->xattr_data, ff_pkt);
+    retval = BuildXattrStreams(jcr, jcr->impl->xattr_data.get(), ff_pkt);
   }
 
   switch (retval) {
