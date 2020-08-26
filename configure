@@ -32765,6 +32765,10 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
+if test "x${with_rados}" = "xno"; then
+       have_ceph_rados=no
+fi
+
 if test "x${have_ceph_rados}" = "xyes"; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rados_ioctx_set_namespace in -lrados" >&5
 $as_echo_n "checking for rados_ioctx_set_namespace in -lrados... " >&6; }
@@ -33055,6 +33059,10 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 LIBS="${saved_LIBS}"
 CFLAGS="${saved_CFLAGS}"
 CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${with_cephfs}" = "xno"; then
+       have_cephfs=no
+fi
 
 if test "x${have_cephfs}" = "xyes"; then
 
