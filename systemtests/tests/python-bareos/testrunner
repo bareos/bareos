@@ -2,9 +2,6 @@
 set -e
 set -u
 #
-# Run a simple backup
-#   then restore it.
-#
 TestName="$(basename "$(pwd)")"
 export TestName
 
