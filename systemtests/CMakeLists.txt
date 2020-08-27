@@ -647,6 +647,7 @@ set(SYSTEM_TESTS
     passive
     spool
     bareos
+    bareos-acl
     bscan
     bconsole-status-client
     config-syntax-crash

@@ -543,13 +543,19 @@ bail_out:
 
 static void DoConfigurationStatus(UaContext* ua)
 {
-  if (my_config->HasWarnings()) {
-    ua->SendMsg(_("Deprecated configuration settings detected:\n"));
-    for (auto& warning : my_config->GetWarnings()) {
-      ua->SendMsg(" * %s\n", warning.c_str());
-    }
+  if (!ua->AclAccessOk(Command_ACL, "configure")) {
+    ua->ErrorMsg(_("%s %s: is an invalid command or needs access right to the"
+                   " \"configure\" command.\n"),
+                 ua->argk[0], ua->argk[1]);
   } else {
-    ua->SendMsg(_("No deprecated configuration settings detected.\n"));
+    if (my_config->HasWarnings()) {
+      ua->SendMsg(_("Deprecated configuration settings detected:\n"));
+      for (auto& warning : my_config->GetWarnings()) {
+        ua->SendMsg(" * %s\n", warning.c_str());
+      }
+    } else {
+      ua->SendMsg(_("No deprecated configuration settings detected.\n"));
+    }
   }
 }
 

@@ -1356,7 +1356,7 @@ status
    Not configuring the directive at all also disables it, as the default value for the Subscriptions directive is zero.
 
 
-   Using the console command :bcommand:`status configuration` will show a list of deprecated configuration settings that were detected when loading the director's configuration.
+   Using the console command :bcommand:`status configuration` will show a list of deprecated configuration settings that were detected when loading the director's configuration. Be sure to enable access to the "configuration" command by using the according command ACL.
 
 time
    :index:`\ <single: Console; Command; time>`\  The time command shows the current date, time and weekday.
