@@ -99,6 +99,10 @@ override_dh_auto_configure:
 		dh_auto_configure -- $(CONFIGURE_FULL); \
 	fi
 
+override_dh_auto_build:
+	make -C src/ndmp ndmp0.h ndmp2.h ndmp3.h ndmp4.h ndmp9.h
+	dh_auto_build
+
 override_dh_fixperms:
 	# all files in /etc/bareos
 	dh_fixperms \
