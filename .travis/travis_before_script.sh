@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -u
+
 print_header()
 {
    TEXT="$1"
@@ -8,9 +11,7 @@ print_header()
    printf "#\n"
 }
 
-cd core
-
-if [ "${COVERITY_SCAN}" ]; then
+if [ "${COVERITY_SCAN:-}" ]; then
    # run configure with default options
    debian/rules override_dh_auto_configure
    eval "$COVERITY_SCAN_BUILD"
@@ -20,17 +21,9 @@ fi
 
 
 print_header "build Bareos core packages"
+# https://www.debian.org/doc/debian-policy/ch-source.html#s-debianrules-options
+export DEB_BUILD_OPTIONS="nocheck"
 fakeroot debian/rules binary
-
-
-if [ "${BUILD_WEBUI}" ]; then
-    cd ../webui
-    # to avoid timestamp conflicts while autoconfiguring we refresh every file
-    #touch *
-    print_header "build Bareos webui packages"
-    fakeroot debian/rules binary
-fi
-
 
 print_header "create Debian package repository"
 cd ..
@@ -41,11 +34,10 @@ printf 'deb file:%s /\n' $PWD > /tmp/bareos.list
 sudo cp /tmp/bareos.list /etc/apt/sources.list.d/bareos.list
 cd -
 
-
-print_header "install Bareos core package"
-sudo apt-get -qq update
-sudo apt-get install -y --force-yes bareos bareos-database-$DB
-
-if [ "${BUILD_WEBUI}" ]; then
-    sudo apt-get install -y --force-yes bareos-webui
+PKGS="bareos bareos-database-$DB"
+if [ "${BUILD_WEBUI:-}" ]; then
+    PKGS="$PKGS bareos-webui"
 fi
+print_header "install Bareos packages: $PKGS"
+sudo apt-get -qq update --allow-insecure-repositories || true
+sudo apt-get install -y --allow-unauthenticated $PKGS
