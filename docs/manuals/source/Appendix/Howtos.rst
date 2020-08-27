@@ -148,6 +148,7 @@ Plugin Test
      stopbeforemark=<log sequence number specification>:
      stopatmark=<log sequence number specification>:
      stopat=<timestamp>
+     getconfigurationtimeout=<timeout-seconds>
 
     examples:
      timestamp: 'Apr 15, 2020 12:00 AM'
