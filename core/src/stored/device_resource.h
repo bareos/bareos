@@ -94,7 +94,8 @@ class DeviceResource : public BareosResource {
   virtual ~DeviceResource() = default;
   DeviceResource(const DeviceResource& other);
   DeviceResource& operator=(const DeviceResource& rhs);
-  bool PrintConfig(PoolMem& buf,
+
+  bool PrintConfig(OutputFormatterResource& send,
                    const ConfigurationParser& /* unused */,
                    bool hide_sensitive_data = false,
                    bool verbose = false) override;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,8 +30,9 @@
 #include "lib/alist.h"
 #include "lib/json.h"
 #include "lib/resource_item.h"
-#include "lib/output_formatter.h"
 #include "lib/tls_resource_items.h"
+#include "lib/output_formatter.h"
+#include "lib/output_formatter_resource.h"
 
 #include <cassert>
 
@@ -44,7 +45,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass);
 static void FreeResource(BareosResource* sres, int type);
 static void DumpResource(int type,
                          BareosResource* reshdr,
-                         void sendit(void* sock, const char* fmt, ...),
+                         bool sendit(void* sock, const char* fmt, ...),
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose);
@@ -94,13 +95,17 @@ static ResourceTable resources[] = {
 
 static void DumpResource(int type,
                          BareosResource* res,
-                         void sendit(void* sock, const char* fmt, ...),
+                         bool sendit(void* sock, const char* fmt, ...),
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose)
 {
   PoolMem buf;
   bool recurse = true;
+  OutputFormatter output_formatter =
+      OutputFormatter(sendit, sock, nullptr, nullptr);
+  OutputFormatterResource output_formatter_resource =
+      OutputFormatterResource(&output_formatter);
 
   if (!res) {
     sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
@@ -114,10 +119,10 @@ static void DumpResource(int type,
 
   switch (type) {
     default:
-      res->PrintConfig(buf, *my_config);
+      res->PrintConfig(output_formatter_resource, *my_config,
+                       hide_sensitive_data, verbose);
       break;
   }
-  sendit(sock, "%s", buf.c_str());
 
   if (recurse && res->next_) {
     DumpResource(type, res->next_, sendit, sock, hide_sensitive_data, verbose);

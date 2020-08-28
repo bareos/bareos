@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -73,13 +73,15 @@
 #define MAX_PATH 1024
 #endif
 
-void PrintMessage(void* sock, const char* fmt, ...)
+bool PrintMessage(void* sock, const char* fmt, ...)
 {
   va_list arg_ptr;
 
   va_start(arg_ptr, fmt);
   vfprintf(stdout, fmt, arg_ptr);
   va_end(arg_ptr);
+
+  return true;
 }
 
 ConfigurationParser::ConfigurationParser()
@@ -600,7 +602,7 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
   return false;
 }
 
-void ConfigurationParser::DumpResources(void sendit(void* sock,
+void ConfigurationParser::DumpResources(bool sendit(void* sock,
                                                     const char* fmt,
                                                     ...),
                                         void* sock,
@@ -712,18 +714,16 @@ bool ConfigurationParser::GetPathOfNewResource(PoolMem& path,
   return true;
 }
 
-void ConfigurationParser::AddWarning(const std::string& warning) {
+void ConfigurationParser::AddWarning(const std::string& warning)
+{
   warnings_ << warning;
 }
 
-void ConfigurationParser::ClearWarnings() {
-  warnings_.clear();
-}
+void ConfigurationParser::ClearWarnings() { warnings_.clear(); }
 
-bool ConfigurationParser::HasWarnings() const {
-  return !warnings_.empty();
-}
+bool ConfigurationParser::HasWarnings() const { return !warnings_.empty(); }
 
-const BStringList& ConfigurationParser::GetWarnings() const {
+const BStringList& ConfigurationParser::GetWarnings() const
+{
   return warnings_;
 }

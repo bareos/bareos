@@ -72,7 +72,7 @@ class PythonBareosBase(unittest.TestCase):
 
 class PythonBareosModuleTest(PythonBareosBase):
     def versiontuple(self, versionstring):
-        version, separator, suffix = versionstring.partition('~')
+        version, separator, suffix = versionstring.partition("~")
         return tuple(map(int, (version.split("."))))
 
     def test_exception_connection_error(self):
@@ -623,14 +623,14 @@ class PythonBareosJsonBase(PythonBareosBase):
         if wait:
             result = director.call("wait jobid={}".format(jobId))
             # "result": {
-            #    "Job": {
+            #    "job": {
             #    "jobid": 1,
             #    "jobstatuslong": "OK",
             #    "jobstatus": "T",
             #    "exitstatus": 0
             #    }
             # }
-            self.assertEqual(result["Job"]["jobstatuslong"], u"OK")
+            self.assertEqual(result["job"]["jobstatuslong"], u"OK")
 
         return jobId
 
@@ -775,8 +775,18 @@ class PythonBareosJsonBackendTest(PythonBareosJsonBase):
         logger.debug(str(result))
         self.assertEqual(username, result["whoami"])
 
-    def test_json_backend_without_json_input(self):
+    @unittest.skip("Most commands do return valid JSON")
+    def test_json_backend_with_invalid_json_output(self):
         logger = logging.getLogger()
+
+        # This command sends additional plain (none JSON) output.
+        # Therefore the result is not valid JSON.
+        # Used "show clients" earlier,
+        # however, this now produces valid output.
+        # Commands like 'status storage' (and 'status client') only produces empty output.
+        # The "messages" command shows plain outout in JSON mode,
+        # but only if there are pending messages.
+        bcmd = "show clients"
 
         username = self.get_operator_username()
         password = self.get_operator_password(username)
@@ -788,7 +798,7 @@ class PythonBareosJsonBackendTest(PythonBareosJsonBase):
             password=password,
         )
 
-        result = director_plain.call("show clients")
+        result = director_plain.call(bcmd)
         logger.debug(str(result))
 
         director_json = bareos.bsock.DirectorConsoleJson(
@@ -798,16 +808,14 @@ class PythonBareosJsonBackendTest(PythonBareosJsonBase):
             password=password,
         )
 
-        # The 'show' command does not deliver JSON output.
-
         # The JsonRpcInvalidJsonReceivedException
         # is inherited from JsonRpcErrorReceivedException,
         # so both exceptions could by tried.
         with self.assertRaises(bareos.exceptions.JsonRpcInvalidJsonReceivedException):
-            result = director_json.call("show clients")
+            result = director_json.call(bcmd)
 
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
-            result = director_json.call("show clients")
+            result = director_json.call(bcmd)
 
     def test_json_no_api_command(self):
         """
@@ -1332,6 +1340,58 @@ class PythonBareosJsonRunScriptTest(PythonBareosJsonBase):
         )
 
 
+class PythonBareosJsonConfigTest(PythonBareosJsonBase):
+    def test_show_command(self):
+        """
+        Verify, that the "show" command delivers valid JSON.
+        If the JSON is not valid, the "call" command would raise an exception.
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+        )
+
+        resourcesname = "clients"
+        newclient = "test-client-fd"
+        newpassword = "secret"
+        
+        director.call("show all")
+        
+        try:
+            os.remove("etc/bareos/bareos-dir.d/client/{}.conf".format(newclient))
+            director.call("reload")
+        except OSError:
+            pass
+        
+        self.assertFalse(
+            self.check_resource(director, resourcesname, newclient),
+            u"Resource {} in {} already exists.".format(newclient, resourcesname),
+        )
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            director.call("show client={}".format(newclient))
+
+        self.configure_add(
+            director,
+            resourcesname,
+            newclient,
+            u"client={} password={} address=127.0.0.1".format(newclient, newpassword),
+        )
+
+        director.call("show all")
+        director.call("show all verbose")
+        result = director.call("show client={}".format(newclient))
+        logger.debug(str(result))
+        director.call("show client={} verbose".format(newclient))
+
+
 class PythonBareosFiledaemonTest(PythonBareosBase):
     @unittest.skipUnless(
         bareos.bsock.DirectorConsole.is_tls_psk_available(), "TLS-PSK is not available."
@@ -1407,6 +1467,41 @@ class PythonBareosFiledaemonTest(PythonBareosBase):
         )
 
         self.assertRegexpMatches(result, expected_regex)
+
+
+class PythonBareosShowTest(PythonBareosJsonBase):
+    def test_fileset(self):
+        """
+        Filesets are stored in the database,
+        as soon as a job using them did run.
+        We want to verify, that the catalog content is correct.
+        As comparing the full content is difficult,
+        we only check if the "Description" is stored in the catalog.
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        jobname = u"backup-bareos-fd"
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+        )
+
+        jobid = self.run_job(director, jobname, wait=True)
+        result = director.call("llist jobid={}".format(jobid))
+        fileset = result["jobs"][0]["fileset"]
+        result = director.call("list fileset jobid={} limit=1".format(jobid))
+        fileset_content_list = result["filesets"][0]["filesettext"]
+
+        result = director.call("show fileset={}".format(fileset))
+        fileset_show_description = result["fileset"][fileset]["description"]
+
+        self.assertIn(fileset_show_description, fileset_content_list)
 
 
 def get_env():

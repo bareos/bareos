@@ -30,6 +30,7 @@ class QualifiedResourceNameTypeConverter;
 enum class BareosVersionNumber : uint32_t;
 
 void EscapeString(PoolMem& snew, const char* old, int len);
+std::string EscapeString(const char* old);
 bool IsBufZero(char* buf, int len);
 void lcase(char* str);
 void BashSpaces(char* str);
@@ -72,5 +73,7 @@ void SortCaseInsensitive(std::vector<std::string>& v);
 std::string getenv_std_string(std::string env_var);
 void StringToLowerCase(std::string& s);
 void StringToLowerCase(std::string& out, const std::string& in);
+bool pm_append(void* pm_string, const char* fmt, ...);
+
 
 #endif  // BAREOS_LIB_UTIL_H_

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,9 +57,10 @@ class MessagesResource : public BareosResource {
   void WaitNotInUse() const;
   void Lock() const;
   void Unlock() const;
-  bool PrintConfig(PoolMem& buff,
+
+  bool PrintConfig(OutputFormatterResource& send,
                    const ConfigurationParser& /* unused */,
-                   bool hide_sensitive_data = false,
+                   bool hide_sensitive_data,
                    bool verbose = false) override;
 
   void DuplicateResourceTo(MessagesResource& other) const;
@@ -72,6 +73,7 @@ class MessagesResource : public BareosResource {
                                 int msg_type,
                                 const std::string& where);
 
+
  private:
   std::vector<MessageDestinationInfo*> DuplicateDestChain() const;
   bool AddToExistingChain(MessageDestinationCode dest_code,
@@ -82,6 +84,8 @@ class MessagesResource : public BareosResource {
                      const std::string& where,
                      const std::string& mail_cmd,
                      const std::string& timestamp_format);
+  std::string GetMessageTypesAsSring(MessageDestinationInfo* d,
+                                     bool verbose = false);
 };
 
 #endif /* BAREOS_LIB_MESSAGES_RESOURCE_H_ */

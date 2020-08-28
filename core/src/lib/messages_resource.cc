@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -118,28 +118,20 @@ bool MessagesResource::AddToExistingChain(MessageDestinationCode dest_code,
                                           int msg_type,
                                           const std::string& where)
 {
-  auto pos = std::find_if(dest_chain_.begin(), dest_chain_.end(),
-                          [&dest_code](MessageDestinationInfo* d) {
-                            return d->dest_code_ == dest_code;
-                          });
+  auto pos = std::find_if(
+      dest_chain_.rbegin(), dest_chain_.rend(),
+      [&dest_code, where](MessageDestinationInfo* d) {
+        return ((d->dest_code_ == dest_code) &&
+                ((where.empty() && d->where_.empty()) || (where == d->where_)));
+      });
 
-  if (pos != dest_chain_.end()) {
+  if (pos != dest_chain_.rend()) {
     MessageDestinationInfo* d = *pos;
-    bool append = false;
-
-    if (where.empty() && d->where_.empty()) {
-      append = true;
-    } else if (where == d->where_) {
-      append = true;
-    }
-
-    if (append) {
-      Dmsg4(850, "Add to existing d=%p msgtype=%d destcode=%d where=%s\n", pos,
-            msg_type, dest_code, NSTDPRNT(where));
-      SetBit(msg_type, d->msg_types_);
-      SetBit(msg_type, send_msg_types_);
-      return true;
-    }
+    Dmsg4(850, "add to existing d=%p msgtype=%d destcode=%d where=%s\n", d,
+          msg_type, dest_code, NSTDPRNT(where));
+    SetBit(msg_type, d->msg_types_);
+    SetBit(msg_type, send_msg_types_);
+    return true;
   }
   return false;
 }
@@ -160,8 +152,7 @@ void MessagesResource::AddToNewChain(MessageDestinationCode dest_code,
   d->mail_cmd_ = mail_cmd;
   d->timestamp_format_ = timestamp_format;
 
-  // insert in front for compatibility to the former alist implementation */
-  dest_chain_.insert(dest_chain_.begin(), d);
+  dest_chain_.push_back(d);
 
   Dmsg6(850,
         "add new d=%p msgtype=%d destcode=%d where=%s mailcmd=%s "

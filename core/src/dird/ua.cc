@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -83,7 +83,7 @@ UaContext* new_ua_context(JobControlRecord* jcr)
   ua->errmsg = GetPoolMemory(PM_FNAME);
   ua->verbose = true;
   ua->automount = true;
-  ua->send = new OutputFormatter(printit, ua, filterit, ua);
+  ua->send = new OutputFormatter(sprintit, ua, filterit, ua);
 
   return ua;
 }

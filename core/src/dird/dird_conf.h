@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,10 +35,10 @@
 #include "lib/alist.h"
 #include "lib/messages_resource.h"
 #include "lib/resource_item.h"
-#include "lib/output_formatter.h"
 #include "lib/tls_conf.h"
 
 class dlist;
+class json_t;
 
 namespace directordaemon {
 
@@ -599,10 +599,14 @@ class FilesetResource : public BareosResource {
   bool enable_vss = false;        /**< Enable Volume Shadow Copy */
 
   /* Methods */
-  bool PrintConfig(PoolMem& buf,
-                   const ConfigurationParser& /* unused */,
+  bool PrintConfig(OutputFormatterResource& send,
+                   const ConfigurationParser& my_config /* unused */,
                    bool hide_sensitive_data = false,
                    bool verbose = false) override;
+  void PrintConfigIncludeExcludeOptions(OutputFormatterResource& send,
+                                        FileOptions* fo,
+                                        bool verbose);
+  std::string GetOptionValue(const char** option);
 };
 
 /**

@@ -746,7 +746,7 @@
           "equals": true
         },
         "WriteBootstrap": {
-          "datatype": "DIRECTORY",
+          "datatype": "DIRECTORY_OR_COMMAND",
           "code": 0,
           "equals": true
         },
@@ -779,23 +779,29 @@
         "FullMaxWaitTime": {
           "datatype": "TIME",
           "code": 0,
+          "alias": true,
           "deprecated": true,
           "equals": true,
-          "versions": "-12.4.0"
+          "versions": "-12.4.0",
+          "description": "This directive has been deprecated in favor of \"Full Max Runtime\"."
         },
         "IncrementalMaxWaitTime": {
           "datatype": "TIME",
           "code": 0,
+          "alias": true,
           "deprecated": true,
           "equals": true,
-          "versions": "-12.4.0"
+          "versions": "-12.4.0",
+          "description": "This directive has been deprecated in favor of \"Incremental Max Runtime\"."
         },
         "DifferentialMaxWaitTime": {
           "datatype": "TIME",
           "code": 0,
+          "alias": true,
           "deprecated": true,
           "equals": true,
-          "versions": "-12.4.0"
+          "versions": "-12.4.0",
+          "description": "This directive has been deprecated in favor of \"Differential Max Runtime\"."
         },
         "FullMaxRuntime": {
           "datatype": "TIME",
@@ -1270,7 +1276,7 @@
           "equals": true
         },
         "WriteBootstrap": {
-          "datatype": "DIRECTORY",
+          "datatype": "DIRECTORY_OR_COMMAND",
           "code": 0,
           "equals": true
         },
@@ -1303,23 +1309,29 @@
         "FullMaxWaitTime": {
           "datatype": "TIME",
           "code": 0,
+          "alias": true,
           "deprecated": true,
           "equals": true,
-          "versions": "-12.4.0"
+          "versions": "-12.4.0",
+          "description": "This directive has been deprecated in favor of \"Full Max Runtime\"."
         },
         "IncrementalMaxWaitTime": {
           "datatype": "TIME",
           "code": 0,
+          "alias": true,
           "deprecated": true,
           "equals": true,
-          "versions": "-12.4.0"
+          "versions": "-12.4.0",
+          "description": "This directive has been deprecated in favor of \"Incremental Max Runtime\"."
         },
         "DifferentialMaxWaitTime": {
           "datatype": "TIME",
           "code": 0,
+          "alias": true,
           "deprecated": true,
           "equals": true,
-          "versions": "-12.4.0"
+          "versions": "-12.4.0",
+          "description": "This directive has been deprecated in favor of \"Differential Max Runtime\"."
         },
         "FullMaxRuntime": {
           "datatype": "TIME",
@@ -2826,6 +2838,10 @@
     "PLUGIN_NAMES": {
       "number": 29,
       "description": "Plugin Name(s)"
+    },
+    "DIRECTORY_OR_COMMAND": {
+      "number": 34,
+      "description": "Directory or command"
     },
     "ACL": {
       "number": 50,

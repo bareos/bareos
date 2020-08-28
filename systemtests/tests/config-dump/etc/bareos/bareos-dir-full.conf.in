@@ -1,0 +1,1419 @@
+Director {
+  Name = "bareos-dir"
+  Description = "Long string 1234567890 1234567890 1234567890"
+  Messages = "Daemon"
+  DirAddresses = {
+    ipv4 = {
+      addr = 0.0.0.0
+      port = @dir_port@
+    }
+  }
+  QueryFile = "@scriptdir@/query.sql"
+  WorkingDirectory = "@working_dir@"
+  PidDirectory = "@piddir@"
+  PluginDirectory = "@tmpdir@"
+  # PluginNames = 
+  ScriptsDirectory = "@tmpdir@"
+  BackendDirectory = "@backenddir@"
+  Subscriptions = 10
+  SubSysDirectory = "@tmpdir@"
+  MaximumConcurrentJobs = 100
+  MaximumConnections = 300
+  MaximumConsoleConnections = 200
+  Password = "@dir_password@"
+  FdConnectTimeout = 1 minutes 
+  SdConnectTimeout = 3 minutes 
+  HeartbeatInterval = 30 seconds 
+  StatisticsRetention = 1 years 2 months 3 weeks 4 days 5 hours 6 minutes 7 seconds 
+  StatisticsCollectInterval = 1500
+  VerId = "My Private Version ID"
+  OptimizeForSize = Yes
+  # OptimizeForSpeed = No
+  NdmpSnooping = Yes
+  NdmpLogLevel = 40
+  AbsoluteJobTimeout = 10
+  Auditing = Yes
+  AuditEvents = "item11", "item12"
+  AuditEvents = "item21", "item22", ".*"
+  # SecureEraseCommand = 
+  # LogTimestampFormat = 
+  # TlsAuthenticate = No
+  # TlsEnable = Yes
+  TlsRequire = Yes
+  # TlsCipherList = ""
+  # TlsDhFile = ""
+  # TlsVerifyPeer = No
+  # TlsCaCertificateFile = ""
+  # TlsCaCertificateDir = ""
+  # TlsCertificateRevocationList = ""
+  # TlsCertificate = ""
+  # TlsKey = ""
+  # TlsAllowedCn = 
+}
+
+Client {
+  Name = "bareos-fd"
+  Description = "Client resource of the Director itself."
+  # Protocol = Native
+  # AuthType = None
+  Address = "localhost"
+  # LanAddress = 
+  # Port = 9102
+  # Username = 
+  Password = "[md5]97a3419152ff86bedac46016e0c97271"
+  # Catalog = "MyCatalog"
+  # Passive = No
+  # ConnectionFromDirectorToClient = Yes
+  # ConnectionFromClientToDirector = No
+  # Enabled = Yes
+  # HardQuota = 0
+  # SoftQuota = 0
+  # SoftQuotaGracePeriod = 0
+  # StrictQuotas = No
+  # QuotaIncludeFailedJobs = Yes
+  # FileRetention = 2 months 
+  # JobRetention = 6 months 
+  # HeartbeatInterval = 0
+  # AutoPrune = No
+  # MaximumConcurrentJobs = 1
+  # MaximumBandwidthPerJob = 0
+  # NdmpLogLevel = 4
+  # NdmpBlockSize = 63 k 
+  # NdmpUseLmdb = Yes
+  # TlsAuthenticate = No
+  # TlsEnable = Yes
+  # TlsRequire = No
+  # TlsCipherList = ""
+  # TlsDhFile = ""
+  # TlsVerifyPeer = No
+  # TlsCaCertificateFile = ""
+  # TlsCaCertificateDir = ""
+  # TlsCertificateRevocationList = ""
+  # TlsCertificate = ""
+  # TlsKey = ""
+  # TlsAllowedCn = 
+}
+
+Client {
+  Name = "min-fd"
+  # Description = 
+  # Protocol = Native
+  # AuthType = None
+  Address = "localhost"
+  # LanAddress = 
+  # Port = 9102
+  # Username = 
+  Password = "[md5]97a3419152ff86bedac46016e0c97271"
+  # Catalog = "MyCatalog"
+  # Passive = No
+  # ConnectionFromDirectorToClient = Yes
+  # ConnectionFromClientToDirector = No
+  # Enabled = Yes
+  # HardQuota = 0
+  # SoftQuota = 0
+  # SoftQuotaGracePeriod = 0
+  # StrictQuotas = No
+  # QuotaIncludeFailedJobs = Yes
+  # FileRetention = 2 months 
+  # JobRetention = 6 months 
+  # HeartbeatInterval = 0
+  # AutoPrune = No
+  # MaximumConcurrentJobs = 1
+  # MaximumBandwidthPerJob = 0
+  # NdmpLogLevel = 4
+  # NdmpBlockSize = 63 k 
+  # NdmpUseLmdb = Yes
+  # TlsAuthenticate = No
+  # TlsEnable = Yes
+  # TlsRequire = No
+  # TlsCipherList = ""
+  # TlsDhFile = ""
+  # TlsVerifyPeer = No
+  # TlsCaCertificateFile = ""
+  # TlsCaCertificateDir = ""
+  # TlsCertificateRevocationList = ""
+  # TlsCertificate = ""
+  # TlsKey = ""
+  # TlsAllowedCn = 
+}
+
+Client {
+  Name = "max-fd"
+  Description = "Client resource of the Director itself."
+  # Protocol = Native
+  # AuthType = None
+  Address = "localhost"
+  LanAddress = "127.0.0.1"
+  Port = 19102
+  Username = "user"
+  Password = "[md5]97a3419152ff86bedac46016e0c97271"
+  Catalog = "MyCatalog"
+  Passive = Yes
+  ConnectionFromDirectorToClient = No
+  ConnectionFromClientToDirector = Yes
+  Enabled = No
+  HardQuota = 10 k 
+  SoftQuota = 10 k 
+  SoftQuotaGracePeriod = 1 weeks 2 days 
+  StrictQuotas = Yes
+  QuotaIncludeFailedJobs = No
+  FileRetention = 10 months 
+  JobRetention = 11 months 
+  HeartbeatInterval = 10 seconds 
+  AutoPrune = Yes
+  MaximumConcurrentJobs = 10
+  MaximumBandwidthPerJob = 10000
+  NdmpLogLevel = 40
+  NdmpBlockSize = 163 k 
+  NdmpUseLmdb = No
+  # TlsAuthenticate = No
+  # TlsEnable = Yes
+  # TlsRequire = No
+  # TlsCipherList = ""
+  # TlsDhFile = ""
+  # TlsVerifyPeer = No
+  # TlsCaCertificateFile = ""
+  # TlsCaCertificateDir = ""
+  # TlsCertificateRevocationList = ""
+  # TlsCertificate = ""
+  # TlsKey = ""
+  # TlsAllowedCn = 
+}
+
+JobDefs {
+  Name = "DefaultJob"
+  # Description = 
+  Type = Backup
+  # Protocol = Native
+  # BackupFormat = "Native"
+  Level = Differential
+  Messages = "Standard"
+  Storage = "File"
+  Pool = "Incremental"
+  FullBackupPool = "Full"
+  # VirtualFullBackupPool = ""
+  IncrementalBackupPool = "Incremental"
+  DifferentialBackupPool = "Differential"
+  # NextPool = ""
+  Client = "bareos-fd"
+  FileSet = "SelfTest"
+  Schedule = "WeeklyCycle"
+  # JobToVerify = ""
+  # Catalog = ""
+  # JobDefs = ""
+  # Run = 
+  # Where = 
+  # RegexWhere = 
+  # StripPrefix = 
+  # AddPrefix = 
+  # AddSuffix = 
+  # Bootstrap = 
+  WriteBootstrap = "/var/lib/bareos/%c.bsr"
+  # WriteVerifyList = 
+  # Replace = Always
+  # MaximumBandwidth = 0
+  # MaxRunSchedTime = 0
+  # MaxRunTime = 0
+  # FullMaxRuntime = 0
+  # IncrementalMaxRuntime = 0
+  # DifferentialMaxRuntime = 0
+  # MaxWaitTime = 0
+  # MaxStartDelay = 0
+  # MaxFullInterval = 0
+  # MaxVirtualFullInterval = 0
+  # MaxDiffInterval = 0
+  # PrefixLinks = No
+  # PruneJobs = No
+  # PruneFiles = No
+  # PruneVolumes = No
+  # PurgeMigrationJob = No
+  # Enabled = Yes
+  # SpoolAttributes = No
+  # SpoolData = No
+  # SpoolSize = 0
+  # RerunFailedLevels = No
+  # PreferMountedVolumes = Yes
+  # MaximumConcurrentJobs = 1
+  # RescheduleOnError = No
+  # RescheduleInterval = 30 minutes 
+  # RescheduleTimes = 5
+  # Priority = 10
+  # AllowMixedPriority = No
+  # SelectionPattern = 
+  # Accurate = No
+  # AllowDuplicateJobs = Yes
+  # AllowHigherDuplicates = Yes
+  # CancelLowerLevelDuplicates = No
+  # CancelQueuedDuplicates = No
+  # CancelRunningDuplicates = No
+  # SaveFileHistory = Yes
+  # FileHistorySize = 9 m 549 k 640  
+  # FdPluginOptions = 
+  # SdPluginOptions = 
+  # DirPluginOptions = 
+  # Base = 
+  # MaxConcurrentCopies = 100
+  # AlwaysIncremental = No
+  # AlwaysIncrementalJobRetention = 0
+  # AlwaysIncrementalKeepNumber = 0
+  # AlwaysIncrementalMaxFullAge = 0
+  # MaxFullConsolidations = 0
+  # RunOnIncomingConnectInterval = 0
+}
+
+Job {
+  Name = "job-min-DefaultJob"
+  # Description = 
+  # Type = Backup
+  # Protocol = Native
+  # BackupFormat = "Native"
+  # Level = Differential
+  # Messages = "Standard"
+  # Storage = "File"
+  # Pool = "Incremental"
+  # FullBackupPool = "Full"
+  # VirtualFullBackupPool = ""
+  # IncrementalBackupPool = "Incremental"
+  # DifferentialBackupPool = "Differential"
+  # NextPool = ""
+  # Client = "bareos-fd"
+  # FileSet = "SelfTest"
+  # Schedule = "WeeklyCycle"
+  # JobToVerify = ""
+  # Catalog = ""
+  JobDefs = "DefaultJob"
+  # Run = 
+  # Where = 
+  # RegexWhere = 
+  # StripPrefix = 
+  # AddPrefix = 
+  # AddSuffix = 
+  # Bootstrap = 
+  # WriteBootstrap = 
+  # WriteVerifyList = 
+  # Replace = Always
+  # MaximumBandwidth = 0
+  # MaxRunSchedTime = 0
+  # MaxRunTime = 0
+  # FullMaxRuntime = 0
+  # IncrementalMaxRuntime = 0
+  # DifferentialMaxRuntime = 0
+  # MaxWaitTime = 0
+  # MaxStartDelay = 0
+  # MaxFullInterval = 0
+  # MaxVirtualFullInterval = 0
+  # MaxDiffInterval = 0
+  # PrefixLinks = No
+  # PruneJobs = No
+  # PruneFiles = No
+  # PruneVolumes = No
+  # PurgeMigrationJob = No
+  # Enabled = Yes
+  # SpoolAttributes = No
+  # SpoolData = No
+  # SpoolSize = 0
+  # RerunFailedLevels = No
+  # PreferMountedVolumes = Yes
+  # MaximumConcurrentJobs = 1
+  # RescheduleOnError = No
+  # RescheduleInterval = 30 minutes 
+  # RescheduleTimes = 5
+  # Priority = 10
+  # AllowMixedPriority = No
+  # SelectionPattern = 
+  # Accurate = No
+  # AllowDuplicateJobs = Yes
+  # AllowHigherDuplicates = Yes
+  # CancelLowerLevelDuplicates = No
+  # CancelQueuedDuplicates = No
+  # CancelRunningDuplicates = No
+  # SaveFileHistory = Yes
+  # FileHistorySize = 9 m 549 k 640  
+  # FdPluginOptions = 
+  # SdPluginOptions = 
+  # DirPluginOptions = 
+  # Base = 
+  # MaxConcurrentCopies = 100
+  # AlwaysIncremental = No
+  # AlwaysIncrementalJobRetention = 0
+  # AlwaysIncrementalKeepNumber = 0
+  # AlwaysIncrementalMaxFullAge = 0
+  # MaxFullConsolidations = 0
+  # RunOnIncomingConnectInterval = 0
+}
+
+Job {
+  Name = "job-min"
+  # Description = 
+  Type = Backup
+  # Protocol = Native
+  # BackupFormat = "Native"
+  # Level = 
+  Messages = "Standard"
+  Storage = "File"
+  Pool = "Full"
+  # FullBackupPool = ""
+  # VirtualFullBackupPool = ""
+  # IncrementalBackupPool = ""
+  # DifferentialBackupPool = ""
+  # NextPool = ""
+  Client = "bareos-fd"
+  FileSet = "SelfTest"
+  # Schedule = ""
+  # JobToVerify = ""
+  # Catalog = ""
+  # JobDefs = ""
+  # Run = 
+  # Where = 
+  # RegexWhere = 
+  # StripPrefix = 
+  # AddPrefix = 
+  # AddSuffix = 
+  # Bootstrap = 
+  # WriteBootstrap = 
+  # WriteVerifyList = 
+  # Replace = Always
+  # MaximumBandwidth = 0
+  # MaxRunSchedTime = 0
+  # MaxRunTime = 0
+  # FullMaxRuntime = 0
+  # IncrementalMaxRuntime = 0
+  # DifferentialMaxRuntime = 0
+  # MaxWaitTime = 0
+  # MaxStartDelay = 0
+  # MaxFullInterval = 0
+  # MaxVirtualFullInterval = 0
+  # MaxDiffInterval = 0
+  # PrefixLinks = No
+  # PruneJobs = No
+  # PruneFiles = No
+  # PruneVolumes = No
+  # PurgeMigrationJob = No
+  # Enabled = Yes
+  # SpoolAttributes = No
+  # SpoolData = No
+  # SpoolSize = 0
+  # RerunFailedLevels = No
+  # PreferMountedVolumes = Yes
+  # MaximumConcurrentJobs = 1
+  # RescheduleOnError = No
+  # RescheduleInterval = 30 minutes 
+  # RescheduleTimes = 5
+  # Priority = 10
+  # AllowMixedPriority = No
+  # SelectionPattern = 
+  # Accurate = No
+  # AllowDuplicateJobs = Yes
+  # AllowHigherDuplicates = Yes
+  # CancelLowerLevelDuplicates = No
+  # CancelQueuedDuplicates = No
+  # CancelRunningDuplicates = No
+  # SaveFileHistory = Yes
+  # FileHistorySize = 9 m 549 k 640  
+  # FdPluginOptions = 
+  # SdPluginOptions = 
+  # DirPluginOptions = 
+  # Base = 
+  # MaxConcurrentCopies = 100
+  # AlwaysIncremental = No
+  # AlwaysIncrementalJobRetention = 0
+  # AlwaysIncrementalKeepNumber = 0
+  # AlwaysIncrementalMaxFullAge = 0
+  # MaxFullConsolidations = 0
+  # RunOnIncomingConnectInterval = 0
+}
+
+Job {
+  Name = "job-max"
+  Description = "Description, multiple words ..."
+  Type = Backup
+  # Protocol = Native
+  BackupFormat = "Default is Native, trying different value"
+  Level = Incremental
+  Messages = "Standard"
+  Storage = "File"
+  Pool = "Full"
+  FullBackupPool = "Full"
+  # VirtualFullBackupPool = ""
+  IncrementalBackupPool = "Incremental"
+  DifferentialBackupPool = "Differential"
+  # NextPool = ""
+  Client = "bareos-fd"
+  FileSet = "SelfTest"
+  Schedule = "WeeklyCycle"
+  # JobToVerify = ""
+  # Catalog = ""
+  JobDefs = "DefaultJob"
+  Run = "job=job-min level=%l since=\"%s\"", "job=job12"
+  Run = "job=job21", "job=job22"
+  # Where = 
+  RegexWhere = "!/olddir/!/newdir/!,/.ini$/.ini.new/"
+  StripPrefix = "/usr/local1"
+  StripPrefix = "/usr/local2"
+  AddPrefix = "/usr"
+  AddSuffix = ".bak"
+  Bootstrap = "/tmp/used_for_restore/"
+  WriteBootstrap = "|/bin/true"
+  WriteVerifyList = "/tmp/verifylist.txt"
+  Replace = IfNewer
+  MaximumBandwidth = 10000
+  MaxRunSchedTime = 1 hours 
+  MaxRunTime = 1 hours 
+  FullMaxRuntime = 3 days 
+  IncrementalMaxRuntime = 2 days 
+  DifferentialMaxRuntime = 1 days 
+  MaxWaitTime = 1 hours 
+  MaxStartDelay = 1 hours 
+  MaxFullInterval = 3 weeks 
+  MaxVirtualFullInterval = 4 weeks 
+  MaxDiffInterval = 2 weeks 
+  PrefixLinks = Yes
+  PruneJobs = Yes
+  PruneFiles = Yes
+  PruneVolumes = Yes
+  PurgeMigrationJob = Yes
+  Enabled = No
+  SpoolAttributes = Yes
+  SpoolData = Yes
+  SpoolSize = 10 m 
+  RerunFailedLevels = Yes
+  PreferMountedVolumes = No
+  MaximumConcurrentJobs = 10
+  RescheduleOnError = Yes
+  RescheduleInterval = 10 minutes 
+  RescheduleTimes = 10
+  Priority = 100
+  AllowMixedPriority = Yes
+  WritePartAfterJob = Yes
+  SelectionPattern = "select * from jobs;"
+  RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+  RunAfterJob = "/usr/lib/bareos/scripts/delete_catalog_backup"
+  RunScript {
+    Command = "/etc/init.d/apache stop"
+    RunsWhen = "before"
+    FailJobOnError = No
+  }
+  Accurate = Yes
+  AllowDuplicateJobs = No
+  AllowHigherDuplicates = No
+  CancelLowerLevelDuplicates = Yes
+  CancelQueuedDuplicates = Yes
+  CancelRunningDuplicates = Yes
+  SaveFileHistory = No
+  FileHistorySize = 10 m 
+  FdPluginOptions = "Option 11", "Option 12"
+  FdPluginOptions = "Option 21", "Option 22"
+  SdPluginOptions = "Option 11", "Option 12"
+  SdPluginOptions = "Option 21", "Option 22"
+  DirPluginOptions = "Option 11", "Option 12"
+  DirPluginOptions = "Option 21", "Option 22"
+  Base = "job-min"
+  Base = "job-max"
+  MaxConcurrentCopies = 10
+  AlwaysIncremental = Yes
+  AlwaysIncrementalJobRetention = 10 seconds 
+  AlwaysIncrementalKeepNumber = 10
+  AlwaysIncrementalMaxFullAge = 30 seconds 
+  # MaxFullConsolidations = 0
+  RunOnIncomingConnectInterval = 30 seconds 
+}
+
+Job {
+  Name = "RestoreFiles"
+  Description = "Standard Restore template. Only one such job is needed for all standard Jobs/Clients/Storage ..."
+  Type = Restore
+  # Protocol = Native
+  # BackupFormat = "Native"
+  # Level = 
+  Messages = "Standard"
+  Storage = "File"
+  Pool = "Incremental"
+  # FullBackupPool = ""
+  # VirtualFullBackupPool = ""
+  # IncrementalBackupPool = ""
+  # DifferentialBackupPool = ""
+  # NextPool = ""
+  Client = "bareos-fd"
+  FileSet = "LinuxAll"
+  # Schedule = ""
+  # JobToVerify = ""
+  # Catalog = ""
+  # JobDefs = ""
+  # Run = 
+  Where = "/tmp/bareos-restores"
+  # RegexWhere = 
+  # StripPrefix = 
+  # AddPrefix = 
+  # AddSuffix = 
+  # Bootstrap = 
+  # WriteBootstrap = 
+  # WriteVerifyList = 
+  # Replace = Always
+  # MaximumBandwidth = 0
+  # MaxRunSchedTime = 0
+  # MaxRunTime = 0
+  # FullMaxRuntime = 0
+  # IncrementalMaxRuntime = 0
+  # DifferentialMaxRuntime = 0
+  # MaxWaitTime = 0
+  # MaxStartDelay = 0
+  # MaxFullInterval = 0
+  # MaxVirtualFullInterval = 0
+  # MaxDiffInterval = 0
+  # PrefixLinks = No
+  # PruneJobs = No
+  # PruneFiles = No
+  # PruneVolumes = No
+  # PurgeMigrationJob = No
+  # Enabled = Yes
+  # SpoolAttributes = No
+  # SpoolData = No
+  # SpoolSize = 0
+  # RerunFailedLevels = No
+  # PreferMountedVolumes = Yes
+  # MaximumConcurrentJobs = 1
+  # RescheduleOnError = No
+  # RescheduleInterval = 30 minutes 
+  # RescheduleTimes = 5
+  # Priority = 10
+  # AllowMixedPriority = No
+  # SelectionPattern = 
+  # Accurate = No
+  # AllowDuplicateJobs = Yes
+  # AllowHigherDuplicates = Yes
+  # CancelLowerLevelDuplicates = No
+  # CancelQueuedDuplicates = No
+  # CancelRunningDuplicates = No
+  # SaveFileHistory = Yes
+  # FileHistorySize = 9 m 549 k 640  
+  # FdPluginOptions = 
+  # SdPluginOptions = 
+  # DirPluginOptions = 
+  # Base = 
+  # MaxConcurrentCopies = 100
+  # AlwaysIncremental = No
+  # AlwaysIncrementalJobRetention = 0
+  # AlwaysIncrementalKeepNumber = 0
+  # AlwaysIncrementalMaxFullAge = 0
+  # MaxFullConsolidations = 0
+  # RunOnIncomingConnectInterval = 0
+}
+
+Job {
+  Name = "BackupCatalog"
+  Description = "Backup the catalog database (after the nightly save)"
+  # Type = Backup
+  # Protocol = Native
+  # BackupFormat = "Native"
+  Level = Full
+  # Messages = "Standard"
+  # Storage = "File"
+  # Pool = "Incremental"
+  # FullBackupPool = "Full"
+  # VirtualFullBackupPool = ""
+  # IncrementalBackupPool = "Incremental"
+  # DifferentialBackupPool = "Differential"
+  # NextPool = ""
+  # Client = "bareos-fd"
+  FileSet = "Catalog"
+  Schedule = "WeeklyCycleAfterBackup"
+  # JobToVerify = ""
+  # Catalog = ""
+  JobDefs = "DefaultJob"
+  # Run = 
+  # Where = 
+  # RegexWhere = 
+  # StripPrefix = 
+  # AddPrefix = 
+  # AddSuffix = 
+  # Bootstrap = 
+  WriteBootstrap = "|/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root"
+  # WriteVerifyList = 
+  # Replace = Always
+  # MaximumBandwidth = 0
+  # MaxRunSchedTime = 0
+  # MaxRunTime = 0
+  # FullMaxRuntime = 0
+  # IncrementalMaxRuntime = 0
+  # DifferentialMaxRuntime = 0
+  # MaxWaitTime = 0
+  # MaxStartDelay = 0
+  # MaxFullInterval = 0
+  # MaxVirtualFullInterval = 0
+  # MaxDiffInterval = 0
+  # PrefixLinks = No
+  # PruneJobs = No
+  # PruneFiles = No
+  # PruneVolumes = No
+  # PurgeMigrationJob = No
+  # Enabled = Yes
+  # SpoolAttributes = No
+  # SpoolData = No
+  # SpoolSize = 0
+  # RerunFailedLevels = No
+  # PreferMountedVolumes = Yes
+  # MaximumConcurrentJobs = 1
+  # RescheduleOnError = No
+  # RescheduleInterval = 30 minutes 
+  # RescheduleTimes = 5
+  Priority = 11
+  # AllowMixedPriority = No
+  # SelectionPattern = 
+  RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+  RunAfterJob = "/usr/lib/bareos/scripts/delete_catalog_backup"
+  # Accurate = No
+  # AllowDuplicateJobs = Yes
+  # AllowHigherDuplicates = Yes
+  # CancelLowerLevelDuplicates = No
+  # CancelQueuedDuplicates = No
+  # CancelRunningDuplicates = No
+  # SaveFileHistory = Yes
+  # FileHistorySize = 9 m 549 k 640  
+  # FdPluginOptions = 
+  # SdPluginOptions = 
+  # DirPluginOptions = 
+  # Base = 
+  # MaxConcurrentCopies = 100
+  # AlwaysIncremental = No
+  # AlwaysIncrementalJobRetention = 0
+  # AlwaysIncrementalKeepNumber = 0
+  # AlwaysIncrementalMaxFullAge = 0
+  # MaxFullConsolidations = 0
+  # RunOnIncomingConnectInterval = 0
+}
+
+Job {
+  Name = "job-runscripts"
+  # Description = 
+  # Type = Backup
+  # Protocol = Native
+  # BackupFormat = "Native"
+  # Level = Differential
+  # Messages = "Standard"
+  # Storage = "File"
+  # Pool = "Incremental"
+  # FullBackupPool = "Full"
+  # VirtualFullBackupPool = ""
+  # IncrementalBackupPool = "Incremental"
+  # DifferentialBackupPool = "Differential"
+  # NextPool = ""
+  # Client = "bareos-fd"
+  # FileSet = "SelfTest"
+  # Schedule = "WeeklyCycle"
+  # JobToVerify = ""
+  # Catalog = ""
+  JobDefs = "DefaultJob"
+  # Run = 
+  # Where = 
+  # RegexWhere = 
+  # StripPrefix = 
+  # AddPrefix = 
+  # AddSuffix = 
+  # Bootstrap = 
+  # WriteBootstrap = 
+  # WriteVerifyList = 
+  # Replace = Always
+  # MaximumBandwidth = 0
+  # MaxRunSchedTime = 0
+  # MaxRunTime = 0
+  # FullMaxRuntime = 0
+  # IncrementalMaxRuntime = 0
+  # DifferentialMaxRuntime = 0
+  # MaxWaitTime = 0
+  # MaxStartDelay = 0
+  # MaxFullInterval = 0
+  # MaxVirtualFullInterval = 0
+  # MaxDiffInterval = 0
+  # PrefixLinks = No
+  # PruneJobs = No
+  # PruneFiles = No
+  # PruneVolumes = No
+  # PurgeMigrationJob = No
+  # Enabled = Yes
+  # SpoolAttributes = No
+  # SpoolData = No
+  # SpoolSize = 0
+  # RerunFailedLevels = No
+  # PreferMountedVolumes = Yes
+  # MaximumConcurrentJobs = 1
+  # RescheduleOnError = No
+  # RescheduleInterval = 30 minutes 
+  # RescheduleTimes = 5
+  # Priority = 10
+  # AllowMixedPriority = No
+  # SelectionPattern = 
+  RunBeforeJob = "/tmp/RunBeforeJob1.sh"
+  RunBeforeJob = "/tmp/RunBeforeJob2.sh"
+  RunAfterJob = "/tmp/RunAfterJob1"
+  RunAfterJob = "/tmp/RunAfterJob2"
+  RunScript {
+    Command = "/tmp/RunScript1.sh"
+    RunsWhen = "before"
+    FailJobOnError = No
+  }
+  RunScript {
+    Command = "/tmp/RunScript2.sh"
+    RunsWhen = "before"
+    FailJobOnError = No
+  }
+  # Accurate = No
+  # AllowDuplicateJobs = Yes
+  # AllowHigherDuplicates = Yes
+  # CancelLowerLevelDuplicates = No
+  # CancelQueuedDuplicates = No
+  # CancelRunningDuplicates = No
+  # SaveFileHistory = Yes
+  # FileHistorySize = 9 m 549 k 640  
+  # FdPluginOptions = 
+  # SdPluginOptions = 
+  # DirPluginOptions = 
+  # Base = 
+  # MaxConcurrentCopies = 100
+  # AlwaysIncremental = No
+  # AlwaysIncrementalJobRetention = 0
+  # AlwaysIncrementalKeepNumber = 0
+  # AlwaysIncrementalMaxFullAge = 0
+  # MaxFullConsolidations = 0
+  # RunOnIncomingConnectInterval = 0
+}
+
+Job {
+  Name = "job-runscripts-mixed"
+  # Description = 
+  # Type = Backup
+  # Protocol = Native
+  # BackupFormat = "Native"
+  # Level = Differential
+  # Messages = "Standard"
+  # Storage = "File"
+  # Pool = "Incremental"
+  # FullBackupPool = "Full"
+  # VirtualFullBackupPool = ""
+  # IncrementalBackupPool = "Incremental"
+  # DifferentialBackupPool = "Differential"
+  # NextPool = ""
+  # Client = "bareos-fd"
+  # FileSet = "SelfTest"
+  # Schedule = "WeeklyCycle"
+  # JobToVerify = ""
+  # Catalog = ""
+  JobDefs = "DefaultJob"
+  # Run = 
+  # Where = 
+  # RegexWhere = 
+  # StripPrefix = 
+  # AddPrefix = 
+  # AddSuffix = 
+  # Bootstrap = 
+  # WriteBootstrap = 
+  # WriteVerifyList = 
+  # Replace = Always
+  # MaximumBandwidth = 0
+  # MaxRunSchedTime = 0
+  # MaxRunTime = 0
+  # FullMaxRuntime = 0
+  # IncrementalMaxRuntime = 0
+  # DifferentialMaxRuntime = 0
+  # MaxWaitTime = 0
+  # MaxStartDelay = 0
+  # MaxFullInterval = 0
+  # MaxVirtualFullInterval = 0
+  # MaxDiffInterval = 0
+  # PrefixLinks = No
+  # PruneJobs = No
+  # PruneFiles = No
+  # PruneVolumes = No
+  # PurgeMigrationJob = No
+  # Enabled = Yes
+  # SpoolAttributes = No
+  # SpoolData = No
+  # SpoolSize = 0
+  # RerunFailedLevels = No
+  # PreferMountedVolumes = Yes
+  # MaximumConcurrentJobs = 1
+  # RescheduleOnError = No
+  # RescheduleInterval = 30 minutes 
+  # RescheduleTimes = 5
+  # Priority = 10
+  # AllowMixedPriority = No
+  # SelectionPattern = 
+  RunBeforeJob = "/tmp/RunBeforeJob1.sh"
+  RunAfterJob = "/tmp/RunAfterJob2"
+  RunScript {
+    Command = "/tmp/RunScript3.sh"
+    RunsWhen = "before"
+    FailJobOnError = No
+  }
+  RunAfterJob = "/tmp/RunAfterJob4"
+  RunBeforeJob = "/tmp/RunBeforeJob5.sh"
+  RunScript {
+    Command = "/tmp/RunScript6.sh"
+    RunsWhen = "before"
+    FailJobOnError = No
+  }
+  RunScript {
+    Command = "/tmp/RunScript7.sh"
+    RunsWhen = "before"
+  }
+  # Accurate = No
+  # AllowDuplicateJobs = Yes
+  # AllowHigherDuplicates = Yes
+  # CancelLowerLevelDuplicates = No
+  # CancelQueuedDuplicates = No
+  # CancelRunningDuplicates = No
+  # SaveFileHistory = Yes
+  # FileHistorySize = 9 m 549 k 640  
+  # FdPluginOptions = 
+  # SdPluginOptions = 
+  # DirPluginOptions = 
+  # Base = 
+  # MaxConcurrentCopies = 100
+  # AlwaysIncremental = No
+  # AlwaysIncrementalJobRetention = 0
+  # AlwaysIncrementalKeepNumber = 0
+  # AlwaysIncrementalMaxFullAge = 0
+  # MaxFullConsolidations = 0
+  # RunOnIncomingConnectInterval = 0
+}
+
+Storage {
+  Name = "File"
+  # Description = 
+  # Protocol = Native
+  # AuthType = None
+  Address = "localhost"
+  # LanAddress = 
+  # Port = 9103
+  # Username = 
+  Password = "[md5]4f389409b83d78959bc9fd95292fb63a"
+  Device = "FileStorage"
+  MediaType = "File"
+  # AutoChanger = No
+  # Enabled = Yes
+  # AllowCompression = Yes
+  # HeartbeatInterval = 0
+  # CacheStatusInterval = 30 seconds 
+  # MaximumConcurrentJobs = 1
+  # MaximumConcurrentReadJobs = 0
+  # PairedStorage = ""
+  # MaximumBandwidthPerJob = 0
+  # CollectStatistics = No
+  # NdmpChangerDevice = 
+  # TlsAuthenticate = No
+  # TlsEnable = Yes
+  # TlsRequire = No
+  # TlsCipherList = ""
+  # TlsDhFile = ""
+  # TlsVerifyPeer = No
+  # TlsCaCertificateFile = ""
+  # TlsCaCertificateDir = ""
+  # TlsCertificateRevocationList = ""
+  # TlsCertificate = ""
+  # TlsKey = ""
+  # TlsAllowedCn = 
+}
+
+Catalog {
+  Name = "MyCatalog"
+  # Description = 
+  # DbAddress = 
+  # DbPort = 0
+  DbPassword = "@db_password@"
+  DbUser = "@db_user@"
+  DbName = "@db_name@"
+  DbDriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
+  # DbSocket = 
+  # MultipleConnections = No
+  # DisableBatchInsert = No
+  # Reconnect = No
+  # ExitOnFatal = No
+  # MinConnections = 1
+  # MaxConnections = 5
+  # IncConnections = 1
+  # IdleTimeout = 30
+  # ValidateTimeout = 120
+}
+
+Schedule {
+  Name = "WeeklyCycleAfterBackup"
+  Description = "This schedule does the catalog. It starts after the WeeklyCycle."
+  Run = Full Mon-Fri at 21:10
+  # Enabled = Yes
+}
+
+Schedule {
+  Name = "WeeklyCycle"
+  # Description = 
+  Run = Full 1st Sat at 21:00
+  Run = Differential 2nd-5th Sat at 21:00
+  Run = Incremental Mon-Fri at 21:00
+  # Enabled = Yes
+}
+
+FileSet {
+  Name = "Windows All Drives"
+  Include {
+    Options {
+      Signature = "MD5"
+      IgnoreCase = Yes
+      Exclude = Yes
+      AclSupport = Yes
+      XattrSupport = Yes
+      WildDir = "[A-Z]:/RECYCLER"
+      WildDir = "[A-Z]:/$RECYCLE.BIN"
+      WildDir = "[A-Z]:/System Volume Information"
+      WildFile = "[A-Z]:/pagefile.sys"
+      DriveType = "fixed"
+    }
+    File = "/"
+  }
+}
+
+FileSet {
+  Name = "SelfTest"
+  Description = "fileset just to backup some files for selftest"
+  Include {
+    Options {
+      Signature = "MD5"
+      AclSupport = Yes
+      XattrSupport = Yes
+    }
+    File = "/usr/sbin"
+  }
+}
+
+FileSet {
+  Name = "LinuxAll"
+  Description = "Backup all regular filesystems, determined by filesystem type."
+  Include {
+    Options {
+      Signature = "MD5"
+      OneFS = No
+      AclSupport = Yes
+      XattrSupport = Yes
+      FsType = "btrfs"
+      FsType = "ext2"
+      FsType = "ext3"
+      FsType = "ext4"
+      FsType = "reiserfs"
+      FsType = "jfs"
+      FsType = "xfs"
+      FsType = "zfs"
+    }
+    File = "/"
+  }
+  Exclude {
+    File = "/var/lib/bareos"
+    File = "/var/lib/bareos/storage"
+    File = "/proc"
+    File = "/tmp"
+    File = "/var/tmp"
+    File = "/.journal"
+    File = "/.fsck"
+  }
+}
+
+FileSet {
+  Name = "Catalog"
+  Description = "Backup the catalog dump and Bareos configuration files."
+  Include {
+    Options {
+      Signature = "MD5"
+      AclSupport = Yes
+      XattrSupport = Yes
+    }
+    File = "/var/lib/bareos/bareos.sql"
+    File = "/etc/bareos"
+  }
+}
+
+FileSet {
+  Name = "ExtraFileSet"
+  Description = "fileset that reads information during runtime."
+  Include {
+    Options {
+      Signature = "MD5"
+      AclSupport = Yes
+      XattrSupport = Yes
+    }
+    File = "/tmp/dir"
+    File = "<includefile-server"
+    File = "\<includefile-client"
+    File = "|command-server"
+    File = "\|command-client"
+  }
+}
+
+FileSet {
+  Name = "FsMultiInclude"
+  Description = "fileset with multiple blocks."
+  Include {
+    File = "/tmp/dir11"
+  }
+  Include {
+    File = "/tmp/dir22"
+  }
+}
+
+FileSet {
+  Name = "FsMultiOptions"
+  Description = "fileset with multiple blocks."
+  Include {
+    Options {
+      Signature = "MD5"
+      AclSupport = Yes
+      XattrSupport = Yes
+      Wild = "/tmp/data/*1/*"
+      WildDir = "/tmp/data/*1"
+    }
+    Options {
+      Signature = "MD5"
+      Compression = "GZIP3"
+      AclSupport = Yes
+      XattrSupport = Yes
+      Wild = "/tmp/data/*2/*"
+      Wild = "/tmp/data/*22/*"
+      WildDir = "/tmp/data/*2"
+      WildDir = "/tmp/data/*22"
+    }
+    File = "/tmp/data"
+  }
+  Include {
+    File = "/tmp/dir22"
+  }
+}
+
+FileSet {
+  Name = "FsMultipleBlocks"
+  Description = "fileset with multiple blocks."
+  Include {
+    Options {
+      Signature = "MD5"
+      AclSupport = Yes
+      XattrSupport = Yes
+    }
+    File = "/tmp/dir11"
+    File = "/tmp/dir12"
+    Plugin = "plugin11"
+    Plugin = "plugin12"
+    ExcludeDirContaining = ".nobackup11"
+    ExcludeDirContaining = ".nobackup12"
+  }
+  Include {
+    Options {
+      Signature = "MD5"
+      AclSupport = Yes
+      XattrSupport = Yes
+    }
+    File = "/tmp/dir21"
+    File = "/tmp/dir22"
+    Plugin = "plugin21"
+    Plugin = "plugin22"
+    ExcludeDirContaining = ".nobackup21"
+    ExcludeDirContaining = ".nobackup22"
+  }
+  Exclude {
+    File = "/tmp/tmp11"
+    File = "/tmp/tmp12"
+  }
+  Exclude {
+    File = "/tmp/tmp21"
+    File = "/tmp/tmp22"
+  }
+}
+
+Pool {
+  Name = "Scratch"
+  # Description = 
+  PoolType = Scratch
+  # LabelFormat = 
+  # LabelType = "bareos"
+  # CleaningPrefix = "CLN"
+  # UseCatalog = Yes
+  # PurgeOldestVolume = No
+  # ActionOnPurge = None
+  # RecycleOldestVolume = No
+  # RecycleCurrentVolume = No
+  # MaximumVolumes = 0
+  # MaximumVolumeJobs = 0
+  # MaximumVolumeFiles = 0
+  # MaximumVolumeBytes = 0
+  # CatalogFiles = Yes
+  # VolumeRetention = 1 years 
+  # VolumeUseDuration = 0
+  # MigrationTime = 0
+  # MigrationHighBytes = 0
+  # MigrationLowBytes = 0
+  # NextPool = ""
+  # Storage = 
+  # AutoPrune = Yes
+  # Recycle = Yes
+  # RecyclePool = ""
+  # ScratchPool = ""
+  # Catalog = ""
+  # FileRetention = 0
+  # JobRetention = 0
+  # MinimumBlockSize = 0
+  # MaximumBlockSize = 0
+}
+
+Pool {
+  Name = "Incremental"
+  # Description = 
+  # PoolType = Backup
+  LabelFormat = "Incremental-"
+  # LabelType = "bareos"
+  # CleaningPrefix = "CLN"
+  # UseCatalog = Yes
+  # PurgeOldestVolume = No
+  # ActionOnPurge = None
+  # RecycleOldestVolume = No
+  # RecycleCurrentVolume = No
+  MaximumVolumes = 100
+  # MaximumVolumeJobs = 0
+  # MaximumVolumeFiles = 0
+  MaximumVolumeBytes = 1 g 
+  # CatalogFiles = Yes
+  VolumeRetention = 1 months 
+  # VolumeUseDuration = 0
+  # MigrationTime = 0
+  # MigrationHighBytes = 0
+  # MigrationLowBytes = 0
+  # NextPool = ""
+  # Storage = 
+  # AutoPrune = Yes
+  # Recycle = Yes
+  # RecyclePool = ""
+  # ScratchPool = ""
+  # Catalog = ""
+  # FileRetention = 0
+  # JobRetention = 0
+  # MinimumBlockSize = 0
+  # MaximumBlockSize = 0
+}
+
+Pool {
+  Name = "Full"
+  # Description = 
+  # PoolType = Backup
+  LabelFormat = "Full-"
+  LabelType = "bareos"
+  # CleaningPrefix = "CLN"
+  UseCatalog = No
+  PurgeOldestVolume = Yes
+  ActionOnPurge = None
+  RecycleOldestVolume = Yes
+  RecycleCurrentVolume = Yes
+  MaximumVolumes = 200
+  MaximumVolumeJobs = 10
+  MaximumVolumeFiles = 1000
+  MaximumVolumeBytes = 50 g 
+  CatalogFiles = No
+  VolumeRetention = 2 years 
+  VolumeUseDuration = 12 hours 
+  # MigrationTime = 0
+  # MigrationHighBytes = 0
+  # MigrationLowBytes = 0
+  # NextPool = ""
+  # Storage = 
+  AutoPrune = No
+  Recycle = No
+  # RecyclePool = ""
+  ScratchPool = "Scratch"
+  # Catalog = ""
+  FileRetention = 1 years 
+  JobRetention = 2 years 
+  MinimumBlockSize = 80 k 
+  MaximumBlockSize = 1 m 
+}
+
+Pool {
+  Name = "Differential"
+  # Description = 
+  # PoolType = Backup
+  LabelFormat = "Differential-"
+  # LabelType = "bareos"
+  # CleaningPrefix = "CLN"
+  # UseCatalog = Yes
+  # PurgeOldestVolume = No
+  # ActionOnPurge = None
+  # RecycleOldestVolume = No
+  # RecycleCurrentVolume = No
+  MaximumVolumes = 100
+  # MaximumVolumeJobs = 0
+  # MaximumVolumeFiles = 0
+  MaximumVolumeBytes = 10 g 
+  # CatalogFiles = Yes
+  VolumeRetention = 3 months 
+  # VolumeUseDuration = 0
+  # MigrationTime = 0
+  # MigrationHighBytes = 0
+  # MigrationLowBytes = 0
+  # NextPool = ""
+  # Storage = 
+  # AutoPrune = Yes
+  # Recycle = Yes
+  # RecyclePool = ""
+  # ScratchPool = ""
+  # Catalog = ""
+  # FileRetention = 0
+  # JobRetention = 0
+  # MinimumBlockSize = 0
+  # MaximumBlockSize = 0
+}
+
+Messages {
+  Name = "Standard"
+  MailCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
+  OperatorCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
+  catalog = debug,abort,fatal,error,warning,info,notsaved,mount,Terminate,restored,security,alert,volmgmt,!saved,!skipped,!audit
+  append = /tmp/btest/systemtests/tests/config-dump/log/bareos.log = debug,abort,fatal,error,warning,info,notsaved,mount,Terminate,restored,security,alert,volmgmt,!saved,!skipped,!audit
+  console = debug,abort,fatal,error,warning,info,notsaved,mount,Terminate,restored,security,alert,volmgmt,!saved,!skipped,!audit
+  mail = root = debug,abort,fatal,error,warning,info,notsaved,mount,Terminate,restored,security,alert,volmgmt,!saved,!skipped,!audit
+  operator = root = mount,!debug,!abort,!fatal,!error,!warning,!info,!saved,!notsaved,!skipped,!Terminate,!restored,!security,!alert,!volmgmt,!audit
+}
+
+Messages {
+  Name = "Daemon"
+  MailCommand = "/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
+  append = /tmp/btest/systemtests/tests/config-dump/log/bareos-audit.log = audit,!debug,!abort,!fatal,!error,!warning,!info,!saved,!notsaved,!skipped,!mount,!Terminate,!restored,!security,!alert,!volmgmt
+  append = /tmp/btest/systemtests/tests/config-dump/log/bareos.log = debug,abort,fatal,error,warning,info,saved,notsaved,mount,Terminate,restored,security,alert,volmgmt,!skipped,!audit
+  console = debug,abort,fatal,error,warning,info,notsaved,mount,Terminate,restored,security,alert,volmgmt,!saved,!skipped,!audit
+  mail = root = debug,abort,fatal,error,warning,info,saved,notsaved,mount,Terminate,restored,security,alert,volmgmt,!skipped,!audit
+}
+
+Profile {
+  Name = "webui-readonly"
+  # Description = 
+  JobACL = "*all*"
+  ClientACL = "*all*"
+  StorageACL = "*all*"
+  ScheduleACL = "*all*"
+  PoolACL = "*all*"
+  CommandACL = ".api", ".help", "use", "version", "status", "list", "llist", ".clients", ".jobs", ".filesets", ".pools", ".storages", ".defaults", ".schedule", ".bvfs_lsdirs", ".bvfs_lsfiles", ".bvfs_update", ".bvfs_get_jobids", ".bvfs_versions", ".bvfs_restore"
+  FileSetACL = "*all*"
+  CatalogACL = "*all*"
+  WhereACL = "*all*"
+  # PluginOptionsACL = 
+}
+
+Profile {
+  Name = "webui-admin"
+  # Description = 
+  JobACL = "*all*"
+  ClientACL = "*all*"
+  StorageACL = "*all*"
+  ScheduleACL = "*all*"
+  PoolACL = "*all*"
+  CommandACL = "!.bvfs_clear_cache", "!.exit", "!.sql", "!configure", "!create", "!delete", "!purge", "!prune", "!sqlquery", "!umount", "!unmount", "*all*"
+  FileSetACL = "*all*"
+  CatalogACL = "*all*"
+  WhereACL = "*all*"
+  # PluginOptionsACL = 
+}
+
+Profile {
+  Name = "operator"
+  Description = "Profile allowing normal Bareos operations."
+  JobACL = "*all*"
+  ClientACL = "*all*"
+  StorageACL = "*all*"
+  ScheduleACL = "*all*"
+  PoolACL = "*all*"
+  CommandACL = "!.bvfs_clear_cache", "!.exit", "!.sql", "!configure", "!create", "!delete", "!purge", "!prune", "!sqlquery", "!umount", "!unmount", "*all*"
+  FileSetACL = "*all*"
+  CatalogACL = "*all*"
+  WhereACL = "*all*"
+  PluginOptionsACL = "*all*"
+}
+
+Console {
+  Name = "bareos-mon"
+  Description = "Restricted console used by tray-monitor to get the status of the director."
+  Password = "[md5]4cf5943929b8447731b086f0f43f7f99"
+  JobACL = "*all*"
+  # ClientACL = 
+  # StorageACL = 
+  # ScheduleACL = 
+  # PoolACL = 
+  CommandACL = "status", ".status"
+  # FileSetACL = 
+  # CatalogACL = 
+  # WhereACL = 
+  # PluginOptionsACL = 
+  # Profile = 
+  # UsePamAuthentication = No
+  # TlsAuthenticate = No
+  # TlsEnable = Yes
+  # TlsRequire = No
+  # TlsCipherList = ""
+  # TlsDhFile = ""
+  # TlsVerifyPeer = No
+  # TlsCaCertificateFile = ""
+  # TlsCaCertificateDir = ""
+  # TlsCertificateRevocationList = ""
+  # TlsCertificate = ""
+  # TlsKey = ""
+  # TlsAllowedCn = 
+}
+
+Console {
+  Name = "admin"
+  # Description = 
+  Password = "[md5]5ebe2294ecd0e0f08eab7690d2a6ee69"
+  # JobACL = 
+  # ClientACL = 
+  # StorageACL = 
+  # ScheduleACL = 
+  # PoolACL = 
+  # CommandACL = 
+  # FileSetACL = 
+  # CatalogACL = 
+  # WhereACL = 
+  # PluginOptionsACL = 
+  Profile = "webui-admin"
+  # UsePamAuthentication = No
+  # TlsAuthenticate = No
+  TlsEnable = No
+  # TlsRequire = No
+  # TlsCipherList = ""
+  # TlsDhFile = ""
+  # TlsVerifyPeer = No
+  # TlsCaCertificateFile = ""
+  # TlsCaCertificateDir = ""
+  # TlsCertificateRevocationList = ""
+  # TlsCertificate = ""
+  # TlsKey = ""
+  # TlsAllowedCn = 
+}
+
+# Console {
+  # Name = "*UserAgent*"
+  # Description = "root console definition"
+  # Password = "[md5]19c05ce71554a186e052ee6bfadcde4a"
+  # JobACL = 
+  # ClientACL = 
+  # StorageACL = 
+  # ScheduleACL = 
+  # PoolACL = 
+  # CommandACL = 
+  # FileSetACL = 
+  # CatalogACL = 
+  # WhereACL = 
+  # PluginOptionsACL = 
+  # Profile = 
+  # UsePamAuthentication = No
+  # TlsAuthenticate = No
+  # TlsEnable = Yes
+  # TlsRequire = No
+  # TlsCipherList = ""
+  # TlsDhFile = ""
+  # TlsVerifyPeer = No
+  # TlsCaCertificateFile = ""
+  # TlsCaCertificateDir = ""
+  # TlsCertificateRevocationList = ""
+  # TlsCertificate = ""
+  # TlsKey = ""
+  # TlsAllowedCn = 
+# }
+

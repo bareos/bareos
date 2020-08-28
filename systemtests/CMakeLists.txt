@@ -641,6 +641,7 @@ endforeach()
 set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
     client-initiated
+    config-dump
     encrypt-signature
     encrypt-signature-tls-cert
     notls

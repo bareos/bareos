@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1642,6 +1642,19 @@ bool printit(void* ctx, const char* msg)
   return retval;
 }
 
+bool sprintit(void* ctx, const char* fmt, ...)
+{
+  va_list arg_ptr;
+  PoolMem msg;
+
+  va_start(arg_ptr, fmt);
+  msg.Bvsprintf(fmt, arg_ptr);
+  va_end(arg_ptr);
+
+  return printit(ctx, msg.c_str());
+}
+
+
 /**
  * Format message and send to other end.
 
@@ -1679,12 +1692,14 @@ again:
   }
 }
 
-void bsendmsg(void* ctx, const char* fmt, ...)
+bool bsendmsg(void* ctx, const char* fmt, ...)
 {
   va_list arg_ptr;
   va_start(arg_ptr, fmt);
   bmsg((UaContext*)ctx, fmt, arg_ptr);
   va_end(arg_ptr);
+
+  return true;
 }
 
 /*

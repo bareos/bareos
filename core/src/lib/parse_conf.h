@@ -91,13 +91,13 @@ enum
   /*
    * Standard resource types. handlers in res.c
    */
-  CFG_TYPE_STR = 1,           /* String */
-  CFG_TYPE_DIR = 2,           /* Directory */
-  CFG_TYPE_MD5PASSWORD = 3,   /* MD5 hashed Password */
-  CFG_TYPE_CLEARPASSWORD = 4, /* Clear text Password */
-  CFG_TYPE_AUTOPASSWORD =
-      5,             /* Password stored in clear when needed otherwise hashed */
-  CFG_TYPE_NAME = 6, /* Name */
+  /* clang-format off */
+  CFG_TYPE_STR = 1,                 /* String */
+  CFG_TYPE_DIR = 2,                 /* Directory */
+  CFG_TYPE_MD5PASSWORD = 3,         /* MD5 hashed Password */
+  CFG_TYPE_CLEARPASSWORD = 4,       /* Clear text Password */
+  CFG_TYPE_AUTOPASSWORD = 5,        /* Password stored in clear when needed otherwise hashed */
+  CFG_TYPE_NAME = 6,                /* Name */
   CFG_TYPE_STRNAME = 7,             /* String Name */
   CFG_TYPE_RES = 8,                 /* Resource */
   CFG_TYPE_ALIST_RES = 9,           /* List of resources */
@@ -124,7 +124,9 @@ enum
   CFG_TYPE_STDSTR = 30,             /* String as std::string */
   CFG_TYPE_STDSTRDIR = 31,          /* Directory as std::string */
   CFG_TYPE_STR_VECTOR = 32,         /* std::vector<std::string> of any string */
-  CFG_TYPE_STR_VECTOR_OF_DIRS = 33, /* std::vector<std::string> of directories*/
+  CFG_TYPE_STR_VECTOR_OF_DIRS = 33, /* std::vector<std::string> of directories */
+  CFG_TYPE_DIR_OR_CMD = 34,         /* Directory or command (starting with "|") */
+  /* clang-format on */
 
   /*
    * Director resource types. handlers in dird_conf.
@@ -191,11 +193,12 @@ typedef void(STORE_RES_HANDLER)(LEX* lc,
                                 ResourceItem* item,
                                 int index,
                                 int pass);
-typedef void(PRINT_RES_HANDLER)(ResourceItem* items,
-                                int i,
-                                PoolMem& cfg_str,
+typedef void(PRINT_RES_HANDLER)(ResourceItem& item,
+                                OutputFormatterResource& send,
                                 bool hide_sensitive_data,
-                                bool inherited);
+                                bool inherited,
+                                bool verbose);
+
 
 class QualifiedResourceNameTypeConverter;
 
@@ -269,7 +272,7 @@ class ConfigurationParser {
                     std::function<void()> ResourceSpecificInitializer);
   bool AppendToResourcesChain(BareosResource* new_resource, int rcode);
   bool RemoveResource(int rcode, const char* name);
-  void DumpResources(void sendit(void* sock, const char* fmt, ...),
+  void DumpResources(bool sendit(void* sock, const char* fmt, ...),
                      void* sock,
                      bool hide_sensitive_data = false);
   int GetResourceCode(const char* resource_type);
@@ -416,8 +419,11 @@ class ConfigurationParser {
   void SetResourceDefaultsParserPass2(ResourceItem* item);
 };
 
-void PrintMessage(void* sock, const char* fmt, ...);
+bool PrintMessage(void* sock, const char* fmt, ...);
 bool IsTlsConfigured(TlsResource* tls_resource);
+
+const char* GetName(ResourceItem& item, s_kw* keywords);
+bool HasDefaultValue(ResourceItem& item, s_kw* keywords);
 
 /*
  * Data type routines
