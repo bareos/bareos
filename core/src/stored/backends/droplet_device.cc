@@ -223,18 +223,19 @@ bool droplet_device::walk_chunks(const char* dirname,
   bool retval = true;
   dpl_status_t status;
   dpl_status_t callback_status;
-  dpl_sysmd_t* sysmd = NULL;
   PoolMem path(PM_NAME);
 
-  sysmd = dpl_sysmd_dup(&sysmd_);
   bool found = true;
   int i = 0;
+  int tries = 0;
+
   while ((i < max_chunks_) && (found) && (retval)) {
     path.bsprintf("%s/%04d", dirname, i);
 
+    auto sysmd = dpl_sysmd_dup(&sysmd_);
     status = dpl_getattr(ctx_,         /* context */
                          path.c_str(), /* locator */
-                         NULL,         /* metadata */
+                         nullptr,      /* metadata */
                          sysmd);       /* sysmd */
 
     switch (status) {
@@ -253,24 +254,30 @@ bool droplet_device::walk_chunks(const char* dirname,
         break;
       case DPL_ENOENT:
         if (ignore_gaps) {
-          Dmsg1(1000, "chunk %s does not exists. Skipped.\n", path.c_str());
+          Dmsg1(1000, "chunk %s does not exist. Skipped.\n", path.c_str());
           i++;
         } else {
-          Dmsg1(100, "chunk %s does not exists. Exiting.\n", path.c_str());
+          Dmsg1(100, "chunk %s does not exist. Exiting.\n", path.c_str());
           found = false;
         }
         break;
       default:
-        Dmsg2(100, "chunk %s failure: %s. Exiting.\n", path.c_str(),
-              dpl_status_str(callback_status));
-        found = false;
+        ++tries;
+        if (tries < NUMBER_OF_RETRIES) {
+          Dmsg2(100, "chunk %s failure: %s. Try again (%d).\n", path.c_str(),
+                dpl_status_str(callback_status), tries);
+          Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+        } else {
+          Dmsg2(100, "chunk %s failure: %s. Exiting after %d tries.\n",
+                path.c_str(), dpl_status_str(callback_status), tries);
+          found = false;
+        }
         break;
     }
-  }
-
-  if (sysmd) {
-    dpl_sysmd_free(sysmd);
-    sysmd = NULL;
+    if (sysmd) {
+      dpl_sysmd_free(sysmd);
+      sysmd = nullptr;
+    }
   }
 
   return retval;
@@ -335,16 +342,30 @@ bool droplet_device::walk_chunks(const char* dirname,
 dpl_status_t droplet_device::check_path(const char* path)
 {
   dpl_status_t status;
-  dpl_sysmd_t* sysmd = NULL;
+  const char* retry = "";
 
-  sysmd = dpl_sysmd_dup(&sysmd_);
-  status = dpl_getattr(ctx_,   /* context */
-                       path,   /* locator */
-                       NULL,   /* metadata */
-                       sysmd); /* sysmd */
-  Dmsg4(100, "check_path: path=<%s> (device=%s, bucket=%s): Result %s\n", path,
-        prt_name, ctx_->cur_bucket, dpl_status_str(status));
-  dpl_sysmd_free(sysmd);
+  int tries = 0;
+  bool success = false;
+
+  do {
+    auto sysmd = dpl_sysmd_dup(&sysmd_);
+    status = dpl_getattr(ctx_,   /* context */
+                         path,   /* locator */
+                         NULL,   /* metadata */
+                         sysmd); /* sysmd */
+    Dmsg4(100, "%scheck_path: path=<%s> (device=%s, bucket=%s): Result %s\n",
+          retry, path, prt_name, ctx_->cur_bucket, dpl_status_str(status));
+    dpl_sysmd_free(sysmd);
+
+    if (status == DPL_SUCCESS || status == DPL_ENOENT) {
+      success = true;
+    } else {
+      retry = "Retry: ";
+      ++tries;
+      Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+    }
+
+  } while (tries < NUMBER_OF_RETRIES && !success);
 
   return status;
 }
@@ -431,111 +452,128 @@ bool droplet_device::FlushRemoteChunk(chunk_io_request* request)
   /*
    * Set that we are uploading the chunk.
    */
-  if (!SetInflightChunk(request)) { goto bail_out; }
+  if (!SetInflightChunk(request)) { return false; }
 
-  Dmsg1(100, "Flushing chunk %s\n", chunk_name.c_str());
+  int tries = 0;
+  bool success = false;
 
-  /*
-   * Check on the remote backing store if the chunk already exists.
-   * We only upload this chunk if it is bigger then the chunk that exists
-   * on the remote backing store. When using io-threads it could happen
-   * that there are multiple flush requests for the same chunk when a
-   * chunk is reused in a next backup job. We only want the chunk with
-   * the biggest amount of valid data to persist as we only append to
-   * chunks.
-   */
-  sysmd = dpl_sysmd_dup(&sysmd_);
-  status = dpl_getattr(ctx_,               /* context */
-                       chunk_name.c_str(), /* locator */
-                       NULL,               /* metadata */
-                       sysmd);             /* sysmd */
+  do {
+    Dmsg1(100, "Flushing chunk %s\n", chunk_name.c_str());
 
-  switch (status) {
-    case DPL_SUCCESS:
-      if (sysmd->size > request->wbuflen) {
-        retval = true;
-        goto bail_out;
-      }
-      break;
-    default:
-      /*
-       * Check on the remote backing store if the chunkdir exists.
-       */
-      dpl_sysmd_free(sysmd);
-      sysmd = dpl_sysmd_dup(&sysmd_);
-      status = dpl_getattr(ctx_,              /* context */
-                           chunk_dir.c_str(), /* locator */
-                           NULL,              /* metadata */
-                           sysmd);            /* sysmd */
+    /*
+     * Check on the remote backing store if the chunk already exists.
+     * We only upload this chunk if it is bigger then the chunk that exists
+     * on the remote backing store. When using io-threads it could happen
+     * that there are multiple flush requests for the same chunk when a
+     * chunk is reused in a next backup job. We only want the chunk with
+     * the biggest amount of valid data to persist as we only append to
+     * chunks.
+     */
+    sysmd = dpl_sysmd_dup(&sysmd_);
+    status = dpl_getattr(ctx_,               /* context */
+                         chunk_name.c_str(), /* locator */
+                         NULL,               /* metadata */
+                         sysmd);             /* sysmd */
 
-      switch (status) {
-        case DPL_SUCCESS:
-          break;
-        case DPL_ENOENT:
-        case DPL_FAILURE:
-          /*
-           * Make sure the chunk directory with the name of the volume exists.
-           */
-          dpl_sysmd_free(sysmd);
-          sysmd = dpl_sysmd_dup(&sysmd_);
-          status = dpl_mkdir(ctx_,              /* context */
+    switch (status) {
+      case DPL_SUCCESS:
+        if (sysmd->size > request->wbuflen) {
+          success = true;
+          goto bail_out;
+        }
+        break;
+      default:
+        /*
+         * Check on the remote backing store if the chunkdir exists.
+         */
+        dpl_sysmd_free(sysmd);
+        sysmd = dpl_sysmd_dup(&sysmd_);
+        status = dpl_getattr(ctx_,              /* context */
                              chunk_dir.c_str(), /* locator */
                              NULL,              /* metadata */
                              sysmd);            /* sysmd */
 
-          switch (status) {
-            case DPL_SUCCESS:
-              break;
-            default:
-              Mmsg2(errmsg,
-                    _("Failed to create directory %s using dpl_mkdir(): "
-                      "ERR=%s.\n"),
-                    chunk_dir.c_str(), dpl_status_str(status));
-              dev_errno = DropletErrnoToSystemErrno(status);
-              goto bail_out;
-          }
-          break;
-        default:
-          break;
-      }
-      break;
-  }
+        switch (status) {
+          case DPL_SUCCESS:
+            break;
+          case DPL_ENOENT:
+          case DPL_FAILURE:
+            /*
+             * Make sure the chunk directory with the name of the volume
+             * exists.
+             */
+            dpl_sysmd_free(sysmd);
+            sysmd = dpl_sysmd_dup(&sysmd_);
+            status = dpl_mkdir(ctx_,              /* context */
+                               chunk_dir.c_str(), /* locator */
+                               NULL,              /* metadata */
+                               sysmd);            /* sysmd */
 
-  /*
-   * Create some options for libdroplet.
-   *
-   * DPL_OPTION_NOALLOC - we provide the buffer to copy the data into
-   *                      no need to let the library allocate memory we
-   *                      need to free after copying the data.
-   */
-  memset(&dpl_options, 0, sizeof(dpl_options));
-  dpl_options.mask |= DPL_OPTION_NOALLOC;
+            switch (status) {
+              case DPL_SUCCESS:
+                break;
+              default:
+                Mmsg2(errmsg,
+                      _("Failed to create directory %s using dpl_mkdir(): "
+                        "ERR=%s.\n"),
+                      chunk_dir.c_str(), dpl_status_str(status));
+                dev_errno = DropletErrnoToSystemErrno(status);
+                Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+                tries++;
+                goto again1;
+            }
+            break;
+          default:
+            break;
+        }
+        break;
+    }
 
-  dpl_sysmd_free(sysmd);
-  sysmd = dpl_sysmd_dup(&sysmd_);
-  status = dpl_fput(ctx_,                   /* context */
-                    chunk_name.c_str(),     /* locator */
-                    &dpl_options,           /* options */
-                    NULL,                   /* condition */
-                    NULL,                   /* range */
-                    NULL,                   /* metadata */
-                    sysmd,                  /* sysmd */
-                    (char*)request->buffer, /* data_buf */
-                    request->wbuflen);      /* data_len */
+    /*
+     * Create some options for libdroplet.
+     *
+     * DPL_OPTION_NOALLOC - we provide the buffer to copy the data into
+     *                      no need to let the library allocate memory we
+     *                      need to free after copying the data.
+     */
+    memset(&dpl_options, 0, sizeof(dpl_options));
+    dpl_options.mask |= DPL_OPTION_NOALLOC;
 
-  switch (status) {
-    case DPL_SUCCESS:
-      break;
-    default:
-      Mmsg2(errmsg, _("Failed to flush %s using dpl_fput(): ERR=%s.\n"),
-            chunk_name.c_str(), dpl_status_str(status));
-      dev_errno = DropletErrnoToSystemErrno(status);
-      goto bail_out;
-  }
+    dpl_sysmd_free(sysmd);
+    sysmd = dpl_sysmd_dup(&sysmd_);
+    status = dpl_fput(ctx_,                   /* context */
+                      chunk_name.c_str(),     /* locator */
+                      &dpl_options,           /* options */
+                      NULL,                   /* condition */
+                      NULL,                   /* range */
+                      NULL,                   /* metadata */
+                      sysmd,                  /* sysmd */
+                      (char*)request->buffer, /* data_buf */
+                      request->wbuflen);      /* data_len */
 
-  retval = true;
+    switch (status) {
+      case DPL_SUCCESS:
+        success = true;
+        goto bail_out;
+      default:
+        Mmsg2(errmsg, _("Failed to flush %s using dpl_fput(): ERR=%s.\n"),
+              chunk_name.c_str(), dpl_status_str(status));
+        dev_errno = DropletErrnoToSystemErrno(status);
+        Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+        tries++;
+        goto again1;
+    }
+
+  again1:
+    Dmsg1(100, "Flushing start over again (%d)\n", status);
+
+  } while (!success && tries < NUMBER_OF_RETRIES);
+
+  if (tries == NUMBER_OF_RETRIES) { Dmsg0(100, "dpl_fput timed out\n"); }
+
 
 bail_out:
+  retval = success;
   /*
    * Clear that we are uploading the chunk.
    */
@@ -564,29 +602,52 @@ bool droplet_device::ReadRemoteChunk(chunk_io_request* request)
   /*
    * See if chunk exists.
    */
-  sysmd = dpl_sysmd_dup(&sysmd_);
-  status = dpl_getattr(ctx_,               /* context */
-                       chunk_name.c_str(), /* locator */
-                       NULL,               /* metadata */
-                       sysmd);             /* sysmd */
+  int tries = 0;
+  bool success = false;
 
-  switch (status) {
-    case DPL_SUCCESS:
-      break;
-    default:
-      Mmsg1(errmsg, _("Failed to open %s doesn't exist\n"), chunk_name.c_str());
-      Dmsg1(100, "%s", errmsg);
-      dev_errno = EIO;
-      goto bail_out;
-  }
+  do {
+    if (sysmd) { dpl_sysmd_free(sysmd); }
+    sysmd = dpl_sysmd_dup(&sysmd_);
+    status = dpl_getattr(ctx_,               /* context */
+                         chunk_name.c_str(), /* locator */
+                         NULL,               /* metadata */
+                         sysmd);             /* sysmd */
 
-  if (sysmd->size > request->wbuflen) {
-    Mmsg3(
-        errmsg,
-        _("Failed to read %s (%ld) to big to fit in chunksize of %ld bytes\n"),
-        chunk_name.c_str(), sysmd->size, request->wbuflen);
-    Dmsg1(100, "%s", errmsg);
-    dev_errno = EINVAL;
+    switch (status) {
+      case DPL_SUCCESS:
+        if (sysmd->size > request->wbuflen) {
+          Mmsg3(errmsg,
+                _("Failed to read %s (%ld) to big to fit in chunksize of %ld "
+                  "bytes\n"),
+                chunk_name.c_str(), sysmd->size, request->wbuflen);
+          Dmsg1(100, "%s", errmsg);
+          dev_errno = EINVAL;
+          goto bail_out;
+        } else {
+          success = true;
+          dev_errno = 0;
+        }
+        break;
+      case DPL_ENOENT:
+      case DPL_EINVAL:
+        Mmsg1(errmsg, _("Failed to open %s doesn't exist\n"),
+              chunk_name.c_str());
+        Dmsg1(100, "%s", errmsg);
+        dev_errno = EIO;
+        goto bail_out;
+      default:
+        Mmsg2(errmsg, _("Failed to open %s (Droplet error: %d)\n"),
+              chunk_name.c_str(), status);
+        Dmsg1(100, "%s", errmsg);
+        dev_errno = EIO;
+        Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+        tries++;
+    }
+
+  } while (!success && tries < NUMBER_OF_RETRIES);
+
+  if (tries == NUMBER_OF_RETRIES) {
+    Dmsg0(100, "dpl_getattr timed out");
     goto bail_out;
   }
 
@@ -597,40 +658,52 @@ bool droplet_device::ReadRemoteChunk(chunk_io_request* request)
    *                      no need to let the library allocate memory we
    *                      need to free after copying the data.
    */
-  memset(&dpl_options, 0, sizeof(dpl_options));
-  dpl_options.mask |= DPL_OPTION_NOALLOC;
+  tries = 0;
+  success = false;
 
-  dpl_range.start = 0;
-  dpl_range.end = sysmd->size;
-  *request->rbuflen = sysmd->size;
-  dpl_sysmd_free(sysmd);
-  sysmd = dpl_sysmd_dup(&sysmd_);
-  status = dpl_fget(ctx_,                     /* context */
-                    chunk_name.c_str(),       /* locator */
-                    &dpl_options,             /* options */
-                    NULL,                     /* condition */
-                    &dpl_range,               /* range */
-                    (char**)&request->buffer, /* data_bufp */
-                    request->rbuflen,         /* data_lenp */
-                    NULL,                     /* metadatap */
-                    sysmd);                   /* sysmdp */
+  do {
+    memset(&dpl_options, 0, sizeof(dpl_options));
+    dpl_options.mask |= DPL_OPTION_NOALLOC;
 
-  switch (status) {
-    case DPL_SUCCESS:
-      break;
-    case DPL_ENOENT:
-      Mmsg1(errmsg, _("Failed to open %s doesn't exist\n"), chunk_name.c_str());
-      Dmsg1(100, "%s", errmsg);
-      dev_errno = EIO;
-      goto bail_out;
-    default:
-      Mmsg2(errmsg, _("Failed to read %s using dpl_fget(): ERR=%s.\n"),
-            chunk_name.c_str(), dpl_status_str(status));
-      dev_errno = DropletErrnoToSystemErrno(status);
-      goto bail_out;
-  }
+    dpl_range.start = 0;
+    dpl_range.end = sysmd->size;
+    *request->rbuflen = sysmd->size;
+    dpl_sysmd_free(sysmd);
+    sysmd = dpl_sysmd_dup(&sysmd_);
+    status = dpl_fget(ctx_,                     /* context */
+                      chunk_name.c_str(),       /* locator */
+                      &dpl_options,             /* options */
+                      NULL,                     /* condition */
+                      &dpl_range,               /* range */
+                      (char**)&request->buffer, /* data_bufp */
+                      request->rbuflen,         /* data_lenp */
+                      NULL,                     /* metadatap */
+                      sysmd);                   /* sysmdp */
 
-  retval = true;
+    switch (status) {
+      case DPL_SUCCESS:
+        success = true;
+        dev_errno = 0;
+        break;
+      case DPL_ENOENT:
+        Mmsg1(errmsg, _("Failed to open %s doesn't exist\n"),
+              chunk_name.c_str());
+        Dmsg1(100, "%s", errmsg);
+        dev_errno = EIO;
+        Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+        ++tries;
+      default:
+        Mmsg2(errmsg, _("Failed to read %s using dpl_fget(): ERR=%s.\n"),
+              chunk_name.c_str(), dpl_status_str(status));
+        dev_errno = DropletErrnoToSystemErrno(status);
+        Bmicrosleep(INFLIGT_RETRY_TIME, 0);
+        ++tries;
+    }
+  } while (!success && tries < NUMBER_OF_RETRIES);
+
+  if (tries == NUMBER_OF_RETRIES) { Dmsg0(100, "dpl_getattr timed out"); }
+
+  retval = success;
 
 bail_out:
   if (sysmd) { dpl_sysmd_free(sysmd); }
@@ -639,7 +712,8 @@ bail_out:
 }
 
 /*
- * Internal method for truncating a chunked volume on the remote backing store.
+ * Internal method for truncating a chunked volume on the remote backing
+ * store.
  */
 bool droplet_device::TruncateRemoteChunkedVolume(DeviceControlRecord* dcr)
 {

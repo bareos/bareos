@@ -64,6 +64,7 @@ namespace storagedaemon {
  */
 #define INFLIGHT_RETRIES 120
 #define INFLIGT_RETRY_TIME 5
+#define NUMBER_OF_RETRIES 5
 
 enum thread_wait_type
 {
