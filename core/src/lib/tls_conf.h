@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,11 +42,11 @@ class TlsResource {
   s_password password_;    /* UA server password */
   TlsConfigCert tls_cert_; /* TLS structure */
   std::string cipherlist_; /* TLS Cipher List */
-  bool authenticate_;      /* Authenticate only with TLS */
-  bool tls_enable_;
-  bool tls_require_;
+  std::string protocol_;
+  bool authenticate_{false}; /* Authenticate only with TLS */
+  bool tls_enable_{false};
+  bool tls_require_{false};
 
-  TlsResource();
   bool IsTlsConfigured() const;
   TlsPolicy GetPolicy() const;
   int SelectTlsPolicy(TlsPolicy remote_policy) const;
