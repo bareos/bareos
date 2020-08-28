@@ -1224,7 +1224,7 @@ static bool ParseListBackupsCmd(UaContext* ua,
     return false;
   }
 
-  selection.bsprintf("AND Job.Type='B' AND Client.Name='%s' ",
+  selection.bsprintf("AND Job.Type IN('B','a') AND Client.Name='%s' ",
                      ua->argv[client]);
 
   /*
