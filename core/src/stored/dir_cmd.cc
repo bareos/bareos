@@ -1647,7 +1647,6 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   std::unique_ptr<BareosSocket> storage_daemon_socket =
       std::make_unique<BareosSocketTCP>();
 
-  if (me->nokeepalive) { storage_daemon_socket->ClearKeepalive(); }
   Dmsg1(100, "ReplicateCmd: %s", dir->msg);
   sd_auth_key.check_size(dir->message_length);
 
@@ -1764,7 +1763,6 @@ static bool PassiveCmd(JobControlRecord* jcr)
   jcr->passive_client = true;
 
   fd = new BareosSocketTCP;
-  if (me->nokeepalive) { fd->ClearKeepalive(); }
   fd->SetSourceAddress(me->SDsrc_addr);
 
   /*

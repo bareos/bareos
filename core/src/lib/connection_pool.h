@@ -48,12 +48,11 @@ class Connection {
   time_t ConnectTime() { return connect_time_; }
 
   bool check(int timeout = 0);
-  bool wait(int timeout = 60);
   bool take();
-  void lock() { P(mutex_); }
-  void unlock() { V(mutex_); }
 
  private:
+  void lock() { P(mutex_); }
+  void unlock() { V(mutex_); }
   pthread_t tid_;
   BareosSocket* socket_;
   char name_[MAX_NAME_LENGTH];
@@ -75,16 +74,14 @@ class ConnectionPool {
                              bool authenticated = true);
   Connection* remove(const char* name, int timeout_in_seconds = 0);
   alist* get_as_alist();
+  void cleanup();
 
  private:
   alist* connections_;
   int WaitForNewConnection(timespec& timeout);
   bool add(Connection* connection);
   bool remove(Connection* connection);
-  bool exists(const char* name);
-  void cleanup();
   Connection* get_connection(const char* name);
-  Connection* get_connection(const char* name, int timeout_seconds);
   Connection* get_connection(const char* name, timespec& timeout);
   pthread_mutex_t add_mutex_;
   pthread_cond_t add_cond_var_;

@@ -133,8 +133,8 @@ void StartSocketServer(dlist* addrs)
    */
   sock_fds = new alist(10, not_owned_by_alist);
   BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, thread_list,
-                      me->nokeepalive, HandleConnectionRequest, my_config,
-                      nullptr, UserAgentShutdownCallback);
+                      HandleConnectionRequest, my_config, nullptr,
+                      UserAgentShutdownCallback);
 }
 
 void StopSocketServer(bool wait)

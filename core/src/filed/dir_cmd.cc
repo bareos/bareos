@@ -1630,7 +1630,6 @@ static bool StorageCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   BareosSocket* storage_daemon_socket = new BareosSocketTCP;
 
-  if (me->nokeepalive) { storage_daemon_socket->ClearKeepalive(); }
   Dmsg1(100, "StorageCmd: %s", dir->msg);
   sd_auth_key.check_size(dir->message_length);
   if (sscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port, &tls_policy,
@@ -2290,8 +2289,6 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
 
   std::unique_ptr<BareosSocket> director_socket =
       std::make_unique<BareosSocketTCP>();
-
-  if (me->nokeepalive) { director_socket->ClearKeepalive(); }
 
   director_socket->SetSourceAddress(me->FDsrc_addr);
 

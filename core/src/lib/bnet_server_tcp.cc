@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -55,7 +55,11 @@
 #elif HAVE_SYS_POLL_H
 #include <sys/poll.h>
 #endif
+
+#include <algorithm>
 #include <atomic>
+#include <array>
+#include <vector>
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static std::atomic<bool> quit{false};
@@ -120,50 +124,12 @@ class BNetThreadServerCleanupObject {
   ThreadList& thread_list_;
 };
 
-/**
- * Become Threaded Network Server
- *
- * This function is able to handle multiple server ips in
- * ipv4 and ipv6 style. The Addresse are give in a comma
- * separated string in bind_addr
- *
- * At the moment it is impossible to bind to different ports.
- */
-void BnetThreadServerTcp(
-    dlist* addr_list,
-    int max_clients,
-    alist* sockfds,
-    ThreadList& thread_list,
-    bool nokeepalive,
-    void* HandleConnectionRequest(ConfigurationParser* config, void* bsock),
-    ConfigurationParser* config,
-    std::atomic<BnetServerState>* const server_state,
-    void* UserAgentShutdownCallback(void* bsock))
+static void RemoveDuplicateAddresses(dlist* addr_list)
 {
-  int newsockfd;
-  socklen_t clilen;
-  struct sockaddr_storage cli_addr; /* client's address */
-  int tlog;
-  int value;
-  IPADDR *ipaddr, *next, *to_free;
-  s_sockfd* fd_ptr = NULL;
-  char buf[128];
-#ifdef HAVE_POLL
-  nfds_t nfds;
-  int events;
-  struct pollfd* pfds;
-#endif
+  IPADDR* ipaddr = nullptr;
+  IPADDR* next = nullptr;
+  IPADDR* to_free = nullptr;
 
-  char allbuf[256 * 10];
-
-  BNetThreadServerCleanupObject cleanup_object(sockfds, thread_list);
-
-  quit = false;
-  if (server_state) { server_state->store(BnetServerState::kStarting); }
-
-  /*
-   * Remove any duplicate addresses.
-   */
   for (ipaddr = (IPADDR*)addr_list->first(); ipaddr;
        ipaddr = (IPADDR*)addr_list->next(ipaddr)) {
     next = (IPADDR*)addr_list->next(ipaddr);
@@ -183,68 +149,112 @@ void BnetThreadServerTcp(
       }
     }
   }
+}
+
+static void LogAllAddresses(dlist* addr_list)
+{
+  std::vector<char> buf(256 * addr_list->size());
 
   Dmsg1(100, "Addresses %s\n",
-        BuildAddressesString(addr_list, allbuf, sizeof(allbuf)));
+        BuildAddressesString(addr_list, buf.data(), buf.size()));
+}
 
-  if (nokeepalive) {
-    value = 0;
-  } else {
-    value = 1;
-  }
+static int OpenSocketAndBind(IPADDR* ipaddr,
+                             dlist* addr_list,
+                             uint16_t port_number)
+{
+  int fd = -1;
+  int tries = 0;
 
-#ifdef HAVE_POLL
-  nfds = 0;
-#endif
-  foreach_dlist (ipaddr, addr_list) {
-    /*
-     * Allocate on stack from -- no need to free
-     */
-    fd_ptr = (s_sockfd*)alloca(sizeof(s_sockfd));
-    fd_ptr->port = ipaddr->GetPortNetOrder();
-
-    /*
-     * Open a TCP socket
-     */
-    for (tlog = 60;
-         (fd_ptr->fd = socket(ipaddr->GetFamily(), SOCK_STREAM, 0)) < 0;
-         tlog -= 10) {
-      if (tlog <= 0) {
-        BErrNo be;
-        char curbuf[256];
-        Emsg3(M_ABORT, 0,
-              _("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
-              be.bstrerror(), ipaddr->build_address_str(curbuf, sizeof(curbuf)),
-              BuildAddressesString(addr_list, allbuf, sizeof(allbuf)));
-      }
+  do {
+    ++tries;
+    if ((fd = socket(ipaddr->GetFamily(), SOCK_STREAM, 0)) < 0) {
       Bmicrosleep(10, 0);
     }
+  } while (fd < 0 && tries < 6);
 
-    if (setsockopt(fd_ptr->fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&value,
-                   sizeof(value)) < 0) {
+  if (fd < 0) {
+    BErrNo be;
+    std::array<char, 256> buf1;
+    std::vector<char> buf2(256 * addr_list->size());
+
+    Emsg3(M_ABORT, 0,
+          _("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
+          be.bstrerror(), ipaddr->build_address_str(buf1.data(), buf1.size()),
+          BuildAddressesString(addr_list, buf2.data(), buf2.size()));
+
+    return -1;
+  }
+
+  int reuseaddress = 1;
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&reuseaddress,
+                 sizeof(reuseaddress)) < 0) {
+    BErrNo be;
+    Emsg1(M_WARNING, 0, _("Cannot set SO_REUSEADDR on socket: %s\n"),
+          be.bstrerror());
+    return -2;
+  }
+
+  tries = 0;
+
+  do {
+    ++tries;
+    if (bind(fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0) {
       BErrNo be;
-      Emsg1(M_WARNING, 0, _("Cannot set SO_REUSEADDR on socket: %s\n"),
-            be.bstrerror());
+      Emsg2(M_WARNING, 0, _("Cannot bind port %d: ERR=%s: Retrying ...\n"),
+            ntohs(port_number), be.bstrerror());
+      Bmicrosleep(5, 0);
+    } else {
+      // success
+      return fd;
     }
+  } while (tries < 3);
 
-    int tries = 3;
-    int wait_seconds = 5;
-    bool ok = false;
+  return -3;
+}
 
-    do {
-      int ret =
-          bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen());
-      if (ret < 0) {
-        BErrNo be;
-        Emsg2(M_WARNING, 0, _("Cannot bind port %d: ERR=%s: Retrying ...\n"),
-              ntohs(fd_ptr->port), be.bstrerror());
-        Bmicrosleep(wait_seconds, 0);
-      } else {
-        ok = true;
-      }
-    } while (!ok && --tries);
+/**
+ * Become Threaded Network Server
+ *
+ * This function is able to handle multiple server ips in
+ * ipv4 and ipv6 style. The Addresse are give in a comma
+ * separated string in bind_addr
+ *
+ * At the moment it is impossible to bind to different ports.
+ */
+void BnetThreadServerTcp(
+    dlist* addr_list,
+    int max_clients,
+    alist* sockfds,
+    ThreadList& thread_list,
+    std::function<void*(ConfigurationParser* config, void* bsock)>
+        HandleConnectionRequest,
+    ConfigurationParser* config,
+    std::atomic<BnetServerState>* const server_state,
+    std::function<void*(void* bsock)> UserAgentShutdownCallback,
+    std::function<void()> CustomCallback)
+{
+  BNetThreadServerCleanupObject cleanup_object(sockfds, thread_list);
 
-    if (!ok) {
+  quit = false;  // allow other threads to set this true during initialization
+  if (server_state) { server_state->store(BnetServerState::kStarting); }
+
+  RemoveDuplicateAddresses(addr_list);
+  LogAllAddresses(addr_list);
+
+#ifdef HAVE_POLL
+  nfds_t number_of_filedescriptors = 0;
+#endif
+
+  IPADDR* ipaddr = nullptr;
+
+  foreach_dlist (ipaddr, addr_list) {
+    s_sockfd* fd_ptr = (s_sockfd*)alloca(sizeof(s_sockfd));
+
+    fd_ptr->port = ipaddr->GetPortNetOrder();
+    fd_ptr->fd = OpenSocketAndBind(ipaddr, addr_list, fd_ptr->port);
+
+    if (fd_ptr->fd < 0) {
       BErrNo be;
       Emsg2(M_ERROR, 0, _("Cannot bind port %d: ERR=%s.\n"),
             ntohs(fd_ptr->port), be.bstrerror());
@@ -256,7 +266,7 @@ void BnetThreadServerTcp(
     sockfds->append(fd_ptr);
 
 #ifdef HAVE_POLL
-    nfds++;
+    number_of_filedescriptors++;
 #endif
   }
 
@@ -264,14 +274,11 @@ void BnetThreadServerTcp(
                    UserAgentShutdownCallback);
 
 #ifdef HAVE_POLL
-  /*
-   * Allocate on stack from -- no need to free
-   */
-  pfds = (struct pollfd*)alloca(sizeof(struct pollfd) * nfds);
-  memset(pfds, 0, sizeof(struct pollfd) * nfds);
+  struct pollfd* pfds =
+      (struct pollfd*)alloca(sizeof(struct pollfd) * number_of_filedescriptors);
+  memset(pfds, 0, sizeof(struct pollfd) * number_of_filedescriptors);
 
-  nfds = 0;
-  events = POLLIN;
+  int events = POLLIN;
 #if defined(POLLRDNORM)
   events |= POLLRDNORM;
 #endif
@@ -282,24 +289,29 @@ void BnetThreadServerTcp(
   events |= POLLPRI;
 #endif
 
+  s_sockfd* fd_ptr = nullptr;
+  int i = 0;
+
   foreach_alist (fd_ptr, sockfds) {
-    pfds[nfds].fd = fd_ptr->fd;
-    pfds[nfds].events = events;
-    nfds++;
+    pfds[i].fd = fd_ptr->fd;
+    pfds[i].events = events;
+    i++;
   }
 #endif
 
   if (server_state) { server_state->store(BnetServerState::kStarted); }
 
   while (!quit) {
+    if (CustomCallback) { CustomCallback(); }
 #ifndef HAVE_POLL
-    unsigned int maxfd = 0;
+    int maxfd = 0;
     fd_set sockset;
     FD_ZERO(&sockset);
 
+    s_sockfd* fd_ptr = nullptr;
     foreach_alist (fd_ptr, sockfds) {
       FD_SET((unsigned)fd_ptr->fd, &sockset);
-      if ((unsigned)fd_ptr->fd > maxfd) { maxfd = fd_ptr->fd; }
+      maxfd = std::max(fd_ptr->fd, maxfd);
     }
 
     struct timeval timeout {
@@ -325,7 +337,7 @@ void BnetThreadServerTcp(
     static constexpr int timeout_ms{1000};
 
     errno = 0;
-    int status = poll(pfds, nfds, timeout_ms);
+    int status = poll(pfds, number_of_filedescriptors, timeout_ms);
 
     if (status == 0) {
       continue;  // timeout: check if thread should quit
@@ -341,9 +353,11 @@ void BnetThreadServerTcp(
     foreach_alist (fd_ptr, sockfds) {
       if (pfds[cnt++].revents & events) {
 #endif
-        /*
-         * Got a connection, now accept it.
-         */
+
+        int newsockfd = -1;
+        socklen_t clilen;
+        struct sockaddr_storage cli_addr; /* client's address */
+
         do {
           clilen = sizeof(cli_addr);
           newsockfd = accept(fd_ptr->fd, reinterpret_cast<sockaddr*>(&cli_addr),
@@ -351,11 +365,9 @@ void BnetThreadServerTcp(
         } while (newsockfd < 0 && errno == EINTR);
         if (newsockfd < 0) { continue; }
 
-        /*
-         * Receive notification when connection dies.
-         */
+        int keepalive = 1;
         if (setsockopt(newsockfd, SOL_SOCKET, SO_KEEPALIVE,
-                       (sockopt_val_t)&value, sizeof(value)) < 0) {
+                       (sockopt_val_t)&keepalive, sizeof(keepalive)) < 0) {
           BErrNo be;
           Emsg1(M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
                 be.bstrerror());
@@ -364,6 +376,8 @@ void BnetThreadServerTcp(
         /*
          * See who client is. i.e. who connected to us.
          */
+        char buf[128];
+
         P(mutex);
         SockaddrToAscii(reinterpret_cast<sockaddr*>(&cli_addr), buf,
                         sizeof(buf));
@@ -371,7 +385,6 @@ void BnetThreadServerTcp(
 
         BareosSocket* bs;
         bs = new BareosSocketTCP;
-        if (nokeepalive) { bs->ClearKeepalive(); }
 
         bs->fd_ = newsockfd;
         bs->SetWho(strdup("client"));
