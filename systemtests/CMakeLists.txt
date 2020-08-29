@@ -65,7 +65,7 @@ macro(find_installed_binary_and_set_BINARY_NAME_TO_TEST_variable_for
 
 endmacro()
 
-function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
+function(configurefilestosystemtest srcbasedir dirname globexpression
          configure_option srcdirname
 )
   if(srcdirname STREQUAL "")

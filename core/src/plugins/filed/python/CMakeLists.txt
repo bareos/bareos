@@ -177,7 +177,6 @@ set(PYFILES
     postgres/BareosFdPluginPostgres.py
     vmware/bareos-fd-vmware.py
     vmware/BareosFdPluginVMware.py
-    libcloud/bareos_libcloud_api
     libcloud/bareos_libcloud_api/process_base.py
     libcloud/bareos_libcloud_api/queue_message.py
     libcloud/bareos_libcloud_api/mtime.py
