@@ -889,7 +889,6 @@ else()
   set(TEST_INFO_TEXT "running system tests on the sourcetree")
 endif()
 
-
 foreach(TEST_NAME ${SYSTEM_TESTS})
   message(STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}")
   string(REGEX MATCH "py2plug" py_v2 "${TEST_NAME}")
@@ -906,6 +905,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   string(
     CONCAT
       pythonpath
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/libcloud:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
@@ -1003,7 +1003,6 @@ foreach(TEST_NAME_DISABLED ${SYSTEM_TESTS_DISABLED})
   )
   message(STATUS "Disabled test: ${SYSTEMTEST_PREFIX}${TEST_NAME_DISABLED}")
 endforeach()
-
 
 configure_file(
   "CTestCustom.cmake.in" "${CMAKE_BINARY_DIR}/CTestCustom.cmake" @ONLY
