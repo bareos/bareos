@@ -457,13 +457,13 @@ set(python_plugin_module_src_test_dir_relative "python-modules")
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
 
-if(TARGET python-dir)
+if(TARGET python-dir OR TARGET python3-dir)
   set(dir_plugin_binary_path ${DIR_PLUGINS_DIR_TO_TEST})
 endif()
-if(TARGET python-sd)
+if(TARGET python-sd OR TARGET python3-sd)
   set(sd_plugin_binary_path ${SD_PLUGINS_DIR_TO_TEST})
 endif()
-if(TARGET python-fd)
+if(TARGET python-fd OR TARGET python3-fd)
   set(fd_plugin_binary_path ${FD_PLUGINS_DIR_TO_TEST})
 endif()
 
@@ -541,17 +541,20 @@ endforeach()
 set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
     client-initiated
+    config-dump
     encrypt-signature
     encrypt-signature-tls-cert
     notls
     passive
     spool
     bareos
+    bareos-acl
     bscan
     bconsole-status-client
     config-syntax-crash
     copy-bscan
     copy-remote-bscan
+    deprecation
     messages
     multiplied-device
     reload-add-client
@@ -576,6 +579,25 @@ set(glusterfs_uri
 )
 mark_as_advanced(glusterfs_uri)
 
+include(BareosCheckXattr)
+if(SETFATTR_WORKS)
+  list(APPEND SYSTEM_TESTS xattr)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED xattr)
+endif()
+
+include(BareosCheckAcl)
+if(SETFACL_WORKS)
+  list(APPEND SYSTEM_TESTS acl)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED acl)
+endif()
+
+if(TARGET droplet)
+  list(APPEND SYSTEM_TESTS droplet-s3)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED droplet-s3)
+endif()
 if(SD_GFAPI_DIR_TO_TEST AND glusterfs_uri)
   list(APPEND SYSTEM_TESTS glusterfs-backend)
 else()
@@ -595,6 +617,7 @@ endif()
 if(EXISTS /run/.containerenv)
   message(STATUS "detected container environment, disabling python-bareos")
   set(in_container TRUE)
+  list(APPEND SYSTEM_TESTS "dbcopy-mysql-postgresql-test")
 else()
   set(in_container FALSE)
 endif()
@@ -623,73 +646,124 @@ else()
 endif()
 
 if(TARGET python-fd)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-local-fileset")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-local-fileset")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-local-fileset")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-local-fileset")
+endif()
+
+if(TARGET python3-fd)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-local-fileset")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-local-fileset")
 endif()
 
 if(TARGET python-fd)
-  if(S3CMD)
-    list(APPEND SYSTEM_TESTS "python-fd-plugin-libcloud-test")
-  else()
-    message("s3cmd not found, disabling python-fd-plugin-libcloud-test")
-    list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-libcloud-test")
-  endif()
-  list(APPEND SYSTEM_TESTS "pyplug-fd-local-fileset-restoreobject")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-local-fileset-restoreobject")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-local-fileset-restoreobject")
-  list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-libcloud-test")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-local-fileset-restoreobject")
 endif()
 
-message("checking for requirements of pyplug-fd-postgres:")
-check_pymodule_available("psycopg2")
-check_pymodule_available("dateutil")
-
-if(TARGET python-fd
-   AND PYMODULE_PSYCOPG2_FOUND
-   AND PYMODULE_DATEUTIL_FOUND
-)
-  message("OK, enabling pyplug-fd-postgres:")
-  list(APPEND SYSTEM_TESTS "pyplug-fd-postgres")
+if(TARGET python3-fd)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-local-fileset-restoreobject")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-postgres")
-  message("NOT OK, disabling pyplug-fd-postgres:")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-local-fileset-restoreobject")
+endif()
+
+message("checking for requirements of py2plug-fd-postgres:")
+check_pymodule_available(2 psycopg2)
+check_pymodule_available(2 dateutil)
+if(TARGET python-fd
+   AND PYMODULE_2_PSYCOPG2_FOUND
+   AND PYMODULE_2_DATEUTIL_FOUND
+)
+  message("OK, enabling py2plug-fd-postgres:")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-postgres")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-postgres")
+  message("NOT OK, disabling py2plug-fd-postgres:")
+endif()
+
+message("checking for requirements of py3plug-fd-postgres:")
+check_pymodule_available(3 psycopg2)
+check_pymodule_available(3 dateutil)
+if(TARGET python-fd
+   AND PYMODULE_3_PSYCOPG2_FOUND
+   AND PYMODULE_3_DATEUTIL_FOUND
+)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-postgres")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-postgres")
 endif()
 
 if(TARGET python-fd AND ovirt_server)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-ovirt")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-ovirt")
 else()
-  message(STATUS "disabling pyplug-fd-ovirt-test as ovirt_server is not set")
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-ovirt")
+  message(STATUS "disabling py2plug-fd-ovirt-test as ovirt_server is not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-ovirt")
+endif()
+
+if(TARGET python3-fd AND ovirt_server)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-ovirt")
+else()
+  message(STATUS "disabling py3plug-fd-ovirt as ovirt_server is not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-ovirt")
 endif()
 
 if(TARGET python-fd AND enable_vmware_test)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-vmware")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-vmware")
 else()
-  message(STATUS "disabling pyplug-fd-vmware as vmware_server was not set")
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-vmware")
+  message(STATUS "disabling py2plug-fd-vmware as vmware_server was not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-vmware")
+endif()
+
+if(TARGET python3-fd AND enable_vmware_test)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-vmware")
+else()
+  message(STATUS "disabling py3plug-fd-vmware as vmware_server was not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-vmware")
 endif()
 
 if(TARGET python-fd AND XTRABACKUP)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-percona-xtrabackup")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-percona-xtrabackup")
 else()
   message(
     STATUS
-      "disabling pyplug-fd-percona-xtrabackup-test as XTRABACKUP was not found"
+      "disabling py2plug-fd-percona-xtrabackup-test as XTRABACKUP was not found"
   )
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-percona-xtrabackup")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-percona-xtrabackup")
+endif()
+
+if(TARGET python3-fd AND XTRABACKUP)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-percona-xtrabackup")
+else()
+  message(
+    STATUS "disabling py3plug-fd-percona-xtrabackup as XTRABACKUP was not found"
+  )
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-percona-xtrabackup")
 endif()
 
 if(TARGET python-dir)
-  list(APPEND SYSTEM_TESTS "pyplug-dir")
+  list(APPEND SYSTEM_TESTS "py2plug-dir")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-dir")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-dir")
+endif()
+
+if(TARGET python3-dir)
+  list(APPEND SYSTEM_TESTS "py3plug-dir")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-dir")
 endif()
 
 if(TARGET python-sd)
-  list(APPEND SYSTEM_TESTS "pyplug-sd")
+  list(APPEND SYSTEM_TESTS "py2plug-sd")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-sd")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-sd")
+endif()
+
+if(TARGET python3-sd)
+  list(APPEND SYSTEM_TESTS "py3plug-sd")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-sd")
 endif()
 
 message(STATUS "Looking for pam test requirements ...")
@@ -744,17 +818,18 @@ message(STATUS "Looking for webui test requirements ...")
 
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
-check_pymodule_available("selenium") # sets PYMODULE_SELENIUM_FOUND to TRUE or
+check_pymodule_available(2 selenium) # sets PYMODULE_2_SELENIUM_FOUND to TRUE or
+check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
 
 message("   PHP:                    " ${PHP})
 message("   PYTHON_EXECUTABLE:      " ${PYTHON_EXECUTABLE})
-message("   PYMODULE_SELENIUM_FOUND:" ${PYMOD_SELENIUM_FOUND})
+message("   PYMODULE_2_SELENIUM_FOUND:" ${PYMODULE_2_SELENIUM_FOUND})
 message("   CHROMEDRIVER:           " ${CHROMEDRIVER})
 
 if(PHP
    AND PYTHON_EXECUTABLE
-   AND PYMODULE_SELENIUM_FOUND
+   AND PYMODULE_2_SELENIUM_FOUND
    AND CHROMEDRIVER
 )
   set(ENABLE_WEBUI_SELENIUM_TEST TRUE)
@@ -795,10 +870,31 @@ endif()
 
 foreach(TEST_NAME ${SYSTEM_TESTS})
   message(STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}")
+  string(REGEX MATCH "py2plug" py_v2 "${TEST_NAME}")
+  string(REGEX MATCH "py3plug" py_v3 "${TEST_NAME}")
+  if(py_v2)
+    set(python_module_name python)
+  endif()
+  if(py_v3)
+    set(python_module_name python3)
+  endif()
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
-  handle_python_plugin_modules(${TEST_NAME})
+  string(
+    CONCAT
+      pythonpath
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules:"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
+  )
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
 
@@ -810,7 +906,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
   )
 
-  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 90)
+  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 180)
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
@@ -870,7 +966,9 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
       COMMAND ${tests_dir}/${TEST_NAME}/testrunner
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
-    set_tests_properties(${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 90)
+    set_tests_properties(
+      ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 180
+    )
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()
 endif()
