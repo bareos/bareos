@@ -1,3 +1,4 @@
+from bareosfd import M_INFO, M_ERROR
 from bareos_libcloud_api.bucket_explorer import BucketExplorer
 from bareos_libcloud_api.bucket_explorer import TASK_TYPE
 from bareos_libcloud_api.debug import debugmessage, jobmessage
@@ -43,7 +44,7 @@ class BareosLibcloudApi(object):
 
         self.__create_tmp_dir()
 
-        jobmessage("M_INFO", "Initialize BucketExplorer")
+        jobmessage(M_INFO, "Initialize BucketExplorer")
 
         self.bucket_explorer = BucketExplorer(
             options,
@@ -53,7 +54,7 @@ class BareosLibcloudApi(object):
             self.number_of_worker,
         )
 
-        jobmessage("M_INFO", "Initialize %d Workers" % self.number_of_worker)
+        jobmessage(M_INFO, "Initialize %d Workers" % self.number_of_worker)
 
         self.worker = [
             Worker(
@@ -67,10 +68,10 @@ class BareosLibcloudApi(object):
             for i in range(self.number_of_worker)
         ]
 
-        jobmessage("M_INFO", "Start BucketExplorer")
+        jobmessage(M_INFO, "Start BucketExplorer")
         self.bucket_explorer.start()
 
-        jobmessage("M_INFO", "Start Workers")
+        jobmessage(M_INFO, "Start Workers")
         for w in self.worker:
             w.start()
 
@@ -85,9 +86,9 @@ class BareosLibcloudApi(object):
             try:
                 message = self.message_queue.get_nowait()
                 if message.type == MESSAGE_TYPE.INFO_MESSAGE:
-                    jobmessage("M_INFO", message.message_string)
+                    jobmessage(M_INFO, message.message_string)
                 elif message.type == MESSAGE_TYPE.ERROR_MESSAGE:
-                    jobmessage("M_ERROR", message.message_string)
+                    jobmessage(M_ERROR, message.message_string)
                 elif message.type == MESSAGE_TYPE.READY_MESSAGE:
                     if message.worker_id == 0:
                         self.count_bucket_explorer_ready += 1
@@ -100,7 +101,7 @@ class BareosLibcloudApi(object):
                 else:
                     raise Exception(value="Unknown message type")
             except Exception as e:
-                jobmessage("M_INFO", "check_worker_messages exception: %s" % e)
+                jobmessage(M_INFO, "check_worker_messages exception: %s" % e)
         return SUCCESS
 
     def get_next_task(self):
@@ -149,7 +150,7 @@ class BareosLibcloudApi(object):
         except:
             pass
 
-        jobmessage("M_INFO", "Finished shutdown of worker processes")
+        jobmessage(M_INFO, "Finished shutdown of worker processes")
 
     def __create_tmp_dir(self):
         debugmessage(100, "Try to create temporary directory: %s" % (self.tmp_dir_path))

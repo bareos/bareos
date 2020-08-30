@@ -19,9 +19,6 @@
 # Author: Alexandre Bruyelles <git@jack.fr.eu.org>
 #
 
-# Provided by the Bareos FD Python plugin interface
-import bareos_fd_consts
-
 # This module contains the wrapper functions called by the Bareos-FD, the
 # functions call the corresponding methods from your plugin class
 import BareosFdWrapper
@@ -32,8 +29,10 @@ from BareosFdWrapper import *  # noqa
 # This module contains the used plugin class
 import BareosFdPluginLibcloud
 
+from bareosfd import bRC_OK
 
-def load_bareos_plugin(context, plugindef):
+
+def load_bareos_plugin(plugindef):
     """
     This function is called by the Bareos-FD to load the plugin
     We use it to instantiate the plugin class
@@ -41,9 +40,9 @@ def load_bareos_plugin(context, plugindef):
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that
     # holds the plugin class object
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginLibcloud.BareosFdPluginLibcloud(
-        context, plugindef
+        plugindef
     )
-    return bareos_fd_consts.bRCs["bRC_OK"]
+    return bRC_OK
 
 
 # the rest is done in the Plugin module
