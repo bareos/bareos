@@ -310,10 +310,10 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         debugmessage(100, "Backup file: %s" % (filename,))
 
         statp = bareosfd.StatPacket()
-        statp.size = self.current_backup_task["size"]
-        statp.mtime = self.current_backup_task["mtime"]
-        statp.atime = 0
-        statp.ctime = 0
+#        statp.size = self.current_backup_task["size"]
+#        statp.mtime = self.current_backup_task["mtime"]
+#        statp.atime = 0
+#        statp.ctime = 0
 
         savepkt.statp = statp
         savepkt.fname = filename
