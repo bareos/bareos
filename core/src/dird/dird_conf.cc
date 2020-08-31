@@ -3856,7 +3856,9 @@ static void DumpResource(int type,
       OutputFormatterResource(output_formatter);
 
   if (!res) {
-    sendit(sock, _("No %s resource defined\n"), my_config->ResToStr(type));
+    PoolMem msg;
+    msg.bsprintf(_("No %s resource defined\n"), my_config->ResToStr(type));
+    output_formatter->message(MSG_TYPE_INFO, msg);
     return;
   }
 
