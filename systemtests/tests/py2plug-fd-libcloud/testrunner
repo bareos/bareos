@@ -36,6 +36,8 @@ BackupDirectory="${tmp}/data"
 # Data will be placed at "${tmp}/data/".
 setup_data "$@"
 
+"${rscripts}"/start_minio.sh 9001
+
 # create s3 content for test
 ${S3} rb --recursive --force s3://$bucket_name || echo "s3://$bucket_name does not exist"
 ${S3} mb s3://$bucket_name
@@ -84,5 +86,7 @@ list=( $(find "${BackupDirectory}" -type f) )
 if ! diff -r tmp/data tmp/bareos-restores/$bucket_name/data; then
   export estat=1
 fi
+
+"${rscripts}"/stop_minio.sh
 
 end_test
