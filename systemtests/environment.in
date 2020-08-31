@@ -119,5 +119,6 @@ export PYTHONPATH=@pythonpath@
 # enable deprecated database handling in scripts
 export BAREOS_TEST_RUNNING=yes
 
+MINIO=@MINIO@
 S3CMD="@S3CMD@"
 S3CFG="${PROJECT_SOURCE_DIR}/s3cfg"
