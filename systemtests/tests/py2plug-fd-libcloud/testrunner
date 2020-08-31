@@ -1,4 +1,6 @@
 #!/bin/bash
+set -e
+set -u
 #
 # This systemtest tests the plugin functionality
 # of the Bareos FD by using the supplied module
@@ -36,7 +38,7 @@ BackupDirectory="${tmp}/data"
 # Data will be placed at "${tmp}/data/".
 setup_data "$@"
 
-"${rscripts}"/start_minio.sh 9001
+"${SYSTEMTESTS_DIR}"/scripts/start_minio.sh 9000
 
 # create s3 content for test
 ${S3} rb --recursive --force s3://$bucket_name || echo "s3://$bucket_name does not exist"

@@ -657,11 +657,18 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-local-fileset")
 endif()
 
+check_pymodule_available(2 libcloud)
+check_pymodule_available(3 libcloud)
 if(TARGET python-fd)
-  if(S3CMD)
+  if(S3CMD
+     AND MINIO
+     AND PYMODULE_2_LIBCLOUD_FOUND
+  )
     list(APPEND SYSTEM_TESTS "py2plug-fd-libcloud")
   else()
-    message("s3cmd not found, disabling py2plug-fd-libcloud")
+    message(
+      "S3CMD, MINIO or LIBCLOUD MODULE not found, disabling py2plug-fd-libcloud"
+    )
     list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-libcloud")
   endif()
 else()
@@ -669,10 +676,15 @@ else()
 endif()
 
 if(TARGET python3-fd)
-  if(S3CMD)
+  if(S3CMD
+     AND MINIO
+     AND PYMODULE_3_LIBCLOUD_FOUND
+  )
     list(APPEND SYSTEM_TESTS "py3plug-fd-libcloud")
   else()
-    message("s3cmd not found, disabling py3plug-fd-libcloud")
+    message(
+      "S3CMD, MINIO or LIBCLOUD MODULE not found, disabling py3plug-fd-libcloud"
+    )
     list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-libcloud")
   endif()
 else()
