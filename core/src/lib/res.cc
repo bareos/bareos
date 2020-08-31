@@ -140,6 +140,15 @@ const char* ConfigurationParser::ResToStr(int rcode) const
   }
 }
 
+const char* ConfigurationParser::ResGroupToStr(int rcode) const
+{
+  if (rcode < r_first_ || rcode > r_last_) {
+    return _("***UNKNOWN***");
+  } else {
+    return resources_[rcode - r_first_].groupname;
+  }
+}
+
 bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
     ConfigurationParser* config,
     const char* fq_name_in,
@@ -2121,7 +2130,7 @@ bool BareosResource::PrintConfig(OutputFormatterResource& send,
 
   *my_config.resources_[rindex].allocated_resource_ = this;
 
-  send.ResourceTypeStart(my_config.ResToStr(rcode_), internal_);
+  send.ResourceTypeStart(my_config.ResGroupToStr(rcode_), internal_);
   send.ResourceStart(resource_name_);
 
   for (int i = 0; items[i].name; i++) {

@@ -55,10 +55,11 @@ class ConfigurationParser;
  * this daemon.
  */
 struct ResourceTable {
-  const char* name;    /* Resource name */
-  ResourceItem* items; /* List of resource keywords */
-  uint32_t rcode;      /* Code if needed */
-  uint32_t size;       /* Size of resource */
+  const char* name;      /* Resource name */
+  const char* groupname; /* Resource name in plural form */
+  ResourceItem* items;   /* List of resource keywords */
+  uint32_t rcode;        /* Code if needed */
+  uint32_t size;         /* Size of resource */
 
   std::function<void()> ResourceSpecificInitializer; /* this allocates memory */
   BareosResource** allocated_resource_;
@@ -299,6 +300,7 @@ class ConfigurationParser {
   void b_LockRes(const char* file, int line) const;
   void b_UnlockRes(const char* file, int line) const;
   const char* ResToStr(int rcode) const;
+  const char* ResGroupToStr(int rcode) const;
   bool StoreResource(int rcode,
                      LEX* lc,
                      ResourceItem* item,
