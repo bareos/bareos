@@ -161,6 +161,7 @@ include(CTest)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(OPENSSL_ROOT_DIR /usr/local/opt/openssl)
   set(Readline_ROOT_DIR /usr/local/opt/readline)
+  set(Intl_ROOT_DIR /usr/local/opt/gettext)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -299,21 +300,21 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   set(WINDOWS_LIBRARIES ws2_32)
 
-  set(PYTHON_LIBRARIES
-      ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}/python27.dll
-  )
-  set(PYTHON_INCLUDE_DIRS
-      ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
-  )
-  set(HAVE_PYTHON 1)
+  set(Python2_LIBRARIES python27.dll)
+  set(Python3_LIBRARIES python38.dll)
 
-  set(PostgreSQL_LIBRARY
-      ${PROJECT_SOURCE_DIR}/src/win32/cats/pgsql/lib/${WINDOWS_BITS}/libpq.dll
-  )
-  set(PostgreSQL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/win32/cats/pgsql/include)
-  set(PostgreSQL_TYPE_INCLUDE_DIR
-      ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include
-  )
+  if(${WINDOWS_BITS} MATCHES "32")
+    set(cross-prefix i686-w64-mingw32)
+  else()
+    set(cross-prefix x86_64-w64-mingw32)
+  endif()
+
+  set(Python2_INCLUDE_DIRS /usr/${cross-prefix}/include/python2/)
+  set(Python3_INCLUDE_DIRS /usr/${cross-prefix}/include/python3/)
+
+  set(PostgreSQL_LIBRARY libpq.dll)
+  set(PostgreSQL_INCLUDE_DIR "")
+  set(PostgreSQL_TYPE_INCLUDE_DIR "")
 
   set(dynamic-storage-backends OFF)
   set(HAVE_DYNAMIC_SD_BACKENDS 0)
@@ -407,9 +408,9 @@ include(BareosDetermineHaveLowLevelScsiInterface)
 
 include(acltypes)
 
-include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
+# include_directories(SYSTEM ${Python_INCLUDE_DIRS})
 
-include_directories(SYSTEM ${PYTHON_INCLUDE_PATH})
+# include_directories(SYSTEM ${Python_INCLUDE_PATH})
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 
@@ -674,6 +675,46 @@ if(${lmdb})
 endif()
 
 # info what the config files need to be installed PLUGINS  ############
+set(PLUGINS python-ldap)
+
+list(APPEND PLUGINS python-ovirt)
+
+if(VIXDISKLIB_FOUND)
+  list(APPEND PLUGINS python-vmware)
+endif()
+
+if(${HAVE_CEPHFS})
+  list(APPEND PLUGINS cephfs)
+endif()
+if(${HAVE_CEPH_RADOS})
+  list(APPEND PLUGINS rados)
+endif()
+
+if(${HAVE_GLUSTERFS})
+  list(APPEND PLUGINS gfapi)
+endif()
+
+set(PLUGINS
+    ${PLUGINS}
+    PARENT_SCOPE
+)
+
+# BACKENDS  ####
+if(build_client_only)
+  set(BACKENDS "")
+else()
+  set(BACKENDS unix_tape_device.d)
+  list(APPEND BACKENDS unix_fifo_device.d)
+  if(${HAVE_CEPHFS})
+    list(APPEND BACKENDS rados_device.d)
+  endif()
+  if(${HAVE_GLUSTERFS})
+    list(APPEND BACKENDS gfapi_device.d)
+  endif()
+  if(${HAVE_DROPLET})
+    list(APPEND BACKENDS droplet_device.d)
+  endif()
+endif()
 
 set(support_systemd "")
 set(batch_insert_db_backends "")
@@ -837,10 +878,14 @@ message(
   "   CEPHFS support:               ${CEPHFS_FOUND} ${CEPHFS_LIBRARIES} ${CEPHFS_INCLUDE_DIRS} "
 )
 message(
-  "   Python support:               ${PYTHONLIBS_FOUND} ${PYTHONLIBS_VERSION_STRING} ${PYTHON_INCLUDE_PATH}"
+  "   Python2 support:              ${Python2_FOUND} ${Python2_VERSION} ${Python2_INCLUDE_DIRS} ${Python2_EXECUTABLE}"
+)
+message(
+  "   Python3 support:              ${Python3_FOUND} ${Python3_VERSION} ${Python3_INCLUDE_DIRS} ${Python3_EXECUTABLE}"
 )
 message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
+message("   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ")
 if(GTEST_FOUND)
   message(
     "   gtest support:                ${GTEST_FOUND} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} "
@@ -880,6 +925,8 @@ message("   AWK:                          ${AWK}")
 message("   GAWK:                         ${GAWK}")
 message("   RPCGEN:                       ${RPCGEN}")
 message("   MTX:                          ${MTX}")
+message("   MINIO:                        ${MINIO}")
+message("   S3CMD:                        ${S3CMD}")
 message("   XTRABACKUP:                   ${XTRABACKUP}")
 message("   DEVELOPER:                    ${developer}")
 message("   LocalBuildDefinitionsFile:    ${BareosLocalBuildDefinitionsFile}")

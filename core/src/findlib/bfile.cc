@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -274,7 +274,8 @@ bool processWin32BackupAPIBlock(BareosWinFilePacket* bfd,
      BackupRead stream beginning at pos 0 and ending at the end.
    */
 
-  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT* pContext = &(bfd->win32DecompContext);
+  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT* plugin_private_context =
+      &(bfd->win32Decomplugin_private_context);
   bool bContinue = false;
   int64_t dwDataOffset = 0;
   int64_t dwDataLen;
@@ -285,36 +286,37 @@ bool processWin32BackupAPIBlock(BareosWinFilePacket* bfd,
   int32_t dwSizeHeader = 20;
 
   do {
-    if (pContext->liNextHeader >= dwSize) {
+    if (plugin_private_context->liNextHeader >= dwSize) {
       dwDataLen = dwSize - dwDataOffset;
       bContinue = false; /* 1 iteration is enough */
     } else {
-      dwDataLen = pContext->liNextHeader - dwDataOffset;
+      dwDataLen = plugin_private_context->liNextHeader - dwDataOffset;
       bContinue = true; /* multiple iterations may be necessary */
     }
 
     /* flush */
     /* copy block of real DATA */
-    if (pContext->bIsInData) {
+    if (plugin_private_context->bIsInData) {
       if (bwrite(bfd, ((char*)pBuffer) + dwDataOffset, dwDataLen) !=
           (ssize_t)dwDataLen)
         return false;
     }
 
-    if (pContext->liNextHeader < dwSize) { /* is a header in this block ? */
+    if (plugin_private_context->liNextHeader <
+        dwSize) { /* is a header in this block ? */
       int32_t dwOffsetTarget;
       int32_t dwOffsetSource;
 
-      if (pContext->liNextHeader < 0) {
+      if (plugin_private_context->liNextHeader < 0) {
         /* start of header was before this block, so we
          * continue with the part in the current block
          */
-        dwOffsetTarget = -pContext->liNextHeader;
+        dwOffsetTarget = -plugin_private_context->liNextHeader;
         dwOffsetSource = 0;
       } else {
         /* start of header is inside of this block */
         dwOffsetTarget = 0;
-        dwOffsetSource = pContext->liNextHeader;
+        dwOffsetSource = plugin_private_context->liNextHeader;
       }
 
       int32_t dwHeaderPartLen = dwSizeHeader - dwOffsetTarget;
@@ -332,33 +334,37 @@ bool processWin32BackupAPIBlock(BareosWinFilePacket* bfd,
       }
 
       /* copy the available portion of header to persistent copy */
-      memcpy(((char*)&pContext->header_stream) + dwOffsetTarget,
+      memcpy(((char*)&plugin_private_context->header_stream) + dwOffsetTarget,
              ((char*)pBuffer) + dwOffsetSource, dwHeaderPartLen);
 
       /* recalculate position of next header */
       if (bHeaderIsComplete) {
         /* convert stream name size (32 bit little endian) to machine type */
         int32_t dwNameSize;
-        int32_LE2BE(&dwNameSize, pContext->header_stream.dwStreamNameSize);
-        dwDataOffset = dwNameSize + pContext->liNextHeader + dwSizeHeader;
+        int32_LE2BE(&dwNameSize,
+                    plugin_private_context->header_stream.dwStreamNameSize);
+        dwDataOffset =
+            dwNameSize + plugin_private_context->liNextHeader + dwSizeHeader;
 
         /* convert stream size (64 bit little endian) to machine type */
-        int64_LE2BE(&(pContext->liNextHeader), pContext->header_stream.Size);
-        pContext->liNextHeader += dwDataOffset;
+        int64_LE2BE(&(plugin_private_context->liNextHeader),
+                    plugin_private_context->header_stream.Size);
+        plugin_private_context->liNextHeader += dwDataOffset;
 
-        pContext->bIsInData =
-            pContext->header_stream.dwStreamId == WIN32_BACKUP_DATA;
+        plugin_private_context->bIsInData =
+            plugin_private_context->header_stream.dwStreamId ==
+            WIN32_BACKUP_DATA;
         if (dwDataOffset == dwSize) bContinue = false;
       } else {
         /* stop and continue with next block */
         bContinue = false;
-        pContext->bIsInData = false;
+        plugin_private_context->bIsInData = false;
       }
     }
   } while (bContinue);
 
   /* set "NextHeader" relative to the beginning of the next block */
-  pContext->liNextHeader -= dwSize;
+  plugin_private_context->liNextHeader -= dwSize;
 
   return TRUE;
 }
@@ -754,9 +760,9 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
   }
 
   bfd->errmsg = NULL;
-  bfd->lpContext = NULL;
-  bfd->win32DecompContext.bIsInData = false;
-  bfd->win32DecompContext.liNextHeader = 0;
+  bfd->lplugin_private_context = NULL;
+  bfd->win32Decomplugin_private_context.bIsInData = false;
+  bfd->win32Decomplugin_private_context.liNextHeader = 0;
   FreePoolMemory(win32_fname_wchar);
   FreePoolMemory(win32_fname);
 
@@ -836,28 +842,30 @@ static inline int BcloseNonencrypted(BareosWinFilePacket* bfd)
 
   /*
    * We need to tell the API to release the buffer it
-   *  allocated in lpContext.  We do so by calling the
+   *  allocated in lplugin_private_context.  We do so by calling the
    *  API one more time, but with the Abort bit set.
    */
   if (bfd->use_backup_api && bfd->mode == BF_READ) {
     BYTE buf[10];
-    if (bfd->lpContext && !p_BackupRead(bfd->fh, buf,   /* buffer */
-                                        (DWORD)0,       /* bytes to read */
-                                        &bfd->rw_bytes, /* bytes read */
-                                        1,              /* Abort */
-                                        1,              /* ProcessSecurity */
-                                        &bfd->lpContext)) { /* Read context */
+    if (bfd->lplugin_private_context &&
+        !p_BackupRead(bfd->fh, buf,                     /* buffer */
+                      (DWORD)0,                         /* bytes to read */
+                      &bfd->rw_bytes,                   /* bytes read */
+                      1,                                /* Abort */
+                      1,                                /* ProcessSecurity */
+                      &bfd->lplugin_private_context)) { /* Read context */
       errno = b_errno_win32;
       status = -1;
     }
   } else if (bfd->use_backup_api && bfd->mode == BF_WRITE) {
     BYTE buf[10];
-    if (bfd->lpContext && !p_BackupWrite(bfd->fh, buf,   /* buffer */
-                                         (DWORD)0,       /* bytes to read */
-                                         &bfd->rw_bytes, /* bytes written */
-                                         1,              /* Abort */
-                                         1,              /* ProcessSecurity */
-                                         &bfd->lpContext)) { /* Write context */
+    if (bfd->lplugin_private_context &&
+        !p_BackupWrite(bfd->fh, buf,                     /* buffer */
+                       (DWORD)0,                         /* bytes to read */
+                       &bfd->rw_bytes,                   /* bytes written */
+                       1,                                /* Abort */
+                       1,                                /* ProcessSecurity */
+                       &bfd->lplugin_private_context)) { /* Write context */
       errno = b_errno_win32;
       status = -1;
     }
@@ -873,7 +881,7 @@ all_done:
     bfd->errmsg = NULL;
   }
   bfd->mode = BF_CLOSED;
-  bfd->lpContext = NULL;
+  bfd->lplugin_private_context = NULL;
   bfd->cmd_plugin = false;
 
   return status;
@@ -904,9 +912,9 @@ ssize_t bread(BareosWinFilePacket* bfd, void* buf, size_t count)
 
   if (bfd->use_backup_api) {
     if (!p_BackupRead(bfd->fh, (BYTE*)buf, count, &bfd->rw_bytes,
-                      0,                  /* no Abort */
-                      1,                  /* Process Security */
-                      &bfd->lpContext)) { /* Context */
+                      0,                                /* no Abort */
+                      1,                                /* Process Security */
+                      &bfd->lplugin_private_context)) { /* Context */
       bfd->lerror = GetLastError();
       bfd->BErrNo = b_errno_win32;
       errno = b_errno_win32;
@@ -934,9 +942,9 @@ ssize_t bwrite(BareosWinFilePacket* bfd, void* buf, size_t count)
 
   if (bfd->use_backup_api) {
     if (!p_BackupWrite(bfd->fh, (BYTE*)buf, count, &bfd->rw_bytes,
-                       0,                  /* No abort */
-                       1,                  /* Process Security */
-                       &bfd->lpContext)) { /* Context */
+                       0,                                /* No abort */
+                       1,                                /* Process Security */
+                       &bfd->lplugin_private_context)) { /* Context */
       bfd->lerror = GetLastError();
       bfd->BErrNo = b_errno_win32;
       errno = b_errno_win32;
@@ -1129,8 +1137,8 @@ int bopen(BareosWinFilePacket* bfd,
   Dmsg1(400, "Open file %d\n", bfd->fid);
   errno = bfd->BErrNo;
 
-  bfd->win32DecompContext.bIsInData = false;
-  bfd->win32DecompContext.liNextHeader = 0;
+  bfd->win32Decomplugin_private_context.bIsInData = false;
+  bfd->win32Decomplugin_private_context.liNextHeader = 0;
 
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
   /* If not RDWR or WRONLY must be Read Only */

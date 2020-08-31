@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -59,10 +59,10 @@ typedef enum
 #define HIGHEST_PLUGIN_INSTANCE 127
 
 extern "C" {
-typedef bRC (*t_loadPlugin)(void* binfo,
-                            void* bfuncs,
-                            void** pinfo,
-                            void** pfuncs);
+typedef bRC (*t_loadPlugin)(void* bareos_plugin_interface_version,
+                            void* bareos_core_functions,
+                            void** plugin_information,
+                            void** plugin_functions);
 typedef bRC (*t_unloadPlugin)(void);
 }
 
@@ -71,19 +71,19 @@ class Plugin {
   char* file;
   int32_t file_len;
   t_unloadPlugin unloadPlugin;
-  void* pinfo;
-  void* pfuncs;
-  void* pHandle;
+  void* plugin_information;
+  void* plugin_functions;
+  void* plugin_handle;
 };
 
 /**
  * Context packet as first argument of all functions
  */
-struct bpContext {
+struct PluginContext {
   uint32_t instance;
   Plugin* plugin;
-  void* bContext; /* BAREOS private context */
-  void* pContext; /* Plugin private context */
+  void* core_private_context;   /* BAREOS private context */
+  void* plugin_private_context; /* Plugin private context */
 };
 
 typedef struct gen_pluginInfo {
@@ -96,13 +96,13 @@ typedef struct gen_pluginInfo {
   const char* plugin_version;
   const char* plugin_description;
   const char* plugin_usage;
-} genpInfo;
+} PluginInformation;
 
 class alist;
 
 /* Functions */
-bool LoadPlugins(void* binfo,
-                 void* bfuncs,
+bool LoadPlugins(void* bareos_plugin_interface_version,
+                 void* bareos_core_functions,
                  alist* plugin_list,
                  const char* plugin_dir,
                  alist* plugin_names,

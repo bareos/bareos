@@ -159,8 +159,18 @@ macro(
   # install configs from  fd plugins
   foreach(PLUGIN ${PLUGINS})
     message(STATUS "install config files for PLUGIN ${PLUGIN}")
+
+    # if plugin has -, conf.d directory is:
+    # python-ovirt -> python/ovirt/python-ovirt-conf.d
+    # else it is :
+    # cephfs -> cephfs/cephfs-conf.d
+
+    string(REPLACE "-" "/" PLUGINPATH "${PLUGIN}")
+    string(APPEND PLUGINPATH "/" ${PLUGIN} "-conf.d")
+    message(STATUS "PLUGINPATH for PLUGIN ${PLUGIN} is ${PLUGINPATH}")
+
     file(GLOB resourcedirs
-         "${SRC_DIR}/src/plugins/filed/${PLUGIN}/${CONFIGBASEDIRECTORY}/*")
+      "${SRC_DIR}/src/plugins/filed/${PLUGINPATH}/${CONFIGBASEDIRECTORY}/*")
     foreach(resdir ${resourcedirs})
       file(GLOB configfiles "${resdir}/*.conf*")
       get_filename_component(resname ${resdir} NAME)

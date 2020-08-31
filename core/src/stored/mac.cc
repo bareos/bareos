@@ -226,14 +226,14 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
    */
   jcr->impl->dcr->before_rec = rec;
   jcr->impl->dcr->after_rec = NULL;
-  if (GeneratePluginEvent(jcr, bsdEventWriteRecordTranslation,
+  if (GeneratePluginEvent(jcr, bSdEventWriteRecordTranslation,
                           jcr->impl->dcr) != bRC_OK) {
     goto bail_out;
   }
 
   /*
    * The record got translated when we got an after_rec pointer after calling
-   * the bsdEventWriteRecordTranslation plugin event. If no translation has
+   * the bSdEventWriteRecordTranslation plugin event. If no translation has
    * taken place we just point the after_rec pointer to same DeviceRecord as in
    * the before_rec pointer.
    */
@@ -798,7 +798,7 @@ bail_out:
   DequeueMessages(jcr); /* send any queued messages */
   if (ok) { jcr->setJobStatus(JS_Terminated); }
 
-  GeneratePluginEvent(jcr, bsdEventJobEnd);
+  GeneratePluginEvent(jcr, bSdEventJobEnd);
   dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
              edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);
   Dmsg4(100, Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles, ec1);

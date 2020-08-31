@@ -97,7 +97,7 @@ The two entry points are:
 
 ::
 
-    bRC loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, pInfo **pinfo, pFuncs **pfuncs)
+    bRC loadPlugin(PluginApiDefinition *lbinfo, CoreFunctions *lbfuncs, PluginInformation **pinfo, PluginFunctions **pfuncs)
 
     and
 
@@ -160,26 +160,26 @@ must return to Bareos. The call is:
 
 ::
 
-    bRC loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, pInfo **pinfo, pFuncs **pfuncs)
+    bRC loadPlugin(PluginApiDefinition *lbinfo, CoreFunctions *lbfuncs, PluginInformation **pinfo, PluginFunctions **pfuncs)
 
 and the arguments are:
 
 lbinfo
     This is information about Bareos in general. Currently, the only
-    value defined in the bInfo structure is the version, which is the
+    value defined in the PluginApiDefinition structure is the version, which is the
     Bareos plugin interface version, currently defined as 1. The
     **size** is set to the byte size of the structure. The exact
-    definition of the bInfo structure as of this writing is:
+    definition of the PluginApiDefinition structure as of this writing is:
 
     ::
 
         typedef struct s_bareosInfo {
            uint32_t size;
            uint32_t version;
-        } bInfo;
+        } PluginApiDefinition;
 
 lbfuncs
-    The bFuncs structure defines the callback entry points within Bareos
+    The CoreFunctions structure defines the callback entry points within Bareos
     that the plugin can use register events, get Bareos values, set
     Bareos values, and send messages to the Job output or debug output.
 
@@ -200,12 +200,12 @@ lbfuncs
            void *(*bareosMalloc)(bpContext *ctx, const char *file, int line,
                size_t size);
            void (*bareosFree)(bpContext *ctx, const char *file, int line, void *mem);
-        } bFuncs;
+        } CoreFunctions;
 
     We will discuss these entry points and how to use them a bit later
     when describing the plugin code.
 
-pInfo
+PluginInformation
     When the loadPlugin entry point is called, the plugin must
     initialize an information structure about the plugin and return a
     pointer to this structure to Bareos.
@@ -223,7 +223,7 @@ pInfo
            const char *plugin_date;
            const char *plugin_version;
            const char *plugin_description;
-        } pInfo;
+        } PluginInformation;
 
     Where:
 
@@ -254,13 +254,13 @@ pInfo
         is a pointer to a string describing what the plugin does. The
         contents are determined by the plugin writer.
 
-    The pInfo structure must be defined in static memory because Bareos
+    The PluginInformation structure must be defined in static memory because Bareos
     does not copy it and may refer to the values at any time while the
     plugin is loaded. All values must be supplied or the plugin will not
     run (not yet implemented). All text strings must be either ASCII or
     UTF-8 strings that are terminated with a zero byte.
 
-pFuncs
+PluginFunctions
     When the loadPlugin entry point is called, the plugin must
     initialize an entry point structure about the plugin and return a
     pointer to this structure to Bareos. This structure contains pointer
@@ -268,7 +268,7 @@ pFuncs
     When Bareos is actually running the plugin, it will call the defined
     entry points at particular times. All entry points must be defined.
 
-    The pFuncs structure must be defined in static memory because Bareos
+    The PluginFunctions structure must be defined in static memory because Bareos
     does not copy it and may refer to the values at any time while the
     plugin is loaded.
 
@@ -292,7 +292,7 @@ pFuncs
            bRC (*createFile)(bpContext *ctx, struct restore_pkt *rp);
            bRC (*setFileAttributes)(bpContext *ctx, struct restore_pkt *rp);
            bRC (*checkFile)(bpContext *ctx, char *fname);
-        } pFuncs;
+        } PluginFunctions;
 
     The details of the entry points will be presented in separate
     sections below.
@@ -324,7 +324,7 @@ Plugin Entry Points
 This section will describe each of the entry points (subroutines) within
 the plugin that the plugin must provide for Bareos, when they are called
 and their arguments. As noted above, pointers to these subroutines are
-passed back to Bareos in the pFuncs structure when Bareos calls the
+passed back to Bareos in the PluginFunctions structure when Bareos calls the
 loadPlugin() externally defined entry point.
 
 newPlugin(bpContext \*ctx)

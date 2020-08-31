@@ -109,11 +109,18 @@ export OVIRT_SERVER=@ovirt_server@
 # real postgres binaries are hidden on debian, instead there are wrappers
 # which we do not want for our tests
 if [ -d /usr/lib/postgresql  ]; then
-  POSTGRES_BINARY_DIR=$(dirname $(find /usr/lib/postgresql | grep psql))
+  POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql | grep psql))
   export PATH=$POSTGRES_BINARY_DIR:$PATH
 else
   export PATH=/sbin:/usr/sbin:$PATH
 fi
+export PYTHONPATH=@pythonpath@
 
 # enable deprecated database handling in scripts
 export BAREOS_TEST_RUNNING=yes
+
+MINIO=@MINIO@
+S3CMD="@S3CMD@"
+S3CFG="${PROJECT_SOURCE_DIR}/s3cfg"
+
+SYSTEMTESTS_DIR=@CMAKE_CURRENT_SOURCE_DIR@

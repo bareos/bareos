@@ -482,7 +482,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
          * GeneratePluginEvent() the reverse argument so it knows that we want
          * the plugins to be called in that order.
          */
-        if (GeneratePluginEvent(jcr, bsdEventReadRecordTranslation, dcr,
+        if (GeneratePluginEvent(jcr, bSdEventReadRecordTranslation, dcr,
                                 true) != bRC_OK) {
           ok = false;
           continue;
@@ -490,7 +490,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
 
         /*
          * The record got translated when we got an after_rec pointer after
-         * calling the bsdEventReadRecordTranslation plugin event. If no
+         * calling the bSdEventReadRecordTranslation plugin event. If no
          * translation has taken place we just point the rec pointer to same
          * DeviceRecord as in the before_rec pointer.
          */

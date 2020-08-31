@@ -704,7 +704,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
        * plugins can register to.
        */
       if (dev->NumReserved() == 0) {
-        GeneratePluginEvent(jcr, bsdEventDeviceRelease, dcr);
+        GeneratePluginEvent(jcr, bSdEventDeviceRelease, dcr);
       }
     }
   }

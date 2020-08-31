@@ -1,0 +1,1 @@
+../../../../core/src/plugins/filed/python/pyfiles/bareos-fd-local-fileset.py

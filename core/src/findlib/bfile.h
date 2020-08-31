@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -79,7 +79,7 @@ struct BareosWinFilePacket {
   int mode = BF_CLOSED;             /**< set if file is open */
   HANDLE fh = INVALID_HANDLE_VALUE; /**< Win32 file handle */
   int fid = 0;                      /**< fd if doing Unix style */
-  LPVOID lpContext = nullptr;       /**< BackupRead/Write context */
+  LPVOID lplugin_private_context = nullptr;       /**< BackupRead/Write context */
   PVOID pvContext = nullptr;        /**< Encryption context */
   POOLMEM* errmsg = nullptr;        /**< error message buffer */
   DWORD rw_bytes = 0;               /**< Bytes read or written */
@@ -87,7 +87,7 @@ struct BareosWinFilePacket {
   int BErrNo = 0;                   /**< errno */
   boffset_t offset = 0;             /**< Delta offset */
   JobControlRecord* jcr = nullptr;  /**< jcr for editing job codes */
-  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32DecompContext{0}; /**< context for decomposition
+  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32Decomplugin_private_context{0}; /**< context for decomposition
                                                                    of win32 backup streams */
   int use_backup_decomp = 0; /**< set if using BackupRead Stream Decomposition */
   bool reparse_point = false; /**< set if reparse point */
@@ -115,7 +115,7 @@ struct BareosWinFilePacket {
   int32_t lerror{0};              /**< not used - simplies Win32 builds */
   boffset_t offset{0};            /**< Delta offset */
   JobControlRecord* jcr{nullptr}; /**< jcr for editing job codes */
-  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32DecompContext{0}; /**< context for decomposition
+  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32Decomplugin_private_context{0}; /**< context for decomposition
                                                                    of win32 backup streams */
   int use_backup_decomp{0};       /**< set if using BackupRead Stream Decomposition */
   bool reparse_point{false};      /**< not used in Unix */

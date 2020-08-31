@@ -606,7 +606,7 @@ bool DeviceControlRecord::DoUnload()
 {
   DeviceControlRecord* dcr = this;
 
-  if (GeneratePluginEvent(jcr, bsdEventVolumeUnload, dcr) != bRC_OK) {
+  if (GeneratePluginEvent(jcr, bSdEventVolumeUnload, dcr) != bRC_OK) {
     return false;
   }
 
@@ -632,7 +632,7 @@ bool DeviceControlRecord::DoLoad(bool IsWriting)
     retval = true;
   }
 
-  if (GeneratePluginEvent(jcr, bsdEventVolumeLoad, dcr) != bRC_OK) {
+  if (GeneratePluginEvent(jcr, bSdEventVolumeLoad, dcr) != bRC_OK) {
     retval = false;
   }
 
@@ -874,7 +874,7 @@ void DeviceControlRecord::ReleaseVolume()
 
   UnloadAutochanger(dcr, -1);
 
-  GeneratePluginEvent(jcr, bsdEventVolumeUnload, dcr);
+  GeneratePluginEvent(jcr, bSdEventVolumeUnload, dcr);
 
   if (WroteVol) {
     Jmsg0(jcr, M_ERROR, 0, _("Hey!!!!! WroteVol non-zero !!!!!\n"));

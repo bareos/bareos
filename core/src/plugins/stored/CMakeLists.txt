@@ -30,34 +30,22 @@ if(HAVE_WIN32)
   add_definitions(-DMS_WIN${WINDOWS_BITS})
 endif()
 
-add_library(autoxflate-sd MODULE autoxflate-sd.cc)
+add_subdirectory(python)
+
+add_library(autoxflate-sd MODULE autoxflate/autoxflate-sd.cc)
 set_target_properties(autoxflate-sd PROPERTIES PREFIX "")
 target_link_libraries(autoxflate-sd bareos)
 install(TARGETS autoxflate-sd DESTINATION ${plugindir})
 
 if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
-  add_library(scsicrypto-sd MODULE scsicrypto-sd.cc)
+  add_library(scsicrypto-sd MODULE scsicrypto/scsicrypto-sd.cc)
   set_target_properties(scsicrypto-sd PROPERTIES PREFIX "")
   install(TARGETS scsicrypto-sd DESTINATION ${plugindir})
 
-  add_library(scsitapealert-sd MODULE scsitapealert-sd.cc)
+  add_library(scsitapealert-sd MODULE scsitapealert/scsitapealert-sd.cc)
   set_target_properties(scsitapealert-sd PROPERTIES PREFIX "")
   install(TARGETS scsitapealert-sd DESTINATION ${plugindir})
   if(HAVE_DARWIN_OS)
     target_link_libraries(scsitapealert-sd bareossd)
   endif()
-endif()
-
-if(HAVE_PYTHON)
-  add_library(python-sd MODULE python-sd.cc)
-  set_target_properties(python-sd PROPERTIES PREFIX "")
-  install(TARGETS python-sd DESTINATION ${plugindir})
-  target_link_libraries(python-sd ${PYTHON_LIBRARIES} bareos)
-
-  set(PYFILES
-      bareos-sd-class-plugin.py bareos_sd_consts.py BareosSdPluginBaseclass.py
-      bareos-sd.py.template BareosSdWrapper.py
-  )
-
-  install(FILES ${PYFILES} DESTINATION ${plugindir})
 endif()

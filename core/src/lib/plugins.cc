@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -97,17 +97,17 @@ static void ClosePlugin(Plugin* plugin)
     Dmsg1(50, "Got plugin=%s but not accepted.\n", plugin->file);
   }
   if (plugin->unloadPlugin) { plugin->unloadPlugin(); }
-  if (plugin->pHandle) { dlclose(plugin->pHandle); }
+  if (plugin->plugin_handle) { dlclose(plugin->plugin_handle); }
   if (plugin->file) { free(plugin->file); }
   free(plugin);
 }
 
 /*
  * Load a specific plugin and check if the plugin had the correct
- * entry points, the license is compatible and the initialize the plugin.
+ * entry points, the license is compatible and initialize the plugin.
  */
-static bool load_a_plugin(void* binfo,
-                          void* bfuncs,
+static bool load_a_plugin(void* bareos_plugin_interface_version,
+                          void* bareos_core_functions,
                           const char* plugin_pathname,
                           const char* plugin_name,
                           const char* type,
@@ -121,9 +121,9 @@ static bool load_a_plugin(void* binfo,
   plugin->file = strdup(plugin_name);
   plugin->file_len = strstr(plugin->file, type) - plugin->file;
 
-  plugin->pHandle = dlopen(plugin_pathname, LT_LAZY_OR_NOW | LT_GLOBAL);
+  plugin->plugin_handle = dlopen(plugin_pathname, LT_LAZY_OR_NOW | LT_GLOBAL);
 
-  if (!plugin->pHandle) {
+  if (!plugin->plugin_handle) {
     const char* error = dlerror();
 
     Jmsg(NULL, M_ERROR, 0, _("dlopen plugin %s failed: ERR=%s\n"),
@@ -139,7 +139,7 @@ static bool load_a_plugin(void* binfo,
   /*
    * Get two global entry points
    */
-  loadPlugin = (t_loadPlugin)dlsym(plugin->pHandle, "loadPlugin");
+  loadPlugin = (t_loadPlugin)dlsym(plugin->plugin_handle, "loadPlugin");
   if (!loadPlugin) {
     Jmsg(NULL, M_ERROR, 0,
          _("Lookup of loadPlugin in plugin %s failed: ERR=%s\n"),
@@ -152,7 +152,8 @@ static bool load_a_plugin(void* binfo,
     return false;
   }
 
-  plugin->unloadPlugin = (t_unloadPlugin)dlsym(plugin->pHandle, "unloadPlugin");
+  plugin->unloadPlugin =
+      (t_unloadPlugin)dlsym(plugin->plugin_handle, "unloadPlugin");
   if (!plugin->unloadPlugin) {
     Jmsg(NULL, M_ERROR, 0,
          _("Lookup of unloadPlugin in plugin %s failed: ERR=%s\n"),
@@ -168,7 +169,9 @@ static bool load_a_plugin(void* binfo,
   /*
    * Initialize the plugin
    */
-  if (loadPlugin(binfo, bfuncs, &plugin->pinfo, &plugin->pfuncs) != bRC_OK) {
+  if (loadPlugin(bareos_plugin_interface_version, bareos_core_functions,
+                 &plugin->plugin_information,
+                 &plugin->plugin_functions) != bRC_OK) {
     ClosePlugin(plugin);
 
     return false;
@@ -192,8 +195,8 @@ static bool load_a_plugin(void* binfo,
  * Or when plugin_names is give it has a list of plugins
  * to load from the specified directory.
  */
-bool LoadPlugins(void* binfo,
-                 void* bfuncs,
+bool LoadPlugins(void* bareos_plugin_interface_version,
+                 void* bareos_core_functions,
                  alist* plugin_list,
                  const char* plugin_dir,
                  alist* plugin_names,
@@ -241,8 +244,9 @@ bool LoadPlugins(void* binfo,
       /*
        * Try to load the plugin and resolve the wanted symbols.
        */
-      if (load_a_plugin(binfo, bfuncs, fname.c_str(), plugin_name.c_str(), type,
-                        plugin_list, IsPluginCompatible)) {
+      if (load_a_plugin(bareos_plugin_interface_version, bareos_core_functions,
+                        fname.c_str(), plugin_name.c_str(), type, plugin_list,
+                        IsPluginCompatible)) {
         found = true;
       }
     }
@@ -311,8 +315,9 @@ bool LoadPlugins(void* binfo,
       /*
        * Try to load the plugin and resolve the wanted symbols.
        */
-      if (load_a_plugin(binfo, bfuncs, fname.c_str(), result->d_name, type,
-                        plugin_list, IsPluginCompatible)) {
+      if (load_a_plugin(bareos_plugin_interface_version, bareos_core_functions,
+                        fname.c_str(), result->d_name, type, plugin_list,
+                        IsPluginCompatible)) {
         found = true;
       }
     }
@@ -341,7 +346,7 @@ void UnloadPlugins(alist* plugin_list)
      * Shut it down and unload it
      */
     plugin->unloadPlugin();
-    dlclose(plugin->pHandle);
+    dlclose(plugin->plugin_handle);
     if (plugin->file) { free(plugin->file); }
     free(plugin);
   }
@@ -353,7 +358,7 @@ void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index)
    * Shut it down and unload it
    */
   plugin->unloadPlugin();
-  dlclose(plugin->pHandle);
+  dlclose(plugin->plugin_handle);
   if (plugin->file) { free(plugin->file); }
   plugin_list->remove(index);
   free(plugin);
@@ -370,8 +375,9 @@ int ListPlugins(alist* plugin_list, PoolMem& msg)
     foreach_alist_index (i, plugin, plugin_list) {
       PmStrcat(msg, " Plugin     : ");
       len = PmStrcat(msg, plugin->file);
-      if (plugin->pinfo) {
-        genpInfo* info = (genpInfo*)plugin->pinfo;
+      if (plugin->plugin_information) {
+        PluginInformation* info =
+            (PluginInformation*)plugin->plugin_information;
         PmStrcat(msg, "\n");
         PmStrcat(msg, " Description: ");
         PmStrcat(msg, NPRT(info->plugin_description));

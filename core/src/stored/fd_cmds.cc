@@ -187,7 +187,7 @@ void RunJob(JobControlRecord* jcr)
   DequeueMessages(jcr); /* send any queued messages */
   jcr->setJobStatus(JS_Terminated);
 
-  GeneratePluginEvent(jcr, bsdEventJobEnd);
+  GeneratePluginEvent(jcr, bSdEventJobEnd);
 
   dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
              edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);

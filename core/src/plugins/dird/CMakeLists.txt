@@ -30,17 +30,4 @@ if(HAVE_WIN32)
   add_definitions(-DMS_WIN${WINDOWS_BITS})
 endif()
 
-if(HAVE_PYTHON)
-  add_library(python-dir MODULE python-dir.cc)
-  # do not prefix with "lib"
-  set_target_properties(python-dir PROPERTIES PREFIX "")
-  install(TARGETS python-dir DESTINATION ${plugindir})
-  target_link_libraries(python-dir ${PYTHON_LIBRARIES} bareos)
-
-  set(PYFILES
-      bareos-dir.py.template bareos-dir-class-plugin.py bareos_dir_consts.py
-      BareosDirPluginBaseclass.py BareosDirWrapper.py
-  )
-
-  install(FILES ${PYFILES} DESTINATION ${plugindir})
-endif()
+add_subdirectory(python)

@@ -822,7 +822,7 @@ bool DeviceControlRecord::WriteBlockToDev()
             be.bstrerror());
     }
 
-    GeneratePluginEvent(jcr, bsdEventWriteError, dcr);
+    GeneratePluginEvent(jcr, bSdEventWriteError, dcr);
 
     if (dev->dev_errno != ENOSPC) { Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg); }
 
@@ -1055,7 +1055,7 @@ reread:
           dev->fd(), dev->file, dev->block_num, dev->print_name(),
           be.bstrerror());
 
-    GeneratePluginEvent(jcr, bsdEventReadError, dcr);
+    GeneratePluginEvent(jcr, bSdEventReadError, dcr);
 
     Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
     if (device_resource->eof_on_error_is_eot && dev->AtEof()) {

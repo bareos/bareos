@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -257,7 +257,7 @@ typedef struct s_bEvent {
 typedef struct s_bareosInfo {
   uint32_t size;
   uint32_t version;
-} bInfo;
+} PluginApiDefinition;
 
 /*
  * Bareos Core Routines -- not used within a plugin
@@ -319,43 +319,43 @@ extern "C" {
 typedef struct s_bareosFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*registerBareosEvents)(bpContext* ctx, int nr_events, ...);
-  bRC (*unregisterBareosEvents)(bpContext* ctx, int nr_events, ...);
-  bRC (*getInstanceCount)(bpContext* ctx, int* ret);
-  bRC (*getBareosValue)(bpContext* ctx, bVariable var, void* value);
-  bRC (*setBareosValue)(bpContext* ctx, bVariable var, void* value);
-  bRC (*JobMessage)(bpContext* ctx,
+  bRC (*registerBareosEvents)(PluginContext* ctx, int nr_events, ...);
+  bRC (*unregisterBareosEvents)(PluginContext* ctx, int nr_events, ...);
+  bRC (*getInstanceCount)(PluginContext* ctx, int* ret);
+  bRC (*getBareosValue)(PluginContext* ctx, bVariable var, void* value);
+  bRC (*setBareosValue)(PluginContext* ctx, bVariable var, void* value);
+  bRC (*JobMessage)(PluginContext* ctx,
                     const char* file,
                     int line,
                     int type,
                     utime_t mtime,
                     const char* fmt,
                     ...);
-  bRC (*DebugMessage)(bpContext* ctx,
+  bRC (*DebugMessage)(PluginContext* ctx,
                       const char* file,
                       int line,
                       int level,
                       const char* fmt,
                       ...);
-  void* (*bareosMalloc)(bpContext* ctx,
+  void* (*bareosMalloc)(PluginContext* ctx,
                         const char* file,
                         int line,
                         size_t size);
-  void (*bareosFree)(bpContext* ctx, const char* file, int line, void* mem);
-  bRC (*AddExclude)(bpContext* ctx, const char* file);
-  bRC (*AddInclude)(bpContext* ctx, const char* file);
-  bRC (*AddOptions)(bpContext* ctx, const char* opts);
-  bRC (*AddRegex)(bpContext* ctx, const char* item, int type);
-  bRC (*AddWild)(bpContext* ctx, const char* item, int type);
-  bRC (*NewOptions)(bpContext* ctx);
-  bRC (*NewInclude)(bpContext* ctx);
-  bRC (*NewPreInclude)(bpContext* ctx);
-  bRC (*checkChanges)(bpContext* ctx, struct save_pkt* sp);
-  bRC (*AcceptFile)(bpContext* ctx,
+  void (*bareosFree)(PluginContext* ctx, const char* file, int line, void* mem);
+  bRC (*AddExclude)(PluginContext* ctx, const char* file);
+  bRC (*AddInclude)(PluginContext* ctx, const char* file);
+  bRC (*AddOptions)(PluginContext* ctx, const char* opts);
+  bRC (*AddRegex)(PluginContext* ctx, const char* item, int type);
+  bRC (*AddWild)(PluginContext* ctx, const char* item, int type);
+  bRC (*NewOptions)(PluginContext* ctx);
+  bRC (*NewInclude)(PluginContext* ctx);
+  bRC (*NewPreInclude)(PluginContext* ctx);
+  bRC (*checkChanges)(PluginContext* ctx, struct save_pkt* sp);
+  bRC (*AcceptFile)(PluginContext* ctx,
                     struct save_pkt* sp); /* Need fname and statp */
-  bRC (*SetSeenBitmap)(bpContext* ctx, bool all, char* fname);
-  bRC (*ClearSeenBitmap)(bpContext* ctx, bool all, char* fname);
-} bFuncs;
+  bRC (*SetSeenBitmap)(PluginContext* ctx, bool all, char* fname);
+  bRC (*ClearSeenBitmap)(PluginContext* ctx, bool all, char* fname);
+} CoreFunctions;
 
 /****************************************************************************
  *                                                                          *
@@ -378,27 +378,27 @@ typedef enum
 typedef struct s_pluginFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*newPlugin)(bpContext* ctx);
-  bRC (*freePlugin)(bpContext* ctx);
-  bRC (*getPluginValue)(bpContext* ctx, pVariable var, void* value);
-  bRC (*setPluginValue)(bpContext* ctx, pVariable var, void* value);
-  bRC (*handlePluginEvent)(bpContext* ctx, bEvent* event, void* value);
-  bRC (*startBackupFile)(bpContext* ctx, struct save_pkt* sp);
-  bRC (*endBackupFile)(bpContext* ctx);
-  bRC (*startRestoreFile)(bpContext* ctx, const char* cmd);
-  bRC (*endRestoreFile)(bpContext* ctx);
-  bRC (*pluginIO)(bpContext* ctx, struct io_pkt* io);
-  bRC (*createFile)(bpContext* ctx, struct restore_pkt* rp);
-  bRC (*setFileAttributes)(bpContext* ctx, struct restore_pkt* rp);
-  bRC (*checkFile)(bpContext* ctx, char* fname);
-  bRC (*getAcl)(bpContext* ctx, struct acl_pkt* ap);
-  bRC (*setAcl)(bpContext* ctx, struct acl_pkt* ap);
-  bRC (*getXattr)(bpContext* ctx, struct xattr_pkt* xp);
-  bRC (*setXattr)(bpContext* ctx, struct xattr_pkt* xp);
-} pFuncs;
+  bRC (*newPlugin)(PluginContext* ctx);
+  bRC (*freePlugin)(PluginContext* ctx);
+  bRC (*getPluginValue)(PluginContext* ctx, pVariable var, void* value);
+  bRC (*setPluginValue)(PluginContext* ctx, pVariable var, void* value);
+  bRC (*handlePluginEvent)(PluginContext* ctx, bEvent* event, void* value);
+  bRC (*startBackupFile)(PluginContext* ctx, struct save_pkt* sp);
+  bRC (*endBackupFile)(PluginContext* ctx);
+  bRC (*startRestoreFile)(PluginContext* ctx, const char* cmd);
+  bRC (*endRestoreFile)(PluginContext* ctx);
+  bRC (*pluginIO)(PluginContext* ctx, struct io_pkt* io);
+  bRC (*createFile)(PluginContext* ctx, struct restore_pkt* rp);
+  bRC (*setFileAttributes)(PluginContext* ctx, struct restore_pkt* rp);
+  bRC (*checkFile)(PluginContext* ctx, char* fname);
+  bRC (*getAcl)(PluginContext* ctx, struct acl_pkt* ap);
+  bRC (*setAcl)(PluginContext* ctx, struct acl_pkt* ap);
+  bRC (*getXattr)(PluginContext* ctx, struct xattr_pkt* xp);
+  bRC (*setXattr)(PluginContext* ctx, struct xattr_pkt* xp);
+} PluginFunctions;
 
-#define PlugFunc(plugin) ((pFuncs*)(plugin->pfuncs))
-#define plug_info(plugin) ((genpInfo*)(plugin->pinfo))
+#define PlugFunc(plugin) ((PluginFunctions*)(plugin->plugin_functions))
+#define plug_info(plugin) ((PluginInformation*)(plugin->plugin_information))
 
 #ifdef __cplusplus
 }

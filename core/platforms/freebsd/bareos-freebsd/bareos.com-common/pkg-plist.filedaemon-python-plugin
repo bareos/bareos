@@ -6,4 +6,3 @@ lib/bareos/plugins/bareos-fd-mock-test.py
 lib/bareos/plugins/BareosFdPluginBaseclass.py
 lib/bareos/plugins/BareosFdPluginLocalFileset.py
 lib/bareos/plugins/BareosFdWrapper.py
-lib/bareos/plugins/bareos_fd_consts.py

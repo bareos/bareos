@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -62,13 +62,13 @@ TEST(sd, sd_plugins)
   jcr2->JobId = 222;
   NewPlugins(jcr2);
 
-  EXPECT_EQ(GeneratePluginEvent(jcr1, bsdEventJobStart, (void*)"Start Job 1"),
+  EXPECT_EQ(GeneratePluginEvent(jcr1, bSdEventJobStart, (void*)"Start Job 1"),
             bRC_OK);
-  EXPECT_EQ(GeneratePluginEvent(jcr1, bsdEventJobEnd), bRC_OK);
-  EXPECT_EQ(GeneratePluginEvent(jcr2, bsdEventJobStart, (void*)"Start Job 1"),
+  EXPECT_EQ(GeneratePluginEvent(jcr1, bSdEventJobEnd), bRC_OK);
+  EXPECT_EQ(GeneratePluginEvent(jcr2, bSdEventJobStart, (void*)"Start Job 1"),
             bRC_OK);
   FreePlugins(jcr1);
-  EXPECT_EQ(GeneratePluginEvent(jcr2, bsdEventJobEnd), bRC_OK);
+  EXPECT_EQ(GeneratePluginEvent(jcr2, bSdEventJobEnd), bRC_OK);
   FreePlugins(jcr2);
 
   UnloadSdPlugins();

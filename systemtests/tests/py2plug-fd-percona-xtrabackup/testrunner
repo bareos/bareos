@@ -1,0 +1,108 @@
+#!/bin/bash
+set -e
+set -u
+#
+# This systemtest tests the Percona plugin functionality
+# of the Bareos FD by using the supplied module
+#   BareosFdPluginPerconaXtraBackup.py
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+MYSQL="mysql --defaults-file=mysqldefaults --user=root"
+
+JobName=backup-bareos-fd
+#shellcheck source=../environment.in
+. ./environment
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
+rm -Rf mysql/data/*
+mkdir -p mysql/data/
+# initialize mysql db
+mysql_install_db --user="$USER" --defaults-file=mysqldefaults > mysql/mysql_init.log
+
+# start mysql server
+mysqld_safe --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
+
+sleep 4
+
+xtrabackup_test_db="${db_name}_xtrabackup"
+
+start_test
+
+echo "create database ${xtrabackup_test_db}" | $MYSQL
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYSQL "${xtrabackup_test_db}"
+echo "insert into test (data) VALUES ('test entry 1') " | $MYSQL "${xtrabackup_test_db}"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/log1.out
+run job=$JobName yes
+wait JobName=$JobName
+status dir
+
+run job=$JobName level=Incremental yes
+wait JobName=$JobName
+status dir
+
+# insert data and run incremental
+insert into test (data) VALUES ('test entry 2')
+
+END_OF_DATA
+run_bareos "$@"
+
+cat <<END_OF_DATA2 >"$tmp/bconcmds"
+# run incremental again without any new data
+run job=$JobName yes
+wait JobName=$JobName
+status dir
+wait
+messages
+quit
+END_OF_DATA2
+run_bareos "$@"
+
+cat <<END_OF_DATA3 >"$tmp/bconcmds"
+restore client=bareos-fd fileset=PerconaXtraBackupTest yes restorejob=RestoreFile select all done
+@$out $tmp/log2.out
+wait
+END_OF_DATA3
+
+run_bareos "$@"
+
+#JOBID=$(echo "$RESTORECMD" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf | grep "Job queued. JobId=" | sed s'/.*=//')
+#
+#if ! echo "wait jobid=$JOBID" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf | grep -q "JobStatus=OK";
+#then
+#    echo "Restore Job $JOBID failed"
+#    estat=1
+#fi
+
+
+
+# Check if xtrabackup has extracted some files at least
+# TODO: verify that xtrabackup --prepare works and eventually do complete datbase restore
+ls -lR  "$tmp/bareos-restores/_percona/"
+if [ -z "$(ls -A "$tmp"/bareos-restores/_percona/)" ]; then
+       echo "No restore data found"
+       estat=1
+fi
+
+
+
+# shutdown mysql
+[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)"
+rm -Rf mysql/data
+
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+
+end_test

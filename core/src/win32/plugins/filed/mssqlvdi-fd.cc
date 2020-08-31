@@ -3,7 +3,7 @@
 
    Copyright (C) 2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,7 @@
  */
 #include "include/bareos.h"
 #include "fd_plugins.h"
-#include "fd_common.h"
+#include "plugins/include/common.h"
 
 /**
  * Microsoft® Component Object Model (COM)
@@ -90,52 +90,53 @@ static const int debuglevel = 150;
 /**
  * Forward referenced functions
  */
-static bRC newPlugin(bpContext* ctx);
-static bRC freePlugin(bpContext* ctx);
-static bRC getPluginValue(bpContext* ctx, pVariable var, void* value);
-static bRC setPluginValue(bpContext* ctx, pVariable var, void* value);
-static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value);
-static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp);
-static bRC endBackupFile(bpContext* ctx);
-static bRC pluginIO(bpContext* ctx, struct io_pkt* io);
-static bRC startRestoreFile(bpContext* ctx, const char* cmd);
-static bRC endRestoreFile(bpContext* ctx);
-static bRC createFile(bpContext* ctx, struct restore_pkt* rp);
-static bRC setFileAttributes(bpContext* ctx, struct restore_pkt* rp);
-static bRC checkFile(bpContext* ctx, char* fname);
+static bRC newPlugin(PluginContext* ctx);
+static bRC freePlugin(PluginContext* ctx);
+static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
+static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
+static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value);
+static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp);
+static bRC endBackupFile(PluginContext* ctx);
+static bRC pluginIO(PluginContext* ctx, struct io_pkt* io);
+static bRC startRestoreFile(PluginContext* ctx, const char* cmd);
+static bRC endRestoreFile(PluginContext* ctx);
+static bRC createFile(PluginContext* ctx, struct restore_pkt* rp);
+static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp);
+static bRC checkFile(PluginContext* ctx, char* fname);
 
-static bRC parse_plugin_definition(bpContext* ctx, void* value);
-static bRC end_restore_job(bpContext* ctx, void* value);
+static bRC parse_plugin_definition(PluginContext* ctx, void* value);
+static bRC end_restore_job(PluginContext* ctx, void* value);
 static void CloseVdiDeviceset(struct plugin_ctx* p_ctx);
-static bool adoReportError(bpContext* ctx);
+static bool adoReportError(PluginContext* ctx);
 
 /**
  * Pointers to Bareos functions
  */
-static bFuncs* bfuncs = NULL;
-static bInfo* binfo = NULL;
+static CoreFunctions* bareos_core_functions = NULL;
+static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 /**
  * Plugin Information block
  */
-static genpInfo pluginInfo = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
-                              FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-                              PLUGIN_AUTHOR,      PLUGIN_DATE,
-                              PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-                              PLUGIN_USAGE};
+static PluginInformation pluginInfo = {
+    sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
+    FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+    PLUGIN_AUTHOR,      PLUGIN_DATE,
+    PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+    PLUGIN_USAGE};
 
 /**
  * Plugin entry points for Bareos
  */
-static pFuncs pluginFuncs = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs = {
+    sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
-                             /* Entry points into plugin */
-                             newPlugin,  /* new plugin instance */
-                             freePlugin, /* free plugin instance */
-                             getPluginValue, setPluginValue, handlePluginEvent,
-                             startBackupFile, endBackupFile, startRestoreFile,
-                             endRestoreFile, pluginIO, createFile,
-                             setFileAttributes, checkFile};
+    /* Entry points into plugin */
+    newPlugin,  /* new plugin instance */
+    freePlugin, /* free plugin instance */
+    getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
+    endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
+    setFileAttributes, checkFile};
 
 /**
  * Plugin private context
@@ -227,15 +228,16 @@ extern "C" {
  *
  * External entry point called by Bareos to "load" the plugin
  */
-bRC loadPlugin(bInfo* lbinfo,
-               bFuncs* lbfuncs,
-               genpInfo** pinfo,
-               pFuncs** pfuncs)
+bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
+               CoreFunctions* lbareos_core_functions,
+               PluginInformation** plugin_information,
+               PluginFunctions** plugin_functions)
 {
-  bfuncs = lbfuncs; /* set Bareos funct pointers */
-  binfo = lbinfo;
-  *pinfo = &pluginInfo;   /* return pointer to our info */
-  *pfuncs = &pluginFuncs; /* return pointer to our functions */
+  bareos_core_functions =
+      lbareos_core_functions; /* set Bareos funct pointers */
+  bareos_plugin_interface_version = lbareos_plugin_interface_version;
+  *plugin_information = &pluginInfo; /* return pointer to our info */
+  *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
 
   return bRC_OK;
 }
@@ -256,7 +258,7 @@ bRC unloadPlugin() { return bRC_OK; }
  *
  * Create a new instance of the plugin i.e. allocate our private storage
  */
-static bRC newPlugin(bpContext* ctx)
+static bRC newPlugin(PluginContext* ctx)
 {
   HRESULT hr;
   plugin_ctx* p_ctx;
@@ -272,14 +274,14 @@ static bRC newPlugin(bpContext* ctx)
   p_ctx = (plugin_ctx*)malloc(sizeof(plugin_ctx));
   if (!p_ctx) { return bRC_Error; }
   memset(p_ctx, 0, sizeof(plugin_ctx));
-  ctx->pContext = (void*)p_ctx; /* set our context pointer */
+  ctx->plugin_private_context = (void*)p_ctx; /* set our context pointer */
 
   /*
    * Only register the events we are really interested in.
    */
-  bfuncs->registerBareosEvents(ctx, 6, bEventLevel, bEventRestoreCommand,
-                               bEventBackupCommand, bEventPluginCommand,
-                               bEventEndRestoreJob, bEventNewPluginOptions);
+  bareos_core_functions->registerBareosEvents(
+      ctx, 6, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
+      bEventPluginCommand, bEventEndRestoreJob, bEventNewPluginOptions);
 
   return bRC_OK;
 }
@@ -287,9 +289,9 @@ static bRC newPlugin(bpContext* ctx)
 /**
  * Free a plugin instance, i.e. release our private storage
  */
-static bRC freePlugin(bpContext* ctx)
+static bRC freePlugin(PluginContext* ctx)
 {
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { return bRC_Error; }
 
   Dmsg(ctx, debuglevel, "mssqlvdi-fd: entering freePlugin\n");
@@ -349,7 +351,7 @@ static bRC freePlugin(bpContext* ctx)
 /**
  * Return some plugin value (none defined)
  */
-static bRC getPluginValue(bpContext* ctx, pVariable var, void* value)
+static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   return bRC_OK;
 }
@@ -357,7 +359,7 @@ static bRC getPluginValue(bpContext* ctx, pVariable var, void* value)
 /**
  * Set a plugin value (none defined)
  */
-static bRC setPluginValue(bpContext* ctx, pVariable var, void* value)
+static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   return bRC_OK;
 }
@@ -365,10 +367,10 @@ static bRC setPluginValue(bpContext* ctx, pVariable var, void* value)
 /**
  * Handle an event that was generated in Bareos
  */
-static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
+static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 {
   bRC retval;
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if (!p_ctx) { return bRC_Error; }
 
@@ -421,12 +423,12 @@ static bRC handlePluginEvent(bpContext* ctx, bEvent* event, void* value)
 /**
  * Start the backup of a specific file
  */
-static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
+static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
 {
   time_t now;
   PoolMem fname(PM_NAME);
   char dt[MAX_TIME_LENGTH];
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if (!p_ctx) { return bRC_Error; }
 
@@ -486,7 +488,7 @@ static bRC startBackupFile(bpContext* ctx, struct save_pkt* sp)
 /**
  * Done with backup of this file
  */
-static bRC endBackupFile(bpContext* ctx)
+static bRC endBackupFile(PluginContext* ctx)
 {
   /*
    * We would return bRC_More if we wanted startBackupFile to be called again to
@@ -574,12 +576,12 @@ static inline void SetString(char** destination, char* value)
  *
  * mssqlvdi:instance=<instance>:database=<databasename>:
  */
-static bRC parse_plugin_definition(bpContext* ctx, void* value)
+static bRC parse_plugin_definition(PluginContext* ctx, void* value)
 {
   int i;
   bool keep_existing;
   char *plugin_definition, *bp, *argument, *argument_value;
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if (!p_ctx || !value) { return bRC_Error; }
 
@@ -775,7 +777,7 @@ static void CloseVdiDeviceset(plugin_ctx* p_ctx)
 /**
  * Generic COM error reporting function.
  */
-static void comReportError(bpContext* ctx, HRESULT hrErr)
+static void comReportError(PluginContext* ctx, HRESULT hrErr)
 {
   IErrorInfo* pErrorInfo;
   BSTR pSource = NULL;
@@ -835,7 +837,7 @@ static void comReportError(bpContext* ctx, HRESULT hrErr)
 /**
  * Retrieve errors from ADO Connection.
  */
-static bool adoGetErrors(bpContext* ctx,
+static bool adoGetErrors(PluginContext* ctx,
                          _ADOConnection* adoConnection,
                          PoolMem& ado_errorstr)
 {
@@ -913,9 +915,9 @@ bail_out:
 /**
  * Print errors (when available) collected by adoThreadSetError function.
  */
-static bool adoReportError(bpContext* ctx)
+static bool adoReportError(PluginContext* ctx)
 {
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if (p_ctx->ado_errorstr) {
     Jmsg(ctx, M_FATAL, "%s\n", p_ctx->ado_errorstr);
@@ -934,11 +936,11 @@ static bool adoReportError(bpContext* ctx)
  * Retrieve errors from ADO Connection when running the query in a separate
  * thread.
  */
-static void adoThreadSetError(bpContext* ctx, _ADOConnection* adoConnection)
+static void adoThreadSetError(PluginContext* ctx, _ADOConnection* adoConnection)
 {
   int cancel_type;
   PoolMem ado_errorstr(PM_NAME);
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if (p_ctx->ado_errorstr) { return; }
 
@@ -1009,8 +1011,8 @@ static void* adoThread(void* data)
 {
   HRESULT hr;
   adoThreadContext ado_ctx;
-  bpContext* ctx = (bpContext*)data;
-  plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->pContext;
+  PluginContext* ctx = (PluginContext*)data;
+  plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
 
   memset(&ado_ctx, 0, sizeof(ado_ctx));
 
@@ -1078,10 +1080,10 @@ bail_out:
 /**
  * Create a connection string for connecting to the master database.
  */
-static void SetAdoConnectString(bpContext* ctx)
+static void SetAdoConnectString(PluginContext* ctx)
 {
   PoolMem ado_connect_string(PM_NAME);
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
     Mmsg(ado_connect_string,
@@ -1116,9 +1118,9 @@ static void SetAdoConnectString(bpContext* ctx)
  * Generate a valid connect string and the backup command we should execute
  * in the separate database controling thread.
  */
-static inline void PerformAdoBackup(bpContext* ctx)
+static inline void PerformAdoBackup(PluginContext* ctx)
 {
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
   PoolMem ado_connect_string(PM_NAME), ado_query(PM_NAME);
   POOLMEM* vdsname;
 
@@ -1167,11 +1169,11 @@ static inline void PerformAdoBackup(bpContext* ctx)
  * Generate a valid connect string and the restore command we should execute
  * in the separate database controlling thread.
  */
-static inline void perform_aDoRestore(bpContext* ctx)
+static inline void perform_aDoRestore(PluginContext* ctx)
 {
   PoolMem ado_query(PM_NAME), temp(PM_NAME);
   POOLMEM* vdsname;
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   /*
    * If no explicit instance name given use the DEFAULT_INSTANCE name.
@@ -1239,14 +1241,14 @@ static inline void perform_aDoRestore(bpContext* ctx)
 /**
  * Run a query not in a separate thread.
  */
-static inline bool RunAdoQuery(bpContext* ctx, const char* query)
+static inline bool RunAdoQuery(PluginContext* ctx, const char* query)
 {
   bool retval = false;
   HRESULT hr;
   BSTR ado_connect_string = NULL;
   BSTR ado_query = NULL;
   _ADOConnection* adoConnection = NULL;
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   Dmsg(ctx, debuglevel, "RunAdoQuery: ADO Query '%s'\n", query);
 
@@ -1314,10 +1316,10 @@ cleanup:
 /**
  * Automatically recover the database at the end of the whole restore process.
  */
-static inline bool PerformAdoRecover(bpContext* ctx)
+static inline bool PerformAdoRecover(PluginContext* ctx)
 {
   PoolMem recovery_query(PM_NAME);
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   SetAdoConnectString(ctx);
   Mmsg(recovery_query, "RESTORE DATABASE [%s] WITH RECOVERY", p_ctx->database);
@@ -1328,12 +1330,12 @@ static inline bool PerformAdoRecover(bpContext* ctx)
 /**
  * Setup a VDI device for performing a backup or restore operation.
  */
-static inline bool SetupVdiDevice(bpContext* ctx, struct io_pkt* io)
+static inline bool SetupVdiDevice(PluginContext* ctx, struct io_pkt* io)
 {
   int status;
   HRESULT hr = NOERROR;
   GUID vdsId;
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if ((p_ctx->username && !p_ctx->password) ||
       (!p_ctx->username && p_ctx->password)) {
@@ -1497,11 +1499,11 @@ bail_out:
 /**
  * Perform an I/O operation to a file as part of a restore.
  */
-static inline bool PerformFileIo(bpContext* ctx,
+static inline bool PerformFileIo(PluginContext* ctx,
                                  struct io_pkt* io,
                                  DWORD* completionCode)
 {
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   switch (io->func) {
     case IO_OPEN:
@@ -1568,13 +1570,13 @@ bail_out:
 /**
  * Perform an I/O operation to a virtual device as part of a backup or restore.
  */
-static inline bool PerformVdiIo(bpContext* ctx,
+static inline bool PerformVdiIo(PluginContext* ctx,
                                 struct io_pkt* io,
                                 DWORD* completionCode)
 {
   HRESULT hr = NOERROR;
   VDC_Command* cmd;
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   /*
    * See what command is available on the VDIDevice.
@@ -1667,11 +1669,11 @@ bail_out:
 /**
  * End of I/O tear down the VDI and check if everything did go to plan.
  */
-static inline bool TearDownVdiDevice(bpContext* ctx, struct io_pkt* io)
+static inline bool TearDownVdiDevice(PluginContext* ctx, struct io_pkt* io)
 {
   HRESULT hr = NOERROR;
   VDC_Command* cmd;
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   Dmsg(ctx, debuglevel, "mssqlvdi-fd: entering TearDownVdiDevice\n");
 
@@ -1722,10 +1724,10 @@ bail_out:
 /**
  * Bareos is calling us to do the actual I/O
  */
-static bRC pluginIO(bpContext* ctx, struct io_pkt* io)
+static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
 {
   DWORD completionCode = ERROR_BAD_ENVIRONMENT;
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if (!p_ctx) { return bRC_Error; }
 
@@ -1793,10 +1795,10 @@ bail_out:
 /**
  * See if we need to do any postprocessing after the restore.
  */
-static bRC end_restore_job(bpContext* ctx, void* value)
+static bRC end_restore_job(PluginContext* ctx, void* value)
 {
   bRC retval = bRC_OK;
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if (!p_ctx) { return bRC_Error; }
 
@@ -1815,13 +1817,16 @@ static bRC end_restore_job(bpContext* ctx, void* value)
  * Bareos is notifying us that a plugin name string was found,
  * and passing us the plugin command, so we can prepare for a restore.
  */
-static bRC startRestoreFile(bpContext* ctx, const char* cmd) { return bRC_OK; }
+static bRC startRestoreFile(PluginContext* ctx, const char* cmd)
+{
+  return bRC_OK;
+}
 
 /**
  * Bareos is notifying us that the plugin data has terminated,
  * so the restore for this particular file is done.
  */
-static bRC endRestoreFile(bpContext* ctx) { return bRC_OK; }
+static bRC endRestoreFile(PluginContext* ctx) { return bRC_OK; }
 
 /**
  * This is called during restore to create the file (if necessary) We must
@@ -1833,9 +1838,9 @@ static bRC endRestoreFile(bpContext* ctx) { return bRC_OK; }
  *  CF_CREATED  -- created, but no content to extract (typically directories)
  *  CF_CORE     -- let bareos core create the file
  */
-static bRC createFile(bpContext* ctx, struct restore_pkt* rp)
+static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
 {
-  plugin_ctx* p_ctx = (plugin_ctx*)ctx->pContext;
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if (!p_ctx) { return bRC_Error; }
 
@@ -1854,7 +1859,7 @@ static bRC createFile(bpContext* ctx, struct restore_pkt* rp)
  * We will get here if the File is a directory after everything is written in
  * the directory.
  */
-static bRC setFileAttributes(bpContext* ctx, struct restore_pkt* rp)
+static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
 {
   return bRC_OK;
 }
@@ -1862,6 +1867,6 @@ static bRC setFileAttributes(bpContext* ctx, struct restore_pkt* rp)
 /**
  * When using Incremental dump, all previous dumps are necessary
  */
-static bRC checkFile(bpContext* ctx, char* fname) { return bRC_OK; }
+static bRC checkFile(PluginContext* ctx, char* fname) { return bRC_OK; }
 
 } /* namespace filedaemon */

@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,19 +46,19 @@ static alist* dird_plugin_list;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Forward referenced functions */
-static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value);
-static bRC bareosSetValue(bpContext* ctx, bwDirVariable var, void* value);
-static bRC bareosRegisterEvents(bpContext* ctx, int nr_events, ...);
-static bRC bareosUnRegisterEvents(bpContext* ctx, int nr_events, ...);
-static bRC bareosGetInstanceCount(bpContext* ctx, int* ret);
-static bRC bareosJobMsg(bpContext* ctx,
+static bRC bareosGetValue(PluginContext* ctx, brDirVariable var, void* value);
+static bRC bareosSetValue(PluginContext* ctx, bwDirVariable var, void* value);
+static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...);
+static bRC bareosUnRegisterEvents(PluginContext* ctx, int nr_events, ...);
+static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret);
+static bRC bareosJobMsg(PluginContext* ctx,
                         const char* file,
                         int line,
                         int type,
                         utime_t mtime,
                         const char* fmt,
                         ...);
-static bRC bareosDebugMsg(bpContext* ctx,
+static bRC bareosDebugMsg(PluginContext* ctx,
                           const char* file,
                           int line,
                           int level,
@@ -67,14 +67,16 @@ static bRC bareosDebugMsg(bpContext* ctx,
 static bool IsPluginCompatible(Plugin* plugin);
 
 /* BAREOS info */
-static bDirInfo binfo = {sizeof(bDirFuncs), DIR_PLUGIN_INTERFACE_VERSION};
+static PluginApiDefinition bareos_plugin_interface_version = {
+    sizeof(CoreFunctions), DIR_PLUGIN_INTERFACE_VERSION};
 
 /* BAREOS entry points */
-static bDirFuncs bfuncs = {sizeof(bDirFuncs),      DIR_PLUGIN_INTERFACE_VERSION,
-                           bareosRegisterEvents,   bareosUnRegisterEvents,
-                           bareosGetInstanceCount, bareosGetValue,
-                           bareosSetValue,         bareosJobMsg,
-                           bareosDebugMsg};
+static CoreFunctions bareos_core_functions = {
+    sizeof(CoreFunctions),  DIR_PLUGIN_INTERFACE_VERSION,
+    bareosRegisterEvents,   bareosUnRegisterEvents,
+    bareosGetInstanceCount, bareosGetValue,
+    bareosSetValue,         bareosJobMsg,
+    bareosDebugMsg};
 
 /*
  * BAREOS private context
@@ -87,31 +89,31 @@ struct b_plugin_ctx {
   Plugin* plugin; /* pointer to plugin of which this is an instance off */
 };
 
-static inline bool IsEventEnabled(bpContext* ctx, bDirEventType eventType)
+static inline bool IsEventEnabled(PluginContext* ctx, bDirEventType eventType)
 {
   b_plugin_ctx* b_ctx;
   if (!ctx) { return false; }
-  b_ctx = (b_plugin_ctx*)ctx->bContext;
+  b_ctx = (b_plugin_ctx*)ctx->core_private_context;
   if (!b_ctx) { return false; }
   return BitIsSet(eventType, b_ctx->events);
 }
 
-static inline bool IsPluginDisabled(bpContext* ctx)
+static inline bool IsPluginDisabled(PluginContext* ctx)
 {
   b_plugin_ctx* b_ctx;
   if (!ctx) { return true; }
-  b_ctx = (b_plugin_ctx*)ctx->bContext;
+  b_ctx = (b_plugin_ctx*)ctx->core_private_context;
   if (!b_ctx) { return true; }
   return b_ctx->disabled;
 }
 
-static bool IsCtxGood(bpContext* ctx,
+static bool IsCtxGood(PluginContext* ctx,
                       JobControlRecord*& jcr,
                       b_plugin_ctx*& bctx)
 {
   if (!ctx) { return false; }
 
-  bctx = (b_plugin_ctx*)ctx->bContext;
+  bctx = (b_plugin_ctx*)ctx->core_private_context;
   if (!bctx) { return false; }
 
   jcr = bctx->jcr;
@@ -123,7 +125,7 @@ static bool IsCtxGood(bpContext* ctx,
 static inline bool trigger_plugin_event(JobControlRecord* jcr,
                                         bDirEventType eventType,
                                         bDirEvent* event,
-                                        bpContext* ctx,
+                                        PluginContext* ctx,
                                         void* value,
                                         alist* plugin_ctx_list,
                                         int* index,
@@ -228,7 +230,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
    * See if we need to trigger the loaded plugins in reverse order.
    */
   if (reverse) {
-    bpContext* ctx;
+    PluginContext* ctx;
 
     foreach_alist_rindex (i, ctx, plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
@@ -237,7 +239,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       }
     }
   } else {
-    bpContext* ctx;
+    PluginContext* ctx;
 
     foreach_alist_index (i, ctx, plugin_ctx_list) {
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
@@ -261,11 +263,11 @@ bail_out:
  */
 void DumpDirPlugin(Plugin* plugin, FILE* fp)
 {
-  genpInfo* info;
+  PluginInformation* info;
 
   if (!plugin) { return; }
 
-  info = (genpInfo*)plugin->pinfo;
+  info = (PluginInformation*)plugin->plugin_information;
   fprintf(fp, "\tversion=%d\n", info->version);
   fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
   fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));
@@ -293,7 +295,8 @@ void LoadDirPlugins(const char* plugin_dir, alist* plugin_names)
   }
 
   dird_plugin_list = new alist(10, not_owned_by_alist);
-  if (!LoadPlugins((void*)&binfo, (void*)&bfuncs, dird_plugin_list, plugin_dir,
+  if (!LoadPlugins((void*)&bareos_plugin_interface_version,
+                   (void*)&bareos_core_functions, dird_plugin_list, plugin_dir,
                    plugin_names, plugin_type, IsPluginCompatible)) {
     /* Either none found, or some error */
     if (dird_plugin_list->size() == 0) {
@@ -331,7 +334,7 @@ int ListDirPlugins(PoolMem& msg) { return ListPlugins(dird_plugin_list, msg); }
  */
 static bool IsPluginCompatible(Plugin* plugin)
 {
-  genpInfo* info = (genpInfo*)plugin->pinfo;
+  PluginInformation* info = (PluginInformation*)plugin->plugin_information;
 
   Dmsg0(50, "IsPluginCompatible called\n");
   if (debug_level >= 50) { DumpDirPlugin(plugin, stdin); }
@@ -361,10 +364,10 @@ static bool IsPluginCompatible(Plugin* plugin)
           plugin->file, info->plugin_license);
     return false;
   }
-  if (info->size != sizeof(genpInfo)) {
+  if (info->size != sizeof(PluginInformation)) {
     Jmsg(NULL, M_ERROR, 0,
          _("Plugin size incorrect. Plugin=%s wanted=%d got=%d\n"), plugin->file,
-         sizeof(genpInfo), info->size);
+         sizeof(PluginInformation), info->size);
     return false;
   }
 
@@ -374,11 +377,11 @@ static bool IsPluginCompatible(Plugin* plugin)
 /**
  * Instantiate a new plugin instance.
  */
-static inline bpContext* instantiate_plugin(JobControlRecord* jcr,
-                                            Plugin* plugin,
-                                            uint32_t instance)
+static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
+                                                Plugin* plugin,
+                                                uint32_t instance)
 {
-  bpContext* ctx;
+  PluginContext* ctx;
   b_plugin_ctx* b_ctx;
 
   b_ctx = (b_plugin_ctx*)malloc(sizeof(b_plugin_ctx));
@@ -389,11 +392,11 @@ static inline bpContext* instantiate_plugin(JobControlRecord* jcr,
   Dmsg2(debuglevel, "Instantiate dir-plugin_ctx_list=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
 
-  ctx = (bpContext*)malloc(sizeof(bpContext));
+  ctx = (PluginContext*)malloc(sizeof(PluginContext));
   ctx->instance = instance;
   ctx->plugin = plugin;
-  ctx->bContext = (void*)b_ctx;
-  ctx->pContext = NULL;
+  ctx->core_private_context = (void*)b_ctx;
+  ctx->plugin_private_context = NULL;
 
   jcr->plugin_ctx_list->append(ctx);
 
@@ -410,7 +413,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
 {
   int i, j, len;
   Plugin* plugin;
-  bpContext* ctx = nullptr;
+  PluginContext* ctx = nullptr;
   uint32_t instance;
   bDirEvent event;
   bDirEventType eventType;
@@ -536,7 +539,7 @@ void NewPlugins(JobControlRecord* jcr)
  */
 void FreePlugins(JobControlRecord* jcr)
 {
-  bpContext* ctx = nullptr;
+  PluginContext* ctx = nullptr;
 
   if (!dird_plugin_list || !jcr->plugin_ctx_list) { return; }
 
@@ -547,7 +550,7 @@ void FreePlugins(JobControlRecord* jcr)
      * Free the plugin instance
      */
     DirplugFunc(ctx->plugin)->freePlugin(ctx);
-    free(ctx->bContext); /* Free BAREOS private context */
+    free(ctx->core_private_context); /* Free BAREOS private context */
   }
 
   delete jcr->plugin_ctx_list;
@@ -559,7 +562,7 @@ void FreePlugins(JobControlRecord* jcr)
  * Callbacks from the plugin
  *
  */
-static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
+static bRC bareosGetValue(PluginContext* ctx, brDirVariable var, void* value)
 {
   JobControlRecord* jcr = NULL;
   bRC retval = bRC_OK;
@@ -574,7 +577,7 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
       break;
     default:
       if (!ctx) { return bRC_Error; }
-      jcr = ((b_plugin_ctx*)ctx->bContext)->jcr;
+      jcr = ((b_plugin_ctx*)ctx->core_private_context)->jcr;
       if (!jcr) { return bRC_Error; }
       break;
   }
@@ -613,8 +616,7 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
       case bDirVarNumVols: {
         PoolDbRecord pr;
 
-        bstrncpy(pr.Name, jcr->impl->res.pool->resource_name_,
-                 sizeof(pr.Name));
+        bstrncpy(pr.Name, jcr->impl->res.pool->resource_name_, sizeof(pr.Name));
         if (!jcr->db->GetPoolRecord(jcr, &pr)) { retval = bRC_Error; }
         *((int*)value) = pr.NumVols;
         Dmsg1(debuglevel, "dir-plugin: return bDirVarNumVols=%d\n", pr.NumVols);
@@ -745,13 +747,13 @@ static bRC bareosGetValue(bpContext* ctx, brDirVariable var, void* value)
   return retval;
 }
 
-static bRC bareosSetValue(bpContext* ctx, bwDirVariable var, void* value)
+static bRC bareosSetValue(PluginContext* ctx, bwDirVariable var, void* value)
 {
   JobControlRecord* jcr;
 
   if (!value || !ctx) { return bRC_Error; }
 
-  jcr = ((b_plugin_ctx*)ctx->bContext)->jcr;
+  jcr = ((b_plugin_ctx*)ctx->core_private_context)->jcr;
   if (!jcr) { return bRC_Error; }
 
   Dmsg1(debuglevel, "dir-plugin: bareosSetValue var=%d\n", var);
@@ -772,7 +774,7 @@ static bRC bareosSetValue(bpContext* ctx, bwDirVariable var, void* value)
   return bRC_OK;
 }
 
-static bRC bareosRegisterEvents(bpContext* ctx, int nr_events, ...)
+static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...)
 {
   int i;
   va_list args;
@@ -780,7 +782,7 @@ static bRC bareosRegisterEvents(bpContext* ctx, int nr_events, ...)
   b_plugin_ctx* b_ctx;
 
   if (!ctx) { return bRC_Error; }
-  b_ctx = (b_plugin_ctx*)ctx->bContext;
+  b_ctx = (b_plugin_ctx*)ctx->core_private_context;
   va_start(args, nr_events);
   for (i = 0; i < nr_events; i++) {
     event = va_arg(args, uint32_t);
@@ -792,7 +794,7 @@ static bRC bareosRegisterEvents(bpContext* ctx, int nr_events, ...)
   return bRC_OK;
 }
 
-static bRC bareosUnRegisterEvents(bpContext* ctx, int nr_events, ...)
+static bRC bareosUnRegisterEvents(PluginContext* ctx, int nr_events, ...)
 {
   int i;
   va_list args;
@@ -800,7 +802,7 @@ static bRC bareosUnRegisterEvents(bpContext* ctx, int nr_events, ...)
   b_plugin_ctx* b_ctx;
 
   if (!ctx) { return bRC_Error; }
-  b_ctx = (b_plugin_ctx*)ctx->bContext;
+  b_ctx = (b_plugin_ctx*)ctx->core_private_context;
   va_start(args, nr_events);
   for (i = 0; i < nr_events; i++) {
     event = va_arg(args, uint32_t);
@@ -812,11 +814,11 @@ static bRC bareosUnRegisterEvents(bpContext* ctx, int nr_events, ...)
   return bRC_OK;
 }
 
-static bRC bareosGetInstanceCount(bpContext* ctx, int* ret)
+static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 {
   int cnt;
   JobControlRecord *jcr, *njcr;
-  bpContext* nctx;
+  PluginContext* nctx;
   b_plugin_ctx* bctx;
   bRC retval = bRC_Error;
 
@@ -843,7 +845,7 @@ bail_out:
   return retval;
 }
 
-static bRC bareosJobMsg(bpContext* ctx,
+static bRC bareosJobMsg(PluginContext* ctx,
                         const char* file,
                         int line,
                         int type,
@@ -856,7 +858,7 @@ static bRC bareosJobMsg(bpContext* ctx,
   PoolMem buffer(PM_MESSAGE);
 
   if (ctx) {
-    jcr = ((b_plugin_ctx*)ctx->bContext)->jcr;
+    jcr = ((b_plugin_ctx*)ctx->core_private_context)->jcr;
   } else {
     jcr = NULL;
   }
@@ -869,7 +871,7 @@ static bRC bareosJobMsg(bpContext* ctx,
   return bRC_OK;
 }
 
-static bRC bareosDebugMsg(bpContext* ctx,
+static bRC bareosDebugMsg(PluginContext* ctx,
                           const char* file,
                           int line,
                           int level,

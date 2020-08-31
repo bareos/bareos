@@ -68,7 +68,7 @@ class BareosRegex {
   /* private */
   POOLMEM* expr = nullptr;       /**< search epression */
   POOLMEM* subst = nullptr;      /**< substitution */
-  regex_t preg{};                /**< regex_t result of regcomp() */
+  regex_t preg{0};               /**< regex_t result of regcomp() */
   regmatch_t regs[BREG_NREGS]{}; /**< contains match */
   char* eor = nullptr;           /**< end of regexp in expr */
 

@@ -37,15 +37,13 @@ if(HAVE_WIN32)
     ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}
   )
   add_definitions(-DMS_WIN${WINDOWS_BITS})
-else()
-  include_directories(/usr/include/python2.7)
 endif()
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-# set(DLLIBS dl)
+add_subdirectory(python)
 
-add_library(bpipe-fd MODULE bpipe-fd.cc)
+add_library(bpipe-fd MODULE bpipe/bpipe-fd.cc)
 set_target_properties(bpipe-fd PROPERTIES PREFIX "")
 install(
   TARGETS bpipe-fd
@@ -72,7 +70,7 @@ if(HAVE_WIN32)
 endif()
 
 if(${HAVE_CEPHFS})
-  add_library(cephfs-fd MODULE cephfs-fd.cc)
+  add_library(cephfs-fd MODULE cephfs/cephfs-fd.cc)
   set_target_properties(cephfs-fd PROPERTIES PREFIX "")
   install(
     TARGETS cephfs-fd
@@ -82,7 +80,7 @@ if(${HAVE_CEPHFS})
 endif()
 
 if(${HAVE_CEPH_RADOS})
-  add_library(rados-fd MODULE rados-fd.cc)
+  add_library(rados-fd MODULE rados/rados-fd.cc)
   set_target_properties(rados-fd PROPERTIES PREFIX "")
   install(
     TARGETS rados-fd
@@ -92,23 +90,13 @@ if(${HAVE_CEPH_RADOS})
 endif()
 
 if(NOT HAVE_WIN32)
-  add_library(example-plugin-fd MODULE example-plugin-fd.cc)
+  add_library(example-plugin-fd MODULE example/example-plugin-fd.cc)
   set_target_properties(example-plugin-fd PROPERTIES PREFIX "")
 endif()
 
-if(HAVE_PYTHON)
-  add_library(python-fd MODULE python-fd.cc)
-  set_target_properties(python-fd PROPERTIES PREFIX "")
-  install(
-    TARGETS python-fd
-    DESTINATION ${plugindir}
-    COMPONENT filedaemon
-  )
-  target_link_libraries(python-fd ${PYTHON_LIBRARIES} bareos)
-endif()
 
 if(${HAVE_GLUSTERFS})
-  add_library(gfapi-fd MODULE gfapi-fd.cc)
+  add_library(gfapi-fd MODULE gfapi/gfapi-fd.cc)
   set_target_properties(gfapi-fd PROPERTIES PREFIX "")
   install(
     TARGETS gfapi-fd
@@ -120,7 +108,7 @@ if(${HAVE_GLUSTERFS})
 endif()
 
 if(${HAVE_TEST_PLUGIN})
-  add_library(test-plugin-fd MODULE test-plugin-fd.cc)
+  add_library(test-plugin-fd MODULE test-plugin/test-plugin-fd.cc)
   # do not prefix with "lib"
   set_target_properties(test-plugin-fd PROPERTIES PREFIX "")
   install(
@@ -129,32 +117,3 @@ if(${HAVE_TEST_PLUGIN})
     COMPONENT filedaemon
   )
 endif()
-
-set(PYFILES
-    bareos-fd.py.template
-    bareos-fd-local-fileset.py
-    bareos-fd-mock-test.py
-    BareosFdPluginBaseclass.py
-    BareosFdPluginLocalFileset.py
-    BareosFdWrapper.py
-    bareos_fd_consts.py
-    bareos-fd-ldap.py
-    BareosFdPluginLDAP.py
-    bareos-fd-ovirt.py
-    BareosFdPluginOvirt.py
-    bareos-fd-percona-xtrabackup.py
-    BareosFdPluginPerconaXtraBackup.py
-    BareosFdPluginPostgres.py
-    bareos-fd-postgres.py
-    BareosFdPluginVMware.py
-    bareos-fd-vmware.py
-)
-if(${HAVE_VIXDISKLIB})
-  list(APPEND PYFILES BareosFdPluginVMware.py bareos-fd-vmware.py)
-endif()
-
-install(
-  FILES ${PYFILES}
-  DESTINATION ${plugindir}
-  COMPONENT filedaemon
-)

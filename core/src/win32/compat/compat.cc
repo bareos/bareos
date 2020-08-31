@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1322,7 +1322,7 @@ static int GetWindowsFileInfo(const char* filename,
   WIN32_FIND_DATAW info_w;  // window's file info
   WIN32_FIND_DATAA info_a;  // window's file info
 #if (_WIN32_WINNT >= 0x0600)
-  FILE_BASIC_INFO binfo;  // window's basic file info
+  FILE_BASIC_INFO bareos_plugin_interface_version;  // window's basic file info
   HANDLE h = INVALID_HANDLE_VALUE;
 #endif
   HANDLE fh = INVALID_HANDLE_VALUE;
@@ -1401,15 +1401,20 @@ static int GetWindowsFileInfo(const char* filename,
      */
     if (h != INVALID_HANDLE_VALUE) {
       if (p_GetFileInformationByHandleEx) {
-        if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &binfo,
-                                           sizeof(binfo))) {
-          pftLastAccessTime = (FILETIME*)&binfo.LastAccessTime;
-          pftLastWriteTime = (FILETIME*)&binfo.LastWriteTime;
-          if (CvtFtimeToUtime(binfo.CreationTime) >
-              CvtFtimeToUtime(binfo.ChangeTime)) {
-            pftCreationTime = (FILETIME*)&binfo.CreationTime;
+        if (p_GetFileInformationByHandleEx(
+                h, FileBasicInfo, &bareos_plugin_interface_version,
+                sizeof(bareos_plugin_interface_version))) {
+          pftLastAccessTime =
+              (FILETIME*)&bareos_plugin_interface_version.LastAccessTime;
+          pftLastWriteTime =
+              (FILETIME*)&bareos_plugin_interface_version.LastWriteTime;
+          if (CvtFtimeToUtime(bareos_plugin_interface_version.CreationTime) >
+              CvtFtimeToUtime(bareos_plugin_interface_version.ChangeTime)) {
+            pftCreationTime =
+                (FILETIME*)&bareos_plugin_interface_version.CreationTime;
           } else {
-            pftCreationTime = (FILETIME*)&binfo.ChangeTime;
+            pftCreationTime =
+                (FILETIME*)&bareos_plugin_interface_version.ChangeTime;
           }
           use_fallback_data = false;
         }
@@ -1630,17 +1635,23 @@ int fstat(intptr_t fd, struct stat* sb)
 
 #if (_WIN32_WINNT >= 0x0600)
   if (p_GetFileInformationByHandleEx) {
-    FILE_BASIC_INFO binfo;
+    FILE_BASIC_INFO bareos_plugin_interface_version;
 
-    if (p_GetFileInformationByHandleEx((HANDLE)_get_osfhandle(fd),
-                                       FileBasicInfo, &binfo, sizeof(binfo))) {
-      sb->st_atime = CvtFtimeToUtime(binfo.LastAccessTime);
-      sb->st_mtime = CvtFtimeToUtime(binfo.LastWriteTime);
-      if (CvtFtimeToUtime(binfo.CreationTime) >
-          CvtFtimeToUtime(binfo.ChangeTime)) {
-        sb->st_ctime = CvtFtimeToUtime(binfo.CreationTime);
+    if (p_GetFileInformationByHandleEx(
+            (HANDLE)_get_osfhandle(fd), FileBasicInfo,
+            &bareos_plugin_interface_version,
+            sizeof(bareos_plugin_interface_version))) {
+      sb->st_atime =
+          CvtFtimeToUtime(bareos_plugin_interface_version.LastAccessTime);
+      sb->st_mtime =
+          CvtFtimeToUtime(bareos_plugin_interface_version.LastWriteTime);
+      if (CvtFtimeToUtime(bareos_plugin_interface_version.CreationTime) >
+          CvtFtimeToUtime(bareos_plugin_interface_version.ChangeTime)) {
+        sb->st_ctime =
+            CvtFtimeToUtime(bareos_plugin_interface_version.CreationTime);
       } else {
-        sb->st_ctime = CvtFtimeToUtime(binfo.ChangeTime);
+        sb->st_ctime =
+            CvtFtimeToUtime(bareos_plugin_interface_version.ChangeTime);
       }
       use_fallback_data = false;
     }
@@ -1841,17 +1852,22 @@ int stat(const char* filename, struct stat* sb)
       }
 
       if (h != INVALID_HANDLE_VALUE) {
-        FILE_BASIC_INFO binfo;
+        FILE_BASIC_INFO bareos_plugin_interface_version;
 
-        if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &binfo,
-                                           sizeof(binfo))) {
-          sb->st_atime = CvtFtimeToUtime(binfo.LastAccessTime);
-          sb->st_mtime = CvtFtimeToUtime(binfo.LastWriteTime);
-          if (CvtFtimeToUtime(binfo.CreationTime) >
-              CvtFtimeToUtime(binfo.ChangeTime)) {
-            sb->st_ctime = CvtFtimeToUtime(binfo.CreationTime);
+        if (p_GetFileInformationByHandleEx(
+                h, FileBasicInfo, &bareos_plugin_interface_version,
+                sizeof(bareos_plugin_interface_version))) {
+          sb->st_atime =
+              CvtFtimeToUtime(bareos_plugin_interface_version.LastAccessTime);
+          sb->st_mtime =
+              CvtFtimeToUtime(bareos_plugin_interface_version.LastWriteTime);
+          if (CvtFtimeToUtime(bareos_plugin_interface_version.CreationTime) >
+              CvtFtimeToUtime(bareos_plugin_interface_version.ChangeTime)) {
+            sb->st_ctime =
+                CvtFtimeToUtime(bareos_plugin_interface_version.CreationTime);
           } else {
-            sb->st_ctime = CvtFtimeToUtime(binfo.ChangeTime);
+            sb->st_ctime =
+                CvtFtimeToUtime(bareos_plugin_interface_version.ChangeTime);
           }
           use_fallback_data = false;
         }

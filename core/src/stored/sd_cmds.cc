@@ -2,7 +2,7 @@
    BAREOS - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -277,7 +277,7 @@ bool DoListenRun(JobControlRecord* jcr)
   jcr->setJobStatus(JS_Terminated);
 
 cleanup:
-  GeneratePluginEvent(jcr, bsdEventJobEnd);
+  GeneratePluginEvent(jcr, bSdEventJobEnd);
 
   dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,
              edit_uint64(jcr->JobBytes, ec1), jcr->JobErrors);

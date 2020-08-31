@@ -65,7 +65,7 @@ macro(find_installed_binary_and_set_BINARY_NAME_TO_TEST_variable_for
 
 endmacro()
 
-function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
+function(configurefilestosystemtest srcbasedir dirname globexpression
          configure_option srcdirname
 )
   if(srcdirname STREQUAL "")
@@ -82,37 +82,59 @@ function(ConfigureFilesToSystemtest srcbasedir dirname globexpression
     string(REGEX REPLACE ".in$" "" TARGET_FILE ${TARGET_FILE}) # do not mess
                                                                # with .ini files
     string(REPLACE "${srcbasedir}/${srcdirname}" "" TARGET_FILE ${TARGET_FILE})
-    # MESSAGE(STATUS "configuring  ${TARGET_FILE}" )
-    configure_file(
-      ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
-      ${configure_option}
-    )
+    get_filename_component(DIR_NAME ${TARGET_FILE} DIRECTORY)
+    if(DIR_NAME MATCHES "python-modules$")
+      if(NOT EXISTS ${PROJECT_BINARY_DIR}/${dirname}/${DIR_NAME})
+        file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${dirname}/${DIR_NAME})
+      endif()
+      # message( STATUS "symlinking ${CURRENT_FILE}
+      # ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}" )
+      create_symlink(
+        ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
+      )
+    else()
+      configure_file(
+        ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
+        ${configure_option}
+      )
+    endif()
   endforeach()
 endfunction()
 
-# generic function to probe for a python module
-function(check_pymodule_available module)
-  if(NOT PYTHON_EXECUTABLE)
-    message(FATAL_ERROR "PYTHON_EXECUTABLE ist not set")
+# generic function to probe for a python module for the given python version (2
+# or 3)
+function(check_pymodule_available python_version module)
+  if(NOT python_version)
+    message(FATAL_ERROR "python_version ist not set")
   endif()
+  if(${python_version} EQUAL 2)
+    set(python_exe ${Python2_EXECUTABLE})
+  elseif(${python_version} EQUAL 3)
+    set(python_exe ${Python3_EXECUTABLE})
+  else()
+    message(FATAL_ERROR "unsupported python_version ${python_version}")
+  endif()
+  # message(STATUS "running  ${python_exe} -c import ${module}")
   execute_process(
-    COMMAND "${PYTHON_EXECUTABLE}" "-c" "import ${module}"
+    COMMAND "${python_exe}" "-c" "import ${module}"
     RESULT_VARIABLE ${module}_status
     ERROR_QUIET
   )
   string(TOUPPER ${module} module_uppercase)
   if(${module}_status EQUAL 0)
-    set("PYMODULE_${module_uppercase}_FOUND"
+    set("PYMODULE_${python_version}_${module_uppercase}_FOUND"
         TRUE
         PARENT_SCOPE
     )
-    message(STATUS "python module ${module} found")
+    message(STATUS "python module pyversion ${python_version} ${module} found")
   else()
-    set("PYMODULE_${module_uppercase}_FOUND"
+    set("PYMODULE_${python_version}_${module_uppercase}_FOUND"
         FALSE
         PARENT_SCOPE
     )
-    message(STATUS "python module ${module} NOT found")
+    message(
+      STATUS "python module pyversion ${python_version} ${module} NOT found"
+    )
   endif()
 endfunction()
 
@@ -125,128 +147,6 @@ macro(CheckForEnabledAndDisabledListEntry TEST_NAME_TO_CHECK)
         "The test name: ${TEST_NAME} is listed ambiguously in SYSTEM_TESTS and SYSTEM_TESTS_DISABLED at the same time"
     )
   endif()
-endmacro()
-
-macro(handle_python_plugin_modules test_name)
-  set(PYMODULES_TO_LINK_TO_SRC)
-
-  string(REGEX MATCH ^dbcopy.* starts_with_dbcopy ${test_name})
-  string(REGEX MATCH ^pyplug-fd.* starts_with_pyplug-fd ${test_name})
-  if(starts_with_pyplug-fd OR starts_with_dbcopy)
-    list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdWrapper.py
-         filed/BareosFdPluginBaseclass.py filed/bareos_fd_consts.py
-         filed/bareos-fd-mock-test.py
-    )
-  endif()
-
-  string(REGEX MATCH ^pyplug-sd.* starts_with_pyplug-sd ${test_name})
-  if(starts_with_pyplug-sd)
-    list(APPEND SD_PYMODULES_TO_LINK_TO_SRC bareos_sd_consts.py
-         bareos-sd-class-plugin.py BareosSdPluginBaseclass.py
-         BareosSdWrapper.py
-    )
-  endif()
-
-  string(REGEX MATCH ^pyplug-dir.* starts_with_pyplug-dir ${test_name})
-  if(starts_with_pyplug-dir)
-    list(APPEND DIR_PYMODULES_TO_LINK_TO_SRC bareos_dir_consts.py
-         BareosDirPluginBaseclass.py bareos-dir-class-plugin.py
-         BareosDirWrapper.py
-    )
-  endif()
-
-  if(${test_name} STREQUAL pyplug-dir)
-    list(APPEND DIR_PYMODULES_TO_LINK_TO_SRC)
-  endif()
-
-  if(${test_name} STREQUAL pyplug-fd-percona-xtrabackup)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC BareosFdPluginPerconaXtraBackup.py
-         bareos-fd-percona-xtrabackup.py
-    )
-  endif()
-
-  if(${test_name} STREQUAL pyplug-fd-ovirt)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC BareosFdPluginOvirt.py
-         bareos-fd-ovirt.py
-    )
-  endif()
-
-  if(${test_name} STREQUAL pyplug-fd-local-fileset)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-local-fileset.py
-         BareosFdPluginLocalFileset.py
-    )
-  endif()
-
-  if(${test_name} STREQUAL pyplug-fd-local-fileset-restoreobject)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-local-fileset.py
-         BareosFdPluginLocalFileset.py
-    )
-  endif()
-
-  if(${test_name} STREQUAL pyplug-fd-postgres)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-postgres.py
-         BareosFdPluginLocalFileset.py BareosFdPluginPostgres.py
-         BareosFdPluginBaseclass.py
-    )
-
-  endif()
-  if(${test_name} STREQUAL pyplug-fd-vmware)
-    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-vmware.py
-         BareosFdPluginVMware.py
-    )
-  endif()
-
-  # still missing: filed/BareosFdPluginLDAP.py filed/bareos-fd-ldap.py
-
-  if(NOT EXISTS ${python_plugin_module_src_test_dir})
-    file(MAKE_DIRECTORY ${python_plugin_module_src_test_dir})
-  endif()
-
-  foreach(PYMODULE_SOURCEPATH ${PYMODULES_TO_LINK_TO_SRC})
-    get_filename_component(PYMODULE_NAME ${PYMODULE_SOURCEPATH} NAME)
-    execute_process(
-      COMMAND
-        ${CMAKE_COMMAND} -E create_symlink
-        ${PROJECT_SOURCE_DIR}/../core/src/plugins/${PYMODULE_SOURCEPATH}
-        ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
-    )
-  endforeach()
-
-  foreach(PYMODULE ${DIR_PYMODULES_TO_LINK_TO_SRC})
-    get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
-    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/${PYMODULE})
-    else()
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/dird/${PYMODULE})
-    endif()
-    create_symlink(
-      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
-    )
-  endforeach()
-
-  foreach(PYMODULE ${FD_PYMODULES_TO_LINK_TO_SRC})
-    get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
-    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/${PYMODULE})
-    else()
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/filed/${PYMODULE})
-    endif()
-    create_symlink(
-      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
-    )
-  endforeach()
-
-  foreach(PYMODULE ${SD_PYMODULES_TO_LINK_TO_SRC})
-    get_filename_component(PYMODULE_NAME ${PYMODULE} NAME)
-    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/${PYMODULE})
-    else()
-      set(ORIGINAL_FILE ${python_plugin_module_src_dir}/stored/${PYMODULE})
-    endif()
-    create_symlink(
-      ${ORIGINAL_FILE} ${python_plugin_module_src_test_dir}/${PYMODULE_NAME}
-    )
-  endforeach()
 
 endmacro()
 
@@ -373,6 +273,7 @@ macro(prepare_test)
   math(EXPR sd_port "${BASEPORT} + 2")
   math(EXPR sd2_port "${BASEPORT} + 3")
   math(EXPR php_port "${BASEPORT} + 4")
+  math(EXPR test_db_port "${BASEPORT} + 5")
 
   # skip for tests without etc/bareos ("catalog" test)
   if(EXISTS ${current_test_source_directory}/etc/bareos)
@@ -453,6 +354,10 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
                                              /usr/lib64/bareos/plugins
   )
   find_program(
+    PYTHON_PLUGIN_TO_TEST python3-fd.so PATHS /usr/lib/bareos/plugins
+                                              /usr/lib64/bareos/plugins
+  )
+  find_program(
     CREATE_BAREOS_DATABASE_TO_TEST create_bareos_database
     PATHS /usr/lib/bareos/scripts
   )
@@ -488,18 +393,13 @@ else() # run systemtests on source and compiled files
 
   get_target_property(FD_PLUGINS_DIR_TO_TEST bpipe-fd BINARY_DIR)
   get_target_property(SD_PLUGINS_DIR_TO_TEST autoxflate-sd BINARY_DIR)
-
   if(TARGET bareossd-droplet)
     get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-droplet BINARY_DIR)
   endif()
   if(TARGET bareossd-gfapi)
     get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-gfapi BINARY_DIR)
   endif()
-  if(TARGET python-dir)
-    get_target_property(DIR_PLUGINS_DIR_TO_TEST python-dir BINARY_DIR)
-  else()
-    set(DIR_PLUGINS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/src/plugins/dird)
-  endif()
+  set(DIR_PLUGINS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/src/plugins/dird)
 
   get_target_property(BACKEND_DIR_TO_TEST bareoscats BINARY_DIR)
   set(SCRIPTS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/scripts)
@@ -557,13 +457,13 @@ set(python_plugin_module_src_test_dir_relative "python-modules")
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
 
-if(TARGET python-dir)
+if(TARGET python-dir OR TARGET python3-dir)
   set(dir_plugin_binary_path ${DIR_PLUGINS_DIR_TO_TEST})
 endif()
-if(TARGET python-sd)
+if(TARGET python-sd OR TARGET python3-sd)
   set(sd_plugin_binary_path ${SD_PLUGINS_DIR_TO_TEST})
 endif()
-if(TARGET python-fd)
+if(TARGET python-fd OR TARGET python3-fd)
   set(fd_plugin_binary_path ${FD_PLUGINS_DIR_TO_TEST})
 endif()
 
@@ -698,8 +598,7 @@ if(TARGET droplet)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED droplet-s3)
 endif()
-
-if(glusterfs_uri)
+if(SD_GFAPI_DIR_TO_TEST AND glusterfs_uri)
   list(APPEND SYSTEM_TESTS glusterfs-backend)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED glusterfs-backend)
@@ -718,6 +617,7 @@ endif()
 if(EXISTS /run/.containerenv)
   message(STATUS "detected container environment, disabling python-bareos")
   set(in_container TRUE)
+  list(APPEND SYSTEM_TESTS "dbcopy-mysql-postgresql-test")
 else()
   set(in_container FALSE)
 endif()
@@ -746,66 +646,158 @@ else()
 endif()
 
 if(TARGET python-fd)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-local-fileset")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-local-fileset")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-local-fileset")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-local-fileset")
+endif()
+
+if(TARGET python3-fd)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-local-fileset")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-local-fileset")
+endif()
+
+check_pymodule_available(2 libcloud)
+check_pymodule_available(3 libcloud)
+if(TARGET python-fd)
+  if(S3CMD
+     AND MINIO
+     AND PYMODULE_2_LIBCLOUD_FOUND
+  )
+    list(APPEND SYSTEM_TESTS "py2plug-fd-libcloud")
+  else()
+    message(
+      "S3CMD, MINIO or LIBCLOUD MODULE not found, disabling py2plug-fd-libcloud"
+    )
+    list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-libcloud")
+  endif()
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-libcloud")
+endif()
+
+if(TARGET python3-fd)
+  if(S3CMD
+     AND MINIO
+     AND PYMODULE_3_LIBCLOUD_FOUND
+  )
+    list(APPEND SYSTEM_TESTS "py3plug-fd-libcloud")
+  else()
+    message(
+      "S3CMD, MINIO or LIBCLOUD MODULE not found, disabling py3plug-fd-libcloud"
+    )
+    list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-libcloud")
+  endif()
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-libcloud")
 endif()
 
 if(TARGET python-fd)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-local-fileset-restoreobject")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-local-fileset-restoreobject")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-local-fileset-restoreobject")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-local-fileset-restoreobject")
 endif()
 
-message("checking for requirements of pyplug-fd-postgres:")
-check_pymodule_available("psycopg2")
-check_pymodule_available("dateutil")
-
-if(TARGET python-fd
-   AND PYMODULE_PSYCOPG2_FOUND
-   AND PYMODULE_DATEUTIL_FOUND
-)
-  message("OK, enabling pyplug-fd-postgres:")
-  list(APPEND SYSTEM_TESTS "pyplug-fd-postgres")
+if(TARGET python3-fd)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-local-fileset-restoreobject")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-postgres")
-  message("NOT OK, disabling pyplug-fd-postgres:")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-local-fileset-restoreobject")
+endif()
+
+message("checking for requirements of py2plug-fd-postgres:")
+check_pymodule_available(2 psycopg2)
+check_pymodule_available(2 dateutil)
+if(TARGET python-fd
+   AND PYMODULE_2_PSYCOPG2_FOUND
+   AND PYMODULE_2_DATEUTIL_FOUND
+)
+  message("OK, enabling py2plug-fd-postgres:")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-postgres")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-postgres")
+  message("NOT OK, disabling py2plug-fd-postgres:")
+endif()
+
+message("checking for requirements of py3plug-fd-postgres:")
+check_pymodule_available(3 psycopg2)
+check_pymodule_available(3 dateutil)
+if(TARGET python-fd
+   AND PYMODULE_3_PSYCOPG2_FOUND
+   AND PYMODULE_3_DATEUTIL_FOUND
+)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-postgres")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-postgres")
 endif()
 
 if(TARGET python-fd AND ovirt_server)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-ovirt")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-ovirt")
 else()
-  message(STATUS "disabling pyplug-fd-ovirt-test as ovirt_server is not set")
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-ovirt")
+  message(STATUS "disabling py2plug-fd-ovirt-test as ovirt_server is not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-ovirt")
+endif()
+
+if(TARGET python3-fd AND ovirt_server)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-ovirt")
+else()
+  message(STATUS "disabling py3plug-fd-ovirt as ovirt_server is not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-ovirt")
 endif()
 
 if(TARGET python-fd AND enable_vmware_test)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-vmware")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-vmware")
 else()
-  message(STATUS "disabling pyplug-fd-vmware as vmware_server was not set")
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-vmware")
+  message(STATUS "disabling py2plug-fd-vmware as vmware_server was not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-vmware")
+endif()
+
+if(TARGET python3-fd AND enable_vmware_test)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-vmware")
+else()
+  message(STATUS "disabling py3plug-fd-vmware as vmware_server was not set")
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-vmware")
 endif()
 
 if(TARGET python-fd AND XTRABACKUP)
-  list(APPEND SYSTEM_TESTS "pyplug-fd-percona-xtrabackup")
+  list(APPEND SYSTEM_TESTS "py2plug-fd-percona-xtrabackup")
 else()
   message(
     STATUS
-      "disabling pyplug-fd-percona-xtrabackup-test as XTRABACKUP was not found"
+      "disabling py2plug-fd-percona-xtrabackup-test as XTRABACKUP was not found"
   )
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-fd-percona-xtrabackup")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-percona-xtrabackup")
+endif()
+
+if(TARGET python3-fd AND XTRABACKUP)
+  list(APPEND SYSTEM_TESTS "py3plug-fd-percona-xtrabackup")
+else()
+  message(
+    STATUS "disabling py3plug-fd-percona-xtrabackup as XTRABACKUP was not found"
+  )
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-percona-xtrabackup")
 endif()
 
 if(TARGET python-dir)
-  list(APPEND SYSTEM_TESTS "pyplug-dir")
+  list(APPEND SYSTEM_TESTS "py2plug-dir")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-dir")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-dir")
+endif()
+
+if(TARGET python3-dir)
+  list(APPEND SYSTEM_TESTS "py3plug-dir")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-dir")
 endif()
 
 if(TARGET python-sd)
-  list(APPEND SYSTEM_TESTS "pyplug-sd")
+  list(APPEND SYSTEM_TESTS "py2plug-sd")
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED "pyplug-sd")
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-sd")
+endif()
+
+if(TARGET python3-sd)
+  list(APPEND SYSTEM_TESTS "py3plug-sd")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py3plug-sd")
 endif()
 
 message(STATUS "Looking for pam test requirements ...")
@@ -860,17 +852,18 @@ message(STATUS "Looking for webui test requirements ...")
 
 find_program(PHP php)
 find_program(CHROMEDRIVER chromedriver)
-check_pymodule_available("selenium") # sets PYMODULE_SELENIUM_FOUND to TRUE or
+check_pymodule_available(2 selenium) # sets PYMODULE_2_SELENIUM_FOUND to TRUE or
+check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 # FALSE
 
 message("   PHP:                    " ${PHP})
 message("   PYTHON_EXECUTABLE:      " ${PYTHON_EXECUTABLE})
-message("   PYMODULE_SELENIUM_FOUND:" ${PYMOD_SELENIUM_FOUND})
+message("   PYMODULE_2_SELENIUM_FOUND:" ${PYMODULE_2_SELENIUM_FOUND})
 message("   CHROMEDRIVER:           " ${CHROMEDRIVER})
 
 if(PHP
    AND PYTHON_EXECUTABLE
-   AND PYMODULE_SELENIUM_FOUND
+   AND PYMODULE_2_SELENIUM_FOUND
    AND CHROMEDRIVER
 )
   set(ENABLE_WEBUI_SELENIUM_TEST TRUE)
@@ -910,10 +903,32 @@ endif()
 
 foreach(TEST_NAME ${SYSTEM_TESTS})
   message(STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}")
+  string(REGEX MATCH "py2plug" py_v2 "${TEST_NAME}")
+  string(REGEX MATCH "py3plug" py_v3 "${TEST_NAME}")
+  if(py_v2)
+    set(python_module_name python)
+  endif()
+  if(py_v3)
+    set(python_module_name python3)
+  endif()
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
-  handle_python_plugin_modules(${TEST_NAME})
+  string(
+    CONCAT
+      pythonpath
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/libcloud:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules:"
+      "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules:"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
+  )
 
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
 
@@ -924,7 +939,8 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
   )
-  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 90)
+
+  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 180)
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
@@ -984,7 +1000,9 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
       COMMAND ${tests_dir}/${TEST_NAME}/testrunner
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
-    set_tests_properties(${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 90)
+    set_tests_properties(
+      ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 180
+    )
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()
 endif()

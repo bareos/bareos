@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -129,7 +129,7 @@ typedef struct s_bDirEvent {
 typedef struct s_dirbareosInfo {
   uint32_t size;
   uint32_t version;
-} bDirInfo;
+} PluginApiDefinition;
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,25 +141,25 @@ extern "C" {
 typedef struct s_dirbareosFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*registerBareosEvents)(bpContext* ctx, int nr_events, ...);
-  bRC (*unregisterBareosEvents)(bpContext* ctx, int nr_events, ...);
-  bRC (*getInstanceCount)(bpContext* ctx, int* ret);
-  bRC (*getBareosValue)(bpContext* ctx, brDirVariable var, void* value);
-  bRC (*setBareosValue)(bpContext* ctx, bwDirVariable var, void* value);
-  bRC (*JobMessage)(bpContext* ctx,
+  bRC (*registerBareosEvents)(PluginContext* ctx, int nr_events, ...);
+  bRC (*unregisterBareosEvents)(PluginContext* ctx, int nr_events, ...);
+  bRC (*getInstanceCount)(PluginContext* ctx, int* ret);
+  bRC (*getBareosValue)(PluginContext* ctx, brDirVariable var, void* value);
+  bRC (*setBareosValue)(PluginContext* ctx, bwDirVariable var, void* value);
+  bRC (*JobMessage)(PluginContext* ctx,
                     const char* file,
                     int line,
                     int type,
                     utime_t mtime,
                     const char* fmt,
                     ...);
-  bRC (*DebugMessage)(bpContext* ctx,
+  bRC (*DebugMessage)(PluginContext* ctx,
                       const char* file,
                       int line,
                       int level,
                       const char* fmt,
                       ...);
-} bDirFuncs;
+} CoreFunctions;
 
 /**
  * Bareos Core Routines -- not used within a plugin
@@ -182,9 +182,9 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
  */
 typedef enum
 {
-  pDirVarName = 1,
-  pDirVarDescription = 2
-} pDirVariable;
+  pVarName = 1,
+  pVarDescription = 2
+} pVariable;
 
 #define DIR_PLUGIN_MAGIC "*DirPluginData*"
 #define DIR_PLUGIN_INTERFACE_VERSION 4
@@ -192,15 +192,15 @@ typedef enum
 typedef struct s_dirpluginFuncs {
   uint32_t size;
   uint32_t version;
-  bRC (*newPlugin)(bpContext* ctx);
-  bRC (*freePlugin)(bpContext* ctx);
-  bRC (*getPluginValue)(bpContext* ctx, pDirVariable var, void* value);
-  bRC (*setPluginValue)(bpContext* ctx, pDirVariable var, void* value);
-  bRC (*handlePluginEvent)(bpContext* ctx, bDirEvent* event, void* value);
-} pDirFuncs;
+  bRC (*newPlugin)(PluginContext* ctx);
+  bRC (*freePlugin)(PluginContext* ctx);
+  bRC (*getPluginValue)(PluginContext* ctx, pVariable var, void* value);
+  bRC (*setPluginValue)(PluginContext* ctx, pVariable var, void* value);
+  bRC (*handlePluginEvent)(PluginContext* ctx, bDirEvent* event, void* value);
+} PluginFunctions;
 
-#define DirplugFunc(plugin) ((pDirFuncs*)(plugin->pfuncs))
-#define dirplug_info(plugin) ((genpInfo*)(plugin->pinfo))
+#define DirplugFunc(plugin) ((PluginFunctions*)(plugin->plugin_functions))
+#define dirplug_info(plugin) ((PluginInformation*)(plugin->plugin_information))
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,5 @@
 @plugindir@/python-sd.so
 @plugindir@/bareos-sd.py*
-@plugindir@/bareos_sd_consts.py*
 @plugindir@/BareosSdPluginBaseclass.py*
 @plugindir@/BareosSdWrapper.py*
 @plugindir@/bareos-sd-class-plugin.py*
