@@ -177,15 +177,6 @@ set(PYFILES
     postgres/BareosFdPluginPostgres.py
     vmware/bareos-fd-vmware.py
     vmware/BareosFdPluginVMware.py
-    libcloud/bareos_libcloud_api/process_base.py
-    libcloud/bareos_libcloud_api/queue_message.py
-    libcloud/bareos_libcloud_api/mtime.py
-    libcloud/bareos_libcloud_api/debug.py
-    libcloud/bareos_libcloud_api/utils.py
-    libcloud/bareos_libcloud_api/get_libcloud_driver.py
-    libcloud/bareos_libcloud_api/worker.py
-    libcloud/bareos_libcloud_api/__init__.py
-    libcloud/bareos_libcloud_api/bucket_explorer.py
     libcloud/BareosLibcloudApi.py
     libcloud/bareos-fd-libcloud.py
     libcloud/BareosFdPluginLibcloud.py
@@ -193,6 +184,12 @@ set(PYFILES
 
 install(
   FILES ${PYFILES}
+  DESTINATION ${plugindir}
+  COMPONENT filedaemon
+)
+
+install(
+  DIRECTORY libcloud/bareos_libcloud_api
   DESTINATION ${plugindir}
   COMPONENT filedaemon
 )
