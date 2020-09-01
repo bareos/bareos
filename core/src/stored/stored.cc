@@ -253,6 +253,12 @@ int main(int argc, char* argv[])
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
   ParseSdConfig(configfile, M_ERROR_TERM);
 
+  if (forge_on) {
+    my_config->AddWarning(
+        "Running with '-p' is for testing and emergency recovery purposes "
+        "only");
+  }
+
   if (export_config) {
     my_config->DumpResources(PrintMessage, NULL);
     goto bail_out;
