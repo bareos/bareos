@@ -1224,7 +1224,9 @@ static bool ParseListBackupsCmd(UaContext* ua,
     return false;
   }
 
-  selection.bsprintf("AND Job.Type IN('B','a') AND Client.Name='%s' ",
+  /* allow jobtypes 'B' for Backup and 'A' or 'a' for archive (update job 
+   * doesn't enforce a valid jobtype, so people have 'a' in their catalogs */
+  selection.bsprintf("AND Job.Type IN('B', 'A', 'a') AND Client.Name='%s' ",
                      ua->argv[client]);
 
   /*
