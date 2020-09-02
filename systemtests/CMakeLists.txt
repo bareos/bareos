@@ -555,6 +555,7 @@ set(SYSTEM_TESTS
     copy-bscan
     copy-remote-bscan
     deprecation
+    list-backups
     messages
     multiplied-device
     reload-add-client

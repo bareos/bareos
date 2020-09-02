@@ -1,0 +1,70 @@
+#!/bin/bash
+set -e
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+# Directory to backup.
+# This directory will be created by setup_data "$@"().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backed up.
+# Data will be placed at "${tmp}/data/".
+setup_data "$@"
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName yes
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+update jobid=2 jobtype=archive
+@#
+@# now do a restore
+@#
+@$out $tmp/list-backups.out
+list backups client=bareos-fd
+@$out $tmp/llist-backups.out
+llist backups client=bareos-fd
+quit
+END_OF_DATA
+
+run_bareos "$@"
+check_for_zombie_jobs storage=File
+stop_bareos
+
+echo "Checking list backups for jobtype=backup"
+grep -F '1 | backup-bareos-fd | bareos-fd' "$tmp/list-backups.out"
+
+echo "Checking llist backups for jobtype=backup"
+grep -F 'jobid: 1' "$tmp/llist-backups.out"
+
+echo "Checking list backups for jobtype=archive"
+grep -F '2 | backup-bareos-fd | bareos-fd' "$tmp/list-backups.out"
+
+echo "Checking llist backups for jobtype=archive"
+grep -F 'jobid: 2' "$tmp/llist-backups.out"
+end_test
