@@ -623,6 +623,8 @@ else()
   set(in_container FALSE)
 endif()
 
+find_program(PYTHON NAMES python python3 python2)
+
 # python-bareos-test does not work on installed files
 if(PYTHON_EXECUTABLE
    AND PYTHON
@@ -802,7 +804,6 @@ else()
 endif()
 
 message(STATUS "Looking for pam test requirements ...")
-find_program(PYTHON python python2 python3)
 bareosfindlibraryandheaders("pam" "security/pam_appl.h" "")
 find_program(PAMTESTER pamtester)
 
