@@ -741,6 +741,11 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   int i;
   int error = 0;
 
+  BareosResource* allocated_resource = *resources[rindex].allocated_resource_;
+  if (pass == 2 && !allocated_resource->Validate()) {
+    return false;
+  }
+
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {

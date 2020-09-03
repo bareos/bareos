@@ -21,6 +21,7 @@
    02110-1301, USA.
 */
 
+#include "lib/parse_conf.h"
 #include "stored/autoxflate.h"
 #include "stored/device_resource.h"
 #include "stored/stored_globals.h"
@@ -287,5 +288,13 @@ void DeviceResource::CreateAndAssignSerialNumber(uint16_t number)
   resource_name_ = strdup(tmp_name.c_str());
 }
 
+bool DeviceResource::Validate()
+{
+  if (max_block_size > 0 && dev_type != DeviceType::B_TAPE_DEV) {
+    my_config->AddWarning(
+        "Setting 'Maximum Block Size' on a non-tape device is unsupported");
+  }
+  return true;
+}
 
 } /* namespace storagedaemon  */
