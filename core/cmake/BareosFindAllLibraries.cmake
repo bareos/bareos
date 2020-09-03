@@ -100,8 +100,6 @@ else() # windows
 endif()
 
 
-
-
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   include(FindPostgreSQL)
 endif()
