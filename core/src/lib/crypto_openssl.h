@@ -30,4 +30,4 @@ int OpensslSeedPrng(void);
 int OpensslSavePrng(void);
 #endif /* HAVE_OPENSSL */
 
-#endif // BAREOS_LIB_CRYPTO_OPENSSL_H_
+#endif  // BAREOS_LIB_CRYPTO_OPENSSL_H_
