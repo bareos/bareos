@@ -277,6 +277,7 @@ macro(prepare_test)
   math(EXPR php_port "${BASEPORT} + 4")
   math(EXPR test_db_port "${BASEPORT} + 5")
   math(EXPR minio_port "${BASEPORT} + 6")
+  math(EXPR restapi_port "${BASEPORT} + 7")
 
   # skip for tests without etc/bareos ("catalog" test)
   if(EXISTS ${current_test_source_directory}/etc/bareos)
@@ -646,6 +647,24 @@ if(PYTHON_EXECUTABLE
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-bareos")
 endif()
+
+check_pymodule_available(3 fastapi)
+check_pymodule_available(3 uvicorn)
+find_program (CURL curl)
+
+# python-restapi-test does not work on installed files and needs some modules
+if(PYTHON_EXECUTABLE
+   AND CURL
+   AND PYTHON
+   AND PYMODULE_3_FASTAPI_FOUND
+   AND PYMODULE_3_UVICORN_FOUND
+   AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES
+)
+  list(APPEND SYSTEM_TESTS "python-restapi")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "python-restapi")
+endif()
+
 
 bareosfindlibrary("gtest")
 if(GTEST_FOUND AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)

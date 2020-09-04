@@ -1,0 +1,5571 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Bareos REST API",
+    "description": "Bareos REST API built on python-bareos. Experimental and subject to enhancements and changes. **Note** swagger does not support GET methods with bodies, however, the CURL statements displayed by swagger do work.",
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/token": {
+      "post": {
+        "summary": "Login For Access Token",
+        "operationId": "login_for_access_token_token_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_for_access_token_token_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/": {
+      "get": {
+        "summary": "Read Users Me",
+        "operationId": "read_users_me_users_me__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/clients": {
+      "get": {
+        "tags": [
+          "clients",
+          "control"
+        ],
+        "summary": "Read Catalog Info For All Clients",
+        "description": "Read status information from catalog about all clients or just one client by name.\nBuilt on console command _llist client_",
+        "operationId": "read_catalog_info_for_all_clients_control_clients_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            },
+            "name": "name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/clients/{client_id}": {
+      "get": {
+        "tags": [
+          "clients",
+          "control"
+        ],
+        "summary": "Read Catalog Info For Particular Client",
+        "description": "Read catalog information for one client by id.\nBuilt on console command _llist client_\n\n**Warning** Director does not support direct query by _id_ we query all clients and filter the result.\nMaybe more time consuming than expected in large settings.",
+        "operationId": "read_catalog_info_for_particular_client_control_clients__client_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The ID of client to get",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "name": "client_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/clients/enable/{client_name}": {
+      "put": {
+        "tags": [
+          "clients",
+          "control"
+        ],
+        "summary": "Enable Client",
+        "operationId": "enable_client_control_clients_enable__client_name__put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The client (name) to enable",
+              "type": "string"
+            },
+            "name": "client_name",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/clients/disable/{client_name}": {
+      "put": {
+        "tags": [
+          "clients",
+          "control"
+        ],
+        "summary": "Disable Client",
+        "operationId": "disable_client_control_clients_disable__client_name__put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The client (name) to disable",
+              "type": "string"
+            },
+            "name": "client_name",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/clients": {
+      "get": {
+        "tags": [
+          "clients",
+          "configuration"
+        ],
+        "summary": "Read All Clients",
+        "description": "Read all jobdef resources. Built on console command _show clients_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_all_clients_configuration_clients_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "clients",
+          "configuration"
+        ],
+        "summary": "Post Client",
+        "operationId": "post_client_configuration_clients_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "The client to create",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/clientResource"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/clients/{clients_name}": {
+      "get": {
+        "tags": [
+          "clients",
+          "configuration"
+        ],
+        "summary": "Read Client By Name",
+        "description": "Read all jobdef resources. Built on console command _show clients_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_client_by_name_configuration_clients__clients_name__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Client name to look for",
+              "type": "string"
+            },
+            "name": "clients_name",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/filesets": {
+      "get": {
+        "tags": [
+          "filesets",
+          "configuration"
+        ],
+        "summary": "Read All Filesets",
+        "description": "Read all jobdef resources. Built on console command _show filesets_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_all_filesets_configuration_filesets_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/filesets/{filesets_name}": {
+      "get": {
+        "tags": [
+          "filesets",
+          "configuration"
+        ],
+        "summary": "Read Fileset By Name",
+        "description": "Read all jobdef resources. Built on console command _show filesets_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_fileset_by_name_configuration_filesets__filesets_name__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "fileset name to look for",
+              "type": "string"
+            },
+            "name": "filesets_name",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs/run": {
+      "post": {
+        "tags": [
+          "jobcontrol",
+          "control",
+          "jobs"
+        ],
+        "summary": "Runjob",
+        "description": "Run a job, defined by jobControl record.\n\n**Note**: Swagger throws a weird error when running this command by the UI,\nwhile the given curl statement works fine.",
+        "operationId": "runJob_control_jobs_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_runJob_control_jobs_run_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs/rerun/{job_id}": {
+      "post": {
+        "tags": [
+          "jobcontrol",
+          "control",
+          "jobs"
+        ],
+        "summary": "Rerun Job By Jobid",
+        "description": "Rerun a specific job given bei jobid",
+        "operationId": "rerun_Job_by_jobid_control_jobs_rerun__job_id__post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The ID of job to rerun",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs/rerun": {
+      "post": {
+        "tags": [
+          "jobcontrol",
+          "control",
+          "jobs"
+        ],
+        "summary": "Rerun Job",
+        "description": "Rerun jobs given by the following parameters (at least one)\n\n- **since_jobid**=_jobid_ rerun failed jobs since this jobid\n- **until_jobid**=_jobid_ - in conjunction with _since_jobid_\n- **days**=_nr_days_ - since a number of days\n- **hours**=_nr_hours_ - since a number of hours\n\nBuilt on console command _rerun_",
+        "operationId": "rerun_Job_control_jobs_rerun_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Job range to rerun",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/jobRange"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs/restore": {
+      "post": {
+        "tags": [
+          "jobcontrol",
+          "control",
+          "jobs"
+        ],
+        "summary": "Runrestorejob",
+        "description": "Run a restore-job, defined by jobControl record.",
+        "operationId": "runRestoreJob_control_jobs_restore_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_runRestoreJob_control_jobs_restore_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs/cancel/{job_id}": {
+      "put": {
+        "tags": [
+          "jobcontrol",
+          "control",
+          "jobs"
+        ],
+        "summary": "Canceljob",
+        "description": "Cancel a specific job given bei jobid",
+        "operationId": "cancelJob_control_jobs_cancel__job_id__put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The ID of job to cancel",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs/enable/{job_name}": {
+      "put": {
+        "tags": [
+          "jobcontrol",
+          "jobs",
+          "control"
+        ],
+        "summary": "Enable Job",
+        "operationId": "enable_job_control_jobs_enable__job_name__put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The job (name) to enable",
+              "type": "string"
+            },
+            "name": "job_name",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs/disable/{job_name}": {
+      "put": {
+        "tags": [
+          "jobcontrol",
+          "jobs",
+          "control"
+        ],
+        "summary": "Disable Job",
+        "operationId": "disable_job_control_jobs_disable__job_name__put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The job (name) to disable",
+              "type": "string"
+            },
+            "name": "job_name",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs/totals": {
+      "get": {
+        "tags": [
+          "jobcontrol",
+          "control",
+          "jobs"
+        ],
+        "summary": "Read All Jobs Totals",
+        "operationId": "read_all_jobs_totals_control_jobs_totals_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "jobcontrol",
+          "control",
+          "jobs"
+        ],
+        "summary": "Read Job Status",
+        "description": "Read information about a specific job defined by jobid\nReturns output of command _llist jobid=id_",
+        "operationId": "read_job_status_control_jobs__job_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The ID of job to get",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "jobcontrol",
+          "control",
+          "jobs"
+        ],
+        "summary": "Delete Job",
+        "description": "Delete job record from catalog",
+        "operationId": "delete_job_control_jobs__job_id__delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The ID of job to delete",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs": {
+      "get": {
+        "tags": [
+          "jobcontrol",
+          "control",
+          "jobs"
+        ],
+        "summary": "Read All Jobs Status",
+        "operationId": "read_all_jobs_status_control_jobs_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Result items limit",
+              "exclusiveMinimum": 1,
+              "type": "integer"
+            },
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Result items offset",
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Query parameter",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/jobQuery"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs/logs/{job_id}": {
+      "get": {
+        "tags": [
+          "jobcontrol",
+          "control",
+          "jobs"
+        ],
+        "summary": "Read One Job Log",
+        "description": "Read logs from a specific job defined by jobid\nReturns output of command _list joblog jobid=id_",
+        "operationId": "read_one_job_log_control_jobs_logs__job_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The ID of job to get the logs",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/jobs/files/{job_id}": {
+      "get": {
+        "tags": [
+          "jobcontrol",
+          "control",
+          "jobs"
+        ],
+        "summary": "Read Files Of Job",
+        "description": "Read files from a specific job defined by jobid\nReturns output of command _list joblog jobid=id_",
+        "operationId": "read_files_of_job_control_jobs_files__job_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The ID of job to get the files",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/confguration/jobdefs": {
+      "post": {
+        "tags": [
+          "jobdefs",
+          "configuration"
+        ],
+        "summary": "Post Jobdef",
+        "description": "Create a new jobdefs resource.\nConsole command used: _configure add jobdefs_",
+        "operationId": "post_jobdef_confguration_jobdefs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Jobdef resource",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/jobDefs"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/jobdefs": {
+      "get": {
+        "tags": [
+          "jobdefs",
+          "configuration"
+        ],
+        "summary": "Read All Jobdefs",
+        "description": "Read all jobdef resources. Built on console command _show jobdefs_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_all_jobdefs_configuration_jobdefs_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/jobdefs/{jobdefs_name}": {
+      "get": {
+        "tags": [
+          "jobdefs",
+          "configuration"
+        ],
+        "summary": "Read Jobdef By Name",
+        "description": "Read all jobdef resources. Built on console command _show jobdefs_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_jobdef_by_name_configuration_jobdefs__jobdefs_name__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "JobDef name to look for",
+              "type": "string"
+            },
+            "name": "jobdefs_name",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/jobs": {
+      "get": {
+        "tags": [
+          "jobs",
+          "configuration"
+        ],
+        "summary": "Read All Jobs",
+        "description": "Read all jobdef resources. Built on console command _show jobs_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_all_jobs_configuration_jobs_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "jobs",
+          "configuration"
+        ],
+        "summary": "Post Job",
+        "description": "Create a new job resource.\nConsole command used: _configure add job_",
+        "operationId": "post_job_configuration_jobs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Job resource",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/jobResource"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/jobs/{jobs_name}": {
+      "get": {
+        "tags": [
+          "jobs",
+          "configuration"
+        ],
+        "summary": "Read Job By Name",
+        "description": "Read all jobdef resources. Built on console command _show jobs_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_job_by_name_configuration_jobs__jobs_name__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Client name to look for",
+              "type": "string"
+            },
+            "name": "jobs_name",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/volumes": {
+      "get": {
+        "tags": [
+          "volumes",
+          "control"
+        ],
+        "summary": "Read Volumes",
+        "operationId": "read_volumes_control_volumes_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Result items limit",
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Result items offset",
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Query parameter",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/volumeQuery"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "volumes",
+          "control"
+        ],
+        "summary": "Label Volume",
+        "description": "Label a new volume using the _label_\" command",
+        "operationId": "label_volume_control_volumes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Volume label properties",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/volumeLabelDef"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/volumes/{volume_id}": {
+      "get": {
+        "tags": [
+          "volumes",
+          "control"
+        ],
+        "summary": "Read Volume",
+        "operationId": "read_volume_control_volumes__volume_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Volume ID to look for",
+              "exclusiveMinimum": 0,
+              "type": "integer",
+              "example": 1
+            },
+            "name": "volume_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Query parameter",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/volumeQuery"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/volumes/{volume_name}": {
+      "put": {
+        "tags": [
+          "volumes",
+          "control"
+        ],
+        "summary": "Relabel Volume",
+        "description": "Relabel a volume, using the _relabel_ command\nTODO: handle encrypt flag",
+        "operationId": "relabel_volume_control_volumes__volume_name__put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Old Volume Name to relabel",
+              "type": "string",
+              "example": "Full-1742"
+            },
+            "name": "volume_name",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "New label properties",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/volumeRelabelDef"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "volumes",
+          "control"
+        ],
+        "summary": "Delete Volume",
+        "description": "Delete a volume from catalog using the _delete volume_ command.",
+        "operationId": "delete_volume_control_volumes__volume_name__delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Volume Name to delete",
+              "type": "string",
+              "example": "Full-1742"
+            },
+            "name": "volume_name",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "volumes",
+          "control"
+        ],
+        "summary": "Update Volume",
+        "description": "Update a volume\nTODO: verify, that parameter are quoted correct",
+        "operationId": "update_volume_control_volumes__volume_name__patch",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Volume Name to update",
+              "type": "string",
+              "example": "Full-1742"
+            },
+            "name": "volume_name",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Volume properties",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/volumeProperties"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/volumes/move": {
+      "put": {
+        "tags": [
+          "volumes",
+          "control"
+        ],
+        "summary": "Move Volume",
+        "description": "Move a volume, using the _move_ command\nTODO: handle encrypt flag",
+        "operationId": "move_volume_control_volumes_move_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Volume move parameters",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/volumeMove"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/volumes/export": {
+      "put": {
+        "tags": [
+          "volumes",
+          "control"
+        ],
+        "summary": "Export Volume",
+        "description": "Export volumes the _export_ command",
+        "operationId": "export_volume_control_volumes_export_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Volume Export parameters",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/volumeExport"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/volumes/import": {
+      "put": {
+        "tags": [
+          "volumes",
+          "control"
+        ],
+        "summary": "Import Volume",
+        "description": "import volumes the _import_ command",
+        "operationId": "import_volume_control_volumes_import_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Volume import parameters",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/volumeImport"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/pools": {
+      "get": {
+        "tags": [
+          "pools",
+          "configuration"
+        ],
+        "summary": "Read All Pools",
+        "description": "Read all jobdef resources. Built on console command _show pools_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_all_pools_configuration_pools_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "pools",
+          "configuration"
+        ],
+        "summary": "Post Pool",
+        "description": "Create a new pool resource.\nConsole command used: _configure add pool_",
+        "operationId": "post_pool_configuration_pools_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "pool resource",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/poolResource"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/pools/{pools_name}": {
+      "get": {
+        "tags": [
+          "pools",
+          "configuration"
+        ],
+        "summary": "Read Pool By Name",
+        "description": "Read all jobdef resources. Built on console command _show pools_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_pool_by_name_configuration_pools__pools_name__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Client name to look for",
+              "type": "string"
+            },
+            "name": "pools_name",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/pools": {
+      "get": {
+        "tags": [
+          "pools",
+          "control"
+        ],
+        "summary": "Read All Pools",
+        "description": "Read settings for all pools or just one pool by name from catalog.\nBuilt on console command _llist pool_",
+        "operationId": "read_all_pools_control_pools_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            },
+            "name": "name",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/pools/{pool_id}": {
+      "get": {
+        "tags": [
+          "pools",
+          "control"
+        ],
+        "summary": "Read Pool",
+        "description": "Read catalog information abour just one pool by id.\nBuilt on console command _llist pool_\n\n**Warning** Director does not support direct query by _id_ we query all pools and filter the result.\nMaybe more time consuming than expected in large settings.",
+        "operationId": "read_pool_control_pools__pool_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The ID of pool to get",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "name": "pool_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/schedules": {
+      "get": {
+        "tags": [
+          "schedules",
+          "configuration"
+        ],
+        "summary": "Read All Schedules",
+        "description": "Read all jobdef resources. Built on console command _show schedules_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_all_schedules_configuration_schedules_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "schedules",
+          "configuration"
+        ],
+        "summary": "Create Schedule",
+        "description": "Create a new schedule resource.\nConsole command used _configure add schedule_",
+        "operationId": "create_schedule_configuration_schedules_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Name for new schedule",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/scheduleResource"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/schedules/{schedules_name}": {
+      "get": {
+        "tags": [
+          "schedules",
+          "configuration"
+        ],
+        "summary": "Read Schedule By Name",
+        "description": "Read all jobdef resources. Built on console command _show schedules_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_schedule_by_name_configuration_schedules__schedules_name__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Client name to look for",
+              "type": "string"
+            },
+            "name": "schedules_name",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/schedules/enable/{schedule_name}": {
+      "put": {
+        "tags": [
+          "schedules",
+          "control"
+        ],
+        "summary": "Enable Schedule",
+        "operationId": "enable_schedule_control_schedules_enable__schedule_name__put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The schedule (name) to enable",
+              "type": "string"
+            },
+            "name": "schedule_name",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/schedules/disable/{schedule_name}": {
+      "put": {
+        "tags": [
+          "schedules",
+          "control"
+        ],
+        "summary": "Disable Schedule",
+        "operationId": "disable_schedule_control_schedules_disable__schedule_name__put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "The schedule (name) to disable",
+              "type": "string"
+            },
+            "name": "schedule_name",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/storages": {
+      "get": {
+        "tags": [
+          "storages",
+          "configuration"
+        ],
+        "summary": "Read All Storages",
+        "description": "Read all jobdef resources. Built on console command _show storages_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_all_storages_configuration_storages_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/storages/{storages_name}": {
+      "get": {
+        "tags": [
+          "storages",
+          "configuration"
+        ],
+        "summary": "Read Storage By Name",
+        "description": "Read all jobdef resources. Built on console command _show storages_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_storage_by_name_configuration_storages__storages_name__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Client name to look for",
+              "type": "string"
+            },
+            "name": "storages_name",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/storage": {
+      "post": {
+        "tags": [
+          "storages",
+          "configuration"
+        ],
+        "summary": "Post Storage",
+        "description": "Create a new storage resource.\nConsole command used: _configure add storage_",
+        "operationId": "post_storage_configuration_storage_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "storage resource",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/storageResource"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/users": {
+      "get": {
+        "tags": [
+          "users",
+          "configuration"
+        ],
+        "summary": "Read All Users",
+        "description": "Read all users resources. Built on console command _show users_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_all_users_configuration_users_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "users",
+          "configuration"
+        ],
+        "summary": "Post User",
+        "description": "Create a new Bareos user resource.\nConsole command used: _configure add user_",
+        "operationId": "post_user_configuration_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "user resource",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/userResource"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/users/{users_name}": {
+      "get": {
+        "tags": [
+          "users",
+          "configuration"
+        ],
+        "summary": "Read User By Name",
+        "description": "Read all jobdef resources. Built on console command _show users_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_user_by_name_configuration_users__users_name__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Client name to look for",
+              "type": "string"
+            },
+            "name": "users_name",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/profiles": {
+      "get": {
+        "tags": [
+          "profiles",
+          "configuration"
+        ],
+        "summary": "Read All Profiles",
+        "description": "Read all jobdef resources. Built on console command _show profiles_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_all_profiles_configuration_profiles_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "users",
+          "configuration"
+        ],
+        "summary": "Post Profile",
+        "description": "Create a new Bareos profile resource.\nConsole command used: _configure add profile_",
+        "operationId": "post_profile_configuration_profiles_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "profile resource",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/profileResource"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/profiles/{profiles_name}": {
+      "get": {
+        "tags": [
+          "profiles",
+          "configuration"
+        ],
+        "summary": "Read Client By Name",
+        "description": "Read all jobdef resources. Built on console command _show profiles_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_client_by_name_configuration_profiles__profiles_name__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Client name to look for",
+              "type": "string"
+            },
+            "name": "profiles_name",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/consoles": {
+      "get": {
+        "tags": [
+          "consoles",
+          "configuration"
+        ],
+        "summary": "Read All Consoles",
+        "description": "Read all jobdef resources. Built on console command _show consoles_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_all_consoles_configuration_consoles_get",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "users",
+          "configuration"
+        ],
+        "summary": "Post Console",
+        "description": "Create a new Bareos console resource.\nConsole command used: _configure add console_",
+        "operationId": "post_console_configuration_consoles_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "console resource",
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/consoleResource"
+                  }
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/configuration/consoles/{consoles_name}": {
+      "get": {
+        "tags": [
+          "consoles",
+          "configuration"
+        ],
+        "summary": "Read Console By Name",
+        "description": "Read all jobdef resources. Built on console command _show consoles_.\n\nNeeds at least Bareos Version >= 20.0.0",
+        "operationId": "read_console_by_name_configuration_consoles__consoles_name__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Console name to look for",
+              "type": "string"
+            },
+            "name": "consoles_name",
+            "in": "path"
+          },
+          {
+            "required": false,
+            "schema": {
+              "title": "Verbose output",
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/bareosBool"
+                }
+              ],
+              "default": "yes"
+            },
+            "name": "verbose",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/directors/version": {
+      "get": {
+        "tags": [
+          "directors",
+          "control"
+        ],
+        "summary": "Read Director Version",
+        "description": "Read director version. Command used: _version_",
+        "operationId": "read_director_version_control_directors_version_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/directors/time": {
+      "get": {
+        "tags": [
+          "directors",
+          "control"
+        ],
+        "summary": "Read Director Time",
+        "description": "Read director time. Command used: _time_",
+        "operationId": "read_director_time_control_directors_time_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/control/directors/reload": {
+      "put": {
+        "tags": [
+          "directors",
+          "control"
+        ],
+        "summary": "Read Director Time",
+        "description": "Reload director configuration from files. Command used: _reload_",
+        "operationId": "read_director_time_control_directors_reload_put",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_login_for_access_token_token_post": {
+        "title": "Body_login_for_access_token_token_post",
+        "required": [
+          "username",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "grant_type": {
+            "title": "Grant Type",
+            "pattern": "password",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string",
+            "default": ""
+          },
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_secret": {
+            "title": "Client Secret",
+            "type": "string"
+          }
+        }
+      },
+      "Body_runJob_control_jobs_run_post": {
+        "title": "Body_runJob_control_jobs_run_post",
+        "required": [
+          "jobControl"
+        ],
+        "type": "object",
+        "properties": {
+          "jobControl": {
+            "title": "Job control information",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/jobControl"
+              }
+            ]
+          }
+        }
+      },
+      "Body_runRestoreJob_control_jobs_restore_post": {
+        "title": "Body_runRestoreJob_control_jobs_restore_post",
+        "required": [
+          "jobControl"
+        ],
+        "type": "object",
+        "properties": {
+          "jobControl": {
+            "title": "Restore Job control information",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/restoreJobControl"
+              }
+            ]
+          }
+        }
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "Token": {
+        "title": "Token",
+        "required": [
+          "access_token",
+          "token_type"
+        ],
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "title": "Access Token",
+            "type": "string"
+          },
+          "token_type": {
+            "title": "Token Type",
+            "type": "string"
+          }
+        }
+      },
+      "User": {
+        "title": "User",
+        "required": [
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "title": "Username",
+            "type": "string"
+          },
+          "directorName": {
+            "title": "Directorname",
+            "type": "string"
+          }
+        }
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "title": "Location",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        }
+      },
+      "bareosBool": {
+        "title": "bareosBool",
+        "enum": [
+          "yes",
+          "no"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "bareosFlag": {
+        "title": "bareosFlag",
+        "enum": [
+          "yes",
+          "no"
+        ],
+        "type": "string",
+        "description": "Same as bareosBool but with different internal handling"
+      },
+      "bareosReplaceOption": {
+        "title": "bareosReplaceOption",
+        "enum": [
+          "always",
+          "never",
+          "ifolder",
+          "ifnewer"
+        ],
+        "type": "string",
+        "description": "Replace option used by restore command"
+      },
+      "clientResource": {
+        "title": "clientResource",
+        "required": [
+          "name",
+          "address",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "tlsauthenticate": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlsenable": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlsrequire": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlscipherlist": {
+            "title": "Tlscipherlist",
+            "type": "string",
+            "format": "path"
+          },
+          "tlsdhfile": {
+            "title": "Tlsdhfile",
+            "type": "string",
+            "format": "path"
+          },
+          "tlsverifypeer": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlscacertificatefile": {
+            "title": "Tlscacertificatefile",
+            "type": "string",
+            "format": "path"
+          },
+          "tlscacertificatedir": {
+            "title": "Tlscacertificatedir",
+            "type": "string",
+            "format": "path"
+          },
+          "tlscertificaterevocationlist": {
+            "title": "Tlscertificaterevocationlist",
+            "type": "string",
+            "format": "path"
+          },
+          "tlscertificate": {
+            "title": "Tlscertificate",
+            "type": "string",
+            "format": "path"
+          },
+          "tlskey": {
+            "title": "Tlskey",
+            "type": "string",
+            "format": "path"
+          },
+          "tlsallowedcn": {
+            "title": "Tlsallowedcn",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "address": {
+            "title": "Address",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "description": {
+            "title": "A client description",
+            "type": "string"
+          },
+          "passive": {
+            "title": "Passive clients will wait for Director and SD to open any connection",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosBool"
+              }
+            ]
+          },
+          "port": {
+            "title": "Port",
+            "maximum": 65535,
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "protocol": {
+            "title": "Protocol",
+            "type": "string"
+          },
+          "authtype": {
+            "title": "Authtype",
+            "type": "string"
+          },
+          "lanaddress": {
+            "title": "Lanaddress",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          },
+          "catalog": {
+            "title": "Catalog",
+            "type": "string"
+          },
+          "connectionfromdirectortoclient": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "connectionfromclienttodirector": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "enabled": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "hardquota": {
+            "title": "Hardquota",
+            "type": "integer"
+          },
+          "softquota": {
+            "title": "Softquota",
+            "type": "integer"
+          },
+          "softquotagraceperiod": {
+            "title": "Softquotagraceperiod",
+            "type": "string"
+          },
+          "strictquotas": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "quotaincludefailedjobs": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "fileretention": {
+            "title": "Fileretention",
+            "type": "string"
+          },
+          "jobretention": {
+            "title": "Jobretention",
+            "type": "string"
+          },
+          "heartbeatinterval": {
+            "title": "Heartbeatinterval",
+            "type": "string"
+          },
+          "autoprune": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "maximumconcurrentjobs": {
+            "title": "Maximumconcurrentjobs",
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "maximumbandwidthperjob": {
+            "title": "Maximumbandwidthperjob",
+            "type": "string"
+          },
+          "ndmploglevel": {
+            "title": "Ndmploglevel",
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "ndmpblocksize": {
+            "title": "Ndmpblocksize",
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "ndmpuselmdb": {
+            "$ref": "#/components/schemas/bareosBool"
+          }
+        },
+        "description": "Options for TLS settings"
+      },
+      "consoleResource": {
+        "title": "consoleResource",
+        "required": [
+          "name",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "tlsauthenticate": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlsenable": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlsrequire": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlscipherlist": {
+            "title": "Tlscipherlist",
+            "type": "string",
+            "format": "path"
+          },
+          "tlsdhfile": {
+            "title": "Tlsdhfile",
+            "type": "string",
+            "format": "path"
+          },
+          "tlsverifypeer": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlscacertificatefile": {
+            "title": "Tlscacertificatefile",
+            "type": "string",
+            "format": "path"
+          },
+          "tlscacertificatedir": {
+            "title": "Tlscacertificatedir",
+            "type": "string",
+            "format": "path"
+          },
+          "tlscertificaterevocationlist": {
+            "title": "Tlscertificaterevocationlist",
+            "type": "string",
+            "format": "path"
+          },
+          "tlscertificate": {
+            "title": "Tlscertificate",
+            "type": "string",
+            "format": "path"
+          },
+          "tlskey": {
+            "title": "Tlskey",
+            "type": "string",
+            "format": "path"
+          },
+          "tlsallowedcn": {
+            "title": "Tlsallowedcn",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "jobacl": {
+            "title": "Jobacl",
+            "type": "string"
+          },
+          "clientacl": {
+            "title": "Clientacl",
+            "type": "string"
+          },
+          "storageacl": {
+            "title": "Storageacl",
+            "type": "string"
+          },
+          "scheduleacl": {
+            "title": "Scheduleacl",
+            "type": "string"
+          },
+          "poolacl": {
+            "title": "Poolacl",
+            "type": "string"
+          },
+          "commandacl": {
+            "title": "Commandacl",
+            "type": "string"
+          },
+          "filesetacl": {
+            "title": "Filesetacl",
+            "type": "string"
+          },
+          "catalogacl": {
+            "title": "Catalogacl",
+            "type": "string"
+          },
+          "whereacl": {
+            "title": "Whereacl",
+            "type": "string"
+          },
+          "pluginoptionsacl": {
+            "title": "Pluginoptionsacl",
+            "type": "string"
+          },
+          "name": {
+            "title": "resource name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "profile": {
+            "title": "List of profile names for this user",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "password": {
+            "title": "Console password",
+            "type": "string"
+          }
+        },
+        "description": "Possible ACL options"
+      },
+      "jobControl": {
+        "title": "jobControl",
+        "required": [
+          "job"
+        ],
+        "type": "object",
+        "properties": {
+          "job": {
+            "title": "Job name to run",
+            "type": "string",
+            "example": "myjob"
+          },
+          "client": {
+            "title": "Client to run job on",
+            "type": "string",
+            "example": "myclient-fd"
+          },
+          "fileset": {
+            "title": "Fileset to use",
+            "type": "string",
+            "example": "server-fileset"
+          },
+          "level": {
+            "title": "Job level to query",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/jobLevel"
+              }
+            ]
+          },
+          "storage": {
+            "title": "Storage to use",
+            "type": "string"
+          },
+          "when": {
+            "title": "When to run job, Bareos universal timespec",
+            "type": "string"
+          },
+          "pool": {
+            "title": "Pool to use",
+            "type": "string",
+            "example": "LTO-Pool"
+          },
+          "pluginoptions": {
+            "title": "Overwrite eventual plugin options",
+            "type": "string"
+          },
+          "accurate": {
+            "title": "Set / unset accurate option",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosBool"
+              }
+            ]
+          },
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "spooldata": {
+            "title": "Spooling",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosBool"
+              }
+            ]
+          },
+          "priority": {
+            "title": "Priority, higher number means lower prio",
+            "type": "string"
+          },
+          "catalog": {
+            "title": "Catalog to use for this job",
+            "type": "string"
+          },
+          "migrationjob": {
+            "title": "Migrationjob",
+            "type": "string"
+          },
+          "backupformat": {
+            "title": "The backup format used for protocols which support multiple formats.",
+            "type": "string"
+          },
+          "nextpool": {
+            "title": "A Next Pool override used for Migration/Copy and Virtual Backup Jobs.",
+            "type": "string"
+          },
+          "since": {
+            "title": "Set since time for differential / incremental jobs. Bareos universal timespec",
+            "type": "string"
+          },
+          "verifyjob": {
+            "title": "Verifyjob",
+            "type": "string"
+          },
+          "verifylist": {
+            "title": "Verifylist",
+            "type": "string"
+          }
+        }
+      },
+      "jobDefs": {
+        "title": "jobDefs",
+        "required": [
+          "messages",
+          "name",
+          "pool",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "messages": {
+            "title": "Message resource identifier",
+            "type": "string",
+            "example": "Standard"
+          },
+          "name": {
+            "title": "Name for this resource",
+            "type": "string",
+            "example": "DefaultJob"
+          },
+          "pool": {
+            "title": "Pool for this job",
+            "type": "string",
+            "example": "Full"
+          },
+          "jobdefs": {
+            "title": "Jobdefs to use",
+            "type": "string",
+            "example": "DefaultJob"
+          },
+          "type": {
+            "title": "Job type",
+            "type": "string",
+            "example": "Backup"
+          },
+          "accurate": {
+            "title": "Accurate setting, will be default 'no' if unset here",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosBool"
+              }
+            ]
+          },
+          "addprefix": {
+            "title": "Addprefix",
+            "type": "string"
+          },
+          "addsuffix": {
+            "title": "Addsuffix",
+            "type": "string"
+          },
+          "allowduplicatejobs": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "allowhigherduplicates": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "allowmixedpriority": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "alwaysincremental": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "alwaysincrementaljobretention": {
+            "title": "Alwaysincrementaljobretention",
+            "type": "string",
+            "example": "20 days"
+          },
+          "alwaysincrementalkeepnumber": {
+            "title": "Alwaysincrementalkeepnumber",
+            "minimum": 1,
+            "type": "integer",
+            "example": 5
+          },
+          "cancellowerlevelduplicates": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "cancelqueuedduplicates": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "cancelrunningduplicates": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "catalog": {
+            "title": "Catalog",
+            "type": "string"
+          },
+          "client": {
+            "title": "Client",
+            "type": "string"
+          },
+          "clientrunafterjob": {
+            "title": "Clientrunafterjob",
+            "type": "string"
+          },
+          "clientrunbeforejob": {
+            "title": "Clientrunbeforejob",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "differentialbackuppool": {
+            "title": "Differentialbackuppool",
+            "type": "string"
+          },
+          "differentialmaxruntime": {
+            "title": "Differentialmaxruntime",
+            "type": "string"
+          },
+          "dirpluginoptions": {
+            "title": "Dirpluginoptions",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "enabled": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "fdpluginoptions": {
+            "title": "Fdpluginoptions",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "filehistorysize": {
+            "title": "Filehistorysize",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "fileset": {
+            "title": "Fileset",
+            "type": "string"
+          },
+          "fullbackuppool": {
+            "title": "Fullbackuppool",
+            "type": "string"
+          },
+          "fullmaxruntime": {
+            "title": "Fullmaxruntime",
+            "type": "string"
+          },
+          "incrementalbackuppool": {
+            "title": "Incrementalbackuppool",
+            "type": "string"
+          },
+          "incrementalmaxruntime": {
+            "title": "Incrementalmaxruntime",
+            "type": "string"
+          },
+          "jobtoverify": {
+            "title": "Jobtoverify",
+            "type": "string"
+          },
+          "level": {
+            "title": "Job Level",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/jobLevel"
+              }
+            ]
+          },
+          "maxconcurrentcopies": {
+            "title": "Maxconcurrentcopies",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "maxdiffinterval": {
+            "title": "Maxdiffinterval",
+            "type": "string"
+          },
+          "maxfullconsolidations": {
+            "title": "Maxfullconsolidations",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "maxfullinterval": {
+            "title": "Maxfullinterval",
+            "type": "string"
+          },
+          "maximumbandwidth": {
+            "title": "Maximumbandwidth",
+            "type": "string"
+          },
+          "maximumconcurrentjobs": {
+            "title": "Maximumconcurrentjobs",
+            "type": "integer"
+          },
+          "maxrunschedtime": {
+            "title": "Maxrunschedtime",
+            "type": "string"
+          },
+          "maxruntime": {
+            "title": "Maxruntime",
+            "type": "string"
+          },
+          "maxstartdelay": {
+            "title": "Maxstartdelay",
+            "type": "string"
+          },
+          "maxvirtualfullinterval": {
+            "title": "Maxvirtualfullinterval",
+            "type": "string"
+          },
+          "maxwaittime": {
+            "title": "Maxwaittime",
+            "type": "string"
+          },
+          "nextpool": {
+            "title": "Nextpool",
+            "type": "string"
+          },
+          "prefermountedvolumes": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "prefixlinks": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "priority": {
+            "title": "Priority",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "protocol": {
+            "title": "Protocol",
+            "type": "string"
+          },
+          "prunefiles": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "prunejobs": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "prunevolumes": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "purgemigrationjob": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "regexwhere": {
+            "title": "Regexwhere",
+            "type": "string"
+          },
+          "replace": {
+            "title": "Replace",
+            "type": "string"
+          },
+          "rerunfailedlevels": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "rescheduleinterval": {
+            "title": "Rescheduleinterval",
+            "type": "string"
+          },
+          "rescheduleonerror": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "rescheduletimes": {
+            "title": "Rescheduletimes",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "runafterfailedjob": {
+            "title": "Runafterfailedjob",
+            "type": "string"
+          },
+          "runafterjob": {
+            "title": "Runafterjob",
+            "type": "string"
+          },
+          "runbeforejob": {
+            "title": "Runbeforejob",
+            "type": "string"
+          },
+          "runonincomingconnectinterval": {
+            "title": "Runonincomingconnectinterval",
+            "type": "string"
+          },
+          "run": {
+            "title": "Run",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "savefilehistory": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "schedule": {
+            "title": "Schedule",
+            "type": "string"
+          },
+          "sdpluginoptions": {
+            "title": "Sdpluginoptions",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "selectionpattern": {
+            "title": "Selectionpattern",
+            "type": "string"
+          },
+          "selectiontype": {
+            "title": "Selectiontype",
+            "type": "string",
+            "example": "OldestVolume"
+          },
+          "spoolattributes": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "spooldata": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "spoolsize": {
+            "title": "Spoolsize",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "storage": {
+            "title": "Storage",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stripprefix": {
+            "title": "Stripprefix",
+            "type": "string"
+          },
+          "virtualfullbackuppool": {
+            "title": "Virtualfullbackuppool",
+            "type": "string"
+          },
+          "where": {
+            "title": "Where",
+            "type": "string",
+            "format": "path"
+          },
+          "writebootstrap": {
+            "title": "Writebootstrap",
+            "type": "string",
+            "format": "path"
+          },
+          "writeverifylist": {
+            "title": "Writeverifylist",
+            "type": "string",
+            "format": "path"
+          }
+        }
+      },
+      "jobLevel": {
+        "title": "jobLevel",
+        "enum": [
+          "Base",
+          "Full",
+          "Incremental",
+          "Differential",
+          "Since",
+          "Verify Catalog",
+          "Init Catalog",
+          "Volume to Catalog"
+        ],
+        "type": "string",
+        "description": "Allowed job level full description strings"
+      },
+      "jobLevelChr": {
+        "title": "jobLevelChr",
+        "enum": [
+          "F",
+          "I",
+          "D",
+          "S",
+          "C",
+          "V",
+          "O",
+          "d",
+          "A",
+          "B",
+          "f"
+        ],
+        "type": "string",
+        "description": "Allowed job level chars"
+      },
+      "jobQuery": {
+        "title": "jobQuery",
+        "type": "object",
+        "properties": {
+          "job": {
+            "title": "Job name to query",
+            "type": "string",
+            "example": "myjob"
+          },
+          "client": {
+            "title": "Client to query",
+            "type": "string",
+            "example": "myclient-fd"
+          },
+          "jobstatus": {
+            "title": "Job status to query",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/jobStatus"
+              }
+            ]
+          },
+          "joblevel": {
+            "title": "Job level to query",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/jobLevelChr"
+              }
+            ]
+          },
+          "volume": {
+            "title": "Query jobs on the given volume",
+            "type": "string",
+            "example": "Full-0017"
+          },
+          "days": {
+            "title": "Query jobs run max days ago",
+            "exclusiveMinimum": 1,
+            "type": "integer",
+            "example": 7
+          },
+          "hours": {
+            "title": "Query jobs run max hours ago",
+            "exclusiveMinimum": 1,
+            "type": "integer",
+            "example": 12
+          }
+        }
+      },
+      "jobRange": {
+        "title": "jobRange",
+        "type": "object",
+        "properties": {
+          "days": {
+            "title": "Query jobs run max days ago",
+            "exclusiveMinimum": 1,
+            "type": "integer",
+            "example": 7
+          },
+          "hours": {
+            "title": "Query jobs run max hours ago",
+            "exclusiveMinimum": 1,
+            "type": "integer",
+            "example": 12
+          },
+          "since_jobid": {
+            "title": "Run all jobs since the given job by id",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "unitl_jobid": {
+            "title": "Run all jobs until the given job by id",
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      },
+      "jobResource": {
+        "title": "jobResource",
+        "required": [
+          "messages",
+          "name",
+          "pool",
+          "jobdefs",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "messages": {
+            "title": "Message resource identifier",
+            "type": "string",
+            "example": "Standard"
+          },
+          "name": {
+            "title": "Name for this resource",
+            "type": "string",
+            "example": "DefaultJob"
+          },
+          "pool": {
+            "title": "Pool for this job",
+            "type": "string",
+            "example": "Full"
+          },
+          "jobdefs": {
+            "title": "Jobdefs to use",
+            "type": "string",
+            "example": "DefaultJob"
+          },
+          "type": {
+            "title": "Job type",
+            "type": "string",
+            "example": "Backup"
+          },
+          "accurate": {
+            "title": "Accurate setting, will be default 'no' if unset here",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosBool"
+              }
+            ]
+          },
+          "addprefix": {
+            "title": "Addprefix",
+            "type": "string"
+          },
+          "addsuffix": {
+            "title": "Addsuffix",
+            "type": "string"
+          },
+          "allowduplicatejobs": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "allowhigherduplicates": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "allowmixedpriority": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "alwaysincremental": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "alwaysincrementaljobretention": {
+            "title": "Alwaysincrementaljobretention",
+            "type": "string",
+            "example": "20 days"
+          },
+          "alwaysincrementalkeepnumber": {
+            "title": "Alwaysincrementalkeepnumber",
+            "minimum": 1,
+            "type": "integer",
+            "example": 5
+          },
+          "cancellowerlevelduplicates": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "cancelqueuedduplicates": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "cancelrunningduplicates": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "catalog": {
+            "title": "Catalog",
+            "type": "string"
+          },
+          "client": {
+            "title": "Client",
+            "type": "string"
+          },
+          "clientrunafterjob": {
+            "title": "Clientrunafterjob",
+            "type": "string"
+          },
+          "clientrunbeforejob": {
+            "title": "Clientrunbeforejob",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "differentialbackuppool": {
+            "title": "Differentialbackuppool",
+            "type": "string"
+          },
+          "differentialmaxruntime": {
+            "title": "Differentialmaxruntime",
+            "type": "string"
+          },
+          "dirpluginoptions": {
+            "title": "Dirpluginoptions",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "enabled": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "fdpluginoptions": {
+            "title": "Fdpluginoptions",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "filehistorysize": {
+            "title": "Filehistorysize",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "fileset": {
+            "title": "Fileset",
+            "type": "string"
+          },
+          "fullbackuppool": {
+            "title": "Fullbackuppool",
+            "type": "string"
+          },
+          "fullmaxruntime": {
+            "title": "Fullmaxruntime",
+            "type": "string"
+          },
+          "incrementalbackuppool": {
+            "title": "Incrementalbackuppool",
+            "type": "string"
+          },
+          "incrementalmaxruntime": {
+            "title": "Incrementalmaxruntime",
+            "type": "string"
+          },
+          "jobtoverify": {
+            "title": "Jobtoverify",
+            "type": "string"
+          },
+          "level": {
+            "title": "Job Level",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/jobLevel"
+              }
+            ]
+          },
+          "maxconcurrentcopies": {
+            "title": "Maxconcurrentcopies",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "maxdiffinterval": {
+            "title": "Maxdiffinterval",
+            "type": "string"
+          },
+          "maxfullconsolidations": {
+            "title": "Maxfullconsolidations",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "maxfullinterval": {
+            "title": "Maxfullinterval",
+            "type": "string"
+          },
+          "maximumbandwidth": {
+            "title": "Maximumbandwidth",
+            "type": "string"
+          },
+          "maximumconcurrentjobs": {
+            "title": "Maximumconcurrentjobs",
+            "type": "integer"
+          },
+          "maxrunschedtime": {
+            "title": "Maxrunschedtime",
+            "type": "string"
+          },
+          "maxruntime": {
+            "title": "Maxruntime",
+            "type": "string"
+          },
+          "maxstartdelay": {
+            "title": "Maxstartdelay",
+            "type": "string"
+          },
+          "maxvirtualfullinterval": {
+            "title": "Maxvirtualfullinterval",
+            "type": "string"
+          },
+          "maxwaittime": {
+            "title": "Maxwaittime",
+            "type": "string"
+          },
+          "nextpool": {
+            "title": "Nextpool",
+            "type": "string"
+          },
+          "prefermountedvolumes": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "prefixlinks": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "priority": {
+            "title": "Priority",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "protocol": {
+            "title": "Protocol",
+            "type": "string"
+          },
+          "prunefiles": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "prunejobs": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "prunevolumes": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "purgemigrationjob": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "regexwhere": {
+            "title": "Regexwhere",
+            "type": "string"
+          },
+          "replace": {
+            "title": "Replace",
+            "type": "string"
+          },
+          "rerunfailedlevels": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "rescheduleinterval": {
+            "title": "Rescheduleinterval",
+            "type": "string"
+          },
+          "rescheduleonerror": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "rescheduletimes": {
+            "title": "Rescheduletimes",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "runafterfailedjob": {
+            "title": "Runafterfailedjob",
+            "type": "string"
+          },
+          "runafterjob": {
+            "title": "Runafterjob",
+            "type": "string"
+          },
+          "runbeforejob": {
+            "title": "Runbeforejob",
+            "type": "string"
+          },
+          "runonincomingconnectinterval": {
+            "title": "Runonincomingconnectinterval",
+            "type": "string"
+          },
+          "run": {
+            "title": "Run",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "savefilehistory": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "schedule": {
+            "title": "Schedule",
+            "type": "string"
+          },
+          "sdpluginoptions": {
+            "title": "Sdpluginoptions",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "selectionpattern": {
+            "title": "Selectionpattern",
+            "type": "string"
+          },
+          "selectiontype": {
+            "title": "Selectiontype",
+            "type": "string",
+            "example": "OldestVolume"
+          },
+          "spoolattributes": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "spooldata": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "spoolsize": {
+            "title": "Spoolsize",
+            "exclusiveMinimum": 1,
+            "type": "integer"
+          },
+          "storage": {
+            "title": "Storage",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stripprefix": {
+            "title": "Stripprefix",
+            "type": "string"
+          },
+          "virtualfullbackuppool": {
+            "title": "Virtualfullbackuppool",
+            "type": "string"
+          },
+          "where": {
+            "title": "Where",
+            "type": "string",
+            "format": "path"
+          },
+          "writebootstrap": {
+            "title": "Writebootstrap",
+            "type": "string",
+            "format": "path"
+          },
+          "writeverifylist": {
+            "title": "Writeverifylist",
+            "type": "string",
+            "format": "path"
+          }
+        }
+      },
+      "jobStatus": {
+        "title": "jobStatus",
+        "enum": [
+          "A",
+          "B",
+          "C",
+          "D",
+          "E",
+          "F",
+          "I",
+          "L",
+          "M",
+          "R",
+          "S",
+          "T",
+          "W",
+          "a",
+          "c",
+          "d",
+          "e",
+          "f",
+          "i",
+          "j",
+          "l",
+          "m",
+          "p",
+          "q",
+          "s",
+          "t"
+        ],
+        "type": "string",
+        "description": "Allowed job status chars"
+      },
+      "poolResource": {
+        "title": "poolResource",
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Pool name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "pooltype": {
+            "title": "Pooltype",
+            "type": "string"
+          },
+          "labelformat": {
+            "title": "Labelformat",
+            "type": "string"
+          },
+          "labeltype": {
+            "title": "Labeltype",
+            "type": "string"
+          },
+          "cleaningprefix": {
+            "title": "Cleaningprefix",
+            "type": "string"
+          },
+          "usecatalog": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "purgeoldestvolume": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "actiononpurge": {
+            "title": "Actiononpurge",
+            "type": "string"
+          },
+          "recycleoldestvolume": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "recyclecurrentvolume": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "maximumvolumes": {
+            "title": "Maximumvolumes",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maximumvolumejobs": {
+            "title": "Maximumvolumejobs",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maximumvolumefiles": {
+            "title": "Maximumvolumefiles",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maximumvolumebytes": {
+            "title": "Maximumvolumebytes",
+            "type": "integer"
+          },
+          "catalogfiles": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "volumeretention": {
+            "title": "Volumeretention",
+            "type": "string"
+          },
+          "volumeuseduration": {
+            "title": "Volumeuseduration",
+            "type": "string"
+          },
+          "migrationtime": {
+            "title": "Migrationtime",
+            "type": "string"
+          },
+          "migrationhighbytes": {
+            "title": "Migrationhighbytes",
+            "type": "integer"
+          },
+          "migrationlowbytes": {
+            "title": "Migrationlowbytes",
+            "type": "integer"
+          },
+          "nextpool": {
+            "title": "Nextpool",
+            "type": "string"
+          },
+          "storage": {
+            "title": "Storage",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "autoprune": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "recycle": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "recyclepool": {
+            "title": "Recyclepool",
+            "type": "string"
+          },
+          "scratchpool": {
+            "title": "Scratchpool",
+            "type": "string"
+          },
+          "catalog": {
+            "title": "Catalog",
+            "type": "string"
+          },
+          "fileretention": {
+            "title": "Fileretention",
+            "type": "string"
+          },
+          "jobretention": {
+            "title": "Jobretention",
+            "type": "string"
+          },
+          "minimumblocksize": {
+            "title": "Minimumblocksize",
+            "type": "integer"
+          },
+          "maximumblocksize": {
+            "title": "Maximumblocksize",
+            "type": "integer"
+          }
+        }
+      },
+      "profileResource": {
+        "title": "profileResource",
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "jobacl": {
+            "title": "Jobacl",
+            "type": "string"
+          },
+          "clientacl": {
+            "title": "Clientacl",
+            "type": "string"
+          },
+          "storageacl": {
+            "title": "Storageacl",
+            "type": "string"
+          },
+          "scheduleacl": {
+            "title": "Scheduleacl",
+            "type": "string"
+          },
+          "poolacl": {
+            "title": "Poolacl",
+            "type": "string"
+          },
+          "commandacl": {
+            "title": "Commandacl",
+            "type": "string"
+          },
+          "filesetacl": {
+            "title": "Filesetacl",
+            "type": "string"
+          },
+          "catalogacl": {
+            "title": "Catalogacl",
+            "type": "string"
+          },
+          "whereacl": {
+            "title": "Whereacl",
+            "type": "string"
+          },
+          "pluginoptionsacl": {
+            "title": "Pluginoptionsacl",
+            "type": "string"
+          },
+          "name": {
+            "title": "resource name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "description": "Possible ACL options"
+      },
+      "restoreJobControl": {
+        "title": "restoreJobControl",
+        "required": [
+          "client"
+        ],
+        "type": "object",
+        "properties": {
+          "client": {
+            "title": "Restore data from this client",
+            "type": "string"
+          },
+          "where": {
+            "title": "Filesystem prefix. Use _/_ for original location",
+            "type": "string",
+            "format": "path",
+            "example": "/"
+          },
+          "storage": {
+            "title": "Storage",
+            "type": "string"
+          },
+          "bootstrap": {
+            "title": "Bootstrap",
+            "type": "string"
+          },
+          "restorejob": {
+            "title": "Restorejob",
+            "type": "string"
+          },
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "jobid": {
+            "title": "Restore all files backuped by a given jobid",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "fileset": {
+            "title": "Fileset",
+            "type": "string"
+          },
+          "replace": {
+            "title": "Set file-replace options",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosReplaceOption"
+              }
+            ]
+          },
+          "pluginoptions": {
+            "title": "Pluginoptions",
+            "type": "string"
+          },
+          "regexwhere": {
+            "title": "Regexwhere",
+            "type": "string"
+          },
+          "restoreclient": {
+            "title": "Restore data to this client",
+            "type": "string"
+          },
+          "backupformat": {
+            "title": "Backupformat",
+            "type": "string"
+          },
+          "pool": {
+            "title": "Pool",
+            "type": "string"
+          },
+          "file": {
+            "title": "File",
+            "type": "string"
+          },
+          "directory": {
+            "title": "Directory",
+            "type": "string"
+          },
+          "before": {
+            "title": "Before",
+            "type": "string"
+          },
+          "strip_prefix": {
+            "title": "Strip Prefix",
+            "type": "string"
+          },
+          "add_prefix": {
+            "title": "Add Prefix",
+            "type": "string"
+          },
+          "add_suffix": {
+            "title": "Add Suffix",
+            "type": "string"
+          },
+          "select": {
+            "title": "use select=date",
+            "type": "string"
+          },
+          "selectAllDone": {
+            "title": "Run restore job with _select all done_ option",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosBool"
+              }
+            ]
+          }
+        }
+      },
+      "scheduleResource": {
+        "title": "scheduleResource",
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Schedule name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Schedule Description",
+            "type": "string"
+          },
+          "runCommand": {
+            "title": "A list of run statements",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "Full 1st Sat at 12:00",
+              "Incremental Sun-Fri at 11:00"
+            ]
+          },
+          "enabled": {
+            "title": "Schedule enabled? Yes, if unset",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosBool"
+              }
+            ]
+          }
+        }
+      },
+      "storageResource": {
+        "title": "storageResource",
+        "required": [
+          "device",
+          "mediatype",
+          "name",
+          "address",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "tlsauthenticate": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlsenable": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlsrequire": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlscipherlist": {
+            "title": "Tlscipherlist",
+            "type": "string",
+            "format": "path"
+          },
+          "tlsdhfile": {
+            "title": "Tlsdhfile",
+            "type": "string",
+            "format": "path"
+          },
+          "tlsverifypeer": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "tlscacertificatefile": {
+            "title": "Tlscacertificatefile",
+            "type": "string",
+            "format": "path"
+          },
+          "tlscacertificatedir": {
+            "title": "Tlscacertificatedir",
+            "type": "string",
+            "format": "path"
+          },
+          "tlscertificaterevocationlist": {
+            "title": "Tlscertificaterevocationlist",
+            "type": "string",
+            "format": "path"
+          },
+          "tlscertificate": {
+            "title": "Tlscertificate",
+            "type": "string",
+            "format": "path"
+          },
+          "tlskey": {
+            "title": "Tlskey",
+            "type": "string",
+            "format": "path"
+          },
+          "tlsallowedcn": {
+            "title": "Tlsallowedcn",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "device": {
+            "title": "Device",
+            "type": "string"
+          },
+          "mediatype": {
+            "title": "Mediatype",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "protocol": {
+            "title": "Protocol",
+            "type": "string"
+          },
+          "authtype": {
+            "title": "Authtype",
+            "type": "string"
+          },
+          "lanaddress": {
+            "title": "Lanaddress",
+            "type": "string"
+          },
+          "port": {
+            "title": "Port",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          },
+          "autochanger": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "enabled": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "allowcompression": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "heartbeatinterval": {
+            "title": "Heartbeatinterval",
+            "type": "string"
+          },
+          "cachestatusinterval": {
+            "title": "Cachestatusinterval",
+            "type": "string"
+          },
+          "maximumconcurrentjobs": {
+            "title": "Maximumconcurrentjobs",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maximumconcurrentreadjobs": {
+            "title": "Maximumconcurrentreadjobs",
+            "minimum": 1,
+            "type": "integer"
+          },
+          "pairedstorage": {
+            "title": "Pairedstorage",
+            "type": "string"
+          },
+          "maximumbandwidthperjob": {
+            "title": "Maximumbandwidthperjob",
+            "type": "string"
+          },
+          "collectstatistics": {
+            "$ref": "#/components/schemas/bareosBool"
+          },
+          "ndmpchangerdevice": {
+            "title": "Ndmpchangerdevice",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "address": {
+            "title": "Address",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "description": "Options for TLS settings"
+      },
+      "userResource": {
+        "title": "userResource",
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "jobacl": {
+            "title": "Jobacl",
+            "type": "string"
+          },
+          "clientacl": {
+            "title": "Clientacl",
+            "type": "string"
+          },
+          "storageacl": {
+            "title": "Storageacl",
+            "type": "string"
+          },
+          "scheduleacl": {
+            "title": "Scheduleacl",
+            "type": "string"
+          },
+          "poolacl": {
+            "title": "Poolacl",
+            "type": "string"
+          },
+          "commandacl": {
+            "title": "Commandacl",
+            "type": "string"
+          },
+          "filesetacl": {
+            "title": "Filesetacl",
+            "type": "string"
+          },
+          "catalogacl": {
+            "title": "Catalogacl",
+            "type": "string"
+          },
+          "whereacl": {
+            "title": "Whereacl",
+            "type": "string"
+          },
+          "pluginoptionsacl": {
+            "title": "Pluginoptionsacl",
+            "type": "string"
+          },
+          "name": {
+            "title": "resource name",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "profile": {
+            "title": "List of profile names for this user",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Possible ACL options"
+      },
+      "volumeExport": {
+        "title": "volumeExport",
+        "required": [
+          "storage",
+          "srcslots"
+        ],
+        "type": "object",
+        "properties": {
+          "storage": {
+            "title": "Storage to use for move operation",
+            "type": "string"
+          },
+          "srcslots": {
+            "title": "Source slot selection",
+            "type": "string"
+          },
+          "dstslots": {
+            "title": "Destination slot selection",
+            "type": "string"
+          },
+          "volume": {
+            "title": "Volume selection",
+            "type": "string",
+            "example": "A00020L4|A00007L4|A00005L4"
+          },
+          "scan": {
+            "title": "scan volume",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosFlag"
+              }
+            ]
+          }
+        }
+      },
+      "volumeImport": {
+        "title": "volumeImport",
+        "required": [
+          "storage",
+          "srcslots"
+        ],
+        "type": "object",
+        "properties": {
+          "storage": {
+            "title": "Storage to use for import operation",
+            "type": "string"
+          },
+          "srcslots": {
+            "title": "Source slot selection",
+            "type": "string"
+          },
+          "dstslots": {
+            "title": "Destination slot selection",
+            "type": "string"
+          },
+          "volume": {
+            "title": "Volume name",
+            "type": "string"
+          },
+          "scan": {
+            "title": "scan volume",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosFlag"
+              }
+            ]
+          }
+        }
+      },
+      "volumeLabelDef": {
+        "title": "volumeLabelDef",
+        "required": [
+          "volume",
+          "pool"
+        ],
+        "type": "object",
+        "properties": {
+          "volume": {
+            "title": "Name for the new volume",
+            "type": "string",
+            "example": "Full-1742"
+          },
+          "pool": {
+            "title": "New volume will get into this pool",
+            "type": "string",
+            "example": "Full"
+          },
+          "storage": {
+            "title": "Storage for this volume",
+            "type": "string"
+          },
+          "slot": {
+            "title": "Slot for this volume",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "drive": {
+            "title": "Drive number",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "description": "Options for volume label operation"
+      },
+      "volumeMove": {
+        "title": "volumeMove",
+        "required": [
+          "storage",
+          "srcslots",
+          "dstslots"
+        ],
+        "type": "object",
+        "properties": {
+          "storage": {
+            "title": "Storage to use for move operation",
+            "type": "string"
+          },
+          "srcslots": {
+            "title": "Source slot selection",
+            "type": "string"
+          },
+          "dstslots": {
+            "title": "Destination slot selection",
+            "type": "string"
+          }
+        }
+      },
+      "volumeProperties": {
+        "title": "volumeProperties",
+        "type": "object",
+        "properties": {
+          "pool": {
+            "title": "New pool for this volume",
+            "type": "string",
+            "example": "Full"
+          },
+          "slot": {
+            "title": "New slot for this volume",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "volstatus": {
+            "title": "New status for this volume",
+            "type": "string",
+            "example": "Archive"
+          },
+          "volretention": {
+            "title": "Volume retention time",
+            "type": "string",
+            "example": "1 month"
+          },
+          "actiononpurge": {
+            "title": "Action to execute on purge",
+            "type": "string"
+          },
+          "recycle": {
+            "title": "Set recycle flag",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosBool"
+              }
+            ]
+          },
+          "inchanger": {
+            "title": "Set inchanger flag",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosBool"
+              }
+            ]
+          },
+          "maxvolbytes": {
+            "title": "Set max byte size for this volume",
+            "type": "string",
+            "example": "20G"
+          },
+          "maxvolfiles": {
+            "title": "Set max number of files for this volume",
+            "minimum": 0,
+            "type": "integer",
+            "example": "10000"
+          },
+          "maxvoljobs": {
+            "title": "Set max number of jobs for this volume",
+            "minimum": 0,
+            "type": "integer",
+            "example": "20"
+          },
+          "enabled": {
+            "title": "Enable / disable volume",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosBool"
+              }
+            ]
+          },
+          "recyclepool": {
+            "title": "Define recyclepool for this volume",
+            "type": "string",
+            "example": "Scratch"
+          }
+        },
+        "description": "Volume properties that can be set for _update volume_ operation"
+      },
+      "volumeQuery": {
+        "title": "volumeQuery",
+        "type": "object",
+        "properties": {
+          "volume": {
+            "title": "volume name to query",
+            "type": "string",
+            "example": "myvolume"
+          },
+          "jobid": {
+            "title": "Search for volumes used by a certain job",
+            "exclusiveMinimum": 1,
+            "type": "integer",
+            "example": "1"
+          },
+          "ujobid": {
+            "title": "Search for volumes used by a certain job given by full job-name",
+            "type": "string",
+            "example": "DefaultJob.2020-08-20_12.56.27_25"
+          },
+          "pool": {
+            "title": "Query volumes from the given pool",
+            "type": "string",
+            "example": "Full"
+          }
+        },
+        "description": "Allowed query fields for volume queries"
+      },
+      "volumeRelabelDef": {
+        "title": "volumeRelabelDef",
+        "required": [
+          "volume",
+          "storage",
+          "pool"
+        ],
+        "type": "object",
+        "properties": {
+          "volume": {
+            "title": "New Name for Volume",
+            "type": "string",
+            "example": "Full-001742"
+          },
+          "storage": {
+            "title": "Volume's storage",
+            "type": "string",
+            "example": "File"
+          },
+          "pool": {
+            "title": "Volume's pool, can stay here or be moved to this pool",
+            "type": "string",
+            "example": "Full"
+          },
+          "encrypt": {
+            "title": "Encrypt volume",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/bareosFlag"
+              }
+            ]
+          }
+        },
+        "description": "Options for volume relabel operation"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "token"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "configuration",
+      "description": "Resource configuration with _show_ and _configure_ command",
+      "externalDocs": {
+        "description": "Configuration resources documentation",
+        "url": "https://docs.bareos.org/Configuration"
+      }
+    },
+    {
+      "name": "control",
+      "description": "Monitor and control Bareos components with commands like _list_ and _update_",
+      "externalDocs": {
+        "description": "Bareos Console commands",
+        "url": "https://docs.bareos.org/TasksAndConcepts/BareosConsole.html"
+      }
+    },
+    {
+      "name": "clients",
+      "description": "Operations with clients / client resource",
+      "externalDocs": {
+        "description": "Client resource documentation",
+        "url": "https://docs.bareos.org/Configuration/Director.html#client-resource"
+      }
+    },
+    {
+      "name": "devices",
+      "description": "Bareos Devices",
+      "externalDocs": {
+        "description": "Device resource documentation",
+        "url": "https://docs.bareos.org/Configuration/StorageDaemon.html"
+      }
+    },
+    {
+      "name": "directors",
+      "description": "Director status and configuration",
+      "externalDocs": {
+        "description": "Director documentation",
+        "url": "https://docs.bareos.org/Configuration/Director.html"
+      }
+    },
+    {
+      "name": "filesets",
+      "description": "Operations with filesets / fileset resource",
+      "externalDocs": {
+        "description": "fileset resource documentation",
+        "url": "https://docs.bareos.org/Configuration/Director.html#fileset-resource"
+      }
+    },
+    {
+      "name": "jobcontrol",
+      "description": "Monitor and control jobs, run, cancel, rerun",
+      "externalDocs": {
+        "description": "Job status and control",
+        "url": "https://docs.bareos.org/IntroductionAndTutorial/Tutorial.html#running-a-job"
+      }
+    },
+    {
+      "name": "jobdefs",
+      "description": "Jobdefs - Bareos job definition templates",
+      "externalDocs": {
+        "description": "JobDefs resource documentation",
+        "url": "https://docs.bareos.org/Configuration/Director.html#jobdefs-resource"
+      }
+    },
+    {
+      "name": "jobs",
+      "description": "Job resource - Bareos job definition",
+      "externalDocs": {
+        "description": "Job resource documentation",
+        "url": "https://docs.bareos.org/Configuration/Director.html#job-resource"
+      }
+    },
+    {
+      "name": "pools",
+      "description": "Pool - Bareos Pool definition and status",
+      "externalDocs": {
+        "description": "Pool resource documentation",
+        "url": "https://docs.bareos.org/Configuration/Director.html#pool-resource"
+      }
+    },
+    {
+      "name": "schedules",
+      "description": "Bareos Schedules",
+      "externalDocs": {
+        "description": "Schedule resource documentation",
+        "url": "https://docs.bareos.org/Configuration/Director.html#schedule-resource"
+      }
+    },
+    {
+      "name": "storages",
+      "description": "Bareos Storages",
+      "externalDocs": {
+        "description": "Storage resource documentation",
+        "url": "https://docs.bareos.org/Configuration/Director.html#storage-resource"
+      }
+    },
+    {
+      "name": "users",
+      "description": "Manage users, consoles, profiles",
+      "externalDocs": {
+        "description": "Volume management documentation",
+        "url": "https://docs.bareos.org/Configuration/Director.html#user-resource"
+      }
+    },
+    {
+      "name": "volumes",
+      "description": "Volume handling",
+      "externalDocs": {
+        "description": "Volume management documentation",
+        "url": "https://docs.bareos.org/TasksAndConcepts/VolumeManagement.html"
+      }
+    }
+  ]
+}

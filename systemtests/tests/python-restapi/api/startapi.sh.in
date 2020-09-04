@@ -1,0 +1,18 @@
+#!/bin/bash
+. ../environment
+
+if [ "${PROJECT_SOURCE_DIR}" ] && [ -e "${PROJECT_SOURCE_DIR}/../python-bareos/" ]; then
+    PYTHONPATH=${PYTHONPATH:-}
+    if [ "$PYTHONPATH" ]; then
+        export PYTHONPATH=${PROJECT_SOURCE_DIR}/../python-bareos/:$PYTHONPATH
+    else
+        export PYTHONPATH=${PROJECT_SOURCE_DIR}/../python-bareos/
+    fi
+    PYTHONPATH=/root/git/bareos/python-bareos/bareos:$PYTHONPATH
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python}
+fi
+
+uvicorn bareos-restapi:app --port @restapi_port@ > ../log/bareos-restapi.log 2>&1 &
+PID=$!
+echo @restapi_port@ > api.port
+echo $PID > api.pid
