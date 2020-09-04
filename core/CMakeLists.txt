@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+# Copyright (C) 2017-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -163,11 +163,22 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include)
   set(HAVE_PYTHON 1)
 
-  set(PostgreSQL_LIBRARY
-      ${PROJECT_SOURCE_DIR}/src/win32/cats/pgsql/lib/${WINDOWS_BITS}/libpq.dll)
-  set(PostgreSQL_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/win32/cats/pgsql/include)
+  set(WINDOWS_LIBRARIES ws2_32)
+  if(${WINDOWS_BITS} MATCHES "32")
+    set(cross-prefix i686-w64-mingw32)
+  else()
+    set(cross-prefix x86_64-w64-mingw32)
+  endif()
+
+  set(PYTHON_LIBRARIES /usr/${cross-prefix}/lib/python27.dll)
+  set(PYTHON_INCLUDE_DIRS /usr/${cross-prefix}/include/python2/)
+  set(HAVE_PYTHON 1)
+
+  set(PostgreSQL_LIBRARY /usr/${cross-prefix}/sys-root/mingw/bin/libpq.dll)
+  set(PostgreSQL_INCLUDE_DIR
+      /usr/${cross-prefix}/sys-root/mingw/include/postgresql/server/)
   set(PostgreSQL_TYPE_INCLUDE_DIR
-      ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/include)
+      /usr/${cross-prefix}/sys-root/mingw/include/postgresql/internal/)
 
   set(dynamic-storage-backends OFF)
   set(HAVE_DYNAMIC_SD_BACKENDS 0)
