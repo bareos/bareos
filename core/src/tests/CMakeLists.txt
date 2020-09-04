@@ -417,3 +417,8 @@ if(NOT client-only)
       SKIP_GTEST
   )
 endif() # NOT client-only
+
+bareos_add_test(
+  test_edit LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
+                                    ${GTEST_MAIN_LIBRARIES}
+)
