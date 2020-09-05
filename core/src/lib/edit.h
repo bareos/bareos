@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,5 +47,6 @@ bool IsNameValid(const char* name, POOLMEM*& msg);
 bool IsNameValid(const char* name);
 bool IsAclEntryValid(const char* acl, std::vector<char>& msg);
 bool IsAclEntryValid(const char* acl);
+bool size_to_uint64(char* str, uint64_t* value);
 
 #endif  // BAREOS_LIB_EDIT_H_

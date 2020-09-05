@@ -1511,13 +1511,14 @@ std::string PrintNumberSiPrefixFormat(ResourceItem* item, uint64_t value_in)
   /*
    * convert default value string to numeric value
    */
-  static const char* modifier[] = {"g", "m", "k", "", NULL};
-  const uint64_t multiplier[] = {
-      1073741824, /* gibi */
-      1048576,    /* mebi */
-      1024,       /* kibi */
-      1           /* byte */
-  };
+  static const char* modifier[] = {"e", "p", "t", "g", "m", "k", "", NULL};
+  const uint64_t multiplier[] = {1152921504606846976,  // EiB Exbibyte
+                                 1125899906842624,     // PiB Pebibyte
+                                 1099511627776,        // TiB Tebibyte
+                                 1073741824,           // GiB Gibibyte
+                                 1048576,              // MiB Mebibyte
+                                 1024,                 // KiB Kibibyte
+                                 1};
 
   if (value == 0) {
     PmStrcat(volspec, "0");

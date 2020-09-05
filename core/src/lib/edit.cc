@@ -366,17 +366,22 @@ static bool strunit_to_uint64(char* str, uint64_t* value, const char** mod)
   char mod_str[20];
   char num_str[50];
   static const uint64_t mult[] = {
-      1,                    // Byte
-      1024,                 // KiB Kibibyte
-      1000,                 // kB Kilobyte
-      1048576,              // MiB Mebibyte
-      1000000,              // MB Megabyte
-      1073741824,           // GiB Gibibyte
-      1000000000,           // GB Gigabyte
-      1099511627776,        // TiB Tebibyte
-      1000000000000,        // TB Terabyte
-      1125899906842624,     // PiB Pebibyte
-      1000000000000000,     // PB Petabyte
+      1,     // Byte
+      1024,  // KiB Kibibyte
+      1000,  // kB Kilobyte
+
+      1048576,  // MiB Mebibyte
+      1000000,  // MB Megabyte
+
+      1073741824,  // GiB Gibibyte
+      1000000000,  // GB Gigabyte
+
+      1099511627776,  // TiB Tebibyte
+      1000000000000,  // TB Terabyte
+
+      1125899906842624,  // PiB Pebibyte
+      1000000000000000,  // PB Petabyte
+
       1152921504606846976,  // EiB Exbibyte
       1000000000000000000,  // EB Exabyte
                             // 18446744073709551616 2^64
@@ -420,9 +425,23 @@ bool size_to_uint64(char* str, uint64_t* value)
   /*
    * First item * not used
    */
-  static const char* mod[] = {"*", "k",  "kb", "m",  "mb", "g",  "gb",
-                              "t", "tb", "p",  "pb", "e",  "eb", NULL};
+  // clang-format off
+  static const char* mod[] = {"*",
+                              // kibibyte, kilobyte
+                              "k",  "kb",
+                              // mebibyte, megabyte
+                              "m",  "mb",
+                              // gibibyte, gigabyte
+                              "g",  "gb",
+                              // tebibyte, terabyte
+                              "t",  "tb",
+                              // pebibyte, petabyte
+                              "p",  "pb",
+                              // exbibyte, exabyte
+                              "e",  "eb",
+                              NULL};
 
+  // clang-format on
   return strunit_to_uint64(str, value, mod);
 }
 
