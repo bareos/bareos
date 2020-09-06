@@ -28,6 +28,23 @@
 
 #include "lib/edit.h"
 
+TEST(edit, format_1k)
+{
+  ASSERT_STREQ(SizeAsSiPrefixFormat(1).c_str(), "1");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(1024).c_str(), "1 k");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(1048576).c_str(), "1 m");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(1073741824).c_str(), "1 g");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(1099511627776).c_str(), "1 t");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(1125899906842624).c_str(), "1 p");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(1152921504606846976).c_str(), "1 e");
+
+  ASSERT_STREQ(
+      SizeAsSiPrefixFormat(1152921504606846976 + 1125899906842624 +
+                           1099511627776 + 1073741824 + 1048576 + 1024 + 1)
+          .c_str(),
+      "1 e 1 p 1 t 1 g 1 m 1 k 1");
+}
+
 // kibibyte
 TEST(edit, k)
 {

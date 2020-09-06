@@ -415,6 +415,44 @@ static bool strunit_to_uint64(char* str, uint64_t* value, const char** mod)
   return true;
 }
 
+// convert uint64 number to size string
+std::string SizeAsSiPrefixFormat(uint64_t value_in)
+{
+  uint64_t value = value_in;
+  int factor;
+  std::string result{};
+  /*
+   * convert default value string to numeric value
+   */
+  static const char* modifier[] = {"e", "p", "t", "g", "m", "k", "", NULL};
+  const uint64_t multiplier[] = {1152921504606846976,  // EiB Exbibyte
+                                 1125899906842624,     // PiB Pebibyte
+                                 1099511627776,        // TiB Tebibyte
+                                 1073741824,           // GiB Gibibyte
+                                 1048576,              // MiB Mebibyte
+                                 1024,                 // KiB Kibibyte
+                                 1};
+
+  if (value == 0) {
+    result += "0";
+  } else {
+    for (int t = 0; modifier[t]; t++) {
+      factor = value / multiplier[t];
+      value = value % multiplier[t];
+      if (factor > 0) {
+        result += std::to_string(factor);
+        result += " ";
+        result += modifier[t];
+        if (!(bstrcmp(modifier[t], ""))) { result += " "; }
+      }
+      if (value == 0) { break; }
+    }
+  }
+  result.pop_back();
+  return result;
+}
+
+
 /*
  * Convert a size in bytes to uint64_t
  * Returns false: if error

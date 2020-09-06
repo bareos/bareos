@@ -48,5 +48,6 @@ bool IsNameValid(const char* name);
 bool IsAclEntryValid(const char* acl, std::vector<char>& msg);
 bool IsAclEntryValid(const char* acl);
 bool size_to_uint64(char* str, uint64_t* value);
+std::string SizeAsSiPrefixFormat(uint64_t value_in);
 
 #endif  // BAREOS_LIB_EDIT_H_
