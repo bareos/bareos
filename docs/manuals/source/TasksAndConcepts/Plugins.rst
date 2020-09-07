@@ -152,7 +152,7 @@ The **python-fd** plugin behaves similar to the :ref:`director-python-plugin`. B
 
 Modernization of the python plugin API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Since :sinceVersion:`20`, the Bareos python API was refactored and adapted to
+Since :sinceVersion:`20: Python API`, the Bareos python API was refactored and adapted to
 support both python version *2* and python version *3*.
 
 Description of the old API
@@ -212,7 +212,7 @@ call that goes into the core.
 
 Description of the new API
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-Since Bareos :sinceVersion:`20`, plugin API still consists of a Bareos daemon
+Since Bareos :sinceVersion:`20: Python3`, plugin API still consists of a Bareos daemon
 plugin which technically are shared objects being loaded by the corresponding
 daemon during startup when loading of the plugin is configured.
 
