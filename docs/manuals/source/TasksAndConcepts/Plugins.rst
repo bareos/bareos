@@ -35,8 +35,8 @@ Modernization of the Python plugin API
 For :sinceVersion:`20: Python API`, the Bareos Python API was refactored and
 adapted to support both Python version *2* and Python version *3*.
 
-Description of the old Bareos Python API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Description of the old Bareos Python plugin API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In  Bareos < 20, the Bareos Python plugin API consists of a Bareos daemon
 plugin (**python-fd**, **python-sd**, **python-dir**). These plugins are
 shared objects that are loaded by the corresponding daemon during startup.
@@ -96,8 +96,8 @@ being called from the core has an context which needs to be given back to every
 call that goes into the core.
 
 
-Description of the new Bareos Plugin API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Description of the new Bareos Python plugin API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Since Bareos :sinceVersion:`20: Python3`, two Python plugins exist for
 each Bareos daemon, where the **python-** prefix means that the module supports
 Python 2, and the **python3-** prefix supports Python 3.
