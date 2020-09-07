@@ -32,7 +32,7 @@ plugin functionality. These are for example the VMware Plugin or the  oVirt Plug
 
 Modernization of the Python plugin API
 --------------------------------------
-For :sinceVersion:`20: Python API`, the Bareos Python API was refactored and
+For Bareos :sinceVersion:`20: Python API`, the Bareos Python API was refactored and
 adapted to support both Python version *2* and Python version *3*.
 
 Description of the old Bareos Python plugin API
