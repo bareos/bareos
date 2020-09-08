@@ -24,10 +24,14 @@ The Python plugins create a connection between the Bareos Plugin API and the
 Python programming language. With the Python plugins, it is possible to implement
 Bareos Plugins by writing Python code.
 
-For each daemon, there exists a Python plugin which is a plugin implementing
-the c api for Bareos plugins. The Python plugin can be configured via the usual
-plugin configuration and load different Python files which then implement the
-plugin functionality. These are for example the VMware Plugin or the  oVirt Plugin.
+For each daemon there exists a Daemon Python Plugin which is a plugin implementing
+the c API for Bareos plugins.
+
+This Python plugin can be configured via the usual plugin configuration mechanism
+which python files to load. The python files then implement the plugin
+functionality.
+
+Examples for such Python Plugins are the VMware Python Plugin or the oVirt Python Plugin.
 
 
 Modernization of the Python plugin API
@@ -35,13 +39,38 @@ Modernization of the Python plugin API
 For Bareos :sinceVersion:`20: Python API`, the Bareos Python API was refactored and
 adapted to support both Python version *2* and Python version *3*.
 
-Description of the old Bareos Python plugin API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Description of the Bareos Python plugin API for Bareos < 20
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In  Bareos < 20, the Bareos Python plugin API consists of a Bareos daemon
 plugin (**python-fd**, **python-sd**, **python-dir**). These plugins are
 shared objects that are loaded by the corresponding daemon during startup.
 
-This plugin then creates an **internal Python** module and starts a **Python 2**
+
+.. uml::
+  :caption: Bareos Python Plugin Architecture for Bareos < 20
+
+  package "Bareos Daemon" {
+  [Core]
+  }
+
+  package "Daemon Python Plugin (shared library)" {
+  [Python Module]
+  [Python Interpreter]
+  }
+
+  package "Python Plugin Scripts" {
+  [Python Plugin Files]
+  [Python Constants File]
+  }
+
+  [Core] <-> [Python Interpreter] : Bareos Plugin API
+
+  [Python Interpreter] <-> [Python Module] : use
+  [Python Module] <-> [Python Plugin Files] : Python Plugin API
+  [Python Plugin Files] -> [Python Constants File] : imports
+
+
+This plugin then creates an **internal Python module** and starts a **Python 2**
 interpreter being able to access the Python module.
 
 The **internal Python module** allows the Python plugin to call functions
@@ -50,8 +79,8 @@ from the Python code into the core. It also implements the data types that are
 exchanged via the Bareos plugin interface.
 
 Finally, the Python interpreter loads the Python script configured in the
-**Plugin string** of the fileset and executes it. This Python script is the
-bareos plugin implemented in Python.
+**Plugin string** of the file set and executes it. This Python script is the
+Bareos plugin implemented in Python.
 
 As the **internal Python module** is only created inside of the Python
 plugin, debugging and testing is a challenge.
@@ -96,8 +125,8 @@ being called from the core has an context which needs to be given back to every
 call that goes into the core.
 
 
-Description of the new Bareos Python plugin API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Description of the new Bareos Python plugin API for Bareos >= 20
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Since Bareos :sinceVersion:`20: Python3`, two Python plugins exist for
 each Bareos daemon, where the **python-** prefix means that the module supports
 Python 2, and the **python3-** prefix supports Python 3.
@@ -120,6 +149,32 @@ as real Python module with the name *bareos[daemon-abbreviation]*, for example
 **bareosfd**.
 Every Python plugin now has a corresponding Python module.
 
+.. uml::
+  :caption: Bareos Python Plugin Architecture for Bareos >= 20
+
+  package "Bareos Daemon" {
+  [Core]
+  }
+
+  package "Daemon Python Plugin (shared library)" {
+  [Python Interpreter]
+  }
+
+  package "Python Module (shared object)" {
+  [Python Module]
+  }
+
+  package "Python Plugin Scripts" {
+  [Python Plugin Files]
+  }
+
+  [Core] <-> [Python Interpreter] : Bareos Plugin API
+
+  [Python Interpreter] <-> [Python Module] :  load and use
+  [Python Module] <-> [Python Plugin Files] : Python Plugin API
+
+
+
 The Python plugin creates a Python interpreter with either Python 2 or Python 3
 which then loads the corresponding Python module. Afterwards the interpreter
 loads the Python script configured in the *Plugin* fileset setting and executes
@@ -135,7 +190,7 @@ Python files containing the constant definitions have been removed.
 To access these values, every Python plugin imports the corresponding Python
 module and can access the variables immediately:
 
-.. code-block:: importing bareosfd
+.. code-block:: python
    :caption: bareosfd: accessing compiled-in constants:
 
    import bareosfd
