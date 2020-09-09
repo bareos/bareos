@@ -183,12 +183,16 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   if (!Py_IsInitialized()) {
     Py_InitializeEx(0);
 
+    // add bareos plugin path to python module search path
+    pyObject* sysPath = PySys_GetObject((char*)"path");
+    pyObject* pluginPath = PyUnicode_FromString("/usr/lib/bareos/plugins");
+    PyList_Append(sysPath, pluginPath);
+    Py_DECREF(modulePath);
+
     /* import the bareosfd module */
     PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
-    if (bareosfdModule) {
-      // printf("loaded bareosfd successfully\n");
-    } else {
-      // printf("loading of bareosfd failed\n");
+    if (!bareosfdModule) {
+      printf("loading of bareosfd failed\n");
       if (PyErr_Occurred()) { PyErrorHandler(); }
     }
 

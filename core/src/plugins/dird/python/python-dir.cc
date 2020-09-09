@@ -210,12 +210,18 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
 {
   /* Setup Python */
   Py_InitializeEx(0);
+
+  // add bareos plugin path to python module search path
+  pyObject* sysPath = PySys_GetObject((char*)"path");
+  pyObject* pluginPath = PyUnicode_FromString("/usr/lib/bareos/plugins");
+  PyList_Append(sysPath, pluginPath);
+  Py_DECREF(modulePath);
+
+
   /* import the bareosdir module */
   PyObject* bareosdirModule = PyImport_ImportModule("bareosdir");
-  if (bareosdirModule) {
-    // printf("loaded bareosdir successfully\n");
-  } else {
-    // printf("loading of bareosdir failed\n");
+  if (!bareosdirModule) {
+    printf("loading of bareosdir failed\n");
     if (PyErr_Occurred()) { PyErrorHandler(); }
   }
 
