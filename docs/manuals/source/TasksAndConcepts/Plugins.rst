@@ -202,6 +202,8 @@ During the restructuring of the plugin API it became clear that the *context*
 that was always transferred between the core and the Python Plugin and back was
 **unnecessary**, so it was completely removed from the API.
 
+The members of the **bareosfd.stat_pkt** type have been renamed with the
+**st_** prefix to match with the member names of Pythons' **os.stat_result**.
 
 Porting existing Python plugins:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -215,6 +217,8 @@ and requires the following steps:
 
    Switch to the constants being defined in the bareos[fd|sd|dir] Python plugin.
       Import bareos[fd|sd|dir] instead of bareos_[fd|sd|dir]_consts.
+
+   Add the **st_** prefix to all members of **stat_pkt** type.
 
    Adapt the code to run on Python 2 **and** Python 3
       It is important to make sure the code works both for Python 2 and 3.
