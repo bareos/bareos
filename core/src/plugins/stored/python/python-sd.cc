@@ -211,10 +211,10 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   Py_InitializeEx(0);
 
   // add bareos plugin path to python module search path
-  pyObject* sysPath = PySys_GetObject((char*)"path");
-  pyObject* pluginPath = PyUnicode_FromString("/usr/lib/bareos/plugins");
+  PyObject* sysPath = PySys_GetObject((char*)"path");
+  PyObject* pluginPath = PyUnicode_FromString(PLUGINDIR);
   PyList_Append(sysPath, pluginPath);
-  Py_DECREF(modulePath);
+  Py_DECREF(pluginPath);
 
   /* import the bareossd module */
   PyObject* bareossdModule = PyImport_ImportModule("bareossd");
