@@ -145,7 +145,7 @@ The following six plugins now exist:
    ===============  =========== ============
 
 The functionality of the former *internal Python module* is now implemented
-as real Python module with the name *bareos[daemon-abbreviation]*, for example
+as real Python module with the name *bareos[fd|sd|dir]*, for example
 **bareosfd**.
 Every Python plugin now has a corresponding Python module.
 
@@ -184,7 +184,7 @@ As the Python module for the Python plugin is now available also
 outside of the plugin, it can be loaded and tested independently.
 
 Definitions required for the Python plugin callbacks into the Bareos core
-are now **compiled into** the *bareos[daemon-abbreviation]* Python module, and the
+are now **compiled into** the *bareos[fd|sd|dir]* Python module, and the
 Python files containing the constant definitions have been removed.
 
 To access these values, every Python plugin imports the corresponding Python
