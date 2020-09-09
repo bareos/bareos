@@ -5,15 +5,16 @@ Plugins
 
 .. index:: Plugin
 
-The functionality of Bareos can be extended by plugins. They do exists plugins for the different daemons (Director, Storage- and File-Daemon).
+The functionality of Bareos can be extended by plugins. Plugins exist
+for the different daemons (Director, Storage- and File-Daemon).
 
 To use plugins, they must be enabled in the configuration (:strong:`Plugin Directory`\  and optionally :strong:`Plugin Names`\ ).
 
 If a :strong:`Plugin Directory`\  is specified, :strong:`Plugin Names`\  defines which plugins get loaded.
 
-If :strong:`Plugin Names`\  is not defined, all plugins get loaded.
+If :strong:`Plugin Names`\  is not defined, all plugins found in the :strong:`Plugin Directory` are loaded.
 
-The program :ref:`bpluginfo` can be used, to retrieve information about a specific plugin.
+The program :ref:`bpluginfo` can be used to retrieve information about a specific plugin.
 
 
 Python Plugins
