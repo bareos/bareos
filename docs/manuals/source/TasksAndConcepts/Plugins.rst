@@ -25,7 +25,7 @@ Python programming language. With the Python plugins, it is possible to implemen
 Bareos Plugins by writing Python code.
 
 For each daemon there exists a Daemon Python Plugin which is a plugin implementing
-the c API for Bareos plugins.
+the C API for Bareos plugins.
 
 This Python plugin can be configured via the usual plugin configuration mechanism
 which python files to load. The python files then implement the plugin
@@ -180,8 +180,9 @@ which then loads the corresponding Python module. Afterwards the interpreter
 loads the Python script configured in the *Plugin* fileset setting and executes
 it.
 
-As the Python module for the Python plugin is now available also
-outside of the plugin, it can be loaded and tested independently.
+As the Python module for the Python plugin is now available outside of the
+Daemon Python Plugin. It is now a real stand-alone Python module implemented in
+C which can be loaded and tested independently.
 
 Definitions required for the Python plugin callbacks into the Bareos core
 are now **compiled into** the *bareos[fd|sd|dir]* Python module, and the
@@ -194,13 +195,11 @@ module and can access the variables immediately:
    :caption: bareosfd: accessing compiled-in constants:
 
    import bareosfd
-
    ...
-
    return bareos_fd.bRC_OK
 
 During the restructuring of the plugin API it became clear that the *context*
-that was always transferred between the core and the Python plugin and back was
+that was always transferred between the core and the Python Plugin and back was
 **unnecessary**, so it was completely removed from the API.
 
 
