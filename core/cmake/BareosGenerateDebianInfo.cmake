@@ -36,6 +36,7 @@ if(GENERATE_DEBIAN_CONTROL)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-ceph DEBIAN_CONTROL_STORAGE_CEPH)
   endif()
 
+  #python (2) plugins
   if(TARGET python-fd)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python-plugin
          DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN)
@@ -49,6 +50,7 @@ if(GENERATE_DEBIAN_CONTROL)
          DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN)
   endif()
 
+  #python 3 plugins
   if(TARGET python3-fd)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python3-plugin
          DEBIAN_CONTROL_FILEDAEMON_PYTHON3_PLUGIN)
@@ -61,6 +63,21 @@ if(GENERATE_DEBIAN_CONTROL)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python3-plugin
          DEBIAN_CONTROL_DIRECTOR_PYTHON3_PLUGIN)
   endif()
+
+  # python plugin common files
+  if(TARGET python-fd OR TARGET python3-fd)
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python-plugins-common
+      DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGINS_COMMON)
+  endif()
+  if(TARGET python-sd OR TARGET python3-sd)
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storagedaemon-python-plugins-common
+      DEBIAN_CONTROL_STORAGEDAEMON_PYTHON_PLUGINS_COMMON)
+  endif()
+  if(TARGET python-dir OR TARGET python3-dir)
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python-plugins-common
+      DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGINS_COMMON)
+  endif()
+
 
 
   if(${PLATFORM} MATCHES "univention")

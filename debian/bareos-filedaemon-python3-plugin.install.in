@@ -1,8 +1,2 @@
 @plugindir@/python3-fd.so
-@plugindir@/bareos-fd.py*
-@plugindir@/bareos-fd-local-fileset.py*
-@plugindir@/bareos-fd-mock-test.py*
-@plugindir@/BareosFdPluginBaseclass.py*
-@plugindir@/BareosFdPluginLocalFileset.py*
-@plugindir@/BareosFdWrapper.py*
 @plugindir@/bareosfd.so

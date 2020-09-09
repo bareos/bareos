@@ -1,0 +1,4 @@
+@plugindir@/bareos-dir.py*
+@plugindir@/BareosDirWrapper.py*
+@plugindir@/BareosDirPluginBaseclass.py*
+@plugindir@/bareos-dir-class-plugin.py*

@@ -1,6 +1,2 @@
 @plugindir@/python-fd.so
-@plugindir@/bareos-fd-local-fileset.py*
-@plugindir@/BareosFdPluginBaseclass.py*
-@plugindir@/BareosFdPluginLocalFileset.py*
-@plugindir@/BareosFdWrapper.py*
 @plugindir@/bareosfd.so
