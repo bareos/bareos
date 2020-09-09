@@ -2,3 +2,4 @@
 @plugindir@/BareosSdPluginBaseclass.py*
 @plugindir@/BareosSdWrapper.py*
 @plugindir@/bareos-sd-class-plugin.py*
+@plugindir@/bareossd.so

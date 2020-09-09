@@ -2,3 +2,4 @@
 @plugindir@/BareosDirWrapper.py*
 @plugindir@/BareosDirPluginBaseclass.py*
 @plugindir@/bareos-dir-class-plugin.py*
+@plugindir@/bareosdir.so
