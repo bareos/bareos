@@ -37,43 +37,43 @@ if(GENERATE_DEBIAN_CONTROL)
   endif()
 
   #python (2) plugins
-  if(TARGET python-fd)
+  if(Python2_FOUND)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python-plugin
          DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN)
   endif()
-  if(TARGET python-sd)
+  if(Python2_FOUND)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python-plugin
          DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN)
   endif()
-  if(TARGET python-dir)
+  if(Python2_FOUND)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python-plugin
          DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN)
   endif()
 
   #python 3 plugins
-  if(TARGET python3-fd)
+  if(Python3_FOUND)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python3-plugin
          DEBIAN_CONTROL_FILEDAEMON_PYTHON3_PLUGIN)
   endif()
-  if(TARGET python3-sd)
+  if(Python3_FOUND)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python3-plugin
          DEBIAN_CONTROL_STORAGE_PYTHON3_PLUGIN)
   endif()
-  if(TARGET python3-dir)
+  if(Python3_FOUND)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python3-plugin
          DEBIAN_CONTROL_DIRECTOR_PYTHON3_PLUGIN)
   endif()
 
   # python plugin common files
-  if(TARGET python-fd OR TARGET python3-fd)
+  if(Python2_FOUND OR Python3_FOUND)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python-plugins-common
       DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGINS_COMMON)
   endif()
-  if(TARGET python-sd OR TARGET python3-sd)
+  if(Python2_FOUND OR Python3_FOUND)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storagedaemon-python-plugins-common
       DEBIAN_CONTROL_STORAGEDAEMON_PYTHON_PLUGINS_COMMON)
   endif()
-  if(TARGET python-dir OR TARGET python3-dir)
+  if(Python2_FOUND OR Python3_FOUND)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python-plugins-common
       DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGINS_COMMON)
   endif()
