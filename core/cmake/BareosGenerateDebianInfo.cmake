@@ -70,7 +70,7 @@ if(GENERATE_DEBIAN_CONTROL)
       DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGINS_COMMON)
   endif()
   if(Python2_FOUND OR Python3_FOUND)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storagedaemon-python-plugins-common
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python-plugins-common
       DEBIAN_CONTROL_STORAGEDAEMON_PYTHON_PLUGINS_COMMON)
   endif()
   if(Python2_FOUND OR Python3_FOUND)
