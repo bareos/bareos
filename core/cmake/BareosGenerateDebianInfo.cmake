@@ -36,14 +36,32 @@ if(GENERATE_DEBIAN_CONTROL)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-ceph DEBIAN_CONTROL_STORAGE_CEPH)
   endif()
 
-  if(HAVE_PYTHON)
+  if(TARGET python-fd)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python-plugin
          DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN)
+  endif()
+  if(TARGET python-sd)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python-plugin
          DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN)
+  endif()
+  if(TARGET python-dir)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python-plugin
          DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN)
   endif()
+
+  if(TARGET python3-fd)
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python3-plugin
+         DEBIAN_CONTROL_FILEDAEMON_PYTHON3_PLUGIN)
+  endif()
+  if(TARGET python3-sd)
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python3-plugin
+         DEBIAN_CONTROL_STORAGE_PYTHON3_PLUGIN)
+  endif()
+  if(TARGET python3-dir)
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python3-plugin
+         DEBIAN_CONTROL_DIRECTOR_PYTHON3_PLUGIN)
+  endif()
+
 
   if(${PLATFORM} MATCHES "univention")
     # only required for univention
