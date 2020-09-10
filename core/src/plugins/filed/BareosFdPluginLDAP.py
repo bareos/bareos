@@ -31,6 +31,7 @@ from bareos_fd_consts import bCFs
 import BareosFdPluginBaseclass
 from StringIO import StringIO
 from stat import S_IFREG, S_IFDIR, S_IRWXU
+import io
 import ldif
 import ldap
 import ldap.resiter
@@ -53,6 +54,7 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         )
         super(BareosFdPluginLDAP, self).__init__(context, plugindef, ["uri", "basedn"])
         self.ldap = BareosLDAPWrapper()
+        self.data_stream = None
 
     def parse_plugin_definition(self, context, plugindef):
         """
@@ -163,21 +165,24 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bRCs["bRC_OK"]
 
         elif IOP.func == bIOPS["IO_READ"]:
-            if self.ldap.ldif:
-                IOP.buf = bytearray(self.ldap.ldif)
-                IOP.status = self.ldap.ldif_len
-                self.ldap.ldif = None
-            else:
-                IOP.status = 0
-            IOP.io_errno = 0
+            if not self.data_stream:
+                self.data_stream = io.BytesIO(self.ldap.ldif)
+            IOP.buf = bytearray(IOP.count)
+            IOP.status = self.data_stream.readinto(IOP.buf)
 
+            if IOP.status == 0:
+                self.data_stream = None
+                self.ldap.ldif = None
+
+            IOP.io_errno = 0
             self.last_op = IOP.func
             return bRCs["bRC_OK"]
 
         elif IOP.func == bIOPS["IO_WRITE"]:
-            self.ldap.ldif = str(IOP.buf)
-            self.ldap.ldif_len = IOP.count
-            IOP.status = IOP.count
+            if not self.data_stream:
+                self.data_stream = io.BytesIO()
+
+            IOP.status = self.data_stream.write(IOP.buf)
             IOP.io_errno = 0
 
             self.last_op = IOP.func
@@ -194,6 +199,11 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(
             context, 100, "BareosFdPluginLDAP:end_restore_file() called\n"
         )
+
+        if self.data_stream is not None:
+            self.ldap.ldif = self.data_stream.getvalue().decode("ascii")
+            self.ldap.ldif_len = len(self.ldap.ldif)
+            self.data_stream = None
 
         return self.ldap.restore_entry(context)
 
@@ -448,12 +458,7 @@ class BareosLDAPWrapper:
         3. filter out anything without an equals sign("=")
         4. join components into comma-separated string
         """
-        self.dn = ",".join(
-            filter(
-                lambda x: "=" in x,
-                reversed(fname.split("/")),
-            )
-        )
+        self.dn = ",".join(filter(lambda x: "=" in x, reversed(fname.split("/"))))
 
     def has_next_file(self, context):
         # See if we are currently handling the LDIF file or
