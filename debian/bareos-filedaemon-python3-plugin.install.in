@@ -1,2 +1,2 @@
 @plugindir@/python3-fd.so
-@plugindir@/bareosfd.so
+@plugindir@/bareosfd.cpython*.so

@@ -1,2 +1,2 @@
 @plugindir@/python3-dir.so
-@plugindir@/bareosdir.so
+@plugindir@/bareosdir.cpython*.so
