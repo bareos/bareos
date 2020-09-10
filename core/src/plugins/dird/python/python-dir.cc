@@ -39,8 +39,10 @@
 
 #if PY_VERSION_HEX < 0x03000000
 #define PLUGIN_NAME "python"
+#define PLUGIN_DIR PY2MODDIR
 #else
 #define PLUGIN_NAME "python3"
+#define PLUGIN_DIR PY3MODDIR
 #endif
 #define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
@@ -216,7 +218,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
 
   // add bareos plugin path to python module search path
   PyObject* sysPath = PySys_GetObject((char*)"path");
-  PyObject* pluginPath = PyUnicode_FromString(PLUGINDIR);
+  PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
   PyList_Append(sysPath, pluginPath);
   Py_DECREF(pluginPath);
 

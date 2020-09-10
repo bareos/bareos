@@ -91,7 +91,7 @@ endif()
 
 if(Python2_FOUND)
   add_library(bareosfd-python2-module MODULE module/bareosfd.cc)
-  install(TARGETS bareosfd-python2-module DESTINATION ${plugindir})
+  install(TARGETS bareosfd-python2-module DESTINATION ${py2moddir})
   set_target_properties(
     bareosfd-python2-module
     PROPERTIES PREFIX ""
@@ -126,7 +126,7 @@ endif()
 
 if(Python3_FOUND)
   add_library(bareosfd-python3-module MODULE module/bareosfd.cc)
-  install(TARGETS bareosfd-python3-module DESTINATION ${plugindir})
+  install(TARGETS bareosfd-python3-module DESTINATION ${py3moddir})
   set_target_properties(
     bareosfd-python3-module
     PROPERTIES PREFIX ""
