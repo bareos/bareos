@@ -658,6 +658,33 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-local-fileset")
 endif()
 
+set(SYSTEMTEST_LDAP_ADDRESS
+    ""
+    CACHE STRING "address of LDAP server for Plugin test"
+)
+set(SYSTEMTEST_LDAP_BASEDN
+    "dc=example,dc=org"
+    CACHE STRING "LDAP base DN for plugin test"
+)
+set(SYSTEMTEST_LDAP_BINDDN
+    "cn=admin,dc=example,dc=org"
+    CACHE STRING "LDAP bind DN for plugin test"
+)
+set(SYSTEMTEST_LDAP_PASSWORD
+    "admin"
+    CACHE STRING "LDAP bind password for plugin test"
+)
+check_pymodule_available(2 ldap)
+if(TARGET python-fd
+   AND PYMODULE_2_LDAP_FOUND
+   AND Python2_EXECUTABLE
+   AND SYSTEMTEST_LDAP_ADDRESS
+)
+  list(APPEND SYSTEM_TESTS "py2plug-fd-ldap")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-ldap")
+endif()
+
 check_pymodule_available(2 libcloud)
 check_pymodule_available(3 libcloud)
 if(TARGET python-fd)
@@ -918,6 +945,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   string(
     CONCAT
       pythonpath
+      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ldap:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/libcloud:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"

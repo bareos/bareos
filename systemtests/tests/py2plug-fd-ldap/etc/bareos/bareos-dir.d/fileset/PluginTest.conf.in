@@ -1,0 +1,10 @@
+FileSet {
+  Name = "PluginTest"
+  Description = "Test the Plugin functionality with a Python Plugin."
+  Include {
+    Options {
+      signature = MD5
+    }
+    Plugin = "@python_module_name@:module_path=@python_plugin_module_src_test_dir@:module_name=bareos-fd-ldap:uri=ldap\\://@SYSTEMTEST_LDAP_ADDRESS@:basedn=ou=backup,@SYSTEMTEST_LDAP_BASEDN@:bind_dn=@SYSTEMTEST_LDAP_BINDDN@:password=@SYSTEMTEST_LDAP_PASSWORD@"
+  }
+}
