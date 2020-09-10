@@ -2,7 +2,7 @@ Package:        bareos-filedaemon-python3-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}, bareos-fileadaemon-python-plugins-common
+Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}, bareos-filedaemon-python-plugins-common
 Description: Backup Archiving Recovery Open Sourced - file daemon Python plugin
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
