@@ -35,12 +35,14 @@
 #include "include/bareos.h"
 #endif
 
-#if PY_VERSION_HEX < 0x03000000
-#define LOGPREFIX "python-dir: "
-#else
-#define LOGPREFIX "python3-dir "
-#endif
+#define PLUGIN_DAEMON "dir"
 
+#if PY_VERSION_HEX < 0x03000000
+#define PLUGIN_NAME "python"
+#else
+#define PLUGIN_NAME "python3"
+#endif
+#define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
 #include "dird/dird.h"
 #include "plugins/include/python3compat.h"
@@ -59,8 +61,9 @@ static const int debuglevel = 150;
 #define PLUGIN_DATE "May 2020"
 #define PLUGIN_VERSION "4"
 #define PLUGIN_DESCRIPTION "Python Director Daemon Plugin"
-#define PLUGIN_USAGE                                                           \
-  "python:instance=<instance_id>:module_path=<path-to-python-modules>:module_" \
+#define PLUGIN_USAGE                                                     \
+  PLUGIN_NAME                                                            \
+  ":instance=<instance_id>:module_path=<path-to-python-modules>:module_" \
   "name=<python-module-to-load>"
 
 

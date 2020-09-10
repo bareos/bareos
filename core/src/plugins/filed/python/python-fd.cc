@@ -35,12 +35,14 @@
 #include "include/bareos.h"
 #endif
 
-#if PY_VERSION_HEX < 0x03000000
-#define LOGPREFIX "python-fd: "
-#else
-#define LOGPREFIX "python3-fd: "
-#endif
+#define PLUGIN_DAEMON "fd"
 
+#if PY_VERSION_HEX < 0x03000000
+#define PLUGIN_NAME "python"
+#else
+#define PLUGIN_NAME "python3"
+#endif
+#define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
 #include "filed/fd_plugins.h"
 #include "plugins/include/python3compat.h"
@@ -54,12 +56,13 @@ namespace filedaemon {
 static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE "Bareos AGPLv3"
-#define PLUGIN_AUTHOR "Bareos GmbH & Co.KG"
+#define PLUGIN_AUTHOR "Bareos GmbH & Co. KG"
 #define PLUGIN_DATE "May 2020"
 #define PLUGIN_VERSION "4"
 #define PLUGIN_DESCRIPTION "Python File Daemon Plugin"
-#define PLUGIN_USAGE                                                           \
-  "python:module_path=<path-to-python-modules>:module_name=<python-module-to-" \
+#define PLUGIN_USAGE                                                     \
+  PLUGIN_NAME                                                            \
+  ":module_path=<path-to-python-modules>:module_name=<python-module-to-" \
   "load>:..."
 
 /* Forward referenced functions */
