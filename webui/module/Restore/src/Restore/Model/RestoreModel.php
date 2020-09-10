@@ -155,7 +155,7 @@ class RestoreModel
     */
    public function getFileVersions(&$bsock=null, $clientname=null, $pathid=null, $filename=null) {
       if(isset($bsock)) {
-         $cmd = '.bvfs_versions jobid=0 client='.$clientname.' pathid='.$pathid.' fname='.$filename;
+         $cmd = '.bvfs_versions jobid=0 client='.$clientname.' pathid='.$pathid.' fname="'.addslashes($filename).'"';
          $result = $bsock->send_command($cmd, 2);
          $versions = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $versions['result']['versions'];
