@@ -121,7 +121,7 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(
             context,
             100,
-            "BareosFdPluginVMware:create_file() called with %s\n" % (restorepkt),
+            "BareosFdPluginLDAP:create_file() called with %s\n" % (restorepkt),
         )
         if restorepkt.type == bFileType["FT_DIREND"]:
             restorepkt.create_status = bCFs["CF_SKIP"]
@@ -146,12 +146,20 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         )
 
         if IOP.func == bIOPS["IO_OPEN"]:
+            self.last_op = IOP.func
             return bRCs["bRC_OK"]
 
         elif IOP.func == bIOPS["IO_CLOSE"]:
+            if self.last_op == bIOPS["IO_OPEN"]:
+                bareosfd.JobMessage(
+                    context,
+                    bJobMessageType["M_WARNING"],
+                    "Missing data for DN %s\n" % self.ldap.dn)
+            self.last_op = IOP.func
             return bRCs["bRC_OK"]
 
         elif IOP.func == bIOPS["IO_SEEK"]:
+            self.last_op = IOP.func
             return bRCs["bRC_OK"]
 
         elif IOP.func == bIOPS["IO_READ"]:
@@ -163,6 +171,7 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 IOP.status = 0
             IOP.io_errno = 0
 
+            self.last_op = IOP.func
             return bRCs["bRC_OK"]
 
         elif IOP.func == bIOPS["IO_WRITE"]:
@@ -171,6 +180,7 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             IOP.status = IOP.count
             IOP.io_errno = 0
 
+            self.last_op = IOP.func
             return bRCs["bRC_OK"]
 
     def end_backup_file(self, context):
