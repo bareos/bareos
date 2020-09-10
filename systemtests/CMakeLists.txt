@@ -125,7 +125,7 @@ macro(handle_python_plugin_modules test_name)
   set(PYMODULES_TO_LINK_TO_SRC)
 
   string(REGEX MATCH ^dbcopy.* starts_with_dbcopy ${test_name})
-  string(REGEX MATCH ^python-fd.* starts_with_python-fd ${test_name})
+  string(REGEX MATCH "^py(thon|[23]plug)-fd.*" starts_with_python-fd ${test_name})
   if(starts_with_python-fd OR starts_with_dbcopy)
     list(APPEND PYMODULES_TO_LINK_TO_SRC filed/BareosFdWrapper.py
                 filed/BareosFdPluginBaseclass.py filed/bareos_fd_consts.py
@@ -171,7 +171,11 @@ macro(handle_python_plugin_modules test_name)
     )
   endif()
 
-  # still missing: filed/BareosFdPluginLDAP.py filed/bareos-fd-ldap.py
+  if(${test_name} STREQUAL py2plug-fd-ldap)
+    list(APPEND FD_PYMODULES_TO_LINK_TO_SRC bareos-fd-ldap.py
+                BareosFdPluginLDAP.py
+    )
+  endif()
 
   if(NOT EXISTS ${python_plugin_module_src_test_dir})
     file(MAKE_DIRECTORY ${python_plugin_module_src_test_dir})
@@ -641,6 +645,31 @@ if(TARGET python-fd)
   list(APPEND SYSTEM_TESTS "python-fd-plugin-local-fileset-test")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-fd-plugin-local-fileset-test")
+endif()
+
+set(SYSTEMTEST_LDAP_ADDRESS
+    ""
+    CACHE STRING "address of LDAP server for Plugin test"
+)
+set(SYSTEMTEST_LDAP_BASEDN
+    "dc=example,dc=org"
+    CACHE STRING "LDAP base DN for plugin test"
+)
+set(SYSTEMTEST_LDAP_BINDDN
+    "cn=admin,dc=example,dc=org"
+    CACHE STRING "LDAP bind DN for plugin test"
+)
+set(SYSTEMTEST_LDAP_PASSWORD
+    "admin"
+    CACHE STRING "LDAP bind password for plugin test"
+)
+if(TARGET python-fd
+   AND PYTHON
+   AND SYSTEMTEST_LDAP_ADDRESS
+)
+  list(APPEND SYSTEM_TESTS "py2plug-fd-ldap")
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-ldap")
 endif()
 
 if(TARGET python-fd AND ovirt_server)
