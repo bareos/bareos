@@ -403,12 +403,20 @@ class BareosLDAPWrapper:
         return bareosfd.bRC_OK
 
     def set_new_dn(self, fname):
-        path = fname[: -len("/ldif.data")]
-        # Convert the PATH into a DN e.g. reverse the elements.
-        path_sliced = path.split("/")
-        new_dn = "".join([element + "," for element in reversed(path_sliced)])
-        # Remove the ',@LDAP,' in the DN which is an internal placeholder
-        self.dn = new_dn.replace(",@LDAP,", "")
+        """
+        Generate a LDAP DN based on provided filename and path.
+
+        1. split filename into path components
+        2. reverse the list
+        3. filter out anything without an equals sign("=")
+        4. join components into comma-separated string
+        """
+        self.dn = ",".join(
+            filter(
+                lambda x: "=" in x,
+                reversed(fname.split("/")),
+            )
+        )
 
     def has_next_file(self):
         # See if we are currently handling the LDIF file or
