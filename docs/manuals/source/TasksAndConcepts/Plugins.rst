@@ -55,7 +55,7 @@ shared objects that are loaded by the corresponding daemon during startup.
   }
 
   package "Daemon Python Plugin (shared library)" {
-  [Python Module]
+  [Python Extension Module]
   [Python Interpreter]
   }
 
@@ -66,15 +66,15 @@ shared objects that are loaded by the corresponding daemon during startup.
 
   [Core] <-> [Python Interpreter] : Bareos Plugin API
 
-  [Python Interpreter] <-> [Python Module] : use
-  [Python Module] <-> [Python Plugin Files] : Python Plugin API
+  [Python Interpreter] <-> [Python Extension Module] : use
+  [Python Extension Module] <-> [Python Plugin Files] : Python Plugin API
   [Python Plugin Files] -> [Python Constants File] : imports
 
 
-This plugin then creates an **internal Python module** and starts a **Python 2**
+This plugin then creates an **internal Python extensoin module** and starts a **Python 2**
 interpreter being able to access the Python module.
 
-The **internal Python module** allows the Python plugin to call functions
+The **internal Python extension module** allows the Python plugin to call functions
 implemented in Python, and implements callback functions that can be called
 from the Python code into the core. It also implements the data types that are
 exchanged via the Bareos plugin interface.
@@ -83,7 +83,7 @@ Finally, the Python interpreter loads the Python script configured in the
 **Plugin string** of the file set and executes it. This Python script is the
 Bareos plugin implemented in Python.
 
-As the **internal Python module** is only created inside of the Python
+As the **internal Python extension module** is only created inside of the Python
 plugin, debugging and testing is a challenge.
 
 Definitions of constants required for the Python plugins callbacks into the
@@ -129,7 +129,7 @@ call that goes into the core.
 Description of the new Bareos Python plugin API for Bareos >= 20
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Since Bareos :sinceVersion:`20: Python3`, two Python plugins exist for
-each Bareos daemon, where the **python-** prefix means that the module supports
+each Bareos daemon, where the **python-** prefix means that the plugin supports
 Python 2, and the **python3-** prefix supports Python 3.
 
 The following six plugins now exist:
@@ -145,10 +145,10 @@ The following six plugins now exist:
     director        python-dir  python3-dir
    ===============  =========== ============
 
-The functionality of the former *internal Python module* is now implemented
-as real Python module with the name *bareos[fd|sd|dir]*, for example
+The functionality of the former *internal Python extension module* is now implemented
+as real Python extension module with the name *bareos[fd|sd|dir]*, for example
 **bareosfd**.
-Every Python plugin now has a corresponding Python module.
+Every Python plugin now has a corresponding Python extension module.
 
 .. uml::
   :caption: Bareos Python Plugin Architecture for Bareos >= 20
@@ -161,8 +161,8 @@ Every Python plugin now has a corresponding Python module.
   [Python Interpreter]
   }
 
-  package "Python Module (shared object)" {
-  [Python Module]
+  package "Python Extension Module (shared object)" {
+  [Python Extension Module]
   }
 
   package "Python Plugin Scripts" {
@@ -171,26 +171,26 @@ Every Python plugin now has a corresponding Python module.
 
   [Core] <-> [Python Interpreter] : Bareos Plugin API
 
-  [Python Interpreter] <-> [Python Module] :  load and use
-  [Python Module] <-> [Python Plugin Files] : Python Plugin API
+  [Python Interpreter] <-> [Python Extension Module] :  load and use
+  [Python Extension Module] <-> [Python Plugin Files] : Python Plugin API
 
 
 
 The Python plugin creates a Python interpreter with either Python 2 or Python 3
-which then loads the corresponding Python module. Afterwards the interpreter
+which then loads the corresponding Python extension module. Afterwards the interpreter
 loads the Python script configured in the *Plugin* fileset setting and executes
 it.
 
-As the Python module for the Python plugin is now available outside of the
-Daemon Python Plugin. It is now a real stand-alone Python module implemented in
+As the Python extension module for the Python Plugin is now available outside of the
+Daemon Python Plugin. It is now a real stand-alone Python extension module implemented in
 C which can be loaded and tested independently.
 
 Definitions required for the Python plugin callbacks into the Bareos core
-are now **compiled into** the *bareos[fd|sd|dir]* Python module, and the
+are now **compiled into** the *bareos[fd|sd|dir]* Python extension module, and the
 Python files containing the constant definitions have been removed.
 
 To access these values, every Python plugin imports the corresponding Python
-module and can access the variables immediately:
+extension module and can access the variables immediately:
 
 .. code-block:: python
    :caption: bareosfd: accessing compiled-in constants:
