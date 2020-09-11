@@ -447,6 +447,16 @@ class BareosLDAPWrapper:
                     # Don't read the content of a directory
                     savepkt.no_read = True
 
+                    if "/" in self.dn:
+                        bareosfd.JobMessage(
+                            context,
+                            bJobMessageType["M_ERROR"],
+                            "Slashes (/) in DN not supported. Skipping %s"
+                            % self.dn,
+                        )
+                        # set to none, so the object will not be picket up
+                        self.file_to_backup = None
+
         return bRCs["bRC_OK"]
 
     def set_new_dn(self, fname):
