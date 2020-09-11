@@ -534,7 +534,7 @@ Group:      Productivity/Archiving/Backup
 Requires:   bareos-director = %{version}
 Requires:   bareos-director-python-plugins-common = %{version}
 
-%package    director-python-plugin-common
+%package    director-python-plugins-common
 Summary:    Python plugin for Bareos Director daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-director = %{version}
