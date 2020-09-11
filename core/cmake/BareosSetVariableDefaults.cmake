@@ -250,10 +250,6 @@ else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 endif() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
-# directories where the python modules will be installed
-set(py2moddir ${plugindir}/py2modules)
-set(py3moddir ${plugindir}/py3modules)
-
 # db_name
 if(NOT DEFINED db_name)
   set(db_name "bareos")

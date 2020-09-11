@@ -37,7 +37,7 @@ endif()
 
 if(Python2_FOUND)
   add_library(bareossd-python2-module MODULE module/bareossd.cc)
-  install(TARGETS bareossd-python2-module DESTINATION ${py2moddir})
+  install(TARGETS bareossd-python2-module DESTINATION ${Python2_SITELIB})
   set_target_properties(
     bareossd-python2-module
     PROPERTIES PREFIX ""
@@ -89,7 +89,7 @@ endif()
 
 if(Python3_FOUND)
   add_library(bareossd-python3-module MODULE module/bareossd.cc)
-  install(TARGETS bareossd-python3-module DESTINATION ${py3moddir})
+  install(TARGETS bareossd-python3-module DESTINATION ${Python3_SITELIB})
   set_target_properties(
     bareossd-python3-module
     PROPERTIES PREFIX ""

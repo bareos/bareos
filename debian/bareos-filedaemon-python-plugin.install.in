@@ -1,2 +1,2 @@
 @plugindir@/python-fd.so
-@py3moddir@/bareosfd.so
+@Python2_SITELIB@/bareosfd.so
