@@ -15,6 +15,7 @@ amd64/bareos-devel
 amd64/bareos-director
 amd64/bareos-director-python-plugin
 amd64/bareos-director-python-plugins-common
+amd64/bareos-director-python3-plugin
 amd64/bareos-filedaemon
 amd64/bareos-filedaemon-ceph-plugin
 amd64/bareos-filedaemon-ldap-python-plugin
@@ -22,12 +23,14 @@ amd64/bareos-filedaemon-libcloud-python-plugin
 amd64/bareos-filedaemon-percona-xtrabackup-python-plugin
 amd64/bareos-filedaemon-python-plugin
 amd64/bareos-filedaemon-python-plugins-common
+amd64/bareos-filedaemon-python3-plugin
 amd64/bareos-regress-config
 amd64/bareos-storage
 amd64/bareos-storage-ceph
 amd64/bareos-storage-fifo
 amd64/bareos-storage-python-plugin
 amd64/bareos-storage-python-plugins-common
+amd64/bareos-storage-python3-plugin
 amd64/bareos-storage-tape
 amd64/bareos-tools
 amd64/bareos-traymonitor
