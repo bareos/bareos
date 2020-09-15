@@ -40,6 +40,23 @@ import time
 from calendar import timegm
 
 
+def _safe_encode(data):
+    if isinstance(data, unicode):
+        return data.encode('utf-8')
+    return data
+
+
+class BytesLDIFRecordList(ldif.LDIFRecordList):
+    """Simple encoding wrapper for LDIFRecordList that converts keys to UTF-8"""
+    def _next_key_and_value(self):
+        # we do not descend from object, so we cannot use super()
+        k, v = ldif.LDIFRecordList._next_key_and_value(self)
+        try:
+            return _safe_encode(k), v
+        except:
+            return k, v
+
+
 class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     """
     LDAP related backup and restore stuff
@@ -166,7 +183,7 @@ class BareosFdPluginLDAP(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         elif IOP.func == bIOPS["IO_READ"]:
             if not self.data_stream:
-                self.data_stream = io.BytesIO(self.ldap.ldif)
+                self.data_stream = io.BytesIO(_safe_encode(self.ldap.ldif))
             IOP.buf = bytearray(IOP.count)
             IOP.status = self.data_stream.readinto(IOP.buf)
 
@@ -236,9 +253,15 @@ class BareosLDAPWrapper:
         Bind to LDAP URI using the given authentication tokens
         """
         if bulk:
-            self.ld = BulkLDAP(options["uri"])
+            try:
+                self.ld = BulkLDAP(options["uri"], bytes_mode=True)
+            except TypeError:
+                self.ld = BulkLDAP(options["uri"])
         else:
-            self.ld = ldap.initialize(options["uri"])
+            try:
+                self.ld = ldap.initialize(options["uri"], bytes_mode=True)
+            except TypeError:
+                self.ld = ldap.initialize(options["uri"])
 
         try:
             self.ld.protocol_version = ldap.VERSION3
@@ -364,7 +387,11 @@ class BareosLDAPWrapper:
             # Dump the content of the LDAP entry as LDIF text
             ldif_dump = StringIO()
             ldif_out = ldif.LDIFWriter(ldif_dump)
-            ldif_out.unparse(self.dn, self.entry)
+            try:
+                ldif_out.unparse(self.dn, self.entry)
+            except UnicodeDecodeError:
+                ldif_out.unparse(self.dn.decode('utf-8'), self.entry)
+
             self.ldif = ldif_dump.getvalue()
             self.ldif_len = len(self.ldif)
             ldif_dump.close()
@@ -468,7 +495,7 @@ class BareosLDAPWrapper:
         3. filter out anything without an equals sign("=")
         4. join components into comma-separated string
         """
-        self.dn = ",".join(filter(lambda x: "=" in x, reversed(fname.split("/"))))
+        self.dn = _safe_encode(",".join(filter(lambda x: "=" in x, reversed(fname.split("/")))))
 
     def has_next_file(self, context):
         # See if we are currently handling the LDIF file or
@@ -500,9 +527,10 @@ class BareosLDAPWrapper:
         if self.ldif:
             # Parse the LDIF back to an attribute list
             ldif_dump = StringIO(str(self.ldif))
-            ldif_parser = ldif.LDIFRecordList(ldif_dump, max_entries=1)
+            ldif_parser = BytesLDIFRecordList(ldif_dump, max_entries=1)
             ldif_parser.parse()
             dn, entry = ldif_parser.all_records[0]
+            dn = _safe_encode(dn)
             ldif_dump.close()
 
             if self.dn != dn:
