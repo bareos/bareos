@@ -102,6 +102,7 @@ class DeviceResource : public BareosResource {
   void CreateAndAssignSerialNumber(uint16_t number);
   void MultipliedDeviceRestoreBaseName();
   void MultipliedDeviceRestoreNumberedName();
+  bool Validate() override;
 
  private:
   std::string multiplied_device_resource_base_name; /** < base name without

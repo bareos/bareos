@@ -555,6 +555,7 @@ set(SYSTEM_TESTS
     copy-bscan
     copy-remote-bscan
     deprecation
+    list-backups
     messages
     multiplied-device
     reload-add-client
@@ -621,6 +622,8 @@ if(EXISTS /run/.containerenv)
 else()
   set(in_container FALSE)
 endif()
+
+find_program(PYTHON NAMES python python3 python2)
 
 # python-bareos-test does not work on installed files
 if(PYTHON_EXECUTABLE
@@ -801,7 +804,6 @@ else()
 endif()
 
 message(STATUS "Looking for pam test requirements ...")
-find_program(PYTHON python python2 python3)
 bareosfindlibraryandheaders("pam" "security/pam_appl.h" "")
 find_program(PAMTESTER pamtester)
 

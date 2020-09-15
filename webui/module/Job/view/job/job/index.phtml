@@ -415,6 +415,7 @@ $this->headTitle($title);
 
       if(result.length > 0) {
          $("#modal-002").modal();
+         window.history.pushState({}, document.title, window.location.pathname);
       }
 
       attachJobTable();

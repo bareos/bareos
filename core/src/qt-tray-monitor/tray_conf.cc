@@ -169,17 +169,17 @@ static ResourceItem con_font_items[] = {
  *  name items rcode res_head
  */
 static ResourceTable resources[] = {
-  {"Monitor", mon_items, R_MONITOR, sizeof(MonitorResource),
+  {"Monitor", "Monitors", mon_items, R_MONITOR, sizeof(MonitorResource),
       []() { res_monitor = new MonitorResource(); }, reinterpret_cast<BareosResource**>(&res_monitor)},
-  {"Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
+  {"Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
       []() { res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir)},
-  {"Client", cli_items, R_CLIENT, sizeof(ClientResource),
+  {"Client", "Clients", cli_items, R_CLIENT, sizeof(ClientResource),
       []() { res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)},
-  {"Storage", store_items, R_STORAGE, sizeof(StorageResource),
+  {"Storage", "Storages", store_items, R_STORAGE, sizeof(StorageResource),
       []() { res_store = new StorageResource(); }, reinterpret_cast<BareosResource**>(&res_store)},
-  {"ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(ConsoleFontResource),
+  {"ConsoleFont", "ConsoleFonts", con_font_items, R_CONSOLE_FONT, sizeof(ConsoleFontResource),
       []() { res_font = new ConsoleFontResource(); }, reinterpret_cast<BareosResource**>(&res_font)},
-  {nullptr, nullptr, 0, 0}
+  {nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr}
 };
 
 /* clang-format on */

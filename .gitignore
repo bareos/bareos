@@ -28,6 +28,7 @@ autoconf/config.log
 debian/*.log
 debian/bareos-bconsole.install
 debian/bareos-bconsole.postinst
+debian/bareos-common.install
 debian/bareos-common.postinst
 debian/bareos-common.preinst
 debian/bareos-database-common.config
@@ -35,18 +36,21 @@ debian/bareos-database-common.install
 debian/bareos-database-common.postinst
 debian/bareos-database-mysql.install
 debian/bareos-database-postgresql.dirs
-debian/bareos-director.install
+debian/bareos-database-postgresql.install
 debian/bareos-database-sqlite3.install
+debian/bareos-database-tools.install
 debian/bareos-devel.install
 debian/bareos-director-python-plugin.install
 debian/bareos-director.bareos-dir.init
-debian/bareos-common.install
+debian/bareos-director.install
 debian/bareos-director.postinst
 debian/bareos-director.preinst
 debian/bareos-director.service
 debian/bareos-filedaemon-ceph-plugin.install
 debian/bareos-filedaemon-glusterfs-plugin.install
 debian/bareos-filedaemon-ldap-python-plugin.install
+debian/bareos-filedaemon-libcloud-python-plugin.install
+debian/bareos-filedaemon-percona-xtrabackup-python-plugin.install
 debian/bareos-filedaemon-python-plugin.install
 debian/bareos-filedaemon.bareos-fd.init
 debian/bareos-filedaemon.install
@@ -69,9 +73,10 @@ debian/bareos-tools.install
 debian/bareos-traymonitor.install
 debian/bareos-traymonitor.postinst
 debian/univention-bareos.postinst
-debian/bareos-database-postgresql.install
-debian/bareos-database-tools.install
-debian/bareos-filedaemon-percona-xtrabackup-python-plugin.install
+
+# generated sample-configuration
+core/src/plugins/filed/python/ldap/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example
+core/src/plugins/filed/python/ovirt/python-ovirt-conf.d/bareos-dir.d/fileset/plugin-ovirt.conf.example
 
 # etags and cscope db
 tags
