@@ -83,11 +83,11 @@ static ResourceItem dir_items[] = {
 };
 
 static ResourceTable resources[] = {
-  { "Console", cons_items, R_CONSOLE, sizeof(ConsoleResource),
+  { "Console", "Consoles", cons_items, R_CONSOLE, sizeof(ConsoleResource),
       [] (){ res_cons = new ConsoleResource(); }, reinterpret_cast<BareosResource**>(&res_cons) },
-  { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
+  { "Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
       [] (){ res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir) },
-  {nullptr, nullptr, 0, 0, nullptr, nullptr}
+  {nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr}
 };
 
 /* clang-format on */
