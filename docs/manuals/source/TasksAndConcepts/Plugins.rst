@@ -190,7 +190,7 @@ are now **compiled into** the *bareos[fd|sd|dir]* Python extension module, and t
 Python files containing the constant definitions have been removed.
 
 To access these values, every Python plugin imports the corresponding Python
-extension module and can access the variables immediately:
+extension module and can access the variables immediately.
 
 .. code-block:: python
    :caption: bareosfd: accessing compiled-in constants:
@@ -198,6 +198,20 @@ extension module and can access the variables immediately:
    import bareosfd
    ...
    return bareos_fd.bRC_OK
+
+The dictionaries used before still exist, but every value that was stored in
+the dictionaries before is also available directly in the **bareosfd**
+namespace. To see what is available in the plugin you can import the python
+extension module and use the **dir()** function:
+
+.. code-block:: python
+   :caption: bareosfd: show constants
+
+   import bareosfd
+   dir(bareosfd)
+   ['AcceptFile', 'AclPacket', 'AddExclude', 'AddInclude', 'AddOptions', 'AddRegex', 'AddWild', 'CF_CORE', 'CF_CREATED', 'CF_ERROR', 'CF_EXTRACT', 'CF_SKIP', 'CheckChanges', 'ClearSeenBitmap', 'DebugMessage', 'FT_BASE', 'FT_DELETED', 'FT_DIRBEGIN', 'FT_DIREND', 'FT_DIRNOCHG', 'FT_FIFO', 'FT_INVALIDDT', 'FT_INVALIDFS', 'FT_ISARCH', 'FT_JUNCTION', 'FT_LNK', 'FT_LNKSAVED', 'FT_NOACCESS', 'FT_NOCHG', 'FT_NOFOLLOW', 'FT_NOFSCHG', 'FT_NOOPEN', 'FT_NORECURSE', 'FT_NOSTAT', 'FT_PLUGIN', 'FT_PLUGIN_CONFIG', 'FT_PLUGIN_CONFIG_FILLED', 'FT_RAW', 'FT_REG', 'FT_REGE', 'FT_REPARSE', 'FT_RESTORE_FIRST', 'FT_SPEC', 'GetInstanceCount', 'GetValue', 'IO_CLOSE', 'IO_OPEN', 'IO_READ', 'IO_SEEK', 'IO_WRITE', 'IoPacket', 'JobMessage', 'L_BASE', 'L_DIFFERENTIAL', 'L_FULL', 'L_INCREMENTAL', 'L_NONE', 'L_SINCE', 'L_VERIFY_CATALOG', 'L_VERIFY_DATA', 'L_VERIFY_DISK_TO_CATALOG', 'L_VERIFY_INIT', 'L_VERIFY_VOLUME_TO_CATALOG', 'L_VIRTUAL_FULL', 'M_ABORT', 'M_ALERT', 'M_DEBUG', 'M_ERROR', 'M_ERROR_TERM', 'M_FATAL', 'M_INFO', 'M_MOUNT', 'M_NOTSAVED', 'M_RESTORED', 'M_SAVED', 'M_SECURITY', 'M_SKIPPED', 'M_TERM', 'M_VOLMGMT', 'M_WARNING', 'NewInclude', 'NewOptions', 'NewPreInclude', 'RegisterEvents', 'RestoreObject', 'RestorePacket', 'SavePacket', 'SetSeenBitmap', 'SetValue', 'StatPacket', 'UnRegisterEvents', 'XattrPacket', '_C_API', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', 'bCFs', 'bEventBackupCommand', 'bEventCancelCommand', 'bEventEndBackupJob', 'bEventEndFileSet', 'bEventEndRestoreJob', 'bEventEndVerifyJob', 'bEventEstimateCommand', 'bEventHandleBackupFile', 'bEventJobEnd', 'bEventJobStart', 'bEventLevel', 'bEventNewPluginOptions', 'bEventOptionPlugin', 'bEventPluginCommand', 'bEventRestoreCommand', 'bEventRestoreObject', 'bEventSince', 'bEventStartBackupJob', 'bEventStartRestoreJob', 'bEventStartVerifyJob', 'bEventType', 'bEventVssBackupAddComponents', 'bEventVssBackupComplete', 'bEventVssCloseRestore', 'bEventVssCreateSnapshots', 'bEventVssInitializeForBackup', 'bEventVssInitializeForRestore', 'bEventVssPrepareForBackup', 'bEventVssPrepareSnapshot', 'bEventVssRestoreLoadComponentMetadata', 'bEventVssRestoreSetComponentsSelected', 'bEventVssSetBackupState', 'bFileType', 'bIOPS', 'bJobMessageType', 'bLevels', 'bRC_Cancel', 'bRC_Core', 'bRC_Error', 'bRC_More', 'bRC_OK', 'bRC_Seen', 'bRC_Skip', 'bRC_Stop', 'bRC_Term', 'bRCs', 'bVarAccurate', 'bVarClient', 'bVarDistName', 'bVarExePath', 'bVarFDName', 'bVarFileSeen', 'bVarJobId', 'bVarJobName', 'bVarJobStatus', 'bVarLevel', 'bVarPrefixLinks', 'bVarPrevJobName', 'bVarRegexWhere', 'bVarSinceTime', 'bVarType', 'bVarVersion', 'bVarVssClient', 'bVarWhere', 'bVarWorkingDir', 'bVariable']
+
+
 
 During the restructuring of the plugin API it became clear that the *context*
 that was always transferred between the core and the Python Plugin and back was
