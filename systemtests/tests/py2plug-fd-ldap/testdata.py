@@ -12,10 +12,29 @@ from argparse import ArgumentParser
 from ldif import LDIFWriter
 
 
+def _safe_encode(data):
+    if isinstance(data, unicode):
+        return data.encode('utf-8')
+    return data
+
+
+class BytesLDIFRecordList(ldif.LDIFRecordList):
+    """Simple encoding wrapper for LDIFRecordList that converts keys to UTF-8"""
+    def _next_key_and_value(self):
+        # we do not descend from object, so we cannot use super()
+        k, v = ldif.LDIFRecordList._next_key_and_value(self)
+        return k.encode('utf-8'), v
+
+
 def ldap_connect(address, binddn, password):
-    conn = ldap.initialize("ldap://%s" % address)
+    try:
+        conn = ldap.initialize("ldap://%s" % address, bytes_mode=True)
+    except TypeError:
+        conn = ldap.initialize("ldap://%s" % address)
+
     conn.set_option(ldap.OPT_REFERRALS, 0)
     conn.simple_bind_s(binddn, password)
+
     return conn
 
 
@@ -38,7 +57,7 @@ def action_clean(conn, basedn):
     longest to shortest dn, so we remove parent objects later
     """
 
-    for subtree_dn in ["ou=backup,%s" % basedn, "ou=restore,%s" % basedn]:
+    for subtree_dn in [b"ou=backup,%s" % basedn, b"ou=restore,%s" % basedn]:
         try:
             for dn in sorted(
                 map(
@@ -58,91 +77,91 @@ def action_populate(conn, basedn):
     """Populate our backup data"""
     ldap_create_or_fail(
         conn,
-        "ou=backup,%s" % basedn,
-        {"objectClass": [b"organizationalUnit"], "ou": [b"restore"]},
+        b"ou=backup,%s" % basedn,
+        {b"objectClass": [b"organizationalUnit"], b"ou": [b"restore"]},
     )
 
     ldap_create_or_fail(
         conn,
-        "cn=No JPEG,ou=backup,%s" % basedn,
+        b"cn=No JPEG,ou=backup,%s" % basedn,
         {
-            "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
-            "uid": [b"njpeg"],
-            "sn": [b"JPEG"],
-            "givenName": [b"No"],
-            "cn": [b"No JPEG"],
-            "displayName": [b"No JPEG"],
-            "uidNumber": [b"1000"],
-            "gidNumber": [b"1000"],
-            "loginShell": [b"/bin/bash"],
-            "homeDirectory": [b"/home/njpeg"],
+            b"objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
+            b"uid": [b"njpeg"],
+            b"sn": [b"JPEG"],
+            b"givenName": [b"No"],
+            b"cn": [b"No JPEG"],
+            b"displayName": [b"No JPEG"],
+            b"uidNumber": [b"1000"],
+            b"gidNumber": [b"1000"],
+            b"loginShell": [b"/bin/bash"],
+            b"homeDirectory": [b"/home/njpeg"],
         },
     )
 
     ldap_create_or_fail(
         conn,
-        "cn=Small JPEG,ou=backup,%s" % basedn,
+        b"cn=Small JPEG,ou=backup,%s" % basedn,
         {
-            "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
-            "uid": [b"sjpeg"],
-            "sn": [b"JPEG"],
-            "givenName": [b"Small"],
-            "cn": [b"Small JPEG"],
-            "displayName": [b"Small JPEG"],
-            "uidNumber": [b"1001"],
-            "gidNumber": [b"1000"],
-            "loginShell": [b"/bin/bash"],
-            "homeDirectory": [b"/home/sjpeg"],
-            "jpegPhoto": open("image-small.jpg", "rb").read(),
+            b"objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
+            b"uid": [b"sjpeg"],
+            b"sn": [b"JPEG"],
+            b"givenName": [b"Small"],
+            b"cn": [b"Small JPEG"],
+            b"displayName": [b"Small JPEG"],
+            b"uidNumber": [b"1001"],
+            b"gidNumber": [b"1000"],
+            b"loginShell": [b"/bin/bash"],
+            b"homeDirectory": [b"/home/sjpeg"],
+            b"jpegPhoto": open("image-small.jpg", "rb").read(),
         },
     )
 
     ldap_create_or_fail(
         conn,
-        "cn=Medium JPEG,ou=backup,%s" % basedn,
+        b"cn=Medium JPEG,ou=backup,%s" % basedn,
         {
-            "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
-            "uid": [b"mjpeg"],
-            "sn": [b"JPEG"],
-            "givenName": [b"Medium"],
-            "cn": [b"Medium JPEG"],
-            "displayName": [b"Medium JPEG"],
-            "uidNumber": [b"1002"],
-            "gidNumber": [b"1000"],
-            "loginShell": [b"/bin/bash"],
-            "homeDirectory": [b"/home/mjpeg"],
-            "jpegPhoto": open("image-medium.jpg", "rb").read(),
+            b"objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
+            b"uid": [b"mjpeg"],
+            b"sn": [b"JPEG"],
+            b"givenName": [b"Medium"],
+            b"cn": [b"Medium JPEG"],
+            b"displayName": [b"Medium JPEG"],
+            b"uidNumber": [b"1002"],
+            b"gidNumber": [b"1000"],
+            b"loginShell": [b"/bin/bash"],
+            b"homeDirectory": [b"/home/mjpeg"],
+            b"jpegPhoto": open("image-medium.jpg", "rb").read(),
         },
     )
 
     ldap_create_or_fail(
         conn,
-        "cn=Large JPEG,ou=backup,%s" % basedn,
+        b"cn=Large JPEG,ou=backup,%s" % basedn,
         {
-            "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
-            "uid": [b"ljpeg"],
-            "sn": [b"JPEG"],
-            "givenName": [b"Large"],
-            "cn": [b"Large JPEG"],
-            "displayName": [b"Large JPEG"],
-            "uidNumber": [b"1003"],
-            "gidNumber": [b"1000"],
-            "loginShell": [b"/bin/bash"],
-            "homeDirectory": [b"/home/ljpeg"],
-            "jpegPhoto": open("image-large.jpg", "rb").read(),
+            b"objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
+            b"uid": [b"ljpeg"],
+            b"sn": [b"JPEG"],
+            b"givenName": [b"Large"],
+            b"cn": [b"Large JPEG"],
+            b"displayName": [b"Large JPEG"],
+            b"uidNumber": [b"1003"],
+            b"gidNumber": [b"1000"],
+            b"loginShell": [b"/bin/bash"],
+            b"homeDirectory": [b"/home/ljpeg"],
+            b"jpegPhoto": open("image-large.jpg", "rb").read(),
         },
     )
 
     ldap_create_or_fail(
         conn,
-        "o=Bareos GmbH & Co. KG,ou=backup,%s" % basedn,
-        {"objectClass": [b"top", b"organization"], "o": [b"Bareos GmbH & Co. KG"]},
+        b"o=Bareos GmbH & Co. KG,ou=backup,%s" % basedn,
+        {b"objectClass": [b"top", b"organization"], b"o": [b"Bareos GmbH & Co. KG"]},
     )
 
     ldap_create_or_fail(
         conn,
-        "ou=automount,ou=backup,%s" % basedn,
-        {"objectClass": [b"top", b"organizationalUnit"], "ou": [b"automount"]},
+        b"ou=automount,ou=backup,%s" % basedn,
+        {b"objectClass": [b"top", b"organizationalUnit"], b"ou": [b"automount"]},
     )
 
     # # Objects with / in the DN are currently not supported
@@ -158,8 +177,8 @@ def action_populate(conn, basedn):
 
     ldap_create_or_fail(
         conn,
-        "ou=weird-names,ou=backup,%s" % basedn,
-        {"objectClass": [b"top", b"organizationalUnit"], "ou": [b"weird-names"]},
+        b"ou=weird-names,ou=backup,%s" % basedn,
+        {b"objectClass": [b"top", b"organizationalUnit"], b"ou": [b"weird-names"]},
     )
 
     for ou in [
@@ -180,8 +199,8 @@ def action_populate(conn, basedn):
     ]:
         ldap_create_or_fail(
             conn,
-            "ou=%s,ou=weird-names,ou=backup,%s" % (ldap.dn.escape_dn_chars(ou), basedn),
-            {"objectClass": [b"top", b"organizationalUnit"], "ou": [ou]},
+            b"ou=%s,ou=weird-names,ou=backup,%s" % (ldap.dn.escape_dn_chars(ou), basedn),
+            {b"objectClass": [b"top", b"organizationalUnit"], b"ou": [ou]},
         )
 
     # creating the DN using the normal method wouldn't work, so we create a
@@ -194,15 +213,16 @@ def action_populate(conn, basedn):
     ldif_data.write(b"ou: böses encoding\n")
     ldif_data.seek(0)
 
-    ldif_parser = ldif.LDIFRecordList(ldif_data, max_entries=1)
+    ldif_parser = BytesLDIFRecordList(ldif_data, max_entries=1)
     ldif_parser.parse()
     dn, entry = ldif_parser.all_records[0]
     ldif_data.close()
 
     ldap_create_or_fail(
         conn,
-        dn,
-        entry)
+        _safe_encode(dn),
+        entry
+        )
 
 
 def abbrev_value(v):
@@ -228,7 +248,10 @@ def action_dump(conn, basedn, shorten=True, rewrite_dn=True):
                 attrs = {
                     k: [abbrev_value(v) for v in vals] for k, vals in attrs.iteritems()
                 }
-            writer.unparse(dn, attrs)
+            try:
+                writer.unparse(dn, attrs)
+            except UnicodeDecodeError:
+                writer.unparse(dn.decode('utf-8'), attrs)
     except ldap.NO_SUCH_OBJECT:
         print("No object '%s' in directory." % basedn, file=sys.stderr)
         sys.exit(1)
@@ -261,15 +284,15 @@ if __name__ == "__main__":
         "--real-dn", action="store_true", help="disable rewriting of DN during dump"
     )
     parser.add_argument(
-        "--address", "--host", default="ldap://localhost", help="LDAP URI"
+        "--address", "--host", default="localhost", help="LDAP server address"
     )
     parser.add_argument(
-        "--basedn", "-b", default="dc=example,dc=org", help="LDAP base dn"
+        "--basedn", "-b", default=b"dc=example,dc=org", help="LDAP base dn"
     )
     parser.add_argument(
-        "--binddn", "-D", default="cn=admin,dc=example,dc=org", help="LDAP bind dn"
+        "--binddn", "-D", default=b"cn=admin,dc=example,dc=org", help="LDAP bind dn"
     )
-    parser.add_argument("--password", "-w", default="admin", help="LDAP password")
+    parser.add_argument("--password", "-w", default=b"admin", help="LDAP password")
 
     args = parser.parse_args()
 
@@ -290,14 +313,14 @@ if __name__ == "__main__":
     if args.dump_backup:
         action_dump(
             conn,
-            "ou=backup,%s" % args.basedn,
+            b"ou=backup,%s" % args.basedn,
             shorten=not args.full_value,
             rewrite_dn=not args.real_dn,
         )
     if args.dump_restore:
         action_dump(
             conn,
-            "ou=restore,%s" % args.basedn,
+            b"ou=restore,%s" % args.basedn,
             shorten=not args.full_value,
             rewrite_dn=not args.real_dn,
         )
