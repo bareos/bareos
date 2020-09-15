@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1504,10 +1504,6 @@ int InitCrypto(void)
   /* Register OpenSSL ciphers and digests */
   OpenSSL_add_all_algorithms();
 
-  if (!OpensslSeedPrng()) {
-    Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to seed OpenSSL PRNG\n"));
-  }
-
 #ifdef HAVE_ENGINE_LOAD_PK11
   ENGINE_load_pk11();
 #else
@@ -1544,10 +1540,6 @@ int CleanupCrypto(void)
    */
   ENGINE_cleanup();
 #endif
-
-  if (!OpensslSavePrng()) {
-    Jmsg0(NULL, M_ERROR, 0, _("Failed to save OpenSSL PRNG\n"));
-  }
 
   OpensslCleanupThreads();
 
@@ -1765,40 +1757,4 @@ void OpensslCleanupThreads(void)
   CRYPTO_set_dynlock_destroy_callback(NULL);
 }
 
-/*
- * Seed OpenSSL PRNG
- *  Returns: 1 on success
- *           0 on failure
- */
-int OpensslSeedPrng(void)
-{
-  const char* names[] = {"/dev/urandom", "/dev/random", NULL};
-  int i;
-
-  // ***FIXME***
-  // Win32 Support
-  // Read saved entropy?
-
-  for (i = 0; names[i]; i++) {
-    if (RAND_load_file(names[i], 1024) != -1) {
-      /* Success */
-      return 1;
-    }
-  }
-
-  /* Fail */
-  return 0;
-}
-
-/*
- * Save OpenSSL Entropy
- *  Returns: 1 on success
- *           0 on failure
- */
-int OpensslSavePrng(void)
-{
-  // ***FIXME***
-  // Implement PRNG state save
-  return 1;
-}
 #endif /* HAVE_OPENSSL */
