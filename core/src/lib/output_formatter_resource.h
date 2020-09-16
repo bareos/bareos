@@ -64,11 +64,14 @@ class OutputFormatterResource {
   std::string GetKeyFormatString(bool inherited,
                                  std::string baseformat = "%s = ");
 
-  void ResourceTypeStart(const char* name, bool as_comment = false);
-  void ResourceTypeEnd(const char* name, bool as_comment = false);
-
-  void ResourceStart(const char* name);
-  void ResourceEnd(const char* name);
+  void ResourceStart(const char* resource_type_groupname,
+                     const char* resource_type_name,
+                     const char* resource_name,
+                     bool as_comment = false);
+  void ResourceEnd(const char* resource_type_groupname,
+                   const char* resource_type_name,
+                   const char* resource_name,
+                   bool as_comment = false);
 
   void SubResourceStart(const char* name,
                         bool as_comment = false,

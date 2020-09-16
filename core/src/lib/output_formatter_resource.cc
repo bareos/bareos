@@ -82,28 +82,32 @@ std::string OutputFormatterResource::GetKeyFormatString(bool inherited,
   return format;
 }
 
-void OutputFormatterResource::ResourceTypeStart(const char* name,
-                                                bool as_comment)
-{
-  send_->ObjectStart(name, GetKeyFormatString(as_comment, "%s {\n").c_str());
-  indent_level_++;
-}
-
-void OutputFormatterResource::ResourceTypeEnd(const char* name, bool as_comment)
-{
-  indent_level_--;
-  send_->ObjectEnd(name, GetKeyFormatString(as_comment, "}\n\n").c_str());
-}
-
-void OutputFormatterResource::ResourceStart(const char* name)
+void OutputFormatterResource::ResourceStart(const char* resource_type_groupname,
+                                            const char* resource_type_name,
+                                            const char* resource_name,
+                                            bool as_comment)
 {
   const bool case_sensitive_name = true;
-  send_->ObjectStart(name, nullptr, case_sensitive_name);
+  /*
+   * Use resource_type_groupname as structure key (JSON),
+   * but use resource_type_name when writing config resources.
+   */
+  std::string format = std::string(resource_type_name) + std::string(" {\n");
+  send_->ObjectStart(resource_type_groupname,
+                     GetKeyFormatString(as_comment, format).c_str());
+  indent_level_++;
+  send_->ObjectStart(resource_name, nullptr, case_sensitive_name);
 }
 
-void OutputFormatterResource::ResourceEnd(const char* name)
+void OutputFormatterResource::ResourceEnd(const char* resource_type_groupname,
+                                          const char* resource_type_name,
+                                          const char* resource_name,
+                                          bool as_comment)
 {
-  send_->ObjectEnd(name);
+  send_->ObjectEnd(resource_name);
+  indent_level_--;
+  send_->ObjectEnd(resource_type_groupname,
+                   GetKeyFormatString(as_comment, "}\n\n").c_str());
 }
 
 void OutputFormatterResource::SubResourceStart(const char* name,

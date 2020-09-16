@@ -1671,8 +1671,7 @@ bool MessagesResource::PrintConfig(OutputFormatterResource& send,
 
   msgres = this;
 
-  send.ResourceTypeStart("Messages");
-  send.ResourceStart(resource_name_);
+  send.ResourceStart("Messages", "Messages", resource_name_);
 
   send.KeyQuotedString("Name", resource_name_);
 
@@ -1715,8 +1714,7 @@ bool MessagesResource::PrintConfig(OutputFormatterResource& send,
     }
   }
 
-  send.ResourceEnd(resource_name_);
-  send.ResourceTypeEnd("Messages");
+  send.ResourceEnd("Messages", "Messages", resource_name_);
 
   return true;
 }
@@ -2130,8 +2128,8 @@ bool BareosResource::PrintConfig(OutputFormatterResource& send,
 
   *my_config.resources_[rindex].allocated_resource_ = this;
 
-  send.ResourceTypeStart(my_config.ResGroupToStr(rcode_), internal_);
-  send.ResourceStart(resource_name_);
+  send.ResourceStart(my_config.ResGroupToStr(rcode_),
+                     my_config.ResToStr(rcode_), resource_name_, internal_);
 
   for (int i = 0; items[i].name; i++) {
     bool inherited = BitIsSet(i, inherit_content_);
@@ -2140,8 +2138,8 @@ bool BareosResource::PrintConfig(OutputFormatterResource& send,
                       verbose);
   }
 
-  send.ResourceEnd(resource_name_);
-  send.ResourceTypeEnd(my_config.ResToStr(rcode_), internal_);
+  send.ResourceEnd(my_config.ResGroupToStr(rcode_), my_config.ResToStr(rcode_),
+                   resource_name_, internal_);
 
   return true;
 }
