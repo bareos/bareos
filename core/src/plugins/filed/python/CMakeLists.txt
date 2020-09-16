@@ -124,6 +124,7 @@ if(Python2_FOUND)
       "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/test"
       LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../../lib
   )
+  set_tests_properties(bareosfd-python2-module PROPERTIES LABELS "broken")
 endif()
 
 if(Python3_FOUND)

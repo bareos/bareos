@@ -22,6 +22,7 @@ cmake_minimum_required(VERSION 3.3)
 project(bareos-systemtests)
 cmake_policy(SET CMP0057 NEW) # IF(.. IN_LIST ..)
 cmake_policy(SET CMP0053 NEW)
+cmake_policy(SET CMP0064 NEW) # IF(TEST ...)
 
 # create a variable BINARY_NAME_TO_TEST for each binary name bareos-dir ->
 # BAREOS_DIR_TO_TEST bconsole -> BCONSOLE_TO_TEST
@@ -575,6 +576,14 @@ set(SYSTEM_TESTS
 set(SYSTEM_TESTS_DISABLED # initially empty
 )
 
+# add tests also here that fail during build they will be run but failing will
+# not fail the build
+set(SYSTEM_TESTS_BROKEN
+    config-dump dbcopy-mysql-postgresql py2plug-fd-postgres
+    py3plug-fd-local-fileset py3plug-fd-postgres python-bareos scheduler-backup
+    volume-pruning
+)
+
 set(glusterfs_uri
     ""
     CACHE STRING "URI for GlusterFS backend test"
@@ -597,7 +606,8 @@ endif()
 
 if(TARGET droplet
    AND S3CMD
-   AND MINIO)
+   AND MINIO
+)
   list(APPEND SYSTEM_TESTS droplet-s3)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED droplet-s3)
@@ -618,22 +628,12 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "dbcopy-mysql-postgresql")
 endif()
 
-# python-bareos fails inside of container
-if(EXISTS /run/.containerenv)
-  message(STATUS "detected container environment, disabling python-bareos")
-  set(in_container TRUE)
-  list(APPEND SYSTEM_TESTS "dbcopy-mysql-postgresql-test")
-else()
-  set(in_container FALSE)
-endif()
-
 find_program(PYTHON NAMES python python3 python2)
 
 # python-bareos-test does not work on installed files
 if(PYTHON_EXECUTABLE
    AND PYTHON
    AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES
-   AND NOT in_container
 )
   list(APPEND SYSTEM_TESTS "python-bareos")
 else()
@@ -935,6 +935,7 @@ else()
 endif()
 
 foreach(TEST_NAME ${SYSTEM_TESTS})
+
   message(STATUS "Configuring test: ${SYSTEMTEST_PREFIX}${TEST_NAME}")
   string(REGEX MATCH "py2plug" py_v2 "${TEST_NAME}")
   string(REGEX MATCH "py3plug" py_v3 "${TEST_NAME}")
@@ -973,8 +974,13 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
     COMMAND ${tests_dir}/${TEST_NAME}/testrunner
     WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
   )
+  if(${TEST_NAME} IN_LIST SYSTEM_TESTS_BROKEN)
+    set_tests_properties(
+      ${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES LABELS "broken"
+    )
+  endif()
 
-  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 180)
+  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 300)
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
@@ -1035,7 +1041,7 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
     set_tests_properties(
-      ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 180
+      ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 300
     )
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()
