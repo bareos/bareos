@@ -3,7 +3,7 @@
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2015-2015 Planets Communications B.V.
-# Copyright (C) 2015-2015 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -27,7 +27,7 @@
 #
 
 # Provided by the Bareos FD Python plugin interface
-from bareos_fd_consts import bRCs
+from bareosfd import bRC_OK
 
 # This module contains the wrapper functions called by the Bareos-FD, the
 # functions call the corresponding
@@ -48,7 +48,7 @@ def load_bareos_plugin(plugindef):
         plugindef
     )
 
-    return bRCs["bRC_OK"]
+    return bRC_OK
 
 
 # the rest is done in the Plugin module
