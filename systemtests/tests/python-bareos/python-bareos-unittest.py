@@ -1499,7 +1499,7 @@ class PythonBareosShowTest(PythonBareosJsonBase):
         fileset_content_list = result["filesets"][0]["filesettext"]
 
         result = director.call("show fileset={}".format(fileset))
-        fileset_show_description = result["fileset"][fileset]["description"]
+        fileset_show_description = result["filesets"][fileset]["description"]
 
         self.assertIn(fileset_show_description, fileset_content_list)
 
