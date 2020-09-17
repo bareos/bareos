@@ -625,6 +625,7 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "dbcopy-mysql-postgresql-test")
 endif()
 
+find_program(PYTHON python)
 # python-bareos-test does not work on installed files
 if(PYTHON AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   list(APPEND SYSTEM_TESTS "python-bareos-test")
@@ -704,7 +705,6 @@ else()
 endif()
 
 message(STATUS "Looking for pam test requirements ...")
-find_program(PYTHON python)
 bareosfindlibraryandheaders("pam" "security/pam_appl.h")
 find_program(PAMTESTER pamtester)
 
