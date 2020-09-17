@@ -2134,8 +2134,7 @@ bool FilesetResource::PrintConfig(
 
   Dmsg0(200, "FilesetResource::PrintConfig\n");
 
-  send.ResourceTypeStart("FileSets");
-  send.ResourceStart(this->resource_name_);
+  send.ResourceStart("FileSets", "FileSet", this->resource_name_);
   send.KeyQuotedString("Name", this->resource_name_);
 
   if (this->description_ != NULL) {
@@ -2208,8 +2207,7 @@ bool FilesetResource::PrintConfig(
     send.ArrayEnd("Exclude", inherited, "");
   }
 
-  send.ResourceEnd(this->resource_name_);
-  send.ResourceTypeEnd("FileSet");
+  send.ResourceEnd("FileSets", "FileSet", this->resource_name_);
 
   return true;
 }
