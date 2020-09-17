@@ -1,4 +1,3 @@
 @backenddir@/libbareoscats-mysql.so*
 @scriptdir@/ddl/*/mysql*.sql
-/usr/share/dbconfig-common/data/bareos-database-common/install/mysql
 /usr/share/dbconfig-common/data/bareos-database-common/upgrade/mysql/*
