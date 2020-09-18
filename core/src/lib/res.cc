@@ -1512,39 +1512,7 @@ void IndentConfigItem(PoolMem& cfg_str,
 
 std::string PrintNumberSiPrefixFormat(ResourceItem* item, uint64_t value_in)
 {
-  PoolMem temp;
-  PoolMem volspec; /* vol specification string*/
-  uint64_t value = value_in;
-  int factor;
-
-  /*
-   * convert default value string to numeric value
-   */
-  static const char* modifier[] = {"g", "m", "k", "", NULL};
-  const uint64_t multiplier[] = {
-      1073741824, /* gibi */
-      1048576,    /* mebi */
-      1024,       /* kibi */
-      1           /* byte */
-  };
-
-  if (value == 0) {
-    PmStrcat(volspec, "0");
-  } else {
-    for (int t = 0; modifier[t]; t++) {
-      Dmsg2(200, " %s bytes: %lld\n", item->name, value);
-      factor = value / multiplier[t];
-      value = value % multiplier[t];
-      if (factor > 0) {
-        Mmsg(temp, "%d %s ", factor, modifier[t]);
-        PmStrcat(volspec, temp.c_str());
-        Dmsg1(200, " volspec: %s\n", volspec.c_str());
-      }
-      if (value == 0) { break; }
-    }
-  }
-
-  return std::string(volspec.c_str());
+  return SizeAsSiPrefixFormat(value_in);
 }
 
 std::string Print32BitConfigNumberSiPrefixFormat(ResourceItem* item)

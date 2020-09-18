@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -365,14 +365,27 @@ static bool strunit_to_uint64(char* str, uint64_t* value, const char** mod)
   double val;
   char mod_str[20];
   char num_str[50];
-  static const int64_t mult[] = {
-      1,          /* Byte */
-      1024,       /* kiloByte */
-      1000,       /* KiB KiloByte */
-      1048576,    /* MegaByte */
-      1000000,    /* MiB MegaByte */
-      1073741824, /* GigaByte */
-      1000000000  /* GiB GigaByte */
+  static const uint64_t mult[] = {
+      1,     // Byte
+      1024,  // KiB Kibibyte
+      1000,  // kB Kilobyte
+
+      1048576,  // MiB Mebibyte
+      1000000,  // MB Megabyte
+
+      1073741824,  // GiB Gibibyte
+      1000000000,  // GB Gigabyte
+
+      1099511627776,  // TiB Tebibyte
+      1000000000000,  // TB Terabyte
+
+      1125899906842624,  // PiB Pebibyte
+      1000000000000000,  // PB Petabyte
+
+      1152921504606846976,  // EiB Exbibyte
+      1000000000000000000,  // EB Exabyte
+                            // 18446744073709551616 2^64
+
   };
 
   if (!GetModifier(str, num_str, sizeof(num_str), mod_str, sizeof(mod_str))) {
@@ -402,6 +415,44 @@ static bool strunit_to_uint64(char* str, uint64_t* value, const char** mod)
   return true;
 }
 
+// convert uint64 number to size string
+std::string SizeAsSiPrefixFormat(uint64_t value_in)
+{
+  uint64_t value = value_in;
+  int factor;
+  std::string result{};
+  /*
+   * convert default value string to numeric value
+   */
+  static const char* modifier[] = {"e", "p", "t", "g", "m", "k", "", NULL};
+  const uint64_t multiplier[] = {1152921504606846976,  // EiB Exbibyte
+                                 1125899906842624,     // PiB Pebibyte
+                                 1099511627776,        // TiB Tebibyte
+                                 1073741824,           // GiB Gibibyte
+                                 1048576,              // MiB Mebibyte
+                                 1024,                 // KiB Kibibyte
+                                 1};
+
+  if (value == 0) {
+    result += "0";
+  } else {
+    for (int t = 0; modifier[t]; t++) {
+      factor = value / multiplier[t];
+      value = value % multiplier[t];
+      if (factor > 0) {
+        result += std::to_string(factor);
+        result += " ";
+        result += modifier[t];
+        if (!(bstrcmp(modifier[t], ""))) { result += " "; }
+      }
+      if (value == 0) { break; }
+    }
+  }
+  result.pop_back();
+  return result;
+}
+
+
 /*
  * Convert a size in bytes to uint64_t
  * Returns false: if error
@@ -412,8 +463,23 @@ bool size_to_uint64(char* str, uint64_t* value)
   /*
    * First item * not used
    */
-  static const char* mod[] = {"*", "k", "kb", "m", "mb", "g", "gb", NULL};
+  // clang-format off
+  static const char* mod[] = {"*",
+                              // kibibyte, kilobyte
+                              "k",  "kb",
+                              // mebibyte, megabyte
+                              "m",  "mb",
+                              // gibibyte, gigabyte
+                              "g",  "gb",
+                              // tebibyte, terabyte
+                              "t",  "tb",
+                              // pebibyte, petabyte
+                              "p",  "pb",
+                              // exbibyte, exabyte
+                              "e",  "eb",
+                              NULL};
 
+  // clang-format on
   return strunit_to_uint64(str, value, mod);
 }
 
