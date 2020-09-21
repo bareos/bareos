@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1012,11 +1012,11 @@ static void JcrTimeoutCheck(watchdog_t* /* self */)
  *   0 if no more JobIds are in list
  *  -1 there is an error
  */
-int GetNextJobidFromList(char** p, uint32_t* JobId)
+int GetNextJobidFromList(const char** p, uint32_t* JobId)
 {
   const int maxlen = 30;
   char jobid[maxlen + 1];
-  char* q = *p;
+  const char* q = *p;
 
   jobid[0] = 0;
   for (int i = 0; i < maxlen; i++) {

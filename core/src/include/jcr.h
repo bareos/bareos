@@ -234,7 +234,7 @@ class JobControlRecord {
 /*
  * The following routines are found in lib/jcr.c
  */
-extern int GetNextJobidFromList(char** p, uint32_t* JobId);
+extern int GetNextJobidFromList(const char** p, uint32_t* JobId);
 extern bool InitJcrSubsystem(int timeout);
 extern JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
 extern JobControlRecord* get_jcr_by_id(uint32_t JobId);

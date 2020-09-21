@@ -286,7 +286,8 @@ static struct ua_cmdstruct commands[] = {
      NT_("pool=<pool-name>"), false, true},
     {NT_("delete"), DeleteCmd, _("Delete volume, pool or job"),
      NT_("[volume=<vol-name> [yes] | volume pool=<pool-name> [yes] | "
-         "pool=<pool-name> | jobid=<jobid>]"),
+         "pool=<pool-name> | jobid=<jobid> | jobid=<jobid1,jobid2,...> | "
+         "jobid=<jobid1-jobid9>]"),
      true, true},
     {NT_("disable"), DisableCmd, _("Disable a job/client/schedule"),
      NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true,
@@ -2206,9 +2207,7 @@ static bool DeleteCmd(UaContext* ua, const char* cmd)
       DeleteVolume(ua);
       break;
     case 1:
-      ua->send->ArrayEnd("pools");
       DeletePool(ua);
-      ua->send->ArrayEnd("pools");
       break;
     case 2:
       DeleteJob(ua);
@@ -2365,15 +2364,13 @@ static bool DeleteVolume(UaContext* ua)
                    "and all Jobs saved on that volume from the Catalog\n"),
                  mr.VolumeName);
 
-  if (FindArg(ua, "yes") >= 0) {
-    ua->pint32_val = 1; /* Have "yes" on command line already" */
-  } else {
+  if ((!ua->batch) && (FindArg(ua, "yes") < 0)) {
     Bsnprintf(buf, sizeof(buf),
               _("Are you sure you want to delete Volume \"%s\"? (yes/no): "),
               mr.VolumeName);
     if (!GetYesno(ua, buf)) { return true; }
+    if (!ua->pint32_val) { return true; }
   }
-  if (!ua->pint32_val) { return true; }
 
   /*
    * If not purged, do it
@@ -2383,32 +2380,39 @@ static bool DeleteVolume(UaContext* ua)
       ua->ErrorMsg(_("Can't list jobs on this volume\n"));
       return true;
     }
-    if (lst.count) {
-      PurgeJobsFromCatalog(ua, lst.list);
+    if (!lst.empty()) {
+      PurgeJobsFromCatalog(ua, lst.list());
       ua->send->ArrayStart("jobids");
-      for (const std::string& item : lst.get_items()) {
-        ua->send->ArrayItem(item.c_str());
-      }
+      for (const std::string& item : lst) { ua->send->ArrayItem(item.c_str()); }
       ua->send->ArrayEnd("jobids");
+      ua->InfoMsg(
+          _("Deleted %d jobs and associated records deleted from the catalog "
+            "(jobids: %s).\n"),
+          lst.size(), lst.list());
     }
   }
 
   ua->db->DeleteMediaRecord(ua->jcr, &mr);
   ua->send->ArrayStart("volumes");
-  ua->send->ArrayItem(mr.VolumeName);
+  ua->send->ArrayItem(mr.VolumeName, _("Volume %s deleted.\n"));
   ua->send->ArrayEnd("volumes");
 
   return true;
 }
 
 /**
- * Delete a pool record from the database -- dangerous
+ * Delete a pool record from the database -- dangerous.
  */
 static bool DeletePool(UaContext* ua)
 {
   PoolDbRecord pr;
   char buf[200];
 
+  if (ua->batch) {
+    ua->ErrorMsg(
+        _("Deleting pools from the catalog is not supported in batch mode.\n"));
+    return false;
+  }
 
   if (!GetPoolDbr(ua, &pr)) { return true; }
   Bsnprintf(buf, sizeof(buf),
