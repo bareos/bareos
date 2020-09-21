@@ -1085,9 +1085,9 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
   ScheduleResource* sched = NULL;
   ClientResource* client = NULL;
   JobResource* job = NULL;
-  int i;
+  std::string action(setting ? "enable" : "disable");
 
-  i = FindArg(ua, NT_("schedule"));
+  int i = FindArg(ua, NT_("schedule"));
   if (i >= 0) {
     i = FindArgWithValue(ua, NT_("schedule"));
     if (i >= 0) {
@@ -1132,19 +1132,29 @@ static void DoEnDisableCmd(UaContext* ua, bool setting)
     }
   }
 
+  ua->send->ObjectStart(action.c_str());
   if (sched) {
     sched->enabled = setting;
-    ua->SendMsg(_("Schedule \"%s\" %sabled\n"), sched->resource_name_,
-                setting ? "en" : "dis");
+    ua->SendMsg(_("Schedule \"%s\" %sd\n"), sched->resource_name_,
+                action.c_str());
+    ua->send->ArrayStart("schedules");
+    ua->send->ArrayItem(sched->resource_name_);
+    ua->send->ArrayEnd("schedules");
   } else if (client) {
     client->enabled = setting;
-    ua->SendMsg(_("Client \"%s\" %sabled\n"), client->resource_name_,
-                setting ? "en" : "dis");
+    ua->SendMsg(_("Client \"%s\" %sd\n"), client->resource_name_,
+                action.c_str());
+    ua->send->ArrayStart("clients");
+    ua->send->ArrayItem(client->resource_name_);
+    ua->send->ArrayEnd("clients");
   } else if (job) {
     job->enabled = setting;
-    ua->SendMsg(_("Job \"%s\" %sabled\n"), job->resource_name_,
-                setting ? "en" : "dis");
+    ua->SendMsg(_("Job \"%s\" %sd\n"), job->resource_name_, action.c_str());
+    ua->send->ArrayStart("jobs");
+    ua->send->ArrayItem(job->resource_name_);
+    ua->send->ArrayEnd("jobs");
   }
+  ua->send->ObjectEnd(action.c_str());
 
   ua->WarningMsg(
       _("%sabling is a temporary operation until the director reloads.\n"
