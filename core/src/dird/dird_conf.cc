@@ -1069,7 +1069,8 @@ static void PropagateResource(ResourceItem* items,
       offset = items[i].offset;  // Ueb
       switch (items[i].type) {
         case CFG_TYPE_STR:
-        case CFG_TYPE_DIR: {
+        case CFG_TYPE_DIR:
+        case CFG_TYPE_DIR_OR_CMD: {
           char **def_svalue, **svalue;
 
           /*
