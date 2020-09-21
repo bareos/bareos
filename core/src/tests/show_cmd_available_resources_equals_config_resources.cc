@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,11 @@ TEST(available_resources_equals_config_resources, check_contents)
   std::set<uint32_t> set_of_config_resources;
 
   for (int i = 0; my_config->resources_[i].name; i++) {
-    set_of_config_resources.insert(my_config->resources_[i].rcode);
+    if (my_config->resources_[i].rcode != R_DEVICE) {
+      /* skip R_DEVICE, as these are special resources, not shown by the show
+       * command. */
+      set_of_config_resources.insert(my_config->resources_[i].rcode);
+    }
   }
 
   std::set<uint32_t> set_of_show_cmd_resources;
