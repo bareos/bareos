@@ -39,6 +39,9 @@
 #include "lib/berrno.h"
 
 
+const std::vector<std::string>& db_list_ctx::get_items() const { return item_; }
+
+
 bool BareosDb::MatchDatabase(const char* db_driver,
                              const char* db_name,
                              const char* db_address,

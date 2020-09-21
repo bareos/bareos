@@ -520,7 +520,6 @@ void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
   /* Now remove the Job record itself */
   Mmsg(query, "DELETE FROM Job WHERE JobId IN (%s)", jobs);
   ua->db->SqlQuery(query.c_str());
-
   Dmsg1(050, "Delete Job sql=%s\n", query.c_str());
 }
 

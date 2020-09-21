@@ -517,6 +517,8 @@ class db_list_ctx {
       if (*list) { PmStrcat(list, ","); }
       PmStrcat(list, str.list);
       count += str.count;
+      const std::vector<std::string>& str_items = str.get_items();
+      item_.insert(std::end(item_), std::begin(str_items), std::end(str_items));
     }
   }
   void add(const char* str)
@@ -524,9 +526,13 @@ class db_list_ctx {
     if (count > 0) { PmStrcat(list, ","); }
     PmStrcat(list, str);
     count++;
+    item_.push_back(std::string(str));
   }
 
+  const std::vector<std::string>& get_items() const;
+
  private:
+  std::vector<std::string> item_;
   db_list_ctx(const db_list_ctx&);            /**< prohibit pass by value */
   db_list_ctx& operator=(const db_list_ctx&); /**< prohibit class assignment */
 };

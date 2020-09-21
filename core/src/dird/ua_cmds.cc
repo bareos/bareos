@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -285,7 +285,9 @@ static struct ua_cmdstruct commands[] = {
     {NT_("create"), CreateCmd, _("Create DB Pool from resource"),
      NT_("pool=<pool-name>"), false, true},
     {NT_("delete"), DeleteCmd, _("Delete volume, pool or job"),
-     NT_("volume=<vol-name> pool=<pool-name> jobid=<jobid>"), true, true},
+     NT_("[volume=<vol-name> [yes] | volume pool=<pool-name> [yes] | "
+         "pool=<pool-name> | jobid=<jobid>]"),
+     true, true},
     {NT_("disable"), DisableCmd, _("Disable a job/client/schedule"),
      NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true,
      true},
@@ -2188,43 +2190,34 @@ static bool DeleteCmd(UaContext* ua, const char* cmd)
                                    NULL};
 
   if (!OpenClientDb(ua, true)) { return true; }
+  ua->send->ObjectStart("deleted");
 
-  switch (FindArgKeyword(ua, keywords)) {
-    case 0:
-      DeleteVolume(ua);
-      return true;
-    case 1:
-      DeletePool(ua);
-      return true;
-    case 2:
-      int i;
-      while ((i = FindArg(ua, "jobid")) > 0) {
-        DeleteJob(ua);
-        *ua->argk[i] = 0; /* zap keyword already visited */
-      }
-      return true;
-    default:
-      break;
+  int keyword = FindArgKeyword(ua, keywords);
+  if (keyword < 0) {
+    ua->WarningMsg(
+        _("In general it is not a good idea to delete either a\n"
+          "Pool or a Volume since they may contain data.\n\n"));
+
+    keyword = DoKeywordPrompt(ua, _("Choose catalog item to delete"), keywords);
   }
 
-  ua->WarningMsg(
-      _("In general it is not a good idea to delete either a\n"
-        "Pool or a Volume since they may contain data.\n\n"));
-
-  switch (DoKeywordPrompt(ua, _("Choose catalog item to delete"), keywords)) {
+  switch (keyword) {
     case 0:
       DeleteVolume(ua);
       break;
     case 1:
+      ua->send->ArrayEnd("pools");
       DeletePool(ua);
+      ua->send->ArrayEnd("pools");
       break;
     case 2:
       DeleteJob(ua);
-      return true;
+      break;
     default:
       ua->WarningMsg(_("Nothing done.\n"));
       break;
   }
+  ua->send->ObjectEnd("deleted");
   return true;
 }
 
@@ -2240,8 +2233,17 @@ static void DeleteJob(UaContext* ua)
   JobId_t JobId;
   char *s, *sep, *tok;
 
-  i = FindArgWithValue(ua, NT_("jobid"));
-  if (i >= 0) {
+  if (FindArgWithValue(ua, NT_("jobid")) <= 0) {
+    if (GetPint(ua, _("Enter JobId to delete: "))) {
+      JobId = ua->int64_val;
+      DoJobDelete(ua, JobId);
+    }
+    return;
+  }
+
+  ua->send->ArrayStart("jobids");
+  while ((i = FindArgWithValue(ua, NT_("jobid"))) > 0) {
+    *ua->argk[i] = 0; /* zap keyword already visited */
     if (strchr(ua->argv[i], ',') || strchr(ua->argv[i], '-')) {
       s = strdup(ua->argv[i]);
       tok = s;
@@ -2261,7 +2263,7 @@ static void DeleteJob(UaContext* ua)
             JobId = (JobId_t)str_to_uint64(tok);
             DoJobDelete(ua, JobId);
           } else {
-            ua->WarningMsg(_("Illegal JobId %s ignored\n"), tok);
+            ua->ErrorMsg(_("Illegal JobId %s ignored\n"), tok);
           }
         }
         tok = ++sep;
@@ -2276,7 +2278,7 @@ static void DeleteJob(UaContext* ua)
           JobId = (JobId_t)str_to_uint64(tok);
           DoJobDelete(ua, JobId);
         } else {
-          ua->WarningMsg(_("Illegal JobId %s ignored\n"), tok);
+          ua->ErrorMsg(_("Illegal JobId %s ignored\n"), tok);
         }
       }
 
@@ -2286,15 +2288,11 @@ static void DeleteJob(UaContext* ua)
         JobId = (JobId_t)str_to_uint64(ua->argv[i]);
         DoJobDelete(ua, JobId);
       } else {
-        ua->WarningMsg(_("Illegal JobId %s ignored\n"), ua->argv[i]);
+        ua->ErrorMsg(_("Illegal JobId %s ignored\n"), ua->argv[i]);
       }
     }
-  } else if (!GetPint(ua, _("Enter JobId to delete: "))) {
-    return;
-  } else {
-    JobId = ua->int64_val;
-    DoJobDelete(ua, JobId);
   }
+  ua->send->ArrayEnd("jobids");
 }
 
 /**
@@ -2321,7 +2319,7 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
        * See if the range is big if more then 25 Jobs are deleted
        * ask the user for confirmation.
        */
-      if ((j2 - j1) > 25) {
+      if ((!ua->batch) && ((j2 - j1) > 25)) {
         Bsnprintf(buf, sizeof(buf),
                   _("Are you sure you want to delete %d JobIds ? (yes/no): "),
                   j2 - j1);
@@ -2329,12 +2327,12 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
       }
       for (j = j1; j <= j2; j++) { DoJobDelete(ua, j); }
     } else {
-      ua->WarningMsg(_("Illegal JobId range %s - %s should define increasing "
-                       "JobIds, ignored\n"),
-                     tok, tok2);
+      ua->ErrorMsg(_("Illegal JobId range %s - %s should define increasing "
+                     "JobIds, ignored\n"),
+                   tok, tok2);
     }
   } else {
-    ua->WarningMsg(_("Illegal JobId range %s - %s, ignored\n"), tok, tok2);
+    ua->ErrorMsg(_("Illegal JobId range %s - %s, ignored\n"), tok, tok2);
   }
 
   return true;
@@ -2349,8 +2347,8 @@ static void DoJobDelete(UaContext* ua, JobId_t JobId)
 
   edit_int64(JobId, ed1);
   PurgeJobsFromCatalog(ua, ed1);
-  ua->SendMsg(_("Jobid %s and associated records deleted from the catalog.\n"),
-              ed1);
+  ua->send->ArrayItem(
+      ed1, _("Jobid %s and associated records deleted from the catalog.\n"));
 }
 
 /**
@@ -2385,10 +2383,21 @@ static bool DeleteVolume(UaContext* ua)
       ua->ErrorMsg(_("Can't list jobs on this volume\n"));
       return true;
     }
-    if (lst.count) { PurgeJobsFromCatalog(ua, lst.list); }
+    if (lst.count) {
+      PurgeJobsFromCatalog(ua, lst.list);
+      ua->send->ArrayStart("jobids");
+      for (const std::string& item : lst.get_items()) {
+        ua->send->ArrayItem(item.c_str());
+      }
+      ua->send->ArrayEnd("jobids");
+    }
   }
 
   ua->db->DeleteMediaRecord(ua->jcr, &mr);
+  ua->send->ArrayStart("volumes");
+  ua->send->ArrayItem(mr.VolumeName);
+  ua->send->ArrayEnd("volumes");
+
   return true;
 }
 
