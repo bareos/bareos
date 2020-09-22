@@ -63,23 +63,26 @@ macro(bareos_install_sql_files_to_dbconfig_common)
     DB_CONFIG_COMMON "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
   )
 
-  install(
-    DIRECTORY
-    DESTINATION
-      "${CMAKE_INSTALL_FULL_DATAROOTDIR}/dbconfig-common/data/bareos-database-common/install/"
-  )
+  if(DB_CONFIG_COMMON_BAREOS_DB_NAME STREQUAL "postgresql")
+    install(
+      DIRECTORY
+      DESTINATION
+        "${CMAKE_INSTALL_FULL_DATAROOTDIR}/dbconfig-common/data/bareos-database-common/install/"
+    )
+
+    install(
+      FILES
+        "${CMAKE_SOURCE_DIR}/core/src/cats/ddl/creates/${DB_CONFIG_COMMON_BAREOS_DB_NAME}.sql"
+      DESTINATION
+        "${CMAKE_INSTALL_FULL_DATAROOTDIR}/dbconfig-common/data/bareos-database-common/install/"
+      RENAME "${DB_CONFIG_COMMON_DEBIAN_DB_NAME}"
+    )
+  endif()
+
   install(
     DIRECTORY
     DESTINATION
       "${CMAKE_INSTALL_FULL_DATAROOTDIR}/dbconfig-common/data/bareos-database-common/upgrade/${DB_CONFIG_COMMON_DEBIAN_DB_NAME}/"
-  )
-
-  install(
-    FILES
-      "${CMAKE_SOURCE_DIR}/core/src/cats/ddl/creates/${DB_CONFIG_COMMON_BAREOS_DB_NAME}.sql"
-    DESTINATION
-      "${CMAKE_INSTALL_FULL_DATAROOTDIR}/dbconfig-common/data/bareos-database-common/install/"
-    RENAME "${DB_CONFIG_COMMON_DEBIAN_DB_NAME}"
   )
   file(
     GLOB
