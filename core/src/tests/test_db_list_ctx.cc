@@ -102,3 +102,16 @@ TEST(db_list_ctx, list)
   EXPECT_TRUE(bstrcmp(list1.GetAsString().c_str(), "11,12,13"));
   EXPECT_STREQ(list1.GetAsString().c_str(), "11,12,13");
 }
+
+TEST(db_list_ctx, GetFrontAsInteger)
+{
+  db_list_ctx nb;
+
+  EXPECT_EQ(0, nb.GetFrontAsInteger());
+
+  nb.add(11);
+  EXPECT_EQ(11, nb.GetFrontAsInteger());
+
+  nb.add(12);
+  EXPECT_EQ(11, nb.GetFrontAsInteger());
+}

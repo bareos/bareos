@@ -357,7 +357,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   jcr->file_bsock->fsend("accurate files=%s\n", nb.GetAsString().c_str());
 
   if (jcr->HasBase) {
-    jcr->nb_base_files = str_to_int64(nb.GetAsString().c_str());
+    jcr->nb_base_files = nb.GetFrontAsInteger();
     if (!jcr->db->CreateBaseFileList(jcr, jobids.GetAsString().c_str())) {
       Jmsg(jcr, M_FATAL, 0, "error in jcr->db->CreateBaseFileList:%s\n",
            jcr->db->strerror());

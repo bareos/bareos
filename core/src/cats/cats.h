@@ -499,6 +499,14 @@ class db_list_ctx : public BStringList {
   void add(JobId_t id) { push_back(std::to_string(id)); }
 
   std::string GetAsString() { return Join(','); }
+  uint64_t GetFrontAsInteger()
+  {
+    try {
+      return std::stoull(at(0));
+    } catch (...) {
+      return 0;
+    }
+  }
 };
 
 typedef enum
