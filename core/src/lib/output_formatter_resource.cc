@@ -28,7 +28,7 @@
 #include "lib/util.h"
 #include "lib/output_formatter_resource.h"
 
-const char* GetAsString(void* item) { return (const char*)item; }
+const char* GetAsCString(void* item) { return (const char*)item; }
 
 OutputFormatterResource::OutputFormatterResource(OutputFormatter* send,
                                                  int indent_level)
@@ -229,7 +229,7 @@ void OutputFormatterResource::KeyMultipleStringsInOneLine(const char* key,
                                                           bool as_comment,
                                                           bool quoted_strings)
 {
-  KeyMultipleStringsInOneLine(key, list, GetAsString, as_comment,
+  KeyMultipleStringsInOneLine(key, list, GetAsCString, as_comment,
                               quoted_strings);
 }
 
@@ -288,7 +288,7 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLine(const char* key,
                                                            bool as_comment,
                                                            bool quoted_strings)
 {
-  KeyMultipleStringsOnePerLine(key, list, GetAsString, as_comment,
+  KeyMultipleStringsOnePerLine(key, list, GetAsCString, as_comment,
                                quoted_strings);
 }
 

@@ -357,10 +357,10 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
 
     ua->SendMsg(_("The restore will use the following job(s) as Base\n"));
     ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_print_jobs,
-                      jobids.list());
+                      jobids.GetAsString().c_str());
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
   }
-  PmStrcpy(rx->BaseJobIds, jobids.list());
+  PmStrcpy(rx->BaseJobIds, jobids.GetAsString().c_str());
 }
 
 static void free_rx(RestoreContext* rx)
@@ -772,7 +772,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
           if (!ua->db->AccurateGetJobids(ua->jcr, &jr, &jobids)) { return 0; }
         }
-        PmStrcpy(rx->JobIds, jobids.list());
+        PmStrcpy(rx->JobIds, jobids.GetAsString().c_str());
         Dmsg1(30, "Item 12: jobids = %s\n", rx->JobIds);
         break;
       case 12: /* Cancel or quit */

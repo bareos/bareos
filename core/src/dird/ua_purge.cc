@@ -564,7 +564,7 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
       Dmsg0(050, "Count failed\n");
       goto bail_out;
     }
-    jobids = lst.get_as_string();
+    jobids = lst.GetAsString();
   }
 
   if (jobids.size() > 0) { PurgeJobsFromCatalog(ua, jobids.c_str()); }

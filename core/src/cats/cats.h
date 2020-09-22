@@ -498,15 +498,7 @@ class db_list_ctx : public BStringList {
   void add(const char* str) { Append(str); }
   void add(JobId_t id) { push_back(std::to_string(id)); }
 
-  std::string get_as_string() const { return Join(','); }
-  const char* list()
-  {
-    strlist_ = get_as_string();
-    return strlist_.c_str();
-  }
-
- private:
-  std::string strlist_{};
+  std::string GetAsString() { return Join(','); }
 };
 
 typedef enum

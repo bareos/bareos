@@ -1409,7 +1409,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
     Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate", jobid);
   }
   SqlQueryWithHandler(query.c_str(), DbListHandler, jobids);
-  Dmsg1(1, "db_accurate_get_jobids=%s\n", jobids->list());
+  Dmsg1(1, "db_accurate_get_jobids=%s\n", jobids->GetAsString().c_str());
   retval = true;
 
 bail_out:

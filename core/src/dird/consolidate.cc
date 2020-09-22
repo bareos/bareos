@@ -157,7 +157,8 @@ bool DoConsolidate(JobControlRecord* jcr)
        */
       jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
       incrementals_total = jobids_ctx.size() - 1;
-      Dmsg1(10, "unlimited jobids list:  %s.\n", jobids_ctx.list());
+      Dmsg1(10, "unlimited jobids list:  %s.\n",
+            jobids_ctx.GetAsString().c_str());
 
       /*
        * If we are doing always incremental, we need to limit the search to
@@ -180,7 +181,8 @@ bool DoConsolidate(JobControlRecord* jcr)
       }
 
       jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
-      Dmsg1(10, "consolidate candidates:  %s.\n", jobids_ctx.list());
+      Dmsg1(10, "consolidate candidates:  %s.\n",
+            jobids_ctx.GetAsString().c_str());
 
       /**
        * Consolidation of zero or one job does not make sense, we leave it like
@@ -211,7 +213,7 @@ bool DoConsolidate(JobControlRecord* jcr)
         jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
         incrementals_to_consolidate = jobids_ctx.size() - 1;
         Dmsg2(10, "%d consolidate ids after limit: %s.\n", jobids_ctx.size(),
-              jobids_ctx.list());
+              jobids_ctx.GetAsString().c_str());
         if (incrementals_to_consolidate < 1) {
           Jmsg(jcr, M_INFO, 0,
                _("%s: After limited query: less incrementals than required, "
@@ -231,7 +233,7 @@ bool DoConsolidate(JobControlRecord* jcr)
         jobids = NULL;
       }
 
-      jobids = strdup(jobids_ctx.list());
+      jobids = strdup(jobids_ctx.GetAsString().c_str());
       p = jobids;
 
       /**

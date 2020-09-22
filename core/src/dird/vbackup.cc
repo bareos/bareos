@@ -216,14 +216,15 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   } else {
     db_list_ctx jobids_ctx;
     jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
-    Dmsg1(10, "consolidate candidates:  %s.\n", jobids_ctx.list());
+    Dmsg1(10, "consolidate candidates:  %s.\n",
+          jobids_ctx.GetAsString().c_str());
 
     if (jobids_ctx.empty()) {
       Jmsg(jcr, M_FATAL, 0, _("No previous Jobs found.\n"));
       return false;
     }
 
-    jobids = strdup(jobids_ctx.list());
+    jobids = strdup(jobids_ctx.GetAsString().c_str());
   }
 
   Jmsg(jcr, M_INFO, 0, _("Consolidating JobIds %s\n"), jobids);

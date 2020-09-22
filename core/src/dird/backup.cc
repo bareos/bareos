@@ -318,7 +318,8 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
      */
     if (GetBaseJobids(jcr, &jobids)) {
       jcr->HasBase = true;
-      Jmsg(jcr, M_INFO, 0, _("Using BaseJobId(s): %s\n"), jobids.list());
+      Jmsg(jcr, M_INFO, 0, _("Using BaseJobId(s): %s\n"),
+           jobids.GetAsString().c_str());
     } else {
       return true;
     }
@@ -348,14 +349,16 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   /*
    * To be able to allocate the right size for htable
    */
-  Mmsg(buf, "SELECT sum(JobFiles) FROM Job WHERE JobId IN (%s)", jobids.list());
+  Mmsg(buf, "SELECT sum(JobFiles) FROM Job WHERE JobId IN (%s)",
+       jobids.GetAsString().c_str());
   jcr->db->SqlQuery(buf.c_str(), DbListHandler, &nb);
-  Dmsg2(200, "jobids=%s nb=%s\n", jobids.list(), nb.list());
-  jcr->file_bsock->fsend("accurate files=%s\n", nb.list());
+  Dmsg2(200, "jobids=%s nb=%s\n", jobids.GetAsString().c_str(),
+        nb.GetAsString().c_str());
+  jcr->file_bsock->fsend("accurate files=%s\n", nb.GetAsString().c_str());
 
   if (jcr->HasBase) {
-    jcr->nb_base_files = str_to_int64(nb.list());
-    if (!jcr->db->CreateBaseFileList(jcr, jobids.list())) {
+    jcr->nb_base_files = str_to_int64(nb.GetAsString().c_str());
+    if (!jcr->db->CreateBaseFileList(jcr, jobids.GetAsString().c_str())) {
       Jmsg(jcr, M_FATAL, 0, "error in jcr->db->CreateBaseFileList:%s\n",
            jcr->db->strerror());
       return false;
@@ -373,7 +376,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
     }
 
     jcr->db_batch->GetFileList(
-        jcr, jobids.list(), jcr->impl->use_accurate_chksum,
+        jcr, jobids.GetAsString().c_str(), jcr->impl->use_accurate_chksum,
         false /* no delta */, AccurateListHandler, (void*)jcr);
   }
 

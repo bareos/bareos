@@ -336,7 +336,7 @@ void BareosDb::BvfsUpdateCache(JobControlRecord* jcr)
        "ORDER BY JobId");
   SqlQuery(cmd, DbListHandler, &jobids_list);
 
-  BvfsUpdatePathHierarchyCache(jcr, jobids_list.list());
+  BvfsUpdatePathHierarchyCache(jcr, jobids_list.GetAsString().c_str());
 
   StartTransaction(jcr);
   Dmsg0(dbglevel, "Cleaning pathvisibility\n");

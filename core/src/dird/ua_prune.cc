@@ -771,22 +771,23 @@ static bool PruneBackupJobs(UaContext* ua,
    * also remove BaseJobs that can be linked with them
    */
   if (!jobids.empty()) {
-    Dmsg1(60, "jobids to exclude before basejobs = %s\n", jobids.list());
+    Dmsg1(60, "jobids to exclude before basejobs = %s\n",
+          jobids.GetAsString().c_str());
     /* We also need to exclude all basejobs used */
-    ua->db->GetUsedBaseJobids(ua->jcr, jobids.list(), &jobids);
+    ua->db->GetUsedBaseJobids(ua->jcr, jobids.GetAsString().c_str(), &jobids);
 
     /* Removing useful jobs from the DelCandidates list */
     Mmsg(query,
          "DELETE FROM DelCandidates "
          "WHERE JobId IN (%s) " /* JobId used in accurate */
          "AND JobFiles!=0",     /* Discard when JobFiles=0 */
-         jobids.list());
+         jobids.GetAsString().c_str());
 
     if (!ua->db->SqlQuery(query.c_str())) {
       ua->ErrorMsg("%s", ua->db->strerror());
       goto bail_out; /* Don't continue if the list isn't clean */
     }
-    Dmsg1(60, "jobids to exclude = %s\n", jobids.list());
+    Dmsg1(60, "jobids to exclude = %s\n", jobids.GetAsString().c_str());
   }
 
   /* We use DISTINCT because we can have two times the same job */

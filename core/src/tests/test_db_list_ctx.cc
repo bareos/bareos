@@ -97,7 +97,8 @@ TEST(db_list_ctx, list)
   list1.add(13);
 
   EXPECT_EQ(3, list1.size());
-  EXPECT_EQ(0, list1.get_as_string().compare(std::string("11,12,13")));
+  EXPECT_EQ(0, list1.GetAsString().compare(std::string("11,12,13")));
   // std::cerr << "list: " << list1.list() << "\n";
-  EXPECT_TRUE(bstrcmp(list1.list(), "11,12,13"));
+  EXPECT_TRUE(bstrcmp(list1.GetAsString().c_str(), "11,12,13"));
+  EXPECT_STREQ(list1.GetAsString().c_str(), "11,12,13");
 }

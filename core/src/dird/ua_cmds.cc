@@ -2391,14 +2391,14 @@ static bool DeleteVolume(UaContext* ua)
       return true;
     }
     if (!lst.empty()) {
-      PurgeJobsFromCatalog(ua, lst.list());
+      PurgeJobsFromCatalog(ua, lst.GetAsString().c_str());
       ua->send->ArrayStart("jobids");
       for (const std::string& item : lst) { ua->send->ArrayItem(item.c_str()); }
       ua->send->ArrayEnd("jobids");
       ua->InfoMsg(
           _("Deleted %d jobs and associated records deleted from the catalog "
             "(jobids: %s).\n"),
-          lst.size(), lst.list());
+          lst.size(), lst.GetAsString().c_str());
     }
   }
 
