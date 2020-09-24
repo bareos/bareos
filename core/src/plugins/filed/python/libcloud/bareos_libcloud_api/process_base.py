@@ -25,7 +25,11 @@ from bareos_libcloud_api.queue_message import ErrorMessage
 from bareos_libcloud_api.queue_message import AbortMessage
 from bareos_libcloud_api.queue_message import DebugMessage
 from bareos_libcloud_api.queue_message import MESSAGE_TYPE
-import Queue as Q
+
+try:
+    import Queue as Q
+except ImportError:
+    import queue as Q
 
 
 class ProcessBase(Process):

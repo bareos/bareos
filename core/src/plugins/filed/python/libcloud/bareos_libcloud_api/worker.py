@@ -23,7 +23,7 @@ from bareos_libcloud_api.get_libcloud_driver import get_driver
 import io
 from libcloud.common.types import LibcloudError
 from libcloud.storage.types import ObjectDoesNotExistError
-from utils import silentremove
+from bareos_libcloud_api.utils import silentremove
 from time import sleep
 import uuid
 
