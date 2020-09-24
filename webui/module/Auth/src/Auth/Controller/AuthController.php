@@ -39,6 +39,7 @@ class AuthController extends AbstractActionController
     */
    protected $directorModel = null;
    protected $bsock = null;
+   protected $updates = null;
 
    /**
     * Index Action
@@ -68,7 +69,6 @@ class AuthController extends AbstractActionController
       $config = $this->getServiceLocator()->get('Config');
       $dird = $this->params()->fromQuery('dird') ? $this->params()->fromQuery('dird') : null;
 
-      // Check for Multi Director Environment
       if(count($config['directors']) > 1) {
          $multi_dird_env = true;
       }
@@ -84,8 +84,8 @@ class AuthController extends AbstractActionController
       $auth = new Auth();
       $form->setInputFilter($auth->getInputFilter());
       $form->setData($request->getPost());
+
       if(!$form->isValid()) {
-         // given credentials in login form could not be validated in this case
          $err_msg = "Please provide a director, username and password.";
          return $this->createNewLoginForm($form, $multi_dird_env, $err_msg);
       }
@@ -97,7 +97,6 @@ class AuthController extends AbstractActionController
       $bareos_updates = $form->getInputFilter()->getValue('bareos_updates');
 
       $config = $this->getServiceLocator()->get('Config');
-
       $this->bsock = $this->getServiceLocator()->get('director');
       $this->bsock->set_config($config['directors'][$director]);
       $this->bsock->set_user_credentials($username, $password);
@@ -107,114 +106,49 @@ class AuthController extends AbstractActionController
          return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
       }
 
-      $_SESSION['bareos']['director'] = $director;
-      $_SESSION['bareos']['username'] = $username;
-      $_SESSION['bareos']['password'] = $password;
-      $_SESSION['bareos']['authenticated'] = true;
-      $_SESSION['bareos']['locale'] = $locale;
-      $_SESSION['bareos']['idletime'] = time();
-      $_SESSION['bareos']['product-updates'] = $bareos_updates;
-      $_SESSION['bareos']['dird-update-available'] = false;
+      $session = new Container('bareos');
+      $session->offsetSet('director', $director);
+      $session->offsetSet('username', $username);
+      $session->offsetSet('password', $password);
+      $session->offsetSet('authenticated', true);
+      $session->offsetSet('locale', $locale);
+      $session->offsetSet('idletime', time());
+      $session->offsetSet('product-updates', $bareos_updates);
+      $session->offsetSet('product-updates-status', false);
+      $session->offsetSet('dird-update-available', false);
 
-      // Check if .api command is allowed and version 2 is available
-      $debug = $this->getDirectorModel()->sendDirectorCommand($this->bsock, ".api 2 compact=yes");
-      if(preg_match("/.api:/",$debug)) {
-         $err_msg = 'Sorry, the user you are trying to login with has no permissions for the .api command. For further information, please read the <a href="https://docs.bareos.org/IntroductionAndTutorial/InstallingBareosWebui.html#configuration-of-profile-resources" target="_blank">Bareos documentation</a>.';
-         return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
-      }
-      elseif(!preg_match('/result/', $debug)) {
-         $err_msg = 'Error: API 2 not available on 15.2.2 or greater and/or compile with jansson support.';
-         return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
-      }
-
-      if(isset($bareos_updates) && $bareos_updates == false) {
-         // updates could not be retrieved by ajax call
-         $_SESSION['bareos']['product-updates-status'] = false;
-         return null;
-      }
-
-      $_SESSION['bareos']['product-updates-status'] = true;
-      $updates = json_decode($bareos_updates, true);
-
-      try {
-         $dird_version = $this->getDirectorModel()->getDirectorVersion($this->bsock);
-      }
-      catch(Exception $e) {
-         echo $e->getMessage();
-      }
-
-      if(array_key_exists('obsdistribution', $dird_version)) {
-         $dird_dist = $dird_version['obsdistribution'];
-      }
-
-      if(!array_key_exists('obsarch', $dird_version)) {
-         $dird_arch = null;
-      }
-
-      if(preg_match("/ubuntu/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
-         $dird_arch = "amd64";
-      }
-      elseif(preg_match("/debian/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
-         $dird_arch = "amd64";
-      }
-      elseif(preg_match("/univention/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
-         $dird_arch = "amd64";
-      }
-      elseif(preg_match("/windows/i", $dird_dist) && $dird_version['obsarch'] == "Win32") {
-         $dird_arch = "32";
-      }
-      elseif(preg_match("/windows/i", $dird_dist) && $dird_version['obsarch'] == "Win64") {
-         $dird_arch = "64";
-      }
-      else {
-         $dird_arch = $dird_version['obsarch'];
-      }
-      if(array_key_exists('version', $dird_version)) {
-         $dird_vers = $dird_version['version'];
-      }
-      if(isset($dird_dist) && isset($dird_arch) && isset($dird_vers)) {
-         if(array_key_exists('product', $updates) &&
-            array_key_exists($dird_dist, $updates['product']['bareos-director']['distribution']) &&
-            array_key_exists($dird_arch, $updates['product']['bareos-director']['distribution'][$dird_dist])) {
-            foreach($updates['product']['bareos-director']['distribution'][$dird_dist][$dird_arch] as $key => $value) {
-               if( version_compare($dird_vers, $key, '>=') ) {
-                  $_SESSION['bareos']['dird-update-available'] = false;
-               }
-               if( version_compare($dird_vers, $key, '<') ) {
-                  $_SESSION['bareos']['dird-update-available'] = true;
-               }
-            }
-         }
-      }
-
-      // Get available commands
-      try {
-         $commands = $this->getDirectorModel()->getAvailableCommands($this->bsock);
-      }
-      catch(Exception $e) {
-         echo $e->getMessage();
-      }
-      // Push available commands into SESSION context.
-      $_SESSION['bareos']['commands'] = $commands;
-      // Check if Command ACL has the minimal requirements
-      if($_SESSION['bareos']['commands']['.help']['permission'] == 0) {
-         $err_msg = 'Sorry, your Command ACL does not fit the minimal requirements. For further information, please read the <a href="https://docs.bareos.org/IntroductionAndTutorial/InstallingBareosWebui.html#configuration-of-profile-resources" target="_blank">Bareos documentation</a>.';
-         return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
-      }
-      // Get the config.
       $configuration = $this->getServiceLocator()->get('configuration');
-      // Push the datatable settings into the SESSION context.
-      $_SESSION['bareos']['dt_lengthmenu'] = $configuration['configuration']['tables']['pagination_values'];
-      $_SESSION['bareos']['dt_pagelength'] = $configuration['configuration']['tables']['pagination_default_value'];
-      $_SESSION['bareos']['dt_statesave'] = ($configuration['configuration']['tables']['save_previous_state']) ? 'true' : 'false';
-      // Push the autochanger settings into the SESSION context.
+
+      $session->offsetSet('dt_lengthmenu', $configuration['configuration']['tables']['pagination_values']);
+      $session->offsetSet('dt_pagelength', $configuration['configuration']['tables']['pagination_default_value']);
+      $session->offsetSet('dt_statesave', ($configuration['configuration']['tables']['save_previous_state']) ? 'true' : 'false');
+      $session->offsetSet('dashboard_autorefresh_interval', $configuration['configuration']['dashboard']['autorefresh_interval']);
+      $session->offsetSet('filetree_refresh_timeout', $configuration['configuration']['restore']['filetree_refresh_timeout']);
+
       if(isset($configuration['configuration']['autochanger']['labelpooltype'])) {
-         $_SESSION['bareos']['ac_labelpooltype'] = $configuration['configuration']['autochanger']['labelpooltype'];
+         $session->offsetSet('ac_labelpooltype', $configuration['configuration']['autochanger']['labelpooltype']);
       }
-      // Push dashboard configuration settings into SESSION context.
-      $_SESSION['bareos']['dashboard_autorefresh_interval'] = $configuration['configuration']['dashboard']['autorefresh_interval'];
-      // Push restore configuration settings into SESSION context.
-      $_SESSION['bareos']['filetree_refresh_timeout'] = $configuration['configuration']['restore']['filetree_refresh_timeout'];
+
+      if($bareos_updates != "false" &&
+         !preg_match('/"statusText":"timeout"/', $bareos_updates)) {
+            $session->offsetSet('product-updates-status', true);
+            $this->updates = json_decode($bareos_updates, true);
+            $session->offsetSet('dird-update-available', $this->checkUpdateStatusDIRD());
+      }
+
+      $apicheck = $this->checkAPIStatusDIRD();
+
+      if(!$apicheck) {
+         return $this->createNewLoginForm($form, $multi_dird_env, $apicheck, $this->bsock);
+      }
+
+      $aclcheck = $this->checkACLStatusDIRD();
+
+      if(!$aclcheck) {
+         return $this->createNewLoginForm($form, $multi_dird_env, $aclcheck, $this->bsock);
+      } else {
+         $session->offsetSet('commands', $aclcheck);
+      }
 
       if($this->params()->fromQuery('req')) {
          $redirect = $this->params()->fromQuery('req');
@@ -224,6 +158,7 @@ class AuthController extends AbstractActionController
             return $this->redirect()->toUrl($this->params()->fromQuery('req'));
          }
       }
+
       return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
    }
 
@@ -234,9 +169,8 @@ class AuthController extends AbstractActionController
     */
    public function logoutAction()
    {
-      // todo - ask user if he's really wants to log out!
-      unset($_SESSION['bareos']);
-      session_destroy();
+      $session = new Container('bareos');
+      $session->getManager()->destroy();
       return $this->redirect()->toRoute('auth', array('action' => 'login'));
    }
 
@@ -273,4 +207,118 @@ class AuthController extends AbstractActionController
          )
       );
    }
+
+   /**
+    * DIRD API check
+    *
+    * @return mixed
+    */
+   private function checkAPIStatusDIRD() {
+
+      $err_msg_1 = 'Sorry, the user you are trying to login with has no permissions for the .api command. For further information, please read the <a href="https://docs.bareos.org/IntroductionAndTutorial/InstallingBareosWebui.html#configuration-of-profile-resources" target="_blank">Bareos documentation</a>.';
+      $err_msg_2 = 'Error: API 2 not available on 15.2.2 or greater and/or compile with jansson support.';
+
+      $result = $this->getDirectorModel()->sendDirectorCommand($this->bsock, ".api 2 compact=yes");
+
+      if(preg_match("/.api:/", $result)) {
+         return $err_msg_1;
+      }
+
+      if(preg_match("/result/", $result)) {
+         return $err_msg_2;
+      }
+
+      return true;
+   }
+
+   /**
+    * DIRD ACL check
+    *
+    * @return mixed
+    */
+   private function checkACLStatusDIRD() {
+
+      $err_msg = 'Sorry, your Command ACL does not fit the minimal requirements. For further information, please read the <a href="https://docs.bareos.org/IntroductionAndTutorial/InstallingBareosWebui.html#configuration-of-profile-resources" target="_blank">Bareos documentation</a>.';
+
+      try {
+         $commands = $this->getDirectorModel()->getAvailableCommands($this->bsock);
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
+
+      if($commands['.help']['permission'] == 0) {
+         return $err_msg;
+      }
+
+      return $commands;
+   }
+
+   /**
+    * DIRD update check
+    *
+    * @return boolean
+    */
+   private function checkUpdateStatusDIRD() {
+
+      $dird_version = null;
+      $dird_dist = null;
+
+      try {
+         $dird_version = $this->getDirectorModel()->getDirectorVersion($this->bsock);
+         if(array_key_exists('version', $dird_version)) {
+            $dird_vers = $dird_version['version'];
+         }
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
+
+      if(array_key_exists('obsdistribution', $dird_version)) {
+         $dird_dist = $dird_version['obsdistribution'];
+      }
+
+      if(!array_key_exists('obsarch', $dird_version)) {
+         $dird_arch = null;
+      }
+
+      if($dird_dist !== null) {
+         if(preg_match("/ubuntu/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
+            $dird_arch = "amd64";
+         }
+         elseif(preg_match("/debian/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
+            $dird_arch = "amd64";
+         }
+         elseif(preg_match("/univention/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
+            $dird_arch = "amd64";
+         }
+         elseif(preg_match("/windows/i", $dird_dist) && $dird_version['obsarch'] == "Win32") {
+            $dird_arch = "32";
+         }
+         elseif(preg_match("/windows/i", $dird_dist) && $dird_version['obsarch'] == "Win64") {
+            $dird_arch = "64";
+         }
+         else {
+            $dird_arch = $dird_version['obsarch'];
+         }
+
+         if(isset($dird_arch) && isset($dird_vers)) {
+            if(array_key_exists('product', $this->updates) &&
+               array_key_exists($dird_dist, $this->updates['product']['bareos-director']['distribution']) &&
+               array_key_exists($dird_arch, $this->updates['product']['bareos-director']['distribution'][$dird_dist])) {
+               foreach($this->updates['product']['bareos-director']['distribution'][$dird_dist][$dird_arch] as $key => $value) {
+                  if( version_compare($dird_vers, $key, '>=') ) {
+                     return false;
+                  }
+                  if( version_compare($dird_vers, $key, '<') ) {
+                     return true;
+                  }
+               }
+            }
+         }
+      }
+
+      return false;
+   }
+
 }
