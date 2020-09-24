@@ -595,11 +595,14 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED acl)
 endif()
 
-if(TARGET droplet)
+if(TARGET droplet
+   AND S3CMD
+   AND MINIO)
   list(APPEND SYSTEM_TESTS droplet-s3)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED droplet-s3)
 endif()
+
 if(SD_GFAPI_DIR_TO_TEST AND glusterfs_uri)
   list(APPEND SYSTEM_TESTS glusterfs-backend)
 else()
