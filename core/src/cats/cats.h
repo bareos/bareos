@@ -37,6 +37,7 @@
 
 #include "include/bareos.h"
 #include "cats/column_data.h"
+#include "lib/bstringlist.h"
 #include "lib/output_formatter.h"
 
 #include <string>
@@ -491,44 +492,21 @@ class db_int64_ctx {
  * Call back context for getting a list of comma separated strings from the
  * database
  */
-class db_list_ctx {
+class db_list_ctx : public BStringList {
  public:
-  POOLMEM* list = nullptr; /* list */
-  int count = 0;           /* number of values seen */
+  void add(const db_list_ctx& list) { Append(list); }
+  void add(const char* str) { Append(str); }
+  void add(JobId_t id) { push_back(std::to_string(id)); }
 
-  db_list_ctx()
+  std::string GetAsString() { return Join(','); }
+  uint64_t GetFrontAsInteger()
   {
-    list = GetPoolMemory(PM_FNAME);
-    reset();
-  }
-  ~db_list_ctx()
-  {
-    FreePoolMemory(list);
-    list = NULL;
-  }
-  void reset()
-  {
-    *list = 0;
-    count = 0;
-  }
-  void add(const db_list_ctx& str)
-  {
-    if (str.count > 0) {
-      if (*list) { PmStrcat(list, ","); }
-      PmStrcat(list, str.list);
-      count += str.count;
+    try {
+      return std::stoull(at(0));
+    } catch (...) {
+      return 0;
     }
   }
-  void add(const char* str)
-  {
-    if (count > 0) { PmStrcat(list, ","); }
-    PmStrcat(list, str);
-    count++;
-  }
-
- private:
-  db_list_ctx(const db_list_ctx&);            /**< prohibit pass by value */
-  db_list_ctx& operator=(const db_list_ctx&); /**< prohibit class assignment */
 };
 
 typedef enum
@@ -681,7 +659,7 @@ class BareosDb : public BareosDbQueryEnum {
   }
 
   /* bvfs.c */
-  bool BvfsUpdatePathHierarchyCache(JobControlRecord* jcr, char* jobids);
+  bool BvfsUpdatePathHierarchyCache(JobControlRecord* jcr, const char* jobids);
   void BvfsUpdateCache(JobControlRecord* jcr);
   int BvfsLsDirs(PoolMem& query, void* ctx);
   int BvfsBuildLsFileQuery(PoolMem& query,
@@ -740,7 +718,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool CreateBaseFileAttributesRecord(JobControlRecord* jcr,
                                       AttributesDbRecord* ar);
   bool CommitBaseFileAttributesRecord(JobControlRecord* jcr);
-  bool CreateBaseFileList(JobControlRecord* jcr, char* jobids);
+  bool CreateBaseFileList(JobControlRecord* jcr, const char* jobids);
   bool CreateQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr);
   bool CreateNdmpLevelMapping(JobControlRecord* jcr,
                               JobDbRecord* jr,
@@ -837,7 +815,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool GetCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr);
   bool GetQueryDbids(JobControlRecord* jcr, PoolMem& query, dbid_list& ids);
   bool GetFileList(JobControlRecord* jcr,
-                   char* jobids,
+                   const char* jobids,
                    bool use_md5,
                    bool use_delta,
                    DB_RESULT_HANDLER* ResultHandler,
@@ -847,7 +825,7 @@ class BareosDb : public BareosDbQueryEnum {
                          JobDbRecord* jr,
                          db_list_ctx* jobids);
   bool GetUsedBaseJobids(JobControlRecord* jcr,
-                         POOLMEM* jobids,
+                         const char* jobids,
                          db_list_ctx* result);
   bool GetQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr);
   bool get_quota_jobbytes(JobControlRecord* jcr,

@@ -681,7 +681,7 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, const char* cmd)
     }
   }
 
-  BvfsValidateJobids(ua, jobids.list, filtered_jobids, false);
+  BvfsValidateJobids(ua, jobids.GetAsString().c_str(), filtered_jobids, false);
   switch (ua->api) {
     case API_MODE_JSON: {
       char *cur_id, *bp;

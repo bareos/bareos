@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1250,7 +1250,7 @@ static void strip_md5(char* q)
  * TODO: See if we can do the SORT only if needed (as an argument)
  */
 bool BareosDb::GetFileList(JobControlRecord* jcr,
-                           char* jobids,
+                           const char* jobids,
                            bool use_md5,
                            bool use_delta,
                            DB_RESULT_HANDLER* ResultHandler,
@@ -1300,7 +1300,7 @@ bool BareosDb::GetFileList(JobControlRecord* jcr,
  * This procedure gets the base jobid list used by jobids,
  */
 bool BareosDb::GetUsedBaseJobids(JobControlRecord* jcr,
-                                 POOLMEM* jobids,
+                                 const char* jobids,
                                  db_list_ctx* result)
 {
   PoolMem query(PM_MESSAGE);
@@ -1341,7 +1341,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   utime_t StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
 
   bstrutime(date, sizeof(date), StartTime + 1);
-  jobids->reset();
+  jobids->clear();
 
   /*
    * First, find the last good Full backup for this job/client/fileset
@@ -1409,7 +1409,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
     Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate", jobid);
   }
   SqlQueryWithHandler(query.c_str(), DbListHandler, jobids);
-  Dmsg1(1, "db_accurate_get_jobids=%s\n", jobids->list);
+  Dmsg1(1, "db_accurate_get_jobids=%s\n", jobids->GetAsString().c_str());
   retval = true;
 
 bail_out:

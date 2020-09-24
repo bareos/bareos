@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -347,7 +347,7 @@ static void DisplayVolInfo(UaContext* ua, RestoreContext& rx, JobId_t JobId)
 void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
 {
   int i;
-  char* p;
+  const char* p;
   JobId_t JobId;
 
   /*
@@ -482,7 +482,7 @@ uint32_t WriteBsr(UaContext* ua, RestoreContext& rx, std::string& buffer)
   bool first = true;
   uint32_t LastIndex = 0;
   uint32_t total_count = 0;
-  char* p;
+  const char* p;
   JobId_t JobId;
   RestoreBootstrapRecord* bsr;
 

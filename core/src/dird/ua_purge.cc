@@ -520,7 +520,6 @@ void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
   /* Now remove the Job record itself */
   Mmsg(query, "DELETE FROM Job WHERE JobId IN (%s)", jobs);
   ua->db->SqlQuery(query.c_str());
-
   Dmsg1(050, "Delete Job sql=%s\n", query.c_str());
 }
 
@@ -535,7 +534,7 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
 {
   PoolMem query(PM_MESSAGE);
   db_list_ctx lst;
-  char* jobids = NULL;
+  std::string jobids;
   int i;
   bool purged = false;
   bool status;
@@ -555,7 +554,7 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
    */
   i = FindArgWithValue(ua, "jobid");
   if (i >= 0 && Is_a_number_list(ua->argv[i])) {
-    jobids = ua->argv[i];
+    jobids = std::string(ua->argv[i]);
   } else {
     /*
      * Purge ALL JobIds
@@ -565,13 +564,13 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
       Dmsg0(050, "Count failed\n");
       goto bail_out;
     }
-    jobids = lst.list;
+    jobids = lst.GetAsString();
   }
 
-  if (*jobids) { PurgeJobsFromCatalog(ua, jobids); }
+  if (jobids.size() > 0) { PurgeJobsFromCatalog(ua, jobids.c_str()); }
 
-  ua->InfoMsg(_("%d File%s on Volume \"%s\" purged from catalog.\n"), lst.count,
-              lst.count <= 1 ? "" : "s", mr->VolumeName);
+  ua->InfoMsg(_("%d File%s on Volume \"%s\" purged from catalog.\n"),
+              lst.size(), lst.size() <= 1 ? "" : "s", mr->VolumeName);
 
   purged = IsVolumePurged(ua, mr, force);
 

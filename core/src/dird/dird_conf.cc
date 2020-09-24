@@ -1069,7 +1069,8 @@ static void PropagateResource(ResourceItem* items,
       offset = items[i].offset;  // Ueb
       switch (items[i].type) {
         case CFG_TYPE_STR:
-        case CFG_TYPE_DIR: {
+        case CFG_TYPE_DIR:
+        case CFG_TYPE_DIR_OR_CMD: {
           char **def_svalue, **svalue;
 
           /*
@@ -2824,6 +2825,7 @@ static void StoreAuthprotocoltype(LEX* lc,
   if (!found) {
     scan_err1(lc, _("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
   }
+
   ScanToEol(lc);
   SetBit(index, (*item->allocated_resource)->item_present_);
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
@@ -3149,6 +3151,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 
   if (token != BCT_BOB) {
     scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
+    return;
   }
 
   res_runscript = new RunScript();
@@ -3166,6 +3169,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 
     if (token != BCT_IDENTIFIER) {
       scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
+      goto bail_out;
     }
 
     bool keyword_ok = false;
@@ -3174,6 +3178,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
           scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
+          goto bail_out;
         }
         switch (runscript_items[i].type) {
           case CFG_TYPE_RUNSCRIPT_CMD:
@@ -3198,6 +3203,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 
     if (!keyword_ok) {
       scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
+      goto bail_out;
     }
   }
 
@@ -3222,6 +3228,8 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       script->Debug();
     }
   }
+
+bail_out:
   /* for pass == 1 only delete the memory
      because it is only used while parsing */
   delete res_runscript;
