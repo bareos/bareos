@@ -111,6 +111,7 @@
           "code": 0,
           "platform_specific": true,
           "equals": true,
+          "versions": "20.0.0-",
           "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
@@ -403,6 +404,7 @@
           "code": 0,
           "platform_specific": true,
           "equals": true,
+          "versions": "20.0.0-",
           "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
@@ -695,6 +697,7 @@
           "code": 0,
           "platform_specific": true,
           "equals": true,
+          "versions": "20.0.0-",
           "description": "OpenSSL Configuration: Protocol"
         },
         "TlsVerifyPeer": {
