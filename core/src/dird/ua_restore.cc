@@ -352,14 +352,15 @@ static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
     ua->WarningMsg("%s", ua->db->strerror());
   }
 
-  if (jobids.count) {
+  if (!jobids.empty()) {
     PoolMem query(PM_MESSAGE);
 
     ua->SendMsg(_("The restore will use the following job(s) as Base\n"));
-    ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_print_jobs, jobids.list);
+    ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_print_jobs,
+                      jobids.GetAsString().c_str());
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
   }
-  PmStrcpy(rx->BaseJobIds, jobids.list);
+  PmStrcpy(rx->BaseJobIds, jobids.GetAsString().c_str());
 }
 
 static void free_rx(RestoreContext* rx)
@@ -469,7 +470,7 @@ static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx)
  */
 static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 {
-  char* p;
+  const char* p;
   char date[MAX_TIME_LENGTH];
   bool have_date = false;
   /* Include current second if using current time */
@@ -771,7 +772,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
           if (!ua->db->AccurateGetJobids(ua->jcr, &jr, &jobids)) { return 0; }
         }
-        PmStrcpy(rx->JobIds, jobids.list);
+        PmStrcpy(rx->JobIds, jobids.GetAsString().c_str());
         Dmsg1(30, "Item 12: jobids = %s\n", rx->JobIds);
         break;
       case 12: /* Cancel or quit */
@@ -1097,7 +1098,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 {
   TreeContext tree;
   JobId_t JobId, last_JobId;
-  char* p;
+  const char* p;
   bool OK = true;
   char ed1[50];
 
@@ -1134,11 +1135,10 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     }
   }
 
-  ua->InfoMsg(
-      _("\nBuilding directory tree for JobId(s) %s ...  "), rx->JobIds);
+  ua->InfoMsg(_("\nBuilding directory tree for JobId(s) %s ...  "), rx->JobIds);
 
-  ua->LogAuditEventInfoMsg(
-      _("Building directory tree for JobId(s) %s"), rx->JobIds);
+  ua->LogAuditEventInfoMsg(_("Building directory tree for JobId(s) %s"),
+                           rx->JobIds);
 
   if (!ua->db->GetFileList(ua->jcr, rx->JobIds, false /* do not use md5 */,
                            true /* get delta */, InsertTreeHandler,

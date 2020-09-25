@@ -1,4 +1,4 @@
-host = localhost:9000
+host = localhost:@minio_port@
 use_https = false
 access_key = minioadmin
 secret_key = minioadmin

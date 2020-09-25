@@ -1,6 +1,6 @@
 [host]
 hostname=127.0.0.1
-port=9000
+port=@minio_port@
 tls=false
 provider=S3
 

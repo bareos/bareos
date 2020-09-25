@@ -23,7 +23,11 @@
 import BareosFdPluginBaseclass
 import bareosfd
 from bareosfd import *
-import ConfigParser as configparser
+
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
 import datetime
 import dateutil.parser
 from bareos_libcloud_api.bucket_explorer import TASK_TYPE
@@ -44,6 +48,21 @@ from libcloud.storage.types import Provider
 from libcloud.storage.types import ObjectDoesNotExistError
 from sys import version_info
 from distutils.util import strtobool
+
+class StringCodec:
+    @staticmethod
+    def encode_for_backup(var):
+        if version_info.major < 3:
+            return var.encode("utf-8")
+        else:
+            return var
+
+    @staticmethod
+    def encode_for_restore(var):
+        if version_info.major < 3:
+            return var
+        else:
+            return var.encode("utf-8")
 
 
 class FilenameConverter:
@@ -229,8 +248,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bRC_Error
 
         jobmessage(
-            M_INFO,
-            "Connected, last backup: %s (ts: %s)" % (self.last_run, self.since),
+            M_INFO, "Connected, last backup: %s (ts: %s)" % (self.last_run, self.since),
         )
 
         try:
@@ -310,13 +328,13 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         debugmessage(100, "Backup file: %s" % (filename,))
 
         statp = bareosfd.StatPacket()
-#        statp.size = self.current_backup_task["size"]
-#        statp.mtime = self.current_backup_task["mtime"]
-#        statp.atime = 0
-#        statp.ctime = 0
+        # statp.size = self.current_backup_task["size"]
+        # statp.mtime = self.current_backup_task["mtime"]
+        # statp.atime = 0
+        # statp.ctime = 0
 
         savepkt.statp = statp
-        savepkt.fname = filename
+        savepkt.fname = StringCodec.encode_for_backup(filename)
         savepkt.type = FT_REG
 
         if self.current_backup_task["type"] == TASK_TYPE.DOWNLOADED:
@@ -357,7 +375,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             100, "create_file() entry point in Python called with %s\n" % (restorepkt)
         )
         FNAME = FilenameConverter.BackupToBucket(restorepkt.ofname)
-        dirname = os.path.dirname(FNAME)
+        dirname = StringCodec.encode_for_restore(os.path.dirname(FNAME))
         if not os.path.exists(dirname):
             jobmessage(M_INFO, "Directory %s does not exist, creating it\n" % dirname)
             os.makedirs(dirname)
@@ -371,7 +389,12 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if IOP.func == IO_OPEN:
             # Only used by the 'restore' path
             if IOP.flags & (os.O_CREAT | os.O_WRONLY):
-                self.FILE = open(FilenameConverter.BackupToBucket(IOP.fname), "wb")
+                self.FILE = open(
+                    StringCodec.encode_for_restore(
+                        FilenameConverter.BackupToBucket(IOP.fname)
+                    ),
+                    "wb",
+                )
             return bRC_OK
 
         elif IOP.func == IO_READ:

@@ -38,15 +38,24 @@ BackupDirectory="${tmp}/data"
 # Data will be placed at "${tmp}/data/".
 setup_data "$@"
 
-"${SYSTEMTESTS_DIR}"/scripts/start_minio.sh 9000
+"${SYSTEMTESTS_DIR}"/scripts/start_minio.sh "$MINIO_PORT" "$TestName"
 
 # create s3 content for test
 ${S3} rb --recursive --force s3://$bucket_name || echo "s3://$bucket_name does not exist"
 ${S3} mb s3://$bucket_name
 
 
-# this test does not work with links because of the restore objects
-rm -r "${tmp}"/data/weird-files >/dev/null 2>&1
+# this test does not work with links and some other weird files as they would already
+# have a changed name by syncing to S3 using s3cmd
+find ${tmp}/data/weird-files -type l -exec rm {} \;
+find ${tmp}/data/weird-files -links +1 -type f -exec rm {} \;
+rm ${tmp}/data/weird-files/fifo*
+rm ${tmp}/data/weird-files/newline*
+rm ${tmp}/data/weird-files/tab*
+# s3cmd does not sync empty dirs
+rmdir ${tmp}/data/weird-files/big-X
+rmdir ${tmp}/data/weird-files/subdir
+
 ${S3} sync "$BackupDirectory" s3://$bucket_name
 
 start_test
@@ -56,6 +65,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out $tmp/log1.out
 setdebug level=100 storage=File
+setdebug level=100 client=bareos-fd trace=1 timestamp=1
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
 status director
@@ -89,6 +99,6 @@ if ! diff -r tmp/data tmp/bareos-restores/$bucket_name/data; then
   export estat=1
 fi
 
-"${rscripts}"/stop_minio.sh
+"${SYSTEMTESTS_DIR}"/scripts/stop_minio.sh "$TestName"
 
 end_test

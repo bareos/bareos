@@ -1,7 +1,7 @@
 ;
 ;   BAREOS - Backup Archiving REcovery Open Sourced
 ;
-;   Copyright (C) 2012-2017 Bareos GmbH & Co. KG
+;   Copyright (C) 2012-2020 Bareos GmbH & Co. KG
 ;
 ;   This program is Free Software; you can redistribute it and/or
 ;   modify it under the terms of version three of the GNU Affero General Public
@@ -24,6 +24,8 @@ RequestExecutionLevel admin
 
 #SilentInstall silentlog
 
+!define SF_UNSELECTED   0
+
 BrandingText "Bareos Installer"
 
 ; HM NIS Edit Wizard helper defines
@@ -43,7 +45,6 @@ $\r$\n\
 [/CLIENTPASSWORD=password]$\r$\n\
 [/CLIENTADDRESS=network address]$\r$\n\
 [/CLIENTMONITORPASSWORD=password]$\r$\n\
-[/CLIENTCOMPATIBLE=compatible mode <0=no,1=yes>]$\r$\n\
 $\r$\n\
 [/DIRECTORADDRESS=network address]$\r$\n\
 [/DIRECTORNAME=name]$\r$\n\
@@ -82,7 +83,6 @@ Var ClientName            #XXX_REPLACE_WITH_HOSTNAME_XXX
 Var ClientPassword        #XXX_REPLACE_WITH_FD_PASSWORD_XXX
 Var ClientMonitorPassword #XXX_REPLACE_WITH_FD_MONITOR_PASSWORD_XXX
 Var ClientAddress         #XXX_REPLACE_WITH_FD_MONITOR_PASSWORD_XXX
-Var ClientCompatible      # is client compatible?
 
 # Needed for configuring the storage config file
 Var StorageName        # name of the storage in the director config (Device)
@@ -507,8 +507,8 @@ Section -SetPasswords
   FileWrite $R1 "s#/etc/bareos-webui/directors.ini#C:/ProgramData/Bareos/directors.ini#g$\r$\n"
   FileWrite $R1 "s#/etc/bareos-webui/configuration.ini#C:/ProgramData/Bareos/configuration.ini#g$\r$\n"
   FileWrite $R1 "s#;include_path = $\".;c.*#include_path = $\".;c:/php/includes;C:/Program Files/Bareos/bareos-webui/vendor/ZendFramework$\"#g$\r$\n"
-  FileWrite $R1 "s#; extension_dir = $\"ext$\"#extension_dir = $\"ext$\"#g$\r$\n"
-  FileWrite $R1 "s#;extension=php_gettext.dll#extension=php_gettext.dll#g$\r$\n"
+  FileWrite $R1 "s#;extension_dir.*ext$\"#extension_dir = $\"ext$\"#g$\r$\n"
+  FileWrite $R1 "s#;extension=gettext#extension=gettext#g$\r$\n"
 
   # set username/password to bareos/bareos
   FileWrite $R1 "s#user1#bareos#g$\r$\n"
@@ -530,23 +530,6 @@ Section -SetPasswords
 
 SectionEnd
 
-#
-# Check if database server is installed only in silent mode
-# otherwise this is done in the database dialog
-#
-Section -DataBaseCheck
-
-IfSilent 0 DataBaseCheckEnd  # if we are silent, we do the db credentials check, otherwise the db dialog will do it
-
-StrCmp $InstallDirector "no" DataBaseCheckEnd # skip DbConnection if not instaling director
-StrCmp $DbDriver "sqlite3" DataBaseCheckEnd # skip DbConnection if not instaling director
-
-${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
-!insertmacro CheckDbAdminConnection
-${EndIF}
-
-DataBaseCheckEnd:
-SectionEnd
 
 !If ${WIN_DEBUG} == yes
 # install sourcecode if WIN_DEBUG is yes
@@ -573,22 +556,26 @@ SectionIn 1 2 3 4
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
   CreateDirectory "$APPDATA\${PRODUCT_NAME}"
   SetOutPath "$INSTDIR"
-  File "bareos-config-deploy.bat"
-  File "bareos-fd.exe"
-  File "libbareos.dll"
-  File "libbareosfastlz.dll"
-  File "libbareosfind.dll"
-  File "libbareoslmdb.dll"
-  File "libbareossql.dll"
-  File "libcrypto-*.dll"
-  File "libgcc_s_*-1.dll"
-  File "libssl-*.dll"
-  File "libstdc++-6.dll"
-  File "libwinpthread-1.dll"
-  File "zlib1.dll"
-  File "liblzo2-2.dll"
-  File "libfastlz.dll"
-  File "libjansson-4.dll"
+  File bareos-config-deploy.bat
+  File bareos-fd.exe
+  File libbareos.dll
+  File libbareosfastlz.dll
+  File libbareosfind.dll
+  File libbareoslmdb.dll
+  File libbareossql.dll
+  File libcrypto-*.dll
+  File libgcc_s_*-1.dll
+  File libssl-*.dll
+  File libstdc++-6.dll
+  File libwinpthread-1.dll
+  File zlib1.dll
+  File liblzo2-2.dll
+  File libjansson-4.dll
+  File iconv.dll
+  File libxml2-2.dll
+  File libpq.dll
+  File libpcre-1.dll
+  File libbz2-1.dll
 
   # for password generation
   File "openssl.exe"
@@ -763,28 +750,6 @@ SectionIn 3
   # install db-create script
   Rename  "$PLUGINSDIR\postgresql-createdb.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-createdb.sql"
 
-  # copy postgresql libs to our path
-  StrCpy $R0 "$PostgresPath"
-  StrCpy $R1 "\bin"
-
-  StrCpy $PostgresBinPath "$R0$R1"
-  DetailPrint "Copying dlls from $PostgresBinPath ..."
-
-  DetailPrint "libpq.dll"
-  CopyFiles /SILENT "$PostgresBinPath\libpq.dll" "$INSTDIR"
-
-  DetailPrint "libintl*.dll"
-  CopyFiles /SILENT "$PostgresBinPath\libintl*.dll" "$INSTDIR"
-
-  DetailPrint "ssleay32.dll"
-  CopyFiles /SILENT "$PostgresBinPath\ssleay32.dll" "$INSTDIR"
-
-  DetailPrint "libeay32.dll"
-  CopyFiles /SILENT "$PostgresBinPath\libeay32.dll" "$INSTDIR"
-
-  # needed since postgresql 9.5
-  DetailPrint "libiconv-2.dll"
-  CopyFiles /SILENT "$PostgresBinPath\libiconv-2.dll" "$INSTDIR"
 
   # Since PostgreSQL 9.4 unfortunately setting the PATH Variable is not enough
   # to execute psql.exe It always complains about:
@@ -839,6 +804,26 @@ SectionIn 3
   FileWrite $R1 'del $APPDATA\${PRODUCT_NAME}\working\bareos.sql $\r$\n'
   FileClose $R1
 SectionEnd
+
+
+#
+# Check if database server is installed only in silent mode
+# otherwise this is done in the database dialog
+#
+Section -DataBaseCheck
+
+IfSilent 0 DataBaseCheckEnd  # if we are silent, we do the db credentials check, otherwise the db dialog will do it
+
+StrCmp $InstallDirector "no" DataBaseCheckEnd # skip DbConnection if not installing director
+StrCmp $DbDriver "sqlite3" DataBaseCheckEnd # skip DbConnection if not installing director
+
+${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
+!insertmacro CheckDbAdminConnection
+${EndIF}
+
+DataBaseCheckEnd:
+SectionEnd
+
 
 
 
@@ -941,15 +926,14 @@ SectionIn 1 2 3
   File "Qt5Core.dll"
   File "Qt5Gui.dll"
   File "Qt5Widgets.dll"
-  File "icui18n56.dll"
-  File "icudata56.dll"
-  File "icuuc56.dll"
+  File "icui18n65.dll"
+  File "icudata65.dll"
+  File "icuuc65.dll"
   File "libfreetype-6.dll"
   File "libglib-2.0-0.dll"
   File "libintl-8.dll"
-  File "libGLESv2.dll"
   File "libharfbuzz-0.dll"
-  File "libpcre16-0.dll"
+  File "libpcre2-16-0.dll"
 
   SetOutPath "$INSTDIR\platforms"
   File "qwindows.dll"
@@ -1009,11 +993,12 @@ skip_vc_redist_check:
    CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\console"
    Rename  "$PLUGINSDIR\admin.conf"       "$INSTDIR\defaultconfigs\bareos-dir.d\console\admin.conf"
 
-   FileClose $R1
 
    ExecWait '$INSTDIR\nssm.exe install bareos-webui $INSTDIR\bareos-webui\php\php.exe'
    ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
    ExecWait '$INSTDIR\nssm.exe set     bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
+   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppEnvironmentExtra BAREOS_WEBUI_CONFDIR=$APPDATA\${PRODUCT_NAME}\'
+
    # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
    # see https://nssm.cc/usage -> quoting issues
    ExecWait '$INSTDIR\nssm.exe set bareos-webui AppParameters \
@@ -1051,8 +1036,8 @@ SectionIn 2 3
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe"
 
   File "bconsole.exe"
-  File "libhistory6.dll"
-  File "libreadline6.dll"
+  File "libhistory8.dll"
+  File "libreadline8.dll"
   File "libtermcap-0.dll"
 
   !insertmacro InstallConfFile "bconsole.conf"
@@ -1186,13 +1171,6 @@ Section -ConfigureConfiguration
   FileWrite $R1 "s#delete_catalog_backup#delete_catalog_backup.bat#g$\r$\n"
 
   FileWrite $R1 "s#/tmp/bareos-restores#C:/temp/bareos-restores#g$\r$\n"
-
-  #
-  # If we want to be compatible we uncomment the setting for "compatible = yes"
-  #
-  ${If} $ClientCompatible == ${BST_CHECKED}
-    FileWrite $R1 "s@# compatible@compatible@g$\r$\n"
-  ${EndIf}
 
   #
   # generated by
@@ -1511,9 +1489,6 @@ done:
   ${GetOptions} $cmdLineParams "/CLIENTMONITORPASSWORD=" $ClientMonitorPassword
   ClearErrors
 
-  ${GetOptions} $cmdLineParams "/CLIENTCOMPATIBLE=" $ClientCompatible
-  ClearErrors
-
   ${GetOptions} $cmdLineParams "/DIRECTORADDRESS=" $DirectorAddress
   ClearErrors
 
@@ -1597,16 +1572,19 @@ done:
   File "/oname=$PLUGINSDIR\openssl.exe" "openssl.exe"
   File "/oname=$PLUGINSDIR\sed.exe" "sed.exe"
 
-  # one of the two files  have to be available depending onwhat openssl Version we sue
-  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-8.dll" "libcrypto-8.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-10.dll" "libcrypto-10.dll"
+  File "/oname=$PLUGINSDIR\iconv.dll" "iconv.dll"
+  File "/oname=$PLUGINSDIR\libintl-8.dll" "libintl-8.dll"
+  File "/oname=$PLUGINSDIR\libwinpthread-1.dll" "libwinpthread-1.dll"
 
+  # one of the two files  have to be available depending onwhat openssl Version we sue
+  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-1_1.dll" "libcrypto-1_1.dll"
+  File /nonfatal "/oname=$PLUGINSDIR\libcrypto-1_1-x64.dll" "libcrypto-1_1-x64.dll"
   # Either one of this two files will be available depending on 32/64 bits.
   File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_sjlj-1.dll" "libgcc_s_sjlj-1.dll"
   File /nonfatal "/oname=$PLUGINSDIR\libgcc_s_seh-1.dll" "libgcc_s_seh-1.dll"
 
-  File /nonfatal "/oname=$PLUGINSDIR\libssl-8.dll" "libssl-8.dll"
-  File /nonfatal "/oname=$PLUGINSDIR\libssl-10.dll" "libssl-10.dll"
+  File /nonfatal "/oname=$PLUGINSDIR\libssl-1_1.dll" "libssl-1_1.dll"
+  File /nonfatal "/oname=$PLUGINSDIR\libssl-1_1-x64.dll" "libssl-1_1-x64.dll"
 
   File "/oname=$PLUGINSDIR\libstdc++-6.dll" "libstdc++-6.dll"
   File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
@@ -1868,7 +1846,6 @@ ${If} ${SectionIsSelected} ${SEC_FD}
   ReadINIStr  $ClientPassword          "$PLUGINSDIR\clientdialog.ini" "Field 4" "state"
   ReadINIStr  $ClientMonitorPassword   "$PLUGINSDIR\clientdialog.ini" "Field 14" "state"
   ReadINIStr  $ClientAddress           "$PLUGINSDIR\clientdialog.ini" "Field 5" "state"
-  ReadINIStr  $ClientCompatible        "$PLUGINSDIR\clientdialog.ini" "Field 16" "state"
 
 ${EndIf}
 #  MessageBox MB_OK "Compatible:$\r$\n$Compatible"
@@ -2160,8 +2137,8 @@ ConfDeleteSkip:
 
   Delete "$INSTDIR\libcrypto-*.dll"
   Delete "$INSTDIR\libgcc_s_*-1.dll"
-  Delete "$INSTDIR\libhistory6.dll"
-  Delete "$INSTDIR\libreadline6.dll"
+  Delete "$INSTDIR\libhistory8.dll"
+  Delete "$INSTDIR\libreadline8.dll"
   Delete "$INSTDIR\libssl-*.dll"
   Delete "$INSTDIR\libstdc++-6.dll"
   Delete "$INSTDIR\libtermcap-0.dll"
@@ -2170,20 +2147,24 @@ ConfDeleteSkip:
   Delete "$INSTDIR\Qt5Core.dll"
   Delete "$INSTDIR\Qt5Gui.dll"
   Delete "$INSTDIR\Qt5Widgets.dll"
-  Delete "$INSTDIR\icui18n56.dll"
-  Delete "$INSTDIR\icudata56.dll"
-  Delete "$INSTDIR\icuuc56.dll"
+  Delete "$INSTDIR\icui18n65.dll"
+  Delete "$INSTDIR\icudata65.dll"
+  Delete "$INSTDIR\icuuc65.dll"
   Delete "$INSTDIR\libfreetype-6.dll"
   Delete "$INSTDIR\libglib-2.0-0.dll"
   Delete "$INSTDIR\libintl-8.dll"
-  Delete "$INSTDIR\libGLESv2.dll"
   Delete "$INSTDIR\libharfbuzz-0.dll"
-  Delete "$INSTDIR\libpcre16-0.dll"
+  Delete "$INSTDIR\libpcre2-16-0.dll"
+  Delete "$INSTDIR\iconv.dll"
+  Delete "$INSTDIR\libxml2-2.dll"
+  Delete "$INSTDIR\libpq.dll"
+  Delete "$INSTDIR\libpcre-1.dll"
+  Delete "$INSTDIR\libbz2-1.dll"
 
   RMDir /r "$INSTDIR\platforms"
 
   Delete "$INSTDIR\liblzo2-2.dll"
-  Delete "$INSTDIR\libfastlz.dll"
+  Delete "$INSTDIR\libbareosfastlz.dll"
   Delete "$INSTDIR\libjansson-4.dll"
   Delete "$INSTDIR\libpng*.dll"
   Delete "$INSTDIR\openssl.exe"
@@ -2194,15 +2175,6 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bwild.exe"
   Delete "$INSTDIR\*template"
 
-# delete unittest bin
-#  Delete  "$INSTDIR\test_*.exe"
-
-# copied stuff from postgresql install
-  Delete "$INSTDIR\libpq.dll"
-  Delete "$INSTDIR\libintl*.dll"
-  Delete "$INSTDIR\ssleay32.dll"
-  Delete "$INSTDIR\libeay32.dll"
-  Delete "$INSTDIR\libiconv-2.dll"
 
 # logs
   Delete "$INSTDIR\*.log"

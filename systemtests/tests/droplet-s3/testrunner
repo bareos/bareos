@@ -16,13 +16,12 @@ JobName=backup-s3-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-if ! ./start_minio.sh; then
-  echo "Could not start minio server"
-  export estat=1
-  exit 1
-fi
+"${SYSTEMTESTS_DIR}"/scripts/start_minio.sh "$MINIO_PORT" "$TestName"
 
-s3cmd --config=etc/s3cfg-local-minio mb S3://backup
+# shortcut for s3cmd
+S3="${S3CMD} --config ${S3CFG}"
+
+$S3 mb S3://backup
 
 # Directory to backup.
 # This directory will be created by setup_data "$@"().
@@ -67,5 +66,7 @@ check_for_zombie_jobs storage=File
 stop_bareos
 
 check_two_logs
-check_restore_diff ${BackupDirectory}
+check_restore_diff "${BackupDirectory}"
+
+"${SYSTEMTESTS_DIR}"/scripts/stop_minio.sh "$TestName"
 end_test

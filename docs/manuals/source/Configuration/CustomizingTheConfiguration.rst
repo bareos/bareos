@@ -713,22 +713,40 @@ size
    A size specified as bytes. Typically, this is a floating point scientific input format followed by an optional modifier. The floating point input is stored as a 64 bit integer value. If a modifier is present, it must immediately follow the value with no intervening spaces. The following modifiers are permitted:
 
    k
-      1,024 (kilobytes)
+      1,024  (kibibytes)
 
    kb
-      1,000 (kilobytes)
+      1,0000 (kilobytes)
 
    m
-      1,048,576 (megabytes)
+      1,048,576 (mebibytes)
 
    mb
       1,000,000 (megabytes)
 
    g
-      1,073,741,824 (gigabytes)
+      1,073,741,824 (gibibytes)
 
    gb
       1,000,000,000 (gigabytes)
+
+   t
+      1,099,511,627,776 (tebibytes)
+
+   tb
+      1,000,000,000,000 (terabytes)
+
+   p
+      1,125,899,906,842,624 (pebibytes)
+
+   pb
+      1,000,000,000,000,000 (petabytes)
+
+   e
+      1,152,921,504,606,846,976 (exbibytes)
+
+   eb
+      1,000,000,000,000,000,000 (exabytes)
 
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 

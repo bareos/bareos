@@ -30,7 +30,7 @@ msgstr "Přehled"
 #: ../module/Job/view/job/job/details.phtml:34
 #: ../module/Job/view/job/job/actions.phtml:34
 #: ../module/Application/config/module.config.php:141
-#: ../public/js/bootstrap-table-formatter.js:630
+#: ../public/js/bootstrap-table-formatter.js:625
 msgid "Run"
 msgstr "Spustit"
 
@@ -40,9 +40,9 @@ msgstr "Spustit"
 #: ../module/Restore/view/restore/restore/versions.phtml:26
 #: ../module/Application/config/module.config.php:148
 #: ../public/js/bootstrap-table-formatter.js:53
-#: ../public/js/bootstrap-table-formatter.js:524
-#: ../public/js/bootstrap-table-formatter.js:549
-#: ../public/js/bootstrap-table-formatter.js:569
+#: ../public/js/bootstrap-table-formatter.js:517
+#: ../public/js/bootstrap-table-formatter.js:542
+#: ../public/js/bootstrap-table-formatter.js:562
 msgid "Restore"
 msgstr "Obnovit"
 
@@ -68,7 +68,7 @@ msgstr "Úložiště"
 #: ../module/Job/src/Job/Form/RunJobForm.php:197
 #: ../module/Job/src/Job/Form/RunJobForm.php:213
 #: ../module/Job/view/job/job/index.phtml:303
-#: ../module/Job/view/job/job/details.phtml:154
+#: ../module/Job/view/job/job/details.phtml:155
 #: ../module/Application/config/module.config.php:168
 #: ../module/Application/config/module.config.php:173
 #: ../module/Storage/src/Storage/Form/StorageForm.php:61
@@ -153,7 +153,7 @@ msgstr "Další informace"
 msgid "File"
 msgstr "Soubor"
 
-#: ../module/Job/view/job/job/details.phtml:87
+#: ../module/Job/view/job/job/details.phtml:88
 #: ../module/Application/view/error/index.phtml:18
 #: ../module/Application/view/error/index.phtml:42
 #: ../module/Application/view/error/404.phtml:62
@@ -247,8 +247,8 @@ msgstr "Klient"
 #: ../module/Media/view/media/media/details.phtml:55
 #: ../module/Schedule/view/schedule/schedule/index.phtml:82
 #: ../module/Schedule/view/schedule/schedule/index.phtml:83
-#: ../module/Restore/view/restore/restore/index.phtml:395
-#: ../module/Restore/view/restore/restore/versions.phtml:516
+#: ../module/Restore/view/restore/restore/index.phtml:386
+#: ../module/Restore/view/restore/restore/versions.phtml:530
 #: ../module/Storage/view/storage/storage/index.phtml:61
 #: ../module/Storage/view/storage/storage/index.phtml:62
 #: ../module/Client/view/client/client/index.phtml:59
@@ -328,14 +328,14 @@ msgstr "Identif. úlohy"
 msgid "Job name"
 msgstr "Název úlohy"
 
-#: ../module/Job/view/job/job/details.phtml:86
+#: ../module/Job/view/job/job/details.phtml:87
 msgid "Timestamp"
 msgstr "Časové razítko"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:127
 #: ../module/Job/src/Job/Form/RunJobForm.php:143
 #: ../module/Job/view/job/job/index.phtml:299
-#: ../module/Job/view/job/job/details.phtml:150
+#: ../module/Job/view/job/job/details.phtml:151
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:184
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:199
 #: ../module/Client/view/client/client/details.phtml:112
@@ -403,9 +403,9 @@ msgstr "Bajtů"
 #: ../module/Director/view/director/director/messages.phtml:32
 #: ../module/Pool/view/pool/pool/details.phtml:117
 #: ../module/Pool/view/pool/pool/details.phtml:118
-#: ../public/js/bootstrap-table-formatter.js:525
-#: ../public/js/bootstrap-table-formatter.js:550
-#: ../public/js/bootstrap-table-formatter.js:642
+#: ../public/js/bootstrap-table-formatter.js:518
+#: ../public/js/bootstrap-table-formatter.js:543
+#: ../public/js/bootstrap-table-formatter.js:637
 msgid "Status"
 msgstr "Stav"
 
@@ -415,7 +415,7 @@ msgstr "Zobrazit soubory"
 
 #: ../module/Job/view/job/job/index.phtml:170
 #: ../module/Job/view/job/job/index.phtml:191
-#: ../module/Job/view/job/job/details.phtml:134
+#: ../module/Job/view/job/job/details.phtml:135
 #: ../module/Job/view/job/job/actions.phtml:55
 #: ../module/Media/view/media/media/index.phtml:139
 #: ../module/Media/view/media/media/details.phtml:177
@@ -439,15 +439,15 @@ msgstr "Zapnuté"
 msgid "Disabled"
 msgstr "Vypnuté"
 
-#: ../public/js/bootstrap-table-formatter.js:526
-#: ../public/js/bootstrap-table-formatter.js:556
-#: ../public/js/bootstrap-table-formatter.js:632
+#: ../public/js/bootstrap-table-formatter.js:519
+#: ../public/js/bootstrap-table-formatter.js:549
+#: ../public/js/bootstrap-table-formatter.js:627
 msgid "Disable"
 msgstr "Vypnout"
 
-#: ../public/js/bootstrap-table-formatter.js:527
-#: ../public/js/bootstrap-table-formatter.js:557
-#: ../public/js/bootstrap-table-formatter.js:631
+#: ../public/js/bootstrap-table-formatter.js:520
+#: ../public/js/bootstrap-table-formatter.js:550
+#: ../public/js/bootstrap-table-formatter.js:626
 msgid "Enable"
 msgstr "Zapnout"
 
@@ -470,7 +470,7 @@ msgstr "Nejnovější stav podle názvu úlohy"
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:45
 #: ../module/Job/view/job/job/index.phtml:106
 #: ../module/Job/view/job/job/index.phtml:107
-#: ../module/Job/view/job/job/details.phtml:162
+#: ../module/Job/view/job/job/details.phtml:163
 #: ../module/Client/view/client/client/details.phtml:99
 #: ../module/Client/view/client/client/details.phtml:100
 msgid "Start"
@@ -479,7 +479,7 @@ msgstr "Start"
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:46
 #: ../module/Job/view/job/job/index.phtml:113
 #: ../module/Job/view/job/job/index.phtml:114
-#: ../module/Job/view/job/job/details.phtml:166
+#: ../module/Job/view/job/job/details.phtml:167
 #: ../module/Client/view/client/client/details.phtml:106
 #: ../module/Client/view/client/client/details.phtml:107
 msgid "End"
@@ -655,11 +655,11 @@ msgstr "Úložiště"
 msgid "Priority"
 msgstr "Priorita"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:330
+#: ../module/Job/src/Job/Form/RunJobForm.php:365
 msgid "When"
 msgstr "Kdy"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:345
+#: ../module/Job/src/Job/Form/RunJobForm.php:380
 #: ../module/Storage/src/Storage/Form/StorageForm.php:93
 msgid "Submit"
 msgstr "Uplatnit"
@@ -692,11 +692,11 @@ msgstr "Typ"
 msgid "Errors"
 msgstr "Chyby"
 
-#: ../module/Job/view/job/job/details.phtml:97
+#: ../module/Job/view/job/job/details.phtml:98
 msgid "Used Volumes"
 msgstr "Využité svazky"
 
-#: ../module/Job/view/job/job/details.phtml:102
+#: ../module/Job/view/job/job/details.phtml:103
 #: ../module/Storage/view/storage/storage/details.phtml:112
 #: ../module/Storage/view/storage/storage/details.phtml:128
 #: ../module/Storage/view/storage/storage/details.phtml:153
@@ -704,7 +704,7 @@ msgid "Volume"
 msgstr "Svazek"
 
 #: ../module/Job/view/job/job/index.phtml:162
-#: ../module/Job/view/job/job/details.phtml:127
+#: ../module/Job/view/job/job/details.phtml:128
 #: ../module/Media/view/media/media/index.phtml:132
 #: ../module/Media/view/media/media/details.phtml:170
 #: ../module/Restore/view/restore/restore/index.phtml:46
@@ -714,7 +714,7 @@ msgid "Failed to retrieve data from Bareos director"
 msgstr "Nepodařilo se získat data z Bareos řídící součásti"
 
 #: ../module/Job/view/job/job/index.phtml:166
-#: ../module/Job/view/job/job/details.phtml:130
+#: ../module/Job/view/job/job/details.phtml:131
 #: ../module/Media/view/media/media/index.phtml:135
 #: ../module/Media/view/media/media/details.phtml:173
 #: ../module/Pool/view/pool/pool/details.phtml:167
@@ -722,7 +722,7 @@ msgid "Error message received from director:"
 msgstr "Chybové hlášení obdržené z řídící komponenty:"
 
 #: ../module/Job/view/job/job/index.phtml:167
-#: ../module/Job/view/job/job/details.phtml:131
+#: ../module/Job/view/job/job/details.phtml:132
 #: ../module/Media/view/media/media/index.phtml:136
 #: ../module/Media/view/media/media/details.phtml:174
 #: ../module/Pool/view/pool/pool/details.phtml:168
@@ -730,7 +730,7 @@ msgid "Failed to send result as json. Maybe the result message is too long?"
 msgstr "Nepodařilo se poslat výsledek jak json. Možná je výsledná zpráva příliš dlouhá?"
 
 #: ../module/Job/view/job/job/index.phtml:307
-#: ../module/Job/view/job/job/details.phtml:158
+#: ../module/Job/view/job/job/details.phtml:159
 msgid "Scheduled"
 msgstr "Naplánováno"
 
@@ -750,14 +750,14 @@ msgstr "Počáteční blok"
 msgid "End Block"
 msgstr "Koncový blok"
 
-#: ../public/js/bootstrap-table-formatter.js:568
+#: ../public/js/bootstrap-table-formatter.js:561
 msgid "Rerun"
 msgstr "Spustit znovu"
 
 #: ../module/Restore/view/restore/restore/index.phtml:97
 #: ../module/Restore/view/restore/restore/versions.phtml:98
 #: ../module/Storage/view/storage/storage/details.phtml:88
-#: ../public/js/bootstrap-table-formatter.js:570
+#: ../public/js/bootstrap-table-formatter.js:563
 msgid "Cancel"
 msgstr "Storno"
 
@@ -1030,7 +1030,7 @@ msgstr "Spojit všechny sady souborů klienta"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:313
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:332
 #: ../public/js/bootstrap-table-formatter.js:258
-#: ../public/js/bootstrap-table-formatter.js:510
+#: ../public/js/bootstrap-table-formatter.js:503
 msgid "Yes"
 msgstr "Ano"
 
@@ -1039,7 +1039,7 @@ msgstr "Ano"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:314
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:333
 #: ../public/js/bootstrap-table-formatter.js:261
-#: ../public/js/bootstrap-table-formatter.js:508
+#: ../public/js/bootstrap-table-formatter.js:501
 msgid "No"
 msgstr "Ne"
 
@@ -1129,9 +1129,9 @@ msgstr "Zpráva z řídící součásti"
 msgid "File selection"
 msgstr "Výběr souboru"
 
-#: ../module/Restore/view/restore/restore/index.phtml:401
+#: ../module/Restore/view/restore/restore/index.phtml:416
 #: ../module/Restore/view/restore/restore/versions.phtml:194
-#: ../module/Restore/view/restore/restore/versions.phtml:522
+#: ../module/Restore/view/restore/restore/versions.phtml:536
 msgid "Size"
 msgstr "Velikost"
 
@@ -1222,7 +1222,7 @@ msgstr "Úložná zařízení"
 msgid "Autochanger"
 msgstr "Automatický měnič médií"
 
-#: ../public/js/bootstrap-table-formatter.js:643
+#: ../public/js/bootstrap-table-formatter.js:638
 msgid "Manage autochanger"
 msgstr "Spravovat automatický měnič médií"
 
@@ -1463,7 +1463,7 @@ msgid "Queued waiting for device"
 msgstr "Čekání na zařízení zařazeno do fronty"
 
 #: ../public/js/bootstrap-table-formatter.js:25
-#: ../public/js/bootstrap-table-formatter.js:567
+#: ../public/js/bootstrap-table-formatter.js:560
 msgid "View Job Details"
 msgstr "Zobrazit podrobnosti o úloze"
 
@@ -1584,9 +1584,9 @@ msgstr "OK"
 msgid "No files or directories selected to restore!"
 msgstr "Nejsou vybrány žádné soubory či složky k obnovení!"
 
-#: ../module/Restore/view/restore/restore/index.phtml:414
+#: ../module/Restore/view/restore/restore/index.phtml:424
 #: ../module/Restore/view/restore/restore/versions.phtml:193
-#: ../module/Restore/view/restore/restore/versions.phtml:534
+#: ../module/Restore/view/restore/restore/versions.phtml:544
 msgid "Last modification"
 msgstr "Poslední změna"
 
@@ -1644,4 +1644,21 @@ msgstr "Informace ohledně nastavování seznamů řízení přístupu (ACL) k p
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:42
 msgid "Back"
 msgstr "Zpět"
+
+#: ../module/Job/view/job/job/index.phtml:56
+msgid "Clear search filters"
+msgstr "Vyčistit filtry vyhledávání"
+
+#: ../module/Job/view/job/job/index.phtml:165
+msgid "Please try to reduce the amount of data to display."
+msgstr "Zkuste snížit množství dat, která zobrazit"
+
+#: ../module/Client/view/client/client/index.phtml:65
+#: ../module/Client/view/client/client/index.phtml:66
+msgid "OS"
+msgstr "Oper. systém"
+
+#: ../public/js/bootstrap-table-formatter.js:521
+msgid "Download update"
+msgstr "Stáhnout aktualizaci"
 

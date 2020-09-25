@@ -118,19 +118,21 @@ static void ShowDisabledJobs(UaContext* ua)
   JobResource* job;
   bool first = true;
 
+  ua->send->ArrayStart("jobs");
   foreach_res (job, R_JOB) {
     if (!ua->AclAccessOk(Job_ACL, job->resource_name_, false)) { continue; }
 
     if (!job->enabled) {
       if (first) {
         first = false;
-        ua->SendMsg(_("Disabled Jobs:\n"));
+        ua->send->Decoration(_("Disabled Jobs:\n"));
       }
-      ua->SendMsg("   %s\n", job->resource_name_);
+      ua->send->ArrayItem(job->resource_name_, "   %s\n");
     }
   }
 
-  if (first) { ua->SendMsg(_("No disabled Jobs.\n")); }
+  if (first) { ua->send->Decoration(_("No disabled Jobs.\n")); }
+  ua->send->ArrayEnd("jobs");
 }
 
 /**
@@ -141,6 +143,7 @@ static void ShowDisabledClients(UaContext* ua)
   ClientResource* client;
   bool first = true;
 
+  ua->send->ArrayStart("clients");
   foreach_res (client, R_CLIENT) {
     if (!ua->AclAccessOk(Client_ACL, client->resource_name_, false)) {
       continue;
@@ -149,13 +152,14 @@ static void ShowDisabledClients(UaContext* ua)
     if (!client->enabled) {
       if (first) {
         first = false;
-        ua->SendMsg(_("Disabled Clients:\n"));
+        ua->send->Decoration(_("Disabled Clients:\n"));
       }
-      ua->SendMsg("   %s\n", client->resource_name_);
+      ua->send->ArrayItem(client->resource_name_, "   %s\n");
     }
   }
 
-  if (first) { ua->SendMsg(_("No disabled Clients.\n")); }
+  if (first) { ua->send->Decoration(_("No disabled Clients.\n")); }
+  ua->send->ArrayEnd("clients");
 }
 
 /**
@@ -166,6 +170,7 @@ static void ShowDisabledSchedules(UaContext* ua)
   ScheduleResource* sched;
   bool first = true;
 
+  ua->send->ArrayStart("schedules");
   foreach_res (sched, R_SCHEDULE) {
     if (!ua->AclAccessOk(Schedule_ACL, sched->resource_name_, false)) {
       continue;
@@ -174,13 +179,14 @@ static void ShowDisabledSchedules(UaContext* ua)
     if (!sched->enabled) {
       if (first) {
         first = false;
-        ua->SendMsg(_("Disabled Schedules:\n"));
+        ua->send->Decoration(_("Disabled Schedules:\n"));
       }
-      ua->SendMsg("   %s\n", sched->resource_name_);
+      ua->send->ArrayItem(sched->resource_name_, "   %s\n");
     }
   }
 
-  if (first) { ua->SendMsg(_("No disabled Schedules.\n")); }
+  if (first) { ua->send->Decoration(_("No disabled Schedules.\n")); }
+  ua->send->ArrayEnd("schedules");
 }
 
 /**
@@ -251,6 +257,7 @@ bool show_cmd(UaContext* ua, const char* cmd)
     if (Bstrcasecmp(ua->argk[i], NT_("verbose"))) { continue; }
 
     if (Bstrcasecmp(ua->argk[i], NT_("disabled"))) {
+      ua->send->ObjectStart("disabled");
       if (((i + 1) < ua->argc) && Bstrcasecmp(ua->argk[i + 1], NT_("jobs"))) {
         ShowDisabledJobs(ua);
       } else if (((i + 1) < ua->argc) &&
@@ -264,7 +271,7 @@ bool show_cmd(UaContext* ua, const char* cmd)
         ShowDisabledClients(ua);
         ShowDisabledSchedules(ua);
       }
-
+      ua->send->ObjectEnd("disabled");
       goto bail_out;
     }
 
@@ -310,9 +317,9 @@ bool show_cmd(UaContext* ua, const char* cmd)
         ShowAll(ua, hide_sensitive_data, verbose);
         break;
       case -2:
-        ua->SendMsg(_("Keywords for the show command are:\n"));
+        ua->InfoMsg(_("Keywords for the show command are:\n"));
         for (j = 0; show_cmd_available_resources[j].res_name; j++) {
-          ua->ErrorMsg("%s\n", _(show_cmd_available_resources[j].res_name));
+          ua->InfoMsg("%s\n", _(show_cmd_available_resources[j].res_name));
         }
         goto bail_out;
       case -3:
@@ -1224,7 +1231,7 @@ static bool ParseListBackupsCmd(UaContext* ua,
     return false;
   }
 
-  /* allow jobtypes 'B' for Backup and 'A' or 'a' for archive (update job 
+  /* allow jobtypes 'B' for Backup and 'A' or 'a' for archive (update job
    * doesn't enforce a valid jobtype, so people have 'a' in their catalogs */
   selection.bsprintf("AND Job.Type IN('B', 'A', 'a') AND Client.Name='%s' ",
                      ua->argv[client]);

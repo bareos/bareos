@@ -719,6 +719,13 @@ class PythonBareosJsonBase(PythonBareosBase):
         self.search_joblog(director, jobId, patterns)
         return jobId
 
+    def list_jobid(self, director, jobid):
+        result = director.call("llist jobid={}".format(jobid))
+        try:
+            return result["jobs"][0]
+        except KeyError:
+            raise ValueError(u"jobid {} does not exist".format(jobid))
+
 
 class PythonBareosJsonBackendTest(PythonBareosJsonBase):
     def test_json_backend(self):
@@ -1361,15 +1368,15 @@ class PythonBareosJsonConfigTest(PythonBareosJsonBase):
         resourcesname = "clients"
         newclient = "test-client-fd"
         newpassword = "secret"
-        
+
         director.call("show all")
-        
+
         try:
             os.remove("etc/bareos/bareos-dir.d/client/{}.conf".format(newclient))
             director.call("reload")
         except OSError:
             pass
-        
+
         self.assertFalse(
             self.check_resource(director, resourcesname, newclient),
             u"Resource {} in {} already exists.".format(newclient, resourcesname),
@@ -1390,6 +1397,137 @@ class PythonBareosJsonConfigTest(PythonBareosJsonBase):
         result = director.call("show client={}".format(newclient))
         logger.debug(str(result))
         director.call("show client={} verbose".format(newclient))
+
+
+class PythonBareosDeleteTest(PythonBareosJsonBase):
+    def test_delete_jobid(self):
+        """
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        jobname = u"backup-bareos-fd"
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+        )
+
+        jobid = self.run_job(director, jobname, wait=True)
+        job = self.list_jobid(director, jobid)
+        result = director.call("delete jobid={}".format(jobid))
+        logger.debug(str(result))
+        self.assertIn(jobid, result["deleted"]["jobids"])
+        with self.assertRaises(ValueError):
+            job = self.list_jobid(director, jobid)
+
+    def test_delete_jobids(self):
+        """
+        Note:
+        If delete is called on a non existing jobid,
+        this jobid will neithertheless be returned as deleted.
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+        )
+
+        jobids = ["1001", "1002", "1003"]
+        result = director.call("delete jobid={}".format(",".join(jobids)))
+        logger.debug(str(result))
+        for jobid in jobids:
+            self.assertIn(jobid, result["deleted"]["jobids"])
+            with self.assertRaises(ValueError):
+                job = self.list_jobid(director, jobid)
+
+    def test_delete_jobid_paramter(self):
+        """
+        Note:
+        If delete is called on a non existing jobid,
+        this jobid will neithertheless be returned as deleted.
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+        )
+
+        jobids = "jobid=1001,1002,1101-1110,1201 jobid=2001,2002,2101-2110,2201"
+        #                 1 +  1 +      10  + 1       +  1 +  1 +      10 +  1
+        number = 26
+        result = director.call("delete {}".format(jobids))
+        logger.debug(str(result))
+        deleted_jobids = result["deleted"]["jobids"]
+        self.assertEqual(
+            len(deleted_jobids),
+            number,
+            "Failed: expecting {} jobids, found {} ({})".format(
+                number, len(deleted_jobids), deleted_jobids
+            ),
+        )
+
+    def test_delete_invalid_jobids(self):
+        """
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+        )
+
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            result = director.call("delete jobid={}".format("1000_INVALID"))
+
+    def test_delete_volume(self):
+        """
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        jobname = u"backup-bareos-fd"
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+        )
+
+        jobid = self.run_job(director, jobname, level="Full", wait=True)
+        job = self.list_jobid(director, jobid)
+        result = director.call("list volume jobid={}".format(jobid))
+        volume = result["volumes"][0]["volumename"]
+        result = director.call("delete volume={} yes".format(volume))
+        logger.debug(str(result))
+        self.assertIn(jobid, result["deleted"]["jobids"])
+        self.assertIn(volume, result["deleted"]["volumes"])
+        with self.assertRaises(ValueError):
+            job = self.list_jobid(director, jobid)
 
 
 class PythonBareosFiledaemonTest(PythonBareosBase):
@@ -1499,7 +1637,7 @@ class PythonBareosShowTest(PythonBareosJsonBase):
         fileset_content_list = result["filesets"][0]["filesettext"]
 
         result = director.call("show fileset={}".format(fileset))
-        fileset_show_description = result["fileset"][fileset]["description"]
+        fileset_show_description = result["filesets"][fileset]["description"]
 
         self.assertIn(fileset_show_description, fileset_content_list)
 

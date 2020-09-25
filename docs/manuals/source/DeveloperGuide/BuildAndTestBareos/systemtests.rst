@@ -98,7 +98,7 @@ Run all system tests
 .. code-block:: shell-session
    :caption: Run all system tests
 
-   user@host:~$ cd bareos-local-tests/build
+   user@host:~$ cd bareos-local-tests/build<<<<<<< dev/pstorz/master/python3-documentation
    user@host:~/bareos-local-tests/build$ make test
 
    Running tests...
@@ -108,7 +108,8 @@ Run all system tests
          Start  2: system:backup-bareos-passive-test
    ...
 
-Instead of using :command:`make test` , :command:`ctest` can directly invoked.
+
+Instead of using :command:`make test` , :command:`ctest` can be directly invoked.
 This offers some advantages, like being able to run multiple tests in parallel with
 :command:`ctest -j <number of parallel tests>`.
 Only jobs with names matching a certain regular expression can be run with

@@ -542,37 +542,37 @@ static ResourceItem counter_items[] = {
  * name handler value code flags default_value
  */
 static ResourceTable resources[] = {
-  { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource),
+  { "Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
       [] (){ res_dir = new DirectorResource(); }, reinterpret_cast<BareosResource**>(&res_dir) },
-  { "Client", cli_items, R_CLIENT, sizeof(ClientResource),
+  { "Client", "Clients", cli_items, R_CLIENT, sizeof(ClientResource),
       [] (){ res_client = new ClientResource(); }, reinterpret_cast<BareosResource**>(&res_client)  },
-  { "JobDefs", job_items, R_JOBDEFS, sizeof(JobResource),
+  { "JobDefs", "JobDefs", job_items, R_JOBDEFS, sizeof(JobResource),
       [] (){ res_job = new JobResource(); }, reinterpret_cast<BareosResource**>(&res_job) },
-  { "Job", job_items, R_JOB, sizeof(JobResource),
+  { "Job", "Jobs", job_items, R_JOB, sizeof(JobResource),
       [] (){ res_job = new JobResource(); }, reinterpret_cast<BareosResource**>(&res_job) },
-  { "Storage", store_items, R_STORAGE, sizeof(StorageResource),
+  { "Storage", "Storages", store_items, R_STORAGE, sizeof(StorageResource),
       [] (){ res_store = new StorageResource(); }, reinterpret_cast<BareosResource**>(&res_store) },
-  { "Catalog", cat_items, R_CATALOG, sizeof(CatalogResource),
+  { "Catalog", "Catalogs", cat_items, R_CATALOG, sizeof(CatalogResource),
       [] (){ res_cat = new CatalogResource(); }, reinterpret_cast<BareosResource**>(&res_cat) },
-  { "Schedule", sch_items, R_SCHEDULE, sizeof(ScheduleResource),
+  { "Schedule", "Schedules", sch_items, R_SCHEDULE, sizeof(ScheduleResource),
       [] (){ res_sch = new ScheduleResource(); }, reinterpret_cast<BareosResource**>(&res_sch) },
-  { "FileSet", fs_items, R_FILESET, sizeof(FilesetResource),
+  { "FileSet", "FileSets", fs_items, R_FILESET, sizeof(FilesetResource),
       [] (){ res_fs = new FilesetResource(); }, reinterpret_cast<BareosResource**>(&res_fs) },
-  { "Pool", pool_items, R_POOL, sizeof(PoolResource),
+  { "Pool", "Pools", pool_items, R_POOL, sizeof(PoolResource),
       [] (){ res_pool = new PoolResource(); }, reinterpret_cast<BareosResource**>(&res_pool) },
-  { "Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
+  { "Messages", "Messages", msgs_items, R_MSGS, sizeof(MessagesResource),
       [] (){ res_msgs = new MessagesResource(); }, reinterpret_cast<BareosResource**>(&res_msgs) },
-  { "Counter", counter_items, R_COUNTER, sizeof(CounterResource),
+  { "Counter", "Counters", counter_items, R_COUNTER, sizeof(CounterResource),
       [] (){ res_counter = new CounterResource(); }, reinterpret_cast<BareosResource**>(&res_counter) },
-  { "Profile", profile_items, R_PROFILE, sizeof(ProfileResource),
+  { "Profile", "Profiles", profile_items, R_PROFILE, sizeof(ProfileResource),
       [] (){ res_profile = new ProfileResource(); }, reinterpret_cast<BareosResource**>(&res_profile) },
-  { "Console", con_items, R_CONSOLE, sizeof(ConsoleResource),
+  { "Console", "Consoles", con_items, R_CONSOLE, sizeof(ConsoleResource),
       [] (){ res_con = new ConsoleResource(); }, reinterpret_cast<BareosResource**>(&res_con) },
-  { "Device", NULL, R_DEVICE, sizeof(DeviceResource),/* info obtained from SD */
+  { "Device", "Devices", NULL, R_DEVICE, sizeof(DeviceResource),/* info obtained from SD */
       [] (){ res_dev = new DeviceResource(); }, reinterpret_cast<BareosResource**>(&res_dev) },
-  { "User", user_items, R_USER, sizeof(UserResource),
+  { "User", "Users", user_items, R_USER, sizeof(UserResource),
       [] (){ res_user = new UserResource(); }, reinterpret_cast<BareosResource**>(&res_user) },
-  {nullptr, nullptr, 0, 0, nullptr, nullptr}
+  { nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr }
 };
 
 /**
@@ -1069,7 +1069,8 @@ static void PropagateResource(ResourceItem* items,
       offset = items[i].offset;  // Ueb
       switch (items[i].type) {
         case CFG_TYPE_STR:
-        case CFG_TYPE_DIR: {
+        case CFG_TYPE_DIR:
+        case CFG_TYPE_DIR_OR_CMD: {
           char **def_svalue, **svalue;
 
           /*
@@ -2134,8 +2135,7 @@ bool FilesetResource::PrintConfig(
 
   Dmsg0(200, "FilesetResource::PrintConfig\n");
 
-  send.ResourceTypeStart("FileSet");
-  send.ResourceStart(this->resource_name_);
+  send.ResourceStart("FileSets", "FileSet", this->resource_name_);
   send.KeyQuotedString("Name", this->resource_name_);
 
   if (this->description_ != NULL) {
@@ -2208,8 +2208,7 @@ bool FilesetResource::PrintConfig(
     send.ArrayEnd("Exclude", inherited, "");
   }
 
-  send.ResourceEnd(this->resource_name_);
-  send.ResourceTypeEnd("FileSet");
+  send.ResourceEnd("FileSets", "FileSet", this->resource_name_);
 
   return true;
 }
@@ -2826,6 +2825,7 @@ static void StoreAuthprotocoltype(LEX* lc,
   if (!found) {
     scan_err1(lc, _("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
   }
+
   ScanToEol(lc);
   SetBit(index, (*item->allocated_resource)->item_present_);
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
@@ -3151,6 +3151,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 
   if (token != BCT_BOB) {
     scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
+    return;
   }
 
   res_runscript = new RunScript();
@@ -3168,6 +3169,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 
     if (token != BCT_IDENTIFIER) {
       scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
+      goto bail_out;
     }
 
     bool keyword_ok = false;
@@ -3176,6 +3178,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
           scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
+          goto bail_out;
         }
         switch (runscript_items[i].type) {
           case CFG_TYPE_RUNSCRIPT_CMD:
@@ -3200,6 +3203,7 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
 
     if (!keyword_ok) {
       scan_err1(lc, _("Keyword %s not permitted in this resource"), lc->str);
+      goto bail_out;
     }
   }
 
@@ -3224,6 +3228,8 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
       script->Debug();
     }
   }
+
+bail_out:
   /* for pass == 1 only delete the memory
      because it is only used while parsing */
   delete res_runscript;
@@ -3856,7 +3862,9 @@ static void DumpResource(int type,
       OutputFormatterResource(output_formatter);
 
   if (!res) {
-    sendit(sock, _("No %s resource defined\n"), my_config->ResToStr(type));
+    PoolMem msg;
+    msg.bsprintf(_("No %s resource defined\n"), my_config->ResToStr(type));
+    output_formatter->message(MSG_TYPE_INFO, msg);
     return;
   }
 

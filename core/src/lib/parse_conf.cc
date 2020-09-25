@@ -377,8 +377,10 @@ ResourceItem* ConfigurationParser::GetResourceItem(
   ResourceItem* result = nullptr;
   int i = -1;
 
-  i = GetResourceItemIndex(resource_items_, item);
-  if (i >= 0) { result = &resource_items_[i]; }
+  if (resource_items_) {
+    i = GetResourceItemIndex(resource_items_, item);
+    if (i >= 0) { result = &resource_items_[i]; }
+  }
 
   return result;
 }

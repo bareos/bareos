@@ -172,6 +172,21 @@ bareos_add_test(
 
 if(NOT client-only)
   bareos_add_test(
+    test_db_list_ctx
+    LINK_LIBRARIES
+      #dird_objects
+      bareos
+      #bareosfind
+      bareoscats
+      bareossql
+      ${GTEST_LIBRARIES}
+      ${GTEST_MAIN_LIBRARIES}
+  )
+endif()
+
+
+if(NOT client-only)
+  bareos_add_test(
     test_dir_plugins
     ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
     LINK_LIBRARIES bareos bareoscats bareossql ${GTEST_LIBRARIES}
@@ -417,3 +432,8 @@ if(NOT client-only)
       SKIP_GTEST
   )
 endif() # NOT client-only
+
+bareos_add_test(
+  test_edit LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
+                                    ${GTEST_MAIN_LIBRARIES}
+)

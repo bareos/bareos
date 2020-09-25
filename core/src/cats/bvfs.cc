@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -336,7 +336,7 @@ void BareosDb::BvfsUpdateCache(JobControlRecord* jcr)
        "ORDER BY JobId");
   SqlQuery(cmd, DbListHandler, &jobids_list);
 
-  BvfsUpdatePathHierarchyCache(jcr, jobids_list.list);
+  BvfsUpdatePathHierarchyCache(jcr, jobids_list.GetAsString().c_str());
 
   StartTransaction(jcr);
   Dmsg0(dbglevel, "Cleaning pathvisibility\n");
@@ -354,9 +354,10 @@ void BareosDb::BvfsUpdateCache(JobControlRecord* jcr)
 /*
  * Update the bvfs cache for given jobids (1,2,3,4)
  */
-bool BareosDb::BvfsUpdatePathHierarchyCache(JobControlRecord* jcr, char* jobids)
+bool BareosDb::BvfsUpdatePathHierarchyCache(JobControlRecord* jcr,
+                                            const char* jobids)
 {
-  char* p;
+  const char* p;
   int status;
   JobId_t JobId;
   bool retval = true;

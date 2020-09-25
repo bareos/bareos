@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -156,8 +156,9 @@ bool DoConsolidate(JobControlRecord* jcr)
        * First determine the number of total incrementals
        */
       jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
-      incrementals_total = jobids_ctx.count - 1;
-      Dmsg1(10, "unlimited jobids list:  %s.\n", jobids_ctx.list);
+      incrementals_total = jobids_ctx.size() - 1;
+      Dmsg1(10, "unlimited jobids list:  %s.\n",
+            jobids_ctx.GetAsString().c_str());
 
       /*
        * If we are doing always incremental, we need to limit the search to
@@ -180,7 +181,8 @@ bool DoConsolidate(JobControlRecord* jcr)
       }
 
       jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
-      Dmsg1(10, "consolidate candidates:  %s.\n", jobids_ctx.list);
+      Dmsg1(10, "consolidate candidates:  %s.\n",
+            jobids_ctx.GetAsString().c_str());
 
       /**
        * Consolidation of zero or one job does not make sense, we leave it like
@@ -207,11 +209,11 @@ bool DoConsolidate(JobControlRecord* jcr)
         Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n",
               incrementals_total, max_incrementals_to_consolidate,
               jcr->impl->jr.limit);
-        jobids_ctx.reset();
+        jobids_ctx.clear();
         jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
-        incrementals_to_consolidate = jobids_ctx.count - 1;
-        Dmsg2(10, "%d consolidate ids after limit: %s.\n", jobids_ctx.count,
-              jobids_ctx.list);
+        incrementals_to_consolidate = jobids_ctx.size() - 1;
+        Dmsg2(10, "%d consolidate ids after limit: %s.\n", jobids_ctx.size(),
+              jobids_ctx.GetAsString().c_str());
         if (incrementals_to_consolidate < 1) {
           Jmsg(jcr, M_INFO, 0,
                _("%s: After limited query: less incrementals than required, "
@@ -231,7 +233,7 @@ bool DoConsolidate(JobControlRecord* jcr)
         jobids = NULL;
       }
 
-      jobids = strdup(jobids_ctx.list);
+      jobids = strdup(jobids_ctx.GetAsString().c_str());
       p = jobids;
 
       /**

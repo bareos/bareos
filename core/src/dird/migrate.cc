@@ -440,12 +440,12 @@ static inline void StartNewMigrationJob(JobControlRecord* jcr)
  *   0 if no more DBIds are in list
  *  -1 there is an error
  */
-static inline int GetNextDbidFromList(char** p, DBId_t* DBId)
+static inline int GetNextDbidFromList(const char** p, DBId_t* DBId)
 {
   int i;
   const int maxlen = 30;
   char id[maxlen + 1];
-  char* q = *p;
+  const char* q = *p;
 
   id[0] = 0;
   for (i = 0; i < maxlen; i++) {
@@ -805,7 +805,7 @@ bail_out:
  */
 static inline bool getJobs_to_migrate(JobControlRecord* jcr)
 {
-  char* p;
+  const char* p;
   int status;
   int limit = -1;
   bool apply_limit = false;

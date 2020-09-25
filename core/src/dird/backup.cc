@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -190,7 +190,6 @@ static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
   JobDbRecord jr;
   JobResource* job = nullptr;
   JobId_t id;
-  char str_jobid[50];
 
   if (!jcr->impl->res.job->base) {
     return false; /* no base job, stop accurate */
@@ -202,14 +201,10 @@ static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
     bstrncpy(jr.Name, job->resource_name_, sizeof(jr.Name));
     jcr->db->GetBaseJobid(jcr, &jr, &id);
 
-    if (id) {
-      if (jobids->count) { PmStrcat(jobids->list, ","); }
-      PmStrcat(jobids->list, edit_uint64(id, str_jobid));
-      jobids->count++;
-    }
+    if (id) { jobids->add(id); }
   }
 
-  return jobids->count > 0;
+  return (!jobids->empty());
 }
 
 /*
@@ -323,7 +318,8 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
      */
     if (GetBaseJobids(jcr, &jobids)) {
       jcr->HasBase = true;
-      Jmsg(jcr, M_INFO, 0, _("Using BaseJobId(s): %s\n"), jobids.list);
+      Jmsg(jcr, M_INFO, 0, _("Using BaseJobId(s): %s\n"),
+           jobids.GetAsString().c_str());
     } else {
       return true;
     }
@@ -336,7 +332,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
     /*
      * We are in Incr/Diff, but no Full to build the accurate list...
      */
-    if (jobids.count == 0) {
+    if (jobids.empty()) {
       Jmsg(jcr, M_FATAL, 0, _("Cannot find previous jobids.\n"));
       return false; /* fail */
     }
@@ -353,14 +349,16 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   /*
    * To be able to allocate the right size for htable
    */
-  Mmsg(buf, "SELECT sum(JobFiles) FROM Job WHERE JobId IN (%s)", jobids.list);
+  Mmsg(buf, "SELECT sum(JobFiles) FROM Job WHERE JobId IN (%s)",
+       jobids.GetAsString().c_str());
   jcr->db->SqlQuery(buf.c_str(), DbListHandler, &nb);
-  Dmsg2(200, "jobids=%s nb=%s\n", jobids.list, nb.list);
-  jcr->file_bsock->fsend("accurate files=%s\n", nb.list);
+  Dmsg2(200, "jobids=%s nb=%s\n", jobids.GetAsString().c_str(),
+        nb.GetAsString().c_str());
+  jcr->file_bsock->fsend("accurate files=%s\n", nb.GetAsString().c_str());
 
   if (jcr->HasBase) {
-    jcr->nb_base_files = str_to_int64(nb.list);
-    if (!jcr->db->CreateBaseFileList(jcr, jobids.list)) {
+    jcr->nb_base_files = nb.GetFrontAsInteger();
+    if (!jcr->db->CreateBaseFileList(jcr, jobids.GetAsString().c_str())) {
       Jmsg(jcr, M_FATAL, 0, "error in jcr->db->CreateBaseFileList:%s\n",
            jcr->db->strerror());
       return false;
@@ -377,9 +375,9 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
       return false; /* Fail */
     }
 
-    jcr->db_batch->GetFileList(jcr, jobids.list, jcr->impl->use_accurate_chksum,
-                               false /* no delta */, AccurateListHandler,
-                               (void*)jcr);
+    jcr->db_batch->GetFileList(
+        jcr, jobids.GetAsString().c_str(), jcr->impl->use_accurate_chksum,
+        false /* no delta */, AccurateListHandler, (void*)jcr);
   }
 
   jcr->file_bsock->signal(BNET_EOD);
