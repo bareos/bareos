@@ -1,38 +1,364 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: bareos-webui\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-25 10:42+0200\n"
-"Language: pl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: POEditor.com\n"
+"Project-Id-Version: bareos-webui\n"
+"Language: pl\n"
 
 #: ../module/Dashboard/view/dashboard/dashboard/index.phtml:26
 #: ../module/Application/config/module.config.php:126
 msgid "Dashboard"
 msgstr "Tablica"
 
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:259
-msgid ""
-"Not enough data to estimate progress or statistics collection is disabled."
-msgstr ""
-"Za mały danych do oszacowania postępu lub gromadzenie statystyk jest "
-"wyłączone."
-
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:267
-msgid "There are no jobs running."
-msgstr "Brak działających zadań."
-
-#: ../module/Dashboard/view/partial/JobTotals.phtml:31
-msgid "Job Totals"
-msgstr "Łącznie zadań"
-
 #: ../module/Dashboard/view/partial/JobTotals.phtml:40
 #: ../module/Application/config/module.config.php:131
 msgid "Jobs"
 msgstr "Zadania"
+
+#: ../module/Schedule/view/schedule/schedule/index.phtml:33
+#: ../module/Schedule/view/schedule/schedule/details.phtml:33
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:33
+#: ../module/Schedule/view/schedule/schedule/status.phtml:32
+#: ../module/Application/config/module.config.php:136
+msgid "Overview"
+msgstr "Przegląd"
+
+#: ../module/Job/view/job/job/run.phtml:34
+#: ../module/Job/view/job/job/index.phtml:34
+#: ../module/Job/view/job/job/details.phtml:34
+#: ../module/Job/view/job/job/actions.phtml:34
+#: ../module/Application/config/module.config.php:141
+#: ../public/js/bootstrap-table-formatter.js:625
+msgid "Run"
+msgstr "Uruchom"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:525
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:539
+#: ../module/Restore/view/restore/restore/index.phtml:26
+#: ../module/Restore/view/restore/restore/versions.phtml:26
+#: ../module/Application/config/module.config.php:148
+#: ../public/js/bootstrap-table-formatter.js:53
+#: ../public/js/bootstrap-table-formatter.js:517
+#: ../public/js/bootstrap-table-formatter.js:542
+#: ../public/js/bootstrap-table-formatter.js:562
+msgid "Restore"
+msgstr "Odzyskaj"
+
+#: ../module/Application/config/module.config.php:153
+#: ../module/Client/view/client/client/index.phtml:26
+#: ../module/Client/view/client/client/index.phtml:45
+msgid "Clients"
+msgstr "Klienci"
+
+#: ../module/Schedule/view/schedule/schedule/index.phtml:26
+#: ../module/Schedule/view/schedule/schedule/index.phtml:68
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:26
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:47
+#: ../module/Application/config/module.config.php:158
+msgid "Schedules"
+msgstr "Harmonogramy"
+
+#: ../module/Application/config/module.config.php:163
+#: ../module/Storage/view/storage/storage/index.phtml:26
+msgid "Storages"
+msgstr "Magazyny"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:197
+#: ../module/Job/src/Job/Form/RunJobForm.php:213
+#: ../module/Job/view/job/job/index.phtml:303
+#: ../module/Job/view/job/job/details.phtml:155
+#: ../module/Application/config/module.config.php:168
+#: ../module/Application/config/module.config.php:173
+#: ../module/Storage/src/Storage/Form/StorageForm.php:61
+#: ../module/Storage/view/storage/storage/details.phtml:159
+#: ../module/Pool/view/pool/pool/details.phtml:48
+msgid "Pool"
+msgstr "Pula"
+
+#: ../module/Media/view/media/media/index.phtml:26
+#: ../module/Media/view/media/media/index.phtml:34
+#: ../module/Media/view/media/media/index.phtml:47
+#: ../module/Media/view/media/media/details.phtml:34
+#: ../module/Application/config/module.config.php:178
+#: ../module/Application/config/module.config.php:183
+#: ../module/Storage/view/storage/storage/index.phtml:34
+#: ../module/Storage/view/storage/storage/details.phtml:34
+#: ../module/Storage/view/storage/storage/status.phtml:34
+#: ../module/Pool/view/pool/pool/index.phtml:34
+#: ../module/Pool/view/pool/pool/index.phtml:73
+#: ../module/Pool/view/pool/pool/index.phtml:74
+#: ../module/Pool/view/pool/pool/details.phtml:34
+#: ../module/Pool/view/pool/pool/details.phtml:58
+#: ../module/Pool/view/pool/pool/details.phtml:79
+msgid "Volumes"
+msgstr "Wolumeny"
+
+#: ../module/Application/config/module.config.php:190
+#: ../module/Director/view/director/director/index.phtml:27
+#: ../module/Director/view/director/director/messages.phtml:26
+msgid "Director"
+msgstr "Zarządca"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:37
+msgid "Sorry, it seems you are not authorized to run this module. If you think this is an error, please contact your local administrator."
+msgstr "Niestety, nie masz uprawnień do uruchamiania tego modułu. Jeśli uważasz to za błąd skontaktuj sie z Administratorem."
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "Przeczytaj <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">dokumentacje Bareos </a> w celu uzyskania dodatkowych informacji na temat konfigurowania dyrektywy ACL  dla zasobów konsoli / profilu. Poniżej znajduje się lista wymaganych poleceń, które muszą znajdować się w liście poleceń, aby poprawnie uruchomić ten moduł: ACL. "
+
+#: ../module/Application/view/error/404.phtml:3
+msgid "A 404 error occurred"
+msgstr "Wystąpił błąd 404"
+
+#: ../module/Application/view/error/404.phtml:12
+msgid "The requested controller was unable to dispatch the request."
+msgstr "Żądany kontroler nie mogł wysłać żądania."
+
+#: ../module/Application/view/error/404.phtml:15
+msgid "The requested controller could not be mapped to an existing controller class."
+msgstr "Żądanego kontrolera nie można przypisać do istniejącej klasy kontrolera."
+
+#: ../module/Application/view/error/404.phtml:18
+msgid "The requested controller was not dispatchable."
+msgstr "Żądanego kontrolera nie można było wysłać."
+
+#: ../module/Application/view/error/404.phtml:21
+msgid "The requested URL could not be matched by routing."
+msgstr "Żądanego adresu URL nie można powiązać z routingiem."
+
+#: ../module/Application/view/error/404.phtml:24
+msgid "We cannot determine at this time why a 404 was generated."
+msgstr "W tej chwili nie możemy ustalić, dlaczego wygenerowano 404."
+
+#: ../module/Application/view/error/404.phtml:36
+msgid "Controller"
+msgstr "Kontroler"
+
+#: ../module/Application/view/error/404.phtml:43
+msgid "resolves to %s"
+msgstr "rozwiązuje na %s"
+
+#: ../module/Application/view/error/index.phtml:11
+#: ../module/Application/view/error/404.phtml:55
+msgid "Additional information"
+msgstr "Dodatkowe informacje"
+
+#: ../module/Application/view/error/index.phtml:14
+#: ../module/Application/view/error/index.phtml:38
+#: ../module/Application/view/error/404.phtml:58
+#: ../module/Application/view/error/404.phtml:82
+msgid "File"
+msgstr "Plik"
+
+#: ../module/Job/view/job/job/details.phtml:88
+#: ../module/Application/view/error/index.phtml:18
+#: ../module/Application/view/error/index.phtml:42
+#: ../module/Application/view/error/404.phtml:62
+#: ../module/Application/view/error/404.phtml:86
+msgid "Message"
+msgstr "Wiadomość"
+
+#: ../module/Application/view/error/index.phtml:22
+#: ../module/Application/view/error/index.phtml:46
+#: ../module/Application/view/error/404.phtml:66
+#: ../module/Application/view/error/404.phtml:90
+#, fuzzy
+msgid "Stack trace"
+msgstr "Stack trace"
+
+#: ../module/Application/view/error/index.phtml:32
+#: ../module/Application/view/error/404.phtml:76
+msgid "Previous exceptions"
+msgstr "Poprzednie wyjątki"
+
+#: ../module/Application/view/error/index.phtml:61
+#: ../module/Application/view/error/404.phtml:105
+msgid "No Exception available"
+msgstr "Brak dostępnych wyjątków"
+
+#: ../module/Application/view/error/index.phtml:4
+msgid "An error occurred"
+msgstr "Wystąpił błąd"
+
+#: ../module/Application/view/layout/layout.phtml:156
+msgid "Documentation"
+msgstr "Dokumentacja"
+
+#: ../module/Application/view/layout/layout.phtml:157
+msgid "Mailinglists"
+msgstr "Listy mailingowe"
+
+#: ../module/Application/view/layout/layout.phtml:158
+#, fuzzy
+msgid "Bugtracker"
+msgstr "Rejestrator błędów (Bugtracker)"
+
+#: ../module/Application/view/layout/layout.phtml:159
+msgid "Support"
+msgstr "Wsparcie"
+
+#: ../module/Application/view/layout/layout.phtml:160
+msgid "Subscription"
+msgstr "Subskrypcja"
+
+#: ../module/Application/view/layout/layout.phtml:162
+msgid "Logout"
+msgstr "Wyloguj"
+
+#: ../module/Job/view/job/job/run.phtml:32
+#: ../module/Job/view/job/job/index.phtml:32
+#: ../module/Job/view/job/job/details.phtml:32
+#: ../module/Job/view/job/job/actions.phtml:32
+#: ../module/Schedule/view/schedule/schedule/index.phtml:32
+#: ../module/Schedule/view/schedule/schedule/details.phtml:32
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
+#: ../module/Schedule/view/schedule/schedule/status.phtml:31
+#: ../module/Client/view/client/client/index.phtml:32
+#: ../module/Client/view/client/client/details.phtml:32
+#: ../module/Client/view/client/client/status.phtml:32
+msgid "Show"
+msgstr "Pokaż"
+
+#: ../module/Client/view/client/client/status.phtml:45
+msgid "Client Status"
+msgstr "Status klienta"
+
+#: ../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "Szczegóły klienta"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
+#: ../module/Job/src/Job/Form/RunJobForm.php:56
+#: ../module/Job/src/Job/Form/RunJobForm.php:73
+#: ../module/Job/view/job/job/index.phtml:85
+#: ../module/Job/view/job/job/index.phtml:86
+#: ../module/Job/view/job/job/details.phtml:59
+#: ../module/Media/view/media/media/details.phtml:104
+#: ../module/Media/view/media/media/details.phtml:105
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:95
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:112
+#: ../module/Client/view/client/client/details.phtml:45
+msgid "Client"
+msgstr "Klient"
+
+#: ../module/Media/view/media/media/index.phtml:61
+#: ../module/Media/view/media/media/index.phtml:62
+#: ../module/Media/view/media/media/details.phtml:55
+#: ../module/Schedule/view/schedule/schedule/index.phtml:82
+#: ../module/Schedule/view/schedule/schedule/index.phtml:83
+#: ../module/Restore/view/restore/restore/index.phtml:386
+#: ../module/Restore/view/restore/restore/versions.phtml:530
+#: ../module/Storage/view/storage/storage/index.phtml:61
+#: ../module/Storage/view/storage/storage/index.phtml:62
+#: ../module/Client/view/client/client/index.phtml:59
+#: ../module/Client/view/client/client/index.phtml:60
+#: ../module/Client/view/client/client/details.phtml:52
+#: ../module/Fileset/view/fileset/fileset/details.phtml:48
+#: ../module/Pool/view/pool/pool/index.phtml:61
+#: ../module/Pool/view/pool/pool/index.phtml:62
+#: ../module/Pool/view/pool/pool/details.phtml:56
+#: ../module/Pool/view/pool/pool/details.phtml:93
+#: ../module/Pool/view/pool/pool/details.phtml:94
+msgid "Name"
+msgstr "Nazwa"
+
+#: ../module/Client/view/client/client/index.phtml:71
+#: ../module/Client/view/client/client/index.phtml:72
+#: ../module/Client/view/client/client/details.phtml:53
+msgid "Version"
+msgstr "Wersja"
+
+#: ../module/Client/view/client/client/details.phtml:54
+#, fuzzy
+msgid "Autoprune"
+msgstr "Automatyczne przycinanie (Autoprune)"
+
+#: ../module/Client/view/client/client/details.phtml:55
+msgid "Fileretention"
+msgstr "Retencja plików"
+
+#: ../module/Client/view/client/client/details.phtml:56
+msgid "Jobretention"
+msgstr "Retencja zadań"
+
+#: ../module/Job/view/job/job/run.phtml:33
+#: ../module/Job/view/job/job/index.phtml:33
+#: ../module/Job/view/job/job/index.phtml:145
+#: ../module/Job/view/job/job/details.phtml:33
+#: ../module/Job/view/job/job/details.phtml:66
+#: ../module/Job/view/job/job/actions.phtml:33
+#: ../module/Job/view/job/job/actions.phtml:93
+#: ../module/Schedule/view/schedule/schedule/index.phtml:92
+#: ../module/Storage/view/storage/storage/index.phtml:71
+#: ../module/Storage/view/storage/storage/details.phtml:113
+#: ../module/Storage/view/storage/storage/details.phtml:129
+#: ../module/Storage/view/storage/storage/details.phtml:162
+#: ../module/Client/view/client/client/index.phtml:81
+#: ../module/Client/view/client/client/details.phtml:57
+#: ../module/Client/view/client/client/details.phtml:145
+msgid "Actions"
+msgstr "Akcje"
+
+#: ../module/Client/view/client/client/details.phtml:69
+msgid "Last successful backups"
+msgstr "Lista poprawnych kopii"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:42
+#: ../module/Job/view/job/job/index.phtml:73
+#: ../module/Job/view/job/job/index.phtml:74
+#: ../module/Job/view/job/job/details.phtml:57
+#: ../module/Media/view/media/media/details.phtml:92
+#: ../module/Media/view/media/media/details.phtml:93
+#: ../module/Client/view/client/client/details.phtml:86
+#: ../module/Client/view/client/client/details.phtml:87
+msgid "Job ID"
+msgstr "ID Zadania"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:39
+#: ../module/Job/src/Job/Form/JobForm.php:53
+#: ../module/Job/view/job/job/index.phtml:79
+#: ../module/Job/view/job/job/index.phtml:80
+#: ../module/Job/view/job/job/details.phtml:58
+#: ../module/Job/view/job/job/actions.phtml:83
+#: ../module/Job/view/job/job/actions.phtml:84
+#: ../module/Media/view/media/media/details.phtml:98
+#: ../module/Media/view/media/media/details.phtml:99
+#: ../module/Client/view/client/client/details.phtml:92
+#: ../module/Client/view/client/client/details.phtml:93
+msgid "Job name"
+msgstr "Nazwa zadania"
+
+#: ../module/Job/view/job/job/details.phtml:87
+msgid "Timestamp"
+msgstr "Znacznik czasu"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:127
+#: ../module/Job/src/Job/Form/RunJobForm.php:143
+#: ../module/Job/view/job/job/index.phtml:299
+#: ../module/Job/view/job/job/details.phtml:151
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:184
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:199
+#: ../module/Client/view/client/client/details.phtml:112
+#: ../module/Client/view/client/client/details.phtml:113
+#: ../module/Fileset/view/fileset/fileset/details.phtml:39
+msgid "Fileset"
+msgstr "Zestaw plików"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:44
+#: ../module/Job/src/Job/Form/RunJobForm.php:232
+#: ../module/Job/src/Job/Form/RunJobForm.php:248
+#: ../module/Job/view/job/job/index.phtml:99
+#: ../module/Job/view/job/job/index.phtml:100
+#: ../module/Job/view/job/job/details.phtml:61
+#: ../module/Media/view/media/media/details.phtml:116
+#: ../module/Media/view/media/media/details.phtml:117
+#: ../module/Client/view/client/client/details.phtml:119
+#: ../module/Client/view/client/client/details.phtml:120
+msgid "Level"
+msgstr "Poziom"
 
 #: ../module/Dashboard/view/partial/JobTotals.phtml:41
 #: ../module/Job/view/job/job/index.phtml:120
@@ -57,24 +383,6 @@ msgstr "Pliki"
 #: ../module/Client/view/client/client/details.phtml:134
 msgid "Bytes"
 msgstr "najty"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
-msgid "Most recent job status per job name"
-msgstr "Najnowszy status zadania na nazwę zadania"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:39
-#: ../module/Job/src/Job/Form/JobForm.php:53
-#: ../module/Job/view/job/job/index.phtml:79
-#: ../module/Job/view/job/job/index.phtml:80
-#: ../module/Job/view/job/job/details.phtml:58
-#: ../module/Job/view/job/job/actions.phtml:83
-#: ../module/Job/view/job/job/actions.phtml:84
-#: ../module/Media/view/media/media/details.phtml:98
-#: ../module/Media/view/media/media/details.phtml:99
-#: ../module/Client/view/client/client/details.phtml:92
-#: ../module/Client/view/client/client/details.phtml:93
-msgid "Job name"
-msgstr "Nazwa zadania"
 
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:40
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:41
@@ -104,43 +412,63 @@ msgstr "Nazwa zadania"
 msgid "Status"
 msgstr "Status"
 
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:42
-#: ../module/Job/view/job/job/index.phtml:73
-#: ../module/Job/view/job/job/index.phtml:74
-#: ../module/Job/view/job/job/details.phtml:57
-#: ../module/Media/view/media/media/details.phtml:92
-#: ../module/Media/view/media/media/details.phtml:93
-#: ../module/Client/view/client/client/details.phtml:86
-#: ../module/Client/view/client/client/details.phtml:87
-msgid "Job ID"
-msgstr "ID Zadania"
+#: ../module/Client/view/client/client/details.phtml:221
+msgid "Show Files"
+msgstr "Pokaż pliki"
 
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
-#: ../module/Job/src/Job/Form/RunJobForm.php:56
-#: ../module/Job/src/Job/Form/RunJobForm.php:73
-#: ../module/Job/view/job/job/index.phtml:85
-#: ../module/Job/view/job/job/index.phtml:86
-#: ../module/Job/view/job/job/details.phtml:59
-#: ../module/Media/view/media/media/details.phtml:104
-#: ../module/Media/view/media/media/details.phtml:105
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:95
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:112
-#: ../module/Client/view/client/client/details.phtml:45
-msgid "Client"
-msgstr "Klient"
+#: ../module/Job/view/job/job/index.phtml:170
+#: ../module/Job/view/job/job/index.phtml:191
+#: ../module/Job/view/job/job/details.phtml:135
+#: ../module/Job/view/job/job/actions.phtml:55
+#: ../module/Media/view/media/media/index.phtml:139
+#: ../module/Media/view/media/media/details.phtml:177
+#: ../module/Schedule/view/schedule/schedule/index.phtml:55
+#: ../module/Restore/view/restore/restore/index.phtml:53
+#: ../module/Restore/view/restore/restore/index.phtml:76
+#: ../module/Restore/view/restore/restore/versions.phtml:53
+#: ../module/Restore/view/restore/restore/versions.phtml:77
+#: ../module/Storage/view/storage/storage/details.phtml:57
+#: ../module/Client/view/client/client/index.phtml:117
+#: ../module/Pool/view/pool/pool/details.phtml:171
+msgid "Close"
+msgstr "Zamknij"
 
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:44
-#: ../module/Job/src/Job/Form/RunJobForm.php:232
-#: ../module/Job/src/Job/Form/RunJobForm.php:248
-#: ../module/Job/view/job/job/index.phtml:99
-#: ../module/Job/view/job/job/index.phtml:100
-#: ../module/Job/view/job/job/details.phtml:61
-#: ../module/Media/view/media/media/details.phtml:116
-#: ../module/Media/view/media/media/details.phtml:117
-#: ../module/Client/view/client/client/details.phtml:119
-#: ../module/Client/view/client/client/details.phtml:120
-msgid "Level"
-msgstr "Poziom"
+#: ../module/Media/view/media/media/details.phtml:395
+#: ../public/js/bootstrap-table-formatter.js:408
+msgid "Enabled"
+msgstr "Włączony"
+
+#: ../public/js/bootstrap-table-formatter.js:410
+msgid "Disabled"
+msgstr "Wyłączony"
+
+#: ../public/js/bootstrap-table-formatter.js:519
+#: ../public/js/bootstrap-table-formatter.js:549
+#: ../public/js/bootstrap-table-formatter.js:627
+msgid "Disable"
+msgstr "Wyłącz"
+
+#: ../public/js/bootstrap-table-formatter.js:520
+#: ../public/js/bootstrap-table-formatter.js:550
+#: ../public/js/bootstrap-table-formatter.js:626
+msgid "Enable"
+msgstr "Włącz"
+
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:259
+msgid "Not enough data to estimate progress or statistics collection is disabled."
+msgstr "Za mały danych do oszacowania postępu lub gromadzenie statystyk jest wyłączone."
+
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:267
+msgid "There are no jobs running."
+msgstr "Brak działających zadań."
+
+#: ../module/Dashboard/view/partial/JobTotals.phtml:31
+msgid "Job Totals"
+msgstr "Łącznie zadań"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
+msgid "Most recent job status per job name"
+msgstr "Najnowszy status zadania na nazwę zadania"
 
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:45
 #: ../module/Job/view/job/job/index.phtml:106
@@ -159,14 +487,6 @@ msgstr "Start"
 #: ../module/Client/view/client/client/details.phtml:107
 msgid "End"
 msgstr "Koniec"
-
-#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
-msgid "Current Director messages"
-msgstr "Aktualne wiadomości zarządcy"
-
-#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
-msgid "Running Jobs"
-msgstr "Uruchomione zadania"
 
 #: ../module/Dashboard/view/partial/JobsPast24h.phtml:31
 msgid "Jobs started during the past 24 hours"
@@ -196,14 +516,71 @@ msgstr "W kolejce"
 msgid "Successful"
 msgstr "Udane"
 
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
-#: ../public/js/bootstrap-table-formatter.js:387
-msgid "Warning"
-msgstr "Ostrzeżenie"
-
 #: ../module/Dashboard/view/partial/JobsPast24h.phtml:90
 msgid "Failed"
 msgstr "Nieudane"
+
+#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
+msgid "Current Director messages"
+msgstr "Aktualne wiadomości zarządcy"
+
+#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
+msgid "Running Jobs"
+msgstr "Uruchomione zadania"
+
+#: ../module/Job/view/job/job/details.phtml:81
+#: ../module/Director/view/director/director/index.phtml:34
+#: ../module/Director/view/director/director/messages.phtml:33
+msgid "Messages"
+msgstr "Wiadomości"
+
+#: ../module/Application/view/layout/layout.phtml:148
+msgid "Console"
+msgstr "Konsole"
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "bconsole (batch-mode), please handle with care."
+msgstr "bconsole (tryb wsadowy), ostrożnie."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "All commands have to be a one liner, dialogs are not working."
+msgstr "Wszystkie polecenia muszą być jenoliniowe, okna dialogowe nie działają."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "Type help for a list of commands."
+msgstr "Wpisz help aby uzyskac liste komend."
+
+#: ../module/Director/view/director/director/index.phtml:47
+msgid "Director Status"
+msgstr "Status zarządcy"
+
+#: ../module/Director/view/director/director/messages.phtml:43
+msgid "Refresh"
+msgstr "Odśwież"
+
+#: ../module/Director/view/director/director/messages.phtml:50
+msgid "Director messages"
+msgstr "Wiadomości zarządcy"
+
+#: ../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr "Zestawy plików"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:26
+msgid "Fileset details"
+msgstr "Szczególy zestawy plików"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:47
+msgid "Id"
+msgstr "Id"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:49
+msgid "MD5 checksum"
+msgstr "Suma MD5"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:50
+msgid "Creation time"
+msgstr "Czas stworzenia"
 
 #: ../module/Job/src/Job/Form/JobForm.php:60
 msgid "jobname"
@@ -261,27 +638,11 @@ msgstr "zakończone nieudane"
 msgid "terminated successfully"
 msgstr "zakończone udane"
 
-#: ../module/Job/src/Job/Form/JobForm.php:102
-msgid "warning"
-msgstr "ostrzeżenie"
-
 #: ../module/Job/src/Job/Form/RunJobForm.php:92
 #: ../module/Job/src/Job/Form/RunJobForm.php:108
 #: ../module/Job/view/job/job/details.phtml:49
 msgid "Job"
 msgstr "Zadanie"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:127
-#: ../module/Job/src/Job/Form/RunJobForm.php:143
-#: ../module/Job/view/job/job/index.phtml:299
-#: ../module/Job/view/job/job/details.phtml:151
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:184
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:199
-#: ../module/Client/view/client/client/details.phtml:112
-#: ../module/Client/view/client/client/details.phtml:113
-#: ../module/Fileset/view/fileset/fileset/details.phtml:39
-msgid "Fileset"
-msgstr "Zestaw plików"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:162
 #: ../module/Job/src/Job/Form/RunJobForm.php:178
@@ -293,21 +654,22 @@ msgstr "Zestaw plików"
 msgid "Storage"
 msgstr "Magazyn"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:197
-#: ../module/Job/src/Job/Form/RunJobForm.php:213
-#: ../module/Job/view/job/job/index.phtml:303
-#: ../module/Job/view/job/job/details.phtml:155
-#: ../module/Application/config/module.config.php:168
-#: ../module/Application/config/module.config.php:173
-#: ../module/Storage/src/Storage/Form/StorageForm.php:61
-#: ../module/Storage/view/storage/storage/details.phtml:159
-#: ../module/Pool/view/pool/pool/details.phtml:48
-msgid "Pool"
-msgstr "Pula"
-
 #: ../module/Job/src/Job/Form/RunJobForm.php:266
 msgid "Priority"
 msgstr "Priorytet"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:365
+msgid "When"
+msgstr "Kiedy"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:380
+#: ../module/Storage/src/Storage/Form/StorageForm.php:93
+msgid "Submit"
+msgstr "Zatwierdź"
+
+#: ../module/Job/view/job/job/actions.phtml:69
+msgid "Job Actions"
+msgstr "Akcja zadania"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:281
 #: ../module/Job/src/Job/Form/RunJobForm.php:297
@@ -327,76 +689,22 @@ msgstr "Priorytet"
 msgid "Type"
 msgstr "Typ"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:315
-#: ../module/Job/src/Job/Form/RunJobForm.php:331
-#, fuzzy
-msgid "Next Pool"
-msgstr "Pula"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:365
-msgid "When"
-msgstr "Kiedy"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:380
-#: ../module/Storage/src/Storage/Form/StorageForm.php:93
-msgid "Submit"
-msgstr "Zatwierdź"
-
-#: ../module/Job/view/job/job/run.phtml:32
-#: ../module/Job/view/job/job/index.phtml:32
-#: ../module/Job/view/job/job/details.phtml:32
-#: ../module/Job/view/job/job/actions.phtml:32
-#: ../module/Schedule/view/schedule/schedule/index.phtml:32
-#: ../module/Schedule/view/schedule/schedule/details.phtml:32
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
-#: ../module/Schedule/view/schedule/schedule/status.phtml:31
-#: ../module/Client/view/client/client/index.phtml:32
-#: ../module/Client/view/client/client/details.phtml:32
-#: ../module/Client/view/client/client/status.phtml:32
-msgid "Show"
-msgstr "Pokaż"
-
-#: ../module/Job/view/job/job/run.phtml:33
-#: ../module/Job/view/job/job/index.phtml:33
-#: ../module/Job/view/job/job/index.phtml:145
-#: ../module/Job/view/job/job/details.phtml:33
-#: ../module/Job/view/job/job/details.phtml:66
-#: ../module/Job/view/job/job/actions.phtml:33
-#: ../module/Job/view/job/job/actions.phtml:93
-#: ../module/Schedule/view/schedule/schedule/index.phtml:92
-#: ../module/Storage/view/storage/storage/index.phtml:71
-#: ../module/Storage/view/storage/storage/details.phtml:113
-#: ../module/Storage/view/storage/storage/details.phtml:129
-#: ../module/Storage/view/storage/storage/details.phtml:162
-#: ../module/Client/view/client/client/index.phtml:81
-#: ../module/Client/view/client/client/details.phtml:57
-#: ../module/Client/view/client/client/details.phtml:145
-msgid "Actions"
-msgstr "Akcje"
-
-#: ../module/Job/view/job/job/run.phtml:34
-#: ../module/Job/view/job/job/index.phtml:34
-#: ../module/Job/view/job/job/details.phtml:34
-#: ../module/Job/view/job/job/actions.phtml:34
-#: ../module/Application/config/module.config.php:141
-#: ../public/js/bootstrap-table-formatter.js:625
-msgid "Run"
-msgstr "Uruchom"
-
-#: ../module/Job/view/job/job/index.phtml:48
-#: ../module/Client/view/client/client/details.phtml:71
-msgid "Job list"
-msgstr "Lista zadań"
-
-#: ../module/Job/view/job/job/index.phtml:56
-msgid "Clear search filters"
-msgstr ""
-
 #: ../module/Job/view/job/job/index.phtml:134
 #: ../module/Job/view/job/job/index.phtml:135
 #: ../module/Job/view/job/job/details.phtml:64
 msgid "Errors"
 msgstr "Błędy"
+
+#: ../module/Job/view/job/job/details.phtml:98
+msgid "Used Volumes"
+msgstr "Użyte wolumeny"
+
+#: ../module/Job/view/job/job/details.phtml:103
+#: ../module/Storage/view/storage/storage/details.phtml:112
+#: ../module/Storage/view/storage/storage/details.phtml:128
+#: ../module/Storage/view/storage/storage/details.phtml:153
+msgid "Volume"
+msgstr "Wolumen"
 
 #: ../module/Job/view/job/job/index.phtml:162
 #: ../module/Job/view/job/job/details.phtml:128
@@ -407,10 +715,6 @@ msgstr "Błędy"
 #: ../module/Pool/view/pool/pool/details.phtml:164
 msgid "Failed to retrieve data from Bareos director"
 msgstr "Nie można pobrać danych z zarządcy Bareos"
-
-#: ../module/Job/view/job/job/index.phtml:165
-msgid "Please try to reduce the amount of data to display."
-msgstr ""
 
 #: ../module/Job/view/job/job/index.phtml:166
 #: ../module/Job/view/job/job/details.phtml:131
@@ -426,81 +730,52 @@ msgstr "Komunikaty błędów otrzymany od zarządcy:"
 #: ../module/Media/view/media/media/details.phtml:174
 #: ../module/Pool/view/pool/pool/details.phtml:168
 msgid "Failed to send result as json. Maybe the result message is too long?"
-msgstr ""
-"Nie udało się wysłać wyniku jako json. Może komunikat wyniku jest za długi?"
-
-#: ../module/Job/view/job/job/index.phtml:170
-#: ../module/Job/view/job/job/index.phtml:191
-#: ../module/Job/view/job/job/details.phtml:135
-#: ../module/Job/view/job/job/actions.phtml:55
-#: ../module/Media/view/media/media/index.phtml:139
-#: ../module/Media/view/media/media/details.phtml:177
-#: ../module/Schedule/view/schedule/schedule/index.phtml:55
-#: ../module/Restore/view/restore/restore/index.phtml:53
-#: ../module/Restore/view/restore/restore/index.phtml:76
-#: ../module/Restore/view/restore/restore/versions.phtml:53
-#: ../module/Restore/view/restore/restore/versions.phtml:77
-#: ../module/Storage/view/storage/storage/details.phtml:57
-#: ../module/Client/view/client/client/index.phtml:117
-#: ../module/Pool/view/pool/pool/details.phtml:171
-msgid "Close"
-msgstr "Zamknij"
+msgstr "Nie udało się wysłać wyniku jako json. Może komunikat wyniku jest za długi?"
 
 #: ../module/Job/view/job/job/index.phtml:307
 #: ../module/Job/view/job/job/details.phtml:159
 msgid "Scheduled"
 msgstr "Planowany"
 
-#: ../module/Job/view/job/job/details.phtml:81
-#: ../module/Director/view/director/director/index.phtml:34
-#: ../module/Director/view/director/director/messages.phtml:33
-msgid "Messages"
-msgstr "Wiadomości"
+#: ../module/Job/view/job/job/details.phtml:180
+msgid "First Index"
+msgstr "Pierwszy indeks"
 
-#: ../module/Job/view/job/job/details.phtml:87
-msgid "Timestamp"
-msgstr "Znacznik czasu"
+#: ../module/Job/view/job/job/details.phtml:184
+msgid "Last Index"
+msgstr "Ostatni indeks"
 
-#: ../module/Job/view/job/job/details.phtml:88
-#: ../module/Application/view/error/index.phtml:18
-#: ../module/Application/view/error/index.phtml:42
-#: ../module/Application/view/error/404.phtml:62
-#: ../module/Application/view/error/404.phtml:86
-msgid "Message"
-msgstr "Wiadomość"
+#: ../module/Job/view/job/job/details.phtml:188
+msgid "Start Block"
+msgstr "Początek bloku"
 
-#: ../module/Job/view/job/job/details.phtml:98
-msgid "Used Volumes"
-msgstr "Użyte wolumeny"
+#: ../module/Job/view/job/job/details.phtml:192
+msgid "End Block"
+msgstr "Koniec bloku"
 
-#: ../module/Job/view/job/job/details.phtml:103
-#: ../module/Storage/view/storage/storage/details.phtml:112
-#: ../module/Storage/view/storage/storage/details.phtml:128
-#: ../module/Storage/view/storage/storage/details.phtml:153
-msgid "Volume"
-msgstr "Wolumen"
+#: ../public/js/bootstrap-table-formatter.js:561
+msgid "Rerun"
+msgstr "Uruchom ponownie"
 
-#: ../module/Job/view/job/job/actions.phtml:69
-msgid "Job Actions"
-msgstr "Akcja zadania"
+#: ../module/Restore/view/restore/restore/index.phtml:97
+#: ../module/Restore/view/restore/restore/versions.phtml:98
+#: ../module/Storage/view/storage/storage/details.phtml:88
+#: ../public/js/bootstrap-table-formatter.js:563
+msgid "Cancel"
+msgstr "Zakończ"
 
-#: ../module/Media/view/media/media/index.phtml:26
-#: ../module/Media/view/media/media/index.phtml:34
-#: ../module/Media/view/media/media/index.phtml:47
-#: ../module/Media/view/media/media/details.phtml:34
-#: ../module/Application/config/module.config.php:178
-#: ../module/Application/config/module.config.php:183
-#: ../module/Storage/view/storage/storage/index.phtml:34
-#: ../module/Storage/view/storage/storage/details.phtml:34
-#: ../module/Storage/view/storage/storage/status.phtml:34
-#: ../module/Pool/view/pool/pool/index.phtml:34
-#: ../module/Pool/view/pool/pool/index.phtml:73
-#: ../module/Pool/view/pool/pool/index.phtml:74
-#: ../module/Pool/view/pool/pool/details.phtml:34
-#: ../module/Pool/view/pool/pool/details.phtml:58
-#: ../module/Pool/view/pool/pool/details.phtml:79
-msgid "Volumes"
-msgstr "Wolumeny"
+#: ../module/Job/view/job/job/index.phtml:48
+#: ../module/Client/view/client/client/details.phtml:71
+msgid "Job list"
+msgstr "Lista zadań"
+
+#: ../module/Job/view/job/job/index.phtml:110
+msgid "Please try to reduce the amount of data to display, e.g. reduce time period."
+msgstr "Spróbuj zmniejszyć ilość danych do wyświetlenia, np. skrócić okres czasu."
+
+#: ../module/Media/view/media/media/details.phtml:26
+msgid "Volume details"
+msgstr "Szczegóły wolumenu"
 
 #: ../module/Media/view/media/media/index.phtml:32
 #: ../module/Media/view/media/media/details.phtml:32
@@ -523,27 +798,6 @@ msgstr "Urządzenia"
 #: ../module/Pool/view/pool/pool/details.phtml:33
 msgid "Pools"
 msgstr "Pule"
-
-#: ../module/Media/view/media/media/index.phtml:61
-#: ../module/Media/view/media/media/index.phtml:62
-#: ../module/Media/view/media/media/details.phtml:55
-#: ../module/Schedule/view/schedule/schedule/index.phtml:82
-#: ../module/Schedule/view/schedule/schedule/index.phtml:83
-#: ../module/Restore/view/restore/restore/index.phtml:386
-#: ../module/Restore/view/restore/restore/versions.phtml:530
-#: ../module/Storage/view/storage/storage/index.phtml:61
-#: ../module/Storage/view/storage/storage/index.phtml:62
-#: ../module/Client/view/client/client/index.phtml:59
-#: ../module/Client/view/client/client/index.phtml:60
-#: ../module/Client/view/client/client/details.phtml:52
-#: ../module/Fileset/view/fileset/fileset/details.phtml:48
-#: ../module/Pool/view/pool/pool/index.phtml:61
-#: ../module/Pool/view/pool/pool/index.phtml:62
-#: ../module/Pool/view/pool/pool/details.phtml:56
-#: ../module/Pool/view/pool/pool/details.phtml:93
-#: ../module/Pool/view/pool/pool/details.phtml:94
-msgid "Name"
-msgstr "Nazwa"
 
 #: ../module/Media/view/media/media/index.phtml:79
 #: ../module/Media/view/media/media/index.phtml:80
@@ -581,6 +835,20 @@ msgstr "Maksymalnie bajtów"
 msgid "Current bytes"
 msgstr "Aktualnie bajtów"
 
+#: ../module/Media/view/media/media/details.phtml:78
+msgid "Jobs on volume"
+msgstr "Zadania na wolumenie"
+
+#: ../module/Media/view/media/media/details.phtml:134
+#: ../module/Media/view/media/media/details.phtml:135
+msgid "Starttime"
+msgstr "Czas uruchmienia"
+
+#: ../module/Media/view/media/media/details.phtml:140
+#: ../module/Media/view/media/media/details.phtml:141
+msgid "Endtime"
+msgstr "Czas końca"
+
 #: ../module/Media/view/media/media/index.phtml:235
 #: ../module/Media/view/media/media/details.phtml:327
 #: ../module/Pool/view/pool/pool/details.phtml:298
@@ -605,24 +873,6 @@ msgstr "Zadania wolumenu"
 #, fuzzy
 msgid "Recycle"
 msgstr "Wykorzystaj ponownie"
-
-#: ../module/Media/view/media/media/details.phtml:26
-msgid "Volume details"
-msgstr "Szczegóły wolumenu"
-
-#: ../module/Media/view/media/media/details.phtml:78
-msgid "Jobs on volume"
-msgstr "Zadania na wolumenie"
-
-#: ../module/Media/view/media/media/details.phtml:134
-#: ../module/Media/view/media/media/details.phtml:135
-msgid "Starttime"
-msgstr "Czas uruchmienia"
-
-#: ../module/Media/view/media/media/details.phtml:140
-#: ../module/Media/view/media/media/details.phtml:141
-msgid "Endtime"
-msgstr "Czas końca"
 
 #: ../module/Media/view/media/media/details.phtml:347
 #, fuzzy
@@ -678,11 +928,6 @@ msgstr "Pojemność wolumentu"
 msgid "Volume errors"
 msgstr "Błędy wolumenu"
 
-#: ../module/Media/view/media/media/details.phtml:395
-#: ../public/js/bootstrap-table-formatter.js:408
-msgid "Enabled"
-msgstr "Włączony"
-
 #: ../module/Media/view/media/media/details.phtml:399
 msgid "Max. volume files"
 msgstr "Maks. plików wolumenu"
@@ -730,72 +975,41 @@ msgstr "Odzyskaj identyfikator puli"
 msgid "Comment"
 msgstr "Komentarz"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "bconsole (batch-mode), please handle with care."
-msgstr "bconsole (tryb wsadowy), ostrożnie."
+#: ../module/Pool/view/pool/pool/details.phtml:26
+msgid "Pool details"
+msgstr "Szczególy puli"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "All commands have to be a one liner, dialogs are not working."
-msgstr ""
-"Wszystkie polecenia muszą być jenoliniowe, okna dialogowe nie działają."
+#: ../module/Pool/view/pool/pool/index.phtml:79
+#: ../module/Pool/view/pool/pool/index.phtml:80
+#: ../module/Pool/view/pool/pool/details.phtml:59
+msgid "Maximum volumes"
+msgstr "Maksymalnie wolumenów"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "Type help for a list of commands."
-msgstr "Wpisz help aby uzyskac liste komend."
+#: ../module/Pool/view/pool/pool/index.phtml:85
+#: ../module/Pool/view/pool/pool/index.phtml:86
+#: ../module/Pool/view/pool/pool/details.phtml:60
+msgid "Volume retention"
+msgstr "Retencja wolumenów"
 
-#: ../module/Schedule/view/schedule/schedule/index.phtml:26
-#: ../module/Schedule/view/schedule/schedule/index.phtml:68
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:26
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:47
-#: ../module/Application/config/module.config.php:158
-msgid "Schedules"
-msgstr "Harmonogramy"
+#: ../module/Pool/view/pool/pool/index.phtml:91
+#: ../module/Pool/view/pool/pool/index.phtml:92
+#: ../module/Pool/view/pool/pool/details.phtml:61
+msgid "Maximum volume jobs"
+msgstr "Zadania o maksymalnej objętości"
 
-#: ../module/Schedule/view/schedule/schedule/index.phtml:33
-#: ../module/Schedule/view/schedule/schedule/details.phtml:33
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:33
-#: ../module/Schedule/view/schedule/schedule/status.phtml:32
-#: ../module/Application/config/module.config.php:136
-msgid "Overview"
-msgstr "Przegląd"
-
-#: ../module/Schedule/view/schedule/schedule/index.phtml:34
-#: ../module/Schedule/view/schedule/schedule/details.phtml:34
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:34
-#: ../module/Schedule/view/schedule/schedule/status.phtml:33
-msgid "Scheduler status"
-msgstr "Status harmonogramu"
-
-#: ../module/Schedule/view/schedule/schedule/details.phtml:26
-#: ../module/Schedule/view/schedule/schedule/details.phtml:47
-msgid "Schedule Details"
-msgstr "Szczegóły harmonogramu"
-
-#: ../module/Schedule/view/schedule/schedule/status.phtml:26
-#: ../module/Schedule/view/schedule/schedule/status.phtml:46
-msgid "Status Scheduler"
-msgstr "Status Scheduler"
+#: ../module/Pool/view/pool/pool/index.phtml:97
+#: ../module/Pool/view/pool/pool/index.phtml:98
+#: ../module/Pool/view/pool/pool/details.phtml:62
+msgid "Maximum volume bytes"
+msgstr "Maksymalna ilość bajtów"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:59
 msgid "Backup jobs"
 msgstr "Zarchiwizuj zadania"
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:60
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:77
-msgid "Please choose a backup"
-msgstr "Wybierz backup"
-
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:76
 msgid "Backups"
 msgstr "Kopie"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:96
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:113
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:132
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:149
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:166
-msgid "Please choose a client"
-msgstr "Wybierz klienta"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:131
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:148
@@ -816,11 +1030,6 @@ msgstr "Wybierz zestaw plików"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:250
 msgid "Restore job"
 msgstr "Przywróć zadanie"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:234
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:251
-msgid "Please choose a restore job"
-msgstr "Wybierz zadanie do odtworzenia"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:270
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:289
@@ -847,9 +1056,7 @@ msgstr "Nie"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:311
 msgid "Merge all related jobs to last full backup of selected backup job"
-msgstr ""
-"Scal wszystkie powiązane zadania do ostatniej pełnej kopii zapasowej "
-"wybranego zadania kopii zapasowej"
+msgstr "Scal wszystkie powiązane zadania do ostatniej pełnej kopii zapasowej wybranego zadania kopii zapasowej"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:330
 msgid "Merge jobs"
@@ -898,31 +1105,24 @@ msgstr "Lokalizacja odtworzenia na kliencie"
 msgid "e.g. / or /tmp/bareos-restores/"
 msgstr "np. / lub /tmp/bareos-restores/"
 
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:439
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:456
+msgid "Path"
+msgstr "Ścieżka"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:475
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:492
+msgid "Limit"
+msgstr "Limit"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:511
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:528
+msgid "Offset"
+msgstr "Offsetowy"
+
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:487
 msgid "Related jobs for a most recent full restore"
 msgstr "Powiązane zadania dla ostatniego pełnego przywracania"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:525
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:539
-#: ../module/Restore/view/restore/restore/index.phtml:26
-#: ../module/Restore/view/restore/restore/versions.phtml:26
-#: ../module/Application/config/module.config.php:148
-#: ../public/js/bootstrap-table-formatter.js:53
-#: ../public/js/bootstrap-table-formatter.js:517
-#: ../public/js/bootstrap-table-formatter.js:542
-#: ../public/js/bootstrap-table-formatter.js:562
-msgid "Restore"
-msgstr "Odzyskaj"
-
-#: ../module/Restore/view/restore/restore/index.phtml:32
-#: ../module/Restore/view/restore/restore/versions.phtml:32
-msgid "Restore multiple files"
-msgstr "Odtwórz wiele plików"
-
-#: ../module/Restore/view/restore/restore/index.phtml:33
-#: ../module/Restore/view/restore/restore/versions.phtml:33
-msgid "Restore specific file version"
-msgstr "Odtwórz konkretna wersje pliku"
 
 #: ../module/Restore/view/restore/restore/index.phtml:49
 #: ../module/Restore/view/restore/restore/versions.phtml:49
@@ -935,50 +1135,10 @@ msgstr "Otrzymany komunikat błędu:"
 msgid "Director message"
 msgstr "Wiadomość zarządcy"
 
-#: ../module/Restore/view/restore/restore/index.phtml:75
-#: ../module/Restore/view/restore/restore/versions.phtml:76
-msgid "Job report"
-msgstr "Raport zadania"
-
-#: ../module/Restore/view/restore/restore/index.phtml:89
-#: ../module/Restore/view/restore/restore/versions.phtml:90
-msgid "Confirm restore job submit"
-msgstr "Potwierdź zadanie odtworzenia"
-
-#: ../module/Restore/view/restore/restore/index.phtml:97
-#: ../module/Restore/view/restore/restore/versions.phtml:98
-#: ../module/Storage/view/storage/storage/details.phtml:88
-#: ../public/js/bootstrap-table-formatter.js:563
-msgid "Cancel"
-msgstr "Zakończ"
-
-#: ../module/Restore/view/restore/restore/index.phtml:98
-#: ../module/Restore/view/restore/restore/index.phtml:117
-#: ../module/Restore/view/restore/restore/versions.phtml:99
-#: ../module/Restore/view/restore/restore/versions.phtml:118
-msgid "OK"
-msgstr "OK"
-
-#: ../module/Restore/view/restore/restore/index.phtml:114
-msgid "No files or directories selected to restore!"
-msgstr "Nie wybrano plików lub katalogów od odzyskania!"
-
 #: ../module/Restore/view/restore/restore/index.phtml:164
 #: ../module/Restore/view/restore/restore/versions.phtml:162
 msgid "File selection"
 msgstr "Wybór pliku"
-
-#: ../module/Restore/view/restore/restore/index.phtml:392
-msgid "Mode"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:400
-msgid "User"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:408
-msgid "Group"
-msgstr ""
 
 #: ../module/Restore/view/restore/restore/index.phtml:416
 #: ../module/Restore/view/restore/restore/versions.phtml:194
@@ -986,181 +1146,18 @@ msgstr ""
 msgid "Size"
 msgstr "Rozmiar"
 
-#: ../module/Restore/view/restore/restore/index.phtml:424
-#: ../module/Restore/view/restore/restore/versions.phtml:193
-#: ../module/Restore/view/restore/restore/versions.phtml:544
-msgid "Last modification"
-msgstr "Ostatnia modyfikacja"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:115
-msgid "No file selected to restore!"
-msgstr "Nie wybrano pliku do odzyskania!"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:172
-msgid "Selected file"
-msgstr "Wybrany plik"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:180
-msgid "Available versions"
-msgstr "Dostępna wersja"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:195
-msgid "Checksum"
-msgstr "Suma kontrolna"
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:36
-msgid ""
-"<b>Access denied</b><br><br>Permission to execute the following commands is "
-"required:<br><br><kbd>"
-msgstr ""
-"<b>Brak dostępu</b><br><br>Wymagane prawa do wykonywania danej komendy:"
-"<br><br><kbd>"
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid "Access denied"
-msgstr "Brak dostępu"
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:40
-#, php-format
-msgid ""
-"Read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> on how to "
-"configure ACL settings in your Console/Profile resources."
-msgstr ""
-"Przeczytaj <a href=\"%s\" target=\"_blank\"> Dokumentację Bareos </a> na "
-"temat konfigurowania ustawień ACL w zasobach konsoli / profilu."
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:42
-msgid "Back"
-msgstr "Cofnij"
-
-#: ../module/Application/config/module.config.php:153
-#: ../module/Client/view/client/client/index.phtml:26
-#: ../module/Client/view/client/client/index.phtml:45
-msgid "Clients"
-msgstr "Klienci"
-
-#: ../module/Application/config/module.config.php:163
-#: ../module/Storage/view/storage/storage/index.phtml:26
-msgid "Storages"
-msgstr "Magazyny"
-
-#: ../module/Application/config/module.config.php:190
-#: ../module/Director/view/director/director/index.phtml:27
-#: ../module/Director/view/director/director/messages.phtml:26
-msgid "Director"
-msgstr "Zarządca"
-
-#: ../module/Application/view/layout/layout.phtml:148
-msgid "Console"
-msgstr "Konsole"
-
-#: ../module/Application/view/layout/layout.phtml:156
-msgid "Documentation"
-msgstr "Dokumentacja"
-
-#: ../module/Application/view/layout/layout.phtml:157
-msgid "Mailinglists"
-msgstr "Listy mailingowe"
-
-#: ../module/Application/view/layout/layout.phtml:158
-#, fuzzy
-msgid "Bugtracker"
-msgstr "Rejestrator błędów (Bugtracker)"
-
-#: ../module/Application/view/layout/layout.phtml:159
-msgid "Support"
-msgstr "Wsparcie"
-
-#: ../module/Application/view/layout/layout.phtml:160
-msgid "Subscription"
-msgstr "Subskrypcja"
-
-#: ../module/Application/view/layout/layout.phtml:162
-msgid "Logout"
-msgstr "Wyloguj"
-
-#: ../module/Application/view/error/index.phtml:4
-msgid "An error occurred"
-msgstr "Wystąpił błąd"
-
-#: ../module/Application/view/error/index.phtml:11
-#: ../module/Application/view/error/404.phtml:55
-msgid "Additional information"
-msgstr "Dodatkowe informacje"
-
-#: ../module/Application/view/error/index.phtml:14
-#: ../module/Application/view/error/index.phtml:38
-#: ../module/Application/view/error/404.phtml:58
-#: ../module/Application/view/error/404.phtml:82
-msgid "File"
-msgstr "Plik"
-
-#: ../module/Application/view/error/index.phtml:22
-#: ../module/Application/view/error/index.phtml:46
-#: ../module/Application/view/error/404.phtml:66
-#: ../module/Application/view/error/404.phtml:90
-#, fuzzy
-msgid "Stack trace"
-msgstr "Stack trace"
-
-#: ../module/Application/view/error/index.phtml:32
-#: ../module/Application/view/error/404.phtml:76
-msgid "Previous exceptions"
-msgstr "Poprzednie wyjątki"
-
-#: ../module/Application/view/error/index.phtml:61
-#: ../module/Application/view/error/404.phtml:105
-msgid "No Exception available"
-msgstr "Brak dostępnych wyjątków"
-
-#: ../module/Application/view/error/404.phtml:3
-msgid "A 404 error occurred"
-msgstr "Wystąpił błąd 404"
-
-#: ../module/Application/view/error/404.phtml:12
-msgid "The requested controller was unable to dispatch the request."
-msgstr "Żądany kontroler nie mogł wysłać żądania."
-
-#: ../module/Application/view/error/404.phtml:15
-msgid ""
-"The requested controller could not be mapped to an existing controller class."
-msgstr ""
-"Żądanego kontrolera nie można przypisać do istniejącej klasy kontrolera."
-
-#: ../module/Application/view/error/404.phtml:18
-msgid "The requested controller was not dispatchable."
-msgstr "Żądanego kontrolera nie można było wysłać."
-
-#: ../module/Application/view/error/404.phtml:21
-msgid "The requested URL could not be matched by routing."
-msgstr "Żądanego adresu URL nie można powiązać z routingiem."
-
-#: ../module/Application/view/error/404.phtml:24
-msgid "We cannot determine at this time why a 404 was generated."
-msgstr "W tej chwili nie możemy ustalić, dlaczego wygenerowano 404."
-
-#: ../module/Application/view/error/404.phtml:36
-msgid "Controller"
-msgstr "Kontroler"
-
-#: ../module/Application/view/error/404.phtml:43
-#, php-format
-msgid "resolves to %s"
-msgstr "rozwiązuje na %s"
+#: ../../../module/Restore/view/restore/restore/index.phtml:321
+msgid "Date"
+msgstr "Data"
 
 #: ../module/Storage/src/Storage/Form/StorageForm.php:77
 #: ../module/Storage/view/storage/storage/details.phtml:126
 msgid "Drive"
 msgstr "Urządzenie"
 
-#: ../module/Storage/view/storage/storage/index.phtml:47
-msgid "Storage Devices"
-msgstr "Urządzenia magazynu"
-
-#: ../module/Storage/view/storage/storage/index.phtml:67
-#: ../module/Storage/view/storage/storage/index.phtml:68
-msgid "Autochanger"
-msgstr "Automatyczny zmieniacz"
+#: ../module/Storage/view/storage/storage/status.phtml:47
+msgid "Storage Status"
+msgstr "Status "
 
 #: ../module/Storage/view/storage/storage/details.phtml:26
 msgid "Storage details"
@@ -1227,106 +1224,35 @@ msgstr "nie ma w katalogu"
 msgid "Export"
 msgstr "Eksport"
 
-#: ../module/Storage/view/storage/storage/status.phtml:47
-msgid "Storage Status"
-msgstr "Status "
+#: ../module/Storage/view/storage/storage/index.phtml:47
+msgid "Storage Devices"
+msgstr "Urządzenia magazynu"
 
-#: ../module/Client/view/client/client/index.phtml:65
-#: ../module/Client/view/client/client/index.phtml:66
-msgid "OS"
-msgstr ""
+#: ../module/Storage/view/storage/storage/index.phtml:67
+#: ../module/Storage/view/storage/storage/index.phtml:68
+msgid "Autochanger"
+msgstr "Automatyczny zmieniacz"
 
-#: ../module/Client/view/client/client/index.phtml:71
-#: ../module/Client/view/client/client/index.phtml:72
-#: ../module/Client/view/client/client/details.phtml:53
-msgid "Version"
-msgstr "Wersja"
+#: ../public/js/bootstrap-table-formatter.js:638
+msgid "Manage autochanger"
+msgstr "Zarządzaj automatycznym zmieniaczem"
 
-#: ../module/Client/view/client/client/details.phtml:26
-msgid "Client details"
-msgstr "Szczegóły klienta"
+#: ../module/Schedule/view/schedule/schedule/details.phtml:26
+#: ../module/Schedule/view/schedule/schedule/details.phtml:47
+msgid "Schedule Details"
+msgstr "Szczegóły harmonogramu"
 
-#: ../module/Client/view/client/client/details.phtml:54
-#, fuzzy
-msgid "Autoprune"
-msgstr "Automatyczne przycinanie (Autoprune)"
+#: ../module/Schedule/view/schedule/schedule/index.phtml:34
+#: ../module/Schedule/view/schedule/schedule/details.phtml:34
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:34
+#: ../module/Schedule/view/schedule/schedule/status.phtml:33
+msgid "Scheduler status"
+msgstr "Status harmonogramu"
 
-#: ../module/Client/view/client/client/details.phtml:55
-msgid "Fileretention"
-msgstr "Retencja plików"
-
-#: ../module/Client/view/client/client/details.phtml:56
-msgid "Jobretention"
-msgstr "Retencja zadań"
-
-#: ../module/Client/view/client/client/status.phtml:45
-msgid "Client Status"
-msgstr "Status klienta"
-
-#: ../module/Director/view/director/director/index.phtml:47
-msgid "Director Status"
-msgstr "Status zarządcy"
-
-#: ../module/Director/view/director/director/messages.phtml:43
-msgid "Refresh"
-msgstr "Odśwież"
-
-#: ../module/Director/view/director/director/messages.phtml:50
-msgid "Director messages"
-msgstr "Wiadomości zarządcy"
-
-#: ../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
-msgstr "Zestawy plików"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:26
-msgid "Fileset details"
-msgstr "Szczególy zestawy plików"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:47
-msgid "Id"
-msgstr "Id"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:49
-msgid "MD5 checksum"
-msgstr "Suma MD5"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:50
-msgid "Creation time"
-msgstr "Czas stworzenia"
-
-#: ../module/Pool/view/pool/pool/index.phtml:79
-#: ../module/Pool/view/pool/pool/index.phtml:80
-#: ../module/Pool/view/pool/pool/details.phtml:59
-msgid "Maximum volumes"
-msgstr "Maksymalnie wolumenów"
-
-#: ../module/Pool/view/pool/pool/index.phtml:85
-#: ../module/Pool/view/pool/pool/index.phtml:86
-#: ../module/Pool/view/pool/pool/details.phtml:60
-msgid "Volume retention"
-msgstr "Retencja wolumenów"
-
-#: ../module/Pool/view/pool/pool/index.phtml:91
-#: ../module/Pool/view/pool/pool/index.phtml:92
-#: ../module/Pool/view/pool/pool/details.phtml:61
-msgid "Maximum volume jobs"
-msgstr "Zadania o maksymalnej objętości"
-
-#: ../module/Pool/view/pool/pool/index.phtml:97
-#: ../module/Pool/view/pool/pool/index.phtml:98
-#: ../module/Pool/view/pool/pool/details.phtml:62
-msgid "Maximum volume bytes"
-msgstr "Maksymalna ilość bajtów"
-
-#: ../module/Pool/view/pool/pool/details.phtml:26
-msgid "Pool details"
-msgstr "Szczególy puli"
-
-#: ../public/js/bootstrap-table-formatter.js:25
-#: ../public/js/bootstrap-table-formatter.js:560
-msgid "View Job Details"
-msgstr "Pokaż szczegóły zadania"
+#: ../module/Schedule/view/schedule/schedule/status.phtml:26
+#: ../module/Schedule/view/schedule/schedule/status.phtml:46
+msgid "Status Scheduler"
+msgstr "Status Scheduler"
 
 #: ../public/js/bootstrap-table-formatter.js:44
 msgid "Backup"
@@ -1487,15 +1413,78 @@ msgstr "aktywny"
 msgid "disabled"
 msgstr "nieaktywny"
 
-#: ../public/js/bootstrap-table-formatter.js:271
-msgid "Non-fatal error"
-msgstr "Błąd niekrytyczny"
-
 #: ../public/js/bootstrap-table-formatter.js:272
 #: ../public/js/bootstrap-table-formatter.js:277
 #: ../public/js/bootstrap-table-formatter.js:282
 msgid "Failure"
 msgstr "Błąd"
+
+#: ../public/js/bootstrap-table-formatter.js:287
+msgid "Success"
+msgstr "Sukces"
+
+#: ../public/js/bootstrap-table-formatter.js:297
+msgid "Queued"
+msgstr "W kolejce"
+
+#: ../public/js/bootstrap-table-formatter.js:301
+#: ../public/js/bootstrap-table-formatter.js:302
+msgid "Blocked"
+msgstr "Zablokowany"
+
+#: ../public/js/bootstrap-table-formatter.js:307
+msgid "Verify found differences"
+msgstr "Sprawdź znalezione różnice"
+
+#: ../public/js/bootstrap-table-formatter.js:312
+msgid "Canceled"
+msgstr "Anulowany"
+
+#: ../public/js/bootstrap-table-formatter.js:366
+#: ../public/js/bootstrap-table-formatter.js:367
+msgid "SD despooling attributes"
+msgstr "Atrybuty usuwania SD"
+
+#: ../public/js/bootstrap-table-formatter.js:371
+#: ../public/js/bootstrap-table-formatter.js:372
+msgid "Doing batch insert file records"
+msgstr "Wykonywanie rekordów plików wsadowych"
+
+#: ../public/js/bootstrap-table-formatter.js:377
+msgid "Incomplete"
+msgstr "Niekompletny"
+
+#: ../public/js/bootstrap-table-formatter.js:382
+msgid "Committing data"
+msgstr "Zatwierdzanie danych"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
+#: ../public/js/bootstrap-table-formatter.js:387
+msgid "Warning"
+msgstr "Ostrzeżenie"
+
+#: ../public/js/bootstrap-table-formatter.js:391
+#: ../public/js/bootstrap-table-formatter.js:392
+msgid "Doing data despooling"
+msgstr "Odpakowywanie danych"
+
+#: ../public/js/bootstrap-table-formatter.js:396
+#: ../public/js/bootstrap-table-formatter.js:397
+msgid "Queued waiting for device"
+msgstr "W kolejce czeka na urządzenie"
+
+#: ../public/js/bootstrap-table-formatter.js:25
+#: ../public/js/bootstrap-table-formatter.js:560
+msgid "View Job Details"
+msgstr "Pokaż szczegóły zadania"
+
+#: ../module/Job/src/Job/Form/JobForm.php:102
+msgid "warning"
+msgstr "ostrzeżenie"
+
+#: ../public/js/bootstrap-table-formatter.js:271
+msgid "Non-fatal error"
+msgstr "Błąd niekrytyczny"
 
 #: ../public/js/bootstrap-table-formatter.js:276
 msgid "Job terminated in error"
@@ -1509,38 +1498,17 @@ msgstr "Błąd krytyczny"
 msgid "Terminated normally"
 msgstr "Zakończony normalnie"
 
-#: ../public/js/bootstrap-table-formatter.js:287
-msgid "Success"
-msgstr "Sukces"
-
 #: ../public/js/bootstrap-table-formatter.js:296
 msgid "Created but not yet running"
 msgstr "Utworzono, ale jeszcze nie uruchomiono"
-
-#: ../public/js/bootstrap-table-formatter.js:297
-msgid "Queued"
-msgstr "W kolejce"
-
-#: ../public/js/bootstrap-table-formatter.js:301
-#: ../public/js/bootstrap-table-formatter.js:302
-msgid "Blocked"
-msgstr "Zablokowany"
 
 #: ../public/js/bootstrap-table-formatter.js:306
 msgid "Verify differences"
 msgstr "Sprawdź różnice"
 
-#: ../public/js/bootstrap-table-formatter.js:307
-msgid "Verify found differences"
-msgstr "Sprawdź znalezione różnice"
-
 #: ../public/js/bootstrap-table-formatter.js:311
 msgid "Canceled by user"
 msgstr "Anulowane przez użytkownika"
-
-#: ../public/js/bootstrap-table-formatter.js:312
-msgid "Canceled"
-msgstr "Anulowany"
 
 #: ../public/js/bootstrap-table-formatter.js:316
 msgid "Waiting on File daemon"
@@ -1582,141 +1550,140 @@ msgstr "Oczekiwanie na czas rozpoczęcia"
 msgid "Waiting for higher priority jobs to finish"
 msgstr "Oczekiwanie na zakończenie zadań o wyższym priorytecie"
 
-#: ../public/js/bootstrap-table-formatter.js:366
-#: ../public/js/bootstrap-table-formatter.js:367
-msgid "SD despooling attributes"
-msgstr "Atrybuty usuwania SD"
-
-#: ../public/js/bootstrap-table-formatter.js:371
-#: ../public/js/bootstrap-table-formatter.js:372
-msgid "Doing batch insert file records"
-msgstr "Wykonywanie rekordów plików wsadowych"
-
 #: ../public/js/bootstrap-table-formatter.js:376
 msgid "Incomplete Job"
 msgstr "Nieukończona praca"
-
-#: ../public/js/bootstrap-table-formatter.js:377
-msgid "Incomplete"
-msgstr "Niekompletny"
 
 #: ../public/js/bootstrap-table-formatter.js:381
 msgid "Committing data (last despool)"
 msgstr "Zatwierdzanie danych (ostatni despool)"
 
-#: ../public/js/bootstrap-table-formatter.js:382
-msgid "Committing data"
-msgstr "Zatwierdzanie danych"
-
 #: ../public/js/bootstrap-table-formatter.js:386
 msgid "Terminated normally with warnings"
 msgstr "Zakończono normalnie z ostrzeżeniami"
 
-#: ../public/js/bootstrap-table-formatter.js:391
-#: ../public/js/bootstrap-table-formatter.js:392
-msgid "Doing data despooling"
-msgstr "Odpakowywanie danych"
+#: ../module/Restore/view/restore/restore/index.phtml:32
+#: ../module/Restore/view/restore/restore/versions.phtml:32
+msgid "Restore multiple files"
+msgstr "Odtwórz wiele plików"
 
-#: ../public/js/bootstrap-table-formatter.js:396
-#: ../public/js/bootstrap-table-formatter.js:397
-msgid "Queued waiting for device"
-msgstr "W kolejce czeka na urządzenie"
+#: ../module/Restore/view/restore/restore/index.phtml:33
+#: ../module/Restore/view/restore/restore/versions.phtml:33
+msgid "Restore specific file version"
+msgstr "Odtwórz konkretna wersje pliku"
 
-#: ../public/js/bootstrap-table-formatter.js:410
-msgid "Disabled"
-msgstr "Wyłączony"
+#: ../module/Restore/view/restore/restore/index.phtml:75
+#: ../module/Restore/view/restore/restore/versions.phtml:76
+msgid "Job report"
+msgstr "Raport zadania"
 
-#: ../public/js/bootstrap-table-formatter.js:519
-#: ../public/js/bootstrap-table-formatter.js:549
-#: ../public/js/bootstrap-table-formatter.js:627
-msgid "Disable"
-msgstr "Wyłącz"
+#: ../module/Restore/view/restore/restore/index.phtml:89
+#: ../module/Restore/view/restore/restore/versions.phtml:90
+msgid "Confirm restore job submit"
+msgstr "Potwierdź zadanie odtworzenia"
 
-#: ../public/js/bootstrap-table-formatter.js:520
-#: ../public/js/bootstrap-table-formatter.js:550
-#: ../public/js/bootstrap-table-formatter.js:626
-msgid "Enable"
-msgstr "Włącz"
+#: ../module/Restore/view/restore/restore/index.phtml:98
+#: ../module/Restore/view/restore/restore/index.phtml:117
+#: ../module/Restore/view/restore/restore/versions.phtml:99
+#: ../module/Restore/view/restore/restore/versions.phtml:118
+msgid "OK"
+msgstr "OK"
+
+#: ../module/Restore/view/restore/restore/index.phtml:114
+msgid "No files or directories selected to restore!"
+msgstr "Nie wybrano plików lub katalogów od odzyskania!"
+
+#: ../module/Restore/view/restore/restore/index.phtml:424
+#: ../module/Restore/view/restore/restore/versions.phtml:193
+#: ../module/Restore/view/restore/restore/versions.phtml:544
+msgid "Last modification"
+msgstr "Ostatnia modyfikacja"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:115
+msgid "No file selected to restore!"
+msgstr "Nie wybrano pliku do odzyskania!"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:172
+msgid "Selected file"
+msgstr "Wybrany plik"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:180
+msgid "Available versions"
+msgstr "Dostępna wersja"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:195
+msgid "Checksum"
+msgstr "Suma kontrolna"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "Przeczytaj <a href=\"%s\" target=\"_blank\">dokumentacje Bareos </a> w celu uzyskania dodatkowych informacji na temat konfigurowania dyrektywy ACL  dla zasobów konsoli / profilu. Poniżej znajduje się lista wymaganych poleceń, które muszą znajdować się w liście poleceń, aby poprawnie uruchomić ten moduł: ACL. "
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:60
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:77
+msgid "Please choose a backup"
+msgstr "Wybierz backup"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:96
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:113
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:132
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:149
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:166
+msgid "Please choose a client"
+msgstr "Wybierz klienta"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:234
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:251
+msgid "Please choose a restore job"
+msgstr "Wybierz zadanie do odtworzenia"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:36
+msgid "<b>Access denied</b><br><br>Permission to execute the following commands is required:<br><br><kbd>"
+msgstr "<b>Brak dostępu</b><br><br>Wymagane prawa do wykonywania danej komendy:<br><br><kbd>"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Access denied"
+msgstr "Brak dostępu"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:40
+msgid "Read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> on how to configure ACL settings in your Console/Profile resources."
+msgstr "Przeczytaj <a href=\"%s\" target=\"_blank\"> Dokumentację Bareos </a> na temat konfigurowania ustawień ACL w zasobach konsoli / profilu."
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:42
+msgid "Back"
+msgstr "Cofnij"
+
+#: ../module/Job/view/job/job/index.phtml:56
+msgid "Clear search filters"
+msgstr ""
+
+#: ../module/Job/view/job/job/index.phtml:165
+msgid "Please try to reduce the amount of data to display."
+msgstr ""
+
+#: ../module/Client/view/client/client/index.phtml:65
+#: ../module/Client/view/client/client/index.phtml:66
+msgid "OS"
+msgstr ""
 
 #: ../public/js/bootstrap-table-formatter.js:521
 msgid "Download update"
 msgstr ""
 
-#: ../public/js/bootstrap-table-formatter.js:561
-msgid "Rerun"
-msgstr "Uruchom ponownie"
+#: ../module/Job/src/Job/Form/RunJobForm.php:315
+#: ../module/Job/src/Job/Form/RunJobForm.php:331
+msgid "Next Pool"
+msgstr ""
 
-#: ../public/js/bootstrap-table-formatter.js:638
-msgid "Manage autochanger"
-msgstr "Zarządzaj automatycznym zmieniaczem"
+#: ../module/Restore/view/restore/restore/index.phtml:392
+msgid "Mode"
+msgstr ""
 
-#~ msgid ""
-#~ "Sorry, it seems you are not authorized to run this module. If you think "
-#~ "this is an error, please contact your local administrator."
-#~ msgstr ""
-#~ "Niestety, nie masz uprawnień do uruchamiania tego modułu. Jeśli uważasz "
-#~ "to za błąd skontaktuj sie z Administratorem."
+#: ../module/Restore/view/restore/restore/index.phtml:400
+msgid "User"
+msgstr ""
 
-#~ msgid ""
-#~ "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
-#~ "main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
-#~ "documentation</a> for any additional information on how to configure the "
-#~ "Command ACL directive of your Console/Profile resources. Following is a "
-#~ "list of required commands which need to be in your Command ACL to run "
-#~ "this module properly:"
-#~ msgstr ""
-#~ "Przeczytaj <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-"
-#~ "reference.html#sec:webui-console\" target=\"_blank\">dokumentacje Bareos "
-#~ "</a> w celu uzyskania dodatkowych informacji na temat konfigurowania "
-#~ "dyrektywy ACL  dla zasobów konsoli / profilu. Poniżej znajduje się lista "
-#~ "wymaganych poleceń, które muszą znajdować się w liście poleceń, aby "
-#~ "poprawnie uruchomić ten moduł: ACL. "
+#: ../module/Restore/view/restore/restore/index.phtml:408
+msgid "Group"
+msgstr ""
 
-#~ msgid "Last successful backups"
-#~ msgstr "Lista poprawnych kopii"
-
-#~ msgid "Show Files"
-#~ msgstr "Pokaż pliki"
-
-#~ msgid "First Index"
-#~ msgstr "Pierwszy indeks"
-
-#~ msgid "Last Index"
-#~ msgstr "Ostatni indeks"
-
-#~ msgid "Start Block"
-#~ msgstr "Początek bloku"
-
-#~ msgid "End Block"
-#~ msgstr "Koniec bloku"
-
-#~ msgid ""
-#~ "Please try to reduce the amount of data to display, e.g. reduce time "
-#~ "period."
-#~ msgstr ""
-#~ "Spróbuj zmniejszyć ilość danych do wyświetlenia, np. skrócić okres czasu."
-
-#~ msgid "Path"
-#~ msgstr "Ścieżka"
-
-#~ msgid "Limit"
-#~ msgstr "Limit"
-
-#~ msgid "Offset"
-#~ msgstr "Offsetowy"
-
-#~ msgid "Date"
-#~ msgstr "Data"
-
-#~ msgid ""
-#~ "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> "
-#~ "for any additional information on how to configure the Command ACL "
-#~ "directive of your Console/Profile resources. Following is a list of "
-#~ "required commands which need to be in your Command ACL to run this module "
-#~ "properly:"
-#~ msgstr ""
-#~ "Przeczytaj <a href=\"%s\" target=\"_blank\">dokumentacje Bareos </a> w "
-#~ "celu uzyskania dodatkowych informacji na temat konfigurowania dyrektywy "
-#~ "ACL  dla zasobów konsoli / profilu. Poniżej znajduje się lista wymaganych "
-#~ "poleceń, które muszą znajdować się w liście poleceń, aby poprawnie "
-#~ "uruchomić ten moduł: ACL. "
