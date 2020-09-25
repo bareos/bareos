@@ -1,38 +1,361 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: bareos-webui\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-25 10:42+0200\n"
-"Language: hu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: POEditor.com\n"
+"Project-Id-Version: bareos-webui\n"
+"Language: hu\n"
 
 #: ../module/Dashboard/view/dashboard/dashboard/index.phtml:26
 #: ../module/Application/config/module.config.php:126
 msgid "Dashboard"
 msgstr "Műszerfal"
 
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:259
-msgid ""
-"Not enough data to estimate progress or statistics collection is disabled."
-msgstr ""
-"Nincs elég adat a haladás megbecsüléséhez vagy a statisztika gyűjtés le van "
-"tiltva."
-
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:267
-msgid "There are no jobs running."
-msgstr "Nem fut egy feladat sem."
-
-#: ../module/Dashboard/view/partial/JobTotals.phtml:31
-msgid "Job Totals"
-msgstr "Feladat összegek"
-
 #: ../module/Dashboard/view/partial/JobTotals.phtml:40
 #: ../module/Application/config/module.config.php:131
 msgid "Jobs"
 msgstr "Feladatok"
+
+#: ../module/Schedule/view/schedule/schedule/index.phtml:33
+#: ../module/Schedule/view/schedule/schedule/details.phtml:33
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:33
+#: ../module/Schedule/view/schedule/schedule/status.phtml:32
+#: ../module/Application/config/module.config.php:136
+msgid "Overview"
+msgstr "Áttekintés"
+
+#: ../module/Job/view/job/job/run.phtml:34
+#: ../module/Job/view/job/job/index.phtml:34
+#: ../module/Job/view/job/job/details.phtml:34
+#: ../module/Job/view/job/job/actions.phtml:34
+#: ../module/Application/config/module.config.php:141
+#: ../public/js/bootstrap-table-formatter.js:625
+msgid "Run"
+msgstr "Futtatás"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:525
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:539
+#: ../module/Restore/view/restore/restore/index.phtml:26
+#: ../module/Restore/view/restore/restore/versions.phtml:26
+#: ../module/Application/config/module.config.php:148
+#: ../public/js/bootstrap-table-formatter.js:53
+#: ../public/js/bootstrap-table-formatter.js:517
+#: ../public/js/bootstrap-table-formatter.js:542
+#: ../public/js/bootstrap-table-formatter.js:562
+msgid "Restore"
+msgstr "Visszaállítás"
+
+#: ../module/Application/config/module.config.php:153
+#: ../module/Client/view/client/client/index.phtml:26
+#: ../module/Client/view/client/client/index.phtml:45
+msgid "Clients"
+msgstr "Kliensek"
+
+#: ../module/Schedule/view/schedule/schedule/index.phtml:26
+#: ../module/Schedule/view/schedule/schedule/index.phtml:68
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:26
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:47
+#: ../module/Application/config/module.config.php:158
+msgid "Schedules"
+msgstr "Ütemezések"
+
+#: ../module/Application/config/module.config.php:163
+#: ../module/Storage/view/storage/storage/index.phtml:26
+msgid "Storages"
+msgstr "Tárolók"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:197
+#: ../module/Job/src/Job/Form/RunJobForm.php:213
+#: ../module/Job/view/job/job/index.phtml:303
+#: ../module/Job/view/job/job/details.phtml:155
+#: ../module/Application/config/module.config.php:168
+#: ../module/Application/config/module.config.php:173
+#: ../module/Storage/src/Storage/Form/StorageForm.php:61
+#: ../module/Storage/view/storage/storage/details.phtml:159
+#: ../module/Pool/view/pool/pool/details.phtml:48
+msgid "Pool"
+msgstr "Készlet"
+
+#: ../module/Media/view/media/media/index.phtml:26
+#: ../module/Media/view/media/media/index.phtml:34
+#: ../module/Media/view/media/media/index.phtml:47
+#: ../module/Media/view/media/media/details.phtml:34
+#: ../module/Application/config/module.config.php:178
+#: ../module/Application/config/module.config.php:183
+#: ../module/Storage/view/storage/storage/index.phtml:34
+#: ../module/Storage/view/storage/storage/details.phtml:34
+#: ../module/Storage/view/storage/storage/status.phtml:34
+#: ../module/Pool/view/pool/pool/index.phtml:34
+#: ../module/Pool/view/pool/pool/index.phtml:73
+#: ../module/Pool/view/pool/pool/index.phtml:74
+#: ../module/Pool/view/pool/pool/details.phtml:34
+#: ../module/Pool/view/pool/pool/details.phtml:58
+#: ../module/Pool/view/pool/pool/details.phtml:79
+msgid "Volumes"
+msgstr "Kötetek"
+
+#: ../module/Application/config/module.config.php:190
+#: ../module/Director/view/director/director/index.phtml:27
+#: ../module/Director/view/director/director/messages.phtml:26
+msgid "Director"
+msgstr "Direktor"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:37
+msgid "Sorry, it seems you are not authorized to run this module. If you think this is an error, please contact your local administrator."
+msgstr "Elnézést, de úgy tűnik, hogy nincs jogosultsága ehhez a modulhoz. Ha Ön szerint ez hiba, lépjen kapcsolatba a helyi adminisztrátorral."
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "Legyen szíves olvassa el a <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos dokumentációt</a> a konzol/profil parancs ACL direktívák beállításával kapcsolatos további információkért. Az alábbi parancsoknak szerepelniük kell a parancs ACL-ben ezen modul megfelelő futtatásához:"
+
+#: ../module/Application/view/error/404.phtml:3
+msgid "A 404 error occurred"
+msgstr "404-es hiba történt"
+
+#: ../module/Application/view/error/404.phtml:12
+msgid "The requested controller was unable to dispatch the request."
+msgstr "A kért vezérlő nem tudta elküldeni a kérést."
+
+#: ../module/Application/view/error/404.phtml:15
+msgid "The requested controller could not be mapped to an existing controller class."
+msgstr "A kért vezérlő nincs hozzátársítva egy létező vezérlő osztályhoz."
+
+#: ../module/Application/view/error/404.phtml:18
+msgid "The requested controller was not dispatchable."
+msgstr "A kért vezérlő nem kiküldhető."
+
+#: ../module/Application/view/error/404.phtml:21
+msgid "The requested URL could not be matched by routing."
+msgstr "A kért URL nem található meg az útválasztás alapján."
+
+#: ../module/Application/view/error/404.phtml:24
+msgid "We cannot determine at this time why a 404 was generated."
+msgstr "Jelenleg nem állapítható meg, miért generálódott 404-es hiba."
+
+#: ../module/Application/view/error/404.phtml:36
+msgid "Controller"
+msgstr "Vezérlő"
+
+#: ../module/Application/view/error/404.phtml:43
+msgid "resolves to %s"
+msgstr "feloldva erre: %s"
+
+#: ../module/Application/view/error/index.phtml:11
+#: ../module/Application/view/error/404.phtml:55
+msgid "Additional information"
+msgstr "További információ"
+
+#: ../module/Application/view/error/index.phtml:14
+#: ../module/Application/view/error/index.phtml:38
+#: ../module/Application/view/error/404.phtml:58
+#: ../module/Application/view/error/404.phtml:82
+msgid "File"
+msgstr "Fájl"
+
+#: ../module/Job/view/job/job/details.phtml:88
+#: ../module/Application/view/error/index.phtml:18
+#: ../module/Application/view/error/index.phtml:42
+#: ../module/Application/view/error/404.phtml:62
+#: ../module/Application/view/error/404.phtml:86
+msgid "Message"
+msgstr "Üzenet"
+
+#: ../module/Application/view/error/index.phtml:22
+#: ../module/Application/view/error/index.phtml:46
+#: ../module/Application/view/error/404.phtml:66
+#: ../module/Application/view/error/404.phtml:90
+msgid "Stack trace"
+msgstr "Híváslista"
+
+#: ../module/Application/view/error/index.phtml:32
+#: ../module/Application/view/error/404.phtml:76
+msgid "Previous exceptions"
+msgstr "Előző kivételek"
+
+#: ../module/Application/view/error/index.phtml:61
+#: ../module/Application/view/error/404.phtml:105
+msgid "No Exception available"
+msgstr "Nincs elérhető kivétel"
+
+#: ../module/Application/view/error/index.phtml:4
+msgid "An error occurred"
+msgstr "Hiba történt"
+
+#: ../module/Application/view/layout/layout.phtml:156
+msgid "Documentation"
+msgstr "Dokumentáció"
+
+#: ../module/Application/view/layout/layout.phtml:157
+msgid "Mailinglists"
+msgstr "Levelezési listák"
+
+#: ../module/Application/view/layout/layout.phtml:158
+msgid "Bugtracker"
+msgstr "Hibakövető"
+
+#: ../module/Application/view/layout/layout.phtml:159
+msgid "Support"
+msgstr "Támogatás"
+
+#: ../module/Application/view/layout/layout.phtml:160
+msgid "Subscription"
+msgstr "Feliratkozás"
+
+#: ../module/Application/view/layout/layout.phtml:162
+msgid "Logout"
+msgstr "Kijelentkezés"
+
+#: ../module/Job/view/job/job/run.phtml:32
+#: ../module/Job/view/job/job/index.phtml:32
+#: ../module/Job/view/job/job/details.phtml:32
+#: ../module/Job/view/job/job/actions.phtml:32
+#: ../module/Schedule/view/schedule/schedule/index.phtml:32
+#: ../module/Schedule/view/schedule/schedule/details.phtml:32
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
+#: ../module/Schedule/view/schedule/schedule/status.phtml:31
+#: ../module/Client/view/client/client/index.phtml:32
+#: ../module/Client/view/client/client/details.phtml:32
+#: ../module/Client/view/client/client/status.phtml:32
+msgid "Show"
+msgstr "Mutat"
+
+#: ../module/Client/view/client/client/status.phtml:45
+msgid "Client Status"
+msgstr "Kliens állapot"
+
+#: ../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "Kliens részletei"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
+#: ../module/Job/src/Job/Form/RunJobForm.php:56
+#: ../module/Job/src/Job/Form/RunJobForm.php:73
+#: ../module/Job/view/job/job/index.phtml:85
+#: ../module/Job/view/job/job/index.phtml:86
+#: ../module/Job/view/job/job/details.phtml:59
+#: ../module/Media/view/media/media/details.phtml:104
+#: ../module/Media/view/media/media/details.phtml:105
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:95
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:112
+#: ../module/Client/view/client/client/details.phtml:45
+msgid "Client"
+msgstr "Kliens"
+
+#: ../module/Media/view/media/media/index.phtml:61
+#: ../module/Media/view/media/media/index.phtml:62
+#: ../module/Media/view/media/media/details.phtml:55
+#: ../module/Schedule/view/schedule/schedule/index.phtml:82
+#: ../module/Schedule/view/schedule/schedule/index.phtml:83
+#: ../module/Restore/view/restore/restore/index.phtml:386
+#: ../module/Restore/view/restore/restore/versions.phtml:530
+#: ../module/Storage/view/storage/storage/index.phtml:61
+#: ../module/Storage/view/storage/storage/index.phtml:62
+#: ../module/Client/view/client/client/index.phtml:59
+#: ../module/Client/view/client/client/index.phtml:60
+#: ../module/Client/view/client/client/details.phtml:52
+#: ../module/Fileset/view/fileset/fileset/details.phtml:48
+#: ../module/Pool/view/pool/pool/index.phtml:61
+#: ../module/Pool/view/pool/pool/index.phtml:62
+#: ../module/Pool/view/pool/pool/details.phtml:56
+#: ../module/Pool/view/pool/pool/details.phtml:93
+#: ../module/Pool/view/pool/pool/details.phtml:94
+msgid "Name"
+msgstr "Név"
+
+#: ../module/Client/view/client/client/index.phtml:71
+#: ../module/Client/view/client/client/index.phtml:72
+#: ../module/Client/view/client/client/details.phtml:53
+msgid "Version"
+msgstr "Verzió"
+
+#: ../module/Client/view/client/client/details.phtml:54
+msgid "Autoprune"
+msgstr "Autoprune"
+
+#: ../module/Client/view/client/client/details.phtml:55
+msgid "Fileretention"
+msgstr "Fájl megőrzés"
+
+#: ../module/Client/view/client/client/details.phtml:56
+msgid "Jobretention"
+msgstr "Feladat megőrzés"
+
+#: ../module/Job/view/job/job/run.phtml:33
+#: ../module/Job/view/job/job/index.phtml:33
+#: ../module/Job/view/job/job/index.phtml:145
+#: ../module/Job/view/job/job/details.phtml:33
+#: ../module/Job/view/job/job/details.phtml:66
+#: ../module/Job/view/job/job/actions.phtml:33
+#: ../module/Job/view/job/job/actions.phtml:93
+#: ../module/Schedule/view/schedule/schedule/index.phtml:92
+#: ../module/Storage/view/storage/storage/index.phtml:71
+#: ../module/Storage/view/storage/storage/details.phtml:113
+#: ../module/Storage/view/storage/storage/details.phtml:129
+#: ../module/Storage/view/storage/storage/details.phtml:162
+#: ../module/Client/view/client/client/index.phtml:81
+#: ../module/Client/view/client/client/details.phtml:57
+#: ../module/Client/view/client/client/details.phtml:145
+msgid "Actions"
+msgstr "Tevékenységek"
+
+#: ../module/Client/view/client/client/details.phtml:69
+msgid "Last successful backups"
+msgstr "Utolsó sikeres metések"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:42
+#: ../module/Job/view/job/job/index.phtml:73
+#: ../module/Job/view/job/job/index.phtml:74
+#: ../module/Job/view/job/job/details.phtml:57
+#: ../module/Media/view/media/media/details.phtml:92
+#: ../module/Media/view/media/media/details.phtml:93
+#: ../module/Client/view/client/client/details.phtml:86
+#: ../module/Client/view/client/client/details.phtml:87
+msgid "Job ID"
+msgstr "Feladat azonosító"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:39
+#: ../module/Job/src/Job/Form/JobForm.php:53
+#: ../module/Job/view/job/job/index.phtml:79
+#: ../module/Job/view/job/job/index.phtml:80
+#: ../module/Job/view/job/job/details.phtml:58
+#: ../module/Job/view/job/job/actions.phtml:83
+#: ../module/Job/view/job/job/actions.phtml:84
+#: ../module/Media/view/media/media/details.phtml:98
+#: ../module/Media/view/media/media/details.phtml:99
+#: ../module/Client/view/client/client/details.phtml:92
+#: ../module/Client/view/client/client/details.phtml:93
+msgid "Job name"
+msgstr "Feladat név"
+
+#: ../module/Job/view/job/job/details.phtml:87
+msgid "Timestamp"
+msgstr "Időbélyeg"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:127
+#: ../module/Job/src/Job/Form/RunJobForm.php:143
+#: ../module/Job/view/job/job/index.phtml:299
+#: ../module/Job/view/job/job/details.phtml:151
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:184
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:199
+#: ../module/Client/view/client/client/details.phtml:112
+#: ../module/Client/view/client/client/details.phtml:113
+#: ../module/Fileset/view/fileset/fileset/details.phtml:39
+msgid "Fileset"
+msgstr "Fájl készlet"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:44
+#: ../module/Job/src/Job/Form/RunJobForm.php:232
+#: ../module/Job/src/Job/Form/RunJobForm.php:248
+#: ../module/Job/view/job/job/index.phtml:99
+#: ../module/Job/view/job/job/index.phtml:100
+#: ../module/Job/view/job/job/details.phtml:61
+#: ../module/Media/view/media/media/details.phtml:116
+#: ../module/Media/view/media/media/details.phtml:117
+#: ../module/Client/view/client/client/details.phtml:119
+#: ../module/Client/view/client/client/details.phtml:120
+msgid "Level"
+msgstr "Szint"
 
 #: ../module/Dashboard/view/partial/JobTotals.phtml:41
 #: ../module/Job/view/job/job/index.phtml:120
@@ -57,24 +380,6 @@ msgstr "Fájlok"
 #: ../module/Client/view/client/client/details.phtml:134
 msgid "Bytes"
 msgstr "Bájt"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
-msgid "Most recent job status per job name"
-msgstr "A legutolsó feladat állapot eladat nevenként"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:39
-#: ../module/Job/src/Job/Form/JobForm.php:53
-#: ../module/Job/view/job/job/index.phtml:79
-#: ../module/Job/view/job/job/index.phtml:80
-#: ../module/Job/view/job/job/details.phtml:58
-#: ../module/Job/view/job/job/actions.phtml:83
-#: ../module/Job/view/job/job/actions.phtml:84
-#: ../module/Media/view/media/media/details.phtml:98
-#: ../module/Media/view/media/media/details.phtml:99
-#: ../module/Client/view/client/client/details.phtml:92
-#: ../module/Client/view/client/client/details.phtml:93
-msgid "Job name"
-msgstr "Feladat név"
 
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:40
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:41
@@ -104,43 +409,63 @@ msgstr "Feladat név"
 msgid "Status"
 msgstr "Állapot"
 
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:42
-#: ../module/Job/view/job/job/index.phtml:73
-#: ../module/Job/view/job/job/index.phtml:74
-#: ../module/Job/view/job/job/details.phtml:57
-#: ../module/Media/view/media/media/details.phtml:92
-#: ../module/Media/view/media/media/details.phtml:93
-#: ../module/Client/view/client/client/details.phtml:86
-#: ../module/Client/view/client/client/details.phtml:87
-msgid "Job ID"
-msgstr "Feladat azonosító"
+#: ../module/Client/view/client/client/details.phtml:221
+msgid "Show Files"
+msgstr "Fájlok megjelenítése"
 
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
-#: ../module/Job/src/Job/Form/RunJobForm.php:56
-#: ../module/Job/src/Job/Form/RunJobForm.php:73
-#: ../module/Job/view/job/job/index.phtml:85
-#: ../module/Job/view/job/job/index.phtml:86
-#: ../module/Job/view/job/job/details.phtml:59
-#: ../module/Media/view/media/media/details.phtml:104
-#: ../module/Media/view/media/media/details.phtml:105
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:95
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:112
-#: ../module/Client/view/client/client/details.phtml:45
-msgid "Client"
-msgstr "Kliens"
+#: ../module/Job/view/job/job/index.phtml:170
+#: ../module/Job/view/job/job/index.phtml:191
+#: ../module/Job/view/job/job/details.phtml:135
+#: ../module/Job/view/job/job/actions.phtml:55
+#: ../module/Media/view/media/media/index.phtml:139
+#: ../module/Media/view/media/media/details.phtml:177
+#: ../module/Schedule/view/schedule/schedule/index.phtml:55
+#: ../module/Restore/view/restore/restore/index.phtml:53
+#: ../module/Restore/view/restore/restore/index.phtml:76
+#: ../module/Restore/view/restore/restore/versions.phtml:53
+#: ../module/Restore/view/restore/restore/versions.phtml:77
+#: ../module/Storage/view/storage/storage/details.phtml:57
+#: ../module/Client/view/client/client/index.phtml:117
+#: ../module/Pool/view/pool/pool/details.phtml:171
+msgid "Close"
+msgstr "Bezár"
 
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:44
-#: ../module/Job/src/Job/Form/RunJobForm.php:232
-#: ../module/Job/src/Job/Form/RunJobForm.php:248
-#: ../module/Job/view/job/job/index.phtml:99
-#: ../module/Job/view/job/job/index.phtml:100
-#: ../module/Job/view/job/job/details.phtml:61
-#: ../module/Media/view/media/media/details.phtml:116
-#: ../module/Media/view/media/media/details.phtml:117
-#: ../module/Client/view/client/client/details.phtml:119
-#: ../module/Client/view/client/client/details.phtml:120
-msgid "Level"
-msgstr "Szint"
+#: ../module/Media/view/media/media/details.phtml:395
+#: ../public/js/bootstrap-table-formatter.js:408
+msgid "Enabled"
+msgstr "Engedélyezett"
+
+#: ../public/js/bootstrap-table-formatter.js:410
+msgid "Disabled"
+msgstr "Letiltott"
+
+#: ../public/js/bootstrap-table-formatter.js:519
+#: ../public/js/bootstrap-table-formatter.js:549
+#: ../public/js/bootstrap-table-formatter.js:627
+msgid "Disable"
+msgstr "Letilt"
+
+#: ../public/js/bootstrap-table-formatter.js:520
+#: ../public/js/bootstrap-table-formatter.js:550
+#: ../public/js/bootstrap-table-formatter.js:626
+msgid "Enable"
+msgstr "Engedélyez"
+
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:259
+msgid "Not enough data to estimate progress or statistics collection is disabled."
+msgstr "Nincs elég adat a haladás megbecsüléséhez vagy a statisztika gyűjtés le van tiltva."
+
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:267
+msgid "There are no jobs running."
+msgstr "Nem fut egy feladat sem."
+
+#: ../module/Dashboard/view/partial/JobTotals.phtml:31
+msgid "Job Totals"
+msgstr "Feladat összegek"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
+msgid "Most recent job status per job name"
+msgstr "A legutolsó feladat állapot eladat nevenként"
 
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:45
 #: ../module/Job/view/job/job/index.phtml:106
@@ -159,14 +484,6 @@ msgstr "Indulás"
 #: ../module/Client/view/client/client/details.phtml:107
 msgid "End"
 msgstr "Befejezés"
-
-#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
-msgid "Current Director messages"
-msgstr "Aktuális Direktor üzenetek"
-
-#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
-msgid "Running Jobs"
-msgstr "Futó feladatok"
 
 #: ../module/Dashboard/view/partial/JobsPast24h.phtml:31
 msgid "Jobs started during the past 24 hours"
@@ -196,14 +513,71 @@ msgstr "Várakozik"
 msgid "Successful"
 msgstr "Sikeres"
 
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
-#: ../public/js/bootstrap-table-formatter.js:387
-msgid "Warning"
-msgstr "Figyelmeztetés"
-
 #: ../module/Dashboard/view/partial/JobsPast24h.phtml:90
 msgid "Failed"
 msgstr "Sikertelen"
+
+#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
+msgid "Current Director messages"
+msgstr "Aktuális Direktor üzenetek"
+
+#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
+msgid "Running Jobs"
+msgstr "Futó feladatok"
+
+#: ../module/Job/view/job/job/details.phtml:81
+#: ../module/Director/view/director/director/index.phtml:34
+#: ../module/Director/view/director/director/messages.phtml:33
+msgid "Messages"
+msgstr "Üzenetek"
+
+#: ../module/Application/view/layout/layout.phtml:148
+msgid "Console"
+msgstr "Konzol"
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "bconsole (batch-mode), please handle with care."
+msgstr "bconsole (kötegelt mód), legyen óvatos."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "All commands have to be a one liner, dialogs are not working."
+msgstr "Minden parancsnak egy sorosnak kell lennie, dialógus ablakok nincsenek."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "Type help for a list of commands."
+msgstr "A parancsok listájához írja be: help."
+
+#: ../module/Director/view/director/director/index.phtml:47
+msgid "Director Status"
+msgstr "Direktor állapot"
+
+#: ../module/Director/view/director/director/messages.phtml:43
+msgid "Refresh"
+msgstr "Frissítés"
+
+#: ../module/Director/view/director/director/messages.phtml:50
+msgid "Director messages"
+msgstr "Direktor üzenetek"
+
+#: ../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr "Fájl készlet"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:26
+msgid "Fileset details"
+msgstr "Fájl készlet részletei"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:47
+msgid "Id"
+msgstr "Azonosító"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:49
+msgid "MD5 checksum"
+msgstr "MD5 checksum"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:50
+msgid "Creation time"
+msgstr "Létrehozás dátuma"
 
 #: ../module/Job/src/Job/Form/JobForm.php:60
 msgid "jobname"
@@ -261,27 +635,11 @@ msgstr "véget ért sikertelenül"
 msgid "terminated successfully"
 msgstr "véget ért sikeresen"
 
-#: ../module/Job/src/Job/Form/JobForm.php:102
-msgid "warning"
-msgstr "figyelmeztetés"
-
 #: ../module/Job/src/Job/Form/RunJobForm.php:92
 #: ../module/Job/src/Job/Form/RunJobForm.php:108
 #: ../module/Job/view/job/job/details.phtml:49
 msgid "Job"
 msgstr "Feladat"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:127
-#: ../module/Job/src/Job/Form/RunJobForm.php:143
-#: ../module/Job/view/job/job/index.phtml:299
-#: ../module/Job/view/job/job/details.phtml:151
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:184
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:199
-#: ../module/Client/view/client/client/details.phtml:112
-#: ../module/Client/view/client/client/details.phtml:113
-#: ../module/Fileset/view/fileset/fileset/details.phtml:39
-msgid "Fileset"
-msgstr "Fájl készlet"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:162
 #: ../module/Job/src/Job/Form/RunJobForm.php:178
@@ -293,21 +651,22 @@ msgstr "Fájl készlet"
 msgid "Storage"
 msgstr "Tároló"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:197
-#: ../module/Job/src/Job/Form/RunJobForm.php:213
-#: ../module/Job/view/job/job/index.phtml:303
-#: ../module/Job/view/job/job/details.phtml:155
-#: ../module/Application/config/module.config.php:168
-#: ../module/Application/config/module.config.php:173
-#: ../module/Storage/src/Storage/Form/StorageForm.php:61
-#: ../module/Storage/view/storage/storage/details.phtml:159
-#: ../module/Pool/view/pool/pool/details.phtml:48
-msgid "Pool"
-msgstr "Készlet"
-
 #: ../module/Job/src/Job/Form/RunJobForm.php:266
 msgid "Priority"
 msgstr "Priorítás"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:365
+msgid "When"
+msgstr "Mikor"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:380
+#: ../module/Storage/src/Storage/Form/StorageForm.php:93
+msgid "Submit"
+msgstr "Elküld"
+
+#: ../module/Job/view/job/job/actions.phtml:69
+msgid "Job Actions"
+msgstr "Feladat műveletek"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:281
 #: ../module/Job/src/Job/Form/RunJobForm.php:297
@@ -327,77 +686,22 @@ msgstr "Priorítás"
 msgid "Type"
 msgstr "Típus"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:315
-#: ../module/Job/src/Job/Form/RunJobForm.php:331
-#, fuzzy
-msgid "Next Pool"
-msgstr "Készlet"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:365
-msgid "When"
-msgstr "Mikor"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:380
-#: ../module/Storage/src/Storage/Form/StorageForm.php:93
-msgid "Submit"
-msgstr "Elküld"
-
-#: ../module/Job/view/job/job/run.phtml:32
-#: ../module/Job/view/job/job/index.phtml:32
-#: ../module/Job/view/job/job/details.phtml:32
-#: ../module/Job/view/job/job/actions.phtml:32
-#: ../module/Schedule/view/schedule/schedule/index.phtml:32
-#: ../module/Schedule/view/schedule/schedule/details.phtml:32
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
-#: ../module/Schedule/view/schedule/schedule/status.phtml:31
-#: ../module/Client/view/client/client/index.phtml:32
-#: ../module/Client/view/client/client/details.phtml:32
-#: ../module/Client/view/client/client/status.phtml:32
-msgid "Show"
-msgstr "Mutat"
-
-#: ../module/Job/view/job/job/run.phtml:33
-#: ../module/Job/view/job/job/index.phtml:33
-#: ../module/Job/view/job/job/index.phtml:145
-#: ../module/Job/view/job/job/details.phtml:33
-#: ../module/Job/view/job/job/details.phtml:66
-#: ../module/Job/view/job/job/actions.phtml:33
-#: ../module/Job/view/job/job/actions.phtml:93
-#: ../module/Schedule/view/schedule/schedule/index.phtml:92
-#: ../module/Storage/view/storage/storage/index.phtml:71
-#: ../module/Storage/view/storage/storage/details.phtml:113
-#: ../module/Storage/view/storage/storage/details.phtml:129
-#: ../module/Storage/view/storage/storage/details.phtml:162
-#: ../module/Client/view/client/client/index.phtml:81
-#: ../module/Client/view/client/client/details.phtml:57
-#: ../module/Client/view/client/client/details.phtml:145
-msgid "Actions"
-msgstr "Tevékenységek"
-
-#: ../module/Job/view/job/job/run.phtml:34
-#: ../module/Job/view/job/job/index.phtml:34
-#: ../module/Job/view/job/job/details.phtml:34
-#: ../module/Job/view/job/job/actions.phtml:34
-#: ../module/Application/config/module.config.php:141
-#: ../public/js/bootstrap-table-formatter.js:625
-msgid "Run"
-msgstr "Futtatás"
-
-#: ../module/Job/view/job/job/index.phtml:48
-#: ../module/Client/view/client/client/details.phtml:71
-msgid "Job list"
-msgstr "Feladat lista"
-
-#: ../module/Job/view/job/job/index.phtml:56
-#, fuzzy
-msgid "Clear search filters"
-msgstr "Válasszon fájl készletet"
-
 #: ../module/Job/view/job/job/index.phtml:134
 #: ../module/Job/view/job/job/index.phtml:135
 #: ../module/Job/view/job/job/details.phtml:64
 msgid "Errors"
 msgstr "Hibák"
+
+#: ../module/Job/view/job/job/details.phtml:98
+msgid "Used Volumes"
+msgstr "Használt kötetek"
+
+#: ../module/Job/view/job/job/details.phtml:103
+#: ../module/Storage/view/storage/storage/details.phtml:112
+#: ../module/Storage/view/storage/storage/details.phtml:128
+#: ../module/Storage/view/storage/storage/details.phtml:153
+msgid "Volume"
+msgstr "Kötetek"
 
 #: ../module/Job/view/job/job/index.phtml:162
 #: ../module/Job/view/job/job/details.phtml:128
@@ -408,13 +712,6 @@ msgstr "Hibák"
 #: ../module/Pool/view/pool/pool/details.phtml:164
 msgid "Failed to retrieve data from Bareos director"
 msgstr "Sikertelen az adatok lekérése a Bareos direktortól"
-
-#: ../module/Job/view/job/job/index.phtml:165
-#, fuzzy
-msgid "Please try to reduce the amount of data to display."
-msgstr ""
-"Legyen szíves csökkentse a megjelenítendő adat mennyiségét, pl. csökkentse a "
-"periódust."
 
 #: ../module/Job/view/job/job/index.phtml:166
 #: ../module/Job/view/job/job/details.phtml:131
@@ -430,82 +727,52 @@ msgstr "Hibaüzenet érkezett a direktortól:"
 #: ../module/Media/view/media/media/details.phtml:174
 #: ../module/Pool/view/pool/pool/details.phtml:168
 msgid "Failed to send result as json. Maybe the result message is too long?"
-msgstr ""
-"Sikertelen az eredmény json formátumú küldése. Lehet, hogy az eredmény "
-"üzenet túl nagy?"
-
-#: ../module/Job/view/job/job/index.phtml:170
-#: ../module/Job/view/job/job/index.phtml:191
-#: ../module/Job/view/job/job/details.phtml:135
-#: ../module/Job/view/job/job/actions.phtml:55
-#: ../module/Media/view/media/media/index.phtml:139
-#: ../module/Media/view/media/media/details.phtml:177
-#: ../module/Schedule/view/schedule/schedule/index.phtml:55
-#: ../module/Restore/view/restore/restore/index.phtml:53
-#: ../module/Restore/view/restore/restore/index.phtml:76
-#: ../module/Restore/view/restore/restore/versions.phtml:53
-#: ../module/Restore/view/restore/restore/versions.phtml:77
-#: ../module/Storage/view/storage/storage/details.phtml:57
-#: ../module/Client/view/client/client/index.phtml:117
-#: ../module/Pool/view/pool/pool/details.phtml:171
-msgid "Close"
-msgstr "Bezár"
+msgstr "Sikertelen az eredmény json formátumú küldése. Lehet, hogy az eredmény üzenet túl nagy?"
 
 #: ../module/Job/view/job/job/index.phtml:307
 #: ../module/Job/view/job/job/details.phtml:159
 msgid "Scheduled"
 msgstr "Ütemezett"
 
-#: ../module/Job/view/job/job/details.phtml:81
-#: ../module/Director/view/director/director/index.phtml:34
-#: ../module/Director/view/director/director/messages.phtml:33
-msgid "Messages"
-msgstr "Üzenetek"
+#: ../module/Job/view/job/job/details.phtml:180
+msgid "First Index"
+msgstr "Első index"
 
-#: ../module/Job/view/job/job/details.phtml:87
-msgid "Timestamp"
-msgstr "Időbélyeg"
+#: ../module/Job/view/job/job/details.phtml:184
+msgid "Last Index"
+msgstr "Utolsó index"
 
-#: ../module/Job/view/job/job/details.phtml:88
-#: ../module/Application/view/error/index.phtml:18
-#: ../module/Application/view/error/index.phtml:42
-#: ../module/Application/view/error/404.phtml:62
-#: ../module/Application/view/error/404.phtml:86
-msgid "Message"
-msgstr "Üzenet"
+#: ../module/Job/view/job/job/details.phtml:188
+msgid "Start Block"
+msgstr "Kezdő blokk"
 
-#: ../module/Job/view/job/job/details.phtml:98
-msgid "Used Volumes"
-msgstr "Használt kötetek"
+#: ../module/Job/view/job/job/details.phtml:192
+msgid "End Block"
+msgstr "Befejező blokk"
 
-#: ../module/Job/view/job/job/details.phtml:103
-#: ../module/Storage/view/storage/storage/details.phtml:112
-#: ../module/Storage/view/storage/storage/details.phtml:128
-#: ../module/Storage/view/storage/storage/details.phtml:153
-msgid "Volume"
-msgstr "Kötetek"
+#: ../public/js/bootstrap-table-formatter.js:561
+msgid "Rerun"
+msgstr "Újra futtatás"
 
-#: ../module/Job/view/job/job/actions.phtml:69
-msgid "Job Actions"
-msgstr "Feladat műveletek"
+#: ../module/Restore/view/restore/restore/index.phtml:97
+#: ../module/Restore/view/restore/restore/versions.phtml:98
+#: ../module/Storage/view/storage/storage/details.phtml:88
+#: ../public/js/bootstrap-table-formatter.js:563
+msgid "Cancel"
+msgstr "Mégsem"
 
-#: ../module/Media/view/media/media/index.phtml:26
-#: ../module/Media/view/media/media/index.phtml:34
-#: ../module/Media/view/media/media/index.phtml:47
-#: ../module/Media/view/media/media/details.phtml:34
-#: ../module/Application/config/module.config.php:178
-#: ../module/Application/config/module.config.php:183
-#: ../module/Storage/view/storage/storage/index.phtml:34
-#: ../module/Storage/view/storage/storage/details.phtml:34
-#: ../module/Storage/view/storage/storage/status.phtml:34
-#: ../module/Pool/view/pool/pool/index.phtml:34
-#: ../module/Pool/view/pool/pool/index.phtml:73
-#: ../module/Pool/view/pool/pool/index.phtml:74
-#: ../module/Pool/view/pool/pool/details.phtml:34
-#: ../module/Pool/view/pool/pool/details.phtml:58
-#: ../module/Pool/view/pool/pool/details.phtml:79
-msgid "Volumes"
-msgstr "Kötetek"
+#: ../module/Job/view/job/job/index.phtml:48
+#: ../module/Client/view/client/client/details.phtml:71
+msgid "Job list"
+msgstr "Feladat lista"
+
+#: ../module/Job/view/job/job/index.phtml:110
+msgid "Please try to reduce the amount of data to display, e.g. reduce time period."
+msgstr "Legyen szíves csökkentse a megjelenítendő adat mennyiségét, pl. csökkentse a periódust."
+
+#: ../module/Media/view/media/media/details.phtml:26
+msgid "Volume details"
+msgstr "Kötet részletei"
 
 #: ../module/Media/view/media/media/index.phtml:32
 #: ../module/Media/view/media/media/details.phtml:32
@@ -528,27 +795,6 @@ msgstr "Eszközök"
 #: ../module/Pool/view/pool/pool/details.phtml:33
 msgid "Pools"
 msgstr "Készletek"
-
-#: ../module/Media/view/media/media/index.phtml:61
-#: ../module/Media/view/media/media/index.phtml:62
-#: ../module/Media/view/media/media/details.phtml:55
-#: ../module/Schedule/view/schedule/schedule/index.phtml:82
-#: ../module/Schedule/view/schedule/schedule/index.phtml:83
-#: ../module/Restore/view/restore/restore/index.phtml:386
-#: ../module/Restore/view/restore/restore/versions.phtml:530
-#: ../module/Storage/view/storage/storage/index.phtml:61
-#: ../module/Storage/view/storage/storage/index.phtml:62
-#: ../module/Client/view/client/client/index.phtml:59
-#: ../module/Client/view/client/client/index.phtml:60
-#: ../module/Client/view/client/client/details.phtml:52
-#: ../module/Fileset/view/fileset/fileset/details.phtml:48
-#: ../module/Pool/view/pool/pool/index.phtml:61
-#: ../module/Pool/view/pool/pool/index.phtml:62
-#: ../module/Pool/view/pool/pool/details.phtml:56
-#: ../module/Pool/view/pool/pool/details.phtml:93
-#: ../module/Pool/view/pool/pool/details.phtml:94
-msgid "Name"
-msgstr "Név"
 
 #: ../module/Media/view/media/media/index.phtml:79
 #: ../module/Media/view/media/media/index.phtml:80
@@ -586,6 +832,20 @@ msgstr "Maximum bájt"
 msgid "Current bytes"
 msgstr "Aktuális bájt"
 
+#: ../module/Media/view/media/media/details.phtml:78
+msgid "Jobs on volume"
+msgstr "Feladatok a köteten"
+
+#: ../module/Media/view/media/media/details.phtml:134
+#: ../module/Media/view/media/media/details.phtml:135
+msgid "Starttime"
+msgstr "Kezdő idő"
+
+#: ../module/Media/view/media/media/details.phtml:140
+#: ../module/Media/view/media/media/details.phtml:141
+msgid "Endtime"
+msgstr "Befejező idő"
+
 #: ../module/Media/view/media/media/index.phtml:235
 #: ../module/Media/view/media/media/details.phtml:327
 #: ../module/Pool/view/pool/pool/details.phtml:298
@@ -609,24 +869,6 @@ msgstr "Kötet feladatok"
 #: ../module/Pool/view/pool/pool/details.phtml:314
 msgid "Recycle"
 msgstr "Újrahasznosít"
-
-#: ../module/Media/view/media/media/details.phtml:26
-msgid "Volume details"
-msgstr "Kötet részletei"
-
-#: ../module/Media/view/media/media/details.phtml:78
-msgid "Jobs on volume"
-msgstr "Feladatok a köteten"
-
-#: ../module/Media/view/media/media/details.phtml:134
-#: ../module/Media/view/media/media/details.phtml:135
-msgid "Starttime"
-msgstr "Kezdő idő"
-
-#: ../module/Media/view/media/media/details.phtml:140
-#: ../module/Media/view/media/media/details.phtml:141
-msgid "Endtime"
-msgstr "Befejező idő"
 
 #: ../module/Media/view/media/media/details.phtml:347
 msgid "Volume writes"
@@ -678,11 +920,6 @@ msgstr "Kötet kapacitás bájtok"
 msgid "Volume errors"
 msgstr "Kötet hibák"
 
-#: ../module/Media/view/media/media/details.phtml:395
-#: ../public/js/bootstrap-table-formatter.js:408
-msgid "Enabled"
-msgstr "Engedélyezett"
-
 #: ../module/Media/view/media/media/details.phtml:399
 msgid "Max. volume files"
 msgstr "Max. kötet fájlok"
@@ -727,74 +964,41 @@ msgstr "Készlet azonosító újra felhasználása"
 msgid "Comment"
 msgstr "Megjegyzés"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "bconsole (batch-mode), please handle with care."
-msgstr "bconsole (kötegelt mód), legyen óvatos."
+#: ../module/Pool/view/pool/pool/details.phtml:26
+msgid "Pool details"
+msgstr "Készlet részletei"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "All commands have to be a one liner, dialogs are not working."
-msgstr ""
-"Minden parancsnak egy sorosnak kell lennie, dialógus ablakok nincsenek."
+#: ../module/Pool/view/pool/pool/index.phtml:79
+#: ../module/Pool/view/pool/pool/index.phtml:80
+#: ../module/Pool/view/pool/pool/details.phtml:59
+msgid "Maximum volumes"
+msgstr "Maximum kötet"
 
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "Type help for a list of commands."
-msgstr "A parancsok listájához írja be: help."
+#: ../module/Pool/view/pool/pool/index.phtml:85
+#: ../module/Pool/view/pool/pool/index.phtml:86
+#: ../module/Pool/view/pool/pool/details.phtml:60
+msgid "Volume retention"
+msgstr "Kötet megőrzés"
 
-#: ../module/Schedule/view/schedule/schedule/index.phtml:26
-#: ../module/Schedule/view/schedule/schedule/index.phtml:68
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:26
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:47
-#: ../module/Application/config/module.config.php:158
-msgid "Schedules"
-msgstr "Ütemezések"
+#: ../module/Pool/view/pool/pool/index.phtml:91
+#: ../module/Pool/view/pool/pool/index.phtml:92
+#: ../module/Pool/view/pool/pool/details.phtml:61
+msgid "Maximum volume jobs"
+msgstr "Maximum kötet feladatok"
 
-#: ../module/Schedule/view/schedule/schedule/index.phtml:33
-#: ../module/Schedule/view/schedule/schedule/details.phtml:33
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:33
-#: ../module/Schedule/view/schedule/schedule/status.phtml:32
-#: ../module/Application/config/module.config.php:136
-msgid "Overview"
-msgstr "Áttekintés"
-
-#: ../module/Schedule/view/schedule/schedule/index.phtml:34
-#: ../module/Schedule/view/schedule/schedule/details.phtml:34
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:34
-#: ../module/Schedule/view/schedule/schedule/status.phtml:33
-msgid "Scheduler status"
-msgstr "Ütemező állapot"
-
-#: ../module/Schedule/view/schedule/schedule/details.phtml:26
-#: ../module/Schedule/view/schedule/schedule/details.phtml:47
-msgid "Schedule Details"
-msgstr "Ütemezés részletei"
-
-#: ../module/Schedule/view/schedule/schedule/status.phtml:26
-#: ../module/Schedule/view/schedule/schedule/status.phtml:46
-msgid "Status Scheduler"
-msgstr "Állapot ütemező"
+#: ../module/Pool/view/pool/pool/index.phtml:97
+#: ../module/Pool/view/pool/pool/index.phtml:98
+#: ../module/Pool/view/pool/pool/details.phtml:62
+msgid "Maximum volume bytes"
+msgstr "Maximum kötet bájtok"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:59
 msgid "Backup jobs"
 msgstr "Mentési feladatok"
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:60
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:77
-#, fuzzy
-msgid "Please choose a backup"
-msgstr "Válasszon fájl készletet"
-
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:76
 msgid "Backups"
 msgstr "Mentések"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:96
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:113
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:132
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:149
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:166
-#, fuzzy
-msgid "Please choose a client"
-msgstr "Válasszon fájl készletet"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:131
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:148
@@ -815,12 +1019,6 @@ msgstr "Válasszon fájl készletet"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:250
 msgid "Restore job"
 msgstr "Visszaállítási feladat"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:234
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:251
-#, fuzzy
-msgid "Please choose a restore job"
-msgstr "Válasszon fájl készletet"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:270
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:289
@@ -847,9 +1045,7 @@ msgstr "Nem"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:311
 msgid "Merge all related jobs to last full backup of selected backup job"
-msgstr ""
-"Minden kapcsolódó feladat összefésülése a kiválasztott mentési feladat "
-"utolsó teljes mentésébe"
+msgstr "Minden kapcsolódó feladat összefésülése a kiválasztott mentési feladat utolsó teljes mentésébe"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:330
 msgid "Merge jobs"
@@ -898,31 +1094,24 @@ msgstr "Visszaállítás helye a kliensen"
 msgid "e.g. / or /tmp/bareos-restores/"
 msgstr "pl. / vagy /tmp/bareos-restores/"
 
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:439
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:456
+msgid "Path"
+msgstr "Útvonal"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:475
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:492
+msgid "Limit"
+msgstr "Korlát"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:511
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:528
+msgid "Offset"
+msgstr "Eltolás"
+
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:487
 msgid "Related jobs for a most recent full restore"
 msgstr "Legfrissebb teljes visszaállításhoz kapcsolódó feladatok"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:525
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:539
-#: ../module/Restore/view/restore/restore/index.phtml:26
-#: ../module/Restore/view/restore/restore/versions.phtml:26
-#: ../module/Application/config/module.config.php:148
-#: ../public/js/bootstrap-table-formatter.js:53
-#: ../public/js/bootstrap-table-formatter.js:517
-#: ../public/js/bootstrap-table-formatter.js:542
-#: ../public/js/bootstrap-table-formatter.js:562
-msgid "Restore"
-msgstr "Visszaállítás"
-
-#: ../module/Restore/view/restore/restore/index.phtml:32
-#: ../module/Restore/view/restore/restore/versions.phtml:32
-msgid "Restore multiple files"
-msgstr "Több fájl visszaállítása"
-
-#: ../module/Restore/view/restore/restore/index.phtml:33
-#: ../module/Restore/view/restore/restore/versions.phtml:33
-msgid "Restore specific file version"
-msgstr "Fájl megadott változatának visszaállítása"
 
 #: ../module/Restore/view/restore/restore/index.phtml:49
 #: ../module/Restore/view/restore/restore/versions.phtml:49
@@ -935,50 +1124,10 @@ msgstr "Hibaüzenet érkezett:"
 msgid "Director message"
 msgstr "Direktor üzenet"
 
-#: ../module/Restore/view/restore/restore/index.phtml:75
-#: ../module/Restore/view/restore/restore/versions.phtml:76
-msgid "Job report"
-msgstr "Feladat riport"
-
-#: ../module/Restore/view/restore/restore/index.phtml:89
-#: ../module/Restore/view/restore/restore/versions.phtml:90
-msgid "Confirm restore job submit"
-msgstr "VIsszaállítási feladat elküldésének megerősítése"
-
-#: ../module/Restore/view/restore/restore/index.phtml:97
-#: ../module/Restore/view/restore/restore/versions.phtml:98
-#: ../module/Storage/view/storage/storage/details.phtml:88
-#: ../public/js/bootstrap-table-formatter.js:563
-msgid "Cancel"
-msgstr "Mégsem"
-
-#: ../module/Restore/view/restore/restore/index.phtml:98
-#: ../module/Restore/view/restore/restore/index.phtml:117
-#: ../module/Restore/view/restore/restore/versions.phtml:99
-#: ../module/Restore/view/restore/restore/versions.phtml:118
-msgid "OK"
-msgstr "OK"
-
-#: ../module/Restore/view/restore/restore/index.phtml:114
-msgid "No files or directories selected to restore!"
-msgstr "Nincs kijelölt fájl vagy mappa a visszaállításhoz!"
-
 #: ../module/Restore/view/restore/restore/index.phtml:164
 #: ../module/Restore/view/restore/restore/versions.phtml:162
 msgid "File selection"
 msgstr "Fájl kiválasztás"
-
-#: ../module/Restore/view/restore/restore/index.phtml:392
-msgid "Mode"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:400
-msgid "User"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:408
-msgid "Group"
-msgstr ""
 
 #: ../module/Restore/view/restore/restore/index.phtml:416
 #: ../module/Restore/view/restore/restore/versions.phtml:194
@@ -986,175 +1135,18 @@ msgstr ""
 msgid "Size"
 msgstr "Méret"
 
-#: ../module/Restore/view/restore/restore/index.phtml:424
-#: ../module/Restore/view/restore/restore/versions.phtml:193
-#: ../module/Restore/view/restore/restore/versions.phtml:544
-msgid "Last modification"
-msgstr "Utolsó módosítás"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:115
-msgid "No file selected to restore!"
-msgstr "Nincs kijelölve fájl a visszaállításhoz!"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:172
-msgid "Selected file"
-msgstr "Kijelölt fájl"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:180
-msgid "Available versions"
-msgstr "Elérhető verziók"
-
-#: ../module/Restore/view/restore/restore/versions.phtml:195
-msgid "Checksum"
-msgstr "Ellenőrző összeg"
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:36
-msgid ""
-"<b>Access denied</b><br><br>Permission to execute the following commands is "
-"required:<br><br><kbd>"
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid "Access denied"
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:40
-#, php-format
-msgid ""
-"Read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> on how to "
-"configure ACL settings in your Console/Profile resources."
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:42
-#, fuzzy
-msgid "Back"
-msgstr "Mentések"
-
-#: ../module/Application/config/module.config.php:153
-#: ../module/Client/view/client/client/index.phtml:26
-#: ../module/Client/view/client/client/index.phtml:45
-msgid "Clients"
-msgstr "Kliensek"
-
-#: ../module/Application/config/module.config.php:163
-#: ../module/Storage/view/storage/storage/index.phtml:26
-msgid "Storages"
-msgstr "Tárolók"
-
-#: ../module/Application/config/module.config.php:190
-#: ../module/Director/view/director/director/index.phtml:27
-#: ../module/Director/view/director/director/messages.phtml:26
-msgid "Director"
-msgstr "Direktor"
-
-#: ../module/Application/view/layout/layout.phtml:148
-msgid "Console"
-msgstr "Konzol"
-
-#: ../module/Application/view/layout/layout.phtml:156
-msgid "Documentation"
-msgstr "Dokumentáció"
-
-#: ../module/Application/view/layout/layout.phtml:157
-msgid "Mailinglists"
-msgstr "Levelezési listák"
-
-#: ../module/Application/view/layout/layout.phtml:158
-msgid "Bugtracker"
-msgstr "Hibakövető"
-
-#: ../module/Application/view/layout/layout.phtml:159
-msgid "Support"
-msgstr "Támogatás"
-
-#: ../module/Application/view/layout/layout.phtml:160
-msgid "Subscription"
-msgstr "Feliratkozás"
-
-#: ../module/Application/view/layout/layout.phtml:162
-msgid "Logout"
-msgstr "Kijelentkezés"
-
-#: ../module/Application/view/error/index.phtml:4
-msgid "An error occurred"
-msgstr "Hiba történt"
-
-#: ../module/Application/view/error/index.phtml:11
-#: ../module/Application/view/error/404.phtml:55
-msgid "Additional information"
-msgstr "További információ"
-
-#: ../module/Application/view/error/index.phtml:14
-#: ../module/Application/view/error/index.phtml:38
-#: ../module/Application/view/error/404.phtml:58
-#: ../module/Application/view/error/404.phtml:82
-msgid "File"
-msgstr "Fájl"
-
-#: ../module/Application/view/error/index.phtml:22
-#: ../module/Application/view/error/index.phtml:46
-#: ../module/Application/view/error/404.phtml:66
-#: ../module/Application/view/error/404.phtml:90
-msgid "Stack trace"
-msgstr "Híváslista"
-
-#: ../module/Application/view/error/index.phtml:32
-#: ../module/Application/view/error/404.phtml:76
-msgid "Previous exceptions"
-msgstr "Előző kivételek"
-
-#: ../module/Application/view/error/index.phtml:61
-#: ../module/Application/view/error/404.phtml:105
-msgid "No Exception available"
-msgstr "Nincs elérhető kivétel"
-
-#: ../module/Application/view/error/404.phtml:3
-msgid "A 404 error occurred"
-msgstr "404-es hiba történt"
-
-#: ../module/Application/view/error/404.phtml:12
-msgid "The requested controller was unable to dispatch the request."
-msgstr "A kért vezérlő nem tudta elküldeni a kérést."
-
-#: ../module/Application/view/error/404.phtml:15
-msgid ""
-"The requested controller could not be mapped to an existing controller class."
-msgstr "A kért vezérlő nincs hozzátársítva egy létező vezérlő osztályhoz."
-
-#: ../module/Application/view/error/404.phtml:18
-msgid "The requested controller was not dispatchable."
-msgstr "A kért vezérlő nem kiküldhető."
-
-#: ../module/Application/view/error/404.phtml:21
-msgid "The requested URL could not be matched by routing."
-msgstr "A kért URL nem található meg az útválasztás alapján."
-
-#: ../module/Application/view/error/404.phtml:24
-msgid "We cannot determine at this time why a 404 was generated."
-msgstr "Jelenleg nem állapítható meg, miért generálódott 404-es hiba."
-
-#: ../module/Application/view/error/404.phtml:36
-msgid "Controller"
-msgstr "Vezérlő"
-
-#: ../module/Application/view/error/404.phtml:43
-#, php-format
-msgid "resolves to %s"
-msgstr "feloldva erre: %s"
+#: ../../../module/Restore/view/restore/restore/index.phtml:321
+msgid "Date"
+msgstr "Dátum"
 
 #: ../module/Storage/src/Storage/Form/StorageForm.php:77
 #: ../module/Storage/view/storage/storage/details.phtml:126
 msgid "Drive"
 msgstr "Meghajtó"
 
-#: ../module/Storage/view/storage/storage/index.phtml:47
-msgid "Storage Devices"
-msgstr "Tároló eszközök"
-
-#: ../module/Storage/view/storage/storage/index.phtml:67
-#: ../module/Storage/view/storage/storage/index.phtml:68
-msgid "Autochanger"
-msgstr "Automata váltó"
+#: ../module/Storage/view/storage/storage/status.phtml:47
+msgid "Storage Status"
+msgstr "Tároló állapot"
 
 #: ../module/Storage/view/storage/storage/details.phtml:26
 msgid "Storage details"
@@ -1221,105 +1213,35 @@ msgstr "nincs a katalógusban"
 msgid "Export"
 msgstr "Exportálás"
 
-#: ../module/Storage/view/storage/storage/status.phtml:47
-msgid "Storage Status"
-msgstr "Tároló állapot"
+#: ../module/Storage/view/storage/storage/index.phtml:47
+msgid "Storage Devices"
+msgstr "Tároló eszközök"
 
-#: ../module/Client/view/client/client/index.phtml:65
-#: ../module/Client/view/client/client/index.phtml:66
-msgid "OS"
-msgstr ""
+#: ../module/Storage/view/storage/storage/index.phtml:67
+#: ../module/Storage/view/storage/storage/index.phtml:68
+msgid "Autochanger"
+msgstr "Automata váltó"
 
-#: ../module/Client/view/client/client/index.phtml:71
-#: ../module/Client/view/client/client/index.phtml:72
-#: ../module/Client/view/client/client/details.phtml:53
-msgid "Version"
-msgstr "Verzió"
+#: ../public/js/bootstrap-table-formatter.js:638
+msgid "Manage autochanger"
+msgstr "Automata váltó beállítása"
 
-#: ../module/Client/view/client/client/details.phtml:26
-msgid "Client details"
-msgstr "Kliens részletei"
+#: ../module/Schedule/view/schedule/schedule/details.phtml:26
+#: ../module/Schedule/view/schedule/schedule/details.phtml:47
+msgid "Schedule Details"
+msgstr "Ütemezés részletei"
 
-#: ../module/Client/view/client/client/details.phtml:54
-msgid "Autoprune"
-msgstr "Autoprune"
+#: ../module/Schedule/view/schedule/schedule/index.phtml:34
+#: ../module/Schedule/view/schedule/schedule/details.phtml:34
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:34
+#: ../module/Schedule/view/schedule/schedule/status.phtml:33
+msgid "Scheduler status"
+msgstr "Ütemező állapot"
 
-#: ../module/Client/view/client/client/details.phtml:55
-msgid "Fileretention"
-msgstr "Fájl megőrzés"
-
-#: ../module/Client/view/client/client/details.phtml:56
-msgid "Jobretention"
-msgstr "Feladat megőrzés"
-
-#: ../module/Client/view/client/client/status.phtml:45
-msgid "Client Status"
-msgstr "Kliens állapot"
-
-#: ../module/Director/view/director/director/index.phtml:47
-msgid "Director Status"
-msgstr "Direktor állapot"
-
-#: ../module/Director/view/director/director/messages.phtml:43
-msgid "Refresh"
-msgstr "Frissítés"
-
-#: ../module/Director/view/director/director/messages.phtml:50
-msgid "Director messages"
-msgstr "Direktor üzenetek"
-
-#: ../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
-msgstr "Fájl készlet"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:26
-msgid "Fileset details"
-msgstr "Fájl készlet részletei"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:47
-msgid "Id"
-msgstr "Azonosító"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:49
-msgid "MD5 checksum"
-msgstr "MD5 checksum"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:50
-msgid "Creation time"
-msgstr "Létrehozás dátuma"
-
-#: ../module/Pool/view/pool/pool/index.phtml:79
-#: ../module/Pool/view/pool/pool/index.phtml:80
-#: ../module/Pool/view/pool/pool/details.phtml:59
-msgid "Maximum volumes"
-msgstr "Maximum kötet"
-
-#: ../module/Pool/view/pool/pool/index.phtml:85
-#: ../module/Pool/view/pool/pool/index.phtml:86
-#: ../module/Pool/view/pool/pool/details.phtml:60
-msgid "Volume retention"
-msgstr "Kötet megőrzés"
-
-#: ../module/Pool/view/pool/pool/index.phtml:91
-#: ../module/Pool/view/pool/pool/index.phtml:92
-#: ../module/Pool/view/pool/pool/details.phtml:61
-msgid "Maximum volume jobs"
-msgstr "Maximum kötet feladatok"
-
-#: ../module/Pool/view/pool/pool/index.phtml:97
-#: ../module/Pool/view/pool/pool/index.phtml:98
-#: ../module/Pool/view/pool/pool/details.phtml:62
-msgid "Maximum volume bytes"
-msgstr "Maximum kötet bájtok"
-
-#: ../module/Pool/view/pool/pool/details.phtml:26
-msgid "Pool details"
-msgstr "Készlet részletei"
-
-#: ../public/js/bootstrap-table-formatter.js:25
-#: ../public/js/bootstrap-table-formatter.js:560
-msgid "View Job Details"
-msgstr "Feladat részletei"
+#: ../module/Schedule/view/schedule/schedule/status.phtml:26
+#: ../module/Schedule/view/schedule/schedule/status.phtml:46
+msgid "Status Scheduler"
+msgstr "Állapot ütemező"
 
 #: ../public/js/bootstrap-table-formatter.js:44
 msgid "Backup"
@@ -1482,15 +1404,78 @@ msgstr "Engedélyezett"
 msgid "disabled"
 msgstr "Letiltott"
 
-#: ../public/js/bootstrap-table-formatter.js:271
-msgid "Non-fatal error"
-msgstr "Nem végzetes hiba"
-
 #: ../public/js/bootstrap-table-formatter.js:272
 #: ../public/js/bootstrap-table-formatter.js:277
 #: ../public/js/bootstrap-table-formatter.js:282
 msgid "Failure"
 msgstr "Sikertelen"
+
+#: ../public/js/bootstrap-table-formatter.js:287
+msgid "Success"
+msgstr "Sikeres"
+
+#: ../public/js/bootstrap-table-formatter.js:297
+msgid "Queued"
+msgstr "Várakozó"
+
+#: ../public/js/bootstrap-table-formatter.js:301
+#: ../public/js/bootstrap-table-formatter.js:302
+msgid "Blocked"
+msgstr "Blokkolt"
+
+#: ../public/js/bootstrap-table-formatter.js:307
+msgid "Verify found differences"
+msgstr "Megtalált különbségek ellenőrzése"
+
+#: ../public/js/bootstrap-table-formatter.js:312
+msgid "Canceled"
+msgstr "Mégsem"
+
+#: ../public/js/bootstrap-table-formatter.js:366
+#: ../public/js/bootstrap-table-formatter.js:367
+msgid "SD despooling attributes"
+msgstr "SD várólista megszüntetés attribútumai"
+
+#: ../public/js/bootstrap-table-formatter.js:371
+#: ../public/js/bootstrap-table-formatter.js:372
+msgid "Doing batch insert file records"
+msgstr "Fájl rekordok kötegelt beillesztése"
+
+#: ../public/js/bootstrap-table-formatter.js:377
+msgid "Incomplete"
+msgstr "Nem teljes"
+
+#: ../public/js/bootstrap-table-formatter.js:382
+msgid "Committing data"
+msgstr "Adat rögzítése"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
+#: ../public/js/bootstrap-table-formatter.js:387
+msgid "Warning"
+msgstr "Figyelmeztetés"
+
+#: ../public/js/bootstrap-table-formatter.js:391
+#: ../public/js/bootstrap-table-formatter.js:392
+msgid "Doing data despooling"
+msgstr "Adat várólista megszüntetése"
+
+#: ../public/js/bootstrap-table-formatter.js:396
+#: ../public/js/bootstrap-table-formatter.js:397
+msgid "Queued waiting for device"
+msgstr "Sorbaállított várakozás az eszközre"
+
+#: ../public/js/bootstrap-table-formatter.js:25
+#: ../public/js/bootstrap-table-formatter.js:560
+msgid "View Job Details"
+msgstr "Feladat részletei"
+
+#: ../module/Job/src/Job/Form/JobForm.php:102
+msgid "warning"
+msgstr "figyelmeztetés"
+
+#: ../public/js/bootstrap-table-formatter.js:271
+msgid "Non-fatal error"
+msgstr "Nem végzetes hiba"
 
 #: ../public/js/bootstrap-table-formatter.js:276
 msgid "Job terminated in error"
@@ -1504,38 +1489,17 @@ msgstr "Végzetes hiba"
 msgid "Terminated normally"
 msgstr "Véget ért sikeresen"
 
-#: ../public/js/bootstrap-table-formatter.js:287
-msgid "Success"
-msgstr "Sikeres"
-
 #: ../public/js/bootstrap-table-formatter.js:296
 msgid "Created but not yet running"
 msgstr "Létrehozva, de még nem fut."
-
-#: ../public/js/bootstrap-table-formatter.js:297
-msgid "Queued"
-msgstr "Várakozó"
-
-#: ../public/js/bootstrap-table-formatter.js:301
-#: ../public/js/bootstrap-table-formatter.js:302
-msgid "Blocked"
-msgstr "Blokkolt"
 
 #: ../public/js/bootstrap-table-formatter.js:306
 msgid "Verify differences"
 msgstr "Különbségek ellenőrzése"
 
-#: ../public/js/bootstrap-table-formatter.js:307
-msgid "Verify found differences"
-msgstr "Megtalált különbségek ellenőrzése"
-
 #: ../public/js/bootstrap-table-formatter.js:311
 msgid "Canceled by user"
 msgstr "Felhasználó leállította"
-
-#: ../public/js/bootstrap-table-formatter.js:312
-msgid "Canceled"
-msgstr "Mégsem"
 
 #: ../public/js/bootstrap-table-formatter.js:316
 msgid "Waiting on File daemon"
@@ -1577,133 +1541,72 @@ msgstr "Várakozás az indulási időre"
 msgid "Waiting for higher priority jobs to finish"
 msgstr "Várakozás a nagyobb priorítású feladatok lefutására"
 
-#: ../public/js/bootstrap-table-formatter.js:366
-#: ../public/js/bootstrap-table-formatter.js:367
-msgid "SD despooling attributes"
-msgstr "SD várólista megszüntetés attribútumai"
-
-#: ../public/js/bootstrap-table-formatter.js:371
-#: ../public/js/bootstrap-table-formatter.js:372
-msgid "Doing batch insert file records"
-msgstr "Fájl rekordok kötegelt beillesztése"
-
 #: ../public/js/bootstrap-table-formatter.js:376
 msgid "Incomplete Job"
 msgstr "Nem lefutott feladat"
-
-#: ../public/js/bootstrap-table-formatter.js:377
-msgid "Incomplete"
-msgstr "Nem teljes"
 
 #: ../public/js/bootstrap-table-formatter.js:381
 msgid "Committing data (last despool)"
 msgstr "Adat rögzítése (utolsó despool)"
 
-#: ../public/js/bootstrap-table-formatter.js:382
-msgid "Committing data"
-msgstr "Adat rögzítése"
-
 #: ../public/js/bootstrap-table-formatter.js:386
 msgid "Terminated normally with warnings"
 msgstr "Sikeresen befejezve figyelmeztetésekkel"
 
-#: ../public/js/bootstrap-table-formatter.js:391
-#: ../public/js/bootstrap-table-formatter.js:392
-msgid "Doing data despooling"
-msgstr "Adat várólista megszüntetése"
+#: ../module/Restore/view/restore/restore/index.phtml:32
+#: ../module/Restore/view/restore/restore/versions.phtml:32
+msgid "Restore multiple files"
+msgstr "Több fájl visszaállítása"
 
-#: ../public/js/bootstrap-table-formatter.js:396
-#: ../public/js/bootstrap-table-formatter.js:397
-msgid "Queued waiting for device"
-msgstr "Sorbaállított várakozás az eszközre"
+#: ../module/Restore/view/restore/restore/index.phtml:33
+#: ../module/Restore/view/restore/restore/versions.phtml:33
+msgid "Restore specific file version"
+msgstr "Fájl megadott változatának visszaállítása"
 
-#: ../public/js/bootstrap-table-formatter.js:410
-msgid "Disabled"
-msgstr "Letiltott"
+#: ../module/Restore/view/restore/restore/index.phtml:75
+#: ../module/Restore/view/restore/restore/versions.phtml:76
+msgid "Job report"
+msgstr "Feladat riport"
 
-#: ../public/js/bootstrap-table-formatter.js:519
-#: ../public/js/bootstrap-table-formatter.js:549
-#: ../public/js/bootstrap-table-formatter.js:627
-msgid "Disable"
-msgstr "Letilt"
+#: ../module/Restore/view/restore/restore/index.phtml:89
+#: ../module/Restore/view/restore/restore/versions.phtml:90
+msgid "Confirm restore job submit"
+msgstr "VIsszaállítási feladat elküldésének megerősítése"
 
-#: ../public/js/bootstrap-table-formatter.js:520
-#: ../public/js/bootstrap-table-formatter.js:550
-#: ../public/js/bootstrap-table-formatter.js:626
-msgid "Enable"
-msgstr "Engedélyez"
+#: ../module/Restore/view/restore/restore/index.phtml:98
+#: ../module/Restore/view/restore/restore/index.phtml:117
+#: ../module/Restore/view/restore/restore/versions.phtml:99
+#: ../module/Restore/view/restore/restore/versions.phtml:118
+msgid "OK"
+msgstr "OK"
 
-#: ../public/js/bootstrap-table-formatter.js:521
-msgid "Download update"
-msgstr ""
+#: ../module/Restore/view/restore/restore/index.phtml:114
+msgid "No files or directories selected to restore!"
+msgstr "Nincs kijelölt fájl vagy mappa a visszaállításhoz!"
 
-#: ../public/js/bootstrap-table-formatter.js:561
-msgid "Rerun"
-msgstr "Újra futtatás"
+#: ../module/Restore/view/restore/restore/index.phtml:424
+#: ../module/Restore/view/restore/restore/versions.phtml:193
+#: ../module/Restore/view/restore/restore/versions.phtml:544
+msgid "Last modification"
+msgstr "Utolsó módosítás"
 
-#: ../public/js/bootstrap-table-formatter.js:638
-msgid "Manage autochanger"
-msgstr "Automata váltó beállítása"
+#: ../module/Restore/view/restore/restore/versions.phtml:115
+msgid "No file selected to restore!"
+msgstr "Nincs kijelölve fájl a visszaállításhoz!"
 
-#~ msgid ""
-#~ "Sorry, it seems you are not authorized to run this module. If you think "
-#~ "this is an error, please contact your local administrator."
-#~ msgstr ""
-#~ "Elnézést, de úgy tűnik, hogy nincs jogosultsága ehhez a modulhoz. Ha Ön "
-#~ "szerint ez hiba, lépjen kapcsolatba a helyi adminisztrátorral."
+#: ../module/Restore/view/restore/restore/versions.phtml:172
+msgid "Selected file"
+msgstr "Kijelölt fájl"
 
-#~ msgid ""
-#~ "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
-#~ "main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
-#~ "documentation</a> for any additional information on how to configure the "
-#~ "Command ACL directive of your Console/Profile resources. Following is a "
-#~ "list of required commands which need to be in your Command ACL to run "
-#~ "this module properly:"
-#~ msgstr ""
-#~ "Legyen szíves olvassa el a <a href=\"http://doc.bareos.org/master/html/"
-#~ "bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank"
-#~ "\">Bareos dokumentációt</a> a konzol/profil parancs ACL direktívák "
-#~ "beállításával kapcsolatos további információkért. Az alábbi parancsoknak "
-#~ "szerepelniük kell a parancs ACL-ben ezen modul megfelelő futtatásához:"
+#: ../module/Restore/view/restore/restore/versions.phtml:180
+msgid "Available versions"
+msgstr "Elérhető verziók"
 
-#~ msgid "Last successful backups"
-#~ msgstr "Utolsó sikeres metések"
+#: ../module/Restore/view/restore/restore/versions.phtml:195
+msgid "Checksum"
+msgstr "Ellenőrző összeg"
 
-#~ msgid "Show Files"
-#~ msgstr "Fájlok megjelenítése"
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "Legyen szíves olvassa el a <a href=\"%s\" target=\"_blank\">Bareos dokumentációt</a> a konzol/profil parancs ACL direktívák beállításával kapcsolatos további információkért. Az alábbi parancsoknak szerepelniük kell a parancs ACL-ben ezen modul megfelelő futtatásához:"
 
-#~ msgid "First Index"
-#~ msgstr "Első index"
-
-#~ msgid "Last Index"
-#~ msgstr "Utolsó index"
-
-#~ msgid "Start Block"
-#~ msgstr "Kezdő blokk"
-
-#~ msgid "End Block"
-#~ msgstr "Befejező blokk"
-
-#~ msgid "Path"
-#~ msgstr "Útvonal"
-
-#~ msgid "Limit"
-#~ msgstr "Korlát"
-
-#~ msgid "Offset"
-#~ msgstr "Eltolás"
-
-#~ msgid "Date"
-#~ msgstr "Dátum"
-
-#~ msgid ""
-#~ "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> "
-#~ "for any additional information on how to configure the Command ACL "
-#~ "directive of your Console/Profile resources. Following is a list of "
-#~ "required commands which need to be in your Command ACL to run this module "
-#~ "properly:"
-#~ msgstr ""
-#~ "Legyen szíves olvassa el a <a href=\"%s\" target=\"_blank\">Bareos "
-#~ "dokumentációt</a> a konzol/profil parancs ACL direktívák beállításával "
-#~ "kapcsolatos további információkért. Az alábbi parancsoknak szerepelniük "
-#~ "kell a parancs ACL-ben ezen modul megfelelő futtatásához:"
