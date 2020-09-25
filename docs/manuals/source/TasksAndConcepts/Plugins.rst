@@ -71,7 +71,7 @@ shared objects that are loaded by the corresponding daemon during startup.
   [Python Plugin Files] -> [Python Constants File] : imports
 
 
-This plugin then creates an **internal Python extensoin module** and starts a **Python 2**
+This plugin then creates an **internal Python extension module** and starts a **Python 2**
 interpreter being able to access the Python module.
 
 The **internal Python extension module** allows the Python plugin to call functions
