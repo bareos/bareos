@@ -274,6 +274,7 @@ macro(prepare_test)
   math(EXPR sd2_port "${BASEPORT} + 3")
   math(EXPR php_port "${BASEPORT} + 4")
   math(EXPR test_db_port "${BASEPORT} + 5")
+  math(EXPR minio_port "${BASEPORT} + 6")
 
   # skip for tests without etc/bareos ("catalog" test)
   if(EXISTS ${current_test_source_directory}/etc/bareos)
@@ -594,11 +595,14 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED acl)
 endif()
 
-if(TARGET droplet)
+if(TARGET droplet
+   AND S3CMD
+   AND MINIO)
   list(APPEND SYSTEM_TESTS droplet-s3)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED droplet-s3)
 endif()
+
 if(SD_GFAPI_DIR_TO_TEST AND glusterfs_uri)
   list(APPEND SYSTEM_TESTS glusterfs-backend)
 else()
