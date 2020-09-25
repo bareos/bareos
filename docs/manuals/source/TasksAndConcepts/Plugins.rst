@@ -18,7 +18,7 @@ The program :ref:`bpluginfo` can be used to retrieve information about a specifi
 
 
 Python Plugins
-==============
+--------------
 
 A special case of the Bareos Plugins are the Python Plugins.
 The Python plugins create a connection between the Bareos Plugin API and the
@@ -36,12 +36,12 @@ Examples for such Python Plugins are the VMware Python Plugin or the oVirt Pytho
 
 
 Modernization of the Python plugin API
---------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 For Bareos :sinceVersion:`20: Python API`, the Bareos Python API was refactored and
 adapted to support both Python version *2* and Python version *3*.
 
 Description of the Bareos Python plugin API for Bareos < 20
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In  Bareos < 20, the Bareos Python plugin API consists of a Bareos daemon
 plugin (**python-fd**, **python-sd**, **python-dir**). These plugins are
 shared objects that are loaded by the corresponding daemon during startup.
@@ -127,7 +127,7 @@ call that goes into the core.
 
 
 Description of the new Bareos Python plugin API for Bareos >= 20
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Since Bareos :sinceVersion:`20: Python3`, two Python plugins exist for
 each Bareos daemon, where the **python-** prefix means that the plugin supports
 Python 2, and the **python3-** prefix supports Python 3.
@@ -258,8 +258,8 @@ that was always transferred between the core and the Python Plugin and back was
 The members of the **bareosfd.stat_pkt** type have been renamed with the
 **st_** prefix to match with the member names of Pythons' **os.stat_result**.
 
-Porting existing Python plugins:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Porting existing Python plugins
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Porting existing Python plugin from Version 19 to 20 requires is not very hard
 and requires the following steps:
@@ -283,16 +283,16 @@ and requires the following steps:
 
 
 
-Switching to Python 3:
-~~~~~~~~~~~~~~~~~~~~~
+Switching to Python 3
+^^^^^^^^^^^^^^^^^^^^^
 
 Switching to use the Python 3 plugin, the following needs to be changed:
   * Set `Plugin Names = "python3"` to make sure the Python3 plugin is loaded.
   * Adapt the Plugin setting in the fileset to use Python3: `Plugin = "python3:module_path ...`
 
 
-Recovering old backups:
-~~~~~~~~~~~~~~~~~~~~~~~
+Recovering old backups
+^^^^^^^^^^^^^^^^^^^^^^^
 When doing backups, the plugin parameter string is stored into the backup stream.
 During restore, this string is used to determine the plugin that will handle this
 data.
