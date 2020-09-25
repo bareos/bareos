@@ -961,6 +961,7 @@ Migrate |mysql| to |postgresql|
    single: bareos-dbcopy
    see: dbcopy; bareos-dbcopy
 
+
 Since Bareos :sinceVersion:`19.0.0: MySQL Backend is deprecated` the use of |mysql| databases with
 Bareos is deprecated. Therefore Bareos provides a tool to conveniently copy the
 whole contents to a new |postgresql| database: :ref:`program-bareos-dbcopy`. This
@@ -1028,7 +1029,7 @@ in the file table took about 5 hours to copy (the testsystem was equipped with S
 
    Please run bareos-dbcopy as user **bareos** to avoid problems with access rights.
    To start the shell as user **bareos** you can use this command:
-      ``su -s /bin/bash - bareos``
+   ``su -s /bin/bash - bareos``
 
 
 .. code-block:: shell-session
