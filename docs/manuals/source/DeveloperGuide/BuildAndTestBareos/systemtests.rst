@@ -98,7 +98,7 @@ Run all system tests
 .. code-block:: shell-session
    :caption: Run all system tests
 
-   user@host:~$ cd bareos-local-tests/build<<<<<<< dev/pstorz/master/python3-documentation
+   user@host:~$ cd bareos-local-tests/build
    user@host:~/bareos-local-tests/build$ make test
 
    Running tests...
