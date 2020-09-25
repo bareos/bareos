@@ -43,7 +43,7 @@
      "the ephemeral keying, " \
      "allowing for forward secrecy of communications." }, \
   { "TlsProtocol", CFG_TYPE_STDSTR, ITEM(res, protocol_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
-     NULL, "OpenSSL Configuration: Protocol"}
+     "20.0.0-", "OpenSSL Configuration: Protocol"}
 
 /*
  * TLS Settings for Certificate only
