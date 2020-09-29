@@ -26,6 +26,7 @@ if(Python2_FOUND)
   install(TARGETS python-dir DESTINATION ${plugindir})
   target_link_libraries(python-dir ${Python2_LIBRARIES} bareos)
   target_include_directories(python-dir PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
+  target_compile_definitions(python-dir PUBLIC PY2MODDIR=\"${Python2_SITELIB}\")
   add_dependencies(python-dir bareosdir-python2-module)
 
   set(PYFILES pyfiles/bareos-dir-class-plugin.py
@@ -79,6 +80,9 @@ if(Python3_FOUND)
   install(TARGETS python3-dir DESTINATION ${plugindir})
   target_link_libraries(python3-dir ${Python3_LIBRARIES} bareos)
   target_include_directories(python3-dir PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})
+  target_compile_definitions(
+    python3-dir PUBLIC PY3MODDIR=\"${Python3_SITELIB}\"
+  )
   add_dependencies(python3-dir bareosdir-python3-module)
 
   set(PYFILES pyfiles/bareos-dir-class-plugin.py

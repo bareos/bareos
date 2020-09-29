@@ -22,10 +22,6 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(pymod_include_dirs ${PROJECT_SOURCE_DIR}/src)
 
-
-add_definitions(-DPY2MODDIR=\"${Python2_SITELIB}\")
-add_definitions(-DPY3MODDIR=\"${Python3_SITELIB}\")
-
 # FreeBSD
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   list(APPEND pymod_include_dirs ${Intl_INCLUDE_DIRS})

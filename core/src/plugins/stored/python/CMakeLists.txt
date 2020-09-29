@@ -25,6 +25,7 @@ if(Python2_FOUND)
   install(TARGETS python-sd DESTINATION ${plugindir})
   target_link_libraries(python-sd ${Python2_LIBRARIES} bareos)
   target_include_directories(python-sd PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
+  target_compile_definitions(python-sd PUBLIC PY2MODDIR=\"${Python2_SITELIB}\")
   add_dependencies(python-sd bareossd-python2-module)
 
   set(PYFILES
@@ -76,6 +77,7 @@ if(Python3_FOUND)
   )
   install(TARGETS python3-sd DESTINATION ${plugindir})
   target_link_libraries(python3-sd ${Python3_LIBRARIES} bareos)
+  target_compile_definitions(python3-sd PUBLIC PY3MODDIR=\"${Python3_SITELIB}\")
   target_include_directories(python3-sd PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})
   add_dependencies(python3-sd bareossd-python3-module)
 
