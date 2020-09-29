@@ -839,8 +839,48 @@ static bool get_date(UaContext* ua, char* date, int date_len)
   ua->SendMsg(
       _("The restored files will the most current backup\n"
         "BEFORE the date you specify below.\n\n"));
+
+  const char* datetime_format_list[] = {
+      _("YYYY-MM-DD HH:MM:SS"),
+      _("YYYY-MM-DD HH:MM"),
+      _("YYYY-MM-DD HH"),
+      _("YYYY-MM-DD"),
+      _("YYYY-MM"),
+      _("YYYY"),
+      NULL};
+
   for (;;) {
-    if (!GetCmd(ua, _("Enter date as YYYY-MM-DD HH:MM:SS :"))) { return false; }
+      StartPrompt(ua,
+                  _("Choose one of following formats:\n"));
+      for (int i = 0; datetime_format_list[i]; i++) { AddPrompt(ua, datetime_format_list[i]); }
+
+      switch (DoPrompt(ua, "", _("Select preferred format : "), NULL, 0)) {
+
+      case 0:
+          if (!GetCmd(ua, _("Enter the date here :"))) { return false; };
+          break;
+      case 1:
+          if (!GetCmd(ua, _("Enter the date here :"))) { return false; };
+          strcat(ua->cmd, ":00");
+          break;
+      case 2:
+          if (!GetCmd(ua, _("Enter the date here :"))) { return false; };
+          strcat(ua->cmd, ":00:00");
+          break;
+      case 3:
+          if (!GetCmd(ua, _("Enter the date here :"))) { return false; };
+          strcat(ua->cmd, " 00:00:00");
+          break;
+      case 4:
+          if (!GetCmd(ua, _("Enter the date here :"))) { return false; };
+          strcat(ua->cmd, "-01 00:00:00");
+          break;
+      case 5:
+          if (!GetCmd(ua, _("Enter the date here :"))) { return false; };
+          strcat(ua->cmd, "-01-01 00:00:00");
+          break;
+  }
+
     if (StrToUtime(ua->cmd) != 0) { break; }
     ua->ErrorMsg(_("Improper date format.\n"));
   }
