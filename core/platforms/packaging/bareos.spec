@@ -173,7 +173,7 @@ Source0: %{name}-%{version}.tar.gz
 
 BuildRequires: pam-devel
 
-BuildRequires: cmake
+BuildRequires: cmake >= 3.12
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: make
