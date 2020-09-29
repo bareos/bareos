@@ -38,11 +38,11 @@ if(GENERATE_DEBIAN_CONTROL)
 
   #python (2) plugins
   if(Python2_FOUND)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python-plugin
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python2-plugin
          DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python-plugin
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python2-plugin
          DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python-plugin
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python2-plugin
          DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN)
   endif()
 
