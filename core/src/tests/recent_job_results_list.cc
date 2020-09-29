@@ -32,13 +32,18 @@
 #include <iostream>
 #include <fstream>
 
+static auto Is32BitWordsize = []() { return sizeof(void*) == 4; };
+
 TEST(recent_job_results_list, read_job_results_from_file)
 {
   OSDependentInit();
   RecentJobResultsList::Cleanup();
 
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
-  ReadStateFile(orig_path, "bareos-dir", 42001);
+
+  const char *fname = Is32BitWordsize() ? "bareos-dir-32bit" : "bareos-dir";
+
+  ReadStateFile(orig_path, fname, 42001);
 
   static std::vector<RecentJobResultsList::JobResult> recent_jobs =
       RecentJobResultsList::Get();
@@ -57,15 +62,17 @@ TEST(recent_job_results_list, write_job_results_to_file)
   OSDependentInit();
   RecentJobResultsList::Cleanup();
 
+  const char *fname = Is32BitWordsize() ? "bareos-dir-32bit" : "bareos-dir";
+
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
-  ReadStateFile(orig_path, "bareos-dir", 42001);
+  ReadStateFile(orig_path, fname, 42001);
 
   char path[]{TEST_TEMP_DIR};
-  WriteStateFile(path, "bareos-dir", 42001);
+  WriteStateFile(path, fname, 42001);
 
   RecentJobResultsList::Cleanup();
 
-  ReadStateFile(path, "bareos-dir", 42001);
+  ReadStateFile(path, fname, 42001);
 
   static std::vector<RecentJobResultsList::JobResult> recent_jobs =
       RecentJobResultsList::Get();
@@ -115,8 +122,13 @@ TEST(recent_job_results_list, read_job_results_from_file_truncated_jobs)
   RecentJobResultsList::Cleanup();
 
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
-  ASSERT_TRUE(create_file(orig_path, "bareos-dir-truncated-jobs.42001.state"));
-  ReadStateFile(orig_path, "bareos-dir-truncated-jobs", 42001);
+
+  const char *fname = Is32BitWordsize()
+                      ? "bareos-dir-truncated-jobs-32bit"
+                      : "bareos-dir-truncated-jobs";
+
+  ASSERT_TRUE(create_file(orig_path, std::string(fname) + ".42001.state"));
+  ReadStateFile(orig_path, fname, 42001);
 
   static std::vector<RecentJobResultsList::JobResult> recent_jobs =
       RecentJobResultsList::Get();
