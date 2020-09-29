@@ -2014,7 +2014,7 @@ static int PyStatPacket_init(PyStatPacket* self, PyObject* args, PyObject* kwds)
   self->blocks = 1;
 
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|IKHHIIIKIIIIK", kwlist, &self->dev, &self->ino,
+          args, kwds, "|IKHHIIILIIIIK", kwlist, &self->dev, &self->ino,
           &self->mode, &self->nlink, &self->uid, &self->gid, &self->rdev,
           &self->size, &self->atime, &self->mtime, &self->ctime, &self->blksize,
           &self->blocks)) {
