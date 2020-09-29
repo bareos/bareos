@@ -1,6 +1,6 @@
 all/bareos-webui
-all/python3-bareos
 all/python-bareos
+all/python3-bareos
 i386/bareos
 i386/bareos-bconsole
 i386/bareos-client
