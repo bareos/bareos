@@ -1,10 +1,12 @@
-Package:        bareos-storage-python-plugin
+Package:        bareos-director-python2-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - storage daemon Python plugin
+Provides        bareos-director-python-plugin
+Replaces:       bareos-director-python-plugin
+Description: Backup Archiving Recovery Open Sourced - director Python plugin
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
  .
- This package provides the Python plugin for the storage daemon.
+ This package provides the Python plugin for the director.
