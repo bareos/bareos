@@ -31,20 +31,47 @@
 
 #include "lib/bsock_tcp.h"
 
+#if HAVE_WIN32
+#include <cstdlib>
+#include <mutex>
+static void exithandler() { WSACleanup(); }
+static void init_once()
+{
+  if (WSA_Init() == 0) { std::atexit(exithandler); }
+}
+#endif
+
 static int create_listening_server_socket(int port)
 {
+#if HAVE_WIN32
+  try {
+    static std::once_flag f;
+    std::call_once(f, init_once);
+  } catch (...) {
+    return -1;
+  }
+#endif
+
   int listen_file_descriptor;
-  int opt = 1;
 
   if ((listen_file_descriptor = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
     perror("socket failed");
-    return -1;
+    return -2;
   }
 
-  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&opt,
-                 sizeof(opt))) {
+#if defined(HAVE_WIN32)
+  BOOL option = TRUE;
+  auto r1 = setsockopt(listen_file_descriptor, SOL_SOCKET, SO_REUSEADDR,
+                       reinterpret_cast<const char*>(&option), sizeof(option));
+#else
+  int option = 1;
+  auto r1 = setsockopt(listen_file_descriptor, SOL_SOCKET, SO_REUSEADDR,
+                       static_cast<const void*>(&option), sizeof(option));
+#endif
+
+  if (r1 < 0) {
     perror("setsockopt");
-    return -1;
+    return -3;
   }
 
   struct sockaddr_in address;
@@ -54,22 +81,33 @@ static int create_listening_server_socket(int port)
   if (bind(listen_file_descriptor, (struct sockaddr*)&address,
            sizeof(address)) < 0) {
     perror("bind failed");
-    return -1;
+    return -4;
   }
 
+#if defined(HAVE_WIN32)
+  DWORD timeout = 10000;  // after 10 seconds connect() will timeout
+  auto r2 = (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_RCVTIMEO,
+                        reinterpret_cast<const char*>(&timeout),
+                        sizeof(timeout)) == SOCKET_ERROR)
+                ? -1
+                : 0;
+#else
   struct timeval timeout;
   timeout.tv_sec = 10;  // after 10 seconds connect() will timeout
   timeout.tv_usec = 0;
 
-  if (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_RCVTIMEO, (sockopt_val_t)&timeout,
-                 sizeof(timeout)) < 0) {
+  auto r2 = setsockopt(listen_file_descriptor, SOL_SOCKET, SO_RCVTIMEO,
+                       static_cast<const void*>(&timeout), sizeof(timeout));
+#endif
+
+  if (r2 < 0) {
     perror("setsockopt");
-    return -1;
+    return -5;
   }
 
   if (listen(listen_file_descriptor, 3) < 0) {
     perror("listen");
-    return -1;
+    return -6;
   }
   return listen_file_descriptor;
 }
