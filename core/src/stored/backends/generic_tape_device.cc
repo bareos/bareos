@@ -46,7 +46,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord *dcr, int omode)
    file_size = 0;
    int timeout = max_open_wait;
 #if !defined(HAVE_WIN32)
-   struct mtop mt_com;
+   struct mtop mt_com{};
    utime_t start_time = time(NULL);
 #endif
 
@@ -158,7 +158,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord *dcr, int omode)
  */
 bool generic_tape_device::eod(DeviceControlRecord *dcr)
 {
-   struct mtop mt_com;
+   struct mtop mt_com{};
    bool ok = true;
    int32_t os_file;
 
@@ -332,7 +332,7 @@ void generic_tape_device::SetAteot()
  */
 bool generic_tape_device::offline()
 {
-   struct mtop mt_com;
+   struct mtop mt_com{};
 
    /*
     * Remove EOF/EOT flags.
@@ -369,7 +369,7 @@ bool generic_tape_device::offline()
  */
 bool generic_tape_device::weof(int num)
 {
-   struct mtop mt_com;
+   struct mtop mt_com{};
    int status;
    Dmsg1(129, "=== weof_dev=%s\n", prt_name);
 
@@ -417,7 +417,7 @@ bool generic_tape_device::weof(int num)
 bool generic_tape_device::fsf(int num)
 {
    int32_t os_file = 0;
-   struct mtop mt_com;
+   struct mtop mt_com{};
    int status = 0;
 
    if (!IsOpen()) {
@@ -601,7 +601,7 @@ bool generic_tape_device::fsf(int num)
  */
 bool generic_tape_device::bsf(int num)
 {
-   struct mtop mt_com;
+   struct mtop mt_com{};
    int status;
 
    if (!IsOpen()) {
@@ -647,7 +647,7 @@ static inline bool DevGetOsPos(Device *dev, struct mtget *mt_stat)
  */
 bool generic_tape_device::fsr(int num)
 {
-   struct mtop mt_com;
+   struct mtop mt_com{};
    int status;
 
    if (!IsOpen()) {
@@ -702,7 +702,7 @@ bool generic_tape_device::fsr(int num)
  */
 bool generic_tape_device::bsr(int num)
 {
-   struct mtop mt_com;
+   struct mtop mt_com{};
    int status;
 
    if (!IsOpen()) {
@@ -744,7 +744,7 @@ bool generic_tape_device::bsr(int num)
 bool generic_tape_device::LoadDev()
 {
 #ifdef MTLOAD
-   struct mtop mt_com;
+   struct mtop mt_com{};
 #endif
 
    if (fd_ < 0) {
@@ -780,7 +780,7 @@ bool generic_tape_device::LoadDev()
 void generic_tape_device::LockDoor()
 {
 #ifdef MTLOCK
-   struct mtop mt_com;
+   struct mtop mt_com{};
 
    mt_com.mt_op = MTLOCK;
    mt_com.mt_count = 1;
@@ -793,7 +793,7 @@ void generic_tape_device::LockDoor()
 void generic_tape_device::UnlockDoor()
 {
 #ifdef MTUNLOCK
-   struct mtop mt_com;
+   struct mtop mt_com{};
 
    mt_com.mt_op = MTUNLOCK;
    mt_com.mt_count = 1;
@@ -837,7 +837,7 @@ static inline void OsClrerror(Device *dev)
  */
 static inline void OsClrerror(Device *dev)
 {
-   struct mtop mt_com;
+   struct mtop mt_com{};
 
    /*
     * Clear any error condition on the tape
@@ -997,7 +997,7 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord *dcr)
    }
 
 #if defined(HAVE_LINUX_OS) || defined(HAVE_WIN32)
-   struct mtop mt_com;
+   struct mtop mt_com{};
 
    Dmsg0(100, "In SetOsDeviceParameters\n");
 #if defined(MTSETBLK)
@@ -1031,7 +1031,7 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord *dcr)
 #endif
 
 #ifdef HAVE_NETBSD_OS
-   struct mtop mt_com;
+   struct mtop mt_com{};
    if (dev->min_block_size == dev->max_block_size &&
        dev->min_block_size == 0) {    /* variable block mode */
       mt_com.mt_op = MTSETBSIZ;
@@ -1050,7 +1050,7 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord *dcr)
 #endif
 
 #if HAVE_FREEBSD_OS || HAVE_OPENBSD_OS
-   struct mtop mt_com;
+   struct mtop mt_com{};
    if (dev->min_block_size == dev->max_block_size &&
        dev->min_block_size == 0) {    /* variable block mode */
       mt_com.mt_op = MTSETBSIZ;
@@ -1078,7 +1078,7 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord *dcr)
 #endif
 
 #ifdef HAVE_SUN_OS
-   struct mtop mt_com;
+   struct mtop mt_com{};
    if (dev->min_block_size == dev->max_block_size &&
        dev->min_block_size == 0) {    /* variable block mode */
       mt_com.mt_op = MTSRSZ;
@@ -1114,7 +1114,7 @@ int32_t generic_tape_device::GetOsTapeFile()
  */
 bool generic_tape_device::rewind(DeviceControlRecord *dcr)
 {
-   struct mtop mt_com;
+   struct mtop mt_com{};
    unsigned int i;
    bool first = true;
 
