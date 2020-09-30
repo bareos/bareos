@@ -307,7 +307,6 @@ bail_out:
 static bool WriteVolumeLabelToBlock(DeviceControlRecord *dcr)
 {
    Device *dev = dcr->dev;
-   DeviceBlock *block = dcr->block;
    DeviceRecord rec;
    JobControlRecord *jcr = dcr->jcr;
 
@@ -315,11 +314,11 @@ static bool WriteVolumeLabelToBlock(DeviceControlRecord *dcr)
 
    memset(&rec, 0, sizeof(rec));
    rec.data = GetMemory(SER_LENGTH_Volume_Label);
-   EmptyBlock(block);                /* Volume label always at beginning */
+   EmptyBlock(dcr->block);                /* Volume label always at beginning */
 
    CreateVolumeLabelRecord(dcr, dev, &rec);
 
-   block->BlockNumber = 0;
+   dcr->block->BlockNumber = 0;
    if (!WriteRecordToBlock(dcr, &rec)) {
       FreePoolMemory(rec.data);
       Jmsg1(jcr, M_FATAL, 0, _("Cannot write Volume label to block for device %s\n"),
@@ -348,7 +347,6 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord *dcr, const char *VolName,
    DeviceRecord *rec;
    JobControlRecord *jcr = dcr->jcr;
    Device *dev = dcr->dev;
-   DeviceBlock *block = dcr->block;
 
    /*
     * Set the default blocksize to read the label
@@ -395,7 +393,7 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord *dcr, const char *VolName,
       goto bail_out;
    }
 
-   EmptyBlock(block);
+   EmptyBlock(dcr->block);
    if (!dev->rewind(dcr)) {
       Dmsg2(130, "Bad status on %s from rewind: ERR=%s\n", dev->print_name(), dev->print_errmsg());
       if (!forge_on) {
