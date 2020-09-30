@@ -313,18 +313,17 @@ bail_out:
 static bool WriteVolumeLabelToBlock(DeviceControlRecord* dcr)
 {
   Device* dev = dcr->dev;
-  DeviceBlock* block = dcr->block;
   DeviceRecord rec;
   JobControlRecord* jcr = dcr->jcr;
 
   Dmsg0(130, "write Label in WriteVolumeLabelToBlock()\n");
 
   rec.data = GetMemory(SER_LENGTH_Volume_Label);
-  EmptyBlock(block); /* Volume label always at beginning */
+  EmptyBlock(dcr->block); /* Volume label always at beginning */
 
   CreateVolumeLabelRecord(dcr, dev, &rec);
 
-  block->BlockNumber = 0;
+  dcr->block->BlockNumber = 0;
   if (!WriteRecordToBlock(dcr, &rec)) {
     FreePoolMemory(rec.data);
     Jmsg1(jcr, M_FATAL, 0,
@@ -356,7 +355,6 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
   DeviceRecord* rec;
   JobControlRecord* jcr = dcr->jcr;
   Device* dev = dcr->dev;
-  DeviceBlock* block = dcr->block;
 
   /*
    * Set the default blocksize to read the label
@@ -403,7 +401,7 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
     goto bail_out;
   }
 
-  EmptyBlock(block);
+  EmptyBlock(dcr->block);
   if (!dev->rewind(dcr)) {
     Dmsg2(130, "Bad status on %s from rewind: ERR=%s\n", dev->print_name(),
           dev->print_errmsg());
