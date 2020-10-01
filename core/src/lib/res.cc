@@ -840,27 +840,33 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
                                            int index,
                                            int pass)
 {
+  alist** alistvalue = GetItemVariablePointer<alist**>(*item);
   if (pass == 2) {
-    char *p, *plugin_name, *plugin_names;
-    LexGetToken(lc, BCT_STRING); /* scan next item */
-
-    alist** alistvalue = GetItemVariablePointer<alist**>(*item);
     if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
-    alist* list = *alistvalue;
-
-    plugin_names = strdup(lc->str);
-    plugin_name = plugin_names;
-    while (plugin_name) {
-      if ((p = strchr(plugin_name, ':'))) { /* split string at ':' */
-        *p++ = '\0';
-      }
-
-      list->append(strdup(plugin_name));
-      plugin_name = p;
-    }
-    free(plugin_names);
   }
-  ScanToEol(lc);
+  alist* list = *alistvalue;
+
+  char* p{nullptr};
+  char* plugin_name{nullptr};
+  char* plugin_names{nullptr};
+  int token = BCT_COMMA;
+  while (token == BCT_COMMA) {
+    LexGetToken(lc, BCT_STRING); /* scan next item */
+    if (pass == 2) {
+      plugin_names = strdup(lc->str);
+      plugin_name = plugin_names;
+      while (plugin_name) {
+        if ((p = strchr(plugin_name, ':'))) { /* split string at ':' */
+          *p++ = '\0';
+        }
+
+        list->append(strdup(plugin_name));
+        plugin_name = p;
+      }
+      free(plugin_names);
+    }
+    token = LexGetToken(lc, BCT_ALL);
+  }
   SetBit(index, (*item->allocated_resource)->item_present_);
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
