@@ -10,7 +10,7 @@ version_regexp='([[:digit:]]+\.){2}[[:digit:]]+(~[[:alnum:]]+)?'
 # "18.2.7"
 stable_version_regexp='([[:digit:]]+\.){2}[[:digit:]]+'
 
-topdir="$(dirname "$0")"
+topdir="$(realpath "$(dirname "$0")/..")"
 prog="$(basename "$0")"
 
 git="${GIT:-$(type -p git)}"
