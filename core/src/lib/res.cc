@@ -722,25 +722,32 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
                                             int index,
                                             int pass)
 {
+  std::vector<std::string>* list{nullptr};
   if (pass == 2) {
-    std::vector<std::string>* list =
-        GetItemVariablePointer<std::vector<std::string>*>(*item);
-    LexGetToken(lc, BCT_STRING); /* scan next item */
-    Dmsg4(900, "Append %s to vector %p size=%d %s\n", lc->str, list,
-          list->size(), item->name);
-
-    /*
-     * See if we need to drop the default value from the alist.
-     *
-     * We first check to see if the config item has the CFG_ITEM_DEFAULT
-     * flag set and currently has exactly one entry.
-     */
-    if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
-      if (list->at(0) == item->default_value) { list->clear(); }
-    }
-    list->push_back(lc->str);
+    list = GetItemVariablePointer<std::vector<std::string>*>(*item);
   }
-  ScanToEol(lc);
+  int token = BCT_COMMA;
+  while (token == BCT_COMMA) {
+    LexGetToken(lc, BCT_STRING); /* scan next item */
+    if (pass == 2) {
+      Dmsg4(900, "Append %s to vector %p size=%d %s\n", lc->str, list,
+            list->size(), item->name);
+
+      /*
+       * See if we need to drop the default value.
+       *
+       * We first check to see if the config item has the CFG_ITEM_DEFAULT
+       * flag set and currently has exactly one entry.
+       */
+      if (!BitIsSet(index, (*item->allocated_resource)->item_present_)) {
+        if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+          if (list->at(0) == item->default_value) { list->clear(); }
+        }
+      }
+      list->push_back(lc->str);
+    }
+    token = LexGetToken(lc, BCT_ALL);
+  }
   SetBit(index, (*item->allocated_resource)->item_present_);
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
