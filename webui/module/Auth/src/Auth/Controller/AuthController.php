@@ -68,13 +68,10 @@ class AuthController extends AbstractActionController
       $config = $this->getServiceLocator()->get('Config');
       $dird = $this->params()->fromQuery('dird') ? $this->params()->fromQuery('dird') : null;
 
-<<<<<<< HEAD
-=======
       if(count($config['directors']) > 1) {
          $multi_dird_env = true;
       }
 
->>>>>>> 069118035... webui: Fix login issue
       $form = new LoginForm($config['directors'], $dird);
 
       $request = $this->getRequest();
