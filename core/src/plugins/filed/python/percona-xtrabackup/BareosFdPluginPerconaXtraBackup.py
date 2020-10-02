@@ -235,7 +235,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
             # use old method as fallback, if module MySQLdb not available
             else:
                 get_lsn_command = (
-                    "echo 'SHOW ENGINE INNODB STATUS' | %s | grep 'Log sequence number' | cut -d ' ' -f 4"
+                    "echo 'SHOW ENGINE INNODB STATUS' | %s | grep 'Log sequence number' | awk '{ print $4 }'"
                     % self.mysqlcmd
                 )
                 last_lsn_proc = Popen(
