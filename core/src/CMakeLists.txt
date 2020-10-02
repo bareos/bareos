@@ -31,6 +31,13 @@ if(NOT client-only)
       )
     endif()
     add_subdirectory(droplet)
+    if(TARGET droplet)
+      set_target_properties(
+        droplet PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                           SOVERSION "${BAREOS_VERSION_MAJOR}"
+                           PREFIX "libbareos"
+      )
+    endif()
   endif()
   add_subdirectory(tools)
   add_subdirectory(cats)
