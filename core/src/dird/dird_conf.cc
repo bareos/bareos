@@ -2945,20 +2945,17 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 
 static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  int token;
-  alist* list;
-
   alist** alistvalue = GetItemVariablePointer<alist**>(*item);
-
   if (pass == 1) {
     if (!alistvalue[item->code]) {
       alistvalue[item->code] = new alist(10, owned_by_alist);
       Dmsg1(900, "Defined new ACL alist at %d\n", item->code);
     }
   }
-  list = alistvalue[item->code];
+  alist* list = alistvalue[item->code];
   std::vector<char> msg(256);
-  for (;;) {
+  int token = BCT_COMMA;
+  while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING);
     if (pass == 1) {
       if (!IsAclEntryValid(lc->str, msg)) {
@@ -2969,8 +2966,6 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
       Dmsg2(900, "Appended to %d %s\n", item->code, lc->str);
     }
     token = LexGetToken(lc, BCT_ALL);
-    if (token == BCT_COMMA) { continue; /* get another ACL */ }
-    break;
   }
   SetBit(index, (*item->allocated_resource)->item_present_);
   ClearBit(index, (*item->allocated_resource)->inherit_content_);

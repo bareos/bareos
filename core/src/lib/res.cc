@@ -666,32 +666,16 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
                                         int index,
                                         int pass)
 {
-  int i = 0;
-  alist* list;
-  int count = str_to_int32(item->default_value);
-
+  alist** alistvalue = GetItemVariablePointer<alist**>(*item);
   if (pass == 2) {
-    alist** alistvalue = GetItemVariablePointer<alist**>(*item);
+    if (!*alistvalue) { *alistvalue = new alist(10, not_owned_by_alist); }
+  }
+  alist* list = *alistvalue;
 
-    if (count == 0) { /* always store in item->value */
-      i = 0;
-      if (!alistvalue[i]) { alistvalue[i] = new alist(10, not_owned_by_alist); }
-    } else {
-      /*
-       * Find empty place to store this directive
-       */
-      while ((alistvalue)[i] != NULL && i++ < count) {}
-      if (i >= count) {
-        scan_err4(lc, _("Too many %s directives. Max. is %d. line %d: %s\n"),
-                  lc->str, count, lc->line_no, lc->line);
-        return;
-      }
-      alistvalue[i] = new alist(10, not_owned_by_alist);
-    }
-    list = alistvalue[i];
-
-    for (;;) {
-      LexGetToken(lc, BCT_NAME); /* scan next item */
+  int token = BCT_COMMA;
+  while (token == BCT_COMMA) {
+    LexGetToken(lc, BCT_NAME); /* scan next item */
+    if (pass == 2) {
       BareosResource* res = GetResWithName(item->code, lc->str);
       if (res == NULL) {
         scan_err3(lc,
@@ -700,16 +684,12 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
                   item->name, lc->line_no, lc->line);
         return;
       }
-      Dmsg5(900, "Append %p to alist %p size=%d i=%d %s\n", res, list,
-            list->size(), i, item->name);
+      Dmsg5(900, "Append %p (%s) to alist %p size=%d %s\n", res,
+            res->resource_name_, list, list->size(), item->name);
       list->append(res);
-      if (lc->ch != ',') { /* if no other item follows */
-        break;             /* get out */
-      }
-      LexGetToken(lc, BCT_ALL); /* eat comma */
     }
+    token = LexGetToken(lc, BCT_ALL);
   }
-  ScanToEol(lc);
   SetBit(index, (*item->allocated_resource)->item_present_);
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
