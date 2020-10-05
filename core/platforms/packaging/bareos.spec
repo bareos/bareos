@@ -527,16 +527,16 @@ Summary:    Python plugin for Bareos Director daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-director = %{version}
 Requires:   bareos-director-python-plugins-common = %{version}
-Provides:   director-python-plugin
-Obsoletes:  director-python-plugin
+Provides:   bareos-director-python-plugin
+Obsoletes:  bareos-director-python-plugin
 
 %package    director-python3-plugin
 Summary:    Python plugin for Bareos Director daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-director = %{version}
 Requires:   bareos-director-python-plugins-common = %{version}
-Provides:   director-python-plugin
-Obsoletes:  director-python-plugin
+Provides:   bareos-director-python-plugin
+Obsoletes:  bareos-director-python-plugin
 
 %package    director-python-plugins-common
 Summary:    Python plugin for Bareos Director daemon
@@ -549,16 +549,16 @@ Summary:    Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugins-common = %{version}
-Provides:   filedaemon-python-plugin
-Obsoletes:  filedaemon-python-plugin
+Provides:   bareos-filedaemon-python-plugin
+Obsoletes:  bareos-filedaemon-python-plugin
 
 %package    filedaemon-python3-plugin
 Summary:    Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugins-common = %{version}
-Provides:   filedaemon-python-plugin
-Obsoletes:  filedaemon-python-plugin
+Provides:   bareos-filedaemon-python-plugin
+Obsoletes:  bareos-filedaemon-python-plugin
 
 %package    filedaemon-python-plugins-common
 Summary:    Python plugin for Bareos File daemon
@@ -604,16 +604,16 @@ Summary:    Python plugin for Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-storage = %{version}
 Requires:   bareos-storage-python-plugins-common = %{version}
-Provides:   storage-python-plugin
-Obsoletes:  storage-python-plugin
+Provides:   bareos-storage-python-plugin
+Obsoletes:  bareos-storage-python-plugin
 
 %package    storage-python3-plugin
 Summary:    Python plugin for Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-storage = %{version}
 Requires:   bareos-storage-python-plugins-common = %{version}
-Provides:   storage-python-plugin
-Obsoletes:  storage-python-plugin
+Provides:   bareos-storage-python-plugin
+Obsoletes:  bareos-storage-python-plugin
 
 %package    storage-python-plugins-common
 Summary:    Python plugin for Bareos Storage daemon
