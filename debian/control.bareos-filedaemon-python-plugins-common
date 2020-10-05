@@ -8,3 +8,36 @@ Description: Backup Archiving Recovery Open Sourced - file daemon Python plugin 
  data across a network of computers of different kinds.
  .
  This package provides common files for both Python 2 and Python 3 filedaemon plugins.
+
+Package:        bareos-filedaemon-ldap-python-plugin
+Architecture:   any
+Section:        python
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python2-plugin (= ${binary:Version}), python-ldap, ${misc:Depends}
+Description: Backup Archiving Recovery Open Sourced - file daemon LDAP plugin
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides the LDAP Python plugin for the filedaemon.
+
+Package:        bareos-filedaemon-percona-xtrabackup-python-plugin
+Architecture:   any
+Section:        python
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugin (= ${binary:Version})${misc:Depends}
+Description: Backup Archiving Recovery Open Sourced - file daemon Percona XtraBackup plugin
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides the Percona XtraBackup Python plugin for the filedaemon.
+
+Package:        bareos-filedaemon-libcloud-python-plugin
+Architecture:   any
+Section:        python
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugin (= ${binary:Version})${misc:Depends}
+Description: Backup Archiving Recovery Open Sourced - file daemon Apache Libcloud plugin
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides the Apache Libcloud Python plugin for the filedaemon.
