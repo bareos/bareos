@@ -424,7 +424,8 @@ std::string SizeAsSiPrefixFormat(uint64_t value_in)
   /*
    * convert default value string to numeric value
    */
-  static const char* modifier[] = {"e", "p", "t", "g", "m", "k", "", NULL};
+  static const char* modifier[] = {" e", " p", " t", " g",
+                                   " m", " k", "",   NULL};
   const uint64_t multiplier[] = {1152921504606846976,  // EiB Exbibyte
                                  1125899906842624,     // PiB Pebibyte
                                  1099511627776,        // TiB Tebibyte
@@ -436,19 +437,16 @@ std::string SizeAsSiPrefixFormat(uint64_t value_in)
   if (value == 0) {
     result += "0";
   } else {
-    for (int t = 0; modifier[t]; t++) {
+    for (int t = 0; modifier[t] && (value > 0); t++) {
       factor = value / multiplier[t];
       value = value % multiplier[t];
       if (factor > 0) {
         result += std::to_string(factor);
-        result += " ";
         result += modifier[t];
-        if (!(bstrcmp(modifier[t], ""))) { result += " "; }
+        if (value > 0) { result += " "; }
       }
-      if (value == 0) { break; }
     }
   }
-  result.pop_back();
   return result;
 }
 
@@ -699,4 +697,3 @@ bool IsAclEntryValid(const char* acl)
   std::vector<char> msg;
   return IsAclEntryValid(acl, msg);
 }
-
