@@ -161,8 +161,6 @@ if(Python3_FOUND)
 endif()
 
 set(PYFILES
-    pyfiles/bareos-fd.py.template
-    pyfiles/bareos-fd-mock-test.py
     pyfiles/BareosFdPluginBaseclass.py
     pyfiles/BareosFdWrapper.py
     pyfiles/BareosFdPluginLocalFileset.py

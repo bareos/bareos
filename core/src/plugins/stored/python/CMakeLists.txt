@@ -29,7 +29,7 @@ if(Python2_FOUND)
 
   set(PYFILES
       pyfiles/bareos-sd-class-plugin.py pyfiles/BareosSdPluginBaseclass.py
-      pyfiles/bareos-sd.py.template pyfiles/BareosSdWrapper.py
+      pyfiles/BareosSdWrapper.py
   )
 
   install(FILES ${PYFILES} DESTINATION ${plugindir})
@@ -81,7 +81,7 @@ if(Python3_FOUND)
 
   set(PYFILES
       pyfiles/bareos-sd-class-plugin.py pyfiles/BareosSdPluginBaseclass.py
-      pyfiles/bareos-sd.py.template pyfiles/BareosSdWrapper.py
+      pyfiles/BareosSdWrapper.py
   )
 
   install(FILES ${PYFILES} DESTINATION ${plugindir})

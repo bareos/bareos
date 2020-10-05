@@ -28,7 +28,7 @@ if(Python2_FOUND)
   target_include_directories(python-dir PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
   add_dependencies(python-dir bareosdir-python2-module)
 
-  set(PYFILES pyfiles/bareos-dir.py.template pyfiles/bareos-dir-class-plugin.py
+  set(PYFILES pyfiles/bareos-dir-class-plugin.py
               pyfiles/BareosDirPluginBaseclass.py pyfiles/BareosDirWrapper.py
   )
 
@@ -81,7 +81,7 @@ if(Python3_FOUND)
   target_include_directories(python3-dir PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})
   add_dependencies(python3-dir bareosdir-python3-module)
 
-  set(PYFILES pyfiles/bareos-dir.py.template pyfiles/bareos-dir-class-plugin.py
+  set(PYFILES pyfiles/bareos-dir-class-plugin.py
               pyfiles/BareosDirPluginBaseclass.py pyfiles/BareosDirWrapper.py
   )
 

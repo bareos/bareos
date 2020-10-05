@@ -1,6 +1,5 @@
 
 lib/bareos/plugins/python-dir.so
-lib/bareos/plugins/bareos-dir.py.template
 lib/bareos/plugins/BareosDirPluginBaseclass.py
 lib/bareos/plugins/bareos-dir-class-plugin.py
 lib/bareos/plugins/BareosDirWrapper.py
