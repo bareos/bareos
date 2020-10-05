@@ -760,34 +760,39 @@ void ConfigurationParser::StoreAlistStr(LEX* lc,
                                         int index,
                                         int pass)
 {
+  alist** alistvalue = GetItemVariablePointer<alist**>(*item);
   if (pass == 2) {
-    alist** alistvalue = GetItemVariablePointer<alist**>(*item);
     if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
-    alist* list = *alistvalue;
-
-    LexGetToken(lc, BCT_STRING); /* scan next item */
-    Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
-          list->size(), item->name);
-
-    /*
-     * See if we need to drop the default value from the alist.
-     *
-     * We first check to see if the config item has the CFG_ITEM_DEFAULT
-     * flag set and currently has exactly one entry.
-     */
-    if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
-      char* entry;
-
-      entry = (char*)list->first();
-      if (bstrcmp(entry, item->default_value)) {
-        list->destroy();
-        list->init(10, owned_by_alist);
-      }
-    }
-
-    list->append(strdup(lc->str));
   }
-  ScanToEol(lc);
+  alist* list = *alistvalue;
+
+  int token = BCT_COMMA;
+  while (token == BCT_COMMA) {
+    LexGetToken(lc, BCT_STRING); /* scan next item */
+
+    if (pass == 2) {
+      Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
+            list->size(), item->name);
+
+      /*
+       * See if we need to drop the default value from the alist.
+       *
+       * We first check to see if the config item has the CFG_ITEM_DEFAULT
+       * flag set and currently has exactly one entry.
+       */
+      if (!BitIsSet(index, (*item->allocated_resource)->item_present_)) {
+        if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+          char* entry = (char*)list->first();
+          if (bstrcmp(entry, item->default_value)) {
+            list->destroy();
+            list->init(10, owned_by_alist);
+          }
+        }
+      }
+      list->append(strdup(lc->str));
+    }
+    token = LexGetToken(lc, BCT_ALL);
+  }
   SetBit(index, (*item->allocated_resource)->item_present_);
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
