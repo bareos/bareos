@@ -513,14 +513,6 @@ int DeletePidFile(char* dir, const char* progname, int port)
   return 1;
 }
 
-struct StateFileHeader {
-  char id[14];
-  int32_t version;
-  uint64_t last_jobs_addr;
-  uint64_t end_of_recent_job_results_list;
-  uint64_t reserved[19];
-};
-
 static struct StateFileHeader state_hdr = {{"Bareos State\n"}, 4, 0, 0, {0}};
 
 static bool CheckHeader(const StateFileHeader& hdr)
