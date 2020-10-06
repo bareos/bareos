@@ -12,6 +12,7 @@ set -u
 # * "unreleased"    -> link to github master branch
 # * version numbers -> link to gitgub release
 # * issue numbers   -> link to bugs.bareos.org
+# * pull requests   -> link to github PR
 
 topdir="$(realpath "$(dirname "$0")/..")"
 pushd "$topdir" >/dev/null
@@ -63,6 +64,13 @@ for ref_tok in "${ref_tokens[@]}"; do
       printf "[%s]: https://bugs.bareos.org/view.php?id=%d\n" \
         "$ref_tok" \
         "$ticket" \
+        >>"$tmp"
+      ;;
+    PR\ \#[0-9]*)
+      pr="$(grep -o -E '[0-9]+$' <<< "$ref_tok")"
+      printf "[%s]: https://github.com/bareos/bareos/pull/%d\n" \
+        "$ref_tok" \
+        "$pr" \
         >>"$tmp"
       ;;
     *)
