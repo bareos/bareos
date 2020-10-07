@@ -192,6 +192,7 @@ lib/bareos/plugins/BareosDirWrapper.py
 lib/bareos/plugins/BareosFdPluginBaseclass.py
 lib/bareos/plugins/BareosFdPluginLDAP.py
 lib/bareos/plugins/BareosFdPluginLocalFileset.py
+lib/bareos/plugins/BareosFdPluginLocalFilesBaseclass.py
 lib/bareos/plugins/BareosFdWrapper.py
 lib/bareos/plugins/BareosSdPluginBaseclass.py
 lib/bareos/plugins/BareosSdWrapper.py
