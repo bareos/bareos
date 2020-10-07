@@ -197,13 +197,9 @@ lib/bareos/plugins/BareosSdPluginBaseclass.py
 lib/bareos/plugins/BareosSdWrapper.py
 lib/bareos/plugins/autoxflate-sd.so
 lib/bareos/plugins/bareos-dir-class-plugin.py
-lib/bareos/plugins/bareos-dir.py.template
 lib/bareos/plugins/bareos-fd-ldap.py
 lib/bareos/plugins/bareos-fd-local-fileset.py
-lib/bareos/plugins/bareos-fd-mock-test.py
-lib/bareos/plugins/bareos-fd.py.template
 lib/bareos/plugins/bareos-sd-class-plugin.py
-lib/bareos/plugins/bareos-sd.py.template
 lib/bareos/plugins/bpipe-fd.so
 lib/bareos/plugins/python-dir.so
 lib/bareos/plugins/python-fd.so
