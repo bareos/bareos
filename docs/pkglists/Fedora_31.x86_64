@@ -21,12 +21,9 @@ debug/x86_64/bareos-storage-python-plugin-debuginfo
 debug/x86_64/bareos-storage-tape-debuginfo
 debug/x86_64/bareos-tools-debuginfo
 debug/x86_64/bareos-traymonitor-debuginfo
-debug/x86_64/libdroplet-debuginfo
-debug/x86_64/libdroplet-debugsource
 noarch/python-bareos
 noarch/python3-bareos
 src/bareos
-src/libdroplet
 src/python-bareos
 x86_64/bareos
 x86_64/bareos-bconsole
@@ -58,5 +55,3 @@ x86_64/bareos-storage-tape
 x86_64/bareos-tools
 x86_64/bareos-traymonitor
 x86_64/bareos-webui
-x86_64/libdroplet
-x86_64/libdroplet-devel
