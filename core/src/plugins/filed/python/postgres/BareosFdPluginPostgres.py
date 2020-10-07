@@ -33,12 +33,12 @@ import datetime
 from dateutil import parser
 import dateutil
 import json
-import BareosFdPluginLocalFileset
+from BareosFdPluginLocalFilesBaseclass import BareosFdPluginLocalFilesBaseclass
 from BareosFdPluginBaseclass import *
 
 
 class BareosFdPluginPostgres(
-    BareosFdPluginLocalFileset.BareosFdPluginLocalFileset
+    BareosFdPluginLocalFilesBaseclass
 ):  # noqa
     """
     Simple Bareos-FD-Plugin-Class that parses a file and backups all files
