@@ -31,9 +31,7 @@ from BareosFdPluginBaseclass import BareosFdPluginBaseclass
 import stat
 
 
-class BareosFdPluginLocalFilesBaseclass(
-    BareosFdPluginBaseclass
-):  # noqa
+class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
     """
     Simple Bareos-FD-Plugin-Class that parses a file and backups all files
     listed there Filename is taken from plugin argument 'filename'
@@ -90,8 +88,7 @@ class BareosFdPluginLocalFilesBaseclass(
         except Exception as e:
             bareosfd.JobMessage(
                 bareosfd.M_ERROR,
-                'Could net get stat-info for file %s: "%s"'
-                % (self.file_to_backup, e),
+                'Could net get stat-info for file %s: "%s"' % (self.file_to_backup, e),
             )
         # As of Bareos 19.2.7 attribute names in bareosfd.StatPacket differ from os.stat
         # In this case we have to translate names
@@ -111,7 +108,7 @@ class BareosFdPluginLocalFilesBaseclass(
         mystatp.st_atime = statp.st_atime
         mystatp.st_mtime = statp.st_mtime
         mystatp.st_ctime = statp.st_ctime
-        #bareosfd.JobMessage( bareosfd.M_ERROR, '\nmystatp: %s\nstatp: %s\n' % (mystatp,statp))
+        # bareosfd.JobMessage( bareosfd.M_ERROR, '\nmystatp: %s\nstatp: %s\n' % (mystatp,statp))
 
         savepkt.fname = self.file_to_backup
         # os.islink will detect links to directories only when
@@ -119,9 +116,7 @@ class BareosFdPluginLocalFilesBaseclass(
         # on the stripped name but use it with trailing / for the backup itself
         if os.path.islink(self.file_to_backup.rstrip("/")):
             savepkt.type = bareosfd.FT_LNK
-            savepkt.link = os.readlink(
-                self.file_to_backup.rstrip("/")
-            )
+            savepkt.link = os.readlink(self.file_to_backup.rstrip("/"))
             bareosfd.DebugMessage(150, "file type is: FT_LNK\n")
         elif os.path.isfile(self.file_to_backup):
             savepkt.type = bareosfd.FT_REG
@@ -137,8 +132,7 @@ class BareosFdPluginLocalFilesBaseclass(
             bareosfd.DebugMessage(150, "file type is: FT_FIFO\n")
         else:
             bareosfd.JobMessage(
-                bareosfd.M_WARNING,
-                "File %s of unknown type" % (self.file_to_backup),
+                bareosfd.M_WARNING, "File %s of unknown type" % (self.file_to_backup),
             )
             return bareosfd.bRC_Skip
 
@@ -154,8 +148,7 @@ class BareosFdPluginLocalFilesBaseclass(
         virtual files or similar
         """
         bareosfd.DebugMessage(
-            100,
-            "create_file() entry point in Python called with %s\n" % (restorepkt),
+            100, "create_file() entry point in Python called with %s\n" % (restorepkt),
         )
         FNAME = restorepkt.ofname
         if not FNAME:
@@ -194,8 +187,7 @@ class BareosFdPluginLocalFilesBaseclass(
                     os.mkfifo(FNAME, 0o600)
                 except Exception as e:
                     bareosfd.JobMessage(
-                        bareosfd.M_ERROR,
-                        'Could net create fifo %s: "%s"' % (FNAME, e),
+                        bareosfd.M_ERROR, 'Could net create fifo %s: "%s"' % (FNAME, e),
                     )
             restorepkt.create_status = bareosfd.CF_CREATED
         else:
@@ -262,10 +254,13 @@ class BareosFdPluginLocalFilesBaseclass(
             + "\n",
         )
         try:
-            os.chown(self.FNAME, self.statp[self.FNAME].st_uid, self.statp[self.FNAME].st_gid)
+            os.chown(
+                self.FNAME, self.statp[self.FNAME].st_uid, self.statp[self.FNAME].st_gid
+            )
             os.chmod(self.FNAME, self.statp[self.FNAME].st_mode)
             os.utime(
-                self.FNAME, (self.statp[self.FNAME].st_atime, self.statp[self.FNAME].st_mtime)
+                self.FNAME,
+                (self.statp[self.FNAME].st_atime, self.statp[self.FNAME].st_mtime),
             )
             # del sometimes leads to no-key errors, it seams that end_restore_file is sometimes called
             # multipl times.
@@ -282,9 +277,7 @@ class BareosFdPluginLocalFilesBaseclass(
         Here we return 'bRC_More' as long as our list files_to_backup is not
         empty and bRC_OK when we are done
         """
-        bareosfd.DebugMessage(
-            100, "end_backup_file() entry point in Python called\n"
-        )
+        bareosfd.DebugMessage(100, "end_backup_file() entry point in Python called\n")
         if self.files_to_backup:
             return bareosfd.bRC_More
         else:
