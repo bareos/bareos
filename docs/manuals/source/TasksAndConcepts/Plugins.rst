@@ -1637,10 +1637,8 @@ Optional Plugin Options:
 This option in the config file is optional:
 
 fail_on_download_error
-   This parameter is by default False to keep a job running if for some reason a file cannot
-   be downloaded from a bucket because it is either deleted or moved to another space during
-   download. In this case a Job will be marked with warnings as this is the default of Bareos.
-   It is recommended not to change this option.
+   When this option is enabled, any error during a file download will fail the backup job.
+   By default a warning will be issued and the next file will be backed up.
 
 
 .. _PerconaXtrabackupPlugin:

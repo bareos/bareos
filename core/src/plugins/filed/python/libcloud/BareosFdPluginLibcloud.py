@@ -298,8 +298,6 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 if self.options["fail_on_download_error"]:
                     self.active = False
                     error = True
-                else:
-                    pass
             elif worker_result == ABORT:
                 self.active = False
                 error = True
