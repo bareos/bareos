@@ -2003,9 +2003,9 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
       /*
        * Each member of the list is comma-separated
        */
-      send.KeyMultipleStringsOnePerLine(item.name,
-                                        GetItemVariable<alist*>(item),
-                                        GetResourceName, inherited, true);
+      send.KeyMultipleStringsOnePerLine(
+          item.name, GetItemVariable<alist*>(item), GetResourceName, inherited,
+          true, false);
       break;
     }
     case CFG_TYPE_RES: {

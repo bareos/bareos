@@ -845,7 +845,7 @@ static void StoreFname(LEX* lc,
                     _("Backslash found. Use forward slashes or quote the "
                       "string.: %s\n"),
                     lc->str);
-          /* NOT REACHED */
+          return;
         }
       case BCT_QUOTED_STRING: {
         FilesetResource* res_fs = GetStaticFilesetResource();

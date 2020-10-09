@@ -49,7 +49,8 @@ class OutputFormatterResource {
   void KeyMultipleStringsOnePerLineAddItem(const char* key,
                                            const char* item,
                                            bool as_comment,
-                                           bool quoted_strings);
+                                           bool quoted_strings,
+                                           bool escape_strings);
 
 
  public:
@@ -121,18 +122,21 @@ class OutputFormatterResource {
   void KeyMultipleStringsOnePerLine(const char* key,
                                     alist* list,
                                     bool as_comment = false,
-                                    bool quoted_strings = true);
+                                    bool quoted_strings = true,
+                                    bool escape_strings = false);
 
   void KeyMultipleStringsOnePerLine(const char* key,
                                     alist* list,
                                     std::function<const char*(void*)> GetValue,
                                     bool as_comment = false,
-                                    bool quoted_strings = true);
+                                    bool quoted_strings = true,
+                                    bool escape_strings = false);
 
   void KeyMultipleStringsOnePerLine(const char* key,
                                     const std::vector<std::string>&,
                                     bool as_comment = false,
-                                    bool quoted_strings = true);
+                                    bool quoted_strings = true,
+                                    bool escape_strings = false);
 
   void ArrayStart(const char* key,
                   bool as_comment = false,
