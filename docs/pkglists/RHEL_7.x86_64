@@ -1,5 +1,4 @@
 debug/x86_64/bareos-debuginfo
-debug/x86_64/libdroplet-debuginfo
 noarch/python3-bareos
 noarch/python-bareos
 src/bareos
