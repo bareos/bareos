@@ -1620,7 +1620,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{python3_sitelib}/bareosfd*.so
 
 %files filedaemon-python-plugins-common
-%{plugin_dir}/bareos-fd.py*
 %{plugin_dir}/bareos-fd-local-fileset.py*
 %{plugin_dir}/BareosFdPluginBaseclass.py*
 %{plugin_dir}/BareosFdPluginLocalFileset.py*
@@ -1676,7 +1675,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{python3_sitelib}/bareosdir*.so
 
 %files director-python-plugins-common
-%{plugin_dir}/bareos-dir.py*
 %{plugin_dir}/BareosDirPluginBaseclass.py*
 %{plugin_dir}/bareos-dir-class-plugin.py*
 %{plugin_dir}/BareosDirWrapper.py*
@@ -1692,7 +1690,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{python3_sitelib}/bareossd*.so
 
 %files storage-python-plugins-common
-%{plugin_dir}/bareos-sd.py*
 %{plugin_dir}/BareosSdPluginBaseclass.py*
 %{plugin_dir}/BareosSdWrapper.py*
 %{plugin_dir}/bareos-sd-class-plugin.py*
