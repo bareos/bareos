@@ -847,6 +847,7 @@ static void StoreFname(LEX* lc,
                     lc->str);
           /* NOT REACHED */
         }
+        break;
       case BCT_QUOTED_STRING: {
         FilesetResource* res_fs = GetStaticFilesetResource();
         if (res_fs->have_MD5) {
@@ -898,6 +899,7 @@ static void StorePluginName(LEX* lc,
                     lc->str);
           /* NOT REACHED */
         }
+        break;
       case BCT_QUOTED_STRING: {
         FilesetResource* res_fs = GetStaticFilesetResource();
 
@@ -914,6 +916,7 @@ static void StorePluginName(LEX* lc,
       default:
         scan_err1(lc, _("Expected a filename, got: %s"), lc->str);
         /* NOT REACHED */
+        break;
     }
   }
   ScanToEol(lc);
