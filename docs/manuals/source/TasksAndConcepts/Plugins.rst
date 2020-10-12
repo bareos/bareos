@@ -1636,10 +1636,9 @@ Optional Plugin Options:
 
 This option in the config file is optional:
 
-treat_download_errors_as_warnings
-   This parameter can be set to True to keep a job running if for some reason a file cannot
-   be downloaded from a bucket because it is either deleted or moved to another space during
-   download. The default for this value is False.
+fail_on_download_error
+   When this option is enabled, any error during a file download will fail the backup job.
+   By default a warning will be issued and the next file will be backed up.
 
 
 .. _PerconaXtrabackupPlugin:

@@ -93,7 +93,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         super(BareosFdPluginLibcloud, self).__init__(plugindef)
         super(BareosFdPluginLibcloud, self).parse_plugin_definition(plugindef)
-        self.options["treat_download_errors_as_warnings"] = False
+        self.options["fail_on_download_error"] = False
         self.__parse_options()
 
         self.last_run = datetime.datetime.fromtimestamp(self.since)
@@ -165,7 +165,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "temporary_download_directory",
         ]
         optional_options = {}
-        optional_options["misc"] = ["treat_download_errors_as_warnings"]
+        optional_options["misc"] = ["fail_on_download_error"]
 
         # this maps config file options to libcloud options
         option_map = {
@@ -221,7 +221,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if self.config.has_option(section, option):
                 try:
                     value = self.config.get(section, option)
-                    self.options["treat_download_errors_as_warnings"] = strtobool(value)
+                    self.options["fail_on_download_error"] = strtobool(value)
                 except:
                     debugmessage(
                         100,
@@ -295,9 +295,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         while self.active:
             worker_result = self.api.check_worker_messages()
             if worker_result == ERROR:
-                if self.options["treat_download_errors_as_warnings"]:
-                    pass
-                else:
+                if self.options["fail_on_download_error"]:
                     self.active = False
                     error = True
             elif worker_result == ABORT:
@@ -350,20 +348,20 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             try:
                 self.FILE = IterStringIO(self.current_backup_task["data"].as_stream())
             except ObjectDoesNotExistError:
-                if self.options["treat_download_errors_as_warnings"]:
-                    jobmessage(
-                        M_WARNING,
-                        "Skipped file %s because it does not exist anymore"
-                        % (self.current_backup_task["name"]),
-                    )
-                    return bRC_Skip
-                else:
+                if self.options["fail_on_download_error"]:
                     jobmessage(
                         M_ERROR,
                         "File %s does not exist anymore"
                         % (self.current_backup_task["name"]),
                     )
                     return bRC_Error
+                else:
+                    jobmessage(
+                        M_WARNING,
+                        "Skipped file %s because it does not exist anymore"
+                        % (self.current_backup_task["name"]),
+                    )
+                    return bRC_Skip
 
         else:
             raise Exception(value='Wrong argument for current_backup_task["type"]')
@@ -418,10 +416,10 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     ),
                 )
                 IOP.status = 0
-                if self.options["treat_download_errors_as_warnings"]:
-                    return bRC_Skip
-                else:
+                if self.options["fail_on_download_error"]:
                     return bRC_Error
+                else:
+                    return bRC_Skip
 
         elif IOP.func == IO_WRITE:
             try:
