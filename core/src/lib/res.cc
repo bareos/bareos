@@ -832,32 +832,40 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
                                            int index,
                                            int pass)
 {
-  alist** alistvalue = GetItemVariablePointer<alist**>(*item);
-  if (pass == 2) {
-    if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
+  if (pass == 1) {
+    ScanToEol(lc);
+    return;
   }
-  alist* list = *alistvalue;
 
-  char* p{nullptr};
-  char* plugin_name{nullptr};
-  char* plugin_names{nullptr};
-  int token = BCT_COMMA;
-  while (token == BCT_COMMA) {
-    LexGetToken(lc, BCT_STRING); /* scan next item */
-    if (pass == 2) {
-      plugin_names = strdup(lc->str);
-      plugin_name = plugin_names;
-      while (plugin_name) {
-        if ((p = strchr(plugin_name, ':'))) { /* split string at ':' */
-          *p++ = '\0';
+  alist** alistvalue = GetItemVariablePointer<alist**>(*item);
+  if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
+
+  bool finish = false;
+  while (!finish) {
+    switch (LexGetToken(lc, BCT_ALL)) {
+      case BCT_EOL:
+        finish = true;
+        break;
+      case BCT_COMMA:
+        continue;
+      case BCT_UNQUOTED_STRING:
+      case BCT_QUOTED_STRING: {
+        char* p0 = strdup(lc->str);
+        char* p1 = p0;
+        char* p2 = p0;
+        while (p1) {
+          p2 = strchr(p1, ':'); // split at ':'
+          if (p2 != nullptr) { *p2++ = '\0'; }
+          (*alistvalue)->append(strdup(p1));
+          p1 = p2;
         }
-
-        list->append(strdup(plugin_name));
-        plugin_name = p;
+        free(p0);
+        break;
       }
-      free(plugin_names);
+      default:
+        finish = true;
+        break;
     }
-    token = LexGetToken(lc, BCT_ALL);
   }
   SetBit(index, (*item->allocated_resource)->item_present_);
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
