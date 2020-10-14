@@ -1,0 +1,8 @@
+core/src/lmdb
+core/src/fastlz
+core/src/droplet
+core/src/ndmp/*.c
+core/src/ndmp/*.h
+core/src/stored/crc32
+webui/vendor
+webui/module/Application/language

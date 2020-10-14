@@ -4,6 +4,7 @@
  *
  * (Note: Relicensed from PSF: http://bugs.python.org/issue24937#msg250191 )
  */
+/* check-sources:disable-copyright-check */
 
 #ifndef __CAPSULETHUNK_H
 #define __CAPSULETHUNK_H

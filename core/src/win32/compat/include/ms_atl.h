@@ -2,6 +2,7 @@
  * Minimal replacement for class CComPtr and CComBSTR
  * Based on common public IUnknown interface only
  */
+/* check-sources:disable-copyright-check */
 
 template <class T>
 class CComPtr {

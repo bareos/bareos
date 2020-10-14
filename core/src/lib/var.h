@@ -1,25 +1,4 @@
 /*
-   BAREOS® - Backup Archiving REcovery Open Sourced
-
-   Copyright (C) 2003-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
-
-   This program is Free Software; you can redistribute it and/or
-   modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation and included
-   in the file LICENSE.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   Affero General Public License for more details.
-
-   You should have received a copy of the GNU Affero General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
-*/
-/*
  *  Copyright (c) 2001-2002 Ralf S. Engelschall <rse@engelschall.com>
  *  Copyright (c) 2001-2002 The OSSP Project (http://www.ossp.org/)
  *  Copyright (c) 2001-2002 Cable & Wireless Deutschland (http://www.cw.com/de/)
@@ -41,6 +20,7 @@
  * @file
  * OSSP var - Variable Expansion
  */
+/* check-sources:disable-copyright-check */
 
 #ifndef BAREOS_LIB_VAR_H_
 #define BAREOS_LIB_VAR_H_

@@ -1,6 +1,7 @@
 /**
  * @file glob.h
  * Copyright (C) 2012 MinGW.org project
+ * Copyright (C) 2016-2016 Bareos GmbH & Co. KG
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),

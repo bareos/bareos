@@ -1,6 +1,7 @@
 /*
 
    Copyright (C) 2007-2012 Kern Sibbald
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    You may freely use this code to create your own plugin provided
    it is to write a plugin for Bareos licensed under AGPLv3
