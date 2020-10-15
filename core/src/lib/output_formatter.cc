@@ -991,7 +991,6 @@ void OutputFormatter::JsonFinalizeResult(bool result)
   json_t* range_obj = NULL;
   PoolMem ErrorMsg;
   char* string;
-  size_t string_length = 0;
 
   /*
    * We mimic json-rpc result and error messages,
@@ -1039,14 +1038,14 @@ void OutputFormatter::JsonFinalizeResult(bool result)
   } else {
     string = json_dumps(msg_obj, UA_JSON_FLAGS_NORMAL);
   }
-  string_length = strlen(string);
-  Dmsg1(800, "message length (json): %lld\n", string_length);
   if (string == NULL) {
     /*
      * json_dumps return NULL on failure (this should not happen).
      */
     Emsg0(M_ERROR, 0, "Failed to generate json string.\n");
   } else {
+    size_t string_length = strlen(string);
+    Dmsg1(800, "message length (json): %lld\n", string_length);
     /*
      * send json string, on failure, send json error message
      */

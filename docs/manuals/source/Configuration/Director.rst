@@ -287,24 +287,30 @@ Please take note of the following items in the FileSet syntax:
 
 #. When using wild-cards or regular expressions, directory names are always terminated with a slash (/) and filenames have no trailing slash.
 
-.. config:option:: dir/fileset/include/file
+.. config:option:: dir/fileset/include/File
 
-   :type: path
-   :type: <includefile-server
-   :type: \\<includefile-client
-   :type: \|command-server
-   :type: \\\|command-client
+   :type: "path"
+   :type: "<includefile-server"
+   :type: "\\\\<includefile-client"
+   :type: "\|command-server"
+   :type: "\\\\\|command-client"
 
    The file list consists of one file or directory name per line. Directory names should be specified without a trailing slash with Unix path notation.
 
-   Windows users, please take note to specify directories (even c:/...) in Unix path notation. If you use Windows conventions, you will most likely not be able to restore your files due to the fact that the Windows path separator was defined as an escape character long before Windows existed, and Bareos adheres to that convention (i.e. means the next character appears as itself).
+   .. note::
 
-   You should always specify a full path for every directory and file that you list in the FileSet. In addition, on Windows machines, you should always prefix the directory or filename with the drive specification (e.g. c:/xxx) using Unix directory name separators (forward slash). The drive letter itself can be upper or lower case (e.g. c:/xxx or C:/xxx).
+      Windows users, please take note to specify directories (even :file:`c:/...`) in Unix path notation. If you use Windows conventions, you will most likely not be able to restore your files due to the fact that the Windows path separator was defined as an escape character long before Windows existed, and Bareos adheres to that convention (i.e. means the next character appears as itself).
 
-   Bareos’s default for processing directories is to recursively descend in the directory saving all files and subdirectories. Bareos will not by default cross filesystems (or mount points in Unix parlance). This means that if you specify the root partition (e.g. /), Bareos will save only the root partition and not any of the other mounted filesystems. Similarly on Windows systems, you must explicitly specify each of the drives you want saved (e.g. c:/ and d:/ ...). In addition, at least for
-   Windows systems, you will most likely want to enclose each specification within double quotes particularly if the directory (or file) name contains spaces. The df command on Unix systems will show you which mount points you must specify to save everything. See below for an example.
+   You should always specify a full path for every directory and file that you list in the FileSet. In addition, on Windows machines, you should always prefix the directory or filename with the drive specification (e.g. :file:`c:/xxx`) using Unix directory name separators (forward slash). The drive letter itself can be upper or lower case (e.g. :file:`c:/xxx` or :file:`C:/xxx`).
 
-   Take special care not to include a directory twice or Bareos will backup the same files two times wasting a lot of space on your archive device. Including a directory twice is very easy to do. For example:
+   A file item may not contain wild-cards.
+   Use directives in the :ref:`fileset-options`
+   if you wish to specify wild-cards or regular expression matching.
+
+   Bareos’s default for processing directories is to recursively descend in the directory saving all files and subdirectories. Bareos will not by default cross filesystems (or mount points in Unix parlance). This means that if you specify the root partition (e.g. :file:`/`), Bareos will save only the root partition and not any of the other mounted filesystems. Similarly on Windows systems, you must explicitly specify each of the drives you want saved (e.g. :file:`c:/` and :file:`d:/` ...). In addition, at least for
+   Windows systems, you will most likely want to enclose each specification within double quotes particularly if the directory (or file) name contains spaces.
+
+   Take special care not to include a directory twice or Bareos will by default backup the same files two times wasting a lot of space on your archive device. Including a directory twice is very easy to do. For example:
 
    .. code-block:: bareosconfig
       :caption: File Set
@@ -317,15 +323,16 @@ Please take note of the following items in the FileSet syntax:
         File = /usr
       }
 
-   on a Unix system where /usr is a subdirectory (rather than a mounted filesystem) will cause /usr to be backed up twice.
+   on a Unix system where :file:`/usr` is a subdirectory (rather than a mounted filesystem) will cause :file:`/usr` to be backed up twice.
+   Using the directive :config:option:`dir/fileset/include/options/Shadowing` Bareos can be configured to detect and exclude duplicates automatically.
 
    To include names containing spaces, enclose the name between double-quotes.
 
    There are a number of special cases when specifying directories and files.
    They are:
 
-   -  Any name preceded by an at-sign (@) is assumed to be the name of a file, which contains a list of files each preceded by a "File =". The named file is read once when the configuration file is parsed during the Director startup. Note, that the file is read on the Director’s machine and not on the Client’s. In fact, the @filename can appear anywhere within a configuration file where a token would be read, and the contents of the named file will be logically inserted in the place of the
-      @filename. What must be in the file depends on the location the @filename is specified in the conf file. For example:
+   ``@filename``
+      Any name preceded by an at-sign (@) is assumed to be the name of a file, which contains a list of files each preceded by a "File =". The named file is read once when the configuration file is parsed during the Director startup. Note, that the file is read on the Director’s machine and not on the Client’s. In fact, the @filename can appear anywhere within a configuration file where a token would be read, and the contents of the named file will be logically inserted in the place of the @filename. What must be in the file depends on the location the @filename is specified in the conf file. For example:
 
       .. code-block:: bareosconfig
          :caption: File Set with Include File
@@ -337,15 +344,42 @@ Please take note of the following items in the FileSet syntax:
            @/home/files/my-files
          }
 
-   -  Any name beginning with a vertical bar (|) is assumed to be the name of a program. This program will be executed on the Director’s machine at the time the Job starts (not when the Director reads the configuration file), and any output from that program will be assumed to be a list of files or directories, one per line, to be included. Before submitting the specified command Bareos will performe :ref:`character substitution <character substitution>`.
+
+   ``File = "<includefile-server"``
+      Any file item preceded by a less-than sign (``<``) will be taken to be a file. This file will be read on the Director’s machine (see below for doing it on the Client machine) at the time the Job starts, and the data will be assumed to be a list of directories or files, one per line, to be included. The names should start in column 1 and should not be quoted even if they contain spaces. This feature allows you to modify the external file and change what will be saved without stopping and restarting Bareos as would be necessary if using the @ modifier noted above. For example:
+
+      .. code-block:: bareosconfig
+
+         Include {
+           Options {
+             signature = SHA1
+           }
+           File = "</home/files/local-filelist"
+         }
+
+
+   ``File = "\\<includefile-client"``
+      If you precede the less-than sign (``<``) with two backslashes as in ``\\<``, the file-list will be read on the Client machine instead of on the Director’s machine.
+
+      .. code-block:: bareosconfig
+
+         Include {
+           Options {
+             Signature = SHA1
+           }
+           File = "\\</home/xxx/filelist-on-client"
+         }
+
+
+   ``File = "|command-server"``
+      Any name beginning with a vertical bar (|) is assumed to be the name of a program. This program will be executed on the Director’s machine at the time the Job starts (not when the Director reads the configuration file), and any output from that program will be assumed to be a list of files or directories, one per line, to be included. Before submitting the specified command Bareos will performe :ref:`character substitution <character substitution>`.
 
       This allows you to have a job that, for example, includes all the local partitions even if you change the partitioning by adding a disk. The examples below show you how to do this. However, please note two things:
     
-      1. if you want the local filesystems, you probably should be using the fstype directive and set onefs=no.
+      1. if you want the local filesystems, you probably should be using the :config:option:`dir/fileset/include/options/FsType` directive and set :config:option:`dir/fileset/include/options/OneFs = no`.
       2. the exact syntax of the command needed in the examples below is very system dependent. For example, on recent Linux systems, you may need to add the -P option, on FreeBSD systems, the options will be different as well.
 
-      In general, you will need to prefix your command or commands with a sh -c so that they are invoked by a shell. This will not be the case if you are invoking a script as in the second example below. Also, you must take care to escape (precede with a \\) wild-cards, shell character, and to ensure that any spaces in your command are escaped as well. If you use a single quotes (’) within a double quote ("), Bareos will treat everything between the single quotes as one field so it will not be
-      necessary to escape the spaces. In general, getting all the quotes and escapes correct is a real pain as you can see by the next example. As a consequence, it is often easier to put everything in a file and simply use the file name within Bareos. In that case the sh -c will not be necessary providing the first line of the file is #!/bin/sh.
+      In general, you will need to prefix your command or commands with a :command:`sh -c` so that they are invoked by a shell. This will not be the case if you are invoking a script as in the second example below. Also, you must take care to escape (precede with a ``\``) wild-cards, shell character, and to ensure that any spaces in your command are escaped as well. If you use a single quotes (’) within a double quote ("), Bareos will treat everything between the single quotes as one field so it will not be necessary to escape the spaces. In general, getting all the quotes and escapes correct is a real pain as you can see by the next example. As a consequence, it is often easier to put everything in a file and simply use the file name within Bareos. In that case the sh -c will not be necessary providing the first line of the file is #!/bin/sh.
 
       As an example:
 
@@ -379,7 +413,9 @@ Please take note of the following items in the FileSet syntax:
          df -l | grep "^/dev/hd[ab]" | grep -v ".*/tmp" \
                | awk "{print \$6}"
 
-   - If the vertical bar (``|``) in front of :command:`my_partitions` is preceded by a backslash as in ``\|``, the program will be executed on the Client’s machine instead of on the Director’s machine. Please note that if the filename is given within quotes, you will need to use two slashes. An example, provided by John Donagher, that backs up all the local UFS partitions on a remote system is:
+
+   ``File = "\\|command-client"``
+      If the vertical bar (``|``) in front of :command:`my_partitions` is preceded by a two backslashes as in ``\\|``, the program will be executed on the Client’s machine instead of on the Director’s machine. An example, provided by John Donagher, that backs up all the local UFS partitions on a remote system is:
 
       .. code-block:: bareosconfig
          :caption: File Set with inline script in quotes
@@ -388,8 +424,8 @@ Please take note of the following items in the FileSet syntax:
            Name = "All local partitions"
            Include {
              Options {
-               signature=SHA1
-               onefs=yes
+               Signature=SHA1
+               OneFs=yes
              }
              File = "\\|bash -c \"df -klF ufs | tail +2 | awk '{print \$6}'\""
            }
@@ -404,55 +440,33 @@ Please take note of the following items in the FileSet syntax:
 
          Include {
             Options {
-              signature = SHA1
-              onefs=no
-              fstype=ext2
+              Signature = SHA1
+              OneFs=no
+              FsType=ext2
             }
             File = /
          }
 
-   -  Any file item preceded by a less-than sign (``<``) will be taken to be a file. This file will be read on the Director’s machine (see below for doing it on the Client machine) at the time the Job starts, and the data will be assumed to be a list of directories or files, one per line, to be included. The names should start in column 1 and should not be quoted even if they contain spaces. This feature allows you to modify the external file and change what will be saved without stopping and restarting Bareos as would be necessary if using the @ modifier noted above. For example:
 
-      .. code-block:: bareosconfig
+   Raw Partition
+      .. index::
+         single: Backup; Partitions
+         single: Backup; Raw Partitions
 
-         Include {
-           Options {
-             signature = SHA1
-           }
-           File = "</home/files/local-filelist"
-         }
-
-   - If you precede the less-than sign (``<``) with a backslash as in ``\<``, the file-list will be read on the Client machine instead of on the Director’s machine. Please note that if the filename is given within quotes, you will need to use two slashes.
-
-      .. code-block:: bareosconfig
-
-         Include {
-           Options {
-             signature = SHA1
-           }
-           File = "\</home/xxx/filelist-on-client"
-         }
-
-   -  :index:`\ <single: Backup; Partitions>`
-      :index:`\ <single: Backup; Raw Partitions>`
-      If you explicitly specify a block device such as /dev/hda1, then Bareos will assume that this is a raw partition to be backed up. In this case, you are strongly urged to specify a sparse=yes include option, otherwise, you will save the whole partition rather than just the actual data that the partition contains. For example:
+      If you explicitly specify a block device such as :file:`/dev/hda1`, then Bareos will assume that this is a raw partition to be backed up. In this case, you are strongly urged to specify a Sparse=yes include option, otherwise, you will save the whole partition rather than just the actual data that the partition contains. For example:
 
       .. code-block:: bareosconfig
          :caption: Backup Raw Partitions
 
          Include {
            Options {
-             signature=MD5
-             sparse=yes
+             Signature=MD5
+             Sparse=yes
            }
            File = /dev/hd6
          }
 
-      will backup the data in device /dev/hd6. Note, the bf /dev/hd6 must be the raw partition itself. Bareos will not back it up as a raw device if you specify a symbolic link to a raw device such as my be created by the LVM Snapshot utilities.
-
-   -  A file item may not contain wild-cards.
-      Use directives in the :ref:`fileset-options`
-      if you wish to specify wild-cards or regular expression matching.
+      will backup the data in device :file:`/dev/hd6`. Note, :file:`/dev/hd6` must be the raw partition itself. Bareos will not back it up as a raw device if you specify a symbolic link to a raw device such as my be created by the LVM Snapshot utilities.
 
 
 .. config:option:: dir/fileset/include/ExcludeDirContaining
@@ -466,31 +480,31 @@ Please take note of the following items in the FileSet syntax:
    .. code-block:: bareosconfig
       :caption: Exlude Directories containing the file .nobackup
 
-          # List of files to be backed up
-          FileSet {
-              Name = "MyFileSet"
-              Include {
-                  Options {
-                      signature = MD5
-                  }
-                  File = /home
-                  Exclude Dir Containing = .nobackup
-              }
+      # List of files to be backed up
+      FileSet {
+        Name = "MyFileSet"
+        Include {
+          Options {
+            Signature = MD5
           }
+          File = /home
+          Exclude Dir Containing = .nobackup
+        }
+      }
 
-   But in /home, there may be hundreds of directories of users and some people want to indicate that they don’t want to have certain directories backed up. For example, with the above FileSet, if the user or sysadmin creates a file named .nobackup in specific directories, such as
+   But in :file:`/home`, there may be hundreds of directories of users and some people want to indicate that they don’t want to have certain directories backed up. For example, with the above FileSet, if the user or sysadmin creates a file named .nobackup in specific directories, such as
 
    ::
 
-          /home/user/www/cache/.nobackup
-          /home/user/temp/.nobackup
+      /home/user/www/cache/.nobackup
+      /home/user/temp/.nobackup
 
    then Bareos will not backup the two directories named:
 
    ::
 
-          /home/user/www/cache
-          /home/user/temp
+      /home/user/www/cache
+      /home/user/temp
    
    Subdirectories will not be backed up. That is, the directive applies to the two directories in question and any children (be they files, directories, etc).
 
@@ -537,11 +551,11 @@ FileSet Exclude-Resources very similar to Include-Resources, except that they on
 
 .. config:option:: dir/fileset/exclude/file
 
-   :type: path
-   :type: <includefile-server
-   :type: \\<includefile-client
-   :type: \|command-server
-   :type: \\\|command-client
+   :type: "path"
+   :type: "<includefile-server"
+   :type: "\\\\<includefile-client"
+   :type: "\|command-server"
+   :type: "\\\\\|command-client"
 
    Files to exclude are descripted in the same way as at the :ref:`fileset-include`.
 
@@ -570,7 +584,9 @@ FileSet Exclude-Resources very similar to Include-Resources, except that they on
         }
       }
 
-   Another way to exclude files and directories is to use the :strong:`Exclude`\  option from the Include section.
+   Another way to exclude files and directories is to use the 
+   :config:option:`dir/fileset/include/options/Exclude = yes` setting
+   in a Include section.
 
 
 
@@ -611,9 +627,6 @@ The directives within an Options resource may be one of the following:
 .. config:option:: dir/fileset/include/options/compression
 
    :type: <GZIP|GZIP1|...|GZIP9|LZO|LZFAST|LZ4|LZ4HC>
-
-   :index:`\ <single: compression>`\ 
-   :index:`\ <single: Directive; compression>`\ 
 
    Configures the software compression to be used by the File Daemon.
    The compression is done on a file by file basis.
@@ -695,13 +708,10 @@ The directives within an Options resource may be one of the following:
 
 
 
-.. config:option:: dir/fileset/include/options/signature
+.. config:option:: dir/fileset/include/options/Signature
 
    :type: <MD5|SHA1|SHA256|SHA512>
 
-
-   :index:`\ <single: signature>`
-   :index:`\ <single: Directive; signature>`
    It is strongly recommend to use signatures for your backups.
    Note, only one type of signature can be computed per file.
 
@@ -733,13 +743,10 @@ The directives within an Options resource may be one of the following:
 
 
 
-.. config:option:: dir/fileset/include/options/basejob
+.. config:option:: dir/fileset/include/options/BaseJob
 
    :type: <options>
 
-
-   :index:`\ <single: basejob>`\ 
-   :index:`\ <single: Directive; basejob>`\ 
 
    The options letters specified are used when running a :strong:`Backup Level=Full`
    with BaseJobs. The options letters are the same than in the :strong:`verify=`
@@ -749,21 +756,17 @@ The directives within an Options resource may be one of the following:
 
    :type: <options>
 
-     :index:`\ <single: Accurate>`\ 
-     :index:`\ <single: Directive; accurate>`\  
-     The options letters specified are used when
-     running a :strong:`Backup Level=Incremental/Differential` in Accurate mode. The
-     options letters are the same than in the :strong:`verify=` option below.
+   The options letters specified are used when
+   running a :strong:`Backup Level=Incremental/Differential` in Accurate mode. The
+   options letters are the same than in the :strong:`verify=` option below.
 
-.. config:option:: dir/fileset/include/options/verify
+.. config:option:: dir/fileset/include/options/Verify
 
    :type: <options>
 
-    :index:`\ <single: verify>`
-    :index:`\ <single: Directive; verify>`
-    The options letters specified are used  when running a :strong:`Verify
-    Level=Catalog` as well as the  :strong:`DiskToCatalog` level job. The options
-    letters may be any  combination of the following:
+   The options letters specified are used  when running a :strong:`Verify
+   Level=Catalog` as well as the  :strong:`DiskToCatalog` level job. The options
+   letters may be any  combination of the following:
 
     i
         compare the inodes
@@ -813,13 +816,11 @@ The directives within an Options resource may be one of the following:
    :type: yes|no
    :default: yes
 
-   :index:`\ <single: onefs>`
-   :index:`\ <single: Directive; onefs>`
    If set to :strong:`yes`, Bareos will remain on a single
    file system.  That is it will not backup file systems that are mounted
    on a subdirectory.  If you are using a Unix system, you may not even be
    aware that there are several different filesystems as they are often
-   automatically mounted by the OS (e.g.  /dev, /net, /sys, /proc, ...).
+   automatically mounted by the OS (e.g.  :file:`/dev`, :file:`/net`, :file:`/sys`, :file:`/proc`, ...).
    Bareos will inform you when it decides not to
    traverse into another filesystem.  This can be very useful if you forgot
    to backup a particular partition.
@@ -828,13 +829,13 @@ The directives within an Options resource may be one of the following:
 
    .. code-block:: bareoslog
    
-        rufus-fd: /misc is a different filesystem. Will not descend from / into /misc
-        rufus-fd: /net is a different filesystem. Will not descend from / into /net
-        rufus-fd: /var/lib/nfs/rpc_pipefs is a different filesystem. Will not descend from /var/lib/nfs into /var/lib/nfs/rpc_pipefs
-        rufus-fd: /selinux is a different filesystem. Will not descend from / into /selinux
-        rufus-fd: /sys is a different filesystem. Will not descend from / into /sys
-        rufus-fd: /dev is a different filesystem. Will not descend from / into /dev
-        rufus-fd: /home is a different filesystem. Will not descend from / into /home
+      host-fd: /misc is a different filesystem. Will not descend from / into /misc
+      host-fd: /net is a different filesystem. Will not descend from / into /net
+      host-fd: /var/lib/nfs/rpc_pipefs is a different filesystem. Will not descend from /var/lib/nfs into /var/lib/nfs/rpc_pipefs
+      host-fd: /selinux is a different filesystem. Will not descend from / into /selinux
+      host-fd: /sys is a different filesystem. Will not descend from / into /sys
+      host-fd: /dev is a different filesystem. Will not descend from / into /dev
+      host-fd: /home is a different filesystem. Will not descend from / into /home
 
 
    If you wish to backup multiple filesystems, you can  explicitly
@@ -842,11 +843,11 @@ The directives within an Options resource may be one of the following:
    to :strong:`no`, Bareos will backup  all mounted file systems (i.e. traverse mount
    points) that  are found within the :strong:`FileSet`. Thus if  you have NFS or
    Samba file systems mounted on a directory listed  in your FileSet, they will
-   also be backed up. Normally, it is  preferable to set :strong:`onefs=yes` and to
+   also be backed up. Normally, it is  preferable to set :config:option:`dir/fileset/include/options/OneFs = yes` and to
    explicitly name  each filesystem you want backed up. Explicitly naming  the
    filesystems you want backed up avoids the possibility  of getting into a
    infinite loop recursing filesystems.  Another possibility is to
-   use :strong:`onefs=no` and to set :strong:`fstype=ext2, ...`.
+   use :config:option:`dir/fileset/include/options/OneFs = no` and to set :config:option:`dir/fileset/include/options/FsType = ext2, ...`.
    See the example below for more details.
 
    If you think that Bareos should be backing up a particular directory
@@ -909,10 +910,8 @@ The directives within an Options resource may be one of the following:
 
 .. config:option:: dir/fileset/include/options/HonorNoDumpFlag
 
-   :type: <yes|no>
+   :type: yes|no
 
-   :index:`\ <single: honornodumpflag>`\ 
-   :index:`\ <single: Directive; honornodumpflag>`\ 
    If your file system supports the :strong:`nodump` flag (e. g. most
    BSD-derived systems) Bareos will honor the setting of the flag
    when this option is set to :strong:`yes`. Files having this flag set
@@ -929,9 +928,6 @@ The directives within an Options resource may be one of the following:
 
    :type: yes|no
 
-   :index:`\ <single: portable>`\ 
-   :index:`\ <single: Directive; portable>`\ 
-   
    If set to :strong:`yes` (default is :strong:`no`), the Bareos File daemon will
    backup Win32 files in a portable format, but not all Win32 file
    attributes will be saved and restored.  By default, this option is set
@@ -948,8 +944,6 @@ The directives within an Options resource may be one of the following:
 
    :type: yes|no
 
-   :index:`\ <single: recurse>`\ 
-   :index:`\ <single: Directive; recurse>`\ 
    If set to :strong:`yes` (the default), Bareos will recurse (or descend) into
    all subdirectories found unless the directory is explicitly excluded
    using an :strong:`exclude` definition.  If you set :strong:`recurse=no`, Bareos
@@ -961,10 +955,6 @@ The directives within an Options resource may be one of the following:
 .. config:option:: dir/fileset/include/options/sparse
 
    :type: yes|no
-
-   .. index::
-      single: sparse
-      single: Directive; sparse
 
    Enable special code that checks for sparse files such as created by
    ndbm.  The default is :strong:`no`, so no checks are made for sparse files.
@@ -1006,14 +996,10 @@ The directives within an Options resource may be one of the following:
 
 .. _readfifo:
 
-.. config:option:: dir/fileset/include/options/readfifo
+.. config:option:: dir/fileset/include/options/ReadFifo
 
    :type: yes|no
 
-   .. index::
-      single: readfifo
-      single: Directive; readfifo
-   
    If enabled, tells the Client to read the data on a backup and write the
    data on a restore to any FIFO (pipe) that is explicitly mentioned in the
    FileSet.  In this case, you must have a program already running that
@@ -1038,11 +1024,11 @@ The directives within an Options resource may be one of the following:
       :caption: FileSet with Fifo
 
       Include {
-            Options {
-            signature=SHA1
-            readfifo=yes
-            }
-            File = /home/abc/fifo
+        Options {
+          signature=SHA1
+          readfifo=yes
+        }
+        File = "/home/abc/fifo"
       }
 
    This feature can be used to do a "hot" database backup.  
@@ -1065,8 +1051,6 @@ The directives within an Options resource may be one of the following:
 
    :type: yes|no
 
-   :index:`\ <single: noatime>`\ 
-   :index:`\ <single: Directive; noatime>`\ 
    If enabled, and if your Operating System supports the O\_NOATIME file
    open flag, Bareos will open all files to be backed up with this option.
    It makes it possible to read a file without updating the inode atime
@@ -1084,13 +1068,10 @@ The directives within an Options resource may be one of the following:
    silently ignored by Bareos.
 
 
-.. config:option:: dir/fileset/include/options/mtimeonly
+.. config:option:: dir/fileset/include/options/MtimeOnly
 
    :type: yes|no
 
-
-   :index:`\ <single: mtimeonly>`\ 
-   :index:`\ <single: Directive; mtimeonly>`\ 
    If enabled, tells the Client that the selection of files during
    Incremental and Differential backups should based only on the st\_mtime
    value in the stat() packet.  The default is :strong:`no` which means that
@@ -1098,13 +1079,9 @@ The directives within an Options resource may be one of the following:
    st\_mtime and the st\_ctime values.  In general, it is not recommended
    to use this option.
 
-.. config:option:: dir/fileset/include/options/keepatime
+.. config:option:: dir/fileset/include/options/KeepAtime
 
    :type: yes|no
-
-   .. index::
-      single: keepatime
-      single: Directive; keepatime
 
    The default is :strong:`no`.  When enabled, Bareos will reset the st\_atime
    (access time) field of files that it backs up to their value prior to
@@ -1123,12 +1100,10 @@ The directives within an Options resource may be one of the following:
    to use :strong:`mtimeonly = yes` as well as keepatime (thanks to
    Rudolf Cejka for this tip).
 
-.. config:option:: dir/fileset/include/options/checkfilechanges
+.. config:option:: dir/fileset/include/options/CheckFileChanges
 
    :type: yes|no
 
-   :index:`\ <single: checkfilechanges>`\ 
-   :index:`\ <single: Directive; checkfilechanges>`\ 
    If enabled, the Client will check size, age of each file after
    their backup to see if they have changed during backup. If time
    or size mismatch, an error will raise.
@@ -1140,171 +1115,161 @@ The directives within an Options resource may be one of the following:
 
    In general, it is recommended to use this option.
 
-.. config:option:: dir/fileset/include/options/hardlinks
+.. config:option:: dir/fileset/include/options/HardLinks
 
    :type: yes|no
-
-    :index:`\ <single: hardlinks>`\ 
-    :index:`\ <single: Directive; hardlinks>`\ 
-    When enabled (default), this directive will cause hard links to be
-    backed up. However, the File daemon keeps track of hard linked files and
-    will backup the data only once. The process of keeping track of the
-    hard links can be quite expensive if you have lots of them (tens of
-    thousands or more). This doesn't occur on normal Unix systems, but if
-    you use a program like BackupPC, it can create hundreds of thousands, or
-    even millions of hard links. Backups become very long and the File daemon
-    will consume a lot of CPU power checking hard links.  In such a case,
-    set :strong:`hardlinks=no` and hard links will not be backed up.  Note, using
-    this option will most likely backup more data and on a restore the file
-    system will not be restored identically to the original.
-
-.. config:option:: dir/fileset/include/options/wild
-
-   :type: <string>
-
-    :index:`\ <single: wild>`\ 
-    :index:`\ <single: Directive; wild>`\ 
-    Specifies a wild-card string to be applied to the filenames and
-    directory names.  Note, if :strong:`Exclude` is not enabled, the wild-card
-    will select which files are to be included.  If :strong:`Exclude=yes` is
-    specified, the wild-card will select which files are to be excluded.
-    Multiple wild-card directives may be specified, and they will be applied
-    in turn until the first one that matches.  Note, if you exclude a
-    directory, no files or directories below it will be matched.
-
-    You may want to test your expressions prior to running your
-    backup by using the :ref:`bwild` program.
-    You can also test your full FileSet definition by using
-    the :ref:`estimate <estimate>` command.
-    It is recommended to enclose the string in double quotes.
+   :default: yes
 
 
-.. config:option:: dir/fileset/include/options/wilddir
+   When enabled (default), this directive will cause hard links to be
+   backed up. However, the File daemon keeps track of hard linked files and
+   will backup the data only once. The process of keeping track of the
+   hard links can be quite expensive if you have lots of them (tens of
+   thousands or more). This doesn't occur on normal Unix systems, but if
+   you use a program like BackupPC, it can create hundreds of thousands, or
+   even millions of hard links. Backups become very long and the File daemon
+   will consume a lot of CPU power checking hard links.  In such a case,
+   set :config:option:`dir/fileset/include/options/HardLinks = no`
+   and hard links will not be backed up.  Note, using
+   this option will most likely backup more data and on a restore the file
+   system will not be restored identically to the original.
+
+.. config:option:: dir/fileset/include/options/Wild
 
    :type: <string>
 
-    :index:`\ <single: wilddir>`\ 
-    :index:`\ <single: Directive; wilddir>`\ 
-    Specifies a wild-card string to be applied to directory names only.  No
-    filenames will be matched by this directive.  Note, if :strong:`Exclude` is
-    not enabled, the wild-card will select directories to be
-    included.  If :strong:`Exclude=yes` is specified, the wild-card will select
-    which directories are to be excluded.  Multiple wild-card directives may be
-    specified, and they will be applied in turn until the first one that
-    matches.  Note, if you exclude a directory, no files or directories
-    below it will be matched.
+   Specifies a wild-card string to be applied to the filenames and
+   directory names.  Note, if :strong:`Exclude` is not enabled, the wild-card
+   will select which files are to be included.  If :strong:`Exclude=yes` is
+   specified, the wild-card will select which files are to be excluded.
+   Multiple wild-card directives may be specified, and they will be applied
+   in turn until the first one that matches.  Note, if you exclude a
+   directory, no files or directories below it will be matched.
 
-    It is recommended to enclose the string in double quotes.
+   You may want to test your expressions prior to running your
+   backup by using the :ref:`bwild` program.
+   You can also test your full FileSet definition by using
+   the :ref:`estimate <estimate>` command.
+   It is recommended to enclose the string in double quotes.
 
-    You may want to test your expressions prior to running your
-    backup by using the :ref:`bwild` program.
-    You can also test your full FileSet definition by using
-    the :ref:`estimate <estimate>` command.
 
-.. config:option:: dir/fileset/include/options/wildfile
+.. config:option:: dir/fileset/include/options/WildDir
 
    :type: <string>
 
-    :index:`\ <single: wildfile>`\ 
-    :index:`\ <single: Directive; wildfile>`\ 
-    Specifies a wild-card string to be applied to non-directories. That
-    is no directory entries will be matched by this directive.
-    However, note that the match is done against the full path and filename,
-    so your wild-card string must take into account that filenames
-    are preceded by the full path.
-    If :strong:`Exclude`
-    is not enabled, the wild-card will select which files are to be
-    included.  If :strong:`Exclude=yes` is specified, the wild-card will select
-    which files are to be excluded.  Multiple wild-card directives may be
-    specified, and they will be applied in turn until the first one that
-    matches.
+   Specifies a wild-card string to be applied to directory names only.  No
+   filenames will be matched by this directive.  Note, if :strong:`Exclude` is
+   not enabled, the wild-card will select directories to be
+   included.  If :strong:`Exclude=yes` is specified, the wild-card will select
+   which directories are to be excluded.  Multiple wild-card directives may be
+   specified, and they will be applied in turn until the first one that
+   matches.  Note, if you exclude a directory, no files or directories
+   below it will be matched.
 
-    It is recommended to enclose the string in double quotes.
+   It is recommended to enclose the string in double quotes.
 
-    You may want to test your expressions prior to running your
-    backup by using the :ref:`bwild` program.
-    You can also test your full FileSet definition by using
-    the :ref:`estimate <estimate>` command.
-    An example of excluding with the WildFile option on Win32 machines is
-    presented below.
+   You may want to test your expressions prior to running your
+   backup by using the :ref:`bwild` program.
+   You can also test your full FileSet definition by using
+   the :ref:`estimate <estimate>` command.
+
+.. config:option:: dir/fileset/include/options/WildFile
+
+   :type: <string>
+
+   Specifies a wild-card string to be applied to non-directories. That
+   is no directory entries will be matched by this directive.
+   However, note that the match is done against the full path and filename,
+   so your wild-card string must take into account that filenames
+   are preceded by the full path.
+   If :config:option:`dir/fileset/include/options/Exclude`
+   is not enabled, the wild-card will select which files are to be
+   included.
+   If :config:option:`dir/fileset/include/options/Exclude=yes` is specified,
+   the wild-card will select
+   which files are to be excluded.  Multiple wild-card directives may be
+   specified, and they will be applied in turn until the first one that
+   matches.
+
+   It is recommended to enclose the string in double quotes.
+
+   You may want to test your expressions prior to running your
+   backup by using the :ref:`bwild` program.
+   You can also test your full FileSet definition by using
+   the :ref:`estimate <estimate>` command.
+   An example of excluding with the WildFile option on Win32 machines is
+   presented below.
 
 .. _FileRegex:
 
-.. config:option:: dir/fileset/include/options/regex
+.. config:option:: dir/fileset/include/options/Regex
 
    :type: <string>
 
-    :index:`\ <single: regex>`\ 
-    :index:`\ <single: Directive; regex>`\ 
+   Specifies a POSIX extended regular expression to be applied to the
+   filenames and directory names, which include the full path.  If :strong:`
+   Exclude` is not enabled, the regex will select which files are to be
+   included.  If :strong:`Exclude=yes` is specified, the regex will select
+   which files are to be excluded.  Multiple regex directives may be
+   specified within an Options resource, and they will be applied in turn
+   until the first one that matches.  Note, if you exclude a directory, no
+   files or directories below it will be matched.
 
-    Specifies a POSIX extended regular expression to be applied to the
-    filenames and directory names, which include the full path.  If :strong:`
-    Exclude` is not enabled, the regex will select which files are to be
-    included.  If :strong:`Exclude=yes` is specified, the regex will select
-    which files are to be excluded.  Multiple regex directives may be
-    specified within an Options resource, and they will be applied in turn
-    until the first one that matches.  Note, if you exclude a directory, no
-    files or directories below it will be matched.
+   It is recommended to enclose the string in double quotes.
 
-    It is recommended to enclose the string in double quotes.
+   The regex libraries differ from one operating system to
+   another, and in addition, regular expressions are complicated,
+   so you may want to test your expressions prior to running your
+   backup by using the :ref:`bregex` program.
+   You can also test your full FileSet definition by using
+   the :ref:`estimate <estimate>` command.
 
-    The regex libraries differ from one operating system to
-    another, and in addition, regular expressions are complicated,
-    so you may want to test your expressions prior to running your
-    backup by using the :ref:`bregex` program.
-    You can also test your full FileSet definition by using
-    the :ref:`estimate <estimate>` command.
-
-    You find yourself using a lot of Regex statements, which will cost quite a lot
-    of CPU time, we recommend you simplify them if you can, or better yet
-    convert them to Wild statements which are much more efficient.
+   You find yourself using a lot of Regex statements, which will cost quite a lot
+   of CPU time, we recommend you simplify them if you can, or better yet
+   convert them to Wild statements which are much more efficient.
 
 
-.. config:option:: dir/fileset/include/options/regexfile
+.. config:option:: dir/fileset/include/options/RegexFile
 
    :type: <string>
 
-    :index:`\ <single: regexfile>`\ 
-    :index:`\ <single: Directive; regexfile>`\ 
-    Specifies a POSIX extended regular expression to be applied to
-    non-directories. No directories will be matched by this directive.
-    However, note that the match is done against the full path and
-    filename, so your regex string must take into account that filenames
-    are preceded by the full path.
-    If :strong:`Exclude` is not enabled, the regex will select which files are
-    to be included.  If :strong:`Exclude=yes` is specified, the regex will
-    select which files are to be excluded.  Multiple regex directives may be
-    specified, and they will be applied in turn until the first one that
-    matches.
+   Specifies a POSIX extended regular expression to be applied to
+   non-directories. No directories will be matched by this directive.
+   However, note that the match is done against the full path and
+   filename, so your regex string must take into account that filenames
+   are preceded by the full path.
+   If :strong:`Exclude` is not enabled, the regex will select which files are
+   to be included.  If :strong:`Exclude=yes` is specified, the regex will
+   select which files are to be excluded.  Multiple regex directives may be
+   specified, and they will be applied in turn until the first one that
+   matches.
 
-    It is recommended to enclose the string in double quotes.
+   It is recommended to enclose the string in double quotes.
 
-    The regex libraries differ from one operating system to
-    another, and in addition, regular expressions are complicated,
-    so you may want to test your expressions prior to running your
-    backup by using the :ref:`bregex` program.
+   The regex libraries differ from one operating system to
+   another, and in addition, regular expressions are complicated,
+   so you may want to test your expressions prior to running your
+   backup by using the :ref:`bregex` program.
 
-.. config:option:: dir/fileset/include/options/regexdir
+.. config:option:: dir/fileset/include/options/RegexDir
 
    :type: <string>
 
-    :index:`\ <single: regexdir>`\ 
-    :index:`\ <single: Directive; regexdir>`\ 
-    Specifies a POSIX extended regular expression to be applied to directory
-    names only.  No filenames will be matched by this directive.  Note, if
-    :strong:`Exclude` is not enabled, the regex will select directories
-    files are to be included.  If :strong:`Exclude=yes` is specified, the
-    regex will select which files are to be excluded.  Multiple
-    regex directives may be specified, and they will be applied in turn
-    until the first one that matches.  Note, if you exclude a directory, no
-    files or directories below it will be matched.
+   Specifies a POSIX extended regular expression to be applied to directory
+   names only.  No filenames will be matched by this directive.  Note, if
+   :strong:`Exclude` is not enabled, the regex will select directories
+   files are to be included.  If :strong:`Exclude=yes` is specified, the
+   regex will select which files are to be excluded.  Multiple
+   regex directives may be specified, and they will be applied in turn
+   until the first one that matches.  Note, if you exclude a directory, no
+   files or directories below it will be matched.
 
-    It is recommended to enclose the string in double quotes.
+   It is recommended to enclose the string in double quotes.
 
-    The regex libraries differ from one operating system to
-    another, and in addition, regular expressions are complicated,
-    so you may want to test your expressions prior to running your
-    backup by using the :ref:`bregex` program.
+   The regex libraries differ from one operating system to
+   another, and in addition, regular expressions are complicated,
+   so you may want to test your expressions prior to running your
+   backup by using the :ref:`bregex` program.
 
 .. config:option:: dir/fileset/include/options/Exclude 
 
@@ -1319,11 +1284,8 @@ The directives within an Options resource may be one of the following:
 .. config:option:: dir/fileset/include/options/AclSupport
 
    :type: yes|no
+   :default: yes
 
-   .. index::
-      single acl support
-      single Directive; acl support
-   
    Since :sinceVersion:`18.2.4: ACL support = yes (new default)`
    the default is :strong:`yes`.
    If this option is set to yes, and you have the
@@ -1363,10 +1325,7 @@ The directives within an Options resource may be one of the following:
 .. config:option:: dir/fileset/include/options/XAttrSupport
 
    :type: yes|no
-
-   .. index::
-      single: xattr support
-      single: Directive; xattr support
+   :default: yes
 
    Since :sinceVersion:`18.2.4: xattr support = yes (new default)`
    the default is :strong:`yes`.
@@ -1401,19 +1360,15 @@ The directives within an Options resource may be one of the following:
 
    :type: yes|no
 
-   :index:`\ <single: ignore case>`\ 
-   :index:`\ <single: Directive; ignore case>`\ 
    The default is :strong:`no`.  On Windows systems, you will almost surely
    want to set this to :strong:`yes`.  When this directive is set to :strong:`yes`
    all the case of character will be ignored in wild-card and regex
    comparisons.  That is an uppercase A will match a lowercase a.
 
-.. config:option:: dir/fileset/include/options/fstype
+.. config:option:: dir/fileset/include/options/FsType
 
    :type: filesystem-type
 
-   :index:`\ <single: fstype>`\ 
-   :index:`\ <single: Directive; fstype>`\ 
    This option allows you to select files and directories by the
    filesystem type.  Example filesystem-type names are:
 
@@ -1426,7 +1381,8 @@ The directives within an Options resource may be one of the following:
    filesystem for a particular directive, that directory will not be
    backed up.  This directive can be used to prevent backing up
    non-local filesystems. Normally, when you use this directive, you
-   would also set :strong:`onefs=no` so that Bareos will traverse filesystems.
+   would also set :config:option:`dir/fileset/include/options/OneFs=no`
+   so that Bareos will traverse filesystems.
 
    This option is not implemented in Win32 systems.
 
@@ -1435,11 +1391,11 @@ The directives within an Options resource may be one of the following:
 
    :type: Windows-drive-type
 
-   :index:`\ <single: DriveType>`\ 
-   :index:`\ <single: Directive; DriveType>`\ 
    This option is effective only on Windows machines and is
-   somewhat similar to the Unix/Linux :strong:`fstype` described
-   above, except that it allows you to select what Windows
+   somewhat similar to the Unix/Linux
+   :config:option:`dir/fileset/include/options/FsType`
+   described above,
+   except that it allows you to select what Windows
    drive types you want to allow.  By default all drive
    types are accepted.
 
@@ -1453,7 +1409,8 @@ The directives within an Options resource may be one of the following:
    filesystem for a particular directive, that directory will not be
    backed up.  This directive can be used to prevent backing up
    non-local filesystems. Normally, when you use this directive, you
-   would also set :strong:`onefs=no` so that Bareos will traverse filesystems.
+   would also set :config:option:`dir/fileset/include/options/OneFs=no`
+   so that Bareos will traverse filesystems.
 
    This option is not implemented in Unix/Linux systems.
 
@@ -1462,8 +1419,6 @@ The directives within an Options resource may be one of the following:
 
    :type: yes|no
 
-   :index:`\ <single: hfsplussupport>`\ 
-   :index:`\ <single: Directive; hfsplussupport>`\ 
    This option allows you to turn on support for Mac OSX HFS plus
    finder information.
 
@@ -1472,9 +1427,6 @@ The directives within an Options resource may be one of the following:
 
    :type: <integer>
 
-
-   :index:`\ <single: strippath>`\ 
-   :index:`\ <single: Directive; strippath>`\ 
    This option will cause :strong:`integer` paths to be stripped from
    the front of the full path/filename being backed up. This can
    be useful if you are migrating data from another vendor or if
@@ -1487,8 +1439,6 @@ The directives within an Options resource may be one of the following:
 
    :type: sizeoption
 
-   :index:`\ <single: size>`\ 
-   :index:`\ <single: Directive; size>`\ 
    This option will allow you to select files by their actual size.
    You can select either files smaller than a certain size or bigger
    then a certain size, files of a size in a certain range or files
@@ -1514,8 +1464,6 @@ The directives within an Options resource may be one of the following:
    :type: none|localwarn|localremove|globalwarn|globalremove
    :default: none
 
-   :index:`\ <single: shadowing>`\ 
-   :index:`\ <single: Directive; shadowing>`\ 
    This option performs a check within the
    fileset for any file-list entries which are shadowing each other.
    Lets say you specify / and /usr but /usr is not a separate filesystem.
@@ -1563,12 +1511,10 @@ The directives within an Options resource may be one of the following:
       }
 
 
-.. config:option:: dir/fileset/include/options/meta
+.. config:option:: dir/fileset/include/options/Meta
 
    :type: tag
 
-   :index:`\ <single: meta>`\ 
-   :index:`\ <single: Directive; meta>`\ 
    This option will add a meta tag to a fileset. These meta tags are used
    by the Native NDMP protocol to pass NDMP backup or restore environment
    variables via the Data Management Agent (DMA) in Bareos to the remote
@@ -1580,7 +1526,8 @@ The directives within an Options resource may be one of the following:
 FileSet Examples
 ~~~~~~~~~~~~~~~~
 
-:index:`\ <pair: Example; FileSet>`
+.. index::
+   pair: Example; FileSet
 
 The following is an example of a valid FileSet resource definition. Note, the first Include pulls in the contents of the file :file:`/etc/backup.list` when Bareos is started (i.e. the @), and that file must have each filename to be backed up preceded by a File = and on a separate line.
 

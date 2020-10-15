@@ -545,6 +545,7 @@ set(SYSTEM_TESTS
     config-dump
     encrypt-signature
     encrypt-signature-tls-cert
+    filesets
     notls
     passive
     spool

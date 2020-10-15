@@ -1,0 +1,44 @@
+#!/bin/sh
+
+set -u
+set -e
+
+self="$1"
+#out="@tmpdir@/$self"
+out="@tmpdir@/command-$self.out"
+
+> $out
+
+#printf "dir=%s\n" "$BAREOS_DIRECTOR_BINARY" >> $out
+#printf "fd =%s\n" "$BAREOS_FILEDAEMON_BINARY" >> $out
+
+if [ "$self" = "client" ]; then
+    parentbin="$BAREOS_FILEDAEMON_BINARY"
+elif [ "$self" = "server" ]; then
+    parentbin="$BAREOS_DIRECTOR_BINARY"
+else
+    echo "Invalid parameter. Must be 'client' or 'server'".
+    exit 1
+fi
+
+printf "PID=%s\n" "$$" >> $out
+printf "looking for parent process: %s\n" "$parentbin" >> $out
+
+PID=$$
+while [ $PID -gt 1 ]; do
+  #CMD=$(ps -fp $PID -o comm=)
+  FULLCMD=$(ps -fp $PID -o args=)
+  printf "PID=%s: %s\n" "$PID" "$FULLCMD" >> $out
+  if printf "%s" "$FULLCMD" | grep -q $parentbin ; then
+    printf "found calling bareos daemon (%s)\n" "$self" >> $out
+    # backup the log file.
+    printf "%s\n" "$out"
+    printf "%s\n" "@tmpdir@/common"
+    printf "%s\n" "@tmpdir@/command-$self"
+    exit 0
+  fi
+  PID=$(ps -o ppid= -p $PID)
+done
+
+echo "EXPECTED PARENT NOT FOUND ($parentbin)" | tee -a $out
+#exit 1

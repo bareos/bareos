@@ -30,8 +30,11 @@
 
 TEST(edit, convert_number_to_siunits)
 {
+  ASSERT_STREQ(SizeAsSiPrefixFormat(0).c_str(), "0");
   ASSERT_STREQ(SizeAsSiPrefixFormat(1).c_str(), "1");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(123).c_str(), "123");
   ASSERT_STREQ(SizeAsSiPrefixFormat(1024).c_str(), "1 k");
+  ASSERT_STREQ(SizeAsSiPrefixFormat(2050).c_str(), "2 k 2");
   ASSERT_STREQ(SizeAsSiPrefixFormat(1048576).c_str(), "1 m");
   ASSERT_STREQ(SizeAsSiPrefixFormat(1073741824).c_str(), "1 g");
   ASSERT_STREQ(SizeAsSiPrefixFormat(1099511627776).c_str(), "1 t");

@@ -1,0 +1,79 @@
+#!/bin/bash
+set -e
+set -u
+#
+# This tests uses different filesets
+# for testing
+#   File = "|command-server"
+#   File = "\\|command-client"
+#   File = "<include-server"
+#   File = "\\<include-client"
+#
+# When testing command-server resp. command-client
+# we check which daemon calls the script.
+# If the script is not called by the expected daemon,
+# no files will be backed up.
+# For include-server and include-client
+# we only check, that the syntax is accepted,
+# as we can not distinguish between director and filedaemon
+# as both run in the same environment.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+# Directory to backup.
+# This directory will be created by setup_data "$@"().
+#BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backed up.
+# Data will be placed at "${tmp}/data/".
+#setup_data "$@"
+
+TESTS="command-server command-client include-server include-client"
+
+for i in common $TESTS; do
+    mkdir "${tmp}/$i"
+    echo "Test $i" > "${tmp}/$i/data1.txt"
+    echo "Test $i" > "${tmp}/$i/data2.txt"
+done
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+
+@$out $tmp/estimate-command-server.out
+estimate listing job=$JobName level=Full fileset=command-server
+
+@$out $tmp/estimate-command-client.out
+estimate listing job=$JobName level=Full fileset=command-client
+
+@$out $tmp/estimate-include-server.out
+estimate listing job=$JobName level=Full fileset=include-server
+
+@$out $tmp/estimate-include-client.out
+estimate listing job=$JobName level=Full fileset=include-client
+
+END_OF_DATA
+
+run_bareos "$@"
+check_for_zombie_jobs storage=File
+stop_bareos
+
+for i in $TESTS; do
+    if ! grep -q $tmp/$i/data2.txt $tmp/estimate-$i.out; then
+        set_error "$i failed."
+    fi
+done
+
+end_test

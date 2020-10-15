@@ -1,0 +1,9 @@
+FileSet {
+  Name = "command-server"
+  Include {
+    Options {
+      Signature = MD5
+    }
+    File = "|sh -c '@confdir@/command.sh server'"
+  }
+}

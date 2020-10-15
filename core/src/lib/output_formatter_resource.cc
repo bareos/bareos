@@ -238,14 +238,15 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLineAddItem(
     const char* key,
     const char* item,
     bool as_comment,
-    bool quoted_strings)
+    bool quoted_strings,
+    bool escape_strings)
 {
   PoolMem lineformat;
   std::string escItem;
   const char* value = item;
   std::string format = GetKeyFormatString(as_comment) + "%s\n";
   if (quoted_strings) { format = GetKeyFormatString(as_comment) + "\"%s\"\n"; }
-  if (requiresEscaping(item)) {
+  if (escape_strings || requiresEscaping(item)) {
     escItem = EscapeString(item);
     value = escItem.c_str();
   }
@@ -259,7 +260,8 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLine(
     alist* list,
     std::function<const char*(void* item)> GetValue,
     bool as_comment,
-    bool quoted_strings)
+    bool quoted_strings,
+    bool escape_strings)
 {
   /*
    * One line for each member of the list
@@ -276,7 +278,7 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLine(
     send_->ArrayStart(key);
     foreach_alist (item, list) {
       KeyMultipleStringsOnePerLineAddItem(key, GetValue(item), as_comment,
-                                          quoted_strings);
+                                          quoted_strings, escape_strings);
     }
     send_->ArrayEnd(key);
   }
@@ -286,10 +288,11 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLine(
 void OutputFormatterResource::KeyMultipleStringsOnePerLine(const char* key,
                                                            alist* list,
                                                            bool as_comment,
-                                                           bool quoted_strings)
+                                                           bool quoted_strings,
+                                                           bool escape_strings)
 {
   KeyMultipleStringsOnePerLine(key, list, GetAsCString, as_comment,
-                               quoted_strings);
+                               quoted_strings, escape_strings);
 }
 
 
@@ -297,7 +300,8 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLine(
     const char* key,
     const std::vector<std::string>& list,
     bool as_comment,
-    bool quoted_strings)
+    bool quoted_strings,
+    bool escape_strings)
 {
   if (list.empty()) {
     if (as_comment) {
@@ -309,7 +313,7 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLine(
     send_->ArrayStart(key);
     for (const std::string& item : list) {
       KeyMultipleStringsOnePerLineAddItem(key, item.c_str(), as_comment,
-                                          quoted_strings);
+                                          quoted_strings, escape_strings);
     }
     send_->ArrayEnd(key);
   }

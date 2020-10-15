@@ -520,13 +520,11 @@ static uint32_t scan_pint(LEX* lf, char* str)
 
   if (!Is_a_number(str)) {
     scan_err1(lf, _("expected a positive integer number, got: %s"), str);
-    /* NOT REACHED */
   } else {
     errno = 0;
     val = str_to_int64(str);
     if (errno != 0 || val < 0) {
       scan_err1(lf, _("expected a positive integer number, got: %s"), str);
-      /* NOT REACHED */
     }
   }
 
@@ -539,13 +537,11 @@ static uint64_t scan_pint64(LEX* lf, char* str)
 
   if (!Is_a_number(str)) {
     scan_err1(lf, _("expected a positive integer number, got: %s"), str);
-    /* NOT REACHED */
   } else {
     errno = 0;
     val = str_to_uint64(str);
     if (errno != 0) {
       scan_err1(lf, _("expected a positive integer number, got: %s"), str);
-      /* NOT REACHED */
     }
   }
 
