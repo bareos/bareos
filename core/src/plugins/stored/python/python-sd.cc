@@ -35,15 +35,19 @@
 #include "include/bareos.h"
 #endif
 
+#define PLUGIN_DAEMON "sd"
+
 #if PY_VERSION_HEX < 0x03000000
-#define LOGPREFIX "python-sd: "
+#define PLUGIN_NAME "python"
+#define PLUGIN_DIR PY2MODDIR
 #else
-#define LOGPREFIX "python3-sd: "
+#define PLUGIN_NAME "python3"
+#define PLUGIN_DIR PY3MODDIR
 #endif
 
+#define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
 #include "stored/stored.h"
-
 #include "plugins/include/python3compat.h"
 
 #include "python-sd.h"
@@ -59,8 +63,9 @@ static const int debuglevel = 150;
 #define PLUGIN_DATE "May 2020"
 #define PLUGIN_VERSION "4"
 #define PLUGIN_DESCRIPTION "Python Storage Daemon Plugin"
-#define PLUGIN_USAGE                                                           \
-  "python:instance=<instance_id>:module_path=<path-to-python-modules>:module_" \
+#define PLUGIN_USAGE                                                     \
+  PLUGIN_NAME                                                            \
+  ":instance=<instance_id>:module_path=<path-to-python-modules>:module_" \
   "name=<python-module-to-load>"
 
 
@@ -210,12 +215,16 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
 {
   Py_InitializeEx(0);
 
+  // add bareos plugin path to python module search path
+  PyObject* sysPath = PySys_GetObject((char*)"path");
+  PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
+  PyList_Append(sysPath, pluginPath);
+  Py_DECREF(pluginPath);
+
   /* import the bareossd module */
   PyObject* bareossdModule = PyImport_ImportModule("bareossd");
-  if (bareossdModule) {
-    // printf("loaded bareossd successfully\n");
-  } else {
-    // printf("loading of bareossd failed\n");
+  if (!bareossdModule) {
+    printf("loading of bareossd failed\n");
     if (PyErr_Occurred()) { PyErrorHandler(); }
   }
 

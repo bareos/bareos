@@ -173,7 +173,7 @@ Source0: %{name}-%{version}.tar.gz
 
 BuildRequires: pam-devel
 
-BuildRequires: cmake
+BuildRequires: cmake >= 3.12
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: make
@@ -220,8 +220,10 @@ BuildRequires: qt-devel
 %if 0%{?python_plugins}
 %if 0%{?centos_version} >= 800 || 0%{?rhel_version} >= 800 || 0%{?fedora} >= 31
 BuildRequires: python2-devel >= 2.6
+BuildRequires: python3-devel >= 3.4
 %else
 BuildRequires: python-devel >= 2.6
+BuildRequires: python3-devel >= 3.4
 %endif
 %endif
 
@@ -520,15 +522,49 @@ Group:      Development/Languages/C and C++
 Requires:   %{name}-common = %{version}
 
 %if 0%{?python_plugins}
-%package    director-python-plugin
+%package    director-python2-plugin
+Summary:    Python plugin for Bareos Director daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-director = %{version}
+Requires:   bareos-director-python-plugins-common = %{version}
+Provides:   bareos-director-python-plugin
+Obsoletes:  bareos-director-python-plugin
+
+%package    director-python3-plugin
+Summary:    Python plugin for Bareos Director daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-director = %{version}
+Requires:   bareos-director-python-plugins-common = %{version}
+Provides:   bareos-director-python-plugin
+Obsoletes:  bareos-director-python-plugin
+
+%package    director-python-plugins-common
 Summary:    Python plugin for Bareos Director daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-director = %{version}
 
-%package    filedaemon-python-plugin
+
+%package    filedaemon-python2-plugin
 Summary:    Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
+Requires:   bareos-filedaemon-python-plugins-common = %{version}
+Provides:   bareos-filedaemon-python-plugin
+Obsoletes:  bareos-filedaemon-python-plugin
+
+%package    filedaemon-python3-plugin
+Summary:    Python plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+Requires:   bareos-filedaemon-python-plugins-common = %{version}
+Provides:   bareos-filedaemon-python-plugin
+Obsoletes:  bareos-filedaemon-python-plugin
+
+%package    filedaemon-python-plugins-common
+Summary:    Python plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+
 
 %package    filedaemon-ldap-python-plugin
 Summary:    LDAP Python plugin for Bareos File daemon
@@ -563,7 +599,23 @@ Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
 #Requires:   python-percona
 
-%package    storage-python-plugin
+%package    storage-python2-plugin
+Summary:    Python plugin for Bareos Storage daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-storage = %{version}
+Requires:   bareos-storage-python-plugins-common = %{version}
+Provides:   bareos-storage-python-plugin
+Obsoletes:  bareos-storage-python-plugin
+
+%package    storage-python3-plugin
+Summary:    Python plugin for Bareos Storage daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-storage = %{version}
+Requires:   bareos-storage-python-plugins-common = %{version}
+Provides:   bareos-storage-python-plugin
+Obsoletes:  bareos-storage-python-plugin
+
+%package    storage-python-plugins-common
 Summary:    Python plugin for Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-storage = %{version}
@@ -609,15 +661,35 @@ Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos 
 
 # VMware Plugin END
 %endif
-%description director-python-plugin
+%description director-python2-plugin
 %{dscr}
 
 This package contains the python plugin for the director daemon
 
-%description filedaemon-python-plugin
+%description director-python3-plugin
+%{dscr}
+
+This package contains the python 3 plugin for the director daemon
+
+%description director-python-plugins-common
+%{dscr}
+
+This package contains the common files for the python 2 and python 3 director plugins.
+
+%description filedaemon-python2-plugin
 %{dscr}
 
 This package contains the python plugin for the file daemon
+
+%description filedaemon-python3-plugin
+%{dscr}
+
+This package contains the python 3 plugin for the file daemon
+
+%description filedaemon-python-plugins-common
+%{dscr}
+
+This package contains the common files for the python 2 and python 3 filedaemon plugins.
 
 %description filedaemon-ldap-python-plugin
 %{dscr}
@@ -643,11 +715,20 @@ This package contains the PostgreSQL python plugin for the file daemon
 
 This package contains the Percona python plugin for the file daemon
 
-%description storage-python-plugin
+%description storage-python2-plugin
 %{dscr}
 
 This package contains the python plugin for the storage daemon
 
+%description storage-python3-plugin
+%{dscr}
+
+This package contains the python 3 plugin for the storage daemon
+
+%description storage-python-plugins-common
+%{dscr}
+
+This package contains the common files for the python 2 and python 3 storage plugins.
 %endif
 
 %if 0%{?glusterfs}
@@ -1528,10 +1609,17 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 /usr/include/%{name}
 
 %if 0%{?python_plugins}
-%files filedaemon-python-plugin
+%files filedaemon-python2-plugin
 %defattr(-, root, root)
-%{plugin_dir}/python*-fd.so
-%{plugin_dir}/bareosfd*.so
+%{plugin_dir}/python-fd.so
+%{python2_sitelib}/bareosfd*.so
+
+%files filedaemon-python3-plugin
+%defattr(-, root, root)
+%{plugin_dir}/python3-fd.so
+%{python3_sitelib}/bareosfd*.so
+
+%files filedaemon-python-plugins-common
 %{plugin_dir}/bareos-fd-local-fileset.py*
 %{plugin_dir}/BareosFdPluginBaseclass.py*
 %{plugin_dir}/BareosFdPluginLocalFileset.py*
@@ -1577,18 +1665,32 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 ##attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/job/backup-percona-xtrabackup.conf.example
 ##attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/job/restore-percona-xtrabackup.conf.example
 
-%files director-python-plugin
+%files director-python2-plugin
 %defattr(-, root, root)
-%{plugin_dir}/python*-dir.so
-%{plugin_dir}/bareosdir*.so
+%{plugin_dir}/python-dir.so
+%{python2_sitelib}/bareosdir*.so
+
+%files director-python3-plugin
+%defattr(-, root, root)
+%{plugin_dir}/python3-dir.so
+%{python3_sitelib}/bareosdir*.so
+
+%files director-python-plugins-common
 %{plugin_dir}/BareosDirPluginBaseclass.py*
 %{plugin_dir}/bareos-dir-class-plugin.py*
 %{plugin_dir}/BareosDirWrapper.py*
 
-%files storage-python-plugin
+%files storage-python2-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python*-sd.so
-%{plugin_dir}/bareossd*.so
+%{python2_sitelib}/bareossd*.so
+
+%files storage-python3-plugin
+%defattr(-, root, root)
+%{plugin_dir}/python3-sd.so
+%{python3_sitelib}/bareossd*.so
+
+%files storage-python-plugins-common
 %{plugin_dir}/BareosSdPluginBaseclass.py*
 %{plugin_dir}/BareosSdWrapper.py*
 %{plugin_dir}/bareos-sd-class-plugin.py*

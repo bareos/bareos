@@ -35,12 +35,16 @@
 #include "include/bareos.h"
 #endif
 
-#if PY_VERSION_HEX < 0x03000000
-#define LOGPREFIX "python-dir: "
-#else
-#define LOGPREFIX "python3-dir "
-#endif
+#define PLUGIN_DAEMON "dir"
 
+#if PY_VERSION_HEX < 0x03000000
+#define PLUGIN_NAME "python"
+#define PLUGIN_DIR PY2MODDIR
+#else
+#define PLUGIN_NAME "python3"
+#define PLUGIN_DIR PY3MODDIR
+#endif
+#define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
 #include "dird/dird.h"
 #include "plugins/include/python3compat.h"
@@ -59,8 +63,9 @@ static const int debuglevel = 150;
 #define PLUGIN_DATE "May 2020"
 #define PLUGIN_VERSION "4"
 #define PLUGIN_DESCRIPTION "Python Director Daemon Plugin"
-#define PLUGIN_USAGE                                                           \
-  "python:instance=<instance_id>:module_path=<path-to-python-modules>:module_" \
+#define PLUGIN_USAGE                                                     \
+  PLUGIN_NAME                                                            \
+  ":instance=<instance_id>:module_path=<path-to-python-modules>:module_" \
   "name=<python-module-to-load>"
 
 
@@ -210,12 +215,18 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
 {
   /* Setup Python */
   Py_InitializeEx(0);
+
+  // add bareos plugin path to python module search path
+  PyObject* sysPath = PySys_GetObject((char*)"path");
+  PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
+  PyList_Append(sysPath, pluginPath);
+  Py_DECREF(pluginPath);
+
+
   /* import the bareosdir module */
   PyObject* bareosdirModule = PyImport_ImportModule("bareosdir");
-  if (bareosdirModule) {
-    // printf("loaded bareosdir successfully\n");
-  } else {
-    // printf("loading of bareosdir failed\n");
+  if (!bareosdirModule) {
+    printf("loading of bareosdir failed\n");
     if (PyErr_Occurred()) { PyErrorHandler(); }
   }
 

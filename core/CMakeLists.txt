@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.12)
 project(bareos C CXX)
 
 if(POLICY CMP0054)
@@ -351,6 +351,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     -D_WIN32_WINNT=${WINDOWS_VERSION}
   )
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads")
+
+  set(Python2_SITELIB ${plugindir})
+  set(Python3_SITELIB ${plugindir})
 endif()
 
 # set INSTALL_LIB_DIR automatically to lib or lib64 automatically Taken from

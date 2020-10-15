@@ -1,0 +1,10 @@
+Package:        bareos-director-python3-plugin
+Architecture:   any
+Section:        python
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Description: Backup Archiving Recovery Open Sourced - director Python plugin
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides the Python plugin for the director.

@@ -35,12 +35,16 @@
 #include "include/bareos.h"
 #endif
 
-#if PY_VERSION_HEX < 0x03000000
-#define LOGPREFIX "python-fd: "
-#else
-#define LOGPREFIX "python3-fd: "
-#endif
+#define PLUGIN_DAEMON "fd"
 
+#if PY_VERSION_HEX < 0x03000000
+#define PLUGIN_NAME "python"
+#define PLUGIN_DIR PY2MODDIR
+#else
+#define PLUGIN_NAME "python3"
+#define PLUGIN_DIR PY3MODDIR
+#endif
+#define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
 #include "filed/fd_plugins.h"
 #include "plugins/include/python3compat.h"
@@ -54,12 +58,13 @@ namespace filedaemon {
 static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE "Bareos AGPLv3"
-#define PLUGIN_AUTHOR "Bareos GmbH & Co.KG"
+#define PLUGIN_AUTHOR "Bareos GmbH & Co. KG"
 #define PLUGIN_DATE "May 2020"
 #define PLUGIN_VERSION "4"
 #define PLUGIN_DESCRIPTION "Python File Daemon Plugin"
-#define PLUGIN_USAGE                                                           \
-  "python:module_path=<path-to-python-modules>:module_name=<python-module-to-" \
+#define PLUGIN_USAGE                                                     \
+  PLUGIN_NAME                                                            \
+  ":module_path=<path-to-python-modules>:module_name=<python-module-to-" \
   "load>:..."
 
 /* Forward referenced functions */
@@ -183,12 +188,16 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   if (!Py_IsInitialized()) {
     Py_InitializeEx(0);
 
+    // add bareos plugin path to python module search path
+    PyObject* sysPath = PySys_GetObject((char*)"path");
+    PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
+    PyList_Append(sysPath, pluginPath);
+    Py_DECREF(pluginPath);
+
     /* import the bareosfd module */
     PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
-    if (bareosfdModule) {
-      // printf("loaded bareosfd successfully\n");
-    } else {
-      // printf("loading of bareosfd failed\n");
+    if (!bareosfdModule) {
+      printf("loading of bareosfd failed\n");
       if (PyErr_Occurred()) { PyErrorHandler(); }
     }
 
