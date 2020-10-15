@@ -107,10 +107,11 @@ export PYTHON_EXECUTABLE=@PYTHON_EXECUTABLE@
 
 export OVIRT_SERVER=@ovirt_server@
 
-# real postgres binaries are hidden on debian, instead there are wrappers
-# which we do not want for our tests
+# Real postgres binaries are hidden on debian, instead there are wrappers
+# which we do not want for our tests.
+# If there are multiple version, select the first.
 if [ -d /usr/lib/postgresql  ]; then
-  POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql | grep psql))
+  POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql -name psql | sort | head -n 1))
   export PATH=$POSTGRES_BINARY_DIR:$PATH
 else
   export PATH=/sbin:/usr/sbin:$PATH
