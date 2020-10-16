@@ -1,8 +1,3 @@
 
 lib/bareos/plugins/python3-fd.so
 lib/python3.7/site-packages/bareosfd.so
-lib/bareos/plugins/bareos-fd-local-fileset.py
-lib/bareos/plugins/BareosFdPluginBaseclass.py
-lib/bareos/plugins/BareosFdPluginLocalFileset.py
-lib/bareos/plugins/BareosFdPluginLocalFilesBaseclass.py
-lib/bareos/plugins/BareosFdWrapper.py
