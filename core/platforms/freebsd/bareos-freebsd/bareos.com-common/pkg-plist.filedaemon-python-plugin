@@ -1,5 +1,6 @@
 
 lib/bareos/plugins/python-fd.so
+lib/bareos/plugins/bareosfd.so
 lib/bareos/plugins/bareos-fd-local-fileset.py
 lib/bareos/plugins/BareosFdPluginBaseclass.py
 lib/bareos/plugins/BareosFdPluginLocalFileset.py
