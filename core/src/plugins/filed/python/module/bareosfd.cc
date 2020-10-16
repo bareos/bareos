@@ -1387,11 +1387,37 @@ static PyObject* PyBareosSetValue(PyObject* self, PyObject* args)
   RETURN_RUNTIME_ERROR_IF_BFUNC_OR_BAREOS_PLUGIN_CTX_UNSET()
 
   switch (var) {
-    case bVarLevel: {
+    case bVarAccurate: {
       int value = 0;
 
       value = PyLong_AsLong(pyValue);
-      if (value) {
+      if (value == -1 && PyErr_Occurred()) {
+        Jmsg(plugin_ctx, M_FATAL, "python-fd:  PyLong_AsLong failed\n");
+      } else {
+        retval = bareos_core_functions->setBareosValue(plugin_ctx,
+                                                       (bVariable)var, &value);
+      }
+      break;
+    }
+    case bVarSinceTime: {
+      // needs to be set in core and in plugin context
+      int value = 0;
+      value = PyLong_AsLong(pyValue);
+      if (value == -1 && PyErr_Occurred()) {
+        Jmsg(plugin_ctx, M_FATAL, "python-fd:  PyLong_AsLong failed\n");
+      } else {
+        retval = bareos_core_functions->setBareosValue(plugin_ctx,
+                                                       (bVariable)var, &value);
+        ((struct plugin_private_context*)plugin_ctx->plugin_private_context)
+            ->since = value;
+      }
+    } break;
+    case bVarLevel: {
+      int value = 0;
+      value = PyLong_AsLong(pyValue);
+      if (value == -1 && PyErr_Occurred()) {
+        Jmsg(plugin_ctx, M_FATAL, "python-fd:  PyLong_AsLong failed\n");
+      } else {
         retval = bareos_core_functions->setBareosValue(plugin_ctx,
                                                        (bVariable)var, &value);
       }

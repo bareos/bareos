@@ -1245,11 +1245,11 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
     }
 
     if (b_ctx->restoreFileStarted) {
-      Jmsg2(jcr, M_FATAL, 0,
+      Jmsg2(jcr, M_INFO, 0,
             "Second call to startRestoreFile. plugin=%s cmd=%s\n",
             ctx->plugin->file, cmd);
-      b_ctx->restoreFileStarted = false;
-      goto bail_out;
+      // b_ctx->restoreFileStarted = false;
+      // goto bail_out;
     }
 
     if (PlugFunc(ctx->plugin)->startRestoreFile(jcr->plugin_ctx, cmd) ==
@@ -2224,6 +2224,10 @@ static bRC bareosSetValue(PluginContext* ctx, bVariable var, void* value)
   if (!jcr) { return bRC_Error; }
 
   switch (var) {
+    case bVarAccurate:
+      jcr->accurate = (*(int*)value) ? true : false;
+      Dmsg1(debuglevel, "set jcr->accurate to value %d.\n", jcr->accurate);
+      break;
     case bVarSinceTime:
       jcr->impl->since_time = (*(int*)value);
       break;
