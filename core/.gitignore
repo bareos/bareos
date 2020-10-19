@@ -137,8 +137,6 @@ src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/jobdefs/
 src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/messages/Daemon.conf
 src/tests/configs/console-director/tls_psk_default_enabled/bareos-dir.d/messages/Standard.conf
 src/tests/configs/sd_reservation/bareos-sd.d/storage/myself.conf
-src/tests/test_cmakelists_template.txt
-src/tests/test_template.cc
 src/win32/console/consoleres.rc
 src/win32/dird/dbcheckres.rc
 src/win32/dird/dirdres.rc
