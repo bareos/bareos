@@ -52,6 +52,9 @@
 
 namespace filedaemon {
 
+
+static PluginContext* plugin_context{nullptr};
+
 static const int debuglevel = 150;
 
 static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions);
