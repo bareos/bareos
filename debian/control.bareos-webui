@@ -6,7 +6,7 @@ Depends: apache2 | httpd, libapache2-mod-php | libapache2-mod-php5 | libapache2-
    php-intl | php5-intl | php7-intl,
    php-json | php5-json | php7-json,
    php-curl | php5-curl | php7-curl,
-   php-gettext | php5-gettext | php7-gettext,
+   php-gettext | php5-gettext | php7-gettext | php7.4-gettext,
    ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - webui
  This package contains the webui.
