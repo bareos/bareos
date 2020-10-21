@@ -144,14 +144,22 @@ TEST(ConfigParser_Dir, CFG_TYPE_STR_VECTOR)
 void test_CFG_TYPE_STR_VECTOR_OF_DIRS(DirectorResource* me)
 {
   EXPECT_EQ(me->backend_directories.size(), 9);
+  /*
+   *  WIN32:
+   *  cmake uses some value for PATH_BAREOS_BACKENDDIR,
+   *  which ends up in the configuration files
+   *  but this is later overwritten in the Director Daemon with ".".
+   *  Therefore we skip this test.
+   */
+#if !defined(HAVE_WIN32)
   EXPECT_EQ(me->backend_directories.at(0), PATH_BAREOS_BACKENDDIR);
+#endif
 }
 
 TEST(ConfigParser_Dir, CFG_TYPE_STR_VECTOR_OF_DIRS)
 {
   test_config_directive_type(test_CFG_TYPE_STR_VECTOR_OF_DIRS);
 }
-
 
 void test_CFG_TYPE_ALIST_STR(DirectorResource* me)
 {
