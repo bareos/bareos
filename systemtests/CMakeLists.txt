@@ -958,6 +958,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   string(
     CONCAT
       pythonpath
+      "${CMAKE_SOURCE_DIR}/python-bareos:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ldap:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/libcloud:"
       "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
