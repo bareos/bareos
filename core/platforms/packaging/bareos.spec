@@ -1071,7 +1071,7 @@ pushd %{CMAKE_BUILDDIR}
 make clean
 
 # run the tests and fail build if test fails
-REGRESS_DEBUG=1 ctest --label-exclude broken --no-compress-output -j 10 --repeat until-pass:2 -D Experimental || echo "ctest result:$?"
+REGRESS_DEBUG=1 ctest --label-exclude broken --no-compress-output --parallel 10 --repeat until-pass:2 --dashboard Continous
 
 %install
 ##if 0#{?suse_version}
