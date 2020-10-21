@@ -45,7 +45,7 @@ if py_ver[0] == 2 and py_ver[1] == 7 and py_ver[2] >= 5:
         pass
 
 # Provided by the Bareos FD Python plugin interface
-from bareos_fd_consts import bRCs
+from bareosfd import bRC_OK
 
 # This module contains the wrapper functions called by the Bareos-FD, the
 # functions call the corresponding
@@ -66,7 +66,7 @@ def load_bareos_plugin(plugindef):
         plugindef
     )
 
-    return bRCs["bRC_OK"]
+    return bRC_OK
 
 
 # the rest is done in the Plugin module
