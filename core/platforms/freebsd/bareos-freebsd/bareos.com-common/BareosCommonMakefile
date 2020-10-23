@@ -138,7 +138,7 @@ post-install:
 	@${MKDIR} ${STAGEDIR}/var/log/bareos
 	@${MKDIR} ${STAGEDIR}/var/run/bareos
 
-post-build:
-	cd ${CONFIGURE_WRKSRC} && REGRESS_DEBUG=1 ctest --label-exclude broken --no-compress-output --parallel 10 --repeat until-pass:2 --dashboard Continuous || echo "ctest result:$?"
+#post-build:
+#	cd ${CONFIGURE_WRKSRC} && REGRESS_DEBUG=1 ctest --label-exclude broken --no-compress-output --parallel 10 --repeat until-pass:2 --dashboard Continuous || echo "ctest result:$?"
 
 .include <bsd.port.mk>
