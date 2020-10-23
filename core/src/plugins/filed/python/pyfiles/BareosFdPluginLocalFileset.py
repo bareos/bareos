@@ -27,7 +27,7 @@
 import bareosfd
 import os
 import re
-from BareosFdPluginBaseclass import BareosFdPluginBaseclass
+from BareosFdPluginLocalFilesBaseclass import BareosFdPluginLocalFilesBaseclass
 import stat
 
 
