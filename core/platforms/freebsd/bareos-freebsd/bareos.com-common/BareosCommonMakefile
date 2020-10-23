@@ -139,6 +139,8 @@ post-install:
 	@${MKDIR} ${STAGEDIR}/var/run/bareos
 
 post-build:
+	find  . -name DartConfiguration.tcl
+	exit 1
 	cd ${WRKSRC}/core  && REGRESS_DEBUG=1 ctest --label-exclude broken --no-compress-output --parallel 10 --repeat until-pass:2 --dashboard Continuous || echo "ctest result:$?"
 
 .include <bsd.port.mk>
