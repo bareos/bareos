@@ -80,7 +80,7 @@ LIB_DEPENDS+= libpython3.7m.so:lang/python37
 
 #GNU_CONFIGURE=	yes
 CMAKE_VERBOSE = yes
-CMAKE_SOURCE_PATH=   ${WRKSRC}/core
+CMAKE_SOURCE_PATH=   ${WRKSRC}
 CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DCMAKE_INSTALL_PREFIX:PATH=/usr/local \
       -DCMAKE_INSTALL_LIBDIR:PATH=/usr/local/lib \
@@ -139,6 +139,6 @@ post-install:
 	@${MKDIR} ${STAGEDIR}/var/run/bareos
 
 post-build:
-	cd work/.build  && REGRESS_DEBUG=1 ctest --label-exclude broken --no-compress-output --parallel 10 --repeat until-pass:2 --dashboard Continuous || echo "ctest result:$?"
+	cd ${CONFIGURE_WRKSRC} && REGRESS_DEBUG=1 ctest --label-exclude broken --no-compress-output --parallel 10 --repeat until-pass:2 --dashboard Continuous || echo "ctest result:$?"
 
 .include <bsd.port.mk>
