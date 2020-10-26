@@ -558,7 +558,6 @@ set(SYSTEM_TESTS
     copy-remote-bscan
     deprecation
     list-backups
-    messages
     multiplied-device
     reload-add-client
     reload-add-duplicate-job
@@ -595,6 +594,12 @@ if(SETFATTR_WORKS)
   list(APPEND SYSTEM_TESTS xattr)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED xattr)
+endif()
+
+if(TARGET (messages_resource))
+  list(APPEND SYSTEM_TESTS messages)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED messages)
 endif()
 
 include(BareosCheckAcl)
