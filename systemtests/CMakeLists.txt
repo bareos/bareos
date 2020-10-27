@@ -575,12 +575,20 @@ set(SYSTEM_TESTS
 set(SYSTEM_TESTS_DISABLED # initially empty
 )
 
-# add tests also here that fail during build they will be run but failing will
-# not fail the build
+# add tests also here that are unreliable they are excluded when running tests
+# during build in jenkins
 set(SYSTEM_TESTS_BROKEN
-    config-dump dbcopy-mysql-postgresql py2plug-fd-postgres
-    py3plug-fd-local-fileset py3plug-fd-postgres python-bareos scheduler-backup
+    config-dump
+    dbcopy-mysql-postgresql
+    py2plug-fd-postgres
+    py3plug-fd-local-fileset
+    py3plug-fd-postgres
+    python-bareos
+    scheduler-backup
     volume-pruning
+    # the next two fail on FreeBSD 11.4
+    filesets
+    py3plug-fd-localfileset-restoreobject
 )
 
 set(glusterfs_uri
