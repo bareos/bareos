@@ -588,7 +588,7 @@ set(SYSTEM_TESTS_BROKEN
     volume-pruning
     # the next two fail on FreeBSD 11.4
     filesets
-    py3plug-fd-localfileset-restoreobject
+    py3plug-fd-local-fileset-restoreobject
 )
 
 set(glusterfs_uri
