@@ -23,6 +23,7 @@
 import BareosFdPluginBaseclass
 import bareosfd
 from bareosfd import *
+import traceback
 
 try:
     import ConfigParser as configparser
@@ -259,7 +260,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             )
             debugmessage(100, "BareosLibcloudApi started")
         except Exception as e:
-            debugmessage(100, "Error: %s" % e)
+            debugmessage(100, "Error: %s \n%s" % (e, traceback.format_exc()))
             jobmessage(M_FATAL, "Starting BareosLibcloudApi failed: %s" % e)
             return bRC_Cancel
 
