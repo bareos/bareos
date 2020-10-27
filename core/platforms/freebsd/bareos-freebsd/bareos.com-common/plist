@@ -42,7 +42,6 @@ bin/bconsole
 bin/bregex
 bin/bsmtp
 bin/bwild
-bin/timelimit
 %%ETCDIR%%/bareos-dir.d/catalog/MyCatalog.conf
 %%ETCDIR%%/bareos-dir.d/client/bareos-fd.conf
 %%ETCDIR%%/bareos-dir.d/console/bareos-mon.conf
@@ -127,7 +126,6 @@ include/bareos/lib.h
 include/bareos/lmdb/lmdb.h
 include/bareos/lmdb/midl.h
 include/bareos/lockmgr.h
-include/bareos/md5.h
 include/bareos/mem_pool.h
 include/bareos/message.h
 include/bareos/mntent_cache.h
@@ -168,7 +166,6 @@ include/bareos/scsi_lli.h
 include/bareos/scsi_tapealert.h
 include/bareos/sellist.h
 include/bareos/serial.h
-include/bareos/sha1.h
 include/bareos/sql/cats.h
 include/bareos/sql/protos.h
 include/bareos/status.h
@@ -262,7 +259,6 @@ sbin/btraceback
 sbin/bwild
 sbin/grow
 sbin/testls
-sbin/timelimit
 @dir %%ETCDIR%%/bareos-dir-export/client
 @dir %%ETCDIR%%/bareos-dir.d/counter
 @dir %%ETCDIR%%/bareos-sd.d/ndmp

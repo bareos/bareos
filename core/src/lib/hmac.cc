@@ -28,8 +28,8 @@
 
 #include "include/bareos.h"
 
-#define PAD_LEN 64          /* PAD length */
-#define SIG_LEN MD5HashSize /* MD5 digest length */
+#define PAD_LEN 64 /* PAD length */
+#define SIG_LEN 16 /* MD5 digest length */
 
 void hmac_md5(uint8_t* text, /* pointer to data stream */
               int text_len,  /* length of data stream */

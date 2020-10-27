@@ -1419,14 +1419,14 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
            sizeof(fsr.FileSet));
   if (jcr->impl->res.fileset->have_MD5) {
     MD5_CTX md5c;
-    unsigned char digest[MD5HashSize];
+    unsigned char digest[16]; /* MD5 digest length */ 
     memcpy(&md5c, &jcr->impl->res.fileset->md5c, sizeof(md5c));
     MD5_Final(digest, &md5c);
     /*
      * Keep the flag (last arg) set to false otherwise old FileSets will
      * get new MD5 sums and the user will get Full backups on everything
      */
-    BinToBase64(fsr.MD5, sizeof(fsr.MD5), (char*)digest, MD5HashSize, false);
+    BinToBase64(fsr.MD5, sizeof(fsr.MD5), (char*)digest, sizeof(digest), false);
     bstrncpy(jcr->impl->res.fileset->MD5, fsr.MD5,
              sizeof(jcr->impl->res.fileset->MD5));
   } else {
