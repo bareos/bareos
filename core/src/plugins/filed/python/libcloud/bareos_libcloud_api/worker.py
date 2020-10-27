@@ -26,6 +26,7 @@ from libcloud.storage.types import ObjectDoesNotExistError
 from bareos_libcloud_api.utils import silentremove
 from time import sleep
 import uuid
+import os
 
 FINISH = 0
 CONTINUE = 1
@@ -122,7 +123,14 @@ class Worker(ProcessBase):
                 job["data"] = None
                 job["tmpfile"] = tmpfilename
                 job["type"] = TASK_TYPE.TEMP_FILE
-                success = True
+                if os.path.isfile(tmpfilename):
+                    success = True
+                else:
+                    self.error_message(
+                        "Error downloading object, skipping: %s/%s"
+                        % (job["bucket"], job["name"])
+                    )
+                    return CONTINUE
             except OSError as e:
                 self.error_message("Could not open temporary file %s" % e.filename)
                 self.abort_message()
@@ -143,7 +151,7 @@ class Worker(ProcessBase):
             except Exception:
                 silentremove(tmpfilename)
                 self.error_message(
-                    "Error using temporary file for, skipping: %s/%s"
+                    "Error using temporary file, skipping: %s/%s"
                     % (job["bucket"], job["name"])
                 )
                 return CONTINUE
