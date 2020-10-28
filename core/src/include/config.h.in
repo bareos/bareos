@@ -33,6 +33,7 @@
 
 #if defined(HAVE_WIN32)
 #  include "mingwconfig.h"
+#define _POSIX_C_SOURCE 1
 extern char win_os[];
 #  define PLATFORM "Cross-compile"
 #  if defined(_WIN64)
