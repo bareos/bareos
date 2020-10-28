@@ -24,6 +24,7 @@ import io
 from libcloud.common.types import LibcloudError
 from libcloud.storage.types import ObjectDoesNotExistError
 from bareos_libcloud_api.utils import silentremove
+import requests.exceptions
 from time import sleep
 import uuid
 import os
@@ -58,7 +59,7 @@ class Worker(ProcessBase):
             return
 
         status = CONTINUE
-        while status != FINISH:
+        while status != FINISH and not self.shutdown_event.is_set():
             status = self.__iterate_input_queue()
 
     def __iterate_input_queue(self):
@@ -83,6 +84,18 @@ class Worker(ProcessBase):
                 % (job["bucket"], job["name"])
             )
             return CONTINUE
+        except requests.exceptions.ConnectionError as e:
+            self.error_message(
+                "Connection error while getting file object, %s/%s (%s)"
+                % (job["bucket"], job["name"], str(e))
+            )
+            return FINISH
+        except Exception as e:
+            self.error_message(
+                "Exception while getting file object, %s/%s (%s)"
+                % (job["bucket"], job["name"], str(e))
+            )
+            return FINISH
 
         if job["size"] < 1024 * 10:
             try:
@@ -131,8 +144,12 @@ class Worker(ProcessBase):
                         % (job["bucket"], job["name"])
                     )
                     return CONTINUE
+            except (ConnectionError, TimeoutError, ConnectionResetError, ConnectionAbortedError) as e:
+                self.error_message("Connection error while downloading %s (%s)" % (job["name"], str(e)))
+                self.abort_message()
+                return FINISH
             except OSError as e:
-                self.error_message("Could not open temporary file %s" % e.filename)
+                self.error_message("Could not download to temporary file %s (%s)" % (job["name"], str(e)))
                 self.abort_message()
                 return FINISH
             except ObjectDoesNotExistError as e:
