@@ -172,7 +172,7 @@ class Worker(ProcessBase):
                     % (job["bucket"], job["name"])
                 )
                 return CONTINUE
-        else:
+        else: # files larger than self.options["prefetch_size"]
             try:
                 self.debug_message(
                     110,
