@@ -46,7 +46,7 @@ _status_write_get(struct json_object *status,
   struct json_object  *json_nparts = NULL;
   struct json_object  *json_parts = NULL;
 
-  if (json_object_object_get_ex(status, "direction", &json_mode) == FALSE)
+  if (json_object_object_get_ex(status, "direction", &json_mode) == 0)
     {
       json_mode = json_object_new_string("write");
       if (NULL == json_mode)
@@ -64,7 +64,7 @@ _status_write_get(struct json_object *status,
       goto end;
     }
 
-  if (json_object_object_get_ex(status, "offset", &json_off) == FALSE)
+  if (json_object_object_get_ex(status, "offset", &json_off) == 0)
     {
       json_off = json_object_new_int64(0);
       if (NULL == json_off)
@@ -76,7 +76,7 @@ _status_write_get(struct json_object *status,
     }
   *offsetp = (unsigned int)json_object_get_int64(json_off);
 
-  if (json_object_object_get_ex(status, "nparts", &json_nparts) == FALSE)
+  if (json_object_object_get_ex(status, "nparts", &json_nparts) == 0)
     {
       json_nparts = json_object_new_int64(0);
       if (NULL == json_nparts)
@@ -88,7 +88,7 @@ _status_write_get(struct json_object *status,
     }
   *npartsp = (unsigned int)json_object_get_int64(json_nparts);
 
-  if (json_object_object_get_ex(status, "parts", &json_parts) == FALSE)
+  if (json_object_object_get_ex(status, "parts", &json_parts) == 0)
     {
       json_parts = json_object_new_array();
       if (NULL == json_parts)
@@ -118,7 +118,7 @@ _status_write_set(struct json_object *status,
   struct json_object  *json_nparts = NULL;
   struct json_object  *json_parts = NULL;
 
-  if (json_object_object_get_ex(status, "parts", &json_parts) == FALSE)
+  if (json_object_object_get_ex(status, "parts", &json_parts) == 0)
     {
       ret = DPL_FAILURE;
       goto end;
@@ -258,7 +258,7 @@ dpl_s3_stream_put(dpl_ctx_t *ctx, dpl_stream_t *stream,
         }
     }
 
-  if (json_object_object_get_ex(stream->status, "uploadId", &obj) == FALSE)
+  if (json_object_object_get_ex(stream->status, "uploadId", &obj) == 0)
     {
       uploadidp = &uploadid;
       ret = dpl_s3_stream_multipart_init(ctx,

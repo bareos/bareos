@@ -1245,7 +1245,7 @@ dpl_posix_stream_get(dpl_ctx_t *ctx,
     }
   else
     {
-      if (json_object_object_get_ex(stream->status, "offset", &offset_object) == FALSE)
+      if (json_object_object_get_ex(stream->status, "offset", &offset_object) == 0)
         {
           ret = DPL_FAILURE;
           goto end;
@@ -1381,7 +1381,7 @@ dpl_posix_stream_put(dpl_ctx_t *ctx,
     }
   else
     {
-      if (json_object_object_get_ex(stream->status, "offset", &offset_object) == FALSE)
+      if (json_object_object_get_ex(stream->status, "offset", &offset_object) == 0)
         {
           ret = DPL_FAILURE;
           goto end;

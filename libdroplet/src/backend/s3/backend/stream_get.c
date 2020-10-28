@@ -45,7 +45,7 @@ _status_read_get(struct json_object *status,
   struct json_object  *json_mode = NULL;
   struct json_object  *json_offset = NULL;
 
-  if (json_object_object_get_ex(status, "direction", &json_mode) == FALSE)
+  if (json_object_object_get_ex(status, "direction", &json_mode) == 0)
     {
       json_mode = json_object_new_string("read");
       if (NULL == json_mode)
@@ -63,7 +63,7 @@ _status_read_get(struct json_object *status,
       goto end;
     }
 
-  if (json_object_object_get_ex(status, "offset", &json_offset) == FALSE)
+  if (json_object_object_get_ex(status, "offset", &json_offset) == 0)
     {
       json_offset = json_object_new_int64(0);
       if (NULL == json_offset)
