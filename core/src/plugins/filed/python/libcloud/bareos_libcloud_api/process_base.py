@@ -59,8 +59,9 @@ class ProcessBase(Process):
     def info_message(self, message):
         self.message_queue.put(InfoMessage(self.worker_id, message))
 
-    def error_message(self, message):
-        self.message_queue.put(ErrorMessage(self.worker_id, message))
+    def error_message(self, message, exception=None):
+        s = self.__format_exception_string(exception)
+        self.message_queue.put(ErrorMessage(self.worker_id, message + s))
 
     def debug_message(self, level, message):
         self.message_queue.put(DebugMessage(self.worker_id, level, message))
@@ -79,3 +80,7 @@ class ProcessBase(Process):
             except Q.Full:
                 self.debug_message(400, "Queue %s is full, trying again.." % queue)
                 continue
+
+    @staticmethod
+    def __format_exception_string(exception):
+        return (" (%s)" % str(exception)) if exception != None else ""
