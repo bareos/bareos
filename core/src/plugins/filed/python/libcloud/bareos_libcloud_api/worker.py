@@ -144,12 +144,22 @@ class Worker(ProcessBase):
                         % (job["bucket"], job["name"])
                     )
                     return CONTINUE
-            except (ConnectionError, TimeoutError, ConnectionResetError, ConnectionAbortedError) as e:
-                self.error_message("Connection error while downloading %s (%s)" % (job["name"], str(e)))
+            except (
+                ConnectionError,
+                TimeoutError,
+                ConnectionResetError,
+                ConnectionAbortedError,
+            ) as e:
+                self.error_message(
+                    "Connection error while downloading %s (%s)" % (job["name"], str(e))
+                )
                 self.abort_message()
                 return FINISH
             except OSError as e:
-                self.error_message("Could not download to temporary file %s (%s)" % (job["name"], str(e)))
+                self.error_message(
+                    "Could not download to temporary file %s (%s)"
+                    % (job["name"], str(e))
+                )
                 self.abort_message()
                 return FINISH
             except ObjectDoesNotExistError as e:
@@ -172,7 +182,7 @@ class Worker(ProcessBase):
                     % (job["bucket"], job["name"])
                 )
                 return CONTINUE
-        else: # files larger than self.options["prefetch_size"]
+        else:  # files larger than self.options["prefetch_size"]
             try:
                 self.debug_message(
                     110,

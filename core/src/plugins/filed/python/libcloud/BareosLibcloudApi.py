@@ -22,6 +22,7 @@ SUCCESS = 0
 ERROR = 1
 ABORT = 2
 
+
 class BareosLibcloudApi(object):
     @staticmethod
     def probe_driver(options):

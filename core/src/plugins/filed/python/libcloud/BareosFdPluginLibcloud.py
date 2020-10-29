@@ -50,6 +50,7 @@ from libcloud.storage.types import ObjectDoesNotExistError
 from sys import version_info
 from distutils.util import strtobool
 
+
 class StringCodec:
     @staticmethod
     def encode_for_backup(var):

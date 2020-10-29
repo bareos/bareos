@@ -19,9 +19,9 @@
 
 from os import remove
 
+
 def silentremove(filename):
     try:
         os.remove(filename)
     except:
         pass
-
