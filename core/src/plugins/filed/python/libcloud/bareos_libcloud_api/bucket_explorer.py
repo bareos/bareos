@@ -29,7 +29,7 @@ class TASK_TYPE(object):
     STREAM = 3
 
     def __setattr__(self, *_):
-        raise Exception("class JOB_TYPE is read only")
+        raise Exception("class TASK_TYPE is read only")
 
 
 def parse_options_bucket(name, options):
@@ -92,11 +92,11 @@ class BucketExplorer(ProcessBase):
 
             self.info_message('Exploring bucket "%s"' % (bucket.name,))
 
-            self.__generate_jobs_for_bucket_objects(
+            self.__generate_tasks_for_bucket_objects(
                 self.driver.iterate_container_objects(bucket)
             )
 
-    def __generate_jobs_for_bucket_objects(self, object_iterator):
+    def __generate_tasks_for_bucket_objects(self, object_iterator):
         for obj in object_iterator:
             if self.shutdown_event.is_set():
                 break
