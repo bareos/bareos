@@ -89,13 +89,13 @@ class Worker(ProcessBase):
                 "Connection error while getting file object, %s/%s (%s)"
                 % (job["bucket"], job["name"], str(e))
             )
-            return FINISH
+            return CONTINUE
         except Exception as e:
             self.error_message(
                 "Exception while getting file object, %s/%s (%s)"
                 % (job["bucket"], job["name"], str(e))
             )
-            return FINISH
+            return CONTINUE
 
         if job["size"] < 1024 * 10:
             try:
@@ -118,11 +118,10 @@ class Worker(ProcessBase):
                 job["data"] = io.BytesIO(content)
                 job["type"] = TASK_TYPE.DOWNLOADED
                 success = True
-            except LibcloudError:
-                self.error_message("Libcloud error, could not download file")
-                return CONTINUE
-            except Exception:
-                self.error_message("Could not download file")
+            except (LibcloudError, Exception) as e:
+                self.error_message(
+                    "Could not download file %s (%s)" % (job["name"], str(e),)
+                )
                 return CONTINUE
         elif job["size"] < self.options["prefetch_size"]:
             try:
@@ -153,15 +152,13 @@ class Worker(ProcessBase):
                 self.error_message(
                     "Connection error while downloading %s (%s)" % (job["name"], str(e))
                 )
-                self.abort_message()
-                return FINISH
+                return CONTINUE
             except OSError as e:
                 self.error_message(
                     "Could not download to temporary file %s (%s)"
                     % (job["name"], str(e))
                 )
-                self.abort_message()
-                return FINISH
+                return CONTINUE
             except ObjectDoesNotExistError as e:
                 silentremove(tmpfilename)
                 self.error_message(

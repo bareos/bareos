@@ -70,9 +70,8 @@ class BucketExplorer(ProcessBase):
         try:
             if not self.shutdown_event.is_set():
                 self.__iterate_over_buckets()
-        except Exception:
-            self.error_message("Error while iterating buckets")
-            self.abort_message()
+        except Exception as e:
+            self.error_message("Error while iterating buckets (%s)" % str(e))
 
         for _ in range(self.number_of_workers):
             self.discovered_objects_queue.put(None)
