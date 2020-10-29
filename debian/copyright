@@ -166,11 +166,7 @@ License: Bareos
     directory.
     .
     d)
-    Files: src/lib/sha1.h src/lib/sha1.c
-    Copyright: Steve Reid <steve@edmweb.com>
-    License: public-domain
-    replaced the SHA licensed implementation (Copyright: 2001 The Internet Society), mentioned later in this document.
-    .
+    (section does not apply anymore and was removed)
     e)
     Bareos can be compiled with data compression and decompression using
     the fastlzlib library.  (see git://github.com/exalead/fastlzlib.git)
@@ -1268,29 +1264,6 @@ Files: src/lib/fnmatch.h src/lib/fnmatch.c
 Copyright: 1989,1992,1993,1994 The Regents of the University of California
 License: BSD-3-clause
 
-
-Files: src/lib/md5.h src/lib/md5.c
-Copyright: 2001 Alexander Peslyak
-License: public-domain
- This software was written by Alexander Peslyak in 2001.  No copyright is
- claimed, and the software is hereby placed in the public domain.
- In case this attempt to disclaim copyright and place the software in the
- public domain is deemed null and void, then the software is
- Copyright (c) 2001 Alexander Peslyak and it is hereby released to the
- general public under the following terms:
- .
- Redistribution and use in source and binary forms, with or without
- modification, are permitted.
- .
- There's ABSOLUTELY NO WARRANTY, express or implied.
- .
- (This is a heavily cut-down "BSD license".)
-
-
-Files: src/lib/sha1.h src/lib/sha1.c
-Copyright: Steve Reid <steve@edmweb.com>
-License: public-domain
- This work was put by the author in the public domain.
 
 Files: src/lib/var.h src/lib/var.c
 Copyright: 2001-2002 Ralf S. Engelschall <rse@engelschall.com>

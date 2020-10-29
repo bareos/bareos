@@ -1723,8 +1723,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{script_dir}/%{name}
 %{script_dir}/bareos-ctl-*
-%{_bindir}/timelimit
-%{_sbindir}/timelimit
 %{_sbindir}/btestls
 # must be readable by package build user of bareos-regress.
 %attr(0644, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-regress.conf

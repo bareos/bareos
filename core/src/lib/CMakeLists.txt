@@ -52,7 +52,6 @@ if(NOT client-only)
       lex.h
       lib.h
       lockmgr.h
-      md5.h
       mem_pool.h
       message.h
       messages_resource.h
@@ -68,7 +67,6 @@ if(NOT client-only)
       scsi_lli.h
       scsi_tapealert.h
       serial.h
-      sha1.h
       status_packet.h
       thread_list.h
       tls.h
@@ -132,7 +130,6 @@ set(BAREOS_SRCS
     jcr.cc
     json.cc
     lockmgr.cc
-    md5.cc
     mem_pool.cc
     message.cc
     messages_resource.cc
@@ -152,7 +149,6 @@ set(BAREOS_SRCS
     scsi_crypto.cc
     scsi_lli.cc
     serial.cc
-    sha1.cc
     signal.cc
     status_packet.cc
     thread_list.cc

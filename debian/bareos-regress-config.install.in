@@ -1,6 +1,4 @@
 @scriptdir@/bareos
 @scriptdir@/bareos-ctl-*
-/usr/bin/timelimit
-/usr/sbin/timelimit
 /usr/sbin/btestls
 @confdir@/bareos-regress.conf

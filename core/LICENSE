@@ -143,10 +143,7 @@ submitted to the BAREOS project.The AUTHORS file can be found in the main
 directory.
 
 d)
-Files: src/lib/sha1.h src/lib/sha1.c
-Copyright: Steve Reid <steve@edmweb.com>
-License: public-domain
-replaced the SHA licensed implementation (Copyright: 2001 The Internet Society), mentioned later in this document.
+(section does not apply anymore and was removed)
 
 e)
 Bareos can be compiled with data compression and decompression using

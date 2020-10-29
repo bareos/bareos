@@ -38,8 +38,8 @@
 #ifndef BAREOS_LIB_LIB_H_
 #include "fnmatch.h"
 #endif
-#include "md5.h"
-#include "sha1.h"
+#include <openssl/md5.h>
+#include <openssl/sha.h>
 #include "bpipe.h"
 #include "attr.h"
 #include "var.h"

@@ -55,8 +55,6 @@ if(NOT HAVE_WIN32)
 
   add_executable(bpluginfo bpluginfo.cc)
   target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} ${JANSSON_LIBRARIES})
-
-  add_executable(timelimit timelimit.cc)
 endif()
 
 set(TOOLS_BIN bsmtp bwild bregex)
@@ -64,8 +62,7 @@ set(TOOLS_BIN bsmtp bwild bregex)
 set(TOOLS_SBIN bscrypto bwild bregex)
 
 if(NOT HAVE_WIN32)
-  list(APPEND TOOLS_BIN timelimit)
-  list(APPEND TOOLS_SBIN bpluginfo timelimit btestls)
+  list(APPEND TOOLS_SBIN bpluginfo btestls)
 endif()
 
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
