@@ -86,10 +86,14 @@ class BareosLibcloudApi(object):
         while not self.message_queue.empty():
             try:
                 message = self.message_queue.get_nowait()
+                message_text = ("%3d: %s") % (
+                    message.worker_id,
+                    message.message_string,
+                )
                 if message.type == MESSAGE_TYPE.INFO_MESSAGE:
-                    jobmessage(M_INFO, message.message_string)
+                    jobmessage(M_INFO, message_text)
                 elif message.type == MESSAGE_TYPE.ERROR_MESSAGE:
-                    jobmessage(M_ERROR, message.message_string)
+                    jobmessage(M_ERROR, message_text)
                 elif message.type == MESSAGE_TYPE.READY_MESSAGE:
                     if message.worker_id == 0:
                         self.count_bucket_explorer_ready += 1
@@ -98,11 +102,11 @@ class BareosLibcloudApi(object):
                 elif message.type == MESSAGE_TYPE.ABORT_MESSAGE:
                     return ABORT
                 elif message.type == MESSAGE_TYPE.DEBUG_MESSAGE:
-                    debugmessage(message.level, message.message_string)
+                    debugmessage(message.level, message_text)
                 else:
                     raise Exception(value="Unknown message type")
             except Exception as e:
-                jobmessage(M_INFO, "check_worker_messages exception: %s" % e)
+                jobmessage(M_INFO, "check_worker_messages exception: %s" % str(e))
         return SUCCESS
 
     def get_next_task(self):

@@ -118,9 +118,7 @@ class Worker(ProcessBase):
     def __prefetch_file_into_queue(self, task, obj):
         try:
             self.debug_message(
-                110,
-                "%3d: Put complete file %s into queue"
-                % (self.worker_id, task_object_full_name(task)),
+                110, "Put complete file %s into queue" % (task_object_full_name(task)),
             )
             stream = obj.as_stream()
             content = b"".join(list(stream))
@@ -153,8 +151,7 @@ class Worker(ProcessBase):
     def __download_object_into_tempfile(self, task, obj):
         try:
             self.debug_message(
-                110,
-                "%3d: Prefetch file %s" % (self.worker_id, task_object_full_name(task)),
+                110, "Prefetch file %s" % (task_object_full_name(task)),
             )
             tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
             obj.download(tmpfilename)
@@ -215,8 +212,8 @@ class Worker(ProcessBase):
         try:
             self.debug_message(
                 110,
-                "%3d: Prepare file as stream for download %s"
-                % (self.worker_id, task_object_full_name(task)),
+                "Prepare file as stream for download %s"
+                % (task_object_full_name(task)),
             )
             task["data"] = obj
             task["type"] = TASK_TYPE.STREAM
