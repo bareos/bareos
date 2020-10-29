@@ -29,8 +29,9 @@ from time import sleep
 import uuid
 import os
 
-FINISH = 0
-CONTINUE = 1
+CONTINUE = 0
+FINISH_ON_ERROR = 1
+FINISH_ON_REQUEST = 2
 
 
 def task_object_full_name(task):
@@ -54,6 +55,11 @@ class Worker(ProcessBase):
         self.tmp_dir_path = tmp_dir_path
         self.input_queue = discovered_objects_queue
         self.output_queue = downloaded_objects_queue
+        self.fail_on_download_error = bool(
+            options["fail_on_download_error"]
+            if "fail_on_download_error" in options
+            else 0
+        )
 
     def run_process(self):
         self.driver = get_driver(self.options)
@@ -63,18 +69,20 @@ class Worker(ProcessBase):
             return
 
         status = CONTINUE
-        while status != FINISH and not self.shutdown_event.is_set():
+        while status == CONTINUE and not self.shutdown_event.is_set():
             status = self.__iterate_input_queue()
+        if status == FINISH_ON_ERROR:
+            self.abort_message()
 
     def __iterate_input_queue(self):
         while not self.input_queue.empty():
             if self.shutdown_event.is_set():
-                return FINISH
+                return FINISH_ON_REQUEST
             task = self.input_queue.get()
             if task == None:  # poison pill
-                return FINISH
-            if self.__run_download_task(task) == FINISH:
-                return FINISH
+                return FINISH_ON_REQUEST
+            if self.__run_download_task(task) == FINISH_ON_ERROR:
+                return FINISH_ON_ERROR
         # try again
         return CONTINUE
 
@@ -88,21 +96,21 @@ class Worker(ProcessBase):
                 % (task_object_full_name(task)),
                 e,
             )
-            return CONTINUE
+            return self.__fail_or_continue()
         except requests.exceptions.ConnectionError as e:
             self.error_message(
                 "Connection error while getting file object, %s"
                 % (task_object_full_name(task)),
                 e,
             )
-            return CONTINUE
+            return self.__fail_or_continue()
         except Exception as e:
             self.error_message(
                 "Exception while getting file object, %s"
                 % (task_object_full_name(task)),
                 e,
             )
-            return CONTINUE
+            return self.__fail_or_continue()
 
         action = CONTINUE
 
@@ -134,7 +142,7 @@ class Worker(ProcessBase):
                         task["size"],
                     ),
                 )
-                return CONTINUE
+                return self.__fail_or_continue()
 
             task["data"] = io.BytesIO(content)
             task["type"] = TASK_TYPE.DOWNLOADED
@@ -146,7 +154,7 @@ class Worker(ProcessBase):
             self.error_message(
                 "Could not download file %s" % (task_object_full_name(task)), e
             )
-            return CONTINUE
+            return self.__fail_or_continue()
 
     def __download_object_into_tempfile(self, task, obj):
         try:
@@ -166,7 +174,7 @@ class Worker(ProcessBase):
                     "Error downloading object, skipping: %s"
                     % (task_object_full_name(task))
                 )
-                return CONTINUE
+                return self.__fail_or_continue()
         except (
             ConnectionError,
             TimeoutError,
@@ -178,7 +186,7 @@ class Worker(ProcessBase):
                 "Connection error while downloading %s" % (task_object_full_name(task)),
                 e,
             )
-            return CONTINUE
+            return self.__fail_or_continue()
         except OSError as e:
             silentremove(tmpfilename)
             self.error_message(
@@ -186,11 +194,11 @@ class Worker(ProcessBase):
                 % (task_object_full_name(task)),
                 e,
             )
-            return CONTINUE
+            return self.__fail_or_continue()
         except ObjectDoesNotExistError as e:
             silentremove(tmpfilename)
             self.error_message("Could not open object, skipping: %s" % e.object_name)
-            return CONTINUE
+            return self.__fail_or_continue()
         except LibcloudError as e:
             silentremove(tmpfilename)
             self.error_message(
@@ -198,7 +206,7 @@ class Worker(ProcessBase):
                 % (task_object_full_name(task)),
                 e,
             )
-            return CONTINUE
+            return self.__fail_or_continue()
         except Exception as e:
             silentremove(tmpfilename)
             self.error_message(
@@ -206,7 +214,7 @@ class Worker(ProcessBase):
                 % (task_object_full_name(task)),
                 e,
             )
-            return CONTINUE
+            return self.__fail_or_continue()
 
     def __put_stream_object_into_queue(self, task, obj):
         try:
@@ -225,11 +233,16 @@ class Worker(ProcessBase):
                 % (task_object_full_name(task)),
                 e,
             )
-            return CONTINUE
+            return self.__fail_or_continue()
         except Exception as e:
             self.error_message(
                 "Error preparing stream object, skipping: %s"
                 % (task_object_full_name(task)),
                 e,
             )
-            return CONTINUE
+            return self.__fail_or_continue()
+
+    def __fail_or_continue(self):
+        if self.fail_on_download_error:
+            return FINISH_ON_ERROR
+        return CONTINUE

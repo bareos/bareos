@@ -58,6 +58,11 @@ class BucketExplorer(ProcessBase):
         self.buckets_include = parse_options_bucket("buckets_include", options)
         self.buckets_exclude = parse_options_bucket("buckets_exclude", options)
         self.number_of_workers = number_of_workers
+        self.fail_on_download_error = bool(
+            options["fail_on_download_error"]
+            if "fail_on_download_error" in options
+            else 0
+        )
 
     def run_process(self):
         self.driver = get_driver(self.options)
@@ -73,6 +78,8 @@ class BucketExplorer(ProcessBase):
                 self.shutdown_event.set()
             except Exception as e:
                 self.error_message("Error while iterating buckets (%s)" % str(e))
+                if self.fail_on_download_error:
+                    self.abort_message()
 
         for _ in range(self.number_of_workers):
             self.discovered_objects_queue.put(None)
