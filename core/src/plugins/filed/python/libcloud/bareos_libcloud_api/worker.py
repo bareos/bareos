@@ -115,7 +115,7 @@ class Worker(ProcessBase):
         action = CONTINUE
 
         if task["size"] < 1024 * 10:
-            action = self.__prefetch_file_into_queue(task, obj)
+            action = self.__prefetch_object_into_queue(task, obj)
         elif task["size"] < self.options["prefetch_size"]:
             action = self.__download_object_into_tempfile(task, obj)
         else:  # files larger than self.options["prefetch_size"]
@@ -123,7 +123,7 @@ class Worker(ProcessBase):
 
         return action
 
-    def __prefetch_file_into_queue(self, task, obj):
+    def __prefetch_object_into_queue(self, task, obj):
         try:
             self.debug_message(
                 110, "Put complete file %s into queue" % (task_object_full_name(task)),

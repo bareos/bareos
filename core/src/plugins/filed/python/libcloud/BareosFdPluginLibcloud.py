@@ -345,6 +345,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         elif self.current_backup_task["type"] == TASK_TYPE.STREAM:
             try:
                 self.FILE = IterStringIO(self.current_backup_task["data"].as_stream())
+                self.current_backup_task["stream_length"] = 0
             except ObjectDoesNotExistError:
                 if self.options["fail_on_download_error"]:
                     jobmessage(
@@ -402,6 +403,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 buf = self.FILE.read(IOP.count)
                 IOP.buf[:] = buf
                 IOP.status = len(buf)
+                if self.current_backup_task["type"] == TASK_TYPE.STREAM:
+                    self.current_backup_task["stream_length"] += len(buf)
                 return bRC_OK
             except IOError as e:
                 jobmessage(
@@ -446,6 +449,29 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                             "Could not remove temporary file: %s"
                             % (self.current_backup_task["tmpfile"]),
                         )
+                elif self.current_backup_task["type"] == TASK_TYPE.STREAM:
+                    if (
+                        self.current_backup_task["stream_length"]
+                        != self.current_backup_task["size"]
+                    ):
+                        level = M_ERROR
+                        ret = bRC_Skip
+                        if self.options["fail_on_download_error"]:
+                            level = M_FATAL
+                            ret = bRC_Error
+
+                        jobmessage(
+                            level,
+                            "skipping file %s that has %d bytes, "
+                            "not %d bytes as stated before"
+                            % (
+                                self.current_backup_task["name"],
+                                self.current_backup_task["stream_length"],
+                                self.current_backup_task["size"],
+                            ),
+                        )
+                        return ret
+
             return bRC_OK
 
         return bRC_OK
