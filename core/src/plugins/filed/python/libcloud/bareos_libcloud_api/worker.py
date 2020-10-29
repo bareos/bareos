@@ -176,12 +176,14 @@ class Worker(ProcessBase):
             ConnectionResetError,
             ConnectionAbortedError,
         ) as e:
+            silentremove(tmpfilename)
             self.error_message(
                 "Connection error while downloading %s" % (task_object_full_name(task)),
                 e,
             )
             return CONTINUE
         except OSError as e:
+            silentremove(tmpfilename)
             self.error_message(
                 "Could not download to temporary file %s"
                 % (task_object_full_name(task)),
