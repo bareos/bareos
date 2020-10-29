@@ -28,7 +28,7 @@ prog="$(basename "$0")"
 topdir="$(realpath "$(dirname "$0")/..")"
 pushd "$topdir" >/dev/null
 
-if [ $# -ne 2 -a "${1:-}" != unreleased ]; then
+if [ $# -ne 2 ] && [ "${1:-}" != unreleased ]; then
   echo "usage: $prog {<version> <date>|unreleased}" >&2
   exit 1
 fi

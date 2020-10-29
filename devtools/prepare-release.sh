@@ -55,7 +55,7 @@ print_block() {
   local s='\e[44m\e[97m' e='\e[0m'
   printf "\n%b┏" "$s"; printf -- "━%.0s" {1..77}; printf "┓%b\n" "$e"
   printf "%b┃  %-73s  ┃%b\n" "$s" '' "$e"
-  while read line; do
+  while read -r line; do
     printf "%b┃  %-73s  ┃%b\n" "$s" "$line" "$e"
   done
   printf "%b┃  %-73s  ┃%b\n" "$s" '' "$e"
@@ -66,7 +66,7 @@ print_block() {
 # it will then return the patch-version that follows after the provided version.
 get_next_version() {
   local in_parts out_parts last
-  IFS=. in_parts=($1)  # split into an array
+  IFS=. read -ra in_parts <<< "$1" # split into an array
   ((last=${#in_parts[@]} - 1 )) # get index of last element
   out_parts=()
   # concatenate up to, but not including last element
@@ -84,9 +84,9 @@ confirm() {
   [[ $REPLY =~ ^[Yy]$ ]]
 }
 
-if [ -z "$git" -o ! -x "$git" ]; then
+if [ -z "$git" ] || [ ! -x "$git" ]; then
   log_fatal "git not found."
-elif [ -z "$cmake" -o ! -x "$cmake" ]; then
+elif [ -z "$cmake" ] || [ ! -x "$cmake" ]; then
   log_fatal "cmake not found."
 elif [ ! -e .git ]; then
   log_fatal "This is not a git working copy."
