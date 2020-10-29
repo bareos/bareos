@@ -25,6 +25,7 @@ from bareos_libcloud_api.queue_message import ErrorMessage
 from bareos_libcloud_api.queue_message import AbortMessage
 from bareos_libcloud_api.queue_message import DebugMessage
 from bareos_libcloud_api.queue_message import MESSAGE_TYPE
+import traceback
 
 try:
     import Queue as Q
@@ -46,7 +47,14 @@ class ProcessBase(Process):
         pass
 
     def run(self):
-        self.run_process()
+        try:
+            self.run_process()
+        except Exception as e:
+            self.error_message(
+                "Exception in process %d: %s\n%s"
+                % (self.worker_id, str(e), traceback.format_exc())
+            )
+            self.abort_message()
         self.ready_message()
         self.wait_for_shutdown()
 
