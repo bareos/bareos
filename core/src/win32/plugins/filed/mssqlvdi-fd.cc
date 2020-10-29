@@ -24,6 +24,7 @@
  * @file
  * MSSQL backup restore plugin using VDI.
  */
+#define __MIDL_user_allocate_free_DEFINED__ 1
 #include "include/bareos.h"
 #include "fd_plugins.h"
 #include "plugins/include/common.h"
