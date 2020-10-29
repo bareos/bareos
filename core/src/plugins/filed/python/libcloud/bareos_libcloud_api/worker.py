@@ -33,6 +33,10 @@ FINISH = 0
 CONTINUE = 1
 
 
+def task_object_full_name(task):
+    return task["bucket"] + "/" + task["name"]
+
+
 class Worker(ProcessBase):
     def __init__(
         self,
@@ -80,20 +84,20 @@ class Worker(ProcessBase):
 
         except ObjectDoesNotExistError:
             self.error_message(
-                "Could not get file object, skipping: %s/%s"
-                % (task["bucket"], task["name"])
+                "Could not get file object, skipping: %s"
+                % (task_object_full_name(task))
             )
             return CONTINUE
         except requests.exceptions.ConnectionError as e:
             self.error_message(
-                "Connection error while getting file object, %s/%s (%s)"
-                % (task["bucket"], task["name"], str(e))
+                "Connection error while getting file object, %s (%s)"
+                % (task_object_full_name(task), str(e))
             )
             return CONTINUE
         except Exception as e:
             self.error_message(
-                "Exception while getting file object, %s/%s (%s)"
-                % (task["bucket"], task["name"], str(e))
+                "Exception while getting file object, %s (%s)"
+                % (task_object_full_name(task), str(e))
             )
             return CONTINUE
 
@@ -113,7 +117,7 @@ class Worker(ProcessBase):
             self.debug_message(
                 110,
                 "%3d: Put complete file %s into queue"
-                % (self.worker_id, task["bucket"] + task["name"]),
+                % (self.worker_id, task_object_full_name(task)),
             )
             stream = obj.as_stream()
             content = b"".join(list(stream))
@@ -122,7 +126,11 @@ class Worker(ProcessBase):
             if size_of_fetched_object != task["size"]:
                 self.error_message(
                     "prefetched file %s: got %s bytes, not the real size (%s bytes)"
-                    % (task["name"], size_of_fetched_object, task["size"]),
+                    % (
+                        task_object_full_name(task),
+                        size_of_fetched_object,
+                        task["size"],
+                    ),
                 )
                 return CONTINUE
 
@@ -134,7 +142,8 @@ class Worker(ProcessBase):
 
         except (LibcloudError, Exception) as e:
             self.error_message(
-                "Could not download file %s (%s)" % (task["name"], str(e),)
+                "Could not download file %s (%s)"
+                % (task_object_full_name(task), str(e),)
             )
             return CONTINUE
 
@@ -142,8 +151,7 @@ class Worker(ProcessBase):
         try:
             self.debug_message(
                 110,
-                "%3d: Prefetch file %s"
-                % (self.worker_id, task["bucket"] + task["name"]),
+                "%3d: Prefetch file %s" % (self.worker_id, task_object_full_name(task)),
             )
             tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
             obj.download(tmpfilename)
@@ -155,8 +163,8 @@ class Worker(ProcessBase):
                 return CONTINUE
             else:
                 self.error_message(
-                    "Error downloading object, skipping: %s/%s"
-                    % (task["bucket"], task["name"])
+                    "Error downloading object, skipping: %s"
+                    % (task_object_full_name(task))
                 )
                 return CONTINUE
         except (
@@ -166,33 +174,31 @@ class Worker(ProcessBase):
             ConnectionAbortedError,
         ) as e:
             self.error_message(
-                "Connection error while downloading %s (%s)" % (task["name"], str(e))
+                "Connection error while downloading %s (%s)"
+                % (task_object_full_name(task), str(e))
             )
             return CONTINUE
         except OSError as e:
             self.error_message(
                 "Could not download to temporary file %s (%s)"
-                % (task["name"], str(e))
+                % (task_object_full_name(task), str(e))
             )
             return CONTINUE
         except ObjectDoesNotExistError as e:
             silentremove(tmpfilename)
-            self.error_message(
-                "Could not open object, skipping: %s" % e.object_name
-            )
+            self.error_message("Could not open object, skipping: %s" % e.object_name)
             return CONTINUE
         except LibcloudError:
             silentremove(tmpfilename)
             self.error_message(
-                "Error downloading object, skipping: %s/%s"
-                % (task["bucket"], task["name"])
+                "Error downloading object, skipping: %s" % (task_object_full_name(task))
             )
             return CONTINUE
         except Exception:
             silentremove(tmpfilename)
             self.error_message(
-                "Error using temporary file, skipping: %s/%s"
-                % (task["bucket"], task["name"])
+                "Error using temporary file, skipping: %s"
+                % (task_object_full_name(task))
             )
             return CONTINUE
 
@@ -201,7 +207,7 @@ class Worker(ProcessBase):
             self.debug_message(
                 110,
                 "%3d: Prepare file as stream for download %s"
-                % (self.worker_id, task["bucket"] + task["name"]),
+                % (self.worker_id, task_object_full_name(task)),
             )
             task["data"] = obj
             task["type"] = TASK_TYPE.STREAM
@@ -209,13 +215,13 @@ class Worker(ProcessBase):
             return CONTINUE
         except LibcloudError:
             self.error_message(
-                "Libcloud error preparing stream object, skipping: %s/%s"
-                % (task["bucket"], task["name"])
+                "Libcloud error preparing stream object, skipping: %s"
+                % (task_object_full_name(task))
             )
             return CONTINUE
         except Exception:
             self.error_message(
-                "Error preparing stream object, skipping: %s/%s"
-                % (task["bucket"], task["name"])
+                "Error preparing stream object, skipping: %s"
+                % (task_object_full_name(task))
             )
             return CONTINUE
