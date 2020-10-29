@@ -578,6 +578,8 @@ SectionIn 1 2 3 4
   File libpq.dll
   File libpcre-1.dll
   File libbz2-1.dll
+  File libssp-0.dll
+
 
   # for password generation
   File "openssl.exe"
@@ -1608,6 +1610,7 @@ done:
 
   File "/oname=$PLUGINSDIR\libstdc++-6.dll" "libstdc++-6.dll"
   File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
+  File "/oname=$PLUGINSDIR\libssp-0.dll" "libssp-0.dll"
 
   File "/oname=$PLUGINSDIR\bconsole.conf" "config/bconsole.conf"
 
@@ -2181,6 +2184,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libpq.dll"
   Delete "$INSTDIR\libpcre-1.dll"
   Delete "$INSTDIR\libbz2-1.dll"
+  Delete "$INSTDIR\libssp-0.dll"
 
   RMDir /r "$INSTDIR\platforms"
 
