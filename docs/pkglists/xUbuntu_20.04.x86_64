@@ -29,4 +29,5 @@ amd64/bareos-tools
 amd64/bareos-traymonitor
 amd64/bareos-vadp-dumper
 amd64/bareos-vmware-plugin
+amd64/bareos-vmware-plugin-compat
 amd64/bareos-vmware-vix-disklib
