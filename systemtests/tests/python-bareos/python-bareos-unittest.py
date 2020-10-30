@@ -33,6 +33,7 @@ import bareos.bsock
 from bareos.bsock.constants import Constants
 from bareos.bsock.protocolmessages import ProtocolMessages
 from bareos.bsock.protocolversions import ProtocolVersions
+from bareos.bsock.lowlevel import LowLevel
 import bareos.exceptions
 
 
@@ -133,6 +134,7 @@ class PythonBareosModuleTest(PythonBareosBase):
         hello_message = ProtocolMessages().hello(name)
         logger.debug(hello_message)
 
+        # with Python 3.2 assertRegexpMatches is renamed to assertRegex.
         self.assertRegexpMatches(hello_message, expected_regex)
 
         version = re.search(expected_regex, hello_message).group(1).decode("utf-8")
@@ -141,6 +143,12 @@ class PythonBareosModuleTest(PythonBareosBase):
         self.assertGreaterEqual(
             self.versiontuple(version), self.versiontuple(u"18.2.5")
         )
+
+    def test_password(self):
+        password = bareos.bsock.Password("secret")
+        md5 = password.md5()
+        self.assertTrue(isinstance(md5, bytes))
+        self.assertEqual(md5, b"5ebe2294ecd0e0f08eab7690d2a6ee69")
 
 
 class PythonBareosPlainTest(PythonBareosBase):
@@ -425,6 +433,18 @@ class PythonBareosTlsPskTest(PythonBareosBase):
     # console: tls, director: tls     => login  (tls)
     """
 
+    def test_tls_psk_identity(self):
+        """
+        Check if tls_psk_identity is in the expected format
+        and is of type "bytes".
+        """
+        core = LowLevel()
+        core.identity_prefix = "R_TEST"
+        core.name = "Test"
+        identity = core.get_tls_psk_identity()
+        self.assertTrue(isinstance(identity, bytes))
+        self.assertEqual(identity, b"R_TEST\x1eTest")
+
     def test_login_notls_notls(self):
         """
         console: notls, director: notls => login
@@ -559,6 +579,36 @@ class PythonBareosTlsPskTest(PythonBareosBase):
         cipher = director.socket.cipher()
         logger.debug(str(cipher))
 
+
+    @unittest.skipUnless(
+        bareos.bsock.DirectorConsole.is_tls_psk_available(), "TLS-PSK is not available."
+    )
+    def test_login_tls_tls_require(self):
+        """
+        console: tls, director: tls     => login
+        """
+
+        logger = logging.getLogger()
+
+        username = self.get_operator_username(tls=True)
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            tls_psk_require=True,
+            name=username,
+            password=password,
+        )
+
+        whoami = director.call("whoami").decode("utf-8")
+        self.assertEqual(username, whoami.rstrip())
+
+        self.assertTrue(hasattr(director.socket, "cipher"))
+        cipher = director.socket.cipher()
+        logger.debug(str(cipher))
+
+
     @unittest.skipUnless(
         bareos.bsock.DirectorConsole.is_tls_psk_available(), "TLS-PSK is not available."
     )
@@ -592,7 +642,6 @@ class PythonBareosTlsPskTest(PythonBareosBase):
 #
 # Test with JSON backend
 #
-
 
 class PythonBareosJsonBase(PythonBareosBase):
 
