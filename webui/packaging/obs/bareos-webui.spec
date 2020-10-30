@@ -76,7 +76,11 @@ BuildRequires: httpd-devel
 %define daemon_user  apache
 %define daemon_group apache
 Requires:   httpd
+%if 0%{?fedora_version} >= 33
+Requires:   php-fpm
+%else
 Requires:   mod_php
+%endif
 %endif
 
 #define serverroot #(/usr/sbin/apxs2 -q datadir 2>/dev/null || /usr/sbin/apxs2 -q PREFIX)/htdocs/
