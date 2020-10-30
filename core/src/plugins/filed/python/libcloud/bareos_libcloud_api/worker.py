@@ -175,18 +175,6 @@ class Worker(ProcessBase):
                     % (task_object_full_name(task))
                 )
                 return self.__fail_or_continue()
-        except (
-            ConnectionError,
-            TimeoutError,
-            ConnectionResetError,
-            ConnectionAbortedError,
-        ) as e:
-            silentremove(tmpfilename)
-            self.error_message(
-                "Connection error while downloading %s" % (task_object_full_name(task)),
-                e,
-            )
-            return self.__fail_or_continue()
         except OSError as e:
             silentremove(tmpfilename)
             self.error_message(
