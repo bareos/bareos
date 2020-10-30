@@ -449,4 +449,5 @@
 /* Define to 1 if you have the <glob.h> header file. */
 #define HAVE_GLOB_H 1
 
+#define _POSIX_C_SOURCE 1
 #endif /* __MINGWNCONFIG_H */
