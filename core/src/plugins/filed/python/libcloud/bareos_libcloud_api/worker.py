@@ -134,7 +134,7 @@ class Worker(ProcessBase):
             size_of_fetched_object = len(content)
             if size_of_fetched_object != task["size"]:
                 self.error_message(
-                    "skipping prefetched file %s that has %d bytes, "
+                    "skipping prefetched object %s that has %d bytes, "
                     "not %d bytes as stated before"
                     % (
                         task_object_full_name(task),
@@ -159,7 +159,7 @@ class Worker(ProcessBase):
     def __download_object_into_tempfile(self, task, obj):
         try:
             self.debug_message(
-                110, "Prefetch file %s" % (task_object_full_name(task)),
+                110, "Prefetch object to temp file %s" % (task_object_full_name(task)),
             )
             tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
             obj.download(tmpfilename)
@@ -208,7 +208,7 @@ class Worker(ProcessBase):
         try:
             self.debug_message(
                 110,
-                "Prepare file as stream for download %s"
+                "Prepare object as stream for download %s"
                 % (task_object_full_name(task)),
             )
             task["data"] = obj
