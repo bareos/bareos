@@ -578,6 +578,8 @@ SectionIn 1 2 3 4
   File libpq.dll
   File libpcre-1.dll
   File libbz2-1.dll
+  File libssp-0.dll
+
 
   # for password generation
   File "openssl.exe"
@@ -931,9 +933,9 @@ SectionIn 1 2 3
   File "Qt5Core.dll"
   File "Qt5Gui.dll"
   File "Qt5Widgets.dll"
-  File "icui18n65.dll"
-  File "icudata65.dll"
-  File "icuuc65.dll"
+  File "icui18n67.dll"
+  File "icudata67.dll"
+  File "icuuc67.dll"
   File "libfreetype-6.dll"
   File "libglib-2.0-0.dll"
   File "libintl-8.dll"
@@ -1608,6 +1610,7 @@ done:
 
   File "/oname=$PLUGINSDIR\libstdc++-6.dll" "libstdc++-6.dll"
   File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
+  File "/oname=$PLUGINSDIR\libssp-0.dll" "libssp-0.dll"
 
   File "/oname=$PLUGINSDIR\bconsole.conf" "config/bconsole.conf"
 
@@ -2168,9 +2171,9 @@ ConfDeleteSkip:
   Delete "$INSTDIR\Qt5Core.dll"
   Delete "$INSTDIR\Qt5Gui.dll"
   Delete "$INSTDIR\Qt5Widgets.dll"
-  Delete "$INSTDIR\icui18n65.dll"
-  Delete "$INSTDIR\icudata65.dll"
-  Delete "$INSTDIR\icuuc65.dll"
+  Delete "$INSTDIR\icui18n67.dll"
+  Delete "$INSTDIR\icudata67.dll"
+  Delete "$INSTDIR\icuuc67.dll"
   Delete "$INSTDIR\libfreetype-6.dll"
   Delete "$INSTDIR\libglib-2.0-0.dll"
   Delete "$INSTDIR\libintl-8.dll"
@@ -2181,6 +2184,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libpq.dll"
   Delete "$INSTDIR\libpcre-1.dll"
   Delete "$INSTDIR\libbz2-1.dll"
+  Delete "$INSTDIR\libssp-0.dll"
 
   RMDir /r "$INSTDIR\platforms"
 
