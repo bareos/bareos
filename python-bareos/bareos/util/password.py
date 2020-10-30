@@ -49,4 +49,4 @@ class Password(object):
         """
         md5 = hashlib.md5()
         md5.update(bytes(bytearray(password, "utf-8")))
-        return md5.hexdigest()
+        return bytes(bytearray(md5.hexdigest(), "utf-8"))

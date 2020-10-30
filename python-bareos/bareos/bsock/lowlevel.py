@@ -98,6 +98,7 @@ class LowLevel(object):
         self.max_reconnects = 0
         self.tls_psk_enable = True
         self.tls_psk_require = False
+        self.tls_version = ssl.PROTOCOL_TLS
         self.connection_type = None
         self.requested_protocol_version = None
         self.protocol_messages = ProtocolMessages()
@@ -119,6 +120,8 @@ class LowLevel(object):
             self.dirname = address
         self.connection_type = connection_type
         self.name = name
+        if password is None:
+            raise bareos.exceptions.ConnectionError(u"Parameter 'password' is required.")
         if isinstance(password, Password):
             self.password = password
         else:
@@ -220,8 +223,9 @@ class LowLevel(object):
         try:
             self.socket = sslpsk.wrap_socket(
                 client_socket,
-                psk=(password, identity),
+                ssl_version=self.tls_version,
                 ciphers="ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH",
+                psk=(password, identity),
                 server_side=False,
             )
         except ssl.SSLError as e:
@@ -233,9 +237,12 @@ class LowLevel(object):
 
     def get_tls_psk_identity(self):
         """Bareos TLS-PSK excepts the identiy is a specific format."""
-        return u"{0}{1}{2}".format(
-            self.identity_prefix, Constants.record_separator, str(self.name)
-        )
+        name = str(self.name)
+        if isinstance(self.name, bytes):
+            name = self.name.decode("utf-8")
+        result = u"{0}{1}{2}".format(self.identity_prefix, Constants.record_separator, name)
+        return bytes(bytearray(result, "utf-8"))
+
 
     @staticmethod
     def is_tls_psk_available():
@@ -580,7 +587,7 @@ class LowLevel(object):
         self.logger.debug("received: " + str(msg))
 
         # hash with password
-        hmac_md5 = hmac.new(bytes(bytearray(password, "utf-8")), None, hashlib.md5)
+        hmac_md5 = hmac.new(password, None, hashlib.md5)
         hmac_md5.update(bytes(bytearray(chal, "utf-8")))
         bbase64compatible = BareosBase64().string_to_base64(
             bytearray(hmac_md5.digest()), True
@@ -637,7 +644,7 @@ class LowLevel(object):
         ssl = int(msg_list[3][4])
         compatible = True
         # hmac chal and the password
-        hmac_md5 = hmac.new(bytes(bytearray(password, "utf-8")), None, hashlib.md5)
+        hmac_md5 = hmac.new((password), None, hashlib.md5)
         hmac_md5.update(bytes(chal))
 
         # base64 encoding
