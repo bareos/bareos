@@ -814,8 +814,12 @@ BuildRequires: httpd-devel
 %define _apache_conf_dir /etc/httpd/conf.d/
 %define www_daemon_user  apache
 %define www_daemon_group apache
-Requires:   httpd
+%if 0%{?fedora_version} >= 33
+Requires:   php-fpm
+%else
 Requires:   mod_php
+%endif
+Requires:   httpd
 %endif
 
 
