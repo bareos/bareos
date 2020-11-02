@@ -20,7 +20,9 @@ debug/x86_64/bareos-storage-python-plugin-debuginfo
 debug/x86_64/bareos-storage-tape-debuginfo
 debug/x86_64/bareos-tools-debuginfo
 debug/x86_64/bareos-traymonitor-debuginfo
+noarch/bareos-webui
 src/bareos
+src/bareos-webui
 src/libfastlz
 src/python-bareos
 x86_64/bareos
