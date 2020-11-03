@@ -75,7 +75,7 @@ CPPFLAGS+=      -I${LOCALBASE}/include
 
 LIB_DEPENDS+=	liblzo2.so:archivers/lzo2 \
 		          libjansson.so:devel/jansson
-LIB_DEPENDS+= libpython2.7.so:lang/python27
+LIB_DEPENDS+= libpython3.7m.so:lang/python37
 
 
 #GNU_CONFIGURE=	yes
