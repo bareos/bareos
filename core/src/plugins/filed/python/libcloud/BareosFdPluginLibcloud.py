@@ -96,6 +96,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         super(BareosFdPluginLibcloud, self).__init__(plugindef)
         super(BareosFdPluginLibcloud, self).parse_plugin_definition(plugindef)
         self.options["fail_on_download_error"] = False
+        self.options["job_message_after_each_number_of_objects"] = 100
         self.__parse_options()
 
         self.last_run = datetime.datetime.fromtimestamp(self.since)
@@ -105,7 +106,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # Set to None when the whole backup is completed
         # Restore's path will not touch this
         self.current_backup_task = {}
-        self.number_of_objects_to_backup = 0
+        self.number_of_objects_have_been_backed_up = 0
         self.FILE = None
         self.active = True
         self.api = None
@@ -167,7 +168,10 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "temporary_download_directory",
         ]
         optional_options = {}
-        optional_options["misc"] = ["fail_on_download_error"]
+        optional_options["misc"] = [
+            "fail_on_download_error",
+            "job_message_after_each_number_of_objects",
+        ]
 
         # this maps config file options to libcloud options
         option_map = {
@@ -223,7 +227,10 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if self.config.has_option(section, option):
                 try:
                     value = self.config.get(section, option)
-                    self.options["fail_on_download_error"] = strtobool(value)
+                    if option == "fail_on_download_error":
+                        self.options["fail_on_download_error"] = strtobool(value)
+                    elif option == "job_message_after_each_number_of_objects":
+                        self.options["job_message_after_each_number_of_objects"] = int(value)
                 except:
                     debugmessage(
                         100,
@@ -282,7 +289,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         jobmessage(
             M_INFO,
             "BareosFdPluginLibcloud finished with %d files"
-            % (self.number_of_objects_to_backup),
+            % (self.number_of_objects_have_been_backed_up),
         )
 
         if self.api == None:
@@ -478,7 +485,18 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def end_backup_file(self):
         if self.current_backup_task is not None:
-            self.number_of_objects_to_backup += 1
+            self.number_of_objects_have_been_backed_up += 1
+            if self.options["job_message_after_each_number_of_objects"] != 0:
+                if (
+                    self.number_of_objects_have_been_backed_up
+                    % self.options["job_message_after_each_number_of_objects"]
+                    == 0
+                ):
+                    jobmessage(
+                        M_INFO,
+                        "Number of backed-up objects: %d"
+                        % self.number_of_objects_have_been_backed_up,
+                    )
             return bRC_More
         else:
             return bRC_OK
