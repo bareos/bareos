@@ -97,7 +97,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         super(BareosFdPluginLibcloud, self).parse_plugin_definition(plugindef)
         self.options["fail_on_download_error"] = False
         self.options["job_message_after_each_number_of_objects"] = 100
-        self.__parse_options()
+        self._parse_options()
 
         self.last_run = datetime.datetime.fromtimestamp(self.since)
         self.last_run = self.last_run.replace(tzinfo=None)
@@ -111,7 +111,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.active = True
         self.api = None
 
-    def __parse_options(self):
+    def _parse_options(self):
         accurate = bVarAccurate
         accurate = bareosfd.GetValue(accurate)
         if accurate is None or accurate == 0:
@@ -123,13 +123,13 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         debugmessage(100, "parse_plugin_definition()")
         config_filename = self.options.get("config_file")
         if config_filename:
-            if self.__parse_config_file(config_filename):
+            if self._parse_config_file(config_filename):
                 return bRC_OK
         debugmessage(100, "Could not load configfile %s" % (config_filename))
         jobmessage(M_FATAL, "Could not load configfile %s" % (config_filename))
         return bRC_Error
 
-    def __parse_config_file(self, config_filename):
+    def _parse_config_file(self, config_filename):
         """
         Parse the config file given in the config_file plugin option
         """
@@ -150,9 +150,9 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             )
             return False
 
-        return self.__check_config(config_filename)
+        return self._check_config(config_filename)
 
-    def __check_config(self, config_filename):
+    def _check_config(self, config_filename):
         """
         Check the configuration and set or override options if necessary,
         considering mandatory: username and password in the [credentials] section
@@ -276,7 +276,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def end_backup_job(self):
         if self.active:
-            self.__shutdown()
+            self._shutdown()
         return bRC_OK
 
     def check_file(self, fname):
@@ -284,7 +284,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # If bareos has not seen one, it does not exists anymore
         return bRC_Error
 
-    def __shutdown(self):
+    def _shutdown(self):
         self.active = False
         jobmessage(
             M_INFO,
@@ -320,7 +320,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     sleep(0.01)
 
         if not self.active:
-            self.__shutdown()
+            self._shutdown()
             savepkt.fname = ""  # dummy value
             if error:
                 jobmessage(M_FATAL, "Shutdown after worker error")
@@ -347,7 +347,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 self.FILE = io.open(self.current_backup_task["tmpfile"], "rb")
             except Exception as e:
                 jobmessage(M_FATAL, "Could not open temporary file for reading.")
-                self.__shutdown()
+                self._shutdown()
                 return bRC_Error
         elif self.current_backup_task["type"] == TASK_TYPE.STREAM:
             try:

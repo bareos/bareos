@@ -70,23 +70,23 @@ class Worker(ProcessBase):
 
         status = CONTINUE
         while status == CONTINUE and not self.shutdown_event.is_set():
-            status = self.__iterate_input_queue()
+            status = self._iterate_input_queue()
         if status == FINISH_ON_ERROR:
             self.abort_message()
 
-    def __iterate_input_queue(self):
+    def _iterate_input_queue(self):
         while not self.input_queue.empty():
             if self.shutdown_event.is_set():
                 return FINISH_ON_REQUEST
             task = self.input_queue.get()
             if task == None:  # poison pill
                 return FINISH_ON_REQUEST
-            if self.__run_download_task(task) == FINISH_ON_ERROR:
+            if self._run_download_task(task) == FINISH_ON_ERROR:
                 return FINISH_ON_ERROR
         # try again
         return CONTINUE
 
-    def __run_download_task(self, task):
+    def _run_download_task(self, task):
         try:
             obj = self.driver.get_object(task["bucket"], task["name"])
 
@@ -96,34 +96,34 @@ class Worker(ProcessBase):
                 % (task_object_full_name(task)),
                 e,
             )
-            return self.__fail_job_or_continue_running()
+            return self._fail_job_or_continue_running()
         except requests.exceptions.ConnectionError as e:
             self.error_message(
                 "Connection error while getting file object, %s"
                 % (task_object_full_name(task)),
                 e,
             )
-            return self.__fail_job_or_continue_running()
+            return self._fail_job_or_continue_running()
         except Exception as e:
             self.error_message(
                 "Exception while getting file object, %s"
                 % (task_object_full_name(task)),
                 e,
             )
-            return self.__fail_job_or_continue_running()
+            return self._fail_job_or_continue_running()
 
         action = CONTINUE
 
         if task["size"] < 1024 * 10:
-            action = self.__download_object_into_queue(task, obj)
+            action = self._download_object_into_queue(task, obj)
         elif task["size"] < self.options["prefetch_size"]:
-            action = self.__download_object_into_tempfile(task, obj)
+            action = self._download_object_into_tempfile(task, obj)
         else:  # files larger than self.options["prefetch_size"]
-            action = self.__put_stream_object_into_queue(task, obj)
+            action = self._put_stream_object_into_queue(task, obj)
 
         return action
 
-    def __download_object_into_queue(self, task, obj):
+    def _download_object_into_queue(self, task, obj):
         try:
             self.debug_message(
                 110, "Put complete file %s into queue" % (task_object_full_name(task)),
@@ -142,7 +142,7 @@ class Worker(ProcessBase):
                         task["size"],
                     ),
                 )
-                return self.__fail_job_or_continue_running()
+                return self._fail_job_or_continue_running()
 
             task["data"] = io.BytesIO(content)
             task["type"] = TASK_TYPE.DOWNLOADED
@@ -154,9 +154,9 @@ class Worker(ProcessBase):
             self.error_message(
                 "Could not download file %s" % (task_object_full_name(task)), e
             )
-            return self.__fail_job_or_continue_running()
+            return self._fail_job_or_continue_running()
 
-    def __download_object_into_tempfile(self, task, obj):
+    def _download_object_into_tempfile(self, task, obj):
         try:
             self.debug_message(
                 110, "Prefetch object to temp file %s" % (task_object_full_name(task)),
@@ -174,7 +174,7 @@ class Worker(ProcessBase):
                     "Error downloading object, skipping: %s"
                     % (task_object_full_name(task))
                 )
-                return self.__fail_job_or_continue_running()
+                return self._fail_job_or_continue_running()
         except OSError as e:
             silentremove(tmpfilename)
             self.error_message(
@@ -182,11 +182,11 @@ class Worker(ProcessBase):
                 % (task_object_full_name(task)),
                 e,
             )
-            return self.__fail_job_or_continue_running()
+            return self._fail_job_or_continue_running()
         except ObjectDoesNotExistError as e:
             silentremove(tmpfilename)
             self.error_message("Could not open object, skipping: %s" % e.object_name)
-            return self.__fail_job_or_continue_running()
+            return self._fail_job_or_continue_running()
         except LibcloudError as e:
             silentremove(tmpfilename)
             self.error_message(
@@ -194,7 +194,7 @@ class Worker(ProcessBase):
                 % (task_object_full_name(task)),
                 e,
             )
-            return self.__fail_job_or_continue_running()
+            return self._fail_job_or_continue_running()
         except Exception as e:
             silentremove(tmpfilename)
             self.error_message(
@@ -202,9 +202,9 @@ class Worker(ProcessBase):
                 % (task_object_full_name(task)),
                 e,
             )
-            return self.__fail_job_or_continue_running()
+            return self._fail_job_or_continue_running()
 
-    def __put_stream_object_into_queue(self, task, obj):
+    def _put_stream_object_into_queue(self, task, obj):
         try:
             self.debug_message(
                 110,
@@ -221,16 +221,16 @@ class Worker(ProcessBase):
                 % (task_object_full_name(task)),
                 e,
             )
-            return self.__fail_job_or_continue_running()
+            return self._fail_job_or_continue_running()
         except Exception as e:
             self.error_message(
                 "Error preparing stream object, skipping: %s"
                 % (task_object_full_name(task)),
                 e,
             )
-            return self.__fail_job_or_continue_running()
+            return self._fail_job_or_continue_running()
 
-    def __fail_job_or_continue_running(self):
+    def _fail_job_or_continue_running(self):
         if self.fail_on_download_error:
             return FINISH_ON_ERROR
         return CONTINUE

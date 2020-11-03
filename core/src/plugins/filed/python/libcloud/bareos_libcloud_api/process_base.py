@@ -68,7 +68,7 @@ class ProcessBase(Process):
         self.message_queue.put(InfoMessage(self.worker_id, message))
 
     def error_message(self, message, exception=None):
-        s = self.__format_exception_string(exception)
+        s = self._format_exception_string(exception)
         self.message_queue.put(ErrorMessage(self.worker_id, message + s))
 
     def debug_message(self, level, message):
@@ -90,5 +90,5 @@ class ProcessBase(Process):
                 continue
 
     @staticmethod
-    def __format_exception_string(exception):
+    def _format_exception_string(exception):
         return (" (%s)" % str(exception)) if exception != None else ""

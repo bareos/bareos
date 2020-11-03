@@ -74,7 +74,7 @@ class BucketExplorer(ProcessBase):
 
         while not self.shutdown_event.is_set():
             try:
-                self.__iterate_over_buckets()
+                self._iterate_over_buckets()
                 self.shutdown_event.set()
             except Exception as e:
                 self.error_message("Error while iterating buckets (%s)" % str(e))
@@ -84,7 +84,7 @@ class BucketExplorer(ProcessBase):
         for _ in range(self.number_of_workers):
             self.discovered_objects_queue.put(None)
 
-    def __iterate_over_buckets(self):
+    def _iterate_over_buckets(self):
         for bucket in self.driver.iterate_containers():
             if self.shutdown_event.is_set():
                 break
@@ -99,11 +99,11 @@ class BucketExplorer(ProcessBase):
 
             self.info_message('Exploring bucket "%s"' % (bucket.name,))
 
-            self.__generate_tasks_for_bucket_objects(
+            self._generate_tasks_for_bucket_objects(
                 self.driver.iterate_container_objects(bucket)
             )
 
-    def __generate_tasks_for_bucket_objects(self, object_iterator):
+    def _generate_tasks_for_bucket_objects(self, object_iterator):
         for obj in object_iterator:
             if self.shutdown_event.is_set():
                 break

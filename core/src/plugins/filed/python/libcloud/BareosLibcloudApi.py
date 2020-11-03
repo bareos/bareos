@@ -43,7 +43,7 @@ class BareosLibcloudApi(object):
         self.downloaded_objects_queue = Queue(queue_size)
         self.message_queue = Queue()
 
-        self.__create_tmp_dir()
+        self._create_tmp_dir()
 
         jobmessage(M_INFO, "Initialize BucketExplorer")
 
@@ -151,18 +151,18 @@ class BareosLibcloudApi(object):
             self.bucket_explorer.terminate()
 
         try:
-            self.__remove_tmp_dir()
+            self._remove_tmp_dir()
         except:
             pass
 
         jobmessage(M_INFO, "Finished shutdown of worker processes")
 
-    def __create_tmp_dir(self):
+    def _create_tmp_dir(self):
         debugmessage(100, "Try to create temporary directory: %s" % (self.tmp_dir_path))
         os.makedirs(self.tmp_dir_path)
         debugmessage(100, "Created temporary directory: %s" % (self.tmp_dir_path))
 
-    def __remove_tmp_dir(self):
+    def _remove_tmp_dir(self):
         debugmessage(100, "Try to remove leftover files from: %s" % (self.tmp_dir_path))
         try:
             files = glob.glob(self.tmp_dir_path + "/*")
@@ -186,6 +186,6 @@ class BareosLibcloudApi(object):
 
     def __del__(self):
         try:
-            self.__remove_tmp_dir()
+            self._remove_tmp_dir()
         except:
             pass
