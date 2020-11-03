@@ -58,7 +58,7 @@ msgstr "Clientes"
 #: ../module/Schedule/view/schedule/schedule/overview.phtml:47
 #: ../module/Application/config/module.config.php:158
 msgid "Schedules"
-msgstr "Agendas"
+msgstr "Agendamentos"
 
 #: ../module/Application/config/module.config.php:163
 #: ../module/Storage/view/storage/storage/index.phtml:26
@@ -127,7 +127,7 @@ msgstr "O controle requisitado não estava disponível."
 
 #: ../module/Application/view/error/404.phtml:21
 msgid "The requested URL could not be matched by routing."
-msgstr "The requested URL could not be matched by routing."
+msgstr "A URL requisitada não pôde ser encontrada pelo roteamento."
 
 #: ../module/Application/view/error/404.phtml:24
 msgid "We cannot determine at this time why a 404 was generated."
@@ -519,7 +519,7 @@ msgstr "Com falha"
 
 #: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
 msgid "Current Director messages"
-msgstr "Mensagens do Director atuais"
+msgstr "Mensagens do Director Atual"
 
 #: ../module/Dashboard/view/partial/RunningJobs.phtml:31
 msgid "Running Jobs"
@@ -727,7 +727,7 @@ msgstr "Mensagem de erro recebida pelo Director:"
 #: ../module/Media/view/media/media/details.phtml:174
 #: ../module/Pool/view/pool/pool/details.phtml:168
 msgid "Failed to send result as json. Maybe the result message is too long?"
-msgstr "Falha para enviar o resultado como json. Talvez a mensagem do resultado é muito grande?"
+msgstr "Falha ao enviar o resultado como json. Talvez a mensagem do resultado seja muito grande?"
 
 #: ../module/Job/view/job/job/index.phtml:307
 #: ../module/Job/view/job/job/details.phtml:159
@@ -764,7 +764,7 @@ msgstr "Cancelar"
 #: ../module/Job/view/job/job/index.phtml:48
 #: ../module/Client/view/client/client/details.phtml:71
 msgid "Job list"
-msgstr "Lista de jogos"
+msgstr "Lista de Jobs"
 
 #: ../module/Job/view/job/job/index.phtml:110
 msgid "Please try to reduce the amount of data to display, e.g. reduce time period."
@@ -782,7 +782,7 @@ msgstr "Detalhes do volume"
 #: ../module/Pool/view/pool/pool/index.phtml:32
 #: ../module/Pool/view/pool/pool/details.phtml:32
 msgid "Devices"
-msgstr "Dispositivos"
+msgstr "Devices"
 
 #: ../module/Media/view/media/media/index.phtml:33
 #: ../module/Media/view/media/media/details.phtml:33
@@ -898,7 +898,7 @@ msgstr "ID do Volume Pool"
 
 #: ../module/Media/view/media/media/details.phtml:371
 msgid "In changer"
-msgstr "No changer"
+msgstr "Em mudança"
 
 #: ../module/Media/view/media/media/details.phtml:375
 msgid "Volume Files"
@@ -1049,7 +1049,7 @@ msgstr "Juntar todos os jobs relacionados para o último backup do Job de backup
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:330
 msgid "Merge jobs"
-msgstr "Juntas jobs"
+msgstr "Juntar jobs"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:352
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:374
@@ -1061,7 +1061,7 @@ msgstr "Substituir arquivos no cliente"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:376
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:397
 msgid "always"
-msgstr "Sempre"
+msgstr "sempre"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:355
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:377
@@ -1167,7 +1167,7 @@ msgstr "Usar esse drive para label"
 
 #: ../module/Storage/view/storage/storage/details.phtml:103
 msgid "Import/Export Slots"
-msgstr "Importar / Exportar soltos"
+msgstr "Importar / Exportar slots"
 
 #: ../module/Storage/view/storage/storage/details.phtml:107
 msgid "Import all"
@@ -1187,7 +1187,7 @@ msgstr "Slots"
 
 #: ../module/Storage/view/storage/storage/details.phtml:145
 msgid "Update slots"
-msgstr "Atualizar soltos"
+msgstr "Atualizar slots"
 
 #: ../module/Storage/view/storage/storage/details.phtml:156
 msgid "Expiration"
@@ -1284,16 +1284,16 @@ msgstr "copie tarefa"
 #: ../public/js/bootstrap-table-formatter.js:74
 #, fuzzy
 msgid "Migration job"
-msgstr "Expiração"
+msgstr "Migração de job"
 
 #: ../public/js/bootstrap-table-formatter.js:77
 msgid "Scan"
-msgstr "Varre"
+msgstr "Examinar"
 
 #: ../public/js/bootstrap-table-formatter.js:80
 #, fuzzy
 msgid "Consolidate"
-msgstr "Console"
+msgstr "Consolidar"
 
 #: ../public/js/bootstrap-table-formatter.js:92
 #: ../public/js/bootstrap-table-formatter.js:140
@@ -1379,7 +1379,7 @@ msgstr "expira em 1 dia"
 #: ../public/js/bootstrap-table-formatter.js:160
 #, fuzzy
 msgid "expires in"
-msgstr "Expiração"
+msgstr "Expira em"
 
 #: ../public/js/bootstrap-table-formatter.js:160
 msgid "days"
@@ -1464,7 +1464,7 @@ msgstr "Confirmando dados"
 #: ../public/js/bootstrap-table-formatter.js:387
 #, fuzzy
 msgid "Warning"
-msgstr "executando"
+msgstr "Com aviso"
 
 #: ../public/js/bootstrap-table-formatter.js:391
 #: ../public/js/bootstrap-table-formatter.js:392
@@ -1480,12 +1480,12 @@ msgstr "Enfileirado aguardando dispositivo"
 #: ../public/js/bootstrap-table-formatter.js:560
 #, fuzzy
 msgid "View Job Details"
-msgstr "Totais dos Jobs"
+msgstr "Ver detalhes do Job"
 
 #: ../module/Job/src/Job/Form/JobForm.php:102
 #, fuzzy
 msgid "warning"
-msgstr "executando"
+msgstr "com aviso"
 
 #: ../public/js/bootstrap-table-formatter.js:271
 msgid "Non-fatal error"
@@ -1502,12 +1502,12 @@ msgstr "Erro fatal"
 #: ../public/js/bootstrap-table-formatter.js:286
 #, fuzzy
 msgid "Terminated normally"
-msgstr "terminado sem sucesso"
+msgstr "Terminado normalmente"
 
 #: ../public/js/bootstrap-table-formatter.js:296
 #, fuzzy
 msgid "Created but not yet running"
-msgstr "Não há jobs executando."
+msgstr "Criado, mas ainda não em execução"
 
 #: ../public/js/bootstrap-table-formatter.js:306
 msgid "Verify differences"
@@ -1519,7 +1519,7 @@ msgstr "Cancelado pelo usuário"
 
 #: ../public/js/bootstrap-table-formatter.js:316
 msgid "Waiting on File daemon"
-msgstr "Aguardando o file daemon"
+msgstr "Aguardando o File daemon"
 
 #: ../public/js/bootstrap-table-formatter.js:321
 msgid "Waiting on the Storage daemon"
@@ -1539,7 +1539,7 @@ msgstr "Aguardando por recurso de storage"
 
 #: ../public/js/bootstrap-table-formatter.js:341
 msgid "Waiting for job resource"
-msgstr "Aguardando por recurso de tarefas"
+msgstr "Aguardando por recurso do job"
 
 #: ../public/js/bootstrap-table-formatter.js:346
 msgid "Waiting for Client resource"
@@ -1547,7 +1547,7 @@ msgstr "Aguardando por recurso de cliente"
 
 #: ../public/js/bootstrap-table-formatter.js:351
 msgid "Waiting for maximum jobs"
-msgstr "Aguardando por máximo de tarefas"
+msgstr "Aguardando por máximo de jobs"
 
 #: ../public/js/bootstrap-table-formatter.js:356
 msgid "Waiting for start time"
@@ -1559,7 +1559,7 @@ msgstr "Aguardando finalização de tarefas de maior prioridade"
 
 #: ../public/js/bootstrap-table-formatter.js:376
 msgid "Incomplete Job"
-msgstr "Tarefa incompleta"
+msgstr "Job incompleto"
 
 #: ../public/js/bootstrap-table-formatter.js:381
 msgid "Committing data (last despool)"
@@ -1573,13 +1573,13 @@ msgstr "Finalizado normalmente com mensagens de atenção"
 #: ../module/Restore/view/restore/restore/versions.phtml:32
 #, fuzzy
 msgid "Restore multiple files"
-msgstr "Restaurar para o cliente"
+msgstr "Restaurar múltiplos arquivos"
 
 #: ../module/Restore/view/restore/restore/index.phtml:75
 #: ../module/Restore/view/restore/restore/versions.phtml:76
 #, fuzzy
 msgid "Job report"
-msgstr "Totais dos Jobs"
+msgstr "Reportar Job"
 
 #: ../module/Restore/view/restore/restore/versions.phtml:195
 #, fuzzy
@@ -1588,5 +1588,5 @@ msgstr "MD5 checksum"
 
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
 msgid "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
-msgstr "Por favor, leia a <a href=“%s” target=“_blank”>Documentação do Bareos</a> para informarções adicionais de como configurar as diretivas de ACL do seu Console / Profile. Segue uma lista dos comandos requeridos e que precisam estar na sua ACL para que este módulo funcione corretamente."
+msgstr "Por favor, leia a <a href=“%s” target=“_blank”>Documentação do Bareos</a> para informações adicionais de como configurar as diretivas de ACL do seu Console / Profile. Segue uma lista dos comandos requeridos e que precisam estar na sua ACL para que este módulo funcione corretamente."
 
