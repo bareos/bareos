@@ -248,19 +248,19 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             % (self.options["host"], self.options["port"]),
         )
 
-        if BareosLibcloudApi.probe_driver(self.options) == "failed":
-            jobmessage(
-                M_FATAL,
-                "Could not connect to libcloud driver: %s:%s"
-                % (self.options["host"], self.options["port"]),
-            )
-            return bRC_Error
-
-        jobmessage(
-            M_INFO, "Connected, last backup: %s (ts: %s)" % (self.last_run, self.since),
-        )
-
         try:
+            if BareosLibcloudApi.probe_driver(self.options) == "failed":
+                jobmessage(
+                    M_FATAL,
+                    "Could not connect to libcloud driver: %s:%s"
+                    % (self.options["host"], self.options["port"]),
+                )
+                return bRC_Error
+
+            jobmessage(
+                M_INFO, "Connected, last backup: %s (ts: %s)" % (self.last_run, self.since),
+            )
+
             self.api = BareosLibcloudApi(
                 self.options,
                 self.last_run,
@@ -293,11 +293,11 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         )
 
         if self.api == None:
-            debugmessage(100, "BareosLibcloudApi did not initialize properly")
+            jobmessage(M_INFO, "BareosLibcloudApi did not initialize properly")
         else:
-            debugmessage(100, "Shut down BareosLibcloudApi")
+            jobmessage(M_INFO, "Shut down BareosLibcloudApi")
             self.api.shutdown()
-            debugmessage(100, "BareosLibcloudApi is shut down")
+            jobmessage(M_INFO, "BareosLibcloudApi is shut down")
 
     def start_backup_file(self, savepkt):
         error = False

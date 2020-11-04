@@ -41,6 +41,7 @@ class ProcessBase(Process):
         self.shutdown_event = Event()
         self.message_queue = message_queue
         self.worker_id = worker_id
+        self.driver = None
 
     def run_process(self):
         # implementation of derived class

@@ -65,10 +65,15 @@ class BucketExplorer(ProcessBase):
         )
 
     def run_process(self):
-        self.driver = get_driver(self.options)
+        error = ""
+        try:
+            self.driver = get_driver(self.options)
+        except Exception as e:
+            error = "(%s)" % str(e)
+            pass
 
         if self.driver == None:
-            self.error_message("Could not load driver")
+            self.error_message("Could not load driver %s" % error)
             self.abort_message()
             return
 

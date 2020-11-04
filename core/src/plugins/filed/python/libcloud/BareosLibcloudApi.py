@@ -69,12 +69,20 @@ class BareosLibcloudApi(object):
             for i in range(self.number_of_worker)
         ]
 
-        jobmessage(M_INFO, "Start BucketExplorer")
-        self.bucket_explorer.start()
+        jobmessage(M_INFO, "Starting BucketExplorer")
+        try:
+            self.bucket_explorer.start()
+        except Exception as e:
+            jobmessage(M_ERROR, "Start BucketExplorer failed: %s" % (str(e)))
+            raise
 
-        jobmessage(M_INFO, "Start Workers")
-        for w in self.worker:
-            w.start()
+        jobmessage(M_INFO, "Starting Workers")
+        try:
+            for w in self.worker:
+                w.start()
+        except Exception as e:
+            jobmessage(M_ERROR, "Start Worker failed: %s" % (str(e)))
+            raise
 
     def worker_ready(self):
         return self.count_worker_ready == self.number_of_worker
@@ -115,17 +123,21 @@ class BareosLibcloudApi(object):
         return None
 
     def shutdown(self):
-        debugmessage(100, "Shut down worker")
+        jobmessage(M_INFO, "Shut down bucket explorer")
         self.bucket_explorer.shutdown()
-        for w in self.worker:
-            w.shutdown()
+        jobmessage(M_INFO, "Shut down worker")
+        try:
+            for w in self.worker:
+                w.shutdown()
+        except:
+            jobmessage(M_INFO, "Shut down worker failed")
 
-        debugmessage(100, "Wait for worker")
+        jobmessage(M_INFO, "Wait for worker")
         while not self.bucket_explorer_ready():
             self.check_worker_messages()
         while not self.worker_ready():
             self.check_worker_messages()
-        debugmessage(100, "Worker finished")
+        jobmessage(M_INFO, "Worker finished")
 
         while not self.discovered_objects_queue.empty():
             self.discovered_objects_queue.get()
@@ -136,7 +148,7 @@ class BareosLibcloudApi(object):
         while not self.message_queue.empty():
             self.message_queue.get()
 
-        debugmessage(100, "Join worker processes")
+        jobmessage(M_INFO, "Join worker processes")
 
         for w in self.worker:
             w.join(timeout=0.3)
