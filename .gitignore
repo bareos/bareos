@@ -41,6 +41,9 @@ debian/bareos-database-sqlite3.install
 debian/bareos-database-tools.install
 debian/bareos-devel.install
 debian/bareos-director-python-plugin.install
+debian/bareos-director-python-plugins-common.install
+debian/bareos-director-python2-plugin.install
+debian/bareos-director-python3-plugin.install
 debian/bareos-director.bareos-dir.init
 debian/bareos-director.install
 debian/bareos-director.postinst
@@ -52,6 +55,9 @@ debian/bareos-filedaemon-ldap-python-plugin.install
 debian/bareos-filedaemon-libcloud-python-plugin.install
 debian/bareos-filedaemon-percona-xtrabackup-python-plugin.install
 debian/bareos-filedaemon-python-plugin.install
+debian/bareos-filedaemon-python-plugins-common.install
+debian/bareos-filedaemon-python2-plugin.install
+debian/bareos-filedaemon-python3-plugin.install
 debian/bareos-filedaemon.bareos-fd.init
 debian/bareos-filedaemon.install
 debian/bareos-filedaemon.postinst
@@ -63,6 +69,9 @@ debian/bareos-storage-ceph.install
 debian/bareos-storage-fifo.install
 debian/bareos-storage-glusterfs.install
 debian/bareos-storage-python-plugin.install
+debian/bareos-storage-python-plugins-common.install
+debian/bareos-storage-python2-plugin.install
+debian/bareos-storage-python3-plugin.install
 debian/bareos-storage-tape.install
 debian/bareos-storage.bareos-sd.init
 debian/bareos-storage.install
@@ -77,6 +86,9 @@ debian/univention-bareos.postinst
 # generated sample-configuration
 core/src/plugins/filed/python/ldap/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example
 core/src/plugins/filed/python/ovirt/python-ovirt-conf.d/bareos-dir.d/fileset/plugin-ovirt.conf.example
+
+# generated test configuration
+core/src/tests/configs/bareos-configparser-tests/bareos-dir-CFG_TYPE_STR_VECTOR_OF_DIRS.conf
 
 # etags and cscope db
 tags
