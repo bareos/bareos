@@ -313,6 +313,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             else:
                 self.current_backup_task = self.api.get_next_task()
                 if self.current_backup_task != None:
+                    self.current_backup_task["skip_file"] = False
+                    self.current_backup_task["stream_length"] = 0
                     break
                 elif self.api.worker_ready():
                     self.active = False
@@ -352,22 +354,22 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         elif self.current_backup_task["type"] == TASK_TYPE.STREAM:
             try:
                 self.FILE = IterStringIO(self.current_backup_task["data"].as_stream())
-                self.current_backup_task["stream_length"] = 0
-            except ObjectDoesNotExistError:
+            except (ObjectDoesNotExistError, Exception) as e:
                 if self.options["fail_on_download_error"]:
                     jobmessage(
-                        M_ERROR,
-                        "File %s does not exist anymore"
-                        % (self.current_backup_task["name"]),
+                        M_FATAL,
+                        "File %s does not exist anymore \n(%s)"
+                        % (self.current_backup_task["name"], str(e))
                     )
                     return bRC_Error
                 else:
                     jobmessage(
-                        M_WARNING,
-                        "Skipped file %s because it does not exist anymore"
-                        % (self.current_backup_task["name"]),
+                        M_ERROR,
+                        "Skipped file %s because it does not exist anymore \n(%s)"
+                        % (self.current_backup_task["name"], str(e))
                     )
-                    return bRC_Skip
+                    self.current_backup_task["skip_file"] = True
+                    return bRC_OK
 
         else:
             raise Exception(value='Wrong argument for current_backup_task["type"]')
@@ -390,6 +392,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def plugin_io(self, IOP):
         if self.current_backup_task is None:
             return bRC_Error
+
         if IOP.func == IO_OPEN:
             # Only used by the 'restore' path
             if IOP.flags & (os.O_CREAT | os.O_WRONLY):
@@ -407,6 +410,9 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if self.FILE is None:
                 return bRC_Error
             try:
+                if self.current_backup_task["type"] == TASK_TYPE.STREAM:
+                    if self.current_backup_task["skip_file"]:
+                        return bRC_Skip # workaround for self.start_backup_file
                 buf = self.FILE.read(IOP.count)
                 IOP.buf[:] = buf
                 IOP.status = len(buf)
