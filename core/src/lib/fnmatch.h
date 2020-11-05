@@ -3,6 +3,7 @@
 /*-
  * Copyright (c) 1992, 1993
  *      The Regents of the University of California.  All rights reserved.
+ * Copyright (C) 2015-2018 Bareos GmbH & Co. KG
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

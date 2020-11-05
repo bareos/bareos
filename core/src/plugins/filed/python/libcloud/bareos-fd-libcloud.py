@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# Copyright (C) 2020-2020 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -16,8 +17,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-# Author: Alexandre Bruyelles <git@jack.fr.eu.org>
-#
+# Original Author: Alexandre Bruyelles <git@jack.fr.eu.org>
+
 
 # This module contains the wrapper functions called by the Bareos-FD, the
 # functions call the corresponding methods from your plugin class

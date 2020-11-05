@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009-2017, Farooq Mela
+ * Copyright (C) 2019-2019 Bareos GmbH & Co. KG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
