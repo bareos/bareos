@@ -1,4 +1,23 @@
 #!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
 set -e
 set -u
 
@@ -10,7 +29,7 @@ version_regexp='([[:digit:]]+\.){2}[[:digit:]]+(~[[:alnum:]]+)?'
 # "18.2.7"
 stable_version_regexp='([[:digit:]]+\.){2}[[:digit:]]+'
 
-topdir="$(dirname "$0")"
+topdir="$(realpath "$(dirname "$0")/..")"
 prog="$(basename "$0")"
 
 git="${GIT:-$(type -p git)}"
@@ -36,7 +55,7 @@ print_block() {
   local s='\e[44m\e[97m' e='\e[0m'
   printf "\n%b┏" "$s"; printf -- "━%.0s" {1..77}; printf "┓%b\n" "$e"
   printf "%b┃  %-73s  ┃%b\n" "$s" '' "$e"
-  while read line; do
+  while read -r line; do
     printf "%b┃  %-73s  ┃%b\n" "$s" "$line" "$e"
   done
   printf "%b┃  %-73s  ┃%b\n" "$s" '' "$e"
@@ -47,7 +66,7 @@ print_block() {
 # it will then return the patch-version that follows after the provided version.
 get_next_version() {
   local in_parts out_parts last
-  IFS=. in_parts=($1)  # split into an array
+  IFS=. read -ra in_parts <<< "$1" # split into an array
   ((last=${#in_parts[@]} - 1 )) # get index of last element
   out_parts=()
   # concatenate up to, but not including last element
@@ -65,9 +84,9 @@ confirm() {
   [[ $REPLY =~ ^[Yy]$ ]]
 }
 
-if [ -z "$git" -o ! -x "$git" ]; then
+if [ -z "$git" ] || [ ! -x "$git" ]; then
   log_fatal "git not found."
-elif [ -z "$cmake" -o ! -x "$cmake" ]; then
+elif [ -z "$cmake" ] || [ ! -x "$cmake" ]; then
   log_fatal "cmake not found."
 elif [ ! -e .git ]; then
   log_fatal "This is not a git working copy."
@@ -111,6 +130,7 @@ fi
 
 release_tag="Release/${version/\~/-}"
 release_ts="$(date --utc --iso-8601=seconds | sed --expression='s/T/ /;s/+.*$//')"
+release_date="$(sed --expression='s/ .*$//' <<< "$release_ts")"
 release_message="Release $version"
 
 # Only if we are preparing a stable release
@@ -145,14 +165,24 @@ If this is not a pre-release a new work-in-progress tag will be created:
 
 
 This script will do the following:
-  1. Create an empty git commit with the version timestamp
-  2. Generate and add */cmake/BareosVersion.cmake
-  3. Amend the previous commit with the version files
-  4. Remove */cmake/BareosVersion.cmake
-  5. Commit the removed version files.
-  6. Add an empty commit for a WIP tag (not for pre-releases)
-  7. Set the release tag
-  8. Set the WIP tag (not for pre-releases)
+
+  1. Create release commit
+  1a. create empty commit with version timestamp
+  1b. generate and add */cmake/BareosVersion.cmake
+  1c. update CHANGELOG.md to reflect new release
+  1d. amend commit from a. with changes from b. and c.
+
+  2. Clean up after release commit
+  2a. remove */cmake/BareosVersion.cmake
+  2b. commit the removed files
+
+  3. Set up a new base for future work (not for pre-releases)
+  3a. add a new "unreleased" section to CHANGELOG.md
+  3b. commit updated CHANGELOG.md
+
+  4. Set tags
+  4a. add the release-tag pointing to the commit from 1d.
+  4b. add WIP tag pointing to the commit form 3b. if applicable
 
 Please make sure you're on the right branch before continuing and review
 the commits, tags and branch pointers before you push!
@@ -182,11 +212,17 @@ log_info "if you want to rollback the commits" \
 
 "$cmake" -DVERSION_STRING="$version" -P write_version_files.cmake
 
+if [ "$wip_enable" -eq 1 ]; then
+  ./devtools/new-changelog-release.sh "$version" "$release_date"
+  ./devtools/update-changelog-links.sh
+fi
+
 "$git" add \
   --no-all \
   --force \
   -- \
-  ./*/cmake/BareosVersion.cmake
+  ./*/cmake/BareosVersion.cmake \
+  ./CHANGELOG.md
 
 "$git" commit \
   --quiet \
@@ -195,7 +231,8 @@ log_info "if you want to rollback the commits" \
   --date="$release_ts" \
   -m "$release_message" \
   -- \
-  ./*/cmake/BareosVersion.cmake
+  ./*/cmake/BareosVersion.cmake \
+  ./CHANGELOG.md
 
 release_commit="$(git rev-parse HEAD)"
 log_info "commit for release tag will be $release_commit"
@@ -210,6 +247,14 @@ log_info "commit for release tag will be $release_commit"
   -m "Remove */cmake/BareosVersion.cmake after release"
 
 if [ "$wip_enable" -eq 1 ]; then
+  ./devtools/new-changelog-release.sh unreleased
+  ./devtools/update-changelog-links.sh
+
+  "$git" add \
+    --no-all \
+    -- \
+    ./CHANGELOG.md
+
   "$git" commit \
     --quiet \
     --allow-empty \
