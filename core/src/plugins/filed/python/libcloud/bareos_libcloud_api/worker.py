@@ -24,11 +24,18 @@ import io
 from libcloud.common.types import LibcloudError
 from libcloud.storage.types import ObjectDoesNotExistError
 from bareos_libcloud_api.utils import silentremove
+import requests.exceptions
 from time import sleep
 import uuid
+import os
 
-FINISH = 0
-CONTINUE = 1
+CONTINUE = 0
+FINISH_ON_ERROR = 1
+FINISH_ON_REQUEST = 2
+
+
+def task_object_full_name(task):
+    return task["bucket"] + "/" + task["name"]
 
 
 class Worker(ProcessBase):
@@ -42,135 +49,197 @@ class Worker(ProcessBase):
         downloaded_objects_queue,
     ):
         super(Worker, self).__init__(
-            worker_id, message_queue,
+            worker_id,
+            message_queue,
         )
         self.options = options
         self.tmp_dir_path = tmp_dir_path
         self.input_queue = discovered_objects_queue
         self.output_queue = downloaded_objects_queue
+        self.fail_on_download_error = bool(
+            options["fail_on_download_error"]
+            if "fail_on_download_error" in options
+            else 0
+        )
 
     def run_process(self):
-        self.driver = get_driver(self.options)
+        error = ""
+        try:
+            self.driver = get_driver(self.options)
+        except Exception as e:
+            error = "(%s)" % str(e)
+            pass
+
         if self.driver == None:
-            self.error_message("Could not load driver")
+            self.error_message("Could not load driver %s" % error)
             self.abort_message()
             return
 
         status = CONTINUE
-        while status != FINISH:
-            status = self.__iterate_input_queue()
+        while status == CONTINUE and not self.shutdown_event.is_set():
+            status = self._iterate_input_queue()
+        if status == FINISH_ON_ERROR:
+            self.abort_message()
 
-    def __iterate_input_queue(self):
+    def _iterate_input_queue(self):
         while not self.input_queue.empty():
             if self.shutdown_event.is_set():
-                return FINISH
-            job = self.input_queue.get()
-            if job == None:  # poison pill
-                return FINISH
-            if self.__run_job(job) == FINISH:
-                return FINISH
+                return FINISH_ON_REQUEST
+            task = self.input_queue.get()
+            if task == None:  # poison pill
+                return FINISH_ON_REQUEST
+            if self._run_download_task(task) == FINISH_ON_ERROR:
+                return FINISH_ON_ERROR
         # try again
         return CONTINUE
 
-    def __run_job(self, job):
-        success = False
+    def _run_download_task(self, task):
         try:
-            obj = self.driver.get_object(job["bucket"], job["name"])
-        except ObjectDoesNotExistError:
+            obj = self.driver.get_object(task["bucket"], task["name"])
+
+        except ObjectDoesNotExistError as e:
             self.error_message(
-                "Could not get file object, skipping: %s/%s"
-                % (job["bucket"], job["name"])
+                "Could not get file object, skipping: %s"
+                % (task_object_full_name(task)),
+                e,
             )
+            return self._fail_job_or_continue_running()
+        except requests.exceptions.ConnectionError as e:
+            self.error_message(
+                "Connection error while getting file object, %s"
+                % (task_object_full_name(task)),
+                e,
+            )
+            return self._fail_job_or_continue_running()
+        except Exception as e:
+            self.error_message(
+                "Exception while getting file object, %s"
+                % (task_object_full_name(task)),
+                e,
+            )
+            return self._fail_job_or_continue_running()
+
+        action = CONTINUE
+
+        if task["size"] < 1024 * 10:
+            action = self._download_object_into_queue(task, obj)
+        elif task["size"] < self.options["prefetch_size"]:
+            action = self._download_object_into_tempfile(task, obj)
+        else:  # files larger than self.options["prefetch_size"]
+            action = self._put_stream_object_into_queue(task, obj)
+
+        return action
+
+    def _download_object_into_queue(self, task, obj):
+        try:
+            self.debug_message(
+                110,
+                "Put complete file %s into queue" % (task_object_full_name(task)),
+            )
+            stream = obj.as_stream()
+            content = b"".join(list(stream))
+
+            size_of_fetched_object = len(content)
+            if size_of_fetched_object != task["size"]:
+                self.error_message(
+                    "skipping prefetched object %s that has %d bytes, "
+                    "not %d bytes as stated before"
+                    % (
+                        task_object_full_name(task),
+                        size_of_fetched_object,
+                        task["size"],
+                    ),
+                )
+                return self._fail_job_or_continue_running()
+
+            task["data"] = io.BytesIO(content)
+            task["type"] = TASK_TYPE.DOWNLOADED
+
+            self.queue_try_put(self.output_queue, task)
             return CONTINUE
 
-        if job["size"] < 1024 * 10:
-            try:
-                self.debug_message(
-                    110,
-                    "%3d: Put complete file %s into queue"
-                    % (self.worker_id, job["bucket"] + job["name"]),
-                )
-                stream = obj.as_stream()
-                content = b"".join(list(stream))
+        except (LibcloudError, Exception) as e:
+            self.error_message(
+                "Could not download file %s" % (task_object_full_name(task)), e
+            )
+            return self._fail_job_or_continue_running()
 
-                size_of_fetched_object = len(content)
-                if size_of_fetched_object != job["size"]:
-                    self.error_message(
-                        "prefetched file %s: got %s bytes, not the real size (%s bytes)"
-                        % (job["name"], size_of_fetched_object, job["size"]),
-                    )
-                    return CONTINUE
+    def _download_object_into_tempfile(self, task, obj):
+        try:
+            self.debug_message(
+                110,
+                "Prefetch object to temp file %s" % (task_object_full_name(task)),
+            )
+            tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
+            obj.download(tmpfilename)
+            task["data"] = None
+            task["tmpfile"] = tmpfilename
+            task["type"] = TASK_TYPE.TEMP_FILE
+            if os.path.isfile(tmpfilename):
+                self.queue_try_put(self.output_queue, task)
+                return CONTINUE
+            else:
+                self.error_message(
+                    "Error downloading object, skipping: %s"
+                    % (task_object_full_name(task))
+                )
+                return self._fail_job_or_continue_running()
+        except OSError as e:
+            silentremove(tmpfilename)
+            self.error_message(
+                "Could not download to temporary file %s"
+                % (task_object_full_name(task)),
+                e,
+            )
+            return self._fail_job_or_continue_running()
+        except ObjectDoesNotExistError as e:
+            silentremove(tmpfilename)
+            self.error_message("Could not open object, skipping: %s" % e.object_name)
+            return self._fail_job_or_continue_running()
+        except LibcloudError as e:
+            silentremove(tmpfilename)
+            self.error_message(
+                "Error downloading object, skipping: %s"
+                % (task_object_full_name(task)),
+                e,
+            )
+            return self._fail_job_or_continue_running()
+        except Exception as e:
+            silentremove(tmpfilename)
+            self.error_message(
+                "Error using temporary file, skipping: %s"
+                % (task_object_full_name(task)),
+                e,
+            )
+            return self._fail_job_or_continue_running()
 
-                job["data"] = io.BytesIO(content)
-                job["type"] = TASK_TYPE.DOWNLOADED
-                success = True
-            except LibcloudError:
-                self.error_message("Libcloud error, could not download file")
-                return CONTINUE
-            except Exception:
-                self.error_message("Could not download file")
-                return CONTINUE
-        elif job["size"] < self.options["prefetch_size"]:
-            try:
-                self.debug_message(
-                    110,
-                    "%3d: Prefetch file %s"
-                    % (self.worker_id, job["bucket"] + job["name"]),
-                )
-                tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
-                obj.download(tmpfilename)
-                job["data"] = None
-                job["tmpfile"] = tmpfilename
-                job["type"] = TASK_TYPE.TEMP_FILE
-                success = True
-            except OSError as e:
-                self.error_message("Could not open temporary file %s" % e.filename)
-                self.abort_message()
-                return FINISH
-            except ObjectDoesNotExistError as e:
-                silentremove(tmpfilename)
-                self.error_message(
-                    "Could not open object, skipping: %s" % e.object_name
-                )
-                return CONTINUE
-            except LibcloudError:
-                silentremove(tmpfilename)
-                self.error_message(
-                    "Error downloading object, skipping: %s/%s"
-                    % (job["bucket"], job["name"])
-                )
-                return CONTINUE
-            except Exception:
-                silentremove(tmpfilename)
-                self.error_message(
-                    "Error using temporary file for, skipping: %s/%s"
-                    % (job["bucket"], job["name"])
-                )
-                return CONTINUE
-        else:
-            try:
-                self.debug_message(
-                    110,
-                    "%3d: Prepare file as stream for download %s"
-                    % (self.worker_id, job["bucket"] + job["name"]),
-                )
-                job["data"] = obj
-                job["type"] = TASK_TYPE.STREAM
-                success = True
-            except LibcloudError:
-                self.error_message(
-                    "Libcloud error preparing stream object, skipping: %s/%s"
-                    % (job["bucket"], job["name"])
-                )
-                return CONTINUE
-            except Exception:
-                self.error_message(
-                    "Error preparing stream object, skipping: %s/%s"
-                    % (job["bucket"], job["name"])
-                )
-                return CONTINUE
+    def _put_stream_object_into_queue(self, task, obj):
+        try:
+            self.debug_message(
+                110,
+                "Prepare object as stream for download %s"
+                % (task_object_full_name(task)),
+            )
+            task["data"] = obj
+            task["type"] = TASK_TYPE.STREAM
+            self.queue_try_put(self.output_queue, task)
+            return CONTINUE
+        except LibcloudError as e:
+            self.error_message(
+                "Libcloud error preparing stream object, skipping: %s"
+                % (task_object_full_name(task)),
+                e,
+            )
+            return self._fail_job_or_continue_running()
+        except Exception as e:
+            self.error_message(
+                "Error preparing stream object, skipping: %s"
+                % (task_object_full_name(task)),
+                e,
+            )
+            return self._fail_job_or_continue_running()
 
-        if success == True:
-            self.queue_try_put(self.output_queue, job)
-
+    def _fail_job_or_continue_running(self):
+        if self.fail_on_download_error:
+            return FINISH_ON_ERROR
         return CONTINUE

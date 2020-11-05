@@ -1640,6 +1640,9 @@ fail_on_download_error
    When this option is enabled, any error during a file download will fail the backup job.
    By default a warning will be issued and the next file will be backed up.
 
+job_message_after_each_number_of_objects
+   When running a backup, put a jobmessage after each count of "job_message_after_number_of_objects"
+   to the joblog or no message if parameter equals 0; default is 100.
 
 .. _PerconaXtrabackupPlugin:
 .. _backup-mysql-XtraBackup:

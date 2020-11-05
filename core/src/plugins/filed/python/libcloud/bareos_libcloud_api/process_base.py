@@ -25,6 +25,7 @@ from bareos_libcloud_api.queue_message import ErrorMessage
 from bareos_libcloud_api.queue_message import AbortMessage
 from bareos_libcloud_api.queue_message import DebugMessage
 from bareos_libcloud_api.queue_message import MESSAGE_TYPE
+import traceback
 
 try:
     import Queue as Q
@@ -34,19 +35,29 @@ except ImportError:
 
 class ProcessBase(Process):
     def __init__(
-        self, worker_id, message_queue,
+        self,
+        worker_id,
+        message_queue,
     ):
         super(ProcessBase, self).__init__()
         self.shutdown_event = Event()
         self.message_queue = message_queue
         self.worker_id = worker_id
+        self.driver = None
 
     def run_process(self):
         # implementation of derived class
         pass
 
     def run(self):
-        self.run_process()
+        try:
+            self.run_process()
+        except Exception as e:
+            self.error_message(
+                "Exception in process %d: %s\n%s"
+                % (self.worker_id, str(e), traceback.format_exc())
+            )
+            self.abort_message()
         self.ready_message()
         self.wait_for_shutdown()
 
@@ -59,8 +70,9 @@ class ProcessBase(Process):
     def info_message(self, message):
         self.message_queue.put(InfoMessage(self.worker_id, message))
 
-    def error_message(self, message):
-        self.message_queue.put(ErrorMessage(self.worker_id, message))
+    def error_message(self, message, exception=None):
+        s = self._format_exception_string(exception)
+        self.message_queue.put(ErrorMessage(self.worker_id, message + s))
 
     def debug_message(self, level, message):
         self.message_queue.put(DebugMessage(self.worker_id, level, message))
@@ -79,3 +91,7 @@ class ProcessBase(Process):
             except Q.Full:
                 self.debug_message(400, "Queue %s is full, trying again.." % queue)
                 continue
+
+    @staticmethod
+    def _format_exception_string(exception):
+        return (" (%s)" % str(exception)) if exception != None else ""

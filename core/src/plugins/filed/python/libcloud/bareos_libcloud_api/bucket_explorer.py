@@ -29,7 +29,7 @@ class TASK_TYPE(object):
     STREAM = 3
 
     def __setattr__(self, *_):
-        raise Exception("class JOB_TYPE is read only")
+        raise Exception("class TASK_TYPE is read only")
 
 
 def parse_options_bucket(name, options):
@@ -58,26 +58,38 @@ class BucketExplorer(ProcessBase):
         self.buckets_include = parse_options_bucket("buckets_include", options)
         self.buckets_exclude = parse_options_bucket("buckets_exclude", options)
         self.number_of_workers = number_of_workers
+        self.fail_on_download_error = bool(
+            options["fail_on_download_error"]
+            if "fail_on_download_error" in options
+            else 0
+        )
 
     def run_process(self):
-        self.driver = get_driver(self.options)
+        error = ""
+        try:
+            self.driver = get_driver(self.options)
+        except Exception as e:
+            error = "(%s)" % str(e)
+            pass
 
         if self.driver == None:
-            self.error_message("Could not load driver")
+            self.error_message("Could not load driver %s" % error)
             self.abort_message()
             return
 
-        try:
-            if not self.shutdown_event.is_set():
-                self.__iterate_over_buckets()
-        except Exception:
-            self.error_message("Error while iterating buckets")
-            self.abort_message()
+        while not self.shutdown_event.is_set():
+            try:
+                self._iterate_over_buckets()
+                self.shutdown_event.set()
+            except Exception as e:
+                self.error_message("Error while iterating buckets (%s)" % str(e))
+                if self.fail_on_download_error:
+                    self.abort_message()
 
         for _ in range(self.number_of_workers):
             self.discovered_objects_queue.put(None)
 
-    def __iterate_over_buckets(self):
+    def _iterate_over_buckets(self):
         for bucket in self.driver.iterate_containers():
             if self.shutdown_event.is_set():
                 break
@@ -92,11 +104,11 @@ class BucketExplorer(ProcessBase):
 
             self.info_message('Exploring bucket "%s"' % (bucket.name,))
 
-            self.__generate_jobs_for_bucket_objects(
+            self._generate_tasks_for_bucket_objects(
                 self.driver.iterate_container_objects(bucket)
             )
 
-    def __generate_jobs_for_bucket_objects(self, object_iterator):
+    def _generate_tasks_for_bucket_objects(self, object_iterator):
         for obj in object_iterator:
             if self.shutdown_event.is_set():
                 break

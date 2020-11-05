@@ -25,13 +25,14 @@ debuglevel = 100
 
 def jobmessage(message_type, message):
     message = "BareosFdPluginLibcloud [%s]: %s\n" % (os.getpid(), message)
-    bareosfd.JobMessage(message_type, message)
+    try:
+        bareosfd.JobMessage(message_type, message)
+    except:
+        bareosfd.JobMessage(message_type, message.encode("utf-8"))
 
 
 def debugmessage(level, message):
     message = "BareosFdPluginLibcloud [%s]: %s\n" % (os.getpid(), message)
-    #bareosfd.DebugMessage(level, message)
-    #bareosfd.DebugMessage(level, message.encode("utf-8"))
     try:
         bareosfd.DebugMessage(level, message)
     except UnicodeError:

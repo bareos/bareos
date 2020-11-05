@@ -41,6 +41,7 @@ SUCCESS = 0
 ERROR = 1
 ABORT = 2
 
+
 class BareosLibcloudApi(object):
     @staticmethod
     def probe_driver(options):
@@ -61,7 +62,7 @@ class BareosLibcloudApi(object):
         self.downloaded_objects_queue = Queue(queue_size)
         self.message_queue = Queue()
 
-        self.__create_tmp_dir()
+        self._create_tmp_dir()
 
         jobmessage(M_INFO, "Initialize BucketExplorer")
 
@@ -87,12 +88,20 @@ class BareosLibcloudApi(object):
             for i in range(self.number_of_worker)
         ]
 
-        jobmessage(M_INFO, "Start BucketExplorer")
-        self.bucket_explorer.start()
+        jobmessage(M_INFO, "Starting BucketExplorer")
+        try:
+            self.bucket_explorer.start()
+        except Exception as e:
+            jobmessage(M_ERROR, "Start BucketExplorer failed: %s" % (str(e)))
+            raise
 
-        jobmessage(M_INFO, "Start Workers")
-        for w in self.worker:
-            w.start()
+        jobmessage(M_INFO, "Starting Workers")
+        try:
+            for w in self.worker:
+                w.start()
+        except Exception as e:
+            jobmessage(M_ERROR, "Start Worker failed: %s" % (str(e)))
+            raise
 
     def worker_ready(self):
         return self.count_worker_ready == self.number_of_worker
@@ -104,10 +113,14 @@ class BareosLibcloudApi(object):
         while not self.message_queue.empty():
             try:
                 message = self.message_queue.get_nowait()
+                message_text = ("%3d: %s") % (
+                    message.worker_id,
+                    message.message_string,
+                )
                 if message.type == MESSAGE_TYPE.INFO_MESSAGE:
-                    jobmessage(M_INFO, message.message_string)
+                    jobmessage(M_INFO, message_text)
                 elif message.type == MESSAGE_TYPE.ERROR_MESSAGE:
-                    jobmessage(M_ERROR, message.message_string)
+                    jobmessage(M_ERROR, message_text)
                 elif message.type == MESSAGE_TYPE.READY_MESSAGE:
                     if message.worker_id == 0:
                         self.count_bucket_explorer_ready += 1
@@ -116,11 +129,11 @@ class BareosLibcloudApi(object):
                 elif message.type == MESSAGE_TYPE.ABORT_MESSAGE:
                     return ABORT
                 elif message.type == MESSAGE_TYPE.DEBUG_MESSAGE:
-                    debugmessage(message.level, message.message_string)
+                    debugmessage(message.level, message_text)
                 else:
                     raise Exception(value="Unknown message type")
             except Exception as e:
-                jobmessage(M_INFO, "check_worker_messages exception: %s" % e)
+                jobmessage(M_INFO, "check_worker_messages exception: %s" % str(e))
         return SUCCESS
 
     def get_next_task(self):
@@ -129,17 +142,21 @@ class BareosLibcloudApi(object):
         return None
 
     def shutdown(self):
-        debugmessage(100, "Shut down worker")
+        jobmessage(M_INFO, "Shut down bucket explorer")
         self.bucket_explorer.shutdown()
-        for w in self.worker:
-            w.shutdown()
+        jobmessage(M_INFO, "Shut down worker")
+        try:
+            for w in self.worker:
+                w.shutdown()
+        except:
+            jobmessage(M_INFO, "Shut down worker failed")
 
-        debugmessage(100, "Wait for worker")
+        jobmessage(M_INFO, "Wait for worker")
         while not self.bucket_explorer_ready():
             self.check_worker_messages()
         while not self.worker_ready():
             self.check_worker_messages()
-        debugmessage(100, "Worker finished")
+        jobmessage(M_INFO, "Worker finished")
 
         while not self.discovered_objects_queue.empty():
             self.discovered_objects_queue.get()
@@ -150,7 +167,7 @@ class BareosLibcloudApi(object):
         while not self.message_queue.empty():
             self.message_queue.get()
 
-        debugmessage(100, "Join worker processes")
+        jobmessage(M_INFO, "Join worker processes")
 
         for w in self.worker:
             w.join(timeout=0.3)
@@ -165,18 +182,18 @@ class BareosLibcloudApi(object):
             self.bucket_explorer.terminate()
 
         try:
-            self.__remove_tmp_dir()
+            self._remove_tmp_dir()
         except:
             pass
 
         jobmessage(M_INFO, "Finished shutdown of worker processes")
 
-    def __create_tmp_dir(self):
+    def _create_tmp_dir(self):
         debugmessage(100, "Try to create temporary directory: %s" % (self.tmp_dir_path))
         os.makedirs(self.tmp_dir_path)
         debugmessage(100, "Created temporary directory: %s" % (self.tmp_dir_path))
 
-    def __remove_tmp_dir(self):
+    def _remove_tmp_dir(self):
         debugmessage(100, "Try to remove leftover files from: %s" % (self.tmp_dir_path))
         try:
             files = glob.glob(self.tmp_dir_path + "/*")
@@ -191,7 +208,8 @@ class BareosLibcloudApi(object):
                 )
             else:
                 debugmessage(
-                    100, "No leftover files to remove from: %s" % (self.tmp_dir_path),
+                    100,
+                    "No leftover files to remove from: %s" % (self.tmp_dir_path),
                 )
             os.rmdir(self.tmp_dir_path)
             debugmessage(100, "Removed temporary directory: %s" % (self.tmp_dir_path))
@@ -200,6 +218,6 @@ class BareosLibcloudApi(object):
 
     def __del__(self):
         try:
-            self.__remove_tmp_dir()
+            self._remove_tmp_dir()
         except:
             pass

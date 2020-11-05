@@ -38,6 +38,19 @@ BackupDirectory="${tmp}/data"
 # Data will be placed at "${tmp}/data/".
 setup_data "$@"
 
+# create files to test the temporary-file and the stream-download path
+prefetch_size=$(( $(grep prefetch_size etc/libcloud_config.ini | cut -d '=' -f 2) ))
+
+#backup via temp file
+dd if=/dev/random \
+  of="${tmp}/data/object-size-downloads-to-temporary-file" \
+  bs=$(( prefetch_size -1 )) count=1
+
+#backup via stream object using the plugin process itself
+dd if=/dev/random \
+  of="${tmp}/data/object-size-downloads-with-plugin-process" \
+  bs=$(( prefetch_size +1 )) count=1
+
 "${SYSTEMTESTS_DIR}"/scripts/start_minio.sh "$MINIO_PORT" "$TestName"
 
 # create s3 content for test
