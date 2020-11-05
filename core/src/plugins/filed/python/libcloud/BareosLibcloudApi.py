@@ -189,7 +189,8 @@ class BareosLibcloudApi(object):
                 )
             else:
                 debugmessage(
-                    100, "No leftover files to remove from: %s" % (self.tmp_dir_path),
+                    100,
+                    "No leftover files to remove from: %s" % (self.tmp_dir_path),
                 )
             os.rmdir(self.tmp_dir_path)
             debugmessage(100, "Removed temporary directory: %s" % (self.tmp_dir_path))

@@ -230,7 +230,9 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     if option == "fail_on_download_error":
                         self.options["fail_on_download_error"] = strtobool(value)
                     elif option == "job_message_after_each_number_of_objects":
-                        self.options["job_message_after_each_number_of_objects"] = int(value)
+                        self.options["job_message_after_each_number_of_objects"] = int(
+                            value
+                        )
                 except:
                     debugmessage(
                         100,
@@ -258,7 +260,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 return bRC_Error
 
             jobmessage(
-                M_INFO, "Connected, last backup: %s (ts: %s)" % (self.last_run, self.since),
+                M_INFO,
+                "Connected, last backup: %s (ts: %s)" % (self.last_run, self.since),
             )
 
             self.api = BareosLibcloudApi(
@@ -332,7 +335,10 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         filename = FilenameConverter.BucketToBackup(
             "%s/%s"
-            % (self.current_backup_task["bucket"], self.current_backup_task["name"],)
+            % (
+                self.current_backup_task["bucket"],
+                self.current_backup_task["name"],
+            )
         )
         debugmessage(100, "Backup file: %s" % (filename,))
 
@@ -359,14 +365,14 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     jobmessage(
                         M_FATAL,
                         "File %s does not exist anymore \n(%s)"
-                        % (self.current_backup_task["name"], str(e))
+                        % (self.current_backup_task["name"], str(e)),
                     )
                     return bRC_Error
                 else:
                     jobmessage(
                         M_ERROR,
                         "Skipped file %s because it does not exist anymore \n(%s)"
-                        % (self.current_backup_task["name"], str(e))
+                        % (self.current_backup_task["name"], str(e)),
                     )
                     self.current_backup_task["skip_file"] = True
                     return bRC_OK
@@ -412,7 +418,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             try:
                 if self.current_backup_task["type"] == TASK_TYPE.STREAM:
                     if self.current_backup_task["skip_file"]:
-                        return bRC_Skip # workaround for self.start_backup_file
+                        return bRC_Skip  # workaround for self.start_backup_file
                 buf = self.FILE.read(IOP.count)
                 IOP.buf[:] = buf
                 IOP.status = len(buf)

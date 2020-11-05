@@ -35,7 +35,9 @@ except ImportError:
 
 class ProcessBase(Process):
     def __init__(
-        self, worker_id, message_queue,
+        self,
+        worker_id,
+        message_queue,
     ):
         super(ProcessBase, self).__init__()
         self.shutdown_event = Event()

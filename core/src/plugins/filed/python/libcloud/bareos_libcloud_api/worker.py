@@ -49,7 +49,8 @@ class Worker(ProcessBase):
         downloaded_objects_queue,
     ):
         super(Worker, self).__init__(
-            worker_id, message_queue,
+            worker_id,
+            message_queue,
         )
         self.options = options
         self.tmp_dir_path = tmp_dir_path
@@ -132,7 +133,8 @@ class Worker(ProcessBase):
     def _download_object_into_queue(self, task, obj):
         try:
             self.debug_message(
-                110, "Put complete file %s into queue" % (task_object_full_name(task)),
+                110,
+                "Put complete file %s into queue" % (task_object_full_name(task)),
             )
             stream = obj.as_stream()
             content = b"".join(list(stream))
@@ -165,7 +167,8 @@ class Worker(ProcessBase):
     def _download_object_into_tempfile(self, task, obj):
         try:
             self.debug_message(
-                110, "Prefetch object to temp file %s" % (task_object_full_name(task)),
+                110,
+                "Prefetch object to temp file %s" % (task_object_full_name(task)),
             )
             tmpfilename = self.tmp_dir_path + "/" + str(uuid.uuid4())
             obj.download(tmpfilename)
