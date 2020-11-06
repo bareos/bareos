@@ -32,7 +32,21 @@
 #include <iostream>
 #include <fstream>
 
-static auto Is32BitWordsize = []() { return sizeof(void*) == 4; };
+static inline bool Is32BitAligned()
+{
+  return offsetof(StateFileHeader, last_jobs_addr) == 20;
+}
+
+static bool StateFileExists(const char* dir, const char* name, int port)
+{
+  struct stat buf;
+  std::string path{dir};
+  path += "/";
+  path += name;
+  path += "." + std::to_string(port) + ".state";
+  std::cout << path << "\n";
+  return stat(path.c_str(), &buf) == 0;
+}
 
 TEST(recent_job_results_list, read_job_results_from_file)
 {
@@ -41,8 +55,9 @@ TEST(recent_job_results_list, read_job_results_from_file)
 
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
 
-  const char *fname = Is32BitWordsize() ? "bareos-dir-32bit" : "bareos-dir";
+  const char* fname = Is32BitAligned() ? "bareos-dir-32bit" : "bareos-dir";
 
+  ASSERT_TRUE(StateFileExists(orig_path, fname, 42001));
   ReadStateFile(orig_path, fname, 42001);
 
   static std::vector<RecentJobResultsList::JobResult> recent_jobs =
@@ -62,9 +77,10 @@ TEST(recent_job_results_list, write_job_results_to_file)
   OSDependentInit();
   RecentJobResultsList::Cleanup();
 
-  const char *fname = Is32BitWordsize() ? "bareos-dir-32bit" : "bareos-dir";
+  const char* fname = Is32BitAligned() ? "bareos-dir-32bit" : "bareos-dir";
 
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
+  ASSERT_TRUE(StateFileExists(orig_path, fname, 42001));
   ReadStateFile(orig_path, fname, 42001);
 
   char path[]{TEST_TEMP_DIR};
@@ -72,6 +88,7 @@ TEST(recent_job_results_list, write_job_results_to_file)
 
   RecentJobResultsList::Cleanup();
 
+  ASSERT_TRUE(StateFileExists(path, fname, 42001));
   ReadStateFile(path, fname, 42001);
 
   static std::vector<RecentJobResultsList::JobResult> recent_jobs =
@@ -123,9 +140,8 @@ TEST(recent_job_results_list, read_job_results_from_file_truncated_jobs)
 
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
 
-  const char *fname = Is32BitWordsize()
-                      ? "bareos-dir-truncated-jobs-32bit"
-                      : "bareos-dir-truncated-jobs";
+  const char* fname = Is32BitAligned() ? "bareos-dir-truncated-jobs-32bit"
+                                       : "bareos-dir-truncated-jobs";
 
   ASSERT_TRUE(create_file(orig_path, std::string(fname) + ".42001.state"));
   ReadStateFile(orig_path, fname, 42001);
@@ -161,6 +177,7 @@ TEST(recent_job_results_list, read_job_results_from_file_not_exist)
   RecentJobResultsList::Cleanup();
 
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
+  ASSERT_FALSE(StateFileExists(orig_path, "file-does-not-exist", 42001));
   ReadStateFile(orig_path, "file-does-not-exist", 42001);
 
   static std::vector<RecentJobResultsList::JobResult> recent_jobs =

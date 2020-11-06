@@ -65,4 +65,24 @@ bool PathAppend(PoolMem& path, PoolMem& extra);
 bool PathCreate(const char* path, mode_t mode = 0750);
 bool PathCreate(PoolMem& path, mode_t mode = 0750);
 
+struct StateFileHeader {
+  char id[14];
+  int32_t version;
+  uint64_t last_jobs_addr;
+  uint64_t end_of_recent_job_results_list;
+  uint64_t reserved[19];
+};
+
+static_assert(offsetof(StateFileHeader, version) == 16,
+              "StateFileHeader.version offset");
+static_assert(offsetof(StateFileHeader, last_jobs_addr) == 20 ||
+                  offsetof(StateFileHeader, last_jobs_addr) == 24,
+              "StageFileHeader.last_jobs_addr offset");
+static_assert(offsetof(StateFileHeader, end_of_recent_job_results_list) == 28 ||
+                  offsetof(StateFileHeader, end_of_recent_job_results_list) ==
+                      32,
+              "StateFileHeader.end_of_recent_job_results_list offset");
+static_assert(offsetof(StateFileHeader, reserved) == 36 ||
+                  offsetof(StateFileHeader, reserved) == 40,
+              "StateFileHeader.reserved offset");
 #endif  // BAREOS_LIB_BSYS_H_

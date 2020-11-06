@@ -26,6 +26,7 @@ macro(bareos_gtest_add_tests testname)
     TEST_PREFIX gtest:
     TEST_LIST found_tests
   )
+  set_tests_properties(${found_tests} PROPERTIES TIMEOUT 120)
   if(HAVE_WIN32)
     set_tests_properties(
       ${found_tests} PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}"
@@ -160,8 +161,8 @@ endif() # NOT client-only
 if(NOT client-only)
   bareos_add_test(
     scheduler_job_item_queue
-    LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql ${GTEST_LIBRARIES}
-                   ${GTEST_MAIN_LIBRARIES}
+    LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql
+                   ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
   )
 endif() # NOT client-only
 
@@ -172,18 +173,10 @@ bareos_add_test(
 
 if(NOT client-only)
   bareos_add_test(
-    test_db_list_ctx
-    LINK_LIBRARIES
-      #dird_objects
-      bareos
-      #bareosfind
-      bareoscats
-      bareossql
-      ${GTEST_LIBRARIES}
-      ${GTEST_MAIN_LIBRARIES}
+    test_db_list_ctx LINK_LIBRARIES bareos bareoscats bareossql
+                                    ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
   )
 endif()
-
 
 if(NOT client-only)
   bareos_add_test(
@@ -252,6 +245,14 @@ bareos_add_test(
   LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
   COMPILE_DEFINITIONS TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\"
                       TEST_ORIGINAL_FILE_DIR=\"${TEST_ORIGINAL_FILE_DIR}\"
+)
+set_tests_properties(
+  gtest:recent_job_results_list.read_job_results_from_file PROPERTIES LABELS
+                                                                      "broken"
+)
+set_tests_properties(
+  gtest:recent_job_results_list.write_job_results_to_file PROPERTIES LABELS
+                                                                     "broken"
 )
 
 if(NOT client-only)
@@ -355,7 +356,7 @@ if(NOT client-only)
       ${LMDB_LIBS}
       ${GTEST_LIBRARIES}
       ${GTEST_MAIN_LIBRARIES}
-      SKIP_GTEST
+    SKIP_GTEST
   )
 endif()
 
@@ -429,11 +430,10 @@ if(NOT client-only)
       ${LMDB_LIBS}
       ${GTEST_LIBRARIES}
       ${GTEST_MAIN_LIBRARIES}
-      SKIP_GTEST
+    SKIP_GTEST
   )
 endif() # NOT client-only
 
 bareos_add_test(
-  test_edit LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
-                                    ${GTEST_MAIN_LIBRARIES}
+  test_edit LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
 )

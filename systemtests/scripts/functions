@@ -630,7 +630,14 @@ check_restore_diff()
    if "$rscripts/diff.pl" -s "${dest}" -d "${tmp}/bareos-restores/${dest}"; then
        result=$?
    fi
-   OUT="$(diff --no-dereference -ur --exclude="fifo*" "${dest}" "${tmp}/bareos-restores/${dest}")"
+
+   # gnu diff is required
+   if [ "$(uname -s)" == FreeBSD ]; then
+     DIFFTOOL='gdiff'
+   else
+     DIFFTOOL='diff'
+   fi
+   OUT="$($DIFFTOOL --no-dereference -ur --exclude="fifo*" "${dest}" "${tmp}/bareos-restores/${dest}")"
    result=$(( result + $?))
    if is_debug; then
        printf "%s\n" "$OUT"
