@@ -74,7 +74,6 @@ Client {
   Description = "Another Client resource."
   Address = localhost
   Password = "@fd_password@"          # password for FileDaemon
-  FD PORT = @fd_port@
 }
 END_OF_DATA
 }
@@ -116,7 +115,6 @@ Director {                            # define myself
 #  Backend Directory = @backenddir@
   Working Directory =  "@working_dir@"
   Pid Directory =  "@piddir@"
-  DirPort = @dir_port@
 }
 END_OF_DATA4
 }
