@@ -80,12 +80,22 @@ Fedora_33:
   warnings_unhealthy: 69
   warnings_healthy: 34
 
+FreeBSD:
+  ctest_unstable: 0
+  warnings_unhealthy: 20
+  warnings_healthy: 10
+
 MacOS:
   ctest_unstable: 0
   warnings_unhealthy: 13
   warnings_healthy: 6
 
+Solaris:
+  ctest_unstable: 0
+  warnings_unhealthy: 30
+  warnings_healthy: 15
+
 win:
   ctest_unstable: 0
-  warnings_unhealthy: 57
-  warnings_healthy: 27
+  warnings_unhealthy: 60
+  warnings_healthy: 30
