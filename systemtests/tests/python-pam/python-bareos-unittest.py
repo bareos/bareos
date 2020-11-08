@@ -15,6 +15,7 @@ import bareos.exceptions
 class PythonBareosBase(unittest.TestCase):
     director_address = "localhost"
     director_port = 9101
+    director_extra_options = {}
     director_root_password = "secret"
     director_operator_username = "admin"
     director_operator_password = "secret"
@@ -68,6 +69,7 @@ class PythonBareosPamLoginTest(PythonBareosBase):
             password=bareos_password,
             pam_username=pam_username,
             pam_password=pam_password,
+            **self.director_extra_options
         )
 
         whoami = director.call("whoami").decode("utf-8")
@@ -95,6 +97,7 @@ class PythonBareosPamLoginTest(PythonBareosBase):
             password=bareos_password,
             pam_username=pam_username,
             pam_password=pam_password,
+            **self.director_extra_options
         )
 
         whoami = director.call("whoami").decode("utf-8")
@@ -116,6 +119,7 @@ class PythonBareosPamLoginTest(PythonBareosBase):
                 password=bareos_password,
                 pam_username=pam_username,
                 pam_password=pam_password,
+                **self.director_extra_options
             )
 
     def test_login_with_not_wrong_password(self):
@@ -134,6 +138,7 @@ class PythonBareosPamLoginTest(PythonBareosBase):
                 password=bareos_password,
                 pam_username=pam_username,
                 pam_password=pam_password,
+                **self.director_extra_options
             )
 
     def test_login_with_director_requires_pam_but_credentials_not_given(self):
@@ -150,6 +155,7 @@ class PythonBareosPamLoginTest(PythonBareosBase):
                 port=self.director_port,
                 name=self.console_pam_username,
                 password=bareos_password,
+                **self.director_extra_options
             )
 
     def test_login_without_director_pam_console_but_with_pam_credentials(self):
@@ -171,6 +177,7 @@ class PythonBareosPamLoginTest(PythonBareosBase):
                 password=bareos_password,
                 pam_username=pam_username,
                 pam_password=pam_password,
+                **self.director_extra_options
             )
 
     def test_login_with_director_requires_pam_but_protocol_124(self):
@@ -192,6 +199,7 @@ class PythonBareosPamLoginTest(PythonBareosBase):
                 protocolversion=ProtocolVersions.bareos_12_4,
                 name=self.console_pam_username,
                 password=bareos_password,
+                **self.director_extra_options
             )
             result = director.call("whoami").decode("utf-8")
 
@@ -214,13 +222,26 @@ def get_env():
     if backup_directory:
         PythonBareosBase.backup_directory = backup_directory
 
+    tls_version_str = os.environ.get("PYTHON_BAREOS_TLS_VERSION")
+    if tls_version_str is not None:
+        tls_version_parser = bareos.bsock.TlsVersionParser()
+        tls_version = tls_version_parser.get_protocol_version_from_string(
+            tls_version_str
+        )
+        if tls_version is not None:
+            PythonBareosBase.director_extra_options["tls_version"] = tls_version
+        else:
+            print(
+                "Environment variable PYTHON_BAREOS_TLS_VERSION has invalid value ({}). Valid values: {}".format(
+                    tls_version_str,
+                    ", ".join(tls_version_parser.get_protocol_versions()),
+                )
+            )
+
     if os.environ.get("REGRESS_DEBUG"):
         PythonBareosBase.debug = True
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        format="%(levelname)s %(module)s.%(funcName)s: %(message)s", level=logging.ERROR
-    )
     get_env()
     unittest.main()
