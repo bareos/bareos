@@ -27,15 +27,8 @@ from bareos.bsock.lowlevel import LowLevel
 from bareos.bsock.protocolmessageids import ProtocolMessageIds
 from bareos.bsock.protocolmessages import ProtocolMessages
 from bareos.bsock.protocolversions import ProtocolVersions
+from bareos.bsock.tlsversionparser import TlsVersionParser
 import bareos.exceptions
-import argparse
-from collections import OrderedDict
-import ssl
-
-
-class ArgParserTlsVersionAction(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest, getattr(ssl, self.choices.get(values)))
 
 
 class DirectorConsole(LowLevel):
@@ -122,34 +115,7 @@ class DirectorConsole(LowLevel):
             dest="BAREOS_tls_psk_require",
         )
 
-        # Add the possibility to specify the TLS protocol version.
-        # This is required,
-        # as sslpsk (1.0.0), depending on the Python and openssl version
-        # is known to fail on various protocol versions,
-        # especially with the default (PROTOCOL_TLS).
-        # Anyhow, if possible, use the default (PROTOCOL_TLS),
-        # as this covers different protocol versions,
-        # including all versions >= v1.3.
-        # There will be no specific constant TLS >= 1.3.
-        tls_version_options = {
-            # "default": "PROTOCOL_TLS",
-            "v1": "PROTOCOL_TLSv1",
-            "v1.1": "PROTOCOL_TLSv1_1",
-            "v1.2": "PROTOCOL_TLSv1_2",
-        }
-
-        # remove invalid options
-        for key, value in tls_version_options.items():
-            if not hasattr(ssl, value):
-                del tls_version_options[key]
-
-        argparser.add_argument(
-            "--tls-version",
-            help="Use a specific TLS protocol version.",
-            action=ArgParserTlsVersionAction,
-            choices=OrderedDict(sorted(tls_version_options.items())),
-            dest="BAREOS_tls_version",
-        )
+        TlsVersionParser().add_argument(argparser)
 
     def __init__(
         self,
