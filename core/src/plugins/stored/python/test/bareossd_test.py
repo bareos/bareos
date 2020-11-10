@@ -21,10 +21,10 @@ import unittest
 import bareossd
 import time
 
-print (help (bareossd))
+print(help(bareossd))
+
 
 class TestBareosFd(unittest.TestCase):
-
     def test_GetValue(self):
         self.assertRaises(TypeError, bareossd.GetValue)
         self.assertRaises(RuntimeError, bareossd.GetValue, 1)
@@ -35,11 +35,15 @@ class TestBareosFd(unittest.TestCase):
 
     def test_DebugMessage(self):
         self.assertRaises(TypeError, bareossd.DebugMessage, "This is a Debug message")
-        self.assertRaises(RuntimeError, bareossd.DebugMessage, 100, "This is a Debug message")
+        self.assertRaises(
+            RuntimeError, bareossd.DebugMessage, 100, "This is a Debug message"
+        )
 
     def test_JobMessage(self):
         self.assertRaises(TypeError, bareossd.JobMessage, "This is a Job message")
-        self.assertRaises(RuntimeError, bareossd.JobMessage, 100, "This is a Job message")
+        self.assertRaises(
+            RuntimeError, bareossd.JobMessage, 100, "This is a Job message"
+        )
 
     # def test_RegisterEvents(self):
     #     self.assertRaises(RuntimeError, bareossd.RegisterEvents)

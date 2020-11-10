@@ -41,12 +41,13 @@ from calendar import timegm
 
 def _safe_encode(data):
     if isinstance(data, unicode):
-        return data.encode('utf-8')
+        return data.encode("utf-8")
     return data
 
 
 class BytesLDIFRecordList(ldif.LDIFRecordList):
     """Simple encoding wrapper for LDIFRecordList that converts keys to UTF-8"""
+
     def _next_key_and_value(self):
         # we do not descend from object, so we cannot use super()
         k, v = ldif.LDIFRecordList._next_key_and_value(self)
@@ -366,7 +367,7 @@ class BareosLDAPWrapper:
             try:
                 ldif_out.unparse(self.dn, self.entry)
             except UnicodeDecodeError:
-                ldif_out.unparse(self.dn.decode('utf-8'), self.entry)
+                ldif_out.unparse(self.dn.decode("utf-8"), self.entry)
 
             self.ldif = ldif_dump.getvalue()
             self.ldif_len = len(self.ldif)
@@ -450,8 +451,7 @@ class BareosLDAPWrapper:
                     if "/" in self.dn:
                         bareosfd.JobMessage(
                             bareosfd.bJobMessageType["M_ERROR"],
-                            "Slashes (/) in DN not supported. Skipping %s"
-                            % self.dn,
+                            "Slashes (/) in DN not supported. Skipping %s" % self.dn,
                         )
                         # set to none, so the object will not be picket up
                         self.file_to_backup = None
@@ -467,7 +467,9 @@ class BareosLDAPWrapper:
         3. filter out anything without an equals sign("=")
         4. join components into comma-separated string
         """
-        self.dn = _safe_encode(",".join(filter(lambda x: "=" in x, reversed(fname.split("/")))))
+        self.dn = _safe_encode(
+            ",".join(filter(lambda x: "=" in x, reversed(fname.split("/"))))
+        )
 
     def has_next_file(self):
         # See if we are currently handling the LDIF file or
@@ -508,7 +510,7 @@ class BareosLDAPWrapper:
             if self.dn != dn:
                 bareosfd.JobMessage(
                     bareosfd.bJobMessageType["M_INFO"],
-                    "Restoring original DN %s as %s\n" % (dn, self.dn)
+                    "Restoring original DN %s as %s\n" % (dn, self.dn),
                 )
 
             if dn:

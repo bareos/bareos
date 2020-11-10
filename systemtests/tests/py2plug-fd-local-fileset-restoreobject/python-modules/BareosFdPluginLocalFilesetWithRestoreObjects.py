@@ -71,7 +71,6 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         #         "Wrong value for since time (should be 999 but is %d)\n" % triple_nine
         #     )
 
-
     def filename_is_allowed(self, filename, allowregex, denyregex):
         """
         Check, if filename is allowed.
@@ -90,7 +89,8 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         if not allowed or denied:
             bareosfd.DebugMessage(100, "File %s denied by configuration\n" % (filename))
             bareosfd.JobMessage(
-                M_ERROR, "File %s denied by configuration\n" % (filename),
+                M_ERROR,
+                "File %s denied by configuration\n" % (filename),
             )
             return False
         else:
@@ -104,15 +104,17 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         """
 
         bareosfd.DebugMessage(
-            100, "Using %s to search for local files\n" % (self.options["filename"]),
+            100,
+            "Using %s to search for local files\n" % (self.options["filename"]),
         )
         if os.path.exists(self.options["filename"]):
             try:
                 config_file = open(self.options["filename"], "r")
-                #config_file = open(self.options["filename"], "rb")
+                # config_file = open(self.options["filename"], "rb")
             except:
                 bareosfd.DebugMessage(
-                    100, "Could not open file %s\n" % (self.options["filename"]),
+                    100,
+                    "Could not open file %s\n" % (self.options["filename"]),
                 )
                 return bRC_Error
         else:
@@ -135,7 +137,9 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
                 for topdir, dirNames, fileNames in os.walk(listItem):
                     for fileName in fileNames:
                         if self.filename_is_allowed(
-                            os.path.join(topdir, fileName), self.allow, self.deny,
+                            os.path.join(topdir, fileName),
+                            self.allow,
+                            self.deny,
                         ):
                             self.files_to_backup.append(os.path.join(topdir, fileName))
                             if os.path.isfile(os.path.join(topdir, fileName)):
@@ -157,7 +161,8 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
 
         if not self.files_to_backup:
             bareosfd.JobMessage(
-                M_ERROR, "No (allowed) files to backup found\n",
+                M_ERROR,
+                "No (allowed) files to backup found\n",
             )
             return bRC_Error
         else:
@@ -192,7 +197,9 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
             savepkt.type = FT_RESTORE_FIRST
             savepkt.fname = file_to_backup
             savepkt.object_name = file_to_backup
-            savepkt.object = bytearray(os.path.splitext(file_to_backup)[0].encode("utf-8"))
+            savepkt.object = bytearray(
+                os.path.splitext(file_to_backup)[0].encode("utf-8")
+            )
 
             savepkt.object_len = len(savepkt.object)
             savepkt.object_index = self.object_index_seq
@@ -213,7 +220,8 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
             savepkt.type = FT_REG
 
         bareosfd.JobMessage(
-            M_INFO, "Starting backup of {}\n" .format(file_to_backup),
+            M_INFO,
+            "Starting backup of {}\n".format(file_to_backup),
         )
         return bRC_OK
 
@@ -237,12 +245,11 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
 
         orig_fname = "/" + os.path.relpath(restorepkt.ofname, restorepkt.where)
         bareosfd.DebugMessage(
-            100,
-            "set_file_attributes() orig_fname: {} \n".format (orig_fname)
+            100, "set_file_attributes() orig_fname: {} \n".format(orig_fname)
         )
         restoreobject_sha256sum = self.sha256sums_by_filename[orig_fname]
 
-        file_sha256sum = self.get_sha256sum(orig_fname).encode('utf-8')
+        file_sha256sum = self.get_sha256sum(orig_fname).encode("utf-8")
         bareosfd.DebugMessage(
             100,
             "set_file_attributes() orig_fname: %s restoreobject_sha256sum: %s file_sha256sum: %s\n"
@@ -277,13 +284,16 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
             % (ROP),
         )
         bareosfd.DebugMessage(
-            100, "ROP.object_name(%s): %s\n" % (type(ROP.object_name), ROP.object_name),
+            100,
+            "ROP.object_name(%s): %s\n" % (type(ROP.object_name), ROP.object_name),
         )
         bareosfd.DebugMessage(
-            100, "ROP.plugin_name(%s): %s\n" % (type(ROP.plugin_name), ROP.plugin_name),
+            100,
+            "ROP.plugin_name(%s): %s\n" % (type(ROP.plugin_name), ROP.plugin_name),
         )
         bareosfd.DebugMessage(
-            100, "ROP.object_len(%s): %s\n" % (type(ROP.object_len), ROP.object_len),
+            100,
+            "ROP.object_len(%s): %s\n" % (type(ROP.object_len), ROP.object_len),
         )
         bareosfd.DebugMessage(
             100,
@@ -296,7 +306,7 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         orig_filename = os.path.splitext(ROP.object_name)[0]
         if ROP.object_name.endswith(".sha256sum"):
             self.sha256sums_by_filename[orig_filename] = ROP.object
-            #self.sha256sums_by_filename[orig_filename] = str(ROP.object)
+            # self.sha256sums_by_filename[orig_filename] = str(ROP.object)
         elif ROP.object_name.endswith(".abspath"):
             if ROP.object.decode() != orig_filename:
                 bareosfd.JobMessage(
@@ -309,12 +319,14 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
             if ROP.object.decode() != "a" * stored_length:
                 bareosfd.JobMessage(
                     M_ERROR,
-                    "bad long restoreobject {} does not match stored object: {}, {}\n"
-                    .format (ROP.object_name, ROP.object.decode(), "a" * stored_length),
+                    "bad long restoreobject {} does not match stored object: {}, {}\n".format(
+                        ROP.object_name, ROP.object.decode(), "a" * stored_length
+                    ),
                 )
         else:
             bareosfd.DebugMessage(
-                100, "not checking restoreobject: %s\n" % (type(ROP.object_name)),
+                100,
+                "not checking restoreobject: %s\n" % (type(ROP.object_name)),
             )
         return bRC_OK
 

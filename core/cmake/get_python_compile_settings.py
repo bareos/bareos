@@ -25,33 +25,50 @@
 #  This is required to build python modules without setuptools.
 
 import sys
+
 try:
-	import sysconfig
+    import sysconfig
 except:
-	import distutils.sysconfig as sysconfig
+    import distutils.sysconfig as sysconfig
 
 for var in ("CC", "BLDSHARED"):
     value = sysconfig.get_config_var(var)
-    print ("message(STATUS \"Python{0}_{1}\ is\  {2}\")" . format(sys.version_info[0], var, value))
-    print ("set(Python{0}_{1} \"{2}\")" . format(sys.version_info[0], var, value))
+    print(
+        'message(STATUS "Python{0}_{1}\ is\  {2}")'.format(
+            sys.version_info[0], var, value
+        )
+    )
+    print('set(Python{0}_{1} "{2}")'.format(sys.version_info[0], var, value))
 
     # if nothing comes after the compile command, the flags are empty
     try:
-        value = value.split(' ',1)[1]
+        value = value.split(" ", 1)[1]
     except:
-        value = ''
+        value = ""
     # as these vars contain the compiler itself, we remove the first word and return it as _FLAGS
-    print ("message(STATUS \"Python{0}_{1}_FLAGS\ is\  {2}\")" . format(sys.version_info[0], var, value))
-    print ("set(Python{0}_{1}_FLAGS \"{2}\")" . format(sys.version_info[0], var, value))
+    print(
+        'message(STATUS "Python{0}_{1}_FLAGS\ is\  {2}")'.format(
+            sys.version_info[0], var, value
+        )
+    )
+    print('set(Python{0}_{1}_FLAGS "{2}")'.format(sys.version_info[0], var, value))
 
-for var in ("CFLAGS","CCSHARED","INCLUDEPY","LDFLAGS"):
+for var in ("CFLAGS", "CCSHARED", "INCLUDEPY", "LDFLAGS"):
     value = sysconfig.get_config_var(var)
-    print ("message(STATUS \"Python{0}_{1}\ is\  {2}\")" . format(sys.version_info[0], var, value))
-    print ("set(Python{0}_{1} \"{2}\")" . format(sys.version_info[0], var, value))
+    print(
+        'message(STATUS "Python{0}_{1}\ is\  {2}")'.format(
+            sys.version_info[0], var, value
+        )
+    )
+    print('set(Python{0}_{1} "{2}")'.format(sys.version_info[0], var, value))
 
 for var in ("EXT_SUFFIX",):
     value = sysconfig.get_config_var(var)
     if value is None:
-        value = ''
-    print ("message(STATUS \"Python{0}_{1}\ is\  {2}\")" . format(sys.version_info[0], var, value))
-    print ("set(Python{0}_{1} \"{2}\")" . format(sys.version_info[0], var, value))
+        value = ""
+    print(
+        'message(STATUS "Python{0}_{1}\ is\  {2}")'.format(
+            sys.version_info[0], var, value
+        )
+    )
+    print('set(Python{0}_{1} "{2}")'.format(sys.version_info[0], var, value))

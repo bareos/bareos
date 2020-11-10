@@ -44,8 +44,8 @@ def load_bareos_plugin(plugindef):
     """
     # BareosSdWrapper.bareos_sd_plugin_object is the module attribute that
     # holds the plugin class object
-    BareosSdWrapper.bareos_sd_plugin_object = BareosSdPluginBaseclass.BareosSdPluginBaseclass(
-        plugindef
+    BareosSdWrapper.bareos_sd_plugin_object = (
+        BareosSdPluginBaseclass.BareosSdPluginBaseclass(plugindef)
     )
     return bareos_sd_consts.bRCs["bRC_OK"]
 

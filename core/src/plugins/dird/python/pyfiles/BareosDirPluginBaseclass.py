@@ -34,9 +34,7 @@ class BareosDirPluginBaseclass(object):
     """ Bareos DIR python plugin base class """
 
     def __init__(self, plugindef):
-        bareosdir.DebugMessage(
-            100, "Constructor called in module %s\n" % (__name__)
-        )
+        bareosdir.DebugMessage(100, "Constructor called in module %s\n" % (__name__))
         events = []
 
         events.append(bDirEventType["bDirEventJobStart"])
@@ -85,9 +83,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
         or better call super.parse_plugin_definition in your own class and
         make sanity check on self.options afterwards
         """
-        bareosdir.DebugMessage(
-            100, "plugin def parser called with %s\n" % (plugindef)
-        )
+        bareosdir.DebugMessage(100, "plugin def parser called with %s\n" % (plugindef))
         # Parse plugin options into a dict
         self.options = dict()
         plugin_options = plugindef.split(":")
@@ -109,9 +105,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
         """
         if event == bDirEventType["bDirEventJobInit"]:
             self.jobInitTime = time.time()
-            self.jobStatus = chr(
-                bareosdir.GetValue(brDirVariable["bDirVarJobStatus"])
-            )
+            self.jobStatus = chr(bareosdir.GetValue(brDirVariable["bDirVarJobStatus"]))
             bareosdir.DebugMessage(
                 100,
                 "bDirEventJobInit event triggered at Unix time %s\n"
@@ -120,9 +114,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
 
         elif event == bDirEventType["bDirEventJobStart"]:
             self.jobStartTime = time.time()
-            self.jobStatus = chr(
-                bareosdir.GetValue(brDirVariable["bDirVarJobStatus"])
-            )
+            self.jobStatus = chr(bareosdir.GetValue(brDirVariable["bDirVarJobStatus"]))
             bareosdir.DebugMessage(
                 100,
                 "bDirEventJobStart event triggered at Unix time %s\n"
@@ -144,31 +136,15 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
                 100,
                 "bDirEventJobEnd event triggered at Unix time %s\n" % (self.jobEndTime),
             )
-            self.jobLevel = chr(
-                bareosdir.GetValue(brDirVariable["bDirVarLevel"])
-            )
-            self.jobStatus = chr(
-                bareosdir.GetValue(brDirVariable["bDirVarJobStatus"])
-            )
-            self.jobErrors = int(
-                bareosdir.GetValue(brDirVariable["bDirVarJobErrors"])
-            )
-            self.jobBytes = int(
-                bareosdir.GetValue(brDirVariable["bDirVarJobBytes"])
-            )
-            self.jobFiles = int(
-                bareosdir.GetValue(brDirVariable["bDirVarJobFiles"])
-            )
-            self.jobNumVols = int(
-                bareosdir.GetValue(brDirVariable["bDirVarNumVols"])
-            )
+            self.jobLevel = chr(bareosdir.GetValue(brDirVariable["bDirVarLevel"]))
+            self.jobStatus = chr(bareosdir.GetValue(brDirVariable["bDirVarJobStatus"]))
+            self.jobErrors = int(bareosdir.GetValue(brDirVariable["bDirVarJobErrors"]))
+            self.jobBytes = int(bareosdir.GetValue(brDirVariable["bDirVarJobBytes"]))
+            self.jobFiles = int(bareosdir.GetValue(brDirVariable["bDirVarJobFiles"]))
+            self.jobNumVols = int(bareosdir.GetValue(brDirVariable["bDirVarNumVols"]))
             self.jobPool = bareosdir.GetValue(brDirVariable["bDirVarPool"])
-            self.jobStorage = bareosdir.GetValue(
-                brDirVariable["bDirVarStorage"]
-            )
-            self.jobMediaType = bareosdir.GetValue(
-                brDirVariable["bDirVarMediaType"]
-            )
+            self.jobStorage = bareosdir.GetValue(brDirVariable["bDirVarStorage"])
+            self.jobMediaType = bareosdir.GetValue(brDirVariable["bDirVarMediaType"])
 
             self.jobTotalTime = self.jobEndTime - self.jobInitTime
             self.jobRunningTime = self.jobEndTime - self.jobRunTime

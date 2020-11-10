@@ -130,7 +130,8 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.dbCursor.execute(sqlStatement)
         except Exception as e:
             bareosfd.JobMessage(
-                M_ERROR, 'Query "%s" failed: "%s"' % (sqlStatement, e.message),
+                M_ERROR,
+                'Query "%s" failed: "%s"' % (sqlStatement, e.message),
             )
             return False
         return True
@@ -163,7 +164,8 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             # )
             ## WARNING: JobMessages cause fatal errors at this stage
             JobMessage(
-                M_INFO, "Connected to Postgres version %d\n" % (self.pgVersion),
+                M_INFO,
+                "Connected to Postgres version %d\n" % (self.pgVersion),
             )
         except:
             bareosfd.JobMessage(
@@ -199,7 +201,8 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 switchLsnStmt = "SELECT pg_switch_xlog()"
             if pgMajorVersion < 9:
                 bareosfd.JobMessage(
-                    M_INFO, "WAL switching not supported on Postgres Version < 9\n",
+                    M_INFO,
+                    "WAL switching not supported on Postgres Version < 9\n",
                 )
             else:
                 if self.execute_SQL(getLsnStmt):
@@ -218,7 +221,8 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                     # Let Postgres write latest transaction into a new WAL file now
                     if not self.execute_SQL(switchLsnStmt):
                         bareosfd.JobMessage(
-                            M_WARNING, "Could not switch to next WAL segment\n",
+                            M_WARNING,
+                            "Could not switch to next WAL segment\n",
                         )
                     if self.execute_SQL(getLsnStmt):
                         currentLSN = self.formatLSN(self.dbCursor.fetchone()[0])
@@ -318,7 +322,8 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             labelFile = open(self.labelFileName, "r")
         except:
             bareosfd.JobMessage(
-                M_ERROR, "Could not open Label File %s" % (self.labelFileName),
+                M_ERROR,
+                "Could not open Label File %s" % (self.labelFileName),
             )
 
         for labelItem in labelFile.read().splitlines():

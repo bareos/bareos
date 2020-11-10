@@ -35,8 +35,8 @@ import json
 
 class BareosFdPercona(BareosFdPluginBaseclass):
     """
-        Plugin for backing up all mysql innodb databases found in a specific mysql server
-        using the Percona xtrabackup tool.
+    Plugin for backing up all mysql innodb databases found in a specific mysql server
+    using the Percona xtrabackup tool.
     """
 
     def __init__(self, plugindef):
@@ -185,9 +185,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
         check_option_bRC = self.check_plugin_options()
         if check_option_bRC != bRC_OK:
             return check_option_bRC
-        bareosfd.DebugMessage(
-            100, "start_backup_job, level: %s\n" % chr(self.level)
-        )
+        bareosfd.DebugMessage(100, "start_backup_job, level: %s\n" % chr(self.level))
         if chr(self.level) == "I":
             # We check, if we have a LSN received by restore object from previous job
             if self.max_to_lsn == 0:
@@ -260,9 +258,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                             'Error reading LSN: "%s" not an integer' % mysqlStdOut,
                         )
                         return bRC_Error
-            JobMessage(
-                M_INFO, "Backup until LSN: %d\n" % last_lsn
-            )
+            JobMessage(M_INFO, "Backup until LSN: %d\n" % last_lsn)
             if (
                 self.max_to_lsn > 0
                 and self.max_to_lsn >= last_lsn
@@ -311,7 +307,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
             savepkt.fname = "/_percona/xtrabackup_checkpoints"
             savepkt.type = FT_RESTORE_FIRST
             savepkt.object_name = savepkt.fname
-            savepkt.object = bytearray(json.dumps(checkpoints) ,encoding='utf8')
+            savepkt.object = bytearray(json.dumps(checkpoints), encoding="utf8")
             savepkt.object_len = len(savepkt.object)
             savepkt.object_index = int(time.time())
             shutil.rmtree(self.tempdir)
@@ -388,9 +384,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                 IOP.io_errno = 0
             except IOError as msg:
                 IOP.io_errno = -1
-                DebugMessage(
-                    100, "Error writing data: " + format(str(msg)) + "\n"
-                )
+                DebugMessage(100, "Error writing data: " + format(str(msg)) + "\n")
             return bRC_OK
 
         elif IOP.func == IO_CLOSE:
@@ -453,9 +447,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
                     ]
                     if self.log:
                         msg += ['log file: "%s"' % self.log]
-                    JobMessage(
-                        M_FATAL, ", ".join(msg) + "\n"
-                    )
+                    JobMessage(M_FATAL, ", ".join(msg) + "\n")
             if returnCode != 0:
                 return bRC_Error
 
@@ -511,7 +503,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
         """
         # Improve: sanity / consistence check of restore object
         self.row_rop_raw = ROP.object
-        self.rop_data[ROP.jobid] = json.loads((self.row_rop_raw.decode('utf-8')))
+        self.rop_data[ROP.jobid] = json.loads((self.row_rop_raw.decode("utf-8")))
         if (
             "to_lsn" in self.rop_data[ROP.jobid]
             and int(self.rop_data[ROP.jobid]["to_lsn"]) > self.max_to_lsn

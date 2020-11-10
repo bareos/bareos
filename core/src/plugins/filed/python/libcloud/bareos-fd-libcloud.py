@@ -40,8 +40,8 @@ def load_bareos_plugin(plugindef):
     """
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that
     # holds the plugin class object
-    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginLibcloud.BareosFdPluginLibcloud(
-        plugindef
+    BareosFdWrapper.bareos_fd_plugin_object = (
+        BareosFdPluginLibcloud.BareosFdPluginLibcloud(plugindef)
     )
     return bRC_OK
 

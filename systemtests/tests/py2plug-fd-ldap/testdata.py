@@ -33,16 +33,17 @@ from ldif import LDIFWriter
 
 def _safe_encode(data):
     if isinstance(data, unicode):
-        return data.encode('utf-8')
+        return data.encode("utf-8")
     return data
 
 
 class BytesLDIFRecordList(ldif.LDIFRecordList):
     """Simple encoding wrapper for LDIFRecordList that converts keys to UTF-8"""
+
     def _next_key_and_value(self):
         # we do not descend from object, so we cannot use super()
         k, v = ldif.LDIFRecordList._next_key_and_value(self)
-        return k.encode('utf-8'), v
+        return k.encode("utf-8"), v
 
 
 def ldap_connect(address, binddn, password):
@@ -218,7 +219,8 @@ def action_populate(conn, basedn):
     ]:
         ldap_create_or_fail(
             conn,
-            b"ou=%s,ou=weird-names,ou=backup,%s" % (ldap.dn.escape_dn_chars(ou), basedn),
+            b"ou=%s,ou=weird-names,ou=backup,%s"
+            % (ldap.dn.escape_dn_chars(ou), basedn),
             {b"objectClass": [b"top", b"organizationalUnit"], b"ou": [ou]},
         )
 
@@ -226,7 +228,7 @@ def action_populate(conn, basedn):
     # temporary LDIF and parse that.
     ldif_data = io.BytesIO()
     ldif_data.write(b"dn: ou=böses encoding,ou=weird-names,ou=backup,")
-    ldif_data.write(b"%s\n" % basedn.encode('ascii'))
+    ldif_data.write(b"%s\n" % basedn.encode("ascii"))
     ldif_data.write(b"objectClass: top\n")
     ldif_data.write(b"objectClass: organizationalUnit\n")
     ldif_data.write(b"ou: böses encoding\n")
@@ -237,11 +239,7 @@ def action_populate(conn, basedn):
     dn, entry = ldif_parser.all_records[0]
     ldif_data.close()
 
-    ldap_create_or_fail(
-        conn,
-        _safe_encode(dn),
-        entry
-        )
+    ldap_create_or_fail(conn, _safe_encode(dn), entry)
 
 
 def abbrev_value(v):
@@ -270,7 +268,7 @@ def action_dump(conn, basedn, shorten=True, rewrite_dn=True):
             try:
                 writer.unparse(dn, attrs)
             except UnicodeDecodeError:
-                writer.unparse(dn.decode('utf-8'), attrs)
+                writer.unparse(dn.decode("utf-8"), attrs)
     except ldap.NO_SUCH_OBJECT:
         print("No object '%s' in directory." % basedn, file=sys.stderr)
         sys.exit(1)

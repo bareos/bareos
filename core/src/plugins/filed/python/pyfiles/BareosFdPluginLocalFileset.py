@@ -63,7 +63,8 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
         if not allowed or denied:
             bareosfd.DebugMessage(100, "File %s denied by configuration\n" % (filename))
             bareosfd.JobMessage(
-                bareosfd.M_ERROR, "File %s denied by configuration\n" % (filename),
+                bareosfd.M_ERROR,
+                "File %s denied by configuration\n" % (filename),
             )
             return False
         else:
@@ -76,14 +77,16 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
         in self.files_to_backup
         """
         bareosfd.DebugMessage(
-            100, "Using %s to search for local files\n" % self.options["filename"],
+            100,
+            "Using %s to search for local files\n" % self.options["filename"],
         )
         if os.path.exists(self.options["filename"]):
             try:
                 config_file = open(self.options["filename"], "r")
             except:
                 bareosfd.DebugMessage(
-                    100, "Could not open file %s\n" % (self.options["filename"]),
+                    100,
+                    "Could not open file %s\n" % (self.options["filename"]),
                 )
                 return bareosfd.bRC_Error
         else:
@@ -111,7 +114,9 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
                 for topdir, dirNames, fileNames in os.walk(listItem):
                     for fileName in fileNames:
                         if self.filename_is_allowed(
-                            os.path.join(topdir, fileName), self.allow, self.deny,
+                            os.path.join(topdir, fileName),
+                            self.allow,
+                            self.deny,
                         ):
                             self.append_file_to_backup(os.path.join(topdir, fileName))
                     for dirName in dirNames:
@@ -121,7 +126,8 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
 
         if not self.files_to_backup:
             bareosfd.JobMessage(
-                bareosfd.M_ERROR, "No (allowed) files to backup found\n",
+                bareosfd.M_ERROR,
+                "No (allowed) files to backup found\n",
             )
             return bareosfd.bRC_Error
         else:
