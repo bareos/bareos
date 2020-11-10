@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 
+- Fix memory corruption in storage daemon [PR #616]
 - [Issue #1039]: Can not login in webui [PR #591]
 - Improve the behaviour of some console commands [PR #604]
 - Several improvements to the LDAP Plugin for filedaemon [PR #595]
@@ -61,7 +62,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Added
 
-
+- Add support for Fedora 33 [PR #643]
+- Add development tools for changelog-handling [PR #617]
 - Added documentation and background information for the new python 3 plugin support [PR #599]
 - Added the libcloud filedaemon plugin to backup S3 buckets
 - Allow terabytes, tebibytes, petabytes, pebibytes, exabytes and exbibytes unit symbols when specifying sizes [PR #600]
@@ -97,6 +99,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Add test for client initiated backup [PR #383]
 
 ### Changed
+
+- Release-notes / changelog have been moved to CHANGELOG.md [PR #613]
+- Bareos now requires at least CMake 3.12 to build
 - Updated many localization files [PR #609]
 - Display archived jobs on list backups command [PR #581]
 - Use a configurable VDI timeout when requesting the MSSQL config [PR #571]
@@ -123,7 +128,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Using Rados as a storage backend is now deprecated [PR #672]
 
 ### Removed
-- Remove support for creating MySQL / SQLite catalogs [PR#563] [PR #603]
+- Remove support for creating MySQL / SQLite catalogs [PR #563] [PR #603]
 
 ### Security
 
@@ -139,6 +144,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1190]: https://bugs.bareos.org/view.php?id=1190
 [Issue #1192]: https://bugs.bareos.org/view.php?id=1192
 [Issue #1206]: https://bugs.bareos.org/view.php?id=1206
+[Issue #1210]: https://bugs.bareos.org/view.php?id=1210
 [Issue #1211]: https://bugs.bareos.org/view.php?id=1211
 [Issue #1220]: https://bugs.bareos.org/view.php?id=1220
 [Issue #1227]: https://bugs.bareos.org/view.php?id=1227
@@ -245,6 +251,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #595]: https://github.com/bareos/bareos/pull/595
 [PR #599]: https://github.com/bareos/bareos/pull/599
 [PR #600]: https://github.com/bareos/bareos/pull/600
+[PR #603]: https://github.com/bareos/bareos/pull/603
 [PR #604]: https://github.com/bareos/bareos/pull/604
 [PR #609]: https://github.com/bareos/bareos/pull/609
+[PR #613]: https://github.com/bareos/bareos/pull/613
+[PR #616]: https://github.com/bareos/bareos/pull/616
+[PR #617]: https://github.com/bareos/bareos/pull/617
+[PR #643]: https://github.com/bareos/bareos/pull/643
 [unreleased]: https://github.com/bareos/bareos/tree/master
