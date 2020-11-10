@@ -3,7 +3,7 @@
 System Requirements
 ===================
 
-:index:`\ <single: System Requirements>`\  :index:`\ <single: Requirements; System>`\ 
+:index:`\ <single: System Requirements>`\  :index:`\ <single: Requirements; System>`\
 
 -  The minimum versions for each of the databases supported by Bareos are:
 
@@ -24,7 +24,3 @@ System Requirements
 .. _jansson:
 
  :index:`\ <single: JSON>`\  :index:`\ <single: Jansson; \see{JSON}>`\  Bareos :sinceVersion:`15.2.0: requires: jansson` offers a JSON API mode, see `Bareos Developer Guide (api-mode-2-json) <https://docs.bareos.org/DeveloperGuide/api.html#api-mode-2-json>`_. On some platform, the Jansson library is directory available. On others it can easly be added. For some older platforms, we compile Bareos without JSON API mode.
-
-
-
-

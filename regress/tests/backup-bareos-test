@@ -104,4 +104,3 @@ stop_bareos
 check_two_logs
 check_restore_diff ${BackupDirectory}
 end_test
-

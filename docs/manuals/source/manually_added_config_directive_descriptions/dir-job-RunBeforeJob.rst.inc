@@ -15,5 +15,3 @@ is equivalent to:
 
    .. literalinclude:: /include/config/DirJobRunBeforeJob2.conf
       :language: bareosconfig
-
-

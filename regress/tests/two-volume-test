@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup 
+# Run a simple backup
 #  to two tapes where the maximum tape file size is set to 1M
 #  Note, this test simulates the tape filling and writing to
 #   the next tape.

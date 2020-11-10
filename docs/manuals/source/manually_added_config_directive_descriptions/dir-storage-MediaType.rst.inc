@@ -13,4 +13,4 @@ should use two different Media Types for your two disk Devices (even though you 
 The MediaType specified in the Director’s Storage resource, must correspond to the Media Type specified in the Device resource of the Storage daemon configuration file. This directive is required, and it is used by the Director and the Storage daemon to ensure that a Volume automatically selected from the Pool corresponds to the physical device. If a Storage daemon handles multiple devices (e.g. will write to various file Volumes on different partitions), this directive allows you to specify
 exactly which device.
 
-As mentioned above, the value specified in the Director’s Storage resource must agree with the value specified in the Device resource in the Storage daemon’s configuration file. It is also an additional check so that you don’t try to write data for a DLT onto an 8mm device. 
+As mentioned above, the value specified in the Director’s Storage resource must agree with the value specified in the Device resource in the Storage daemon’s configuration file. It is also an additional check so that you don’t try to write data for a DLT onto an 8mm device.

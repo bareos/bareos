@@ -3,7 +3,7 @@
 Bareos Console
 ==============
 
-:index:`\ <single: Bareos Console>`\  :index:`\ <single: bconsole>`\  :index:`\ <single: Command; bconsole>`\ 
+:index:`\ <single: Bareos Console>`\  :index:`\ <single: bconsole>`\  :index:`\ <single: Command; bconsole>`\
 
 The Bareos Console (:command:`bconsole`) is a program that allows the user or the System Administrator, to interact with the Bareos Director daemon while the daemon is running.
 
@@ -16,7 +16,7 @@ In fact, a certain minimal knowledge of the Console program is needed in order f
 Console Configuration
 ---------------------
 
-:index:`\ <single: Configuration; Console>`\  :index:`\ <single: Configuration; bconsole>`\ 
+:index:`\ <single: Configuration; Console>`\  :index:`\ <single: Configuration; bconsole>`\
 
 When the Console starts, it reads a standard Bareos configuration file named bconsole.conf unless you specify the -c command line option (see below). This file allows default configuration of the Console, and at the current time, the only Resource Record defined is the Director resource, which gives the Console the name and address of the Director. For more information on configuration of the Console program, please see the :ref:`Console Configuration <ConsoleConfChapter>` chapter
 of this document.
@@ -26,7 +26,7 @@ Running the Console Program
 
 The console program can be run with the following options:
 
-:index:`\ <single: Command Line Options>`\ 
+:index:`\ <single: Command Line Options>`\
 
 .. code-block:: shell-session
    :caption: bconsole command line options
@@ -86,7 +86,7 @@ The maximum command line length is limited to 511 characters, so if you are scri
 Exit the Console Program
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Command; bconsole; exit>`\ 
+:index:`\ <single: Command; bconsole; exit>`\
 
 Normally, you simply enter quit or exit and the Console program will terminate. However, it waits until the Director acknowledges the command. If the Director is already doing a lengthy command (e.g. prune), it may take some time. If you want to immediately terminate the Console program, enter the .quit command.
 
@@ -96,7 +96,7 @@ Volume name. In that case, you will most likely be able to cancel at the next pr
 Running the Console from a Shell Script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Console; Running from a Shell>`\  
+:index:`\ <single: Console; Running from a Shell>`\
 
 .. _scripting:
 
@@ -173,7 +173,7 @@ The output from the backup is directed to /tmp/log1.out and the output from the 
 Console Keywords
 ----------------
 
-:index:`\ <single: Console; Keywords>`\ 
+:index:`\ <single: Console; Keywords>`\
 
 Unless otherwise specified, each of the following keywords takes an argument, which is specified after the keyword following an equal sign. For example:
 
@@ -544,7 +544,7 @@ enable
 
       enable job=<job-name>
 
-   
+
 
 .. _estimate:
 
@@ -701,14 +701,14 @@ label
 
    Please note, when labeling a blank tape, Bareos will get read I/O error when it attempts to ensure that the tape is not already labeled. If you wish to avoid getting these messages, please write an EOF mark on your tape before attempting to label it:
 
-   
+
 
    ::
 
              mt rewind
              mt weof
 
-   
+
 
    The label command can fail for a number of reasons:
 
@@ -1164,7 +1164,7 @@ sqlquery
    Depending on what database engine you are using (MySQL, PostgreSQL or SQLite), you will have somewhat different SQL commands available. For more detailed information, please refer to the MySQL, PostgreSQL or SQLite documentation.
 
 status
-   :index:`\ <single: Console; Command; status>`\ 
+   :index:`\ <single: Console; Command; status>`\
 
    This command will display the status of all components. For the director, it will display the next jobs that are scheduled during the next 24 hours as well as the status of currently running jobs. For the Storage Daemon, you will have drive status or autochanger content. The File Daemon will give you information about current jobs like average speed or file accounting. The full form of this command is:
 
@@ -1365,7 +1365,7 @@ trace
    :index:`\ <single: Console; Command; trace>`\  Turn on/off trace to file.
 
 truncate
-   :index:`\ <single: Console; Command; truncate>`\  :index:`\ <single: Disk; Freeing disk space>`\  :index:`\ <single: Disk; Freeing disk space>`\  
+   :index:`\ <single: Console; Command; truncate>`\  :index:`\ <single: Disk; Freeing disk space>`\  :index:`\ <single: Disk; Freeing disk space>`\
 
 .. _bcommandTruncate:
 
@@ -1441,7 +1441,7 @@ update
          All Volumes from Pool
          All Volumes from all Pools
 
-   
+
 
    For slots :bcommand:`update slots`, Bareos will obtain a list of slots and their barcodes from the Storage daemon, and for each barcode found, it will automatically update the slot in the catalog Media record to correspond to the new value. This is very useful if you have moved cassettes in the magazine, or if you have removed the magazine and inserted a different one. As the slot of each Volume is updated, the InChanger flag for that Volume will also be set, and any other
    Volumes in the Pool that were last mounted on the same Storage device will have their InChanger flag turned off. This permits Bareos to know what magazine (tape holder) is currently in the autochanger.
@@ -1511,7 +1511,7 @@ whoami
 Special dot (.) Commands
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Console; Command; . commands>`\ 
+:index:`\ <single: Console; Command; . commands>`\
 
 There is a list of commands that are prefixed with a period (.). These commands are intended to be used either by batch programs or graphical user interface front-ends. They are not normally used by interactive users. For details, see `Bareos Developer Guide (dot-commands) <../DeveloperGuide/api.html#dot-commands>`_.
 
@@ -1528,7 +1528,7 @@ Normally, all commands entered to the Console program are immediately forwarded 
 @output <filename> <w|a>
    :index:`\ <single: Console; Command; @output <filename> <w|a>>`\  Send all following output to the filename specified either overwriting the file (w) or appending to the file (a). To redirect the output to the terminal, simply enter @output without a filename specification. WARNING: be careful not to overwrite a valid file. A typical example during a regression test might be:
 
-   
+
 
    ::
 
@@ -1536,7 +1536,7 @@ Normally, all commands entered to the Console program are immediately forwarded 
           commands ...
           @output
 
-   
+
 
 @tee <filename> <w|a>
    :index:`\ <single: Console; Command; @tee <filename> <w|a>>`\  Send all subsequent output to both the specified file and the terminal. It is turned off by specifying @tee or @output without a filename.
@@ -1574,7 +1574,7 @@ Normally, all commands entered to the Console program are immediately forwarded 
 Adding Volumes to a Pool
 ------------------------
 
-:index:`\ <single: Console; Adding a Volume to a Pool>`\ 
+:index:`\ <single: Console; Adding a Volume to a Pool>`\
 
 .. TODO: move to another chapter
 
@@ -1632,6 +1632,4 @@ To see what you have added, enter:
 
 
 
-Notice that the console program automatically appended a number to the base Volume name that you specify (Save in this case). If you don’t want it to append a number, you can simply answer 0 (zero) to the question "Enter number of Media volumes to create. Max=1000:", and in this case, it will create a single Volume with the exact name you specify. 
-
-
+Notice that the console program automatically appended a number to the base Volume name that you specify (Save in this case). If you don’t want it to append a number, you can simply answer 0 (zero) to the question "Enter number of Media volumes to create. Max=1000:", and in this case, it will create a single Volume with the exact name you specify.

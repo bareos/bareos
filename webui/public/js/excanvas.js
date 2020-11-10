@@ -1,4 +1,4 @@
-// Memory Leaks patch from http://explorercanvas.googlecode.com/svn/trunk/ 
+// Memory Leaks patch from http://explorercanvas.googlecode.com/svn/trunk/
 //  svn : r73
 // ------------------------------------------------------------------
 // Copyright 2006 Google Inc.

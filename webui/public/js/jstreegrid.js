@@ -1357,4 +1357,3 @@
 		// need to do alternating background colors or borders
 	};
 }));
-

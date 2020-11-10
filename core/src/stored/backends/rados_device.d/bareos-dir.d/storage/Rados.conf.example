@@ -5,4 +5,3 @@ Storage {
   Device = RadosStorage
   Media Type = RadosFile
 }
-

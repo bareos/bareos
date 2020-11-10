@@ -43,7 +43,7 @@ TLS Handshake before Bareos 18.2
   participant "director\ndaemon" as D
 
   W <-> D: Open TCP connection
-  
+
   W -> D: "Hello [*UserAgent*|name] calling"
   note right of D: *UserAgent*: root console\nname: named console
   autonumber 1 "[cram 0:]"
@@ -163,4 +163,3 @@ The following diagramm shows the interface of the *TlsOpenSsl* class and its agg
   OpenSsl --|> Tls
 
   BareosSocket o- Tls : initialize >
-

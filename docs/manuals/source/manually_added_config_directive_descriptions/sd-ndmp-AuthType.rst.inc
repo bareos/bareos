@@ -7,4 +7,3 @@ The following values are allowed:
 #. Clear - Use clear text password
 
 #. MD5 - Use MD5 hashing
-

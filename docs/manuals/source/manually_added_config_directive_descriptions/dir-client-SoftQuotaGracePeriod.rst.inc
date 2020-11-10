@@ -32,4 +32,3 @@ After the grace time expires, in the next backup job of the client, the value fo
 
 
 At this point, it is not possible to do any backup of the client. To be able to do more backups, the amount of stored data for this client has to fall under the burst quota value.
-

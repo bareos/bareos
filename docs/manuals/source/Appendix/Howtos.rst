@@ -48,7 +48,7 @@ The best solution is to shutdown your database before backing it up, or use some
 Backup of MSSQL Databases with Bareos Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: MSSQL Backup>`\  :index:`\ <single: Database; MSSQL>`\  :index:`\ <single: Plugin; MSSQL backup>`\  
+:index:`\ <single: MSSQL Backup>`\  :index:`\ <single: Database; MSSQL>`\  :index:`\ <single: Plugin; MSSQL backup>`\
 
 :sinceVersion:`13.2.0: MSSQL`
 
@@ -59,7 +59,7 @@ If you like to use the MSSQL-Plugin to backing up your Databases you need to con
 
 -  | Database Mode
    | The database need to run in Full Recovery Mode. Otherwise you are not able to use differential and incremental backups or to use point in time recovery.
-   | 
+   |
 
 .. warning::
 
@@ -468,14 +468,14 @@ norecovery=<yes|no>
    This option must be set to yes, if the database server should not do a automatic recovery after the backup. Instead, additional manual maintenace operations are possible.
 
 recoverafterrestore=<yes|no>
-   With this command the database is right after backup in the correct mode. If you not use this you have to use the followed tsql statement: 
+   With this command the database is right after backup in the correct mode. If you not use this you have to use the followed tsql statement:
 
    ::
 
           Restore DATABASE yourDatabase WITH RECOVERY
           GO
 
-   
+
 
 stopbeforemark=<log sequence number specification>
    used for point in time recovery.
@@ -740,7 +740,7 @@ This can also be used, to backup a database that is running on a remote host:
 Backup of a PostgreSQL Databases by using the PGSQL-Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Plugin; PostgreSQL Backup>`\  
+:index:`\ <single: Plugin; PostgreSQL Backup>`\
 
 The PGSQL-Plugin supports an online (Hot) backup of database files and database transaction logs (WAL) archiving (with pgsql-archlog) and backup. With online database and transaction logs the backup plugin can perform Poin-In-Time-Restore up to a single selected transaction or date/time.
 
@@ -765,7 +765,7 @@ In this section, we describe different methods to do a full backup of a MySQL da
 Backup of MySQL Databases using the Python MySQL plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Plugin; MySQL Backup>`\  
+:index:`\ <single: Plugin; MySQL Backup>`\
 
 The Python plugin from https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python makes a backup of all or selected MySQL databases from the |fd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps. If you prefer to use mechanisms like incremental hot-backups of InnoDB tables, please use the Bareos MySQL / MariaDB Percona xtrabackup Plugin (see
 :ref:`backup-mysql-xtrabackup`).
@@ -837,7 +837,7 @@ On restore, the database dumps are restored to the subdirectory :file:`_mysqlbac
 Backup of a MySQL Database by using the RunScript directive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: RunScript; Example>`\ 
+:index:`\ <single: RunScript; Example>`\
 
 One method to backup a MySQL database is to use the :command:`mysqldump` tool to dump the database into a file and then backup it as a normal file. After the backup, the file can be removed. It may also be an option not to remove it, so that the latest version is always available immediately. On the next job run it will be overwritten anyway.
 
@@ -878,7 +878,7 @@ This can be done by using :config:option:`dir/job/RunScript`\  directives, for e
          compression = gzip
        }
      # database dump file
-     File = "/var/lib/bareos/mysql_dump.sql" 
+     File = "/var/lib/bareos/mysql_dump.sql"
      }
    }
 
@@ -887,7 +887,7 @@ Note that redirecting the :command:`mysqldump` output to a file requires to run 
 Backup of a MySQL Database by using the bpipe plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: bpipe; MySQL backup>`\ 
+:index:`\ <single: bpipe; MySQL backup>`\
 
 Instead of creating a temporary database dump file, the bpipe plugin can be used. For general information about bpipe, see the :ref:`bpipe` section. The bpipe plugin is configured inside the Include section of a File Set, e.g.:
 
@@ -1125,47 +1125,47 @@ Statistics Collection
 
 Statistics Collection can be controlled by a number of configuration directives. If Statistics Collection is enabled, statistics are collected by the |dir| and stored into the Catalog database. So enabling this feature will increase your database size.
 
-The Statistics are used by the |webui| to show the status of a running job. :index:`\ <single: Webui; Configure Statistics Collection>`\ 
+The Statistics are used by the |webui| to show the status of a running job. :index:`\ <single: Webui; Configure Statistics Collection>`\
 
 Director Configuration - Director Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  
+-
 
-   :config:option:`dir/director/StatisticsCollectInterval`\ 
+   :config:option:`dir/director/StatisticsCollectInterval`\
 
--  
+-
 
-   :config:option:`dir/director/StatisticsRetention`\ 
+   :config:option:`dir/director/StatisticsRetention`\
 
 Director Configuration - Storage Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  
+-
 
-   :config:option:`dir/storage/CollectStatistics`\ 
+   :config:option:`dir/storage/CollectStatistics`\
 
 Storage Configuration - Storage Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  
+-
 
-   :config:option:`sd/storage/CollectDeviceStatistics`\ 
+   :config:option:`sd/storage/CollectDeviceStatistics`\
 
--  
+-
 
-   :config:option:`sd/storage/CollectJobStatistics`\ 
+   :config:option:`sd/storage/CollectJobStatistics`\
 
--  
+-
 
-   :config:option:`sd/storage/StatisticsCollectInterval`\ 
+   :config:option:`sd/storage/StatisticsCollectInterval`\
 
 Storage Configuration - Device Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  
+-
 
-   :config:option:`sd/device/CollectStatistics`\ 
+   :config:option:`sd/device/CollectStatistics`\
 
 See chapter :ref:`section-JobStatistics` for additional information.
 
@@ -1199,11 +1199,11 @@ Removing the client from the configuration will leave you with catalog records c
 
 
 .. warning::
-      
+
    After removing the job and file records you will be unable to restore the client's data.
    The :bcommand:`purge` command ignores retention policies, so please take careful.
-   
+
 
 As soon as all jobs for a client have been removed from the catalog that client record becomes orphaned. Orphaned client records usually stay in your database indefinitely, but if you want them removed for cosmetic reasons you can do so using "Check for orphaned Client records" in :command:`bareos-dbcheck`.
 
-By default :command:`bareos-dbcheck` only lists the orphaned clients it finds. You need to enable the modify database flag to make it actually change the database. 
+By default :command:`bareos-dbcheck` only lists the orphaned clients it finds. You need to enable the modify database flag to make it actually change the database.

@@ -13,7 +13,7 @@ Additionally, the following table gives an overview on the available package ver
 .. csv-table::
    :header: "Operating Systems", "Version", "Client Daemon", "Director Daemon" , "Storage Daemon"
 
-   :strong:`Linux`  :index:`\ <single: Platform; Linux>`\ 
+   :strong:`Linux`  :index:`\ <single: Platform; Linux>`\
    Arch Linux :index:`\ <single: Platform; Arch Linux>`\ , `X <https://aur.archlinux.org/pkgbase/bareos/>`_,      `X <https://aur.archlinux.org/pkgbase/bareos/>`_, `X <https://aur.archlinux.org/pkgbase/bareos/>`_
    CentOS, current, v12.4, v12.4, v12.4
    Debian, current, v12.4, v12.4, v12.4
@@ -27,25 +27,25 @@ Additionally, the following table gives an overview on the available package ver
 
    :strong:`MS Windows`
    :ref:`MS Windows <section-windows>` 32bit, 10/8/7, v12.4, v15.2, v15.2
-                                           , 2008/Vista/2003/XP, v12.4–v14.2                                                                                                                                                
+                                           , 2008/Vista/2003/XP, v12.4–v14.2
    :ref:`MS Windows <section-windows>` 64bit, 10/8/2012/7, v12.4, v15.2, v15.2
                                             , 2008/Vista, v12.4–v14.2
 
-   :strong:`Mac OS`                                                                                                                                                                                                                     
-   :ref:`Mac OS X/Darwin <section-macosx>`, v14.2                                                                                                                                                      
+   :strong:`Mac OS`
+   :ref:`Mac OS X/Darwin <section-macosx>`, v14.2
 
-   :strong:`BSD`                                                                                                                                                                                                                        
+   :strong:`BSD`
    FreeBSD :index:`\ <single: Platform; FreeBSD>`\ , >= 5.0, `X <http://www.freshports.org/sysutils/bareos-client/>`_, `X <http://www.freshports.org/sysutils/bareos-server/>`_, `X <http://www.freshports.org/sysutils/bareos-server/>`_
    OpenBSD, , X
    NetBSD,  , X                                                                                                                                                            
-   :strong:`Unix`                                                                                                                                                                                                                       
+   :strong:`Unix`
    AIX :index:`\ <single: Platform; AIX>`\ ,         >= 4.3, com-13.2, \*, \*
-   HP-UX :index:`\ <single: Platform; HP-UX>`\ ,           , com-13.2                                                                      
+   HP-UX :index:`\ <single: Platform; HP-UX>`\ ,           , com-13.2
    Irix,                                                   , \*
    Solaris :index:`\ <single: Platform; Solaris>`\ , >= 8  , com-12.4, com-12.4, com-12.4
    True64,                                         ,       , \*
 
-   
+
 ============ =============================================================================================================================
 **vVV.V**    starting with Bareos version VV.V, this platform is official supported by the Bareos.org project
 **com-VV.V** starting with Bareos version VV.V, this platform is supported. However, pre-build packages are only available from Bareos.com
@@ -378,7 +378,7 @@ Bareos >= 16.2.4
 ''''''''''''''''
 
 Server-side
-           
+
 
 The Univention Bareos application comes with an automatism for the client and job configuration. If you want to add a client to the Bareos director configuration, you need use the Univention Management Console, select the client you want to backup and set the :strong:`enable backup job` checkbox to true, as shown in the screenshot below.
 
@@ -508,7 +508,7 @@ Limitations of the Debian.org/Ubuntu Universe version of Bareos
 Mac OS X
 --------
 
-:index:`\ <single: Platform; Mac; OS X>`\ 
+:index:`\ <single: Platform; Mac; OS X>`\
 
 Bareos for MacOS X is available either
 
@@ -523,7 +523,7 @@ Both packages contain the |fd| and :command:`bconsole`.
 Installing the Bareos Client as PKG
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Installation; MacOS>`\ 
+:index:`\ <single: Installation; MacOS>`\
 
 The Bareos installer package for Mac OS X contains the |fd| for Mac OS X 10.5 or later.
 
@@ -632,4 +632,3 @@ You can also manually start bareos-fd in debug mode by:
    :caption: Start |fd| in debug mode
 
    sudo /usr/local/sbin/bareos-fd -f -d 100
-

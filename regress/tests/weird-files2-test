@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup 
+# Run a simple backup
 #   then restore it.
 #
 TestName="weird-files2-test"

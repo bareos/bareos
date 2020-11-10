@@ -572,7 +572,3 @@ In Bareos Version 18.2 the relevant resources for some connections had to be cha
 .. [#psk] From Version 18.2 onwards this is identical to the TLS-PSK Pre-Shared Key
 .. [#user_agent] The name of the default console is predefined and cannot be changed
 .. [#cert] Certificate directives are: TlsVerifyPeer, TlsCaCertificateFile, TlsCaCertificateDir, TlsCertificateRevocationList, TlsCertificate, TlsKey, TlsAllowedCn
-
-
-
-

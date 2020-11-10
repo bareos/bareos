@@ -7,4 +7,3 @@ This is a parameter used by :ref:`plugin-autoxflate-sd` which allow you to trans
 -  both - decompress data streams both when reading and writing to a device.
 
 This option allows you to write uncompressed data to for instance a tape drive that has hardware compression even when you compress your data on the client with for instance a low cpu load compression method (LZ4 for instance) to transfer less data over the network. It also allows you to restore data in a compression format that the client might not support but the storage daemon does. This only works on normal compressed datastreams not on encrypted datastreams or meta data streams.
-

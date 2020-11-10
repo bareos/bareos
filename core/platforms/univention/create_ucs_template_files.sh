@@ -69,4 +69,3 @@ create_config_resource_template bareos-dir pool    Incremental      MaximumVolum
 create_config_resource_template bareos-dir pool    Incremental      MaximumVolumes     '@%@bareos/max_incr_volumes@%@'
 
 find $DEST_DIR -type f | sort
-

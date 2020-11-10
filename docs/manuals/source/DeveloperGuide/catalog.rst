@@ -731,4 +731,3 @@ UML Diagram of Database Schema
 ------------------------------
 
 .. uml:: catalog/schema_bareos_postgresql.puml
-

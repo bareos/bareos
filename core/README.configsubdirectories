@@ -40,7 +40,7 @@ When updating from bareos < 16.2, most of these changes are not relevant, as the
             * $CONFIGDIR/$COMPONENT.d/$RESOURCE/$NAME.conf.example
             * For example, the bareos-webui comes with two config resources for the bareos-director:
                 * $CONFIGDIR/bareos-director.d/profile/webui.conf
-                * $CONFIGDIR/bareos-director.d/console/user1.conf.example            
+                * $CONFIGDIR/bareos-director.d/console/user1.conf.example
     * modified resource names:
         * $HOSTNAME-dir => bareos-dir
         * $HOSTNAME-sd => bareos-sd
@@ -77,5 +77,3 @@ How to use configsubdirectories
             * The easy way is:
                 * mkdir $CONFIGDIR/$COMPONENT.d/migrate && mv $CONFIGDIR/$COMPONENT.conf $CONFIGDIR/$COMPONENT.d/migrate
                 * Resources defined in both, the new configuration directory scheme and the old configuration file must be removed from one of the places, best from the old configuration file, after verifying that the settings are identical with the new settings.
-
-            

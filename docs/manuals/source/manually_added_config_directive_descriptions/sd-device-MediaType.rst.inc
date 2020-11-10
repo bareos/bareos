@@ -5,4 +5,3 @@ Even though the names you assign are arbitrary (i.e. you choose the name you wan
 For example, if you specify a Media Type of "DDS-4" then during the restore, Bareos will be able to choose any Storage Daemon that handles "DDS-4". If you have an autochanger, you might want to name the Media Type in a way that is unique to the autochanger, unless you wish to possibly use the Volumes in other drives. You should also ensure to have unique Media Type names if the Media is not compatible between drives. This specification is required for all devices.
 
 In addition, if you are using disk storage, each Device resource will generally have a different mount point or directory. In order for Bareos to select the correct Device resource, each one must have a unique Media Type.
-

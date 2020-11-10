@@ -11,4 +11,3 @@ port=@test_db_port@
 socket=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mysql/mysql.sock
 # Where MariaDB should store all its data
 datadir=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mysql/data
-

@@ -3,7 +3,7 @@
 Installing Bareos
 =================
 
-:index:`\ <single: Bareos; Installing>`\  :index:`\ <single: Installation; Linux>`\ 
+:index:`\ <single: Bareos; Installing>`\  :index:`\ <single: Installation; Linux>`\
 
 If you are like me, you want to get Bareos running immediately to get a feel for it, then later you want to go back and read about all the details. This chapter attempts to accomplish just that: get you going quickly without all the details.
 
@@ -11,19 +11,19 @@ Bareos comes prepackaged for a number of Linux distributions. So the easiest way
 
 If Bareos is available as a package, only 4 steps are required to get to a running Bareos system:
 
-#. 
+#.
 
    :ref:`section-AddSoftwareRepository`
 
-#. 
+#.
 
    :ref:`section-InstallBareosPackages`
 
-#. 
+#.
 
    :ref:`section-CreateDatabase`
 
-#. 
+#.
 
    :ref:`section-StartDaemons`
 
@@ -123,7 +123,7 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
 RHEL 6, CentOS 6
 ^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Platform; RHEL; 6>`\  :index:`\ <single: Platform; CentOS; 6>`\ 
+:index:`\ <single: Platform; RHEL; 6>`\  :index:`\ <single: Platform; CentOS; 6>`\
 
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. This package is available on `EPEL <https://fedoraproject.org/wiki/EPEL>`_ 6. Make sure, it is available on your system.
 
@@ -162,7 +162,7 @@ Install on SUSE based Linux Distributions
 SUSE Linux Enterprise Server (SLES), openSUSE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Platform; SLES>`\  :index:`\ <single: Platform; openSUSE>`\ 
+:index:`\ <single: Platform; SLES>`\  :index:`\ <single: Platform; openSUSE>`\
 
 .. code-block:: shell-session
    :caption: Shell example script for Bareos installation on SLES / openSUSE
@@ -197,7 +197,7 @@ Install on Debian based Linux Distributions
 Debian / Ubuntu
 ^^^^^^^^^^^^^^^
 
-:index:`\ <single: Platform; Debian>`\  :index:`\ <single: Platform; Ubuntu>`\ 
+:index:`\ <single: Platform; Debian>`\  :index:`\ <single: Platform; Ubuntu>`\
 
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
 
@@ -338,7 +338,7 @@ service with **svcadm restart bareos-fd**:
 
 .. code-block:: shell-session
    :caption: Restart solaris service
-   
+
    root@solaris114:~# svcadm restart bareos-fd
 
 The bareos filedaemon service on solaris is now ready for use.
@@ -420,6 +420,4 @@ Please remark, the Bareos Daemons need to have access to the ports 9101-9103.
 
 Now you should be able to log in to the director using the bconsole.
 
-When you want to use the bareos-webui, please refer to the chapter :ref:`section-install-webui`.  
-
-
+When you want to use the bareos-webui, please refer to the chapter :ref:`section-install-webui`.

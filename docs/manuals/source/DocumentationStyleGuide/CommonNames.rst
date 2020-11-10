@@ -76,7 +76,7 @@ Products
 
 .. csv-table:: Product Names
    :header: "Text to be Displayed", "Text Formatting"
-   
+
    |mysql|,      ``|mysql|``
    |postgresql|, ``|postgresql|``
    reST,         reST

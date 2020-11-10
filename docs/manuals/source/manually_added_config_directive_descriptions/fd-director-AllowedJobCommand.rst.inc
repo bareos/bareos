@@ -1,2 +1,1 @@
-see :config:option:`fd/client/AllowedJobCommand`\ 
-
+see :config:option:`fd/client/AllowedJobCommand`\

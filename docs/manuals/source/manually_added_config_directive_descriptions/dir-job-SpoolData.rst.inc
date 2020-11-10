@@ -9,4 +9,3 @@ We don’t recommend using this option if you are writing to a disk file using t
 NOTE: When this directive is set to yes, :config:option:`dir/job/SpoolAttributes`\  is also automatically set to yes.
 
 For details, see :ref:`section-spooling`.
-

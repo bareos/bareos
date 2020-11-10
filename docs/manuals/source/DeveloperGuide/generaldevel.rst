@@ -186,4 +186,3 @@ avoid the ``edit_*()`` functions from ``edit.cc``
 avoid pool memory allocation
   The whole allocation library with ``get_pool_memory()`` and friends do not mix with RAII, so we will try to remove them step by step in the future.
   Avoid in new code if possible.
-

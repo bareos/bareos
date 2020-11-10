@@ -18,7 +18,7 @@ version
 
 Summary
    A short summary.
-   
+
 This role will only display ''Version >= <version>''. The <Summary> will appear only in the index.
 
 The index will contain entries:
@@ -26,7 +26,7 @@ The index will contain entries:
 * bareos-<version>
 
   * Summary
-   
+
 and
 
 * Summary
@@ -37,7 +37,7 @@ Example:
 
 .. literalinclude:: /DocumentationStyleGuide/example/sinceVersion-documentation-sphinx.rst.inc
    :language: none
-   
+
 This will be displayed as:
 
 .. include:: /DocumentationStyleGuide/example/sinceVersion-documentation-sphinx.rst.inc
@@ -51,7 +51,7 @@ Note
   * https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-versionadded
   * https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-versionchanged
   * https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-deprecated
-  
+
 Until defined otherwise, you should use ``:sinceVersion:`` instead of these.
 
 
@@ -69,7 +69,7 @@ If you want to display the release notes of a Bareos stable release, use the fol
    }
 
 .. literalinclude:: /DocumentationStyleGuide/example/releasenotes-template.rst.inc
-   
+
 Example:
 
 .. literalinclude:: /DocumentationStyleGuide/example/releasenotes-17.2.7.rst.inc
@@ -91,7 +91,7 @@ To refer to a release, use::
 Example:
 
   This refers to :ref:`bareos-17.2.7`\ .
-  
+
 Output:
 
 This refers to :ref:`bareos-17.2.7`\ .
@@ -101,7 +101,7 @@ This refers to :ref:`bareos-17.2.7`\ .
    --------------------------------
 
    TODO: required?
-   
+
   If you want to display the release notes of a bareos unstable release, the following formatting should be used:
 
 .. \newcommand{\releasenoteUnstable}[2]{

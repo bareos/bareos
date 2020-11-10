@@ -161,7 +161,7 @@ DBADMINUSER and DBADMINPASSWORD are used to create the bareos databases. If logi
 Dealing with Windows Problems
 -----------------------------
 
-:index:`\ <single: Problem; Windows>`\  :index:`\ <single: Windows; Dealing with Problems>`\ 
+:index:`\ <single: Problem; Windows>`\  :index:`\ <single: Windows; Dealing with Problems>`\
 
 Antivirus Program
 ~~~~~~~~~~~~~~~~~
@@ -188,7 +188,7 @@ In case of problems, you can enable the creation of log files. For this you have
 Windows Compatibility Considerations
 ------------------------------------
 
-:index:`\ <single: Windows; Compatibility Considerations>`\ 
+:index:`\ <single: Windows; Compatibility Considerations>`\
 
 Exclusively Opened Files
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -206,7 +206,7 @@ Windows Reparse Points
 
 :sinceVersion:`12.4.5: Windows: Reparse points`
 
-:index:`\ <single: Windows; Symbolic links>`\  :index:`\ <single: Windows; Junction points>`\  :index:`\ <single: Windows; Volume Mount Points (VMP)>`\ 
+:index:`\ <single: Windows; Symbolic links>`\  :index:`\ <single: Windows; Junction points>`\  :index:`\ <single: Windows; Volume Mount Points (VMP)>`\
 
 Besides normal files and directories, Windows filesystems also support special files, called "Reparse Points". Bareos can handle the following types of Reparse points:
 
@@ -296,7 +296,7 @@ FilesNotToBackup Registry Key
 
 :sinceVersion:`14.2.0: Windows: FilesNotToBackup`
 
-:index:`\ <single: Windows; Exclude Files from Backup>`\ 
+:index:`\ <single: Windows; Exclude Files from Backup>`\
 
 Windows supports a special Registry Key that specifies the names of the files and directories that backup applications should not backup or restore.
 
@@ -398,7 +398,7 @@ The VSS aware File daemon has the letters VSS on the signon line that it produce
 
    Tibs-fd Version: 1.37.32 (22 July 2005) VSS Windows XP MVS NT 5.1.2600
 
-the VSS is shown in the line above. This only means that the File daemon is capable of doing VSS not that VSS is turned on for a particular backup. There are two ways of telling if VSS is actually turned on during a backup. The first is to look at the status output for a job, e.g.: 
+the VSS is shown in the line above. This only means that the File daemon is capable of doing VSS not that VSS is turned on for a particular backup. There are two ways of telling if VSS is actually turned on during a backup. The first is to look at the status output for a job, e.g.:
 
 ::
 
@@ -414,7 +414,7 @@ the VSS is shown in the line above. This only means that the File daemon is capa
 
 Here, you see under Running Jobs that JobId 1 is "VSS Backup Job started ..." This means that VSS is enabled for that job. If VSS is not enabled, it will simply show "Backup Job started ..." without the letters VSS.
 
-The second way to know that the job was backed up with VSS is to look at the Job Report, which will look something like the following: 
+The second way to know that the job was backed up with VSS is to look at the Job Report, which will look something like the following:
 
 ::
 
@@ -528,7 +528,7 @@ Windows Backup Problems
 
 If during a Backup, you get the message: ERR=Access is denied and you are using the portable option, you should try both adding both the non-portable (backup API) and the Volume Shadow Copy options to your Director’s conf file.
 
-In the Options resource: 
+In the Options resource:
 
 ::
 
@@ -536,7 +536,7 @@ In the Options resource:
 
 
 
-In the FileSet resource: 
+In the FileSet resource:
 
 ::
 
@@ -577,7 +577,7 @@ The |fd| (and also the |dir| and |sd|) is started as a Windows service.
 
 This is configured in the Registry at
 
--  
+-
 
    ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Bareos-fd``
 
@@ -632,41 +632,37 @@ and
 Windows Specific Command Line Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Windows; File Daemon; Command Line Options>`\ 
+:index:`\ <single: Windows; File Daemon; Command Line Options>`\
 
 These options are not normally seen or used by the user, and are documented here only for information purposes. At the current time, to change the default options, you must either manually run Bareos or you must manually edit the system registry and modify the appropriate entries.
 
 In order to avoid option clashes between the options necessary for Bareos to run on Windows and the standard Bareos options, all Windows specific options are signaled with a forward slash character (/), while as usual, the standard Bareos options are signaled with a minus (-), or a minus minus (``--``). All the standard Bareos options can be used on the Windows version. In addition, the following Windows only options are implemented:
 
-/service 
+/service
    Start Bareos as a service
 
-/run 
+/run
    Run the Bareos application
 
-/install 
+/install
    Install Bareos as a service in the system registry
 
-/remove 
+/remove
    Uninstall Bareos from the system registry
 
-/about 
+/about
    Show the Bareos about dialogue box
 
-/status 
+/status
    Show the Bareos status dialogue box
 
-/events 
+/events
    Show the Bareos events dialogue box (not yet implemented)
 
-/kill 
+/kill
    Stop any running Bareos
 
-/help 
+/help
    Show the Bareos help dialogue box
 
-It is important to note that under normal circumstances the user should never need to use these options as they are normally handled by the system automatically once Bareos is installed. However, you may note these options in some of the .bat files that have been created for your use. 
-
-
-
-
+It is important to note that under normal circumstances the user should never need to use these options as they are normally handled by the system automatically once Bareos is installed. However, you may note these options in some of the .bat files that have been created for your use.

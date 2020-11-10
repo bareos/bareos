@@ -10,4 +10,3 @@ Client {
   TLS Allowed CN = client1.bareos.org
   Passive = yes
 }
-

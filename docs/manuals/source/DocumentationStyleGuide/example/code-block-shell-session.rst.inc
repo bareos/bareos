@@ -1,6 +1,6 @@
 .. code-block:: shell-session
    :caption: Access the local PostgreSQL database
-    
+
    root@host:~# cd /etc/bareos
    root@host:/etc/bareos# ls -1
    bareos-fd.d

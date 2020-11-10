@@ -15,5 +15,3 @@ or
 
    .. literalinclude:: /include/config/DirClientStrictQuotas2.conf
       :language: bareosconfig
-
-

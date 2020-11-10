@@ -4,5 +4,4 @@ This directive takes precedence over Client directives of the same name. For exa
 
 Note, this affects only records in the catalog database. It does not affect your archive backups.
 
-For more information see Client documentation about :config:option:`dir/client/FileRetention`\ 
-
+For more information see Client documentation about :config:option:`dir/client/FileRetention`\

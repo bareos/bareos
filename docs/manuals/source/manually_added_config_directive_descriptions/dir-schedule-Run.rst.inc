@@ -73,4 +73,3 @@ The date/time to run the Job can be specified in the following way in pseudo-BNF
    <day-spec>             ::= <day> | <wday-keyword> | <day> | <wday-range> | <week-keyword> <wday-keyword> | <week-keyword> <wday-range> | daily
    <month-spec>           ::= <month-keyword> | <month-range> | monthly
    <date-time-spec>       ::= <month-spec> <day-spec> <time-spec>
-

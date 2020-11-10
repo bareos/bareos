@@ -569,4 +569,3 @@ If you prefer to use |webui| on Nginx with php5-fpm instead of Apache, a basic w
    }
 
 This will make the |webui| accessible at http://bareos:9100/ (assuming your DNS resolve the hostname :strong:`bareos` to the NGINX server).
-

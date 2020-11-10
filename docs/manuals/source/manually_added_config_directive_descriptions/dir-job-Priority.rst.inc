@@ -14,4 +14,3 @@ If you want to run concurrent jobs you should keep these points in mind:
    run. This ensures that higher priority jobs will be run as soon as possible.
 
 If you have several jobs of different priority, it may not best to start them at exactly the same time, because Bareos must examine them one at a time. If by Bareos starts a lower priority job first, then it will run before your high priority jobs. If you experience this problem, you may avoid it by starting any higher priority jobs a few seconds before lower priority ones. This insures that Bareos will examine the jobs in the correct order, and that your priority scheme will be respected.
-

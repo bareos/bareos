@@ -29,7 +29,7 @@ They are used inside other text structures.
 Usage::
 
    :strong:`text`
-   
+
 Output:
 
    :strong:`text`
@@ -47,16 +47,16 @@ Usage::
       :option2: value
       :option5: value
       ...
-      
+
       Multiline content,
       ...
 
 ``arg1, arg2, ...``
    Arguments. The last argument can contain spaces (depending on the directive implementation).
-   
+
 ``:option1:``
    Options are optional.
-      
+
 Example:
 
 .. literalinclude:: /DocumentationStyleGuide/example/code-block-bareosconfig.rst.inc
@@ -190,7 +190,7 @@ Example::
 
    .. code-block:: sh
       :caption: Titel
-      
+
       Line 1
       Line 2
       ...
@@ -199,7 +199,7 @@ Output:
 
 .. code-block:: sh
    :caption: Titel
-      
+
    Line 1
    Line 2
    ...
@@ -217,7 +217,7 @@ Valid values for the highlighting language are:
   * ``sh`` (Shell scripts)
   * ``shell-session`` (Shell sessions)
   * ``dosbatch`` (DOS/Windows Batch file)
-  * ``doscon`` (MSDOS sessions)  
+  * ``doscon`` (MSDOS sessions)
   * ``cfg`` (Generic configuration file, mostly INI files)
   * ``sql`` (Generic SQL commands)
   * ``registry`` (Windows Registry files produced by regedit)
@@ -228,7 +228,7 @@ Valid values for the highlighting language are:
   * ... and any other `lexer alias that Pygments supports
     <http://pygments.org/docs/lexers/>`_.
 
-If the text resides in a seperate file, use::    
+If the text resides in a seperate file, use::
 
    .. literalinclude:: /include/config/backup-client1.cfg
       :language: bareosconfig
@@ -326,7 +326,7 @@ This prefix each section label with the name (including the relative path from t
 Example::
 
   :ref:`DocumentationStyleGuide/RestOverview:Cross-linking markup`
-  
+
 This will link to :ref:`DocumentationStyleGuide/RestOverview:Cross-linking markup`\ .
 
 
@@ -358,7 +358,7 @@ Our convention is to use them in this order:
    ####
    Part
    ####
-   
+
    Chapter
    =======
 
@@ -389,7 +389,7 @@ Therefore the specific names part, chapter, section ... might not match the actu
    With reST, there is no leaving out a section level.
    If you write a chapter it is not possible to continue with a paragraph.
    Instead the next section must be of the type section.
-   
+
    If you try to do it overwise (chapter 1 ``=`` -> paragraph ``'``),
    the ''paragraph'' is treated as a section.
    And if you continue by another chapter (in the same file) (chapter 2 ``=`` -> section ``-``),
@@ -455,7 +455,7 @@ The formatting looks a follows:
 .. literalinclude:: /DocumentationStyleGuide/example/file.rst.inc
 
 Output:
-  
+
 .. include:: /DocumentationStyleGuide/example/file.rst.inc
 
 
@@ -500,8 +500,8 @@ The output should look like this:
 .. warning::
 
    This record ignores retention periods!
-   
-   
+
+
 Quote
 ------
 
@@ -567,7 +567,7 @@ see
 seealso
     Like ``see``, but inserts "see also" instead of "see".
 
-    
+
 Sphinx indices, at least in HTML, are only structured in up to two level.
 More level will only be combined into the second level.
 
@@ -582,7 +582,7 @@ and one page contains ::
       .. index:: ! Python
 
 then the backlink to the latter page is emphasized among the three backlinks.
-   
+
 For index directives containing only "single" entries, there is a shorthand
 notation::
 
@@ -609,8 +609,8 @@ above.  For example::
 .. note::
 
    The ``:index:`` role must contain text. This text will be printed and referenced by the index.
-   
-    
+
+
 Converted (Latex2Sphinx) Indices
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -623,7 +623,7 @@ which prevents an easy automatic conversation to ``.. index::``.
 To work around these problem, following substitution have been used::
 
   \index{Console!Command!restore}
-  
+
 is substituted by::
 
   :index:`\ <single: Console; Command; restore>`
@@ -641,7 +641,7 @@ Image can be included by::
    .. image:: /include/images/bareos-webui-jobs.*
       :caption: Bareos WebUI: Job Overview
       :width: 80.0%
-      
+
 All images should be located in the :file:`/include/images/` directory.
 Sphinx supports a number of image format.
 With the file extension :file:`.*` Sphinx chooses the best one.
@@ -661,7 +661,7 @@ Example:
 
 .. literalinclude:: /DocumentationStyleGuide/example/csv-table.rst.inc
    :language: none
-   
+
 This will be displayed as:
 
 .. include:: /DocumentationStyleGuide/example/csv-table.rst.inc

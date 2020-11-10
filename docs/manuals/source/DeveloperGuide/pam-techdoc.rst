@@ -4,15 +4,15 @@ PAM
 ===
 PAM is an authentication method provided by many operating systems to establish a standardized interface for the authorization of users.
 
-The name of the service to be registered with the respective PAM module is "bareos". 
+The name of the service to be registered with the respective PAM module is "bareos".
 
-The following sequence diagram shows three options how a user can be authorized on a Bareos Director Daemon: 
+The following sequence diagram shows three options how a user can be authorized on a Bareos Director Daemon:
 
 * Option 1: No PAM authentication using named console
 * Option 2: Interactive PAM authentication
 * Option 3: Direct PAM authentication
 
-In this example the complete connection and authorization sequence of a Bareos Console respective Bareos Webui is shown. 
+In this example the complete connection and authorization sequence of a Bareos Console respective Bareos Webui is shown.
 
 A detailed description on the configuration see this chapter: :ref:`PAMConfigurationChapter`.
 
@@ -49,7 +49,7 @@ A detailed description on the configuration see this chapter: :ref:`PAMConfigura
 
   note right of D: pam can only be used when connected \nwith a named console (__not__ default console) \nusing EnablePamAuthentication= yes
 
-  note left of W: (__RS__) is the Record Separator \n(ASCII-character 0x1e) 
+  note left of W: (__RS__) is the Record Separator \n(ASCII-character 0x1e)
 
   W <- D: "1001__RS__" (Pam Authentication required)
   W -> D: "4001__RS__" (Interactive Pam (i.e. pam_unix))
@@ -74,7 +74,7 @@ A detailed description on the configuration see this chapter: :ref:`PAMConfigura
   W <--> D: [Close TLS connection]
   W <--> D: Close TCP connection
 
-  == On success == 
+  == On success ==
   W <- D: 1000__RS__OK:__RS__<director-name> Version: <version> (<date>)
   W <- D: 1002__RS__<You are logged in as: <username>|You are connected using the default console>
 
@@ -82,4 +82,3 @@ A detailed description on the configuration see this chapter: :ref:`PAMConfigura
 
   W <-> D: [Close TLS connection]
   W <-> D: Close TCP connection
-

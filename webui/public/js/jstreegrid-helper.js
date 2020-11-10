@@ -176,4 +176,3 @@ function formatJSTreeGridLastModItem(mtime) {
       return moment.unix(mtime).format("YYYY-MM-DD HH:mm:ss");
    }
 }
-

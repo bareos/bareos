@@ -3,4 +3,3 @@ The Bootstrap directive specifies a bootstrap file that, if provided, will be us
 If you use the :ref:`restore <bcommandRestore>` command in the Console program, to start a restore job, the bootstrap file will be created automatically from the files you select to be restored.
 
 For additional details see :ref:`BootstrapChapter` chapter.
-

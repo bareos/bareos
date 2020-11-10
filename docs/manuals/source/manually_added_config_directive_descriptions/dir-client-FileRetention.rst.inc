@@ -3,4 +3,3 @@ The File Retention directive defines the length of time that Bareos will keep Fi
 File records may actually be retained for a shorter period than you specify on this directive if you specify either a shorter :config:option:`dir/client/JobRetention`\  or a shorter :config:option:`dir/pool/VolumeRetention`\  period. The shortest retention period of the three takes precedence.
 
 The default is 60 days.
-

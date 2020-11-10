@@ -1,7 +1,7 @@
 NDMP Backups with Bareos
 ========================
 
-:index:`\ <single: NDMP; Overview>`\ 
+:index:`\ <single: NDMP; Overview>`\
 
 NDMP Basics
 -----------
@@ -167,21 +167,21 @@ When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. S
 
 .. csv-table::
    :header: "", |ndmpbareos|, |ndmpnative|
-   
-   Data Management Agent,                                   |dir|,       |dir| 
+
+   Data Management Agent,                                   |dir|,       |dir|
    Tape Agent,                                              |sd|,        external
-   Requires external Tape Agent,                                       , |checkmark| 
-   Backup to tape (and VTL),                                |checkmark|, |checkmark| 
-   Backup to other :config:option:`sd/device/DeviceType`\ , |checkmark|, 
-   2-way backup,                                                       , |checkmark| 
+   Requires external Tape Agent,                                       , |checkmark|
+   Backup to tape (and VTL),                                |checkmark|, |checkmark|
+   Backup to other :config:option:`sd/device/DeviceType`\ , |checkmark|,
+   2-way backup,                                                       , |checkmark|
    3-way backup,                                            |checkmark|, untested
-   Full Backups,                                            |checkmark|, |checkmark| 
-   Differential Backups,                                    |checkmark|, |checkmark| 
+   Full Backups,                                            |checkmark|, |checkmark|
+   Differential Backups,                                    |checkmark|, |checkmark|
    Incremental Backups,                                     |checkmark| :ref:`(8) <section-NdmpBackupLevel>`, |checkmark| :ref:`(8) <section-NdmpBackupLevel>`
-   Single File Restore,                                     |checkmark|, |checkmark| 
-   DAR,                                                                , |checkmark| 
-   DDAR,                                                               , |checkmark| 
-   :ref:`Copy and Migration jobs <MigrationChapter>`,       |checkmark|, 
+   Single File Restore,                                     |checkmark|, |checkmark|
+   DAR,                                                                , |checkmark|
+   DDAR,                                                               , |checkmark|
+   :ref:`Copy and Migration jobs <MigrationChapter>`,       |checkmark|,
 
 
 .. _section-NdmpBareos:
@@ -214,7 +214,7 @@ On restore, the data is read by the conventional resource, and then recovered as
 Example Setup for NDMP_BAREOS backup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: NDMP; Example; NDMP\_BAREOS>`\ 
+:index:`\ <single: NDMP; Example; NDMP\_BAREOS>`\
 
 This example starts from a clean default Bareos installation.
 
@@ -705,7 +705,7 @@ Now we are ready to do our first NDMP backup:
      JobId:                  1
      Job:                    ndmp-backup-job.2016-01-14_10.57.51_04
      Backup Level:           Full
-     Client:                 "ndmp-client" 
+     Client:                 "ndmp-client"
      FileSet:                "NDMP Fileset" 2016-01-14 10:57:51
      Pool:                   "Full" (From Job resource)
      Catalog:                "MyCatalog" (From Client resource)
@@ -901,7 +901,7 @@ original file name              where                                 restored f
 NDMP Copy Jobs
 ~~~~~~~~~~~~~~
 
-:index:`\ <single: Copy; NDMP>`\  :index:`\ <single: NDMP; Copy jobs>`\ 
+:index:`\ <single: Copy; NDMP>`\  :index:`\ <single: NDMP; Copy jobs>`\
 
 To be able to do copy jobs, we need to have a second storage resource where we can copy the data to. Depending on your requirements, this resource can be added to the existing |sd| (e.g. :config:option:`Sd/Storage = autochanger-0`\  for tape based backups) or to an additional |sd|.
 
@@ -1113,7 +1113,7 @@ For NDMP jobs, all data is stored into a single big file. The file and directory
    As storing the database dump for disaster recovery and storing the bootstrap file offsite is recommended  anyway (see :ref:`section-before-disaster`), this should be not a big problem in correctly setup environments.
 
    For the same reason, the information about the number of files of a job (e.g. JobFiles with :bcommand:`list jobs` command) is limited to the number of NDMP backup files in copied jobs.
-   
+
 
 
 
@@ -1140,7 +1140,7 @@ When using NDMP_NATIVE, the Tape Agent must be provided by some other systems. S
 Example Setup for NDMP_NATIVE backup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: NDMP; Example; NDMP\_NATIVE>`\ 
+:index:`\ <single: NDMP; Example; NDMP\_NATIVE>`\
 
 Configure a NDMP Client
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -1884,7 +1884,7 @@ This section contains additional information about the Bareos NDMP implementatio
 NDMP Backup Level
 ~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: NDMP; Level>`\ 
+:index:`\ <single: NDMP; Level>`\
 
 The trailing number in the main backup file (after the :file:`%` character) indicates the NDMP backup level:
 
@@ -1915,25 +1915,25 @@ NDMP Debugging
 
 To debug the NDMP backups, these settings can be adapted:
 
--  
+-
 
-   :config:option:`dir/director/NdmpSnooping`\ 
+   :config:option:`dir/director/NdmpSnooping`\
 
--  
+-
 
-   :config:option:`dir/director/NdmpLogLevel`\ 
+   :config:option:`dir/director/NdmpLogLevel`\
 
--  
+-
 
-   :config:option:`dir/client/NdmpLogLevel`\ 
+   :config:option:`dir/client/NdmpLogLevel`\
 
--  
+-
 
-   :config:option:`sd/storage/NdmpSnooping`\ 
+   :config:option:`sd/storage/NdmpSnooping`\
 
--  
+-
 
-   :config:option:`sd/storage/NdmpLogLevel`\ 
+   :config:option:`sd/storage/NdmpLogLevel`\
 
 This will create a lot of debugging output that will help to find the problem during NDMP backups.
 
@@ -1952,7 +1952,7 @@ NDMP Fileset limitations
    Even if this is working fine during backup, restore jobs will cause trouble.
 
    Normally (:config:option:`dir/client/Protocol`\ =Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (:config:option:`dir/client/Protocol`\ =NDMP*), no |fd| is involved and therefore most Fileset options can't be used. Instead, parameters are handled via :strong:`Options - Meta`\  from :config:option:`dir/fileset/Include`\ .
-   
+
 
 
 
@@ -1963,7 +1963,7 @@ Single file restore on incremental backups
 
    Unfortunately, it is currently (bareos-15.2.2) not possible to restore a chain of Full and Incremental backups at once.
    The workaround for that problem is to restore the full backup and each incremental each in a single restore operation.
-   
+
 
 
 
@@ -1974,9 +1974,9 @@ Temporary memory mapped database
 
    The |dir| uses a memory mapped database (LMBD) to temporarily store NDMP file information.
    On some 32-bit systems the default :config:option:`dir/job/FileHistorySize`\  requires a larger memory area than available.
-   In this case, you either have to lower the :config:option:`dir/job/FileHistorySize`\ 
+   In this case, you either have to lower the :config:option:`dir/job/FileHistorySize`\
    or preferably run the |dir| on a 64-bit system.
-   
+
 
 
 
@@ -1989,7 +1989,7 @@ Bareos NDMP support have been tested against:
    :header: Vendor, Product, "NDMP Subsystem", "Bareos version", "Tape Agent", Features, Remarks
 
    Isilon,     Isilon OneFS v7.2.1.4, Isilon NDMP 2.2.1   , bareos-17.2.3, Isilon Backup Accelerator, ,             Protocol: |ndmpnative|
-   Isilon,     Isilon OneFS v7.2.0.1, Isilon NDMP 2.2     , bareos-16.2.6, |sd|               
-   Isilon,     Isilon OneFS v7.1.1.5, Isilon NDMP 2.2     , bareos-15.2.2, |sd|               
-   NetApp,                          , Release 8.2.3 7-Mode, bareos-15.2.2, |sd|               
-   Oracle/Sun, ZFS Storage Appliance, OS 8.3              , bareos-15.2.2, |sd|               
+   Isilon,     Isilon OneFS v7.2.0.1, Isilon NDMP 2.2     , bareos-16.2.6, |sd|
+   Isilon,     Isilon OneFS v7.1.1.5, Isilon NDMP 2.2     , bareos-15.2.2, |sd|
+   NetApp,                          , Release 8.2.3 7-Mode, bareos-15.2.2, |sd|
+   Oracle/Sun, ZFS Storage Appliance, OS 8.3              , bareos-15.2.2, |sd|

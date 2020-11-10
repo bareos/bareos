@@ -2,7 +2,7 @@ Bareos-17.2
 -----------
 
 
-.. index:: 
+.. index::
    :pair: bareos-17.2.7; Release Notes
 
 .. _bareos-17.2.7:

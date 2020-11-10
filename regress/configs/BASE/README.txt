@@ -41,4 +41,3 @@ Settings Summary
 
   * Messages
     * "Standard"
-

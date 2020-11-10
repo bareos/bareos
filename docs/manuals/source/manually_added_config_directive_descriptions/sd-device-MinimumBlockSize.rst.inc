@@ -19,5 +19,3 @@ If you want the block size to be variable but with a 63K minimum and 200K maximu
 
    .. literalinclude:: /include/config/SdDeviceMinimumBlockSize2.conf
       :language: bareosconfig
-
-

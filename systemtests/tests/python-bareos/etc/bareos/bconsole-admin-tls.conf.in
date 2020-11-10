@@ -13,4 +13,3 @@ Console {
   name = admin-tls
   password = secret
 }
-

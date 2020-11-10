@@ -325,4 +325,3 @@ Pool {
   Volume Retention = 365d             # one year
   Recycle Pool = SpecialScratch       # recycle back here
 }
-

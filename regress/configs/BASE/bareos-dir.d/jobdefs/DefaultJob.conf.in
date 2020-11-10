@@ -10,4 +10,3 @@ JobDefs {
   Priority = 10
   Write Bootstrap = "@working_dir@/%c.bsr"
 }
-

@@ -8,4 +8,3 @@ This directive defines the pool type, which corresponds to the type of Job being
 * \*Save
 
 Note, only Backup is currently implemented.
-

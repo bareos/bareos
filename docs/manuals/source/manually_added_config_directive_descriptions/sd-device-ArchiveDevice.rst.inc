@@ -9,7 +9,7 @@ directory
    If a directory is specified, it is used as file storage. The directory must be existing and be specified as absolute path. Bareos will write to file storage in the specified directory and the filename used will be the Volume name as specified in the Catalog. If you want to write into more than one directory (i.e. to spread the load to different disk drives), you will need to define two Device resources, each containing an Archive Device with a different directory.
 
 fifo
-   
+
 
 .. _SetupFifo:
 
@@ -17,7 +17,7 @@ fifo
    program at the beginning of the job perhaps with the :config:option:`dir/job/RunBeforeJob`\  directive. For this kind of device, you always want to specify :config:option:`sd/device/AlwaysOpen`\  = no, because you want the Storage daemon to open it only when a job starts. Since a FIFO is a one way device, Bareos will not attempt to read a label of a FIFO device, but will simply write on it. To create a FIFO Volume in the catalog, use the add command
    rather than the label command to avoid attempting to write a label.
 
-   
+
 
       .. literalinclude:: /include/config/SdDeviceArchiveDevice1.conf
          :language: bareosconfig
@@ -29,16 +29,15 @@ fifo
    A FIFO device can also be used to test your configuration, see the :ref:`Howto section <TestUsingFifoDevice>`.
 
 GlusterFS Storage
-   
+
 
 .. _GlusterArchiveType:
 
  don’t use this directive, but only :config:option:`sd/device/DeviceType`\  and :config:option:`sd/device/DeviceOptions`\  (this behavior have changed with :sinceVersion:`15.2.0: Device Options`).
 
 Ceph Object Store
-   
+
 
 .. _CephArchiveType:
 
  don’t use this directive, but only :config:option:`sd/device/DeviceType`\  and :config:option:`sd/device/DeviceOptions`\ . (this behavior have changed with :sinceVersion:`15.2.0: Device Options`).
-

@@ -18,4 +18,3 @@ The following diagram shows the class model of the Storage Daemon resources.
 The following diagram is added for historic documentation purposes only. It contains the old class model of the |sd| resources as it was existent until Bareos Version 18.2.
 
 .. include:: configparser/sd_resources_class_model_outdated.puml
-

@@ -16,7 +16,7 @@ Example:
 
 .. literalinclude:: /DocumentationStyleGuide/example/limitation-example.rst.inc
    :language: none
-   
+
 This will be displayed as:
 
 .. include:: /DocumentationStyleGuide/example/limitation-example.rst.inc

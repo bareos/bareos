@@ -9,4 +9,3 @@ Device {
   @@confdir@/tape_options
   Description = "Tape device. A connecting Director must have the same Name and MediaType."
 }
-

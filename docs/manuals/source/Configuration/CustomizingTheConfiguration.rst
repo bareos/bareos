@@ -3,7 +3,7 @@
 Customizing the Configuration
 =============================
 
-:index:`\ <single: Customizing the Configuration>`\ 
+:index:`\ <single: Customizing the Configuration>`\
 
 Each Bareos component (Director, Client, Storage, Console) has its own configuration containing a set of resource definitions. These resources are very similar from one service to another, but may contain different directives (records) depending on the component. For example, in the Director configuration, the :ref:`DirectorResourceDirector` defines the name of the Director, a number of global Director parameters and his password. In the File daemon configuration, the
 :ref:`ClientResourceDirector` specifies which Directors are permitted to use the File daemon.
@@ -27,7 +27,7 @@ The following configuration files must be present:
 Configuration Path Layout
 -------------------------
 
-:index:`\ <single: Configuration; Directories>`\  :index:`\ <single: Configuration; Subdirectories>`\ 
+:index:`\ <single: Configuration; Directories>`\  :index:`\ <single: Configuration; Subdirectories>`\
 
 When a Bareos component starts, it reads its configuration. In Bareos < 16.2.2 only configuration files (which optionally can include other files) are supported. Since Bareos :sinceVersion:`16.2.2: Subdirectory Configuration Scheme` also configuration subdirectories are supported.
 
@@ -97,25 +97,25 @@ Relation between Bareos components and configuration
 
 .. csv-table:: Bareos configuration default paths on Unix
    :header: "Bareos component", "Configuration File", "Subdirectory Configuration Scheme"
-   
-   
+
+
    ,                                    "(default path on Unix)",                "(default path on Unix)"
-   
+
    "bareos-dir",                        :file:`bareos-dir.conf`,                 :file:`bareos-dir.d`
    :ref:`DirectorChapter`,              (:file:`/etc/bareos/bareos-dir.conf`),   (:file:`/etc/bareos/bareos-dir.d/`)
-   
+
    bareos-sd,                           :file:`bareos-sd.conf`,                  :file:`bareos-sd.d`
    :ref:`StoredConfChapter`,            (:file:`/etc/bareos/bareos-sd.conf`),    (:file:`/etc/bareos/bareos-sd.d/`)
-   
+
    bareos-fd,                           :file:`bareos-fd.conf`,                  :file:`bareos-fd.d`
    :ref:`FiledConfChapter`,             (:file:`/etc/bareos/bareos-fd.conf`),    (:file:`/etc/bareos/bareos-fd.d/`)
-   
+
    bconsole,                            :file:`bconsole.conf`,                   :file:`bconsole.d`
    :ref:`ConsoleConfChapter`,           (:file:`/etc/bareos/bconsole.conf`),     :file:`/etc/bareos/bconsole.d/`)
-   
+
    bareos-traymonitor,                  :file:`tray-monitor.conf`,               :file:`tray-monitor.d`
    :ref:`section-MonitorConfig`,        (:file:`/etc/bareos/tray-monitor.conf`), (:file:`/etc/bareos/tray-monitor.d/`)
-   
+
    :ref:`section-VolumeUtilityCommands`, :file:`bareos-sd.conf`,                 :file:`bareos-sd.d`
    (use the bareos-sd configuration),    (:file:`/etc/bareos/bareos-sd.conf`),   (:file:`/etc/bareos/bareos-sd.d/`)
 
@@ -181,7 +181,7 @@ Resource file conventions
 -  extbfsection-deleteConfigurationResourceFilesDisable/remove configuration resource files:
 
    -  Normally you should not remove resources that are already in use (jobs, clients, ...). Instead you should disable them by adding the directive ``Enable = no``. Otherwise you take the risk that orphaned entries are kept in the Bareos catalog. However, if a resource has not been used or all references have been cleared from the database, they can also be removed from the configuration.
-      
+
 
 .. warning::
 
@@ -208,9 +208,9 @@ Updates from Bareos < 16.2.4
 
 -  When updating to a Bareos version containing the Subdirectories Configuration, the existing configuration will not be touched and is still the default configuration.
 
-   -  
+   -
 
-      
+
 
          .. warning::
 
@@ -289,7 +289,7 @@ Bareos assumes that all filenames are in UTF-8 format on Linux and Unix machines
 Comments
 ~~~~~~~~
 
-:index:`\ <single: Configuration; Comments>`\ 
+:index:`\ <single: Configuration; Comments>`\
 
 When reading a configuration, blank lines are ignored and everything after a hash sign (#) until the end of the line is taken to be a comment.
 
@@ -303,7 +303,7 @@ A semicolon (;) is a logical end of line and anything after the semicolon is con
 Including other Configuration Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Including other Configuration Files>`\  :index:`\ <single: Files; Including other Configuration>`\  :index:`\ <single: Configuration; Including Files>`\ 
+:index:`\ <single: Including other Configuration Files>`\  :index:`\ <single: Files; Including other Configuration>`\  :index:`\ <single: Configuration; Including Files>`\
 
 If you wish to break your configuration file into smaller pieces, you can do so by including other files using the syntax :strong:`@filename`\  where :file:`filename` is the full path and filename of another file. The :strong:`@filename`\  specification can be given anywhere a primitive token would appear.
 
@@ -340,7 +340,7 @@ The scripts are called at the start of the daemon. You should use this with care
 Resource
 --------
 
-:index:`\ <single: Configuration; Resource>`\ 
+:index:`\ <single: Configuration; Resource>`\
 
 A resource is defined as the resource type, followed by an open brace (:file:`{`), a number of :ref:`section-ConfigurationResourceDirective`, and ended by a closing brace (:file:`}`)
 
@@ -357,7 +357,7 @@ Each resource definition MUST contain a :strong:`Name`\  directive. It can conta
 
 defines the Director resource with the name :strong:`bareos-dir` and a query file :file:`/usr/lib/bareos/scripts/query.sql`.
 
-:index:`\ <single: Configuration; Naming Convention>`\ 
+:index:`\ <single: Configuration; Naming Convention>`\
 
 When naming resources, for some resource types naming conventions should be applied:
 
@@ -429,7 +429,7 @@ Within a quoted string, any character following a backslash (\) is taken as itse
 .. warning::
 
    If the configure directive is used to define a number, the number is never to be put between surrounding quotes. This is even true if the number is specified together with its unit, like :strong:`365 days`.
-   
+
 
 Numbers
 ^^^^^^^
@@ -441,14 +441,14 @@ Numbers are not to be quoted, see :ref:`section-Quotes`. Also do not prepend num
 Data Types
 ^^^^^^^^^^
 
-:index:`\ <single: Configuration; Data Types>`\  :index:`\ <single: Data Type>`\  
+:index:`\ <single: Configuration; Data Types>`\  :index:`\ <single: Data Type>`\
 
 When parsing the resource directives, Bareos classifies the data according to the types listed below.
 
 .. _DataTypeAcl:
 
 acl
-   :index:`\ <single: Data Type; acl>`\  
+   :index:`\ <single: Data Type; acl>`\
 
    This directive defines what is permitted to be accessed. It does this by using a list of regular expressions, separated by commas (:strong:`,`) or using multiple directives. If :strong:`!` is prepended, the expression is negated. The special keyword :strong:`*all*` allows unrestricted access.
 
@@ -501,7 +501,7 @@ acl
       Comamnd ACL = !set(ip|debug)
       Comamnd ACL = *all*
 
-   
+
 
    .. warning::
 
@@ -517,7 +517,7 @@ acl
 .. _DataTypeAuthType:
 
 auth-type
-   :index:`\ <single: Data Type; auth-type>`\  
+   :index:`\ <single: Data Type; auth-type>`\
 
    Specifies the authentication type that must be supplied when connecting to a backup protocol that uses a specific authentication type. Currently only used for :ref:`NDMPResource`.
 
@@ -536,28 +536,28 @@ auth-type
 .. _DataTypeInteger:
 
 integer
-   :index:`\ <single: Data Type; integer>`\  
+   :index:`\ <single: Data Type; integer>`\
 
 
    A 32 bit integer value. It may be positive or negative.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
-   
+
 .. _DataTypeLongInteger:
 
 long integer
-   :index:`\ <single: Data Type; long integer>`\  
+   :index:`\ <single: Data Type; long integer>`\
 
    A 64 bit integer value. Typically these are values such as bytes that can exceed 4 billion and thus require a 64 bit value.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
-   
+
 .. _DataTypeJobProtocol:
 
 job protocol
-   :index:`\ <single: Data Type; job protocol>`\  
+   :index:`\ <single: Data Type; job protocol>`\
 
    The protocol to run a the job. Following protocols are available:
 
@@ -573,11 +573,11 @@ job protocol
    NDMP_NATIVE
       Since Bareos :sinceVersion:`17.2.3: NDMP NATIVE`. See :ref:`section-NdmpNative`.
 
-      
+
 .. _DataTypeName:
 
 name
-   :index:`\ <single: Data Type; name>`\  
+   :index:`\ <single: Data Type; name>`\
 
    A keyword or name consisting of alphanumeric characters, including the hyphen, underscore, and dollar characters. The first character of a name must be a letter. A name has a maximum length currently set to 127 bytes.
 
@@ -587,7 +587,7 @@ name
 .. _DataTypePassword:
 
 password
-   :index:`\ <single: Data Type; password>`\  
+   :index:`\ <single: Data Type; password>`\
 
    This is a Bareos password and it is stored internally in MD5 hashed format.
 
@@ -595,7 +595,7 @@ password
 .. _DataTypeDirectory:
 
 path
-   :index:`\ <single: Data Type; path>`\  
+   :index:`\ <single: Data Type; path>`\
 
    A path is either a quoted or non-quoted string. A path will be passed to your standard shell for expansion when it is scanned. Thus constructs such as $HOME are interpreted to be their correct values. The path can either reference to a file or a directory.
 
@@ -603,7 +603,7 @@ path
 .. _DataTypePositiveInteger:
 
 positive integer
-   :index:`\ <single: Data Type; positive integer>`\  
+   :index:`\ <single: Data Type; positive integer>`\
 
    A 32 bit positive integer value.
 
@@ -613,7 +613,7 @@ positive integer
 .. _DataTypeSpeed:
 
 speed
-   :index:`\ <single: Data Type; speed>`\  
+   :index:`\ <single: Data Type; speed>`\
 
    The speed parameter can be specified as k/s, kb/s, m/s or mb/s.
 
@@ -623,7 +623,7 @@ speed
 .. _DataTypeString:
 
 string
-   :index:`\ <single: Data Type; string>`\  
+   :index:`\ <single: Data Type; string>`\
 
    A quoted string containing virtually any character including spaces, or a non-quoted string. A string may be of any length. Strings are typically values that correspond to filenames, directories, or system command names. A backslash (\) turns the next character into itself, so to include a double quote in a string, you precede the double quote with a backslash. Likewise to include a backslash.
 
@@ -632,7 +632,7 @@ string
 .. _DataTypeStringList:
 
 string-list
-   :index:`\ <single: Data Type; string list>`\  
+   :index:`\ <single: Data Type; string list>`\
 
    Multiple strings, specified in multiple directives, or in a single directive, separated by commas (**,**).
 
@@ -640,7 +640,7 @@ string-list
 .. _DataTypeStrname:
 
 strname
-   :index:`\ <single: Data Type; strname>`\  
+   :index:`\ <single: Data Type; strname>`\
 
    is similar to a :strong:`Name`, except that the name may be quoted and can thus contain additional characters including spaces.
 
@@ -649,7 +649,7 @@ strname
 .. _DataTypeNetAddress:
 
 net-address
-   :index:`\ <single: Data Type; net-address>`\  
+   :index:`\ <single: Data Type; net-address>`\
 
    is either a domain name or an IP address specified as a dotted quadruple in string or quoted string format. This directive only permits a single address to be specified. The :strong:`NetPort` must be specificly separated. If multiple net-addresses are needed, please assess if it is also possible to specify :strong:`NetAddresses` (plural).
 
@@ -657,7 +657,7 @@ net-address
 .. _DataTypeNetAddresses:
 
 net-addresses
-   :index:`\ <single: Data Type; net-addresses>`\  
+   :index:`\ <single: Data Type; net-addresses>`\
 
    Specify a set of net-addresses and net-ports. Probably the simplest way to explain this is to show an example:
 
@@ -690,7 +690,7 @@ net-addresses
 .. _DataTypeNetPort:
 
 net-port
-   :index:`\ <single: Data Type; net-port>`\  
+   :index:`\ <single: Data Type; net-port>`\
 
    Specify a network port (a positive integer).
 
@@ -700,7 +700,7 @@ net-port
 .. _DataTypeRes:
 
 resource
-   :index:`\ <single: Data Type; resource>`\  
+   :index:`\ <single: Data Type; resource>`\
 
    A resource defines a relation to the name of another resource.
 
@@ -708,7 +708,7 @@ resource
 .. _DataTypeSize:
 
 size
-   :index:`\ <single: Data Type; size>`\  
+   :index:`\ <single: Data Type; size>`\
 
    A size specified as bytes. Typically, this is a floating point scientific input format followed by an optional modifier. The floating point input is stored as a 64 bit integer value. If a modifier is present, it must immediately follow the value with no intervening spaces. The following modifiers are permitted:
 
@@ -754,13 +754,13 @@ size
 .. _DataTypeTime:
 
 time
-   :index:`\ <single: Data Type; time>`\  
+   :index:`\ <single: Data Type; time>`\
 
    A time or duration specified in seconds. The time is stored internally as a 64 bit integer value, but it is specified in two parts: a number part and a modifier part. The number can be an integer or a floating point number. If it is entered in floating point notation, it will be rounded to the nearest integer. The modifier is mandatory and follows the number part, either with or without
    intervening spaces. The following modifiers are permitted:
 
    seconds
-      :index:`\ <single: seconds>`\ 
+      :index:`\ <single: seconds>`\
 
    minutes
       :index:`\ <single: minutes>`\  (60 seconds)
@@ -792,7 +792,7 @@ time
       1 week 2 days 3 hours 10 mins
       1 month 2 days 30 sec
 
-   
+
 
    are valid date specifications.
 
@@ -802,7 +802,7 @@ time
 .. _DataTypeAuditCommandList:
 
 audit-command-list
-   :index:`\ <single: Data Type; audit command list>`\  
+   :index:`\ <single: Data Type; audit command list>`\
 
    Specifies the commands that should be logged on execution (audited). E.g.
 
@@ -811,13 +811,13 @@ audit-command-list
       Audit Events = label
       Audit Events = restore
 
-   Based on the type :ref:`string-list <DataTypeStringList>`. 
+   Based on the type :ref:`string-list <DataTypeStringList>`.
 
 
 .. _DataTypeYesNo:
 
 yes|no
-   :index:`\ <single: Data Type; \yesno>`\  :index:`\ <single: Data Type; boolean>`\  
+   :index:`\ <single: Data Type; \yesno>`\  :index:`\ <single: Data Type; boolean>`\
 
    Either a :strong:`yes` or a :strong:`no` (or :strong:`true` or :strong:`false`).
 
@@ -932,7 +932,7 @@ At the configuration of mail and operator commands the following variables can b
 Names, Passwords and Authorization
 ----------------------------------
 
-:index:`\ <single: Authorization; Names and Passwords>`\  :index:`\ <single: Passwords>`\ 
+:index:`\ <single: Authorization; Names and Passwords>`\  :index:`\ <single: Passwords>`\
 
 In order for one daemon to contact another daemon, it must authorize itself with a password. In most cases, the password corresponds to a particular name, so both the name and the password must match to be authorized. Passwords are plain text, any text. They are not generated by any special process; just use random text.
 
@@ -953,6 +953,4 @@ The default configuration files are automatically defined for correct authorizat
 In the left column, you can see the Director, Storage, and Client resources and their corresponding names and passwords – these are all in :file:`bareos-dir.conf`. In the right column the corresponding values in the Console, Storage daemon (SD), and File daemon (FD) configuration files are shown.
 
 Please note that the address :strong:`fw-sd`, that appears in the Storage resource of the Director, is passed to the File daemon in symbolic form. The File daemon then resolves it to an IP address. For this reason you must use either an IP address or a resolvable fully qualified name. A name such as :strong:`localhost`, not being a fully qualified name, will resolve in the File daemon to the :strong:`localhost` of the File daemon, which is most likely not what is
-desired. The password used for the File daemon to authorize with the Storage daemon is a temporary password unique to each Job created by the daemons and is not specified in any .conf file.  
-
-
+desired. The password used for the File daemon to authorize with the Storage daemon is a temporary password unique to each Job created by the daemons and is not specified in any .conf file.

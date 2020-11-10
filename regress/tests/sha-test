@@ -18,7 +18,7 @@ Storage=File1
 VolumeName=TestVolume001
 
 # Directory to backup.
-# This example uses a subdirectory 
+# This example uses a subdirectory
 # that contains some file but isn't to large.
 BackupDirectory="${tmp}/data"
 
@@ -107,4 +107,3 @@ fi
 
 # end tests and check for error codes
 end_test
-

@@ -32,4 +32,3 @@ The available options (and ciphers) are:
 They depend on the version of the openssl library installed.
 
 For decryption of encrypted data, the right decompression algorithm should be automatically chosen.
-

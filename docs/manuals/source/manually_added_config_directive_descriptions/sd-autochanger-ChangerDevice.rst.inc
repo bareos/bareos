@@ -11,4 +11,3 @@ On Solaris, the changer device will typically be some file under :file:`/dev/rds
 Please ensure that your Storage daemon has permission to access this device.
 
 It can be overwritten per device using the :config:option:`sd/device/ChangerDevice`\  directive.
-

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup 
+# Run a simple backup
 #   then verify the Volume to the catalog.
 #
 TestName="verify-voltocat-test"

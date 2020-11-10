@@ -2,4 +2,3 @@ If Yes the archive device must support the \tt MTOFFL ioctl to rewind and take t
 before the system will recognize the tape. If you are using an autochanger, some devices require an offline to be issued prior to changing the volume. However, most devices do not and may get very confused.
 
 If you are using a Linux 2.6 kernel or other OSes such as FreeBSD or Solaris, the Offline On Unmount will leave the drive with no tape, and Bareos will not be able to properly open the drive and may fail the job.
-

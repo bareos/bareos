@@ -42,4 +42,3 @@ WHERE
       ) OR
       Job.JobId IN (%s)
    )
-

@@ -113,10 +113,3 @@ Shutdown Director on local director machine.
 Import data form volume via :command:`bscan`, you need to set which database backend is used: :command:`bscan -B sqlite3 FileStorage -V Transfer-0001 -s -S`
 
 If the import was successfully completed, test if an incremental job really only backs up the minimum amount of data.
-
-
-
-
-
-
-

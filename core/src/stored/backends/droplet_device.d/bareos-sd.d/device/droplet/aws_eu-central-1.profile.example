@@ -9,4 +9,3 @@ aws_auth_sign_version = 4
 access_key = "CHANGEME"
 secret_key = "CHANGEME"
 pricing_dir = ""
-

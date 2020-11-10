@@ -49,4 +49,3 @@ WHERE (Job.JobId IN
   AND Job.JobId = File.JobId
   AND T1.PathId = File.PathId
   AND T1.FileName = File.Name
-

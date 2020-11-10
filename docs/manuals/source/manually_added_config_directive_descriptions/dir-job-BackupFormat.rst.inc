@@ -5,4 +5,3 @@ The backup format used for protocols which support multiple formats. By default,
 -  Tar
 
 -  SMTape
-

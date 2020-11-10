@@ -31,4 +31,3 @@ PoolTime
 
 PoolUncopiedJobs
    This selection which copies all jobs from a pool to an other pool which were not copied before is available only for copy Jobs.
-

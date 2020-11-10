@@ -28,4 +28,3 @@ namespace Dashboard\Model;
 class Dashboard
 {
 }
-

@@ -12,4 +12,3 @@ Introduction and Tutorial
       /IntroductionAndTutorial/Tutorial.rst
       /IntroductionAndTutorial/BareosWebui.rst
       /IntroductionAndTutorial/CriticalItemsToImplementBeforeProduction.rst
-

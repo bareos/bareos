@@ -30,7 +30,7 @@ Some of the DNS and Firewall problems can be circumvented by configuring clients
 Difficulties Connecting from the FD to the SD
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Problem; Connecting from the FD to the SD>`\ 
+:index:`\ <single: Problem; Connecting from the FD to the SD>`\
 
 If you are having difficulties getting one or more of your File daemons to connect to the Storage daemon, it is most likely because you have not used a fully qualified domain name on the :config:option:`dir/storage/Address`\  directive. That is the resolver on the File daemon’s machine (not on the Director’s) must be able to resolve the name you supply into an IP address. An example of an address that is guaranteed not to work: :strong:`localhost`. An example that
 may work: :strong:`bareos-sd1`. An example that is more likely to work: :strong:`bareos-sd1.example.com`.
@@ -53,7 +53,7 @@ If your address is correct, then make sure that no other program is using the po
 Authorization Errors
 ~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Problem; Authorization Errors>`\  :index:`\ <single: Concurrent Jobs>`\  
+:index:`\ <single: Problem; Authorization Errors>`\  :index:`\ <single: Concurrent Jobs>`\
 
 .. _AuthorizationErrors:
 
@@ -87,29 +87,29 @@ Another thing to check is to ensure that the Bareos component you are trying to 
 Concurrent Jobs
 ---------------
 
-:index:`\ <single: Job; Concurrent Jobs>`\  :index:`\ <single: Running Concurrent Jobs>`\  :index:`\ <single: Concurrent Jobs>`\ 
+:index:`\ <single: Job; Concurrent Jobs>`\  :index:`\ <single: Running Concurrent Jobs>`\  :index:`\ <single: Concurrent Jobs>`\
 
 Bareos can run multiple concurrent jobs. Using the :strong:`Maximum Concurrent Jobs`\  directives, you can configure how many and which jobs can be run simultaneously:
 
 |dir|
 
-   - :config:option:`dir/director/MaximumConcurrentJobs`\ 
+   - :config:option:`dir/director/MaximumConcurrentJobs`\
 
-   - :config:option:`dir/client/MaximumConcurrentJobs`\ 
+   - :config:option:`dir/client/MaximumConcurrentJobs`\
 
-   - :config:option:`dir/job/MaximumConcurrentJobs`\ 
+   - :config:option:`dir/job/MaximumConcurrentJobs`\
 
-   - :config:option:`dir/storage/MaximumConcurrentJobs`\ 
+   - :config:option:`dir/storage/MaximumConcurrentJobs`\
 
 |sd|
 
-   - :config:option:`sd/storage/MaximumConcurrentJobs`\ 
+   - :config:option:`sd/storage/MaximumConcurrentJobs`\
 
-   - :config:option:`sd/device/MaximumConcurrentJobs`\ 
+   - :config:option:`sd/device/MaximumConcurrentJobs`\
 
 |fd|
 
-   - :config:option:`fd/client/MaximumConcurrentJobs`\ 
+   - :config:option:`fd/client/MaximumConcurrentJobs`\
 
 For example, if you want two different jobs to run simultaneously backing up the same Client to the same Storage device, they will run concurrently only if you have set :strong:`Maximum Concurrent Jobs`\  greater than one in the :config:option:`Dir/Director`\  resource, the :config:option:`Dir/Client`\  resource, and the :config:option:`Dir/Storage`\  resource in |dir| configuration.
 
@@ -152,7 +152,7 @@ Below is a super stripped down :file:`bareos-dir.conf` file showing you the four
 Media VolWrites: integer out of range
 -------------------------------------
 
-:index:`\ <single: Errors; integer out of range>`\  :index:`\ <single: Catalog; Media; VolWrites>`\ 
+:index:`\ <single: Errors; integer out of range>`\  :index:`\ <single: Catalog; Media; VolWrites>`\
 
 In some situation, you receive an error message similar to this:
 
@@ -198,7 +198,7 @@ In the long run, it is planed to modify the database schema to enable storing mu
 Tape Labels: ANSI or IBM
 ------------------------
 
-:index:`\ <single: Label; Tape Labels>`\  :index:`\ <single: Tape; Label; ANSI>`\  :index:`\ <single: Tape; Label; IBM>`\ 
+:index:`\ <single: Label; Tape Labels>`\  :index:`\ <single: Tape; Label; ANSI>`\  :index:`\ <single: Tape; Label; IBM>`\
 
 By default, Bareos uses its own tape label (see :ref:`backward-compatibility-tape-format` and :config:option:`dir/pool/LabelType`\ ). However, Bareos also supports reading and write ANSI and IBM tape labels.
 
@@ -223,7 +223,7 @@ If you have labeled your volumes outside of Bareos, then the ANSI/IBM label will
 Tape Drive
 ----------
 
-:index:`\ <single: Problem; Tape>`\ 
+:index:`\ <single: Problem; Tape>`\
 
 This chapter is concerned with testing and configuring your tape drive to make sure that it will work properly with Bareos using the btape program.
 
@@ -238,7 +238,7 @@ Do not proceed to the next item until you have succeeded with the previous one.
 
 #. Use tar to write to, then read from your drive:
 
-   
+
 
    ::
 
@@ -247,7 +247,7 @@ Do not proceed to the next item until you have succeeded with the previous one.
          mt -f /dev/nst0 rewind
          tar tvf /dev/nst0
 
-   
+
 
 #. Make sure you have a valid and correct Device resource corresponding to your drive. For Linux users, generally, the default one works. For FreeBSD users, there are two possible Device configurations (see below). For other drives and/or OSes, you will need to first ensure that your system tape modes are properly setup (see below), then possibly modify you Device resource depending on the output from the btape program (next item). When doing this, you should consult the
    :ref:`Storage Daemon Configuration <StoredConfChapter>` of this manual.
@@ -256,14 +256,14 @@ Do not proceed to the next item until you have succeeded with the previous one.
 
 #. Run the btape test command:
 
-   
+
 
    ::
 
          btape /dev/nst0
          test
 
-   
+
 
    It isn’t necessary to run the autochanger part of the test at this time, but do not go past this point until the basic test succeeds. If you do have an autochanger, please be sure to read the :ref:`Autochanger chapter <AutochangersChapter>` of this manual.
 
@@ -275,27 +275,27 @@ Do not proceed to the next item until you have succeeded with the previous one.
 
 #. Do a restore of the directory backed up, by entering the following restore command, being careful to restore it to an alternate location:
 
-   
+
 
    ::
 
          restore select all done
          yes
 
-   
+
 
    Do a diff on the restored directory to ensure it is identical to the original directory. If you are going to backup multiple different systems (Linux, Windows, Mac, Solaris, FreeBSD, ...), be sure you test the restore on each system type.
 
 #. If you have an autochanger, you should now go back to the btape program and run the autochanger test:
 
-   
+
 
    ::
 
            btape /dev/nst0
            auto
 
-   
+
 
    Adjust your autochanger as necessary to ensure that it works correctly. See the :ref:`Autochanger chapter <AutochangerTesting>` of this manual for a complete discussion of testing your autochanger.
 
@@ -313,7 +313,7 @@ Testing Autochanger and Adapting mtx-changer script
 
 .. _section-MtxChangerManualUsage:
 
- :index:`\ <single: Autochanger; Testing>`\  :index:`\ <single: Autochanger; mtx-changer>`\  :index:`\ <single: Command; mtx-changer>`\  :index:`\ <single: Problem; Autochanger>`\  :index:`\ <single: Problem; mtx-changer>`\ 
+ :index:`\ <single: Autochanger; Testing>`\  :index:`\ <single: Autochanger; mtx-changer>`\  :index:`\ <single: Command; mtx-changer>`\  :index:`\ <single: Problem; Autochanger>`\  :index:`\ <single: Problem; mtx-changer>`\
 
 In case, Bareos does not work well with the Autochanger, it is preferable to "hand-test" that the changer works. To do so, we suggest you do the following commands:
 
@@ -321,7 +321,7 @@ Make sure Bareos is not running.
 
 :command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 list 0 /dev/nst0 0`
 
-:index:`\ <single: mtx-changer list>`\ 
+:index:`\ <single: mtx-changer list>`\
 
 This command should print:
 
@@ -340,7 +340,7 @@ or one number per line for each slot that is occupied in your changer, and the n
 
 :command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 listall 0 /dev/nst0 0`
 
-:index:`\ <single: mtx-changer listall>`\ 
+:index:`\ <single: mtx-changer listall>`\
 
 This command should print:
 
@@ -367,37 +367,37 @@ This command should print:
 
 :command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 transfer 1 2`
 
-:index:`\ <single: mtx-changer listall>`\ 
+:index:`\ <single: mtx-changer listall>`\
 
 This command should transfer a volume from source (1) to destination (2)
 
 :command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 slots`
 
-:index:`\ <single: mtx-changer slots>`\ 
+:index:`\ <single: mtx-changer slots>`\
 
 This command should return the number of slots in your autochanger.
 
 :command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 unload 1 /dev/nst0 0`
 
-:index:`\ <single: mtx-changer unload>`\ 
+:index:`\ <single: mtx-changer unload>`\
 
 If a tape is loaded from slot 1, this should cause it to be unloaded.
 
 :command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 load 3 /dev/nst0 0`
 
-:index:`\ <single: mtx-changer load>`\ 
+:index:`\ <single: mtx-changer load>`\
 
 Assuming you have a tape in slot 3, it will be loaded into drive (0).
 
 :command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 loaded 0 /dev/nst0 0`
 
-:index:`\ <single: mtx-changer loaded>`\ 
+:index:`\ <single: mtx-changer loaded>`\
 
 It should print "3" Note, we have used an "illegal" slot number 0. In this case, it is simply ignored because the slot number is not used. However, it must be specified because the drive parameter at the end of the command is needed to select the correct drive.
 
 :command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 unload 3 /dev/nst0 0`
 
-:index:`\ <single: mtx-changer unload>`\ 
+:index:`\ <single: mtx-changer unload>`\
 
 will unload the tape into slot 3.
 
@@ -441,7 +441,7 @@ Restore
 Restore a pruned job using a pattern
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Restore; pruned job>`\  :index:`\ <single: Problem; Restore; pruned job>`\  :index:`\ <single: Regex>`\ 
+:index:`\ <single: Restore; pruned job>`\  :index:`\ <single: Problem; Restore; pruned job>`\  :index:`\ <single: Regex>`\
 
 It is possible to configure Bareos in a way, that job information are still stored in the Bareos catalog, while the individual file information are already pruned.
 
@@ -463,7 +463,7 @@ See also :ref:`FileRegex bsr option <FileRegex>` for more information.
 Problems Restoring Files
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Restore; Files; Problem>`\  :index:`\ <single: Problem; Restoring Files>`\  :index:`\ <single: Problem; Tape; fixed mode>`\  :index:`\ <single: Problem; Tape; variable mode>`\ 
+:index:`\ <single: Restore; Files; Problem>`\  :index:`\ <single: Problem; Restoring Files>`\  :index:`\ <single: Problem; Tape; fixed mode>`\  :index:`\ <single: Problem; Tape; variable mode>`\
 
 The most frequent problems users have restoring files are error messages such as:
 
@@ -504,7 +504,7 @@ Try the following things, each separately, and reset your Device resource to wha
 Restoring Files Can Be Slow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Restore; slow>`\  :index:`\ <single: Problem; Restore; slow>`\ 
+:index:`\ <single: Restore; slow>`\  :index:`\ <single: Problem; Restore; slow>`\
 
 Restoring files is generally much slower than backing them up for several reasons. The first is that during a backup the tape is normally already positioned and Bareos only needs to write. On the other hand, because restoring files is done so rarely, Bareos keeps only the start file and block on the tape for the whole job rather than on a file by file basis which would use quite a lot of space in the catalog.
 
@@ -519,7 +519,7 @@ For all the above reasons the restore process is generally much slower than back
 Restoring When Things Go Wrong
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Catalog; Restore>`\  :index:`\ <single: Restore; Catalog>`\  :index:`\ <single: Disaster; Recovery; Catalog>`\  :index:`\ <single: Problem; Repair Catalog>`\ 
+:index:`\ <single: Catalog; Restore>`\  :index:`\ <single: Restore; Catalog>`\  :index:`\ <single: Disaster; Recovery; Catalog>`\  :index:`\ <single: Problem; Repair Catalog>`\
 
 This and the following sections will try to present a few of the kinds of problems that can come up making restoring more difficult. We will try to provide a few ideas how to get out of these problem situations. In addition to what is presented here, there is more specific information on restoring a :ref:`Client <section-BareMetalRestoreClient>` and your :ref:`Server <section-RestoreServer>` in the :ref:`RescueChapter` chapter of this manual.
 
@@ -544,7 +544,7 @@ Solution with a Catalog backup
 
    After re-initializing the database, you should be able to run Bareos. If you now try to use the restore command, it will not work because the database will be empty. However, you can manually run a restore job and specify your bootstrap file. You do so by entering the run command in the console and selecting the restore job. If you are using the default bareos-dir.conf, this Job will be named RestoreFiles. Most likely it will prompt you with something such as:
 
-   
+
 
    ::
 
@@ -561,7 +561,7 @@ Solution with a Catalog backup
       Priority:   10
       OK to run? (yes/mod/no):
 
-   
+
 
    A number of the items will be different in your case. What you want to do is: to use the mod option to change the Bootstrap to point to your saved bootstrap file; and to make sure all the other items such as Client, Storage, Catalog, and Where are correct. The FileSet is not used when you specify a bootstrap file. Once you have set all the correct values, run the Job and it will restore the backup of your database, which is most likely an ASCII dump.
 
@@ -573,7 +573,7 @@ Solution with a Job listing
    If you did save your database but did not make a bootstrap file, then recovering the database is more difficult. You will probably need to use :command:`bextract` to extract the backup copy. First you should locate the listing of the job report from the last catalog backup. It has important information that will allow you to quickly find your database file. For example, in the job report for the CatalogBackup shown below, the critical items are the Volume name(s), the Volume
    Session Id and the Volume Session Time. If you know those, you can easily restore your Catalog.
 
-   
+
 
    ::
 
@@ -605,11 +605,11 @@ Solution with a Job listing
         SD termination status:  OK
         Termination:            Backup OK
 
-   
+
 
    From the above information, you can manually create a bootstrap file, and then follow the instructions given above for restoring your database. A reconstructed bootstrap file for the above backup Job would look like the following:
 
-   
+
 
    ::
 
@@ -618,13 +618,13 @@ Solution with a Job listing
       VolSessionTime=1114075126
       FileIndex=1-1
 
-   
+
 
    Where we have inserted the Volume name, Volume Session Id, and Volume Session Time that correspond to the values in the job report. We’ve also used a FileIndex of one, which will always be the case providing that there was only one file backed up in the job.
 
    The disadvantage of this bootstrap file compared to what is created when you ask for one to be written, is that there is no File and Block specified, so the restore code must search all data in the Volume to find the requested file. A fully specified bootstrap file would have the File and Blocks specified as follows:
 
-   
+
 
    ::
 
@@ -635,7 +635,7 @@ Solution with a Job listing
       VolBlock=0-4053
       FileIndex=1-1
 
-   
+
 
    Once you have restored the ASCII dump of the database, you will then to follow the instructions for your database type to recreate the database from the ASCII backup file. See the :ref:`Catalog Maintenance <CatMaintenanceChapter>` chapter of this manual for examples of the command needed to restore a database from an ASCII dump (they are shown in the Compacting Your XXX Database sections).
 
@@ -649,20 +649,20 @@ Solution without a Job Listing
 Problem
    Trying to restore the last known good full backup by specifying item 3 on the restore menu then the JobId to restore, but Bareos then reports:
 
-   
+
 
    ::
 
          1 Job 0 Files
 
-   
+
 
    and restores nothing.
 
 Solution
    Most likely the File records were pruned from the database either due to the File Retention period expiring or by explicitly purging the Job. By using the "llist jobid=nn" command, you can obtain all the important information about the job:
 
-   
+
 
    ::
 
@@ -690,18 +690,18 @@ Solution
          Job.FileSetId: 1
        FileSet.FileSet: BackupSet
 
-   
+
 
    Then you can find the Volume(s) used by doing:
 
-   
+
 
    ::
 
       sql
       select VolumeName from JobMedia,Media where JobId=1 and JobMedia.MediaId=Media.MediaId;
 
-   
+
 
    Finally, you can create a bootstrap file as described in the previous problem above using this information.
 
@@ -713,15 +713,15 @@ Problem
 Solution
    Either :command:`bscan` the tape (see below for bscanning), or better use :command:`bls` to find where it is on the tape, then use :command:`bextract` to restore the database. For example,
 
-   
+
 
    ::
 
       ./bls -j -V DLT-22Apr05 /dev/nst0
 
-   
 
-   Might produce the following output: 
+
+   Might produce the following output:
 
    ::
 
@@ -742,7 +742,7 @@ Solution
       Volume "DLT-22Apr05"
       21-Jul 18:34 bls: End of all volumes.
 
-   
+
 
    Of course, there will be many more records printed, but we have indicated the essential lines of output. From the information on the Begin Job and End Job Session Records, you can reconstruct a bootstrap file such as the one shown above.
 
@@ -754,7 +754,7 @@ Solution
 
    If you would like to know the JobId where a file was saved, select restore menu option 2.
 
-   You can also use the query command to find information such as: 
+   You can also use the query command to find information such as:
 
    ::
 
@@ -779,7 +779,7 @@ Solution
           16: List Volumes likely to need replacement from age or errors
       Choose a query (1-16):
 
-   
+
 
 Problem
    I didn’t backup my database. What do I do now?
@@ -796,9 +796,3 @@ Solution
    #. Start and stop the Bareos Director using the propriate bareos-dir.conf file so that it can create the Client and Storage records which are not stored on the Volumes. Without these records, scanning is unable to connect the Job records to the proper client.
 
    When the above is complete, you can begin bscanning your Volumes. Please see the :ref:`bscan` chapter for more details.
-
-
-
-
-
-

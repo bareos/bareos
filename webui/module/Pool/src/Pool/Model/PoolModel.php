@@ -146,7 +146,7 @@ class PoolModel
       if(isset($bsock, $pool)) {
          $cmd = 'show pool="'.$pool.'"';
          $result = $bsock->send_command($cmd, 0);
-         
+
          $matches = [];
          preg_match('/\s*Next\s*Pool\s*=\s*("|\')?(?<value>.*)(?(1)\1|)/i', $result, $matches);
          return $matches["value"];

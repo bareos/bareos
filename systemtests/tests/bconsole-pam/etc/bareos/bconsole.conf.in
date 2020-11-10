@@ -13,4 +13,3 @@ Console {
   Name = PamConsole
   Password = "secret"
 }
-

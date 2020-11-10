@@ -32,4 +32,3 @@ Device {
   Description = "S3 device"
   Maximum Concurrent Jobs = 1
 }
-

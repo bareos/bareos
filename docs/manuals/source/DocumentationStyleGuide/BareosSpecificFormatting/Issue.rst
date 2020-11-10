@@ -40,4 +40,3 @@ Refer to a Github Commit by:
 This will be displayed as:
 
 .. include:: /DocumentationStyleGuide/example/github-commit.rst.inc
-

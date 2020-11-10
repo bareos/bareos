@@ -1794,7 +1794,7 @@ module.exports = isArray || function (val) {
 };
 
 },{}],5:[function(require,module,exports){
-/* "iJS"(pour "inside JS") initiée ici est une mini bibliothèque pour le développement en JavaScript des projets associés. 
+/* "iJS"(pour "inside JS") initiée ici est une mini bibliothèque pour le développement en JavaScript des projets associés.
  * Le but n’est pas de refaire ce que des grandes bibliothèques telles que **Jquery**, **mootools**, AngularJS** et autres font assez bien, mais de fournir soit des fonctionnalités en plus ou soit une meilleur approche pour une certaine facilité.
  * Cette bibliothèque se veut être legère, indépendante et fonctionnelle. Elle peut donc être utilisable dans n’importe quel projet développé en JavaScript.
  *__________________________________________________________________________________________________________________________________________________________
@@ -1802,10 +1802,10 @@ module.exports = isArray || function (val) {
 /*
  * This library is firstly build for UMI web’s projects and for pure JavaScript development.
  * However it can be use for any JavaScript projects.
- * 
+ *
  * @license LGPL v2.1 or later
  * @author  [Tindo Ngoufo Arsel](mailto:devtnga@gmail.com)
- * @version 0.99.7_15.11 
+ * @version 0.99.7_15.11
 */
 
 
@@ -1813,29 +1813,29 @@ module.exports = isArray || function (val) {
 
 //manage possible conflict in iJS namespace definition.
 if ( typeof iJS !== "undefined" ) {
-    
+
     console.warn("Seem like `iJS` namespace is use for another purpose. Taking risk of an overwrite ...") ;
     window.iJS = iJS = {} ;
     console.warn("Forcing iJS namespace initialization ... done.") ;
-    
+
 } else {
-    
+
     window.iJS = {} ;
 }
 
-/**   
+/**
  * This name space provide some functionalities that facilitate JavaScript development of the associated projects.
- * 
+ *
  * @namespace iJS
  */
 
 iJS = {
-    
+
     /**
      *@property {string} version Inform about the version of library that is use.
      */
     version: "0.99.7_15.11 ",
-    
+
     /**
      * Let you know if a value or a variable is type of Number or not.
      * @function isNumber
@@ -1868,7 +1868,7 @@ iJS = {
 
         return ((typeof arg).toLowerCase() === "string" || arg instanceof String);
     },
-    
+
     /**
      * Let you know if a value’s suite or a variable is type of Array or not.
      * @function isArray
@@ -1890,7 +1890,7 @@ iJS = {
 
         return (arg instanceof Element);
     },
-   
+
    /**
      * Let you know if a variable is type of HTMLElement or not.
      * @function isHTMLElement
@@ -1912,7 +1912,7 @@ iJS = {
 
         return (arg instanceof HTMLImageElement);
     },
-    
+
     /**
      * Let you know if a variable is type of HTMLLinkElement or not.
      * @function isHTMLLinkElement
@@ -1945,7 +1945,7 @@ iJS = {
 
         return ((typeof arg).toLowerCase() === "object");
     },
-    
+
     /**
      * Let you know if a value or a variable is valid or not.
      * ie: if an object is `null` or `undefined`.
@@ -1954,10 +1954,10 @@ iJS = {
      * @returns {boolean} true if it is, false if it isn’t.
      */
     isSet: function (arg) {
-        
-        return ( (arg !== undefined) && (arg != null) ) ; 
+
+        return ( (arg !== undefined) && (arg != null) ) ;
     },
-    
+
     /**
      * Let you know if a variable is defined or not.
      * ie: if an object is not `undefined`.
@@ -1966,10 +1966,10 @@ iJS = {
      * @returns {boolean} true if it is, false if it isn’t.
      */
     isDefined: function (arg) {
-      
+
         return (arg !== undefined) ;
     },
-    
+
     /**
      * Let you know if a variable is undefined or not.
      * ie: if an object is not defined.
@@ -1978,10 +1978,10 @@ iJS = {
      * @returns {boolean} true if it is, false if it isn’t.
      */
     isUndefined: function (arg) {
-      
+
         return (arg === undefined) ;
     },
-    
+
     /**
      * clear a string by deleting space at the beginning and at the end.
      * @function stringClear
@@ -1989,23 +1989,23 @@ iJS = {
      * @returns {String} null or the formatted string
      */
     stringClear: function (arg) {
-      
+
         var str = iJS.isString(arg) ? arg : null ;
-        
+
         if (str) {
-            
+
             var tabChar = str.split('') ;
 
             for( var i = 0 ; i < tabChar.length && tabChar[i] == ' ' ; i++) {
-                
+
                 tabChar.shift() ;
                 --i ;
             }
             for( var i = (tabChar.length - 1) ; i >= 0 && tabChar[i] == ' ' ; i--) {
-                
+
                 tabChar.pop() ;
             }
-            
+
             str = tabChar.join('') ;
         }
 
@@ -2103,23 +2103,23 @@ iJS = {
      * @returns {XMLHttpRequest} new instance of `XMLHttpRequest` class.
      */
     newHTTPRequest: function () {
-        
+
         var xhr = null ;
 
         if (window.XMLHttpRequest) {
-            
+
             xhr = new XMLHttpRequest(); //For Chrome, Firefox, Opera and others...
-            
+
             if (xhr.overrideMimeType)
                 xhr.overrideMimeType("text/xml"); //Avoid Safari’s bug
         }
         else if (window.ActiveXObject) {
             //For Internet Explorer
             try {
-                xhr = new ActiveXObject("Msxml2.XMLHTTP");  
+                xhr = new ActiveXObject("Msxml2.XMLHTTP");
             } catch (e1) {
                 try {
-                    xhr = new ActiveXObject("Microsoft.XMLHTTP");  
+                    xhr = new ActiveXObject("Microsoft.XMLHTTP");
                 } catch (e2) {
                     console.warn( e1.message );
                     console.warn( e2.message );
@@ -2128,14 +2128,14 @@ iJS = {
         }else {
             console.error("iJS:'newHTTPRequest': Can’t init Ajax functionalities. Maybe it’s your browser version?");
         }
-        
+
         return xhr;
     }
 
 };
 
 
-/* Here is where the animations dependencies are included. 
+/* Here is where the animations dependencies are included.
  * iJS animations features requires **web-animations.js** library.
  * Some browser like *chrome* or webkit's base applications implement it.
  * However, on waiting of its full support, it's more efficient to prevent non full support by directly use the library.

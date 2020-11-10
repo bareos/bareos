@@ -119,4 +119,3 @@ class Bootstrap
 
 Bootstrap::init();
 Bootstrap::chroot();
-

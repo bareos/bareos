@@ -11,7 +11,7 @@ Configuration file (snippets) should be formatted as
 
 .. literalinclude:: /DocumentationStyleGuide/example/code-block-cfg-mysql.rst.inc
    :language: none
-   
+
 This will be displayed as:
 
 .. include:: /DocumentationStyleGuide/example/code-block-cfg-mysql.rst.inc
@@ -70,7 +70,7 @@ Example:
 
 .. literalinclude:: /DocumentationStyleGuide/example/code-block-shell-session.rst.inc
    :language: none
-   
+
 This will be displayed as:
 
 .. include:: /DocumentationStyleGuide/example/code-block-shell-session.rst.inc
@@ -122,13 +122,13 @@ If you want to display an (Unix) environment variable name, the following format
 ::
 
   ``$HOSTNAME``
-  
+
   ``VERSION="18.2.5"``
 
 The output should look like this:
 
 ``$HOSTNAME``
-  
+
 ``VERSION="18.2.5"``
 
 
@@ -140,7 +140,7 @@ Example:
 
 .. literalinclude:: /DocumentationStyleGuide/example/code-block-sql-create-index.rst.inc
    :language: none
-   
+
 This will be displayed as:
 
 .. include:: /DocumentationStyleGuide/example/code-block-sql-create-index.rst.inc
@@ -188,7 +188,7 @@ Especially it should be used for:
 * System Group (e.g. group **bareos**, has been ``\group{<name>}`` in Latex))
 * Volume Name (has been ``\volume{<name>}`` in Latex)
 * Volume Status (UPPPERCASE) (has been ``\volumestatus{<name>}`` in Latex)
-   
+
 Unless a specific rule for this kind of item exists.
 
 Specific rules exist for:
@@ -240,7 +240,7 @@ If you want to display an operating system name, the following formatting should
 
 .. literalinclude:: /DocumentationStyleGuide/example/os.rst.inc
    :language: none
-   
+
 The output will look like this:
 
 .. include:: /DocumentationStyleGuide/example/os.rst.inc
@@ -259,7 +259,7 @@ Example::
    Emails will be send to root@localhost\ .
 
 Output:
-   
+
 Emails will be send to root@localhost\ .
 
 

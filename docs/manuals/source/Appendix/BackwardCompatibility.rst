@@ -3,7 +3,7 @@
 Backward Compatibility
 ======================
 
-:index:`\ <single: Compatibility; Backward>`\  
+:index:`\ <single: Compatibility; Backward>`\
 
 
 .. _backward-compatibility-tape-format:
@@ -11,7 +11,7 @@ Backward Compatibility
 Tape Formats
 ------------
 
-:index:`\ <single: Tape; Format>`\  
+:index:`\ <single: Tape; Format>`\
 
 One of the major goals of Backup software is to ensure that you can restore tapes (the word tape should also include disk volumes) that you wrote years ago. This means that each new version of the software should be able to read old format tapes. The first problem you will have is to ensure that the hardware is still working some years down the road, and the second problem will be to ensure that the media will still be good, then your OS must be able to interface to the device, and finally
 Bareos must be able to recognize old formats. All the problems except the last are ones that we cannot solve, but by careful planning you can.
@@ -36,7 +36,7 @@ The |fd| is compatible with all version of the Bacula director (tested with vers
 
 To be sure this is enabled you can explicitly set the compatible option:
 
-:config:option:`fd/client/Compatible = True`\ 
+:config:option:`fd/client/Compatible = True`\
 
 A |dir| can only talk to Bacula file daemons of version 2.0 or higher. Through a change in the Bacula network protocols, it is currently not possible to use a Bacula file daemon > 6.0 with a |dir|.
 
@@ -45,9 +45,9 @@ These combinations of Bareos and Bacula are know to work together:
 ============ ================== =========================== ===========
 **Director** **Storage Daemon** **File Daemon**             **Remarks**
 ============ ================== =========================== ===========
-Bareos       Bareos             Bareos                     
-Bareos       Bareos             2.0 <= Bacula < 6.0        
-Bacula       Bacula             Bacula                     
+Bareos       Bareos             Bareos 
+Bareos       Bareos             2.0 <= Bacula < 6.0
+Bacula       Bacula             Bacula 
 Bacula       Bacula             Bareos (compatibility mode)
 ============ ================== =========================== ===========
 
@@ -77,7 +77,7 @@ Upgrade is supported from Bacula version 5.2.x. If you are running any older ver
    it is on most platforms not possible to install components from both in parallel.
    Your package management tool will warn you about this.
 
-   
+
 Rename user and group before upgrading
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -159,5 +159,3 @@ Renaming a postgresql database:
       ALTER DATABASE bacula RENAME TO bareos;
       ALTER USER bacula RENAME TO bareos;
       ALTER USER bareos UNENCRYPTED PASSWORD 'password';
-
-

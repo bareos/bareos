@@ -1,7 +1,7 @@
 ---
 # quality gates to configure Jenkins build pipeline
 coverage:
-  lines: 
+  lines:
     healthy: 24
     unhealthy: 23
     unstable: 24

@@ -27,4 +27,3 @@ Director {                            # define myself
   TLS Certificate = "@confdir@/tls/bareos-dir.bareos.org-cert.pem"
   TLS Key = "@confdir@/tls/bareos-dir.bareos.org-key.pem"
 }
-

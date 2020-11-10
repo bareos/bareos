@@ -3,4 +3,3 @@ This directive is optional and specifies a directory in which the Director may p
 The PID directory specified must already exist and be readable and writable by the Bareos daemon referencing it.
 
 Typically on Linux systems, you will set this to: :file:`/var/run`. If you are not installing Bareos in the system directories, you can use the Working Directory as defined above.
-

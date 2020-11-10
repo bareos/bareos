@@ -100,4 +100,3 @@ check_compression "${Storage}" "${VolumeName}" "1" "${tmp}/data/data3/test.dat" 
 
 # end tests and check for error codes
 end_test
-

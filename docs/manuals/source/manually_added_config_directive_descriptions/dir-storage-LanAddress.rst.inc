@@ -3,4 +3,3 @@ This directive might be useful in network setups where the |dir| and |fd| need d
 For details, see :ref:`LanAddress`.
 
 This directive corresponds to :config:option:`dir/client/LanAddress`\ .
-

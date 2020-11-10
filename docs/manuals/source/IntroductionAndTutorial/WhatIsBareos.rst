@@ -41,7 +41,7 @@ Bareos is made up of the following major components or services: Director, Conso
 Bareos Director
 ~~~~~~~~~~~~~~~
 
-The Director is the central control program for all the other daemons. It schedules and supervises all the backup, restore, verify and archive operations. The system administrator uses the Bareos Director to schedule backups and to recover files. The Director runs as a daemon (or service) in the background. 
+The Director is the central control program for all the other daemons. It schedules and supervises all the backup, restore, verify and archive operations. The system administrator uses the Bareos Director to schedule backups and to recover files. The Director runs as a daemon (or service) in the background.
 
 .. _UADef:
 
@@ -91,7 +91,7 @@ To perform a successful save or restore, the following four daemons must be conf
 Bareos Version Numbers and Releases
 -----------------------------------
 
-:index:`\ <single: Version numbers>`\  :index:`\ <single: Releases>`\ 
+:index:`\ <single: Version numbers>`\  :index:`\ <single: Releases>`\
 
 Bareos version numbers consists of three parts: YY.Q.C
 
@@ -178,7 +178,7 @@ To get Bareos up and running quickly, the author recommends that you first scan 
 Terminology
 -----------
 
-:index:`\ <single: Terminology>`\ 
+:index:`\ <single: Terminology>`\
 
 Administrator
    :index:`\ <single: Administrator>`\  The person or persons responsible for administrating the Bareos system.
@@ -219,7 +219,7 @@ File Attributes
 File daemon
    :index:`\ <single: File Daemon>`\  The daemon running on the client computer to be backed up. This is also referred to as the File services, and sometimes as the Client services or the FD.
 
-   
+
 
 .. _FileSetDef:
 
@@ -231,7 +231,7 @@ FileSet
 Incremental
    :index:`\ <single: Incremental>`\  A backup that includes all files changed since the last Full, Differential, or Incremental backup started. It is normally specified on the Level directive within the Job resource definition, or in a Schedule resource.
 
-   
+
 
 .. _JobDef:
 
@@ -317,7 +317,7 @@ The Current State of Bareos
 What is Implemented
 ~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Implementation; What is implemented>`\ 
+:index:`\ <single: Implementation; What is implemented>`\
 
 -  Job Control
 
@@ -461,7 +461,7 @@ It is possible to configure the Bareos Director to use multiple Catalogs. Howeve
 Design Limitations or Restrictions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Restrictions; Design Limitations>`\  :index:`\ <single: Design; Limitations>`\ 
+:index:`\ <single: Restrictions; Design Limitations>`\  :index:`\ <single: Design; Limitations>`\
 
 -  Names (resource names, volume names, and such) defined in Bareos configuration files are limited to a fixed number of characters. Currently the limit is defined as 127 characters. Note, this does not apply to filenames, which may be arbitrarily long.
 
@@ -472,14 +472,8 @@ Design Limitations or Restrictions
 Items to Note
 ~~~~~~~~~~~~~
 
-:index:`\ <single: Items to Note>`\ 
+:index:`\ <single: Items to Note>`\
 
 -  Bareos’s Differential and Incremental *normal* backups are based on time stamps. Consequently, if you move files into an existing directory or move a whole directory into the backup fileset after a Full backup, those files will probably not be backed up by an Incremental save because they will have old dates. This problem is corrected by using :ref:`Accurate mode <accuratemode>` backups or by explicitly updating the date/time stamp on all moved files.
 
 -  In non Accurate mode, files deleted after a Full save will be included in a restoration. This is typical for most similar backup programs. To avoid this, use :ref:`Accurate mode <accuratemode>` backup.
-
-
-
-
-
-

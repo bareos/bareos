@@ -5,7 +5,7 @@ catalog database.
 
 If the bootstrap-file-specification begins with a vertical bar (|), Bareos will use the specification as the name of a program to which it will pipe the bootstrap record. It could for example be a shell script that emails you the bootstrap record.
 
-Before opening the file or executing the specified command, Bareos performs :ref:`character substitution <character substitution>` like in RunScript directive. To automatically manage your bootstrap files, you can use this in your JobDefs resources: 
+Before opening the file or executing the specified command, Bareos performs :ref:`character substitution <character substitution>` like in RunScript directive. To automatically manage your bootstrap files, you can use this in your JobDefs resources:
 
 .. literalinclude:: /include/config/DirJobWriteBootstrap1.conf
    :language: bareosconfig
@@ -13,4 +13,3 @@ Before opening the file or executing the specified command, Bareos performs :ref
 
 
 For more details on using this file, please see chapter :ref:`BootstrapChapter`.
-

@@ -11,8 +11,8 @@ scripts/copy-2disk-confs
 scripts/prepare-disk-changer
 
 # create a new bareos-sd.conf
-BAREOS_SD2_CONF=$conf/bareos-sd2.conf 
-BAREOS_SD2_PORT="1${BAREOS_SD_PORT}" 
+BAREOS_SD2_CONF=$conf/bareos-sd2.conf
+BAREOS_SD2_PORT="1${BAREOS_SD_PORT}"
 perl -ne '
 if (/SDPort = /) { $_ =~ s/(\d+)/1$1/;}
 if (/Name = .+?-sd/) { $_ =~ s/-sd/-sd2/;}

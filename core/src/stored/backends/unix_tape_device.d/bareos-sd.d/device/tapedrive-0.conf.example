@@ -36,4 +36,3 @@ Device {
     AutomaticMount = yes                    # default: no
     MaximumFileSize = 10GB                  # default: 1000000000 (1GB)
 }
-

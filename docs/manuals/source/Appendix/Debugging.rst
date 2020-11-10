@@ -1,7 +1,7 @@
 Debugging
 =========
 
-:index:`\ <single: Crash>`\  :index:`\ <single: Debug; crash>`\ 
+:index:`\ <single: Crash>`\  :index:`\ <single: Debug; crash>`\
 
 This chapter describes, how to debug Bareos, when the program crashes. If you are just interested about how to get more information about a running Bareos daemon, please read :ref:`section-debug-messages`.
 
@@ -13,7 +13,7 @@ Bareos will force itself to crash with a SEGFAULT. However, before crashing, Bar
 Traceback
 ---------
 
-:index:`\ <single: Traceback>`\ 
+:index:`\ <single: Traceback>`\
 
 Each of the three Bareos daemons has a built-in exception handler which, in case of an error, will attempt to produce a traceback. If successful the traceback will be emailed to you.
 
@@ -37,7 +37,7 @@ If all the above conditions are met, the daemon that crashes will produce a trac
 Testing The Traceback
 ---------------------
 
-:index:`\ <single: Traceback; Test>`\ 
+:index:`\ <single: Traceback; Test>`\
 
 To "manually" test the traceback feature, you simply start Bareos then obtain the PID of the main daemon thread (there are multiple threads). The output produced here will look different depending on what OS and what version of the kernel you are running.
 

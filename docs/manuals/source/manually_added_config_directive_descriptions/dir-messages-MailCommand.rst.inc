@@ -48,4 +48,3 @@ A default installation will use the program bsmtp as :strong:`Mail Command`\ . T
 
 
 The :command:`bsmtp` program is provided as part of Bareos. For additional details, please see the :ref:`bsmtp` section. Please test any :strong:`Mail Command`\  that you use to ensure that your smtp gateway accepts the addressing form that you use. Certain programs such as Exim can be very selective as to what forms are permitted particularly in the from part.
-

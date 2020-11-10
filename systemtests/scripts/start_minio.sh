@@ -67,4 +67,3 @@ while ! s3cmd --config=${S3CFG} ls S3:// > /dev/null 2>&1; do
 done
 
 exit 0
-

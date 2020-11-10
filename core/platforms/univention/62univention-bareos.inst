@@ -43,4 +43,3 @@ univention-directory-manager settings/extended_attribute create "$@" \
 joinscript_save_current_version
 
 exit 0
-
