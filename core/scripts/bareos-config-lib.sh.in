@@ -1033,11 +1033,14 @@ replace()
 
     for file in `grep -l ${SEARCH} ${BAREOS_CONFIG_DIR}/*.conf ${BAREOS_CONFIG_DIR}/bareos-*.d/*/*.conf ${BAREOS_CONFIG_DIR}/tray-monitor.d/*/*.conf 2>/dev/null`; do
         if [ -f "$file" ]; then
-            echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
-            if [ "$os_type" = "Darwin" -o "$os_type" = "FreeBSD" ]; then
-                 sed -i '' "s#${SEARCH}#${REPLACE}#g" "${file}"
-            else
-		 sed -i'' "s#${SEARCH}#${REPLACE}#g" "${file}"
+            if grep "${SEARCH}" "$file"; then
+                # do a log-message only if file will be changed, not always
+                echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
+                if [ "$os_type" = "Darwin" -o "$os_type" = "FreeBSD" ]; then
+                     sed -i '' "s#${SEARCH}#${REPLACE}#g" "${file}"
+                else
+                     sed -i'' "s#${SEARCH}#${REPLACE}#g" "${file}"
+                fi
             fi
         fi
     done
