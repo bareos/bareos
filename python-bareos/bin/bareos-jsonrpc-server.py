@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
 #   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
