@@ -28,9 +28,8 @@ if(Python2_FOUND)
   target_compile_definitions(python-sd PUBLIC PY2MODDIR=\"${Python2_SITELIB}\")
   add_dependencies(python-sd bareossd-python2-module)
 
-  set(PYFILES
-      pyfiles/bareos-sd-class-plugin.py pyfiles/BareosSdPluginBaseclass.py
-      pyfiles/BareosSdWrapper.py
+  set(PYFILES pyfiles/bareos-sd-class-plugin.py
+              pyfiles/BareosSdPluginBaseclass.py pyfiles/BareosSdWrapper.py
   )
 
   install(FILES ${PYFILES} DESTINATION ${plugindir})
@@ -81,9 +80,8 @@ if(Python3_FOUND)
   target_include_directories(python3-sd PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})
   add_dependencies(python3-sd bareossd-python3-module)
 
-  set(PYFILES
-      pyfiles/bareos-sd-class-plugin.py pyfiles/BareosSdPluginBaseclass.py
-      pyfiles/BareosSdWrapper.py
+  set(PYFILES pyfiles/bareos-sd-class-plugin.py
+              pyfiles/BareosSdPluginBaseclass.py pyfiles/BareosSdWrapper.py
   )
 
   install(FILES ${PYFILES} DESTINATION ${plugindir})

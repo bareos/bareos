@@ -17,14 +17,20 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-check_c_source_compiles("#include <sys/types.h>
+check_c_source_compiles(
+  "#include <sys/types.h>
    #include <sys/acl.h>
-   int main(void) { return ACL_TYPE_DEFAULT_DIR; }" HAVE_ACL_TYPE_DEFAULT_DIR)
+   int main(void) { return ACL_TYPE_DEFAULT_DIR; }" HAVE_ACL_TYPE_DEFAULT_DIR
+)
 
-check_c_source_compiles("#include <sys/types.h>
+check_c_source_compiles(
+  "#include <sys/types.h>
    #include <sys/acl.h>
-   int main(void) { return ACL_TYPE_EXTENDED; }" HAVE_ACL_TYPE_EXTENDED)
+   int main(void) { return ACL_TYPE_EXTENDED; }" HAVE_ACL_TYPE_EXTENDED
+)
 
-check_c_source_compiles("#include <sys/types.h>
+check_c_source_compiles(
+  "#include <sys/types.h>
    #include <sys/acl.h>
-   int main(void) { return ACL_TYPE_NFS4; }" HAVE_ACL_TYPE_NFS4)
+   int main(void) { return ACL_TYPE_NFS4; }" HAVE_ACL_TYPE_NFS4
+)

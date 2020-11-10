@@ -24,8 +24,7 @@ message(STATUS "installing startfiles to ${DESTSTARTDIR}")
 
 # Install autostart fd
 install(
-  FILES
-    "${CMAKE_SOURCE_DIR}/debian/bareos-filedaemon.bareos-fd.init"
+  FILES "${CMAKE_SOURCE_DIR}/debian/bareos-filedaemon.bareos-fd.init"
   DESTINATION "${DESTSTARTDIR}/bareos-fd"
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE

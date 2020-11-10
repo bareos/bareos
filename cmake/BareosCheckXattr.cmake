@@ -22,13 +22,15 @@ find_program(GETFATTR_PROG getfattr)
 
 set(SETFATTR_WORKS NO)
 if(SETFATTR_PROG AND GETFATTR_PROG)
-  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/xattr-test-file.txt" "Just a testfile")
-  exec_program(${SETFATTR_PROG}
-    ${CMAKE_CURRENT_BINARY_DIR}
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/xattr-test-file.txt"
+       "Just a testfile"
+  )
+  exec_program(
+    ${SETFATTR_PROG} ${CMAKE_CURRENT_BINARY_DIR}
     ARGS "--name=user.cmake-check --value=xattr-value xattr-test-file.txt"
-    RETURN_VALUE SETFATTR_RETURN)
+    RETURN_VALUE SETFATTR_RETURN
+  )
   if(SETFATTR_RETURN EQUAL 0)
     set(SETFATTR_WORKS YES)
   endif()
 endif()
-

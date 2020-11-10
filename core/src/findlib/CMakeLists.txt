@@ -53,8 +53,8 @@ install(
 
 set_target_properties(
   bareosfind
-  PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}" SOVERSION
-                                                 "${BAREOS_VERSION_MAJOR}"
+  PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+             SOVERSION "${BAREOS_VERSION_MAJOR}"
              DEFINE_SYMBOL "BUILDING_DLL"
 )
 if(HAVE_WIN32)
