@@ -241,7 +241,8 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
     Bmicrosleep(5, 0);
   }
 
-  Dmsg0(50, "pg_real_connect done\n");
+  Dmsg0(50, "pg_real_connect %s\n",
+        PQstatus(db_handle_) == CONNECTION_OK ? "ok" : "failed");
   Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", db_user_, db_name_,
         (db_password_ == NULL) ? "(NULL)" : db_password_);
 
@@ -249,8 +250,8 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
     Mmsg2(errmsg,
           _("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
             "Possible causes: SQL server not running; password incorrect; "
-            "max_connections exceeded.\n"),
-          db_name_, db_user_);
+            "max_connections exceeded.\n(%s)\n"),
+          db_name_, db_user_, PQerrorMessage(db_handle_));
     goto bail_out;
   }
 
