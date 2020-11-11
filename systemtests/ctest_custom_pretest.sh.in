@@ -31,7 +31,7 @@ fi
 postgresql=@postgresql@
 if [ -n "$postgresql" ]; then
   echo -n "PRETEST: checking postgresql connection ..."
-  if ! psql postgres <<< "SELECT version()" 2>&1 >/dev/null; then
+  if ! psql --username=regress postgres <<< "SELECT version()" 2>&1 >/dev/null; then
     echo "could not connect postgresql server"
     exit 1
   else
