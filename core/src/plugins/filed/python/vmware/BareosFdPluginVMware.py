@@ -99,6 +99,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "localvmdk",
             "vadp_dumper_verbose",
             "verifyssl",
+            "quiesce",
         ]
         self.utf8_options = ["vmname", "folder"]
         self.config = None
@@ -1101,13 +1102,21 @@ class BareosVADPWrapper(object):
         """
         Creates a snapshot
         """
+        enable_quiescing = True
+        if self.options.get("quiesce") == "no":
+            enable_quiescing = False
+            bareosfd.JobMessage(
+                bareosfd.M_ERROR,
+                "Guest quescing on snapshot was disabled by configuration, backup may be inconsistent\n",
+            )
+
         try:
             self.create_snap_task = self.vm.CreateSnapshot_Task(
                 name="BareosTmpSnap_jobId_%s" % (self.plugin.jobId),
                 description="Bareos Tmp Snap jobId %s jobName %s"
                 % (self.plugin.jobId, self.plugin.jobName),
                 memory=False,
-                quiesce=True,
+                quiesce=enable_quiescing,
             )
         except vmodl.MethodFault as e:
             bareosfd.JobMessage(
