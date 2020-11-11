@@ -1,0 +1,106 @@
+---
+# quality gates to configure Jenkins build pipeline
+coverage:
+  lines:
+    healthy: 24
+    unhealthy: 23
+    unstable: 24
+
+docs:
+  warnings_unhealthy: 68
+  warnings_healthy: 34
+
+default:
+  ctest_unstable: 0
+  warnings_unhealthy: 0
+  warnings_healthy: 0
+
+CentOS_6:
+  ctest_unstable: 0
+  warnings_unhealthy: 5
+  warnings_healthy: 4
+
+CentOS_7:
+  ctest_unstable: 0
+  warnings_unhealthy: 11
+  warnings_healthy: 5
+
+CentOS_8:
+  ctest_unstable: 0
+  warnings_unhealthy: 6
+  warnings_healthy: 3
+
+FreeBSD:
+  ctest_unstable: 0
+  warnings_unhealthy: 8
+  warnings_healthy: 4
+
+Debian:
+  ctest_unstable: 10
+  warnings_unhealthy: 8
+  warnings_healthy: 4
+
+Fedora:
+  ctest_unstable: 0
+  warnings_unhealthy: 7
+  warnings_healthy: 4
+
+Solaris:
+  ctest_unstable: 0
+  warnings_unhealthy: 30
+  warnings_healthy: 15
+
+MacOS:
+  ctest_unstable: 0
+  warnings_unhealthy: 7
+  warnings_healthy: 4
+
+openSUSE:
+  ctest_unstable: 0
+  warnings_unhealthy: 6
+  warnings_healthy: 3
+
+RHEL_6:
+  ctest_unstable: 0
+  warnings_unhealthy: 5
+  warnings_healthy: 4
+
+RHEL_7:
+  ctest_unstable: 0
+  warnings_unhealthy: 11
+  warnings_healthy: 5
+
+RHEL_8:
+  ctest_unstable: 0
+  warnings_unhealthy: 6
+  warnings_healthy: 3
+
+SLE_12_SP4:
+  ctest_unstable: 0
+  warnings_unhealthy: 50
+  warnings_healthy: 25
+
+SLE:
+  ctest_unstable: 0
+  warnings_unhealthy: 6
+  warnings_healthy: 3
+
+Univention:
+  ctest_unstable: 0
+  warnings_unhealthy: 8
+  warnings_healthy: 4
+
+win:
+  ctest_unstable: 10
+  warnings_unhealthy: 67
+  warnings_healthy: 30
+
+xUbuntu_16.04:
+  ctest_unstable: 10
+  warnings_unhealthy: 48
+  warnings_healthy: 24
+
+xUbuntu:
+  ctest_unstable: 10
+  warnings_unhealthy: 8
+  warnings_healthy: 4
