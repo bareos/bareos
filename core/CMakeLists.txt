@@ -344,6 +344,28 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
 endif()
 include(BareosFindStaticCodeAnalysisTools)
 
+if(NOT client-only)
+  # droplet does not build on solaris because of sys/cdefs.h: No such file or
+  # directory
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/droplet/CMakeLists.txt)
+      message(
+        FATAL_ERROR
+          "Please checkout the libdroplet submodule via \n \"git submodule update --init --recursive\""
+      )
+    endif()
+    add_subdirectory(src/droplet)
+    if(TARGET droplet)
+      set_target_properties(
+        droplet
+        PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                   SOVERSION "${BAREOS_VERSION_MAJOR}"
+                   PREFIX "libbareos"
+      )
+    endif()
+  endif()
+endif()
+
 include(BareosGenerateDebianInfo)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   add_definitions(
@@ -714,7 +736,7 @@ else()
   if(${HAVE_GLUSTERFS})
     list(APPEND BACKENDS gfapi_device.d)
   endif()
-  if(${HAVE_DROPLET})
+  if(TARGET droplet)
     list(APPEND BACKENDS droplet_device.d)
   endif()
 endif()
@@ -732,17 +754,17 @@ if(HAVE_WIN32)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  message(status "installing var/log/bareos")
+  message(STATUS "installing var/log/bareos")
   install(DIRECTORY DESTINATION var/log/bareos)
 
-  message(status "installing var/lib/bareos")
+  message(STATUS "installing var/lib/bareos")
   install(DIRECTORY DESTINATION var/lib/bareos)
 else()
   install(DIRECTORY DESTINATION ${logdir})
-  message(status "installing ${logdir}")
+  message(STATUS "installing ${logdir}")
 
   install(DIRECTORY DESTINATION ${workingdir})
-  message(status "installing ${woringdir}")
+  message(STATUS "installing ${woringdir}")
 endif()
 
 include(BareosConfigureFile)

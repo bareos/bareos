@@ -17,6 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+
 if(GENERATE_DEBIAN_CONTROL)
 
   if(HAVE_TRAYMONITOR)
@@ -44,7 +45,7 @@ if(GENERATE_DEBIAN_CONTROL)
     )
   endif()
 
-  if(HAVE_DROPLET)
+  if(TARGET droplet)
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-droplet DEBIAN_CONTROL_STORAGE_DROPLET)
   endif()
 
