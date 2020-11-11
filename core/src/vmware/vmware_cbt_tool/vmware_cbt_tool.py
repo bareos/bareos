@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
@@ -25,7 +25,9 @@
 Python program for enabling/disabling/resetting CBT on a VMware VM
 """
 
-from pyVim.connect import SmartConnect, Disconnect
+from __future__ import print_function
+
+from pyVim.connect import SmartConnect, SmartConnectNoSSL, Disconnect
 from pyVmomi import vim, vmodl
 
 import argparse
@@ -112,6 +114,12 @@ def GetArgs():
         default=False,
         help="List all VMs in the given datacenter with UUID and containing folder",
     )
+    parser.add_argument(
+        "--sslverify",
+        action="store_true",
+        default=False,
+        help="Force SSL certificate verification",
+    )
     args = parser.parse_args()
 
     if [args.enablecbt, args.disablecbt, args.resetcbt, args.info, args.listall].count(
@@ -136,14 +144,14 @@ def main():
     # CentOS/RHEL since 7.4 by default do SSL cert verification,
     # we then try to disable it here.
     # see https://github.com/vmware/pyvmomi/issues/212
-    py_ver = sys.version_info[0:3]
-    if py_ver[0] == 2 and py_ver[1] == 7 and py_ver[2] >= 5:
-        import ssl
-
-        try:
-            ssl._create_default_https_context = ssl._create_unverified_context
-        except AttributeError:
-            pass
+    #    py_ver = sys.version_info[0:3]
+    #    if py_ver[0] == 2 and py_ver[1] == 7 and py_ver[2] >= 5:
+    #        import ssl
+    #
+    #        try:
+    #            ssl._create_default_https_context = ssl._create_unverified_context
+    #        except AttributeError:
+    #            pass
 
     args = GetArgs()
     if args.password:
@@ -156,15 +164,39 @@ def main():
     try:
 
         si = None
+        retry_no_ssl_verify = False
         try:
             si = SmartConnect(
                 host=args.host, user=args.user, pwd=password, port=int(args.port)
             )
         except IOError as e:
-            pass
+            if "CERTIFICATE_VERIFY_FAILED" in e.strerror and not args.sslverify:
+                print(
+                    "WARNING: Connecting host %s with user %s failed: %s"
+                    % (args.host, args.user, str(e))
+                )
+                print("         Retrying without SSL verification")
+                retry_no_ssl_verify = True
+            else:
+                print(
+                    "ERROR: Connecting host %s with user %s failed: %s"
+                    % (args.host, args.user, str(e))
+                )
+
+        if retry_no_ssl_verify:
+            try:
+                si = SmartConnectNoSSL(
+                    host=args.host, user=args.user, pwd=password, port=int(args.port)
+                )
+            except IOError as e:
+                print(
+                    "ERROR: Connecting host %s with user %s failed: %s"
+                    % (args.host, args.user, str(e))
+                )
+
         if not si:
-            print (
-                "Cannot connect to specified host using specified"
+            print(
+                "Cannot connect to specified host using specified "
                 "username and password"
             )
             sys.exit()
@@ -193,30 +225,36 @@ def main():
 
         for vm in get_vm_list(args, dcftree):
 
-            print "INFO: VM %s CBT supported: %s" % (
-                vm.name,
-                vm.capability.changeTrackingSupported,
+            print(
+                "INFO: VM %s CBT supported: %s"
+                % (
+                    vm.name,
+                    vm.capability.changeTrackingSupported,
+                )
             )
-            print "INFO: VM %s CBT enabled: %s" % (
-                vm.name,
-                vm.config.changeTrackingEnabled,
+            print(
+                "INFO: VM %s CBT enabled: %s"
+                % (
+                    vm.name,
+                    vm.config.changeTrackingEnabled,
+                )
             )
 
             if args.enablecbt:
-                print "INFO: VM %s trying to enable CBT now" % (vm.name)
+                print("INFO: VM %s trying to enable CBT now" % (vm.name))
                 enable_cbt(si, vm)
             if args.disablecbt:
-                print "INFO: VM %s trying to disable CBT now" % (vm.name)
+                print("INFO: VM %s trying to disable CBT now" % (vm.name))
                 disable_cbt(si, vm)
             if args.resetcbt:
-                print "INFO: VM %s trying to reset CBT now" % (vm.name)
+                print("INFO: VM %s trying to reset CBT now" % (vm.name))
                 disable_cbt(si, vm)
                 enable_cbt(si, vm)
 
     except vmodl.MethodFault as e:
-        print "Caught vmodl fault : " + e.msg
+        print("Caught vmodl fault : " + e.msg)
     except Exception as e:
-        print "Caught unexpected Exception : " + str(e)
+        print("Caught unexpected Exception : " + str(e))
         raise
 
 
@@ -228,18 +266,18 @@ def get_vm_list(args, dcftree):
     vm_list = []
     if args.vmname:
         for vmname in args.vmname:
-            folder_u = unicode(args.folder, "utf8")
-            vmname_u = unicode(vmname, "utf8")
+            folder_u = get_unicode(args.folder)
+            vmname_u = get_unicode(vmname)
             vm_path = folder_u + "/" + vmname_u
             if args.folder.endswith("/"):
                 vm_path = folder_u + vmname_u
 
             if args.datacenter not in dcftree:
-                print "ERROR: Could not find datacenter %s" % (args.datacenter)
+                print("ERROR: Could not find datacenter %s" % (args.datacenter))
                 sys.exit(1)
 
             if vm_path not in dcftree[args.datacenter]:
-                print "ERROR: Could not find VM %s in folder %s" % (vmname_u, folder_u)
+                print("ERROR: Could not find VM %s in folder %s" % (vmname_u, folder_u))
                 sys.exit(1)
 
             vm_list.append(dcftree[args.datacenter][vm_path])
@@ -248,13 +286,13 @@ def get_vm_list(args, dcftree):
         vms_by_uuid = get_vms_by_uuid(dcftree)
         for vm_uuid in args.vm_uuid:
             if vm_uuid not in vms_by_uuid:
-                print "ERROR: Could not find VM with instance UUID %s" % (vm_uuid)
+                print("ERROR: Could not find VM with instance UUID %s" % (vm_uuid))
                 sys.exit(1)
 
             vm_list.append(vms_by_uuid[vm_uuid])
 
     else:
-        print "ERROR: No VMs given, neither by folder + name nor by UUID"
+        print("ERROR: No VMs given, neither by folder + name nor by UUID")
         sys.exit(1)
 
     return vm_list
@@ -262,11 +300,11 @@ def get_vm_list(args, dcftree):
 
 def enable_cbt(si, vm):
     if not vm.capability.changeTrackingSupported:
-        print "ERROR: VM %s does not support CBT" % (vm.name)
+        print("ERROR: VM %s does not support CBT" % (vm.name))
         return False
 
     if vm.config.changeTrackingEnabled:
-        print "INFO: VM %s is already CBT enabled" % (vm.name)
+        print("INFO: VM %s is already CBT enabled" % (vm.name))
         return True
 
     cspec = vim.vm.ConfigSpec()
@@ -278,11 +316,11 @@ def enable_cbt(si, vm):
 
 def disable_cbt(si, vm):
     if not vm.capability.changeTrackingSupported:
-        print "ERROR: VM %s does not support CBT" % (vm.name)
+        print("ERROR: VM %s does not support CBT" % (vm.name))
         return False
 
     if not vm.config.changeTrackingEnabled:
-        print "INFO: VM %s is already CBT disabled" % (vm.name)
+        print("INFO: VM %s is already CBT disabled" % (vm.name))
         return True
 
     cspec = vim.vm.ConfigSpec()
@@ -303,7 +341,10 @@ def get_dcftree(dcf, folder, vm_folder):
             for vapp_vm in vm_or_folder.vm:
                 dcf[folder + "/" + vm_or_folder.name + "/" + vapp_vm.name] = vapp_vm
         else:
-            print "NOTE: %s is neither Folder nor VirtualMachine nor vApp, ignoring." % vm_or_folder
+            print(
+                "NOTE: %s is neither Folder nor VirtualMachine nor vApp, ignoring."
+                % vm_or_folder
+            )
 
 
 def create_vm_snapshot(si, vm):
@@ -320,7 +361,7 @@ def create_vm_snapshot(si, vm):
             quiesce=False,
         )
     except vmodl.MethodFault as e:
-        print "Failed to create snapshot %s" % (e.msg)
+        print("Failed to create snapshot %s" % (e.msg))
         return False
 
     WaitForTasks([create_snap_task], si)
@@ -336,7 +377,7 @@ def remove_vm_snapshot(si, create_snap_result):
     try:
         remove_snap_task = create_snap_result.RemoveSnapshot_Task(removeChildren=True)
     except vmodl.MethodFault as e:
-        print "Failed to remove snapshot %s" % (e.msg)
+        print("Failed to remove snapshot %s" % (e.msg))
         return False
 
     WaitForTasks([remove_snap_task], si)
@@ -348,13 +389,13 @@ def create_and_remove_snapshot(si, vm):
     creates, then removes a snapshot,
     also named stun-unstun cycle
     """
-    print "INFO: VM %s trying to create and remove a snapshot to activate CBT" % (
-        vm.name
+    print(
+        "INFO: VM %s trying to create and remove a snapshot to activate CBT" % (vm.name)
     )
     snapshot_result = create_vm_snapshot(si, vm)
     if snapshot_result:
         if remove_vm_snapshot(si, snapshot_result):
-            print "INFO: VM %s successfully created and removed snapshot" % (vm.name)
+            print("INFO: VM %s successfully created and removed snapshot" % (vm.name))
             return True
 
     return False
@@ -424,18 +465,24 @@ def print_dcftree(dcftree):
             dcftree_by_folder[os.path.dirname(vm_path)][
                 os.path.basename(vm_path)
             ] = dcftree[dc][vm_path].config.instanceUuid
-        print "DataCenter: %s" % dc
-        print "%-36s %-50s %s" % (
-            "VM-Instance-UUID",
-            "VM-Name",
-            "VM-Folder and/or vApp",
+        print("DataCenter: %s" % dc)
+        print(
+            "%-36s %-50s %s"
+            % (
+                "VM-Instance-UUID",
+                "VM-Name",
+                "VM-Folder and/or vApp",
+            )
         )
         for vm_folder in sorted(dcftree_by_folder):
             for vm_name in sorted(dcftree_by_folder[vm_folder]):
-                print "%36s %-50s %s" % (
-                    dcftree_by_folder[vm_folder][vm_name],
-                    vm_name,
-                    vm_folder,
+                print(
+                    "%36s %-50s %s"
+                    % (
+                        dcftree_by_folder[vm_folder][vm_name],
+                        vm_name,
+                        vm_folder,
+                    )
                 )
 
 
@@ -449,6 +496,20 @@ def get_vms_by_uuid(dcftree):
             vms_by_uuid[dcftree[dc][vm_path].config.instanceUuid] = dcftree[dc][vm_path]
 
     return vms_by_uuid
+
+
+def get_unicode(value):
+    """
+    Catch NameError: name 'unicode' is not defined
+    for Python 2 and 3 compatibility
+    """
+    value_unicode = None
+    try:
+        value_unicode = unicode(value, "utf8")
+    except NameError:
+        value_unicode = str(value)
+
+    return value_unicode
 
 
 # Start program
