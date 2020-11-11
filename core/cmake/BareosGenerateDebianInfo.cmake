@@ -44,7 +44,11 @@ if(GENERATE_DEBIAN_CONTROL)
     )
   endif()
 
-  # python (2) plugins
+  if(HAVE_DROPLET)
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-droplet DEBIAN_CONTROL_STORAGE_DROPLET)
+  endif()
+
+  #python (2) plugins
   if(Python2_FOUND)
     file(READ
          ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python2-plugin
