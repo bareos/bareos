@@ -71,6 +71,25 @@ sloppiness = file_macro
   hash_dir = false
   sloppiness = file_macro
 
+Prepare the PostgreSQL database for systemtests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is an example how to configure the PostgreSQL server to use for systemtests.
+
+.. code-block:: shell-session
+  :caption: Configure a PostgreSQL Server for systemtests
+
+  su postgres
+  createuser regress -s
+  psql --command='CREATE DATABASE regress OWNER regress TEMPLATE template0;'
+
+  # insert authentication methods for database user 'regress'
+  # BEFORE the general rules into file pg_hba.conf
+  #
+  # local   all             regress                                 trust
+  # host    all             regress         127.0.0.1/32            trust
+  # host    all             regress         ::1/128                 trust
+
 Systemtests
 ~~~~~~~~~~~
 
