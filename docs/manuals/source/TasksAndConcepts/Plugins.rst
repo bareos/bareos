@@ -811,7 +811,7 @@ And the config file as follows:
 
    Do not use quotes in the above config file, it is processed by the Python ConfigParser module and the quotes would not be stripped from the string.
 
-
+Since :sinceVersion:`20.2.0: VMware Plugin: quiesce` To allow backing up VMs which do not support quiesced snapshots, it is now possible to use the plugin option **quiesce**. By default quiescing when not explicitly using this option, quiescing is enabled to create backups that are as consistent as possible. When setting **quiesce=no** it is more likely to backup an inconsistent state. In this case, the backup job log will contain an appropriate warning and the the job termination will be **Backup OK -- with warnings**.
 
 Backup
 ^^^^^^
