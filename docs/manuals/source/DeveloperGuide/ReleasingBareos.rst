@@ -19,10 +19,14 @@ So the version you're going to release is probably the final version for that pr
 
 Preparing the release notes
 ---------------------------
-For each new release there should be a section in the :ref:`releasenotes`.
-See the :ref:`associated section <DocumentationStyleGuide/BareosSpecificFormatting/Release:Release Notes>` in the Documentation Style Guide about formatting the release notes.
+In :sinceVersion:`20.0.0: CHANGELOG.md` release notes will be kept in :file:`CHANGELOG.md`.
+The "Unreleased" section in that file will automatically become the release notes and a new "Unreleased" section will be added afterwards.
 
-The release notes should be committed to the master branch and then cherry-picked to your release branch using ``git cherry-pick -x``.
+How does it work in detail?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+When you run :file:`devtools/prepare-release.sh` the "Unreleased" section will be renamed to the current release by :file:`devtools/new-changelog-release.sh`.
+All links to pull requests, issues, etc. will be automatically updated by :file:`devtools/update-changelog-links.sh`.
+After the release has been made :file:`devtools/new-changelog-release.sh` will be called again to add the new "Unreleased" section that will be added to the commit for the work-in-progress tag.
 
 Update version-dependent files
 ------------------------------
@@ -37,8 +41,8 @@ However, please double-check and add or update the version mapping if needed.
 
 Prepare the git commits and tags
 --------------------------------
-There is a helper script :file:`prepare-release.sh` that will help with the process.
-You can just call the script and it will handle the version-dependant things that need to happen for the release.
+There is a helper script :file:`devtools/prepare-release.sh` that will help with the process.
+You can just call the script and it will handle the version-dependent things that need to happen for the release.
 The script will also prepare all git commits that are required to release the new version and set the correct git tags.
 
 .. important::
@@ -51,25 +55,35 @@ Special considerations for major versions
 Whenever you release a new major version you will be releasing more or less the master branch.
 To allow the splitting of the development (i.e. continue working on master, but allowing to work on the newly released version, too) you will have to carry out a few additional steps.
 
-First of all, do not release from the master branch.
-Before running ``prepare-release.sh`` you should create the new release-branch and switch to it using ``git checkout -b bareos-X.Y``.
-When you now run ``prepare-release.sh`` it will only generate a new WIP-tag for your branch and nothing for the master branch.
+.. important::
+   Do not release from the master branch.
+
+Before running :file:`devtools/prepare-release.sh` you should create the new release-branch and switch to it using ``git checkout -b bareos-X.Y``.
+When you now run :file:`prepare-release.sh` it will only generate a new WIP-tag for your branch and nothing for the master branch.
 Also the release of the major version itself will not be visible on the master branch.
 
 To make the release visible on the master branch, you can just forward the branch pointer to the parent of the new WIP-tag.
 You can do so using ``git checkout master`` followed by ``git reset --soft <wip-tag>~`` (notice the ~).
-Now you can add an empty commit for a new WIP-tag to the master branch.
-For example ``git commit --allow-empty -m 'Start development of X.Y.Z'``.
+
+In :sinceVersion:`20.0.0: CHANGELOG.md` release notes are only per major-release.
+All sections referencing a previous release should be removed from :file:`CHANGELOG.md` before continuing work on the master branch.
+
+In :file:`docs/manuals/source/conf.py` on the master branch the setting for ``scv_root_ref`` and ``scv_banner_main_ref`` should point to the latest (i.e. your newly created) release-branch, so users will see the latest released documentation by default.
+You may also need to change ``scv_whitelist_branches`` so the release-branch will be picked up when building the documentation.
+
+The commit that contains the above changes should then be tagged as the new WIP-tag on the master branch.
+For example ``git add CHANGELOG.md docs/manuals/source/conf.py`` followed by ``git commit -m 'Start development of X.Y.Z'``.
 That commit can now be tagged with a new WIP-tag using ``git tag WIP/X.Y.Z-pre``.
 
 
 Publishing the release
 ----------------------
-To actually publish the release you pushing the commits and tags created earlier to GitHub.
+To actually publish the release you push the commits and tags created earlier to GitHub.
 After you have reviewed the commits and tags that have been set in the previous release and made sure all branch pointers point to the right places (please double- and triple-check this) and you're on the correct branch, you can push the changes to GitHub.
-First push the branch ``git push <remote>``, then push the release-tag ``git push <remote> <release-tag>`` and if applicable the WIP-tag ``git push <remote> <WIP-tag>``.
 
-If this is a new major release you also need to push master and the new WIP-tag for master.
+**For the release branch:** First push the branch ``git push <remote>``, then push the release-tag ``git push <remote> <release-tag>`` and if applicable push the WIP-tag ``git push <remote> <WIP-tag>``.
+
+**For the master:** If this is a new major release you also need to push master and the new WIP-tag for master.
 
 Updating GitHub Release
 -----------------------
