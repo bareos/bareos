@@ -126,6 +126,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Deprecated
 - Using MySQL as a catalog backend is now deprecated [PR #564]
 - Using Rados as a storage backend is now deprecated [PR #672]
+- With full Python 3 support, using Python 2 is now considered deprecated
+- Plugin bareos-fd-ldap is deprecated, because it requires Python 2
+
 
 ### Removed
 - Remove support for creating MySQL / SQLite catalogs [PR #563] [PR #603]
