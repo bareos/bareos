@@ -22,11 +22,11 @@
 */
 
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 
@@ -47,7 +47,7 @@
 #include "stored/stored_globals.h"
 #include "stored/wait.h"
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-#include "stored/sd_backends.h"
+#  include "stored/sd_backends.h"
 #endif
 
 #include "bsock_mock.h"

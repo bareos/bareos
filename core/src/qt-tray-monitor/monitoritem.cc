@@ -32,8 +32,8 @@ MonitorItem::MonitorItem(QObject* parent)
 {
   /* Run this class only in the context of
      MonitorItemThread because of the networking */
-  Q_ASSERT(QThread::currentThreadId() ==
-           MonitorItemThread::instance()->getThreadId());
+  Q_ASSERT(QThread::currentThreadId()
+           == MonitorItemThread::instance()->getThreadId());
 }
 
 MonitorItem::~MonitorItem() { delete d; }
@@ -190,9 +190,9 @@ bool MonitorItem::doconnect()
 
   AuthenticationResult auth_result = AuthenticateWithDaemon(this, &jcr);
 
-  bool authentication_ok =
-      ((auth_result == AuthenticationResult::kAlreadyAuthenticated) ||
-       (auth_result == AuthenticationResult::kNoError));
+  bool authentication_ok
+      = ((auth_result == AuthenticationResult::kAlreadyAuthenticated)
+         || (auth_result == AuthenticationResult::kNoError));
 
   if (!authentication_ok) {
     d->state = MonitorItem::Error;

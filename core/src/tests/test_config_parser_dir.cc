@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #include "lib/parse_conf.h"
@@ -77,10 +77,10 @@ void test_config_directive_type(
   OSDependentInit();
   InitMsg(NULL, NULL); /* initialize message handler */
 
-  std::string path_to_config_file =
-      std::string(RELATIVE_PROJECT_SOURCE_DIR
-                  "/configs/bareos-configparser-tests/bareos-dir-") +
-      test_name + std::string(".conf");
+  std::string path_to_config_file
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR
+                    "/configs/bareos-configparser-tests/bareos-dir-")
+        + test_name + std::string(".conf");
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   my_config->ParseConfig();
 
@@ -88,8 +88,8 @@ void test_config_directive_type(
 
   const char* dir_resource_name = "bareos-dir";
 
-  DirectorResource* me =
-      (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
+  DirectorResource* me
+      = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
   EXPECT_STREQ(dir_resource_name, me->resource_name_);
 
   test_func(me);
@@ -167,8 +167,8 @@ void test_CFG_TYPE_ALIST_STR(DirectorResource* me)
   EXPECT_STREQ("job1", job1->resource_name_);
   EXPECT_EQ(job1->run_cmds->size(), 8);
 
-  JobResource* jobdefs2 =
-      (JobResource*)my_config->GetResWithName(R_JOBDEFS, "jobdefs2");
+  JobResource* jobdefs2
+      = (JobResource*)my_config->GetResWithName(R_JOBDEFS, "jobdefs2");
   EXPECT_STREQ("jobdefs2", jobdefs2->resource_name_);
   EXPECT_EQ(jobdefs2->run_cmds->size(), 8);
 
@@ -185,8 +185,8 @@ TEST(ConfigParser_Dir, CFG_TYPE_ALIST_STR)
 
 void test_CFG_TYPE_ALIST_RES(DirectorResource* me)
 {
-  JobResource* job1 =
-      (JobResource*)my_config->GetResWithName(R_JOB, "resultjob");
+  JobResource* job1
+      = (JobResource*)my_config->GetResWithName(R_JOB, "resultjob");
   EXPECT_STREQ("resultjob", job1->resource_name_);
   EXPECT_EQ(job1->base->size(), 8);
 }
@@ -214,8 +214,8 @@ TEST(ConfigParser_Dir, CFG_TYPE_STR)
 
 void test_CFG_TYPE_FNAME(DirectorResource* me)
 {
-  FilesetResource* fileset1 =
-      (FilesetResource*)my_config->GetResWithName(R_FILESET, "fileset1");
+  FilesetResource* fileset1
+      = (FilesetResource*)my_config->GetResWithName(R_FILESET, "fileset1");
   EXPECT_STREQ("fileset1", fileset1->resource_name_);
   EXPECT_EQ(fileset1->exclude_items.size(), 0);
   EXPECT_EQ(fileset1->include_items.size(), 1);

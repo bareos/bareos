@@ -64,16 +64,16 @@ static void PopReserveMessages(JobControlRecord* jcr);
 // void SwitchDevice(DeviceControlRecord *dcr, Device *dev);
 
 /* Requests from the Director daemon */
-static char use_storage[] =
-    "use storage=%127s media_type=%127s "
-    "pool_name=%127s pool_type=%127s append=%d copy=%d stripe=%d\n";
+static char use_storage[]
+    = "use storage=%127s media_type=%127s "
+      "pool_name=%127s pool_type=%127s append=%d copy=%d stripe=%d\n";
 static char use_device[] = "use device=%127s\n";
 
 /* Responses sent to Director daemon */
 static char OK_device[] = "3000 OK use device device=%s\n";
-static char NO_device[] =
-    "3924 Device \"%s\" not in SD Device"
-    " resources or no matching Media Type.\n";
+static char NO_device[]
+    = "3924 Device \"%s\" not in SD Device"
+      " resources or no matching Media Type.\n";
 static char BAD_use[] = "3913 Bad use command: %s\n";
 
 bool use_cmd(JobControlRecord* jcr)
@@ -212,8 +212,8 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
   do {
     Dmsg1(debuglevel, "<dird: %s", dir->msg);
     ok = sscanf(dir->msg, use_storage, StoreName.c_str(), media_type.c_str(),
-                pool_name.c_str(), pool_type.c_str(), &append, &Copy,
-                &Stripe) == 7;
+                pool_name.c_str(), pool_type.c_str(), &append, &Copy, &Stripe)
+         == 7;
     if (!ok) { break; }
     dirstore = new alist(10, not_owned_by_alist);
     if (append) {
@@ -352,8 +352,8 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
       if (repeat++ > 1) {   /* try algorithm 3 times */
         Bmicrosleep(30, 0); /* wait a bit */
         Dmsg0(debuglevel, "repeat reserve algorithm\n");
-      } else if (!rctx.suitable_device ||
-                 !WaitForDevice(jcr, wait_for_device_retries)) {
+      } else if (!rctx.suitable_device
+                 || !WaitForDevice(jcr, wait_for_device_retries)) {
         Dmsg0(debuglevel, "Fail. !suitable_device || !WaitForDevice\n");
         fail = true;
       }
@@ -709,8 +709,8 @@ static int ReserveDevice(ReserveContext& rctx)
    * Make sure device_resource exists -- i.e. we can stat() it
    */
   if (!rctx.device_resource->dev) {
-    rctx.device_resource->dev =
-        FactoryCreateDevice(rctx.jcr, rctx.device_resource);
+    rctx.device_resource->dev
+        = FactoryCreateDevice(rctx.jcr, rctx.device_resource);
   }
   if (!rctx.device_resource->dev) {
     if (rctx.device_resource->changer_res) {
@@ -987,8 +987,8 @@ static int IsPoolOk(DeviceControlRecord* dcr)
   /*
    * Now check if we want the same Pool and pool type
    */
-  if (bstrcmp(dev->pool_name, dcr->pool_name) &&
-      bstrcmp(dev->pool_type, dcr->pool_type)) {
+  if (bstrcmp(dev->pool_name, dcr->pool_name)
+      && bstrcmp(dev->pool_type, dcr->pool_type)) {
     /*
      * OK, compatible device
      */
@@ -1020,9 +1020,9 @@ static bool IsMaxJobsOk(DeviceControlRecord* dcr)
   /*
    * Limit max concurrent jobs on this drive
    */
-  if (dev->max_concurrent_jobs > 0 &&
-      dev->max_concurrent_jobs <=
-          (uint32_t)(dev->num_writers + dev->NumReserved())) {
+  if (dev->max_concurrent_jobs > 0
+      && dev->max_concurrent_jobs
+             <= (uint32_t)(dev->num_writers + dev->NumReserved())) {
     /*
      * Max Concurrent Jobs depassed or already reserved
      */
@@ -1034,9 +1034,9 @@ static bool IsMaxJobsOk(DeviceControlRecord* dcr)
     return false;
   }
   if (bstrcmp(dcr->VolCatInfo.VolCatStatus, "Recycle")) { return true; }
-  if (dcr->VolCatInfo.VolCatMaxJobs > 0 &&
-      dcr->VolCatInfo.VolCatMaxJobs <=
-          (dcr->VolCatInfo.VolCatJobs + dev->NumReserved())) {
+  if (dcr->VolCatInfo.VolCatMaxJobs > 0
+      && dcr->VolCatInfo.VolCatMaxJobs
+             <= (dcr->VolCatInfo.VolCatJobs + dev->NumReserved())) {
     /*
      * Max Job Vols depassed or already reserved
      */
@@ -1135,8 +1135,8 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
       Dmsg4(debuglevel, "have_vol=%d have=%s resvol=%s want=%s\n",
             rctx.have_volume, dev->VolHdr.VolumeName,
             dev->vol ? dev->vol->vol_name : "*None*", rctx.VolumeName);
-      ok = bstrcmp(dev->VolHdr.VolumeName, rctx.VolumeName) ||
-           (dev->vol && bstrcmp(dev->vol->vol_name, rctx.VolumeName));
+      ok = bstrcmp(dev->VolHdr.VolumeName, rctx.VolumeName)
+           || (dev->vol && bstrcmp(dev->vol->vol_name, rctx.VolumeName));
       if (!ok) {
         Mmsg(jcr->errmsg,
              _("3607 JobId=%u wants Vol=\"%s\" drive has Vol=\"%s\" on drive "
@@ -1158,8 +1158,8 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
   /*
    * Check for unused autochanger drive
    */
-  if (rctx.autochanger_only && !dev->IsBusy() &&
-      dev->VolHdr.VolumeName[0] == 0) {
+  if (rctx.autochanger_only && !dev->IsBusy()
+      && dev->VolHdr.VolumeName[0] == 0) {
     /*
      * Device is available but not yet reserved, reserve it for us
      */

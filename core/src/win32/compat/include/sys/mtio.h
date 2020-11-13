@@ -272,7 +272,7 @@ struct mtconfiginfo {
 
 /* Specify default tape device.  */
 #ifndef DEFTAPE
-#define DEFTAPE "/dev/tape"
+#  define DEFTAPE "/dev/tape"
 #endif
 
 #endif /* mtio.h */

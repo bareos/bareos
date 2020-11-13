@@ -43,8 +43,8 @@
 
 namespace directordaemon {
 
-static char hello_client_with_version[] =
-    "Hello Client %127s FdProtocolVersion=%d calling";
+static char hello_client_with_version[]
+    = "Hello Client %127s FdProtocolVersion=%d calling";
 
 static char hello_client[] = "Hello Client %127s calling";
 
@@ -111,9 +111,9 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   /*
    * See if this is a File daemon connection. If so call FD handler.
    */
-  if ((sscanf(bs->msg, hello_client_with_version, name, &fd_protocol_version) ==
-       2) ||
-      (sscanf(bs->msg, hello_client, name) == 1)) {
+  if ((sscanf(bs->msg, hello_client_with_version, name, &fd_protocol_version)
+       == 2)
+      || (sscanf(bs->msg, hello_client, name) == 1)) {
     Dmsg1(110, "Got a FD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
     return HandleFiledConnection(client_connections, bs, name,
@@ -166,8 +166,9 @@ bool StartSocketServer(dlist* addrs)
 
   server_state.store(BnetServerState::kUndefined);
 
-  if ((status = pthread_create(&tcp_server_tid, nullptr, connect_thread,
-                               (void*)addrs)) != 0) {
+  if ((status
+       = pthread_create(&tcp_server_tid, nullptr, connect_thread, (void*)addrs))
+      != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
   }

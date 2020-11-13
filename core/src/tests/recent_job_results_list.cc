@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #include "lib/bsys.h"
@@ -60,8 +60,8 @@ TEST(recent_job_results_list, read_job_results_from_file)
   ASSERT_TRUE(StateFileExists(orig_path, fname, 42001));
   ReadStateFile(orig_path, fname, 42001);
 
-  static std::vector<RecentJobResultsList::JobResult> recent_jobs =
-      RecentJobResultsList::Get();
+  static std::vector<RecentJobResultsList::JobResult> recent_jobs
+      = RecentJobResultsList::Get();
 
   ASSERT_EQ(recent_jobs.size(), 2);
 
@@ -91,8 +91,8 @@ TEST(recent_job_results_list, write_job_results_to_file)
   ASSERT_TRUE(StateFileExists(path, fname, 42001));
   ReadStateFile(path, fname, 42001);
 
-  static std::vector<RecentJobResultsList::JobResult> recent_jobs =
-      RecentJobResultsList::Get();
+  static std::vector<RecentJobResultsList::JobResult> recent_jobs
+      = RecentJobResultsList::Get();
 
   ASSERT_EQ(recent_jobs.size(), 2);
 
@@ -146,8 +146,8 @@ TEST(recent_job_results_list, read_job_results_from_file_truncated_jobs)
   ASSERT_TRUE(create_file(orig_path, std::string(fname) + ".42001.state"));
   ReadStateFile(orig_path, fname, 42001);
 
-  static std::vector<RecentJobResultsList::JobResult> recent_jobs =
-      RecentJobResultsList::Get();
+  static std::vector<RecentJobResultsList::JobResult> recent_jobs
+      = RecentJobResultsList::Get();
 
   ASSERT_EQ(recent_jobs.size(), 1);
 
@@ -165,8 +165,8 @@ TEST(recent_job_results_list, read_job_results_from_file_truncated_header)
       create_file(orig_path, "bareos-dir-truncated-header.42001.state"));
   ReadStateFile(orig_path, "bareos-dir-truncated-header", 42001);
 
-  static std::vector<RecentJobResultsList::JobResult> recent_jobs =
-      RecentJobResultsList::Get();
+  static std::vector<RecentJobResultsList::JobResult> recent_jobs
+      = RecentJobResultsList::Get();
 
   ASSERT_EQ(recent_jobs.size(), 0);
 }
@@ -180,8 +180,8 @@ TEST(recent_job_results_list, read_job_results_from_file_not_exist)
   ASSERT_FALSE(StateFileExists(orig_path, "file-does-not-exist", 42001));
   ReadStateFile(orig_path, "file-does-not-exist", 42001);
 
-  static std::vector<RecentJobResultsList::JobResult> recent_jobs =
-      RecentJobResultsList::Get();
+  static std::vector<RecentJobResultsList::JobResult> recent_jobs
+      = RecentJobResultsList::Get();
 
   ASSERT_EQ(recent_jobs.size(), 0);
 }

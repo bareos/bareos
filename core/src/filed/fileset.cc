@@ -40,7 +40,7 @@
 #include "lib/util.h"
 
 #ifdef HAVE_WIN32
-#include "win32/findlib/win32.h"
+#  include "win32/findlib/win32.h"
 #endif
 
 namespace filedaemon {
@@ -390,8 +390,8 @@ bool TermFileset(JobControlRecord* jcr)
    * Generate bEventPluginCommand events for each Options Plugin.
    */
   for (int i = 0; i < fileset->include_list.size(); i++) {
-    findIncludeExcludeItem* incexe =
-        (findIncludeExcludeItem*)fileset->include_list.get(i);
+    findIncludeExcludeItem* incexe
+        = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
     for (int j = 0; j < incexe->opts_list.size(); j++) {
       findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
@@ -669,8 +669,8 @@ static int SetOptions(findFOPTS* fo, const char* opts)
         }
         size[j] = 0;
         if (!fo->size_match) {
-          fo->size_match =
-              (struct s_sz_matching*)malloc(sizeof(struct s_sz_matching));
+          fo->size_match
+              = (struct s_sz_matching*)malloc(sizeof(struct s_sz_matching));
         }
         if (!ParseSizeMatch(size, fo->size_match)) {
           Emsg1(M_ERROR, 0, _("Unparseable size option: %s\n"), size);

@@ -20,11 +20,11 @@
 */
 
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #include "lib/alist.h"
@@ -43,8 +43,8 @@ TEST(bsock, config_tls_cert_verify_common_names_list_test)
   /* list is destroyed by destructor of TlsConfigCert */
   tls_config_cert.allowed_certificate_common_names_ = list;
 
-  std::vector<std::string> vec =
-      tls_config_cert.allowed_certificate_common_names_;
+  std::vector<std::string> vec
+      = tls_config_cert.allowed_certificate_common_names_;
 
   EXPECT_EQ(vec.size(), 3);
   EXPECT_STREQ(vec.at(0).c_str(), "123");

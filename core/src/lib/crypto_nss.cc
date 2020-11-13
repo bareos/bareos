@@ -28,10 +28,10 @@
 
 #if defined(HAVE_NSS)
 
-#if defined(HAVE_CRYPTO)
+#  if defined(HAVE_CRYPTO)
 
-#include "jcr.h"
-#include <assert.h>
+#    include "jcr.h"
+#    include <assert.h>
 
 /* Message Digest Structure */
 struct Digest {
@@ -221,7 +221,7 @@ const char* crypto_digest_name(DIGEST* digest)
 {
   return crypto_digest_name(digest->type);
 }
-#endif /* HAVE_CRYPTO */
+#  endif /* HAVE_CRYPTO */
 
 int InitCrypto(void) { return 0; }
 

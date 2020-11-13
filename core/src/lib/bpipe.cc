@@ -32,12 +32,12 @@
 #include "lib/btimers.h"
 #include "lib/util.h"
 
-int execvp_errors[] = {EACCES,  ENOEXEC,      EFAULT, EINTR,
-                       E2BIG,   ENAMETOOLONG, ENOMEM,
+int execvp_errors[]
+    = {EACCES,  ENOEXEC, EFAULT, EINTR, E2BIG, ENAMETOOLONG, ENOMEM,
 #ifndef HAVE_WIN32
-                       ETXTBSY,
+       ETXTBSY,
 #endif
-                       ENOENT};
+       ENOENT};
 int num_execvp_errors = (int)(sizeof(execvp_errors) / sizeof(int));
 
 #define MAX_ARGV 100
@@ -125,21 +125,21 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool dup_stderr)
         if (dup_stderr) { dup2(readp[1], 2); /*   and his stderr */ }
       }
 
-#if defined(HAVE_FCNTL_F_CLOSEM)
+#  if defined(HAVE_FCNTL_F_CLOSEM)
       /*
        * fcntl(fd, F_CLOSEM) needs the lowest filedescriptor to close.
        */
       fcntl(3, F_CLOSEM);
-#elif defined(HAVE_CLOSEFROM)
+#  elif defined(HAVE_CLOSEFROM)
       /*
        * closefrom needs the lowest filedescriptor to close.
        */
       closefrom(3);
-#else
+#  else
       for (i = 3; i <= 32; i++) { /* close any open file descriptors */
         close(i);
       }
-#endif
+#  endif
 
       execvp(bargv[0], bargv); /* call the program */
 

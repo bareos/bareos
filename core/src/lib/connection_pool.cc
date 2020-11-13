@@ -155,8 +155,8 @@ Connection* ConnectionPool::add_connection(const char* name,
                                            BareosSocket* socket,
                                            bool authenticated)
 {
-  Connection* connection =
-      new Connection(name, fd_protocol_version, socket, authenticated);
+  Connection* connection
+      = new Connection(name, fd_protocol_version, socket, authenticated);
   if (!add(connection)) {
     delete (connection);
     return nullptr;
@@ -169,9 +169,9 @@ Connection* ConnectionPool::get_connection(const char* name)
   Connection* connection = nullptr;
   if (!name) { return nullptr; }
   foreach_alist (connection, connections_) {
-    if (connection->check() && connection->authenticated() &&
-        connection->bsock() && (!connection->in_use()) &&
-        bstrcmp(name, connection->name())) {
+    if (connection->check() && connection->authenticated()
+        && connection->bsock() && (!connection->in_use())
+        && bstrcmp(name, connection->name())) {
       Dmsg1(120, "found connection from client %s\n", connection->name());
       return connection;
     }

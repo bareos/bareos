@@ -61,8 +61,8 @@ namespace directordaemon {
 /* Commands sent to File daemon */
 static char restorecmd[] = "restore replace=%c prelinks=%d where=%s\n";
 static char restorecmdR[] = "restore replace=%c prelinks=%d regexwhere=%s\n";
-static char storaddrcmd[] =
-    "storage address=%s port=%d ssl=%d Authorization=%s\n";
+static char storaddrcmd[]
+    = "storage address=%s port=%d ssl=%d Authorization=%s\n";
 static char setauthorizationcmd[] = "setauthorization Authorization=%s\n";
 static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d\n";
 
@@ -249,8 +249,8 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
        */
 
       TlsPolicy tls_policy;
-      if (jcr->impl->res.client->connection_successful_handshake_ !=
-          ClientConnectionHandshakeMode::kTlsFirst) {
+      if (jcr->impl->res.client->connection_successful_handshake_
+          != ClientConnectionHandshakeMode::kTlsFirst) {
         tls_policy = store->GetPolicy();
       } else {
         tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
@@ -285,8 +285,8 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
 
       TlsPolicy tls_policy;
 
-      if (jcr->impl->res.client->connection_successful_handshake_ !=
-          ClientConnectionHandshakeMode::kTlsFirst) {
+      if (jcr->impl->res.client->connection_successful_handshake_
+          != ClientConnectionHandshakeMode::kTlsFirst) {
         tls_policy = client->GetPolicy();
       } else {
         tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto

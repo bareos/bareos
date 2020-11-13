@@ -24,19 +24,19 @@
 #include "lib/berrno.h"
 
 #undef ENABLE_KEEP_READALL_CAPS_SUPPORT
-#if defined(HAVE_SYS_PRCTL_H) && defined(HAVE_SYS_CAPABILITY_H) && \
-    defined(HAVE_PRCTL) && defined(HAVE_SETREUID) && defined(HAVE_LIBCAP)
-#include <sys/prctl.h>
-#include <sys/capability.h>
-#if defined(PR_SET_KEEPCAPS)
-#define ENABLE_KEEP_READALL_CAPS_SUPPORT
-#endif
+#if defined(HAVE_SYS_PRCTL_H) && defined(HAVE_SYS_CAPABILITY_H) \
+    && defined(HAVE_PRCTL) && defined(HAVE_SETREUID) && defined(HAVE_LIBCAP)
+#  include <sys/prctl.h>
+#  include <sys/capability.h>
+#  if defined(PR_SET_KEEPCAPS)
+#    define ENABLE_KEEP_READALL_CAPS_SUPPORT
+#  endif
 #endif
 
 #ifdef HAVE_AIX_OS
-#ifndef _AIX51
+#  ifndef _AIX51
 extern "C" int initgroups(const char*, int);
-#endif
+#  endif
 #endif
 
 /*
@@ -102,7 +102,7 @@ void drop(char* uname, char* gname, bool keep_readall_caps)
     }
   }
   if (keep_readall_caps) {
-#ifdef ENABLE_KEEP_READALL_CAPS_SUPPORT
+#  ifdef ENABLE_KEEP_READALL_CAPS_SUPPORT
     cap_t caps;
 
     if (prctl(PR_SET_KEEPCAPS, 1)) {
@@ -124,11 +124,11 @@ void drop(char* uname, char* gname, bool keep_readall_caps)
             be.bstrerror());
     }
     cap_free(caps);
-#else
+#  else
     Emsg0(
         M_ERROR_TERM, 0,
         _("Keep readall caps not implemented this OS or missing libraries.\n"));
-#endif
+#  endif
   } else if (setuid(uid)) {
     BErrNo be;
     Emsg1(M_ERROR_TERM, 0, _("Could not set specified userid: %s\n"), username);

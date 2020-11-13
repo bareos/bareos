@@ -43,9 +43,9 @@
 
 #include "include/bareos.h"
 #ifdef SYS
-#include <fnmatch.h>
+#  include <fnmatch.h>
 #else
-#include "fnmatch.h"
+#  include "fnmatch.h"
 #endif
 
 #undef EOS
@@ -102,9 +102,10 @@ static int r_fnmatch(const char* pattern,
         if (*string == EOS) return (FNM_NOMATCH);
         if (IsPathSeparator(*string) && ISSET(flags, FNM_PATHNAME))
           return (FNM_NOMATCH);
-        if (*string == '.' && ISSET(flags, FNM_PERIOD) &&
-            (string == stringstart ||
-             (ISSET(flags, FNM_PATHNAME) && IsPathSeparator(*(string - 1)))))
+        if (*string == '.' && ISSET(flags, FNM_PERIOD)
+            && (string == stringstart
+                || (ISSET(flags, FNM_PATHNAME)
+                    && IsPathSeparator(*(string - 1)))))
           return (FNM_NOMATCH);
         ++string;
         break;
@@ -113,9 +114,10 @@ static int r_fnmatch(const char* pattern,
         /* Collapse multiple stars. */
         while (c == '*') { c = *++pattern; }
 
-        if (*string == '.' && ISSET(flags, FNM_PERIOD) &&
-            (string == stringstart ||
-             (ISSET(flags, FNM_PATHNAME) && IsPathSeparator(*(string - 1))))) {
+        if (*string == '.' && ISSET(flags, FNM_PERIOD)
+            && (string == stringstart
+                || (ISSET(flags, FNM_PATHNAME)
+                    && IsPathSeparator(*(string - 1))))) {
           return (FNM_NOMATCH);
         }
 
@@ -147,9 +149,10 @@ static int r_fnmatch(const char* pattern,
         if (*string == EOS) return (FNM_NOMATCH);
         if (IsPathSeparator(*string) && ISSET(flags, FNM_PATHNAME))
           return (FNM_NOMATCH);
-        if (*string == '.' && ISSET(flags, FNM_PERIOD) &&
-            (string == stringstart ||
-             (ISSET(flags, FNM_PATHNAME) && IsPathSeparator(*(string - 1)))))
+        if (*string == '.' && ISSET(flags, FNM_PERIOD)
+            && (string == stringstart
+                || (ISSET(flags, FNM_PATHNAME)
+                    && IsPathSeparator(*(string - 1)))))
           return (FNM_NOMATCH);
 
         switch (Rangematch(pattern, *string, flags, &newp)) {

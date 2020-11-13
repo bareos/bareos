@@ -189,8 +189,8 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
   vol.vol_name = strdup(VolumeName);
   vol.SetJobid(jcr->JobId);
 
-  fvol =
-      (VolumeReservationItem*)read_vol_list->binary_search(&vol, ReadCompare);
+  fvol
+      = (VolumeReservationItem*)read_vol_list->binary_search(&vol, ReadCompare);
   free(vol.vol_name);
 
   if (fvol) {
@@ -393,8 +393,8 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
   /*
    * If aquiring a volume for writing it may not be on the read volume list.
    */
-  if (me->filedevice_concurrent_read && dcr->IsWriting() &&
-      find_read_volume(VolumeName)) {
+  if (me->filedevice_concurrent_read && dcr->IsWriting()
+      && find_read_volume(VolumeName)) {
     Mmsg(dcr->jcr->errmsg,
          _("Could not reserve volume \"%s\" for append, because it is read by "
            "another Job.\n"),

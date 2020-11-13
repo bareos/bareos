@@ -560,13 +560,13 @@ bool DoubleDevWaitTime(Device* dev);
  * MTEOM. System dependent.
  */
 #ifndef MTEOM
-#ifdef MTSEOD
-#define MTEOM MTSEOD
-#endif
-#ifdef MTEOD
-#undef MTEOM
-#define MTEOM MTEOD
-#endif
+#  ifdef MTSEOD
+#    define MTEOM MTSEOD
+#  endif
+#  ifdef MTEOD
+#    undef MTEOM
+#    define MTEOM MTEOD
+#  endif
 #endif
 
 } /* namespace storagedaemon */

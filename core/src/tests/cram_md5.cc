@@ -21,11 +21,11 @@
 */
 
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #include "include/make_unique.h"
@@ -80,10 +80,12 @@ class CramSockets {
                              TlsPolicy::kBnetTlsNone,
                              CreateQualifiedResourceName(r_code_str_1, name_2)))
   {
-    auto client_future = std::async(std::launch::async, &CramMd5Handshake::DoHandshake,
-                                    &client_cram, InitiatedByRemote);
-    auto server_future = std::async(std::launch::async, &CramMd5Handshake::DoHandshake,
-                                    &server_cram, !InitiatedByRemote);
+    auto client_future
+        = std::async(std::launch::async, &CramMd5Handshake::DoHandshake,
+                     &client_cram, InitiatedByRemote);
+    auto server_future
+        = std::async(std::launch::async, &CramMd5Handshake::DoHandshake,
+                     &server_cram, !InitiatedByRemote);
 
     server_future.wait();
     sockets->server->close();

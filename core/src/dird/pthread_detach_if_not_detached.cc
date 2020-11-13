@@ -21,7 +21,7 @@
 #include "include/config.h"
 #include <pthread.h>
 #if defined(HAVE_PTHREAD_NP_H)
-#include <pthread_np.h>
+#  include <pthread_np.h>
 #endif
 #include "pthread_detach_if_not_detached.h"
 
@@ -34,15 +34,15 @@ void DetachIfNotDetached(pthread_t thr)
   /* only detach if not yet detached */
   int _detachstate;
   pthread_attr_t _gattr;
-#if defined(HAVE_PTHREAD_ATTR_GET_NP)
+#  if defined(HAVE_PTHREAD_ATTR_GET_NP)
   pthread_attr_init(&_gattr);
   pthread_attr_get_np(thr, &_gattr);
-#else
+#  else
   pthread_getattr_np(thr, &_gattr);
-#endif // defined(HAVE_PTHREAD_ATTR_GET_NP)
+#  endif  // defined(HAVE_PTHREAD_ATTR_GET_NP)
   pthread_attr_getdetachstate(&_gattr, &_detachstate);
   pthread_attr_destroy(&_gattr);
   if (_detachstate != PTHREAD_CREATE_DETACHED) { pthread_detach(thr); }
-#endif // defined(HAVE_WIN32)
+#endif    // defined(HAVE_WIN32)
 }
 }  // namespace directordaemon

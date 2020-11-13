@@ -40,13 +40,13 @@
  * Loop var through each member of list
  */
 #ifdef HAVE_TYPEOF
-#define foreach_rblist(var, tree)                     \
-  for (((var) = (typeof(var))(tree)->first()); (var); \
-       ((var) = (typeof(var))(tree)->next(var)))
+#  define foreach_rblist(var, tree)                     \
+    for (((var) = (typeof(var))(tree)->first()); (var); \
+         ((var) = (typeof(var))(tree)->next(var)))
 #else
-#define foreach_rblist(var, tree)                             \
-  for ((*((void**)&(var)) = (void*)((tree)->first())); (var); \
-       (*((void**)&(var)) = (void*)((tree)->next(var))))
+#  define foreach_rblist(var, tree)                             \
+    for ((*((void**)&(var)) = (void*)((tree)->first())); (var); \
+         (*((void**)&(var)) = (void*)((tree)->next(var))))
 #endif
 
 struct rblink {

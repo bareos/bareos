@@ -83,19 +83,19 @@ static void bareosFreeRecord(DeviceRecord* rec);
 static bool IsPluginCompatible(Plugin* plugin);
 
 /* Bareos info */
-static PluginApiDefinition bareos_plugin_interface_version = {
-    sizeof(PluginFunctions), SD_PLUGIN_INTERFACE_VERSION};
+static PluginApiDefinition bareos_plugin_interface_version
+    = {sizeof(PluginFunctions), SD_PLUGIN_INTERFACE_VERSION};
 
 /* Bareos entry points */
-static CoreFunctions bareos_core_functions = {
-    sizeof(CoreFunctions),  SD_PLUGIN_INTERFACE_VERSION,
-    bareosRegisterEvents,   bareosUnRegisterEvents,
-    bareosGetInstanceCount, bareosGetValue,
-    bareosSetValue,         bareosJobMsg,
-    bareosDebugMsg,         bareosEditDeviceCodes,
-    bareosLookupCryptoKey,  bareosUpdateVolumeInfo,
-    bareosUpdateTapeAlert,  bareosNewRecord,
-    bareosCopyRecordState,  bareosFreeRecord};
+static CoreFunctions bareos_core_functions
+    = {sizeof(CoreFunctions),  SD_PLUGIN_INTERFACE_VERSION,
+       bareosRegisterEvents,   bareosUnRegisterEvents,
+       bareosGetInstanceCount, bareosGetValue,
+       bareosSetValue,         bareosJobMsg,
+       bareosDebugMsg,         bareosEditDeviceCodes,
+       bareosLookupCryptoKey,  bareosUpdateVolumeInfo,
+       bareosUpdateTapeAlert,  bareosNewRecord,
+       bareosCopyRecordState,  bareosFreeRecord};
 
 /**
  * Bareos private context
@@ -469,8 +469,8 @@ static bool IsPluginCompatible(Plugin* plugin)
           plugin->file, SD_PLUGIN_INTERFACE_VERSION, info->version);
     return false;
   }
-  if (!Bstrcasecmp(info->plugin_license, "Bareos AGPLv3") &&
-      !Bstrcasecmp(info->plugin_license, "AGPLv3")) {
+  if (!Bstrcasecmp(info->plugin_license, "Bareos AGPLv3")
+      && !Bstrcasecmp(info->plugin_license, "AGPLv3")) {
     Jmsg(NULL, M_ERROR, 0,
          _("Plugin license incompatible. Plugin=%s license=%s\n"), plugin->file,
          info->plugin_license);
@@ -573,8 +573,8 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
         option = bp;
       }
 
-      if (instance < LOWEST_PLUGIN_INSTANCE ||
-          instance > HIGHEST_PLUGIN_INSTANCE) {
+      if (instance < LOWEST_PLUGIN_INSTANCE
+          || instance > HIGHEST_PLUGIN_INSTANCE) {
         Jmsg(NULL, M_ERROR, 0,
              _("Illegal SD plugin options encountered, %s instance %d "
                "skipping\n"),
@@ -590,8 +590,8 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
        */
       if (jcr->plugin_ctx_list) {
         foreach_alist (ctx, jcr->plugin_ctx_list) {
-          if (ctx->instance == instance && ctx->plugin->file_len == len &&
-              bstrncasecmp(ctx->plugin->file, plugin_name, len)) {
+          if (ctx->instance == instance && ctx->plugin->file_len == len
+              && bstrncasecmp(ctx->plugin->file, plugin_name, len)) {
             break;
           }
         }
@@ -601,8 +601,8 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
          */
         if (!ctx) {
           foreach_alist_index (j, plugin, sd_plugin_list) {
-            if (plugin->file_len == len &&
-                bstrncasecmp(plugin->file, plugin_name, len)) {
+            if (plugin->file_len == len
+                && bstrncasecmp(plugin->file, plugin_name, len)) {
               ctx = instantiate_plugin(jcr, plugin, instance);
               break;
             }

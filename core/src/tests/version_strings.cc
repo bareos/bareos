@@ -22,11 +22,11 @@
 #include <vector>
 
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 
@@ -47,8 +47,8 @@ TEST(version_strings, version)
 
   // version + date is set correctly
   std::string full_with_date{kBareosVersionStrings.FullWithDate};
-  std::string ref_full_with_date =
-      ver_full + " (" + kBareosVersionStrings.Date + ")";
+  std::string ref_full_with_date
+      = ver_full + " (" + kBareosVersionStrings.Date + ")";
   EXPECT_EQ(full_with_date, ref_full_with_date);
 }
 
@@ -103,8 +103,8 @@ TEST(version_strings, dates)
   EXPECT_EQ(year, atoi(kBareosVersionStrings.ProgDateTime));
 
   // construct shortdate from date and check if it matches
-  std::string ref_short_date =
-      date.substr(0, 2) + date.substr(3, 3) + date.substr(date_len - 2, 2);
+  std::string ref_short_date
+      = date.substr(0, 2) + date.substr(3, 3) + date.substr(date_len - 2, 2);
   EXPECT_EQ(short_date, ref_short_date);
 }
 

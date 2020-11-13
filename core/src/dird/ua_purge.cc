@@ -58,14 +58,14 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client);
 static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client);
 static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd);
 
-static const char* select_jobsfiles_from_client =
-    "SELECT JobId FROM Job "
-    "WHERE ClientId=%s "
-    "AND PurgedFiles=0";
+static const char* select_jobsfiles_from_client
+    = "SELECT JobId FROM Job "
+      "WHERE ClientId=%s "
+      "AND PurgedFiles=0";
 
-static const char* select_jobs_from_client =
-    "SELECT JobId, PurgedFiles FROM Job "
-    "WHERE ClientId=%s";
+static const char* select_jobs_from_client
+    = "SELECT JobId, PurgedFiles FROM Job "
+      "WHERE ClientId=%s";
 
 /**
  * Purge records from database
@@ -78,14 +78,14 @@ bool PurgeCmd(UaContext* ua, const char* cmd)
   MediaDbRecord mr;
   JobDbRecord jr;
   PoolMem cmd_holder(PM_MESSAGE);
-  const char* permission_denied_message =
-      _("Permission denied: need full %s permission.\n");
+  const char* permission_denied_message
+      = _("Permission denied: need full %s permission.\n");
 
-  static const char* keywords[] = {NT_("files"), NT_("jobs"), NT_("volume"),
-                                   NT_("quota"), NULL};
+  static const char* keywords[]
+      = {NT_("files"), NT_("jobs"), NT_("volume"), NT_("quota"), NULL};
 
-  static const char* files_keywords[] = {NT_("Job"), NT_("JobId"),
-                                         NT_("Client"), NT_("Volume"), NULL};
+  static const char* files_keywords[]
+      = {NT_("Job"), NT_("JobId"), NT_("Client"), NT_("Volume"), NULL};
 
   static const char* quota_keywords[] = {NT_("Client"), NULL};
 
@@ -539,8 +539,8 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
   bool purged = false;
   bool status;
 
-  status = bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Full") ||
-           bstrcmp(mr->VolStatus, "Used") || bstrcmp(mr->VolStatus, "Error");
+  status = bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Full")
+           || bstrcmp(mr->VolStatus, "Used") || bstrcmp(mr->VolStatus, "Error");
   if (!status) {
     ua->ErrorMsg(
         _("\nVolume \"%s\" has VolStatus \"%s\" and cannot be purged.\n"
@@ -740,8 +740,8 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
   for (int i = 1; i < ua->argc; i++) {
     if (Bstrcasecmp(ua->argk[i], NT_("allpools"))) {
       allpools = true;
-    } else if (Bstrcasecmp(ua->argk[i], NT_("volume")) &&
-               IsNameValid(ua->argv[i])) {
+    } else if (Bstrcasecmp(ua->argk[i], NT_("volume"))
+               && IsNameValid(ua->argv[i])) {
       ua->db->EscapeString(ua->jcr, esc, ua->argv[i], strlen(ua->argv[i]));
       if (!*volumes.c_str()) {
         Mmsg(buf, "'%s'", esc);
@@ -755,8 +755,8 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
     } else if (Bstrcasecmp(ua->argk[i], NT_("drive")) && ua->argv[i]) {
       drive = static_cast<drive_number_t>(atoi(ua->argv[i]));
 
-    } else if (Bstrcasecmp(ua->argk[i], NT_("action")) &&
-               IsNameValid(ua->argv[i])) {
+    } else if (Bstrcasecmp(ua->argk[i], NT_("action"))
+               && IsNameValid(ua->argv[i])) {
       action = ua->argv[i];
     }
   }
@@ -858,8 +858,8 @@ bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr)
   JobControlRecord* jcr = ua->jcr;
   bool status;
 
-  status = bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Full") ||
-           bstrcmp(mr->VolStatus, "Used") || bstrcmp(mr->VolStatus, "Error");
+  status = bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Full")
+           || bstrcmp(mr->VolStatus, "Used") || bstrcmp(mr->VolStatus, "Error");
 
   if (status) {
     bstrncpy(mr->VolStatus, "Purged", sizeof(mr->VolStatus));
@@ -877,8 +877,8 @@ bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr)
       PoolDbRecord oldpr, newpr;
       newpr.PoolId = mr->RecyclePoolId;
       oldpr.PoolId = mr->PoolId;
-      if (ua->db->GetPoolRecord(jcr, &oldpr) &&
-          ua->db->GetPoolRecord(jcr, &newpr)) {
+      if (ua->db->GetPoolRecord(jcr, &oldpr)
+          && ua->db->GetPoolRecord(jcr, &newpr)) {
         /*
          * Check if destination pool size is ok
          */

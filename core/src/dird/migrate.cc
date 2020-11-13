@@ -61,172 +61,172 @@
 #include "cats/sql.h"
 
 #ifndef HAVE_REGEX_H
-#include "lib/bregex.h"
+#  include "lib/bregex.h"
 #else
-#include <regex.h>
+#  include <regex.h>
 #endif
 
 namespace directordaemon {
 
 /* Commands sent to other storage daemon */
-static char replicatecmd[] =
-    "replicate JobId=%d Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
+static char replicatecmd[]
+    = "replicate JobId=%d Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
 
 /**
  * Get Job names in Pool
  */
-static const char* sql_job =
-    "SELECT DISTINCT Job.Name from Job,Pool"
-    " WHERE Pool.Name='%s' AND Job.PoolId=Pool.PoolId";
+static const char* sql_job
+    = "SELECT DISTINCT Job.Name from Job,Pool"
+      " WHERE Pool.Name='%s' AND Job.PoolId=Pool.PoolId";
 
 /**
  * Get JobIds from regex'ed Job names
  */
-static const char* sql_jobids_from_job =
-    "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
-    " WHERE Job.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
-    " ORDER by Job.StartTime";
+static const char* sql_jobids_from_job
+    = "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
+      " WHERE Job.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
+      " ORDER by Job.StartTime";
 
 /**
  * Get Client names in Pool
  */
-static const char* sql_client =
-    "SELECT DISTINCT Client.Name from Client,Pool,Job"
-    " WHERE Pool.Name='%s' AND Job.ClientId=Client.ClientId AND"
-    " Job.PoolId=Pool.PoolId";
+static const char* sql_client
+    = "SELECT DISTINCT Client.Name from Client,Pool,Job"
+      " WHERE Pool.Name='%s' AND Job.ClientId=Client.ClientId AND"
+      " Job.PoolId=Pool.PoolId";
 
 /**
  * Get JobIds from regex'ed Client names
  */
-static const char* sql_jobids_from_client =
-    "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool,Client"
-    " WHERE Client.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
-    " AND Job.ClientId=Client.ClientId AND Job.Type IN ('B','C')"
-    " AND Job.JobStatus IN ('T','W')"
-    " ORDER by Job.StartTime";
+static const char* sql_jobids_from_client
+    = "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool,Client"
+      " WHERE Client.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
+      " AND Job.ClientId=Client.ClientId AND Job.Type IN ('B','C')"
+      " AND Job.JobStatus IN ('T','W')"
+      " ORDER by Job.StartTime";
 
 /**
  * Get Volume names in Pool
  */
-static const char* sql_vol =
-    "SELECT DISTINCT VolumeName FROM Media,Pool WHERE"
-    " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
-    " Media.PoolId=Pool.PoolId AND Pool.Name='%s'";
+static const char* sql_vol
+    = "SELECT DISTINCT VolumeName FROM Media,Pool WHERE"
+      " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
+      " Media.PoolId=Pool.PoolId AND Pool.Name='%s'";
 
 /**
  * Get JobIds from regex'ed Volume names
  */
-static const char* sql_jobids_from_vol =
-    "SELECT DISTINCT Job.JobId,Job.StartTime FROM Media,JobMedia,Job"
-    " WHERE Media.VolumeName='%s' AND Media.MediaId=JobMedia.MediaId"
-    " AND JobMedia.JobId=Job.JobId AND Job.Type IN ('B','C')"
-    " AND Job.JobStatus IN ('T','W') AND Media.Enabled=1"
-    " ORDER by Job.StartTime";
+static const char* sql_jobids_from_vol
+    = "SELECT DISTINCT Job.JobId,Job.StartTime FROM Media,JobMedia,Job"
+      " WHERE Media.VolumeName='%s' AND Media.MediaId=JobMedia.MediaId"
+      " AND JobMedia.JobId=Job.JobId AND Job.Type IN ('B','C')"
+      " AND Job.JobStatus IN ('T','W') AND Media.Enabled=1"
+      " ORDER by Job.StartTime";
 
 /**
  * Get JobIds from the smallest volume
  */
-static const char* sql_smallest_vol =
-    "SELECT Media.MediaId FROM Media,Pool,JobMedia WHERE"
-    " Media.MediaId in (SELECT DISTINCT MediaId from JobMedia) AND"
-    " Media.VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
-    " Media.PoolId=Pool.PoolId AND Pool.Name='%s'"
-    " ORDER BY VolBytes ASC LIMIT 1";
+static const char* sql_smallest_vol
+    = "SELECT Media.MediaId FROM Media,Pool,JobMedia WHERE"
+      " Media.MediaId in (SELECT DISTINCT MediaId from JobMedia) AND"
+      " Media.VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
+      " Media.PoolId=Pool.PoolId AND Pool.Name='%s'"
+      " ORDER BY VolBytes ASC LIMIT 1";
 
 /**
  * Get JobIds from the oldest volume
  */
-static const char* sql_oldest_vol =
-    "SELECT Media.MediaId FROM Media,Pool,JobMedia WHERE"
-    " Media.MediaId in (SELECT DISTINCT MediaId from JobMedia) AND"
-    " Media.VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
-    " Media.PoolId=Pool.PoolId AND Pool.Name='%s'"
-    " ORDER BY LastWritten ASC LIMIT 1";
+static const char* sql_oldest_vol
+    = "SELECT Media.MediaId FROM Media,Pool,JobMedia WHERE"
+      " Media.MediaId in (SELECT DISTINCT MediaId from JobMedia) AND"
+      " Media.VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
+      " Media.PoolId=Pool.PoolId AND Pool.Name='%s'"
+      " ORDER BY LastWritten ASC LIMIT 1";
 
 /**
  * Get JobIds when we have selected MediaId
  */
-static const char* sql_jobids_from_mediaid =
-    "SELECT DISTINCT Job.JobId,Job.StartTime FROM JobMedia,Job"
-    " WHERE JobMedia.JobId=Job.JobId AND JobMedia.MediaId IN (%s)"
-    " AND Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W')"
-    " ORDER by Job.StartTime";
+static const char* sql_jobids_from_mediaid
+    = "SELECT DISTINCT Job.JobId,Job.StartTime FROM JobMedia,Job"
+      " WHERE JobMedia.JobId=Job.JobId AND JobMedia.MediaId IN (%s)"
+      " AND Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W')"
+      " ORDER by Job.StartTime";
 
 /**
  * Get the number of bytes in the pool
  */
-static const char* sql_pool_bytes =
-    "SELECT SUM(JobBytes) FROM Job WHERE JobId IN"
-    " (SELECT DISTINCT Job.JobId from Pool,Job,Media,JobMedia WHERE"
-    " Pool.Name='%s' AND Media.PoolId=Pool.PoolId AND"
-    " VolStatus in ('Full','Used','Error','Append') AND Media.Enabled=1 AND"
-    " Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W') AND"
-    " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId)";
+static const char* sql_pool_bytes
+    = "SELECT SUM(JobBytes) FROM Job WHERE JobId IN"
+      " (SELECT DISTINCT Job.JobId from Pool,Job,Media,JobMedia WHERE"
+      " Pool.Name='%s' AND Media.PoolId=Pool.PoolId AND"
+      " VolStatus in ('Full','Used','Error','Append') AND Media.Enabled=1 AND"
+      " Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W') AND"
+      " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId)";
 
 /**
  * Get the number of bytes in the Jobs
  */
-static const char* sql_job_bytes =
-    "SELECT SUM(JobBytes) FROM Job WHERE JobId IN (%s)";
+static const char* sql_job_bytes
+    = "SELECT SUM(JobBytes) FROM Job WHERE JobId IN (%s)";
 
 /**
  * Get Media Ids in Pool
  */
-static const char* sql_mediaids =
-    "SELECT MediaId FROM Media,Pool WHERE"
-    " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
-    " Media.PoolId=Pool.PoolId AND Pool.Name='%s' ORDER BY LastWritten ASC";
+static const char* sql_mediaids
+    = "SELECT MediaId FROM Media,Pool WHERE"
+      " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
+      " Media.PoolId=Pool.PoolId AND Pool.Name='%s' ORDER BY LastWritten ASC";
 
 /**
  * Get JobIds in Pool longer than specified time
  */
-static const char* sql_pool_time =
-    "SELECT DISTINCT Job.JobId FROM Pool,Job,Media,JobMedia WHERE"
-    " Pool.Name='%s' AND Media.PoolId=Pool.PoolId AND"
-    " VolStatus IN ('Full','Used','Error') AND Media.Enabled=1 AND"
-    " Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W') AND"
-    " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId"
-    " AND Job.RealEndTime<='%s'";
+static const char* sql_pool_time
+    = "SELECT DISTINCT Job.JobId FROM Pool,Job,Media,JobMedia WHERE"
+      " Pool.Name='%s' AND Media.PoolId=Pool.PoolId AND"
+      " VolStatus IN ('Full','Used','Error') AND Media.Enabled=1 AND"
+      " Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W') AND"
+      " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId"
+      " AND Job.RealEndTime<='%s'";
 
 /**
  * Get JobIds from successfully completed backup jobs which have not been copied
  * before
  */
-static const char* sql_jobids_of_pool_uncopied_jobs =
-    "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
-    " WHERE Pool.Name = '%s' AND Pool.PoolId = Job.PoolId"
-    " AND Job.Type = 'B' AND Job.JobStatus IN ('T','W')"
-    " AND Job.jobBytes > 0"
-    " AND Job.JobId NOT IN"
-    " (SELECT PriorJobId FROM Job WHERE"
-    " Type IN ('B','C') AND Job.JobStatus IN ('T','W')"
-    " AND PriorJobId != 0)"
-    " ORDER by Job.StartTime";
+static const char* sql_jobids_of_pool_uncopied_jobs
+    = "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
+      " WHERE Pool.Name = '%s' AND Pool.PoolId = Job.PoolId"
+      " AND Job.Type = 'B' AND Job.JobStatus IN ('T','W')"
+      " AND Job.jobBytes > 0"
+      " AND Job.JobId NOT IN"
+      " (SELECT PriorJobId FROM Job WHERE"
+      " Type IN ('B','C') AND Job.JobStatus IN ('T','W')"
+      " AND PriorJobId != 0)"
+      " ORDER by Job.StartTime";
 
 /**
  * Migrate NDMP Job MetaData.
  */
-static const char* sql_migrate_ndmp_metadata =
-    "UPDATE File SET JobId=%s "
-    "WHERE JobId=%s "
-    "AND Name NOT IN ("
-    "SELECT Name "
-    "FROM File "
-    "WHERE JobId=%s)";
+static const char* sql_migrate_ndmp_metadata
+    = "UPDATE File SET JobId=%s "
+      "WHERE JobId=%s "
+      "AND Name NOT IN ("
+      "SELECT Name "
+      "FROM File "
+      "WHERE JobId=%s)";
 
 /**
  * Copy NDMP Job MetaData.
  */
-static const char* sql_copy_ndmp_metadata =
-    "INSERT INTO File (FileIndex, JobId, PathId, Name, DeltaSeq, MarkId, "
-    "LStat, MD5) "
-    "SELECT FileIndex, %s, PathId, Name, DeltaSeq, MarkId, LStat, MD5 "
-    "FROM File "
-    "WHERE JobId=%s "
-    "AND Name NOT IN ("
-    "SELECT Name "
-    "FROM File "
-    "WHERE JobId=%s)";
+static const char* sql_copy_ndmp_metadata
+    = "INSERT INTO File (FileIndex, JobId, PathId, Name, DeltaSeq, MarkId, "
+      "LStat, MD5) "
+      "SELECT FileIndex, %s, PathId, Name, DeltaSeq, MarkId, LStat, MD5 "
+      "FROM File "
+      "WHERE JobId=%s "
+      "AND Name NOT IN ("
+      "SELECT Name "
+      "FROM File "
+      "WHERE JobId=%s)";
 
 static const int dbglevel = 10;
 
@@ -246,10 +246,10 @@ struct idpkt {
 static inline bool IsSameStorageDaemon(StorageResource* read_storage,
                                        StorageResource* write_storage)
 {
-  return read_storage->SDport == write_storage->SDport &&
-         Bstrcasecmp(read_storage->address, write_storage->address) &&
-         Bstrcasecmp(read_storage->password_.value,
-                     write_storage->password_.value);
+  return read_storage->SDport == write_storage->SDport
+         && Bstrcasecmp(read_storage->address, write_storage->address)
+         && Bstrcasecmp(read_storage->password_.value,
+                        write_storage->password_.value);
 }
 
 bool SetMigrationWstorage(JobControlRecord* jcr,
@@ -346,8 +346,8 @@ static inline bool SetMigrationNextPool(JobControlRecord* jcr,
    * will be migrating from pool to pool->NextPool.
    */
   if (jcr->impl->res.next_pool) {
-    jcr->impl->jr.PoolId =
-        GetOrCreatePoolRecord(jcr, jcr->impl->res.next_pool->resource_name_);
+    jcr->impl->jr.PoolId
+        = GetOrCreatePoolRecord(jcr, jcr->impl->res.next_pool->resource_name_);
     if (jcr->impl->jr.PoolId == 0) { return false; }
   }
 
@@ -374,8 +374,8 @@ static inline bool SameStorage(JobControlRecord* jcr)
   read_store = (StorageResource*)jcr->impl->res.read_storage_list->first();
   write_store = (StorageResource*)jcr->impl->res.write_storage_list->first();
 
-  if (!read_store->autochanger && !write_store->autochanger &&
-      bstrcmp(read_store->resource_name_, write_store->resource_name_)) {
+  if (!read_store->autochanger && !write_store->autochanger
+      && bstrcmp(read_store->resource_name_, write_store->resource_name_)) {
     return true;
   }
 
@@ -410,8 +410,8 @@ static inline void StartNewMigrationJob(JobControlRecord* jcr)
     /*
      * See if there was actually a next pool override.
      */
-    if (jcr->impl->res.next_pool &&
-        jcr->impl->res.next_pool != jcr->impl->res.pool->NextPool) {
+    if (jcr->impl->res.next_pool
+        && jcr->impl->res.next_pool != jcr->impl->res.pool->NextPool) {
       Mmsg(cmd, " nextpool=\"%s\"", jcr->impl->res.next_pool->resource_name_);
       PmStrcat(ua->cmd, cmd.c_str());
     }
@@ -1099,8 +1099,8 @@ bool DoMigrationInit(JobControlRecord* jcr)
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
-  jcr->impl->jr.PoolId =
-      GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
+  jcr->impl->jr.PoolId
+      = GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
   if (jcr->impl->jr.PoolId == 0) {
     Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
     Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
@@ -1360,8 +1360,8 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
   /*
    * Make sure this job was not already migrated
    */
-  if (jcr->impl->previous_jr.JobType != JT_BACKUP &&
-      jcr->impl->previous_jr.JobType != JT_JOB_COPY) {
+  if (jcr->impl->previous_jr.JobType != JT_BACKUP
+      && jcr->impl->previous_jr.JobType != JT_JOB_COPY) {
     Jmsg(jcr, M_INFO, 0,
          _("JobId %s already %s probably by another Job. %s stopped.\n"),
          edit_int64(jcr->impl->previous_jr.JobId, ed1),
@@ -1590,8 +1590,8 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     tls_need = write_storage->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
                                                 : TlsPolicy::kBnetTlsNone;
 
-    char* connection_target_address =
-        StorageAddressToContact(read_storage, write_storage);
+    char* connection_target_address
+        = StorageAddressToContact(read_storage, write_storage);
 
     Mmsg(command, replicatecmd, mig_jcr->JobId, mig_jcr->Job,
          connection_target_address, write_storage->SDDport, tls_need,
@@ -1870,8 +1870,8 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
     mig_jcr->impl->jr.RealEndTime = 0;
     mig_jcr->impl->jr.PriorJobId = jcr->impl->previous_jr.JobId;
 
-    if (jcr->is_JobStatus(JS_Terminated) &&
-        (jcr->JobErrors || jcr->impl->SDErrors)) {
+    if (jcr->is_JobStatus(JS_Terminated)
+        && (jcr->JobErrors || jcr->impl->SDErrors)) {
       TermCode = JS_Warnings;
     }
 

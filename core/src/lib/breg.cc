@@ -122,9 +122,9 @@ bool BareosRegex::ExtractRegexp(const char* motif)
 
   char sep = motif[0];
 
-  if (!(sep == '!' || sep == ':' || sep == ';' || sep == '|' || sep == ',' ||
-        sep == '&' || sep == '%' || sep == '=' || sep == '~' || sep == '/' ||
-        sep == '#')) {
+  if (!(sep == '!' || sep == ':' || sep == ';' || sep == '|' || sep == ','
+        || sep == '&' || sep == '%' || sep == '=' || sep == '~' || sep == '/'
+        || sep == '#')) {
     return false;
   }
 
@@ -333,13 +333,13 @@ int BregexpGetBuildWhereSize(char* strip_prefix,
                              char* add_prefix,
                              char* add_suffix)
 {
-  int str_size =
-      ((strip_prefix ? strlen(strip_prefix) + strlen(str_strip_prefix) : 0) +
-       (add_prefix ? strlen(add_prefix) + strlen(str_add_prefix) : 0) +
-       (add_suffix ? strlen(add_suffix) + strlen(str_add_suffix) : 0))
-          /* escape + 3*, + \0 */
-          * 2 +
-      3 + 1;
+  int str_size
+      = ((strip_prefix ? strlen(strip_prefix) + strlen(str_strip_prefix) : 0)
+         + (add_prefix ? strlen(add_prefix) + strlen(str_add_prefix) : 0)
+         + (add_suffix ? strlen(add_suffix) + strlen(str_add_suffix) : 0))
+            /* escape + 3*, + \0 */
+            * 2
+        + 3 + 1;
 
   Dmsg1(200, "BregexpGetBuildWhereSize = %i\n", str_size);
   return str_size;

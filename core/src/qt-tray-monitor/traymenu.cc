@@ -40,8 +40,8 @@ TrayMenu::~TrayMenu() { return; }
 
 void TrayMenu::createAction(QString objName, QString text, QWidget* mainWindow)
 {
-  const QString& translate =
-      QApplication::translate("TrayMonitor", text.toUtf8(), 0);
+  const QString& translate
+      = QApplication::translate("TrayMonitor", text.toUtf8(), 0);
 
   QAction* action = new QAction(translate, mainWindow);
 

@@ -105,11 +105,11 @@ bool PruneCmd(UaContext* ua, const char* cmd)
   MediaDbRecord mr;
   utime_t retention;
   int kw;
-  const char* permission_denied_message =
-      _("Permission denied: need full %s permission.\n");
-  static const char* keywords[] = {NT_("Files"),     NT_("Jobs"),
-                                   NT_("Volume"),    NT_("Stats"),
-                                   NT_("Directory"), NULL};
+  const char* permission_denied_message
+      = _("Permission denied: need full %s permission.\n");
+  static const char* keywords[]
+      = {NT_("Files"), NT_("Jobs"),      NT_("Volume"),
+         NT_("Stats"), NT_("Directory"), NULL};
 
   /*
    * All prune commands might target jobs that reside on different storages.
@@ -144,8 +144,8 @@ bool PruneCmd(UaContext* ua, const char* cmd)
 
       if (!(client = get_client_resource(ua))) { return false; }
 
-      if ((FindArgWithValue(ua, NT_("pool")) >= 0) ||
-          ua->AclHasRestrictions(Pool_ACL)) {
+      if ((FindArgWithValue(ua, NT_("pool")) >= 0)
+          || ua->AclHasRestrictions(Pool_ACL)) {
         pool = get_pool_resource(ua);
       } else {
         pool = NULL;
@@ -170,8 +170,8 @@ bool PruneCmd(UaContext* ua, const char* cmd)
 
       if (!(client = get_client_resource(ua))) { return false; }
 
-      if ((FindArgWithValue(ua, NT_("pool")) >= 0) ||
-          ua->AclHasRestrictions(Pool_ACL)) {
+      if ((FindArgWithValue(ua, NT_("pool")) >= 0)
+          || ua->AclHasRestrictions(Pool_ACL)) {
         pool = get_pool_resource(ua);
       } else {
         pool = NULL;
@@ -240,8 +240,8 @@ bool PruneCmd(UaContext* ua, const char* cmd)
         return false;
       }
 
-      if ((FindArgWithValue(ua, NT_("client")) >= 0) ||
-          ua->AclHasRestrictions(Client_ACL)) {
+      if ((FindArgWithValue(ua, NT_("client")) >= 0)
+          || ua->AclHasRestrictions(Client_ACL)) {
         if (!(client = get_client_resource(ua))) { return false; }
       } else {
         client = NULL;
@@ -272,8 +272,8 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
    */
   if (!client) {
     if (!GetYesno(ua, _("No client restriction given really remove "
-                        "directory for all clients (yes/no): ")) ||
-        !ua->pint32_val) {
+                        "directory for all clients (yes/no): "))
+        || !ua->pint32_val) {
       if (!(client = get_client_resource(ua))) { return false; }
     }
   }
@@ -360,8 +360,8 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
    * them anymore.
    */
   if (!client) {
-    if (!GetYesno(ua, _("Cleanup orphaned path records (yes/no):")) ||
-        !ua->pint32_val) {
+    if (!GetYesno(ua, _("Cleanup orphaned path records (yes/no):"))
+        || !ua->pint32_val) {
       retval = true;
       goto bail_out;
     }

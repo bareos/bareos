@@ -112,8 +112,8 @@ void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
             PmStrcpy(ua->cmd, "messages");
             DotMessagesCmd(ua, ua->cmd);
             ua->user_notified_msg_pending = false;
-          } else if (!ua->gui && !ua->user_notified_msg_pending &&
-                     console_msg_pending) {
+          } else if (!ua->gui && !ua->user_notified_msg_pending
+                     && console_msg_pending) {
             if (ua->api) {
               user_agent_socket->signal(BNET_MSGS_PENDING);
             } else {

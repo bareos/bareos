@@ -760,9 +760,9 @@ int LexGetToken(LEX* lf, int expect)
           token = BCT_ERROR;
           break;
         }
-        if (ch == '\n' || ch == L_EOL || ch == '=' || ch == '}' || ch == '{' ||
-            ch == '\r' || ch == ';' || ch == ',' || ch == '#' ||
-            (B_ISSPACE(ch))) {
+        if (ch == '\n' || ch == L_EOL || ch == '=' || ch == '}' || ch == '{'
+            || ch == '\r' || ch == ';' || ch == ',' || ch == '#'
+            || (B_ISSPACE(ch))) {
           LexUngetChar(lf);
           token = BCT_UNQUOTED_STRING;
           lf->state = lex_none;
@@ -777,9 +777,9 @@ int LexGetToken(LEX* lf, int expect)
           break;
         } else if (B_ISSPACE(ch)) {
           break;
-        } else if (ch == '\n' || ch == L_EOL || ch == '=' || ch == '}' ||
-                   ch == '{' || ch == '\r' || ch == ';' || ch == ',' ||
-                   ch == '"' || ch == '#') {
+        } else if (ch == '\n' || ch == L_EOL || ch == '=' || ch == '}'
+                   || ch == '{' || ch == '\r' || ch == ';' || ch == ','
+                   || ch == '"' || ch == '#') {
           LexUngetChar(lf);
           token = BCT_IDENTIFIER;
           lf->state = lex_none;
@@ -814,8 +814,8 @@ int LexGetToken(LEX* lf, int expect)
           break;
         }
         if (ch == '"') {
-          if (NextLineContinuesWithQuotes(lf) ||
-              CurrentLineContinuesWithQuotes(lf)) {
+          if (NextLineContinuesWithQuotes(lf)
+              || CurrentLineContinuesWithQuotes(lf)) {
             continue_string = true;
             lf->state = lex_none;
             continue;
@@ -879,8 +879,8 @@ int LexGetToken(LEX* lf, int expect)
         }
 
 
-        if (B_ISSPACE(ch) || ch == '\n' || ch == L_EOL || ch == '}' ||
-            ch == '{' || ch == ';' || ch == ',' || ch == '"' || ch == '#') {
+        if (B_ISSPACE(ch) || ch == '\n' || ch == L_EOL || ch == '}' || ch == '{'
+            || ch == ';' || ch == ',' || ch == '"' || ch == '#') {
           /* Keep the original LEX so we can print an error if the included file
            * can't be opened. */
           LEX* lfori = lf;
@@ -1043,8 +1043,8 @@ int LexGetToken(LEX* lf, int expect)
       break;
 
     case BCT_NAME:
-      if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING &&
-          token != BCT_QUOTED_STRING) {
+      if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING
+          && token != BCT_QUOTED_STRING) {
         scan_err2(lf, _("expected a name, got %s: %s"), lex_tok_to_str(token),
                   lf->str);
         token = BCT_ERROR;
@@ -1056,8 +1056,8 @@ int LexGetToken(LEX* lf, int expect)
       break;
 
     case BCT_STRING:
-      if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING &&
-          token != BCT_QUOTED_STRING) {
+      if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING
+          && token != BCT_QUOTED_STRING) {
         scan_err2(lf, _("expected a string, got %s: %s"), lex_tok_to_str(token),
                   lf->str);
         token = BCT_ERROR;

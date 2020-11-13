@@ -83,8 +83,8 @@ void ReadCryptoCache(const char* cache_file)
    */
   cnt = 0;
   cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
-  while (read(fd, cce, sizeof(crypto_cache_entry_t)) ==
-         sizeof(crypto_cache_entry_t)) {
+  while (read(fd, cce, sizeof(crypto_cache_entry_t))
+         == sizeof(crypto_cache_entry_t)) {
     cnt++;
     cached_crypto_keys->append(cce);
     cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
@@ -158,8 +158,8 @@ void WriteCryptoCache(const char* cache_file)
   }
 
   crypto_cache_hdr.nr_entries = cached_crypto_keys->size();
-  if (write(fd, &crypto_cache_hdr, sizeof(crypto_cache_hdr)) !=
-      sizeof(crypto_cache_hdr)) {
+  if (write(fd, &crypto_cache_hdr, sizeof(crypto_cache_hdr))
+      != sizeof(crypto_cache_hdr)) {
     BErrNo be;
 
     Dmsg1(000, "Write hdr error: ERR=%s\n", be.bstrerror());
@@ -167,8 +167,8 @@ void WriteCryptoCache(const char* cache_file)
   }
 
   foreach_dlist (cce, cached_crypto_keys) {
-    if (write(fd, cce, sizeof(crypto_cache_entry_t)) !=
-        sizeof(crypto_cache_entry_t)) {
+    if (write(fd, cce, sizeof(crypto_cache_entry_t))
+        != sizeof(crypto_cache_entry_t)) {
       BErrNo be;
 
       Dmsg1(000, "Write record error: ERR=%s\n", be.bstrerror());

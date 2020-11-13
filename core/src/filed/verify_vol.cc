@@ -71,8 +71,8 @@ void DoVerifyVolume(JobControlRecord* jcr)
   jcr->setJobStatus(JS_Running);
 
   LockRes(my_config);
-  ClientResource* client =
-      (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
+  ClientResource* client
+      = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
   UnlockRes(my_config);
   uint32_t buf_size;
   if (client) {
@@ -97,7 +97,8 @@ void DoVerifyVolume(JobControlRecord* jcr)
      * First we expect a Stream Record Header
      */
     if (sscanf(sd->msg, rec_header, &VolSessionId, &VolSessionTime, &file_index,
-               &stream, &size) != 5) {
+               &stream, &size)
+        != 5) {
       Jmsg1(jcr, M_FATAL, 0, _("Record header scan error: %s\n"), sd->msg);
       goto bail_out;
     }
@@ -199,9 +200,9 @@ void DoVerifyVolume(JobControlRecord* jcr)
           status = dir->fsend("%d %d %s %s%c%s%c%c", 0, STREAM_UNIX_ATTRIBUTES,
                               "pinsug5", fname, 0, ap, 0, 0);
         } else {
-          status =
-              dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
-                         STREAM_UNIX_ATTRIBUTES, "pinsug5", fname, 0, ap, 0, 0);
+          status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
+                              STREAM_UNIX_ATTRIBUTES, "pinsug5", fname, 0, ap,
+                              0, 0);
         }
         Dmsg2(200, "filed>dir: attribs len=%d: msg=%s\n", dir->message_length,
               dir->msg);

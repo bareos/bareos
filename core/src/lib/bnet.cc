@@ -46,7 +46,7 @@
 #include "lib/tls.h"
 
 #ifndef INADDR_NONE
-#define INADDR_NONE -1
+#  define INADDR_NONE -1
 #endif
 
 #ifndef HAVE_GETADDRINFO
@@ -238,22 +238,22 @@ int BnetWaitDataIntr(BareosSocket* bsock, int sec)
 }
 
 #ifndef NETDB_INTERNAL
-#define NETDB_INTERNAL -1 /* See errno. */
+#  define NETDB_INTERNAL -1 /* See errno. */
 #endif
 #ifndef NETDB_SUCCESS
-#define NETDB_SUCCESS 0 /* No problem. */
+#  define NETDB_SUCCESS 0 /* No problem. */
 #endif
 #ifndef HOST_NOT_FOUND
-#define HOST_NOT_FOUND 1 /* Authoritative Answer Host not found. */
+#  define HOST_NOT_FOUND 1 /* Authoritative Answer Host not found. */
 #endif
 #ifndef TRY_AGAIN
-#define TRY_AGAIN 2 /* Non-Authoritative Host not found, or SERVERFAIL. */
+#  define TRY_AGAIN 2 /* Non-Authoritative Host not found, or SERVERFAIL. */
 #endif
 #ifndef NO_RECOVERY
-#define NO_RECOVERY 3 /* Non recoverable errors, FORMERR, REFUSED, NOTIMP. */
+#  define NO_RECOVERY 3 /* unrecoverable errors, FORMERR, REFUSED, NOTIMP. */
 #endif
 #ifndef NO_DATA
-#define NO_DATA 4 /* Valid name, no data record of requested type. */
+#  define NO_DATA 4 /* Valid name, no data record of requested type. */
 #endif
 
 #if HAVE_GETADDRINFO
@@ -288,7 +288,7 @@ const char* resolv_host(int family, const char* host, dlist* addr_list)
          */
         addr->SetAddr4(&(((struct sockaddr_in*)rp->ai_addr)->sin_addr));
         break;
-#ifdef HAVE_IPV6
+#  ifdef HAVE_IPV6
       case AF_INET6:
         addr = new IPADDR(rp->ai_addr->sa_family);
         addr->SetType(IPADDR::R_MULTIPLE);
@@ -302,7 +302,7 @@ const char* resolv_host(int family, const char* host, dlist* addr_list)
          */
         addr->SetAddr6(&(((struct sockaddr_in6*)rp->ai_addr)->sin6_addr));
         break;
-#endif
+#  endif
       default:
         continue;
     }
@@ -352,11 +352,11 @@ static const char* resolv_host(int family, const char* host, dlist* addr_list)
   IPADDR* addr;
 
   P(ip_mutex); /* gethostbyname() is not thread safe */
-#ifdef HAVE_GETHOSTBYNAME2
+#  ifdef HAVE_GETHOSTBYNAME2
   if ((hp = gethostbyname2(host, family)) == NULL) {
-#else
+#  else
   if ((hp = gethostbyname(host)) == NULL) {
-#endif
+#  endif
     /* may be the strerror give not the right result -:( */
     errmsg = gethost_strerror();
     V(ip_mutex);
@@ -369,13 +369,13 @@ static const char* resolv_host(int family, const char* host, dlist* addr_list)
           addr->SetType(IPADDR::R_MULTIPLE);
           addr->SetAddr4((struct in_addr*)*p);
           break;
-#ifdef HAVE_IPV6
+#  ifdef HAVE_IPV6
         case AF_INET6:
           addr = new IPADDR(hp->h_addrtype);
           addr->SetType(IPADDR::R_MULTIPLE);
           addr->SetAddr6((struct in6_addr*)*p);
           break;
-#endif
+#  endif
         default:
           continue;
       }
@@ -423,11 +423,11 @@ dlist* BnetHost2IpAddrs(const char* host, int family, const char** errstr)
     addr->SetAddr4(&inaddr);
     addr_list->append(addr);
 #ifdef HAVE_IPV6
-#ifndef HAVE_WIN32
+#  ifndef HAVE_WIN32
   } else if (inet_pton(AF_INET6, host, &inaddr6) == 1) {
-#else
+#  else
   } else if (p_InetPton && p_InetPton(AF_INET6, host, &inaddr6) == 1) {
-#endif
+#  endif
     addr = new IPADDR(AF_INET6);
     addr->SetType(IPADDR::R_MULTIPLE);
     addr->SetAddr6(&inaddr6);

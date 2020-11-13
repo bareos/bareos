@@ -100,8 +100,8 @@ char* edit_uint64_with_suffix(uint64_t val, char* buf)
 {
   int commas = 0;
   char *c, mbuf[50];
-  static const char* suffix[] = {"",  "K", "M", "G", "T",
-                                 "P", "E", "Z", "Y", "FIX ME"};
+  static const char* suffix[]
+      = {"", "K", "M", "G", "T", "P", "E", "Z", "Y", "FIX ME"};
   int suffixes = sizeof(suffix) / sizeof(*suffix);
 
   edit_uint64_with_commas(val, mbuf);
@@ -264,9 +264,9 @@ bool DurationToUtime(char* str, utime_t* value)
   /*
    * The "n" = mins and months appears before minutes so that m maps to months.
    */
-  static const char* mod[] = {"n",        "seconds", "months",   "minutes",
-                              "mins",     "hours",   "days",     "weeks",
-                              "quarters", "years",   (char*)NULL};
+  static const char* mod[]
+      = {"n",    "seconds", "months",   "minutes", "mins",     "hours",
+         "days", "weeks",   "quarters", "years",   (char*)NULL};
   static const int32_t mult[] = {60,
                                  1,
                                  60 * 60 * 24 * 30,
@@ -316,8 +316,8 @@ bool DurationToUtime(char* str, utime_t* value)
 char* edit_utime(utime_t val, char* buf, int buf_len)
 {
   char mybuf[200];
-  static const int32_t mult[] = {60 * 60 * 24 * 365, 60 * 60 * 24 * 30,
-                                 60 * 60 * 24, 60 * 60, 60};
+  static const int32_t mult[]
+      = {60 * 60 * 24 * 365, 60 * 60 * 24 * 30, 60 * 60 * 24, 60 * 60, 60};
   static const char* mod[] = {"year", "month", "day", "hour", "min"};
   int i;
   uint32_t times;
@@ -424,8 +424,8 @@ std::string SizeAsSiPrefixFormat(uint64_t value_in)
   /*
    * convert default value string to numeric value
    */
-  static const char* modifier[] = {" e", " p", " t", " g",
-                                   " m", " k", "",   NULL};
+  static const char* modifier[]
+      = {" e", " p", " t", " g", " m", " k", "", NULL};
   const uint64_t multiplier[] = {1152921504606846976,  // EiB Exbibyte
                                  1125899906842624,     // PiB Pebibyte
                                  1099511627776,        // TiB Tebibyte
@@ -516,8 +516,9 @@ bool Is_a_number(const char* n)
     while (B_ISDIGIT(*n)) { n++; }
   }
 
-  if (digit_seen && (*n == 'e' || *n == 'E') &&
-      (B_ISDIGIT(n[1]) || ((n[1] == '-' || n[1] == '+') && B_ISDIGIT(n[2])))) {
+  if (digit_seen && (*n == 'e' || *n == 'E')
+      && (B_ISDIGIT(n[1])
+          || ((n[1] == '-' || n[1] == '+') && B_ISDIGIT(n[2])))) {
     n += 2; /* Skip e- or e+ or e digit */
     while (B_ISDIGIT(*n)) { n++; }
   }

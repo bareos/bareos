@@ -33,16 +33,16 @@
  */
 
 #ifndef HAVE_WIN32
-#include "include/bareos.h"
-#include "lib/watchdog.h"
-#include "lib/berrno.h"
-#include "lib/bsignal.h"
+#  include "include/bareos.h"
+#  include "lib/watchdog.h"
+#  include "lib/berrno.h"
+#  include "lib/bsignal.h"
 
-#ifndef _NSIG
-#define BA_NSIG 100
-#else
-#define BA_NSIG _NSIG
-#endif
+#  ifndef _NSIG
+#    define BA_NSIG 100
+#  else
+#    define BA_NSIG _NSIG
+#  endif
 
 extern char my_name[];
 extern char* exepath;
@@ -172,12 +172,12 @@ extern "C" void SignalHandler(int sig)
     }
     SecureErase(NULL, "./core"); /* get rid of any old core file */
 
-#ifdef DEVELOPER /* When DEVELOPER not set, this is done below */
+#  ifdef DEVELOPER /* When DEVELOPER not set, this is done below */
     /*
      * Print information about the current state into working/<file>.bactrace
      */
     dbg_print_bareos();
-#endif
+#  endif
 
     sprintf(pid_buf, "%d", (int)main_pid);
     Dmsg1(300, "Working=%s\n", working_directory);
@@ -242,12 +242,12 @@ extern "C" void SignalHandler(int sig)
         printf(" ==== End traceback output ====\n\n");
       }
     }
-#ifndef DEVELOPER /* When DEVELOPER set, this is done above */
+#  ifndef DEVELOPER /* When DEVELOPER set, this is done above */
     /*
      * Print information about the current state into working/<file>.bactrace
      */
     dbg_print_bareos();
-#endif
+#  endif
   }
   exit_handler(sig);
   Dmsg0(500, "Done exit_handler\n");
@@ -267,7 +267,7 @@ void InitSignals(void Terminate(int sig))
   struct sigaction sighandle;
   struct sigaction sigignore;
   struct sigaction sigdefault;
-#ifdef _sys_nsig
+#  ifdef _sys_nsig
   int i;
 
   exit_handler = Terminate;
@@ -277,7 +277,7 @@ void InitSignals(void Terminate(int sig))
   }
 
   for (i = 0; i < _sys_nsig; i++) { sig_names[i] = _sys_siglist[i]; }
-#else
+#  else
   exit_handler = Terminate;
   sig_names[0] = _("UNKNOWN SIGNAL");
   sig_names[SIGHUP] = _("Hangup");
@@ -286,12 +286,12 @@ void InitSignals(void Terminate(int sig))
   sig_names[SIGILL] = _("Illegal instruction");
   sig_names[SIGTRAP] = _("Trace/Breakpoint trap");
   sig_names[SIGABRT] = _("Abort");
-#ifdef SIGEMT
+#    ifdef SIGEMT
   sig_names[SIGEMT] = _("EMT instruction (Emulation Trap)");
-#endif
-#ifdef SIGIOT
+#    endif
+#    ifdef SIGIOT
   sig_names[SIGIOT] = _("IOT trap");
-#endif
+#    endif
   sig_names[SIGBUS] = _("BUS error");
   sig_names[SIGFPE] = _("Floating-point exception");
   sig_names[SIGKILL] = _("Kill, unblockable");
@@ -301,9 +301,9 @@ void InitSignals(void Terminate(int sig))
   sig_names[SIGPIPE] = _("Broken pipe");
   sig_names[SIGALRM] = _("Alarm clock");
   sig_names[SIGTERM] = _("Termination");
-#ifdef SIGSTKFLT
+#    ifdef SIGSTKFLT
   sig_names[SIGSTKFLT] = _("Stack fault");
-#endif
+#    endif
   sig_names[SIGCHLD] = _("Child status has changed");
   sig_names[SIGCONT] = _("Continue");
   sig_names[SIGSTOP] = _("Stop, unblockable");
@@ -317,28 +317,28 @@ void InitSignals(void Terminate(int sig))
   sig_names[SIGPROF] = _("Profiling alarm clock");
   sig_names[SIGWINCH] = _("Window size change");
   sig_names[SIGIO] = _("I/O now possible");
-#ifdef SIGPWR
+#    ifdef SIGPWR
   sig_names[SIGPWR] = _("Power failure restart");
-#endif
-#ifdef SIGWAITING
+#    endif
+#    ifdef SIGWAITING
   sig_names[SIGWAITING] = _("No runnable lwp");
-#endif
-#ifdef SIGLWP
+#    endif
+#    ifdef SIGLWP
   sig_names[SIGLWP] = _("SIGLWP special signal used by thread library");
-#endif
-#ifdef SIGFREEZE
+#    endif
+#    ifdef SIGFREEZE
   sig_names[SIGFREEZE] = _("Checkpoint Freeze");
-#endif
-#ifdef SIGTHAW
+#    endif
+#    ifdef SIGTHAW
   sig_names[SIGTHAW] = _("Checkpoint Thaw");
-#endif
-#ifdef SIGCANCEL
+#    endif
+#    ifdef SIGCANCEL
   sig_names[SIGCANCEL] = _("Thread Cancellation");
-#endif
-#ifdef SIGLOST
+#    endif
+#    ifdef SIGLOST
   sig_names[SIGLOST] = _("Resource Lost (e.g. record-lock lost)");
-#endif
-#endif
+#    endif
+#  endif
 
   /*
    * Now setup signal handlers
@@ -367,12 +367,12 @@ void InitSignals(void Terminate(int sig))
   sigaction(SIGILL, &sighandle, NULL);
   sigaction(SIGTRAP, &sighandle, NULL);
   sigaction(SIGABRT, &sighandle, NULL);
-#ifdef SIGEMT
+#  ifdef SIGEMT
   sigaction(SIGEMT, &sighandle, NULL);
-#endif
-#ifdef SIGIOT
+#  endif
+#  ifdef SIGIOT
   sigaction(SIGIOT, &sighandle, NULL);
-#endif
+#  endif
   sigaction(SIGBUS, &sighandle, NULL);
   sigaction(SIGFPE, &sighandle, NULL);
   sigaction(SIGUSR1, &sighandle, NULL);
@@ -380,35 +380,35 @@ void InitSignals(void Terminate(int sig))
   sigaction(SIGUSR2, &sighandle, NULL);
   sigaction(SIGALRM, &sighandle, NULL);
   sigaction(SIGTERM, &sighandle, NULL);
-#ifdef SIGSTKFLT
+#  ifdef SIGSTKFLT
   sigaction(SIGSTKFLT, &sighandle, NULL);
-#endif
+#  endif
   sigaction(SIGTSTP, &sigdefault, NULL);
   sigaction(SIGTTIN, &sighandle, NULL);
   sigaction(SIGTTOU, &sighandle, NULL);
   sigaction(SIGURG, &sighandle, NULL);
   sigaction(SIGVTALRM, &sighandle, NULL);
-#ifdef SIGPWR
+#  ifdef SIGPWR
   sigaction(SIGPWR, &sighandle, NULL);
-#endif
-#ifdef SIGWAITING
+#  endif
+#  ifdef SIGWAITING
   sigaction(SIGWAITING, &sighandle, NULL);
-#endif
-#ifdef SIGLWP
+#  endif
+#  ifdef SIGLWP
   sigaction(SIGLWP, &sighandle, NULL);
-#endif
-#ifdef SIGFREEZE
+#  endif
+#  ifdef SIGFREEZE
   sigaction(SIGFREEZE, &sighandle, NULL);
-#endif
-#ifdef SIGTHAW
+#  endif
+#  ifdef SIGTHAW
   sigaction(SIGTHAW, &sighandle, NULL);
-#endif
-#ifdef SIGCANCEL
+#  endif
+#  ifdef SIGCANCEL
   sigaction(SIGCANCEL, &sighandle, NULL);
-#endif
-#ifdef SIGLOST
+#  endif
+#  ifdef SIGLOST
   sigaction(SIGLOST, &sighandle, NULL);
-#endif
+#  endif
 }
 
 extern "C" void TimeoutHandler(int sig)

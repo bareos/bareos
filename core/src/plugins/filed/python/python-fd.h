@@ -52,10 +52,10 @@ struct plugin_argument {
   enum plugin_argument_type type;
 };
 
-static plugin_argument plugin_arguments[] = {
-    {"module_path", argument_module_path},
-    {"module_name", argument_module_name},
-    {NULL, argument_none}};
+static plugin_argument plugin_arguments[]
+    = {{"module_path", argument_module_path},
+       {"module_name", argument_module_name},
+       {NULL, argument_none}};
 
 } /* namespace filedaemon */
 #endif /* BAREOS_PLUGINS_FILED_PYTHON_FD_H_ */

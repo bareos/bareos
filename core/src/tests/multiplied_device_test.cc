@@ -20,11 +20,11 @@
 */
 
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #include "lib/alist.h"
@@ -57,8 +57,8 @@ static DeviceResource* GetMultipliedDeviceResource(
 TEST(sd, MultipliedDeviceTest_ConfigParameter)
 {
   InitGlobals();
-  std::string path_to_config =
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config
+      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -84,8 +84,8 @@ static uint32_t CountAllDeviceResources(ConfigurationParser& my_config)
 TEST(sd, MultipliedDeviceTest_CountAllAutomaticallyCreatedResources)
 {
   InitGlobals();
-  std::string path_to_config =
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config
+      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -111,8 +111,8 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
   uint32_t count_str_ok = 0;
   uint32_t count_devices = 0;
 
-  DeviceResource* source_device_resource =
-      GetDeviceResourceByName(my_config, "MultipliedDeviceResource0001");
+  DeviceResource* source_device_resource
+      = GetDeviceResourceByName(my_config, "MultipliedDeviceResource0001");
   if (!source_device_resource) { return 0; }
 
   /* find all matching multiplied-devices, this includes the source device */
@@ -146,8 +146,8 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
 TEST(sd, MultipliedDeviceTest_CheckNames_1)
 {
   InitGlobals();
-  std::string path_to_config =
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config
+      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -165,8 +165,8 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
   uint32_t count_str_ok = 0;
   uint32_t count_devices = 0;
 
-  DeviceResource* source_device_resource =
-      GetDeviceResourceByName(my_config, "AnotherMultipliedDeviceResource0001");
+  DeviceResource* source_device_resource = GetDeviceResourceByName(
+      my_config, "AnotherMultipliedDeviceResource0001");
   if (!source_device_resource) { return 0; }
 
   BareosResource* p = nullptr;
@@ -209,8 +209,8 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
 TEST(sd, MultipliedDeviceTest_CheckNames_2)
 {
   InitGlobals();
-  std::string path_to_config =
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config
+      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -257,8 +257,8 @@ static uint32_t CheckAutochangerInAllDevices(ConfigurationParser& my_config)
 TEST(sd, MultipliedDeviceTest_CheckNameOfAutomaticallyAttachedAutochanger)
 {
   InitGlobals();
-  std::string path_to_config =
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config
+      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -301,8 +301,8 @@ TEST(sd,
      MultipliedDeviceTest_CheckNameOfDevicesAutomaticallyAttachedToAutochanger)
 {
   InitGlobals();
-  std::string path_to_config =
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config
+      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -317,8 +317,8 @@ TEST(sd,
 TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfOriginalDevice)
 {
   InitGlobals();
-  std::string path_to_config =
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config
+      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();
@@ -336,8 +336,8 @@ TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfOriginalDevice)
 TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfCopiedDevice)
 {
   InitGlobals();
-  std::string path_to_config =
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
+  std::string path_to_config
+      = RELATIVE_PROJECT_SOURCE_DIR "/configs/stored_multiplied_device/";
 
   PConfigParser my_config(InitSdConfig(path_to_config.c_str(), M_INFO));
   storagedaemon::my_config = my_config.get();

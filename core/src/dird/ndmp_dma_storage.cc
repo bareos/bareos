@@ -36,8 +36,8 @@
 #include "dird/ndmp_slot2elemaddr.h"
 
 #if HAVE_NDMP
-#include "ndmp/ndmagents.h"
-#include "ndmp_dma_priv.h"
+#  include "ndmp/ndmagents.h"
+#  include "ndmp_dma_priv.h"
 #endif
 
 namespace directordaemon {
@@ -106,22 +106,22 @@ int get_tape_info_cb(struct ndm_session* sess,
 
 
         if (!strcmp(what, "tape\n")) {
-#ifndef NDMOS_OPTION_NO_NDMP3
+#  ifndef NDMOS_OPTION_NO_NDMP3
           if (sess->plumb.tape->protocol_version == 3) {
             attr = dc->v3attr.value;
             Dmsg1(100, "      attr       0x%lx\n", attr);
             if (attr & NDMP3_TAPE_ATTR_REWIND) Dmsg0(100, "        REWIND\n");
             if (attr & NDMP3_TAPE_ATTR_UNLOAD) Dmsg0(100, "        UNLOAD\n");
           }
-#endif /* !NDMOS_OPTION_NO_NDMP3 */
-#ifndef NDMOS_OPTION_NO_NDMP4
+#  endif /* !NDMOS_OPTION_NO_NDMP3 */
+#  ifndef NDMOS_OPTION_NO_NDMP4
           if (sess->plumb.tape->protocol_version == 4) {
             attr = dc->v4attr.value;
             Dmsg1(100, "      attr       0x%lx\n", attr);
             if (attr & NDMP4_TAPE_ATTR_REWIND) Dmsg0(100, "        REWIND\n");
             if (attr & NDMP4_TAPE_ATTR_UNLOAD) Dmsg0(100, "        UNLOAD\n");
           }
-#endif /* !NDMOS_OPTION_NO_NDMP4 */
+#  endif /* !NDMOS_OPTION_NO_NDMP4 */
         }
         for (k = 0; k < dc->capability.capability_len; k++) {
           Dmsg2(100, "      set        %s=%s\n",
@@ -288,14 +288,14 @@ static bool NdmpRunStorageJob(JobControlRecord* jcr,
   ndmp_sess->conn_snooping = (me->ndmp_snooping) ? 1 : 0;
   ndmp_sess->control_agent_enabled = 1;
 
-  ndmp_sess->param =
-      (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
+  ndmp_sess->param
+      = (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
   memset(ndmp_sess->param, 0, sizeof(struct ndm_session_param));
   ndmp_sess->param->log.deliver = NdmpRobotStatusHandler;
   nis = (NIS*)malloc(sizeof(NIS));
   memset(nis, 0, sizeof(NIS));
-  ndmp_sess->param->log_level =
-      NativeToNdmpLoglevel(me->ndmp_loglevel, debug_level, nis);
+  ndmp_sess->param->log_level
+      = NativeToNdmpLoglevel(me->ndmp_loglevel, debug_level, nis);
   ndmp_sess->param->log.ctx = nis;
   ndmp_sess->param->log_tag = strdup("DIR-NDMP");
   nis->jcr = jcr;
@@ -383,10 +383,10 @@ static bool GetRobotElementStatus(JobControlRecord* jcr,
    * We use the ndmscsi_target_from_str() function which parses the NDMJOB
    * format of a device in the form NAME[,[CNUM,]SID[,LUN]
    */
-  ndmp_job.robot_target =
-      (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
+  ndmp_job.robot_target
+      = (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
   int error_number = ndmscsi_target_from_str(ndmp_job.robot_target,
-                              store->ndmp_changer_device);
+                                             store->ndmp_changer_device);
   if (error_number != 0) {
     free(ndmp_job.robot_target);
     Dmsg1(200, "Could not create NDMP target name from string: %d\n",
@@ -693,8 +693,8 @@ slot_number_t NdmpGetNumSlots(UaContext* ua, StorageResource* store)
     return slots;
   }
 
-  return store->runtime_storage_status->storage_mapping.se_count +
-         store->runtime_storage_status->storage_mapping.iee_count;
+  return store->runtime_storage_status->storage_mapping.se_count
+         + store->runtime_storage_status->storage_mapping.iee_count;
 }
 
 /**
@@ -774,10 +774,10 @@ bool NdmpTransferVolume(UaContext* ua,
    * We use the ndmscsi_target_from_str() function which parses the NDMJOB
    * format of a device in the form NAME[,[CNUM,]SID[,LUN]
    */
-  ndmp_job.robot_target =
-      (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
-  if (ndmscsi_target_from_str(ndmp_job.robot_target,
-                              store->ndmp_changer_device) != 0) {
+  ndmp_job.robot_target
+      = (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
+  if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device)
+      != 0) {
     free(ndmp_job.robot_target);
     return retval;
   }
@@ -990,10 +990,10 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
    * We use the ndmscsi_target_from_str() function which parses the NDMJOB
    * format of a device in the form NAME[,[CNUM,]SID[,LUN]
    */
-  ndmp_job.robot_target =
-      (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
-  if (ndmscsi_target_from_str(ndmp_job.robot_target,
-                              store->ndmp_changer_device) != 0) {
+  ndmp_job.robot_target
+      = (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
+  if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device)
+      != 0) {
     free(ndmp_job.robot_target);
     return retval;
   }
@@ -1056,10 +1056,10 @@ bool NdmpSendLabelRequest(UaContext* ua,
    * We use the ndmscsi_target_from_str() function which parses the NDMJOB
    * format of a device in the form NAME[,[CNUM,]SID[,LUN]
    */
-  ndmp_job.robot_target =
-      (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
-  if (ndmscsi_target_from_str(ndmp_job.robot_target,
-                              store->ndmp_changer_device) != 0) {
+  ndmp_job.robot_target
+      = (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
+  if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device)
+      != 0) {
     free(ndmp_job.robot_target);
     Dmsg0(100, "NdmpSendLabelRequest: no robot to use\n");
     return retval;
@@ -1070,8 +1070,8 @@ bool NdmpSendLabelRequest(UaContext* ua,
   /*
    * Set the remote tape drive to use.
    */
-  ndmp_job.tape_device =
-      strdup(((DeviceResource*)(store->device->first()))->resource_name_);
+  ndmp_job.tape_device
+      = strdup(((DeviceResource*)(store->device->first()))->resource_name_);
   if (!ndmp_job.tape_device) { free(ndmp_job.robot_target); }
 
   /*
@@ -1146,10 +1146,10 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
     return retval;
   }
 
-  ndmp_job.robot_target =
-      (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
-  if (ndmscsi_target_from_str(ndmp_job.robot_target,
-                              store->ndmp_changer_device) != 0) {
+  ndmp_job.robot_target
+      = (struct ndmscsi_target*)malloc(sizeof(struct ndmscsi_target));
+  if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device)
+      != 0) {
     free(ndmp_job.robot_target);
     Dmsg0(100, "no robot to use\n");
     return retval;

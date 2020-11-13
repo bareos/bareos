@@ -30,10 +30,10 @@
 
 #if defined(HAVE_OPENSSL)
 
-#ifdef HAVE_OPENSSL
-#include <openssl/err.h>
-#include <openssl/rand.h>
-#endif
+#  ifdef HAVE_OPENSSL
+#    include <openssl/err.h>
+#    include <openssl/rand.h>
+#  endif
 
 /*
  * Generate a semi random passphrase using normal ASCII chars
@@ -46,16 +46,16 @@ char* generate_crypto_passphrase(uint16_t length)
   uint16_t vc_len, cnt, c;
   char* passphrase;
   unsigned char* rand_bytes;
-  char valid_chars[] =
-      "abcdefghijklmnopqrstuvwxyz"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "0123456789"
-      "!@#$%^&*()-_=+|[]{};:,.<>?/~";
+  char valid_chars[]
+      = "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "0123456789"
+        "!@#$%^&*()-_=+|[]{};:,.<>?/~";
 
   rand_bytes = (unsigned char*)malloc(length);
   passphrase = (char*)malloc(length);
 
-#ifdef HAVE_OPENSSL
+#  ifdef HAVE_OPENSSL
   if (RAND_bytes(rand_bytes, length) != 1) {
     unsigned long error;
 
@@ -70,7 +70,7 @@ char* generate_crypto_passphrase(uint16_t length)
 
     return NULL;
   }
-#endif
+#  endif
 
   /*
    * Convert the random bytes into a readable string.
@@ -100,11 +100,11 @@ char* generate_crypto_passphrase(uint16_t length)
   uint16_t vc_len, cnt, c;
   int* rand_bytes;
   char* passphrase;
-  char valid_chars[] =
-      "abcdefghijklmnopqrstuvwxyz"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "0123456789"
-      "!@#$%^&*()-_=+|[]{};:,.<>?/~";
+  char valid_chars[]
+      = "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "0123456789"
+        "!@#$%^&*()-_=+|[]{};:,.<>?/~";
 
   rand_bytes = (int*)malloc(length * sizeof(int));
   passphrase = (char*)malloc(length);

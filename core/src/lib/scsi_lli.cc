@@ -35,14 +35,14 @@
 #ifdef HAVE_LOWLEVEL_SCSI_INTERFACE
 
 
-#if defined(HAVE_LINUX_OS)
+#  if defined(HAVE_LINUX_OS)
 
-#include <scsi/sg.h>
-#include <scsi/scsi.h>
+#    include <scsi/sg.h>
+#    include <scsi/scsi.h>
 
-#ifndef SIOC_REQSENSE
-#define SIOC_REQSENSE _IOR('C', 0x02, SCSI_PAGE_SENSE)
-#endif
+#    ifndef SIOC_REQSENSE
+#      define SIOC_REQSENSE _IOR('C', 0x02, SCSI_PAGE_SENSE)
+#    endif
 
 /*
  * Core interface function to lowlevel SCSI interface.
@@ -160,18 +160,18 @@ bool CheckScsiAtEod(int fd)
   if (rc != 0) { return false; }
 
   return sense.senseKey == 0x08 && /* BLANK CHECK. */
-         sense.addSenseCode ==
-             0x00 && /* End of data (Combination of asc and ascq)*/
+         sense.addSenseCode == 0x00
+         && /* End of data (Combination of asc and ascq)*/
          sense.addSenseCodeQual == 0x05;
 }
 
-#elif defined(HAVE_SUN_OS)
+#  elif defined(HAVE_SUN_OS)
 
-#include <sys/scsi/impl/uscsi.h>
+#    include <sys/scsi/impl/uscsi.h>
 
-#ifndef LOBYTE
-#define LOBYTE(_w) ((_w)&0xff)
-#endif
+#    ifndef LOBYTE
+#      define LOBYTE(_w) ((_w)&0xff)
+#    endif
 
 /*
  * Core interface function to lowlevel SCSI interface.
@@ -269,18 +269,18 @@ bool send_scsi_cmd_page(int fd,
 
 bool CheckScsiAtEod(int fd) { return false; }
 
-#elif defined(HAVE_FREEBSD_OS)
+#  elif defined(HAVE_FREEBSD_OS)
 
-#include <camlib.h>
-#include <cam/scsi/scsi_message.h>
+#    include <camlib.h>
+#    include <cam/scsi/scsi_message.h>
 
-#ifndef SAM_STAT_CHECK_CONDITION
-#define SAM_STAT_CHECK_CONDITION 0x2
-#endif
+#    ifndef SAM_STAT_CHECK_CONDITION
+#      define SAM_STAT_CHECK_CONDITION 0x2
+#    endif
 
-#ifndef SAM_STAT_COMMAND_TERMINATED
-#define SAM_STAT_COMMAND_TERMINATED 0x22
-#endif
+#    ifndef SAM_STAT_COMMAND_TERMINATED
+#      define SAM_STAT_COMMAND_TERMINATED 0x22
+#    endif
 
 /*
  * Core interface function to lowlevel SCSI interface.
@@ -305,7 +305,8 @@ static inline bool do_scsi_cmd_page(int fd,
    * See what CAM device to use.
    */
   if (cam_get_device(device_name, cam_devicename, sizeof(cam_devicename),
-                     &unitnum) == -1) {
+                     &unitnum)
+      == -1) {
     BErrNo be;
 
     Emsg2(M_ERROR, 0, _("Failed to find CAM device for %s: ERR=%s\n"),
@@ -334,14 +335,14 @@ static inline bool do_scsi_cmd_page(int fd,
   memset(&(&ccb->ccb_h)[1], 0,
          sizeof(struct ccb_scsiio) - sizeof(struct ccb_hdr));
 
-  cam_fill_csio(&ccb->csio, 1,       /* retries */
-                NULL,                /* cbfcnp */
-                direction,           /* flags */
-                MSG_SIMPLE_Q_TAG,    /* tagaction */
+  cam_fill_csio(&ccb->csio, 1,      /* retries */
+                NULL,               /* cbfcnp */
+                direction,          /* flags */
+                MSG_SIMPLE_Q_TAG,   /* tagaction */
                 (uint8_t*)cmd_page, /* dataptr */
-                cmd_page_len,        /* datalen */
-                sizeof(sense),       /* senselength */
-                cdb_len,             /* cdblength  */
+                cmd_page_len,       /* datalen */
+                sizeof(sense),      /* senselength */
+                cdb_len,            /* cdblength  */
                 15000 /* timeout (millisecs) */);
   memcpy(ccb->csio.cdb_io.cdb_bytes, cdb, cdb_len);
 
@@ -356,10 +357,10 @@ static inline bool do_scsi_cmd_page(int fd,
   /*
    * Retrieve the SCSI sense data.
    */
-  if (((ccb->ccb_h.status & CAM_STATUS_MASK) == CAM_REQ_CMP) ||
-      ((ccb->ccb_h.status & CAM_STATUS_MASK) == CAM_SCSI_STATUS_ERROR)) {
-    if ((SAM_STAT_CHECK_CONDITION == ccb->csio.scsi_status) ||
-        (SAM_STAT_COMMAND_TERMINATED == ccb->csio.scsi_status)) {
+  if (((ccb->ccb_h.status & CAM_STATUS_MASK) == CAM_REQ_CMP)
+      || ((ccb->ccb_h.status & CAM_STATUS_MASK) == CAM_SCSI_STATUS_ERROR)) {
+    if ((SAM_STAT_CHECK_CONDITION == ccb->csio.scsi_status)
+        || (SAM_STAT_COMMAND_TERMINATED == ccb->csio.scsi_status)) {
       len = sizeof(sense) - ccb->csio.sense_resid;
       if (len) { memcpy(&sense, &(ccb->csio.sense_data), len); }
     }
@@ -407,17 +408,17 @@ bool send_scsi_cmd_page(int fd,
 
 bool CheckScsiAtEod(int fd) { return false; }
 
-#elif defined(HAVE_NETBSD_OS) || defined(HAVE_OPENBSD_OS)
+#  elif defined(HAVE_NETBSD_OS) || defined(HAVE_OPENBSD_OS)
 
-#if defined(HAVE_NETBSD_OS)
-#include <dev/scsipi/scsipi_all.h>
-#else
-#include <scsi/uscsi_all.h>
-#endif
+#    if defined(HAVE_NETBSD_OS)
+#      include <dev/scsipi/scsipi_all.h>
+#    else
+#      include <scsi/uscsi_all.h>
+#    endif
 
-#ifndef LOBYTE
-#define LOBYTE(_w) ((_w)&0xff)
-#endif
+#    ifndef LOBYTE
+#      define LOBYTE(_w) ((_w)&0xff)
+#    endif
 
 /*
  * Core interface function to lowlevel SCSI interface.
@@ -537,7 +538,7 @@ bool send_scsi_cmd_page(int fd,
 }
 
 bool CheckScsiAtEod(int fd) { return false; }
-#endif
+#  endif
 #else
 /*
  * Dummy lowlevel functions when no support for platform.

@@ -33,15 +33,15 @@
 
 #if HAVE_SQLITE3
 
-#include "cats.h"
-#include <sqlite3.h>
-#include "bdb_sqlite.h"
+#  include "cats.h"
+#  include <sqlite3.h>
+#  include "bdb_sqlite.h"
 
 /* pull in the generated queries definitions */
-#include "sqlite_queries.inc"
-#include "lib/edit.h"
-#include "lib/berrno.h"
-#include "lib/dlist.h"
+#  include "sqlite_queries.inc"
+#  include "lib/edit.h"
+#  include "lib/berrno.h"
+#  include "lib/dlist.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -93,15 +93,15 @@ BareosDbSqlite::BareosDbSqlite(JobControlRecord* jcr,
     have_batch_insert_ = false;
   } else {
     disabled_batch_insert_ = false;
-#if defined(USE_BATCH_FILE_INSERT)
-#if defined(HAVE_SQLITE3_THREADSAFE)
+#  if defined(USE_BATCH_FILE_INSERT)
+#    if defined(HAVE_SQLITE3_THREADSAFE)
     have_batch_insert_ = sqlite3_threadsafe();
-#else
+#    else
     have_batch_insert_ = false;
-#endif /* HAVE_SQLITE3_THREADSAFE */
-#else
+#    endif /* HAVE_SQLITE3_THREADSAFE */
+#  else
     have_batch_insert_ = false;
-#endif /* USE_BATCH_FILE_INSERT */
+#  endif /* USE_BATCH_FILE_INSERT */
   }
   errmsg = GetPoolMemory(PM_EMSG); /* get error message buffer */
   *errmsg = 0;
@@ -211,9 +211,9 @@ bool BareosDbSqlite::OpenDatabase(JobControlRecord* jcr)
    */
   sqlite3_busy_handler(db_handle_, SqliteBusyHandler, NULL);
 
-#if defined(SQLITE3_INIT_QUERY)
+#  if defined(SQLITE3_INIT_QUERY)
   SqlQueryWithoutHandler(SQLITE3_INIT_QUERY);
-#endif
+#  endif
 
   if (!CheckTablesVersion(jcr)) { goto bail_out; }
 
@@ -662,7 +662,7 @@ bool BareosDbSqlite::SqlCopyEnd() { return false; }
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+#  ifdef HAVE_DYNAMIC_CATS_BACKENDS
 extern "C" BareosDb* backend_instantiate(JobControlRecord* jcr,
                                          const char* db_driver,
                                          const char* db_name,
@@ -676,7 +676,7 @@ extern "C" BareosDb* backend_instantiate(JobControlRecord* jcr,
                                          bool try_reconnect,
                                          bool exit_on_fatal,
                                          bool need_private)
-#else
+#  else
 BareosDb* db_init_database(JobControlRecord* jcr,
                            const char* db_driver,
                            const char* db_name,
@@ -690,7 +690,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                            bool try_reconnect,
                            bool exit_on_fatal,
                            bool need_private)
-#endif
+#  endif
 {
   BareosDb* mdb = NULL;
 
@@ -721,11 +721,11 @@ bail_out:
   return mdb;
 }
 
-#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+#  ifdef HAVE_DYNAMIC_CATS_BACKENDS
 extern "C" void flush_backend(void)
-#else
+#  else
 void DbFlushBackends(void)
-#endif
+#  endif
 {
 }
 

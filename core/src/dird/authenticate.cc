@@ -34,7 +34,7 @@
 #include "dird.h"
 #include "dird/authenticate.h"
 #if defined(HAVE_PAM)
-#include "dird/auth_pam.h"
+#  include "dird/auth_pam.h"
 #endif
 #include "dird/fd_cmds.h"
 #include "dird/client_connection_handshake_mode.h"
@@ -130,8 +130,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
   BareosSocket* fd = jcr->file_bsock;
   ClientResource* client = jcr->impl->res.client;
 
-  if (jcr->impl->connection_handshake_try_ ==
-      ClientConnectionHandshakeMode::kTlsFirst) {
+  if (jcr->impl->connection_handshake_try_
+      == ClientConnectionHandshakeMode::kTlsFirst) {
     std::string qualified_resource_name;
     if (!my_config->GetQualifiedResourceNameTypeConverter()->ResourceToString(
             me->resource_name_, my_config->r_own_, qualified_resource_name)) {
@@ -169,8 +169,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
 
   if (!auth_success) {
     std::array<char, 1024> msg;
-    const char* fmt =
-        _("Unable to authenticate with File daemon at \"%s:%d\"\n");
+    const char* fmt
+        = _("Unable to authenticate with File daemon at \"%s:%d\"\n");
     snprintf(msg.data(), msg.size(), fmt, fd->host(), fd->port());
     Dmsg0(debuglevel, msg.data());
     Jmsg(jcr, M_FATAL, 0, msg.data());
@@ -191,8 +191,8 @@ bool AuthenticateWithFileDaemon(JobControlRecord* jcr)
 
   Dmsg1(110, "<filed: %s", fd->msg);
   jcr->impl->FDVersion = 0;
-  if (!bstrncmp(fd->msg, FDOKhello, sizeof(FDOKhello)) &&
-      sscanf(fd->msg, FDOKnewHello, &jcr->impl->FDVersion) != 1) {
+  if (!bstrncmp(fd->msg, FDOKhello, sizeof(FDOKhello))
+      && sscanf(fd->msg, FDOKnewHello, &jcr->impl->FDVersion) != 1) {
     Dmsg0(debuglevel, _("File daemon rejected Hello command\n"));
     Jmsg(jcr, M_FATAL, 0,
          _("File daemon at \"%s:%d\" rejected Hello command\n"), fd->host(),

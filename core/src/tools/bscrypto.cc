@@ -163,8 +163,8 @@ int main(int argc, char* const* argv)
   argc -= optind;
   argv += optind;
 
-  if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache &&
-      !reset_cache && argc < 1) {
+  if (!generate_passphrase && !show_keydata && !dump_cache && !populate_cache
+      && !reset_cache && argc < 1) {
     fprintf(stderr, _("Missing device_name argument for this option\n"));
     usage();
     retval = 1;
@@ -183,8 +183,8 @@ int main(int argc, char* const* argv)
     goto bail_out;
   }
 
-  if ((clear_encryption || set_encryption) &&
-      (drive_encryption_status || volume_encryption_status)) {
+  if ((clear_encryption || set_encryption)
+      && (drive_encryption_status || volume_encryption_status)) {
     fprintf(
         stderr,
         _("Either set or clear the crypto key or ask for status not both\n"));
@@ -192,10 +192,10 @@ int main(int argc, char* const* argv)
     goto bail_out;
   }
 
-  if ((clear_encryption || set_encryption || drive_encryption_status ||
-       volume_encryption_status) &&
-      (generate_passphrase || show_keydata || dump_cache || populate_cache ||
-       reset_cache)) {
+  if ((clear_encryption || set_encryption || drive_encryption_status
+       || volume_encryption_status)
+      && (generate_passphrase || show_keydata || dump_cache || populate_cache
+          || reset_cache)) {
     fprintf(stderr, _("Don't mix operations which are incompatible "
                       "e.g. generate/show vs set/clear etc.\n"));
     retval = 1;
@@ -421,8 +421,8 @@ int main(int argc, char* const* argv)
       length = DEFAULT_PASSPHRASE_LENGTH + 12;
       wrapped_passphrase = (char*)malloc(length);
       memset(wrapped_passphrase, 0, length);
-      if (Base64ToBin(wrapped_passphrase, length, keydata, strlen(keydata)) ==
-          0) {
+      if (Base64ToBin(wrapped_passphrase, length, keydata, strlen(keydata))
+          == 0) {
         fprintf(stderr,
                 _("Failed to base64 decode the keydata read from %s, "
                   "aborting...\n"),
@@ -437,7 +437,8 @@ int main(int argc, char* const* argv)
 
       if (AesUnwrap((unsigned char*)wrapdata, length / 8,
                     (unsigned char*)wrapped_passphrase,
-                    (unsigned char*)passphrase) == -1) {
+                    (unsigned char*)passphrase)
+          == -1) {
         fprintf(stderr,
                 _("Failed to aes unwrap the keydata read from %s using the "
                   "wrap data from %s, aborting...\n"),

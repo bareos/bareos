@@ -42,9 +42,9 @@
 #include "lib/berrno.h"
 
 #ifdef HAVE_DARWIN_OS
-#include <sys/param.h>
-#include <sys/mount.h>
-#include <sys/attr.h>
+#  include <sys/param.h>
+#  include <sys/mount.h>
+#  include <sys/attr.h>
 #endif
 
 extern int32_t name_max; /* filename max length */
@@ -190,10 +190,12 @@ static bool VolumeHasAttrlist(const char* fname)
      * We need to check on the mount point
      */
     if (getattrlist(st.f_mntonname, &attrList, &vol, sizeof(vol),
-                    FSOPT_NOFOLLOW) == 0 &&
-        (vol.info.capabilities[VOL_CAPABILITIES_INTERFACES] &
-         VOL_CAP_INT_ATTRLIST) &&
-        (vol.info.valid[VOL_CAPABILITIES_INTERFACES] & VOL_CAP_INT_ATTRLIST)) {
+                    FSOPT_NOFOLLOW)
+            == 0
+        && (vol.info.capabilities[VOL_CAPABILITIES_INTERFACES]
+            & VOL_CAP_INT_ATTRLIST)
+        && (vol.info.valid[VOL_CAPABILITIES_INTERFACES]
+            & VOL_CAP_INT_ATTRLIST)) {
       return true;
     }
   }
@@ -207,8 +209,8 @@ static bool VolumeHasAttrlist(const char* fname)
 static inline bool no_dump(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
 #if defined(HAVE_CHFLAGS) && defined(UF_NODUMP)
-  if (BitIsSet(FO_HONOR_NODUMP, ff_pkt->flags) &&
-      (ff_pkt->statp.st_flags & UF_NODUMP)) {
+  if (BitIsSet(FO_HONOR_NODUMP, ff_pkt->flags)
+      && (ff_pkt->statp.st_flags & UF_NODUMP)) {
     Jmsg(jcr, M_INFO, 1, _("     NODUMP flag set - will not process %s\n"),
          ff_pkt->fname);
     return true; /* do not backup this file */
@@ -261,8 +263,8 @@ static inline bool CheckSizeMatching(JobControlRecord* jcr,
     case size_match_greater:
       return (int64_t)ff_pkt->statp.st_size > begin_size;
     case size_match_range:
-      return ((int64_t)ff_pkt->statp.st_size >= begin_size) &&
-             ((int64_t)ff_pkt->statp.st_size <= end_size);
+      return ((int64_t)ff_pkt->statp.st_size >= begin_size)
+             && ((int64_t)ff_pkt->statp.st_size <= end_size);
     default:
       return true;
   }
@@ -312,8 +314,8 @@ bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     return true;
   }
 
-  if ((statp.st_blksize != ff_pkt->statp.st_blksize) ||
-      (statp.st_blocks != ff_pkt->statp.st_blocks)) {
+  if ((statp.st_blksize != ff_pkt->statp.st_blksize)
+      || (statp.st_blocks != ff_pkt->statp.st_blocks)) {
     Jmsg(jcr, M_ERROR, 0, _("%s: size changed during backup.\n"),
          ff_pkt->fname);
     Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
@@ -339,9 +341,10 @@ bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   /*
    * For normal backups (incr/diff), we use this default behaviour
    */
-  if (ff_pkt->incremental && (ff_pkt->statp.st_mtime < ff_pkt->save_time &&
-                              (BitIsSet(FO_MTIMEONLY, ff_pkt->flags) ||
-                               ff_pkt->statp.st_ctime < ff_pkt->save_time))) {
+  if (ff_pkt->incremental
+      && (ff_pkt->statp.st_mtime < ff_pkt->save_time
+          && (BitIsSet(FO_MTIMEONLY, ff_pkt->flags)
+              || ff_pkt->statp.st_ctime < ff_pkt->save_time))) {
     return false;
   }
 
@@ -432,7 +435,8 @@ static inline int process_hfsattributes(JobControlRecord* jcr,
   attrList.commonattr = ATTR_CMN_FNDRINFO;
   attrList.fileattr = ATTR_FILE_RSRCLENGTH;
   if (getattrlist(fname, &attrList, &ff_pkt->hfsinfo, sizeof(ff_pkt->hfsinfo),
-                  FSOPT_NOFOLLOW) != 0) {
+                  FSOPT_NOFOLLOW)
+      != 0) {
     ff_pkt->type = FT_NOSTAT;
     ff_pkt->ff_errno = errno;
     return HandleFile(jcr, ff_pkt, top_level);
@@ -515,8 +519,8 @@ static inline int process_regular_file(JobControlRecord* jcr,
    * Don't bother opening empty, world readable files. Also do not open
    * files when archive is meant for /dev/null.
    */
-  if (ff_pkt->null_output_device ||
-      (sizeleft == 0 && MODE_RALL == (MODE_RALL & ff_pkt->statp.st_mode))) {
+  if (ff_pkt->null_output_device
+      || (sizeleft == 0 && MODE_RALL == (MODE_RALL & ff_pkt->statp.st_mode))) {
     ff_pkt->type = FT_REGE;
   } else {
     ff_pkt->type = FT_REG;
@@ -595,8 +599,8 @@ static inline int process_directory(JobControlRecord* jcr,
   int len;
   dev_t our_device = ff_pkt->statp.st_dev;
   bool recurse = true;
-  bool volhas_attrlist =
-      ff_pkt->volhas_attrlist; /* Remember this if we recurse */
+  bool volhas_attrlist
+      = ff_pkt->volhas_attrlist; /* Remember this if we recurse */
 
   /*
    * Ignore this directory and everything below if the file .nobackup
@@ -631,8 +635,8 @@ static inline int process_directory(JobControlRecord* jcr,
 
   bool is_win32_mount_point = false;
 #if defined(HAVE_WIN32)
-  is_win32_mount_point =
-      ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
+  is_win32_mount_point
+      = ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
 
   if (ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_REPARSE_POINT) {
     ff_pkt->type = FT_REPARSE;
@@ -684,8 +688,9 @@ static inline int process_directory(JobControlRecord* jcr,
   if (!top_level && BitIsSet(FO_NO_RECURSION, ff_pkt->flags)) {
     ff_pkt->type = FT_NORECURSE;
     recurse = false;
-  } else if (!top_level &&
-             (parent_device != ff_pkt->statp.st_dev || is_win32_mount_point)) {
+  } else if (!top_level
+             && (parent_device != ff_pkt->statp.st_dev
+                 || is_win32_mount_point)) {
     if (!BitIsSet(FO_MULTIFS, ff_pkt->flags)) {
       ff_pkt->type = FT_NOFSCHG;
       recurse = false;
@@ -765,10 +770,10 @@ static inline int process_directory(JobControlRecord* jcr,
     /*
      * Skip `.', `..', and excluded file names.
      */
-    if (entry->d_name[0] == '\0' ||
-        (entry->d_name[0] == '.' &&
-         (entry->d_name[1] == '\0' ||
-          (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))) {
+    if (entry->d_name[0] == '\0'
+        || (entry->d_name[0] == '.'
+            && (entry->d_name[1] == '\0'
+                || (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))) {
       continue;
     }
 
@@ -815,10 +820,10 @@ static inline int process_directory(JobControlRecord* jcr,
     /*
      * Skip `.', `..', and excluded file names.
      */
-    if (result->d_name[0] == '\0' ||
-        (result->d_name[0] == '.' &&
-         (result->d_name[1] == '\0' ||
-          (result->d_name[1] == '.' && result->d_name[2] == '\0')))) {
+    if (result->d_name[0] == '\0'
+        || (result->d_name[0] == '.'
+            && (result->d_name[1] == '\0'
+                || (result->d_name[1] == '.' && result->d_name[2] == '\0')))) {
       continue;
     }
 
@@ -856,8 +861,8 @@ static inline int process_directory(JobControlRecord* jcr,
   if (BitIsSet(FO_KEEPATIME, ff_pkt->flags)) {
     RestoreFileTimes(ff_pkt, fname);
   }
-  ff_pkt->volhas_attrlist =
-      volhas_attrlist; /* Restore value in case it changed. */
+  ff_pkt->volhas_attrlist
+      = volhas_attrlist; /* Restore value in case it changed. */
 
   return rtn_stat;
 }
@@ -889,14 +894,14 @@ static inline int process_special_file(JobControlRecord* jcr,
    * crw-r----- 1 root  operator - 116, 0x00040002 Jun 9 19:32 /dev/ad0s3
    * crw-r----- 1 root  operator - 116, 0x00040002 Jun 9 19:32 /dev/rad0s3
    */
-  if (top_level &&
-      (S_ISBLK(ff_pkt->statp.st_mode) || S_ISCHR(ff_pkt->statp.st_mode))) {
+  if (top_level
+      && (S_ISBLK(ff_pkt->statp.st_mode) || S_ISCHR(ff_pkt->statp.st_mode))) {
 #else
   if (top_level && S_ISBLK(ff_pkt->statp.st_mode)) {
 #endif
     ff_pkt->type = FT_RAW; /* raw partition */
-  } else if (top_level && S_ISFIFO(ff_pkt->statp.st_mode) &&
-             BitIsSet(FO_READFIFO, ff_pkt->flags)) {
+  } else if (top_level && S_ISFIFO(ff_pkt->statp.st_mode)
+             && BitIsSet(FO_READFIFO, ff_pkt->flags)) {
     ff_pkt->type = FT_FIFO;
   } else {
     /*
@@ -1040,8 +1045,8 @@ int FindOneFile(JobControlRecord* jcr,
   }
 
 #ifdef HAVE_DARWIN_OS
-  if (BitIsSet(FO_HFSPLUS, ff_pkt->flags) && ff_pkt->volhas_attrlist &&
-      S_ISREG(ff_pkt->statp.st_mode)) {
+  if (BitIsSet(FO_HFSPLUS, ff_pkt->flags) && ff_pkt->volhas_attrlist
+      && S_ISREG(ff_pkt->statp.st_mode)) {
     rtn_stat = process_hfsattributes(jcr, ff_pkt, HandleFile, fname, top_level);
     if (rtn_stat != -1) { return rtn_stat; }
   }
@@ -1069,8 +1074,8 @@ int FindOneFile(JobControlRecord* jcr,
          * if file processing is done. If done is set to false we continue
          * with the normal processing of the file.
          */
-        rtn_stat =
-            process_hardlink(jcr, ff_pkt, HandleFile, fname, top_level, &done);
+        rtn_stat = process_hardlink(jcr, ff_pkt, HandleFile, fname, top_level,
+                                    &done);
         if (done) { return rtn_stat; }
         break;
       default:

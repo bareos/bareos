@@ -41,13 +41,13 @@
 #include "lib/volume_session_info.h"
 
 #if HAVE_NDMP
-#include "dird/ndmp_dma_generic.h"
-#include "dird/ndmp_dma_restore_common.h"
+#  include "dird/ndmp_dma_generic.h"
+#  include "dird/ndmp_dma_restore_common.h"
 
-#define NDMP_NEED_ENV_KEYWORDS 1
+#  define NDMP_NEED_ENV_KEYWORDS 1
 
-#include "ndmp/ndmagents.h"
-#include "ndmp_dma_priv.h"
+#  include "ndmp/ndmagents.h"
+#  include "ndmp_dma_priv.h"
 #endif /* HAVE_NDMP */
 
 namespace directordaemon {
@@ -332,7 +332,8 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
 
   if (!nbf_options || nbf_options->needs_namelist) {
     if (set_files_to_restore(jcr, job, current_fi, destination_path.c_str(),
-                             ndmp_filesystem) == 0) {
+                             ndmp_filesystem)
+        == 0) {
       /*
        * There is no specific filename selected so restore everything.
        */
@@ -508,8 +509,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     /*
      * Send the bootstrap file -- what Volumes/files to restore
      */
-    if (!SendBootstrapFile(jcr, sd, info) ||
-        !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR)) {
+    if (!SendBootstrapFile(jcr, sd, info)
+        || !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR)) {
       goto cleanup;
     }
 
@@ -604,12 +605,12 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
         ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
         ndmp_sess.control_agent_enabled = 1;
 
-        ndmp_sess.param =
-            (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
+        ndmp_sess.param = (struct ndm_session_param*)malloc(
+            sizeof(struct ndm_session_param));
         memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
         ndmp_sess.param->log.deliver = NdmpLoghandler;
-        ndmp_sess.param->log_level =
-            NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
+        ndmp_sess.param->log_level
+            = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
         nis->jcr = jcr;
         ndmp_sess.param->log.ctx = nis;
         ndmp_sess.param->log_tag = strdup("DIR-NDMP");

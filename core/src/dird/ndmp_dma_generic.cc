@@ -35,12 +35,12 @@
 #include "include/auth_types.h"
 
 #if HAVE_NDMP
-#define SMTAPE_MIN_BLOCKSIZE 4096        /**< 4 Kb */
-#define SMTAPE_MAX_BLOCKSIZE 262144      /**< 256 Kb */
-#define SMTAPE_BLOCKSIZE_INCREMENTS 4096 /**< 4 Kb */
+#  define SMTAPE_MIN_BLOCKSIZE 4096        /**< 4 Kb */
+#  define SMTAPE_MAX_BLOCKSIZE 262144      /**< 256 Kb */
+#  define SMTAPE_BLOCKSIZE_INCREMENTS 4096 /**< 4 Kb */
 
-#include "ndmp/ndmagents.h"
-#include "ndmp_dma_priv.h"
+#  include "ndmp/ndmagents.h"
+#  include "ndmp_dma_priv.h"
 #endif /* HAVE_NDMP */
 
 namespace directordaemon {
@@ -106,12 +106,11 @@ bool NdmpValidateClient(JobControlRecord* jcr)
       }
       break;
     default:
-      Jmsg(
-          jcr, M_FATAL, 0,
-          _("Client %s, with backup protocol %s  not compatible for running "
-            "NDMP backup.\n"),
-          jcr->impl->res.client->resource_name_,
-          AuthenticationProtocolTypeToString(jcr->impl->res.client->Protocol));
+      Jmsg(jcr, M_FATAL, 0,
+           _("Client %s, with backup protocol %s  not compatible for running "
+             "NDMP backup.\n"),
+           jcr->impl->res.client->resource_name_,
+           AuthenticationProtocolTypeToString(jcr->impl->res.client->Protocol));
       return false;
   }
 
@@ -364,8 +363,8 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
     /*
      * SMTAPE only wants certain blocksizes.
      */
-    if (jcr->impl->res.client->ndmp_blocksize < SMTAPE_MIN_BLOCKSIZE ||
-        jcr->impl->res.client->ndmp_blocksize > SMTAPE_MAX_BLOCKSIZE) {
+    if (jcr->impl->res.client->ndmp_blocksize < SMTAPE_MIN_BLOCKSIZE
+        || jcr->impl->res.client->ndmp_blocksize > SMTAPE_MAX_BLOCKSIZE) {
       Jmsg(jcr, M_FATAL, 0,
            _("For SMTAPE NDMP jobs the NDMP blocksize needs to be between %d "
              "and %d, but is set to %d\n"),
@@ -374,8 +373,8 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
       goto bail_out;
     }
 
-    if ((jcr->impl->res.client->ndmp_blocksize %
-         SMTAPE_BLOCKSIZE_INCREMENTS) != 0) {
+    if ((jcr->impl->res.client->ndmp_blocksize % SMTAPE_BLOCKSIZE_INCREMENTS)
+        != 0) {
       Jmsg(jcr, M_FATAL, 0,
            _("For SMTAPE NDMP jobs the NDMP blocksize needs to be in "
              "increments of %d bytes, but is set to %d\n"),
@@ -631,14 +630,14 @@ void NdmpDoQuery(UaContext* ua,
    * Initialize a new NDMP session
    */
   memset(&ndmp_sess, 0, sizeof(ndmp_sess));
-  ndmp_sess.param =
-      (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
+  ndmp_sess.param
+      = (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
   memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
   ndmp_sess.param->log.deliver = NdmpLoghandler;
   nis = (NIS*)malloc(sizeof(NIS));
   memset(nis, 0, sizeof(NIS));
-  ndmp_sess.param->log_level =
-      NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
+  ndmp_sess.param->log_level
+      = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
   nis->ua = ua;
   ndmp_sess.param->log.ctx = nis;
   ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;

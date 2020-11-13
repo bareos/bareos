@@ -88,20 +88,20 @@ static char setbandwidth[] = "setbandwidth=%lld Job=%127s";
 static char setdebugv0cmd[] = "setdebug=%d trace=%d";
 static char setdebugv1cmd[] = "setdebug=%d trace=%d timestamp=%d";
 static char cancelcmd[] = "cancel Job=%127s";
-static char relabelcmd[] =
-    "relabel %127s OldName=%127s NewName=%127s PoolName=%127s "
-    "MediaType=%127s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d";
-static char labelcmd[] =
-    "label %127s VolumeName=%127s PoolName=%127s "
-    "MediaType=%127s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d";
+static char relabelcmd[]
+    = "relabel %127s OldName=%127s NewName=%127s PoolName=%127s "
+      "MediaType=%127s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d";
+static char labelcmd[]
+    = "label %127s VolumeName=%127s PoolName=%127s "
+      "MediaType=%127s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d";
 static char mountslotcmd[] = "mount %127s drive=%hd slot=%hd";
 static char mountcmd[] = "mount %127s drive=%hd";
 static char unmountcmd[] = "unmount %127s drive=%hd";
 static char releasecmd[] = "release %127s drive=%hd";
 static char readlabelcmd[] = "readlabel %127s Slot=%hd drive=%hd";
-static char replicatecmd[] =
-    "replicate JobId=%d Job=%127s address=%s port=%d ssl=%d "
-    "Authorization=%100s";
+static char replicatecmd[]
+    = "replicate JobId=%d Job=%127s address=%s port=%d ssl=%d "
+      "Authorization=%100s";
 static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d";
 static char resolvecmd[] = "resolve %s";
 static char pluginoptionscmd[] = "pluginoptions %s";
@@ -109,10 +109,10 @@ static char pluginoptionscmd[] = "pluginoptions %s";
 /* Responses sent to Director */
 static char derrmsg[] = "3900 Invalid command:";
 static char OKsetdebugv0[] = "3000 OK setdebug=%d tracefile=%s\n";
-static char OKsetdebugv1[] =
-    "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s\n";
-static char invalid_cmd[] =
-    "3997 Invalid command for a Director with Monitor directive enabled.\n";
+static char OKsetdebugv1[]
+    = "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s\n";
+static char invalid_cmd[]
+    = "3997 Invalid command for a Director with Monitor directive enabled.\n";
 static char OK_bootstrap[] = "3000 OK bootstrap\n";
 static char ERROR_bootstrap[] = "3904 Error bootstrap\n";
 static char OK_replicate[] = "3000 OK replicate\n";
@@ -498,8 +498,8 @@ static bool CancelCmd(JobControlRecord* cjcr)
   jcr->setJobStatus(status);
 
   Dmsg2(800, "Cancel JobId=%d %p\n", jcr->JobId, jcr);
-  if (!jcr->authenticated &&
-      (oldStatus == JS_WaitFD || oldStatus == JS_WaitSD)) {
+  if (!jcr->authenticated
+      && (oldStatus == JS_WaitFD || oldStatus == JS_WaitSD)) {
     pthread_cond_signal(&jcr->impl->job_start_wait); /* wake waiting thread */
   }
 
@@ -520,16 +520,16 @@ static bool CancelCmd(JobControlRecord* cjcr)
   /*
    * If thread waiting on mount, wake him
    */
-  if (jcr->impl->dcr && jcr->impl->dcr->dev &&
-      jcr->impl->dcr->dev->waiting_for_mount()) {
+  if (jcr->impl->dcr && jcr->impl->dcr->dev
+      && jcr->impl->dcr->dev->waiting_for_mount()) {
     pthread_cond_broadcast(&jcr->impl->dcr->dev->wait_next_vol);
     Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
           (uint32_t)jcr->JobId);
     ReleaseDeviceCond();
   }
 
-  if (jcr->impl->read_dcr && jcr->impl->read_dcr->dev &&
-      jcr->impl->read_dcr->dev->waiting_for_mount()) {
+  if (jcr->impl->read_dcr && jcr->impl->read_dcr->dev
+      && jcr->impl->read_dcr->dev->waiting_for_mount()) {
     pthread_cond_broadcast(&jcr->impl->read_dcr->dev->wait_next_vol);
     Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
           (uint32_t)jcr->JobId);
@@ -633,14 +633,16 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   if (relabel) {
     if (sscanf(dir->msg, relabelcmd, dev_name.c_str(), oldname, newname,
                poolname, mediatype, &slot, &drive_input,
-               &blocksizes.min_block_size, &blocksizes.max_block_size) == 9) {
+               &blocksizes.min_block_size, &blocksizes.max_block_size)
+        == 9) {
       ok = true;
     }
   } else {
     *oldname = 0;
     if (sscanf(dir->msg, labelcmd, dev_name.c_str(), newname, poolname,
                mediatype, &slot, &drive_input, &blocksizes.min_block_size,
-               &blocksizes.max_block_size) == 8) {
+               &blocksizes.max_block_size)
+        == 8) {
       ok = true;
     }
   }
@@ -931,8 +933,8 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
             Dmsg1(100, "Device %s not autoselect skipped.\n", devname.c_str());
             continue; /* device is not available */
           }
-          if (drive == kInvalidDriveNumber ||
-              drive == device_resource->dev->drive) {
+          if (drive == kInvalidDriveNumber
+              || drive == device_resource->dev->drive) {
             Dmsg1(20, "Found changer device %s\n",
                   device_resource->resource_name_);
             found = true;
@@ -968,8 +970,8 @@ static bool MountCmd(JobControlRecord* jcr)
   slot_number_t slot = 0;
 
   int drive_input = -1;
-  bool ok =
-      sscanf(dir->msg, mountslotcmd, devname.c_str(), &drive_input, &slot) == 3;
+  bool ok = sscanf(dir->msg, mountslotcmd, devname.c_str(), &drive_input, &slot)
+            == 3;
 
   if (!ok) {
     ok = sscanf(dir->msg, mountcmd, devname.c_str(), &drive_input) == 2;
@@ -1325,8 +1327,8 @@ static inline bool GetBootstrapFile(JobControlRecord* jcr, BareosSocket* sock)
   }
   fclose(bs);
   Dmsg0(10, "=== end bootstrap file ===\n");
-  jcr->impl->read_session.bsr =
-      libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
+  jcr->impl->read_session.bsr
+      = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
   if (!jcr->impl->read_session.bsr) {
     Jmsg(jcr, M_FATAL, 0, _("Error parsing bootstrap file.\n"));
     goto bail_out;
@@ -1379,16 +1381,17 @@ static bool ChangerCmd(JobControlRecord* jcr)
   } else if (sscanf(dir->msg, "autochanger list %127s", devname.c_str()) == 1) {
     cmd = "list";
     safe_cmd = ok = true;
-  } else if (sscanf(dir->msg, "autochanger slots %127s", devname.c_str()) ==
-             1) {
+  } else if (sscanf(dir->msg, "autochanger slots %127s", devname.c_str())
+             == 1) {
     cmd = "slots";
     safe_cmd = ok = true;
-  } else if (sscanf(dir->msg, "autochanger drives %127s", devname.c_str()) ==
-             1) {
+  } else if (sscanf(dir->msg, "autochanger drives %127s", devname.c_str())
+             == 1) {
     cmd = "drives";
     safe_cmd = ok = true;
   } else if (sscanf(dir->msg, "autochanger transfer %127s %hd %hd",
-                    devname.c_str(), &src_slot, &dst_slot) == 3) {
+                    devname.c_str(), &src_slot, &dst_slot)
+             == 3) {
     cmd = "transfer";
     safe_cmd = ok = true;
     is_transfer = true;
@@ -1445,8 +1448,8 @@ static bool ReadlabelCmd(JobControlRecord* jcr)
   slot_number_t slot;
   int drive_input = -1;
 
-  if (sscanf(dir->msg, readlabelcmd, devname.c_str(), &slot, &drive_input) ==
-      3) {
+  if (sscanf(dir->msg, readlabelcmd, devname.c_str(), &slot, &drive_input)
+      == 3) {
     drive_number_t drive = IntToDriveNumber(drive_input);
     dcr = FindDevice(jcr, devname, drive, NULL);
     if (dcr) {
@@ -1623,8 +1626,8 @@ class ReplicateCmdConnectState {
 
   ~ReplicateCmdConnectState()
   {
-    if (state_ == ReplicateCmdState::kInit ||
-        state_ == ReplicateCmdState::kError) {
+    if (state_ == ReplicateCmdState::kInit
+        || state_ == ReplicateCmdState::kError) {
       if (!jcr_) { return; }
       if (jcr_->dir_bsock) {
         jcr_->dir_bsock->fsend(BADcmd, "replicate", jcr_->dir_bsock->msg);
@@ -1644,14 +1647,15 @@ static bool ReplicateCmd(JobControlRecord* jcr)
   uint32_t JobId = 0;
   PoolMem sd_auth_key(PM_MESSAGE);
   BareosSocket* dir = jcr->dir_bsock;
-  std::unique_ptr<BareosSocket> storage_daemon_socket =
-      std::make_unique<BareosSocketTCP>();
+  std::unique_ptr<BareosSocket> storage_daemon_socket
+      = std::make_unique<BareosSocketTCP>();
 
   Dmsg1(100, "ReplicateCmd: %s", dir->msg);
   sd_auth_key.check_size(dir->message_length);
 
   if (sscanf(dir->msg, replicatecmd, &JobId, JobName, stored_addr, &stored_port,
-             &tls_policy, sd_auth_key.c_str()) != 6) {
+             &tls_policy, sd_auth_key.c_str())
+      != 6) {
     dir->fsend(BADcmd, "replicate", dir->msg);
     return false;
   }
@@ -1750,8 +1754,8 @@ static bool PassiveCmd(JobControlRecord* jcr)
   BareosSocket* fd; /* file daemon bsock */
 
   Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
-  if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port,
-             &tls_policy) != 3) {
+  if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &tls_policy)
+      != 3) {
     PmStrcpy(jcr->errmsg, dir->msg);
     Jmsg(jcr, M_FATAL, 0, _("Bad passiveclientcmd command: %s"), jcr->errmsg);
     goto bail_out;

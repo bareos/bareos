@@ -68,10 +68,10 @@ static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d\n";
 static char OKbackup[] = "2000 OK backup\n";
 static char OKstore[] = "2000 OK storage\n";
 static char OKpassiveclient[] = "2000 OK passive client\n";
-static char EndJob[] =
-    "2800 End Job TermCode=%d JobFiles=%u "
-    "ReadBytes=%llu JobBytes=%llu Errors=%u "
-    "VSS=%d Encrypt=%d\n";
+static char EndJob[]
+    = "2800 End Job TermCode=%d JobFiles=%u "
+      "ReadBytes=%llu JobBytes=%llu Errors=%u "
+      "VSS=%d Encrypt=%d\n";
 
 static inline bool ValidateClient(JobControlRecord* jcr)
 {
@@ -158,8 +158,8 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
-  jcr->impl->jr.PoolId =
-      GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
+  jcr->impl->jr.PoolId
+      = GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
   if (jcr->impl->jr.PoolId == 0) { return false; }
 
   /*
@@ -223,8 +223,8 @@ static int AccurateListHandler(void* ctx, int num_fields, char** row)
   }
 
   /* sending with checksum */
-  if (jcr->impl->use_accurate_chksum && num_fields == 9 &&
-      row[6][0] && /* skip checksum = '0' */
+  if (jcr->impl->use_accurate_chksum && num_fields == 9 && row[6][0]
+      && /* skip checksum = '0' */
       row[6][1]) {
     jcr->file_bsock->fsend("%s%s%c%s%c%s%c%s", row[0], row[1], 0, row[4], 0,
                            row[6], 0, row[5]);
@@ -535,8 +535,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
      */
 
     TlsPolicy tls_policy;
-    if (jcr->impl->res.client->connection_successful_handshake_ !=
-        ClientConnectionHandshakeMode::kTlsFirst) {
+    if (jcr->impl->res.client->connection_successful_handshake_
+        != ClientConnectionHandshakeMode::kTlsFirst) {
       tls_policy = store->GetPolicy();
     } else {
       tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
@@ -557,8 +557,8 @@ bool DoNativeBackup(JobControlRecord* jcr)
   } else { /* passive client */
 
     TlsPolicy tls_policy;
-    if (jcr->impl->res.client->connection_successful_handshake_ !=
-        ClientConnectionHandshakeMode::kTlsFirst) {
+    if (jcr->impl->res.client->connection_successful_handshake_
+        != ClientConnectionHandshakeMode::kTlsFirst) {
       tls_policy = client->GetPolicy();
     } else {
       tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
@@ -705,9 +705,10 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
      * Wait for Client to terminate
      */
     while ((n = BgetDirmsg(fd)) >= 0) {
-      if (!fd_ok &&
-          sscanf(fd->msg, EndJob, &jcr->impl->FDJobStatus, &JobFiles,
-                 &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt) == 7) {
+      if (!fd_ok
+          && sscanf(fd->msg, EndJob, &jcr->impl->FDJobStatus, &JobFiles,
+                    &ReadBytes, &JobBytes, &JobErrors, &VSS, &Encrypt)
+                 == 7) {
         fd_ok = true;
         jcr->setJobStatus(jcr->impl->FDJobStatus);
         Dmsg1(100, "FDStatus=%c\n", (char)jcr->JobStatus);
@@ -723,8 +724,8 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
       int i = 0;
       Jmsg(jcr, M_FATAL, 0, _("Network error with FD during %s: ERR=%s\n"),
            job_type_to_str(jcr->getJobType()), fd->bstrerror());
-      while (i++ < 10 && jcr->impl->res.job->RescheduleIncompleteJobs &&
-             jcr->IsCanceled()) {
+      while (i++ < 10 && jcr->impl->res.job->RescheduleIncompleteJobs
+             && jcr->IsCanceled()) {
         Bmicrosleep(3, 0);
       }
     }
@@ -737,8 +738,8 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
    */
   Dmsg5(100, "cancel=%d fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", jcr->IsCanceled(),
         fd_ok, jcr->impl->FDJobStatus, jcr->JobStatus, jcr->impl->SDJobStatus);
-  if (jcr->IsCanceled() ||
-      (!jcr->impl->res.job->RescheduleIncompleteJobs && !fd_ok)) {
+  if (jcr->IsCanceled()
+      || (!jcr->impl->res.job->RescheduleIncompleteJobs && !fd_ok)) {
     Dmsg4(100, "fd_ok=%d FDJS=%d JS=%d SDJS=%d\n", fd_ok,
           jcr->impl->FDJobStatus, jcr->JobStatus, jcr->impl->SDJobStatus);
     CancelStorageDaemonJob(jcr);
@@ -793,8 +794,8 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
 
-  if (jcr->is_JobStatus(JS_Terminated) &&
-      (jcr->JobErrors || jcr->impl->SDErrors || jcr->JobWarnings)) {
+  if (jcr->is_JobStatus(JS_Terminated)
+      && (jcr->JobErrors || jcr->impl->SDErrors || jcr->JobWarnings)) {
     TermCode = JS_Warnings;
   }
 
@@ -862,8 +863,8 @@ void UpdateBootstrapFile(JobControlRecord* jcr)
   /*
    * Now update the bootstrap file if any
    */
-  if (jcr->IsTerminatedOk() && jcr->impl->jr.JobBytes &&
-      jcr->impl->res.job->WriteBootstrap) {
+  if (jcr->IsTerminatedOk() && jcr->impl->jr.JobBytes
+      && jcr->impl->res.job->WriteBootstrap) {
     FILE* fd;
     int VolCount;
     int got_pipe = 0;

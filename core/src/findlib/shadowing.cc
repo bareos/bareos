@@ -78,11 +78,11 @@ static inline bool check_include_pattern_shadowing(JobControlRecord* jcr,
       /*
        * See if one pattern shadows the other.
        */
-      if (((len1 < len2 && pattern1[len1] == '\0' &&
-            IsPathSeparator(pattern2[len1])) ||
-           (len1 > len2 && IsPathSeparator(pattern1[len2]) &&
-            pattern1[len1] == '\0')) &&
-          bstrncmp(pattern1, pattern2, MIN(len1, len2))) {
+      if (((len1 < len2 && pattern1[len1] == '\0'
+            && IsPathSeparator(pattern2[len1]))
+           || (len1 > len2 && IsPathSeparator(pattern1[len2])
+               && pattern1[len1] == '\0'))
+          && bstrncmp(pattern1, pattern2, MIN(len1, len2))) {
         /*
          * If both directories have the same st_dev they shadow
          * each other e.g. are not on separate filesystems.
@@ -155,8 +155,8 @@ static inline bool IncludeBlockHasPatterns(findIncludeExcludeItem* incexe)
      * - regexfile = entries
      * - wildfile = entries
      */
-    if (fo->regex.size() > 0 || fo->regexdir.size() > 0 ||
-        fo->wild.size() > 0 || fo->wilddir.size() > 0) {
+    if (fo->regex.size() > 0 || fo->regexdir.size() > 0 || fo->wild.size() > 0
+        || fo->wilddir.size() > 0) {
       has_find_patterns = true;
     }
   }
@@ -324,8 +324,8 @@ static inline void check_global_fileset_shadowing(JobControlRecord* jcr,
       /*
        * See if both include blocks are recursive.
        */
-      global_recursive =
-          (local_recursive && IncludeBlockIsRecursive(compare_against));
+      global_recursive
+          = (local_recursive && IncludeBlockIsRecursive(compare_against));
 
       /*
        * Walk over the filename list and compare it

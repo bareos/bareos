@@ -31,7 +31,7 @@
 #include "filed/filed_globals.h"
 
 #ifdef HAVE_LMDB
-#include "accurate.h"
+#  include "accurate.h"
 #endif
 
 namespace filedaemon {
@@ -39,8 +39,8 @@ namespace filedaemon {
 #ifdef HAVE_LMDB
 static int debuglevel = 100;
 
-#define AVG_NR_BYTES_PER_ENTRY 256
-#define B_PAGE_SIZE 4096
+#  define AVG_NR_BYTES_PER_ENTRY 256
+#  define B_PAGE_SIZE 4096
 
 BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JobControlRecord* jcr,
                                                        uint32_t number_of_files)
@@ -74,16 +74,16 @@ bool BareosAccurateFilelistLmdb::init()
     if ((number_of_previous_files_ * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
       size_t pagesize;
 
-#ifdef HAVE_GETPAGESIZE
+#  ifdef HAVE_GETPAGESIZE
       pagesize = getpagesize();
-#else
+#  else
       pagesize = B_PAGE_SIZE;
-#endif
+#  endif
 
-      mapsize =
-          (((number_of_previous_files_ * AVG_NR_BYTES_PER_ENTRY) / pagesize) +
-           1) *
-          pagesize;
+      mapsize
+          = (((number_of_previous_files_ * AVG_NR_BYTES_PER_ENTRY) / pagesize)
+             + 1)
+            * pagesize;
     }
     result = mdb_env_set_mapsize(env, mapsize);
     if (result) {
@@ -502,8 +502,8 @@ bool BareosAccurateFilelistLmdb::SendDeletedList()
     while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
       payload = (accurate_payload*)data.mv_data;
 
-      if (BitIsSet(payload->filenr, seen_bitmap_) ||
-          PluginCheckFile(jcr_, (char*)key.mv_data)) {
+      if (BitIsSet(payload->filenr, seen_bitmap_)
+          || PluginCheckFile(jcr_, (char*)key.mv_data)) {
         continue;
       }
 

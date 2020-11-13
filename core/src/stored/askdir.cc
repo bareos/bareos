@@ -50,31 +50,31 @@ static const int debuglevel = 50;
 static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Requests sent to the Director */
-static char Find_media[] =
-    "CatReq Job=%s FindMedia=%d pool_name=%s media_type=%s "
-    "unwanted_volumes=%s\n";
+static char Find_media[]
+    = "CatReq Job=%s FindMedia=%d pool_name=%s media_type=%s "
+      "unwanted_volumes=%s\n";
 static char Get_Vol_Info[] = "CatReq Job=%s GetVolInfo VolName=%s write=%d\n";
-static char Update_media[] =
-    "CatReq Job=%s UpdateMedia VolName=%s"
-    " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%s VolMounts=%u"
-    " VolErrors=%u VolWrites=%u MaxVolBytes=%s EndTime=%s VolStatus=%s"
-    " Slot=%d relabel=%d InChanger=%d VolReadTime=%s VolWriteTime=%s"
-    " VolFirstWritten=%s\n";
-static char Create_job_media[] =
-    "CatReq Job=%s CreateJobMedia"
-    " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u"
-    " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%s\n";
+static char Update_media[]
+    = "CatReq Job=%s UpdateMedia VolName=%s"
+      " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%s VolMounts=%u"
+      " VolErrors=%u VolWrites=%u MaxVolBytes=%s EndTime=%s VolStatus=%s"
+      " Slot=%d relabel=%d InChanger=%d VolReadTime=%s VolWriteTime=%s"
+      " VolFirstWritten=%s\n";
+static char Create_job_media[]
+    = "CatReq Job=%s CreateJobMedia"
+      " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u"
+      " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%s\n";
 static char FileAttributes[] = "UpdCat Job=%s FileAttributes ";
 
 /* Responses received from the Director */
-static char OK_media[] =
-    "1000 OK VolName=%127s VolJobs=%u VolFiles=%lu"
-    " VolBlocks=%lu VolBytes=%lld VolMounts=%lu VolErrors=%lu VolWrites=%lu"
-    " MaxVolBytes=%lld VolCapacityBytes=%lld VolStatus=%20s"
-    " Slot=%ld MaxVolJobs=%lu MaxVolFiles=%lu InChanger=%ld"
-    " VolReadTime=%lld VolWriteTime=%lld EndFile=%lu EndBlock=%lu"
-    " LabelType=%ld MediaId=%lld EncryptionKey=%127s"
-    " MinBlocksize=%lu MaxBlocksize=%lu\n";
+static char OK_media[]
+    = "1000 OK VolName=%127s VolJobs=%u VolFiles=%lu"
+      " VolBlocks=%lu VolBytes=%lld VolMounts=%lu VolErrors=%lu VolWrites=%lu"
+      " MaxVolBytes=%lld VolCapacityBytes=%lld VolStatus=%20s"
+      " Slot=%ld MaxVolJobs=%lu MaxVolFiles=%lu InChanger=%ld"
+      " VolReadTime=%lld VolWriteTime=%lld EndFile=%lu EndBlock=%lu"
+      " LabelType=%ld MediaId=%lld EncryptionKey=%127s"
+      " MinBlocksize=%lu MaxBlocksize=%lu\n";
 static char OK_create[] = "1000 OK CreateJobMedia\n";
 
 /**
@@ -433,11 +433,11 @@ bool StorageDaemonDeviceControlRecord::DirUpdateFileAttributes(
 #endif
 
   dir->msg = CheckPoolMemorySize(
-      dir->msg, sizeof(FileAttributes) + MAX_NAME_LENGTH +
-                    sizeof(DeviceRecord) + record->data_len + 1);
-  dir->message_length =
-      Bsnprintf(dir->msg, sizeof(FileAttributes) + MAX_NAME_LENGTH + 1,
-                FileAttributes, jcr->Job);
+      dir->msg, sizeof(FileAttributes) + MAX_NAME_LENGTH + sizeof(DeviceRecord)
+                    + record->data_len + 1);
+  dir->message_length
+      = Bsnprintf(dir->msg, sizeof(FileAttributes) + MAX_NAME_LENGTH + 1,
+                  FileAttributes, jcr->Job);
   SerBegin(dir->msg + dir->message_length, 0);
   ser_uint32(record->VolSessionId);
   ser_uint32(record->VolSessionTime);
@@ -582,19 +582,19 @@ bool StorageDaemonDeviceControlRecord::DirAskSysopToMountVolume(int mode)
       const char* msg;
 
       if (mode == ST_APPENDREADY) {
-        msg =
-            _("Please mount append Volume \"%s\" or label a new one for:\n"
-              "    Job:          %s\n"
-              "    Storage:      %s\n"
-              "    Pool:         %s\n"
-              "    Media type:   %s\n");
+        msg
+            = _("Please mount append Volume \"%s\" or label a new one for:\n"
+                "    Job:          %s\n"
+                "    Storage:      %s\n"
+                "    Pool:         %s\n"
+                "    Media type:   %s\n");
       } else {
-        msg =
-            _("Please mount read Volume \"%s\" for:\n"
-              "    Job:          %s\n"
-              "    Storage:      %s\n"
-              "    Pool:         %s\n"
-              "    Media type:   %s\n");
+        msg
+            = _("Please mount read Volume \"%s\" for:\n"
+                "    Job:          %s\n"
+                "    Storage:      %s\n"
+                "    Pool:         %s\n"
+                "    Media type:   %s\n");
       }
       Jmsg(jcr, M_MOUNT, 0, msg, VolumeName, jcr->Job, dev->print_name(),
            pool_name, media_type);

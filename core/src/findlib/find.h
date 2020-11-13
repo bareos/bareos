@@ -42,11 +42,11 @@
 
 #include <sys/file.h>
 #if !defined(HAVE_WIN32) || defined(HAVE_MINGW)
-#include <sys/param.h>
+#  include <sys/param.h>
 #endif
 
 #if !defined(HAVE_UTIMES) && !defined(HAVE_LUTIMES)
-#include <utime.h>
+#  include <utime.h>
 #endif
 
 #define MODE_RALL (S_IRUSR | S_IRGRP | S_IROTH)
@@ -54,14 +54,14 @@
 #include "lib/fnmatch.h"
 
 #ifndef HAVE_REGEX_H
-#include "lib/bregex.h"
+#  include "lib/bregex.h"
 #else
-#include <regex.h>
+#  include <regex.h>
 #endif
 #ifdef USE_READDIR_R
-#ifndef HAVE_READDIR_R
+#  ifndef HAVE_READDIR_R
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
-#endif
+#  endif
 #endif
 /**
  * For options FO_xxx values see src/fileopts.h

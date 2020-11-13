@@ -199,8 +199,8 @@ bool DoConsolidate(JobControlRecord* jcr)
        * Calculate limit for query. We specify how many incrementals should be
        * left. the limit is total number of incrementals - number required - 1
        */
-      max_incrementals_to_consolidate =
-          incrementals_total - job->AlwaysIncrementalKeepNumber;
+      max_incrementals_to_consolidate
+          = incrementals_total - job->AlwaysIncrementalKeepNumber;
 
       Dmsg2(10, "Incrementals found/required. (%d/%d).\n", incrementals_total,
             job->AlwaysIncrementalKeepNumber);
@@ -287,8 +287,8 @@ bool DoConsolidate(JobControlRecord* jcr)
                jobids);
           if (p) { *p++ = ','; /* Restore , and point to rest of list */ }
 
-        } else if (max_full_consolidations &&
-                   fullconsolidations_started >= max_full_consolidations) {
+        } else if (max_full_consolidations
+                   && fullconsolidations_started >= max_full_consolidations) {
           Jmsg(jcr, M_INFO, 0,
                _("%d AlwaysIncrementalFullConsolidations reached -> skipping "
                  "first jobid %s independent of age\n"),

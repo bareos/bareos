@@ -293,8 +293,8 @@ dlist* native_get_vol_list(UaContext* ua,
     /*
      * Check for returned SD messages
      */
-    if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) && B_ISDIGIT(sd->msg[2]) &&
-        B_ISDIGIT(sd->msg[3]) && sd->msg[4] == ' ') {
+    if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) && B_ISDIGIT(sd->msg[2])
+        && B_ISDIGIT(sd->msg[3]) && sd->msg[4] == ' ') {
       ua->SendMsg("%s\n", sd->msg); /* pass them on to user */
       continue;
     }
@@ -395,8 +395,8 @@ dlist* native_get_vol_list(UaContext* ua,
         continue;
       }
 
-      if (!IsAnInteger(field1) ||
-          (vl->bareos_slot_number = atoi(field1)) <= 0) {
+      if (!IsAnInteger(field1)
+          || (vl->bareos_slot_number = atoi(field1)) <= 0) {
         ua->ErrorMsg(_("Invalid Slot number: %s\n"), field1);
         free(vl);
         continue;
@@ -440,9 +440,10 @@ dlist* native_get_vol_list(UaContext* ua,
        */
       switch (vl->slot_type) {
         case slot_type_t::kSlotTypeDrive:
-          if (!IsAnInteger(field2) ||
-              (vl->bareos_slot_number = static_cast<slot_number_t>(
-                   atoi(field2))) == kInvalidSlotNumber) {
+          if (!IsAnInteger(field2)
+              || (vl->bareos_slot_number
+                  = static_cast<slot_number_t>(atoi(field2)))
+                     == kInvalidSlotNumber) {
             ua->ErrorMsg(_("Invalid Drive number: %s\n"), field2);
             free(vl);
             continue;
@@ -457,8 +458,8 @@ dlist* native_get_vol_list(UaContext* ua,
           }
           break;
         default:
-          if (!IsAnInteger(field2) ||
-              (vl->bareos_slot_number = atoi(field2)) <= 0) {
+          if (!IsAnInteger(field2)
+              || (vl->bareos_slot_number = atoi(field2)) <= 0) {
             ua->ErrorMsg(_("Invalid Slot number: %s\n"), field2);
             free(vl);
             continue;
@@ -480,8 +481,8 @@ dlist* native_get_vol_list(UaContext* ua,
               break;
             case slot_type_t::kSlotTypeDrive:
               if (field4) {
-                vl->currently_loaded_slot_number =
-                    static_cast<slot_number_t>(atoi(field4));
+                vl->currently_loaded_slot_number
+                    = static_cast<slot_number_t>(atoi(field4));
               }
               if (field5) { vl->VolName = strdup(field5); }
               break;
@@ -795,8 +796,8 @@ bool NativeTransferVolume(UaContext* ua,
     /*
      * Check for returned SD messages
      */
-    if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) && B_ISDIGIT(sd->msg[2]) &&
-        B_ISDIGIT(sd->msg[3]) && sd->msg[4] == ' ') {
+    if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) && B_ISDIGIT(sd->msg[2])
+        && B_ISDIGIT(sd->msg[3]) && sd->msg[4] == ' ') {
       /*
        * See if this is a failure msg.
        */
@@ -869,8 +870,8 @@ bool SendSecureEraseReqToSd(JobControlRecord* jcr)
 
   sd->fsend(getSecureEraseCmd);
   while ((n = BgetDirmsg(sd)) >= 0) {
-    jcr->impl->SDSecureEraseCmd =
-        CheckPoolMemorySize(jcr->impl->SDSecureEraseCmd, sd->message_length);
+    jcr->impl->SDSecureEraseCmd
+        = CheckPoolMemorySize(jcr->impl->SDSecureEraseCmd, sd->message_length);
     if (sscanf(sd->msg, OKSecureEraseCmd, jcr->impl->SDSecureEraseCmd) == 1) {
       Dmsg1(421, "Got SD Secure Erase Cmd: %s\n", jcr->impl->SDSecureEraseCmd);
       break;
@@ -929,8 +930,8 @@ bool SendStoragePluginOptions(JobControlRecord* jcr)
   const char* plugin_options;
   BareosSocket* sd = jcr->store_bsock;
 
-  if (jcr->impl->res.job && jcr->impl->res.job->SdPluginOptions &&
-      jcr->impl->res.job->SdPluginOptions->size()) {
+  if (jcr->impl->res.job && jcr->impl->res.job->SdPluginOptions
+      && jcr->impl->res.job->SdPluginOptions->size()) {
     foreach_alist_index (i, plugin_options,
                          jcr->impl->res.job->SdPluginOptions) {
       PmStrcpy(cur_plugin_options, plugin_options);

@@ -324,8 +324,8 @@ static storagedaemon::BootStrapRecord* store_vol(
   for (p = lc->str; p && *p;) {
     n = strchr(p, '|');
     if (n) { *n++ = 0; }
-    volume =
-        (storagedaemon::BsrVolume*)malloc(sizeof(storagedaemon::BsrVolume));
+    volume
+        = (storagedaemon::BsrVolume*)malloc(sizeof(storagedaemon::BsrVolume));
     memset(volume, 0, sizeof(storagedaemon::BsrVolume));
     bstrncpy(volume->VolumeName, p, sizeof(volume->VolumeName));
 
@@ -411,8 +411,8 @@ static storagedaemon::BootStrapRecord* store_client(
   for (;;) {
     token = LexGetToken(lc, BCT_NAME);
     if (token == BCT_ERROR) { return NULL; }
-    client =
-        (storagedaemon::BsrClient*)malloc(sizeof(storagedaemon::BsrClient));
+    client
+        = (storagedaemon::BsrClient*)malloc(sizeof(storagedaemon::BsrClient));
     memset(client, 0, sizeof(storagedaemon::BsrClient));
     bstrncpy(client->ClientName, lc->str, sizeof(client->ClientName));
 
@@ -786,8 +786,8 @@ static storagedaemon::BootStrapRecord* store_stream(
   for (;;) {
     token = LexGetToken(lc, BCT_INT32);
     if (token == BCT_ERROR) { return NULL; }
-    stream =
-        (storagedaemon::BsrStream*)malloc(sizeof(storagedaemon::BsrStream));
+    stream
+        = (storagedaemon::BsrStream*)malloc(sizeof(storagedaemon::BsrStream));
     memset(stream, 0, sizeof(storagedaemon::BsrStream));
     stream->stream = lc->u.int32_val;
 

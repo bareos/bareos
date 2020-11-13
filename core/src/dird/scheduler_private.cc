@@ -80,8 +80,8 @@ static void SetJcrFromRunResource(JobControlRecord* jcr, RunResource* run)
   }
 
   if (run->vfull_pool != nullptr) {
-    jcr->impl->res.vfull_pool =
-        run->vfull_pool; /* override virtual full pool */
+    jcr->impl->res.vfull_pool
+        = run->vfull_pool; /* override virtual full pool */
     jcr->impl->res.run_vfull_pool_override = true;
   }
 

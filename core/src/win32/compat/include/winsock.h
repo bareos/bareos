@@ -1,5 +1,5 @@
 /* check-sources:disable-copyright-check */
 #include <winsock2.h>
 #ifdef HAVE_IPV6
-#include <ws2tcpip.h>
+#  include <ws2tcpip.h>
 #endif

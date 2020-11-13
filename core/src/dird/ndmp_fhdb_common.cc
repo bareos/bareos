@@ -30,8 +30,8 @@
 
 #if defined(HAVE_NDMP)
 
-#include "ndmp/ndmagents.h"
-#include "ndmp_dma_priv.h"
+#  include "ndmp/ndmagents.h"
+#  include "ndmp_dma_priv.h"
 
 namespace directordaemon {
 
@@ -70,8 +70,8 @@ extern "C" int BndmpFhdbAddFile(struct ndmlog* ixlog,
     } else {
       NdmpConvertFstat(fstat, nis->FileIndex, &FileType, attribs);
 
-      bool filesystem_ends_with_slash =
-          (nis->filesystem[strlen(nis->filesystem) - 1] == '/');
+      bool filesystem_ends_with_slash
+          = (nis->filesystem[strlen(nis->filesystem) - 1] == '/');
       bool raw_name_starts_with_slash = (*raw_name == '/');
       bool raw_name_ends_with_slash = (raw_name[strlen(raw_name) - 1] == '/');
 

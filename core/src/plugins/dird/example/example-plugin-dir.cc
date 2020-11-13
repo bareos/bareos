@@ -49,19 +49,19 @@ static bRC handlePluginEvent(PluginContext* ctx, bDirEvent* event, void* value);
 static bDirFuncs* bareos_core_functions = NULL;
 static bDirInfo* bareos_plugin_interface_version = NULL;
 
-static PluginInformation pluginInfo = {
-    sizeof(pluginInfo), DIR_PLUGIN_INTERFACE_VERSION,
-    DIR_PLUGIN_MAGIC,   PLUGIN_LICENSE,
-    PLUGIN_AUTHOR,      PLUGIN_DATE,
-    PLUGIN_VERSION,     PLUGIN_DESCRIPTION};
+static PluginInformation pluginInfo
+    = {sizeof(pluginInfo), DIR_PLUGIN_INTERFACE_VERSION,
+       DIR_PLUGIN_MAGIC,   PLUGIN_LICENSE,
+       PLUGIN_AUTHOR,      PLUGIN_DATE,
+       PLUGIN_VERSION,     PLUGIN_DESCRIPTION};
 
-static PluginFunctions pluginFuncs = {
-    sizeof(pluginFuncs), DIR_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), DIR_PLUGIN_INTERFACE_VERSION,
 
-    /* Entry points into plugin */
-    newPlugin,  /* new plugin instance */
-    freePlugin, /* free plugin instance */
-    getPluginValue, setPluginValue, handlePluginEvent};
+       /* Entry points into plugin */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent};
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,8 +79,8 @@ bRC loadPlugin(bDirInfo* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  bareos_core_functions =
-      lbareos_core_functions; /* set Bareos funct pointers */
+  bareos_core_functions
+      = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
   printf("plugin: Loaded: size=%d version=%d\n", bareos_core_functions->size,
          bareos_core_functions->version);

@@ -170,9 +170,9 @@ uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
   for (auto& range : fi->GetRanges()) {
     auto first = range.first;
     auto last = range.second;
-    if ((first >= FirstIndex && first <= LastIndex) ||
-        (last >= FirstIndex && last <= LastIndex) ||
-        (first < FirstIndex && last > LastIndex)) {
+    if ((first >= FirstIndex && first <= LastIndex)
+        || (last >= FirstIndex && last <= LastIndex)
+        || (first < FirstIndex && last > LastIndex)) {
       first = std::max(first, FirstIndex);
       last = std::min(last, LastIndex);
 
@@ -180,8 +180,8 @@ uint32_t write_findex(RestoreBootstrapRecordFileIndex* fi,
         bsrItems += "FileIndex=" + std::to_string(first) + "\n";
         count++;
       } else {
-        bsrItems += "FileIndex=" + std::to_string(first) + "-" +
-                    std::to_string(last) + "\n";
+        bsrItems += "FileIndex=" + std::to_string(first) + "-"
+                    + std::to_string(last) + "\n";
         count += last - first + 1;
       }
     }
@@ -201,9 +201,9 @@ static inline bool is_volume_selected(RestoreBootstrapRecordFileIndex* fi,
   for (auto range : fi->GetRanges()) {
     auto first = range.first;
     auto last = range.second;
-    if ((first >= FirstIndex && first <= LastIndex) ||
-        (last >= FirstIndex && last <= LastIndex) ||
-        (first < FirstIndex && last > LastIndex)) {
+    if ((first >= FirstIndex && first <= LastIndex)
+        || (last >= FirstIndex && last <= LastIndex)
+        || (first < FirstIndex && last > LastIndex)) {
       return true;
     }
   }
@@ -230,8 +230,9 @@ bool AddVolumeInformationToBsr(UaContext* ua, RestoreBootstrapRecord* bsr)
       bsr->VolCount = 0;    /*   there are no volumes */
       continue;
     }
-    if ((bsr->VolCount = ua->db->GetJobVolumeParameters(
-             ua->jcr, bsr->JobId, &(bsr->VolParams))) == 0) {
+    if ((bsr->VolCount = ua->db->GetJobVolumeParameters(ua->jcr, bsr->JobId,
+                                                        &(bsr->VolParams)))
+        == 0) {
       ua->ErrorMsg(_("Unable to get Job Volume Parameters. ERR=%s\n"),
                    ua->db->strerror());
       if (bsr->VolParams) {
@@ -668,8 +669,8 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
    * If Port and Hostname/IP are same, we are talking to the same
    * Storage Daemon
    */
-  if (jcr->impl->res.read_storage->SDport != new_store->SDport ||
-      !bstrcmp(jcr->impl->res.read_storage->address, new_store->address)) {
+  if (jcr->impl->res.read_storage->SDport != new_store->SDport
+      || !bstrcmp(jcr->impl->res.read_storage->address, new_store->address)) {
     return false;
   }
 

@@ -46,9 +46,9 @@
 #undef SECURITY_PROBLEM
 
 #ifdef HAVE_LONG_DOUBLE
-#define LDOUBLE long double
+#  define LDOUBLE long double
 #else
-#define LDOUBLE double
+#  define LDOUBLE double
 #endif
 
 int Bvsnprintf(char* buffer, int32_t maxlen, const char* format, va_list args);
@@ -76,9 +76,9 @@ static int32_t fmtint(char* buffer,
                       int flags);
 
 #ifdef FP_OUTPUT
-#ifdef HAVE_FCVTL
-#define fcvt fcvtl
-#endif
+#  ifdef HAVE_FCVTL
+#    define fcvt fcvtl
+#  endif
 static int32_t fmtfp(char* buffer,
                      int32_t currlen,
                      int32_t maxlen,
@@ -87,7 +87,7 @@ static int32_t fmtfp(char* buffer,
                      int max,
                      int flags);
 #else
-#define fmtfp(b, c, m, f, min, max, fl) currlen
+#  define fmtfp(b, c, m, f, min, max, fl) currlen
 #endif
 
 /*
@@ -296,8 +296,8 @@ int Bvsnprintf(char* buffer, int32_t maxlen, const char* format, va_list args)
             } else {
               value = va_arg(args, int);
             }
-            currlen =
-                fmtint(buffer, currlen, maxlen, value, 10, min, max, flags);
+            currlen
+                = fmtint(buffer, currlen, maxlen, value, 10, min, max, flags);
             break;
           case 'X':
           case 'x':
@@ -325,8 +325,8 @@ int Bvsnprintf(char* buffer, int32_t maxlen, const char* format, va_list args)
             } else {
               value = va_arg(args, unsigned int);
             }
-            currlen =
-                fmtint(buffer, currlen, maxlen, value, base, min, max, flags);
+            currlen
+                = fmtint(buffer, currlen, maxlen, value, base, min, max, flags);
             break;
           case 'f':
             if (cflags == DP_C_LDOUBLE) {
@@ -364,14 +364,14 @@ int Bvsnprintf(char* buffer, int32_t maxlen, const char* format, va_list args)
             if (cflags != DP_C_WCHAR) {
               strvalue = va_arg(args, char*);
               if (!strvalue) { strvalue = (char*)"<NULL>"; }
-              currlen =
-                  fmtstr(buffer, currlen, maxlen, strvalue, flags, min, max);
+              currlen
+                  = fmtstr(buffer, currlen, maxlen, strvalue, flags, min, max);
             } else {
               /* %ls means to edit wide characters */
               wstrvalue = va_arg(args, wchar_t*);
               if (!wstrvalue) { wstrvalue = (wchar_t*)L"<NULL>"; }
-              currlen =
-                  fmtwstr(buffer, currlen, maxlen, wstrvalue, flags, min, max);
+              currlen = fmtwstr(buffer, currlen, maxlen, wstrvalue, flags, min,
+                                max);
             }
             break;
           case 'p':
@@ -383,8 +383,8 @@ int Bvsnprintf(char* buffer, int32_t maxlen, const char* format, va_list args)
             } else {
               value = 0; /* we have a problem */
             }
-            currlen =
-                fmtint(buffer, currlen, maxlen, value, 16, min, max, flags);
+            currlen
+                = fmtint(buffer, currlen, maxlen, value, 16, min, max, flags);
             break;
 
 #ifdef SECURITY_PROBLEM
@@ -654,10 +654,10 @@ static int32_t fmtfp(char* buffer,
 {
   int signvalue = 0;
   LDOUBLE ufvalue;
-#ifndef HAVE_FCVT
+#  ifndef HAVE_FCVT
   char iconvert[311];
   char fconvert[311];
-#else
+#  else
   char iconvert[311];
   char fconvert[311];
   char* result;
@@ -665,7 +665,7 @@ static int32_t fmtfp(char* buffer,
   int dec_pt, sig;
   int r_length;
   extern char* fcvt(double value, int ndigit, int* decpt, int* sign);
-#endif
+#  endif
   int fiter;
   int iplace = 0;
   int fplace = 0;
@@ -690,7 +690,7 @@ static int32_t fmtfp(char* buffer,
   else if (flags & DP_F_SPACE)
     signvalue = ' ';
 
-#ifndef HAVE_FCVT
+#  ifndef HAVE_FCVT
   intpart = (int64_t)ufvalue;
 
   /*
@@ -709,10 +709,10 @@ static int32_t fmtfp(char* buffer,
     fracpart -= (int64_t)pow10(max);
   }
 
-#ifdef DEBUG_SNPRINTF
+#    ifdef DEBUG_SNPRINTF
   printf("fmtfp: %g %lld.%lld min=%d max=%d\n", (double)fvalue, intpart,
          fracpart, min, max);
-#endif
+#    endif
 
   /* Convert integer part */
   cvt_str = "0123456789";
@@ -734,13 +734,13 @@ static int32_t fmtfp(char* buffer,
 
   if (fplace == (int)sizeof(fconvert)) { fplace--; }
   fconvert[fplace] = 0;
-#else /* use fcvt() */
+#  else /* use fcvt() */
   if (max > 310) { max = 310; }
-#ifdef HAVE_FCVTL
+#    ifdef HAVE_FCVTL
   result = fcvtl(ufvalue, max, &dec_pt, &sig);
-#else
+#    else
   result = fcvt(ufvalue, max, &dec_pt, &sig);
-#endif
+#    endif
 
   if (!result) {
     r_length = 0;
@@ -789,7 +789,7 @@ static int32_t fmtfp(char* buffer,
     for (c = (r_length - dec_pt); c; fconvert[fplace++] = result[--c])
       ;
   }
-#endif /* HAVE_FCVT */
+#  endif /* HAVE_FCVT */
 
   /* -1 for decimal point, another -1 if we are printing a sign */
   padlen = min - iplace - max - 1 - ((signvalue) ? 1 : 0);
@@ -821,9 +821,9 @@ static int32_t fmtfp(char* buffer,
   }
 
 
-#ifdef DEBUG_SNPRINTF
+#  ifdef DEBUG_SNPRINTF
   printf("fmtfp: fplace=%d zpadlen=%d\n", fplace, zpadlen);
-#endif
+#  endif
 
   /*
    * Decimal point.  This should probably use locale to find the correct

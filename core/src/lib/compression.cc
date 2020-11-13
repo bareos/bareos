@@ -36,22 +36,23 @@
 #include "lib/edit.h"
 
 #ifdef HAVE_LIBZ
-#include <zlib.h>
+#  include <zlib.h>
 #endif
 
 #ifdef HAVE_LZO
-#include <lzo/lzoconf.h>
-#include <lzo/lzo1x.h>
+#  include <lzo/lzoconf.h>
+#  include <lzo/lzo1x.h>
 #endif
 
 #include "fastlz/fastlzlib.h"
 
 #ifdef HAVE_LIBZ
 
-#ifndef HAVE_COMPRESS_BOUND
-#define compressBound(sourceLen) \
-  (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
-#endif
+#  ifndef HAVE_COMPRESS_BOUND
+#    define compressBound(sourceLen)                                         \
+      (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) \
+       + 13)
+#  endif
 
 const char* cmprs_algo_to_text(uint32_t compression_algorithm)
 {
@@ -143,8 +144,8 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
        * the "per file" load. The jcr member is only set, if the init
        * was successful.
        */
-      wanted_compress_buf_size =
-          compressBound(jcr->buf_size) + 18 + (int)sizeof(comp_stream_header);
+      wanted_compress_buf_size
+          = compressBound(jcr->buf_size) + 18 + (int)sizeof(comp_stream_header);
       if (wanted_compress_buf_size > *compress_buf_size) {
         *compress_buf_size = wanted_compress_buf_size;
       }
@@ -184,8 +185,8 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
        * the "per file" load. The jcr member is only set, if the init
        * was successful.
        */
-      wanted_compress_buf_size = jcr->buf_size + (jcr->buf_size / 16) + 64 + 3 +
-                                 (int)sizeof(comp_stream_header);
+      wanted_compress_buf_size = jcr->buf_size + (jcr->buf_size / 16) + 64 + 3
+                                 + (int)sizeof(comp_stream_header);
       if (wanted_compress_buf_size > *compress_buf_size) {
         *compress_buf_size = wanted_compress_buf_size;
       }
@@ -234,8 +235,8 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
        * the "per file" load. The jcr member is only set, if the init
        * was successful.
        */
-      wanted_compress_buf_size = jcr->buf_size + (jcr->buf_size / 10 + 16 * 2) +
-                                 (int)sizeof(comp_stream_header);
+      wanted_compress_buf_size = jcr->buf_size + (jcr->buf_size / 10 + 16 * 2)
+                                 + (int)sizeof(comp_stream_header);
       if (wanted_compress_buf_size > *compress_buf_size) {
         *compress_buf_size = wanted_compress_buf_size;
       }
@@ -281,8 +282,8 @@ bool SetupDecompressionBuffers(JobControlRecord* jcr,
   if (compress_buf_size < DEFAULT_NETWORK_BUFFER_SIZE) {
     compress_buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
   }
-  *decompress_buf_size =
-      compress_buf_size + 12 + ((compress_buf_size + 999) / 1000) + 100;
+  *decompress_buf_size
+      = compress_buf_size + 12 + ((compress_buf_size + 999) / 1000) + 100;
 
 #ifdef HAVE_LZO
   if (!jcr->compress.inflate_buffer && lzo_init() != LZO_E_OK) {
@@ -503,13 +504,14 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
   Dmsg2(400, "Comp_len=%d message_length=%d\n", compress_len, *length);
 
   while ((status = uncompress((Byte*)wbuf, &compress_len, (const Byte*)cbuf,
-                              (uLong)real_compress_len)) == Z_BUF_ERROR) {
+                              (uLong)real_compress_len))
+         == Z_BUF_ERROR) {
     /*
      * The buffer size is too small, try with a bigger one
      */
-    jcr->compress.inflate_buffer_size =
-        jcr->compress.inflate_buffer_size +
-        (jcr->compress.inflate_buffer_size >> 1);
+    jcr->compress.inflate_buffer_size
+        = jcr->compress.inflate_buffer_size
+          + (jcr->compress.inflate_buffer_size >> 1);
     jcr->compress.inflate_buffer = CheckPoolMemorySize(
         jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
 
@@ -562,8 +564,8 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
 
   if (sparse && want_data_stream) {
     compress_len = jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
-    cbuf = (const unsigned char*)*data + OFFSET_FADDR_SIZE +
-           sizeof(comp_stream_header);
+    cbuf = (const unsigned char*)*data + OFFSET_FADDR_SIZE
+           + sizeof(comp_stream_header);
     wbuf = (unsigned char*)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
   } else {
     compress_len = jcr->compress.inflate_buffer_size;
@@ -574,14 +576,14 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
   real_compress_len = *length - sizeof(comp_stream_header);
   Dmsg2(400, "Comp_len=%d message_length=%d\n", compress_len, *length);
   while ((status = lzo1x_decompress_safe(cbuf, real_compress_len, wbuf,
-                                         &compress_len, NULL)) ==
-         LZO_E_OUTPUT_OVERRUN) {
+                                         &compress_len, NULL))
+         == LZO_E_OUTPUT_OVERRUN) {
     /*
      * The buffer size is too small, try with a bigger one
      */
-    jcr->compress.inflate_buffer_size =
-        jcr->compress.inflate_buffer_size +
-        (jcr->compress.inflate_buffer_size >> 1);
+    jcr->compress.inflate_buffer_size
+        = jcr->compress.inflate_buffer_size
+          + (jcr->compress.inflate_buffer_size >> 1);
     jcr->compress.inflate_buffer = CheckPoolMemorySize(
         jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
 
@@ -649,8 +651,8 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
   stream.avail_in = (uInt)*length - sizeof(comp_stream_header);
   if (sparse && want_data_stream) {
     stream.next_out = (Bytef*)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
-    stream.avail_out =
-        (uInt)jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+    stream.avail_out
+        = (uInt)jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
   } else {
     stream.next_out = (Bytef*)jcr->compress.inflate_buffer;
     stream.avail_out = (uInt)jcr->compress.inflate_buffer_size;
@@ -671,16 +673,16 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
         /*
          * The buffer size is too small, try with a bigger one
          */
-        jcr->compress.inflate_buffer_size =
-            jcr->compress.inflate_buffer_size +
-            (jcr->compress.inflate_buffer_size >> 1);
+        jcr->compress.inflate_buffer_size
+            = jcr->compress.inflate_buffer_size
+              + (jcr->compress.inflate_buffer_size >> 1);
         jcr->compress.inflate_buffer = CheckPoolMemorySize(
             jcr->compress.inflate_buffer, jcr->compress.inflate_buffer_size);
         if (sparse && want_data_stream) {
-          stream.next_out =
-              (Bytef*)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
-          stream.avail_out =
-              (uInt)jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
+          stream.next_out
+              = (Bytef*)jcr->compress.inflate_buffer + OFFSET_FADDR_SIZE;
+          stream.avail_out
+              = (uInt)jcr->compress.inflate_buffer_size - OFFSET_FADDR_SIZE;
         } else {
           stream.next_out = (Bytef*)jcr->compress.inflate_buffer;
           stream.avail_out = (uInt)jcr->compress.inflate_buffer_size;

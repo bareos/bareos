@@ -59,13 +59,13 @@ static char DotStatusJob[] = "JobId=%d JobStatus=%c JobErrors=%d\n";
 static int privs = 0;
 #endif
 #ifdef WIN32_VSS
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#include "vss.h"
-#pragma GCC diagnostic pop
-#define VSS " VSS"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#  include "vss.h"
+#  pragma GCC diagnostic pop
+#  define VSS " VSS"
 #else
-#define VSS ""
+#  define VSS ""
 #endif
 
 /**
@@ -99,11 +99,11 @@ static void ListStatusHeader(StatusPacket* sp)
     if (!privs) { privs = EnableBackupPrivileges(NULL, 1); }
     len = Mmsg(msg, "Priv 0x%x\n", privs);
     sp->send(msg, len);
-    len =
-        Mmsg(msg, "APIs=%sOPT,%sATP,%sLPV,%sCFA,%sCFW,\n",
-             p_OpenProcessToken ? "" : "!", p_AdjustTokenPrivileges ? "" : "!",
-             p_LookupPrivilegeValue ? "" : "!", p_CreateFileA ? "" : "!",
-             p_CreateFileW ? "" : "!");
+    len = Mmsg(msg, "APIs=%sOPT,%sATP,%sLPV,%sCFA,%sCFW,\n",
+               p_OpenProcessToken ? "" : "!",
+               p_AdjustTokenPrivileges ? "" : "!",
+               p_LookupPrivilegeValue ? "" : "!", p_CreateFileA ? "" : "!",
+               p_CreateFileW ? "" : "!");
     sp->send(msg, len);
     len = Mmsg(msg,
                " %sWUL,%sWMKD,%sGFAA,%sGFAW,%sGFAEA,%sGFAEW,%sSFAA,%sSFAW,%sBR,"
@@ -123,11 +123,11 @@ static void ListStatusHeader(StatusPacket* sp)
         p_FindNextFileA ? "" : "!", p_FindNextFileW ? "" : "!",
         p_SetCurrentDirectoryA ? "" : "!", p_SetCurrentDirectoryW ? "" : "!");
     sp->send(msg, len);
-    len =
-        Mmsg(msg, " %sGCDA,%sGCDW,%sGVPNW,%sGVNFVMPW\n",
-             p_GetCurrentDirectoryA ? "" : "!",
-             p_GetCurrentDirectoryW ? "" : "!", p_GetVolumePathNameW ? "" : "!",
-             p_GetVolumeNameForVolumeMountPointW ? "" : "!");
+    len = Mmsg(msg, " %sGCDA,%sGCDW,%sGVPNW,%sGVNFVMPW\n",
+               p_GetCurrentDirectoryA ? "" : "!",
+               p_GetCurrentDirectoryW ? "" : "!",
+               p_GetVolumePathNameW ? "" : "!",
+               p_GetVolumeNameForVolumeMountPointW ? "" : "!");
     sp->send(msg, len);
   }
 #endif
@@ -140,8 +140,8 @@ static void ListStatusHeader(StatusPacket* sp)
   sp->send(msg, len);
 
   if (me->secure_erase_cmdline) {
-    len =
-        Mmsg(msg, _(" secure erase command='%s'\n"), me->secure_erase_cmdline);
+    len = Mmsg(msg, _(" secure erase command='%s'\n"),
+               me->secure_erase_cmdline);
     sp->send(msg, len);
   }
 
@@ -174,8 +174,8 @@ static void ListRunningJobsPlain(StatusPacket* sp)
   foreach_jcr (njcr) {
     bstrftime_nc(dt, sizeof(dt), njcr->start_time);
     if (njcr->JobId > 0) {
-      len =
-          Mmsg(msg, _("JobId %d Job %s is running.\n"), njcr->JobId, njcr->Job);
+      len = Mmsg(msg, _("JobId %d Job %s is running.\n"), njcr->JobId,
+                 njcr->Job);
       sp->send(msg, len);
 #ifdef WIN32_VSS
       len = Mmsg(
@@ -394,15 +394,15 @@ static void ListTerminatedJobs(StatusPacket* sp)
     }
 
     if (sp->api) {
-      len =
-          Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
-               level, edit_uint64_with_commas(je.JobFiles, b1),
-               edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt, JobName);
+      len = Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
+                 level, edit_uint64_with_commas(je.JobFiles, b1),
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
+                 JobName);
     } else {
-      len =
-          Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
-               edit_uint64_with_commas(je.JobFiles, b1),
-               edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt, JobName);
+      len = Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
+                 edit_uint64_with_commas(je.JobFiles, b1),
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
+                 JobName);
     }
     sp->send(msg, len);
   }
@@ -464,8 +464,8 @@ bool QstatusCmd(JobControlRecord* jcr)
   } else if (bstrcmp(cmd, "last")) {
     dir->fsend(OKqstatus, cmd);
     if (RecentJobResultsList::Count() > 0) {
-      RecentJobResultsList::JobResult job =
-          RecentJobResultsList::GetMostRecentJobResult();
+      RecentJobResultsList::JobResult job
+          = RecentJobResultsList::GetMostRecentJobResult();
       dir->fsend(DotStatusJob, job.JobId, job.JobStatus, job.Errors);
     }
   } else if (Bstrcasecmp(cmd, "header")) {

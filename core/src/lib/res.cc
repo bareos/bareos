@@ -159,8 +159,8 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
   std::string fq_name(fq_name_buffer);
   free(fq_name_buffer);
 
-  QualifiedResourceNameTypeConverter* c =
-      config->GetQualifiedResourceNameTypeConverter();
+  QualifiedResourceNameTypeConverter* c
+      = config->GetQualifiedResourceNameTypeConverter();
   if (!c) { return false; }
 
   int r_type;
@@ -260,8 +260,8 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
 
   Dmsg2(900, "StoreMsgs pass=%d code=%d\n", pass, item->code);
 
-  MessagesResource* message_resource =
-      dynamic_cast<MessagesResource*>(*item->allocated_resource);
+  MessagesResource* message_resource
+      = dynamic_cast<MessagesResource*>(*item->allocated_resource);
 
   if (!message_resource) {
     Dmsg0(900, "Could not dynamic_cast to MessageResource\n");
@@ -339,8 +339,8 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
       case MessageDestinationCode::kMail:
       case MessageDestinationCode::KMailOnError:
       case MessageDestinationCode::kMailOnSuccess:
-        if (static_cast<MessageDestinationCode>(item->code) ==
-            MessageDestinationCode::kOperator) {
+        if (static_cast<MessageDestinationCode>(item->code)
+            == MessageDestinationCode::kOperator) {
           cmd = message_resource->operator_cmd_.c_str();
         } else {
           cmd = message_resource->mail_cmd_.c_str();
@@ -551,10 +551,11 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
      */
     if (bstrncmp(lc->str, "[md5]", 5)) {
       if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
-        static const char* empty_password_md5_hash =
-            "d41d8cd98f00b204e9800998ecf8427e";
+        static const char* empty_password_md5_hash
+            = "d41d8cd98f00b204e9800998ecf8427e";
         if (strncmp(lc->str + 5, empty_password_md5_hash,
-                    strlen(empty_password_md5_hash)) == 0) {
+                    strlen(empty_password_md5_hash))
+            == 0) {
           Emsg1(M_ERROR_TERM, 0, "No Password for Resource \"%s\" given\n",
                 (*item->allocated_resource)->resource_name_);
         }
@@ -854,7 +855,7 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
         char* p1 = p0;
         char* p2 = p0;
         while (p1) {
-          p2 = strchr(p1, ':'); // split at ':'
+          p2 = strchr(p1, ':');  // split at ':'
           if (p2 != nullptr) { *p2++ = '\0'; }
           (*alistvalue)->append(strdup(p1));
           p1 = p2;
@@ -1246,7 +1247,8 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
     EMPTYLINE = 0x0,
     PORTLINE = 0x1,
     ADDRLINE = 0x2
-  } next_line = EMPTYLINE;
+  } next_line
+      = EMPTYLINE;
   int port = str_to_int32(item->default_value);
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
@@ -1309,8 +1311,8 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
       token = LexGetToken(lc, BCT_SKIP_EOL);
       switch (next_line) {
         case PORTLINE:
-          if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER ||
-                token == BCT_IDENTIFIER)) {
+          if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
+                || token == BCT_IDENTIFIER)) {
             scan_err1(lc, _("Expected a number or a string, got: %s"), lc->str);
           }
           bstrncpy(port_str, lc->str, sizeof(port_str));
@@ -1331,10 +1333,10 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
     if (token != BCT_EOB) {
       scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
     }
-    if (pass == 1 &&
-        !AddAddress(GetItemVariablePointer<dlist**>(*item), IPADDR::R_MULTIPLE,
-                    htons(port), family, hostname_str, port_str, errmsg,
-                    sizeof(errmsg))) {
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist**>(*item),
+                       IPADDR::R_MULTIPLE, htons(port), family, hostname_str,
+                       port_str, errmsg, sizeof(errmsg))) {
       scan_err3(lc, _("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
                 hostname_str, port_str, errmsg);
     }
@@ -1357,13 +1359,14 @@ void ConfigurationParser::StoreAddressesAddress(LEX* lc,
   int port = str_to_int32(item->default_value);
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER ||
-        token == BCT_IDENTIFIER)) {
+  if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
+        || token == BCT_IDENTIFIER)) {
     scan_err1(lc, _("Expected an IP number or a hostname, got: %s"), lc->str);
   }
-  if (pass == 1 &&
-      !AddAddress(GetItemVariablePointer<dlist**>(*item), IPADDR::R_SINGLE_ADDR,
-                  htons(port), AF_INET, lc->str, 0, errmsg, sizeof(errmsg))) {
+  if (pass == 1
+      && !AddAddress(GetItemVariablePointer<dlist**>(*item),
+                     IPADDR::R_SINGLE_ADDR, htons(port), AF_INET, lc->str, 0,
+                     errmsg, sizeof(errmsg))) {
     scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
   }
 }
@@ -1378,13 +1381,14 @@ void ConfigurationParser::StoreAddressesPort(LEX* lc,
   int port = str_to_int32(item->default_value);
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER ||
-        token == BCT_IDENTIFIER)) {
+  if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
+        || token == BCT_IDENTIFIER)) {
     scan_err1(lc, _("Expected a port number or string, got: %s"), lc->str);
   }
-  if (pass == 1 &&
-      !AddAddress(GetItemVariablePointer<dlist**>(*item), IPADDR::R_SINGLE_PORT,
-                  htons(port), AF_INET, 0, lc->str, errmsg, sizeof(errmsg))) {
+  if (pass == 1
+      && !AddAddress(GetItemVariablePointer<dlist**>(*item),
+                     IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
+                     errmsg, sizeof(errmsg))) {
     scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
   }
 }
@@ -1579,19 +1583,19 @@ struct s_mdestination {
   bool where;
 };
 
-static std::map<MessageDestinationCode, s_mdestination> msg_destinations = {
-    {MessageDestinationCode::kSyslog, {"syslog", false}},
-    {MessageDestinationCode::kMail, {"mail", true}},
-    {MessageDestinationCode::kFile, {"file", true}},
-    {MessageDestinationCode::kAppend, {"append", true}},
-    {MessageDestinationCode::kStdout, {"stdout", false}},
-    {MessageDestinationCode::kStderr, {"stderr", false}},
-    {MessageDestinationCode::kDirector, {"director", true}},
-    {MessageDestinationCode::kOperator, {"operator", true}},
-    {MessageDestinationCode::kConsole, {"console", false}},
-    {MessageDestinationCode::KMailOnError, {"mailonerror", true}},
-    {MessageDestinationCode::kMailOnSuccess, {"mailonsuccess", true}},
-    {MessageDestinationCode::kCatalog, {"catalog", false}}};
+static std::map<MessageDestinationCode, s_mdestination> msg_destinations
+    = {{MessageDestinationCode::kSyslog, {"syslog", false}},
+       {MessageDestinationCode::kMail, {"mail", true}},
+       {MessageDestinationCode::kFile, {"file", true}},
+       {MessageDestinationCode::kAppend, {"append", true}},
+       {MessageDestinationCode::kStdout, {"stdout", false}},
+       {MessageDestinationCode::kStderr, {"stderr", false}},
+       {MessageDestinationCode::kDirector, {"director", true}},
+       {MessageDestinationCode::kOperator, {"operator", true}},
+       {MessageDestinationCode::kConsole, {"console", false}},
+       {MessageDestinationCode::KMailOnError, {"mailonerror", true}},
+       {MessageDestinationCode::kMailOnSuccess, {"mailonsuccess", true}},
+       {MessageDestinationCode::kCatalog, {"catalog", false}}};
 
 
 std::string MessagesResource::GetMessageTypesAsSring(MessageDestinationInfo* d,
@@ -1740,44 +1744,44 @@ static bool HasDefaultValue(ResourceItem& item)
         is_default = HasDefaultValue(item, tapelabels);
         break;
       case CFG_TYPE_INT16:
-        is_default = (GetItemVariable<int16_t>(item) ==
-                      (int16_t)str_to_int32(item.default_value));
+        is_default = (GetItemVariable<int16_t>(item)
+                      == (int16_t)str_to_int32(item.default_value));
         break;
       case CFG_TYPE_PINT16:
-        is_default = (GetItemVariable<uint16_t>(item) ==
-                      (uint16_t)str_to_int32(item.default_value));
+        is_default = (GetItemVariable<uint16_t>(item)
+                      == (uint16_t)str_to_int32(item.default_value));
         break;
       case CFG_TYPE_INT32:
-        is_default = (GetItemVariable<int32_t>(item) ==
-                      str_to_int32(item.default_value));
+        is_default = (GetItemVariable<int32_t>(item)
+                      == str_to_int32(item.default_value));
         break;
       case CFG_TYPE_PINT32:
-        is_default = (GetItemVariable<uint32_t>(item) ==
-                      (uint32_t)str_to_int32(item.default_value));
+        is_default = (GetItemVariable<uint32_t>(item)
+                      == (uint32_t)str_to_int32(item.default_value));
         break;
       case CFG_TYPE_INT64:
-        is_default = (GetItemVariable<int64_t>(item) ==
-                      str_to_int64(item.default_value));
+        is_default = (GetItemVariable<int64_t>(item)
+                      == str_to_int64(item.default_value));
         break;
       case CFG_TYPE_SPEED:
-        is_default = (GetItemVariable<uint64_t>(item) ==
-                      (uint64_t)str_to_int64(item.default_value));
+        is_default = (GetItemVariable<uint64_t>(item)
+                      == (uint64_t)str_to_int64(item.default_value));
         break;
       case CFG_TYPE_SIZE64:
-        is_default = (GetItemVariable<uint64_t>(item) ==
-                      (uint64_t)str_to_int64(item.default_value));
+        is_default = (GetItemVariable<uint64_t>(item)
+                      == (uint64_t)str_to_int64(item.default_value));
         break;
       case CFG_TYPE_SIZE32:
-        is_default = (GetItemVariable<uint32_t>(item) ==
-                      (uint32_t)str_to_int32(item.default_value));
+        is_default = (GetItemVariable<uint32_t>(item)
+                      == (uint32_t)str_to_int32(item.default_value));
         break;
       case CFG_TYPE_TIME:
-        is_default = (GetItemVariable<uint64_t>(item) ==
-                      (uint64_t)str_to_int64(item.default_value));
+        is_default = (GetItemVariable<uint64_t>(item)
+                      == (uint64_t)str_to_int64(item.default_value));
         break;
       case CFG_TYPE_BOOL: {
-        bool default_value = Bstrcasecmp(item.default_value, "true") ||
-                             Bstrcasecmp(item.default_value, "yes");
+        bool default_value = Bstrcasecmp(item.default_value, "true")
+                             || Bstrcasecmp(item.default_value, "yes");
 
         is_default = (GetItemVariable<bool>(item) == default_value);
         break;
@@ -1992,8 +1996,8 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
       /*
        * One line for each member of the list
        */
-      const std::vector<std::string>& list =
-          GetItemVariable<std::vector<std::string>&>(item);
+      const std::vector<std::string>& list
+          = GetItemVariable<std::vector<std::string>&>(item);
       send.KeyMultipleStringsOnePerLine(item.name, list, inherited);
       break;
     }

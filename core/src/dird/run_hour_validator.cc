@@ -71,13 +71,13 @@ RunHourValidator::RunHourValidator(time_t time) : time_(time)
 // check if the calculated hour matches the runtime bitfiled
 bool RunHourValidator::TriggersOn(const DateTimeBitfield& date_time_bitfield)
 {
-  return BitIsSet(hour_, date_time_bitfield.hour) &&
-         BitIsSet(mday_, date_time_bitfield.mday) &&
-         BitIsSet(wday_, date_time_bitfield.wday) &&
-         BitIsSet(month_, date_time_bitfield.month) &&
-         (BitIsSet(wom_, date_time_bitfield.wom) ||
-          (is_last_week_ && date_time_bitfield.last_week_of_month)) &&
-         BitIsSet(woy_, date_time_bitfield.woy);
+  return BitIsSet(hour_, date_time_bitfield.hour)
+         && BitIsSet(mday_, date_time_bitfield.mday)
+         && BitIsSet(wday_, date_time_bitfield.wday)
+         && BitIsSet(month_, date_time_bitfield.month)
+         && (BitIsSet(wom_, date_time_bitfield.wom)
+             || (is_last_week_ && date_time_bitfield.last_week_of_month))
+         && BitIsSet(woy_, date_time_bitfield.woy);
 }
 
 void RunHourValidator::PrintDebugMessage(int debuglevel) const

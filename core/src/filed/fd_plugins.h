@@ -30,16 +30,16 @@
 #define BAREOS_FILED_FD_PLUGINS_H_
 
 #ifndef BAREOS_INCLUDE_BAREOS_H_
-#ifdef __cplusplus
+#  ifdef __cplusplus
 /* Workaround for SGI IRIX 6.5 */
-#define _LANGUAGE_C_PLUS_PLUS 1
-#endif
-#define _REENTRANT 1
-#define _THREAD_SAFE 1
-#define _POSIX_PTHREAD_SEMANTICS 1
-#define _FILE_OFFSET_BITS 64
-#define _LARGEFILE_SOURCE 1
-#define _LARGE_FILES 1
+#    define _LANGUAGE_C_PLUS_PLUS 1
+#  endif
+#  define _REENTRANT 1
+#  define _THREAD_SAFE 1
+#  define _POSIX_PTHREAD_SEMANTICS 1
+#  define _FILE_OFFSET_BITS 64
+#  define _LARGEFILE_SOURCE 1
+#  define _LARGE_FILES 1
 #endif /* ! BAREOS_INCLUDE_BAREOS_H_ */
 
 #include <sys/types.h>
@@ -53,10 +53,10 @@
 #include <sys/stat.h>
 
 #ifdef HAVE_WIN32
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#include "vss.h"
-#pragma GCC diagnostic pop
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#  include "vss.h"
+#  pragma GCC diagnostic pop
 #endif
 
 #ifdef FILE_DAEMON

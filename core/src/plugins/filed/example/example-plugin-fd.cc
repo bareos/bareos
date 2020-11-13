@@ -50,21 +50,21 @@ static bRC setXattr(PluginContext* ctx, xattr_pkt* xp);
 static CoreFunctions* bareos_core_functions = NULL;
 static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
-static PluginInformation pluginInfo = {
-    sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
-    FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-    PLUGIN_AUTHOR,      PLUGIN_DATE,
-    PLUGIN_VERSION,     PLUGIN_DESCRIPTION};
+static PluginInformation pluginInfo
+    = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
+       FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+       PLUGIN_AUTHOR,      PLUGIN_DATE,
+       PLUGIN_VERSION,     PLUGIN_DESCRIPTION};
 
-static PluginFunctions pluginFuncs = {
-    sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
-    /* Entry points into plugin */
-    newPlugin,  /* new plugin instance */
-    freePlugin, /* free plugin instance */
-    getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
-    endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
-    setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
+       /* Entry points into plugin */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
+       endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
+       setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,8 +78,8 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  bareos_core_functions =
-      lbareos_core_functions; /* set Bareos funct pointers */
+  bareos_core_functions
+      = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
   printf("plugin: Loaded: size=%d version=%d\n", bareos_core_functions->size,
          bareos_core_functions->version);

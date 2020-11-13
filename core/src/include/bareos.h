@@ -71,19 +71,19 @@
 
 #ifdef __cplusplus
 /* Workaround for SGI IRIX 6.5 */
-#define _LANGUAGE_C_PLUS_PLUS 1
+#  define _LANGUAGE_C_PLUS_PLUS 1
 #endif
 
 #include "config.h"
 
 #if HAVE_AIX_OS
-#define _LINUX_SOURCE_COMPAT 1
+#  define _LINUX_SOURCE_COMPAT 1
 #endif
 
 #ifdef HAVE_HPUX_OS
-#undef HAVE_LCHMOD
-#undef HAVE_LCHOWN
-#undef HAVE_POSIX_FADVISE
+#  undef HAVE_LCHMOD
+#  undef HAVE_LCHOWN
+#  undef HAVE_POSIX_FADVISE
 #endif
 
 #define _REENTRANT 1
@@ -92,34 +92,34 @@
 
 /* System includes */
 #ifndef __sgi
-#include <stdint.h>
+#  include <stdint.h>
 #endif
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #if HAVE_UMEM_H
-#include <umem.h>
+#  include <umem.h>
 #endif
 #if HAVE_ALLOCA_H
-#include <alloca.h>
+#  include <alloca.h>
 #endif
 #if defined(_MSC_VER)
-#include <io.h>
-#include <direct.h>
-#include <process.h>
+#  include <io.h>
+#  include <direct.h>
+#  include <process.h>
 #endif
 #include <errno.h>
 #include <fcntl.h>
 
 /* O_NOATIME is defined at fcntl.h when supported */
 #ifndef O_NOATIME
-#define O_NOATIME 0
+#  define O_NOATIME 0
 #endif
 
 #if defined(_MSC_VER)
 extern "C" {
-#include "getopt.h"
+#  include "getopt.h"
 }
 #endif
 
@@ -128,7 +128,7 @@ extern "C" {
 #include <signal.h>
 #include <ctype.h>
 #ifndef _SPLINT_
-#include <syslog.h>
+#  include <syslog.h>
 #endif
 #include <limits.h>
 #include <pwd.h>
@@ -137,15 +137,15 @@ extern "C" {
 #include <netdb.h>
 #include <sys/types.h>
 #ifdef HAVE_SYS_BITYPES_H
-#include <sys/bitypes.h>
+#  include <sys/bitypes.h>
 #endif
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #if defined(HAVE_WIN32) & !defined(HAVE_MINGW)
-#include <winsock2.h>
+#  include <winsock2.h>
 #endif
 #if !defined(HAVE_WIN32) & !defined(HAVE_MINGW)
-#include <sys/stat.h>
+#  include <sys/stat.h>
 #endif
 #include <sys/time.h>
 #include <sys/wait.h>
@@ -154,7 +154,7 @@ extern "C" {
 #include <pthread.h>
 
 #if defined(HAVE_WIN32)
-#include <windows.h>
+#  include <windows.h>
 #endif
 
 
@@ -165,11 +165,11 @@ extern "C" {
 #include "bc_types.h"
 
 #if defined(HAVE_WIN32)
-#include "compat.h"
+#  include "compat.h"
 #endif
 
 #ifndef _GLIBCXX_GTHREAD_USE_WEAK
-#define _GLIBCXX_GTHREAD_USE_WEAK 0
+#  define _GLIBCXX_GTHREAD_USE_WEAK 0
 #endif
 
 #include <list>
@@ -195,18 +195,18 @@ extern "C" {
  *  you must use malloc() and free().
  */
 #ifdef HAVE_WXCONSOLE
-#undef New
-#undef _
-#undef free
-#undef malloc
+#  undef New
+#  undef _
+#  undef free
+#  undef malloc
 #endif
 
 #if defined(HAVE_WIN32)
-#include "winapi.h"
+#  include "winapi.h"
 #endif
 
 #ifndef HAVE_ZLIB_H
-#undef HAVE_LIBZ /* no good without headers */
+#  undef HAVE_LIBZ /* no good without headers */
 #endif
 
 #endif

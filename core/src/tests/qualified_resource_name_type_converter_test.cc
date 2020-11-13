@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #define private public
@@ -86,8 +86,8 @@ TEST(QualifiedResourceNameTypeConverter, TypeToString)
 
   ok = c.ResourceToString("ResourceName", kTwo, result_str);
   EXPECT_EQ(ok, true);
-  std::string test1 =
-      std::string("kTwo") + record_separator_ + std::string("ResourceName");
+  std::string test1
+      = std::string("kTwo") + record_separator_ + std::string("ResourceName");
   EXPECT_STREQ(result_str.c_str(), test1.c_str());
 
   /* try invalid resource type */

@@ -39,24 +39,24 @@ const int debuglevel = 200;
 int (*plugin_bopen)(BareosWinFilePacket* bfd,
                     const char* fname,
                     int flags,
-                    mode_t mode) = NULL;
+                    mode_t mode)
+    = NULL;
 int (*plugin_bclose)(BareosWinFilePacket* bfd) = NULL;
-ssize_t (*plugin_bread)(BareosWinFilePacket* bfd,
-                        void* buf,
-                        size_t count) = NULL;
-ssize_t (*plugin_bwrite)(BareosWinFilePacket* bfd,
-                         void* buf,
-                         size_t count) = NULL;
+ssize_t (*plugin_bread)(BareosWinFilePacket* bfd, void* buf, size_t count)
+    = NULL;
+ssize_t (*plugin_bwrite)(BareosWinFilePacket* bfd, void* buf, size_t count)
+    = NULL;
 boffset_t (*plugin_blseek)(BareosWinFilePacket* bfd,
                            boffset_t offset,
-                           int whence) = NULL;
+                           int whence)
+    = NULL;
 
 #ifdef HAVE_DARWIN_OS
-#include <sys/paths.h>
+#  include <sys/paths.h>
 #endif
 
 #if !defined(HAVE_FDATASYNC)
-#define fdatasync(fd)
+#  define fdatasync(fd)
 #endif
 
 #ifdef HAVE_WIN32
@@ -274,8 +274,8 @@ bool processWin32BackupAPIBlock(BareosWinFilePacket* bfd,
      BackupRead stream beginning at pos 0 and ending at the end.
    */
 
-  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT* plugin_private_context =
-      &(bfd->win32Decomplugin_private_context);
+  PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT* plugin_private_context
+      = &(bfd->win32Decomplugin_private_context);
   bool bContinue = false;
   int64_t dwDataOffset = 0;
   int64_t dwDataLen;
@@ -297,13 +297,13 @@ bool processWin32BackupAPIBlock(BareosWinFilePacket* bfd,
     /* flush */
     /* copy block of real DATA */
     if (plugin_private_context->bIsInData) {
-      if (bwrite(bfd, ((char*)pBuffer) + dwDataOffset, dwDataLen) !=
-          (ssize_t)dwDataLen)
+      if (bwrite(bfd, ((char*)pBuffer) + dwDataOffset, dwDataLen)
+          != (ssize_t)dwDataLen)
         return false;
     }
 
-    if (plugin_private_context->liNextHeader <
-        dwSize) { /* is a header in this block ? */
+    if (plugin_private_context->liNextHeader
+        < dwSize) { /* is a header in this block ? */
       int32_t dwOffsetTarget;
       int32_t dwOffsetSource;
 
@@ -343,17 +343,17 @@ bool processWin32BackupAPIBlock(BareosWinFilePacket* bfd,
         int32_t dwNameSize;
         int32_LE2BE(&dwNameSize,
                     plugin_private_context->header_stream.dwStreamNameSize);
-        dwDataOffset =
-            dwNameSize + plugin_private_context->liNextHeader + dwSizeHeader;
+        dwDataOffset
+            = dwNameSize + plugin_private_context->liNextHeader + dwSizeHeader;
 
         /* convert stream size (64 bit little endian) to machine type */
         int64_LE2BE(&(plugin_private_context->liNextHeader),
                     plugin_private_context->header_stream.Size);
         plugin_private_context->liNextHeader += dwDataOffset;
 
-        plugin_private_context->bIsInData =
-            plugin_private_context->header_stream.dwStreamId ==
-            WIN32_BACKUP_DATA;
+        plugin_private_context->bIsInData
+            = plugin_private_context->header_stream.dwStreamId
+              == WIN32_BACKUP_DATA;
         if (dwDataOffset == dwSize) bContinue = false;
       } else {
         /* stop and continue with next block */
@@ -437,11 +437,11 @@ bool IsRestoreStreamSupported(int stream)
     /*
      * Streams known not to be supported
      */
-#ifndef HAVE_LIBZ
+#  ifndef HAVE_LIBZ
     case STREAM_GZIP_DATA:
     case STREAM_SPARSE_GZIP_DATA:
     case STREAM_WIN32_GZIP_DATA:
-#endif
+#  endif
     case STREAM_MACOS_FORK_DATA:
     case STREAM_HFSPLUS_ATTRIBUTES:
     case STREAM_ENCRYPTED_MACOS_FORK_DATA:
@@ -450,11 +450,11 @@ bool IsRestoreStreamSupported(int stream)
       /*
        * Known streams
        */
-#ifdef HAVE_LIBZ
+#  ifdef HAVE_LIBZ
     case STREAM_GZIP_DATA:
     case STREAM_SPARSE_GZIP_DATA:
     case STREAM_WIN32_GZIP_DATA:
-#endif
+#  endif
     case STREAM_COMPRESSED_DATA:
     case STREAM_SPARSE_COMPRESSED_DATA:
     case STREAM_WIN32_COMPRESSED_DATA:
@@ -467,11 +467,11 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_PROGRAM_NAMES:
     case STREAM_PROGRAM_DATA:
     case STREAM_SHA1_DIGEST:
-#ifdef HAVE_SHA2
+#  ifdef HAVE_SHA2
     case STREAM_SHA256_DIGEST:
     case STREAM_SHA512_DIGEST:
-#endif
-#ifdef HAVE_CRYPTO
+#  endif
+#  ifdef HAVE_CRYPTO
     case STREAM_SIGNED_DIGEST:
     case STREAM_ENCRYPTED_FILE_DATA:
     case STREAM_ENCRYPTED_FILE_GZIP_DATA:
@@ -479,7 +479,7 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
     case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
     case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
-#endif      /* !HAVE_CRYPTO */
+#  endif    /* !HAVE_CRYPTO */
     case 0: /* compatibility with old tapes */
       return true;
   }
@@ -494,18 +494,18 @@ HANDLE BgetHandle(BareosWinFilePacket* bfd)
 /**
  * Windows flags for the OpenEncryptedFileRaw functions.
  */
-#ifndef CREATE_FOR_EXPORT
-#define CREATE_FOR_EXPORT 0
-#endif
-#ifndef CREATE_FOR_IMPORT
-#define CREATE_FOR_IMPORT 1
-#endif
-#ifndef CREATE_FOR_DIR
-#define CREATE_FOR_DIR 2
-#endif
-#ifndef OVERWRITE_HIDDEN
-#define OVERWRITE_HIDDEN 4
-#endif
+#  ifndef CREATE_FOR_EXPORT
+#    define CREATE_FOR_EXPORT 0
+#  endif
+#  ifndef CREATE_FOR_IMPORT
+#    define CREATE_FOR_IMPORT 1
+#  endif
+#  ifndef CREATE_FOR_DIR
+#    define CREATE_FOR_DIR 2
+#  endif
+#  ifndef OVERWRITE_HIDDEN
+#    define OVERWRITE_HIDDEN 4
+#  endif
 
 static inline int BopenEncrypted(BareosWinFilePacket* bfd,
                                  const char* fname,
@@ -629,8 +629,8 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
 
   if (flags & O_CREAT) { /* Create */
     if (bfd->use_backup_api) {
-      dwaccess = GENERIC_WRITE | FILE_ALL_ACCESS | WRITE_OWNER | WRITE_DAC |
-                 ACCESS_SYSTEM_SECURITY;
+      dwaccess = GENERIC_WRITE | FILE_ALL_ACCESS | WRITE_OWNER | WRITE_DAC
+                 | ACCESS_SYSTEM_SECURITY;
       dwflags = FILE_FLAG_BACKUP_SEMANTICS;
     } else {
       dwaccess = GENERIC_WRITE;
@@ -714,8 +714,8 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
       if (flags & O_NOFOLLOW) {
         dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_SEQUENTIAL_SCAN;
       } else {
-        dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_SEQUENTIAL_SCAN |
-                  FILE_FLAG_OPEN_REPARSE_POINT;
+        dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_SEQUENTIAL_SCAN
+                  | FILE_FLAG_OPEN_REPARSE_POINT;
       }
       dwshare = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
     } else {
@@ -847,25 +847,25 @@ static inline int BcloseNonencrypted(BareosWinFilePacket* bfd)
    */
   if (bfd->use_backup_api && bfd->mode == BF_READ) {
     BYTE buf[10];
-    if (bfd->lplugin_private_context &&
-        !p_BackupRead(bfd->fh, buf,                     /* buffer */
-                      (DWORD)0,                         /* bytes to read */
-                      &bfd->rw_bytes,                   /* bytes read */
-                      1,                                /* Abort */
-                      1,                                /* ProcessSecurity */
-                      &bfd->lplugin_private_context)) { /* Read context */
+    if (bfd->lplugin_private_context
+        && !p_BackupRead(bfd->fh, buf,                     /* buffer */
+                         (DWORD)0,                         /* bytes to read */
+                         &bfd->rw_bytes,                   /* bytes read */
+                         1,                                /* Abort */
+                         1,                                /* ProcessSecurity */
+                         &bfd->lplugin_private_context)) { /* Read context */
       errno = b_errno_win32;
       status = -1;
     }
   } else if (bfd->use_backup_api && bfd->mode == BF_WRITE) {
     BYTE buf[10];
-    if (bfd->lplugin_private_context &&
-        !p_BackupWrite(bfd->fh, buf,                     /* buffer */
-                       (DWORD)0,                         /* bytes to read */
-                       &bfd->rw_bytes,                   /* bytes written */
-                       1,                                /* Abort */
-                       1,                                /* ProcessSecurity */
-                       &bfd->lplugin_private_context)) { /* Write context */
+    if (bfd->lplugin_private_context
+        && !p_BackupWrite(bfd->fh, buf,   /* buffer */
+                          (DWORD)0,       /* bytes to read */
+                          &bfd->rw_bytes, /* bytes written */
+                          1,              /* Abort */
+                          1,              /* ProcessSecurity */
+                          &bfd->lplugin_private_context)) { /* Write context */
       errno = b_errno_win32;
       status = -1;
     }
@@ -1038,23 +1038,23 @@ bool IsRestoreStreamSupported(int stream)
 {
   /* No Win32 backup on this machine */
   switch (stream) {
-#ifndef HAVE_LIBZ
+#  ifndef HAVE_LIBZ
     case STREAM_GZIP_DATA:
     case STREAM_SPARSE_GZIP_DATA:
     case STREAM_WIN32_GZIP_DATA:
-#endif
-#ifndef HAVE_DARWIN_OS
+#  endif
+#  ifndef HAVE_DARWIN_OS
     case STREAM_MACOS_FORK_DATA:
     case STREAM_HFSPLUS_ATTRIBUTES:
-#endif
+#  endif
       return false;
 
       /* Known streams */
-#ifdef HAVE_LIBZ
+#  ifdef HAVE_LIBZ
     case STREAM_GZIP_DATA:
     case STREAM_SPARSE_GZIP_DATA:
     case STREAM_WIN32_GZIP_DATA:
-#endif
+#  endif
     case STREAM_COMPRESSED_DATA:
     case STREAM_SPARSE_COMPRESSED_DATA:
     case STREAM_WIN32_COMPRESSED_DATA:
@@ -1069,24 +1069,24 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_PROGRAM_NAMES:
     case STREAM_PROGRAM_DATA:
     case STREAM_SHA1_DIGEST:
-#ifdef HAVE_SHA2
+#  ifdef HAVE_SHA2
     case STREAM_SHA256_DIGEST:
     case STREAM_SHA512_DIGEST:
-#endif
-#ifdef HAVE_CRYPTO
+#  endif
+#  ifdef HAVE_CRYPTO
     case STREAM_SIGNED_DIGEST:
     case STREAM_ENCRYPTED_FILE_DATA:
     case STREAM_ENCRYPTED_FILE_GZIP_DATA:
     case STREAM_ENCRYPTED_WIN32_DATA:
     case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
-#endif
-#ifdef HAVE_DARWIN_OS
+#  endif
+#  ifdef HAVE_DARWIN_OS
     case STREAM_MACOS_FORK_DATA:
     case STREAM_HFSPLUS_ATTRIBUTES:
-#ifdef HAVE_CRYPTO
+#    ifdef HAVE_CRYPTO
     case STREAM_ENCRYPTED_MACOS_FORK_DATA:
-#endif /* HAVE_CRYPTO */
-#endif /* HAVE_DARWIN_OS */
+#    endif /* HAVE_CRYPTO */
+#  endif   /* HAVE_DARWIN_OS */
     case 0: /* compatibility with old tapes */
       return true;
   }
@@ -1140,18 +1140,19 @@ int bopen(BareosWinFilePacket* bfd,
   bfd->win32Decomplugin_private_context.bIsInData = false;
   bfd->win32Decomplugin_private_context.liNextHeader = 0;
 
-#if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
+#  if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
   /* If not RDWR or WRONLY must be Read Only */
-  if (bfd->fid != -1 && !(flags & (O_RDWR|O_WRONLY))) {
+  if (bfd->fid != -1 && !(flags & (O_RDWR | O_WRONLY))) {
     int status = posix_fadvise(bfd->fid, 0, 0, POSIX_FADV_WILLNEED);
-    Dmsg3(400, "Did posix_fadvise WILLNEED on %s fid=%d status=%d\n", fname, bfd->fid, status);
+    Dmsg3(400, "Did posix_fadvise WILLNEED on %s fid=%d status=%d\n", fname,
+          bfd->fid, status);
   }
-#endif
+#  endif
 
   return bfd->fid;
 }
 
-#ifdef HAVE_DARWIN_OS
+#  ifdef HAVE_DARWIN_OS
 /**
  * Open the resource fork of a file.
  */
@@ -1170,7 +1171,7 @@ int BopenRsrc(BareosWinFilePacket* bfd,
 
   return bfd->fid;
 }
-#else
+#  else
 int BopenRsrc(BareosWinFilePacket* bfd,
               const char* fname,
               int flags,
@@ -1178,7 +1179,7 @@ int BopenRsrc(BareosWinFilePacket* bfd,
 {
   return -1;
 }
-#endif
+#  endif
 
 int bclose(BareosWinFilePacket* bfd)
 {
@@ -1193,14 +1194,14 @@ int bclose(BareosWinFilePacket* bfd)
     bfd->fid = -1;
     bfd->cmd_plugin = false;
   } else {
-#if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_DONTNEED)
+#  if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_DONTNEED)
     /* If not RDWR or WRONLY must be Read Only */
-    if (!(bfd->flags_ & (O_RDWR|O_WRONLY))) {
+    if (!(bfd->flags_ & (O_RDWR | O_WRONLY))) {
       /* Tell OS we don't need it any more */
       posix_fadvise(bfd->fid, 0, 0, POSIX_FADV_DONTNEED);
       Dmsg1(400, "Did posix_fadvise DONTNEED on fid=%d\n", bfd->fid);
     }
-#endif
+#  endif
 
     /* Close normal file */
     status = close(bfd->fid);

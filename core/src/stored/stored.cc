@@ -118,7 +118,7 @@ static void usage()
  *
  */
 #if defined(HAVE_WIN32)
-#define main BareosMain
+#  define main BareosMain
 #endif
 
 int main(int argc, char* argv[])
@@ -415,8 +415,8 @@ static int CheckResources()
 
   DeviceResource* device_resource = nullptr;
   foreach_res (device_resource, R_DEVICE) {
-    if (device_resource->drive_crypto_enabled &&
-        BitIsSet(CAP_LABEL, device_resource->cap_bits)) {
+    if (device_resource->drive_crypto_enabled
+        && BitIsSet(CAP_LABEL, device_resource->cap_bits)) {
       Jmsg(NULL, M_FATAL, 0,
            _("LabelMedia enabled is incompatible with tape crypto on Device "
              "\"%s\" in %s.\n"),
@@ -502,8 +502,8 @@ static void CleanUpOldFiles()
     }
 
     /* Exclude any name with ., .., not my_name or containing a space */
-    if (strcmp(result->d_name, ".") == 0 || strcmp(result->d_name, "..") == 0 ||
-        strncmp(result->d_name, my_name, my_name_len) != 0) {
+    if (strcmp(result->d_name, ".") == 0 || strcmp(result->d_name, "..") == 0
+        || strncmp(result->d_name, my_name, my_name_len) != 0) {
       Dmsg1(500, "Skipped: %s\n", result->d_name);
       continue;
     }
@@ -671,15 +671,15 @@ static
         jcr->MyThreadSendSignal(TIMEOUT_SIGNAL);
         Dmsg1(100, "term_stored killing JobId=%d\n", jcr->JobId);
         /* ***FIXME*** wiffle through all dcrs */
-        if (jcr->impl->dcr && jcr->impl->dcr->dev &&
-            jcr->impl->dcr->dev->blocked()) {
+        if (jcr->impl->dcr && jcr->impl->dcr->dev
+            && jcr->impl->dcr->dev->blocked()) {
           pthread_cond_broadcast(&jcr->impl->dcr->dev->wait_next_vol);
           Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
                 (uint32_t)jcr->JobId);
           ReleaseDeviceCond();
         }
-        if (jcr->impl->read_dcr && jcr->impl->read_dcr->dev &&
-            jcr->impl->read_dcr->dev->blocked()) {
+        if (jcr->impl->read_dcr && jcr->impl->read_dcr->dev
+            && jcr->impl->read_dcr->dev->blocked()) {
           pthread_cond_broadcast(&jcr->impl->read_dcr->dev->wait_next_vol);
           Dmsg1(100, "JobId=%u broadcast wait_device_release\n",
                 (uint32_t)jcr->JobId);

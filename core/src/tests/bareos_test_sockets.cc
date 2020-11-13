@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #include "bareos_test_sockets.h"
@@ -32,8 +32,8 @@
 #include "lib/bsock_tcp.h"
 
 #if HAVE_WIN32
-#include <cstdlib>
-#include <mutex>
+#  include <cstdlib>
+#  include <mutex>
 static void exithandler() { WSACleanup(); }
 static void init_once()
 {
@@ -78,19 +78,20 @@ static int create_listening_server_socket(int port)
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
   address.sin_port = htons(port);
-  if (bind(listen_file_descriptor, (struct sockaddr*)&address,
-           sizeof(address)) < 0) {
+  if (bind(listen_file_descriptor, (struct sockaddr*)&address, sizeof(address))
+      < 0) {
     perror("bind failed");
     return -4;
   }
 
 #if defined(HAVE_WIN32)
   DWORD timeout = 10000;  // after 10 seconds connect() will timeout
-  auto r2 = (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_RCVTIMEO,
-                        reinterpret_cast<const char*>(&timeout),
-                        sizeof(timeout)) == SOCKET_ERROR)
-                ? -1
-                : 0;
+  auto r2
+      = (setsockopt(listen_file_descriptor, SOL_SOCKET, SO_RCVTIMEO,
+                    reinterpret_cast<const char*>(&timeout), sizeof(timeout))
+         == SOCKET_ERROR)
+            ? -1
+            : 0;
 #else
   struct timeval timeout;
   timeout.tv_sec = 10;  // after 10 seconds connect() will timeout

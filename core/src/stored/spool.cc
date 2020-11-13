@@ -187,8 +187,8 @@ static bool OpenDataSpoolFile(DeviceControlRecord* dcr)
   POOLMEM* name = GetPoolMemory(PM_MESSAGE);
 
   MakeUniqueDataSpoolFilename(dcr, name);
-  if ((spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640)) >=
-      0) {
+  if ((spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640))
+      >= 0) {
     dcr->spool_fd = spool_fd;
     dcr->jcr->impl->spool_attributes = true;
   } else {
@@ -520,10 +520,10 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
   P(dcr->dev->spool_mutex);
   dcr->job_spool_size += hlen + wlen;
   dcr->dev->spool_size += hlen + wlen;
-  if ((dcr->max_job_spool_size > 0 &&
-       dcr->job_spool_size >= dcr->max_job_spool_size) ||
-      (dcr->dev->max_spool_size > 0 &&
-       dcr->dev->spool_size >= dcr->dev->max_spool_size)) {
+  if ((dcr->max_job_spool_size > 0
+       && dcr->job_spool_size >= dcr->max_job_spool_size)
+      || (dcr->dev->max_spool_size > 0
+          && dcr->dev->spool_size >= dcr->dev->max_spool_size)) {
     despool = true;
   }
   V(dcr->dev->spool_mutex);

@@ -102,8 +102,8 @@ BareosSocket::BareosSocket(const BareosSocket& other)
   blocking_ = other.blocking_;
   errors = other.errors;
   suppress_error_msgs_ = other.suppress_error_msgs_;
-  sleep_time_after_authentication_error =
-      other.sleep_time_after_authentication_error;
+  sleep_time_after_authentication_error
+      = other.sleep_time_after_authentication_error;
   client_addr = other.client_addr;
   peer_addr = other.peer_addr;
   tls_conn = other.tls_conn;
@@ -231,8 +231,8 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size),
   posix_fadvise(spool_fd_, 0, 0, POSIX_FADV_WILLNEED);
 #endif
 
-  while ((nbytes = read(spool_fd_, (char*)&pktsiz, sizeof(int32_t))) ==
-         sizeof(int32_t)) {
+  while ((nbytes = read(spool_fd_, (char*)&pktsiz, sizeof(int32_t)))
+         == sizeof(int32_t)) {
     size += sizeof(int32_t);
     message_length = ntohl(pktsiz);
     if (message_length > 0) {
@@ -397,15 +397,15 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
   bool auth_success = false;
 
   if (jcr && JobCanceled(jcr)) {
-    const char* fmt =
-        _("TwoWayAuthenticate failed, because job was canceled.\n");
+    const char* fmt
+        = _("TwoWayAuthenticate failed, because job was canceled.\n");
     Jmsg(jcr, M_FATAL, 0, fmt);
     Dmsg0(debuglevel, fmt);
   } else if (password.encoding != p_encoding_md5) {
-    const char* fmt =
-        _("Password encoding is not MD5. You are probably restoring a NDMP "
-          "Backup "
-          "with a restore job not configured for NDMP protocol.\n");
+    const char* fmt
+        = _("Password encoding is not MD5. You are probably restoring a NDMP "
+            "Backup "
+            "with a restore job not configured for NDMP protocol.\n");
     Jmsg(jcr, M_FATAL, 0, fmt);
     Dmsg0(debuglevel, fmt);
   } else {
@@ -417,9 +417,9 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 
     if (ConnectionReceivedTerminateSignal()) {
       if (tid) { StopBsockTimer(tid); }
-      const char* fmt =
-          _("TwoWayAuthenticate failed, because connection was reset by "
-            "destination peer.\n");
+      const char* fmt
+          = _("TwoWayAuthenticate failed, because connection was reset by "
+              "destination peer.\n");
       Jmsg(jcr, M_FATAL, 0, fmt);
       Dmsg0(debuglevel, fmt);
       return false;
@@ -433,10 +433,10 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 
       switch (cram_md5_handshake.result) {
         case CramMd5Handshake::HandshakeResult::REPLAY_ATTACK: {
-          const char* fmt =
-              "Warning! Attack detected: "
-              "I will not answer to my own challenge. "
-              "Please check integrity of the host at IP address: %s\n";
+          const char* fmt
+              = "Warning! Attack detected: "
+                "I will not answer to my own challenge. "
+                "Please check integrity of the host at IP address: %s\n";
           Jmsg(jcr, M_FATAL, 0, fmt, ipaddr_str);
           Dmsg1(debuglevel, fmt, ipaddr_str);
           break;
@@ -458,8 +458,8 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
       fsend(_("1999 Authorization failed.\n"));
       Bmicrosleep(sleep_time_after_authentication_error, 0);
     } else if (jcr && JobCanceled(jcr)) {
-      const char* fmt =
-          _("TwoWayAuthenticate failed, because job was canceled.\n");
+      const char* fmt
+          = _("TwoWayAuthenticate failed, because job was canceled.\n");
       Jmsg(jcr, M_FATAL, 0, fmt);
       Dmsg0(debuglevel, fmt);
       auth_success = false;
@@ -482,8 +482,8 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 bool BareosSocket::DoTlsHandshakeAsAServer(ConfigurationParser* config,
                                            JobControlRecord* jcr)
 {
-  TlsResource* tls_resource =
-      dynamic_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
+  TlsResource* tls_resource
+      = dynamic_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
   if (!tls_resource) {
     Dmsg1(100, "Could not get tls resource for %d.\n", config->r_own_);
     return false;
@@ -532,8 +532,8 @@ bool BareosSocket::ParameterizeAndInitTlsConnectionAsAServer(
 
   tls_conn_init->SetTcpFileDescriptor(fd_);
 
-  TlsResource* tls_resource =
-      dynamic_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
+  TlsResource* tls_resource
+      = dynamic_cast<TlsResource*>(config->GetNextRes(config->r_own_, nullptr));
   if (!tls_resource) {
     Dmsg1(100, "Could not get tls resource for %d.\n", config->r_own_);
     return false;
@@ -563,8 +563,8 @@ bool BareosSocket::DoTlsHandshake(TlsPolicy remote_tls_policy,
 
   int tls_policy = tls_resource->SelectTlsPolicy(remote_tls_policy);
 
-  if (tls_policy ==
-      TlsPolicy::kBnetTlsDeny) { /* tls required but not configured */
+  if (tls_policy
+      == TlsPolicy::kBnetTlsDeny) { /* tls required but not configured */
     return false;
   }
   if (tls_policy != TlsPolicy::kBnetTlsNone) { /* no tls configuration is ok */
@@ -700,8 +700,8 @@ bool BareosSocket::AuthenticateInboundConnection(JobControlRecord* jcr,
 
   if (my_config) {
     InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
-    own_qualified_name_for_network_dump =
-        my_config->CreateOwnQualifiedNameForNetworkDump();
+    own_qualified_name_for_network_dump
+        = my_config->CreateOwnQualifiedNameForNetworkDump();
   }
 
   return TwoWayAuthenticate(jcr, own_qualified_name_for_network_dump, identity,

@@ -112,8 +112,8 @@ typedef enum
 /* Maximum Message Digest Size */
 #ifdef HAVE_OPENSSL
 
-#define CRYPTO_DIGEST_MAX_SIZE 64
-#define CRYPTO_CIPHER_MAX_BLOCK_SIZE 32
+#  define CRYPTO_DIGEST_MAX_SIZE 64
+#  define CRYPTO_CIPHER_MAX_BLOCK_SIZE 32
 
 #else /* HAVE_OPENSSL */
 
@@ -124,14 +124,14 @@ typedef enum
  *      MD5: 128 bits
  *      SHA-1: 160 bits
  */
-#ifndef HAVE_SHA2
-#define CRYPTO_DIGEST_MAX_SIZE CRYPTO_DIGEST_SHA1_SIZE
-#else
-#define CRYPTO_DIGEST_MAX_SIZE CRYPTO_DIGEST_SHA512_SIZE
-#endif
+#  ifndef HAVE_SHA2
+#    define CRYPTO_DIGEST_MAX_SIZE CRYPTO_DIGEST_SHA1_SIZE
+#  else
+#    define CRYPTO_DIGEST_MAX_SIZE CRYPTO_DIGEST_SHA512_SIZE
+#  endif
 
 /* Dummy Value */
-#define CRYPTO_CIPHER_MAX_BLOCK_SIZE 0
+#  define CRYPTO_CIPHER_MAX_BLOCK_SIZE 0
 
 #endif /* HAVE_OPENSSL */
 

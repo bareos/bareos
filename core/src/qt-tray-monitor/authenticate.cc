@@ -70,8 +70,8 @@ static std::map<AuthenticationResult, std::string>
 bool GetAuthenticationResultString(AuthenticationResult err,
                                    std::string& buffer)
 {
-  if (authentication_error_to_string_map.find(err) !=
-      authentication_error_to_string_map.end()) {
+  if (authentication_error_to_string_map.find(err)
+      != authentication_error_to_string_map.end()) {
     buffer = authentication_error_to_string_map.at(err);
     return true;
   }
@@ -147,8 +147,7 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
   bstrncpy(dirname, monitor->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
-  sd->InitBnetDump(
-      my_config->CreateOwnQualifiedNameForNetworkDump());
+  sd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
 
   if (!sd->fsend(SDFDhello, dirname)) {
     Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"),
@@ -226,8 +225,7 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
   bstrncpy(dirname, monitor->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
 
-  fd->InitBnetDump(
-      my_config->CreateOwnQualifiedNameForNetworkDump());
+  fd->InitBnetDump(my_config->CreateOwnQualifiedNameForNetworkDump());
 
   if (!fd->fsend(SDFDhello, dirname)) {
     Jmsg(jcr, M_FATAL, 0,

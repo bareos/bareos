@@ -72,8 +72,8 @@ extern "C" void* sd_heartbeat_thread(void* arg)
   jcr->impl->hb_dir_bsock = dir;
   dir->suppress_error_msgs_ = true;
   sd->suppress_error_msgs_ = true;
-  jcr->impl->hb_initialized_once =
-      true;  // initialize last to avoid race condition
+  jcr->impl->hb_initialized_once
+      = true;  // initialize last to avoid race condition
 
   /* Hang reading the socket to the SD, and every time we get
    * a heartbeat or we get a wait timeout (5 seconds), we
@@ -204,8 +204,8 @@ extern "C" void* dir_heartbeat_thread(void* arg)
   jcr->impl->hb_bsock.reset(dir);
   jcr->impl->hb_running = true;
   dir->suppress_error_msgs_ = true;
-  jcr->impl->hb_initialized_once =
-      true;  // initialize last to avoid race condition
+  jcr->impl->hb_initialized_once
+      = true;  // initialize last to avoid race condition
 
   while (!dir->IsStop()) {
     time_t now, next;

@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #include "lib/edit.h"
@@ -42,8 +42,8 @@ TEST(edit, convert_number_to_siunits)
   ASSERT_STREQ(SizeAsSiPrefixFormat(1152921504606846976).c_str(), "1 e");
 
   ASSERT_STREQ(
-      SizeAsSiPrefixFormat(1152921504606846976 + 1125899906842624 +
-                           1099511627776 + 1073741824 + 1048576 + 1024 + 1)
+      SizeAsSiPrefixFormat(1152921504606846976 + 1125899906842624
+                           + 1099511627776 + 1073741824 + 1048576 + 1024 + 1)
           .c_str(),
       "1 e 1 p 1 t 1 g 1 m 1 k 1");
 }

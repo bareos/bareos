@@ -21,13 +21,13 @@
 
 
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "gmock/gmock.h"
 #else
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "gmock/gmock.h"
+#  include "include/bareos.h"
 #endif
 
 #include "cats/cats.h"
@@ -86,10 +86,11 @@ void RunOnIncomingConnectIntervalTest::TearDown() { delete my_config; }
 
 static bool find(std::vector<JobResource*> jobs, std::string jobname)
 {
-  return jobs.end() !=
-         std::find_if(jobs.begin(), jobs.end(), [&jobname](JobResource* job) {
-           return std::string{job->resource_name_} == jobname;
-         });
+  return jobs.end()
+         != std::find_if(jobs.begin(), jobs.end(),
+                         [&jobname](JobResource* job) {
+                           return std::string{job->resource_name_} == jobname;
+                         });
 }
 
 TEST_F(RunOnIncomingConnectIntervalTest, find_all_jobs_for_client)
@@ -176,8 +177,8 @@ class MockDatabase : public BareosDb {
         auto now = system_clock::now();
         auto more_than_three_hours = seconds(hours(3) + seconds(1));
 
-        utime_t fake_start_time_of_previous_job =
-            system_clock::to_time_t(now - more_than_three_hours);
+        utime_t fake_start_time_of_previous_job
+            = system_clock::to_time_t(now - more_than_three_hours);
 
         stime_out.resize(MAX_NAME_LENGTH);
         bstrutime(stime_out.data(), MAX_NAME_LENGTH,

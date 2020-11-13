@@ -80,8 +80,8 @@
 #define AR_DATA_STREAM (1 << 16) /**< Data stream id present */
 
 /* Quick way to know if a Filetype is about a plugin "Object" */
-#define IS_FT_OBJECT(x)                                             \
-  (((x) == FT_RESTORE_FIRST) || ((x) == FT_PLUGIN_CONFIG_FILLED) || \
-   ((x) == FT_PLUGIN_CONFIG))
+#define IS_FT_OBJECT(x)                                          \
+  (((x) == FT_RESTORE_FIRST) || ((x) == FT_PLUGIN_CONFIG_FILLED) \
+   || ((x) == FT_PLUGIN_CONFIG))
 
 #endif /* BAREOS_INCLUDE_FILETYPES_H_ */

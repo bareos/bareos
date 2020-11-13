@@ -95,8 +95,8 @@ void CatalogTest::SetUp()
 
   // parse config
   {
-    std::string path_to_config_file =
-        std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/catalog");
+    std::string path_to_config_file
+        = std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/catalog");
     my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
 
     ASSERT_TRUE(my_config->ParseConfig());
@@ -105,8 +105,8 @@ void CatalogTest::SetUp()
   // connect to database
   {
     jcr = directordaemon::NewDirectorJcr();
-    jcr->impl->res.catalog =
-        (directordaemon::CatalogResource*)my_config->GetResWithName(
+    jcr->impl->res.catalog
+        = (directordaemon::CatalogResource*)my_config->GetResWithName(
             directordaemon::R_CATALOG, catalog_backend_name.c_str());
 
     ASSERT_NE(jcr->impl->res.catalog, nullptr);

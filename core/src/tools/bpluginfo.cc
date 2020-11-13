@@ -40,10 +40,10 @@
 #include "stored/sd_plugins.h"
 #include "assert_macro.h"
 #ifndef __WIN32__
-#include <dlfcn.h>
+#  include <dlfcn.h>
 #endif
 #ifndef PATH_MAX
-#define PATH_MAX 4096
+#  define PATH_MAX 4096
 #endif
 
 extern "C" {
@@ -314,16 +314,16 @@ int Getplugintype(progdata* pdata)
 
   ASSERT_NVAL_RET_V(plugin_information, ERRORPLUGIN);
 
-  if (plugin_information->plugin_magic &&
-      bstrcmp(plugin_information->plugin_magic, DIR_PLUGIN_MAGIC)) {
+  if (plugin_information->plugin_magic
+      && bstrcmp(plugin_information->plugin_magic, DIR_PLUGIN_MAGIC)) {
     return DIRPLUGIN;
   } else {
-    if (plugin_information->plugin_magic &&
-        bstrcmp(plugin_information->plugin_magic, FD_PLUGIN_MAGIC)) {
+    if (plugin_information->plugin_magic
+        && bstrcmp(plugin_information->plugin_magic, FD_PLUGIN_MAGIC)) {
       return FDPLUGIN;
     } else {
-      if (plugin_information->plugin_magic &&
-          bstrcmp(plugin_information->plugin_magic, SD_PLUGIN_MAGIC)) {
+      if (plugin_information->plugin_magic
+          && bstrcmp(plugin_information->plugin_magic, SD_PLUGIN_MAGIC)) {
         return SDPLUGIN;
       } else {
         return ERRORPLUGIN;
@@ -507,8 +507,8 @@ int main(int argc, char* argv[])
   pdata = allocpdata();
   ParseArgs(pdata, argc, argv);
 
-  bareos_plugin_interface_version.bfdinfo.size =
-      sizeof(bareos_plugin_interface_version);
+  bareos_plugin_interface_version.bfdinfo.size
+      = sizeof(bareos_plugin_interface_version);
   bareos_plugin_interface_version.bfdinfo.version = DEFAULT_API_VERSION;
 
   pdata->pluginhandle = dlopen(pdata->pluginfile, RTLD_LAZY);

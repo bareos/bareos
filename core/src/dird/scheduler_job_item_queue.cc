@@ -33,8 +33,8 @@ struct PrioritiseJobItems {
   bool operator()(const SchedulerJobItem& a, const SchedulerJobItem& b) const
   {
     bool a_runs_before_b = a.runtime < b.runtime;
-    bool a_has_higher_priority_than_b =
-        a.runtime == b.runtime && a.priority < b.priority;
+    bool a_has_higher_priority_than_b
+        = a.runtime == b.runtime && a.priority < b.priority;
     // invert for std::priority_queue sort algorithm
     return !(a_runs_before_b || a_has_higher_priority_than_b);
   }

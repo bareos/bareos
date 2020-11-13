@@ -36,7 +36,7 @@
 #define BAREOS_LIB_BMTIO_H
 
 #ifndef _KERNEL
-#include <sys/types.h>
+#  include <sys/types.h>
 #endif
 #include <sys/ioccom.h>
 
@@ -69,41 +69,41 @@ struct mtop {
 /* Resetting the block size to 0 will restore the device to a variable  */
 /* block size device. */
 
-#define MTSETBSIZ 10
+#  define MTSETBSIZ 10
 
 /* Set density values for device. Sets the value for the opened mode only. */
 
-#define MTSETDNSTY 11
+#  define MTSETDNSTY 11
 
-#define MTERASE 12  /**< erase to EOM */
-#define MTEOD 13    /**< Space to EOM */
-#define MTCOMP 14   /**< select compression mode 0=off, 1=def */
-#define MTRETENS 15 /**< re-tension tape */
-#define MTWSS 16    /**< write setmark(s) */
-#define MTFSS 17    /**< forward space setmark */
-#define MTBSS 18    /**< backward space setmark */
+#  define MTERASE 12  /**< erase to EOM */
+#  define MTEOD 13    /**< Space to EOM */
+#  define MTCOMP 14   /**< select compression mode 0=off, 1=def */
+#  define MTRETENS 15 /**< re-tension tape */
+#  define MTWSS 16    /**< write setmark(s) */
+#  define MTFSS 17    /**< forward space setmark */
+#  define MTBSS 18    /**< backward space setmark */
 
-#define MT_COMP_ENABLE 0xffffffff
-#define MT_COMP_DISABLED 0xfffffffe
-#define MT_COMP_UNSUPP 0xfffffffd
+#  define MT_COMP_ENABLE 0xffffffff
+#  define MT_COMP_DISABLED 0xfffffffe
+#  define MT_COMP_UNSUPP 0xfffffffd
 
 /*
  * Values in mt_dsreg that say what the device is doing
  */
-#define MTIO_DSREG_NIL 0  /**< Unknown */
-#define MTIO_DSREG_REST 1 /**< Doing Nothing */
-#define MTIO_DSREG_RBSY 2 /**< Communicating with tape (but no motion) */
-#define MTIO_DSREG_WR 20  /**< Writing */
-#define MTIO_DSREG_FMK 21 /**< Writing Filemarks */
-#define MTIO_DSREG_ZER 22 /**< Erasing */
-#define MTIO_DSREG_RD 30  /**< Reading */
-#define MTIO_DSREG_FWD 40 /**< Spacing Forward */
-#define MTIO_DSREG_REV 41 /**< Spacing Reverse */
-#define MTIO_DSREG_POS 42 /**< Hardware Positioning (direction unknown) */
-#define MTIO_DSREG_REW 43 /**< Rewinding */
-#define MTIO_DSREG_TEN 44 /**< Retensioning */
-#define MTIO_DSREG_UNL 45 /**< Unloading */
-#define MTIO_DSREG_LD 46  /**< Loading */
+#  define MTIO_DSREG_NIL 0  /**< Unknown */
+#  define MTIO_DSREG_REST 1 /**< Doing Nothing */
+#  define MTIO_DSREG_RBSY 2 /**< Communicating with tape (but no motion) */
+#  define MTIO_DSREG_WR 20  /**< Writing */
+#  define MTIO_DSREG_FMK 21 /**< Writing Filemarks */
+#  define MTIO_DSREG_ZER 22 /**< Erasing */
+#  define MTIO_DSREG_RD 30  /**< Reading */
+#  define MTIO_DSREG_FWD 40 /**< Spacing Forward */
+#  define MTIO_DSREG_REV 41 /**< Spacing Reverse */
+#  define MTIO_DSREG_POS 42 /**< Hardware Positioning (direction unknown) */
+#  define MTIO_DSREG_REW 43 /**< Rewinding */
+#  define MTIO_DSREG_TEN 44 /**< Retensioning */
+#  define MTIO_DSREG_UNL 45 /**< Unloading */
+#  define MTIO_DSREG_LD 46  /**< Loading */
 
 #endif /* __FreeBSD__ */
 
@@ -125,7 +125,7 @@ struct mtget {
 #if defined(__FreeBSD__)
   int32_t mt_blksiz;   /**< presently operating blocksize */
   int32_t mt_density;  /**< presently operating density */
-  uint32_t mt_comp;   /**< presently operating compression */
+  uint32_t mt_comp;    /**< presently operating compression */
   int32_t mt_blksiz0;  /**< blocksize for mode 0 */
   int32_t mt_blksiz1;  /**< blocksize for mode 1 */
   int32_t mt_blksiz2;  /**< blocksize for mode 2 */
@@ -135,10 +135,10 @@ struct mtget {
   int32_t mt_density2; /**< density for mode 2 */
   int32_t mt_density3; /**< density for mode 3 */
                        /* the following are not yet implemented */
-  uint32_t mt_comp0;  /**< compression type for mode 0 */
-  uint32_t mt_comp1;  /**< compression type for mode 1 */
-  uint32_t mt_comp2;  /**< compression type for mode 2 */
-  uint32_t mt_comp3;  /**< compression type for mode 3 */
+  uint32_t mt_comp0;   /**< compression type for mode 0 */
+  uint32_t mt_comp1;   /**< compression type for mode 1 */
+  uint32_t mt_comp2;   /**< compression type for mode 2 */
+  uint32_t mt_comp3;   /**< compression type for mode 3 */
 /* end not yet implemented */
 #endif
   int32_t mt_fileno; /**< relative file number of current position */
@@ -154,10 +154,10 @@ struct scsi_tape_errors {
    * of issuing an MTIOCERRSTAT unlatches and clears them.
    */
   uint8_t io_sense[32];  /**< Last Sense Data For Data I/O */
-  int32_t io_resid;       /**< residual count from last Data I/O */
+  int32_t io_resid;      /**< residual count from last Data I/O */
   uint8_t io_cdb[16];    /**< Command that Caused the Last Data Sense */
   uint8_t ctl_sense[32]; /**< Last Sense Data For Control I/O */
-  int32_t ctl_resid;      /**< residual count from last Control I/O */
+  int32_t ctl_resid;     /**< residual count from last Control I/O */
   uint8_t ctl_cdb[16];   /**< Command that Caused the Last Control Sense */
   /*
    * These are the read and write cumulative error counters.
@@ -229,7 +229,7 @@ union mterrstat {
 #define MTIOCGETEOTMODEL _IOR('m', 8, uint32_t)
 
 #ifndef _KERNEL
-#define DEFTAPE "/dev/nsa0"
+#  define DEFTAPE "/dev/nsa0"
 #endif
 
 #endif /* !BAREOS_LIB_BMTIO_H */

@@ -48,9 +48,9 @@
 
 #include "sys/mtio.h"
 #if defined(_MSC_VER)
-#include <winioctl.h>
+#  include <winioctl.h>
 #else
-#include <ntddstor.h>
+#  include <ntddstor.h>
 #endif
 #include <ntddscsi.h>
 
@@ -81,10 +81,10 @@ static inline USHORT Read16BitUnsigned(const unsigned char* pValue)
 
 static inline LONG Read24BitSigned(const unsigned char* pValue)
 {
-  return ((LONG)(((ULONG)pValue[0] << 16) | ((ULONG)pValue[1] << 8) |
-                 (ULONG)pValue[2]))
-             << 8 >>
-         8;
+  return ((LONG)(((ULONG)pValue[0] << 16) | ((ULONG)pValue[1] << 8)
+                 | (ULONG)pValue[2]))
+             << 8
+         >> 8;
 }
 
 static inline ULONG Read24BitUnsigned(const unsigned char* pValue)
@@ -94,32 +94,32 @@ static inline ULONG Read24BitUnsigned(const unsigned char* pValue)
 
 static inline LONG Read32BitSigned(const unsigned char* pValue)
 {
-  return (LONG)(((ULONG)pValue[0] << 24) | ((ULONG)pValue[1] << 16) |
-                ((ULONG)pValue[2] << 8) | (ULONG)pValue[3]);
+  return (LONG)(((ULONG)pValue[0] << 24) | ((ULONG)pValue[1] << 16)
+                | ((ULONG)pValue[2] << 8) | (ULONG)pValue[3]);
 }
 
 static inline ULONG Read32BitUnsigned(const unsigned char* pValue)
 {
-  return (((ULONG)pValue[0] << 24) | ((ULONG)pValue[1] << 16) |
-          ((ULONG)pValue[2] << 8) | (ULONG)pValue[3]);
+  return (((ULONG)pValue[0] << 24) | ((ULONG)pValue[1] << 16)
+          | ((ULONG)pValue[2] << 8) | (ULONG)pValue[3]);
 }
 
 static inline LONGLONG Read64BitSigned(const unsigned char* pValue)
 {
   return (LONGLONG)(
-      ((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48) |
-      ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32) |
-      ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16) |
-      ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]);
+      ((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48)
+      | ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32)
+      | ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16)
+      | ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]);
 }
 
 static inline ULONGLONG Read64BitUnsigned(const unsigned char* pValue)
 {
   return (LONGLONG)(
-      ((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48) |
-      ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32) |
-      ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16) |
-      ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]);
+      ((ULONGLONG)pValue[0] << 56) | ((ULONGLONG)pValue[1] << 48)
+      | ((ULONGLONG)pValue[2] << 40) | ((ULONGLONG)pValue[3] << 32)
+      | ((ULONGLONG)pValue[4] << 24) | ((ULONGLONG)pValue[5] << 16)
+      | ((ULONGLONG)pValue[6] << 8) | (ULONGLONG)pValue[7]);
 }
 
 typedef struct _TAPE_POSITION_INFO {
@@ -148,13 +148,13 @@ typedef struct _TAPE_HANDLE_INFO {
 
 } TAPE_HANDLE_INFO, *PTAPE_HANDLE_INFO;
 
-TAPE_HANDLE_INFO TapeHandleTable[] = {
-    {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
-    {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
-    {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
-    {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
-    {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
-    {INVALID_HANDLE_VALUE}};
+TAPE_HANDLE_INFO TapeHandleTable[]
+    = {{INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
+       {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
+       {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
+       {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
+       {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE}, {INVALID_HANDLE_VALUE},
+       {INVALID_HANDLE_VALUE}};
 
 #define NUMBER_HANDLE_ENTRIES \
   (sizeof(TapeHandleTable) / sizeof(TapeHandleTable[0]))
@@ -198,9 +198,9 @@ int win32_tape_device::d_open(const char* pathname, int flags, int mode)
     TAPE_GET_DRIVE_PARAMETERS TapeDriveParameters;
     DWORD dwSize = sizeof(TapeDriveParameters);
 
-    dwResult =
-        GetTapeParameters(pHandleInfo->OSHandle, GET_TAPE_DRIVE_INFORMATION,
-                          &dwSize, &TapeDriveParameters);
+    dwResult
+        = GetTapeParameters(pHandleInfo->OSHandle, GET_TAPE_DRIVE_INFORMATION,
+                            &dwSize, &TapeDriveParameters);
     if (dwResult == NO_ERROR) {
       pHandleInfo->FeaturesLow = TapeDriveParameters.FeaturesLow;
       pHandleInfo->FeaturesHigh = TapeDriveParameters.FeaturesHigh;
@@ -211,10 +211,9 @@ int win32_tape_device::d_open(const char* pathname, int flags, int mode)
     dwResult = GetTapePositionInfo(pHandleInfo->OSHandle, &TapePositionInfo);
 
     if (dwResult == NO_ERROR) {
-      if (TapePositionInfo.AtPartitionStart ||
-          TapePositionInfo.AtPartitionEnd ||
-          (TapePositionInfo.PartitionBlockValid &&
-           TapePositionInfo.BlockNumber == 0)) {
+      if (TapePositionInfo.AtPartitionStart || TapePositionInfo.AtPartitionEnd
+          || (TapePositionInfo.PartitionBlockValid
+              && TapePositionInfo.BlockNumber == 0)) {
         pHandleInfo->ulFile = 0;
         pHandleInfo->bBlockValid = true;
         pHandleInfo->ullFileStart = 0;
@@ -263,8 +262,8 @@ ssize_t win32_tape_device::d_read(int fd, void* buffer, size_t count)
     return -1;
   }
 
-  if (fd < 3 || fd >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
-      TapeHandleTable[fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
+  if (fd < 3 || fd >= (int)(NUMBER_HANDLE_ENTRIES + 3)
+      || TapeHandleTable[fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
   }
@@ -327,8 +326,8 @@ ssize_t win32_tape_device::d_write(int fd, const void* buffer, size_t count)
     return -1;
   }
 
-  if (fd < 3 || fd >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
-      TapeHandleTable[fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
+  if (fd < 3 || fd >= (int)(NUMBER_HANDLE_ENTRIES + 3)
+      || TapeHandleTable[fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
   }
@@ -337,8 +336,8 @@ ssize_t win32_tape_device::d_write(int fd, const void* buffer, size_t count)
   DWORD bytes_written;
   BOOL bResult;
 
-  bResult =
-      WriteFile(pHandleInfo->OSHandle, buffer, count, &bytes_written, NULL);
+  bResult
+      = WriteFile(pHandleInfo->OSHandle, buffer, count, &bytes_written, NULL);
 
   if (bResult) {
     pHandleInfo->bEOF = false;
@@ -376,8 +375,8 @@ ssize_t win32_tape_device::d_write(int fd, const void* buffer, size_t count)
 
 int win32_tape_device::d_close(int fd)
 {
-  if (fd < 3 || fd >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
-      TapeHandleTable[fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
+  if (fd < 3 || fd >= (int)(NUMBER_HANDLE_ENTRIES + 3)
+      || TapeHandleTable[fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
   }
@@ -417,8 +416,8 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
   DWORD result = NO_ERROR;
   int index;
 
-  if (fd_ < 3 || fd_ >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
-      TapeHandleTable[fd_ - 3].OSHandle == INVALID_HANDLE_VALUE) {
+  if (fd_ < 3 || fd_ >= (int)(NUMBER_HANDLE_ENTRIES + 3)
+      || TapeHandleTable[fd_ - 3].OSHandle == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
   }
@@ -461,9 +460,9 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
       }
       break;
     case MTFSR:
-      result =
-          SetTapePosition(pHandleInfo->OSHandle, TAPE_SPACE_RELATIVE_BLOCKS, 0,
-                          mt_com->mt_count, 0, FALSE);
+      result
+          = SetTapePosition(pHandleInfo->OSHandle, TAPE_SPACE_RELATIVE_BLOCKS,
+                            0, mt_com->mt_count, 0, FALSE);
       if (result == NO_ERROR) {
         pHandleInfo->bEOD = false;
         pHandleInfo->bEOF = false;
@@ -473,9 +472,9 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
       }
       break;
     case MTBSR:
-      result =
-          SetTapePosition(pHandleInfo->OSHandle, TAPE_SPACE_RELATIVE_BLOCKS, 0,
-                          -mt_com->mt_count, ~0, FALSE);
+      result
+          = SetTapePosition(pHandleInfo->OSHandle, TAPE_SPACE_RELATIVE_BLOCKS,
+                            0, -mt_com->mt_count, ~0, FALSE);
       if (result == NO_ERROR) {
         pHandleInfo->bEOD = false;
         pHandleInfo->bEOF = false;
@@ -500,8 +499,8 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
       }
       break;
     case MTREW:
-      result =
-          SetTapePosition(pHandleInfo->OSHandle, TAPE_REWIND, 0, 0, 0, FALSE);
+      result
+          = SetTapePosition(pHandleInfo->OSHandle, TAPE_REWIND, 0, 0, 0, FALSE);
       if (result == NO_ERROR) {
         pHandleInfo->bEOD = false;
         pHandleInfo->bEOF = false;
@@ -597,9 +596,9 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
       TAPE_SET_MEDIA_PARAMETERS SetMediaParameters;
 
       SetMediaParameters.BlockSize = mt_com->mt_count;
-      result =
-          SetTapeParameters(pHandleInfo->OSHandle, SET_TAPE_MEDIA_INFORMATION,
-                            &SetMediaParameters);
+      result
+          = SetTapeParameters(pHandleInfo->OSHandle, SET_TAPE_MEDIA_INFORMATION,
+                              &SetMediaParameters);
       break;
     }
     case MTSEEK: {
@@ -609,8 +608,8 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
                                mt_com->mt_count, 0, FALSE);
 
       memset(&TapePositionInfo, 0, sizeof(TapePositionInfo));
-      DWORD dwPosResult =
-          GetTapePositionInfo(pHandleInfo->OSHandle, &TapePositionInfo);
+      DWORD dwPosResult
+          = GetTapePositionInfo(pHandleInfo->OSHandle, &TapePositionInfo);
       if (dwPosResult == NO_ERROR && TapePositionInfo.FileSetValid) {
         pHandleInfo->ulFile = (ULONG)TapePositionInfo.FileNumber;
       } else {
@@ -659,21 +658,21 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
 
       size = sizeof(GetDriveParameters);
 
-      result =
-          GetTapeParameters(pHandleInfo->OSHandle, GET_TAPE_DRIVE_INFORMATION,
-                            &size, &GetDriveParameters);
+      result
+          = GetTapeParameters(pHandleInfo->OSHandle, GET_TAPE_DRIVE_INFORMATION,
+                              &size, &GetDriveParameters);
 
       if (result == NO_ERROR) {
         SetDriveParameters.ECC = GetDriveParameters.ECC;
         SetDriveParameters.Compression = (BOOLEAN)mt_com->mt_count;
         SetDriveParameters.DataPadding = GetDriveParameters.DataPadding;
         SetDriveParameters.ReportSetmarks = GetDriveParameters.ReportSetmarks;
-        SetDriveParameters.EOTWarningZoneSize =
-            GetDriveParameters.EOTWarningZoneSize;
+        SetDriveParameters.EOTWarningZoneSize
+            = GetDriveParameters.EOTWarningZoneSize;
 
-        result =
-            SetTapeParameters(pHandleInfo->OSHandle, SET_TAPE_DRIVE_INFORMATION,
-                              &SetDriveParameters);
+        result = SetTapeParameters(pHandleInfo->OSHandle,
+                                   SET_TAPE_DRIVE_INFORMATION,
+                                   &SetDriveParameters);
       }
       break;
     }
@@ -686,9 +685,9 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
         result = CreateTapePartition(pHandleInfo->OSHandle,
                                      TAPE_INITIATOR_PARTITIONS, 1, 0);
       } else {
-        result =
-            CreateTapePartition(pHandleInfo->OSHandle,
-                                TAPE_INITIATOR_PARTITIONS, 2, mt_com->mt_count);
+        result = CreateTapePartition(pHandleInfo->OSHandle,
+                                     TAPE_INITIATOR_PARTITIONS, 2,
+                                     mt_com->mt_count);
       }
       break;
     default:
@@ -697,12 +696,12 @@ int win32_tape_device::TapeOp(struct mtop* mt_com)
       break;
   }
 
-  if ((result == NO_ERROR && pHandleInfo->bEOF) ||
-      (result == ERROR_FILEMARK_DETECTED && mt_com->mt_op == MTFSR)) {
+  if ((result == NO_ERROR && pHandleInfo->bEOF)
+      || (result == ERROR_FILEMARK_DETECTED && mt_com->mt_op == MTFSR)) {
     TAPE_POSITION_INFO TapePositionInfo;
 
-    if (GetTapePositionInfo(pHandleInfo->OSHandle, &TapePositionInfo) ==
-        NO_ERROR) {
+    if (GetTapePositionInfo(pHandleInfo->OSHandle, &TapePositionInfo)
+        == NO_ERROR) {
       pHandleInfo->bBlockValid = true;
       pHandleInfo->ullFileStart = TapePositionInfo.BlockNumber;
     }
@@ -747,8 +746,8 @@ int win32_tape_device::TapeGet(struct mtget* mt_get)
   TAPE_POSITION_INFO pos_info;
   BOOL result;
 
-  if (fd_ < 3 || fd_ >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
-      TapeHandleTable[fd_ - 3].OSHandle == INVALID_HANDLE_VALUE) {
+  if (fd_ < 3 || fd_ >= (int)(NUMBER_HANDLE_ENTRIES + 3)
+      || TapeHandleTable[fd_ - 3].OSHandle == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
   }
@@ -769,9 +768,9 @@ int win32_tape_device::TapeGet(struct mtget* mt_get)
     DWORD size;
 
     size = sizeof(drive_params);
-    result =
-        GetTapeParameters(pHandleInfo->OSHandle, GET_TAPE_DRIVE_INFORMATION,
-                          &size, &drive_params);
+    result
+        = GetTapeParameters(pHandleInfo->OSHandle, GET_TAPE_DRIVE_INFORMATION,
+                            &size, &drive_params);
     if (result == NO_ERROR) { blocksize = drive_params.DefaultBlockSize; }
   }
 
@@ -780,14 +779,15 @@ int win32_tape_device::TapeGet(struct mtget* mt_get)
   /*
    * Partition #
    */
-  mt_get->mt_resid =
-      pos_info.PartitionBlockValid ? pos_info.Partition : (ULONG)-1;
+  mt_get->mt_resid
+      = pos_info.PartitionBlockValid ? pos_info.Partition : (ULONG)-1;
 
   /*
    * Density / Block Size
    */
-  mt_get->mt_dsreg = ((density << MT_ST_DENSITY_SHIFT) & MT_ST_DENSITY_MASK) |
-                     ((blocksize << MT_ST_BLKSIZE_SHIFT) & MT_ST_BLKSIZE_MASK);
+  mt_get->mt_dsreg
+      = ((density << MT_ST_DENSITY_SHIFT) & MT_ST_DENSITY_MASK)
+        | ((blocksize << MT_ST_BLKSIZE_SHIFT) & MT_ST_BLKSIZE_MASK);
 
   mt_get->mt_gstat = 0x00010000; /* Immediate report mode.*/
   if (pHandleInfo->bEOF) { mt_get->mt_gstat |= 0x80000000; /* GMT_EOF */ }
@@ -833,10 +833,10 @@ int win32_tape_device::TapeGet(struct mtget* mt_get)
   /*
    * Block Number
    */
-  mt_get->mt_blkno =
-      (__daddr_t)(pHandleInfo->bBlockValid
-                      ? pos_info.BlockNumber - pHandleInfo->ullFileStart
-                      : (ULONGLONG)-1);
+  mt_get->mt_blkno
+      = (__daddr_t)(pHandleInfo->bBlockValid
+                        ? pos_info.BlockNumber - pHandleInfo->ullFileStart
+                        : (ULONGLONG)-1);
 
   return 0;
 }
@@ -909,8 +909,8 @@ static DWORD GetTapePositionInfo(HANDLE hDevice,
   BOOL bResult;
   DWORD dwBytesReturned;
 
-  const DWORD dwBufferSize =
-      sizeof(SCSI_PASS_THROUGH) + sizeof(READ_POSITION_RESULT) + 28;
+  const DWORD dwBufferSize
+      = sizeof(SCSI_PASS_THROUGH) + sizeof(READ_POSITION_RESULT) + 28;
 
   memset(TapePositionInfo, 0, sizeof(*TapePositionInfo));
 
@@ -923,8 +923,8 @@ static DWORD GetTapePositionInfo(HANDLE hDevice,
     ScsiPassThrough->CdbLength = 10;
     ScsiPassThrough->SenseInfoLength = 28;
     ScsiPassThrough->DataIn = 1;
-    ScsiPassThrough->DataTransferLength =
-        sizeof(SCSI_READ_POSITION_LONG_BUFFER);
+    ScsiPassThrough->DataTransferLength
+        = sizeof(SCSI_READ_POSITION_LONG_BUFFER);
     ScsiPassThrough->TimeOutValue = 1000;
     ScsiPassThrough->DataBufferOffset = sizeof(SCSI_PASS_THROUGH) + 28;
     ScsiPassThrough->SenseInfoOffset = sizeof(SCSI_PASS_THROUGH);
@@ -943,8 +943,9 @@ static DWORD GetTapePositionInfo(HANDLE hDevice,
                               sizeof(SCSI_PASS_THROUGH), ScsiPassThrough,
                               dwBufferSize, &dwBytesReturned, NULL);
 
-    if (bResult && dwBytesReturned >= (offsetof(SCSI_PASS_THROUGH, ScsiStatus) +
-                                       sizeof(ScsiPassThrough->ScsiStatus))) {
+    if (bResult
+        && dwBytesReturned >= (offsetof(SCSI_PASS_THROUGH, ScsiStatus)
+                               + sizeof(ScsiPassThrough->ScsiStatus))) {
       if (ScsiPassThrough->ScsiStatus == SCSISTAT_GOOD) {
         PREAD_POSITION_RESULT pPosResult = (PREAD_POSITION_RESULT)(
             (PUCHAR)ScsiPassThrough + ScsiPassThrough->DataBufferOffset);
@@ -956,22 +957,22 @@ static DWORD GetTapePositionInfo(HANDLE hDevice,
             TapePositionInfo->AtPartitionEnd = pPosResult->LongBuffer.EOP;
 
             if (!TapePositionInfo->PartitionBlockValid) {
-              TapePositionInfo->PartitionBlockValid =
-                  !pPosResult->LongBuffer.BPU;
+              TapePositionInfo->PartitionBlockValid
+                  = !pPosResult->LongBuffer.BPU;
               if (TapePositionInfo->PartitionBlockValid) {
-                TapePositionInfo->Partition =
-                    Read32BitUnsigned(pPosResult->LongBuffer.Partition);
-                TapePositionInfo->BlockNumber =
-                    Read64BitUnsigned(pPosResult->LongBuffer.BlockNumber);
+                TapePositionInfo->Partition
+                    = Read32BitUnsigned(pPosResult->LongBuffer.Partition);
+                TapePositionInfo->BlockNumber
+                    = Read64BitUnsigned(pPosResult->LongBuffer.BlockNumber);
               }
             }
 
             TapePositionInfo->FileSetValid = !pPosResult->LongBuffer.MPU;
             if (TapePositionInfo->FileSetValid) {
-              TapePositionInfo->FileNumber =
-                  Read64BitUnsigned(pPosResult->LongBuffer.FileNumber);
-              TapePositionInfo->SetNumber =
-                  Read64BitUnsigned(pPosResult->LongBuffer.SetNumber);
+              TapePositionInfo->FileNumber
+                  = Read64BitUnsigned(pPosResult->LongBuffer.FileNumber);
+              TapePositionInfo->SetNumber
+                  = Read64BitUnsigned(pPosResult->LongBuffer.SetNumber);
             }
             break;
           }
@@ -986,12 +987,12 @@ static DWORD GetTapePositionInfo(HANDLE hDevice,
             TapePositionInfo->AtPartitionEnd = pPosResult->ShortBuffer.EOP;
 
             if (!TapePositionInfo->PartitionBlockValid) {
-              TapePositionInfo->PartitionBlockValid =
-                  !pPosResult->ShortBuffer.BPU;
+              TapePositionInfo->PartitionBlockValid
+                  = !pPosResult->ShortBuffer.BPU;
               if (TapePositionInfo->PartitionBlockValid) {
                 TapePositionInfo->Partition = pPosResult->ShortBuffer.Partition;
-                TapePositionInfo->BlockNumber =
-                    Read32BitUnsigned(pPosResult->ShortBuffer.FirstBlock);
+                TapePositionInfo->BlockNumber
+                    = Read32BitUnsigned(pPosResult->ShortBuffer.FirstBlock);
               }
             }
             // Read32BitsUnsigned(pPosResult->ShortBuffer.LastBlock);
@@ -1037,8 +1038,8 @@ static DWORD GetDensityBlockSize(HANDLE hDevice,
       }
 
       dwBufferSize += 6 * sizeof(DEVICE_MEDIA_INFO);
-      GET_MEDIA_TYPES* pNewBuffer =
-          (GET_MEDIA_TYPES*)realloc(pGetMediaTypes, dwBufferSize);
+      GET_MEDIA_TYPES* pNewBuffer
+          = (GET_MEDIA_TYPES*)realloc(pGetMediaTypes, dwBufferSize);
       if (pNewBuffer != pGetMediaTypes) {
         free(pGetMediaTypes);
 
@@ -1057,10 +1058,10 @@ static DWORD GetDensityBlockSize(HANDLE hDevice,
   for (DWORD idxMedia = 0; idxMedia < pGetMediaTypes->MediaInfoCount;
        idxMedia++) {
     if (pGetMediaTypes->MediaInfo[idxMedia]
-            .DeviceSpecific.TapeInfo.MediaCharacteristics &
-        MEDIA_CURRENTLY_MOUNTED) {
-      if (pGetMediaTypes->MediaInfo[idxMedia].DeviceSpecific.TapeInfo.BusType ==
-          BusTypeScsi) {
+            .DeviceSpecific.TapeInfo.MediaCharacteristics
+        & MEDIA_CURRENTLY_MOUNTED) {
+      if (pGetMediaTypes->MediaInfo[idxMedia].DeviceSpecific.TapeInfo.BusType
+          == BusTypeScsi) {
         *pdwDensity = pGetMediaTypes->MediaInfo[idxMedia]
                           .DeviceSpecific.TapeInfo.BusSpecificData
                           .ScsiInformation.DensityCode;
@@ -1089,8 +1090,8 @@ int win32_tape_device::TapePos(struct mtpos* mt_pos)
   DWORD offsetHi;
   BOOL result;
 
-  if (fd_ < 3 || fd_ >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
-      TapeHandleTable[fd_ - 3].OSHandle == INVALID_HANDLE_VALUE) {
+  if (fd_ < 3 || fd_ >= (int)(NUMBER_HANDLE_ENTRIES + 3)
+      || TapeHandleTable[fd_ - 3].OSHandle == INVALID_HANDLE_VALUE) {
     errno = EBADF;
     return -1;
   }

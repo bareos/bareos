@@ -39,13 +39,13 @@
 #include "lib/edit.h"
 
 #if HAVE_NDMP
-#include "dird/ndmp_dma_backup_common.h"
-#include "dird/ndmp_dma_generic.h"
+#  include "dird/ndmp_dma_backup_common.h"
+#  include "dird/ndmp_dma_generic.h"
 
-#define NDMP_NEED_ENV_KEYWORDS 1
+#  define NDMP_NEED_ENV_KEYWORDS 1
 
-#include "ndmp/ndmagents.h"
-#include "ndmp_dma_priv.h"
+#  include "ndmp/ndmagents.h"
+#  include "ndmp_dma_priv.h"
 #endif /* HAVE_NDMP */
 
 namespace directordaemon {
@@ -74,8 +74,8 @@ static inline bool extract_post_backup_stats(JobControlRecord* jcr,
   /*
    * See if we know this backup format and get it options.
    */
-  nbf_options =
-      ndmp_lookup_backup_format_options(sess->control_acb->job.bu_type);
+  nbf_options
+      = ndmp_lookup_backup_format_options(sess->control_acb->job.bu_type);
 
   /*
    * See if an error was raised during the backup session.
@@ -87,8 +87,9 @@ static inline bool extract_post_backup_stats(JobControlRecord* jcr,
    */
   for (media = sess->control_acb->job.result_media_tab.head; media;
        media = media->next) {
-    if (media->media_open_error || media->media_io_error ||
-        media->label_io_error || media->label_mismatch || media->fmark_error) {
+    if (media->media_open_error || media->media_io_error
+        || media->label_io_error || media->label_mismatch
+        || media->fmark_error) {
       retval = false;
     }
   }
@@ -137,8 +138,8 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
-  jcr->impl->jr.PoolId =
-      GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
+  jcr->impl->jr.PoolId
+      = GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
   if (jcr->impl->jr.PoolId == 0) { return false; }
 
   jcr->start_time = time(NULL);
@@ -198,8 +199,8 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   bool retval = false;
   int NdmpLoglevel;
 
-  NdmpLoglevel =
-      std::max(jcr->impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
+  NdmpLoglevel
+      = std::max(jcr->impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
 
   /*
    * Print Job Start message
@@ -324,12 +325,12 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
       ndmp_sess.control_agent_enabled = 1;
 
-      ndmp_sess.param =
-          (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
+      ndmp_sess.param
+          = (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
       memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
       ndmp_sess.param->log.deliver = NdmpLoghandler;
-      ndmp_sess.param->log_level =
-          NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
+      ndmp_sess.param->log_level
+          = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
       nis->filesystem = item;
       nis->FileIndex = cnt + 1;
       nis->jcr = jcr;

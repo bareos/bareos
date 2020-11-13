@@ -57,38 +57,36 @@ uint64_t FetchRemainingQuotas(JobControlRecord* jcr)
   /*
    * If strict quotas on and grace exceeded, enforce the softquota
    */
-  if (jcr->impl->res.client->StrictQuotas &&
-      jcr->impl->res.client->SoftQuota &&
-      jcr->impl->res.client->GraceTime > 0 &&
-      (now - (uint64_t)jcr->impl->res.client->GraceTime) >
-          (uint64_t)jcr->impl->res.client->SoftQuotaGracePeriod &&
-      jcr->impl->res.client->SoftQuotaGracePeriod > 0) {
-    remaining =
-        jcr->impl->res.client->SoftQuota - jcr->impl->jr.JobSumTotalBytes;
-  } else if (!jcr->impl->res.client->StrictQuotas &&
-             jcr->impl->res.client->SoftQuota &&
-             jcr->impl->res.client->GraceTime > 0 &&
-             jcr->impl->res.client->SoftQuotaGracePeriod > 0 &&
-             (now - (uint64_t)jcr->impl->res.client->GraceTime) >
-                 (uint64_t)jcr->impl->res.client->SoftQuotaGracePeriod) {
+  if (jcr->impl->res.client->StrictQuotas && jcr->impl->res.client->SoftQuota
+      && jcr->impl->res.client->GraceTime > 0
+      && (now - (uint64_t)jcr->impl->res.client->GraceTime)
+             > (uint64_t)jcr->impl->res.client->SoftQuotaGracePeriod
+      && jcr->impl->res.client->SoftQuotaGracePeriod > 0) {
+    remaining
+        = jcr->impl->res.client->SoftQuota - jcr->impl->jr.JobSumTotalBytes;
+  } else if (!jcr->impl->res.client->StrictQuotas
+             && jcr->impl->res.client->SoftQuota
+             && jcr->impl->res.client->GraceTime > 0
+             && jcr->impl->res.client->SoftQuotaGracePeriod > 0
+             && (now - (uint64_t)jcr->impl->res.client->GraceTime)
+                    > (uint64_t)jcr->impl->res.client->SoftQuotaGracePeriod) {
     /*
      * If strict quotas turned off and grace exceeded use the last known limit
      */
-    if (jcr->impl->res.client->QuotaLimit >
-        jcr->impl->res.client->SoftQuota) {
-      remaining =
-          jcr->impl->res.client->QuotaLimit - jcr->impl->jr.JobSumTotalBytes;
+    if (jcr->impl->res.client->QuotaLimit > jcr->impl->res.client->SoftQuota) {
+      remaining
+          = jcr->impl->res.client->QuotaLimit - jcr->impl->jr.JobSumTotalBytes;
     } else {
-      remaining =
-          jcr->impl->res.client->SoftQuota - jcr->impl->jr.JobSumTotalBytes;
+      remaining
+          = jcr->impl->res.client->SoftQuota - jcr->impl->jr.JobSumTotalBytes;
     }
-  } else if (jcr->impl->jr.JobSumTotalBytes <
-             jcr->impl->res.client->HardQuota) {
+  } else if (jcr->impl->jr.JobSumTotalBytes
+             < jcr->impl->res.client->HardQuota) {
     /*
      * If within the hardquota.
      */
-    remaining =
-        jcr->impl->res.client->HardQuota - jcr->impl->jr.JobSumTotalBytes;
+    remaining
+        = jcr->impl->res.client->HardQuota - jcr->impl->jr.JobSumTotalBytes;
   } else {
     /*
      * If just over quota return 0. This shouldnt happen because quotas
@@ -211,19 +209,19 @@ bool CheckSoftquotas(JobControlRecord* jcr)
         jcr->impl->res.client->HardQuota);
   Dmsg2(debuglevel, "SoftQuota for %s is %llu\n", jcr->impl->jr.Name,
         jcr->impl->res.client->SoftQuota);
-  Dmsg2(debuglevel, "SoftQuota Grace Period for %s is %d\n",
-        jcr->impl->jr.Name, jcr->impl->res.client->SoftQuotaGracePeriod);
+  Dmsg2(debuglevel, "SoftQuota Grace Period for %s is %d\n", jcr->impl->jr.Name,
+        jcr->impl->res.client->SoftQuotaGracePeriod);
   Dmsg2(debuglevel, "SoftQuota Grace Time for %s is %d\n", jcr->impl->jr.Name,
         jcr->impl->res.client->GraceTime);
 
-  if ((jcr->impl->jr.JobSumTotalBytes + jcr->impl->SDJobBytes) >
-      jcr->impl->res.client->SoftQuota) {
+  if ((jcr->impl->jr.JobSumTotalBytes + jcr->impl->SDJobBytes)
+      > jcr->impl->res.client->SoftQuota) {
     /*
      * Only warn once about softquotas in the job
      * Check if gracetime has been set
      */
-    if (jcr->impl->res.client->GraceTime == 0 &&
-        jcr->impl->res.client->SoftQuotaGracePeriod) {
+    if (jcr->impl->res.client->GraceTime == 0
+        && jcr->impl->res.client->SoftQuotaGracePeriod) {
       Dmsg1(debuglevel, "UpdateQuotaGracetime: %d\n", now);
       if (!jcr->db->UpdateQuotaGracetime(jcr, &jcr->impl->jr)) {
         Jmsg(jcr, M_WARNING, 0, _("Error setting Quota gracetime: ERR=%s"),
@@ -234,15 +232,15 @@ bool CheckSoftquotas(JobControlRecord* jcr)
       }
       jcr->impl->res.client->GraceTime = now;
       goto bail_out;
-    } else if (jcr->impl->res.client->SoftQuotaGracePeriod &&
-               (now - (uint64_t)jcr->impl->res.client->GraceTime) <
-                   (uint64_t)jcr->impl->res.client->SoftQuotaGracePeriod) {
+    } else if (jcr->impl->res.client->SoftQuotaGracePeriod
+               && (now - (uint64_t)jcr->impl->res.client->GraceTime)
+                      < (uint64_t)jcr->impl->res.client->SoftQuotaGracePeriod) {
       Jmsg(jcr, M_ERROR, 0,
            _("Softquota Exceeded, will be enforced after Grace Period "
              "expires.\n"));
-    } else if (jcr->impl->res.client->SoftQuotaGracePeriod &&
-               (now - (uint64_t)jcr->impl->res.client->GraceTime) >
-                   (uint64_t)jcr->impl->res.client->SoftQuotaGracePeriod) {
+    } else if (jcr->impl->res.client->SoftQuotaGracePeriod
+               && (now - (uint64_t)jcr->impl->res.client->GraceTime)
+                      > (uint64_t)jcr->impl->res.client->SoftQuotaGracePeriod) {
       /*
        * If gracetime has expired update else check more if not set softlimit
        * yet then set and bail out.
@@ -281,16 +279,16 @@ bool CheckSoftquotas(JobControlRecord* jcr)
            * If we use strict quotas enforce the pure soft quota limit.
            */
           if (jcr->impl->res.client->StrictQuotas) {
-            if (jcr->impl->jr.JobSumTotalBytes >
-                jcr->impl->res.client->SoftQuota) {
+            if (jcr->impl->jr.JobSumTotalBytes
+                > jcr->impl->res.client->SoftQuota) {
               Dmsg0(debuglevel,
                     "Soft Quota exceeded, enforcing Strict Quota Limit.\n");
               retval = true;
               goto bail_out;
             }
           } else {
-            if (jcr->impl->jr.JobSumTotalBytes >=
-                jcr->impl->res.client->QuotaLimit) {
+            if (jcr->impl->jr.JobSumTotalBytes
+                >= jcr->impl->res.client->QuotaLimit) {
               /*
                * If strict quotas turned off use the last known limit
                */

@@ -364,8 +364,8 @@ int GetScsiDriveEncryptionStatus(int fd,
    * Only when both encryption and decryption are disabled skip the KAD Format
    * field.
    */
-  if (spd->encryptionMode != SPP_ENCR_MODE_DISABLE &&
-      spd->decryptionMode != SPP_DECR_MODE_DISABLE) {
+  if (spd->encryptionMode != SPP_ENCR_MODE_DISABLE
+      && spd->decryptionMode != SPP_DECR_MODE_DISABLE) {
     switch (spd->kadFormat) {
       case SPP_KAD_KEY_FORMAT_NORMAL:
         IndentStatusMsg(status,
@@ -691,8 +691,8 @@ bool IsScsiEncryptionEnabled(int fd, const char* device_name)
    * When either encryptionMode or decryptionMode are not disabled we return
    * true
    */
-  return (spd->encryptionMode != SPP_ENCR_MODE_DISABLE) ||
-         (spd->decryptionMode != SPP_DECR_MODE_DISABLE);
+  return (spd->encryptionMode != SPP_ENCR_MODE_DISABLE)
+         || (spd->decryptionMode != SPP_DECR_MODE_DISABLE);
 }
 
 #else

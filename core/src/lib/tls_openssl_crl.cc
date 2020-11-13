@@ -39,8 +39,8 @@
 
 #define MAX_CRLS 16
 
-#if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && \
-    (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x00907000L) \
+    && (OPENSSL_VERSION_NUMBER < 0x10100000L)
 
 static X509_LOOKUP_METHOD* X509_LOOKUP_crl_reloader(void);
 static int LoadNewCrlFile(X509_LOOKUP* lu, const char* fname);
@@ -271,8 +271,7 @@ static int CrlReloaderGetBySubject(X509_LOOKUP* lookup,
   ret->type = 0;
   ret->data.crl = NULL;
   for (cnt = 0; cnt < MAX_CRLS; cnt++) {
-
-    if ( data->crls[cnt] == NULL ) { continue; }
+    if (data->crls[cnt] == NULL) { continue; }
 
     if (CrlEntryExpired(data->crls[cnt]) && !CrlReloaderReloadIfNewer(lookup)) {
       goto bail_out;

@@ -223,18 +223,18 @@ static int VerifyFile(JobControlRecord* jcr,
     status = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
                         STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts,
                         ff_pkt->fname, 0, attribs.c_str(), 0, ff_pkt->link, 0);
-  } else if (ff_pkt->type == FT_DIREND || ff_pkt->type == FT_REPARSE ||
-             ff_pkt->type == FT_JUNCTION) {
+  } else if (ff_pkt->type == FT_DIREND || ff_pkt->type == FT_REPARSE
+             || ff_pkt->type == FT_JUNCTION) {
     /*
      * Here link is the canonical filename (i.e. with trailing slash)
      */
-    status =
-        dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles, STREAM_UNIX_ATTRIBUTES,
-                   ff_pkt->VerifyOpts, ff_pkt->link, 0, attribs.c_str(), 0, 0);
+    status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
+                        STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts,
+                        ff_pkt->link, 0, attribs.c_str(), 0, 0);
   } else {
-    status =
-        dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles, STREAM_UNIX_ATTRIBUTES,
-                   ff_pkt->VerifyOpts, ff_pkt->fname, 0, attribs.c_str(), 0, 0);
+    status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
+                        STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts,
+                        ff_pkt->fname, 0, attribs.c_str(), 0, 0);
   }
   Dmsg2(20, "filed>dir: attribs len=%d: msg=%s\n", dir->message_length,
         dir->msg);
@@ -244,10 +244,10 @@ static int VerifyFile(JobControlRecord* jcr,
     return 0;
   }
 
-  if (ff_pkt->type != FT_LNKSAVED && S_ISREG(ff_pkt->statp.st_mode) &&
-      (BitIsSet(FO_MD5, ff_pkt->flags) || BitIsSet(FO_SHA1, ff_pkt->flags) ||
-       BitIsSet(FO_SHA256, ff_pkt->flags) ||
-       BitIsSet(FO_SHA512, ff_pkt->flags))) {
+  if (ff_pkt->type != FT_LNKSAVED && S_ISREG(ff_pkt->statp.st_mode)
+      && (BitIsSet(FO_MD5, ff_pkt->flags) || BitIsSet(FO_SHA1, ff_pkt->flags)
+          || BitIsSet(FO_SHA256, ff_pkt->flags)
+          || BitIsSet(FO_SHA512, ff_pkt->flags))) {
     int digest_stream = STREAM_NONE;
     DIGEST* digest = NULL;
     char* digest_buf = NULL;
@@ -295,7 +295,8 @@ int DigestFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, DIGEST* digest)
   int noatime = BitIsSet(FO_NOATIME, ff_pkt->flags) ? O_NOATIME : 0;
 
   if ((bopen(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0,
-             ff_pkt->statp.st_rdev)) < 0) {
+             ff_pkt->statp.st_rdev))
+      < 0) {
     ff_pkt->ff_errno = errno;
     BErrNo be;
     be.SetErrno(bfd.BErrNo);
@@ -352,9 +353,9 @@ static int ReadDigest(BareosWinFilePacket* bfd,
     /* Check for sparse blocks */
     if (BitIsSet(FO_SPARSE, ff_pkt->flags)) {
       bool allZeros = false;
-      if ((n == bufsiz && fileAddr + n < (uint64_t)ff_pkt->statp.st_size) ||
-          ((ff_pkt->type == FT_RAW || ff_pkt->type == FT_FIFO) &&
-           (uint64_t)ff_pkt->statp.st_size == 0)) {
+      if ((n == bufsiz && fileAddr + n < (uint64_t)ff_pkt->statp.st_size)
+          || ((ff_pkt->type == FT_RAW || ff_pkt->type == FT_FIFO)
+              && (uint64_t)ff_pkt->statp.st_size == 0)) {
         allZeros = IsBufZero(buf, bufsiz);
       }
       fileAddr += n; /* update file address */

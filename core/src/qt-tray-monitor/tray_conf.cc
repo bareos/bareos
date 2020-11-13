@@ -196,10 +196,10 @@ static void DumpResource(int type,
 {
   PoolMem buf;
   bool recurse = true;
-  OutputFormatter output_formatter =
-      OutputFormatter(sendit, sock, nullptr, nullptr);
-  OutputFormatterResource output_formatter_resource =
-      OutputFormatterResource(&output_formatter);
+  OutputFormatter output_formatter
+      = OutputFormatter(sendit, sock, nullptr, nullptr);
+  OutputFormatterResource output_formatter_resource
+      = OutputFormatterResource(&output_formatter);
 
   if (res == NULL) {
     sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),

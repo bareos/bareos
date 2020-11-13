@@ -31,7 +31,7 @@
 #include "stored/device_control_record.h"
 
 #if defined(HAVE_LIBZ)
-#include <zlib.h>
+#  include <zlib.h>
 #endif
 
 #include "fastlz/fastlzlib.h"
@@ -92,22 +92,22 @@ static bool sd_enabled_compatible = false;
 static CoreFunctions* bareos_core_functions = NULL;
 static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
-static PluginInformation pluginInfo = {
-    sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
-    SD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-    PLUGIN_AUTHOR,      PLUGIN_DATE,
-    PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-    PLUGIN_USAGE};
+static PluginInformation pluginInfo
+    = {sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
+       SD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+       PLUGIN_AUTHOR,      PLUGIN_DATE,
+       PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+       PLUGIN_USAGE};
 
-static PluginFunctions pluginFuncs = {
-    sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
 
-    /*
-     * Entry points into plugin
-     */
-    newPlugin,  /* new plugin instance */
-    freePlugin, /* free plugin instance */
-    getPluginValue, setPluginValue, handlePluginEvent};
+       /*
+        * Entry points into plugin
+        */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent};
 
 /**
  * Plugin private context
@@ -140,8 +140,8 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  bareos_core_functions =
-      lbareos_core_functions; /* set Bareos funct pointers */
+  bareos_core_functions
+      = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
@@ -500,8 +500,8 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
     jcr->compress.deflate_buffer_size = compress_buf_size;
   } else {
     if (compress_buf_size > jcr->compress.deflate_buffer_size) {
-      jcr->compress.deflate_buffer =
-          ReallocPoolMemory(jcr->compress.deflate_buffer, compress_buf_size);
+      jcr->compress.deflate_buffer
+          = ReallocPoolMemory(jcr->compress.deflate_buffer, compress_buf_size);
       jcr->compress.deflate_buffer_size = compress_buf_size;
     }
   }
@@ -514,9 +514,10 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
       z_stream* pZlibStream;
 
       pZlibStream = (z_stream*)jcr->compress.workset.pZLIB;
-      if ((zstat = deflateParams(pZlibStream,
-                                 dcr->device_resource->autodeflate_level,
-                                 Z_DEFAULT_STRATEGY)) != Z_OK) {
+      if ((zstat
+           = deflateParams(pZlibStream, dcr->device_resource->autodeflate_level,
+                           Z_DEFAULT_STRATEGY))
+          != Z_OK) {
         Jmsg(ctx, M_FATAL,
              _("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
         jcr->setJobStatus(JS_ErrorTerminated);
@@ -668,14 +669,14 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
     case STREAM_FILE_DATA:
     case STREAM_WIN32_DATA:
       data = (unsigned char*)nrec->data + sizeof(comp_stream_header);
-      max_compression_length =
-          dcr->jcr->compress.deflate_buffer_size - sizeof(comp_stream_header);
+      max_compression_length
+          = dcr->jcr->compress.deflate_buffer_size - sizeof(comp_stream_header);
       break;
     case STREAM_SPARSE_DATA:
-      data = (unsigned char*)nrec->data + OFFSET_FADDR_SIZE +
-             sizeof(comp_stream_header);
-      max_compression_length = dcr->jcr->compress.deflate_buffer_size -
-                               OFFSET_FADDR_SIZE - sizeof(comp_stream_header);
+      data = (unsigned char*)nrec->data + OFFSET_FADDR_SIZE
+             + sizeof(comp_stream_header);
+      max_compression_length = dcr->jcr->compress.deflate_buffer_size
+                               - OFFSET_FADDR_SIZE - sizeof(comp_stream_header);
       break;
   }
 

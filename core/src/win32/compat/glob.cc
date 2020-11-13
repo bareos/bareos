@@ -42,13 +42,13 @@
 #include <errno.h>
 
 #ifdef USE_READDIR_R
-#ifndef HAVE_READDIR_R
+#  ifndef HAVE_READDIR_R
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
-#endif
+#  endif
 #endif
 
 #ifndef HAVE_STRICOLL
-#define stricoll(str1, str2) strcasecmp(str1, str2)
+#  define stricoll(str1, str2) strcasecmp(str1, str2)
 #endif
 
 enum
@@ -68,11 +68,11 @@ enum
 
 #define GLOB_DIRONLY __GLOB_FLAG__(DIRONLY)
 #ifndef GLOB_PERIOD
-#define GLOB_PERIOD __GLOB_FLAG__(PERIOD_PRIVATE)
+#  define GLOB_PERIOD __GLOB_FLAG__(PERIOD_PRIVATE)
 #endif
 
 #ifndef GLOB_INLINE
-#define GLOB_INLINE static __inline__ __attribute__((__always_inline__))
+#  define GLOB_INLINE static __inline__ __attribute__((__always_inline__))
 #endif
 
 //#define GLOB_HARD_ESC __CRT_GLOB_ESCAPE_CHAR__
@@ -83,8 +83,8 @@ enum
  * For the Microsoft platforms, we treat '\' and '/' interchangeably
  * as directory separator characters...
  */
-#define GLOB_DIRSEP ('\\')
-#define glob_is_dirsep(c) (((c) == ('/')) || ((c) == GLOB_DIRSEP))
+#  define GLOB_DIRSEP ('\\')
+#  define glob_is_dirsep(c) (((c) == ('/')) || ((c) == GLOB_DIRSEP))
 /*
  * ...and we use the ASCII ESC code as our escape character.
  */
@@ -109,15 +109,15 @@ GLOB_INLINE char* glob_strdup(const char* pattern)
 #else
 /* Otherwise, we assume only the POSIX standard '/'...
  */
-#define GLOB_DIRSEP ('/')
-#define glob_is_dirsep(c) ((c) == GLOB_DIRSEP)
+#  define GLOB_DIRSEP ('/')
+#  define glob_is_dirsep(c) ((c) == GLOB_DIRSEP)
 /*
  * ...and we interpret '\', as specified by POSIX, as
  * the escape character.
  */
 static int glob_escape_char = '\\';
 
-#define glob_strdup strdup
+#  define glob_strdup strdup
 #endif
 
 static int IsGlobPattern(const char* pattern, int flags)
@@ -142,8 +142,8 @@ static int IsGlobPattern(const char* pattern, int flags)
     while ((c = *p++) != '\0') {
       /* ...proceeding since we have not yet reached the NUL terminator.
        */
-      if (((flags & GLOB_NOESCAPE) == 0) && (c == glob_escape_char) &&
-          (*p++ == '\0'))
+      if (((flags & GLOB_NOESCAPE) == 0) && (c == glob_escape_char)
+          && (*p++ == '\0'))
         /*
          * We found an escape character, (and the escape mechanism has
          * not been disabled), but there is no following character to
@@ -512,13 +512,13 @@ static int GlobStrcmp(const char* pattern, const char* text, int flags)
  * the d_type member of a globbed dirent structure, to determine if
  * the referenced directory entry is itself a subdirectory entry.
  */
-#define GLOB_ISDIR(ent) ((ent)->d_type == DT_DIR)
+#  define GLOB_ISDIR(ent) ((ent)->d_type == DT_DIR)
 
 #else
 /* We can't simply check for (ent)->d_type == DT_DIR, so we must
  * use stat() to identify subdirectory entries.
  */
-#include <sys/stat.h>
+#  include <sys/stat.h>
 
 GLOB_INLINE
 // int GLOB_ISDIR( const struct *dirent ent )
@@ -546,12 +546,12 @@ int GLOB_ISDIR(const char* path, const struct dirent* ent)
  * of the length of the file system entity name returned by
  * the last readdir operation...
  */
-#define D_NAMLEN(entry) ((entry)->d_namlen)
+#  define D_NAMLEN(entry) ((entry)->d_namlen)
 #else
 /*
  * ...otherwise, we have to scan for it.
  */
-#define D_NAMLEN(entry) (strlen((entry)->d_name))
+#  define D_NAMLEN(entry) (strlen((entry)->d_name))
 #endif
 
 static int GlobInitialise(glob_t* gl_data)
@@ -600,9 +600,9 @@ static int GlobStoreEntry(char* path, glob_t* gl_buf)
    * allocated memory space to accommodate it.
    */
   char** pathv;
-  if ((path != NULL) && (gl_buf != NULL) &&
-      ((pathv = (char**)realloc(gl_buf->gl_pathv, GlobExpand(gl_buf))) !=
-       NULL)) {
+  if ((path != NULL) && (gl_buf != NULL)
+      && ((pathv = (char**)realloc(gl_buf->gl_pathv, GlobExpand(gl_buf)))
+          != NULL)) {
     /* Memory expansion was successful; store the new path name
      * in place of the former NULL pointer at the end of the old
      * vector...

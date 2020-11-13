@@ -33,18 +33,18 @@
 #include "lib/htable.h"
 
 #if HAVE_NDMP
-#include "ndmp/ndmagents.h"
-#include "ndmp_dma_priv.h"
+#  include "ndmp/ndmagents.h"
+#  include "ndmp_dma_priv.h"
 #endif /* HAVE_NDMP */
 
 namespace directordaemon {
 
 #if HAVE_NDMP
 
-#define B_PAGE_SIZE 4096
-#define MIN_PAGES 128
-#define MAX_PAGES 2400
-#define MAX_BUF_SIZE (MAX_PAGES * B_PAGE_SIZE) /* approx 10MB */
+#  define B_PAGE_SIZE 4096
+#  define MIN_PAGES 128
+#  define MAX_PAGES 2400
+#  define MAX_BUF_SIZE (MAX_PAGES * B_PAGE_SIZE) /* approx 10MB */
 
 /*
  * Lightweight version of Bareos tree layout for holding the NDMP
@@ -448,8 +448,8 @@ static inline void add_out_of_order_metadata(NIS* nis,
 {
   N_TREE_NODE* nt_node;
   OOO_MD* md_entry = NULL;
-  htable* meta_data =
-      ((struct fhdb_state*)nis->fhdb_state)->out_of_order_metadata;
+  htable* meta_data
+      = ((struct fhdb_state*)nis->fhdb_state)->out_of_order_metadata;
 
   nt_node = ndmp_fhdb_new_tree_node(fhdb_root);
   nt_node->inode = node;
@@ -522,8 +522,8 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog* ixlog,
     /*
      * See if this entry is in the cached parent.
      */
-    if (fhdb_root->cached_parent &&
-        fhdb_root->cached_parent->inode == dir_node) {
+    if (fhdb_root->cached_parent
+        && fhdb_root->cached_parent->inode == dir_node) {
       search_and_insert_tree_node(raw_name, fhdb_root->FileIndex, node,
                                   fhdb_root, fhdb_root->cached_parent);
     } else {
@@ -577,8 +577,8 @@ static N_TREE_NODE* insert_metadata_parent_node(htable* meta_data,
     /*
      * If our parent doesn't exist try finding it and inserting it.
      */
-    parent =
-        insert_metadata_parent_node(meta_data, fhdb_root, md_entry->dir_node);
+    parent
+        = insert_metadata_parent_node(meta_data, fhdb_root, md_entry->dir_node);
     if (!parent) {
       /*
        * If by recursive calling insert_metadata_parent_node we cannot create
@@ -625,8 +625,8 @@ static inline bool ProcessOutOfOrderMetadata(htable* meta_data,
     /*
      * See if this entry is in the cached parent.
      */
-    if (fhdb_root->cached_parent &&
-        fhdb_root->cached_parent->inode == md_entry->dir_node) {
+    if (fhdb_root->cached_parent
+        && fhdb_root->cached_parent->inode == md_entry->dir_node) {
       search_and_insert_tree_node(md_entry->nt_node, fhdb_root,
                                   fhdb_root->cached_parent);
     } else {
@@ -675,8 +675,8 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog* ixlog,
     N_TREE_ROOT* fhdb_root;
     N_TREE_NODE* wanted_node;
     PoolMem attribs(PM_FNAME);
-    htable* meta_data =
-        ((struct fhdb_state*)nis->fhdb_state)->out_of_order_metadata;
+    htable* meta_data
+        = ((struct fhdb_state*)nis->fhdb_state)->out_of_order_metadata;
 
     Dmsg1(100, "bndmp_fhdb_mem_add_node: New node [%llu]\n", node);
 
@@ -765,8 +765,8 @@ extern "C" int bndmp_fhdb_mem_add_dirnode_root(struct ndmlog* ixlog,
      * Allocate a new entry with 2 bytes extra e.g. the extra slash
      * needed for directories and the \0.
      */
-    fhdb_root->fname =
-        ndmp_fhdb_tree_alloc(fhdb_root, fhdb_root->fname_len + 2);
+    fhdb_root->fname
+        = ndmp_fhdb_tree_alloc(fhdb_root, fhdb_root->fname_len + 2);
     bstrncpy(fhdb_root->fname, nis->filesystem, fhdb_root->fname_len + 1);
 
     fhdb_root->cached_parent = (N_TREE_NODE*)fhdb_root;

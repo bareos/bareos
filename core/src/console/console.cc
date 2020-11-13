@@ -54,7 +54,7 @@
 #define usrbrk() 0
 
 #if defined(HAVE_WIN32)
-#define isatty(fd) (fd == 0)
+#  define isatty(fd) (fd == 0)
 #endif
 
 using namespace console;
@@ -103,9 +103,9 @@ static int ExecCmd(FILE* input, BareosSocket* UA_sock);
 static int EolCmd(FILE* input, BareosSocket* UA_sock);
 
 #ifndef HAVE_REGEX_H
-#include "lib/bregex.h"
+#  include "lib/bregex.h"
 #else
-#include <regex.h>
+#  include <regex.h>
 #endif
 
 static void usage()
@@ -281,11 +281,11 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
     }
 
     tid = StartBsockTimer(UA_sock, timeout);
-    while ((status = UA_sock->recv()) >= 0 ||
-           ((status == BNET_SIGNAL) &&
-            ((UA_sock->message_length != BNET_EOD) &&
-             (UA_sock->message_length != BNET_MAIN_PROMPT) &&
-             (UA_sock->message_length != BNET_SUB_PROMPT)))) {
+    while ((status = UA_sock->recv()) >= 0
+           || ((status == BNET_SIGNAL)
+               && ((UA_sock->message_length != BNET_EOD)
+                   && (UA_sock->message_length != BNET_MAIN_PROMPT)
+                   && (UA_sock->message_length != BNET_SUB_PROMPT)))) {
       if (status == BNET_SIGNAL) {
         if (UA_sock->message_length == BNET_START_RTREE) {
           file_selection = true;
@@ -528,31 +528,31 @@ struct cpl_keywords_t {
   bool file_selection;
 };
 
-static struct cpl_keywords_t cpl_keywords[] = {
-    {"pool=", ".pool", false},
-    {"nextpool=", ".pool", false},
-    {"fileset=", ".fileset", false},
-    {"client=", ".client", false},
-    {"jobdefs=", ".jobdefs", false},
-    {"job=", ".jobs", false},
-    {"restore_job=", ".jobs type=R", false},
-    {"level=", ".level", false},
-    {"storage=", ".storage", false},
-    {"schedule=", ".schedule", false},
-    {"volume=", ".media", false},
-    {"oldvolume=", ".media", false},
-    {"volstatus=", ".volstatus", false},
-    {"catalog=", ".catalogs", false},
-    {"message=", ".msgs", false},
-    {"profile=", ".profiles", false},
-    {"actiononpurge=", ".actiononpurge", false},
-    {"ls", ".ls", true},
-    {"cd", ".lsdir", true},
-    {"add", ".ls", true},
-    {"mark", ".ls", true},
-    {"m", ".ls", true},
-    {"delete", ".lsmark", true},
-    {"unmark", ".lsmark", true}};
+static struct cpl_keywords_t cpl_keywords[]
+    = {{"pool=", ".pool", false},
+       {"nextpool=", ".pool", false},
+       {"fileset=", ".fileset", false},
+       {"client=", ".client", false},
+       {"jobdefs=", ".jobdefs", false},
+       {"job=", ".jobs", false},
+       {"restore_job=", ".jobs type=R", false},
+       {"level=", ".level", false},
+       {"storage=", ".storage", false},
+       {"schedule=", ".schedule", false},
+       {"volume=", ".media", false},
+       {"oldvolume=", ".media", false},
+       {"volstatus=", ".volstatus", false},
+       {"catalog=", ".catalogs", false},
+       {"message=", ".msgs", false},
+       {"profile=", ".profiles", false},
+       {"actiononpurge=", ".actiononpurge", false},
+       {"ls", ".ls", true},
+       {"cd", ".lsdir", true},
+       {"add", ".ls", true},
+       {"mark", ".ls", true},
+       {"m", ".ls", true},
+       {"delete", ".lsmark", true},
+       {"unmark", ".lsmark", true}};
 #define key_size ((int)(sizeof(cpl_keywords) / sizeof(struct cpl_keywords_t)))
 
 /* Attempt to complete on the contents of TEXT.  START and END bound the
@@ -671,8 +671,8 @@ static int ConsoleUpdateHistory(const char* histfile)
 
   int max_history_length, truncate_entries;
 
-  max_history_length =
-      (console_resource) ? console_resource->history_length : 100;
+  max_history_length
+      = (console_resource) ? console_resource->history_length : 100;
   truncate_entries = max_history_length - history_length;
   if (truncate_entries < 0) { truncate_entries = 0; }
 
@@ -693,8 +693,8 @@ static int ConsoleInitHistory(const char* histfile)
 
   using_history();
 
-  max_history_length =
-      (console_resource) ? console_resource->history_length : 100;
+  max_history_length
+      = (console_resource) ? console_resource->history_length : 100;
   history_truncate_file(histfile, max_history_length);
 
   ret = read_history(histfile);
@@ -732,8 +732,8 @@ static bool SelectDirector(const char* director,
   UnlockRes(my_config);
 
   if (numdir == 1) { /* No choose */
-    director_resource_tmp =
-        (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
+    director_resource_tmp
+        = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
   }
 
   if (director) { /* Command line choice overwrite the no choose option */
@@ -761,8 +761,8 @@ static bool SelectDirector(const char* director,
                           director_resource_tmp->DIRport);
     }
     UnlockRes(my_config);
-    if (GetCmd(stdin, _("Select Director by entering a number: "), UA_sock,
-               600) < 0) {
+    if (GetCmd(stdin, _("Select Director by entering a number: "), UA_sock, 600)
+        < 0) {
       WSACleanup(); /* Cleanup Windows sockets */
       return 0;
     }
@@ -795,9 +795,9 @@ static bool SelectDirector(const char* director,
   for (i = 0; i < numcon; i++) {
     console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
         R_CONSOLE, (BareosResource*)console_resource_tmp);
-    if (console_resource_tmp->director &&
-        bstrcmp(console_resource_tmp->director,
-                director_resource_tmp->resource_name_)) {
+    if (console_resource_tmp->director
+        && bstrcmp(console_resource_tmp->director,
+                   director_resource_tmp->resource_name_)) {
       break;
     }
     console_resource_tmp = NULL;

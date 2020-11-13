@@ -39,21 +39,21 @@
 #include "lib/berrno.h"
 
 #ifndef ENODATA /* not defined on BSD systems */
-#define ENODATA EPIPE
+#  define ENODATA EPIPE
 #endif
 
 #ifndef SOL_TCP
-#define SOL_TCP IPPROTO_TCP
+#  define SOL_TCP IPPROTO_TCP
 #endif
 
 #ifdef HAVE_WIN32
-#define socketRead(fd, buf, len) ::recv(fd, buf, len, 0)
-#define socketWrite(fd, buf, len) ::send(fd, buf, len, 0)
-#define socketClose(fd) ::closesocket(fd)
+#  define socketRead(fd, buf, len) ::recv(fd, buf, len, 0)
+#  define socketWrite(fd, buf, len) ::send(fd, buf, len, 0)
+#  define socketClose(fd) ::closesocket(fd)
 #else
-#define socketRead(fd, buf, len) ::read(fd, buf, len)
-#define socketWrite(fd, buf, len) ::write(fd, buf, len)
-#define socketClose(fd) ::close(fd)
+#  define socketRead(fd, buf, len) ::read(fd, buf, len)
+#  define socketWrite(fd, buf, len) ::write(fd, buf, len)
+#  define socketClose(fd) ::close(fd)
 #endif
 
 BareosSocketTCP::BareosSocketTCP() : BareosSocket() {}
@@ -205,9 +205,10 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
       /*
        * See if the addresses match.
        */
-      if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen() &&
-          memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
-                 ipaddr->GetSockaddrLen()) == 0) {
+      if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen()
+          && memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
+                    ipaddr->GetSockaddrLen())
+                 == 0) {
         to_free = next;
         next = (IPADDR*)addr_list->next(next);
         addr_list->remove(to_free);
@@ -267,8 +268,8 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
      * Bind to the source address if it is set
      */
     if (src_addr) {
-      if (bind(sockfd, src_addr->get_sockaddr(), src_addr->GetSockaddrLen()) <
-          0) {
+      if (bind(sockfd, src_addr->get_sockaddr(), src_addr->GetSockaddrLen())
+          < 0) {
         BErrNo be;
         save_errno = errno;
         *fatal = 1;
@@ -290,8 +291,8 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
     /*
      * Connect to server
      */
-    if (::connect(sockfd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) <
-        0) {
+    if (::connect(sockfd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen())
+        < 0) {
       save_errno = errno;
       if (sockfd >= 0) {
         socketClose(sockfd);
@@ -319,7 +320,8 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
    * Do this a second time out of paranoia
    */
   if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value,
-                 sizeof(value)) < 0) {
+                 sizeof(value))
+      < 0) {
     BErrNo be;
     Qmsg1(jcr, M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
           be.bstrerror());
@@ -344,7 +346,8 @@ bool BareosSocketTCP::SetKeepalive(JobControlRecord* jcr,
    * Keep socket from timing out from inactivity
    */
   if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value,
-                 sizeof(value)) < 0) {
+                 sizeof(value))
+      < 0) {
     BErrNo be;
     Qmsg1(jcr, M_WARNING, 0, _("Failed to set SO_KEEPALIVE on socket: %s\n"),
           be.bstrerror());
@@ -363,17 +366,18 @@ bool BareosSocketTCP::SetKeepalive(JobControlRecord* jcr,
     val.keepaliveinterval = keepalive_interval * 1000L;
     DWORD got = 0;
     if (WSAIoctl(sockfd, SIO_KEEPALIVE_VALS, &val, sizeof(val), NULL, 0, &got,
-                 NULL, NULL) != 0) {
+                 NULL, NULL)
+        != 0) {
       Qmsg1(jcr, M_WARNING, 0,
             "Failed to set SIO_KEEPALIVE_VALS on socket: %d\n",
             WSAGetLastError());
       return false;
     }
 #else
-#if defined(TCP_KEEPIDLE)
+#  if defined(TCP_KEEPIDLE)
     if (setsockopt(sockfd, SOL_TCP, TCP_KEEPIDLE,
-                   (sockopt_val_t)&keepalive_start,
-                   sizeof(keepalive_start)) < 0) {
+                   (sockopt_val_t)&keepalive_start, sizeof(keepalive_start))
+        < 0) {
       BErrNo be;
       Qmsg2(jcr, M_WARNING, 0,
             _("Failed to set TCP_KEEPIDLE = %d on socket: %s\n"),
@@ -382,14 +386,15 @@ bool BareosSocketTCP::SetKeepalive(JobControlRecord* jcr,
     }
     if (setsockopt(sockfd, SOL_TCP, TCP_KEEPINTVL,
                    (sockopt_val_t)&keepalive_interval,
-                   sizeof(keepalive_interval)) < 0) {
+                   sizeof(keepalive_interval))
+        < 0) {
       BErrNo be;
       Qmsg2(jcr, M_WARNING, 0,
             _("Failed to set TCP_KEEPINTVL = %d on socket: %s\n"),
             keepalive_interval, be.bstrerror());
       return false;
     }
-#endif
+#  endif
 #endif
   }
   return true;
@@ -729,9 +734,10 @@ bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
   }
 
   if (rw & BNET_SETBUF_READ) {
-    while ((dbuf_size > TAPE_BSIZE) &&
-           (setsockopt(fd_, SOL_SOCKET, SO_RCVBUF, (sockopt_val_t)&dbuf_size,
-                       sizeof(dbuf_size)) < 0)) {
+    while ((dbuf_size > TAPE_BSIZE)
+           && (setsockopt(fd_, SOL_SOCKET, SO_RCVBUF, (sockopt_val_t)&dbuf_size,
+                          sizeof(dbuf_size))
+               < 0)) {
       BErrNo be;
       Qmsg1(get_jcr(), M_ERROR, 0, _("sockopt error: %s\n"), be.bstrerror());
       dbuf_size -= TAPE_BSIZE;
@@ -749,9 +755,10 @@ bool BareosSocketTCP::SetBufferSize(uint32_t size, int rw)
   }
   start_size = dbuf_size;
   if (rw & BNET_SETBUF_WRITE) {
-    while ((dbuf_size > TAPE_BSIZE) &&
-           (setsockopt(fd_, SOL_SOCKET, SO_SNDBUF, (sockopt_val_t)&dbuf_size,
-                       sizeof(dbuf_size)) < 0)) {
+    while ((dbuf_size > TAPE_BSIZE)
+           && (setsockopt(fd_, SOL_SOCKET, SO_SNDBUF, (sockopt_val_t)&dbuf_size,
+                          sizeof(dbuf_size))
+               < 0)) {
       BErrNo be;
       Qmsg1(get_jcr(), M_ERROR, 0, _("sockopt error: %s\n"), be.bstrerror());
       dbuf_size -= TAPE_BSIZE;
@@ -920,7 +927,7 @@ int BareosSocketTCP::WaitDataIntr(int sec, int usec)
 }
 
 #ifndef SHUT_RDWR
-#define SHUT_RDWR 2
+#  define SHUT_RDWR 2
 #endif
 
 void BareosSocketTCP::close()

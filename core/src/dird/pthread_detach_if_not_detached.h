@@ -26,4 +26,4 @@
 namespace directordaemon {
 void DetachIfNotDetached(pthread_t thr);
 }  // namespace directordaemon
-#endif // BAREOS_DIRD_THREAD_H_
+#endif  // BAREOS_DIRD_THREAD_H_

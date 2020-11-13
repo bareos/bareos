@@ -191,8 +191,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     if (jcr->rerunning && file_index > 0 && last_file_index == 0) {
       goto fi_checked;
     }
-    if (file_index > 0 &&
-        (file_index == last_file_index || file_index == last_file_index + 1)) {
+    if (file_index > 0
+        && (file_index == last_file_index
+            || file_index == last_file_index + 1)) {
       goto fi_checked;
     }
     Jmsg3(jcr, M_FATAL, 0, _("FI=%d from %s not positive or sequential=%d\n"),
@@ -360,10 +361,10 @@ bail_out:
  */
 bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec)
 {
-  if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES ||
-      rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX ||
-      rec->maskedStream == STREAM_RESTORE_OBJECT ||
-      CryptoDigestStreamType(rec->maskedStream) != CRYPTO_DIGEST_NONE) {
+  if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES
+      || rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX
+      || rec->maskedStream == STREAM_RESTORE_OBJECT
+      || CryptoDigestStreamType(rec->maskedStream) != CRYPTO_DIGEST_NONE) {
     if (!jcr->impl->no_attributes) {
       BareosSocket* dir = jcr->dir_bsock;
       if (AreAttributesSpooled(jcr)) { dir->SetSpooling(); }

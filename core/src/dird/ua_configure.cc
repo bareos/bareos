@@ -349,8 +349,8 @@ static inline bool ConfigureAddResource(UaContext* ua,
    * therefore we explicitly check the new resource here.
    */
   if ((res_table->rcode == R_JOB) || (res_table->rcode == R_JOBDEFS)) {
-    res =
-        (JobResource*)my_config->GetResWithName(res_table->rcode, name.c_str());
+    res = (JobResource*)my_config->GetResWithName(res_table->rcode,
+                                                  name.c_str());
     PropagateJobdefs(res_table->rcode, res);
     if (!ValidateResource(res_table->rcode, res_table->items,
                           (BareosResource*)res)) {

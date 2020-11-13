@@ -49,19 +49,19 @@ namespace storagedaemon {
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Requests from the Director daemon */
-static char jobcmd[] =
-    "JobId=%d job=%127s job_name=%127s client_name=%127s "
-    "type=%d level=%d FileSet=%127s NoAttr=%d SpoolAttr=%d FileSetMD5=%127s "
-    "SpoolData=%d PreferMountedVols=%d SpoolSize=%127s "
-    "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%llu "
-    "Protocol=%d BackupFormat=%127s\n";
+static char jobcmd[]
+    = "JobId=%d job=%127s job_name=%127s client_name=%127s "
+      "type=%d level=%d FileSet=%127s NoAttr=%d SpoolAttr=%d FileSetMD5=%127s "
+      "SpoolData=%d PreferMountedVols=%d SpoolSize=%127s "
+      "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%llu "
+      "Protocol=%d BackupFormat=%127s\n";
 
 /* Responses sent to Director daemon */
 static char OK_job[] = "3000 OK Job SDid=%u SDtime=%u Authorization=%s\n";
 static char OK_nextrun[] = "3000 OK Job Authorization=%s\n";
 static char BAD_job[] = "3915 Bad Job command. stat=%d CMD: %s\n";
-static char Job_end[] =
-    "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+static char Job_end[]
+    = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 /**
  * Director requests us to start a job
@@ -201,8 +201,8 @@ bool DoJobRun(JobControlRecord* jcr)
    */
   P(mutex);
   while (!jcr->authenticated && !JobCanceled(jcr)) {
-    errstat =
-        pthread_cond_timedwait(&jcr->impl->job_start_wait, &mutex, &timeout);
+    errstat
+        = pthread_cond_timedwait(&jcr->impl->job_start_wait, &mutex, &timeout);
     if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
       break;
     }

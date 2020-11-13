@@ -88,8 +88,8 @@ bool RecentJobResultsList::ExportToFile(std::ofstream& file)
 {
   if (!recent_job_results_list.empty()) {
     std::lock_guard<std::mutex> m(mutex);
-    uint32_t num =
-        recent_job_results_list.size();  // always first entry in the file
+    uint32_t num
+        = recent_job_results_list.size();  // always first entry in the file
 
 #if defined HAVE_IS_TRIVIALLY_COPYABLE
     static_assert(

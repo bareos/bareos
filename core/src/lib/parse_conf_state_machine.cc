@@ -130,12 +130,11 @@ ConfigParserStateMachine::ScanResource(int token)
           }
         }
 
-        if (parser_pass_number_ == 1 &&
-            item->flags & CFG_ITEM_DEPRECATED) {
-          my_config_.AddWarning(
-              std::string("using deprecated keyword ") + item->name +
-              " on line " + std::to_string(lexical_parser_->line_no) +
-              " of file " + lexical_parser_->fname);
+        if (parser_pass_number_ == 1 && item->flags & CFG_ITEM_DEPRECATED) {
+          my_config_.AddWarning(std::string("using deprecated keyword ")
+                                + item->name + " on line "
+                                + std::to_string(lexical_parser_->line_no)
+                                + " of file " + lexical_parser_->fname);
         }
 
         Dmsg1(800, "calling handler for %s\n", item->name);
@@ -232,13 +231,13 @@ ConfigParserStateMachine::ParserInitResource(int token)
                             resource_table->ResourceSpecificInitializer);
 
     ASSERT(resource_table->allocated_resource_);
-    currently_parsed_resource_.allocated_resource_ =
-        *resource_table->allocated_resource_;
+    currently_parsed_resource_.allocated_resource_
+        = *resource_table->allocated_resource_;
     ASSERT(currently_parsed_resource_.allocated_resource_);
 
-    currently_parsed_resource_.allocated_resource_->rcode_str_ =
-        my_config_.GetQualifiedResourceNameTypeConverter()
-            ->ResourceTypeToString(resource_table->rcode);
+    currently_parsed_resource_.allocated_resource_->rcode_str_
+        = my_config_.GetQualifiedResourceNameTypeConverter()
+              ->ResourceTypeToString(resource_table->rcode);
 
     state = ParseState::kResource;
 

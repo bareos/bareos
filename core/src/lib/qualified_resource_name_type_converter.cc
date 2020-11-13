@@ -93,8 +93,8 @@ bool QualifiedResourceNameTypeConverter::StringToResource(
 {
   BStringList string_list(str_in, AsciiControlCharacters::RecordSeparator());
 
-  if (string_list.size() <
-      2) { /* minimum of parameters are name_of_resource and r_type */
+  if (string_list.size()
+      < 2) { /* minimum of parameters are name_of_resource and r_type */
     return false;
   }
 

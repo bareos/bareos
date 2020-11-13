@@ -71,8 +71,8 @@ std::string BnetDumpPrivate::CreateDataString(int signal,
   std::string data_string(&ptr[BareosSocketTCP::header_length], string_length);
 
   if (signal < 0) {
-    data_string =
-        BnetSignalToString(signal) + " - " + BnetSignalToDescription(signal);
+    data_string
+        = BnetSignalToString(signal) + " - " + BnetSignalToDescription(signal);
   }
   std::replace(data_string.begin(), data_string.end(), '\n', ' ');
   std::replace(data_string.begin(), data_string.end(), '\t', ' ');

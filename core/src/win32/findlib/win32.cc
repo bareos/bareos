@@ -27,12 +27,12 @@
 
 #if defined(HAVE_WIN32)
 
-#include "include/jcr.h"
-#include "findlib/find.h"
-#include "lib/cbuf.h"
-#include "findlib/drivetype.h"
-#include "findlib/fstype.h"
-#include "win32/findlib/win32.h"
+#  include "include/jcr.h"
+#  include "findlib/find.h"
+#  include "lib/cbuf.h"
+#  include "findlib/drivetype.h"
+#  include "findlib/fstype.h"
+#  include "win32/findlib/win32.h"
 
 /**
  * We need to analyze if a fileset contains onefs=no as option, because only
@@ -331,9 +331,9 @@ static inline int CountIncludeListFileEntries(FindFilesPacket* ff)
  *
  */
 
-#define MAX_VALUE_NAME 16383
-#define REGISTRY_KEY \
-  "SYSTEM\\CurrentControlSet\\Control\\BackupRestore\\FilesNotToBackup"
+#  define MAX_VALUE_NAME 16383
+#  define REGISTRY_KEY \
+    "SYSTEM\\CurrentControlSet\\Control\\BackupRestore\\FilesNotToBackup"
 
 bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
                                                   FindFilesPacket* ff)
@@ -359,8 +359,8 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
    * automatically exclude files from FilesNotToBackup Registry Key
    */
   for (int i = 0; i < ff->fileset->include_list.size(); i++) {
-    findIncludeExcludeItem* incexe =
-        (findIncludeExcludeItem*)ff->fileset->include_list.get(i);
+    findIncludeExcludeItem* incexe
+        = (findIncludeExcludeItem*)ff->fileset->include_list.get(i);
 
     for (int j = 0; j < incexe->opts_list.size(); j++) {
       findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
@@ -374,8 +374,8 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
     }
   }
 
-  retCode =
-      RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT(REGISTRY_KEY), 0, KEY_READ, &hKey);
+  retCode = RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT(REGISTRY_KEY), 0, KEY_READ,
+                         &hKey);
   if (retCode == ERROR_SUCCESS) {
     PoolMem achClass(PM_MESSAGE), achValue(PM_MESSAGE), dwKeyEn(PM_MESSAGE),
         expandedKey(PM_MESSAGE), destination(PM_MESSAGE);
@@ -686,7 +686,8 @@ static inline bool SetupCopyThread(JobControlRecord* jcr,
   }
 
   if (pthread_create(&new_context->thread_id, NULL, copy_thread,
-                     (void*)new_context) != 0) {
+                     (void*)new_context)
+      != 0) {
     pthread_cond_destroy(&new_context->start);
     pthread_mutex_destroy(&new_context->lock);
     goto bail_out;

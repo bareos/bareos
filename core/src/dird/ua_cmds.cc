@@ -578,8 +578,8 @@ bool Do_a_command(UaContext* ua)
   Dmsg1(900, "Command: %s\n", ua->argk[0]);
   if (ua->argc == 0) { return false; }
 
-  while (ua->jcr->impl->res.write_storage_list &&
-         ua->jcr->impl->res.write_storage_list->size()) {
+  while (ua->jcr->impl->res.write_storage_list
+         && ua->jcr->impl->res.write_storage_list->size()) {
     ua->jcr->impl->res.write_storage_list->remove(0);
   }
 
@@ -589,9 +589,9 @@ bool Do_a_command(UaContext* ua)
       /*
        * Check if command permitted, but "quit" and "whoami" is always OK
        */
-      if (!bstrcmp(ua->argk[0], NT_("quit")) &&
-          !bstrcmp(ua->argk[0], NT_("whoami")) &&
-          !ua->AclAccessOk(Command_ACL, ua->argk[0], true)) {
+      if (!bstrcmp(ua->argk[0], NT_("quit"))
+          && !bstrcmp(ua->argk[0], NT_("whoami"))
+          && !ua->AclAccessOk(Command_ACL, ua->argk[0], true)) {
         break;
       }
 
@@ -1320,8 +1320,8 @@ static void AllStorageSetdebug(UaContext* ua,
     if (storage_in_config) {
       bool is_duplicate_address = false;
       for (StorageResource* compared_store : storages_with_unique_address) {
-        if (bstrcmp(compared_store->address, storage_in_config->address) &&
-            compared_store->SDport == storage_in_config->SDport) {
+        if (bstrcmp(compared_store->address, storage_in_config->address)
+            && compared_store->SDport == storage_in_config->SDport) {
           is_duplicate_address = true;
           break;
         }
@@ -1376,8 +1376,8 @@ static void AllClientSetdebug(UaContext* ua,
     if (client_in_config) {
       bool is_duplicate_address = false;
       for (ClientResource* compared_client : clients_with_unique_address) {
-        if (bstrcmp(compared_client->address, client_in_config->address) &&
-            compared_client->FDport == client_in_config->FDport) {
+        if (bstrcmp(compared_client->address, client_in_config->address)
+            && compared_client->FDport == client_in_config->FDport) {
           is_duplicate_address = true;
           break;
         }
@@ -1489,8 +1489,8 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
       DoAllSetDebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
       return true;
     }
-    if (Bstrcasecmp(ua->argk[i], "dir") ||
-        Bstrcasecmp(ua->argk[i], "director")) {
+    if (Bstrcasecmp(ua->argk[i], "dir")
+        || Bstrcasecmp(ua->argk[i], "director")) {
       DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
       return true;
     }
@@ -1512,9 +1512,9 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
       }
     }
 
-    if (Bstrcasecmp(ua->argk[i], NT_("store")) ||
-        Bstrcasecmp(ua->argk[i], NT_("storage")) ||
-        Bstrcasecmp(ua->argk[i], NT_("sd"))) {
+    if (Bstrcasecmp(ua->argk[i], NT_("store"))
+        || Bstrcasecmp(ua->argk[i], NT_("storage"))
+        || Bstrcasecmp(ua->argk[i], NT_("sd"))) {
       store = NULL;
       if (ua->argv[i]) {
         store = ua->GetStoreResWithName(ua->argv[i]);
@@ -1599,8 +1599,8 @@ static bool ResolveCmd(UaContext* ua, const char* cmd)
   ClientResource* client = NULL;
 
   for (int i = 1; i < ua->argc; i++) {
-    if (Bstrcasecmp(ua->argk[i], NT_("client")) ||
-        Bstrcasecmp(ua->argk[i], NT_("fd"))) {
+    if (Bstrcasecmp(ua->argk[i], NT_("client"))
+        || Bstrcasecmp(ua->argk[i], NT_("fd"))) {
       if (ua->argv[i]) {
         client = ua->GetClientResWithName(ua->argv[i]);
         if (!client) {
@@ -1707,8 +1707,8 @@ static bool EstimateCmd(UaContext* ua, const char* cmd)
 
   jcr->setJobLevel(L_FULL);
   for (int i = 1; i < ua->argc; i++) {
-    if (Bstrcasecmp(ua->argk[i], NT_("client")) ||
-        Bstrcasecmp(ua->argk[i], NT_("fd"))) {
+    if (Bstrcasecmp(ua->argk[i], NT_("client"))
+        || Bstrcasecmp(ua->argk[i], NT_("fd"))) {
       if (ua->argv[i]) {
         client = ua->GetClientResWithName(ua->argv[i]);
         if (!client) {
@@ -2197,8 +2197,8 @@ static bool ReloadCmd(UaContext* ua, const char* cmd)
  */
 static bool DeleteCmd(UaContext* ua, const char* cmd)
 {
-  static const char* keywords[] = {NT_("volume"), NT_("pool"), NT_("jobid"),
-                                   NULL};
+  static const char* keywords[]
+      = {NT_("volume"), NT_("pool"), NT_("jobid"), NULL};
 
   if (!OpenClientDb(ua, true)) { return true; }
   ua->send->ObjectStart("deleted");
@@ -2448,8 +2448,8 @@ static void DoMountCmd(UaContext* ua, const char* cmd)
   slot_number_t slot = kInvalidSlotNumber;
   bool do_alldrives = false;
 
-  if ((bstrcmp(cmd, "release") || bstrcmp(cmd, "unmount")) &&
-      FindArg(ua, "alldrives") >= 0) {
+  if ((bstrcmp(cmd, "release") || bstrcmp(cmd, "unmount"))
+      && FindArg(ua, "alldrives") >= 0) {
     do_alldrives = true;
   }
 
@@ -2620,8 +2620,8 @@ static bool wait_cmd(UaContext* ua, const char* cmd)
       if (!ua->argv[i]) { break; }
       JobId = str_to_int64(ua->argv[i]);
       break;
-    } else if (Bstrcasecmp(ua->argk[i], "jobname") ||
-               Bstrcasecmp(ua->argk[i], "job")) {
+    } else if (Bstrcasecmp(ua->argk[i], "jobname")
+               || Bstrcasecmp(ua->argk[i], "job")) {
       if (!ua->argv[i]) { break; }
       jcr = get_jcr_by_partial_name(ua->argv[i]);
       if (jcr) {
@@ -2643,8 +2643,9 @@ static bool wait_cmd(UaContext* ua, const char* cmd)
        */
       for (bool waiting = false; !waiting;) {
         foreach_jcr (jcr) {
-          if (jcr->JobId != 0 && (jcr->JobStatus == JS_WaitMedia ||
-                                  jcr->JobStatus == JS_WaitMount)) {
+          if (jcr->JobId != 0
+              && (jcr->JobStatus == JS_WaitMedia
+                  || jcr->JobStatus == JS_WaitMount)) {
             waiting = true;
             break;
           }
@@ -2748,8 +2749,8 @@ static bool help_cmd(UaContext* ua, const char* cmd)
         break;
       }
     } else {
-      if (ua->AclAccessOk(Command_ACL, commands[i].key) &&
-          (!IsDotCommand(commands[i].key))) {
+      if (ua->AclAccessOk(Command_ACL, commands[i].key)
+          && (!IsDotCommand(commands[i].key))) {
         ua->send->ObjectStart(commands[i].key);
         ua->send->ObjectKeyValue("command", commands[i].key, "  %-18s");
         ua->send->ObjectKeyValue("description", commands[i].help, " %s\n");
@@ -2803,8 +2804,8 @@ static bool DotHelpCmd(UaContext* ua, const char* cmd)
      * Want to display only user commands (except dot commands)
      */
     for (i = 0; i < comsize; i++) {
-      if (ua->AclAccessOk(Command_ACL, commands[i].key) &&
-          (!IsDotCommand(commands[i].key))) {
+      if (ua->AclAccessOk(Command_ACL, commands[i].key)
+          && (!IsDotCommand(commands[i].key))) {
         ua->send->ObjectStart(commands[i].key);
         ua->send->ObjectKeyValue("command", commands[i].key, "%s\n");
         ua->send->ObjectKeyValue("description", commands[i].help);

@@ -290,12 +290,12 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
         break;
       case '5': /** Compare MD5 */
       case '1': /** Compare SHA1 */
-        if (!status && ff_pkt->type != FT_LNKSAVED &&
-            (S_ISREG(ff_pkt->statp.st_mode) &&
-             (BitIsSet(FO_MD5, ff_pkt->flags) ||
-              BitIsSet(FO_SHA1, ff_pkt->flags) ||
-              BitIsSet(FO_SHA256, ff_pkt->flags) ||
-              BitIsSet(FO_SHA512, ff_pkt->flags)))) {
+        if (!status && ff_pkt->type != FT_LNKSAVED
+            && (S_ISREG(ff_pkt->statp.st_mode)
+                && (BitIsSet(FO_MD5, ff_pkt->flags)
+                    || BitIsSet(FO_SHA1, ff_pkt->flags)
+                    || BitIsSet(FO_SHA256, ff_pkt->flags)
+                    || BitIsSet(FO_SHA512, ff_pkt->flags)))) {
           if (!*payload->chksum && !jcr->rerunning) {
             Jmsg(jcr, M_WARNING, 0, _("Cannot verify checksum for %s\n"),
                  ff_pkt->fname);
@@ -351,17 +351,18 @@ bool AccurateCmd(JobControlRecord* jcr)
   }
 
 #ifdef HAVE_LMDB
-  if (me->always_use_lmdb || (me->lmdb_threshold > 0 &&
-                              number_of_previous_files >= me->lmdb_threshold)) {
-    jcr->impl->file_list =
-        new BareosAccurateFilelistLmdb(jcr, number_of_previous_files);
+  if (me->always_use_lmdb
+      || (me->lmdb_threshold > 0
+          && number_of_previous_files >= me->lmdb_threshold)) {
+    jcr->impl->file_list
+        = new BareosAccurateFilelistLmdb(jcr, number_of_previous_files);
   } else {
-    jcr->impl->file_list =
-        new BareosAccurateFilelistHtable(jcr, number_of_previous_files);
+    jcr->impl->file_list
+        = new BareosAccurateFilelistHtable(jcr, number_of_previous_files);
   }
 #else
-  jcr->impl->file_list =
-      new BareosAccurateFilelistHtable(jcr, number_of_previous_files);
+  jcr->impl->file_list
+      = new BareosAccurateFilelistHtable(jcr, number_of_previous_files);
 #endif
 
   if (!jcr->impl->file_list->init()) { return false; }
@@ -393,14 +394,14 @@ bool AccurateCmd(JobControlRecord* jcr)
        * Sanity check total length of the received msg must be at least
        * total of the 3 lengths calculated + 3 (\0)
        */
-      if ((fname_length + lstat_length + chksum_length + 3) >
-          dir->message_length) {
+      if ((fname_length + lstat_length + chksum_length + 3)
+          > dir->message_length) {
         continue;
       }
     }
 
     jcr->impl->file_list->AddFile(fname, fname_length, lstat, lstat_length,
-                                   chksum, chksum_length, delta_seq);
+                                  chksum, chksum_length, delta_seq);
   }
 
   if (!jcr->impl->file_list->EndLoad()) { return false; }

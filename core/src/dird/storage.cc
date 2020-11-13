@@ -39,7 +39,7 @@
 #include "lib/util.h"
 
 #if HAVE_NDMP
-#include "ndmp/ndmagents.h"
+#  include "ndmp/ndmagents.h"
 #endif
 
 #include "dird/ndmp_dma_storage.h"
@@ -97,8 +97,8 @@ void CopyRstorage(JobControlRecord* jcr, alist* storage, const char* where)
     }
     PmStrcpy(jcr->impl->res.rstore_source, where);
     if (jcr->impl->res.read_storage_list) {
-      jcr->impl->res.read_storage =
-          (StorageResource*)jcr->impl->res.read_storage_list->first();
+      jcr->impl->res.read_storage
+          = (StorageResource*)jcr->impl->res.read_storage_list->first();
     }
   }
 }
@@ -157,8 +157,8 @@ void CopyWstorage(JobControlRecord* jcr, alist* storage, const char* where)
     }
     PmStrcpy(jcr->impl->res.wstore_source, where);
     if (jcr->impl->res.write_storage_list) {
-      jcr->impl->res.write_storage =
-          (StorageResource*)jcr->impl->res.write_storage_list->first();
+      jcr->impl->res.write_storage
+          = (StorageResource*)jcr->impl->res.write_storage_list->first();
       Dmsg2(100, "write_storage=%s where=%s\n",
             jcr->impl->res.write_storage->resource_name_,
             jcr->impl->res.wstore_source);
@@ -228,8 +228,8 @@ void SetPairedStorage(JobControlRecord* jcr)
          * jcrres.->write_storage_list. Save the original list under
          * jcr->impl_->res.paired_read_write_storage_list.
          */
-        jcr->impl->res.paired_read_write_storage_list =
-            jcr->impl->res.write_storage_list;
+        jcr->impl->res.paired_read_write_storage_list
+            = jcr->impl->res.write_storage_list;
         jcr->impl->res.write_storage_list = new alist(10, not_owned_by_alist);
         foreach_alist (store, jcr->impl->res.paired_read_write_storage_list) {
           if (store->paired_storage) {
@@ -265,8 +265,8 @@ void SetPairedStorage(JobControlRecord* jcr)
          * all paired_storage entries of all the storage currently in the
          * jcr->impl_->res.read_storage_list.
          */
-        jcr->impl->res.paired_read_write_storage_list =
-            new alist(10, not_owned_by_alist);
+        jcr->impl->res.paired_read_write_storage_list
+            = new alist(10, not_owned_by_alist);
         foreach_alist (paired_read_write_storage,
                        jcr->impl->res.read_storage_list) {
           store = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
@@ -311,8 +311,8 @@ void SetPairedStorage(JobControlRecord* jcr)
          * jcr->impl_->res.read_storage_list. Save the original list under
          * jcr->impl_->res.paired_read_write_storage_list.
          */
-        jcr->impl->res.paired_read_write_storage_list =
-            jcr->impl->res.read_storage_list;
+        jcr->impl->res.paired_read_write_storage_list
+            = jcr->impl->res.read_storage_list;
         jcr->impl->res.read_storage_list = new alist(10, not_owned_by_alist);
         foreach_alist (store, jcr->impl->res.paired_read_write_storage_list) {
           if (store->paired_storage) {
@@ -366,11 +366,11 @@ void FreePairedStorage(JobControlRecord* jcr)
            * master storage.
            */
           delete jcr->impl->res.write_storage_list;
-          jcr->impl->res.write_storage_list =
-              jcr->impl->res.paired_read_write_storage_list;
+          jcr->impl->res.write_storage_list
+              = jcr->impl->res.paired_read_write_storage_list;
           jcr->impl->res.paired_read_write_storage_list = NULL;
-          jcr->impl->res.write_storage =
-              jcr->impl->res.paired_read_write_storage;
+          jcr->impl->res.write_storage
+              = jcr->impl->res.paired_read_write_storage;
           jcr->impl->res.paired_read_write_storage = NULL;
         }
         break;
@@ -396,11 +396,11 @@ void FreePairedStorage(JobControlRecord* jcr)
            * master storage.
            */
           delete jcr->impl->res.read_storage_list;
-          jcr->impl->res.read_storage_list =
-              jcr->impl->res.paired_read_write_storage_list;
+          jcr->impl->res.read_storage_list
+              = jcr->impl->res.paired_read_write_storage_list;
           jcr->impl->res.paired_read_write_storage_list = NULL;
-          jcr->impl->res.read_storage =
-              jcr->impl->res.paired_read_write_storage;
+          jcr->impl->res.read_storage
+              = jcr->impl->res.paired_read_write_storage;
           jcr->impl->res.paired_read_write_storage = NULL;
         }
         break;
@@ -612,8 +612,8 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
      * Are we allowed to return a cached list ?
      */
     if (cached && store->runtime_storage_status->vol_list->type == type) {
-      if ((now - store->runtime_storage_status->vol_list->timestamp) <=
-          store->cache_status_interval) {
+      if ((now - store->runtime_storage_status->vol_list->timestamp)
+          <= store->cache_status_interval) {
         Dmsg0(100, "Using cached storage status\n");
         vol_list = store->runtime_storage_status->vol_list;
         vol_list->reference_count++;
@@ -637,8 +637,8 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
        * then be destroyed.
        */
       Dmsg0(100, "Need to free still referenced vol_list\n");
-      store->runtime_storage_status->vol_list =
-          (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
+      store->runtime_storage_status->vol_list
+          = (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
       changer_vol_list_t empty_vol_list;
       *store->runtime_storage_status->vol_list = empty_vol_list;
     }
@@ -665,8 +665,8 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
      * Cache the returned content of the autochanger.
      */
     if (!store->runtime_storage_status->vol_list) {
-      store->runtime_storage_status->vol_list =
-          (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
+      store->runtime_storage_status->vol_list
+          = (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
       changer_vol_list_t empty_vol_list;
       *store->runtime_storage_status->vol_list = empty_vol_list;
     }
@@ -788,14 +788,14 @@ bool DoAutochangerVolumeOperation(UaContext* ua,
 
   switch (store->Protocol) {
     case APT_NATIVE:
-      retval =
-          NativeAutochangerVolumeOperation(ua, store, operation, drive, slot);
+      retval
+          = NativeAutochangerVolumeOperation(ua, store, operation, drive, slot);
       break;
     case APT_NDMPV2:
     case APT_NDMPV3:
     case APT_NDMPV4:
-      retval =
-          NdmpAutochangerVolumeOperation(ua, store, operation, drive, slot);
+      retval
+          = NdmpAutochangerVolumeOperation(ua, store, operation, drive, slot);
       break;
     default:
       break;

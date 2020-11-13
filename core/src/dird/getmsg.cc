@@ -223,7 +223,8 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
      */
     if (bs->msg[0] == 'J') { /* Job message */
       if (sscanf(bs->msg, "Jmsg Job=%127s type=%d level=%lld", Job, &type,
-                 &mtime) != 3) {
+                 &mtime)
+          != 3) {
         Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
         continue;
       }
@@ -254,8 +255,8 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
     if (bs->msg[0] == 'B') { /* SD sending file spool attributes */
       Dmsg2(100, "Blast attributes jcr 0x%x: %s", jcr, bs->msg);
       char filename[256];
-      if (sscanf(bs->msg, "BlastAttr Job=%127s File=%255s", Job, filename) !=
-          2) {
+      if (sscanf(bs->msg, "BlastAttr Job=%127s File=%255s", Job, filename)
+          != 2) {
         Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
         continue;
       }

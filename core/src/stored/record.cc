@@ -100,8 +100,8 @@ static const char* record_compression_to_str(PoolMem& resultbuffer,
   PoolMem tmp(PM_MESSAGE);
   unser_declare;
 
-  if (maskedStream == STREAM_SPARSE_GZIP_DATA ||
-      maskedStream == STREAM_SPARSE_COMPRESSED_DATA) {
+  if (maskedStream == STREAM_SPARSE_GZIP_DATA
+      || maskedStream == STREAM_SPARSE_COMPRESSED_DATA) {
     uint64_t faddr = 0;
 
     SerBegin(buf, sizeof(uint64_t));
@@ -413,8 +413,8 @@ static const char* record_unix_attributes_to_str(PoolMem& resultbuffer,
     return NULL;
   }
 
-  attr->data_stream =
-      DecodeStat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
+  attr->data_stream = DecodeStat(attr->attr, &attr->statp, sizeof(attr->statp),
+                                 &attr->LinkFI);
   BuildAttrOutputFnames(jcr, attr);
   attr_to_str(resultbuffer, jcr, attr);
 
@@ -658,8 +658,8 @@ bool DeviceControlRecord::WriteRecord()
    */
   before_rec = rec;
   after_rec = NULL;
-  if (GeneratePluginEvent(jcr, bSdEventWriteRecordTranslation, this) !=
-      bRC_OK) {
+  if (GeneratePluginEvent(jcr, bSdEventWriteRecordTranslation, this)
+      != bRC_OK) {
     goto bail_out;
   }
 
@@ -947,8 +947,9 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
      * If we are looking for more (remainder!=0), we reject anything
      * where the VolSessionId and VolSessionTime don't agree
      */
-    if (rec->remainder && (rec->VolSessionId != VolSessionId ||
-                           rec->VolSessionTime != VolSessionTime)) {
+    if (rec->remainder
+        && (rec->VolSessionId != VolSessionId
+            || rec->VolSessionTime != VolSessionTime)) {
       SetBit(REC_NO_MATCH, rec->state_bits);
       Dmsg0(450, "remainder and VolSession doesn't match\n");
       return false; /* This is from some other Session */

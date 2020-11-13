@@ -633,9 +633,9 @@ bool generic_tape_device::bsf(int num)
 static inline bool DevGetOsPos(Device* dev, struct mtget* mt_stat)
 {
   Dmsg0(100, "DevGetOsPos\n");
-  return dev->HasCap(CAP_MTIOCGET) &&
-         dev->d_ioctl(dev->fd(), MTIOCGET, (char*)mt_stat) == 0 &&
-         mt_stat->mt_fileno >= 0;
+  return dev->HasCap(CAP_MTIOCGET)
+         && dev->d_ioctl(dev->fd(), MTIOCGET, (char*)mt_stat) == 0
+         && mt_stat->mt_fileno >= 0;
 }
 
 /**
@@ -995,9 +995,9 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
   mtop mt_com{};
 
   Dmsg0(100, "In SetOsDeviceParameters\n");
-#if defined(MTSETBLK)
-  if (dev->min_block_size == dev->max_block_size &&
-      dev->min_block_size == 0) { /* variable block mode */
+#  if defined(MTSETBLK)
+  if (dev->min_block_size == dev->max_block_size
+      && dev->min_block_size == 0) { /* variable block mode */
     mt_com.mt_op = MTSETBLK;
     mt_com.mt_count = 0;
     Dmsg0(100, "Set block size to zero\n");
@@ -1005,8 +1005,8 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
       dev->clrerror(mt_com.mt_op);
     }
   }
-#endif
-#if defined(MTSETDRVBUFFER)
+#  endif
+#  if defined(MTSETDRVBUFFER)
   if (getuid() == 0) { /* Only root can do this */
     mt_com.mt_op = MTSETDRVBUFFER;
     mt_com.mt_count = MT_ST_CLEARBOOLEANS;
@@ -1017,14 +1017,14 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
       dev->clrerror(mt_com.mt_op);
     }
   }
-#endif
+#  endif
   return;
 #endif
 
 #ifdef HAVE_NETBSD_OS
   mtop mt_com{};
-  if (dev->min_block_size == dev->max_block_size &&
-      dev->min_block_size == 0) { /* variable block mode */
+  if (dev->min_block_size == dev->max_block_size
+      && dev->min_block_size == 0) { /* variable block mode */
     mt_com.mt_op = MTSETBSIZ;
     mt_com.mt_count = 0;
     if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char*)&mt_com) < 0) {
@@ -1042,15 +1042,15 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
 
 #if HAVE_FREEBSD_OS || HAVE_OPENBSD_OS
   mtop mt_com{};
-  if (dev->min_block_size == dev->max_block_size &&
-      dev->min_block_size == 0) { /* variable block mode */
+  if (dev->min_block_size == dev->max_block_size
+      && dev->min_block_size == 0) { /* variable block mode */
     mt_com.mt_op = MTSETBSIZ;
     mt_com.mt_count = 0;
     if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char*)&mt_com) < 0) {
       dev->clrerror(mt_com.mt_op);
     }
   }
-#if defined(MTIOCSETEOTMODEL)
+#  if defined(MTIOCSETEOTMODEL)
   uint32_t neof;
   if (dev->HasCap(CAP_TWOEOF)) {
     neof = 2;
@@ -1064,14 +1064,14 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
           dev->print_name(), be.bstrerror(dev->dev_errno));
     Jmsg(dcr->jcr, M_FATAL, 0, dev->errmsg);
   }
-#endif
+#  endif
   return;
 #endif
 
 #ifdef HAVE_SUN_OS
   mtop mt_com{};
-  if (dev->min_block_size == dev->max_block_size &&
-      dev->min_block_size == 0) { /* variable block mode */
+  if (dev->min_block_size == dev->max_block_size
+      && dev->min_block_size == 0) { /* variable block mode */
     mt_com.mt_op = MTSRSZ;
     mt_com.mt_count = 0;
     if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char*)&mt_com) < 0) {
@@ -1208,8 +1208,9 @@ static bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
 
   /* If busy retry each second */
   Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
-  while ((status = RunProgramFullOutput(
-              ocmd.c_str(), dcr->dev->max_open_wait / 2, results)) != 0) {
+  while ((status = RunProgramFullOutput(ocmd.c_str(),
+                                        dcr->dev->max_open_wait / 2, results))
+         != 0) {
     if (tries-- > 0) { continue; }
 
     Dmsg5(100, "Device %s cannot be %smounted. stat=%d result=%s ERR=%s\n",
@@ -1392,8 +1393,8 @@ bool generic_tape_device::Reposition(DeviceControlRecord* dcr,
     return fsr(rblock - block_num);
   } else {
     while (rblock > block_num) {
-      if (DeviceControlRecord::ReadStatus::Ok !=
-          dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
+      if (DeviceControlRecord::ReadStatus::Ok
+          != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
         BErrNo be;
         dev_errno = errno;
         Dmsg2(30, "Failed to find requested block on %s: ERR=%s", prt_name,

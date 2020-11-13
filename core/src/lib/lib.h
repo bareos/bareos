@@ -37,7 +37,7 @@
 #include "serial.h"
 #include "lex.h"
 #ifndef BAREOS_LIB_LIB_H_
-#include "fnmatch.h"
+#  include "fnmatch.h"
 #endif
 #include <openssl/md5.h>
 #include <openssl/sha.h>

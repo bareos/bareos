@@ -27,11 +27,11 @@
  * Philipp Storz, November 2017
  */
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #include "lib/htable.h"
@@ -46,9 +46,9 @@ struct HTABLEJCR {
 };
 
 #ifndef TEST_SMALL_HTABLE
-#define NITEMS 5000000
+#  define NITEMS 5000000
 #else
-#define NITEMS 5000
+#  define NITEMS 5000
 #endif
 TEST(htable, htable)
 {
@@ -94,4 +94,3 @@ TEST(htable, htable)
 struct RbListJobControlRecord {
   char* buf;
 };
-

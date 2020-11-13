@@ -33,9 +33,9 @@
 //#undef HAVE_REGEX_H
 
 #ifndef HAVE_REGEX_H
-#include "bregex.h"
+#  include "bregex.h"
 #else
-#include <regex.h>
+#  include <regex.h>
 #endif
 
 /* Usage:

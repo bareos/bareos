@@ -24,7 +24,7 @@
 #include "include/bareos.h"
 
 #ifndef BAREOS_SRC_STORED_AUTOXFLATE_H_
-#define BAREOS_SRC_STORED_AUTOXFLATE_H_
+#  define BAREOS_SRC_STORED_AUTOXFLATE_H_
 
 namespace storagedaemon {
 

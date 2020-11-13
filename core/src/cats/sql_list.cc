@@ -32,8 +32,8 @@
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
-#include "cats.h"
-#include "lib/edit.h"
+#  include "cats.h"
+#  include "lib/edit.h"
 
 /* -----------------------------------------------------------------------
  *

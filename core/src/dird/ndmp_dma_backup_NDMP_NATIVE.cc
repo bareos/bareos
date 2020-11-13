@@ -38,14 +38,14 @@
 #include "lib/edit.h"
 
 #if HAVE_NDMP
-#include "dird/ndmp_dma_backup_common.h"
-#include "dird/ndmp_dma_generic.h"
-#include "dird/ndmp_dma_storage.h"
+#  include "dird/ndmp_dma_backup_common.h"
+#  include "dird/ndmp_dma_generic.h"
+#  include "dird/ndmp_dma_storage.h"
 
-#define NDMP_NEED_ENV_KEYWORDS 1
+#  define NDMP_NEED_ENV_KEYWORDS 1
 
-#include "ndmp/ndmagents.h"
-#include "ndmp_dma_priv.h"
+#  include "ndmp/ndmagents.h"
+#  include "ndmp_dma_priv.h"
 #endif /* HAVE_NDMP */
 
 namespace directordaemon {
@@ -182,13 +182,13 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
 
   char* item;
 
-  ndmp_log_level =
-      std::max(jcr->impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
+  ndmp_log_level
+      = std::max(jcr->impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
 
   struct ndmca_media_callbacks media_callbacks;
 
-  media_callbacks.load_first =
-      NdmpLoadNext; /* we use the same callback for first and next*/
+  media_callbacks.load_first
+      = NdmpLoadNext; /* we use the same callback for first and next*/
   media_callbacks.load_next = NdmpLoadNext;
   media_callbacks.unload_current = NULL;
 
@@ -217,8 +217,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
 
 
   if (!NdmpBuildClientAndStorageJob(jcr, jcr->impl->res.write_storage,
-                                    jcr->impl->res.client,
-                                    true, /* init_tape */
+                                    jcr->impl->res.client, true, /* init_tape */
                                     true, /* init_robot */
                                     NDM_JOB_OP_BACKUP, &ndmp_job)) {
     goto bail_out;
@@ -268,12 +267,12 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
   ndmp_sess.control_agent_enabled = 1;
 
-  ndmp_sess.param =
-      (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
+  ndmp_sess.param
+      = (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
   memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
   ndmp_sess.param->log.deliver = NdmpLoghandler;
-  ndmp_sess.param->log_level =
-      NativeToNdmpLoglevel(ndmp_log_level, debug_level, nis);
+  ndmp_sess.param->log_level
+      = NativeToNdmpLoglevel(ndmp_log_level, debug_level, nis);
   nis->filesystem = item;
   nis->FileIndex = 1;
   nis->jcr = jcr;
@@ -472,8 +471,8 @@ bool DoNdmpBackupInitNdmpNative(JobControlRecord* jcr)
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
-  jcr->impl->jr.PoolId =
-      GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
+  jcr->impl->jr.PoolId
+      = GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
   if (jcr->impl->jr.PoolId == 0) { return false; }
 
   jcr->start_time = time(NULL);
@@ -520,8 +519,8 @@ static inline bool extract_post_backup_stats_ndmp_native(
   /*
    * See if we know this backup format and get it options.
    */
-  nbf_options =
-      ndmp_lookup_backup_format_options(sess->control_acb->job.bu_type);
+  nbf_options
+      = ndmp_lookup_backup_format_options(sess->control_acb->job.bu_type);
 
   /*
    * See if an error was raised during the backup session.
@@ -540,7 +539,7 @@ static inline bool extract_post_backup_stats_ndmp_native(
     media->slot_addr = GetBareosSlotNumberByElementAddress(
         &jcr->impl->res.write_storage->runtime_storage_status->storage_mapping,
         slot_type_t::kSlotTypeStorage, media->slot_addr);
-#if 0
+#  if 0
       Jmsg(jcr, M_INFO, 0, _("Physical Slot is %d\n"), media->slot_addr);
       Jmsg(jcr, M_INFO, 0, _("Logical slot is : %d\n"), media->slot_addr);
       Jmsg(jcr, M_INFO, 0, _("label           : %s\n"), media->label);
@@ -548,7 +547,7 @@ static inline bool extract_post_backup_stats_ndmp_native(
       Jmsg(jcr, M_INFO, 0, _("n_bytes         : %lld\n"), media->n_bytes);
       Jmsg(jcr, M_INFO, 0, _("begin_offset    : %u\n"), media->begin_offset);
       Jmsg(jcr, M_INFO, 0, _("end_offset      : %u\n"), media->end_offset);
-#endif
+#  endif
 
     StoreNdmmediaInfoInDatabase(media, jcr);
 
@@ -559,8 +558,9 @@ static inline bool extract_post_backup_stats_ndmp_native(
     /*
      * See if there is any media error.
      */
-    if (media->media_open_error || media->media_io_error ||
-        media->label_io_error || media->label_mismatch || media->fmark_error) {
+    if (media->media_open_error || media->media_io_error
+        || media->label_io_error || media->label_mismatch
+        || media->fmark_error) {
       retval = false;
     }
   }

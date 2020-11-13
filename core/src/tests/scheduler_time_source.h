@@ -53,8 +53,7 @@ class SimulatedTimeSource : public directordaemon::TimeSource {
     if (debug) {
       time_t t{clock_value_};
       std::cout << put_time(
-                       gmtime(&t),
-                       "Start simulated Clock at time: %A %d-%m-%Y %H:%M:%S")
+          gmtime(&t), "Start simulated Clock at time: %A %d-%m-%Y %H:%M:%S")
                 << std::endl;
     }
   }
@@ -63,9 +62,9 @@ class SimulatedTimeSource : public directordaemon::TimeSource {
 
   void SleepFor(std::chrono::seconds wait_interval_pseudo_seconds) override
   {
-    time_t wait_until_ =
-        clock_value_ +
-        static_cast<time_t>(wait_interval_pseudo_seconds.count());
+    time_t wait_until_
+        = clock_value_
+          + static_cast<time_t>(wait_interval_pseudo_seconds.count());
     while (running_ && clock_value_ < wait_until_) { clock_value_ += 1; }
   }
 

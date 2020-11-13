@@ -151,8 +151,8 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
    */
   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type,
         dev->device_resource->media_type);
-  if (dcr->media_type[0] &&
-      !bstrcmp(dcr->media_type, dev->device_resource->media_type)) {
+  if (dcr->media_type[0]
+      && !bstrcmp(dcr->media_type, dev->device_resource->media_type)) {
     ReserveContext rctx;
     DirectorStorage* store;
     int status;
@@ -239,8 +239,8 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
   InitDeviceWaitTimers(dcr);
 
-  tape_previously_mounted =
-      dev->CanRead() || dev->CanAppend() || dev->IsLabeled();
+  tape_previously_mounted
+      = dev->CanRead() || dev->CanAppend() || dev->IsLabeled();
   // tape_initially_mounted = tape_previously_mounted;
 
   /*
@@ -264,9 +264,9 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
      * See if we are changing the volume in the device.
      * If so we need to force a reread of the tape label.
      */
-    if (dev->device_resource->drive_crypto_enabled ||
-        (dev->HasCap(CAP_ALWAYSOPEN) &&
-         !bstrcmp(dev->VolHdr.VolumeName, dcr->VolumeName))) {
+    if (dev->device_resource->drive_crypto_enabled
+        || (dev->HasCap(CAP_ALWAYSOPEN)
+            && !bstrcmp(dev->VolHdr.VolumeName, dcr->VolumeName))) {
       dev->ClearLabeled();
     }
 
@@ -301,9 +301,9 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
      * See if we are changing the volume in the device.
      * If so we need to force a reread of the tape label.
      */
-    if (!dev->device_resource->drive_crypto_enabled &&
-        dev->HasCap(CAP_ALWAYSOPEN) &&
-        bstrcmp(dev->VolHdr.VolumeName, dcr->VolumeName)) {
+    if (!dev->device_resource->drive_crypto_enabled
+        && dev->HasCap(CAP_ALWAYSOPEN)
+        && bstrcmp(dev->VolHdr.VolumeName, dcr->VolumeName)) {
       vol_label_status = VOL_OK;
     } else {
       /*
@@ -477,8 +477,8 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
    * have_vol defines whether or not MountNextWriteVolume should
    * ask the Director again about what Volume to use.
    */
-  if (dev->CanAppend() && dcr->IsSuitableVolumeMounted() &&
-      !bstrcmp(dcr->VolCatInfo.VolCatStatus, "Recycle")) {
+  if (dev->CanAppend() && dcr->IsSuitableVolumeMounted()
+      && !bstrcmp(dcr->VolCatInfo.VolCatStatus, "Recycle")) {
     Dmsg0(190, "device already in append.\n");
     /*
      * At this point, the correct tape is already mounted, so
@@ -653,8 +653,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   /*
    * If no writers, close if file or !CAP_ALWAYS_OPEN
    */
-  if (dev->num_writers == 0 &&
-      (!dev->IsTape() || !dev->HasCap(CAP_ALWAYSOPEN))) {
+  if (dev->num_writers == 0
+      && (!dev->IsTape() || !dev->HasCap(CAP_ALWAYSOPEN))) {
     dev->close(dcr);
     FreeVolume(dev);
   }
@@ -665,8 +665,8 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
    * Fire off Alert command and include any output
    */
   if (!JobCanceled(jcr)) {
-    if (!dcr->device_resource->drive_tapealert_enabled &&
-        dcr->device_resource->alert_command) {
+    if (!dcr->device_resource->drive_tapealert_enabled
+        && dcr->device_resource->alert_command) {
       int status = 1;
       POOLMEM *alert, *line;
       Bpipe* bpipe;
@@ -822,8 +822,8 @@ static void AttachDcrToDev(DeviceControlRecord* dcr)
   jcr = dcr->jcr;
   if (jcr) Dmsg1(500, "JobId=%u enter AttachDcrToDev\n", (uint32_t)jcr->JobId);
   /* ***FIXME*** return error if dev not initiated */
-  if (!dcr->attached_to_dev && dev->initiated && jcr &&
-      jcr->getJobType() != JT_SYSTEM) {
+  if (!dcr->attached_to_dev && dev->initiated && jcr
+      && jcr->getJobType() != JT_SYSTEM) {
     dev->Lock();
     Dmsg4(200, "Attach Jid=%d dcr=%p size=%d dev=%s\n", (uint32_t)jcr->JobId,
           dcr, dev->attached_dcrs.size(), dev->print_name());

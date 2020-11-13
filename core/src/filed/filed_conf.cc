@@ -175,18 +175,18 @@ static ResourceTable resources[] = {
 
 /* clang-format on */
 
-static struct s_kw CryptoCiphers[] = {
-    {"blowfish", CRYPTO_CIPHER_BLOWFISH_CBC},
-    {"3des", CRYPTO_CIPHER_3DES_CBC},
-    {"aes128", CRYPTO_CIPHER_AES_128_CBC},
-    {"aes192", CRYPTO_CIPHER_AES_192_CBC},
-    {"aes256", CRYPTO_CIPHER_AES_256_CBC},
-    {"camellia128", CRYPTO_CIPHER_CAMELLIA_128_CBC},
-    {"camellia192", CRYPTO_CIPHER_CAMELLIA_192_CBC},
-    {"camellia256", CRYPTO_CIPHER_CAMELLIA_256_CBC},
-    {"aes128hmacsha1", CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1},
-    {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
-    {NULL, 0}};
+static struct s_kw CryptoCiphers[]
+    = {{"blowfish", CRYPTO_CIPHER_BLOWFISH_CBC},
+       {"3des", CRYPTO_CIPHER_3DES_CBC},
+       {"aes128", CRYPTO_CIPHER_AES_128_CBC},
+       {"aes192", CRYPTO_CIPHER_AES_192_CBC},
+       {"aes256", CRYPTO_CIPHER_AES_256_CBC},
+       {"camellia128", CRYPTO_CIPHER_CAMELLIA_128_CBC},
+       {"camellia192", CRYPTO_CIPHER_CAMELLIA_192_CBC},
+       {"camellia256", CRYPTO_CIPHER_CAMELLIA_256_CBC},
+       {"aes128hmacsha1", CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1},
+       {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
+       {NULL, 0}};
 
 static void StoreCipher(LEX* lc, ResourceItem* item, int index, int pass)
 {
@@ -324,10 +324,10 @@ static void DumpResource(int type,
 {
   PoolMem buf;
   int recurse = 1;
-  OutputFormatter output_formatter =
-      OutputFormatter(sendit, sock, nullptr, nullptr);
-  OutputFormatterResource output_formatter_resource =
-      OutputFormatterResource(&output_formatter);
+  OutputFormatter output_formatter
+      = OutputFormatter(sendit, sock, nullptr, nullptr);
+  OutputFormatterResource output_formatter_resource
+      = OutputFormatterResource(&output_formatter);
 
   if (res == NULL) {
     sendit(sock, "No record for %d %s\n", type, my_config->ResToStr(type));
@@ -472,8 +472,8 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"),
                 res_dir->resource_name_);
         } else {
-          p->tls_cert_.allowed_certificate_common_names_ =
-              std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
+          p->tls_cert_.allowed_certificate_common_names_
+              = std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
           p->allowed_script_dirs = res_dir->allowed_script_dirs;
           p->allowed_job_cmds = res_dir->allowed_job_cmds;
         }

@@ -33,7 +33,7 @@
 
 #if HAVE_NDMP
 
-#include "ndmp/ndmagents.h"
+#  include "ndmp/ndmagents.h"
 
 namespace directordaemon {
 

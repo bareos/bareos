@@ -586,8 +586,8 @@ bool chunked_device::FlushChunk(bool release_chunk, bool move_to_next_chunk)
      */
     if (io_threads_) { current_chunk_->buffer = allocate_chunkbuffer(); }
     current_chunk_->start_offset += current_chunk_->chunk_size;
-    current_chunk_->end_offset =
-        current_chunk_->start_offset + (current_chunk_->chunk_size - 1);
+    current_chunk_->end_offset
+        = current_chunk_->start_offset + (current_chunk_->chunk_size - 1);
     current_chunk_->buflen = 0;
   } else {
     /*
@@ -618,8 +618,8 @@ bool chunked_device::ReadChunk()
   request.rbuflen = &current_chunk_->buflen;
   request.release = false;
 
-  current_chunk_->end_offset =
-      current_chunk_->start_offset + (current_chunk_->chunk_size - 1);
+  current_chunk_->end_offset
+      = current_chunk_->start_offset + (current_chunk_->chunk_size - 1);
 
   if (!ReadRemoteChunk(&request)) {
     /*
@@ -689,8 +689,9 @@ int chunked_device::SetupChunk(const char* pathname, int flags, int mode)
    * We need to limit the maximum size of a chunked volume to MAX_CHUNKS *
    * chunk_size).
    */
-  if (max_volume_size == 0 ||
-      max_volume_size > (uint64_t)(MAX_CHUNKS * current_chunk_->chunk_size)) {
+  if (max_volume_size == 0
+      || max_volume_size
+             > (uint64_t)(MAX_CHUNKS * current_chunk_->chunk_size)) {
     max_volume_size = MAX_CHUNKS * current_chunk_->chunk_size;
   }
 
@@ -772,12 +773,12 @@ ssize_t chunked_device::ReadChunked(int fd, void* buffer, size_t count)
     /*
      * See if we can fulfill the wanted read from the current chunk.
      */
-    if (current_chunk_->start_offset <= offset_ &&
-        current_chunk_->end_offset >= (boffset_t)((offset_ + count) - 1)) {
+    if (current_chunk_->start_offset <= offset_
+        && current_chunk_->end_offset >= (boffset_t)((offset_ + count) - 1)) {
       wanted_offset = (offset_ % current_chunk_->chunk_size);
 
-      bytes_left =
-          MIN((ssize_t)count, (current_chunk_->buflen - wanted_offset));
+      bytes_left
+          = MIN((ssize_t)count, (current_chunk_->buflen - wanted_offset));
       Dmsg2(200, "Reading %d bytes at offset %d from chunk buffer\n",
             bytes_left, wanted_offset);
 
@@ -846,8 +847,8 @@ ssize_t chunked_device::ReadChunked(int fd, void* buffer, size_t count)
            * Calculate how much data we can read from the just freshly read
            * chunk.
            */
-          bytes_left =
-              MIN((ssize_t)(count - offset), (ssize_t)(current_chunk_->buflen));
+          bytes_left = MIN((ssize_t)(count - offset),
+                           (ssize_t)(current_chunk_->buflen));
 
           if (bytes_left > 0) {
             Dmsg2(200, "Reading %d bytes at offset %d from chunk buffer\n",
@@ -913,8 +914,8 @@ ssize_t chunked_device::WriteChunked(int fd, const void* buffer, size_t count)
     /*
      * See if we can write the whole data inside the current chunk.
      */
-    if (current_chunk_->start_offset <= offset_ &&
-        current_chunk_->end_offset >= (boffset_t)((offset_ + count) - 1)) {
+    if (current_chunk_->start_offset <= offset_
+        && current_chunk_->end_offset >= (boffset_t)((offset_ + count) - 1)) {
       wanted_offset = (offset_ % current_chunk_->chunk_size);
 
       Dmsg2(200, "Writing %d bytes at offset %d in chunk buffer\n", count,
@@ -944,11 +945,11 @@ ssize_t chunked_device::WriteChunked(int fd, const void* buffer, size_t count)
          */
         if (offset_ < current_chunk_->end_offset) {
           wanted_offset = (offset_ % current_chunk_->chunk_size);
-          bytes_left =
-              MIN((ssize_t)(count - offset),
-                  (ssize_t)((current_chunk_->end_offset -
-                             (current_chunk_->start_offset + wanted_offset)) +
-                            1));
+          bytes_left
+              = MIN((ssize_t)(count - offset),
+                    (ssize_t)((current_chunk_->end_offset
+                               - (current_chunk_->start_offset + wanted_offset))
+                              + 1));
 
           if (bytes_left > 0) {
             Dmsg2(200, "Writing %d bytes at offset %d in chunk buffer\n",
@@ -979,9 +980,9 @@ ssize_t chunked_device::WriteChunked(int fd, const void* buffer, size_t count)
          * chunk.
          */
         bytes_left = MIN((ssize_t)(count - offset),
-                         (ssize_t)((current_chunk_->end_offset -
-                                    current_chunk_->start_offset) +
-                                   1));
+                         (ssize_t)((current_chunk_->end_offset
+                                    - current_chunk_->start_offset)
+                                   + 1));
         if (bytes_left > 0) {
           Dmsg2(200, "Writing %d bytes at offset %d in chunk buffer\n",
                 bytes_left, 0);
@@ -1117,8 +1118,8 @@ ssize_t chunked_device::ChunkedVolumeSize()
           /*
            * Calculate the size of the volume based on the last chunk inflight.
            */
-          retval =
-              (request->chunk * current_chunk_->chunk_size) + request->wbuflen;
+          retval = (request->chunk * current_chunk_->chunk_size)
+                   + request->wbuflen;
 
           /*
            * The peek method gives us a cloned chunk_io_request with pointers to
@@ -1297,8 +1298,8 @@ bool chunked_device::LoadChunk()
 {
   boffset_t start_offset;
 
-  start_offset =
-      (offset_ / current_chunk_->chunk_size) * current_chunk_->chunk_size;
+  start_offset
+      = (offset_ / current_chunk_->chunk_size) * current_chunk_->chunk_size;
 
   /*
    * See if we have to allocate a new buffer.
@@ -1339,8 +1340,8 @@ bool chunked_device::LoadChunk()
            * to read the data from the backing store as that will not have the
            * latest data anyway.
            */
-          if (cb_->peek(storagedaemon::PEEK_CLONE, &request, CloneIoRequest) ==
-              &request) {
+          if (cb_->peek(storagedaemon::PEEK_CLONE, &request, CloneIoRequest)
+              == &request) {
             goto bail_out;
           }
         }
@@ -1394,8 +1395,8 @@ bool chunked_device::LoadChunk()
       switch (dev_errno) {
         case EIO:
           if (current_chunk_->writing) {
-            current_chunk_->end_offset =
-                start_offset + (current_chunk_->chunk_size - 1);
+            current_chunk_->end_offset
+                = start_offset + (current_chunk_->chunk_size - 1);
           }
           return false;
           break;
@@ -1435,11 +1436,11 @@ bool chunked_device::DeviceStatus(DeviceStatusInformation* dst)
 
   dst->status_length = 0;
   if (CheckRemote()) {
-    dst->status_length =
-        PmStrcpy(dst->status, _("Backend connection is working.\n"));
+    dst->status_length
+        = PmStrcpy(dst->status, _("Backend connection is working.\n"));
   } else {
-    dst->status_length =
-        PmStrcpy(dst->status, _("Backend connection is not working.\n"));
+    dst->status_length
+        = PmStrcpy(dst->status, _("Backend connection is not working.\n"));
   }
   /*
    * See if we are using io-threads or not and the ordered CircularBuffer is
@@ -1452,8 +1453,8 @@ bool chunked_device::DeviceStatus(DeviceStatusInformation* dst)
     if (inflight_chunks > 0) { pending = true; }
     if (!cb_->empty()) {
       pending = true;
-      dst->status_length =
-          PmStrcat(dst->status, _("Pending IO flush requests:\n"));
+      dst->status_length
+          = PmStrcat(dst->status, _("Pending IO flush requests:\n"));
 
       /*
        * Peek on the ordered circular queue and list all pending requests.
@@ -1463,8 +1464,8 @@ bool chunked_device::DeviceStatus(DeviceStatusInformation* dst)
   }
 
   if (!pending) {
-    dst->status_length =
-        PmStrcat(dst->status, _("No pending IO flush requests.\n"));
+    dst->status_length
+        = PmStrcat(dst->status, _("No pending IO flush requests.\n"));
   }
 
   return (dst->status_length > 0);

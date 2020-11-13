@@ -41,14 +41,14 @@
  * See if the source file needs the full JANSSON namespace or that we can
  * get away with using a forward declaration of the json_t struct.
  */
-#ifndef NEED_JANSSON_NAMESPACE
+#  ifndef NEED_JANSSON_NAMESPACE
 typedef struct json_t json_t;
-#else
-#include <jansson.h>
-#endif
+#  else
+#    include <jansson.h>
+#  endif
 
-#define UA_JSON_FLAGS_NORMAL JSON_INDENT(2)
-#define UA_JSON_FLAGS_COMPACT JSON_COMPACT
+#  define UA_JSON_FLAGS_NORMAL JSON_INDENT(2)
+#  define UA_JSON_FLAGS_COMPACT JSON_COMPACT
 
 #endif /* HAVE_JANSSON */
 

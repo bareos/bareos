@@ -40,11 +40,11 @@
    _CONFIG_H is not defined
  */
 #ifndef _CONFIG_H
-#define _CONFIG_H
-#include <glusterfs/compat-errno.h>
-#undef _CONFIG_H
+#  define _CONFIG_H
+#  include <glusterfs/compat-errno.h>
+#  undef _CONFIG_H
 #else
-#include <glusterfs/compat-errno.h>
+#  include <glusterfs/compat-errno.h>
 #endif
 
 namespace filedaemon {
@@ -97,25 +97,25 @@ static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 /**
  * Plugin Information block
  */
-static PluginInformation pluginInfo = {
-    sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
-    FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-    PLUGIN_AUTHOR,      PLUGIN_DATE,
-    PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-    PLUGIN_USAGE};
+static PluginInformation pluginInfo
+    = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
+       FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+       PLUGIN_AUTHOR,      PLUGIN_DATE,
+       PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+       PLUGIN_USAGE};
 
 /**
  * Plugin entry points for Bareos
  */
-static PluginFunctions pluginFuncs = {
-    sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
-    /* Entry points into plugin */
-    newPlugin,  /* new plugin instance */
-    freePlugin, /* free plugin instance */
-    getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
-    endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
-    setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
+       /* Entry points into plugin */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
+       endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
+       setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
 
 /**
  * Plugin private context
@@ -172,11 +172,11 @@ struct plugin_argument {
   enum plugin_argument_type type;
 };
 
-static plugin_argument plugin_arguments[] = {
-    {"volume", argument_volume_spec},
-    {"snapdir", argument_snapdir},
-    {"gffilelist", argument_gf_file_list},
-    {NULL, argument_none}};
+static plugin_argument plugin_arguments[]
+    = {{"volume", argument_volume_spec},
+       {"snapdir", argument_snapdir},
+       {"gffilelist", argument_gf_file_list},
+       {NULL, argument_none}};
 
 enum gluster_find_type
 {
@@ -202,12 +202,12 @@ struct gluster_find_mapping {
   int compare_size;
 };
 
-static gluster_find_mapping gluster_find_mappings[] = {
-    {"NEW ", gf_type_new, 4},
-    {"MODIFY ", gf_type_modify, 7},
-    {"RENAME ", gf_type_rename, 7},
-    {"DELETE ", gf_type_delete, 7},
-    {NULL, gf_type_none, 0}};
+static gluster_find_mapping gluster_find_mappings[]
+    = {{"NEW ", gf_type_new, 4},
+       {"MODIFY ", gf_type_modify, 7},
+       {"RENAME ", gf_type_rename, 7},
+       {"DELETE ", gf_type_delete, 7},
+       {NULL, gf_type_none, 0}};
 
 static inline struct gluster_find_mapping* find_glustermap_eventtype(
     const char* gf_entry)
@@ -319,8 +319,8 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  bareos_core_functions =
-      lbareos_core_functions; /* set Bareos funct pointers */
+  bareos_core_functions
+      = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
@@ -366,8 +366,8 @@ static bRC newPlugin(PluginContext* ctx)
   /*
    * Resize all buffers for PATH like names to GLFS_PATH_MAX.
    */
-  p_ctx->next_filename =
-      CheckPoolMemorySize(p_ctx->next_filename, GLFS_PATH_MAX);
+  p_ctx->next_filename
+      = CheckPoolMemorySize(p_ctx->next_filename, GLFS_PATH_MAX);
   p_ctx->link_target = CheckPoolMemorySize(p_ctx->link_target, GLFS_PATH_MAX);
 
   /*
@@ -670,8 +670,9 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
       /*
        * If we have a basename we should filter on that.
        */
-      if (p_ctx->basedir && !bstrncmp(p_ctx->basedir, p_ctx->next_filename,
-                                      strlen(p_ctx->basedir))) {
+      if (p_ctx->basedir
+          && !bstrncmp(p_ctx->basedir, p_ctx->next_filename,
+                       strlen(p_ctx->basedir))) {
         Dmsg(ctx, debuglevel, "gfapi-fd: next file %s not under basedir %d\n",
              p_ctx->next_filename, p_ctx->basedir);
         continue;
@@ -742,10 +743,10 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
       /*
        * Skip `.', `..', and excluded file names.
        */
-      if (entry->d_name[0] == '\0' ||
-          (entry->d_name[0] == '.' &&
-           (entry->d_name[1] == '\0' ||
-            (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))) {
+      if (entry->d_name[0] == '\0'
+          || (entry->d_name[0] == '.'
+              && (entry->d_name[1] == '\0'
+                  || (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))) {
         continue;
       }
 
@@ -761,9 +762,9 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         break;
       case S_IFLNK:
         p_ctx->type = FT_LNK;
-        status =
-            glfs_readlink(p_ctx->glfs, p_ctx->next_filename, p_ctx->link_target,
-                          SizeofPoolMemory(p_ctx->link_target));
+        status = glfs_readlink(p_ctx->glfs, p_ctx->next_filename,
+                               p_ctx->link_target,
+                               SizeofPoolMemory(p_ctx->link_target));
         if (status < 0) {
           BErrNo be;
 
@@ -856,8 +857,8 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
        * We also open the directory when it is the toplevel e.g. when
        * p_ctx->gdir == NULL.
        */
-      if (p_ctx->crawl_fs &&
-          (!p_ctx->gdir || !BitIsSet(FO_NO_RECURSION, p_ctx->flags))) {
+      if (p_ctx->crawl_fs
+          && (!p_ctx->gdir || !BitIsSet(FO_NO_RECURSION, p_ctx->flags))) {
         /*
          * Change into the directory and process all entries in it.
          */
@@ -876,8 +877,8 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
           if (p_ctx->gdir) {
             struct dir_stack_entry* new_entry;
 
-            new_entry =
-                (struct dir_stack_entry*)malloc(sizeof(struct dir_stack_entry));
+            new_entry = (struct dir_stack_entry*)malloc(
+                sizeof(struct dir_stack_entry));
             memcpy(&new_entry->statp, &p_ctx->statp, sizeof(new_entry->statp));
             new_entry->gdir = p_ctx->gdir;
             p_ctx->dir_stack->push(new_entry);
@@ -1264,8 +1265,8 @@ static inline bool GfapiMakedirs(plugin_ctx* p_ctx, const char* directory)
     *p = '\0';
   }
 
-  if (strlen(new_directory.c_str()) &&
-      glfs_stat(p_ctx->glfs, new_directory.c_str(), &st) != 0) {
+  if (strlen(new_directory.c_str())
+      && glfs_stat(p_ctx->glfs, new_directory.c_str(), &st) != 0) {
     /*
      * See if the parent exists.
      */
@@ -1595,8 +1596,8 @@ static bRC setup_backup(PluginContext* ctx, void* value)
     if (accurate) { p_ctx->is_accurate = true; }
 
     p_ctx->crawl_fs = false;
-    if ((p_ctx->file_list_handle = fopen(p_ctx->gf_file_list, "r")) ==
-        (FILE*)NULL) {
+    if ((p_ctx->file_list_handle = fopen(p_ctx->gf_file_list, "r"))
+        == (FILE*)NULL) {
       Jmsg(ctx, M_FATAL, "Failed to open %s for reading files to backup\n",
            p_ctx->gf_file_list);
       Dmsg(ctx, debuglevel, "Failed to open %s for reading files to backup\n",
@@ -1895,8 +1896,8 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
         /*
          * Set attributes if we created this directory
          */
-        if (rp->type == FT_DIREND &&
-            PathListLookup(p_ctx->path_list, rp->ofname)) {
+        if (rp->type == FT_DIREND
+            && PathListLookup(p_ctx->path_list, rp->ofname)) {
           break;
         }
         Jmsg(ctx, M_INFO, 0, _("gfapi-fd: File skipped. Already exists: %s\n"),
@@ -2034,8 +2035,8 @@ static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
   /*
    * Restore uid and gid.
    */
-  status =
-      glfs_lchown(p_ctx->glfs, rp->ofname, rp->statp.st_uid, rp->statp.st_gid);
+  status = glfs_lchown(p_ctx->glfs, rp->ofname, rp->statp.st_uid,
+                       rp->statp.st_gid);
   if (status != 0) {
     BErrNo be;
 
@@ -2091,8 +2092,8 @@ static bRC checkFile(PluginContext* ctx, char* fname)
 /**
  * Acls are saved using extended attributes.
  */
-static const char* xattr_acl_skiplist[3] = {"system.posix_acl_access",
-                                            "system.posix_acl_default", NULL};
+static const char* xattr_acl_skiplist[3]
+    = {"system.posix_acl_access", "system.posix_acl_default", NULL};
 
 static inline uint32_t serialize_acl_stream(PoolMem* buf,
                                             uint32_t expected_serialize_len,
@@ -2150,30 +2151,30 @@ static bRC getAcl(PluginContext* ctx, acl_pkt* ap)
     skip_xattr = false;
     while (1) {
       current_size = xattr_value.MaxSize();
-      xattr_value_length =
-          glfs_lgetxattr(p_ctx->glfs, ap->fname, xattr_acl_skiplist[cnt],
-                         xattr_value.c_str(), current_size);
+      xattr_value_length
+          = glfs_lgetxattr(p_ctx->glfs, ap->fname, xattr_acl_skiplist[cnt],
+                           xattr_value.c_str(), current_size);
       if (xattr_value_length < 0) {
         BErrNo be;
 
         switch (errno) {
 #if defined(ENOATTR) || defined(ENODATA)
-#if defined(ENOATTR)
+#  if defined(ENOATTR)
           case ENOATTR:
-#endif
-#if defined(ENODATA) && ENOATTR != ENODATA
+#  endif
+#  if defined(ENODATA) && ENOATTR != ENODATA
           case ENODATA:
-#endif
+#  endif
             skip_xattr = true;
             break;
 #endif
 #if defined(ENOTSUP) || defined(EOPNOTSUPP)
-#if defined(ENOTSUP)
+#  if defined(ENOTSUP)
           case ENOTSUP:
-#endif
-#if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
+#  endif
+#  if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
           case EOPNOTSUPP:
-#endif
+#  endif
             abort_retrieval = true;
             break;
 #endif
@@ -2203,8 +2204,8 @@ static bRC getAcl(PluginContext* ctx, acl_pkt* ap)
     /*
      * Serialize the data.
      */
-    expected_serialize_len =
-        strlen(xattr_acl_skiplist[cnt]) + xattr_value_length + 4;
+    expected_serialize_len
+        = strlen(xattr_acl_skiplist[cnt]) + xattr_value_length + 4;
     content_length = serialize_acl_stream(
         &serialized_acls, expected_serialize_len, content_length,
         xattr_acl_skiplist[cnt], strlen(xattr_acl_skiplist[cnt]),
@@ -2290,20 +2291,20 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
 
         switch (errno) {
 #if defined(ENOTSUP) || defined(EOPNOTSUPP)
-#if defined(ENOTSUP)
+#  if defined(ENOTSUP)
           case ENOTSUP:
-#endif
-#if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
+#  endif
+#  if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
           case EOPNOTSUPP:
-#endif
+#  endif
             return bRC_OK;
 #endif
           case ERANGE:
             /*
              * Not enough room in buffer double its size and retry.
              */
-            p_ctx->xattr_list =
-                CheckPoolMemorySize(p_ctx->xattr_list, current_size * 2);
+            p_ctx->xattr_list
+                = CheckPoolMemorySize(p_ctx->xattr_list, current_size * 2);
             continue;
           default:
             Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_llistxattr(%s) failed: %s\n",
@@ -2355,30 +2356,30 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
 
     if (!skip_xattr) {
       current_size = xattr_value.MaxSize();
-      xattr_value_length =
-          glfs_lgetxattr(p_ctx->glfs, xp->fname, p_ctx->next_xattr_name,
-                         xattr_value.c_str(), current_size);
+      xattr_value_length
+          = glfs_lgetxattr(p_ctx->glfs, xp->fname, p_ctx->next_xattr_name,
+                           xattr_value.c_str(), current_size);
       if (xattr_value_length < 0) {
         BErrNo be;
 
         switch (errno) {
 #if defined(ENOATTR) || defined(ENODATA)
-#if defined(ENOATTR)
+#  if defined(ENOATTR)
           case ENOATTR:
-#endif
-#if defined(ENODATA) && ENOATTR != ENODATA
+#  endif
+#  if defined(ENODATA) && ENOATTR != ENODATA
           case ENODATA:
-#endif
+#  endif
             skip_xattr = true;
             break;
 #endif
 #if defined(ENOTSUP) || defined(EOPNOTSUPP)
-#if defined(ENOTSUP)
+#  if defined(ENOTSUP)
           case ENOTSUP:
-#endif
-#if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
+#  endif
+#  if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
           case EOPNOTSUPP:
-#endif
+#  endif
             skip_xattr = true;
             break;
 #endif

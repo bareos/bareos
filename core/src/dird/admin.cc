@@ -123,8 +123,9 @@ void AdminCleanup(JobControlRecord* jcr, int TermCode)
          "  Bareos binary info:     %s\n"
          "  Job triggered by:       %s\n"
          "  Termination:            %s\n\n"),
-       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt, jcr->impl->jr.JobId,
-       jcr->impl->jr.Job, schedt, sdt, edt, kBareosVersionStrings.JoblogMessage,
+       kBareosVersionStrings.Full, kBareosVersionStrings.ShortDate, edt,
+       jcr->impl->jr.JobId, jcr->impl->jr.Job, schedt, sdt, edt,
+       kBareosVersionStrings.JoblogMessage,
        JobTriggerToString(jcr->impl->job_trigger).c_str(), TermMsg);
 
   Dmsg0(debuglevel, "Leave AdminCleanup()\n");

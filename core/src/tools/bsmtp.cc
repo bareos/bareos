@@ -62,11 +62,11 @@
 #define MY_NAME "bsmtp"
 
 #if defined(HAVE_WIN32)
-#include <lmcons.h>
+#  include <lmcons.h>
 #endif
 
 #ifndef MAXSTRING
-#define MAXSTRING 254
+#  define MAXSTRING 254
 #endif
 
 
@@ -197,12 +197,12 @@ static void usage()
 static long TzOffset(time_t lnow, struct tm& tm)
 {
 #if defined(HAVE_WIN32)
-#if defined(HAVE_MINGW)
+#  if defined(HAVE_MINGW)
   __MINGW_IMPORT long _dstbias;
-#endif
-#if defined(MINGW64)
-#define _tzset tzset
-#endif
+#  endif
+#  if defined(MINGW64)
+#    define _tzset tzset
+#  endif
   /* Win32 code */
   long offset;
   _tzset();
@@ -445,11 +445,11 @@ lookup_host:
     case RESOLV_PROTO_IPV4:
       hints.ai_family = AF_INET;
       break;
-#ifdef HAVE_IPV6
+#  ifdef HAVE_IPV6
     case RESOLV_PROTO_IPV6:
       hints.ai_family = AF_INET6;
       break;
-#endif
+#  endif
     default:
       hints.ai_family = AF_UNSPEC;
       break;
@@ -471,11 +471,11 @@ lookup_host:
   }
 
   for (rp = ai; rp != NULL; rp = rp->ai_next) {
-#if defined(HAVE_WIN32)
+#  if defined(HAVE_WIN32)
     s = WSASocket(rp->ai_family, rp->ai_socktype, rp->ai_protocol, NULL, 0, 0);
-#else
+#  else
     s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-#endif
+#  endif
     if (s < 0) { continue; }
 
     if (connect(s, rp->ai_addr, rp->ai_addrlen) != -1) { break; }
@@ -510,17 +510,17 @@ lookup_host:
   memcpy((char*)&sin.sin_addr, hp->h_addr, hp->h_length);
   sin.sin_family = hp->h_addrtype;
   sin.sin_port = htons(mailport);
-#if defined(HAVE_WIN32)
+#  if defined(HAVE_WIN32)
   if ((s = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, 0)) < 0) {
     Pmsg1(0, _("Fatal socket error: ERR=%s\n"), strerror(errno));
     exit(1);
   }
-#else
+#  else
   if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     Pmsg1(0, _("Fatal socket error: ERR=%s\n"), strerror(errno));
     exit(1);
   }
-#endif
+#  endif
   if (connect(s, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
     Pmsg2(0, _("Fatal connect error to %s: ERR=%s\n"), mailhost,
           strerror(errno));

@@ -534,8 +534,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
         BuildAttrOutputFnames(jcr, attr);
 
-        if (attr->type ==
-            FT_DELETED) { /* TODO: choose the right fname/ofname */
+        if (attr->type
+            == FT_DELETED) { /* TODO: choose the right fname/ofname */
           Jmsg(jcr, M_INFO, 0, _("%s was deleted.\n"), attr->fname);
           extract = false;
           return true;
@@ -606,8 +606,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_SPARSE_COMPRESSED_DATA:
     case STREAM_WIN32_COMPRESSED_DATA:
       if (extract) {
-        if (rec->maskedStream == STREAM_SPARSE_GZIP_DATA ||
-            rec->maskedStream == STREAM_SPARSE_COMPRESSED_DATA) {
+        if (rec->maskedStream == STREAM_SPARSE_GZIP_DATA
+            || rec->maskedStream == STREAM_SPARSE_COMPRESSED_DATA) {
           ser_declare;
           uint64_t faddr;
           char ec1[50];

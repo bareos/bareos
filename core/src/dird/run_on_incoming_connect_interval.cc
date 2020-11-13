@@ -106,11 +106,11 @@ void RunOnIncomingConnectInterval::RunJobIfIntervalExceeded(
     auto timepoint_now = system_clock::now();
     auto timepoint_last_start = system_clock::from_time_t(last_start_time);
 
-    auto diff_seconds =
-        duration_cast<seconds>(timepoint_now - timepoint_last_start).count();
+    auto diff_seconds
+        = duration_cast<seconds>(timepoint_now - timepoint_last_start).count();
 
-    auto maximum_interval_seconds =
-        seconds(job->RunOnIncomingConnectInterval).count();
+    auto maximum_interval_seconds
+        = seconds(job->RunOnIncomingConnectInterval).count();
 
     interval_time_exceeded = diff_seconds > maximum_interval_seconds;
   }
@@ -123,8 +123,8 @@ void RunOnIncomingConnectInterval::RunJobIfIntervalExceeded(
 
 void RunOnIncomingConnectInterval::Run()
 {
-  std::vector<JobResource*> job_resources =
-      GetAllJobResourcesByClientName(client_name_);
+  std::vector<JobResource*> job_resources
+      = GetAllJobResourcesByClientName(client_name_);
 
   if (job_resources.empty()) { return; }
 

@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #include "include/version_numbers.h"
@@ -260,9 +260,9 @@ TEST(Util, version_number_major_minor)
 TEST(Filedaemon, evaluate_jobcommand_from_18_2_test)
 {
   /* command with ssl argument */
-  static const char jobcmd_kVersionFrom_18_2[] =
-      "JobId=111 Job=FirstJob SDid=222 SDtime=333 Authorization=SecretOne "
-      "ssl=4\n";
+  static const char jobcmd_kVersionFrom_18_2[]
+      = "JobId=111 Job=FirstJob SDid=222 SDtime=333 Authorization=SecretOne "
+        "ssl=4\n";
 
   filedaemon::JobCommand eval(jobcmd_kVersionFrom_18_2);
 
@@ -280,8 +280,8 @@ TEST(Filedaemon, evaluate_jobcommand_from_18_2_test)
 TEST(Filedaemon, evaluate_jobcommand_before_18_2_test)
 {
   /* command without ssl argument */
-  static char jobcmdssl_KVersionBefore_18_2[] =
-      "JobId=123 Job=SecondJob SDid=456 SDtime=789 Authorization=SecretTwo";
+  static char jobcmdssl_KVersionBefore_18_2[]
+      = "JobId=123 Job=SecondJob SDid=456 SDtime=789 Authorization=SecretTwo";
 
   filedaemon::JobCommand eval(jobcmdssl_KVersionBefore_18_2);
 

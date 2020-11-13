@@ -92,8 +92,9 @@ bool DotAuthorizedCmd(UaContext* ua, const char* cmd)
   for (int i = 1; i < ua->argc; i++) {
     for (int j = 0; authorization_mappings[j].type; j++) {
       if (Bstrcasecmp(ua->argk[i], authorization_mappings[j].type)) {
-        if (ua->argv[i] && ua->AclAccessOk(authorization_mappings[j].acl_type,
-                                           ua->argv[i], false)) {
+        if (ua->argv[i]
+            && ua->AclAccessOk(authorization_mappings[j].acl_type, ua->argv[i],
+                               false)) {
           retval = true;
         } else {
           retval = false;
@@ -255,9 +256,9 @@ static inline bool BvfsParseArgVersion(UaContext* ua,
   *copies = false;
 
   for (int i = 1; i < ua->argc; i++) {
-    if (Bstrcasecmp(ua->argk[i], NT_("name")) ||
-        Bstrcasecmp(ua->argk[i], NT_("fname")) ||
-        Bstrcasecmp(ua->argk[i], NT_("filename"))) {
+    if (Bstrcasecmp(ua->argk[i], NT_("name"))
+        || Bstrcasecmp(ua->argk[i], NT_("fname"))
+        || Bstrcasecmp(ua->argk[i], NT_("filename"))) {
       *fname = ua->argv[i];
     }
 
@@ -798,8 +799,8 @@ bool DotAdminCmds(UaContext* ua, const char* cmd)
    * General debug?
    */
   for (i = 1; i < ua->argc; i++) {
-    if (Bstrcasecmp(ua->argk[i], "dir") ||
-        Bstrcasecmp(ua->argk[i], "director")) {
+    if (Bstrcasecmp(ua->argk[i], "dir")
+        || Bstrcasecmp(ua->argk[i], "director")) {
       dir = true;
     }
     if (Bstrcasecmp(ua->argk[i], "client") || Bstrcasecmp(ua->argk[i], "fd")) {
@@ -808,9 +809,9 @@ bool DotAdminCmds(UaContext* ua, const char* cmd)
       if (!client) { client = select_client_resource(ua); }
     }
 
-    if (Bstrcasecmp(ua->argk[i], NT_("store")) ||
-        Bstrcasecmp(ua->argk[i], NT_("storage")) ||
-        Bstrcasecmp(ua->argk[i], NT_("sd"))) {
+    if (Bstrcasecmp(ua->argk[i], NT_("store"))
+        || Bstrcasecmp(ua->argk[i], NT_("storage"))
+        || Bstrcasecmp(ua->argk[i], NT_("sd"))) {
       store = NULL;
       if (ua->argv[i]) { store = ua->GetStoreResWithName(ua->argv[i]); }
       if (!store) { store = get_storage_resource(ua); }
@@ -966,8 +967,8 @@ bool DotJobstatusCmd(UaContext* ua, const char* cmd)
   if (!OpenClientDb(ua)) { return false; }
 
   ua->send->ArrayStart("jobstatus");
-  retval =
-      ua->db->ListSqlQuery(ua->jcr, select.c_str(), ua->send, HORZ_LIST, false);
+  retval = ua->db->ListSqlQuery(ua->jcr, select.c_str(), ua->send, HORZ_LIST,
+                                false);
   ua->send->ArrayEnd("jobstatus");
 
   return retval;
@@ -1206,12 +1207,12 @@ bool DotApiCmd(UaContext* ua, const char* cmd)
     if (Bstrcasecmp(ua->argk[1], "off") || Bstrcasecmp(ua->argk[1], "0")) {
       ua->api = API_MODE_OFF;
       ua->batch = false;
-    } else if (Bstrcasecmp(ua->argk[1], "on") ||
-               Bstrcasecmp(ua->argk[1], "1")) {
+    } else if (Bstrcasecmp(ua->argk[1], "on")
+               || Bstrcasecmp(ua->argk[1], "1")) {
       ua->api = API_MODE_ON;
       ua->batch = false;
-    } else if (Bstrcasecmp(ua->argk[1], "json") ||
-               Bstrcasecmp(ua->argk[1], "2")) {
+    } else if (Bstrcasecmp(ua->argk[1], "json")
+               || Bstrcasecmp(ua->argk[1], "2")) {
       ua->api = API_MODE_JSON;
       ua->batch = true;
       if ((ua->argc == 3) && (FindArgWithValue(ua, "compact") == 2)) {
@@ -1410,8 +1411,8 @@ bool DotLevelsCmd(UaContext* ua, const char* cmd)
     }
 
     for (int i = 0; joblevels[i].level_name; i++) {
-      if ((joblevels[i].job_type == jobtype) &&
-          (joblevels[i].level_name[0] != ' ')) {
+      if ((joblevels[i].job_type == jobtype)
+          && (joblevels[i].level_name[0] != ' ')) {
         ua->send->ObjectStart();
         ua->send->ObjectKeyValue("name", joblevels[i].level_name, "%s\n");
         ua->send->ObjectKeyValue("level", joblevels[i].level);

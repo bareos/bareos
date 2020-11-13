@@ -35,7 +35,7 @@
 #include "dird/next_vol.h"
 
 #if HAVE_NDMP
-#include "ndmp/ndmagents.h"
+#  include "ndmp/ndmagents.h"
 #endif
 
 #include "dird/ndmp_dma_storage.h"
@@ -261,8 +261,8 @@ bool SendLabelRequest(UaContext* ua,
     case APT_NDMPV2:
     case APT_NDMPV3:
     case APT_NDMPV4:
-      retval =
-          NdmpSendLabelRequest(ua, store, mr, omr, pr, relabel, drive, slot);
+      retval
+          = NdmpSendLabelRequest(ua, store, mr, omr, pr, relabel, drive, slot);
       break;
     default:
       retval = false;
@@ -360,9 +360,9 @@ static void label_from_barcodes(UaContext* ua,
     ua->SendMsg("%4d  %s\n", vl->bareos_slot_number, vl->VolName);
   }
 
-  if (!yes &&
-      (!GetYesno(ua, _("Do you want to label these Volumes? (yes|no): ")) ||
-       !ua->pint32_val)) {
+  if (!yes
+      && (!GetYesno(ua, _("Do you want to label these Volumes? (yes|no): "))
+          || !ua->pint32_val)) {
     goto bail_out;
   }
 
@@ -555,8 +555,8 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
      * Require Volume to be Purged or Recycled
      */
   checkVol:
-    if (!bstrcmp(omr.VolStatus, "Purged") &&
-        !bstrcmp(omr.VolStatus, "Recycle")) {
+    if (!bstrcmp(omr.VolStatus, "Purged")
+        && !bstrcmp(omr.VolStatus, "Recycle")) {
       ua->ErrorMsg(_("Volume \"%s\" has VolStatus %s. It must be Purged or "
                      "Recycled before relabeling.\n"),
                    omr.VolumeName, omr.VolStatus);
@@ -686,8 +686,8 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
          *  3906 is cannot mount non-tape
          * So for those, no need to print a reminder
          */
-        if (bstrncmp(sd->msg, "3001 ", 5) || bstrncmp(sd->msg, "3002 ", 5) ||
-            bstrncmp(sd->msg, "3906 ", 5)) {
+        if (bstrncmp(sd->msg, "3001 ", 5) || bstrncmp(sd->msg, "3002 ", 5)
+            || bstrncmp(sd->msg, "3906 ", 5)) {
           print_reminder = false;
         }
       }

@@ -40,10 +40,10 @@ class RunOnIncomingConnectInterval {
   ~RunOnIncomingConnectInterval() = default;
   RunOnIncomingConnectInterval(const RunOnIncomingConnectInterval&) = delete;
   RunOnIncomingConnectInterval(RunOnIncomingConnectInterval&&) = delete;
-  RunOnIncomingConnectInterval operator=(const RunOnIncomingConnectInterval&) =
-      delete;
-  RunOnIncomingConnectInterval operator=(RunOnIncomingConnectInterval&&) =
-      delete;
+  RunOnIncomingConnectInterval operator=(const RunOnIncomingConnectInterval&)
+      = delete;
+  RunOnIncomingConnectInterval operator=(RunOnIncomingConnectInterval&&)
+      = delete;
 
   void Run();
 

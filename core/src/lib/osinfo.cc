@@ -22,7 +22,4 @@
 #include "include/config.h"
 #include "osinfo.h"
 
-const char* GetOsInfoString()
-{
-  return DISTVER;
-}
+const char* GetOsInfoString() { return DISTVER; }

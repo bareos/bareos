@@ -62,9 +62,9 @@ typedef void(JCR_free_HANDLER)(JobControlRecord* jcr);
 #define JobTerminatedSuccessfully(jcr) \
   (jcr->JobStatus == JS_Terminated || jcr->JobStatus == JS_Warnings)
 
-#define JobCanceled(jcr)                                                    \
-  (jcr->JobStatus == JS_Canceled || jcr->JobStatus == JS_ErrorTerminated || \
-   jcr->JobStatus == JS_FatalError)
+#define JobCanceled(jcr)                                                 \
+  (jcr->JobStatus == JS_Canceled || jcr->JobStatus == JS_ErrorTerminated \
+   || jcr->JobStatus == JS_FatalError)
 
 #define foreach_jcr(jcr) \
   for (jcr = jcr_walk_start(); jcr; (jcr = jcr_walk_next(jcr)))

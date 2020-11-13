@@ -34,20 +34,20 @@
  * Loop var through each member of table
  */
 #ifdef HAVE_TYPEOF
-#define foreach_htable(var, tbl)                     \
-  for ((var) = (typeof(var))((tbl)->first()); (var); \
-       (var) = (typeof(var))((tbl)->next()))
+#  define foreach_htable(var, tbl)                     \
+    for ((var) = (typeof(var))((tbl)->first()); (var); \
+         (var) = (typeof(var))((tbl)->next()))
 #else
-#define foreach_htable(var, tbl)                             \
-  for ((*((void**)&(var)) = (void*)((tbl)->first())); (var); \
-       (*((void**)&(var)) = (void*)((tbl)->next())))
+#  define foreach_htable(var, tbl)                             \
+    for ((*((void**)&(var)) = (void*)((tbl)->first())); (var); \
+         (*((void**)&(var)) = (void*)((tbl)->next())))
 #endif
 
 
 #include "include/config.h"
 
 #ifdef HAVE_HPUX_OS
-#pragma pack(push, 4)
+#  pragma pack(push, 4)
 #endif
 
 typedef enum
@@ -81,7 +81,7 @@ struct h_mem {
 };
 
 #ifdef HAVE_HPUX_OS
-#pragma pack(pop)
+#  pragma pack(pop)
 #endif
 
 class htable {
@@ -90,8 +90,8 @@ class htable {
   hlink* walkptr = nullptr; /* Table walk pointer */
   uint64_t hash = 0;        /* Temp storage */
   uint64_t total_size = 0;  /* Total bytes malloced */
-  uint32_t extend_length =
-      0; /* Number of bytes to allocate when extending buffer */
+  uint32_t extend_length
+      = 0; /* Number of bytes to allocate when extending buffer */
   uint32_t walk_index = 0;           /* Table walk index */
   uint32_t num_items = 0;            /* Current number of items */
   uint32_t max_items = 0;            /* Maximum items before growing */

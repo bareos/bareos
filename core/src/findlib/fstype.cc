@@ -37,11 +37,11 @@
  *
  * bool fstype(const char *fname, char *fs, int fslen);
  */
-#if defined(HAVE_DARWIN_OS) || defined(HAVE_FREEBSD_OS) || \
-    defined(HAVE_OPENBSD_OS)
+#if defined(HAVE_DARWIN_OS) || defined(HAVE_FREEBSD_OS) \
+    || defined(HAVE_OPENBSD_OS)
 
-#include <sys/param.h>
-#include <sys/mount.h>
+#  include <sys/param.h>
+#  include <sys/mount.h>
 
 bool fstype(const char* fname, char* fs, int fslen)
 {
@@ -57,13 +57,13 @@ bool fstype(const char* fname, char* fs, int fslen)
 }
 
 #elif defined(HAVE_NETBSD_OS)
-#include <sys/param.h>
-#include <sys/mount.h>
-#ifdef HAVE_SYS_STATVFS_H
-#include <sys/statvfs.h>
-#else
-#define statvfs statfs
-#endif
+#  include <sys/param.h>
+#  include <sys/mount.h>
+#  ifdef HAVE_SYS_STATVFS_H
+#    include <sys/statvfs.h>
+#  else
+#    define statvfs statfs
+#  endif
 
 bool fstype(const char* fname, char* fs, int fslen)
 {
@@ -80,8 +80,8 @@ bool fstype(const char* fname, char* fs, int fslen)
 
 #elif defined(HAVE_HPUX_OS) || defined(HAVE_IRIX_OS)
 
-#include <sys/types.h>
-#include <sys/statvfs.h>
+#  include <sys/types.h>
+#  include <sys/statvfs.h>
 
 bool fstype(const char* fname, char* fs, int fslen)
 {
@@ -98,8 +98,8 @@ bool fstype(const char* fname, char* fs, int fslen)
 
 #elif defined(HAVE_LINUX_OS) || defined(HAVE_OSF1_OS)
 
-#include <sys/stat.h>
-#include "lib/mntent_cache.h"
+#  include <sys/stat.h>
+#  include "lib/mntent_cache.h"
 
 bool fstype(const char* fname, char* fs, int fslen)
 {
@@ -121,8 +121,8 @@ bool fstype(const char* fname, char* fs, int fslen)
 
 #elif defined(HAVE_SUN_OS)
 
-#include <sys/types.h>
-#include <sys/stat.h>
+#  include <sys/types.h>
+#  include <sys/stat.h>
 
 bool fstype(const char* fname, char* fs, int fslen)
 {

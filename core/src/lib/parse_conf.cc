@@ -68,9 +68,9 @@
 #include <algorithm>
 
 #if defined(HAVE_WIN32)
-#include "shlobj.h"
+#  include "shlobj.h"
 #else
-#define MAX_PATH 1024
+#  define MAX_PATH 1024
 #endif
 
 bool PrintMessage(void* sock, const char* fmt, ...)
@@ -142,8 +142,8 @@ ConfigurationParser::ConfigurationParser(
   r_last_ = r_last;
   resources_ = resources;
   res_head_ = res_head;
-  config_default_filename_ =
-      config_default_filename == nullptr ? "" : config_default_filename;
+  config_default_filename_
+      = config_default_filename == nullptr ? "" : config_default_filename;
   config_include_dir_ = config_include_dir == nullptr ? "" : config_include_dir;
   ParseConfigBeforeCb_ = ParseConfigBeforeCb;
   ParseConfigReadyCb_ = ParseConfigReadyCb;
@@ -208,8 +208,8 @@ bool ConfigurationParser::ParseConfig()
   }
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
-  bool success =
-      ParseConfigFile(config_path.c_str(), nullptr, scan_error_, scan_warning_);
+  bool success = ParseConfigFile(config_path.c_str(), nullptr, scan_error_,
+                                 scan_warning_);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
   return success;
 }
@@ -555,8 +555,8 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
 BareosResource** ConfigurationParser::SaveResources()
 {
   int num = r_last_ - r_first_ + 1;
-  BareosResource** res =
-      (BareosResource**)malloc(num * sizeof(BareosResource*));
+  BareosResource** res
+      = (BareosResource**)malloc(num * sizeof(BareosResource*));
 
   for (int i = 0; i < num; i++) {
     res[i] = res_head_[i];

@@ -40,10 +40,10 @@
  * we can compile also against an lower version if we define it ourselves.
  */
 #if JANSSON_VERSION_HEX < 0x020500
-#define json_array_foreach(array, index, value)           \
-  for (index = 0; index < json_array_size(array) &&       \
-                  (value = json_array_get(array, index)); \
-       index++)
+#  define json_array_foreach(array, index, value)              \
+    for (index = 0; index < json_array_size(array)             \
+                    && (value = json_array_get(array, index)); \
+         index++)
 #endif
 
 #include <vixDiskLib.h>
@@ -95,16 +95,16 @@ struct disk_type {
   VixDiskLibDiskType vadp_type;
 };
 
-static struct disk_type disk_types[] = {
-    {"monolithic_sparse", VIXDISKLIB_DISK_MONOLITHIC_SPARSE},
-    {"monolithic_flat", VIXDISKLIB_DISK_MONOLITHIC_FLAT},
-    {"split_sparse", VIXDISKLIB_DISK_SPLIT_SPARSE},
-    {"split_flat", VIXDISKLIB_DISK_SPLIT_FLAT},
-    {"vmfs_flat", VIXDISKLIB_DISK_VMFS_FLAT},
-    {"optimized", VIXDISKLIB_DISK_STREAM_OPTIMIZED},
-    {"vmfs_thin", VIXDISKLIB_DISK_VMFS_THIN},
-    {"vmfs_sparse", VIXDISKLIB_DISK_VMFS_SPARSE},
-    {NULL, VIXDISKLIB_DISK_UNKNOWN}};
+static struct disk_type disk_types[]
+    = {{"monolithic_sparse", VIXDISKLIB_DISK_MONOLITHIC_SPARSE},
+       {"monolithic_flat", VIXDISKLIB_DISK_MONOLITHIC_FLAT},
+       {"split_sparse", VIXDISKLIB_DISK_SPLIT_SPARSE},
+       {"split_flat", VIXDISKLIB_DISK_SPLIT_FLAT},
+       {"vmfs_flat", VIXDISKLIB_DISK_VMFS_FLAT},
+       {"optimized", VIXDISKLIB_DISK_STREAM_OPTIMIZED},
+       {"vmfs_thin", VIXDISKLIB_DISK_VMFS_THIN},
+       {"vmfs_sparse", VIXDISKLIB_DISK_VMFS_SPARSE},
+       {NULL, VIXDISKLIB_DISK_UNKNOWN}};
 
 /*
  * Generic identification structure, 128 bytes with padding.
@@ -239,8 +239,8 @@ static inline void dump_runtime_disk_info_encoding(
 static inline char validate_runtime_disk_info_encoding(
     struct runtime_disk_info_encoding* rdie)
 {
-  if (info->biosGeo.cylinders > 0 &&
-      info->biosGeo.cylinders < rdie->bios_cylinders) {
+  if (info->biosGeo.cylinders > 0
+      && info->biosGeo.cylinders < rdie->bios_cylinders) {
     fprintf(stderr,
             "[validate_runtime_disk_info_encoding] New disk has %u BIOS "
             "cylinders original had %u\n",
@@ -256,8 +256,8 @@ static inline char validate_runtime_disk_info_encoding(
     goto bail_out;
   }
 
-  if (info->biosGeo.cylinders > 0 &&
-      info->biosGeo.cylinders < rdie->bios_cylinders) {
+  if (info->biosGeo.cylinders > 0
+      && info->biosGeo.cylinders < rdie->bios_cylinders) {
     fprintf(stderr,
             "[validate_runtime_disk_info_encoding] New disk has %u BIOS "
             "sectors original had %u\n",
@@ -988,8 +988,8 @@ static inline bool read_meta_data_key(char* key)
     return false;
   }
 
-  err =
-      VixDiskLib_ReadMetadata(read_diskHandle, key, buffer, requiredLen, NULL);
+  err = VixDiskLib_ReadMetadata(read_diskHandle, key, buffer, requiredLen,
+                                NULL);
   if (VIX_FAILED(err)) {
     char* error_txt;
 
@@ -1030,14 +1030,14 @@ static inline bool read_meta_data_key(char* key)
     goto bail_out;
   }
 
-  if (robust_writer(STDOUT_FILENO, key, rmde.meta_key_length) !=
-      rmde.meta_key_length) {
+  if (robust_writer(STDOUT_FILENO, key, rmde.meta_key_length)
+      != rmde.meta_key_length) {
     fprintf(stderr, "Failed to write meta data key to output datastream\n");
     goto bail_out;
   }
 
-  if (robust_writer(STDOUT_FILENO, buffer, rmde.meta_data_length) !=
-      rmde.meta_data_length) {
+  if (robust_writer(STDOUT_FILENO, buffer, rmde.meta_data_length)
+      != rmde.meta_data_length) {
     fprintf(stderr, "Failed to write meta data to output datastream\n");
     goto bail_out;
   }
@@ -1078,8 +1078,8 @@ static inline bool save_meta_data()
       return false;
     }
 
-    err =
-        VixDiskLib_GetMetadataKeys(read_diskHandle, buffer, requiredLen, NULL);
+    err = VixDiskLib_GetMetadataKeys(read_diskHandle, buffer, requiredLen,
+                                     NULL);
     if (VIX_FAILED(err)) {
       char* error_txt;
 
@@ -1168,8 +1168,8 @@ static inline bool process_meta_data(bool validate_only)
       goto bail_out;
     }
 
-    if (robust_reader(STDIN_FILENO, key, rmde.meta_key_length) !=
-        rmde.meta_key_length) {
+    if (robust_reader(STDIN_FILENO, key, rmde.meta_key_length)
+        != rmde.meta_key_length) {
       fprintf(stderr, "Failed to read meta data key from input datastream\n");
       goto bail_out;
     }
@@ -1181,8 +1181,8 @@ static inline bool process_meta_data(bool validate_only)
       goto bail_out;
     }
 
-    if (robust_reader(STDIN_FILENO, buffer, rmde.meta_data_length) !=
-        rmde.meta_data_length) {
+    if (robust_reader(STDIN_FILENO, buffer, rmde.meta_data_length)
+        != rmde.meta_data_length) {
       fprintf(stderr, "Failed to read meta data from input datastream\n");
       goto bail_out;
     }
@@ -1305,8 +1305,8 @@ static inline bool process_cbt(const char* key, json_t* cbt)
        * of sectors still available in this CBT range or the upper setting
        * specified in the sectors_per_call variable.
        */
-      sectors_to_read =
-          MIN(sectors_per_call, (offset_length / DEFAULT_SECTOR_SIZE));
+      sectors_to_read
+          = MIN(sectors_per_call, (offset_length / DEFAULT_SECTOR_SIZE));
 
       if (multi_threaded) {
         if (!send_to_copy_thread(sector_offset,
@@ -1315,14 +1315,15 @@ static inline bool process_cbt(const char* key, json_t* cbt)
         }
       } else {
         if (read_from_vmdk(sector_offset, sectors_to_read * DEFAULT_SECTOR_SIZE,
-                           buf) != sectors_to_read * DEFAULT_SECTOR_SIZE) {
+                           buf)
+            != sectors_to_read * DEFAULT_SECTOR_SIZE) {
           fprintf(stderr, "Read error on VMDK\n");
           goto bail_out;
         }
 
         if (write_to_stream(sector_offset,
-                            sectors_to_read * DEFAULT_SECTOR_SIZE,
-                            buf) != sectors_to_read * DEFAULT_SECTOR_SIZE) {
+                            sectors_to_read * DEFAULT_SECTOR_SIZE, buf)
+            != sectors_to_read * DEFAULT_SECTOR_SIZE) {
           fprintf(stderr, "Failed to write data to output datastream\n");
           goto bail_out;
         }
@@ -1435,8 +1436,8 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
        * of sectors still available in this CBT range or the upper setting
        * specified in the sectors_per_call variable.
        */
-      sectors_to_read =
-          MIN(sectors_per_call, (rce.offset_length / DEFAULT_SECTOR_SIZE));
+      sectors_to_read
+          = MIN(sectors_per_call, (rce.offset_length / DEFAULT_SECTOR_SIZE));
 
       if (!validate_only && multi_threaded) {
         if (!send_to_copy_thread(sector_offset,

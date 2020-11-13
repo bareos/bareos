@@ -163,8 +163,8 @@ void ReadContextSetRecord(DeviceControlRecord* dcr, READ_CTX* rctx)
   bool found = false;
 
   foreach_dlist (rec, rctx->recs) {
-    if (rec->VolSessionId == dcr->block->VolSessionId &&
-        rec->VolSessionTime == dcr->block->VolSessionTime) {
+    if (rec->VolSessionId == dcr->block->VolSessionId
+        && rec->VolSessionTime == dcr->block->VolSessionTime) {
       found = true;
       break;
     }
@@ -334,8 +334,8 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
         /*
          * We just check block FI and FT not FileIndex
          */
-        rec->match_stat =
-            MatchBsrBlock(jcr->impl->read_session.bsr, dcr->block);
+        rec->match_stat
+            = MatchBsrBlock(jcr->impl->read_session.bsr, dcr->block);
       } else {
         rec->match_stat = 0;
       }
@@ -377,10 +377,10 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
       return false; /* read second part of record */
     }
 
-    if (rctx->lastFileIndex != READ_NO_FILEINDEX &&
-        rctx->lastFileIndex != rec->FileIndex) {
-      if (IsThisBsrDone(jcr->impl->read_session.bsr, rec) &&
-          TryDeviceRepositioning(jcr, rec, dcr)) {
+    if (rctx->lastFileIndex != READ_NO_FILEINDEX
+        && rctx->lastFileIndex != rec->FileIndex) {
+      if (IsThisBsrDone(jcr->impl->read_session.bsr, rec)
+          && TryDeviceRepositioning(jcr, rec, dcr)) {
         Dmsg2(debuglevel, "This bsr done, break pos %u:%u\n", dev->file,
               dev->block_num);
         return false;
@@ -434,8 +434,8 @@ bool ReadRecords(DeviceControlRecord* dcr,
      * Get a new record for each Job as defined by VolSessionId and
      * VolSessionTime
      */
-    if (!rctx->rec || rctx->rec->VolSessionId != dcr->block->VolSessionId ||
-        rctx->rec->VolSessionTime != dcr->block->VolSessionTime) {
+    if (!rctx->rec || rctx->rec->VolSessionId != dcr->block->VolSessionId
+        || rctx->rec->VolSessionTime != dcr->block->VolSessionTime) {
       ReadContextSetRecord(dcr, rctx);
     }
 
@@ -482,8 +482,8 @@ bool ReadRecords(DeviceControlRecord* dcr,
          * GeneratePluginEvent() the reverse argument so it knows that we want
          * the plugins to be called in that order.
          */
-        if (GeneratePluginEvent(jcr, bSdEventReadRecordTranslation, dcr,
-                                true) != bRC_OK) {
+        if (GeneratePluginEvent(jcr, bSdEventReadRecordTranslation, dcr, true)
+            != bRC_OK) {
           ok = false;
           continue;
         }

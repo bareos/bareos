@@ -30,9 +30,9 @@
 #include "include/bareos.h"
 
 #ifndef HAVE_REGEX_H
-#include "lib/bregex.h"
+#  include "lib/bregex.h"
 #else
-#include <regex.h>
+#  include <regex.h>
 #endif
 
 

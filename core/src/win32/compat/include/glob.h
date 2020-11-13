@@ -41,8 +41,8 @@
 /* POSIX requires glob.h to define the size_t type; we need to
  * get this from GCC, just as sys/types.h does.
  */
-#define __need_size_t
-#include <stddef.h>
+#  define __need_size_t
+#  include <stddef.h>
 
 typedef struct glob_t { /* The structure, in which glob() returns the list of
                          * file system entities which it has matched.
@@ -56,7 +56,7 @@ typedef struct glob_t { /* The structure, in which glob() returns the list of
 /* A macro to facilitate definition of the flags which are used to
  * control the operation of glob().
  */
-#define __GLOB_FLAG__(NAME) (1 << __GLOB_##NAME##_OFFSET)
+#  define __GLOB_FLAG__(NAME) (1 << __GLOB_##NAME##_OFFSET)
 enum
 {
   /* Identify the zero-based offset values which are used to specify
@@ -111,17 +111,17 @@ enum
 
 /* Definitions of the mandatory flags, as specified by POSIX.
  */
-#define GLOB_APPEND __GLOB_FLAG__(APPEND)
-#define GLOB_DOOFFS __GLOB_FLAG__(DOOFFS)
-#define GLOB_ERR __GLOB_FLAG__(ERR)
-#define GLOB_MARK __GLOB_FLAG__(MARK)
-#define GLOB_NOCHECK __GLOB_FLAG__(NOCHECK)
-#define GLOB_NOESCAPE __GLOB_FLAG__(NOESCAPE)
-#define GLOB_NOSORT __GLOB_FLAG__(NOSORT)
+#  define GLOB_APPEND __GLOB_FLAG__(APPEND)
+#  define GLOB_DOOFFS __GLOB_FLAG__(DOOFFS)
+#  define GLOB_ERR __GLOB_FLAG__(ERR)
+#  define GLOB_MARK __GLOB_FLAG__(MARK)
+#  define GLOB_NOCHECK __GLOB_FLAG__(NOCHECK)
+#  define GLOB_NOESCAPE __GLOB_FLAG__(NOESCAPE)
+#  define GLOB_NOSORT __GLOB_FLAG__(NOSORT)
 
 /* Additional flags definitions, for MinGW specific extensions.
  */
-#define GLOB_CASEMATCH __GLOB_FLAG__(CASEMATCH)
+#  define GLOB_CASEMATCH __GLOB_FLAG__(CASEMATCH)
 
 // BEGIN_C_DECLS
 /*
@@ -139,7 +139,7 @@ void __mingw_globfree(glob_t*);
 /* ...to which the standard names are then mapped as aliases,
  * via inline function expansion.
  */
-#define GLOB_INLINE static __inline__ __attribute__((__always_inline__))
+#  define GLOB_INLINE static __inline__ __attribute__((__always_inline__))
 
 GLOB_INLINE int glob(const char* __pattern,
                      int __flags,
@@ -156,10 +156,10 @@ GLOB_INLINE void globfree(glob_t* __data) { return __mingw_globfree(__data); }
 /* Manifest definitions for the possible status values
  * which glob() may return.
  */
-#define GLOB_SUCCESS (0)
-#define GLOB_ABORTED (1)
-#define GLOB_NOMATCH (2)
-#define GLOB_NOSPACE (3)
+#  define GLOB_SUCCESS (0)
+#  define GLOB_ABORTED (1)
+#  define GLOB_NOMATCH (2)
+#  define GLOB_NOSPACE (3)
 
 #endif /* ! RC_INVOKED */
 #endif /* ! defined _GLOB_H */

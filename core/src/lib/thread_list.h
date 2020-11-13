@@ -35,8 +35,8 @@ class ThreadList {
   ThreadList();
   ~ThreadList();
 
-  using ThreadHandler =
-      std::function<void*(ConfigurationParser* config, void* data)>;
+  using ThreadHandler
+      = std::function<void*(ConfigurationParser* config, void* data)>;
   using ShutdownCallback = std::function<void*(void* data)>;
 
   void Init(int maximum_thread_count,

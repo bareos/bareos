@@ -21,27 +21,27 @@
 
 #include "include/bareos.h"
 #if defined(HAVE_PCREPOSIX)
-#include <pcreposix.h>
+#  include <pcreposix.h>
 #elif defined(HAVE_WIN32)
-#include "bregex.h"
+#  include "bregex.h"
 #else
-#include <regex.h>
+#  include <regex.h>
 #endif
 #include "var.h"
 
 /* support for OSSP ex based exception throwing */
 #ifdef WITH_EX
-#include "ex.h"
-#define VAR_RC(rv)                                  \
-  ((rv) != VAR_OK && (ex_catching && !ex_shielding) \
-       ? (ex_throw(var_id, NULL, (rv)), (rv))       \
-       : (rv))
+#  include "ex.h"
+#  define VAR_RC(rv)                                  \
+    ((rv) != VAR_OK && (ex_catching && !ex_shielding) \
+         ? (ex_throw(var_id, NULL, (rv)), (rv))       \
+         : (rv))
 #else
-#define VAR_RC(rv) (rv)
+#  define VAR_RC(rv) (rv)
 #endif /* WITH_EX */
 
 #ifndef EOS
-#define EOS '\0'
+#  define EOS '\0'
 #endif
 
 /*
@@ -289,8 +289,9 @@ static int tokenbuf_append(tokenbuf_t* output, const char* data, int len)
   /* Is the tokenbuffer initialized at all? If not, allocate a
      standard-sized buffer to begin with. */
   if (output->begin == NULL) {
-    if ((output->begin = output->end =
-             (const char*)malloc(TOKENBUF_INITIAL_BUFSIZE)) == NULL)
+    if ((output->begin = output->end
+         = (const char*)malloc(TOKENBUF_INITIAL_BUFSIZE))
+        == NULL)
       return 0;
     output->buffer_size = TOKENBUF_INITIAL_BUFSIZE;
   }
@@ -402,8 +403,8 @@ static var_rc_t expand_octal(const char** src, char** dst, const char* end)
   int c;
 
   if (end - *src < 3) return VAR_ERR_INCOMPLETE_OCTAL;
-  if (!expand_isoct(**src) || !expand_isoct((*src)[1]) ||
-      !expand_isoct((*src)[2]))
+  if (!expand_isoct(**src) || !expand_isoct((*src)[1])
+      || !expand_isoct((*src)[2]))
     return VAR_ERR_INVALID_OCTAL;
 
   c = **src - '0';
@@ -424,8 +425,8 @@ static var_rc_t expand_octal(const char** src, char** dst, const char* end)
 
 static int expand_ishex(int c)
 {
-  if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
-      (c >= 'A' && c <= 'F'))
+  if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')
+      || (c >= 'A' && c <= 'F'))
     return 1;
   else
     return 0;
@@ -554,8 +555,8 @@ static int parse_exptext(var_t* var,
   const char* p;
 
   /* parse until delim_init or delim_close or ':' */
-  for (p = begin; p != end && *p != var->syntax.delim_init &&
-                  *p != var->syntax.delim_close && *p != ':';
+  for (p = begin; p != end && *p != var->syntax.delim_init
+                  && *p != var->syntax.delim_close && *p != ':';
        p++) {
     if (*p == var->syntax.escape) {
       if (p + 1 == end) return VAR_ERR_INCOMPLETE_QUOTED_PAIR;
@@ -945,8 +946,8 @@ static int op_search_and_replace(var_t* var,
 
     /* compile the pattern. */
     rc = regcomp(&preg, tmp.begin,
-                 (REG_EXTENDED | (multiline ? REG_NEWLINE : 0) |
-                  (case_insensitive ? REG_ICASE : 0)));
+                 (REG_EXTENDED | (multiline ? REG_NEWLINE : 0)
+                  | (case_insensitive ? REG_ICASE : 0)));
     tokenbuf_free(&tmp);
     if (rc != 0) {
       tokenbuf_free(&mydata);
@@ -966,8 +967,8 @@ static int op_search_and_replace(var_t* var,
         /* no (more) matching */
         tokenbuf_append(&tmp, p, mydata.end - p);
         break;
-      } else if (multiline && (p + pmatch[0].rm_so) == mydata.end &&
-                 (pmatch[0].rm_eo - pmatch[0].rm_so) == 0) {
+      } else if (multiline && (p + pmatch[0].rm_so) == mydata.end
+                 && (pmatch[0].rm_eo - pmatch[0].rm_so) == 0) {
         /* special case: found empty pattern (usually /^/ or /$/ only)
            in multi-line at end of data (after the last newline) */
         tokenbuf_append(&tmp, p, mydata.end - p);
@@ -1283,8 +1284,8 @@ static int parse_operation(var_t* var,
     case '#': {
       /* determine length of the value */
       if (data->begin != NULL) {
-        char buf[((sizeof(int) * 8) / 3) +
-                 10]; /* sufficient size: <#bits> x log_10(2) + safety */
+        char buf[((sizeof(int) * 8) / 3)
+                 + 10]; /* sufficient size: <#bits> x log_10(2) + safety */
         sprintf(buf, "%d", (int)(data->end - data->begin));
         tokenbuf_free(data);
         if (!tokenbuf_assign(data, buf, strlen(buf))) {
@@ -2054,8 +2055,8 @@ static int parse_text(var_t* var,
       if (p == end) return VAR_ERR_INCOMPLETE_QUOTED_PAIR;
     } else if (*p == var->syntax.delim_init)
       break;
-    else if (var->syntax.index_open != EOS &&
-             (*p == var->syntax.index_open || *p == var->syntax.index_close))
+    else if (var->syntax.index_open != EOS
+             && (*p == var->syntax.index_open || *p == var->syntax.index_close))
       break;
   }
   return (p - begin);
@@ -2083,8 +2084,8 @@ static var_rc_t parse_input(var_t* var,
 
   do {
     /* try to parse a loop construct */
-    if (p != end && var->syntax.index_open != EOS &&
-        *p == var->syntax.index_open) {
+    if (p != end && var->syntax.index_open != EOS
+        && *p == var->syntax.index_open) {
       p++;
 
       /* loop preparation */
@@ -2102,9 +2103,10 @@ static var_rc_t parse_input(var_t* var,
        (=unknown) limit stop and there are still defined variables
        or there is a stop limit known and it is still not reached */
     re_loop:
-      for (i = start; ((open_stop && (loop_limit_length < 0 ||
-                                      rel_lookup_cnt > ctx->rel_lookup_cnt)) ||
-                       (!open_stop && i <= stop));
+      for (i = start;
+           ((open_stop
+             && (loop_limit_length < 0 || rel_lookup_cnt > ctx->rel_lookup_cnt))
+            || (!open_stop && i <= stop));
            i += step) {
         /* remember current output end for restoring */
         output_backup = (output->end - output->begin);
@@ -2268,14 +2270,14 @@ var_rc_t var_config(var_t* var, var_config_t mode, ...)
       var->syntax.index_close = s->index_close;
       var->syntax.index_mark = s->index_mark;
       var->syntax.name_chars = NULL; /* unused internally */
-      if ((rc = expand_character_class(s->name_chars, var->syntax_nameclass)) !=
-          VAR_OK) {
+      if ((rc = expand_character_class(s->name_chars, var->syntax_nameclass))
+          != VAR_OK) {
         goto bail_out;
       }
-      if (var->syntax_nameclass[(int)var->syntax.delim_init] ||
-          var->syntax_nameclass[(int)var->syntax.delim_open] ||
-          var->syntax_nameclass[(int)var->syntax.delim_close] ||
-          var->syntax_nameclass[(int)var->syntax.escape]) {
+      if (var->syntax_nameclass[(int)var->syntax.delim_init]
+          || var->syntax_nameclass[(int)var->syntax.delim_open]
+          || var->syntax_nameclass[(int)var->syntax.delim_close]
+          || var->syntax_nameclass[(int)var->syntax.escape]) {
         rc = VAR_ERR_INVALID_CONFIGURATION;
         goto bail_out;
       }
@@ -2446,8 +2448,8 @@ var_rc_t var_formatv(var_t* var,
   }
 
   /* perform expansion */
-  if ((rc = var_expand(var, cpBuf, nBuf, dst_ptr, NULL, force_expand)) !=
-      VAR_OK) {
+  if ((rc = var_expand(var, cpBuf, nBuf, dst_ptr, NULL, force_expand))
+      != VAR_OK) {
     free(cpBuf);
     return VAR_RC(rc);
   }

@@ -54,32 +54,32 @@ namespace directordaemon {
 /*
  * Requests from the Storage daemon
  */
-static char Find_media[] =
-    "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s "
-    "unwanted_volumes=%s\n";
-static char Get_Vol_Info[] =
-    "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
-static char Update_media[] =
-    "CatReq Job=%127s UpdateMedia VolName=%s"
-    " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolMounts=%u"
-    " VolErrors=%u VolWrites=%u MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
-    " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"
-    " VolFirstWritten=%lld\n";
-static char Create_job_media[] =
-    "CatReq Job=%127s CreateJobMedia "
-    " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
-    " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%lld\n";
+static char Find_media[]
+    = "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s "
+      "unwanted_volumes=%s\n";
+static char Get_Vol_Info[]
+    = "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
+static char Update_media[]
+    = "CatReq Job=%127s UpdateMedia VolName=%s"
+      " VolJobs=%u VolFiles=%u VolBlocks=%u VolBytes=%lld VolMounts=%u"
+      " VolErrors=%u VolWrites=%u MaxVolBytes=%lld EndTime=%lld VolStatus=%10s"
+      " Slot=%d relabel=%d InChanger=%d VolReadTime=%lld VolWriteTime=%lld"
+      " VolFirstWritten=%lld\n";
+static char Create_job_media[]
+    = "CatReq Job=%127s CreateJobMedia "
+      " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
+      " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%lld\n";
 
 /*
  * Responses sent to Storage daemon
  */
-static char OK_media[] =
-    "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
-    " VolBlocks=%u VolBytes=%s VolMounts=%u VolErrors=%u VolWrites=%u"
-    " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
-    " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
-    " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
-    " MediaId=%s EncryptionKey=%s MinBlocksize=%d MaxBlocksize=%d\n";
+static char OK_media[]
+    = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
+      " VolBlocks=%u VolBytes=%s VolMounts=%u VolErrors=%u VolWrites=%u"
+      " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
+      " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
+      " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
+      " MediaId=%s EncryptionKey=%s MinBlocksize=%d MaxBlocksize=%d\n";
 static char OK_create[] = "1000 OK CreateJobMedia\n";
 
 static int SendVolumeInfoToStorageDaemon(JobControlRecord* jcr,
@@ -139,7 +139,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
    */
   unwanted_volumes.check_size(bs->message_length);
   if (sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType,
-             unwanted_volumes.c_str()) == 5) {
+             unwanted_volumes.c_str())
+      == 5) {
     PoolDbRecord pr;
     bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
     UnbashSpaces(pr.Name);
@@ -162,8 +163,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       bs->fsend(_("1901 No Media.\n"));
       Dmsg0(500, "1901 No Media.\n");
     }
-  } else if (sscanf(bs->msg, Get_Vol_Info, &Job, &mr.VolumeName, &writing) ==
-             3) {
+  } else if (sscanf(bs->msg, Get_Vol_Info, &Job, &mr.VolumeName, &writing)
+             == 3) {
     /*
      * Request to find specific Volume information
      */
@@ -224,8 +225,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
                     &sdmr.VolBytes, &sdmr.VolMounts, &sdmr.VolErrors,
                     &sdmr.VolWrites, &sdmr.MaxVolBytes, &VolLastWritten,
                     &sdmr.VolStatus, &sdmr.Slot, &label, &sdmr.InChanger,
-                    &sdmr.VolReadTime, &sdmr.VolWriteTime,
-                    &VolFirstWritten) == 18) {
+                    &sdmr.VolReadTime, &sdmr.VolWriteTime, &VolFirstWritten)
+             == 18) {
     /*
      * Request to update Media record. Comes typically at the end
      * of a Storage daemon Job Session, when labeling/relabeling a
@@ -251,8 +252,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
      */
     if (mr.FirstWritten == 0) {
       if (VolFirstWritten == 0) {
-        mr.FirstWritten =
-            jcr->start_time; /* use Job start time as first write */
+        mr.FirstWritten
+            = jcr->start_time; /* use Job start time as first write */
       } else {
         mr.FirstWritten = VolFirstWritten;
       }
@@ -352,7 +353,8 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     return;
   } else if (sscanf(bs->msg, Create_job_media, &Job, &jm.FirstIndex,
                     &jm.LastIndex, &jm.StartFile, &jm.EndFile, &jm.StartBlock,
-                    &jm.EndBlock, &Copy, &Stripe, &MediaId) == 10) {
+                    &jm.EndBlock, &Copy, &Stripe, &MediaId)
+             == 10) {
     /*
      * Request to create a JobMedia record
      */
@@ -468,8 +470,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
   Dmsg5(400, "UpdCat VolSessId=%d VolSessT=%d FI=%d Strm=%d reclen=%d\n",
         VolSessionId, VolSessionTime, FileIndex, Stream, reclen);
 
-  jcr->impl->SDJobBytes +=
-      reclen; /* update number of bytes transferred for quotas */
+  jcr->impl->SDJobBytes
+      += reclen; /* update number of bytes transferred for quotas */
 
   /*
    * Depending on the stream we are handling dispatch.
@@ -583,8 +585,8 @@ static void UpdateAttribute(JobControlRecord* jcr,
       ro.object_name = &ro.plugin_name[len + 1]; /* point to object name */
       len = strlen(ro.object_name);
       ro.object = &ro.object_name[len + 1]; /* point to object */
-      ro.object[ro.object_len] =
-          0; /* add zero for those who attempt printing */
+      ro.object[ro.object_len]
+          = 0; /* add zero for those who attempt printing */
 
       Dmsg7(100,
             "oname=%s stream=%d FT=%d FI=%d JobId=%d, obj_len=%d\nobj=\"%s\"\n",
@@ -717,8 +719,7 @@ bool DespoolAttributesFromFile(JobControlRecord* jcr, const char* file)
 
   Dmsg0(100, "Begin DespoolAttributesFromFile\n");
 
-  if (jcr->IsJobCanceled() || !jcr->impl->res.pool->catalog_files ||
-      !jcr->db) {
+  if (jcr->IsJobCanceled() || !jcr->impl->res.pool->catalog_files || !jcr->db) {
     goto bail_out; /* user disabled cataloging */
   }
 
@@ -733,8 +734,8 @@ bool DespoolAttributesFromFile(JobControlRecord* jcr, const char* file)
   posix_fadvise(spool_fd, 0, 0, POSIX_FADV_WILLNEED);
 #endif
 
-  while ((nbytes = read(spool_fd, (char*)&pktsiz, sizeof(int32_t))) ==
-         sizeof(int32_t)) {
+  while ((nbytes = read(spool_fd, (char*)&pktsiz, sizeof(int32_t)))
+         == sizeof(int32_t)) {
     size += sizeof(int32_t);
     message_length = ntohl(pktsiz);
 

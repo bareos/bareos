@@ -32,87 +32,87 @@
 
 #ifdef WIN32_VSS
 
-#include "include/bareos.h"
-#include "include/jcr.h"
-#include "lib/berrno.h"
-#include "findlib/find.h"
-#define FILE_DAEMON 1
-#include "filed/fd_plugins.h"
+#  include "include/bareos.h"
+#  include "include/jcr.h"
+#  include "lib/berrno.h"
+#  include "findlib/find.h"
+#  define FILE_DAEMON 1
+#  include "filed/fd_plugins.h"
 
-#undef setlocale
+#  undef setlocale
 
 // STL includes
-#include <vector>
-#include <algorithm>
-#include <string>
-#include <sstream>
-#include <fstream>
+#  include <vector>
+#  include <algorithm>
+#  include <string>
+#  include <sstream>
+#  include <fstream>
 using namespace std;
 
-#include "ms_atl.h"
-#include <objbase.h>
+#  include "ms_atl.h"
+#  include <objbase.h>
 
 /*
  * Kludges to get Vista code to compile.
  */
-#define __in IN
-#define __out OUT
-#define __RPC_unique_pointer
-#define __RPC_string
-#ifndef __RPC__out_ecount_part
-#define __RPC__out_ecount_part(x, y)
-#endif
-#define __RPC__deref_inout_opt
-#define __RPC__out
+#  define __in IN
+#  define __out OUT
+#  define __RPC_unique_pointer
+#  define __RPC_string
+#  ifndef __RPC__out_ecount_part
+#    define __RPC__out_ecount_part(x, y)
+#  endif
+#  define __RPC__deref_inout_opt
+#  define __RPC__out
 
-#if !defined(ENABLE_NLS)
-#define setlocale(p, d)
-#endif
+#  if !defined(ENABLE_NLS)
+#    define setlocale(p, d)
+#  endif
 
-#ifdef HAVE_STRSAFE_H
+#  ifdef HAVE_STRSAFE_H
 /*
  * Used for safe string manipulation
  */
-#include <strsafe.h>
-#endif
+#    include <strsafe.h>
+#  endif
 
-#ifdef HAVE_MINGW
+#  ifdef HAVE_MINGW
 class IXMLDOMDocument;
-#endif
+#  endif
 
 /*
  * Reduce compiler warnings from Windows vss code
  */
-#undef uuid
-#define uuid(x)
+#  undef uuid
+#  define uuid(x)
 
-#ifdef B_VSS_XP
-#define VSSClientGeneric VSSClientXP
-#include "WinXP/vss.h"
-#include "WinXP/vswriter.h"
-#include "WinXP/vsbackup.h"
-#endif
+#  ifdef B_VSS_XP
+#    define VSSClientGeneric VSSClientXP
+#    include "WinXP/vss.h"
+#    include "WinXP/vswriter.h"
+#    include "WinXP/vsbackup.h"
+#  endif
 
-#ifdef B_VSS_W2K3
-#define VSSClientGeneric VSSClient2003
-#include "Win2003/vss.h"
-#include "Win2003/vswriter.h"
-#include "Win2003/vsbackup.h"
-#endif
+#  ifdef B_VSS_W2K3
+#    define VSSClientGeneric VSSClient2003
+#    include "Win2003/vss.h"
+#    include "Win2003/vswriter.h"
+#    include "Win2003/vsbackup.h"
+#  endif
 
-#ifdef B_VSS_VISTA
-#define VSSClientGeneric VSSClientVista
-#include "Win2003/vss.h"
-#include "Win2003/vswriter.h"
-#include "Win2003/vsbackup.h"
-#endif
+#  ifdef B_VSS_VISTA
+#    define VSSClientGeneric VSSClientVista
+#    include "Win2003/vss.h"
+#    include "Win2003/vswriter.h"
+#    include "Win2003/vsbackup.h"
+#  endif
 
-#define VSS_ERROR_OBJECT_ALREADY_EXISTS 0x8004230D
+#  define VSS_ERROR_OBJECT_ALREADY_EXISTS 0x8004230D
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#include "vss.h"
-#pragma GCC diagnostic pop
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#  include "vss.h"
+#  pragma GCC diagnostic pop
 
 using namespace filedaemon;
 
@@ -133,9 +133,10 @@ static void JmsgVssApiStatus(JobControlRecord* jcr,
       errmsg = "The caller is out of memory or other system resources.";
       break;
     case E_ACCESSDENIED:
-      errmsg =
-          "The caller does not have sufficient backup privileges or is not an "
-          "administrator.";
+      errmsg
+          = "The caller does not have sufficient backup privileges or is not "
+            "an "
+            "administrator.";
       break;
     case VSS_E_INVALID_XML_DOCUMENT:
       errmsg = "The XML document is not valid.";
@@ -144,44 +145,47 @@ static void JmsgVssApiStatus(JobControlRecord* jcr,
       errmsg = "The specified file does not exist.";
       break;
     case VSS_E_BAD_STATE:
-      errmsg =
-          "Object is not initialized; called during restore or not called in "
-          "correct sequence.";
+      errmsg
+          = "Object is not initialized; called during restore or not called in "
+            "correct sequence.";
       break;
     case VSS_E_WRITER_INFRASTRUCTURE:
-      errmsg =
-          "The writer infrastructure is not operating properly. Check that the "
-          "Event Service and VSS have been started, and check for errors "
-          "associated with those services in the error log.";
+      errmsg
+          = "The writer infrastructure is not operating properly. Check that "
+            "the "
+            "Event Service and VSS have been started, and check for errors "
+            "associated with those services in the error log.";
       break;
     case VSS_S_ASYNC_CANCELLED:
-      errmsg =
-          "The asynchronous operation was canceled by a previous call to "
-          "IVssAsync::Cancel.";
+      errmsg
+          = "The asynchronous operation was canceled by a previous call to "
+            "IVssAsync::Cancel.";
       break;
     case VSS_S_ASYNC_PENDING:
       errmsg = "The asynchronous operation is still running.";
       break;
     case RPC_E_CHANGED_MODE:
-      errmsg =
-          "Previous call to CoInitializeEx specified the multithread apartment "
-          "(MTA). This call indicates single-threaded apartment has occurred.";
+      errmsg
+          = "Previous call to CoInitializeEx specified the multithread "
+            "apartment "
+            "(MTA). This call indicates single-threaded apartment has "
+            "occurred.";
       break;
     case S_FALSE:
       errmsg = "No writer found for the current component.";
       break;
     default:
-      errmsg =
-          "Unexpected error. The error code is logged in the error log file.";
+      errmsg
+          = "Unexpected error. The error code is logged in the error log file.";
       break;
   }
   Jmsg(jcr, msg_status, 0, "VSS API failure calling \"%s\". ERR=%s\n", apiName,
        errmsg);
 }
 
-#ifndef VSS_WS_FAILED_AT_BACKUPSHUTDOWN
-#define VSS_WS_FAILED_AT_BACKUPSHUTDOWN (VSS_WRITER_STATE)15
-#endif
+#  ifndef VSS_WS_FAILED_AT_BACKUPSHUTDOWN
+#    define VSS_WS_FAILED_AT_BACKUPSHUTDOWN (VSS_WRITER_STATE)15
+#  endif
 
 static void JmsgVssWriterStatus(JobControlRecord* jcr,
                                 int msg_status,
@@ -193,8 +197,8 @@ static void JmsgVssWriterStatus(JobControlRecord* jcr,
   /*
    * The following are normal states
    */
-  if (eWriterStatus == VSS_WS_STABLE ||
-      eWriterStatus == VSS_WS_WAITING_FOR_BACKUP_COMPLETE) {
+  if (eWriterStatus == VSS_WS_STABLE
+      || eWriterStatus == VSS_WS_WAITING_FOR_BACKUP_COMPLETE) {
     return;
   }
 
@@ -216,44 +220,45 @@ static void JmsgVssWriterStatus(JobControlRecord* jcr,
       errmsg = "The writer is waiting for the PostSnapshot state.";
       break;
     case VSS_WS_WAITING_FOR_BACKUP_COMPLETE:
-      errmsg =
-          "The writer is waiting for the requester to finish its backup "
-          "operation.";
+      errmsg
+          = "The writer is waiting for the requester to finish its backup "
+            "operation.";
       break;
     case VSS_WS_FAILED_AT_IDENTIFY:
-      errmsg =
-          "The writer vetoed the shadow copy creation process at the writer "
-          "identification state.";
+      errmsg
+          = "The writer vetoed the shadow copy creation process at the writer "
+            "identification state.";
       break;
     case VSS_WS_FAILED_AT_PREPARE_BACKUP:
-      errmsg =
-          "The writer vetoed the shadow copy creation process during the "
-          "backup preparation state.";
+      errmsg
+          = "The writer vetoed the shadow copy creation process during the "
+            "backup preparation state.";
       break;
     case VSS_WS_FAILED_AT_PREPARE_SNAPSHOT:
-      errmsg =
-          "The writer vetoed the shadow copy creation process during the "
-          "PrepareForSnapshot state.";
+      errmsg
+          = "The writer vetoed the shadow copy creation process during the "
+            "PrepareForSnapshot state.";
       break;
     case VSS_WS_FAILED_AT_FREEZE:
-      errmsg =
-          "The writer vetoed the shadow copy creation process during the "
-          "freeze state.";
+      errmsg
+          = "The writer vetoed the shadow copy creation process during the "
+            "freeze state.";
       break;
     case VSS_WS_FAILED_AT_THAW:
-      errmsg =
-          "The writer vetoed the shadow copy creation process during the thaw "
-          "state.";
+      errmsg
+          = "The writer vetoed the shadow copy creation process during the "
+            "thaw "
+            "state.";
       break;
     case VSS_WS_FAILED_AT_POST_SNAPSHOT:
-      errmsg =
-          "The writer vetoed the shadow copy creation process during the "
-          "PostSnapshot state.";
+      errmsg
+          = "The writer vetoed the shadow copy creation process during the "
+            "PostSnapshot state.";
       break;
     case VSS_WS_FAILED_AT_BACKUP_COMPLETE:
-      errmsg =
-          "The shadow copy has been created and the writer failed during the "
-          "BackupComplete state.";
+      errmsg
+          = "The shadow copy has been created and the writer failed during the "
+            "BackupComplete state.";
       break;
     case VSS_WS_FAILED_AT_PRE_RESTORE:
       errmsg = "The writer failed during the PreRestore state.";
@@ -262,8 +267,8 @@ static void JmsgVssWriterStatus(JobControlRecord* jcr,
       errmsg = "The writer failed during the PostRestore state.";
       break;
     case VSS_WS_FAILED_AT_BACKUPSHUTDOWN:
-      errmsg =
-          "The writer failed during the shutdown of the backup application.";
+      errmsg
+          = "The writer failed during the shutdown of the backup application.";
   }
   Jmsg(jcr, msg_status, 0, "VSS Writer \"%s\" has invalid state. ERR=%s\n",
        writer_name, errmsg);
@@ -317,8 +322,9 @@ static inline wstring GetUniqueVolumeNameForPath(wstring path)
   /*
    * Get the root path of the volume.
    */
-  if (!p_GetVolumePathNameW ||
-      !p_GetVolumePathNameW((LPCWSTR)path.c_str(), volumeRootPath, MAX_PATH)) {
+  if (!p_GetVolumePathNameW
+      || !p_GetVolumePathNameW((LPCWSTR)path.c_str(), volumeRootPath,
+                               MAX_PATH)) {
     return L"";
   }
 
@@ -326,9 +332,9 @@ static inline wstring GetUniqueVolumeNameForPath(wstring path)
    * Get the volume name alias (might be different from the unique volume name
    * in rare cases).
    */
-  if (!p_GetVolumeNameForVolumeMountPointW ||
-      !p_GetVolumeNameForVolumeMountPointW(volumeRootPath, volumeName,
-                                           MAX_PATH)) {
+  if (!p_GetVolumeNameForVolumeMountPointW
+      || !p_GetVolumeNameForVolumeMountPointW(volumeRootPath, volumeName,
+                                              MAX_PATH)) {
     return L"";
   }
 
@@ -409,12 +415,12 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
 /*
  * Helper macro for quick treatment of case statements for error codes
  */
-#define GEN_MERGE(A, B) A##B
-#define GEN_MAKE_W(A) GEN_MERGE(L, A)
+#  define GEN_MERGE(A, B) A##B
+#  define GEN_MAKE_W(A) GEN_MERGE(L, A)
 
-#define CHECK_CASE_FOR_CONSTANT(value) \
-  case value:                          \
-    return (GEN_MAKE_W(#value));
+#  define CHECK_CASE_FOR_CONSTANT(value) \
+    case value:                          \
+      return (GEN_MAKE_W(#value));
 
 /*
  * Convert a writer status into a string
@@ -442,15 +448,15 @@ static inline const wchar_t* GetStringFromWriterStatus(
   }
 }
 
-#ifdef HAVE_VSS64
+#  ifdef HAVE_VSS64
 /* 64 bit entrypoint name */
-#define VSSVBACK_ENTRY \
-  "?CreateVssBackupComponents@@YAJPEAPEAVIVssBackupComponents@@@Z"
-#else
+#    define VSSVBACK_ENTRY \
+      "?CreateVssBackupComponents@@YAJPEAPEAVIVssBackupComponents@@@Z"
+#  else
 /* 32 bit entrypoint name */
-#define VSSVBACK_ENTRY \
-  "?CreateVssBackupComponents@@YGJPAPAVIVssBackupComponents@@@Z"
-#endif
+#    define VSSVBACK_ENTRY \
+      "?CreateVssBackupComponents@@YGJPAPAVIVssBackupComponents@@@Z"
+#  endif
 
 /*
  * Constructor
@@ -459,8 +465,8 @@ VSSClientGeneric::VSSClientGeneric()
 {
   hLib_ = LoadLibraryA("VSSAPI.DLL");
   if (hLib_) {
-    CreateVssBackupComponents_ =
-        (t_CreateVssBackupComponents)GetProcAddress(hLib_, VSSVBACK_ENTRY);
+    CreateVssBackupComponents_
+        = (t_CreateVssBackupComponents)GetProcAddress(hLib_, VSSVBACK_ENTRY);
     VssFreeSnapshotProperties_ = (t_VssFreeSnapshotProperties)GetProcAddress(
         hLib_, "VssFreeSnapshotProperties");
   }
@@ -548,7 +554,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
   pVssObj = (IVssBackupComponents*)pVssObject_;
 
   if (!bDuringRestore) {
-#if defined(B_VSS_W2K3) || defined(B_VSS_VISTA)
+#  if defined(B_VSS_W2K3) || defined(B_VSS_VISTA)
     if (dwContext != VSS_CTX_BACKUP) {
       hr = pVssObj->SetContext(dwContext);
       if (FAILED(hr)) {
@@ -561,7 +567,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
         return false;
       }
     }
-#endif
+#  endif
 
     /*
      * 1. InitializeForBackup
@@ -1066,8 +1072,8 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
      */
     if (Snap.m_SnapshotSetId == snapshotSetID) {
       for (int ch = 'A' - 'A'; ch <= 'Z' - 'A'; ch++) {
-        if (wcscmp(Snap.m_pwszOriginalVolumeName, wszUniqueVolumeName_[ch]) ==
-            0) {
+        if (wcscmp(Snap.m_pwszOriginalVolumeName, wszUniqueVolumeName_[ch])
+            == 0) {
           wcsncpy(szShadowCopyName_[ch], Snap.m_pwszSnapshotDeviceObject,
                   MAX_PATH - 1);
           break;
@@ -1168,9 +1174,9 @@ bool VSSClientGeneric::CheckWriterStatus()
         case VSS_WS_FAILED_AT_BACKUP_COMPLETE:
         case VSS_WS_FAILED_AT_PRE_RESTORE:
         case VSS_WS_FAILED_AT_POST_RESTORE:
-#if defined(B_VSS_W2K3) || defined(B_VSS_VISTA)
+#  if defined(B_VSS_W2K3) || defined(B_VSS_VISTA)
         case VSS_WS_FAILED_AT_BACKUPSHUTDOWN:
-#endif
+#  endif
           /*
            * Writer status problem
            */

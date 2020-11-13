@@ -197,8 +197,8 @@ void TreeAddDeltaPart(TREE_ROOT* root,
                       JobId_t JobId,
                       int32_t FileIndex)
 {
-  struct delta_list* elt =
-      tree_alloc<delta_list>(root, sizeof(struct delta_list));
+  struct delta_list* elt
+      = tree_alloc<delta_list>(root, sizeof(struct delta_list));
 
   elt->next = node->delta_list;
   elt->JobId = JobId;
@@ -253,8 +253,8 @@ TREE_NODE* insert_tree_node(char* path,
     if (!parent) { /* if no parent, we need to make one */
       Dmsg1(100, "make_tree_path for %s\n", path);
       path_len = strlen(path); /* get new length */
-      if (path_len == root->cached_path_len &&
-          bstrcmp(path, root->cached_path)) {
+      if (path_len == root->cached_path_len
+          && bstrcmp(path, root->cached_path)) {
         parent = root->cached_parent;
       } else {
         root->cached_path_len = path_len;
@@ -400,9 +400,8 @@ static void TreeGetpathItem(TREE_NODE* node, POOLMEM*& path)
    * also add a slash to a soft linked file if it has children
    * i.e. it is linked to a directory.
    */
-  if ((node->type != TN_FILE &&
-       !(IsPathSeparator(path[0]) && path[1] == '\0')) ||
-      (node->soft_link && TreeNodeHasChild(node))) {
+  if ((node->type != TN_FILE && !(IsPathSeparator(path[0]) && path[1] == '\0'))
+      || (node->soft_link && TreeNodeHasChild(node))) {
     PmStrcat(path, "/");
   }
 }
@@ -437,8 +436,8 @@ TREE_NODE* tree_cwd(char* path, TREE_ROOT* root, TREE_NODE* node)
   /*
    * Handle relative path
    */
-  if (path[0] == '.' && path[1] == '.' &&
-      (IsPathSeparator(path[2]) || path[2] == '\0')) {
+  if (path[0] == '.' && path[1] == '.'
+      && (IsPathSeparator(path[2]) || path[2] == '\0')) {
     TREE_NODE* parent = node->parent ? node->parent : node;
     if (path[2] == 0) {
       return parent;
@@ -483,8 +482,8 @@ TREE_NODE* tree_relcwd(char* path, TREE_ROOT* root, TREE_NODE* node)
 
   foreach_child (cd, node) {
     Dmsg1(100, "tree_relcwd: test cd=%s\n", cd->fname);
-    if (cd->fname[0] == path[0] && len == (int)strlen(cd->fname) &&
-        bstrncmp(cd->fname, path, len)) {
+    if (cd->fname[0] == path[0] && len == (int)strlen(cd->fname)
+        && bstrncmp(cd->fname, path, len)) {
       break;
     }
 

@@ -45,7 +45,7 @@
 
 /* Define to 1 if you have `alloca', as a function or macro. */
 #ifndef HAVE_MINGW
-#define alloca _alloca
+#  define alloca _alloca
 #endif
 
 /* Define to 1 if you have the `getmntent' function. */
@@ -90,7 +90,7 @@
 /* Enable NLS only if we are using the new VC++.
  * NLS should also work with VC++ 7.1, but the Makefiles are
  * not adapted to support it (include, lib...). */
-#define ENABLE_NLS 1
+#  define ENABLE_NLS 1
 #endif
 
 #undef LOCALEDIR

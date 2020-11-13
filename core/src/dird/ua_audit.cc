@@ -135,8 +135,8 @@ void UaContext::LogAuditEventCmdline()
 
   if (!me->auditing) { return; }
 
-  user_name =
-      user_acl ? user_acl->corresponding_resource->resource_name_ : "default";
+  user_name
+      = user_acl ? user_acl->corresponding_resource->resource_name_ : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
   Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] cmdline %s\n"), user_name, host,
@@ -156,12 +156,12 @@ void UaContext::LogAuditEventInfoMsg(const char* fmt, ...)
   message.Bvsprintf(fmt, arg_ptr);
   va_end(arg_ptr);
 
-  user_name =
-      user_acl ? user_acl->corresponding_resource->resource_name_ : "default";
+  user_name
+      = user_acl ? user_acl->corresponding_resource->resource_name_ : "default";
   host = UA_sock ? UA_sock->host() : "unknown";
 
-  Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] info message %s\n"),
-      user_name, host, message.c_str());
+  Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] info message %s\n"), user_name,
+        host, message.c_str());
 }
 
 } /* namespace directordaemon */

@@ -232,8 +232,8 @@ JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr)
 {
   Dmsg0(debuglevel, "Enter new_jcr\n");
 
-  JobControlRecord* jcr =
-      static_cast<JobControlRecord*>(malloc(sizeof(JobControlRecord)));
+  JobControlRecord* jcr
+      = static_cast<JobControlRecord*>(malloc(sizeof(JobControlRecord)));
   jcr = new (jcr) JobControlRecord();
 
   jcr->daemon_free_jcr = daemon_free_jcr;
@@ -487,9 +487,9 @@ JobControlRecord* get_jcr_by_id(uint32_t JobId)
 std::size_t GetJcrCount()
 {
   LockJcrChain();
-  std::size_t count =
-      count_if(job_control_record_cache.begin(), job_control_record_cache.end(),
-               [](std::weak_ptr<JobControlRecord>& p) { return !p.expired(); });
+  std::size_t count = count_if(
+      job_control_record_cache.begin(), job_control_record_cache.end(),
+      [](std::weak_ptr<JobControlRecord>& p) { return !p.expired(); });
   UnlockJcrChain();
 
   return count;
@@ -1068,8 +1068,8 @@ void DbgPrintJcr(FILE* fp)
   fprintf(fp, "Attempt to dump current JCRs. njcrs=%d\n",
           job_control_record_chain->size());
 
-  for (JobControlRecord* jcr =
-           (JobControlRecord*)job_control_record_chain->first();
+  for (JobControlRecord* jcr
+       = (JobControlRecord*)job_control_record_chain->first();
        jcr; jcr = (JobControlRecord*)job_control_record_chain->next(jcr)) {
     fprintf(fp, "threadid=%s JobId=%d JobStatus=%c jcr=%p name=%s\n",
             edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)), (int)jcr->JobId,

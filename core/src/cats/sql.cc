@@ -36,8 +36,8 @@
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
-#include "cats.h"
-#include "lib/edit.h"
+#  include "cats.h"
+#  include "lib/edit.h"
 
 /* Forward referenced subroutines */
 
@@ -186,8 +186,8 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
     return false;
   }
 
-  if (context.nr_connections && max_concurrent_jobs &&
-      max_concurrent_jobs > context.nr_connections) {
+  if (context.nr_connections && max_concurrent_jobs
+      && max_concurrent_jobs > context.nr_connections) {
     Mmsg(errmsg,
          _("Potential performance problem:\n"
            "max_connections=%d set for %s database \"%s\" should be larger "
@@ -531,8 +531,8 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
           if (type == VERT_LIST) {
             if (col_len > max_len) { max_len = col_len; }
           } else {
-            if (SqlFieldIsNumeric(field->type) &&
-                (int)field->max_length > 0) { /* fixup for commas */
+            if (SqlFieldIsNumeric(field->type)
+                && (int)field->max_length > 0) { /* fixup for commas */
               field->max_length += (field->max_length - 1) / 3;
             }
             if (col_len < (int)field->max_length) {
@@ -632,8 +632,8 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         max_len = MaxLength(field->max_length);
         if (row[i] == NULL) {
           value.bsprintf(" %-*s |", max_len, "NULL");
-        } else if (SqlFieldIsNumeric(field->type) && !jcr->gui &&
-                   IsAnInteger(row[i])) {
+        } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
+                   && IsAnInteger(row[i])) {
           value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
         } else {
           value.bsprintf(" %-*s |", max_len, row[i]);
@@ -664,8 +664,8 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         if (row[i] == NULL) {
           key.bsprintf(" %*s: ", max_len, field->name);
           value.bsprintf("%s\n", "NULL");
-        } else if (SqlFieldIsNumeric(field->type) && !jcr->gui &&
-                   IsAnInteger(row[i])) {
+        } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
+                   && IsAnInteger(row[i])) {
           key.bsprintf(" %*s: ", max_len, field->name);
           value.bsprintf("%s\n", add_commas(row[i], ewc));
         } else {
@@ -756,8 +756,8 @@ int BareosDb::ListResult(JobControlRecord* jcr,
         if (type == VERT_LIST) {
           if (col_len > max_len) { max_len = col_len; }
         } else {
-          if (SqlFieldIsNumeric(field->type) &&
-              (int)field->max_length > 0) { /* fixup for commas */
+          if (SqlFieldIsNumeric(field->type)
+              && (int)field->max_length > 0) { /* fixup for commas */
             field->max_length += (field->max_length - 1) / 3;
           }
           if (col_len < (int)field->max_length) { col_len = field->max_length; }
@@ -868,8 +868,8 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           max_len = MaxLength(field->max_length);
           if (row[i] == NULL) {
             value.bsprintf(" %-*s |", max_len, "NULL");
-          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui &&
-                     IsAnInteger(row[i])) {
+          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
+                     && IsAnInteger(row[i])) {
             value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
           } else {
             value.bsprintf(" %-*s |", max_len, row[i]);
@@ -910,8 +910,8 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           if (row[i] == NULL) {
             key.bsprintf(" %*s: ", max_len, field->name);
             value.bsprintf("%s\n", "NULL");
-          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui &&
-                     IsAnInteger(row[i])) {
+          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
+                     && IsAnInteger(row[i])) {
             key.bsprintf(" %*s: ", max_len, field->name);
             value.bsprintf("%s\n", add_commas(row[i], ewc));
           } else {

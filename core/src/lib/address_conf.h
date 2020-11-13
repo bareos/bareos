@@ -111,7 +111,7 @@ int SockaddrGetPortNetOrder(const struct sockaddr* sa);
 int SockaddrGetPort(const struct sockaddr* sa);
 char* SockaddrToAscii(const struct sockaddr* sa, char* buf, int len);
 #ifdef WIN32
-#undef HAVE_OLD_SOCKOPT
+#  undef HAVE_OLD_SOCKOPT
 #endif
 #ifdef HAVE_OLD_SOCKOPT
 int inet_aton(const char* cp, struct in_addr* inp);

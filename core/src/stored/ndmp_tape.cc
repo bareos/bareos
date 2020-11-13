@@ -39,44 +39,44 @@
 
 #if HAVE_NDMP
 
-#include "stored/stored.h"
-#include "stored/stored_globals.h"
+#  include "stored/stored.h"
+#  include "stored/stored_globals.h"
 
-#include "ndmp/ndmagents.h"
-#include "stored/acquire.h"
-#include "stored/bsr.h"
-#include "stored/device.h"
-#include "stored/device_control_record.h"
-#include "stored/jcr_private.h"
-#include "stored/label.h"
-#include "stored/mount.h"
-#include "stored/read_record.h"
-#include "stored/spool.h"
-#include "lib/address_conf.h"
-#include "lib/attribs.h"
-#include "lib/berrno.h"
-#include "lib/edit.h"
-#include "lib/bpoll.h"
-#include "lib/parse_conf.h"
-#include "lib/thread_list.h"
-#include "include/auth_types.h"
-#include "include/jcr.h"
+#  include "ndmp/ndmagents.h"
+#  include "stored/acquire.h"
+#  include "stored/bsr.h"
+#  include "stored/device.h"
+#  include "stored/device_control_record.h"
+#  include "stored/jcr_private.h"
+#  include "stored/label.h"
+#  include "stored/mount.h"
+#  include "stored/read_record.h"
+#  include "stored/spool.h"
+#  include "lib/address_conf.h"
+#  include "lib/attribs.h"
+#  include "lib/berrno.h"
+#  include "lib/edit.h"
+#  include "lib/bpoll.h"
+#  include "lib/parse_conf.h"
+#  include "lib/thread_list.h"
+#  include "include/auth_types.h"
+#  include "include/jcr.h"
 
-#include <algorithm>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <vector>
-#include <arpa/inet.h>
-#include <netdb.h>
-#ifdef HAVE_ARPA_NAMESER_H
-#include <arpa/nameser.h>
-#endif
+#  include <algorithm>
+#  include <netinet/in.h>
+#  include <sys/socket.h>
+#  include <vector>
+#  include <arpa/inet.h>
+#  include <netdb.h>
+#  ifdef HAVE_ARPA_NAMESER_H
+#    include <arpa/nameser.h>
+#  endif
 
-#ifdef HAVE_POLL_H
-#include <poll.h>
-#elif HAVE_SYS_POLL_H
-#include <sys/poll.h>
-#endif
+#  ifdef HAVE_POLL_H
+#    include <poll.h>
+#  elif HAVE_SYS_POLL_H
+#    include <sys/poll.h>
+#  endif
 #endif /* #if HAVE_NDMP */
 
 namespace storagedaemon {
@@ -117,9 +117,9 @@ struct ndmp_internal_state {
 };
 typedef struct ndmp_internal_state NIS;
 
-#if HAVE_NDMP
+#  if HAVE_NDMP
 static ThreadList thread_list;
-#endif
+#  endif
 
 /* Static globals */
 static bool quit = false;
@@ -252,8 +252,8 @@ extern "C" int BndmpAuthClear(struct ndm_session* sess, char* name, char* pass)
 
     ASSERT(auth_config->password.encoding == p_encoding_clear);
 
-    if (bstrcmp(name, auth_config->username) &&
-        bstrcmp(pass, auth_config->password.value)) {
+    if (bstrcmp(name, auth_config->username)
+        && bstrcmp(pass, auth_config->password.value)) {
       /*
        * See if we need to adjust the logging level.
        */
@@ -408,8 +408,8 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
        * Get a new record for each Job as defined by VolSessionId and
        * VolSessionTime
        */
-      if (!rctx->rec || rctx->rec->VolSessionId != dcr->block->VolSessionId ||
-          rctx->rec->VolSessionTime != dcr->block->VolSessionTime) {
+      if (!rctx->rec || rctx->rec->VolSessionId != dcr->block->VolSessionId
+          || rctx->rec->VolSessionTime != dcr->block->VolSessionTime) {
         ReadContextSetRecord(dcr, rctx);
       }
 
@@ -511,15 +511,15 @@ static inline bool BndmpCreateVirtualFile(JobControlRecord* jcr, char* filename)
    *   Encoded extended-attributes (for Win32)
    *   Delta Sequence Number
    */
-  size =
-      Mmsg(data, "%ld %d %s%c%s%c%s%c%s%c%d%c", dcr->FileIndex, /* File_index */
-           FT_REG,                                              /* File type */
-           filename,           /* Filename (full path) */
-           0, attribs.c_str(), /* Encoded attributes */
-           0, "",              /* Link name (if type==FT_LNK or FT_LNKSAVED) */
-           0, "",              /* Encoded extended-attributes (for Win32) */
-           0, 0,               /* Delta Sequence Number */
-           0);
+  size = Mmsg(data, "%ld %d %s%c%s%c%s%c%s%c%d%c",
+              dcr->FileIndex,     /* File_index */
+              FT_REG,             /* File type */
+              filename,           /* Filename (full path) */
+              0, attribs.c_str(), /* Encoded attributes */
+              0, "", /* Link name (if type==FT_LNK or FT_LNKSAVED) */
+              0, "", /* Encoded extended-attributes (for Win32) */
+              0, 0,  /* Delta Sequence Number */
+              0);
 
   return bndmp_write_data_to_block(jcr, STREAM_UNIX_ATTRIBUTES, data.c_str(),
                                    size);
@@ -664,8 +664,8 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
        * Let any SD plugin know now its time to setup the record translation
        * infra.
        */
-      if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) !=
-          bRC_OK) {
+      if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr)
+          != bRC_OK) {
         goto bail_out;
       }
 
@@ -750,8 +750,8 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
        * Let any SD plugin know now its time to setup the record translation
        * infra.
        */
-      if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) !=
-          bRC_OK) {
+      if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr)
+          != bRC_OK) {
         goto bail_out;
       }
 
@@ -801,8 +801,8 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   bzero(&ta->tape_state, sizeof ta->tape_state);
   ta->tape_state.error = NDMP9_NO_ERR;
   ta->tape_state.state = NDMP9_TAPE_STATE_OPEN;
-  ta->tape_state.open_mode =
-      will_write ? NDMP9_TAPE_RDWR_MODE : NDMP9_TAPE_READ_MODE;
+  ta->tape_state.open_mode
+      = will_write ? NDMP9_TAPE_RDWR_MODE : NDMP9_TAPE_READ_MODE;
   ta->tape_state.file_num.valid = NDMP9_VALIDITY_VALID;
   ta->tape_state.soft_errors.valid = NDMP9_VALIDITY_VALID;
   ta->tape_state.block_size.valid = NDMP9_VALIDITY_VALID;
@@ -1149,8 +1149,8 @@ extern "C" void* HandleNdmpConnectionRequest(ConfigurationParser* config,
   sess = (struct ndm_session*)malloc(sizeof(struct ndm_session));
   memset(sess, 0, sizeof(struct ndm_session));
 
-  sess->param =
-      (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
+  sess->param
+      = (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
   memset(sess->param, 0, sizeof(struct ndm_session_param));
   sess->param->log.deliver = storagedaemon::NdmpLoghandler;
   nis = (NIS*)malloc(sizeof(NIS));
@@ -1269,10 +1269,10 @@ extern "C" void* ndmp_thread_server(void* arg)
   }* fd_ptr = NULL;
   char buf[128];
   std::vector<s_sockfd*> sockfds;
-#ifdef HAVE_POLL
+#  ifdef HAVE_POLL
   nfds_t nfds;
   struct pollfd* pfds;
-#endif
+#  endif
 
   ntsa = (struct ndmp_thread_server_args*)arg;
   if (!ntsa) { return NULL; }
@@ -1284,9 +1284,10 @@ extern "C" void* ndmp_thread_server(void* arg)
        ipaddr = (IPADDR*)ntsa->addr_list->next(ipaddr)) {
     for (next = (IPADDR*)ntsa->addr_list->next(ipaddr); next;
          next = (IPADDR*)ntsa->addr_list->next(next)) {
-      if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen() &&
-          memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
-                 ipaddr->GetSockaddrLen()) == 0) {
+      if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen()
+          && memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
+                    ipaddr->GetSockaddrLen())
+                 == 0) {
         ntsa->addr_list->remove(next);
       }
     }
@@ -1296,9 +1297,9 @@ extern "C" void* ndmp_thread_server(void* arg)
   Dmsg1(100, "Addresses %s\n",
         BuildAddressesString(ntsa->addr_list, allbuf, sizeof(allbuf)));
 
-#ifdef HAVE_POLL
+#  ifdef HAVE_POLL
   nfds = 0;
-#endif
+#  endif
   foreach_dlist (ipaddr, ntsa->addr_list) {
     /*
      * Allocate on stack from -- no need to free
@@ -1327,7 +1328,8 @@ extern "C" void* ndmp_thread_server(void* arg)
      * Reuse old sockets
      */
     if (setsockopt(fd_ptr->fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&turnon,
-                   sizeof(turnon)) < 0) {
+                   sizeof(turnon))
+        < 0) {
       BErrNo be;
       Emsg1(M_WARNING, 0, _("Cannot set SO_REUSEADDR on socket: %s\n"),
             be.bstrerror());
@@ -1351,14 +1353,14 @@ extern "C" void* ndmp_thread_server(void* arg)
     }
     listen(fd_ptr->fd, me->MaxConnections); /* tell system we are ready */
     sockfds.push_back(fd_ptr);
-#ifdef HAVE_POLL
+#  ifdef HAVE_POLL
     nfds++;
-#endif
+#  endif
   }
 
   ntsa->thread_list->Init(ntsa->max_clients, HandleNdmpConnectionRequest);
 
-#ifdef HAVE_POLL
+#  ifdef HAVE_POLL
   /*
    * Allocate on stack from -- no need to free
    */
@@ -1372,13 +1374,13 @@ extern "C" void* ndmp_thread_server(void* arg)
                   pfds[nfds].events |= POLL_IN;
                   nfds++;
                 });
-#endif
+#  endif
 
   /*
    * Wait for a connection from the client process.
    */
   while (!quit) {
-#ifndef HAVE_POLL
+#  ifndef HAVE_POLL
     unsigned int maxfd = 0;
     fd_set sockset;
     FD_ZERO(&sockset);
@@ -1398,7 +1400,7 @@ extern "C" void* ndmp_thread_server(void* arg)
 
     for (auto fd_ptr : sockfds) {
       if (FD_ISSET(fd_ptr->fd, &sockset)) {
-#else
+#  else
     int cnt;
 
     errno = 0;
@@ -1412,7 +1414,7 @@ extern "C" void* ndmp_thread_server(void* arg)
     cnt = 0;
     for (auto fd_ptr : sockfds) {
       if (pfds[cnt++].revents & POLLIN) {
-#endif
+#  endif
         /*
          * Got a connection, now accept it.
          */
@@ -1426,7 +1428,8 @@ extern "C" void* ndmp_thread_server(void* arg)
          * Receive notification when connection dies.
          */
         if (setsockopt(new_sockfd, SOL_SOCKET, SO_KEEPALIVE,
-                       (sockopt_val_t)&turnon, sizeof(turnon)) < 0) {
+                       (sockopt_val_t)&turnon, sizeof(turnon))
+            < 0) {
           BErrNo be;
           Emsg1(M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
                 be.bstrerror());
@@ -1480,7 +1483,8 @@ int StartNdmpThreadServer(dlist* addr_list, int max_clients)
   ndmp_thread_server_args.thread_list = &thread_list;
 
   if ((status = pthread_create(&ndmp_tid, NULL, ndmp_thread_server,
-                               (void*)&ndmp_thread_server_args)) != 0) {
+                               (void*)&ndmp_thread_server_args))
+      != 0) {
     return status;
   }
 

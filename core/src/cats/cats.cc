@@ -32,11 +32,11 @@
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
-#include "cats.h"
-#include "sql_pooling.h"
+#  include "cats.h"
+#  include "sql_pooling.h"
 
-#include "bdb_query_names.inc"
-#include "lib/berrno.h"
+#  include "bdb_query_names.inc"
+#  include "lib/berrno.h"
 
 bool BareosDb::MatchDatabase(const char* db_driver,
                              const char* db_name,
@@ -46,11 +46,11 @@ bool BareosDb::MatchDatabase(const char* db_driver,
   bool match;
 
   if (db_driver) {
-    match = Bstrcasecmp(db_driver_, db_driver) && bstrcmp(db_name_, db_name) &&
-            bstrcmp(db_address_, db_address) && db_port_ == db_port;
+    match = Bstrcasecmp(db_driver_, db_driver) && bstrcmp(db_name_, db_name)
+            && bstrcmp(db_address_, db_address) && db_port_ == db_port;
   } else {
-    match = bstrcmp(db_name_, db_name) && bstrcmp(db_address_, db_address) &&
-            db_port_ == db_port;
+    match = bstrcmp(db_name_, db_name) && bstrcmp(db_address_, db_address)
+            && db_port_ == db_port;
   }
   return match;
 }

@@ -31,31 +31,31 @@
 
 #if defined(HAVE_OPENSSL)
 
-#include <openssl/err.h>
-#include <openssl/rand.h>
+#  include <openssl/err.h>
+#  include <openssl/rand.h>
 
-#if defined(HAVE_CRYPTO)
+#  if defined(HAVE_CRYPTO)
 
-#include "jcr.h"
-#include <assert.h>
+#    include "jcr.h"
+#    include <assert.h>
 
-#include "lib/alist.h"
+#    include "lib/alist.h"
 
-#include <openssl/ssl.h>
-#include <openssl/x509v3.h>
-#include <openssl/asn1.h>
-#include <openssl/asn1t.h>
-#include <openssl/engine.h>
-#include <openssl/evp.h>
+#    include <openssl/ssl.h>
+#    include <openssl/x509v3.h>
+#    include <openssl/asn1.h>
+#    include <openssl/asn1t.h>
+#    include <openssl/engine.h>
+#    include <openssl/evp.h>
 
 /*
  * For OpenSSL version 1.x, EVP_PKEY_encrypt no longer exists. It was not an
  * official API.
  */
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L)
-#define EVP_PKEY_encrypt EVP_PKEY_encrypt_old
-#define EVP_PKEY_decrypt EVP_PKEY_decrypt_old
-#endif
+#    if (OPENSSL_VERSION_NUMBER >= 0x10000000L)
+#      define EVP_PKEY_encrypt EVP_PKEY_encrypt_old
+#      define EVP_PKEY_decrypt EVP_PKEY_decrypt_old
+#    endif
 
 /*
  * Sanity checks.
@@ -64,18 +64,18 @@
  * CRYPTO_DIGEST_MAX_SIZE. Make sure this is large enough for all EVP digest
  * routines supported by openssl.
  */
-#if (EVP_MAX_MD_SIZE > CRYPTO_DIGEST_MAX_SIZE)
-#error \
-    "EVP_MAX_MD_SIZE > CRYPTO_DIGEST_MAX_SIZE, please update src/lib/crypto.h"
-#endif
+#    if (EVP_MAX_MD_SIZE > CRYPTO_DIGEST_MAX_SIZE)
+#      error \
+          "EVP_MAX_MD_SIZE > CRYPTO_DIGEST_MAX_SIZE, please update src/lib/crypto.h"
+#    endif
 
-#if (EVP_MAX_BLOCK_LENGTH != CRYPTO_CIPHER_MAX_BLOCK_SIZE)
-#error \
-    "EVP_MAX_BLOCK_LENGTH != CRYPTO_CIPHER_MAX_BLOCK_SIZE, please update src/lib/crypto.h"
-#endif
+#    if (EVP_MAX_BLOCK_LENGTH != CRYPTO_CIPHER_MAX_BLOCK_SIZE)
+#      error \
+          "EVP_MAX_BLOCK_LENGTH != CRYPTO_CIPHER_MAX_BLOCK_SIZE, please update src/lib/crypto.h"
+#    endif
 
 /* ASN.1 Declarations */
-#define BAREOS_ASN1_VERSION 0
+#    define BAREOS_ASN1_VERSION 0
 
 typedef struct {
   ASN1_INTEGER* version;
@@ -92,14 +92,14 @@ typedef struct {
   ASN1_OCTET_STRING* encryptedKey;
 } RecipientInfo;
 
-ASN1_SEQUENCE(SignerInfo) = {
-    ASN1_SIMPLE(SignerInfo, version, ASN1_INTEGER),
-    ASN1_SIMPLE(SignerInfo, subjectKeyIdentifier, ASN1_OCTET_STRING),
-    ASN1_SIMPLE(SignerInfo, digestAlgorithm, ASN1_OBJECT),
-    ASN1_SIMPLE(SignerInfo, signatureAlgorithm, ASN1_OBJECT),
-    ASN1_SIMPLE(SignerInfo,
-                signature,
-                ASN1_OCTET_STRING)} ASN1_SEQUENCE_END(SignerInfo);
+ASN1_SEQUENCE(SignerInfo)
+    = {ASN1_SIMPLE(SignerInfo, version, ASN1_INTEGER),
+       ASN1_SIMPLE(SignerInfo, subjectKeyIdentifier, ASN1_OCTET_STRING),
+       ASN1_SIMPLE(SignerInfo, digestAlgorithm, ASN1_OBJECT),
+       ASN1_SIMPLE(SignerInfo, signatureAlgorithm, ASN1_OBJECT),
+       ASN1_SIMPLE(SignerInfo,
+                   signature,
+                   ASN1_OCTET_STRING)} ASN1_SEQUENCE_END(SignerInfo);
 
 ASN1_SEQUENCE(RecipientInfo) = {
     ASN1_SIMPLE(RecipientInfo, version, ASN1_INTEGER),
@@ -125,30 +125,30 @@ ASN1_SEQUENCE(SignatureData) = {
     ASN1_SET_OF(SignatureData, signerInfo, SignerInfo),
 } ASN1_SEQUENCE_END(SignatureData);
 
-ASN1_SEQUENCE(CryptoData) = {
-    ASN1_SIMPLE(CryptoData, version, ASN1_INTEGER),
-    ASN1_SIMPLE(CryptoData, contentEncryptionAlgorithm, ASN1_OBJECT),
-    ASN1_SIMPLE(CryptoData, iv, ASN1_OCTET_STRING),
-    ASN1_SET_OF(CryptoData,
-                recipientInfo,
-                RecipientInfo)} ASN1_SEQUENCE_END(CryptoData);
+ASN1_SEQUENCE(CryptoData)
+    = {ASN1_SIMPLE(CryptoData, version, ASN1_INTEGER),
+       ASN1_SIMPLE(CryptoData, contentEncryptionAlgorithm, ASN1_OBJECT),
+       ASN1_SIMPLE(CryptoData, iv, ASN1_OCTET_STRING),
+       ASN1_SET_OF(CryptoData,
+                   recipientInfo,
+                   RecipientInfo)} ASN1_SEQUENCE_END(CryptoData);
 
 IMPLEMENT_ASN1_FUNCTIONS(SignerInfo)
 IMPLEMENT_ASN1_FUNCTIONS(RecipientInfo)
 IMPLEMENT_ASN1_FUNCTIONS(SignatureData)
 IMPLEMENT_ASN1_FUNCTIONS(CryptoData)
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#    if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 /* Openssl Version < 1.1 */
 
-#define OBJ_get0_data(o) ((o)->data)
-#define OBJ_length(o) ((o)->length)
+#      define OBJ_get0_data(o) ((o)->data)
+#      define OBJ_length(o) ((o)->length)
 
-#define X509_EXTENSION_get_data(ext) ((ext)->value)
-#define EVP_PKEY_id(key) ((key)->type)
+#      define X509_EXTENSION_get_data(ext) ((ext)->value)
+#      define EVP_PKEY_id(key) ((key)->type)
 
-#define EVP_PKEY_up_ref(x509_key) \
-  CRYPTO_add(&(x509_key->references), 1, CRYPTO_LOCK_EVP_PKEY)
+#      define EVP_PKEY_up_ref(x509_key) \
+        CRYPTO_add(&(x509_key->references), 1, CRYPTO_LOCK_EVP_PKEY)
 
 IMPLEMENT_STACK_OF(SignerInfo)
 IMPLEMENT_STACK_OF(RecipientInfo)
@@ -157,105 +157,114 @@ IMPLEMENT_STACK_OF(RecipientInfo)
  * SignerInfo and RecipientInfo stack macros, generated by OpenSSL's
  * util/mkstack.pl.
  */
-#define sk_SignerInfo_new(st) SKM_sk_new(SignerInfo, (st))
-#define sk_SignerInfo_new_null() SKM_sk_new_null(SignerInfo)
-#define sk_SignerInfo_free(st) SKM_sk_free(SignerInfo, (st))
-#define sk_SignerInfo_num(st) SKM_sk_num(SignerInfo, (st))
-#define sk_SignerInfo_value(st, i) SKM_sk_value(SignerInfo, (st), (i))
-#define sk_SignerInfo_set(st, i, val) SKM_sk_set(SignerInfo, (st), (i), (val))
-#define sk_SignerInfo_zero(st) SKM_sk_zero(SignerInfo, (st))
-#define sk_SignerInfo_push(st, val) SKM_sk_push(SignerInfo, (st), (val))
-#define sk_SignerInfo_unshift(st, val) SKM_sk_unshift(SignerInfo, (st), (val))
-#define sk_SignerInfo_find(st, val) SKM_sk_find(SignerInfo, (st), (val))
-#define sk_SignerInfo_delete(st, i) SKM_sk_delete(SignerInfo, (st), (i))
-#define sk_SignerInfo_delete_ptr(st, ptr) \
-  SKM_sk_delete_ptr(SignerInfo, (st), (ptr))
-#define sk_SignerInfo_insert(st, val, i) \
-  SKM_sk_insert(SignerInfo, (st), (val), (i))
-#define sk_SignerInfo_set_cmp_func(st, cmp) \
-  SKM_sk_set_cmp_func(SignerInfo, (st), (cmp))
-#define sk_SignerInfo_dup(st) SKM_sk_dup(SignerInfo, st)
-#define sk_SignerInfo_pop_free(st, free_func) \
-  SKM_sk_pop_free(SignerInfo, (st), (free_func))
-#define sk_SignerInfo_shift(st) SKM_sk_shift(SignerInfo, (st))
-#define sk_SignerInfo_pop(st) SKM_sk_pop(SignerInfo, (st))
-#define sk_SignerInfo_sort(st) SKM_sk_sort(SignerInfo, (st))
-#define sk_SignerInfo_is_sorted(st) SKM_sk_is_sorted(SignerInfo, (st))
+#      define sk_SignerInfo_new(st) SKM_sk_new(SignerInfo, (st))
+#      define sk_SignerInfo_new_null() SKM_sk_new_null(SignerInfo)
+#      define sk_SignerInfo_free(st) SKM_sk_free(SignerInfo, (st))
+#      define sk_SignerInfo_num(st) SKM_sk_num(SignerInfo, (st))
+#      define sk_SignerInfo_value(st, i) SKM_sk_value(SignerInfo, (st), (i))
+#      define sk_SignerInfo_set(st, i, val) \
+        SKM_sk_set(SignerInfo, (st), (i), (val))
+#      define sk_SignerInfo_zero(st) SKM_sk_zero(SignerInfo, (st))
+#      define sk_SignerInfo_push(st, val) SKM_sk_push(SignerInfo, (st), (val))
+#      define sk_SignerInfo_unshift(st, val) \
+        SKM_sk_unshift(SignerInfo, (st), (val))
+#      define sk_SignerInfo_find(st, val) SKM_sk_find(SignerInfo, (st), (val))
+#      define sk_SignerInfo_delete(st, i) SKM_sk_delete(SignerInfo, (st), (i))
+#      define sk_SignerInfo_delete_ptr(st, ptr) \
+        SKM_sk_delete_ptr(SignerInfo, (st), (ptr))
+#      define sk_SignerInfo_insert(st, val, i) \
+        SKM_sk_insert(SignerInfo, (st), (val), (i))
+#      define sk_SignerInfo_set_cmp_func(st, cmp) \
+        SKM_sk_set_cmp_func(SignerInfo, (st), (cmp))
+#      define sk_SignerInfo_dup(st) SKM_sk_dup(SignerInfo, st)
+#      define sk_SignerInfo_pop_free(st, free_func) \
+        SKM_sk_pop_free(SignerInfo, (st), (free_func))
+#      define sk_SignerInfo_shift(st) SKM_sk_shift(SignerInfo, (st))
+#      define sk_SignerInfo_pop(st) SKM_sk_pop(SignerInfo, (st))
+#      define sk_SignerInfo_sort(st) SKM_sk_sort(SignerInfo, (st))
+#      define sk_SignerInfo_is_sorted(st) SKM_sk_is_sorted(SignerInfo, (st))
 
-#define sk_RecipientInfo_new(st) SKM_sk_new(RecipientInfo, (st))
-#define sk_RecipientInfo_new_null() SKM_sk_new_null(RecipientInfo)
-#define sk_RecipientInfo_free(st) SKM_sk_free(RecipientInfo, (st))
-#define sk_RecipientInfo_num(st) SKM_sk_num(RecipientInfo, (st))
-#define sk_RecipientInfo_value(st, i) SKM_sk_value(RecipientInfo, (st), (i))
-#define sk_RecipientInfo_set(st, i, val) \
-  SKM_sk_set(RecipientInfo, (st), (i), (val))
-#define sk_RecipientInfo_zero(st) SKM_sk_zero(RecipientInfo, (st))
-#define sk_RecipientInfo_push(st, val) SKM_sk_push(RecipientInfo, (st), (val))
-#define sk_RecipientInfo_unshift(st, val) \
-  SKM_sk_unshift(RecipientInfo, (st), (val))
-#define sk_RecipientInfo_find(st, val) SKM_sk_find(RecipientInfo, (st), (val))
-#define sk_RecipientInfo_delete(st, i) SKM_sk_delete(RecipientInfo, (st), (i))
-#define sk_RecipientInfo_delete_ptr(st, ptr) \
-  SKM_sk_delete_ptr(RecipientInfo, (st), (ptr))
-#define sk_RecipientInfo_insert(st, val, i) \
-  SKM_sk_insert(RecipientInfo, (st), (val), (i))
-#define sk_RecipientInfo_set_cmp_func(st, cmp) \
-  SKM_sk_set_cmp_func(RecipientInfo, (st), (cmp))
-#define sk_RecipientInfo_dup(st) SKM_sk_dup(RecipientInfo, st)
-#define sk_RecipientInfo_pop_free(st, free_func) \
-  SKM_sk_pop_free(RecipientInfo, (st), (free_func))
-#define sk_RecipientInfo_shift(st) SKM_sk_shift(RecipientInfo, (st))
-#define sk_RecipientInfo_pop(st) SKM_sk_pop(RecipientInfo, (st))
-#define sk_RecipientInfo_sort(st) SKM_sk_sort(RecipientInfo, (st))
-#define sk_RecipientInfo_is_sorted(st) SKM_sk_is_sorted(RecipientInfo, (st))
+#      define sk_RecipientInfo_new(st) SKM_sk_new(RecipientInfo, (st))
+#      define sk_RecipientInfo_new_null() SKM_sk_new_null(RecipientInfo)
+#      define sk_RecipientInfo_free(st) SKM_sk_free(RecipientInfo, (st))
+#      define sk_RecipientInfo_num(st) SKM_sk_num(RecipientInfo, (st))
+#      define sk_RecipientInfo_value(st, i) \
+        SKM_sk_value(RecipientInfo, (st), (i))
+#      define sk_RecipientInfo_set(st, i, val) \
+        SKM_sk_set(RecipientInfo, (st), (i), (val))
+#      define sk_RecipientInfo_zero(st) SKM_sk_zero(RecipientInfo, (st))
+#      define sk_RecipientInfo_push(st, val) \
+        SKM_sk_push(RecipientInfo, (st), (val))
+#      define sk_RecipientInfo_unshift(st, val) \
+        SKM_sk_unshift(RecipientInfo, (st), (val))
+#      define sk_RecipientInfo_find(st, val) \
+        SKM_sk_find(RecipientInfo, (st), (val))
+#      define sk_RecipientInfo_delete(st, i) \
+        SKM_sk_delete(RecipientInfo, (st), (i))
+#      define sk_RecipientInfo_delete_ptr(st, ptr) \
+        SKM_sk_delete_ptr(RecipientInfo, (st), (ptr))
+#      define sk_RecipientInfo_insert(st, val, i) \
+        SKM_sk_insert(RecipientInfo, (st), (val), (i))
+#      define sk_RecipientInfo_set_cmp_func(st, cmp) \
+        SKM_sk_set_cmp_func(RecipientInfo, (st), (cmp))
+#      define sk_RecipientInfo_dup(st) SKM_sk_dup(RecipientInfo, st)
+#      define sk_RecipientInfo_pop_free(st, free_func) \
+        SKM_sk_pop_free(RecipientInfo, (st), (free_func))
+#      define sk_RecipientInfo_shift(st) SKM_sk_shift(RecipientInfo, (st))
+#      define sk_RecipientInfo_pop(st) SKM_sk_pop(RecipientInfo, (st))
+#      define sk_RecipientInfo_sort(st) SKM_sk_sort(RecipientInfo, (st))
+#      define sk_RecipientInfo_is_sorted(st) \
+        SKM_sk_is_sorted(RecipientInfo, (st))
 
-#else
+#    else
 /* Openssl Version >= 1.1 */
 
 /* ignore the suggest-override warnings caused by following DEFINE_STACK_OF() */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
+#      pragma GCC diagnostic push
+#      pragma GCC diagnostic ignored "-Wunused-function"
 DEFINE_STACK_OF(SignerInfo)
 DEFINE_STACK_OF(RecipientInfo)
-#pragma GCC diagnostic pop
+#      pragma GCC diagnostic pop
 
 
-#define M_ASN1_OCTET_STRING_free(a) ASN1_STRING_free((ASN1_STRING*)a)
-#define M_ASN1_OCTET_STRING_cmp(a, b) \
-  ASN1_STRING_cmp((const ASN1_STRING*)a, (const ASN1_STRING*)b)
-#define M_ASN1_OCTET_STRING_dup(a) \
-  (ASN1_OCTET_STRING*)ASN1_STRING_dup((const ASN1_STRING*)a)
-#define M_ASN1_OCTET_STRING_set(a, b, c) ASN1_STRING_set((ASN1_STRING*)a, b, c)
+#      define M_ASN1_OCTET_STRING_free(a) ASN1_STRING_free((ASN1_STRING*)a)
+#      define M_ASN1_OCTET_STRING_cmp(a, b) \
+        ASN1_STRING_cmp((const ASN1_STRING*)a, (const ASN1_STRING*)b)
+#      define M_ASN1_OCTET_STRING_dup(a) \
+        (ASN1_OCTET_STRING*)ASN1_STRING_dup((const ASN1_STRING*)a)
+#      define M_ASN1_OCTET_STRING_set(a, b, c) \
+        ASN1_STRING_set((ASN1_STRING*)a, b, c)
 
-#define M_ASN1_STRING_length(x) ((x)->length)
-#define M_ASN1_STRING_data(x) ((x)->data)
+#      define M_ASN1_STRING_length(x) ((x)->length)
+#      define M_ASN1_STRING_data(x) ((x)->data)
 
-#endif
+#    endif
 
-#define d2i_ASN1_SET_OF_SignerInfo(st, pp, length, d2i_func, free_func, \
-                                   ex_tag, ex_class)                    \
-  SKM_ASN1_SET_OF_d2i(SignerInfo, (st), (pp), (length), (d2i_func),     \
-                      (free_func), (ex_tag), (ex_class))
-#define i2d_ASN1_SET_OF_SignerInfo(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-  SKM_ASN1_SET_OF_i2d(SignerInfo, (st), (pp), (i2d_func), (ex_tag),            \
-                      (ex_class), (is_set))
-#define ASN1_seq_pack_SignerInfo(st, i2d_func, buf, len) \
-  SKM_ASN1_seq_pack(SignerInfo, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_SignerInfo(buf, len, d2i_func, free_func) \
-  SKM_ASN1_seq_unpack(SignerInfo, (buf), (len), (d2i_func), (free_func))
+#    define d2i_ASN1_SET_OF_SignerInfo(st, pp, length, d2i_func, free_func, \
+                                       ex_tag, ex_class)                    \
+      SKM_ASN1_SET_OF_d2i(SignerInfo, (st), (pp), (length), (d2i_func),     \
+                          (free_func), (ex_tag), (ex_class))
+#    define i2d_ASN1_SET_OF_SignerInfo(st, pp, i2d_func, ex_tag, ex_class, \
+                                       is_set)                             \
+      SKM_ASN1_SET_OF_i2d(SignerInfo, (st), (pp), (i2d_func), (ex_tag),    \
+                          (ex_class), (is_set))
+#    define ASN1_seq_pack_SignerInfo(st, i2d_func, buf, len) \
+      SKM_ASN1_seq_pack(SignerInfo, (st), (i2d_func), (buf), (len))
+#    define ASN1_seq_unpack_SignerInfo(buf, len, d2i_func, free_func) \
+      SKM_ASN1_seq_unpack(SignerInfo, (buf), (len), (d2i_func), (free_func))
 
-#define d2i_ASN1_SET_OF_RecipientInfo(st, pp, length, d2i_func, free_func, \
-                                      ex_tag, ex_class)                    \
-  SKM_ASN1_SET_OF_d2i(RecipientInfo, (st), (pp), (length), (d2i_func),     \
-                      (free_func), (ex_tag), (ex_class))
-#define i2d_ASN1_SET_OF_RecipientInfo(st, pp, i2d_func, ex_tag, ex_class, \
-                                      is_set)                             \
-  SKM_ASN1_SET_OF_i2d(RecipientInfo, (st), (pp), (i2d_func), (ex_tag),    \
-                      (ex_class), (is_set))
-#define ASN1_seq_pack_RecipientInfo(st, i2d_func, buf, len) \
-  SKM_ASN1_seq_pack(RecipientInfo, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_RecipientInfo(buf, len, d2i_func, free_func) \
-  SKM_ASN1_seq_unpack(RecipientInfo, (buf), (len), (d2i_func), (free_func))
+#    define d2i_ASN1_SET_OF_RecipientInfo(st, pp, length, d2i_func, free_func, \
+                                          ex_tag, ex_class)                    \
+      SKM_ASN1_SET_OF_d2i(RecipientInfo, (st), (pp), (length), (d2i_func),     \
+                          (free_func), (ex_tag), (ex_class))
+#    define i2d_ASN1_SET_OF_RecipientInfo(st, pp, i2d_func, ex_tag, ex_class, \
+                                          is_set)                             \
+      SKM_ASN1_SET_OF_i2d(RecipientInfo, (st), (pp), (i2d_func), (ex_tag),    \
+                          (ex_class), (is_set))
+#    define ASN1_seq_pack_RecipientInfo(st, i2d_func, buf, len) \
+      SKM_ASN1_seq_pack(RecipientInfo, (st), (i2d_func), (buf), (len))
+#    define ASN1_seq_unpack_RecipientInfo(buf, len, d2i_func, free_func) \
+      SKM_ASN1_seq_unpack(RecipientInfo, (buf), (len), (d2i_func), (free_func))
 /* End of util/mkstack.pl block */
 
 /* X509 Public/Private Key Pair Structure */
@@ -270,7 +279,7 @@ struct Digest {
   JobControlRecord* jcr;
   crypto_digest_t type;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#    if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
   /* Openssl Version < 1.1 */
  private:
   EVP_MD_CTX ctx;
@@ -285,7 +294,7 @@ struct Digest {
 
 
   EVP_MD_CTX& get_ctx() { return ctx; }
-#else
+#    else
   /* Openssl Version >= 1.1 */
 
  private:
@@ -305,7 +314,7 @@ struct Digest {
     EVP_MD_CTX_free(ctx);
     ctx = NULL;
   }
-#endif
+#    endif
 };
 
 
@@ -348,11 +357,11 @@ static ASN1_OCTET_STRING* openssl_cert_keyid(X509* cert)
   const X509V3_EXT_METHOD* method;
   ASN1_OCTET_STRING* keyid;
   int i;
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
+#    if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
   const unsigned char* ext_value_data;
-#else
+#    else
   unsigned char* ext_value_data;
-#endif
+#    endif
 
 
   /* Find the index to the subjectKeyIdentifier extension */
@@ -370,7 +379,7 @@ static ASN1_OCTET_STRING* openssl_cert_keyid(X509* cert)
 
   ext_value_data = X509_EXTENSION_get_data(ext)->data;
 
-#if (OPENSSL_VERSION_NUMBER > 0x00907000L)
+#    if (OPENSSL_VERSION_NUMBER > 0x00907000L)
   if (method->it) {
     /* New style ASN1 */
 
@@ -386,10 +395,10 @@ static ASN1_OCTET_STRING* openssl_cert_keyid(X509* cert)
         NULL, &ext_value_data, X509_EXTENSION_get_data(ext)->length);
   }
 
-#else
+#    else
   keyid = (ASN1_OCTET_STRING*)method->d2i(NULL, &ext_value_data,
                                           X509_EXTENSION_get_data(ext)->length);
-#endif
+#    endif
 
   return keyid;
 }
@@ -552,8 +561,9 @@ bool CryptoKeypairHasKey(const char* file)
      * Due to OpenSSL limitations, we must specifically
      * list supported PEM private key encodings.
      */
-    if (bstrcmp(name, PEM_STRING_RSA) || bstrcmp(name, PEM_STRING_DSA) ||
-        bstrcmp(name, PEM_STRING_PKCS8) || bstrcmp(name, PEM_STRING_PKCS8INF)) {
+    if (bstrcmp(name, PEM_STRING_RSA) || bstrcmp(name, PEM_STRING_DSA)
+        || bstrcmp(name, PEM_STRING_PKCS8)
+        || bstrcmp(name, PEM_STRING_PKCS8INF)) {
       retval = true;
       OPENSSL_free(name);
       break;
@@ -598,8 +608,8 @@ int CryptoKeypairLoadKey(X509_KEYPAIR* keypair,
     ctx.pem_userdata = NULL;
   }
 
-  keypair->privkey =
-      PEM_read_bio_PrivateKey(bio, NULL, CryptoPemCallbackDispatch, &ctx);
+  keypair->privkey
+      = PEM_read_bio_PrivateKey(bio, NULL, CryptoPemCallbackDispatch, &ctx);
   BIO_free(bio);
   if (!keypair->privkey) {
     OpensslPostErrors(M_ERROR, _("Unable to read private key from file"));
@@ -641,14 +651,14 @@ DIGEST* crypto_digest_new(JobControlRecord* jcr, crypto_digest_t type)
     case CRYPTO_DIGEST_SHA1:
       md = EVP_sha1();
       break;
-#ifdef HAVE_SHA2
+#    ifdef HAVE_SHA2
     case CRYPTO_DIGEST_SHA256:
       md = EVP_sha256();
       break;
     case CRYPTO_DIGEST_SHA512:
       md = EVP_sha512();
       break;
-#endif
+#    endif
     default:
       Jmsg1(jcr, M_ERROR, 0, _("Unsupported digest type: %d\n"), type);
       goto err;
@@ -755,8 +765,8 @@ crypto_error_t CryptoSignGetDigest(SIGNATURE* sig,
 
   for (i = 0; i < sk_SignerInfo_num(signers); i++) {
     si = sk_SignerInfo_value(signers, i);
-    if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier) ==
-        0) {
+    if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier)
+        == 0) {
       /* Get the digest algorithm and allocate a digest context */
       Dmsg1(150, "CryptoSignGetDigest jcr=%p\n", sig->jcr);
       switch (OBJ_obj2nid(si->digestAlgorithm)) {
@@ -770,7 +780,7 @@ crypto_error_t CryptoSignGetDigest(SIGNATURE* sig,
           type = CRYPTO_DIGEST_SHA1;
           *digest = crypto_digest_new(sig->jcr, CRYPTO_DIGEST_SHA1);
           break;
-#ifdef HAVE_SHA2
+#    ifdef HAVE_SHA2
         case NID_sha256:
           Dmsg0(100, "sign digest algorithm is SHA256\n");
           type = CRYPTO_DIGEST_SHA256;
@@ -781,7 +791,7 @@ crypto_error_t CryptoSignGetDigest(SIGNATURE* sig,
           type = CRYPTO_DIGEST_SHA512;
           *digest = crypto_digest_new(sig->jcr, CRYPTO_DIGEST_SHA512);
           break;
-#endif
+#    endif
         default:
           type = CRYPTO_DIGEST_NONE;
           *digest = NULL;
@@ -816,25 +826,25 @@ crypto_error_t CryptoSignVerify(SIGNATURE* sig,
   SignerInfo* si;
   int ok, i;
   unsigned int sigLen;
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
+#    if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
   const unsigned char* sigData;
-#else
+#    else
   unsigned char* sigData;
-#endif
+#    endif
 
   signers = sig->sigData->signerInfo;
 
   /* Find the signer */
   for (i = 0; i < sk_SignerInfo_num(signers); i++) {
     si = sk_SignerInfo_value(signers, i);
-    if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier) ==
-        0) {
+    if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, si->subjectKeyIdentifier)
+        == 0) {
       /* Extract the signature data */
       sigLen = M_ASN1_STRING_length(si->signature);
       sigData = M_ASN1_STRING_data(si->signature);
 
-      ok =
-          EVP_VerifyFinal(&digest->get_ctx(), sigData, sigLen, keypair->pubkey);
+      ok = EVP_VerifyFinal(&digest->get_ctx(), sigData, sigLen,
+                           keypair->pubkey);
       if (ok >= 1) {
         return CRYPTO_ERROR_NONE;
       } else if (ok == 0) {
@@ -884,14 +894,14 @@ int CryptoSignAddSigner(SIGNATURE* sig, DIGEST* digest, X509_KEYPAIR* keypair)
     case CRYPTO_DIGEST_SHA1:
       si->digestAlgorithm = OBJ_nid2obj(NID_sha1);
       break;
-#ifdef HAVE_SHA2
+#    ifdef HAVE_SHA2
     case CRYPTO_DIGEST_SHA256:
       si->digestAlgorithm = OBJ_nid2obj(NID_sha256);
       break;
     case CRYPTO_DIGEST_SHA512:
       si->digestAlgorithm = OBJ_nid2obj(NID_sha512);
       break;
-#endif
+#    endif
     default:
       /* This should never happen */
       goto err;
@@ -972,11 +982,11 @@ SIGNATURE* crypto_sign_decode(JobControlRecord* jcr,
                               uint32_t length)
 {
   SIGNATURE* sig;
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
+#    if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
   const unsigned char* p = (const unsigned char*)sigData;
-#else
+#    else
   unsigned char* p = (unsigned char*)sigData;
-#endif
+#    endif
 
   sig = (SIGNATURE*)malloc(sizeof(SIGNATURE));
   if (!sig) { return NULL; }
@@ -1048,77 +1058,77 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher, alist* pubkeys)
       break;
     case CRYPTO_CIPHER_3DES_CBC:
       /* 3DES CBC */
-      cs->cryptoData->contentEncryptionAlgorithm =
-          OBJ_nid2obj(NID_des_ede3_cbc);
+      cs->cryptoData->contentEncryptionAlgorithm
+          = OBJ_nid2obj(NID_des_ede3_cbc);
       ec = EVP_des_ede3_cbc();
       break;
-#ifndef OPENSSL_NO_AES
+#    ifndef OPENSSL_NO_AES
     case CRYPTO_CIPHER_AES_128_CBC:
       /* AES 128 bit CBC */
       cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_aes_128_cbc);
       ec = EVP_aes_128_cbc();
       break;
-#ifndef HAVE_OPENSSL_EXPORT_LIBRARY
-#ifdef NID_aes_192_cbc
+#      ifndef HAVE_OPENSSL_EXPORT_LIBRARY
+#        ifdef NID_aes_192_cbc
     case CRYPTO_CIPHER_AES_192_CBC:
       /* AES 192 bit CBC */
       cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_aes_192_cbc);
       ec = EVP_aes_192_cbc();
       break;
-#endif
-#ifdef NID_aes_256_cbc
+#        endif
+#        ifdef NID_aes_256_cbc
     case CRYPTO_CIPHER_AES_256_CBC:
       /* AES 256 bit CBC */
       cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_aes_256_cbc);
       ec = EVP_aes_256_cbc();
       break;
-#endif
-#endif /* OPENSSL_NO_AES */
-#ifndef OPENSSL_NO_CAMELLIA
-#ifdef NID_camellia_128_cbc
+#        endif
+#      endif /* OPENSSL_NO_AES */
+#      ifndef OPENSSL_NO_CAMELLIA
+#        ifdef NID_camellia_128_cbc
     case CRYPTO_CIPHER_CAMELLIA_128_CBC:
       /* Camellia 128 bit CBC */
-      cs->cryptoData->contentEncryptionAlgorithm =
-          OBJ_nid2obj(NID_camellia_128_cbc);
+      cs->cryptoData->contentEncryptionAlgorithm
+          = OBJ_nid2obj(NID_camellia_128_cbc);
       ec = EVP_camellia_128_cbc();
       break;
-#endif
-#ifdef NID_camellia_192_cbc
+#        endif
+#        ifdef NID_camellia_192_cbc
     case CRYPTO_CIPHER_CAMELLIA_192_CBC:
       /* Camellia 192 bit CBC */
-      cs->cryptoData->contentEncryptionAlgorithm =
-          OBJ_nid2obj(NID_camellia_192_cbc);
+      cs->cryptoData->contentEncryptionAlgorithm
+          = OBJ_nid2obj(NID_camellia_192_cbc);
       ec = EVP_camellia_192_cbc();
       break;
-#endif
-#ifdef NID_camellia_256_cbc
+#        endif
+#        ifdef NID_camellia_256_cbc
     case CRYPTO_CIPHER_CAMELLIA_256_CBC:
       /* Camellia 256 bit CBC */
-      cs->cryptoData->contentEncryptionAlgorithm =
-          OBJ_nid2obj(NID_camellia_256_cbc);
+      cs->cryptoData->contentEncryptionAlgorithm
+          = OBJ_nid2obj(NID_camellia_256_cbc);
       ec = EVP_camellia_256_cbc();
       break;
-#endif
-#endif /* OPENSSL_NO_CAMELLIA */
-#endif /* HAVE_OPENSSL_EXPORT_LIBRARY */
-#if !defined(OPENSSL_NO_SHA) && !defined(OPENSSL_NO_SHA1)
-#ifdef NID_aes_128_cbc_hmac_sha1
+#        endif
+#      endif /* OPENSSL_NO_CAMELLIA */
+#    endif   /* HAVE_OPENSSL_EXPORT_LIBRARY */
+#    if !defined(OPENSSL_NO_SHA) && !defined(OPENSSL_NO_SHA1)
+#      ifdef NID_aes_128_cbc_hmac_sha1
     case CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1:
       /* AES 128 bit CBC HMAC SHA1 */
-      cs->cryptoData->contentEncryptionAlgorithm =
-          OBJ_nid2obj(NID_aes_128_cbc_hmac_sha1);
+      cs->cryptoData->contentEncryptionAlgorithm
+          = OBJ_nid2obj(NID_aes_128_cbc_hmac_sha1);
       ec = EVP_aes_128_cbc_hmac_sha1();
       break;
-#endif
-#ifdef NID_aes_256_cbc_hmac_sha1
+#      endif
+#      ifdef NID_aes_256_cbc_hmac_sha1
     case CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1:
       /* AES 256 bit CBC HMAC SHA1 */
-      cs->cryptoData->contentEncryptionAlgorithm =
-          OBJ_nid2obj(NID_aes_256_cbc_hmac_sha1);
+      cs->cryptoData->contentEncryptionAlgorithm
+          = OBJ_nid2obj(NID_aes_256_cbc_hmac_sha1);
       ec = EVP_aes_256_cbc_hmac_sha1();
       break;
-#endif
-#endif /* !OPENSSL_NO_SHA && !OPENSSL_NO_SHA1 */
+#      endif
+#    endif /* !OPENSSL_NO_SHA && !OPENSSL_NO_SHA1 */
     default:
       Jmsg0(NULL, M_ERROR, 0, _("Unsupported cipher type specified\n"));
       CryptoSessionFree(cs);
@@ -1180,15 +1190,16 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher, alist* pubkeys)
     ri->subjectKeyIdentifier = M_ASN1_OCTET_STRING_dup(keypair->keyid);
 
     /* Set our key encryption algorithm. We currently require RSA */
-    assert(keypair->pubkey &&
-           EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)) == EVP_PKEY_RSA);
+    assert(keypair->pubkey
+           && EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)) == EVP_PKEY_RSA);
     ri->keyEncryptionAlgorithm = OBJ_nid2obj(NID_rsaEncryption);
 
     /* Encrypt the session key */
     ekey = (unsigned char*)malloc(EVP_PKEY_size(keypair->pubkey));
 
     if ((ekey_len = EVP_PKEY_encrypt(ekey, cs->session_key, cs->session_key_len,
-                                     keypair->pubkey)) <= 0) {
+                                     keypair->pubkey))
+        <= 0) {
       /* OpenSSL failure */
       RecipientInfo_free(ri);
       CryptoSessionFree(cs);
@@ -1253,11 +1264,11 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
   X509_KEYPAIR* keypair = nullptr;
   STACK_OF(RecipientInfo) * recipients;
   crypto_error_t retval = CRYPTO_ERROR_NONE;
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
+#    if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
   const unsigned char* p = (const unsigned char*)data;
-#else
+#    else
   unsigned char* p = (unsigned char*)data;
-#endif
+#    endif
 
   /* bareos-fd.conf doesn't contains any key */
   if (!keypairs) { return CRYPTO_ERROR_NORECIPIENT; }
@@ -1294,8 +1305,8 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
       ri = sk_RecipientInfo_value(recipients, i);
 
       /* Match against the subjectKeyIdentifier */
-      if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, ri->subjectKeyIdentifier) ==
-          0) {
+      if (M_ASN1_OCTET_STRING_cmp(keypair->keyid, ri->subjectKeyIdentifier)
+          == 0) {
         /* Match found, extract symmetric encryption session data */
 
         /* RSA is required. */
@@ -1310,8 +1321,8 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
 
         /* Decrypt the session key */
         /* Allocate sufficient space for the largest possible decrypted data */
-        cs->session_key =
-            (unsigned char*)malloc(EVP_PKEY_size(keypair->privkey));
+        cs->session_key
+            = (unsigned char*)malloc(EVP_PKEY_size(keypair->privkey));
         cs->session_key_len = EVP_PKEY_decrypt(
             cs->session_key, M_ASN1_STRING_data(ri->encryptedKey),
             M_ASN1_STRING_length(ri->encryptedKey), keypair->privkey);
@@ -1363,8 +1374,8 @@ CIPHER_CONTEXT* crypto_cipher_new(CRYPTO_SESSION* cs,
   /*
    * Acquire a cipher instance for the given ASN.1 cipher NID
    */
-  if ((ec = EVP_get_cipherbyobj(cs->cryptoData->contentEncryptionAlgorithm)) ==
-      NULL) {
+  if ((ec = EVP_get_cipherbyobj(cs->cryptoData->contentEncryptionAlgorithm))
+      == NULL) {
     Jmsg1(NULL, M_ERROR, 0, _("Unsupported contentEncryptionAlgorithm: %d\n"),
           OBJ_obj2nid(cs->cryptoData->contentEncryptionAlgorithm));
     delete cipher_ctx;
@@ -1467,7 +1478,7 @@ const char* crypto_digest_name(DIGEST* digest)
   return crypto_digest_name(digest->type);
 }
 
-#endif /* HAVE_CRYPTO */
+#  endif /* HAVE_CRYPTO */
 
 /*
  * Generic OpenSSL routines used for both TLS and CRYPTO support.
@@ -1495,24 +1506,24 @@ int InitCrypto(void)
   SSL_load_error_strings();
 
   /* Initialize OpenSSL SSL  library */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#  if OPENSSL_VERSION_NUMBER < 0x10100000L
   SSL_library_init();
-#else
+#  else
   OPENSSL_init_ssl(0, NULL);
-#endif
+#  endif
 
   /* Register OpenSSL ciphers and digests */
   OpenSSL_add_all_algorithms();
 
-#ifdef HAVE_ENGINE_LOAD_PK11
+#  ifdef HAVE_ENGINE_LOAD_PK11
   ENGINE_load_pk11();
-#else
+#  else
   /*
    * Load all the builtin engines.
    */
   ENGINE_load_builtin_engines();
   ENGINE_register_all_complete();
-#endif
+#  endif
 
   crypto_initialized = true;
 
@@ -1534,12 +1545,12 @@ int CleanupCrypto(void)
    */
   if (!crypto_initialized) { return 0; }
 
-#ifndef HAVE_SUN_OS
+#  ifndef HAVE_SUN_OS
   /*
    * Cleanup the builtin engines.
    */
   ENGINE_cleanup();
-#endif
+#  endif
 
   OpensslCleanupThreads();
 
@@ -1600,9 +1611,9 @@ void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring)
  */
 static unsigned long GetOpensslThreadId(void)
 {
-#ifdef HAVE_WIN32
+#  ifdef HAVE_WIN32
   return (unsigned long)getpid();
-#else
+#  else
   /*
    * Comparison without use of pthread_equal() is mandated by the OpenSSL API
    *
@@ -1610,7 +1621,7 @@ static unsigned long GetOpensslThreadId(void)
    *   emulation code, which defines pthread_t as a structure.
    */
   return ((unsigned long)pthread_self());
-#endif /* not HAVE_WIN32 */
+#  endif /* not HAVE_WIN32 */
 }
 
 /*
@@ -1623,8 +1634,8 @@ static struct CRYPTO_dynlock_value* openssl_create_dynamic_mutex(
   struct CRYPTO_dynlock_value* dynlock;
   int status;
 
-  dynlock =
-      (struct CRYPTO_dynlock_value*)malloc(sizeof(struct CRYPTO_dynlock_value));
+  dynlock = (struct CRYPTO_dynlock_value*)malloc(
+      sizeof(struct CRYPTO_dynlock_value));
 
   if ((status = pthread_mutex_init(&dynlock->mutex, NULL)) != 0) {
     BErrNo be;

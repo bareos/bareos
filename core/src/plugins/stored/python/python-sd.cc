@@ -27,21 +27,21 @@
 #define BUILD_PLUGIN
 
 #if defined(HAVE_WIN32)
-#include "include/bareos.h"
-#include <Python.h>
+#  include "include/bareos.h"
+#  include <Python.h>
 #else
-#include <Python.h>
-#include "include/bareos.h"
+#  include <Python.h>
+#  include "include/bareos.h"
 #endif
 
 #define PLUGIN_DAEMON "sd"
 
 #if PY_VERSION_HEX < 0x03000000
-#define PLUGIN_NAME "python"
-#define PLUGIN_DIR PY2MODDIR
+#  define PLUGIN_NAME "python"
+#  define PLUGIN_DIR PY2MODDIR
 #else
-#define PLUGIN_NAME "python3"
-#define PLUGIN_DIR PY3MODDIR
+#  define PLUGIN_NAME "python3"
+#  define PLUGIN_DIR PY3MODDIR
 #endif
 
 #define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
@@ -91,20 +91,20 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value);
 static CoreFunctions* bareos_core_functions = NULL;
 static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
-static PluginInformation pluginInfo = {
-    sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
-    SD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-    PLUGIN_AUTHOR,      PLUGIN_DATE,
-    PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-    PLUGIN_USAGE};
+static PluginInformation pluginInfo
+    = {sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
+       SD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+       PLUGIN_AUTHOR,      PLUGIN_DATE,
+       PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+       PLUGIN_USAGE};
 
-static PluginFunctions pluginFuncs = {
-    sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
 
-    /* Entry points into plugin */
-    newPlugin,  /* new plugin instance */
-    freePlugin, /* free plugin instance */
-    getPluginValue, setPluginValue, handlePluginEvent};
+       /* Entry points into plugin */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent};
 
 #include "plugin_private_context.h"
 
@@ -124,8 +124,9 @@ static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
                           pVariable var,
                           void* value)
 {
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)
+            bareos_plugin_ctx->plugin_private_context;
   bRC retval = bRC_Error;
 
   if (!plugin_priv_ctx) { goto bail_out; }
@@ -142,8 +143,9 @@ static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
                           pVariable var,
                           void* value)
 {
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)bareos_plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)
+            bareos_plugin_ctx->plugin_private_context;
   bRC retval = bRC_Error;
 
   if (!plugin_priv_ctx) { return bRC_Error; }
@@ -173,14 +175,14 @@ static void PyErrorHandler()
   if (tracebackModule != NULL) {
     PyObject *tbList, *emptyString, *strRetval;
 
-    tbList =
-        PyObject_CallMethod(tracebackModule, (char*)"format_exception",
-                            (char*)"OOO", type, value == NULL ? Py_None : value,
-                            traceback == NULL ? Py_None : traceback);
+    tbList = PyObject_CallMethod(tracebackModule, (char*)"format_exception",
+                                 (char*)"OOO", type,
+                                 value == NULL ? Py_None : value,
+                                 traceback == NULL ? Py_None : traceback);
 
     emptyString = PyUnicode_FromString("");
-    strRetval =
-        PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
+    strRetval
+        = PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 
     error_string = strdup(PyUnicode_AsUTF8(strRetval));
 
@@ -236,8 +238,8 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   /* set bareos_core_functions inside of barossd module */
   Bareossd_set_bareos_core_functions(lbareos_core_functions);
 
-  bareos_core_functions =
-      lbareos_core_functions; /* Set Bareos funct pointers */
+  bareos_core_functions
+      = lbareos_core_functions; /* Set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
 
   *plugin_information = &pluginInfo; /* Return pointer to our info */
@@ -269,13 +271,13 @@ bRC unloadPlugin()
 /* Create a new instance of the plugin i.e. allocate our private storage */
 static bRC newPlugin(PluginContext* plugin_ctx)
 {
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)malloc(
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)malloc(
           sizeof(struct plugin_private_context));
   if (!plugin_priv_ctx) { return bRC_Error; }
   memset(plugin_priv_ctx, 0, sizeof(struct plugin_private_context));
-  plugin_ctx->plugin_private_context =
-      (void*)plugin_priv_ctx; /* set our context pointer */
+  plugin_ctx->plugin_private_context
+      = (void*)plugin_priv_ctx; /* set our context pointer */
 
   /* set bareos_plugin_context inside of barossd module */
   Bareossd_set_plugin_context(plugin_ctx);
@@ -297,8 +299,8 @@ static bRC newPlugin(PluginContext* plugin_ctx)
 /* Free a plugin instance, i.e. release our private storage */
 static bRC freePlugin(PluginContext* plugin_ctx)
 {
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
 
   if (!plugin_priv_ctx) { return bRC_Error; }
 
@@ -327,8 +329,8 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
   bRC retval = bRC_Error;
   bool event_dispatched = false;
   PoolMem plugin_options(PM_FNAME);
-  plugin_private_context* plugin_priv_ctx =
-      (plugin_private_context*)plugin_ctx->plugin_private_context;
+  plugin_private_context* plugin_priv_ctx
+      = (plugin_private_context*)plugin_ctx->plugin_private_context;
 
   if (!plugin_priv_ctx) { goto bail_out; }
 
@@ -409,8 +411,8 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
   int i, cnt;
   PoolMem plugin_definition(PM_FNAME);
   char *bp, *argument, *argument_value;
-  plugin_private_context* plugin_priv_ctx =
-      (plugin_private_context*)plugin_ctx->plugin_private_context;
+  plugin_private_context* plugin_priv_ctx
+      = (plugin_private_context*)plugin_ctx->plugin_private_context;
 
   if (!value) { return bRC_Error; }
 
@@ -546,8 +548,8 @@ bail_out:
 static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject *sysPath, *mPath, *pName, *pFunc;
   /* See if we already setup the python search path.  */
   if (!plugin_priv_ctx->python_path_set) {
@@ -582,8 +584,8 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
          plugin_priv_ctx->module_name);
 
     /* Get the Python dictionary for lookups in the Python namespace.  */
-    plugin_priv_ctx->pyModuleFunctionsDict =
-        PyModule_GetDict(plugin_priv_ctx->pModule); /* Borrowed reference */
+    plugin_priv_ctx->pyModuleFunctionsDict
+        = PyModule_GetDict(plugin_priv_ctx->pModule); /* Borrowed reference */
 
 
     /* Lookup the load_bareos_plugin() function in the python module.  */

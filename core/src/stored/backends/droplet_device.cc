@@ -76,18 +76,18 @@ struct device_option {
   int compare_size;
 };
 
-static device_option device_options[] = {
-    {"profile=", argument_profile, 8},
-    {"location=", argument_location, 9},
-    {"acl=", argument_canned_acl, 4},
-    {"storageclass=", argument_storage_class, 13},
-    {"bucket=", argument_bucket, 7},
-    {"chunksize=", argument_chunksize, 10},
-    {"iothreads=", argument_iothreads, 10},
-    {"ioslots=", argument_ioslots, 8},
-    {"retries=", argument_retries, 8},
-    {"mmap", argument_mmap, 4},
-    {NULL, argument_none}};
+static device_option device_options[]
+    = {{"profile=", argument_profile, 8},
+       {"location=", argument_location, 9},
+       {"acl=", argument_canned_acl, 4},
+       {"storageclass=", argument_storage_class, 13},
+       {"bucket=", argument_bucket, 7},
+       {"chunksize=", argument_chunksize, 10},
+       {"iothreads=", argument_iothreads, 10},
+       {"ioslots=", argument_ioslots, 8},
+       {"retries=", argument_retries, 8},
+       {"mmap", argument_mmap, 4},
+       {NULL, argument_none}};
 
 static int droplet_reference_count = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;

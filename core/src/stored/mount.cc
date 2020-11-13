@@ -789,9 +789,9 @@ int DeviceControlRecord::TryAutolabel(bool opened)
   }
   /* For a tape require it to be opened and read before labeling */
   if (!opened && dev->IsTape()) { return try_default; }
-  if (dev->HasCap(CAP_LABEL) &&
-      (VolCatInfo.VolCatBytes == 0 ||
-       (!dev->IsTape() && bstrcmp(VolCatInfo.VolCatStatus, "Recycle")))) {
+  if (dev->HasCap(CAP_LABEL)
+      && (VolCatInfo.VolCatBytes == 0
+          || (!dev->IsTape() && bstrcmp(VolCatInfo.VolCatStatus, "Recycle")))) {
     Dmsg0(150, "Create volume label\n");
     /* Create a new Volume label and write it to the device */
     if (!WriteNewVolumeLabelToDev(dcr, VolumeName, pool_name,
@@ -961,8 +961,8 @@ bool MountNextReadVolume(DeviceControlRecord* dcr)
   /*
    * End Of Tape -- mount next Volume (if another specified)
    */
-  if (jcr->impl->NumReadVolumes > 1 &&
-      jcr->impl->CurReadVolume < jcr->impl->NumReadVolumes) {
+  if (jcr->impl->NumReadVolumes > 1
+      && jcr->impl->CurReadVolume < jcr->impl->NumReadVolumes) {
     dev->Lock();
     dev->close(dcr);
     dev->SetRead();

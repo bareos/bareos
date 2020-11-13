@@ -43,17 +43,18 @@ namespace storagedaemon {
 struct BootStrapRecord;
 }  // namespace storagedaemon
 
-#define JobWaiting(jcr)                                                       \
-  (jcr->job_started &&                                                        \
-   (jcr->JobStatus == JS_WaitFD || jcr->JobStatus == JS_WaitSD ||             \
-    jcr->JobStatus == JS_WaitMedia || jcr->JobStatus == JS_WaitMount ||       \
-    jcr->JobStatus == JS_WaitStoreRes || jcr->JobStatus == JS_WaitJobRes ||   \
-    jcr->JobStatus == JS_WaitClientRes || jcr->JobStatus == JS_WaitMaxJobs || \
-    jcr->JobStatus == JS_WaitPriority ||                                      \
-    jcr->impl->SDJobStatus == JS_WaitMedia ||                                 \
-    jcr->impl->SDJobStatus == JS_WaitMount ||                                 \
-    jcr->impl->SDJobStatus == JS_WaitDevice ||                                \
-    jcr->impl->SDJobStatus == JS_WaitMaxJobs))
+#define JobWaiting(jcr)                                                        \
+  (jcr->job_started                                                            \
+   && (jcr->JobStatus == JS_WaitFD || jcr->JobStatus == JS_WaitSD              \
+       || jcr->JobStatus == JS_WaitMedia || jcr->JobStatus == JS_WaitMount     \
+       || jcr->JobStatus == JS_WaitStoreRes || jcr->JobStatus == JS_WaitJobRes \
+       || jcr->JobStatus == JS_WaitClientRes                                   \
+       || jcr->JobStatus == JS_WaitMaxJobs                                     \
+       || jcr->JobStatus == JS_WaitPriority                                    \
+       || jcr->impl->SDJobStatus == JS_WaitMedia                               \
+       || jcr->impl->SDJobStatus == JS_WaitMount                               \
+       || jcr->impl->SDJobStatus == JS_WaitDevice                              \
+       || jcr->impl->SDJobStatus == JS_WaitMaxJobs))
 
 /* clang-format off */
 struct Resources {

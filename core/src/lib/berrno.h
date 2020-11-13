@@ -37,9 +37,9 @@
  * Extra bits set to interpret errno value differently from errno
  */
 #ifdef HAVE_WIN32
-#define b_errno_win32 (1 << 29) /* user reserved bit */
+#  define b_errno_win32 (1 << 29) /* user reserved bit */
 #else
-#define b_errno_win32 0 /* On Unix/Linix system */
+#  define b_errno_win32 0 /* On Unix/Linix system */
 #endif
 #define b_errno_exit (1 << 28)   /* child exited, exit code returned */
 #define b_errno_signal (1 << 27) /* child died, signal code returned */

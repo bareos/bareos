@@ -85,37 +85,37 @@
 #include "lib/berrno.h"
 
 #ifndef HAVE_DYNAMIC_SD_BACKENDS
-#ifdef HAVE_GFAPI
-#include "backends/gfapi_device.h"
-#endif
-#ifdef HAVE_BAREOSSD_DROPLET_DEVICE
-#include "backends/chunked_device.h"
-#include "backends/droplet_device.h"
-#endif
-#ifdef HAVE_RADOS
-#include "backends/rados_device.h"
-#endif
-#ifdef HAVE_CEPHFS
-#include "backends/cephfs_device.h"
-#endif
-#include "backends/generic_tape_device.h"
-#ifdef HAVE_WIN32
-#include "backends/win32_tape_device.h"
-#include "backends/win32_fifo_device.h"
-#else
-#include "backends/unix_tape_device.h"
-#include "backends/unix_fifo_device.h"
-#endif
+#  ifdef HAVE_GFAPI
+#    include "backends/gfapi_device.h"
+#  endif
+#  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
+#    include "backends/chunked_device.h"
+#    include "backends/droplet_device.h"
+#  endif
+#  ifdef HAVE_RADOS
+#    include "backends/rados_device.h"
+#  endif
+#  ifdef HAVE_CEPHFS
+#    include "backends/cephfs_device.h"
+#  endif
+#  include "backends/generic_tape_device.h"
+#  ifdef HAVE_WIN32
+#    include "backends/win32_tape_device.h"
+#    include "backends/win32_fifo_device.h"
+#  else
+#    include "backends/unix_tape_device.h"
+#    include "backends/unix_fifo_device.h"
+#  endif
 #endif /* HAVE_DYNAMIC_SD_BACKENDS */
 
 #ifdef HAVE_WIN32
-#include "backends/win32_file_device.h"
+#  include "backends/win32_file_device.h"
 #else
-#include "backends/unix_file_device.h"
+#  include "backends/unix_file_device.h"
 #endif
 
 #ifndef O_NONBLOCK
-#define O_NONBLOCK 0
+#  define O_NONBLOCK 0
 #endif
 
 namespace storagedaemon {
@@ -147,7 +147,7 @@ const char* Device::mode_to_str(DeviceMode mode)
  */
 
 Device* FactoryCreateDevice(JobControlRecord* jcr,
-                           DeviceResource* device_resource)
+                            DeviceResource* device_resource)
 {
   Dmsg1(400, "max_block_size in device_resource res is %u\n",
         device_resource->max_block_size);
@@ -189,41 +189,41 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
      * for any type of device not being of the type file.
      */
 #ifndef HAVE_DYNAMIC_SD_BACKENDS
-#ifdef HAVE_GFAPI
+#  ifdef HAVE_GFAPI
     case DeviceType::B_GFAPI_DEV:
       dev = new gfapi_device;
       break;
-#endif
-#ifdef HAVE_BAREOSSD_DROPLET_DEVICE
+#  endif
+#  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
     case DeviceType::B_DROPLET_DEV:
       dev = new droplet_device;
       break;
-#endif
-#ifdef HAVE_RADOS
+#  endif
+#  ifdef HAVE_RADOS
     case DeviceType::B_RADOS_DEV:
       dev = new rados_device;
       break;
-#endif
-#ifdef HAVE_CEPHFS
+#  endif
+#  ifdef HAVE_CEPHFS
     case DeviceType::B_CEPHFS_DEV:
       dev = new cephfs_device;
       break;
-#endif
-#ifdef HAVE_WIN32
+#  endif
+#  ifdef HAVE_WIN32
     case DeviceType::B_TAPE_DEV:
       dev = new win32_tape_device;
       break;
     case DeviceType::B_FIFO_DEV:
       dev = new win32_fifo_device;
       break;
-#else
+#  else
     case DeviceType::B_TAPE_DEV:
       dev = new unix_tape_device;
       break;
     case DeviceType::B_FIFO_DEV:
       dev = new unix_fifo_device;
       break;
-#endif
+#  endif
 #endif /* HAVE_DYNAMIC_SD_BACKENDS */
 #ifdef HAVE_WIN32
     case DeviceType::B_FILE_DEV:
@@ -257,8 +257,8 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
     dev->dev_options = GetMemory(strlen(device_resource->device_options) + 1);
     PmStrcpy(dev->dev_options, device_resource->device_options);
   }
-  dev->prt_name = GetMemory(strlen(device_resource->device_name) +
-                            strlen(device_resource->resource_name_) + 20);
+  dev->prt_name = GetMemory(strlen(device_resource->device_name)
+                            + strlen(device_resource->resource_name_) + 20);
 
 
   Mmsg(dev->prt_name, "\"%s\" (%s)", device_resource->resource_name_,
@@ -300,8 +300,8 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
    */
   if (dev->IsFile() && dev->RequiresMount()) {
     struct stat statp;
-    if (!device_resource->mount_point ||
-        stat(device_resource->mount_point, &statp) < 0) {
+    if (!device_resource->mount_point
+        || stat(device_resource->mount_point, &statp) < 0) {
       BErrNo be;
       dev->dev_errno = errno;
       Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat mount point %s: ERR=%s\n"),
@@ -315,8 +315,8 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
     }
   }
 
-  if (dev->min_block_size >
-      (dev->max_block_size == 0 ? DEFAULT_BLOCK_SIZE : dev->max_block_size)) {
+  if (dev->min_block_size
+      > (dev->max_block_size == 0 ? DEFAULT_BLOCK_SIZE : dev->max_block_size)) {
     Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"),
          dev->print_name());
   }
@@ -331,8 +331,8 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
           _("Max block size %u not multiple of device %s block size=%d.\n"),
           dev->max_block_size, dev->print_name(), TAPE_BSIZE);
   }
-  if (dev->max_volume_size != 0 &&
-      dev->max_volume_size < (dev->max_block_size << 4)) {
+  if (dev->max_volume_size != 0
+      && dev->max_volume_size < (dev->max_block_size << 4)) {
     Jmsg(jcr, M_ERROR_TERM, 0,
          _("Max Vol Size < 8 * Max Block Size for device %s\n"),
          dev->print_name());
@@ -421,11 +421,11 @@ void InitDeviceWaitTimers(DeviceControlRecord* dcr)
 
   jcr->impl->device_wait_times.min_wait = 60 * 60;
   jcr->impl->device_wait_times.max_wait = 24 * 60 * 60;
-  jcr->impl->device_wait_times.max_num_wait =
-      9; /* 5 waits =~ 1 day, then 1 day at a time */
+  jcr->impl->device_wait_times.max_num_wait
+      = 9; /* 5 waits =~ 1 day, then 1 day at a time */
   jcr->impl->device_wait_times.wait_sec = jcr->impl->device_wait_times.min_wait;
-  jcr->impl->device_wait_times.rem_wait_sec =
-      jcr->impl->device_wait_times.wait_sec;
+  jcr->impl->device_wait_times.rem_wait_sec
+      = jcr->impl->device_wait_times.wait_sec;
   jcr->impl->device_wait_times.num_wait = 0;
 }
 
@@ -434,11 +434,11 @@ void InitJcrDeviceWaitTimers(JobControlRecord* jcr)
   /* ******FIXME******* put these on config variables */
   jcr->impl->device_wait_times.min_wait = 60 * 60;
   jcr->impl->device_wait_times.max_wait = 24 * 60 * 60;
-  jcr->impl->device_wait_times.max_num_wait =
-      9; /* 5 waits =~ 1 day, then 1 day at a time */
+  jcr->impl->device_wait_times.max_num_wait
+      = 9; /* 5 waits =~ 1 day, then 1 day at a time */
   jcr->impl->device_wait_times.wait_sec = jcr->impl->device_wait_times.min_wait;
-  jcr->impl->device_wait_times.rem_wait_sec =
-      jcr->impl->device_wait_times.wait_sec;
+  jcr->impl->device_wait_times.rem_wait_sec
+      = jcr->impl->device_wait_times.wait_sec;
   jcr->impl->device_wait_times.num_wait = 0;
 }
 
@@ -520,8 +520,8 @@ void Device::SetBlocksizes(DeviceControlRecord* dcr)
           dev->max_block_size, dev->print_name(), TAPE_BSIZE);
   }
 
-  if (dev->max_volume_size != 0 &&
-      dev->max_volume_size < (dev->max_block_size << 4)) {
+  if (dev->max_volume_size != 0
+      && dev->max_volume_size < (dev->max_block_size << 4)) {
     Jmsg(jcr, M_ERROR_TERM, 0,
          _("Max Vol Size < 8 * Max Block Size for device %s\n"),
          dev->print_name());
@@ -687,8 +687,8 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
    * the device name, assuming it has been appropriately setup by the
    * "autochanger".
    */
-  if (!device_resource->changer_res ||
-      device_resource->changer_command[0] == 0) {
+  if (!device_resource->changer_res
+      || device_resource->changer_command[0] == 0) {
     if (VolCatInfo.VolCatName[0] == 0) {
       Mmsg(errmsg, _("Could not open file device %s. No Volume name given.\n"),
            print_name());
@@ -1079,8 +1079,8 @@ bool Device::mount(DeviceControlRecord* dcr, int timeout)
    * bSdEventDeviceMount plugin event so any plugin
    * that want to do something can do things now.
    */
-  if (retval &&
-      GeneratePluginEvent(dcr->jcr, bSdEventDeviceMount, dcr) != bRC_OK) {
+  if (retval
+      && GeneratePluginEvent(dcr->jcr, bSdEventDeviceMount, dcr) != bRC_OK) {
     retval = false;
   }
 
@@ -1112,8 +1112,8 @@ bool Device::unmount(DeviceControlRecord* dcr, int timeout)
    * bSdEventDeviceUnmount plugin event so any plugin
    * that want to do something can do things now.
    */
-  if (dcr &&
-      GeneratePluginEvent(dcr->jcr, bSdEventDeviceUnmount, dcr) != bRC_OK) {
+  if (dcr
+      && GeneratePluginEvent(dcr->jcr, bSdEventDeviceUnmount, dcr) != bRC_OK) {
     retval = false;
     goto bail_out;
   }
@@ -1283,15 +1283,15 @@ Device::~Device()
 
 bool Device::CanStealLock() const
 {
-  return blocked_ &&
-         (blocked_ == BST_UNMOUNTED || blocked_ == BST_WAITING_FOR_SYSOP ||
-          blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP);
+  return blocked_
+         && (blocked_ == BST_UNMOUNTED || blocked_ == BST_WAITING_FOR_SYSOP
+             || blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP);
 }
 
 bool Device::waiting_for_mount() const
 {
-  return (blocked_ == BST_UNMOUNTED || blocked_ == BST_WAITING_FOR_SYSOP ||
-          blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP);
+  return (blocked_ == BST_UNMOUNTED || blocked_ == BST_WAITING_FOR_SYSOP
+          || blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP);
 }
 
 bool Device::IsBlocked() const { return blocked_ != BST_NOT_BLOCKED; }

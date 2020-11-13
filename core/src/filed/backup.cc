@@ -70,8 +70,8 @@ const bool have_xattr = false;
 #endif
 
 #ifndef compressBound
-#define compressBound(sourceLen) \
-  (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
+#  define compressBound(sourceLen) \
+    (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
 #endif
 
 /* Forward referenced functions */
@@ -111,8 +111,8 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   Dmsg1(300, "filed: opened data connection %d to stored\n", sd->fd_);
 
   LockRes(my_config);
-  ClientResource* client =
-      (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
+  ClientResource* client
+      = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
   UnlockRes(my_config);
   uint32_t buf_size;
   if (client) {
@@ -146,16 +146,16 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
 
   if (have_acl) {
     jcr->impl->acl_data = std::make_unique<AclData>();
-    jcr->impl->acl_data->u.build =
-        (acl_build_data_t*)malloc(sizeof(acl_build_data_t));
+    jcr->impl->acl_data->u.build
+        = (acl_build_data_t*)malloc(sizeof(acl_build_data_t));
     memset(jcr->impl->acl_data->u.build, 0, sizeof(acl_build_data_t));
     jcr->impl->acl_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
 
   if (have_xattr) {
     jcr->impl->xattr_data = std::make_unique<XattrData>();
-    jcr->impl->xattr_data->u.build =
-        (xattr_build_data_t*)malloc(sizeof(xattr_build_data_t));
+    jcr->impl->xattr_data->u.build
+        = (xattr_build_data_t*)malloc(sizeof(xattr_build_data_t));
     memset(jcr->impl->xattr_data->u.build, 0, sizeof(xattr_build_data_t));
     jcr->impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
@@ -221,7 +221,8 @@ static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx)
 
   if (bsctx.ff_pkt->hfsinfo.rsrclength > 0) {
     if (BopenRsrc(&bsctx.ff_pkt->bfd, bsctx.ff_pkt->fname, O_RDONLY | O_BINARY,
-                  0) < 0) {
+                  0)
+        < 0) {
       bsctx.ff_pkt->ff_errno = errno;
       BErrNo be;
       Jmsg(bsctx.jcr, M_NOTSAVED, -1,
@@ -763,9 +764,10 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
 #else
       do_read = ff_pkt->statp.st_size > 0;
 #endif
-    } else if (ff_pkt->type == FT_RAW || ff_pkt->type == FT_FIFO ||
-               ff_pkt->type == FT_REPARSE || ff_pkt->type == FT_JUNCTION ||
-               (!IsPortableBackup(&ff_pkt->bfd) && ff_pkt->type == FT_DIREND)) {
+    } else if (ff_pkt->type == FT_RAW || ff_pkt->type == FT_FIFO
+               || ff_pkt->type == FT_REPARSE || ff_pkt->type == FT_JUNCTION
+               || (!IsPortableBackup(&ff_pkt->bfd)
+                   && ff_pkt->type == FT_DIREND)) {
       do_read = true;
     }
   }
@@ -782,11 +784,12 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
     }
 
     noatime = BitIsSet(FO_NOATIME, ff_pkt->flags) ? O_NOATIME : 0;
-    ff_pkt->bfd.reparse_point =
-        (ff_pkt->type == FT_REPARSE || ff_pkt->type == FT_JUNCTION);
+    ff_pkt->bfd.reparse_point
+        = (ff_pkt->type == FT_REPARSE || ff_pkt->type == FT_JUNCTION);
 
     if (bopen(&ff_pkt->bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0,
-              ff_pkt->statp.st_rdev) < 0) {
+              ff_pkt->statp.st_rdev)
+        < 0) {
       ff_pkt->ff_errno = errno;
       BErrNo be;
       Jmsg(jcr, M_NOTSAVED, 0, _("     Cannot open \"%s\": ERR=%s.\n"),
@@ -804,8 +807,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
       tid = NULL;
     }
 
-    status =
-        send_data(jcr, data_stream, ff_pkt, bsctx.digest, bsctx.signing_digest);
+    status = send_data(jcr, data_stream, ff_pkt, bsctx.digest,
+                       bsctx.signing_digest);
 
     if (BitIsSet(FO_CHKCHANGES, ff_pkt->flags)) { HasFileChanged(jcr, ff_pkt); }
 
@@ -818,8 +821,9 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
     /*
      * Regular files can have resource forks and Finder Info
      */
-    if (ff_pkt->type != FT_LNKSAVED && (S_ISREG(ff_pkt->statp.st_mode) &&
-                                        BitIsSet(FO_HFSPLUS, ff_pkt->flags))) {
+    if (ff_pkt->type != FT_LNKSAVED
+        && (S_ISREG(ff_pkt->statp.st_mode)
+            && BitIsSet(FO_HFSPLUS, ff_pkt->flags))) {
       if (!SaveRsrcAndFinder(bsctx)) { goto bail_out; }
     }
   }
@@ -906,11 +910,11 @@ static inline bool SendDataToSd(b_ctx* bctx)
     ser_declare;
 
     allZeros = false;
-    if ((sd->message_length == bctx->rsize &&
-         (bctx->fileAddr + sd->message_length <
-          (uint64_t)bctx->ff_pkt->statp.st_size)) ||
-        ((bctx->ff_pkt->type == FT_RAW || bctx->ff_pkt->type == FT_FIFO) &&
-         ((uint64_t)bctx->ff_pkt->statp.st_size == 0))) {
+    if ((sd->message_length == bctx->rsize
+         && (bctx->fileAddr + sd->message_length
+             < (uint64_t)bctx->ff_pkt->statp.st_size))
+        || ((bctx->ff_pkt->type == FT_RAW || bctx->ff_pkt->type == FT_FIFO)
+            && ((uint64_t)bctx->ff_pkt->statp.st_size == 0))) {
       allZeros = IsBufZero(bctx->rbuf, bctx->rsize);
     }
 
@@ -985,8 +989,8 @@ static inline bool SendDataToSd(b_ctx* bctx)
       bctx->compress_len += sizeof(comp_stream_header); /* add size of header */
     }
 
-    bctx->jcr->store_bsock->message_length =
-        bctx->compress_len; /* set compressed length */
+    bctx->jcr->store_bsock->message_length
+        = bctx->compress_len; /* set compressed length */
     bctx->cipher_input_len = bctx->compress_len;
   }
 
@@ -994,8 +998,8 @@ static inline bool SendDataToSd(b_ctx* bctx)
    * Encrypt the data.
    */
   need_more_data = false;
-  if (BitIsSet(FO_ENCRYPT, bctx->ff_pkt->flags) &&
-      !EncryptData(bctx, &need_more_data)) {
+  if (BitIsSet(FO_ENCRYPT, bctx->ff_pkt->flags)
+      && !EncryptData(bctx, &need_more_data)) {
     if (need_more_data) { return true; }
     return false;
   }
@@ -1003,8 +1007,8 @@ static inline bool SendDataToSd(b_ctx* bctx)
   /*
    * Send the buffer to the Storage daemon
    */
-  if (BitIsSet(FO_SPARSE, bctx->ff_pkt->flags) ||
-      BitIsSet(FO_OFFSETS, bctx->ff_pkt->flags)) {
+  if (BitIsSet(FO_SPARSE, bctx->ff_pkt->flags)
+      || BitIsSet(FO_OFFSETS, bctx->ff_pkt->flags)) {
     sd->message_length += OFFSET_FADDR_SIZE; /* include fileAddr in size */
   }
   sd->msg = bctx->wbuf; /* set correct write buffer */
@@ -1018,9 +1022,9 @@ static inline bool SendDataToSd(b_ctx* bctx)
   }
 
   Dmsg1(130, "Send data to SD len=%d\n", sd->message_length);
-  bctx->jcr->JobBytes +=
-      sd->message_length;  /* count bytes saved possibly compressed/encrypted */
-  sd->msg = bctx->msgsave; /* restore read buffer */
+  bctx->jcr->JobBytes += sd->message_length; /* count bytes saved possibly
+                                                compressed/encrypted */
+  sd->msg = bctx->msgsave;                   /* restore read buffer */
 
   return true;
 }
@@ -1106,8 +1110,9 @@ static inline bool SendPlainData(b_ctx& bctx)
   /*
    * Read the file data
    */
-  while ((sd->message_length =
-              (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize)) > 0) {
+  while ((sd->message_length
+          = (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize))
+         > 0) {
     if (!SendDataToSd(&bctx)) { goto bail_out; }
   }
   retval = true;
@@ -1175,8 +1180,8 @@ static int send_data(JobControlRecord* jcr,
    * Make space at beginning of buffer for fileAddr because this
    *   same buffer will be used for writing if compression is off.
    */
-  if (BitIsSet(FO_SPARSE, ff_pkt->flags) ||
-      BitIsSet(FO_OFFSETS, ff_pkt->flags)) {
+  if (BitIsSet(FO_SPARSE, ff_pkt->flags)
+      || BitIsSet(FO_OFFSETS, ff_pkt->flags)) {
     bctx.rbuf += OFFSET_FADDR_SIZE;
     bctx.rsize -= OFFSET_FADDR_SIZE;
 #ifdef HAVE_FREEBSD_OS
@@ -1361,8 +1366,8 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
    * For a directory, link is the same as fname, but with trailing
    * slash. For a linked file, link is the link.
    */
-  if (!IS_FT_OBJECT(ff_pkt->type) &&
-      ff_pkt->type != FT_DELETED) { /* already stripped */
+  if (!IS_FT_OBJECT(ff_pkt->type)
+      && ff_pkt->type != FT_DELETED) { /* already stripped */
     StripPath(ff_pkt);
   }
   switch (ff_pkt->type) {

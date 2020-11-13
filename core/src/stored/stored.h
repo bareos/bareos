@@ -32,21 +32,21 @@
 const int sd_debuglevel = 300;
 
 #ifdef HAVE_MTIO_H
-#include <mtio.h>
+#  include <mtio.h>
 #else
-#ifdef HAVE_SYS_MTIO_H
-#ifdef HAVE_AIX_OS
-#define _MTEXTEND_H 1
-#endif
-#include <sys/mtio.h>
-#else
-#ifdef HAVE_SYS_TAPE_H
-#include <sys/tape.h>
-#else
+#  ifdef HAVE_SYS_MTIO_H
+#    ifdef HAVE_AIX_OS
+#      define _MTEXTEND_H 1
+#    endif
+#    include <sys/mtio.h>
+#  else
+#    ifdef HAVE_SYS_TAPE_H
+#      include <sys/tape.h>
+#    else
 /* Needed for Mac 10.6 (Snow Leopard) */
-#include "lib/bmtio.h"
-#endif
-#endif
+#      include "lib/bmtio.h"
+#    endif
+#  endif
 #endif
 #include "stored/bsr.h"
 #include "include/ch.h"
@@ -60,9 +60,9 @@ const int sd_debuglevel = 300;
 #include "reserve.h"
 
 #ifdef BAREOS_LIB_LIB_H_
-#include <fnmatch.h>
+#  include <fnmatch.h>
 #else
-#include "lib/fnmatch.h"
+#  include "lib/fnmatch.h"
 #endif
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))

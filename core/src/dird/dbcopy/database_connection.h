@@ -47,8 +47,8 @@ class DatabaseConnection {
   {
     jcr_.reset(directordaemon::NewDirectorJcr());
 
-    jcr_->impl->res.catalog =
-        static_cast<directordaemon::CatalogResource*>(config->GetResWithName(
+    jcr_->impl->res.catalog
+        = static_cast<directordaemon::CatalogResource*>(config->GetResWithName(
             directordaemon::R_CATALOG, catalog_resource_name.c_str()));
 
     if (jcr_->impl->res.catalog == nullptr) {

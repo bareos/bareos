@@ -32,8 +32,8 @@
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
-#include "cats.h"
-#include "lib/edit.h"
+#  include "cats.h"
+#  include "lib/edit.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -102,7 +102,7 @@ bail_out:
   return retval;
 }
 
-#define MAX_DEL_LIST_LEN 1000000
+#  define MAX_DEL_LIST_LEN 1000000
 
 struct s_del_ctx {
   JobId_t* JobId;

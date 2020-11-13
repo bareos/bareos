@@ -32,10 +32,10 @@
 #define FILE_DAEMON 1
 #include "filed_conf.h"
 #ifdef HAVE_WIN32
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#include "vss.h"
-#pragma GCC diagnostic pop
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#  include "vss.h"
+#  pragma GCC diagnostic pop
 #endif
 #include "include/jcr.h"
 #include "lib/breg.h"
