@@ -1880,7 +1880,7 @@ static std::string PrintConfigRun(RunResource* run)
    */
   PmStrcpy(temp, "");
   for (i = 0; i < 24; i++) {
-    if BitIsSet (i, run->date_time_bitfield.hour) {
+    if (BitIsSet (i, run->date_time_bitfield.hour)) {
       Mmsg(temp, "at %02d:%02d", i, run->minute);
       PmStrcat(run_str, temp.c_str());
     }
