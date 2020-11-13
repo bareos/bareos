@@ -314,7 +314,7 @@ class LowLevel(object):
 
     def close(self):
         """disconnect"""
-        if self.socket:
+        if self.socket is not None:
             self.socket.close()
         self.socket = None
 
