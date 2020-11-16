@@ -384,10 +384,12 @@ init_ssl_conn(dpl_ctx_t *ctx, dpl_conn_t *conn)
   if (ret <= 0) {
     int ret_ssl = 0;
 
-    SSL_get_error(conn->ssl, ret);
+    int ssl_err = SSL_get_error(conn->ssl, ret);
+    char buf[256];
+    ERR_error_string_n(ssl_err, buf, sizeof(buf));
 
     DPL_SSL_PERROR(ctx, "SSL_connect");
-    DPL_LOG(ctx, DPL_ERROR, "SSL connect error: %d: %d", ret, ret_ssl);
+    DPL_LOG(ctx, DPL_ERROR, "SSL connect error: %d (%s)", ret, buf);
 
     ret_ssl = SSL_get_verify_result(conn->ssl);
     DPL_LOG(ctx, DPL_ERROR, "SSL certificate verification status: %ld: %s", ret_ssl, X509_verify_cert_error_string(ret_ssl));
