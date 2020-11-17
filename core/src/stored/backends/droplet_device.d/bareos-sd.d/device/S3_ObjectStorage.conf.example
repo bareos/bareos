@@ -18,10 +18,10 @@ Device {
   #
 
   # testing:
-  Device Options = "profile=/etc/bareos/bareos-sd.d/droplet/droplet.profile,bucket=bareos-bucket,chunksize=100M,iothreads=0,retries=1"
+  Device Options = "profile=/etc/bareos/bareos-sd.d/device/droplet/droplet.profile,bucket=bareos-bucket,chunksize=100M,iothreads=0,retries=1"
 
   # performance:
-  #Device Options = "profile=/etc/bareos/bareos-sd.d/droplet/droplet.profile,bucket=bareos-bucket,chunksize=100M"
+  #Device Options = "profile=/etc/bareos/bareos-sd.d/device/droplet/droplet.profile,bucket=bareos-bucket,chunksize=100M"
 
   Device Type = droplet
   Label Media = yes                    # lets Bareos label unlabeled media
