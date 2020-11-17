@@ -89,9 +89,9 @@ As of your |sd| configuration, we need to setup a new device that acts as a link
 
 The name and media type must correspond to those settings in the |dir| :ref:`DirectorResourceStorage`:
 
--  :config:option:`sd/device/Name`\  = :config:option:`dir/storage/Device`\ 
+-  :config:option:`sd/device/Name`\  = :config:option:`dir/storage/Device`\
 
--  :config:option:`sd/device/MediaType`\  = :config:option:`dir/storage/MediaType`\ 
+-  :config:option:`sd/device/MediaType`\  = :config:option:`dir/storage/MediaType`\
 
 .. limitation:: Droplet Backend does not support block interleaving
 
@@ -354,7 +354,7 @@ Rados Storage Backend
 **Rados** (Ceph Object Store)
 
 Here you configure the Ceph object store, which is accessed by the SD using the Rados library. Prerequistes are a working Ceph object store and the package **bareos-storage-ceph**. See http://ceph.com for more information regarding Ceph installation and configuration. Assuming that you have an object store with name :file:`poolname` and your Ceph access is configured in :file:`/etc/ceph/ceph.conf`, you can use following snippet to configure it as
-storage device: 
+storage device:
 
 .. literalinclude:: /include/config/SdDeviceDeviceOptionsRados1.conf
    :language: bareosconfig
@@ -362,7 +362,3 @@ storage device:
 
 
 :sinceVersion:`15.2.0: Ceph Storage`
-
-
-
-

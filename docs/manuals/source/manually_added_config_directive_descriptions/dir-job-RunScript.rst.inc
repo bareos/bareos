@@ -18,7 +18,7 @@ You can specify more than one Command/Console option per RunScript.
 You can use following options may be specified in the body of the runscript:
 
 .. csv-table::
-   :header: Options, Value,          Description                                                                                                                                                                       
+   :header: Options, Value,          Description
 
    Runs On Success  , **Yes** \| No, run if JobStatus is successful
    Runs On Failure  , Yes \| **No**, run if JobStatus isn’t successful
@@ -77,7 +77,7 @@ Before executing the specified command, Bareos performs character substitution o
 
 Some character substitutions are not available in all situations. The Job Exit Status code %e edits the following values:
 
-:index:`\ <single: Exit Status>`\ 
+:index:`\ <single: Exit Status>`\
 
 -  OK
 
@@ -105,14 +105,14 @@ Keyword                                      RunsOnSuccess RunsOnFailure FailJob
 :config:option:`dir/job/ClientRunAfterJob`\   Yes           No                           Yes            After
 ============================================ ============= ============= ============== ============== ========
 
-Examples: 
+Examples:
 
 .. literalinclude:: /include/config/DirJobRunScript2.conf
    :language: bareosconfig
 
 
 
-Special Windows Considerations :index:`\ <single: Windows; Run Script>`\ 
+Special Windows Considerations :index:`\ <single: Windows; Run Script>`\
 
 You can run scripts just after snapshots initializations with *AfterVSS* keyword.
 
@@ -177,4 +177,3 @@ If /C or /K is specified, then the remainder of the command line after the switc
    -  the string between the two quote characters is the name of an executable file.
 
 #. Otherwise, old behavior is to see if the first character is a quote character and if so, strip the leading character and remove the last quote character on the command line, preserving any text after the last quote character.
-

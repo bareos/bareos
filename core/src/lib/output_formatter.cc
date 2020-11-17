@@ -35,15 +35,15 @@
 #include "lib/output_formatter.h"
 #include "lib/json.h"
 
-const char* json_error_message_template =
-    "{ "
-    "\"jsonrpc\": \"2.0\", "
-    "\"id\": null, "
-    "\"error\": { "
-    "\"message\": \"%s\", "
-    "\"code\": 1 "
-    "} "
-    "}\n";
+const char* json_error_message_template
+    = "{ "
+      "\"jsonrpc\": \"2.0\", "
+      "\"id\": null, "
+      "\"error\": { "
+      "\"message\": \"%s\", "
+      "\"code\": 1 "
+      "} "
+      "}\n";
 
 OutputFormatter::OutputFormatter(SEND_HANDLER* send_func_arg,
                                  void* send_ctx_arg,
@@ -151,8 +151,8 @@ void OutputFormatter::ObjectStart(const char* name,
           result_stack_json->push(json_object_current);
         }
       } else {
-        json_object_existing =
-            json_object_get(json_object_current, lname.c_str());
+        json_object_existing
+            = json_object_get(json_object_current, lname.c_str());
         if (json_object_existing) {
           Dmsg1(800, "obj %s already exists. Reusing it.\n", lname.c_str());
           result_stack_json->push(json_object_existing);
@@ -229,8 +229,8 @@ void OutputFormatter::ArrayStart(const char* name, const char* fmt)
         return;
       }
 
-      json_object_existing =
-          json_object_get(json_object_current, lname.c_str());
+      json_object_existing
+          = json_object_get(json_object_current, lname.c_str());
       if (json_object_existing) {
         Emsg2(M_ERROR, 0,
               "Failed to add JSON reference '%s' (stack size: %d) already "
@@ -546,8 +546,8 @@ void OutputFormatter::rewrap(PoolMem& string, int wrap)
     charsinline++;
     switch (*p) {
       case ' ':
-        if (api == 0 && wrap > 0 && charsinline >= wrap && open <= 0 &&
-            *(p + 1) != '|') {
+        if (api == 0 && wrap > 0 && charsinline >= wrap && open <= 0
+            && *(p + 1) != '|') {
           *q++ = '\n';
           *q++ = '\t';
           charsinline = 0;
@@ -888,9 +888,9 @@ bool OutputFormatter::JsonArrayItemAdd(json_t* value)
 bool OutputFormatter::JsonKeyValueAddBool(const char* key, bool value)
 {
   json_t* json_obj = NULL;
-#if JANSSON_VERSION_HEX < 0x020400
+#  if JANSSON_VERSION_HEX < 0x020400
   json_t* json_bool = NULL;
-#endif
+#  endif
   PoolMem lkey(key);
 
   lkey.toLower();
@@ -899,9 +899,9 @@ bool OutputFormatter::JsonKeyValueAddBool(const char* key, bool value)
     Emsg2(M_ERROR, 0, "No json object defined to add %s: %llu", key, value);
   }
 
-#if JANSSON_VERSION_HEX >= 0x020400
+#  if JANSSON_VERSION_HEX >= 0x020400
   json_object_set_new(json_obj, lkey.c_str(), json_boolean(value));
-#else
+#  else
   /*
    * The function json_boolean(bool) requires jansson >= 2.4,
    * which is not available on all platform, so assign the value manually.
@@ -912,7 +912,7 @@ bool OutputFormatter::JsonKeyValueAddBool(const char* key, bool value)
     json_bool = json_false();
   }
   json_object_set_new(json_obj, lkey.c_str(), json_bool);
-#endif
+#  endif
 
   return true;
 }

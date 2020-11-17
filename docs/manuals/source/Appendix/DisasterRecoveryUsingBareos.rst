@@ -3,7 +3,7 @@
 Disaster Recovery Using Bareos
 ==============================
 
-:index:`\ <single: Disaster; Recovery>`\  :index:`\ <single: Recovery; Disaster Recovery>`\ 
+:index:`\ <single: Disaster; Recovery>`\  :index:`\ <single: Recovery; Disaster Recovery>`\
 
 General
 -------
@@ -28,7 +28,7 @@ Here are a few important considerations concerning disaster recovery that you sh
 Steps to Take Before Disaster Strikes
 -------------------------------------
 
-:index:`\ <single: Disaster; Before>`\ 
+:index:`\ <single: Disaster; Before>`\
 
 -  Create a rescue or CDROM for your systems. Generally, they are offered by each distribution, and there are many good rescue disks on the Web
 
@@ -64,7 +64,7 @@ Generally, following components are required for a Bare Metal Recovery:
 Linux
 ~~~~~
 
-:index:`\ <single: Disaster; Recovery; Linux>`\ 
+:index:`\ <single: Disaster; Recovery; Linux>`\
 
 From the Relax-and-Recover web site (`http://relax-and-recover.org <http://relax-and-recover.org>`_):
 
@@ -123,8 +123,8 @@ to create the rescue image. If you used the configuration example above, you wil
 
    This will not create a Bareos backup on your system! You will have to do that by
    other means, e.g. by a regular Bareos backup schedule.
-   Also :command:`rear mkbackup` will not create a backup. 
-   In this configuration it will only create the rescue ISO 
+   Also :command:`rear mkbackup` will not create a backup.
+   In this configuration it will only create the rescue ISO
    (same as the :command:`rear mkrescue` command).
 
 Recovery
@@ -148,7 +148,7 @@ ReaR will restore your bootloader. Recovery is complete.
 Restoring a Bareos Server
 -------------------------
 
-:index:`\ <single: Restore; Bareos Server>`\  
+:index:`\ <single: Restore; Bareos Server>`\
 
 Above, we considered how to recover a client machine where a valid Bareos server was running on another machine. However, what happens if your server goes down and you no longer have a running Director, Catalog, or Storage daemon? There are several solutions:
 

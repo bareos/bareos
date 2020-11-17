@@ -49,11 +49,11 @@
 #include "include/make_unique.h"
 
 #ifdef HAVE_WIN32
-#include "win32/findlib/win32.h"
+#  include "win32/findlib/win32.h"
 #endif
 
 #if defined(HAVE_DARWIN_OS)
-#include <sys/attr.h>
+#  include <sys/attr.h>
 #endif
 
 namespace filedaemon {
@@ -245,8 +245,8 @@ static inline bool do_reStoreAcl(JobControlRecord* jcr,
        * ACL_REPORT_ERR_MAX_PER_JOB print the error message set by the lower
        * level routine in jcr->errmsg.
        */
-      if (jcr->impl->acl_data->u.parse->nr_errors <
-          ACL_REPORT_ERR_MAX_PER_JOB) {
+      if (jcr->impl->acl_data->u.parse->nr_errors
+          < ACL_REPORT_ERR_MAX_PER_JOB) {
         Jmsg(jcr, M_WARNING, 0, "%s", jcr->errmsg);
       }
       jcr->impl->acl_data->u.parse->nr_errors++;
@@ -417,8 +417,8 @@ void DoRestore(JobControlRecord* jcr)
   r_ctx rctx;
   Attributes* attr;
   /* ***FIXME*** make configurable */
-  crypto_digest_t signing_algorithm =
-      have_sha2 ? CRYPTO_DIGEST_SHA256 : CRYPTO_DIGEST_SHA1;
+  crypto_digest_t signing_algorithm
+      = have_sha2 ? CRYPTO_DIGEST_SHA256 : CRYPTO_DIGEST_SHA1;
   /*
    * The following variables keep track of "known unknowns"
    */
@@ -437,8 +437,8 @@ void DoRestore(JobControlRecord* jcr)
   jcr->setJobStatus(JS_Running);
 
   LockRes(my_config);
-  ClientResource* client =
-      (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
+  ClientResource* client
+      = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
   UnlockRes(my_config);
   if (client) {
     buf_size = client->max_network_buffer_size;
@@ -492,14 +492,14 @@ void DoRestore(JobControlRecord* jcr)
   attr = rctx.attr = new_attr(jcr);
   if (have_acl) {
     jcr->impl->acl_data = std::make_unique<AclData>();
-    jcr->impl->acl_data->u.parse =
-        (acl_parse_data_t*)malloc(sizeof(acl_parse_data_t));
+    jcr->impl->acl_data->u.parse
+        = (acl_parse_data_t*)malloc(sizeof(acl_parse_data_t));
     memset(jcr->impl->acl_data->u.parse, 0, sizeof(acl_parse_data_t));
   }
   if (have_xattr) {
     jcr->impl->xattr_data = std::make_unique<XattrData>();
-    jcr->impl->xattr_data->u.parse =
-        (xattr_parse_data_t*)malloc(sizeof(xattr_parse_data_t));
+    jcr->impl->xattr_data->u.parse
+        = (xattr_parse_data_t*)malloc(sizeof(xattr_parse_data_t));
     memset(jcr->impl->xattr_data->u.parse, 0, sizeof(xattr_parse_data_t));
   }
 
@@ -513,7 +513,8 @@ void DoRestore(JobControlRecord* jcr)
      * First we expect a Stream Record Header
      */
     if (sscanf(sd->msg, rec_header, &VolSessionId, &VolSessionTime, &file_index,
-               &rctx.full_stream, &rctx.size) != 5) {
+               &rctx.full_stream, &rctx.size)
+        != 5) {
       Jmsg1(jcr, M_FATAL, 0, _("Record header scan error: %s\n"), sd->msg);
       goto bail_out;
     }
@@ -860,7 +861,8 @@ void DoRestore(JobControlRecord* jcr)
 
             if (ExtractData(jcr, &rctx.bfd, sd->msg, sd->message_length,
                             &rctx.fileAddr, rctx.flags, rctx.stream,
-                            &rctx.cipher_ctx) < 0) {
+                            &rctx.cipher_ctx)
+                < 0) {
               rctx.extract = false;
               bclose(&rctx.bfd);
               continue;
@@ -893,7 +895,8 @@ void DoRestore(JobControlRecord* jcr)
           if (rctx.extract) {
             if (rctx.prev_stream != rctx.stream) {
               if (BopenRsrc(&rctx.forkbfd, jcr->impl->last_fname,
-                            O_WRONLY | O_TRUNC | O_BINARY, 0) < 0) {
+                            O_WRONLY | O_TRUNC | O_BINARY, 0)
+                  < 0) {
                 Jmsg(jcr, M_WARNING, 0,
                      _("Cannot open resource fork for %s.\n"),
                      jcr->impl->last_fname);
@@ -907,7 +910,8 @@ void DoRestore(JobControlRecord* jcr)
 
             if (ExtractData(jcr, &rctx.forkbfd, sd->msg, sd->message_length,
                             &rctx.fork_addr, rctx.fork_flags, rctx.stream,
-                            &rctx.fork_cipher_ctx) < 0) {
+                            &rctx.fork_cipher_ctx)
+                < 0) {
               rctx.extract = false;
               bclose(&rctx.forkbfd);
               continue;
@@ -956,8 +960,8 @@ void DoRestore(JobControlRecord* jcr)
          * b)     and it is not a directory (they are never "extracted")
          * c) or the file name is empty
          */
-        if ((!rctx.extract && jcr->impl->last_type != FT_DIREND) ||
-            (*jcr->impl->last_fname == 0)) {
+        if ((!rctx.extract && jcr->impl->last_type != FT_DIREND)
+            || (*jcr->impl->last_fname == 0)) {
           break;
         }
         if (have_acl) {
@@ -994,8 +998,8 @@ void DoRestore(JobControlRecord* jcr)
          * b)     and it is not a directory (they are never "extracted")
          * c) or the file name is empty
          */
-        if ((!rctx.extract && jcr->impl->last_type != FT_DIREND) ||
-            (*jcr->impl->last_fname == 0)) {
+        if ((!rctx.extract && jcr->impl->last_type != FT_DIREND)
+            || (*jcr->impl->last_fname == 0)) {
           break;
         }
         if (have_xattr) {
@@ -1023,8 +1027,8 @@ void DoRestore(JobControlRecord* jcr)
          * b)     and it is not a directory (they are never "extracted")
          * c) or the file name is empty
          */
-        if ((!rctx.extract && jcr->impl->last_type != FT_DIREND) ||
-            (*jcr->impl->last_fname == 0)) {
+        if ((!rctx.extract && jcr->impl->last_type != FT_DIREND)
+            || (*jcr->impl->last_fname == 0)) {
           break;
         }
         if (have_xattr) {
@@ -1050,9 +1054,10 @@ void DoRestore(JobControlRecord* jcr)
         /*
          * Save signature.
          */
-        if (rctx.extract && (rctx.sig = crypto_sign_decode(
-                                 jcr, (uint8_t*)sd->msg,
-                                 (uint32_t)sd->message_length)) == NULL) {
+        if (rctx.extract
+            && (rctx.sig = crypto_sign_decode(jcr, (uint8_t*)sd->msg,
+                                              (uint32_t)sd->message_length))
+                   == NULL) {
           Jmsg1(jcr, M_ERROR, 0,
                 _("Failed to decode message signature for %s\n"),
                 jcr->impl->last_fname);
@@ -1267,8 +1272,8 @@ bool StoreData(JobControlRecord* jcr,
 #ifdef HAVE_WIN32
   } else {
     if (bfd->encrypted) {
-      if (win32_send_to_copy_thread(jcr, bfd, data, length) !=
-          (ssize_t)length) {
+      if (win32_send_to_copy_thread(jcr, bfd, data, length)
+          != (ssize_t)length) {
         BErrNo be;
         Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
               jcr->impl->last_fname, be.bstrerror(bfd->BErrNo));

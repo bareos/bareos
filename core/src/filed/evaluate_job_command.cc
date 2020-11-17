@@ -40,13 +40,15 @@ JobCommand::JobCommand(const char* msg) : job_{0}, sd_auth_key_{0}
     switch (protocol_try) {
       case ProtocolVersion::kVersionFrom_18_2:
         if (sscanf(msg, jobcmdssl_.c_str(), &job_id_, job_, &vol_session_id_,
-                   &vol_session_time_, sd_auth_key_, &tls_policy_) == 6) {
+                   &vol_session_time_, sd_auth_key_, &tls_policy_)
+            == 6) {
           protocol = protocol_try;
         }
         break;
       case ProtocolVersion::KVersionBefore_18_2:
         if (sscanf(msg, jobcmd_.c_str(), &job_id_, job_, &vol_session_id_,
-                   &vol_session_time_, sd_auth_key_) == 5) {
+                   &vol_session_time_, sd_auth_key_)
+            == 5) {
           protocol = protocol_try;
         }
         break;

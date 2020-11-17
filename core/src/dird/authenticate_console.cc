@@ -25,7 +25,7 @@
 #include "dird/authenticate_console.h"
 #include "dird/dird.h"
 #if defined(HAVE_PAM)
-#include "dird/auth_pam.h"
+#  include "dird/auth_pam.h"
 #endif
 #include "dird/dird_globals.h"
 #include "lib/bnet.h"
@@ -178,8 +178,8 @@ OptionResult ConsoleAuthenticatorBefore_18_2::AuthenticatePamUser()
   if (optional_console_resource_->use_pam_authentication_) {
     Dmsg1(200, "PAM authentication using outdated Bareos console denied: %s\n",
           console_name_.c_str());
-    auth_success_ =
-        false; /* console before 18_2 cannot do pam authentication */
+    auth_success_
+        = false; /* console before 18_2 cannot do pam authentication */
     return OptionResult::Completed;
   }
   return OptionResult::Skipped;
@@ -257,8 +257,8 @@ void ConsoleAuthenticatorFrom_18_2::AuthenticateNamedConsole()
   uint32_t response_id = kMessageIdOk;
   bool send_version = true;
 
-  if (optional_console_resource_ &&
-      optional_console_resource_->use_pam_authentication_) {
+  if (optional_console_resource_
+      && optional_console_resource_->use_pam_authentication_) {
     response_id = kMessageIdPamRequired;
     send_version = false;
   }
@@ -273,8 +273,8 @@ OptionResult ConsoleAuthenticatorFrom_18_2::AuthenticatePamUser()
 {
 #if !defined(HAVE_PAM)
   {
-    if (optional_console_resource_ &&
-        optional_console_resource_->use_pam_authentication_) {
+    if (optional_console_resource_
+        && optional_console_resource_->use_pam_authentication_) {
       Emsg0(M_ERROR, 0, _("PAM is not available on this director\n"));
       auth_success_ = false;
       return OptionResult::Completed;
@@ -397,8 +397,8 @@ static ConsoleAuthenticator* CreateConsoleAuthenticator(UaContext* ua)
     return nullptr;
   }
 
-  ua->UA_sock->connected_daemon_version_ =
-      version; /* this is redundant if using cleartext handshake */
+  ua->UA_sock->connected_daemon_version_
+      = version; /* this is redundant if using cleartext handshake */
 
   if (version < BareosVersionNumber::kRelease_18_2) {
     return new ConsoleAuthenticatorBefore_18_2(ua, console_name);
@@ -420,8 +420,8 @@ bool AuthenticateConsole(UaContext* ua)
       CreateConsoleAuthenticator(ua));
   if (!console_authenticator) { return false; }
 
-  if (console_authenticator->AuthenticateDefaultConsole() ==
-      OptionResult::Completed) {
+  if (console_authenticator->AuthenticateDefaultConsole()
+      == OptionResult::Completed) {
     if (!console_authenticator->auth_success_) {
       LogErrorMessage(console_authenticator->console_name_, ua);
       return false;
@@ -432,8 +432,8 @@ bool AuthenticateConsole(UaContext* ua)
       LogErrorMessage(console_authenticator->console_name_, ua);
       return false;
     }
-    if (console_authenticator->AuthenticatePamUser() ==
-        OptionResult::Completed) {
+    if (console_authenticator->AuthenticatePamUser()
+        == OptionResult::Completed) {
       if (!console_authenticator->auth_success_) {
         LogErrorMessage(console_authenticator->console_name_, ua);
         return false;

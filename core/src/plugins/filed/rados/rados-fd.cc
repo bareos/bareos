@@ -49,10 +49,10 @@ static const int debuglevel = 150;
  * the new one.
  */
 #if LIBRADOS_VERSION_CODE < 17408
-#define DEFAULT_CLIENTID "admin"
+#  define DEFAULT_CLIENTID "admin"
 #else
-#define DEFAULT_CLUSTERNAME "ceph"
-#define DEFAULT_USERNAME "client.admin"
+#  define DEFAULT_CLUSTERNAME "ceph"
+#  define DEFAULT_USERNAME "client.admin"
 #endif
 
 /**
@@ -90,25 +90,25 @@ static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 /**
  * Plugin Information block
  */
-static PluginInformation pluginInfo = {
-    sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
-    FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-    PLUGIN_AUTHOR,      PLUGIN_DATE,
-    PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-    PLUGIN_USAGE};
+static PluginInformation pluginInfo
+    = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
+       FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+       PLUGIN_AUTHOR,      PLUGIN_DATE,
+       PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+       PLUGIN_USAGE};
 
 /**
  * Plugin entry points for Bareos
  */
-static PluginFunctions pluginFuncs = {
-    sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
-    /* Entry points into plugin */
-    newPlugin,  /* new plugin instance */
-    freePlugin, /* free plugin instance */
-    getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
-    endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
-    setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
+       /* Entry points into plugin */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
+       endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
+       setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
 
 /**
  * Plugin private context
@@ -158,15 +158,15 @@ struct plugin_argument {
   enum plugin_argument_type type;
 };
 
-static plugin_argument plugin_arguments[] = {
-    {"conffile", argument_conffile},
-    {"poolname", argument_poolname},
-    {"clientid", argument_clientid},
-    {"clustername", argument_clustername},
-    {"username", argument_username},
-    {"namespace", argument_namespace},
-    {"snapshotname", argument_snapshotname},
-    {NULL, argument_none}};
+static plugin_argument plugin_arguments[]
+    = {{"conffile", argument_conffile},
+       {"poolname", argument_poolname},
+       {"clientid", argument_clientid},
+       {"clustername", argument_clustername},
+       {"username", argument_username},
+       {"namespace", argument_namespace},
+       {"snapshotname", argument_snapshotname},
+       {NULL, argument_none}};
 
 #ifdef __cplusplus
 extern "C" {
@@ -184,8 +184,8 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  bareos_core_functions =
-      lbareos_core_functions; /* set Bareos funct pointers */
+  bareos_core_functions
+      = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */

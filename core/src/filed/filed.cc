@@ -88,7 +88,7 @@ static void usage()
  *
  */
 #if defined(HAVE_WIN32)
-#define main BareosMain
+#  define main BareosMain
 #endif
 
 int main(int argc, char* argv[])

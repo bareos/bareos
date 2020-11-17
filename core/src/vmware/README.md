@@ -20,5 +20,3 @@ Please see [FAQ Section Bareos VMware Backup Plugin](http://www.bareos.org/en/fa
 ### BUGTRACKER
 
 [http://bugs.bareos.org](http://bugs.bareos.org)
-
-

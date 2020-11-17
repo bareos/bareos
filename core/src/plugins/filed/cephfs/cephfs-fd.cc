@@ -82,25 +82,25 @@ static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 /**
  * Plugin Information block
  */
-static PluginInformation pluginInfo = {
-    sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
-    FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-    PLUGIN_AUTHOR,      PLUGIN_DATE,
-    PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-    PLUGIN_USAGE};
+static PluginInformation pluginInfo
+    = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
+       FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+       PLUGIN_AUTHOR,      PLUGIN_DATE,
+       PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+       PLUGIN_USAGE};
 
 /**
  * Plugin entry points for Bareos
  */
-static PluginFunctions pluginFuncs = {
-    sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
-    /* Entry points into plugin */
-    newPlugin,  /* new plugin instance */
-    freePlugin, /* free plugin instance */
-    getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
-    endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
-    setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
+       /* Entry points into plugin */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
+       endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
+       setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
 
 /**
  * Plugin private context
@@ -185,8 +185,8 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  bareos_core_functions =
-      lbareos_core_functions; /* set Bareos funct pointers */
+  bareos_core_functions
+      = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
@@ -235,8 +235,8 @@ static bRC newPlugin(PluginContext* ctx)
    * Resize all buffers for PATH like names to CEPHFS_PATH_MAX.
    */
   p_ctx->cwd = CheckPoolMemorySize(p_ctx->cwd, CEPHFS_PATH_MAX);
-  p_ctx->next_filename =
-      CheckPoolMemorySize(p_ctx->next_filename, CEPHFS_PATH_MAX);
+  p_ctx->next_filename
+      = CheckPoolMemorySize(p_ctx->next_filename, CEPHFS_PATH_MAX);
   p_ctx->link_target = CheckPoolMemorySize(p_ctx->link_target, CEPHFS_PATH_MAX);
 
   /*
@@ -449,9 +449,9 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
 #if HAVE_CEPH_STATX
     unsigned int stmask = 0;
     memset(&p_ctx->statx, 0, sizeof(p_ctx->statx));
-    status =
-        ceph_readdirplus_r(p_ctx->cmount, p_ctx->cdir, &p_ctx->de,
-                           &p_ctx->statx, stmask, CEPH_STATX_ALL_STATS, NULL);
+    status
+        = ceph_readdirplus_r(p_ctx->cmount, p_ctx->cdir, &p_ctx->de,
+                             &p_ctx->statx, stmask, CEPH_STATX_ALL_STATS, NULL);
 #else
     int stmask = 0;
     memset(&p_ctx->statp, 0, sizeof(p_ctx->statp));
@@ -504,10 +504,10 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
     /*
      * Skip `.', `..', and excluded file names.
      */
-    if (entry->d_name[0] == '\0' ||
-        (entry->d_name[0] == '.' &&
-         (entry->d_name[1] == '\0' ||
-          (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))) {
+    if (entry->d_name[0] == '\0'
+        || (entry->d_name[0] == '.'
+            && (entry->d_name[1] == '\0'
+                || (entry->d_name[1] == '.' && entry->d_name[2] == '\0')))) {
       continue;
     }
 
@@ -637,8 +637,8 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
           if (p_ctx->cdir) {
             struct dir_stack_entry* new_entry;
 
-            new_entry =
-                (struct dir_stack_entry*)malloc(sizeof(struct dir_stack_entry));
+            new_entry = (struct dir_stack_entry*)malloc(
+                sizeof(struct dir_stack_entry));
 #if HAVE_CEPH_STATX
             memcpy(&new_entry->statx, &p_ctx->statx, sizeof(new_entry->statx));
 #else
@@ -1123,8 +1123,8 @@ static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
       break;
     case IO_READ:
       if (p_ctx->cfd) {
-        io->status =
-            ceph_read(p_ctx->cmount, p_ctx->cfd, io->buf, io->count, -1);
+        io->status
+            = ceph_read(p_ctx->cmount, p_ctx->cfd, io->buf, io->count, -1);
         if (io->status < 0) {
           io->io_errno = -io->status;
           io->status = -1;
@@ -1138,8 +1138,8 @@ static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
       break;
     case IO_WRITE:
       if (p_ctx->cfd) {
-        io->status =
-            ceph_write(p_ctx->cmount, p_ctx->cfd, io->buf, io->count, -1);
+        io->status
+            = ceph_write(p_ctx->cmount, p_ctx->cfd, io->buf, io->count, -1);
         if (io->status < 0) {
           io->io_errno = -io->status;
           io->status = -1;
@@ -1167,8 +1167,8 @@ static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
       break;
     case IO_SEEK:
       if (p_ctx->cfd) {
-        io->status =
-            ceph_lseek(p_ctx->cmount, p_ctx->cfd, io->offset, io->whence);
+        io->status
+            = ceph_lseek(p_ctx->cmount, p_ctx->cfd, io->offset, io->whence);
         if (io->status < 0) {
           io->io_errno = -io->status;
           io->status = -1;
@@ -1261,7 +1261,8 @@ static inline bool CephfsMakedirs(plugin_ctx* p_ctx, const char* directory)
 
 #if HAVE_CEPH_STATX
       if (ceph_statx(p_ctx->cmount, new_directory.c_str(), &stx,
-                     CEPH_STATX_SIZE, AT_SYMLINK_NOFOLLOW) != 0) {
+                     CEPH_STATX_SIZE, AT_SYMLINK_NOFOLLOW)
+          != 0) {
 #else
       if (ceph_lstat(p_ctx->cmount, new_directory.c_str(), &st) != 0) {
 #endif
@@ -1358,8 +1359,8 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
         /*
          * Set attributes if we created this directory
          */
-        if (rp->type == FT_DIREND &&
-            PathListLookup(p_ctx->path_list, rp->ofname)) {
+        if (rp->type == FT_DIREND
+            && PathListLookup(p_ctx->path_list, rp->ofname)) {
           break;
         }
         Jmsg(ctx, M_INFO, 0, _("cephfs-fd: File skipped. Already exists: %s\n"),
@@ -1552,8 +1553,8 @@ static bRC checkFile(PluginContext* ctx, char* fname)
 /**
  * Acls are saved using extended attributes.
  */
-static const char* xattr_acl_skiplist[3] = {"system.posix_acl_access",
-                                            "system.posix_acl_default", NULL};
+static const char* xattr_acl_skiplist[3]
+    = {"system.posix_acl_access", "system.posix_acl_default", NULL};
 
 static inline uint32_t serialize_acl_stream(PoolMem* buf,
                                             uint32_t expected_serialize_len,
@@ -1611,30 +1612,30 @@ static bRC getAcl(PluginContext* ctx, acl_pkt* ap)
     skip_xattr = false;
     while (1) {
       current_size = xattr_value.MaxSize();
-      xattr_value_length =
-          ceph_lgetxattr(p_ctx->cmount, ap->fname, xattr_acl_skiplist[cnt],
-                         xattr_value.c_str(), current_size);
+      xattr_value_length
+          = ceph_lgetxattr(p_ctx->cmount, ap->fname, xattr_acl_skiplist[cnt],
+                           xattr_value.c_str(), current_size);
       if (xattr_value_length < 0) {
         BErrNo be;
 
         switch (errno) {
 #if defined(ENOATTR) || defined(ENODATA)
-#if defined(ENOATTR)
+#  if defined(ENOATTR)
           case ENOATTR:
-#endif
-#if defined(ENODATA) && ENOATTR != ENODATA
+#  endif
+#  if defined(ENODATA) && ENOATTR != ENODATA
           case ENODATA:
-#endif
+#  endif
             skip_xattr = true;
             break;
 #endif
 #if defined(ENOTSUP) || defined(EOPNOTSUPP)
-#if defined(ENOTSUP)
+#  if defined(ENOTSUP)
           case ENOTSUP:
-#endif
-#if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
+#  endif
+#  if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
           case EOPNOTSUPP:
-#endif
+#  endif
             abort_retrieval = true;
             break;
 #endif
@@ -1664,8 +1665,8 @@ static bRC getAcl(PluginContext* ctx, acl_pkt* ap)
     /*
      * Serialize the data.
      */
-    expected_serialize_len =
-        strlen(xattr_acl_skiplist[cnt]) + xattr_value_length + 4;
+    expected_serialize_len
+        = strlen(xattr_acl_skiplist[cnt]) + xattr_value_length + 4;
     content_length = serialize_acl_stream(
         &serialized_acls, expected_serialize_len, content_length,
         xattr_acl_skiplist[cnt], strlen(xattr_acl_skiplist[cnt]),
@@ -1751,20 +1752,20 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
 
         switch (status) {
 #if defined(ENOTSUP) || defined(EOPNOTSUPP)
-#if defined(ENOTSUP)
+#  if defined(ENOTSUP)
           case ENOTSUP:
-#endif
-#if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
+#  endif
+#  if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
           case EOPNOTSUPP:
-#endif
+#  endif
             return bRC_OK;
 #endif
           case -ERANGE:
             /*
              * Not enough room in buffer double its size and retry.
              */
-            p_ctx->xattr_list =
-                CheckPoolMemorySize(p_ctx->xattr_list, current_size * 2);
+            p_ctx->xattr_list
+                = CheckPoolMemorySize(p_ctx->xattr_list, current_size * 2);
             continue;
           default:
             Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_llistxattr(%s) failed: %s\n",
@@ -1816,30 +1817,30 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
 
     if (!skip_xattr) {
       current_size = xattr_value.MaxSize();
-      xattr_value_length =
-          ceph_lgetxattr(p_ctx->cmount, xp->fname, p_ctx->next_xattr_name,
-                         xattr_value.c_str(), current_size);
+      xattr_value_length
+          = ceph_lgetxattr(p_ctx->cmount, xp->fname, p_ctx->next_xattr_name,
+                           xattr_value.c_str(), current_size);
       if (xattr_value_length < 0) {
         BErrNo be;
 
         switch (xattr_value_length) {
 #if defined(ENOATTR) || defined(ENODATA)
-#if defined(ENOATTR)
+#  if defined(ENOATTR)
           case ENOATTR:
-#endif
-#if defined(ENODATA) && ENOATTR != ENODATA
+#  endif
+#  if defined(ENODATA) && ENOATTR != ENODATA
           case ENODATA:
-#endif
+#  endif
             skip_xattr = true;
             break;
 #endif
 #if defined(ENOTSUP) || defined(EOPNOTSUPP)
-#if defined(ENOTSUP)
+#  if defined(ENOTSUP)
           case ENOTSUP:
-#endif
-#if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
+#  endif
+#  if defined(EOPNOTSUPP) && EOPNOTSUPP != ENOTSUP
           case EOPNOTSUPP:
-#endif
+#  endif
             return bRC_OK;
 #endif
           case -ERANGE:

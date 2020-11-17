@@ -16,7 +16,7 @@ which will be displayed as
 
 .. include:: /DocumentationStyleGuide/example/code-block-bareosconfig.rst.inc
 
-  
+
 The *caption* shows the relevant path where to expect the configuration resource:
 
    #. <daemon>\ :file:`.d/` (bareos-dir.d, bareos-sd.d, bareos-fd.d, ...)
@@ -94,11 +94,11 @@ Internally, they can be referenced by the ``:config:option:`` directive.
 From extern, the URL to access them is
 
    * :config:option:`dir/job/AlwaysIncrementalJobRetention`
-  
+
       * ``.../Configuration/Director.html#config-Dir_Job_AlwaysIncrementalJobRetention``
-     
+
    * :config:option:`fd/client/AllowBandwidthBursting`
-   
+
       * ``.../Configuration/FileDaemon.html#config-Fd_Client_AllowBandwidthBursting``
 
 While the automatically generated may contain a short description (if available in the source code),
@@ -106,11 +106,11 @@ the description can be extended by creating of modifying
 the corresponding file in the :file:`manually_added_config_directive_descriptions/` subdirectory.
 
    * :config:option:`dir/job/AlwaysIncrementalJobRetention`
-  
+
       * :file:`manually_added_config_directive_descriptions/dir-job-AlwaysIncrementalJobRetention.rst.inc`
-     
+
    * :config:option:`fd/client/AllowBandwidthBursting`
-   
+
       * :file:`manually_added_config_directive_descriptions/fd-client-AllowBandwidthBursting.rst.inc`
 
 
@@ -135,12 +135,12 @@ For example:
 
     dir/job/AlwaysIncrementalJobRetention
 
-    
+
 .. note::
 
    If the reference to a Resource Directive does not match a  :ref:`DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Resource Directive Definition`,
    the displayed text will look the same, but there will be no hyperlink behind it.
-   
+
    Unfortenatly, if this is the case (the reference is wrong (e.g. because of a typo))
    there will be no hint about this during Sphinx build.
 
@@ -158,4 +158,3 @@ If you want to display a resource directive along with its value, the following 
 This will get displayed as
 
 :config:option:`dir/job/AlwaysIncrementalJobRetention = 900`
-

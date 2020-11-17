@@ -4,4 +4,3 @@ Director {
   address = localhost
   Password = "@dir_password@"
 }
-

@@ -9,4 +9,3 @@ FROM (
 LEFT JOIN PathVisibility AS b
 ON (b.JobId=%s AND a.PathId = b.PathId)
 WHERE b.PathId IS NULL
-

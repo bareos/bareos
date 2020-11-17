@@ -1,8 +1,8 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /*=================================================================================================================================================
  * Pure Javascript implementation of Uniforum message translation.
- * This implementation of GNU Gettext, providing internationalization support for javascript. 
- * It differs from existing javascript implementations in that it will support all current Gettext features 
+ * This implementation of GNU Gettext, providing internationalization support for javascript.
+ * It differs from existing javascript implementations in that it will support all current Gettext features
  *(ex. plural and context support), and will also support loading language catalogs from .mo, .po, or preprocessed json files (converter included).
  * It use this [2008 - Javascript Gettext](https://sourceforge.net/projects/jsgettext.berlios/?source=navbar)
  * Thank to [Joshua I. Miller](mailto:unrtst@cpan.org) for that great work.
@@ -81,12 +81,12 @@ Locale::gettext_pp(3pm), POSIX(3pm), gettext(1), gettext(3)
  * igt.try_load_lang() ; //will load and parse messages data from the setting catalog.
  * //Then print your messages
  * alert( igt.gettext("Hello world!") ) ;
- * 
+ *
  * //Like with GNU gettext, your domain path have to be
  * // path_to_locale/LC_MESSAGES/fr_FR.utf8/mydomain.po
  * // if "fr_FR.utf8" is not found, "fr_FR" or "fr" will be use for replacement.
  * //This is just an overview. See tutoriels for more.
- * 
+ *
  * //Optimum caching way to add domain is to use *<script>* tag to load it via *iJS.Gettext*’s json like file.
  * //just do this to add or register a domain where to get the messages data.
  * igt.locale_data = external_locale_data ;
@@ -122,7 +122,7 @@ iJS.Gettext = function () {
 
 /**
  * @property {iJS.Gettext} i18n  Defined `Gettext` object, to make *iJS gettext* functionalities to be directly use.
- * @example 
+ * @example
  * //set the locale in which the messages will be translated
  * iJS.i18n.setlocale("en_US.utf8") ;
  * //add domain where to find messages data
@@ -144,7 +144,7 @@ iJS.i18n = new iJS.Gettext() ;
  * @global
  * @param   {String} msgid  message to be translated
  * @returns {String} translated message if is found or `msgid` if not.
- * @example 
+ * @example
  * //set the locale in which the messages will be translated
  * iJS.i18n.setlocale("en_US.utf8") ;
  * //add domain where to find messages data
@@ -235,7 +235,7 @@ iJS.Gettext.prototype.bindtextdomain = function (domain, localePath, dtype) {
     if (!this.domain_registry.length) {    //first initialization
         this.domain_registry.push( {value: new_domain, path: new_locale_path, type: new_dtype} ) ;
 
-    } else {    //attempt to add new domain or reset if it’s already added. 
+    } else {    //attempt to add new domain or reset if it’s already added.
 
         var isNewDomaine = true ;
 
@@ -264,7 +264,7 @@ iJS.Gettext.context_glue = "\004" ;
 /**
  * json structure of all registered domain with corresponding messages data.
  * It depend of setting locale which define the catalog that will be load.
- * It will also content messages data that are parsed from developer’s defined json'd portable object. 
+ * It will also content messages data that are parsed from developer’s defined json'd portable object.
  * @private
  * @memberof iJS.Gettext
  */
@@ -281,7 +281,7 @@ iJS.Gettext.prototype.try_load_lang = function () {
 
     if (iJS.isSet( this.domain_registry ) && iJS.isSet( this.locale) ) {
 
-        /* @TODO execept the fact that loaded file are cached by browser, 
+        /* @TODO execept the fact that loaded file are cached by browser,
          *so that new reload must be fast, it's better to see how to keep already load messages data;
          *and just download those which have to be loaded.
         */
@@ -299,7 +299,7 @@ iJS.Gettext.prototype.try_load_lang = function () {
             domain = this.domain_registry[d] ;
             //When get *link.href* it return the absolute path, event if it initially define with *relative path*.
             //That why is more convenient to define *link* as `HTMLlinkElement` than as `string`.
-            link = document.createElement("link") ; 
+            link = document.createElement("link") ;
             if (domain.type == 'json') {
 
                 link.href = domain.path+"/"+this.locale+"/LC_MESSAGES/"+domain.value+".json" ;
@@ -426,8 +426,8 @@ iJS.Gettext.prototype.try_load_alternative_lang = function (domain, link) {
 };
 
 /**
- * This takes a json’d data (a portable object variant) and moves it into an internal form, 
- * for use in our lib, and puts it in our object as: 
+ * This takes a json’d data (a portable object variant) and moves it into an internal form,
+ * for use in our lib, and puts it in our object as:
  * <PRE><CODE>
    iJS.Gettext._locale_data = {
           domain : {
@@ -437,7 +437,7 @@ iJS.Gettext.prototype.try_load_alternative_lang = function (domain, link) {
               },
             ...
    </CODE></PRE>
- * The json’d data have to respect the library specifications for that. 
+ * The json’d data have to respect the library specifications for that.
  * For details see the script **po2json** in the associated binary directory.
  * Also see tutorials for more explanations.
  * @private
@@ -517,7 +517,7 @@ iJS.Gettext.prototype.parse_locale_data = function (locale_data) {
 
             } else {
                 throw new Error("iJS-gettext:'parse_locale_data': Syntax error in language file. Plural-Forms header is invalid ["+plural_forms+"]");
-            }   
+            }
 
             // default to english plural form
         } else if (typeof( iJS.Gettext._locale_data[domain].head.plural_func ) == 'undefined') {
@@ -563,7 +563,7 @@ iJS.Gettext.prototype.try_load_lang_po = function (uri) {
 /**
  * Do an ajax call to load in a .mo files, language definitions from associated catalog.
  * @NOTE not yet ready
- * @TODO put available when it will ready. For problems here see `parso_mo` implementation. 
+ * @TODO put available when it will ready. For problems here see `parso_mo` implementation.
  * @private
  * @memberof iJS.Gettext
  * @param   {string} uri link to the "mo" files
@@ -614,9 +614,9 @@ iJS.Gettext.prototype.uri_basename = function (uri) {
 };
 
 /**
- * Parse po data in a json structure. 
- * (like the library associated **po2json** perl script). 
- * @TODO ( also associate a **po2json** nodejs script). 
+ * Parse po data in a json structure.
+ * (like the library associated **po2json** perl script).
+ * @TODO ( also associate a **po2json** nodejs script).
  * @private
  * @memberof iJS.Gettext
  * @param   {String}   data a portable object content
@@ -808,7 +808,7 @@ iJS.Gettext.prototype.MAGIC = 314425327;
  * @return {Object} An object of key-value pairs
  */
 iJS.Gettext.prototype.parseHeader = function (str) {
-    
+
     var lines = (str || '').split('\n'),
         headers = {};
 
@@ -834,7 +834,7 @@ iJS.Gettext.prototype.parseHeader = function (str) {
  * @return {String} Normalized charset name
  */
 iJS.Gettext.prototype.formatCharset = function (charset, defaultCharset) {
-    
+
     return (charset || 'iso-8859-1').toString().toLowerCase().
     replace(/^utf[\-_]?(\d+)$/, 'utf-$1').
     replace(/^win(?:dows)?[\-_]?(\d+)$/, 'windows-$1').
@@ -846,25 +846,25 @@ iJS.Gettext.prototype.formatCharset = function (charset, defaultCharset) {
 
 
 /**
- * Parse mo data in a json structure. 
- * (like the library associated **po2json** perl script). 
+ * Parse mo data in a json structure.
+ * (like the library associated **po2json** perl script).
  * @TODO ( also associate a **po2json** nodejs script).
  * @NOTE not yet ready. Base on **moparser** of [node-gettext](http://github.com/andris9/node-gettext).
- * @TODO put available when it will ready. Problems here (depending of `parso_mo` implementation) 
+ * @TODO put available when it will ready. Problems here (depending of `parso_mo` implementation)
  *       are detection of magic number for *.mo* buffer and manipulating the considered buffer,
- *       function of little endian or big endian structure. 
+ *       function of little endian or big endian structure.
  * @private
  * @memberof iJS.Gettext
  * @param   {String}   data a portable object content
  * @returns {Object} a json parsed data
  */
 iJS.Gettext.prototype.parse_mo = function (data, defaultCharset) {
-    
+
     var _fileContents = new iJS.Buffer(data) ,
         _writeFunc = 'writeUInt32LE' , //Method name for writing int32 values, default littleendian
         _readFunc = 'readUInt32LE' , //Method name for reading int32 values, default littleendian
-        _charset = defaultCharset || 'iso-8859-1', 
-        
+        _charset = defaultCharset || 'iso-8859-1',
+
         _table = {
             charset: _charset,
             headers: undefined,
@@ -899,7 +899,7 @@ iJS.Gettext.prototype.parse_mo = function (data, defaultCharset) {
      * Total count of translated strings
      */
     _total = _fileContents[_readFunc](8);
-    
+
     /**
      * Offset position for original strings table
      */
@@ -994,7 +994,7 @@ iJS.Gettext.prototype.parse_mo = function (data, defaultCharset) {
     _fileContents = null;
 
     return _table;
-    
+
 };
 
 
@@ -1018,7 +1018,7 @@ iJS.Gettext.prototype.try_load_lang_json = function (uri) {
 
 /**
  * Set domain for future `gettext()` calls. <BR/>
- * If the given domain is not NULL, the current message domain is set to it; 
+ * If the given domain is not NULL, the current message domain is set to it;
  * else the function returns the current message domain. <BR/>
  * A  message  domain  is  a  set of translatable msgid messages. Usually,
  * every software package has its own message domain. The domain  name  is
@@ -1053,7 +1053,7 @@ iJS.Gettext.prototype.gettext = function (msgid) {
 
 
 /**
- * Like `gettext()`, but retrieves the message for the specified 
+ * Like `gettext()`, but retrieves the message for the specified
  * **TEXTDOMAIN** instead of the default domain.
  * @memberof iJS.Gettext
  * @param   {String} domain  Domain where translation can be found.
@@ -1105,9 +1105,9 @@ iJS.Gettext.prototype.dcgettext = function (domain, msgid, category) {
         alert( iJS._("One file deleted.\n") );
     else ...
 
-   //This is a nuisance for the programmer and often still not sufficient for an adequate translation.  
+   //This is a nuisance for the programmer and often still not sufficient for an adequate translation.
    //Many languages have completely different ideas on numerals.  Some (French, Italian, ...) treat 0 and 1 alike,
-   //others make no distinction at all (Japanese, Korean, Chinese, ...), others have two or more plural forms (Russian, 
+   //others make no distinction at all (Japanese, Korean, Chinese, ...), others have two or more plural forms (Russian,
    //Latvian, Czech, Polish, ...).  The solution is:
 
     alert( iJS.i18n.ngettext("One file deleted.\n", "%d files deleted.\n", count) );
@@ -1162,7 +1162,7 @@ iJS.Gettext.prototype.dcngettext = function (domain, msgid, msgid_plural, n, cat
  * @param   {String} msgctxt  context of text
  * @param   {String} msgid    Message to translate
  * @returns {String} translated text or the *msgid* if not found
- * @example 
+ * @example
  * // The word "View" may be a noun or a verb, which may be
  * //used in a menu as File->View or View->Source.
 
@@ -1179,7 +1179,7 @@ iJS.Gettext.prototype.pgettext = function (msgctxt, msgid) {
 };
 
 /**
- * Like `pgettext()`, but retrieves the message for the specified 
+ * Like `pgettext()`, but retrieves the message for the specified
  * **domain** instead of the default domain.
  * @memberof iJS.Gettext
  * @param   {String} domain   Domain where translation can be found.
@@ -1257,7 +1257,7 @@ iJS.Gettext.prototype.dnpgettext = function (domain, msgctxt, msgid, msgid_plura
  * @param   {String} msgctxt      Context of text
  * @param   {String} msgid        Message to translate
  * @param   {String} msgid_plural Plural form of text to translate
- * @param   {Number} n    
+ * @param   {Number} n
  * @param   {String} category (for now is will always be "LC_MESSAGES")
  * @returns {String} translated text or the *msgid* if not found
  */
@@ -1350,7 +1350,7 @@ iJS.Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plur
  * //One common mistake is to interpolate a variable into the string like this:
  * var translated = iJS._("Hello " + full_name); //`iJS._()` can be replace by `iJS.i18n.gettext()`
 
- * //The interpolation will happen before it's passed to gettext, and it's 
+ * //The interpolation will happen before it's passed to gettext, and it's
  * //unlikely you'll have a translation for every "Hello Tom" and "Hello Dick"
  * //and "Hellow Harry" that may arise.
 
@@ -1358,7 +1358,7 @@ iJS.Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plur
 
  * var translated = iJS.Gettext.strargs( iJS._("Hello %1"), [full_name] );
 
- /* This is espeically useful when multiple replacements are needed, as they 
+ /* This is espeically useful when multiple replacements are needed, as they
   * may not appear in the same order within the translation. As an English to
   * French example:
 
@@ -1367,7 +1367,7 @@ iJS.Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plur
   * French:  "C'est le %2 %1"
   * Code: iJS.Gettext.strargs( iJS._("This is the %1 %2"), ["red", "ball"] );
 
-  * (The example show thing that not have to be done because neither color nor text 
+  * (The example show thing that not have to be done because neither color nor text
   * will get translated here ...).
 
  */
@@ -1475,7 +1475,7 @@ iJS.Gettext.prototype.sjax = function (uri) {
 }
 
 /**
- * Evaluate A string representing a JavaScript expression, statement, or sequence of statements. 
+ * Evaluate A string representing a JavaScript expression, statement, or sequence of statements.
  * @private
  * @param   {String} data  JavaScript expression
  * @returns {Object} [[Description]]

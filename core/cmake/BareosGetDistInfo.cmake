@@ -17,8 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# get DIST info in format
-# "$PLATFORM;$DISTVER"
+# get DIST info in format "$PLATFORM;$DISTVER"
 
 execute_process(
   COMMAND ${CMAKE_CURRENT_LIST_DIR}/distname.sh
@@ -33,8 +32,8 @@ list(LENGTH DISTINFO DISTINFO_LENGTH)
 list(GET DISTINFO 0 PLATFORM)
 list(GET DISTINFO 1 DISTVER)
 
-SET(PLATFORM ${PLATFORM})
-SET(DISTVER ${DISTVER})
+set(PLATFORM ${PLATFORM})
+set(DISTVER ${DISTVER})
 
 set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")
 set(Distribution ${LSB_RELEASE_ID_SHORT})

@@ -75,8 +75,8 @@ int JobqInit(jobq_t* jq, int max_workers, void* (*engine)(void* arg))
           be.bstrerror(status));
     return status;
   }
-  if ((status = pthread_attr_setdetachstate(&jq->attr,
-                                            PTHREAD_CREATE_DETACHED)) != 0) {
+  if ((status = pthread_attr_setdetachstate(&jq->attr, PTHREAD_CREATE_DETACHED))
+      != 0) {
     pthread_attr_destroy(&jq->attr);
     return status;
   }
@@ -358,8 +358,8 @@ static int StartServer(jobq_t* jq)
 
   if (jq->num_workers < jq->max_workers) {
     Dmsg0(2300, "Create worker thread\n");
-    if ((status = pthread_create(&id, &jq->attr, jobq_server, (void*)jq)) !=
-        0) {
+    if ((status = pthread_create(&id, &jq->attr, jobq_server, (void*)jq))
+        != 0) {
       BErrNo be;
       Jmsg1(NULL, M_ERROR, 0, _("pthread_create: ERR=%s\n"),
             be.bstrerror(status));
@@ -553,10 +553,10 @@ extern "C" void* jobq_server(void* arg)
         /*
          * Take only jobs of correct Priority
          */
-        if (!(jcr->JobPriority == Priority ||
-              (jcr->JobPriority < Priority &&
-               jcr->impl->res.job->allow_mixed_priority &&
-               running_allow_mix))) {
+        if (!(jcr->JobPriority == Priority
+              || (jcr->JobPriority < Priority
+                  && jcr->impl->res.job->allow_mixed_priority
+                  && running_allow_mix))) {
           jcr->setJobStatus(JS_WaitPriority);
           break;
         }
@@ -657,19 +657,20 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
   /*
    * Basic condition is that more reschedule times remain
    */
-  if (jcr->impl->res.job->RescheduleTimes == 0 ||
-      jcr->impl->reschedule_count < jcr->impl->res.job->RescheduleTimes) {
+  if (jcr->impl->res.job->RescheduleTimes == 0
+      || jcr->impl->reschedule_count < jcr->impl->res.job->RescheduleTimes) {
     resched =
         /*
          * Check for incomplete jobs
          */
-        (jcr->impl->res.job->RescheduleIncompleteJobs && jcr->IsIncomplete() &&
-         jcr->is_JobType(JT_BACKUP) && !jcr->is_JobLevel(L_BASE)) ||
+        (jcr->impl->res.job->RescheduleIncompleteJobs && jcr->IsIncomplete()
+         && jcr->is_JobType(JT_BACKUP) && !jcr->is_JobLevel(L_BASE))
+        ||
         /*
          * Check for failed jobs
          */
-        (jcr->impl->res.job->RescheduleOnError && !jcr->IsTerminatedOk() &&
-         !jcr->is_JobStatus(JS_Canceled) && jcr->is_JobType(JT_BACKUP));
+        (jcr->impl->res.job->RescheduleOnError && !jcr->IsTerminatedOk()
+         && !jcr->is_JobStatus(JS_Canceled) && jcr->is_JobType(JT_BACKUP));
   }
 
   if (resched) {
@@ -731,22 +732,21 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
       njcr->impl->res.pool = jcr->impl->res.pool;
       njcr->impl->res.run_pool_override = jcr->impl->res.run_pool_override;
       njcr->impl->res.full_pool = jcr->impl->res.full_pool;
-      njcr->impl->res.run_full_pool_override =
-          jcr->impl->res.run_full_pool_override;
+      njcr->impl->res.run_full_pool_override
+          = jcr->impl->res.run_full_pool_override;
       njcr->impl->res.inc_pool = jcr->impl->res.inc_pool;
-      njcr->impl->res.run_inc_pool_override =
-          jcr->impl->res.run_inc_pool_override;
+      njcr->impl->res.run_inc_pool_override
+          = jcr->impl->res.run_inc_pool_override;
       njcr->impl->res.diff_pool = jcr->impl->res.diff_pool;
-      njcr->impl->res.run_diff_pool_override =
-          jcr->impl->res.run_diff_pool_override;
+      njcr->impl->res.run_diff_pool_override
+          = jcr->impl->res.run_diff_pool_override;
       njcr->impl->res.next_pool = jcr->impl->res.next_pool;
-      njcr->impl->res.run_next_pool_override =
-          jcr->impl->res.run_next_pool_override;
+      njcr->impl->res.run_next_pool_override
+          = jcr->impl->res.run_next_pool_override;
       njcr->JobStatus = -1;
       njcr->setJobStatus(jcr->JobStatus);
       if (jcr->impl->res.read_storage) {
-        CopyRstorage(njcr, jcr->impl->res.read_storage_list,
-                     _("previous Job"));
+        CopyRstorage(njcr, jcr->impl->res.read_storage_list, _("previous Job"));
       } else {
         FreeRstorage(njcr);
       }
@@ -867,8 +867,8 @@ static bool IncClientConcurrency(JobControlRecord* jcr)
   }
 
   P(mutex);
-  if (jcr->impl->res.client->rcs->NumConcurrentJobs <
-      jcr->impl->res.client->MaxConcurrentJobs) {
+  if (jcr->impl->res.client->rcs->NumConcurrentJobs
+      < jcr->impl->res.client->MaxConcurrentJobs) {
     jcr->impl->res.client->rcs->NumConcurrentJobs++;
     Dmsg2(50, "Inc Client=%s rncj=%d\n", jcr->impl->res.client->resource_name_,
           jcr->impl->res.client->rcs->NumConcurrentJobs);
@@ -898,8 +898,8 @@ static void DecClientConcurrency(JobControlRecord* jcr)
 static bool IncJobConcurrency(JobControlRecord* jcr)
 {
   P(mutex);
-  if (jcr->impl->res.job->rjs->NumConcurrentJobs <
-      jcr->impl->res.job->MaxConcurrentJobs) {
+  if (jcr->impl->res.job->rjs->NumConcurrentJobs
+      < jcr->impl->res.job->MaxConcurrentJobs) {
     jcr->impl->res.job->rjs->NumConcurrentJobs++;
     Dmsg2(50, "Inc Job=%s rncj=%d\n", jcr->impl->res.job->resource_name_,
           jcr->impl->res.job->rjs->NumConcurrentJobs);
@@ -931,25 +931,24 @@ bool IncReadStore(JobControlRecord* jcr)
   if (jcr->impl->IgnoreStorageConcurrency) { return true; }
 
   P(mutex);
-  if (jcr->impl->res.read_storage->runtime_storage_status->NumConcurrentJobs <
-      jcr->impl->res.read_storage->MaxConcurrentJobs) {
+  if (jcr->impl->res.read_storage->runtime_storage_status->NumConcurrentJobs
+      < jcr->impl->res.read_storage->MaxConcurrentJobs) {
     jcr->impl->res.read_storage->runtime_storage_status
         ->NumConcurrentReadJobs++;
     jcr->impl->res.read_storage->runtime_storage_status->NumConcurrentJobs++;
-    Dmsg2(50, "Inc Rstore=%s rncj=%d\n",
-          jcr->impl->res.read_storage->resource_name_,
-          jcr->impl->res.read_storage->runtime_storage_status
-              ->NumConcurrentJobs);
+    Dmsg2(
+        50, "Inc Rstore=%s rncj=%d\n",
+        jcr->impl->res.read_storage->resource_name_,
+        jcr->impl->res.read_storage->runtime_storage_status->NumConcurrentJobs);
     V(mutex);
 
     return true;
   }
   V(mutex);
 
-  Dmsg2(
-      50, "Fail to acquire Rstore=%s rncj=%d\n",
-      jcr->impl->res.read_storage->resource_name_,
-      jcr->impl->res.read_storage->runtime_storage_status->NumConcurrentJobs);
+  Dmsg2(50, "Fail to acquire Rstore=%s rncj=%d\n",
+        jcr->impl->res.read_storage->resource_name_,
+        jcr->impl->res.read_storage->runtime_storage_status->NumConcurrentJobs);
 
   return false;
 }
@@ -961,21 +960,22 @@ void DecReadStore(JobControlRecord* jcr)
     jcr->impl->res.read_storage->runtime_storage_status
         ->NumConcurrentReadJobs--;
     jcr->impl->res.read_storage->runtime_storage_status->NumConcurrentJobs--;
-    Dmsg2(50, "Dec Rstore=%s rncj=%d\n",
-          jcr->impl->res.read_storage->resource_name_,
-          jcr->impl->res.read_storage->runtime_storage_status
-              ->NumConcurrentJobs);
+    Dmsg2(
+        50, "Dec Rstore=%s rncj=%d\n",
+        jcr->impl->res.read_storage->resource_name_,
+        jcr->impl->res.read_storage->runtime_storage_status->NumConcurrentJobs);
 
     if (jcr->impl->res.read_storage->runtime_storage_status
-            ->NumConcurrentReadJobs < 0) {
+            ->NumConcurrentReadJobs
+        < 0) {
       Jmsg(jcr, M_FATAL, 0, _("NumConcurrentReadJobs Dec Rstore=%s rncj=%d\n"),
            jcr->impl->res.read_storage->resource_name_,
            jcr->impl->res.read_storage->runtime_storage_status
                ->NumConcurrentReadJobs);
     }
 
-    if (jcr->impl->res.read_storage->runtime_storage_status
-            ->NumConcurrentJobs < 0) {
+    if (jcr->impl->res.read_storage->runtime_storage_status->NumConcurrentJobs
+        < 0) {
       Jmsg(jcr, M_FATAL, 0, _("NumConcurrentJobs Dec Rstore=%s rncj=%d\n"),
            jcr->impl->res.read_storage->resource_name_,
            jcr->impl->res.read_storage->runtime_storage_status
@@ -990,8 +990,8 @@ static bool IncWriteStore(JobControlRecord* jcr)
   if (jcr->impl->IgnoreStorageConcurrency) { return true; }
 
   P(mutex);
-  if (jcr->impl->res.write_storage->runtime_storage_status->NumConcurrentJobs <
-      jcr->impl->res.write_storage->MaxConcurrentJobs) {
+  if (jcr->impl->res.write_storage->runtime_storage_status->NumConcurrentJobs
+      < jcr->impl->res.write_storage->MaxConcurrentJobs) {
     jcr->impl->res.write_storage->runtime_storage_status->NumConcurrentJobs++;
     Dmsg2(50, "Inc Wstore=%s wncj=%d\n",
           jcr->impl->res.write_storage->resource_name_,
@@ -1021,8 +1021,8 @@ static void DecWriteStore(JobControlRecord* jcr)
           jcr->impl->res.write_storage->runtime_storage_status
               ->NumConcurrentJobs);
 
-    if (jcr->impl->res.write_storage->runtime_storage_status
-            ->NumConcurrentJobs < 0) {
+    if (jcr->impl->res.write_storage->runtime_storage_status->NumConcurrentJobs
+        < 0) {
       Jmsg(jcr, M_FATAL, 0, _("NumConcurrentJobs Dec Wstore=%s wncj=%d\n"),
            jcr->impl->res.write_storage->resource_name_,
            jcr->impl->res.write_storage->runtime_storage_status

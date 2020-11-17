@@ -147,10 +147,10 @@ int RunScripts(JobControlRecord* jcr,
       }
     } else {
       if ((script->when & SCRIPT_Before) && (when & SCRIPT_Before)) {
-        if ((script->on_success &&
-             (jcr->JobStatus == JS_Running || jcr->JobStatus == JS_Created)) ||
-            (script->on_failure &&
-             (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
+        if ((script->on_success
+             && (jcr->JobStatus == JS_Running || jcr->JobStatus == JS_Created))
+            || (script->on_failure
+                && (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_Before (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
                 jcr->JobStatus);
@@ -159,8 +159,8 @@ int RunScripts(JobControlRecord* jcr,
       }
 
       if ((script->when & SCRIPT_AfterVSS) && (when & SCRIPT_AfterVSS)) {
-        if ((script->on_success && (jcr->JobStatus == JS_Blocked)) ||
-            (script->on_failure && JobCanceled(jcr))) {
+        if ((script->on_success && (jcr->JobStatus == JS_Blocked))
+            || (script->on_failure && JobCanceled(jcr))) {
           Dmsg4(200,
                 "runscript: Run it because SCRIPT_AfterVSS (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
@@ -170,9 +170,9 @@ int RunScripts(JobControlRecord* jcr,
       }
 
       if ((script->when & SCRIPT_After) && (when & SCRIPT_After)) {
-        if ((script->on_success && jcr->IsTerminatedOk()) ||
-            (script->on_failure &&
-             (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
+        if ((script->on_success && jcr->IsTerminatedOk())
+            || (script->on_failure
+                && (JobCanceled(jcr) || jcr->JobStatus == JS_Differences))) {
           Dmsg4(200, "runscript: Run it because SCRIPT_After (%s,%i,%i,%c)\n",
                 script->command.c_str(), script->on_success, script->on_failure,
                 jcr->JobStatus);
@@ -231,8 +231,8 @@ bool RunScript::Run(JobControlRecord* jcr, const char* name)
   Bpipe* bpipe;
   PoolMem line(PM_NAME);
 
-  ecmd =
-      edit_job_codes(jcr, ecmd, command.c_str(), "", this->job_code_callback);
+  ecmd
+      = edit_job_codes(jcr, ecmd, command.c_str(), "", this->job_code_callback);
   Dmsg1(100, "runscript: running '%s'...\n", ecmd);
   Jmsg(jcr, M_INFO, 0, _("%s: run %s \"%s\"\n"),
        cmd_type == SHELL_CMD ? "shell command" : "console command", name, ecmd);

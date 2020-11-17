@@ -42,9 +42,9 @@ void daemon_start() { return; }
 
 #else  // !HAVE_WIN32
 
-#if defined(DEVELOPER)
+#  if defined(DEVELOPER)
 static void SetupStdFileDescriptors() {}
-#else
+#  else
 static void SetupStdFileDescriptors()
 {
   extern int debug_level;
@@ -59,21 +59,21 @@ static void SetupStdFileDescriptors()
   dup2(fd, STDERR_FILENO);
   close(fd);
 }
-#endif  // DEVELOPER
+#  endif  // DEVELOPER
 
 static void CloseNonStdFileDescriptors()
 {
   constexpr int min_fd_to_be_closed = STDERR_FILENO + 1;
 
-#if defined(HAVE_FCNTL_F_CLOSEM)
+#  if defined(HAVE_FCNTL_F_CLOSEM)
   fcntl(min_fd_to_be_closed, F_CLOSEM);
-#elif defined(HAVE_CLOSEFROM)
+#  elif defined(HAVE_CLOSEFROM)
   closefrom(min_fd_to_be_closed);
-#else
+#  else
   for (int i = sysconf(_SC_OPEN_MAX) - 1; i >= min_fd_to_be_closed; i--) {
     close(i);
   }
-#endif
+#  endif
 }
 
 void daemon_start()

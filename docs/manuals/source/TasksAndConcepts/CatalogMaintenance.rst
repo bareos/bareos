@@ -3,7 +3,7 @@
 Catalog Maintenance
 ===================
 
-:index:`\ <single: Maintenance; Catalog>`\  :index:`\ <single: Catalog Maintenance>`\ 
+:index:`\ <single: Maintenance; Catalog>`\  :index:`\ <single: Catalog Maintenance>`\
 
 Catalog Database
 ----------------
@@ -95,21 +95,21 @@ db_type
    -  fallback: postgresql
 
 db_name
-   -  environment variable ``db_name``\ 
+   -  environment variable ``db_name``\
 
    -  :config:option:`dir/catalog/DbName`\  from the configuration
 
    -  default: bareos
 
 db_user
-   -  environment variable ``db_user``\ 
+   -  environment variable ``db_user``\
 
    -  :config:option:`dir/catalog/DbUser`\  from the configuration
 
    -  default: bareos
 
 db_password
-   -  environment variable ``db_password``\ 
+   -  environment variable ``db_password``\
 
    -  :config:option:`dir/catalog/DbPassword`\  from the configuration
 
@@ -364,7 +364,7 @@ database size will remain constant.
 Setting Retention Periods
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Setting Retention Periods>`\  :index:`\ <single: Periods; Setting Retention>`\ 
+:index:`\ <single: Setting Retention Periods>`\  :index:`\ <single: Periods; Setting Retention>`\
 
 Bareos uses three Retention periods: the File Retention period, the Job Retention period, and the Volume Retention period. Of these three, the File Retention period is by far the most important in determining how large your database will become.
 
@@ -390,7 +390,7 @@ Job Retention = <time-period-specification>
 
    The default Job Retention period is 180 days.
 
-:config:option:`dir/client/AutoPrune`\ 
+:config:option:`dir/client/AutoPrune`\
    :index:`\ <single: AutoPrune>`\  :index:`\ <single: Job; Retention; AutoPrune>`\  If set to yes, Bareos will automatically apply the File retention period and the Job retention period for the Client at the end of the Job. If you turn this off by setting it to no, your Catalog will grow each time you run a Job.
 
 .. _section-JobStatistics:
@@ -398,7 +398,7 @@ Job Retention = <time-period-specification>
 Job Statistics
 ^^^^^^^^^^^^^^
 
-:index:`\ <single: Statistics>`\  :index:`\ <single: Job; Statistics>`\ 
+:index:`\ <single: Statistics>`\  :index:`\ <single: Job; Statistics>`\
 
 Bareos catalog contains lot of information about your IT infrastructure, how many files, their size, the number of video or music files etc. Using Bareos catalog during the day to get them permit to save resources on your servers.
 
@@ -443,14 +443,14 @@ You can use the following Job resource in your nightly :config:option:`dir/job =
 PostgreSQL
 ----------
 
-:index:`\ <single: Database; PostgreSQL>`\  :index:`\ <single: PostgreSQL>`\ 
+:index:`\ <single: Database; PostgreSQL>`\  :index:`\ <single: PostgreSQL>`\
 
 .. _CompactingPostgres:
 
 Compacting Your PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Database; PostgreSQL; Compacting>`\  
+:index:`\ <single: Database; PostgreSQL; Compacting>`\
 
 Over time, as noted above, your database will tend to grow until Bareos starts deleting old expired records based on retention periods. After that starts, it is expected that the database size remains constant, provided that the amount of clients and files being backed up is constant.
 
@@ -575,7 +575,7 @@ To setup a scheduled admin job for vacuuming the file table, the following must 
 
       bareos ALL = (postgres) NOPASSWD: /usr/local/lib/bareos/scripts/postgresql_file_table_maintenance.sh
 
-   and make sure that ``/etc/sudoers`` includes it, usually by the line 
+   and make sure that ``/etc/sudoers`` includes it, usually by the line
 
    ::
 
@@ -692,4 +692,4 @@ Assuming that you start all your nightly backup jobs at 1:05 am (and that they r
      }
    }
 
-It is preferable to write/send the :ref:`bootstrap <BootstrapChapter>` file to another computer. It will allow you to quickly recover the database backup should that be necessary. If you do not have a bootstrap file, it is still possible to recover your database backup, but it will be more work and take longer. 
+It is preferable to write/send the :ref:`bootstrap <BootstrapChapter>` file to another computer. It will allow you to quickly recover the database backup should that be necessary. If you do not have a bootstrap file, it is still possible to recover your database backup, but it will be more work and take longer.

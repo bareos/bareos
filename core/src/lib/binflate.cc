@@ -26,7 +26,7 @@
 
 #include "include/bareos.h"
 #ifdef HAVE_LIBZ
-#include <zlib.h>
+#  include <zlib.h>
 #endif
 
 /**

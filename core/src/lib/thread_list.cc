@@ -195,8 +195,8 @@ static void WorkerThread(
 
   run_condition->ThreadIsRunning();
 
-  if (run_condition->WaitUntilThreadIsDetached() ==
-      IsRunningCondition::Result::kTimedout) {
+  if (run_condition->WaitUntilThreadIsDetached()
+      == IsRunningCondition::Result::kTimedout) {
     Emsg0(M_ABORT, 0, "Timeout while waiting to be detached.\n");
   }
 
@@ -225,8 +225,8 @@ bool ThreadList::CreateAndAddNewThread(ConfigurationParser* config, void* data)
                                 impl_->ThreadInvokedHandler_, config, data,
                                 run_condition)};
 
-    if (run_condition->WaitUntilThreadIsRunning() ==
-        IsRunningCondition::Result::kIsRunning) {
+    if (run_condition->WaitUntilThreadIsRunning()
+        == IsRunningCondition::Result::kIsRunning) {
       success = true;
     } else {
       Emsg0(M_ABORT, 0, "Timeout while waiting for new thread.\n");

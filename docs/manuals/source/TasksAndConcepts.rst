@@ -27,4 +27,3 @@ Tasks and Concepts
       /TasksAndConcepts/CatalogMaintenance.rst
       /TasksAndConcepts/BareosSecurityIssues.rst
       /TasksAndConcepts/PAM.rst
-

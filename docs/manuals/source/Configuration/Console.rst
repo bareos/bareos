@@ -47,7 +47,7 @@ An actual example might be:
 Console Resource
 ----------------
 
-:index:`\ <single: Console Resource>`\  :index:`\ <single: Resource; Console>`\ 
+:index:`\ <single: Console Resource>`\  :index:`\ <single: Resource; Console>`\
 
 There are three different kinds of consoles, which the administrator or user can use to interact with the Director. These three kinds of consoles comprise three different security levels.
 
@@ -76,7 +76,7 @@ Note, the Console resource is optional, but can be useful for restricted console
 Example Console Configuration File
 ----------------------------------
 
-:index:`\ <single: Configuration; bconsole>`\ 
+:index:`\ <single: Configuration; bconsole>`\
 
 A Console configuration file might look like this:
 

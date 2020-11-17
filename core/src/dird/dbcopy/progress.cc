@@ -86,8 +86,8 @@ bool Progress::Increment()
 
   state_.start = system_clock::now();
 
-  milliseconds duration =
-      std::chrono::duration_cast<milliseconds>(state_.start - state_old_.start);
+  milliseconds duration = std::chrono::duration_cast<milliseconds>(
+      state_.start - state_old_.start);
 
   if (is_initial_run_) {
     // no average
@@ -98,17 +98,17 @@ bool Progress::Increment()
     state_.duration = (state_old_.duration + duration) / 2;
   }
 
-  auto remaining_time =
-      (state_.duration) * (state_.amount / (state_old_.amount - state_.amount));
+  auto remaining_time = (state_.duration)
+                        * (state_.amount / (state_old_.amount - state_.amount));
   remaining_seconds_ = std::chrono::duration_cast<seconds>(remaining_time);
 
   state_.eta = system_clock::now() + remaining_time;
 
-  state_.ratio =
-      Ratio::num - (state_.amount * Ratio::num) / (full_amount_ * Ratio::den);
+  state_.ratio
+      = Ratio::num - (state_.amount * Ratio::num) / (full_amount_ * Ratio::den);
 
-  bool changed =
-      (state_.ratio != state_old_.ratio) || (state_.eta != state_old_.eta);
+  bool changed
+      = (state_.ratio != state_old_.ratio) || (state_.eta != state_old_.eta);
 
   state_old_ = state_;
 

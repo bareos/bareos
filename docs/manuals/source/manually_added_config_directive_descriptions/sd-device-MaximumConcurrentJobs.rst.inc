@@ -3,4 +3,3 @@ This directive specifies the maximum number of Jobs that can run concurrently on
 .. warning::
 
    If :config:option:`sd/device/DeviceType` is "Droplet" then Maximum Concurrent Jobs is limited to 1.
-

@@ -94,8 +94,8 @@ static char ERROR_append[] = "3903 Error append data\n";
 
 /* Responses sent to the Director */
 static char Job_start[] = "3010 Job %s start\n";
-static char Job_end[] =
-    "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+static char Job_end[]
+    = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 /**
  * After receiving a connection (in dircmd.c) if it is
@@ -388,7 +388,8 @@ static bool ReadOpenSession(JobControlRecord* jcr)
              &jcr->impl->read_session.read_StartFile,
              &jcr->impl->read_session.read_EndFile,
              &jcr->impl->read_session.read_StartBlock,
-             &jcr->impl->read_session.read_EndBlock) == 7) {
+             &jcr->impl->read_session.read_EndBlock)
+      == 7) {
     if (jcr->impl->session_opened) {
       PmStrcpy(jcr->errmsg, _("Attempt to open read on non-open session.\n"));
       fd->fsend(NOT_opened);

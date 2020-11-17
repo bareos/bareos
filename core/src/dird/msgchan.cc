@@ -55,15 +55,15 @@ namespace directordaemon {
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Commands sent to Storage daemon */
-static char jobcmd[] =
-    "JobId=%s job=%s job_name=%s client_name=%s "
-    "type=%d level=%d FileSet=%s NoAttr=%d SpoolAttr=%d FileSetMD5=%s "
-    "SpoolData=%d PreferMountedVols=%d SpoolSize=%s "
-    "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%llu "
-    "Protocol=%d BackupFormat=%s\n";
-static char use_storage[] =
-    "use storage=%s media_type=%s pool_name=%s "
-    "pool_type=%s append=%d copy=%d stripe=%d\n";
+static char jobcmd[]
+    = "JobId=%s job=%s job_name=%s client_name=%s "
+      "type=%d level=%d FileSet=%s NoAttr=%d SpoolAttr=%d FileSetMD5=%s "
+      "SpoolData=%d PreferMountedVols=%d SpoolSize=%s "
+      "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%llu "
+      "Protocol=%d BackupFormat=%s\n";
+static char use_storage[]
+    = "use storage=%s media_type=%s pool_name=%s "
+      "pool_type=%s append=%d copy=%d stripe=%d\n";
 static char use_device[] = "use device=%s\n";
 // static char query_device[] =
 //   "query device=%s";
@@ -76,8 +76,9 @@ static char OK_device[] = "3000 OK use device device=%s\n";
 
 /* Storage Daemon requests */
 static char Job_start[] = "3010 Job %127s start\n";
-static char Job_end[] =
-    "3099 Job %127s end JobStatus=%d JobFiles=%d JobBytes=%lld JobErrors=%u\n";
+static char Job_end[]
+    = "3099 Job %127s end JobStatus=%d JobFiles=%d JobBytes=%lld "
+      "JobErrors=%u\n";
 
 /* Forward referenced functions */
 extern "C" void* msg_thread(void* arg);
@@ -211,7 +212,8 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
   if (BgetDirmsg(sd) > 0) {
     Dmsg1(100, "<stored: %s", sd->msg);
     if (sscanf(sd->msg, OK_job, &jcr->VolSessionId, &jcr->VolSessionTime,
-               &auth_key) != 3) {
+               &auth_key)
+        != 3) {
       Dmsg1(100, "BadJob=%s\n", sd->msg);
       Jmsg(jcr, M_FATAL, 0, _("Storage daemon rejected Job command: %s\n"),
            sd->msg);
@@ -227,9 +229,9 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
     return false;
   }
 
-  if (send_bsr &&
-      (!SendBootstrapFileToSd(jcr, sd) ||
-       !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR))) {
+  if (send_bsr
+      && (!SendBootstrapFileToSd(jcr, sd)
+          || !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR))) {
     return false;
   }
 
@@ -253,8 +255,8 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
   /* Do read side of storage daemon */
   if (ok && read_storage) {
     /* For the moment, only migrate, copy and vbackup have rpool */
-    if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY) ||
-        (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
+    if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
+        || (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
       PmStrcpy(pool_type, jcr->impl->res.rpool->pool_type);
       PmStrcpy(pool_name, jcr->impl->res.rpool->resource_name_);
     } else {
@@ -449,7 +451,8 @@ extern "C" void* msg_thread(void* arg)
      * JobErrors="
      */
     if (sscanf(sd->msg, Job_end, Job, &JobStatus, &JobFiles, &JobBytes,
-               &JobErrors) == 5) {
+               &JobErrors)
+        == 5) {
       jcr->impl->SDJobStatus = JobStatus; /* termination status */
       jcr->impl->SDJobFiles = JobFiles;
       jcr->impl->SDJobBytes = JobBytes;

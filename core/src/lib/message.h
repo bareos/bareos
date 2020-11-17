@@ -52,8 +52,8 @@ bool GetTrace(void);
 const char* get_basename(const char* pathname);
 void SetLogTimestampFormat(const char* format);
 
-using DbLogInsertCallback =
-    std::function<bool(JobControlRecord* jcr, utime_t mtime, const char* msg)>;
+using DbLogInsertCallback = std::function<
+    bool(JobControlRecord* jcr, utime_t mtime, const char* msg)>;
 void SetDbLogInsertCallback(DbLogInsertCallback f);
 
 class MessagesResource;

@@ -193,4 +193,3 @@ check_two_logs
 check_restore_diff
 
 end_test
-

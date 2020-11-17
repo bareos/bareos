@@ -332,8 +332,9 @@ bool reRunCmd(UaContext* ua, const char* cmd)
     }
     ua->SendMsg("\n");
 
-    if (!yes && (!GetYesno(ua, _("rerun these jobids? (yes/no): ")) ||
-                 !ua->pint32_val)) {
+    if (!yes
+        && (!GetYesno(ua, _("rerun these jobids? (yes/no): "))
+            || !ua->pint32_val)) {
       goto bail_out;
     }
     /*
@@ -393,8 +394,8 @@ int DoRunCmd(UaContext* ua, const char* cmd)
   if (!jcr) {
     jcr = NewDirectorJcr();
     SetJcrDefaults(jcr, rc.job);
-    jcr->impl->unlink_bsr =
-        ua->jcr->impl->unlink_bsr; /* copy unlink flag from caller */
+    jcr->impl->unlink_bsr
+        = ua->jcr->impl->unlink_bsr; /* copy unlink flag from caller */
     ua->jcr->impl->unlink_bsr = false;
   }
 
@@ -463,12 +464,12 @@ try_again:
      */
     valid_response = false;
     length = strlen(ua->cmd);
-    if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, ".mod ", MIN(length, 5)) ||
-        bstrncasecmp(ua->cmd, "mod ", MIN(length, 4)) ||
-        bstrncasecmp(ua->cmd, NT_("yes"), length) ||
-        bstrncasecmp(ua->cmd, _("yes"), length) ||
-        bstrncasecmp(ua->cmd, NT_("no"), length) ||
-        bstrncasecmp(ua->cmd, _("no"), length)) {
+    if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, ".mod ", MIN(length, 5))
+        || bstrncasecmp(ua->cmd, "mod ", MIN(length, 4))
+        || bstrncasecmp(ua->cmd, NT_("yes"), length)
+        || bstrncasecmp(ua->cmd, _("yes"), length)
+        || bstrncasecmp(ua->cmd, NT_("no"), length)
+        || bstrncasecmp(ua->cmd, _("no"), length)) {
       valid_response = true;
     }
 
@@ -480,8 +481,8 @@ try_again:
   /*
    * See if the .mod or mod has arguments.
    */
-  if (bstrncasecmp(ua->cmd, ".mod ", 5) ||
-      (bstrncasecmp(ua->cmd, "mod ", 4) && strlen(ua->cmd) > 6)) {
+  if (bstrncasecmp(ua->cmd, ".mod ", 5)
+      || (bstrncasecmp(ua->cmd, "mod ", 4) && strlen(ua->cmd) > 6)) {
     ParseUaArgs(ua);
     rc.mod = true;
     if (!ScanCommandLineArguments(ua, rc)) { return 0; }
@@ -507,8 +508,8 @@ try_again:
    */
   jcr->impl->IgnoreLevelPoolOverrides = true;
 
-  if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, NT_("yes"), strlen(ua->cmd)) ||
-      bstrncasecmp(ua->cmd, _("yes"), strlen(ua->cmd))) {
+  if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, NT_("yes"), strlen(ua->cmd))
+      || bstrncasecmp(ua->cmd, _("yes"), strlen(ua->cmd))) {
     JobId_t JobId;
     Dmsg1(800, "Calling RunJob job=%x\n", jcr->impl->res.job);
 
@@ -583,13 +584,13 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
     AddPrompt(ua, _("Backup Format")); /* 5 */
     AddPrompt(ua, _("When"));          /* 6 */
     AddPrompt(ua, _("Priority"));      /* 7 */
-    if (jcr->is_JobType(JT_BACKUP) || jcr->is_JobType(JT_COPY) ||
-        jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_VERIFY)) {
+    if (jcr->is_JobType(JT_BACKUP) || jcr->is_JobType(JT_COPY)
+        || jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_VERIFY)) {
       AddPrompt(ua, _("Pool")); /* 8 */
-      if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY) ||
-          (jcr->is_JobType(JT_BACKUP) &&
-           jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
-        AddPrompt(ua, _("NextPool"));           /* 9 */
+      if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
+          || (jcr->is_JobType(JT_BACKUP)
+              && jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
+        AddPrompt(ua, _("NextPool"));                 /* 9 */
         if (jcr->is_JobType(JT_BACKUP)) {
           AddPrompt(ua, _("Plugin Options")); /* 10 */
         }
@@ -697,9 +698,9 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         break;
       case 8:
         /* Pool or Bootstrap depending on JobType */
-        if (jcr->is_JobType(JT_BACKUP) || jcr->is_JobType(JT_COPY) ||
-            jcr->is_JobType(JT_MIGRATE) ||
-            jcr->is_JobType(JT_VERIFY)) { /* Pool */
+        if (jcr->is_JobType(JT_BACKUP) || jcr->is_JobType(JT_COPY)
+            || jcr->is_JobType(JT_MIGRATE)
+            || jcr->is_JobType(JT_VERIFY)) { /* Pool */
           rc.pool = select_pool_resource(ua);
           if (rc.pool) {
             jcr->impl->res.pool = rc.pool;
@@ -737,9 +738,9 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
         break;
       case 9:
         /* NextPool/Verify Job/Where/Plugin Options depending on JobType */
-        if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY) ||
-            (jcr->is_JobType(JT_BACKUP) &&
-             jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
+        if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
+            || (jcr->is_JobType(JT_BACKUP)
+                && jcr->is_JobLevel(L_VIRTUAL_FULL))) { /* NextPool */
           rc.next_pool = select_pool_resource(ua);
           if (rc.next_pool) {
             jcr->impl->res.next_pool = rc.next_pool;
@@ -867,8 +868,8 @@ static bool ResetRestoreContext(UaContext* ua,
   if (rc.pool_name) {
     PmStrcpy(jcr->impl->res.pool_source, _("command line"));
     jcr->impl->IgnoreLevelPoolOverrides = true;
-  } else if (!rc.level_override &&
-             jcr->impl->res.pool != jcr->impl->res.job->pool) {
+  } else if (!rc.level_override
+             && jcr->impl->res.pool != jcr->impl->res.job->pool) {
     PmStrcpy(jcr->impl->res.pool_source, _("user input"));
   }
   SetRwstorage(jcr, rc.store);
@@ -974,8 +975,8 @@ static bool ResetRestoreContext(UaContext* ua,
   /*
    * If pool changed, update migration write storage
    */
-  if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY) ||
-      (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
+  if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
+      || (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
     if (!SetMigrationWstorage(jcr, rc.pool, rc.next_pool,
                               _("Storage from Run NextPool override"))) {
       return false;
@@ -1096,8 +1097,8 @@ try_again_reg:
         regs = get_bregexps(rwhere);
         ua->SendMsg(_("regexwhere=%s\n"), NPRT(rwhere));
       } else {
-        int len =
-            BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
+        int len
+            = BregexpGetBuildWhereSize(strip_prefix, add_prefix, add_suffix);
         regexp = (char*)malloc(len * sizeof(char));
         bregexp_build_where(regexp, len, strip_prefix, add_prefix, add_suffix);
         regs = get_bregexps(regexp);
@@ -1742,41 +1743,41 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
 {
   bool kw_ok;
   int i, j;
-  static const char* kw[] = {
-      /* command line arguments */
-      "job",                  /* 0 */
-      "jobid",                /* 1 */
-      "client",               /* 2 */
-      "fd",                   /* 3 */
-      "fileset",              /* 4 */
-      "level",                /* 5 */
-      "storage",              /* 6 */
-      "sd",                   /* 7 */
-      "regexwhere",           /* 8 - where string as a bregexp */
-      "where",                /* 9 */
-      "bootstrap",            /* 10 */
-      "replace",              /* 11 */
-      "when",                 /* 12 */
-      "priority",             /* 13 */
-      "yes",                  /* 14 -- if you change this change YES_POS too */
-      "verifyjob",            /* 15 */
-      "files",                /* 16 - number of files to restore */
-      "catalog",              /* 17 - override catalog */
-      "since",                /* 18 - since */
-      "cloned",               /* 19 - cloned */
-      "verifylist",           /* 20 - verify output list */
-      "migrationjob",         /* 21 - migration job name */
-      "pool",                 /* 22 */
-      "nextpool",             /* 23 */
-      "backupclient",         /* 24 */
-      "restoreclient",        /* 25 */
-      "pluginoptions",        /* 26 */
-      "spooldata",            /* 27 */
-      "comment",              /* 28 */
-      "ignoreduplicatecheck", /* 29 */
-      "accurate",             /* 30 */
-      "backupformat",         /* 31 */
-      NULL};
+  static const char* kw[]
+      = {                 /* command line arguments */
+         "job",           /* 0 */
+         "jobid",         /* 1 */
+         "client",        /* 2 */
+         "fd",            /* 3 */
+         "fileset",       /* 4 */
+         "level",         /* 5 */
+         "storage",       /* 6 */
+         "sd",            /* 7 */
+         "regexwhere",    /* 8 - where string as a bregexp */
+         "where",         /* 9 */
+         "bootstrap",     /* 10 */
+         "replace",       /* 11 */
+         "when",          /* 12 */
+         "priority",      /* 13 */
+         "yes",           /* 14 -- if you change this change YES_POS too */
+         "verifyjob",     /* 15 */
+         "files",         /* 16 - number of files to restore */
+         "catalog",       /* 17 - override catalog */
+         "since",         /* 18 - since */
+         "cloned",        /* 19 - cloned */
+         "verifylist",    /* 20 - verify output list */
+         "migrationjob",  /* 21 - migration job name */
+         "pool",          /* 22 */
+         "nextpool",      /* 23 */
+         "backupclient",  /* 24 */
+         "restoreclient", /* 25 */
+         "pluginoptions", /* 26 */
+         "spooldata",     /* 27 */
+         "comment",       /* 28 */
+         "ignoreduplicatecheck", /* 29 */
+         "accurate",             /* 30 */
+         "backupformat",         /* 31 */
+         NULL};
 
 #define YES_POS 14
 

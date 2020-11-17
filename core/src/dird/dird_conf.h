@@ -154,8 +154,8 @@ class DirectorResource
   uint32_t subscriptions_used = 0; /* Number of subscribtions used */
   uint32_t jcr_watchdog_time = 0;  /* Absolute time after which a Job gets
                                   terminated  regardless of its progress */
-  uint32_t stats_collect_interval =
-      0;                 /* Statistics collect interval in seconds */
+  uint32_t stats_collect_interval
+      = 0;               /* Statistics collect interval in seconds */
   char* verid = nullptr; /* Custom Id to print in version command */
   char* secure_erase_cmdline = nullptr; /* Cmdline to execute to perform secure
                                  erase of file */
@@ -268,23 +268,23 @@ class CatalogResource : public BareosResource {
   char* db_name = nullptr;
   char* db_driver = nullptr;        /**< Select appropriate driver */
   uint32_t mult_db_connections = 0; /**< Set if multiple connections wanted */
-  bool disable_batch_insert =
-      false;                  /**< Set if batch inserts should be disabled */
+  bool disable_batch_insert
+      = false;                /**< Set if batch inserts should be disabled */
   bool try_reconnect = false; /**< Try to reconnect a database connection when
                          its dropped */
   bool exit_on_fatal = false; /**< Make any fatal error in the connection to the
                          database exit the program */
-  uint32_t pooling_min_connections =
-      0; /**< When using sql pooling start with this
-        number of connections to the database */
+  uint32_t pooling_min_connections
+      = 0; /**< When using sql pooling start with this
+          number of connections to the database */
   uint32_t pooling_max_connections = 0; /**< When using sql pooling maximum
                                        number of connections to the database */
   uint32_t pooling_increment_connections = 0; /**< When using sql pooling
                                              increment the pool with this amount
                                              when its to small */
-  uint32_t pooling_idle_timeout =
-      0; /**< When using sql pooling set this to the number
-        of seconds to keep an idle connection */
+  uint32_t pooling_idle_timeout
+      = 0; /**< When using sql pooling set this to the number
+          of seconds to keep an idle connection */
   uint32_t pooling_validate_timeout = 0; /**< When using sql pooling set this to
                                         the number of seconds after a idle
                                         connection should be validated */
@@ -324,11 +324,11 @@ class ClientResource
   utime_t JobRetention = {0};         /* Job retention period in seconds */
   utime_t heartbeat_interval = {0};   /* Interval to send heartbeats */
   char* address = nullptr;            /* Hostname for remote access to Client */
-  char* lanaddress =
-      nullptr; /* Hostname for remote access to Client if behind NAT in LAN
-                */
-  char* username =
-      nullptr; /* Username to use for authentication if protocol supports it */
+  char* lanaddress
+      = nullptr; /* Hostname for remote access to Client if behind NAT in LAN
+                  */
+  char* username = nullptr; /* Username to use for authentication if protocol
+                               supports it */
   CatalogResource* catalog = nullptr; /* Catalog resource */
   int32_t MaxConcurrentJobs = 0;      /* Maximum concurrent jobs */
   bool passive = false;               /* Passive Client */
@@ -337,14 +337,14 @@ class ClientResource
   bool enabled = false;               /* Set if client is enabled */
   bool AutoPrune = false;             /* Do automatic pruning? */
   bool StrictQuotas = false;          /* Enable strict quotas? */
-  bool QuotaIncludeFailedJobs =
-      false; /* Ignore failed jobs when calculating quota */
-  bool ndmp_use_lmdb =
-      false; /* NDMP Protocol specific use LMDB for the FHDB or not */
+  bool QuotaIncludeFailedJobs
+      = false; /* Ignore failed jobs when calculating quota */
+  bool ndmp_use_lmdb
+      = false; /* NDMP Protocol specific use LMDB for the FHDB or not */
   int64_t max_bandwidth = 0;              /* Limit speed on this client */
   runtime_client_status_t* rcs = nullptr; /* Runtime Client Status */
-  ClientConnectionHandshakeMode connection_successful_handshake_ =
-      ClientConnectionHandshakeMode::kUndefined;
+  ClientConnectionHandshakeMode connection_successful_handshake_
+      = ClientConnectionHandshakeMode::kUndefined;
 };
 
 /**
@@ -364,8 +364,8 @@ class StorageResource
   char* address = nullptr;    /* Hostname for remote access to Storage */
   char* lanaddress = nullptr; /* Hostname for remote access to Storage if behind
                        NAT in LAN */
-  char* username =
-      nullptr; /* Username to use for authentication if protocol supports it */
+  char* username = nullptr;   /* Username to use for authentication if protocol
+                                 supports it */
   char* media_type = nullptr; /**< Media Type provided by this Storage */
   char* ndmp_changer_device = nullptr; /**< If DIR controls storage directly
                                 (NDMP_NATIVE) changer device used */
@@ -374,13 +374,13 @@ class StorageResource
   int32_t MaxConcurrentReadJobs = 0; /**< Maximum concurrent jobs reading */
   bool enabled = false;              /**< Set if device is enabled */
   bool autochanger = false;          /**< Set if autochanger */
-  bool collectstats =
-      false; /**< Set if statistics should be collected of this SD */
+  bool collectstats
+      = false; /**< Set if statistics should be collected of this SD */
   bool AllowCompress = false; /**< Set if this Storage should allow jobs to
                          enable compression */
   int64_t StorageId = 0;      /**< Set from Storage DB record */
-  int64_t max_bandwidth =
-      0; /**< Limit speed on this storage daemon for replication */
+  int64_t max_bandwidth
+      = 0; /**< Limit speed on this storage daemon for replication */
   utime_t heartbeat_interval = {0}; /**< Interval to send heartbeats */
   utime_t cache_status_interval = {
       0}; /**< Interval to cache the vol_list in the runtime_storage_status */
@@ -668,12 +668,12 @@ class PoolResource : public BareosResource {
   bool recycle_current_volume = false; /* Attempt recycle of current volume */
   bool AutoPrune = false;              /* Default for pool auto prune */
   bool Recycle = false;                /* Default for media recycle yes/no */
-  uint32_t action_on_purge =
-      0; /* Action on purge, e.g. truncate the disk volume */
-  PoolResource* RecyclePool =
-      nullptr; /* RecyclePool destination when media is purged */
-  PoolResource* ScratchPool =
-      nullptr; /* ScratchPool source when requesting media */
+  uint32_t action_on_purge
+      = 0; /* Action on purge, e.g. truncate the disk volume */
+  PoolResource* RecyclePool
+      = nullptr; /* RecyclePool destination when media is purged */
+  PoolResource* ScratchPool
+      = nullptr; /* ScratchPool source when requesting media */
   CatalogResource* catalog = nullptr; /* Catalog to be used */
   utime_t FileRetention = {0};        /* File retention period in seconds */
   utime_t JobRetention = {0};         /* Job retention period in seconds */

@@ -56,8 +56,8 @@ namespace directordaemon {
 
 /* Commands sent to File daemon */
 static char verifycmd[] = "verify level=%s\n";
-static char storaddrcmd[] =
-    "storage address=%s port=%d ssl=%d Authorization=%s\n";
+static char storaddrcmd[]
+    = "storage address=%s port=%d ssl=%d Authorization=%s\n";
 static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
@@ -141,9 +141,9 @@ bool DoVerify(JobControlRecord* jcr)
     case L_VERIFY_VOLUME_TO_CATALOG:
     case L_VERIFY_DISK_TO_CATALOG:
       jr = jcr->impl->jr;
-      if (jcr->impl->res.verify_job &&
-          (JobLevel == L_VERIFY_VOLUME_TO_CATALOG ||
-           JobLevel == L_VERIFY_DISK_TO_CATALOG)) {
+      if (jcr->impl->res.verify_job
+          && (JobLevel == L_VERIFY_VOLUME_TO_CATALOG
+              || JobLevel == L_VERIFY_DISK_TO_CATALOG)) {
         Name = jcr->impl->res.verify_job->resource_name_;
       } else {
         Name = NULL;
@@ -185,8 +185,8 @@ bool DoVerify(JobControlRecord* jcr)
              jcr->db->strerror());
         return false;
       }
-      if (!(jcr->impl->previous_jr.JobStatus == JS_Terminated ||
-            jcr->impl->previous_jr.JobStatus == JS_Warnings)) {
+      if (!(jcr->impl->previous_jr.JobStatus == JS_Terminated
+            || jcr->impl->previous_jr.JobStatus == JS_Warnings)) {
         Jmsg(jcr, M_FATAL, 0,
              _("Last Job %d did not Terminate normally. JobStatus=%c\n"),
              verify_jobid, jcr->impl->previous_jr.JobStatus);
@@ -341,8 +341,8 @@ bool DoVerify(JobControlRecord* jcr)
         if (store->SDDport == 0) { store->SDDport = store->SDport; }
 
         TlsPolicy tls_policy;
-        if (jcr->impl->res.client->connection_successful_handshake_ !=
-            ClientConnectionHandshakeMode::kTlsFirst) {
+        if (jcr->impl->res.client->connection_successful_handshake_
+            != ClientConnectionHandshakeMode::kTlsFirst) {
           tls_policy = store->GetPolicy();
         } else {
           tls_policy = store->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
@@ -360,8 +360,8 @@ bool DoVerify(JobControlRecord* jcr)
         ClientResource* client = jcr->impl->res.client;
 
         TlsPolicy tls_policy;
-        if (jcr->impl->res.client->connection_successful_handshake_ !=
-            ClientConnectionHandshakeMode::kTlsFirst) {
+        if (jcr->impl->res.client->connection_successful_handshake_
+            != ClientConnectionHandshakeMode::kTlsFirst) {
           tls_policy = client->GetPolicy();
         } else {
           tls_policy = client->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
@@ -426,8 +426,8 @@ bool DoVerify(JobControlRecord* jcr)
        * Verify from catalog
        */
       Dmsg0(10, "Verify level=catalog\n");
-      jcr->impl->sd_msg_thread_done =
-          true; /* no SD msg thread, so it is done */
+      jcr->impl->sd_msg_thread_done
+          = true; /* no SD msg thread, so it is done */
       jcr->impl->SDJobStatus = JS_Terminated;
       GetAttributesAndCompareToCatalog(jcr, jcr->impl->previous_jr.JobId);
       break;
@@ -443,8 +443,8 @@ bool DoVerify(JobControlRecord* jcr)
        * Verify Disk attributes to catalog
        */
       Dmsg0(10, "Verify level=disk_to_catalog\n");
-      jcr->impl->sd_msg_thread_done =
-          true; /* no SD msg thread, so it is done */
+      jcr->impl->sd_msg_thread_done
+          = true; /* no SD msg thread, so it is done */
       jcr->impl->SDJobStatus = JS_Terminated;
       GetAttributesAndCompareToCatalog(jcr, jcr->impl->previous_jr.JobId);
       break;
@@ -453,8 +453,8 @@ bool DoVerify(JobControlRecord* jcr)
        * Build catalog
        */
       Dmsg0(10, "Verify level=init\n");
-      jcr->impl->sd_msg_thread_done =
-          true; /* no SD msg thread, so it is done */
+      jcr->impl->sd_msg_thread_done
+          = true; /* no SD msg thread, so it is done */
       jcr->impl->SDJobStatus = JS_Terminated;
       GetAttributesAndPutInCatalog(jcr);
       jcr->db->EndTransaction(jcr); /* Terminate any open transaction */
@@ -498,8 +498,8 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
   JobLevel = jcr->getJobLevel();
   Dmsg3(900, "JobLevel=%c Expected=%u JobFiles=%u\n", JobLevel,
         jcr->impl->ExpectedFiles, jcr->JobFiles);
-  if (JobLevel == L_VERIFY_VOLUME_TO_CATALOG &&
-      jcr->impl->ExpectedFiles != jcr->JobFiles) {
+  if (JobLevel == L_VERIFY_VOLUME_TO_CATALOG
+      && jcr->impl->ExpectedFiles != jcr->JobFiles) {
     TermCode = JS_ErrorTerminated;
   }
 
@@ -651,11 +651,11 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
 
     if (JobCanceled(jcr)) { goto bail_out; }
     fname = CheckPoolMemorySize(fname, fd->message_length);
-    jcr->impl->fname =
-        CheckPoolMemorySize(jcr->impl->fname, fd->message_length);
+    jcr->impl->fname
+        = CheckPoolMemorySize(jcr->impl->fname, fd->message_length);
     Dmsg1(200, "Atts+Digest=%s\n", fd->msg);
-    if ((len = sscanf(fd->msg, "%ld %d %100s", &file_index, &stream, fname)) !=
-        3) {
+    if ((len = sscanf(fd->msg, "%ld %d %100s", &file_index, &stream, fname))
+        != 3) {
       Jmsg3(jcr, M_FATAL, 0,
             _("dird<filed: bad attributes, expected 3 fields got %d\n"
               " mslen=%d msg=%s\n"),

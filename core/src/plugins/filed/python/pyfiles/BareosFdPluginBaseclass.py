@@ -73,24 +73,19 @@ class BareosFdPluginBaseclass(object):
         self.mandatory_options = mandatory_options
 
     def __str__(self):
-        return (
-            "<%s:fdname=%s jobId=%s client=%s since=%d level=%c jobName=%s workingDir=%s>"
-            % (
-                self.__class__,
-                self.fdname,
-                self.jobId,
-                self.client,
-                self.since,
-                self.level,
-                self.jobName,
-                self.workingdir,
-            )
+        return "<%s:fdname=%s jobId=%s client=%s since=%d level=%c jobName=%s workingDir=%s>" % (
+            self.__class__,
+            self.fdname,
+            self.jobId,
+            self.client,
+            self.since,
+            self.level,
+            self.jobName,
+            self.workingdir,
         )
 
     def parse_plugin_definition(self, plugindef):
-        bareosfd.DebugMessage(
-            100, 'plugin def parser called with "%s"\n' % (plugindef)
-        )
+        bareosfd.DebugMessage(100, 'plugin def parser called with "%s"\n' % (plugindef))
         # Parse plugin options into a dict
         if not hasattr(self, "options"):
             self.options = dict()
@@ -137,9 +132,7 @@ class BareosFdPluginBaseclass(object):
 
     def plugin_io_open(self, IOP):
         self.FNAME = IOP.fname
-        bareosfd.DebugMessage(
-            250, "io_open: self.FNAME is set to %s\n" % (self.FNAME)
-        )
+        bareosfd.DebugMessage(250, "io_open: self.FNAME is set to %s\n" % (self.FNAME))
         if os.path.isdir(self.FNAME):
             bareosfd.DebugMessage(100, "%s is a directory\n" % (self.FNAME))
             self.fileType = "FT_DIR"
@@ -231,9 +224,7 @@ class BareosFdPluginBaseclass(object):
         return bRC_OK
 
     def plugin_io_write(self, IOP):
-        bareosfd.DebugMessage(
-            200, "Writing buffer to file %s\n" % (self.FNAME)
-        )
+        bareosfd.DebugMessage(200, "Writing buffer to file %s\n" % (self.FNAME))
         try:
             self.file.write(IOP.buf)
         except Exception as e:
@@ -272,9 +263,7 @@ class BareosFdPluginBaseclass(object):
 
     def handle_plugin_event(self, event):
         if event == bEventJobEnd:
-            bareosfd.DebugMessage(
-                100, "handle_plugin_event called with bEventJobEnd\n"
-            )
+            bareosfd.DebugMessage(100, "handle_plugin_event called with bEventJobEnd\n")
             return self.end_job()
 
         elif event == bEventEndBackupJob:
@@ -329,7 +318,7 @@ class BareosFdPluginBaseclass(object):
         """
         return bRC_OK
 
-    def start_backup_file(self,savepkt):
+    def start_backup_file(self, savepkt):
         """
         Base method, we do not add anything, overload this method with your
         implementation to add files to backup fileset
@@ -338,15 +327,11 @@ class BareosFdPluginBaseclass(object):
         return bRC_Skip
 
     def end_backup_file(self):
-        bareosfd.DebugMessage(
-            100, "end_backup_file() entry point in Python called\n"
-        )
+        bareosfd.DebugMessage(100, "end_backup_file() entry point in Python called\n")
         return bRC_OK
 
     def end_fileset(self):
-        bareosfd.DebugMessage(
-            100, "end_fileset() entry point in Python called\n"
-        )
+        bareosfd.DebugMessage(100, "end_fileset() entry point in Python called\n")
         return bRC_OK
 
     def start_restore_job(self):
@@ -364,15 +349,11 @@ class BareosFdPluginBaseclass(object):
         return bRC_OK
 
     def end_restore_file(self):
-        bareosfd.DebugMessage(
-            100, "end_restore_file() entry point in Python called\n"
-        )
+        bareosfd.DebugMessage(100, "end_restore_file() entry point in Python called\n")
         return bRC_OK
 
     def restore_object_data(self, ROP):
-        bareosfd.DebugMessage(
-            100, "restore_object_data called with " + str(ROP) + "\n"
-        )
+        bareosfd.DebugMessage(100, "restore_object_data called with " + str(ROP) + "\n")
         return bRC_OK
 
     def create_file(self, restorepkt):

@@ -8,7 +8,7 @@ In most cases, you should use :config:option:`dir/pool/RecycleOldestVolume`\  in
 
    .. warning::
 
-      
+
       Be aware that :strong:`Purge Oldest Volume`\  disregards all retention
       periods. If you have only a single Volume defined and you turn this
       variable on, that Volume will always be immediately overwritten when it
@@ -18,4 +18,3 @@ In most cases, you should use :config:option:`dir/pool/RecycleOldestVolume`\  in
       We :strong:`highly` recommend against using this directive, because it is
       sure that some day, Bareos will purge a Volume that contains current
       data.
-      

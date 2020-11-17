@@ -67,7 +67,7 @@ TlsOpenSslPrivate::TlsOpenSslPrivate()
   /* the SSL_CTX object is the factory that creates
    * openssl objects, so initialize this first */
 #if (OPENSSL_VERSION_NUMBER < 0x10002000L)
-  #error "OPENSSL VERSION < 1.0.2 not supported"
+#  error "OPENSSL VERSION < 1.0.2 not supported"
 #endif
 
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
@@ -130,11 +130,11 @@ bool TlsOpenSslPrivate::init()
 
   if (!protocol_.empty()) {
     SSL_CONF_CTX_set_flags(openssl_conf_ctx_,
-                           SSL_CONF_FLAG_FILE | SSL_CONF_FLAG_SHOW_ERRORS |
-                               SSL_CONF_FLAG_CLIENT | SSL_CONF_FLAG_SERVER);
+                           SSL_CONF_FLAG_FILE | SSL_CONF_FLAG_SHOW_ERRORS
+                               | SSL_CONF_FLAG_CLIENT | SSL_CONF_FLAG_SERVER);
 
-    bool err =
-        SSL_CONF_cmd(openssl_conf_ctx_, "Protocol", protocol_.c_str()) != 2;
+    bool err
+        = SSL_CONF_cmd(openssl_conf_ctx_, "Protocol", protocol_.c_str()) != 2;
 
     if (err) {
       std::string err{_("Error setting OpenSSL Protocol options:\n")};
@@ -168,8 +168,8 @@ bool TlsOpenSslPrivate::init()
   SSL_CTX_set_default_passwd_cb_userdata(openssl_ctx_,
                                          static_cast<void*>(this));
 
-  const char* ca_certfile =
-      ca_certfile_.empty() ? nullptr : ca_certfile_.c_str();
+  const char* ca_certfile
+      = ca_certfile_.empty() ? nullptr : ca_certfile_.c_str();
   const char* ca_certdir = ca_certdir_.empty() ? nullptr : ca_certdir_.c_str();
 
   if (ca_certfile || ca_certdir) { /* at least one should be set */
@@ -185,8 +185,8 @@ bool TlsOpenSslPrivate::init()
                  " specified as a verification store\n"));
   }
 
-#if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && \
-    (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x00907000L) \
+    && (OPENSSL_VERSION_NUMBER < 0x10100000L)
   if (!crlfile_.empty()) {
     std::lock_guard<std::mutex> lg(file_access_mutex_);
     if (!SetCertificateRevocationList(crlfile_, openssl_ctx_)) { return false; }
@@ -251,8 +251,8 @@ bool TlsOpenSslPrivate::init()
   }
 
   /* Non-blocking partial writes */
-  SSL_set_mode(openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE |
-                             SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+  SSL_set_mode(openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE
+                             | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
   BIO* bio = BIO_new(BIO_s_socket());
   if (!bio) {
@@ -471,8 +471,8 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL* ssl,
 
   std::string configured_psk;
 
-  ConfigurationParser* config =
-      static_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
+  ConfigurationParser* config
+      = static_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
           openssl_ctx,
           TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
 
@@ -485,8 +485,8 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL* ssl,
                                                      configured_psk)) {
     Dmsg0(100, "Error, TLS-PSK credentials not found.\n");
   } else {
-    int psklen =
-        Bsnprintf((char*)psk_output, max_psk_len, "%s", configured_psk.c_str());
+    int psklen = Bsnprintf((char*)psk_output, max_psk_len, "%s",
+                           configured_psk.c_str());
     result = (psklen < 0) ? 0 : psklen;
     Dmsg1(100, "psk_server_cb. result: %d.\n", result);
   }
@@ -511,8 +511,8 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL* ssl,
   bool found = false;
 
   psk_client_credentials_mutex_.lock();
-  if (psk_client_credentials_.find(openssl_ctx) !=
-      psk_client_credentials_.end()) {
+  if (psk_client_credentials_.find(openssl_ctx)
+      != psk_client_credentials_.end()) {
     credentials = TlsOpenSslPrivate::psk_client_credentials_.at(openssl_ctx);
     found = true;
   }

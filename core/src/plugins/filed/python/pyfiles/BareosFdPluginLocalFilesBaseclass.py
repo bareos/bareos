@@ -132,7 +132,8 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
             bareosfd.DebugMessage(150, "file type is: FT_FIFO\n")
         else:
             bareosfd.JobMessage(
-                bareosfd.M_WARNING, "File %s of unknown type" % (self.file_to_backup),
+                bareosfd.M_WARNING,
+                "File %s of unknown type" % (self.file_to_backup),
             )
             return bareosfd.bRC_Skip
 
@@ -148,7 +149,8 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         virtual files or similar
         """
         bareosfd.DebugMessage(
-            100, "create_file() entry point in Python called with %s\n" % (restorepkt),
+            100,
+            "create_file() entry point in Python called with %s\n" % (restorepkt),
         )
         FNAME = restorepkt.ofname
         if not FNAME:
@@ -187,7 +189,8 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
                     os.mkfifo(FNAME, 0o600)
                 except Exception as e:
                     bareosfd.JobMessage(
-                        bareosfd.M_ERROR, 'Could net create fifo %s: "%s"' % (FNAME, e),
+                        bareosfd.M_ERROR,
+                        'Could net create fifo %s: "%s"' % (FNAME, e),
                     )
             restorepkt.create_status = bareosfd.CF_CREATED
         else:

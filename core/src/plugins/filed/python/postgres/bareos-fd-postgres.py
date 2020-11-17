@@ -19,8 +19,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-# Bareos-fd-postgres is a plugin to backup Postgres SQL databases using 
-# BareosFdPluginPostgres. 
+# Bareos-fd-postgres is a plugin to backup Postgres SQL databases using
+# BareosFdPluginPostgres.
 #
 # Author: Maik Aussendorf
 #
@@ -28,6 +28,7 @@
 # Provided by the Bareos FD Python plugin interface
 import bareosfd
 from bareosfd import *
+
 # This module contains the wrapper functions called by the Bareos-FD, the
 # functions call the corresponding methods from your plugin class
 import BareosFdWrapper
@@ -49,14 +50,14 @@ def load_bareos_plugin(plugindef):
         import psycopg2
     except Exception as e:
         bareosfd.JobMessage(
-                M_FATAL,
-                "could not import Python module. %s" % e.message,
+            M_FATAL,
+            "could not import Python module. %s" % e.message,
         )
         return bRC_Error
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that
     # holds the plugin class object
-    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginPostgres.BareosFdPluginPostgres(
-        plugindef
+    BareosFdWrapper.bareos_fd_plugin_object = (
+        BareosFdPluginPostgres.BareosFdPluginPostgres(plugindef)
     )
     return bRC_OK
 

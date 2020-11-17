@@ -37,10 +37,10 @@ namespace directordaemon {
  * Array used for storing fixed NDMP env keywords.
  * Anything special should go into a so called meta-tag in the fileset options.
  */
-static char* ndmp_env_keywords[] = {
-    (char*)"HIST",    (char*)"TYPE",       (char*)"DIRECT",
-    (char*)"LEVEL",   (char*)"UPDATE",     (char*)"EXCLUDE",
-    (char*)"INCLUDE", (char*)"FILESYSTEM", (char*)"PREFIX"};
+static char* ndmp_env_keywords[]
+    = {(char*)"HIST",    (char*)"TYPE",       (char*)"DIRECT",
+       (char*)"LEVEL",   (char*)"UPDATE",     (char*)"EXCLUDE",
+       (char*)"INCLUDE", (char*)"FILESYSTEM", (char*)"PREFIX"};
 
 /**
  * Index values for above keyword.

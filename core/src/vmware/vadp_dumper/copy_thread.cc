@@ -139,7 +139,8 @@ bool setup_copy_thread(IO_FUNCTION* input_function,
   }
 
   if (pthread_create(&new_context->thread_id, NULL, copy_thread,
-                     (void*)new_context) != 0) {
+                     (void*)new_context)
+      != 0) {
     pthread_cond_destroy(&new_context->start);
     pthread_mutex_destroy(&new_context->lock);
     goto bail_out;
@@ -179,8 +180,8 @@ bool send_to_copy_thread(size_t sector_offset, size_t nbyte)
    */
   if (!save_data->data) { save_data->data = malloc(nbyte + 1); }
 
-  save_data->data_len =
-      cp_thread->input_function(sector_offset, nbyte, save_data->data);
+  save_data->data_len
+      = cp_thread->input_function(sector_offset, nbyte, save_data->data);
   if (save_data->data_len < 0) { return false; }
   save_data->sector_offset = sector_offset;
 

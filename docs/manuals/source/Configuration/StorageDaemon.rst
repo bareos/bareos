@@ -3,7 +3,7 @@
 Storage Daemon Configuration
 ============================
 
-:index:`\ <single: Configuration>`\  :index:`\ <single: Storage Daemon; Configuration>`\  :index:`\ <single: Configuration; Storage Daemon>`\ 
+:index:`\ <single: Configuration>`\  :index:`\ <single: Storage Daemon; Configuration>`\  :index:`\ <single: Configuration; Storage Daemon>`\
 
 The |sd| configuration file has relatively few resource definitions. However, due to the great variation in backup media and system capabilities, the storage daemon must be highly configurable. As a consequence, there are quite a large number of directives in the Device Resource definition that allow you to define all the characteristics of your Storage device (normally a tape drive). Fortunately, with modern storage devices, the defaults are sufficient, and very few directives
 are actually needed.
@@ -29,7 +29,7 @@ Following resources are optional:
 Storage Resource
 ----------------
 
-:index:`\ <single: Resource; Storage>`\  :index:`\ <single: Storage; Resource>`\ 
+:index:`\ <single: Resource; Storage>`\  :index:`\ <single: Storage; Resource>`\
 
 In general, the properties specified under the Storage resource define global properties of the Storage daemon. Each Storage daemon configuration file must have one and only one Storage resource definition.
 
@@ -139,9 +139,9 @@ Devices that require a mount (USB)
    USB unless they are automounted, and to :strong:`no` for all other devices
    (tapes/files).  This directive indicates if the device requires to be
    mounted to be read, and if it must be written in a special way.  If it
-   set, :config:option:`sd/device/MountPoint`\ , 
-   :config:option:`sd/device/MountCommand`\  and 
-   :config:option:`sd/device/UnmountCommand`\ 
+   set, :config:option:`sd/device/MountPoint`\ ,
+   :config:option:`sd/device/MountCommand`\  and
+   :config:option:`sd/device/UnmountCommand`\
    directives must also be defined.
 
 :config:option:`sd/device/MountPoint`
@@ -164,13 +164,13 @@ Devices that require a mount (USB)
    Command.  For example, instead of this:
 
    .. code-block:: bareosconfig
-   
+
       Mount Command = "/usr/local/bin/mymount"
 
    Where that script contains:
 
    .. code-block:: sh
-   
+
       #!/bin/sh
       ndasadmin enable -s 1 -o w
       sleep 2
@@ -187,7 +187,7 @@ Devices that require a mount (USB)
    Most frequently, you will define it as follows:
 
    .. code-block:: bareosconfig
-   
+
       Unmount Command = "/bin/umount %m"
 
 
@@ -197,7 +197,7 @@ Devices that require a mount (USB)
 .. _AutochangerRes:
 
 .. _StorageResourceAutochanger:
-   
+
 Autochanger Resource
 --------------------
 
@@ -300,7 +300,6 @@ When the configuration is exported, again only the name of the initial Multiplie
 Messages Resource
 -----------------
 
-:index:`\ <single: Resource; Messages>`\  :index:`\ <single: Messages; Resource>`\ 
+:index:`\ <single: Resource; Messages>`\  :index:`\ <single: Messages; Resource>`\
 
-For a description of the Messages Resource, please see the :ref:`MessagesChapter` chapter of this manual.  
-
+For a description of the Messages Resource, please see the :ref:`MessagesChapter` chapter of this manual.

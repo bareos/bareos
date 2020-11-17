@@ -210,8 +210,8 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
               res_run->spool_data = true;
               res_run->spool_data_set = true;
-            } else if (Bstrcasecmp(lc->str, "no") ||
-                       Bstrcasecmp(lc->str, "false")) {
+            } else if (Bstrcasecmp(lc->str, "no")
+                       || Bstrcasecmp(lc->str, "false")) {
               res_run->spool_data = false;
               res_run->spool_data_set = true;
             } else {
@@ -312,12 +312,12 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             break;
           case 'a': /* Accurate */
             token = LexGetToken(lc, BCT_NAME);
-            if (strcasecmp(lc->str, "yes") == 0 ||
-                strcasecmp(lc->str, "true") == 0) {
+            if (strcasecmp(lc->str, "yes") == 0
+                || strcasecmp(lc->str, "true") == 0) {
               res_run->accurate = true;
               res_run->accurate_set = true;
-            } else if (strcasecmp(lc->str, "no") == 0 ||
-                       strcasecmp(lc->str, "false") == 0) {
+            } else if (strcasecmp(lc->str, "no") == 0
+                       || strcasecmp(lc->str, "false") == 0) {
               res_run->accurate = false;
               res_run->accurate_set = true;
             } else {
@@ -382,8 +382,8 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           state = s_modulo;
           break;
         }
-        if (lc->str_len == 3 && (lc->str[0] == 'w' || lc->str[0] == 'W') &&
-            IsAnInteger(lc->str + 1)) {
+        if (lc->str_len == 3 && (lc->str[0] == 'w' || lc->str[0] == 'W')
+            && IsAnInteger(lc->str + 1)) {
           code = atoi(lc->str + 1);
           if (code < 0 || code > 53) {
             scan_err0(lc, _("Week number out of range (0-53)"));
@@ -551,10 +551,10 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
               SetBit(i + code, res_run->date_time_bitfield.mday);
             }
           }
-        } else if (strlen(lc->str) == 3 && strlen(p) == 3 &&
-                   (lc->str[0] == 'w' || lc->str[0] == 'W') &&
-                   (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1) &&
-                   IsAnInteger(p + 1)) {
+        } else if (strlen(lc->str) == 3 && strlen(p) == 3
+                   && (lc->str[0] == 'w' || lc->str[0] == 'W')
+                   && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1)
+                   && IsAnInteger(p + 1)) {
           /*
            * Check for week modulo specification.
            */
@@ -615,10 +615,10 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             SetBitRange(code, 30, res_run->date_time_bitfield.mday);
             SetBitRange(0, code2, res_run->date_time_bitfield.mday);
           }
-        } else if (strlen(lc->str) == 3 && strlen(p) == 3 &&
-                   (lc->str[0] == 'w' || lc->str[0] == 'W') &&
-                   (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1) &&
-                   IsAnInteger(p + 1)) {
+        } else if (strlen(lc->str) == 3 && strlen(p) == 3
+                   && (lc->str[0] == 'w' || lc->str[0] == 'W')
+                   && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1)
+                   && IsAnInteger(p + 1)) {
           /*
            * Check for week of year range.
            */
@@ -651,8 +651,8 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
               break;
             }
           }
-          if (i != 0 ||
-              (state != s_month && state != s_wday && state != s_wom)) {
+          if (i != 0
+              || (state != s_month && state != s_wday && state != s_wom)) {
             scan_err0(lc, _("Invalid month, week or position day range"));
             return;
           }

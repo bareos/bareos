@@ -7,4 +7,3 @@ BEGIN;
    TRUNCATE PathHierarchy;
    TRUNCATE PathVisibility;
 COMMIT;
-

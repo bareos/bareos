@@ -120,8 +120,8 @@ static struct dbcheck_cmdstruct commands[] = {
     {run_all_commands, "Run ALL checks", false},
 };
 
-const int number_commands =
-    (sizeof(commands) / sizeof(struct dbcheck_cmdstruct));
+const int number_commands
+    = (sizeof(commands) / sizeof(struct dbcheck_cmdstruct));
 
 
 static void usage()
@@ -430,9 +430,9 @@ static void eliminate_duplicate_paths()
   /*
    * Make list of duplicated names
    */
-  query =
-      "SELECT Path, count(Path) as Count FROM Path "
-      "GROUP BY Path HAVING count(Path) > 1";
+  query
+      = "SELECT Path, count(Path) as Count FROM Path "
+        "GROUP BY Path HAVING count(Path) > 1";
 
   if (!MakeNameList(query, &name_list)) { exit(1); }
   printf(_("Found %d duplicate Path records.\n"), name_list.num_ids);
@@ -484,10 +484,10 @@ static void eliminate_duplicate_paths()
 
 static void eliminate_orphaned_jobmedia_records()
 {
-  const char* query =
-      "SELECT JobMedia.JobMediaId,Job.JobId FROM JobMedia "
-      "LEFT OUTER JOIN Job USING(JobId) "
-      "WHERE Job.JobId IS NULL LIMIT 300000";
+  const char* query
+      = "SELECT JobMedia.JobMediaId,Job.JobId FROM JobMedia "
+        "LEFT OUTER JOIN Job USING(JobId) "
+        "WHERE Job.JobId IS NULL LIMIT 300000";
 
   printf(_("Checking for orphaned JobMedia entries.\n"));
   fflush(stdout);
@@ -526,10 +526,10 @@ static void eliminate_orphaned_jobmedia_records()
 
 static void eliminate_orphaned_file_records()
 {
-  const char* query =
-      "SELECT File.FileId,Job.JobId FROM File "
-      "LEFT OUTER JOIN Job USING (JobId) "
-      "WHERE Job.JobId IS NULL LIMIT 300000";
+  const char* query
+      = "SELECT File.FileId,Job.JobId FROM File "
+        "LEFT OUTER JOIN Job USING (JobId) "
+        "WHERE Job.JobId IS NULL LIMIT 300000";
 
   printf(_("Checking for orphaned File entries. This may take some time!\n"));
   if (verbose > 1) { printf("%s\n", query); }
@@ -610,10 +610,10 @@ static void eliminate_orphaned_fileset_records()
   const char* query;
 
   printf(_("Checking for orphaned FileSet entries. This takes some time!\n"));
-  query =
-      "SELECT FileSet.FileSetId,Job.FileSetId FROM FileSet "
-      "LEFT OUTER JOIN Job USING(FileSetId) "
-      "WHERE Job.FileSetId IS NULL";
+  query
+      = "SELECT FileSet.FileSetId,Job.FileSetId FROM FileSet "
+        "LEFT OUTER JOIN Job USING(FileSetId) "
+        "WHERE Job.FileSetId IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(query, &id_list)) { exit(1); }
@@ -653,10 +653,10 @@ static void eliminate_orphaned_client_records()
    *   filter out only those where no Job points to a Client
    *   i.e. Job.Client is NULL
    */
-  query =
-      "SELECT Client.ClientId,Client.Name FROM Client "
-      "LEFT OUTER JOIN Job USING(ClientId) "
-      "WHERE Job.ClientId IS NULL";
+  query
+      = "SELECT Client.ClientId,Client.Name FROM Client "
+        "LEFT OUTER JOIN Job USING(ClientId) "
+        "WHERE Job.ClientId IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(query, &id_list)) { exit(1); }
@@ -695,10 +695,10 @@ static void eliminate_orphaned_job_records()
    *   filter out only those where no Client exists
    *   i.e. Client.Name is NULL
    */
-  query =
-      "SELECT Job.JobId,Job.Name FROM Job "
-      "LEFT OUTER JOIN Client USING(ClientId) "
-      "WHERE Client.Name IS NULL";
+  query
+      = "SELECT Job.JobId,Job.Name FROM Job "
+        "LEFT OUTER JOIN Client USING(ClientId) "
+        "WHERE Client.Name IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(query, &id_list)) { exit(1); }
@@ -736,9 +736,9 @@ static void eliminate_admin_records()
   const char* query;
 
   printf(_("Checking for Admin Job entries.\n"));
-  query =
-      "SELECT Job.JobId FROM Job "
-      "WHERE Job.Type='D'";
+  query
+      = "SELECT Job.JobId FROM Job "
+        "WHERE Job.Type='D'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(query, &id_list)) { exit(1); }
@@ -769,9 +769,9 @@ static void eliminate_restore_records()
   const char* query;
 
   printf(_("Checking for Restore Job entries.\n"));
-  query =
-      "SELECT Job.JobId FROM Job "
-      "WHERE Job.Type='R'";
+  query
+      = "SELECT Job.JobId FROM Job "
+        "WHERE Job.Type='R'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(query, &id_list)) { exit(1); }
@@ -803,9 +803,9 @@ static void repair_bad_filenames()
   int i;
 
   printf(_("Checking for Filenames with a trailing slash\n"));
-  query =
-      "SELECT FileId,Name from File "
-      "WHERE Name LIKE '%/'";
+  query
+      = "SELECT FileId,Name from File "
+        "WHERE Name LIKE '%/'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(query, &id_list)) { exit(1); }

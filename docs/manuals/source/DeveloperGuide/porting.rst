@@ -21,4 +21,3 @@ In General, the following holds true:
 -  The source code has been written with portability in mind and is
    mostly POSIX compatible. Thus porting to any POSIX compatible
    operating system should be relatively easy.
-

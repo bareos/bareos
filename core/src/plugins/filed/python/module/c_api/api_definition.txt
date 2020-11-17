@@ -18,4 +18,3 @@ bRC PyRestoreObjectData(PluginContext* bareos_plugin_ctx, struct restore_object_
 bRC PyHandleBackupFile(PluginContext* bareos_plugin_ctx, struct save_pkt* sp);
 bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions);
 bRC set_plugin_context(PluginContext* new_plugin_context);
-

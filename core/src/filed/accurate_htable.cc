@@ -64,8 +64,8 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
   int total_length;
   bool retval = true;
 
-  total_length =
-      sizeof(CurFile) + fname_length + lstat_length + chksum_length + 3;
+  total_length
+      = sizeof(CurFile) + fname_length + lstat_length + chksum_length + 3;
   item = (CurFile*)file_list_->hash_malloc(total_length);
 
   item->fname = (char*)item + sizeof(CurFile);
@@ -163,8 +163,8 @@ bool BareosAccurateFilelistHtable::SendDeletedList()
   ff_pkt->type = FT_DELETED;
 
   foreach_htable (elt, file_list_) {
-    if (BitIsSet(elt->payload.filenr, seen_bitmap_) ||
-        PluginCheckFile(jcr_, elt->fname)) {
+    if (BitIsSet(elt->payload.filenr, seen_bitmap_)
+        || PluginCheckFile(jcr_, elt->fname)) {
       continue;
     }
     Dmsg1(debuglevel, "deleted fname=%s\n", elt->fname);

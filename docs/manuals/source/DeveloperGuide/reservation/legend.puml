@@ -1,6 +1,6 @@
 .. uml::
   :caption: Diagram legend
-  
+
   @startuml
   #aqua:reservation context is read or set;
   detach

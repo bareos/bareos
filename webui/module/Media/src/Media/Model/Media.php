@@ -28,4 +28,3 @@ namespace Media\Model;
 class Media
 {
 }
-

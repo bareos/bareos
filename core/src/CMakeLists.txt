@@ -27,15 +27,16 @@ if(NOT client-only)
     if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/droplet/CMakeLists.txt)
       message(
         FATAL_ERROR
-        "Please checkout the libdroplet submodule via \n \"git submodule update --init --recursive\""
+          "Please checkout the libdroplet submodule via \n \"git submodule update --init --recursive\""
       )
     endif()
     add_subdirectory(droplet)
     if(TARGET droplet)
       set_target_properties(
-        droplet PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                           SOVERSION "${BAREOS_VERSION_MAJOR}"
-                           PREFIX "libbareos"
+        droplet
+        PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                   SOVERSION "${BAREOS_VERSION_MAJOR}"
+                   PREFIX "libbareos"
       )
     endif()
   endif()

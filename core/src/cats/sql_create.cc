@@ -34,8 +34,8 @@ static const int dbglevel = 100;
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
-#include "cats.h"
-#include "lib/edit.h"
+#  include "cats.h"
+#  include "lib/edit.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -601,8 +601,8 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
   esc_name = CheckPoolMemorySize(esc_name, 2 * pnl + 2);
   EscapeString(jcr, esc_name, path, pnl);
 
-  if (cached_path_id != 0 && cached_path_len == pnl &&
-      bstrcmp(cached_path, path)) {
+  if (cached_path_id != 0 && cached_path_len == pnl
+      && bstrcmp(cached_path, path)) {
     ar->PathId = cached_path_id;
     return true;
   }
@@ -1026,8 +1026,8 @@ bool BareosDb::CreateAttributesRecord(JobControlRecord* jcr,
     Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
     return false;
   }
-  if (!(ar->Stream == STREAM_UNIX_ATTRIBUTES ||
-        ar->Stream == STREAM_UNIX_ATTRIBUTES_EX)) {
+  if (!(ar->Stream == STREAM_UNIX_ATTRIBUTES
+        || ar->Stream == STREAM_UNIX_ATTRIBUTES_EX)) {
     Mmsg1(errmsg, _("Attempt to put non-attributes into catalog. Stream=%d\n"),
           ar->Stream);
     Jmsg(jcr, M_FATAL, 0, "%s", errmsg);

@@ -24,43 +24,43 @@
 #include "osinfo.h"
 
 #if !defined BAREOS_VERSION
-#warning should define BAREOS_VERSION when building version.c
-#define BAREOS_VERSION "x.y.z"
+#  warning should define BAREOS_VERSION when building version.c
+#  define BAREOS_VERSION "x.y.z"
 #endif
 
 #if !defined BAREOS_DATE
-#warning should define BAREOS_DATE when building version.c
-#define BAREOS_DATE "unknown date"
+#  warning should define BAREOS_DATE when building version.c
+#  define BAREOS_DATE "unknown date"
 #endif
 
 #if !defined BAREOS_SHORT_DATE
-#warning should define BAREOS_SHORT_DATE when building version.c
-#define BAREOS_SHORT_DATE "unknown date"
+#  warning should define BAREOS_SHORT_DATE when building version.c
+#  define BAREOS_SHORT_DATE "unknown date"
 #endif
 
 #if !defined BAREOS_PROG_DATE_TIME
-#warning should define BAREOS_PROG_DATE_TIME when building version.c
-#define BAREOS_PROG_DATE_TIME __DATE__ " " __TIME__
+#  warning should define BAREOS_PROG_DATE_TIME when building version.c
+#  define BAREOS_PROG_DATE_TIME __DATE__ " " __TIME__
 #endif
 
 #if !defined BAREOS_YEAR
-#warning should define BAREOS_YEAR when building version.c
-#define BAREOS_YEAR "2019"
+#  warning should define BAREOS_YEAR when building version.c
+#  define BAREOS_YEAR "2019"
 #endif
 
 #if !defined BAREOS_BINARY_INFO
-#define BAREOS_BINARY_INFO "self-compiled"
+#  define BAREOS_BINARY_INFO "self-compiled"
 #endif
 
 #if !defined BAREOS_SERVICES_MESSAGE
-#define BAREOS_SERVICES_MESSAGE                             \
-  "self-compiled binaries are UNSUPPORTED by bareos.com.\n" \
-  "Get official binaries and vendor support on https://www.bareos.com"
+#  define BAREOS_SERVICES_MESSAGE                             \
+    "self-compiled binaries are UNSUPPORTED by bareos.com.\n" \
+    "Get official binaries and vendor support on https://www.bareos.com"
 #endif
 
 #if !defined BAREOS_JOBLOG_MESSAGE
-#define BAREOS_JOBLOG_MESSAGE \
-  "self-compiled: Get official binaries and vendor support on bareos.com"
+#  define BAREOS_JOBLOG_MESSAGE \
+    "self-compiled: Get official binaries and vendor support on bareos.com"
 #endif
 
 #define BAREOS_COPYRIGHT_MESSAGE_WITH_FSF_AND_PLANETS            \
@@ -115,18 +115,18 @@ static void PrintCopyright(FILE* fh, int StartYear)
           kBareosVersionStrings.Date, kBareosVersionStrings.GetOsInfo());
 }
 
-const struct BareosVersionStrings kBareosVersionStrings = {
-    .Full = BAREOS_VERSION,
-    .Date = BAREOS_DATE,
-    .ShortDate = BAREOS_SHORT_DATE,
-    .ProgDateTime = BAREOS_PROG_DATE_TIME,
-    .FullWithDate = BAREOS_VERSION " (" BAREOS_DATE ")",
-    .Year = BAREOS_YEAR,
-    .BinaryInfo = BAREOS_BINARY_INFO,
-    .ServicesMessage = BAREOS_SERVICES_MESSAGE,
-    .JoblogMessage = BAREOS_JOBLOG_MESSAGE,
-    .FormatCopyrightWithFsfAndPlanets = FormatCopyrightWithFsfAndPlanets,
-    .PrintCopyrightWithFsfAndPlanets = PrintCopyrightWithFsfAndPlanets,
-    .FormatCopyright = FormatCopyright,
-    .PrintCopyright = PrintCopyright,
-    .GetOsInfo = GetOsInfoString};
+const struct BareosVersionStrings kBareosVersionStrings
+    = {.Full = BAREOS_VERSION,
+       .Date = BAREOS_DATE,
+       .ShortDate = BAREOS_SHORT_DATE,
+       .ProgDateTime = BAREOS_PROG_DATE_TIME,
+       .FullWithDate = BAREOS_VERSION " (" BAREOS_DATE ")",
+       .Year = BAREOS_YEAR,
+       .BinaryInfo = BAREOS_BINARY_INFO,
+       .ServicesMessage = BAREOS_SERVICES_MESSAGE,
+       .JoblogMessage = BAREOS_JOBLOG_MESSAGE,
+       .FormatCopyrightWithFsfAndPlanets = FormatCopyrightWithFsfAndPlanets,
+       .PrintCopyrightWithFsfAndPlanets = PrintCopyrightWithFsfAndPlanets,
+       .FormatCopyright = FormatCopyright,
+       .PrintCopyright = PrintCopyright,
+       .GetOsInfo = GetOsInfoString};

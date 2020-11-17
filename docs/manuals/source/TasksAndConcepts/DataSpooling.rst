@@ -27,7 +27,7 @@ The remainder of this chapter explains the various directives that you can use i
 Data Spooling Directives
 ------------------------
 
-:index:`\ <single: Data Spooling; Directives>`\ 
+:index:`\ <single: Data Spooling; Directives>`\
 
 The following directives can be used to control data spooling.
 
@@ -39,13 +39,13 @@ The following directives can be used to control data spooling.
 
    Please note that this does not refer to a configuration statement, but to an argument for the run command.
 
--  To limit the the maximum spool file size for a particular job: :config:option:`dir/job/SpoolSize`\ 
+-  To limit the the maximum spool file size for a particular job: :config:option:`dir/job/SpoolSize`\
 
--  To limit the maximum total size of the spooled data for a particular device: :config:option:`sd/device/MaximumSpoolSize`\ 
+-  To limit the maximum total size of the spooled data for a particular device: :config:option:`sd/device/MaximumSpoolSize`\
 
--  To limit the maximum total size of the spooled data for a particular device for a single job: :config:option:`sd/device/MaximumJobSpoolSize`\ 
+-  To limit the maximum total size of the spooled data for a particular device for a single job: :config:option:`sd/device/MaximumJobSpoolSize`\
 
--  To specify the spool directory for a particular device: :config:option:`sd/device/SpoolDirectory`\ 
+-  To specify the spool directory for a particular device: :config:option:`sd/device/SpoolDirectory`\
 
 Additional Notes
 ~~~~~~~~~~~~~~~~

@@ -165,9 +165,9 @@ int bareosServiceMain()
     /*
      * Tell OS where to dispatch service calls to us
      */
-    SERVICE_TABLE_ENTRY dispatchTable[] = {
-        {(char*)APP_NAME, (LPSERVICE_MAIN_FUNCTION)serviceStartCallback},
-        {(char*)NULL, NULL}};
+    SERVICE_TABLE_ENTRY dispatchTable[]
+        = {{(char*)APP_NAME, (LPSERVICE_MAIN_FUNCTION)serviceStartCallback},
+           {(char*)NULL, NULL}};
 
     /*
      * Start the service control dispatcher
@@ -326,7 +326,8 @@ int installService(const char* cmdOpts)
     if (RegCreateKey(
             HKEY_LOCAL_MACHINE,
             "Software\\Microsoft\\Windows\\CurrentVersion\\RunServices",
-            &runservices) != ERROR_SUCCESS) {
+            &runservices)
+        != ERROR_SUCCESS) {
       LogErrorMessage(_("Cannot write System Registry for " APP_DESC));
       MessageBox(NULL,
                  _("The System Registry could not be updated - the Bareos "
@@ -339,7 +340,8 @@ int installService(const char* cmdOpts)
      * Add the Bareos values
      */
     if (RegSetValueEx(runservices, APP_NAME, 0, REG_SZ, (unsigned char*)svcmd,
-                      strlen(svcmd) + 1) != ERROR_SUCCESS) {
+                      strlen(svcmd) + 1)
+        != ERROR_SUCCESS) {
       RegCloseKey(runservices);
       LogErrorMessage(_("Cannot add Bareos key to System Registry"));
       MessageBox(NULL,
@@ -445,7 +447,8 @@ int removeService()
     HKEY runservices;
     if (RegOpenKey(HKEY_LOCAL_MACHINE,
                    "Software\\Microsoft\\Windows\\CurrentVersion\\RunServices",
-                   &runservices) != ERROR_SUCCESS) {
+                   &runservices)
+        != ERROR_SUCCESS) {
       if (opt_debug) {
         MessageBox(NULL,
                    _("Could not find registry entry.\nService probably not "
@@ -589,8 +592,8 @@ static void SetServiceDescription(SC_HANDLE hSCManager,
 
   HINSTANCE hLib = LoadLibrary("ADVAPI32.DLL");
   if (!hLib) { return; }
-  ChangeServiceDescription =
-      (WinAPI)GetProcAddress(hLib, "ChangeServiceConfig2A");
+  ChangeServiceDescription
+      = (WinAPI)GetProcAddress(hLib, "ChangeServiceConfig2A");
   FreeLibrary(hLib);
   if (!ChangeServiceDescription) { return; }
 

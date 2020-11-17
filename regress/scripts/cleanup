@@ -43,4 +43,3 @@ if [ -d ${scripts} ]; then
   ${scripts}/make_bareos_tables ${DBTYPE} >/dev/null 2>&1
   ${scripts}/grant_bareos_privileges ${DBTYPE} >/dev/null 2>&1
 fi
-

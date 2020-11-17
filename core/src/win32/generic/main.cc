@@ -44,9 +44,9 @@
 
 #undef _WIN32_IE
 #ifdef MINGW64
-#define _WIN32_IE 0x0501
+#  define _WIN32_IE 0x0501
 #else
-#define _WIN32_IE 0x0401
+#  define _WIN32_IE 0x0401
 #endif  // MINGW64
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
@@ -92,16 +92,16 @@ int WINAPI WinMain(HINSTANCE Instance,
   appInstance = Instance;
   mainthreadId = GetCurrentThreadId();
 
-  if (GetVersionEx(&osversioninfo) &&
-      osversioninfo.dwPlatformId == VER_PLATFORM_WIN32_NT) {
+  if (GetVersionEx(&osversioninfo)
+      && osversioninfo.dwPlatformId == VER_PLATFORM_WIN32_NT) {
     have_service_api = true;
   }
 
   main_pid = getpid();
   main_tid = pthread_self();
 
-  INITCOMMONCONTROLSEX initCC = {sizeof(INITCOMMONCONTROLSEX),
-                                 ICC_STANDARD_CLASSES};
+  INITCOMMONCONTROLSEX initCC
+      = {sizeof(INITCOMMONCONTROLSEX), ICC_STANDARD_CLASSES};
 
   InitCommonControlsEx(&initCC);
 
@@ -268,8 +268,8 @@ void* Main_Msg_Loop(LPVOID lpwThreadParam)
   RegisterClassEx(&baclass);
 
   if (CreateWindow(APP_NAME, APP_NAME, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
-                   CW_USEDEFAULT, 0, 0, NULL, NULL, appInstance,
-                   NULL) == NULL) {
+                   CW_USEDEFAULT, 0, 0, NULL, NULL, appInstance, NULL)
+      == NULL) {
     PostQuitMessage(0);
   }
 

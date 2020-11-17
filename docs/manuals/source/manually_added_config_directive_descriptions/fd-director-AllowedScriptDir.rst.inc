@@ -1,2 +1,1 @@
-see :config:option:`fd/client/AllowedScriptDir`\ 
-
+see :config:option:`fd/client/AllowedScriptDir`\

@@ -68,10 +68,10 @@ class LowLevel(object):
     def argparser_get_bareos_parameter(args):
         """
         This method is usally used together with the method argparser_add_default_command_line_arguments.
-        
+
         @param args: Arguments retrieved by ArgumentParser.parse_args()
         @type args:  ArgParser.Namespace
-        
+
         @return: returns the relevant parameter from args to initialize a connection.
         @rtype: dict
         """

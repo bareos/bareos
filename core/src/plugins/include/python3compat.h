@@ -24,18 +24,18 @@
 /* redefine python3 calls to python2 pendants */
 
 #if PY_VERSION_HEX < 0x03000000
-#define PyLong_FromLong PyInt_FromLong
-#define PyLong_AsLong PyInt_AsLong
+#  define PyLong_FromLong PyInt_FromLong
+#  define PyLong_AsLong PyInt_AsLong
 
-#define PyBytes_FromString PyString_FromString
+#  define PyBytes_FromString PyString_FromString
 
-#undef PyUnicode_FromString
-#define PyUnicode_FromString PyString_FromString
+#  undef PyUnicode_FromString
+#  define PyUnicode_FromString PyString_FromString
 
-#define PyUnicode_AsUTF8 PyString_AsString
+#  define PyUnicode_AsUTF8 PyString_AsString
 
-#undef PyUnicode_Check
-#define PyUnicode_Check PyString_Check
+#  undef PyUnicode_Check
+#  define PyUnicode_Check PyString_Check
 
 #endif
 

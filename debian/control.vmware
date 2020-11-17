@@ -30,4 +30,3 @@ Description: vStorage APIs for Data Protection Dumper program
 #Depends:  bareos-vmware-plugin
 #Description: Bareos VMware plugin compatibility
 # Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos <= 16.2.
-

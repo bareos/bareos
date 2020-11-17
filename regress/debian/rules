@@ -17,4 +17,3 @@ override_dh_auto_test:
 	if ! [ -e config ]; then ln -s /etc/bareos/bareos-regress.conf config; fi
 	dh $@
 	rm -f config
-

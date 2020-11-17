@@ -4,4 +4,3 @@ If a Job record is selected for pruning, all associated File and JobMedia record
 Retention`\  directive to a smaller duration. This is because the Job retention period and the Volume retention period are independently applied, so the smaller of the two takes precedence.
 
 The default is 180 days.
-

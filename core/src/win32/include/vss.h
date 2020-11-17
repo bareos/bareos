@@ -35,15 +35,15 @@
 #define __VSS_H_
 
 #ifndef b_errno_win32
-#define b_errno_win32 (1 << 29)
+#  define b_errno_win32 (1 << 29)
 #endif
 
 #ifdef WIN32_VSS
 
 void VSSInit(JobControlRecord* jcr);
 
-#define VSS_INIT_RESTORE_AFTER_INIT 1
-#define VSS_INIT_RESTORE_AFTER_GATHER 2
+#  define VSS_INIT_RESTORE_AFTER_INIT 1
+#  define VSS_INIT_RESTORE_AFTER_GATHER 2
 
 // some forward declarations
 struct IVssAsync;
@@ -68,9 +68,11 @@ class VSSClient {
   bool InitializeForRestore(JobControlRecord* jcr);
   virtual void AddDriveSnapshots(IVssBackupComponents* pVssObj,
                                  char* szDriveLetters,
-                                 bool onefs_disabled) = 0;
+                                 bool onefs_disabled)
+      = 0;
   virtual void AddVolumeMountPointSnapshots(IVssBackupComponents* pVssObj,
-                                            LPWSTR volume) = 0;
+                                            LPWSTR volume)
+      = 0;
   virtual void ShowVolumeMountPointStats(JobControlRecord* jcr) = 0;
 
   virtual bool CreateSnapshots(char* szDriveLetters, bool onefs_disabled) = 0;
@@ -146,11 +148,11 @@ class VSSClientXP : public VSSClient {
   virtual bool CloseBackup() override;
   virtual bool CloseRestore() override;
   virtual WCHAR* GetMetadata() override;
-#ifdef _WIN64
+#  ifdef _WIN64
   virtual const char* GetDriverName() override { return "Win64 VSS"; };
-#else
+#  else
   virtual const char* GetDriverName() override { return "Win32 VSS"; };
-#endif
+#  endif
 
  private:
   virtual bool Initialize(DWORD dwContext, bool bDuringRestore) override;
@@ -174,11 +176,11 @@ class VSSClient2003 : public VSSClient {
   virtual bool CloseBackup() override;
   virtual bool CloseRestore() override;
   virtual WCHAR* GetMetadata() override;
-#ifdef _WIN64
+#  ifdef _WIN64
   virtual const char* GetDriverName() override { return "Win64 VSS"; };
-#else
+#  else
   virtual const char* GetDriverName() override { return "Win32 VSS"; };
-#endif
+#  endif
 
  private:
   virtual bool Initialize(DWORD dwContext, bool bDuringRestore) override;
@@ -202,11 +204,11 @@ class VSSClientVista : public VSSClient {
   virtual bool CloseBackup() override;
   virtual bool CloseRestore() override;
   virtual WCHAR* GetMetadata() override;
-#ifdef _WIN64
+#  ifdef _WIN64
   virtual const char* GetDriverName() override { return "Win64 VSS"; };
-#else
+#  else
   virtual const char* GetDriverName() override { return "Win32 VSS"; };
-#endif
+#  endif
 
  private:
   virtual bool Initialize(DWORD dwContext, bool bDuringRestore) override;

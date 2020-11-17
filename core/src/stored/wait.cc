@@ -89,8 +89,8 @@ int WaitForSysop(DeviceControlRecord* dcr)
   /* If the user did not unmount the tape and we are polling, ensure
    *  that we poll at the correct interval.
    */
-  if (!unmounted && dev->vol_poll_interval &&
-      add_wait > dev->vol_poll_interval) {
+  if (!unmounted && dev->vol_poll_interval
+      && add_wait > dev->vol_poll_interval) {
     add_wait = dev->vol_poll_interval;
   }
 
@@ -114,8 +114,8 @@ int WaitForSysop(DeviceControlRecord* dcr)
     start = time(NULL);
 
     /* Wait required time */
-    status =
-        pthread_cond_timedwait(&dev->wait_next_vol, &dev->mutex_, &timeout);
+    status
+        = pthread_cond_timedwait(&dev->wait_next_vol, &dev->mutex_, &timeout);
 
     Dmsg2(debuglevel, "Wokeup from sleep on device status=%d blocked=%s\n",
           status, dev->print_blocked());
@@ -160,8 +160,8 @@ int WaitForSysop(DeviceControlRecord* dcr)
      */
     unmounted = dev->IsDeviceUnmounted();
 
-    if (!unmounted && dev->vol_poll_interval &&
-        (total_waited >= dev->vol_poll_interval)) {
+    if (!unmounted && dev->vol_poll_interval
+        && (total_waited >= dev->vol_poll_interval)) {
       Dmsg1(debuglevel, "poll return in wait blocked=%s\n",
             dev->print_blocked());
       dev->poll = true; /* returning a poll event */
@@ -201,8 +201,8 @@ int WaitForSysop(DeviceControlRecord* dcr)
     /* If the user did not unmount the tape and we are polling, ensure
      *  that we poll at the correct interval.
      */
-    if (!unmounted && dev->vol_poll_interval &&
-        add_wait > dev->vol_poll_interval - total_waited) {
+    if (!unmounted && dev->vol_poll_interval
+        && add_wait > dev->vol_poll_interval - total_waited) {
       add_wait = dev->vol_poll_interval - total_waited;
     }
     if (add_wait < 0) { add_wait = 0; }

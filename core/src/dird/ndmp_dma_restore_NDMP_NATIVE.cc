@@ -36,14 +36,14 @@
 
 #if HAVE_NDMP
 
-#define NDMP_NEED_ENV_KEYWORDS 1
+#  define NDMP_NEED_ENV_KEYWORDS 1
 
-#include "ndmp/ndmagents.h"
-#include "dird/ndmp_dma_storage.h"
-#include "ndmp_dma_priv.h"
-#include "dird/jcr_private.h"
-#include "dird/ndmp_dma_restore_common.h"
-#include "dird/ndmp_dma_generic.h"
+#  include "ndmp/ndmagents.h"
+#  include "dird/ndmp_dma_storage.h"
+#  include "ndmp_dma_priv.h"
+#  include "dird/jcr_private.h"
+#  include "dird/ndmp_dma_restore_common.h"
+#  include "dird/ndmp_dma_generic.h"
 
 namespace directordaemon {
 
@@ -154,9 +154,10 @@ static inline bool fill_restore_environment_ndmp_native(
   pv.value = ndmp_filesystem;
   ndma_store_env_list(&job->env_tab, &pv);
 
-  if (ndmp_filesystem && SetFilesToRestoreNdmpNative(jcr, job, current_fi,
-                                                     destination_path.c_str(),
-                                                     ndmp_filesystem) == 0) {
+  if (ndmp_filesystem
+      && SetFilesToRestoreNdmpNative(jcr, job, current_fi,
+                                     destination_path.c_str(), ndmp_filesystem)
+             == 0) {
     Jmsg(jcr, M_INFO, 0, _("No files selected for restore\n"));
     return false;
   }
@@ -211,9 +212,9 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
          * See if we need to strip the prefix from the filename.
          */
         len = 0;
-        if (ndmp_filesystem &&
-            bstrncmp(restore_pathname.c_str(), ndmp_filesystem,
-                     strlen(ndmp_filesystem))) {
+        if (ndmp_filesystem
+            && bstrncmp(restore_pathname.c_str(), ndmp_filesystem,
+                        strlen(ndmp_filesystem))) {
           len = strlen(ndmp_filesystem);
         }
 
@@ -261,8 +262,8 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
   nis = (NIS*)malloc(sizeof(NIS));
   memset(nis, 0, sizeof(NIS));
 
-  NdmpLoglevel =
-      std::max(jcr->impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
+  NdmpLoglevel
+      = std::max(jcr->impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
 
   if (!NdmpBuildClientAndStorageJob(jcr, store, jcr->impl->res.client,
                                     true, /* init_tape */
@@ -313,12 +314,12 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
   /*
    * session initialize
    */
-  ndmp_sess.param =
-      (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
+  ndmp_sess.param
+      = (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
   memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
   ndmp_sess.param->log.deliver = NdmpLoghandler;
-  ndmp_sess.param->log_level =
-      NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
+  ndmp_sess.param->log_level
+      = NativeToNdmpLoglevel(NdmpLoglevel, debug_level, nis);
   nis->jcr = jcr;
   ndmp_sess.param->log.ctx = nis;
   ndmp_sess.param->log_tag = strdup("DIR-NDMP");

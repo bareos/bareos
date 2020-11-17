@@ -194,9 +194,9 @@ struct RuntimeStorageStatus {
                                    the autochanger is controlled by this lock */
   unsigned char smc_ident[32] = {0};      /**< smc ident info = changer name */
   changer_vol_list_t* vol_list = nullptr; /**< Cached content of autochanger */
-  pthread_mutex_t ndmp_deviceinfo_lock =
-      PTHREAD_MUTEX_INITIALIZER; /**< Any access to the list devices is
-       controlled by this lock */
+  pthread_mutex_t ndmp_deviceinfo_lock
+      = PTHREAD_MUTEX_INITIALIZER; /**< Any access to the list devices is
+         controlled by this lock */
 #if HAVE_NDMP
   struct smc_element_address_assignment storage_mapping = {0};
   std::list<ndmp_deviceinfo_t> ndmp_deviceinfo;

@@ -52,7 +52,7 @@ Using Client Initiated Connections has disadvantages. Without Client Initiated C
    ...
    ====
 
-When both connection directions are allowed, the |dir| 
+When both connection directions are allowed, the |dir|
 
 #. checks, if there is a waiting connection from this client.
 
@@ -144,7 +144,7 @@ Also, prior to bareos version 15, you need to set :config:option:`fd/client/Comp
 Using different IP Adresses for SD – FD Communication
 -----------------------------------------------------
 
-:index:`\ <single: Lan Address>`\ 
+:index:`\ <single: Lan Address>`\
 
 Bareos supports network topologies where the |fd| and |sd| are situated inside of a LAN, but the |dir| is outside of that LAN in the Internet and accesses the |fd| and |sd| via SNAT / port forwarding.
 
@@ -237,7 +237,7 @@ Network Connections Overview
 The following diagrams show Bareos components with any possible
 network connections between them. Arrows point always from the TCP
 Client to the respective TCP Server, thus the direction of the connection
-initiation. This is not neccessarily the direction of the data flow. 
+initiation. This is not neccessarily the direction of the data flow.
 
 Full connection overview
 ------------------------
@@ -551,4 +551,3 @@ Tray-Monitor
   arrow(Tray, down, Dir, 9)
   arrow(Tray, down, FD, 10)
   arrow(Tray, down, SD, 11)
-

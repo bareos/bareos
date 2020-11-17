@@ -45,14 +45,15 @@ namespace directordaemon {
 /*
  * Commands received from storage daemon that need scanning
  */
-static char DevStats[] =
-    "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
-    "NumWaiting=%lu, NumWriters=%lu, "
-    "ReadTime=%lld, WriteTime=%lld, MediaId=%ld, VolBytes=%llu, VolFiles=%llu, "
-    "VolBlocks=%llu";
+static char DevStats[]
+    = "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
+      "NumWaiting=%lu, NumWriters=%lu, "
+      "ReadTime=%lld, WriteTime=%lld, MediaId=%ld, VolBytes=%llu, "
+      "VolFiles=%llu, "
+      "VolBlocks=%llu";
 static char TapeAlerts[] = "Tapealerts [%lld]: Device=%s TapeAlert=%llu";
-static char JobStats[] =
-    "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s";
+static char JobStats[]
+    = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s";
 
 static bool quit = false;
 static bool statistics_initialized = false;
@@ -77,8 +78,8 @@ static inline bool LookupDevice(JobControlRecord* jcr,
 {
   DeviceDbRecord dr;
 
-  if (cached_device.StorageId == StorageId &&
-      bstrcmp(cached_device.device_name, device_name)) {
+  if (cached_device.StorageId == StorageId
+      && bstrcmp(cached_device.device_name, device_name)) {
     *DeviceId = cached_device.DeviceId;
     return true;
   }
@@ -133,8 +134,8 @@ extern "C" void* statistics_thread(void* arg)
 
   jcr = new_control_jcr("*StatisticsCollector*", JT_SYSTEM);
 
-  jcr->impl->res.catalog =
-      (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
+  jcr->impl->res.catalog
+      = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
   jcr->db = GetDatabaseConnection(jcr);
   if (jcr->db == NULL) {
     Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
@@ -220,7 +221,8 @@ extern "C" void* statistics_thread(void* arg)
                        &dsr.ReadBytes, &dsr.WriteBytes, &dsr.SpoolSize,
                        &dsr.NumWaiting, &dsr.NumWriters, &dsr.ReadTime,
                        &dsr.WriteTime, &dsr.MediaId, &dsr.VolCatBytes,
-                       &dsr.VolCatFiles, &dsr.VolCatBlocks) == 13) {
+                       &dsr.VolCatFiles, &dsr.VolCatBlocks)
+                == 13) {
               Dmsg5(200,
                     "New Devstats [%lld]: Device=%s Read=%llu, Write=%llu, "
                     "SpoolSize=%llu,\n",
@@ -251,7 +253,8 @@ extern "C" void* statistics_thread(void* arg)
             TapealertStatsDbRecord tsr;
 
             if (sscanf(sd->msg, TapeAlerts, &tsr.SampleTime, DevName.c_str(),
-                       &tsr.AlertFlags) == 3) {
+                       &tsr.AlertFlags)
+                == 3) {
               UnbashSpaces(DevName);
 
               Dmsg3(200, "New stats [%lld]: Device %s TapeAlert %llu\n",
@@ -271,7 +274,8 @@ extern "C" void* statistics_thread(void* arg)
             JobStatisticsDbRecord jsr;
 
             if (sscanf(sd->msg, JobStats, &jsr.SampleTime, &jsr.JobId,
-                       &jsr.JobFiles, &jsr.JobBytes, DevName.c_str()) == 5) {
+                       &jsr.JobFiles, &jsr.JobBytes, DevName.c_str())
+                == 5) {
               UnbashSpaces(DevName);
 
               Dmsg5(200,
@@ -319,8 +323,8 @@ int StartStatisticsThread(void)
 
   quit = false;
 
-  if ((status = pthread_create(&statistics_tid, NULL, statistics_thread,
-                               NULL)) != 0) {
+  if ((status = pthread_create(&statistics_tid, NULL, statistics_thread, NULL))
+      != 0) {
     return status;
   }
 

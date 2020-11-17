@@ -38,14 +38,15 @@
 namespace storagedaemon {
 
 static char OKstats[] = "2000 OK statistics\n";
-static char DevStats[] =
-    "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
-    "NumWaiting=%ld, NumWriters=%ld, "
-    "ReadTime=%lld, WriteTime=%lld, MediaId=%ld, VolBytes=%llu, VolFiles=%llu, "
-    "VolBlocks=%llu\n";
+static char DevStats[]
+    = "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
+      "NumWaiting=%ld, NumWriters=%ld, "
+      "ReadTime=%lld, WriteTime=%lld, MediaId=%ld, VolBytes=%llu, "
+      "VolFiles=%llu, "
+      "VolBlocks=%llu\n";
 static char TapeAlerts[] = "Tapealerts [%lld]: Device=%s TapeAlert=%llu\n";
-static char JobStats[] =
-    "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s\n";
+static char JobStats[]
+    = "Jobstats [%lld]: JobId=%ld, JobFiles=%lu, JobBytes=%llu, DevName=%s\n";
 
 /* Static globals */
 static bool quit = false;
@@ -129,8 +130,8 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
   }
 
   if (!found) {
-    dev_stats =
-        (struct device_statistics*)malloc(sizeof(struct device_statistics));
+    dev_stats
+        = (struct device_statistics*)malloc(sizeof(struct device_statistics));
     struct device_statistics empty_device_statistics;
     *dev_stats = empty_device_statistics;
 
@@ -143,8 +144,8 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
   /*
    * Add a new tapealert message.
    */
-  tape_alert =
-      (struct device_tapealert*)malloc(sizeof(struct device_tapealert));
+  tape_alert
+      = (struct device_tapealert*)malloc(sizeof(struct device_tapealert));
   struct device_tapealert empty_device_tapealert;
   *tape_alert = empty_device_tapealert;
 
@@ -191,14 +192,14 @@ static inline void UpdateDeviceStatistics(const char* devname,
   if (found && dev_stats->cached) {
     dev_stat = dev_stats->cached;
 
-    if (dev_stat->DevReadBytes == dev->DevReadBytes &&
-        dev_stat->DevWriteBytes == dev->DevWriteBytes &&
-        dev_stat->spool_size == dev->spool_size) {
+    if (dev_stat->DevReadBytes == dev->DevReadBytes
+        && dev_stat->DevWriteBytes == dev->DevWriteBytes
+        && dev_stat->spool_size == dev->spool_size) {
       return;
     }
   } else if (!found) {
-    dev_stats =
-        (struct device_statistics*)malloc(sizeof(struct device_statistics));
+    dev_stats
+        = (struct device_statistics*)malloc(sizeof(struct device_statistics));
     struct device_statistics empty_device_statistics;
     *dev_stats = empty_device_statistics;
 
@@ -282,8 +283,8 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
   if (found && job_stats->cached) {
     job_stat = job_stats->cached;
 
-    if (job_stat->JobFiles == jcr->JobFiles &&
-        job_stat->JobBytes == jcr->JobBytes) {
+    if (job_stat->JobFiles == jcr->JobFiles
+        && job_stat->JobBytes == jcr->JobBytes) {
       return;
     }
   } else if (!found) {
@@ -432,8 +433,8 @@ int StartStatisticsThread(void)
   /*
    * First see if device and job stats collection is enabled.
    */
-  if (!me->stats_collect_interval ||
-      (!me->collect_dev_stats && !me->collect_job_stats)) {
+  if (!me->stats_collect_interval
+      || (!me->collect_dev_stats && !me->collect_job_stats)) {
     return 0;
   }
 
@@ -452,8 +453,9 @@ int StartStatisticsThread(void)
     if (cnt == 0) { return 0; }
   }
 
-  if ((status = pthread_create(&statistics_tid, NULL, statistics_thread_runner,
-                               NULL)) != 0) {
+  if ((status
+       = pthread_create(&statistics_tid, NULL, statistics_thread_runner, NULL))
+      != 0) {
     return status;
   }
 
@@ -488,8 +490,8 @@ bool StatsCmd(JobControlRecord* jcr)
 
         dev_stat = (struct device_statistic*)dev_stats->statistics->first();
         while (dev_stat) {
-          next_dev_stat =
-              (struct device_statistic*)dev_stats->statistics->next(dev_stat);
+          next_dev_stat
+              = (struct device_statistic*)dev_stats->statistics->next(dev_stat);
 
           /*
            * If the entry was already collected no need to do it again.
@@ -536,8 +538,9 @@ bool StatsCmd(JobControlRecord* jcr)
           Dmsg1(100, ">dird: %s", msg.c_str());
           dir->fsend(msg.c_str());
 
-          next_tape_alert =
-              (struct device_tapealert*)dev_stats->tapealerts->next(tape_alert);
+          next_tape_alert
+              = (struct device_tapealert*)dev_stats->tapealerts->next(
+                  tape_alert);
           P(mutex);
           dev_stats->tapealerts->remove(tape_alert);
           V(mutex);
@@ -559,8 +562,8 @@ bool StatsCmd(JobControlRecord* jcr)
 
         job_stat = (struct job_statistic*)job_stats->statistics->first();
         while (job_stat) {
-          next_job_stat =
-              (struct job_statistic*)job_stats->statistics->next(job_stat);
+          next_job_stat
+              = (struct job_statistic*)job_stats->statistics->next(job_stat);
 
           /*
            * If the entry was already collected no need to do it again.

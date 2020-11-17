@@ -5,4 +5,3 @@ You might use this directive, for example, if you have a Volume used for Increme
 or you might experience problems of Bareos waiting for a tape over the weekend only to complete the backups Monday morning when an operator mounts a new tape.
 
 Please note that the value defined by this directive in the bareos-dir.conf file is the default value used when a Volume is created. Once the volume is created, changing the value in the bareos-dir.conf file will not change what is stored for the Volume. To change the value for an existing Volume you must use the :ref:` update volume <UpdateCommand>` command in the Console.
-

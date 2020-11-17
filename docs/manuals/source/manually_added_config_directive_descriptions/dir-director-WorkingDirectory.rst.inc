@@ -3,4 +3,3 @@ This directive is optional and specifies a directory in which the Director may p
 will be properly expanded.
 
 The working directory specified must already exist and be readable and writable by the Bareos daemon referencing it.
-

@@ -45,14 +45,14 @@
  *  * For old systems that don't have lchown() use chown()
  *   */
 #ifndef HAVE_LCHOWN
-#define lchown chown
+#  define lchown chown
 #endif
 
 /**
  *  * For old systems that don't have lchmod() use chmod()
  *   */
 #ifndef HAVE_LCHMOD
-#define lchmod chmod
+#  define lchmod chmod
 #endif
 
 static bool makedir(JobControlRecord* jcr,
@@ -257,7 +257,9 @@ bool makepath(Attributes* attr,
   /*
    * Set for final component
    */
-  if (i < ndir && new_dir[i++] && !keep_dir_modes) { SetOwnMod(attr, path, owner, group, mode); }
+  if (i < ndir && new_dir[i++] && !keep_dir_modes) {
+    SetOwnMod(attr, path, owner, group, mode);
+  }
 
   ok = true;
 bail_out:

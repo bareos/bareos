@@ -76,7 +76,7 @@ which requests can produce them in an update to this document.
 SD Append Requests
 ~~~~~~~~~~~~~~~~~~
 
-append open session = <JobId> [ <Password> ] 
+append open session = <JobId> [ <Password> ]
     A data append session is opened with the Job ID given by *JobId*
     with client password (if required) given by *Password*. If the
     session is successfully opened, a status of 3000 OK is returned with

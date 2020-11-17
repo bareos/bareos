@@ -183,7 +183,8 @@ StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
   }
 
   if (DoPrompt(ua, _("Storage"), _("Select Storage resource"), name,
-               sizeof(name)) < 0) {
+               sizeof(name))
+      < 0) {
     return NULL;
   }
   store = ua->GetStoreResWithName(name);
@@ -217,7 +218,8 @@ FilesetResource* select_fileset_resource(UaContext* ua)
   }
 
   if (DoPrompt(ua, _("FileSet"), _("Select FileSet resource"), name,
-               sizeof(name)) < 0) {
+               sizeof(name))
+      < 0) {
     return NULL;
   }
 
@@ -271,7 +273,8 @@ CatalogResource* get_catalog_resource(UaContext* ua)
     UnlockRes(my_config);
 
     if (DoPrompt(ua, _("Catalog"), _("Select Catalog resource"), name,
-                 sizeof(name)) < 0) {
+                 sizeof(name))
+        < 0) {
       return NULL;
     }
 
@@ -308,8 +311,8 @@ JobResource* select_enable_disable_job_resource(UaContext* ua, bool enable)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name)) <
-      0) {
+  if (DoPrompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name))
+      < 0) {
     return NULL;
   }
 
@@ -343,8 +346,8 @@ JobResource* select_job_resource(UaContext* ua)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name)) <
-      0) {
+  if (DoPrompt(ua, _("Job"), _("Select Job resource"), name, sizeof(name))
+      < 0) {
     return NULL;
   }
 
@@ -385,8 +388,8 @@ JobResource* select_restore_job_resource(UaContext* ua)
 
   LockRes(my_config);
   foreach_res (job, R_JOB) {
-    if (job->JobType == JT_RESTORE &&
-        ua->AclAccessOk(Job_ACL, job->resource_name_)) {
+    if (job->JobType == JT_RESTORE
+        && ua->AclAccessOk(Job_ACL, job->resource_name_)) {
       restore_job_names.emplace_back(job->resource_name_);
     }
   }
@@ -433,7 +436,8 @@ ClientResource* select_client_resource(UaContext* ua)
   }
 
   if (DoPrompt(ua, _("Client"), _("Select Client (File daemon) resource"), name,
-               sizeof(name)) < 0) {
+               sizeof(name))
+      < 0) {
     return NULL;
   }
 
@@ -470,8 +474,8 @@ ClientResource* select_enable_disable_client_resource(UaContext* ua,
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Client"), _("Select Client resource"), name,
-               sizeof(name)) < 0) {
+  if (DoPrompt(ua, _("Client"), _("Select Client resource"), name, sizeof(name))
+      < 0) {
     return NULL;
   }
 
@@ -490,9 +494,9 @@ ClientResource* get_client_resource(UaContext* ua)
   ClientResource* client = NULL;
 
   for (int i = 1; i < ua->argc; i++) {
-    if ((Bstrcasecmp(ua->argk[i], NT_("client")) ||
-         Bstrcasecmp(ua->argk[i], NT_("fd"))) &&
-        ua->argv[i]) {
+    if ((Bstrcasecmp(ua->argk[i], NT_("client"))
+         || Bstrcasecmp(ua->argk[i], NT_("fd")))
+        && ua->argv[i]) {
       client = ua->GetClientResWithName(ua->argv[i]);
       if (client) { return client; }
 
@@ -535,7 +539,8 @@ ScheduleResource* select_enable_disable_schedule_resource(UaContext* ua,
   }
 
   if (DoPrompt(ua, _("Schedule"), _("Select Schedule resource"), name,
-               sizeof(name)) < 0) {
+               sizeof(name))
+      < 0) {
     return NULL;
   }
 
@@ -563,9 +568,9 @@ bool GetClientDbr(UaContext* ua, ClientDbRecord* cr)
   }
 
   for (int i = 1; i < ua->argc; i++) {
-    if ((Bstrcasecmp(ua->argk[i], NT_("client")) ||
-         Bstrcasecmp(ua->argk[i], NT_("fd"))) &&
-        ua->argv[i]) {
+    if ((Bstrcasecmp(ua->argk[i], NT_("client"))
+         || Bstrcasecmp(ua->argk[i], NT_("fd")))
+        && ua->argv[i]) {
       if (!ua->AclAccessOk(Client_ACL, ua->argv[i])) { break; }
       bstrncpy(cr->Name, ua->argv[i], sizeof(cr->Name));
       if (!ua->db->GetClientRecord(ua->jcr, cr)) {
@@ -615,16 +620,16 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
   StartPrompt(ua, _("Defined Clients:\n"));
   for (int i = 0; i < num_clients; i++) {
     ocr.ClientId = ids[i];
-    if (!ua->db->GetClientRecord(ua->jcr, &ocr) ||
-        !ua->AclAccessOk(Client_ACL, ocr.Name)) {
+    if (!ua->db->GetClientRecord(ua->jcr, &ocr)
+        || !ua->AclAccessOk(Client_ACL, ocr.Name)) {
       continue;
     }
     AddPrompt(ua, ocr.Name);
   }
   if (ids) { free(ids); }
 
-  if (DoPrompt(ua, _("Client"), _("Select the Client"), name, sizeof(name)) <
-      0) {
+  if (DoPrompt(ua, _("Client"), _("Select the Client"), name, sizeof(name))
+      < 0) {
     return false;
   }
 
@@ -657,8 +662,8 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr)
 bool GetStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
 {
   if (sr->Name[0]) { /* If name already supplied */
-    if (ua->db->GetStorageRecord(ua->jcr, sr) &&
-        ua->AclAccessOk(Pool_ACL, sr->Name)) {
+    if (ua->db->GetStorageRecord(ua->jcr, sr)
+        && ua->AclAccessOk(Pool_ACL, sr->Name)) {
       return true;
     }
     ua->ErrorMsg(_("Could not find Storage \"%s\": ERR=%s"), sr->Name,
@@ -687,8 +692,8 @@ bool GetStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
 bool GetPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
 {
   if (pr->Name[0]) { /* If name already supplied */
-    if (ua->db->GetPoolRecord(ua->jcr, pr) &&
-        ua->AclAccessOk(Pool_ACL, pr->Name)) {
+    if (ua->db->GetPoolRecord(ua->jcr, pr)
+        && ua->AclAccessOk(Pool_ACL, pr->Name)) {
       return true;
     }
     ua->ErrorMsg(_("Could not find Pool \"%s\": ERR=%s"), pr->Name,
@@ -714,8 +719,8 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
   char name[MAX_NAME_LENGTH];
 
   for (int i = 1; i < ua->argc; i++) {
-    if (Bstrcasecmp(ua->argk[i], argk) && ua->argv[i] &&
-        ua->AclAccessOk(Pool_ACL, ua->argv[i])) {
+    if (Bstrcasecmp(ua->argk[i], argk) && ua->argv[i]
+        && ua->AclAccessOk(Pool_ACL, ua->argv[i])) {
       bstrncpy(pr->Name, ua->argv[i], sizeof(pr->Name));
       if (!ua->db->GetPoolRecord(ua->jcr, pr)) {
         ua->ErrorMsg(_("Could not find Pool \"%s\": ERR=%s"), ua->argv[i],
@@ -746,8 +751,8 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
 
   for (int i = 0; i < num_pools; i++) {
     opr.PoolId = ids[i];
-    if (!ua->db->GetPoolRecord(ua->jcr, &opr) ||
-        !ua->AclAccessOk(Pool_ACL, opr.Name)) {
+    if (!ua->db->GetPoolRecord(ua->jcr, &opr)
+        || !ua->AclAccessOk(Pool_ACL, opr.Name)) {
       continue;
     }
     AddPrompt(ua, opr.Name);
@@ -815,8 +820,8 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
   char name[MAX_NAME_LENGTH];
 
   for (int i = 1; i < ua->argc; i++) {
-    if (Bstrcasecmp(ua->argk[i], argk) && ua->argv[i] &&
-        ua->AclAccessOk(Storage_ACL, ua->argv[i])) {
+    if (Bstrcasecmp(ua->argk[i], argk) && ua->argv[i]
+        && ua->AclAccessOk(Storage_ACL, ua->argv[i])) {
       bstrncpy(sr->Name, ua->argv[i], sizeof(sr->Name));
       if (!ua->db->GetStorageRecord(ua->jcr, sr)) {
         ua->ErrorMsg(_("Could not find Storage \"%s\": ERR=%s"), ua->argv[i],
@@ -847,16 +852,16 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
 
   for (int i = 0; i < num_storages; i++) {
     osr.StorageId = ids[i];
-    if (!ua->db->GetStorageRecord(ua->jcr, &osr) ||
-        !ua->AclAccessOk(Storage_ACL, osr.Name)) {
+    if (!ua->db->GetStorageRecord(ua->jcr, &osr)
+        || !ua->AclAccessOk(Storage_ACL, osr.Name)) {
       continue;
     }
     AddPrompt(ua, osr.Name);
   }
   if (ids) { free(ids); }
 
-  if (DoPrompt(ua, _("Storage"), _("Select the Storage"), name, sizeof(name)) <
-      0) {
+  if (DoPrompt(ua, _("Storage"), _("Select the Storage"), name, sizeof(name))
+      < 0) {
     return false;
   }
 
@@ -912,7 +917,9 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
     mr->PoolId = pr.PoolId;
     ua->db->ListMediaRecords(ua->jcr, mr, NULL, false, ua->send, HORZ_LIST);
 
-    ua->SendMsg(_("Enter the volume name or MediaId of the volume prefixed with an asterisk (*).\n"));
+    ua->SendMsg(
+        _("Enter the volume name or MediaId of the volume prefixed with an "
+          "asterisk (*).\n"));
     if (!GetCmd(ua, _("E.g. \"full-0001\" or \"*42\": "))) { goto bail_out; }
 
     if (ua->cmd[0] == '*' && Is_a_number(ua->cmd + 1)) {
@@ -961,8 +968,8 @@ PoolResource* select_pool_resource(UaContext* ua)
     AddPrompt(ua, std::move(resource_name));
   }
 
-  if (DoPrompt(ua, _("Pool"), _("Select Pool resource"), name, sizeof(name)) <
-      0) {
+  if (DoPrompt(ua, _("Pool"), _("Select Pool resource"), name, sizeof(name))
+      < 0) {
     return NULL;
   }
 
@@ -1048,9 +1055,9 @@ int GetJobDbr(UaContext* ua, JobDbRecord* jr)
   jr->Job[0] = 0;
 
   for (i = 1; i < ua->argc; i++) {
-    if ((Bstrcasecmp(ua->argk[i], NT_("jobname")) ||
-         Bstrcasecmp(ua->argk[i], NT_("job"))) &&
-        ua->argv[i]) {
+    if ((Bstrcasecmp(ua->argk[i], NT_("jobname"))
+         || Bstrcasecmp(ua->argk[i], NT_("job")))
+        && ua->argv[i]) {
       jr->JobId = 0;
       bstrncpy(jr->Name, ua->argv[i], sizeof(jr->Name));
       break;
@@ -1243,11 +1250,11 @@ StorageResource* get_storage_resource(UaContext* ua,
       /*
        * Ignore barcode, barcodes, encrypt, scan and slots keywords.
        */
-      if (Bstrcasecmp("barcode", ua->argk[i]) ||
-          Bstrcasecmp("barcodes", ua->argk[i]) ||
-          Bstrcasecmp("encrypt", ua->argk[i]) ||
-          Bstrcasecmp("scan", ua->argk[i]) ||
-          Bstrcasecmp("slots", ua->argk[i])) {
+      if (Bstrcasecmp("barcode", ua->argk[i])
+          || Bstrcasecmp("barcodes", ua->argk[i])
+          || Bstrcasecmp("encrypt", ua->argk[i])
+          || Bstrcasecmp("scan", ua->argk[i])
+          || Bstrcasecmp("slots", ua->argk[i])) {
         continue;
       }
       /*
@@ -1263,8 +1270,8 @@ StorageResource* get_storage_resource(UaContext* ua,
         break;
       }
     } else {
-      if (Bstrcasecmp(ua->argk[i], NT_("storage")) ||
-          Bstrcasecmp(ua->argk[i], NT_("sd"))) {
+      if (Bstrcasecmp(ua->argk[i], NT_("storage"))
+          || Bstrcasecmp(ua->argk[i], NT_("sd"))) {
         StoreName = ua->argv[i];
         break;
       } else if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
@@ -1280,8 +1287,8 @@ StorageResource* get_storage_resource(UaContext* ua,
         store = jcr->impl->res.write_storage;
         FreeJcr(jcr);
         break;
-      } else if (Bstrcasecmp(ua->argk[i], NT_("job")) ||
-                 Bstrcasecmp(ua->argk[i], NT_("jobname"))) {
+      } else if (Bstrcasecmp(ua->argk[i], NT_("job"))
+                 || Bstrcasecmp(ua->argk[i], NT_("jobname"))) {
         if (!ua->argv[i]) {
           ua->ErrorMsg(_("Expecting job=xxx, got: %s.\n"), ua->argk[i]);
           return NULL;
@@ -1368,7 +1375,8 @@ drive_number_t GetStorageDrive(UaContext* ua, StorageResource* store)
         AddPrompt(ua, drivename);
       }
       if (DoPrompt(ua, _("Drive"), _("Select drive"), drivename,
-                   sizeof(drivename)) < 0) {
+                   sizeof(drivename))
+          < 0) {
         drive = kInvalidDriveNumber; /* None */
       } else {
         sscanf(drivename, "Drive %hd", &drive);
@@ -1443,7 +1451,8 @@ int GetMediaType(UaContext* ua, char* MediaType, int max_media)
   UnlockRes(my_config);
 
   return (DoPrompt(ua, _("Media Type"), _("Select the Media Type"), MediaType,
-                   max_media) < 0)
+                   max_media)
+          < 0)
              ? 0
              : 1;
 }
@@ -1567,9 +1576,9 @@ alist* select_jobs(UaContext* ua, const char* reason)
       }
 
       if (jcr) {
-        if (jcr->impl->res.job &&
-            !ua->AclAccessOk(Job_ACL, jcr->impl->res.job->resource_name_,
-                             true)) {
+        if (jcr->impl->res.job
+            && !ua->AclAccessOk(Job_ACL, jcr->impl->res.job->resource_name_,
+                                true)) {
           ua->ErrorMsg(_("Unauthorized command from this console.\n"));
           goto bail_out;
         }
@@ -1735,8 +1744,8 @@ alist* select_jobs(UaContext* ua, const char* reason)
           if (!GetYesno(ua, nbuf) || !ua->pint32_val) { goto bail_out; }
         } else {
           if (njobs == 1) {
-            if (!GetYesno(ua, _("Confirm cancel (yes/no): ")) ||
-                !ua->pint32_val) {
+            if (!GetYesno(ua, _("Confirm cancel (yes/no): "))
+                || !ua->pint32_val) {
               goto bail_out;
             }
           }
@@ -1893,7 +1902,8 @@ bool GetUserJobTypeSelection(UaContext* ua, int* jobtype)
     }
 
     if (DoPrompt(ua, _("JobType"), _("Select Job Type"), job_type,
-                 sizeof(job_type)) < 0) {
+                 sizeof(job_type))
+        < 0) {
       return false;
     }
   }
@@ -1917,8 +1927,8 @@ bool GetUserJobStatusSelection(UaContext* ua, int* jobstatus)
   int i;
 
   if ((i = FindArgWithValue(ua, NT_("jobstatus"))) >= 0) {
-    if (strlen(ua->argv[i]) == 1 && ua->argv[i][0] >= 'A' &&
-        ua->argv[i][0] <= 'z') {
+    if (strlen(ua->argv[i]) == 1 && ua->argv[i][0] >= 'A'
+        && ua->argv[i][0] <= 'z') {
       *jobstatus = ua->argv[i][0];
     } else if (Bstrcasecmp(ua->argv[i], "terminated")) {
       *jobstatus = JS_Terminated;
@@ -1945,8 +1955,8 @@ bool GetUserJobLevelSelection(UaContext* ua, int* joblevel)
   int i;
 
   if ((i = FindArgWithValue(ua, NT_("joblevel"))) >= 0) {
-    if (strlen(ua->argv[i]) == 1 && ua->argv[i][0] >= 'A' &&
-        ua->argv[i][0] <= 'z') {
+    if (strlen(ua->argv[i]) == 1 && ua->argv[i][0] >= 'A'
+        && ua->argv[i][0] <= 'z') {
       *joblevel = ua->argv[i][0];
     } else {
       /* invalid joblevel */

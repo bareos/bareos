@@ -2,5 +2,4 @@ The Job Retention directive defines the length of time that Bareos will keep Job
 
 This directive takes precedence over Client directives of the same name. For example, you can decide to increase Retention times for Archive or OffSite Pool.
 
-For more information see Client side documentation :config:option:`dir/client/JobRetention`\ 
-
+For more information see Client side documentation :config:option:`dir/client/JobRetention`\

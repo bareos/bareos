@@ -25,11 +25,11 @@
 
 #ifdef HAVE_MYSQL
 
-#include "cats.h"
-#include <mysql.h>
-#include <errmsg.h>
-#include "bdb_mysql.h"
-#include "lib/edit.h"
+#  include "cats.h"
+#  include <mysql.h>
+#  include <errmsg.h>
+#  include "bdb_mysql.h"
+#  include "lib/edit.h"
 
 /**
  * Returns true if OK

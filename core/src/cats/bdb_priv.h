@@ -24,7 +24,7 @@
 #define BAREOS_CATS_BDB_PRIV_H_ 1
 
 #ifndef _BDB_PRIV_INTERFACE_
-#error "Illegal inclusion of catalog private interface"
+#  error "Illegal inclusion of catalog private interface"
 #endif
 
 struct AttributesDbRecord;

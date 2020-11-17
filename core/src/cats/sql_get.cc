@@ -36,11 +36,11 @@
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
-#include "cats.h"
-#include "sql.h"
-#include "lib/edit.h"
-#include "lib/volume_session_info.h"
-#include "include/make_unique.h"
+#  include "cats.h"
+#  include "sql.h"
+#  include "lib/edit.h"
+#  include "lib/volume_session_info.h"
+#  include "include/make_unique.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -184,8 +184,8 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
   esc_name = CheckPoolMemorySize(esc_name, 2 * pnl + 2);
   EscapeString(jcr, esc_name, path, pnl);
 
-  if (cached_path_id != 0 && cached_path_len == pnl &&
-      bstrcmp(cached_path, path)) {
+  if (cached_path_id != 0 && cached_path_len == pnl
+      && bstrcmp(cached_path, path)) {
     return cached_path_id;
   }
 
@@ -419,8 +419,8 @@ int BareosDb::GetJobVolumeParameters(JobControlRecord* jcr,
       retval = num_rows;
       DBId_t* SId = NULL;
       if (retval > 0) {
-        *VolParams = Vols =
-            (VolumeParameters*)malloc(retval * sizeof(VolumeParameters));
+        *VolParams = Vols
+            = (VolumeParameters*)malloc(retval * sizeof(VolumeParameters));
         SId = (DBId_t*)malloc(retval * sizeof(DBId_t));
       }
       for (i = 0; i < retval; i++) {
@@ -1745,8 +1745,8 @@ bool BareosDb::GetNdmpEnvironmentString(const std::string& query,
                                         void* ctx)
 {
   auto myctx = std::make_unique<CountContext>(ResultHandler, ctx);
-  bool status =
-      SqlQueryWithHandler(query.c_str(), CountingHandler, myctx.get());
+  bool status
+      = SqlQueryWithHandler(query.c_str(), CountingHandler, myctx.get());
   Dmsg3(150, "Got %d NDMP environment records\n", myctx->count);
   return status && myctx->count > 0;  // no rows means no environment was found
 }
@@ -1842,22 +1842,22 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
    * column 2: pool.name, column 3: storage.name,
    * as this is used for ACL handling (counting starts at 0).
    */
-  const char* columns =
-      "Media.MediaId,"
-      "Media.VolumeName,"
-      "Pool.Name AS Pool,"
-      "Storage.Name AS Storage,"
-      "Media.MediaType,"
-      /* "Media.DeviceId," */
-      /* "Media.FirstWritten, "*/
-      "Media.LastWritten,"
-      "Media.VolFiles,"
-      "Media.VolBytes,"
-      "Media.VolStatus,"
-      /* "Media.Recycle AS Recycle," */
-      "Media.ActionOnPurge,"
-      /* "Media.VolRetention," */
-      "Media.Comment";
+  const char* columns
+      = "Media.MediaId,"
+        "Media.VolumeName,"
+        "Pool.Name AS Pool,"
+        "Storage.Name AS Storage,"
+        "Media.MediaType,"
+        /* "Media.DeviceId," */
+        /* "Media.FirstWritten, "*/
+        "Media.LastWritten,"
+        "Media.VolFiles,"
+        "Media.VolBytes,"
+        "Media.VolStatus,"
+        /* "Media.Recycle AS Recycle," */
+        "Media.ActionOnPurge,"
+        /* "Media.VolRetention," */
+        "Media.Comment";
 
   Mmsg(querystring,
        "SELECT DISTINCT %s FROM Media "

@@ -52,11 +52,11 @@ struct plugin_argument {
   enum plugin_argument_type type;
 };
 
-static plugin_argument plugin_arguments[] = {
-    {"instance", argument_instance},
-    {"module_path", argument_module_path},
-    {"module_name", argument_module_name},
-    {NULL, argument_none}};
+static plugin_argument plugin_arguments[]
+    = {{"instance", argument_instance},
+       {"module_path", argument_module_path},
+       {"module_name", argument_module_name},
+       {NULL, argument_none}};
 
 } /* namespace directordaemon */
 #endif /* BAREOS_PLUGINS_DIRD_PYTHON_DIR_H_ */

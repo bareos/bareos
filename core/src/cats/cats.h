@@ -261,8 +261,8 @@ struct PoolDbRecord {
   int32_t AcceptAnyVolume = 0;   /**< set to accept any volume sequence */
   int32_t AutoPrune = 0;         /**< set to prune automatically */
   int32_t Recycle = 0;           /**< default Vol recycle flag */
-  uint32_t ActionOnPurge =
-      0; /**< action on purge, e.g. truncate the disk volume */
+  uint32_t ActionOnPurge
+      = 0; /**< action on purge, e.g. truncate the disk volume */
   utime_t VolRetention = 0;   /**< retention period in seconds */
   utime_t VolUseDuration = 0; /**< time in secs volume can be used */
   uint32_t MaxVolJobs = 0;    /**< Max Jobs on Volume */
@@ -352,8 +352,8 @@ struct MediaDbRecord {
   uint64_t VolWriteTime = 0;     /**< time spent writing volume */
   utime_t VolRetention = 0;      /**< Volume retention in seconds */
   utime_t VolUseDuration = 0;    /**< time in secs volume can be used */
-  uint32_t ActionOnPurge =
-      0; /**< action on purge, e.g. truncate the disk volume */
+  uint32_t ActionOnPurge
+      = 0; /**< action on purge, e.g. truncate the disk volume */
   uint32_t MaxVolJobs = 0;   /**< Max Jobs on Volume */
   uint32_t MaxVolFiles = 0;  /**< Max files on Volume */
   int32_t Recycle = 0;       /**< recycle yes/no */
@@ -571,8 +571,8 @@ class BareosDb : public BareosDbQueryEnum {
    */
   brwlock_t lock_; /**< Transaction lock */
   dlink link_;     /**< Queue control */
-  SQL_INTERFACETYPE db_interface_type_ =
-      SQL_INTERFACE_TYPE_UNKNOWN;         /**< Type of backend used */
+  SQL_INTERFACETYPE db_interface_type_
+      = SQL_INTERFACE_TYPE_UNKNOWN;       /**< Type of backend used */
   SQL_DBTYPE db_type_ = SQL_TYPE_UNKNOWN; /**< Database type */
   uint32_t ref_count_ = 0;                /**< Reference count */
   bool connected_ = false;                /**< Connection made to db */
@@ -586,15 +586,15 @@ class BareosDb : public BareosDbQueryEnum {
   char* db_address_ = nullptr;   /**< Host name address */
   char* db_socket_ = nullptr;    /**< Socket for local access */
   char* db_password_ = nullptr;  /**< Database password */
-  char* last_query_text_ =
-      nullptr;             /**< Last query text obtained from query table */
+  char* last_query_text_
+      = nullptr;           /**< Last query text obtained from query table */
   int db_port_ = 0;        /**< Port for host name address */
   int cached_path_len = 0; /**< Length of cached path */
   int changes = 0;         /**< Changes during transaction */
   int fnl = 0;             /**< File name length */
   int pnl = 0;             /**< Path name length */
-  bool disabled_batch_insert_ =
-      false;                   /**< Explicitly disabled batch insert mode ? */
+  bool disabled_batch_insert_
+      = false;                 /**< Explicitly disabled batch insert mode ? */
   bool is_private_ = false;    /**< Private connection ? */
   uint32_t cached_path_id = 0; /**< Cached path id */
   uint32_t last_hash_key_ = 0; /**< Last hash key lookup on query table */
@@ -1043,7 +1043,8 @@ class BareosDb : public BareosDbQueryEnum {
   }
 
   virtual bool SqlCopyStart(const std::string& table_name,
-                            const std::vector<std::string>& field_names) = 0;
+                            const std::vector<std::string>& field_names)
+      = 0;
   virtual bool SqlCopyInsert(const std::vector<DatabaseField>& data_fields) = 0;
   virtual bool SqlCopyEnd() = 0;
 
@@ -1059,25 +1060,28 @@ class BareosDb : public BareosDbQueryEnum {
   virtual bool SqlQueryWithoutHandler(const char* query, int flags = 0) = 0;
   virtual bool SqlQueryWithHandler(const char* query,
                                    DB_RESULT_HANDLER* ResultHandler,
-                                   void* ctx) = 0;
+                                   void* ctx)
+      = 0;
   virtual const char* sql_strerror(void) = 0;
   virtual void SqlDataSeek(int row) = 0;
   virtual int SqlAffectedRows(void) = 0;
   virtual uint64_t SqlInsertAutokeyRecord(const char* query,
-                                          const char* table_name) = 0;
+                                          const char* table_name)
+      = 0;
   virtual SQL_FIELD* SqlFetchField(void) = 0;
   virtual bool SqlFieldIsNotNull(int field_type) = 0;
   virtual bool SqlFieldIsNumeric(int field_type) = 0;
   virtual bool SqlBatchStartFileTable(JobControlRecord* jcr) = 0;
-  virtual bool SqlBatchEndFileTable(JobControlRecord* jcr,
-                                    const char* error) = 0;
+  virtual bool SqlBatchEndFileTable(JobControlRecord* jcr, const char* error)
+      = 0;
   virtual bool SqlBatchInsertFileTable(JobControlRecord* jcr,
-                                       AttributesDbRecord* ar) = 0;
+                                       AttributesDbRecord* ar)
+      = 0;
 #endif
 };
 
 #ifdef _BDB_PRIV_INTERFACE_
-#include "bdb_priv.h"
+#  include "bdb_priv.h"
 #endif
 
 /* SqlQuery Query Flags */
@@ -1114,12 +1118,12 @@ struct SqlPoolDescriptor {
   bool active = false;    /**< Is this an active pool, after a config reload an
                       pool is    made inactive */
   time_t last_update = 0; /**< When was this pool last updated */
-  int min_connections =
-      0; /**< Minimum number of connections in the connection pool
-          */
-  int max_connections =
-      0; /**< Maximum number of connections in the connection pool
-          */
+  int min_connections
+      = 0; /**< Minimum number of connections in the connection pool
+            */
+  int max_connections
+      = 0; /**< Maximum number of connections in the connection pool
+            */
   int increment_connections = 0; /**< Increase/Decrease the number of connection
                                 in the pool with this value */
   int idle_timeout = 0;     /**< Number of seconds to wait before tearing down a

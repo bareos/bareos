@@ -44,8 +44,8 @@ BareosResource::BareosResource(const BareosResource& other)
 {
   /* do not copy next_ because that is part of the resource chain */
   next_ = nullptr;
-  resource_name_ =
-      other.resource_name_ ? strdup(other.resource_name_) : nullptr;
+  resource_name_
+      = other.resource_name_ ? strdup(other.resource_name_) : nullptr;
   description_ = other.description_ ? strdup(other.description_) : nullptr;
   rcode_ = other.rcode_;
   refcnt_ = other.refcnt_;

@@ -478,21 +478,21 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   JobId_t JobId;
   bool done = false;
   int i, j;
-  const char* list[] = {
-      _("List last 20 Jobs run"),
-      _("List Jobs where a given File is saved"),
-      _("Enter list of comma separated JobIds to select"),
-      _("Enter SQL list command"),
-      _("Select the most recent backup for a client"),
-      _("Select backup for a client before a specified time"),
-      _("Enter a list of files to restore"),
-      _("Enter a list of files to restore before a specified time"),
-      _("Find the JobIds of the most recent backup for a client"),
-      _("Find the JobIds for a backup for a client before a specified time"),
-      _("Enter a list of directories to restore for found JobIds"),
-      _("Select full restore to a specified Job date"),
-      _("Cancel"),
-      NULL};
+  const char* list[]
+      = {_("List last 20 Jobs run"),
+         _("List Jobs where a given File is saved"),
+         _("Enter list of comma separated JobIds to select"),
+         _("Enter SQL list command"),
+         _("Select the most recent backup for a client"),
+         _("Select backup for a client before a specified time"),
+         _("Enter a list of files to restore"),
+         _("Enter a list of files to restore before a specified time"),
+         _("Find the JobIds of the most recent backup for a client"),
+         _("Find the JobIds for a backup for a client before a specified time"),
+         _("Enter a list of directories to restore for found JobIds"),
+         _("Select full restore to a specified Job date"),
+         _("Cancel"),
+         NULL};
 
   const char* kw[] = {             /*
                                     * These keywords are handled in a for loop
@@ -755,8 +755,8 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         return 2;
 
       case 11: /* Choose a jobid and select jobs */
-        if (!GetCmd(ua, _("Enter JobId to get the state to restore: ")) ||
-            !IsAnInteger(ua->cmd)) {
+        if (!GetCmd(ua, _("Enter JobId to get the state to restore: "))
+            || !IsAnInteger(ua->cmd)) {
           return 0;
         }
         {
@@ -1298,7 +1298,8 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }
     if (DoPrompt(ua, _("FileSet"), _("Select FileSet resource"), fileset_name,
-                 sizeof(fileset_name)) < 0) {
+                 sizeof(fileset_name))
+        < 0) {
       ua->ErrorMsg(_("No FileSet found for client \"%s\".\n"), cr.Name);
       goto bail_out;
     }

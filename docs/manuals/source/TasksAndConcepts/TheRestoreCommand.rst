@@ -3,7 +3,7 @@
 The Restore Command
 ===================
 
-:index:`\ <single: Restore>`\ 
+:index:`\ <single: Restore>`\
 
 General
 -------
@@ -22,7 +22,7 @@ well, if so desired. By default, Bareos will restore data to the same Client tha
 Restore Command
 ---------------
 
-:index:`\ <single: Console; Command; restore>`\ 
+:index:`\ <single: Console; Command; restore>`\
 
 Since Bareos maintains a catalog of your files and on which Volumes (disk or tape), they are stored, it can do most of the bookkeeping work, allowing you simply to specify what kind of restore you want (current, before a particular date), and what files to restore. Bareos will then do the rest.
 
@@ -88,7 +88,7 @@ There are a lot of options, and as a point of reference, most people will want t
 
 -  Item 10 is the same as item 9, except that it allows you to enter a before date (as with item 6). These JobIds will then be retained internally.
 
-   :index:`\ <single: Restore Directories>`\ 
+   :index:`\ <single: Restore Directories>`\
 
 -  Item 11 allows you to enter a list of JobIds from which you can select directories to be restored. The list of JobIds can have been previously created by using either item 9 or 10 on the menu. You may then enter a full path to a directory name or a filename preceded by a less than sign (<). The filename should contain a list of directories to be restored. All files in those directories will be restored, but if the directory contains subdirectories, nothing will be restored in the subdirectory
    unless you explicitly enter its name.
@@ -250,7 +250,7 @@ If you now enter yes, Bareos will run the restore Job.
 Selecting Files by Filename
 ---------------------------
 
-:index:`\ <single: Restore; by filename>`\ 
+:index:`\ <single: Restore; by filename>`\
 
 If you have a small number of files to restore, and you know the filenames, you can either put the list of filenames in a file to be read by Bareos, or you can enter the names one at a time. The filenames must include the full path and filename. No wild cards are used.
 
@@ -413,11 +413,11 @@ The full list of possible command line arguments are:
 Using File Relocation
 ---------------------
 
-:index:`\ <single: File Relocation; using>`\  
+:index:`\ <single: File Relocation; using>`\
 
 .. _filerelocation:
 
- 
+
 
 .. _restorefilerelocation:
 
@@ -492,7 +492,7 @@ Orignal filename     New filename          RegexWhere                        Com
 Restoring Directory Attributes
 ------------------------------
 
-:index:`\ <single: Attributes; Restoring Directory>`\  :index:`\ <single: Restoring Directory Attributes>`\ 
+:index:`\ <single: Attributes; Restoring Directory>`\  :index:`\ <single: Restoring Directory Attributes>`\
 
 Depending how you do the restore, you may or may not get the directory entries back to their original state. Here are a few of the problems you can encounter, and for same machine restores, how to avoid them.
 
@@ -511,7 +511,7 @@ Depending how you do the restore, you may or may not get the directory entries b
 Restoring on Windows
 --------------------
 
-:index:`\ <single: Restoring on Windows>`\  :index:`\ <single: Windows; Restoring on>`\ 
+:index:`\ <single: Restoring on Windows>`\  :index:`\ <single: Windows; Restoring on>`\
 
 If you are restoring on Windows systems, Bareos will restore the files with the original ownerships and permissions as would be expected. This is also true if you are restoring those files to an alternate directory (using the Where option in restore). However, if the alternate directory does not already exist, the Bareos File daemon (Client) will try to create it. In some cases, it may not create the directories, and if it does since the File daemon runs under the SYSTEM account, the directory
 will be created with SYSTEM ownership and permissions. In this case, you may have problems accessing the newly restored files.
@@ -525,7 +525,7 @@ Some users have experienced problems restoring files that participate in the Act
 Restore Errors
 --------------
 
-:index:`\ <single: Errors; Restore>`\  :index:`\ <single: Restore Errors>`\ 
+:index:`\ <single: Errors; Restore>`\  :index:`\ <single: Restore Errors>`\
 
 There are a number of reasons why there may be restore errors or warning messages. Some of the more common ones are:
 
@@ -544,7 +544,7 @@ file size error
 Example Restore Job Resource
 ----------------------------
 
-:index:`\ <single: Resource; Example Restore Job>`\ 
+:index:`\ <single: Resource; Example Restore Job>`\
 
 
 
@@ -563,7 +563,7 @@ Example Restore Job Resource
 
 
 
-If Where is not specified, the default location for restoring files will be their original locations. 
+If Where is not specified, the default location for restoring files will be their original locations.
 
 .. _Selection:
 
@@ -572,7 +572,7 @@ If Where is not specified, the default location for restoring files will be thei
 File Selection Commands
 -----------------------
 
-:index:`\ <single: Console; File Selection>`\  :index:`\ <single: File Selection Commands>`\ 
+:index:`\ <single: Console; File Selection>`\  :index:`\ <single: File Selection Commands>`\
 
 After you have selected the Jobs to be restored and Bareos has created the in-memory directory tree, you will enter file selection mode as indicated by the dollar sign ($) prompt. While in this mode, you may use the commands listed above. The basic idea is to move up and down the in memory directory structure with the cd command much as you normally do on the system. Once you are in a directory, you may select the files that you want restored. As a default no files are marked to be restored. If
 you wish to start with all files, simply enter: cd / and mark \*. Otherwise proceed to select the files you wish to restore by marking them with the mark command. The available commands are:
@@ -605,23 +605,23 @@ mark
 
    After executing the mark command, it will print a brief summary:
 
-   
+
 
    ::
 
           No files marked.
 
-   
+
 
    If no files were marked, or:
 
-   
+
 
    ::
 
           nn files marked.
 
-   
+
 
    if some files are marked.
 
@@ -654,5 +654,3 @@ If your filename contains some weird caracters, you can use ``?``, ``*`` or \\\.
 ::
 
    * mark weird_file\\\\with-backslash
-
-

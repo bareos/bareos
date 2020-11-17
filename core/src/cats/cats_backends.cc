@@ -32,9 +32,9 @@
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
-#include "cats.h"
+#  include "cats.h"
 
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+#  if defined(HAVE_DYNAMIC_CATS_BACKENDS)
 
 /**
  * Known backend to interface mappings.
@@ -43,19 +43,19 @@ static struct backend_interface_mapping_t {
   const char* interface_name;
   bool partly_compare;
   int interface_type_id;
-} backend_interface_mappings[] = {
-    {"dbi", TRUE, SQL_INTERFACE_TYPE_DBI},
-    {"mysql", FALSE, SQL_INTERFACE_TYPE_MYSQL},
-    {"postgresql", FALSE, SQL_INTERFACE_TYPE_POSTGRESQL},
-    {"sqlite3", FALSE, SQL_INTERFACE_TYPE_SQLITE3},
-    {NULL, FALSE, 0}};
+} backend_interface_mappings[]
+    = {{"dbi", TRUE, SQL_INTERFACE_TYPE_DBI},
+       {"mysql", FALSE, SQL_INTERFACE_TYPE_MYSQL},
+       {"postgresql", FALSE, SQL_INTERFACE_TYPE_POSTGRESQL},
+       {"sqlite3", FALSE, SQL_INTERFACE_TYPE_SQLITE3},
+       {NULL, FALSE, 0}};
 
-#include "cats_backends.h"
-#include <dlfcn.h>
+#    include "cats_backends.h"
+#    include <dlfcn.h>
 
-#ifndef RTLD_NOW
-#define RTLD_NOW 2
-#endif
+#    ifndef RTLD_NOW
+#      define RTLD_NOW 2
+#    endif
 
 /**
  * All loaded backends.
@@ -155,8 +155,8 @@ BareosDb* db_init_database(JobControlRecord* jcr,
    */
   if (loaded_backends) {
     foreach_alist (backend_shared_library, loaded_backends) {
-      if (backend_shared_library->interface_type_id ==
-          backend_interface_mapping->interface_type_id) {
+      if (backend_shared_library->interface_type_id
+          == backend_interface_mapping->interface_type_id) {
         return backend_shared_library->backend_instantiate(
             jcr, db_driver, db_name, db_user, db_password, db_address, db_port,
             db_socket, mult_db_connections, disable_batch_insert, try_reconnect,
@@ -170,7 +170,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
    * library.
    */
   for (const auto& backend_dir : backend_dirs) {
-#ifndef HAVE_WIN32
+#    ifndef HAVE_WIN32
     Mmsg(shared_library_name, "%s/libbareoscats-%s%s", backend_dir.c_str(),
          backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
     Dmsg3(100, "db_init_database: checking backend %s/libbareoscats-%s%s\n",
@@ -182,11 +182,11 @@ BareosDb* db_init_database(JobControlRecord* jcr,
      */
     struct stat st;
     if (stat(shared_library_name.c_str(), &st) == 0) {
-#else
+#    else
     Mmsg(shared_library_name, "libbareoscats-%s%s",
          backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
     {
-#endif
+#    endif
       dl_handle = dlopen(shared_library_name.c_str(), RTLD_NOW);
       if (!dl_handle) {
         PmStrcpy(error, dlerror());
@@ -200,8 +200,8 @@ BareosDb* db_init_database(JobControlRecord* jcr,
       /*
        * Lookup the backend_instantiate function.
        */
-      backend_instantiate =
-          (t_backend_instantiate)dlsym(dl_handle, "backend_instantiate");
+      backend_instantiate
+          = (t_backend_instantiate)dlsym(dl_handle, "backend_instantiate");
       if (backend_instantiate == NULL) {
         PmStrcpy(error, dlerror());
         Jmsg(jcr, M_ERROR, 0,
@@ -247,10 +247,10 @@ BareosDb* db_init_database(JobControlRecord* jcr,
      * Create a new loaded shared library entry and tack it onto the list of
      * loaded backend shared libs.
      */
-    backend_shared_library =
-        (backend_shared_library_t*)malloc(sizeof(backend_shared_library_t));
-    backend_shared_library->interface_type_id =
-        backend_interface_mapping->interface_type_id;
+    backend_shared_library
+        = (backend_shared_library_t*)malloc(sizeof(backend_shared_library_t));
+    backend_shared_library->interface_type_id
+        = backend_interface_mapping->interface_type_id;
     backend_shared_library->handle = dl_handle;
     backend_shared_library->backend_instantiate = backend_instantiate;
     backend_shared_library->flush_backend = flush_backend;
@@ -297,7 +297,7 @@ void DbFlushBackends(void)
     loaded_backends = NULL;
   }
 }
-#else
+#  else
 /**
  * Dummy bareos backend function replaced with the correct one at install time.
  */
@@ -324,6 +324,6 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 }
 
 void DbFlushBackends(void) {}
-#endif /* HAVE_DYNAMIC_CATS_BACKENDS */
-#endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-          HAVE_DBI */
+#  endif /* HAVE_DYNAMIC_CATS_BACKENDS */
+#endif   /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
+            HAVE_DBI */

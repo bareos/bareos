@@ -144,8 +144,8 @@ void DatabaseImportMysql::RunQuerySelectAllRows(
       query += ", length(`RestoreObject`) as `size_of_restore_object`";
       is_restore_object = true;
 
-      data_field_index_of_restore_object =
-          CalculateDataFieldIndexOfRestoreobject(
+      data_field_index_of_restore_object
+          = CalculateDataFieldIndexOfRestoreobject(
               table_description.column_descriptions);
 
       if (data_field_index_of_restore_object == invalid) {

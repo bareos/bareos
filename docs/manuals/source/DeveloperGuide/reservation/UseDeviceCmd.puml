@@ -118,9 +118,9 @@
           if (have_device) then (yes)
             stop
           endif
-        endif 
+        endif
       else (yes)
-      endif  
+      endif
       #aqua:set PreferMountedVols]
       #aqua:set exact_match]
       #aqua:clear autochanger_only]

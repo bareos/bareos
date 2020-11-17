@@ -65,8 +65,8 @@ static ConnectionHandshakeMode GetHandshakeMode(
       } else { /* kBnetTlsNone or kBnetTlsEnabled */
         return ConnectionHandshakeMode::PerformCleartextHandshake;
       }
-    } else if (r_code_str == std::string("R_CONSOLE") &&
-               version < BareosVersionNumber::kRelease_18_2) {
+    } else if (r_code_str == std::string("R_CONSOLE")
+               && version < BareosVersionNumber::kRelease_18_2) {
       return ConnectionHandshakeMode::PerformCleartextHandshake;
     } else {
       if (tls_policy == kBnetTlsNone) {

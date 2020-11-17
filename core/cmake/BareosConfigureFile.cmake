@@ -21,23 +21,19 @@
 # configure file all *.in files
 #
 
-# if we're not the toplevel project, then we want to glob in core and debian subdirectories only
+# if we're not the toplevel project, then we want to glob in core and debian
+# subdirectories only
 get_directory_property(have_parent PARENT_DIRECTORY)
 if(have_parent)
-  file(GLOB_RECURSE IN_FILES "${CMAKE_SOURCE_DIR}/core/*.in" "${CMAKE_SOURCE_DIR}/debian/*.in")
+  file(GLOB_RECURSE IN_FILES "${CMAKE_SOURCE_DIR}/core/*.in"
+       "${CMAKE_SOURCE_DIR}/debian/*.in"
+  )
 else()
   file(GLOB_RECURSE IN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.in")
 endif()
 
 foreach(in_file ${IN_FILES})
-  string(
-    REGEX
-    REPLACE
-      ".in\$"
-      ""
-      file
-      ${in_file}
-  )
+  string(REGEX REPLACE ".in\$" "" file ${in_file})
   message(STATUS "creating file ${file}")
   configure_file(${in_file} ${file} @ONLY)
 endforeach()

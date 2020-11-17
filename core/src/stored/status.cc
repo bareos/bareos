@@ -219,8 +219,8 @@ static void get_device_specific_status(DeviceResource* device_resource,
   dst.status = GetPoolMemory(PM_MESSAGE);
   dst.status_length = 0;
 
-  if (device_resource && device_resource->dev &&
-      device_resource->dev->DeviceStatus(&dst)) {
+  if (device_resource && device_resource->dev
+      && device_resource->dev->DeviceStatus(&dst)) {
     if (dst.status_length > 0) { sp->send(dst.status, dst.status_length); }
   }
   FreePoolMemory(dst.status);
@@ -247,8 +247,8 @@ static void ListDevices(JobControlRecord* jcr,
     /*
      * See if we need to list this autochanger.
      */
-    if (devicenames &&
-        !NeedToListDevice(devicenames, changer->resource_name_)) {
+    if (devicenames
+        && !NeedToListDevice(devicenames, changer->resource_name_)) {
       continue;
     }
 
@@ -459,11 +459,11 @@ static void ListStatusHeader(StatusPacket* sp)
 
 #if defined(HAVE_WIN32)
   if (debug_level > 0) {
-    len =
-        Mmsg(msg, "APIs=%sOPT,%sATP,%sLPV,%sCFA,%sCFW,\n",
-             p_OpenProcessToken ? "" : "!", p_AdjustTokenPrivileges ? "" : "!",
-             p_LookupPrivilegeValue ? "" : "!", p_CreateFileA ? "" : "!",
-             p_CreateFileW ? "" : "!");
+    len = Mmsg(msg, "APIs=%sOPT,%sATP,%sLPV,%sCFA,%sCFW,\n",
+               p_OpenProcessToken ? "" : "!",
+               p_AdjustTokenPrivileges ? "" : "!",
+               p_LookupPrivilegeValue ? "" : "!", p_CreateFileA ? "" : "!",
+               p_CreateFileW ? "" : "!");
     sp->send(msg, len);
     len = Mmsg(msg,
                " %sWUL,%sWMKD,%sGFAA,%sGFAW,%sGFAEA,%sGFAEW,%sSFAA,%sSFAW,%sBR,"
@@ -483,11 +483,11 @@ static void ListStatusHeader(StatusPacket* sp)
         p_FindNextFileA ? "" : "!", p_FindNextFileW ? "" : "!",
         p_SetCurrentDirectoryA ? "" : "!", p_SetCurrentDirectoryW ? "" : "!");
     sp->send(msg, len);
-    len =
-        Mmsg(msg, " %sGCDA,%sGCDW,%sGVPNW,%sGVNFVMPW\n",
-             p_GetCurrentDirectoryA ? "" : "!",
-             p_GetCurrentDirectoryW ? "" : "!", p_GetVolumePathNameW ? "" : "!",
-             p_GetVolumeNameForVolumeMountPointW ? "" : "!");
+    len = Mmsg(msg, " %sGCDA,%sGCDW,%sGVPNW,%sGVNFVMPW\n",
+               p_GetCurrentDirectoryA ? "" : "!",
+               p_GetCurrentDirectoryW ? "" : "!",
+               p_GetVolumePathNameW ? "" : "!",
+               p_GetVolumeNameForVolumeMountPointW ? "" : "!");
     sp->send(msg, len);
   }
 #endif
@@ -502,8 +502,8 @@ static void ListStatusHeader(StatusPacket* sp)
 
 
   if (me->secure_erase_cmdline) {
-    len =
-        Mmsg(msg, _(" secure erase command='%s'\n"), me->secure_erase_cmdline);
+    len = Mmsg(msg, _(" secure erase command='%s'\n"),
+               me->secure_erase_cmdline);
     sp->send(msg, len);
   }
 
@@ -895,15 +895,15 @@ static void ListTerminatedJobs(StatusPacket* sp)
       if ((p = strrchr(JobName, '.')) != NULL) { *p = 0; }
     }
     if (sp->api) {
-      len =
-          Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
-               level, edit_uint64_with_commas(je.JobFiles, b1),
-               edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt, JobName);
+      len = Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
+                 level, edit_uint64_with_commas(je.JobFiles, b1),
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
+                 JobName);
     } else {
-      len =
-          Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
-               edit_uint64_with_commas(je.JobFiles, b1),
-               edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt, JobName);
+      len = Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"), je.JobId, level,
+                 edit_uint64_with_commas(je.JobFiles, b1),
+                 edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
+                 JobName);
     }
     sp->send(msg, len);
   }
@@ -1023,8 +1023,8 @@ bool DotstatusCmd(JobControlRecord* jcr)
   } else if (Bstrcasecmp(cmd.c_str(), "last")) {
     dir->fsend(OKdotstatus, cmd.c_str());
     if (RecentJobResultsList::Count() > 0) {
-      RecentJobResultsList::JobResult job =
-          RecentJobResultsList::GetMostRecentJobResult();
+      RecentJobResultsList::JobResult job
+          = RecentJobResultsList::GetMostRecentJobResult();
       dir->fsend(DotStatusJob, job.JobId, job.JobStatus, job.Errors);
     }
   } else if (Bstrcasecmp(cmd.c_str(), "header")) {

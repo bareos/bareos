@@ -35,15 +35,15 @@
 
 #ifdef HAVE_MYSQL
 
-#include "cats.h"
-#include <mysql.h>
-#include <errmsg.h>
-#include "bdb_mysql.h"
-#include "lib/edit.h"
-#include "lib/berrno.h"
-#include "lib/dlist.h"
+#  include "cats.h"
+#  include <mysql.h>
+#  include <errmsg.h>
+#  include "bdb_mysql.h"
+#  include "lib/edit.h"
+#  include "lib/berrno.h"
+#  include "lib/dlist.h"
 /* pull in the generated queries definitions */
-#include "mysql_queries.inc"
+#  include "mysql_queries.inc"
 
 /* -----------------------------------------------------------------------
  *
@@ -91,15 +91,15 @@ BareosDbMysql::BareosDbMysql(JobControlRecord* jcr,
     have_batch_insert_ = false;
   } else {
     disabled_batch_insert_ = false;
-#if defined(USE_BATCH_FILE_INSERT)
-#if defined(HAVE_MYSQL_THREAD_SAFE)
+#  if defined(USE_BATCH_FILE_INSERT)
+#    if defined(HAVE_MYSQL_THREAD_SAFE)
     have_batch_insert_ = mysql_thread_safe();
-#else
+#    else
     have_batch_insert_ = false;
-#endif /* HAVE_MYSQL_THREAD_SAFE */
-#else
+#    endif /* HAVE_MYSQL_THREAD_SAFE */
+#  else
     have_batch_insert_ = false;
-#endif /* USE_BATCH_FILE_INSERT */
+#  endif /* USE_BATCH_FILE_INSERT */
   }
   errmsg = GetPoolMemory(PM_EMSG); /* get error message buffer */
   *errmsg = 0;
@@ -148,11 +148,11 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord* jcr)
 {
   bool retval = false;
   int errstat;
-#if LIBMYSQL_VERSION_ID > 80000
+#  if LIBMYSQL_VERSION_ID > 80000
   bool reconnect = 1;
-#else
+#  else
   my_bool reconnect = 1;
-#endif
+#  endif
 
   P(mutex);
   if (connected_) {
@@ -206,13 +206,13 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord* jcr)
             "MySQL connect failed either server not running or your "
             "authorization is incorrect.\n"),
           db_name_, db_user_);
-#if MYSQL_VERSION_ID >= 40101
+#  if MYSQL_VERSION_ID >= 40101
     Dmsg3(50, "Error %u (%s): %s\n", mysql_errno(&(instance_)),
           mysql_sqlstate(&(instance_)), mysql_error(&(instance_)));
-#else
+#  else
     Dmsg2(50, "Error %u: %s\n", mysql_errno(&(instance_)),
           mysql_error(&(instance_)));
-#endif
+#  endif
     goto bail_out;
   }
 
@@ -320,9 +320,9 @@ bail_out:
  */
 void BareosDbMysql::ThreadCleanup(void)
 {
-#ifndef HAVE_WIN32
+#  ifndef HAVE_WIN32
   mysql_thread_end();
-#endif
+#  endif
 }
 
 /**
@@ -684,7 +684,7 @@ bool BareosDbMysql::SqlFieldIsNumeric(int field_type)
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+#  ifdef HAVE_DYNAMIC_CATS_BACKENDS
 extern "C" BareosDb* backend_instantiate(JobControlRecord* jcr,
                                          const char* db_driver,
                                          const char* db_name,
@@ -698,7 +698,7 @@ extern "C" BareosDb* backend_instantiate(JobControlRecord* jcr,
                                          bool try_reconnect,
                                          bool exit_on_fatal,
                                          bool need_private)
-#else
+#  else
 BareosDb* db_init_database(JobControlRecord* jcr,
                            const char* db_driver,
                            const char* db_name,
@@ -712,7 +712,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                            bool try_reconnect,
                            bool exit_on_fatal,
                            bool need_private)
-#endif
+#  endif
 {
   BareosDbMysql* mdb = NULL;
 
@@ -747,11 +747,11 @@ bail_out:
   return mdb;
 }
 
-#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+#  ifdef HAVE_DYNAMIC_CATS_BACKENDS
 extern "C" void flush_backend(void)
-#else
+#  else
 void DbFlushBackends(void)
-#endif
+#  endif
 {
 }
 

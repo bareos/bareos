@@ -163,8 +163,8 @@ static int MatchBlockSessid(BootStrapRecord* bsr,
                             DeviceBlock* block)
 {
   if (!sessid) { return 1; /* no specification matches all */ }
-  if (sessid->sessid <= block->VolSessionId &&
-      sessid->sessid2 >= block->VolSessionId) {
+  if (sessid->sessid <= block->VolSessionId
+      && sessid->sessid2 >= block->VolSessionId) {
     return 1;
   }
   if (sessid->next) { return MatchBlockSessid(bsr, sessid->next, block); }
@@ -183,8 +183,8 @@ static int MatchFileregex(BootStrapRecord* bsr,
    * The code breaks if the first record associated with a file is
    * not of this type
    */
-  if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES ||
-      rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX) {
+  if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES
+      || rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX) {
     bsr->skip_file = false;
     if (UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len,
                                bsr->attr)) {
@@ -251,8 +251,8 @@ BootStrapRecord* find_next_bsr(BootStrapRecord* root_bsr, Device* dev)
     Dmsg0(dbglevel, "NULL root bsr pointer passed to find_next_bsr.\n");
     return NULL;
   }
-  if (!root_bsr->use_positioning || !root_bsr->Reposition ||
-      !dev->HasCap(CAP_POSITIONBLOCKS)) {
+  if (!root_bsr->use_positioning || !root_bsr->Reposition
+      || !dev->HasCap(CAP_POSITIONBLOCKS)) {
     Dmsg2(dbglevel, "No nxt_bsr use_pos=%d repos=%d\n",
           root_bsr->use_positioning, root_bsr->Reposition);
     return NULL;
@@ -710,8 +710,8 @@ static int MatchSessid(BootStrapRecord* bsr,
                        DeviceRecord* rec)
 {
   if (!sessid) { return 1; /* no specification matches all */ }
-  if (sessid->sessid <= rec->VolSessionId &&
-      sessid->sessid2 >= rec->VolSessionId) {
+  if (sessid->sessid <= rec->VolSessionId
+      && sessid->sessid2 >= rec->VolSessionId) {
     return 1;
   }
   if (sessid->next) { return MatchSessid(bsr, sessid->next, rec); }
@@ -762,8 +762,8 @@ uint64_t GetBsrStartAddr(BootStrapRecord* bsr, uint32_t* file, uint32_t* block)
       sblock = (uint32_t)bsr_addr;
 
     } else if (bsr->volfile && bsr->volblock) {
-      bsr_addr =
-          (((uint64_t)bsr->volfile->sfile) << 32) | bsr->volblock->sblock;
+      bsr_addr
+          = (((uint64_t)bsr->volfile->sfile) << 32) | bsr->volblock->sblock;
       sfile = bsr->volfile->sfile;
       sblock = bsr->volblock->sblock;
     }

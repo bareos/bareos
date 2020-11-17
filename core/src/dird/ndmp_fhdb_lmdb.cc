@@ -32,9 +32,9 @@
 
 #if defined(HAVE_NDMP) && defined(HAVE_LMDB)
 
-#include "ndmp/ndmagents.h"
-#include "ndmp_dma_priv.h"
-#include "lmdb/lmdb.h"
+#  include "ndmp/ndmagents.h"
+#  include "ndmp_dma_priv.h"
+#  include "lmdb/lmdb.h"
 
 namespace directordaemon {
 
@@ -64,8 +64,8 @@ static int debuglevel = 100;
 /*
  * Payload = 8 + 8 + 96 = 112 bytes + namelength.
  */
-#define AVG_NR_BYTES_PER_ENTRY 256
-#define B_PAGE_SIZE 4096
+#  define AVG_NR_BYTES_PER_ENTRY 256
+#  define B_PAGE_SIZE 4096
 
 extern "C" int bndmp_fhdb_lmdb_add_dir(struct ndmlog* ixlog,
                                        int tagc,
@@ -98,8 +98,8 @@ extern "C" int bndmp_fhdb_lmdb_add_dir(struct ndmlog* ixlog,
      */
     length = strlen(raw_name);
     total_length = sizeof(struct fhdb_payload) + length + 2;
-    fhdb_state->pay_load =
-        CheckPoolMemorySize(fhdb_state->pay_load, total_length);
+    fhdb_state->pay_load
+        = CheckPoolMemorySize(fhdb_state->pay_load, total_length);
     payload = (struct fhdb_payload*)fhdb_state->pay_load;
     payload->node = node;
     payload->dir_node = dir_node;
@@ -197,8 +197,8 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
         /*
          * Make a copy of the current pay_load.
          */
-        fhdb_state->pay_load =
-            CheckPoolMemorySize(fhdb_state->pay_load, data.mv_size);
+        fhdb_state->pay_load
+            = CheckPoolMemorySize(fhdb_state->pay_load, data.mv_size);
         memcpy(fhdb_state->pay_load, data.mv_data, data.mv_size);
         payload = (struct fhdb_payload*)fhdb_state->pay_load;
 
@@ -362,8 +362,8 @@ extern "C" int bndmp_fhdb_lmdb_add_dirnode_root(struct ndmlog* ixlog,
      * Make sure fhdb_state->pay_load is large enough.
      */
     total_length = sizeof(struct fhdb_payload);
-    fhdb_state->pay_load =
-        CheckPoolMemorySize(fhdb_state->pay_load, total_length);
+    fhdb_state->pay_load
+        = CheckPoolMemorySize(fhdb_state->pay_load, total_length);
     payload = (struct fhdb_payload*)fhdb_state->pay_load;
 
     fhdb_state->root_node = root_node;
@@ -475,15 +475,14 @@ void NdmpFhdbLmdbRegister(struct ndmlog* ixlog)
     if ((nis->filehist_size * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
       size_t pagesize;
 
-#ifdef HAVE_GETPAGESIZE
+#  ifdef HAVE_GETPAGESIZE
       pagesize = getpagesize();
-#else
+#  else
       pagesize = B_PAGE_SIZE;
-#endif
+#  endif
 
-      mapsize =
-          (((nis->filehist_size * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1) *
-          pagesize;
+      mapsize = (((nis->filehist_size * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1)
+                * pagesize;
     }
 
     result = mdb_env_set_mapsize(fhdb_state->db_env, mapsize);

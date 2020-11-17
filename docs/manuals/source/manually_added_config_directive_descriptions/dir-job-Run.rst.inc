@@ -15,4 +15,3 @@ A cloned job will not start additional clones, so it is not possible to recurse.
 Jobs started by :config:option:`dir/job/Run`\  are submitted for running before the original job (while it is being initialized). This means that any clone job will actually start before the original job, and may even block the original job from starting. It evens ignores :config:option:`dir/job/Priority`\ .
 
 If you are trying to prioritize jobs, you will find it much easier to do using a :config:option:`dir/job/RunScript`\  resource or a :config:option:`dir/job/RunBeforeJob`\  directive.
-

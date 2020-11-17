@@ -60,7 +60,6 @@ check_include_files(sys/ea.h HAVE_SYS_EA_H)
 check_include_files(sys/proplist.h HAVE_SYS_PROPLIST_H)
 check_include_files(sys/xattr.h HAVE_SYS_XATTR_H)
 
-
 include(CheckSymbolExists)
 include(CMakePushCheckState)
 cmake_push_check_state()
@@ -69,8 +68,9 @@ check_symbol_exists(ceph_statx "sys/stat.h;cephfs/libcephfs.h" HAVE_CEPH_STATX)
 cmake_pop_check_state()
 
 check_include_files(rados/librados.h HAVE_RADOS_LIBRADOS_H)
-check_include_files(radosstriper/libradosstriper.h
-                    HAVE_RADOSSTRIPER_LIBRADOSSTRIPER_H)
+check_include_files(
+  radosstriper/libradosstriper.h HAVE_RADOSSTRIPER_LIBRADOSSTRIPER_H
+)
 
 check_include_files(glusterfs/api/glfs.h HAVE_GLUSTERFS_API_GLFS_H)
 
@@ -83,8 +83,9 @@ check_include_files(scsi/scsi.h HAVE_SCSI_SCSI_H)
 
 check_include_files("stddef.h;scsi/sg.h" HAVE_SCSI_SG_H)
 
-check_include_files("sys/types.h;sys/scsi/impl/uscsi.h"
-                    HAVE_SYS_SCSI_IMPL_USCSI_H)
+check_include_files(
+  "sys/types.h;sys/scsi/impl/uscsi.h" HAVE_SYS_SCSI_IMPL_USCSI_H
+)
 check_include_files("stdio.h;camlib.h" HAVE_CAMLIB_H)
 check_include_files(cam/scsi/scsi_message.h HAVE_CAM_SCSI_SCSI_MESSAGE_H)
 check_include_files(dev/scsipi/scsipi_all.h HAVE_DEV_SCSIPI_SCSIPI_ALL_H)

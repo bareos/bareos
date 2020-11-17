@@ -67,8 +67,8 @@ static std::vector<TimerThread::Timer*> controlled_items_list;
 
 bool Start(void)
 {
-  if (timer_thread_state != TimerThreadState::IS_NOT_INITIALZED &&
-      timer_thread_state != TimerThreadState::IS_SHUT_DOWN) {
+  if (timer_thread_state != TimerThreadState::IS_NOT_INITIALZED
+      && timer_thread_state != TimerThreadState::IS_SHUT_DOWN) {
     return false;
   }
 
@@ -78,8 +78,8 @@ bool Start(void)
   timer_thread = std::make_unique<std::thread>(TimerThread);
 
   int timeout = 0;
-  while (timer_thread_state.load() != TimerThreadState::IS_RUNNING &&
-         ++timeout < 2000) {
+  while (timer_thread_state.load() != TimerThreadState::IS_RUNNING
+         && ++timeout < 2000) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
@@ -124,8 +124,8 @@ bool RegisterTimer(TimerThread::Timer* t)
   {
     std::lock_guard<std::mutex> l(controlled_items_list_mutex);
 
-    if (std::find(controlled_items_list.begin(), controlled_items_list.end(),
-                  t) == controlled_items_list.end()) {
+    if (std::find(controlled_items_list.begin(), controlled_items_list.end(), t)
+        == controlled_items_list.end()) {
       return false;
     }
 
@@ -147,8 +147,8 @@ bool UnregisterTimer(TimerThread::Timer* t)
 {
   std::lock_guard<std::mutex> l(controlled_items_list_mutex);
 
-  auto pos =
-      std::find(controlled_items_list.begin(), controlled_items_list.end(), t);
+  auto pos = std::find(controlled_items_list.begin(),
+                       controlled_items_list.end(), t);
 
   if (pos != controlled_items_list.end()) {
     if ((*pos)->user_destructor) { (*pos)->user_destructor((*pos)); }
@@ -166,8 +166,8 @@ bool IsRegisteredTimer(const TimerThread::Timer* t)
 {
   std::lock_guard<std::mutex> l(controlled_items_list_mutex);
 
-  auto pos =
-      std::find(controlled_items_list.begin(), controlled_items_list.end(), t);
+  auto pos = std::find(controlled_items_list.begin(),
+                       controlled_items_list.end(), t);
 
   return pos != controlled_items_list.end();
 }
@@ -200,8 +200,8 @@ static void LogMessage(TimerThread::Timer* p)
 static bool RunOneItem(TimerThread::Timer* p,
                        std::chrono::steady_clock::time_point& next_timer_run)
 {
-  std::chrono::time_point<std::chrono::steady_clock> last_timer_run_timepoint =
-      std::chrono::steady_clock::now();
+  std::chrono::time_point<std::chrono::steady_clock> last_timer_run_timepoint
+      = std::chrono::steady_clock::now();
 
   bool remove_from_list = false;
   if (p->is_active && last_timer_run_timepoint > p->scheduled_run_timepoint) {
@@ -243,8 +243,8 @@ static void TimerThread(void)
   timer_thread_state = TimerThreadState::IS_RUNNING;
 
   while (!quit_timer_thread) {
-    std::chrono::steady_clock::time_point next_timer_run =
-        std::chrono::steady_clock::now() + idle_timeout_interval_milliseconds;
+    std::chrono::steady_clock::time_point next_timer_run
+        = std::chrono::steady_clock::now() + idle_timeout_interval_milliseconds;
 
     RunAllItemsAndRemoveOneShotItems(next_timer_run);
 
@@ -274,8 +274,8 @@ void SetTimerIdleSleepTime(std::chrono::seconds time)
 
 bool CurrentThreadIsTimerThread()
 {
-  return (timer_thread_state == TimerThreadState::IS_RUNNING &&
-          (std::this_thread::get_id() == timer_thread->get_id()));
+  return (timer_thread_state == TimerThreadState::IS_RUNNING
+          && (std::this_thread::get_id() == timer_thread->get_id()));
 }
 
 std::time_t GetCalenderTimeOnLastTimerThreadRun()

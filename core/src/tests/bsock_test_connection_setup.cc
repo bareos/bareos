@@ -19,10 +19,10 @@
    02110-1301, USA.
 */
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
+#  include "gtest/gtest.h"
 #endif
 
 #include "console/console_conf.h"
@@ -75,8 +75,8 @@ static PConfigParser ConsolePrepareResources(const std::string& path_to_config)
   const char* console_configfile = path_to_config.c_str();
   PConfigParser console_config(
       console::InitConsConfig(console_configfile, M_INFO));
-  console::my_config =
-      console_config.get(); /* set the console global variable */
+  console::my_config
+      = console_config.get(); /* set the console global variable */
 
   EXPECT_NE(console_config.get(), nullptr);
   if (!console_config) { return nullptr; }
@@ -101,8 +101,8 @@ static PConfigParser DirectorPrepareResources(const std::string& path_to_config)
 {
   PConfigParser director_config(
       directordaemon::InitDirConfig(path_to_config.c_str(), M_INFO));
-  directordaemon::my_config =
-      director_config.get(); /* set the director global variable */
+  directordaemon::my_config
+      = director_config.get(); /* set the director global variable */
 
   EXPECT_NE(director_config.get(), nullptr);
   if (!director_config) { return nullptr; }
@@ -112,8 +112,8 @@ static PConfigParser DirectorPrepareResources(const std::string& path_to_config)
   if (!parse_director_config_ok) { return nullptr; }
 
   Dmsg0(200, "Start UA server\n");
-  directordaemon::me =
-      (directordaemon::DirectorResource*)director_config->GetNextRes(
+  directordaemon::me
+      = (directordaemon::DirectorResource*)director_config->GetNextRes(
           directordaemon::R_DIRECTOR, nullptr);
   directordaemon::my_config->own_resource_ = directordaemon::me;
 
@@ -163,8 +163,8 @@ static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   if (!director_config) { return false; }
 
-  bool start_socket_server_ok =
-      directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
+  bool start_socket_server_ok
+      = directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
   EXPECT_TRUE(start_socket_server_ok) << "Could not start SocketServer";
   if (!start_socket_server_ok) { return false; }
 

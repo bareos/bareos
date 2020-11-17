@@ -415,8 +415,8 @@ static void RereadLastBlock(DeviceControlRecord* dcr)
        * Note, this can destroy dev->errmsg
        */
       dcr->block = lblock;
-      if (DeviceControlRecord::ReadStatus::Ok !=
-          dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
+      if (DeviceControlRecord::ReadStatus::Ok
+          != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
         Jmsg(jcr, M_ERROR, 0, _("Re-read last block at EOT failed. ERR=%s"),
              dev->errmsg);
       } else {
@@ -660,8 +660,8 @@ bool DeviceControlRecord::WriteBlockToDev()
         /*
          * Min block size
          */
-        wlen =
-            ((dev->min_block_size + TAPE_BSIZE - 1) / TAPE_BSIZE) * TAPE_BSIZE;
+        wlen = ((dev->min_block_size + TAPE_BSIZE - 1) / TAPE_BSIZE)
+               * TAPE_BSIZE;
       } else {
         /*
          * Ensure size is rounded
@@ -686,12 +686,12 @@ bool DeviceControlRecord::WriteBlockToDev()
   /*
    * Limit maximum Volume size to value specified by user
    */
-  hit_max1 =
-      (dev->max_volume_size > 0) &&
-      ((dev->VolCatInfo.VolCatBytes + block->binbuf)) >= dev->max_volume_size;
-  hit_max2 = (dev->VolCatInfo.VolCatMaxBytes > 0) &&
-             ((dev->VolCatInfo.VolCatBytes + block->binbuf)) >=
-                 dev->VolCatInfo.VolCatMaxBytes;
+  hit_max1 = (dev->max_volume_size > 0)
+             && ((dev->VolCatInfo.VolCatBytes + block->binbuf))
+                    >= dev->max_volume_size;
+  hit_max2 = (dev->VolCatInfo.VolCatMaxBytes > 0)
+             && ((dev->VolCatInfo.VolCatBytes + block->binbuf))
+                    >= dev->VolCatInfo.VolCatMaxBytes;
 
   if (hit_max1 || hit_max2) {
     char ed1[50];
@@ -716,8 +716,8 @@ bool DeviceControlRecord::WriteBlockToDev()
   /*
    * Limit maximum File size on volume to user specified value
    */
-  if ((dev->max_file_size > 0) &&
-      (dev->file_size + block->binbuf) >= dev->max_file_size) {
+  if ((dev->max_file_size > 0)
+      && (dev->file_size + block->binbuf) >= dev->max_file_size) {
     dev->file_size = 0; /* reset file size */
 
     if (!dev->weof(1)) { /* write eof */
@@ -1041,8 +1041,8 @@ reread:
     }
     status = dev->read(block->buf, (size_t)block->buf_len);
 
-  } while (status == -1 && (errno == EBUSY || errno == EINTR || errno == EIO) &&
-           retry++ < 3);
+  } while (status == -1 && (errno == EBUSY || errno == EINTR || errno == EIO)
+           && retry++ < 3);
 
   if (status < 0) {
     BErrNo be;
@@ -1086,9 +1086,9 @@ reread:
    */
 
   block->read_len = status; /* save length read */
-  if (block->read_len == 80 &&
-      (dcr->VolCatInfo.LabelType != B_BAREOS_LABEL ||
-       dcr->device_resource->label_type != B_BAREOS_LABEL)) {
+  if (block->read_len == 80
+      && (dcr->VolCatInfo.LabelType != B_BAREOS_LABEL
+          || dcr->device_resource->label_type != B_BAREOS_LABEL)) {
     /* ***FIXME*** should check label */
     Dmsg2(100, "Ignore 80 byte ANSI label at %u:%u\n", dev->file,
           dev->block_num);
@@ -1145,8 +1145,8 @@ reread:
       }
     } else {
       Dmsg0(250, "Seek to beginning of block for reread.\n");
-      boffset_t pos =
-          dev->lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
+      boffset_t pos
+          = dev->lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
       pos -= block->read_len;
       dev->lseek(dcr, pos, SEEK_SET);
       dev->file_addr = pos;

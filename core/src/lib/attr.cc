@@ -219,8 +219,8 @@ void BuildAttrOutputFnames(JobControlRecord* jcr, Attributes* attr)
       /* Always add prefix to hard links (FT_LNKSAVED) and
        *  on user request to soft links
        */
-      if (IsPathSeparator(attr->lname[0]) &&
-          (attr->type == FT_LNKSAVED || jcr->prefix_links)) {
+      if (IsPathSeparator(attr->lname[0])
+          && (attr->type == FT_LNKSAVED || jcr->prefix_links)) {
         PmStrcpy(attr->olname, jcr->where);
         add_link = true;
       } else {
@@ -229,8 +229,8 @@ void BuildAttrOutputFnames(JobControlRecord* jcr, Attributes* attr)
       }
       fn = attr->lname; /* take whole name */
       /* Ensure where is terminated with a slash */
-      if (add_link && !IsPathSeparator(jcr->where[wherelen - 1]) &&
-          !IsPathSeparator(fn[0])) {
+      if (add_link && !IsPathSeparator(jcr->where[wherelen - 1])
+          && !IsPathSeparator(fn[0])) {
         PmStrcat(attr->olname, "/");
       }
       PmStrcat(attr->olname, fn); /* copy rest of link */
@@ -255,8 +255,8 @@ static const char* attr_stat_to_str(PoolMem& resultbuffer,
   char* p;
   guid_list* guid;
 
-  if (attr->type ==
-      FT_DELETED) { /* TODO: change this to get last seen values */
+  if (attr->type
+      == FT_DELETED) { /* TODO: change this to get last seen values */
     resultbuffer.strcat(
         "----------   - -        -                - ---------- --------");
     return resultbuffer.c_str();

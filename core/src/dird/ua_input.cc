@@ -85,8 +85,8 @@ bool GetPint(UaContext* ua, const char* prompt)
     ua->cmd[0] = 0;
     if (!GetCmd(ua, prompt)) { return false; }
     /* Kludge for slots blank line => 0 */
-    if (ua->cmd[0] == 0 &&
-        bstrncmp(prompt, _("Enter slot"), strlen(_("Enter slot")))) {
+    if (ua->cmd[0] == 0
+        && bstrncmp(prompt, _("Enter slot"), strlen(_("Enter slot")))) {
       return true;
     }
     if (!Is_a_number(ua->cmd)) {

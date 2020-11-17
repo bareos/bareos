@@ -38,11 +38,11 @@
 #include <algorithm>
 
 #ifdef __GNUC__
-#ifndef __clang__
+#  ifndef __clang__
 /* ignore the suggest-override warnings caused by MOCK_METHODx */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#endif
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wsuggest-override"
+#  endif
 #endif
 
 class BareosSocketMock : public BareosSocket {
@@ -91,9 +91,9 @@ class BareosSocketMock : public BareosSocket {
                     int*));
 };
 #ifdef __GNUC__
-#ifndef __clang__
-#pragma GCC diagnostic pop
-#endif
+#  ifndef __clang__
+#    pragma GCC diagnostic pop
+#  endif
 #endif
 /* define a gmock action that fills bsock->msg so we can recv() a message */
 ACTION_P2(BareosSocket_Recv, bsock, msg)

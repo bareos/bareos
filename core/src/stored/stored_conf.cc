@@ -255,28 +255,26 @@ static ResourceTable resources[] = {
 
 /* clang-format on */
 
-static struct s_kw authentication_methods[] = {{"None", AT_NONE},
-                                               {"Clear", AT_CLEAR},
-                                               {"MD5", AT_MD5},
-                                               {NULL, 0}};
+static struct s_kw authentication_methods[]
+    = {{"None", AT_NONE}, {"Clear", AT_CLEAR}, {"MD5", AT_MD5}, {NULL, 0}};
 
 struct s_dvt_kw {
   const char* name;
   DeviceType token;
 };
 
-static s_dvt_kw device_types[] = {
-    {"file", DeviceType::B_FILE_DEV},
-    {"tape", DeviceType::B_TAPE_DEV},
-    {"fifo", DeviceType::B_FIFO_DEV},
-    {"vtl", DeviceType::B_VTL_DEV},
-    {"gfapi", DeviceType::B_GFAPI_DEV},
-    /* compatibility: object have been renamed to droplet */
-    {"object", DeviceType::B_DROPLET_DEV},
-    {"droplet", DeviceType::B_DROPLET_DEV},
-    {"rados", DeviceType::B_RADOS_DEV},
-    {"cephfs", DeviceType::B_CEPHFS_DEV},
-    {nullptr, DeviceType::B_UNKNOWN_DEV}};
+static s_dvt_kw device_types[]
+    = {{"file", DeviceType::B_FILE_DEV},
+       {"tape", DeviceType::B_TAPE_DEV},
+       {"fifo", DeviceType::B_FIFO_DEV},
+       {"vtl", DeviceType::B_VTL_DEV},
+       {"gfapi", DeviceType::B_GFAPI_DEV},
+       /* compatibility: object have been renamed to droplet */
+       {"object", DeviceType::B_DROPLET_DEV},
+       {"droplet", DeviceType::B_DROPLET_DEV},
+       {"rados", DeviceType::B_RADOS_DEV},
+       {"cephfs", DeviceType::B_CEPHFS_DEV},
+       {nullptr, DeviceType::B_UNKNOWN_DEV}};
 
 struct s_io_kw {
   const char* name;
@@ -288,10 +286,10 @@ static s_io_kw io_directions[] = {{"in", AutoXflateMode::IO_DIRECTION_IN},
                                   {"both", AutoXflateMode::IO_DIRECTION_INOUT},
                                   {nullptr, AutoXflateMode::IO_DIRECTION_NONE}};
 
-static s_kw compression_algorithms[] = {
-    {"gzip", COMPRESS_GZIP},   {"lzo", COMPRESS_LZO1X},
-    {"lzfast", COMPRESS_FZFZ}, {"lz4", COMPRESS_FZ4L},
-    {"lz4hc", COMPRESS_FZ4H},  {NULL, 0}};
+static s_kw compression_algorithms[]
+    = {{"gzip", COMPRESS_GZIP},   {"lzo", COMPRESS_LZO1X},
+       {"lzfast", COMPRESS_FZFZ}, {"lz4", COMPRESS_FZ4L},
+       {"lz4hc", COMPRESS_FZ4H},  {NULL, 0}};
 
 static void StoreAuthenticationType(LEX* lc,
                                     ResourceItem* item,
@@ -496,21 +494,21 @@ static void MultiplyDevice(DeviceResource& multiplied_device_resource)
   /* append 0001 to the name of the existing resource */
   multiplied_device_resource.CreateAndAssignSerialNumber(1);
 
-  multiplied_device_resource.multiplied_device_resource =
-      std::addressof(multiplied_device_resource);
+  multiplied_device_resource.multiplied_device_resource
+      = std::addressof(multiplied_device_resource);
 
   uint32_t count = multiplied_device_resource.count - 1;
 
   /* create the copied devices */
   for (uint32_t i = 0; i < count; i++) {
-    DeviceResource* copied_device_resource =
-        new DeviceResource(multiplied_device_resource);
+    DeviceResource* copied_device_resource
+        = new DeviceResource(multiplied_device_resource);
 
     /* append 0002, 0003, ... */
     copied_device_resource->CreateAndAssignSerialNumber(i + 2);
 
-    copied_device_resource->multiplied_device_resource =
-        std::addressof(multiplied_device_resource);
+    copied_device_resource->multiplied_device_resource
+        = std::addressof(multiplied_device_resource);
     copied_device_resource->count = 0;
 
     my_config->AppendToResourcesChain(copied_device_resource,
@@ -668,10 +666,10 @@ static bool DumpResource_(int type,
 {
   PoolMem buf;
   bool recurse = true;
-  OutputFormatter output_formatter =
-      OutputFormatter(sendit, sock, nullptr, nullptr);
-  OutputFormatterResource output_formatter_resource =
-      OutputFormatterResource(&output_formatter);
+  OutputFormatter output_formatter
+      = OutputFormatter(sendit, sock, nullptr, nullptr);
+  OutputFormatterResource output_formatter_resource
+      = OutputFormatterResource(&output_formatter);
 
   if (!res) {
     sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
@@ -700,8 +698,8 @@ static bool DumpResource_(int type,
       break;
     }
     case R_AUTOCHANGER: {
-      AutochangerResource* autochanger =
-          dynamic_cast<AutochangerResource*>(res);
+      AutochangerResource* autochanger
+          = dynamic_cast<AutochangerResource*>(res);
       assert(autochanger);
       autochanger->PrintConfig(output_formatter_resource, *my_config,
                                hide_sensitive_data, verbose);
@@ -729,8 +727,8 @@ static void DumpResource(int type,
   BareosResource* p = res;
 
   while (recurse && p) {
-    recurse =
-        DumpResource_(type, p, sendit, sock, hide_sensitive_data, verbose);
+    recurse
+        = DumpResource_(type, p, sendit, sock, hide_sensitive_data, verbose);
     p = p->next_;
   }
 }
@@ -742,9 +740,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   int error = 0;
 
   BareosResource* allocated_resource = *resources[rindex].allocated_resource_;
-  if (pass == 2 && !allocated_resource->Validate()) {
-    return false;
-  }
+  if (pass == 2 && !allocated_resource->Validate()) { return false; }
 
   // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
@@ -777,8 +773,8 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"),
                 res_dir->resource_name_);
         } else {
-          p->tls_cert_.allowed_certificate_common_names_ =
-              std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
+          p->tls_cert_.allowed_certificate_common_names_
+              = std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }
@@ -792,14 +788,14 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           p->plugin_names = res_store->plugin_names;
           p->messages = res_store->messages;
           p->backend_directories = res_store->backend_directories;
-          p->tls_cert_.allowed_certificate_common_names_ =
-              std::move(res_store->tls_cert_.allowed_certificate_common_names_);
+          p->tls_cert_.allowed_certificate_common_names_ = std::move(
+              res_store->tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }
       case R_AUTOCHANGER: {
-        AutochangerResource* p =
-            dynamic_cast<AutochangerResource*>(my_config->GetResWithName(
+        AutochangerResource* p
+            = dynamic_cast<AutochangerResource*>(my_config->GetResWithName(
                 R_AUTOCHANGER, res_changer->resource_name_));
 
         if (!p) {

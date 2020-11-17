@@ -165,8 +165,8 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   }
   count = other.count;
   multiplied_device_resource = other.multiplied_device_resource;
-  multiplied_device_resource_base_name =
-      other.multiplied_device_resource_base_name;
+  multiplied_device_resource_base_name
+      = other.multiplied_device_resource_base_name;
   dev = other.dev;
   changer_res = other.changer_res;
 }
@@ -222,8 +222,8 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   free_space_command = rhs.free_space_command;
   count = rhs.count;
   multiplied_device_resource = rhs.multiplied_device_resource;
-  multiplied_device_resource_base_name =
-      rhs.multiplied_device_resource_base_name;
+  multiplied_device_resource_base_name
+      = rhs.multiplied_device_resource_base_name;
   dev = rhs.dev;
   changer_res = rhs.changer_res;
   temporarily_swapped_numbered_name = rhs.temporarily_swapped_numbered_name;
@@ -257,8 +257,8 @@ bool DeviceResource::PrintConfig(OutputFormatterResource& send,
 void DeviceResource::MultipliedDeviceRestoreBaseName()
 {
   temporarily_swapped_numbered_name = resource_name_;
-  resource_name_ =
-      const_cast<char*>(multiplied_device_resource_base_name.c_str());
+  resource_name_
+      = const_cast<char*>(multiplied_device_resource_base_name.c_str());
 }
 
 void DeviceResource::MultipliedDeviceRestoreNumberedName()

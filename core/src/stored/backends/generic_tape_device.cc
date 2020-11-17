@@ -49,7 +49,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   file_size = 0;
   int timeout = max_open_wait;
 #if !defined(HAVE_WIN32)
-  struct mtop mt_com{};
+  mtop mt_com{};
   utime_t start_time = time(NULL);
 #endif
 
@@ -154,7 +154,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
  */
 bool generic_tape_device::eod(DeviceControlRecord* dcr)
 {
-  struct mtop mt_com{};
+  mtop mt_com{};
   bool ok = true;
   int32_t os_file;
 
@@ -329,7 +329,7 @@ void generic_tape_device::SetAteot()
  */
 bool generic_tape_device::offline()
 {
-  struct mtop mt_com{};
+  mtop mt_com{};
 
   /*
    * Remove EOF/EOT flags.
@@ -367,7 +367,7 @@ bool generic_tape_device::offline()
  */
 bool generic_tape_device::weof(int num)
 {
-  struct mtop mt_com{};
+  mtop mt_com{};
   int status;
   Dmsg1(129, "=== weof_dev=%s\n", prt_name);
 
@@ -416,7 +416,7 @@ bool generic_tape_device::weof(int num)
 bool generic_tape_device::fsf(int num)
 {
   int32_t os_file = 0;
-  struct mtop mt_com{};
+  mtop mt_com{};
   int status = 0;
 
   if (!IsOpen()) {
@@ -599,7 +599,7 @@ bool generic_tape_device::fsf(int num)
  */
 bool generic_tape_device::bsf(int num)
 {
-  struct mtop mt_com{};
+  mtop mt_com{};
   int status;
 
   if (!IsOpen()) {
@@ -633,9 +633,9 @@ bool generic_tape_device::bsf(int num)
 static inline bool DevGetOsPos(Device* dev, struct mtget* mt_stat)
 {
   Dmsg0(100, "DevGetOsPos\n");
-  return dev->HasCap(CAP_MTIOCGET) &&
-         dev->d_ioctl(dev->fd(), MTIOCGET, (char*)mt_stat) == 0 &&
-         mt_stat->mt_fileno >= 0;
+  return dev->HasCap(CAP_MTIOCGET)
+         && dev->d_ioctl(dev->fd(), MTIOCGET, (char*)mt_stat) == 0
+         && mt_stat->mt_fileno >= 0;
 }
 
 /**
@@ -646,7 +646,7 @@ static inline bool DevGetOsPos(Device* dev, struct mtget* mt_stat)
  */
 bool generic_tape_device::fsr(int num)
 {
-  struct mtop mt_com{};
+  mtop mt_com{};
   int status;
 
   if (!IsOpen()) {
@@ -702,7 +702,7 @@ bool generic_tape_device::fsr(int num)
  */
 bool generic_tape_device::bsr(int num)
 {
-  struct mtop mt_com{};
+  mtop mt_com{};
   int status;
 
   if (!IsOpen()) {
@@ -745,7 +745,7 @@ bool generic_tape_device::bsr(int num)
 bool generic_tape_device::LoadDev()
 {
 #ifdef MTLOAD
-  struct mtop mt_com{};
+  mtop mt_com{};
 #endif
 
   if (fd_ < 0) {
@@ -783,7 +783,7 @@ bool generic_tape_device::LoadDev()
 void generic_tape_device::LockDoor()
 {
 #ifdef MTLOCK
-  struct mtop mt_com{};
+  mtop mt_com{};
 
   mt_com.mt_op = MTLOCK;
   mt_com.mt_count = 1;
@@ -794,7 +794,7 @@ void generic_tape_device::LockDoor()
 void generic_tape_device::UnlockDoor()
 {
 #ifdef MTUNLOCK
-  struct mtop mt_com{};
+  mtop mt_com{};
 
   mt_com.mt_op = MTUNLOCK;
   mt_com.mt_count = 1;
@@ -835,7 +835,7 @@ static inline void OsClrerror(Device* dev)
  */
 static inline void OsClrerror(Device* dev)
 {
-  struct mtop mt_com{};
+  mtop mt_com{};
 
   /*
    * Clear any error condition on the tape
@@ -992,12 +992,12 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
   }
 
 #if defined(HAVE_LINUX_OS) || defined(HAVE_WIN32)
-  struct mtop mt_com{};
+  mtop mt_com{};
 
   Dmsg0(100, "In SetOsDeviceParameters\n");
-#if defined(MTSETBLK)
-  if (dev->min_block_size == dev->max_block_size &&
-      dev->min_block_size == 0) { /* variable block mode */
+#  if defined(MTSETBLK)
+  if (dev->min_block_size == dev->max_block_size
+      && dev->min_block_size == 0) { /* variable block mode */
     mt_com.mt_op = MTSETBLK;
     mt_com.mt_count = 0;
     Dmsg0(100, "Set block size to zero\n");
@@ -1005,8 +1005,8 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
       dev->clrerror(mt_com.mt_op);
     }
   }
-#endif
-#if defined(MTSETDRVBUFFER)
+#  endif
+#  if defined(MTSETDRVBUFFER)
   if (getuid() == 0) { /* Only root can do this */
     mt_com.mt_op = MTSETDRVBUFFER;
     mt_com.mt_count = MT_ST_CLEARBOOLEANS;
@@ -1017,14 +1017,14 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
       dev->clrerror(mt_com.mt_op);
     }
   }
-#endif
+#  endif
   return;
 #endif
 
 #ifdef HAVE_NETBSD_OS
-  struct mtop mt_com{};
-  if (dev->min_block_size == dev->max_block_size &&
-      dev->min_block_size == 0) { /* variable block mode */
+  mtop mt_com{};
+  if (dev->min_block_size == dev->max_block_size
+      && dev->min_block_size == 0) { /* variable block mode */
     mt_com.mt_op = MTSETBSIZ;
     mt_com.mt_count = 0;
     if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char*)&mt_com) < 0) {
@@ -1041,16 +1041,16 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
 #endif
 
 #if HAVE_FREEBSD_OS || HAVE_OPENBSD_OS
-  struct mtop mt_com{};
-  if (dev->min_block_size == dev->max_block_size &&
-      dev->min_block_size == 0) { /* variable block mode */
+  mtop mt_com{};
+  if (dev->min_block_size == dev->max_block_size
+      && dev->min_block_size == 0) { /* variable block mode */
     mt_com.mt_op = MTSETBSIZ;
     mt_com.mt_count = 0;
     if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char*)&mt_com) < 0) {
       dev->clrerror(mt_com.mt_op);
     }
   }
-#if defined(MTIOCSETEOTMODEL)
+#  if defined(MTIOCSETEOTMODEL)
   uint32_t neof;
   if (dev->HasCap(CAP_TWOEOF)) {
     neof = 2;
@@ -1064,14 +1064,14 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
           dev->print_name(), be.bstrerror(dev->dev_errno));
     Jmsg(dcr->jcr, M_FATAL, 0, dev->errmsg);
   }
-#endif
+#  endif
   return;
 #endif
 
 #ifdef HAVE_SUN_OS
-  struct mtop mt_com{};
-  if (dev->min_block_size == dev->max_block_size &&
-      dev->min_block_size == 0) { /* variable block mode */
+  mtop mt_com{};
+  if (dev->min_block_size == dev->max_block_size
+      && dev->min_block_size == 0) { /* variable block mode */
     mt_com.mt_op = MTSRSZ;
     mt_com.mt_count = 0;
     if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char*)&mt_com) < 0) {
@@ -1104,7 +1104,7 @@ int32_t generic_tape_device::GetOsTapeFile()
  */
 bool generic_tape_device::rewind(DeviceControlRecord* dcr)
 {
-  struct mtop mt_com{};
+  mtop mt_com{};
   unsigned int i;
   bool first = true;
 
@@ -1208,8 +1208,9 @@ static bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
 
   /* If busy retry each second */
   Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
-  while ((status = RunProgramFullOutput(
-              ocmd.c_str(), dcr->dev->max_open_wait / 2, results)) != 0) {
+  while ((status = RunProgramFullOutput(ocmd.c_str(),
+                                        dcr->dev->max_open_wait / 2, results))
+         != 0) {
     if (tries-- > 0) { continue; }
 
     Dmsg5(100, "Device %s cannot be %smounted. stat=%d result=%s ERR=%s\n",
@@ -1392,8 +1393,8 @@ bool generic_tape_device::Reposition(DeviceControlRecord* dcr,
     return fsr(rblock - block_num);
   } else {
     while (rblock > block_num) {
-      if (DeviceControlRecord::ReadStatus::Ok !=
-          dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
+      if (DeviceControlRecord::ReadStatus::Ok
+          != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
         BErrNo be;
         dev_errno = errno;
         Dmsg2(30, "Failed to find requested block on %s: ERR=%s", prt_name,

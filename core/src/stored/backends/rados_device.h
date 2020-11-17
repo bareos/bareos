@@ -31,7 +31,7 @@
 #include <rados/librados.h>
 
 #ifdef HAVE_RADOS_STRIPER
-#include <radosstriper/libradosstriper.h>
+#  include <radosstriper/libradosstriper.h>
 #endif
 
 namespace storagedaemon {
@@ -41,10 +41,10 @@ namespace storagedaemon {
  * the new one.
  */
 #if LIBRADOS_VERSION_CODE < 17408
-#define DEFAULT_CLIENTID "admin"
+#  define DEFAULT_CLIENTID "admin"
 #else
-#define DEFAULT_CLUSTERNAME "ceph"
-#define DEFAULT_USERNAME "client.admin"
+#  define DEFAULT_CLUSTERNAME "ceph"
+#  define DEFAULT_USERNAME "client.admin"
 #endif
 
 class rados_device : public Device {

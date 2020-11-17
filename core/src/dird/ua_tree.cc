@@ -35,9 +35,9 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #ifdef BAREOS_LIB_LIB_H_
-#include <fnmatch.h>
+#  include <fnmatch.h>
 #else
-#include "lib/fnmatch.h"
+#  include "lib/fnmatch.h"
 #endif
 #include "findlib/find.h"
 #include "dird/ua_input.h"
@@ -79,58 +79,44 @@ struct cmdstruct {
 };
 
 static struct cmdstruct commands[] = {
-    {NT_("abort"), QuitCmd,
-      _("abort and do not do restore"), true},
+    {NT_("abort"), QuitCmd, _("abort and do not do restore"), true},
     {NT_("add"), markcmd,
-      _("add dir/file to be restored recursively, wildcards allowed"), true},
-    {NT_("cd"), cdcmd,
-      _("change current directory"), true},
-    {NT_("count"), countcmd,
-      _("count marked files in and below the cd"), false},
+     _("add dir/file to be restored recursively, wildcards allowed"), true},
+    {NT_("cd"), cdcmd, _("change current directory"), true},
+    {NT_("count"), countcmd, _("count marked files in and below the cd"),
+     false},
     {NT_("delete"), Unmarkcmd,
-      _("delete dir/file to be restored recursively in dir"), true},
-    {NT_("dir"), dircmd,
-      _("long list current directory, wildcards allowed"), false},
+     _("delete dir/file to be restored recursively in dir"), true},
+    {NT_("dir"), dircmd, _("long list current directory, wildcards allowed"),
+     false},
     {NT_(".dir"), DotDircmd,
-      _("long list current directory, wildcards allowed"), false},
-    {NT_("done"), donecmd,
-      _("leave file selection mode"), true},
-    {NT_("estimate"), Estimatecmd,
-      _("estimate restore size"), false},
-    {NT_("exit"), donecmd,
-      _("same as done command"), true},
-    {NT_("find"), findcmd,
-      _("find files, wildcards allowed"), false},
-    {NT_("help"), HelpCmd,
-      _("print help"), false},
-    {NT_("ls"), lscmd,
-      _("list current directory, wildcards allowed"), false},
-    {NT_(".ls"), DotLscmd,
-      _("list current directory, wildcards allowed"), false},
+     _("long list current directory, wildcards allowed"), false},
+    {NT_("done"), donecmd, _("leave file selection mode"), true},
+    {NT_("estimate"), Estimatecmd, _("estimate restore size"), false},
+    {NT_("exit"), donecmd, _("same as done command"), true},
+    {NT_("find"), findcmd, _("find files, wildcards allowed"), false},
+    {NT_("help"), HelpCmd, _("print help"), false},
+    {NT_("ls"), lscmd, _("list current directory, wildcards allowed"), false},
+    {NT_(".ls"), DotLscmd, _("list current directory, wildcards allowed"),
+     false},
     {NT_(".lsdir"), DotLsdircmd,
-      _("list subdir in current directory, wildcards allowed"), false},
-    {NT_("lsmark"), Lsmarkcmd,
-      _("list the marked files in and below the cd"), false},
-    {NT_(".lsmark"), DotLsmarkcmd,
-      _("list the marked files in"), false},
+     _("list subdir in current directory, wildcards allowed"), false},
+    {NT_("lsmark"), Lsmarkcmd, _("list the marked files in and below the cd"),
+     false},
+    {NT_(".lsmark"), DotLsmarkcmd, _("list the marked files in"), false},
     {NT_("mark"), markcmd,
-      _("mark dir/file to be restored recursively, wildcards allowed"), true},
+     _("mark dir/file to be restored recursively, wildcards allowed"), true},
     {NT_("markdir"), Markdircmd,
-      _("mark directory name to be restored (no files)"), true},
-    {NT_("pwd"), pwdcmd,
-      _("print current working directory"), false},
-    {NT_(".pwd"), DotPwdcmd,
-      _("print current working directory"), false},
+     _("mark directory name to be restored (no files)"), true},
+    {NT_("pwd"), pwdcmd, _("print current working directory"), false},
+    {NT_(".pwd"), DotPwdcmd, _("print current working directory"), false},
     {NT_("unmark"), Unmarkcmd,
-      _("unmark dir/file to be restored recursively in dir"), true},
+     _("unmark dir/file to be restored recursively in dir"), true},
     {NT_("unmarkdir"), UnMarkdircmd,
-      _("unmark directory name only no recursion"), true},
-    {NT_("quit"), QuitCmd,
-      _("quit and do not do restore"), true},
-    {NT_(".help"), DotHelpcmd,
-      _("print help"), false},
-    {NT_("?"), HelpCmd,
-      _("print help"), false},
+     _("unmark directory name only no recursion"), true},
+    {NT_("quit"), QuitCmd, _("quit and do not do restore"), true},
+    {NT_(".help"), DotHelpcmd, _("print help"), false},
+    {NT_("?"), HelpCmd, _("print help"), false},
 };
 #define comsize ((int)(sizeof(commands) / sizeof(struct cmdstruct)))
 
@@ -315,8 +301,8 @@ int InsertTreeHandler(void* ctx, int num_fields, char** row)
    */
   ok = true;
   if (!node->inserted && JobId == node->JobId) {
-    if ((hard_link && FileIndex > node->FileIndex) ||
-        (!hard_link && FileIndex < node->FileIndex)) {
+    if ((hard_link && FileIndex > node->FileIndex)
+        || (!hard_link && FileIndex < node->FileIndex)) {
       ok = false;
     }
   }
@@ -356,15 +342,15 @@ int InsertTreeHandler(void* ctx, int num_fields, char** row)
            * Hardlink to known file index: lookup original file
            */
           uint64_t file_key = (((uint64_t)JobId) << 32) + LinkFI;
-          HL_ENTRY* first_hl =
-              (HL_ENTRY*)tree->root->hardlinks.lookup(file_key);
+          HL_ENTRY* first_hl
+              = (HL_ENTRY*)tree->root->hardlinks.lookup(file_key);
 
           if (first_hl && first_hl->node) {
             /*
              * Then add hardlink entry to linked node.
              */
-            entry =
-                (HL_ENTRY*)tree->root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
+            entry = (HL_ENTRY*)tree->root->hardlinks.hash_malloc(
+                sizeof(HL_ENTRY));
             entry->key = (((uint64_t)JobId) << 32) + FileIndex;
             entry->node = first_hl->node;
             tree->root->hardlinks.insert(entry->key, entry);
@@ -376,8 +362,8 @@ int InsertTreeHandler(void* ctx, int num_fields, char** row)
 
   if (node->inserted) {
     tree->FileCount++;
-    if (tree->DeltaCount > 0 &&
-        (tree->FileCount - tree->LastCount) > tree->DeltaCount) {
+    if (tree->DeltaCount > 0
+        && (tree->FileCount - tree->LastCount) > tree->DeltaCount) {
       tree->ua->SendMsg("+");
       tree->LastCount = tree->FileCount;
     }
@@ -456,15 +442,15 @@ static int SetExtract(UaContext* ua,
           fdbr.FileId = 0;
           fdbr.JobId = node->JobId;
 
-          if (node->hard_link &&
-              ua->db->GetFileAttributesRecord(ua->jcr, cwd, NULL, &fdbr)) {
+          if (node->hard_link
+              && ua->db->GetFileAttributesRecord(ua->jcr, cwd, NULL, &fdbr)) {
             int32_t LinkFI;
             struct stat statp;
 
             DecodeStat(fdbr.LStat, &statp, sizeof(statp),
                        &LinkFI); /* decode stat pkt */
-            key = (((uint64_t)node->JobId) << 32) +
-                  LinkFI; /* lookup by linked file's fileindex */
+            key = (((uint64_t)node->JobId) << 32)
+                  + LinkFI; /* lookup by linked file's fileindex */
             is_hardlinked = true;
           }
           FreePoolMemory(cwd);
@@ -746,8 +732,8 @@ static int DotLsmarkcmd(UaContext* ua, TreeContext* tree)
   TREE_NODE* node;
   if (!TreeNodeHasChild(tree->node)) { return 1; }
   foreach_child (node, tree->node) {
-    if ((ua->argc == 1 || fnmatch(ua->argk[1], node->fname, 0) == 0) &&
-        (node->extract || node->extract_dir)) {
+    if ((ua->argc == 1 || fnmatch(ua->argk[1], node->fname, 0) == 0)
+        && (node->extract || node->extract_dir)) {
       ua->SendMsg("%s%s\n", node->fname, TreeNodeHasChild(node) ? "/" : "");
     }
   }
@@ -775,8 +761,8 @@ static void rlsmark(UaContext* ua, TREE_NODE* tnode, int level)
   indent[j] = 0;
 
   foreach_child (node, tnode) {
-    if ((ua->argc == 1 || fnmatch(ua->argk[1], node->fname, 0) == 0) &&
-        (node->extract || node->extract_dir)) {
+    if ((ua->argc == 1 || fnmatch(ua->argk[1], node->fname, 0) == 0)
+        && (node->extract || node->extract_dir)) {
       const char* tag;
       if (node->extract) {
         tag = "*";
@@ -820,17 +806,12 @@ static inline void ls_output(guid_list* guid,
 
   if (dot_cmd) {
     encode_time(statp->st_mtime, time_str);
-    Mmsg(buf, "%s,%d,%d(%s),%d(%s),%s,%s,%c,%s",
-      mode_str,
-      (uint32_t)statp->st_nlink,
-      (uint32_t)statp->st_uid,
-      guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
-      (uint32_t)statp->st_gid,
-      guid->gid_to_name(statp->st_gid, en2, sizeof(en2)),
-      edit_int64(statp->st_size, ec1),
-      time_str,
-      *tag,
-      fname);
+    Mmsg(buf, "%s,%d,%d(%s),%d(%s),%s,%s,%c,%s", mode_str,
+         (uint32_t)statp->st_nlink, (uint32_t)statp->st_uid,
+         guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
+         (uint32_t)statp->st_gid,
+         guid->gid_to_name(statp->st_gid, en2, sizeof(en2)),
+         edit_int64(statp->st_size, ec1), time_str, *tag, fname);
   } else {
     time_t time;
 
@@ -845,17 +826,12 @@ static inline void ls_output(guid_list* guid,
      */
     encode_time(time, time_str);
 
-    Mmsg(buf, "%s  %2d %d (%-.8s) %d (%-.8s)  %12.12s  %s %c %s",
-      mode_str,
-      (uint32_t)statp->st_nlink,
-      (uint32_t)statp->st_uid,
-      guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
-      (uint32_t)statp->st_gid,
-      guid->gid_to_name(statp->st_gid, en2, sizeof(en2)),
-      edit_int64(statp->st_size, ec1),
-      time_str,
-      *tag,
-      fname);
+    Mmsg(buf, "%s  %2d %d (%-.8s) %d (%-.8s)  %12.12s  %s %c %s", mode_str,
+         (uint32_t)statp->st_nlink, (uint32_t)statp->st_uid,
+         guid->uid_to_name(statp->st_uid, en1, sizeof(en1)),
+         (uint32_t)statp->st_gid,
+         guid->gid_to_name(statp->st_gid, en2, sizeof(en2)),
+         edit_int64(statp->st_size, ec1), time_str, *tag, fname);
   }
 }
 

@@ -8,5 +8,3 @@ Under Windows, if you want to restore ``c:/files`` to ``d:/files``, you can use:
 
    .. literalinclude:: /include/config/DirJobStripPrefix1.conf
       :language: bareosconfig
-
-

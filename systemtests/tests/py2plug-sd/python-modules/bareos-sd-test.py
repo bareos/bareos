@@ -21,6 +21,7 @@
 #
 from bareossd import *
 
+
 def load_bareos_plugin(plugindef):
     events = []
     events.append(bsdEventJobStart)

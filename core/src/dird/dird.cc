@@ -51,9 +51,9 @@
 #include "lib/watchdog.h"
 
 #ifndef HAVE_REGEX_H
-#include "lib/bregex.h"
+#  include "lib/bregex.h"
 #else
-#include <regex.h>
+#  include <regex.h>
 #endif
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
@@ -209,7 +209,7 @@ static void usage()
  *
  */
 #if defined(HAVE_WIN32)
-#define main BareosMain
+#  define main BareosMain
 #endif
 
 int main(int argc, char* argv[])
@@ -586,8 +586,8 @@ bool DoReloadConfig()
   my_config->ClearWarnings();
   bool ok = my_config->ParseConfig();
 
-  if (!ok || !CheckResources() || !CheckCatalog(UPDATE_CATALOG) ||
-      !InitializeSqlPooling()) {
+  if (!ok || !CheckResources() || !CheckCatalog(UPDATE_CATALOG)
+      || !InitializeSqlPooling()) {
     Jmsg(NULL, M_ERROR, 0, _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
     Jmsg(NULL, M_ERROR, 0, _("Resetting to previous configuration.\n"));
@@ -662,9 +662,9 @@ bail_out:
 static inline bool IsSameStorageDaemon(StorageResource* store1,
                                        StorageResource* store2)
 {
-  return store1->SDport == store2->SDport &&
-         Bstrcasecmp(store1->address, store2->address) &&
-         Bstrcasecmp(store1->password_.value, store2->password_.value);
+  return store1->SDport == store2->SDport
+         && Bstrcasecmp(store1->address, store2->address)
+         && Bstrcasecmp(store1->password_.value, store2->password_.value);
 }
 
 /**
@@ -771,10 +771,10 @@ static bool CheckResources()
       goto bail_out;
     }
 
-    if (job->JobType != JT_BACKUP &&
-        (job->AlwaysIncremental || job->AlwaysIncrementalJobRetention ||
-         job->AlwaysIncrementalKeepNumber ||
-         job->AlwaysIncrementalMaxFullAge)) {
+    if (job->JobType != JT_BACKUP
+        && (job->AlwaysIncremental || job->AlwaysIncrementalJobRetention
+            || job->AlwaysIncrementalKeepNumber
+            || job->AlwaysIncrementalMaxFullAge)) {
       Jmsg(NULL, M_FATAL, 0,
            _("AlwaysIncremental configured in job %s which is not of job type "
              "\"backup\" in file %s\n"),
@@ -893,8 +893,8 @@ bail_out:
 
 static JobControlRecord* PrepareJobToRun(const char* job_name)
 {
-  JobResource* job =
-      static_cast<JobResource*>(my_config->GetResWithName(R_JOB, job_name));
+  JobResource* job
+      = static_cast<JobResource*>(my_config->GetResWithName(R_JOB, job_name));
   if (!job) {
     Emsg1(M_ERROR, 0, _("Job %s not found\n"), job_name);
     return nullptr;
@@ -963,8 +963,8 @@ static void CleanUpOldFiles()
       break;
     }
     /* Exclude any name with ., .., not my_name or containing a space */
-    if (strcmp(result->d_name, ".") == 0 || strcmp(result->d_name, "..") == 0 ||
-        strncmp(result->d_name, my_name, my_name_len) != 0) {
+    if (strcmp(result->d_name, ".") == 0 || strcmp(result->d_name, "..") == 0
+        || strncmp(result->d_name, my_name, my_name_len) != 0) {
       Dmsg1(500, "Skipped: %s\n", result->d_name);
       continue;
     }

@@ -37,7 +37,7 @@
 
 
 #ifdef HAVE_ARPA_NAMESER_H
-#include <arpa/nameser.h>
+#  include <arpa/nameser.h>
 #endif
 #ifdef HAVE_RESOLV_H
 //#include <resolv.h>
@@ -191,14 +191,14 @@ const char* IPADDR::GetAddress(char* outputbuf, int outlen)
 {
   outputbuf[0] = '\0';
 #ifdef HAVE_INET_NTOP
-#ifdef HAVE_IPV6
+#  ifdef HAVE_IPV6
   inet_ntop(saddr->sa_family,
             saddr->sa_family == AF_INET ? (void*)&(saddr4->sin_addr)
                                         : (void*)&(saddr6->sin6_addr),
             outputbuf, outlen);
-#else
+#  else
   inet_ntop(saddr->sa_family, (void*)&(saddr4->sin_addr), outputbuf, outlen);
-#endif
+#  endif
 #else
   bstrncpy(outputbuf, inet_ntoa(saddr4->sin_addr), outlen);
 #endif
@@ -397,9 +397,9 @@ int AddAddress(dlist** out,
       IPADDR* clone;
       /* for duplicates */
       foreach_dlist (jaddr, addrs) {
-        if (iaddr->GetSockaddrLen() == jaddr->GetSockaddrLen() &&
-            !memcmp(iaddr->get_sockaddr(), jaddr->get_sockaddr(),
-                    iaddr->GetSockaddrLen())) {
+        if (iaddr->GetSockaddrLen() == jaddr->GetSockaddrLen()
+            && !memcmp(iaddr->get_sockaddr(), jaddr->get_sockaddr(),
+                       iaddr->GetSockaddrLen())) {
           goto skip; /* no price */
         }
       }
@@ -467,13 +467,13 @@ char* SockaddrToAscii(const struct sockaddr* sa, char* buf, int len)
 #ifdef HAVE_INET_NTOP
   /* MA Bug 5 the problem was that i mixed up sockaddr and in_addr */
   inet_ntop(sa->sa_family,
-#ifdef HAVE_IPV6
+#  ifdef HAVE_IPV6
             sa->sa_family == AF_INET
                 ? (void*)&(((struct sockaddr_in*)sa)->sin_addr)
                 : (void*)&(((struct sockaddr_in6*)sa)->sin6_addr),
-#else
+#  else
             (void*)&(((struct sockaddr_in*)sa)->sin_addr),
-#endif /* HAVE_IPV6 */
+#  endif /* HAVE_IPV6 */
             buf, len);
 #else
   bstrncpy(buf, inet_ntoa(((struct sockaddr_in*)sa)->sin_addr), len);

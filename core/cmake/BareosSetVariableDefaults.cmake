@@ -85,15 +85,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # archivedir
   if(NOT DEFINED archivedir)
     if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-        # windows install scripts replace the string "/var/lib/bareos/storage"
-      set(
-        archivedir
-        "/var/lib/${CMAKE_PROJECT_NAME}/storage"
-      )
+      # windows install scripts replace the string "/var/lib/bareos/storage"
+      set(archivedir "/var/lib/${CMAKE_PROJECT_NAME}/storage")
     else()
-      set(
-        archivedir
-        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
+      set(archivedir
+          "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
       )
     endif()
   endif()
@@ -110,7 +106,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # workingdir
   if(NOT DEFINED workingdir)
-    set(workingdir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
+    set(workingdir
+        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"
+    )
   endif()
   set(working_dir "${workingdir}")
 
@@ -196,9 +194,8 @@ else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # archivedir
   if(NOT DEFINED archivedir)
-    set(
-      archivedir
-      "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
+    set(archivedir
+        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}/storage"
     )
   endif()
 
@@ -214,7 +211,9 @@ else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
   # workingdir
   if(NOT DEFINED workingdir)
-    set(workingdir "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}")
+    set(workingdir
+        "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/lib/${CMAKE_PROJECT_NAME}"
+    )
   endif()
   set(working_dir "${workingdir}")
 
@@ -518,13 +517,12 @@ if(NOT client-only)
     list(APPEND db_backends sqlite3)
   endif()
 
-
   if(${mysql})
     set(HAVE_MYSQL 1)
     list(APPEND db_backends mysql)
   endif()
 
-  if (NOT DEFINED default_db_backend)
+  if(NOT DEFINED default_db_backend)
     # set first entry as default db backend if not already defined
     list(GET db_backends 0 default_db_backend)
   endif()
@@ -532,8 +530,14 @@ if(NOT client-only)
   list(GET db_backends 0 db_backend_to_test)
   get_directory_property(hasParent PARENT_DIRECTORY)
   if(hasParent)
-    set(db_backend_to_test ${db_backend_to_test} PARENT_SCOPE)
-    set(DEFAULT_DB_TYPE ${default_db_backend} PARENT_SCOPE)
+    set(db_backend_to_test
+        ${db_backend_to_test}
+        PARENT_SCOPE
+    )
+    set(DEFAULT_DB_TYPE
+        ${default_db_backend}
+        PARENT_SCOPE
+    )
   endif()
   set(DEFAULT_DB_TYPE ${default_db_backend})
 endif()

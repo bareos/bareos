@@ -4,4 +4,3 @@
 . ./environment
 
 "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" "$@"
-

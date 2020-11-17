@@ -20,11 +20,11 @@
 */
 
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 
@@ -70,8 +70,8 @@ class SchedulerTest : public ::testing::Test {
   void SetUp() override
   {
     OSDependentInit();
-    std::unique_ptr<SimulatedTimeAdapter> ta =
-        std::make_unique<SimulatedTimeAdapter>();
+    std::unique_ptr<SimulatedTimeAdapter> ta
+        = std::make_unique<SimulatedTimeAdapter>();
     time_adapter = ta.get();
 
     scheduler = std::make_unique<Scheduler>(std::move(ta),
@@ -90,8 +90,8 @@ TEST_F(SchedulerTest, terminate)
 {
   InitMsg(NULL, NULL); /* initialize message handler */
 
-  std::string path_to_config_file =
-      std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-hourly");
+  std::string path_to_config_file
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR "/configs/scheduler-hourly");
 
   my_config = InitDirConfig(path_to_config_file.c_str(), M_ERROR_TERM);
   ASSERT_TRUE(my_config);
@@ -211,8 +211,8 @@ TEST_F(SchedulerTest, hourly)
   bool average_time_between_adjacent_jobs_is_too_low = average < 3600 - 36;
   bool average_time_between_adjacent_jobs_is_too_high = average > 3600 + 36;
 
-  if (debug || average_time_between_adjacent_jobs_is_too_low ||
-      average_time_between_adjacent_jobs_is_too_high) {
+  if (debug || average_time_between_adjacent_jobs_is_too_low
+      || average_time_between_adjacent_jobs_is_too_high) {
     int hour = 0;
     for (const auto& t : list_of_job_execution_time_stamps) {
       auto tm = *std::gmtime(&t);

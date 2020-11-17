@@ -348,4 +348,3 @@ Restore a specific file version
 
 .. image:: /include/images/bareos-webui-restore-2.*
    :width: 80%
-

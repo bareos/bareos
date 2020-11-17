@@ -36,11 +36,11 @@ class CircularBuffer {
   int capacity_ = 0;
   bool flush_ = 0;
   pthread_mutex_t lock_ = PTHREAD_MUTEX_INITIALIZER; /**< Lock the structure */
-  pthread_cond_t notfull_ =
-      PTHREAD_COND_INITIALIZER; /**< Full -> not full condition */
-  pthread_cond_t notempty_ =
-      PTHREAD_COND_INITIALIZER; /**< Empty -> not empty condition */
-  void** data_ = nullptr;       /**< Circular buffer of pointers */
+  pthread_cond_t notfull_
+      = PTHREAD_COND_INITIALIZER; /**< Full -> not full condition */
+  pthread_cond_t notempty_
+      = PTHREAD_COND_INITIALIZER; /**< Empty -> not empty condition */
+  void** data_ = nullptr;         /**< Circular buffer of pointers */
 
  public:
   CircularBuffer(int capacity = QSIZE);

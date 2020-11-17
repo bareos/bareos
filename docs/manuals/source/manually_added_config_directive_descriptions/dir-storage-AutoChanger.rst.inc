@@ -7,4 +7,3 @@ If you specify :strong:`yes`,
 -  Bareos will prefer Volumes, that are in a Auto Changer slot. If none of theses volumes can be used, even after recycling, pruning, ..., Bareos will search for any volume of the same :config:option:`dir/storage/MediaType`\  whether or not in the magazine.
 
 Please consult the :ref:`AutochangersChapter` chapter for details.
-

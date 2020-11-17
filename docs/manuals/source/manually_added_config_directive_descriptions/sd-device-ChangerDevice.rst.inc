@@ -7,4 +7,3 @@ This directive should be specified if
 The specified device must be a generic SCSI device.
 
 For details, see the :ref:`AutochangersChapter` chapter.
-

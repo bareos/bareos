@@ -118,12 +118,12 @@ bool MessagesResource::AddToExistingChain(MessageDestinationCode dest_code,
                                           int msg_type,
                                           const std::string& where)
 {
-  auto pos = std::find_if(
-      dest_chain_.rbegin(), dest_chain_.rend(),
-      [&dest_code, where](MessageDestinationInfo* d) {
-        return ((d->dest_code_ == dest_code) &&
-                ((where.empty() && d->where_.empty()) || (where == d->where_)));
-      });
+  auto pos = std::find_if(dest_chain_.rbegin(), dest_chain_.rend(),
+                          [&dest_code, where](MessageDestinationInfo* d) {
+                            return ((d->dest_code_ == dest_code)
+                                    && ((where.empty() && d->where_.empty())
+                                        || (where == d->where_)));
+                          });
 
   if (pos != dest_chain_.rend()) {
     MessageDestinationInfo* d = *pos;
@@ -183,8 +183,8 @@ void MessagesResource::RemoveMessageDestination(
 {
   for (MessageDestinationInfo* d : dest_chain_) {
     Dmsg2(850, "Remove_msg_dest d=%p where=%s\n", d, NSTDPRNT(d->where_));
-    if (BitIsSet(msg_type, d->msg_types_) && (dest_code == d->dest_code_) &&
-        ((where.empty() && d->where_.empty()) || (where == d->where_))) {
+    if (BitIsSet(msg_type, d->msg_types_) && (dest_code == d->dest_code_)
+        && ((where.empty() && d->where_.empty()) || (where == d->where_))) {
       Dmsg3(850, "Found for remove d=%p msgtype=%d destcode=%d\n", d, msg_type,
             dest_code);
       ClearBit(msg_type, d->msg_types_);

@@ -54,8 +54,8 @@ namespace storagedaemon {
 /**
  * Responses sent to the Director
  */
-static char Job_end[] =
-    "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+static char Job_end[]
+    = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 /**
  * Responses received from Storage Daemon
@@ -200,9 +200,9 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
     /*
      * If something changed, increment FileIndex
      */
-    if (rec->VolSessionId != rec->last_VolSessionId ||
-        rec->VolSessionTime != rec->last_VolSessionTime ||
-        rec->FileIndex != rec->last_FileIndex) {
+    if (rec->VolSessionId != rec->last_VolSessionId
+        || rec->VolSessionTime != rec->last_VolSessionTime
+        || rec->FileIndex != rec->last_FileIndex) {
       jcr->JobFiles++;
       rec->last_VolSessionId = rec->VolSessionId;
       rec->last_VolSessionTime = rec->VolSessionTime;
@@ -226,8 +226,8 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
    */
   jcr->impl->dcr->before_rec = rec;
   jcr->impl->dcr->after_rec = NULL;
-  if (GeneratePluginEvent(jcr, bSdEventWriteRecordTranslation,
-                          jcr->impl->dcr) != bRC_OK) {
+  if (GeneratePluginEvent(jcr, bSdEventWriteRecordTranslation, jcr->impl->dcr)
+      != bRC_OK) {
     goto bail_out;
   }
 
@@ -260,18 +260,18 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
   /*
    * Restore packet
    */
-  jcr->impl->dcr->after_rec->VolSessionId =
-      jcr->impl->dcr->after_rec->last_VolSessionId;
-  jcr->impl->dcr->after_rec->VolSessionTime =
-      jcr->impl->dcr->after_rec->last_VolSessionTime;
+  jcr->impl->dcr->after_rec->VolSessionId
+      = jcr->impl->dcr->after_rec->last_VolSessionId;
+  jcr->impl->dcr->after_rec->VolSessionTime
+      = jcr->impl->dcr->after_rec->last_VolSessionTime;
 
   if (jcr->impl->dcr->after_rec->FileIndex < 0) {
     retval = true; /* don't send LABELs to Dir */
     goto bail_out;
   }
 
-  jcr->JobBytes +=
-      jcr->impl->dcr->after_rec->data_len; /* increment bytes of this job */
+  jcr->JobBytes
+      += jcr->impl->dcr->after_rec->data_len; /* increment bytes of this job */
 
   Dmsg5(500, "wrote_record JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
         jcr->JobId, FI_to_ascii(buf1, jcr->impl->dcr->after_rec->FileIndex),
@@ -337,10 +337,10 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
     /*
      * See if we are changing file or stream type.
      */
-    if (rec->VolSessionId != rec->last_VolSessionId ||
-        rec->VolSessionTime != rec->last_VolSessionTime ||
-        rec->FileIndex != rec->last_FileIndex ||
-        rec->Stream != rec->last_Stream) {
+    if (rec->VolSessionId != rec->last_VolSessionId
+        || rec->VolSessionTime != rec->last_VolSessionTime
+        || rec->FileIndex != rec->last_FileIndex
+        || rec->Stream != rec->last_Stream) {
       /*
        * See if we are changing the FileIndex e.g.
        * start processing the next file in the backup stream.
@@ -665,8 +665,8 @@ bool DoMacRun(JobControlRecord* jcr)
     /*
      * Ready devices for reading and writing.
      */
-    if (!AcquireDeviceForRead(jcr->impl->read_dcr) ||
-        !AcquireDeviceForAppend(jcr->impl->dcr)) {
+    if (!AcquireDeviceForRead(jcr->impl->read_dcr)
+        || !AcquireDeviceForAppend(jcr->impl->dcr)) {
       ok = false;
       acquire_fail = true;
       goto bail_out;

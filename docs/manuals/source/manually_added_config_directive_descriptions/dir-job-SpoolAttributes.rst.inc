@@ -4,4 +4,3 @@ attributes and storage coordinates will be sent to the Director.
 NOTE: When :config:option:`dir/job/SpoolData`\  is set to yes, Spool Attributes is also automatically set to yes.
 
 For details, see :ref:`section-spooling`.
-

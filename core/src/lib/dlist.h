@@ -49,14 +49,15 @@
  * Loop var through each member of list
  */
 #ifdef HAVE_TYPEOF
-#define foreach_dlist(var, list)                                         \
-  for ((var) = nullptr; (list ? ((var) = (typeof(var))(list)->next(var)) \
-                              : nullptr) != nullptr;)
+#  define foreach_dlist(var, list)                                   \
+    for ((var) = nullptr;                                            \
+         (list ? ((var) = (typeof(var))(list)->next(var)) : nullptr) \
+         != nullptr;)
 #else
-#define foreach_dlist(var, list)                                              \
-  for ((var) = nullptr;                                                       \
-       (list ? (*((void**)&(var)) = (void*)((list)->next(var))) : nullptr) != \
-       nullptr;)
+#  define foreach_dlist(var, list)                                           \
+    for ((var) = nullptr;                                                    \
+         (list ? (*((void**)&(var)) = (void*)((list)->next(var))) : nullptr) \
+         != nullptr;)
 #endif
 
 class dlist {
@@ -167,12 +168,12 @@ class dlistString {
 
  private:
 #ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-private-field"
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wunused-private-field"
 #endif
   dlink link_;
 #ifdef __clang__
-#pragma clang diagnostic pop
+#  pragma clang diagnostic pop
 #endif
   char str_[1];
   /* !!! Don't put anything after this as this space is used

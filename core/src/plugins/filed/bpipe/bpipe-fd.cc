@@ -73,23 +73,23 @@ static CoreFunctions* bareos_core_functions = NULL;
 static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
 /* Plugin Information block */
-static PluginInformation pluginInfo = {
-    sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
-    FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-    PLUGIN_AUTHOR,      PLUGIN_DATE,
-    PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-    PLUGIN_USAGE};
+static PluginInformation pluginInfo
+    = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
+       FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+       PLUGIN_AUTHOR,      PLUGIN_DATE,
+       PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+       PLUGIN_USAGE};
 
 /* Plugin entry points for Bareos */
-static PluginFunctions pluginFuncs = {
-    sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
-    /* Entry points into plugin */
-    newPlugin,  /* new plugin instance */
-    freePlugin, /* free plugin instance */
-    getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
-    endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
-    setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
+       /* Entry points into plugin */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
+       endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
+       setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
 
 /**
  * Plugin private context
@@ -145,8 +145,8 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  bareos_core_functions =
-      lbareos_core_functions; /* set Bareos funct pointers */
+  bareos_core_functions
+      = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
@@ -173,8 +173,8 @@ bRC unloadPlugin() { return bRC_OK; }
  */
 static bRC newPlugin(PluginContext* ctx)
 {
-  struct plugin_ctx* p_ctx =
-      (struct plugin_ctx*)malloc(sizeof(struct plugin_ctx));
+  struct plugin_ctx* p_ctx
+      = (struct plugin_ctx*)malloc(sizeof(struct plugin_ctx));
   if (!p_ctx) { return bRC_Error; }
   memset(p_ctx, 0, sizeof(struct plugin_ctx));
   ctx->plugin_private_context = (void*)p_ctx; /* set our context pointer */
@@ -535,8 +535,8 @@ static char* apply_rp_codes(PluginContext* ctx)
    * + number of "where" codes * (len(where)-2)
    * - number of "replace" codes
    */
-  omsg = (char*)malloc(strlen(imsg) + (w_count * (strlen(p_ctx->where) - 2)) -
-                       r_count + 1);
+  omsg = (char*)malloc(strlen(imsg) + (w_count * (strlen(p_ctx->where) - 2))
+                       - r_count + 1);
   if (!omsg) {
     Jmsg(ctx, M_FATAL, "bpipe-fd: Out of memory.");
     return NULL;

@@ -177,8 +177,8 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
         }
 
         if (me->compatible) {
-          if (!bstrncmp("BACULA.DATA", &label[4], 11) &&
-              !bstrncmp("BAREOS.DATA", &label[4], 11)) {
+          if (!bstrncmp("BACULA.DATA", &label[4], 11)
+              && !bstrncmp("BAREOS.DATA", &label[4], 11)) {
             Dmsg1(100,
                   "HD1 not Bacula/Bareos label. Wanted BACULA.DATA/BAREOS.DATA "
                   "got %11s\n",

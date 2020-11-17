@@ -26,17 +26,17 @@
 #define BUILD_PLUGIN
 
 #if defined(HAVE_WIN32)
-#include "include/bareos.h"
-#include <Python.h>
+#  include "include/bareos.h"
+#  include <Python.h>
 #else
-#include <Python.h>
-#include "include/bareos.h"
+#  include <Python.h>
+#  include "include/bareos.h"
 #endif
 
 #if PY_VERSION_HEX < 0x03000000
-#define LOGPREFIX "python-sd-mod: "
+#  define LOGPREFIX "python-sd-mod: "
 #else
-#define LOGPREFIX "python3-sd-mod: "
+#  define LOGPREFIX "python3-sd-mod: "
 #endif
 
 
@@ -100,16 +100,16 @@ static bRC set_plugin_context(PluginContext* new_plugin_context)
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
    * Lookup the parse_plugin_definition() function in the python module.
    */
-  pFunc =
-      PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
-                           "parse_plugin_definition"); /* Borrowed reference */
+  pFunc = PyDict_GetItemString(
+      plugin_priv_ctx->pyModuleFunctionsDict,
+      "parse_plugin_definition"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pPluginDefinition, *pRetVal;
 
@@ -158,8 +158,8 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                void* value)
 {
   bRC retval = bRC_Error;
-  plugin_private_context* plugin_priv_ctx =
-      (plugin_private_context*)plugin_ctx->plugin_private_context;
+  plugin_private_context* plugin_priv_ctx
+      = (plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -215,7 +215,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
       int value;
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (bsdrVariable)var,
-                                                &value) == bRC_OK) {
+                                                &value)
+          == bRC_OK) {
         pRetVal = PyLong_FromLong(value);
       }
       break;
@@ -226,7 +227,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
       uint64_t value = 0;
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (bsdrVariable)var,
-                                                &value) == bRC_OK) {
+                                                &value)
+          == bRC_OK) {
         pRetVal = PyLong_FromUnsignedLong(value);
       }
       break;
@@ -242,7 +244,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
       char* value = NULL;
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (bsdrVariable)var,
-                                                &value) == bRC_OK) {
+                                                &value)
+          == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
@@ -250,8 +253,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bsdVarCompatible: {
       bool value;
 
-      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var,
-                                                &value) == bRC_OK) {
+      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var, &value)
+          == bRC_OK) {
         long bool_value;
 
         bool_value = (value) ? 1 : 0;
@@ -262,8 +265,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
     case bsdVarPluginDir: {
       char* value = NULL;
 
-      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var,
-                                                &value) == bRC_OK) {
+      if (bareos_core_functions->getBareosValue(NULL, (bsdrVariable)var, &value)
+          == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
@@ -398,8 +401,8 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
     if (event >= bSdEventJobStart && event <= bSdEventWriteRecordTranslation) {
       Dmsg(plugin_ctx, debuglevel,
            LOGPREFIX "PyBareosRegisterEvents registering event %d\n", event);
-      retval =
-          bareos_core_functions->registerBareosEvents(plugin_ctx, 1, event);
+      retval
+          = bareos_core_functions->registerBareosEvents(plugin_ctx, 1, event);
 
       if (retval != bRC_OK) { break; }
     }
@@ -440,8 +443,8 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
     if (event >= bSdEventJobStart && event <= bSdEventWriteRecordTranslation) {
       Dmsg(plugin_ctx, debuglevel,
            "PyBareosUnRegisterEvents: registering event %d\n", event);
-      retval =
-          bareos_core_functions->unregisterBareosEvents(plugin_ctx, 1, event);
+      retval
+          = bareos_core_functions->unregisterBareosEvents(plugin_ctx, 1, event);
 
       if (retval != bRC_OK) { break; }
     }

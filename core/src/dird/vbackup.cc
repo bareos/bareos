@@ -76,8 +76,8 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
 
   if (!AllowDuplicateJob(jcr)) { return false; }
 
-  jcr->impl->jr.PoolId =
-      GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
+  jcr->impl->jr.PoolId
+      = GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
   if (jcr->impl->jr.PoolId == 0) {
     Dmsg1(dbglevel, "JobId=%d no PoolId\n", (int)jcr->JobId);
     Jmsg(jcr, M_FATAL, 0, _("Could not get or create a Pool record.\n"));
@@ -140,8 +140,8 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
    * will be migrating from pool to pool->NextPool.
    */
   if (jcr->impl->res.next_pool) {
-    jcr->impl->jr.PoolId =
-        GetOrCreatePoolRecord(jcr, jcr->impl->res.next_pool->resource_name_);
+    jcr->impl->jr.PoolId
+        = GetOrCreatePoolRecord(jcr, jcr->impl->res.next_pool->resource_name_);
     if (jcr->impl->jr.PoolId == 0) { return false; }
   }
 
@@ -364,8 +364,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   /*
    * Remove the successfully consolidated jobids from the database
    */
-  if (jcr->impl->res.job->AlwaysIncremental &&
-      jcr->impl->res.job->AlwaysIncrementalJobRetention) {
+  if (jcr->impl->res.job->AlwaysIncremental
+      && jcr->impl->res.job->AlwaysIncrementalJobRetention) {
     UaContext* ua;
     ua = new_ua_context(jcr);
     PurgeJobsFromCatalog(ua, jobids);
@@ -412,8 +412,8 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   jcr->JobFiles = jcr->impl->SDJobFiles;
   jcr->JobBytes = jcr->impl->SDJobBytes;
 
-  if (jcr->getJobStatus() == JS_Terminated &&
-      (jcr->JobErrors || jcr->impl->SDErrors)) {
+  if (jcr->getJobStatus() == JS_Terminated
+      && (jcr->JobErrors || jcr->impl->SDErrors)) {
     TermCode = JS_Warnings;
   }
 

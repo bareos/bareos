@@ -3,7 +3,7 @@
 Migration and Copy
 ==================
 
-:index:`\ <single: Migration>`\  :index:`\ <single: Copy>`\ 
+:index:`\ <single: Migration>`\  :index:`\ <single: Copy>`\
 
 The term Migration, as used in the context of Bareos, means moving data from one Volume to another. In particular it refers to a Job (similar to a backup job) that reads data that was previously backed up to a Volume and writes it to another Volume. As part of this process, the File catalog records associated with the first backup job are purged. In other words, Migration moves Bareos Job data from one Volume to another by reading the Job data from the Volume it is stored on, writing it to a
 different Volume in a different Pool, and then purging the database records for the first Job.
@@ -50,7 +50,7 @@ If the Migration control Job finds more than one existing Job to migrate, it cre
 Important Migration Considerations
 ----------------------------------
 
-:index:`\ <single: Migration; Important Migration Considerations>`\ 
+:index:`\ <single: Migration; Important Migration Considerations>`\
 
 -  Each Pool into which you migrate Jobs or Volumes must contain Volumes of only one :config:option:`dir/storage/MediaType`\ .
 
@@ -84,43 +84,43 @@ Job Resource
 
 -  :config:option:`dir/job/Type`\  = Migrate|Copy
 
--  
+-
 
-   :config:option:`dir/job/SelectionType`\ 
+   :config:option:`dir/job/SelectionType`\
 
--  
+-
 
-   :config:option:`dir/job/SelectionPattern`\ 
+   :config:option:`dir/job/SelectionPattern`\
 
--  | :config:option:`dir/job/Pool`\ 
+-  | :config:option:`dir/job/Pool`\
    | For :config:option:`dir/job/SelectionType`\  other than SQLQuery, this defines what Pool will be examined for finding JobIds to migrate
 
--  
+-
 
-   :config:option:`dir/job/PurgeMigrationJob`\ 
+   :config:option:`dir/job/PurgeMigrationJob`\
 
 Pool Resource
 '''''''''''''
 
--  | :config:option:`dir/pool/NextPool`\ 
+-  | :config:option:`dir/pool/NextPool`\
    | to what pool Jobs will be migrated
 
--  | :config:option:`dir/pool/MigrationTime`\ 
+-  | :config:option:`dir/pool/MigrationTime`\
    | if :config:option:`dir/job/SelectionType`\  = PoolTime
 
--  | :config:option:`dir/pool/MigrationHighBytes`\ 
+-  | :config:option:`dir/pool/MigrationHighBytes`\
    | if :config:option:`dir/job/SelectionType`\  = PoolOccupancy
 
--  | :config:option:`dir/pool/MigrationLowBytes`\ 
+-  | :config:option:`dir/pool/MigrationLowBytes`\
    | optional if :config:option:`dir/job/SelectionType`\  = PoolOccupancy is used
 
--  | :config:option:`dir/pool/Storage`\ 
+-  | :config:option:`dir/pool/Storage`\
    | if Copy/Migration involves multiple Storage Daemon, see :ref:`section-CopyMigrationJobsMultipleStorageDaemons`
 
 Example Migration Jobs
 ~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Example; Migration Jobs>`\ 
+:index:`\ <single: Example; Migration Jobs>`\
 
 Assume a simple configuration with a single backup job as described below.
 
@@ -294,7 +294,3 @@ Example:
       Spool Data = Yes
       Pool = pool1
    }
-
-
-
-

@@ -3,7 +3,7 @@
 . scripts/functions
 
 #
-# Run a simple backup 
+# Run a simple backup
 #   then restore it.
 #
 

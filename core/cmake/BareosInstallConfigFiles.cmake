@@ -17,13 +17,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-macro(
-  BareosInstallConfigFiles
-  CONFDIR
-  CONFIGBASEDIRECTORY
-  PLUGINS
-  BACKENDS
-  SRC_DIR
+macro(BareosInstallConfigFiles CONFDIR CONFIGBASEDIRECTORY PLUGINS BACKENDS
+      SRC_DIR
 )
 
   message(
@@ -39,9 +34,8 @@ macro(
   if(IS_ABSOLUTE ${CONFDIR})
     set(DESTCONFDIR "$ENV{DESTDIR}${CONFDIR}/${CONFIGBASEDIRECTORY}/")
   else()
-    set(
-      DESTCONFDIR
-      "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CONFDIR}/${CONFIGBASEDIRECTORY}/"
+    set(DESTCONFDIR
+        "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${CONFDIR}/${CONFIGBASEDIRECTORY}/"
     )
   endif()
 
@@ -54,7 +48,8 @@ macro(
     STATUS "globbing ${SRC_DIR}/src/defaultconfigs/${CONFIGBASEDIRECTORY}/*"
   )
   file(GLOB resourcedirs
-       "${SRC_DIR}/src/defaultconfigs/${CONFIGBASEDIRECTORY}/*")
+       "${SRC_DIR}/src/defaultconfigs/${CONFIGBASEDIRECTORY}/*"
+  )
   foreach(resdir ${resourcedirs})
     file(GLOB configfiles "${resdir}/*.conf")
     get_filename_component(resname ${resdir} NAME)
@@ -66,15 +61,11 @@ macro(
         file(RENAME "${configfile}" "${configfile}.new")
 
         message(STATUS "copy ${configfile}.new to ${DESTCONFDIR}/${resname}")
-        file(
-          COPY "${configfile}.new"
-          DESTINATION "${DESTCONFDIR}/${resname}"
-        )
+        file(COPY "${configfile}.new" DESTINATION "${DESTCONFDIR}/${resname}")
         file(RENAME "${configfile}.new" "${configfile}")
       else()
         message(
-          STATUS
-            "${resname}/${fname} as ${resname}/${fname} (new installation)"
+          STATUS "${resname}/${fname} as ${resname}/${fname} (new installation)"
         )
         file(COPY "${configfile}" DESTINATION "${DESTCONFDIR}/${resname}")
       endif()
@@ -100,9 +91,8 @@ macro(
       STATUS
         "install ${CONFIGBASEDIRECTORY} config files for BACKEND ${BACKEND}"
     )
-    set(
-      BackendConfigSrcDir
-      "${SRC_DIR}/src/stored/backends/${BACKEND}/${CONFIGBASEDIRECTORY}"
+    set(BackendConfigSrcDir
+        "${SRC_DIR}/src/stored/backends/${BACKEND}/${CONFIGBASEDIRECTORY}"
     )
 
     file(
@@ -117,18 +107,18 @@ macro(
       if(EXISTS ${DESTCONFDIR}/${configfile})
         message(STATUS "${configfile} as ${configfile}.new (keep existing)")
         file(RENAME "${BackendConfigSrcDir}/${configfile}"
-             "${BackendConfigSrcDir}/${configfile}.new")
-        file(
-          COPY "${BackendConfigSrcDir}/${configfile}.new"
-          DESTINATION "${DESTCONFDIR}/${dir}"
+             "${BackendConfigSrcDir}/${configfile}.new"
+        )
+        file(COPY "${BackendConfigSrcDir}/${configfile}.new"
+             DESTINATION "${DESTCONFDIR}/${dir}"
         )
         file(RENAME "${BackendConfigSrcDir}/${configfile}.new"
-             "${BackendConfigSrcDir}/${configfile}")
+             "${BackendConfigSrcDir}/${configfile}"
+        )
       else()
         message(STATUS "${configfile} as ${configfile}")
-        file(
-          COPY "${BackendConfigSrcDir}/${configfile}"
-          DESTINATION "${DESTCONFDIR}/${dir}"
+        file(COPY "${BackendConfigSrcDir}/${configfile}"
+             DESTINATION "${DESTCONFDIR}/${dir}"
         )
       endif()
     endforeach()
@@ -148,9 +138,8 @@ macro(
         message(STATUS "${configfile} as ${configfile}")
       endif()
 
-      file(
-        COPY "${BackendConfigSrcDir}/${configfile}"
-        DESTINATION "${DESTCONFDIR}/${dir}"
+      file(COPY "${BackendConfigSrcDir}/${configfile}"
+           DESTINATION "${DESTCONFDIR}/${dir}"
       )
     endforeach()
 
@@ -160,28 +149,22 @@ macro(
   foreach(PLUGIN ${PLUGINS})
     message(STATUS "install config files for PLUGIN ${PLUGIN}")
 
-    # if plugin has -, conf.d directory is:
-    # python-ovirt -> python/ovirt/python-ovirt-conf.d
-    # else it is :
-    # cephfs -> cephfs/cephfs-conf.d
+    # if plugin has -, conf.d directory is: python-ovirt ->
+    # python/ovirt/python-ovirt-conf.d else it is : cephfs ->
+    # cephfs/cephfs-conf.d
 
     string(REPLACE "-" "/" PLUGINPATH "${PLUGIN}")
     string(APPEND PLUGINPATH "/" ${PLUGIN} "-conf.d")
     message(STATUS "PLUGINPATH for PLUGIN ${PLUGIN} is ${PLUGINPATH}")
 
     file(GLOB resourcedirs
-      "${SRC_DIR}/src/plugins/filed/${PLUGINPATH}/${CONFIGBASEDIRECTORY}/*")
+         "${SRC_DIR}/src/plugins/filed/${PLUGINPATH}/${CONFIGBASEDIRECTORY}/*"
+    )
     foreach(resdir ${resourcedirs})
       file(GLOB configfiles "${resdir}/*.conf*")
       get_filename_component(resname ${resdir} NAME)
       foreach(configfile ${configfiles})
-        string(
-          REGEX
-            MATCH
-            "\\.in\$"
-            IS_INFILE
-            ${configfile}
-        )
+        string(REGEX MATCH "\\.in\$" IS_INFILE ${configfile})
         if(NOT "${IS_INFILE}" STREQUAL ".in")
           get_filename_component(fname ${configfile} NAME)
           if(EXISTS ${DESTCONFDIR}/${resname}/${fname})
@@ -190,9 +173,8 @@ macro(
                 "${resname}/${fname} as ${resname}/${fname}.new (keep existing)"
             )
             file(RENAME "${configfile}" "${configfile}.new")
-            file(
-              COPY "${configfile}.new"
-              DESTINATION "${DESTCONFDIR}/${resname}"
+            file(COPY "${configfile}.new"
+                 DESTINATION "${DESTCONFDIR}/${resname}"
             )
             file(RENAME "${configfile}.new" "${configfile}")
           else()

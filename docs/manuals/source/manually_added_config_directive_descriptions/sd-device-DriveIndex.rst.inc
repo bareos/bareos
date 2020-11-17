@@ -2,4 +2,3 @@ The Drive Index that you specify is passed to the :config:option:`sd/device/Chan
 permit you to use two or more drives in your autochanger.
 
 For details, refer to :ref:`section-MultipleDevices`.
-

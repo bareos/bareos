@@ -67,31 +67,31 @@
 #include <sys/stat.h>
 
 #if defined(HAVE_GETMNTENT)
-#if defined(HAVE_LINUX_OS) || defined(HAVE_HPUX_OS) || defined(HAVE_AIX_OS)
-#include <mntent.h>
-#elif defined(HAVE_SUN_OS)
-#include <sys/mnttab.h>
-#elif defined(HAVE_HURD_OS)
-#include <hurd/paths.h>
-#include <mntent.h>
-#endif /* HAVE_GETMNTENT */
+#  if defined(HAVE_LINUX_OS) || defined(HAVE_HPUX_OS) || defined(HAVE_AIX_OS)
+#    include <mntent.h>
+#  elif defined(HAVE_SUN_OS)
+#    include <sys/mnttab.h>
+#  elif defined(HAVE_HURD_OS)
+#    include <hurd/paths.h>
+#    include <mntent.h>
+#  endif /* HAVE_GETMNTENT */
 #elif defined(HAVE_GETMNTINFO)
-#if defined(HAVE_OPENBSD_OS)
-#include <sys/param.h>
-#include <sys/mount.h>
-#elif defined(HAVE_NETBSD_OS)
-#include <sys/types.h>
-#include <sys/statvfs.h>
-#else
-#include <sys/param.h>
-#include <sys/ucred.h>
-#include <sys/mount.h>
-#endif
+#  if defined(HAVE_OPENBSD_OS)
+#    include <sys/param.h>
+#    include <sys/mount.h>
+#  elif defined(HAVE_NETBSD_OS)
+#    include <sys/types.h>
+#    include <sys/statvfs.h>
+#  else
+#    include <sys/param.h>
+#    include <sys/ucred.h>
+#    include <sys/mount.h>
+#  endif
 #elif defined(HAVE_AIX_OS)
-#include <fshelp.h>
-#include <sys/vfs.h>
+#  include <fshelp.h>
+#  include <sys/vfs.h>
 #elif defined(HAVE_OSF1_OS)
-#include <sys/mount.h>
+#  include <sys/mount.h>
 #endif
 
 /*
@@ -237,23 +237,23 @@ static void refresh_mount_cache(
 #if defined(HAVE_GETMNTENT)
   FILE* fp;
   struct stat st;
-#if defined(HAVE_LINUX_OS) || defined(HAVE_HPUX_OS) || \
-    defined(HAVE_IRIX_OS) || defined(HAVE_AIX_OS) || defined(HAVE_HURD_OS)
+#  if defined(HAVE_LINUX_OS) || defined(HAVE_HPUX_OS) || defined(HAVE_IRIX_OS) \
+      || defined(HAVE_AIX_OS) || defined(HAVE_HURD_OS)
   struct mntent* mnt;
 
-#if defined(HAVE_LINUX_OS)
+#    if defined(HAVE_LINUX_OS)
   if ((fp = setmntent("/proc/mounts", "r")) == (FILE*)NULL) {
     if ((fp = setmntent(_PATH_MOUNTED, "r")) == (FILE*)NULL) { return; }
   }
-#elif defined(HAVE_HPUX_OS)
+#    elif defined(HAVE_HPUX_OS)
   if ((fp = fopen(MNT_MNTTAB, "r")) == (FILE*)NULL) { return; }
-#elif defined(HAVE_IRIX_OS)
+#    elif defined(HAVE_IRIX_OS)
   if ((fp = setmntent(MOUNTED, "r")) == (FILE*)NULL) { return; }
-#elif defined(HAVE_AIX_OS)
+#    elif defined(HAVE_AIX_OS)
   if ((fp = setmntent(MNTTAB, "r")) == (FILE*)NULL) { return; }
-#elif defined(HAVE_HURD_OS)
+#    elif defined(HAVE_HURD_OS)
   if ((fp = setmntent(_PATH_MNTTAB, "r")) == (FILE*)NULL) { return; }
-#endif
+#    endif
 
   while ((mnt = getmntent(fp)) != (struct mntent*)NULL) {
     if (SkipFstype(mnt->mnt_type)) { continue; }
@@ -265,7 +265,7 @@ static void refresh_mount_cache(
   }
 
   endmntent(fp);
-#elif defined(HAVE_SUN_OS)
+#  elif defined(HAVE_SUN_OS)
   struct mnttab mnt;
 
   if ((fp = fopen(MNTTAB, "r")) == (FILE*)NULL) return;
@@ -280,27 +280,27 @@ static void refresh_mount_cache(
   }
 
   fclose(fp);
-#endif /* HAVE_SUN_OS */
+#  endif /* HAVE_SUN_OS */
 #elif defined(HAVE_GETMNTINFO)
   int cnt;
   struct stat st;
-#if defined(HAVE_NETBSD_OS)
+#  if defined(HAVE_NETBSD_OS)
   struct statvfs* mntinfo;
-#else
+#  else
   struct statfs* mntinfo;
-#endif
-#if defined(ST_NOWAIT)
+#  endif
+#  if defined(ST_NOWAIT)
   int flags = ST_NOWAIT;
-#elif defined(MNT_NOWAIT)
+#  elif defined(MNT_NOWAIT)
   int flags = MNT_NOWAIT;
-#else
+#  else
   int flags = 0;
-#endif
+#  endif
 
   if ((cnt = getmntinfo(&mntinfo, flags)) > 0) {
     while (cnt > 0) {
-      if (!SkipFstype(mntinfo->f_fstypename) &&
-          stat(mntinfo->f_mntonname, &st) == 0) {
+      if (!SkipFstype(mntinfo->f_fstypename)
+          && stat(mntinfo->f_mntonname, &st) == 0) {
         handle_entry(st.st_dev, mntinfo->f_mntfromname, mntinfo->f_mntonname,
                      mntinfo->f_fstypename, NULL);
       }

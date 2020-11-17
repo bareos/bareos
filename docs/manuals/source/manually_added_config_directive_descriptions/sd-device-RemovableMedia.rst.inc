@@ -2,4 +2,3 @@ If Yes, this device supports removable media (for example tapes). If No, media c
 Storage daemon will search the entire device looking for likely Volume names, and for each one found, it will ask the Director if the Volume can be used. If so, the Storage daemon will use the first such Volume found. Thus it acts somewhat like a tape drive – if the correct Volume is not found, it looks at what actually is found, and if it is an appendable Volume, it will use it.
 
 If the removable medium is not automatically mounted (e.g. udev), then you might consider using additional Storage daemon device directives such as Requires Mount, Mount Point, Mount Command, and Unmount Command, all of which can be used in conjunction with Removable Media.
-

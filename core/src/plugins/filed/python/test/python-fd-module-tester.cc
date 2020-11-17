@@ -22,7 +22,7 @@
 /* Load the python-fd plugin and test it */
 
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
+#  include "include/bareos.h"
 #endif
 
 #include "Python.h"
@@ -47,14 +47,14 @@ static void PyErrorHandler()
   if (tracebackModule != NULL) {
     PyObject *tbList, *emptyString, *strRetval;
 
-    tbList =
-        PyObject_CallMethod(tracebackModule, (char*)"format_exception",
-                            (char*)"OOO", type, value == NULL ? Py_None : value,
-                            traceback == NULL ? Py_None : traceback);
+    tbList = PyObject_CallMethod(tracebackModule, (char*)"format_exception",
+                                 (char*)"OOO", type,
+                                 value == NULL ? Py_None : value,
+                                 traceback == NULL ? Py_None : traceback);
 
     emptyString = PyUnicode_FromString("");
-    strRetval =
-        PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
+    strRetval
+        = PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 
     error_string = strdup(PyUnicode_AsUTF8(strRetval));
 
@@ -156,30 +156,30 @@ bRC bareosClearSeenBitmap(PluginContext* ctx, bool all, char* fname)
 
 
 /* Bareos entry points */
-static filedaemon::CoreFunctions bareos_core_functions = {
-    sizeof(filedaemon::CoreFunctions),
-    FD_PLUGIN_INTERFACE_VERSION,
-    bareosRegisterEvents,
-    bareosUnRegisterEvents,
-    bareosGetInstanceCount,
-    bareosGetValue,
-    bareosSetValue,
-    bareosJobMsg,
-    bareosDebugMsg,
-    bareosMalloc,
-    bareosFree,
-    bareosAddExclude,
-    bareosAddInclude,
-    bareosAddOptions,
-    bareosAddRegex,
-    bareosAddWild,
-    bareosNewOptions,
-    bareosNewInclude,
-    bareosNewPreInclude,
-    bareosCheckChanges,
-    bareosAcceptFile,
-    bareosSetSeenBitmap,
-    bareosClearSeenBitmap};
+static filedaemon::CoreFunctions bareos_core_functions
+    = {sizeof(filedaemon::CoreFunctions),
+       FD_PLUGIN_INTERFACE_VERSION,
+       bareosRegisterEvents,
+       bareosUnRegisterEvents,
+       bareosGetInstanceCount,
+       bareosGetValue,
+       bareosSetValue,
+       bareosJobMsg,
+       bareosDebugMsg,
+       bareosMalloc,
+       bareosFree,
+       bareosAddExclude,
+       bareosAddInclude,
+       bareosAddOptions,
+       bareosAddRegex,
+       bareosAddWild,
+       bareosNewOptions,
+       bareosNewInclude,
+       bareosNewPreInclude,
+       bareosCheckChanges,
+       bareosAcceptFile,
+       bareosSetSeenBitmap,
+       bareosClearSeenBitmap};
 
 
 // create plugin context

@@ -16,7 +16,7 @@
 #
 # row                     0    1       2     3      4      5
 (
-SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId 
+SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId
 FROM (
    SELECT
       Path1.PathId AS PathId,
@@ -61,5 +61,3 @@ FROM (
 ) AS A
 ORDER BY Path ASC, JobId DESC
 )
-
-

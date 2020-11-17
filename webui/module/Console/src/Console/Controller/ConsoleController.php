@@ -142,4 +142,3 @@ class ConsoleController extends AbstractActionController
     return $this->directorModel;
   }
 }
-

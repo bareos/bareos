@@ -64,13 +64,13 @@ struct backend_shared_library_t {
 };
 
 #if defined(HAVE_WIN32)
-#define DYN_LIB_EXTENSION ".dll"
+#  define DYN_LIB_EXTENSION ".dll"
 #elif defined(HAVE_DARWIN_OS)
 /* cmake MODULE creates a .so files; cmake SHARED creates .dylib */
 // #define DYN_LIB_EXTENSION ".dylib"
-#define DYN_LIB_EXTENSION ".so"
+#  define DYN_LIB_EXTENSION ".so"
 #else
-#define DYN_LIB_EXTENSION ".so"
+#  define DYN_LIB_EXTENSION ".so"
 #endif
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)

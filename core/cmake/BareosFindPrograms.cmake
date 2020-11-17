@@ -41,4 +41,3 @@ find_program(MDB mdb)
 find_program(XTRABACKUP xtrabackup)
 find_program(S3CMD s3cmd)
 find_program(MINIO minio)
-

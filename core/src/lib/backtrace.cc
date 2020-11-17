@@ -29,14 +29,14 @@
 
 #include <vector>
 
-#if defined HAVE_EXECINFO_H && defined HAVE_BACKTRACE && \
-    defined HAVE_BACKTRACE_SYMBOLS
+#if defined HAVE_EXECINFO_H && defined HAVE_BACKTRACE \
+    && defined HAVE_BACKTRACE_SYMBOLS
 
-#include <stdlib.h>
-#include <execinfo.h>  // for backtrace
-#include <dlfcn.h>     // for dladdr
-#include <cxxabi.h>    // for __cxa_demangle
-#include <string>
+#  include <stdlib.h>
+#  include <execinfo.h>  // for backtrace
+#  include <dlfcn.h>     // for dladdr
+#  include <cxxabi.h>    // for __cxa_demangle
+#  include <string>
 
 std::vector<BacktraceInfo> Backtrace(int skip, int amount)
 {
@@ -60,8 +60,8 @@ std::vector<BacktraceInfo> Backtrace(int skip, int amount)
     Dl_info info;
     if (dladdr(callstack[i], &info)) {
       int status;
-      char* demangled =
-          abi::__cxa_demangle(info.dli_sname, nullptr, 0, &status);
+      char* demangled
+          = abi::__cxa_demangle(info.dli_sname, nullptr, 0, &status);
       const char* name;
       if (status == 0) {
         name = demangled ? demangled : "(no demangeled name)";

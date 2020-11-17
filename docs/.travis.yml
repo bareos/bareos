@@ -31,5 +31,3 @@ script:
     - make check
     - make html
     - make check
-
-

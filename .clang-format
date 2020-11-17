@@ -1,25 +1,30 @@
 BasedOnStyle: Google
 Language: Cpp
 Standard: Cpp11
-BreakBeforeBraces: Custom
-BraceWrapping:
-   AfterFunction: true
-   AfterEnum: true
-ColumnLimit: 80
-Cpp11BracedListStyle: true
+
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
-AlignTrailingComments: true
 AlignOperands: true
+AlignTrailingComments: true
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: true
 AllowShortFunctionsOnASingleLine: true
+AllowShortLambdasOnASingleLine: All
 BinPackParameters: false
-BreakConstructorInitializers: BeforeComma
+BraceWrapping:
+   AfterFunction: true
+   AfterEnum: true
+BreakBeforeBinaryOperators: All
+BreakBeforeBraces: Custom
 BreakBeforeInheritanceComma: true
 BreakBeforeTernaryOperators: true
+BreakBeforeTernaryOperators: true
+BreakConstructorInitializers: BeforeComma
+ColumnLimit: 80
+Cpp11BracedListStyle: true
 DerivePointerAlignment: false
+ForEachMacros: ['foreach_alist', 'foreach_alist_index', 'foreach_alist_rindex', 'foreach_child', 'foreach_dlist', 'foreach_htable', 'foreach_jcr', 'foreach_rblist', 'foreach_res', 'foreach_vol']
+IndentPPDirectives: AfterHash
 MaxEmptyLinesToKeep: 2
 PointerAlignment: Left
 SortIncludes: false
-ForEachMacros: ['foreach_alist', 'foreach_alist_index', 'foreach_alist_rindex', 'foreach_child', 'foreach_dlist', 'foreach_htable', 'foreach_jcr', 'foreach_rblist', 'foreach_res', 'foreach_vol']

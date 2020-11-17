@@ -11,4 +11,3 @@ ifolder
 
 never
    :index:`\ <single: never>`\  if the backed up file already exists, Bareos skips restoring this file.
-

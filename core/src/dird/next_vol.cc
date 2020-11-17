@@ -172,8 +172,9 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
       /*
        *  Look at more drastic ways to find an Appendable Volume
        */
-      if (!ok && (jcr->impl->res.pool->purge_oldest_volume ||
-                  jcr->impl->res.pool->recycle_oldest_volume)) {
+      if (!ok
+          && (jcr->impl->res.pool->purge_oldest_volume
+              || jcr->impl->res.pool->recycle_oldest_volume)) {
         Dmsg2(debuglevel,
               "No next volume found. PurgeOldest=%d\n RecyleOldest=%d",
               jcr->impl->res.pool->purge_oldest_volume,
@@ -396,9 +397,9 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
    * Check retention period from last written, but recycle to within a minute to
    * try to catch close calls ...
    */
-  if ((mr->LastWritten + mr->VolRetention - 60) < (utime_t)time(NULL) &&
-      jcr->impl->res.pool->recycle_current_volume &&
-      (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used"))) {
+  if ((mr->LastWritten + mr->VolRetention - 60) < (utime_t)time(NULL)
+      && jcr->impl->res.pool->recycle_current_volume
+      && (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used"))) {
     /*
      * Attempt prune of current volume to see if we can recycle it for use.
      */
@@ -417,15 +418,15 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
              mr->VolumeName);
         *reason = NULL;
       } else {
-        *reason =
-            _("but should be Append, Purged or Recycle (recycling of the "
-              "current volume failed)");
+        *reason
+            = _("but should be Append, Purged or Recycle (recycling of the "
+                "current volume failed)");
       }
     } else {
-      *reason =
-          _("but should be Append, Purged or Recycle (cannot automatically "
-            "recycle current volume, as it still contains unpruned data "
-            "or the Volume Retention time has not expired.)");
+      *reason
+          = _("but should be Append, Purged or Recycle (cannot automatically "
+              "recycle current volume, as it still contains unpruned data "
+              "or the Volume Retention time has not expired.)");
     }
   }
 }

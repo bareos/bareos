@@ -57,19 +57,19 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args);
 static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args);
 static PyObject* PyBareosGetInstanceCount(PyObject* self, PyObject* args);
 
-static PyMethodDef Methods[] = {
-    {"GetValue", PyBareosGetValue, METH_VARARGS, "Get a Plugin value"},
-    {"SetValue", PyBareosSetValue, METH_VARARGS, "Set a Plugin value"},
-    {"DebugMessage", PyBareosDebugMessage, METH_VARARGS,
-     "Print a Debug message"},
-    {"JobMessage", PyBareosJobMessage, METH_VARARGS, "Print a Job message"},
-    {"RegisterEvents", PyBareosRegisterEvents, METH_VARARGS,
-     "Register Plugin Events"},
-    {"UnRegisterEvents", PyBareosUnRegisterEvents, METH_VARARGS,
-     "Unregister Plugin Events"},
-    {"GetInstanceCount", PyBareosGetInstanceCount, METH_VARARGS,
-     "Get number of instances of current plugin"},
-    {NULL, NULL, 0, NULL}};
+static PyMethodDef Methods[]
+    = {{"GetValue", PyBareosGetValue, METH_VARARGS, "Get a Plugin value"},
+       {"SetValue", PyBareosSetValue, METH_VARARGS, "Set a Plugin value"},
+       {"DebugMessage", PyBareosDebugMessage, METH_VARARGS,
+        "Print a Debug message"},
+       {"JobMessage", PyBareosJobMessage, METH_VARARGS, "Print a Job message"},
+       {"RegisterEvents", PyBareosRegisterEvents, METH_VARARGS,
+        "Register Plugin Events"},
+       {"UnRegisterEvents", PyBareosUnRegisterEvents, METH_VARARGS,
+        "Unregister Plugin Events"},
+       {"GetInstanceCount", PyBareosGetInstanceCount, METH_VARARGS,
+        "Get number of instances of current plugin"},
+       {NULL, NULL, 0, NULL}};
 
 
 static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions);
@@ -100,7 +100,7 @@ MOD_INIT(bareosdir)
   PyObject* c_api_object;
 
   /* Initialize the C API pointer array */
-#include "c_api/capi_3.inc"
+#  include "c_api/capi_3.inc"
 
   /* Create a Capsule containing the API pointer array's address */
   c_api_object = PyCapsule_New((void*)Bareosdir_API,
@@ -195,7 +195,7 @@ MOD_INIT(bareosdir)
 static void** Bareosdir_API;
 
 /* include automatically generated C API */
-#include "c_api/capi_2.inc"
+#  include "c_api/capi_2.inc"
 
 static int import_bareosdir()
 {

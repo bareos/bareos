@@ -17,4 +17,3 @@ template="/usr/lib/bareos/scripts/ddl/grants/postgresql-change_owner.dbconfig-te
 target="/var/lib/bareos/dbconfig-common/upgrade-dbadmin/pgsql/$dbversion"
 
 /usr/sbin/dbconfig-generate-include -f template -o template_infile=$template $dbc_packageconfig > $target
-

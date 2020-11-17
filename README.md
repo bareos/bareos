@@ -8,15 +8,15 @@
 
 [Bareos (Backup Archiving Recovery Open Sourced)](https://www.bareos.org/) is a reliable, cross-network open source software for backup, archiving and recovery of data for all well-established operating systems. Features of Bareos include amongst others:
 
-- True open source software; no open-core or other restrictions; License AGPLv3 
+- True open source software; no open-core or other restrictions; License AGPLv3
 - network based
 - backends include Ceph, Gluster, S3
 - multiple clients and storages possible; Active / passive clients possible
-- Backup Clients ('Bareos-FD') available on Linux, Windows, MacOS, Solaris, HP-UX, AIX, BSD 
+- Backup Clients ('Bareos-FD') available on Linux, Windows, MacOS, Solaris, HP-UX, AIX, BSD
 - Python plugin interface
-- SAN-Backups using NDMP (with DAR/DDAR); NDMP tape support 
+- SAN-Backups using NDMP (with DAR/DDAR); NDMP tape support
 - Always Incremental Backup scheme
-- VMWare Plugin 
+- VMWare Plugin
 - Encryption
 - Scriptable CLI
 - web based graphical interface (webui)
@@ -53,4 +53,3 @@ The Bareos project offers two mailing lists: bareos-users and bareos-devel.
 ### Packages
 
   * [http://download.bareos.org](http://download.bareos.org)
-

@@ -9,4 +9,3 @@ This option specifies the compression algorithm used for the autodeflate option 
 -  LZ4
 
 -  LZ4HC
-

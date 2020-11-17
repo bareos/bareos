@@ -57,14 +57,14 @@ void WinError(JobControlRecord* jcr, const char* prefix, POOLMEM* ofile);
  */
 
 #ifndef HAVE_LCHOWN
-#define lchown chown
+#  define lchown chown
 #endif
 
 /**
  * For old systems that don't have lchmod() use chmod()
  */
 #ifndef HAVE_LCHMOD
-#define lchmod chmod
+#  define lchmod chmod
 #endif
 
 /*=============================================================*/
@@ -113,8 +113,8 @@ int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible)
   /*
    * Encryption is only supported for file data
    */
-  if (stream != STREAM_FILE_DATA && stream != STREAM_WIN32_DATA &&
-      stream != STREAM_MACOS_FORK_DATA) {
+  if (stream != STREAM_FILE_DATA && stream != STREAM_WIN32_DATA
+      && stream != STREAM_MACOS_FORK_DATA) {
     ClearBit(FO_ENCRYPT, ff_pkt->flags);
   }
 
@@ -214,8 +214,8 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
 {
   bool ok = true;
   bool suppress_errors;
-#if defined(HAVE_FCHOWN) || defined(HAVE_FCHMOD) || defined(HAVE_FUTIMES) || \
-    defined(FUTIMENS)
+#if defined(HAVE_FCHOWN) || defined(HAVE_FCHMOD) || defined(HAVE_FUTIMES) \
+    || defined(FUTIMENS)
   bool file_is_open;
 
   /*
@@ -234,8 +234,8 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
    */
 #ifdef HAVE_FCHOWN
   if (file_is_open) {
-    if (fchown(ofd->fid, attr->statp.st_uid, attr->statp.st_gid) < 0 &&
-        !suppress_errors) {
+    if (fchown(ofd->fid, attr->statp.st_uid, attr->statp.st_gid) < 0
+        && !suppress_errors) {
       BErrNo be;
 
       Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"),
@@ -246,8 +246,8 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
 #else
   {
 #endif
-    if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0 &&
-        !suppress_errors) {
+    if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0
+        && !suppress_errors) {
       BErrNo be;
 
       Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"),
@@ -273,9 +273,8 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
   {
 #endif
 #if defined(HAVE_WIN32)
-    if (win32_chmod(attr->ofname, attr->statp.st_mode, attr->statp.st_rdev) <
-            0 &&
-        !suppress_errors) {
+    if (win32_chmod(attr->ofname, attr->statp.st_mode, attr->statp.st_rdev) < 0
+        && !suppress_errors) {
 #else
     if (lchmod(attr->ofname, attr->statp.st_mode) < 0 && !suppress_errors) {
 #endif
@@ -405,16 +404,16 @@ bool SetAttributes(JobControlRecord* jcr,
   suppress_errors = (debug_level >= 100 || my_uid != 0);
 
 #if defined(HAVE_WIN32)
-  if (attr->stream == STREAM_UNIX_ATTRIBUTES_EX &&
-      set_win32_attributes(jcr, attr, ofd)) {
+  if (attr->stream == STREAM_UNIX_ATTRIBUTES_EX
+      && set_win32_attributes(jcr, attr, ofd)) {
     if (IsBopen(ofd)) { bclose(ofd); }
     PmStrcpy(attr->ofname, "*None*");
     return true;
   }
 
-  if (attr->data_stream == STREAM_WIN32_DATA ||
-      attr->data_stream == STREAM_WIN32_GZIP_DATA ||
-      attr->data_stream == STREAM_WIN32_COMPRESSED_DATA) {
+  if (attr->data_stream == STREAM_WIN32_DATA
+      || attr->data_stream == STREAM_WIN32_GZIP_DATA
+      || attr->data_stream == STREAM_WIN32_COMPRESSED_DATA) {
     if (IsBopen(ofd)) { bclose(ofd); }
     PmStrcpy(attr->ofname, "*None*");
     return true;
@@ -432,8 +431,8 @@ bool SetAttributes(JobControlRecord* jcr,
     char ec1[50], ec2[50];
 
     fsize = blseek(ofd, 0, SEEK_END);
-    if (attr->type == FT_REG && fsize > 0 && attr->statp.st_size > 0 &&
-        fsize != (boffset_t)attr->statp.st_size) {
+    if (attr->type == FT_REG && fsize > 0 && attr->statp.st_size > 0
+        && fsize != (boffset_t)attr->statp.st_size) {
       Jmsg3(jcr, M_ERROR, 0,
             _("File size of restored file %s not correct. Original %s, "
               "restored %s.\n"),
@@ -445,8 +444,8 @@ bool SetAttributes(JobControlRecord* jcr,
     char ec1[50], ec2[50];
 
     if (lstat(attr->ofname, &st) == 0) {
-      if (attr->type == FT_REG && st.st_size > 0 && attr->statp.st_size > 0 &&
-          st.st_size != attr->statp.st_size) {
+      if (attr->type == FT_REG && st.st_size > 0 && attr->statp.st_size > 0
+          && st.st_size != attr->statp.st_size) {
         Jmsg3(jcr, M_ERROR, 0,
               _("File size of restored file %s not correct. Original %s, "
                 "restored %s.\n"),
@@ -470,8 +469,8 @@ bool SetAttributes(JobControlRecord* jcr,
     /*
      * Change owner of link, not of real file
      */
-    if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0 &&
-        !suppress_errors) {
+    if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0
+        && !suppress_errors) {
       BErrNo be;
 
       Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"),
@@ -539,7 +538,7 @@ int encode_attribsEx(JobControlRecord* jcr,
                      char* attribsEx,
                      FindFilesPacket* ff_pkt)
 {
-#ifdef HAVE_DARWIN_OS
+#  ifdef HAVE_DARWIN_OS
   /**
    * We save the Mac resource fork length so that on a
    * restore, we can be sure we put back the whole resource.
@@ -555,9 +554,9 @@ int encode_attribsEx(JobControlRecord* jcr,
     p += ToBase64((uint64_t)(ff_pkt->hfsinfo.rsrclength), p);
   }
   *p = 0;
-#else
+#  else
   *attribsEx = 0; /* no extended attributes */
-#endif
+#  endif
   return STREAM_UNIX_ATTRIBUTES;
 }
 #else
@@ -638,9 +637,9 @@ int encode_attribsEx(JobControlRecord* jcr,
 /**
  * Do casting according to unknown type to keep compiler happy
  */
-#ifdef HAVE_TYPEOF
-#define plug(st, val) st = (typeof st)val
-#else
+#  ifdef HAVE_TYPEOF
+#    define plug(st, val) st = (typeof st)val
+#  else
 /*
  * Use templates to do the casting
  */
@@ -649,7 +648,7 @@ void plug(T& st, uint64_t val)
 {
   st = static_cast<T>(val);
 }
-#endif
+#  endif
 
 /**
  * Set Extended File Attributes for Win32

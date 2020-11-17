@@ -74,8 +74,8 @@ class DirectorResource
   bool conn_from_dir_to_fd = false; /* Allow incoming connections */
   bool conn_from_fd_to_dir = false; /* Connect to director */
   bool monitor; /* Have only access to status and .status functions */
-  alist* allowed_script_dirs =
-      nullptr; /* Only allow to run scripts in this directories */
+  alist* allowed_script_dirs
+      = nullptr; /* Only allow to run scripts in this directories */
   alist* allowed_job_cmds = nullptr; /* Only allow the following Job commands to
                               be executed */
   uint64_t max_bandwidth_per_job = 0; /* Bandwidth limitation (per director) */
@@ -109,8 +109,8 @@ class ClientResource
                                        terminated       regardless of its progress */
   bool compatible = false;              /* Support old protocol keywords */
   bool allow_bw_bursting = false; /* Allow bursting with bandwidth limiting */
-  bool pki_sign =
-      false; /* Enable Data Integrity Verification via Digital Signatures */
+  bool pki_sign
+      = false; /* Enable Data Integrity Verification via Digital Signatures */
   bool pki_encrypt = false;                        /* Enable Data Encryption */
   char* pki_keypair_file = nullptr;                /* PKI Key Pair File */
   alist* pki_signing_key_files = nullptr;          /* PKI Signing Key Files */
@@ -122,8 +122,8 @@ class ClientResource
   X509_KEYPAIR* pki_keypair = nullptr; /* Shared PKI Public/Private Keypair */
   alist* pki_signers = nullptr;        /* Shared PKI Trusted Signers */
   alist* pki_recipients = nullptr;     /* Shared PKI Recipients */
-  alist* allowed_script_dirs =
-      nullptr; /* Only allow to run scripts in this directories */
+  alist* allowed_script_dirs
+      = nullptr; /* Only allow to run scripts in this directories */
   alist* allowed_job_cmds = nullptr; /* Only allow the following Job commands to
                                 be executed */
   char* verid = nullptr;             /* Custom Id to print in version command */

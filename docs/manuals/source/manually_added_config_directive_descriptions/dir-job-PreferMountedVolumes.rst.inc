@@ -6,4 +6,3 @@ If the directive is set to no, the Storage daemon will prefer finding an unused 
 Despite the above, we recommend against setting this directive to no since it tends to add a lot of swapping of Volumes between the different drives and can easily lead to deadlock situations in the Storage daemon. We will accept bug reports against it, but we cannot guarantee that we will be able to fix the problem in a reasonable time.
 
 A better alternative for using multiple drives is to use multiple pools so that Bareos will be forced to mount Volumes from those Pools on different drives.
-

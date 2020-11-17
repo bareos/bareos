@@ -38,8 +38,8 @@ static void timestamp_conversion_postgresql(BareosDb* /*db*/, DatabaseField& f)
 {
   static const char* dummy_timepoint = "1970-01-01 00:00:00";
 
-  if (f.data_pointer == nullptr || *f.data_pointer == '0' ||
-      strlen(f.data_pointer) == 0) {
+  if (f.data_pointer == nullptr || *f.data_pointer == '0'
+      || strlen(f.data_pointer) == 0) {
     f.data_pointer = dummy_timepoint;
   }
 }
@@ -162,8 +162,8 @@ void DatabaseExportPostgresql::DoCopyInsertion(RowData& source_data_row)
 {
   size_t i = 0;
   for (const auto& c : source_data_row.column_descriptions) {
-    const ColumnDescription* column_description =
-        table_descriptions_->GetColumnDescription(
+    const ColumnDescription* column_description
+        = table_descriptions_->GetColumnDescription(
             source_data_row.table_name, c.second.column_name_lower_case);
 
     if (column_description == nullptr) {
@@ -196,8 +196,8 @@ void DatabaseExportPostgresql::DoInsertInsertion(RowData& source_data_row)
 
   size_t i = 0;
   for (const auto& c : source_data_row.column_descriptions) {
-    const ColumnDescription* column_description =
-        table_descriptions_->GetColumnDescription(
+    const ColumnDescription* column_description
+        = table_descriptions_->GetColumnDescription(
             source_data_row.table_name, c.second.column_name_lower_case);
 
     if (column_description == nullptr) {

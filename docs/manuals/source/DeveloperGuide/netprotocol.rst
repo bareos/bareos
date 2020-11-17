@@ -207,7 +207,7 @@ all the packets have been sent by sending a zero length record.
 Network startup activity
 ------------------------
 
-The following diagram shows the activity on a Bareos TCP server (i.e. a |dir| or a |sd|) when a TCP client initiates a network connection. The connection protocol has two possible handshake modes. Cleartext first or TLS first. Depending on the configuration, the Bareos version and the type of client (i.e. |fd| or |bconsole|) the handshake mode will be chosen. See chapter :ref:`section-TlsTechnicalDocumentation` for detailed information. 
+The following diagram shows the activity on a Bareos TCP server (i.e. a |dir| or a |sd|) when a TCP client initiates a network connection. The connection protocol has two possible handshake modes. Cleartext first or TLS first. Depending on the configuration, the Bareos version and the type of client (i.e. |fd| or |bconsole|) the handshake mode will be chosen. See chapter :ref:`section-TlsTechnicalDocumentation` for detailed information.
 
 .. uml::
   :caption: Network startup activity (Bareos TCP-Server)
@@ -323,4 +323,3 @@ Detailed Diagram
 ^^^^^^^^^^^^^^^^
 
 .. uml:: netprotocol/verify_one_file_volume_to_catalog.puml
-

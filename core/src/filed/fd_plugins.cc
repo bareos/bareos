@@ -138,8 +138,8 @@ static boffset_t MyPluginBlseek(BareosWinFilePacket* bfd,
                                 int whence);
 
 /* Bareos info */
-static PluginApiDefinition bareos_plugin_interface_version = {
-    sizeof(PluginApiDefinition), FD_PLUGIN_INTERFACE_VERSION};
+static PluginApiDefinition bareos_plugin_interface_version
+    = {sizeof(PluginApiDefinition), FD_PLUGIN_INTERFACE_VERSION};
 
 /* Bareos entry points */
 static CoreFunctions bareos_core_functions = {sizeof(CoreFunctions),
@@ -494,8 +494,8 @@ bool PluginCheckFile(JobControlRecord* jcr, char* fname)
   alist* plugin_ctx_list;
   int retval = bRC_OK;
 
-  if (!fd_plugin_list || !jcr || !jcr->plugin_ctx_list ||
-      jcr->IsJobCanceled()) {
+  if (!fd_plugin_list || !jcr || !jcr->plugin_ctx_list
+      || jcr->IsJobCanceled()) {
     return false; /* Return if no plugins loaded */
   }
 
@@ -751,8 +751,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
      * Send the backup command to the right plugin
      */
     Dmsg1(debuglevel, "Command plugin = %s\n", cmd);
-    if (PlugFunc(ctx->plugin)
-            ->handlePluginEvent(jcr->plugin_ctx, &event, cmd) != bRC_OK) {
+    if (PlugFunc(ctx->plugin)->handlePluginEvent(jcr->plugin_ctx, &event, cmd)
+        != bRC_OK) {
       goto bail_out;
     }
 
@@ -843,8 +843,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
        * us to ensure that the data of each file gets backed up only once.
        */
       ff_pkt->LinkFI = 0;
-      if (!BitIsSet(FO_NO_HARDLINK, ff_pkt->flags) &&
-          ff_pkt->statp.st_nlink > 1) {
+      if (!BitIsSet(FO_NO_HARDLINK, ff_pkt->flags)
+          && ff_pkt->statp.st_nlink > 1) {
         CurLink* hl;
 
         switch (ff_pkt->statp.st_mode & S_IFMT) {
@@ -868,8 +868,8 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
                 ff_pkt->no_read = true;
               } else {
                 ff_pkt->link = hl->name;
-                ff_pkt->type =
-                    FT_LNKSAVED; /* Handle link, file already saved */
+                ff_pkt->type
+                    = FT_LNKSAVED; /* Handle link, file already saved */
                 ff_pkt->LinkFI = hl->FileIndex;
                 ff_pkt->linked = NULL;
                 ff_pkt->digest = hl->digest;
@@ -1178,8 +1178,8 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
      */
     if (jcr->plugin_ctx) {
       Plugin* plugin = jcr->plugin_ctx->plugin;
-      b_plugin_ctx* b_ctx =
-          (b_plugin_ctx*)jcr->plugin_ctx->core_private_context;
+      b_plugin_ctx* b_ctx
+          = (b_plugin_ctx*)jcr->plugin_ctx->core_private_context;
 
       Dmsg2(debuglevel, "End plugin data plugin=%p ctx=%p\n", plugin,
             jcr->plugin_ctx);
@@ -1238,8 +1238,8 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
     jcr->cmd_plugin = true;
     b_ctx = (b_plugin_ctx*)ctx->core_private_context;
 
-    if (PlugFunc(ctx->plugin)
-            ->handlePluginEvent(jcr->plugin_ctx, &event, cmd) != bRC_OK) {
+    if (PlugFunc(ctx->plugin)->handlePluginEvent(jcr->plugin_ctx, &event, cmd)
+        != bRC_OK) {
       Dmsg1(debuglevel, "Handle event failed. Plugin=%s\n", cmd);
       goto bail_out;
     }
@@ -1252,8 +1252,8 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
       goto bail_out;
     }
 
-    if (PlugFunc(ctx->plugin)->startRestoreFile(jcr->plugin_ctx, cmd) ==
-        bRC_OK) {
+    if (PlugFunc(ctx->plugin)->startRestoreFile(jcr->plugin_ctx, cmd)
+        == bRC_OK) {
       b_ctx->restoreFileStarted = true;
       goto bail_out;
     } else {
@@ -1355,8 +1355,8 @@ int PluginCreateFile(JobControlRecord* jcr,
   flags = O_WRONLY | O_CREAT | O_TRUNC | O_BINARY;
   Dmsg0(debuglevel, "call bopen\n");
 
-  status =
-      bopen(bfd, attr->ofname, flags, S_IRUSR | S_IWUSR, attr->statp.st_rdev);
+  status
+      = bopen(bfd, attr->ofname, flags, S_IRUSR | S_IWUSR, attr->statp.st_rdev);
   Dmsg1(debuglevel, "bopen status=%d\n", status);
 
   if (status < 0) {
@@ -1571,13 +1571,13 @@ BxattrExitCode PluginBuildXattrStreams(JobControlRecord* jcr,
 
         current_xattr->name_length = xp.name_length;
         current_xattr->name = xp.name;
-        expected_serialize_len +=
-            sizeof(current_xattr->name_length) + current_xattr->name_length;
+        expected_serialize_len
+            += sizeof(current_xattr->name_length) + current_xattr->name_length;
 
         current_xattr->value_length = xp.value_length;
         current_xattr->value = xp.value;
-        expected_serialize_len +=
-            sizeof(current_xattr->value_length) + current_xattr->value_length;
+        expected_serialize_len += sizeof(current_xattr->value_length)
+                                  + current_xattr->value_length;
 
         if (xattr_value_list == NULL) {
           xattr_value_list = new alist(10, not_owned_by_alist);
@@ -1612,7 +1612,8 @@ BxattrExitCode PluginBuildXattrStreams(JobControlRecord* jcr,
        * Serialize the datastream.
        */
       if (SerializeXattrStream(jcr, xattr_data, expected_serialize_len,
-                               xattr_value_list) < expected_serialize_len) {
+                               xattr_value_list)
+          < expected_serialize_len) {
         Mmsg1(jcr->errmsg,
               _("Failed to Serialize extended attributes on file \"%s\"\n"),
               xattr_data->last_fname);
@@ -1667,7 +1668,8 @@ BxattrExitCode PluginParseXattrStreams(JobControlRecord* jcr,
     xattr_value_list = new alist(10, not_owned_by_alist);
 
     if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
-                               xattr_value_list) != BxattrExitCode::kSuccess) {
+                               xattr_value_list)
+        != BxattrExitCode::kSuccess) {
       goto bail_out;
     }
 
@@ -1804,8 +1806,8 @@ static bool IsPluginCompatible(Plugin* plugin)
           plugin->file, FD_PLUGIN_INTERFACE_VERSION, info->version);
     return false;
   }
-  if (!Bstrcasecmp(info->plugin_license, "Bareos AGPLv3") &&
-      !Bstrcasecmp(info->plugin_license, "AGPLv3")) {
+  if (!Bstrcasecmp(info->plugin_license, "Bareos AGPLv3")
+      && !Bstrcasecmp(info->plugin_license, "AGPLv3")) {
     Jmsg(NULL, M_ERROR, 0,
          _("Plugin license incompatible. Plugin=%s license=%s\n"), plugin->file,
          info->plugin_license);

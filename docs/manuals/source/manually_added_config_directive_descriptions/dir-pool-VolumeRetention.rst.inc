@@ -8,4 +8,3 @@ By defining multiple Pools with different Volume Retention periods, you may effe
 backup. As a consequence, the minimum Volume Retention period should be at twice the interval of your Full backups. This means that if you do a Full backup once a month, the minimum Volume retention period should be two months.
 
 The default Volume retention period is 365 days, and either the default or the value defined by this directive in the bareos-dir.conf file is the default value used when a Volume is created. Once the volume is created, changing the value in the :file:`bareos-dir.conf` file will not change what is stored for the Volume. To change the value for an existing Volume you must use the update command in the Console.
-

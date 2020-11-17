@@ -9,13 +9,13 @@ jobs:
   build-and-publish:
     name: "Build python-bareos and publish it to https://pypi.org/"
     runs-on: ubuntu-18.04
-    
+
     steps:
     - name: "Checkout source"
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
-      
+
     - name: "Checkout tags"
       # for get-version.sh, an unshallow git checkout with tags is needed.
       run:  git fetch --tag
@@ -24,7 +24,7 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: 3.7
-        
+
     - name: "Build python package"
       run: |
         pip install --user wheel

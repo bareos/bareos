@@ -205,8 +205,7 @@ int main(int margc, char* margv[])
   Bsnprintf(buf, sizeof(buf), "%llu", x64);
   i = bsscanf(buf, "%llu", &y64);
   if (i != 1 || x64 != y64) {
-    Pmsg3(-1,
-          _("64 bit printf/scanf problem. i=%d x64=%llu y64=%llu\n"), i,
+    Pmsg3(-1, _("64 bit printf/scanf problem. i=%d x64=%llu y64=%llu\n"), i,
           x64, y64);
     exit(1);
   }
@@ -832,8 +831,8 @@ static bool re_read_block_test()
     goto bail_out;
   }
   Pmsg0(0, _("Backspace record OK.\n"));
-  if (DeviceControlRecord::ReadStatus::Ok !=
-      dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
+  if (DeviceControlRecord::ReadStatus::Ok
+      != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
     BErrNo be;
     Pmsg1(0, _("Read block failed! ERR=%s\n"), be.bstrerror(dev->dev_errno));
     goto bail_out;
@@ -1186,8 +1185,8 @@ static bool write_read_test()
    */
   for (uint32_t i = 1; i <= 2 * num_recs; i++) {
   read_again:
-    if (DeviceControlRecord::ReadStatus::Ok !=
-        dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
+    if (DeviceControlRecord::ReadStatus::Ok
+        != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
       BErrNo be;
       if (dev->AtEof()) {
         Pmsg0(-1, _("Got EOF on tape.\n"));
@@ -1307,8 +1306,8 @@ static bool position_test()
       goto bail_out;
     }
   read_again:
-    if (DeviceControlRecord::ReadStatus::Ok !=
-        dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
+    if (DeviceControlRecord::ReadStatus::Ok
+        != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
       BErrNo be;
       if (dev->AtEof()) {
         Pmsg0(-1, _("Got EOF on tape.\n"));
@@ -1426,8 +1425,8 @@ static int autochanger_test()
 
   Dmsg1(100, "Max changer wait = %d sec\n", timeout);
   if (!dev->HasCap(CAP_AUTOCHANGER)) { return 1; }
-  if (!(dcr->device_resource && dcr->device_resource->changer_name &&
-        dcr->device_resource->changer_command)) {
+  if (!(dcr->device_resource && dcr->device_resource->changer_name
+        && dcr->device_resource->changer_command)) {
     Pmsg0(-1, _("\nAutochanger enabled, but no name or no command device "
                 "specified.\n"));
     return 1;
@@ -2498,8 +2497,8 @@ static bool do_unfill()
     goto bail_out;
   }
   Pmsg1(-1, _("Reading block %u.\n"), last_block_num);
-  if (DeviceControlRecord::ReadStatus::Ok !=
-      dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
+  if (DeviceControlRecord::ReadStatus::Ok
+      != dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
     Pmsg1(-1, _("Error reading block: ERR=%s\n"), dev->bstrerror());
     goto bail_out;
   }
@@ -2547,8 +2546,8 @@ static bool do_unfill()
     goto bail_out;
   }
   Pmsg1(-1, _("Reading block %d.\n"), dev->block_num);
-  if (DeviceControlRecord::ReadStatus::Ok !=
-      dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
+  if (DeviceControlRecord::ReadStatus::Ok
+      != dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
     Pmsg1(-1, _("Error reading block: ERR=%s\n"), dev->bstrerror());
     goto bail_out;
   }
@@ -2564,8 +2563,8 @@ static bool do_unfill()
     goto bail_out;
   }
   Pmsg1(-1, _("Reading block %d.\n"), dev->block_num);
-  if (DeviceControlRecord::ReadStatus::Ok !=
-      dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
+  if (DeviceControlRecord::ReadStatus::Ok
+      != dcr->ReadBlockFromDevice(NO_BLOCK_NUMBER_CHECK)) {
     Pmsg1(-1, _("Error reading block: ERR=%s\n"), dev->bstrerror());
     goto bail_out;
   }

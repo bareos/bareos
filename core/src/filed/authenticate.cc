@@ -109,7 +109,8 @@ bool AuthenticateDirector(JobControlRecord* jcr)
   }
 
   if (sscanf(dir->msg, "Hello Director %s calling",
-             dirname.check_size(dir->message_length)) != 1) {
+             dirname.check_size(dir->message_length))
+      != 1) {
     char addr[64];
     char* who = BnetGetPeer(dir, addr, sizeof(addr)) ? dir->who() : addr;
     dir->msg[100] = 0;
@@ -120,8 +121,8 @@ bool AuthenticateDirector(JobControlRecord* jcr)
   }
 
   UnbashSpaces(dirname.c_str());
-  director =
-      (DirectorResource*)my_config->GetResWithName(R_DIRECTOR, dirname.c_str());
+  director = (DirectorResource*)my_config->GetResWithName(R_DIRECTOR,
+                                                          dirname.c_str());
 
   if (!director) {
     char addr[64];

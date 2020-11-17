@@ -35,7 +35,7 @@
 #include "filed/jcr_private.h"
 
 #if defined(HAVE_LIBZ)
-#include <zlib.h>
+#  include <zlib.h>
 #endif
 
 #include "fastlz/fastlzlib.h"
@@ -54,8 +54,8 @@ bool AdjustCompressionBuffers(JobControlRecord* jcr)
     int i, j;
 
     for (i = 0; i < fileset->include_list.size(); i++) {
-      findIncludeExcludeItem* incexe =
-          (findIncludeExcludeItem*)fileset->include_list.get(i);
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->include_list.get(i);
       for (j = 0; j < incexe->opts_list.size(); j++) {
         findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
 
@@ -106,28 +106,28 @@ bool SetupCompressionContext(b_ctx& bctx)
       /*
        * Calculate buffer offsets.
        */
-      if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags) ||
-          BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
-        bctx.chead =
-            (uint8_t*)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
-        bctx.cbuf = (uint8_t*)bctx.jcr->compress.deflate_buffer +
-                    OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
-        bctx.max_compress_len =
-            bctx.jcr->compress.deflate_buffer_size -
-            (sizeof(comp_stream_header) + OFFSET_FADDR_SIZE);
+      if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags)
+          || BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
+        bctx.chead
+            = (uint8_t*)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
+        bctx.cbuf = (uint8_t*)bctx.jcr->compress.deflate_buffer
+                    + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
+        bctx.max_compress_len
+            = bctx.jcr->compress.deflate_buffer_size
+              - (sizeof(comp_stream_header) + OFFSET_FADDR_SIZE);
       } else {
         bctx.chead = (uint8_t*)bctx.jcr->compress.deflate_buffer;
-        bctx.cbuf = (uint8_t*)bctx.jcr->compress.deflate_buffer +
-                    sizeof(comp_stream_header);
-        bctx.max_compress_len =
-            bctx.jcr->compress.deflate_buffer_size - sizeof(comp_stream_header);
+        bctx.cbuf = (uint8_t*)bctx.jcr->compress.deflate_buffer
+                    + sizeof(comp_stream_header);
+        bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size
+                                - sizeof(comp_stream_header);
       }
 
-      bctx.wbuf =
-          bctx.jcr->compress.deflate_buffer; /* compressed output here */
-      bctx.cipher_input =
-          (uint8_t*)
-              bctx.jcr->compress.deflate_buffer; /* encrypt compressed data */
+      bctx.wbuf
+          = bctx.jcr->compress.deflate_buffer; /* compressed output here */
+      bctx.cipher_input
+          = (uint8_t*)
+                bctx.jcr->compress.deflate_buffer; /* encrypt compressed data */
       bctx.ch.magic = bctx.ff_pkt->Compress_algo;
       bctx.ch.version = COMP_HEAD_VERSION;
     } else {
@@ -135,21 +135,21 @@ bool SetupCompressionContext(b_ctx& bctx)
        * Calculate buffer offsets.
        */
       bctx.chead = NULL;
-      if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags) ||
-          BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
-        bctx.cbuf =
-            (uint8_t*)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
-        bctx.max_compress_len =
-            bctx.jcr->compress.deflate_buffer_size - OFFSET_FADDR_SIZE;
+      if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags)
+          || BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
+        bctx.cbuf
+            = (uint8_t*)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
+        bctx.max_compress_len
+            = bctx.jcr->compress.deflate_buffer_size - OFFSET_FADDR_SIZE;
       } else {
         bctx.cbuf = (uint8_t*)bctx.jcr->compress.deflate_buffer;
         bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size;
       }
-      bctx.wbuf =
-          bctx.jcr->compress.deflate_buffer; /* compressed output here */
-      bctx.cipher_input =
-          (uint8_t*)
-              bctx.jcr->compress.deflate_buffer; /* encrypt compressed data */
+      bctx.wbuf
+          = bctx.jcr->compress.deflate_buffer; /* compressed output here */
+      bctx.cipher_input
+          = (uint8_t*)
+                bctx.jcr->compress.deflate_buffer; /* encrypt compressed data */
     }
 
     /*
@@ -174,7 +174,8 @@ bool SetupCompressionContext(b_ctx& bctx)
            * Set gzip compression level - must be done per file
            */
           if ((zstat = deflateParams(pZlibStream, bctx.ff_pkt->Compress_level,
-                                     Z_DEFAULT_STRATEGY)) != Z_OK) {
+                                     Z_DEFAULT_STRATEGY))
+              != Z_OK) {
             Jmsg(bctx.jcr, M_FATAL, 0,
                  _("Compression deflateParams error: %d\n"), zstat);
             bctx.jcr->setJobStatus(JS_ErrorTerminated);
@@ -210,8 +211,8 @@ bool SetupCompressionContext(b_ctx& bctx)
               break;
           }
 
-          if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor)) !=
-              Z_OK) {
+          if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor))
+              != Z_OK) {
             Jmsg(bctx.jcr, M_FATAL, 0,
                  _("Compression fastlzlibSetCompressor error: %d\n"), zstat);
             bctx.jcr->setJobStatus(JS_ErrorTerminated);

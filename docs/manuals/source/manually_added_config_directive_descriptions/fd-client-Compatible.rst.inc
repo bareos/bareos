@@ -3,4 +3,3 @@ This directive enables the compatible mode of the file daemon. In this mode the 
 The default value for this directive was changed from yes to no since Bareos :sinceVersion:`15.2.0: Compatible = no`.
 
 When you want to use bareos-only features, the value of compatible must be no.
-

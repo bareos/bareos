@@ -44,9 +44,9 @@
 
 #if defined(HAVE_OPENSSL)
 
-#ifdef HAVE_OPENSSL
-#include <openssl/aes.h>
-#endif
+#  ifdef HAVE_OPENSSL
+#    include <openssl/aes.h>
+#  endif
 
 /*
  * @kek: key encryption key (KEK)
@@ -58,9 +58,9 @@ void AesWrap(uint8_t* kek, int n, uint8_t* plain, uint8_t* cipher)
 {
   uint8_t *a, *r, b[16];
   int i, j;
-#ifdef HAVE_OPENSSL
+#  ifdef HAVE_OPENSSL
   AES_KEY key;
-#endif
+#  endif
 
   a = cipher;
   r = cipher + 8;
@@ -71,9 +71,9 @@ void AesWrap(uint8_t* kek, int n, uint8_t* plain, uint8_t* cipher)
   memset(a, 0xa6, 8);
   memcpy(r, plain, 8 * n);
 
-#ifdef HAVE_OPENSSL
+#  ifdef HAVE_OPENSSL
   AES_set_encrypt_key(kek, 128, &key);
-#endif
+#  endif
 
   /*
    * 2) Calculate intermediate values.
@@ -88,9 +88,9 @@ void AesWrap(uint8_t* kek, int n, uint8_t* plain, uint8_t* cipher)
     for (i = 1; i <= n; i++) {
       memcpy(b, a, 8);
       memcpy(b + 8, r, 8);
-#ifdef HAVE_OPENSSL
+#  ifdef HAVE_OPENSSL
       AES_encrypt(b, b, &key);
-#endif
+#  endif
       memcpy(a, b, 8);
       a[7] ^= n * j + i;
       memcpy(r, b + 8, 8);
@@ -115,9 +115,9 @@ int AesUnwrap(uint8_t* kek, int n, uint8_t* cipher, uint8_t* plain)
 {
   uint8_t a[8], *r, b[16];
   int i, j;
-#ifdef HAVE_OPENSSL
+#  ifdef HAVE_OPENSSL
   AES_KEY key;
-#endif
+#  endif
 
   /*
    * 1) Initialize variables.
@@ -126,9 +126,9 @@ int AesUnwrap(uint8_t* kek, int n, uint8_t* cipher, uint8_t* plain)
   r = plain;
   memcpy(r, cipher + 8, 8 * n);
 
-#ifdef HAVE_OPENSSL
+#  ifdef HAVE_OPENSSL
   AES_set_decrypt_key(kek, 128, &key);
-#endif
+#  endif
 
   /*
    * 2) Compute intermediate values.
@@ -145,9 +145,9 @@ int AesUnwrap(uint8_t* kek, int n, uint8_t* cipher, uint8_t* plain)
       b[7] ^= n * j + i;
 
       memcpy(b + 8, r, 8);
-#ifdef HAVE_OPENSSL
+#  ifdef HAVE_OPENSSL
       AES_decrypt(b, b, &key);
-#endif
+#  endif
       memcpy(a, b, 8);
       memcpy(r, b + 8, 8);
       r -= 8;

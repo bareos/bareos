@@ -108,4 +108,3 @@ setup_local_db() {
   fi
   return 0
 }
-

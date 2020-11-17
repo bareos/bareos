@@ -12,4 +12,3 @@ Most frequently, you will define it as follows:
 See the :ref:`mountcodes` section below for more details of the editing codes that can be used in this directive.
 
 If you need to specify multiple commands, create a shell script.
-

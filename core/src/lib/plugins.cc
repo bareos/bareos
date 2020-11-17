@@ -38,40 +38,40 @@ int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
 #endif
 
 #ifndef RTLD_NOW
-#define RTLD_NOW 2
+#  define RTLD_NOW 2
 #endif
 
 #if !defined(LT_LAZY_OR_NOW)
-#if defined(RTLD_LAZY)
-#define LT_LAZY_OR_NOW RTLD_LAZY
-#else
-#if defined(DL_LAZY)
-#define LT_LAZY_OR_NOW DL_LAZY
-#endif
-#endif /* !RTLD_LAZY */
+#  if defined(RTLD_LAZY)
+#    define LT_LAZY_OR_NOW RTLD_LAZY
+#  else
+#    if defined(DL_LAZY)
+#      define LT_LAZY_OR_NOW DL_LAZY
+#    endif
+#  endif /* !RTLD_LAZY */
 #endif
 #if !defined(LT_LAZY_OR_NOW)
-#if defined(RTLD_NOW)
-#define LT_LAZY_OR_NOW RTLD_NOW
-#else
-#if defined(DL_NOW)
-#define LT_LAZY_OR_NOW DL_NOW
-#endif
-#endif /* !RTLD_NOW */
+#  if defined(RTLD_NOW)
+#    define LT_LAZY_OR_NOW RTLD_NOW
+#  else
+#    if defined(DL_NOW)
+#      define LT_LAZY_OR_NOW DL_NOW
+#    endif
+#  endif /* !RTLD_NOW */
 #endif
 
 #if !defined(LT_LAZY_OR_NOW)
-#define LT_LAZY_OR_NOW 0
+#  define LT_LAZY_OR_NOW 0
 #endif /* !LT_LAZY_OR_NOW */
 
 #if !defined(LT_GLOBAL)
-#if defined(RTLD_GLOBAL)
-#define LT_GLOBAL RTLD_GLOBAL
-#else
-#if defined(DL_GLOBAL)
-#define LT_GLOBAL DL_GLOBAL
-#endif
-#endif /* !RTLD_GLOBAL */
+#  if defined(RTLD_GLOBAL)
+#    define LT_GLOBAL RTLD_GLOBAL
+#  else
+#    if defined(DL_GLOBAL)
+#      define LT_GLOBAL DL_GLOBAL
+#    endif
+#  endif /* !RTLD_GLOBAL */
 #endif
 
 #include "plugins.h"
@@ -152,8 +152,8 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
     return false;
   }
 
-  plugin->unloadPlugin =
-      (t_unloadPlugin)dlsym(plugin->plugin_handle, "unloadPlugin");
+  plugin->unloadPlugin
+      = (t_unloadPlugin)dlsym(plugin->plugin_handle, "unloadPlugin");
   if (!plugin->unloadPlugin) {
     Jmsg(NULL, M_ERROR, 0,
          _("Lookup of unloadPlugin in plugin %s failed: ERR=%s\n"),
@@ -170,8 +170,8 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
    * Initialize the plugin
    */
   if (loadPlugin(bareos_plugin_interface_version, bareos_core_functions,
-                 &plugin->plugin_information,
-                 &plugin->plugin_functions) != bRC_OK) {
+                 &plugin->plugin_information, &plugin->plugin_functions)
+      != bRC_OK) {
     ClosePlugin(plugin);
 
     return false;
@@ -293,8 +293,8 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
 
       len = strlen(result->d_name);
       type_len = strlen(type);
-      if (len < type_len + 1 ||
-          !bstrcmp(&result->d_name[len - type_len], type)) {
+      if (len < type_len + 1
+          || !bstrcmp(&result->d_name[len - type_len], type)) {
         Dmsg3(debuglevel, "Rejected plugin: want=%s name=%s len=%d\n", type,
               result->d_name, len);
         continue;
@@ -376,8 +376,8 @@ int ListPlugins(alist* plugin_list, PoolMem& msg)
       PmStrcat(msg, " Plugin     : ");
       len = PmStrcat(msg, plugin->file);
       if (plugin->plugin_information) {
-        PluginInformation* info =
-            (PluginInformation*)plugin->plugin_information;
+        PluginInformation* info
+            = (PluginInformation*)plugin->plugin_information;
         PmStrcat(msg, "\n");
         PmStrcat(msg, " Description: ");
         PmStrcat(msg, NPRT(info->plugin_description));

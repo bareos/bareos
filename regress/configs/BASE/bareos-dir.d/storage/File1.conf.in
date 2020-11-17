@@ -13,4 +13,3 @@ Storage {
   TLS Allowed CN = bareos-sd1.bareos.org
   TLS Allowed CN = bareos-sd2.bareos.org
 }
-

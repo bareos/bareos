@@ -71,12 +71,12 @@ Backup
 
    VirtualFull
       .. _VirtualFull:
-      
+
       :index:`\ <single: VirtualFull Backup>`
       When the Level is set to VirtualFull, a new Full backup is generated from the last existing Full backup and the matching Differential- and Incremental-Backups. It matches this according the :config:option:`dir/client/Name`\  and :config:option:`dir/fileset/Name`\ . This means, a new Full backup get created without transfering all the data from the client to the backup
       server again. The new Full backup will be stored in the pool defined in :config:option:`dir/pool/NextPool`\ .
 
-      
+
 
       .. warning::
 
@@ -118,7 +118,7 @@ Verify
 
          If you run two Verify VolumeToCatalog jobs on the same
          client at the same time, the results will certainly be incorrect.  This
-         is because the Verify VolumeToCatalog modifies the Catalog 
+         is because the Verify VolumeToCatalog modifies the Catalog
          database
          while running.
 
@@ -137,4 +137,3 @@ Verify
       This command can be very useful if you have disk problems because it will compare the current state of your disk against the last successful backup, which may be several jobs.
 
       Note, the current implementation does not identify files that have been deleted.
-

@@ -109,8 +109,8 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
     pr.NumVols++;
     mr->Enabled = VOL_ENABLED;
     SetStorageidInMr(store, mr);
-    if (jcr->db->CreateMediaRecord(jcr, mr) &&
-        jcr->db->UpdatePoolRecord(jcr, &pr)) {
+    if (jcr->db->CreateMediaRecord(jcr, mr)
+        && jcr->db->UpdatePoolRecord(jcr, &pr)) {
       Jmsg(jcr, M_INFO, 0, _("Created new Volume \"%s\" in catalog.\n"),
            mr->VolumeName);
       Dmsg1(90, "Created new Volume=%s\n", mr->VolumeName);

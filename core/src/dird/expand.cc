@@ -311,13 +311,14 @@ static var_rc_t lookup_var(var_t* ctx,
    * Note, if val_size > 0 and val_ptr!=NULL, the core code will free() it
    */
   if ((status = lookup_built_in_var(ctx, my_ctx, var_ptr, var_len, var_index,
-                                    val_ptr, val_len, val_size)) == VAR_OK) {
+                                    val_ptr, val_len, val_size))
+      == VAR_OK) {
     return VAR_OK;
   }
 
   if ((status = lookup_counter_var(ctx, my_ctx, var_ptr, var_len, var_inc,
-                                   var_index, val_ptr, val_len, val_size)) ==
-      VAR_OK) {
+                                   var_index, val_ptr, val_len, val_size))
+      == VAR_OK) {
     return VAR_OK;
   }
 
@@ -489,7 +490,8 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
    * Define callback
    */
   if ((status = var_config(var_ctx, var_config_t::VAR_CONFIG_CB_VALUE,
-                           lookup_var, (void*)jcr)) != VAR_OK) {
+                           lookup_var, (void*)jcr))
+      != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot set var callback: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;
@@ -499,7 +501,8 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
    * Define special operations
    */
   if ((status = var_config(var_ctx, var_config_t::VAR_CONFIG_CB_OPERATION,
-                           operate_var, (void*)jcr)) != VAR_OK) {
+                           operate_var, (void*)jcr))
+      != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot set var operate: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;
@@ -508,8 +511,8 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   /*
    * Unescape in place
    */
-  if ((status = var_unescape(var_ctx, inp, in_len, inp, in_len + 1, 0)) !=
-      VAR_OK) {
+  if ((status = var_unescape(var_ctx, inp, in_len, inp, in_len + 1, 0))
+      != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;
@@ -520,8 +523,8 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   /*
    * Expand variables
    */
-  if ((status = var_expand(var_ctx, inp, in_len, &outp, &out_len, 0)) !=
-      VAR_OK) {
+  if ((status = var_expand(var_ctx, inp, in_len, &outp, &out_len, 0))
+      != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot expand expression \"%s\": ERR=%s\n"), inp,
          var_strerror(var_ctx, status));
     goto bail_out;
@@ -530,8 +533,8 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   /*
    * Unescape once more in place
    */
-  if ((status = var_unescape(var_ctx, outp, out_len, outp, out_len + 1, 1)) !=
-      VAR_OK) {
+  if ((status = var_unescape(var_ctx, outp, out_len, outp, out_len + 1, 1))
+      != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;

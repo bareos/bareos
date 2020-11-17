@@ -34,7 +34,7 @@
 #include "ch.h"
 
 #if defined(HAVE_WIN32)
-#define isatty(fd) (fd == 0)
+#  define isatty(fd) (fd == 0)
 #endif
 
 using namespace directordaemon;
@@ -143,8 +143,8 @@ int main(int argc, char* const* argv)
   }
 
   jcr = NewDirectorJcr();  // Ueb: null
-  jcr->impl->res.fileset =
-      (FilesetResource*)my_config->GetResWithName(R_FILESET, fileset_name);
+  jcr->impl->res.fileset
+      = (FilesetResource*)my_config->GetResWithName(R_FILESET, fileset_name);
 
   if (jcr->impl->res.fileset == NULL) {
     fprintf(stderr, "%s: Fileset not found\n", fileset_name);
@@ -182,8 +182,8 @@ int main(int argc, char* const* argv)
     int i, j, k;
     /* Delete FileSet Include lists */
     for (i = 0; i < fileset->include_list.size(); i++) {
-      findIncludeExcludeItem* incexe =
-          (findIncludeExcludeItem*)fileset->include_list.get(i);
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->include_list.get(i);
       for (j = 0; j < incexe->opts_list.size(); j++) {
         findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
         for (k = 0; k < fo->regex.size(); k++) {
@@ -206,8 +206,8 @@ int main(int argc, char* const* argv)
 
     /* Delete FileSet Exclude lists */
     for (i = 0; i < fileset->exclude_list.size(); i++) {
-      findIncludeExcludeItem* incexe =
-          (findIncludeExcludeItem*)fileset->exclude_list.get(i);
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->exclude_list.get(i);
       for (j = 0; j < incexe->opts_list.size(); j++) {
         findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
         fo->regex.destroy();
@@ -443,8 +443,8 @@ static bool CopyFileset(FindFilesPacket* ff, JobControlRecord* jcr)
         ie = jcr_fileset->include_items[i];
 
         /* New include */
-        fileset->incexe =
-            (findIncludeExcludeItem*)malloc(sizeof(findIncludeExcludeItem));
+        fileset->incexe
+            = (findIncludeExcludeItem*)malloc(sizeof(findIncludeExcludeItem));
         memset(fileset->incexe, 0, sizeof(findIncludeExcludeItem));
         fileset->incexe->opts_list.init(1, true);
         fileset->incexe->name_list.init(0, 0);
@@ -453,8 +453,8 @@ static bool CopyFileset(FindFilesPacket* ff, JobControlRecord* jcr)
         ie = jcr_fileset->exclude_items[i];
 
         /* New exclude */
-        fileset->incexe =
-            (findIncludeExcludeItem*)malloc(sizeof(findIncludeExcludeItem));
+        fileset->incexe
+            = (findIncludeExcludeItem*)malloc(sizeof(findIncludeExcludeItem));
         memset(fileset->incexe, 0, sizeof(findIncludeExcludeItem));
         fileset->incexe->opts_list.init(1, true);
         fileset->incexe->name_list.init(0, 0);

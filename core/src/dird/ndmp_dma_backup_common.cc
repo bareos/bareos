@@ -34,9 +34,9 @@
 #include "lib/edit.h"
 
 #if HAVE_NDMP
-#define NDMP_NEED_ENV_KEYWORDS 1
-#include "ndmp/ndmagents.h"
-#include "ndmp_dma_priv.h"
+#  define NDMP_NEED_ENV_KEYWORDS 1
+#  include "ndmp/ndmagents.h"
+#  include "ndmp_dma_priv.h"
 #endif /* HAVE_NDMP */
 
 namespace directordaemon {
@@ -245,7 +245,7 @@ int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem)
  */
 void RegisterCallbackHooks(struct ndmlog* ixlog)
 {
-#ifdef HAVE_LMDB
+#  ifdef HAVE_LMDB
   NIS* nis = (NIS*)ixlog->ctx;
 
   if (nis->jcr->impl->res.client->ndmp_use_lmdb) {
@@ -253,14 +253,14 @@ void RegisterCallbackHooks(struct ndmlog* ixlog)
   } else {
     NdmpFhdbMemRegister(ixlog);
   }
-#else
+#  else
   NdmpFhdbMemRegister(ixlog);
-#endif
+#  endif
 }
 
 void UnregisterCallbackHooks(struct ndmlog* ixlog)
 {
-#ifdef HAVE_LMDB
+#  ifdef HAVE_LMDB
   NIS* nis = (NIS*)ixlog->ctx;
 
   if (nis->jcr->impl->res.client->ndmp_use_lmdb) {
@@ -268,14 +268,14 @@ void UnregisterCallbackHooks(struct ndmlog* ixlog)
   } else {
     NdmpFhdbMemUnregister(ixlog);
   }
-#else
+#  else
   NdmpFhdbMemUnregister(ixlog);
-#endif
+#  endif
 }
 
 void ProcessFhdb(struct ndmlog* ixlog)
 {
-#ifdef HAVE_LMDB
+#  ifdef HAVE_LMDB
   NIS* nis = (NIS*)ixlog->ctx;
 
   if (nis->jcr->impl->res.client->ndmp_use_lmdb) {
@@ -283,9 +283,9 @@ void ProcessFhdb(struct ndmlog* ixlog)
   } else {
     NdmpFhdbMemProcessDb(ixlog);
   }
-#else
+#  else
   NdmpFhdbMemProcessDb(ixlog);
-#endif
+#  endif
 }
 
 /*
@@ -300,8 +300,8 @@ void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   Dmsg2(100, "Enter NdmpBackupCleanup %d %c\n", TermCode, TermCode);
 
-  if (jcr->is_JobStatus(JS_Terminated) &&
-      (jcr->JobErrors || jcr->impl->SDErrors || jcr->JobWarnings)) {
+  if (jcr->is_JobStatus(JS_Terminated)
+      && (jcr->JobErrors || jcr->impl->SDErrors || jcr->JobWarnings)) {
     TermCode = JS_Warnings;
   }
 

@@ -139,8 +139,8 @@ POOLMEM* GetPoolMemory(int pool)
     return (POOLMEM*)((char*)buf + HEAD_SIZE);
   }
 
-  if ((buf = (struct abufhead*)malloc(pool_ctl[pool].size + HEAD_SIZE)) ==
-      NULL) {
+  if ((buf = (struct abufhead*)malloc(pool_ctl[pool].size + HEAD_SIZE))
+      == NULL) {
     V(mutex);
     MemPoolErrorMessage(__FILE__, __LINE__,
                         _("Out of memory requesting %d bytes\n"),

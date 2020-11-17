@@ -114,8 +114,8 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
     if (Bstrcasecmp(ua->argk[2], "current")) {
       ua->SendMsg(OKdotstatus, ua->argk[2]);
       foreach_jcr (njcr) {
-        if (njcr->JobId != 0 &&
-            ua->AclAccessOk(Job_ACL, njcr->impl->res.job->resource_name_)) {
+        if (njcr->JobId != 0
+            && ua->AclAccessOk(Job_ACL, njcr->impl->res.job->resource_name_)) {
           ua->SendMsg(DotStatusJob, edit_int64(njcr->JobId, ed1),
                       njcr->JobStatus, njcr->JobErrors);
         }
@@ -124,8 +124,8 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
     } else if (Bstrcasecmp(ua->argk[2], "last")) {
       ua->SendMsg(OKdotstatus, ua->argk[2]);
       if (RecentJobResultsList::Count() > 0) {
-        RecentJobResultsList::JobResult job =
-            RecentJobResultsList::GetMostRecentJobResult();
+        RecentJobResultsList::JobResult job
+            = RecentJobResultsList::GetMostRecentJobResult();
         if (ua->AclAccessOk(Job_ACL, job.Job)) {
           ua->SendMsg(DotStatusJob, edit_int64(job.JobId, ed1), job.JobStatus,
                       job.Errors);
@@ -239,7 +239,8 @@ bool StatusCmd(UaContext* ua, const char* cmd)
     AddPrompt(ua, NT_("All"));
     Dmsg0(20, "DoPrompt: select daemon\n");
     if ((item = DoPrompt(ua, "", _("Select daemon type for status"), prmt,
-                         sizeof(prmt))) < 0) {
+                         sizeof(prmt)))
+        < 0) {
       return true;
     }
     Dmsg1(20, "item=%d\n", item);
@@ -291,8 +292,8 @@ static void DoAllStatus(UaContext* ua)
     found = false;
     if (!ua->AclAccessOk(Storage_ACL, store->resource_name_)) { continue; }
     for (j = 0; j < i; j++) {
-      if (bstrcmp(unique_store[j]->address, store->address) &&
-          unique_store[j]->SDport == store->SDport) {
+      if (bstrcmp(unique_store[j]->address, store->address)
+          && unique_store[j]->SDport == store->SDport) {
         found = true;
         break;
       }
@@ -326,8 +327,8 @@ static void DoAllStatus(UaContext* ua)
     found = false;
     if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) { continue; }
     for (j = 0; j < i; j++) {
-      if (bstrcmp(unique_client[j]->address, client->address) &&
-          unique_client[j]->FDport == client->FDport) {
+      if (bstrcmp(unique_client[j]->address, client->address)
+          && unique_client[j]->FDport == client->FDport) {
         found = true;
         break;
       }
@@ -632,12 +633,12 @@ static void DoSchedulerStatus(UaContext* ua)
     }
 
     if (job) {
-      if (job->schedule &&
-          bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
+      if (job->schedule
+          && bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
         if (cnt++ == 0) { ua->SendMsg("%s\n", sched->resource_name_); }
         if (!job->enabled || (job->client && !job->client->enabled)) {
           ua->SendMsg("                       %s (disabled)\n",
-            job->resource_name_);
+                      job->resource_name_);
         } else {
           ua->SendMsg("                       %s\n", job->resource_name_);
         }
@@ -648,12 +649,12 @@ static void DoSchedulerStatus(UaContext* ua)
 
         if (client && job->client != client) { continue; }
 
-        if (job->schedule &&
-            bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
+        if (job->schedule
+            && bstrcmp(sched->resource_name_, job->schedule->resource_name_)) {
           if (cnt++ == 0) { ua->SendMsg("%s\n", sched->resource_name_); }
           if (!job->enabled || (job->client && !job->client->enabled)) {
             ua->SendMsg("                       %s (disabled)\n",
-              job->resource_name_);
+                        job->resource_name_);
           } else {
             ua->SendMsg("                       %s\n", job->resource_name_);
           }
@@ -684,8 +685,8 @@ start_again:
        * List specific schedule.
        */
       if (job) {
-        if (job->schedule && job->schedule->enabled && job->enabled &&
-            job->client->enabled) {
+        if (job->schedule && job->schedule->enabled && job->enabled
+            && job->client->enabled) {
           if (!show_scheduled_preview(ua, job->schedule, overview,
                                       &max_date_len, time_to_check)) {
             goto start_again;
@@ -696,8 +697,8 @@ start_again:
         foreach_res (job, R_JOB) {
           if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
 
-          if (job->schedule && job->schedule->enabled && job->enabled &&
-              job->client == client && job->client->enabled) {
+          if (job->schedule && job->schedule->enabled && job->enabled
+              && job->client == client && job->client->enabled) {
             if (!show_scheduled_preview(ua, job->schedule, overview,
                                         &max_date_len, time_to_check)) {
               job = NULL;
@@ -900,8 +901,8 @@ static void ListScheduledJobs(UaContext* ua)
    */
   LockRes(my_config);
   foreach_res (job, R_JOB) {
-    if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled ||
-        (job->client && !job->client->enabled)) {
+    if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled
+        || (job->client && !job->client->enabled)) {
       continue;
     }
     for (run = NULL; (run = find_next_run(run, job, runtime, days));) {
@@ -982,8 +983,8 @@ static void ListRunningJobs(UaContext* ua)
           "==\n"));
   }
   foreach_jcr (jcr) {
-    if (jcr->JobId == 0 ||
-        !ua->AclAccessOk(Job_ACL, jcr->impl->res.job->resource_name_)) {
+    if (jcr->JobId == 0
+        || !ua->AclAccessOk(Job_ACL, jcr->impl->res.job->resource_name_)) {
       continue;
     }
     njobs++;

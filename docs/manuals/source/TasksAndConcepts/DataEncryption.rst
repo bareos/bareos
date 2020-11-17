@@ -101,7 +101,7 @@ Above we have used the .pub.key extension to refer to X509 certificate encoding 
 Example Data Encryption Configurations (bareos-fd.conf)
 -------------------------------------------------------
 
-:index:`\ <single: Example; Data Encryption Configuration File>`\ 
+:index:`\ <single: Example; Data Encryption Configuration File>`\
 
 
 
@@ -113,7 +113,7 @@ Example Data Encryption Configurations (bareos-fd.conf)
 Decrypting with a Master Key
 ----------------------------
 
-:index:`\ <single: Decrypting with a Master Key>`\  :index:`\ <single: Encryption; Decrypting with a Master Key>`\ 
+:index:`\ <single: Decrypting with a Master Key>`\  :index:`\ <single: Encryption; Decrypting with a Master Key>`\
 
 It is preferable to retain a secure, non-encrypted copy of the client’s own encryption keypair. However, should you lose the client’s keypair, recovery with the master keypair is possible.
 
@@ -132,6 +132,3 @@ You must:
          PKI Keypair = master.keypair
 
 -  Start the restore. The master keypair will be used to decrypt the file data.
-
-
-

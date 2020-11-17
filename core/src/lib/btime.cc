@@ -135,7 +135,8 @@ utime_t StrToUtime(const char* str)
   if (!str || *str == 0) { return 0; }
 
   if (sscanf(str, "%d-%d-%d %d:%d:%d", &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
-             &tm.tm_hour, &tm.tm_min, &tm.tm_sec) != 6) {
+             &tm.tm_hour, &tm.tm_min, &tm.tm_sec)
+      != 6) {
     return 0;
   }
   if (tm.tm_mon > 0) {
@@ -274,16 +275,16 @@ fdate_t DateEncode(uint32_t year, uint8_t month, uint8_t day)
   /* Determine whether date is in Julian or Gregorian calendar based on
      canonical date of calendar reform. */
 
-  if ((year < 1582) ||
-      ((year == 1582) && ((month < 9) || (month == 9 && day < 5)))) {
+  if ((year < 1582)
+      || ((year == 1582) && ((month < 9) || (month == 9 && day < 5)))) {
     b = 0;
   } else {
     a = ((int)(y / 100));
     b = 2 - a + (a / 4);
   }
 
-  return (((int32_t)(365.25 * (y + 4716))) + ((int)(30.6001 * (m + 1))) + day +
-          b - 1524.5);
+  return (((int32_t)(365.25 * (y + 4716))) + ((int)(30.6001 * (m + 1))) + day
+          + b - 1524.5);
 }
 
 /*  TimeEncode  --  Encode time from hours, minutes, and seconds
@@ -296,8 +297,8 @@ ftime_t TimeEncode(uint8_t hour,
                    float32_t second_fraction)
 {
   ASSERT((second_fraction >= 0.0) || (second_fraction < 1.0));
-  return (ftime_t)(((second + 60L * (minute + 60L * hour)) / 86400.0)) +
-         second_fraction;
+  return (ftime_t)(((second + 60L * (minute + 60L * hour)) / 86400.0))
+         + second_fraction;
 }
 
 /*  date_time_encode  --  Set day number and fraction from date

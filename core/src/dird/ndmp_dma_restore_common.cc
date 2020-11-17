@@ -35,8 +35,8 @@
 #include "dird/restore.h"
 
 #if HAVE_NDMP
-#include "ndmp/ndmagents.h"
-#include "ndmp_dma_priv.h"
+#  include "ndmp/ndmagents.h"
+#  include "ndmp_dma_priv.h"
 #endif /* HAVE_NDMP */
 
 namespace directordaemon {
@@ -162,8 +162,9 @@ bool ExtractPostRestoreStats(JobControlRecord* jcr, struct ndm_session* sess)
    */
   for (media = sess->control_acb->job.result_media_tab.head; media;
        media = media->next) {
-    if (media->media_open_error || media->media_io_error ||
-        media->label_io_error || media->label_mismatch || media->fmark_error) {
+    if (media->media_open_error || media->media_io_error
+        || media->label_io_error || media->label_mismatch
+        || media->fmark_error) {
       retval = false;
     }
   }

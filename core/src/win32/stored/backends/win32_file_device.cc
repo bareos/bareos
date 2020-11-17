@@ -72,8 +72,9 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
 
   /* If busy retry each second */
   Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
-  while ((status = RunProgramFullOutput(
-              ocmd.c_str(), dcr->dev->max_open_wait / 2, results)) != 0) {
+  while ((status = RunProgramFullOutput(ocmd.c_str(),
+                                        dcr->dev->max_open_wait / 2, results))
+         != 0) {
     /* Doesn't work with internationalization (This is not a problem) */
     if (mount && fnmatch("*is already mounted on*", results, 0) == 0) { break; }
     if (!mount && fnmatch("* not mounted*", results, 0) == 0) { break; }
@@ -125,8 +126,8 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
               device_resource->mount_point, dcr->dev->print_name());
         break;
       }
-      if (!bstrcmp(result->d_name, ".") && !bstrcmp(result->d_name, "..") &&
-          !bstrcmp(result->d_name, ".keep")) {
+      if (!bstrcmp(result->d_name, ".") && !bstrcmp(result->d_name, "..")
+          && !bstrcmp(result->d_name, ".keep")) {
         count++; /* result->d_name != ., .. or .keep (Gentoo-specific) */
         break;
       } else {

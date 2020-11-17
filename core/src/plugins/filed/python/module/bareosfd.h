@@ -79,30 +79,30 @@ static PyMethodDef PyRestoreObject_methods[] = {
     {NULL} /* Sentinel */
 };
 
-static PyMemberDef PyRestoreObject_members[] = {
-    {(char*)"object_name", T_OBJECT, offsetof(PyRestoreObject, object_name), 0,
-     (char*)"Object Name"},
-    {(char*)"object", T_OBJECT, offsetof(PyRestoreObject, object), 0,
-     (char*)"Object Content"},
-    {(char*)"plugin_name", T_STRING, offsetof(PyRestoreObject, plugin_name), 0,
-     (char*)"Plugin Name"},
-    {(char*)"object_type", T_INT, offsetof(PyRestoreObject, object_type), 0,
-     (char*)"Object Type"},
-    {(char*)"object_len", T_INT, offsetof(PyRestoreObject, object_len), 0,
-     (char*)"Object Length"},
-    {(char*)"object_full_len", T_INT,
-     offsetof(PyRestoreObject, object_full_len), 0,
-     (char*)"Object Full Length"},
-    {(char*)"object_index", T_INT, offsetof(PyRestoreObject, object_index), 0,
-     (char*)"Object Index"},
-    {(char*)"object_compression", T_INT,
-     offsetof(PyRestoreObject, object_compression), 0,
-     (char*)"Object Compression"},
-    {(char*)"stream", T_INT, offsetof(PyRestoreObject, stream), 0,
-     (char*)"Attribute Stream"},
-    {(char*)"jobid", T_UINT, offsetof(PyRestoreObject, JobId), 0,
-     (char*)"Jobid"},
-    {NULL}};
+static PyMemberDef PyRestoreObject_members[]
+    = {{(char*)"object_name", T_OBJECT, offsetof(PyRestoreObject, object_name),
+        0, (char*)"Object Name"},
+       {(char*)"object", T_OBJECT, offsetof(PyRestoreObject, object), 0,
+        (char*)"Object Content"},
+       {(char*)"plugin_name", T_STRING, offsetof(PyRestoreObject, plugin_name),
+        0, (char*)"Plugin Name"},
+       {(char*)"object_type", T_INT, offsetof(PyRestoreObject, object_type), 0,
+        (char*)"Object Type"},
+       {(char*)"object_len", T_INT, offsetof(PyRestoreObject, object_len), 0,
+        (char*)"Object Length"},
+       {(char*)"object_full_len", T_INT,
+        offsetof(PyRestoreObject, object_full_len), 0,
+        (char*)"Object Full Length"},
+       {(char*)"object_index", T_INT, offsetof(PyRestoreObject, object_index),
+        0, (char*)"Object Index"},
+       {(char*)"object_compression", T_INT,
+        offsetof(PyRestoreObject, object_compression), 0,
+        (char*)"Object Compression"},
+       {(char*)"stream", T_INT, offsetof(PyRestoreObject, stream), 0,
+        (char*)"Attribute Stream"},
+       {(char*)"jobid", T_UINT, offsetof(PyRestoreObject, JobId), 0,
+        (char*)"Jobid"},
+       {NULL}};
 
 static PyTypeObject PyRestoreObjectType = {
     PyVarObject_HEAD_INIT(NULL, 0) "restore_object", /* tp_name */
@@ -479,32 +479,32 @@ static PyMethodDef PyIoPacket_methods[] = {
     {NULL} /* Sentinel */
 };
 
-static PyMemberDef PyIoPacket_members[] = {
-    {(char*)"func", T_USHORT, offsetof(PyIoPacket, func), 0,
-     (char*)"Function code"},
-    {(char*)"count", T_INT, offsetof(PyIoPacket, count), 0,
-     (char*)"Read/write count"},
-    {(char*)"flags", T_INT, offsetof(PyIoPacket, flags), 0,
-     (char*)"Open flags"},
-    {(char*)"mode", T_INT, offsetof(PyIoPacket, mode), 0,
-     (char*)"Permissions for created files"},
-    {(char*)"buf", T_OBJECT, offsetof(PyIoPacket, buf), 0,
-     (char*)"Read/write buffer"},
-    {(char*)"fname", T_STRING, offsetof(PyIoPacket, fname), 0,
-     (char*)"Open filename"},
-    {(char*)"status", T_INT, offsetof(PyIoPacket, status), 0,
-     (char*)"Return status"},
-    {(char*)"io_errno", T_INT, offsetof(PyIoPacket, io_errno), 0,
-     (char*)"Errno code"},
-    {(char*)"lerror", T_INT, offsetof(PyIoPacket, lerror), 0,
-     (char*)"Win32 error code"},
-    {(char*)"whence", T_INT, offsetof(PyIoPacket, whence), 0,
-     (char*)"Lseek argument"},
-    {(char*)"offset", T_LONGLONG, offsetof(PyIoPacket, offset), 0,
-     (char*)"Lseek argument"},
-    {(char*)"win32", T_BOOL, offsetof(PyIoPacket, win32), 0,
-     (char*)"Win32 GetLastError returned"},
-    {NULL}};
+static PyMemberDef PyIoPacket_members[]
+    = {{(char*)"func", T_USHORT, offsetof(PyIoPacket, func), 0,
+        (char*)"Function code"},
+       {(char*)"count", T_INT, offsetof(PyIoPacket, count), 0,
+        (char*)"Read/write count"},
+       {(char*)"flags", T_INT, offsetof(PyIoPacket, flags), 0,
+        (char*)"Open flags"},
+       {(char*)"mode", T_INT, offsetof(PyIoPacket, mode), 0,
+        (char*)"Permissions for created files"},
+       {(char*)"buf", T_OBJECT, offsetof(PyIoPacket, buf), 0,
+        (char*)"Read/write buffer"},
+       {(char*)"fname", T_STRING, offsetof(PyIoPacket, fname), 0,
+        (char*)"Open filename"},
+       {(char*)"status", T_INT, offsetof(PyIoPacket, status), 0,
+        (char*)"Return status"},
+       {(char*)"io_errno", T_INT, offsetof(PyIoPacket, io_errno), 0,
+        (char*)"Errno code"},
+       {(char*)"lerror", T_INT, offsetof(PyIoPacket, lerror), 0,
+        (char*)"Win32 error code"},
+       {(char*)"whence", T_INT, offsetof(PyIoPacket, whence), 0,
+        (char*)"Lseek argument"},
+       {(char*)"offset", T_LONGLONG, offsetof(PyIoPacket, offset), 0,
+        (char*)"Lseek argument"},
+       {(char*)"win32", T_BOOL, offsetof(PyIoPacket, win32), 0,
+        (char*)"Win32 GetLastError returned"},
+       {NULL}};
 
 static PyTypeObject PyIoPacketType = {
     PyVarObject_HEAD_INIT(NULL, 0) "io_pkt",  /* tp_name */
@@ -565,12 +565,12 @@ static PyMethodDef PyAclPacket_methods[] = {
     {NULL} /* Sentinel */
 };
 
-static PyMemberDef PyAclPacket_members[] = {
-    {(char*)"fname", T_STRING, offsetof(PyAclPacket, fname), 0,
-     (char*)"Filename"},
-    {(char*)"content", T_OBJECT, offsetof(PyAclPacket, content), 0,
-     (char*)"ACL content buffer"},
-    {NULL}};
+static PyMemberDef PyAclPacket_members[]
+    = {{(char*)"fname", T_STRING, offsetof(PyAclPacket, fname), 0,
+        (char*)"Filename"},
+       {(char*)"content", T_OBJECT, offsetof(PyAclPacket, content), 0,
+        (char*)"ACL content buffer"},
+       {NULL}};
 
 static PyTypeObject PyAclPacketType = {
     PyVarObject_HEAD_INIT(NULL, 0) "acl_pkt", /* tp_name */
@@ -634,14 +634,14 @@ static PyMethodDef PyXattrPacket_methods[] = {
     {NULL} /* Sentinel */
 };
 
-static PyMemberDef PyXattrPacket_members[] = {
-    {(char*)"fname", T_STRING, offsetof(PyXattrPacket, fname), 0,
-     (char*)"Filename"},
-    {(char*)"name", T_OBJECT, offsetof(PyXattrPacket, name), 0,
-     (char*)"XATTR name buffer"},
-    {(char*)"value", T_OBJECT, offsetof(PyXattrPacket, value), 0,
-     (char*)"XATTR value buffer"},
-    {NULL}};
+static PyMemberDef PyXattrPacket_members[]
+    = {{(char*)"fname", T_STRING, offsetof(PyXattrPacket, fname), 0,
+        (char*)"Filename"},
+       {(char*)"name", T_OBJECT, offsetof(PyXattrPacket, name), 0,
+        (char*)"XATTR name buffer"},
+       {(char*)"value", T_OBJECT, offsetof(PyXattrPacket, value), 0,
+        (char*)"XATTR value buffer"},
+       {NULL}};
 
 static PyTypeObject PyXattrPacketType = {
     PyVarObject_HEAD_INIT(NULL, 0) "xattr_pkt", /* tp_name */
@@ -782,7 +782,7 @@ MOD_INIT(bareosfd)
   PyObject* c_api_object;
 
   /* Initialize the C API pointer array */
-#include "c_api/capi_3.inc"
+#  include "c_api/capi_3.inc"
 
   /* Create a Capsule containing the API pointer array's address */
   c_api_object = PyCapsule_New((void*)Bareosfd_API,
@@ -1000,7 +1000,7 @@ MOD_INIT(bareosfd)
 static void** Bareosfd_API;
 
 /* include automatically generated C API */
-#include "c_api/capi_2.inc"
+#  include "c_api/capi_2.inc"
 
 static int import_bareosfd()
 {

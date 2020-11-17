@@ -612,29 +612,29 @@ static ResourceItem runscript_items[] = {
  *
  * name level job_type
  */
-struct s_jl joblevels[] = {
-    {"Full", L_FULL, JT_BACKUP},
-    {"Base", L_BASE, JT_BACKUP},
-    {"Incremental", L_INCREMENTAL, JT_BACKUP},
-    {"Differential", L_DIFFERENTIAL, JT_BACKUP},
-    {"Since", L_SINCE, JT_BACKUP},
-    {"VirtualFull", L_VIRTUAL_FULL, JT_BACKUP},
-    {"Catalog", L_VERIFY_CATALOG, JT_VERIFY},
-    {"InitCatalog", L_VERIFY_INIT, JT_VERIFY},
-    {"VolumeToCatalog", L_VERIFY_VOLUME_TO_CATALOG, JT_VERIFY},
-    {"DiskToCatalog", L_VERIFY_DISK_TO_CATALOG, JT_VERIFY},
-    {"Data", L_VERIFY_DATA, JT_VERIFY},
-    {"Full", L_FULL, JT_COPY},
-    {"Incremental", L_INCREMENTAL, JT_COPY},
-    {"Differential", L_DIFFERENTIAL, JT_COPY},
-    {"Full", L_FULL, JT_MIGRATE},
-    {"Incremental", L_INCREMENTAL, JT_MIGRATE},
-    {"Differential", L_DIFFERENTIAL, JT_MIGRATE},
-    {" ", L_NONE, JT_ADMIN},
-    {" ", L_NONE, JT_ARCHIVE},
-    {" ", L_NONE, JT_RESTORE},
-    {" ", L_NONE, JT_CONSOLIDATE},
-    {NULL, 0, 0}};
+struct s_jl joblevels[]
+    = {{"Full", L_FULL, JT_BACKUP},
+       {"Base", L_BASE, JT_BACKUP},
+       {"Incremental", L_INCREMENTAL, JT_BACKUP},
+       {"Differential", L_DIFFERENTIAL, JT_BACKUP},
+       {"Since", L_SINCE, JT_BACKUP},
+       {"VirtualFull", L_VIRTUAL_FULL, JT_BACKUP},
+       {"Catalog", L_VERIFY_CATALOG, JT_VERIFY},
+       {"InitCatalog", L_VERIFY_INIT, JT_VERIFY},
+       {"VolumeToCatalog", L_VERIFY_VOLUME_TO_CATALOG, JT_VERIFY},
+       {"DiskToCatalog", L_VERIFY_DISK_TO_CATALOG, JT_VERIFY},
+       {"Data", L_VERIFY_DATA, JT_VERIFY},
+       {"Full", L_FULL, JT_COPY},
+       {"Incremental", L_INCREMENTAL, JT_COPY},
+       {"Differential", L_DIFFERENTIAL, JT_COPY},
+       {"Full", L_FULL, JT_MIGRATE},
+       {"Incremental", L_INCREMENTAL, JT_MIGRATE},
+       {"Differential", L_DIFFERENTIAL, JT_MIGRATE},
+       {" ", L_NONE, JT_ADMIN},
+       {" ", L_NONE, JT_ARCHIVE},
+       {" ", L_NONE, JT_RESTORE},
+       {" ", L_NONE, JT_CONSOLIDATE},
+       {NULL, 0, 0}};
 
 /** Keywords (RHS) permitted in Job type records
  *
@@ -654,12 +654,12 @@ struct s_jt jobtypes[] = {{"Backup", JT_BACKUP},
  *
  * name token
  */
-static struct s_kw backupprotocols[] = {
-    {"Native", PT_NATIVE},
-    {"NDMP_BAREOS", PT_NDMP_BAREOS}, /* alias for PT_NDMP */
-    {"NDMP", PT_NDMP_BAREOS},
-    {"NDMP_NATIVE", PT_NDMP_NATIVE},
-    {NULL, 0}};
+static struct s_kw backupprotocols[]
+    = {{"Native", PT_NATIVE},
+       {"NDMP_BAREOS", PT_NDMP_BAREOS}, /* alias for PT_NDMP */
+       {"NDMP", PT_NDMP_BAREOS},
+       {"NDMP_NATIVE", PT_NDMP_NATIVE},
+       {NULL, 0}};
 
 /** Keywords (RHS) permitted in AuthProtocol type records
  *
@@ -676,10 +676,8 @@ static struct s_kw authprotocols[] = {{"Native", APT_NATIVE},
  *
  * name token
  */
-static struct s_kw authmethods[] = {{"None", AT_NONE},
-                                    {"Clear", AT_CLEAR},
-                                    {"MD5", AT_MD5},
-                                    {NULL, 0}};
+static struct s_kw authmethods[]
+    = {{"None", AT_NONE}, {"Clear", AT_CLEAR}, {"MD5", AT_MD5}, {NULL, 0}};
 
 /**
  * Keywords (RHS) permitted in Selection type records
@@ -713,9 +711,8 @@ struct s_kw ReplaceOptions[] = {{"Always", REPLACE_ALWAYS},
  *
  * name token
  */
-struct s_kw ActionOnPurgeOptions[] = {{"None", ON_PURGE_NONE},
-                                      {"Truncate", ON_PURGE_TRUNCATE},
-                                      {NULL, 0}};
+struct s_kw ActionOnPurgeOptions[]
+    = {{"None", ON_PURGE_NONE}, {"Truncate", ON_PURGE_TRUNCATE}, {NULL, 0}};
 
 /**
  * Keywords (RHS) permitted in Volume status type records
@@ -725,9 +722,9 @@ struct s_kw ActionOnPurgeOptions[] = {{"None", ON_PURGE_NONE},
  *
  * name token
  */
-struct s_kw VolumeStatus[] = {{"Append", 0},  {"Full", 0},   {"Used", 0},
-                              {"Recycle", 0}, {"Purged", 0}, {"Cleaning", 0},
-                              {"Error", 0},   {NULL, 0}};
+struct s_kw VolumeStatus[]
+    = {{"Append", 0}, {"Full", 0},     {"Used", 0},  {"Recycle", 0},
+       {"Purged", 0}, {"Cleaning", 0}, {"Error", 0}, {NULL, 0}};
 
 /**
  * Keywords (RHS) permitted in Pool type records
@@ -737,9 +734,9 @@ struct s_kw VolumeStatus[] = {{"Append", 0},  {"Full", 0},   {"Used", 0},
  *
  * name token
  */
-struct s_kw PoolTypes[] = {{"Backup", 0},  {"Copy", 0},      {"Cloned", 0},
-                           {"Archive", 0}, {"Migration", 0}, {"Scratch", 0},
-                           {NULL, 0}};
+struct s_kw PoolTypes[]
+    = {{"Backup", 0},    {"Copy", 0},    {"Cloned", 0}, {"Archive", 0},
+       {"Migration", 0}, {"Scratch", 0}, {NULL, 0}};
 
 #ifdef HAVE_JANSSON
 json_t* json_item(s_jl* item)
@@ -1064,8 +1061,8 @@ static void PropagateResource(ResourceItem* items,
   uint32_t offset;
 
   for (int i = 0; items[i].name; i++) {
-    if (!BitIsSet(i, dest->item_present_) &&
-        BitIsSet(i, source->item_present_)) {
+    if (!BitIsSet(i, dest->item_present_)
+        && BitIsSet(i, source->item_present_)) {
       offset = items[i].offset;  // Ueb
       switch (items[i].type) {
         case CFG_TYPE_STR:
@@ -1340,10 +1337,11 @@ bool JobResource::Validate()
 bool CatalogResource::Validate()
 {
   /* during 1st pass, db_driver is nullptr and we skip the check */
-  if (db_driver != nullptr && (std::string(db_driver) == "mysql" ||
-                               std::string(db_driver) == "sqlite3")) {
-    my_config->AddWarning(std::string("Deprecated DB driver ") + db_driver +
-                          " for Catalog " + resource_name_);
+  if (db_driver != nullptr
+      && (std::string(db_driver) == "mysql"
+          || std::string(db_driver) == "sqlite3")) {
+    my_config->AddWarning(std::string("Deprecated DB driver ") + db_driver
+                          + " for Catalog " + resource_name_);
   }
   return true;
 }
@@ -1386,19 +1384,19 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
           runscript->target.empty()) {
         send.KeyQuotedString("RunBeforeJob", esc.c_str(), inherited);
       } else if (runscript->when == SCRIPT_After && /* runafterjob */
-                 runscript->on_success && !runscript->on_failure &&
-                 !runscript->fail_on_error && runscript->target.empty()) {
+                 runscript->on_success && !runscript->on_failure
+                 && !runscript->fail_on_error && runscript->target.empty()) {
         send.KeyQuotedString("RunAfterJob", esc.c_str(), inherited);
       } else if (runscript->when == SCRIPT_After && /* client run after job */
-                 runscript->on_success && !runscript->on_failure &&
-                 !runscript->fail_on_error && !runscript->target.empty()) {
+                 runscript->on_success && !runscript->on_failure
+                 && !runscript->fail_on_error && !runscript->target.empty()) {
         send.KeyQuotedString("ClientRunAfterJob", esc.c_str(), inherited);
       } else if (runscript->when == SCRIPT_Before && /* client run before job */
                  !runscript->target.empty()) {
         send.KeyQuotedString("ClientRunBeforeJob", esc.c_str(), inherited);
       } else if (runscript->when == SCRIPT_After && /* run after failed job */
-                 runscript->on_failure && !runscript->on_success &&
-                 !runscript->fail_on_error && runscript->target.empty()) {
+                 runscript->on_failure && !runscript->on_success
+                 && !runscript->fail_on_error && runscript->target.empty()) {
         send.KeyQuotedString("RunAfterFailedJob", esc.c_str(), inherited);
       }
       send.SubResourceEnd(NULL, inherited, "");
@@ -1612,8 +1610,8 @@ static std::string PrintConfigRun(RunResource* run)
 
     for (i = 0; i < nr_items; i++) {
       if (BitIsSet(i, run->date_time_bitfield.mday)) {
-        if (interval_start ==
-            -1) {             /* bit is set and we are not in an interval */
+        if (interval_start
+            == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
           Dmsg1(200, "starting interval at %d\n", i + 1);
           Mmsg(interval, ",%d", i + 1);
@@ -1669,8 +1667,8 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
       if (BitIsSet(i, run->date_time_bitfield.wom)) {
-        if (interval_start ==
-            -1) {             /* bit is set and we are not in an interval */
+        if (interval_start
+            == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
           Dmsg1(200, "starting interval at %s\n", ordinals[i]);
           Mmsg(interval, ",%s", ordinals[i]);
@@ -1724,8 +1722,8 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
       if (BitIsSet(i, run->date_time_bitfield.wday)) {
-        if (interval_start ==
-            -1) {             /* bit is set and we are not in an interval */
+        if (interval_start
+            == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
           Dmsg1(200, "starting interval at %s\n", weekdays[i]);
           Mmsg(interval, ",%s", weekdays[i]);
@@ -1779,8 +1777,8 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
       if (BitIsSet(i, run->date_time_bitfield.month)) {
-        if (interval_start ==
-            -1) {             /* bit is set and we are not in an interval */
+        if (interval_start
+            == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
           Dmsg1(200, "starting interval at %s\n", months[i]);
           Mmsg(interval, ",%s", months[i]);
@@ -1834,8 +1832,8 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcpy(temp, "");
     for (i = 0; i < nr_items; i++) {
       if (BitIsSet(i, run->date_time_bitfield.woy)) {
-        if (interval_start ==
-            -1) {             /* bit is set and we are not in an interval */
+        if (interval_start
+            == -1) {          /* bit is set and we are not in an interval */
           interval_start = i; /* start an interval */
           Dmsg1(200, "starting interval at w%02d\n", i);
           Mmsg(interval, ",w%02d", i);
@@ -1880,7 +1878,7 @@ static std::string PrintConfigRun(RunResource* run)
    */
   PmStrcpy(temp, "");
   for (i = 0; i < 24; i++) {
-    if BitIsSet (i, run->date_time_bitfield.hour) {
+    if (BitIsSet(i, run->date_time_bitfield.hour)) {
       Mmsg(temp, "at %02d:%02d", i, run->minute);
       PmStrcat(run_str, temp.c_str());
     }
@@ -2313,8 +2311,8 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
               res_con->resource_name_);
         return false;
       } else {
-        p->tls_cert_.allowed_certificate_common_names_ =
-            std::move(res_con->tls_cert_.allowed_certificate_common_names_);
+        p->tls_cert_.allowed_certificate_common_names_
+            = std::move(res_con->tls_cert_.allowed_certificate_common_names_);
         p->user_acl.profiles = res_con->user_acl.profiles;
         p->user_acl.corresponding_resource = p;
       }
@@ -2344,8 +2342,8 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
         p->plugin_names = res_dir->plugin_names;
         p->messages = res_dir->messages;
         p->backend_directories = res_dir->backend_directories;
-        p->tls_cert_.allowed_certificate_common_names_ =
-            std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
+        p->tls_cert_.allowed_certificate_common_names_
+            = std::move(res_dir->tls_cert_.allowed_certificate_common_names_);
       }
       break;
     }
@@ -2360,23 +2358,24 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
         int status;
 
         p->paired_storage = res_store->paired_storage;
-        p->tls_cert_.allowed_certificate_common_names_ =
-            std::move(res_store->tls_cert_.allowed_certificate_common_names_);
+        p->tls_cert_.allowed_certificate_common_names_
+            = std::move(res_store->tls_cert_.allowed_certificate_common_names_);
 
         p->device = res_store->device;
 
         p->runtime_storage_status = new RuntimeStorageStatus;
 
         if ((status = pthread_mutex_init(
-                 &p->runtime_storage_status->changer_lock, NULL)) != 0) {
+                 &p->runtime_storage_status->changer_lock, NULL))
+            != 0) {
           BErrNo be;
 
           Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"),
                 be.bstrerror(status));
         }
         if ((status = pthread_mutex_init(
-                 &p->runtime_storage_status->ndmp_deviceinfo_lock, NULL)) !=
-            0) {
+                 &p->runtime_storage_status->ndmp_deviceinfo_lock, NULL))
+            != 0) {
           BErrNo be;
 
           Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"),
@@ -2434,8 +2433,8 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
          *
          * We take RegexWhere before all other options
          */
-        if (!p->RegexWhere &&
-            (p->strip_prefix || p->add_suffix || p->add_prefix)) {
+        if (!p->RegexWhere
+            && (p->strip_prefix || p->add_suffix || p->add_prefix)) {
           int len = BregexpGetBuildWhereSize(p->strip_prefix, p->add_prefix,
                                              p->add_suffix);
           p->RegexWhere = (char*)malloc(len * sizeof(char));
@@ -2488,11 +2487,11 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
            */
           p->catalog = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
         }
-        p->tls_cert_.allowed_certificate_common_names_ =
-            std::move(res_client->tls_cert_.allowed_certificate_common_names_);
+        p->tls_cert_.allowed_certificate_common_names_ = std::move(
+            res_client->tls_cert_.allowed_certificate_common_names_);
 
-        p->rcs =
-            (runtime_client_status_t*)malloc(sizeof(runtime_client_status_t));
+        p->rcs
+            = (runtime_client_status_t*)malloc(sizeof(runtime_client_status_t));
         runtime_client_status_t empty_rcs;
         *p->rcs = empty_rcs;
       }
@@ -3442,8 +3441,8 @@ static bool HasDefaultValue(ResourceItem& item, s_jl* keywords)
 static bool HasDefaultValue(ResourceItem& item, alist* values)
 {
   if (item.flags & CFG_ITEM_DEFAULT) {
-    if ((values->size() == 1) and
-        (bstrcmp((const char*)values->get(0), item.default_value))) {
+    if ((values->size() == 1)
+        and (bstrcmp((const char*)values->get(0), item.default_value))) {
       return true;
     }
   } else {
@@ -3536,8 +3535,8 @@ static bool HasDefaultValue(ResourceItem& item)
       break;
     }
     case CFG_TYPE_POOLTYPE:
-      is_default =
-          bstrcmp(GetItemVariable<const char*>(item), item.default_value);
+      is_default
+          = bstrcmp(GetItemVariable<const char*>(item), item.default_value);
       Dmsg1(200, "CFG_TYPE_POOLTYPE: default: %d\n", is_default);
       break;
     default:
@@ -3692,8 +3691,8 @@ static void ResetAllClientConnectionHandshakeModes(
   while (p) {
     ClientResource* client = dynamic_cast<ClientResource*>(p);
     if (client) {
-      client->connection_successful_handshake_ =
-          ClientConnectionHandshakeMode::kUndefined;
+      client->connection_successful_handshake_
+          = ClientConnectionHandshakeMode::kUndefined;
     }
     p = my_config.GetNextRes(R_CLIENT, p);
   };
@@ -3798,8 +3797,8 @@ static bool AddResourceCopyToEndOfChain(int type,
  */
 static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& my_config)
 {
-  DirectorResource* dir_resource =
-      (DirectorResource*)my_config.GetNextRes(R_DIRECTOR, NULL);
+  DirectorResource* dir_resource
+      = (DirectorResource*)my_config.GetNextRes(R_DIRECTOR, NULL);
   if (!dir_resource) { return; }
 
   ConsoleResource* c = new ConsoleResource();
@@ -3846,13 +3845,13 @@ static void DumpResource(int type,
   if (ua) {
     output_formatter = ua->send;
   } else {
-    output_formatter_local =
-        new OutputFormatter(sendit, nullptr, nullptr, nullptr);
+    output_formatter_local
+        = new OutputFormatter(sendit, nullptr, nullptr, nullptr);
     output_formatter = output_formatter_local;
   }
 
-  OutputFormatterResource output_formatter_resource =
-      OutputFormatterResource(output_formatter);
+  OutputFormatterResource output_formatter_resource
+      = OutputFormatterResource(output_formatter);
 
   if (!res) {
     PoolMem msg;

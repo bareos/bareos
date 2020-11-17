@@ -79,9 +79,7 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         else:
             denied = True
         if not allowed or denied:
-            bareosfd.DebugMessage(
-                100, "File %s denied by configuration\n" % (filename)
-            )
+            bareosfd.DebugMessage(100, "File %s denied by configuration\n" % (filename))
             bareosfd.JobMessage(
                 bJobMessageType["M_ERROR"],
                 "File %s denied by configuration\n" % (filename),
@@ -221,9 +219,7 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         Here we return 'bRC_More' as long as our list files_to_backup is not
         empty and bRC_OK when we are done
         """
-        bareosfd.DebugMessage(
-            100, "end_backup_file() entry point in Python called\n"
-        )
+        bareosfd.DebugMessage(100, "end_backup_file() entry point in Python called\n")
         if self.files_to_backup:
             return bRCs["bRC_More"]
         else:
@@ -255,9 +251,7 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         return bRCs["bRC_OK"]
 
     def end_restore_file(self):
-        bareosfd.DebugMessage(
-            100, "end_restore_file() self.FNAME: %s\n" % self.FNAME
-        )
+        bareosfd.DebugMessage(100, "end_restore_file() self.FNAME: %s\n" % self.FNAME)
         return bRCs["bRC_OK"]
 
     def restore_object_data(self, ROP):

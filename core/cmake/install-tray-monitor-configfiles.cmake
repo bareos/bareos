@@ -19,9 +19,5 @@
 
 include(${CMAKE_CURRENT_LIST_DIR}/BareosInstallConfigFiles.cmake)
 bareosinstallconfigfiles(
-  "${configtemplatedir}"
-  "tray-monitor.d"
-  ""
-  ""
-  "${SRC_DIR}"
+  "${configtemplatedir}" "tray-monitor.d" "" "" "${SRC_DIR}"
 )

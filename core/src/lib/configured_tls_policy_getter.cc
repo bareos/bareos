@@ -91,9 +91,8 @@ TlsPolicy ConfiguredTlsPolicyGetterPrivate::GetTlsPolicyForResourceCodeAndName(
     const std::string& r_code_str,
     const std::string& name) const
 {
-  int r_code =
-      my_config_.qualified_resource_name_type_converter_->StringToResourceType(
-          r_code_str);
+  int r_code = my_config_.qualified_resource_name_type_converter_
+                   ->StringToResourceType(r_code_str);
   if (r_code < 0) { return TlsPolicy::kBnetTlsUnknown; }
 
   TlsResource* foreign_tls_resource = dynamic_cast<TlsResource*>(

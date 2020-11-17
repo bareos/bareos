@@ -27,4 +27,3 @@ estat=$?
 stop_bareos
 
 end_test
-

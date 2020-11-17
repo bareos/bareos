@@ -269,4 +269,3 @@ class DashboardController extends AbstractActionController
   }
 
 }
-

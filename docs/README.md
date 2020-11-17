@@ -9,4 +9,3 @@ The documentation is published as HTML at https://docs.bareos.org.
 The documentation source is done using RST.
 
 If you like to contribute, please have a look at https://www.bareos.org/en/howto-contribute.html
-

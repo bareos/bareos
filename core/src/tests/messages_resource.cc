@@ -20,11 +20,11 @@
 */
 
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #include "dird/dird_conf.h"
@@ -130,9 +130,9 @@ TEST(messages_resource, send_message_to_all_configured_destinations)
   ASSERT_TRUE(directordaemon::my_config->ParseConfig());
 
   // get message resource
-  MessagesResource* messages =
-      dynamic_cast<MessagesResource*>(directordaemon::my_config->GetResWithName(
-          directordaemon::R_MSGS, "Standard"));
+  MessagesResource* messages = dynamic_cast<MessagesResource*>(
+      directordaemon::my_config->GetResWithName(directordaemon::R_MSGS,
+                                                "Standard"));
   ASSERT_NE(messages, nullptr);
 
   // initialize message handler

@@ -244,10 +244,10 @@ bool GetNameAndResourceTypeAndVersionFromHello(
   if (ok) {
     bareos_version = BareosVersionNumber::kUndefined;
     if (hello->position_of_version >= 0) {
-      if (arguments_of_hello_string.size() >
-          static_cast<SizeTypeOfHelloList>(hello->position_of_version)) {
-        std::string version_str =
-            arguments_of_hello_string[hello->position_of_version];
+      if (arguments_of_hello_string.size()
+          > static_cast<SizeTypeOfHelloList>(hello->position_of_version)) {
+        std::string version_str
+            = arguments_of_hello_string[hello->position_of_version];
         if (!version_str.empty()) {
           ok = false;
           BStringList splittet_version(version_str, '.');
@@ -707,16 +707,16 @@ char* encode_mode(mode_t mode, char* buf)
 {
   char* cp = buf;
 
-  *cp++ =
-      S_ISDIR(mode)
-          ? 'd'
-          : S_ISBLK(mode)
-                ? 'b'
-                : S_ISCHR(mode)
-                      ? 'c'
-                      : S_ISLNK(mode)
-                            ? 'l'
-                            : S_ISFIFO(mode) ? 'f' : S_ISSOCK(mode) ? 's' : '-';
+  *cp++ = S_ISDIR(mode)
+              ? 'd'
+              : S_ISBLK(mode)
+                    ? 'b'
+                    : S_ISCHR(mode)
+                          ? 'c'
+                          : S_ISLNK(mode)
+                                ? 'l'
+                                : S_ISFIFO(mode) ? 'f'
+                                                 : S_ISSOCK(mode) ? 's' : '-';
   *cp++ = mode & S_IRUSR ? 'r' : '-';
   *cp++ = mode & S_IWUSR ? 'w' : '-';
   *cp++ = (mode & S_ISUID ? (mode & S_IXUSR ? 's' : 'S')
@@ -845,9 +845,9 @@ void MakeSessionKey(char* key, char* seed, int mode)
   (void)!getcwd(s + strlen(s), 256);
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)clock());
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)time(NULL));
-#if defined(Solaris)
+#  if defined(Solaris)
   sysinfo(SI_HW_SERIAL, s + strlen(s), 12);
-#endif
+#  endif
   gethostname(s + strlen(s), 256);
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getuid());
   Bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getgid());

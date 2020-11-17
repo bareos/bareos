@@ -31,7 +31,7 @@
 #include <glusterfs/api/glfs.h>
 
 #if defined GLFS_FTRUNCATE_HAS_FOUR_ARGS
-#define glfs_ftruncate(fd, offset) glfs_ftruncate(fd, offset, NULL, NULL)
+#  define glfs_ftruncate(fd, offset) glfs_ftruncate(fd, offset, NULL, NULL)
 #endif
 
 namespace storagedaemon {

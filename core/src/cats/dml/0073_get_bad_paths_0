@@ -4,4 +4,3 @@
 SELECT PathId, Path FROM Path
 WHERE  Path != ''
   AND  Path NOT LIKE '%%/'
-

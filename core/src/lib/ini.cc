@@ -47,16 +47,16 @@ struct ini_store {
   int type;
 };
 
-static struct ini_store funcs[] = {
-    {"@INT32@", "Integer", INI_CFG_TYPE_INT32},
-    {"@PINT32@", "Integer", INI_CFG_TYPE_PINT32},
-    {"@INT64@", "Integer", INI_CFG_TYPE_INT64},
-    {"@PINT64@", "Positive Integer", INI_CFG_TYPE_PINT64},
-    {"@NAME@", "Simple String", INI_CFG_TYPE_NAME},
-    {"@STR@", "String", INI_CFG_TYPE_STR},
-    {"@BOOL@", "on/off", INI_CFG_TYPE_BOOL},
-    {"@ALIST@", "String list", INI_CFG_TYPE_ALIST_STR},
-    {NULL, NULL, 0}};
+static struct ini_store funcs[]
+    = {{"@INT32@", "Integer", INI_CFG_TYPE_INT32},
+       {"@PINT32@", "Integer", INI_CFG_TYPE_PINT32},
+       {"@INT64@", "Integer", INI_CFG_TYPE_INT64},
+       {"@PINT64@", "Positive Integer", INI_CFG_TYPE_PINT64},
+       {"@NAME@", "Simple String", INI_CFG_TYPE_NAME},
+       {"@STR@", "String", INI_CFG_TYPE_STR},
+       {"@BOOL@", "on/off", INI_CFG_TYPE_BOOL},
+       {"@ALIST@", "String list", INI_CFG_TYPE_ALIST_STR},
+       {NULL, NULL, 0}};
 
 /*
  * Get handler code from storage type.

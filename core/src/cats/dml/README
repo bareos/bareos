@@ -13,4 +13,3 @@ NOTE:
   * As % are used for replace variables, % in SQL LIKE statements must be escaped (% => %%).
   * each query must consist of a single SQL statement,
     as more statement, separated by columns (";") need special result handling for MySQL.
-

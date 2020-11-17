@@ -73,11 +73,11 @@ void ConfigurationParser::SetResourceDefaultsParserPass1(ResourceItem* item)
         }
         break;
       case CFG_TYPE_BOOL:
-        if (Bstrcasecmp(item->default_value, "yes") ||
-            Bstrcasecmp(item->default_value, "true")) {
+        if (Bstrcasecmp(item->default_value, "yes")
+            || Bstrcasecmp(item->default_value, "true")) {
           SetItemVariable<bool>(*item, true);
-        } else if (Bstrcasecmp(item->default_value, "no") ||
-                   Bstrcasecmp(item->default_value, "false")) {
+        } else if (Bstrcasecmp(item->default_value, "no")
+                   || Bstrcasecmp(item->default_value, "false")) {
           SetItemVariable<bool>(*item, false);
         }
         break;
@@ -165,8 +165,8 @@ void ConfigurationParser::SetResourceDefaultsParserPass2(ResourceItem* item)
         break;
       }
       case CFG_TYPE_STR_VECTOR_OF_DIRS: {
-        std::vector<std::string>* list =
-            GetItemVariablePointer<std::vector<std::string>*>(*item);
+        std::vector<std::string>* list
+            = GetItemVariablePointer<std::vector<std::string>*>(*item);
 
         PoolMem pathname(PM_FNAME);
         PmStrcpy(pathname, item->default_value);

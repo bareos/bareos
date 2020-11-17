@@ -26,45 +26,39 @@
  * Circular buffer used for producer/consumer problem with pthread.
  */
 
-#define QSIZE 40              /* # of pointers in the queue */
+#define QSIZE 40 /* # of pointers in the queue */
 
 class circbuf {
-   int m_size;
-   int m_next_in;
-   int m_next_out;
-   int m_capacity;
-   bool m_flush;
-   pthread_mutex_t m_lock;    /* Lock the structure */
-   pthread_cond_t m_notfull;  /* Full -> not full condition */
-   pthread_cond_t m_notempty; /* Empty -> not empty condition */
-   void *m_data[QSIZE];       /* Circular buffer of pointers */
+  int m_size;
+  int m_next_in;
+  int m_next_out;
+  int m_capacity;
+  bool m_flush;
+  pthread_mutex_t m_lock;    /* Lock the structure */
+  pthread_cond_t m_notfull;  /* Full -> not full condition */
+  pthread_cond_t m_notempty; /* Empty -> not empty condition */
+  void* m_data[QSIZE];       /* Circular buffer of pointers */
 
-public:
-   circbuf();
-   ~circbuf();
-   int init();
-   void destroy();
-   int enqueue(void *data);
-   void *dequeue();
-   int next_slot();
-   int flush();
-   bool full() { return m_size == m_capacity; };
-   bool empty() { return m_size == 0; };
-   int capacity() const { return m_capacity; };
+ public:
+  circbuf();
+  ~circbuf();
+  int init();
+  void destroy();
+  int enqueue(void* data);
+  void* dequeue();
+  int next_slot();
+  int flush();
+  bool full() { return m_size == m_capacity; };
+  bool empty() { return m_size == 0; };
+  int capacity() const { return m_capacity; };
 };
 
 /*
  * Constructor
  */
-inline circbuf::circbuf()
-{
-   init();
-}
+inline circbuf::circbuf() { init(); }
 
 /*
  * Destructor
  */
-inline circbuf::~circbuf()
-{
-   destroy();
-}
+inline circbuf::~circbuf() { destroy(); }

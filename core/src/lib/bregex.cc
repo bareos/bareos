@@ -816,8 +816,8 @@ static int ReOptimizeStarJump(regex_t* bufp, unsigned char* code)
   /* if the only instruction matches a single character, we can do
    * better */
   p1 = code + 3 + a; /* start of sole instruction */
-  if (*p1 == Cset || *p1 == Cexact || *p1 == Canychar || *p1 == Csyntaxspec ||
-      *p1 == Cnotsyntaxspec)
+  if (*p1 == Cset || *p1 == Cexact || *p1 == Canychar || *p1 == Csyntaxspec
+      || *p1 == Cnotsyntaxspec)
     code[0] = Crepeat1;
   return 1;
 
@@ -1102,15 +1102,15 @@ const char* re_compile_pattern(regex_t* bufp, unsigned char* regex)
         opcode = Cbol;
         goto store_opcode;
       case Reol:
-        if (!((pos >= size) ||
-              ((regexp_syntax & RE_NO_BK_VBAR)
-                   ? (regex[pos] == '\174')
-                   : (pos + 1 < size && regex[pos] == '\134' &&
-                      regex[pos + 1] == '\174')) ||
-              ((regexp_syntax & RE_NO_BK_PARENS)
-                   ? (regex[pos] == ')')
-                   : (pos + 1 < size && regex[pos] == '\134' &&
-                      regex[pos + 1] == ')')))) {
+        if (!((pos >= size)
+              || ((regexp_syntax & RE_NO_BK_VBAR)
+                      ? (regex[pos] == '\174')
+                      : (pos + 1 < size && regex[pos] == '\134'
+                         && regex[pos + 1] == '\174'))
+              || ((regexp_syntax & RE_NO_BK_PARENS)
+                      ? (regex[pos] == ')')
+                      : (pos + 1 < size && regex[pos] == '\134'
+                         && regex[pos + 1] == ')')))) {
           if (regexp_context_indep_ops)
             goto op_error;
           else
@@ -1475,8 +1475,8 @@ continue_matching:
           }
         } else {
           for (a = 1; a < bufp->num_registers; a++) {
-            if ((GET_REG_START(state, a) == NULL) ||
-                (GET_REG_END(state, a) == NULL)) {
+            if ((GET_REG_START(state, a) == NULL)
+                || (GET_REG_END(state, a) == NULL)) {
               old_regs->start[a] = -1;
               old_regs->end[a] = -1;
               continue;
@@ -1573,8 +1573,8 @@ continue_matching:
       b = (unsigned char)code[1];
       b |= (unsigned char)code[2] << 8;
       failuredest = code + (int)SHORT(b) + 3;
-      if (failuredest < bufp->buffer ||
-          bufp->buffer + bufp->used < failuredest) {
+      if (failuredest < bufp->buffer
+          || bufp->buffer + bufp->used < failuredest) {
         set_error(
             "Regex VM jump out of bounds (Cdummy_failure_jump failuredest)");
         FREE_STATE(state);
@@ -1829,8 +1829,8 @@ int ReSearch(regex_t* bufp,
         partend = string + size;
         partstart = text;
         if (translate)
-          while (text != partend &&
-                 !fastmap[(unsigned char)translate[(unsigned char)*text]])
+          while (text != partend
+                 && !fastmap[(unsigned char)translate[(unsigned char)*text]])
             text++;
         else
           while (text != partend && !fastmap[(unsigned char)*text]) text++;
@@ -1842,8 +1842,8 @@ int ReSearch(regex_t* bufp,
         partstart = string + pos - range;
         partend = text;
         if (translate)
-          while (text != partstart &&
-                 !fastmap[(unsigned char)translate[(unsigned char)*text]])
+          while (text != partstart
+                 && !fastmap[(unsigned char)translate[(unsigned char)*text]])
             text--;
         else
           while (text != partstart && !fastmap[(unsigned char)*text]) text--;

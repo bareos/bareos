@@ -30,11 +30,11 @@
 #include "include/bareos.h"
 
 #ifdef HAVE_GFAPI
-#include "stored/stored.h"
-#include "stored/sd_backends.h"
-#include "stored/backends/gfapi_device.h"
-#include "lib/edit.h"
-#include "lib/berrno.h"
+#  include "stored/stored.h"
+#  include "stored/sd_backends.h"
+#  include "stored/backends/gfapi_device.h"
+#  include "lib/edit.h"
+#  include "lib/berrno.h"
 
 namespace storagedaemon {
 
@@ -274,8 +274,8 @@ static inline bool GfapiMakedirs(glfs_t* glfs, const char* directory)
     *p = '\0';
   }
 
-  if (strlen(new_directory.c_str()) &&
-      glfs_stat(glfs, new_directory.c_str(), &st) != 0) {
+  if (strlen(new_directory.c_str())
+      && glfs_stat(glfs, new_directory.c_str(), &st) != 0) {
     /*
      * See if the parent exists.
      */
@@ -348,8 +348,8 @@ int gfapi_device::d_open(const char* pathname, int flags, int mode)
               gfapi_logfile_ = bp + device_options[i].compare_size;
               break;
             case argument_loglevel:
-              gfapi_loglevel_ =
-                  strtol(bp + device_options[i].compare_size, NULL, 10);
+              gfapi_loglevel_
+                  = strtol(bp + device_options[i].compare_size, NULL, 10);
               break;
             default:
               Mmsg1(errmsg, _("Unable to parse device option: %s\n"), bp);
@@ -644,8 +644,7 @@ gfapi_device::gfapi_device()
 
 class Backend : public BackendInterface {
  public:
-  Device* GetDevice(JobControlRecord* jcr,
-                              DeviceType device_type) override
+  Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) override
   {
     switch (device_type) {
       case DeviceType::B_GFAPI_DEV:
@@ -659,9 +658,9 @@ class Backend : public BackendInterface {
   void FlushDevice(void) override {}
 };
 
-#ifdef HAVE_DYNAMIC_SD_BACKENDS
+#  ifdef HAVE_DYNAMIC_SD_BACKENDS
 extern "C" BackendInterface* GetBackend(void) { return new Backend; }
-#endif
+#  endif
 
 
 } /* namespace storagedaemon */

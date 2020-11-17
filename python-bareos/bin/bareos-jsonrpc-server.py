@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
 #   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
@@ -50,31 +50,31 @@ class BconsoleMethods:
 
     def execute(self, command):
         """
-      Generic function to call any bareos console command.
-      """
+        Generic function to call any bareos console command.
+        """
         self.logger.debug(command)
         return self.conn.call(command)
 
     def execute_fullresult(self, command):
         """
-      Generic function to call any bareos console commands,
-      and return the full result (also the pseudo jsonrpc header, not required here).
-      """
+        Generic function to call any bareos console commands,
+        and return the full result (also the pseudo jsonrpc header, not required here).
+        """
         self.logger.debug(command)
         return self.conn.call_fullresult(command)
 
     def list(self, command):
         """
-      Interface to the Bareos console list command.
-      """
+        Interface to the Bareos console list command.
+        """
         return self.execute("list " + command)
 
     def call(self, command):
         """
-      legacy function, as call is a suboptimal name.
-      It is used internally by python-jsonrpc.
-      Use execute() instead.
-      """
+        legacy function, as call is a suboptimal name.
+        It is used internally by python-jsonrpc.
+        Use execute() instead.
+        """
         return self.execute(command)
 
 

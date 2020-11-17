@@ -20,4 +20,3 @@ Director {                            # define myself
   # enable_plugin PLUGINNAME
   Plugin Directory = @plugindirtmp@
 }
-

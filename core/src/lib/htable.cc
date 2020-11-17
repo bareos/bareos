@@ -44,7 +44,7 @@
 #include "include/config.h"
 
 #ifdef HAVE_HPUX_OS
-#pragma pack(4)
+#  pragma pack(4)
 #endif
 
 #include "include/bareos.h"
@@ -198,8 +198,8 @@ void htable::init(void* item,
   mask = ~((~0) << pwr); /* 3 bits => table size = 8 */
   rshift = 30 - pwr;     /* Start using bits 28, 29, 30 */
   buckets = 1 << pwr;    /* Hash table size -- power of two */
-  max_items =
-      buckets * nr_entries; /* Allow average nr_entries entries per chain */
+  max_items
+      = buckets * nr_entries; /* Allow average nr_entries entries per chain */
   table = (hlink**)malloc(buckets * sizeof(hlink*));
   memset(table, 0, buckets * sizeof(hlink*));
 

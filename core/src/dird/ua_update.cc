@@ -416,8 +416,8 @@ static void UpdateVolFromPool(UaContext* ua, MediaDbRecord* mr)
   PoolDbRecord pr;
 
   pr.PoolId = mr->PoolId;
-  if (!ua->db->GetPoolRecord(ua->jcr, &pr) ||
-      !ua->AclAccessOk(Pool_ACL, pr.Name, true)) {
+  if (!ua->db->GetPoolRecord(ua->jcr, &pr)
+      || !ua->AclAccessOk(Pool_ACL, pr.Name, true)) {
     return;
   }
   SetPoolDbrDefaultsInMediaDbr(mr, &pr);
@@ -681,7 +681,8 @@ static bool UpdateVolume(UaContext* ua)
         }
         AddPrompt(ua, NT_("Read-Only"));
         if (DoPrompt(ua, "", _("Choose new Volume Status"), ua->cmd,
-                     sizeof(mr.VolStatus)) < 0) {
+                     sizeof(mr.VolStatus))
+            < 0) {
           return true;
         }
         UpdateVolstatus(ua, ua->cmd, &mr);
@@ -767,8 +768,8 @@ static bool UpdateVolume(UaContext* ua)
         if (VolFiles != (int)(mr.VolFiles + 1)) {
           ua->WarningMsg(
               _("Normally, you should only increase Volume Files by one!\n"));
-          if (!GetYesno(ua, _("Increase Volume Files? (yes/no): ")) ||
-              !ua->pint32_val) {
+          if (!GetYesno(ua, _("Increase Volume Files? (yes/no): "))
+              || !ua->pint32_val) {
             break;
           }
         }
@@ -1134,8 +1135,8 @@ static void UpdateSlots(UaContext* ua)
       /*
        * If Slot, Inchanger, and StorageId have changed, update the Media record
        */
-      if (mr.Slot != vl->bareos_slot_number || !mr.InChanger ||
-          mr.StorageId != store.store->StorageId) {
+      if (mr.Slot != vl->bareos_slot_number || !mr.InChanger
+          || mr.StorageId != store.store->StorageId) {
         mr.Slot = vl->bareos_slot_number;
         mr.InChanger = 1;
         if (have_enabled) { mr.Enabled = Enabled; }
@@ -1279,8 +1280,8 @@ void UpdateSlotsFromVolList(UaContext* ua,
             mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
       /* If Slot, Inchanger, and StorageId have changed, update the Media record
        */
-      if (mr.Slot != vl->bareos_slot_number || !mr.InChanger ||
-          mr.StorageId != store->StorageId) {
+      if (mr.Slot != vl->bareos_slot_number || !mr.InChanger
+          || mr.StorageId != store->StorageId) {
         mr.Slot = vl->bareos_slot_number;
         mr.InChanger = 1;
         SetStorageidInMr(store, &mr);

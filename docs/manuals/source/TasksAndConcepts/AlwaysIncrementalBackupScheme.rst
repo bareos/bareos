@@ -3,14 +3,14 @@
 Always Incremental Backup Scheme
 ================================
 
-:index:`\ <single: Always Incremental>`\ 
+:index:`\ <single: Always Incremental>`\
 
 Always Incremental Backups are available since Bareos :sinceVersion:`16.2.4: Always Incremental`.
 
 Conventional Backup Scheme Drawbacks
 ------------------------------------
 
-:index:`\ <single: Retention>`\ 
+:index:`\ <single: Retention>`\
 
 To better understand the advantages of the Always Incremental Backup scheme, we first analyze the way that the conventional Incremental - Differential - Full Backup Scheme works.
 
@@ -42,7 +42,7 @@ The Always Incremental Backup Scheme does only incremental backups of clients, w
 .. limitation:: Always Incremental Backup: Only suitable for file based backups.
 
    Always Incremental backups are only suitable for file based backups. Other data can not be combined on the server side (e.g. vmware plugings, NDMP, ...)
-   
+
 
 
 
@@ -96,19 +96,19 @@ To configure a job to use Always Incremental Backup Scheme, following configurat
        ...
    }
 
-:config:option:`dir/job/Accurate = yes`\ 
+:config:option:`dir/job/Accurate = yes`\
    is required to detect deleted files and prevent that they are kept in the consolidated backup jobs.
 
-:config:option:`dir/job/AlwaysIncremental = yes`\ 
+:config:option:`dir/job/AlwaysIncremental = yes`\
    enables the Always Incremental feature.
 
-:config:option:`dir/job/AlwaysIncrementalJobRetention`\ 
+:config:option:`dir/job/AlwaysIncrementalJobRetention`\
    set the age where incrementals of this job will be kept, older jobs will be consolidated.
 
-:config:option:`dir/job/AlwaysIncrementalKeepNumber`\ 
+:config:option:`dir/job/AlwaysIncrementalKeepNumber`\
    sets the number of incrementals that will be kept without regarding the age. This should make sure that a certain history of a job will be kept even if the job is not executed for some time.
 
-:config:option:`dir/job/AlwaysIncrementalMaxFullAge`\ 
+:config:option:`dir/job/AlwaysIncrementalMaxFullAge`\
    is described later, see :ref:`section-AlwaysIncrementalMaxFullAge`.
 
 Consolidate Job
@@ -124,13 +124,13 @@ Consolidate Job
        JobDefs = "DefaultJob"
    }
 
-:config:option:`dir/job/Type = Consolidate`\ 
+:config:option:`dir/job/Type = Consolidate`\
    configures a job to be a consolidate job. This type have been introduced with the Always Incremental feature. When used, it automatically trigger the consolidation of incremental jobs that need to be consolidated.
 
-:config:option:`dir/job/Accurate = yes`\ 
+:config:option:`dir/job/Accurate = yes`\
    let the generated virtual backup job keep the accurate information.
 
-:config:option:`dir/job/MaxFullConsolidations`\ 
+:config:option:`dir/job/MaxFullConsolidations`\
    is described later, see :ref:`section-MaxFullConsolidations`.
 
 The :config:option:`dir/job = Consolidate`\  job evaluates all jobs configured with :config:option:`dir/job/AlwaysIncremental = yes`\ . When a job is selected for consolidation, all job runs are taken into account, independent of the pool and storage where they are located.
@@ -466,17 +466,3 @@ To make sure the longterm :config:option:`dir/job/Level = VirtualFull`\  is not 
 As can be seen on the plot, the :config:option:`dir/job/Level = VirtualFull`\  archives the current data, i.e. it consolidates the full and all incrementals that are currently available.
 
 .. image:: /include/images/always-incremental-virtualfull-job-archiving.*
-
-
-
-
-
-
-
-
-
-
-
-
-
-

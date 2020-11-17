@@ -11,12 +11,12 @@
 #   %s JobIds ("1,2,...")
 #
 # row  0    1                  2                3      4      5
-SELECT 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId  
+SELECT 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
 FROM (
     SELECT %s AS PathId, '.' AS Path
-    
+
     UNION
-    
+
     SELECT PPathId AS PathId, '..' AS Path
     FROM   PathHierarchy
     WHERE  PathId = %s

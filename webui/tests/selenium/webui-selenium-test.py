@@ -251,7 +251,9 @@ class SeleniumTest(unittest.TestCase):
                     opt.add_argument("--headless")
                     opt.add_argument("--no-sandbox")
 
-                self.driver = webdriver.Chrome(self.chromedriverpath, chrome_options=opt)
+                self.driver = webdriver.Chrome(
+                    self.chromedriverpath, chrome_options=opt
+                )
             elif self.browser == "firefox":
                 d = DesiredCapabilities.FIREFOX
                 d["loggingPrefs"] = {"browser": "ALL"}
@@ -513,9 +515,9 @@ class SeleniumTest(unittest.TestCase):
         driver = self.driver
         driver.get(self.base_url + "/auth/login")
         # Currently not required in the test environment because it is preselected
-        #Select(driver.find_element_by_name("director")).select_by_visible_text(
+        # Select(driver.find_element_by_name("director")).select_by_visible_text(
         #    "localhost-dir"
-        #)
+        # )
         self.enter_input("consolename", self.username)
         self.enter_input("password", self.password)
         driver.find_element_by_xpath('(//button[@type="button"])[1]').click()
@@ -568,7 +570,7 @@ class SeleniumTest(unittest.TestCase):
                 "/usr/bin/chromedriver",
                 "/usr/sbin/chromedriver",
                 "/usr/local/bin/chromedriver",
-                "/usr/local/sbin/chromedriver"
+                "/usr/local/sbin/chromedriver",
             ]:
                 if os.path.isfile(chromedriverpath):
                     return chromedriverpath

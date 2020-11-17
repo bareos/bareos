@@ -140,10 +140,10 @@ void PruneVolumes(JobControlRecord* jcr,
    * Get the List of all media ids in the current Pool or whose
    *  RecyclePoolId is the current pool or the scratch pool
    */
-  const char* select =
-      "SELECT DISTINCT MediaId,LastWritten FROM Media WHERE "
-      "(PoolId=%s OR RecyclePoolId IN (%s)) AND MediaType='%s' %s"
-      "ORDER BY LastWritten ASC,MediaId";
+  const char* select
+      = "SELECT DISTINCT MediaId,LastWritten FROM Media WHERE "
+        "(PoolId=%s OR RecyclePoolId IN (%s)) AND MediaType='%s' %s"
+        "ORDER BY LastWritten ASC,MediaId";
 
   if (InChanger) {
     char changer[100];

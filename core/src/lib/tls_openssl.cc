@@ -33,20 +33,20 @@
 
 #if defined(HAVE_TLS) && defined(HAVE_OPENSSL)
 
-#include <openssl/asn1.h>
-#include <openssl/asn1t.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-#include <openssl/x509v3.h>
+#  include <openssl/asn1.h>
+#  include <openssl/asn1t.h>
+#  include <openssl/err.h>
+#  include <openssl/ssl.h>
+#  include <openssl/x509v3.h>
 
-#include "lib/bsock.h"
-#include "lib/tls_openssl.h"
-#include "lib/tls_openssl_private.h"
-#include "lib/bstringlist.h"
-#include "lib/ascii_control_characters.h"
-#include "include/jcr.h"
+#  include "lib/bsock.h"
+#  include "lib/tls_openssl.h"
+#  include "lib/tls_openssl_private.h"
+#  include "lib/bstringlist.h"
+#  include "lib/ascii_control_characters.h"
+#  include "include/jcr.h"
 
-#include "parse_conf.h"
+#  include "parse_conf.h"
 
 TlsOpenSsl::TlsOpenSsl() : d_(std::make_unique<TlsOpenSslPrivate>()) {}
 
@@ -136,8 +136,8 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
 
   if ((subject = X509_get_subject_name(cert)) != NULL) {
     char data[256]; /* nullterminated by X509_NAME_get_text_by_NID */
-    if (X509_NAME_get_text_by_NID(subject, NID_commonName, data, sizeof(data)) >
-        0) {
+    if (X509_NAME_get_text_by_NID(subject, NID_commonName, data, sizeof(data))
+        > 0) {
       std::string cn;
       for (const std::string& cn : verify_list) {
         std::string d(data);
@@ -189,25 +189,25 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
       extname = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
 
       if (bstrcmp(extname, "subjectAltName")) {
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000L)
+#  if (OPENSSL_VERSION_NUMBER >= 0x10000000L)
         const X509V3_EXT_METHOD* method;
-#else
+#  else
         X509V3_EXT_METHOD* method;
-#endif
+#  endif
         STACK_OF(CONF_VALUE) * val;
         CONF_VALUE* nval;
         void* extstr = NULL;
-#if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
+#  if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
         const unsigned char* ext_value_data;
-#else
+#  else
         unsigned char* ext_value_data;
-#endif
+#  endif
 
         if (!(method = X509V3_EXT_get(ext))) { break; }
 
         ext_value_data = X509_EXTENSION_get_data(ext)->data;
 
-#if (OPENSSL_VERSION_NUMBER > 0x00907000L)
+#  if (OPENSSL_VERSION_NUMBER > 0x00907000L)
         if (method->it) {
           extstr = ASN1_item_d2i(NULL, &ext_value_data,
                                  X509_EXTENSION_get_data(ext)->length,
@@ -221,9 +221,9 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
                                X509_EXTENSION_get_data(ext)->length);
         }
 
-#else
+#  else
         extstr = method->d2i(NULL, &ext_value_data, ext->value->length);
-#endif
+#  endif
 
         /*
          * Iterate through to find the dNSName field(s)
@@ -252,8 +252,8 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
        * Loop through all CNs
        */
       for (;;) {
-        cnLastPos =
-            X509_NAME_get_index_by_NID(subject, NID_commonName, cnLastPos);
+        cnLastPos
+            = X509_NAME_get_index_by_NID(subject, NID_commonName, cnLastPos);
         if (cnLastPos == -1) { break; }
         neCN = X509_NAME_get_entry(subject, cnLastPos);
         asn1CN = X509_NAME_ENTRY_get_data(neCN);

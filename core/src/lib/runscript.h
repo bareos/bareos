@@ -94,8 +94,8 @@ class RunScript : public BareosResource {
   job_code_callback_t job_code_callback = nullptr;
   std::vector<TempParserCommand> temp_parser_command_container;
   bool Run(JobControlRecord* job,
-           const char* name =
-               ""); /* name must contain "Before" or "After" keyword */
+           const char* name
+           = ""); /* name must contain "Before" or "After" keyword */
   void SetCommand(const std::string& cmd, int cmd_type = SHELL_CMD);
   void SetTarget(const std::string& client_name);
   bool IsLocal() const { return target.empty(); } /* true if no target host */

@@ -40,7 +40,7 @@
 #include <iostream>
 
 #if !defined HAVE_DYNAMIC_CATS_BACKENDS
-#error "NOT DEFINED: HAVE_DYNAMIC_CATS_BACKENDS"
+#  error "NOT DEFINED: HAVE_DYNAMIC_CATS_BACKENDS"
 #endif
 
 namespace directordaemon {
@@ -86,7 +86,8 @@ class DbCopy {
   void SetWorkingDir()
   {
     if (getcwd(current_working_directory_.data(),
-               current_working_directory_.size()) == nullptr) {
+               current_working_directory_.size())
+        == nullptr) {
       throw std::runtime_error(
           "Could not determine current working directory.");
     }
@@ -95,8 +96,8 @@ class DbCopy {
 
   void ParseConfig()
   {
-    directordaemon::my_config =
-        directordaemon::InitDirConfig(cl.configpath_.c_str(), M_ERROR_TERM);
+    directordaemon::my_config
+        = directordaemon::InitDirConfig(cl.configpath_.c_str(), M_ERROR_TERM);
 
     my_config_.reset(directordaemon::my_config);
 

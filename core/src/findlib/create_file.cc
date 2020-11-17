@@ -38,12 +38,12 @@
 #include "lib/berrno.h"
 
 #ifndef S_IRWXUGO
-#define S_IRWXUGO (S_IRWXU | S_IRWXG | S_IRWXO)
+#  define S_IRWXUGO (S_IRWXU | S_IRWXG | S_IRWXO)
 #endif
 
 #ifndef IS_CTG
-#define IS_CTG(x) 0
-#define O_CTG 0
+#  define IS_CTG(x) 0
+#  define O_CTG 0
 #endif
 
 static int SeparatePathAndFile(JobControlRecord* jcr, char* fname, char* ofile);
@@ -144,8 +144,8 @@ int CreateFile(JobControlRecord* jcr,
         /*
          * Set attributes if we created this directory
          */
-        if (attr->type == FT_DIREND &&
-            PathListLookup(jcr->path_list, attr->ofname)) {
+        if (attr->type == FT_DIREND
+            && PathListLookup(jcr->path_list, attr->ofname)) {
           break;
         }
         Qmsg(jcr, M_INFO, 0, _("File skipped. Already exists: %s\n"),
@@ -258,8 +258,8 @@ int CreateFile(JobControlRecord* jcr,
           isOnRoot = bstrcmp(attr->fname, attr->ofname) ? 1 : 0;
           if (S_ISFIFO(attr->statp.st_mode)) {
             Dmsg1(400, "Restore fifo: %s\n", attr->ofname);
-            if (mkfifo(attr->ofname, attr->statp.st_mode) != 0 &&
-                errno != EEXIST) {
+            if (mkfifo(attr->ofname, attr->statp.st_mode) != 0
+                && errno != EEXIST) {
               BErrNo be;
               Qmsg2(jcr, M_ERROR, 0, _("Cannot make fifo %s: ERR=%s\n"),
                     attr->ofname, be.bstrerror());
@@ -267,18 +267,18 @@ int CreateFile(JobControlRecord* jcr,
             }
           } else if (S_ISSOCK(attr->statp.st_mode)) {
             Dmsg1(200, "Skipping restore of socket: %s\n", attr->ofname);
-#ifdef S_IFDOOR /* Solaris high speed RPC mechanism */
+#  ifdef S_IFDOOR /* Solaris high speed RPC mechanism */
           } else if (S_ISDOOR(attr->statp.st_mode)) {
             Dmsg1(200, "Skipping restore of door file: %s\n", attr->ofname);
-#endif
-#ifdef S_IFPORT /* Solaris event port for handling AIO */
+#  endif
+#  ifdef S_IFPORT /* Solaris event port for handling AIO */
           } else if (S_ISPORT(attr->statp.st_mode)) {
             Dmsg1(200, "Skipping restore of event port file: %s\n",
                   attr->ofname);
-#endif
-          } else if ((S_ISBLK(attr->statp.st_mode) ||
-                      S_ISCHR(attr->statp.st_mode)) &&
-                     !exists && isOnRoot) {
+#  endif
+          } else if ((S_ISBLK(attr->statp.st_mode)
+                      || S_ISCHR(attr->statp.st_mode))
+                     && !exists && isOnRoot) {
             /*
              * Fatal: Restoring a device on root-file system, but device node
              * does not exist. Should not create a dump file.
@@ -287,15 +287,15 @@ int CreateFile(JobControlRecord* jcr,
                   _("Device restore on root failed, device %s missing.\n"),
                   attr->fname);
             return CF_ERROR;
-          } else if (S_ISBLK(attr->statp.st_mode) ||
-                     S_ISCHR(attr->statp.st_mode)) {
+          } else if (S_ISBLK(attr->statp.st_mode)
+                     || S_ISCHR(attr->statp.st_mode)) {
             Dmsg1(400, "Restoring a device as a file: %s\n", attr->ofname);
             flags = O_WRONLY | O_CREAT | O_TRUNC | O_BINARY;
           } else {
             Dmsg1(400, "Restore node: %s\n", attr->ofname);
-            if (mknod(attr->ofname, attr->statp.st_mode, attr->statp.st_rdev) !=
-                    0 &&
-                errno != EEXIST) {
+            if (mknod(attr->ofname, attr->statp.st_mode, attr->statp.st_rdev)
+                    != 0
+                && errno != EEXIST) {
               BErrNo be;
               Qmsg2(jcr, M_ERROR, 0, _("Cannot make node %s: ERR=%s\n"),
                     attr->ofname, be.bstrerror());
@@ -345,7 +345,7 @@ int CreateFile(JobControlRecord* jcr,
           Dmsg2(130, "Hard link %s => %s\n", attr->ofname, attr->olname);
           if (link(attr->olname, attr->ofname) != 0) {
             BErrNo be;
-#ifdef HAVE_CHFLAGS
+#  ifdef HAVE_CHFLAGS
             struct stat s;
 
             /*
@@ -365,14 +365,14 @@ int CreateFile(JobControlRecord* jcr,
                         _("Could not restore file flags for file %s: ERR=%s\n"),
                         attr->olname, be.bstrerror());
                   }
-#endif /* HAVE_CHFLAGS */
+#  endif /* HAVE_CHFLAGS */
                   Qmsg3(jcr, M_ERROR, 0,
                         _("Could not hard link %s -> %s: ERR=%s\n"),
                         attr->ofname, attr->olname, be.bstrerror());
                   Dmsg3(200, "Could not hard link %s -> %s: ERR=%s\n",
                         attr->ofname, attr->olname, be.bstrerror());
                   return CF_ERROR;
-#ifdef HAVE_CHFLAGS
+#  ifdef HAVE_CHFLAGS
                 }
                 /*
                  * Finally restore original file flags
@@ -393,7 +393,7 @@ int CreateFile(JobControlRecord* jcr,
                     attr->olname, be.bstrerror());
               return CF_ERROR;
             }
-#endif /* HAVE_CHFLAGS */
+#  endif /* HAVE_CHFLAGS */
           }
           return CF_CREATED;
 
@@ -416,9 +416,9 @@ int CreateFile(JobControlRecord* jcr,
             Dmsg0(130, "Skipping Volume Mount Point\n");
             return CF_SKIP;
           }
-          if (win32_symlink(attr->olname, attr->ofname, attr->statp.st_rdev) !=
-                  0 &&
-              errno != EEXIST) {
+          if (win32_symlink(attr->olname, attr->ofname, attr->statp.st_rdev)
+                  != 0
+              && errno != EEXIST) {
             BErrNo be;
             Qmsg3(jcr, M_ERROR, 0, _("Could not symlink %s -> %s: ERR=%s\n"),
                   attr->ofname, attr->olname, be.bstrerror());
@@ -464,15 +464,16 @@ int CreateFile(JobControlRecord* jcr,
           Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
         }
         if (bopen(bfd, attr->ofname, O_WRONLY | O_BINARY, 0,
-                  attr->statp.st_rdev) < 0) {
+                  attr->statp.st_rdev)
+            < 0) {
           BErrNo be;
           be.SetErrno(bfd->BErrNo);
 #ifdef HAVE_WIN32
           /*
            * Check for trying to create a drive, if so, skip
            */
-          if (attr->ofname[1] == ':' && IsPathSeparator(attr->ofname[2]) &&
-              attr->ofname[3] == '\0') {
+          if (attr->ofname[1] == ':' && IsPathSeparator(attr->ofname[2])
+              && attr->ofname[3] == '\0') {
             return CF_SKIP;
           }
 #endif

@@ -28,19 +28,19 @@
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
-#include "cats/cats.h"
-#include "cats/sql.h"
-#include "lib/htable.h"
-#include "cats/bvfs.h"
-#include "lib/edit.h"
+#  include "cats/cats.h"
+#  include "cats/sql.h"
+#  include "lib/htable.h"
+#  include "cats/bvfs.h"
+#  include "lib/edit.h"
 
-#define dbglevel 10
-#define dbglevel_sql 15
+#  define dbglevel 10
+#  define dbglevel_sql 15
 
 /*
  * Working Object to store PathId already seen (avoid database queries),
  */
-#define NITEMS 50000
+#  define NITEMS 50000
 class pathid_cache {
  private:
   hlink* nodes;
@@ -761,8 +761,8 @@ static int GetNextIdFromList(char** p, int64_t* Id)
 
 static bool CheckTemp(char* output_table)
 {
-  if (output_table[0] == 'b' && output_table[1] == '2' &&
-      IsAnInteger(output_table + 2)) {
+  if (output_table[0] == 'b' && output_table[1] == '2'
+      && IsAnInteger(output_table + 2)) {
     return true;
   }
   return false;
@@ -812,10 +812,10 @@ bool Bvfs::compute_restore_list(char* fileid,
   bool retval = false;
 
   /* check args */
-  if ((*fileid && !Is_a_number_list(fileid)) ||
-      (*dirid && !Is_a_number_list(dirid)) ||
-      (*hardlink && !Is_a_number_list(hardlink)) ||
-      (!*hardlink && !*fileid && !*dirid && !*hardlink)) {
+  if ((*fileid && !Is_a_number_list(fileid))
+      || (*dirid && !Is_a_number_list(dirid))
+      || (*hardlink && !Is_a_number_list(hardlink))
+      || (!*hardlink && !*fileid && !*dirid && !*hardlink)) {
     return false;
   }
   if (!CheckTemp(output_table)) { return false; }

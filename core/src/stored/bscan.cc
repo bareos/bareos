@@ -199,8 +199,8 @@ int main(int argc, char* argv[])
 
   OSDependentInit();
 
-  while ((ch = getopt(argc, argv, "a:B:b:c:d:D:h:p:mn:pP:q:rsSt:u:vV:w:?")) !=
-         -1) {
+  while ((ch = getopt(argc, argv, "a:B:b:c:d:D:h:p:mn:pP:q:rsSt:u:vV:w:?"))
+         != -1) {
     switch (ch) {
       case 'a':
         backend_directory = optarg;
@@ -486,7 +486,8 @@ static inline bool UnpackRestoreObject(JobControlRecord* jcr,
 
   if (sscanf(rec, "%d %d %d %d %d %d ", &JobFiles, &rop->Stream,
              &rop->object_index, &rop->object_len, &rop->object_full_len,
-             &rop->object_compression) != 6) {
+             &rop->object_compression)
+      != 6) {
     return false;
   }
 
@@ -526,8 +527,8 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
   char digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
 
   if (rec->data_len > 0) {
-    mr.VolBytes +=
-        rec->data_len + WRITE_RECHDR_LENGTH; /* Accumulate Volume bytes */
+    mr.VolBytes
+        += rec->data_len + WRITE_RECHDR_LENGTH; /* Accumulate Volume bytes */
     if (showProgress && currentVolumeSize > 0) {
       int pct = (mr.VolBytes * 100) / currentVolumeSize;
       if (pct != last_pct) {
@@ -919,9 +920,10 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
     case STREAM_SPARSE_GZIP_DATA:
     case STREAM_SPARSE_COMPRESSED_DATA:
-      mjcr->JobBytes += rec->data_len -
-                        sizeof(uint64_t); /* Not correct, we should expand it */
-      FreeJcr(mjcr);                      /* done using JobControlRecord */
+      mjcr->JobBytes
+          += rec->data_len
+             - sizeof(uint64_t); /* Not correct, we should expand it */
+      FreeJcr(mjcr);             /* done using JobControlRecord */
       break;
 
     /*

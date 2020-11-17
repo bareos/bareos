@@ -249,7 +249,7 @@ Start, JobFiles AS Files,ROUND(Job.JobBytes/1024.0/1024.0/1024.0,3) AS Bytes
  AND JobMedia.MediaId=Media.MediaId
  GROUP by VolumeName, Job.JobID, Job.Name, Job.JobBytes, JobFiles, Job.StartTime
  ORDER by JobName, Start;
- 
+
 # 21
 :List Jobs of a client that contain a file (regardless of the directory, with wildcards)
 *Enter Client name:

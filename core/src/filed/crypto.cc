@@ -68,8 +68,8 @@ bool CryptoSessionStart(JobControlRecord* jcr, crypto_cipher_t cipher)
     /**
      * Create per-job session encryption context
      */
-    jcr->impl->crypto.pki_session =
-        crypto_session_new(cipher, jcr->impl->crypto.pki_recipients);
+    jcr->impl->crypto.pki_session
+        = crypto_session_new(cipher, jcr->impl->crypto.pki_recipients);
     if (!jcr->impl->crypto.pki_session) {
       Jmsg(jcr, M_FATAL, 0,
            _("Cannot create a new crypto session probably unsupported cipher "
@@ -166,8 +166,8 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
   DIGEST* digest = NULL;
   crypto_error_t err;
   uint64_t saved_bytes;
-  crypto_digest_t signing_algorithm =
-      have_sha2 ? CRYPTO_DIGEST_SHA256 : CRYPTO_DIGEST_SHA1;
+  crypto_digest_t signing_algorithm
+      = have_sha2 ? CRYPTO_DIGEST_SHA256 : CRYPTO_DIGEST_SHA1;
   crypto_digest_t algorithm;
   SIGNATURE* sig = rctx.sig;
 
@@ -211,9 +211,8 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
           /*
            * Use digest computed while writing the file to verify the signature
            */
-          if ((err =
-                   CryptoSignVerify(sig, keypair, jcr->impl->crypto.digest)) !=
-              CRYPTO_ERROR_NONE) {
+          if ((err = CryptoSignVerify(sig, keypair, jcr->impl->crypto.digest))
+              != CRYPTO_ERROR_NONE) {
             Dmsg1(50, "Bad signature on %s\n", jcr->impl->last_fname);
             Jmsg2(jcr, M_ERROR, 0,
                   _("Signature validation failed for file %s: ERR=%s\n"),
@@ -233,7 +232,8 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
            */
           saved_bytes = jcr->JobBytes;
           if (FindOneFile(jcr, jcr->impl->ff, DoFileDigest,
-                          jcr->impl->last_fname, (dev_t)-1, 1) != 0) {
+                          jcr->impl->last_fname, (dev_t)-1, 1)
+              != 0) {
             Jmsg(jcr, M_ERROR, 0, _("Digest one file failed for file: %s\n"),
                  jcr->impl->last_fname);
             jcr->JobBytes = saved_bytes;
@@ -244,8 +244,8 @@ bool VerifySignature(JobControlRecord* jcr, r_ctx& rctx)
           /*
            * Verify the signature
            */
-          if ((err = CryptoSignVerify(sig, keypair, digest)) !=
-              CRYPTO_ERROR_NONE) {
+          if ((err = CryptoSignVerify(sig, keypair, digest))
+              != CRYPTO_ERROR_NONE) {
             Dmsg1(50, "Bad signature on %s\n", jcr->impl->last_fname);
             Jmsg2(jcr, M_ERROR, 0,
                   _("Signature validation failed for file %s: ERR=%s\n"),
@@ -434,8 +434,8 @@ bool SetupEncryptionContext(b_ctx& bctx)
   bool retval = false;
 
   if (BitIsSet(FO_ENCRYPT, bctx.ff_pkt->flags)) {
-    if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags) ||
-        BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
+    if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags)
+        || BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
       Jmsg0(bctx.jcr, M_FATAL, 0,
             _("Encrypting sparse or offset data not supported.\n"));
       goto bail_out;
@@ -443,9 +443,9 @@ bool SetupEncryptionContext(b_ctx& bctx)
     /*
      * Allocate the cipher context
      */
-    if ((bctx.cipher_ctx = crypto_cipher_new(
-             bctx.jcr->impl->crypto.pki_session, true, &cipher_block_size)) ==
-        NULL) {
+    if ((bctx.cipher_ctx = crypto_cipher_new(bctx.jcr->impl->crypto.pki_session,
+                                             true, &cipher_block_size))
+        == NULL) {
       /*
        * Shouldn't happen!
        */
@@ -461,16 +461,16 @@ bool SetupEncryptionContext(b_ctx& bctx)
      * could be returned for the given read buffer size.
      * (Using the larger of either rsize or max_compress_len)
      */
-    bctx.jcr->impl->crypto.crypto_buf =
-        CheckPoolMemorySize(bctx.jcr->impl->crypto.crypto_buf,
-                            (MAX(bctx.jcr->buf_size + (int)sizeof(uint32_t),
-                                 (int32_t)bctx.max_compress_len) +
-                             cipher_block_size - 1) /
-                                cipher_block_size * cipher_block_size);
+    bctx.jcr->impl->crypto.crypto_buf
+        = CheckPoolMemorySize(bctx.jcr->impl->crypto.crypto_buf,
+                              (MAX(bctx.jcr->buf_size + (int)sizeof(uint32_t),
+                                   (int32_t)bctx.max_compress_len)
+                               + cipher_block_size - 1)
+                                  / cipher_block_size * cipher_block_size);
 
-    bctx.wbuf =
-        bctx.jcr->impl->crypto
-            .crypto_buf; /* Encrypted, possibly compressed output here. */
+    bctx.wbuf
+        = bctx.jcr->impl->crypto
+              .crypto_buf; /* Encrypted, possibly compressed output here. */
   }
 
   retval = true;
@@ -491,8 +491,8 @@ bool SetupDecryptionContext(r_ctx& rctx, RestoreCipherContext& rcctx)
     return false;
   }
 
-  if ((rcctx.cipher = crypto_cipher_new(rctx.cs, false, &rcctx.block_size)) ==
-      NULL) {
+  if ((rcctx.cipher = crypto_cipher_new(rctx.cs, false, &rcctx.block_size))
+      == NULL) {
     Jmsg1(rctx.jcr, M_ERROR, 0,
           _("Failed to initialize decryption context for %s\n"),
           rctx.jcr->impl->last_fname);
@@ -523,8 +523,8 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
    */
   ser_declare;
 
-  if (BitIsSet(FO_SPARSE, bctx->ff_pkt->flags) ||
-      BitIsSet(FO_OFFSETS, bctx->ff_pkt->flags)) {
+  if (BitIsSet(FO_SPARSE, bctx->ff_pkt->flags)
+      || BitIsSet(FO_OFFSETS, bctx->ff_pkt->flags)) {
     bctx->cipher_input_len += OFFSET_FADDR_SIZE;
   }
 
@@ -565,8 +565,8 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
     Dmsg2(400, "encrypted len=%d unencrypted len=%d\n", bctx->encrypted_len,
           bctx->jcr->store_bsock->message_length);
 
-    bctx->jcr->store_bsock->message_length =
-        initial_len + bctx->encrypted_len; /* set encrypted length */
+    bctx->jcr->store_bsock->message_length
+        = initial_len + bctx->encrypted_len; /* set encrypted length */
   } else {
     /*
      * Encryption failed. Shouldn't happen.
@@ -637,8 +637,8 @@ bool DecryptData(JobControlRecord* jcr,
   Dmsg1(500, "Crypto unser block size=%d\n",
         cipher_ctx->packet_len - CRYPTO_LEN_SIZE);
 
-  if (cipher_ctx->packet_len == 0 ||
-      cipher_ctx->buf_len < cipher_ctx->packet_len) {
+  if (cipher_ctx->packet_len == 0
+      || cipher_ctx->buf_len < cipher_ctx->packet_len) {
     /*
      * No full preserved block is available.
      */

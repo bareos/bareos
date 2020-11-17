@@ -124,4 +124,3 @@ fi
 check_restore_files_diff `cat ${tmp}/restore-list`
 
 end_test
-

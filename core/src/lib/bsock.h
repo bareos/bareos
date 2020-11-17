@@ -114,14 +114,16 @@ class BareosSocket {
                        const char* who,
                        const char* host,
                        int port,
-                       struct sockaddr* lclient_addr) = 0;
+                       struct sockaddr* lclient_addr)
+      = 0;
   virtual bool open(JobControlRecord* jcr,
                     const char* name,
                     const char* host,
                     char* service,
                     int port,
                     utime_t heart_beat,
-                    int* fatal) = 0;
+                    int* fatal)
+      = 0;
 
  private:
   bool TwoWayAuthenticate(JobControlRecord* jcr,
@@ -161,7 +163,8 @@ class BareosSocket {
                        const char* host,
                        char* service,
                        int port,
-                       bool verbose) = 0;
+                       bool verbose)
+      = 0;
   virtual int32_t recv() = 0;
   virtual bool send() = 0;
   virtual int32_t read_nbytes(char* ptr, int32_t nbytes) = 0;

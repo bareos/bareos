@@ -6,5 +6,3 @@ If the Hard Quota is exceeded, the running job is terminated:
 
    .. literalinclude:: /include/config/DirClientHardQuota1.conf
       :language: bareosconfig
-
-

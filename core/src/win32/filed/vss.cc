@@ -31,24 +31,24 @@
 
 #ifdef WIN32_VSS
 
-#include "include/bareos.h"
-#include "filed/filed.h"
-#include "filed/jcr_private.h"
-#include "lib/thread_specific_data.h"
+#  include "include/bareos.h"
+#  include "filed/filed.h"
+#  include "filed/jcr_private.h"
+#  include "lib/thread_specific_data.h"
 
-#include "ms_atl.h"
-#include <objbase.h>
+#  include "ms_atl.h"
+#  include <objbase.h>
 
 using namespace filedaemon;
 
 /*
  * { b5946137-7b9f-4925-af80-51abd60b20d5 }
  */
-static const GUID VSS_SWPRV_ProviderID = {
-    0xb5946137,
-    0x7b9f,
-    0x4925,
-    {0xaf, 0x80, 0x51, 0xab, 0xd6, 0x0b, 0x20, 0xd5}};
+static const GUID VSS_SWPRV_ProviderID
+    = {0xb5946137,
+       0x7b9f,
+       0x4925,
+       {0xaf, 0x80, 0x51, 0xab, 0xd6, 0x0b, 0x20, 0xd5}};
 
 static bool VSSPathConvert(const char* szFilePath,
                            char* szShadowPath,
@@ -58,7 +58,7 @@ static bool VSSPathConvert(const char* szFilePath,
 
   if (jcr && jcr->impl->pVSSClient) {
     return jcr->impl->pVSSClient->GetShadowPath(szFilePath, szShadowPath,
-                                                 nBuflen);
+                                                nBuflen);
   }
 
   return false;
@@ -72,7 +72,7 @@ static bool VSSPathConvertW(const wchar_t* szFilePath,
 
   if (jcr && jcr->impl->pVSSClient) {
     return jcr->impl->pVSSClient->GetShadowPathW(szFilePath, szShadowPath,
-                                                  nBuflen);
+                                                 nBuflen);
   }
 
   return false;
@@ -161,8 +161,8 @@ bool VSSClient::GetShadowPath(const char* szFilePath,
 
   bIsValidName = strlen(szFilePath) > 3;
   if (bIsValidName)
-    bIsValidName &=
-        isalpha(szFilePath[0]) && szFilePath[1] == ':' && szFilePath[2] == '\\';
+    bIsValidName &= isalpha(szFilePath[0]) && szFilePath[1] == ':'
+                    && szFilePath[2] == '\\';
 
   if (bIsValidName) {
     int nDriveIndex = toupper(szFilePath[0]) - 'A';
@@ -194,8 +194,8 @@ bool VSSClient::GetShadowPathW(const wchar_t* szFilePath,
 
   bIsValidName = wcslen(szFilePath) > 3;
   if (bIsValidName)
-    bIsValidName &= iswalpha(szFilePath[0]) && szFilePath[1] == ':' &&
-                    szFilePath[2] == '\\';
+    bIsValidName &= iswalpha(szFilePath[0]) && szFilePath[1] == ':'
+                    && szFilePath[2] == '\\';
 
   if (bIsValidName) {
     int nDriveIndex = towupper(szFilePath[0]) - 'A';

@@ -121,8 +121,8 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
   /*
    * Read ANSI/IBM label if so requested
    */
-  want_ansi_label = dcr->VolCatInfo.LabelType != B_BAREOS_LABEL ||
-                    dcr->device_resource->label_type != B_BAREOS_LABEL;
+  want_ansi_label = dcr->VolCatInfo.LabelType != B_BAREOS_LABEL
+                    || dcr->device_resource->label_type != B_BAREOS_LABEL;
   if (want_ansi_label || dev->HasCap(CAP_CHECKLABELS)) {
     status = ReadAnsiIbmLabel(dcr);
     /*
@@ -152,8 +152,8 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
   EmptyBlock(dcr->block);
 
   Dmsg0(130, "Big if statement in ReadVolumeLabel\n");
-  if (DeviceControlRecord::ReadStatus::Ok !=
-      dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
+  if (DeviceControlRecord::ReadStatus::Ok
+      != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
     Mmsg(jcr->errmsg,
          _("Requested Volume \"%s\" on %s is not a Bareos "
            "labeled Volume, because: ERR=%s"),
@@ -166,9 +166,9 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
     Mmsg(jcr->errmsg, _("Could not UnSerialize Volume label: ERR=%s\n"),
          dev->print_errmsg());
     Dmsg1(130, "%s", jcr->errmsg);
-  } else if (!bstrcmp(dev->VolHdr.Id, BareosId) &&
-             !bstrcmp(dev->VolHdr.Id, OldBaculaId) &&
-             !bstrcmp(dev->VolHdr.Id, OlderBaculaId)) {
+  } else if (!bstrcmp(dev->VolHdr.Id, BareosId)
+             && !bstrcmp(dev->VolHdr.Id, OldBaculaId)
+             && !bstrcmp(dev->VolHdr.Id, OlderBaculaId)) {
     Mmsg(jcr->errmsg, _("Volume Header Id bad: %s\n"), dev->VolHdr.Id);
     Dmsg1(130, "%s", jcr->errmsg);
   } else {
@@ -194,10 +194,10 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
    * then read the Bareos Volume label. Now we need to
    * make sure we have the right Volume.
    */
-  if (dev->VolHdr.VerNum != BareosTapeVersion &&
-      dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion1 &&
-      dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion2 &&
-      dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion3) {
+  if (dev->VolHdr.VerNum != BareosTapeVersion
+      && dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion1
+      && dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion2
+      && dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion3) {
     Mmsg(jcr->errmsg,
          _("Volume on %s has wrong Bareos version. Wanted %d got %d\n"),
          dev->print_name(), BareosTapeVersion, dev->VolHdr.VerNum);
@@ -210,8 +210,8 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
    * We are looking for either an unused Bareos tape (PRE_LABEL) or
    * a Bareos volume label (VOL_LABEL)
    */
-  if (dev->VolHdr.LabelType != PRE_LABEL &&
-      dev->VolHdr.LabelType != VOL_LABEL) {
+  if (dev->VolHdr.LabelType != PRE_LABEL
+      && dev->VolHdr.LabelType != VOL_LABEL) {
     Mmsg(jcr->errmsg, _("Volume on %s has bad Bareos label type: %x\n"),
          dev->print_name(), dev->VolHdr.LabelType);
     Dmsg1(130, "%s", jcr->errmsg);
@@ -228,8 +228,8 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
   /* Compare Volume Names */
   Dmsg2(130, "Compare Vol names: VolName=%s hdr=%s\n", VolName ? VolName : "*",
         dev->VolHdr.VolumeName);
-  if (VolName && *VolName && *VolName != '*' &&
-      !bstrcmp(dev->VolHdr.VolumeName, VolName)) {
+  if (VolName && *VolName && *VolName != '*'
+      && !bstrcmp(dev->VolHdr.VolumeName, VolName)) {
     Mmsg(jcr->errmsg,
          _("Wrong Volume mounted on device %s: Wanted %s have %s\n"),
          dev->print_name(), VolName, dev->VolHdr.VolumeName);
@@ -972,8 +972,8 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
   const char* type;
   int dbl;
 
-  if (rec->FileIndex == 0 && rec->VolSessionId == 0 &&
-      rec->VolSessionTime == 0) {
+  if (rec->FileIndex == 0 && rec->VolSessionId == 0
+      && rec->VolSessionTime == 0) {
     return;
   }
   dbl = debug_level;

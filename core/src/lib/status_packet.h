@@ -48,10 +48,9 @@ class StatusPacket {
   virtual ~StatusPacket() = default;
   BareosSocket* bs = nullptr; /* used on Unix machines */
   void* context = nullptr;    /* Win32 */
-  void (*callback)(const char* msg,
-                   int len,
-                   void* context) = nullptr; /* Win32 */
-  bool api = false;                          /* set if we want API output */
+  void (*callback)(const char* msg, int len, void* context)
+      = nullptr;    /* Win32 */
+  bool api = false; /* set if we want API output */
   void send(const char* msg, int len);
   void send(PoolMem& msg, int len) { send(msg.c_str(), len); }
   void send(const std::string& msg) { send(msg.c_str(), msg.length()); }

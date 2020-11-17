@@ -102,10 +102,10 @@ static void DumpResource(int type,
 {
   PoolMem buf;
   bool recurse = true;
-  OutputFormatter output_formatter =
-      OutputFormatter(sendit, sock, nullptr, nullptr);
-  OutputFormatterResource output_formatter_resource =
-      OutputFormatterResource(&output_formatter);
+  OutputFormatter output_formatter
+      = OutputFormatter(sendit, sock, nullptr, nullptr);
+  OutputFormatterResource output_formatter_resource
+      = OutputFormatterResource(&output_formatter);
 
   if (!res) {
     sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"),
@@ -196,8 +196,8 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"),
                 res_cons->resource_name_);
         } else {
-          p->tls_cert_.allowed_certificate_common_names_ =
-              std::move(res_cons->tls_cert_.allowed_certificate_common_names_);
+          p->tls_cert_.allowed_certificate_common_names_ = std::move(
+              res_cons->tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }
@@ -208,8 +208,8 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"),
                 res_dir->resource_name_);
         } else {
-          p->tls_cert_.allowed_certificate_common_names_ =
-              std::move(p->tls_cert_.allowed_certificate_common_names_);
+          p->tls_cert_.allowed_certificate_common_names_
+              = std::move(p->tls_cert_.allowed_certificate_common_names_);
         }
         break;
       }

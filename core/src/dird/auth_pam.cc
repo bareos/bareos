@@ -76,8 +76,8 @@ static int PamConversationCallback(int num_msg,
     return (PAM_CONV_ERR);
   }
 
-  struct pam_response* resp =
-      static_cast<pam_response*>(calloc(num_msg, sizeof(struct pam_response)));
+  struct pam_response* resp = static_cast<pam_response*>(
+      calloc(num_msg, sizeof(struct pam_response)));
 
   if (!resp) {
     Dmsg0(debuglevel, "pam_conv_callback memory error\n");
@@ -151,8 +151,8 @@ static int PamLocalCallback(int num_msg,
                             struct pam_response** response,
                             void* appdata_ptr)
 {
-  struct pam_response* resp =
-      static_cast<pam_response*>(calloc(num_msg, sizeof(struct pam_response)));
+  struct pam_response* resp = static_cast<pam_response*>(
+      calloc(num_msg, sizeof(struct pam_response)));
 
   PamData* pam_data = static_cast<PamData*>(appdata_ptr);
 
@@ -177,8 +177,8 @@ bool PamAuthenticateUser(BareosSocket* UA_sock,
 
   bool interactive = true;
   if (!username_in.empty() && !password_in.empty()) { interactive = false; }
-  pam_conversation_container->conv =
-      interactive ? PamConversationCallback : PamLocalCallback;
+  pam_conversation_container->conv
+      = interactive ? PamConversationCallback : PamLocalCallback;
   pam_conversation_container->appdata_ptr = pam_callback_data.get();
 
   const char* username = username_in.empty() ? nullptr : username_in.c_str();

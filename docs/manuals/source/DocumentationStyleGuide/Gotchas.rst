@@ -62,7 +62,7 @@ To avoid :program:`sphinx-build` warnings, included files should use a different
 
 Background: As sphinx-build scans all matching files during the build process, it is aware about documents included by  toctree, but not about plain **include** statements. As result, it will see the content of the included file twice: one as included file as part of the source file, once by the scan process during the build. Sphinx will then complain about double defined heading and references.
 
-  
+
 toctree
 ~~~~~~~
 

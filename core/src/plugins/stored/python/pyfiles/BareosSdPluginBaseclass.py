@@ -34,9 +34,7 @@ class BareosSdPluginBaseclass(object):
     """ Bareos storage python plugin base class """
 
     def __init__(self, plugindef):
-        bareossd.DebugMessage(
-            100, "Constructor called in module %s\n" % (__name__)
-        )
+        bareossd.DebugMessage(100, "Constructor called in module %s\n" % (__name__))
         events = []
 
         events.append(bsdEventType["bsdEventJobStart"])
@@ -70,9 +68,7 @@ class BareosSdPluginBaseclass(object):
         or better call super.parse_plugin_definition in your own class and
         make sanity check on self.options afterwards
         """
-        bareossd.DebugMessage(
-            100, "plugin def parser called with %s\n" % (plugindef)
-        )
+        bareossd.DebugMessage(100, "plugin def parser called with %s\n" % (plugindef))
         # Parse plugin options into a dict
         self.options = dict()
         plugin_options = plugindef.split(":")
@@ -106,12 +102,8 @@ class BareosSdPluginBaseclass(object):
                 100,
                 "bsdEventJobEnd event triggered at Unix time %s\n" % (self.jobEndTime),
             )
-            self.jobBytes = int(
-                bareossd.GetValue(bsdrVariable["bsdVarJobBytes"])
-            )
-            self.jobFiles = int(
-                bareossd.GetValue(bsdrVariable["bsdVarJobFiles"])
-            )
+            self.jobBytes = int(bareossd.GetValue(bsdrVariable["bsdVarJobBytes"]))
+            self.jobFiles = int(bareossd.GetValue(bsdrVariable["bsdVarJobFiles"]))
             self.jobRunningTime = self.jobEndTime - self.jobStartTime
             self.throughput = 0
             if self.jobRunningTime > 0:

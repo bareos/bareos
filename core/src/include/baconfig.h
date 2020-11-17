@@ -41,19 +41,19 @@
 #define FALSE 0
 
 #ifdef HAVE_TLS
-#define have_tls 1
+#  define have_tls 1
 #else
-#define have_tls 0
+#  define have_tls 0
 #endif
 
 #ifndef ETIME
-#define ETIME ETIMEDOUT
+#  define ETIME ETIMEDOUT
 #endif
 
 #ifdef HAVE_IOCTL_ULINT_REQUEST
-#define ioctl_req_t unsigned long int
+#  define ioctl_req_t unsigned long int
 #else
-#define ioctl_req_t int
+#  define ioctl_req_t int
 #endif
 
 /**
@@ -78,52 +78,52 @@
 /**
  * Reduce compiler warnings from Windows vss code
  */
-#define uuid(x)
+#  define uuid(x)
 
 void InitWinAPIWrapper();
 
-#define OSDependentInit() InitWinAPIWrapper()
+#  define OSDependentInit() InitWinAPIWrapper()
 
-#define ClearThreadId(x) memset(&(x), 0, sizeof(x))
+#  define ClearThreadId(x) memset(&(x), 0, sizeof(x))
 
 #else /* HAVE_WIN32 */
 
-#define ClearThreadId(x) x = 0
-#define OSDependentInit()
+#  define ClearThreadId(x) x = 0
+#  define OSDependentInit()
 
 #endif /* HAVE_WIN32 */
 
 #ifdef ENABLE_NLS
-#include <libintl.h>
-#include <locale.h>
-#ifndef _
-#define _(s) gettext((s))
-#endif /* _ */
-#ifndef N_
-#define N_(s) (s)
-#endif /* N_ */
-#else  /* !ENABLE_NLS */
-#undef _
-#undef N_
-#undef textdomain
-#undef bindtextdomain
-#undef setlocale
+#  include <libintl.h>
+#  include <locale.h>
+#  ifndef _
+#    define _(s) gettext((s))
+#  endif /* _ */
+#  ifndef N_
+#    define N_(s) (s)
+#  endif /* N_ */
+#else    /* !ENABLE_NLS */
+#  undef _
+#  undef N_
+#  undef textdomain
+#  undef bindtextdomain
+#  undef setlocale
 
-#ifndef _
-#define _(s) (s)
-#endif
-#ifndef N_
-#define N_(s) (s)
-#endif
-#ifndef textdomain
-#define textdomain(d)
-#endif
-#ifndef bindtextdomain
-#define bindtextdomain(p, d)
-#endif
-#ifndef setlocale
-#define setlocale(p, d)
-#endif
+#  ifndef _
+#    define _(s) (s)
+#  endif
+#  ifndef N_
+#    define N_(s) (s)
+#  endif
+#  ifndef textdomain
+#    define textdomain(d)
+#  endif
+#  ifndef bindtextdomain
+#    define bindtextdomain(p, d)
+#  endif
+#  ifndef setlocale
+#    define setlocale(p, d)
+#  endif
 #endif /* ENABLE_NLS */
 
 
@@ -147,22 +147,22 @@ void InitWinAPIWrapper();
 
 /* Maximum length of a hostname */
 #ifndef MAXHOSTNAMELEN
-#define MAXHOSTNAMELEN 256
+#  define MAXHOSTNAMELEN 256
 #endif
 
 /* Default length of passphrases used */
 #define DEFAULT_PASSPHRASE_LENGTH 32
 
 #ifdef DEV_BSIZE
-#define B_DEV_BSIZE DEV_BSIZE
+#  define B_DEV_BSIZE DEV_BSIZE
 #endif
 
 #if !defined(B_DEV_BSIZE) & defined(BSIZE)
-#define B_DEV_BSIZE BSIZE
+#  define B_DEV_BSIZE BSIZE
 #endif
 
 #ifndef B_DEV_BSIZE
-#define B_DEV_BSIZE 512
+#  define B_DEV_BSIZE 512
 #endif
 
 /**
@@ -218,44 +218,44 @@ typedef void(HANDLER)();
 typedef int(INTHANDLER)();
 
 #ifndef S_ISLNK
-#define S_ISLNK(m) (((m)&S_IFM) == S_IFLNK)
+#  define S_ISLNK(m) (((m)&S_IFM) == S_IFLNK)
 #endif
 
 /** Added by KES to deal with Win32 systems */
 #ifndef S_ISWIN32
-#define S_ISWIN32 020000
+#  define S_ISWIN32 020000
 #endif
 
 #ifndef INADDR_NONE
-#define INADDR_NONE ((unsigned long)-1)
+#  define INADDR_NONE ((unsigned long)-1)
 #endif
 
 #ifdef TIME_WITH_SYS_TIME
-#include <sys/time.h>
-#include <time.h>
+#  include <sys/time.h>
+#  include <time.h>
 #else
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#else
-#include <time.h>
-#endif
+#  ifdef HAVE_SYS_TIME_H
+#    include <sys/time.h>
+#  else
+#    include <time.h>
+#  endif
 #endif
 
 #ifndef O_BINARY
-#define O_BINARY 0
+#  define O_BINARY 0
 #endif
 
 #ifndef O_NOFOLLOW
-#define O_NOFOLLOW 0
+#  define O_NOFOLLOW 0
 #endif
 
 #ifndef MODE_RW
-#define MODE_RW 0666
+#  define MODE_RW 0666
 #endif
 
 #if defined(HAVE_WIN32)
 typedef int64_t boffset_t;
-#define caddr_t char*
+#  define caddr_t char*
 #else
 typedef off_t boffset_t;
 #endif
@@ -266,10 +266,10 @@ typedef uint16_t slot_flags_t;
 
 #include <limits>
 
-constexpr slot_number_t kInvalidSlotNumber =
-    std::numeric_limits<slot_number_t>::max();
-constexpr slot_number_t kInvalidDriveNumber =
-    std::numeric_limits<drive_number_t>::max();
+constexpr slot_number_t kInvalidSlotNumber
+    = std::numeric_limits<slot_number_t>::max();
+constexpr slot_number_t kInvalidDriveNumber
+    = std::numeric_limits<drive_number_t>::max();
 
 inline bool IsSlotNumberValid(slot_number_t slot)
 {
@@ -301,15 +301,15 @@ inline bool IsSlotNumberValid(slot_number_t slot)
  * older compilers that don't understand the attribute yet
  */
 #if !defined(FALLTHROUGH_INTENDED)
-#if defined(__clang__)
-#define FALLTHROUGH_INTENDED [[clang::fallthrough]]
-#elif defined(__GNUC__) && __GNUC__ >= 7
-#define FALLTHROUGH_INTENDED [[gnu::fallthrough]]
-#else
-#define FALLTHROUGH_INTENDED \
-  do {                       \
-  } while (0)
-#endif
+#  if defined(__clang__)
+#    define FALLTHROUGH_INTENDED [[clang::fallthrough]]
+#  elif defined(__GNUC__) && __GNUC__ >= 7
+#    define FALLTHROUGH_INTENDED [[gnu::fallthrough]]
+#  else
+#    define FALLTHROUGH_INTENDED \
+      do {                       \
+      } while (0)
+#  endif
 #endif
 
 /**
@@ -513,31 +513,31 @@ int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...);
  * =============================================================
  */
 #ifndef HAVE_WIN32
-#if defined(__digital__) && defined(__unix__)
+#  if defined(__digital__) && defined(__unix__)
 /* Tru64 - it does have fseeko and ftello , but since ftell/fseek are also 64
  * bit */
 /* take this 'shortcut' */
-#define fseeko fseek
-#define ftello ftell
-#else
-#ifndef HAVE_FSEEKO
+#    define fseeko fseek
+#    define ftello ftell
+#  else
+#    ifndef HAVE_FSEEKO
 /* Bad news. This OS cannot handle 64 bit fseeks and ftells */
-#define fseeko fseek
-#define ftello ftell
-#endif
-#endif /* __digital__ && __unix__ */
-#endif /* HAVE_WIN32 */
+#      define fseeko fseek
+#      define ftello ftell
+#    endif
+#  endif /* __digital__ && __unix__ */
+#endif   /* HAVE_WIN32 */
 
 #ifdef HAVE_DARWIN_OS
 /* Apparently someone forgot to wrap Getdomainname as a C function */
-#ifdef __cplusplus
+#  ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#  endif /* __cplusplus */
 int Getdomainname(char* name, int len);
-#ifdef __cplusplus
+#  ifdef __cplusplus
 }
-#endif /* __cplusplus */
-#endif /* HAVE_DARWIN_OS */
+#  endif /* __cplusplus */
+#endif   /* HAVE_DARWIN_OS */
 
 #define TRACEFILEDIRECTORY working_directory ? working_directory : "c:"
 
@@ -545,9 +545,9 @@ int Getdomainname(char* name, int len);
 /**
  *   Windows
  */
-#define DEFAULT_CONFIGDIR \
-  "C:\\Documents and Settings\\All Users\\Application Data\\Bareos"
-#define PathSeparator '\\'
+#  define DEFAULT_CONFIGDIR \
+    "C:\\Documents and Settings\\All Users\\Application Data\\Bareos"
+#  define PathSeparator '\\'
 
 inline bool IsPathSeparator(int ch) { return ch == '/' || ch == '\\'; }
 inline char* first_path_separator(char* path) { return strpbrk(path, "/\\"); }
@@ -560,14 +560,14 @@ extern void PauseMsg(const char* file,
                      const char* func,
                      int line,
                      const char* msg);
-#define pause(msg) \
-  if (debug_level) PauseMsg(__FILE__, __func__, __LINE__, (msg))
+#  define pause(msg) \
+    if (debug_level) PauseMsg(__FILE__, __func__, __LINE__, (msg))
 
 #else
 /**
  *   Unix/Linux
  */
-#define PathSeparator '/'
+#  define PathSeparator '/'
 
 /* Define Winsock functions if we aren't on Windows */
 inline int WSA_Init() { return (0); }   /* 0 = success */
@@ -579,55 +579,55 @@ inline const char* first_path_separator(const char* path)
 {
   return strchr(path, '/');
 }
-#define pause(msg)
+#  define pause(msg)
 #endif
 
 
 /** HP-UX 11 specific workarounds */
 
 #ifdef HAVE_HPUX_OS
-#undef h_errno
+#  undef h_errno
 extern int h_errno;
 /** the {get,set}domainname() functions exist in HPUX's libc.
  * the configure script detects that correctly.
  * the problem is no system headers declares the prototypes for these functions
  * this is done below
  */
-#ifdef __cplusplus
+#  ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#  endif /* __cplusplus */
 int Getdomainname(char* name, int namelen);
 int Setdomainname(char* name, int namelen);
-#ifdef __cplusplus
+#  ifdef __cplusplus
 }
-#endif /* __cplusplus */
-#endif /* HAVE_HPUX_OS */
+#  endif /* __cplusplus */
+#endif   /* HAVE_HPUX_OS */
 
 
 #ifdef HAVE_OSF1_OS
-#ifdef __cplusplus
+#  ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#  endif /* __cplusplus */
 int fchdir(int filedes);
 long gethostid(void);
 int Getdomainname(char* name, int len);
-#ifdef __cplusplus
+#  ifdef __cplusplus
 }
-#endif /* __cplusplus */
-#endif /* HAVE_OSF1_OS */
+#  endif /* __cplusplus */
+#endif   /* HAVE_OSF1_OS */
 
 /** Determine endianes */
 static inline bool bigendian() { return htonl(1) == 1L; }
 
 #ifndef __GNUC__
-#define __PRETTY_FUNCTION__ __func__
+#  define __PRETTY_FUNCTION__ __func__
 #endif
 #ifdef ENTER_LEAVE
-#define Enter(lvl) Dmsg1(lvl, "Enter: %s\n", __PRETTY_FUNCTION__)
-#define Leave(lvl) Dmsg1(lvl, "Leave: %s\n", __PRETTY_FUNCTION__)
+#  define Enter(lvl) Dmsg1(lvl, "Enter: %s\n", __PRETTY_FUNCTION__)
+#  define Leave(lvl) Dmsg1(lvl, "Leave: %s\n", __PRETTY_FUNCTION__)
 #else
-#define Enter(lvl)
-#define Leave(lvl)
+#  define Enter(lvl)
+#  define Leave(lvl)
 #endif
 
 #endif /* BAREOS_INCLUDE_BACONFIG_H_ */

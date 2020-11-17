@@ -119,25 +119,25 @@ static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 /**
  * Plugin Information block
  */
-static PluginInformation pluginInfo = {
-    sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
-    FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-    PLUGIN_AUTHOR,      PLUGIN_DATE,
-    PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-    PLUGIN_USAGE};
+static PluginInformation pluginInfo
+    = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
+       FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+       PLUGIN_AUTHOR,      PLUGIN_DATE,
+       PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+       PLUGIN_USAGE};
 
 /**
  * Plugin entry points for Bareos
  */
-static PluginFunctions pluginFuncs = {
-    sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
+static PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
-    /* Entry points into plugin */
-    newPlugin,  /* new plugin instance */
-    freePlugin, /* free plugin instance */
-    getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
-    endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
-    setFileAttributes, checkFile};
+       /* Entry points into plugin */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent, startBackupFile,
+       endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
+       setFileAttributes, checkFile};
 
 /**
  * Plugin private context
@@ -203,20 +203,20 @@ struct plugin_argument {
   enum plugin_argument_type type;
 };
 
-static plugin_argument plugin_arguments[] = {
-    {"serveraddress", argument_server_address},
-    {"instance", argument_instance},
-    {"database", argument_database},
-    {"username", argument_username},
-    {"password", argument_password},
-    {"norecovery", argument_norecovery},
-    {"replace", argument_replace},
-    {"recoverafterrestore", argument_recover_after_restore},
-    {"stopbeforemark", argument_stopbeforemark},
-    {"stopatmark", argument_stopatmark},
-    {"stopat", argument_stopat},
-    {"getconfigurationtimeout", argument_get_configuration_timeout},  // sec
-    {NULL, argument_none}};
+static plugin_argument plugin_arguments[]
+    = {{"serveraddress", argument_server_address},
+       {"instance", argument_instance},
+       {"database", argument_database},
+       {"username", argument_username},
+       {"password", argument_password},
+       {"norecovery", argument_norecovery},
+       {"replace", argument_replace},
+       {"recoverafterrestore", argument_recover_after_restore},
+       {"stopbeforemark", argument_stopbeforemark},
+       {"stopatmark", argument_stopatmark},
+       {"stopat", argument_stopat},
+       {"getconfigurationtimeout", argument_get_configuration_timeout},  // sec
+       {NULL, argument_none}};
 
 #ifdef __cplusplus
 extern "C" {
@@ -234,8 +234,8 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  bareos_core_functions =
-      lbareos_core_functions; /* set Bareos funct pointers */
+  bareos_core_functions
+      = lbareos_core_functions; /* set Bareos funct pointers */
   bareos_plugin_interface_version = lbareos_plugin_interface_version;
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
@@ -525,8 +525,8 @@ static inline void StripBackSlashes(char* value)
  */
 static inline bool ParseBoolean(const char* argument_value)
 {
-  if (Bstrcasecmp(argument_value, "yes") ||
-      Bstrcasecmp(argument_value, "true")) {
+  if (Bstrcasecmp(argument_value, "yes")
+      || Bstrcasecmp(argument_value, "true")) {
     return true;
   } else {
     return false;
@@ -1338,8 +1338,8 @@ static inline bool SetupVdiDevice(PluginContext* ctx, struct io_pkt* io)
   GUID vdsId;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
-  if ((p_ctx->username && !p_ctx->password) ||
-      (!p_ctx->username && p_ctx->password)) {
+  if ((p_ctx->username && !p_ctx->password)
+      || (!p_ctx->username && p_ctx->password)) {
     Jmsg(ctx, M_FATAL,
          "Illegal plugin definition when using username or password define "
          "both\n");
@@ -1440,13 +1440,13 @@ static inline bool SetupVdiDevice(PluginContext* ctx, struct io_pkt* io)
     }
 
     std::array<char, 300> error_msg;
-    const char* fmt =
-        "mssqlvdi-fd: IClientVirtualDeviceSet2::GetConfiguration "
-        "%s: %0#x (%s)\n";
+    const char* fmt
+        = "mssqlvdi-fd: IClientVirtualDeviceSet2::GetConfiguration "
+          "%s: %0#x (%s)\n";
 
     if (success) {
       snprintf(error_msg.data(), error_msg.size(), fmt, "successful",
-              static_cast<unsigned int>(hr), err);
+               static_cast<unsigned int>(hr), err);
       Jmsg(ctx, M_INFO, error_msg.data());
       Dmsg(ctx, debuglevel, error_msg.data());
     } else {

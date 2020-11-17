@@ -1,6 +1,6 @@
 Automatic Version Generation
 ============================
-This section describes how version numbers for Releases and Prereleases are determined. 
+This section describes how version numbers for Releases and Prereleases are determined.
 Generally they are generated based on Git metadata.
 It covers what prerequisites must be met for this process to work and describes ways to bypass it.
 

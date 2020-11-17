@@ -5,4 +5,3 @@ Storage {
   Device = GlusterStorage
   Media Type = GlusterFile
 }
-

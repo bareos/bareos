@@ -46,8 +46,8 @@ def load_bareos_plugin(gcplugindef):
     """
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that
     # holds the plugin class object
-    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPluginLocalFileset.BareosFdPluginLocalFileset(
-        gcplugindef
+    BareosFdWrapper.bareos_fd_plugin_object = (
+        BareosFdPluginLocalFileset.BareosFdPluginLocalFileset(gcplugindef)
     )
     return bareosfd.bRC_OK
 

@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 #include "bsock_test.h"
@@ -125,8 +125,8 @@ static void start_bareos_server(std::promise<bool>* promise,
   bool success = false;
   if (bs->recv() <= 0) {
     Dmsg1(10, _("Connection request from %s failed.\n"), bs->who());
-  } else if (bs->message_length < MIN_MSG_LEN ||
-             bs->message_length > MAX_MSG_LEN) {
+  } else if (bs->message_length < MIN_MSG_LEN
+             || bs->message_length > MAX_MSG_LEN) {
     Dmsg2(10, _("Invalid connection from %s. Len=%d\n"), bs->who(),
           bs->message_length);
   } else {

@@ -3,7 +3,7 @@
 Tutorial
 ========
 
-:index:`\ <single: Tutorial>`\ 
+:index:`\ <single: Tutorial>`\
 
 This chapter will guide you through running Bareos. To do so, we assume you have installed Bareos. However, we assume that you have not modified the configuration. The examples in this chapter use the default configuration files and will write the volumes to disk in your :file:`/var/lib/bareos/storage/` directory.
 
@@ -11,7 +11,7 @@ The general flow of running Bareos is:
 
 #. Start the Database (if using |postgresql| or |mysql|)
 
-#. 
+#.
 
    :ref:`InstallChapter`
 
@@ -42,7 +42,7 @@ For installing Bareos, follow the instructions from the :ref:`InstallChapter` ch
 Starting the Daemons
 --------------------
 
-:index:`\ <single: Starting the Daemons>`\  :index:`\ <single: Daemon; Start>`\ 
+:index:`\ <single: Starting the Daemons>`\  :index:`\ <single: Daemon; Start>`\
 
 Assuming you have installed the packages, to start the three daemons, from your installation directory, simply enter:
 
@@ -134,7 +134,7 @@ Details of the console program’s commands are explained in the :ref:`section-b
 Running a Job
 -------------
 
-:index:`\ <single: Job; Running a>`\  :index:`\ <single: Running a Job>`\ 
+:index:`\ <single: Job; Running a>`\  :index:`\ <single: Running a Job>`\
 
 At this point, we assume you have done the following:
 
@@ -376,7 +376,7 @@ This is the file Volume that you just wrote and it contains all the data of the 
 
 If you would like to stop here, you can simply enter :bcommand:`quit` in the Console program.
 
-If you would like to try restoring the files that you just backed up, read the following section. 
+If you would like to try restoring the files that you just backed up, read the following section.
 
 .. _restoring:
 
@@ -385,7 +385,7 @@ If you would like to try restoring the files that you just backed up, read the f
 Restoring Your Files
 --------------------
 
-:index:`\ <single: Files; Restoring Your>`\  :index:`\ <single: Restoring Your Files>`\ 
+:index:`\ <single: Files; Restoring Your>`\  :index:`\ <single: Restoring Your Files>`\
 
 If you have run the default configuration and run the job as demonstrated above, you can restore the backed up files in the Console program by entering:
 
@@ -425,7 +425,7 @@ As you can see, there are a number of options, but for the current demonstration
    The defined FileSet resources are:
         1: Catalog
         2: Full Set
-   Select FileSet resource (1-2): 
+   Select FileSet resource (1-2):
 
 
 
@@ -452,7 +452,7 @@ As you can see, Bareos knows what client you have, and since there was only one,
    Enter "done" to leave this mode.
 
    cwd is: /
-   $ 
+   $
 
 
 
@@ -502,7 +502,7 @@ and you will get the following output:
    The job will require the following
       Volume(s)                 Storage(s)                SD Device(s)
    ===========================================================================
-      
+
        TestVolume001             File                      FileStorage
 
    Volumes marked with "*" are online.
@@ -524,7 +524,7 @@ and you will get the following output:
    Catalog:         MyCatalog
    Priority:        10
    Plugin Options:  *None*
-   OK to run? (yes/mod/no): 
+   OK to run? (yes/mod/no):
 
 
 
@@ -567,7 +567,7 @@ After exiting the Console program, you can examine the files in :file:`/tmp/bare
 Quitting the Console Program
 ----------------------------
 
-:index:`\ <single: Program; Quitting the Console>`\  :index:`\ <single: Quitting the Console Program>`\ 
+:index:`\ <single: Program; Quitting the Console>`\  :index:`\ <single: Quitting the Console Program>`\
 
 Simply enter the command :bcommand:`quit`.
 
@@ -619,7 +619,7 @@ Start the :command:`bconsole` and use the :bcommand:`configure add client` comma
 
 This creates two resource configuration files:
 
--  
+-
 
    :file:`/etc/bareos/bareos-dir.d/client/client2-fd.conf`
 
@@ -661,19 +661,19 @@ Client: configure
 
 The package **bareos-filedaemon** :sinceVersion:`16.2.4: Client resource files` brings several configuration files:
 
--  
+-
 
    :file:`/etc/bareos/bareos-fd.d/client/myself.conf`
 
--  
+-
 
    :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf`
 
--  
+-
 
    :file:`/etc/bareos/bareos-fd.d/director/bareos-mon.conf`
 
--  
+-
 
    :file:`/etc/bareos/bareos-fd.d/messages/Standard.conf`
 
@@ -798,7 +798,7 @@ The same considerations apply if you have just mounted a blank tape in a drive. 
 Pools
 -----
 
-:index:`\ <single: Pool; Overview>`\ 
+:index:`\ <single: Pool; Overview>`\
 
 Creating the Pool is automatically done when the |dir| starts, so if you understand Pools, you can skip to the next section.
 
@@ -827,7 +827,7 @@ When Bareos starts, it ensures that all Pool resource definitions have been reco
 Other Useful Console Commands
 -----------------------------
 
-:index:`\ <single: Console; Commands; Useful>`\ 
+:index:`\ <single: Console; Commands; Useful>`\
 
 help
    Show the list all all available commands.
@@ -873,5 +873,4 @@ quit
 
 Most of the commands given above, with the exception of list, will prompt you for the necessary arguments if you simply enter the command name.
 
-The full list of commands is shown in the chapter :ref:`section-ConsoleCommands`.  
-
+The full list of commands is shown in the chapter :ref:`section-ConsoleCommands`.

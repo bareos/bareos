@@ -35,17 +35,17 @@
 
 #ifdef HAVE_POSTGRESQL
 
-#include "cats.h"
-#include "libpq-fe.h"
-#include "postgres_ext.h"     /* needed for NAMEDATALEN */
-#include "pg_config_manual.h" /* get NAMEDATALEN on version 8.3 or later */
-#include "bdb_postgresql.h"
-#include "lib/edit.h"
-#include "lib/berrno.h"
-#include "lib/dlist.h"
+#  include "cats.h"
+#  include "libpq-fe.h"
+#  include "postgres_ext.h"     /* needed for NAMEDATALEN */
+#  include "pg_config_manual.h" /* get NAMEDATALEN on version 8.3 or later */
+#  include "bdb_postgresql.h"
+#  include "lib/edit.h"
+#  include "lib/berrno.h"
+#  include "lib/dlist.h"
 
 /* pull in the generated queries definitions */
-#include "postgresql_queries.inc"
+#  include "postgresql_queries.inc"
 
 /* -----------------------------------------------------------------------
  *
@@ -92,19 +92,20 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord* jcr,
     have_batch_insert_ = false;
   } else {
     disabled_batch_insert_ = false;
-#if defined(USE_BATCH_FILE_INSERT)
-#if defined(HAVE_POSTGRESQL_BATCH_FILE_INSERT) || defined(HAVE_PQISTHREADSAFE)
-#ifdef HAVE_PQISTHREADSAFE
+#  if defined(USE_BATCH_FILE_INSERT)
+#    if defined(HAVE_POSTGRESQL_BATCH_FILE_INSERT) \
+        || defined(HAVE_PQISTHREADSAFE)
+#      ifdef HAVE_PQISTHREADSAFE
     have_batch_insert_ = PQisthreadsafe();
-#else
+#      else
     have_batch_insert_ = true;
-#endif /* HAVE_PQISTHREADSAFE */
-#else
+#      endif /* HAVE_PQISTHREADSAFE */
+#    else
     have_batch_insert_ = true;
-#endif /* HAVE_POSTGRESQL_BATCH_FILE_INSERT || HAVE_PQISTHREADSAFE */
-#else
+#    endif /* HAVE_POSTGRESQL_BATCH_FILE_INSERT || HAVE_PQISTHREADSAFE */
+#  else
     have_batch_insert_ = false;
-#endif /* USE_BATCH_FILE_INSERT */
+#  endif /* USE_BATCH_FILE_INSERT */
   }
   errmsg = GetPoolMemory(PM_EMSG); /* get error message buffer */
   *errmsg = 0;
@@ -976,7 +977,7 @@ bool BareosDbPostgresql::SqlFieldIsNumeric(int field_type)
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */
-#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+#  ifdef HAVE_DYNAMIC_CATS_BACKENDS
 extern "C" BareosDb* backend_instantiate(JobControlRecord* jcr,
                                          const char* db_driver,
                                          const char* db_name,
@@ -990,7 +991,7 @@ extern "C" BareosDb* backend_instantiate(JobControlRecord* jcr,
                                          bool try_reconnect,
                                          bool exit_on_fatal,
                                          bool need_private)
-#else
+#  else
 BareosDb* db_init_database(JobControlRecord* jcr,
                            const char* db_driver,
                            const char* db_name,
@@ -1004,7 +1005,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                            bool try_reconnect,
                            bool exit_on_fatal,
                            bool need_private)
-#endif
+#  endif
 {
   BareosDbPostgresql* mdb = NULL;
 
@@ -1039,11 +1040,11 @@ bail_out:
   return mdb;
 }
 
-#ifdef HAVE_DYNAMIC_CATS_BACKENDS
+#  ifdef HAVE_DYNAMIC_CATS_BACKENDS
 extern "C" void flush_backend(void)
-#else
+#  else
 void DbFlushBackends(void)
-#endif
+#  endif
 {
 }
 

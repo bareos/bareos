@@ -20,11 +20,11 @@
 */
 
 #if defined(HAVE_MINGW)
-#include "include/bareos.h"
-#include "gtest/gtest.h"
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
 #else
-#include "gtest/gtest.h"
-#include "include/bareos.h"
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
 #endif
 
 
@@ -88,8 +88,8 @@ directordaemon::ConsoleResource* CreateAndInitializeNewConsoleResource()
 
 directordaemon::StorageResource* CreateAndInitializeNewStorageResource()
 {
-  directordaemon::StorageResource* store =
-      new (directordaemon::StorageResource);
+  directordaemon::StorageResource* store
+      = new (directordaemon::StorageResource);
   store->address = (char*)HOST;
   store->SDport = htons(create_unique_socket_number());
   store->tls_enable_ = false;
@@ -104,8 +104,8 @@ directordaemon::StorageResource* CreateAndInitializeNewStorageResource()
 
 directordaemon::DirectorResource* CreateAndInitializeNewDirectorResource()
 {
-  directordaemon::DirectorResource* dir =
-      new (directordaemon::DirectorResource);
+  directordaemon::DirectorResource* dir
+      = new (directordaemon::DirectorResource);
   dir->tls_enable_ = false;
   dir->tls_require_ = false;
   dir->tls_cert_.certfile_ = CERTDIR "/bareos-dir.bareos.org-cert.pem";

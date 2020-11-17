@@ -61,8 +61,7 @@ unix_tape_device::unix_tape_device()
 
 class Backend : public BackendInterface {
  public:
-  Device* GetDevice(JobControlRecord* jcr,
-                              DeviceType device_type) override
+  Device* GetDevice(JobControlRecord* jcr, DeviceType device_type) override
   {
     switch (device_type) {
       case DeviceType::B_TAPE_DEV:

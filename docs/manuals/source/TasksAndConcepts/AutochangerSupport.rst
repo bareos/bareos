@@ -3,7 +3,7 @@
 Autochanger Support
 ===================
 
-:index:`\ <single: Support; Autochanger>`\  :index:`\ <single: Autochanger; Support>`\ 
+:index:`\ <single: Support; Autochanger>`\  :index:`\ <single: Autochanger; Support>`\
 
 Bareos provides autochanger support for reading and writing tapes. In order to work with an autochanger, Bareos requires a number of things, each of which is explained in more detail after this list:
 
@@ -37,7 +37,7 @@ Some users have reported that the the Storage daemon blocks under certain circum
 Knowing What SCSI Devices You Have
 ----------------------------------
 
-:index:`\ <single: SCSI devices>`\  :index:`\ <single: Devices; SCSI>`\  :index:`\ <single: Devices; Detecting>`\ 
+:index:`\ <single: SCSI devices>`\  :index:`\ <single: Devices; SCSI>`\  :index:`\ <single: Devices; Detecting>`\
 
 Linux
 ~~~~~
@@ -64,7 +64,7 @@ to see what SCSI devices you have available. You can also:
 
 to find out how to specify their control address (/dev/sg0 for the first, /dev/sg1 for the second, ...) on the :config:option:`sd/autochanger/ChangerDevice`\  Bareos directive.
 
-You can also use the excellent lsscsi tool. 
+You can also use the excellent lsscsi tool.
 
 ::
 
@@ -92,7 +92,7 @@ Under FreeBSD, use the following command to list the SCSI devices as well as the
 
 Please check that your Storage daemon has permission to access this device.
 
-The following tip for FreeBSD users comes from Danny Butroyd: on reboot Bareos will NOT have permission to control the device :file:`/dev/pass0` (assuming this is your changer device). To get around this just edit the :file:`/etc/devfs.conf` file and add the following to the bottom: 
+The following tip for FreeBSD users comes from Danny Butroyd: on reboot Bareos will NOT have permission to control the device :file:`/dev/pass0` (assuming this is your changer device). To get around this just edit the :file:`/etc/devfs.conf` file and add the following to the bottom:
 
 ::
 
@@ -119,7 +119,7 @@ On Solaris, the changer device will typically be some file under :file:`/dev/rds
 Slots
 -----
 
-:index:`\ <single: Slots>`\  
+:index:`\ <single: Slots>`\
 
 .. _Slots:
 
@@ -142,7 +142,7 @@ You can check if the Slot number and InChanger flag by:
 Multiple Devices
 ----------------
 
-:index:`\ <single: Devices; Multiple>`\  :index:`\ <single: Multiple Devices>`\ 
+:index:`\ <single: Devices; Multiple>`\  :index:`\ <single: Multiple Devices>`\
 
 Some autochangers have more than one read/write device (drive). The :ref:`Autochanger resource <AutochangerRes>` permits you to group Device resources, where each device represents a drive. The Director may still reference the Devices (drives) directly, but doing so, bypasses the proper functioning of the drives together. Instead, the Director (in the Storage resource) should reference the Autochanger resource name. Doing so permits the Storage daemon to ensure that only one drive
 uses the mtx-changer script at a time, and also that two drives don’t reference the same Volume.
@@ -154,29 +154,29 @@ As a default, Bareos jobs will prefer to write to a Volume that is already mount
 Device Configuration Records
 ----------------------------
 
-:index:`\ <single: Device Configuration Records>`\ 
+:index:`\ <single: Device Configuration Records>`\
 
 Configuration of autochangers within Bareos is done in the Device resource of the Storage daemon.
 
 Following records control how Bareos uses the autochanger:
 
-:config:option:`sd/device/Autochanger`\ 
+:config:option:`sd/device/Autochanger`\
    Specifies if the current device belongs to an autochanger resource.
 
 :config:option:`sd/autochanger/ChangerCommand`\  (:config:option:`sd/device/ChangerCommand`\ )
 
 :config:option:`sd/autochanger/ChangerDevice`\  (:config:option:`sd/device/ChangerDevice`\ )
 
-:config:option:`sd/device/DriveIndex`\ 
+:config:option:`sd/device/DriveIndex`\
    Individual driver number, starting at 0.
 
-:config:option:`sd/device/MaximumChangerWait`\ 
+:config:option:`sd/device/MaximumChangerWait`\
 
 
 Specifying Slots When Labeling
 ------------------------------
 
-:index:`\ <single: Specifying Slots When Labeling>`\  :index:`\ <single: Label; Specifying Slots When Labeling>`\  
+:index:`\ <single: Specifying Slots When Labeling>`\  :index:`\ <single: Label; Specifying Slots When Labeling>`\
 
 .. _SpecifyingSlots:
 
@@ -226,7 +226,7 @@ If you do not do the unmount before making such a change, Bareos will become com
 Dealing with Multiple Magazines
 -------------------------------
 
-:index:`\ <single: Magazines; Dealing with Multiple>`\ 
+:index:`\ <single: Magazines; Dealing with Multiple>`\
 
 If you have several magazines or if you insert or remove cartridges from a magazine, you should notify Bareos of this. By doing so, Bareos will as a preference, use Volumes that it knows to be in the autochanger before accessing Volumes that are not in the autochanger. This prevents unneeded operator intervention.
 
@@ -253,13 +253,13 @@ If you do not have a barcode reader on your autochanger, you have several altern
 
 #. You can issue a
 
-   
+
 
    ::
 
       update slots scan
 
-   
+
 
    command that will cause Bareos to read the label on each of the cartridges in the magazine in turn and update the information (Slot, InChanger flag) in the catalog. This is quite effective but does take time to load each cartridge into the drive in turn and read the Volume label.
 
@@ -268,7 +268,7 @@ If you do not have a barcode reader on your autochanger, you have several altern
 Update Slots Command
 --------------------
 
-:index:`\ <single: Console; Command; update slots>`\  
+:index:`\ <single: Console; Command; update slots>`\
 
 .. _updateslots:
 
@@ -313,7 +313,7 @@ will read the barcoded Volume names for slots 1,2,3 and 6 and make the appropria
 Using the Autochanger
 ---------------------
 
-:index:`\ <single: Autochanger; Using the>`\  
+:index:`\ <single: Autochanger; Using the>`\
 
 .. _using:
 
@@ -460,7 +460,7 @@ If you see a near the slot number, you have to run update slots command to synch
 Bareos Autochanger Interface
 ----------------------------
 
-:index:`\ <single: Autochanger; Interface>`\  
+:index:`\ <single: Autochanger; Interface>`\
 
 .. _autochanger-interface:
 
@@ -617,7 +617,7 @@ Here, the block was written with 1M block size but we only read 64k.
 Direct access to Volumes with with non-default block sizes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: bls; block size>`\  :index:`\ <single: bextract; block size>`\  :index:`\ <single: Command; bls; block size>`\  :index:`\ <single: Command; bextract; block size>`\ 
+:index:`\ <single: bls; block size>`\  :index:`\ <single: bextract; block size>`\  :index:`\ <single: Command; bls; block size>`\  :index:`\ <single: Command; bextract; block size>`\
 
 :command:`bls` and :command:`bextract` can directly access Bareos volumes without catalog database. This means that these programs don’t have information about the used block size.
 
@@ -718,6 +718,4 @@ If your tape libraries auto-cleaning won’t work when there are tapes in the dr
        }
    }
 
-Replace :config:option:`Dir/Storage = Tape`\  by the storage name of your tape library. Use the highest :config:option:`dir/job/Priority`\  value to make sure no other jobs are running. In the default configuration for example, the :config:option:`dir/job = CatalogBackup`\  job has Priority = 100. The higher the number, the lower the job priority.  
-
-
+Replace :config:option:`Dir/Storage = Tape`\  by the storage name of your tape library. Use the highest :config:option:`dir/job/Priority`\  value to make sure no other jobs are running. In the default configuration for example, the :config:option:`dir/job = CatalogBackup`\  job has Priority = 100. The higher the number, the lower the job priority.

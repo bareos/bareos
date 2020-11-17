@@ -17,24 +17,17 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# - Find mysqlclient
-# Find the native MySQL includes and library
+# * Find mysqlclient Find the native MySQL includes and library
 #
-#  MYSQL_INCLUDE_DIR - where to find mysql.h, etc.
-#  MYSQL_LIBRARIES   - List of libraries when using MySQL.
-#  MYSQL_FOUND       - True if MySQL found.
+# MYSQL_INCLUDE_DIR - where to find mysql.h, etc. MYSQL_LIBRARIES   - List of
+# libraries when using MySQL. MYSQL_FOUND       - True if MySQL found.
 
 if(MYSQL_INCLUDE_DIR)
   # Already in cache, be silent
   set(MYSQL_FIND_QUIETLY TRUE)
 endif(MYSQL_INCLUDE_DIR)
 
-find_path(
-  MYSQL_INCLUDE_DIR
-  mysql.h
-  /usr/local/include/mysql
-  /usr/include/mysql
-)
+find_path(MYSQL_INCLUDE_DIR mysql.h /usr/local/include/mysql /usr/include/mysql)
 
 set(MYSQL_NAMES mysqlclient mysqlclient_r)
 find_library(

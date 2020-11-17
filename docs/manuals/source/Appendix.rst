@@ -21,4 +21,3 @@ Appendix
       /Appendix/FAQ.rst
       /Appendix/BareosCopyrightTrademarkAndLicenses.rst
       copyright.rst
-

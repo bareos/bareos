@@ -20,4 +20,3 @@ Autochanger {
 
   Changer Command = "/usr/lib/bareos/scripts/mtx-changer %c %o %S %a %d"
 }
-

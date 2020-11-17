@@ -931,8 +931,8 @@ const char* get_basename(const char* pathname)
 {
   const char* basename;
 
-  if ((basename = bstrrpath(pathname, pathname + strlen(pathname))) ==
-      pathname) {
+  if ((basename = bstrrpath(pathname, pathname + strlen(pathname)))
+      == pathname) {
     /* empty */
   } else if ((basename = bstrrpath(pathname, basename - 1)) == pathname) {
     /* empty */
@@ -1272,8 +1272,9 @@ void e_msg(const char* file,
    * Check if we have a message destination defined.
    * We always report M_ABORT and M_ERROR_TERM
    */
-  if (!daemon_msgs || ((type != M_ABORT && type != M_ERROR_TERM) &&
-                       !BitIsSet(type, daemon_msgs->send_msg_types_))) {
+  if (!daemon_msgs
+      || ((type != M_ABORT && type != M_ERROR_TERM)
+          && !BitIsSet(type, daemon_msgs->send_msg_types_))) {
     return; /* no destination */
   }
 
@@ -1309,8 +1310,8 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     BareosSocket* dir = jcr->dir_bsock;
 
     va_start(ap, fmt);
-    dir->message_length =
-        Bvsnprintf(dir->msg, SizeofPoolMemory(dir->msg), fmt, ap);
+    dir->message_length
+        = Bvsnprintf(dir->msg, SizeofPoolMemory(dir->msg), fmt, ap);
     va_end(ap);
     jcr->dir_bsock->send();
 
@@ -1359,8 +1360,8 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
    * Check if we have a message destination defined.
    * We always report M_ABORT and M_ERROR_TERM
    */
-  if (msgs && (type != M_ABORT && type != M_ERROR_TERM) &&
-      !BitIsSet(type, msgs->send_msg_types_)) {
+  if (msgs && (type != M_ABORT && type != M_ERROR_TERM)
+      && !BitIsSet(type, msgs->send_msg_types_)) {
     return; /* no destination */
   }
 

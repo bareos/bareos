@@ -94,7 +94,6 @@ if(NOT HAVE_WIN32)
   set_target_properties(example-plugin-fd PROPERTIES PREFIX "")
 endif()
 
-
 if(${HAVE_GLUSTERFS})
   add_library(gfapi-fd MODULE gfapi/gfapi-fd.cc)
   set_target_properties(gfapi-fd PROPERTIES PREFIX "")

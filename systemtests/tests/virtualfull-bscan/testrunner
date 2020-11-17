@@ -127,7 +127,7 @@ wait
 messages
 quit
 END_OF_DATA
-                                                                                
+
 run_bconsole "$tmp/bconcmds2"
 
 check_for_zombie_jobs storage=File

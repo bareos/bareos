@@ -39,4 +39,3 @@ A typical setting for this is :config:option:`sd/autochanger/ChangerCommand = "/
 Details of the three commands currently used by Bareos (loaded, load, unload) as well as the output expected by Bareos are given in the :ref:`Bareos Autochanger Interface <autochanger-interface>` section.
 
 If it is specified here, it needs not to be specified in the Device resource. If it is also specified in the Device resource, it will take precedence over the one specified in the Autochanger resource.
-

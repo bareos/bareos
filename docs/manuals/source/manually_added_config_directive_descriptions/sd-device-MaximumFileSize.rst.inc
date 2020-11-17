@@ -6,4 +6,3 @@ If you are configuring an modern drive like LTO-4 or newer, you probably will wa
 For more info regarding this parameter, read :ref:`Tapespeed and blocksizes`.
 
 Note, this directive does not limit the size of Volumes that Bareos will create regardless of whether they are tape or disk volumes. It changes only the number of EOF marks on a tape and the number of block positioning records that are generated. If you want to limit the size of all Volumes for a particular device, use the use the :config:option:`dir/pool/MaximumVolumeBytes`\  directive.
-

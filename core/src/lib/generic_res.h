@@ -43,16 +43,16 @@ struct s_mtypes {
 /*
  * Various message types
  */
-static struct s_mtypes msg_types[] = {
-    {"debug", M_DEBUG},       {"abort", M_ABORT},
-    {"fatal", M_FATAL},       {"error", M_ERROR},
-    {"warning", M_WARNING},   {"info", M_INFO},
-    {"saved", M_SAVED},       {"notsaved", M_NOTSAVED},
-    {"skipped", M_SKIPPED},   {"mount", M_MOUNT},
-    {"Terminate", M_TERM},    {"restored", M_RESTORED},
-    {"security", M_SECURITY}, {"alert", M_ALERT},
-    {"volmgmt", M_VOLMGMT},   {"audit", M_AUDIT},
-    {"all", M_MAX + 1},       {NULL, 0}};
+static struct s_mtypes msg_types[]
+    = {{"debug", M_DEBUG},       {"abort", M_ABORT},
+       {"fatal", M_FATAL},       {"error", M_ERROR},
+       {"warning", M_WARNING},   {"info", M_INFO},
+       {"saved", M_SAVED},       {"notsaved", M_NOTSAVED},
+       {"skipped", M_SKIPPED},   {"mount", M_MOUNT},
+       {"Terminate", M_TERM},    {"restored", M_RESTORED},
+       {"security", M_SECURITY}, {"alert", M_ALERT},
+       {"volmgmt", M_VOLMGMT},   {"audit", M_AUDIT},
+       {"all", M_MAX + 1},       {NULL, 0}};
 #endif /* DIRECTOR_DAEMON */
 
 /*

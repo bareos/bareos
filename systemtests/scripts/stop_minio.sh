@@ -43,4 +43,3 @@ fi
 
 echo "$0: could not stop minio server"
 exit 2
-

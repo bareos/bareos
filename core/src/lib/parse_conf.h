@@ -446,13 +446,13 @@ void IndentConfigItem(PoolMem& cfg_str,
  * Loop through each resource of type, returning in var
  */
 #ifdef HAVE_TYPEOF
-#define foreach_res(var, type)                                    \
-  for ((var) = NULL; ((var) = (typeof(var))my_config->GetNextRes( \
-                          (type), (BareosResource*)var));)
+#  define foreach_res(var, type)                                    \
+    for ((var) = NULL; ((var) = (typeof(var))my_config->GetNextRes( \
+                            (type), (BareosResource*)var));)
 #else
-#define foreach_res(var, type)                                        \
-  for (var = NULL; (*((void**)&(var)) = (void*)my_config->GetNextRes( \
-                        (type), (BareosResource*)var));)
+#  define foreach_res(var, type)                                        \
+    for (var = NULL; (*((void**)&(var)) = (void*)my_config->GetNextRes( \
+                          (type), (BareosResource*)var));)
 #endif
 
 #define LockRes(x) (x)->b_LockRes(__FILE__, __LINE__)

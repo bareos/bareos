@@ -32,9 +32,9 @@
 #include "lib/berrno.h"
 #include "lib/recent_job_results_list.h"
 #ifndef HAVE_REGEX_H
-#include "lib/bregex.h"
+#  include "lib/bregex.h"
 #else
-#include <regex.h>
+#  include <regex.h>
 #endif
 
 #include <fstream>
@@ -375,8 +375,8 @@ struct tm* localtime_r(const time_t* timep, struct tm* tm)
 #endif /* HAVE_LOCALTIME_R */
 
 #ifndef HAVE_READDIR_R
-#ifndef HAVE_WIN32
-#include <dirent.h>
+#  ifndef HAVE_WIN32
+#    include <dirent.h>
 
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result)
 {
@@ -398,7 +398,7 @@ int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result)
   V(mutex);
   return status;
 }
-#endif
+#  endif
 #endif /* HAVE_READDIR_R */
 
 int b_strerror(int errnum, char* buf, size_t bufsiz)
@@ -440,9 +440,9 @@ void CreatePidFile(char* dir, const char* progname, int port)
   if (stat(fname, &statp) == 0) {
     /* File exists, see what we have */
     *pidbuf = 0;
-    if ((pidfd = open(fname, O_RDONLY | O_BINARY, 0)) < 0 ||
-        read(pidfd, &pidbuf, sizeof(pidbuf)) < 0 ||
-        sscanf(pidbuf, "%d", &oldpid) != 1) {
+    if ((pidfd = open(fname, O_RDONLY | O_BINARY, 0)) < 0
+        || read(pidfd, &pidbuf, sizeof(pidbuf)) < 0
+        || sscanf(pidbuf, "%d", &oldpid) != 1) {
       BErrNo be;
       Emsg2(M_ERROR_TERM, 0, _("Cannot open pid file. %s ERR=%s\n"), fname,
             be.bstrerror());
@@ -459,8 +459,8 @@ void CreatePidFile(char* dir, const char* progname, int port)
        * another BAREOS process already running.
        * For more details see bug #797.
        */
-      if ((oldpid != (int)getpid()) &&
-          (kill(oldpid, 0) != -1 || errno != ESRCH)) {
+      if ((oldpid != (int)getpid())
+          && (kill(oldpid, 0) != -1 || errno != ESRCH)) {
         Emsg3(M_ERROR_TERM, 0,
               _("%s is already running. pid=%d\nCheck file %s\n"), progname,
               oldpid, fname);
@@ -478,8 +478,8 @@ void CreatePidFile(char* dir, const char* progname, int port)
   /*
    * Create new pid file
    */
-  if ((pidfd = open(fname, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0640)) >=
-      0) {
+  if ((pidfd = open(fname, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0640))
+      >= 0) {
     len = sprintf(pidbuf, "%d\n", (int)getpid());
     write(pidfd, pidbuf, len);
     close(pidfd);
@@ -1024,7 +1024,7 @@ bool PathCreate(PoolMem& path, mode_t mode)
  * Solaris 11 has backtrace_symbols in libc older
  * Solaris versions don't have this.
  */
-#ifndef HAVE_BACKTRACE_SYMBOLS
+#  ifndef HAVE_BACKTRACE_SYMBOLS
 static char** backtrace_symbols(void* const* array, int size)
 {
   int bufferlen, len;
@@ -1058,19 +1058,19 @@ static char** backtrace_symbols(void* const* array, int size)
 /*
  * Define that we now know backtrace_symbols()
  */
-#define HAVE_BACKTRACE_SYMBOLS 1
+#    define HAVE_BACKTRACE_SYMBOLS 1
 
-#endif /* HAVE_BACKTRACE_SYMBOLS */
+#  endif /* HAVE_BACKTRACE_SYMBOLS */
 
 /*
  * If libc doesn't have backtrace call emulate it using getcontext(3)
  * Solaris 11 has backtrace in libc older Solaris versions don't have this.
  */
-#ifndef HAVE_BACKTRACE
+#  ifndef HAVE_BACKTRACE
 
-#ifdef HAVE_UCONTEXT_H
-#include <ucontext.h>
-#endif
+#    ifdef HAVE_UCONTEXT_H
+#      include <ucontext.h>
+#    endif
 
 typedef struct backtrace {
   void** bt_buffer;
@@ -1108,24 +1108,24 @@ static int backtrace(void** buffer, int count)
 /*
  * Define that we now know backtrace()
  */
-#define HAVE_BACKTRACE 1
+#    define HAVE_BACKTRACE 1
 
-#endif /* HAVE_BACKTRACE */
-#endif /* HAVE_SUN_OS */
+#  endif /* HAVE_BACKTRACE */
+#endif   /* HAVE_SUN_OS */
 
 /*
  * Support strack_trace support on platforms that use GCC as compiler.
  */
-#if defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && \
-    defined(HAVE_GCC)
+#if defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) \
+    && defined(HAVE_GCC)
 
-#ifdef HAVE_CXXABI_H
-#include <cxxabi.h>
-#endif
+#  ifdef HAVE_CXXABI_H
+#    include <cxxabi.h>
+#  endif
 
-#ifdef HAVE_EXECINFO_H
-#include <execinfo.h>
-#endif
+#  ifdef HAVE_EXECINFO_H
+#    include <execinfo.h>
+#  endif
 
 void stack_trace()
 {
@@ -1186,19 +1186,19 @@ void stack_trace()
 /*
  * Support strack_trace support on Solaris when using the SUNPRO_CC compiler.
  */
-#elif defined(HAVE_SUN_OS) && !defined(HAVE_NON_WORKING_WALKCONTEXT) && \
-    defined(HAVE_UCONTEXT_H) && defined(HAVE_DEMANGLE_H) &&             \
-    defined(HAVE_CPLUS_DEMANGLE) && defined(__SUNPRO_CC)
+#elif defined(HAVE_SUN_OS) && !defined(HAVE_NON_WORKING_WALKCONTEXT) \
+    && defined(HAVE_UCONTEXT_H) && defined(HAVE_DEMANGLE_H)          \
+    && defined(HAVE_CPLUS_DEMANGLE) && defined(__SUNPRO_CC)
 
-#ifdef HAVE_UCONTEXT_H
-#include <ucontext.h>
-#endif
+#  ifdef HAVE_UCONTEXT_H
+#    include <ucontext.h>
+#  endif
 
-#if defined(HAVE_EXECINFO_H)
-#include <execinfo.h>
-#endif
+#  if defined(HAVE_EXECINFO_H)
+#    include <execinfo.h>
+#  endif
 
-#include <demangle.h>
+#  include <demangle.h>
 
 void stack_trace()
 {

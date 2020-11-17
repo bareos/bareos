@@ -48,7 +48,7 @@
 #include "lib/edit.h"
 
 #ifndef FNM_LEADING_DIR
-#define FNM_LEADING_DIR 0
+#  define FNM_LEADING_DIR 0
 #endif
 
 /* Fold case in fnmatch() on Win32 */
@@ -125,8 +125,8 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
 
   len = strlen(fname);
 
-  inc =
-      (struct s_included_file*)malloc(sizeof(struct s_included_file) + len + 1);
+  inc = (struct s_included_file*)malloc(sizeof(struct s_included_file) + len
+                                        + 1);
   memset(inc, 0, sizeof(struct s_included_file) + len + 1);
   inc->VerifyOpts[0] = 'V';
   inc->VerifyOpts[1] = ':';
@@ -353,8 +353,8 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
           }
           size[j] = 0;
           if (!inc->size_match) {
-            inc->size_match =
-                (struct s_sz_matching*)malloc(sizeof(struct s_sz_matching));
+            inc->size_match
+                = (struct s_sz_matching*)malloc(sizeof(struct s_sz_matching));
           }
           if (!ParseSizeMatch(size, inc->size_match)) {
             Emsg1(M_ERROR, 0, _("Unparseable size option: %s\n"), size);
@@ -429,8 +429,8 @@ void AddFnameToExcludeList(FindFilesPacket* ff, const char* fname)
 
   len = strlen(fname);
 
-  exc =
-      (struct s_excluded_file*)malloc(sizeof(struct s_excluded_file) + len + 1);
+  exc = (struct s_excluded_file*)malloc(sizeof(struct s_excluded_file) + len
+                                        + 1);
   memset(exc, 0, sizeof(struct s_excluded_file) + len + 1);
   exc->next = *list;
   exc->len = len;
@@ -492,8 +492,8 @@ bool FileIsIncluded(FindFilesPacket* ff, const char* file)
     Dmsg2(900, "pat=%s file=%s\n", inc->fname, file);
     len = strlen(file);
     if (inc->len == len && bstrcmp(inc->fname, file)) { return true; }
-    if (inc->len < len && IsPathSeparator(file[inc->len]) &&
-        bstrncmp(inc->fname, file, inc->len)) {
+    if (inc->len < len && IsPathSeparator(file[inc->len])
+        && bstrncmp(inc->fname, file, inc->len)) {
       return true;
     }
     if (inc->len == 1 && IsPathSeparator(inc->fname[0])) { return true; }
@@ -540,8 +540,8 @@ bool FileIsExcluded(FindFilesPacket* ff, const char* file)
   /* Try each component */
   for (p = file; *p; p++) {
     /* Match from the beginning of a component only */
-    if ((p == file || (!IsPathSeparator(*p) && IsPathSeparator(p[-1]))) &&
-        FileInExcludedList(ff->excluded_files_list, p)) {
+    if ((p == file || (!IsPathSeparator(*p) && IsPathSeparator(p[-1])))
+        && FileInExcludedList(ff->excluded_files_list, p)) {
       return true;
     }
   }

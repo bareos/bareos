@@ -10,4 +10,3 @@ Currently only plain data streams are compressed (so things that are already com
 having any problems with data already written.
 
 This option could be used if your clients doesn’t have enough power to do the compression/decompression itself and you have enough network bandwidth. Or when your filesystem doesn’t have the option to transparently compress data you write to it but you want the data to be compressed when written.
-

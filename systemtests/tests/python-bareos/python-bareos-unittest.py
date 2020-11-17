@@ -453,7 +453,7 @@ class PythonBareosTlsPskTest(PythonBareosBase):
     def test_login_notls_tls(self):
         """
         console: notls, director: tls => login
-        
+
         This works, because DirectorConsole falls back to the old protocol.
         Set tls_psk_require=True, if this should not happen.
         """
@@ -1420,8 +1420,7 @@ class PythonBareosJsonConfigTest(PythonBareosJsonBase):
 
 class PythonBareosDeleteTest(PythonBareosJsonBase):
     def test_delete_jobid(self):
-        """
-        """
+        """"""
         logger = logging.getLogger()
 
         username = self.get_operator_username()
@@ -1503,8 +1502,7 @@ class PythonBareosDeleteTest(PythonBareosJsonBase):
         )
 
     def test_delete_invalid_jobids(self):
-        """
-        """
+        """"""
         logger = logging.getLogger()
 
         username = self.get_operator_username()
@@ -1521,8 +1519,7 @@ class PythonBareosDeleteTest(PythonBareosJsonBase):
             result = director.call("delete jobid={}".format("1000_INVALID"))
 
     def test_delete_volume(self):
-        """
-        """
+        """"""
         logger = logging.getLogger()
 
         username = self.get_operator_username()

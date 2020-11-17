@@ -40,4 +40,3 @@ FORMS += mainwindow.ui
 
 # Application icon and info
 win32:RC_FILE = traymon.rc
-

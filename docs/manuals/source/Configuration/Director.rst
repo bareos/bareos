@@ -10,7 +10,7 @@ Of all the configuration files needed to run Bareos, the Director’s is the mos
 
 For a general discussion of configuration files and resources including the recognized data types see :ref:`ConfigureChapter`.
 
-:index:`\ <single: Types; Director Resource>`\  :index:`\ <single: Director; Resource Types>`\  :index:`\ <single: Resource Types>`\ 
+:index:`\ <single: Types; Director Resource>`\  :index:`\ <single: Director; Resource Types>`\  :index:`\ <single: Resource Types>`\
 
 Everything revolves around a job and is tied to a job in one way or another.
 
@@ -120,7 +120,7 @@ The following is an example of a valid Job resource definition:
 JobDefs Resource
 ----------------
 
-:index:`\ <single: Job; JobDefs Resource>`\  :index:`\ <single: Resource; JobDefs>`\ 
+:index:`\ <single: Job; JobDefs Resource>`\  :index:`\ <single: Resource; JobDefs>`\
 
 The JobDefs resource permits all the same directives that can appear in a Job resource. However, a JobDefs resource does not create a Job, rather it can be referenced within a Job to provide defaults for that Job. This permits you to concisely define several nearly identical Jobs, each one referencing a JobDefs resource which contains the defaults. Only the changes from the defaults need to be mentioned in each Job.
 
@@ -129,7 +129,7 @@ The JobDefs resource permits all the same directives that can appear in a Job re
 Schedule Resource
 -----------------
 
-:index:`\ <single: Resource; Schedule>`\  :index:`\ <single: Schedule; Resource>`\ 
+:index:`\ <single: Resource; Schedule>`\  :index:`\ <single: Schedule; Resource>`\
 
 The Schedule resource provides a means of automatically scheduling a Job as well as the ability to override the default Level, Pool, Storage and Messages resources. If a Schedule resource is not referenced in a Job, the Job can only be run manually. In general, you specify an action to be taken and when.
 
@@ -375,7 +375,7 @@ Please take note of the following items in the FileSet syntax:
       Any name beginning with a vertical bar (|) is assumed to be the name of a program. This program will be executed on the Director’s machine at the time the Job starts (not when the Director reads the configuration file), and any output from that program will be assumed to be a list of files or directories, one per line, to be included. Before submitting the specified command Bareos will performe :ref:`character substitution <character substitution>`.
 
       This allows you to have a job that, for example, includes all the local partitions even if you change the partitioning by adding a disk. The examples below show you how to do this. However, please note two things:
-    
+
       1. if you want the local filesystems, you probably should be using the :config:option:`dir/fileset/include/options/FsType` directive and set :config:option:`dir/fileset/include/options/OneFs = no`.
       2. the exact syntax of the command needed in the examples below is very system dependent. For example, on recent Linux systems, you may need to add the -P option, on FreeBSD systems, the options will be different as well.
 
@@ -472,7 +472,7 @@ Please take note of the following items in the FileSet syntax:
 .. config:option:: dir/fileset/include/ExcludeDirContaining
 
    :type: filename
-   
+
    This directive can be added to the Include section of the FileSet resource. If the specified filename (filename-string) is found on the Client in any directory to be backed up, the whole directory will be ignored (not backed up). We recommend to use the filename :file:`.nobackup`, as it is a hidden file on unix systems, and explains what is the purpose of the file.
 
    For example:
@@ -505,7 +505,7 @@ Please take note of the following items in the FileSet syntax:
 
       /home/user/www/cache
       /home/user/temp
-   
+
    Subdirectories will not be backed up. That is, the directive applies to the two directories in question and any children (be they files, directories, etc).
 
 .. # define a hard line break for HTML
@@ -529,7 +529,7 @@ Please take note of the following items in the FileSet syntax:
    Since :sinceVersion:`20: Multiline Strings` the plugin string can be spread over multiple lines using quotes as shown above.
 
    For more information, see :ref:`fdPlugins`.
-   
+
    It is also possible to define more than one plugin directive in a FileSet to do several database dumps at once.
 
 
@@ -584,7 +584,7 @@ FileSet Exclude-Resources very similar to Include-Resources, except that they on
         }
       }
 
-   Another way to exclude files and directories is to use the 
+   Another way to exclude files and directories is to use the
    :config:option:`dir/fileset/include/options/Exclude = yes` setting
    in a Include section.
 
@@ -828,7 +828,7 @@ The directives within an Options resource may be one of the following:
    message in the job report is:
 
    .. code-block:: bareoslog
-   
+
       host-fd: /misc is a different filesystem. Will not descend from / into /misc
       host-fd: /net is a different filesystem. Will not descend from / into /net
       host-fd: /var/lib/nfs/rpc_pipefs is a different filesystem. Will not descend from /var/lib/nfs into /var/lib/nfs/rpc_pipefs
@@ -855,7 +855,7 @@ The directives within an Options resource may be one of the following:
    please do:
 
    .. code-block:: shell-session
-   
+
       stat /
       stat <filesystem>
 
@@ -864,7 +864,7 @@ The directives within an Options resource may be one of the following:
    :strong:`Device:` number is different for / and for your filesystem, then they
    are on different filesystems.  E.g.
 
-   .. code-block:: shell-session      
+   .. code-block:: shell-session
 
       root@host:~# stat /
       File: `/'
@@ -922,8 +922,8 @@ The directives within an Options resource may be one of the following:
    or set to :strong:`no` every file and directory will be eligible for
    backup.
 
-.. _portable:   
-   
+.. _portable:
+
 .. config:option:: dir/fileset/include/options/portable
 
    :type: yes|no
@@ -1031,10 +1031,10 @@ The directives within an Options resource may be one of the following:
         File = "/home/abc/fifo"
       }
 
-   This feature can be used to do a "hot" database backup.  
+   This feature can be used to do a "hot" database backup.
    You can use the :strong:`RunBeforeJob` to create the fifo
    and to start a program that dynamically reads your database and writes
-   it to the fifo.  Bareos will then write it to the Volume. 
+   it to the fifo.  Bareos will then write it to the Volume.
 
    During the restore operation, the inverse is true, after Bareos creates
    the fifo if there was any data stored with it (no need to explicitly
@@ -1108,7 +1108,7 @@ The directives within an Options resource may be one of the following:
    their backup to see if they have changed during backup. If time
    or size mismatch, an error will raise.
 
-   
+
    .. code-block:: bconsole
 
       zog-fd: Client1.2007-03-31_09.46.21 Error: /tmp/test mtime changed during backup.
@@ -1271,7 +1271,7 @@ The directives within an Options resource may be one of the following:
    so you may want to test your expressions prior to running your
    backup by using the :ref:`bregex` program.
 
-.. config:option:: dir/fileset/include/options/Exclude 
+.. config:option:: dir/fileset/include/options/Exclude
 
    :type: BOOLEAN
 
@@ -1318,7 +1318,7 @@ The directives within an Options resource may be one of the following:
    * Linux
    * Solaris (POSIX and NFSv4/ZFS ACLs)
    * Tru64
-   
+
 
 .. _XattrSupport:
 
@@ -1386,7 +1386,7 @@ The directives within an Options resource may be one of the following:
 
    This option is not implemented in Win32 systems.
 
-   
+
 .. config:option:: dir/fileset/include/options/DriveType
 
    :type: Windows-drive-type
@@ -1422,7 +1422,7 @@ The directives within an Options resource may be one of the following:
    This option allows you to turn on support for Mac OSX HFS plus
    finder information.
 
-   
+
 .. config:option:: dir/fileset/include/options/StripPath
 
    :type: <integer>
@@ -1451,10 +1451,10 @@ The directives within an Options resource may be one of the following:
 
    <size
       Select files smaller than size.
-      
+
    >size
       Select files bigger than size.
-      
+
    size
       Select files which are within 1 \% of size.
 
@@ -1474,16 +1474,16 @@ The directives within an Options resource may be one of the following:
 
    none
       Do NO shadowing check
-      
+
    localwarn
       Do shadowing check within one include block and warn
-      
+
    localremove
       Do shadowing check within one include block and remove duplicates
-      
+
    globalwarn
       Do shadowing check between all include blocks and warn
-      
+
    globalremove
       Do shadowing check between all include blocks and remove duplicates
 
@@ -1497,7 +1497,7 @@ The directives within an Options resource may be one of the following:
 
    .. code-block:: bareosconfig
       :caption: FileSet resource with fileset shadow warning enabled
-      
+
       FileSet {
         Name = "Test Set"
         Include {
@@ -1813,7 +1813,7 @@ The FileSet resource definition below implements this by including specifc direc
 Windows FileSets
 ~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Windows; FileSet>`\  :index:`\ <single: FileSet; Windows>`\  
+:index:`\ <single: Windows; FileSet>`\  :index:`\ <single: FileSet; Windows>`\
 
 If you are entering Windows file names, the directory path may be preceded by the drive and a colon (as in c:). However, the path separators must be specified in Unix convention (i.e. forward slash (/)). If you wish to include a quote in a file name, precede the quote with a backslash (\). For example you might use the following for a Windows machine to backup the "My Documents"
 directory:
@@ -1850,7 +1850,7 @@ On Win32 systems, if you move a directory or file or rename a file into the set 
 Example Fileset for Windows
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: FileSet; Windows Example>`\  :index:`\ <single: Windows; FileSet; Example>`\ 
+:index:`\ <single: FileSet; Windows Example>`\  :index:`\ <single: Windows; FileSet; Example>`\
 
 The following example demostrates a Windows FileSet. It backups all data from all fixed drives and only excludes some Windows temporary data.
 
@@ -1914,7 +1914,7 @@ to give you a listing of all files that match. In the above example, it should b
 Client Resource
 ---------------
 
-:index:`\ <single: Resource; Client>`\  :index:`\ <single: Client Resource>`\ 
+:index:`\ <single: Resource; Client>`\  :index:`\ <single: Client Resource>`\
 
 The Client (or FileDaemon) resource defines the attributes of the Clients that are served by this Director; that is the machines that are to be backed up. You will need one Client resource definition for each machine to be backed up.
 
@@ -1956,7 +1956,7 @@ The following is an example of a Quota Configuration in Client resource:
 Storage Resource
 ----------------
 
-:index:`\ <single: Resource; Storage>`\  :index:`\ <single: Storage Resource>`\ 
+:index:`\ <single: Resource; Storage>`\  :index:`\ <single: Storage Resource>`\
 
 The Storage resource defines which Storage daemons are available for use by the Director.
 
@@ -1982,7 +1982,7 @@ The following is an example of a valid Storage resource definition:
 Pool Resource
 -------------
 
-:index:`\ <single: Resource; Pool>`\  :index:`\ <single: Pool Resource>`\ 
+:index:`\ <single: Resource; Pool>`\  :index:`\ <single: Pool Resource>`\
 
 The Pool resource defines the set of storage Volumes (tapes or files) to be used by Bareos to write the data. By configuring different Pools, you can determine which set of Volumes (media) receives the backup data. This permits, for example, to store all full backup data on one set of Volumes and all incremental backups on another set of Volumes. Alternatively, you could assign a different set of Volumes to each machine that you backup. This is most easily done by defining multiple Pools.
 
@@ -1992,7 +1992,7 @@ Job. Bareos will not automatically search for the correct Pool.
 To use a Pool, there are three distinct steps. First the Pool must be defined in the Director’s configuration. Then the Pool must be written to the Catalog database. This is done automatically by the Director each time that it starts. Finally, if you change the Pool definition in the Director’s configuration file and restart Bareos, the pool will be updated alternatively you can use the :bcommand:`update pool` console command to refresh the database image. It is this database image
 rather than the Director’s resource image that is used for the default Volume attributes. Note, for the pool to be automatically created or updated, it must be explicitly referenced by a Job resource.
 
-If automatic labeling is not enabled (see :ref:`AutomaticLabeling`) the physical media must be manually labeled. The labeling can either be done with the :bcommand:`label` command in the console program or using the :command:`btape` program. The preferred method is to use the :bcommand:`label` command in the console program. Generally, automatic labeling is enabled for :config:option:`sd/device/DeviceType = File`\ 
+If automatic labeling is not enabled (see :ref:`AutomaticLabeling`) the physical media must be manually labeled. The labeling can either be done with the :bcommand:`label` command in the console program or using the :command:`btape` program. The preferred method is to use the :bcommand:`label` command in the console program. Generally, automatic labeling is enabled for :config:option:`sd/device/DeviceType = File`\
 and disabled for :config:option:`sd/device/DeviceType = Tape`\ .
 
 Finally, you must add Volume names (and their attributes) to the Pool. For Volumes to be used by Bareos they must be of the same :config:option:`sd/device/MediaType`\  as the archive device specified for the job (i.e. if you are going to back up to a DLT device, the Pool must have DLT volumes defined since 8mm volumes cannot be mounted on a DLT drive). The :config:option:`sd/device/MediaType`\  has particular importance if you are backing up to files.
@@ -2025,7 +2025,7 @@ The following is an example of a valid Pool resource definition:
 Scratch Pool
 ~~~~~~~~~~~~
 
-:index:`\ <single: Scratch Pool>`\  :index:`\ <single: Pool; Scratch>`\ 
+:index:`\ <single: Scratch Pool>`\  :index:`\ <single: Pool; Scratch>`\
 
 In general, you can give your Pools any name you wish, but there is one important restriction: the Pool named Scratch, if it exists behaves like a scratch pool of Volumes in that when Bareos needs a new Volume for writing and it cannot find one, it will look in the Scratch pool, and if it finds an available Volume, it will move it out of the Scratch pool into the Pool currently being used by the job.
 
@@ -2034,7 +2034,7 @@ In general, you can give your Pools any name you wish, but there is one importan
 Catalog Resource
 ----------------
 
-:index:`\ <single: Resource; Catalog>`\  :index:`\ <single: Catalog Resource>`\ 
+:index:`\ <single: Resource; Catalog>`\  :index:`\ <single: Catalog Resource>`\
 
 The Catalog Resource defines what catalog to use for the current job. Currently, Bareos can only handle a single database server (SQLite, MySQL, PostgreSQL) that is defined when configuring Bareos. However, there may be as many Catalogs (databases) defined as you wish. For example, you may want each Client to have its own Catalog database, or you may want backup jobs to use one database and verify or restore jobs to use another database.
 
@@ -2079,7 +2079,7 @@ or for a Catalog on another machine:
 Messages Resource
 -----------------
 
-:index:`\ <single: Resource; Messages>`\  :index:`\ <single: Messages Resource>`\ 
+:index:`\ <single: Resource; Messages>`\  :index:`\ <single: Messages Resource>`\
 
 For the details of the Messages Resource, please see the :ref:`MessagesChapter` of this manual.
 
@@ -2088,7 +2088,7 @@ For the details of the Messages Resource, please see the :ref:`MessagesChapter` 
 Console Resource
 ----------------
 
-:index:`\ <single: Console Resource>`\  :index:`\ <single: Resource; Console>`\ 
+:index:`\ <single: Console Resource>`\  :index:`\ <single: Resource; Console>`\
 
 There are three different kinds of consoles, which the administrator or user can use to interact with the Director. These three kinds of consoles comprise three different security levels.
 

@@ -8,4 +8,3 @@ The time specifies the maximum allowed time that a job may block waiting for a r
    :width: 13cm
 
    Job time control directives
-

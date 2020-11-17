@@ -60,11 +60,11 @@
 #include "lib/util.h"
 
 #if defined(WIN32_VSS)
-#include "win32/findlib/win32.h"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#include "vss.h"
-#pragma GCC diagnostic pop
+#  include "win32/findlib/win32.h"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#  include "vss.h"
+#  pragma GCC diagnostic pop
 #endif
 
 namespace filedaemon {
@@ -208,8 +208,8 @@ static char setdebugv0cmd[] = "setdebug=%d trace=%d";
 static char setdebugv1cmd[] = "setdebug=%d trace=%d hangup=%d";
 static char setdebugv2cmd[] = "setdebug=%d trace=%d hangup=%d timestamp=%d";
 static char storaddrv0cmd[] = "storage address=%s port=%d ssl=%d";
-static char storaddrv1cmd[] =
-    "storage address=%s port=%d ssl=%d Authorization=%100s";
+static char storaddrv1cmd[]
+    = "storage address=%s port=%d ssl=%d Authorization=%100s";
 static char sessioncmd[] = "session %127s %ld %ld %ld %ld %ld %ld\n";
 static char restorecmd[] = "restore replace=%c prelinks=%d where=%s\n";
 static char restorecmd1[] = "restore replace=%c prelinks=%d where=\n";
@@ -222,16 +222,16 @@ static char verifycmd[] = "verify level=%30s";
 static char Estimatecmd[] = "estimate listing=%d";
 static char runbeforecmd[] = "RunBeforeJob %s";
 static char runaftercmd[] = "RunAfterJob %s";
-static char runscriptcmd[] =
-    "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
+static char runscriptcmd[]
+    = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
 static char resolvecmd[] = "resolve %s";
 
 /**
  * Responses sent to Director
  */
 static char errmsg[] = "2999 Invalid command\n";
-static char invalid_cmd[] =
-    "2997 Invalid command for a Director with Monitor directive enabled.\n";
+static char invalid_cmd[]
+    = "2997 Invalid command for a Director with Monitor directive enabled.\n";
 static char OkAuthorization[] = "2000 OK Authorization\n";
 static char OKBandwidth[] = "2000 OK Bandwidth\n";
 static char OKinc[] = "2000 OK include\n";
@@ -246,14 +246,14 @@ static char OKsession[] = "2000 OK session\n";
 static char OKstore[] = "2000 OK storage\n";
 static char OKstoreend[] = "2000 OK storage end\n";
 static char OKjob[] = "2000 OK Job %s (%s) %s,%s";
-static char OKsetdebugv0[] =
-    "2000 OK setdebug=%d trace=%d hangup=%d tracefile=%s\n";
-static char OKsetdebugv1[] =
-    "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s\n";
+static char OKsetdebugv0[]
+    = "2000 OK setdebug=%d trace=%d hangup=%d tracefile=%s\n";
+static char OKsetdebugv1[]
+    = "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s\n";
 static char BADjob[] = "2901 Bad Job\n";
-static char EndJob[] =
-    "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
-    " JobBytes=%s Errors=%u VSS=%d Encrypt=%d\n";
+static char EndJob[]
+    = "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
+      " JobBytes=%s Errors=%u VSS=%d Encrypt=%d\n";
 static char OKRunBefore[] = "2000 OK RunBefore\n";
 static char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
 static char OKRunAfter[] = "2000 OK RunAfter\n";
@@ -549,7 +549,8 @@ static bool StartProcessDirectorCommands(JobControlRecord* jcr)
   pthread_t thread;
 
   if ((result = pthread_create(&thread, nullptr, process_director_commands,
-                               (void*)jcr)) != 0) {
+                               (void*)jcr))
+      != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, _("Cannot create Director connect thread: %s\n"),
           be.bstrerror(result));
@@ -709,9 +710,10 @@ bool StartConnectToDirectorThreads()
         Dmsg3(120, "Connecting to Director \"%s\", address %s:%d.\n",
               dir_res->resource_name_, dir_res->address, dir_res->port);
         thread = (pthread_t*)malloc(sizeof(pthread_t));
-        if ((pthread_create_result =
-                 pthread_create(thread, nullptr, handle_connection_to_director,
-                                (void*)dir_res)) == 0) {
+        if ((pthread_create_result
+             = pthread_create(thread, nullptr, handle_connection_to_director,
+                              (void*)dir_res))
+            == 0) {
           client_initiated_connection_threads->append(thread);
         } else {
           BErrNo be;
@@ -981,11 +983,11 @@ static bool job_cmd(JobControlRecord* jcr)
   jcr->VolSessionId = command.vol_session_id_;
   jcr->VolSessionTime = command.vol_session_time_;
 
-  TlsPolicy tls_policy =
-      command.protocol_version_ ==
-              JobCommand::ProtocolVersion::KVersionBefore_18_2
-          ? TlsPolicy::kBnetTlsNone
-          : command.tls_policy_;
+  TlsPolicy tls_policy
+      = command.protocol_version_
+                == JobCommand::ProtocolVersion::KVersionBefore_18_2
+            ? TlsPolicy::kBnetTlsNone
+            : command.tls_policy_;
 
   SetStorageAuthKeyAndTlsPolicy(jcr, command.sd_auth_key_, tls_policy);
   Dmsg3(120, "JobId=%d Auth=%s TlsPolicy=%d\n", jcr->JobId, jcr->sd_auth_key,
@@ -1135,7 +1137,8 @@ static bool RunscriptCmd(JobControlRecord* jcr)
    * Note, we cannot sscanf into bools
    */
   if (sscanf(dir->msg, runscriptcmd, &on_success, &on_failure, &fail_on_error,
-             &cmd->when, msg) != 5) {
+             &cmd->when, msg)
+      != 5) {
     PmStrcpy(jcr->errmsg, dir->msg);
     Jmsg1(jcr, M_FATAL, 0, _("Bad RunScript command: %s\n"), jcr->errmsg);
     dir->fsend(FailedRunScript);
@@ -1209,13 +1212,15 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
 
   if (sscanf(dir->msg, restoreobjcmd, &rop.JobId, &rop.object_len,
              &rop.object_full_len, &rop.object_index, &rop.object_type,
-             &rop.object_compression, &FileIndex, rop.plugin_name) != 8) {
+             &rop.object_compression, &FileIndex, rop.plugin_name)
+      != 8) {
     /*
      * Old version, no plugin_name
      */
     if (sscanf(dir->msg, restoreobjcmd1, &rop.JobId, &rop.object_len,
                &rop.object_full_len, &rop.object_index, &rop.object_type,
-               &rop.object_compression, &FileIndex) != 7) {
+               &rop.object_compression, &FileIndex)
+        != 7) {
       Dmsg0(5, "Bad restore object command\n");
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad RestoreObject command: %s\n"), jcr->errmsg);
@@ -1360,8 +1365,8 @@ static bool FilesetCmd(JobControlRecord* jcr)
   if (!TermFileset(jcr)) { return false; }
 
 #if defined(WIN32_VSS)
-  jcr->impl->enable_vss =
-      (vss && (CountIncludeListFileEntries(jcr) > 0)) ? true : false;
+  jcr->impl->enable_vss
+      = (vss && (CountIncludeListFileEntries(jcr) > 0)) ? true : false;
 #endif
 
   retval = dir->fsend(OKinc);
@@ -1481,9 +1486,11 @@ static bool LevelCmd(JobControlRecord* jcr)
     }
 
     if (sscanf(dir->msg, "level = since_utime %s mtime_only=%d prev_job=%127s",
-               buf, &mtime_only, jcr->impl->PrevJob) != 3) {
+               buf, &mtime_only, jcr->impl->PrevJob)
+        != 3) {
       if (sscanf(dir->msg, "level = since_utime %s mtime_only=%d", buf,
-                 &mtime_only) != 2) {
+                 &mtime_only)
+          != 2) {
         goto bail_out;
       }
     }
@@ -1572,7 +1579,8 @@ static bool SessionCmd(JobControlRecord* jcr)
   Dmsg1(100, "SessionCmd: %s", dir->msg);
   if (sscanf(dir->msg, sessioncmd, jcr->VolumeName, &jcr->VolSessionId,
              &jcr->VolSessionTime, &jcr->impl->StartFile, &jcr->impl->EndFile,
-             &jcr->impl->StartBlock, &jcr->impl->EndBlock) != 7) {
+             &jcr->impl->StartBlock, &jcr->impl->EndBlock)
+      != 7) {
     PmStrcpy(jcr->errmsg, dir->msg);
     Jmsg(jcr, M_FATAL, 0, _("Bad session command: %s"), jcr->errmsg);
     return false;
@@ -1633,9 +1641,10 @@ static bool StorageCmd(JobControlRecord* jcr)
   Dmsg1(100, "StorageCmd: %s", dir->msg);
   sd_auth_key.check_size(dir->message_length);
   if (sscanf(dir->msg, storaddrv1cmd, stored_addr, &stored_port, &tls_policy,
-             sd_auth_key.c_str()) != 4) {
-    if (sscanf(dir->msg, storaddrv0cmd, stored_addr, &stored_port,
-               &tls_policy) != 3) {
+             sd_auth_key.c_str())
+      != 4) {
+    if (sscanf(dir->msg, storaddrv0cmd, stored_addr, &stored_port, &tls_policy)
+        != 3) {
       PmStrcpy(jcr->errmsg, dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("Bad storage command: %s"), jcr->errmsg);
       goto bail_out;
@@ -1724,8 +1733,8 @@ static void LogFlagStatus(JobControlRecord* jcr,
   bool found = false;
   if (fileset) {
     for (int i = 0; i < fileset->include_list.size() && !found; i++) {
-      findIncludeExcludeItem* incexe =
-          (findIncludeExcludeItem*)fileset->include_list.get(i);
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
       for (int j = 0; j < incexe->opts_list.size() && !found; j++) {
         findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
@@ -1757,8 +1766,8 @@ static inline void ClearFlagInFileset(JobControlRecord* jcr,
   fileset = jcr->impl->ff->fileset;
   if (fileset) {
     for (int i = 0; i < fileset->include_list.size(); i++) {
-      findIncludeExcludeItem* incexe =
-          (findIncludeExcludeItem*)fileset->include_list.get(i);
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
       for (int j = 0; j < incexe->opts_list.size(); j++) {
         findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
@@ -1787,8 +1796,8 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
   fileset = jcr->impl->ff->fileset;
   if (fileset) {
     for (int i = 0; i < fileset->include_list.size(); i++) {
-      findIncludeExcludeItem* incexe =
-          (findIncludeExcludeItem*)fileset->include_list.get(i);
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
       for (int j = 0; j < incexe->opts_list.size(); j++) {
         findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
@@ -1847,8 +1856,8 @@ static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
   fileset = jcr->impl->ff->fileset;
   if (fileset) {
     for (int i = 0; i < fileset->include_list.size(); i++) {
-      findIncludeExcludeItem* incexe =
-          (findIncludeExcludeItem*)fileset->include_list.get(i);
+      findIncludeExcludeItem* incexe
+          = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
       for (int j = 0; j < incexe->opts_list.size(); j++) {
         findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
@@ -2065,8 +2074,8 @@ static bool BackupCmd(JobControlRecord* jcr)
        */
       GeneratePluginEvent(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
 
-      drive_count =
-          get_win32_driveletters(jcr->impl->ff->fileset, szWinDriveLetters);
+      drive_count
+          = get_win32_driveletters(jcr->impl->ff->fileset, szWinDriveLetters);
 
       onefs_disabled = win32_onefs_is_disabled(jcr->impl->ff->fileset);
 
@@ -2287,8 +2296,8 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
 {
   ASSERT(dir_res != nullptr);
 
-  std::unique_ptr<BareosSocket> director_socket =
-      std::make_unique<BareosSocketTCP>();
+  std::unique_ptr<BareosSocket> director_socket
+      = std::make_unique<BareosSocketTCP>();
 
   director_socket->SetSourceAddress(me->FDsrc_addr);
 

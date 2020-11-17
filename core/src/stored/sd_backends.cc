@@ -31,26 +31,23 @@
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
 
-#include "stored/stored.h"
-#include "sd_backends.h"
-#include "include/make_unique.h"
+#  include "stored/stored.h"
+#  include "sd_backends.h"
+#  include "include/make_unique.h"
 
-#include <cstdlib>
-#include <dlfcn.h>
-#include <map>
-#include <memory>
-#include <stdexcept>
-#include <vector>
+#  include <cstdlib>
+#  include <dlfcn.h>
+#  include <map>
+#  include <memory>
+#  include <stdexcept>
+#  include <vector>
 
 namespace storagedaemon {
 
 static std::map<DeviceType, const char*> device_type_to_name_mapping = {
-    {DeviceType::B_FIFO_DEV, "fifo"},
-    {DeviceType::B_TAPE_DEV, "tape"},
-    {DeviceType::B_GFAPI_DEV, "gfapi"},
-    {DeviceType::B_DROPLET_DEV, "droplet"},
-    {DeviceType::B_RADOS_DEV, "rados"},
-    {DeviceType::B_CEPHFS_DEV, "cephfs"},
+    {DeviceType::B_FIFO_DEV, "fifo"},    {DeviceType::B_TAPE_DEV, "tape"},
+    {DeviceType::B_GFAPI_DEV, "gfapi"},  {DeviceType::B_DROPLET_DEV, "droplet"},
+    {DeviceType::B_RADOS_DEV, "rados"},  {DeviceType::B_CEPHFS_DEV, "cephfs"},
     {DeviceType::B_UNKNOWN_DEV, nullptr}};
 
 

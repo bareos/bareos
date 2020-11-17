@@ -32,7 +32,7 @@
 
 #ifdef HAVE_LOWLEVEL_SCSI_INTERFACE
 
-#include "scsi_tapealert.h"
+#  include "scsi_tapealert.h"
 
 struct tapealert_mapping {
   uint32_t flag;
@@ -161,8 +161,8 @@ bool GetTapealertFlags(int fd, const char* device_name, uint64_t* flags)
     TAPEALERT_PARAMETER* ta_param;
 
     ta_param = (TAPEALERT_PARAMETER*)&cmd_page.log_parameters[cnt];
-    result_index =
-        (ta_param->parameter_code[0] << 8) + ta_param->parameter_code[1];
+    result_index
+        = (ta_param->parameter_code[0] << 8) + ta_param->parameter_code[1];
     if (result_index > 0 && result_index < MAX_TAPE_ALERTS) {
       /*
        * See if the TapeAlert is raised.

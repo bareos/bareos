@@ -40,11 +40,11 @@
  * #include <native.h>
  * #endif
  */
-#include <windef.h>
+#  include <windef.h>
 
-#ifndef POOLMEM
+#  ifndef POOLMEM
 typedef char POOLMEM;
-#endif
+#  endif
 
 // unicode enabling of win 32 needs some defines and functions
 
@@ -52,8 +52,8 @@ typedef char POOLMEM;
 // practice but I believe that Windows actually uses UTF-16 encoding
 // as opposed to UCS2 which means characters 0x10000-0x10ffff are
 // valid and result in 4 byte UTF-8 encodings.
-#define MAX_PATH_UTF8 \
-  MAX_PATH * 4  // strict upper bound on UTF-16 to UTF-8 conversion
+#  define MAX_PATH_UTF8 \
+    MAX_PATH * 4  // strict upper bound on UTF-16 to UTF-8 conversion
 
 // from
 // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/fileio/fs/getfileattributesex.asp
@@ -61,7 +61,7 @@ typedef char POOLMEM;
 // MAX_PATH characters. To extend this limit to 32,767 wide
 // characters, call the Unicode version of the function and prepend
 // "\\?\" to the path. For more information, see Naming a File.
-#define MAX_PATH_W 32767
+#  define MAX_PATH_W 32767
 
 int wchar_2_UTF8(POOLMEM*& pszUTF, const wchar_t* pszUCS);
 int UTF8_2_wchar(POOLMEM*& pszUCS, const char* pszUTF);
@@ -107,12 +107,12 @@ typedef BOOL(WINAPI* t_GetFileAttributesExW)(LPCWSTR,
                                              GET_FILEEX_INFO_LEVELS,
                                              LPVOID);
 
-#if (_WIN32_WINNT >= 0x0600)
+#  if (_WIN32_WINNT >= 0x0600)
 typedef DWORD(WINAPI* t_GetFileInformationByHandleEx)(HANDLE,
                                                       FILE_INFO_BY_HANDLE_CLASS,
                                                       LPVOID,
                                                       DWORD);
-#endif
+#  endif
 
 typedef DWORD(WINAPI* t_GetFileAttributesA)(LPCSTR);
 typedef DWORD(WINAPI* t_GetFileAttributesW)(LPCWSTR);
@@ -209,9 +209,9 @@ typedef BOOL(WINAPI* t_CreateProcessW)(LPCWSTR,
 extern t_CreateProcessA p_CreateProcessA;
 extern t_CreateProcessW p_CreateProcessW;
 
-#if (_WIN32_WINNT >= 0x0600)
+#  if (_WIN32_WINNT >= 0x0600)
 extern t_GetFileInformationByHandleEx p_GetFileInformationByHandleEx;
-#endif
+#  endif
 
 extern t_GetFileAttributesA p_GetFileAttributesA;
 extern t_GetFileAttributesW p_GetFileAttributesW;

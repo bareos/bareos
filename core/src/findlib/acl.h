@@ -67,14 +67,14 @@ typedef enum
  * The way the code is build this should never happen.
  */
 #if !defined(ACL_TYPE_NONE)
-#define ACL_TYPE_NONE 0x0
+#  define ACL_TYPE_NONE 0x0
 #endif
 
-#if defined(HAVE_FREEBSD_OS) || defined(HAVE_DARWIN_OS) || \
-    defined(HAVE_HPUX_OS) || defined(HAVE_LINUX_OS)
-#define BACL_ENOTSUP EOPNOTSUPP
+#if defined(HAVE_FREEBSD_OS) || defined(HAVE_DARWIN_OS) \
+    || defined(HAVE_HPUX_OS) || defined(HAVE_LINUX_OS)
+#  define BACL_ENOTSUP EOPNOTSUPP
 #elif defined(HAVE_IRIX_OS)
-#define BACL_ENOTSUP ENOSYS
+#  define BACL_ENOTSUP ENOSYS
 #endif
 
 #define BACL_FLAG_SAVE_NATIVE 0x01

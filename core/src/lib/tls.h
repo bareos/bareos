@@ -53,16 +53,16 @@ class Tls {
   virtual void SetTlsPskClientContext(const PskCredentials& credentials) = 0;
   virtual void SetTlsPskServerContext(ConfigurationParser* config) = 0;
 
-  virtual bool TlsPostconnectVerifyHost(JobControlRecord* jcr,
-                                        const char* host) = 0;
+  virtual bool TlsPostconnectVerifyHost(JobControlRecord* jcr, const char* host)
+      = 0;
   virtual bool TlsPostconnectVerifyCn(
       JobControlRecord* jcr,
-      const std::vector<std::string>& verify_list) = 0;
+      const std::vector<std::string>& verify_list)
+      = 0;
 
   virtual bool TlsBsockAccept(BareosSocket* bsock) = 0;
-  virtual int TlsBsockWriten(BareosSocket* bsock,
-                             char* ptr,
-                             int32_t nbytes) = 0;
+  virtual int TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes)
+      = 0;
   virtual int TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes) = 0;
   virtual bool TlsBsockConnect(BareosSocket* bsock) = 0;
   virtual void TlsBsockShutdown(BareosSocket* bsock) = 0;

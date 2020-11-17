@@ -36,8 +36,8 @@
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
-#include "cats.h"
-#include "lib/edit.h"
+#  include "cats.h"
+#  include "lib/edit.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -336,9 +336,9 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
          " JobStatus IN ('T','W') AND Name='%s' AND "
          "ClientId=%s ORDER BY StartTime DESC LIMIT 1",
          L_VERIFY_INIT, esc_jobname, edit_int64(jr->ClientId, ed1));
-  } else if (jr->JobLevel == L_VERIFY_VOLUME_TO_CATALOG ||
-             jr->JobLevel == L_VERIFY_DISK_TO_CATALOG ||
-             jr->JobType == JT_BACKUP) {
+  } else if (jr->JobLevel == L_VERIFY_VOLUME_TO_CATALOG
+             || jr->JobLevel == L_VERIFY_DISK_TO_CATALOG
+             || jr->JobType == JT_BACKUP) {
     if (Name) {
       EscapeString(jcr, esc_jobname, (char*)Name,
                    MIN(strlen(Name), sizeof(esc_jobname)));
@@ -531,8 +531,8 @@ retry_fetch:
      * We need to reduce the number of rows by one
      * and jump out if no more rows are available
      */
-    if (unwanted_volumes &&
-        is_on_unwanted_volumes_list(row[1], unwanted_volumes)) {
+    if (unwanted_volumes
+        && is_on_unwanted_volumes_list(row[1], unwanted_volumes)) {
       Dmsg1(50, "Volume %s is on unwanted_volume_list, skipping\n", row[1]);
       num_rows--;
       if (num_rows <= 0) {

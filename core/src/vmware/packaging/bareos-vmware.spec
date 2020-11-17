@@ -73,4 +73,3 @@ cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_VERBOSE_MAKEFILE=ON .
 
 
 %changelog
-

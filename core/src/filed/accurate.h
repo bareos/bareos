@@ -44,7 +44,7 @@
 #include "include/config.h"
 
 #ifdef HAVE_HPUX_OS
-#pragma pack(push, 4)
+#  pragma pack(push, 4)
 #endif
 
 namespace filedaemon {
@@ -78,7 +78,8 @@ class BareosAccurateFilelist {
                        int lstat_length,
                        char* chksum,
                        int checksum_length,
-                       int32_t delta_seq) = 0;
+                       int32_t delta_seq)
+      = 0;
   virtual bool EndLoad() = 0;
   virtual accurate_payload* lookup_payload(char* fname) = 0;
   virtual bool UpdatePayload(char* fname, accurate_payload* payload) = 0;
@@ -110,7 +111,7 @@ struct CurFile {
 };
 
 #ifdef HAVE_HPUX_OS
-#pragma pack(pop)
+#  pragma pack(pop)
 #endif
 
 class BareosAccurateFilelistHtable : public BareosAccurateFilelist {
@@ -142,7 +143,7 @@ class BareosAccurateFilelistHtable : public BareosAccurateFilelist {
 
 #ifdef HAVE_LMDB
 
-#include "lmdb/lmdb.h"
+#  include "lmdb/lmdb.h"
 
 /*
  * Lightning Memory DataBase (LMDB) specific storage abstraction class using the

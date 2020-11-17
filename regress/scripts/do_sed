@@ -21,4 +21,3 @@ chmod 755 ${rscripts}/cleanup-*tape ${rscripts}/cleanup-*drive ${rscripts}/prepa
 chmod 755 ${rscripts}/diff.pl
 ${rscripts}/set_tape_options
 ${rscripts}/config_dart
-

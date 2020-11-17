@@ -27,9 +27,9 @@
 #include "include/bareos.h"
 
 #ifdef HAVE_POLL_H
-#include <poll.h>
+#  include <poll.h>
 #elif HAVE_SYS_POLL_H
-#include <sys/poll.h>
+#  include <sys/poll.h>
 #endif
 
 #ifdef HAVE_POLL
@@ -44,15 +44,15 @@ int WaitForReadableFd(int fd, int msec, bool ignore_interupts)
   int events;
 
   events = POLLIN;
-#if defined(POLLRDNORM)
+#  if defined(POLLRDNORM)
   events |= POLLRDNORM;
-#endif
-#if defined(POLLRDBAND)
+#  endif
+#  if defined(POLLRDBAND)
   events |= POLLRDBAND;
-#endif
-#if defined(POLLPRI)
+#  endif
+#  if defined(POLLPRI)
   events |= POLLPRI;
-#endif
+#  endif
 
   memset(pfds, 0, sizeof(pfds));
   pfds[0].fd = fd;
@@ -88,12 +88,12 @@ int WaitForWritableFd(int fd, int msec, bool ignore_interupts)
   int events;
 
   events = POLLOUT;
-#if defined(POLLWRNORM)
+#  if defined(POLLWRNORM)
   events |= POLLWRNORM;
-#endif
-#if defined POLLWRBAND
+#  endif
+#  if defined POLLWRBAND
   events |= POLLWRBAND;
-#endif
+#  endif
 
   memset(pfds, 0, sizeof(pfds));
   pfds[0].fd = fd;
@@ -155,9 +155,9 @@ int WaitForReadableFd(int fd, int msec, bool ignore_interupts)
  */
 int WaitForWritableFd(int fd, int msec, bool ignore_interupts)
 {
-#if defined(HAVE_WIN32)
+#  if defined(HAVE_WIN32)
   return 1;
-#else
+#  else
   fd_set fdset;
   struct timeval tv;
 
@@ -179,6 +179,6 @@ int WaitForWritableFd(int fd, int msec, bool ignore_interupts)
         return 1;
     }
   }
-#endif /* defined(HAVE_WIN32) */
+#  endif /* defined(HAVE_WIN32) */
 }
-#endif /* HAVE_POLL */
+#endif   /* HAVE_POLL */

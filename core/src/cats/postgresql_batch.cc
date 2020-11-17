@@ -25,14 +25,14 @@
 
 #ifdef HAVE_POSTGRESQL
 
-#include "cats.h"
-#include "libpq-fe.h"
-#include "postgres_ext.h"     /* needed for NAMEDATALEN */
-#include "pg_config_manual.h" /* get NAMEDATALEN on version 8.3 or later */
-#include "bdb_postgresql.h"
-#include "lib/edit.h"
-#include "lib/berrno.h"
-#include "lib/dlist.h"
+#  include "cats.h"
+#  include "libpq-fe.h"
+#  include "postgres_ext.h"     /* needed for NAMEDATALEN */
+#  include "pg_config_manual.h" /* get NAMEDATALEN on version 8.3 or later */
+#  include "bdb_postgresql.h"
+#  include "lib/edit.h"
+#  include "lib/berrno.h"
+#  include "lib/dlist.h"
 
 bool BareosDbPostgresql::SqlBatchStartFileTable(JobControlRecord* jcr)
 {

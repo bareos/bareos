@@ -124,8 +124,8 @@ const ColumnDescription* DatabaseTableDescriptions::GetColumnDescription(
     return nullptr;
   }
   try {
-    const auto& c =
-        table_description->column_descriptions.at(column_name_lower_case);
+    const auto& c
+        = table_description->column_descriptions.at(column_name_lower_case);
     return std::addressof(c);
   } catch (std::out_of_range&) {
     std::cout << "Could not get columnd description for column: "

@@ -24,4 +24,3 @@ WHERE File.Name = '%s'
 ORDER BY File.FileId
 LIMIT %d
 OFFSET %d
-

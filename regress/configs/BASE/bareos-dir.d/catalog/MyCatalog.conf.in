@@ -5,4 +5,3 @@ Catalog {
   dbuser = "@db_user@"
   dbpassword = "@db_password@"
 }
-

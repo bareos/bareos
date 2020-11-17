@@ -64,12 +64,12 @@ const int debuglevel = 400;
 /* Commands sent to File daemon */
 static char filesetcmd[] = "fileset%s\n"; /* set full fileset */
 static char jobcmd[] = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
-static char jobcmdssl[] =
-    "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%d\n";
+static char jobcmdssl[]
+    = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%d\n";
 /* Note, mtime_only is not used here -- implemented as file option */
 static char levelcmd[] = "level = %s%s%s mtime_only=%d %s%s\n";
-static char runscriptcmd[] =
-    "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
+static char runscriptcmd[]
+    = "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
 static char runbeforenowcmd[] = "RunBeforeNow\n";
 static char restoreobjectendcmd[] = "restoreobject end\n";
 static char bandwidthcmd[] = "setbandwidth=%lld Job=%s\n";
@@ -161,10 +161,10 @@ static void OutputMessageForConnectionTry(JobControlRecord* jcr, UaContext* ua)
 {
   std::string m;
 
-  if (jcr->impl->res.client->connection_successful_handshake_ ==
-          ClientConnectionHandshakeMode::kUndefined ||
-      jcr->impl->res.client->connection_successful_handshake_ ==
-          ClientConnectionHandshakeMode::kFailed) {
+  if (jcr->impl->res.client->connection_successful_handshake_
+          == ClientConnectionHandshakeMode::kUndefined
+      || jcr->impl->res.client->connection_successful_handshake_
+             == ClientConnectionHandshakeMode::kFailed) {
     m = "Probing client protocol... (result will be saved until config reload)";
   } else {
     return;
@@ -191,8 +191,8 @@ static void SendInfoChosenCipher(JobControlRecord* jcr, UaContext* ua)
 static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
 {
   std::string m;
-  if (jcr->impl->res.client->connection_successful_handshake_ ==
-      ClientConnectionHandshakeMode::kUndefined) {
+  if (jcr->impl->res.client->connection_successful_handshake_
+      == ClientConnectionHandshakeMode::kUndefined) {
     m += "\r\v";
   }
   bool add_newline_in_joblog = false;
@@ -230,29 +230,29 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
 {
   bool success = false;
   bool tcp_connect_failed = false;
-  int connect_tries =
-      3; /* as a finish-hook for the UseWaitingClient mechanism */
+  int connect_tries
+      = 3; /* as a finish-hook for the UseWaitingClient mechanism */
 
   /* try the connection modes starting with tls directly,
    * in case there is a client that cannot do Tls immediately then
    * fall back to cleartext md5-handshake */
   OutputMessageForConnectionTry(jcr, ua);
-  if (jcr->impl->res.client->connection_successful_handshake_ ==
-          ClientConnectionHandshakeMode::kUndefined ||
-      jcr->impl->res.client->connection_successful_handshake_ ==
-          ClientConnectionHandshakeMode::kFailed) {
+  if (jcr->impl->res.client->connection_successful_handshake_
+          == ClientConnectionHandshakeMode::kUndefined
+      || jcr->impl->res.client->connection_successful_handshake_
+             == ClientConnectionHandshakeMode::kFailed) {
     if (jcr->impl->res.client->IsTlsConfigured()) {
-      jcr->impl->connection_handshake_try_ =
-          ClientConnectionHandshakeMode::kTlsFirst;
+      jcr->impl->connection_handshake_try_
+          = ClientConnectionHandshakeMode::kTlsFirst;
     } else {
-      jcr->impl->connection_handshake_try_ =
-          ClientConnectionHandshakeMode::kCleartextFirst;
+      jcr->impl->connection_handshake_try_
+          = ClientConnectionHandshakeMode::kCleartextFirst;
     }
     jcr->is_passive_client_connection_probing = true;
   } else {
     /* if there is a stored mode from a previous connection then use this */
-    jcr->impl->connection_handshake_try_ =
-        jcr->impl->res.client->connection_successful_handshake_;
+    jcr->impl->connection_handshake_try_
+        = jcr->impl->res.client->connection_successful_handshake_;
     jcr->is_passive_client_connection_probing = false;
   }
 
@@ -278,8 +278,8 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
         SendInfoSuccess(jcr, ua);
         SendInfoChosenCipher(jcr, ua);
         jcr->is_passive_client_connection_probing = false;
-        jcr->impl->res.client->connection_successful_handshake_ =
-            jcr->impl->connection_handshake_try_;
+        jcr->impl->res.client->connection_successful_handshake_
+            = jcr->impl->connection_handshake_try_;
       } else {
         /* authentication failed due to
          * - tls mismatch or
@@ -293,12 +293,12 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
               jcr->file_bsock = nullptr;
             }
             jcr->resetJobStatus(JS_Running);
-            jcr->impl->connection_handshake_try_ =
-                ClientConnectionHandshakeMode::kCleartextFirst;
+            jcr->impl->connection_handshake_try_
+                = ClientConnectionHandshakeMode::kCleartextFirst;
             break;
           case ClientConnectionHandshakeMode::kCleartextFirst:
-            jcr->impl->connection_handshake_try_ =
-                ClientConnectionHandshakeMode::kFailed;
+            jcr->impl->connection_handshake_try_
+                = ClientConnectionHandshakeMode::kFailed;
             break;
           case ClientConnectionHandshakeMode::kFailed:
           default: /* should bei one of class ClientConnectionHandshakeMode */
@@ -311,9 +311,9 @@ bool ConnectToFileDaemon(JobControlRecord* jcr,
            jcr->impl->res.client->resource_name_);
     }
     connect_tries--;
-  } while (!tcp_connect_failed && connect_tries && !success &&
-           jcr->impl->connection_handshake_try_ !=
-               ClientConnectionHandshakeMode::kFailed);
+  } while (!tcp_connect_failed && connect_tries && !success
+           && jcr->impl->connection_handshake_try_
+                  != ClientConnectionHandshakeMode::kFailed);
 
   if (!success) { jcr->setJobStatus(JS_ErrorTerminated); }
 
@@ -326,8 +326,8 @@ int SendJobInfoToFileDaemon(JobControlRecord* jcr)
 
   if (jcr->sd_auth_key == NULL) { jcr->sd_auth_key = strdup("dummy"); }
 
-  if (jcr->impl->res.client->connection_successful_handshake_ ==
-      ClientConnectionHandshakeMode::kTlsFirst) {
+  if (jcr->impl->res.client->connection_successful_handshake_
+      == ClientConnectionHandshakeMode::kTlsFirst) {
     /* client protocol onwards Bareos 18.2 */
     TlsPolicy tls_policy = kBnetTlsUnknown;
     int JobLevel = jcr->getJobLevel();
@@ -450,10 +450,10 @@ bool SendSecureEraseReqToFd(JobControlRecord* jcr)
   if (jcr->impl->FDVersion > FD_VERSION_53) {
     fd->fsend(getSecureEraseCmd);
     while ((n = BgetDirmsg(fd)) >= 0) {
-      jcr->impl->FDSecureEraseCmd =
-          CheckPoolMemorySize(jcr->impl->FDSecureEraseCmd, fd->message_length);
-      if (sscanf(fd->msg, OKgetSecureEraseCmd, jcr->impl->FDSecureEraseCmd) ==
-          1) {
+      jcr->impl->FDSecureEraseCmd = CheckPoolMemorySize(
+          jcr->impl->FDSecureEraseCmd, fd->message_length);
+      if (sscanf(fd->msg, OKgetSecureEraseCmd, jcr->impl->FDSecureEraseCmd)
+          == 1) {
         Dmsg1(400, "Got FD Secure Erase Cmd: %s\n",
               jcr->impl->FDSecureEraseCmd);
         break;
@@ -584,8 +584,8 @@ static bool SendFileset(JobControlRecord* jcr)
          */
         if (store && !store->AllowCompress) {
           char newopts[MAX_FOPTS];
-          bool done =
-              false; /* print warning only if compression enabled in FS */
+          bool done
+              = false; /* print warning only if compression enabled in FS */
           int l = 0;
 
           for (int k = 0; fo->opts[k] != '\0'; k++) {
@@ -927,8 +927,8 @@ static int RestoreObjectHandler(void* ctx, int num_fields, char** row)
     return 1;
   }
 
-  if (jcr->impl->FDVersion <
-      FD_VERSION_5) { /* Old version without PluginName */
+  if (jcr->impl->FDVersion
+      < FD_VERSION_5) { /* Old version without PluginName */
     fd->fsend("restoreobject JobId=%s %s,%s,%s,%s,%s,%s\n", row[0], row[1],
               row[2], row[3], row[4], row[5], row[6]);
   } else {
@@ -988,8 +988,8 @@ bool SendPluginOptions(JobControlRecord* jcr)
       return false;
     }
   }
-  if (jcr->impl->res.job && jcr->impl->res.job->FdPluginOptions &&
-      jcr->impl->res.job->FdPluginOptions->size()) {
+  if (jcr->impl->res.job && jcr->impl->res.job->FdPluginOptions
+      && jcr->impl->res.job->FdPluginOptions->size()) {
     Dmsg2(200, "dird: sendpluginoptions found FdPluginOptions in res.job");
     foreach_alist_index (i, plugin_options,
                          jcr->impl->res.job->FdPluginOptions) {
@@ -1115,8 +1115,9 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     char *p, *fn;
     PoolMem Digest(PM_MESSAGE); /* Either Verify opts or MD5/SHA1 digest */
     Digest.check_size(fd->message_length);
-    if ((len = sscanf(fd->msg, "%ld %d %s", &file_index, &stream,
-                      Digest.c_str())) != 3) {
+    if ((len
+         = sscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest.c_str()))
+        != 3) {
       Jmsg(jcr, M_FATAL, 0,
            _("<filed: bad attributes, expected 3 fields got %d\n"
              "message_length=%d msg=%s\n"),
@@ -1136,8 +1137,8 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
     SkipNonspaces(&p); /* skip Opts_Digest */
     p++;               /* skip space */
     Dmsg1(debuglevel, "Stream=%d\n", stream);
-    if (stream == STREAM_UNIX_ATTRIBUTES ||
-        stream == STREAM_UNIX_ATTRIBUTES_EX) {
+    if (stream == STREAM_UNIX_ATTRIBUTES
+        || stream == STREAM_UNIX_ATTRIBUTES_EX) {
       if (jcr->cached_attribute) {
         Dmsg3(debuglevel, "Cached attr. Stream=%d fname=%s\n", ar->Stream,
               ar->fname, ar->attr);
@@ -1150,8 +1151,8 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       /*
        * Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
        */
-      fn = jcr->impl->fname =
-          CheckPoolMemorySize(jcr->impl->fname, fd->message_length);
+      fn = jcr->impl->fname
+          = CheckPoolMemorySize(jcr->impl->fname, fd->message_length);
       while (*p != 0) { *fn++ = *p++; /* copy filename */ }
       *fn = *p++;             /* term filename and point p to attribs */
       PmStrcpy(jcr->attr, p); /* save attributes */
@@ -1372,8 +1373,8 @@ void* HandleFiledConnection(ConnectionPool* connections,
   Connection* connection = NULL;
   SocketGuard socket_guard{fd};
 
-  client_resource =
-      (ClientResource*)my_config->GetResWithName(R_CLIENT, client_name);
+  client_resource
+      = (ClientResource*)my_config->GetResWithName(R_CLIENT, client_name);
   if (!client_resource) {
     Emsg1(M_WARNING, 0,
           "Client \"%s\" tries to connect, "
@@ -1394,8 +1395,8 @@ void* HandleFiledConnection(ConnectionPool* connections,
 
   Dmsg1(20, "Connected to file daemon %s\n", client_name);
 
-  connection =
-      connections->add_connection(client_name, fd_protocol_version, fd, true);
+  connection
+      = connections->add_connection(client_name, fd_protocol_version, fd, true);
   if (!connection) {
     Emsg0(M_ERROR, 0, "Failed to add connection to pool.\n");
     return NULL;

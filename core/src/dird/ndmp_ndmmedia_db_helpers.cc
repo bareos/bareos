@@ -30,7 +30,7 @@
 #include "dird.h"
 
 #if HAVE_NDMP
-#include "ndmp/ndmagents.h"
+#  include "ndmp/ndmagents.h"
 #endif /* HAVE_NDMP */
 
 namespace directordaemon {

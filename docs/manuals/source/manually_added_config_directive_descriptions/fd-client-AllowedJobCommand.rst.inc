@@ -4,7 +4,7 @@ Allowed Job Command can be defined globally for all directors by adding it to th
 
 You specify all commands you want to be executed by the filedaemon. When you don’t specify the option it will be empty which means all commands are allowed.
 
-The following example shows how to use this functionality: 
+The following example shows how to use this functionality:
 
 .. literalinclude:: /include/config/FdClientAllowedJobCommand1.conf
    :language: bareosconfig
@@ -35,4 +35,3 @@ Only the important commands the filedaemon can perform are filtered, as some com
 If runscripts are not needed it would be recommended as a security measure to disable running those or only allow the commands that you really want to be used.
 
 Runscripts are particularly a problem as they allow the |fd| to run arbitrary commands. You may also look into the :config:option:`fd/client/AllowedScriptDir`\  keyword to limit the impact of the runscript command.
-

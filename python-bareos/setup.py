@@ -28,14 +28,12 @@ def get_version():
     base_dir = os.path.abspath(os.path.dirname(__file__))
 
     try:
-        with open(
-            os.path.join(base_dir, "bareos", "VERSION.txt")
-        ) as version_file:
+        with open(os.path.join(base_dir, "bareos", "VERSION.txt")) as version_file:
             # read version
             # and adapt it according to
             # https://www.python.org/dev/peps/pep-0440/.
             fullversion = version_file.read().strip()
-            __version__ = re.compile(r'~pre([0-9]+).*').sub(r'.dev\1', fullversion)
+            __version__ = re.compile(r"~pre([0-9]+).*").sub(r".dev\1", fullversion)
     except IOError:
         # Fallback version.
         # First protocol implemented
@@ -59,7 +57,7 @@ setup(
     keywords="bareos",
     description="Client library and tools for Bareos console access.",
     long_description=open("README.rst").read(),
-    long_description_content_type='text/x-rst',
+    long_description_content_type="text/x-rst",
     # Python 2.6 is used by RHEL/Centos 6.
     # When RHEL/Centos 6 is no longer supported (End of 2020),
     # Python 2.6 will no longer be supported by python-bareos.

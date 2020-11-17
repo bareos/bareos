@@ -419,8 +419,8 @@ bool UseWaitingClient(JobControlRecord* jcr, int timeout)
     Dmsg1(120, "Client Initiated Connection from \"%s\" is not allowed.\n",
           jcr->impl->res.client->resource_name_);
   } else {
-    connection =
-        connections->remove(jcr->impl->res.client->resource_name_, timeout);
+    connection
+        = connections->remove(jcr->impl->res.client->resource_name_, timeout);
     if (connection) {
       jcr->file_bsock = connection->bsock();
       jcr->impl->FDVersion = connection->protocol_version();
@@ -465,9 +465,9 @@ static void* job_thread(void* arg)
    */
   stats_job_started();
 
-  if (jcr->impl->res.job->MaxStartDelay != 0 &&
-      jcr->impl->res.job->MaxStartDelay <
-          (utime_t)(jcr->start_time - jcr->sched_time)) {
+  if (jcr->impl->res.job->MaxStartDelay != 0
+      && jcr->impl->res.job->MaxStartDelay
+             < (utime_t)(jcr->start_time - jcr->sched_time)) {
     jcr->setJobStatus(JS_Canceled);
     Jmsg(jcr, M_FATAL, 0,
          _("Job canceled because max start delay time exceeded.\n"));
@@ -685,8 +685,8 @@ static void* job_thread(void* arg)
 void SdMsgThreadSendSignal(JobControlRecord* jcr, int sig)
 {
   jcr->lock();
-  if (!jcr->impl->sd_msg_thread_done && jcr->impl->SD_msg_chan_started &&
-      !pthread_equal(jcr->impl->SD_msg_chan, pthread_self())) {
+  if (!jcr->impl->sd_msg_thread_done && jcr->impl->SD_msg_chan_started
+      && !pthread_equal(jcr->impl->SD_msg_chan, pthread_self())) {
     Dmsg1(800, "Send kill to SD msg chan jid=%d\n", jcr->JobId);
     pthread_kill(jcr->impl->SD_msg_chan, sig);
   }
@@ -821,8 +821,8 @@ static bool JobCheckMaxwaittime(JobControlRecord* jcr)
 
   Dmsg2(200, "check maxwaittime %u >= %u\n", current + jcr->wait_time_sum,
         job->MaxWaitTime);
-  if (job->MaxWaitTime != 0 &&
-      (current + jcr->wait_time_sum) >= job->MaxWaitTime) {
+  if (job->MaxWaitTime != 0
+      && (current + jcr->wait_time_sum) >= job->MaxWaitTime) {
     cancel = true;
   }
 
@@ -840,8 +840,8 @@ static bool JobCheckMaxruntime(JobControlRecord* jcr)
   utime_t run_time;
 
   if (JobCanceled(jcr) || !jcr->job_started) { return false; }
-  if (job->MaxRunTime == 0 && job->FullMaxRunTime == 0 &&
-      job->IncMaxRunTime == 0 && job->DiffMaxRunTime == 0) {
+  if (job->MaxRunTime == 0 && job->FullMaxRunTime == 0
+      && job->IncMaxRunTime == 0 && job->DiffMaxRunTime == 0) {
     return false;
   }
   run_time = watchdog_time - jcr->start_time;
@@ -849,16 +849,16 @@ static bool JobCheckMaxruntime(JobControlRecord* jcr)
         watchdog_time, jcr->start_time, run_time, job->MaxRunTime,
         job->FullMaxRunTime, job->IncMaxRunTime, job->DiffMaxRunTime);
 
-  if (jcr->getJobLevel() == L_FULL && job->FullMaxRunTime != 0 &&
-      run_time >= job->FullMaxRunTime) {
+  if (jcr->getJobLevel() == L_FULL && job->FullMaxRunTime != 0
+      && run_time >= job->FullMaxRunTime) {
     Dmsg0(200, "check_maxwaittime: FullMaxcancel\n");
     cancel = true;
-  } else if (jcr->getJobLevel() == L_DIFFERENTIAL && job->DiffMaxRunTime != 0 &&
-             run_time >= job->DiffMaxRunTime) {
+  } else if (jcr->getJobLevel() == L_DIFFERENTIAL && job->DiffMaxRunTime != 0
+             && run_time >= job->DiffMaxRunTime) {
     Dmsg0(200, "check_maxwaittime: DiffMaxcancel\n");
     cancel = true;
-  } else if (jcr->getJobLevel() == L_INCREMENTAL && job->IncMaxRunTime != 0 &&
-             run_time >= job->IncMaxRunTime) {
+  } else if (jcr->getJobLevel() == L_INCREMENTAL && job->IncMaxRunTime != 0
+             && run_time >= job->IncMaxRunTime) {
     Dmsg0(200, "check_maxwaittime: IncMaxcancel\n");
     cancel = true;
   } else if (job->MaxRunTime > 0 && run_time >= job->MaxRunTime) {
@@ -956,12 +956,12 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
           continue; /* not really a duplicate */
         }
       }
-      if (job->CancelLowerLevelDuplicates && djcr->is_JobType(JT_BACKUP) &&
-          jcr->is_JobType(JT_BACKUP)) {
+      if (job->CancelLowerLevelDuplicates && djcr->is_JobType(JT_BACKUP)
+          && jcr->is_JobType(JT_BACKUP)) {
         switch (jcr->getJobLevel()) {
           case L_FULL:
-            if (djcr->getJobLevel() == L_DIFFERENTIAL ||
-                djcr->getJobLevel() == L_INCREMENTAL) {
+            if (djcr->getJobLevel() == L_DIFFERENTIAL
+                || djcr->getJobLevel() == L_INCREMENTAL) {
               cancel_dup = true;
             }
             break;
@@ -970,8 +970,8 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
             if (djcr->getJobLevel() == L_FULL) { cancel_me = true; }
             break;
           case L_INCREMENTAL:
-            if (djcr->getJobLevel() == L_FULL ||
-                djcr->getJobLevel() == L_DIFFERENTIAL) {
+            if (djcr->getJobLevel() == L_FULL
+                || djcr->getJobLevel() == L_DIFFERENTIAL) {
               cancel_me = true;
             }
         }
@@ -1121,8 +1121,8 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
       /*
        * Make sure the last diff is recent enough
        */
-      if (have_full && JobLevel == L_INCREMENTAL &&
-          jcr->impl->res.job->MaxDiffInterval > 0) {
+      if (have_full && JobLevel == L_INCREMENTAL
+          && jcr->impl->res.job->MaxDiffInterval > 0) {
         /*
          * Lookup last diff job
          */
@@ -1145,8 +1145,8 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
           Dmsg1(50, "No last_diff_time setting to full_time=%lld\n",
                 last_full_time);
         }
-        do_diff =
-            ((now - last_diff_time) >= jcr->impl->res.job->MaxDiffInterval);
+        do_diff
+            = ((now - last_diff_time) >= jcr->impl->res.job->MaxDiffInterval);
         Dmsg2(50, "do_diff=%d diffInter=%lld\n", do_diff,
               jcr->impl->res.job->MaxDiffInterval);
       }
@@ -1155,11 +1155,11 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
        * Note, do_full takes precedence over do_vfull and do_diff
        */
       if (have_full && jcr->impl->res.job->MaxFullInterval > 0) {
-        do_full =
-            ((now - last_full_time) >= jcr->impl->res.job->MaxFullInterval);
+        do_full
+            = ((now - last_full_time) >= jcr->impl->res.job->MaxFullInterval);
       } else if (have_full && jcr->impl->res.job->MaxVFullInterval > 0) {
-        do_vfull =
-            ((now - last_full_time) >= jcr->impl->res.job->MaxVFullInterval);
+        do_vfull
+            = ((now - last_full_time) >= jcr->impl->res.job->MaxVFullInterval);
       }
       FreePoolMemory(start_time);
 
@@ -1269,11 +1269,10 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
    * If only a pool override and no level overrides are given in run entry
    * choose this pool
    */
-  if (jcr->impl->res.run_pool_override &&
-      !jcr->impl->res.run_full_pool_override &&
-      !jcr->impl->res.run_vfull_pool_override &&
-      !jcr->impl->res.run_inc_pool_override &&
-      !jcr->impl->res.run_diff_pool_override) {
+  if (jcr->impl->res.run_pool_override && !jcr->impl->res.run_full_pool_override
+      && !jcr->impl->res.run_vfull_pool_override
+      && !jcr->impl->res.run_inc_pool_override
+      && !jcr->impl->res.run_diff_pool_override) {
     PmStrcpy(jcr->impl->res.pool_source, _("Run Pool override"));
     Dmsg2(100, "Pool set to '%s' because of %s",
           jcr->impl->res.pool->resource_name_, _("Run Pool override\n"));
@@ -1383,8 +1382,8 @@ bool GetOrCreateClientRecord(JobControlRecord* jcr)
   /*
    * Only initialize quota when a Soft or Hard Limit is set.
    */
-  if (jcr->impl->res.client->HardQuota != 0 ||
-      jcr->impl->res.client->SoftQuota != 0) {
+  if (jcr->impl->res.client->HardQuota != 0
+      || jcr->impl->res.client->SoftQuota != 0) {
     if (!jcr->db->GetQuotaRecord(jcr, &cr)) {
       if (!jcr->db->CreateQuotaRecord(jcr, &cr)) {
         Jmsg(jcr, M_FATAL, 0, _("Could not create Quota record. ERR=%s\n"),
@@ -1419,7 +1418,7 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
            sizeof(fsr.FileSet));
   if (jcr->impl->res.fileset->have_MD5) {
     MD5_CTX md5c;
-    unsigned char digest[16]; /* MD5 digest length */ 
+    unsigned char digest[16]; /* MD5 digest length */
     memcpy(&md5c, &jcr->impl->res.fileset->md5c, sizeof(md5c));
     MD5_Final(digest, &md5c);
     /*
@@ -1432,13 +1431,13 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
   } else {
     Jmsg(jcr, M_WARNING, 0, _("FileSet MD5 digest not found.\n"));
   }
-  if (!jcr->impl->res.fileset->ignore_fs_changes ||
-      !jcr->db->GetFilesetRecord(jcr, &fsr)) {
+  if (!jcr->impl->res.fileset->ignore_fs_changes
+      || !jcr->db->GetFilesetRecord(jcr, &fsr)) {
     PoolMem FileSetText(PM_MESSAGE);
-    OutputFormatter output_formatter =
-        OutputFormatter(pm_append, (void*)&FileSetText, nullptr, nullptr);
-    OutputFormatterResource output_formatter_resource =
-        OutputFormatterResource(&output_formatter);
+    OutputFormatter output_formatter
+        = OutputFormatter(pm_append, (void*)&FileSetText, nullptr, nullptr);
+    OutputFormatterResource output_formatter_resource
+        = OutputFormatterResource(&output_formatter);
 
     jcr->impl->res.fileset->PrintConfig(output_formatter_resource, *my_config,
                                         false, false);
@@ -1779,8 +1778,8 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
         jcr->impl->res.catalog = job->client->catalog;
         PmStrcpy(jcr->impl->res.catalog_source, _("Client resource"));
       } else {
-        jcr->impl->res.catalog =
-            (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
+        jcr->impl->res.catalog
+            = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
         PmStrcpy(jcr->impl->res.catalog_source, _("Default catalog"));
       }
     }

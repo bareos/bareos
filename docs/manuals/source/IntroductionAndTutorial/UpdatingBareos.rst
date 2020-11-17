@@ -114,5 +114,4 @@ If you are able to connect via the :command:`mysql` to the database, run the fol
 
 Currently on MySQL is it not necessary to run :command:`grant_bareos_privileges`, because access to the database is already given using wildcards.
 
-After this, restart the Bareos Director and verify it starts without problems.  
-
+After this, restart the Bareos Director and verify it starts without problems.

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup with encryption and compression 
+# Run a simple backup with encryption and compression
 #   then verify the signatures.
 #
 TestName="lzfast-encrypt-test"

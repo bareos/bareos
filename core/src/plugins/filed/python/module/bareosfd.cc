@@ -26,17 +26,17 @@
 #define BUILD_PLUGIN
 
 #if defined(HAVE_WIN32)
-#include "include/bareos.h"
-#include <Python.h>
+#  include "include/bareos.h"
+#  include <Python.h>
 #else
-#include <Python.h>
-#include "include/bareos.h"
+#  include <Python.h>
+#  include "include/bareos.h"
 #endif
 
 #if PY_VERSION_HEX < 0x03000000
-#define LOGPREFIX "python-fd-mod: "
+#  define LOGPREFIX "python-fd-mod: "
 #else
-#define LOGPREFIX "python3-fd-mod: "
+#  define LOGPREFIX "python3-fd-mod: "
 #endif
 
 
@@ -118,16 +118,16 @@ static bRC set_plugin_context(PluginContext* new_plugin_context)
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
    * Lookup the parse_plugin_definition() function in the python module.
    */
-  pFunc =
-      PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
-                           "parse_plugin_definition"); /* Borrowed reference */
+  pFunc = PyDict_GetItemString(
+      plugin_priv_ctx->pyModuleFunctionsDict,
+      "parse_plugin_definition"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pPluginDefinition, *pRetVal;
 
@@ -178,8 +178,8 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                void* value)
 {
   bRC retval = bRC_Error;
-  plugin_private_context* plugin_priv_ctx =
-      (plugin_private_context*)plugin_ctx->plugin_private_context;
+  plugin_private_context* plugin_priv_ctx
+      = (plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -269,8 +269,8 @@ static inline PySavePacket* NativeToPySavePacket(struct save_pkt* sp)
     }
 
     pSavePkt->type = sp->type;
-    pSavePkt->flags =
-        PyByteArray_FromStringAndSize(sp->flags, sizeof(sp->flags));
+    pSavePkt->flags
+        = PyByteArray_FromStringAndSize(sp->flags, sizeof(sp->flags));
     pSavePkt->no_read = sp->no_read;
     pSavePkt->portable = sp->portable;
     pSavePkt->accurate_found = sp->accurate_found;
@@ -367,16 +367,16 @@ static inline bool PySavePacketToNative(
          * As this has to linger as long as the backup is running we save it
          * in our plugin context.
          */
-        if (pSavePkt->object_name && pSavePkt->object &&
-            PyUnicode_Check(pSavePkt->object_name) &&
-            PyByteArray_Check(pSavePkt->object)) {
+        if (pSavePkt->object_name && pSavePkt->object
+            && PyUnicode_Check(pSavePkt->object_name)
+            && PyByteArray_Check(pSavePkt->object)) {
           char* buf;
 
           if (plugin_priv_ctx->object_name) {
             free(plugin_priv_ctx->object_name);
           }
-          plugin_priv_ctx->object_name =
-              strdup(PyUnicode_AsUTF8(pSavePkt->object_name));
+          plugin_priv_ctx->object_name
+              = strdup(PyUnicode_AsUTF8(pSavePkt->object_name));
           sp->object_name = plugin_priv_ctx->object_name;
 
           sp->object_len = pSavePkt->object_len;
@@ -437,8 +437,8 @@ bail_out:
 static bRC PyStartBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -489,8 +489,8 @@ bail_out:
 static bRC PyEndBackupFile(PluginContext* plugin_ctx)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -598,8 +598,8 @@ static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, struct io_pkt* io)
 static bRC PyPluginIO(PluginContext* plugin_ctx, struct io_pkt* io)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -650,8 +650,8 @@ bail_out:
 static bRC PyStartRestoreFile(PluginContext* plugin_ctx, const char* cmd)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -693,8 +693,8 @@ bail_out:
 static bRC PyEndRestoreFile(PluginContext* plugin_ctx)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   /*
@@ -726,8 +726,8 @@ bail_out:
 
 static inline PyRestorePacket* NativeToPyRestorePacket(struct restore_pkt* rp)
 {
-  PyRestorePacket* pRestorePacket =
-      PyObject_New(PyRestorePacket, &PyRestorePacketType);
+  PyRestorePacket* pRestorePacket
+      = PyObject_New(PyRestorePacket, &PyRestorePacketType);
 
   if (pRestorePacket) {
     pRestorePacket->stream = rp->stream;
@@ -774,8 +774,8 @@ static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
 static bRC PyCreateFile(PluginContext* plugin_ctx, struct restore_pkt* rp)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!rp) { return bRC_Error; }
@@ -820,8 +820,8 @@ static bRC PySetFileAttributes(PluginContext* plugin_ctx,
                                struct restore_pkt* rp)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!rp) { return bRC_Error; }
@@ -863,8 +863,8 @@ bail_out:
 static bRC PyCheckFile(PluginContext* plugin_ctx, char* fname)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!fname) { return bRC_Error; }
@@ -908,8 +908,8 @@ static inline PyAclPacket* NativeToPyAclPacket(struct acl_pkt* ap)
     pAclPacket->fname = ap->fname;
 
     if (ap->content_length && ap->content) {
-      pAclPacket->content =
-          PyByteArray_FromStringAndSize(ap->content, ap->content_length);
+      pAclPacket->content
+          = PyByteArray_FromStringAndSize(ap->content, ap->content_length);
     } else {
       pAclPacket->content = NULL;
     }
@@ -927,8 +927,8 @@ static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket,
     char* buf;
 
     ap->content_length = PyByteArray_Size(pAclPacket->content);
-    if (ap->content_length <= 0 ||
-        !(buf = PyByteArray_AsString(pAclPacket->content))) {
+    if (ap->content_length <= 0
+        || !(buf = PyByteArray_AsString(pAclPacket->content))) {
       return false;
     }
 
@@ -943,8 +943,8 @@ static inline bool PyAclPacketToNative(PyAclPacket* pAclPacket,
 static bRC PyGetAcl(PluginContext* plugin_ctx, acl_pkt* ap)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!ap) { return bRC_Error; }
@@ -991,8 +991,8 @@ bail_out:
 static bRC PySetAcl(PluginContext* plugin_ctx, acl_pkt* ap)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!ap) { return bRC_Error; }
@@ -1039,14 +1039,14 @@ static inline PyXattrPacket* NativeToPyXattrPacket(struct xattr_pkt* xp)
     pXattrPacket->fname = xp->fname;
 
     if (xp->name_length && xp->name) {
-      pXattrPacket->name =
-          PyByteArray_FromStringAndSize(xp->name, xp->name_length);
+      pXattrPacket->name
+          = PyByteArray_FromStringAndSize(xp->name, xp->name_length);
     } else {
       pXattrPacket->name = NULL;
     }
     if (xp->value_length && xp->value) {
-      pXattrPacket->value =
-          PyByteArray_FromStringAndSize(xp->value, xp->value_length);
+      pXattrPacket->value
+          = PyByteArray_FromStringAndSize(xp->value, xp->value_length);
     } else {
       pXattrPacket->value = NULL;
     }
@@ -1064,8 +1064,8 @@ static inline bool PyXattrPacketToNative(PyXattrPacket* pXattrPacket,
     char* buf;
 
     xp->name_length = PyByteArray_Size(pXattrPacket->name);
-    if (xp->name_length <= 0 ||
-        !(buf = PyByteArray_AsString(pXattrPacket->name))) {
+    if (xp->name_length <= 0
+        || !(buf = PyByteArray_AsString(pXattrPacket->name))) {
       return false;
     }
 
@@ -1078,8 +1078,8 @@ static inline bool PyXattrPacketToNative(PyXattrPacket* pXattrPacket,
     char* buf;
 
     xp->value_length = PyByteArray_Size(pXattrPacket->value);
-    if (xp->name_length <= 0 ||
-        !(buf = PyByteArray_AsString(pXattrPacket->name))) {
+    if (xp->name_length <= 0
+        || !(buf = PyByteArray_AsString(pXattrPacket->name))) {
       return false;
     }
 
@@ -1097,8 +1097,8 @@ static inline bool PyXattrPacketToNative(PyXattrPacket* pXattrPacket,
 static bRC PyGetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!xp) { return bRC_Error; }
@@ -1145,8 +1145,8 @@ bail_out:
 static bRC PySetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!xp) { return bRC_Error; }
@@ -1187,13 +1187,13 @@ bail_out:
 static inline PyRestoreObject* NativeToPyRestoreObject(
     struct restore_object_pkt* rop)
 {
-  PyRestoreObject* pRestoreObject =
-      PyObject_New(PyRestoreObject, &PyRestoreObjectType);
+  PyRestoreObject* pRestoreObject
+      = PyObject_New(PyRestoreObject, &PyRestoreObjectType);
 
   if (pRestoreObject) {
     pRestoreObject->object_name = PyUnicode_FromString(rop->object_name);
-    pRestoreObject->object =
-        PyByteArray_FromStringAndSize(rop->object, rop->object_len);
+    pRestoreObject->object
+        = PyByteArray_FromStringAndSize(rop->object, rop->object_len);
     pRestoreObject->plugin_name = rop->plugin_name;
     pRestoreObject->object_type = rop->object_type;
     pRestoreObject->object_len = rop->object_len;
@@ -1211,8 +1211,8 @@ static bRC PyRestoreObjectData(PluginContext* plugin_ctx,
                                struct restore_object_pkt* rop)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!rop) { return bRC_OK; }
@@ -1254,8 +1254,8 @@ bail_out:
 static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx =
-      (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  struct plugin_private_context* plugin_priv_ctx
+      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
   if (!sp) { return bRC_Error; }
@@ -1322,7 +1322,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
       char* value = NULL;
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value) == bRC_OK) {
+                                                &value)
+          == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
@@ -1337,7 +1338,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
       int value = 0;
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value) == bRC_OK) {
+                                                &value)
+          == bRC_OK) {
         pRetVal = PyLong_FromLong(value);
       }
       break;
@@ -1350,7 +1352,8 @@ static PyObject* PyBareosGetValue(PyObject* self, PyObject* args)
       char* value = NULL;
 
       if (bareos_core_functions->getBareosValue(plugin_ctx, (bVariable)var,
-                                                &value) == bRC_OK) {
+                                                &value)
+          == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
       break;
@@ -1488,8 +1491,8 @@ static PyObject* PyBareosRegisterEvents(PyObject* self, PyObject* args)
     if (event >= bEventJobStart && event <= FD_NR_EVENTS) {
       Dmsg(plugin_ctx, debuglevel,
            LOGPREFIX "PyBareosRegisterEvents registering event %d\n", event);
-      retval =
-          bareos_core_functions->registerBareosEvents(plugin_ctx, 1, event);
+      retval
+          = bareos_core_functions->registerBareosEvents(plugin_ctx, 1, event);
 
       if (retval != bRC_OK) { break; }
     }
@@ -1529,8 +1532,8 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* self, PyObject* args)
     if (event >= bEventJobStart && event <= FD_NR_EVENTS) {
       Dmsg(plugin_ctx, debuglevel,
            "PyBareosUnRegisterEvents: unregistering event %d\n", event);
-      retval =
-          bareos_core_functions->unregisterBareosEvents(plugin_ctx, 1, event);
+      retval
+          = bareos_core_functions->unregisterBareosEvents(plugin_ctx, 1, event);
     }
   }
 
@@ -2088,12 +2091,12 @@ static PyObject* PySavePacket_repr(PySavePacket* self)
  */
 static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
 {
-  static char* kwlist[] = {
-      (char*)"fname",          (char*)"link",         (char*)"type",
-      (char*)"flags",          (char*)"no_read",      (char*)"portable",
-      (char*)"accurate_found", (char*)"cmd",          (char*)"save_time",
-      (char*)"delta_seq",      (char*)"object_name",  (char*)"object",
-      (char*)"object_len",     (char*)"object_index", NULL};
+  static char* kwlist[]
+      = {(char*)"fname",          (char*)"link",         (char*)"type",
+         (char*)"flags",          (char*)"no_read",      (char*)"portable",
+         (char*)"accurate_found", (char*)"cmd",          (char*)"save_time",
+         (char*)"delta_seq",      (char*)"object_name",  (char*)"object",
+         (char*)"object_len",     (char*)"object_index", NULL};
   self->fname = NULL;
   self->link = NULL;
   self->type = 0;
@@ -2169,12 +2172,12 @@ static int PyRestorePacket_init(PyRestorePacket* self,
                                 PyObject* args,
                                 PyObject* kwds)
 {
-  static char* kwlist[] = {
-      (char*)"stream",     (char*)"data_stream",   (char*)"type",
-      (char*)"file_index", (char*)"linkFI",        (char*)"uid",
-      (char*)"statp",      (char*)"attrEX",        (char*)"ofname",
-      (char*)"olname",     (char*)"where",         (char*)"regexwhere",
-      (char*)"replace",    (char*)"create_status", NULL};
+  static char* kwlist[]
+      = {(char*)"stream",     (char*)"data_stream",   (char*)"type",
+         (char*)"file_index", (char*)"linkFI",        (char*)"uid",
+         (char*)"statp",      (char*)"attrEX",        (char*)"ofname",
+         (char*)"olname",     (char*)"where",         (char*)"regexwhere",
+         (char*)"replace",    (char*)"create_status", NULL};
 
   self->stream = 0;
   self->data_stream = 0;

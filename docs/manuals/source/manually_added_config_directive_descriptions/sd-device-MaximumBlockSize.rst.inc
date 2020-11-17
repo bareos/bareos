@@ -11,7 +11,7 @@ Please read chapter :ref:`Tapespeed and blocksizes`, to see how to tune this val
 
    This setting has only been tested with tape drives.
    The use with every other storage backend is untested and therefore unsupported and discouraged.
-      
+
 .. warning::
    After setting this value the device may write volumes with the new setting.
    Such volumes can only be read by a device with the same or a larger maximum block size configured.

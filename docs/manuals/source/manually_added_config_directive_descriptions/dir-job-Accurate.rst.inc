@@ -2,7 +2,7 @@
 
 .. _accuratemode:
 
- 
+
 
 .. _accurate:
 
@@ -15,4 +15,3 @@ When doing :ref:`VirtualFull <VirtualFull>` backups, it is advised to use the ac
 However, using the accurate mode has also disadvantages:
 
 -  The File daemon must keep data concerning all files in memory. So If you do not have sufficient memory, the backup may either be terribly slow or fail. For 500.000 files (a typical desktop linux system), it will require approximately 64 Megabytes of RAM on your File daemon to hold the required information.
-

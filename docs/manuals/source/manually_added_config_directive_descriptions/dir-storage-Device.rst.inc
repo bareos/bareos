@@ -7,4 +7,3 @@ Otherwise it refers to one or more configured :config:option:`sd/device/Name`\ ,
 This name is not the physical device name, but the logical device name as defined in the |sd| resource.
 
 If :config:option:`dir/job/Protocol = NDMP_NATIVE`\ , it refers to tape devices on the NDMP Tape Agent, see :ref:`section-NdmpNative`.
-

@@ -10,5 +10,3 @@ The following example shows how to use this functionality:
 
    .. literalinclude:: /include/config/FdClientAllowedScriptDir1.conf
       :language: bareosconfig
-
-

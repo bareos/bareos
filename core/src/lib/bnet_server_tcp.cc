@@ -44,16 +44,16 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #ifdef HAVE_ARPA_NAMESER_H
-#include <arpa/nameser.h>
+#  include <arpa/nameser.h>
 #endif
 #ifdef HAVE_RESOLV_H
 //#include <resolv.h>
 #endif
 
 #ifdef HAVE_POLL_H
-#include <poll.h>
+#  include <poll.h>
 #elif HAVE_SYS_POLL_H
-#include <sys/poll.h>
+#  include <sys/poll.h>
 #endif
 
 #include <algorithm>
@@ -137,9 +137,10 @@ static void RemoveDuplicateAddresses(dlist* addr_list)
       /*
        * See if the addresses match.
        */
-      if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen() &&
-          memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
-                 ipaddr->GetSockaddrLen()) == 0) {
+      if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen()
+          && memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
+                    ipaddr->GetSockaddrLen())
+                 == 0) {
         to_free = next;
         next = (IPADDR*)addr_list->next(next);
         addr_list->remove(to_free);
@@ -188,7 +189,8 @@ static int OpenSocketAndBind(IPADDR* ipaddr,
 
   int reuseaddress = 1;
   if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&reuseaddress,
-                 sizeof(reuseaddress)) < 0) {
+                 sizeof(reuseaddress))
+      < 0) {
     BErrNo be;
     Emsg1(M_WARNING, 0, _("Cannot set SO_REUSEADDR on socket: %s\n"),
           be.bstrerror());
@@ -274,20 +276,20 @@ void BnetThreadServerTcp(
                    UserAgentShutdownCallback);
 
 #ifdef HAVE_POLL
-  struct pollfd* pfds =
-      (struct pollfd*)alloca(sizeof(struct pollfd) * number_of_filedescriptors);
+  struct pollfd* pfds = (struct pollfd*)alloca(sizeof(struct pollfd)
+                                               * number_of_filedescriptors);
   memset(pfds, 0, sizeof(struct pollfd) * number_of_filedescriptors);
 
   int events = POLLIN;
-#if defined(POLLRDNORM)
+#  if defined(POLLRDNORM)
   events |= POLLRDNORM;
-#endif
-#if defined(POLLRDBAND)
+#  endif
+#  if defined(POLLRDBAND)
   events |= POLLRDBAND;
-#endif
-#if defined(POLLPRI)
+#  endif
+#  if defined(POLLPRI)
   events |= POLLPRI;
-#endif
+#  endif
 
   s_sockfd* fd_ptr = nullptr;
   int i = 0;
@@ -367,7 +369,8 @@ void BnetThreadServerTcp(
 
         int keepalive = 1;
         if (setsockopt(newsockfd, SOL_SOCKET, SO_KEEPALIVE,
-                       (sockopt_val_t)&keepalive, sizeof(keepalive)) < 0) {
+                       (sockopt_val_t)&keepalive, sizeof(keepalive))
+            < 0) {
           BErrNo be;
           Emsg1(M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"),
                 be.bstrerror());

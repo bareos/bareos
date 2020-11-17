@@ -12,4 +12,3 @@ Client {
   Connection From Director To Client = no
   Connection From Client To Director = yes
 }
-

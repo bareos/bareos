@@ -63,7 +63,7 @@ extern const struct BareosVersionStrings kBareosVersionStrings;
  *  penalties.
  */
 #ifdef DEVELOPER
-#define SMCHECK
+#  define SMCHECK
 #endif
 
 /*

@@ -90,8 +90,8 @@ static char OK_start_replicate[] = "3000 OK start replicate ticket = %d\n";
  * Responses sent to the Director
  */
 static char Job_start[] = "3010 Job %s start\n";
-static char Job_end[] =
-    "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+static char Job_end[]
+    = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 /**
  * After receiving a connection (in socket_server.c) if it is

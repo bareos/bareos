@@ -260,11 +260,11 @@ bool show_cmd(UaContext* ua, const char* cmd)
       ua->send->ObjectStart("disabled");
       if (((i + 1) < ua->argc) && Bstrcasecmp(ua->argk[i + 1], NT_("jobs"))) {
         ShowDisabledJobs(ua);
-      } else if (((i + 1) < ua->argc) &&
-                 Bstrcasecmp(ua->argk[i + 1], NT_("clients"))) {
+      } else if (((i + 1) < ua->argc)
+                 && Bstrcasecmp(ua->argk[i + 1], NT_("clients"))) {
         ShowDisabledClients(ua);
-      } else if (((i + 1) < ua->argc) &&
-                 Bstrcasecmp(ua->argk[i + 1], NT_("schedules"))) {
+      } else if (((i + 1) < ua->argc)
+                 && Bstrcasecmp(ua->argk[i + 1], NT_("schedules"))) {
         ShowDisabledSchedules(ua);
       } else {
         ShowDisabledJobs(ua);
@@ -609,10 +609,10 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   /*
    * Select what to do based on the first argument.
    */
-  if ((Bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL)) ||
-      ((Bstrcasecmp(ua->argk[1], NT_("job")) ||
-        Bstrcasecmp(ua->argk[1], NT_("jobname"))) &&
-       ua->argv[1])) {
+  if ((Bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL))
+      || ((Bstrcasecmp(ua->argk[1], NT_("job"))
+           || Bstrcasecmp(ua->argk[1], NT_("jobname")))
+          && ua->argv[1])) {
     /*
      * List jobs or List job=xxx
      */
@@ -670,9 +670,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
      * List JOBTOTALS
      */
     ua->db->ListJobTotals(ua->jcr, &jr, ua->send);
-  } else if ((Bstrcasecmp(ua->argk[1], NT_("jobid")) ||
-              Bstrcasecmp(ua->argk[1], NT_("ujobid"))) &&
-             ua->argv[1]) {
+  } else if ((Bstrcasecmp(ua->argk[1], NT_("jobid"))
+              || Bstrcasecmp(ua->argk[1], NT_("ujobid")))
+             && ua->argv[1]) {
     /*
      * List JOBID=nn
      * List UJOBID=xxx
@@ -830,8 +830,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
     ua->db->ListLogRecords(ua->jcr, clientname, query_range.c_str(), reverse,
                            ua->send, llist);
-  } else if (Bstrcasecmp(ua->argk[1], NT_("pool")) ||
-             Bstrcasecmp(ua->argk[1], NT_("pools"))) {
+  } else if (Bstrcasecmp(ua->argk[1], NT_("pool"))
+             || Bstrcasecmp(ua->argk[1], NT_("pools"))) {
     PoolDbRecord pr;
 
     /*
@@ -882,9 +882,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
     ua->db->ListSqlQuery(ua->jcr, "SELECT * FROM Storage", ua->send, llist,
                          "storages");
-  } else if (Bstrcasecmp(ua->argk[1], NT_("media")) ||
-             Bstrcasecmp(ua->argk[1], NT_("volume")) ||
-             Bstrcasecmp(ua->argk[1], NT_("volumes"))) {
+  } else if (Bstrcasecmp(ua->argk[1], NT_("media"))
+             || Bstrcasecmp(ua->argk[1], NT_("volume"))
+             || Bstrcasecmp(ua->argk[1], NT_("volumes"))) {
     /*
      * List MEDIA or VOLUMES
      */
@@ -986,8 +986,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
 
     return true;
-  } else if (Bstrcasecmp(ua->argk[1], NT_("nextvol")) ||
-             Bstrcasecmp(ua->argk[1], NT_("nextvolume"))) {
+  } else if (Bstrcasecmp(ua->argk[1], NT_("nextvol"))
+             || Bstrcasecmp(ua->argk[1], NT_("nextvolume"))) {
     int days;
 
     /*
@@ -1042,8 +1042,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
       ua->db->ListSqlQuery(ua->jcr, ua->cmd, ua->send, llist, "backups");
     }
-  } else if (Bstrcasecmp(ua->argk[1], NT_("jobstatistics")) ||
-             Bstrcasecmp(ua->argk[1], NT_("jobstats"))) {
+  } else if (Bstrcasecmp(ua->argk[1], NT_("jobstatistics"))
+             || Bstrcasecmp(ua->argk[1], NT_("jobstats"))) {
     jobid = GetJobidFromCmdline(ua);
     if (jobid > 0) {
       ua->db->ListJobstatisticsRecords(ua->jcr, jobid, ua->send, llist);
@@ -1148,9 +1148,9 @@ static inline bool parse_level_selection_param(PoolMem& selection,
        * Try mapping from text level to internal level.
        */
       for (int i = 0; joblevels[i].level_name; i++) {
-        if (joblevels[i].job_type == JT_BACKUP &&
-            bstrncasecmp(joblevels[i].level_name, cur_level,
-                         strlen(cur_level))) {
+        if (joblevels[i].job_type == JT_BACKUP
+            && bstrncasecmp(joblevels[i].level_name, cur_level,
+                            strlen(cur_level))) {
           if (cnt == 0) {
             Mmsg(temp, " AND Level IN ('%c'", joblevels[i].level);
             PmStrcat(selection, temp.c_str());
@@ -1182,8 +1182,8 @@ static inline bool parse_fileset_selection_param(PoolMem& selection,
 
   PmStrcpy(selection, "");
   fileset = FindArgWithValue(ua, "fileset");
-  if ((fileset >= 0 && Bstrcasecmp(ua->argv[fileset], "any")) ||
-      (listall && fileset < 0)) {
+  if ((fileset >= 0 && Bstrcasecmp(ua->argv[fileset], "any"))
+      || (listall && fileset < 0)) {
     FilesetResource* fs;
     PoolMem temp(PM_MESSAGE);
 
@@ -1394,11 +1394,11 @@ RunResource* find_next_run(RunResource* run,
       wom = mday / 7;
       woy = TmWoy(future);
 
-      bool is_scheduled = BitIsSet(mday, run->date_time_bitfield.mday) &&
-                          BitIsSet(wday, run->date_time_bitfield.wday) &&
-                          BitIsSet(month, run->date_time_bitfield.month) &&
-                          BitIsSet(wom, run->date_time_bitfield.wom) &&
-                          BitIsSet(woy, run->date_time_bitfield.woy);
+      bool is_scheduled = BitIsSet(mday, run->date_time_bitfield.mday)
+                          && BitIsSet(wday, run->date_time_bitfield.wday)
+                          && BitIsSet(month, run->date_time_bitfield.month)
+                          && BitIsSet(wom, run->date_time_bitfield.wom)
+                          && BitIsSet(woy, run->date_time_bitfield.woy);
 
       if (is_scheduled) { /* Jobs scheduled on that day */
         /* find time (time_t) job is to be run */
@@ -1498,8 +1498,8 @@ void DoMessages(UaContext* ua, const char* cmd)
 
 bool DotMessagesCmd(UaContext* ua, const char* cmd)
 {
-  if (console_msg_pending && ua->AclNoRestrictions(Command_ACL) &&
-      ua->auto_display_messages) {
+  if (console_msg_pending && ua->AclNoRestrictions(Command_ACL)
+      && ua->auto_display_messages) {
     DoMessages(ua, cmd);
   }
   return true;
@@ -1530,8 +1530,8 @@ of_filter_state filterit(void* ctx, void* data, of_filter_tuple* tuple)
     case OF_FILTER_OFFSET:
       break;
     case OF_FILTER_ACL:
-      if (!row[tuple->u.acl_filter.column] ||
-          strlen(row[tuple->u.acl_filter.column]) == 0) {
+      if (!row[tuple->u.acl_filter.column]
+          || strlen(row[tuple->u.acl_filter.column]) == 0) {
         retval = OF_FILTER_STATE_UNKNOWN;
       } else {
         if (!ua->AclAccessOk(tuple->u.acl_filter.acltype,
@@ -1544,8 +1544,8 @@ of_filter_state filterit(void* ctx, void* data, of_filter_tuple* tuple)
       }
       goto bail_out;
     case OF_FILTER_RESOURCE:
-      if (!row[tuple->u.res_filter.column] ||
-          strlen(row[tuple->u.res_filter.column]) == 0) {
+      if (!row[tuple->u.res_filter.column]
+          || strlen(row[tuple->u.res_filter.column]) == 0) {
         retval = OF_FILTER_STATE_UNKNOWN;
       } else {
         if (!my_config->GetResWithName(tuple->u.res_filter.restype,
@@ -1563,8 +1563,8 @@ of_filter_state filterit(void* ctx, void* data, of_filter_tuple* tuple)
     case OF_FILTER_DISABLED: {
       bool enabled = true;
 
-      if (!row[tuple->u.res_filter.column] ||
-          strlen(row[tuple->u.res_filter.column]) == 0) {
+      if (!row[tuple->u.res_filter.column]
+          || strlen(row[tuple->u.res_filter.column]) == 0) {
         retval = OF_FILTER_STATE_UNKNOWN;
         goto bail_out;
       }

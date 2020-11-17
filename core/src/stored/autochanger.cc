@@ -141,8 +141,8 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
   /*
    * An empty ChangerCommand => virtual disk autochanger
    */
-  if (dcr->device_resource->changer_command &&
-      dcr->device_resource->changer_command[0] == 0) {
+  if (dcr->device_resource->changer_command
+      && dcr->device_resource->changer_command[0] == 0) {
     Dmsg0(100, "ChangerCommand=0, virtual disk changer\n");
     return 1; /* nothing to load */
   }
@@ -272,8 +272,8 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
         BErrNo be;
         be.SetErrno(status);
         std::string tmp(results.c_str());
-        if (tmp.find("Source Element Address") != std::string::npos &&
-            tmp.find("is Empty") != std::string::npos) {
+        if (tmp.find("Source Element Address") != std::string::npos
+            && tmp.find("is Empty") != std::string::npos) {
           rtn_stat = -3; /* medium not found in slot */
         } else {
           rtn_stat = -1; /* hard error */
@@ -466,8 +466,8 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
 
   if (loaded_slot == 0) { return true; }
 
-  if (!dev->IsAutochanger() || !dcr->device_resource->changer_name ||
-      !dcr->device_resource->changer_command) {
+  if (!dev->IsAutochanger() || !dcr->device_resource->changer_name
+      || !dcr->device_resource->changer_command) {
     return false;
   }
 
@@ -570,8 +570,8 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
     dcr->SetDev(dev);
 
     bool slotnumber_not_set = !IsSlotNumberValid(dev->GetSlot());
-    bool slot_not_loaded_in_autochanger =
-        !IsSlotNumberValid(GetAutochangerLoadedSlot(dcr, lock_set));
+    bool slot_not_loaded_in_autochanger
+        = !IsSlotNumberValid(GetAutochangerLoadedSlot(dcr, lock_set));
 
     if (slotnumber_not_set && slot_not_loaded_in_autochanger) {
       dcr->SetDev(dev_save);
@@ -737,8 +737,8 @@ bool AutochangerCmd(DeviceControlRecord* dcr,
   int status;
   int retries = 1; /* Number of retries on failing slot count */
 
-  if (!dev->IsAutochanger() || !dcr->device_resource->changer_name ||
-      !dcr->device_resource->changer_command) {
+  if (!dev->IsAutochanger() || !dcr->device_resource->changer_name
+      || !dcr->device_resource->changer_command) {
     if (bstrcmp(cmd, "drives")) { dir->fsend("drives=1\n"); }
     dir->fsend(_("3993 Device %s not an autochanger device.\n"),
                dev->print_name());
@@ -845,8 +845,8 @@ bool AutochangerTransferCmd(DeviceControlRecord* dcr,
   int len = SizeofPoolMemory(dir->msg) - 1;
   int status;
 
-  if (!dev->IsAutochanger() || !dcr->device_resource->changer_name ||
-      !dcr->device_resource->changer_command) {
+  if (!dev->IsAutochanger() || !dcr->device_resource->changer_name
+      || !dcr->device_resource->changer_command) {
     dir->fsend(_("3993 Device %s not an autochanger device.\n"),
                dev->print_name());
     return false;
