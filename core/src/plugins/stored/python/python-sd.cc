@@ -33,10 +33,11 @@
 #  include <Python.h>
 #  include "include/bareos.h"
 #endif
+#include "include/version_hex.h"
 
 #define PLUGIN_DAEMON "sd"
 
-#if PY_VERSION_HEX < 0x03000000
+#if PY_VERSION_HEX < VERSION_HEX(3, 0, 0)
 #  define PLUGIN_NAME "python"
 #  define PLUGIN_DIR PY2MODDIR
 #else
@@ -245,7 +246,10 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   *plugin_information = &pluginInfo; /* Return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
 
+#if PY_VERSION_HEX < VERSION_HEX(3, 7, 0)
   PyEval_InitThreads();
+#endif
+
   mainThreadState = PyEval_SaveThread();
   return bRC_OK;
 }
@@ -313,7 +317,12 @@ static bRC freePlugin(PluginContext* plugin_ctx)
   if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
 
   Py_EndInterpreter(plugin_priv_ctx->interpreter);
+#if PY_VERSION_HEX < VERSION_HEX(3, 2, 0)
   PyEval_ReleaseLock();
+#else
+  PyThreadState_Swap(mainThreadState);
+  PyEval_ReleaseThread(mainThreadState);
+#endif
 
   free(plugin_priv_ctx);
   plugin_ctx->plugin_private_context = NULL;
