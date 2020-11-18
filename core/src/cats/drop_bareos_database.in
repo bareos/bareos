@@ -86,7 +86,7 @@ case ${db_type} in
       retval=$?
       ;;
    postgresql)
-      dropdb --username=${db_user} $* ${db_name}
+      dropdb $* ${db_name}
       retval=$?
       ;;
 esac
