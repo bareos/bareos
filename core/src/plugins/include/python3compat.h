@@ -23,7 +23,9 @@
 
 /* redefine python3 calls to python2 pendants */
 
-#if PY_VERSION_HEX < 0x03000000
+#include "include/version_hex.h"
+
+#if PY_VERSION_HEX < VERSION_HEX(3, 0, 0)
 #  define PyLong_FromLong PyInt_FromLong
 #  define PyLong_AsLong PyInt_AsLong
 
