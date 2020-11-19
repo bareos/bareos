@@ -66,6 +66,7 @@ debian/bareos-filedaemon.service
 debian/bareos-regress-config.install
 debian/bareos-regress-config.preinst
 debian/bareos-storage-ceph.install
+debian/bareos-storage-droplet.install
 debian/bareos-storage-fifo.install
 debian/bareos-storage-glusterfs.install
 debian/bareos-storage-python-plugin.install
