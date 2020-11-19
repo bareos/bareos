@@ -4,6 +4,7 @@ core/src/droplet
 core/src/ndmp/*.c
 core/src/ndmp/*.h
 core/src/stored/crc32
+debian/control
 webui/vendor
 webui/module/Application/language
 webui/public/js/*.min.*
