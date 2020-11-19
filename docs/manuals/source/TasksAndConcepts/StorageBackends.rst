@@ -199,7 +199,7 @@ A device for CEPH object storage could look like this:
      Media Type = "S3_Object1"
      Archive Device = "Object S3 Storage"
      Device Type = droplet
-     Device Options = "profile=/etc/bareos/bareos-sd.d/droplet/ceph-rados-gateway.profile,bucket=backup-bareos,chunksize=100M"
+     Device Options = "profile=/etc/bareos/bareos-sd.d/device/droplet/ceph-rados-gateway.profile,bucket=backup-bareos,chunksize=100M"
      Label Media = yes                    # Lets Bareos label unlabeled media
      Random Access = yes
      Automatic Mount = yes                # When device opened, read it
