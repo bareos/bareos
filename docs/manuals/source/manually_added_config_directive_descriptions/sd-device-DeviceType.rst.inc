@@ -19,6 +19,8 @@ The Device Type specification allows you to explicitly define the kind of device
 
    :sinceVersion:`14.2.2: Ceph (Rados)`
 
+   .. deprecated:: 20.0.0
+
 **Droplet**
    is used to access an object store supported by **libdroplet**, most notably S3. For details, refer to :ref:`SdBackendDroplet`.
 
