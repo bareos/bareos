@@ -93,22 +93,10 @@ Bareos Version Numbers and Releases
 
 :index:`\ <single: Version numbers>`\  :index:`\ <single: Releases>`\
 
-Bareos version numbers consists of three parts: YY.Q.C
+Bareos :sinceVersion:`20.0.0: Semantic Versioning` follows `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_ with a few special considerations:
 
-==== ====================================================================================================================================================================================================================================================================================================================================
-YY   year (last two digits)
-Q    quarter of the year
-YY.Q year and quarter of the code freeze. After this, as a general rule, no new feature should get introduced to this Bareos branch. Subsequent release are for bugfixing.
-C    Release counter. For every subsequent release, this counter is incremented. Beginning with 16.2, numbers from 1 to 3 represents the month of the quarter during development. After the code freeze, the number is set to 4. So, stable releases get number from 4 onwards. Maintenance releases get numbers starting from 5 onwards.
-==== ====================================================================================================================================================================================================================================================================================================================================
-
-Following information can be determined from the Bareos release bareos-16.2.4:
-
--  16.2: Code freeze have been in the second quarter of 2016
-
--  4: this is the first stable release of the bareos-16.2 branch
-
-For details about the different releases see :ref:`releasenotes`.
+* If a new major release does not contain backwards-incompatible changes, a subsequent release of that major version may still break backwards-compatibility with a previous major release.
+* |dir| and |sd| are guaranteed to be backwards-compatible to the |fd| of the previous two major releases.
 
 .. _section-BareosPackages:
 
