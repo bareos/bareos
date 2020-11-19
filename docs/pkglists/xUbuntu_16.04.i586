@@ -27,6 +27,7 @@ i386/bareos-filedaemon-python3-plugin
 i386/bareos-regress-config
 i386/bareos-storage
 i386/bareos-storage-ceph
+i386/bareos-storage-droplet
 i386/bareos-storage-fifo
 i386/bareos-storage-python-plugins-common
 i386/bareos-storage-python2-plugin

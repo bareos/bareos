@@ -35,8 +35,10 @@ Build-Depends: acl-dev,
  libssl-dev,
  libwrap0-dev,
  libx11-dev,
+ libxml2-dev,
  libsqlite3-dev, default-libmysqlclient-dev | libmysqlclient-dev, libpq-dev,
  libjansson-dev,
+ libjson-c-dev,
  logrotate,
  lsb-release,
  mtx [!hurd-any],
@@ -334,6 +336,8 @@ Description: Backup Archiving Recovery Open Sourced - common tools
 @DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGINS_COMMON@
 
 @DEBIAN_CONTROL_STORAGE_CEPH@
+
+@DEBIAN_CONTROL_STORAGE_DROPLET@
 
 @DEBIAN_CONTROL_STORAGE_GLUSTERFS@
 
