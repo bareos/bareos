@@ -382,20 +382,15 @@ bool droplet_device::CheckRemote()
     if (!initialize()) { return false; }
   }
 
-  auto status = check_path("/");
+  auto status = check_path("bareos-test/");
 
   const char* h = dpl_addrlist_get(ctx_->addrlist);
   std::string hostaddr{h != nullptr ? h : "???"};
 
   switch (status) {
     case DPL_SUCCESS:
-      Dmsg1(100, "Host is accessible: %s\n", hostaddr.c_str());
-      return true;
     case DPL_ENOENT:
-      Dmsg2(100,
-            "Host is accessible: %s (%s), probably the host should be"
-            " configured to accept virtual-host-style requests\n",
-            hostaddr.c_str(), dpl_status_str(status));
+      Dmsg1(100, "Host is accessible: %s\n", hostaddr.c_str());
       return true;
     default:
       Dmsg2(100, "Cannot reach host: %s (%s)\n ", hostaddr.c_str(),
@@ -416,12 +411,20 @@ bool droplet_device::remote_chunked_volume_exists()
   Mmsg(chunk_dir, "%s/", getVolCatName());
   status = check_path(chunk_dir.c_str());
 
+  const char* h = dpl_addrlist_get(ctx_->addrlist);
+  std::string hostaddr{h != nullptr ? h : "???"};
+
   switch (status) {
     case DPL_SUCCESS:
       Dmsg1(100, "Remote chunked volume %s exists\n", chunk_dir.c_str());
       retval = true;
       break;
     case DPL_ENOENT:
+      Dmsg2(100,
+            "Host is accessible: %s (%s), probably the host should be"
+            " configured to accept virtual-host-style requests\n",
+            hostaddr.c_str(), dpl_status_str(status));
+      break;
     case DPL_FAILURE:
     default:
       Dmsg1(100, "Remote chunked volume %s does not exist\n",
