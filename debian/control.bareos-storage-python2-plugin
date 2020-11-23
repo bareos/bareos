@@ -3,7 +3,7 @@ Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Provides:       bareos-storage-python-plugin
+Provides:       bareos-storage-python-plugin (= ${binary:Version})
 Replaces:       bareos-storage-python-plugin
 Conflicts:      bareos-storage-python-plugin
 Description: Backup Archiving Recovery Open Sourced - storage daemon Python plugin
