@@ -38,31 +38,28 @@ ways that Bareos is designed to facilitate this:
    than data.
 
 -  The Director has a number of commands that are non-interactive. They
-   all begin with a period, and provide things such as the list of all
+   all begin with a period and provide things such as the list of all
    Jobs, list of all Clients, list of all Pools, list of all Storage, …
    Thus the GUI interface can get to virtually all information that the
-   Director has in a deterministic way. See
-   https://github.com/bareos/bareos/blob/master/core/src/dird/ua_dotcmds.cc
-   for more details on this.
+   Director has in a deterministic way.
 
 -  Most console commands allow all the arguments to be specified on the
-   command line: e.g. ``run job=NightlyBackup level=Full``
+   command line: e.g. :bcommand:`run job=NightlyBackup level=Full`
 
 dot commands
 ------------
 
-Besides the normal commands (like list, status, run, mount, …) the
+Besides the normal commands (like list, status, run, mount, ...) the
 Director offers a number of so called *dot commands*. They all begin
 with a period, are all non-interactive, easily parseable and are
 indended to be used by other Bareos interface programs (GUIs).
 
-See https://github.com/bareos/bareos/blob/master/core/src/dird/ua_dotcmds.cc
-for more details.
+The command :bcommand:`.help` shows a complete list of all dot commands.
 
 -  ``.actiononpurge``
--  .\ ``api [ 0 | 1 | 2 | off | on | json ]``
+-  ``.api [ 0 | 1 | 2 | off | on | json ]``
 
-   -  Switch between different `api modes <#sec:ApiMode>`__
+   -  Switch between different :ref:`section-ApiMode`.
 
 -  ``.clients``
 
@@ -152,14 +149,15 @@ for more details.
 -  ``.bvfs_cleanup``
 -  ``.bvfs_clear_cache``
 
-.. _sec:ApiMode:
+.. _section-ApiMode:
 
 API Modes
 ---------
 
-The ``.api`` command can be used to switch between the different API
-modes. Besides the ``.api`` command, there is also the ``gui on | off``
-command. However, this command can be ignored, as it set to gui on in
+The :bcommand:`.api` command can be used to switch between the different API
+modes. Besides the :bcommand:`.api` command,
+there is also the :bcommand:`gui on | off` command.
+However, this command can be ignored, as it set to gui on in
 command execution anyway.
 
 API mode 0 (off)
@@ -197,7 +195,7 @@ all.
 
 In API mode 1 some output is only delimted by the end of a packet, by
 not a new line. bconsole does not display end of packets (for good
-reason, as some output (e.g. ``status``) is send in multiple packets).
+reason, as some output (e.g. :bcommand:`status`) is send in multiple packets).
 If running in a bconsole, this leads not parsable output for human.
 
 Example:
@@ -238,7 +236,7 @@ differs from API mode 1 in several aspects:
    (http://www.jsonrpc.org/specification#response_object). This should
    make it easier to implement a full JSON-RPC service later.
 -  No user interaction inside a command (meaning: if not all parameter
-   are given to a ``run`` command, the command fails).
+   are given to a :bcommand:`run` command, the command fails).
 -  Each command creates exaclty one responce object.
 
 Currently a subset of the available commands return there result in JSON
@@ -307,7 +305,7 @@ Examples
        }
        }
 
-   -  keys are the table names
+   - The keys are identical to the catalog column names in lowercase.
 
 -  llist
 
@@ -378,7 +376,7 @@ Examples
        }
        }
 
-   -  like the list ``command``, but more values
+   - Like the :bcommand:`list` command, but contains more information.
 
 -  .jobs
 
