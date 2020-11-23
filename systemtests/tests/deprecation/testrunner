@@ -29,14 +29,32 @@ invoke_dir() {
   fi
   "${BAREOS_DIRECTOR_BINARY}" "${options[@]}"
 }
+invoke_sd() {
+  options=("$@")
+  if [ -n "${BAREOS_SD_USER:-}" ]; then
+    options+=(-u "${BAREOS_SD_USER}")
+  fi
+  if [ -n "${BAREOS_SD_GROUP:-}" ]; then
+    options+=(-g "${BAREOS_SD_GROUP}")
+  fi
+  if [ -n "${BAREOS_CONFIG_DIR:-}" ]; then
+    options+=(-c "${BAREOS_CONFIG_DIR}")
+  fi
+  "${BAREOS_STORAGEDAEMON_BINARY}" "${options[@]}"
+}
 
 
 start_test
 
 # check for deprecated database if applicable
-if [ "$DBTYPE" = mysql -o "$DBTYPE" = sqlite3 ]; then
+if [ "$DBTYPE" = mysql ] || [ "$DBTYPE" = sqlite3 ]; then
+  echo "Checking catalog backend deprecation"
   invoke_dir -t -v 2>&1 \
     | grep "Deprecated DB driver ${DBTYPE} for Catalog MyCatalog"
 fi
+
+echo "Checking rados backend deprecation"
+invoke_sd -t -v 2>&1 \
+  | grep "The Rados Storage Backend Device is deprecated"
 
 end_test
