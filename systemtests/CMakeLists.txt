@@ -190,6 +190,7 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     # ${${binary_name_to_test_upcase}}" )
     create_symlink(${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}})
   endforeach()
+  create_symlink(${scriptdir}/btraceback ${CURRENT_SBIN_DIR}/btraceback)
 endmacro()
 
 macro(prepare_testdir_for_daemon_run)
@@ -519,8 +520,6 @@ file(MAKE_DIRECTORY ${bindir})
 file(MAKE_DIRECTORY ${scripts})
 file(MAKE_DIRECTORY ${working})
 file(MAKE_DIRECTORY ${archivedir})
-
-create_symlink(${scriptdir}/btraceback ${bindir}/btraceback)
 
 file(REMOVE_RECURSE ${scripts}/ddl)
 file(RENAME ${PROJECT_BINARY_DIR}/ddl ${scripts}/ddl)
