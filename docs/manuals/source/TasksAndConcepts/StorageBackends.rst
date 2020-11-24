@@ -19,7 +19,8 @@ A Bareos Storage Daemon can use various storage backends:
    is used to access a GlusterFS storage.
 
 **Rados** (Ceph Object Store)
-   is used to access a Ceph object store.
+   is used to access a Ceph object store (deprecated since Bareos 20.0.0)
+
 
 .. _SdBackendDroplet:
 
@@ -174,7 +175,7 @@ More arguments and the SSL parameters can be found in the documentation of the d
 CEPH Object Gateway S3
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Please note, that there is also the :ref:`SdBackendRados` backend, which can backup to CEPH directly. However, currently (17.2.7) the **Droplet** (S3) is known to outperform the **Rados** backend.
+Please note, that there is also the :ref:`SdBackendRados` backend, which is deprecated since Bareos 20.0.0. Please use the **Droplet** (S3) backend, instead.
 
 While parameters have been explained in the :ref:`section-DropletAwsS3` section, this gives an example about how to backup to a CEPH Object Gateway S3.
 
@@ -350,6 +351,8 @@ Adapt server and volume name to your environment.
 
 Rados Storage Backend
 ---------------------
+
+.. deprecated:: 20.0.0
 
 **Rados** (Ceph Object Store)
 
