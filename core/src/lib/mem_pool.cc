@@ -433,19 +433,13 @@ void GarbageCollectMemoryPool()
 /* Release all freed pooled memory */
 void CloseMemoryPool()
 {
-   struct abufhead *buf, *next;
-   int count = 0;
-   uint64_t bytes = 0;
-
    sm_check(__FILE__, __LINE__, false);
    P(mutex);
    for (int i=1; i<=PM_MAX; i++) {
-      buf = pool_ctl[i].free_buf;
+      abufhead* buf = pool_ctl[i].free_buf;
       while (buf) {
-         next = buf->next;
-         count++;
-         bytes += SizeofPoolMemory((char *)buf);
-         free((char *)buf);
+         abufhead* next = buf->next;
+         free(buf);
          buf = next;
       }
       pool_ctl[i].free_buf = NULL;
