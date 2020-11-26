@@ -225,28 +225,31 @@ POOLMEM* CheckPoolMemorySize(POOLMEM* obuf, int32_t size)
 /* Free a memory buffer */
 void FreePoolMemory(POOLMEM* obuf)
 {
-  struct abufhead* buf;
-  int pool;
-
   ASSERT(obuf);
-  P(mutex);
-  buf = (struct abufhead*)((char*)obuf - HEAD_SIZE);
-  pool = buf->pool;
-  pool_ctl[pool].in_use--;
+  struct abufhead* buf = (struct abufhead*)((char*)obuf - HEAD_SIZE);
+
+  int pool = buf->pool;
+
   if (pool == 0) {
     free((char*)buf); /* free nonpooled memory */
-  } else {            /* otherwise link it to the free pool chain */
-    struct abufhead* next;
-    /* Don't let him free the same buffer twice */
-    for (next = pool_ctl[pool].free_buf; next; next = next->next) {
-      if (next == buf) {
-        V(mutex);
-        ASSERT(next != buf); /* attempt to free twice */
-      }
-    }
-    buf->next = pool_ctl[pool].free_buf;
-    pool_ctl[pool].free_buf = buf;
+    P(mutex);
+    pool_ctl[0].in_use--;
+    V(mutex);
+    return;
   }
+  /* otherwise link it to the free pool chain */
+  P(mutex);
+  struct abufhead* next;
+  /* Don't let him free the same buffer twice */
+  for (next = pool_ctl[pool].free_buf; next; next = next->next) {
+    if (next == buf) {
+      V(mutex);
+      ASSERT(next != buf); /* attempt to free twice */
+    }
+  }
+  pool_ctl[pool].in_use--;
+  buf->next = pool_ctl[pool].free_buf;
+  pool_ctl[pool].free_buf = buf;
   V(mutex);
 }
 
