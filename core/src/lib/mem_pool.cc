@@ -152,9 +152,8 @@ POOLMEM* GetPoolMemory(int pool)
   buf->pool = pool;
   buf->next = NULL;
   pool_ctl[pool].in_use++;
-  if (pool_ctl[pool].in_use > pool_ctl[pool].max_used) {
-    pool_ctl[pool].max_used = pool_ctl[pool].in_use;
-  }
+  pool_ctl[pool].max_used
+      = std::max(pool_ctl[pool].in_use, pool_ctl[pool].max_used);
   V(mutex);
   return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
 }
@@ -163,7 +162,6 @@ POOLMEM* GetPoolMemory(int pool)
 POOLMEM* GetMemory(int32_t size)
 {
   struct abufhead* buf;
-  int pool = 0;
 
   if ((buf = (struct abufhead*)malloc(size + HEAD_SIZE)) == NULL) {
     MemPoolErrorMessage(__FILE__, __LINE__,
@@ -172,12 +170,12 @@ POOLMEM* GetMemory(int32_t size)
   }
 
   buf->ablen = size;
-  buf->pool = pool;
+  buf->pool = 0;
   buf->next = NULL;
-  pool_ctl[pool].in_use++;
-  if (pool_ctl[pool].in_use > pool_ctl[pool].max_used) {
-    pool_ctl[pool].max_used = pool_ctl[pool].in_use;
-  }
+  P(mutex);
+  pool_ctl[0].in_use++;
+  pool_ctl[0].max_used = std::max(pool_ctl[0].in_use, pool_ctl[0].max_used);
+  V(mutex);
   return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
 }
 
@@ -194,23 +192,17 @@ int32_t SizeofPoolMemory(POOLMEM* obuf)
 /* Realloc pool memory buffer */
 POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size)
 {
-  char* cp = (char*)obuf;
-  void* buf;
-  int pool;
-
   ASSERT(obuf);
-  P(mutex);
-  cp -= HEAD_SIZE;
-  buf = realloc(cp, size + HEAD_SIZE);
+  void* buf = realloc((char*)obuf - HEAD_SIZE, size + HEAD_SIZE);
   if (buf == NULL) {
-    V(mutex);
     MemPoolErrorMessage(__FILE__, __LINE__,
                         _("Out of memory requesting %d bytes\n"), size);
     return NULL;
   }
 
   ((struct abufhead*)buf)->ablen = size;
-  pool = ((struct abufhead*)buf)->pool;
+  const int pool = ((struct abufhead*)buf)->pool;
+  P(mutex);
   if (size > pool_ctl[pool].max_allocated) {
     pool_ctl[pool].max_allocated = size;
   }
@@ -228,28 +220,30 @@ POOLMEM* CheckPoolMemorySize(POOLMEM* obuf, int32_t size)
 /* Free a memory buffer */
 void FreePoolMemory(POOLMEM* obuf)
 {
-  struct abufhead* buf;
-  int pool;
-
   ASSERT(obuf);
-  P(mutex);
-  buf = (struct abufhead*)((char*)obuf - HEAD_SIZE);
-  pool = buf->pool;
-  pool_ctl[pool].in_use--;
+  struct abufhead* buf = (struct abufhead*)((char*)obuf - HEAD_SIZE);
+
+  const int pool = buf->pool;
+
   if (pool == 0) {
     free((char*)buf); /* free nonpooled memory */
-  } else {            /* otherwise link it to the free pool chain */
-    struct abufhead* next;
-    /* Don't let him free the same buffer twice */
-    for (next = pool_ctl[pool].free_buf; next; next = next->next) {
-      if (next == buf) {
-        V(mutex);
-        ASSERT(next != buf); /* attempt to free twice */
-      }
-    }
-    buf->next = pool_ctl[pool].free_buf;
-    pool_ctl[pool].free_buf = buf;
+    P(mutex);
+    pool_ctl[0].in_use--;
+    V(mutex);
+    return;
   }
+  P(mutex);
+  struct abufhead* next;
+  for (next = pool_ctl[pool].free_buf; next; next = next->next) {
+    if (next == buf) {  // attempt to free twice
+      V(mutex);
+      ASSERT(next != buf);
+    }
+  }
+  // otherwise link it to the free pool chain
+  pool_ctl[pool].in_use--;
+  buf->next = pool_ctl[pool].free_buf;
+  pool_ctl[pool].free_buf = buf;
   V(mutex);
 }
 
@@ -283,7 +277,6 @@ void GarbageCollectMemoryPool()
 /* Release all freed pooled memory */
 void CloseMemoryPool()
 {
-
   P(mutex);
   for (int i = 1; i <= PM_MAX; i++) {
     abufhead* buf = pool_ctl[i].free_buf;
