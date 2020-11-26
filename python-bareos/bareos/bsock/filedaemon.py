@@ -24,6 +24,7 @@ Communicates with the bareos-fd
 from bareos.bsock.connectiontype import ConnectionType
 from bareos.bsock.lowlevel import LowLevel
 from bareos.bsock.protocolmessageids import ProtocolMessageIds
+from bareos.bsock.tlsversionparser import TlsVersionParser
 import bareos.exceptions
 import shlex
 
@@ -89,6 +90,8 @@ class FileDaemon(LowLevel):
             dest="BAREOS_tls_psk_require",
         )
 
+        TlsVersionParser().add_argument(argparser)
+
     def __init__(
         self,
         address="localhost",
@@ -98,10 +101,13 @@ class FileDaemon(LowLevel):
         password=None,
         tls_psk_enable=True,
         tls_psk_require=False,
+        tls_version=None,
     ):
         super(FileDaemon, self).__init__()
         self.tls_psk_enable = tls_psk_enable
         self.tls_psk_require = tls_psk_require
+        if tls_version is not None:
+            self.tls_version = tls_version
         # Well, we are not really a Director,
         # but using the interface provided for Directors.
         self.identity_prefix = u"R_DIRECTOR"

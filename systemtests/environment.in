@@ -78,6 +78,11 @@ export db_name=@db_name@
 export db_user=@db_user@
 export db_password=@db_password@
 
+# TLS_VERSION = v1.2 is a workaround,
+# By default, sslpsk should negotiate the highest
+# TLS protocol version.
+# This fails with the current version (1.0.0) of sslpsk.
+export PYTHON_BAREOS_TLS_VERSION="v1.2"
 
 export PAM_WRAPPER_LIBRARIES=@PAM_WRAPPER_LIBRARIES@
 
