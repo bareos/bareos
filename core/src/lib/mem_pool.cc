@@ -163,7 +163,6 @@ POOLMEM* GetPoolMemory(int pool)
 POOLMEM* GetMemory(int32_t size)
 {
   struct abufhead* buf;
-  int pool = 0;
 
   if ((buf = (struct abufhead*)malloc(size + HEAD_SIZE)) == NULL) {
     MemPoolErrorMessage(__FILE__, __LINE__,
@@ -172,11 +171,11 @@ POOLMEM* GetMemory(int32_t size)
   }
 
   buf->ablen = size;
-  buf->pool = pool;
+  buf->pool = 0;
   buf->next = NULL;
-  pool_ctl[pool].in_use++;
-  if (pool_ctl[pool].in_use > pool_ctl[pool].max_used) {
-    pool_ctl[pool].max_used = pool_ctl[pool].in_use;
+  pool_ctl[0].in_use++;
+  if (pool_ctl[0].in_use > pool_ctl[0].max_used) {
+    pool_ctl[0].max_used = pool_ctl[0].in_use;
   }
   return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
 }
