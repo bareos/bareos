@@ -173,10 +173,12 @@ POOLMEM* GetMemory(int32_t size)
   buf->ablen = size;
   buf->pool = 0;
   buf->next = NULL;
+  P(mutex);
   pool_ctl[0].in_use++;
   if (pool_ctl[0].in_use > pool_ctl[0].max_used) {
     pool_ctl[0].max_used = pool_ctl[0].in_use;
   }
+  V(mutex);
   return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
 }
 
