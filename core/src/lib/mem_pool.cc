@@ -193,23 +193,19 @@ int32_t SizeofPoolMemory(POOLMEM* obuf)
 /* Realloc pool memory buffer */
 POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size)
 {
-  char* cp = (char*)obuf;
-  void* buf;
-  int pool;
-
   ASSERT(obuf);
-  P(mutex);
-  cp -= HEAD_SIZE;
-  buf = realloc(cp, size + HEAD_SIZE);
+  char* cp = (char*)obuf - HEAD_SIZE;
+
+  void* buf = realloc(cp, size + HEAD_SIZE);
   if (buf == NULL) {
-    V(mutex);
     MemPoolErrorMessage(__FILE__, __LINE__,
                         _("Out of memory requesting %d bytes\n"), size);
     return NULL;
   }
 
   ((struct abufhead*)buf)->ablen = size;
-  pool = ((struct abufhead*)buf)->pool;
+  int pool = ((struct abufhead*)buf)->pool;
+  P(mutex);
   if (size > pool_ctl[pool].max_allocated) {
     pool_ctl[pool].max_allocated = size;
   }
