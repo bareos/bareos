@@ -152,9 +152,8 @@ POOLMEM* GetPoolMemory(int pool)
   buf->pool = pool;
   buf->next = NULL;
   pool_ctl[pool].in_use++;
-  if (pool_ctl[pool].in_use > pool_ctl[pool].max_used) {
-    pool_ctl[pool].max_used = pool_ctl[pool].in_use;
-  }
+  pool_ctl[pool].max_used
+      = std::max(pool_ctl[pool].in_use, pool_ctl[pool].max_used);
   V(mutex);
   return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
 }
@@ -175,9 +174,7 @@ POOLMEM* GetMemory(int32_t size)
   buf->next = NULL;
   P(mutex);
   pool_ctl[0].in_use++;
-  if (pool_ctl[0].in_use > pool_ctl[0].max_used) {
-    pool_ctl[0].max_used = pool_ctl[0].in_use;
-  }
+  pool_ctl[0].max_used = std::max(pool_ctl[0].in_use, pool_ctl[0].max_used);
   V(mutex);
   return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
 }
@@ -240,7 +237,6 @@ void FreePoolMemory(POOLMEM* obuf)
   /* otherwise link it to the free pool chain */
   P(mutex);
   struct abufhead* next;
-  /* Don't let him free the same buffer twice */
   for (next = pool_ctl[pool].free_buf; next; next = next->next) {
     if (next == buf) {
       V(mutex);
