@@ -7,8 +7,8 @@ coverage:
     unstable: 12
 
 docs:
-  warnings_unhealthy: 68
-  warnings_healthy: 34
+  warnings_unhealthy: 80
+  warnings_healthy: 40
 
 default:
   ctest_unstable: 0
@@ -76,6 +76,11 @@ RHEL_8:
   warnings_healthy: 3
 
 SLE_12_SP4:
+  ctest_unstable: 0
+  warnings_unhealthy: 50
+  warnings_healthy: 25
+
+SLE_12_SP5:
   ctest_unstable: 0
   warnings_unhealthy: 50
   warnings_healthy: 25
