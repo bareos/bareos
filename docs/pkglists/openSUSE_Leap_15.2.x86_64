@@ -20,9 +20,11 @@ debug/x86_64/bareos-storage-python-plugin-debuginfo
 debug/x86_64/bareos-storage-tape-debuginfo
 debug/x86_64/bareos-tools-debuginfo
 debug/x86_64/bareos-traymonitor-debuginfo
+noarch/bareos-webui
 noarch/python2-bareos
 noarch/python3-bareos
 src/bareos
+src/bareos-webui
 src/python-bareos
 x86_64/bareos
 x86_64/bareos-bconsole
@@ -41,7 +43,6 @@ x86_64/bareos-filedaemon-ceph-plugin
 x86_64/bareos-filedaemon-ldap-python-plugin
 x86_64/bareos-filedaemon-ovirt-python-plugin
 x86_64/bareos-filedaemon-percona-xtrabackup-python-plugin
-x86_64/bareos-filedaemon-postgresql-python-plugin
 x86_64/bareos-filedaemon-python-plugin
 x86_64/bareos-regress-config
 x86_64/bareos-storage
@@ -51,4 +52,3 @@ x86_64/bareos-storage-python-plugin
 x86_64/bareos-storage-tape
 x86_64/bareos-tools
 x86_64/bareos-traymonitor
-x86_64/bareos-webui
