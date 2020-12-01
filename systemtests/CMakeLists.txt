@@ -204,9 +204,6 @@ macro(prepare_testdir_for_daemon_run)
   set(tmpdir ${current_test_directory}/tmp)
   set(tmp ${tmpdir})
   set(working_dir ${current_test_directory}/working)
-  set(python_plugin_module_src_test_dir
-      ${current_test_directory}/python-modules
-  )
   set(piddir ${current_test_directory}/piddir)
 
   set(backenddir ${BACKEND_DIR_TO_TEST})
@@ -218,11 +215,15 @@ macro(prepare_testdir_for_daemon_run)
     set(sbin /sbin)
     set(scripts ${SCRIPTS_DIR_TO_TEST})
     set(python_plugin_module_src_dir ${PYTHON_PLUGINS_DIR_TO_TEST})
+    set(python_plugin_module_src_test_dir ${PYTHON_PLUGINS_DIR_TO_TEST})
   else()
     set(bin ${PROJECT_BINARY_DIR}/bin)
     set(sbin ${PROJECT_BINARY_DIR}/sbin)
     set(scripts ${PROJECT_BINARY_DIR}/scripts)
     set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
+    set(python_plugin_module_src_test_dir
+        ${current_test_directory}/python-modules
+    )
   endif()
 
   file(MAKE_DIRECTORY ${piddir})
@@ -453,7 +454,6 @@ set(logdir "log")
 set(mon_dir_password "mon_dir_password")
 set(mon_fd_password "mon_fd_password")
 set(mon_sd_password "mon_sd_password")
-set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
 set(python_plugin_module_src_test_dir_relative "python-modules")
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
