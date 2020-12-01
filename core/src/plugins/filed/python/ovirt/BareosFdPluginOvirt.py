@@ -121,6 +121,11 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         bareosfd.DebugMessage(100, "BareosFdPluginOvirt:start_backup_job() called\n")
 
+        bareosfd.JobMessage(
+           bareosfd.M_INFO,
+            "Using oVirt SDK Version %s\n" % sdk.version.VERSION,
+        )
+
         if chr(self.level) != "F":
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
@@ -1095,16 +1100,7 @@ class BareosOvirtWrapper(object):
         proxy_url = urlparse(transfer.proxy_url)
         self.proxy_connection = self.get_proxy_connection(proxy_url)
 
-        # signed_ticket is deprecated: see https://bugzilla.redhat.com/show_bug.cgi?id=1862722
-        if hasattr(transfer, "signed_ticket") and transfer.signed_ticket is not None:
-            # Set needed headers for downloading:
-            transfer_headers = {"Authorization": transfer.signed_ticket}
-            # Perform the request.
-            self.proxy_connection.request("GET", proxy_url.path, headers=transfer_headers)
-
-        else:
-            # Perform the request.
-            self.proxy_connection.request("GET", proxy_url.path)
+        self.proxy_connection.request("GET", proxy_url.path)
 
         # Get response
         self.response = self.proxy_connection.getresponse()
@@ -1628,10 +1624,6 @@ class BareosOvirtWrapper(object):
 
         # Send the request head
         self.proxy_connection.putrequest("PUT", proxy_url.path)
-
-        # signed_ticket is deprecated: see https://bugzilla.redhat.com/show_bug.cgi?id=1862722
-        if hasattr(transfer, "signed_ticket") and transfer.signed_ticket is not None:
-            self.proxy_connection.putheader("Authorization", transfer.signed_ticket)
 
         # To prevent from errors on transfer, the exact number of bytes that
         # will be sent must be used, we call it effective_size here. It was
