@@ -1,4 +1,23 @@
 #!/usr/bin/env python
+#
+#   BAREOS - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
 
 # -*- coding: utf-8 -*-
 
@@ -9,11 +28,13 @@ import os
 import re
 from time import sleep
 import unittest
+import warnings
 
 import bareos.bsock
 from bareos.bsock.constants import Constants
 from bareos.bsock.protocolmessages import ProtocolMessages
 from bareos.bsock.protocolversions import ProtocolVersions
+from bareos.bsock.lowlevel import LowLevel
 import bareos.exceptions
 
 
@@ -24,6 +45,7 @@ class PythonBareosBase(unittest.TestCase):
     director_address = "localhost"
     director_port = 9101
     director_root_password = "secret"
+    director_extra_options = {}
     client = "bareos-fd"
 
     filedaemon_address = "localhost"
@@ -46,6 +68,14 @@ class PythonBareosBase(unittest.TestCase):
         logger = logging.getLogger()
         if self.debug:
             logger.setLevel(logging.DEBUG)
+
+        # assertRegexpMatches has been renamed
+        # to assertRegex in Python 3.2
+        # and is deprecated now.
+        # This prevents a deprecation warning.
+        if hasattr(self, "assertRegexpMatches") and not hasattr(self, "assertRegex"):
+            self.assertRegex = self.assertRegexpMatches
+
         logger.debug("setUp")
 
     def tearDown(self):
@@ -114,7 +144,7 @@ class PythonBareosModuleTest(PythonBareosBase):
         hello_message = ProtocolMessages().hello(name)
         logger.debug(hello_message)
 
-        self.assertRegexpMatches(hello_message, expected_regex)
+        self.assertRegex(hello_message, expected_regex)
 
         version = re.search(expected_regex, hello_message).group(1).decode("utf-8")
         logger.debug(u"version: {} ({})".format(version, type(version)))
@@ -122,6 +152,12 @@ class PythonBareosModuleTest(PythonBareosBase):
         self.assertGreaterEqual(
             self.versiontuple(version), self.versiontuple(u"18.2.5")
         )
+
+    def test_password(self):
+        password = bareos.bsock.Password("secret")
+        md5 = password.md5()
+        self.assertTrue(isinstance(md5, bytes))
+        self.assertEqual(md5, b"5ebe2294ecd0e0f08eab7690d2a6ee69")
 
 
 class PythonBareosPlainTest(PythonBareosBase):
@@ -134,7 +170,10 @@ class PythonBareosPlainTest(PythonBareosBase):
         bareos_password = bareos.bsock.Password(self.director_root_password)
         with self.assertRaises(bareos.exceptions.ConnectionError):
             director = bareos.bsock.DirectorConsole(
-                address=self.director_address, port=port, password=bareos_password
+                address=self.director_address,
+                port=port,
+                password=bareos_password,
+                **self.director_extra_options
             )
 
     def test_login_as_root(self):
@@ -145,6 +184,7 @@ class PythonBareosPlainTest(PythonBareosBase):
             address=self.director_address,
             port=self.director_port,
             password=bareos_password,
+            **self.director_extra_options
         )
         whoami = director.call("whoami").decode("utf-8")
         self.assertEqual("root", whoami.rstrip())
@@ -160,6 +200,7 @@ class PythonBareosPlainTest(PythonBareosBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
         whoami = director.call("whoami").decode("utf-8")
         self.assertEqual(username, whoami.rstrip())
@@ -175,12 +216,15 @@ class PythonBareosPlainTest(PythonBareosBase):
 
         bareos_password = bareos.bsock.Password(password)
         with self.assertRaises(bareos.exceptions.AuthenticationError):
-            director = bareos.bsock.DirectorConsole(
-                address=self.director_address,
-                port=self.director_port,
-                name=username,
-                password=bareos_password,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                director = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name=username,
+                    password=bareos_password,
+                    **self.director_extra_options
+                )
 
     def test_login_with_wrong_password(self):
         """
@@ -193,12 +237,15 @@ class PythonBareosPlainTest(PythonBareosBase):
 
         bareos_password = bareos.bsock.Password(password)
         with self.assertRaises(bareos.exceptions.AuthenticationError):
-            director = bareos.bsock.DirectorConsole(
-                address=self.director_address,
-                port=self.director_port,
-                name=username,
-                password=bareos_password,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                director = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    name=username,
+                    password=bareos_password,
+                    **self.director_extra_options
+                )
 
     def test_no_autodisplay_command(self):
         """
@@ -217,6 +264,7 @@ class PythonBareosPlainTest(PythonBareosBase):
             port=self.director_port,
             name=username,
             password=bareos_password,
+            **self.director_extra_options
         )
 
         # get the list of all command
@@ -245,6 +293,7 @@ class PythonBareosPlainTest(PythonBareosBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
         result = director.call(".api json").decode("utf-8")
         result = director.call("whoami").decode("utf-8")
@@ -280,6 +329,7 @@ class PythonBareosProtocol124Test(PythonBareosBase):
             tls_psk_enable=False,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         whoami = director.call("whoami").decode("utf-8")
@@ -313,6 +363,7 @@ class PythonBareosProtocol124Test(PythonBareosBase):
             tls_psk_enable=False,
             name=username,
             password=password,
+            **self.director_extra_options
         )
         whoami = director.call("whoami").decode("utf-8")
         self.assertEqual(username, whoami.rstrip())
@@ -347,6 +398,7 @@ class PythonBareosProtocol124Test(PythonBareosBase):
             tls_psk_enable=True,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         whoami = director.call("whoami").decode("utf-8")
@@ -378,6 +430,7 @@ class PythonBareosProtocol124Test(PythonBareosBase):
             protocolversion=ProtocolVersions.bareos_12_4,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         whoami = director.call("whoami").decode("utf-8")
@@ -406,6 +459,18 @@ class PythonBareosTlsPskTest(PythonBareosBase):
     # console: tls, director: tls     => login  (tls)
     """
 
+    def test_tls_psk_identity(self):
+        """
+        Check if tls_psk_identity is in the expected format
+        and is of type "bytes".
+        """
+        core = LowLevel()
+        core.identity_prefix = "R_TEST"
+        core.name = "Test"
+        identity = core.get_tls_psk_identity()
+        self.assertTrue(isinstance(identity, bytes))
+        self.assertEqual(identity, b"R_TEST\x1eTest")
+
     def test_login_notls_notls(self):
         """
         console: notls, director: notls => login
@@ -422,6 +487,7 @@ class PythonBareosTlsPskTest(PythonBareosBase):
             tls_psk_enable=False,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         whoami = director.call("whoami").decode("utf-8")
@@ -450,6 +516,7 @@ class PythonBareosTlsPskTest(PythonBareosBase):
             tls_psk_enable=False,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         whoami = director.call("whoami").decode("utf-8")
@@ -473,14 +540,17 @@ class PythonBareosTlsPskTest(PythonBareosBase):
         password = self.get_operator_password(username)
 
         with self.assertRaises(bareos.exceptions.AuthenticationError):
-            director = bareos.bsock.DirectorConsole(
-                address=self.director_address,
-                port=self.director_port,
-                tls_psk_enable=False,
-                protocolversion=ProtocolVersions.last,
-                name=username,
-                password=password,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                director = bareos.bsock.DirectorConsole(
+                    address=self.director_address,
+                    port=self.director_port,
+                    tls_psk_enable=False,
+                    protocolversion=ProtocolVersions.last,
+                    name=username,
+                    password=password,
+                    **self.director_extra_options
+                )
 
     @unittest.skipUnless(
         bareos.bsock.DirectorConsole.is_tls_psk_available(), "TLS-PSK is not available."
@@ -504,6 +574,7 @@ class PythonBareosTlsPskTest(PythonBareosBase):
             tls_psk_enable=True,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         whoami = director.call("whoami").decode("utf-8")
@@ -531,6 +602,36 @@ class PythonBareosTlsPskTest(PythonBareosBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
+        )
+
+        whoami = director.call("whoami").decode("utf-8")
+        self.assertEqual(username, whoami.rstrip())
+
+        self.assertTrue(hasattr(director.socket, "cipher"))
+        cipher = director.socket.cipher()
+        logger.debug(str(cipher))
+
+    @unittest.skipUnless(
+        bareos.bsock.DirectorConsole.is_tls_psk_available(), "TLS-PSK is not available."
+    )
+    def test_login_tls_tls_require(self):
+        """
+        console: tls, director: tls     => login
+        """
+
+        logger = logging.getLogger()
+
+        username = self.get_operator_username(tls=True)
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsole(
+            address=self.director_address,
+            port=self.director_port,
+            tls_psk_require=True,
+            name=username,
+            password=password,
+            **self.director_extra_options
         )
 
         whoami = director.call("whoami").decode("utf-8")
@@ -560,6 +661,7 @@ class PythonBareosTlsPskTest(PythonBareosBase):
             tls_psk_require=True,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         whoami = director.call("whoami").decode("utf-8")
@@ -654,6 +756,7 @@ class PythonBareosJsonBase(PythonBareosBase):
             port=self.director_port,
             name=console,
             password=bareos_password,
+            **self.director_extra_options
         )
 
         result = console_poolbotfull.call("llist media all")
@@ -733,6 +836,7 @@ class PythonBareosJsonBackendTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
         result = director.call("list clients")
         logger.debug(str(result))
@@ -754,6 +858,7 @@ class PythonBareosJsonBackendTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
@@ -770,6 +875,7 @@ class PythonBareosJsonBackendTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
         result = director.call("whoami")
         logger.debug(str(result))
@@ -786,6 +892,7 @@ class PythonBareosJsonBackendTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         result = director_plain.call("show clients")
@@ -796,6 +903,7 @@ class PythonBareosJsonBackendTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         # The 'show' command does not deliver JSON output.
@@ -831,6 +939,7 @@ class PythonBareosJsonBackendTest(PythonBareosJsonBase):
                 port=self.director_port,
                 name=username,
                 password=bareos_password,
+                **self.director_extra_options
             )
 
 
@@ -857,6 +966,7 @@ class PythonBareosAclTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         result = director_root.call("run job=backup-bareos-fd level=Full yes")
@@ -882,6 +992,7 @@ class PythonBareosAclTest(PythonBareosJsonBase):
             port=self.director_port,
             name=console_bareos_fd_username,
             password=bareos_password,
+            **self.director_extra_options
         )
 
         result = console_bareos_fd.call("restore")
@@ -994,6 +1105,7 @@ class PythonBareosJsonAclTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         # result = director_root.call('run job=backup-bareos-fd level=Full yes')
@@ -1058,6 +1170,7 @@ class PythonBareosJsonAclTest(PythonBareosJsonBase):
             port=self.director_port,
             name="poolfull",
             password=bareos_password,
+            **self.director_extra_options
         )
 
         # 'list media all' returns an error,
@@ -1094,8 +1207,10 @@ class PythonBareosJsonAclTest(PythonBareosJsonBase):
             ),
         )
 
-        # TODO: IMHO this is a bug. This console should not see volumes in the Full pool.
-        #       It needs to be fixed in the server side code.
+        # TODO:
+        # IMHO this is a bug.
+        # This console should not see volumes in the Full pool.
+        # It needs to be fixed in the server side code.
         with self.assertRaises(AssertionError):
             self._test_no_volume_in_pool(console_overwrite, console_password, "Full")
 
@@ -1126,6 +1241,7 @@ class PythonBareosJsonAclTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         jobid1 = self.run_job(
@@ -1158,6 +1274,7 @@ class PythonBareosJsonAclTest(PythonBareosJsonBase):
             port=self.director_port,
             name=console_username,
             password=bareos_password,
+            **self.director_extra_options
         )
 
         #
@@ -1187,6 +1304,7 @@ class PythonBareosJsonRunScriptTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         # Example log entry:
@@ -1218,6 +1336,7 @@ class PythonBareosJsonRunScriptTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         # Example log entry:
@@ -1252,6 +1371,7 @@ class PythonBareosJsonRunScriptTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         # Example log entry:
@@ -1287,6 +1407,7 @@ class PythonBareosJsonRunScriptTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         # Example log entry:
@@ -1319,6 +1440,7 @@ class PythonBareosJsonRunScriptTest(PythonBareosJsonBase):
             port=self.director_port,
             name=username,
             password=password,
+            **self.director_extra_options
         )
 
         # Example log entry:
@@ -1348,6 +1470,7 @@ class PythonBareosFiledaemonTest(PythonBareosBase):
             port=self.filedaemon_port,
             name=name,
             password=bareos_password,
+            **self.director_extra_options
         )
 
         result = fd.call(u"status")
@@ -1360,7 +1483,7 @@ class PythonBareosFiledaemonTest(PythonBareosBase):
 
         # logger.debug(re.search(expected_regex, result).group(1).decode('utf-8'))
 
-        self.assertRegexpMatches(result, expected_regex)
+        self.assertRegex(result, expected_regex)
 
     @unittest.skipUnless(
         bareos.bsock.DirectorConsole.is_tls_psk_available(), "TLS-PSK is not available."
@@ -1383,6 +1506,7 @@ class PythonBareosFiledaemonTest(PythonBareosBase):
             port=self.filedaemon_port,
             name=name,
             password=bareos_password,
+            **self.director_extra_options
         )
 
         fd.call(
@@ -1406,7 +1530,7 @@ class PythonBareosFiledaemonTest(PythonBareosBase):
             )
         )
 
-        self.assertRegexpMatches(result, expected_regex)
+        self.assertRegex(result, expected_regex)
 
 
 def get_env():
@@ -1414,7 +1538,6 @@ def get_env():
     Get attributes as environment variables,
     if not available or set use defaults.
     """
-
     director_root_password = os.environ.get("dir_password")
     if director_root_password:
         PythonBareosBase.director_root_password = director_root_password
@@ -1435,14 +1558,26 @@ def get_env():
     if backup_directory:
         PythonBareosBase.backup_directory = backup_directory
 
+    tls_version_str = os.environ.get("PYTHON_BAREOS_TLS_VERSION")
+    if tls_version_str is not None:
+        tls_version_parser = bareos.bsock.TlsVersionParser()
+        tls_version = tls_version_parser.get_protocol_version_from_string(
+            tls_version_str
+        )
+        if tls_version is not None:
+            PythonBareosBase.director_extra_options["tls_version"] = tls_version
+        else:
+            print(
+                "Environment variable PYTHON_BAREOS_TLS_VERSION has invalid value ({}). Valid values: {}".format(
+                    tls_version_str,
+                    ", ".join(tls_version_parser.get_protocol_versions()),
+                )
+            )
+
     if os.environ.get("REGRESS_DEBUG"):
         PythonBareosBase.debug = True
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        format="%(asctime)s %(levelname)s %(module)s.%(funcName)s: %(message)s",
-        level=logging.ERROR,
-    )
     get_env()
     unittest.main()
