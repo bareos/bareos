@@ -57,6 +57,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fixed errors in client only build [PR #413]
 - Fixed checksum algorithm regarding byte order [PR #412]
 - Avoid a race condition in job name creation [PR #385]
+- [Issue #1281]: Director crashes on memory access violation in CloseMemoryPool() and is_regex()
 
 ### Added
 
