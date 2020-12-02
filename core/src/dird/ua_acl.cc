@@ -33,6 +33,8 @@
 #include "dird/dird_globals.h"
 #include "lib/edit.h"
 
+#include <string>
+
 namespace directordaemon {
 
 /**
@@ -44,38 +46,13 @@ bool UaContext::AclAccessOk(int acl, const char *item, bool audit_event)
 }
 
 /**
- * Check if this is a regular expresion.
+ * Check if this is a regular expression.
  * A regexp uses the following chars:
  * ., (, ), [, ], |, ^, $, +, ?, *
  */
-static inline bool is_regex(const char *regexp)
+static bool is_regex(std::string string_to_check)
 {
-   const char *p;
-   bool retval = false;
-
-   p = regexp;
-   while (p) {
-      switch (*p++) {
-      case '.':
-      case '(':
-      case ')':
-      case '[':
-      case ']':
-      case '|':
-      case '^':
-      case '$':
-      case '+':
-      case '?':
-      case '*':
-         retval = true;
-         goto bail_out;
-      default:
-         break;
-      }
-   }
-
-bail_out:
-   return retval;
+   return std::string::npos != string_to_check.find_first_of(".()[]|^$+?*");
 }
 
 /**
