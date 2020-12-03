@@ -66,6 +66,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Added documentation and background information for the new python 3 plugin support [PR #599]
 - Added the libcloud filedaemon plugin to backup S3 buckets
 - Allow terabytes, tebibytes, petabytes, pebibytes, exabytes and exbibytes unit symbols when specifying sizes [PR #600]
+- Add technology preview for a REST API to configure and manage Bareos [PR #587]
 - Add some configuration warnings to the storagedaemon [PR #583]
 - Add python3 support for filedaemon, storagedaemon and director plugins [PR #572]
 - Use configurable OpenSSL "Protocol" parameter [PR #575]

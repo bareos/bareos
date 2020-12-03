@@ -1,0 +1,13 @@
+dataclasses
+fastapi
+pydantic
+python-bareos
+# This will require gcc and some headerfiles
+#sslpsk
+starlette==0.13.6
+python-jose
+uvicorn
+python-multipart
+passlib
+packaging
+pyyaml

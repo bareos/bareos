@@ -1,0 +1,138 @@
+#!/bin/bash
+set -e
+set -u
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+#shellcheck source=../environment.in
+. ./environment
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+
+# Directory to backup.
+# This directory will be created by setup_data "$@"().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backed up.
+# Data will be placed at "${tmp}/data/".
+setup_data "$@"
+
+start_test
+
+start_bareos
+
+#run_python_unittests "$@"
+function endpoint_check {
+# $1: method
+# $2: endpoint-url
+# $3: string to grep for
+# $4: extra curl options
+url="http://127.0.0.1:@restapi_port@/$2"
+echo "curl -w \"\n%{http_code}\n\" -s -X $1 $url -H \"accept: application/json\" -H  \"Authorization: Bearer $TOKEN\" \"$4\" " >> ${tmp}/../log/curl.log
+# curl doesn't like empty string "" as option, will exit with code 3
+if [ -z "$4" ]
+then
+    curl -w "\n%{http_code}\n" -s -X $1 $url -H "accept: application/json" -H  "Authorization: Bearer $TOKEN" > ${tmp}/curl.out
+else
+    curl -w "\n%{http_code}\n" -s -X $1 $url -H "accept: application/json" -H  "Authorization: Bearer $TOKEN" "$4" > ${tmp}/curl.out
+fi
+cat ${tmp}/curl.out >> ${tmp}/../log/curl.log
+echo "Search for \"$3\"" >> ${tmp}/../log/curl.log
+grep -q "$3" ${tmp}/curl.out
+resultCode=$?
+echo $resultCode >> ${tmp}/../log/curl.log
+echo "------------" >> ${tmp}/../log/curl.log
+
+if [ $resultCode -ne 0 ]
+  then print_debug "ERROR getting endpoint $2 with method $1"
+  exit 1
+fi
+}
+
+## place api tests here
+## TODO: error handling / make sure api gets stopped
+mkdir -p etc/bareos/bareos-dir.d/schedule
+mkdir -p etc/bareos/bareos-dir.d/user
+cd api
+./startapi.sh
+sleep 3
+echo "api started"
+TOKEN=`curl -X POST "http://127.0.0.1:@restapi_port@/token" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "grant_type=&username=admin-tls&password=secret&scope=&client_id=&client_secret=" | grep access_token | cut -d '"' -f 4`
+#echo $TOKEN
+endpoint_check POST "configuration/clients" newClient.$$ "-d {\"name\":\"newClient.$$-fd\",\"address\": \"127.0.0.1\", \"password\": \"string\"}"
+endpoint_check GET "configuration/clients/bareos-fd" bareos-fd ""
+endpoint_check GET "configuration/clients" newClient ""
+endpoint_check GET "configuration/jobs" backup-bareos-fd ""
+endpoint_check GET "configuration/jobs/backup-bareos-fd" backup-bareos-fd ""
+endpoint_check GET "configuration/filesets" SelfTest ""
+endpoint_check GET "configuration/filesets/SelfTest" SelfTest ""
+endpoint_check GET "configuration/jobdefs" DefaultJob ""
+endpoint_check GET "configuration/jobdefs/DefaultJob" DefaultJob ""
+endpoint_check GET "configuration/pools" Full ""
+endpoint_check GET "configuration/pools/Full" Full ""
+endpoint_check POST "configuration/schedules" mysched.$$ "-d {\"name\":\"mysched.$$\",\"enabled\":\"no\"}"
+endpoint_check GET "configuration/schedules" mysched ""
+# On some endpoints director returns empty strings, in this case we grep for http status code 204 (empty document by intention)
+endpoint_check PUT "control/schedules/disable/mysched.$$" 204 ""
+endpoint_check PUT "control/schedules/enable/mysched.$$" 204 ""
+endpoint_check GET "configuration/storages" File  ""
+endpoint_check GET "configuration/storages/File" File  ""
+endpoint_check GET "configuration/consoles" admin-tls  ""
+endpoint_check GET "configuration/consoles/admin-tls" admin-tls  ""
+endpoint_check GET "configuration/profiles" operator  ""
+endpoint_check GET "configuration/profiles/operator" operator  ""
+endpoint_check GET "configuration/profiles" operator  ""
+endpoint_check GET "configuration/profiles/operator" operator  ""
+endpoint_check POST "configuration/users" string "-d {\"name\":\"myuser$$\",\"description\":\"string\"}"
+endpoint_check GET "configuration/users" myuser$$  ""
+endpoint_check GET "configuration/users/myuser$$" myuser$$  ""
+endpoint_check GET "control/clients" bareos-fd ""
+endpoint_check GET "control/clients/1" test2-fd ""
+endpoint_check PUT "control/clients/disable/bareos-fd" 204 ""
+endpoint_check PUT "control/clients/enable/bareos-fd" 204 ""
+endpoint_check PUT "control/jobs/run" jobid "-d {\"jobControl\":{\"job\":\"backup-bareos-fd\",\"joblevel\":\"Full\"}}"
+endpoint_check PUT "control/jobs/run" jobid "-d {\"jobControl\":{\"job\":\"backup-bareos-fd\",\"joblevel\":\"Full\"}}"
+endpoint_check PUT "control/jobs/cancel/2" 200 ""
+endpoint_check PUT "control/jobs/rerun/2" "jobid" ""
+# try non-existing job
+endpoint_check GET "control/jobs/26544" "not found" ""
+endpoint_check GET "control/jobs/1" "jobstatus" ""
+endpoint_check GET "control/jobs/totals" "jobs" ""
+endpoint_check GET "control/jobs" "jobs" ""
+endpoint_check GET "control/jobs/logs/1" "joblog" ""
+endpoint_check GET "control/jobs/files/1" "filenames" ""
+# TODO: loop here until jobid 1 has finished instead of sleep
+sleep 5
+endpoint_check PUT "control/jobs/restore" "jobid" "-d {\"jobControl\":{\"client\":\"bareos-fd\",\"selectAllDone\":\"yes\"}}"
+endpoint_check DELETE "control/jobs/1" "deleted" ""
+endpoint_check DELETE "control/jobs/63535" "No job" ""
+endpoint_check GET "control/volumes" "volumes" ""
+# label volume fails inside centos7 container - TODO find out why
+#endpoint_check POST "control/volumes" 204 "-d {\"volume\":\"Full-$$\",\"pool\":\"Full\",\"storage\":\"File\"} "
+#endpoint_check PATCH "control/volumes/Full-$$" "Recycle" "-d {\"pool\":\"Full\",\"volstatus\":\"Recycle\"} "
+#endpoint_check PUT "control/volumes/Full-$$" 204 "-d {\"volume\":\"Full-00$$\",\"storage\":\"File\",\"pool\":\"Full\",\"encrypt\":\"yes\"} "
+endpoint_check GET "control/volumes/1" "mediaid" ""
+endpoint_check GET "control/volumes/188" "No volume" ""
+endpoint_check GET "control/pools" "pools" ""
+endpoint_check GET "control/pools/1" "poolid" ""
+endpoint_check GET "users/me/" "username" ""
+endpoint_check GET "control/directors/version" "bareos-dir" ""
+endpoint_check GET "control/directors/time" "year" ""
+endpoint_check PUT "control/directors/reload" "success" ""
+
+./stopapi.sh
+cd -
+
+#check_for_zombie_jobs storage=File client=bareos-fd
+
+stop_bareos
+
+end_test

@@ -1,0 +1,43 @@
+- description: Resource configuration with _show_ and _configure_ command
+  externalDocs: {description: Configuration resources documentation, url: 'https://docs.bareos.org/Configuration.html'}
+  name: configuration
+- description: Monitor and control Bareos components with commands like _list_ and
+    _update_
+  externalDocs: {description: Bareos Console commands, url: 'https://docs.bareos.org/TasksAndConcepts/BareosConsole.html'}
+  name: control
+- description: Operations with clients / client resource
+  externalDocs: {description: Client resource documentation, url: 'https://docs.bareos.org/Configuration/Director.html#client-resource'}
+  name: clients
+- description: Bareos Devices
+  externalDocs: {description: Device resource documentation, url: 'https://docs.bareos.org/Configuration/StorageDaemon.html#device-resource'}
+  name: devices
+- description: Director status and configuration
+  externalDocs: {description: Director documentation, url: 'https://docs.bareos.org/Configuration/Director.html'}
+  name: directors
+- description: Operations with filesets / fileset resource
+  externalDocs: {description: Fileset resource documentation, url: 'https://docs.bareos.org/Configuration/Director.html#fileset-resource'}
+  name: filesets
+- description: Monitor and control jobs, run, cancel, rerun
+  externalDocs: {description: Job status and control, url: 'https://docs.bareos.org/IntroductionAndTutorial/Tutorial.html#running-a-job'}
+  name: jobcontrol
+- description: Jobdefs - Bareos job definition templates
+  externalDocs: {description: JobDefs resource documentation, url: 'https://docs.bareos.org/Configuration/Director.html#jobdefs-resource'}
+  name: jobdefs
+- description: Job resource - Bareos job definition
+  externalDocs: {description: Job resource documentation, url: 'https://docs.bareos.org/Configuration/Director.html#job-resource'}
+  name: jobs
+- description: Pool - Bareos Pool definition and status
+  externalDocs: {description: Pool resource documentation, url: 'https://docs.bareos.org/Configuration/Director.html#pool-resource'}
+  name: pools
+- description: Bareos Schedules
+  externalDocs: {description: Schedule resource documentation, url: 'https://docs.bareos.org/Configuration/Director.html#schedule-resource'}
+  name: schedules
+- description: Bareos Storages
+  externalDocs: {description: Storage resource documentation, url: 'https://docs.bareos.org/Configuration/Director.html#storage-resource'}
+  name: storages
+- description: Manage users, consoles, profiles
+  externalDocs: {description: User Resource documentation, url: 'https://docs.bareos.org/Configuration/Director.html#user-resource'}
+  name: users
+- description: Volume handling
+  externalDocs: {description: Volume management documentation, url: 'https://docs.bareos.org/TasksAndConcepts/VolumeManagement.html'}
+  name: volumes

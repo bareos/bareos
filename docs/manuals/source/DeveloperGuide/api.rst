@@ -7,7 +7,8 @@ General
 -------
 
 This document is intended mostly for developers who wish to develop a
-new GUI interface to **Bareos**.
+new GUI interface to **Bareos** or who want to script commands to the director
+for automation purposes.
 
 Minimal Code in Console Program
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -434,6 +435,65 @@ Example of a JSON-RPC Error Response
    an error message
    (``void UAContext::error_msg(const char *fmt, ...)``). Messages and
    the result so far will be part of the error response object.
+
+.. _sec:REST:
+
+REST API
+--------
+
+Introduction
+~~~~~~~~~~~~
+This is an experimental and preliminary backend for development purposes. The endpoints are subject for review and maybe changed in the future.
+
+It provides a REST API using `fastapi <https://fastapi.tiangolo.com/>`_ and python-bareos to connect to
+a Bareos director. It supports the :command:`configure add` commands to create configuration for clients, jobs, filesets and some more resources. It also provides endpoints to query job information and job control (i.e. start / restart jobs, trigger restores).
+
+Python3 is needed to run the REST API.
+
+Installation
+~~~~~~~~~~~~
+Use pip to install:
+:command:`pip3 install python-bareos-restapi`
+This will also install dependencies like fastapi, uvicorn and some more.
+
+
+Configuration
+~~~~~~~~~~~~~
+
+Configure your Bareos Server in _api.ini_ adapting these 3 lines of configuration:
+
+.. code-block:: config
+
+    [Director]
+    Name=bareos-dir
+    Address=127.0.0.1
+    Port=9101
+
+To configure the webserver uvicorn (e.g. adapt used network interfaces, ports), read the `uvicorn
+documentation <https://www.uvicorn.org/>`_. The default port is 8000 and the default interface is the loopback device.
+
+Start the backend server
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+:command:`uvicorn bareos-restapi:app --reload`
+
+Serve the Swagger UI to explore the REST API: `<http://127.0.0.1:8000/docs>`_
+Alternatively you can use the redoc format: `<http://127.0.0.1:8000/redoc>`_
+
+
+Browse
+~~~~~~
+
+The Swagger UI contains documentation and online-tests. Use "authorize" to connect to your Bareos director using a named console. Read here to learn how to configure
+a named console: :ref:`DirectorResourceConsole`
+
+The Swagger documentation also contains CURL statements for all available endpoints.
+
+Future work
+~~~~~~~~~~~
+
+The API will be extended by some methods provided by the Bareos console, that are not yet implemented. It is also planned to add delete / update options for configuration in the director and REST API. If you are interested in support and / or funding enhancements, please visit `<https://www.bareos.com>`_
+
 
 .. _sec:bvfs:
 
