@@ -30,6 +30,12 @@ class UaContext;
 bool Do_a_command(UaContext* ua);
 bool DotMessagesCmd(UaContext* ua, const char* cmd);
 
+struct SetDeviceCommand {
+  using ArgumentsList = std::map<std::string, std::string>;
+  static ArgumentsList ScanCommandLine(UaContext* ua);
+  static bool Cmd(UaContext* ua, const char* cmd);
+};
+
 void SetDoClientSetdebugFunction(std::function<void(UaContext* ua,
                                                     ClientResource* client,
                                                     int level,

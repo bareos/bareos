@@ -32,6 +32,7 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/backup.h"
+#include "dird/ua_cmds.h"
 #include "dird/ua_cmdstruct.h"
 #include "dird/expand.h"
 #include "dird/fd_cmds.h"
@@ -484,6 +485,9 @@ static struct ua_cmdstruct commands[] = {
     {NT_("setdebug"), SetdebugCmd, _("Sets debug level"),
      NT_("level=<nn> trace=0/1 timestamp=0/1 client=<client-name> | dir | "
          "storage=<storage-name> | all"),
+     true, true},
+    {NT_("setdevice"), SetDeviceCommand::Cmd, _("Sets device parameter"),
+     NT_("storage=<storage-name> device=<device-name> autoselect=<bool>"),
      true, true},
     {NT_("setip"), SetipCmd, _("Sets new client address -- if authorized"),
      NT_(""), false, true},
@@ -1585,6 +1589,58 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
       break;
     default:
       break;
+  }
+
+  return true;
+}
+
+SetDeviceCommand::ArgumentsList SetDeviceCommand::ScanCommandLine(UaContext* ua)
+{
+  ArgumentsList arguments{{"storage", ""}, {"device", ""}, {"autoselect", ""}};
+
+  for (int i = 1; i < ua->argc; i++) {
+    try {
+      auto& value = arguments.at(ua->argk[i]);
+      int idx = FindArgWithValue(ua, NT_(ua->argk[i]));
+      if (idx >= 0) { value = ua->argv[idx]; }
+    } catch (std::out_of_range& e) {
+      ua->ErrorMsg("Wrong argument: %s\n", ua->argk[i]);
+      return ArgumentsList();
+    }
+  }
+
+  bool argument_missing = false;
+  for (const auto& arg : arguments) {
+    if (arg.second.empty()) {  // value
+      ua->ErrorMsg("Argument missing: %s\n", arg.first.c_str());
+      argument_missing = true;
+    }
+  }
+  if (argument_missing) { return ArgumentsList(); }
+
+  return arguments;
+}
+
+/**
+ * setdevice storage=<storage-name> device=<device-name> autoselect=<bool>
+ */
+bool SetDeviceCommand::Cmd(UaContext* ua, const char* cmd)
+{
+  if (ua->AclHasRestrictions(Storage_ACL)) { return false; }
+
+  auto arguments = ScanCommandLine(ua);
+
+  if (arguments.empty()) {
+    ua->SendCmdUsage("");
+    return false;
+  }
+
+  StorageResource* sd = ua->GetStoreResWithName(arguments["storage"].c_str());
+
+  if (sd == nullptr) {
+    ua->ErrorMsg(_("Storage \"%s\" not found.\n"),
+                 arguments["storage"].c_str());
+    return false;
   }
 
   return true;
