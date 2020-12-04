@@ -29,13 +29,13 @@ bool SkipSpaces(char** msg);
 bool SkipNonspaces(char** msg);
 int fstrsch(const char* a, const char* b);
 char* next_arg(char** s);
-int ParseArgs(POOLMEM* cmd,
+int ParseArgs(const POOLMEM* cmd,
               POOLMEM*& args,
               int* argc,
               char** argk,
               char** argv,
               int max_args);
-int ParseArgsOnly(POOLMEM* cmd,
+int ParseArgsOnly(const POOLMEM* cmd,
                   POOLMEM*& args,
                   int* argc,
                   char** argk,

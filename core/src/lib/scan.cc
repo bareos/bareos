@@ -202,7 +202,7 @@ char* next_arg(char** s)
  *  argk[2] = arg3
  *  argv[2] =
  */
-int ParseArgs(POOLMEM* cmd,
+int ParseArgs(const POOLMEM* cmd,
               POOLMEM*& args,
               int* argc,
               char** argk,
@@ -246,7 +246,7 @@ int ParseArgs(POOLMEM* cmd,
  *  argk[2] = arg3
  *  argv[2] =
  */
-int ParseArgsOnly(POOLMEM* cmd,
+int ParseArgsOnly(const POOLMEM* cmd,
                   POOLMEM*& args,
                   int* argc,
                   char** argk,
