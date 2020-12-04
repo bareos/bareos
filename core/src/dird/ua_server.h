@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,12 +22,13 @@
 #ifndef BAREOS_DIRD_UA_SERVER_H_
 #define BAREOS_DIRD_UA_SERVER_H_
 
+class BareosSocket;
+class JobControlRecord;
+
 namespace directordaemon {
 
 void* HandleUserAgentClientRequest(BareosSocket* user);
-UaContext* new_ua_context(JobControlRecord* jcr);
 JobControlRecord* new_control_jcr(const char* base_name, int job_type);
-void FreeUaContext(UaContext* ua);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_UA_SERVER_H_

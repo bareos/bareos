@@ -24,6 +24,11 @@
 
 #include "dird/ua.h"
 class alist;
+class PoolDbRecord;
+class MediaDbRecord;
+class StorageDbRecord;
+class ClientDbRecord;
+class JobDbRecord;
 
 namespace directordaemon {
 
