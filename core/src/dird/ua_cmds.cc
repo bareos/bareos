@@ -1621,6 +1621,52 @@ SetDeviceCommand::ArgumentsList SetDeviceCommand::ScanCommandLine(UaContext* ua)
   return arguments;
 }
 
+bool SetDeviceCommand::SendToSd(UaContext* ua,
+                                StorageResource* store,
+                                const ArgumentsList& arguments)
+{
+  switch (store->Protocol) {
+    case APT_NDMPV2:
+    case APT_NDMPV3:
+    case APT_NDMPV4:
+      return true;
+    default:
+      break;
+  }
+
+  UnifiedStorageResource lstore;
+  lstore.store = store;
+  PmStrcpy(lstore.store_source, _("unknown source"));
+  SetWstorage(ua->jcr, &lstore);
+
+  /*
+   * Try connecting for up to 15 seconds
+   */
+  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
+              store->resource_name_, store->address, store->SDport);
+
+  if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
+    ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
+    return false;
+  }
+
+  Dmsg0(120, _("Connected to storage daemon\n"));
+  ua->jcr->store_bsock->fsend("setdevice device=%s autoselect=%s",
+                              arguments.at("device").c_str(),
+                              arguments.at("autoselect").c_str());
+  if (ua->jcr->store_bsock->recv() >= 0) {
+    ua->SendMsg("%s", ua->jcr->store_bsock->msg);
+  }
+
+  ua->jcr->store_bsock->signal(BNET_TERMINATE);
+  ua->jcr->store_bsock->close();
+  delete ua->jcr->store_bsock;
+  ua->jcr->store_bsock = nullptr;
+
+  return true;
+}
+
+
 /**
  * setdevice storage=<storage-name> device=<device-name> autoselect=<bool>
  */
@@ -1643,7 +1689,7 @@ bool SetDeviceCommand::Cmd(UaContext* ua, const char* cmd)
     return false;
   }
 
-  return true;
+  return SendToSd(ua, sd, arguments);
 }
 
 /**

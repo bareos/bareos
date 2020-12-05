@@ -34,6 +34,9 @@ struct SetDeviceCommand {
   using ArgumentsList = std::map<std::string, std::string>;
   static ArgumentsList ScanCommandLine(UaContext* ua);
   static bool Cmd(UaContext* ua, const char* cmd);
+  static bool SendToSd(UaContext* ua,
+                       StorageResource* store,
+                       const ArgumentsList& arguments);
 };
 
 void SetDoClientSetdebugFunction(std::function<void(UaContext* ua,
