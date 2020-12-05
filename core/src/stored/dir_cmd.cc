@@ -67,6 +67,7 @@
 #include "include/protocol_types.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
+#include "lib/bool_string.h"
 #include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
 #include "lib/edit.h"
@@ -111,6 +112,7 @@ static char derrmsg[] = "3900 Invalid command:";
 static char OKsetdebugv0[] = "3000 OK setdebug=%d tracefile=%s\n";
 static char OKsetdebugv1[]
     = "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s\n";
+static char OKsetdevice[] = "3000 OK setdevice=%s autoselect=%s\n";
 static char invalid_cmd[]
     = "3997 Invalid command for a Director with Monitor directive enabled.\n";
 static char OK_bootstrap[] = "3000 OK bootstrap\n";
@@ -121,6 +123,9 @@ static char OKBandwidth[] = "2000 OK Bandwidth\n";
 static char OKpassive[] = "2000 OK passive client\n";
 static char OKpluginoptions[] = "2000 OK plugin options\n";
 static char OKsecureerase[] = "2000 OK SDSecureEraseCmd %s \n";
+
+#define MAX_SETDEVICE_NAME_LENGTH 128  // including the trailing zero
+static char setdevice_autoselect[] = "setdevice device=%127s autoselect=%127s";
 
 /* Forward referenced functions */
 // static bool ActionOnPurgeCmd(JobControlRecord *jcr);
@@ -143,6 +148,7 @@ static bool SecureerasereqCmd(JobControlRecord* jcr);
 static bool SetbandwidthCmd(JobControlRecord* jcr);
 static bool SetdebugCmd(JobControlRecord* jcr);
 static bool UnmountCmd(JobControlRecord* jcr);
+static bool SetdeviceCmd(JobControlRecord* jcr);
 
 static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
                                        PoolMem& dev_name,
@@ -199,7 +205,8 @@ static struct s_cmds cmds[] = {
     {"run", RunCmd, false},             /**< Start of Job */
     {"getSecureEraseCmd", SecureerasereqCmd, false},
     {"setbandwidth=", SetbandwidthCmd, false},
-    {"setdebug=", SetdebugCmd, false}, /**< Set debug level */
+    {"setdebug=", SetdebugCmd, false},  /**< Set debug level */
+    {"setdevice", SetdeviceCmd, false}, /**< Set device parameter */
     {"stats", StatsCmd, false},
     {"status", StatusCmd, true},
     {".status", DotstatusCmd, true},
@@ -428,7 +435,7 @@ static bool SetdebugCmd(JobControlRecord* jcr)
   int32_t level, trace_flag, timestamp_flag;
   int scan;
 
-  Dmsg1(10, "SetdebugCmd: %s", dir->msg);
+  Dmsg1(10, "SetdebugCmd: %s\n", dir->msg);
   scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &timestamp_flag);
   if (scan != 3) {
     scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
@@ -452,6 +459,45 @@ static bool SetdebugCmd(JobControlRecord* jcr)
   } else {
     Dmsg3(50, "level=%d trace=%d\n", level, GetTrace(), tracefilename.c_str());
     return dir->fsend(OKsetdebugv0, level, tracefilename.c_str());
+  }
+}
+
+static DeviceResource* GetDeviceResource(const std::string& name)
+{
+  return static_cast<DeviceResource*>(
+      my_config->GetResWithName(R_DEVICE, name.c_str()));
+}
+
+static bool SetdeviceCmd(JobControlRecord* jcr)
+{
+  BareosSocket* dir = jcr->dir_bsock;
+
+  Dmsg1(10, "SetdeviceCmd: %s\n", dir->msg);
+
+  std::vector<char> device_name(MAX_SETDEVICE_NAME_LENGTH);
+  std::vector<char> autoselect_value(MAX_SETDEVICE_NAME_LENGTH);
+  int scan = sscanf(dir->msg, setdevice_autoselect, device_name.data(),
+                    autoselect_value.data());
+  if (scan != 2) {
+    dir->fsend(BADcmd, "setdevice", dir->msg);
+    return false;
+  }
+
+  auto res = GetDeviceResource(device_name.data());
+  if (res == nullptr) {
+    std::string err{"Device not found: "};
+    err += device_name.data();
+    dir->fsend(BADcmd, "setdevice", err.c_str());
+    return false;
+  }
+
+  try {
+    BoolString s{autoselect_value.data()};
+    res->autoselect = s.get<bool>();
+    if (res->dev) { res->dev->autoselect = res->autoselect; }
+    return dir->fsend(OKsetdevice, device_name.data(), s.get().c_str());
+  } catch (const std::out_of_range& e) {
+    return dir->fsend(BADcmd, "setdevice", e.what());
   }
 }
 
