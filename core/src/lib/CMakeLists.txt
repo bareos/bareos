@@ -100,6 +100,7 @@ set(BAREOS_SRCS
     bnet.cc
     bnet_network_dump.cc
     bnet_network_dump_private.cc
+    bool_string.cc
     bpipe.cc
     breg.cc
     bregex.cc

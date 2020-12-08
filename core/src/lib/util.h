@@ -75,5 +75,4 @@ void StringToLowerCase(std::string& s);
 void StringToLowerCase(std::string& out, const std::string& in);
 bool pm_append(void* pm_string, const char* fmt, ...);
 
-
 #endif  // BAREOS_LIB_UTIL_H_
