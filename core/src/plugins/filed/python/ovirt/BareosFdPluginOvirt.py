@@ -38,9 +38,6 @@ except ImportError:
 import xml.etree
 
 
-import ovirtsdk4 as sdk
-import ovirtsdk4.types as types
-
 import ssl
 
 from sys import version_info
@@ -58,6 +55,13 @@ except ImportError:
 import BareosFdPluginBaseclass
 
 import logging
+
+SDK_IMPORT_ERROR = False
+try:
+    import ovirtsdk4 as sdk
+    import ovirtsdk4.types as types
+except ImportError:
+    SDK_IMPORT_ERROR = True
 
 # The name of the application, to be used as the 'origin' of events
 # sent to the audit log:
@@ -114,11 +118,20 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         Check Plugin options
         Note: this is called by parent class parse_plugin_definition().
-        This plugin does not yet implement any checks.
+        This plugin does not yet implement any checks for plugin options,
+        but it's used to report if the Python oVirt SDK is not installed.
         If it is required to know if it is a backup or a restore, it
         may make more sense to invoke the options checking from
         start_backup_job() and start_restore_job()
         """
+
+        if SDK_IMPORT_ERROR:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Please install the Python SDK for oVirt Engine API.\n",
+            )
+            return bareosfd.bRC_Error
+
         return bareosfd.bRC_OK
 
     def start_backup_job(self):
@@ -342,6 +355,12 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         Overload this to handle restore objects, if applicable
         """
         bareosfd.DebugMessage(100, "BareosFdPluginOvirt:start_restore_job() called\n")
+
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "Using oVirt SDK Version %s\n" % sdk.version.VERSION,
+        )
+
         if self.options.get("local") == "yes":
             bareosfd.DebugMessage(
                 100,
