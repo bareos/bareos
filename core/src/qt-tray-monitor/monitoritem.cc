@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -280,7 +280,7 @@ bool MonitorItem::docmd(const char* command)
       } else if (d->DSock->message_length == BNET_HEARTBEAT) {
         BnetSig(d->DSock, BNET_HB_RESPONSE);
       } else {
-        qDebug() << BnetSigToAscii(d->DSock);
+        qDebug() << BnetSignalToString(d->DSock).c_str();
       }
     } else { /* BNET_HARDEOF || BNET_ERROR */
       d->DSock = NULL;

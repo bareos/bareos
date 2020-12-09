@@ -38,7 +38,7 @@
 #include "lib/tls_conf.h"
 
 class dlist;
-class json_t;
+struct json_t;
 
 namespace directordaemon {
 

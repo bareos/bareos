@@ -321,7 +321,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       break; /* error or term */
     } else if (status == BNET_SIGNAL) {
       if (UA_sock->message_length == BNET_SUB_PROMPT) { at_prompt = true; }
-      Dmsg1(100, "Got poll %s\n", BnetSigToAscii(UA_sock));
+      Dmsg1(100, "Got poll %s\n", BnetSignalToString(UA_sock).c_str());
     }
   }
 }

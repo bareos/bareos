@@ -85,8 +85,7 @@ TEST(setdevice, scan_command_line)
       "setdevice storage=File autoselect=on",
       "setdevice storage=File device=Any",
       "setdevice torage=File device=Any autoselect=on",
-      "setdevice storage=File device=Any autoselect="
-  };
+      "setdevice storage=File device=Any autoselect="};
 
   for (const auto& c : wrong_command_lines) {
     ParseArgs(c.c_str(), ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);

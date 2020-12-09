@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,11 +24,11 @@
 
 #include "dird/ua.h"
 class alist;
-class PoolDbRecord;
-class MediaDbRecord;
-class StorageDbRecord;
-class ClientDbRecord;
-class JobDbRecord;
+struct PoolDbRecord;
+struct MediaDbRecord;
+struct StorageDbRecord;
+struct ClientDbRecord;
+struct JobDbRecord;
 
 namespace directordaemon {
 
