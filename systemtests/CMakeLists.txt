@@ -191,6 +191,16 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     create_symlink(${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}})
   endforeach()
   create_symlink(${scriptdir}/btraceback ${CURRENT_SBIN_DIR}/btraceback)
+  if(TARGET bareos_vadp_dumper)
+    create_symlink(
+      "${CMAKE_SOURCE_DIR}/core/src/vmware/vadp_dumper/bareos_vadp_dumper_wrapper.sh"
+      "${CURRENT_SBIN_DIR}/bareos_vadp_dumper_wrapper.sh"
+    )
+    create_symlink(
+      "${CURRENT_SBIN_DIR}/bareos_vadp_dumper-${TEST_NAME}"
+      "${CURRENT_SBIN_DIR}/bareos_vadp_dumper"
+    )
+  endif()
 endmacro()
 
 macro(prepare_testdir_for_daemon_run)

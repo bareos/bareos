@@ -11,7 +11,7 @@ JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
 
-export PATH="$(pwd)/bin:$PATH"
+export PATH="${current_test_directory}/sbin:${current_test_directory}/bin:$PATH"
 
 JobName=backup-bareos-fd
 #shellcheck source=../scripts/functions
@@ -20,8 +20,6 @@ JobName=backup-bareos-fd
 "${rscripts}"/setup
 
 
-ln -sf ../sbin/bareos_vadp_dumper-$TestName bin/bareos_vadp_dumper_wrapper.sh
-export PATH=${current_test_directory}/bin:$PATH
 ./reset_cbt.sh
 
 # Directory to backup.
