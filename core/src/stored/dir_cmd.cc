@@ -1049,9 +1049,9 @@ static bool MountCmd(JobControlRecord* jcr)
         /* In both of these two cases, we (the user) unmounted the Volume */
         case BST_UNMOUNTED_WAITING_FOR_SYSOP:
         case BST_UNMOUNTED:
-          Dmsg2(100, "Unmounted changer=%d slot=%hd\n", dev->IsAutochanger(),
-                slot);
-          if (dev->IsAutochanger() && slot > 0) {
+          Dmsg2(100, "Unmounted changer=%d slot=%hd\n",
+                dev->AttachedToAutochanger(), slot);
+          if (dev->AttachedToAutochanger() && slot > 0) {
             TryAutoloadDevice(jcr, dcr, slot, "");
           }
           /* We freed the device, so reopen it and wake any waiting threads */
@@ -1103,9 +1103,9 @@ static bool MountCmd(JobControlRecord* jcr)
           break;
 
         case BST_NOT_BLOCKED:
-          Dmsg2(100, "Not blocked changer=%d slot=%hd\n", dev->IsAutochanger(),
-                slot);
-          if (dev->IsAutochanger() && slot > 0) {
+          Dmsg2(100, "Not blocked changer=%d slot=%hd\n",
+                dev->AttachedToAutochanger(), slot);
+          if (dev->AttachedToAutochanger() && slot > 0) {
             TryAutoloadDevice(jcr, dcr, slot, "");
           }
           if (dev->IsOpen()) {

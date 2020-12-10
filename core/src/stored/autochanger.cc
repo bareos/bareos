@@ -133,8 +133,9 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
   drive_number_t drive;
   Device* volatile dev = dcr->dev;
 
-  if (!dev->IsAutochanger()) {
-    Dmsg1(100, "Device %s is not an autochanger\n", dev->print_name());
+  if (!dev->AttachedToAutochanger()) {
+    Dmsg1(100, "Device %s is not attached to an autochanger\n",
+          dev->print_name());
     return 0;
   }
 
@@ -323,7 +324,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
   uint32_t timeout = dcr->device_resource->max_changer_wait;
   drive_number_t drive = dcr->dev->drive;
 
-  if (!dev->IsAutochanger()) { return kInvalidSlotNumber; }
+  if (!dev->AttachedToAutochanger()) { return kInvalidSlotNumber; }
 
   if (!dcr->device_resource->changer_command) { return kInvalidSlotNumber; }
 
@@ -466,7 +467,7 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
 
   if (loaded_slot == 0) { return true; }
 
-  if (!dev->IsAutochanger() || !dcr->device_resource->changer_name
+  if (!dev->AttachedToAutochanger() || !dcr->device_resource->changer_name
       || !dcr->device_resource->changer_command) {
     return false;
   }
@@ -737,7 +738,7 @@ bool AutochangerCmd(DeviceControlRecord* dcr,
   int status;
   int retries = 1; /* Number of retries on failing slot count */
 
-  if (!dev->IsAutochanger() || !dcr->device_resource->changer_name
+  if (!dev->AttachedToAutochanger() || !dcr->device_resource->changer_name
       || !dcr->device_resource->changer_command) {
     if (bstrcmp(cmd, "drives")) { dir->fsend("drives=1\n"); }
     dir->fsend(_("3993 Device %s not an autochanger device.\n"),
@@ -845,7 +846,7 @@ bool AutochangerTransferCmd(DeviceControlRecord* dcr,
   int len = SizeofPoolMemory(dir->msg) - 1;
   int status;
 
-  if (!dev->IsAutochanger() || !dcr->device_resource->changer_name
+  if (!dev->AttachedToAutochanger() || !dcr->device_resource->changer_name
       || !dcr->device_resource->changer_command) {
     dir->fsend(_("3993 Device %s not an autochanger device.\n"),
                dev->print_name());

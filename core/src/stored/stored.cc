@@ -585,7 +585,7 @@ extern "C" void* device_initialization(void* arg)
     SetupNewDcrDevice(jcr, dcr, dev, NULL);
     jcr->impl->dcr->SetWillWrite();
     GeneratePluginEvent(jcr, bSdEventDeviceInit, dcr);
-    if (dev->IsAutochanger()) {
+    if (dev->AttachedToAutochanger()) {
       /*
        * If autochanger set slot in dev structure
        */

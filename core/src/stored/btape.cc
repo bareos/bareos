@@ -1424,7 +1424,7 @@ static int autochanger_test()
   int sleep_time = 0;
 
   Dmsg1(100, "Max changer wait = %d sec\n", timeout);
-  if (!dev->HasCap(CAP_AUTOCHANGER)) { return 1; }
+  if (!dev->HasCap(CAP_ATTACHED_TO_AUTOCHANGER)) { return 1; }
   if (!(dcr->device_resource && dcr->device_resource->changer_name
         && dcr->device_resource->changer_command)) {
     Pmsg0(-1, _("\nAutochanger enabled, but no name or no command device "

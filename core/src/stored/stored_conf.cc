@@ -172,7 +172,7 @@ static ResourceItem dev_items[] = {
   {"AutomaticMount", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_AUTOMOUNT, CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"LabelMedia", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_LABEL, CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"AlwaysOpen", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_ALWAYSOPEN, CFG_ITEM_DEFAULT, "on", NULL, NULL},
-  {"Autochanger", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_AUTOCHANGER, CFG_ITEM_DEFAULT, "off", NULL, NULL},
+  {"Autochanger", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_ATTACHED_TO_AUTOCHANGER, CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"CloseOnPoll", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_CLOSEONPOLL, CFG_ITEM_DEFAULT, "off", NULL, NULL},
   {"BlockPositioning", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_POSITIONBLOCKS, CFG_ITEM_DEFAULT, "on", NULL, NULL},
   {"UseMtiocget", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_MTIOCGET, CFG_ITEM_DEFAULT, "on", NULL, NULL},

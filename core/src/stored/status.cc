@@ -582,7 +582,7 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
   /*
    * Send autochanger slot status
    */
-  if (dev->IsAutochanger()) {
+  if (dev->AttachedToAutochanger()) {
     if (dev->GetSlot() > 0) {
       len = Mmsg(msg, _("    Slot %hd %s loaded in drive %hd.\n"),
                  dev->GetSlot(), dev->IsOpen() ? "is" : "was last", dev->drive);
