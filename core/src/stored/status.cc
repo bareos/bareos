@@ -667,6 +667,8 @@ static void SendDeviceStatus(Device* dev, StatusPacket* sp)
   len = Mmsg(msg, _("  Min block=%u Max block=%u\n"), dev->min_block_size,
              dev->max_block_size);
   sp->send(msg, len);
+  len = Mmsg(msg, _("  Auto Select=%s\n"), dev->autoselect ? "yes" : "no");
+  sp->send(msg, len);
 }
 
 static void ListRunningJobs(StatusPacket* sp)
