@@ -1,5 +1,7 @@
 include_directories(/usr/lib/vmware-vix-disklib/include)
 link_directories(/usr/lib/vmware-vix-disklib/lib64)
+add_link_options("-Wl,--disable-new-dtags")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH true)
 add_executable(bareos_vadp_dumper bareos_vadp_dumper.cc cbuf.cc copy_thread.cc)
 target_link_libraries(bareos_vadp_dumper vixDiskLib pthread jansson)
 
