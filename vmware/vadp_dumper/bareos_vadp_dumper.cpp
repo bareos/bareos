@@ -667,6 +667,14 @@ static inline void do_vixdisklib_open(const char *key, const char *disk_name, js
          VixDiskLib_FreeErrorText(error_txt);
          goto bail_out;
       }
+#ifdef VIXDISKLIBCREATEPARAMS_HAS_PHYSICALSECTORSIZE
+      if (verbose) {
+        fprintf(stderr, "DiskInfo logicalSectorSize: %u\n",
+                info->logicalSectorSize);
+        fprintf(stderr, "DiskInfo physicalSectorSize: %u\n",
+                info->physicalSectorSize);
+      }
+#endif
    }
 
    if (verbose) {
@@ -721,6 +729,10 @@ static inline void do_vixdisklib_create(const char *key, const char *disk_name,
    } else {
       createParams.diskType = VIXDISKLIB_DISK_MONOLITHIC_SPARSE;
    }
+#ifdef VIXDISKLIBCREATEPARAMS_HAS_PHYSICALSECTORSIZE
+   createParams.physicalSectorSize = VIXDISKLIB_SECTOR_SIZE;
+   createParams.logicalSectorSize = VIXDISKLIB_SECTOR_SIZE;
+#endif
    createParams.hwVersion = 7; /* for ESX(i)4 */
    err = VixDiskLib_Create(connection, disk_path, &createParams, NULL, NULL);
    if (VIX_FAILED(err)) {
