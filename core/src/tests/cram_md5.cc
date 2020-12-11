@@ -111,8 +111,7 @@ TEST(cram_md5, same_director_qualified_name)
             CramMd5Handshake::HandshakeResult::NETWORK_ERROR)
       << "  CramMd5Handshake::HandshakeResult::"
       << cram_result_to_string.at(cs.client_cram.result) << std::endl
-      << "  Which is probably a side effect of a challenge attack."
-      << std::endl;
+      << "  Which is probably a side effect of a relay attack." << std::endl;
 
   EXPECT_FALSE(cs.handshake_ok_server);
   EXPECT_EQ(cs.server_cram.result,
@@ -130,8 +129,7 @@ TEST(cram_md5, different_director_qualified_name)
   EXPECT_EQ(cs.client_cram.result, CramMd5Handshake::HandshakeResult::SUCCESS)
       << "  CramMd5Handshake::HandshakeResult::"
       << cram_result_to_string.at(cs.client_cram.result) << std::endl
-      << "  Which is probably a side effect of a challenge attack."
-      << std::endl;
+      << "  Which is probably a side effect of a relay attack." << std::endl;
 
   EXPECT_TRUE(cs.handshake_ok_server);
   EXPECT_EQ(cs.server_cram.result, CramMd5Handshake::HandshakeResult::SUCCESS)
@@ -148,8 +146,7 @@ TEST(cram_md5, same_stored_qualified_name)
   EXPECT_EQ(cs.client_cram.result, CramMd5Handshake::HandshakeResult::SUCCESS)
       << "  CramMd5Handshake::HandshakeResult::"
       << cram_result_to_string.at(cs.client_cram.result) << std::endl
-      << "  Which is probably a side effect of a challenge attack."
-      << std::endl;
+      << "  Which is probably a side effect of a relay attack." << std::endl;
 
   EXPECT_TRUE(cs.handshake_ok_server);
   EXPECT_EQ(cs.server_cram.result, CramMd5Handshake::HandshakeResult::SUCCESS)
@@ -166,8 +163,7 @@ TEST(cram_md5, different_stored_qualified_name)
   EXPECT_EQ(cs.client_cram.result, CramMd5Handshake::HandshakeResult::SUCCESS)
       << "  CramMd5Handshake::HandshakeResult::"
       << cram_result_to_string.at(cs.client_cram.result) << std::endl
-      << "  Which is probably a side client_cram of a challenge attack."
-      << std::endl;
+      << "  Which is probably a side effect of a relay attack." << std::endl;
 
   EXPECT_TRUE(cs.handshake_ok_server);
   EXPECT_EQ(cs.server_cram.result, CramMd5Handshake::HandshakeResult::SUCCESS)
