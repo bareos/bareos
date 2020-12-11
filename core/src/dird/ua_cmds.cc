@@ -1672,13 +1672,20 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
  */
 bool SetDeviceCommand::Cmd(UaContext* ua, const char* cmd)
 {
-  if (ua->AclHasRestrictions(Storage_ACL)) { return false; }
-
   auto arguments = ScanCommandLine(ua);
 
   if (arguments.empty()) {
     ua->SendCmdUsage("");
     return false;
+  }
+
+  if (ua->AclHasRestrictions(Storage_ACL)) {
+    if (!ua->AclAccessOk(Storage_ACL, arguments["storage"].c_str())) {
+      std::string err{"Access to storage "};
+      err += "\"" + arguments["storage"] + "\" forbidden\n";
+      ua->ErrorMsg(err.c_str());
+      return false;
+    }
   }
 
   StorageResource* sd = ua->GetStoreResWithName(arguments["storage"].c_str());

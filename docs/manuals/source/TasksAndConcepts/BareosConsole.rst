@@ -1111,6 +1111,8 @@ setdevice
 
       setdevice storage=<storage-name> device=<device-name> autoselect=<bool>
 
+   Note: Consider the settings of :config:option:`dir/console/CommandACL` and :config:option:`dir/console/StorageACL`.
+
 .. _bcommandSetIP:
 
 setip
