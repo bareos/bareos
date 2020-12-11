@@ -18,11 +18,52 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 
 .. _bareos-current-releasenotes:
 
-.. _bareos-1826-releasenotes:
-
-
 Bareos-18.2
 -----------
+
+.. _bareos-18210-releasenotes:
+
+.. _bareos-18.2.10:
+
+Bareos-18.2.10
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+
+.. list-table:: Bareos 18.2.10 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 11 December 2020
+   * - **Database Version**
+     -  2171
+   * - **URL**
+     - https://download.bareos.com/bareos/release/18.2/
+
+   * - **Release Ticket**
+     - :mantis:`1261`
+
+VMware Plugin
+^^^^^^^^^^^^^
+Starting with this release the VMware Plugin will be built with VDDK 7.0.1.
+Due to a bug with that version that may crash bareos_vadp_dumper, the wrapper script will check some prerequisites to make sure the bug will   not occur.
+If the prerequisites are not met, the wrapper script will exit with an error describing the problem and make the job fail.
+The prerequisites are the existence of ``/sys/class/scsi_disk/`` and ``/etc/mtab``.
+This can be achieved easily by loading the sd_mod kernel module and creating ``/etc/mtab`` as a symlink to ``/proc/self/mounts``.
+
+Due to problems with the availability of packages for ``pyvmomi``, the depencency has been removed from the RPM packages.
+The ``pyvmomi`` python dependency now needs to be installed using the ``pip`` command.
+
+Bugfixes and Changes
+^^^^^^^^^^^^^^^^^^^^
+* :mantis:`1039`: Can not login in webui
+* fix problem when backing up large objects in filedaemon ldap plugin
+* OpenSSL now uses automatic RNG initialization
+* support newer versions of CephFS that don't have ceph_statx.h
+* fix a memory corruption when autolabeling with increased maxiumum block size
+* :mantis:`1281`: Director crashes on memory access violation in CloseMemoryPool() and is_regex()
 
 .. _bareos-1829-releasenotes:
 
