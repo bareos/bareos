@@ -21,6 +21,56 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 Bareos-19.2
 -----------
 
+.. _bareos-1929-releasenotes:
+
+.. _bareos-19.2.9:
+
+Bareos-19.2.9
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+.. list-table:: Bareos 19.2.9 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 2020-12-11
+   * - **Database Version**
+     -  2192
+   * - **URL**
+     - https://download.bareos.com/bareos/release/19.2/
+   * - **Release Ticket**
+     - :mantis:`1260`
+
+VMware Plugin
+^^^^^^^^^^^^^
+Starting with this release the VMware Plugin will be built with VDDK 7.0.1.
+Due to a bug with that version that may crash bareos_vadp_dumper, the wrapper script will check some prerequisites to make sure the bug will not occur.
+If the prerequisites are not met, the wrapper script will exit with an error describing the problem and make the job fail.
+The prerequisites are the existence of ``/sys/class/scsi_disk/`` and ``/etc/mtab``.
+This can be achieved easily by loading the sd_mod kernel module and creating ``/etc/mtab`` as a symlink to ``/proc/self/mounts``.
+
+Due to problems with the availability of packages for ``pyvmomi``, the depencency has been removed from the RPM packages.
+The ``pyvmomi`` python dependency now needs to be installed using the ``pip`` command.
+
+Bugs Fixed
+^^^^^^^^^^
+* fix a memory corruption when autolabeling with increased maxiumum block size
+* :mantis:`1039`: Can not login in webui
+* filed: allow backup/restore of cephfs mounts and add tests
+* fix problem when backing up large objects in filedaemon ldap plugin
+* :mantis:`1281`: Director crashes on memory access violation in CloseMemoryPool() and is_regex()
+
+Other Improvements
+^^^^^^^^^^^^^^^^^^
+* core: sort jobids before purging
+* filedaemon: solve a race condition within the heartbeat thread shutdown
+* stored: always initialize struct mtop
+* OpenSSL now uses automatic RNG initialization
+* support newer versions of CephFS that don't have ceph_statx.h
+
+
 .. _bareos-1928-releasenotes:
 
 .. _bareos-19.2.8:
