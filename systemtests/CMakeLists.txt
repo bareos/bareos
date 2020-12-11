@@ -993,24 +993,29 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
-  string(
-    CONCAT
-      pythonpath
-      "${CMAKE_SOURCE_DIR}/python-bareos:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ldap:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/libcloud:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules:"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
-  )
 
+  if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+    string(CONCAT pythonpath ${PYTHON_PLUGINS_DIR_TO_TEST})
+
+  else()
+    string(
+      CONCAT
+        pythonpath
+        "${CMAKE_SOURCE_DIR}/python-bareos:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ldap:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/libcloud:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
+        "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"
+        "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules:"
+        "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules:"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
+    )
+  endif()
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
 
   checkforenabledanddisabledlistentry(${TEST_NAME})
