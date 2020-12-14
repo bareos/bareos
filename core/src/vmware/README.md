@@ -7,7 +7,7 @@ It makes use of CBT (Changed Block Tracking) to do space efficient full and
 incremental backups.
 
 The plugin uses the [VMware vSphere API Python Bindings](https://github.com/vmware/pyvmomi)
-and the [VMware Virtual Disk Development Kit (VDDK)](https://developercenter.vmware.com/web/sdk/55/vddk)
+and the [VMware Virtual Disk Development Kit (VDDK)](https://code.vmware.com/web/sdk/7.0/vddk)
 
 ### INSTALLATION
 

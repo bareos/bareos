@@ -1,6 +1,6 @@
 Package: bareos-vmware-plugin
 Architecture: any
-Depends:  bareos-vadp-dumper, bareos-filedaemon-python-plugin (>= 15.2), python-pyvmomi
+Depends:  bareos-vadp-dumper, bareos-filedaemon-python-plugin (>= 15.2)
 Description: Bareos VMware plugin
  Uses the VMware API to take snapshots of running VMs and takes
  full and incremental backup so snapshots. Restore of a snapshot

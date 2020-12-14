@@ -26,6 +26,7 @@ link_directories(${VIX_DISKLIB_LIBRARY_DIR})
 
 add_executable(bareos_vadp_dumper bareos_vadp_dumper.cc cbuf.cc copy_thread.cc)
 
+target_link_options(bareos_vadp_dumper PRIVATE "-Wl,--disable-new-dtags")
 target_link_libraries(bareos_vadp_dumper vixDiskLib pthread jansson)
 
 if(VIXDISKLIBCREATEPARAMS_HAS_PHYSICALSECTORSIZE)

@@ -191,6 +191,25 @@ macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
     create_symlink(${${binary_name_to_test_upcase}} ${${bareos_XXX_binary}})
   endforeach()
   create_symlink(${scriptdir}/btraceback ${CURRENT_SBIN_DIR}/btraceback)
+
+  if(TARGET bareos_vadp_dumper)
+    if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+      create_symlink(
+        "/usr/sbin/bareos_vadp_dumper_wrapper.sh"
+        "${CURRENT_SBIN_DIR}/bareos_vadp_dumper_wrapper.sh"
+      )
+    else()
+      create_symlink(
+        "${CMAKE_SOURCE_DIR}/core/src/vmware/vadp_dumper/bareos_vadp_dumper_wrapper.sh"
+        "${CURRENT_SBIN_DIR}/bareos_vadp_dumper_wrapper.sh"
+      )
+
+    endif()
+    create_symlink(
+      "${CURRENT_SBIN_DIR}/bareos_vadp_dumper-${TEST_NAME}"
+      "${CURRENT_SBIN_DIR}/bareos_vadp_dumper"
+    )
+  endif()
 endmacro()
 
 macro(prepare_testdir_for_daemon_run)
@@ -204,9 +223,6 @@ macro(prepare_testdir_for_daemon_run)
   set(tmpdir ${current_test_directory}/tmp)
   set(tmp ${tmpdir})
   set(working_dir ${current_test_directory}/working)
-  set(python_plugin_module_src_test_dir
-      ${current_test_directory}/python-modules
-  )
   set(piddir ${current_test_directory}/piddir)
 
   set(backenddir ${BACKEND_DIR_TO_TEST})
@@ -218,11 +234,15 @@ macro(prepare_testdir_for_daemon_run)
     set(sbin /sbin)
     set(scripts ${SCRIPTS_DIR_TO_TEST})
     set(python_plugin_module_src_dir ${PYTHON_PLUGINS_DIR_TO_TEST})
+    set(python_plugin_module_src_test_dir ${PYTHON_PLUGINS_DIR_TO_TEST})
   else()
     set(bin ${PROJECT_BINARY_DIR}/bin)
     set(sbin ${PROJECT_BINARY_DIR}/sbin)
     set(scripts ${PROJECT_BINARY_DIR}/scripts)
     set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
+    set(python_plugin_module_src_test_dir
+        ${current_test_directory}/python-modules
+    )
   endif()
 
   file(MAKE_DIRECTORY ${piddir})
@@ -323,7 +343,7 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     bregex
 )
 if(TARGET bareos_vadp_dumper)
-  list(APPEND bareos_vadp_dumper)
+  list(APPEND ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS bareos_vadp_dumper)
 endif()
 
 set(AVAILABLE_WEBUI_SELENIUM_TESTS
@@ -453,7 +473,6 @@ set(logdir "log")
 set(mon_dir_password "mon_dir_password")
 set(mon_fd_password "mon_fd_password")
 set(mon_sd_password "mon_sd_password")
-set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
 set(python_plugin_module_src_test_dir_relative "python-modules")
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
@@ -974,24 +993,29 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   prepare_test()
 
   configurefilestosystemtest("systemtests" "tests/${TEST_NAME}" "*" @ONLY "")
-  string(
-    CONCAT
-      pythonpath
-      "${CMAKE_SOURCE_DIR}/python-bareos:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ldap:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/libcloud:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
-      "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules:"
-      "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules:"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
-  )
 
+  if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+    string(CONCAT pythonpath ${PYTHON_PLUGINS_DIR_TO_TEST})
+
+  else()
+    string(
+      CONCAT
+        pythonpath
+        "${CMAKE_SOURCE_DIR}/python-bareos:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ldap:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/libcloud:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
+        "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
+        "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"
+        "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules:"
+        "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules:"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
+    )
+  endif()
   configure_file("environment.in" "tests/${TEST_NAME}/environment" @ONLY)
 
   checkforenabledanddisabledlistentry(${TEST_NAME})
