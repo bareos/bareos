@@ -35,7 +35,7 @@ except ImportError:
     from ConfigParser import SafeConfigParser as ConfigParser
 
 
-import xml.etree
+import xml.etree.ElementTree
 
 
 import ssl
@@ -166,7 +166,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(100, "BareosFdPluginOvirt:start_backup_file() called\n")
 
         if not self.ovirt.backup_objects:
-            bareosfd.JobMessage(M_ERROR, "Nothing to backup.\n")
+            bareosfd.JobMessage(bareosfd.M_ERROR, "Nothing to backup.\n")
             self.backup_obj = None
             return bareosfd.bRC_Skip
 
@@ -289,6 +289,10 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             100,
             "create_file() entry point in Python called with %s\n" % (restorepkt),
         )
+        bareosfd.DebugMessage(
+            200,
+            "create_file() Type of restorepkt.ofname: %s\n" % type(restorepkt.ofname),
+        )
 
         # Process includes/excludes for restore to oVirt.  Note that it is more
         # efficient to mark only the disks to restore, as skipping here can not
@@ -300,21 +304,35 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             not restorepkt.ofname.endswith(".ovf")
             and not self.options.get("local") == "yes"
         ):
-            disk_alias = self.ovirt.get_ovf_disk_alias_by_basename(restorepkt.ofname)
+            disk_alias = self.ovirt.get_ovf_disk_alias_by_basename(
+                StringCodec.decode_fname(restorepkt.ofname)
+            )
+            disk_alias = StringCodec.encode_disk_alias(disk_alias)
+            bareosfd.DebugMessage(
+                200,
+                "create_file() disk_alias: %s (%s)\n"
+                % (repr(disk_alias), type(disk_alias)),
+            )
 
             if not self.ovirt.is_disk_alias_included(disk_alias):
-                restorepkt.create_status = CF_SKIP
-                returnbRC_OK
+                bareosfd.DebugMessage(
+                    200,
+                    "create_file() Skipping disk_alias: %s (is not included)\n"
+                    % (repr(disk_alias)),
+                )
+                restorepkt.create_status = bareosfd.CF_SKIP
+                return bareosfd.bRC_OK
 
             if self.ovirt.is_disk_alias_excluded(disk_alias):
+                bareosfd.DebugMessage(
+                    200,
+                    "create_file() Skipping disk_alias: %s (is exluded)\n"
+                    % (repr(disk_alias)),
+                )
                 restorepkt.create_status = bareosfd.CF_SKIP
                 return bareosfd.bRC_OK
 
         if self.options.get("local") == "yes":
-            bareosfd.DebugMessage(
-                200,
-                "Type of restorepkt.ofname: %s\n" % type(restorepkt.ofname),
-            )
             FNAME = restorepkt.ofname
             dirname = os.path.dirname(FNAME)
             if not os.path.exists(dirname):
@@ -507,7 +525,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 except IOError as msg:
                     IOP.io_errno = -1
                     bareosfd.DebugMessage(100, "Error writing data: " + msg + "\n")
-                    return bRC_Error
+                    return bareosfd.bRC_Error
             elif self.FNAME.endswith(".ovf"):
                 self.ovirt.process_ovf(IOP.buf)
                 IOP.status = IOP.count
@@ -1062,6 +1080,11 @@ class BareosOvirtWrapper(object):
             return True
 
         include_disk_aliases = self.options["include_disk_aliases"].split(",")
+        bareosfd.DebugMessage(
+            200,
+            "is_disk_alias_included() disk_alias: %s include_disk_aliases: %s\n"
+            % (repr(disk_alias), repr(include_disk_aliases)),
+        )
         if disk_alias in include_disk_aliases:
             bareosfd.JobMessage(
                 bareosfd.M_INFO,
@@ -1139,7 +1162,7 @@ class BareosOvirtWrapper(object):
 
         # Check the response status:
         if self.response.status >= 300:
-            bareosfd.JobMessage(M_ERROR, "Error: %s" % self.response.read())
+            bareosfd.JobMessage(bareosfd.M_ERROR, "Error: %s" % self.response.read())
 
         self.bytes_to_transf = int(self.response.getheader("Content-Length"))
 
@@ -1342,7 +1365,7 @@ class BareosOvirtWrapper(object):
 
         # Add the virtual machine, the transferred disks will be
         # attached to this virtual machine:
-        bareosfd.JobMessage(M_INFO, "Adding virtual machine %s\n" % vm_name)
+        bareosfd.JobMessage(bareosfd.M_INFO, "Adding virtual machine %s\n" % vm_name)
 
         # vm type (server/desktop)
         vm_type = "server"
@@ -1478,6 +1501,11 @@ class BareosOvirtWrapper(object):
         dirpath = os.path.dirname(fname)
         dirname = os.path.basename(dirpath)
         basename = os.path.basename(fname)
+        bareosfd.DebugMessage(
+            150,
+            "get_ovf_disk_alias_by_basename(): self.ovf_disks_by_alias_and_fileref: %s\n"
+            % (self.ovf_disks_by_alias_and_fileref),
+        )
         relname = "%s/%s" % (dirname, basename)
 
         return self.ovf_disks_by_alias_and_fileref[relname]["disk-alias"]
@@ -1545,7 +1573,7 @@ class BareosOvirtWrapper(object):
 
         disk = None
         if "storage_domain" not in obj:
-            bareosfd.JobMessage(M_FATAL, "No storage domain specified.\n")
+            bareosfd.JobMessage(bareosfd.M_FATAL, "No storage domain specified.\n")
         else:
             storage_domain = obj["storage_domain"]
 
@@ -1681,10 +1709,11 @@ class BareosOvirtWrapper(object):
         self.transfer_start_time = time.time()
 
     def process_ovf(self, chunk):
+        chunk = StringCodec.decode_ovf_chunk(chunk)
         if self.ovf_data is None:
-            self.ovf_data = str(chunk)
+            self.ovf_data = chunk
         else:
-            self.ovf_data = self.ovf_data.str(chunk)
+            self.ovf_data += chunk
 
     def process_upload(self, chunk):
 
@@ -1847,11 +1876,16 @@ class Ovf(object):
 
     # XPath expressions
     OVF_XPATH_EXPRESSIONS = {
-        "vm_name": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Name',
-        "cluster_name": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/ClusterName',
-        "network_elements": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[Type="interface"]',
-        "disk_elements": '/ovf:Envelope/Section[@xsi:type="ovf:DiskSection_Type"]/Disk',
-        "resources_elements": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[rasd:ResourceType=3 or rasd:ResourceType=4]',
+        "vm_name": './Content[@xsi:type="ovf:VirtualSystem_Type"]/Name',
+        "cluster_name": './Content[@xsi:type="ovf:VirtualSystem_Type"]/ClusterName',
+        "network_elements": [
+            './Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[Type="interface"]'
+        ],
+        "disk_elements": ['./Section[@xsi:type="ovf:DiskSection_Type"]/Disk'],
+        "resources_elements": [
+            './Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[rasd:ResourceType="3"]',
+            './Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[rasd:ResourceType="4"]',
+        ],
     }
 
     def __init__(self, ovf_data=None):
@@ -1864,7 +1898,11 @@ class Ovf(object):
         """
 
         # Parse the OVF as XML document:
-        self.ovf = xml.etree.fromstring(ovf_data)
+        self.ovf = xml.etree.ElementTree.fromstring(ovf_data)
+
+        # register namespaces
+        for prefix, uri in self.OVF_NAMESPACES.items():
+            xml.etree.ElementTree.register_namespace(prefix, uri)
 
     def get_element(self, element_name):
         """
@@ -1873,8 +1911,8 @@ class Ovf(object):
         This method supports the following parameters:
         `element_name':: A string with the element name to extract
         """
-        return self.ovf.xpath(
-            self.OVF_XPATH_EXPRESSIONS[element_name], namespaces=self.OVF_NAMESPACES
+        return self.ovf.findall(
+            self.OVF_XPATH_EXPRESSIONS[element_name], self.OVF_NAMESPACES
         )[0].text
 
     def get_elements(self, element_name):
@@ -1884,9 +1922,10 @@ class Ovf(object):
         This method supports the following parameters:
         `element_name':: A string with the element name to extract
         """
-        return self.ovf.xpath(
-            self.OVF_XPATH_EXPRESSIONS[element_name], namespaces=self.OVF_NAMESPACES
-        )
+        results = []
+        for xpath_expression in self.OVF_XPATH_EXPRESSIONS[element_name]:
+            results += self.ovf.findall(xpath_expression, self.OVF_NAMESPACES)
+        return results
 
 
 class StringCodec:
@@ -1896,6 +1935,13 @@ class StringCodec:
             return var
         else:
             return var.encode("utf-8")
+
+    @staticmethod
+    def encode_disk_alias(var):
+        if version_info.major < 3:
+            return var.encode("utf-8")
+        else:
+            return var
 
     @staticmethod
     def decode_fname(var):
@@ -1908,6 +1954,13 @@ class StringCodec:
     def decode_object_data(var):
         if version_info.major < 3:
             return var
+        else:
+            return var.decode("utf-8")
+
+    @staticmethod
+    def decode_ovf_chunk(var):
+        if version_info.major < 3:
+            return str(var)
         else:
             return var.decode("utf-8")
 
