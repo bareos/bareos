@@ -641,7 +641,6 @@ Summary:        Bareos VMware plugin
 Group:          Productivity/Archiving/Backup
 Requires:       bareos-vadp-dumper
 Requires:       bareos-filedaemon-python-plugin >= 15.2
-Requires:       python-pyvmomi
 %if 0%{?suse_version} == 1110
 Requires:       python-ordereddict
 %endif

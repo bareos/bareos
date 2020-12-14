@@ -78,6 +78,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Add pkglists to documentation for all OS we build for [PR #557]
 - Merge VMware plugin code into core subdirectories, add system test [PR #544]
 - The VMware plugin now allows to use an optional config file to specify plugin options [PR #544]
+- Removed the dependency to pyvmomi from rpm and deb packages [PR #667]
 - Add next pool selection to custom job run form in the webui [PR #518]
 - In job reports display who triggered a job (scheduler, user, ..) [PR #532]
 - Added VirtualFull option for manual defined Jobs [PR #508]
