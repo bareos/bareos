@@ -62,6 +62,12 @@ print_block() {
   printf "%b┗" "$s"; printf -- "━%.0s" {1..77}; printf "┛%b\n\n" "$e"
 }
 
+join_by() {
+  local IFS="$1"
+  shift
+  echo "$*"
+}
+
 # get_next_version accepts a stable version as its only parameter.
 # it will then return the patch-version that follows after the provided version.
 get_next_version() {
@@ -74,7 +80,7 @@ get_next_version() {
     out_parts+=("${in_parts[i]}")
   done
   out_parts+=($(( in_parts[i]+1 ))) # add last element incremented by one
-  IFS=. echo "${out_parts[*]}" # join array to string
+  join_by . "${out_parts[@]}" # join array to string
 }
 
 confirm() {
