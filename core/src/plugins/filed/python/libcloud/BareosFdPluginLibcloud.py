@@ -344,6 +344,11 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         statp = bareosfd.StatPacket()
 
+        statp.st_size = self.current_backup_task['size']
+        statp.st_mtime = self.current_backup_task['mtime']
+        statp.st_atime = 0
+        statp.st_ctime = 0
+        
         savepkt.statp = statp
         savepkt.fname = StringCodec.encode_for_backup(filename)
         savepkt.type = FT_REG
