@@ -1031,7 +1031,7 @@ oVirt Plugin
    pair: Plugin; oVirt
 
 The oVirt Plugin can be used for agentless backups of virtual machines running on oVirt or Red Hat Virtualization (RHV).
-It was tested with oVirt/RHV 4.3. There are currently no known technical differences between
+It was tested with oVirt/RHV 4.4. There are currently no known technical differences between
 RHV and oVirt (which is RHV's upstream project) that are relevant for this plugin, so both
 names are equivalent in this documentation if not explicitly mentioned.
 
@@ -1051,8 +1051,11 @@ It is included in Bareos since :sinceVersion:`19: oVirt Plugin`.
 Status
 ^^^^^^
 
-The Plugin can currently only take full backups of VM disks because
-the oVirt/RHV API does not yet provide methods for incremental backups.
+The Plugin can currently only take full backups of VM disks.
+
+In oVirt 4.4 the incremental backup feature was added, in RHV 4.4 this
+is still declared as a technology preview feature. The Bareos oVirt
+plugin does not yet support this new feature.
 
 When performing restores, the plugin can do one of the following:
 
@@ -1071,15 +1074,35 @@ Additionally it is possible to
 Currently, the access to disk images is implemented only via the oVirt Image I/O Proxy component
 of the engine server.
 
+Since :sinceVersion:`20: oVirt Plugin` the plugin works with both Python version 2 or 3 and it
+was adapted to the modernized Bareos Python plugin API.
+
 .. _oVirtPlugin-requirements:
 
 Requirements
 ^^^^^^^^^^^^
 
-The plugin is currently only available for Red Hat Enterprise Linux 7 and CentOS 7. It requires the
+The plugin is currently only available for Red Hat Enterprise Linux and CentOS 7 and 8. It requires the
 Python oVirt Engine SDK version 4, Red Hat Subscriptions customers can find the package
-**python-ovirt-engine-sdk4** in the ``rh-common`` repo, which may not be enabled by default.
-The oVirt project provides the package at https://resources.ovirt.org/pub/ovirt-4.3/rpm/el7/x86_64/.
+**python-ovirt-engine-sdk4** in the ``rh-common`` repo for RHEL 7, which may not be enabled by default.
+For RHEL 8 the package **python3-ovirt-engine-sdk4** can be found in the ``rhv-4-tools-for-rhel-8-x86_64-rpms``
+repo.
+The oVirt project provides the package at https://resources.ovirt.org/pub/ovirt-4.3/rpm/el7/x86_64/
+or https://resources.ovirt.org/pub/ovirt-4.4/rpm/el8/x86_64/.
+
+As mentioned above, since :sinceVersion:`20: oVirt Plugin` the plugin works with Python version 2 or 3,
+however, it is recommended to use Python 3 because Python 2 has reached it's end of life.
+To allow the user more flexibility for the installation of the Python oVirt Engine SDK, the
+dependency on the **python-ovirt-engine-sdk4** has been removed in the Bareos package.
+Instead, the plugin code now creates an appropriate job error messages when the SDK is not
+installed. The user can now choose to either install the **python3-ovirt-engine-sdk4** package
+from the oVirt project or Red Hat repo, or install the SDK by using
+
+.. code-block:: shell
+
+   pip3 install ovirt-engine-sdk-python
+
+Use ``pip`` or ``pip2`` for the Python 2 version.
 
 The system running the |fd| with this plugin must have network access to the oVirt/RHV
 engine server on the TCP ports 443 (https for API access) and 54323 (for Image I/O Proxy access).
