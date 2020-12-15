@@ -65,9 +65,9 @@ check_two_logs
 check_restore_diff ${BackupDirectory}
 
 #make sure all the setdevice commands were successful
-grep "3000 OK setdevice=MultiFileStorage0001 autoselect=yes" "${tmp}"/log1.out >/dev/null 2>&1 &&
-grep "3000 OK setdevice=MultiFileStorage0002 autoselect=yes" "${tmp}"/log1.out >/dev/null 2>&1 &&
-grep "3000 OK setdevice=MultiFileStorage0003 autoselect=yes" "${tmp}"/log1.out >/dev/null 2>&1
+grep "3000 OK setdevice=MultiFileStorage0001 autoselect=1" "${tmp}"/log1.out >/dev/null 2>&1 &&
+grep "3000 OK setdevice=MultiFileStorage0002 autoselect=1" "${tmp}"/log1.out >/dev/null 2>&1 &&
+grep "3000 OK setdevice=MultiFileStorage0003 autoselect=1" "${tmp}"/log1.out >/dev/null 2>&1
 if test $? -ne 0 ; then
   echo "The setdevice command failed for a MultiFileStorage."
   estat=1;
