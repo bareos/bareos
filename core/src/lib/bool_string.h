@@ -28,7 +28,7 @@
 
 class BoolString {
  public:
-  BoolString(const std::string& s) : str_value(s)
+  explicit BoolString(const std::string& s) : str_value(s)
   {
     if (true_values.find(str_value) == true_values.end()
         && false_values.find(str_value) == false_values.end()) {
@@ -44,8 +44,8 @@ class BoolString {
 
  private:
   std::string str_value;
-  static const std::set<std::string> true_values;
-  static const std::set<std::string> false_values;
+  const std::set<std::string> true_values{"true", "yes", "1"};
+  const std::set<std::string> false_values{"false", "no", "0"};
 };
 
 template <>

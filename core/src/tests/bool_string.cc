@@ -35,8 +35,8 @@
 TEST(BoolString, convert_supported_bool_strings)
 {
   const std::map<std::string, bool> test_pattern{
-      {"on", true},   {"true", true},   {"yes", true}, {"1", true},
-      {"off", false}, {"false", false}, {"no", false}, {"0", false}};
+      {"true", true},   {"yes", true}, {"1", true},
+      {"false", false}, {"no", false}, {"0", false}};
 
   for (const auto& t : test_pattern) {
     bool value = false;
