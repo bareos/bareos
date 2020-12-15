@@ -51,6 +51,7 @@
 #include "dird/ua_run.h"
 #include "include/auth_protocol_types.h"
 #include "lib/bnet.h"
+#include "lib/bool_string.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -1618,6 +1619,15 @@ SetDeviceCommand::ArgumentsList SetDeviceCommand::ScanCommandLine(UaContext* ua)
   }
   if (argument_missing) { return ArgumentsList(); }
 
+  try {
+    BoolString s{arguments["autoselect"].data()};  // throws
+    arguments["autoselect"].clear();
+    arguments["autoselect"] = s.get<bool>() == true ? "1" : "0";
+  } catch (const std::out_of_range& e) {
+    ua->ErrorMsg("Wrong argument: %s\n", arguments["autoselect"].c_str());
+    return ArgumentsList();
+  }
+
   return arguments;
 }
 
@@ -1651,9 +1661,9 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
   }
 
   Dmsg0(120, _("Connected to storage daemon\n"));
-  ua->jcr->store_bsock->fsend("setdevice device=%s autoselect=%s",
+  ua->jcr->store_bsock->fsend("setdevice device=%s autoselect=%d",
                               arguments.at("device").c_str(),
-                              arguments.at("autoselect").c_str());
+                              std::stoi(arguments.at("autoselect")));
   if (ua->jcr->store_bsock->recv() >= 0) {
     ua->SendMsg("%s", ua->jcr->store_bsock->msg);
   }

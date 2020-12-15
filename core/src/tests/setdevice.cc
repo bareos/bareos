@@ -72,7 +72,7 @@ TEST(setdevice, scan_command_line)
 
   std::string command_line{
       "setdevice storage=File device=Any "
-      "autoselect=on"};
+      "autoselect=yes"};
 
   ParseArgs(command_line.c_str(), ua->args, &ua->argc, ua->argk, ua->argv,
             MAX_CMD_ARGS);
@@ -81,10 +81,10 @@ TEST(setdevice, scan_command_line)
   EXPECT_TRUE(!result.empty());
 
   std::array<std::string, 5> wrong_command_lines{
-      "setdevice device=Any autoselect=on",
-      "setdevice storage=File autoselect=on",
+      "setdevice device=Any autoselect=yes",
+      "setdevice storage=File autoselect=yes",
       "setdevice storage=File device=Any",
-      "setdevice torage=File device=Any autoselect=on",
+      "setdevice torage=File device=Any autoselect=yes",
       "setdevice storage=File device=Any autoselect="};
 
   for (const auto& c : wrong_command_lines) {

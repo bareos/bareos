@@ -67,7 +67,6 @@
 #include "include/protocol_types.h"
 #include "lib/berrno.h"
 #include "lib/bnet.h"
-#include "lib/bool_string.h"
 #include "lib/bsock.h"
 #include "lib/bsock_tcp.h"
 #include "lib/edit.h"
@@ -112,7 +111,7 @@ static char derrmsg[] = "3900 Invalid command:";
 static char OKsetdebugv0[] = "3000 OK setdebug=%d tracefile=%s\n";
 static char OKsetdebugv1[]
     = "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s\n";
-static char OKsetdevice[] = "3000 OK setdevice=%s autoselect=%s\n";
+static char OKsetdevice[] = "3000 OK setdevice=%s autoselect=%d\n";
 static char invalid_cmd[]
     = "3997 Invalid command for a Director with Monitor directive enabled.\n";
 static char OK_bootstrap[] = "3000 OK bootstrap\n";
@@ -125,7 +124,7 @@ static char OKpluginoptions[] = "2000 OK plugin options\n";
 static char OKsecureerase[] = "2000 OK SDSecureEraseCmd %s \n";
 
 #define MAX_SETDEVICE_NAME_LENGTH 128  // including the trailing zero
-static char setdevice_autoselect[] = "setdevice device=%127s autoselect=%127s";
+static char setdevice_autoselect[] = "setdevice device=%127s autoselect=%d";
 
 /* Forward referenced functions */
 // static bool ActionOnPurgeCmd(JobControlRecord *jcr);
@@ -475,9 +474,9 @@ static bool SetdeviceCmd(JobControlRecord* jcr)
   Dmsg1(10, "SetdeviceCmd: %s\n", dir->msg);
 
   std::vector<char> device_name(MAX_SETDEVICE_NAME_LENGTH);
-  std::vector<char> autoselect_value(MAX_SETDEVICE_NAME_LENGTH);
+  int autoselect_value = 0;
   int scan = sscanf(dir->msg, setdevice_autoselect, device_name.data(),
-                    autoselect_value.data());
+                    &autoselect_value);
   if (scan != 2) {
     dir->fsend(BADcmd, "setdevice", dir->msg);
     return false;
@@ -491,14 +490,10 @@ static bool SetdeviceCmd(JobControlRecord* jcr)
     return false;
   }
 
-  try {
-    BoolString s{autoselect_value.data()};
-    res->autoselect = s.get<bool>();
-    if (res->dev) { res->dev->autoselect = res->autoselect; }
-    return dir->fsend(OKsetdevice, device_name.data(), s.get().c_str());
-  } catch (const std::out_of_range& e) {
-    return dir->fsend(BADcmd, "setdevice", e.what());
-  }
+  res->autoselect = autoselect_value == 0 ? false : true;
+  if (res->dev) { res->dev->autoselect = res->autoselect; }
+
+  return dir->fsend(OKsetdevice, device_name.data(), autoselect_value);
 }
 
 /**
