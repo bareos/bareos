@@ -578,7 +578,6 @@ Summary:    Ovirt Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
-Requires:   python-pycurl
 
 %package    filedaemon-libcloud-python-plugin
 Summary:    Libcloud Python plugin for Bareos File daemon
