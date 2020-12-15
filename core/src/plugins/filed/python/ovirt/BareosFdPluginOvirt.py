@@ -22,7 +22,6 @@
 # Bareos python class for Ovirt related backup and restore
 
 import bareosfd
-from bareosfd import *
 
 import os
 import io
@@ -35,15 +34,13 @@ try:
 except ImportError:
     from ConfigParser import SafeConfigParser as ConfigParser
 
-# import ConfigParser as configparser
 
-import xml.etree
+import xml.etree.ElementTree
 
-
-import ovirtsdk4 as sdk
-import ovirtsdk4.types as types
 
 import ssl
+
+from sys import version_info
 
 try:
     from httplib import HTTPSConnection
@@ -58,6 +55,13 @@ except ImportError:
 import BareosFdPluginBaseclass
 
 import logging
+
+SDK_IMPORT_ERROR = False
+try:
+    import ovirtsdk4 as sdk
+    import ovirtsdk4.types as types
+except ImportError:
+    SDK_IMPORT_ERROR = True
 
 # The name of the application, to be used as the 'origin' of events
 # sent to the audit log:
@@ -74,6 +78,11 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             100,
             "Constructor called in module %s with plugindef=%s\n"
             % (__name__, plugindef),
+        )
+        bareosfd.DebugMessage(
+            100,
+            "Python Version: %s.%s.%s\n"
+            % (version_info.major, version_info.minor, version_info.micro),
         )
         super(BareosFdPluginOvirt, self).__init__(plugindef)
 
@@ -100,21 +109,30 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         config_file = self.options.get("config_file")
         if config_file:
             if not self.parse_config_file():
-                return bRC_Error
+                return bareosfd.bRC_Error
 
         self.ovirt.set_options(self.options)
-        return bRC_OK
+        return bareosfd.bRC_OK
 
     def check_options(self, mandatory_options=None):
         """
         Check Plugin options
         Note: this is called by parent class parse_plugin_definition().
-        This plugin does not yet implement any checks.
+        This plugin does not yet implement any checks for plugin options,
+        but it's used to report if the Python oVirt SDK is not installed.
         If it is required to know if it is a backup or a restore, it
         may make more sense to invoke the options checking from
         start_backup_job() and start_restore_job()
         """
-        return bRC_OK
+
+        if SDK_IMPORT_ERROR:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Please install the Python SDK for oVirt Engine API.\n",
+            )
+            return bareosfd.bRC_Error
+
+        return bareosfd.bRC_OK
 
     def start_backup_job(self):
         """
@@ -123,16 +141,21 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         bareosfd.DebugMessage(100, "BareosFdPluginOvirt:start_backup_job() called\n")
 
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "Using oVirt SDK Version %s\n" % sdk.version.VERSION,
+        )
+
         if chr(self.level) != "F":
             bareosfd.JobMessage(
-                M_FATAL,
+                bareosfd.M_FATAL,
                 "BareosFdPluginOvirt can only perform level F (Full) backups, but level is %s\n"
                 % (chr(self.level)),
             )
-            return bRC_Error
+            return bareosfd.bRC_Error
 
         if not self.ovirt.connect_api():
-            return bRC_Error
+            return bareosfd.bRC_Error
 
         return self.ovirt.prepare_vm_backup()
 
@@ -143,9 +166,9 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(100, "BareosFdPluginOvirt:start_backup_file() called\n")
 
         if not self.ovirt.backup_objects:
-            bareosfd.JobMessage(M_ERROR, "Nothing to backup.\n")
+            bareosfd.JobMessage(bareosfd.M_ERROR, "Nothing to backup.\n")
             self.backup_obj = None
-            return bRC_Skip
+            return bareosfd.bRC_Skip
 
         self.backup_obj = self.ovirt.backup_objects.pop(0)
 
@@ -164,13 +187,15 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 % (vmfile["filename"], self.backup_obj["vmname"]),
             )
 
-            savepkt.type = FT_REG
+            savepkt.type = bareosfd.FT_REG
             savepkt.fname = "/VMS/%s-%s/%s" % (
                 self.backup_obj["vmname"],
                 self.backup_obj["vmid"],
                 vmfile["filename"],
             )
-            self.backup_obj["file"]["fh"] = io.BytesIO(vmfile["data"].encode("utf-8"))
+            self.backup_obj["file"]["fh"] = io.BytesIO(
+                StringCodec.encode_ovf_data(vmfile["data"])
+            )
 
         elif "disk" in self.backup_obj:
 
@@ -185,7 +210,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 % (disk.alias, disk.id, snapshot.id, self.backup_obj["vmname"]),
             )
 
-            savepkt.type = FT_REG
+            savepkt.type = bareosfd.FT_REG
             savepkt.fname = "/VMS/%s-%s/%s-%s/%s" % (
                 self.backup_obj["vmname"],
                 self.backup_obj["vmid"],
@@ -198,11 +223,11 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 self.ovirt.start_download(snapshot, disk)
             except Exception as e:
                 bareosfd.JobMessage(
-                    M_ERROR,
+                    bareosfd.M_ERROR,
                     "BareosFdPluginOvirt:start_backup_file() Error: %s\n" % str(e),
                 )
                 self.ovirt.end_transfer()
-                return bRC_Error
+                return bareosfd.bRC_Error
 
         elif "disk_metadata" in self.backup_obj:
             # save disk metadata as restoreobject
@@ -226,7 +251,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 ),
             )
 
-            savepkt.type = FT_RESTORE_FIRST
+            savepkt.type = bareosfd.FT_RESTORE_FIRST
             savepkt.fname = "/VMS/%s-%s/%s-%s/%s.metadata" % (
                 self.backup_obj["vmname"],
                 self.backup_obj["vmid"],
@@ -241,18 +266,18 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         else:
             bareosfd.JobMessage(
-                M_FATAL,
+                bareosfd.M_FATAL,
                 "BareosFdPluginOvirt:start_backup_file(): Invalid data in backup_obj, keys: %s\n"
                 % (self.backup_obj.keys()),
             )
-            return bRC_Error
+            return bareosfd.bRC_Error
 
         bareosfd.JobMessage(
-            M_INFO,
+            bareosfd.M_INFO,
             "Starting backup of %s\n" % savepkt.fname,
         )
 
-        return bRC_OK
+        return bareosfd.bRC_OK
 
     def create_file(self, restorepkt):
         """
@@ -263,6 +288,10 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(
             100,
             "create_file() entry point in Python called with %s\n" % (restorepkt),
+        )
+        bareosfd.DebugMessage(
+            200,
+            "create_file() Type of restorepkt.ofname: %s\n" % type(restorepkt.ofname),
         )
 
         # Process includes/excludes for restore to oVirt.  Note that it is more
@@ -275,15 +304,33 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             not restorepkt.ofname.endswith(".ovf")
             and not self.options.get("local") == "yes"
         ):
-            disk_alias = self.ovirt.get_ovf_disk_alias_by_basename(restorepkt.ofname)
+            disk_alias = self.ovirt.get_ovf_disk_alias_by_basename(
+                StringCodec.decode_fname(restorepkt.ofname)
+            )
+            disk_alias = StringCodec.encode_disk_alias(disk_alias)
+            bareosfd.DebugMessage(
+                200,
+                "create_file() disk_alias: %s (%s)\n"
+                % (repr(disk_alias), type(disk_alias)),
+            )
 
             if not self.ovirt.is_disk_alias_included(disk_alias):
-                restorepkt.create_status = CF_SKIP
-                returnbRC_OK
+                bareosfd.DebugMessage(
+                    200,
+                    "create_file() Skipping disk_alias: %s (is not included)\n"
+                    % (repr(disk_alias)),
+                )
+                restorepkt.create_status = bareosfd.CF_SKIP
+                return bareosfd.bRC_OK
 
             if self.ovirt.is_disk_alias_excluded(disk_alias):
-                restorepkt.create_status = CF_SKIP
-                return bRC_OK
+                bareosfd.DebugMessage(
+                    200,
+                    "create_file() Skipping disk_alias: %s (is exluded)\n"
+                    % (repr(disk_alias)),
+                )
+                restorepkt.create_status = bareosfd.CF_SKIP
+                return bareosfd.bRC_OK
 
         if self.options.get("local") == "yes":
             FNAME = restorepkt.ofname
@@ -299,27 +346,26 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             # But: only do this for regular files, prevent from
             # IOError: (21, 'Is a directory', '/tmp/bareos-restores/my/dir/')
             # if it's a directory
-            if restorepkt.type == FT_REG:
+            if restorepkt.type == bareosfd.FT_REG:
                 open(FNAME, "wb").close()
         else:
             if not restorepkt.ofname.endswith(".ovf"):
-                FNAME = restorepkt.ofname
-                FNAME = FNAME.decode("utf-8")
+                FNAME = StringCodec.decode_fname(restorepkt.ofname)
 
                 disk = self.ovirt.get_vm_disk_by_basename(FNAME)
                 if disk is None:
                     bareosfd.JobMessage(
-                        M_ERROR,
+                        bareosfd.M_ERROR,
                         "BareosFdPluginOvirt:create_file() Unable to restore disk %s.\n"
                         % (FNAME),
                     )
-                    return bRC_Error
+                    return bareosfd.bRC_Error
                 else:
                     self.ovirt.start_upload(disk)
 
-        if restorepkt.type == FT_REG:
-            restorepkt.create_status = CF_EXTRACT
-        return bRC_OK
+        if restorepkt.type == bareosfd.FT_REG:
+            restorepkt.create_status = bareosfd.CF_EXTRACT
+        return bareosfd.bRC_OK
 
     def start_restore_job(self):
         """
@@ -327,25 +373,31 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         Overload this to handle restore objects, if applicable
         """
         bareosfd.DebugMessage(100, "BareosFdPluginOvirt:start_restore_job() called\n")
+
+        bareosfd.JobMessage(
+            bareosfd.M_INFO,
+            "Using oVirt SDK Version %s\n" % sdk.version.VERSION,
+        )
+
         if self.options.get("local") == "yes":
             bareosfd.DebugMessage(
                 100,
                 "BareosFdPluginOvirt:start_restore_job(): restore to local file, skipping checks\n",
             )
-            return bRC_OK
+            return bareosfd.bRC_OK
         else:
             # restore to VM to OVirt
             if not self.ovirt.connect_api():
-                return bRC_Error
+                return bareosfd.bRC_Error
 
-        return bRC_OK
+        return bareosfd.bRC_OK
 
     def start_restore_file(self, cmd):
         bareosfd.DebugMessage(
             100,
             "BareosFdPluginOvirt:start_restore_file() called with %s\n" % (cmd),
         )
-        return bRC_OK
+        return bareosfd.bRC_OK
 
     def plugin_io(self, IOP):
         """
@@ -359,12 +411,13 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "BareosFdPluginOvirt::plugin_io() jobType: %s\n" % (self.jobType),
         )
 
-        if IOP.func == IO_OPEN:
+        if IOP.func == bareosfd.IO_OPEN:
 
             self.FNAME = IOP.fname
             bareosfd.DebugMessage(
                 100, "self.FNAME was set to %s from IOP.fname\n" % (self.FNAME)
             )
+            bareosfd.DebugMessage(100, "type(self.FNAME): %s\n" % (type(self.FNAME)))
 
             if self.options.get("local") == "yes":
                 try:
@@ -386,10 +439,10 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     else:
                         IOP.status = -1
                         bareosfd.JobMessage(
-                            M_FATAL,
+                            bareosfd.M_FATAL,
                             "plugin_io: option local=yes can only be used on restore\n",
                         )
-                    return bRC_Error
+                    return bareosfd.bRC_Error
                 except (OSError, IOError) as io_open_error:
                     IOP.status = -1
                     bareosfd.DebugMessage(
@@ -398,15 +451,15 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                         % (self.FNAME, io_open_error.strerror),
                     )
                     bareosfd.JobMessage(
-                        M_FATAL,
+                        bareosfd.M_FATAL,
                         "plugin_io: failed to open %s: %s\n"
                         % (self.FNAME, io_open_error.strerror),
                     )
-                    return bRC_Error
+                    return bareosfd.bRC_Error
 
-            return bRC_OK
+            return bareosfd.bRC_OK
 
-        elif IOP.func == IO_CLOSE:
+        elif IOP.func == bareosfd.IO_CLOSE:
             if self.file is not None:
                 bareosfd.DebugMessage(100, "Closing file " + "\n")
                 self.file.close()
@@ -422,10 +475,10 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     return self.ovirt.prepare_vm_restore()
                 else:
                     self.ovirt.end_transfer()
-            return bRC_OK
-        elif IOP.func == IO_SEEK:
-            return bRC_OK
-        elif IOP.func == IO_READ:
+            return bareosfd.bRC_OK
+        elif IOP.func == bareosfd.IO_SEEK:
+            return bareosfd.bRC_OK
+        elif IOP.func == bareosfd.IO_READ:
             if "file" in self.backup_obj:
                 IOP.buf = bytearray(IOP.count)
                 IOP.status = self.backup_obj["file"]["fh"].readinto(IOP.buf)
@@ -448,19 +501,19 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     IOP.io_errno = 0
                 except Exception as e:
                     bareosfd.JobMessage(
-                        M_ERROR,
+                        bareosfd.M_ERROR,
                         "BareosFdPluginOvirt:plugin_io() Error: %s\n" % str(e),
                     )
                     self.ovirt.end_transfer()
-                    return bRC_Error
+                    return bareosfd.bRC_Error
             else:
                 bareosfd.JobMessage(
-                    M_ERROR,
+                    bareosfd.M_ERROR,
                     "BareosFdPluginOvirt:plugin_io() Unable to read data to backup.",
                 )
-                return bRC_Error
-            return bRC_OK
-        elif IOP.func == IO_WRITE:
+                return bareosfd.bRC_Error
+            return bareosfd.bRC_OK
+        elif IOP.func == bareosfd.IO_WRITE:
             if self.file is not None:
                 try:
                     bareosfd.DebugMessage(
@@ -472,7 +525,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 except IOError as msg:
                     IOP.io_errno = -1
                     bareosfd.DebugMessage(100, "Error writing data: " + msg + "\n")
-                    return bRC_Error
+                    return bareosfd.bRC_Error
             elif self.FNAME.endswith(".ovf"):
                 self.ovirt.process_ovf(IOP.buf)
                 IOP.status = IOP.count
@@ -481,44 +534,44 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 self.ovirt.process_upload(IOP.buf)
                 IOP.status = IOP.count
                 IOP.io_errno = 0
-            return bRC_OK
+            return bareosfd.bRC_OK
 
     def handle_plugin_event(self, event):
 
-        if event == bEventEndBackupJob:
+        if event == bareosfd.bEventEndBackupJob:
             bareosfd.DebugMessage(
                 100,
-                "BareosFdPluginOvirt::handle_plugin_event() called with bEventEndBackupJob\n",
+                "BareosFdPluginOvirt::handle_plugin_event() called with bareosfd.bEventEndBackupJob\n",
             )
             bareosfd.DebugMessage(100, "removing Snapshot\n")
             self.ovirt.end_vm_backup()
 
-        elif event == bEventEndFileSet:
+        elif event == bareosfd.bEventEndFileSet:
             bareosfd.DebugMessage(
                 100,
-                "BareosFdPluginOvirt::handle_plugin_event() called with bEventEndFileSet\n",
+                "BareosFdPluginOvirt::handle_plugin_event() called with bareosfd.bEventEndFileSet\n",
             )
 
-        elif event == bEventStartBackupJob:
+        elif event == bareosfd.bEventStartBackupJob:
             bareosfd.DebugMessage(
                 100,
-                "BareosFdPluginOvirt::handle_plugin_event() called with bEventStartBackupJob\n",
+                "BareosFdPluginOvirt::handle_plugin_event() called with bareosfd.bEventStartBackupJob\n",
             )
 
             return self.start_backup_job()
 
-        elif event == bEventStartRestoreJob:
+        elif event == bareosfd.bEventStartRestoreJob:
             bareosfd.DebugMessage(
                 100,
-                "BareosFdPluginOvirt::handle_plugin_event() called with bEventStartRestoreJob\n",
+                "BareosFdPluginOvirt::handle_plugin_event() called with bareosfd.bEventStartRestoreJob\n",
             )
 
             return self.start_restore_job()
 
-        elif event == bEventEndRestoreJob:
+        elif event == bareosfd.bEventEndRestoreJob:
             bareosfd.DebugMessage(
                 100,
-                "BareosFdPluginOvirt::handle_plugin_event() called with bEventEndRestoreJob\n",
+                "BareosFdPluginOvirt::handle_plugin_event() called with bareosfd.bEventEndRestoreJob\n",
             )
             bareosfd.DebugMessage(100, "removing Snapshot\n")
             self.ovirt.end_vm_restore()
@@ -529,7 +582,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 % (event),
             )
 
-        return bRC_OK
+        return bareosfd.bRC_OK
 
     def end_backup_file(self):
         bareosfd.DebugMessage(
@@ -542,16 +595,16 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 self.ovirt.init_bytes_to_transf / 1000.0 / elapsed_seconds, 1
             )
             bareosfd.JobMessage(
-                M_INFO,
+                bareosfd.M_INFO,
                 "   Transfer time: %s s bytes: %s rate: %s KB/s\n"
                 % (elapsed_seconds, self.ovirt.init_bytes_to_transf, download_rate),
             )
             self.ovirt.transfer_start_time = None
 
         if self.ovirt.backup_objects:
-            return bRC_More
+            return bareosfd.bRC_More
         else:
-            return bRC_OK
+            return bareosfd.bRC_OK
 
     def end_restore_file(self):
         bareosfd.DebugMessage(
@@ -564,12 +617,12 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 self.ovirt.init_bytes_to_transf / 1000.0 / elapsed_seconds, 1
             )
             bareosfd.JobMessage(
-                M_INFO,
+                bareosfd.M_INFO,
                 "   Upload time: %s s bytes: %s rate: %s KB/s\n"
                 % (elapsed_seconds, self.ovirt.init_bytes_to_transf, download_rate),
             )
             self.ovirt.transfer_start_time = None
-        return bRC_OK
+        return bareosfd.bRC_OK
 
     def restore_object_data(self, ROP):
         """
@@ -579,7 +632,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         - on restore (for every job id being restored)
         But at the point in time called, it is not possible
         to distinguish which of them it is, because job type
-        is "I" until the bEventStartBackupJob event
+        is "I" until the bareosfd.bEventStartBackupJob event
         """
         bareosfd.DebugMessage(
             100,
@@ -605,12 +658,12 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(
             100, "ROP.object(%s): %s\n" % (type(ROP.object), ROP.object)
         )
-        ro_data = json.loads(str(ROP.object))
+        ro_data = json.loads(str(StringCodec.decode_object_data(ROP.object)))
         self.ovirt.disk_metadata_by_id[ro_data["disk_metadata"]["id"]] = ro_data[
             "disk_metadata"
         ]
 
-        return bRC_OK
+        return bareosfd.bRC_OK
 
     def parse_config_file(self):
         """
@@ -628,7 +681,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.config.readfp(open(self.options["config_file"]))
         except IOError as err:
             bareosfd.JobMessage(
-                M_FATAL,
+                bareosfd.M_FATAL,
                 "BareosFdPluginOvirt: Error reading config file %s: %s\n"
                 % (self.options["config_file"], err.strerror),
             )
@@ -649,7 +702,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         for section in mandatory_sections:
             if not self.config.has_section(section):
                 bareosfd.JobMessage(
-                    M_FATAL,
+                    bareosfd.M_FATAL,
                     "BareosFdPluginOvirt: Section [%s] missing in config file %s\n"
                     % (section, self.options["config_file"]),
                 )
@@ -658,7 +711,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             for option in mandatory_options[section]:
                 if not self.config.has_option(section, option):
                     bareosfd.JobMessage(
-                        M_FATAL,
+                        bareosfd.M_FATAL,
                         "BareosFdPluginOvirt: Options %s missing in Section [%s] in config file %s\n"
                         % (option, section, self.options["config_file"]),
                     )
@@ -667,7 +720,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 plugin_option = self.options.get(option)
                 if plugin_option:
                     bareosfd.JobMessage(
-                        M_WARNING,
+                        bareosfd.M_WARNING,
                         "BareosFdPluginOvirt: Overriding plugin option %s from config file %s\n"
                         % (option, self.options["config_file"]),
                     )
@@ -748,7 +801,7 @@ class BareosOvirtWrapper(object):
 
         if not self.connection:
             bareosfd.JobMessage(
-                M_FATAL,
+                bareosfd.M_FATAL,
                 "Cannot connect to host %s with user %s and ca file %s\n"
                 % (self.options["server"], self.options["username"], self.ca),
             )
@@ -802,7 +855,7 @@ class BareosOvirtWrapper(object):
         if not self.get_vm():
             bareosfd.DebugMessage(100, "Error getting details for VM\n")
 
-            return bRC_Error
+            return bareosfd.bRC_Error
         else:
             # Locate the service that manages the virtual machine:
             self.vm_service = self.vms_service.vm_service(self.vm.id)
@@ -811,11 +864,11 @@ class BareosOvirtWrapper(object):
             snaps_service = self.vm_service.snapshots_service()
             if len(snaps_service.list()) > 1:
                 bareosfd.JobMessage(
-                    M_FATAL,
+                    bareosfd.M_FATAL,
                     "Error '%s' already has %d snapshots. This is not supported\n"
                     % (self.vm.name, len(snaps_service.list()) - 1),
                 )
-                return bRC_Error
+                return bareosfd.bRC_Error
 
             bareosfd.DebugMessage(100, "Start the backup of VM %s\n" % (self.vm.name))
 
@@ -842,12 +895,12 @@ class BareosOvirtWrapper(object):
             # get vm backup disks from snapshot
             if not self.all_disks_excluded and not self.get_vm_backup_disks():
                 bareosfd.JobMessage(
-                    M_FATAL,
+                    bareosfd.M_FATAL,
                     "Error getting Backup Disks VM %s from snapshot\n" % (self.vm.name),
                 )
-                return bRC_Error
+                return bareosfd.bRC_Error
 
-            return bRC_OK
+            return bareosfd.bRC_OK
 
     def get_vm(self):
         search = None
@@ -907,7 +960,7 @@ class BareosOvirtWrapper(object):
             ),
         )
         bareosfd.JobMessage(
-            M_INFO,
+            bareosfd.M_INFO,
             "Sent request to create snapshot '%s', the id is '%s'.\n"
             % (snap.description, snap.id),
         )
@@ -928,7 +981,7 @@ class BareosOvirtWrapper(object):
         # wait some time until snapshot real complete
         time.sleep(10)
 
-        bareosfd.JobMessage(M_INFO, "'  The snapshot is now complete.\n")
+        bareosfd.JobMessage(bareosfd.M_INFO, "'  The snapshot is now complete.\n")
 
     def get_vm_disks_for_snapshot(self):
         # return list of disks for snapshot, process include/exclude if given
@@ -952,7 +1005,7 @@ class BareosOvirtWrapper(object):
             # included_disks = (types.DiskAttachment(),)
             self.all_disks_excluded = True
             bareosfd.JobMessage(
-                M_INFO,
+                bareosfd.M_INFO,
                 "All disks excluded, only backing up VM configuration.\n",
             )
             included_disks = [types.DiskAttachment()]
@@ -1027,9 +1080,14 @@ class BareosOvirtWrapper(object):
             return True
 
         include_disk_aliases = self.options["include_disk_aliases"].split(",")
+        bareosfd.DebugMessage(
+            200,
+            "is_disk_alias_included() disk_alias: %s include_disk_aliases: %s\n"
+            % (repr(disk_alias), repr(include_disk_aliases)),
+        )
         if disk_alias in include_disk_aliases:
             bareosfd.JobMessage(
-                M_INFO,
+                bareosfd.M_INFO,
                 "Including disk with alias %s\n" % (disk_alias),
             )
             return True
@@ -1044,7 +1102,7 @@ class BareosOvirtWrapper(object):
 
         if "*" in exclude_disk_aliases or disk_alias in exclude_disk_aliases:
             bareosfd.JobMessage(
-                M_INFO,
+                bareosfd.M_INFO,
                 "Excluding disk with alias %s\n" % (disk_alias),
             )
             return True
@@ -1082,7 +1140,7 @@ class BareosOvirtWrapper(object):
     def start_download(self, snapshot, disk):
 
         bareosfd.JobMessage(
-            M_INFO,
+            bareosfd.M_INFO,
             "Downloading snapshot '%s' of disk '%s'('%s')\n"
             % (snapshot.id, disk.alias, disk.id),
         )
@@ -1097,17 +1155,14 @@ class BareosOvirtWrapper(object):
         proxy_url = urlparse(transfer.proxy_url)
         self.proxy_connection = self.get_proxy_connection(proxy_url)
 
-        # Set needed headers for downloading:
-        transfer_headers = {"Authorization": transfer.signed_ticket}
+        self.proxy_connection.request("GET", proxy_url.path)
 
-        # Perform the request.
-        self.proxy_connection.request("GET", proxy_url.path, headers=transfer_headers)
         # Get response
         self.response = self.proxy_connection.getresponse()
 
         # Check the response status:
         if self.response.status >= 300:
-            bareosfd.JobMessage(M_ERROR, "Error: %s" % self.response.read())
+            bareosfd.JobMessage(bareosfd.M_ERROR, "Error: %s" % self.response.read())
 
         self.bytes_to_transf = int(self.response.getheader("Content-Length"))
 
@@ -1126,7 +1181,7 @@ class BareosOvirtWrapper(object):
         )
 
         bareosfd.JobMessage(
-            M_INFO,
+            bareosfd.M_INFO,
             "   Transfer disk snapshot of %s bytes\n" % (str(self.bytes_to_transf)),
         )
 
@@ -1160,7 +1215,7 @@ class BareosOvirtWrapper(object):
                     100, "process_download(): Socket disconnected. \n"
                 )
                 bareosfd.JobMessage(
-                    M_ERROR,
+                    bareosfd.M_ERROR,
                     "process_download(): Socket disconnected.",
                 )
 
@@ -1184,21 +1239,21 @@ class BareosOvirtWrapper(object):
         if self.connection is None:
             # if not connected yet
             if not self.connect_api():
-                return bRC_Error
+                return bareosfd.bRC_Error
 
         if self.ovf_data is None:
             bareosfd.JobMessage(
-                M_FATAL,
+                bareosfd.M_FATAL,
                 "Unable to restore VM. No OVF data. \n",
             )
-            return bRC_Error
+            return bareosfd.bRC_Error
         else:
             if "storage_domain" not in self.options:
                 bareosfd.JobMessage(
-                    M_FATAL,
+                    bareosfd.M_FATAL,
                     "No storage domain specified.\n",
                 )
-                return bRC_Error
+                return bareosfd.bRC_Error
 
             storage_domain = self.options["storage_domain"]
 
@@ -1230,33 +1285,33 @@ class BareosOvirtWrapper(object):
             )
             if len(res) > 1:
                 bareosfd.JobMessage(
-                    M_FATAL,
+                    bareosfd.M_FATAL,
                     "Found %s VMs with name '%s'\n" % (len(res), str(vm_name)),
                 )
-                return bRC_Error
+                return bareosfd.bRC_Error
 
             if len(res) == 1:
                 if not self.options.get("overwrite") == "yes":
                     bareosfd.JobMessage(
-                        M_FATAL,
+                        bareosfd.M_FATAL,
                         "If you are sure you want to overwrite the existing VM '%s', please add the plugin option 'overwrite=yes'\n"
                         % (str(vm_name)),
                     )
-                    return bRC_Error
+                    return bareosfd.bRC_Error
 
                 bareosfd.JobMessage(
-                    M_INFO,
+                    bareosfd.M_INFO,
                     "Restore to existing VM '%s'\n" % str(vm_name),
                 )
                 self.vm = res[0]
 
                 if self.vm.status != types.VmStatus.DOWN:
                     bareosfd.JobMessage(
-                        M_FATAL,
+                        bareosfd.M_FATAL,
                         "VM '%s' must be down for restore, but status is %s\n"
                         % (str(vm_name), self.vm.status),
                     )
-                    return bRC_Error
+                    return bareosfd.bRC_Error
 
                 restore_existing_vm = True
 
@@ -1300,7 +1355,7 @@ class BareosOvirtWrapper(object):
                 % (self.restore_objects, self.old_new_ids),
             )
 
-        return bRC_OK
+        return bareosfd.bRC_OK
 
     def create_vm(self, vm_name, cluster_name):
 
@@ -1310,7 +1365,7 @@ class BareosOvirtWrapper(object):
 
         # Add the virtual machine, the transferred disks will be
         # attached to this virtual machine:
-        bareosfd.JobMessage(M_INFO, "Adding virtual machine %s\n" % vm_name)
+        bareosfd.JobMessage(bareosfd.M_INFO, "Adding virtual machine %s\n" % vm_name)
 
         # vm type (server/desktop)
         vm_type = "server"
@@ -1413,7 +1468,7 @@ class BareosOvirtWrapper(object):
             network = props["Connection"]
             if network not in self.network_profiles:
                 bareosfd.JobMessage(
-                    M_WARNING,
+                    bareosfd.M_WARNING,
                     "No network profile found for '%s'\n" % (network),
                 )
             else:
@@ -1446,6 +1501,11 @@ class BareosOvirtWrapper(object):
         dirpath = os.path.dirname(fname)
         dirname = os.path.basename(dirpath)
         basename = os.path.basename(fname)
+        bareosfd.DebugMessage(
+            150,
+            "get_ovf_disk_alias_by_basename(): self.ovf_disks_by_alias_and_fileref: %s\n"
+            % (self.ovf_disks_by_alias_and_fileref),
+        )
         relname = "%s/%s" % (dirname, basename)
 
         return self.ovf_disks_by_alias_and_fileref[relname]["disk-alias"]
@@ -1497,7 +1557,7 @@ class BareosOvirtWrapper(object):
                             found = disk
                     else:
                         bareosfd.JobMessage(
-                            M_WARNING,
+                            bareosfd.M_WARNING,
                             "The backup have snapshots and only base will be restored\n",
                         )
 
@@ -1513,7 +1573,7 @@ class BareosOvirtWrapper(object):
 
         disk = None
         if "storage_domain" not in obj:
-            bareosfd.JobMessage(M_FATAL, "No storage domain specified.\n")
+            bareosfd.JobMessage(bareosfd.M_FATAL, "No storage domain specified.\n")
         else:
             storage_domain = obj["storage_domain"]
 
@@ -1600,7 +1660,7 @@ class BareosOvirtWrapper(object):
     def start_upload(self, disk):
 
         bareosfd.JobMessage(
-            M_INFO,
+            bareosfd.M_INFO,
             "Uploading disk '%s'('%s')\n" % (disk.alias, disk.id),
         )
         bareosfd.DebugMessage(
@@ -1623,7 +1683,6 @@ class BareosOvirtWrapper(object):
 
         # Send the request head
         self.proxy_connection.putrequest("PUT", proxy_url.path)
-        self.proxy_connection.putheader("Authorization", transfer.signed_ticket)
 
         # To prevent from errors on transfer, the exact number of bytes that
         # will be sent must be used, we call it effective_size here. It was
@@ -1644,16 +1703,17 @@ class BareosOvirtWrapper(object):
         self.proxy_connection.endheaders()
 
         bareosfd.JobMessage(
-            M_INFO,
+            bareosfd.M_INFO,
             "   Upload disk of %s bytes\n" % (str(self.bytes_to_transf)),
         )
         self.transfer_start_time = time.time()
 
     def process_ovf(self, chunk):
+        chunk = StringCodec.decode_ovf_chunk(chunk)
         if self.ovf_data is None:
-            self.ovf_data = str(chunk)
+            self.ovf_data = chunk
         else:
-            self.ovf_data = self.ovf_data.str(chunk)
+            self.ovf_data += chunk
 
     def process_upload(self, chunk):
 
@@ -1691,7 +1751,7 @@ class BareosOvirtWrapper(object):
             snapshot_deleted_success = False
 
             bareosfd.JobMessage(
-                M_INFO,
+                bareosfd.M_INFO,
                 "Sending request to remove snapshot '%s', the id is '%s'.\n"
                 % (snap.description, snap.id),
             )
@@ -1706,11 +1766,11 @@ class BareosOvirtWrapper(object):
                         elapsed = int(time.time()) - t_start
                         if elapsed >= self.snapshot_remove_timeout:
                             bareosfd.JobMessage(
-                                M_WARNING,
+                                bareosfd.M_WARNING,
                                 "Remove snapshot timed out after %s s, reason: %s! Please remove it manually.\n"
                                 % (elapsed, e),
                             )
-                            return bRC_Error
+                            return bareosfd.bRC_Error
 
                         bareosfd.DebugMessage(
                             100,
@@ -1718,17 +1778,17 @@ class BareosOvirtWrapper(object):
                             % (e, self.snapshot_remove_timeout - elapsed),
                         )
                         bareosfd.JobMessage(
-                            M_INFO,
+                            bareosfd.M_INFO,
                             "Still waiting for snapshot removal, retrying until timeout (%s seconds left).\n"
                             % (self.snapshot_remove_timeout - elapsed),
                         )
                     else:
                         bareosfd.JobMessage(
-                            M_WARNING,
+                            bareosfd.M_WARNING,
                             "Unexpected error removing snapshot: %s, Please remove it manually.\n"
                             % e,
                         )
-                        return bRC_Error
+                        return bareosfd.bRC_Error
 
                 if self.wait_for_snapshot_removal(snap.id):
                     snapshot_deleted_success = True
@@ -1739,7 +1799,7 @@ class BareosOvirtWrapper(object):
 
             if snapshot_deleted_success:
                 bareosfd.JobMessage(
-                    M_INFO,
+                    bareosfd.M_INFO,
                     "Removed the snapshot '%s'.\n" % snap.description,
                 )
 
@@ -1816,11 +1876,16 @@ class Ovf(object):
 
     # XPath expressions
     OVF_XPATH_EXPRESSIONS = {
-        "vm_name": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Name',
-        "cluster_name": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/ClusterName',
-        "network_elements": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[Type="interface"]',
-        "disk_elements": '/ovf:Envelope/Section[@xsi:type="ovf:DiskSection_Type"]/Disk',
-        "resources_elements": '/ovf:Envelope/Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[rasd:ResourceType=3 or rasd:ResourceType=4]',
+        "vm_name": './Content[@xsi:type="ovf:VirtualSystem_Type"]/Name',
+        "cluster_name": './Content[@xsi:type="ovf:VirtualSystem_Type"]/ClusterName',
+        "network_elements": [
+            './Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[Type="interface"]'
+        ],
+        "disk_elements": ['./Section[@xsi:type="ovf:DiskSection_Type"]/Disk'],
+        "resources_elements": [
+            './Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[rasd:ResourceType="3"]',
+            './Content[@xsi:type="ovf:VirtualSystem_Type"]/Section[@xsi:type="ovf:VirtualHardwareSection_Type"]/Item[rasd:ResourceType="4"]',
+        ],
     }
 
     def __init__(self, ovf_data=None):
@@ -1833,7 +1898,11 @@ class Ovf(object):
         """
 
         # Parse the OVF as XML document:
-        self.ovf = xml.etree.fromstring(ovf_data)
+        self.ovf = xml.etree.ElementTree.fromstring(ovf_data)
+
+        # register namespaces
+        for prefix, uri in self.OVF_NAMESPACES.items():
+            xml.etree.ElementTree.register_namespace(prefix, uri)
 
     def get_element(self, element_name):
         """
@@ -1842,8 +1911,8 @@ class Ovf(object):
         This method supports the following parameters:
         `element_name':: A string with the element name to extract
         """
-        return self.ovf.xpath(
-            self.OVF_XPATH_EXPRESSIONS[element_name], namespaces=self.OVF_NAMESPACES
+        return self.ovf.findall(
+            self.OVF_XPATH_EXPRESSIONS[element_name], self.OVF_NAMESPACES
         )[0].text
 
     def get_elements(self, element_name):
@@ -1853,9 +1922,47 @@ class Ovf(object):
         This method supports the following parameters:
         `element_name':: A string with the element name to extract
         """
-        return self.ovf.xpath(
-            self.OVF_XPATH_EXPRESSIONS[element_name], namespaces=self.OVF_NAMESPACES
-        )
+        results = []
+        for xpath_expression in self.OVF_XPATH_EXPRESSIONS[element_name]:
+            results += self.ovf.findall(xpath_expression, self.OVF_NAMESPACES)
+        return results
+
+
+class StringCodec:
+    @staticmethod
+    def encode_ovf_data(var):
+        if version_info.major < 3:
+            return var
+        else:
+            return var.encode("utf-8")
+
+    @staticmethod
+    def encode_disk_alias(var):
+        if version_info.major < 3:
+            return var.encode("utf-8")
+        else:
+            return var
+
+    @staticmethod
+    def decode_fname(var):
+        if version_info.major < 3:
+            return var.decode("utf-8")
+        else:
+            return var
+
+    @staticmethod
+    def decode_object_data(var):
+        if version_info.major < 3:
+            return var
+        else:
+            return var.decode("utf-8")
+
+    @staticmethod
+    def decode_ovf_chunk(var):
+        if version_info.major < 3:
+            return str(var)
+        else:
+            return var.decode("utf-8")
 
 
 # vim: tabstop=4 shiftwidth=4 softtabstop=4 expandtab
