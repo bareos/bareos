@@ -61,6 +61,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Added
 
+- Add console command setdevice [PR #686]
 - Add support for Fedora 33 [PR #643]
 - Add development tools for changelog-handling [PR #617]
 - Added documentation and background information for the new python 3 plugin support [PR #599]

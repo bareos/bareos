@@ -34,6 +34,9 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out $tmp/log1.out
 setdebug level=100 storage=File
+setdevice storage=File device=MultiFileStorage0001 autoselect=yes
+setdevice storage=File device=MultiFileStorage0002 autoselect=yes
+setdevice storage=File device=MultiFileStorage0003 autoselect=yes
 run job=backup-to-pool1 level=Full yes
 run job=backup-to-pool2 level=Full yes
 run job=backup-to-pool3 level=Full yes
@@ -61,13 +64,24 @@ stop_bareos
 check_two_logs
 check_restore_diff ${BackupDirectory}
 
-#make sure all MultiFileStorage devices are used
-grep "Using Device \"MultiFileStorage0001\"" "${tmp}"/log1.out >/dev/null 2>&1 &&
-grep "Using Device \"MultiFileStorage0002\"" "${tmp}"/log1.out >/dev/null 2>&1 &&
-grep "Using Device \"MultiFileStorage0003\"" "${tmp}"/log1.out >/dev/null 2>&1
+#make sure all the setdevice commands were successful
+grep "3000 OK setdevice=MultiFileStorage0001 autoselect=1" "${tmp}"/log1.out >/dev/null 2>&1 &&
+grep "3000 OK setdevice=MultiFileStorage0002 autoselect=1" "${tmp}"/log1.out >/dev/null 2>&1 &&
+grep "3000 OK setdevice=MultiFileStorage0003 autoselect=1" "${tmp}"/log1.out >/dev/null 2>&1
 if test $? -ne 0 ; then
-  echo "Not all MultiFileStorage devices are used."
+  echo "The setdevice command failed for a MultiFileStorage."
   estat=1;
+fi
+
+if test $estat -ne 1 ; then
+  #make sure all MultiFileStorage devices are used
+  grep "Using Device \"MultiFileStorage0001\"" "${tmp}"/log1.out >/dev/null 2>&1 &&
+  grep "Using Device \"MultiFileStorage0002\"" "${tmp}"/log1.out >/dev/null 2>&1 &&
+  grep "Using Device \"MultiFileStorage0003\"" "${tmp}"/log1.out >/dev/null 2>&1
+  if test $? -ne 0 ; then
+    echo "Not all MultiFileStorage devices are used."
+    estat=1;
+  fi
 fi
 
 end_test

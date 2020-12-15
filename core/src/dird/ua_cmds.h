@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,15 @@ class UaContext;
 
 bool Do_a_command(UaContext* ua);
 bool DotMessagesCmd(UaContext* ua, const char* cmd);
+
+struct SetDeviceCommand {
+  using ArgumentsList = std::map<std::string, std::string>;
+  static ArgumentsList ScanCommandLine(UaContext* ua);
+  static bool Cmd(UaContext* ua, const char* cmd);
+  static bool SendToSd(UaContext* ua,
+                       StorageResource* store,
+                       const ArgumentsList& arguments);
+};
 
 void SetDoClientSetdebugFunction(std::function<void(UaContext* ua,
                                                     ClientResource* client,

@@ -188,7 +188,7 @@ mount_next_vol:
        * volume that is not in the autochanger so that means we need to ask the
        * operator to mount it.
        */
-      if (dev->IsAutochanger() && !VolCatInfo.InChanger) {
+      if (dev->AttachedToAutochanger() && !VolCatInfo.InChanger) {
         ask = true;
       } else {
         ask = retry >= 2;

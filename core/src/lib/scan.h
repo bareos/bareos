@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,13 +29,13 @@ bool SkipSpaces(char** msg);
 bool SkipNonspaces(char** msg);
 int fstrsch(const char* a, const char* b);
 char* next_arg(char** s);
-int ParseArgs(POOLMEM* cmd,
+int ParseArgs(const POOLMEM* cmd,
               POOLMEM*& args,
               int* argc,
               char** argk,
               char** argv,
               int max_args);
-int ParseArgsOnly(POOLMEM* cmd,
+int ParseArgsOnly(const POOLMEM* cmd,
                   POOLMEM*& args,
                   int* argc,
                   char** argk,

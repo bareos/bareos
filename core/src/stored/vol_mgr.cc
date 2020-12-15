@@ -772,7 +772,7 @@ bool VolumeUnused(DeviceControlRecord* dcr)
         "=== set not reserved vol=%s num_writers=%d dev_reserved=%d dev=%s\n",
         dev->vol->vol_name, dev->num_writers, dev->NumReserved(),
         dev->print_name());
-  if (dev->IsTape() || dev->IsAutochanger()) {
+  if (dev->IsTape() || dev->AttachedToAutochanger()) {
     return true;
   } else {
     /*

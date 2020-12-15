@@ -582,7 +582,7 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
   /*
    * Send autochanger slot status
    */
-  if (dev->IsAutochanger()) {
+  if (dev->AttachedToAutochanger()) {
     if (dev->GetSlot() > 0) {
       len = Mmsg(msg, _("    Slot %hd %s loaded in drive %hd.\n"),
                  dev->GetSlot(), dev->IsOpen() ? "is" : "was last", dev->drive);
@@ -666,6 +666,8 @@ static void SendDeviceStatus(Device* dev, StatusPacket* sp)
   sp->send(msg, len);
   len = Mmsg(msg, _("  Min block=%u Max block=%u\n"), dev->min_block_size,
              dev->max_block_size);
+  sp->send(msg, len);
+  len = Mmsg(msg, _("  Auto Select=%s\n"), dev->autoselect ? "yes" : "no");
   sp->send(msg, len);
 }
 

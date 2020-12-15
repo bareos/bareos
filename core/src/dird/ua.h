@@ -286,5 +286,8 @@ class RunContext {
   ~RunContext();
 };
 
+void FreeUaContext(UaContext* ua);
+UaContext* new_ua_context(JobControlRecord* jcr);
+
 } /* namespace directordaemon */
 #endif /* BAREOS_DIRD_UA_H_ */

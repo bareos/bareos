@@ -132,33 +132,33 @@ enum
  */
 enum
 {
-  CAP_EOF = 0,             /**< Has MTWEOF */
-  CAP_BSR = 1,             /**< Has MTBSR */
-  CAP_BSF = 2,             /**< Has MTBSF */
-  CAP_FSR = 3,             /**< Has MTFSR */
-  CAP_FSF = 4,             /**< Has MTFSF */
-  CAP_EOM = 5,             /**< Has MTEOM */
-  CAP_REM = 6,             /**< Is removable media */
-  CAP_RACCESS = 7,         /**< Is random access device */
-  CAP_AUTOMOUNT = 8,       /**< Read device at start to see what is there */
-  CAP_LABEL = 9,           /**< Label blank tapes */
-  CAP_ANONVOLS = 10,       /**< Mount without knowing volume name */
-  CAP_ALWAYSOPEN = 11,     /**< Always keep device open */
-  CAP_AUTOCHANGER = 12,    /**< AutoChanger */
-  CAP_OFFLINEUNMOUNT = 13, /**< Offline before unmount */
-  CAP_STREAM = 14,         /**< Stream device */
-  CAP_BSFATEOM = 15,       /**< Backspace file at EOM */
-  CAP_FASTFSF = 16,        /**< Fast forward space file */
-  CAP_TWOEOF = 17,         /**< Write two eofs for EOM */
-  CAP_CLOSEONPOLL = 18,    /**< Close device on polling */
-  CAP_POSITIONBLOCKS = 19, /**< Use block positioning */
-  CAP_MTIOCGET = 20,       /**< Basic support for fileno and blkno */
-  CAP_REQMOUNT = 21,       /**< Require mount/unmount */
-  CAP_CHECKLABELS = 22,    /**< Check for ANSI/IBM labels */
-  CAP_BLOCKCHECKSUM = 23,  /**< Create/test block checksum */
-  CAP_IOERRATEOM = 24,     /**< IOError at EOM */
-  CAP_IBMLINTAPE = 25,     /**< Using IBM lin_tape driver */
-  CAP_ADJWRITESIZE = 26    /**< Adjust write size to min/max */
+  CAP_EOF = 0,         /**< Has MTWEOF */
+  CAP_BSR = 1,         /**< Has MTBSR */
+  CAP_BSF = 2,         /**< Has MTBSF */
+  CAP_FSR = 3,         /**< Has MTFSR */
+  CAP_FSF = 4,         /**< Has MTFSF */
+  CAP_EOM = 5,         /**< Has MTEOM */
+  CAP_REM = 6,         /**< Is removable media */
+  CAP_RACCESS = 7,     /**< Is random access device */
+  CAP_AUTOMOUNT = 8,   /**< Read device at start to see what is there */
+  CAP_LABEL = 9,       /**< Label blank tapes */
+  CAP_ANONVOLS = 10,   /**< Mount without knowing volume name */
+  CAP_ALWAYSOPEN = 11, /**< Always keep device open */
+  CAP_ATTACHED_TO_AUTOCHANGER = 12, /**< Device is attached to an AutoChanger */
+  CAP_OFFLINEUNMOUNT = 13,          /**< Offline before unmount */
+  CAP_STREAM = 14,                  /**< Stream device */
+  CAP_BSFATEOM = 15,                /**< Backspace file at EOM */
+  CAP_FASTFSF = 16,                 /**< Fast forward space file */
+  CAP_TWOEOF = 17,                  /**< Write two eofs for EOM */
+  CAP_CLOSEONPOLL = 18,             /**< Close device on polling */
+  CAP_POSITIONBLOCKS = 19,          /**< Use block positioning */
+  CAP_MTIOCGET = 20,                /**< Basic support for fileno and blkno */
+  CAP_REQMOUNT = 21,                /**< Require mount/unmount */
+  CAP_CHECKLABELS = 22,             /**< Check for ANSI/IBM labels */
+  CAP_BLOCKCHECKSUM = 23,           /**< Create/test block checksum */
+  CAP_IOERRATEOM = 24,              /**< IOError at EOM */
+  CAP_IBMLINTAPE = 25,              /**< Using IBM lin_tape driver */
+  CAP_ADJWRITESIZE = 26             /**< Adjust write size to min/max */
 };
 
 /**
@@ -308,7 +308,7 @@ class Device {
   void ClearCap(int cap) { ClearBit(cap, capabilities); }
   void SetCap(int cap) { SetBit(cap, capabilities); }
   bool DoChecksum() const { return BitIsSet(CAP_BLOCKCHECKSUM, capabilities); }
-  bool IsAutochanger() const { return BitIsSet(CAP_AUTOCHANGER, capabilities); }
+  bool AttachedToAutochanger() const { return BitIsSet(CAP_ATTACHED_TO_AUTOCHANGER, capabilities); }
   bool RequiresMount() const { return BitIsSet(CAP_REQMOUNT, capabilities); }
   bool IsRemovable() const { return BitIsSet(CAP_REM, capabilities); }
   bool IsTape() const { return (dev_type == DeviceType::B_TAPE_DEV); }

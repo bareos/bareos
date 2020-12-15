@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -571,17 +571,17 @@ std::map<int, std::pair<std::string, std::string>> bnet_signal_to_text {
 };
 /* clang-format on */
 
-const char* BnetSigToAscii(BareosSocket* bs)
-{
-  return BnetSignalToString(bs->message_length).c_str();
-}
-
 std::string BnetSignalToString(int signal)
 {
   if (bnet_signal_to_text.find(signal) != bnet_signal_to_text.end()) {
     return bnet_signal_to_text[signal].first;
   }
-  return std::string("Unknown sig ") + std::to_string(signal);
+  return "Unknown sig " + std::to_string(signal);
+}
+
+std::string BnetSignalToString(const BareosSocket* bs)
+{
+  return BnetSignalToString(bs->message_length);
 }
 
 std::string BnetSignalToDescription(int signal)
@@ -589,7 +589,7 @@ std::string BnetSignalToDescription(int signal)
   if (bnet_signal_to_text.find(signal) != bnet_signal_to_text.end()) {
     return bnet_signal_to_text[signal].second;
   }
-  return std::string("Unknown sig ") + std::to_string(signal);
+  return "Unknown sig " + std::to_string(signal);
 }
 
 bool ReadoutCommandIdFromMessage(const BStringList& list_of_arguments,

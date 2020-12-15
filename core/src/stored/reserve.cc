@@ -478,7 +478,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
           rctx.device_name = device_name;
           rctx.device_resource = vol->dev->device_resource;
 
-          if (vol->dev->IsAutochanger()) {
+          if (vol->dev->AttachedToAutochanger()) {
             Dmsg1(debuglevel, "vol=%s is in changer\n", vol->vol_name);
             if (!IsVolInAutochanger(rctx, vol) || !vol->dev->autoselect) {
               continue;

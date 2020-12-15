@@ -1094,6 +1094,24 @@ setdebug
       *<input>setdebug level=100 trace=1 dir</input>
       level=100 trace=1 hangup=0 timestamp=0 tracefilename=/var/lib/bareos/bareos-dir.example.com.trace
 
+.. _bcommandSetdevice:
+
+setdevice
+   :index:`\ <single: Console; Command; setdevice>`
+   :index:`\ <single: Debug; setdevice>`
+   :index:`\ <single: Debug; Windows>`
+   :index:`\ <single: Windows; Debug>`
+
+   This command is used to set :config:option:`sd/device/AutoSelect` of a device resource in the |sd|. This command can be used to temporarily disable that a device is automatically selected in an autochanger.
+
+   The setting is only valid until the next restart of the |sd|. The form of this command is:
+
+   .. code-block:: bconsole
+      :caption: setdevice
+
+      setdevice storage=<storage-name> device=<device-name> autoselect=<bool>
+
+   Note: Consider the settings of :config:option:`dir/console/CommandACL` and :config:option:`dir/console/StorageACL`.
 
 .. _bcommandSetIP:
 

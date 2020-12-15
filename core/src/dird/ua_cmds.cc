@@ -32,6 +32,7 @@
 #include "dird.h"
 #include "dird/dird_globals.h"
 #include "dird/backup.h"
+#include "dird/ua_cmds.h"
 #include "dird/ua_cmdstruct.h"
 #include "dird/expand.h"
 #include "dird/fd_cmds.h"
@@ -50,6 +51,7 @@
 #include "dird/ua_run.h"
 #include "include/auth_protocol_types.h"
 #include "lib/bnet.h"
+#include "lib/bool_string.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -485,6 +487,9 @@ static struct ua_cmdstruct commands[] = {
      NT_("level=<nn> trace=0/1 timestamp=0/1 client=<client-name> | dir | "
          "storage=<storage-name> | all"),
      true, true},
+    {NT_("setdevice"), SetDeviceCommand::Cmd, _("Sets device parameter"),
+     NT_("storage=<storage-name> device=<device-name> autoselect=<bool>"), true,
+     true},
     {NT_("setip"), SetipCmd, _("Sets new client address -- if authorized"),
      NT_(""), false, true},
     {NT_("show"), show_cmd, _("Show resource records"),
@@ -1588,6 +1593,120 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   }
 
   return true;
+}
+
+SetDeviceCommand::ArgumentsList SetDeviceCommand::ScanCommandLine(UaContext* ua)
+{
+  ArgumentsList arguments{{"storage", ""}, {"device", ""}, {"autoselect", ""}};
+
+  for (int i = 1; i < ua->argc; i++) {
+    try {
+      auto& value = arguments.at(ua->argk[i]);
+      int idx = FindArgWithValue(ua, NT_(ua->argk[i]));
+      if (idx >= 0) { value = ua->argv[idx]; }
+    } catch (std::out_of_range& e) {
+      ua->ErrorMsg("Wrong argument: %s\n", ua->argk[i]);
+      return ArgumentsList();
+    }
+  }
+
+  bool argument_missing = false;
+  for (const auto& arg : arguments) {
+    if (arg.second.empty()) {  // value
+      ua->ErrorMsg("Argument missing: %s\n", arg.first.c_str());
+      argument_missing = true;
+    }
+  }
+  if (argument_missing) { return ArgumentsList(); }
+
+  try {
+    BoolString s{arguments["autoselect"].data()};  // throws
+    arguments["autoselect"].clear();
+    arguments["autoselect"] = s.get<bool>() == true ? "1" : "0";
+  } catch (const std::out_of_range& e) {
+    ua->ErrorMsg("Wrong argument: %s\n", arguments["autoselect"].c_str());
+    return ArgumentsList();
+  }
+
+  return arguments;
+}
+
+bool SetDeviceCommand::SendToSd(UaContext* ua,
+                                StorageResource* store,
+                                const ArgumentsList& arguments)
+{
+  switch (store->Protocol) {
+    case APT_NDMPV2:
+    case APT_NDMPV3:
+    case APT_NDMPV4:
+      return true;
+    default:
+      break;
+  }
+
+  UnifiedStorageResource lstore;
+  lstore.store = store;
+  PmStrcpy(lstore.store_source, _("unknown source"));
+  SetWstorage(ua->jcr, &lstore);
+
+  /*
+   * Try connecting for up to 15 seconds
+   */
+  ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
+              store->resource_name_, store->address, store->SDport);
+
+  if (!ConnectToStorageDaemon(ua->jcr, 1, 15, false)) {
+    ua->ErrorMsg(_("Failed to connect to Storage daemon.\n"));
+    return false;
+  }
+
+  Dmsg0(120, _("Connected to storage daemon\n"));
+  ua->jcr->store_bsock->fsend("setdevice device=%s autoselect=%d",
+                              arguments.at("device").c_str(),
+                              std::stoi(arguments.at("autoselect")));
+  if (ua->jcr->store_bsock->recv() >= 0) {
+    ua->SendMsg("%s", ua->jcr->store_bsock->msg);
+  }
+
+  ua->jcr->store_bsock->signal(BNET_TERMINATE);
+  ua->jcr->store_bsock->close();
+  delete ua->jcr->store_bsock;
+  ua->jcr->store_bsock = nullptr;
+
+  return true;
+}
+
+
+/**
+ * setdevice storage=<storage-name> device=<device-name> autoselect=<bool>
+ */
+bool SetDeviceCommand::Cmd(UaContext* ua, const char* cmd)
+{
+  auto arguments = ScanCommandLine(ua);
+
+  if (arguments.empty()) {
+    ua->SendCmdUsage("");
+    return false;
+  }
+
+  if (ua->AclHasRestrictions(Storage_ACL)) {
+    if (!ua->AclAccessOk(Storage_ACL, arguments["storage"].c_str())) {
+      std::string err{"Access to storage "};
+      err += "\"" + arguments["storage"] + "\" forbidden\n";
+      ua->ErrorMsg(err.c_str());
+      return false;
+    }
+  }
+
+  StorageResource* sd = ua->GetStoreResWithName(arguments["storage"].c_str());
+
+  if (sd == nullptr) {
+    ua->ErrorMsg(_("Storage \"%s\" not found.\n"),
+                 arguments["storage"].c_str());
+    return false;
+  }
+
+  return SendToSd(ua, sd, arguments);
 }
 
 /**

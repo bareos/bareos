@@ -29,7 +29,7 @@
 class PoolMem;
 class ConfigurationParser;
 class OutputFormatterResource;
-class ResourceItem;
+struct ResourceItem;
 
 #define MAX_RES_ITEMS 95 /* maximum resource items per BareosResource */
 

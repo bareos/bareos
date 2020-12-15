@@ -111,6 +111,7 @@ static char derrmsg[] = "3900 Invalid command:";
 static char OKsetdebugv0[] = "3000 OK setdebug=%d tracefile=%s\n";
 static char OKsetdebugv1[]
     = "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s\n";
+static char OKsetdevice[] = "3000 OK setdevice=%s autoselect=%d\n";
 static char invalid_cmd[]
     = "3997 Invalid command for a Director with Monitor directive enabled.\n";
 static char OK_bootstrap[] = "3000 OK bootstrap\n";
@@ -121,6 +122,9 @@ static char OKBandwidth[] = "2000 OK Bandwidth\n";
 static char OKpassive[] = "2000 OK passive client\n";
 static char OKpluginoptions[] = "2000 OK plugin options\n";
 static char OKsecureerase[] = "2000 OK SDSecureEraseCmd %s \n";
+
+#define MAX_SETDEVICE_NAME_LENGTH 128  // including the trailing zero
+static char setdevice_autoselect[] = "setdevice device=%127s autoselect=%d";
 
 /* Forward referenced functions */
 // static bool ActionOnPurgeCmd(JobControlRecord *jcr);
@@ -143,6 +147,7 @@ static bool SecureerasereqCmd(JobControlRecord* jcr);
 static bool SetbandwidthCmd(JobControlRecord* jcr);
 static bool SetdebugCmd(JobControlRecord* jcr);
 static bool UnmountCmd(JobControlRecord* jcr);
+static bool SetdeviceCmd(JobControlRecord* jcr);
 
 static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
                                        PoolMem& dev_name,
@@ -199,7 +204,8 @@ static struct s_cmds cmds[] = {
     {"run", RunCmd, false},             /**< Start of Job */
     {"getSecureEraseCmd", SecureerasereqCmd, false},
     {"setbandwidth=", SetbandwidthCmd, false},
-    {"setdebug=", SetdebugCmd, false}, /**< Set debug level */
+    {"setdebug=", SetdebugCmd, false},  /**< Set debug level */
+    {"setdevice", SetdeviceCmd, false}, /**< Set device parameter */
     {"stats", StatsCmd, false},
     {"status", StatusCmd, true},
     {".status", DotstatusCmd, true},
@@ -428,7 +434,7 @@ static bool SetdebugCmd(JobControlRecord* jcr)
   int32_t level, trace_flag, timestamp_flag;
   int scan;
 
-  Dmsg1(10, "SetdebugCmd: %s", dir->msg);
+  Dmsg1(10, "SetdebugCmd: %s\n", dir->msg);
   scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &timestamp_flag);
   if (scan != 3) {
     scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
@@ -453,6 +459,41 @@ static bool SetdebugCmd(JobControlRecord* jcr)
     Dmsg3(50, "level=%d trace=%d\n", level, GetTrace(), tracefilename.c_str());
     return dir->fsend(OKsetdebugv0, level, tracefilename.c_str());
   }
+}
+
+static DeviceResource* GetDeviceResource(const std::string& name)
+{
+  return static_cast<DeviceResource*>(
+      my_config->GetResWithName(R_DEVICE, name.c_str()));
+}
+
+static bool SetdeviceCmd(JobControlRecord* jcr)
+{
+  BareosSocket* dir = jcr->dir_bsock;
+
+  Dmsg1(10, "SetdeviceCmd: %s\n", dir->msg);
+
+  std::vector<char> device_name(MAX_SETDEVICE_NAME_LENGTH);
+  int autoselect_value = 0;
+  int scan = sscanf(dir->msg, setdevice_autoselect, device_name.data(),
+                    &autoselect_value);
+  if (scan != 2) {
+    dir->fsend(BADcmd, "setdevice", dir->msg);
+    return false;
+  }
+
+  auto res = GetDeviceResource(device_name.data());
+  if (res == nullptr) {
+    std::string err{"Device not found: "};
+    err += device_name.data();
+    dir->fsend(BADcmd, "setdevice", err.c_str());
+    return false;
+  }
+
+  res->autoselect = autoselect_value == 0 ? false : true;
+  if (res->dev) { res->dev->autoselect = res->autoselect; }
+
+  return dir->fsend(OKsetdevice, device_name.data(), autoselect_value);
 }
 
 /**
@@ -1003,9 +1044,9 @@ static bool MountCmd(JobControlRecord* jcr)
         /* In both of these two cases, we (the user) unmounted the Volume */
         case BST_UNMOUNTED_WAITING_FOR_SYSOP:
         case BST_UNMOUNTED:
-          Dmsg2(100, "Unmounted changer=%d slot=%hd\n", dev->IsAutochanger(),
-                slot);
-          if (dev->IsAutochanger() && slot > 0) {
+          Dmsg2(100, "Unmounted changer=%d slot=%hd\n",
+                dev->AttachedToAutochanger(), slot);
+          if (dev->AttachedToAutochanger() && slot > 0) {
             TryAutoloadDevice(jcr, dcr, slot, "");
           }
           /* We freed the device, so reopen it and wake any waiting threads */
@@ -1057,9 +1098,9 @@ static bool MountCmd(JobControlRecord* jcr)
           break;
 
         case BST_NOT_BLOCKED:
-          Dmsg2(100, "Not blocked changer=%d slot=%hd\n", dev->IsAutochanger(),
-                slot);
-          if (dev->IsAutochanger() && slot > 0) {
+          Dmsg2(100, "Not blocked changer=%d slot=%hd\n",
+                dev->AttachedToAutochanger(), slot);
+          if (dev->AttachedToAutochanger() && slot > 0) {
             TryAutoloadDevice(jcr, dcr, slot, "");
           }
           if (dev->IsOpen()) {

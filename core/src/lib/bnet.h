@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,7 +38,7 @@ bool BnetTlsClient(BareosSocket* bsock,
 int BnetGetPeer(BareosSocket* bs, char* buf, socklen_t buflen);
 BareosSocket* dup_bsock(BareosSocket* bsock);
 const char* BnetStrerror(BareosSocket* bsock);
-const char* BnetSigToAscii(BareosSocket* bsock);
+std::string BnetSignalToString(const BareosSocket*);
 std::string BnetSignalToString(int signal);
 std::string BnetSignalToDescription(int signal);
 int BnetWaitData(BareosSocket* bsock, int sec);
