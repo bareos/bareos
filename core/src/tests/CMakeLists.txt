@@ -392,6 +392,12 @@ if(NOT client-only)
     ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
     LINK_LIBRARIES ${LINK_LIBRARIES}
   )
+
+  bareos_add_test(
+    bool_string LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
+                               ${GTEST_MAIN_LIBRARIES}
+  )
+
 endif() # NOT client-only
 
 if(NOT HAVE_WIN32 AND NOT client-only)
