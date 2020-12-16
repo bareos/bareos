@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [20.0.0] - 2020-12-16
 
 ### Fixed
 
@@ -143,6 +143,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1210]: Heap overflow in director when running a verify job against a malicious filedaemon [CVE-2020-11061](https://github.com/bareos/bareos/security/advisories/GHSA-mm45-cg35-54j4)
 
 
+[20.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.0
 [Issue #1039]: https://bugs.bareos.org/view.php?id=1039
 [Issue #1174]: https://bugs.bareos.org/view.php?id=1174
 [Issue #1175]: https://bugs.bareos.org/view.php?id=1175
@@ -157,6 +158,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1227]: https://bugs.bareos.org/view.php?id=1227
 [Issue #1246]: https://bugs.bareos.org/view.php?id=1246
 [Issue #1257]: https://bugs.bareos.org/view.php?id=1257
+[Issue #1281]: https://bugs.bareos.org/view.php?id=1281
 [PR #383]: https://github.com/bareos/bareos/pull/383
 [PR #384]: https://github.com/bareos/bareos/pull/384
 [PR #385]: https://github.com/bareos/bareos/pull/385
@@ -253,6 +255,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #578]: https://github.com/bareos/bareos/pull/578
 [PR #581]: https://github.com/bareos/bareos/pull/581
 [PR #583]: https://github.com/bareos/bareos/pull/583
+[PR #587]: https://github.com/bareos/bareos/pull/587
 [PR #591]: https://github.com/bareos/bareos/pull/591
 [PR #594]: https://github.com/bareos/bareos/pull/594
 [PR #595]: https://github.com/bareos/bareos/pull/595
@@ -265,4 +268,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #616]: https://github.com/bareos/bareos/pull/616
 [PR #617]: https://github.com/bareos/bareos/pull/617
 [PR #643]: https://github.com/bareos/bareos/pull/643
-[unreleased]: https://github.com/bareos/bareos/tree/master
+[PR #667]: https://github.com/bareos/bareos/pull/667
+[PR #672]: https://github.com/bareos/bareos/pull/672
+[PR #686]: https://github.com/bareos/bareos/pull/686
