@@ -87,8 +87,9 @@ For general information about the packages, see :ref:`section-BareosPackages`.
 Univention Corporate Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Platform; Univention Corporate Server>`
-:os:`Univention`
+.. index::
+   single: Platform; Univention Corporate Server
+
 The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server.
 
 Preamble
