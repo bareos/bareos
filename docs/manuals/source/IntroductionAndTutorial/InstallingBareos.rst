@@ -3,7 +3,9 @@
 Installing Bareos
 =================
 
-:index:`\ <single: Bareos; Installing>`\  :index:`\ <single: Installation; Linux>`\
+.. index::
+   pair: Bareos; Installation
+   pair: Installation; Linux
 
 If you are like me, you want to get Bareos running immediately to get a feel for it, then later you want to go back and read about all the details. This chapter attempts to accomplish just that: get you going quickly without all the details.
 
@@ -34,13 +36,12 @@ This will start a very basic Bareos installation which will regularly backup a d
 Decide about the Bareos release to use
 --------------------------------------
 
--  http://download.bareos.org/bareos/release/latest/
-
-You’ll find Bareos binary package repositories at http://download.bareos.org/. The latest stable released version is available at http://download.bareos.org/bareos/release/latest/.
+You’ll find Bareos binary package repositories at http://download.bareos.org/. The stable releases are available at http://download.bareos.org/bareos/release/.
 
 The public key to verify the repository is also in repository directory (:file:`Release.key` for Debian based distributions, :file:`repodata/repomd.xml.key` for RPM based distributions).
 
 Section :ref:`section-InstallBareosPackages` describes how to add the software repository to your system.
+
 
 .. _section-ChooseDatabaseBackend:
 
@@ -69,7 +70,7 @@ SQLite
 
 The Bareos database packages have their dependencies only to the database client packages, therefore the database itself must be installed manually.
 
-If you do not explicitly choose a database backend, your operating system installer will choose one for you. The default should be PostgreSQL, but depending on your operating system and the already installed packages, this may differ.
+
 
 .. _section-InstallBareosPackages:
 
@@ -85,15 +86,18 @@ The following code snippets are shell scripts that can be used as orientation ho
 Install on RedHat based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-RHEL>7, CentOS>7, Fedora
-^^^^^^^^^^^^^^^^^^^^^^^^
+RHEL, CentOS, Fedora
+^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Platform; RHEL>`\  :index:`\ <single: Platform; CentOS>`\  :index:`\ <single: Platform; Fedora>`\
+.. index::
+   single: Platform; RHEL
+   single: Platform; CentOS
+   single: Platform; Fedora
 
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included in the main repository.
 
 .. code-block:: shell-session
-   :caption: Shell example script for Bareos installation on RHEL > 7 / CentOS > 7 / Fedora
+   :caption: Shell example script for Bareos installation on RHEL 7 / CentOS 7 / Fedora
 
    #!/bin/sh
 
@@ -105,13 +109,12 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    # DIST=RHEL_7
    # DIST=CentOS_8
    # DIST=CentOS_7
-   # DIST=Fedora_30
+   # DIST=Fedora_33
+   # DIST=Fedora_32
    # DIST=Fedora_31
 
-   RELEASE=release/19.2/
-   # or
-   # RELEASE=release/latest/
-   # RELEASE=experimental/nightly/
+   RELEASE=release/20
+   # RELEASE=experimental/nightly
 
    # add the Bareos repository
    URL=http://download.bareos.org/bareos/$RELEASE/$DIST
@@ -120,41 +123,6 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    # install Bareos packages
    yum install bareos bareos-database-postgresql
 
-RHEL 6, CentOS 6
-^^^^^^^^^^^^^^^^
-
-:index:`\ <single: Platform; RHEL; 6>`\  :index:`\ <single: Platform; CentOS; 6>`\
-
-Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. This package is available on `EPEL <https://fedoraproject.org/wiki/EPEL>`_ 6. Make sure, it is available on your system.
-
-.. code-block:: shell-session
-   :caption: Shell example script for Bareos installation on RHEL > 6 / CentOS > 6
-
-   #!/bin/sh
-
-   # See http://download.bareos.org/bareos/release/
-   # for applicable releases and distributions
-
-   #
-   # add EPEL repository, if not already present.
-   # Required for the jansson package.
-   #
-   rpm -Uhv https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
-
-   DIST=RHEL_6
-   # DIST=CentOS_6
-
-   RELEASE=release/19.2/
-   # or
-   # RELEASE=release/latest/
-   # RELEASE=experimental/nightly/
-
-   # add the Bareos repository
-   URL=http://download.bareos.org/bareos/$RELEASE/$DIST
-   wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
-
-   # install Bareos packages
-   yum install bareos bareos-database-postgresql
 
 Install on SUSE based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -162,7 +130,9 @@ Install on SUSE based Linux Distributions
 SUSE Linux Enterprise Server (SLES), openSUSE
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Platform; SLES>`\  :index:`\ <single: Platform; openSUSE>`\
+.. index::
+   single: Platform; SLES
+   single: Platform; openSUSE
 
 .. code-block:: shell-session
    :caption: Shell example script for Bareos installation on SLES / openSUSE
@@ -172,15 +142,14 @@ SUSE Linux Enterprise Server (SLES), openSUSE
    # See http://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=SLE_15_SP1
+   DIST=SLE_15_SP2
    # or
-   # DIST=SLE_12_SP4
-   # DIST=openSUSE_Leap_15.1
+   # DIST=SLE_12_SP5
+   # DIST=openSUSE_Leap_15.2
 
-   RELEASE=release/19.2/
+   RELEASE=release/20
    # or
-   # RELEASE=release/latest/
-   # RELEASE=experimental/nightly/
+   # RELEASE=experimental/nightly
 
    # add the Bareos repository
    URL=http://download.bareos.org/bareos/$RELEASE/$DIST
@@ -197,7 +166,9 @@ Install on Debian based Linux Distributions
 Debian / Ubuntu
 ^^^^^^^^^^^^^^^
 
-:index:`\ <single: Platform; Debian>`\  :index:`\ <single: Platform; Ubuntu>`\
+.. index::
+   single: Platform; Debian
+   single: Platform; Ubuntu
 
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
 
@@ -212,18 +183,18 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    DIST=Debian_10
    # or
    # DIST=Debian_9.0
+   # DIST=xUbuntu_20.04
    # DIST=xUbuntu_18.04
    # DIST=xUbuntu_16.04
 
-   RELEASE=release/19.2
+   RELEASE=release/20
    # or
-   # RELEASE=release/latest
    # RELEASE=experimental/nightly
 
    URL=http://download.bareos.org/bareos/$RELEASE/$DIST
 
    # add the Bareos repository
-   printf "deb $URL /\n" > /etc/apt/sources.list.d/bareos.list
+   wget -O /etc/apt/sources.list.d/bareos.list $URL/bareos.list
 
    # add package key
    wget -q $URL/Release.key -O- | apt-key add -
@@ -232,12 +203,13 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
    apt-get update
    apt-get install bareos bareos-database-postgresql
 
-If you prefer using the versions of Bareos directly integrated into the distributions, please note that there are some differences, see :ref:`section-DebianOrgLimitations`.
+If you use the versions of Bareos directly integrated into the distributions, please note that there are some differences, see :ref:`section-DebianOrgLimitations`.
 
 Install on FreeBSD based Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Platform; FreeBSD>`\  :index:`\ <single: Platform; FreeBSD>`\
+.. index::
+   single: Platform; FreeBSD
 
 .. code-block:: shell-session
    :caption: Shell example script for Bareos installation on FreeBSD
@@ -247,15 +219,14 @@ Install on FreeBSD based Distributions
    # See http://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=FreeBSD_12.1
+   DIST=FreeBSD_12.2
    # or
-   # DIST=FreeBSD_12.0
-   # DIST=FreeBSD_11.3
+   # DIST=FreeBSD_12.1
+   # DIST=FreeBSD_11.4
 
-   RELEASE=release/19.2/
+   RELEASE=release/20
    # or
-   # RELEASE=release/latest/
-   # RELEASE=experimental/nightly/
+   # RELEASE=experimental/nightly
 
    URL=http://download.bareos.org/bareos/$RELEASE/$DIST
 
@@ -285,7 +256,8 @@ Install on FreeBSD based Distributions
 Install on Oracle Solaris
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Platform; Solaris>`
+.. index::
+   single: Platform; Solaris
 
 Bareos offers **IPS** (*Image Packaging System*) filedaemon Packages for **Oracle Solaris 11.4**.
 
@@ -346,12 +318,9 @@ The bareos filedaemon service on solaris is now ready for use.
 Install on Univention Corporate Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:os:`Univention`
-
-Bareos offers additional functionality and integration into an Univention Corporate Server environment. Please follow the instructions in :ref:`section-UniventionCorporateServer`.
+Bareos offers additional functionality and integration into an Univention Corporate Server environment. Please follow the intructions in :ref:`section-UniventionCorporateServer`.
 
 If you are not interested in this additional functionality, the commands described in :ref:`section-InstallBareosPackagesDebian` will also work for Univention Corporate Servers.
-
 
 
 
@@ -392,9 +361,6 @@ For details see :ref:`section-dbconfig`.
 Other Platforms
 ~~~~~~~~~~~~~~~
 
-PostgreSQL
-^^^^^^^^^^
-
 If your are using PostgreSQL and your PostgreSQL administration user is **postgres** (default), use the following commands:
 
 .. code-block:: shell-session
@@ -404,6 +370,7 @@ If your are using PostgreSQL and your PostgreSQL administration user is **postgr
    su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
    su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
 
+
 .. _section-StartDaemons:
 
 Start the daemons
@@ -412,9 +379,9 @@ Start the daemons
 .. code-block:: shell-session
    :caption: Start the Bareos Daemons
 
-   service bareos-dir start
-   service bareos-sd start
-   service bareos-fd start
+   systemctl start bareos-dir
+   systemctl start bareos-sd
+   systemctl start bareos-fd
 
 Please remark, the Bareos Daemons need to have access to the ports 9101-9103.
 
