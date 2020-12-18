@@ -5,8 +5,9 @@
 Installing Bareos Webui
 =======================
 
-:index:`\ <single: Webui>`
-:index:`\ <single: Webui; Install>`
+.. index::
+   single: Webui
+   single: Webui; Install
 
 This chapter addresses the installation process of the |webui|.
 
@@ -69,26 +70,6 @@ System Requirements
 
 -  On SUSE Linux Enterprise 12 you need the additional SUSE Linux Enterprise Module for Web Scripting 12.
 
-Version < 16.2
-~~~~~~~~~~~~~~
-
-|webui| :sinceVersion:`16.2.4: bareos-webui incorporates Zend Framework 2` incorporates the required Zend Framework 2 components, no extra Zend Framework installation is required. For older versions of **bareos-webui**, you must install Zend Framework separately. Unfortunately, not all distributions offer Zend Framework 2 packages. The following list shows where to get the Zend Framework 2 package:
-
--  RHEL, CentOS
-
-   -  https://fedoraproject.org/wiki/EPEL
-
-   -  https://apps.fedoraproject.org/packages/php-ZendFramework2
-
--  Fedora
-
-   -  https://apps.fedoraproject.org/packages/php-ZendFramework2
-
--  SUSE, Debian, Ubuntu
-
-   -  http://download.bareos.org/bareos
-
-Also be aware, that older versions of |dir| do not support the :ref:`section-SubdirectoryConfigurationScheme` and therefore Bareos configuration resource files must be included manually.
 
 Installation
 ------------
