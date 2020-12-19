@@ -153,7 +153,7 @@ else
       elif test -f /etc/gentoo-release
       then
          PLATFORM=gentoo
-         DISTVER=`awk '/version / { print $5 }' < /etc/gentoo-release`
+         DISTVER=`awk '/release / { print $5 }' < /etc/gentoo-release`
       elif test -f /etc/debian_version
       then
          if `test -f /etc/apt/sources.list && grep -q ubuntu /etc/apt/sources.list`; then
