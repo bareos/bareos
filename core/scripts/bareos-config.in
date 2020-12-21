@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/sh
 
 LIB=@scriptdir@/bareos-config-lib.sh
 

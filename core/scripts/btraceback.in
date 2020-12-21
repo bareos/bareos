@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/sh
 #
 # Script to do a stack trace of a Bareos daemon/program
 # and create a core-file for postmortem debugging.

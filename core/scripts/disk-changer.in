@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/sh
 #
 # BAREOS interface to virtual autoloader using disk storage
 #

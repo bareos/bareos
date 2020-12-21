@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/usr/bin/sh
 
 # A function to find the pid of a program.
 pidofproc() {
