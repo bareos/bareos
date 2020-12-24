@@ -445,7 +445,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(Python2_CCSHARED -Wno-register)
 
   set(Python2_SITELIB ${plugindir})
-  set(Python3_SITELIB ${plugindir})
+  set(Python3_SITEARCH ${plugindir})
 endif()
 
 # set INSTALL_LIB_DIR automatically to lib or lib64 automatically Taken from
