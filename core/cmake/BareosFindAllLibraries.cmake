@@ -99,10 +99,18 @@ endif()
 
 include(BareosFindLibraryAndHeaders)
 
-bareosfindlibraryandheaders(
-  "vixDiskLib" "vixDiskLib.h"
-  "/usr/lib/vmware-vix-disklib-distrib;/usr/lib/vmware-vix-disklib"
-)
+set(vddk_path "/usr/lib/vmware-vix-disklib-distrib;/usr/lib/vmware-vix-disklib")
+# allow another vddk include search path
+if(DEFINED vddk_incl)
+  string(APPEND vddk_path ";${vddk_incl}")
+endif()
+
+# allow another vddk lib search path
+if(DEFINED vddk_lib)
+  string(APPEND vddk_path ";${vddk_lib}")
+endif()
+message (STATUS "VDDK header/lib search path: ${vddk_path}")
+bareosfindlibraryandheaders("vixDiskLib" "vixDiskLib.h" "${vddk_path}")
 
 # check for structmember physicalSectorSize in struct VixDiskLibCreateParams
 if(VIXDISKLIB_FOUND)
