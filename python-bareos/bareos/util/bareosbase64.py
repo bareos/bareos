@@ -18,36 +18,37 @@
 #   02110-1301, USA.
 
 """
+Bareos specific base64 implementation.
+
 Bacula and therefore Bareos specific implementation of a base64 decoder.
-This class offers functions to handle this.
 """
 
-
 class BareosBase64(object):
-    """
-    Bacula and therefore Bareos specific implementation of a base64 decoder
-    """
+    """Bareos specific base64 implementation."""
 
     base64_digits = list(
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
     )
 
     def __init__(self):
-        """
-        Initialize the Base 64 conversion routines
-        """
+        """Initialize the Base 64 conversion routines."""
         self.base64_map = dict(list(zip(self.base64_digits, list(range(0, 64)))))
 
     @staticmethod
     def twos_comp(val, bits):
-        """compute the 2's compliment of int value val"""
+        """Compute the 2's compliment of int value val."""
         if (val & (1 << (bits - 1))) != 0:
             val = val - (1 << bits)
         return val
 
     def base64_to_int(self, base64):
-        """
-        Convert the Base 64 characters in base64 to a value.
+        """Convert a base 64 string to integer.
+
+        Args:
+           base64 (str): base 64 string.
+
+        Returns:
+           int: Integer value of the base64 string.
         """
         value = 0
         first = 0
@@ -67,8 +68,13 @@ class BareosBase64(object):
         return -value if neg else value
 
     def int_to_base64(self, value):
-        """
-        Convert an integer to base 64
+        """Convert an integer to base 64.
+
+        Args:
+           value (int): integeer value.
+
+        Returns:
+           str: base 64 representation of value.
         """
         result = ""
         if value < 0:
@@ -82,8 +88,14 @@ class BareosBase64(object):
         return result
 
     def string_to_base64(self, string, compatible=False):
-        """
-        Convert a string to base64
+        """Convert a string to base64.
+
+        Args:
+           string (str): string to be converted.
+           compatible (bool): If True, generate Baculas broken version of base 64 strings.
+
+        Returns:
+           bytearray: base 64 representation of the given string.
         """
         buf = ""
         reg = 0

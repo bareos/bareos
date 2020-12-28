@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 """
-Low Level socket methods to communication with the bareos-director.
+Low Level socket methods to communicate with a Bareos Daemon.
 """
 
 # Authentication code is taken from
@@ -61,19 +61,23 @@ except ImportError:
 
 class LowLevel(object):
     """
-    Low Level socket methods to communicate with the bareos-director.
+    Low Level socket methods to communicate with a Bareos Daemon.
+    
+    This class should not be used by itself,
+    only by inherited classed.
     """
 
     @staticmethod
     def argparser_get_bareos_parameter(args):
-        """
-        This method is usally used together with the method argparser_add_default_command_line_arguments.
+        """Extract arguments.
 
-        @param args: Arguments retrieved by ArgumentParser.parse_args()
-        @type args:  ArgParser.Namespace
+        This method is usally used together with the method :py:func:`argparser_add_default_command_line_arguments`.
 
-        @return: returns the relevant parameter from args to initialize a connection.
-        @rtype: dict
+        Args:
+           args (ArgParser.Namespace): Arguments retrieved by :py:func:`ArgumentParser.parse_args`.
+
+        Returns:
+           dict: The relevant parameter from args to initialize a connection.
         """
         result = {}
         for key, value in vars(args).items():
@@ -112,6 +116,32 @@ class LowLevel(object):
     def connect(
         self, address, port, dirname, connection_type, name=None, password=None
     ):
+        """Establish a network connection and authenticate.
+
+        Args:
+           address (str): Address of the Bareos Director (hostname or IP).
+
+           port (int): Port number of the Bareos Director.
+
+           dirname (str, optional):
+              Name of the Bareos Director. Deprecated, normally not required.
+
+           connection_type (int): See :py:class:`bareos.bsock.connectiontype.ConnectionType`.
+
+           name (str, optional):
+              Credential name.
+
+           password  (str, bareos.util.Password):
+              Credential password, in cleartext or as Password object.
+
+        Returns:
+           bool: True, if the authentication succeeds. In earlier versions, authentication failures returned False. However, now an authentication failure raises an exception.
+
+        Raises:
+           bareos.exceptions.ConnectionError: If connection can be established.
+           bareos.exceptions.PamAuthenticationError: If PAM authentication fails.
+           bareos.exceptions.AuthenticationError: If Bareos authentication fails.
+        """
         self.address = address
         self.port = int(port)
         if dirname:
@@ -121,7 +151,9 @@ class LowLevel(object):
         self.connection_type = connection_type
         self.name = name
         if password is None:
-            raise bareos.exceptions.ConnectionError(u"Parameter 'password' is required.")
+            raise bareos.exceptions.ConnectionError(
+                u"Parameter 'password' is required."
+            )
         if isinstance(password, Password):
             self.password = password
         else:
@@ -240,9 +272,10 @@ class LowLevel(object):
         name = str(self.name)
         if isinstance(self.name, bytes):
             name = self.name.decode("utf-8")
-        result = u"{0}{1}{2}".format(self.identity_prefix, Constants.record_separator, name)
+        result = u"{0}{1}{2}".format(
+            self.identity_prefix, Constants.record_separator, name
+        )
         return bytes(bytearray(result, "utf-8"))
-
 
     @staticmethod
     def is_tls_psk_available():
@@ -250,9 +283,20 @@ class LowLevel(object):
         return "sslpsk" in sys.modules
 
     def get_protocol_version(self):
+        """Get the Bareos Console protocol version that is used.
+
+        Returns:
+           int: Number that represents the Bareos Console protocol version (see :py:class:`bareos.bsock.protocolversions.ProtocolVersions`.)
+        """
         return self.protocol_messages.get_version()
 
     def get_cipher(self):
+        """
+        If a encrypted connection is used, returns information about the encryption. Else it returns None.
+
+        Returns:
+           tuple or None: Returns a three-value tuple containing the name of the cipher being used, the version of the SSL protocol that defines its use, and the number of secret bits being used. If the connection is unencrypted or has been established, returns None.
+        """
         if hasattr(self.socket, "cipher"):
             return self.socket.cipher()
         else:
@@ -262,14 +306,12 @@ class LowLevel(object):
         """
         Login to a Bareos Daemon.
 
-        @return: True, if the authentication succeeds.
-                 In earlier versions, authentication failures returned False.
-                 However, now an authentication failure raises an exception.
-        @rtype: bool
+        Returns:
+           bool: True, if the authentication succeeds. In earlier versions, authentication failures returned False. However, now an authentication failure raises an exception.
 
-        @raise bareos.exceptions.AuthenticationError: if authentication fails.
+        Raises:
+           bareos.exceptions.AuthenticationError: if authentication fails.
         """
-
         bashed_name = self.protocol_messages.hello(self.name, type=self.connection_type)
         # send the bash to the director
         self.send(bashed_name)
@@ -293,11 +335,18 @@ class LowLevel(object):
         ):
             raise bareos.exceptions.AuthenticationError("failed (in challenge)")
 
-        self.finalize_authentication()
+        self._finalize_authentication()
 
         return self.auth_credentials_valid
 
     def receive_and_evaluate_response_message(self):
+        """Retrieve a message and evaluate it.
+        
+        Only used during in the authentication phase.
+        
+        Returns:
+           2-tuple: (code, text).
+        """
         regex_str = r"^(\d\d\d\d){0}(.*)$".format(
             Constants.record_separator_compat_regex
         )
@@ -313,12 +362,18 @@ class LowLevel(object):
         pass
 
     def close(self):
-        """disconnect"""
+        """Close the connection."""
         if self.socket is not None:
             self.socket.close()
         self.socket = None
 
     def reconnect(self):
+        """
+        Tries to reconnect.
+
+        Returns:
+           bool: True, if the connection could be reestablished.
+        """
         result = False
         if self.max_reconnects > 0:
             try:
@@ -330,17 +385,34 @@ class LowLevel(object):
         return result
 
     def call(self, command):
-        """
-        call a bareos-director user agent command
+        """Call a Bareos command.
+
+        Args:
+           command (str or list): Command to execute. Best provided as a list.
+
+        Returns:
+            bytes: Result received from the Daemon.
         """
         if isinstance(command, list):
             command = " ".join(command)
         return self._send_a_command_and_receive_result(command)
 
     def _send_a_command_and_receive_result(self, command):
-        """
-        Send a command and receive the result.
+        """Send a command and receive the result.
+
         If connection is lost, try to reconnect.
+
+        Args:
+           command (str or list): Command to execute. Best provided as a list.
+
+        Returns:
+            bytes: Result received from the Daemon.
+
+        Raises:
+            bareos.exceptions.SocketEmptyHeader:
+                if an empty header is received.
+            bareos.exceptions.ConnectionLostError:
+                if the connection is lost-
         """
         result = b""
         try:
@@ -360,10 +432,18 @@ class LowLevel(object):
         return result
 
     def send_command(self, command):
+        """Alias for :py:func:`call`.
+
+        :deprecated: 15.2.0
+        """
         return self.call(command)
 
     def send(self, msg=None):
-        """use socket to send request to director"""
+        """Send message to the Daemon.
+
+        Args:
+           msg (bytearray): Message to send.
+        """
         self.__check_socket_connection()
         msg_len = len(msg)  # plus the msglen info
 
@@ -375,13 +455,17 @@ class LowLevel(object):
             self._handleSocketError(e)
 
     def recv_bytes(self, length, timeout=10):
-        """
-        Receive a number of bytes.
+        """Receive a number of bytes.
 
-        @raise bareos.exceptions.ConnectionLostError:
-               is raised, if the socket connection gets lost.
-        @raise socket.timeout:
-               is raised, if a timeout occurs on the socket connection,
+        Args:
+          length (int): Number of bytes to receive.
+          timeout (float): Timeout in seconds.
+
+        Raises:
+            bareos.exceptions.ConnectionLostError:
+               If the socket connection gets lost.
+            socket.timeout:
+               If a timeout occurs on the socket connection,
                meaning no data received.
         """
         self.socket.settimeout(timeout)
@@ -399,16 +483,20 @@ class LowLevel(object):
         return msg
 
     def recv(self):
-        """
-        Receive a single message.
+        """Receive a single message.
+
         This is,
         header (4 bytes): if
-            > 0: length of the following message
-            < 0: Bareos signal
-        msg: of the length descriped in the header.
+        
+            * > 0: length of the following message
+            * < 0: Bareos signal
+        
+        Returns:
+           bytearray: Message retrieved via the connection.
 
-        @raise bareos.exceptions.SignalReceivedException:
-               is raised, if a Bareos signal is received.
+        Raises:
+            bareos.exceptions.SignalReceivedException:
+                If a Bareos signal is received.
         """
         self.__check_socket_connection()
         # get the message header
@@ -422,16 +510,23 @@ class LowLevel(object):
         return msg
 
     def recv_msg(self, regex=b"^\d\d\d\d OK.*$"):
-        """
-        Receive a full Director message.
+        """Receive a full message.
 
-        It retrieves Director messages (header + message text),
+        It retrieves messages (header + message text),
         until
-          1. the message matches the specified regex or
-          2. the header indicates a signal.
 
-        @raise bareos.exceptions.SignalReceivedException:
-               is raised, if a Bareos signal is received.
+           1. the message contains the specified regex or
+           2. the header indicates a signal.
+
+        Args:
+          regex (bytes): Descripes the expected end of the message.
+
+        Returns:
+           bytearray: Message retrieved via the connection.
+
+        Raises:
+            bareos.exceptions.SignalReceivedException:
+               If a Bareos signal is received.
         """
         self.__check_socket_connection()
         try:
@@ -492,7 +587,14 @@ class LowLevel(object):
             self._handleSocketError(e)
 
     def recv_submsg(self, length):
-        # get the message
+        """Retrieve a message of the specific length.
+
+        Args:
+           length (int): Number of bytes to retrieve.
+
+        Returns:
+           bytearray: Retrieved message.
+        """
         msg = self.recv_bytes(length)
         if type(msg) is str:
             msg = bytearray(msg.decode("utf-8"), "utf-8")
@@ -502,9 +604,12 @@ class LowLevel(object):
         return msg
 
     def interactive(self):
-        """
-        Enter the interactive mode.
+        """Enter the interactive mode.
+
         Exit via typing "exit" or "quit".
+
+        Returns:
+           bool: True, if exited by user command.
         """
         command = ""
         while command != "exit" and command != "quit" and self.is_connected():
@@ -520,10 +625,10 @@ class LowLevel(object):
             except bareos.exceptions.JsonRpcErrorReceivedException as exp:
                 print(str(exp))
                 # print(str(exp.jsondata))
-
         return True
 
     def _get_input(self):
+        # Wrapper to retrieve user keyboard input.
         # Python2: raw_input, Python3: input
         try:
             myinput = raw_input
@@ -552,6 +657,14 @@ class LowLevel(object):
         return data
 
     def is_end_of_message(self, data):
+        """Checks if a Bareos signal indicates the end of a message.
+
+        Args:
+           data (int): Negative integer.
+
+        Returns:
+           bool: True, if regular end of message is reached.
+        """
         return (
             (not self.is_connected())
             or data == Constants.BNET_EOD
@@ -561,6 +674,11 @@ class LowLevel(object):
         )
 
     def is_connected(self):
+        """Verifes that last status still indicates connected.
+
+        Returns:
+           bool: True, if still connected.
+        """
         return self.status != Constants.BNET_TERMINATE
 
     def _cram_md5_challenge(
@@ -665,12 +783,17 @@ class LowLevel(object):
         self.logger.debug(str(status_text) + " (" + str(status) + ")")
 
     def has_data(self):
+        """Is readable data available?
+        
+        Returns:
+            bool: True: if readable data is available.
+        """
         self.__check_socket_connection()
         timeout = 0.1
         readable, writable, exceptional = select([self.socket], [], [], timeout)
         return readable
 
-    def get_to_prompt(self):
+    def _get_to_prompt(self):
         time.sleep(0.1)
         if self.has_data():
             msg = self.recv_msg()

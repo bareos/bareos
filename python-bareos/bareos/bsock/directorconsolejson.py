@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 """
-Reimplementation of the bconsole program in python.
+Communicate with the Bareos Director Daemon Console interface in API mode 2 (JSON).
 """
 
 from bareos.bsock.directorconsole import DirectorConsole
@@ -28,13 +28,32 @@ import json
 
 
 class DirectorConsoleJson(DirectorConsole):
-    """
-    use to send and receive the response from director
+    """Communicate with the Bareos Director Daemon Console interface in API mode 2 (JSON).
+    
+    Example:
+
+       >>> import bareos.bsock
+       >>> directorconsole = bareos.bsock.DirectorConsoleJson(address='localhost', port=9101, password='secret')
+       >>> pools = directorconsole.call('list pools')
+       >>> for pool in pools["pools"]:
+       ...   print(pool["name"])
+       ...
+       Scratch
+       Incremental
+       Full
+       Differential
+
+       The results the the `call` method is a ``dict`` object.
+
+       In case of an error, an exception, derived from ``bareos.exceptions.Error`` is raised.
     """
 
     def __init__(self, *args, **kwargs):
-        """
-        @raise: bareos.exceptions.JsonRpcInvalidJsonReceivedException:
+        """\ 
+        **Parameters:** The parameter are identical to :py:class:`bareos.bsock.directorconsole.DirectorConsole`.
+        
+        Raises:
+            bareos.exceptions.JsonRpcInvalidJsonReceivedException:
                 if the ".api" command is not available.
         """
         super(DirectorConsoleJson, self).__init__(*args, **kwargs)
@@ -47,10 +66,22 @@ class DirectorConsoleJson(DirectorConsole):
         self.logger.debug(self.call(".api json compact=yes"))
 
     def call(self, command):
-        """
-        @raise: bareos.exceptions.JsonRpcErrorReceivedException:
+        """Calls a command on the Bareos Director and returns its result.
+
+        If the JSON-RPC result indicates an error
+        (contains the ``error`` element),
+        an exception will be raised.
+        
+        Args:
+           command (str or list): Command to execute. Best provided as a list.
+
+        Returns:
+            dict: Result received from the Bareos Director.
+        
+        Raises:
+            bareos.exceptions.JsonRpcErrorReceivedException:
                 if an JSON-RPC error object is received.
-        @raise: bareos.exceptions.JsonRpcInvalidJsonReceivedException:
+            bareos.exceptions.JsonRpcInvalidJsonReceivedException:
                 if an invalid JSON-RPC result is received.
         """
         json = self.call_fullresult(command)
@@ -65,6 +96,15 @@ class DirectorConsoleJson(DirectorConsole):
         return result
 
     def call_fullresult(self, command):
+        """Calls a command on the Bareos Director and returns its result.
+        
+        Returns:
+            dict: Result received from the Bareos Director.
+        
+        Raises:
+            bareos.exceptions.JsonRpcInvalidJsonReceivedException:
+                if an invalid JSON-RPC result is received.
+        """
         resultstring = super(DirectorConsoleJson, self).call(command)
         data = None
         if resultstring:

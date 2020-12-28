@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 """
-Communicates with the bareos-dir console
+Send and receive the response to Bareos Director Daemon Console interface.
 """
 
 from bareos.bsock.connectiontype import ConnectionType
@@ -32,29 +32,36 @@ import bareos.exceptions
 
 
 class DirectorConsole(LowLevel):
-    """use to send and receive the response to Bareos Director Daemon"""
+    """Send and receive the response to Bareos Director Daemon Console interface.
+
+    Example:
+       >>> import bareos.bsock
+       >>> directorconsole=bareos.bsock.DirectorConsole(address='localhost', port=9101, name='user1', password='secret')
+       >>> print(directorconsole.call('help').decode("utf-8"))
+    """
 
     @staticmethod
     def argparser_add_default_command_line_arguments(argparser):
-        """
+        """Extend argparser with :py:class:`DirectorConsole` specific parameter.
+        
         Every command line program must offer a similar set of parameter
         to connect to a Bareos Director.
-        This method adds the required parameter to an existing ArgParser object.
+        This method adds the required parameter to an existing ArgParser instance.
         Parameter required to initialize a DirectorConsole class
-        are stored in variables prefixed with BAREOS_.
+        are stored in variables prefixed with ``BAREOS_``.
 
-        Use the argparser_get_bareos_parameter method to retrieve the relevant parameter
-        (with the BAREOS_ prefix removed).
+        Use :py:func:`bareos.bsock.lowlevel.LowLevel.argparser_get_bareos_parameter` to retrieve the relevant parameter
+        (with the ``BAREOS_`` prefix removed).
 
         Example:
-        argparser = argparse.ArgumentParser(description='Console to Bareos Director.')
-        DirectorConsole.argparser_add_default_command_line_arguments(argparser)
-        args = argparser.parse_args()
-        bareos_args = DirectorConsole.argparser_get_bareos_parameter(args)
-        director = DirectorConsole(**bareos_args)
+           >>> argparser = argparse.ArgumentParser(description="Console to Bareos Director.")
+           >>> DirectorConsole.argparser_add_default_command_line_arguments(argparser)
+           >>> args = argparser.parse_args()
+           >>> bareos_args = DirectorConsole.argparser_get_bareos_parameter(args)
+           >>> director = DirectorConsole(**bareos_args)
 
-        @param argparser: ArgParser
-        @type name: ArgParser
+        Args:
+          argparser (ArgParser): ArgParser instance.
         """
         argparser.add_argument(
             "--name",
@@ -131,6 +138,40 @@ class DirectorConsole(LowLevel):
         tls_psk_require=False,
         tls_version=None,
     ):
+        """\ 
+        
+        Args:
+           address (str): Address of the Bareos Director (hostname or IP).
+           
+           port (int): Port number of the Bareos Director.
+           
+           dirname (str, optional):
+              Name of the Bareos Director. Deprecated, normally not required.
+
+           name (str, optional):
+              Name of the Director Console. Leave empty when connecting to the Bareos Default Console.
+           
+           password  (str, bareos.util.Password):
+              Password, in cleartext or as Password object.
+
+           protocolversion (None, bareos.bsock.ProtocolVersions.last, bareos.bsock.ProtocolVersions.bareos_12_4, bareos.bsock.ProtocolVersions.bareos_18_2):
+              Specify the Bareos Console protocol version to use.
+
+           pam_username (str): Additional username when using PAM.
+
+           pam_password (str): Additional user password when using PAM.
+
+           tls_psk_enable (boolean): Enable TLS-PSK.
+           
+           tls_psk_require (boolean): Enforce using TLS-PSK.
+           
+           tls_version (None, ssl.PROTOCOL_TLS, ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2):
+              TLS protocol version to use.
+
+        Raises:
+          bareos.exceptions.ConnectionError: On connections errors.
+        """
+
         super(DirectorConsole, self).__init__()
         self.pam_username = pam_username
         self.pam_password = pam_password
@@ -146,7 +187,7 @@ class DirectorConsole(LowLevel):
         self._init_connection()
         self.max_reconnects = 1
 
-    def finalize_authentication(self):
+    def _finalize_authentication(self):
         code, text = self.receive_and_evaluate_response_message()
 
         self.logger.debug(u"code: {0}".format(code))
@@ -212,6 +253,6 @@ class DirectorConsole(LowLevel):
     def _init_connection(self):
         self.call("autodisplay off")
 
-    def get_to_prompt(self):
+    def _get_to_prompt(self):
         self.send(b".")
-        return super(DirectorConsole, self).get_to_prompt()
+        return super(DirectorConsole, self)._get_to_prompt()

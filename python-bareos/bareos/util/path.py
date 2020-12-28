@@ -18,14 +18,23 @@
 #   02110-1301, USA.
 
 """
-Class to handle file paths.
+Handle file paths.
 """
 
 from copy import copy
 
 
 class Path(object):
+    """
+    Class to handle file paths.
+    """
+
     def __init__(self, path=None):
+        """\ 
+
+        Args:
+           path (str, optional): string representation of the file system path.
+        """
         self.__set_defaults()
         self.set_path(path)
 
@@ -72,23 +81,25 @@ class Path(object):
         else:
             return self.path[index]
 
-    # def lstrip(self, path=[]):
-    # """
-    # Creates a new Path instance with lstrip components removed from left.
-    # """
-    # result = copy(self)
-    # result.root = False
-    # for i in path:
-    # if result.get(0) == i:
-    # result.remove(0)
-    # else:
-    ## TODO: exception?
-    # pass
-    # return result
-
     def shift(self):
         """
-        Creates a new Path instance with lstrip components removed from left.
+        Removes the first component of the path.
+
+        Example:
+
+           .. code:: python
+
+              >>> path = Path("/usr/bin/python")
+              >>> path.shift()
+              'usr'
+              >>> print(path)
+              /bin/python
+
+        Returns:
+            str: First component of the path.
+
+        Raises:
+            IndexError: if path can't be shifted (path is empty).
         """
         result = self.get(0)
         self.remove(0)

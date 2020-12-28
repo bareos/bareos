@@ -17,9 +17,10 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""Constants for the different Bareos connection types."""
 
 class ConnectionType:
-    """"""
+    """Constants for the different Bareos connection types."""
 
     DIRECTOR = 1001
     STORAGE = 1002

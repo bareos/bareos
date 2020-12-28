@@ -17,21 +17,19 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-"""
-Constants used by Bareos.
-"""
+"""Constants used by Bareos."""
 
 
 class Constants:
+    """Constants used by Bareos."""
 
     unit_separator = chr(0x1F)
     record_separator = chr(0x1E)
     record_separator_compat_regex = r"[ {0}]".format(chr(0x1E))
     group_separator = chr(0x1D)
 
-    """
-    translated enum from https://github.com/bareos/bareos/blob/master/core/src/lib/bsock.h
-    """
+    # translated enum from
+    # https://github.com/bareos/bareos/blob/master/core/src/lib/bsock.h
     BNET_EOD = -1  # ,          /* End of data stream, new data may follow */
     BNET_EOD_POLL = -2  # ,          /* End of data and poll all in one */
     BNET_STATUS = -3  # ,          /* Send full status */
@@ -61,7 +59,7 @@ class Constants:
     BNET_SUB_PROMPT = -27  # ,         /* Indicate we are at a subprompt */
     BNET_TEXT_INPUT = -28  #          /* Get text input from user */
 
-    description = {
+    _description = {
         BNET_EOD: "End of data stream, new data may follow",
         BNET_EOD_POLL: "End of data and poll all in one",
         BNET_STATUS: "Send full status",
@@ -94,8 +92,16 @@ class Constants:
 
     @staticmethod
     def get_description(code):
+        """Get a description text for a Bareos constant.
+
+        Args:
+           code (int): Bareos ``BNET`` constant.
+
+        Returns:
+            str: Description for a Bareos ``BNET`` constant or ``None`` if no description exists.
+        """
         try:
-            description = Constants.description[code]
+            description = Constants._description[code]
         except KeyError:
             # self.logger.error( "unknown bsock code " + code )
             return

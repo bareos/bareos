@@ -17,10 +17,13 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""
+Classes to parse TLS version paramters.
+"""
+
 import argparse
 from collections import OrderedDict
 import ssl
-
 
 class ArgParserTlsVersionAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):

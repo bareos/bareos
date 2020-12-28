@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 """
-Communicates with the bareos-fd
+Send and receive the response to Bareos File Daemon (bareos-fd).
 """
 
 from bareos.bsock.connectiontype import ConnectionType
@@ -30,29 +30,33 @@ import shlex
 
 
 class FileDaemon(LowLevel):
-    """use to send and receive the response to Bareos File Daemon"""
+    """Send and receive the response to Bareos File Daemon (bareos-fd)."""
 
     @staticmethod
     def argparser_add_default_command_line_arguments(argparser):
-        """
+        """Extend argparser with :py:class:`FileDaemon` specific parameter.
+
         Every command line program must offer a similar set of parameter
         to connect to a Bareos File Daemon.
-        This method adds the required parameter to an existing ArgParser object.
+        This method adds the required parameter to an existing ArgParser instance.
         Parameter required to initialize a FileDaemon class
-        are stored in variables prefixed with BAREOS_.
+        are stored in variables prefixed with ``BAREOS_``.
 
-        Use the argparser_get_bareos_parameter method to retrieve the relevant parameter
-        (with the BAREOS_ prefix removed).
+        Use :py:func:`bareos.bsock.lowlevel.LowLevel.argparser_get_bareos_parameter` to retrieve the relevant parameter
+        (with the ``BAREOS_`` prefix removed).
 
         Example:
-        argparser = argparse.ArgumentParser(description='Console to Bareos Director.')
-        DirectorConsole.argparser_add_default_command_line_arguments(argparser)
-        args = argparser.parse_args()
-        bareos_args = DirectorConsole.argparser_get_bareos_parameter(args)
-        director = DirectorConsole(**bareos_args)
 
-        @param argparser: ArgParser
-        @type name: ArgParser
+           .. code-block:: python
+
+              argparser = argparse.ArgumentParser(description='Connect to  Bareos File Daemon.')
+              FileDaemon.argparser_add_default_command_line_arguments(argparser)
+              args = argparser.parse_args()
+              bareos_args = DirectorConsole.argparser_get_bareos_parameter(args)
+              fd = FileDaemon(**bareos_args)
+
+        Args:
+          argparser (ArgParser): ArgParser instance.
         """
         argparser.add_argument(
             "--name",
@@ -96,13 +100,35 @@ class FileDaemon(LowLevel):
         self,
         address="localhost",
         port=9102,
-        dirname=None,
         name=None,
         password=None,
         tls_psk_enable=True,
         tls_psk_require=False,
         tls_version=None,
     ):
+        """\ 
+
+        Args:
+           address (str): Address of the Bareos File Daemon (hostname or IP).
+
+           port (int): Port number of the Bareos File Daemon.
+
+           name (str):
+              Name of the File Daemon.
+
+           password  (str, bareos.util.Password):
+              Password, in cleartext or as Password object.
+
+           tls_psk_enable (boolean): Enable TLS-PSK.
+
+           tls_psk_require (boolean): Enforce using TLS-PSK.
+
+           tls_version (None, ssl.PROTOCOL_TLS, ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2):
+              TLS protocol version to use.
+
+        Raises:
+          bareos.exceptions.ConnectionError: On connections errors.
+        """
         super(FileDaemon, self).__init__()
         self.tls_psk_enable = tls_psk_enable
         self.tls_psk_require = tls_psk_require
@@ -114,7 +140,7 @@ class FileDaemon(LowLevel):
         self.connect(address, port, dirname, ConnectionType.FILEDAEMON, name, password)
         self._init_connection()
 
-    def finalize_authentication(self):
+    def _finalize_authentication(self):
         code, text = self.receive_and_evaluate_response_message()
 
         self.logger.debug(u"code: {0}".format(code))
@@ -133,9 +159,13 @@ class FileDaemon(LowLevel):
             )
 
     def call(self, command):
-        """
-        Replace spaces by char(1) in quoted arguments
-        and then call the original function.
+        """Calls a command on the Bareos File Daemon and returns its result.
+
+        Args:
+           command (str or list): Command to execute. Best provided as a list.
+        
+        Returns:
+            bytes: Result received from the File Daemon.
         """
         if isinstance(command, list):
             cmdlist = command

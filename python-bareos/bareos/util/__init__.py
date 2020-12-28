@@ -17,7 +17,12 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# __all__ = [ "bconsole" ]
+"""
+Bareos utility classes.
+"""
+
 from bareos.util.bareosbase64 import BareosBase64
 from bareos.util.password import Password
 from bareos.util.path import Path
+
+__all__ = [ "BareosBase64", "Password", "Path" ]

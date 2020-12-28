@@ -17,15 +17,16 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-"""
-Communicates with the bareos-director
-
-Legacy, use DirectorConsole instead.
-"""
+"""Deprecated, use :py:class:`bareos.bsock.DirectorConsole` instead."""
 
 from bareos.bsock.directorconsole import DirectorConsole
 
-
 class BSock(DirectorConsole):
+    """Communicates with the bareos-director.
+
+    :deprecated: 15.2.0
+
+    Deprecated, use :py:class:`bareos.bsock.DirectorConsole` instead.
+    """
     def __init__(self, *args, **kwargs):
         super(BSock, self).__init__(*args, **kwargs)

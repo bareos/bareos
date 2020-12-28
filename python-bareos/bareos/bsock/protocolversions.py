@@ -17,8 +17,14 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""
+Bareos Protocol Versions.
+"""
 
 class ProtocolVersions(object):
+    """
+    Bareos Protocol Versions.
+    """
 
     bareos_12_4 = 1
     bareos_18_2 = 2
