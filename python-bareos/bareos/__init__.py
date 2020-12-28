@@ -17,7 +17,9 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# __all__ = [ "bconsole" ]
+"""
+`python-bareos` module.
+"""
 
 import os.path
 
@@ -37,5 +39,5 @@ else:
 
 from bareos.exceptions import *
 from bareos.util.password import Password
-import bareos.util
-import bareos.bsock
+
+__all__ = [ "bsock", "exceptions", "util", "Password" ]
