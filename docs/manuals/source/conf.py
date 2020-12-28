@@ -39,6 +39,7 @@
 import os
 import sys
 
+sys.path.insert(0, os.path.abspath("../../../python-bareos/"))
 sys.path.insert(0, os.path.abspath("./_extensions"))
 
 import datetime
@@ -84,7 +85,7 @@ rst_epilog = """
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-# needs_sphinx = '1.0'
+needs_sphinx = '3.1'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -93,9 +94,14 @@ extensions = [
     "bareos-ext",
     "limitation",
     "sphinx_issues",
+    'sphinx.ext.autodoc',  # Core Sphinx library for auto html doc generation from docstrings
     "sphinx.ext.autosectionlabel",
+    'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
     "sphinx.ext.coverage",
+    'sphinx.ext.intersphinx',  # Link to other project's documentation (see mapping below)
+    'sphinx.ext.napoleon',
     "sphinx.ext.todo",
+    'sphinx.ext.viewcode',  # Add a link to the Python source code for classes, functions etc.
     "sphinxcontrib.actdiag",
     "sphinxcontrib.blockdiag",
     "sphinxcontrib.nwdiag",
@@ -108,16 +114,46 @@ extensions = [
 #    'limitation',
 # extensions.append('limitation')
 
+#
+# sphinx_issues
+#
+issues_github_path = "bareos/bareos"
+# issues_uri = 'https://bugs.bareos.org/view.php?id={issue}'
+# issues_pr_uri = 'https://github.com/bareos/bareos/pull/{pr}'
+
+#
+# sphinx.ext.autodoc
+#
+
+# python:
+# Both the class and the __init__ method’s docstring are concatenated and inserted.
+autoclass_content = "both"
+
+#
+# sphinx.ext.autosectionlabel
+#
 
 # True to prefix each section label with the name of the document it is in, followed by a colon.
 # For example, index:Introduction for a section called Introduction that appears in document index.rst.
 # Useful for avoiding ambiguity when the same section heading appears in different documents.
 autosectionlabel_prefix_document = True
 
-issues_github_path = "bareos/bareos"
-# issues_uri = 'https://bugs.bareos.org/view.php?id={issue}'
-# issues_pr_uri = 'https://github.com/bareos/bareos/pull/{pr}'
+#
+# sphinx.ext.autosummary
+#
 
+autosummary_generate = True  # Turn on sphinx.ext.autosummary
+#autosummary_imported_members = True
+#autosummary_generate_overwrite = True
+
+#
+# sphinx.ext.intersphinx
+#
+
+# Mappings for sphinx.ext.intersphinx. Projects have to have Sphinx-generated doc! (.inv file)
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3/", None),
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -150,6 +186,10 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
+
+#
+# sphinx.ext.todo
+#
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
