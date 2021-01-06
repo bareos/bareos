@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,19 @@ class TASK_TYPE(object):
 
     def __setattr__(self, *_):
         raise Exception("class TASK_TYPE is read only")
+
+    @staticmethod
+    def to_str(value):
+        m = {
+            TASK_TYPE.UNDEFINED: "UNDEFINED",
+            TASK_TYPE.DOWNLOADED: "DOWNLOADED",
+            TASK_TYPE.TEMP_FILE: "TEMP_FILE",
+            TASK_TYPE.STREAM: "STREAM",
+        }
+        try:
+            return m[value]
+        except:
+            return "TASK_TYPE???"
 
 
 def parse_options_bucket(name, options):
@@ -104,9 +117,16 @@ class BucketExplorer(ProcessBase):
 
             self.info_message('Exploring bucket "%s"' % (bucket.name,))
 
-            self._generate_tasks_for_bucket_objects(
-                self.driver.iterate_container_objects(bucket)
-            )
+            try:
+                self._generate_tasks_for_bucket_objects(
+                    self.driver.iterate_container_objects(bucket)
+                )
+            except Exception as e:
+                self.error_message(
+                    "Error iterating over container objects (%s)" % str(e)
+                )
+                self.abort_message()
+                break
 
     def _generate_tasks_for_bucket_objects(self, object_iterator):
         for obj in object_iterator:
