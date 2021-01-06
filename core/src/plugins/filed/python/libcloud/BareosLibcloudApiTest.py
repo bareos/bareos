@@ -80,6 +80,11 @@ if __name__ == "__main__":
     last_run = datetime.datetime.fromtimestamp(0)
     last_run = last_run.replace(tzinfo=None)
 
+    if BareosLibcloudApi.probe_driver(options) == "failed":
+        exit(1)
+
     api = BareosLibcloudApi(options, last_run, tmp_dir_path)
     run(api)
+
     api.shutdown()
+    exit(0)

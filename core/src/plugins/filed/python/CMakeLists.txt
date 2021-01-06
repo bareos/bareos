@@ -91,6 +91,14 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
       ENVIRONMENT
       PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/test/:${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/pyfiles
   )
+  add_test(
+    NAME bareos-libcloud-api-test
+    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/libcloud/BareosLibcloudApiTest.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/libcloud
+  )
+  set_property(
+    TEST bareos-libcloud-api-test PROPERTY ENVIRONMENT PYTHONPATH=./testing
+  )
 endif()
 
 if(Python2_FOUND)
