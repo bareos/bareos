@@ -85,7 +85,9 @@ rst_epilog = """
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = '3.1'
+# autosummary :recursive: requires Sphinx >= 3.1.
+# For now, we use a workaround to use autosummary without :recursive:.
+#needs_sphinx = '3.1'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
