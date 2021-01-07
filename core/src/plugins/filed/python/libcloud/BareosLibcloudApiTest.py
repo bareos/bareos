@@ -42,6 +42,7 @@ def create_options():
 
 
 def run(api: BareosLibcloudApi):
+    counter = 0
     active = True
     while active:
         worker_result = api.check_worker_messages()
@@ -57,6 +58,7 @@ def run(api: BareosLibcloudApi):
             if current_backup_task != None:
                 current_backup_task["skip_file"] = False
                 current_backup_task["stream_length"] = 0
+                counter += 1
 
                 print(
                     "Current File: %s/%s (%s)"
@@ -71,6 +73,7 @@ def run(api: BareosLibcloudApi):
                 active = False
             else:
                 sleep(0.01)
+    return counter
 
 
 if __name__ == "__main__":
@@ -84,7 +87,9 @@ if __name__ == "__main__":
         exit(1)
 
     api = BareosLibcloudApi(options, last_run, tmp_dir_path)
-    run(api)
+    number_of_files = run(api)
 
     api.shutdown()
+    print("Handled: %d files" % number_of_files)
+
     exit(0)
