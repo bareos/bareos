@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@
 
 from bareos.bsock.directorconsole import DirectorConsole
 
+
 class BSock(DirectorConsole):
     """Communicates with the bareos-director.
 
@@ -28,5 +29,6 @@ class BSock(DirectorConsole):
 
     Deprecated, use :py:class:`bareos.bsock.DirectorConsole` instead.
     """
+
     def __init__(self, *args, **kwargs):
         super(BSock, self).__init__(*args, **kwargs)

@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -43,7 +43,7 @@ class DirectorConsole(LowLevel):
     @staticmethod
     def argparser_add_default_command_line_arguments(argparser):
         """Extend argparser with :py:class:`DirectorConsole` specific parameter.
-        
+
         Every command line program must offer a similar set of parameter
         to connect to a Bareos Director.
         This method adds the required parameter to an existing ArgParser instance.
@@ -138,19 +138,19 @@ class DirectorConsole(LowLevel):
         tls_psk_require=False,
         tls_version=None,
     ):
-        """\ 
-        
+        """\
+
         Args:
            address (str): Address of the Bareos Director (hostname or IP).
-           
+
            port (int): Port number of the Bareos Director.
-           
+
            dirname (str, optional):
               Name of the Bareos Director. Deprecated, normally not required.
 
            name (str, optional):
               Name of the Director Console. Leave empty when connecting to the Bareos Default Console.
-           
+
            password  (str, bareos.util.Password):
               Password, in cleartext or as Password object.
 
@@ -162,9 +162,9 @@ class DirectorConsole(LowLevel):
            pam_password (str): Additional user password when using PAM.
 
            tls_psk_enable (boolean): Enable TLS-PSK.
-           
+
            tls_psk_require (boolean): Enforce using TLS-PSK.
-           
+
            tls_version (None, ssl.PROTOCOL_TLS, ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2):
               TLS protocol version to use.
 

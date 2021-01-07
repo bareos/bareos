@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -62,7 +62,7 @@ except ImportError:
 class LowLevel(object):
     """
     Low Level socket methods to communicate with a Bareos Daemon.
-    
+
     This class should not be used by itself,
     only by inherited classed.
     """
@@ -341,9 +341,9 @@ class LowLevel(object):
 
     def receive_and_evaluate_response_message(self):
         """Retrieve a message and evaluate it.
-        
+
         Only used during in the authentication phase.
-        
+
         Returns:
            2-tuple: (code, text).
         """
@@ -487,10 +487,10 @@ class LowLevel(object):
 
         This is,
         header (4 bytes): if
-        
+
             * > 0: length of the following message
             * < 0: Bareos signal
-        
+
         Returns:
            bytearray: Message retrieved via the connection.
 
@@ -784,7 +784,7 @@ class LowLevel(object):
 
     def has_data(self):
         """Is readable data available?
-        
+
         Returns:
             bool: True: if readable data is available.
         """

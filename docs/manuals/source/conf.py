@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -87,7 +87,7 @@ rst_epilog = """
 #
 # autosummary :recursive: requires Sphinx >= 3.1.
 # For now, we use a workaround to use autosummary without :recursive:.
-#needs_sphinx = '3.1'
+# needs_sphinx = '3.1'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -96,14 +96,14 @@ extensions = [
     "bareos-ext",
     "limitation",
     "sphinx_issues",
-    'sphinx.ext.autodoc',  # Core Sphinx library for auto html doc generation from docstrings
+    "sphinx.ext.autodoc",  # Core Sphinx library for auto html doc generation from docstrings
     "sphinx.ext.autosectionlabel",
-    'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
+    "sphinx.ext.autosummary",  # Create neat summary tables for modules/classes/methods etc
     "sphinx.ext.coverage",
-    'sphinx.ext.intersphinx',  # Link to other project's documentation (see mapping below)
-    'sphinx.ext.napoleon',
+    "sphinx.ext.intersphinx",  # Link to other project's documentation (see mapping below)
+    "sphinx.ext.napoleon",
     "sphinx.ext.todo",
-    'sphinx.ext.viewcode',  # Add a link to the Python source code for classes, functions etc.
+    "sphinx.ext.viewcode",  # Add a link to the Python source code for classes, functions etc.
     "sphinxcontrib.actdiag",
     "sphinxcontrib.blockdiag",
     "sphinxcontrib.nwdiag",
@@ -145,8 +145,8 @@ autosectionlabel_prefix_document = True
 #
 
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
-#autosummary_imported_members = True
-#autosummary_generate_overwrite = True
+# autosummary_imported_members = True
+# autosummary_generate_overwrite = True
 
 #
 # sphinx.ext.intersphinx
