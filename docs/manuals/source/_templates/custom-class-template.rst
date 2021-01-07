@@ -10,7 +10,7 @@
 
    {% block methods %}
    {% if methods %}
-   .. rubric:: {{ _('Methods') }}
+   .. rubric:: {{ 'Methods' }}
 
    .. autosummary::
       :nosignatures:
@@ -24,7 +24,7 @@
 
    {% block attributes %}
    {% if attributes %}
-   .. rubric:: {{ _('Attributes') }}
+   .. rubric:: {{ 'Attributes' }}
 
    .. autosummary::
    {% for item in attributes %}
