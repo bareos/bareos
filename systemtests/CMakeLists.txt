@@ -464,10 +464,6 @@ set(dir_password "dir_password")
 set(dumps ${PROJECT_BINARY_DIR}/dumps)
 set(fd_password "fd_password")
 
-if(NOT hostname)
-  cmake_host_system_information(RESULT hostname QUERY HOSTNAME)
-endif()
-
 set(job_email "job_email")
 set(logdir "log")
 set(mon_dir_password "mon_dir_password")

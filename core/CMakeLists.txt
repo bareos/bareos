@@ -402,8 +402,6 @@ set(CMAKE_INSTALL_RPATH "${libdir}")
 
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-site_name(hostname)
-
 set(dbdriver sqlite3)
 
 # manual definitions
