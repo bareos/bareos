@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Added
 
 ### Changed
+- scripts: cleaned up code for postgresql db creation [PR #709]
 
 ### Deprecated
 

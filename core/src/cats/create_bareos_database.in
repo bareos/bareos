@@ -102,33 +102,9 @@ case ${db_type} in
       fi
       ;;
    postgresql)
-      #
       # use SQL_ASCII to be able to put any filename into
       # the database even those created with unusual character sets
-      PSQLVERSION=`PGOPTIONS='--client-min-messages=warning' psql -d template1 -c 'SELECT version()' $* 2>/dev/null | \
-                   awk '/PostgreSQL/ { print $2 }' | \
-                   cut -d '.' -f 1,2`
-
-      if [ -z "${PSQLVERSION}" ]; then
-         echo "Unable to determine PostgreSQL version."
-         exit 1
-      fi
-
-      #
-      # Note, LC_COLLATE and LC_TYPE are needed on 8.4 and beyond, but are not implemented in 8.3 or below.
-      # This must be updated for future versions of PostgreSQL
-      #
-      case ${PSQLVERSION} in
-         9.*|10.*|11.*|12.*)
-	    ENCODING="ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
-            ;;
-         8.[456789])
-	    ENCODING="ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
-            ;;
-         *)
-	    ENCODING="ENCODING 'SQL_ASCII'"
-            ;;
-      esac
+      ENCODING="ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
 
       PGOPTIONS='--client-min-messages=warning' psql -f - -d template1 $* << END-OF-DATA
 \set ON_ERROR_STOP on
