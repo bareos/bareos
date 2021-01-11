@@ -784,6 +784,7 @@ message("Configuration on ${NOW} : ")
 message(" ")
 
 message("   Host:                         ${host} -- ${PLATFORM} ${DISTVER} ")
+message("   Hostname:                     ${hostname} ")
 message(
   "   Bareos version:               ${BAREOS} ${BAREOS_FULL_VERSION} (${DATE}) "
 )

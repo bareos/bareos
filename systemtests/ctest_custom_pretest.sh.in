@@ -29,21 +29,21 @@ if ! @BAREOS_DIR_TO_TEST@ -? 2>&1 | grep Version >/dev/null; then
 fi
 
 hostname=@hostname@
-echo -n "PRETEST: checking configured hostname ..."
+echo -n "PRETEST: checking configured hostname ($hostname) ... "
 if [ "$hostname" != "localhost" \
   -a "$hostname" != "127.0.0.1" \
   -a "$hostname" != "::1" ]; then
   if [ "$hostname" != "$(hostname)" ]; then
-    echo "current hostname is different ($hostname:$(hostname))"
-    echo "   please run cmake again"
+    echo "current hostname is different ($(hostname))"
+    echo "   please run cmake again, probably after removing CMakeCache.txt"
     exit 1
   fi
 fi
-echo "OK ($hostname)"
+echo "OK"
 
 postgresql=@postgresql@
 if [ -n "$postgresql" ]; then
-  echo -n "PRETEST: checking postgresql connection ..."
+  echo -n "PRETEST: checking postgresql connection ... "
   if ! psql postgres <<< "SELECT version()" 2>&1 >/dev/null; then
     echo "could not connect postgresql server"
     exit 1
@@ -54,7 +54,7 @@ fi
 
 mysql=@mysql@
 if [ -n "$mysql" ]; then
-  echo -n "PRETEST: checking mysql connection ..."
+  echo -n "PRETEST: checking mysql connection ... "
   if ! mysql <<< "SELECT version()" 2>&1 >/dev/null; then
     echo "could not connect mysql server"
     exit 1
