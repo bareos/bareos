@@ -11,12 +11,12 @@ password = configRegistry.get('bareos/subscription/password', '')
 
 if username and password:
 
-    bareos_major_version  = @BAREOS_VERSION_MAJOR@.@BAREOS_VERSION_MINOR@
+    bareos_version  = @BAREOS_VERSION_MAJOR@
 
     ucs_version = configRegistry.get('version/version')
     bareos_univention_dist = 'Univention_{version}'.format(version=ucs_version)
 
-    bareos_com_url = "https://{username}:{password}@download.bareos.com/bareos/release/{version}/{dist}".format(username=quote(username), password=password, version=bareos_major_version, dist=bareos_univention_dist)
+    bareos_com_url = "https://{username}:{password}@download.bareos.com/bareos/release/{version}/{dist}".format(username=quote(username), password=password, version=bareos_version, dist=bareos_univention_dist)
     try:
         r = requests.get("{baseurl}/Release".format(baseurl=bareos_com_url))
         if r.status_code == 200:
@@ -35,7 +35,7 @@ if username and password:
                 print "# 'bareos/subscription/password'."
             elif r.status_code == 404:
                 print "# This Bareos version has not been released for your"
-                print "# Specific version of UCS."
+                print "# specific version of UCS."
             else:
                 print "# An unexpected error has occured while contacting"
                 print "# server download.bareos.com"
