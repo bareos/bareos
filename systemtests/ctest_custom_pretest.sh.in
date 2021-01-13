@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -28,9 +28,22 @@ if ! @BAREOS_DIR_TO_TEST@ -? 2>&1 | grep Version >/dev/null; then
     exit 1
 fi
 
+hostname=@hostname@
+echo -n "PRETEST: checking configured hostname ($hostname) ... "
+if [ "$hostname" != "localhost" \
+  -a "$hostname" != "127.0.0.1" \
+  -a "$hostname" != "::1" ]; then
+  if [ "$hostname" != "$(hostname)" ]; then
+    echo "current hostname is different ($(hostname))"
+    echo "   please run cmake again, probably after removing CMakeCache.txt"
+    exit 1
+  fi
+fi
+echo "OK"
+
 postgresql=@postgresql@
 if [ -n "$postgresql" ]; then
-  echo -n "PRETEST: checking postgresql connection ..."
+  echo -n "PRETEST: checking postgresql connection ... "
   if ! psql postgres <<< "SELECT version()" 2>&1 >/dev/null; then
     echo "could not connect postgresql server"
     exit 1
@@ -41,7 +54,7 @@ fi
 
 mysql=@mysql@
 if [ -n "$mysql" ]; then
-  echo -n "PRETEST: checking mysql connection ..."
+  echo -n "PRETEST: checking mysql connection ... "
   if ! mysql <<< "SELECT version()" 2>&1 >/dev/null; then
     echo "could not connect mysql server"
     exit 1

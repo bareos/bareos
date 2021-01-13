@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -464,10 +464,6 @@ set(dir_password "dir_password")
 set(dumps ${PROJECT_BINARY_DIR}/dumps)
 set(fd_password "fd_password")
 
-if(NOT hostname)
-  cmake_host_system_information(RESULT hostname QUERY HOSTNAME)
-endif()
-
 set(job_email "job_email")
 set(logdir "log")
 set(mon_dir_password "mon_dir_password")
@@ -669,7 +665,7 @@ endif()
 
 check_pymodule_available(3 fastapi)
 check_pymodule_available(3 uvicorn)
-find_program (CURL curl)
+find_program(CURL curl)
 
 # python-restapi-test does not work on installed files and needs some modules
 if(PYTHON_EXECUTABLE
@@ -683,7 +679,6 @@ if(PYTHON_EXECUTABLE
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-restapi")
 endif()
-
 
 bareosfindlibrary("gtest")
 if(GTEST_FOUND AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
