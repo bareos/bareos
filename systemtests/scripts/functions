@@ -113,17 +113,23 @@ setup_data()
 {
   data_dir="${tmp}/data"
 
+  # gnu tar is required
+  if [ "$(uname -s)" == SunOS ]; then
+    GTAR='gtar'
+  else
+    GTAR='tar'
+  fi
+
   [ -d "$data_dir" ] || mkdir "$data_dir"
   echo "$data_dir" >"$tmp/file-list"
 
-  for tar in "../../data/small.tgz" "../../data/weird-files.tar.gz"; do
-   if [ ! -f "$tar" ]; then
-    set_error "setup_data: $tar not found."
+  for tarfile in "../../data/small.tgz" "../../data/weird-files.tar.gz"; do
+   if [ ! -f "$tarfile" ]; then
+    set_error "setup_data: $tarfile not found."
     exit 1
    fi
-   tar --directory="$data_dir" -xf "$tar" || exit 1
+   $GTAR --directory="$data_dir" -xf "$tarfile" || exit 1
   done
-
 
   return 0
 }
