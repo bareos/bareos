@@ -36,7 +36,6 @@ if [ "$hostname" != "localhost" \
   if [ "$hostname" != "$(hostname)" ]; then
     echo "current hostname is different ($(hostname))"
     echo "   please run cmake again, probably after removing CMakeCache.txt"
-    exit 1
   fi
 fi
 echo "OK"
