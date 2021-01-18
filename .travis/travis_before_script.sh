@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -53,10 +53,7 @@ printf 'deb file:%s /\n' $PWD > /tmp/bareos.list
 sudo cp /tmp/bareos.list /etc/apt/sources.list.d/bareos.list
 cd -
 
-PKGS="bareos bareos-database-$DB"
-if [ "${BUILD_WEBUI:-}" ]; then
-    PKGS="$PKGS bareos-webui"
-fi
+PKGS="bareos bareos-database-$DB bareos-webui"
 print_header "install Bareos packages: $PKGS"
 sudo apt-get -qq update --allow-insecure-repositories || true
 sudo apt-get install -y --allow-unauthenticated $PKGS
