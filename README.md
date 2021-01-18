@@ -1,8 +1,6 @@
 # <img src="https://raw.githubusercontent.com/bareos/bareos/master/webui/public/img/bareos.png" alt="Bareos" />
 
-
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos/branches)
-
+[![Build Status](https://travis-ci.com/bareos/bareos.svg?branch=master)](https://travis-ci.com/bareos/bareos/branches)
 
 ### Bareos
 
