@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -161,6 +161,16 @@ if(Python3_FOUND)
       "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/test"
       LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../../lib
   )
+  add_test(
+    NAME python-simple-test-example
+    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/test/simple-test-example.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test
+  )
+  set_property(
+    # add current directory for documentation only
+    TEST python-simple-test-example PROPERTY ENVIRONMENT PYTHONPATH=./
+  )
+  set_property(TEST python-simple-test-example PROPERTY DISABLED true)
 endif()
 
 set(PYFILES
