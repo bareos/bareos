@@ -21,11 +21,23 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 macro(bareos_gtest_add_tests testname)
+  set(options OPTIONAL DISABLE)
+  cmake_parse_arguments(
+    BAREOS_GTEST_ADD_TESTS "${options}" "${oneValueArgs}" "${multiValueArgs}"
+    ${ARGN}
+  )
   gtest_add_tests(
     TARGET ${testname}
     TEST_PREFIX gtest:
     TEST_LIST found_tests
   )
+  if(BAREOS_GTEST_ADD_TESTS_DISABLE)
+    message("DISABELING ${found_tests}")
+    set_tests_properties(${found_tests} PROPERTIES DISABLED TRUE)
+  else()
+    message("NOT DISABELING ${found_tests}")
+  endif()
+
   set_tests_properties(${found_tests} PROPERTIES TIMEOUT 120)
   if(HAVE_WIN32)
     set_tests_properties(
@@ -35,7 +47,7 @@ macro(bareos_gtest_add_tests testname)
 endmacro() # bareos_gtest_add_tests
 
 macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
-  set(options SKIP_GTEST)
+  set(options SKIP_GTEST DISABLE)
   set(multiValueArgs ADDITIONAL_SOURCES LINK_LIBRARIES COMPILE_DEFINITIONS)
   cmake_parse_arguments(
     BAREOS_ADD_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
@@ -51,8 +63,14 @@ macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
   target_compile_definitions(
     ${BAREOS_ADD_TEST_TESTNAME} PRIVATE ${BAREOS_ADD_TEST_COMPILE_DEFINITIONS}
   )
+  if(BAREOS_ADD_TEST_DISABLE)
+    set(disable "DISABLE")
+  else()
+    set(disable "")
+  endif()
+
   if(NOT BAREOS_ADD_TEST_SKIP_GTEST)
-    bareos_gtest_add_tests(${BAREOS_ADD_TEST_TESTNAME})
+    bareos_gtest_add_tests(${BAREOS_ADD_TEST_TESTNAME} ${disable})
   endif()
 endmacro() # bareos_add_test
 
@@ -370,12 +388,16 @@ if(HAVE_EXECINFO_H
   )
 endif() # HAVE_EXECINFO_H ..
 
-if(GMOCK_FOUND
-   AND NOT client-only
-   AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS"
-)
+if(GMOCK_FOUND AND NOT client-only)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS") # disable on solaris
+    set(disable "DISABLE")
+  else()
+    set(disable "")
+  endif()
   bareos_add_test(
-    sd_reservation LINK_LIBRARIES ${LINK_LIBRARIES} ${GMOCK_LIBRARIES}
+    sd_reservation
+    ${disable}
+    LINK_LIBRARIES ${LINK_LIBRARIES} ${GMOCK_LIBRARIES}
   )
 endif()
 
