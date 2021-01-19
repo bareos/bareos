@@ -72,11 +72,7 @@ else()
 endif()
 
 if(NOT hostname)
-  if(${CMAKE_HOST_SOLARIS})
-    site_name(hostname)
-  else()
-    cmake_host_system_information(RESULT hostname QUERY HOSTNAME)
-  endif()
+  site_name(hostname)
 endif()
 
 if(BUILD_BAREOS_BINARIES)
