@@ -35,8 +35,8 @@ PIDFile=@piddir@/bareos-dir.@dir_port@.pid
 ExecStartPre=@sbindir@/bareos-dir -t -f
 ExecStart=@sbindir@/bareos-dir
 SuccessExitStatus=0 1 15
-# This daemon should be able to reload the conf file
-#ExecReload=/sbin/killproc -p @piddir@/bareos-dir.pid -HUP @sbindir@/bareos-dir
+ExecReload=@sbindir@/bareos-dir -t -f
+ExecReload=/bin/kill -HUP $MAINPID
 #Restart=on-failure
 # Allow unlimited restarts,
 # required for automatic restarting on Univention Corporate Servers (UCS).
