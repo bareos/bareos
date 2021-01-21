@@ -564,6 +564,7 @@ set(SYSTEM_TESTS
     bscan
     bconsole-status-client
     config-syntax-crash
+    copy-archive-job
     copy-bscan
     copy-remote-bscan
     deprecation

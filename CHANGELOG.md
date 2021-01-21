@@ -15,6 +15,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Package **bareos-database-postgresql**: add recommendation for package **dbconfig-pgsql**.
 - Adapt the init scripts for some platform to not refer to a specific (outdated) configuration file, but to use the default config file instead.
 - scripts: cleaned up code for postgresql db creation [PR #709]
+- Change Copy Job behaviour regarding Archive Jobs [PR #717]
 
 ### Deprecated
 

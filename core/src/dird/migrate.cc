@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -195,7 +195,7 @@ static const char* sql_pool_time
 static const char* sql_jobids_of_pool_uncopied_jobs
     = "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
       " WHERE Pool.Name = '%s' AND Pool.PoolId = Job.PoolId"
-      " AND Job.Type = 'B' AND Job.JobStatus IN ('T','W')"
+      " AND Job.Type IN ('B','A') AND Job.JobStatus IN ('T','W')"
       " AND Job.jobBytes > 0"
       " AND Job.JobId NOT IN"
       " (SELECT PriorJobId FROM Job WHERE"
@@ -1361,7 +1361,8 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
    * Make sure this job was not already migrated
    */
   if (jcr->impl->previous_jr.JobType != JT_BACKUP
-      && jcr->impl->previous_jr.JobType != JT_JOB_COPY) {
+      && jcr->impl->previous_jr.JobType != JT_JOB_COPY
+      && jcr->impl->previous_jr.JobType != JT_ARCHIVE) {
     Jmsg(jcr, M_INFO, 0,
          _("JobId %s already %s probably by another Job. %s stopped.\n"),
          edit_int64(jcr->impl->previous_jr.JobId, ed1),
