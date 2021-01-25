@@ -1,4 +1,0 @@
-@scriptdir@/bareos
-@scriptdir@/bareos-ctl-*
-/usr/sbin/btestls
-@confdir@/bareos-regress.conf

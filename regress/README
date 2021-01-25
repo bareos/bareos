@@ -17,8 +17,6 @@ bareos-regress package
 When using the bareos-regress package,
 the software is already preconfigured to test bareos,
 provided by the normal install packages.
-The Bareos packages include a package that provide the required configuration:
-bareos-regress-config
 
   # as root: stop all running bareos daemon
 
@@ -42,17 +40,14 @@ Local Build
 get sources from github
 -----------------------
 
-  # get Bareos core
-  git clone https://github.com/bareos/bareos-regress
-
-  # get bareos-regress
-  git clone https://github.com/bareos/bareos-regress
+  # get Bareos
+  git clone https://github.com/bareos/bareos
 
 To set it up, create your personal configuration file, by
 copying prototype.conf to config or simply editing prototype.conf
 directly then copying it to the file config.
 
-  cd bareos-regress
+  cd bareos/regress
   cp prototype.conf config
 
 You must end up with a file named config in the main regress

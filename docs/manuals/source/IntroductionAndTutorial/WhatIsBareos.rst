@@ -117,7 +117,6 @@ bareos-database-mysql                Libs and tools for mysql catalog
 bareos-database-postgresql           Libs and tools for postgresql catalog
 bareos-database-sqlite3              Libs and tools for sqlite3 catalog
 bareos-database-tools                Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
-bareos-devel                         Devel headers
 bareos-director                      Bareos Director daemon
 bareos-director-python-plugin        Python plugin for Bareos Director daemon
 bareos-filedaemon                    Bareos File daemon (backup and restore client)
@@ -125,7 +124,6 @@ bareos-filedaemon-ceph-plugin        CEPH plugin for Bareos File daemon
 bareos-filedaemon-glusterfs-plugin   GlusterFS plugin for Bareos File daemon
 bareos-filedaemon-ldap-python-plugin LDAP Python plugin for Bareos File daemon
 bareos-filedaemon-python-plugin      Python plugin for Bareos File daemon
-bareos-regress-config                Required files for bareos-regress
 bareos-storage                       Bareos Storage daemon
 bareos-storage-ceph                  CEPH support for the Bareos Storage daemon
 bareos-storage-droplet               Object Storage support (through libdroplet) for the Bareos Storage daemon

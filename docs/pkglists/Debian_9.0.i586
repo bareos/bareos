@@ -11,7 +11,6 @@ i386/bareos-database-postgresql
 i386/bareos-database-sqlite3
 i386/bareos-database-tools
 i386/bareos-dbg
-i386/bareos-devel
 i386/bareos-director
 i386/bareos-director-python-plugins-common
 i386/bareos-director-python2-plugin
@@ -24,7 +23,6 @@ i386/bareos-filedaemon-percona-xtrabackup-python-plugin
 i386/bareos-filedaemon-python-plugins-common
 i386/bareos-filedaemon-python2-plugin
 i386/bareos-filedaemon-python3-plugin
-i386/bareos-regress-config
 i386/bareos-storage
 i386/bareos-storage-ceph
 i386/bareos-storage-fifo
