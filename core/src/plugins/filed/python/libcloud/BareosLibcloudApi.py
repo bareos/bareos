@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -50,6 +50,15 @@ class BareosLibcloudApi(object):
             return "success"
         return "failed"
 
+    @staticmethod
+    def redirect_stdout_stderr():
+        if sys.stdout != None:
+            sys.stdout.close()
+        if sys.stderr != None:
+            sys.stderr.close()
+        sys.stdout = open("/dev/null", "w")
+        sys.stderr = open("/dev/null", "w")
+
     def __init__(self, options, last_run, tmp_dir_path):
         self.tmp_dir_path = tmp_dir_path + "/" + str(uuid.uuid4())
         self.count_worker_ready = 0
@@ -87,6 +96,14 @@ class BareosLibcloudApi(object):
             )
             for i in range(self.number_of_worker)
         ]
+
+        try:
+            BareosLibcloudApi.redirect_stdout_stderr()
+        except Exception as e:
+            jobmessage(
+                M_ERROR, "Could not redirect stdout and/or stderr: %s" % (str(e))
+            )
+            raise
 
         jobmessage(M_INFO, "Starting BucketExplorer")
         try:
@@ -219,5 +236,9 @@ class BareosLibcloudApi(object):
     def __del__(self):
         try:
             self._remove_tmp_dir()
+            if sys.stdout != None:
+                sys.stdout.close()
+            if sys.stderr != None:
+                sys.stderr.close()
         except:
             pass
