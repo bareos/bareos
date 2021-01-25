@@ -24,7 +24,6 @@
 
 
 from bareosfd import *
-from bareos_fd_consts import *
 import os
 from subprocess import *
 from  BareosFdPluginBaseclass import *
@@ -35,14 +34,14 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
     '''
         Plugin for backing up all mysql databases found in a specific mysql server
     '''       
-    def __init__(self, context, plugindef):
-        BareosFdPluginBaseclass.__init__(self, context, plugindef)
+    def __init__(self, plugindef):
+        BareosFdPluginBaseclass.__init__(self, plugindef)
         self.file=None
 
-    def parse_plugin_definition(self,context, plugindef):
+    def parse_plugin_definition(self, plugindef):
         '''
         '''
-        BareosFdPluginBaseclass.parse_plugin_definition(self, context, plugindef)
+        BareosFdPluginBaseclass.parse_plugin_definition(self, plugindef)
 
         # mysql host and credentials, by default we use localhost and root and
         # prefer to have a my.cnf with mysql credentials
@@ -85,7 +84,7 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
             self.databases = self.options['db'].split(',')
         # Otherwise we backup all existing databases
         else:
-            showDbCommand = "mysql %s -B -N -e 'show databases'" %self.mysqlconnect
+            showDbCommand = "mysql %s -B -N -e 'show databases'" % self.mysqlconnect
             showDb = Popen(showDbCommand, shell=True, stdout=PIPE, stderr=PIPE)
             self.databases = showDb.stdout.read().splitlines()
             if 'performance_schema' in self.databases:
@@ -95,111 +94,156 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
             showDb.wait()
             returnCode = showDb.poll()
             if returnCode == None:
-                JobMessage(context, bJobMessageType['M_FATAL'], "No databases specified and show databases failed for unknown reason");
-                DebugMessage(context, 10, "Failed mysql command: '%s'" %showDbCommand)
-                return bRCs['bRC_Error'];
+                JobMessage(
+                    M_FATAL,
+                    "No databases specified and show databases failed for unknown reason"
+                )
+                DebugMessage(
+                    10,
+                    "Failed mysql command: '%s'"
+                    % showDbCommand
+                )
+                return bRC_Error
             if returnCode != 0:
                 (stdOut, stdError) = showDb.communicate()    
-                JobMessage(context, bJobMessageType['M_FATAL'], "No databases specified and show databases failed. %s" %stdError);
-                DebugMessage(context, 10, "Failed mysql command: '%s'" %showDbCommand)
-                return bRCs['bRC_Error'];
+                JobMessage(
+                    M_FATAL,
+                    "No databases specified and show databases failed. %s"
+                    % stdError
+                )
+                DebugMessage(
+                    10,
+                    "Failed mysql command: '%s'"
+                    % showDbCommand
+                )
+                return bRC_Error
 
         if 'ignore_db' in self.options:
-            DebugMessage(context, 100, "databases in ignore list: %s\n" %(self.options['ignore_db'].split(',')));
+            DebugMessage(
+                100,
+                "databases in ignore list: %s\n" 
+                % (self.options['ignore_db'].split(','))
+            )
             for ignored_cur in self.options['ignore_db'].split(','):
                 try:
                     self.databases.remove(ignored_cur)
                 except:
                     pass
-        DebugMessage(context, 100, "databases to backup: %s\n" %(self.databases));
-        return bRCs['bRC_OK'];
+        DebugMessage(
+            100,
+            "databases to backup: %s\n"
+            % (self.databases)
+        )
+        return bRC_OK
 
 
-    def start_backup_file(self,context, savepkt):
+    def start_backup_file(self, savepkt):
         '''
         This method is called, when Bareos is ready to start backup a file
         For each database to backup we create a mysqldump subprocess, wrting to
         the pipe self.stream.stdout
         '''
-        DebugMessage(context, 100, "start_backup called\n");
+        DebugMessage(
+            100,
+            "start_backup called\n"
+        )
         if not self.databases:
-            DebugMessage(context,100,"No databases to backup")
-            JobMessage(context, bJobMessageType['M_ERROR'], "No databases to backup.\n");
-            return bRCs['bRC_Skip']
+            DebugMessage(
+                100,
+                "No databases to backup"
+            )
+            JobMessage(
+                M_ERROR,
+                "No databases to backup.\n"
+            )
+            return bRC_Skip
 
         db = self.databases.pop()
 
-        sizeDbCommand = "mysql %s -B -N -e 'SELECT (SUM(DATA_LENGTH + INDEX_LENGTH)) FROM information_schema.TABLES WHERE TABLE_SCHEMA = \"%s\"'" %(self.mysqlconnect, db)
+        sizeDbCommand = "mysql %s -B -N -e 'SELECT (SUM(DATA_LENGTH + INDEX_LENGTH)) FROM information_schema.TABLES WHERE TABLE_SCHEMA = \"%s\"'" % (self.mysqlconnect, db)
         sizeDb = Popen(sizeDbCommand, shell=True, stdout=PIPE, stderr=PIPE)
         size_curr_db = sizeDb.stdout.read()
         sizeDb.wait()
         sizereturnCode = sizeDb.poll()
 
         statp = StatPacket()
-        if not size_curr_db == "NULL\n":
-            try:
-                statp.size = int(size_curr_db)
-            except ValueError:
-                pass
         savepkt.statp = statp
-        savepkt.fname = "/_mysqlbackups_/"+db+".sql"
-        savepkt.type = bFileType['FT_REG']
+        savepkt.fname = "/_mysqlbackups_/" + db + ".sql"
+        savepkt.type = FT_REG
 
-        dumpcommand = ("%s %s %s %s" %(self.dumpbinary, self.mysqlconnect, db, self.dumpoptions))
-        DebugMessage(context, 100, "Dumper: '" + dumpcommand + "'\n")
+        dumpcommand = ("%s %s %s %s" % (self.dumpbinary, self.mysqlconnect, db, self.dumpoptions))
+        DebugMessage(
+            100,
+            "Dumper: '" + dumpcommand + "'\n"
+        )
         self.stream = Popen(dumpcommand, shell=True, stdout=PIPE, stderr=PIPE)
 
-        JobMessage(context, bJobMessageType['M_INFO'], "Starting backup of " + savepkt.fname + "\n");
-        return bRCs['bRC_OK'];
+        JobMessage(
+            M_INFO,
+            "Starting backup of " + savepkt.fname + "\n"
+        )
+        return bRC_OK
 
 
-    def plugin_io(self, context, IOP):
+    def plugin_io(self, IOP):
         '''
         Called for io operations. We read from pipe into buffers or on restore
         create a file for each database and write into it.
         '''
-        DebugMessage(context, 100, "plugin_io called with " + str(IOP.func) + "\n");
+        DebugMessage(
+            100,
+            "plugin_io called with " + str(IOP.func) + "\n"
+        )
 
-        if IOP.func == bIOPS['IO_OPEN']:
+        if IOP.func == IO_OPEN:
             try:
                 if IOP.flags & (os.O_CREAT | os.O_WRONLY):
                     self.file = open(IOP.fname, 'wb');
             except Exception,msg:
                 IOP.status = -1;
-                DebugMessage(context, 100, "Error opening file: " + IOP.fname + "\n");
+                DebugMessage(
+                    100,
+                    "Error opening file: " + IOP.fname + "\n"
+                )
                 print msg;
-                return bRCs['bRC_Error'];
-            return bRCs['bRC_OK']
+                return bRC_Error
+            return bRC_OK
 
-        elif IOP.func == bIOPS['IO_READ']:
+        elif IOP.func == IO_READ:
             IOP.buf = bytearray(IOP.count)
             IOP.status = self.stream.stdout.readinto(IOP.buf)
             IOP.io_errno = 0
-            return bRCs['bRC_OK']
+            return bRC_OK
         
-        elif IOP.func == bIOPS['IO_WRITE']:
+        elif IOP.func == IO_WRITE:
             try:
                 self.file.write(IOP.buf);
                 IOP.status = IOP.count
                 IOP.io_errno = 0
             except IOError,msg:
                 IOP.io_errno = -1
-                DebugMessage(context, 100, "Error writing data: " + msg + "\n");
-            return bRCs['bRC_OK'];
+                DebugMessage(
+                    100,
+                    "Error writing data: " + msg + "\n"
+                )
+            return bRC_OK
 
-        elif IOP.func == bIOPS['IO_CLOSE']:
+        elif IOP.func == IO_CLOSE:
             if self.file:
                 self.file.close()
-            return bRCs['bRC_OK']
+            return bRC_OK
         
-        elif IOP.func == bIOPS['IO_SEEK']:
-            return bRCs['bRC_OK']
+        elif IOP.func == IO_SEEK:
+            return bRC_OK
         
         else:
-            DebugMessage(context,100,"plugin_io called with unsupported IOP:"+str(IOP.func)+"\n")
-            return bRCs['bRC_OK']
+            DebugMessage(
+                100,
+                "plugin_io called with unsupported IOP:" + str(IOP.func) + "\n"
+            )
+            return bRC_OK
 
-    def end_backup_file(self, context):
+    def end_backup_file(self):
         '''
         Check, if dump was successfull.
         '''
@@ -208,23 +252,34 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         self.stream.wait()
         returnCode = self.stream.poll()
         if returnCode == None:
-            JobMessage(context, bJobMessageType['M_ERROR'], "Dump command not finished properly for unknown reason")
+            JobMessage(
+                M_ERROR,
+                "Dump command not finished properly for unknown reason"
+            )
             returnCode = -99
         else:
-            DebugMessage(context, 100, "end_backup_file() entry point in Python called. Returncode: %d\n" %self.stream.returncode)
+            DebugMessage(
+                100,
+                "end_backup_file() entry point in Python called. Returncode: %d\n" 
+                % self.stream.returncode
+            )
             if returnCode != 0:
                 (stdOut, stdError) = self.stream.communicate()
                 if stdError == None:
                     stdError = ''
-                JobMessage(context, bJobMessageType['M_ERROR'], "Dump command returned non-zero value: %d, message: %s\n" %(returnCode,stdError));
+                JobMessage(
+                    M_ERROR, 
+                    "Dump command returned non-zero value: %d, message: %s\n" 
+                    % (returnCode,stdError)
+                )
             
         if self.databases:
-                return bRCs['bRC_More']
+                return bRC_More
         else:
             if returnCode == 0:
-                return bRCs['bRC_OK'];
+                return bRC_OK
             else:
-                return bRCs['bRC_Error']
+                return bRC_Error
 
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4
