@@ -35,14 +35,14 @@ install(
 
 install(
   FILES bareos bareos-config
-        bareos-config-lib.sh bareos-ctl-funcs
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE
   DESTINATION "${scriptdir}"
 )
 
 install(
-  FILES btraceback.gdb btraceback.dbx btraceback.mdb
+  FILES bareos-config-lib.sh bareos-ctl-funcs
+        btraceback.gdb btraceback.dbx btraceback.mdb
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   DESTINATION "${scriptdir}"
 )
@@ -50,7 +50,7 @@ install(
 if(NOT client-only)
   install(
     FILES mtx-changer disk-changer bareos-explorer bareos-glusterfind-wrapper
-          bareos-ctl-dir bareos-ctl-sd bareos-ctl-funcs
+          bareos-ctl-dir bareos-ctl-sd
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
                 WORLD_READ WORLD_EXECUTE
     DESTINATION "${scriptdir}"
