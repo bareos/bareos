@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,4 +88,4 @@
  */
 #define CopyBits(b, var1, var2) memcpy((var2), (var1), NbytesForBits((b)))
 
-#endif /* BAREOS_LIB_BITS_H_ */
+#endif  // BAREOS_LIB_BITS_H_

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2008-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,8 +23,8 @@
  * Written by Kern Sibbald, February 2008
  */
 
-#ifndef __DLFCN_H_
-#define __DLFCN_H_
+#ifndef BAREOS_WIN32_COMPAT_INCLUDE_DLFCN_H_
+#define BAREOS_WIN32_COMPAT_INCLUDE_DLFCN_H_
 
 #define RTLD_LAZY 0x00001   /* Deferred function binding */
 #define RTLD_NOW 0x00002    /* Immediate function binding */
@@ -38,4 +38,4 @@ void* dlsym(void* handle, const char* name);
 int dlclose(void* handle);
 char* dlerror(void);
 
-#endif /* __DLFCN_H_ */
+#endif  // BAREOS_WIN32_COMPAT_INCLUDE_DLFCN_H_

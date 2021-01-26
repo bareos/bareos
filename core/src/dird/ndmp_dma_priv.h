@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,7 @@
  */
 
 #ifndef BAREOS_DIRD_NDMP_DMA_PRIV_H_
-#define BAREOS_DIRD_NDMP_DMA_PRIV_H_ 1
+#define BAREOS_DIRD_NDMP_DMA_PRIV_H_
 
 namespace directordaemon {
 
@@ -174,4 +174,4 @@ extern "C" int BndmpFhdbAddFile(struct ndmlog* ixlog,
                                 ndmp9_file_stat* fstat);
 
 } /* namespace directordaemon */
-#endif /* BAREOS_DIRD_NDMP_DMA_PRIV_H_ */
+#endif  // BAREOS_DIRD_NDMP_DMA_PRIV_H_

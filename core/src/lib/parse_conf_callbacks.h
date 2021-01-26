@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,7 +20,7 @@
 */
 
 #ifndef BAREOS_LIB_PARSE_CONF_CALLBACKS_H_
-#define BAREOS_LIB_PARSE_CONF_CALLBACKS_H_ 1
+#define BAREOS_LIB_PARSE_CONF_CALLBACKS_H_
 
 struct ResourceItem;
 class BareosResource;
@@ -38,4 +38,4 @@ typedef void (*FreeResourceCb_t)(BareosResource* res, int type);
 typedef void (*ParseConfigBeforeCb_t)(ConfigurationParser&);
 typedef void (*ParseConfigReadyCb_t)(ConfigurationParser&);
 
-#endif /* BAREOS_LIB_PARSE_CONF_CALLBACKS_H_ */
+#endif  // BAREOS_LIB_PARSE_CONF_CALLBACKS_H_

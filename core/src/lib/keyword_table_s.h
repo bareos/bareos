@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,4 +32,4 @@ struct s_kw {
   uint32_t token;
 };
 
-#endif /* BAREOS_LIB_KEYWORD_TABLE_S_H_ */
+#endif  // BAREOS_LIB_KEYWORD_TABLE_S_H_

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,7 +27,7 @@
  */
 
 #ifndef BAREOS_LIB_GENERIC_RES_H_
-#define BAREOS_LIB_GENERIC_RES_H_ 1
+#define BAREOS_LIB_GENERIC_RES_H_
 
 #include "lib/keyword_table_s.h"
 
@@ -65,4 +65,4 @@ static s_kw tapelabels[] = {{"bareos", B_BAREOS_LABEL},
                             {"ibm", B_IBM_LABEL},
                             {NULL, 0}};
 
-#endif /* BAREOS_LIB_GENERIC_RES_H_ */
+#endif  // BAREOS_LIB_GENERIC_RES_H_

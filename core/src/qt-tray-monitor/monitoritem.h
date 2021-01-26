@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef MONITORITEM_H_INCLUDED
-#define MONITORITEM_H_INCLUDED
+#ifndef BAREOS_QT_TRAY_MONITOR_MONITORITEM_H_
+#define BAREOS_QT_TRAY_MONITOR_MONITORITEM_H_
 
 #include <QString>
 #include <QStringList>
@@ -130,4 +130,4 @@ class MonitorItemPrivate {
   MonitorItem::StateEnum state;
 };
 
-#endif  // MONITORITEM_H_INCLUDED
+#endif  // BAREOS_QT_TRAY_MONITOR_MONITORITEM_H_

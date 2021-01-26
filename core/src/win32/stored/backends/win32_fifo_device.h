@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,4 +60,4 @@ class win32_fifo_device : public Device {
 };
 
 } /* namespace storagedaemon */
-#endif /* BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_ */
+#endif  // BAREOS_WIN32_STORED_BACKENDS_WIN32_FIFO_DEVICE_H_

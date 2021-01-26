@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,4 +42,4 @@ BareosSocket* create_new_bareos_socket(int fd);
 std::unique_ptr<TestSockets> create_connected_server_and_client_bareos_socket();
 uint16_t create_unique_socket_number();
 
-#endif /* BAREOS_TESTS_BAREOS_TEST_SOCKETS_H_ */
+#endif  // BAREOS_TESTS_BAREOS_TEST_SOCKETS_H_

@@ -67,7 +67,7 @@
  */
 
 #ifndef BAREOS_INCLUDE_BAREOS_H_
-#define BAREOS_INCLUDE_BAREOS_H_ 1
+#define BAREOS_INCLUDE_BAREOS_H_
 
 #ifdef __cplusplus
 /* Workaround for SGI IRIX 6.5 */
@@ -209,4 +209,4 @@ extern "C" {
 #  undef HAVE_LIBZ /* no good without headers */
 #endif
 
-#endif
+#endif  // BAREOS_INCLUDE_BAREOS_H_

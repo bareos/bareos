@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -24,8 +24,8 @@
  * support.
  */
 
-#ifndef BAREOS_PLUGINS_DIRD_PYTHON_DIR_H_
-#define BAREOS_PLUGINS_DIRD_PYTHON_DIR_H_ 1
+#ifndef BAREOS_PLUGINS_DIRD_PYTHON_PYTHON_DIR_H_
+#define BAREOS_PLUGINS_DIRD_PYTHON_PYTHON_DIR_H_
 
 #define PYTHON_MODULE_NAME bareosdir
 #define PYTHON_MODULE_NAME_QUOTED "bareosdir"
@@ -59,4 +59,4 @@ static plugin_argument plugin_arguments[]
        {NULL, argument_none}};
 
 } /* namespace directordaemon */
-#endif /* BAREOS_PLUGINS_DIRD_PYTHON_DIR_H_ */
+#endif  // BAREOS_PLUGINS_DIRD_PYTHON_PYTHON_DIR_H_

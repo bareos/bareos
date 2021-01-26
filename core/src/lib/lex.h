@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -205,4 +205,4 @@ void LexSetDefaultErrorHandler(LEX* lf);
 void LexSetDefaultWarningHandler(LEX* lf);
 void LexSetErrorHandlerErrorType(LEX* lf, int err_type);
 
-#endif /* BAREOS_LIB_LEX_H_ */
+#endif  // BAREOS_LIB_LEX_H_

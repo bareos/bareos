@@ -79,4 +79,4 @@ uint32_t new_VolSessionId();
 
 } /* namespace storagedaemon */
 
-#endif /* BAREOS_STORED_STORED_H_ */
+#endif  // BAREOS_STORED_STORED_H_

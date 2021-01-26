@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
    Copyright (C) 2009 Free Software Foundation Europe e.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -88,4 +88,4 @@ bool StoreData(JobControlRecord* jcr,
                bool win32_decomp);
 
 } /* namespace filedaemon */
-#endif
+#endif  // BAREOS_FILED_RESTORE_H_

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,8 +21,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_STORED_SD_DEVICE_CONTROL_RECORD_H_
-#define BAREOS_SRC_STORED_SD_DEVICE_CONTROL_RECORD_H_
+#ifndef BAREOS_STORED_SD_DEVICE_CONTROL_RECORD_H_
+#define BAREOS_STORED_SD_DEVICE_CONTROL_RECORD_H_
 
 #include "stored/device_control_record.h"
 
@@ -43,4 +43,4 @@ class StorageDaemonDeviceControlRecord : public DeviceControlRecord {
 
 }  // namespace storagedaemon
 
-#endif  // BAREOS_SRC_STORED_SD_DEVICE_CONTROL_RECORD_H_
+#endif  // BAREOS_STORED_SD_DEVICE_CONTROL_RECORD_H_

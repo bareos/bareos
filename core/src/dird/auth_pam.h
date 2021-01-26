@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,4 +30,4 @@ bool PamAuthenticateUser(BareosSocket* UA_sock,
                          const std::string& passwd,
                          std::string& authenticated_username);
 
-#endif /* BAREOS_DIRD_AUTH_PAM_H_ */
+#endif  // BAREOS_DIRD_AUTH_PAM_H_

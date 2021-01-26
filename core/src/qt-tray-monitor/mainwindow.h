@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef BAREOS_QT_TRAY_MONITOR_MAINWINDOW_H_
+#define BAREOS_QT_TRAY_MONITOR_MAINWINDOW_H_
 
 #include <QMainWindow>
 #include <QApplication>
@@ -90,4 +90,4 @@ class MainWindow : public QMainWindow {
   void refreshItems();
 };
 
-#endif  // MAINWINDOW_H
+#endif  // BAREOS_QT_TRAY_MONITOR_MAINWINDOW_H_

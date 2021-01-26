@@ -148,4 +148,4 @@ var_rc_t var_format(var_t* var,
                     ...);
 const char* var_strerror(var_t* var, var_rc_t rc);
 
-#endif /* BAREOS_LIB_VAR_H_ */
+#endif  // BAREOS_LIB_VAR_H_

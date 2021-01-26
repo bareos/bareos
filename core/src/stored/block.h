@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,7 +27,7 @@
  * Block definitions for Bareos media data format.
  */
 #ifndef BAREOS_STORED_BLOCK_H_
-#define BAREOS_STORED_BLOCK_H_ 1
+#define BAREOS_STORED_BLOCK_H_
 
 namespace storagedaemon {
 
@@ -134,4 +134,4 @@ void SerBlockHeader(DeviceBlock* block);
 
 } /* namespace storagedaemon */
 
-#endif
+#endif  // BAREOS_STORED_BLOCK_H_

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2010-2017 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -122,4 +122,4 @@ extern const struct BareosVersionStrings kBareosVersionStrings;
  *  eliminate the comm time sending to the SD.
  */
 /* #define FD_NO_SEND_TEST 1 */
-#endif /* BAREOS_LIB_VERSION_H_ */
+#endif  // BAREOS_LIB_VERSION_H_

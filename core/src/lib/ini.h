@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2011 Bacula Systems(R) SA
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -236,4 +236,4 @@ const char* ini_get_store_code(int type);
  */
 int IniGetStoreType(const char* key);
 
-#endif
+#endif  // BAREOS_LIB_INI_H_

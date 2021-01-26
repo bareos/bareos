@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,8 +22,8 @@
 /* --                     CONFIGURE SPECIFIED FEATURES                    -- */
 /* ------------------------------------------------------------------------- */
 
-#ifndef __MINGWCONFIG_H
-#define __MINGWCONFIG_H
+#ifndef BAREOS_WIN32_COMPAT_INCLUDE_MINGWCONFIG_H_
+#define BAREOS_WIN32_COMPAT_INCLUDE_MINGWCONFIG_H_
 
 /* Define if you want to use Batch Mode */
 /* #define HAVE_BATCH_FILE_INSERT 1 */
@@ -186,4 +186,4 @@
 /* Define to 1 if you have the `glob' function. */
 #define HAVE_GLOB 1
 
-#endif /* __MINGWNCONFIG_H */
+#endif  // BAREOS_WIN32_COMPAT_INCLUDE_MINGWCONFIG_H_

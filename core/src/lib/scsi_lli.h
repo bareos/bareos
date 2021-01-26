@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,7 @@
  */
 
 #ifndef BAREOS_LIB_SCSI_LLI_H_
-#define BAREOS_LIB_SCSI_LLI_H_ 1
+#define BAREOS_LIB_SCSI_LLI_H_
 
 /*
  * Device Inquiry Response
@@ -179,4 +179,4 @@ bool send_scsi_cmd_page(int fd,
                         void* cmd_page,
                         unsigned int cmd_page_len);
 bool CheckScsiAtEod(int fd);
-#endif /* BAREOS_LIB_SCSI_LLI_H_ */
+#endif  // BAREOS_LIB_SCSI_LLI_H_

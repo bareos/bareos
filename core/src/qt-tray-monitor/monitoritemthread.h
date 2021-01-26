@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef MONITORITEMTHREAD_H_INCLUDED
-#define MONITORITEMTHREAD_H_INCLUDED
+#ifndef BAREOS_QT_TRAY_MONITOR_MONITORITEMTHREAD_H_
+#define BAREOS_QT_TRAY_MONITOR_MONITORITEMTHREAD_H_
 
 #include "tray-monitor.h"
 
@@ -72,4 +72,4 @@ class MonitorItemThread : public QThread {
   void refreshItemsReady();
 };
 
-#endif  // MONITORITEMTHREAD_H_INCLUDED
+#endif  // BAREOS_QT_TRAY_MONITOR_MONITORITEMTHREAD_H_

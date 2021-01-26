@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -190,4 +190,4 @@ const char* crypto_digest_name(DIGEST* digest);
 crypto_digest_t CryptoDigestStreamType(int stream);
 const char* crypto_strerror(crypto_error_t error);
 
-#endif /* BAREOS_LIB_CRYPTO_H_ */
+#endif  // BAREOS_LIB_CRYPTO_H_

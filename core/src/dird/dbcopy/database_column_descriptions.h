@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DBCOPY_DATABASE_COLUMN_DESCRIPTIONS_H_
-#define BAREOS_SRC_DIRD_DBCOPY_DATABASE_COLUMN_DESCRIPTIONS_H_
+#ifndef BAREOS_DIRD_DBCOPY_DATABASE_COLUMN_DESCRIPTIONS_H_
+#define BAREOS_DIRD_DBCOPY_DATABASE_COLUMN_DESCRIPTIONS_H_
 
 #include "include/bareos.h"
 #include "dird/dbcopy/column_description.h"
@@ -67,4 +67,4 @@ class DatabaseColumnDescriptionsMysql : public DatabaseColumnDescriptions {
   DatabaseColumnDescriptionsMysql(BareosDb* db, const std::string& table_name);
 };
 
-#endif  // BAREOS_SRC_DIRD_DBCOPY_DATABASE_COLUMN_DESCRIPTIONS_H_
+#endif  // BAREOS_DIRD_DBCOPY_DATABASE_COLUMN_DESCRIPTIONS_H_

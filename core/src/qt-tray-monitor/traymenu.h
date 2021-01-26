@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef TRAYMONITOR_TRAYMENU_H
-#define TRAYMONITOR_TRAYMENU_H
+#ifndef BAREOS_QT_TRAY_MONITOR_TRAYMENU_H_
+#define BAREOS_QT_TRAY_MONITOR_TRAYMENU_H_
 
 #include <QMenu>
 #include <QWidget>
@@ -41,4 +41,4 @@ class TrayMenu : public QMenu {
  signals:
 };
 
-#endif  // TRAYMONITOR_TRAYMENU_H
+#endif  // BAREOS_QT_TRAY_MONITOR_TRAYMENU_H_

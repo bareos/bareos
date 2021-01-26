@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,9 @@
  * Mockup for Network Utility Routines
  *
  */
+
+#ifndef BAREOS_TESTS_BSOCK_MOCK_H_
+#define BAREOS_TESTS_BSOCK_MOCK_H_
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -126,3 +129,5 @@ BareosSocketMock::~BareosSocketMock()
     src_addr = nullptr;
   }
 }
+
+#endif  // BAREOS_TESTS_BSOCK_MOCK_H_

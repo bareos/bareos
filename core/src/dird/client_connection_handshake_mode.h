@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_DIR_CLIENT_CONNECTION_HANDSHAKE_MODE_H_
-#define BAREOS_DIR_CLIENT_CONNECTION_HANDSHAKE_MODE_H_
+#ifndef BAREOS_DIRD_CLIENT_CONNECTION_HANDSHAKE_MODE_H_
+#define BAREOS_DIRD_CLIENT_CONNECTION_HANDSHAKE_MODE_H_
 
 namespace directordaemon {
 
@@ -32,4 +32,4 @@ enum class ClientConnectionHandshakeMode
 };
 
 } /* namespace directordaemon */
-#endif /* BAREOS_DIR_CLIENT_CONNECTION_HANDSHAKE_MODE_H_ */
+#endif  // BAREOS_DIRD_CLIENT_CONNECTION_HANDSHAKE_MODE_H_

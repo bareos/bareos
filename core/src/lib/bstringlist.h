@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,4 +47,4 @@ class BStringList : public std::vector<std::string> {
   std::string Join(const char* separator) const;
 };
 
-#endif /* BAREOS_LIB_BSTRINGLIST_H_ */
+#endif  // BAREOS_LIB_BSTRINGLIST_H_

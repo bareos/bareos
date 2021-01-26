@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -177,4 +177,4 @@ class chunked_device : public Device {
 
 } /* namespace storagedaemon */
 
-#endif /* BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_ */
+#endif  // BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_

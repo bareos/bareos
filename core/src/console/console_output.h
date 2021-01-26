@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,4 +31,4 @@ void DisableTeeOut();
 void SetTeeFile(FILE* f);
 void CloseTeeFile();
 
-#endif /* BAREOS_CONSOLE_CONSOLE_OUTPUT_H_ */
+#endif  // BAREOS_CONSOLE_CONSOLE_OUTPUT_H_

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,12 +19,12 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_CHECK_FOR_CLEARTEXT_CONNECTION_H_
-#define BAREOS_LIB_CHECK_FOR_CLEARTEXT_CONNECTION_H_
+#ifndef BAREOS_LIB_TRY_TLS_HANDSHAKE_AS_A_SERVER_H_
+#define BAREOS_LIB_TRY_TLS_HANDSHAKE_AS_A_SERVER_H_
 
 class BareosSocket;
 class ConfigurationParser;
 
 bool TryTlsHandshakeAsAServer(BareosSocket* bsock, ConfigurationParser* config);
 
-#endif /* BAREOS_LIB_CHECK_FOR_CLEARTEXT_CONNECTION_H_ */
+#endif  // BAREOS_LIB_TRY_TLS_HANDSHAKE_AS_A_SERVER_H_

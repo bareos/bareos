@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef SYSTEMTRAYICON_H
-#define SYSTEMTRAYICON_H
+#ifndef BAREOS_QT_TRAY_MONITOR_SYSTEMTRAYICON_H_
+#define BAREOS_QT_TRAY_MONITOR_SYSTEMTRAYICON_H_
 
 #include <QSystemTrayIcon>
 
@@ -50,4 +50,4 @@ class SystemTrayIcon : public QSystemTrayIcon {
   void setIconInternal();
 };
 
-#endif  // SYSTEMTRAYICON_H
+#endif  // BAREOS_QT_TRAY_MONITOR_SYSTEMTRAYICON_H_

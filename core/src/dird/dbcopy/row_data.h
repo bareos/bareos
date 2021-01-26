@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_SRC_DIRD_DBCOPY_ROW_DATA_H_
-#define BAREOS_SRC_DIRD_DBCOPY_ROW_DATA_H_
+#ifndef BAREOS_DIRD_DBCOPY_ROW_DATA_H_
+#define BAREOS_DIRD_DBCOPY_ROW_DATA_H_
 
 #include "include/bareos.h"
 #include "cats/column_data.h"
@@ -51,4 +51,4 @@ struct RowData {
   const RowData& operator=(RowData&& rhs) = delete;
 };
 
-#endif  // BAREOS_SRC_DIRD_DBCOPY_ROW_DATA_H_
+#endif  // BAREOS_DIRD_DBCOPY_ROW_DATA_H_

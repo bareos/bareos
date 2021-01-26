@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,6 +24,9 @@
  * Bi-directional pipe structure
  */
 
+#ifndef BAREOS_LIB_BPIPE_H_
+#define BAREOS_LIB_BPIPE_H_
+
 struct btimer_t;
 
 class Bpipe {
@@ -42,3 +45,5 @@ Bpipe* OpenBpipe(char* prog,
                  bool dup_stderr = true);
 int CloseWpipe(Bpipe* bpipe);
 int CloseBpipe(Bpipe* bpipe);
+
+#endif  // BAREOS_LIB_BPIPE_H_

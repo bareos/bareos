@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU Lesser General
@@ -87,4 +87,4 @@ class Tls {
   virtual void SetTcpFileDescriptor(const int& fd) = 0;
 };
 
-#endif /* BAREOS_LIB_TLS_H_ */
+#endif  // BAREOS_LIB_TLS_H_

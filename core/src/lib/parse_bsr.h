@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_STORED_PARSE_BSR_H_
-#define BAREOS_STORED_PARSE_BSR_H_
+#ifndef BAREOS_LIB_PARSE_BSR_H_
+#define BAREOS_LIB_PARSE_BSR_H_
 
 class JobControlRecord;
 
@@ -33,4 +33,4 @@ void DumpBsr(storagedaemon::BootStrapRecord* bsr, bool recurse);
 
 } /* namespace libbareos */
 
-#endif  // BAREOS_STORED_PARSE_BSR_H_
+#endif  // BAREOS_LIB_PARSE_BSR_H_

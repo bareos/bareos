@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,9 @@
  * Kern Sibbald, August 2007
  */
 
+#ifndef BAREOS_WIN32_DIRD_WHO_H_
+#define BAREOS_WIN32_DIRD_WHO_H_
+
 #define APP_NAME "Bareos-dir"
 #define LC_APP_NAME "bareos-dir"
 #define APP_DESC "Bareos Director Service"
@@ -32,3 +35,5 @@
 namespace directordaemon {
 extern void TerminateDird(int sig);
 } /* namespace directordaemon  */
+
+#endif  // BAREOS_WIN32_DIRD_WHO_H_

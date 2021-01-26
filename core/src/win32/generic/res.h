@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,9 @@
  * Kern Sibbald, August 2007
  */
 
+#ifndef BAREOS_WIN32_GENERIC_RES_H_
+#define BAREOS_WIN32_GENERIC_RES_H_
+
 /* Icon definitions */
 #define IDI_BAREOS 100
 #define IDI_IDLE 101
@@ -41,3 +44,5 @@
 /* Dialog definitions */
 #define IDD_ABOUT 201
 #define IDD_STATUS 202
+
+#endif  // BAREOS_WIN32_GENERIC_RES_H_

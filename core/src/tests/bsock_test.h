@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_
-#define BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_
+#ifndef BAREOS_TESTS_BSOCK_TEST_H_
+#define BAREOS_TESTS_BSOCK_TEST_H_
 
 #define HOST "127.0.0.1"
 
@@ -31,4 +31,4 @@ void InitForTest();
 int create_accepted_server_socket(int port);
 BareosSocket* create_new_bareos_socket(int fd);
 
-#endif /* BAREOS_LIB_UNITTESTS_BSOCK_TEST_H_ */
+#endif  // BAREOS_TESTS_BSOCK_TEST_H_

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -101,4 +101,4 @@ class droplet_device : public chunked_device {
   bool d_flush(DeviceControlRecord* dcr) override;
 };
 } /* namespace storagedaemon */
-#endif /* OBJECTSTORE_DEVICE_H */
+#endif  // BAREOS_STORED_BACKENDS_DROPLET_DEVICE_H_

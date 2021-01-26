@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -55,4 +55,4 @@ void StopThreadTimer(btimer_t* wid);
 btimer_t* StartBsockTimer(BareosSocket* bs, uint32_t wait);
 void StopBsockTimer(btimer_t* wid);
 
-#endif /* BAREOS_LIB_BTIMERS_H_ */
+#endif  // BAREOS_LIB_BTIMERS_H_

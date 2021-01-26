@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,8 +21,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_LIB_API_MODE_H_
-#define BAREOS_SRC_LIB_API_MODE_H_
+#ifndef BAREOS_LIB_API_MODE_H_
+#define BAREOS_LIB_API_MODE_H_
 
 enum
 {
@@ -31,4 +31,4 @@ enum
   API_MODE_JSON = 2
 };
 
-#endif  // BAREOS_SRC_LIB_API_MODE_H_
+#endif  // BAREOS_LIB_API_MODE_H_
