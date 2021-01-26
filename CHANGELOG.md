@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix invalid file descriptor issue in the libcloud plugin [PR #702]
 
 ### Added
+- added reload commands to systemd service [PR #694]
 
 ### Changed
 
