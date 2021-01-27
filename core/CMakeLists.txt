@@ -849,9 +849,6 @@ message(
   "   readline support:             ROOT_DIR:${Readline_ROOT_DIR} INCLUDE_DIR:${Readline_INCLUDE_DIR} LIBRARY:${Readline_LIBRARY}
  "
 )
-message(
-  "   TCP Wrappers support:         ${WRAP_FOUND} ${WRAP_LIBRARIES} ${WRAP_INCLUDE_DIRS} "
-)
 message("   TLS support:                  ${have_tls} ")
 message("   Encryption support:           ${have_crypto} ")
 message(

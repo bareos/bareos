@@ -107,9 +107,6 @@ Then you can edit the **config** file directly.
     #WHICHDB="--with-${DBTYPE}=${SQLITE3_DIR}"
     WHICHDB="--with-${DBTYPE}"
 
-    # Set this to "--with-tcp-wrappers" or "--without-tcp-wrappers"
-    TCPWRAPPERS="--with-tcp-wrappers"
-
     # Set this to "" to disable OpenSSL support, "--with-openssl=yes"
     # to enable it, or provide the path to the OpenSSL installation,
     # eg "--with-openssl=/usr/local"

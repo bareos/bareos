@@ -15,29 +15,13 @@ Bareos Security Issues
 
 -  You should restrict access to the Bareos configuration files, so that the passwords are not world-readable. The Bareos daemons are password protected using CRAM-MD5 (i.e. the password is not sent across the network). This will ensure that not everyone can access the daemons. It is a reasonably good protection, but can be cracked by experts.
 
--  If you are using the recommended ports 9101, 9102, and 9103, you will probably want to protect these ports from external access using a firewall and/or using tcp wrappers (etc/hosts.allow).
-
--  By default, all data that is sent across the network is unencrypted. However, Bareos does support TLS (transport layer security) and can encrypt transmitted data. Please read the :ref:`TLS (SSL) Communications Encryption <CommEncryption>` section of this manual.
+-  If you are using the recommended ports 9101, 9102, and 9103, you will probably want to protect these ports from external access using a firewall.
 
 -  You should ensure that the Bareos working directories are readable and writable only by the Bareos daemons.
-
--  The default Bareos :command:`grant_bareos_privileges` script grants all permissions to use the MySQL (and PostgreSQL) database without a password. If you want security, please tighten this up!
 
 -  Don’t forget that Bareos is a network program, so anyone anywhere on the network with the console program and the Director’s password can access Bareos and the backed up data.
 
 -  You can restrict what IP addresses Bareos will bind to by using the appropriate DirAddress, FDAddress, or SDAddress records in the respective daemon configuration files.
-
-.. _wrappers:
-
-Configuring and Testing TCP Wrappers
-------------------------------------
-
-:index:`\ <single: TCP Wrappers>`\  :index:`\ <single: Wrappers; TCP>`\  :index:`\ <single: libwrappers>`\
-
-The TCP wrapper functionality is available on different platforms. Be default, it is activated on Bareos for Linux. With this enabled, you may control who may access your daemons. This control is done by modifying the file: /etc/hosts.allow. The program name that Bareos uses when applying these access restrictions is the name you specify in the daemon configuration file (see below for examples). You must not use the twist option in your /etc/hosts.allow or it will terminate the Bareos daemon
-when a connection is refused.
-
-
 
 
 
