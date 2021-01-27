@@ -48,14 +48,12 @@ platforms/systemd/bareos-sd.service
 platforms/systemd/bareos.conf
 platforms/univention/AppCenter/univention-bareos.ini
 platforms/univention/conffiles/etc/apt/sources.list.d/60_bareos.list
-po/POTFILES
 scripts/bareos-config
 scripts/bareos-explorer
 scripts/bareos-glusterfind-wrapper
 scripts/bareos-regress.conf
 scripts/bareos
 scripts/bconsole
-scripts/devel_bareos
 scripts/disk-changer
 scripts/logrotate
 scripts/logwatch/logfile.bareos.conf
