@@ -3,8 +3,8 @@
 Operating Systems
 =================
 
-:index:`\ <single: Systems; Supported Operating Systems>`
-:index:`\ <single: Support; Operating Systems>`
+.. index::
+   pair: Operating Systems; Support
 
 The Bareos project provides packages that have been released on http://download.bareos.org/bareos/release/.
 
@@ -35,21 +35,18 @@ Additionally, the following table gives an overview on the available package ver
    :ref:`Mac OS X/Darwin <section-macosx>`, v14.2
 
    :strong:`BSD`
-   FreeBSD :index:`\ <single: Platform; FreeBSD>`\ , >= 5.0, `X <http://www.freshports.org/sysutils/bareos-client/>`_, `X <http://www.freshports.org/sysutils/bareos-server/>`_, `X <http://www.freshports.org/sysutils/bareos-server/>`_
+   :ref:`FreeBSD <section-FreeBSD>` :index:`\ <single: Platform; FreeBSD>`\ , >= 11, v19.2, v19.2, v19.2
    OpenBSD, , X
    NetBSD,  , X                                                                                                                                                            
    :strong:`Unix`
    AIX :index:`\ <single: Platform; AIX>`\ ,         >= 4.3, com-13.2, \*, \*
    HP-UX :index:`\ <single: Platform; HP-UX>`\ ,           , com-13.2
-   Irix,                                                   , \*
-   Solaris :index:`\ <single: Platform; Solaris>`\ , >= 8  , com-12.4, com-12.4, com-12.4
-   True64,                                         ,       , \*
+   :ref:`Solaris <section-Solaris>` (i386/Sparc) :index:`\ <single: Platform; Solaris>`\ , >= 11 , com-12.4, com-12.4, com-12.4
 
 
 ============ =============================================================================================================================
 **vVV.V**    starting with Bareos version VV.V, this platform is official supported by the Bareos.org project
 **com-VV.V** starting with Bareos version VV.V, this platform is supported. However, pre-build packages are only available from Bareos.com
-**nightly**  provided by Bareos nightly build. Bug reports are welcome, however it is not official supported
 **X**        known to work
 **\***       has been reported to work by the community
 ============ =============================================================================================================================

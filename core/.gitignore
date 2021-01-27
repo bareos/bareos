@@ -1,8 +1,4 @@
 platforms/aix/bareos-fd
-platforms/alpha/bareos-fd
-platforms/bsdi/bareos-dir
-platforms/bsdi/bareos-fd
-platforms/bsdi/bareos-sd
 platforms/darwin/resources/welcome.txt
 platforms/darwin/resources/ReadMe.html
 platforms/darwin/resources/com.bareos.bareos-fd.plist
@@ -13,16 +9,9 @@ platforms/debian/set_dbconfig_vars.sh
 platforms/freebsd/bareos-dir
 platforms/freebsd/bareos-fd
 platforms/freebsd/bareos-sd
-platforms/gentoo/bareos-init
-platforms/gentoo/bareos-dir
-platforms/gentoo/bareos-fd
-platforms/gentoo/bareos-sd
 platforms/hurd/bareos-dir
 platforms/hurd/bareos-fd
 platforms/hurd/bareos-sd
-platforms/irix/bareos-dir
-platforms/irix/bareos-fd
-platforms/irix/bareos-sd
 platforms/openbsd/bareos-dir
 platforms/openbsd/bareos-fd
 platforms/openbsd/bareos-sd

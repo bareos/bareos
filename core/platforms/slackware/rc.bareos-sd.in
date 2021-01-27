@@ -25,7 +25,7 @@ case "$1" in
 	       OPTIONS="${OPTIONS} -g ${SD_GROUP}"
 	    fi
 
-	    ${BACSDBIN}/bareos-sd $2 ${OPTIONS} -v -c ${BACSDCFG}/bareos-sd.conf
+	    ${BACSDBIN}/bareos-sd $2 ${OPTIONS} -v
 	    echo Done.
 	}
 	;;
