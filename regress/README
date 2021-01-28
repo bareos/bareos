@@ -1,6 +1,13 @@
 Bareos Regression
 =================
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Warning:
+Tests from the regress directory are all deprecated.
+New tests should be written as systemtests, see
+https://docs.bareos.org/DeveloperGuide/BuildAndTestBareos/systemtests.html
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 Origial author: Kern Sibbald
 
 This is Bareos's regression script directory.
@@ -11,37 +18,14 @@ with your production Catalog because the tables will all
 be deleted (dropped and recreated).
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-bareos-regress package
-======================
-
-When using the bareos-regress package,
-the software is already preconfigured to test bareos,
-provided by the normal install packages.
-
-  # as root: stop all running bareos daemon
-
-  # switch to user to bareos
-  su - bareos -s /bin/bash
-
-  # enable debug output
-  export REGRESS_DEBUG=1
-
-  # run a single test (and verify that it ends with "OK"
-  tests/backup-bareos-test
-
-  # run all disk tests
-  ./all-disk-tests
-
-
-
-Local Build
-===========
-
 get sources from github
------------------------
+=======================
 
   # get Bareos
   git clone https://github.com/bareos/bareos
+
+Local Build
+-----------
 
 To set it up, create your personal configuration file, by
 copying prototype.conf to config or simply editing prototype.conf
@@ -50,6 +34,10 @@ directly then copying it to the file config.
   cd bareos/regress
   cp prototype.conf config
 
+Alternatively, you can copy/link a preconfigured version of the config file:
+
+  ln -s ../core/scripts/bareos-regress.conf config
+  
 You must end up with a file named config in the main regress
 directory that has all the specifications that correspond to
 your system.
@@ -226,6 +214,7 @@ Anyway, you can debug where it is happening in the source code using the
 following example.  For example, here I get the following backtrace:
 
 ======= Backtrace: =========
+
 /lib/libc.so.6[0xb7b9d6e1]
 /lib/libc.so.6(cfree+0x89)[0xb7b9ed79]
 /home/kern/bareos/regress/bin/bareos-fd[0x8082ae5]

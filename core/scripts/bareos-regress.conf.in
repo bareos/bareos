@@ -1,3 +1,10 @@
+#
+# This config file is intended for regress testing.
+# cmake generates a bareos-regress.conf file from the bareos-regress.conf.in file,
+# according to the configuration options.
+# This file must be copied to "../../regress/config".
+#
+
 # Set this to the make option (usually -j3 or higher)
 #MAKEOPT=
 
@@ -9,8 +16,7 @@
 #SMTP_HOST="localhost"
 
 # Set what backend to use "postresql" "mysql" or "sqlite3"
-#DBTYPE=@DEFAULT_DB_TYPE@
-DBTYPE="sqlite3"
+DBTYPE=@DEFAULT_DB_TYPE@
 
 # Set your database here
 #WHICHDB="--with-${DBTYPE}"
