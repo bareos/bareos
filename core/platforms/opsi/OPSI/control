@@ -138,7 +138,7 @@ values: ["32 only", "64 only", "both", "system specific"]
 default: ["system specific"]
 
 [Changelog]
-20180222, Jörg Steffens
+20180222, Joerg Steffens
   * cleanup
   * add ProductProperty jobdefs and fileset.
 

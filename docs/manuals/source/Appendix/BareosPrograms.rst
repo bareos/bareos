@@ -11,7 +11,8 @@ Bareos Daemons
 Daemon Command Line Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Daemon; Command Line Options>`\  :index:`\ <single: Command Line Options; Daemon>`\
+.. index::
+   pair: Daemon; Command Line Options
 
 Each of the three daemons (Director, File, Storage) accepts a small set of options on the command line. In general, each of the daemons as well as the Console program accepts the following options:
 
@@ -557,21 +558,22 @@ If you wish to extract files that span several Volumes, you can specify the Volu
 Extracting Under Windows
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-:index:`\ <single: Windows; bextract>`\
+.. index::
+   pair: Windows; bextract
 
 .. warning::
 
    If you use :command:`bextract` under Windows, the order of the parameters is essential.
 
 
-To use :command:`bextract`, the Bareos Storage Daemon must be installed. As bextract works on tapes or disk volumes, these must be configured in the Storage Daemon configuration file, normally found at :file:`C:\\ProgrammData\\Bareos\\bareos-sd.conf`. However, it is not required to start the Bareos Storage Daemon. Normally, if the Storage Daemon would be able to run, :command:`bextract` would not be required.
+To use :command:`bextract`, the Bareos Storage Daemon must be installed. As bextract works on tapes or disk volumes, these must be configured in the Storage Daemon configuration file, normally found at :dir:`C:\\ProgrammData\\Bareos\\`. However, it is not required to start the Bareos Storage Daemon. Normally, if the Storage Daemon would be able to run, :command:`bextract` would not be required.
 
 After installing, :command:`bextract` can be called via command line:
 
 .. code-block:: doscon
    :caption: Call of bextract
 
-   C:\Program Files\Bareos> .\bextract.exe -c "C:\ProgrammData\Bareos\bareos-sd.conf" -V <Volume> <YourStorage> <YourDestination>
+   C:\Program Files\Bareos> .\bextract.exe -c "C:\ProgrammData\Bareos\" -V <Volume> <YourStorage> <YourDestination>
 
 If you want to use exclude or include files you need to write them like you do on Linux. That means each path begins with a "/" and not with "yourdrive:/". You need to specify the parameter -e exclude.list as first parameter. For example:
 
@@ -584,7 +586,7 @@ If you want to use exclude or include files you need to write them like you do o
 .. code-block:: doscon
    :caption: Call bextract with exclude list
 
-   C:\Program Files\Bareos> .\bextract.exe -e exclude.list -c "C:\ProgrammData\Bareos\bareos-sd.conf" -V <Volume> <YourStorage> <YourDestination>
+   C:\Program Files\Bareos> .\bextract.exe -e exclude.list -c "C:\ProgrammData\Bareos\" -V <Volume> <YourStorage> <YourDestination>
 
 
 .. _bscan:

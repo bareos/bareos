@@ -2146,31 +2146,31 @@ For SMF make sure you have something like this in the instance block:
 
    <method_context working_directory=":default"> <method_credential user="bareos" group="bareos" privileges="basic,sys_devices"/> </method_context>
 
-Changes in bareos-sd.conf
-'''''''''''''''''''''''''
+Changes in bareos-sd configuration
+''''''''''''''''''''''''''''''''''
 
 -  Set the Key Encryption Key
 
-   -  :config:option:`sd/director/KeyEncryptionKey`\  = :strong:`passphrase`
+   -  :config:option:`sd/director/KeyEncryptionKey = passphrase`
 
 -  Enable the loading of storage daemon plugins
 
-   -  :config:option:`sd/storage/PluginDirectory`\  = :file:`path_to_sd_plugins`
+   -  :config:option:`sd/storage/PluginDirectory = path_to_sd_plugins`
 
 -  Enable the SCSI encryption option
 
-   -  :config:option:`sd/device/DriveCryptoEnabled`\  = yes
+   -  :config:option:`sd/device/DriveCryptoEnabled = yes`
 
 -  Enable this, if you want the plugin to probe the encryption status of the drive when it needs to clear a pending key
 
-   -  :config:option:`sd/device/QueryCryptoStatus`\  = yes
+   -  :config:option:`sd/device/QueryCryptoStatus = yes`
 
-Changes in bareos-dir.conf
-''''''''''''''''''''''''''
+Changes in bareos-dir configuration
+'''''''''''''''''''''''''''''''''''
 
 -  Set the Key Encryption Key
 
-   -  :config:option:`dir/director/KeyEncryptionKey`\  = :strong:`passphrase`
+   -  :config:option:`dir/director/KeyEncryptionKey = passphrase`
 
 Testing
 ^^^^^^^
@@ -2186,11 +2186,11 @@ Disaster Recovery
 
 For Disaster Recovery (DR) you need the following information:
 
--  Actual bareos-sd.conf with config options enabled as described above, including, among others, a definition of a director with the Key Encryption Key used for creating the encryption keys of the volumes.
+-  Actual bareos-sd configuration files with config options enabled as described above, including, among others, a definition of a director with the Key Encryption Key used for creating the encryption keys of the volumes.
 
 -  The actual keys used for the encryption of the volumes.
 
-This data needs to be availabe as a so called crypto cache file which is used by the plugin when no connection to the director can be made to do a lookup (most likely on DR).
+This data needs to be available as a so called crypto cache file which is used by the plugin when no connection to the director can be made to do a lookup (most likely on DR).
 
 Most of the times the needed information, e.g. the bootstrap info, is available on recently written volumes and most of the time the encryption cache will contain the most recent data, so a recent copy of the :file:`bareos-sd.<portnr>.cryptoc` file in the working directory is enough most of the time. You can also save the info from database in a safe place and use bscrypto to populate this info (VolumeName |rarr| EncryptKey) into the crypto cache file used by
 :command:`bextract` and :command:`bscan`. You can use :command:`bscrypto` with the following flags to create a new or update an existing crypto cache file e.g.:
@@ -2205,15 +2205,16 @@ Most of the times the needed information, e.g. the bootstrap info, is available 
 
    .. code-block:: shell-session
 
-      bextract -D <director_name> -c bareos-sd.conf -V <volname> \ /dev/nst0 /tmp -b bootstrap.bsr
-      /usr/lib64/bareos/create_bareos_database
-      /usr/lib64/bareos/grant_bareos_privileges
+      bextract -D <director_name> -V <volname> /dev/nst0 /tmp -b bootstrap.bsr
+      /usr/lib/bareos/scripts/create_bareos_database
+      /usr/lib/bareos/scripts/grant_bareos_privileges
       psql bareos < /tmp/var/lib/bareos/bareos.sql
 
 Or something similar (change paths to follow where you installed the software or where the package put it).
 
-**Note:** As described at the beginning of this chapter, there are different types of key management, AME, LME and KMA. If the Library is set up for LME or KMA, it probably won’t allow our AME setup and the scsi-crypto plugin will fail to set/clear the encryption key. To be able to use AME you need to "Modify Encryption Method" and set it to something like "Application Managed". If you decide to use LME or KMA you don’t have to bother with the whole setup
-of AME which may for big libraries be easier, although the overhead of using AME even for very big libraries should be minimal.
+.. note::
+
+   As described at the beginning of this chapter, there are different types of key management, AME, LME and KMA. If the Library is set up for LME or KMA, it probably won’t allow our AME setup and the scsi-crypto plugin will fail to set/clear the encryption key. To be able to use AME you need to "Modify Encryption Method" and set it to something like "Application Managed". If you decide to use LME or KMA you don’t have to bother with the whole setup of AME which may for big libraries be easier, although the overhead of using AME even for very big libraries should be minimal.
 
 scsitapealert-sd
 ~~~~~~~~~~~~~~~~

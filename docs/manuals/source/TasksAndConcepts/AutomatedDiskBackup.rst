@@ -3,7 +3,11 @@
 Automated Disk Backup
 =====================
 
-:index:`\ <single: Volumes; Using Pools to Manage>`\  :index:`\ <single: Disk; Automated Backup>`\  :index:`\ <single: Automated Disk Backup>`\  :index:`\ <single: Pool>`\
+.. index::
+   single: Volumes; Using Pools
+   single: Disk; Automated Backup
+   single: Automated Disk Backup
+   single: Pool
 
 If you manage five or ten machines and have a nice tape backup, you don’t need Pools, and you may wonder what they are good for. In this chapter, you will see that Pools can help you optimize disk storage space. The same techniques can be applied to a shop that has multiple tape drives, or that wants to mount various different Volumes to meet their needs.
 
@@ -330,7 +334,6 @@ The Director’s configuration file is as follows:
 and the Storage daemon’s configuration file is:
 
 .. code-block:: bareosconfig
-   :caption: bareos-sd.conf
 
    Storage {               # definition of myself
      Name = bareos-sd
@@ -338,7 +341,7 @@ and the Storage daemon’s configuration file is:
 
    Director {
      Name = bareos-dir
-     Password = " *** CHANGE ME ***"
+     Password = "*** CHANGE ME ***"
    }
 
    Device {

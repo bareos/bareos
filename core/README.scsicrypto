@@ -240,27 +240,27 @@ The initial setup of SCSI crypto looks something like this:
           <method_credential user="bareos" group="bareos" privileges="basic,sys_devices"/>
        </method_context>
 
-  === Changes in bareos-sd.conf ===
+  === Changes in bareos-sd configuration files ===
 
-- Put the Key Encryption Key into the bareos-sd.conf
+- Put the Key Encryption Key into the bareos-sd configuration
   under the director entry in that config for the specific
   director you are creating the config for. e.g.
   Key Encryption Key = "<passphrase>"
 - Enable the loading of storage daemon plugins by
-  setting the plugin dir in the bareos-sd.conf e.g.
+  setting the plugin dir in the bareos-sd configuration e.g.
   Plugin Directory = <path_to_sd_plugins>
 - Enable the SCSI encryption option in the device configuration
-  section of the drive in the bareos-sd.conf. e.g.
+  section of the drive in the bareos-sd configuration, e.g.
   Drive Crypto Enabled = Yes
 - When you want the plugin to probe the drive for its encryption
   status if it needs to clear a pending key enable the Query
   Crypto Status option in the device configuration section of the
-  drive in the bareos-sd.conf e.g.
+  drive in the bareos-sd configuration, e.g.
   Query Crypto Status = Yes
 
-  === Changes in bareos-dir.conf ===
+  === Changes in bareos-dir configuration ===
 
-- Put the Key Encryption Key into the bareos-dir.conf under
+- Put the Key Encryption Key into the bareos-dir configuration file under
   the director config item named Key Encryption Key e.g.
   Key Encryption Key = "<passphrase>"
 
@@ -270,7 +270,7 @@ The initial setup of SCSI crypto looks something like this:
 
 For Disaster Recovery (DR) you need the following information:
 
-- Actual bareos-sd.conf with config options enabled as described
+- Actual bareos-sd configuration with config options enabled as described
   above, including things like a definition of a director with
   the Key Encryption Key used for creating the encryption keys
   of the volumes.
@@ -299,7 +299,7 @@ For Disaster Recovery (DR) you need the following information:
   make sure its stored somewhere safe.
 - Recover the database in the normal way e.g. for postgresql:
 
-  # bextract -D <director_name> -c bareos-sd.conf -V <volname> \
+  # bextract -D <director_name> -V <volname> \
              /dev/nst0 /tmp -b bootstrap.bsr
   # /usr/lib64/bareos/create_bareos_database
   # /usr/lib64/bareos/grant_bareos_privileges

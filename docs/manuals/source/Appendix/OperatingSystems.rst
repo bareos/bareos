@@ -322,7 +322,7 @@ For example, to use a NAS device for storing backups, you can mount your NAS vol
 
    root@ucs:/etc/bareos# ucr set bareos/filestorage=/path/to/your/storage
    Setting bareos/filestorage
-   File: /etc/bareos/bareos-sd.conf
+   File: /etc/bareos/...
 
 
 
@@ -347,11 +347,11 @@ Alternatively you can also set those UCR variables via commandline.
 
    root@ucs:~# ucr set bareos/webui/console/user1/username="bareos"
    Setting bareos/webui/console/user1/username
-   File: /etc/bareos/bareos-dir.conf
+   File: /etc/bareos/...
    [ ok ] Reloading Bareos Director: bareos-dir.
    root@ucs:~# ucr set bareos/webui/console/user1/password="secret"
    Setting bareos/webui/console/user1/password
-   File: /etc/bareos/bareos-dir.conf
+   File: /etc/bareos/...
    [ ok ] Reloading Bareos Director: bareos-dir.
 
 When your login credentials are set, you can login into Bareos Webui by following the entry in your Administration UCS Overview or directly via https://<UCS_SERVER>/bareos-webui/.
