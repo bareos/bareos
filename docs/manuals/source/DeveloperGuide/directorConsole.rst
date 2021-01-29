@@ -1,17 +1,17 @@
 Director Console Output
 =======================
 
-The console output should handle different `API modes <#sec:ApiMode>`__.
+The console output should handle different :ref:`section-ApiMode`.
 
 As the initial design of the Director Console connection did allow
 various forms of output (in fact: free text with some helper functions)
 the introduction of another API mode (API mode JSON) did require to
 change the creation of output.
 
--  Output can be send to a console connection (UserAgent Socket) or the
+-  Output can be send to a console connection (UserAgent socket) or the
    command is executed in a job
 -  free text (with the use of some helper functions)
--  -  :ref:`Signals <section-signals>`
+-  :ref:`Signals <section-signals>`
 -  Different Message types
 
    -  Types
@@ -23,9 +23,9 @@ change the creation of output.
 
    -  indicated by a signal packet and than the text packet
 
--  see `Daemon Protocols <#DaemonProtocol>`__
+-  see :ref:`DeveloperGuide/daemonprotocol/Daemon Protocol`
 
-The ``OUTPUT_FORMATTER`` class have been introduced to consolidate the
+The ``OutputFormatter`` class have been introduced to consolidate the
 interface to generate Console output.
 
 The basic idea is to provide an object, array and key-value based
@@ -34,19 +34,19 @@ interface.
 object_key_value
 ~~~~~~~~~~~~~~~~
 
-A main member function of ``OUTPUT_FORMATTER`` are the
-object_key_value(…) functions, like
+A main member function of ``OutputFormatter`` are the
+object_key_value(...) functions, like
 
 ::
 
-    void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt, const char *value, const char *value_fmt, int wrap = -1);
+    void OutputFormatter::object_key_value(const char *key, const char *key_fmt, const char *value, const char *value_fmt, int wrap = -1);
 
 API mode 0 and 1 get the key and value, and write them as defined in the
 key_fmt and value_fmt strings. If the key_fmt string is not given, the
 key will not be written. If the value_fmt string is not given, the value
 will not be written.
 
-In API mode 2 (JSON), OUTPUT_FORMATTER stores the key value pair in its
+In API mode 2 (JSON), OutputFormatter stores the key value pair in its
 internal JSON object, to delivers it, when the response object is
 finished. The keys will be transformed to lower case strings.
 
@@ -54,7 +54,7 @@ decoration
 ~~~~~~~~~~
 
 Additional output can be created by the
-``void OUTPUT_FORMATTER::decoration(const char *fmt, ...)`` function.
+``void OutputFormatter::decoration(const char *fmt, ...)`` function.
 This strings will only be written in API mode 0 and is intended to make
 an output prettier.
 
@@ -69,7 +69,7 @@ For messages, the UAContext function should be used:
 -  UAContext::error_msg
 
 Internally, these redirect to the
-``void OUTPUT_FORMATTER::message(const char *type, POOL_MEM &message)``
+``void OutputFormatter::message(const char *type, POOL_MEM &message)``
 function.
 
 -  API mode 0
@@ -92,7 +92,7 @@ function.
 Objects and Arrays
 ~~~~~~~~~~~~~~~~~~
 
-To structure data, the ``OUTPUT_FORMATTER`` class offers functions:
+To structure data, the ``OutputFormatter`` class offers functions:
 
 -  ``void object_start(const char *name = NULL);``
 -  ``void object_end(const char *name = NULL);``

@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,15 +17,18 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-"""
-Communicates with the bareos-director using JSON results
-
-Legacy, use DirectorConsoleJson instead.
-"""
+"""Deprecated, use :py:class:`bareos.bsock.DirectorConsoleJson` instead."""
 
 from bareos.bsock.directorconsolejson import DirectorConsoleJson
 
 
 class BSockJson(DirectorConsoleJson):
+    """Communicates with the bareos-director using JSON results.
+
+    :deprecated: 15.2.0
+
+    Deprecated, use :py:class:`bareos.bsock.DirectorConsoleJson` instead.
+    """
+
     def __init__(self, *args, **kwargs):
         super(BSockJson, self).__init__(*args, **kwargs)

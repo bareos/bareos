@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,64 +18,50 @@
 #   02110-1301, USA.
 
 """
-Bareos specific exceptions
+Bareos specific exceptions.
 """
 
 from bareos.bsock.constants import Constants
 
 
 class Error(Exception):
-    """
-    general error exception
-    """
+    """Base Bareos error exception."""
 
     pass
 
 
 class ConnectionError(Error):
-    """
-    error with the Connection
-    """
+    """Error with the connection."""
 
     pass
 
 
 class ConnectionLostError(Error):
-    """
-    error with the Connection
-    """
+    """Connection lost error."""
 
     pass
 
 
 class SocketEmptyHeader(Error):
-    """
-    socket connection received an empty header. Connection lost?
-    """
+    """Socket connection received an empty header. Connection lost?"""
 
     pass
 
 
 class AuthenticationError(ConnectionError):
-    """
-    error during Authentication
-    """
+    """Error during authentication."""
 
     pass
 
 
 class PamAuthenticationError(AuthenticationError):
-    """
-    error during PAM Authentication
-    """
+    """Error during PAM authentication."""
 
     pass
 
 
 class SignalReceivedException(Error):
-    """
-    received a signal during a connection.
-    """
+    """Received a Bareos signal during a connection."""
 
     def __init__(self, signal):
         # Call the base class constructor with the parameters it needs
@@ -89,7 +75,8 @@ class SignalReceivedException(Error):
 
 
 class JsonRpcErrorReceivedException(Error):
-    """
+    """Received JSON-RPC error object.
+
     This exception is raised,
     if a JSON-RPC error object is received.
     """
@@ -120,7 +107,8 @@ class JsonRpcErrorReceivedException(Error):
 
 
 class JsonRpcInvalidJsonReceivedException(JsonRpcErrorReceivedException):
-    """
+    """Received invalid JSON-RPC object.
+
     This exception is raised,
     if a invalid JSON-RPC object is received (e.g. data is not a valid JSON structure).
     """

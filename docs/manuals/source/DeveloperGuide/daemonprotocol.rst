@@ -1,5 +1,3 @@
-.. _DaemonProtocol:
-
 Daemon Protocol
 ===============
 
