@@ -12,6 +12,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - added reload commands to systemd service [PR #694]
 
 ### Changed
+- scripts: cleaned up code for postgresql db creation [PR #709]
 
 ### Deprecated
 
