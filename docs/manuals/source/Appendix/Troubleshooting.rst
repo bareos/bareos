@@ -519,7 +519,10 @@ For all the above reasons the restore process is generally much slower than back
 Restoring When Things Go Wrong
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Catalog; Restore>`\  :index:`\ <single: Restore; Catalog>`\  :index:`\ <single: Disaster; Recovery; Catalog>`\  :index:`\ <single: Problem; Repair Catalog>`\
+.. index::
+   pair: Catalog; Restore
+   single: Disaster; Recovery; Catalog
+   single: Problem; Repair Catalog
 
 This and the following sections will try to present a few of the kinds of problems that can come up making restoring more difficult. We will try to provide a few ideas how to get out of these problem situations. In addition to what is presented here, there is more specific information on restoring a :ref:`Client <section-BareMetalRestoreClient>` and your :ref:`Server <section-RestoreServer>` in the :ref:`RescueChapter` chapter of this manual.
 
@@ -537,16 +540,14 @@ Problem
 Solution with a Catalog backup
    If you have backed up your database nightly (as you should) and you have made a bootstrap file, you can immediately load back your database (or the ASCII SQL output). Make a copy of your current database, then re-initialize it, by running the following scripts:
 
-   ::
+   .. code-block:: shell-session
 
-         ./drop_bareos_tables
-         ./make_bareos_tables
+      /usr/lib/bareos/scripts/drop_bareos_tables
+      /usr/lib/bareos/scripts/make_bareos_tables
 
-   After re-initializing the database, you should be able to run Bareos. If you now try to use the restore command, it will not work because the database will be empty. However, you can manually run a restore job and specify your bootstrap file. You do so by entering the run command in the console and selecting the restore job. If you are using the default bareos-dir.conf, this Job will be named RestoreFiles. Most likely it will prompt you with something such as:
+   After re-initializing the database, you should be able to run Bareos. If you now try to use the restore command, it will not work because the database will be empty. However, you can manually run a restore job and specify your bootstrap file. You do so by entering the run command in the console and selecting the restore job. If you are using the default |dir| configuration, this Job will be named RestoreFiles. Most likely it will prompt you with something such as:
 
-
-
-   ::
+   .. code-block:: bconsole
 
       Run Restore job
       JobName:    RestoreFiles
@@ -793,6 +794,6 @@ Solution
 
    #. Ensure that the Bareos databases are created. This is also described at the above link.
 
-   #. Start and stop the Bareos Director using the propriate bareos-dir.conf file so that it can create the Client and Storage records which are not stored on the Volumes. Without these records, scanning is unable to connect the Job records to the proper client.
+   #. Start and stop the Bareos Director using the probate |dir| configuration files so that it can create the Client and Storage records which are not stored on the Volumes. Without these records, scanning is unable to connect the Job records to the proper client.
 
    When the above is complete, you can begin bscanning your Volumes. Please see the :ref:`bscan` chapter for more details.

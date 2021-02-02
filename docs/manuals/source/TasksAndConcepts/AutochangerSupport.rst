@@ -651,7 +651,7 @@ As can be seen, :command:`bls` manages to read the label block as it knows what 
 
 This shows that the block size for the data blocks that we need is 131072.
 
-Now we have to set this block size in the :file:`bareos-sd.conf`, device resource as :config:option:`sd/device/MaximumBlockSize`\ :
+Now we have to set this block size in the |sd| configuration file, device resource as :config:option:`sd/device/MaximumBlockSize`\ :
 
 .. code-block:: bareosconfig
    :caption: Storage Device Resource: setting Maximum Block Size

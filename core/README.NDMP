@@ -154,7 +154,7 @@ the NDMP session related to internal BAREOS resources.
 
 A ndmp backup configuration looks somethings like this:
 
-Configuration in bareos-dir.conf:
+Configuration in bareos-dir configuration:
 
 Replace <ndmp_data_server> with the hostname of the storage device
 you are backing up e.g. the DATA AGENT in NDMP terms.
@@ -341,7 +341,7 @@ Pool {
   Maximum Volumes = 100               # Limit number of Volumes in Pool
 }
 
-Configuration in bareos-sd.conf:
+Configuration in bareos-sd configuration:
 
 #
 # Normal SD config block, should enable the NDMP protocol here otherwise it won't listen

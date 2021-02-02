@@ -57,29 +57,6 @@ Set verbose mode.
 .TP
 .BI \-?
 Show version and usage of program.
-.SH TCP-WRAPPERS CONFIGURATION
-Tcpwrappers looks for the service name of the bareos daemons in
-.I hosts.allow
-The service names are not the names of the binaries, but the configured names of the components, often %hostname%-%component%.
-
-So the hosts.allow entry has to match
-.B %hostname%-%component%
-(servername-dir for example) instead of bareos-%component%
-
-.B WARNING:
-
-This means that if the hosts.allow file has the entry:
-
-.B bareos-dir: ALL
-
-you will not be able to run bconsole to connect to the local director!
-
-The entry would have to read:
-
-.B server-dir: ALL
-
-and this will allow the console to connect to the director.
-(The process running is bareos-dir.)
 .SH SEE ALSO
 .BR bareos-fd (8),
 .BR bareos-sd (8).

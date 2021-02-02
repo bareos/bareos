@@ -208,7 +208,6 @@ for F in  \
     %{script_dir}/mtx-changer \
     %{_sysconfdir}/bareos/mtx-changer.conf \
 %endif
-    %{script_dir}/bareos_config \
     %{script_dir}/btraceback.dbx \
     %{script_dir}/btraceback.mdb \
     %{_sbindir}/%{name}

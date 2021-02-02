@@ -47,7 +47,7 @@ gluster+rdma://1.2.3.4:24007/testvol[/dir]
   the libbareossd-gfapi.so shared object which implements a dynamic loaded
   storage backend.
 
-  - bareos-sd.conf
+  - bareos-sd configuration:
 
   Device {
     Name = GlusterStorage
@@ -62,7 +62,7 @@ gluster+rdma://1.2.3.4:24007/testvol[/dir]
     AlwaysOpen = no
   }
 
-  - bareos-dir.conf
+  - bareos-dir configuration:
 
   Storage {
     Name = Gluster

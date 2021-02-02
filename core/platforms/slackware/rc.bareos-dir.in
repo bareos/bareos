@@ -25,7 +25,7 @@ case "$1" in
 	       OPTIONS="${OPTIONS} -g ${DIR_GROUP}"
 	    fi
 
-	    ${BACDIRBIN}/bareos-dir $2 ${OPTIONS} -v -c ${BACDIRCFG}/bareos-dir.conf
+	    ${BACDIRBIN}/bareos-dir $2 ${OPTIONS} -v
 	    echo Done.
 	}
 	;;

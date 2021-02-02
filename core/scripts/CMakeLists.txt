@@ -56,7 +56,7 @@ if(NOT client-only)
     DESTINATION "${scriptdir}"
   )
 
-  install(FILES mtx-changer.conf bareos-regress.conf DESTINATION "${confdir}")
+  install(FILES mtx-changer.conf DESTINATION "${confdir}")
 
   install(
     FILES logrotate

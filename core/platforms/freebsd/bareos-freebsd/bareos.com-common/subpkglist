@@ -8,7 +8,6 @@ database-common
 database-postgresql
 database-tools
 tools
-devel
 director-python-plugin
 filedaemon-python2-plugin
 filedaemon-python3-plugin

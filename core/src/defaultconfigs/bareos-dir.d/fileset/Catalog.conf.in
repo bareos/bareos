@@ -6,6 +6,6 @@ FileSet {
       signature = MD5
     }
     File = "@workingdir@/@db_name@.sql" # database dump
-    File = "@confdir@"                   # configuration
+    File = "@confdir@"                  # configuration
   }
 }

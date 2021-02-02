@@ -39,7 +39,6 @@ debian/bareos-database-postgresql.dirs
 debian/bareos-database-postgresql.install
 debian/bareos-database-sqlite3.install
 debian/bareos-database-tools.install
-debian/bareos-devel.install
 debian/bareos-director-python-plugin.install
 debian/bareos-director-python-plugins-common.install
 debian/bareos-director-python2-plugin.install
@@ -63,8 +62,6 @@ debian/bareos-filedaemon.install
 debian/bareos-filedaemon.postinst
 debian/bareos-filedaemon.preinst
 debian/bareos-filedaemon.service
-debian/bareos-regress-config.install
-debian/bareos-regress-config.preinst
 debian/bareos-storage-ceph.install
 debian/bareos-storage-droplet.install
 debian/bareos-storage-fifo.install

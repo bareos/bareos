@@ -18,68 +18,6 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-if(NOT client-only)
-  set(INCLUDE_FILES
-      ../include/baconfig.h
-      ../include/bareos.h
-      ../include/bc_types.h
-      ../include/config.h
-      ../include/jcr.h
-      version.h
-      address_conf.h
-      alist.h
-      attr.h
-      base64.h
-      berrno.h
-      bits.h
-      bpipe.h
-      breg.h
-      bregex.h
-      bstringlist.h
-      bsock.h
-      bsock_tcp.h
-      btime.h
-      btimers.h
-      cbuf.h
-      crypto.h
-      crypto_cache.h
-      devlock.h
-      dlist.h
-      fnmatch.h
-      guid_to_name.h
-      htable.h
-      ini.h
-      lex.h
-      lib.h
-      lockmgr.h
-      mem_pool.h
-      message.h
-      messages_resource.h
-      messages_resource_items.h
-      mntent_cache.h
-      parse_conf.h
-      plugins.h
-      qualified_resource_name_type_converter.h
-      rblist.h
-      runscript.h
-      rwlock.h
-      scsi_crypto.h
-      scsi_lli.h
-      scsi_tapealert.h
-      serial.h
-      status_packet.h
-      thread_list.h
-      tls.h
-      tls_conf.h
-      tree.h
-      try_tls_handshake_as_a_server.h
-      var.h
-      watchdog.h
-  )
-
-  install(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
-endif()
-
 include_directories(
   ${OPENSSL_INCLUDE_DIR} ${PTHREAD_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS}
   ${ACL_INCLUDE_DIRS} ${LZO2_INCLUDE_DIRS} ${CAP_INCLUDE_DIRS}

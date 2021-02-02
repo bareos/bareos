@@ -3,7 +3,9 @@
 Disaster Recovery Using Bareos
 ==============================
 
-:index:`\ <single: Disaster; Recovery>`\  :index:`\ <single: Recovery; Disaster Recovery>`\
+.. index::
+   single: Disaster; Recovery
+   single: Recovery; Disaster Recovery
 
 General
 -------
@@ -28,8 +30,6 @@ Here are a few important considerations concerning disaster recovery that you sh
 Steps to Take Before Disaster Strikes
 -------------------------------------
 
-:index:`\ <single: Disaster; Before>`\
-
 -  Create a rescue or CDROM for your systems. Generally, they are offered by each distribution, and there are many good rescue disks on the Web
 
 -  Ensure that you always have a valid bootstrap file for your backup and that it is saved to an alternate machine. This will permit you to easily do a full restore of your system.
@@ -40,7 +40,7 @@ Steps to Take Before Disaster Strikes
 
 -  Try out how to use the Rescue CDROM before you are forced to use it in an emergency situation.
 
--  Make a copy of your Bareos .conf files, particularly your bareos-dir.conf, and your bareos-sd.conf files, because if your server goes down, these files will be needed to get it back up and running, and they can be difficult to rebuild from memory.
+-  Make a copy of your Bareos .conf files, particularly your bareos-dir  and your bareos-sd configuration files, because if your server goes down, these files will be needed to get it back up and running, and they can be difficult to rebuild from memory.
 
 .. _section-BareMetalRestoreClient:
 
@@ -64,7 +64,8 @@ Generally, following components are required for a Bare Metal Recovery:
 Linux
 ~~~~~
 
-:index:`\ <single: Disaster; Recovery; Linux>`\
+.. index::
+   single: Disaster; Recovery; Linux
 
 From the Relax-and-Recover web site (`http://relax-and-recover.org <http://relax-and-recover.org>`_):
 

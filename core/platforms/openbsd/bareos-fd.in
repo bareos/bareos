@@ -11,7 +11,7 @@
 case "$1" in
     start)
        echo "Starting the Bareos File daemon: "
-       @sbindir@/bareos-fd $2 -c @confdir@/bareos-fd.conf
+       @sbindir@/bareos-fd $2
        RETVAL=$?
        echo
        [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-fd

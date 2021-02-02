@@ -349,7 +349,7 @@ Add a NDMP resource
 
 Additionally, we need to define the access credentials for our NDMP TAPE AGENT (Secondary Storage) inside of this Storage Daemon.
 
-These are configured by adding a NDMP resource to :file:`bareos-sd.conf`:
+These are configured by adding a NDMP resource to |sd| configuration:
 
 .. code-block:: bareosconfig
 
@@ -481,17 +481,14 @@ The specified directory needs to be a filesystem or a subdirectory of a filesyst
      }
    }
 
+.. warning::
+
+   Normally (:config:option:`dir/client/Protocol`\ =Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (:config:option:`dir/client/Protocol`\ =NDMP*), no |fd| is involved and therefore most Fileset options can't be used. Instead, parameters are handled via :strong:`Options - Meta`\  from :config:option:`dir/fileset/Include`\ .
 
 
-   .. warning::
+.. warning::
 
-      Normally (:config:option:`dir/client/Protocol`\ =Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (:config:option:`dir/client/Protocol`\ =NDMP*), no |fd| is involved and therefore most Fileset options can't be used. Instead, parameters are handled via :strong:`Options - Meta`\  from :config:option:`dir/fileset/Include`\ .
-
-
-
-   .. warning::
-
-      Avoid using multiple :config:option:`dir/fileset/Include`\  :strong:`File`\  directives.
+   Avoid using multiple :config:option:`dir/fileset/Include`\  :strong:`File`\  directives.
    The |dir| would try to handle them by running multiple NDMP jobs in a single Bareos job.
    Even if this is working fine during backup, restore jobs will cause trouble.
 

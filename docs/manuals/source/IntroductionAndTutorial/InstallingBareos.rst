@@ -205,6 +205,9 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson libr
 
 If you use the versions of Bareos directly integrated into the distributions, please note that there are some differences, see :ref:`section-DebianOrgLimitations`.
 
+
+.. _section-FreeBSD:
+
 Install on FreeBSD based Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -252,6 +255,8 @@ Install on FreeBSD based Distributions
    service bareos-sd start
    service bareos-fd start
 
+   
+.. _section-Solaris:
 
 Install on Oracle Solaris
 ~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -34,7 +34,6 @@ else
     -Dlibdir=${1}/bin \
     -Dmandir=${1}/bin \
     -Ddocdir=${1}/bin/html \
-    -Dhtmldir=${1}/bin/html \
 
 fi
 
