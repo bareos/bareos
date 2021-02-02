@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -52,6 +52,9 @@ printf "const char *BareosDb::query_names[] = {\n" >> $QUERY_NAMES_FILE
 > $QUERY_ENUM_FILE
 print_note >> $QUERY_ENUM_FILE
 cat >> $QUERY_ENUM_FILE << EOF
+#ifndef BAREOS_CATS_BDB_QUERY_ENUM_CLASS_H_
+#define BAREOS_CATS_BDB_QUERY_ENUM_CLASS_H_
+
 class BareosDbQueryEnum {
  public:
   enum class SQL_QUERY
@@ -99,6 +102,8 @@ cat >> $QUERY_ENUM_FILE << EOF
     SQL_QUERY_NUMBER = $i
   };
 };
+
+#endif  // BAREOS_CATS_BDB_QUERY_ENUM_CLASS_H_
 EOF
 
 for db in $DATABASES; do
