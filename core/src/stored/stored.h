@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -59,11 +59,7 @@ const int sd_debuglevel = 300;
 #include "vol_mgr.h"
 #include "reserve.h"
 
-#ifdef BAREOS_LIB_LIB_H_
-#  include <fnmatch.h>
-#else
-#  include "lib/fnmatch.h"
-#endif
+#include "lib/fnmatch.h"
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
 #ifndef HAVE_READDIR_R

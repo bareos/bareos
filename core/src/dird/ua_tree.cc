@@ -34,11 +34,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
-#ifdef BAREOS_LIB_LIB_H_
-#  include <fnmatch.h>
-#else
-#  include "lib/fnmatch.h"
-#endif
+#include "lib/fnmatch.h"
 #include "findlib/find.h"
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
