@@ -1124,6 +1124,23 @@ int DoPrompt(UaContext* ua,
   PoolMem pmsg(PM_MESSAGE);
   BareosSocket* user = ua->UA_sock;
 
+  int windowsize = 79;
+  int threshold = 20;
+  unsigned long max_prompt_length = 1;
+  int prompts_perline = 1;
+
+  int prompt_number_length = std::to_string(ua->num_prompts).length();
+
+  for (int i = 1; i < ua->num_prompts; i++) {
+    if (strlen(ua->prompt[i]) > max_prompt_length) {
+      max_prompt_length = strlen(ua->prompt[i]);
+    }
+  }
+  max_prompt_length += prompt_number_length;
+  prompts_perline = (windowsize / max_prompt_length) - 1;
+
+  if (prompts_perline == 0) { prompts_perline = 1; }
+
   if (prompt) { *prompt = 0; }
   if (ua->num_prompts == 2) {
     item = 1;
@@ -1143,7 +1160,7 @@ int DoPrompt(UaContext* ua,
      */
     ua->SendMsg(ua->prompt[0]);
     for (int i = 1; i < ua->num_prompts; i++) {
-      ua->SendMsg("%6d: %s\n", i, ua->prompt[i]);
+      ua->SendMsg("%*d: %s\n", prompt_number_length, i, ua->prompt[i]);
     }
 
     /*
@@ -1159,11 +1176,19 @@ int DoPrompt(UaContext* ua,
   if (ua->api) { user->signal(BNET_START_SELECT); }
 
   ua->SendMsg(ua->prompt[0]);
+
   for (int i = 1; i < ua->num_prompts; i++) {
     if (ua->api) {
       ua->SendMsg("%s", ua->prompt[i]);
+    } else if (ua->num_prompts > threshold) {
+      if (i % prompts_perline == 0 || i == ua->num_prompts - 1) {
+        ua->SendMsg("%*d: %s\n", prompt_number_length, i, ua->prompt[i]);
+      } else {
+        ua->SendMsg("%*d: %-*s ", prompt_number_length, i, max_prompt_length,
+                    ua->prompt[i]);
+      }
     } else {
-      ua->SendMsg("%6d: %s\n", i, ua->prompt[i]);
+      ua->SendMsg("%*d: %s\n", prompt_number_length, i, ua->prompt[i]);
     }
   }
 
