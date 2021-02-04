@@ -28,7 +28,15 @@
 #  include "include/bareos.h"
 #endif
 
+#include "dird/bsr.h"
+#include "dird/ua_restore.h"
 #include "lib/btime.h"
+
+using namespace directordaemon;
+
+namespace directordaemon {
+bool DoReloadConfig() { return false; }
+}  // namespace directordaemon
 
 TEST(time_format, correct_time_and_date_format)
 {
@@ -77,4 +85,81 @@ TEST(time_format, correct_time_and_date_format)
                  "22:22:22adfddfkjlsdjklf;asfdkslfkjasflsdfdkslfjdsfklds;"
                  "lfkjdskkjajkvnkashuiadfvmnknkajnsfkljdnafkljdnafklja")
       == 0);
+}
+
+TEST(time_format, short_formats_compensation)
+{
+  char const* short_date;
+  char const* correct_full_format_date;
+
+  // Correct long format
+  correct_full_format_date = "1999-05-06 10:10:10";
+  EXPECT_EQ(CompensateShortDate(correct_full_format_date),
+            correct_full_format_date);
+
+  // Correct short format
+  short_date = "1999";
+  EXPECT_EQ(CompensateShortDate(short_date), "1999-01-01 00:00:00");
+
+  short_date = "1999-05";
+  EXPECT_EQ(CompensateShortDate(short_date), "1999-05-01 00:00:00");
+
+  short_date = "1999-05-";
+  EXPECT_EQ(CompensateShortDate(short_date), "1999-05-01 00:00:00");
+
+  short_date = "1999-05-06";
+  EXPECT_EQ(CompensateShortDate(short_date), "1999-05-06 00:00:00");
+
+  short_date = "1999-05-31";
+  EXPECT_EQ(CompensateShortDate(short_date), "1999-05-31 00:00:00");
+
+  short_date = "1999-05-06 10";
+  EXPECT_EQ(CompensateShortDate(short_date), "1999-05-06 10:00:00");
+
+  short_date = "1999-05-06 10:";
+  EXPECT_EQ(CompensateShortDate(short_date), "1999-05-06 10:00:00");
+
+  short_date = "1999-05-06 10:10";
+  EXPECT_EQ(CompensateShortDate(short_date), "1999-05-06 10:10:00");
+
+  // Random stuff
+
+  short_date = "1999-- ::";
+  EXPECT_EQ(CompensateShortDate(short_date), "1999-01-01 00:00:00");
+
+  short_date = "1999--- ::";
+  EXPECT_EQ(CompensateShortDate(short_date), short_date);
+
+  short_date = "1999-05- :10:";
+  EXPECT_EQ(CompensateShortDate(short_date), "1999-05-01 00:10:00");
+
+  short_date = "1999--06 10:10:";
+  EXPECT_EQ(CompensateShortDate(short_date), "1999-01-06 10:10:00");
+
+  short_date = "1999-05-06 10:10:10:10-56";
+  EXPECT_EQ(CompensateShortDate(short_date), short_date);
+
+  short_date = "1999asfasdf";
+  EXPECT_EQ(CompensateShortDate(short_date), short_date);
+
+  short_date = "1999-05---";
+  EXPECT_EQ(CompensateShortDate(short_date), short_date);
+
+  short_date = "hey-05";
+  EXPECT_EQ(CompensateShortDate(short_date), short_date);
+
+  short_date = "1999-dd-dd ::";
+  EXPECT_EQ(CompensateShortDate(short_date), short_date);
+
+  short_date = "";
+  EXPECT_EQ(CompensateShortDate(short_date), short_date);
+
+  short_date = "19999999999999999999999999999999999999999-5-06 10:10:10:10";
+  EXPECT_EQ(CompensateShortDate(short_date), short_date);
+
+  short_date
+      = "1999-01-02 "
+        "22:22:22adfddfkjlsdjklf;asfdkslfkjasflsdfdkslfjdsfklds;"
+        "lfkjdskkjajkvnkashuiadfvmnknkajnsfkljdnafkljdnafklja";
+  EXPECT_EQ(CompensateShortDate(short_date), short_date);
 }
