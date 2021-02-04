@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Added
 - added reload commands to systemd service [PR #694]
+- added multicolumn prompt selection for selection of more than 20 items [PR #725]
 
 ### Changed
 - Package **bareos-database-postgresql**: add recommendation for package **dbconfig-pgsql**.
