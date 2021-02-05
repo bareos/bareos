@@ -1,7 +1,7 @@
 /*
  * BAREOS® - Backup Archiving REcovery Open Sourced
  *
- * Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+ * Copyright (C) 2019-2021 Bareos GmbH & Co. KG
  *
  * This program is Free Software; you can redistribute it and/or modify
  * it under the terms of version three of the GNU Affero General Public License
@@ -25,7 +25,7 @@
  * every way.
  */
 #ifndef BAREOS_INCLUDE_MAKE_UNIQUE_H_
-#define BAREOS_INCLUDE_MAKE_UNIQUE_H_ 1
+#define BAREOS_INCLUDE_MAKE_UNIQUE_H_
 
 /* make sure we only add this on a C++11 compiler */
 #if __cplusplus == 201103L
@@ -67,5 +67,5 @@ typename _Unique_if<T>::_Unknown_bound make_unique(size_t n)
 template <class T, class... Args>
 typename _Unique_if<T>::_Known_bound make_unique(Args&&...) = delete;
 }  // namespace std
-#endif /** __cplusplus == 201103L */
-#endif /** BAREOS_INCLUDE_MAKE_UNIQUE_H_ */
+#endif  /** __cplusplus == 201103L */
+#endif  // BAREOS_INCLUDE_MAKE_UNIQUE_H_

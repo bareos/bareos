@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,9 @@
  * Kern Sibbald, August 2007
  */
 
+#ifndef BAREOS_WIN32_STORED_WHO_H_
+#define BAREOS_WIN32_STORED_WHO_H_
+
 #define APP_NAME "Bareos-sd"
 #define LC_APP_NAME "bareos-sd"
 #define APP_DESC "Bareos Storage Service"
@@ -32,3 +35,5 @@
 namespace storagedaemon {
 extern void TerminateStored(int sig);
 } /* namespace storagedaemon */
+
+#endif  // BAREOS_WIN32_STORED_WHO_H_

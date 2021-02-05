@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,17 +27,17 @@
  * Directory tree build/traverse routines
  */
 
+#ifndef BAREOS_LIB_TREE_H_
+#define BAREOS_LIB_TREE_H_
+
 #include "lib/htable.h"
 #include "lib/rblist.h"
 
-#ifndef BAREOS_LIB_TREE_H_
-#  define BAREOS_LIB_TREE_H_
+#include "include/config.h"
 
-#  include "include/config.h"
-
-#  ifdef HAVE_HPUX_OS
-#    pragma pack(push, 4)
-#  endif
+#ifdef HAVE_HPUX_OS
+#  pragma pack(push, 4)
+#endif
 
 struct s_mem {
   struct s_mem* next; /* next buffer */
@@ -46,15 +46,15 @@ struct s_mem {
   char first[1];      /* first byte */
 };
 
-#  define USE_DLIST
+#define USE_DLIST
 
-#  define foreach_child(var, list) \
-    for ((var) = NULL;             \
-         (*((TREE_NODE**)&(var)) = (TREE_NODE*)(list->child.next(var)));)
+#define foreach_child(var, list) \
+  for ((var) = NULL;             \
+       (*((TREE_NODE**)&(var)) = (TREE_NODE*)(list->child.next(var)));)
 
-#  define TreeNodeHasChild(node) ((node)->child.size() > 0)
+#define TreeNodeHasChild(node) ((node)->child.size() > 0)
 
-#  define first_child(node) \
+#define first_child(node) \
         ((TREE_NODE *)(node->child.first())
 
 struct delta_list {
@@ -152,16 +152,16 @@ struct s_hl_entry {
 };
 typedef struct s_hl_entry HL_ENTRY;
 
-#  ifdef HAVE_HPUX_OS
-#    pragma pack(pop)
-#  endif
+#ifdef HAVE_HPUX_OS
+#  pragma pack(pop)
+#endif
 
 /* type values */
-#  define TN_ROOT 1    /* root node */
-#  define TN_NEWDIR 2  /* created directory to fill path */
-#  define TN_DIR 3     /* directory entry */
-#  define TN_DIR_NLS 4 /* directory -- no leading slash -- win32 */
-#  define TN_FILE 5    /* file entry */
+#define TN_ROOT 1    /* root node */
+#define TN_NEWDIR 2  /* created directory to fill path */
+#define TN_DIR 3     /* directory entry */
+#define TN_DIR_NLS 4 /* directory -- no leading slash -- win32 */
+#define TN_FILE 5    /* file entry */
 
 /* External interface */
 TREE_ROOT* new_tree(int count);
@@ -186,7 +186,7 @@ void TreeRemoveNode(TREE_ROOT* root, TREE_NODE* node);
  *   traversed in the order the entries were inserted into the
  *   tree.
  */
-#  define FirstTreeNode(r) (r)->first
-#  define NextTreeNode(n) (n)->next
+#define FirstTreeNode(r) (r)->first
+#define NextTreeNode(n) (n)->next
 
-#endif /* #ifndef BAREOS_LIB_TREE_H_ */
+#endif  // BAREOS_LIB_TREE_H_

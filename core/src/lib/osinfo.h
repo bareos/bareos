@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,4 +19,9 @@
    02110-1301, USA.
 */
 
+#ifndef BAREOS_LIB_OSINFO_H_
+#define BAREOS_LIB_OSINFO_H_
+
 const char* GetOsInfoString(void);
+
+#endif  // BAREOS_LIB_OSINFO_H_

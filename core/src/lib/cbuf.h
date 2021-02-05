@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,8 @@
  * Circular buffer used for producer/consumer problem with pthread.
  */
 
+#ifndef BAREOS_LIB_CBUF_H_
+#define BAREOS_LIB_CBUF_H_
 
 #define QSIZE 10 /**< # of pointers in the queue */
 
@@ -66,3 +68,5 @@ inline CircularBuffer::CircularBuffer(int capacity) { init(capacity); }
  * Destructor
  */
 inline CircularBuffer::~CircularBuffer() { destroy(); }
+
+#endif  // BAREOS_LIB_CBUF_H_

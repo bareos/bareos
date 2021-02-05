@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2008-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,7 +21,7 @@
 */
 
 #ifndef BAREOS_LIB_LOCKMGR_H_
-#define BAREOS_LIB_LOCKMGR_H_ 1
+#define BAREOS_LIB_LOCKMGR_H_
 
 #define PRIO_SD_VOL_LIST 0    /* vol_list_lock */
 #define PRIO_SD_ACH_ACCESS 16 /* autochanger lock mutex */
@@ -33,4 +33,4 @@ void Lmgr_v(pthread_mutex_t* m);
 
 #define P(x) Lmgr_p(&(x))
 #define V(x) Lmgr_v(&(x))
-#endif /* BAREOS_LIB_LOCKMGR_H_ */
+#endif  // BAREOS_LIB_LOCKMGR_H_

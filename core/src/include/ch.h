@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,7 @@
  */
 
 #ifndef BAREOS_INCLUDE_CH_H_
-#define BAREOS_INCLUDE_CH_H_ 1
+#define BAREOS_INCLUDE_CH_H_
 
 /**
  * Compression algorithm signature. 4 letters as a 32bits integer
@@ -53,4 +53,4 @@ typedef struct {
   uint32_t size;    /* compressed size of the original data */
 } comp_stream_header;
 
-#endif /* BAREOS_INCLUDE_CH_H_ */
+#endif  // BAREOS_INCLUDE_CH_H_

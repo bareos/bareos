@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -184,4 +184,4 @@ class dlistString {
 extern dlistString* new_dlistString(const char* str, int len);
 extern dlistString* new_dlistString(const char* str);
 
-#endif /* BAREOS_LIB_DLIST_H_ */
+#endif  // BAREOS_LIB_DLIST_H_

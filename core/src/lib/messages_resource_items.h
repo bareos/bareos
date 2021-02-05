@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,8 +26,8 @@
  * Extracted from other source files by Marco van Wieringen, April 2014
  */
 
-#ifndef BAREOS_LIB_MSG_RES_H_
-#define BAREOS_LIB_MSG_RES_H_ 1
+#ifndef BAREOS_LIB_MESSAGES_RESOURCE_ITEMS_H_
+#define BAREOS_LIB_MESSAGES_RESOURCE_ITEMS_H_
 
 #include "lib/message_destination_info.h"
 
@@ -56,4 +56,4 @@ static ResourceItem msgs_items[] = {
 
 /* clang-format on */
 
-#endif /* BAREOS_LIB_MSG_RES_H_ */
+#endif  // BAREOS_LIB_MESSAGES_RESOURCE_ITEMS_H_

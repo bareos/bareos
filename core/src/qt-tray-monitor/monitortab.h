@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef MONITORTAB_H
-#define MONITORTAB_H
+#ifndef BAREOS_QT_TRAY_MONITOR_MONITORTAB_H_
+#define BAREOS_QT_TRAY_MONITOR_MONITORTAB_H_
 
 class MonitorTab : public QObject {
  public:
@@ -47,4 +47,4 @@ class MonitorTab : public QObject {
   QPlainTextEdit* textEdit;
 };
 
-#endif  // MONITORTAB_H
+#endif  // BAREOS_QT_TRAY_MONITOR_MONITORTAB_H_

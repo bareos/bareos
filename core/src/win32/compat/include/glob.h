@@ -1,7 +1,7 @@
 /**
  * @file glob.h
  * Copyright (C) 2012 MinGW.org project
- * Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+ * Copyright (C) 2016-2021 Bareos GmbH & Co. KG
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,8 +32,8 @@
  *
  * ---------------------------------------------------------------------------
  */
-#ifndef _GLOB_H
-#define _GLOB_H 1
+#ifndef BAREOS_WIN32_COMPAT_INCLUDE_GLOB_H_
+#define BAREOS_WIN32_COMPAT_INCLUDE_GLOB_H_
 #include <_mingw.h>
 #pragma GCC system_header
 
@@ -161,5 +161,5 @@ GLOB_INLINE void globfree(glob_t* __data) { return __mingw_globfree(__data); }
 #  define GLOB_NOMATCH (2)
 #  define GLOB_NOSPACE (3)
 
-#endif /* ! RC_INVOKED */
-#endif /* ! defined _GLOB_H */
+#endif  /* ! RC_INVOKED */
+#endif  // BAREOS_WIN32_COMPAT_INCLUDE_GLOB_H_

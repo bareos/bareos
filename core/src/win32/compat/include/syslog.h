@@ -28,8 +28,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef _SYSLOG_H
-#define _SYSLOG_H
+#ifndef BAREOS_WIN32_COMPAT_INCLUDE_SYSLOG_H_
+#define BAREOS_WIN32_COMPAT_INCLUDE_SYSLOG_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -104,4 +104,4 @@ void closelog(void);
 }
 #endif
 
-#endif /* _SYSLOG_H */
+#endif  // BAREOS_WIN32_COMPAT_INCLUDE_SYSLOG_H_

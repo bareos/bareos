@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -23,8 +23,8 @@
  * support.
  */
 
-#ifndef BAREOS_PLUGINS_STORED_BAREOSSD_H_
-#define BAREOS_PLUGINS_STORED_BAREOSSD_H_ 1
+#ifndef BAREOS_PLUGINS_STORED_PYTHON_MODULE_BAREOSSD_H_
+#define BAREOS_PLUGINS_STORED_PYTHON_MODULE_BAREOSSD_H_
 
 #define PYTHON_MODULE_NAME bareossd
 #define PYTHON_MODULE_NAME_QUOTED "bareossd"
@@ -205,4 +205,4 @@ static int import_bareossd()
 }
 #endif  // BAREOSSD_MODULE
 
-#endif /* BAREOS_PLUGINS_STORED_BAREOSSD_H_ */
+#endif  // BAREOS_PLUGINS_STORED_PYTHON_MODULE_BAREOSSD_H_

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -335,4 +335,4 @@ enum
   BNET_ERROR = -3
 };
 
-#endif /* BAREOS_LIB_BSOCK_H_ */
+#endif  // BAREOS_LIB_BSOCK_H_

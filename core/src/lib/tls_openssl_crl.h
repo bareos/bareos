@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,4 +41,4 @@ bool SetCertificateRevocationList(const std::string& crlfile_,
 #endif /* (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < \
           0x10100000L) */
 
-#endif /* BAREOS_LIB_TLS_OPENSSL_CRL_H_ */
+#endif  // BAREOS_LIB_TLS_OPENSSL_CRL_H_

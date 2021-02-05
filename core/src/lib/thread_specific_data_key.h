@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_LIB_THREAD_SPECIFIC_DATA_KEY_H_
-#define BAREOS_SRC_LIB_THREAD_SPECIFIC_DATA_KEY_H_
+#ifndef BAREOS_LIB_THREAD_SPECIFIC_DATA_KEY_H_
+#define BAREOS_LIB_THREAD_SPECIFIC_DATA_KEY_H_
 
 #include "lib/berrno.h"
 
@@ -62,4 +62,4 @@ class ThreadSpecificDataKey {
 
 pthread_key_t ThreadSpecificDataKey::key_;
 
-#endif  // BAREOS_SRC_LIB_THREAD_SPECIFIC_DATA_KEY_H_
+#endif  // BAREOS_LIB_THREAD_SPECIFIC_DATA_KEY_H_

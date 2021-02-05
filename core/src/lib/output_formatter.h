@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -300,4 +300,4 @@ json_t* json_item(ResourceItem* item);
 json_t* json_items(ResourceItem items[]);
 #endif
 
-#endif
+#endif  // BAREOS_LIB_OUTPUT_FORMATTER_H_

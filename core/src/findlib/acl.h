@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -119,4 +119,4 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
                                  char* content,
                                  uint32_t content_length);
 
-#endif
+#endif  // BAREOS_FINDLIB_ACL_H_

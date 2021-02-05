@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,7 @@
  * FileSet include handling
  */
 #ifndef BAREOS_DIRD_INC_CONF_H_
-#define BAREOS_DIRD_INC_CONF_H_ 1
+#define BAREOS_DIRD_INC_CONF_H_
 
 #include "lib/keyword_table_s.h"
 
@@ -48,4 +48,4 @@ json_t* json_options(const int type);
 
 } /* namespace directordaemon */
 
-#endif /* BAREOS_DIRD_INC_CONF_H_ */
+#endif  // BAREOS_DIRD_INC_CONF_H_

@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,7 @@
  */
 
 #ifndef BAREOS_DIRD_UA_H_
-#define BAREOS_DIRD_UA_H_ 1
+#define BAREOS_DIRD_UA_H_
 
 #include "include/bareos.h"
 #include "lib/bsock.h"
@@ -290,4 +290,4 @@ void FreeUaContext(UaContext* ua);
 UaContext* new_ua_context(JobControlRecord* jcr);
 
 } /* namespace directordaemon */
-#endif /* BAREOS_DIRD_UA_H_ */
+#endif  // BAREOS_DIRD_UA_H_

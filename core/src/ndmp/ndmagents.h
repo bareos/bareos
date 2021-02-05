@@ -95,7 +95,7 @@
  */
 
 #ifndef BAREOS_NDMP_NDMAGENTS_H_
-#define BAREOS_NDMP_NDMAGENTS_H_ 1
+#define BAREOS_NDMP_NDMAGENTS_H_
 
 #include "ndmp/ndmlib.h"
 

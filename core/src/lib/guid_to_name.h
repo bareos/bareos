@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007 Kern Sibbald
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,9 @@
  * for performance reasons.
  */
 
+#ifndef BAREOS_LIB_GUID_TO_NAME_H_
+#define BAREOS_LIB_GUID_TO_NAME_H_
+
 class dlist;
 
 class guid_list {
@@ -41,3 +44,5 @@ class guid_list {
 
 guid_list* new_guid_list();
 void FreeGuidList(guid_list* list);
+
+#endif  // BAREOS_LIB_GUID_TO_NAME_H_

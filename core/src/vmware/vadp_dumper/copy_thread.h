@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,10 @@
 /*
  * Copy thread used for producer/consumer problem with pthreads.
  */
+
+#ifndef BAREOS_VMWARE_VADP_DUMPER_COPY_THREAD_H_
+#define BAREOS_VMWARE_VADP_DUMPER_COPY_THREAD_H_
+
 #include "cbuf.h"
 
 typedef size_t(IO_FUNCTION)(size_t sector_offset, size_t nbyte, void* buf);
@@ -55,3 +59,5 @@ bool setup_copy_thread(IO_FUNCTION* input_function,
 bool send_to_copy_thread(size_t sector_offset, size_t nbyte);
 void flush_copy_thread();
 void cleanup_copy_thread();
+
+#endif  // BAREOS_VMWARE_VADP_DUMPER_COPY_THREAD_H_

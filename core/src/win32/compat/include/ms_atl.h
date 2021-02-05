@@ -4,6 +4,9 @@
  */
 /* check-sources:disable-copyright-check */
 
+#ifndef BAREOS_WIN32_COMPAT_INCLUDE_MS_ATL_H_
+#define BAREOS_WIN32_COMPAT_INCLUDE_MS_ATL_H_
+
 template <class T>
 class CComPtr {
  public:
@@ -33,3 +36,5 @@ class CComBSTR {
   /* Address-of operator */
   BSTR* operator&() { return &p; }
 };
+
+#endif  // BAREOS_WIN32_COMPAT_INCLUDE_MS_ATL_H_

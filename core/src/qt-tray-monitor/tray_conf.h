@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,8 +33,8 @@
  * Resource codes -- they must be sequential for indexing
  */
 
-#ifndef TRAY_CONF_H_INCLUDED
-#define TRAY_CONF_H_INCLUDED
+#ifndef BAREOS_QT_TRAY_MONITOR_TRAY_CONF_H_
+#define BAREOS_QT_TRAY_MONITOR_TRAY_CONF_H_
 
 #include "lib/tls_conf.h"
 
@@ -140,4 +140,4 @@ class ConsoleFontResource
 ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code);
 bool PrintConfigSchemaJson(PoolMem& buffer);
 
-#endif /* TRAY_CONF_H_INCLUDED */
+#endif  // BAREOS_QT_TRAY_MONITOR_TRAY_CONF_H_

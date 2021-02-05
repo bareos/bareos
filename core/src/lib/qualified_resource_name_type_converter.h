@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,7 +20,7 @@
 */
 
 #ifndef BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_
-#define BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_ 1
+#define BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_
 
 #include "include/bareos.h"
 
@@ -46,4 +46,4 @@ class QualifiedResourceNameTypeConverter {
   const std::map<std::string, int> name_type_relation_map_;
 };
 
-#endif /* BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_ */
+#endif  // BAREOS_LIB_QUALIFIED_RESOURCE_NAME_TYPE_CONVERTER_H_

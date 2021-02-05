@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,7 @@
  */
 
 #ifndef BAREOS_CATS_CATS_BACKENDS_H_
-#define BAREOS_CATS_CATS_BACKENDS_H_ 1
+#define BAREOS_CATS_CATS_BACKENDS_H_
 
 class BareosDb;
 
@@ -92,4 +92,4 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                            bool need_private = false);
 
 
-#endif /* BAREOS_CATS_CATS_BACKENDS_H_ */
+#endif  // BAREOS_CATS_CATS_BACKENDS_H_

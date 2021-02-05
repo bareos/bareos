@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,7 +31,7 @@
  */
 
 #ifndef BAREOS_DIRD_JOBQ_H_
-#define BAREOS_DIRD_JOBQ_H_ 1
+#define BAREOS_DIRD_JOBQ_H_
 
 class dlist;
 
@@ -76,4 +76,4 @@ bool IncReadStore(JobControlRecord* jcr);
 void DecReadStore(JobControlRecord* jcr);
 
 } /* namespace directordaemon */
-#endif /* BAREOS_DIRD_JOBQ_H_ */
+#endif  // BAREOS_DIRD_JOBQ_H_

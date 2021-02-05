@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,7 @@
  */
 
 #ifndef BAREOS_LIB_MNTENT_CACHE_H_
-#define BAREOS_LIB_MNTENT_CACHE_H_ 1
+#define BAREOS_LIB_MNTENT_CACHE_H_
 
 /*
  * Don't use the mountlist data when its older than this amount
@@ -61,4 +61,4 @@ mntent_cache_entry_t* find_mntent_mapping(uint32_t dev);
 void ReleaseMntentMapping(mntent_cache_entry_t* mce);
 void FlushMntentCache(void);
 
-#endif /* BAREOS_LIB_MNTENT_CACHE_H_ */
+#endif  // BAREOS_LIB_MNTENT_CACHE_H_

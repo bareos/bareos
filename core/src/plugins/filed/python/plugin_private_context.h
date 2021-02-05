@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_CORE_SRC_PLUGINS_FILED_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
-#define BAREOS_CORE_SRC_PLUGINS_FILED_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
+#ifndef BAREOS_PLUGINS_FILED_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
+#define BAREOS_PLUGINS_FILED_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
 
 struct plugin_private_context {
   int32_t backup_level; /* Backup level e.g. Full/Differential/Incremental */
@@ -41,4 +41,4 @@ struct plugin_private_context {
 };
 
 
-#endif  // BAREOS_CORE_SRC_PLUGINS_FILED_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
+#endif  // BAREOS_PLUGINS_FILED_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_

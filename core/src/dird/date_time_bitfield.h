@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,8 +21,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_SRC_DIRD_DATE_TIME_BITFILED_H_
-#define BAREOS_SRC_DIRD_DATE_TIME_BITFILED_H_
+#ifndef BAREOS_DIRD_DATE_TIME_BITFIELD_H_
+#define BAREOS_DIRD_DATE_TIME_BITFIELD_H_
 
 #include "lib/bits.h"
 
@@ -40,4 +40,4 @@ struct DateTimeBitfield {
 
 }  // namespace directordaemon
 
-#endif  // BAREOS_SRC_DIRD_DATE_TIME_BITFILED_H_
+#endif  // BAREOS_DIRD_DATE_TIME_BITFIELD_H_

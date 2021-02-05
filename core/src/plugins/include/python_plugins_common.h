@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -18,8 +18,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_PYTHON_PLUGINS_COMMON_H_
-#define BAREOS_PYTHON_PLUGINS_COMMON_H_
+#ifndef BAREOS_PLUGINS_INCLUDE_PYTHON_PLUGINS_COMMON_H_
+#define BAREOS_PLUGINS_INCLUDE_PYTHON_PLUGINS_COMMON_H_
 
 /* Common definitions used in all python plugins.  */
 
@@ -140,4 +140,4 @@
     return MOD_ERROR_VAL;                                            \
   }
 
-#endif  // BAREOS_PYTHON_PLUGINS_COMMON_H_
+#endif  // BAREOS_PLUGINS_INCLUDE_PYTHON_PLUGINS_COMMON_H_

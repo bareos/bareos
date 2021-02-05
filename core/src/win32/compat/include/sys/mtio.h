@@ -20,8 +20,8 @@
 
 /* Written by H. Bergman <hennus@cybercomm.nl>.  */
 
-#ifndef _SYS_MTIO_H
-#define _SYS_MTIO_H 1
+#ifndef BAREOS_WIN32_COMPAT_INCLUDE_SYS_MTIO_H_
+#define BAREOS_WIN32_COMPAT_INCLUDE_SYS_MTIO_H_
 
 /* Get necessary definitions from system and kernel headers.  */
 #include <sys/types.h>
@@ -275,4 +275,4 @@ struct mtconfiginfo {
 #  define DEFTAPE "/dev/tape"
 #endif
 
-#endif /* mtio.h */
+#endif  // BAREOS_WIN32_COMPAT_INCLUDE_SYS_MTIO_H_

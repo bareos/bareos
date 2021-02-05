@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,9 @@
 /*
  * Kern Sibbald, August 2007
  */
+
+#ifndef BAREOS_WIN32_GENERIC_PROTOS_H_
+#define BAREOS_WIN32_GENERIC_PROTOS_H_
 
 #define LogErrorMessage(msg) LogLastErrorMsg((msg), __FILE__, __LINE__)
 
@@ -46,3 +49,5 @@ extern bool opt_debug;
 extern bool have_service_api;
 extern HINSTANCE appInstance;
 extern int bareosstat;
+
+#endif  // BAREOS_WIN32_GENERIC_PROTOS_H_

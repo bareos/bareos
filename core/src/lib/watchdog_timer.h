@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,6 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+
+#ifndef BAREOS_LIB_WATCHDOG_TIMER_H_
+#define BAREOS_LIB_WATCHDOG_TIMER_H_
 
 #include "include/bareos.h"
 #include <chrono>
@@ -77,3 +80,5 @@ class BSockWatchdog : public WatchdogTimer {
  public:
   BareosSocket* bsock_;
 };
+
+#endif  // BAREOS_LIB_WATCHDOG_TIMER_H_

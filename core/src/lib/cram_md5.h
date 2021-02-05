@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_CRAM_MD5_H_
-#define LIB_CRAM_MD5_H_
+#ifndef BAREOS_LIB_CRAM_MD5_H_
+#define BAREOS_LIB_CRAM_MD5_H_
 
 #include "lib/tls_conf.h"
 
@@ -77,4 +77,4 @@ void hmac_md5(uint8_t* text,
               int key_len,
               uint8_t* hmac);
 
-#endif  // LIB_CRAM_MD5_H_
+#endif  // BAREOS_LIB_CRAM_MD5_H_

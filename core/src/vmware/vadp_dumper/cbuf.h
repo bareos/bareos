@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,9 @@
 /*
  * Circular buffer used for producer/consumer problem with pthread.
  */
+
+#ifndef BAREOS_VMWARE_VADP_DUMPER_CBUF_H_
+#define BAREOS_VMWARE_VADP_DUMPER_CBUF_H_
 
 #define QSIZE 40 /* # of pointers in the queue */
 
@@ -62,3 +65,5 @@ inline circbuf::circbuf() { init(); }
  * Destructor
  */
 inline circbuf::~circbuf() { destroy(); }
+
+#endif  // BAREOS_VMWARE_VADP_DUMPER_CBUF_H_
