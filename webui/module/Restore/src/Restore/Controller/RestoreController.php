@@ -550,9 +550,10 @@ class RestoreController extends AbstractActionController
     $this->setRestoreParams();
     $this->getJobIds();
 
-    if($this->restore_params['id'] !== null && $this->restore_params['id'] !== "#") {
+    if($this->restore_params['id'] === null || $this->restore_params['id'] === "#") {
       $this->updateBvfsCache();
     }
+
     $this->getDirectories();
     $this->getFiles();
 
