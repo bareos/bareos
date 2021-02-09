@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -675,7 +675,7 @@ class BareosFdPluginOvirt(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             % (self.options["config_file"]),
         )
 
-        self.config = configparser.ConfigParser()
+        self.config = ConfigParser()
 
         try:
             self.config.readfp(open(self.options["config_file"]))
