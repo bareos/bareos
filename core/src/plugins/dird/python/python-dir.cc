@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2014 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -196,7 +196,6 @@ static void PyErrorHandler()
   Py_DECREF(type);
   Py_XDECREF(value);
   Py_XDECREF(traceback);
-  // printf("%s", error_string);
 
   free(error_string);
   exit(1);
@@ -215,46 +214,46 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  /* Setup Python */
-  Py_InitializeEx(0);
+  if (!Py_IsInitialized()) {
+    Py_InitializeEx(0);
+    // add bareos plugin path to python module search path
+    PyObject* sysPath = PySys_GetObject((char*)"path");
+    PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
+    PyList_Append(sysPath, pluginPath);
+    Py_DECREF(pluginPath);
 
-  // add bareos plugin path to python module search path
-  PyObject* sysPath = PySys_GetObject((char*)"path");
-  PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
-  PyList_Append(sysPath, pluginPath);
-  Py_DECREF(pluginPath);
+    /* import the bareosdir module */
+    PyObject* bareosdirModule = PyImport_ImportModule("bareosdir");
+    if (!bareosdirModule) {
+      printf("loading of bareosdir failed\n");
+      if (PyErr_Occurred()) { PyErrorHandler(); }
+    }
 
+    /* import the CAPI from the bareosdir python module
+     * afterwards, Bareosdir_* macros are initialized to
+     * point to the corresponding functions in the bareosdir python
+     * module */
+    import_bareosdir();
 
-  /* import the bareosdir module */
-  PyObject* bareosdirModule = PyImport_ImportModule("bareosdir");
-  if (!bareosdirModule) {
-    printf("loading of bareosdir failed\n");
-    if (PyErr_Occurred()) { PyErrorHandler(); }
-  }
+    /* set bareos_core_functions inside of barosdir module */
+    Bareosdir_set_bareos_core_functions(lbareos_core_functions);
 
-  /* import the CAPI from the bareosdir python module
-   * afterwards, Bareosdir_* macros are initialized to
-   * point to the corresponding functions in the bareosdir python
-   * module */
-  import_bareosdir();
+    bareos_core_functions
+        = lbareos_core_functions; /* Set Bareos funct pointers */
+    bareos_plugin_interface_version = lbareos_plugin_interface_version;
 
-  /* set bareos_core_functions inside of barosdir module */
-  Bareosdir_set_bareos_core_functions(lbareos_core_functions);
-
-  bareos_core_functions
-      = lbareos_core_functions; /* Set Bareos funct pointers */
-  bareos_plugin_interface_version = lbareos_plugin_interface_version;
-
-  *plugin_information = &pluginInfo; /* Return pointer to our info */
-  *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
+    *plugin_information = &pluginInfo; /* Return pointer to our info */
+    *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
 
 #if PY_VERSION_HEX < VERSION_HEX(3, 7, 0)
-  PyEval_InitThreads();
+    PyEval_InitThreads();
 #endif
 
-  mainThreadState = PyEval_SaveThread();
-
-  return bRC_OK;
+    mainThreadState = PyEval_SaveThread();
+    return bRC_OK;
+  } else {
+    return bRC_Error;
+  }
 }
 
 /**
@@ -262,12 +261,12 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
  */
 bRC unloadPlugin()
 {
-  /*
-   * Terminate Python
-   */
-  PyEval_RestoreThread(mainThreadState);
-  Py_Finalize();
-
+  /* Terminate Python if it was initialized correctly */
+  if (mainThreadState) {
+    PyEval_RestoreThread(mainThreadState);
+    Py_Finalize();
+    mainThreadState = nullptr;
+  }
   return bRC_OK;
 }
 
