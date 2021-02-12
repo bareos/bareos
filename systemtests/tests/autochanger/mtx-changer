@@ -1,0 +1,298 @@
+#!/bin/sh
+#
+# Bareos interface to mtx autoloader
+#
+#  If you set in your Device resource
+#
+#  Changer Command = "path-to-this-script/mtx-changer %c %o %S %a %d"
+#    you will have the following input to this script:
+#
+#  So Bareos will always call with all the following arguments, even though
+#    in come cases, not all are used.
+#
+#  mtx-changer "changer-device" "command" "slot" "archive-device" "drive-index"
+#		   $1		   $2	    $3	      $4	       $5
+#
+#  for example:
+#
+#  mtx-changer /dev/sg0 load 1 /dev/nst0 0 (on a Linux system)
+#
+#  will request to load the first cartidge into drive 0, where
+#   the SCSI control channel is /dev/sg0, and the read/write device
+#   is /dev/nst0.
+#
+#  The commands are:
+#      Command		  Function
+#      unload		  unload a given slot
+#      load		  load a given slot
+#      loaded		  which slot is loaded?
+#      list		  list Volume names (requires barcode reader)
+#      slots		  how many slots total?
+#      listall		  list all info
+#      transfer
+#
+#  Slots are numbered from 1 ...
+#  Drives are numbered from 0 ...
+#
+#
+#  If you need to an offline, refer to the drive as $4
+#    e.g.   mt -f $4 offline
+#
+#  Many changers need an offline after the unload. Also many
+#   changers need a sleep 60 after the mtx load.
+#
+#  N.B. If you change the script, take care to return either
+#   the mtx exit code or a 0. If the script exits with a non-zero
+#   exit code, Bareos will assume the request failed.
+#
+
+set -e
+set -u
+
+. ./environment
+
+# source our conf file
+if test ! -r "${conf}/mtx-changer.conf" ; then
+  echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  echo "ERROR: ${conf}/mtx-changer.conf not found"
+  echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  exit 1
+fi
+. "${conf}/mtx-changer.conf"
+
+MTX=$(which mtx)
+if test ! -x "$MTX" ; then
+  echo "ERROR: mtx program not found ($MTX)"
+  exit 1
+fi
+
+dbgfile="${logdir}/mtx.log"
+if test ${debug_log} -ne 0 ; then
+  touch $dbgfile
+fi
+debug() {
+    if test -f $dbgfile; then
+        echo "`date +\"%Y%m%d-%H:%M:%S\"` $*" >> $dbgfile
+    fi
+}
+
+
+#
+# Create a temporary file
+#
+make_temp_file() {
+  TMPFILE=$(mktemp "${tmp}/mtx.XXXXXXXXXX")
+  if test x${TMPFILE} = x; then
+     TMPFILE="${tmp}/mtx.$$"
+     if test -f ${TMPFILE}; then
+	echo "ERROR: Temp file security problem on: ${TMPFILE}"
+	exit 1
+     fi
+  fi
+}
+
+#
+#  Create a temporary file for stderr
+#
+#  Note, this file is used because sometime mtx emits
+#  unexpected error messages followed by the output
+#  expected during success.
+#  So we separate STDOUT and STDERR in
+#  certain of the mtx commands. The contents of STDERR
+#  is then printed after the STDOUT produced by mtx
+#  thus we sometimes get better changer results.
+#
+make_err_file() {
+  ERRFILE=$(mktemp "${tmp}/mtx.err.XXXXXXXXXX")
+  if test x${ERRFILE} = x; then
+     ERRFILE="${tmp}/mtx.err.$$"
+     if test -f ${ERRFILE}; then
+	echo "ERROR: Temp file security problem on: ${ERRFILE}"
+	exit 1
+     fi
+  fi
+}
+
+
+#
+# The purpose of this function to wait a maximum
+#   time for the drive. It will
+#   return as soon as the drive is ready, or after
+#   waiting a maximum of 300 seconds.
+# Note, this is very system dependent, so if you are
+#   not running on Linux, you will probably need to
+#   re-write it, or at least change the grep target.
+#   We've attempted to get the appropriate OS grep targets
+#   in the code at the top of this script.
+#
+wait_for_drive() {
+  i=0
+  while [ $i -le 300 ]; do  # Wait max 300 seconds
+    if mt -f $1 status 2>&1 | grep "${ready}" >/dev/null 2>&1; then
+      break
+    fi
+    debug "Device $1 - not ready, retrying..."
+    sleep 1
+    i=`expr $i + 1`
+  done
+}
+
+# check parameter count on commandline
+#
+check_parm_count() {
+    pCount=$1
+    pCountNeed=$2
+    if test $pCount -lt $pCountNeed; then
+	echo "ERROR: usage: mtx-changer ctl-device command [slot archive-device drive-index]"
+	echo "	Insufficient number of arguments given."
+	if test $pCount -lt 2; then
+	    echo "  Mimimum usage is first two arguments ..."
+	else
+	    echo "  Command expected $pCountNeed arguments"
+	fi
+	exit 1
+    fi
+}
+
+# Check for special cases where only 2 arguments are needed,
+#  all others are a minimum of 5
+#
+case $2 in
+    list|listall)
+	check_parm_count $# 2
+	;;
+    slots)
+	check_parm_count $# 2
+	;;
+    transfer)
+	check_parm_count $# 4
+	;;
+    *)
+	check_parm_count $# 5
+	;;
+esac
+
+
+# Setup arguments
+ctl=$1
+cmd="$2"
+slot=$3
+device=$4
+drive=$5
+
+debug "Parms: $ctl $cmd $slot $device $drive"
+
+case $cmd in
+   unload)
+      debug "Doing mtx -f $ctl unload $slot $drive"
+
+      if test ${offline} -eq 1 ; then
+        mt -f $device offline
+      fi
+      if test ${offline_sleep} -ne 0 ; then
+        sleep ${offline_sleep}
+      fi
+      make_err_file
+      ${MTX} -f $ctl unload $slot $drive 2>${ERRFILE}
+      rtn=$?
+      cat ${ERRFILE}
+      rm -f ${ERRFILE} >/dev/null 2>&1
+      exit $rtn
+      ;;
+
+   load)
+      debug "Doing mtx -f $ctl load $slot $drive"
+      make_err_file
+      ${MTX} -f $ctl load $slot $drive 2>${ERRFILE}
+      rtn=$?
+      if test ${load_sleep} -ne 0 ; then
+        sleep ${load_sleep}
+      fi
+      wait_for_drive $device
+      cat ${ERRFILE}
+      rm -f ${ERRFILE} >/dev/null 2>&1
+      exit $rtn
+      ;;
+
+   list)
+      debug "Doing mtx -f $ctl -- to list volumes"
+      make_temp_file
+      if test ${inventory} -ne 0 ; then
+        ${MTX} -f $ctl inventory
+      fi
+      ${MTX} -f $ctl status >${TMPFILE}
+      rtn=$?
+      if test ${vxa_packetloader} -ne 0 ; then
+        cat ${TMPFILE} | grep " *Storage Element [0-9]*:.*Full" | sed "s/ Storage Element //" | sed "s/Full :VolumeTag=//"
+      else
+	cat ${TMPFILE} | grep " Storage Element [0-9]*:.*Full" | awk "{print \$3 \$4}" | sed "s/Full *\(:VolumeTag=\)*//"
+      fi
+      cat ${TMPFILE} | grep "^Data Transfer Element [0-9]*:Full (Storage Element [0-9]" | awk '{printf "%s:%s\n",$7,$10}'
+      rm -f ${TMPFILE} >/dev/null 2>&1
+      exit $rtn
+      ;;
+
+   listall)
+#  Drive content:	  D:Drive num:F:Slot loaded:Volume Name
+#  D:0:F:2:vol2        or D:Drive num:E
+#  D:1:F:42:vol42
+#  D:3:E
+#
+#  Slot content:
+#  S:1:F:vol1		  S:Slot num:F:Volume Name
+#  S:2:E	       or S:Slot num:E
+#  S:3:F:vol4
+#
+#  Import/Export tray slots:
+#  I:10:F:vol10 	  I:Slot num:F:Volume Name
+#  I:11:E	       or I:Slot num:E
+#  I:12:F:vol40
+
+      debug "Doing mtx -f $ctl -- to list all"
+      make_temp_file
+      if test ${inventory} -ne 0 ; then
+        ${MTX} -f $ctl inventory
+      fi
+      ${MTX} -f $ctl status >${TMPFILE}
+      rtn=$?
+      # can be converted to awk+sed+cut, see below
+      perl -ne '
+/Data Transfer Element (\d+):Empty/ && print "D:$1:E\n";
+/Data Transfer Element (\d+):Full \(Storage Element (\d+) Loaded\)(:VolumeTag =\s*(.+))?/ && print "D:$1:F:$2:$4\n";
+/Storage Element (\d+):Empty/ && print "S:$1:E\n";
+/Storage Element (\d+):Full( :VolumeTag=(.+))?/ && print "S:$1:F:$3\n";
+/Storage Element (\d+) IMPORT.EXPORT:Empty/ && print "I:$1:E\n";
+/Storage Element (\d+) IMPORT.EXPORT:Full( :VolumeTag=(.+))?/ && print "I:$1:F:$3\n";' ${TMPFILE}
+      # If perl isn't installed, you can use by those commands
+#cat ${TMPFILE} | grep "Data Transfer Element" | awk "{print \"D:\"\$4 \$7 \$9 \$10}" | sed "s/=/:/" | sed "s/Full/F:/" | sed "s/Empty/E/"
+#cat ${TMPFILE} | grep -v "Data Transfer Element" | grep "Storage Element" | grep -v "IMPORT/EXPORT" | awk "{print \"S:\"\$3 \$4 \$5}" | sed "s/IMPORT\/EXPORT//" | sed "s/Full *:VolumeTag=/F:/" | sed "s/Empty/E/"
+#cat ${TMPFILE} | grep -v "Data Transfer Element" | grep "Storage Element" | grep "IMPORT/EXPORT" | awk "{print \"I:\"\$3 \$4 \$5}" | sed "s/IMPORT\/EXPORT//" | sed "s/Full *:VolumeTag=/F:/" | sed "s/Empty/E/"
+
+      rm -f ${TMPFILE} >/dev/null 2>&1
+      exit $rtn
+      ;;
+
+   transfer)
+      slotdest=$device
+      debug "Doing transfer from $slot to $slotdest"
+      ${MTX} -f $ctl transfer $slot $slotdest
+      rtn=$?
+      exit $rtn
+      ;;
+
+   loaded)
+      debug "Doing mtx -f $ctl $drive -- to find what is loaded"
+      make_temp_file
+      ${MTX} -f $ctl status >${TMPFILE}
+      rtn=$?
+      cat ${TMPFILE} | grep "^Data Transfer Element $drive:Full" | awk "{print \$7}"
+      cat ${TMPFILE} | grep "^Data Transfer Element $drive:Empty" | awk "{print 0}"
+      rm -f ${TMPFILE} >/dev/null 2>&1
+      exit $rtn
+      ;;
+
+   slots)
+      debug "Doing mtx -f $ctl -- to get count of slots"
+      ${MTX} -f $ctl status | grep " *Storage Changer" | awk "{print \$5}"
+      ;;
+esac
