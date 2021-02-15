@@ -25,8 +25,8 @@ PSQL="psql --host $TESTPGHOST"
 mkdir -p "$TESTPGHOST"
 [ $EUID -eq 0 ] && chown postgres "$TESTPGHOST"
 
-pushd database > /dev/null || exit 1
-setup_local_db "$TESTPGHOST" || exit
+pushd database > /dev/null
+setup_local_db "$TESTPGHOST"
 popd > /dev/null
 
 #shellcheck source=../scripts/functions
@@ -129,7 +129,7 @@ until ${PSQL} ${DBNAME} <<< "SELECT * FROM t" | grep "for INCR"  > $tmp/sql.log 
 	echo "waiting for query to succeed"
 	sleep 1
   i=$((i+1))
-  if [ $i -gt 30 ]; then echo "timout waiting for query after recovery"; exit 1; fi
+  if [ $i -gt 30 ]; then echo "timeout waiting for query after recovery"; exit 1; fi
 done
 
 pushd database/ > /dev/null
