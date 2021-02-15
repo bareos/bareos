@@ -36,6 +36,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - support for shorter date formats, where shorter dates are compensated with lowest value possible to make a full date [PR #707]
 - added external repo bareos-contrib as subtree [PR #752]
 - add "copy button" to code snippets in documentation for easy copying [PR #802]
+- added multicolumn prompt selection for selection of more than 20 items [PR #731]
 
 ### Changed
 . core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
