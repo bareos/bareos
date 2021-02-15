@@ -1790,11 +1790,11 @@ static bool IsPluginCompatible(Plugin* plugin)
 {
   PluginInformation* info = (PluginInformation*)plugin->plugin_information;
   Dmsg0(debuglevel, "IsPluginCompatible called\n");
-  if (debug_level >= 50) { DumpFdPlugin(plugin, stdin); }
   if (!info) {
     Dmsg0(debuglevel, "IsPluginCompatible: plugin_information is empty\n");
     return false;
   }
+  if (debug_level >= 50) { DumpFdPlugin(plugin, stdin); }
   if (!bstrcmp(info->plugin_magic, FD_PLUGIN_MAGIC)) {
     Jmsg(NULL, M_ERROR, 0,
          _("Plugin magic wrong. Plugin=%s wanted=%s got=%s\n"), plugin->file,

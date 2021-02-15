@@ -114,7 +114,7 @@ static PluginFunctions pluginFuncs
  * final python interpreter on unload of the plugin. Each instance of
  * the plugin get its own interpreter.
  */
-static PyThreadState* mainThreadState;
+static PyThreadState* mainThreadState{nullptr};
 
 /* functions common to all plugins */
 #include "plugins/include/python_plugins_common.inc"
@@ -214,46 +214,44 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  if (!Py_IsInitialized()) {
-    Py_InitializeEx(0);
-    // add bareos plugin path to python module search path
-    PyObject* sysPath = PySys_GetObject((char*)"path");
-    PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
-    PyList_Append(sysPath, pluginPath);
-    Py_DECREF(pluginPath);
+  if (Py_IsInitialized()) { return bRC_Error; }
 
-    /* import the bareosdir module */
-    PyObject* bareosdirModule = PyImport_ImportModule("bareosdir");
-    if (!bareosdirModule) {
-      printf("loading of bareosdir failed\n");
-      if (PyErr_Occurred()) { PyErrorHandler(); }
-    }
+  Py_InitializeEx(0);
+  // add bareos plugin path to python module search path
+  PyObject* sysPath = PySys_GetObject((char*)"path");
+  PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
+  PyList_Append(sysPath, pluginPath);
+  Py_DECREF(pluginPath);
 
-    /* import the CAPI from the bareosdir python module
-     * afterwards, Bareosdir_* macros are initialized to
-     * point to the corresponding functions in the bareosdir python
-     * module */
-    import_bareosdir();
+  /* import the bareosdir module */
+  PyObject* bareosdirModule = PyImport_ImportModule("bareosdir");
+  if (!bareosdirModule) {
+    printf("loading of bareosdir failed\n");
+    if (PyErr_Occurred()) { PyErrorHandler(); }
+  }
 
-    /* set bareos_core_functions inside of barosdir module */
-    Bareosdir_set_bareos_core_functions(lbareos_core_functions);
+  /* import the CAPI from the bareosdir python module
+   * afterwards, Bareosdir_* macros are initialized to
+   * point to the corresponding functions in the bareosdir python
+   * module */
+  import_bareosdir();
 
-    bareos_core_functions
-        = lbareos_core_functions; /* Set Bareos funct pointers */
-    bareos_plugin_interface_version = lbareos_plugin_interface_version;
+  /* set bareos_core_functions inside of barosdir module */
+  Bareosdir_set_bareos_core_functions(lbareos_core_functions);
 
-    *plugin_information = &pluginInfo; /* Return pointer to our info */
-    *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
+  bareos_core_functions
+      = lbareos_core_functions; /* Set Bareos funct pointers */
+  bareos_plugin_interface_version = lbareos_plugin_interface_version;
+
+  *plugin_information = &pluginInfo; /* Return pointer to our info */
+  *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
 
 #if PY_VERSION_HEX < VERSION_HEX(3, 7, 0)
-    PyEval_InitThreads();
+  PyEval_InitThreads();
 #endif
 
-    mainThreadState = PyEval_SaveThread();
-    return bRC_OK;
-  } else {
-    return bRC_Error;
-  }
+  mainThreadState = PyEval_SaveThread();
+  return bRC_OK;
 }
 
 /**
