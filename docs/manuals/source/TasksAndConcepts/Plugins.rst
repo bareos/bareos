@@ -290,6 +290,10 @@ Switching to use the Python 3 plugin, the following needs to be changed:
   * Set `Plugin Names = "python3"` to make sure the Python3 plugin is loaded.
   * Adapt the Plugin setting in the fileset to use Python3: `Plugin = "python3:module_path ...`
 
+.. warning::
+
+   It is not possible to load the python2 and python3 plugins at the same time.
+
 
 Recovering old backups
 ^^^^^^^^^^^^^^^^^^^^^^^
