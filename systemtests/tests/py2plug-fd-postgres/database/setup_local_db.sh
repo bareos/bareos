@@ -92,7 +92,7 @@ local_db_create_superuser_role() {
     su postgres -c "createuser -s --host=$1 root"
     su postgres -c "createdb   --host=$1 root"
   else
-    echo "CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN" |psql -h "$1" postgres
+    echo "CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN" | psql -h "$1" postgres
   fi
 }
 
@@ -102,9 +102,9 @@ setup_local_db() {
   if ! local_db_start_server "$1"; then return 1; fi
   local_db_create_superuser_role "$1"
   if [ $UID -eq 0 ]; then
-    echo stop server with "pg_ctl --pgdata=data stop"
+    echo stop server with "su postgres -c 'pg_ctl --pgdata=data stop'"
   else
-    echo stop server with "su postgres -c ' pg_ctl--pgdata=data stop'"
+    echo stop server with "pg_ctl --pgdata=data stop"
   fi
   return 0
 }

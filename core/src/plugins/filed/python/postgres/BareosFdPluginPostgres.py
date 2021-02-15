@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -101,22 +101,15 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             return bRC_Error
         if not self.options["postgresDataDir"].endswith("/"):
             self.options["postgresDataDir"] += "/"
-        self.labelFileName = self.options["postgresDataDir"] + "/backup_label"
+        self.labelFileName = self.options["postgresDataDir"] + "backup_label"
         if not self.options["walArchive"].endswith("/"):
             self.options["walArchive"] += "/"
         if "ignoreSubdirs" in self.options:
             self.ignoreSubdirs = self.options["ignoreSubdirs"]
-        if "dbname" in self.options:
-            self.dbname = self.options["dbname"]
-        else:
-            self.dbname = "postgres"
-        if "dbuser" in self.options:
-            self.dbuser = self.options["dbuser"]
-        else:
-            self.dbuser = "root"
-        if not "switchWal" in self.options:
-            self.switchWal = True
-        else:
+        self.dbname = self.options.get("dbname", "postgres")
+        self.dbuser = self.options.get("dbuser", "root")
+        self.switchWal = True
+        if "switchWal" in self.options:
             self.switchWal = self.options["switchWal"].lower() == "true"
         if "dbHost" in self.options:
             self.dbOpts += " host='%s'" % self.options["dbHost"]
@@ -131,7 +124,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         except Exception as e:
             bareosfd.JobMessage(
                 M_ERROR,
-                'Query "%s" failed: "%s"' % (sqlStatement, e.message),
+                'Query "%s" failed: %s\n' % (sqlStatement, e),
             )
             return False
         return True
@@ -256,9 +249,10 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             except Exception as e:
                 bareosfd.JobMessage(
                     M_ERROR,
-                    'Could net get stat-info for file %s: "%s"'
-                    % (file_to_backup, e.message),
+                    'Could net get stat-info for file %s: %s\n'
+                    % (file_to_backup, e),
                 )
+                continue
             bareosfd.DebugMessage(
                 150,
                 "%s fullTime: %d mtime: %d\n"
@@ -292,8 +286,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.parseBackupLabelFile()
             bareosfd.JobMessage(
                 M_FATAL,
-                'Another Postgres Backup Operation "%s" is in progress. ' % self.laLABEL
-                + "You may stop it using SELECT pg_stop_backup()",
+                "Another Postgres Backup Operation is in progress (\"{}\" file exists). You may stop it using SELECT pg_stop_backup()\n".format(self.labelFileName)
             )
             return bRC_Error
 
@@ -319,18 +312,17 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
 
     def parseBackupLabelFile(self):
         try:
-            labelFile = open(self.labelFileName, "r")
+            with open(self.labelFileName, "r") as labelFile:
+                for labelItem in labelFile.read().splitlines():
+                    k, v = labelItem.split(":", 1)
+                    self.labelItems.update({k.strip(): v.strip()})
+            bareosfd.DebugMessage(150, "Labels read: %s\n" % str(self.labelItems))
         except:
             bareosfd.JobMessage(
                 M_ERROR,
-                "Could not open Label File %s" % (self.labelFileName),
+                "Could not read Label File %s\n" % (self.labelFileName),
             )
 
-        for labelItem in labelFile.read().splitlines():
-            k, v = labelItem.split(":", 1)
-            self.labelItems.update({k.strip(): v.strip()})
-        labelFile.close()
-        bareosfd.DebugMessage(150, "Labels read: %s\n" % str(self.labelItems))
 
     def start_backup_file(self, savepkt):
         """
@@ -373,14 +365,15 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         Called on restore and on diff/inc jobs.
         """
         # Improve: sanity / consistence check of restore object
-        self.row_rop_raw = ROP.object
+        # ROP.object is of type bytearray.
+        self.row_rop_raw = ROP.object.decode("UTF-8")
         try:
-            self.rop_data[ROP.jobid] = json.loads(str(self.row_rop_raw))
+            self.rop_data[ROP.jobid] = json.loads(self.row_rop_raw)
         except Exception as e:
             bareosfd.JobMessage(
-                M_ERROR,
-                'Could net parse restore object json-data "%s\ / "%s"'
-                % (self.row_rop_raw, e.message),
+                M_FATAL,
+                'Could not parse restore object json-data "%s\ / "%s"\n'
+                % (self.row_rop_raw, e),
             )
 
         if "lastBackupStopTime" in self.rop_data[ROP.jobid]:
@@ -439,7 +432,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             except Exception as e:
                 bareosfd.JobMessage(
                     M_ERROR,
-                    'Could net get stat-info for file %s: "%s"' % (fullPath, e.message),
+                    'Could net get stat-info for file %s: %s\n' % (fullPath, e),
                 )
                 continue
             fileMtime = datetime.datetime.fromtimestamp(st.st_mtime)
