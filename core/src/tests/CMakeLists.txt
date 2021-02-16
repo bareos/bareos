@@ -484,3 +484,19 @@ if(NOT client-only)
       ${GTEST_MAIN_LIBRARIES}
   )
 endif() # NOT client-only
+
+if(NOT client-only)
+  bareos_add_test(
+    time_format_test
+    LINK_LIBRARIES
+      bareos
+      dird_objects
+      bareosfind
+      bareoscats
+      bareossql
+      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
+      ${LMDB_LIBS}
+      ${GTEST_LIBRARIES}
+      ${GTEST_MAIN_LIBRARIES}
+  )
+endif() # NOT client-only
