@@ -1,0 +1,12 @@
+Job {
+  Name = "copy-job2"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  Type = Copy
+  Level = Full
+  Pool = Full
+  Storage = File2
+  Selection Type = SQLQuery
+  Selection Pattern = "SELECT jobid FROM job WHERE poolid=3 AND type='A' AND jobstatus IN ('T','W');"
+  Messages = Standard
+}

@@ -301,6 +301,19 @@ check_files_written()
     fi
 }
 
+check_sd_files_written()
+{
+    LOG=$1
+    FILES="$(awk '/SD Files Written:/ { last=$4 } END { print last }' "$LOG")"
+
+    if [[ "$FILES" -lt 1 || -z "$FILES" ]]; then
+        print_debug "ERROR: Expected number of SD files written > 0, got \"$FILES\"."
+        return 1
+    fi
+
+    return 0
+}
+
 check_linked_against()
 {
    LIB="$1"
