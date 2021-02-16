@@ -613,8 +613,11 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED xattr)
 endif()
 
-# enable when mhvtl is present
-list(APPEND SYSTEM_TESTS_DISABLED autochanger)
+if(AUTOCHANGER_TEST_ENABLED)
+  list(APPEND SYSTEM_TESTS autochanger)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED autochanger)
+endif()
 
 if(TARGET (messages_resource))
   list(APPEND SYSTEM_TESTS messages)

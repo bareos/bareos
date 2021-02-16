@@ -20,13 +20,8 @@ done
 
 #maximum of 9 changer devices possible
 
-readonly CHANGER_DEVICE0="/dev/tape/by-id/scsi-SSTK_L700_XYZZY_A"
-readonly TAPE_DEVICES0=(\
-  "/dev/tape/by-id/scsi-XYZZY_A1-nst"\
-  "/dev/tape/by-id/scsi-XYZZY_A2-nst"\
-  "/dev/tape/by-id/scsi-XYZZY_A3-nst"\
-  "/dev/tape/by-id/scsi-XYZZY_A4-nst"\
-)
+readonly CHANGER_DEVICE0="@CHANGER_DEVICE0@"
+readonly TAPE_DEVICES0=(@TAPE_DEVICES0@)
 
 # testrunner currently supports only a single autochanger
 #readonly CHANGER_DEVICE1="/dev/tape/by-id/scsi-SSTK_L80_XYZZY_B"

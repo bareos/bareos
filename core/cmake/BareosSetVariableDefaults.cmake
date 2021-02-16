@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -652,4 +652,84 @@ if(DEFINED do-static-code-checks)
   set(DO_STATIC_CODE_CHECKS ${do-static-code-checks})
 else()
   set(DO_STATIC_CODE_CHECKS OFF)
+endif()
+
+if(NOT DEFINED changer-device0)
+  set(changer-device0 "/dev/tape/by-id/scsi-SSTK_L700_XYZZY_A")
+  set(default_changer0 TRUE)
+endif()
+
+execute_process(
+  COMMAND "ls ${changer-device0}"
+  RESULT_VARIABLE exists
+  OUTPUT_QUIET ERROR_QUIET
+)
+if(NOT exists)
+  message(STATUS "Could not find changer-device \"${changer-device0}\"")
+  set(error_changer0 TRUE)
+endif()
+
+if(NOT DEFINED tape-devices0)
+  list(APPEND tape-devices0 "/dev/tape/by-id/scsi-XYZZY_A1-nst"
+       "/dev/tape/by-id/scsi-XYZZY_A2-nst" "/dev/tape/by-id/scsi-XYZZY_A3-nst"
+       "/dev/tape/by-id/scsi-XYZZY_A4-nst"
+  )
+  set(default_tape_devices0 TRUE)
+endif()
+
+foreach(device ${tape-devices0})
+  execute_process(
+    COMMAND "ls ${device}"
+    RESULT_VARIABLE exists
+    OUTPUT_QUIET ERROR_QUIET
+  )
+  if(NOT exists)
+    message(STATUS "Could not find tape-device \"${device}\"")
+    set(error_tape_devices0 TRUE)
+  endif()
+endforeach()
+
+if(default_changer0 AND default_tape_devices0)
+  if(error_changer0 OR error_tape_devices0)
+    message(
+      STATUS
+        "Disabling autochanger test because one or more default devices were not found."
+    )
+  else()
+    set(autochanger_test_enabled TRUE)
+  endif()
+elseif(NOT default_changer0 AND NOT default_tape_devices0)
+  if(error_changer0 OR error_tape_devices0)
+    message(
+      FATAL_ERROR "Could not find one or more devices for autochanger test."
+    )
+  else()
+    set(autochanger_test_enabled TRUE)
+  endif()
+else()
+  message(
+    FATAL_ERROR "Cannot use default and non default devices at the same time."
+  )
+endif()
+
+if(autochanger_test_enabled)
+  set(AUTOCHANGER_TEST_ENABLED
+      TRUE
+      PARENT_SCOPE
+  )
+  set(CHANGER_DEVICE0
+      ${changer-device0}
+      PARENT_SCOPE
+  )
+
+  list(JOIN tape-devices0 "\" \"" joined_tape_devices_0)
+  set(TAPE_DEVICES0
+      "\"${joined_tape_devices_0}\""
+      PARENT_SCOPE
+  )
+
+  message(
+    STATUS
+      "Found valid devices for autochanger test: ${CHANGER_DEVICE0} ${TAPE_DEVICES0}"
+  )
 endif()
