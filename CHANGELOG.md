@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - fix invalid file descriptor issue in the libcloud plugin [PR #702]
+- fix crash when loading both python-fd and python3-fd plugins [PR #730]
 
 ### Added
 - added reload commands to systemd service [PR #694]

@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1711,6 +1711,8 @@ static void DumpFdPlugin(Plugin* plugin, FILE* fp)
   if (!plugin) { return; }
 
   info = (PluginInformation*)plugin->plugin_information;
+  if (!info) { return; }
+
   fprintf(fp, "\tversion=%d\n", info->version);
   fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
   fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));
@@ -1788,6 +1790,10 @@ static bool IsPluginCompatible(Plugin* plugin)
 {
   PluginInformation* info = (PluginInformation*)plugin->plugin_information;
   Dmsg0(debuglevel, "IsPluginCompatible called\n");
+  if (!info) {
+    Dmsg0(debuglevel, "IsPluginCompatible: plugin_information is empty\n");
+    return false;
+  }
   if (debug_level >= 50) { DumpFdPlugin(plugin, stdin); }
   if (!bstrcmp(info->plugin_magic, FD_PLUGIN_MAGIC)) {
     Jmsg(NULL, M_ERROR, 0,
