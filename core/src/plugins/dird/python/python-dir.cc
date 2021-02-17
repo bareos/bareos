@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2014 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -114,7 +114,7 @@ static PluginFunctions pluginFuncs
  * final python interpreter on unload of the plugin. Each instance of
  * the plugin get its own interpreter.
  */
-static PyThreadState* mainThreadState;
+static PyThreadState* mainThreadState{nullptr};
 
 /* functions common to all plugins */
 #include "plugins/include/python_plugins_common.inc"
@@ -196,7 +196,6 @@ static void PyErrorHandler()
   Py_DECREF(type);
   Py_XDECREF(value);
   Py_XDECREF(traceback);
-  // printf("%s", error_string);
 
   free(error_string);
   exit(1);
@@ -215,15 +214,14 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  /* Setup Python */
-  Py_InitializeEx(0);
+  if (Py_IsInitialized()) { return bRC_Error; }
 
+  Py_InitializeEx(0);
   // add bareos plugin path to python module search path
   PyObject* sysPath = PySys_GetObject((char*)"path");
   PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
   PyList_Append(sysPath, pluginPath);
   Py_DECREF(pluginPath);
-
 
   /* import the bareosdir module */
   PyObject* bareosdirModule = PyImport_ImportModule("bareosdir");
@@ -253,7 +251,6 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
 #endif
 
   mainThreadState = PyEval_SaveThread();
-
   return bRC_OK;
 }
 
@@ -262,12 +259,12 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
  */
 bRC unloadPlugin()
 {
-  /*
-   * Terminate Python
-   */
-  PyEval_RestoreThread(mainThreadState);
-  Py_Finalize();
-
+  /* Terminate Python if it was initialized correctly */
+  if (mainThreadState) {
+    PyEval_RestoreThread(mainThreadState);
+    Py_Finalize();
+    mainThreadState = nullptr;
+  }
   return bRC_OK;
 }
 

@@ -3,6 +3,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [20.0.1] - 2020-xx-xx
+
+### Fixed
+- fix parallel python plugin jobs [PR #732]
+- fix oVirt plugin problem with config file [PR #732]
+
+### Added
+
+- py2lug-fd-ovirt systemtest: use ovirt-plugin.ini config file [PR #732]
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Security
+
+
 ## [20.0.0] - 2020-12-16
 
 ### Fixed
@@ -271,4 +290,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #667]: https://github.com/bareos/bareos/pull/667
 [PR #672]: https://github.com/bareos/bareos/pull/672
 [PR #686]: https://github.com/bareos/bareos/pull/686
+[PR #732]: https://github.com/bareos/bareos/pull/732
 [unreleased]: https://github.com/bareos/bareos/tree/master

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -127,7 +127,7 @@ static PluginFunctions pluginFuncs
  * final python interpreter on unload of the plugin. Each instance of
  * the plugin get its own interpreter.
  */
-static PyThreadState* mainThreadState;
+static PyThreadState* mainThreadState{nullptr};
 
 /* functions common to all plugins */
 #include "plugins/include/python_plugins_common.inc"
@@ -170,7 +170,6 @@ static void PyErrorHandler()
   Py_DECREF(type);
   Py_XDECREF(value);
   Py_XDECREF(traceback);
-  // printf("%s", error_string);
 
   free(error_string);
   exit(1);
@@ -185,44 +184,43 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                PluginInformation** plugin_information,
                PluginFunctions** plugin_functions)
 {
-  if (!Py_IsInitialized()) {
-    Py_InitializeEx(0);
+  if (Py_IsInitialized()) { return bRC_Error; }
 
-    // add bareos plugin path to python module search path
-    PyObject* sysPath = PySys_GetObject((char*)"path");
-    PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
-    PyList_Append(sysPath, pluginPath);
-    Py_DECREF(pluginPath);
+  Py_InitializeEx(0);
+  // add bareos plugin path to python module search path
+  PyObject* sysPath = PySys_GetObject((char*)"path");
+  PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
+  PyList_Append(sysPath, pluginPath);
+  Py_DECREF(pluginPath);
 
-    /* import the bareosfd module */
-    PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
-    if (!bareosfdModule) {
-      printf("loading of bareosfd failed\n");
-      if (PyErr_Occurred()) { PyErrorHandler(); }
-    }
+  /* import the bareosfd module */
+  PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
+  if (!bareosfdModule) {
+    printf("loading of bareosfd failed\n");
+    if (PyErr_Occurred()) { PyErrorHandler(); }
+  }
 
-    /* import the CAPI from the bareosfd python module
-     * afterwards, Bareosfd_* macros are initialized to
-     * point to the corresponding functions in the bareosfd python
-     * module */
-    import_bareosfd();
+  /* import the CAPI from the bareosfd python module
+   * afterwards, Bareosfd_* macros are initialized to
+   * point to the corresponding functions in the bareosfd python
+   * module */
+  import_bareosfd();
 
-    /* set bareos_core_functions inside of barosfd module */
-    Bareosfd_set_bareos_core_functions(lbareos_core_functions);
+  /* set bareos_core_functions inside of barosfd module */
+  Bareosfd_set_bareos_core_functions(lbareos_core_functions);
 
-    bareos_core_functions
-        = lbareos_core_functions; /* Set Bareos funct pointers */
-    bareos_plugin_interface_version = lbareos_plugin_interface_version;
+  bareos_core_functions
+      = lbareos_core_functions; /* Set Bareos funct pointers */
+  bareos_plugin_interface_version = lbareos_plugin_interface_version;
 
-    *plugin_information = &pluginInfo; /* Return pointer to our info */
-    *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
+  *plugin_information = &pluginInfo; /* Return pointer to our info */
+  *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
 
 #if PY_VERSION_HEX < VERSION_HEX(3, 7, 0)
-    PyEval_InitThreads();
+  PyEval_InitThreads();
 #endif
 
-    mainThreadState = PyEval_SaveThread();
-  }
+  mainThreadState = PyEval_SaveThread();
   return bRC_OK;
 }
 
@@ -232,12 +230,12 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
  */
 bRC unloadPlugin()
 {
-  /*
-   * Terminate Python
-   */
-  PyEval_RestoreThread(mainThreadState);
-  Py_Finalize();
-
+  /* Terminate Python if it was initialized correctly */
+  if (mainThreadState) {
+    PyEval_RestoreThread(mainThreadState);
+    Py_Finalize();
+    mainThreadState = nullptr;
+  }
   return bRC_OK;
 }
 
@@ -263,7 +261,7 @@ static bRC newPlugin(PluginContext* plugin_ctx)
       = (void*)plugin_priv_ctx; /* set our context pointer */
 
 
-  /* set bareos_plugin_context inside of barosfd module */
+  /* set bareos_plugin_context inside of bareosfd module */
   Bareosfd_set_plugin_context(plugin_ctx);
 
   /* For each plugin instance we instantiate a new Python interpreter. */
