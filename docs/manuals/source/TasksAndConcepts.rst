@@ -1,9 +1,6 @@
 Tasks and Concepts
 ==================
 
-
-
-
    .. toctree::
 
       /TasksAndConcepts/BareosConsole.rst

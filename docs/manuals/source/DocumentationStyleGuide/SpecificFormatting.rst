@@ -187,7 +187,7 @@ Especially it should be used for:
 * System User (e.g. user **root**, has been ``\user{<name>}`` in Latex))
 * System Group (e.g. group **bareos**, has been ``\group{<name>}`` in Latex))
 * Volume Name (has been ``\volume{<name>}`` in Latex)
-* Volume Status (UPPPERCASE) (has been ``\volumestatus{<name>}`` in Latex)
+* Volume Status (UPPERCASE) (has been ``\volumestatus{<name>}`` in Latex)
 
 Unless a specific rule for this kind of item exists.
 
