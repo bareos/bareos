@@ -696,7 +696,7 @@ if(default_changer0 AND default_tape_devices0)
         "Disabling autochanger test because one or more default devices were not found."
     )
   else()
-    set(autochanger_test_enabled TRUE)
+    set(autochanger_devices_found TRUE)
   endif()
 elseif(NOT default_changer0 AND NOT default_tape_devices0)
   if(error_changer0 OR error_tape_devices0)
@@ -704,7 +704,7 @@ elseif(NOT default_changer0 AND NOT default_tape_devices0)
       FATAL_ERROR "Could not find one or more devices for autochanger test."
     )
   else()
-    set(autochanger_test_enabled TRUE)
+    set(autochanger_devices_found TRUE)
   endif()
 else()
   message(
@@ -712,8 +712,8 @@ else()
   )
 endif()
 
-if(autochanger_test_enabled)
-  set(AUTOCHANGER_TEST_ENABLED
+if(autochanger_devices_found)
+  set(AUTOCHANGER_DEVICES_FOUND
       TRUE
       PARENT_SCOPE
   )
