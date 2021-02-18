@@ -48,7 +48,10 @@ The best solution is to shutdown your database before backing it up, or use some
 Backup of MSSQL Databases with Bareos Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: MSSQL Backup>`\  :index:`\ <single: Database; MSSQL>`\  :index:`\ <single: Plugin; MSSQL backup>`\
+.. index::
+   single: MSSQL Backup
+   single: Database; MSSQL
+   single: Plugin; MSSQL backup
 
 :sinceVersion:`13.2.0: MSSQL`
 
@@ -59,11 +62,10 @@ If you like to use the MSSQL-Plugin to backing up your Databases you need to con
 
 -  | Database Mode
    | The database need to run in Full Recovery Mode. Otherwise you are not able to use differential and incremental backups or to use point in time recovery.
-   |
 
-.. warning::
+   .. warning::
 
-   If you set the databases into the mentionend mode you have to consider some maintance facts. The database doesn't shrink or delete the logs unanttended, so you have to shrink them manual once a week and you have to truncate the logs once in a month.
+      If you set the databases into the mentionend mode you have to consider some maintance facts. The database doesn't shrink or delete the logs unanttended, so you have to shrink them manual once a week and you have to truncate the logs once in a month.
 
 -  | Security and Access
    | For connections you can use a SQL-User or a integrated systemaccount (Windows NT user). Both connection types are supported.
@@ -273,8 +275,8 @@ At least you gain a full backup which contains the follow:
 
 
 
-| So if you perform your first full backup your are capable to perfom differntial and incremental backups.
-| Differntial FileSet example:
+After your first full backup you will be able to also run differential and incremental backups.
+Differntial FileSet example:
 
 
 
@@ -306,7 +308,7 @@ Incremental FileSet example:
 Restores
 ^^^^^^^^
 
-If you want to perfom a restore of a full backup without differentials or incrementals you have some options which helps you to restore even the corrupted database still exist. But you have to specifiy the options like plugin, instance and database during every backup.
+If you want to perform a restore of a full backup without differentials or incrementals you have some options which helps you to restore even the corrupted database still exist. But you have to specifiy the options like plugin, instance and database during every backup.
 
 replace=<yes|no>
    With this option you can replace the database if it still exist.
@@ -735,18 +737,11 @@ This can also be used, to backup a database that is running on a remote host:
    }
 
 
-.. _backup-postgresql-plugin:
+Backup of a PostgreSQL Databases by using the PostgreSQL-Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Backup of a PostgreSQL Databases by using the PGSQL-Plugin
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+See :ref:`plugin-postgresql-fd`.
 
-:index:`\ <single: Plugin; PostgreSQL Backup>`\
-
-The PGSQL-Plugin supports an online (Hot) backup of database files and database transaction logs (WAL) archiving (with pgsql-archlog) and backup. With online database and transaction logs the backup plugin can perform Poin-In-Time-Restore up to a single selected transaction or date/time.
-
-Database recovery is performed fully automatic with dedicated pgsql-restore utility.
-
-For a full description, see https://github.com/bareos/contrib-pgsql-plugin/wiki.
 
 
 .. _backup-mysql:
@@ -759,80 +754,6 @@ Backup of a MySQL Database
 
 In this section, we describe different methods to do a full backup of a MySQL database.
 
-
-.. _backup-mysql-python:
-
-Backup of MySQL Databases using the Python MySQL plugin
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-:index:`\ <single: Plugin; MySQL Backup>`\
-
-The Python plugin from https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python makes a backup of all or selected MySQL databases from the |fd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps. If you prefer to use mechanisms like incremental hot-backups of InnoDB tables, please use the Bareos MySQL / MariaDB Percona xtrabackup Plugin (see
-:ref:`backup-mysql-xtrabackup`).
-
-Following settings must be done on the Bareos client (|fd|):
-
--  install and enable the |fd| Python plugin
-
--  install the Python MySQL plugin (for some platforms it is available prepackaged from http://download.bareos.org/bareos/contrib/\ , on the other platforms: copy the plugin files to the Bareos Plugin Directory)
-
--  disable bacula compatibility (default for Bareos >= 15.2)
-
-.. code-block:: bareosconfig
-   :caption: bareos-fd.d/client/myself.conf
-
-   Client {
-     ...
-     Plugin Directory = /usr/lib64/bareos/plugins
-     Plugin Names = "python"
-     compatible = no
-   }
-
-Configure the plugin in the |dir|:
-
-.. code-block:: bareosconfig
-   :caption: bareos-dir.d/fileset/mysql.conf
-
-   FileSet {
-       Name = "mysql"
-       Include {
-         Options {
-           signature = MD5
-           compression = lz4
-         }
-         Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:db=test,wikidb"
-         #Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:mysqlhost=dbhost:mysqluser=bareos:mysqlpassword=bareos"
-       }
-   }
-
-In the above example the plugin creates and saves a dump from the databases called :strong:`test` and :strong:`wikidb`, running on the file-daemon. The commented example below specifies an explicit MySQL server called :strong:`dbhost`, and connects with user :strong:`bareos`, password :strong:`bareos`, to create and save a backup of all databases.
-
-The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory :file:`/_mysqlbackups_`.
-
-List of supported options:
-
-db
-   comma separated list of databases to save, where each database will be stored in a separate file. If ommited, all databases will be saved.
-
-dumpbinary
-   command (with or without full path) to create the dumps. Default: :strong:`mysqldump`
-
-dumpoptions
-   options for dumpbinary, default: ":strong:`--events --single-transaction`"
-
-drop_and_recreate
-   if not set to :strong:`false`, adds :strong:`--add-drop-database --databases` to dumpoptions
-
-mysqlhost
-   MySQL host to connect to, default: :strong:`localhost`
-
-mysqluser
-   MySQL user. Default: unset, the user running the file-daemon will be used (usually root)
-
-mysqlpassword
-   MySQL password. Default: unset (better use :file:`my.cnf` to store passwords)
-
-On restore, the database dumps are restored to the subdirectory :file:`_mysqlbackups_` in the restore path. The database restore must be triggered manually (:command:`mysql < _mysqlbackups_/DATABASENAME.sql`).
 
 Backup of a MySQL Database by using the RunScript directive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -945,6 +866,88 @@ A very simple corresponding shell script (:command:`bpipe-restore.sh`) to the me
    #!/bin/bash
    cat - > /tmp/dump.sql
    exit 0
+
+
+.. _backup-mysql-python:
+
+Backup of MySQL Databases using the Python MySQL plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index::
+   single: Plugin; MySQL Backup
+
+The Python plugin from https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python makes a backup of all or selected MySQL databases from the |fd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps.
+Following settings must be done on the Bareos client (|fd|):
+
+-  install and enable the |fd| Python plugin
+
+-  install the Python MySQL plugin (for some platforms it is available prepackaged from http://download.bareos.org/bareos/contrib/\ , on the other platforms: copy the plugin files to the Bareos Plugin Directory)
+
+-  disable bacula compatibility (default for Bareos >= 15.2)
+
+.. code-block:: bareosconfig
+   :caption: bareos-fd.d/client/myself.conf
+
+   Client {
+     ...
+     Plugin Directory = /usr/lib64/bareos/plugins
+     Plugin Names = "python"
+     compatible = no
+   }
+
+Configure the plugin in the |dir|:
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/fileset/mysql.conf
+
+   FileSet {
+       Name = "mysql"
+       Include {
+         Options {
+           signature = MD5
+           compression = lz4
+         }
+         Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:db=test,wikidb"
+         #Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:mysqlhost=dbhost:mysqluser=bareos:mysqlpassword=bareos"
+       }
+   }
+
+In the above example the plugin creates and saves a dump from the databases called :strong:`test` and :strong:`wikidb`, running on the file-daemon. The commented example below specifies an explicit MySQL server called :strong:`dbhost`, and connects with user :strong:`bareos`, password :strong:`bareos`, to create and save a backup of all databases.
+
+The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory :file:`/_mysqlbackups_`.
+
+List of supported options:
+
+db
+   comma separated list of databases to save, where each database will be stored in a separate file. If ommited, all databases will be saved.
+
+dumpbinary
+   command (with or without full path) to create the dumps. Default: :strong:`mysqldump`
+
+dumpoptions
+   options for dumpbinary, default: ":strong:`--events --single-transaction`"
+
+drop_and_recreate
+   if not set to :strong:`false`, adds :strong:`--add-drop-database --databases` to dumpoptions
+
+mysqlhost
+   MySQL host to connect to, default: :strong:`localhost`
+
+mysqluser
+   MySQL user. Default: unset, the user running the file-daemon will be used (usually root)
+
+mysqlpassword
+   MySQL password. Default: unset (better use :file:`my.cnf` to store passwords)
+
+On restore, the database dumps are restored to the subdirectory :file:`_mysqlbackups_` in the restore path. The database restore must be triggered manually (:command:`mysql < _mysqlbackups_/DATABASENAME.sql`).
+
+
+
+Backup of MySQL Databases using the Python xtrabackup plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For incremental hot-backups of InnoDB tables, please use the Bareos MySQL / MariaDB Percona xtrabackup Plugin (see :ref:`backup-mysql-xtrabackup`).
+
 
 
 .. _section-MigrationMysqlToPostgresql:
@@ -1123,49 +1126,35 @@ The migration is now completed.
 Statistics Collection
 ---------------------
 
+.. index::
+   single: Webui; Configure Statistics Collection
+
 Statistics Collection can be controlled by a number of configuration directives. If Statistics Collection is enabled, statistics are collected by the |dir| and stored into the Catalog database. So enabling this feature will increase your database size.
 
-The Statistics are used by the |webui| to show the status of a running job. :index:`\ <single: Webui; Configure Statistics Collection>`\
+The Statistics are used by the |webui| to show the status of a running job.
 
 Director Configuration - Director Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--
-
-   :config:option:`dir/director/StatisticsCollectInterval`\
-
--
-
-   :config:option:`dir/director/StatisticsRetention`\
+- :config:option:`dir/director/StatisticsCollectInterval`
+- :config:option:`dir/director/StatisticsRetention`
 
 Director Configuration - Storage Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--
-
-   :config:option:`dir/storage/CollectStatistics`\
+- :config:option:`dir/storage/CollectStatistics`
 
 Storage Configuration - Storage Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--
-
-   :config:option:`sd/storage/CollectDeviceStatistics`\
-
--
-
-   :config:option:`sd/storage/CollectJobStatistics`\
-
--
-
-   :config:option:`sd/storage/StatisticsCollectInterval`\
+- :config:option:`sd/storage/CollectDeviceStatistics`
+- :config:option:`sd/storage/CollectJobStatistics`
+- :config:option:`sd/storage/StatisticsCollectInterval`
 
 Storage Configuration - Device Resource Directives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--
-
-   :config:option:`sd/device/CollectStatistics`\
+- :config:option:`sd/device/CollectStatistics`
 
 See chapter :ref:`section-JobStatistics` for additional information.
 
