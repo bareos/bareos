@@ -422,6 +422,9 @@ else() # run systemtests on source and compiled files
   if(TARGET bareossd-gfapi)
     get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-gfapi BINARY_DIR)
   endif()
+  if(TARGET bareossd-tape)
+    get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-tape BINARY_DIR)
+  endif()
   set(DIR_PLUGINS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/src/plugins/dird)
 
   get_target_property(BACKEND_DIR_TO_TEST bareoscats BINARY_DIR)
