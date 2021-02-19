@@ -772,7 +772,7 @@ static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp);
 using namespace filedaemon;
 
 /* variables storing bareos pointers */
-PluginContext* plugin_context = NULL;
+thread_local PluginContext* plugin_context = NULL;
 
 MOD_INIT(bareosfd)
 {
