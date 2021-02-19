@@ -137,5 +137,6 @@ post-install:
 	@${MKDIR} ${STAGEDIR}/var/lib/bareos/storage
 	@${MKDIR} ${STAGEDIR}/var/log/bareos
 	@${MKDIR} ${STAGEDIR}/var/run/bareos
+	ccache -s
 
 .include <bsd.port.mk>

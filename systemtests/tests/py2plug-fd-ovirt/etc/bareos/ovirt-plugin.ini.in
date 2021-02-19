@@ -1,0 +1,3 @@
+[credentials]
+username = @ovirt_user@
+password = @ovirt_password@
