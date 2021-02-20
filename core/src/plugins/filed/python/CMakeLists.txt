@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -59,7 +59,6 @@ if(Python2_FOUND)
   target_include_directories(
     bareosfd-python2-module-tester PUBLIC SYSTEM ${Python2_INCLUDE_DIRS}
   )
-
   add_test(NAME bareosfd-python2-module-tester
            COMMAND ${CMAKE_CURRENT_BINARY_DIR}/bareosfd-python2-module-tester
   )
@@ -69,6 +68,9 @@ if(Python2_FOUND)
       ENVIRONMENT
       PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/test/:${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/pyfiles
   )
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set_property(TEST bareosfd-python2-module-tester PROPERTY DISABLED true)
+  endif()
 endif()
 
 if(Python3_FOUND AND NOT HAVE_WIN32)
