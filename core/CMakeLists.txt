@@ -971,3 +971,12 @@ if(HAVE_WIN32)
   message("   WINDOWS_BITS:                 ${WINDOWS_BITS}")
   message("   WINEPATH environment:         $ENV{WINEPATH}")
 endif()
+
+# REPEAT_UNTIL requires cmake 3.17+
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.17.0")
+  set(REPEAT_UNTIL "REPEAT UNTIL_PASS:2")
+endif()
+
+configure_file(
+  "CTestScript.cmake.in" "${CMAKE_BINARY_DIR}/CTestScript.cmake" @ONLY
+)

@@ -1018,10 +1018,9 @@ cmake  .. \
 %check
 # run unit tests
 pushd %{CMAKE_BUILDDIR}
-make clean
 
 # run the tests and fail build if test fails
-REGRESS_DEBUG=1 ctest --label-exclude broken --parallel 10 --repeat until-pass:2 --dashboard Continuous || echo "ctest result:$?"
+REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
 
 %install
 ##if 0#{?suse_version}

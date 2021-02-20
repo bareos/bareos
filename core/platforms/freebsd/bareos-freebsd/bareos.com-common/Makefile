@@ -13,7 +13,7 @@ post-patch:
 	@${REINPLACE_CMD} -e 's|pg_dump|/usr/local/bin/pg_dump|g' ${WRKSRC}/core/src/cats/make_catalog_backup.pl.in
 
 pre-package:
-	if [ -f work/.build/Testing/TAG ]; then echo "Testing/TAG exists, not running ctest a second time"; else cd work/.build && REGRESS_DEBUG=1 ctest --label-exclude broken --parallel 10 --repeat until-pass:2 --dashboard Continuous || echo "ctest result:$?"; fi
+	if [ -f work/.build/Testing/TAG ]; then echo "Testing/TAG exists, not running ctest a second time"; else cd work/.build && REGRESS_DEBUG=1  ctest -V -S CTestScript.cmake || echo "ctest result:$?"; fi
 
 
 .include "${MASTERDIR}/BareosCommonMakefile"

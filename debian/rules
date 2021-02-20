@@ -130,7 +130,7 @@ override_dh_auto_test:
 # see https://www.debian.org/doc/debian-policy/ch-source.html#s-debianrules-options
 # No tabs allowed before ifeq.
 ifneq (nocheck,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	cd obj-$(DEB_BUILD_GNU_TYPE) && make clean && REGRESS_DEBUG=1 ctest --label-exclude broken --parallel 10 --repeat until-pass:2 -D Continuous || echo "ctest result:$?"
+	cd obj-$(DEB_BUILD_GNU_TYPE) && ls Testing/*/Test.xml || REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
 else
 	@echo "ctest: skipped"
 endif
