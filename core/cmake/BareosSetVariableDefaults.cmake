@@ -661,10 +661,10 @@ endif()
 
 execute_process(
   COMMAND "ls ${changer-device0}"
-  RESULT_VARIABLE exists
+  RESULT_VARIABLE changer_device0_exists
   OUTPUT_QUIET ERROR_QUIET
 )
-if(NOT exists)
+if(NOT changer_device0_exists)
   message(STATUS "Could not find changer-device \"${changer-device0}\"")
   set(error_changer0 TRUE)
 endif()
@@ -680,10 +680,10 @@ endif()
 foreach(device ${tape-devices0})
   execute_process(
     COMMAND "ls ${device}"
-    RESULT_VARIABLE exists
+    RESULT_VARIABLE tape_device_exists
     OUTPUT_QUIET ERROR_QUIET
   )
-  if(NOT exists)
+  if(NOT tape_device_exists)
     message(STATUS "Could not find tape-device \"${device}\"")
     set(error_tape_devices0 TRUE)
   endif()
