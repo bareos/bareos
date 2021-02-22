@@ -11,8 +11,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix crash when loading both python-fd and python3-fd plugins [PR #733]
 
 ### Added
-
 - py2lug-fd-ovirt systemtest: use ovirt-plugin.ini config file [PR #732]
+- Build the package **bareos-filedaemon-postgresql-python-plugin** also for Debian, Ubuntu and UCS (deb packages) [PR #723].
 
 ### Changed
 
