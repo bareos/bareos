@@ -51,7 +51,7 @@ Autochanger {
   Name = "autochanger-${changer_index}"
   Changer Device = ${changer_device}
 
-  Changer Command = "./mtx-changer %c %o %S %a %d"
+  Changer Command = "${rscripts}/mtx-changer %c %o %S %a %d"
 EOF
 ####
 

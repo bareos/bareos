@@ -302,6 +302,10 @@ macro(prepare_test)
   # skip for tests without etc/bareos ("catalog" test)
   if(EXISTS ${current_test_source_directory}/etc/bareos)
     prepare_testdir_for_daemon_run()
+    create_symlink(
+      ${CMAKE_SOURCE_DIR}/core/scripts/mtx-changer.conf
+      ${current_test_directory}/etc/bareos/mtx-changer.conf
+    )
   endif()
 endmacro()
 

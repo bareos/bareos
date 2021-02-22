@@ -47,21 +47,21 @@
 #
 
 # source our conf file
-if test ! -r @confdir@/mtx-changer.conf ; then
+if test ! -r ${confdir:-@confdir@}/mtx-changer.conf ; then
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-  echo "ERROR: @confdir@/mtx-changer.conf file not found!!!!"
+  echo "ERROR: ${confdir:-@confdir@}/mtx-changer.conf file not found!!!!"
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
   exit 1
 fi
-. @confdir@/mtx-changer.conf
+. ${confdir:-@confdir@}/mtx-changer.conf
 
-MTX=@MTX@
+MTX=${MTX:-@MTX@}
 if test ! -x "$MTX" ; then
   echo "ERROR: mtx program not found ($MTX)"
   exit 1
 fi
 
-dbgfile="@logdir@/mtx.log"
+dbgfile="${logdir:-@logdir@}/mtx.log"
 if test ${debug_log} -ne 0 ; then
   touch $dbgfile
 fi
@@ -76,9 +76,9 @@ debug() {
 # Create a temporary file
 #
 make_temp_file() {
-  TMPFILE=`mktemp @working_dir@/mtx.XXXXXXXXXX`
+  TMPFILE=`mktemp ${working_dir:-@working_dir@}/mtx.XXXXXXXXXX`
   if test x${TMPFILE} = x; then
-     TMPFILE="@working_dir@/mtx.$$"
+     TMPFILE="${working_dir:-@working_dir@}/mtx.$$"
      if test -f ${TMPFILE}; then
 	echo "ERROR: Temp file security problem on: ${TMPFILE}"
 	exit 1
@@ -98,9 +98,9 @@ make_temp_file() {
 #  thus we sometimes get better changer results.
 #
 make_err_file() {
-  ERRFILE=`mktemp @working_dir@/mtx.err.XXXXXXXXXX`
+  ERRFILE=`mktemp ${working_dir:-@working_dir@}/mtx.err.XXXXXXXXXX`
   if test x${ERRFILE} = x; then
-     ERRFILE="@working_dir@/mtx.err.$$"
+     ERRFILE="${working_dir:-@working_dir@}/mtx.err.$$"
      if test -f ${ERRFILE}; then
 	echo "ERROR: Temp file security problem on: ${ERRFILE}"
 	exit 1
