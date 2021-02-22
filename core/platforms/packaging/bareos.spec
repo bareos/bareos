@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2018 Bareos GmbH & Co KG
+#               2013-2021 Bareos GmbH & Co KG
 #
 
 Name: 		bareos
@@ -63,7 +63,7 @@ BuildRequires: libtirpc-devel
 %endif
 
 #
-# SUSE (openSUSE, SLES) specific settigs
+# SUSE (openSUSE, SLES) specific settings
 #
 %if 0%{?sles_version} == 10
 %define build_qt_monitor 0
@@ -554,6 +554,8 @@ Requires:   bareos-filedaemon-python-plugin = %{version}
 Summary:    PostgreSQL Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
+Requires:   bareos-filedaemon-python-plugin = %{version}
+
 %package    filedaemon-percona-xtrabackup-python-plugin
 Summary:    Percona xtrabackup Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
@@ -1601,10 +1603,10 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 #attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/job/backup-libcloud.conf.example
 
 %files filedaemon-postgresql-python-plugin
-
 %defattr(-, root, root)
 %{plugin_dir}/BareosFdPluginPostgres.py*
 %{plugin_dir}/bareos-fd-postgres.py*
+
 %files filedaemon-percona-xtrabackup-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-percona-xtrabackup.py*
