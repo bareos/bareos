@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,7 +31,7 @@ namespace storagedaemon {
 DeviceResource::DeviceResource()
     : BareosResource()
     , media_type(nullptr)
-    , device_name(nullptr)
+    , archive_device_string(nullptr)
     , device_options(nullptr)
     , diag_device_name(nullptr)
     , changer_name(nullptr)
@@ -91,7 +91,7 @@ DeviceResource::DeviceResource()
 DeviceResource::DeviceResource(const DeviceResource& other)
     : BareosResource(other)
     , media_type(nullptr)
-    , device_name(nullptr)
+    , archive_device_string(nullptr)
     , device_options(nullptr)
     , diag_device_name(nullptr)
     , changer_name(nullptr)
@@ -106,7 +106,9 @@ DeviceResource::DeviceResource(const DeviceResource& other)
     , temporarily_swapped_numbered_name(nullptr) /* should not copy */
 {
   if (other.media_type) { media_type = strdup(other.media_type); }
-  if (other.device_name) { device_name = strdup(other.device_name); }
+  if (other.archive_device_string) {
+    archive_device_string = strdup(other.archive_device_string);
+  }
   if (other.device_options) { device_options = strdup(other.device_options); }
   if (other.diag_device_name) {
     diag_device_name = strdup(other.diag_device_name);
@@ -175,7 +177,7 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
 {
   BareosResource::operator=(rhs);
   media_type = rhs.media_type;
-  device_name = rhs.device_name;
+  archive_device_string = rhs.archive_device_string;
   device_options = rhs.device_options;
   diag_device_name = rhs.diag_device_name;
   changer_name = rhs.changer_name;
@@ -295,8 +297,7 @@ bool DeviceResource::Validate()
         "Setting 'Maximum Block Size' on a non-tape device is unsupported");
   }
   if (dev_type == DeviceType::B_RADOS_DEV) {
-    my_config->AddWarning(
-        "The Rados Storage Backend Device is deprecated");
+    my_config->AddWarning("The Rados Storage Backend Device is deprecated");
   }
   return true;
 }

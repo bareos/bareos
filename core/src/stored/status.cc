@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -710,7 +710,7 @@ static void ListRunningJobs(StatusPacket* sp)
                    job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
                    rdcr->VolumeName, rdcr->pool_name,
                    rdcr->dev ? rdcr->dev->print_name()
-                             : rdcr->device_resource->device_name);
+                             : rdcr->device_resource->archive_device_string);
         sp->send(msg, len);
       }
       if (dcr && dcr->device_resource) {
@@ -721,7 +721,7 @@ static void ListRunningJobs(StatusPacket* sp)
                    job_type_to_str(jcr->getJobType()), JobName, jcr->JobId,
                    dcr->VolumeName, dcr->pool_name,
                    dcr->dev ? dcr->dev->print_name()
-                            : dcr->device_resource->device_name);
+                            : dcr->device_resource->archive_device_string);
         sp->send(msg, len);
         len = Mmsg(msg, _("    spooling=%d despooling=%d despool_wait=%d\n"),
                    dcr->spooling, dcr->despooling, dcr->despool_wait);

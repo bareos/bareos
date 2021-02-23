@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,8 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
                                    char* dev_name,
                                    const char* VolumeName,
                                    bool readonly);
-static DeviceResource* find_device_res(char* device_name, bool readonly);
+static DeviceResource* find_device_res(char* archive_device_string,
+                                       bool readonly);
 static void MyFreeJcr(JobControlRecord* jcr);
 
 /**
@@ -175,7 +176,8 @@ static bool setup_to_access_device(DeviceControlRecord* dcr,
   if (VolName[0]) {
     bstrncpy(dcr->VolumeName, VolName, sizeof(dcr->VolumeName));
   }
-  bstrncpy(dcr->dev_name, device_resource->device_name, sizeof(dcr->dev_name));
+  bstrncpy(dcr->dev_name, device_resource->archive_device_string,
+           sizeof(dcr->dev_name));
 
   CreateRestoreVolumeList(jcr);
 
@@ -246,7 +248,8 @@ static void MyFreeJcr(JobControlRecord* jcr)
  * Returns: NULL on failure
  *          Device resource pointer on success
  */
-static DeviceResource* find_device_res(char* device_name, bool readonly)
+static DeviceResource* find_device_res(char* archive_device_string,
+                                       bool readonly)
 {
   bool found = false;
   DeviceResource* device_resource;
@@ -254,9 +257,10 @@ static DeviceResource* find_device_res(char* device_name, bool readonly)
   Dmsg0(900, "Enter find_device_res\n");
   LockRes(my_config);
   foreach_res (device_resource, R_DEVICE) {
-    Dmsg2(900, "Compare %s and %s\n", device_resource->device_name,
-          device_name);
-    if (bstrcmp(device_resource->device_name, device_name)) {
+    Dmsg2(900, "Compare %s and %s\n", device_resource->archive_device_string,
+          archive_device_string);
+    if (bstrcmp(device_resource->archive_device_string,
+                archive_device_string)) {
       found = true;
       break;
     }
@@ -264,16 +268,16 @@ static DeviceResource* find_device_res(char* device_name, bool readonly)
 
   if (!found) {
     /* Search for name of Device resource rather than archive name */
-    if (device_name[0] == '"') {
-      int len = strlen(device_name);
-      bstrncpy(device_name, device_name + 1, len + 1);
+    if (archive_device_string[0] == '"') {
+      int len = strlen(archive_device_string);
+      bstrncpy(archive_device_string, archive_device_string + 1, len + 1);
       len--;
-      if (len > 0) { device_name[len - 1] = 0; /* zap trailing " */ }
+      if (len > 0) { archive_device_string[len - 1] = 0; /* zap trailing " */ }
     }
     foreach_res (device_resource, R_DEVICE) {
       Dmsg2(900, "Compare %s and %s\n", device_resource->resource_name_,
-            device_name);
-      if (bstrcmp(device_resource->resource_name_, device_name)) {
+            archive_device_string);
+      if (bstrcmp(device_resource->resource_name_, archive_device_string)) {
         found = true;
         break;
       }
@@ -283,14 +287,14 @@ static DeviceResource* find_device_res(char* device_name, bool readonly)
 
   if (!found) {
     Pmsg2(0, _("Could not find device \"%s\" in config file %s.\n"),
-          device_name, configfile);
+          archive_device_string, configfile);
     return NULL;
   }
 
   if (readonly) {
-    Pmsg1(0, _("Using device: \"%s\" for reading.\n"), device_name);
+    Pmsg1(0, _("Using device: \"%s\" for reading.\n"), archive_device_string);
   } else {
-    Pmsg1(0, _("Using device: \"%s\" for writing.\n"), device_name);
+    Pmsg1(0, _("Using device: \"%s\" for writing.\n"), archive_device_string);
   }
 
   return device_resource;

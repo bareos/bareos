@@ -250,7 +250,7 @@ class Device {
   int label_type{};           /**< Bareos/ANSI/IBM label types */
   drive_number_t drive{};     /**< Autochanger logical drive number (base 0) */
   drive_number_t drive_index{}; /**< Autochanger physical drive index (base 0) */
-  POOLMEM* dev_name{};        /**< Physical device name */
+  POOLMEM* archive_device_string{};  /**< Physical device name */
   POOLMEM* dev_options{};     /**< Device specific options */
   POOLMEM* prt_name{};        /**< Name used for display purposes */
   char* errmsg{};             /**< Nicely edited error message */
@@ -541,7 +541,10 @@ class SpoolDevice :public Device
 /* clang-format on */
 
 inline const char* Device::strerror() const { return errmsg; }
-inline const char* Device::archive_name() const { return dev_name; }
+inline const char* Device::archive_name() const
+{
+  return archive_device_string;
+}
 inline const char* Device::print_name() const { return prt_name; }
 
 Device* FactoryCreateDevice(JobControlRecord* jcr, DeviceResource* device);

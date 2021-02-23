@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -340,7 +340,7 @@ static bRC do_set_scsi_encryption_key(void* value)
      * Check if encryption key is needed for reading this volume.
      */
     P(crypto_operation_mutex);
-    if (!NeedScsiCryptoKey(dev->fd(), dev->dev_name, true)) {
+    if (!NeedScsiCryptoKey(dev->fd(), dev->archive_device_string, true)) {
       V(crypto_operation_mutex);
       Dmsg0(debuglevel, "scsicrypto-sd: No encryption key needed!\n");
       return bRC_OK;
@@ -396,7 +396,7 @@ static bRC do_set_scsi_encryption_key(void* value)
   Dmsg1(debuglevel, "scsicrypto-sd: Loading new crypto key %s\n", VolEncrKey);
 
   P(crypto_operation_mutex);
-  if (SetScsiEncryptionKey(dev->fd(), dev->dev_name, VolEncrKey)) {
+  if (SetScsiEncryptionKey(dev->fd(), dev->archive_device_string, VolEncrKey)) {
     dev->SetCryptoEnabled();
     V(crypto_operation_mutex);
     return bRC_OK;
@@ -443,13 +443,14 @@ static bRC do_clear_scsi_encryption_key(void* value)
    * the stored.
    */
   if (device_resource->query_crypto_status) {
-    need_to_clear = IsScsiEncryptionEnabled(dev->fd(), dev->dev_name);
+    need_to_clear
+        = IsScsiEncryptionEnabled(dev->fd(), dev->archive_device_string);
   } else {
     need_to_clear = dev->IsCryptoEnabled();
   }
   if (need_to_clear) {
     Dmsg0(debuglevel, "scsicrypto-sd: Clearing crypto key\n");
-    if (ClearScsiEncryptionKey(dev->fd(), dev->dev_name)) {
+    if (ClearScsiEncryptionKey(dev->fd(), dev->archive_device_string)) {
       dev->ClearCryptoEnabled();
       V(crypto_operation_mutex);
       return bRC_OK;
@@ -502,7 +503,7 @@ static bRC handle_read_error(void* value)
          */
         if (device_resource->query_crypto_status) {
           P(crypto_operation_mutex);
-          if (NeedScsiCryptoKey(dev->fd(), dev->dev_name, false)) {
+          if (NeedScsiCryptoKey(dev->fd(), dev->archive_device_string, false)) {
             decryption_needed = true;
           } else {
             decryption_needed = false;
@@ -551,8 +552,8 @@ static bRC send_device_encryption_status(void* value)
   if (dst->device_resource->drive_crypto_enabled) {
     P(crypto_operation_mutex);
     dst->status_length = GetScsiDriveEncryptionStatus(
-        dst->device_resource->dev->fd(), dst->device_resource->dev->dev_name,
-        dst->status, 4);
+        dst->device_resource->dev->fd(),
+        dst->device_resource->dev->archive_device_string, dst->status, 4);
     V(crypto_operation_mutex);
   }
   return bRC_OK;
@@ -574,8 +575,8 @@ static bRC send_volume_encryption_status(void* value)
   if (dst->device_resource->drive_crypto_enabled) {
     P(crypto_operation_mutex);
     dst->status_length = GetScsiVolumeEncryptionStatus(
-        dst->device_resource->dev->fd(), dst->device_resource->dev->dev_name,
-        dst->status, 4);
+        dst->device_resource->dev->fd(),
+        dst->device_resource->dev->archive_device_string, dst->status, 4);
     V(crypto_operation_mutex);
   }
   return bRC_OK;

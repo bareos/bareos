@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -888,7 +888,7 @@ bool droplet_device::initialize()
       sysmd_.location_constraint = dpl_location_constraint(temp.c_str());
       if (sysmd_.location_constraint == -1) {
         Mmsg2(errmsg, _("Illegal location argument %s for device %s%s\n"),
-              temp.c_str(), dev_name);
+              temp.c_str(), archive_device_string);
         goto bail_out;
       }
     }
@@ -899,7 +899,7 @@ bool droplet_device::initialize()
       sysmd_.canned_acl = dpl_canned_acl(temp.c_str());
       if (sysmd_.canned_acl == -1) {
         Mmsg2(errmsg, _("Illegal canned_acl argument %s for device %s%s\n"),
-              temp.c_str(), dev_name);
+              temp.c_str(), archive_device_string);
         goto bail_out;
       }
     }
@@ -910,7 +910,7 @@ bool droplet_device::initialize()
       sysmd_.storage_class = dpl_storage_class(temp.c_str());
       if (sysmd_.storage_class == -1) {
         Mmsg2(errmsg, _("Illegal storage_class argument %s for device %s%s\n"),
-              temp.c_str(), dev_name);
+              temp.c_str(), archive_device_string);
         goto bail_out;
       }
     }
