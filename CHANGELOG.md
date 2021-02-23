@@ -20,6 +20,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - scripts: cleaned up code for postgresql db creation [PR #709]
 - Change Copy Job behaviour regarding Archive Jobs [PR #717]
 - py2lug-fd-ovirt systemtest: use ovirt-plugin.ini config file [PR #729]
+- Ctest now runs in scripted mode. [PR #742]
 
 ### Deprecated
 
