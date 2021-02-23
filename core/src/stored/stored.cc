@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -571,12 +571,13 @@ extern "C" void* device_initialization(void* arg)
   }
 
   foreach_res (device_resource, R_DEVICE) {
-    Dmsg1(90, "calling FactoryCreateDevice %s\n", device_resource->device_name);
+    Dmsg1(90, "calling FactoryCreateDevice %s\n",
+          device_resource->archive_device_string);
     dev = FactoryCreateDevice(NULL, device_resource);
-    Dmsg1(10, "SD init done %s\n", device_resource->device_name);
+    Dmsg1(10, "SD init done %s\n", device_resource->archive_device_string);
     if (!dev) {
       Jmsg1(NULL, M_ERROR, 0, _("Could not initialize %s\n"),
-            device_resource->device_name);
+            device_resource->archive_device_string);
       continue;
     }
 
@@ -704,13 +705,14 @@ static
   FreeVolumeLists();
 
   foreach_res (device_resource, R_DEVICE) {
-    Dmsg1(10, "Term device %s\n", device_resource->device_name);
+    Dmsg1(10, "Term device %s\n", device_resource->archive_device_string);
     if (device_resource->dev) {
       device_resource->dev->ClearVolhdr();
       delete device_resource->dev;
       device_resource->dev = nullptr;
     } else {
-      Dmsg1(10, "No dev structure %s\n", device_resource->device_name);
+      Dmsg1(10, "No dev structure %s\n",
+            device_resource->archive_device_string);
     }
   }
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -155,7 +155,7 @@ static ResourceItem dev_items[] = {
       "The Description directive provides easier human recognition, but is not used by Bareos directly."},
   {"MediaType", CFG_TYPE_STRNAME, ITEM(res_dev, media_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"DeviceType", CFG_TYPE_DEVTYPE, ITEM(res_dev, dev_type), 0, 0, NULL, NULL, NULL},
-  {"ArchiveDevice", CFG_TYPE_STRNAME, ITEM(res_dev, device_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
+  {"ArchiveDevice", CFG_TYPE_STRNAME, ITEM(res_dev, archive_device_string), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"DeviceOptions", CFG_TYPE_STR, ITEM(res_dev, device_options), 0, 0, NULL, "15.2.0-", NULL},
   {"DiagnosticDevice", CFG_TYPE_STRNAME, ITEM(res_dev, diag_device_name), 0, 0, NULL, NULL, NULL},
   {"HardwareEndOfFile", CFG_TYPE_BIT, ITEM(res_dev, cap_bits), CAP_EOF, CFG_ITEM_DEFAULT, "on", NULL, NULL},
@@ -561,13 +561,13 @@ static void CheckDropletDevices(ConfigurationParser& my_config)
         Jmsg1(nullptr, M_WARNING, 0,
               _("device %s is set to the default 'Maximum Concurrent Jobs' = "
                 "1.\n"),
-              d->device_name);
+              d->archive_device_string);
         d->max_concurrent_jobs = 1;
       } else if (d->max_concurrent_jobs > 1) {
         Jmsg2(nullptr, M_ERROR_TERM, 0,
               _("device %s is configured with 'Maximum Concurrent Jobs' = %d, "
                 "however only 1 is supported.\n"),
-              d->device_name, d->max_concurrent_jobs);
+              d->archive_device_string, d->max_concurrent_jobs);
       }
     }
   }
@@ -946,7 +946,7 @@ static void FreeResource(BareosResource* res, int type)
       DeviceResource* p = dynamic_cast<DeviceResource*>(res);
       assert(p);
       if (p->media_type) { free(p->media_type); }
-      if (p->device_name) { free(p->device_name); }
+      if (p->archive_device_string) { free(p->archive_device_string); }
       if (p->device_options) { free(p->device_options); }
       if (p->diag_device_name) { free(p->diag_device_name); }
       if (p->changer_name) { free(p->changer_name); }

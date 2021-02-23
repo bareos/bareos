@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -696,7 +696,7 @@ static void capcmd()
   printf("\n");
 
   printf(_("Device parameters:\n"));
-  printf("Device name: %s\n", dev->dev_name);
+  printf("Device name: %s\n", dev->archive_device_string);
   printf("File=%u block=%u\n", dev->file, dev->block_num);
   printf("Min block=%u Max block=%u\n", dev->min_block_size,
          dev->max_block_size);
@@ -1899,8 +1899,8 @@ static void scancmd()
     if ((status = read(dev->fd(), buf, sizeof(buf))) < 0) {
       BErrNo be;
       dev->clrerror(-1);
-      Mmsg2(dev->errmsg, _("read error on %s. ERR=%s.\n"), dev->dev_name,
-            be.bstrerror());
+      Mmsg2(dev->errmsg, _("read error on %s. ERR=%s.\n"),
+            dev->archive_device_string, be.bstrerror());
       Pmsg2(0, _("Bad status from read %d. ERR=%s\n"), status,
             dev->bstrerror());
       if (blocks > 0) {

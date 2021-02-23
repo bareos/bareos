@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -69,7 +69,9 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   /*
    * Windows Code
    */
-  if ((fd_ = d_open(dev_name, oflags, 0)) < 0) { dev_errno = errno; }
+  if ((fd_ = d_open(archive_device_string, oflags, 0)) < 0) {
+    dev_errno = errno;
+  }
 #else
   /*
    * UNIX Code
@@ -80,7 +82,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     /*
      * Try non-blocking open
      */
-    fd_ = d_open(dev_name, oflags | O_NONBLOCK, 0);
+    fd_ = d_open(archive_device_string, oflags | O_NONBLOCK, 0);
     if (fd_ < 0) {
       BErrNo be;
       dev_errno = errno;
@@ -113,7 +115,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
          * Got fd and rewind worked, so we must have medium in drive
          */
         d_close(fd_);
-        fd_ = d_open(dev_name, oflags, 0); /* open normally */
+        fd_ = d_open(archive_device_string, oflags, 0); /* open normally */
         if (fd_ < 0) {
           BErrNo be;
           dev_errno = errno;
@@ -987,7 +989,7 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
 {
   Device* dev = dcr->dev;
 
-  if (bstrcmp(dev->dev_name, "/dev/null")) {
+  if (bstrcmp(dev->archive_device_string, "/dev/null")) {
     return; /* no use trying to set /dev/null */
   }
 
