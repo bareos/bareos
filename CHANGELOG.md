@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Added
 - added reload commands to systemd service [PR #694]
+- Changelog changed
 
 ### Changed
 - Package **bareos-database-postgresql**: add recommendation for package **dbconfig-pgsql**.
