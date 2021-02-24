@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -511,6 +511,14 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
       /*
        * Caller wants to switch Volume to another device
        */
+
+      // should be different devices with different names
+      if (bstrcmp(dev->print_name(), vol->dev->print_name())) {
+        // names are same
+        Dmsg1(100, "device pointers are different but have same name %s\n",
+              dev->print_name());
+      }
+
       if (!vol->dev->IsBusy() && !vol->IsSwapping()) {
         slot_number_t slot;
 
