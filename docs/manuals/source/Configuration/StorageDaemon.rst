@@ -12,7 +12,7 @@ For a general discussion of configuration file and resources including the data 
 
 -  :ref:`Storage <StorageResourceStorage>` – to define the name of the Storage daemon.
 
--  :ref:`Director <StorageResourceDirector>` – to define the Director’s name and his access password.
+-  :ref:`Director <StorageResourceDirector>` – to define the Director’s name and its access password.
 
 -  :ref:`Device <StorageResourceDevice>` – to define the characteristics of your storage device (tape drive).
 
