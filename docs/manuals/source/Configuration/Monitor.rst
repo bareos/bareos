@@ -4,7 +4,7 @@ Monitor Configuration
 =====================
 
 .. index::
-   pair: Monitor Configuration
+   pair: Monitor; Configuration
 
 The Monitor configuration file is a stripped down version of the Director configuration file, mixed with a Console configuration file. It simply contains the information necessary to contact Directors, Clients, and Storage daemons you want to monitor.
 
