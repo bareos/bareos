@@ -19,6 +19,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - added an informative debugmessage when a dynamic backend cannot be loaded [PR #740]
 
 ### Changed
+- Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page
 - Package **bareos-database-postgresql**: add recommendation for package **dbconfig-pgsql**.
 - Adapt the init scripts for some platform to not refer to a specific (outdated) configuration file, but to use the default config file instead.
 - scripts: cleaned up code for postgresql db creation [PR #709]
