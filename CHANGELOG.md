@@ -10,6 +10,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix crash when loading both python-fd and python3-fd plugins [PR #730]
 - fix parallel python plugin jobs [PR #729]
 - fix oVirt plugin problem with config file [PR #729]
+- [Issue #1316]: storage daemon loses a configured device instance [PR #739]
+
 
 ### Added
 - added reload commands to systemd service [PR #694]
