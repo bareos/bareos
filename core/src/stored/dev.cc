@@ -237,6 +237,19 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
     default:
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
       dev = InitBackendDevice(jcr, device_resource->dev_type);
+      if (!dev) {
+        try {
+          Jmsg2(jcr, M_ERROR, 0,
+                _("Initialization of dynamic %s device \"%s\" with archive "
+                  "device \"%s\" failed. Backend "
+                  "library might be missing or backend directory incorrect.\n"),
+                device_type_to_name_mapping.at(device_resource->dev_type),
+                device_resource->resource_name_, device_resource->device_name);
+        } catch (const std::out_of_range&) {
+          // device_resource->dev_type could exceed limits of map
+        }
+        return nullptr;
+      }
 #endif
       break;
   }

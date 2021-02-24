@@ -12,8 +12,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1316]: storage daemon loses a configured device instance [PR #734]
 
 ### Added
-
 - py2lug-fd-ovirt systemtest: use ovirt-plugin.ini config file [PR #732]
+- informative debugmessage when a dynamic backend cannot be loaded [PR #746]
 
 ### Changed
 
@@ -22,6 +22,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Removed
 
 ### Security
+
 ## [20.0.0] - 2020-12-16
 
 ### Fixed
