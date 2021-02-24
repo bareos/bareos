@@ -10,6 +10,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix oVirt plugin problem with config file [PR #732]
 - fix crash when loading both python-fd and python3-fd plugins [PR #733]
 - [Issue #1316]: storage daemon loses a configured device instance [PR #734]
+- fix python-bareos for Python < 2.7.13 [PR #753]
+
 
 ### Added
 - py2lug-fd-ovirt systemtest: use ovirt-plugin.ini config file [PR #732]
