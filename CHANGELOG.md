@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Added
 - py2lug-fd-ovirt systemtest: use ovirt-plugin.ini config file [PR #732]
+- Build the package **bareos-filedaemon-postgresql-python-plugin** also for Debian, Ubuntu and UCS (deb packages) [PR #745].
 - informative debugmessage when a dynamic backend cannot be loaded [PR #746]
 
 ### Changed

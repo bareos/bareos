@@ -398,11 +398,6 @@ automatically create the path to the file. Either the path must exist, or you mu
 
 See the examples about :ref:`backup-postgresql` and :ref:`backup-mysql`.
 
-PGSQL Plugin
-~~~~~~~~~~~~
-
-See chapter :ref:`backup-postgresql-plugin`.
-
 MySQL Plugin
 ~~~~~~~~~~~~
 
@@ -417,6 +412,8 @@ LDAP Plugin
 ~~~~~~~~~~~
 
 :index:`\ <single: Plugin; ldap>`\
+
+.. deprecated:: 20.0.0
 
 This plugin is intended to backup (and restore) the contents of a LDAP server. It uses normal LDAP operation for this. The package **bareos-filedaemon-ldap-python-plugin** (:sinceVersion:`15.2.0: LDAP Plugin`) contains an example configuration file, that must be adapted to your environment.
 
@@ -1674,18 +1671,21 @@ job_message_after_each_number_of_objects
    When running a backup, put a jobmessage after each count of "job_message_after_number_of_objects"
    to the joblog or no message if parameter equals 0; default is 100.
 
+
+
 .. _PerconaXtrabackupPlugin:
 .. _backup-mysql-XtraBackup:
 
 Percona XtraBackup Plugin
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; MySQL Backup>`
-:index:`\ <single: Percona XtraBackup>`
-:index:`\ <single: XtraBackup>`
-:index:`\ <single: Plugin; MariaDB Backup>`
+.. index::
+   single: Plugin; MySQL Backup
+   single: Percona XtraBackup
+   single: XtraBackup
+   single: Plugin; MariaDB Backup
 
-This plugin uses Perconas XtraBackup tool, to make full and incremental backups of Mysql / MariaDB databases.
+This plugin uses Perconas XtraBackup tool, to make full and incremental backups of |mysql| databases.
 
 The key features of XtraBackup are:
 
@@ -1702,8 +1702,6 @@ Prerequisites
 ^^^^^^^^^^^^^
 
 Install the XtraBackup tool from Percona. Documentation and packages are available here: https://www.percona.com/software/mysql-database/percona-XtraBackup. The plugin was successfully tested with XtraBackup versions 2.3.5 and 2.4.4.
-
-As it is a Python plugin, it will also require to have the package **bareos-filedaemon-python-plugin** installed on the |fd|, where you run it.
 
 For authentication the :file:`.mycnf` file of the user running the |fd| is used. Before proceeding, make sure that XtraBackup can connect to the database and create backups.
 
@@ -1799,11 +1797,16 @@ If things don't work as expected, make sure that
 - Make sure *XtraBackup* works as user root, MySQL access needs to be
   configured properly
 
+
+.. _plugin-postgresql-fd:
+
 PostgreSQL Plugin
 ~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; PostgreSQL Backup>`
+.. index::
+   single: Plugin; PostgreSQL Backup
 
+The PostgreSQL plugin supports an online (Hot) backup of database files and database transaction logs (WAL) archiving. With online database and transaction logs the backup plugin can perform Point-In-Time-Restore up to a single selected transaction or date/time.
 
 This plugin uses the standard API |postgresql| backup  routines based on *pg_start_backup()* and *pg_stop_backup()*.
 
@@ -1816,8 +1819,6 @@ The key features are:
 * Savings on disk space and network bandwidth
 * Higher uptime due to faster restore time
 
-Requires |postgresql| Version 9.x or newer.
-
 
 Concept
 ^^^^^^^
@@ -1826,30 +1827,53 @@ Please make sure to read the |postgresql| documentation about the backup and res
 
 This is just a short outline of the tasks performed by the plugin.
 
-#. Notify Postgres that we want to start backup the database files using the *SELECT pg_start_backup()* statement
+#. Notify |postgresql| that we want to start backup the database files using the *SELECT pg_start_backup()* statement
 #. Backup database files
-#. Notify Postgres when done with file backups using the *SELECT pg_stop_backup()* statement
-#. Postgres will write *Write-Ahead-Logfiles* - WAL - into the WAL Archive. These transaction logs contain transactions done while the file backup proceeded
+#. Notify |postgresql| when done with file backups using the *SELECT pg_stop_backup()* statement
+#. |postgresql| will write *Write-Ahead-Logfiles* (WAL) into the WAL Archive directory. These transaction logs contain transactions done while the file backup proceeded
 #. Backup fresh created WAL files
 
 Incremental and Differential backups will only have to backup WAL files created since last reference backup.
 
 The restore basically works like this:
 
-#. Restore all files to the original Postgres location
-#. Create a recovery.conf file (see below)
-#. Start Postgres
-#. Postgres will restore the latest possible consistent point in time. You can manage to restore to any other point in in time available in the WAL files, please refer to the Postgres documentation for more details.
+#. Restore all files to the original |postgresql| location
+#. Configure |postgresql| for the recovery (see below)
+#. Start |postgresql|
+#. |postgresql| will restore the latest possible consistent point in time. You can manage to restore to any other point in in time available in the WAL files, please refer to the |postgresql| documentation for more details.
 
 
 Prerequisites
 ^^^^^^^^^^^^^
 
-As it is a Python plugin, it will also require to have the package **bareos-filedaemon-python-plugin** installed on the |fd|, where you run it.
+This plugin is a Bareos Python plugin.
+It requires |postgresql| >= 9 and the Python module **psycopg2** to be installed.
+Best use Python >= 3.
 
-The plugin requires the Python module psycopg2 to be installed in your python2 environment.
+The plugin must be installed on the same host where the |postgresql| database runs.
 
-**You have to enable WAL-Archiving** - the process and the plugin depend on it.
+**You have to enable PostgreSQL WAL-Archiving** - the process and the plugin depend on it.
+
+As a minimum this requires that you create an WAL archive directory
+and matching settings in your |postgresql| configuration file **postgres.conf**.
+In our examples we assume the WAL archive directory as :file:`/var/lib/pgsql/wal_archive/`.
+
+.. code-block:: cfg
+   :caption: postgres.conf
+
+   ...
+   # wal_level default is replica
+   wal_level = replica
+   archive_mode = on
+   archive_command = 'test ! -f /var/lib/pgsql/wal_archive/%f && cp %p /var/lib/pgsql/wal_archive/%f'
+   ...
+
+Please refer to the |postgresql| documentation for details.
+
+.. note::
+
+   While the PostgreSQL plugin backups only the required files from the WAL archive directory,
+   old files are not removed automatically.
 
 
 Installation
@@ -1857,7 +1881,6 @@ Installation
 
 Make sure you have met the prerequisites, after that install the package **bareos-filedaemon-postgres-python-plugin**.
 
-The plugin must be installed on the same server where the |postgresql| database runs.
 
 Configuration
 ^^^^^^^^^^^^^
@@ -1870,7 +1893,7 @@ Activate your plugin directory in the |fd| configuration. See :ref:`fdPlugins` f
    Client {
      ...
      Plugin Directory = /usr/lib64/bareos/plugins
-     Plugin Names = "python"
+     Plugin Names = "python3"
    }
 
 Now include the plugin as command-plugin in the fileset resource and define a job using this fileset:
@@ -1895,21 +1918,30 @@ Now include the plugin as command-plugin in the fileset resource and define a jo
 
 
 
-You can append options to the plugin call as key=value pairs, separated by ’:’. The following options are available:
+You can append options to the plugin call as key=value pairs, separated by ``:``. The following options are available:
 
--  :strong:`postgresDataDir` the Postgres data directory. Default: :file:`/var/lib/pgsql/data`
+postgresDataDir
+   the Postgres data directory. Default: :file:`/var/lib/pgsql/data`
 
--  :strong:`walArchive` directory where Postgres archives the WAL files as defined in your :file:`postgresql.conf` with the *archive_command* directive. This is a **mandatory** option, there is no default set.
+walArchive
+   directory where Postgres archives the WAL files as defined in your :file:`postgresql.conf` with the *archive_command* directive. This is a **mandatory** option, there is no default set.
 
--  :strong:`dbuser` with this user the plugin will try to connect to the database. Default: *root*
+dbuser
+   with this user the plugin will try to connect to the database. Default: *root*
 
--  :strong:`dbname` there needs to be a named database for the connection. Default: *postgres*
+dbname
+   there needs to be a named database for the connection. Default: *postgres*
 
-- :strong:`dbHost` useful, if socket is not in default location. Specify socket-directory with a leading / here
+dbHost
+   useful, if socket is not in default location. Specify socket-directory with a leading / here
 
--  :strong:`ignoreSubdirs` a list of comma separated directories below the *postgresDataDir*, that will not be backed up. Default: *pg_wal,pg_log,pg_xlog*
+ignoreSubdirs
+   a list of comma separated directories below the *postgresDataDir*, that will not be backed up. Default: *pg_wal,pg_log,pg_xlog*
 
--  :strong:`switchWal` If set to *true* (default), the plugin will let Postgres write a new wal file, if the current Log Sequence Number (LSN) is greater than the LSN from the previous job to make sure changes will go into the backup.
+switchWal
+   If set to *true* (default), the plugin will let Postgres write a new wal file, if the current Log Sequence Number (LSN) is greater than the LSN from the previous job to make sure changes will go into the backup. Default: *true*
+
+
 
 Restore
 ^^^^^^^
@@ -1919,7 +1951,29 @@ With the usual Bareos restore mechanism a file-hierarchy will be created on the 
 -   :file:`<restore prefix>/<postgresDataDir>/`
 -   :file:`<restore prefix>/<walArchive>/`
 
-You need to place a minimal :file:`recovery.conf` in your Postgres datadir, Example:
+This example describes how to restore to the latest possible consistent point in time. You can manage to restore to any other point in in time available in the WAL files, please refer to the |postgresql| documentation for more details.
+
+PostgreSQL >= 12
+''''''''''''''''
+
+Beginning with |postgresql| >= 12 the configuration must be done in your |postgresql| configuration file :file:`postgres.conf`:
+
+.. code-block:: cfg
+   :caption: postgres.conf
+
+   ...
+   restore_command = 'cp /var/lib/pgsql/wal_archive/%f %p'
+   ...
+
+Additionally a (empty) file named :file:`recovery.signal` must be created in your |postgresql| datadir.
+
+
+PostgreSQL < 12
+'''''''''''''''
+
+For |postgresql| < 12 you need to place a minimal :file:`recovery.conf` in your |postgresql| datadir.
+
+Example:
 
 .. code-block:: cfg
    :caption: recovery.conf
@@ -1927,7 +1981,18 @@ You need to place a minimal :file:`recovery.conf` in your Postgres datadir, Exam
    restore_command = 'cp /var/lib/pgsql/wal_archive/%f %p'
 
 
-Where :file:`/var/lib/pgsql/wal_archive/` is the *walArchive* directory. Starting the |postgresql| server shall now initiate the recovery process. Make sure that the user *postgres* is allowed to rename the :file:`recovery.conf` file. You might have to disable or adapt your SELINUX configuration on some installations.
+Where :file:`/var/lib/pgsql/wal_archive/` is the *walArchive* directory.
+
+
+Initiate the Recovery Process
+'''''''''''''''''''''''''''''
+
+Make sure that the user **postgres** is allowed to rename the recovery marker file (:file:`recovery.signal` or :file:`recovery.conf`),
+as the file will be renamed during the recovery process.
+You might have to adapt your SELINUX configuration for this.
+
+Starting the |postgresql| server shall now initiate the recovery process.
+
 
 Troubleshooting
 ^^^^^^^^^^^^^^^
@@ -1938,24 +2003,23 @@ If things don't work as expected, make sure that
 - the Bareos FD Python plugins work in general, try one of
   the shipped simple sample plugins
 - check your Postgres data directory for a file named backup_label. If it exists, another backup-process is already running. This file contains an entry like *LABEL: SomeLabel*. If the backup was triggered by this plugin, the label will look like: *LABEL: Bareos.pgplugin.jobid.<jobid>*.
- You may want to stop it using the *SELECT pg_stop_backup()* statement.
-- make sure your *dbuser* can connect to the database *dbname* and is allowed to issue the following statements:
+  You may want to stop it using the *SELECT pg_stop_backup()* statement.
+- make sure your *dbuser* can connect to the database *dbname* and is allowed to issue the following statements matching your |postgresql| version:
 
-.. code-block:: sql
+  .. code-block:: sql
 
-    SELECT current_setting('server_version_num')
-    -- Postgres version >= 9
-    SELECT pg_start_backup()
-    SELECT pg_backup_start_time()"
-    SELECT pg_stop_backup()
-    -- Postgres version >=10:
-    SELECT pg_current_wal_lsn()
-    SELECT pg_switch_wal()
-    -- Postgres version 9 only:
-    SELECT pg_current_xlog_location()
-    SELECT pg_switch_xlog()
+     SELECT current_setting('server_version_num');
+     -- Postgres version >= 9
+     SELECT pg_start_backup();
+     SELECT pg_backup_start_time();
+     SELECT pg_stop_backup();
+     -- Postgres version >=10:
+     SELECT pg_current_wal_lsn();
+     SELECT pg_switch_wal();
+     -- Postgres version 9 only:
+     SELECT pg_current_xlog_location();
+     SELECT pg_switch_xlog();
 
-Support is available here: https://www.bareos.com
 
 
 .. _sdPlugins:
