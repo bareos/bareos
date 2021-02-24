@@ -31,13 +31,13 @@ sleep 1
 "${rscripts}"/setup
 
 
-if ! ./invalidate_tapes.sh
+if ! ./invalidate_tapes.sh ${1:-}
 then
   echo "Could not invalidate tapes"
   exit 1
 fi
 
-if ! ./create_autochanger_configs.sh
+if ! ./create_autochanger_configs.sh ${1:-}
 then
   echo "Could not create autochanger configs"
   exit 1
