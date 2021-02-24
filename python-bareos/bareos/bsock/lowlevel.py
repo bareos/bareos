@@ -102,7 +102,10 @@ class LowLevel(object):
         self.max_reconnects = 0
         self.tls_psk_enable = True
         self.tls_psk_require = False
-        self.tls_version = ssl.PROTOCOL_TLS
+        try:
+            self.tls_version = ssl.PROTOCOL_TLS
+        except AttributeError:
+            self.tls_version = ssl.PROTOCOL_SSLv23
         self.connection_type = None
         self.requested_protocol_version = None
         self.protocol_messages = ProtocolMessages()
