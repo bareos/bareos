@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix parallel python plugin jobs [PR #732]
 - fix oVirt plugin problem with config file [PR #732]
 - fix crash when loading both python-fd and python3-fd plugins [PR #733]
+- [Issue #1316]: storage daemon loses a configured device instance [PR #734]
 
 ### Added
 
@@ -21,8 +22,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Removed
 
 ### Security
-
-
 ## [20.0.0] - 2020-12-16
 
 ### Fixed
@@ -291,6 +290,4 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #667]: https://github.com/bareos/bareos/pull/667
 [PR #672]: https://github.com/bareos/bareos/pull/672
 [PR #686]: https://github.com/bareos/bareos/pull/686
-[PR #730]: https://github.com/bareos/bareos/pull/730
-[PR #733]: https://github.com/bareos/bareos/pull/733
 [unreleased]: https://github.com/bareos/bareos/tree/master
