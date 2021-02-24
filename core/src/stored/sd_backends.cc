@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,13 +44,6 @@
 
 namespace storagedaemon {
 
-static std::map<DeviceType, const char*> device_type_to_name_mapping = {
-    {DeviceType::B_FIFO_DEV, "fifo"},    {DeviceType::B_TAPE_DEV, "tape"},
-    {DeviceType::B_GFAPI_DEV, "gfapi"},  {DeviceType::B_DROPLET_DEV, "droplet"},
-    {DeviceType::B_RADOS_DEV, "rados"},  {DeviceType::B_CEPHFS_DEV, "cephfs"},
-    {DeviceType::B_UNKNOWN_DEV, nullptr}};
-
-
 struct BackendDeviceLibraryDescriptor {
   DeviceType device_type{DeviceType::B_UNKNOWN_DEV};
 
@@ -58,6 +51,11 @@ struct BackendDeviceLibraryDescriptor {
   BackendInterface* backend_interface;
 };
 
+const std::map<DeviceType, const char*> device_type_to_name_mapping = {
+    {DeviceType::B_FIFO_DEV, "fifo"},    {DeviceType::B_TAPE_DEV, "tape"},
+    {DeviceType::B_GFAPI_DEV, "gfapi"},  {DeviceType::B_DROPLET_DEV, "droplet"},
+    {DeviceType::B_RADOS_DEV, "rados"},  {DeviceType::B_CEPHFS_DEV, "cephfs"},
+    {DeviceType::B_UNKNOWN_DEV, nullptr}};
 
 static std::vector<std::unique_ptr<BackendDeviceLibraryDescriptor>>
     loaded_backends;
