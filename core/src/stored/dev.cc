@@ -1291,7 +1291,10 @@ Device::~Device()
   pthread_mutex_destroy(&spool_mutex);
   // RwlDestroy(&lock);
   attached_dcrs.clear();
-  if (device_resource) { device_resource->dev = nullptr; }
+
+  if (device_resource && device_resource->dev == this) {
+    device_resource->dev = nullptr;
+  }
 }
 
 bool Device::CanStealLock() const
