@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -237,6 +237,19 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
     default:
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
       dev = InitBackendDevice(jcr, device_resource->dev_type);
+      if (!dev) {
+        try {
+          Jmsg2(jcr, M_ERROR, 0,
+                _("Initialization of dynamic %s device \"%s\" with archive "
+                  "device \"%s\" failed. Backend "
+                  "library might be missing or backend directory incorrect.\n"),
+                device_type_to_name_mapping.at(device_resource->dev_type),
+                device_resource->resource_name_, device_resource->device_name);
+        } catch (const std::out_of_range&) {
+          // device_resource->dev_type could exceed limits of map
+        }
+        return nullptr;
+      }
 #endif
       break;
   }

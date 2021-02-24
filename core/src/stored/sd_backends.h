@@ -56,11 +56,13 @@ BackendInterface* GetBackend(void);
 
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
+#  include <map>
 void SetBackendDeviceDirectories(std::vector<std::string>&& new_backend_dirs);
 Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type);
 void FlushAndCloseBackendDevices();
-#endif
 
+extern const std::map<DeviceType, const char*> device_type_to_name_mapping;
+#endif
 } /* namespace storagedaemon */
 
 #endif /* __SD_DYNAMIC_H_ */
