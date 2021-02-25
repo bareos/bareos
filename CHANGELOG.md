@@ -18,6 +18,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page
+- Ctest now runs in scripted mode. [PR #751]
 
 ### Deprecated
 
