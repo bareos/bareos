@@ -17,6 +17,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - informative debugmessage when a dynamic backend cannot be loaded [PR #746]
 
 ### Changed
+- Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page
 
 ### Deprecated
 
