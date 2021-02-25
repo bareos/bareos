@@ -46,7 +46,7 @@ SHEBANG_FILES=  ${WRKSRC}/core/src/cats/make_catalog_backup.pl.in
 
 
 PLIST_SUB+=	LIBVERSION=${DISTVERSION:C/\..*//} # major version
-PLIST_SUB+=	DISTVERSION=${DISTVERSION:C/(.{6}).*/\1/} # full version
+PLIST_SUB+=	DISTVERSION=${DISTVERSION:C/(.{7}).*/\1/} # full version
 
 USES+=ssl
 USES+=gettext-runtime
