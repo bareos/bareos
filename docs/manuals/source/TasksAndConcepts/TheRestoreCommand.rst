@@ -19,6 +19,8 @@ restore job. You must use the restore command.
 Since Bareos is a network backup program, you must be aware that when you restore files, it is up to you to ensure that you or Bareos have selected the correct Client and the correct hard disk location for restoring those files. Bareos will quite willingly backup client A, and restore it by sending the files to a different directory on client B. Normally, you will want to avoid this, but assuming the operating systems are not too different in their file structures, this should work perfectly
 well, if so desired. By default, Bareos will restore data to the same Client that was backed up, and those data will be restored not to the original places but to /tmp/bareos-restores. This is configured in the default restore command resource in bareos-dir.conf. You may modify any of these defaults when the restore command prompts you to run the job by selecting the mod option.
 
+.. _RestoreCommand:
+
 Restore Command
 ---------------
 
@@ -96,6 +98,8 @@ There are a lot of options, and as a point of reference, most people will want t
 -  Item 12 is a full restore to a specified job date.
 
 -  Item 13 allows you to cancel the restore command.
+
+For items 6, 7 and 9, note that you must specify the date/time either exactly as shown YYYY-MM-DD HH-MM-SS or you can enter a shorter version of the same format such as YYYY-MM, and the command will take care of formatting. For example, if you want the system to restore saves done before October 2020, you can write 2020-10, and the console will understand it as 2020-10-01 00:00:00 and restore all saves before it. Empty fields in the format will get assigned the lowest possible value.
 
 As an example, suppose that we select item 5 (restore to most recent state). If you have not specified a client=xxx on the command line, it it will then ask for the desired Client, which on my system, will print all the Clients found in the database as follows:
 
@@ -388,7 +392,7 @@ The full list of possible command line arguments are:
 
 -  jobid=nnn – specify a JobId or comma separated list of JobIds to be restored.
 
--  before=YYYY-MM-DD HH:MM:SS – specify a date and time to which the system should be restored. Only Jobs started before the specified date/time will be selected, and as is the case for current Bareos will automatically find the most recent prior Full save and all Differential and Incremental saves run before the date you specify. Note, this command is not too user friendly in that you must specify the date/time exactly as shown.
+-  before=YYYY-MM-DD HH:MM:SS – specify a date and time to which the system should be restored. Only Jobs started before the specified date/time will be selected, and as is the case for current Bareos will automatically find the most recent prior Full save and all Differential and Incremental saves run before the date you specify. Note, the same formatting rules as items 6, 7 and 9 in :ref:`Restore Command <RestoreCommand>` apply to it.
 
 -  file=filename – specify a filename to be restored. You must specify the full path and filename. Prefixing the entry with a less-than sign (<) will cause Bareos to assume that the filename is on your system and contains a list of files to be restored. Bareos will thus read the list from that file. Multiple file=xxx specifications may be specified on the command line.
 

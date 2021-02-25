@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,6 +42,7 @@
 #include "dird/ua_select.h"
 #include "dird/ua_tree.h"
 #include "dird/ua_run.h"
+#include "dird/ua_restore.h"
 #include "dird/bsr.h"
 #include "lib/breg.h"
 #include "lib/edit.h"
@@ -560,14 +561,19 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         have_date = true;
         break;
       case 2: /* before */
+      {
         if (have_date || !HasValue(ua, i)) { return 0; }
-        if (StrToUtime(ua->argv[i]) == 0) {
-          ua->ErrorMsg(_("Improper date format: %s\n"), ua->argv[i]);
+
+        std::string cpdate = CompensateShortDate(ua->argv[i]);
+
+        if (StrToUtime(cpdate.c_str()) == 0) {
+          ua->ErrorMsg(_("Improper date format: %s\n"), cpdate.c_str());
           return 0;
         }
-        bstrncpy(date, ua->argv[i], sizeof(date));
+        bstrncpy(date, cpdate.c_str(), sizeof(date));
         have_date = true;
         break;
+      }
       case 3: /* file */
       case 4: /* dir */
         if (!HasValue(ua, i)) { return 0; }
@@ -839,13 +845,63 @@ static bool get_date(UaContext* ua, char* date, int date_len)
   ua->SendMsg(
       _("The restored files will the most current backup\n"
         "BEFORE the date you specify below.\n\n"));
+  std::string cmpdate;
   for (;;) {
     if (!GetCmd(ua, _("Enter date as YYYY-MM-DD HH:MM:SS :"))) { return false; }
-    if (StrToUtime(ua->cmd) != 0) { break; }
+    cmpdate = CompensateShortDate(ua->cmd);
+
+    if (StrToUtime(cmpdate.c_str()) != 0) { break; }
     ua->ErrorMsg(_("Improper date format.\n"));
   }
-  bstrncpy(date, ua->cmd, date_len);
+  bstrncpy(date, cmpdate.c_str(), date_len);
   return true;
+}
+
+/**
+ * Compensate missing date-time elements in shorter formats
+ * Returns a full compensated date when argument has a correct short format
+ * Returns the argument unchanged, if there is a format problem
+ */
+std::string CompensateShortDate(const char* cmd)
+{
+  tm datetime{};
+  char trailinggarbage[16]{""};
+
+  if ((sscanf(cmd, "%u-%u-%u %u:%u:%u%15s", &datetime.tm_year, &datetime.tm_mon,
+              &datetime.tm_mday, &datetime.tm_hour, &datetime.tm_min,
+              &datetime.tm_sec, trailinggarbage)
+           == 7
+       || sscanf(cmd, "%u-%u-%u %u:%u%15s", &datetime.tm_year, &datetime.tm_mon,
+                 &datetime.tm_mday, &datetime.tm_hour, &datetime.tm_min,
+                 trailinggarbage)
+              == 6
+       || sscanf(cmd, "%u-%u-%u %u%15s", &datetime.tm_year, &datetime.tm_mon,
+                 &datetime.tm_mday, &datetime.tm_hour, trailinggarbage)
+              == 5
+       || sscanf(cmd, "%u-%u-%u%15s", &datetime.tm_year, &datetime.tm_mon,
+                 &datetime.tm_mday, trailinggarbage)
+              == 4
+       || sscanf(cmd, "%u-%u%15s", &datetime.tm_year, &datetime.tm_mon,
+                 trailinggarbage)
+              == 3
+       || sscanf(cmd, "%u%s", &datetime.tm_year, trailinggarbage) == 2)
+      && (trailinggarbage[0] == '\0')) {
+    if (datetime.tm_mon == 0) { datetime.tm_mon = 1; }
+    if (datetime.tm_mday == 0) { datetime.tm_mday = 1; }
+
+    if (datetime.tm_year >= 1900) {
+      datetime.tm_year -= 1900;
+    } else {
+      return cmd;
+    }
+
+    if (datetime.tm_mon > 0) { datetime.tm_mon--; }
+
+    char buffer[MAX_TIME_LENGTH];
+    std::strftime(buffer, MAX_TIME_LENGTH, "%Y-%m-%d %H:%M:%S", &datetime);
+    return buffer;
+  }
+  return cmd;
 }
 
 /**

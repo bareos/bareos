@@ -12,12 +12,14 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix oVirt plugin problem with config file [PR #729]
 - [Issue #1316]: storage daemon loses a configured device instance [PR #739]
 - fix python-bareos for Python < 2.7.13 [PR #748]
+- fixed bug when user could enter wrong dates such as 2000-66-100 55:55:89 without being denied [PR #707]
 
 
 ### Added
 - added reload commands to systemd service [PR #694]
 - Build the package **bareos-filedaemon-postgresql-python-plugin** also for Debian, Ubuntu and UCS (deb packages) [PR #723].
 - added an informative debugmessage when a dynamic backend cannot be loaded [PR #740]
+- support for shorter date formats, where shorter dates are compensated with lowest value possible to make a full date [PR #707]
 
 ### Changed
 - Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page

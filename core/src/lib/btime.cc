@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -121,37 +121,96 @@ char* bstrutime(char* dt, int maxlen, utime_t utime)
   return bstrftime(dt, maxlen, utime, "%Y-%m-%d %H:%M:%S");
 }
 
+
+/*
+ * Check if a given date is valid
+ */
+
+static bool DateIsValid(const tm& datetime)
+{
+  if (datetime.tm_year <= 0 || datetime.tm_mon <= 0 || datetime.tm_mday <= 0
+      || datetime.tm_mon > 12 || datetime.tm_hour > 23 || datetime.tm_min > 59
+      || datetime.tm_sec > 59 || datetime.tm_mon < 0 || datetime.tm_hour < 0
+      || datetime.tm_min < 0 || datetime.tm_sec < 0) {
+    return false;
+  }
+
+  /*
+   * taking into context leap years in february:
+   * leap years are years that are divisible by 4 or are divisible by 4, 100 and
+   * 400 simultaniously
+   */
+
+  if (datetime.tm_mon == 2) {
+    if (datetime.tm_year % 4 == 0) {
+      if (datetime.tm_year % 100 == 0 && datetime.tm_year % 400 != 0) {
+        if (datetime.tm_mday > 28) { return false; }
+      } else if (datetime.tm_mday > 29) {
+        return false;
+      }
+
+    } else if (datetime.tm_mday > 28) {
+      return false;
+    }
+  }
+
+  /*
+   * taking into context 31-day and 30-day months
+   */
+
+  if ((datetime.tm_mon == 1 || datetime.tm_mon == 3 || datetime.tm_mon == 5
+       || datetime.tm_mon == 7 || datetime.tm_mon == 8 || datetime.tm_mon == 10
+       || datetime.tm_mon == 12)
+      && datetime.tm_mday > 31) {
+    return false;
+
+  } else if (datetime.tm_mday > 30 || datetime.tm_mday < 0) {
+    return false;
+  }
+
+  return true;
+}
+
 /*
  * Convert standard time string yyyy-mm-dd hh:mm:ss to Unix time
  */
 utime_t StrToUtime(const char* str)
 {
-  struct tm tm;
+  tm datetime{};
   time_t time;
+
+  char trailinggarbage[16]{""};
 
   /*
    * Check for bad argument
    */
   if (!str || *str == 0) { return 0; }
 
-  if (sscanf(str, "%d-%d-%d %d:%d:%d", &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
-             &tm.tm_hour, &tm.tm_min, &tm.tm_sec)
-      != 6) {
+  if ((sscanf(str, "%u-%u-%u %u:%u:%u%15s", &datetime.tm_year, &datetime.tm_mon,
+              &datetime.tm_mday, &datetime.tm_hour, &datetime.tm_min,
+              &datetime.tm_sec, trailinggarbage)
+       != 7)
+      || trailinggarbage[0] != '\0') {
     return 0;
   }
-  if (tm.tm_mon > 0) {
-    tm.tm_mon--;
+
+  if (!DateIsValid(datetime)) { return 0; }
+
+  if (datetime.tm_mon > 0) {
+    datetime.tm_mon--;
   } else {
     return 0;
   }
-  if (tm.tm_year >= 1900) {
-    tm.tm_year -= 1900;
+
+  if (datetime.tm_year >= 1900) {
+    datetime.tm_year -= 1900;
   } else {
     return 0;
   }
-  tm.tm_wday = tm.tm_yday = 0;
-  tm.tm_isdst = -1;
-  time = mktime(&tm);
+
+  datetime.tm_wday = datetime.tm_yday = 0;
+  datetime.tm_isdst = -1;
+  time = mktime(&datetime);
   if (time == -1) { time = 0; }
   return (utime_t)time;
 }
