@@ -22,7 +22,7 @@ CentOS_6:
 
 CentOS_7:
   ctest_unstable: 0
-  warnings_unhealthy: 11
+  warnings_unhealthy: 25
   warnings_healthy: 5
 
 CentOS_8:
@@ -57,7 +57,7 @@ MacOS:
 
 openSUSE:
   ctest_unstable: 0
-  warnings_unhealthy: 6
+  warnings_unhealthy: 7
   warnings_healthy: 3
 
 RHEL_6:
@@ -67,7 +67,7 @@ RHEL_6:
 
 RHEL_7:
   ctest_unstable: 0
-  warnings_unhealthy: 11
+  warnings_unhealthy: 25
   warnings_healthy: 5
 
 RHEL_8:
@@ -87,7 +87,7 @@ SLE_12_SP5:
 
 SLE:
   ctest_unstable: 0
-  warnings_unhealthy: 6
+  warnings_unhealthy: 7
   warnings_healthy: 3
 
 Univention:
