@@ -14,7 +14,7 @@ In technical terms, it is a network Client/Server based backup program. Bareos i
 History
 -------
 
-Bareos is a `fork <http://www.bareos.org/en/faq/items/why_fork.html>`_ of the open source project `Bacula <http://www.bacula.org>`_ version 5.2. In 2010 the Bacula community developer Marco van Wieringen started to collect rejected or neglected community contributions in his own branch. This branch was later on the base of Bareos and since then was enriched by a lot of new features.
+Bareos is a `fork <http://www.bareos.org/en/faq/why_fork.html>`_ of the open source project `Bacula <http://www.bacula.org>`_ version 5.2. In 2010 the Bacula community developer Marco van Wieringen started to collect rejected or neglected community contributions in his own branch. This branch was later on the base of Bareos and since then was enriched by a lot of new features.
 
 This documentation also bases on the `original Bacula documentation <http://www.bacula.org/5.2.x-manuals/en/main/main/>`_, it is technically also a fork of the documenation created following the rules of the GNU Free Documentation License.
 
