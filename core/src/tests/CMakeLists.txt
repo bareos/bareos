@@ -407,8 +407,8 @@ if(NOT client-only)
   bareos_add_test(
     lib_tests
     ADDITIONAL_SOURCES
-      alist_test.cc bareos_test_sockets.cc dlist_test.cc htable_test.cc
-      qualified_resource_name_type_converter_test.cc
+      alist_test.cc bareos_test_sockets.cc bsys_test.cc dlist_test.cc
+      htable_test.cc qualified_resource_name_type_converter_test.cc
       ${PROJECT_SOURCE_DIR}/src/filed/evaluate_job_command.cc
     LINK_LIBRARIES stored_objects bareossd bareos ${JANSSON_LIBRARIES}
                    ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
