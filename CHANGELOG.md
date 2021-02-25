@@ -11,6 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix parallel python plugin jobs [PR #729]
 - fix oVirt plugin problem with config file [PR #729]
 - [Issue #1316]: storage daemon loses a configured device instance [PR #739]
+- fix python-bareos for Python < 2.7.13 [PR #748]
 
 
 ### Added
