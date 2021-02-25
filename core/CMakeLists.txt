@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -975,3 +975,12 @@ if(HAVE_WIN32)
   message("   WINDOWS_BITS:                 ${WINDOWS_BITS}")
   message("   WINEPATH environment:         $ENV{WINEPATH}")
 endif()
+
+# REPEAT_UNTIL requires cmake 3.17+
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.17.0")
+  set(REPEAT_UNTIL "REPEAT UNTIL_PASS:2")
+endif()
+
+configure_file(
+  "CTestScript.cmake.in" "${CMAKE_BINARY_DIR}/CTestScript.cmake" @ONLY
+)
