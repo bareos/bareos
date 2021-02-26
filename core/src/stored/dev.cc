@@ -772,7 +772,7 @@ bool Device::rewind(DeviceControlRecord* dcr)
 
   if (IsFifo() || IsVtl()) { return true; }
 
-  if (lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
+  if (d_lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
     BErrNo be;
     dev_errno = errno;
     Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(), be.bstrerror());
@@ -835,7 +835,7 @@ bool Device::eod(DeviceControlRecord* dcr)
   file_size = 0;
   file_addr = 0;
 
-  pos = lseek(dcr, (boffset_t)0, SEEK_END);
+  pos = d_lseek(dcr, (boffset_t)0, SEEK_END);
   Dmsg1(200, "====== Seek to %lld\n", pos);
 
   if (pos >= 0) {
@@ -875,7 +875,7 @@ bool Device::UpdatePos(DeviceControlRecord* dcr)
 
   file = 0;
   file_addr = 0;
-  pos = lseek(dcr, (boffset_t)0, SEEK_CUR);
+  pos = d_lseek(dcr, (boffset_t)0, SEEK_CUR);
   if (pos < 0) {
     BErrNo be;
     dev_errno = errno;
@@ -966,7 +966,7 @@ bool Device::Reposition(DeviceControlRecord* dcr,
 
   boffset_t pos = (((boffset_t)rfile) << 32) | rblock;
   Dmsg1(100, "===== lseek to %d\n", (int)pos);
-  if (lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
+  if (d_lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
     BErrNo be;
     dev_errno = errno;
     Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),

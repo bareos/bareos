@@ -1146,9 +1146,9 @@ reread:
     } else {
       Dmsg0(250, "Seek to beginning of block for reread.\n");
       boffset_t pos
-          = dev->lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
+          = dev->d_lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
       pos -= block->read_len;
-      dev->lseek(dcr, pos, SEEK_SET);
+      dev->d_lseek(dcr, pos, SEEK_SET);
       dev->file_addr = pos;
     }
     Mmsg1(dev->errmsg, _("Setting block buffer size to %u bytes.\n"),
@@ -1225,10 +1225,10 @@ reread:
   Dmsg0(250, "At end of read block\n");
   if (block->read_len > block->block_len && !dev->IsTape()) {
     char ed1[50];
-    boffset_t pos = dev->lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
+    boffset_t pos = dev->d_lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
     Dmsg1(250, "Current lseek pos=%s\n", edit_int64(pos, ed1));
     pos -= (block->read_len - block->block_len);
-    dev->lseek(dcr, pos, SEEK_SET);
+    dev->d_lseek(dcr, pos, SEEK_SET);
     Dmsg3(250, "Did lseek pos=%s blk_size=%d rdlen=%d\n", edit_int64(pos, ed1),
           block->block_len, block->read_len);
     dev->file_addr = pos;

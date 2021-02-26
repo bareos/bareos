@@ -567,7 +567,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
    * which resulted in various locking problems.
    */
   if (!JobCanceled(jcr)) {
-    if (!dev->flush(dcr)) {
+    if (!dev->d_flush(dcr)) {
       Jmsg(jcr, M_FATAL, 0, "Failed to flush device %s.\n", dev->print_name());
     }
   }

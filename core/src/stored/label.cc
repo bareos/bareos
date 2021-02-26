@@ -369,7 +369,7 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
   if (relabel) {
     VolumeUnused(dcr); /* mark current volume unused */
     /* Truncate device */
-    if (!dev->truncate(dcr)) { goto bail_out; }
+    if (!dev->d_truncate(dcr)) { goto bail_out; }
     if (!dev->IsTape()) {
       dev->close(dcr); /* make sure file closed for rename */
     }
@@ -1139,7 +1139,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
     }
     if (recycle) {
       Dmsg1(150, "Doing recycle. Vol=%s\n", dcr->VolumeName);
-      if (!dev->truncate(dcr)) {
+      if (!dev->d_truncate(dcr)) {
         Jmsg2(jcr, M_FATAL, 0, _("Truncate error on device %s: ERR=%s\n"),
               dev->print_name(), dev->print_errmsg());
         return false;
