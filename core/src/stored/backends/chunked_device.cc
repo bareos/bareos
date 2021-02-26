@@ -1503,22 +1503,4 @@ chunked_device::~chunked_device()
   if (current_volname_) { free(current_volname_); }
 }
 
-chunked_device::chunked_device()
-{
-  current_volname_ = NULL;
-  current_chunk_ = NULL;
-  io_threads_ = 0;
-  io_slots_ = 0;
-  retries_ = 0;
-  chunk_size_ = 0;
-  io_threads_started_ = false;
-  end_of_media_ = false;
-  readonly_ = false;
-  inflight_chunks_ = 0;
-  cb_ = NULL;
-  chunk_size_ = 0;
-  offset_ = 0;
-  use_mmap_ = false;
-}
-
 } /* namespace storagedaemon */
