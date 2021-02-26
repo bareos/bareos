@@ -1102,7 +1102,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
   }
 
   Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%x\n",
-        dev->fd(), dev);
+        dev->fd, dev);
 
   /*
    * Let any stored plugin know that we are (re)writing the label.
@@ -1168,7 +1168,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
     }
 
     /* Attempt write to check write permission */
-    Dmsg1(200, "Attempt to write to device fd=%d.\n", dev->fd());
+    Dmsg1(200, "Attempt to write to device fd=%d.\n", dev->fd);
     if (!dcr->WriteBlockToDev()) {
       Jmsg2(jcr, M_ERROR, 0, _("Unable to write device %s: ERR=%s\n"),
             dev->print_name(), dev->print_errmsg());

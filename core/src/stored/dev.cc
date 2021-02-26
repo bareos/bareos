@@ -615,7 +615,7 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
     if (open_mode == omode) {
       return true;
     } else {
-      d_close(fd_);
+      d_close(fd);
       ClearOpened();
       Dmsg0(100, "Close fd for mode change.\n");
 
@@ -658,9 +658,9 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
    */
   CopySetBits(ST_MAX, preserve, state);
 
-  Dmsg2(100, "preserve=%08o fd=%d\n", preserve, fd_);
+  Dmsg2(100, "preserve=%08o fd=%d\n", preserve, fd);
 
-  return fd_ >= 0;
+  return fd >= 0;
 }
 
 void Device::set_mode(DeviceMode mode)
@@ -726,7 +726,7 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   Dmsg3(100, "open archive: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
         archive_name.c_str(), oflags);
 
-  if ((fd_ = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
+  if ((fd = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
     BErrNo be;
     dev_errno = errno;
     if (dev_errno == 0) {
@@ -738,13 +738,13 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     Dmsg1(100, "open failed: %s", errmsg);
   }
 
-  if (fd_ >= 0) {
+  if (fd >= 0) {
     dev_errno = 0;
     file = 0;
     file_addr = 0;
   }
 
-  Dmsg1(100, "open dev: disk fd=%d opened\n", fd_);
+  Dmsg1(100, "open dev: disk fd=%d opened\n", fd);
 }
 
 /**
@@ -755,7 +755,7 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
  */
 bool Device::rewind(DeviceControlRecord* dcr)
 {
-  Dmsg3(400, "rewind res=%d fd=%d %s\n", NumReserved(), fd_, print_name());
+  Dmsg3(400, "rewind res=%d fd=%d %s\n", NumReserved(), fd, print_name());
 
   /*
    * Remove EOF/EOT flags
@@ -768,7 +768,7 @@ bool Device::rewind(DeviceControlRecord* dcr)
   file_size = 0;
   file_addr = 0;
 
-  if (fd_ < 0) { return false; }
+  if (fd < 0) { return false; }
 
   if (IsFifo() || IsVtl()) { return true; }
 
@@ -818,7 +818,7 @@ bool Device::eod(DeviceControlRecord* dcr)
 {
   boffset_t pos;
 
-  if (fd_ < 0) {
+  if (fd < 0) {
     dev_errno = EBADF;
     Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), print_name());
     return false;
@@ -917,7 +917,7 @@ char* Device::StatusDev()
 
 bool Device::OfflineOrRewind()
 {
-  if (fd_ < 0) { return false; }
+  if (fd < 0) { return false; }
   if (HasCap(CAP_OFFLINEUNMOUNT)) {
     return offline();
   } else {
@@ -1025,7 +1025,7 @@ bool Device::close(DeviceControlRecord* dcr)
        * Fall through wanted
        */
     default:
-      status = d_close(fd_);
+      status = d_close(fd);
       if (status < 0) {
         BErrNo be;
 
@@ -1216,7 +1216,7 @@ ssize_t Device::read(void* buf, size_t len)
 
   GetTimerCount();
 
-  read_len = d_read(fd_, buf, len);
+  read_len = d_read(fd, buf, len);
 
   last_tick = GetTimerCount();
 
@@ -1239,7 +1239,7 @@ ssize_t Device::write(const void* buf, size_t len)
 
   GetTimerCount();
 
-  write_len = d_write(fd_, buf, len);
+  write_len = d_write(fd, buf, len);
 
   last_tick = GetTimerCount();
 

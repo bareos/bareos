@@ -150,9 +150,9 @@ int cephfs_device::d_open(const char* pathname, int flags, int mode)
   /*
    * See if we don't have a file open already.
    */
-  if (fd_ >= 0) {
-    ceph_close(cmount_, fd_);
-    fd_ = -1;
+  if (fd >= 0) {
+    ceph_close(cmount_, fd);
+    fd = -1;
   }
 
   /*
@@ -207,8 +207,8 @@ int cephfs_device::d_open(const char* pathname, int flags, int mode)
     Mmsg(virtual_filename_, "%s", getVolCatName());
   }
 
-  fd_ = ceph_open(cmount_, virtual_filename_, flags, mode);
-  if (fd_ < 0) { goto bail_out; }
+  fd = ceph_open(cmount_, virtual_filename_, flags, mode);
+  if (fd < 0) { goto bail_out; }
 
   return 0;
 
@@ -220,7 +220,7 @@ bail_out:
     ceph_shutdown(cmount_);
     cmount_ = NULL;
   }
-  fd_ = -1;
+  fd = -1;
 
   return -1;
 }
@@ -230,8 +230,8 @@ bail_out:
  */
 ssize_t cephfs_device::d_read(int fd, void* buffer, size_t count)
 {
-  if (fd_ >= 0) {
-    return ceph_read(cmount_, fd_, (char*)buffer, count, -1);
+  if (fd >= 0) {
+    return ceph_read(cmount_, fd, (char*)buffer, count, -1);
   } else {
     errno = EBADF;
     return -1;
@@ -243,8 +243,8 @@ ssize_t cephfs_device::d_read(int fd, void* buffer, size_t count)
  */
 ssize_t cephfs_device::d_write(int fd, const void* buffer, size_t count)
 {
-  if (fd_ >= 0) {
-    return ceph_write(cmount_, fd_, (char*)buffer, count, -1);
+  if (fd >= 0) {
+    return ceph_write(cmount_, fd, (char*)buffer, count, -1);
   } else {
     errno = EBADF;
     return -1;
@@ -253,11 +253,11 @@ ssize_t cephfs_device::d_write(int fd, const void* buffer, size_t count)
 
 int cephfs_device::d_close(int fd)
 {
-  if (fd_ >= 0) {
+  if (fd >= 0) {
     int status;
 
-    status = ceph_close(cmount_, fd_);
-    fd_ = -1;
+    status = ceph_close(cmount_, fd);
+    fd = -1;
     return (status < 0) ? -1 : 0;
   } else {
     errno = EBADF;
@@ -271,10 +271,10 @@ boffset_t cephfs_device::d_lseek(DeviceControlRecord* dcr,
                                  boffset_t offset,
                                  int whence)
 {
-  if (fd_ >= 0) {
+  if (fd >= 0) {
     boffset_t status;
 
-    status = ceph_lseek(cmount_, fd_, offset, whence);
+    status = ceph_lseek(cmount_, fd, offset, whence);
     if (status >= 0) {
       return status;
     } else {
@@ -297,8 +297,8 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
   struct stat st;
 #  endif
 
-  if (fd_ >= 0) {
-    status = ceph_ftruncate(cmount_, fd_, 0);
+  if (fd >= 0) {
+    status = ceph_ftruncate(cmount_, fd, 0);
     if (status < 0) {
       BErrNo be;
 
@@ -318,9 +318,9 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
      * 4. change ownership to original
      */
 #  if HAVE_CEPH_STATX
-    status = ceph_fstatx(cmount_, fd_, &stx, CEPH_STATX_MODE, 0);
+    status = ceph_fstatx(cmount_, fd, &stx, CEPH_STATX_MODE, 0);
 #  else
-    status = ceph_fstat(cmount_, fd_, &st);
+    status = ceph_fstat(cmount_, fd, &st);
 #  endif
     if (status < 0) {
       BErrNo be;
@@ -341,7 +341,7 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
 #  else
     if (st.st_size != 0) { /* ceph_ftruncate() didn't work */
 #  endif
-      ceph_close(cmount_, fd_);
+      ceph_close(cmount_, fd);
       ceph_unlink(cmount_, virtual_filename_);
 
       /*
@@ -349,19 +349,19 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
        */
       oflags = O_CREAT | O_RDWR | O_BINARY;
 #  if HAVE_CEPH_STATX
-      fd_ = ceph_open(cmount_, virtual_filename_, oflags, stx.stx_mode);
+      fd = ceph_open(cmount_, virtual_filename_, oflags, stx.stx_mode);
 #  else
-      fd_ = ceph_open(cmount_, virtual_filename_, oflags, st.st_mode);
+      fd = ceph_open(cmount_, virtual_filename_, oflags, st.st_mode);
 #  endif
-      if (fd_ < 0) {
+      if (fd < 0) {
         BErrNo be;
 
-        dev_errno = -fd_;
+        dev_errno = -fd;
         ;
         Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), virtual_filename_,
-              be.bstrerror(-fd_));
+              be.bstrerror(-fd));
         Emsg0(M_FATAL, 0, errmsg);
-        fd_ = -1;
+        fd = -1;
 
         return false;
       }
@@ -382,9 +382,9 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
 
 cephfs_device::~cephfs_device()
 {
-  if (cmount_ && fd_ >= 0) {
-    ceph_close(cmount_, fd_);
-    fd_ = -1;
+  if (cmount_ && fd >= 0) {
+    ceph_close(cmount_, fd);
+    fd = -1;
   }
 
   if (!cmount_) {

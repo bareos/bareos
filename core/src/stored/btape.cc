@@ -885,7 +885,7 @@ static bool SpeedTestRaw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
   for (uint32_t j = 0; j < nb; j++) {
     init_speed();
     for (; jcr->JobBytes < nb_gb;) {
-      status = dev->d_write(dev->fd(), block->buf, block->buf_len);
+      status = dev->d_write(dev->fd, block->buf, block->buf_len);
       if (status == (int)block->buf_len) {
         if ((block_num++ % 500) == 0) {
           printf("+");
@@ -1863,7 +1863,7 @@ static void rrcmd()
     len = 1024;
   }
   buf = (char*)malloc(len);
-  status = read(dev->fd(), buf, len);
+  status = read(dev->fd, buf, len);
   if (status > 0 && status <= len) { errno = 0; }
   BErrNo be;
   Pmsg3(0, _("Read of %d bytes gives status=%d. ERR=%s\n"), len, status,
@@ -1896,7 +1896,7 @@ static void scancmd()
   tot_files = dev->file;
   Pmsg1(0, _("Starting scan at file %u\n"), dev->file);
   for (;;) {
-    if ((status = read(dev->fd(), buf, sizeof(buf))) < 0) {
+    if ((status = read(dev->fd, buf, sizeof(buf))) < 0) {
       BErrNo be;
       dev->clrerror(-1);
       Mmsg2(dev->errmsg, _("read error on %s. ERR=%s.\n"),
@@ -2799,7 +2799,7 @@ static void rawfill_cmd()
   Pmsg1(0, _("Begin writing raw blocks of %u bytes.\n"), block->buf_len);
   for (;;) {
     *p = block_num;
-    status = dev->d_write(dev->fd(), block->buf, block->buf_len);
+    status = dev->d_write(dev->fd, block->buf, block->buf_len);
     if (status == (int)block->buf_len) {
       if ((block_num++ % 100) == 0) {
         printf("+");

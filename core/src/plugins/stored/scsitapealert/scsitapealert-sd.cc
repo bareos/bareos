@@ -220,7 +220,7 @@ static bRC handle_tapealert_readout(void* value)
   Dmsg1(debuglevel, "scsitapealert-sd: checking for tapealerts on device %s\n",
         dev->archive_device_string);
   P(tapealert_operation_mutex);
-  GetTapealertFlags(dev->fd(), dev->archive_device_string, &flags);
+  GetTapealertFlags(dev->fd, dev->archive_device_string, &flags);
   V(tapealert_operation_mutex);
 
   Dmsg1(debuglevel,
