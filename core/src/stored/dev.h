@@ -474,12 +474,6 @@ class Device {
     return true;
   }
   virtual bool DeviceStatus(DeviceStatusInformation* dst) { return false; }
-  boffset_t lseek(DeviceControlRecord* dcr, boffset_t offset, int whence)
-  {
-    return d_lseek(dcr, offset, whence);
-  }
-  bool truncate(DeviceControlRecord* dcr) { return d_truncate(dcr); }
-  bool flush(DeviceControlRecord* dcr) { return d_flush(dcr); };
 
   /*
    * Low level operations
