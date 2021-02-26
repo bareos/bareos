@@ -26,10 +26,10 @@
  *
  * Stacking is the following:
  *
- *   droplet_device::
+ *   DropletDevice::
  *         |
  *         v
- *   chunked_device::
+ *   ChunkedDevice::
  *         |
  *         v
  *       Device::
@@ -215,7 +215,7 @@ static dpl_status_t chunked_volume_truncate_callback(dpl_sysmd_t* sysmd,
  *          false - if an error has occured. Sets dev_errno and errmsg to the
  * first error.
  */
-bool droplet_device::walk_chunks(const char* dirname,
+bool DropletDevice::walk_chunks(const char* dirname,
                                  t_dpl_walk_chunks_call_back callback,
                                  void* data,
                                  bool ignore_gaps)
@@ -339,7 +339,7 @@ bool droplet_device::walk_chunks(const char* dirname,
  * Returns DPL_SUCCESS     - if path exists and can be accessed
  *         DPL_* errorcode - otherwise
  */
-dpl_status_t droplet_device::check_path(const char* path)
+dpl_status_t DropletDevice::check_path(const char* path)
 {
   dpl_status_t status;
   const char* retry = "";
@@ -376,7 +376,7 @@ dpl_status_t droplet_device::check_path(const char* path)
  * Returns true  - if connection can be established
  *         false - otherwise
  */
-bool droplet_device::CheckRemote()
+bool DropletDevice::CheckRemote()
 {
   if (!ctx_) {
     if (!initialize()) { return false; }
@@ -400,7 +400,7 @@ bool droplet_device::CheckRemote()
 }
 
 
-bool droplet_device::remote_chunked_volume_exists()
+bool DropletDevice::remote_chunked_volume_exists()
 {
   bool retval = false;
   dpl_status_t status;
@@ -441,7 +441,7 @@ bool droplet_device::remote_chunked_volume_exists()
  * This does the real work either by being called from a
  * io-thread or directly blocking the device.
  */
-bool droplet_device::FlushRemoteChunk(chunk_io_request* request)
+bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
 {
   bool retval = false;
   dpl_status_t status;
@@ -590,7 +590,7 @@ bail_out:
 /*
  * Internal method for reading a chunk from the remote backing store.
  */
-bool droplet_device::ReadRemoteChunk(chunk_io_request* request)
+bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
 {
   bool retval = false;
   dpl_status_t status;
@@ -718,7 +718,7 @@ bail_out:
  * Internal method for truncating a chunked volume on the remote backing
  * store.
  */
-bool droplet_device::TruncateRemoteChunkedVolume(DeviceControlRecord* dcr)
+bool DropletDevice::TruncateRemoteChunkedVolume(DeviceControlRecord* dcr)
 {
   PoolMem chunk_dir(PM_FNAME);
 
@@ -736,7 +736,7 @@ bool droplet_device::TruncateRemoteChunkedVolume(DeviceControlRecord* dcr)
 }
 
 
-bool droplet_device::d_flush(DeviceControlRecord* dcr)
+bool DropletDevice::d_flush(DeviceControlRecord* dcr)
 {
   return WaitUntilChunksWritten();
 };
@@ -744,7 +744,7 @@ bool droplet_device::d_flush(DeviceControlRecord* dcr)
 /*
  * Initialize backend.
  */
-bool droplet_device::initialize()
+bool DropletDevice::initialize()
 {
   dpl_status_t status;
 
@@ -986,7 +986,7 @@ bail_out:
 /*
  * Open a volume using libdroplet.
  */
-int droplet_device::d_open(const char* pathname, int flags, int mode)
+int DropletDevice::d_open(const char* pathname, int flags, int mode)
 {
   if (!initialize()) { return -1; }
 
@@ -996,7 +996,7 @@ int droplet_device::d_open(const char* pathname, int flags, int mode)
 /*
  * Read data from a volume using libdroplet.
  */
-ssize_t droplet_device::d_read(int fd, void* buffer, size_t count)
+ssize_t DropletDevice::d_read(int fd, void* buffer, size_t count)
 {
   return ReadChunked(fd, buffer, count);
 }
@@ -1004,14 +1004,14 @@ ssize_t droplet_device::d_read(int fd, void* buffer, size_t count)
 /**
  * Write data to a volume using libdroplet.
  */
-ssize_t droplet_device::d_write(int fd, const void* buffer, size_t count)
+ssize_t DropletDevice::d_write(int fd, const void* buffer, size_t count)
 {
   return WriteChunked(fd, buffer, count);
 }
 
-int droplet_device::d_close(int fd) { return CloseChunk(); }
+int DropletDevice::d_close(int fd) { return CloseChunk(); }
 
-int droplet_device::d_ioctl(int fd, ioctl_req_t request, char* op)
+int DropletDevice::d_ioctl(int fd, ioctl_req_t request, char* op)
 {
   return -1;
 }
@@ -1020,7 +1020,7 @@ int droplet_device::d_ioctl(int fd, ioctl_req_t request, char* op)
  * Open a directory on the backing store and find out size information for a
  * volume.
  */
-ssize_t droplet_device::chunked_remote_volume_size()
+ssize_t DropletDevice::chunked_remote_volume_size()
 {
   ssize_t volumesize = 0;
   dpl_sysmd_t* sysmd = NULL;
@@ -1052,7 +1052,7 @@ bail_out:
   return volumesize;
 }
 
-boffset_t droplet_device::d_lseek(DeviceControlRecord* dcr,
+boffset_t DropletDevice::d_lseek(DeviceControlRecord* dcr,
                                   boffset_t offset,
                                   int whence)
 {
@@ -1086,12 +1086,12 @@ boffset_t droplet_device::d_lseek(DeviceControlRecord* dcr,
   return offset_;
 }
 
-bool droplet_device::d_truncate(DeviceControlRecord* dcr)
+bool DropletDevice::d_truncate(DeviceControlRecord* dcr)
 {
   return TruncateChunkedVolume(dcr);
 }
 
-droplet_device::~droplet_device()
+DropletDevice::~DropletDevice()
 {
   if (ctx_) {
     if (bucketname_ && ctx_->cur_bucket) {
@@ -1116,7 +1116,7 @@ class Backend : public BackendInterface {
   {
     switch (device_type) {
       case DeviceType::B_DROPLET_DEV:
-        return new droplet_device;
+        return new DropletDevice;
       default:
         Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"),
              device_type);
