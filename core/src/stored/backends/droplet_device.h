@@ -33,7 +33,7 @@
 
 namespace storagedaemon {
 /*
- * Generic callback for the droplet_device::walk_directory() function.
+ * Generic callback for the DropletDevice::walk_directory() function.
  *
  * Returns DPL_SUCCESS - success
  *         other dpl_status_t value: failure
@@ -48,7 +48,7 @@ typedef dpl_status_t (*t_dpl_walk_chunks_call_back)(dpl_sysmd_t* sysmd,
                                                     void* data);
 
 
-class droplet_device : public chunked_device {
+class DropletDevice : public ChunkedDevice {
  private:
   /* maximun number of chunks in a volume (0000 to 9999) */
   const int max_chunks_ = 10000;
@@ -65,7 +65,7 @@ class droplet_device : public chunked_device {
   dpl_status_t check_path(const char* path);
 
   /*
-   * Interface from chunked_device
+   * Interface from ChunkedDevice
    */
   bool CheckRemote() override;
   bool remote_chunked_volume_exists() override;
@@ -83,8 +83,8 @@ class droplet_device : public chunked_device {
                    bool ignore_gaps = false);
 
  public:
-  droplet_device() = default;
-  ~droplet_device();
+  DropletDevice() = default;
+  ~DropletDevice();
 
   /*
    * Interface from Device

@@ -100,7 +100,7 @@ struct chunk_descriptor {
 };
 
 
-class chunked_device : public Device {
+class ChunkedDevice : public Device {
  private:
   /*
    * Private Members
@@ -168,8 +168,8 @@ class chunked_device : public Device {
   /*
    * Public Methods
    */
-  chunked_device() = default;
-  virtual ~chunked_device();
+  ChunkedDevice() = default;
+  virtual ~ChunkedDevice();
 
   bool DequeueChunk();
   bool DeviceStatus(DeviceStatusInformation* dst) override;

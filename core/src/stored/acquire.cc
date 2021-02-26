@@ -558,7 +558,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   UpdateJobStatistics(jcr, now);
 
   /*
-   * Some devices do cache write operations (e.g. droplet_device).
+   * Some devices do cache write operations (e.g. DropletDevice).
    * Therefore flushing the cache is required to determine
    * if a job have been written successfully.
    * As a flush operation can take quite a long time,

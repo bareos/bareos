@@ -196,7 +196,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 #  endif
 #  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
     case DeviceType::B_DROPLET_DEV:
-      dev = new droplet_device;
+      dev = new DropletDevice;
       break;
 #  endif
 #  ifdef HAVE_RADOS
