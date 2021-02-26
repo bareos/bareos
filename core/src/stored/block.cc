@@ -818,7 +818,7 @@ bool DeviceControlRecord::WriteBlockToDev()
       be.SetErrno(dev->dev_errno);
       Mmsg5(dev->errmsg,
             _("Write error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"),
-            dev->fd(), dev->file, dev->block_num, dev->print_name(),
+            dev->fd, dev->file, dev->block_num, dev->print_name(),
             be.bstrerror());
     }
 
@@ -833,7 +833,7 @@ bool DeviceControlRecord::WriteBlockToDev()
       Dmsg7(100,
             "=== Write error. fd=%d size=%u rtn=%d dev_blk=%d blk_blk=%d "
             "errno=%d: ERR=%s\n",
-            dev->fd(), wlen, status, dev->block_num, block->BlockNumber,
+            dev->fd, wlen, status, dev->block_num, block->BlockNumber,
             dev->dev_errno, be.bstrerror(dev->dev_errno));
     }
 
@@ -1011,7 +1011,7 @@ DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDev(
     Mmsg4(dev->errmsg,
           _("Attempt to read closed device: fd=%d at file:blk %u:%u on device "
             "%s\n"),
-          dev->fd(), dev->file, dev->block_num, dev->print_name());
+          dev->fd, dev->file, dev->block_num, dev->print_name());
     Jmsg(dcr->jcr, M_WARNING, 0, "%s", dev->errmsg);
     block->read_len = 0;
     return ReadStatus::Error;
@@ -1052,7 +1052,7 @@ reread:
     block->read_len = 0;
     Mmsg5(dev->errmsg,
           _("Read error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"),
-          dev->fd(), dev->file, dev->block_num, dev->print_name(),
+          dev->fd, dev->file, dev->block_num, dev->print_name(),
           be.bstrerror());
 
     GeneratePluginEvent(jcr, bSdEventReadError, dcr);

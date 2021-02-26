@@ -73,16 +73,16 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     /*
      * Try non-blocking open
      */
-    fd_ = d_open(archive_device_string, oflags | O_NONBLOCK, 0);
-    if (fd_ < 0) {
+    fd = d_open(archive_device_string, oflags | O_NONBLOCK, 0);
+    if (fd < 0) {
       BErrNo be;
       dev_errno = errno;
       Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
             prt_name, omode, oflags, errno, be.bstrerror());
     } else {
-      d_close(fd_);
-      fd_ = d_open(archive_device_string, oflags, 0); /* open normally */
-      if (fd_ < 0) {
+      d_close(fd);
+      fd = d_open(archive_device_string, oflags, 0); /* open normally */
+      if (fd < 0) {
         BErrNo be;
         dev_errno = errno;
         Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
@@ -116,12 +116,12 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     tid = 0;
   }
 
-  Dmsg1(100, "open dev: fifo %d opened\n", fd_);
+  Dmsg1(100, "open dev: fifo %d opened\n", fd);
 }
 
 bool win32_fifo_device::eod(DeviceControlRecord* dcr)
 {
-  if (fd_ < 0) {
+  if (fd < 0) {
     dev_errno = EBADF;
     Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), prt_name);
     return false;
