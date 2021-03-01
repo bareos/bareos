@@ -133,7 +133,9 @@ else() # NOT HAVE_WIN32
       ${CMAKE_CURRENT_SOURCE_DIR}/recent_job_results_list
   )
   set(TEST_TEMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list_tmp)
-  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list_tmp)
+  file(MAKE_DIRECTORY
+       ${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list_tmp/write-test
+  )
 
   set(CERTDIR ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
 endif() # HAVE_WIN32
