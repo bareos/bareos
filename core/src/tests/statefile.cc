@@ -76,7 +76,7 @@ static bool CopyTestStateFileFromOriginal(std::string orig_path,
   return true;
 }
 
-TEST(recent_job_results_list, read_job_results_from_file)
+TEST(statefile, read)
 {
   OSDependentInit();
   RecentJobResultsList::Cleanup();
@@ -102,7 +102,7 @@ TEST(recent_job_results_list, read_job_results_from_file)
   EXPECT_STREQ(recent_jobs[1].Job, "RestoreFiles.2019-08-08_22.38.17_05");
 }
 
-TEST(recent_job_results_list, write_job_results_to_file)
+TEST(statefile, write)
 {
   OSDependentInit();
   RecentJobResultsList::Cleanup();
@@ -140,7 +140,7 @@ TEST(recent_job_results_list, write_job_results_to_file)
   EXPECT_STREQ(recent_jobs[1].Job, "RestoreFiles.2019-08-08_22.38.17_05");
 }
 
-TEST(recent_job_results_list, read_job_results_from_file_truncated_jobs)
+TEST(statefile, handle_truncated_jobs)
 {
   OSDependentInit();
   RecentJobResultsList::Cleanup();
@@ -163,7 +163,7 @@ TEST(recent_job_results_list, read_job_results_from_file_truncated_jobs)
   EXPECT_STREQ(recent_jobs[0].Job, "backup-bareos-fd.2019-08-08_22.38.13_04");
 }
 
-TEST(recent_job_results_list, read_job_results_from_file_truncated_header)
+TEST(statefile, handle_truncated_headers)
 {
   OSDependentInit();
   RecentJobResultsList::Cleanup();
@@ -180,7 +180,7 @@ TEST(recent_job_results_list, read_job_results_from_file_truncated_header)
   ASSERT_EQ(recent_jobs.size(), 0);
 }
 
-TEST(recent_job_results_list, read_job_results_from_file_not_exist)
+TEST(statefile, handle_nonexisting_file)
 {
   OSDependentInit();
   RecentJobResultsList::Cleanup();
