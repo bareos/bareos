@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,7 +22,7 @@
 #define BAREOS_LIB_JCR_H_
 class JobControlRecord;
 
-void WriteStateFile(char* dir, const char* progname, int port);
+void WriteStateFile(const char* dir, const char* progname, int port);
 void RegisterJobEndCallback(JobControlRecord* jcr,
                             void JobEndCb(JobControlRecord* jcr, void*),
                             void* ctx);
