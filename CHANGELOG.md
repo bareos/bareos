@@ -22,6 +22,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - support for shorter date formats, where shorter dates are compensated with lowest value possible to make a full date [PR #707]
 
 ### Changed
+- Disabled test "statefile" for big endian, use temporary state files for all other architectures [PR #757]
 - Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page
 - Package **bareos-database-postgresql**: add recommendation for package **dbconfig-pgsql**.
 - Adapt the init scripts for some platform to not refer to a specific (outdated) configuration file, but to use the default config file instead.
