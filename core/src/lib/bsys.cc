@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -543,7 +543,9 @@ class SecureEraseGuard {
   void Release() { cleanup = false; }
 };
 
-static std::string CreateFileNameFrom(char* dir, const char* progname, int port)
+static std::string CreateFileNameFrom(const char* dir,
+                                      const char* progname,
+                                      int port)
 {
   int amount = snprintf(nullptr, 0, "%s/%s.%d.state", dir, progname, port) + 1;
   std::vector<char> filename(amount);
@@ -551,7 +553,7 @@ static std::string CreateFileNameFrom(char* dir, const char* progname, int port)
   return std::string(filename.data());
 }
 
-void ReadStateFile(char* dir, const char* progname, int port)
+void ReadStateFile(const char* dir, const char* progname, int port)
 {
   std::string filename = CreateFileNameFrom(dir, progname, port);
   SecureEraseGuard secure_erase_guard(filename.data());
@@ -600,7 +602,7 @@ static void SafeTheLastWritePosition(std::ofstream& file, uint64_t pos)
             : position_after_export;
 }
 
-void WriteStateFile(char* dir, const char* progname, int port)
+void WriteStateFile(const char* dir, const char* progname, int port)
 {
   std::string filename = CreateFileNameFrom(dir, progname, port);
 

@@ -118,22 +118,18 @@ endif()
 # set some path variables used during test compilation
 if(HAVE_WIN32)
   set(RELATIVE_PROJECT_SOURCE_DIR "Z:${CMAKE_CURRENT_SOURCE_DIR}")
-  set(TEST_ORIGINAL_FILE_DIR
-      Z:${CMAKE_CURRENT_SOURCE_DIR}/recent_job_results_list
-  )
-  set(TEST_TEMP_DIR Z:${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list_tmp)
-  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list_tmp)
+  set(TEST_ORIGINAL_FILE_DIR Z:${CMAKE_CURRENT_SOURCE_DIR}/statefile)
+  set(TEST_TEMP_DIR Z:${CMAKE_CURRENT_BINARY_DIR}/statefile_tmp)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/statefile_tmp/write-test)
 
   set(CERTDIR Z:${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
 else() # NOT HAVE_WIN32
   file(RELATIVE_PATH RELATIVE_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}
        ${CMAKE_CURRENT_SOURCE_DIR}
   )
-  set(TEST_ORIGINAL_FILE_DIR
-      ${CMAKE_CURRENT_SOURCE_DIR}/recent_job_results_list
-  )
-  set(TEST_TEMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list_tmp)
-  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/recent_job_results_list_tmp)
+  set(TEST_ORIGINAL_FILE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/statefile)
+  set(TEST_TEMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/statefile_tmp)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/statefile_tmp/write-test)
 
   set(CERTDIR ${CMAKE_CURRENT_SOURCE_DIR}/configs/test_bsock/tls)
 endif() # HAVE_WIN32
@@ -259,19 +255,25 @@ if(NOT client-only)
 endif() # NOT client-only
 
 bareos_add_test(
-  recent_job_results_list
+  statefile
   LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
   COMPILE_DEFINITIONS TEST_TEMP_DIR=\"${TEST_TEMP_DIR}\"
                       TEST_ORIGINAL_FILE_DIR=\"${TEST_ORIGINAL_FILE_DIR}\"
 )
-set_tests_properties(
-  gtest:recent_job_results_list.read_job_results_from_file PROPERTIES LABELS
-                                                                      "broken"
-)
-set_tests_properties(
-  gtest:recent_job_results_list.write_job_results_to_file PROPERTIES LABELS
-                                                                     "broken"
-)
+
+if(HAVE_BIG_ENDIAN)
+  set_tests_properties(gtest:statefile.read PROPERTIES DISABLED TRUE)
+  set_tests_properties(gtest:statefile.write PROPERTIES DISABLED TRUE)
+  set_tests_properties(
+    gtest:statefile.handle_truncated_jobs PROPERTIES DISABLED TRUE
+  )
+  set_tests_properties(
+    gtest:statefile.handle_truncated_headers PROPERTIES DISABLED TRUE
+  )
+  set_tests_properties(
+    gtest:statefile.handle_nonexisting_file PROPERTIES DISABLED TRUE
+  )
+endif()
 
 if(NOT client-only)
   bareos_add_test(
