@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [20.0.1] - 2020-xx-xx
+## [Unreleased]
 
 ### Fixed
 - fix parallel python plugin jobs [PR #732]
@@ -22,11 +22,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page
 - Ctest now runs in scripted mode. [PR #751]
 
-### Deprecated
-
-### Removed
-
-### Security
 
 ## [20.0.0] - 2020-12-16
 
