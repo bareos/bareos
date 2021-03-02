@@ -21,6 +21,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - informative debugmessage when a dynamic backend cannot be loaded [PR #746]
 
 ### Changed
+- Disabled test "statefile" for big endian, use temporary state files for all other architectures [PR #758]
 - Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page
 - Ctest now runs in scripted mode. [PR #751]
 
