@@ -32,6 +32,8 @@
 #include <iostream>
 #include <fstream>
 
+using JobResultsList = std::vector<RecentJobResultsList::JobResult>;
+
 static inline bool Is32BitAligned()
 {
   return offsetof(StateFileHeader, last_jobs_addr) == 20;
@@ -91,7 +93,7 @@ TEST(statefile, read)
   ASSERT_TRUE(StateFileExists(test_path, fname, 42001));
   ReadStateFile(test_path, fname, 42001);
 
-  auto recent_jobs{RecentJobResultsList::Get()};
+  JobResultsList recent_jobs = RecentJobResultsList::Get();
 
   ASSERT_EQ(recent_jobs.size(), 2);
 
@@ -129,7 +131,7 @@ TEST(statefile, write)
   ASSERT_TRUE(StateFileExists(write_path.c_str(), fname, 42001));
   ReadStateFile(write_path.c_str(), fname, 42001);
 
-  auto recent_jobs{RecentJobResultsList::Get()};
+  JobResultsList recent_jobs = RecentJobResultsList::Get();
 
   ASSERT_EQ(recent_jobs.size(), 2);
 
@@ -155,7 +157,7 @@ TEST(statefile, handle_truncated_jobs)
       orig_path, test_path, std::string(fname) + ".42001.state"));
   ReadStateFile(test_path, fname, 42001);
 
-  auto recent_jobs{RecentJobResultsList::Get()};
+  JobResultsList recent_jobs = RecentJobResultsList::Get();
 
   ASSERT_EQ(recent_jobs.size(), 1);
 
@@ -175,7 +177,7 @@ TEST(statefile, handle_truncated_headers)
       orig_path, test_path, "bareos-dir-truncated-header.42001.state"));
   ReadStateFile(test_path, "bareos-dir-truncated-header", 42001);
 
-  auto recent_jobs{RecentJobResultsList::Get()};
+  JobResultsList recent_jobs = RecentJobResultsList::Get();
 
   ASSERT_EQ(recent_jobs.size(), 0);
 }
@@ -190,7 +192,7 @@ TEST(statefile, handle_nonexisting_file)
   ASSERT_FALSE(StateFileExists(test_path, "file-does-not-exist", 42001));
   ReadStateFile(test_path, "file-does-not-exist", 42001);
 
-  auto recent_jobs{RecentJobResultsList::Get()};
+  JobResultsList recent_jobs = RecentJobResultsList::Get();
 
   ASSERT_EQ(recent_jobs.size(), 0);
 }
