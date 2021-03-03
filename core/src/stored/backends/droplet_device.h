@@ -67,20 +67,15 @@ class DropletDevice : public ChunkedDevice {
   /*
    * Interface from ChunkedDevice
    */
-  bool CheckRemote() override;
-  bool remote_chunked_volume_exists() override;
+  bool CheckRemoteConnection() override;
   bool FlushRemoteChunk(chunk_io_request* request) override;
   bool ReadRemoteChunk(chunk_io_request* request) override;
-  ssize_t chunked_remote_volume_size() override;
-  bool TruncateRemoteChunkedVolume(DeviceControlRecord* dcr) override;
-
-  bool walk_directory(const char* dirname,
-                      t_dpl_walk_directory_call_back callback,
-                      void* data);
-  bool walk_chunks(const char* dirname,
-                   t_dpl_walk_chunks_call_back callback,
-                   void* data,
-                   bool ignore_gaps = false);
+  ssize_t RemoteVolumeSize() override;
+  bool TruncateRemoteVolume(DeviceControlRecord* dcr) override;
+  bool ForEachChunkInDirectoryRunCallback(const char* dirname,
+                                          t_dpl_walk_chunks_call_back callback,
+                                          void* data,
+                                          bool ignore_gaps = false);
 
  public:
   DropletDevice() = default;

@@ -157,12 +157,11 @@ class ChunkedDevice : public Device {
   /*
    * Methods implemented by inheriting class.
    */
-  virtual bool CheckRemote() = 0;
-  virtual bool remote_chunked_volume_exists() = 0;
+  virtual bool CheckRemoteConnection() = 0;
   virtual bool FlushRemoteChunk(chunk_io_request* request) = 0;
   virtual bool ReadRemoteChunk(chunk_io_request* request) = 0;
-  virtual ssize_t chunked_remote_volume_size() = 0;
-  virtual bool TruncateRemoteChunkedVolume(DeviceControlRecord* dcr) = 0;
+  virtual ssize_t RemoteVolumeSize() = 0;
+  virtual bool TruncateRemoteVolume(DeviceControlRecord* dcr) = 0;
 
  public:
   /*
