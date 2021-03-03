@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1225,7 +1225,8 @@ reread:
   Dmsg0(250, "At end of read block\n");
   if (block->read_len > block->block_len && !dev->IsTape()) {
     char ed1[50];
-    boffset_t pos = dev->d_lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
+    boffset_t pos
+        = dev->d_lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
     Dmsg1(250, "Current lseek pos=%s\n", edit_int64(pos, ed1));
     pos -= (block->read_len - block->block_len);
     dev->d_lseek(dcr, pos, SEEK_SET);

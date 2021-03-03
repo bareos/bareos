@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,8 +71,8 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  *
  * FlushRemoteChunk() - Flush a chunk to the remote backing store.
  * ReadRemoteChunk() - Read a chunk from the remote backing store.
- * chunked_remote_volume_size - Return the current size of a volume.
- * TruncateRemoteChunkedVolume() - Truncate a chunked volume on the
+ * RemoteVolumeSize - Return the current size of a volume.
+ * TruncateRemoteVolume() - Truncate a chunked volume on the
  *                                    remote backing store.
  */
 
@@ -651,7 +651,7 @@ int ChunkedDevice::SetupChunk(const char* pathname, int flags, int mode)
     return -1;
   }
 
-  if (!CheckRemote()) {
+  if (!CheckRemoteConnection()) {
     Dmsg0(100, "setup_chunk failed, as remote device is not available\n");
     dev_errno = EIO; /**< I/O error */
     return -1;
@@ -1056,7 +1056,7 @@ int ChunkedDevice::CloseChunk()
 bool ChunkedDevice::TruncateChunkedVolume(DeviceControlRecord* dcr)
 {
   if (current_chunk_->opened) {
-    if (!TruncateRemoteChunkedVolume(dcr)) { return false; }
+    if (!TruncateRemoteVolume(dcr)) { return false; }
 
     /*
      * Reinitialize the initial chunk.
@@ -1094,7 +1094,7 @@ ssize_t ChunkedDevice::ChunkedVolumeSize()
   /*
    * See if we are using io-threads or not and the ordered CircularBuffer is
    * created. We try to make sure that nothing of the volume being requested is
-   * still inflight as then the chunked_remote_volume_size() method will fail to
+   * still inflight as then the RemoteVolumeSize() method will fail to
    * determine the size of the data as its not fully stored on the backing store
    * yet.
    */
@@ -1180,7 +1180,7 @@ ssize_t ChunkedDevice::ChunkedVolumeSize()
   /*
    * Get the actual length by contacting the remote backing store.
    */
-  return chunked_remote_volume_size();
+  return RemoteVolumeSize();
 }
 
 bool ChunkedDevice::is_written()
@@ -1188,7 +1188,7 @@ bool ChunkedDevice::is_written()
   /*
    * See if we are using io-threads or not and the ordered circbuf is created.
    * We try to make sure that nothing of the volume being requested is still
-   * inflight as then the chunked_remote_volume_size() method will fail to
+   * inflight as then the RemoteVolumeSize() method will fail to
    * determine the size of the data as its not fully stored on the backing store
    * yet.
    */
@@ -1232,9 +1232,9 @@ bool ChunkedDevice::is_written()
   }
 
   /* compare expected to written volume size */
-  size_t remote_volume_size = chunked_remote_volume_size();
+  size_t remote_volume_size = RemoteVolumeSize();
   Dmsg3(100,
-        "volume: %s, chunked_remote_volume_size = %lld, VolCatInfo.VolCatBytes "
+        "volume: %s, RemoteVolumeSize = %lld, VolCatInfo.VolCatBytes "
         "= %lld\n",
         current_volname_, remote_volume_size, VolCatInfo.VolCatBytes);
 
@@ -1435,7 +1435,7 @@ bool ChunkedDevice::DeviceStatus(DeviceStatusInformation* dst)
   PoolMem inflights(PM_MESSAGE);
 
   dst->status_length = 0;
-  if (CheckRemote()) {
+  if (CheckRemoteConnection()) {
     dst->status_length
         = PmStrcpy(dst->status, _("Backend connection is working.\n"));
   } else {

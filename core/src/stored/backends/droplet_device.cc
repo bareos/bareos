@@ -215,10 +215,11 @@ static dpl_status_t chunked_volume_truncate_callback(dpl_sysmd_t* sysmd,
  *          false - if an error has occured. Sets dev_errno and errmsg to the
  * first error.
  */
-bool DropletDevice::walk_chunks(const char* dirname,
-                                 t_dpl_walk_chunks_call_back callback,
-                                 void* data,
-                                 bool ignore_gaps)
+bool DropletDevice::ForEachChunkInDirectoryRunCallback(
+    const char* dirname,
+    t_dpl_walk_chunks_call_back callback,
+    void* data,
+    bool ignore_gaps)
 {
   bool retval = true;
   dpl_status_t status;
@@ -376,7 +377,7 @@ dpl_status_t DropletDevice::check_path(const char* path)
  * Returns true  - if connection can be established
  *         false - otherwise
  */
-bool DropletDevice::CheckRemote()
+bool DropletDevice::CheckRemoteConnection()
 {
   if (!ctx_) {
     if (!initialize()) { return false; }
@@ -398,43 +399,6 @@ bool DropletDevice::CheckRemote()
       return false;
   }
 }
-
-
-bool DropletDevice::remote_chunked_volume_exists()
-{
-  bool retval = false;
-  dpl_status_t status;
-  PoolMem chunk_dir(PM_FNAME);
-
-  if (!CheckRemote()) { return false; }
-
-  Mmsg(chunk_dir, "%s/", getVolCatName());
-  status = check_path(chunk_dir.c_str());
-
-  const char* h = dpl_addrlist_get(ctx_->addrlist);
-  std::string hostaddr{h != nullptr ? h : "???"};
-
-  switch (status) {
-    case DPL_SUCCESS:
-      Dmsg1(100, "Remote chunked volume %s exists\n", chunk_dir.c_str());
-      retval = true;
-      break;
-    case DPL_ENOENT:
-      Dmsg2(100,
-            "Host is accessible: %s (%s), probably the host should be"
-            " configured to accept virtual-host-style requests\n",
-            hostaddr.c_str(), dpl_status_str(status));
-      break;
-    case DPL_FAILURE:
-    default:
-      Dmsg1(100, "Remote chunked volume %s does not exist\n",
-            chunk_dir.c_str());
-      break;
-  }
-
-  return retval;
-}
-
 
 /*
  * Internal method for flushing a chunk to the backing store.
@@ -718,16 +682,17 @@ bail_out:
  * Internal method for truncating a chunked volume on the remote backing
  * store.
  */
-bool DropletDevice::TruncateRemoteChunkedVolume(DeviceControlRecord* dcr)
+bool DropletDevice::TruncateRemoteVolume(DeviceControlRecord* dcr)
 {
   PoolMem chunk_dir(PM_FNAME);
 
   Dmsg1(100, "truncate_remote_chunked_volume(%s) start.\n", getVolCatName());
   Mmsg(chunk_dir, "/%s", getVolCatName());
   bool ignore_gaps = true;
-  if (!walk_chunks(chunk_dir.c_str(), chunked_volume_truncate_callback, NULL,
-                   ignore_gaps)) {
-    /* errno already set in walk_chunks. */
+  if (!ForEachChunkInDirectoryRunCallback(chunk_dir.c_str(),
+                                          chunked_volume_truncate_callback,
+                                          NULL, ignore_gaps)) {
+    /* errno already set in ForEachChunkInDirectoryRunCallback. */
     return false;
   }
   Dmsg1(100, "truncate_remote_chunked_volume(%s) finished.\n", getVolCatName());
@@ -1011,16 +976,13 @@ ssize_t DropletDevice::d_write(int fd, const void* buffer, size_t count)
 
 int DropletDevice::d_close(int fd) { return CloseChunk(); }
 
-int DropletDevice::d_ioctl(int fd, ioctl_req_t request, char* op)
-{
-  return -1;
-}
+int DropletDevice::d_ioctl(int fd, ioctl_req_t request, char* op) { return -1; }
 
 /**
  * Open a directory on the backing store and find out size information for a
  * volume.
  */
-ssize_t DropletDevice::chunked_remote_volume_size()
+ssize_t DropletDevice::RemoteVolumeSize()
 {
   ssize_t volumesize = 0;
   dpl_sysmd_t* sysmd = NULL;
@@ -1031,15 +993,15 @@ ssize_t DropletDevice::chunked_remote_volume_size()
   /*
    * FIXME: With the current version of libdroplet a dpl_getattr() on a
    * directory fails with DPL_ENOENT even when the directory does exist. All
-   * other operations succeed and as walk_chunks() does a dpl_chdir() anyway
-   *        that will fail if the directory doesn't exist for now we should be
-   *        mostly fine.
+   * other operations succeed and as ForEachChunkInDirectoryRunCallback() does a
+   * dpl_chdir() anyway that will fail if the directory doesn't exist for now we
+   * should be mostly fine.
    */
 
-  Dmsg1(100, "get chunked_remote_volume_size(%s)\n", getVolCatName());
-  if (!walk_chunks(chunk_dir.c_str(), chunked_volume_size_callback,
-                   &volumesize)) {
-    /* errno is already set in walk_chunks */
+  Dmsg1(100, "get RemoteVolumeSize(%s)\n", getVolCatName());
+  if (!ForEachChunkInDirectoryRunCallback(
+          chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
+    /* errno is already set in ForEachChunkInDirectoryRunCallback */
     volumesize = -1;
     goto bail_out;
   }
@@ -1053,8 +1015,8 @@ bail_out:
 }
 
 boffset_t DropletDevice::d_lseek(DeviceControlRecord* dcr,
-                                  boffset_t offset,
-                                  int whence)
+                                 boffset_t offset,
+                                 int whence)
 {
   switch (whence) {
     case SEEK_SET:
