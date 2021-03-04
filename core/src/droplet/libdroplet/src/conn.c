@@ -852,12 +852,6 @@ writev_all_plaintext(dpl_conn_t *conn,
 /*
  * Write an IO vector to a connection via the SSL library with retry
  *
- * Note the default semantics of SSL_write() are to handle partial
- * writes internally, so we don't need to do it ourselves.
- *
- * Timeout is ignored, the SSL library doesn't implement a per-write
- * timeout.  It has a session timeout, but that's a different beast
- * and not helpful to us.
  */
 static dpl_status_t
 writev_all_ssl(dpl_conn_t *conn,
@@ -866,7 +860,7 @@ writev_all_ssl(dpl_conn_t *conn,
                int timeout)
 {
   int i, ret;
-  u_int total_size, off;
+  u_int amount_left, total_size, off;
   char *ptr = NULL;
 
   total_size = 0;
@@ -886,9 +880,24 @@ writev_all_ssl(dpl_conn_t *conn,
       off += iov[i].iov_len;
     }
 
-  ret = SSL_write(conn->ssl, ptr, total_size);
-  if (ret <= 0)
+  amount_left = total_size;
+
+again:
+  ret = SSL_write(conn->ssl, &ptr[total_size - amount_left], amount_left);
+
+  if (ret > 0)
     {
+      amount_left -= ret;
+      if (amount_left > 0)
+          goto again;
+    }
+  else
+    { // ret <= 0
+      int err = SSL_get_error(conn->ssl, ret);
+
+      if (SSL_ERROR_WANT_WRITE == err || SSL_ERROR_WANT_READ == err)
+          goto again;
+
       DPL_SSL_PERROR(conn->ctx, "SSL_write");
       free(ptr);
       return DPL_FAILURE;
