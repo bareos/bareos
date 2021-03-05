@@ -596,7 +596,6 @@ set(SYSTEM_TESTS_BROKEN
     py3plug-fd-postgres
     python-bareos
     scheduler-backup
-    volume-pruning
     # the next two fail on FreeBSD 11.4
     filesets
     py3plug-fd-local-fileset-restoreobject
