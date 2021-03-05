@@ -18,6 +18,8 @@ export config_directory_dir_additional_test_config=@config_directory_dir_additio
 working=${current_test_directory}/working
 working_dir=${working}
 tmp=${current_test_directory}/tmp
+systemtests_s3_use_https=@systemtests_s3_use_https@
+
 
 
 dumps=${current_test_directory}/dumps

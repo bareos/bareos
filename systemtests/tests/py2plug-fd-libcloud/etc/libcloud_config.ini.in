@@ -1,7 +1,7 @@
 [host]
 hostname=127.0.0.1
 port=@minio_port@
-tls=false
+tls=@systemtests_s3_use_https@
 provider=S3
 
 [credentials]

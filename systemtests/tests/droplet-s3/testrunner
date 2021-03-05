@@ -19,7 +19,7 @@ JobName=backup-s3-fd
 "${SYSTEMTESTS_DIR}"/scripts/start_minio.sh "$MINIO_PORT" "$TestName"
 
 # shortcut for s3cmd
-S3="${S3CMD} --config ${S3CFG}"
+S3="${S3CMD} --no-check-certificate --config ${S3CFG}"
 
 $S3 mb S3://backup
 

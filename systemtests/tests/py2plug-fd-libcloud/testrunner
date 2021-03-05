@@ -27,7 +27,7 @@ JobName=backup-bareos-fd
 "${rscripts}"/setup
 
 # shortcut for s3cmd
-S3="${S3CMD} --config ${S3CFG}"
+S3="${S3CMD} --no-check-certificate --config ${S3CFG}"
 
 
 # Directory to backup.
