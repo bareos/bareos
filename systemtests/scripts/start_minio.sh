@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -47,12 +47,25 @@ tries=0
 while pidof "$minio_alias" > /dev/null; do
   kill -SIGTERM "$(pidof "$minio_alias")"
   sleep 0.1
-  (( tries++ )) && [ $tries == '100' ] \
+  (( tries++ )) && [ "$tries" == '100' ] \
     && { echo "$0: could not stop minio server"; exit 2; }
 done
 
 export MINIO_DOMAIN=localhost,127.0.0.1
-exec -a "$minio_alias" "${MINIO}" server --address :${minio_port_number} "$minio_tmp_data_dir" > "$logdir"/minio.log &
+
+certificate_dir="${CMAKE_BINARY_DIR}/systemtests/tls/minio"
+
+if [ "${systemtests_s3_use_https}" == "true" ]; then
+  if ! [ -d "${certificate_dir}" ]; then
+    echo "$0: could not find certificate dir (${certificate_dir})"
+    exit 1
+  fi
+  certs="--certs-dir ${certificate_dir}"
+else
+  certs=""
+fi
+
+exec -a "$minio_alias" "${MINIO}" server ${certs} --address ":${minio_port_number}" "$minio_tmp_data_dir" > "$logdir"/minio.log &
 
 if ! pidof ${MINIO} > /dev/null; then
   echo "$0: could not start minio server"
@@ -60,9 +73,9 @@ if ! pidof ${MINIO} > /dev/null; then
 fi
 
 tries=0
-while ! s3cmd --config=${S3CFG} ls S3:// > /dev/null 2>&1; do
+while ! s3cmd --config=${S3CFG} --no-check-certificate ls S3:// > /dev/null 2>&1; do
   sleep 0.1
-  (( tries++ )) && [ $tries == '100' ] \
+  (( tries++ )) && [ "$tries" == '100' ] \
     && { echo "$0: could not start minio server"; exit 3; }
 done
 
