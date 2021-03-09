@@ -229,10 +229,25 @@ char* bstrinlinecpy(char* dest, const char* src)
 }
 
 /*
- * Guarantee that the string is properly terminated
+ * Guarantee that the string is properly terminated.
+ * maxlen is the maximum of the string pointed to by src,
+ * including the terminating null byte ('\0').
  */
 char* bstrncpy(char* dest, const char* src, int maxlen)
 {
+  std::string tmp;
+
+  if ((src == nullptr) || (maxlen <= 1)) {
+    dest[0] = 0;
+    return dest;
+  }
+
+  if ((dest <= src) && ((dest + (maxlen - 1) * sizeof(char)) >= src)) {
+    Dmsg0(100, "Overlapping strings found, using copy.\n");
+    tmp.assign(src);
+    src = tmp.c_str();
+  }
+
   strncpy(dest, src, maxlen - 1);
   dest[maxlen - 1] = 0;
   return dest;
@@ -243,9 +258,7 @@ char* bstrncpy(char* dest, const char* src, int maxlen)
  */
 char* bstrncpy(char* dest, PoolMem& src, int maxlen)
 {
-  strncpy(dest, src.c_str(), maxlen - 1);
-  dest[maxlen - 1] = 0;
-  return dest;
+  return bstrncpy(dest, src.c_str(), maxlen);
 }
 
 /*
@@ -255,9 +268,16 @@ char* bstrncpy(char* dest, PoolMem& src, int maxlen)
  */
 char* bstrncat(char* dest, const char* src, int maxlen)
 {
+  std::string tmp;
   int len = strlen(dest);
-  if (len < maxlen - 1) { strncpy(dest + len, src, maxlen - len - 1); }
-  dest[maxlen - 1] = 0;
+
+  if ((dest <= src) && ((dest + (maxlen - 1) * sizeof(char)) >= src)) {
+    Dmsg0(100, "Overlapping strings found, using copy.\n");
+    tmp.assign(src);
+    src = tmp.c_str();
+  }
+
+  if (len < maxlen - 1) { bstrncpy(dest + len, src, maxlen - len); }
   return dest;
 }
 
@@ -268,12 +288,7 @@ char* bstrncat(char* dest, const char* src, int maxlen)
  */
 char* bstrncat(char* dest, PoolMem& src, int maxlen)
 {
-  int len = strlen(dest);
-  if (len < maxlen - 1) {
-    strncpy(dest + len, src.c_str(), maxlen - (len + 1));
-  }
-  dest[maxlen - 1] = 0;
-  return dest;
+  return bstrncat(dest, src.c_str(), maxlen);
 }
 
 /*

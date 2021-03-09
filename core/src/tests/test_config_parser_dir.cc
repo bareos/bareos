@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -230,6 +230,21 @@ void test_CFG_TYPE_FNAME(DirectorResource* me)
 TEST(ConfigParser_Dir, CFG_TYPE_FNAME)
 {
   test_config_directive_type(test_CFG_TYPE_FNAME);
+}
+
+void test_CFG_TYPE_TIME(DirectorResource* me)
+{
+  /* clang-format off */
+  /*
+   * Heartbeat Interval = 1 years 2 months 3 weeks 4 days 5 hours 6 minutes 7 seconds
+   */
+  /* clang-format on */
+  EXPECT_EQ(me->heartbeat_interval, 38898367);
+}
+
+TEST(ConfigParser_Dir, CFG_TYPE_TIME)
+{
+  test_config_directive_type(test_CFG_TYPE_TIME);
 }
 
 

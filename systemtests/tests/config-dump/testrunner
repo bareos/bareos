@@ -30,7 +30,7 @@ remove_bconsole_commands_from_output()
 {
     FILE="$1"
     # remove first and last line from file
-    sed -i -e '1d' -e '$ d' ${FILE}
+    sed -i'.bak' -e '1d' -e '$ d' ${FILE}
 }
 
 strip_config()
@@ -63,6 +63,9 @@ dump_config()
         set_error "Director config file \"${configfile}\" does not exist."
         exit 1
     fi
+
+    DESC="dump_config ${configfile} ext=${ext}"
+    print_debug "*** start $DESC"
 
     "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" -xc > $tmp/bareos-dir-xc-${ext}.conf
 
@@ -98,6 +101,8 @@ END_OF_DATA
         set_error "Director is not stopped."
         exit 1
     fi
+
+    print_debug "*** end   $DESC"
 }
 
 diff_files()
@@ -107,7 +112,9 @@ diff_files()
     base1="$(basename "$file1" .conf)"
     base2="$(basename "$file2" .conf)"
     difffile="${tmp}/${base1}_${base2}.diff"
-    DIFF_CMD='diff "${file1}" "${file2}"'
+    # --ignore-space-change could be replaced by --ignore-trailing-space,
+    # however, the FreeBSD version of diff does not support this option.
+    DIFF_CMD='diff --ignore-blank-lines --ignore-space-change "${file1}" "${file2}"'
     if ! eval "$DIFF_CMD" > "${difffile}"; then
         echo "Differences found. Output of:"
         eval "echo $DIFF_CMD"
