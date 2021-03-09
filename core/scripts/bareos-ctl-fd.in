@@ -1,58 +1,36 @@
 #! /bin/sh
 #
-# bareos-ctl-fd This shell script takes care of starting and stopping
-#		the bareos File daemon.
-#
-#   This is pretty much watered down version of the RedHat script
-#   that works on Solaris as well as Linux, but it won't work everywhere.
+# bareos-ctl-fd  This shell script takes care of starting and stopping
+#		 the Bareos File daemon.
 #
 # description: Backup Archiving REcovery Open Sourced.
 #
 
-PSCMD="@PSCMD@"
-PS="ps"
+export PSCMD="@PSCMD@"
+export PS="ps"
+export AWK="@AWK@"
+export PIDOF="@PIDOF@"
+export PGREP="@PGREP@"
 
-#
-# On Solaris, you may need to use nawk, or alternatively,
-#  add the GNU binaries to your path, such as /usr/xpg4/bin
-#
-AWK=@AWK@
-
-# All these are not *really* needed but it makes it
-#  easier to "steal" this code for the development
-#  environment where they are different.
-#
-
-
-BAREOS_FILEDAEMON_BINARY=${BAREOS_FILEDAEMON_BINARY:-@sbindir@/bareos-fd}
 PIDDIR=${PIDDIR:-@piddir@}
 SUBSYSDIR=@subsysdir@
-
-BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
+BAREOS_FILEDAEMON_BINARY=${BAREOS_FILEDAEMON_BINARY:-@sbindir@/bareos-fd}
+export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
 BAREOS_FD_PORT=${BAREOS_FD_PORT:-@fd_port@}
 BAREOS_FD_USER=${BAREOS_FD_USER:-@fd_user@}
 BAREOS_FD_GROUP=${BAREOS_FD_GROUP:-@fd_group@}
-
-Bareos="@BAREOS@"
-PIDOF="@PIDOF@"
-PGREP="@PGREP@"
-
-OS=`uname -s`
+BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 
 #
 # Source the generic functions.
 #
-. @scriptdir@/bareos-ctl-funcs
+. "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
 
-# if /lib/tls exists, force Bareos to use the glibc pthreads instead
-if [ -d "/lib/tls" -a $OS = "Linux" -a `uname -r | cut -c1-3` = "2.4" ] ; then
-   export LD_ASSUME_KERNEL=2.4.19
-fi
 
 case "$1" in
     start)
         if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
-            echo "Starting the $Bareos File daemon"
+            echo "Starting the Bareos File daemon"
             OPTIONS=''
             if [ "${BAREOS_FD_USER}" != '' ]; then
                 OPTIONS="${OPTIONS} -u ${BAREOS_FD_USER}"
@@ -76,7 +54,7 @@ case "$1" in
 
     stop)
         if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
-            echo "Stopping the $Bareos File daemon"
+            echo -n "Stopping the Bareos File daemon: "
             killproc ${BAREOS_FILEDAEMON_BINARY} ${BAREOS_FD_PORT}
         fi
         ;;

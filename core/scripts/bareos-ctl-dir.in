@@ -1,10 +1,11 @@
 #! /bin/sh
 #
 # bareos-ctl-dir This shell script takes care of starting and stopping
-#		 the bareos Director daemon
+#		 the Bareos Director daemon
 #
 # description: Backup Archiving REcovery Open Sourced.
 #
+
 export PSCMD="@PSCMD@"
 export PS="ps"
 export AWK="@AWK@"
@@ -12,13 +13,13 @@ export PIDOF="@PIDOF@"
 export PGREP="@PGREP@"
 
 PIDDIR=${PIDDIR:-@piddir@}
+SUBSYSDIR=@subsysdir@
 BAREOS_DIRECTOR_BINARY="${BAREOS_DIRECTOR_BINARY:-@sbindir@/bareos-dir}"
 export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
 BAREOS_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT:-@dir_port@}
 BAREOS_DIRECTOR_USER=${BAREOS_DIRECTOR_USER:-@dir_user@}
 BAREOS_DIRECTOR_GROUP=${BAREOS_DIRECTOR_GROUP:-@dir_group@}
 BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
-Bareos="@BAREOS@"
 
 #
 # Source the generic functions.
@@ -29,7 +30,7 @@ Bareos="@BAREOS@"
 case "$1" in
     start)
         if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
-            echo "Starting the $Bareos Director daemon"
+            echo "Starting the Bareos Director daemon"
             OPTIONS=''
             if [ "${BAREOS_DIRECTOR_USER}" != '' ]; then
                 OPTIONS="${OPTIONS} -u ${BAREOS_DIRECTOR_USER}"
@@ -54,7 +55,7 @@ case "$1" in
 
     stop)
         if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
-            echo "Stopping the $Bareos Director daemon"
+            echo -n "Stopping the Bareos Director daemon: "
             killproc "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
         fi
         ;;
