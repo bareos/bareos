@@ -5,6 +5,22 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Security
+
+### Documentation
+- Restore error "could not hard link" documented: what is the cause and how it can be avoided or solved. (Backport [PR #759])
+
+
 ## [20.0.1] - 2021-03-02
 
 ### Fixed
