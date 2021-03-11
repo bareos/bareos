@@ -57,6 +57,9 @@
 %#endif
 %#endif
 
+%/* register storage class specifier was removed in C++17 so we undefine it */
+%#define register
+
 %#ifndef NDMOS_OPTION_NO_NDMP2
 
 const NDMP2VER = 2;

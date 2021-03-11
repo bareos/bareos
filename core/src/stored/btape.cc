@@ -66,7 +66,7 @@ extern bool ParseSdConfig(const char* configfile, int exit_code);
 using namespace storagedaemon;
 
 static int quit = 0;
-static char buf[100000];
+static char buf[100'000];
 
 /**
  * If you change the format of the state file,
@@ -165,7 +165,7 @@ int main(int margc, char* margv[])
   int ch, i;
   uint32_t x32, y32;
   uint64_t x64, y64;
-  char buf[1000];
+  char buf[1'000];
   char* DirectorName = NULL;
   DirectorResource* director = NULL;
 
@@ -1069,7 +1069,7 @@ static void speed_test()
   }
 }
 
-const uint64_t num_recs = 10000LL;
+const uint64_t num_recs = 10'000LL;
 
 static bool write_two_files()
 {
@@ -1858,7 +1858,7 @@ static void rrcmd()
 
   if (!GetCmd(_("Enter length to read: "))) { return; }
   len = atoi(cmd);
-  if (len < 0 || len > 1000000) {
+  if (len < 0 || len > 1'000'000) {
     Pmsg0(0, _("Bad length entered, using default of 1024 bytes.\n"));
     len = 1024;
   }
@@ -2185,7 +2185,7 @@ static void fillcmd()
   Pmsg0(-1, _("Wrote Start of Session label.\n"));
 
   DeviceRecord rec;
-  rec.data = GetMemory(100000); /* max record size */
+  rec.data = GetMemory(100'000); /* max record size */
   rec.data_len = REC_SIZE;
 
   /*
@@ -2485,8 +2485,8 @@ static bool do_unfill()
   if (!dev->rewind(dcr)) { /* get to a known place on tape */
     goto bail_out;
   }
-  /* Read the first 10000 records */
-  Pmsg2(-1, _("Reading the first 10000 records from %u:%u.\n"), dev->file,
+  /* Read the first 10'000 records */
+  Pmsg2(-1, _("Reading the first 10'000 records from %u:%u.\n"), dev->file,
         dev->block_num);
   quickie_count = 0;
   ReadRecords(dcr, QuickieCb, MyMountNextReadVolume);
@@ -2588,16 +2588,16 @@ bail_out:
   return rc;
 }
 
-/* Read 10000 records then stop */
+/* Read 10'000 records then stop */
 static bool QuickieCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 {
   Device* dev = dcr->dev;
   quickie_count++;
-  if (quickie_count == 10000) {
-    Pmsg2(-1, _("10000 records read now at %d:%d\n"), dev->file,
+  if (quickie_count == 10'000) {
+    Pmsg2(-1, _("10'000 records read now at %d:%d\n"), dev->file,
           dev->block_num);
   }
-  return quickie_count < 10000;
+  return quickie_count < 10'000;
 }
 
 static bool CompareBlocks(DeviceBlock* last_block, DeviceBlock* block)

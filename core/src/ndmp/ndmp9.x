@@ -98,6 +98,9 @@
 %#endif
 %#endif
 
+%/* register storage class specifier was removed in C++17 so we undefine it */
+%#define register
+
 const NDMP9VER = 9;
 
 

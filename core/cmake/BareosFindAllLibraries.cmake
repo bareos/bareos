@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -59,6 +59,7 @@ else()
       OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/py2settings.cmake
     )
     include(${CMAKE_CURRENT_BINARY_DIR}/py2settings.cmake)
+    set(Python2_CCSHARED ${Python2_CC_FLAGS} -Wno-register)
   endif()
 
   if(${Python3_FOUND})
