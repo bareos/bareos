@@ -1,0 +1,442 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+# BAREOS® - Backup Archiving REcovery Open Sourced
+#
+# Copyright (C) 2015-2018 Bareos GmbH & Co. KG
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of version three of the GNU Affero General Public
+# License as published by the Free Software Foundation, which is
+# listed in the file LICENSE.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+#
+# Author: Maik Aussendorf
+#
+# PoC code to implement a Bareos commandline tool that allows to trigger
+# common tasks from a Bareos client.
+# bsmc stands for "Bareos simple management cli"
+#
+# Implemented are show scheduler, trigger incremental backup and restore a
+# single given file.
+#
+
+
+import ConfigParser
+import argparse
+import bareos.bsock
+import logging
+import time
+import sys
+import re
+import os
+#import fcntl
+import struct
+import random
+import string
+
+
+def getArguments():
+    '''
+    CLI argument parser
+    '''
+    parser = argparse.ArgumentParser(description='CLI to Bareos director.', prog="bsmc")
+    parser.add_argument('-d', '--debug', action='store_true', help="enable debugging output")
+    parser.add_argument('-p', '--password', help="password to authenticate at Bareos Director")
+    subparsers = parser.add_subparsers(help='Run \'bsmc subcommand help\'', dest='command')
+    parser_query = subparsers.add_parser(
+        'query', help='query command is used to query information from director')
+    parser_query.add_argument('queryobject', default='status',
+                              choices=['sched', 'schedule', 'status', 'lost'], help="Object to query")
+    parser_query.add_argument('-r', '--recursive', action='store_true', default=False,
+                              dest='query_recursive', help="query lost files recursively")
+    parser_incremental = subparsers.add_parser(
+        'incr', help='run incremental job(s) defined for this client')
+    parser_restore = subparsers.add_parser(
+        'rest', help="Restore a file or directory")
+    parser_restore.add_argument('filename', help="File or directory to restore")
+    parser_restore.add_argument("-l","--lost", help=
+                                "Restore any lost file found in backup in directory given by filename argument", action='store_true', default=False)
+    parser_restore.add_argument("-d", "--destination", help="Directory prefix for restore," +
+                                " default =None, will restore to original place in filesystem. Ignored with -l",
+                                default=None)
+    parser_restore.add_argument("-o","--restoreoption", 
+                                help="Option-string added to restore command. Be careful", default='')
+    parser_archive = subparsers.add_parser(
+        'archive', help="Archive a list of files and / or directories")
+    parser_archive.add_argument('filenames', nargs='+',
+                                help="list of files and / or directories to archive")
+    args = parser.parse_args()
+    return args
+
+def getLostFiles(client, searchpath, recursive=False, printPrefix="./"):
+    '''
+    List all files in searchpath that exist in a backup but not in
+    the filesystem. Use recursive=True to iterate through subdirectories
+    Return triple:
+    1. list of lost filenames
+    2. list of FileIds
+    3. Set of job ids
+    '''
+    lostFiles = []
+    lostFileIds = []
+    relevantJobIds = set()
+    jobids = getClientJobs (client)
+    jobIdList = 'jobid={}'.format(','.join(jobids))
+    # first refresh bvfs_cache regarding needed jobids
+    dirCommand = ".bvfs_update %s" %jobIdList
+    logger.debug ("command: %s" %dirCommand)
+    jsonDirector.call(dirCommand)
+    dirCommand = ".bvfs_lsfiles %s path=\"%s\"" %(jobIdList, searchpath)
+    res = jsonDirector.call(dirCommand)
+    if 'files' in res:
+        for file in res['files']:
+            if not 'name' in file:
+                continue
+            if not (os.path.lexists(searchpath + file['name'])):
+                lostFiles.append(printPrefix + file['name'])
+                lostFileIds.append(file['fileid'])
+                relevantJobIds.add(file['jobid'])
+    dirCommand = ".bvfs_lsdirs %s path=\"%s\"" %(jobIdList, searchpath)
+    res = jsonDirector.call(dirCommand)
+    if 'directories' in res:
+        for dir in res['directories']:
+            if dir['name'] == '.' or dir['name'] == '..':
+                continue
+            if recursive:
+                rLostFiles, rLostIds, rJobIds = getLostFiles(client, searchpath + dir['name'], 
+                                                             True, printPrefix + dir['name'])
+                lostFiles += rLostFiles
+                lostFileIds += rLostIds
+                relevantJobIds.update(rJobIds)
+    return (lostFiles, lostFileIds, relevantJobIds)
+
+def query(queryobject, client, query_recursive=False):
+    '''
+    Query scheduler information for client
+    '''
+    if queryobject in ["sched", "schedule"]:
+        command = "status scheduler client=" + client
+        director.send(command)
+        msg = director.recv_msg()
+        sys.stdout.write(msg)
+    elif queryobject in ['status', 'st']:
+        command = "status client=" + client
+        director.send(command)
+        msg = director.recv_msg()
+        sys.stdout.write(msg)
+    elif queryobject in ['lost']:
+        myPath = os.getcwd()
+        if not myPath == '/':
+            myPath += '/'
+        fileNames, fileIds, jobIds = getLostFiles(client, myPath, query_recursive)
+        print ('\n'.join(fileNames))
+    else:
+        logger.error("Unknown query object " + queryobject)
+
+def getClientJobs(client):
+    '''
+    Get list of jobs for a client
+    '''
+    res = jsonDirector.call('list jobs client={}'.format(client))
+    jobids = []
+    for job in res['jobs']:
+        if job['jobstatus'] in ['T', 'W'] and job['type'] == 'B':
+            jobids.append(job['jobid'])
+    return jobids
+
+def waitForJob(jobId):
+    '''
+    Wait for a given job to finish and return a tupel (jobStatus, job message).
+    Returns a tupel (char jobStatus, string jobMessage)
+
+    Arguments
+    jobID -- int job ID to wait for
+    '''
+    command = "wait jobid=%s" % jobId
+    result=jsonDirector.call(command)
+    if 'Job' not in result:
+        logger.error("No Job Status found for JobId=%d\n" % jobId)
+        return (None, None)
+    else:
+        jobStatus = result['Job']['jobstatus']
+        jobMsg = result['Job']['jobstatuslong']
+        return (jobStatus, jobMsg)
+
+
+def incremental(client_joblist=None):
+    '''
+    Trigger incremental backup for client, using client_joblist
+    Returns 0, if all jobs went fine, number of jobs with errors otherwise
+    '''
+    if client_joblist is None:
+        # TODO: use all jobs configured for client instead of error here
+        logger.error("No joblist configured. Use 'jobs' in [client] section" +
+                     " of your bsmc config file")
+        return 1
+    errors = 0
+    warnings = 0
+    successful = 0
+    jobList = []
+    for job in client_joblist:
+        backup_command = "run client=%s level=Incremental job=%s yes" % (client_fd, job)
+        logger.debug("running %s\n" % backup_command)
+        (jobId, jobStatus) = runJob(backup_command)
+        if jobId is None:
+            continue
+        else:
+            jobList.append(jobId)
+
+    # now wait until all started jobs are done and report results
+    for job in jobList:
+        jobResult, jobMessage = waitForJob(job)
+
+        if jobResult in ['E', 'f']:
+            logger.error("Job %d finished with with status %s" % (job, jobResult))
+            errors += 1
+        elif jobResult in ['W', 'A']:
+            logger.warning("Job %d finished with with status %s" % (job, jobResult))
+            warnings += 1
+        elif jobResult == 'T':
+            logger.info("Job %d finished with with status %s" % (job, jobResult))
+            successful += 1
+        else:
+            logger.warning("Job %d has unrecognized status %s" % (job, jobResult))
+            warnings += 1
+
+    logger.info("Run %d jobs, with %d warnings and %d errors."
+                % (len(client_joblist), warnings, errors))
+    return errors
+
+def restoreFiles(fileList, fileIds, jobIds, optionString=''):
+    '''
+    Restore a list of files with an optional relocationString
+    Arguments:
+    fileList: list of files
+    optionString: general options for the restore command, no error checking here
+    '''
+    tableId = "b2" + ''.join(random.choice(string.digits) for _ in range(9))
+    command = ".bvfs_restore fileid=%s jobid=%s path=%s" %(','.join(map(str,fileIds)), ','.join(map(str,jobIds)), tableId)
+    logger.debug("command: %s" %command)
+    result = jsonDirector.call(command)
+    command = "restore file=?%s client=%s %s" %(tableId, client_fd, optionString) 
+    logger.debug("command: %s" %command)
+    (jobId, jobResult) = runJob(command, True)
+    restoreResult = jobResult in ['T']
+    command = ".bvfs_cleanup path=%s" %tableId
+    logger.debug("command: %s" %command)
+    result = jsonDirector.call(command)
+    return restoreResult
+    
+    
+def restoreFile(filename, relocation=None):
+    '''
+    Restore a single file. Returns 0, if file got restored without errors, 1 otherwise
+    Arguments:
+    filename -- The filename with full path to restore
+    relocation -- Recover file to either a given directory or to a
+    filename (if relocation is not a directory). Default: original filename
+    '''
+    filename = os.path.abspath(filename)
+    filename = filename.encode('string-escape')
+    where = '/'
+    if relocation is None:
+        relocationString = ''
+    elif os.path.isdir(relocation):
+        relocationString = "strip_prefix=.*/ add_prefix=/%s/" % relocation
+    else:
+        relocationString = "strip_prefix=.* add_prefix=%s" % relocation
+
+    restore_command = ("restore file=%s client=%s %s where=%s yes"
+                       % (filename, client_fd, relocationString, where))
+    logger.debug("Command: %s" % restore_command)
+    (jobId, jobResult) = runJob(restore_command, True)
+    return jobResult in ['T']
+
+
+def runJob(jobCommand, wait=False):
+    '''
+    Runs the job specified by jobCommand
+    and return (jobId, None) if wait is false,
+    otherwise wait until job has finished and return
+    tupel (jobID, jobStatus), with jobSTatus in {E,f,W,A,T}
+    '''
+    result=jsonDirector.call(jobCommand)
+    if 'run' in result:
+        jobId = int(result['run']['jobid'])
+        logger.info("Job scheduled with JobId: %s" % jobId)
+    else:
+        logger.error("Warning: No JobId returned. Message was: %s" % result)
+        return (None, None)
+
+    if not wait:
+        # TODO get and return jobStatus here (failed, running, waiting)
+        return (jobId, None)
+
+    (jobResult, jobMessage) = waitForJob(jobId)
+    logger.debug("JobResult for job %d is: :%s, jobMessage: %s" % (jobId, jobResult, jobMessage))
+
+    if jobResult in ['E', 'f']:
+        logger.error("Job %d finished with with status %s. Message: %s"
+                     % (jobId, jobResult, jobMessage))
+    elif jobResult in ['W', 'A']:
+        logger.warning("Job %d finished with with status %s. Message: %s"
+                       % (jobId, jobResult, jobMessage))
+    elif jobResult == 'T':
+        logger.info("OK: Job %d finished with with status %s" % (jobId, jobResult))
+    else:
+        logger.warning("Job %d has unrecognized status %s. Message: %s"
+                       % (jobId, jobResult, jobMessage))
+        errors += 1
+    return (jobId, jobResult)
+
+
+def lockFile(fileName, waitIfLocked=False, waitIntervall=1):
+    '''
+    Checks, if a file is locked by another process.
+    fileName : Filename to lock (append a suffix and write pid to lockfile
+    waitIfLocked: if true, wait until existings lock has disappeared
+    waitIntervall: if waiting, then retry every n seconds set here
+    returns success (true / false)
+    '''
+    lockFilename = fileName + ".lock"
+    if os.path.isfile(lockFilename):
+        if not waitIfLocked:
+            logger.warning("File %s is locked by another process, quit." % fileName)
+            return False
+        else:
+            logger.info("File %s is locked by another process. Waiting." % fileName)
+    needLineBreak = False
+    while os.path.isfile(lockFilename):
+        time.sleep(waitIntervall)
+        sys.stdout.write('.')
+        sys.stdout.flush()
+        needLineBreak = True
+    f = open(lockFilename, "wb")
+    f.write(str(os.getpid()))
+    f.close()
+    if needLineBreak:
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+    return True
+
+
+def unlockFile(fileName):
+    '''
+    Unlock a file previously locked with lockFile()
+    '''
+    lockFilename = fileName + ".lock"
+    if not os.path.isfile(lockFilename):
+        logger.warning("File %s is not locked, while trying to unlock it" % fileName)
+    try:
+        os.remove(lockFilename)
+    except IOError as e:
+        logger.error("Could not remove lockfile '%s'" % lockFilename)
+
+
+def archiveFiles(fileNames):
+    '''
+    Creates a temporary filelist with files to backup
+    and start a predefined archive job for those files
+    '''
+    if client_archivefilelist is None or client_archivejob is None:
+        logger.error("Need archivejob and archivefilelist set in " +
+                     "configuration file to run archive jobs")
+        return 1
+    lockFile(client_archivefilelist, waitIfLocked=True)
+    fl = open(client_archivefilelist, "wb")
+
+    for fileName in fileNames:
+        absolute_filename = os.path.abspath(fileName)
+        fl.write(absolute_filename)
+        fl.write('\n')
+    fl.close()
+    jobCommand = "run client=%s job=%s yes" % (client_fd, client_archivejob)
+    (jobId, jobResult) = runJob(jobCommand, True)
+    try:
+        os.remove(client_archivefilelist)
+    except IOError as e:
+        logger.warning("Could not remove file for archive files '%s'" % client_archivefilelist)
+    unlockFile(client_archivefilelist)
+    return jobResult in ['T']
+
+if __name__ == '__main__':
+    logging.basicConfig(format='%(levelname)s %(module)s.%(funcName)s: %(message)s',
+                        level=logging.INFO)
+    logger = logging.getLogger()
+
+    args = getArguments()
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+
+    parser = ConfigParser.SafeConfigParser({'port': '9101'})
+    # TODO make configfile an option
+    parser.readfp(open("/etc/bareos/bsmc.conf", "r"))
+
+    host = parser.get("director", "server")
+    dirname = parser.get("director", "name")
+    password = parser.get("director", "password")
+    dir_port = parser.getint("director", "port")
+    # TODO: restructure client as directory
+    client_fd = parser.get("client", "name")
+    # Relevant jobs for this client to be run when triggering "incremental" jobs.
+    if parser.has_option("client", "jobs"):
+        client_joblist = parser.get("client", "jobs").split(',')
+        logger.debug(client_joblist)
+    else:
+        client_joblist = None
+    if parser.has_option("client", "archivejob"):
+        client_archivejob = parser.get("client", "archivejob")
+    else:
+        client_archivejob = None
+
+    if parser.has_option("client", "archivefilelist"):
+        client_archivefilelist = parser.get("client", "archivefilelist")
+    else:
+        client_archivefilelist = None
+
+    try:
+        director = bareos.bsock.BSock(address=host, port=dir_port, dirname=dirname,
+                                      password=bareos.bsock.Password(password))
+        # Another director of class json
+        jsonDirector = bareos.bsock.DirectorConsoleJson(address=host, port=dir_port, dirname=dirname,
+                                                        password=bareos.bsock.Password(password))
+    except RuntimeError as e:
+        print str(e)
+        sys.exit(1)
+
+    logger.debug("Command: " + args.command + "\n")
+
+    if args.command in ["query", 'q']:
+        query(args.queryobject, client_fd, args.query_recursive)
+    elif args.command in ['Incremental', 'incr']:
+        exitCode = incremental(client_joblist)
+        sys.exit(exitCode)
+    elif args.command in ['restore', 'rest']:
+        if args.lost:
+            if not os.path.isdir(args.filename):
+                logger.error("Restore lost files requires directory as filename argument")
+                sys.exit(1)
+            lostFiles, fileIds, jobIds = getLostFiles(client_fd, args.filename, True, args.filename)
+            if lostFiles:
+                jobDone = restoreFiles (lostFiles, fileIds, jobIds, args.restoreoption)
+            else:
+                logger.info ("no lost files found")
+                jobDone = True
+        else:
+            jobDone = restoreFile(args.filename, args.destination)
+        if jobDone:
+            sys.exit(0)
+        else:
+            sys.exit(1)
+    elif (args.command in ['archive', 'arch']):
+        if archiveFiles(args.filenames):
+            sys.exit(0)
