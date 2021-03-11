@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -874,6 +874,11 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
            _("Volume \"%s\" contains no jobs after pruning.\n"),
            mr->VolumeName);
     }
+  } else {
+    Jmsg(ua->jcr, M_INFO, 0,
+         _("Pruning volume %s: cannot prune as Volstatus is %s but needs to be "
+           "Full or Used.\n"),
+         mr->VolumeName, mr->VolStatus);
   }
 
   DbUnlock(ua->db);
