@@ -22,6 +22,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Build the package **bareos-filedaemon-postgresql-python-plugin** also for Debian, Ubuntu and UCS (deb packages) [PR #723].
 - added an informative debugmessage when a dynamic backend cannot be loaded [PR #740]
 - support for shorter date formats, where shorter dates are compensated with lowest value possible to make a full date [PR #707]
+- added external repo bareos-contrib as subtree [PR #752]
 
 ### Changed
 - bstrncpy: workaround when used with overlapping strings [PR #736]

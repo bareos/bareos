@@ -1,0 +1,14 @@
+Source: bareos-bsmc
+Maintainer: Maik Aussendorf <maik.aussendorf@bareos.com>
+Section: python
+Priority: optional
+Build-Depends: debhelper (>= 7.4.3)
+Standards-Version: 3.9.1
+
+Package: bareos-bsmc
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}, python-bareos
+# required for restoring
+Recommends: bareos-filedaemon (>=15.2.1)
+Description: Backup Archiving Recovery Open Sourced - bsmc 
+ bareos-bsmc is a CLI to trigger backup, restore, or archive-jobs from the command line.
