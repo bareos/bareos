@@ -545,6 +545,38 @@ file size error
 
    If the restored size is smaller, then you should be concerned about a possible tape error and check the Bareos output as well as your system logs.
 
+
+could not hard link
+   ::
+
+         Error: findlib/create_file.cc:371 Could not hard link <destination path> -> <source path>: ERR=No such file or directory
+
+   This error occurs when a file with multiple hard links has been deleted, and a file that should be restored
+   references the original file.
+
+   When Bareos encounters a file with multiple hard links in a backup job, it stores the file only once.
+   All further occurrences of this file are stored as a reference to the first occurrence.
+
+   When restoring a file that is a hard link reference, Bareos expects the original file to
+   be present.
+
+   The workaround for this error is to include the original file in the restore FileSet,
+   and delete it again after the restore is completed.
+
+   Note that in the filesystem, there is no distinction between the "original" hard linked file
+   and other hard links. They are all directory entries pointing to the same file (inode).
+   But in a Bareos job, one of the directory entries becomes the "original" file, and the
+   others become "references". To restore a file which has been backed up as a reference,
+   the original file must be present in the filesystem, or it must be restored in the same job.
+
+   This special behaviour of storing hard links can be turned off in the FileSet
+   resource :config:option:`dir/fileset/include/options/HardLinks = no`
+   In this case, all files with hard links are backed up separately, and can be restored separately.
+   Please note that this can increase the size of the backup job. After a restore,
+   all files that might have been hard links will be separate files, taking up more disk space.
+
+
+
 Example Restore Job Resource
 ----------------------------
 
