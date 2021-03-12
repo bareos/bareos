@@ -3,4 +3,3 @@ Console {
   Password = "@dir_password@"
   CommandACL = status, .status
 }
-
