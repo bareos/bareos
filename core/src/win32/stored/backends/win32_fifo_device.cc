@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -73,7 +73,7 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     /*
      * Try non-blocking open
      */
-    fd_ = d_open(dev_name, oflags | O_NONBLOCK, 0);
+    fd_ = d_open(archive_device_string, oflags | O_NONBLOCK, 0);
     if (fd_ < 0) {
       BErrNo be;
       dev_errno = errno;
@@ -81,7 +81,7 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
             prt_name, omode, oflags, errno, be.bstrerror());
     } else {
       d_close(fd_);
-      fd_ = d_open(dev_name, oflags, 0); /* open normally */
+      fd_ = d_open(archive_device_string, oflags, 0); /* open normally */
       if (fd_ < 0) {
         BErrNo be;
         dev_errno = errno;

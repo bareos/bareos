@@ -34,6 +34,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Change Copy Job behaviour regarding Archive Jobs [PR #717]
 - py2lug-fd-ovirt systemtest: use ovirt-plugin.ini config file [PR #729]
 - Ctest now runs in scripted mode. [PR #742]
+- storage daemon: class Device: rename dev_name to archive_device_string (as the value stored here is the value of the "Archive Device" directive) [PR #744]
 
 ### Deprecated
 
