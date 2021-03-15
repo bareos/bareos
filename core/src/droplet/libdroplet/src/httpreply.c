@@ -112,6 +112,12 @@ read_line_init(dpl_conn_t *conn)
   conn->read_buf_pos = 1;
   conn->cc = 1;
   conn->eof = 0;
+
+  struct timeval tv;
+  tv.tv_sec = conn->ctx->read_timeout;
+  tv.tv_usec = 0;
+
+  setsockopt(conn->fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
 }
 
 /**
@@ -126,7 +132,7 @@ read_line_init(dpl_conn_t *conn)
 static char *
 read_line(dpl_conn_t *conn)
 {
-  int		size, line_pos, found_nl, ret;
+  int		size, line_pos, found_nl;
   char		*line, *tmp;
 
   DPRINTF("read_line cc=%ld read_buf_pos=%d\n", conn->cc, conn->read_buf_pos);
@@ -167,8 +173,8 @@ read_line(dpl_conn_t *conn)
        * or we found a newline
        */
       while (conn->read_buf_pos < conn->cc &&
-	     line_pos < conn->block_size * size &&
-	     conn->read_buf[conn->read_buf_pos] != '\n')
+	           line_pos < conn->block_size * size &&
+	           conn->read_buf[conn->read_buf_pos] != '\n')
         {
           //DPRINTF("%c\n", conn->read_buf[conn->read_buf_pos]);
 
@@ -176,80 +182,100 @@ read_line(dpl_conn_t *conn)
         }
 
       if (conn->read_buf_pos == conn->cc)
-	{
-	  /*
-	   * current buf is totally read: read a new buf
-	   */
+        {
+           // current buf is totally read: read a new buf
 
           DPL_TRACE(conn->ctx, DPL_TRACE_IO, "read conn=%p https=%d size=%ld", conn, conn->ctx->use_https, conn->read_buf_size);
 
+          int ready = 0;
+          int error = 0;
+          int tries = 0;
+
+          while (!ready && !error)
             {
-              struct pollfd fds;
-              int tries = 0;
-
-            retry:
-              memset(&fds, 0, sizeof (fds));
-              fds.fd = conn->fd;
-              fds.events = POLLIN;
-
-              ++tries;
-              ret = poll(&fds, 1, conn->ctx->read_timeout*1000);
-              if (-1 == ret)
+              if(++tries > 3)
                 {
-                  if (tries < 3 && errno == EINTR)
-                    goto retry;
-                  free(line);
-                  conn->status = DPL_ESYS;
-                  return NULL;
-                }
-
-              if (0 == ret)
-                {
-                  if (tries < 3)
-                    goto retry;
-                  free(line);
                   conn->status = DPL_ETIMEOUT;
-                  return NULL;
+                  DPL_LOG(conn->ctx, DPL_ERROR,
+                    "Timed out waiting to read from server %s:%s",
+                    conn->host, conn->port);
+                  error = 1;
+                  continue;
                 }
-              else if (!(fds.revents & POLLIN))
-                {
-                  free(line);
-                  conn->status = DPL_ESYS;
-                  return NULL;
-                }
+
+              int ret;
 
               if (0 == conn->ctx->use_https)
                 {
-                  conn->cc = read(conn->fd, conn->read_buf, conn->read_buf_size);
-                  if (conn->cc == -1)
+                  errno = 0;
+
+                  ret = read(conn->fd, conn->read_buf, conn->read_buf_size);
+                  if (ret >= 0)
                     {
-                      free(line);
-                      conn->status = DPL_EIO;
-                      return NULL;
+                      conn->cc = ret;
+                      ready = 1;
+                    }
+                  else
+                    {
+                      switch(errno)
+                        {
+                          case EAGAIN:
+                    #if EWOULDBLOCK != EAGAIN
+                          case EWOULDBLOCK:
+                    #endif
+                          case EINTR:
+                            // retry
+                            break;
+                          default:
+                            DPL_LOG(conn->ctx, DPL_ERROR,
+                              "Failed to read from server %s:%s: %s",
+                              conn->host, conn->port, strerror(errno));
+                            conn->status = DPL_EIO;
+                            error = 1;
+                        }
                     }
                  }
               else
                 {
-                  conn->cc = SSL_read(conn->ssl, conn->read_buf, conn->read_buf_size);
-                  if (conn->cc <= 0)
+                  ret = SSL_read(conn->ssl, conn->read_buf, conn->read_buf_size);
+                  if (ret > 0)
                     {
-                      DPL_SSL_PERROR(conn->ctx, "SSL_read");
-                      free(line);
-                      conn->status = DPL_EIO;
-                      return NULL;
+                      conn->cc = ret;
+                      ready = 1;
                     }
-                }
-            }
+                  else
+                    {
+                      switch(SSL_get_error(conn->ssl, ret))
+                        {
+                          case SSL_ERROR_WANT_READ:
+                          case SSL_ERROR_WANT_WRITE:
+                            // retry
+                            break;
+                          case SSL_ERROR_ZERO_RETURN:
+                          default:
+                            DPL_SSL_PERROR(conn->ctx, "SSL_read");
+                            conn->status = DPL_EIO;
+                            error = 1;
+                            break;
+                        }
+                    }
+                } // if (0 == conn->ctx->use_https)
+            } // while (!ready && !error)
+
+          if(error) {
+            free(line);
+            return NULL;
+          }
 
           DPL_TRACE(conn->ctx, DPL_TRACE_IO, "read conn=%p https=%d cc=%ld", conn, conn->ctx->use_https, conn->cc);
 
-	  if (conn->cc == 0)
+          if (conn->cc == 0)
             conn->eof = 1;
 
           if (conn->ctx->trace_buffers)
             dpl_dump_simple(conn->read_buf, conn->cc, conn->ctx->trace_binary);
 
-	  conn->read_buf_pos = 0;
+          conn->read_buf_pos = 0;
 
 	}
       else if (line_pos >= (conn->block_size * size))
@@ -309,7 +335,7 @@ read_line(dpl_conn_t *conn)
  *
  * @return dpl_status
  */
-dpl_status_t
+static dpl_status_t
 dpl_read_http_reply_buffered(dpl_conn_t *conn,
                              int expect_data,
                              int *http_statusp,
@@ -358,76 +384,89 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
             {
               chunk_remain = chunk_len ? chunk_len - chunk_off : -1;
 
-              DPL_TRACE(conn->ctx, DPL_TRACE_IO, "read conn=%p https=%d size=%ld (remain %ld)", conn, conn->ctx->use_https, conn->read_buf_size, chunk_remain);
+              DPL_TRACE(conn->ctx, DPL_TRACE_IO, "read conn=%p https=%d size=%ld (remain %ld)",
+                          conn, conn->ctx->use_https, conn->read_buf_size, chunk_remain);
 
-                // poll for new data on the socket
+              int ready = 0;
+              int error = 0;
+              int tries = 0;
+
+              while (!ready && !error)
                 {
-                  struct pollfd fds;
-
-                  int tries = 0;
-
-                retry:
-                  ++tries;
-                  memset(&fds, 0, sizeof (fds));
-                  fds.fd = conn->fd;
-                  fds.events = POLLIN;
-
-                  ret2 = poll(&fds, 1, conn->ctx->read_timeout*1000);
-                  if (-1 == ret2)
+                  if(++tries > 3)
                     {
-                      if (tries < 3 && errno == EINTR)
-                        goto retry;
-                      DPL_LOG(conn->ctx, DPL_ERROR, "poll failed: %s", strerror(errno));
-                      ret = DPL_FAILURE;
-                      goto end;
-                    }
-                  else if (0 == ret2)
-                    {
-                      if (tries < 3)
-                        goto retry;
+                      conn->status = DPL_ETIMEOUT;
                       DPL_LOG(conn->ctx, DPL_ERROR,
                         "Timed out waiting to read from server %s:%s",
                         conn->host, conn->port);
-                        ret = DPL_FAILURE;
-                      goto end;
+                      error = 1;
+                      continue;
                     }
-                  else if (!(fds.revents & POLLIN))
-                    {
-                      DPL_LOG(conn->ctx, DPL_ERROR, "poll returned strange results");
-                      ret = DPL_FAILURE;
-                      goto end;
-                    }
-                }
 
-              if (0 == conn->ctx->use_https)
-                {
+                  int ret;
 
-                  /*
-                   * We want to read as much as possible in a connclose case,
-                   * since we do not know the size of the body in advance.
-                   */
-                  int flags = (chunk_remain >= conn->read_buf_size || connclose) ? MSG_WAITALL : 0;
+                  if (0 == conn->ctx->use_https)
+                    {
+                      errno = 0;
+                      int flags = (chunk_remain >= conn->read_buf_size || connclose) ? MSG_WAITALL : 0;
 
-                  conn->cc = recv(conn->fd, conn->read_buf, conn->read_buf_size, flags);
-                  if (-1 == conn->cc)
+                      ret = recv(conn->fd, conn->read_buf, conn->read_buf_size, flags);
+                      if (ret >= 0)
+                        {
+                          conn->cc = ret;
+                          ready = 1;
+                        }
+                      else
+                        {
+                          switch(errno)
+                            {
+                              case EAGAIN:
+                        #if EWOULDBLOCK != EAGAIN
+                              case EWOULDBLOCK:
+                        #endif
+                              case EINTR:
+                                // retry
+                                break;
+                              default:
+                                DPL_LOG(conn->ctx, DPL_ERROR,
+                                  "Failed to read from server %s:%s: %s",
+                                  conn->host, conn->port, strerror(errno));
+                                conn->status = DPL_FAILURE;
+                                error = 1;
+                            }
+                        }
+                     }
+                  else
                     {
-                      DPL_LOG(conn->ctx, DPL_ERROR,
-                        "Failed to read from server %s:%s: %s",
-                        conn->host, conn->port, strerror(errno));
-                      ret = DPL_FAILURE;
-                      goto end;
-                    }
-                }
-              else
-                {
-                  conn->cc = SSL_read(conn->ssl, conn->read_buf, conn->read_buf_size);
-                  if (conn->cc <= 0)
-                    {
-                      DPL_SSL_PERROR(conn->ctx, "SSL_read");
-                      ret = DPL_FAILURE;
-                      goto end;
-                    }
-                }
+                      ret = SSL_read(conn->ssl, conn->read_buf, conn->read_buf_size);
+                      if (ret > 0)
+                        {
+                          conn->cc = ret;
+                          ready = 1;
+                        }
+                      else
+                        {
+                          switch(SSL_get_error(conn->ssl, ret))
+                            {
+                              case SSL_ERROR_WANT_READ:
+                              case SSL_ERROR_WANT_WRITE:
+                                // retry
+                                break;
+                              case SSL_ERROR_ZERO_RETURN:
+                              default:
+                                DPL_SSL_PERROR(conn->ctx, "SSL_read");
+                                conn->status = DPL_FAILURE;
+                                error = 1;
+                                break;
+                            }
+                        }
+                    } // if (0 == conn->ctx->use_https)
+                } // while (!ready && !error)
+
+              if(error) {
+                free(line);
+                goto end;
+              }
 
               DPL_TRACE(conn->ctx, DPL_TRACE_IO, "read conn=%p https=%d cc=%ld", conn, conn->ctx->use_https, conn->cc);
 
