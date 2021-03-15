@@ -328,8 +328,8 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
   int chunked = 0;
 #define MODE_REPLY  0
 #define MODE_HEADER  1
-#define MODE_CHUNK   2
-#define MODE_CHUNKED 3
+#define MODE_SINGLE_DATA_CHUNK   2
+#define MODE_HTTP_CHUNKED 3
   int mode;
 
   DPRINTF("read_http_reply fd=%d flags=0x%x\n", conn->fd, flags);
@@ -343,7 +343,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
 
   while (1)
     {
-      if (MODE_CHUNK == mode)
+      if (MODE_SINGLE_DATA_CHUNK == mode)
         {
           DPRINTF("chunk_len=%ld chunk_off=%ld\n", chunk_len, chunk_off);
 
@@ -406,9 +406,9 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                    * We want to read as much as possible in a connclose case,
                    * since we do not know the size of the body in advance.
                    */
-                  int recvfl = (chunk_remain >= conn->read_buf_size || connclose) ? MSG_WAITALL : 0;
+                  int flags = (chunk_remain >= conn->read_buf_size || connclose) ? MSG_WAITALL : 0;
 
-                  conn->cc = recv(conn->fd, conn->read_buf, conn->read_buf_size, recvfl);
+                  conn->cc = recv(conn->fd, conn->read_buf, conn->read_buf_size, flags);
                   if (-1 == conn->cc)
                     {
                       DPL_LOG(conn->ctx, DPL_ERROR,
@@ -504,12 +504,12 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                 {
                   if (1 == chunked)
                     {
-                      mode = MODE_CHUNKED;
+                      mode = MODE_HTTP_CHUNKED;
                     }
                   else
                     {
                       //one big chunk
-                      mode = MODE_CHUNK;
+                      mode = MODE_SINGLE_DATA_CHUNK;
                       chunk_off = 0;
                       if (conn->read_buf_pos < conn->cc)
                         {
@@ -584,7 +584,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                 break ;
               }
 
-            case MODE_CHUNKED:
+            case MODE_HTTP_CHUNKED:
 
               chunk_len = strtoul(line, NULL, 16);
 
@@ -597,7 +597,7 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                   goto end;
                 }
 
-              mode = MODE_CHUNK;
+              mode = MODE_SINGLE_DATA_CHUNK;
               chunk_off = 0;
               if (conn->read_buf_pos < conn->cc)
                 {
