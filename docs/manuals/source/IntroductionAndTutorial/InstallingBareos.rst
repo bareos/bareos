@@ -94,10 +94,12 @@ RHEL, CentOS, Fedora
    single: Platform; CentOS
    single: Platform; Fedora
 
-Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included in the main repository.
+Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library package.
+On RHEL 7 it is available through the RHEL Server Optional channel.
+On CentOS 7 and Fedora is it included in the main repository.
 
 .. code-block:: shell-session
-   :caption: Shell example script for Bareos installation on RHEL 7 / CentOS 7 / Fedora
+   :caption: Shell example script for Bareos installation on RHEL / CentOS / Fedora
 
    #!/bin/sh
 
@@ -170,7 +172,7 @@ Debian / Ubuntu
    single: Platform; Debian
    single: Platform; Ubuntu
 
-Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
+Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
 
 .. code-block:: shell-session
    :caption: Shell example script for Bareos installation on Debian / Ubuntu

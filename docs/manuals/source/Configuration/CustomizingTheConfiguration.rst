@@ -3,7 +3,8 @@
 Customizing the Configuration
 =============================
 
-:index:`\ <single: Customizing the Configuration>`\
+.. index::
+   single: Customizing the Configuration
 
 Each Bareos component (Director, Client, Storage, Console) has its own configuration containing a set of resource definitions. These resources are very similar from one service to another, but may contain different directives (records) depending on the component. For example, in the Director configuration, the :ref:`DirectorResourceDirector` defines the name of the Director, a number of global Director parameters and his password. In the File daemon configuration, the
 :ref:`ClientResourceDirector` specifies which Directors are permitted to use the File daemon.
@@ -27,7 +28,9 @@ The following configuration files must be present:
 Configuration Path Layout
 -------------------------
 
-:index:`\ <single: Configuration; Directories>`\  :index:`\ <single: Configuration; Subdirectories>`\
+.. index::
+   single: Configuration; Directories
+   single: Configuration; Subdirectories
 
 When a Bareos component starts, it reads its configuration. In Bareos < 16.2.2 only configuration files (which optionally can include other files) are supported. Since Bareos :sinceVersion:`16.2.2: Subdirectory Configuration Scheme` also configuration subdirectories are supported.
 
@@ -178,16 +181,19 @@ Resource file conventions
 
          -  :file:`CONFIGDIR/bareos-director.d/console/admin.conf.example`
 
--  extbfsection-deleteConfigurationResourceFilesDisable/remove configuration resource files:
+-  .. _section-deleteConfigurationResourceFiles:
 
-   -  Normally you should not remove resources that are already in use (jobs, clients, ...). Instead you should disable them by adding the directive ``Enable = no``. Otherwise you take the risk that orphaned entries are kept in the Bareos catalog. However, if a resource has not been used or all references have been cleared from the database, they can also be removed from the configuration.
+   Disable/remove configuration resource files:
+
+   Normally you should not remove resources that are already in use (jobs, clients, ...). Instead you should disable them by adding the directive ``Enable = no``. Otherwise you take the risk that orphaned entries are kept in the Bareos catalog. However, if a resource has not been used or all references have been cleared from the database, they can also be removed from the configuration.
 
 
-.. warning::
+   .. warning::
 
-   If you want to remove a configuration resource that is part of a Bareos package,
-                          replace the resource configuration file by an empty file.
-                          This prevents the resource from reappearing in the course of a package update.
+      If you want to remove a configuration resource that is part of a Bareos package,
+      replace the resource configuration file by an empty file.
+      This prevents the resource from reappearing in the course of a package update.
+
 
 Using Subdirectories Configuration Scheme
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -208,16 +214,12 @@ Updates from Bareos < 16.2.4
 
 -  When updating to a Bareos version containing the Subdirectories Configuration, the existing configuration will not be touched and is still the default configuration.
 
-   -
+   .. warning::
 
-
-
-         .. warning::
-
-            Problems can occur if you have implemented an own wildcard mechanism to load your configuration
-                     from the same subdirectories as used by the new packages (:file:`CONFIGDIR/COMPONENT.d/*/*.conf`).
-                     In this case, newly installed configuration resource files can alter
-                     your current configuration by adding resources.
+      Problems can occur if you have implemented an own wildcard mechanism to load your configuration
+      from the same subdirectories as used by the new packages (:file:`CONFIGDIR/COMPONENT.d/*/*.conf`).
+      In this case, newly installed configuration resource files can alter
+      your current configuration by adding resources.
 
       Best create a copy of your configuration directory before updating Bareos and modify your existing configuration file to use that other directory.
 
@@ -225,7 +227,7 @@ Updates from Bareos < 16.2.4
 
 -  The correct way of migrating to the new configuration scheme would be to split the configuration file into resources, store them in the resource directories and then remove the original configuration file.
 
-   -  For migrating the |dir| configuration, the script `bareos-migrate-config.sh <https://github.com/bareos/bareos-contrib/blob/master/misc/bareos-migrate-config/bareos-migrate-config.sh>`_ exists. Being called, it connects via :command:`bconsole` to a running |dir| and creates subdirectories with the resource configuration files.
+   -  For migrating the |dir| configuration, the script `bareos-migrate-config.sh <https://github.com/bareos/bareos/blob/master/contrib/misc/bareos-migrate-config/bareos-migrate-config.sh>`_ exists. Being called, it connects via :command:`bconsole` to a running |dir| and creates subdirectories with the resource configuration files.
 
       .. code-block:: shell-session
          :caption: bareos-migrate-config.sh
@@ -235,7 +237,7 @@ Updates from Bareos < 16.2.4
          cd /tmp/bareos-dir.d
 
          # download migration script
-         wget https://raw.githubusercontent.com/bareos/bareos-contrib/master/misc/bareos-migrate-config/bareos-migrate-config.sh
+         wget https://raw.githubusercontent.com/bareos/bareos/master/contrib/misc/bareos-migrate-config/bareos-migrate-config.sh
 
          # execute the script
          bash bareos-migrate-config.sh
@@ -251,16 +253,17 @@ Updates from Bareos < 16.2.4
          # install newly generated configuration
          cp -a /tmp/bareos-dir.d /etc/bareos/
 
-      Restart the |dir| and verify your configuration. Also make sure, that all resource configuration files coming from Bareos packages exists, in doubt as empty files, see `remove configuration resource files <#section-deleteConfigurationResourceFiles>`__.
+      Restart the |dir| and verify your configuration. Also make sure, that all resource configuration files coming from Bareos packages exists, in doubt as empty files, see :ref:`remove configuration resource files <section-deleteConfigurationResourceFiles>`.
 
    -  Another way, without splitting the configuration into resource files is:
 
-      -  .. code-block:: shell-session
-            :caption: move configuration to subdirectory
+      .. code-block:: shell-session
+         :caption: move configuration to subdirectory
 
-            mkdir CONFIGDIR/COMPONENT.d/migrate && mv CONFIGDIR/COMPONENT.conf CONFIGDIR/COMPONENT.d/migrate
+         mkdir CONFIGDIR/COMPONENT.d/migrate && mv CONFIGDIR/COMPONENT.conf CONFIGDIR/COMPONENT.d/migrate
 
-      -  Resources defined in both, the new configuration directory scheme and the old configuration file, must be removed from one of the places, best from the old configuration file, after verifying that the settings are identical with the new settings.
+
+      Resources defined in both, the new configuration directory scheme and the old configuration file, must be removed from one of the places, best from the old configuration file, after verifying that the settings are identical with the new settings.
 
 Configuration File Format
 -------------------------
@@ -441,7 +444,9 @@ Numbers are not to be quoted, see :ref:`section-Quotes`. Also do not prepend num
 Data Types
 ^^^^^^^^^^
 
-:index:`\ <single: Configuration; Data Types>`\  :index:`\ <single: Data Type>`\
+.. index::
+   single: Configuration; Data Types
+   single: Data Type
 
 When parsing the resource directives, Bareos classifies the data according to the types listed below.
 

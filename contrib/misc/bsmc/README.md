@@ -51,5 +51,4 @@ archivejob=archive
 archivefilelist=/tmp/bsmc.archive
 ```
 
-Sample configuration for an archive job to be in included in your bareos-dir.conf is here:
-etc/bareos/bareos-dir.d/archivejob.conf
+Sample configuration for an archive job to be in included in your bareos-dir.conf is at etc/bareos/bareos-dir.d/archivejob.conf

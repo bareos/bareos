@@ -427,31 +427,30 @@ Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data
 Rados Plugin
 ~~~~~~~~~~~~
 
-.. comment::
-   .. deprecated:: 20.0.0
+.. deprecated:: 20.0.0
 
-:index:`\ <single: Plugin; ceph; rados>`\  :index:`\ <single: Ceph; Rados Plugin>`\
+.. index::
+   single: Plugin; Ceph; Rados
+   single: Ceph; Rados Plugin
 
 Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data on a CEPH Object Store, this plugin is intended to backup a CEPH Object Store via the Rados interface to other media. The package **bareos-filedaemon-ceph-plugin** (:sinceVersion:`15.2.0: CEPH Rados Plugin`) contains an example configuration file, that must be adapted to your environment.
 
 GlusterFS Plugin
 ~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; glusterfs>`\  :index:`\ <single: GlusterFS; Plugin>`\
+.. index::
+   pair: GlusterFS; Plugin
 
 Opposite to the :ref:`GFAPI Backend <SdBackendGfapi>` that is used to store data on a Gluster system, this plugin is intended to backup data from a Gluster system to other media. The package **bareos-filedaemon-glusterfs-plugin** (:sinceVersion:`15.2.0: GlusterFS Plugin`) contains an example configuration file, that must be adapted to your environment.
-
-
-
-
 
 
 python-fd Plugin
 ~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; Python; File Daemon>`\
+.. index::
+   single: Plugin; Python; File Daemon
 
-The **python-fd** plugin behaves similar to the :ref:`director-python-plugin`. Base plugins and an example get installed via the package bareos-filedaemon-python-plugin. Configuration is done in the :ref:`DirectorResourceFileSet` on the director.
+The **python-fd** plugin behaves similar to the :ref:`director-python-plugin`. Base plugins and an example get installed via the package **bareos-filedaemon-python-plugin**. Configuration is done in the :ref:`DirectorResourceFileSet` on the director.
 
 
 
@@ -469,7 +468,7 @@ Command plugins are used to replace or extend the FileSet definition in the File
      Name = "mysql"
      Include {
        Options {
-         Signature = MD5 # calculate md5 checksum per file
+         Signature = MD5
        }
        File = "/etc"
        Plugin = "python"
@@ -478,7 +477,10 @@ Command plugins are used to replace or extend the FileSet definition in the File
      }
    }
 
-:index:`\ <single: MySQL; Backup>`\  This example uses the :ref:`MySQL plugin <backup-mysql-python>` to backup MySQL dumps in addition to :file:`/etc`.
+.. index::
+   single: MySQL; Backup
+
+This example uses the :ref:`MySQL plugin <backup-mysql-python>` to backup MySQL dumps in addition to :file:`/etc`.
 
 Option Plugins
 ^^^^^^^^^^^^^^
@@ -488,7 +490,7 @@ Option plugins are activated in the Options resource of a FileSet definition.
 Example:
 
 .. code-block:: bareosconfig
-   :caption: bareos-dir.conf: Python FD option plugins
+   :caption: bareos-dir.d/fileset/option.conf: Python FD option plugins
 
    FileSet {
      Name = "option"
@@ -504,14 +506,16 @@ Example:
      }
    }
 
-This plugin bareos-fd-file-interact from https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/options-plugin-sample has a method that is called before and after each file that goes into the backup, it can be used as a template for whatever plugin wants to interact with files before or after backup.
+This plugin bareos-fd-file-interact from https://github.com/bareos/bareos/tree/master/contrib/fd-plugins/options-plugin-sample has a method that is called before and after each file that goes into the backup, it can be used as a template for whatever plugin wants to interact with files before or after backup.
 
 .. _VMwarePlugin:
 
 VMware Plugin
 ~~~~~~~~~~~~~
 
-:index:`\ <single: Plugin; VMware>`\  :index:`\ <single: VMware Plugin>`\
+.. index::
+   single: Plugin; VMware
+   single: VMware Plugin
 
 The |vmware| Plugin can be used for agentless backups of virtual machines running on |vsphere|. It makes use of CBT (Changed Block Tracking) to do space efficient full and incremental backups, see below for mandatory requirements.
 
@@ -526,31 +530,29 @@ Current limitations amongst others are:
 
 .. limitation:: VMware Plugin: Normal VM disks can not be excluded from the backup.
 
-       It is not yet possible to exclude normal (dependent) VM disks from backups.
-       However, independent disks are excluded implicitly because they are not affected
-       by snapshots which are required for CBT based backup.
+   It is not yet possible to exclude normal (dependent) VM disks from backups.
+   However, independent disks are excluded implicitly because they are not affected
+   by snapshots which are required for CBT based backup.
 
 
 
 .. limitation:: VMware Plugin: VM configuration is not backed up.
 
-       The VM configuration is not backed up, so that it is not yet possible to recreate a completely deleted VM.
+   The VM configuration is not backed up, so that it is not yet possible to recreate a completely deleted VM.
 
 
 
 .. limitation:: VMware Plugin: Virtual Disks have to be smaller than 2TB.
 
-       Virtual Disks have to be smaller than 2 TB, see :mantis:`670`.
+   Virtual Disks have to be smaller than 2 TB, see :mantis:`670`.
 
 
 
 .. limitation:: VMware Plugin: Restore can only be done to the same VM or to local VMDK files.
 
-       Until Bareos Version 15.2.2, the restore has only be possible to the same existing VM with existing virtual disks.
-       Since :sinceVersion:`15.2.3: VMware Plugin: restore to VMDK files`
-       %**bareos-vadp-dumper** :sinceVersion:`15.2.2-15: bareos-vadp-dumper` and
-       %**bareos-vmware-plugin** :sinceVersion:`15.2.2-27: bareos-vmware-plugin`
-       it is also possible to restore to local VMDK files, see below for more details.
+   Until Bareos Version 15.2.2, the restore has only be possible to the same existing VM with existing virtual disks.
+   Since :sinceVersion:`15.2.3: VMware Plugin: restore to VMDK files`
+   it is also possible to restore to local VMDK files, see below for more details.
 
 
 
