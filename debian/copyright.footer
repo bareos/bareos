@@ -1,5 +1,5 @@
 
-Files: src/lib/bmtio.h
+Files: core/src/lib/bmtio.h
 Copyright: 1982,1986,1993 The Regents of the University of California
 License: permissive
     /*-
@@ -35,12 +35,12 @@ License: permissive
     */
 
 
-Files: src/lmdb/*
+Files: core/src/lmdb/*
 Copyright: 2011-2014 Howard Chu, Symas Corp.
 License: OpenLDAP
 
 
-Files: src/ndmp/md5.h src/ndmp/md5c.c
+Files: core/src/ndmp/md5.h src/ndmp/md5c.c
 Copyright:  1991,1992, RSA Data Security, Inc.
 License: permissive
     Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
@@ -65,7 +65,7 @@ License: permissive
     documentation and/or software.
 
 
-Files: src/ndmp/*
+Files: core/src/ndmp/*
 Copyright: 1998-2002 Traakan, Inc., Los Altos, CA
 License: BSD-2-clause
     /*
@@ -97,30 +97,30 @@ License: BSD-2-clause
     */
 
 
-Files: src/lib/bregex.h src/lib/bregex.c
+Files: core/src/lib/bregex.h core/src/lib/bregex.cc
 Copyright: 1991 Tatu Ylonen, Espoo, Finland
            2006-2010 Free Software Foundation Europe e.V.
 License: permissive and AGPL-3.0
 
 
-Files: src/lib/bsnprintf.c
+Files: core/src/lib/bsnprintf.cc
 Copyright: 1995 Patrick Powell
            2005-2012 Free Software Foundation Europe e.V.
 License: permissive and AGPL-3.0
 
 
-Files: src/tools/bsmtp.c
+Files: core/src/tools/bsmtp.cc
 Copyright: 1997 Ralf S. Engelschall
            2001-2012 Free Software Foundation Europe e.V.
 License: GPL-2
 
 
-Files: src/lib/fnmatch.h src/lib/fnmatch.c
+Files: core/src/lib/fnmatch.h core/src/lib/fnmatch.cc
 Copyright: 1989,1992,1993,1994 The Regents of the University of California
 License: BSD-3-clause
 
 
-Files: src/lib/var.h src/lib/var.c
+Files: core/src/lib/var.h core/src/lib/var.cc
 Copyright: 2001-2002 Ralf S. Engelschall <rse@engelschall.com>
            2001-2002 The OSSP Project (http://www.ossp.org/)
            2001-2002 Cable & Wireless Deutschland (http://www.cw.com/de/)
@@ -128,11 +128,11 @@ Copyright: 2001-2002 Ralf S. Engelschall <rse@engelschall.com>
 License: permissive and AGPL-3.0
 
 
-Files: src/win32/compat/include/sys/mtio.h
+Files: core/src/win32/compat/include/sys/mtio.h
 Copyright: 1996, 1997 Free Software Foundation, Inc.
 License: LGPL-2.1+
 
-Files: src/win32/compat/glob.c src/win32/compat/include/glob.h
+Files: core/src/win32/compat/glob.c core/src/win32/compat/include/glob.h
 Copyright (C) 2012 MinGW.org project
 License: permissive
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -154,7 +154,7 @@ License: permissive
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF OR OTHER
  * DEALINGS IN THE SOFTWARE.
 
-Files: src/win32/plugins/filed/mssqlvdi-fd.c
+Files: core/src/win32/plugins/filed/mssqlvdi-fd.c
 Copyright:  2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
             2013-2013 Bareos GmbH & Co. KG
 License: AGPL-3.0
@@ -199,6 +199,11 @@ License: BSD-2-clause
  *
  * https://github.com/scality/Droplet
  */
+
+
+Files: *
+Copyright: 2012-2021 Bareos GmbH & Co. KG
+License: AGPL-3.0
 
 
 License: AGPL-3.0
