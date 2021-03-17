@@ -33,6 +33,8 @@
  */
 #include "dropletp.h"
 
+#include <openssl/ssl.h>
+
 /** @file */
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
