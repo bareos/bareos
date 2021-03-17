@@ -53,28 +53,41 @@ struct ssl_method_authorized {
 
 static struct ssl_method_authorized
 list_ssl_method_authorized[] = {
-#ifndef OPENSSL_NO_SSL2
-#ifdef SSL_TXT_SSLV2
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+
+  { .name = "TLS_method",    .fn = TLS_method     },
+
+#else // (OPENSSL_VERSION_NUMBER < 0x10100000L)
+
+# ifndef OPENSSL_NO_SSL2
+#  ifdef SSL_TXT_SSLV2
   { .name = SSL_TXT_SSLV2,   .fn = SSLv2_method   },
-#endif
-#endif
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-#ifdef SSL_TXT_SSLV3
+#  endif
+# endif // !OPENSSL_NO_SSL2
+
+# ifdef SSL_TXT_SSLV3
   { .name = SSL_TXT_SSLV3,   .fn = SSLv3_method   },
-#endif
-#endif
+# endif
+
   { .name = "SSLv23",        .fn = SSLv23_method  },
-#ifdef SSL_TXT_TLSV1
+
+# ifdef SSL_TXT_TLSV1
   { .name = SSL_TXT_TLSV1,   .fn = TLSv1_method   },
-#endif
-#ifdef SSL_TXT_TLSV1_1
+# endif
+
+# ifdef SSL_TXT_TLSV1_1
   { .name = SSL_TXT_TLSV1_1, .fn = TLSv1_1_method },
-#endif
-#ifdef SSL_TXT_TLSV1_2
+# endif
+
+# ifdef SSL_TXT_TLSV1_2
   { .name = SSL_TXT_TLSV1_2, .fn = TLSv1_2_method },
-#endif
+# endif
+
+#endif // (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+
   { .name = "",              .fn = NULL           }
-};
+}; // list_ssl_method_authorized
 
 static void
 cbuf_reset(struct dpl_conf_buf *cbuf)
@@ -807,23 +820,6 @@ dpl_profile_init(dpl_ctx_t *ctx,
       return DPL_ENOMEM;
 
   return DPL_SUCCESS;
-}
-
-static int
-ssl_verify_cert(X509_STORE_CTX *cert, void *arg)
-{
-  dpl_ctx_t     *ctx = (dpl_ctx_t *) arg;
-  char          buffer[256];
-
-  DPL_TRACE(ctx, DPL_TRACE_SSL, "Server certificates:");
-
-  X509_NAME_oneline(X509_get_subject_name(X509_STORE_CTX_get0_cert(cert)), buffer, sizeof(buffer));
-  DPL_TRACE(ctx, DPL_TRACE_SSL, "Subject: %s", buffer);
-
-  X509_NAME_oneline(X509_get_issuer_name(X509_STORE_CTX_get0_cert(cert)), buffer, sizeof(buffer));
-  DPL_TRACE(ctx, DPL_TRACE_SSL, "Issuer: %s", buffer);
-
-  return 1;
 }
 
 static dpl_status_t
