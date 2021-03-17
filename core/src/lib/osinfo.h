@@ -22,6 +22,9 @@
 #ifndef BAREOS_LIB_OSINFO_H_
 #define BAREOS_LIB_OSINFO_H_
 
+// register keyword removed in c++17
+#define register
+
 const char* GetOsInfoString(void);
 
 #endif  // BAREOS_LIB_OSINFO_H_

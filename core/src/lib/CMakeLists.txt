@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -110,6 +110,10 @@ if(HAVE_WIN32)
   list(APPEND BAREOS_SRCS ../win32/compat/compat.cc ../win32/compat/glob.cc
        ../win32/compat/winapi.cc
   )
+  set_source_files_properties(
+    ../win32/compat/glob.cc PROPERTIES COMPILE_DEFINITIONS register=
+  )
+
 else()
   list(APPEND BAREOS_SRCS scsi_tapealert.cc)
 endif()

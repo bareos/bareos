@@ -44,9 +44,9 @@ if(CCACHE_FOUND)
   set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 endif(CCACHE_FOUND)
 
-# switch on CXX 11 Support
+# switch on CXX 17 Support
 #
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(CheckCCompilerFlag)
@@ -328,11 +328,6 @@ endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-deprecated-register")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-register")
-endif()
-
 include(BareosSetVariableDefaults)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
@@ -369,6 +364,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     -D_WIN32_WINNT=${WINDOWS_VERSION}
   )
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads")
+
+  # c++17 removed register keyword
+  set(Python2_CCSHARED -Wno-register)
 
   set(Python2_SITELIB ${plugindir})
   set(Python3_SITELIB ${plugindir})

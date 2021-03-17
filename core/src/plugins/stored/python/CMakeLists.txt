@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,7 @@ if(Python2_FOUND)
   target_link_libraries(python-sd ${Python2_LIBRARIES} bareos)
   target_include_directories(python-sd PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
   target_compile_definitions(python-sd PUBLIC PY2MODDIR=\"${Python2_SITELIB}\")
+  target_compile_options(python-sd PUBLIC ${Python2_CCSHARED})
   add_dependencies(python-sd bareossd-python2-module)
 
   set(PYFILES pyfiles/bareos-sd-class-plugin.py
@@ -49,10 +50,7 @@ if(Python2_FOUND)
                INCLUDE_DIRECTORIES "${pymod2_include_dirs}"
   )
   if(NOT "${Python2_CCSHARED}" STREQUAL "")
-    set_property(
-      TARGET bareossd-python2-module PROPERTY COMPILE_OPTIONS
-                                              ${Python2_CCSHARED}
-    )
+    target_compile_options(bareossd-python2-module PUBLIC ${Python2_CCSHARED})
   endif()
   target_link_libraries(bareossd-python2-module bareos ${Python2_LIBRARIES})
 
