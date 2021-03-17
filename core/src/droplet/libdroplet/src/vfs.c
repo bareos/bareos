@@ -1692,7 +1692,6 @@ dpl_mkobj(dpl_ctx_t *ctx,
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
-  char resource[DPL_MAXPATHLEN];
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "mkobj locator=%s", locator);
 
@@ -1734,9 +1733,16 @@ dpl_mkobj(dpl_ctx_t *ctx,
       goto end;
     }
 
-  snprintf(resource, sizeof (resource), "%s%s", obj_fqn.path, obj_type_ext(obj_type));
+  {
+    size_t len = 1;  // maximum strlen of obj_type_ext()
+    len += strlen(obj_fqn.path);
 
-  ret2 = dpl_put(ctx, bucket, resource, NULL, obj_type, NULL, NULL, metadata, sysmd, NULL, 0);
+    char resource[len +1];
+    snprintf(resource, sizeof(resource), "%s%s", obj_fqn.path, obj_type_ext(obj_type));
+
+    ret2 = dpl_put(ctx, bucket, resource, NULL, obj_type, NULL, NULL, metadata, sysmd, NULL, 0);
+  }
+
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
