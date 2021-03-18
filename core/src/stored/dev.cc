@@ -723,17 +723,18 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   open_mode = omode;
   set_mode(omode);
 
-  /*
-   * If creating file, give 0640 permissions
-   */
-  Dmsg3(100, "open disk: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
+  Dmsg3(100, "open archive: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
         archive_name.c_str(), oflags);
 
   if ((fd_ = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
     BErrNo be;
     dev_errno = errno;
-    Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
-          be.bstrerror());
+    if (dev_errno == 0) {
+      Mmsg2(errmsg, _("Could not open: %s\n"), archive_name.c_str());
+    } else {
+      Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
+            be.bstrerror());
+    }
     Dmsg1(100, "open failed: %s", errmsg);
   }
 
