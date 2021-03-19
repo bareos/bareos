@@ -121,6 +121,7 @@ if(BUILD_BAREOS_BINARIES)
   if(NOT client-only AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     add_subdirectory(systemtests)
   endif()
+  add_subdirectory(contrib)
 endif()
 
 if(docs

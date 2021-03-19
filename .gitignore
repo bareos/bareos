@@ -150,6 +150,8 @@ debian/bareos-bconsole.postinst
 debian/bareos-common.install
 debian/bareos-common.postinst
 debian/bareos-common.preinst
+debian/bareos-contrib-director-python-plugins.install
+debian/bareos-contrib-filedaemon-python-plugins.install
 debian/bareos-database-common.config
 debian/bareos-database-common.install
 debian/bareos-database-common.postinst

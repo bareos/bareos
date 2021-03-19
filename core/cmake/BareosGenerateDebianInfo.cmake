@@ -112,6 +112,10 @@ else()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "vmware")
   endif()
 
+  if(NOT client-only)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-contrib-tools")
+  endif()
+
 endif()
 
 configure_file(

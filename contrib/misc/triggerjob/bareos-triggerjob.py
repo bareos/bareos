@@ -7,6 +7,7 @@ import logging
 import sys
 
 
+
 def get_job_names(director):
     result = director.call('.jobs')['jobs']
     jobs = [job['name'] for job in result]
@@ -41,21 +42,22 @@ def trigger(director, jobnames, clients, hours):
 
 
 def getArguments():
-    parser = argparse.ArgumentParser(description='Console to Bareos Director.')
-    parser.add_argument('-d', '--debug', action='store_true',
+    epilog = """
+    bareos-triggerjob is a Python script that allows you to perform a backup for a connected client if a definable time has passed since the last backup.
+
+    It will look for all clients connected to the Director. If it finds a job named "backup-{clientname}" that did not successfully run during the specified time period, it will trigger this job. This way, clients that are not regularly connected to the director, such as notebooks, can be reliably backed up.
+
+    bareos-triggerjob should be executed regularly to detect newly connected clients. To do so, a cronjob should run the script repeatedly.
+
+    Note: bareos-triggerjob requires a connection between director and client. Therefore, activate Client Initiated Connections (https://docs.bareos.org/TasksAndConcepts/NetworkSetup.html#client-initiated-connection) to automatically establish a connection whenever possible. Otherwise no jobs will be started.
+
+    """
+    
+    argparser = argparse.ArgumentParser(description=u"Trigger Bareos jobs.", epilog=epilog)
+    argparser.add_argument('-d', '--debug', action='store_true',
                         help="enable debugging output")
-    parser.add_argument('--name', default="*UserAgent*",
-                        help="use this to access a specific Bareos director named console. Otherwise it connects to the default console (\"*UserAgent*\")")
-    parser.add_argument(
-        '-p', '--password', help="password to authenticate to a Bareos Director console", required=True)
-    parser.add_argument('--port', default=9101,
-                        help="Bareos Director network port")
-    parser.add_argument('--dirname', help="Bareos Director name")
-    parser.add_argument('--hours', default=24,
-                        help="Minimum time since last backup in hours")
-    parser.add_argument('address', nargs='?', default="localhost",
-                        help="Bareos Director network address")
-    args = parser.parse_args()
+    bareos.bsock.DirectorConsole.argparser_add_default_command_line_arguments(argparser)
+    args = argparser.parse_args()
     return args
 
 

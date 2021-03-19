@@ -1,0 +1,3 @@
+@plugindir@/bareos_mysql_dump/*
+@plugindir@/bareos_tasks/*
+@plugindir@/openvz7/*
