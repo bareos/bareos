@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -180,7 +180,7 @@ if(${HAVE_DYNAMIC_SD_BACKENDS})
     list(APPEND BACKEND_OBJECTS libbareossd-chunked)
   endif()
 
-  set(LIBBAREOSSD_LIBRARIES bareos ${BACKEND_OBJECTS})
+  set(LIBBAREOSSD_LIBRARIES bareos ${PTHREAD_LIBRARIES} ${BACKEND_OBJECTS})
   message(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
 else()
   if(TARGET droplet)
@@ -196,7 +196,9 @@ else()
   if(${HAVE_GFAPI})
     list(APPEND LIBBAREOSSD_LIBRARIES ${GFAPI_LIBRARIES})
   endif()
-  set(LIBBAREOSSD_LIBRARIES bareos ${LIBBAREOSSD_LIBRARIES})
+  set(LIBBAREOSSD_LIBRARIES bareos ${LIBBAREOSSD_LIBRARIES}
+                            ${JANSSON_LIBRARIES} ${WINDOWS_LIBRARIES}
+  )
   message(STATUS "LIBBAREOSSD_LIBRARIES ARE ${LIBBAREOSSD_LIBRARIES}")
 endif()
 
@@ -219,8 +221,10 @@ target_link_libraries(stored_objects ${NDMP_LIBS})
 
 add_executable(bareos-sd stored.cc)
 
-set(BAREOS_SD_LIBRARIES bareos bareossd bareosfind ${NDMP_LIBS})
-
+set(BAREOS_SD_LIBRARIES
+    bareos bareossd bareosfind ${NDMP_LIBS} ${PTHREAD_LIBRARIES}
+    $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
+)
 if(HAVE_WIN32)
   target_sources(bareos-sd PRIVATE ../win32/generic/main.cc)
   list(APPEND BAREOS_SD_LIBRARIES comctl32)
@@ -229,20 +233,38 @@ endif()
 target_link_libraries(bareos-sd stored_objects ${BAREOS_SD_LIBRARIES})
 
 add_executable(bls ${BLSSRCS})
-target_link_libraries(bls bareos bareossd bareosfind)
+target_link_libraries(
+  bls bareos bareossd bareosfind ${ACL_LIBRARIES}
+  $<$<PLATFORM_ID:FreeBSD>:${PTHREAD_LIBRARIES}>
+  $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
+)
 
 add_executable(bextract ${BEXTRACTSRS})
-target_link_libraries(bextract bareossd bareosfind bareos)
+target_link_libraries(
+  bextract bareossd bareosfind bareos ${ACL_LIBRARIES}
+  $<$<PLATFORM_ID:FreeBSD>:${PTHREAD_LIBRARIES}>
+  $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
+)
 
 add_executable(bscan ${BSCANSRCS})
-target_link_libraries(bscan bareos bareossd bareosfind bareossql bareoscats)
+target_link_libraries(
+  bscan bareos bareossd bareosfind bareossql bareoscats
+  $<$<PLATFORM_ID:FreeBSD>:${PTHREAD_LIBRARIES}>
+  $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
+)
 
 add_executable(btape ${BTAPESRCS})
-target_link_libraries(btape bareossd bareos)
+target_link_libraries(
+  btape bareossd bareos $<$<PLATFORM_ID:FreeBSD>:${PTHREAD_LIBRARIES}>
+  $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
+)
 
 add_executable(bcopy ${BCOPYSRCS})
 
-target_link_libraries(bcopy bareossd bareos)
+target_link_libraries(
+  bcopy bareossd bareos $<$<PLATFORM_ID:FreeBSD>:${PTHREAD_LIBRARIES}>
+  $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
+)
 
 install(TARGETS bareossd DESTINATION ${libdir})
 

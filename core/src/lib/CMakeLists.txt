@@ -21,7 +21,6 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 include_directories(
   ${OPENSSL_INCLUDE_DIR} ${PTHREAD_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS}
   ${ACL_INCLUDE_DIRS} ${LZO2_INCLUDE_DIRS} ${CAP_INCLUDE_DIRS}
-  ${WRAP_INCLUDE_DIRS}
 )
 
 set(BAREOS_SRCS
@@ -154,17 +153,16 @@ set_target_properties(version-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(
   bareos
-  bareosfastlz
-  ${OPENSSL_LIBRARIES}
-  ${PTHREAD_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${ACL_LIBRARIES}
-  ${LZO2_LIBRARIES}
-  ${CAP_LIBRARIES}
-  ${WRAP_LIBRARIES}
-  ${CAM_LIBRARIES}
-  ${WINDOWS_LIBRARIES}
-  ${JANSSON_LIBRARIES}
+  PRIVATE bareosfastlz
+          ${OPENSSL_LIBRARIES}
+          ${PTHREAD_LIBRARIES}
+          ${ZLIB_LIBRARIES}
+          ${ACL_LIBRARIES}
+          ${LZO2_LIBRARIES}
+          ${CAP_LIBRARIES}
+          ${JANSSON_LIBRARIES}
+          ${CAM_LIBRARIES}
+          ${WINDOWS_LIBRARIES}
 )
 
 install(TARGETS bareos DESTINATION ${libdir})

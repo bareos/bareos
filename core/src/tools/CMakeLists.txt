@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,13 +23,17 @@ if(HAVE_WIN32)
   list(APPEND BSMTPSRCS ../win32/tools/bsmtpres.rc)
 endif()
 add_executable(bsmtp ${BSMTPSRCS})
-target_link_libraries(bsmtp bareos ${JANSSON_LIBRARIES})
+target_link_libraries(bsmtp bareos ${JANSSON_LIBRARIES} ${WINDOWS_LIBRARIES})
 
 add_executable(drivetype drivetype.cc)
-target_link_libraries(drivetype bareos bareosfind ${JANSSON_LIBRARIES})
+target_link_libraries(
+  drivetype bareos bareosfind ${JANSSON_LIBRARIES} ${ACL_LIBRARIES}
+)
 
 add_executable(fstype fstype.cc)
-target_link_libraries(fstype bareos bareosfind ${JANSSON_LIBRARIES})
+target_link_libraries(
+  fstype bareos bareosfind ${JANSSON_LIBRARIES} ${ACL_LIBRARIES}
+)
 
 set(BREGEXSRCS bregex.cc)
 if(HAVE_WIN32)
@@ -51,7 +55,9 @@ target_link_libraries(bscrypto bareos ${JANSSON_LIBRARIES})
 if(NOT HAVE_WIN32)
 
   add_executable(btestls btestls.cc)
-  target_link_libraries(btestls bareosfind bareos ${JANSSON_LIBRARIES})
+  target_link_libraries(
+    btestls bareosfind bareos ${JANSSON_LIBRARIES} ${ACL_LIBRARIES}
+  )
 
   add_executable(bpluginfo bpluginfo.cc)
   target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} ${JANSSON_LIBRARIES})
