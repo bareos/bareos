@@ -22,12 +22,12 @@
 local_db_stop_server() {
   echo "stop db server"
   if [ $UID -eq 0 ]; then
-    su postgres -c "pg_ctl --pgdata=data stop"
+    su postgres -c "${POSTGRES_BIN_PATH}/pg_ctl  --pgdata=data stop" || :
   else
-    pg_ctl --silent --pgdata=data stop
+    ${POSTGRES_BIN_PATH}/pg_ctl  --silent --pgdata=data stop || :
   fi
   tries=10
-  while psql --host="$1" --list > /dev/null 2>&1; do
+  while ${POSTGRES_BIN_PATH}/psql --host="$1" --list > /dev/null 2>&1; do
     echo " -- $tries -- "
     [ $((tries-=1)) -eq 0 ] && {
       echo "Could not stop postgres server"
@@ -43,9 +43,9 @@ local_db_prepare_files() {
   mkdir tmp data log wal_archive
   if [ $UID -eq 0 ]; then
     chown postgres  tmp data log wal_archive
-    LANG= su postgres -c "pg_ctl --pgdata=data --log=log/postgres.log initdb"
+    LANG= su postgres -c "${POSTGRES_BIN_PATH}/pg_ctl  --pgdata=data --log=log/postgres.log initdb"
   else
-    LANG= pg_ctl --silent --pgdata=data --log=log/postgres.log initdb
+    LANG= ${POSTGRES_BIN_PATH}/pg_ctl  --silent --pgdata=data --log=log/postgres.log initdb
   fi
   sed -i.bak "s@#listen_addresses.*@listen_addresses = ''@g" data/postgresql.conf
   sed -i.bak "s@#unix_socket_directories.*@unix_socket_directories = \'$1\'@g" data/postgresql.conf
@@ -62,12 +62,12 @@ local_db_prepare_files() {
 local_db_start_server() {
   echo "start db server"
   if [ $UID -eq 0 ]; then
-    su postgres -c "pg_ctl -w --pgdata=data --log=log/logfile start"
+    su postgres -c "${POSTGRES_BIN_PATH}/pg_ctl  -w --pgdata=data --log=log/logfile start"
   else
-    pg_ctl --silent --pgdata=data --log=log/logfile start
+    ${POSTGRES_BIN_PATH}/pg_ctl -w --pgdata=data --log=log/logfile start
   fi
 #  tries=60
-#  while ! psql --host="$1" --list > /dev/null 2>&1; do
+#  while ! ${POSTGRES_BIN_PATH}/psql --host="$1" --list > /dev/null 2>&1; do
 #    [ $((tries-=1)) -eq 0 ] && {
 #      echo "Could not start postgres server"
 #      return 1
@@ -76,7 +76,7 @@ local_db_start_server() {
 #  done
 
 #  tries=60
-#  while ! echo "select pg_is_in_recovery()" | psql --host="$1" postgres | grep -q -e "^ f$" ; do
+#  while ! echo "select pg_is_in_recovery()" | ${POSTGRES_BIN_PATH}/psql --host="$1" postgres | grep -q -e "^ f$" ; do
 #    [ $((tries-=1)) -eq 0 ] && {
 #      echo "Could not start postgres server (still recovering)"
 #      return 1
@@ -89,10 +89,10 @@ local_db_start_server() {
 
 local_db_create_superuser_role() {
   if [ $UID -eq 0 ]; then
-    su postgres -c "createuser -s --host=$1 root"
-    su postgres -c "createdb   --host=$1 root"
+    su postgres -c "${POSTGRES_BIN_PATH}/createuser  -s --host=$1 root"
+    su postgres -c "${POSTGRES_BIN_PATH}/createdb    --host=$1 root"
   else
-    echo "CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN" | psql -h "$1" postgres
+    echo "CREATE ROLE root WITH SUPERUSER CREATEDB CREATEROLE REPLICATION LOGIN" | ${POSTGRES_BIN_PATH}/psql -h "$1" postgres
   fi
 }
 
@@ -102,9 +102,9 @@ setup_local_db() {
   if ! local_db_start_server "$1"; then return 1; fi
   local_db_create_superuser_role "$1"
   if [ $UID -eq 0 ]; then
-    echo stop server with "su postgres -c 'pg_ctl --pgdata=data stop'"
+    echo stop server with "su postgres -c '${POSTGRES_BIN_PATH}/pg_ctl  --pgdata=data stop'"
   else
-    echo stop server with "pg_ctl --pgdata=data stop"
+    echo stop server with "${POSTGRES_BIN_PATH}/pg_ctl  --pgdata=data stop"
   fi
   return 0
 }

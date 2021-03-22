@@ -241,6 +241,15 @@ macro(prepare_testdir_for_daemon_run)
   set(sd_backenddir ${SD_BACKEND_DIR_TO_TEST})
   set(BAREOS_WEBUI_PUBLIC_DIR ${WEBUI_PUBLIC_DIR_TO_TEST})
 
+  set(dbHost ${current_test_directory}/tmp)
+  string(LENGTH ${dbHost} dbHostLength)
+  if(${dbHostLength} GREATER 110) # psql does not accept PGHOST length > 127
+    # message( STATUS "${current_test_directory}/tmp is too
+    # long(${dbHostLength}) PGHOST, using ${dbHost}" )
+    set(dbHost /tmp/${TEST_NAME})
+    file(MAKE_DIRECTORY ${dbHost})
+  endif()
+
   if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
     set(bin /bin)
     set(sbin /sbin)
@@ -329,6 +338,11 @@ endmacro()
 # Main starts here...
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
+
+find_program(PG_CTL pg_ctl /usr/lib/postgresql/*/bin /usr/bin /bin)
+get_filename_component(POSTGRES_BIN_PATH ${PG_CTL} DIRECTORY)
+# message(STATUS "PG_CTL is ${PG_CTL}")
+message(STATUS "POSTGRES_BIN_PATH is ${POSTGRES_BIN_PATH}")
 
 find_program(PERL perl)
 
