@@ -626,15 +626,10 @@ set(SYSTEM_TESTS_DISABLED # initially empty
 # add tests also here that are unreliable they are excluded when running tests
 # during build in jenkins
 set(SYSTEM_TESTS_BROKEN
-    dbcopy-mysql-postgresql
-    py2plug-fd-postgres
-    py3plug-fd-local-fileset
-    py3plug-fd-postgres
-    python-bareos
-    scheduler-backup
-    # the next two fail on FreeBSD 11.4
-    filesets
-    py3plug-fd-local-fileset-restoreobject
+    python-bareos # Fails on FreeBSD
+    py3plug-fd-local-fileset # Fails with UnicodeEncodeError: 'utf-8' codec
+                             # can't encode characters in position 133-142:
+                             # surrogates not allowed
 )
 
 set(glusterfs_uri
