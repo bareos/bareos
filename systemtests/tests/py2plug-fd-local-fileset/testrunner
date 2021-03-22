@@ -43,6 +43,7 @@ setup_data "$@"
 find ${tmp}/data/weird-files -type l -exec rm {} \;
 find tmp/data/weird-files -links +1 -type f -exec rm {} \;
 
+locale
 
 start_test
 
@@ -50,7 +51,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
 @$out $tmp/log1.out
-setdebug level=100 storage=File
+setdebug level=800 client trace=1
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
 status director
@@ -58,6 +59,16 @@ status client
 status storage=File
 wait
 messages
+quit
+END_OF_DATA
+
+run_bareos "$@"
+cat ${working_dir}/*.trace
+check_for_zombie_jobs storage=File
+stop_bareos
+
+
+cat <<END_OF_DATA2 >$tmp/bconcmds
 @#
 @# now do a restore
 @#
@@ -68,13 +79,20 @@ yes
 wait
 messages
 quit
-END_OF_DATA
+END_OF_DATA2
 
 run_bareos "$@"
 check_for_zombie_jobs storage=File
 stop_bareos
 
+
+
+
+
 check_two_logs
 #list=( $(find "${BackupDirectory}" -type f) )
 check_restore_diff ${BackupDirectory}
+
+
+
 end_test
