@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -97,7 +97,7 @@ local_db_create_superuser_role() {
 }
 
 setup_local_db() {
-  local_db_stop_server "$1"
+  local_db_stop_server "$1" || true
   local_db_prepare_files "$1"
   if ! local_db_start_server "$1"; then return 1; fi
   local_db_create_superuser_role "$1"
