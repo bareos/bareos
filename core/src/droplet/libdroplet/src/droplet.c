@@ -37,11 +37,9 @@
 
 int dpl_header_size;
 
-const char *
-dpl_status_str(dpl_status_t status)
+const char* dpl_status_str(dpl_status_t status)
 {
-  switch (status)
-    {
+  switch (status) {
     case DPL_SUCCESS:
       return "DPL_SUCCESS";
     case DPL_FAILURE:
@@ -86,7 +84,7 @@ dpl_status_str(dpl_status_t status)
       return "DPL_ECONFLICT";
     case DPL_ERANGEUNAVAIL:
       return "DPL_ERANGEUNAVAIL";
-    }
+  }
 
   return "Unknown error";
 }
@@ -110,8 +108,7 @@ dpl_status_str(dpl_status_t status)
  *
  * @retval DPL_SUCCESS this function cannot currently fail
  */
-dpl_status_t
-dpl_init()
+dpl_status_t dpl_init()
 {
   SSL_library_init();
   SSL_load_error_strings();
@@ -138,8 +135,7 @@ dpl_init()
  * Must be called once and only once after all Droplet library calls
  * have stopped.
  */
-void
-dpl_free()
+void dpl_free()
 {
   ERR_clear_error();
 #if (OPENSSL_VERSION_NUMBER < 0x10000000L)
@@ -197,51 +193,44 @@ dpl_free()
  * between all threads.
  */
 
-void
-dpl_ctx_lock(dpl_ctx_t *ctx)
+void dpl_ctx_lock(dpl_ctx_t* ctx)
 {
   pthread_mutex_lock(&ctx->lock);
   assert(0 == ctx->canary);
   ctx->canary++;
 }
 
-void
-dpl_ctx_unlock(dpl_ctx_t *ctx)
+void dpl_ctx_unlock(dpl_ctx_t* ctx)
 {
   ctx->canary--;
   assert(0 == ctx->canary);
   pthread_mutex_unlock(&ctx->lock);
 }
 
-static dpl_ctx_t *
-dpl_ctx_alloc(void)
+static dpl_ctx_t* dpl_ctx_alloc(void)
 {
-  dpl_ctx_t *ctx;
+  dpl_ctx_t* ctx;
 
-  ctx = malloc(sizeof (*ctx));
-  if (NULL == ctx)
-    return NULL;
+  ctx = malloc(sizeof(*ctx));
+  if (NULL == ctx) return NULL;
 
-  memset(ctx, 0, sizeof (*ctx));
+  memset(ctx, 0, sizeof(*ctx));
 
   pthread_mutex_init(&ctx->lock, NULL);
 
   return ctx;
 }
 
-static void
-dpl_ctx_post_load(dpl_ctx_t *ctx)
+static void dpl_ctx_post_load(dpl_ctx_t* ctx)
 {
-  char *str;
+  char* str;
 
   if ((str = getenv("DPL_TRACE_LEVEL")))
     ctx->trace_level = strtoul(str, NULL, 0);
 
-  if ((str = getenv("DPL_TRACE_BUFFERS")))
-    ctx->trace_buffers = atoi(str);
+  if ((str = getenv("DPL_TRACE_BUFFERS"))) ctx->trace_buffers = atoi(str);
 
-  if ((str = getenv("DPL_TRACE_BINARY")))
-    ctx->trace_binary = atoi(str);
+  if ((str = getenv("DPL_TRACE_BINARY"))) ctx->trace_binary = atoi(str);
 
   dpl_header_size = ctx->header_size;
 }
@@ -256,7 +245,8 @@ dpl_ctx_post_load(dpl_ctx_t *ctx)
  * fails there is no way for the caller to discover what went wrong.
  *
  * The droplet directory is used as the base directory for finding several
- * important files, notably the profile file.  It is the first non-NULL pathname of:
+ * important files, notably the profile file.  It is the first non-NULL pathname
+ * of:
  * @arg the parameter @a droplet_dir, or
  * @arg the environmental variable `DPLDIR`, or
  * @arg `"~/.droplet/"`.
@@ -278,26 +268,22 @@ dpl_ctx_post_load(dpl_ctx_t *ctx)
  * @param profile_name name of the profile to use, or `NULL`
  * @return a new context, or NULL on error
  */
-dpl_ctx_t *
-dpl_ctx_new(const char *droplet_dir,
-            const char *profile_name)
+dpl_ctx_t* dpl_ctx_new(const char* droplet_dir, const char* profile_name)
 {
-  dpl_ctx_t *ctx;
+  dpl_ctx_t* ctx;
   int ret;
 
   ctx = dpl_ctx_alloc();
-  if (NULL == ctx)
-    {
-      DPL_LOG(NULL, DPL_ERROR, "No memory for droplet context creation.");
-      return NULL;
-    }
+  if (NULL == ctx) {
+    DPL_LOG(NULL, DPL_ERROR, "No memory for droplet context creation.");
+    return NULL;
+  }
 
   ret = dpl_profile_load(ctx, droplet_dir, profile_name);
-  if (DPL_SUCCESS != ret)
-    {
-      dpl_ctx_free(ctx);
-      return NULL;
-    }
+  if (DPL_SUCCESS != ret) {
+    dpl_ctx_free(ctx);
+    return NULL;
+  }
 
   dpl_ctx_post_load(ctx);
 
@@ -325,15 +311,13 @@ dpl_ctx_new(const char *droplet_dir,
  * @param profile a dict containing profile variables
  * @return a new context or NULL on error
  */
-dpl_ctx_t *
-dpl_ctx_new_from_dict(const dpl_dict_t *profile)
+dpl_ctx_t* dpl_ctx_new_from_dict(const dpl_dict_t* profile)
 {
-  dpl_ctx_t     *ctx;
-  int           ret;
+  dpl_ctx_t* ctx;
+  int ret;
 
   ctx = dpl_ctx_alloc();
-  if (NULL == ctx)
-    return NULL;
+  if (NULL == ctx) return NULL;
 
   ret = dpl_profile_set_from_dict(ctx, profile);
   if (DPL_SUCCESS != ret) {
@@ -359,8 +343,7 @@ dpl_ctx_new_from_dict(const dpl_dict_t *profile)
  * calling `dpl_ctx_free()`.
  */
 
-void
-dpl_ctx_free(dpl_ctx_t *ctx)
+void dpl_ctx_free(dpl_ctx_t* ctx)
 {
   dpl_profile_free(ctx);
   pthread_mutex_destroy(&ctx->lock);
@@ -373,38 +356,32 @@ dpl_ctx_free(dpl_ctx_t *ctx)
  * eval
  */
 
-double
-dpl_price_storage(dpl_ctx_t *ctx,
-                  size_t size)
+double dpl_price_storage(dpl_ctx_t* ctx, size_t size)
 {
   int i;
-  struct dpl_data_pricing *datp = NULL;
+  struct dpl_data_pricing* datp = NULL;
 
-  for (i = 0;i < ctx->data_pricing[DPL_DATA_TYPE_STORAGE]->n_items;i++)
-    {
-      datp = (struct dpl_data_pricing *) dpl_vec_get(ctx->data_pricing[DPL_DATA_TYPE_STORAGE], i);
+  for (i = 0; i < ctx->data_pricing[DPL_DATA_TYPE_STORAGE]->n_items; i++) {
+    datp = (struct dpl_data_pricing*)dpl_vec_get(
+        ctx->data_pricing[DPL_DATA_TYPE_STORAGE], i);
 
-      //dpl_data_pricing_print(datp);
+    // dpl_data_pricing_print(datp);
 
-      if (size < datp->limit)
-        break ;
-    }
+    if (size < datp->limit) break;
+  }
 
-  if (NULL == datp)
-    return .0;
+  if (NULL == datp) return .0;
 
-  return ((double) size / (double) datp->quantity) * datp->price;
+  return ((double)size / (double)datp->quantity) * datp->price;
 }
 
-char *
-dpl_price_storage_str(dpl_ctx_t *ctx,
-                      size_t size)
+char* dpl_price_storage_str(dpl_ctx_t* ctx, size_t size)
 {
- static char str[256];
+  static char str[256];
 
- snprintf(str, sizeof (str), "$%.03f", dpl_price_storage(ctx, size));
+  snprintf(str, sizeof(str), "$%.03f", dpl_price_storage(ctx, size));
 
- return str;
+  return str;
 }
 
 /**
@@ -416,11 +393,10 @@ dpl_price_storage_str(dpl_ctx_t *ctx,
  *
  * @return
  */
-char *
-dpl_size_str(uint64_t size)
+char* dpl_size_str(uint64_t size)
 {
   static char str[256];
-  char *unit;
+  char* unit;
   unsigned long long divisor;
   double size_dbl;
 
@@ -428,30 +404,23 @@ dpl_size_str(uint64_t size)
 
   if (size < 1000)
     unit = "";
-  else if (size < (1000*1000))
-    {
-      divisor = 1000;
-      unit = "KB";
-    }
-  else if (size < (1000*1000*1000))
-    {
-      divisor = 1000*1000;
-      unit = "MB";
-    }
-  else if (size < (1000LL*1000LL*1000LL*1000LL))
-    {
-      divisor = 1000LL*1000LL*1000LL;
-      unit = "GB";
-    }
-  else
-    {
-      divisor = 1000LL*1000LL*1000LL*1000LL;
-      unit = "PB";
-    }
+  else if (size < (1000 * 1000)) {
+    divisor = 1000;
+    unit = "KB";
+  } else if (size < (1000 * 1000 * 1000)) {
+    divisor = 1000 * 1000;
+    unit = "MB";
+  } else if (size < (1000LL * 1000LL * 1000LL * 1000LL)) {
+    divisor = 1000LL * 1000LL * 1000LL;
+    unit = "GB";
+  } else {
+    divisor = 1000LL * 1000LL * 1000LL * 1000LL;
+    unit = "PB";
+  }
 
   size_dbl = (double)size / (double)divisor;
 
-  snprintf(str, sizeof (str), "%.02f%s", size_dbl, unit);
+  snprintf(str, sizeof(str), "%.02f%s", size_dbl, unit);
 
   return str;
 }
@@ -467,19 +436,16 @@ extern dpl_backend_t dpl_backend_srws;
 extern dpl_backend_t dpl_backend_sproxyd;
 extern dpl_backend_t dpl_backend_posix;
 
-int
-dpl_backend_set(dpl_ctx_t *ctx, const char *name)
+int dpl_backend_set(dpl_ctx_t* ctx, const char* name)
 {
   int ret = 0;
 
   if (!strcmp(name, "s3"))
     ctx->backend = &dpl_backend_s3;
-  else if (!strcmp(name, "cdmi"))
-  {
+  else if (!strcmp(name, "cdmi")) {
     ctx->preserve_root_path = 1;
     ctx->backend = &dpl_backend_cdmi;
-  }
-  else if (!strcmp(name, "swift"))
+  } else if (!strcmp(name, "swift"))
     ctx->backend = &dpl_backend_swift;
   else if (!strcmp(name, "srws"))
     ctx->backend = &dpl_backend_srws;
@@ -488,29 +454,26 @@ dpl_backend_set(dpl_ctx_t *ctx, const char *name)
   else if (!strcmp(name, "posix"))
     ctx->backend = &dpl_backend_posix;
   else
-      ret = -1;
+    ret = -1;
 
   return ret;
 }
 
-dpl_status_t
-dpl_print_capabilities(dpl_ctx_t *ctx)
+dpl_status_t dpl_print_capabilities(dpl_ctx_t* ctx)
 {
   dpl_status_t ret, ret2;
   dpl_capability_t mask;
 
-  if (NULL == ctx->backend->get_capabilities)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
+  if (NULL == ctx->backend->get_capabilities) {
+    ret = DPL_ENOTSUPP;
+    goto end;
+  }
+
   ret2 = ctx->backend->get_capabilities(ctx, &mask);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   printf("buckets:\t\t%d\n", mask & DPL_CAP_BUCKETS ? 1 : 0);
   printf("fnames:\t\t\t%d\n", mask & DPL_CAP_FNAMES ? 1 : 0);
@@ -525,150 +488,119 @@ dpl_print_capabilities(dpl_ctx_t *ctx)
   printf("put_range:\t\t%d\n", mask & DPL_CAP_PUT_RANGE ? 1 : 0);
 
   ret = DPL_SUCCESS;
-  
- end:
+
+end:
 
   return ret;
 }
 
 /* other */
 
-void
-dpl_bucket_free(dpl_bucket_t *bucket)
+void dpl_bucket_free(dpl_bucket_t* bucket)
 {
   free(bucket->name);
   free(bucket);
 }
 
-void
-dpl_vec_buckets_free(dpl_vec_t *vec)
-{
-  int i;
-
-  for (i = 0;i < vec->n_items;i++)
-    dpl_bucket_free((dpl_bucket_t *) dpl_vec_get(vec, i));
-  dpl_vec_free(vec);
-}
-
-void
-dpl_object_free(dpl_object_t *object)
-{
-  if (NULL != object->path)
-    free(object->path);
-
-  free(object);
-}
-
-void
-dpl_vec_objects_free(dpl_vec_t *vec)
-{
-  int i;
-
-  for (i = 0;i < vec->n_items;i++)
-    dpl_object_free((dpl_object_t *) dpl_vec_get(vec, i));
-  dpl_vec_free(vec);
-}
-
-void
-dpl_delete_object_free(dpl_delete_object_t *object)
-{
-  if (object->name != NULL)
-    free(object->name);
-
-  if (object->version_id != NULL)
-    free(object->version_id);
-
-  if (object->error != NULL)
-    free(object->error);
-
-  free(object);
-}
-
-void
-dpl_vec_delete_objects_free(dpl_vec_t *vec)
+void dpl_vec_buckets_free(dpl_vec_t* vec)
 {
   int i;
 
   for (i = 0; i < vec->n_items; i++)
-    dpl_delete_object_free((dpl_delete_object_t *) dpl_vec_get(vec, i));
+    dpl_bucket_free((dpl_bucket_t*)dpl_vec_get(vec, i));
   dpl_vec_free(vec);
 }
 
-void
-dpl_common_prefix_free(dpl_common_prefix_t *common_prefix)
+void dpl_object_free(dpl_object_t* object)
 {
-  if (NULL != common_prefix->prefix)
-    free(common_prefix->prefix);
+  if (NULL != object->path) free(object->path);
+
+  free(object);
+}
+
+void dpl_vec_objects_free(dpl_vec_t* vec)
+{
+  int i;
+
+  for (i = 0; i < vec->n_items; i++)
+    dpl_object_free((dpl_object_t*)dpl_vec_get(vec, i));
+  dpl_vec_free(vec);
+}
+
+void dpl_delete_object_free(dpl_delete_object_t* object)
+{
+  if (object->name != NULL) free(object->name);
+
+  if (object->version_id != NULL) free(object->version_id);
+
+  if (object->error != NULL) free(object->error);
+
+  free(object);
+}
+
+void dpl_vec_delete_objects_free(dpl_vec_t* vec)
+{
+  int i;
+
+  for (i = 0; i < vec->n_items; i++)
+    dpl_delete_object_free((dpl_delete_object_t*)dpl_vec_get(vec, i));
+  dpl_vec_free(vec);
+}
+
+void dpl_common_prefix_free(dpl_common_prefix_t* common_prefix)
+{
+  if (NULL != common_prefix->prefix) free(common_prefix->prefix);
 
   free(common_prefix);
 }
 
-void
-dpl_vec_common_prefixes_free(dpl_vec_t *vec)
+void dpl_vec_common_prefixes_free(dpl_vec_t* vec)
 {
   int i;
 
-  for (i = 0;i < vec->n_items;i++)
-    dpl_common_prefix_free((dpl_common_prefix_t *) dpl_vec_get(vec, i));
+  for (i = 0; i < vec->n_items; i++)
+    dpl_common_prefix_free((dpl_common_prefix_t*)dpl_vec_get(vec, i));
   dpl_vec_free(vec);
 }
 
-dpl_option_t *
-dpl_option_dup(const dpl_option_t *src)
+dpl_option_t* dpl_option_dup(const dpl_option_t* src)
 {
-  dpl_option_t *dst = NULL;
+  dpl_option_t* dst = NULL;
 
-  dst = malloc(sizeof (*dst));
-  if (NULL == dst)
-    return NULL;
-  
-  memcpy(dst, src, sizeof (*src));
-  
+  dst = malloc(sizeof(*dst));
+  if (NULL == dst) return NULL;
+
+  memcpy(dst, src, sizeof(*src));
+
   return dst;
 }
 
-void
-dpl_option_free(dpl_option_t *option)
-{
-  free(option);
-}
+void dpl_option_free(dpl_option_t* option) { free(option); }
 
-dpl_condition_t *
-dpl_condition_dup(const dpl_condition_t *src)
+dpl_condition_t* dpl_condition_dup(const dpl_condition_t* src)
 {
-  dpl_condition_t *dst = NULL;
+  dpl_condition_t* dst = NULL;
 
-  dst = malloc(sizeof (*dst));
-  if (NULL == dst)
-    return NULL;
-  
-  memcpy(dst, src, sizeof (*src));
-  
+  dst = malloc(sizeof(*dst));
+  if (NULL == dst) return NULL;
+
+  memcpy(dst, src, sizeof(*src));
+
   return dst;
 }
 
-void
-dpl_condition_free(dpl_condition_t *condition)
-{
-  free(condition);
-}
+void dpl_condition_free(dpl_condition_t* condition) { free(condition); }
 
-dpl_range_t *
-dpl_range_dup(const dpl_range_t *src)
+dpl_range_t* dpl_range_dup(const dpl_range_t* src)
 {
-  dpl_range_t *dst = NULL;
+  dpl_range_t* dst = NULL;
 
-  dst = malloc(sizeof (*dst));
-  if (NULL == dst)
-    return NULL;
-  
-  memcpy(dst, src, sizeof (*src));
-  
+  dst = malloc(sizeof(*dst));
+  if (NULL == dst) return NULL;
+
+  memcpy(dst, src, sizeof(*src));
+
   return dst;
 }
 
-void
-dpl_range_free(dpl_range_t *range)
-{
-  free(range);
-}
+void dpl_range_free(dpl_range_t* range) { free(range); }
