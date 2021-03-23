@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -120,6 +120,17 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.options["accurate"] = True
 
     def parse_plugin_definition(self, plugindef):
+        if version_info.major >= 3 and version_info.minor > 7:
+            jobmessage(
+                M_FATAL,
+                "Need Python version < 3.8 for Bareos Libcloud (current version: %d.%d.%d)"
+                % (
+                    version_info.major,
+                    version_info.minor,
+                    version_info.micro,
+                ),
+            )
+            return bRC_Error
         debugmessage(100, "parse_plugin_definition()")
         config_filename = self.options.get("config_file")
         if config_filename:
@@ -344,11 +355,11 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         statp = bareosfd.StatPacket()
 
-        statp.st_size = self.current_backup_task['size']
-        statp.st_mtime = self.current_backup_task['mtime']
+        statp.st_size = self.current_backup_task["size"]
+        statp.st_mtime = self.current_backup_task["mtime"]
         statp.st_atime = 0
         statp.st_ctime = 0
-        
+
         savepkt.statp = statp
         savepkt.fname = StringCodec.encode_for_backup(filename)
         savepkt.type = FT_REG
