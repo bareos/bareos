@@ -37,59 +37,54 @@
 /** @file */
 
 /* #define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__) */
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt, ...)
 
 //#define DEBUG
 
-dpl_ctx_t *dpl_default_conn_ctx = NULL;
+dpl_ctx_t* dpl_default_conn_ctx = NULL;
 
-static u_int
-conn_hashcode(const unsigned char *data,
-              size_t len)
+static u_int conn_hashcode(const unsigned char* data, size_t len)
 {
-  const unsigned char *p;
+  const unsigned char* p;
   u_int h, g;
   int i = 0;
 
   h = g = 0;
 
-  for (p=data;i < len;p=p+1,i++)
-    {
-      h = (h<<4)+(*p);
-      if ((g=h&0xf0000000))
-        {
-          h=h^(g>>24);
-          h=h^g;
-        }
+  for (p = data; i < len; p = p + 1, i++) {
+    h = (h << 4) + (*p);
+    if ((g = h & 0xf0000000)) {
+      h = h ^ (g >> 24);
+      h = h ^ g;
     }
+  }
   return h;
 }
 
-static dpl_conn_t *
-dpl_conn_get_nolock(dpl_ctx_t *ctx,
-                    struct hostent *host, u_short port)
+static dpl_conn_t* dpl_conn_get_nolock(dpl_ctx_t* ctx,
+                                       struct hostent* host,
+                                       u_short port)
 {
-  u_int                 bucket;
-  struct dpl_hash_info  hash_info;
-  dpl_conn_t            *conn;
+  u_int bucket;
+  struct dpl_hash_info hash_info;
+  dpl_conn_t* conn;
 
-  memset(&hash_info, 0, sizeof (hash_info));
+  memset(&hash_info, 0, sizeof(hash_info));
 
   memcpy(&hash_info.addr, host->h_addr, host->h_length);
   hash_info.port = port;
 
-  bucket = conn_hashcode((unsigned char *)&hash_info, sizeof (hash_info)) % ctx->n_conn_buckets;
+  bucket = conn_hashcode((unsigned char*)&hash_info, sizeof(hash_info))
+           % ctx->n_conn_buckets;
 
-  for (conn = ctx->conn_buckets[bucket];conn;conn = conn->prev) {
-    if (!memcmp(&conn->hash_info, &hash_info, sizeof (hash_info)))
-      return conn;
+  for (conn = ctx->conn_buckets[bucket]; conn; conn = conn->prev) {
+    if (!memcmp(&conn->hash_info, &hash_info, sizeof(hash_info))) return conn;
   }
 
   return NULL;
 }
 
-static int
-is_usable(dpl_conn_t *conn)
+static int is_usable(dpl_conn_t* conn)
 {
   struct pollfd pfd;
   int retval;
@@ -98,30 +93,28 @@ is_usable(dpl_conn_t *conn)
 
   pfd.fd = conn->fd;
 #ifdef POLLRDHUP
-  pfd.events = POLLIN|POLLPRI|POLLRDHUP;
+  pfd.events = POLLIN | POLLPRI | POLLRDHUP;
 #else
-  pfd.events = POLLIN|POLLPRI;
+  pfd.events = POLLIN | POLLPRI;
 #endif
 
   retval = poll(&pfd, 1, 0);
 
-  switch (retval)
-    {
-    case 1:
-      {
-        char  buf[1];
-        int   size;
+  switch (retval) {
+    case 1: {
+      char buf[1];
+      int size;
 
-        if (conn->ctx->use_https)
-          size = SSL_read(conn->ssl, buf, sizeof(buf));
-        else
-          size = recv(conn->fd, buf, sizeof(buf), MSG_DONTWAIT|MSG_PEEK);
+      if (conn->ctx->use_https)
+        size = SSL_read(conn->ssl, buf, sizeof(buf));
+      else
+        size = recv(conn->fd, buf, sizeof(buf), MSG_DONTWAIT | MSG_PEEK);
 
-        if (size == 0) {
-          DPRINTF("is_usable: rv %d returning False\n", retval);
-          return 0;
-        }
+      if (size == 0) {
+        DPRINTF("is_usable: rv %d returning False\n", retval);
+        return 0;
       }
+    }
       /* fall down */
     case 0:
       DPRINTF("is_usable: rv %d returning True\n", retval);
@@ -129,17 +122,18 @@ is_usable(dpl_conn_t *conn)
     default:
       DPRINTF("is_usable: rv %d returning False\n", retval);
       return 0;
-    }
+  }
 
   return 0; /* not reached */
 }
 
-static void
-dpl_conn_add_nolock(dpl_conn_t *conn)
+static void dpl_conn_add_nolock(dpl_conn_t* conn)
 {
   u_int bucket;
 
-  bucket = conn_hashcode((unsigned char *) &conn->hash_info, sizeof (conn->hash_info)) % conn->ctx->n_conn_buckets;
+  bucket
+      = conn_hashcode((unsigned char*)&conn->hash_info, sizeof(conn->hash_info))
+        % conn->ctx->n_conn_buckets;
 
   conn->next = NULL;
   conn->prev = conn->ctx->conn_buckets[bucket];
@@ -148,32 +142,26 @@ dpl_conn_add_nolock(dpl_conn_t *conn)
     conn->ctx->conn_buckets[bucket]->next = conn;
 
   conn->ctx->conn_buckets[bucket] = conn;
-
 }
 
-static void
-dpl_conn_remove_nolock(dpl_ctx_t *ctx,
-                       dpl_conn_t *conn)
+static void dpl_conn_remove_nolock(dpl_ctx_t* ctx, dpl_conn_t* conn)
 {
   u_int bucket;
 
-  bucket = conn_hashcode((unsigned char *) &conn->hash_info, sizeof (conn->hash_info)) % ctx->n_conn_buckets;
+  bucket
+      = conn_hashcode((unsigned char*)&conn->hash_info, sizeof(conn->hash_info))
+        % ctx->n_conn_buckets;
 
-  if (conn->prev)
-    conn->prev->next = conn->next;
+  if (conn->prev) conn->prev->next = conn->next;
 
-  if (conn->next)
-    conn->next->prev = conn->prev;
+  if (conn->next) conn->next->prev = conn->prev;
 
-  if (ctx->conn_buckets[bucket] == conn)
-    ctx->conn_buckets[bucket] = conn->prev;
-
+  if (ctx->conn_buckets[bucket] == conn) ctx->conn_buckets[bucket] = conn->prev;
 }
 
-static void
-safe_close(dpl_ctx_t *ctx, int fd)
+static void safe_close(dpl_ctx_t* ctx, int fd)
 {
-  int   ret;
+  int ret;
 
   DPRINTF("closing fd=%d\n", fd);
 
@@ -185,52 +173,55 @@ safe_close(dpl_ctx_t *ctx, int fd)
     DPL_TRACE(ctx, DPL_TRACE_WARN, "close failed: %s", strerror(errno));
 }
 
-static void
-dpl_conn_free(dpl_conn_t *conn)
+static void dpl_conn_free(dpl_conn_t* conn)
 {
   if (NULL != conn->ssl) {
     int ssl_ret;
     char buf[256];
     unsigned long ssl_err;
-    SSL_set_shutdown(conn->ssl, SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN);
+    SSL_set_shutdown(conn->ssl, SSL_SENT_SHUTDOWN | SSL_RECEIVED_SHUTDOWN);
     ssl_ret = SSL_shutdown(conn->ssl);
     if (1 == ssl_ret) {
-      DPL_TRACE(conn->ctx, DPL_TRACE_WARN, "SSL shutdown was successfully completed");
+      DPL_TRACE(conn->ctx, DPL_TRACE_WARN,
+                "SSL shutdown was successfully completed");
     } else if (0 == ssl_ret) {
       ssl_err = SSL_get_error(conn->ssl, ssl_ret);
       ERR_error_string_n(ssl_err, buf, sizeof buf);
-      DPL_TRACE(conn->ctx, DPL_TRACE_WARN, "SSL shutdown is not yet finished, calling for a second time: %s", buf);
+      DPL_TRACE(
+          conn->ctx, DPL_TRACE_WARN,
+          "SSL shutdown is not yet finished, calling for a second time: %s",
+          buf);
       ssl_ret = SSL_shutdown(conn->ssl);
       if (1 == ssl_ret) {
-        DPL_TRACE(conn->ctx, DPL_TRACE_WARN, "SSL shutdown was successfully completed");
+        DPL_TRACE(conn->ctx, DPL_TRACE_WARN,
+                  "SSL shutdown was successfully completed");
       } else {
-        DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "SSL shutdown was not successfully completed");
+        DPL_TRACE(conn->ctx, DPL_TRACE_ERR,
+                  "SSL shutdown was not successfully completed");
       }
     } else if (0 > ssl_ret) {
       ssl_err = SSL_get_error(conn->ssl, ssl_ret);
       ERR_error_string_n(ssl_err, buf, sizeof buf);
-      DPL_TRACE(conn->ctx, DPL_TRACE_WARN, "SSL shutdown was not successful because a fatal error occurred: %s", buf);
+      DPL_TRACE(
+          conn->ctx, DPL_TRACE_WARN,
+          "SSL shutdown was not successful because a fatal error occurred: %s",
+          buf);
     }
     SSL_free(conn->ssl);
   }
 
-  if (-1 != conn->fd)
-    safe_close(conn->ctx, conn->fd);
+  if (-1 != conn->fd) safe_close(conn->ctx, conn->fd);
 
-  if (NULL != conn->read_buf)
-    free(conn->read_buf);
+  if (NULL != conn->read_buf) free(conn->read_buf);
 
-  if (NULL != conn->host)
-    free(conn->host);
+  if (NULL != conn->host) free(conn->host);
 
-  if (NULL != conn->port)
-    free(conn->port);
+  if (NULL != conn->port) free(conn->port);
 
   free(conn);
 }
 
-static void
-dpl_conn_terminate_nolock(dpl_conn_t *conn)
+static void dpl_conn_terminate_nolock(dpl_conn_t* conn)
 {
   DPL_TRACE(conn->ctx, DPL_TRACE_CONN, "conn_terminate conn=%p", conn);
 
@@ -238,14 +229,12 @@ dpl_conn_terminate_nolock(dpl_conn_t *conn)
   dpl_conn_free(conn);
 }
 
-static int
-do_connect(dpl_ctx_t *ctx,
-           struct hostent *host, u_short port)
+static int do_connect(dpl_ctx_t* ctx, struct hostent* host, u_short port)
 {
-  int                   fd = -1, ret, on, error;
-  struct pollfd         fds;
-  socklen_t             errorlen;
-  char                  ident[DPL_ADDR_IDENT_STRLEN];
+  int fd = -1, ret, on, error;
+  struct pollfd fds;
+  socklen_t errorlen;
+  char ident[DPL_ADDR_IDENT_STRLEN];
 
   fd = socket(host->h_addrtype, SOCK_STREAM, 0);
   if (fd == -1) {
@@ -255,128 +244,118 @@ do_connect(dpl_ctx_t *ctx,
 
   on = 1;
   ret = ioctl(fd, FIONBIO, &on);
-  if (-1 == ret)
-    {
-      DPL_LOG(ctx, DPL_ERROR, "ioctl(FIONBIO) failed: %s", strerror(errno));
-      safe_close(ctx, fd);
-      fd = -1;
-      goto end;
-    }
+  if (-1 == ret) {
+    DPL_LOG(ctx, DPL_ERROR, "ioctl(FIONBIO) failed: %s", strerror(errno));
+    safe_close(ctx, fd);
+    fd = -1;
+    goto end;
+  }
 
   dpl_addr_get_ident(host, port, ident, sizeof(ident));
   DPL_TRACE(ctx, DPL_TRACE_CONN, "connect %s", ident);
 
   if (host->h_addrtype == AF_INET) {
-    struct sockaddr_in    sin;
+    struct sockaddr_in sin;
 
     sin.sin_family = host->h_addrtype;
-    sin.sin_port   = htons(port);
+    sin.sin_port = htons(port);
     memcpy(&sin.sin_addr, host->h_addr, host->h_length);
 
-    ret = connect(fd, (struct sockaddr *) &sin, sizeof(sin));
+    ret = connect(fd, (struct sockaddr*)&sin, sizeof(sin));
   } else {
-    struct sockaddr_in6   sin;
+    struct sockaddr_in6 sin;
 
     sin.sin6_family = host->h_addrtype;
-    sin.sin6_port   = htons(port);
+    sin.sin6_port = htons(port);
     memcpy(&sin.sin6_addr, host->h_addr, host->h_length);
 
-    ret = connect(fd, (struct sockaddr *) &sin, sizeof(sin));
+    ret = connect(fd, (struct sockaddr*)&sin, sizeof(sin));
   }
 
-  if (-1 == ret)
-    {
-      if (EINPROGRESS != errno)
-	{
-	  DPL_LOG(ctx, DPL_ERROR, "Connect to server %s failed: %s", ident, strerror(errno));
-	  safe_close(ctx, fd);
-          fd = -1;
-          goto end;
-        }
+  if (-1 == ret) {
+    if (EINPROGRESS != errno) {
+      DPL_LOG(ctx, DPL_ERROR, "Connect to server %s failed: %s", ident,
+              strerror(errno));
+      safe_close(ctx, fd);
+      fd = -1;
+      goto end;
     }
+  }
 
- retry:
-  memset(&fds, 0, sizeof (fds));
+retry:
+  memset(&fds, 0, sizeof(fds));
   fds.fd = fd;
   fds.events = POLLOUT;
 
-  ret = poll(&fds, 1, ctx->conn_timeout*1000);
-  if (-1 == ret)
-    {
-      if (errno == EINTR)
-        goto retry;
-      DPL_LOG(ctx, DPL_ERROR, "poll failed: %s", strerror(errno));
-      safe_close(ctx, fd);
-      fd = -1;
-      goto end;
-    }
+  ret = poll(&fds, 1, ctx->conn_timeout * 1000);
+  if (-1 == ret) {
+    if (errno == EINTR) goto retry;
+    DPL_LOG(ctx, DPL_ERROR, "poll failed: %s", strerror(errno));
+    safe_close(ctx, fd);
+    fd = -1;
+    goto end;
+  }
 
-  if (0 == ret)
-    {
-      DPL_LOG(ctx, DPL_ERROR, "Timed out connecting to server %s after %d seconds",
-	      ident, ctx->conn_timeout);
-      safe_close(ctx, fd);
-      fd = -1;
-      goto end;
-    }
-  else if (!(fds.revents & POLLOUT))
-    {
-      DPL_LOG(ctx, DPL_ERROR, "poll returned strange results");
-      safe_close(ctx, fd);
-      fd = -1;
-      goto end;
-    }
+  if (0 == ret) {
+    DPL_LOG(ctx, DPL_ERROR,
+            "Timed out connecting to server %s after %d seconds", ident,
+            ctx->conn_timeout);
+    safe_close(ctx, fd);
+    fd = -1;
+    goto end;
+  } else if (!(fds.revents & POLLOUT)) {
+    DPL_LOG(ctx, DPL_ERROR, "poll returned strange results");
+    safe_close(ctx, fd);
+    fd = -1;
+    goto end;
+  }
 
   on = 0;
   ret = ioctl(fd, FIONBIO, &on);
-  if (-1 == ret)
-    {
-      DPL_LOG(ctx, DPL_ERROR, "ioctl(FIONBIO) failed: %s", strerror(errno));
-      safe_close(ctx, fd);
-      fd = -1;
-      goto end;
-    }
+  if (-1 == ret) {
+    DPL_LOG(ctx, DPL_ERROR, "ioctl(FIONBIO) failed: %s", strerror(errno));
+    safe_close(ctx, fd);
+    fd = -1;
+    goto end;
+  }
 
-  /* errors from the async connect() are reported through the SO_ERROR sockopt */
+  /* errors from the async connect() are reported through the SO_ERROR sockopt
+   */
 
   errorlen = sizeof(error);
   error = 0;
   ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &errorlen);
-  if (-1 == ret)
-    {
-      DPL_LOG(ctx, DPL_ERROR, "getsockopt(SO_ERROR) failed: %s", strerror(errno));
-      safe_close(ctx, fd);
-      fd = -1;
-      goto end;
-    }
+  if (-1 == ret) {
+    DPL_LOG(ctx, DPL_ERROR, "getsockopt(SO_ERROR) failed: %s", strerror(errno));
+    safe_close(ctx, fd);
+    fd = -1;
+    goto end;
+  }
 
-  if (error != 0)
-    {
-      DPL_LOG(ctx, DPL_ERROR, "Connect to server %s failed: %s", ident, strerror(error));
-      safe_close(ctx, fd);
-      fd = -1;
-      goto end;
-    }
+  if (error != 0) {
+    DPL_LOG(ctx, DPL_ERROR, "Connect to server %s failed: %s", ident,
+            strerror(error));
+    safe_close(ctx, fd);
+    fd = -1;
+    goto end;
+  }
 
- end:
+end:
 
   DPL_TRACE(ctx, DPL_TRACE_CONN, "connect fd=%d", fd);
 
   return fd;
 }
 
-static int
-init_ssl_conn(dpl_ctx_t *ctx, dpl_conn_t *conn)
+static int init_ssl_conn(dpl_ctx_t* ctx, dpl_conn_t* conn)
 {
   int ret;
 
   conn->ssl = SSL_new(ctx->ssl_ctx);
-  if (conn->ssl == NULL)
-    return 0;
+  if (conn->ssl == NULL) return 0;
 
   conn->bio = BIO_new_socket(conn->fd, BIO_NOCLOSE);
-  if (conn->bio == NULL)
-    return 0;
+  if (conn->bio == NULL) return 0;
 
   SSL_set_bio(conn->ssl, conn->bio, conn->bio);
 
@@ -392,15 +371,19 @@ init_ssl_conn(dpl_ctx_t *ctx, dpl_conn_t *conn)
     DPL_LOG(ctx, DPL_ERROR, "SSL connect error: %d (%s)", ret, buf);
 
     ret_ssl = SSL_get_verify_result(conn->ssl);
-    DPL_LOG(ctx, DPL_ERROR, "SSL certificate verification status: %ld: %s", ret_ssl, X509_verify_cert_error_string(ret_ssl));
+    DPL_LOG(ctx, DPL_ERROR, "SSL certificate verification status: %ld: %s",
+            ret_ssl, X509_verify_cert_error_string(ret_ssl));
     return 0;
   }
   if (0 == ctx->cert_verif) {
     long ret_ssl = 0;
     ret_ssl = SSL_get_verify_result(conn->ssl);
-    DPL_TRACE(ctx, DPL_TRACE_SSL, "SSL certificate verification status: %ld: %s", ret_ssl, X509_verify_cert_error_string(ret_ssl));
+    DPL_TRACE(ctx, DPL_TRACE_SSL,
+              "SSL certificate verification status: %ld: %s", ret_ssl,
+              X509_verify_cert_error_string(ret_ssl));
   }
-  DPL_TRACE(ctx, DPL_TRACE_SSL, "SSL cipher used: %s", SSL_get_cipher(conn->ssl));
+  DPL_TRACE(ctx, DPL_TRACE_SSL, "SSL cipher used: %s",
+            SSL_get_cipher(conn->ssl));
 
   return 1;
 }
@@ -410,90 +393,78 @@ init_ssl_conn(dpl_ctx_t *ctx, dpl_conn_t *conn)
  * a new connection is created.
  */
 
-static dpl_conn_t *
-conn_open(dpl_ctx_t *ctx,
-          struct hostent *host,
-          u_short port)
+static dpl_conn_t* conn_open(dpl_ctx_t* ctx, struct hostent* host, u_short port)
 {
-  dpl_conn_t    *conn = NULL;
-  time_t        now = time(0);
-  char          ident[DPL_ADDR_IDENT_STRLEN];
+  dpl_conn_t* conn = NULL;
+  time_t now = time(0);
+  char ident[DPL_ADDR_IDENT_STRLEN];
 
   dpl_ctx_lock(ctx);
 
   dpl_addr_get_ident(host, port, ident, sizeof(ident));
   DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open %s", ident);
 
- again:
+again:
 
   conn = dpl_conn_get_nolock(ctx, host, port);
 
-  if (NULL != conn)
-    {
-      if (0 == is_usable(conn))
-        {
-          dpl_conn_remove_nolock(ctx, conn);
-          dpl_conn_terminate_nolock(conn);
-          goto again;
-        }
-
+  if (NULL != conn) {
+    if (0 == is_usable(conn)) {
       dpl_conn_remove_nolock(ctx, conn);
-      if (conn->n_hits >= ctx->n_conn_max_hits ||
-          (now - conn->close_time) >= ctx->conn_idle_time)
-        {
-          DPRINTF("auto-close\n");
-          dpl_conn_terminate_nolock(conn);
-          conn = NULL;
-        }
-      else
-        {
-          //OK reuse
-          conn->n_hits++;
-          goto end;
-        }
+      dpl_conn_terminate_nolock(conn);
+      goto again;
     }
 
-  if (ctx->n_conn_fds >= ctx->n_conn_max)
-    {
-      DPL_TRACE(ctx, DPL_TRACE_ERR, "reaching limit %d", ctx->n_conn_fds);
+    dpl_conn_remove_nolock(ctx, conn);
+    if (conn->n_hits >= ctx->n_conn_max_hits
+        || (now - conn->close_time) >= ctx->conn_idle_time) {
+      DPRINTF("auto-close\n");
+      dpl_conn_terminate_nolock(conn);
       conn = NULL;
+    } else {
+      // OK reuse
+      conn->n_hits++;
       goto end;
     }
+  }
 
-  conn = malloc(sizeof (*conn));
-  if (NULL == conn)
-    {
-      DPL_TRACE(ctx, DPL_TRACE_ERR, "malloc failed");
-      conn = NULL;
-      goto end;
-    }
+  if (ctx->n_conn_fds >= ctx->n_conn_max) {
+    DPL_TRACE(ctx, DPL_TRACE_ERR, "reaching limit %d", ctx->n_conn_fds);
+    conn = NULL;
+    goto end;
+  }
+
+  conn = malloc(sizeof(*conn));
+  if (NULL == conn) {
+    DPL_TRACE(ctx, DPL_TRACE_ERR, "malloc failed");
+    conn = NULL;
+    goto end;
+  }
 
   DPL_TRACE(ctx, DPL_TRACE_CONN, "new_conn %s %p", ident, conn);
 
-  memset(conn, 0, sizeof (*conn));
+  memset(conn, 0, sizeof(*conn));
 
   conn->type = DPL_CONN_TYPE_HTTP;
   conn->ctx = ctx;
   conn->read_buf_size = ctx->read_buf_size;
   conn->fd = -1;
 
-  if ((conn->read_buf = malloc(conn->read_buf_size)) == NULL)
-    {
-      dpl_conn_free(conn);
-      conn = NULL;
-      goto end;
-    }
+  if ((conn->read_buf = malloc(conn->read_buf_size)) == NULL) {
+    dpl_conn_free(conn);
+    conn = NULL;
+    goto end;
+  }
 
   memcpy(&conn->hash_info.addr, host->h_addr_list[0], host->h_length);
   conn->hash_info.port = port;
 
   conn->fd = do_connect(ctx, host, port);
-  if (-1 == conn->fd)
-    {
-      dpl_conn_free(conn);
-      conn = NULL;
-      goto end;
-    }
+  if (-1 == conn->fd) {
+    dpl_conn_free(conn);
+    conn = NULL;
+    goto end;
+  }
 
   conn->start_time = now;
   conn->n_hits = 0;
@@ -508,7 +479,7 @@ conn_open(dpl_ctx_t *ctx,
 
   ctx->n_conn_fds++;
 
- end:
+end:
 
   dpl_ctx_unlock(ctx);
 
@@ -517,23 +488,24 @@ conn_open(dpl_ctx_t *ctx,
   return conn;
 }
 
-dpl_conn_t *
-dpl_conn_open_host(dpl_ctx_t *ctx, int af,
-                   const char *host,
-                   const char *portstr)
+dpl_conn_t* dpl_conn_open_host(dpl_ctx_t* ctx,
+                               int af,
+                               const char* host,
+                               const char* portstr)
 {
-  int                   ret2;
-  struct hostent        hret, *hresult;
-  char                  hbuf[1024];
-  int                   herr = 0;
-  u_short               port;
-  dpl_conn_t            *conn = NULL;
-  char                  *nstr;
+  int ret2;
+  struct hostent hret, *hresult;
+  char hbuf[1024];
+  int herr = 0;
+  u_short port;
+  dpl_conn_t* conn = NULL;
+  char* nstr;
 
-  ret2 = dpl_gethostbyname2_r(host, af, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
+  ret2 = dpl_gethostbyname2_r(host, af, &hret, hbuf, sizeof(hbuf), &hresult,
+                              &herr);
   if (0 != ret2 || hresult == NULL) {
-    DPL_LOG(ctx, DPL_ERROR, "Failed to lookup hostname \"%s\": %s",
-            host, hstrerror(herr));
+    DPL_LOG(ctx, DPL_ERROR, "Failed to lookup hostname \"%s\": %s", host,
+            hstrerror(herr));
     goto bad;
   }
 
@@ -545,41 +517,34 @@ dpl_conn_open_host(dpl_ctx_t *ctx, int af,
   }
 
   nstr = strdup(host);
-  if (NULL == nstr)
-    goto bad;
+  if (NULL == nstr) goto bad;
 
-  if (NULL != conn->host)
-    free(conn->host);
+  if (NULL != conn->host) free(conn->host);
 
   conn->host = nstr;
 
   nstr = strdup(portstr);
-  if (NULL == nstr)
-    goto bad;
+  if (NULL == nstr) goto bad;
 
-  if (NULL != conn->port)
-    free(conn->port);
+  if (NULL != conn->port) free(conn->port);
 
   conn->port = nstr;
 
   return conn;
 
- bad:
+bad:
 
-  if (NULL != conn)
-    dpl_conn_release(conn);
+  if (NULL != conn) dpl_conn_release(conn);
 
   return NULL;
 }
 
-void
-dpl_blacklist_host(dpl_ctx_t *ctx,
-                   const char *host,
-                   const char *portstr)
+void dpl_blacklist_host(dpl_ctx_t* ctx, const char* host, const char* portstr)
 {
   DPL_TRACE(ctx, DPL_TRACE_CONN, "blacklisting %s:%s", host, portstr);
 
-  (void) dpl_addrlist_blacklist(ctx->addrlist, host, portstr, ctx->blacklist_expiretime);
+  (void)dpl_addrlist_blacklist(ctx->addrlist, host, portstr,
+                               ctx->blacklist_expiretime);
 }
 
 /**
@@ -606,18 +571,15 @@ dpl_blacklist_host(dpl_ctx_t *ctx,
  * @retval DPL_SUCCESS on success, or
  * @return a Droplet error code on failure
  */
-dpl_status_t
-dpl_try_connect(dpl_ctx_t *ctx,
-                dpl_req_t *req,
-                dpl_conn_t **connp)
+dpl_status_t dpl_try_connect(dpl_ctx_t* ctx, dpl_req_t* req, dpl_conn_t** connp)
 {
-  int           cur_host;
-  dpl_addr_t    *addr;
-  dpl_conn_t    *conn = NULL;
-  dpl_status_t  ret, ret2;
-  char          virtual_host[1024], *hostp = NULL;
+  int cur_host;
+  dpl_addr_t* addr;
+  dpl_conn_t* conn = NULL;
+  dpl_status_t ret, ret2;
+  char virtual_host[1024], *hostp = NULL;
 
- retry:
+retry:
   pthread_mutex_lock(&ctx->lock);
 
   cur_host = ctx->cur_host;
@@ -633,7 +595,8 @@ dpl_try_connect(dpl_ctx_t *ctx,
   }
 
   if (req->behavior_flags & DPL_BEHAVIOR_VIRTUAL_HOSTING) {
-    snprintf(virtual_host, sizeof (virtual_host), "%s.%s", req->bucket, addr->host);
+    snprintf(virtual_host, sizeof(virtual_host), "%s.%s", req->bucket,
+             addr->host);
     hostp = virtual_host;
   } else
     hostp = addr->host;
@@ -665,13 +628,12 @@ dpl_try_connect(dpl_ctx_t *ctx,
 
   if (NULL != connp) {
     *connp = conn;
-    conn = NULL; // consumed
+    conn = NULL;  // consumed
   }
 
- end:
+end:
 
-  if (NULL != conn)
-    dpl_conn_terminate(conn);
+  if (NULL != conn) dpl_conn_terminate(conn);
 
   return ret;
 }
@@ -690,19 +652,16 @@ dpl_try_connect(dpl_ctx_t *ctx,
  *
  * @param conn connection to release
  */
-void
-dpl_conn_release(dpl_conn_t *conn)
+void dpl_conn_release(dpl_conn_t* conn)
 {
   dpl_ctx_lock(conn->ctx);
 
-  if (conn->type == DPL_CONN_TYPE_FILE)
-    {
-      if (-1 != conn->fd)
-        close(conn->fd);
-      dpl_ctx_unlock(conn->ctx);
-      free(conn);
-      return ;
-    }
+  if (conn->type == DPL_CONN_TYPE_FILE) {
+    if (-1 != conn->fd) close(conn->fd);
+    dpl_ctx_unlock(conn->ctx);
+    free(conn);
+    return;
+  }
 
   DPL_TRACE(conn->ctx, DPL_TRACE_CONN, "conn_release conn=%p", conn);
 
@@ -722,10 +681,9 @@ dpl_conn_release(dpl_conn_t *conn)
  *
  * @param conn connection to release
  */
-void
-dpl_conn_terminate(dpl_conn_t *conn)
+void dpl_conn_terminate(dpl_conn_t* conn)
 {
-  dpl_ctx_t *ctx;
+  dpl_ctx_t* ctx;
 
   DPRINTF("explicit termination n_hits=%d\n", conn->n_hits);
 
@@ -739,37 +697,31 @@ dpl_conn_terminate(dpl_conn_t *conn)
   dpl_ctx_unlock(ctx);
 }
 
-dpl_status_t
-dpl_conn_pool_init(dpl_ctx_t *ctx)
+dpl_status_t dpl_conn_pool_init(dpl_ctx_t* ctx)
 {
-  ctx->conn_buckets = malloc(ctx->n_conn_buckets * sizeof (dpl_conn_t *));
-  if (NULL == ctx->conn_buckets)
-    return DPL_FAILURE;
+  ctx->conn_buckets = malloc(ctx->n_conn_buckets * sizeof(dpl_conn_t*));
+  if (NULL == ctx->conn_buckets) return DPL_FAILURE;
 
-  memset(ctx->conn_buckets, 0, ctx->n_conn_buckets * sizeof (dpl_conn_t *));
+  memset(ctx->conn_buckets, 0, ctx->n_conn_buckets * sizeof(dpl_conn_t*));
 
   return DPL_SUCCESS;
 }
 
-void
-dpl_conn_pool_destroy(dpl_ctx_t *ctx)
+void dpl_conn_pool_destroy(dpl_ctx_t* ctx)
 {
   int bucket;
   dpl_conn_t *conn, *prev;
 
-  if (NULL != ctx->conn_buckets)
-    {
-      for (bucket = 0;bucket < ctx->n_conn_buckets;bucket++)
-        {
-          for (conn = ctx->conn_buckets[bucket];conn;conn = prev)
-            {
-              prev = conn->prev;
-              dpl_conn_terminate_nolock(conn);
-            }
-        }
-
-      free(ctx->conn_buckets);
+  if (NULL != ctx->conn_buckets) {
+    for (bucket = 0; bucket < ctx->n_conn_buckets; bucket++) {
+      for (conn = ctx->conn_buckets[bucket]; conn; conn = prev) {
+        prev = conn->prev;
+        dpl_conn_terminate_nolock(conn);
+      }
     }
+
+    free(ctx->conn_buckets);
+  }
 }
 
 /*
@@ -783,68 +735,57 @@ dpl_conn_pool_destroy(dpl_ctx_t *ctx)
  *
  * @param timeout in secs or -1
  */
-static dpl_status_t
-writev_all_plaintext(dpl_conn_t *conn,
-                     struct iovec *iov,
-                     int n_iov,
-                     int timeout)
+static dpl_status_t writev_all_plaintext(dpl_conn_t* conn,
+                                         struct iovec* iov,
+                                         int n_iov,
+                                         int timeout)
 {
   ssize_t cc = 0;
   int i, ret;
 
   DPRINTF("writev n_iov=%d\n", n_iov);
 
-  while (1)
-    {
-      if (-1 != timeout)
-        {
-          struct pollfd fds;
+  while (1) {
+    if (-1 != timeout) {
+      struct pollfd fds;
 
-        retry:
-          memset(&fds, 0, sizeof (fds));
-          fds.fd = conn->fd;
-          fds.events = POLLOUT;
+    retry:
+      memset(&fds, 0, sizeof(fds));
+      fds.fd = conn->fd;
+      fds.events = POLLOUT;
 
-          ret = poll(&fds, 1, timeout*1000);
-          if (-1 == ret)
-            {
-              if (errno == EINTR)
-                goto retry;
-              return DPL_FAILURE;
-            }
+      ret = poll(&fds, 1, timeout * 1000);
+      if (-1 == ret) {
+        if (errno == EINTR) goto retry;
+        return DPL_FAILURE;
+      }
 
-          if (0 == ret)
-            return DPL_ETIMEOUT;
-          else if (!(fds.revents & POLLOUT))
-            {
-              return DPL_FAILURE;
-            }
-        }
-
-      cc = writev(conn->fd, iov, n_iov);
-      if (-1 == cc)
-        {
-          if (EINTR == errno)
-            continue ;
-
-          return DPL_FAILURE;
-        }
-
-      for (i = 0;i < n_iov;i++)
-        {
-          if (iov[i].iov_len > cc)
-            {
-              iov[i].iov_base = (char *) iov[i].iov_base + cc;
-              iov[i].iov_len -= cc;
-              break ;
-            }
-          cc -= iov[i].iov_len;
-          iov[i].iov_len = 0;
-        }
-
-      if (n_iov == i)
-        return DPL_SUCCESS;
+      if (0 == ret)
+        return DPL_ETIMEOUT;
+      else if (!(fds.revents & POLLOUT)) {
+        return DPL_FAILURE;
+      }
     }
+
+    cc = writev(conn->fd, iov, n_iov);
+    if (-1 == cc) {
+      if (EINTR == errno) continue;
+
+      return DPL_FAILURE;
+    }
+
+    for (i = 0; i < n_iov; i++) {
+      if (iov[i].iov_len > cc) {
+        iov[i].iov_base = (char*)iov[i].iov_base + cc;
+        iov[i].iov_len -= cc;
+        break;
+      }
+      cc -= iov[i].iov_len;
+      iov[i].iov_len = 0;
+    }
+
+    if (n_iov == i) return DPL_SUCCESS;
+  }
 
   return DPL_SUCCESS;
 }
@@ -853,55 +794,45 @@ writev_all_plaintext(dpl_conn_t *conn,
  * Write an IO vector to a connection via the SSL library with retry
  *
  */
-static dpl_status_t
-writev_all_ssl(dpl_conn_t *conn,
-               struct iovec *iov,
-               int n_iov,
-               int timeout)
+static dpl_status_t writev_all_ssl(dpl_conn_t* conn,
+                                   struct iovec* iov,
+                                   int n_iov,
+                                   int timeout)
 {
   int i, ret;
   u_int amount_left, total_size, off;
-  char *ptr = NULL;
+  char* ptr = NULL;
 
   total_size = 0;
 
-  for (i = 0;i < n_iov;i++)
-    total_size += iov[i].iov_len;
-  if (total_size == 0)
-    return DPL_FAILURE;
+  for (i = 0; i < n_iov; i++) total_size += iov[i].iov_len;
+  if (total_size == 0) return DPL_FAILURE;
   ptr = malloc(total_size);
-  if (NULL == ptr)
-    return DPL_FAILURE;
+  if (NULL == ptr) return DPL_FAILURE;
 
   off = 0;
-  for (i = 0;i < n_iov;i++)
-    {
-      memcpy(ptr + off, iov[i].iov_base, iov[i].iov_len);
-      off += iov[i].iov_len;
-    }
+  for (i = 0; i < n_iov; i++) {
+    memcpy(ptr + off, iov[i].iov_base, iov[i].iov_len);
+    off += iov[i].iov_len;
+  }
 
   amount_left = total_size;
 
 again:
   ret = SSL_write(conn->ssl, &ptr[total_size - amount_left], amount_left);
 
-  if (ret > 0)
-    {
-      amount_left -= ret;
-      if (amount_left > 0)
-          goto again;
-    }
-  else
-    { // ret <= 0
-      int err = SSL_get_error(conn->ssl, ret);
+  if (ret > 0) {
+    amount_left -= ret;
+    if (amount_left > 0) goto again;
+  } else {  // ret <= 0
+    int err = SSL_get_error(conn->ssl, ret);
 
-      if (SSL_ERROR_WANT_WRITE == err || SSL_ERROR_WANT_READ == err)
-          goto again;
+    if (SSL_ERROR_WANT_WRITE == err || SSL_ERROR_WANT_READ == err) goto again;
 
-      DPL_SSL_PERROR(conn->ctx, "SSL_write");
-      free(ptr);
-      return DPL_FAILURE;
-    }
+    DPL_SSL_PERROR(conn->ctx, "SSL_write");
+    free(ptr);
+    return DPL_FAILURE;
+  }
 
   free(ptr);
   return DPL_SUCCESS;
@@ -923,15 +854,15 @@ again:
  * @retval DPL_SUCCESS on success, or
  * @return a Droplet error code on failure
  */
-dpl_status_t
-dpl_conn_writev_all(dpl_conn_t *conn,
-                    struct iovec *iov,
-                    int n_iov,
-                    int timeout)
+dpl_status_t dpl_conn_writev_all(dpl_conn_t* conn,
+                                 struct iovec* iov,
+                                 int n_iov,
+                                 int timeout)
 {
   dpl_status_t ret;
 
-  DPL_TRACE(conn->ctx, DPL_TRACE_IO, "writev conn=%p https=%d size=%ld", conn, conn->ctx->use_https, dpl_iov_size(iov, n_iov));
+  DPL_TRACE(conn->ctx, DPL_TRACE_IO, "writev conn=%p https=%d size=%ld", conn,
+            conn->ctx->use_https, dpl_iov_size(iov, n_iov));
 
   if (conn->ctx->trace_buffers)
     dpl_iov_dump(iov, n_iov, dpl_iov_size(iov, n_iov), conn->ctx->trace_binary);
@@ -941,12 +872,11 @@ dpl_conn_writev_all(dpl_conn_t *conn,
   else
     ret = writev_all_ssl(conn, iov, n_iov, timeout);
 
-  if (DPL_SUCCESS != ret)
-    {
-      //blacklist host
-      if (DPL_CONN_TYPE_HTTP == conn->type)
-        dpl_blacklist_host(conn->ctx, conn->host, conn->port);
-    }
+  if (DPL_SUCCESS != ret) {
+    // blacklist host
+    if (DPL_CONN_TYPE_HTTP == conn->type)
+      dpl_blacklist_host(conn->ctx, conn->host, conn->port);
+  }
 
   return ret;
 }
@@ -962,43 +892,39 @@ dpl_conn_writev_all(dpl_conn_t *conn,
  * @param fd an open file descriptor for a local file
  * @return a new context, or NULL on failure
  */
-dpl_conn_t *
-dpl_conn_open_file(dpl_ctx_t *ctx,
-                   int fd)
+dpl_conn_t* dpl_conn_open_file(dpl_ctx_t* ctx, int fd)
 {
-  dpl_conn_t *conn = NULL;
+  dpl_conn_t* conn = NULL;
   time_t now = time(0);
 
   DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open_file fd=%d", fd);
 
   DPRINTF("allocate new conn\n");
 
-  conn = malloc(sizeof (*conn));
-  if (NULL == conn)
-    {
-      DPL_TRACE(ctx, DPL_TRACE_ERR, "malloc failed");
-      conn = NULL;
-      goto end;
-    }
+  conn = malloc(sizeof(*conn));
+  if (NULL == conn) {
+    DPL_TRACE(ctx, DPL_TRACE_ERR, "malloc failed");
+    conn = NULL;
+    goto end;
+  }
 
-  memset(conn, 0, sizeof (*conn));
+  memset(conn, 0, sizeof(*conn));
 
   conn->type = DPL_CONN_TYPE_FILE;
   conn->ctx = ctx;
   conn->read_buf_size = ctx->read_buf_size;
   conn->fd = fd;
 
-  if ((conn->read_buf = malloc(conn->read_buf_size)) == NULL)
-    {
-      dpl_conn_free(conn);
-      conn = NULL;
-      goto end;
-    }
+  if ((conn->read_buf = malloc(conn->read_buf_size)) == NULL) {
+    dpl_conn_free(conn);
+    conn = NULL;
+    goto end;
+  }
 
   conn->start_time = now;
   conn->n_hits = 0;
 
- end:
+end:
 
   DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open conn=%p", conn);
 
