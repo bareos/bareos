@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_CDMI_REPLYPARSER_H__
-#define __DROPLET_CDMI_REPLYPARSER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_REPLYPARSER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_REPLYPARSER_H_
 
 #define DPL_X_OBJECT_META_PREFIX "X-Object-Meta-"
 #define DPL_X_CONTAINER_META_PREFIX "X-Container-Meta-"
@@ -49,4 +49,4 @@ dpl_status_t dpl_cdmi_get_metadata_from_values(const dpl_dict_t *values, dpl_dic
 dpl_status_t dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx, const char *buf, int len, const char *prefix, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
 dpl_status_t dpl_cdmi_parse_json_buffer(dpl_ctx_t *ctx, const char *buf, int len, dpl_value_t **valp);
 dpl_ftype_t dpl_cdmi_content_type_to_ftype(const char *str);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_REPLYPARSER_H_

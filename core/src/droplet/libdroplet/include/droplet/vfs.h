@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_VFS_H__
-#define __DROPLET_VFS_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VFS_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VFS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -147,4 +147,4 @@ dpl_status_t dpl_mvdent(dpl_ctx_t *ctx, const char *src_locator, const char *dst
 }
 #endif
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VFS_H_

@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_DICT_H__
-#define __DROPLET_DICT_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_DICT_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_DICT_H_
 
 struct dpl_dict;
 
@@ -70,4 +70,4 @@ dpl_status_t dpl_dict_copy(dpl_dict_t *dst, const dpl_dict_t *src);
 dpl_dict_t *dpl_dict_dup(const dpl_dict_t *src);
 dpl_status_t dpl_dict_filter_prefix(dpl_dict_t *dst, const dpl_dict_t *src, const char * prefix);
 dpl_status_t dpl_dict_filter_no_prefix(dpl_dict_t *dst, const dpl_dict_t *src, const char * prefix);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_DICT_H_

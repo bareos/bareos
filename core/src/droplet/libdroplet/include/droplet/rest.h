@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_REST_H__
-#define __DROPLET_REST_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_REST_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_REST_H_
 
 const char *dpl_get_backend_name(dpl_ctx_t *ctx);
 dpl_status_t dpl_get_capabilities(dpl_ctx_t *ctx, dpl_capability_t *maskp);
@@ -72,4 +72,4 @@ dpl_status_t dpl_stream_put(dpl_ctx_t *ctx, dpl_stream_t *stream, char *buf, uns
 dpl_status_t dpl_stream_flush(dpl_ctx_t *ctx, dpl_stream_t *stream);
 void         dpl_stream_close(dpl_ctx_t *ctx, dpl_stream_t *stream);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_REST_H_

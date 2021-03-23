@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_CONN_H__
-#define __DROPLET_CONN_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONN_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONN_H_
 
 struct dpl_hash_info
 {
@@ -102,4 +102,4 @@ dpl_status_t dpl_conn_pool_init(dpl_ctx_t *ctx);
 void dpl_conn_pool_destroy(dpl_ctx_t *ctx);
 dpl_status_t dpl_conn_writev_all(dpl_conn_t *conn, struct iovec *iov, int n_iov, int timeout);
 dpl_conn_t *dpl_conn_open_file(dpl_ctx_t *ctx, int fd);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONN_H_

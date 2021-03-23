@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SPROXYD_REPLYPARSER_H__
-#define __DROPLET_SPROXYD_REPLYPARSER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_REPLYPARSER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_REPLYPARSER_H_
 
 #define DPL_SPROXYD_X_SCAL_SIZE           "X-Scal-Size"
 #define DPL_SPROXYD_X_SCAL_ATIME          "X-Scal-Atime"
@@ -65,4 +65,4 @@
 dpl_status_t dpl_sproxyd_get_metadatum_from_header(const char *header, const char *value, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_sproxyd_get_metadata_from_headers(const dpl_dict_t *headers, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_sproxyd_parse_delete_all(const dpl_ctx_t *ctx, const char *buf, int len, dpl_vec_t *vec);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_REPLYPARSER_H_

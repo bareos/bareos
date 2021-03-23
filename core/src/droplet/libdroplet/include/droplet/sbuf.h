@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SBUF_H__
-#define __DROPLET_SBUF_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SBUF_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SBUF_H_
 
 typedef struct
 {
@@ -53,4 +53,4 @@ void dpl_sbuf_free(dpl_sbuf_t *sb);
 void dpl_sbuf_print(FILE *f, dpl_sbuf_t *sb);
 dpl_status_t dpl_sbuf_url_encode(dpl_sbuf_t *sb);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SBUF_H_

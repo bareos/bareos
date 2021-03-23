@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DPL_ADDRLIST_H__
-#define __DPL_ADDRLIST_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_ADDRLIST_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_ADDRLIST_H_
 
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -86,4 +86,4 @@ dpl_status_t dpl_addrlist_add_from_str(dpl_addrlist_t *addrlist, const char *add
 dpl_status_t dpl_addrlist_set_from_str(dpl_addrlist_t *addrlist, const char *addrlist_str);
 char *dpl_addrlist_get(dpl_addrlist_t *addrlist);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_ADDRLIST_H_

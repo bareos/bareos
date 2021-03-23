@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SWIFT_REPLYPARSER_H__
-#define __DROPLET_SWIFT_REPLYPARSER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REPLYPARSER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REPLYPARSER_H_
 
 #define DPL_X_OBJECT_META_PREFIX "X-Object-Meta-"
 #define DPL_X_CONTAINER_META_PREFIX "X-Container-Meta-"
@@ -48,4 +48,4 @@ dpl_status_t dpl_swift_get_metadata_from_headers(const dpl_dict_t *headers, dpl_
 dpl_status_t dpl_swift_get_metadata_from_values(const dpl_dict_t *values, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_swift_parse_list_bucket(dpl_ctx_t *ctx, const char *buf, int len, const char *prefix, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
 dpl_ftype_t dpl_swift_content_type_to_ftype(const char *str);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REPLYPARSER_H_

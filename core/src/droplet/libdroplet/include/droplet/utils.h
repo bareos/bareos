@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_UTILS_H__
-#define __DROPLET_UTILS_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UTILS_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UTILS_H_
 
 #include <stdarg.h>
 /*
@@ -66,7 +66,7 @@
 #endif
 
 /* Mac OSX has __BIG_ENDIAN__ or __LITTLE_ENDIAN__ automatically set by the compiler (at least with GCC) */
-#elif defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+#elif defined(__APPLE__) && defined(__MACH_) || defined(__ellcc__ )
 
     #ifdef _LITTLE_ENDIAN__
     #define __BYTE_ORDER __LITTLE_ENDIAN__
@@ -82,7 +82,7 @@
 #if defined(SOLARIS) || defined(__sun__)
 # include <asm/byteorder.h>
 
-#elif defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+#elif defined(__APPLE__) && defined(__MACH_) || defined(__ellcc__ )
     #include <libkern/OSByteOrder.h>
     #define le32toh OSSwapLittleToHostInt32
     #define htole32 OSSwapHostToLittleInt32
@@ -267,4 +267,4 @@ dpl_status_t dpl_get_xattrs(char *path, dpl_dict_t *dict, char *prefix, int do_6
 #define XATTRS_ENCODE_BASE64 1
 #define XATTRS_NO_ENCODING 0
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UTILS_H_

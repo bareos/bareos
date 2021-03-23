@@ -1,5 +1,5 @@
-#ifndef __TOYSERVER_H__
-#define __TOYSERVER_H__ 1
+#ifndef BAREOS_DROPLET_UTESTS_TOYSERVER_H_
+#define BAREOS_DROPLET_UTESTS_TOYSERVER_H_
 
 #define TOY_USERNAME	"leviathan"
 #define TOY_PASSWORD	"shibboleth"
@@ -68,4 +68,4 @@ struct server_state
     struct reply reply;
 };
 
-#endif /* __TOYSERVER_H__ */
+#endif  // BAREOS_DROPLET_UTESTS_TOYSERVER_H_

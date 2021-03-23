@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SRWS_REPLYPARSER_H__
-#define __DROPLET_SRWS_REPLYPARSER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_REPLYPARSER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_REPLYPARSER_H_
 
 #define DPL_SRWS_X_BIZ_USERMD               "x-biz-usermd"
 #define DPL_SRWS_X_BIZ_CMD                  "x-biz-cmd"
@@ -46,4 +46,4 @@
 /* src/replyparser.c */
 dpl_status_t dpl_srws_get_metadatum_from_header(const char *header, const char *value, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_srws_get_metadata_from_headers(const dpl_dict_t *headers, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_REPLYPARSER_H_

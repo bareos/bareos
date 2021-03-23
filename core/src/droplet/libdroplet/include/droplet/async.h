@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DPL_ASYNC_H__
-#define __DPL_ASYNC_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_ASYNC_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_ASYNC_H_
 
 #include <droplet/task.h>
 
@@ -211,4 +211,4 @@ dpl_task_t *dpl_get_id_async_prepare(dpl_ctx_t *ctx, const char *bucket, const c
 dpl_task_t *dpl_head_id_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition);
 dpl_task_t *dpl_delete_id_async_prepare(dpl_ctx_t *ctx, const char *bucket, const char *resource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition);
 dpl_task_t *dpl_copy_id_async_prepare(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *dst_bucket, const char *dst_resource, const dpl_option_t *option, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_ASYNC_H_

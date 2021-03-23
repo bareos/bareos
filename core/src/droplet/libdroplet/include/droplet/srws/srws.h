@@ -31,11 +31,11 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SRWS_H__
-#define __DROPLET_SRWS_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_SRWS_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_SRWS_H_
 
 #include <droplet/srws/reqbuilder.h>
 #include <droplet/srws/replyparser.h>
 #include <droplet/srws/backend.h>
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_SRWS_H_

@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_CDMI_REQBUILDER_H__
-#define __DROPLET_CDMI_REQBUILDER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_REQBUILDER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_REQBUILDER_H_
 
 typedef enum
   {
@@ -58,4 +58,4 @@ dpl_status_t dpl_cdmi_req_set_resource(dpl_req_t *req, const char *resource);
 dpl_status_t dpl_cdmi_req_add_range(dpl_req_t *req, dpl_cdmi_req_mask_t req_mask, const dpl_range_t *range);
 dpl_status_t dpl_cdmi_req_build(const dpl_req_t *req, dpl_cdmi_req_mask_t req_mask, dpl_dict_t **headersp, char **body_strp, int *lenp);
 dpl_status_t dpl_cdmi_req_gen_url(const dpl_req_t *req, dpl_dict_t *headers, char *buf, int len, unsigned int *lenp);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_REQBUILDER_H_

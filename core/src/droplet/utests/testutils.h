@@ -1,5 +1,5 @@
-#ifndef __TESTUTIL_H__
-#define __TESTUTIL_H__ 1
+#ifndef BAREOS_DROPLET_UTESTS_TESTUTILS_H_
+#define BAREOS_DROPLET_UTESTS_TESTUTILS_H_
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -16,4 +16,4 @@ extern off_t file_size(FILE *fp);
 extern char *home;	/* assign this to pervert getpwuid() */
 #endif /* __linux__ */
 
-#endif /* __TESTUTIL_H__ */
+#endif  // BAREOS_DROPLET_UTESTS_TESTUTILS_H_

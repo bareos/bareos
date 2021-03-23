@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_CONVERTERS_H__
-#define __DROPLET_CONVERTERS_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONVERTERS_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONVERTERS_H_
 
 /* PROTO converters.c */
 /* src/converters.c */
@@ -52,4 +52,4 @@ dpl_dict_t *dpl_parse_metadata(char *metadata);
 dpl_dict_t *dpl_parse_query_params(char *query_params);
 dpl_status_t dpl_parse_condition(const char *str, dpl_condition_t *condp);
 dpl_status_t dpl_parse_option(const char *str, dpl_option_t *optp);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONVERTERS_H_

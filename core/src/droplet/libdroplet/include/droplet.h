@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_H__
-#define __DROPLET_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -748,4 +748,4 @@ char* dpl_copy_directive_to_str(dpl_copy_directive_t directive);
 }
 #endif
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_H_

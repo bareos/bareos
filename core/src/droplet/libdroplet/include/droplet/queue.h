@@ -29,9 +29,8 @@
  *	@(#)queue.h	8.5 (Berkeley) 8/20/94
  * $FreeBSD$
  */
-
-#ifndef _SCAL_STD_QUEUE_H_
-#define	_SCAL_STD_QUEUE_H_
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_QUEUE_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_QUEUE_H_
 
 #include <sys/cdefs.h>
 
@@ -633,4 +632,4 @@ struct {								\
 		(head2)->tqh_last = &(head2)->tqh_first;		\
 } while (0)
 
-#endif /* !_SCAL_STD_QUEUE_H_ */
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_QUEUE_H_

@@ -31,9 +31,9 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_CDMI_BACKEND_H__
-#define __DROPLET_CDMI_BACKEND_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_BACKEND_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_BACKEND_H_
 
 extern dpl_backend_t dpl_backend_cdmi;
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_BACKEND_H_

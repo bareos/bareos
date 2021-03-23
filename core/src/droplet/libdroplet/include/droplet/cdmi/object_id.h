@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_CDMI_OBJECT_ID_H__
-#define __DROPLET_CDMI_OBJECT_ID_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_OBJECT_ID_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_OBJECT_ID_H_
 
 typedef struct
 {
@@ -54,4 +54,4 @@ void dpl_cdmi_object_id_undef(dpl_cdmi_object_id_t *object_id);
 int dpl_cdmi_object_id_is_def(const dpl_cdmi_object_id_t *object_id);
 dpl_status_t dpl_cdmi_object_id_opaque_len(const dpl_cdmi_object_id_t *object_id, size_t *lenp);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_OBJECT_ID_H_

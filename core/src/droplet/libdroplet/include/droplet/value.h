@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_VAR_H__
-#define __DROPLET_VAR_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VALUE_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VALUE_H_
 
 #include <droplet/sbuf.h>
 
@@ -66,4 +66,4 @@ typedef int (*dpl_value_cmp_func_t)(const void *p1, const void *p2);
 void dpl_value_free(dpl_value_t *value);
 dpl_value_t *dpl_value_dup(dpl_value_t *src);
 void dpl_value_print(dpl_value_t *val, FILE *f, int level, int indent);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VALUE_H_

@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_VEC_H__
-#define __DROPLET_VEC_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VEC_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VEC_H_
 
 typedef struct dpl_vec
 {
@@ -52,4 +52,4 @@ void *dpl_vec_get(dpl_vec_t *vec, int i);
 void dpl_vec_print(dpl_vec_t *vec, FILE *f, int level);
 dpl_vec_t *dpl_vec_dup(dpl_vec_t *vec);
 void dpl_vec_sort(dpl_vec_t *vec, dpl_value_cmp_func_t cmp_func);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VEC_H_
