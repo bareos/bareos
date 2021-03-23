@@ -1,0 +1,9 @@
+@plugindir@/BareosFdMySQLClass.py
+@plugindir@/BareosFdOracleClass.py
+@plugindir@/BareosFdPgSQLClass.py
+@plugindir@/BareosFdTaskClass.py
+@plugindir@/BareosFdXenServerClass.py
+@plugindir@/bareos-fd-mysql.py
+@plugindir@/bareos-fd-oracle.py
+@plugindir@/bareos-fd-pgsql.py
+@plugindir@/bareos-fd-xenserver.py

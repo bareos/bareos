@@ -6,7 +6,7 @@ all: copyright
 
 copyright: copyright.header copyright.footer
 	@cat copyright.header > copyright
-	@sed -r -e 's/^$$/./' -e 's/^[ ]*(.*)$$/    \1/' ../LICENSE >> copyright
+	@sed -r -e 's/^$$/./' -e 's/^[ ]*(.*)$$/    \1/' ../core/LICENSE >> copyright
 	@cat copyright.footer >> copyright
 
 clean:

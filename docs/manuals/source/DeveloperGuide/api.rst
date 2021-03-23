@@ -458,14 +458,14 @@ This will also install dependencies like fastapi, uvicorn and some more.
 Configuration
 ~~~~~~~~~~~~~
 
-Configure your Bareos Server in _api.ini_ adapting these 3 lines of configuration:
+Configure your Bareos Server in :file:`api.ini` adapting these 3 lines of configuration:
 
-.. code-block:: config
+.. code-block:: cfg
 
-    [Director]
-    Name=bareos-dir
-    Address=127.0.0.1
-    Port=9101
+   [Director]
+   Name=bareos-dir
+   Address=127.0.0.1
+   Port=9101
 
 To configure the webserver uvicorn (e.g. adapt used network interfaces, ports), read the `uvicorn
 documentation <https://www.uvicorn.org/>`_. The default port is 8000 and the default interface is the loopback device.

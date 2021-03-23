@@ -566,7 +566,7 @@ Extracting Under Windows
    If you use :command:`bextract` under Windows, the order of the parameters is essential.
 
 
-To use :command:`bextract`, the Bareos Storage Daemon must be installed. As bextract works on tapes or disk volumes, these must be configured in the Storage Daemon configuration file, normally found at :dir:`C:\\ProgrammData\\Bareos\\`. However, it is not required to start the Bareos Storage Daemon. Normally, if the Storage Daemon would be able to run, :command:`bextract` would not be required.
+To use :command:`bextract`, the Bareos Storage Daemon must be installed. As bextract works on tapes or disk volumes, these must be configured in the Storage Daemon configuration file, normally found at :file:`C:\\ProgrammData\\Bareos\\`. However, it is not required to start the Bareos Storage Daemon. Normally, if the Storage Daemon would be able to run, :command:`bextract` would not be required.
 
 After installing, :command:`bextract` can be called via command line:
 
@@ -601,7 +601,7 @@ If you find yourself using this program, you have probably done something wrong.
 The bscan program can be used to re-create a database (catalog) records from the backup information written to one or more Volumes. This is normally needed only if one or more Volumes have been pruned or purged from your catalog so that the records on the Volume are no longer in the catalog, or for Volumes that you have archived. Note, if you scan in Volumes that were previously purged, you will be able to do restores from those Volumes. However, unless you modify the Job and File retention
 times for the Jobs that were added by scanning, the next time you run any backup Job with the same name, the records will be pruned again. Since it takes a long time to scan Volumes this can be very frustrating.
 
-With some care, :command:`bscan` can also be used to synchronize your existing catalog with a Volume. Although we have never seen a case of bscan damaging a catalog, since bscan modifies your catalog, we recommend that you do a simple ASCII backup of your database before running :command:`bscan` just to be sure. See :ref:`Compacting Your Database <CompactingMySQL>` for the details of making a copy of your database.
+With some care, :command:`bscan` can also be used to synchronize your existing catalog with a Volume. Although we have never seen a case of bscan damaging a catalog, since bscan modifies your catalog, we recommend that you do a simple ASCII backup of your database before running :command:`bscan` just to be sure.
 
 :command:`bscan` can also be useful in a disaster recovery situation, after the loss of a hard disk, if you do not have a valid bootstrap file for reloading your system, or if a Volume has been recycled but not overwritten, you can use :command:`bscan` to re-create your database, which can then be used to restore your system or a file to its previous state.
 

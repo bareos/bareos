@@ -12,10 +12,10 @@ Comment: BAREOS is a fork of the Bacula source code.
   The name BAREOS is a registered trademark of Bareos GmbH & Co. KG
 
 
-Files: *
+Files: core/* docs/manuals/source/* regress/*
 Copyright: 2000-2012 Free Software Foundation Europe e.V.
            2011-2012 Planets Communications B.V.
-           2013-2017 Bareos GmbH & Co. KG
+           2013-2021 Bareos GmbH & Co. KG
 License: Bareos
     This is basically AGPL-3.0 with Bacula and other exceptions.
     This section is the reformated version of
@@ -167,6 +167,7 @@ License: Bareos
     .
     d)
     (section does not apply anymore and was removed)
+    .
     e)
     Bareos can be compiled with data compression and decompression using
     the fastlzlib library.  (see git://github.com/exalead/fastlzlib.git)
@@ -285,6 +286,79 @@ License: Bareos
     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF OR OTHER
     * DEALINGS IN THE SOFTWARE.
+    .
+    g)
+    File src/lib/backtrace.cc contains code with the following license:
+    * Copyright (c) 2009-2017, Farooq Mela
+    * All rights reserved.
+    *
+    * Redistribution and use in source and binary forms, with or without
+    * modification, are permitted provided that the following conditions are met:
+    *
+    * 1. Redistributions of source code must retain the above copyright
+    *    notice, this list of conditions and the following disclaimer.
+    * 2. Redistributions in binary form must reproduce the above copyright
+    *    notice, this list of conditions and the following disclaimer in the
+    *    documentation and/or other materials provided with the distribution.
+    * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+    * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+    * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+    * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+    * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+    * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+    * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+    * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+    * POSSIBILITY OF SUCH DAMAGE.
+    .
+    h)
+    Files core/src/stored/crc32/crc32.{cc,h} contain code with the following license:
+    zlib License
+    .
+    Copyright (c) 2011-2016 Stephan Brumme
+    .
+    This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
+    Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
+    1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software.
+    If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+    2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+    3. This notice may not be removed or altered from any source distribution.
+    .
+    i)
+    We included the Scality Droplet source code which is released under the BSD License and uses this abbreviated license term:
+    .
+    * Copyright (C) 2010 SCALITY SA. All rights reserved.
+    * http://www.scality.com
+    *
+    * Redistribution and use in source and binary forms, with or without
+    * modification, are permitted provided that the following conditions are
+    * met:
+    *
+    * Redistributions of source code must retain the above copyright notice,
+    * this list of conditions and the following disclaimer.
+    *
+    * Redistributions in binary form must reproduce the above copyright
+    * notice, this list of conditions and the following disclaimer in the
+    * documentation and/or other materials provided with the distribution.
+    *
+    * THIS SOFTWARE IS PROVIDED BY SCALITY SA ``AS IS'' AND ANY EXPRESS OR
+    * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    * DISCLAIMED. IN NO EVENT SHALL SCALITY SA OR CONTRIBUTORS BE LIABLE FOR
+    * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+    * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+    * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+    * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+    * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+    * POSSIBILITY OF SUCH DAMAGE.
+    *
+    * The views and conclusions contained in the software and documentation
+    * are those of the authors and should not be interpreted as representing
+    * official policies, either expressed or implied, of SCALITY SA.
+    *
+    * https://github.com/scality/Droplet
     .
     .
     ===========================================
@@ -1144,7 +1218,7 @@ License: Bareos
     .
     ===========================================
 
-Files: src/lib/bmtio.h
+Files: core/src/lib/bmtio.h
 Copyright: 1982,1986,1993 The Regents of the University of California
 License: permissive
     /*-
@@ -1180,12 +1254,12 @@ License: permissive
     */
 
 
-Files: src/lmdb/*
+Files: core/src/lmdb/*
 Copyright: 2011-2014 Howard Chu, Symas Corp.
 License: OpenLDAP
 
 
-Files: src/ndmp/md5.h src/ndmp/md5c.c
+Files: core/src/ndmp/md5.h src/ndmp/md5c.c
 Copyright:  1991,1992, RSA Data Security, Inc.
 License: permissive
     Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
@@ -1210,7 +1284,7 @@ License: permissive
     documentation and/or software.
 
 
-Files: src/ndmp/*
+Files: core/src/ndmp/*
 Copyright: 1998-2002 Traakan, Inc., Los Altos, CA
 License: BSD-2-clause
     /*
@@ -1242,30 +1316,30 @@ License: BSD-2-clause
     */
 
 
-Files: src/lib/bregex.h src/lib/bregex.c
+Files: core/src/lib/bregex.h core/src/lib/bregex.cc
 Copyright: 1991 Tatu Ylonen, Espoo, Finland
            2006-2010 Free Software Foundation Europe e.V.
 License: permissive and AGPL-3.0
 
 
-Files: src/lib/bsnprintf.c
+Files: core/src/lib/bsnprintf.cc
 Copyright: 1995 Patrick Powell
            2005-2012 Free Software Foundation Europe e.V.
 License: permissive and AGPL-3.0
 
 
-Files: src/tools/bsmtp.c
+Files: core/src/tools/bsmtp.cc
 Copyright: 1997 Ralf S. Engelschall
            2001-2012 Free Software Foundation Europe e.V.
 License: GPL-2
 
 
-Files: src/lib/fnmatch.h src/lib/fnmatch.c
+Files: core/src/lib/fnmatch.h core/src/lib/fnmatch.cc
 Copyright: 1989,1992,1993,1994 The Regents of the University of California
 License: BSD-3-clause
 
 
-Files: src/lib/var.h src/lib/var.c
+Files: core/src/lib/var.h core/src/lib/var.cc
 Copyright: 2001-2002 Ralf S. Engelschall <rse@engelschall.com>
            2001-2002 The OSSP Project (http://www.ossp.org/)
            2001-2002 Cable & Wireless Deutschland (http://www.cw.com/de/)
@@ -1273,11 +1347,11 @@ Copyright: 2001-2002 Ralf S. Engelschall <rse@engelschall.com>
 License: permissive and AGPL-3.0
 
 
-Files: src/win32/compat/include/sys/mtio.h
+Files: core/src/win32/compat/include/sys/mtio.h
 Copyright: 1996, 1997 Free Software Foundation, Inc.
 License: LGPL-2.1+
 
-Files: src/win32/compat/glob.c src/win32/compat/include/glob.h
+Files: core/src/win32/compat/glob.c core/src/win32/compat/include/glob.h
 Copyright (C) 2012 MinGW.org project
 License: permissive
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -1299,9 +1373,55 @@ License: permissive
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF OR OTHER
  * DEALINGS IN THE SOFTWARE.
 
-Files: src/win32/plugins/filed/mssqlvdi-fd.c
+Files: core/src/win32/plugins/filed/mssqlvdi-fd.c
 Copyright:  2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
             2013-2013 Bareos GmbH & Co. KG
+License: AGPL-3.0
+
+Files: core/src/stored/crc32/crc32.cc core/src/stored/crc32/crc32.h
+Copyright:  2011-2016 Stephan Brumme
+License: Zlib
+
+Files: core/src/droplet/*
+Copyright:  2010 SCALITY SA
+License: BSD-2-clause
+/*
+ * Copyright (C) 2010 SCALITY SA. All rights reserved.
+ * http://www.scality.com
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ * Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY SCALITY SA ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL SCALITY SA OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation
+ * are those of the authors and should not be interpreted as representing
+ * official policies, either expressed or implied, of SCALITY SA.
+ *
+ * https://github.com/scality/Droplet
+ */
+
+
+Files: *
+Copyright: 2012-2021 Bareos GmbH & Co. KG
 License: AGPL-3.0
 
 

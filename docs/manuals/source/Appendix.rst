@@ -6,7 +6,6 @@ Appendix
 
    .. toctree::
 
-      /Appendix/SystemRequirements.rst
       /Appendix/OperatingSystems.rst
       /Appendix/BareosPrograms.rst
       /Appendix/TheBootstrapFile.rst

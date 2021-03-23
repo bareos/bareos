@@ -23,7 +23,7 @@ change the creation of output.
 
    -  indicated by a signal packet and than the text packet
 
--  see :ref:`DeveloperGuide/daemonprotocol/Daemon Protocol`
+-  see :ref:`section-daemon-protocol`
 
 The ``OutputFormatter`` class have been introduced to consolidate the
 interface to generate Console output.

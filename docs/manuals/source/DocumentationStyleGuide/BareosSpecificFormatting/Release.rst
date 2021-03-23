@@ -145,18 +145,3 @@ If you want to display the release download URL from the Bareos.com site, the fo
 
 
 https://download.bareos.com/bareos/release/18.2/
-
-
-Contributions Download URL
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you want to display the download URL of plugins available on Bareos.org, the following formatting should be used:
-
-.. \newcommand{\contribDownloadBareosOrg}{%
-   \url{http://download.bareos.org/bareos/contrib/}%
-   }
-
-   Post Conversion Changes
-   ${PERL} 's#\\contribDownloadBareosOrg\{(.*?)\}#//http://download.bareos.org/bareos/contrib/#g' ${DESTFILE}
-
-http://download.bareos.org/bareos/contrib/

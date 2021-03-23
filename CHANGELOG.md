@@ -18,6 +18,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix volume-pruning to be relyable on all test platforms [PR #761]
 
 ### Added
+- add support for building and packaging contrib packages [PR #768]:
+  - bareos-contrib-director-python-plugins.install
+  - bareos-contrib-filedaemon-python-plugins.install
+  - bareos-contrib-tools
 - added reload commands to systemd service [PR #694]
 - Build the package **bareos-filedaemon-postgresql-python-plugin** also for Debian, Ubuntu and UCS (deb packages) [PR #723].
 - added an informative debugmessage when a dynamic backend cannot be loaded [PR #740]

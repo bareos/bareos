@@ -1,3 +1,5 @@
+.. _section-daemon-protocol:
+
 Daemon Protocol
 ===============
 

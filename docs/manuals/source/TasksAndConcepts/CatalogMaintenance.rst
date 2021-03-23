@@ -376,7 +376,7 @@ File Retention = <time-period-specification>
 
    Since File records in the database account for probably 80 percent of the size of the database, you should carefully determine exactly what File Retention period you need. Once the File records have been removed from the database, you will no longer be able to restore individual files in a Job. However, as long as the Job record still exists, you will be able to restore all files in the job.
 
-   Retention periods are specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years on the record. See the :ref:`Configuration chapter <Time>` of this manual for additional details of modifier specification.
+   Retention periods are specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years on the record. See the :ref:`Configuration chapter <DataTypeTime>` of this manual for additional details of modifier specification.
 
    The default File retention period is 60 days.
 
@@ -386,7 +386,7 @@ Job Retention = <time-period-specification>
 
    As mentioned above, once the File records are removed from the database, you will no longer be able to restore individual files from the Job. However, as long as the Job record remains in the database, you will be able to restore all the files backed up for the Job. As a consequence, it is generally a good idea to retain the Job records much longer than the File records.
 
-   The retention period is specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years. See the :ref:`Configuration chapter <Time>` of this manual for additional details of modifier specification.
+   The retention period is specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years. See the :ref:`Configuration chapter <DataTypeTime>` of this manual for additional details of modifier specification.
 
    The default Job Retention period is 180 days.
 
@@ -610,21 +610,18 @@ To setup a scheduled admin job for vacuuming the file table, the following must 
 Repairing Your PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Database; Repairing Your PostgreSQL>`
-:index:`\ <single: Repairing Your PostgreSQL Database>`
-
-The same considerations apply as for :ref:`RepairingMySQL`. Consult the PostgreSQL documents for how to repair the database.
-
 For Bareos specific problems, consider using :ref:`bareos-dbcheck` program.
+In other cases, consult the PostgreSQL documents for how to repair the database.
 
 .. _BackingUpBareos:
 
 Backing Up Your Bareos Database
 -------------------------------
 
-:index:`\ <single: Backup; Bareos database>`
-:index:`\ <single: Backup; Catalog>`
-:index:`\ <single: Database; Backup Bareos database>`
+.. index::
+   single: Backup; Bareos database
+   single: Backup; Catalog
+   single: Database; Backup Bareos database
 
 If ever the machine on which your Bareos database crashes, and you need to restore from backup tapes, one of your first priorities will probably be to recover the database. Although Bareos will happily backup your catalog database if it is specified in the FileSet, this is not a very good way to do it, because the database will be saved while Bareos is modifying it. Thus the database may be in an instable state. Worse yet, you will backup the database before all the Bareos updates have been
 applied.
