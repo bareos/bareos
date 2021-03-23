@@ -249,8 +249,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             except Exception as e:
                 bareosfd.JobMessage(
                     M_ERROR,
-                    'Could net get stat-info for file %s: %s\n'
-                    % (file_to_backup, e),
+                    "Could net get stat-info for file %s: %s\n" % (file_to_backup, e),
                 )
                 continue
             bareosfd.DebugMessage(
@@ -286,7 +285,9 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.parseBackupLabelFile()
             bareosfd.JobMessage(
                 M_FATAL,
-                "Another Postgres Backup Operation is in progress (\"{}\" file exists). You may stop it using SELECT pg_stop_backup()\n".format(self.labelFileName)
+                'Another Postgres Backup Operation is in progress ("{}" file exists). You may stop it using SELECT pg_stop_backup()\n'.format(
+                    self.labelFileName
+                ),
             )
             return bRC_Error
 
@@ -322,7 +323,6 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 M_ERROR,
                 "Could not read Label File %s\n" % (self.labelFileName),
             )
-
 
     def start_backup_file(self, savepkt):
         """
@@ -432,7 +432,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             except Exception as e:
                 bareosfd.JobMessage(
                     M_ERROR,
-                    'Could net get stat-info for file %s: %s\n' % (fullPath, e),
+                    "Could net get stat-info for file %s: %s\n" % (fullPath, e),
                 )
                 continue
             fileMtime = datetime.datetime.fromtimestamp(st.st_mtime)
