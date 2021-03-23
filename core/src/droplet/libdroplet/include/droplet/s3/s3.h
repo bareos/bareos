@@ -32,8 +32,8 @@
  * https://github.com/scality/Droplet
  */
 
-#ifndef __DROPLET_S3_H__
-#define __DROPLET_S3_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_S3_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_S3_H_
 
 #include <droplet/s3/reqbuilder.h>
 #include <droplet/s3/replyparser.h>
@@ -43,4 +43,4 @@
 /* #define DPRINTF(fmt,...) fprintf(stderr, "[s3] " fmt, ##__VA_ARGS__) */
 #define DPRINTF(fmt,...)
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_S3_H_

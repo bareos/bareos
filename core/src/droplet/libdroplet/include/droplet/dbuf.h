@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_DBUF_H__
-#define __DROPLET_DBUF_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_DBUF_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_DBUF_H_
 
 typedef struct
 {
@@ -51,4 +51,4 @@ int dpl_dbuf_add(dpl_dbuf_t *nbuf, const void *buf, int len);
 // int dpl_dbuf_read(dpl_dbuf_t *nbuf, int fd, int size);
 int dpl_dbuf_length(dpl_dbuf_t *nbuf);
 // int dpl_dbuf_consume(dpl_dbuf_t *nbuf, void *buf, int size);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_DBUF_H_

@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SPROXYD_REQBUILDER_H__
-#define __DROPLET_SPROXYD_REQBUILDER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_REQBUILDER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_REQBUILDER_H_
 
 typedef enum
   {
@@ -45,4 +45,4 @@ typedef enum
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */
 dpl_status_t dpl_sproxyd_req_build(const dpl_req_t *req, dpl_sproxyd_req_mask_t req_mask, uint32_t force_version, dpl_dict_t **headersp);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_REQBUILDER_H_

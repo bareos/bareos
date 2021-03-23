@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_PRICING_H__
-#define __DROPLET_PRICING_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_PRICING_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_PRICING_H_
 
 enum dpl_tok
   {
@@ -195,4 +195,4 @@ dpl_status_t dpl_pricing_load(dpl_ctx_t *ctx);
 void dpl_pricing_free(dpl_ctx_t *ctx);
 void dpl_log_request(dpl_ctx_t *ctx, const char *type, const char *subtype, size_t size);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_PRICING_H_

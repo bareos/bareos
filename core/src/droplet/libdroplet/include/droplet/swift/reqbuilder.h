@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SWIFT_REQBUILDER_H__
-#define __DROPLET_SWIFT_REQBUILDER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REQBUILDER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REQBUILDER_H_
 
 typedef enum
   {
@@ -54,4 +54,4 @@ typedef enum
 /* src/reqbuilder.c */
 dpl_status_t dpl_swift_req_set_resource(dpl_req_t *req, const char *resource);
 dpl_status_t dpl_swift_req_build(dpl_ctx_t *ctx, const dpl_req_t *req, dpl_swift_req_mask_t req_mask, dpl_dict_t **headersp, char **body_strp, int *lenp);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REQBUILDER_H_

@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_REQ_H__
-#define __DROPLET_REQ_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_REQ_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_REQ_H_
 
 /* PROTO req.c */
 /* src/req.c */
@@ -67,4 +67,4 @@ dpl_status_t dpl_req_set_src_resource(dpl_req_t *req, const char *src_resource);
 dpl_status_t dpl_req_set_src_subresource(dpl_req_t *req, const char *src_subresource);
 void dpl_req_set_copy_directive(dpl_req_t *req, dpl_copy_directive_t copy_directive);
 void dpl_req_set_copy_source_condition(dpl_req_t *req, const dpl_condition_t *condition);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_REQ_H_

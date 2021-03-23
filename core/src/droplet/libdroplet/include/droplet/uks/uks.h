@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_UKS_UKS_H__
-#define __DROPLET_UKS_UKS_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UKS_UKS_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UKS_UKS_H_
 
 #define DPL_UKS_CLASS_NBITS            4
 #define DPL_UKS_REPLICA_NBITS          4
@@ -68,4 +68,4 @@ dpl_status_t dpl_uks_bn2hex(const BIGNUM *id, char *id_str);
 
 extern dpl_id_scheme_t dpl_id_scheme_uks;
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UKS_UKS_H_

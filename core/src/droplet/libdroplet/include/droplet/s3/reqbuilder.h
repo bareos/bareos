@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_S3_REQBUILDER_H__
-#define __DROPLET_S3_REQBUILDER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_REQBUILDER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_REQBUILDER_H_
 
 typedef enum
   {
@@ -56,4 +56,4 @@ dpl_status_t dpl_s3_add_authorization_v4_to_headers(const dpl_req_t *, dpl_dict_
                                                     const dpl_dict_t *, struct tm *);
 dpl_status_t dpl_s3_get_authorization_v4_params(const dpl_req_t *, dpl_dict_t *, struct tm *);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_REQBUILDER_H_

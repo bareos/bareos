@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DPL_JSON_ADAPTER_H__
-#define __DPL_JSON_ADAPTER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_JSON_ADAPTER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_JSON_ADAPTER_H_
 
 #ifdef SCAL_JSON_C
 
@@ -59,4 +59,4 @@ json_object_get_string_length(struct json_object *o)
 
 #endif
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_JSON_ADAPTER_H_

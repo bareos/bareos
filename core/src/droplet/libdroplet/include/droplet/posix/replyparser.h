@@ -31,10 +31,10 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_POSIX_REPLYPARSER_H__
-#define __DROPLET_POSIX_REPLYPARSER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_REPLYPARSER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_REPLYPARSER_H_
 
 dpl_status_t dpl_posix_get_metadatum_from_value(const char *key, dpl_value_t *val, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_posix_get_metadata_from_values(const dpl_dict_t *values, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_REPLYPARSER_H_

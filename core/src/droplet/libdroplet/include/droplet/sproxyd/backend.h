@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SPROXYD_BACKEND_H__
-#define __DROPLET_SPROXYD_BACKEND_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_BACKEND_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_BACKEND_H_
 
 DCL_BACKEND_GET_CAPABILITIES_FN(dpl_sproxyd_get_capabilities);
 DCL_BACKEND_GET_ID_SCHEME_FN(dpl_sproxyd_get_id_scheme);
@@ -48,4 +48,4 @@ DCL_BACKEND_FN(dpl_sproxyd_put_internal, const char *, const char *, const char 
 
 extern dpl_backend_t    dpl_backend_sproxyd;
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_BACKEND_H_

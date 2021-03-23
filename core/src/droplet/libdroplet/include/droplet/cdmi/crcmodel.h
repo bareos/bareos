@@ -66,8 +66,8 @@
 
 /* The following #ifndef encloses this entire */
 /* header file, rendering it indempotent.     */
-#ifndef CM_DONE
-#define CM_DONE
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_CRCMODEL_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_CRCMODEL_H_
 
 /******************************************************************************/
 
@@ -150,8 +150,4 @@ ulong cm_tab P_((p_cm_t p_cm,int index));
 /******************************************************************************/
 
 /* End of the header file idempotence #ifndef */
-#endif
-
-/******************************************************************************/
-/*                             End of crcmodel.h                              */
-/******************************************************************************/
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_CRCMODEL_H_

@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DPL_TASK_H__
-#define __DPL_TASK_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_TASK_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_TASK_H_
 
 #define DPL_TASK_DEFAULT_N_WORKERS 10
 
@@ -75,4 +75,4 @@ int dpl_task_pool_get_workers(dpl_task_pool_t *pool);
 void dpl_task_pool_enable_congestion(dpl_task_pool_t *pool, int threshold);
 void dpl_task_pool_wait_idle(dpl_task_pool_t *pool);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_TASK_H_

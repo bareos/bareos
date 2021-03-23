@@ -31,11 +31,11 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SPROXYD_H__
-#define __DROPLET_SPROXYD_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_SPROXYD_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_SPROXYD_H_
 
 #include <droplet/sproxyd/reqbuilder.h>
 #include <droplet/sproxyd/replyparser.h>
 #include <droplet/sproxyd/backend.h>
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_SPROXYD_H_

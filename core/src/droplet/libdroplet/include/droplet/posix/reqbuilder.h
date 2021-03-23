@@ -31,11 +31,11 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_POSIX_REQBUILDER_H__
-#define __DROPLET_POSIX_REQBUILDER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_REQBUILDER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_REQBUILDER_H_
 
 #define DPL_POSIX_XATTR_PREFIX "user."
 
 dpl_status_t dpl_posix_setattr(const char *path, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_REQBUILDER_H_

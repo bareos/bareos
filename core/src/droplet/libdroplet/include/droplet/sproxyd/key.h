@@ -31,9 +31,9 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SPROXYD_KEY_H__
-#define __DROPLET_SPROXYD_KEY_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_KEY_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_KEY_H_
 
 dpl_status_t dpl_sproxyd_gen_key(BIGNUM *id, uint64_t oid, uint32_t volid, uint8_t serviceid, uint32_t specific);
 dpl_status_t dpl_sproxyd_set_class(BIGNUM *k, int class);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_KEY_H_

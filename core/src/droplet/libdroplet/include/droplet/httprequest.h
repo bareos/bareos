@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_HTTPREQUEST_H__
-#define __DROPLET_HTTPREQUEST_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_HTTPREQUEST_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_HTTPREQUEST_H_
 
 /* PROTO httprequest.c */
 /* src/httprequest.c */
@@ -42,4 +42,4 @@ dpl_status_t dpl_add_content_range_to_headers(const dpl_range_t *range, dpl_dict
 dpl_status_t dpl_add_condition_to_headers(const dpl_condition_t *condition, dpl_dict_t *headers);
 dpl_status_t dpl_add_basic_authorization_to_headers(const dpl_req_t *req, dpl_dict_t *headers);
 dpl_status_t dpl_req_gen_http_request(dpl_ctx_t *ctx, dpl_req_t *req, const dpl_dict_t *headers, const dpl_dict_t *query_params, char *buf, int len, unsigned int *lenp);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_HTTPREQUEST_H_

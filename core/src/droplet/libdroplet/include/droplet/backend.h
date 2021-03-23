@@ -32,8 +32,8 @@
  * https://github.com/scality/Droplet
  */
 
-#ifndef __DROPLET_BACKEND_H__
-#define __DROPLET_BACKEND_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_BACKEND_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_BACKEND_H_
 
 /**
  * All backend fn return a @e dpl_status_t and get a @e dpl_ctx_t* as first argument.
@@ -126,4 +126,4 @@ typedef struct dpl_backend_s
   dpl_stream_flush_t            stream_flush;
 } dpl_backend_t;
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_BACKEND_H_

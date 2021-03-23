@@ -1,5 +1,5 @@
-#ifndef __UTEST_MAIN_H__
-#define __UTEST_MAIN_H__
+#ifndef BAREOS_DROPLET_UTESTS_UTEST_MAIN_H_
+#define BAREOS_DROPLET_UTESTS_UTEST_MAIN_H_
 
 #include <check.h>
 
@@ -91,4 +91,4 @@ extern Suite    *s3_auth_v4_suite(void);
 #define dpl_assert_ptr_null(X) _dpl_assert_ptr(X, ==, NULL)
 #define dpl_assert_ptr_not_null(X) _dpl_assert_ptr(X, !=, NULL)
 
-#endif
+#endif  // BAREOS_DROPLET_UTESTS_UTEST_MAIN_H_

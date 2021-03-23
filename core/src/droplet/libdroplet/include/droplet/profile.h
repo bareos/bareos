@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_PROFILE_H__
-#define __DROPLET_PROFILE_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_PROFILE_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_PROFILE_H_
 
 /* PROTO profile.c */
 /* src/profile.c */
@@ -48,4 +48,4 @@ dpl_status_t dpl_profile_post(dpl_ctx_t *ctx);
 dpl_status_t dpl_profile_load(dpl_ctx_t *ctx, const char *droplet_dir, const char *profile_name);
 dpl_status_t dpl_profile_set_from_dict(dpl_ctx_t *ctx, const dpl_dict_t *profile);
 void dpl_profile_free(dpl_ctx_t *ctx);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_PROFILE_H_

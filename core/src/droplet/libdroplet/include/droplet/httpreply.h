@@ -31,8 +31,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_HTTPREPLY_H__
-#define __DROPLET_HTTPREPLY_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_HTTPREPLY_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_HTTPREPLY_H_
 
 /*
  *
@@ -90,4 +90,4 @@ dpl_status_t dpl_read_http_reply(dpl_conn_t* conn,
                                  unsigned int* data_lenp,
                                  dpl_dict_t** headersp,
                                  int* connection_closep);
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_HTTPREPLY_H_
