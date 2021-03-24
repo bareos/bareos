@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -652,4 +652,87 @@ if(DEFINED do-static-code-checks)
   set(DO_STATIC_CODE_CHECKS ${do-static-code-checks})
 else()
   set(DO_STATIC_CODE_CHECKS OFF)
+endif()
+
+if(DEFINED changer-device AND NOT DEFINED tape-devices)
+  message(STATUS "Error: Changer device defined but no tape device defined")
+  set(error_odd_devices TRUE)
+elseif(NOT DEFINED changer-device AND DEFINED tape-devices)
+  message(STATUS "Error: Tape device defined but no changer device defined")
+  set(error_odd_devices TRUE)
+endif()
+
+if(DEFINED changer-device)
+  execute_process(
+    COMMAND ls "${changer-device}"
+    RESULT_VARIABLE changer_device0_exists
+    OUTPUT_QUIET ERROR_QUIET
+  )
+endif()
+
+if(NOT ${changer_device0_exists} EQUAL 0)
+  message(STATUS "Error: Could not find changer-device \"${changer-device}\"")
+  set(error_changer0 TRUE)
+endif()
+
+if(DEFINED tape-devices)
+  list(LENGTH tape-devices number_of_tape_devices)
+  if(number_of_tape_devices EQUAL 0)
+    message(STATUS "Error: list of tape-devices is empty")
+    set(error_tape_devices0 TRUE)
+  else()
+    foreach(device ${tape-devices})
+      execute_process(
+        COMMAND ls "${device}"
+        RESULT_VARIABLE tape_device_exists
+        OUTPUT_QUIET ERROR_QUIET
+      )
+      if(NOT ${tape_device_exists} EQUAL 0)
+        message(STATUS "Error: Could not find tape-device \"${device}\"")
+        set(error_tape_devices0 TRUE)
+      endif()
+    endforeach()
+  endif()
+endif()
+
+if(error_changer0
+   OR error_tape_devices0
+   OR error_odd_devices
+)
+  set(changer_example
+      "-D changer-device=\"/dev/tape/by-id/scsi-SSTK_L700_XYZZY_A\""
+  )
+  set(tape_example
+      "-D tape-devices=\"/dev/tape/by-id/scsi-XYZZY_A1-nst;/dev/tape/by-id/scsi-XYZZY_A2-nst;/dev/tape/by-id/scsi-XYZZY_A3-nst;/dev/tape/by-id/scsi-XYZZY_A4-nst\""
+  )
+  message(
+    FATAL_ERROR
+      "Errors occurred during cmake run for autochanger test (see above).\n\nUse this Example as guideline:
+    ${changer_example} ${tape_example}\n"
+  )
+else() # no error
+  if(DEFINED changer-device AND DEFINED tape-devices)
+    set(autochanger_devices_found TRUE)
+  endif()
+endif()
+if(autochanger_devices_found)
+  set(AUTOCHANGER_DEVICES_FOUND
+      TRUE
+      PARENT_SCOPE
+  )
+  set(CHANGER_DEVICE0
+      ${changer-device}
+      PARENT_SCOPE
+  )
+
+  list(JOIN tape-devices "\" \"" joined_tape_devices_0)
+  set(TAPE_DEVICES0
+      "\"${joined_tape_devices_0}\""
+      PARENT_SCOPE
+  )
+
+  message(
+    STATUS
+      "Found these devices for autochanger test: \"${changer-device}\" \"${joined_tape_devices_0}\""
+  )
 endif()

@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -814,7 +814,7 @@ retry_changercmd:
     }
 
     dir->fsend("slots=%hd", slots);
-    Dmsg1(100, "<stored: %s", dir->msg);
+    Dmsg1(100, "<stored: %s\n", dir->msg);
   }
 
   status = CloseBpipe(bpipe);

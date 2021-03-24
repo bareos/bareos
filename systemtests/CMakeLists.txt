@@ -302,6 +302,10 @@ macro(prepare_test)
   # skip for tests without etc/bareos ("catalog" test)
   if(EXISTS ${current_test_source_directory}/etc/bareos)
     prepare_testdir_for_daemon_run()
+    create_symlink(
+      ${CMAKE_SOURCE_DIR}/core/scripts/mtx-changer.conf
+      ${current_test_directory}/etc/bareos/mtx-changer.conf
+    )
   endif()
 endmacro()
 
@@ -421,6 +425,9 @@ else() # run systemtests on source and compiled files
   endif()
   if(TARGET bareossd-gfapi)
     get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-gfapi BINARY_DIR)
+  endif()
+  if(TARGET bareossd-tape)
+    get_target_property(SD_BACKEND_DIR_TO_TEST bareossd-tape BINARY_DIR)
   endif()
   set(DIR_PLUGINS_DIR_TO_TEST ${CMAKE_BINARY_DIR}/core/src/plugins/dird)
 
@@ -611,6 +618,20 @@ if(SETFATTR_WORKS)
   list(APPEND SYSTEM_TESTS xattr)
 else()
   list(APPEND SYSTEM_TESTS_DISABLED xattr)
+endif()
+
+if(AUTOCHANGER_DEVICES_FOUND)
+  if(MT AND MTX)
+    set(AUTOCHANGER_TEST_ENABLED TRUE)
+  else()
+    message(FATAL_ERROR "mtx/mt not found for autochanger test")
+  endif()
+endif()
+
+if(AUTOCHANGER_TEST_ENABLED)
+  list(APPEND SYSTEM_TESTS autochanger)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED autochanger)
 endif()
 
 if(TARGET (messages_resource))
