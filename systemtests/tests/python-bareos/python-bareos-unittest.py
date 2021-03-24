@@ -2,7 +2,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -1521,10 +1521,68 @@ class PythonBareosJsonConfigTest(PythonBareosJsonBase):
         logger.debug(str(result))
         director.call("show client={} verbose".format(newclient))
 
+    def test_configure_add_with_quotes(self):
+        """
+        verifying that configure add handles quoted strings correctly
+        """
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        resourcesname = "jobs"
+        testname = "testjob"
+        stringwithwhitespace = "strings with whitespace"
+        testscript = '/bin/bash -c \\"echo Hallo\\"'
+        priority = 11
+
+        try:
+            os.remove("etc/bareos/bareos-dir.d/job/{}.conf".format(testname))
+            director.call("reload")
+        except OSError:
+            pass
+
+        self.assertFalse(
+            self.check_resource(director, resourcesname, testname),
+            u"Resource {} in {} already exists.".format(testname, resourcesname),
+        )
+
+        self.configure_add(
+            director,
+            resourcesname,
+            testname,
+            u'job jobdefs=DefaultJob name={} description="{}" runafterjob="{}" priority={}'.format(
+                testname, stringwithwhitespace, testscript, priority
+            ),
+        )
+
+        result = director.call("show jobs={}".format(testname))
+
+        self.assertEqual(
+            result["jobs"][testname]["description"],
+            stringwithwhitespace,
+        )
+
+        self.assertEqual(
+            result["jobs"][testname]["runscript"][0]["runafterjob"],
+            testscript,
+        )
+
+        self.assertEqual(
+            result["jobs"][testname]["priority"],
+            priority,
+        )
+
 
 class PythonBareosDeleteTest(PythonBareosJsonBase):
     def test_delete_jobid(self):
-        """"""
         logger = logging.getLogger()
 
         username = self.get_operator_username()
@@ -1549,8 +1607,6 @@ class PythonBareosDeleteTest(PythonBareosJsonBase):
             job = self.list_jobid(director, jobid)
 
     def test_delete_jobids(self):
-        """
-        """
         logger = logging.getLogger()
 
         username = self.get_operator_username()
@@ -1576,8 +1632,6 @@ class PythonBareosDeleteTest(PythonBareosJsonBase):
                 job = self.list_jobid(director, jobid)
 
     def test_delete_jobid_paramter(self):
-        """
-        """
         logger = logging.getLogger()
 
         username = self.get_operator_username()
