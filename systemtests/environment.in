@@ -23,8 +23,6 @@ systemtests_s3_use_https=@systemtests_s3_use_https@
 
 
 dumps=${current_test_directory}/dumps
-plugindir=@plugins@
-plugindirtmp=${PROJECT_BINARY_DIR}/pluginstmp
 rscripts=${PROJECT_BINARY_DIR}/scripts
 scripts=@scripts@
 cats=${PROJECT_BINARY_DIR}/cats
