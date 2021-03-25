@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,8 +24,7 @@ set(TEST_SRC # drivetype_test.cc
 
 add_executable(test_findlib ${TEST_SRC})
 target_link_libraries(
-  test_findlib bareosfind bareos ${JANSSON_LIBRARIES} ${GTEST_LIBRARIES}
-  ${GTEST_MAIN_LIBRARIES}
+  test_findlib bareosfind bareos ${JANSSON_LIBRARIES} GTest::gtest_main
 )
 
 add_test(NAME test_findlib COMMAND "test_findlib")

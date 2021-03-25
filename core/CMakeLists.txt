@@ -901,24 +901,7 @@ message(
 message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
 message("   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ")
-if(GTEST_FOUND)
-  message(
-    "   gtest support:                ${GTEST_FOUND} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} "
-  )
-  if(GMOCK_FOUND)
-    message(
-      "   gmock support:                ${GMOCK_FOUND} ${GMOCK_LIBRARIES} "
-    )
-  else()
-    message(
-      "   gmock support:                ${GMOCK_FOUND} (some unit tests will be disabled)"
-    )
-  endif()
-else()
-  message(
-    "   gtest support:                ${GTEST_FOUND} (unit tests will be disabled)"
-  )
-endif()
+message("   GTest enabled:                ${GTest_FOUND}")
 message(
   "   Intl support:                 ${Intl_FOUND} ${INTLINCLUDE_DIRS} ${INTL_LIBRARIES}"
 )

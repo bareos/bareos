@@ -725,8 +725,8 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-restapi")
 endif()
 
-bareosfindlibrary("gtest")
-if(GTEST_FOUND AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
+find_package(GTest 1.8 CONFIG)
+if(GTest_FOUND AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   list(APPEND SYSTEM_TESTS "catalog")
   message(
     STATUS
