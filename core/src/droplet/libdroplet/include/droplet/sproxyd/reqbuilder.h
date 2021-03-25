@@ -35,14 +35,17 @@
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_REQBUILDER_H_
 
 typedef enum
-  {
-    DPL_SPROXYD_REQ_MD_ONLY       = (1u<<0),
-    DPL_SPROXYD_REQ_CONSISTENT    = (1u<<1),
-    DPL_SPROXYD_REQ_EXPECT_VERSION = (1u<<2),
-    DPL_SPROXYD_REQ_FORCE_VERSION = (1u<<3),
-  } dpl_sproxyd_req_mask_t;
+{
+  DPL_SPROXYD_REQ_MD_ONLY = (1u << 0),
+  DPL_SPROXYD_REQ_CONSISTENT = (1u << 1),
+  DPL_SPROXYD_REQ_EXPECT_VERSION = (1u << 2),
+  DPL_SPROXYD_REQ_FORCE_VERSION = (1u << 3),
+} dpl_sproxyd_req_mask_t;
 
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */
-dpl_status_t dpl_sproxyd_req_build(const dpl_req_t *req, dpl_sproxyd_req_mask_t req_mask, uint32_t force_version, dpl_dict_t **headersp);
+dpl_status_t dpl_sproxyd_req_build(const dpl_req_t* req,
+                                   dpl_sproxyd_req_mask_t req_mask,
+                                   uint32_t force_version,
+                                   dpl_dict_t** headersp);
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_REQBUILDER_H_

@@ -35,27 +35,38 @@
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_REQBUILDER_H_
 
 typedef enum
-  {
-    DPL_CDMI_REQ_HTTP_COMPAT = (1u<<0),
-  } dpl_cdmi_req_mask_t;
+{
+  DPL_CDMI_REQ_HTTP_COMPAT = (1u << 0),
+} dpl_cdmi_req_mask_t;
 
-#define DPL_CDMI_CONTENT_TYPE_CONTAINER  "application/cdmi-container"
-#define DPL_CDMI_CONTENT_TYPE_OBJECT     "application/cdmi-object"
+#define DPL_CDMI_CONTENT_TYPE_CONTAINER "application/cdmi-container"
+#define DPL_CDMI_CONTENT_TYPE_OBJECT "application/cdmi-object"
 #define DPL_CDMI_CONTENT_TYPE_CAPABILITY "application/cdmi-capability"
-#define DPL_CDMI_CONTENT_TYPE_DOMAIN     "application/cdmi-domain"
-#define DPL_CDMI_CONTENT_TYPE_CHARDEVICE     "inode/chardevice"
-#define DPL_CDMI_CONTENT_TYPE_BLOCKDEVICE    "inode/blockdevice"
-#define DPL_CDMI_CONTENT_TYPE_FIFO       "inode/fifo"
-#define DPL_CDMI_CONTENT_TYPE_SOCKET     "inode/socket"
-#define DPL_CDMI_CONTENT_TYPE_SYMLINK    "inode/symlink"
-#define DPL_CDMI_CONTENT_TYPE_ANY        "application/*"
+#define DPL_CDMI_CONTENT_TYPE_DOMAIN "application/cdmi-domain"
+#define DPL_CDMI_CONTENT_TYPE_CHARDEVICE "inode/chardevice"
+#define DPL_CDMI_CONTENT_TYPE_BLOCKDEVICE "inode/blockdevice"
+#define DPL_CDMI_CONTENT_TYPE_FIFO "inode/fifo"
+#define DPL_CDMI_CONTENT_TYPE_SOCKET "inode/socket"
+#define DPL_CDMI_CONTENT_TYPE_SYMLINK "inode/symlink"
+#define DPL_CDMI_CONTENT_TYPE_ANY "application/*"
 
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */
-const char *dpl_cdmi_who_str(dpl_ace_who_t who);
-dpl_status_t dpl_cdmi_add_sysmd_to_req(const dpl_sysmd_t *sysmd, dpl_req_t *req);
-dpl_status_t dpl_cdmi_req_set_resource(dpl_req_t *req, const char *resource);
-dpl_status_t dpl_cdmi_req_add_range(dpl_req_t *req, dpl_cdmi_req_mask_t req_mask, const dpl_range_t *range);
-dpl_status_t dpl_cdmi_req_build(const dpl_req_t *req, dpl_cdmi_req_mask_t req_mask, dpl_dict_t **headersp, char **body_strp, int *lenp);
-dpl_status_t dpl_cdmi_req_gen_url(const dpl_req_t *req, dpl_dict_t *headers, char *buf, int len, unsigned int *lenp);
+const char* dpl_cdmi_who_str(dpl_ace_who_t who);
+dpl_status_t dpl_cdmi_add_sysmd_to_req(const dpl_sysmd_t* sysmd,
+                                       dpl_req_t* req);
+dpl_status_t dpl_cdmi_req_set_resource(dpl_req_t* req, const char* resource);
+dpl_status_t dpl_cdmi_req_add_range(dpl_req_t* req,
+                                    dpl_cdmi_req_mask_t req_mask,
+                                    const dpl_range_t* range);
+dpl_status_t dpl_cdmi_req_build(const dpl_req_t* req,
+                                dpl_cdmi_req_mask_t req_mask,
+                                dpl_dict_t** headersp,
+                                char** body_strp,
+                                int* lenp);
+dpl_status_t dpl_cdmi_req_gen_url(const dpl_req_t* req,
+                                  dpl_dict_t* headers,
+                                  char* buf,
+                                  int len,
+                                  unsigned int* lenp);
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_REQBUILDER_H_

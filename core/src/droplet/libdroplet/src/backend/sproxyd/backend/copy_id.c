@@ -35,28 +35,26 @@
 #include "dropletp.h"
 #include "droplet/sproxyd/sproxyd.h"
 
-dpl_status_t
-dpl_sproxyd_copy_id(dpl_ctx_t *ctx,
-                    const char *src_bucket,
-                    const char *src_resource,
-                    const char *src_subresource,
-                    const char *dst_bucket,
-                    const char *dst_resource,
-                    const char *dst_subresource,
-                    const dpl_option_t *option,
-                    dpl_ftype_t object_type,
-                    dpl_copy_directive_t copy_directive,
-                    const dpl_dict_t *metadata,
-                    const dpl_sysmd_t *sysmd,
-                    const dpl_condition_t *condition,
-                    char **locationp)
+dpl_status_t dpl_sproxyd_copy_id(dpl_ctx_t* ctx,
+                                 const char* src_bucket,
+                                 const char* src_resource,
+                                 const char* src_subresource,
+                                 const char* dst_bucket,
+                                 const char* dst_resource,
+                                 const char* dst_subresource,
+                                 const dpl_option_t* option,
+                                 dpl_ftype_t object_type,
+                                 dpl_copy_directive_t copy_directive,
+                                 const dpl_dict_t* metadata,
+                                 const dpl_sysmd_t* sysmd,
+                                 const dpl_condition_t* condition,
+                                 char** locationp)
 {
   int ret, ret2;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
-  switch (copy_directive)
-    {
+  switch (copy_directive) {
     case DPL_COPY_DIRECTIVE_UNDEF:
       ret = DPL_ENOTSUPP;
       goto end;
@@ -65,17 +63,17 @@ dpl_sproxyd_copy_id(dpl_ctx_t *ctx,
       goto end;
     case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
 
-      //replace the metadata
-      ret2 = dpl_sproxyd_put_internal(ctx, dst_bucket, dst_resource,
-                                      dst_subresource, option, object_type, condition, NULL, metadata, 
-                                      DPL_CANNED_ACL_UNDEF, NULL, 0, 1, locationp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
+      // replace the metadata
+      ret2 = dpl_sproxyd_put_internal(
+          ctx, dst_bucket, dst_resource, dst_subresource, option, object_type,
+          condition, NULL, metadata, DPL_CANNED_ACL_UNDEF, NULL, 0, 1,
+          locationp);
+      if (DPL_SUCCESS != ret2) {
+        ret = ret2;
+        goto end;
+      }
 
-      break ;
+      break;
     case DPL_COPY_DIRECTIVE_LINK:
     case DPL_COPY_DIRECTIVE_SYMLINK:
     case DPL_COPY_DIRECTIVE_MOVE:
@@ -84,11 +82,11 @@ dpl_sproxyd_copy_id(dpl_ctx_t *ctx,
     case DPL_COPY_DIRECTIVE_MVDENT:
       ret = DPL_ENOTSUPP;
       goto end;
-    }
+  }
 
   ret = DPL_SUCCESS;
-  
- end:
+
+end:
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 

@@ -36,53 +36,33 @@
 #include "droplet/s3/s3.h"
 
 /* WARNING, UNTESTED */
-dpl_status_t
-dpl_s3_list_bucket_attrs(dpl_ctx_t *ctx,
-                         const char *bucket,
-                         const char *prefix,
-                         const char *delimiter,
-                         const int max_keys,
-                         dpl_dict_t **metadatap,
-                         dpl_sysmd_t *sysmdp,
-                         dpl_vec_t **objectsp,
-                         dpl_vec_t **common_prefixesp,
-                         char **locationp)
+dpl_status_t dpl_s3_list_bucket_attrs(dpl_ctx_t* ctx,
+                                      const char* bucket,
+                                      const char* prefix,
+                                      const char* delimiter,
+                                      const int max_keys,
+                                      dpl_dict_t** metadatap,
+                                      dpl_sysmd_t* sysmdp,
+                                      dpl_vec_t** objectsp,
+                                      dpl_vec_t** common_prefixesp,
+                                      char** locationp)
 {
   dpl_status_t status;
 
-  status = dpl_s3_head(ctx,
-                       bucket,
-                       prefix,
-                       NULL,
-                       NULL,
-                       DPL_FTYPE_UNDEF,
-                       NULL,
-                       metadatap,
-                       sysmdp,
-                       locationp);
-  if (DPL_SUCCESS != status)
-    {
-      goto end;
-    }
+  status = dpl_s3_head(ctx, bucket, prefix, NULL, NULL, DPL_FTYPE_UNDEF, NULL,
+                       metadatap, sysmdp, locationp);
+  if (DPL_SUCCESS != status) { goto end; }
 
-  status = dpl_s3_list_bucket(ctx,
-                              bucket,
-                              prefix,
-                              delimiter,
-                              max_keys,
-                              objectsp,
-                              common_prefixesp,
-                              locationp);
-  if (DPL_SUCCESS != status)
-    {
-      if (NULL != metadatap && NULL != *metadatap)
-        {
-          dpl_dict_free(*metadatap);
-          *metadatap = NULL;
-        }
-      goto end;
+  status = dpl_s3_list_bucket(ctx, bucket, prefix, delimiter, max_keys,
+                              objectsp, common_prefixesp, locationp);
+  if (DPL_SUCCESS != status) {
+    if (NULL != metadatap && NULL != *metadatap) {
+      dpl_dict_free(*metadatap);
+      *metadatap = NULL;
     }
+    goto end;
+  }
 
- end:
+end:
   return status;
 }

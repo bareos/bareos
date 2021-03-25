@@ -34,6 +34,10 @@
 #ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_KEY_H_
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_KEY_H_
 
-dpl_status_t dpl_srws_gen_key(BIGNUM *id, uint64_t oid, uint32_t volid, uint8_t serviceid, uint32_t specific);
-dpl_status_t dpl_srws_set_class(BIGNUM *k, int class);
+dpl_status_t dpl_srws_gen_key(BIGNUM* id,
+                              uint64_t oid,
+                              uint32_t volid,
+                              uint8_t serviceid,
+                              uint32_t specific);
+dpl_status_t dpl_srws_set_class(BIGNUM* k, int class);
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_KEY_H_

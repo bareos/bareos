@@ -38,78 +38,78 @@ terminated at the unquoted end of a line or by an unquoted ';'
 Here is the profile file syntax in ABNF form, which is
 [defined in RFC5234](http://tools.ietf.org/html/rfc5234).
 
-	profile = *( *LWS item ) *LWS
+        profile = *( *LWS item ) *LWS
 
-	item = assignment / comment
+        item = assignment / comment
 
-	comment = %x23 *( %x00-09 %x0b-%xff ) LF
-	    ; from '#' character to newline
+        comment = %x23 *( %x00-09 %x0b-%xff ) LF
+            ; from '#' character to newline
 
-	assignment = variable *LWS "=" *LWS value *LWS ( LF / ";" )
-	    ; assignments end at newline or semicolon
+        assignment = variable *LWS "=" *LWS value *LWS ( LF / ";" )
+            ; assignments end at newline or semicolon
 
-	variable = string
+        variable = string
 
-	value = bool / addrlist / int / inth / path
+        value = bool / addrlist / int / inth / path
 
-	bool = "true" / "false"
-	    ; case sensitive
+        bool = "true" / "false"
+            ; case sensitive
 
-	addrlist = addr *( ( SP / COMMA / SEMIC ) addr )
-	addr = host [ ":" port ]
-	host = hostname / ipv4-addr
-	hostname = dot-atom
-	    ; from RFC 5322.  DNS host name, case insensitive
-	ipv4-addr = 1*3DIGIT 3( "." 1*3DIGIT )
-	    ; IPv4 address in dotted-quad form, see RFC 1166
-	port = int
+        addrlist = addr *( ( SP / COMMA / SEMIC ) addr )
+        addr = host [ ":" port ]
+        host = hostname / ipv4-addr
+        hostname = dot-atom
+            ; from RFC 5322.  DNS host name, case insensitive
+        ipv4-addr = 1*3DIGIT 3( "." 1*3DIGIT )
+            ; IPv4 address in dotted-quad form, see RFC 1166
+        port = int
 
-	int = 1*DIGIT
+        int = 1*DIGIT
 
-	inth = int / ( "0x" 1*XDIGIT )
-	    ; integer, possibly in hexadecimal
+        inth = int / ( "0x" 1*XDIGIT )
+            ; integer, possibly in hexadecimal
 
-	path = string
-	    ; unix-style '/' separated pathname.  May be used
-	    ; either for HTTP or as a local filesystem name.
+        path = string
+            ; unix-style '/' separated pathname.  May be used
+            ; either for HTTP or as a local filesystem name.
 
-	string = quoted-string / simple-string
-	quoted-string = DQUOTE *NOTDQUOTE DQUOTE
-	simple-string = 1*( STR / escaped-char )
-	escaped-char = ( BSLASH "r" ) /
-		       ( BSLASH "n" ) /
-		       ( BSLASH "t" ) /
-		       ( BSLASH BSLASH )
+        string = quoted-string / simple-string
+        quoted-string = DQUOTE *NOTDQUOTE DQUOTE
+        simple-string = 1*( STR / escaped-char )
+        escaped-char = ( BSLASH "r" ) /
+                       ( BSLASH "n" ) /
+                       ( BSLASH "t" ) /
+                       ( BSLASH BSLASH )
 
-	TAB = %x09
-	    ; tab character
-	LF = %x0a
-	    ; newline character
-	SP = %x20
-	    ; ' ' (space) character
-	DQUOTE = %x22
-	    ; '"' (double quote) character
-	HASH = %x23
-	    ; '#' (hash, pound) character
-	COMMA = %x2c
-	    ; ',' (comma) character
-	SEMIC = %x3b
-	    ; ';' (semicolon) character
-	EQUAL = %x3d
-	    ; '=' (equals) character
-	BSLASH = %x5c
-	    ; '\\' (backslash) character
-	NOTDQUOTE = %x00-%x21 / %x23-%xff
-	    ; anything but a double quote
-	LWS = SP / TAB
-	    ; linear whitespace characters
-	DIGIT = %x30-39
-	    ; ASCII decimal digits
-	XDIGIT = %x30-39 / %x41-46 / %x61-66
-	    ; ASCII hexadecimal digits
-	STR = %x00-08 %x0b-1f %x21 %x24-3a %x3c %x3e-5b %x5d-ff
-	    ; string characters, all characters except TAB LF SP
-	    ; DQUOTE HASH SEMIC EQUAL BSLASH
+        TAB = %x09
+            ; tab character
+        LF = %x0a
+            ; newline character
+        SP = %x20
+            ; ' ' (space) character
+        DQUOTE = %x22
+            ; '"' (double quote) character
+        HASH = %x23
+            ; '#' (hash, pound) character
+        COMMA = %x2c
+            ; ',' (comma) character
+        SEMIC = %x3b
+            ; ';' (semicolon) character
+        EQUAL = %x3d
+            ; '=' (equals) character
+        BSLASH = %x5c
+            ; '\\' (backslash) character
+        NOTDQUOTE = %x00-%x21 / %x23-%xff
+            ; anything but a double quote
+        LWS = SP / TAB
+            ; linear whitespace characters
+        DIGIT = %x30-39
+            ; ASCII decimal digits
+        XDIGIT = %x30-39 / %x41-46 / %x61-66
+            ; ASCII hexadecimal digits
+        STR = %x00-08 %x0b-1f %x21 %x24-3a %x3c %x3e-5b %x5d-ff
+            ; string characters, all characters except TAB LF SP
+            ; DQUOTE HASH SEMIC EQUAL BSLASH
 
 
 @section variables Variables
@@ -149,12 +149,12 @@ uses round-robin DNS.
 There is no default host list.  All backends except `posix` require
 `host` to be specified in the profile.  Examples:
 
-	host = server
-	host = server1,server2,server3
-	host = server1:8080,server2:4080
-	host = 192.168.100.20
-	host = my.external.server.com
-	host = "server1;server2"
+        host = server
+        host = server1,server2,server3
+        host = server1:8080,server2:4080
+        host = 192.168.100.20
+        host = my.external.server.com
+        host = "server1;server2"
 
 @par port
 This variable is deprecated; if specified it is ignored with a warning.
@@ -217,8 +217,8 @@ value for your operating system.  The correct value on Ubuntu is
 `"/etc/ssl/certs/ca-certificates.crt"`.
 
 @par cert_verif = \<bool\>
-Whether to strictly validate the SSL certificate provided by the server.  
-Default is `true`.  You should *NOT* set this variable to `false`  
+Whether to strictly validate the SSL certificate provided by the server.
+Default is `true`.  You should *NOT* set this variable to `false`
 except for testing purpose with self-signed SSL certificate on server
 you trust.
 
@@ -233,8 +233,8 @@ TODO
 TODO
 
 @par ssl_comp = \<bool\>
-Whether to explicitly disable SSL compression in order to mitigate CRIME 
-attack.  Default is 'false'.  If set to 'true', you then rely on the 
+Whether to explicitly disable SSL compression in order to mitigate CRIME
+attack.  Default is 'false'.  If set to 'true', you then rely on the
 configuration of the underlaying SSL library.
 
 @par pricing = \<string\>
@@ -254,7 +254,7 @@ profile.  See *Pricing Model* for a description of the log file.  The
 default is the droplet directory, i.e. chargeable events are logged by
 default.  To turn off logging specify an empty string, like this
 
-	pricing = ""	# turns off logging of chargeable events
+        pricing = ""	# turns off logging of chargeable events
 
 @par read_buf_size = \<inth\>
 Size in bytes of the buffer used to read from the HTTP socket.
@@ -273,7 +273,8 @@ backends are:
 
 - @b s3 Amazon's S3 (Simple Storage Service)
 - @b cdmi The SNIA's Cloud Management Data Interface
-- @b posix A backend which stores data in the local filesystem.  Useful only for testing.
+- @b posix A backend which stores data in the local filesystem.  Useful only for
+testing.
 - @b srws A vendor-specific RESTful interface provided by Scality's RING.
 - @b sproxyd A vendor-specific RESTful interface provided by Scality's RING.
 
@@ -297,7 +298,8 @@ Some servers may care.  The default is `true`.
 @par enterprise_number = \<inth\>
 Specifies an SNMP Enterprise Number, which is used in the `cdmi` backend to
 generate unique ObjectIDs.  Enterprise Number assignments are published
-[by IANA](http://www.iana.org/assignments/enterprise-numbers/enterprise-numbers).
+[by
+IANA](http://www.iana.org/assignments/enterprise-numbers/enterprise-numbers).
 For example, SGI's Enterprise Number is 59.  The default is 37489
 (assigned to Scality).
 

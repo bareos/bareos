@@ -34,14 +34,17 @@
 #ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SCAL_GC_H_
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SCAL_GC_H_
 
-#define DPL_SCAL_GC_SERVICE_ID       0x44
+#define DPL_SCAL_GC_SERVICE_ID 0x44
 
-#define DPL_SCAL_GC_IDXMAGIC         "BZ-DB"
-#define DPL_SCAL_GC_IDXMAGICLEN      5
-#define DPL_SCAL_GC_IDXVERSION       1
+#define DPL_SCAL_GC_IDXMAGIC "BZ-DB"
+#define DPL_SCAL_GC_IDXMAGICLEN 5
+#define DPL_SCAL_GC_IDXVERSION 1
 
-void dpl_scal_gc_gen_key(BIGNUM *id, int cl);
-dpl_status_t dpl_scal_gc_index_init(dpl_dbuf_t **indexp);
-dpl_status_t dpl_scal_gc_index_serialize(BIGNUM *chunkkey, uint64_t offset, uint64_t size, dpl_dbuf_t *buffer);
+void dpl_scal_gc_gen_key(BIGNUM* id, int cl);
+dpl_status_t dpl_scal_gc_index_init(dpl_dbuf_t** indexp);
+dpl_status_t dpl_scal_gc_index_serialize(BIGNUM* chunkkey,
+                                         uint64_t offset,
+                                         uint64_t size,
+                                         dpl_dbuf_t* buffer);
 
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SCAL_GC_H_

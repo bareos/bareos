@@ -34,37 +34,53 @@
 #ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UKS_UKS_H_
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UKS_UKS_H_
 
-#define DPL_UKS_CLASS_NBITS            4
-#define DPL_UKS_REPLICA_NBITS          4
-#define DPL_UKS_EXTRA_NBITS            (DPL_UKS_CLASS_NBITS+DPL_UKS_REPLICA_NBITS)
+#define DPL_UKS_CLASS_NBITS 4
+#define DPL_UKS_REPLICA_NBITS 4
+#define DPL_UKS_EXTRA_NBITS (DPL_UKS_CLASS_NBITS + DPL_UKS_REPLICA_NBITS)
 
-#define DPL_UKS_SPECIFIC_NBITS       24
-#define DPL_UKS_SERVICEID_NBITS      8
-#define DPL_UKS_VOLID_NBITS          32
-#define DPL_UKS_OID_NBITS            64
-#define DPL_UKS_HASH_NBITS           24 /*!< dispersion */
+#define DPL_UKS_SPECIFIC_NBITS 24
+#define DPL_UKS_SERVICEID_NBITS 8
+#define DPL_UKS_VOLID_NBITS 32
+#define DPL_UKS_OID_NBITS 64
+#define DPL_UKS_HASH_NBITS 24 /*!< dispersion */
 
-#define DPL_UKS_PAYLOAD_NBITS        (DPL_UKS_SPECIFIC_NBITS+DPL_UKS_SERVICEID_NBITS+DPL_UKS_VOLID_NBITS+DPL_UKS_OID_NBITS)
+#define DPL_UKS_PAYLOAD_NBITS                                             \
+  (DPL_UKS_SPECIFIC_NBITS + DPL_UKS_SERVICEID_NBITS + DPL_UKS_VOLID_NBITS \
+   + DPL_UKS_OID_NBITS)
 
-#define DPL_UKS_NBITS   160
+#define DPL_UKS_NBITS 160
 #define DPL_UKS_BCH_LEN 40
 
 typedef enum
-  {
-    DPL_UKS_MASK_OID = (1u<<0),
-    DPL_UKS_MASK_VOLID = (1u<<1),
-    DPL_UKS_MASK_SERVICEID = (1u<<2),
-    DPL_UKS_MASK_SPECIFIC = (1u<<3),
-  } dpl_uks_mask_t;
+{
+  DPL_UKS_MASK_OID = (1u << 0),
+  DPL_UKS_MASK_VOLID = (1u << 1),
+  DPL_UKS_MASK_SERVICEID = (1u << 2),
+  DPL_UKS_MASK_SPECIFIC = (1u << 3),
+} dpl_uks_mask_t;
 
-dpl_status_t dpl_uks_gen_key_raw(BIGNUM *id, uint32_t hash, uint64_t oid, uint32_t volid, uint8_t serviceid, uint32_t specific);
-dpl_status_t dpl_uks_gen_key_ext(BIGNUM *id, dpl_uks_mask_t mask, uint64_t oid, uint32_t volid, uint8_t serviceid, uint32_t specific);
-dpl_status_t dpl_uks_gen_key(BIGNUM *id, uint64_t oid, uint32_t volid, uint8_t serviceid, uint32_t specific);
-uint32_t     dpl_uks_hash_get(BIGNUM *k);
-dpl_status_t dpl_uks_hash_set(BIGNUM *k, uint32_t hash);
-dpl_status_t dpl_uks_set_class(BIGNUM *k, int cl);
-dpl_status_t dpl_uks_set_replica(BIGNUM *k, int replica);
-dpl_status_t dpl_uks_bn2hex(const BIGNUM *id, char *id_str);
+dpl_status_t dpl_uks_gen_key_raw(BIGNUM* id,
+                                 uint32_t hash,
+                                 uint64_t oid,
+                                 uint32_t volid,
+                                 uint8_t serviceid,
+                                 uint32_t specific);
+dpl_status_t dpl_uks_gen_key_ext(BIGNUM* id,
+                                 dpl_uks_mask_t mask,
+                                 uint64_t oid,
+                                 uint32_t volid,
+                                 uint8_t serviceid,
+                                 uint32_t specific);
+dpl_status_t dpl_uks_gen_key(BIGNUM* id,
+                             uint64_t oid,
+                             uint32_t volid,
+                             uint8_t serviceid,
+                             uint32_t specific);
+uint32_t dpl_uks_hash_get(BIGNUM* k);
+dpl_status_t dpl_uks_hash_set(BIGNUM* k, uint32_t hash);
+dpl_status_t dpl_uks_set_class(BIGNUM* k, int cl);
+dpl_status_t dpl_uks_set_replica(BIGNUM* k, int replica);
+dpl_status_t dpl_uks_bn2hex(const BIGNUM* id, char* id_str);
 
 extern dpl_id_scheme_t dpl_id_scheme_uks;
 

@@ -36,38 +36,50 @@
 
 struct dpl_dict;
 
-typedef struct dpl_dict_var
-{
-  struct dpl_dict_var *prev;
-  struct dpl_dict_var *next;
-  char *key;
-  dpl_value_t *val;
+typedef struct dpl_dict_var {
+  struct dpl_dict_var* prev;
+  struct dpl_dict_var* next;
+  char* key;
+  dpl_value_t* val;
 } dpl_dict_var_t;
 
-typedef dpl_status_t (*dpl_dict_func_t)(dpl_dict_var_t *var, void *cb_arg);
+typedef dpl_status_t (*dpl_dict_func_t)(dpl_dict_var_t* var, void* cb_arg);
 
-typedef struct dpl_dict
-{
-  dpl_dict_var_t **buckets;
+typedef struct dpl_dict {
+  dpl_dict_var_t** buckets;
   unsigned int n_buckets;
 } dpl_dict_t;
 
 /* PROTO dict.c */
 /* src/dict.c */
-dpl_dict_t *dpl_dict_new(int n_buckets);
-dpl_dict_var_t *dpl_dict_get(const dpl_dict_t *dict, const char *key);
-dpl_status_t dpl_dict_get_lowered(const dpl_dict_t *dict, const char *key, dpl_dict_var_t **varp);
-char *dpl_dict_get_value(const dpl_dict_t *dict, const char *key);
-dpl_status_t dpl_dict_iterate(const dpl_dict_t *dict, dpl_dict_func_t cb_func, void *cb_arg);
-int dpl_dict_count(const dpl_dict_t *dict);
-void dpl_dict_var_free(dpl_dict_var_t *var);
-void dpl_dict_free(dpl_dict_t *dict);
-void dpl_dict_print(const dpl_dict_t *dict, FILE *f, int level);
-dpl_status_t dpl_dict_add_value(dpl_dict_t *dict, const char *key, dpl_value_t *value, int lowered);
-dpl_status_t dpl_dict_add(dpl_dict_t *dict, const char *key, const char *string, int lowered);
-void dpl_dict_remove(dpl_dict_t *dict, dpl_dict_var_t *var);
-dpl_status_t dpl_dict_copy(dpl_dict_t *dst, const dpl_dict_t *src);
-dpl_dict_t *dpl_dict_dup(const dpl_dict_t *src);
-dpl_status_t dpl_dict_filter_prefix(dpl_dict_t *dst, const dpl_dict_t *src, const char * prefix);
-dpl_status_t dpl_dict_filter_no_prefix(dpl_dict_t *dst, const dpl_dict_t *src, const char * prefix);
+dpl_dict_t* dpl_dict_new(int n_buckets);
+dpl_dict_var_t* dpl_dict_get(const dpl_dict_t* dict, const char* key);
+dpl_status_t dpl_dict_get_lowered(const dpl_dict_t* dict,
+                                  const char* key,
+                                  dpl_dict_var_t** varp);
+char* dpl_dict_get_value(const dpl_dict_t* dict, const char* key);
+dpl_status_t dpl_dict_iterate(const dpl_dict_t* dict,
+                              dpl_dict_func_t cb_func,
+                              void* cb_arg);
+int dpl_dict_count(const dpl_dict_t* dict);
+void dpl_dict_var_free(dpl_dict_var_t* var);
+void dpl_dict_free(dpl_dict_t* dict);
+void dpl_dict_print(const dpl_dict_t* dict, FILE* f, int level);
+dpl_status_t dpl_dict_add_value(dpl_dict_t* dict,
+                                const char* key,
+                                dpl_value_t* value,
+                                int lowered);
+dpl_status_t dpl_dict_add(dpl_dict_t* dict,
+                          const char* key,
+                          const char* string,
+                          int lowered);
+void dpl_dict_remove(dpl_dict_t* dict, dpl_dict_var_t* var);
+dpl_status_t dpl_dict_copy(dpl_dict_t* dst, const dpl_dict_t* src);
+dpl_dict_t* dpl_dict_dup(const dpl_dict_t* src);
+dpl_status_t dpl_dict_filter_prefix(dpl_dict_t* dst,
+                                    const dpl_dict_t* src,
+                                    const char* prefix);
+dpl_status_t dpl_dict_filter_no_prefix(dpl_dict_t* dst,
+                                       const dpl_dict_t* src,
+                                       const char* prefix);
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_DICT_H_

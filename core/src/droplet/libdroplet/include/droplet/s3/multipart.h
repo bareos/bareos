@@ -35,24 +35,25 @@
 #ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_MULTIPART_H_
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_MULTIPART_H_
 
-dpl_status_t dpl_s3_stream_multipart_init(dpl_ctx_t *ctx,
-                                          const char *bucket,
-                                          const char *resource,
-                                          const char **uploadidp);
-dpl_status_t dpl_s3_stream_multipart_complete(dpl_ctx_t *ctx,
-                                              const char *bucket,
-                                              const char *resource,
-                                              const char *uploadid,
-                                              struct json_object *parts,
+dpl_status_t dpl_s3_stream_multipart_init(dpl_ctx_t* ctx,
+                                          const char* bucket,
+                                          const char* resource,
+                                          const char** uploadidp);
+dpl_status_t dpl_s3_stream_multipart_complete(dpl_ctx_t* ctx,
+                                              const char* bucket,
+                                              const char* resource,
+                                              const char* uploadid,
+                                              struct json_object* parts,
                                               unsigned int n_parts,
-                                              const dpl_dict_t *metadata,
-                                              const dpl_sysmd_t *sysmd);
-dpl_status_t dpl_s3_stream_multipart_put(dpl_ctx_t *ctx,
-                                         const char *bucket,
-                                         const char *resource,
-                                         const char *uploadid,
-					 unsigned int partnb,
-                                         char *buf, unsigned int len,
-                                         const char **etagp);
+                                              const dpl_dict_t* metadata,
+                                              const dpl_sysmd_t* sysmd);
+dpl_status_t dpl_s3_stream_multipart_put(dpl_ctx_t* ctx,
+                                         const char* bucket,
+                                         const char* resource,
+                                         const char* uploadid,
+                                         unsigned int partnb,
+                                         char* buf,
+                                         unsigned int len,
+                                         const char** etagp);
 
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_MULTIPART_H_

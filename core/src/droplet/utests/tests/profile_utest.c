@@ -18,55 +18,51 @@
 
 static int bound_sock = -1;
 
-static int
-get_bound_port(char *host, int maxlen)
+static int get_bound_port(char* host, int maxlen)
 {
-    struct sockaddr_in sin;
-    socklen_t len;
-    int sock;
-    int r;
+  struct sockaddr_in sin;
+  socklen_t len;
+  int sock;
+  int r;
 
-    /* only one at a time */
-    fail_if(bound_sock >= 0, NULL);
+  /* only one at a time */
+  fail_if(bound_sock >= 0, NULL);
 
-    /* create a TCP socket */
-    sock = socket(PF_INET, SOCK_STREAM, 0);
-    fail_if(sock < 0, strerror(errno));
+  /* create a TCP socket */
+  sock = socket(PF_INET, SOCK_STREAM, 0);
+  fail_if(sock < 0, strerror(errno));
 
-    /* bind the socket to some port on localhost */
-    memset(&sin, 0, sizeof(sin));
-    sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    sin.sin_port = 0;	/* kernel allocates */
-    r = bind(sock, (struct sockaddr *)&sin, sizeof(sin));
-    fail_if(r < 0, strerror(errno));
+  /* bind the socket to some port on localhost */
+  memset(&sin, 0, sizeof(sin));
+  sin.sin_family = AF_INET;
+  sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  sin.sin_port = 0; /* kernel allocates */
+  r = bind(sock, (struct sockaddr*)&sin, sizeof(sin));
+  fail_if(r < 0, strerror(errno));
 
-    /* note: we never listen() on the socket, so attempts
-     * to connect() should fail immediately with ECONNREFUSED */
+  /* note: we never listen() on the socket, so attempts
+   * to connect() should fail immediately with ECONNREFUSED */
 
-    /* find out what port the kernel chose for us */
-    len = sizeof(sin);
-    r = getsockname(sock, (struct sockaddr *)&sin, &len);
-    fail_if(r < 0, strerror(errno));
+  /* find out what port the kernel chose for us */
+  len = sizeof(sin);
+  r = getsockname(sock, (struct sockaddr*)&sin, &len);
+  fail_if(r < 0, strerror(errno));
 
-    bound_sock = sock;
+  bound_sock = sock;
 
-    snprintf(host, maxlen, "%s:%d", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
-    return 0;
+  snprintf(host, maxlen, "%s:%d", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
+  return 0;
 }
 
-static void
-release_bound_port(void)
+static void release_bound_port(void)
 {
-    if (bound_sock >= 0)
-      {
-	close(bound_sock);
-	bound_sock = -1;
-      }
+  if (bound_sock >= 0) {
+    close(bound_sock);
+    bound_sock = -1;
+  }
 }
 
-static void
-setup(void)
+static void setup(void)
 {
   /* Make sure there's a new unique directory which
    * is returned as our home directory by getpwuid() */
@@ -75,8 +71,7 @@ setup(void)
   dpl_init();
 }
 
-static void
-teardown(void)
+static void teardown(void)
 {
   release_bound_port();
 
@@ -87,16 +82,16 @@ teardown(void)
 
 START_TEST(ctx_new_defaults_test)
 {
-  dpl_ctx_t *ctx;
-  char *dropdir;
-  char *profile;
+  dpl_ctx_t* ctx;
+  char* dropdir;
+  char* profile;
 
   /* Make sure there's a directory ~/.droplet
    * containing a file default.profile */
   dropdir = make_sub_directory(home, ".droplet");
   profile = write_file(dropdir, "default.profile",
-    "host = localhost\n"
-    "base_path = /polaroid\n");
+                       "host = localhost\n"
+                       "base_path = /polaroid\n");
 
   /* create a context with all defaults */
   unsetenv("DPLDIR");
@@ -115,9 +110,9 @@ END_TEST
 
 START_TEST(ctx_new_dropdir_test)
 {
-  dpl_ctx_t *ctx;
-  char *dropdir;
-  char *profile;
+  dpl_ctx_t* ctx;
+  char* dropdir;
+  char* profile;
 
   /* Make sure there's a new unique directory,
    * which is *NOT* ~/.droplet, and contains a
@@ -125,11 +120,11 @@ START_TEST(ctx_new_dropdir_test)
    * random word courtesy http://hipsteripsum.me/ */
   dropdir = make_sub_directory(home, "williamsburg");
   profile = write_file(dropdir, "default.profile",
-    "host = localhost\n"
-    "base_path = /polaroid\n");
+                       "host = localhost\n"
+                       "base_path = /polaroid\n");
 
   /* create a context with all droplet dir named via the environment */
-  setenv("DPLDIR", dropdir, /*overwrite*/1);
+  setenv("DPLDIR", dropdir, /*overwrite*/ 1);
   unsetenv("DPLPROFILE");
   ctx = dpl_ctx_new(NULL, NULL);
   dpl_assert_ptr_not_null(ctx);
@@ -145,21 +140,21 @@ END_TEST
 
 START_TEST(ctx_new_dropdir_profile_test)
 {
-  dpl_ctx_t *ctx;
-  char *dropdir;
-  char *profile;
+  dpl_ctx_t* ctx;
+  char* dropdir;
+  char* profile;
 
   /* Make sure there's a new unique directory,
    * which is *NOT* ~/.droplet, and contains a
    * file profile *NOT* called default.profile. */
   dropdir = make_sub_directory(home, "quinoa");
   profile = write_file(dropdir, "sriracha.profile",
-    "host = localhost\n"
-    "base_path = /polaroid\n");
+                       "host = localhost\n"
+                       "base_path = /polaroid\n");
 
   /* create a context with profile named via the environment */
-  setenv("DPLDIR", dropdir, /*overwrite*/1);
-  setenv("DPLPROFILE", "sriracha", /*overwrite*/1);
+  setenv("DPLDIR", dropdir, /*overwrite*/ 1);
+  setenv("DPLPROFILE", "sriracha", /*overwrite*/ 1);
   ctx = dpl_ctx_new(NULL, NULL);
   dpl_assert_ptr_not_null(ctx);
   dpl_assert_str_eq(ctx->droplet_dir, dropdir);
@@ -174,23 +169,27 @@ END_TEST
 
 START_TEST(ctx_new_from_dict_test)
 {
-  dpl_ctx_t *ctx;
-  dpl_dict_t *profile;
-  char *dropdir;
+  dpl_ctx_t* ctx;
+  dpl_dict_t* profile;
+  char* dropdir;
 
   /* At this point we have a pretend ~ with NO
    * .droplet/ directory in it.  We don't create
    * a dropdir on disk at all, nor a profile, it's
    * all in memory. */
-  dropdir = strconcat(home, "/trust-fund", (char *)NULL);  /* never created */
+  dropdir = strconcat(home, "/trust-fund", (char*)NULL); /* never created */
 
   profile = dpl_dict_new(13);
   dpl_assert_ptr_not_null(profile);
   dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "host", "localhost", 0));
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "base_path", "/polaroid", 0));
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "droplet_dir", dropdir, 0));
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "profile_name", "viral", 0));
-  /* need this to disable the event log, otherwise the droplet_dir needs to exist */
+  dpl_assert_int_eq(DPL_SUCCESS,
+                    dpl_dict_add(profile, "base_path", "/polaroid", 0));
+  dpl_assert_int_eq(DPL_SUCCESS,
+                    dpl_dict_add(profile, "droplet_dir", dropdir, 0));
+  dpl_assert_int_eq(DPL_SUCCESS,
+                    dpl_dict_add(profile, "profile_name", "viral", 0));
+  /* need this to disable the event log, otherwise the droplet_dir needs to
+   * exist */
   dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "pricing_dir", "", 0));
 
   /* create a context with all defaults */
@@ -211,26 +210,26 @@ END_TEST
 /* actually set some non-default parameters to check they're parsed */
 START_TEST(ctx_new_params_test)
 {
-  dpl_ctx_t *ctx;
-  char *dropdir;
-  char *profile;
-  char *ssl_cert_file;
-  char *ssl_key_file;
-  char *ssl_ca_cert_file;
-  char *profdata;
-  char *pricing;
+  dpl_ctx_t* ctx;
+  char* dropdir;
+  char* profile;
+  char* ssl_cert_file;
+  char* ssl_key_file;
+  char* ssl_ca_cert_file;
+  char* profdata;
+  char* pricing;
   static const char ssl_cert[] =
   /* This is actually a chain, starting with the client cert
    * and ending with the CA cert, in that order */
-#include "ssldata/client-cert.c"
-#include "ssldata/demoCA/cacert.c"
-    ;
+#  include "ssldata/client-cert.c"
+#  include "ssldata/demoCA/cacert.c"
+      ;
   static const char ssl_key[] =
-#include "ssldata/client.c"
-    ;
+#  include "ssldata/client.c"
+      ;
   static const char ssl_ca_cert[] =
-#include "ssldata/demoCA/cacert.c"
-    ;
+#  include "ssldata/demoCA/cacert.c"
+      ;
 
   /* Make sure there's a directory ~/.droplet
    * containing a file default.profile */
@@ -238,26 +237,27 @@ START_TEST(ctx_new_params_test)
   ssl_cert_file = write_file(dropdir, "disrupt.pem", ssl_cert);
   ssl_key_file = write_file(dropdir, "fingerstache.pem", ssl_key);
   ssl_ca_cert_file = write_file(home, "stumptown.pem", ssl_ca_cert);
-  pricing = write_file(dropdir, "pitchfork.pricing",
-		       "# this file is empty\n");
+  pricing = write_file(dropdir, "pitchfork.pricing", "# this file is empty\n");
   profdata = strconcat(
-    "use_https = true\n"
-    "host = localhost\n"
-    "blacklist_expiretime = 42\n"
-    "header_size = 12345\n"
-    "base_path = /polaroid\n"
-    "access_key = letterpress\n"
-    "secret_key = freegan\n"
-    "ssl_cert_file = disrupt.pem\n"
-    "ssl_key_file = fingerstache.pem\n"
-    "ssl_password = mixtape\n"
-    "ssl_ca_list = ", home, "/stumptown.pem\n"
-    "pricing = pitchfork\n"
-    "read_buf_size = 8765\n"
-    "encrypt_key = distillery\n"
-    "backend = swift\n"
-    "encode_slashes = true\n",
-    (char *)NULL);
+      "use_https = true\n"
+      "host = localhost\n"
+      "blacklist_expiretime = 42\n"
+      "header_size = 12345\n"
+      "base_path = /polaroid\n"
+      "access_key = letterpress\n"
+      "secret_key = freegan\n"
+      "ssl_cert_file = disrupt.pem\n"
+      "ssl_key_file = fingerstache.pem\n"
+      "ssl_password = mixtape\n"
+      "ssl_ca_list = ",
+      home,
+      "/stumptown.pem\n"
+      "pricing = pitchfork\n"
+      "read_buf_size = 8765\n"
+      "encrypt_key = distillery\n"
+      "backend = swift\n"
+      "encode_slashes = true\n",
+      (char*)NULL);
   profile = write_file(dropdir, "default.profile", profdata);
 
   /* create a context with all defaults */
@@ -295,52 +295,45 @@ START_TEST(ctx_new_params_test)
 }
 END_TEST
 
-static void
-redirect_stdio(FILE *fp, const char *name)
+static void redirect_stdio(FILE* fp, const char* name)
 {
-  char *logfile;
+  char* logfile;
   int fd;
 
-  logfile = strconcat(home, "/", name, ".log", (char *)NULL);
-  fd = open(logfile, O_WRONLY|O_CREAT|O_TRUNC, 0666);
-  if (fd < 0)
-    {
-      perror(logfile);
-      fail();
-    }
+  logfile = strconcat(home, "/", name, ".log", (char*)NULL);
+  fd = open(logfile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+  if (fd < 0) {
+    perror(logfile);
+    fail();
+  }
   fflush(fp);
-  if (dup2(fd, fileno(fp)) < 0)
-    {
-      perror("dup2");
-      fail();
-    }
+  if (dup2(fd, fileno(fp)) < 0) {
+    perror("dup2");
+    fail();
+  }
   close(fd);
   free(logfile);
 }
 
-#define MAXLOGGED 128
+#  define MAXLOGGED 128
 static struct {
   dpl_log_level_t level;
-  char *message;
+  char* message;
 } logged[MAXLOGGED];
 static int nlogged = 0;
 
-static int
-log_find(const char *needle)
+static int log_find(const char* needle)
 {
   int i;
 
-  for (i = 0 ; i < nlogged ; i++)
-    {
-      if (strstr(logged[i].message, needle))
-	return i;
-    }
+  for (i = 0; i < nlogged; i++) {
+    if (strstr(logged[i].message, needle)) return i;
+  }
 
   return -1;
 }
 
-static void
-log_func(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
+static void log_func(dpl_ctx_t* ctx, dpl_log_level_t level, const char* message)
 {
   fail_unless(nlogged < MAXLOGGED);
   logged[nlogged].level = level;
@@ -350,9 +343,9 @@ log_func(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
 
 START_TEST(logging_test)
 {
-  dpl_ctx_t *ctx;
-  dpl_dict_t *profile;
-  char *dropdir;
+  dpl_ctx_t* ctx;
+  dpl_dict_t* profile;
+  char* dropdir;
   off_t logsize;
   int nerrs;
 
@@ -365,16 +358,20 @@ START_TEST(logging_test)
    * .droplet/ directory in it.  We don't create
    * a dropdir on disk at all, nor a profile, it's
    * all in memory. */
-  dropdir = strconcat(home, "/trust-fund", (char *)NULL);  /* never created */
+  dropdir = strconcat(home, "/trust-fund", (char*)NULL); /* never created */
 
   profile = dpl_dict_new(13);
   dpl_assert_ptr_not_null(profile);
   /* the host is an unparseable IPv4 address literal, which should
    * result in a predicable error */
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "host", "123.456.789.012", 0));
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "droplet_dir", dropdir, 0));
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "profile_name", "viral", 0));
-  /* need this to disable the event log, otherwise the droplet_dir needs to exist */
+  dpl_assert_int_eq(DPL_SUCCESS,
+                    dpl_dict_add(profile, "host", "123.456.789.012", 0));
+  dpl_assert_int_eq(DPL_SUCCESS,
+                    dpl_dict_add(profile, "droplet_dir", dropdir, 0));
+  dpl_assert_int_eq(DPL_SUCCESS,
+                    dpl_dict_add(profile, "profile_name", "viral", 0));
+  /* need this to disable the event log, otherwise the droplet_dir needs to
+   * exist */
   dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "pricing_dir", "", 0));
   unsetenv("DPLDIR");
   unsetenv("DPLPROFILE");
@@ -430,11 +427,11 @@ END_TEST
  * a message. */
 START_TEST(connect_logging_test)
 {
-  dpl_ctx_t *ctx;
-  dpl_dict_t *profile;
-  dpl_req_t *req;
-  dpl_conn_t *conn = NULL;
-  char *dropdir;
+  dpl_ctx_t* ctx;
+  dpl_dict_t* profile;
+  dpl_req_t* req;
+  dpl_conn_t* conn = NULL;
+  char* dropdir;
   int r;
   dpl_status_t s;
   char host[128];
@@ -448,7 +445,7 @@ START_TEST(connect_logging_test)
    * .droplet/ directory in it.  We don't create
    * a dropdir on disk at all, nor a profile, it's
    * all in memory. */
-  dropdir = strconcat(home, "/trust-fund", (char *)NULL);  /* never created */
+  dropdir = strconcat(home, "/trust-fund", (char*)NULL); /* never created */
 
   r = get_bound_port(host, sizeof(host));
   fail_if(r < 0, NULL);
@@ -456,9 +453,12 @@ START_TEST(connect_logging_test)
   profile = dpl_dict_new(13);
   dpl_assert_ptr_not_null(profile);
   dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "host", host, 0));
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "droplet_dir", dropdir, 0));
-  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "profile_name", "viral", 0));
-  /* need this to disable the event log, otherwise the droplet_dir needs to exist */
+  dpl_assert_int_eq(DPL_SUCCESS,
+                    dpl_dict_add(profile, "droplet_dir", dropdir, 0));
+  dpl_assert_int_eq(DPL_SUCCESS,
+                    dpl_dict_add(profile, "profile_name", "viral", 0));
+  /* need this to disable the event log, otherwise the droplet_dir needs to
+   * exist */
   dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "pricing_dir", "", 0));
   unsetenv("DPLDIR");
   unsetenv("DPLPROFILE");
@@ -504,11 +504,10 @@ START_TEST(connect_logging_test)
 END_TEST
 
 
-Suite *
-profile_suite()
+Suite* profile_suite()
 {
-  Suite *s = suite_create("profile");
-  TCase *t = tcase_create("base");
+  Suite* s = suite_create("profile");
+  TCase* t = tcase_create("base");
   tcase_set_timeout(t, 45);
   tcase_add_checked_fixture(t, setup, teardown);
   tcase_add_test(t, ctx_new_defaults_test);

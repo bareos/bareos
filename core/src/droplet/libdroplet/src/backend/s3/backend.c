@@ -35,26 +35,25 @@
 #include "dropletp.h"
 #include <droplet/s3/s3.h>
 
-dpl_backend_t   dpl_backend_s3 = {
-  "s3",
-  .get_capabilities    = dpl_s3_get_capabilities,
-  .list_all_my_buckets = dpl_s3_list_all_my_buckets,
-  .list_bucket         = dpl_s3_list_bucket,
-  .list_bucket_attrs   = dpl_s3_list_bucket_attrs, /* WARNING, UNTESTED */
-  .make_bucket         = dpl_s3_make_bucket,
-  .delete_bucket       = dpl_s3_delete_bucket,
-  .put                 = dpl_s3_put,
-  .get                 = dpl_s3_get,
-  .head                = dpl_s3_head,
-  .head_raw            = dpl_s3_head_raw,
-  .deletef             = dpl_s3_delete,
-  .delete_all          = dpl_s3_delete_all,
-  .genurl              = dpl_s3_genurl,
-  .copy                = dpl_s3_copy,
-  .stream_resume       = dpl_s3_stream_resume,
-  .stream_getmd        = dpl_s3_stream_getmd,
-  .stream_get          = dpl_s3_stream_get,
-  .stream_putmd        = dpl_s3_stream_putmd,
-  .stream_put          = dpl_s3_stream_put,
-  .stream_flush        = dpl_s3_stream_flush
-};
+dpl_backend_t dpl_backend_s3
+    = {"s3",
+       .get_capabilities = dpl_s3_get_capabilities,
+       .list_all_my_buckets = dpl_s3_list_all_my_buckets,
+       .list_bucket = dpl_s3_list_bucket,
+       .list_bucket_attrs = dpl_s3_list_bucket_attrs, /* WARNING, UNTESTED */
+       .make_bucket = dpl_s3_make_bucket,
+       .delete_bucket = dpl_s3_delete_bucket,
+       .put = dpl_s3_put,
+       .get = dpl_s3_get,
+       .head = dpl_s3_head,
+       .head_raw = dpl_s3_head_raw,
+       .deletef = dpl_s3_delete,
+       .delete_all = dpl_s3_delete_all,
+       .genurl = dpl_s3_genurl,
+       .copy = dpl_s3_copy,
+       .stream_resume = dpl_s3_stream_resume,
+       .stream_getmd = dpl_s3_stream_getmd,
+       .stream_get = dpl_s3_stream_get,
+       .stream_putmd = dpl_s3_stream_putmd,
+       .stream_put = dpl_s3_stream_put,
+       .stream_flush = dpl_s3_stream_flush};

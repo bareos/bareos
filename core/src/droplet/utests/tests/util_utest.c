@@ -15,9 +15,9 @@ END_TEST
 START_TEST(xattrs_test)
 {
   char path[] = "/tmp/test_droplet_util_XXXXXX";
-  dpl_dict_t *dict = NULL;
+  dpl_dict_t* dict = NULL;
   int ret;
-  char *value = NULL;
+  char* value = NULL;
 
   int fd = mkstemp(path);
   dpl_assert_int_ne(-1, fd);
@@ -32,10 +32,7 @@ START_TEST(xattrs_test)
   /* No encoding, with prefix filter */
   dict = dpl_dict_new(13);
   dpl_assert_ptr_not_null(dict);
-  ret = dpl_get_xattrs(path,
-                       dict,
-                       "user.",
-                       XATTRS_NO_ENCODING);
+  ret = dpl_get_xattrs(path, dict, "user.", XATTRS_NO_ENCODING);
   dpl_assert_int_eq(DPL_SUCCESS, ret);
 
   ret = dpl_dict_count(dict);
@@ -48,10 +45,7 @@ START_TEST(xattrs_test)
   /* No encoding, without prefix filter */
   dict = dpl_dict_new(13);
   dpl_assert_ptr_not_null(dict);
-  ret = dpl_get_xattrs(path,
-                       dict,
-                       NULL,
-                       XATTRS_NO_ENCODING);
+  ret = dpl_get_xattrs(path, dict, NULL, XATTRS_NO_ENCODING);
   dpl_assert_int_eq(DPL_SUCCESS, ret);
 
   ret = dpl_dict_count(dict);
@@ -64,10 +58,7 @@ START_TEST(xattrs_test)
   /* Base64 encoding, without prefix filter */
   dict = dpl_dict_new(13);
   dpl_assert_ptr_not_null(dict);
-  ret = dpl_get_xattrs(path,
-                       dict,
-                       NULL,
-                       XATTRS_ENCODE_BASE64);
+  ret = dpl_get_xattrs(path, dict, NULL, XATTRS_ENCODE_BASE64);
   dpl_assert_int_eq(DPL_SUCCESS, ret);
 
   ret = dpl_dict_count(dict);
@@ -85,34 +76,32 @@ END_TEST
 
 START_TEST(uks_hash_setget_test)
 {
-    int hash_set = 0xcabefe;
-    int hash_rd = 0;
-    int ret;
-    BIGNUM *bn = BN_new();
-    dpl_assert_ptr_not_null(bn);
+  int hash_set = 0xcabefe;
+  int hash_rd = 0;
+  int ret;
+  BIGNUM* bn = BN_new();
+  dpl_assert_ptr_not_null(bn);
 
-    BN_set_bit(bn, DPL_UKS_NBITS - 1);
-    BN_clear_bit(bn, DPL_UKS_NBITS - 1);
+  BN_set_bit(bn, DPL_UKS_NBITS - 1);
+  BN_clear_bit(bn, DPL_UKS_NBITS - 1);
 
-    ret = dpl_uks_hash_set(bn, hash_set);
-    dpl_assert_int_eq(ret, DPL_SUCCESS);
+  ret = dpl_uks_hash_set(bn, hash_set);
+  dpl_assert_int_eq(ret, DPL_SUCCESS);
 
-    hash_rd = dpl_uks_hash_get(bn);
-    dpl_assert_int_eq(hash_set, hash_rd);
+  hash_rd = dpl_uks_hash_get(bn);
+  dpl_assert_int_eq(hash_set, hash_rd);
 
-    BN_free(bn);
+  BN_free(bn);
 }
 END_TEST
 
-Suite *
-util_suite(void)
+Suite* util_suite(void)
 {
-  Suite *s = suite_create("util");
-  TCase *t = tcase_create("base");
+  Suite* s = suite_create("util");
+  TCase* t = tcase_create("base");
   tcase_add_test(t, strrstr_test);
   tcase_add_test(t, xattrs_test);
   tcase_add_test(t, uks_hash_setget_test);
   suite_add_tcase(s, t);
   return s;
 }
-

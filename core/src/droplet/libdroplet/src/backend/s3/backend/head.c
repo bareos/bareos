@@ -35,20 +35,19 @@
 #include "dropletp.h"
 #include "droplet/s3/s3.h"
 
-dpl_status_t
-dpl_s3_head(dpl_ctx_t *ctx,
-            const char *bucket,
-            const char *resource,
-            const char *subresource,
-            const dpl_option_t *option,
-            dpl_ftype_t object_type,
-            const dpl_condition_t *condition,
-            dpl_dict_t **metadatap,
-            dpl_sysmd_t *sysmdp,
-            char **locationp)
+dpl_status_t dpl_s3_head(dpl_ctx_t* ctx,
+                         const char* bucket,
+                         const char* resource,
+                         const char* subresource,
+                         const dpl_option_t* option,
+                         dpl_ftype_t object_type,
+                         const dpl_condition_t* condition,
+                         dpl_dict_t** metadatap,
+                         dpl_sysmd_t* sysmdp,
+                         char** locationp)
 {
   dpl_status_t ret, ret2;
-  dpl_dict_t *headers_reply = NULL;
+  dpl_dict_t* headers_reply = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
@@ -58,41 +57,37 @@ dpl_s3_head(dpl_ctx_t *ctx,
    * an empty object is used to create directories, instead of simply using the
    * delimiters in the paths)
    */
-  if ((resource && resource[strlen(resource)-1] != '/') || ctx->empty_folder_emulation)
-    {
-      ret2 = dpl_s3_head_raw(ctx, bucket, resource, subresource, NULL,
-                             object_type, condition, &headers_reply, locationp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
+  if ((resource && resource[strlen(resource) - 1] != '/')
+      || ctx->empty_folder_emulation) {
+    ret2 = dpl_s3_head_raw(ctx, bucket, resource, subresource, NULL,
+                           object_type, condition, &headers_reply, locationp);
+    if (DPL_SUCCESS != ret2) {
+      ret = ret2;
+      goto end;
+    }
 
-      ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
+    ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
+    if (DPL_SUCCESS != ret2) {
+      ret = ret2;
+      goto end;
     }
-  else if (NULL != sysmdp)
-    {
-      /*
-       * No emulation enabled, but we still need to return a valid minimal set
-       * of properties for the Droplet API to be usable, if required.
-       */
-      memset(sysmdp, 0, sizeof(*sysmdp));
-      sysmdp->mask = DPL_SYSMD_MASK_FTYPE | DPL_SYSMD_MASK_SIZE | DPL_SYSMD_MASK_PATH;
-      sysmdp->ftype = DPL_FTYPE_DIR;
-      snprintf(sysmdp->path, DPL_MAXPATHLEN, "%s", resource);
-    }
+  } else if (NULL != sysmdp) {
+    /*
+     * No emulation enabled, but we still need to return a valid minimal set
+     * of properties for the Droplet API to be usable, if required.
+     */
+    memset(sysmdp, 0, sizeof(*sysmdp));
+    sysmdp->mask
+        = DPL_SYSMD_MASK_FTYPE | DPL_SYSMD_MASK_SIZE | DPL_SYSMD_MASK_PATH;
+    sysmdp->ftype = DPL_FTYPE_DIR;
+    snprintf(sysmdp->path, DPL_MAXPATHLEN, "%s", resource);
+  }
 
   ret = DPL_SUCCESS;
-  
- end:
 
-  if (NULL != headers_reply)
-    dpl_dict_free(headers_reply);
+end:
+
+  if (NULL != headers_reply) dpl_dict_free(headers_reply);
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
