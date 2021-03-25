@@ -43,7 +43,7 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
 
-target_link_libraries(bareosfind bareos ${ACL_LIBS} ${WINDOWS_LIBRARIES})
+target_link_libraries(bareosfind bareos ${ACL_LIBS})
 
 install(
   TARGETS bareosfind

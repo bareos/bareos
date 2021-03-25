@@ -79,10 +79,7 @@ if(Qt5Widgets_FOUND)
   qt5_use_modules(bareos-tray-monitor Widgets)
 endif()
 
-target_link_libraries(
-  ${TRAYMON_LIBRARIES} ${JANSSON_LIBRARIES}
-  $<$<PLATFORM_ID:Windows>:${WINDOWS_LIBRARIES}>
-)
+target_link_libraries(${TRAYMON_LIBRARIES} ${JANSSON_LIBRARIES})
 
 install(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
 

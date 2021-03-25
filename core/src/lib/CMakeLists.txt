@@ -162,7 +162,6 @@ target_link_libraries(
           ${CAP_LIBRARIES}
           ${JANSSON_LIBRARIES}
           ${CAM_LIBRARIES}
-          ${WINDOWS_LIBRARIES}
 )
 
 install(TARGETS bareos DESTINATION ${libdir})
@@ -174,4 +173,5 @@ set_target_properties(
 
 if(HAVE_WIN32)
   set_target_properties(bareos PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
+  target_link_libraries(bareos PUBLIC ws2_32)
 endif()

@@ -36,7 +36,6 @@ add_library(autoxflate-sd MODULE autoxflate/autoxflate-sd.cc)
 set_target_properties(autoxflate-sd PROPERTIES PREFIX "")
 target_link_libraries(
   autoxflate-sd bareos bareosfastlz $<$<PLATFORM_ID:Windows>:${ZLIB_LIBRARIES}>
-  $<$<PLATFORM_ID:Windows>:${WINDOWS_LIBRARIES}>
 )
 install(TARGETS autoxflate-sd DESTINATION ${plugindir})
 

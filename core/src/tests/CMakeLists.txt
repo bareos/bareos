@@ -223,7 +223,7 @@ bareos_add_test(job_control_record LINK_LIBRARIES bareos GTest::gtest_main)
 
 bareos_add_test(
   cram_md5
-  LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main ${WINDOWS_LIBRARIES}
+  LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main
   ADDITIONAL_SOURCES bareos_test_sockets.cc
 )
 

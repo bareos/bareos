@@ -294,8 +294,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   set(HAVE_WIN32 1)
 
-  set(WINDOWS_LIBRARIES ws2_32)
-
   set(Python2_LIBRARIES python27.dll)
   set(Python3_LIBRARIES python38.dll)
 
