@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 /* unit test the sproxyd protocol backend */
 #include <sys/types.h>
 #include <limits.h>

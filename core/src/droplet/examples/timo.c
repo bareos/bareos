@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 /*
  * Timo use cases:
  *

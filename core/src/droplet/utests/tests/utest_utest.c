@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 #include <check.h>
 #include <stdlib.h>
 #include "utest_main.h"

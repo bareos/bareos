@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 /* unit test the code in droplet.c */
 #include <sys/types.h>
 #include <limits.h>

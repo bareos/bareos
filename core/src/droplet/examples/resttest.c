@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 /*
  * simple example which operates into a folder (creation of a folder, atomic
  * file creation + get/set data/metadata + listing of a folder + getattr +

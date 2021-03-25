@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 /* TODO: copyright */
 #include <sys/types.h>
 #include <stdio.h>

@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 /*
  * simple buffered example which use ID capable REST services (emulate blocks
  * with UKS)

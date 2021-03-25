@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 #include <droplet.h>
 #include <check.h>
 #include <arpa/inet.h>
