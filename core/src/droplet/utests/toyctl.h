@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 /* TODO: copyright */
 
 #ifndef BAREOS_DROPLET_UTESTS_TOYCTL_H_

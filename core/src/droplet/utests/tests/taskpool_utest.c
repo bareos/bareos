@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 #include <pthread.h>
 #include <check.h>
 #include <droplet.h>

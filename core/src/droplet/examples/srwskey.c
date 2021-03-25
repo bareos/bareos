@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 /*
  * Example of proprietary SRWS key generation.
  * unfortunately key generation is proprietary to the REST system, driver must

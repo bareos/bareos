@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 #ifndef BAREOS_DROPLET_UTESTS_TESTUTILS_H_
 #define BAREOS_DROPLET_UTESTS_TESTUTILS_H_
 

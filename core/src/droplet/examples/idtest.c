@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 /*
  * simple example which use ID capable REST services
  */

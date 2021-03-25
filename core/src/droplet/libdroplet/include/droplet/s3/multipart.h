@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2015 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
