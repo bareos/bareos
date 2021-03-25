@@ -35,16 +35,23 @@
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_ID_SCHEME_H_
 
 /* general */
-typedef dpl_status_t (*dpl_gen_random_key_t)(dpl_ctx_t *ctx, dpl_storage_class_t storage_class, char *custom, char *id_buf, int max_len);
+typedef dpl_status_t (*dpl_gen_random_key_t)(dpl_ctx_t* ctx,
+                                             dpl_storage_class_t storage_class,
+                                             char* custom,
+                                             char* id_buf,
+                                             int max_len);
 
-typedef struct dpl_id_scheme_s
-{
-  const char *name; /*!< name of the id_scheme */
+typedef struct dpl_id_scheme_s {
+  const char* name; /*!< name of the id_scheme */
   dpl_gen_random_key_t gen_random_key;
 } dpl_id_scheme_t;
 
-#define DPL_ID_SCHEME_ANY ((dpl_id_scheme_t *) 0x1)
+#define DPL_ID_SCHEME_ANY ((dpl_id_scheme_t*)0x1)
 
-dpl_status_t dpl_gen_random_key(dpl_ctx_t *ctx, dpl_storage_class_t storage_class, char *custom, char *id_buf, int max_len);
+dpl_status_t dpl_gen_random_key(dpl_ctx_t* ctx,
+                                dpl_storage_class_t storage_class,
+                                char* custom,
+                                char* id_buf,
+                                int max_len);
 
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_ID_SCHEME_H_

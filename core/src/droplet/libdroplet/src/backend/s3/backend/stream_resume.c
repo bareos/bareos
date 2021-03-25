@@ -35,9 +35,9 @@
 #include <dropletp.h>
 #include <droplet/s3/s3.h>
 
-dpl_status_t
-dpl_s3_stream_resume(dpl_ctx_t *ctx, dpl_stream_t *stream,
-                     struct json_object *status)
+dpl_status_t dpl_s3_stream_resume(dpl_ctx_t* ctx,
+                                  dpl_stream_t* stream,
+                                  struct json_object* status)
 {
   json_object_put(stream->status);
   json_object_get(status);

@@ -36,35 +36,48 @@
 
 /* PROTO req.c */
 /* src/req.c */
-void dpl_req_free(dpl_req_t *req);
-dpl_req_t *dpl_req_new(dpl_ctx_t *ctx);
-dpl_status_t dpl_req_set_host(dpl_req_t *req, const char *host);
-dpl_status_t dpl_req_set_port(dpl_req_t *req, const char *port);
-void dpl_req_set_method(dpl_req_t *req, dpl_method_t method);
-dpl_status_t dpl_req_set_bucket(dpl_req_t *req, const char *bucket);
-dpl_status_t dpl_req_set_src_resource_ext(dpl_req_t *req, const char *src_resource, int add_base_path);
-dpl_status_t dpl_req_set_resource(dpl_req_t *req, const char *resource);
-dpl_status_t dpl_req_set_subresource(dpl_req_t *req, const char *subresource);
-dpl_status_t dpl_req_add_subresource(dpl_req_t *req, const char *subresource);
-void dpl_req_add_behavior(dpl_req_t *req, unsigned int flags);
-void dpl_req_rm_behavior(dpl_req_t *req, unsigned int flags);
-void dpl_req_set_location_constraint(dpl_req_t *req, dpl_location_constraint_t location_constraint);
-void dpl_req_set_canned_acl(dpl_req_t *req, dpl_canned_acl_t canned_acl);
-void dpl_req_set_storage_class(dpl_req_t *req, dpl_storage_class_t storage_class);
-void dpl_req_set_condition(dpl_req_t *req, const dpl_condition_t *condition);
-dpl_status_t dpl_req_set_cache_control(dpl_req_t *req, const char *cache_control);
-dpl_status_t dpl_req_set_content_disposition(dpl_req_t *req, const char *content_disposition);
-dpl_status_t dpl_req_set_content_encoding(dpl_req_t *req, const char *content_encoding);
-void dpl_req_set_data(dpl_req_t *req, const char *data_buf, u_int data_len);
-dpl_status_t dpl_req_add_metadatum(dpl_req_t *req, const char *key, const char *value);
-dpl_status_t dpl_req_add_metadata(dpl_req_t *req, const dpl_dict_t *metadata);
-dpl_status_t dpl_req_set_content_type(dpl_req_t *req, const char *content_type);
-dpl_status_t dpl_req_set_object_type(dpl_req_t *req, dpl_ftype_t object_type);
-dpl_status_t dpl_req_add_range(dpl_req_t *req, uint64_t start, uint64_t end);
-void dpl_req_set_expires(dpl_req_t *req, time_t expires);
-dpl_status_t dpl_req_set_src_bucket(dpl_req_t *req, const char *src_bucket);
-dpl_status_t dpl_req_set_src_resource(dpl_req_t *req, const char *src_resource);
-dpl_status_t dpl_req_set_src_subresource(dpl_req_t *req, const char *src_subresource);
-void dpl_req_set_copy_directive(dpl_req_t *req, dpl_copy_directive_t copy_directive);
-void dpl_req_set_copy_source_condition(dpl_req_t *req, const dpl_condition_t *condition);
+void dpl_req_free(dpl_req_t* req);
+dpl_req_t* dpl_req_new(dpl_ctx_t* ctx);
+dpl_status_t dpl_req_set_host(dpl_req_t* req, const char* host);
+dpl_status_t dpl_req_set_port(dpl_req_t* req, const char* port);
+void dpl_req_set_method(dpl_req_t* req, dpl_method_t method);
+dpl_status_t dpl_req_set_bucket(dpl_req_t* req, const char* bucket);
+dpl_status_t dpl_req_set_src_resource_ext(dpl_req_t* req,
+                                          const char* src_resource,
+                                          int add_base_path);
+dpl_status_t dpl_req_set_resource(dpl_req_t* req, const char* resource);
+dpl_status_t dpl_req_set_subresource(dpl_req_t* req, const char* subresource);
+dpl_status_t dpl_req_add_subresource(dpl_req_t* req, const char* subresource);
+void dpl_req_add_behavior(dpl_req_t* req, unsigned int flags);
+void dpl_req_rm_behavior(dpl_req_t* req, unsigned int flags);
+void dpl_req_set_location_constraint(
+    dpl_req_t* req,
+    dpl_location_constraint_t location_constraint);
+void dpl_req_set_canned_acl(dpl_req_t* req, dpl_canned_acl_t canned_acl);
+void dpl_req_set_storage_class(dpl_req_t* req,
+                               dpl_storage_class_t storage_class);
+void dpl_req_set_condition(dpl_req_t* req, const dpl_condition_t* condition);
+dpl_status_t dpl_req_set_cache_control(dpl_req_t* req,
+                                       const char* cache_control);
+dpl_status_t dpl_req_set_content_disposition(dpl_req_t* req,
+                                             const char* content_disposition);
+dpl_status_t dpl_req_set_content_encoding(dpl_req_t* req,
+                                          const char* content_encoding);
+void dpl_req_set_data(dpl_req_t* req, const char* data_buf, u_int data_len);
+dpl_status_t dpl_req_add_metadatum(dpl_req_t* req,
+                                   const char* key,
+                                   const char* value);
+dpl_status_t dpl_req_add_metadata(dpl_req_t* req, const dpl_dict_t* metadata);
+dpl_status_t dpl_req_set_content_type(dpl_req_t* req, const char* content_type);
+dpl_status_t dpl_req_set_object_type(dpl_req_t* req, dpl_ftype_t object_type);
+dpl_status_t dpl_req_add_range(dpl_req_t* req, uint64_t start, uint64_t end);
+void dpl_req_set_expires(dpl_req_t* req, time_t expires);
+dpl_status_t dpl_req_set_src_bucket(dpl_req_t* req, const char* src_bucket);
+dpl_status_t dpl_req_set_src_resource(dpl_req_t* req, const char* src_resource);
+dpl_status_t dpl_req_set_src_subresource(dpl_req_t* req,
+                                         const char* src_subresource);
+void dpl_req_set_copy_directive(dpl_req_t* req,
+                                dpl_copy_directive_t copy_directive);
+void dpl_req_set_copy_source_condition(dpl_req_t* req,
+                                       const dpl_condition_t* condition);
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_REQ_H_

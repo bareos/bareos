@@ -35,38 +35,40 @@
 #include "dropletp.h"
 #include "droplet/sproxyd/sproxyd.h"
 
-struct dall_req
-{
-  dpl_req_t     *req;
-  dpl_dict_t    *headers;
-  dpl_conn_t    *conn;
-  dpl_sbuf_t    *data;
-  char          *answer_data;
-  unsigned int  answer_len;
-  int           connection_close;
-  dpl_vec_t     *objects;
+struct dall_req {
+  dpl_req_t* req;
+  dpl_dict_t* headers;
+  dpl_conn_t* conn;
+  dpl_sbuf_t* data;
+  char* answer_data;
+  unsigned int answer_len;
+  int connection_close;
+  dpl_vec_t* objects;
 };
 
-static dpl_status_t
-get_delete_data_content(dpl_ctx_t *ctx, dpl_locators_t *locators, dpl_sbuf_t *buffer)
+static dpl_status_t get_delete_data_content(dpl_ctx_t* ctx,
+                                            dpl_locators_t* locators,
+                                            dpl_sbuf_t* buffer)
 {
-  int           i;
-  dpl_status_t  ret;
+  int i;
+  dpl_status_t ret;
 
-#define DPL_FN(fn, args...) ({                  \
-      ret = fn(args);                           \
-      if (ret != DPL_SUCCESS)                   \
-        return ret;                             \
-    })
+#define DPL_FN(fn, args...)             \
+  ({                                    \
+    ret = fn(args);                     \
+    if (ret != DPL_SUCCESS) return ret; \
+  })
 #define ADD_STR(str) DPL_FN(dpl_sbuf_add_str, buffer, str)
-#define ADD_STR_FMT(fmt, args...) DPL_FN(dpl_sbuf_add_str_fmt, buffer, fmt, args)
+#define ADD_STR_FMT(fmt, args...) \
+  DPL_FN(dpl_sbuf_add_str_fmt, buffer, fmt, args)
 
-  ADD_STR("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-          "<Delete>\n"
-          "    <Quiet>false</Quiet>\n");
+  ADD_STR(
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+      "<Delete>\n"
+      "    <Quiet>false</Quiet>\n");
 
   for (i = 0; i < locators->size; i++) {
-    dpl_locator_t       *locator = &locators->tab[i];
+    dpl_locator_t* locator = &locators->tab[i];
 
     ADD_STR("    <Object>\n");
     ADD_STR_FMT("        <Key>%s</Key>\n", locator->name);
@@ -84,69 +86,62 @@ get_delete_data_content(dpl_ctx_t *ctx, dpl_locators_t *locators, dpl_sbuf_t *bu
   return DPL_SUCCESS;
 }
 
-static dpl_status_t
-delete_all(dpl_ctx_t *ctx, const char *bucket, const char *ressource,
-           dpl_locators_t *locators,
-           struct dall_req *dctx, dpl_vec_t **objectsp)
+static dpl_status_t delete_all(dpl_ctx_t* ctx,
+                               const char* bucket,
+                               const char* ressource,
+                               dpl_locators_t* locators,
+                               struct dall_req* dctx,
+                               dpl_vec_t** objectsp)
 {
-  char          path[1024];
-  dpl_status_t  ret;
-  struct iovec  iov[10];
-  int           n_iov = 0;
-  char          header[dpl_header_size];
-  u_int         header_len;
+  char path[1024];
+  dpl_status_t ret;
+  struct iovec iov[10];
+  int n_iov = 0;
+  char header[dpl_header_size];
+  u_int header_len;
 
   dctx->req = dpl_req_new(ctx);
-  if (dctx->req == NULL)
-    return DPL_ENOMEM;
+  if (dctx->req == NULL) return DPL_ENOMEM;
 
   dpl_req_set_method(dctx->req, DPL_METHOD_POST);
 
-  if (bucket == NULL)
-    return DPL_EINVAL;
+  if (bucket == NULL) return DPL_EINVAL;
 
   ret = dpl_req_set_bucket(dctx->req, bucket);
-  if (ret != DPL_SUCCESS)
-    return ret;
+  if (ret != DPL_SUCCESS) return ret;
 
   snprintf(path, sizeof(path), "%s/.delete", ressource);
   ret = dpl_req_set_resource(dctx->req, path);
-  if (ret != DPL_SUCCESS)
-    return ret;
+  if (ret != DPL_SUCCESS) return ret;
 
   dctx->data = dpl_sbuf_new(4096);
-  if (dctx->data == NULL)
-    return DPL_ENOMEM;
+  if (dctx->data == NULL) return DPL_ENOMEM;
 
   ret = get_delete_data_content(ctx, locators, dctx->data);
-  if (ret != DPL_SUCCESS)
-    return ret;
+  if (ret != DPL_SUCCESS) return ret;
 
   dpl_req_set_data(dctx->req, dctx->data->buf, dctx->data->len);
   dpl_req_add_behavior(dctx->req, DPL_BEHAVIOR_MD5);
 
-  ret = dpl_sproxyd_req_build(dctx->req, DPL_SPROXYD_REQ_CONSISTENT, 0, &dctx->headers);
-  if (ret != DPL_SUCCESS)
-    return ret;
+  ret = dpl_sproxyd_req_build(dctx->req, DPL_SPROXYD_REQ_CONSISTENT, 0,
+                              &dctx->headers);
+  if (ret != DPL_SUCCESS) return ret;
 
   dpl_req_rm_behavior(dctx->req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
   ret = dpl_try_connect(ctx, dctx->req, &dctx->conn);
-  if (ret != DPL_SUCCESS)
-    return ret;
+  if (ret != DPL_SUCCESS) return ret;
 
   ret = dpl_add_host_to_headers(dctx->req, dctx->headers);
-  if (ret != DPL_SUCCESS)
-    return ret;
+  if (ret != DPL_SUCCESS) return ret;
 
-  ret = dpl_req_gen_http_request(ctx, dctx->req, dctx->headers, NULL,
-                                 header, sizeof(header), &header_len);
-  if (ret != DPL_SUCCESS)
-    return ret;
+  ret = dpl_req_gen_http_request(ctx, dctx->req, dctx->headers, NULL, header,
+                                 sizeof(header), &header_len);
+  if (ret != DPL_SUCCESS) return ret;
 
   // Headers
   iov[n_iov].iov_base = header;
-  iov[n_iov].iov_len  = header_len;
+  iov[n_iov].iov_len = header_len;
   n_iov++;
 
   // Final crlf
@@ -155,7 +150,7 @@ delete_all(dpl_ctx_t *ctx, const char *bucket, const char *ressource,
   n_iov++;
 
   // Data
-  iov[n_iov].iov_base = (void *) dctx->data->buf;
+  iov[n_iov].iov_base = (void*)dctx->data->buf;
   iov[n_iov].iov_len = dctx->data->len;
   n_iov++;
 
@@ -165,49 +160,46 @@ delete_all(dpl_ctx_t *ctx, const char *bucket, const char *ressource,
     return ret;
   }
 
-  ret = dpl_read_http_reply(dctx->conn, 1,
-                            &dctx->answer_data, &dctx->answer_len,
-                            NULL, &dctx->connection_close);
+  ret = dpl_read_http_reply(dctx->conn, 1, &dctx->answer_data,
+                            &dctx->answer_len, NULL, &dctx->connection_close);
 
   if (dctx->answer_len > 0) {
-    dpl_status_t        parse_ret;
+    dpl_status_t parse_ret;
 
     dctx->objects = dpl_vec_new(2, 2);
-    if (dctx->objects == NULL)
-      return DPL_ENOMEM;
+    if (dctx->objects == NULL) return DPL_ENOMEM;
 
-    parse_ret = dpl_sproxyd_parse_delete_all(ctx, dctx->answer_data, dctx->answer_len, dctx->objects);
+    parse_ret = dpl_sproxyd_parse_delete_all(ctx, dctx->answer_data,
+                                             dctx->answer_len, dctx->objects);
     if (parse_ret == DPL_SUCCESS && objectsp != NULL) {
       *objectsp = dctx->objects;
       dctx->objects = NULL;
     }
 
-    if (ret == DPL_SUCCESS)
-      ret = parse_ret;
+    if (ret == DPL_SUCCESS) ret = parse_ret;
   }
 
   return ret;
 }
 
-dpl_status_t
-dpl_sproxyd_delete_all_id(dpl_ctx_t *ctx,
-                          const char *bucket,
-                          const char *ressource,
-                          dpl_locators_t *locators,
-                          UNUSED const dpl_option_t *option,
-                          UNUSED const dpl_condition_t *condition,
-                          dpl_vec_t **objectsp)
+dpl_status_t dpl_sproxyd_delete_all_id(dpl_ctx_t* ctx,
+                                       const char* bucket,
+                                       const char* ressource,
+                                       dpl_locators_t* locators,
+                                       UNUSED const dpl_option_t* option,
+                                       UNUSED const dpl_condition_t* condition,
+                                       dpl_vec_t** objectsp)
 {
-  dpl_status_t          ret;
-  struct dall_req       dctx = {
-    .req              = NULL,
-    .headers          = NULL,
-    .conn             = NULL,
-    .data             = NULL,
-    .answer_data      = NULL,
-    .answer_len       = 0,
-    .connection_close = 0,
-    .objects          = NULL,
+  dpl_status_t ret;
+  struct dall_req dctx = {
+      .req = NULL,
+      .headers = NULL,
+      .conn = NULL,
+      .data = NULL,
+      .answer_data = NULL,
+      .answer_len = 0,
+      .connection_close = 0,
+      .objects = NULL,
   };
 
   ret = delete_all(ctx, bucket, ressource, locators, &dctx, objectsp);
@@ -219,20 +211,15 @@ dpl_sproxyd_delete_all_id(dpl_ctx_t *ctx,
       dpl_conn_release(dctx.conn);
   }
 
-  if (dctx.headers != NULL)
-    dpl_dict_free(dctx.headers);
+  if (dctx.headers != NULL) dpl_dict_free(dctx.headers);
 
-  if (dctx.req != NULL)
-    dpl_req_free(dctx.req);
+  if (dctx.req != NULL) dpl_req_free(dctx.req);
 
-  if (dctx.data != NULL)
-    dpl_sbuf_free(dctx.data);
+  if (dctx.data != NULL) dpl_sbuf_free(dctx.data);
 
-  if (dctx.answer_data != NULL)
-    free(dctx.answer_data);
+  if (dctx.answer_data != NULL) free(dctx.answer_data);
 
-  if (dctx.objects != NULL)
-    dpl_vec_delete_objects_free(dctx.objects);
+  if (dctx.objects != NULL) dpl_vec_delete_objects_free(dctx.objects);
 
   return ret;
 }

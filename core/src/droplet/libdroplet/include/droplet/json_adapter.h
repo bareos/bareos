@@ -36,22 +36,20 @@
 
 #ifdef SCAL_JSON_C
 
-static inline long_t
-json_object_get_string_length(struct json_object *o)
+static inline long_t json_object_get_string_length(struct json_object* o)
 {
   long_t len;
   json_object_get_string_len(o, &len);
   return len;
 }
 
-#define json_type_int json_type_integer
-#define json_object_new_int(i) json_object_new_integer(i)
-#define json_object_get_int(o) json_ojbect_get_integer(o)
+#  define json_type_int json_type_integer
+#  define json_object_new_int(i) json_object_new_integer(i)
+#  define json_object_get_int(o) json_ojbect_get_integer(o)
 
 #else
 
-static inline int
-json_object_get_string_length(struct json_object *o)
+static inline int json_object_get_string_length(struct json_object* o)
 {
   return json_object_get_string_len(o);
 }

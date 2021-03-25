@@ -76,7 +76,7 @@
 #include <droplet/ntinydb.h>
 #include <droplet/task.h>
 
-#define UNUSED  __attribute__((__unused__))
-#define PRINTF(idx, chk) __attribute__((format (printf, idx, chk)))
+#define UNUSED __attribute__((__unused__))
+#define PRINTF(idx, chk) __attribute__((format(printf, idx, chk)))
 
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLETP_H_

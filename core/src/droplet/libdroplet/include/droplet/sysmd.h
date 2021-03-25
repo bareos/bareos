@@ -34,7 +34,7 @@
 #ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SYSMD_H_
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SYSMD_H_
 
-dpl_sysmd_t *dpl_sysmd_dup(const dpl_sysmd_t *sysmd);
-void dpl_sysmd_free(dpl_sysmd_t *sysmd);
-void dpl_sysmd_print(dpl_sysmd_t *sysmd, FILE *f);
+dpl_sysmd_t* dpl_sysmd_dup(const dpl_sysmd_t* sysmd);
+void dpl_sysmd_free(dpl_sysmd_t* sysmd);
+void dpl_sysmd_print(dpl_sysmd_t* sysmd, FILE* f);
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SYSMD_H_

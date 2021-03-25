@@ -41,6 +41,6 @@
 #include <droplet/s3/multipart.h>
 
 /* #define DPRINTF(fmt,...) fprintf(stderr, "[s3] " fmt, ##__VA_ARGS__) */
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt, ...)
 
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_S3_H_

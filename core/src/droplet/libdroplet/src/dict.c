@@ -52,29 +52,26 @@
  */
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt, ...)
 
 /*
  * compute a simple hash code
  *
  * note: bad dispersion, good for hash tables
  */
-static int
-dict_hashcode(const char *s)
+static int dict_hashcode(const char* s)
 {
-  const char *p;
+  const char* p;
   unsigned h, g;
 
   h = g = 0;
-  for (p=s;*p!='\0';p=p+1)
-    {
-      h = (h<<4)+(*p);
-      if ((g=h&0xf0000000))
-        {
-          h=h^(g>>24);
-          h=h^g;
-        }
+  for (p = s; *p != '\0'; p = p + 1) {
+    h = (h << 4) + (*p);
+    if ((g = h & 0xf0000000)) {
+      h = h ^ (g >> 24);
+      h = h ^ g;
     }
+  }
 
   return h;
 }
@@ -92,27 +89,23 @@ dict_hashcode(const char *s)
  * @param n_buckets specifies how many buckets the dict will use
  * @return a new dict, or NULL on failure
  */
-dpl_dict_t *
-dpl_dict_new(int n_buckets)
+dpl_dict_t* dpl_dict_new(int n_buckets)
 {
-  dpl_dict_t *dict;
+  dpl_dict_t* dict;
 
-  if (0 == n_buckets)
-      return NULL;
+  if (0 == n_buckets) return NULL;
 
-  dict = malloc(sizeof (*dict));
-  if (NULL == dict)
+  dict = malloc(sizeof(*dict));
+  if (NULL == dict) return NULL;
+
+  memset(dict, 0, sizeof(*dict));
+
+  dict->buckets = malloc(n_buckets * sizeof(dpl_dict_var_t*));
+  if (NULL == dict->buckets) {
+    free(dict);
     return NULL;
-
-  memset(dict, 0, sizeof (*dict));
-
-  dict->buckets = malloc(n_buckets * sizeof (dpl_dict_var_t *));
-  if (NULL == dict->buckets)
-    {
-      free(dict);
-      return NULL;
-    }
-  memset(dict->buckets, 0, n_buckets * sizeof (dpl_dict_var_t *));
+  }
+  memset(dict->buckets, 0, n_buckets * sizeof(dpl_dict_var_t*));
 
   dict->n_buckets = n_buckets;
 
@@ -134,20 +127,16 @@ dpl_dict_new(int n_buckets)
  * @param key the key to look up
  * @return the entry matching @a key if found, or NULL
  */
-dpl_dict_var_t *
-dpl_dict_get(const dpl_dict_t *dict,
-             const char *key)
+dpl_dict_var_t* dpl_dict_get(const dpl_dict_t* dict, const char* key)
 {
   int bucket;
-  dpl_dict_var_t *var;
+  dpl_dict_var_t* var;
 
   bucket = dict_hashcode(key) % dict->n_buckets;
 
-  for (var = dict->buckets[bucket];var;var = var->prev)
-    {
-      if (!strcmp(var->key, key))
-        return var;
-    }
+  for (var = dict->buckets[bucket]; var; var = var->prev) {
+    if (!strcmp(var->key, key)) return var;
+  }
 
   return NULL;
 }
@@ -166,17 +155,15 @@ dpl_dict_get(const dpl_dict_t *dict,
  * @retval DPL_ENOENT if no matching entry is found, or
  * @retval DPL_* other Droplet error codes on failure
  */
-dpl_status_t
-dpl_dict_get_lowered(const dpl_dict_t *dict,
-                     const char *key,
-                     dpl_dict_var_t **varp)
+dpl_status_t dpl_dict_get_lowered(const dpl_dict_t* dict,
+                                  const char* key,
+                                  dpl_dict_var_t** varp)
 {
-  dpl_dict_var_t *var;
-  char *nkey;
+  dpl_dict_var_t* var;
+  char* nkey;
 
   nkey = strdup(key);
-  if (NULL == nkey)
-    return DPL_ENOMEM;
+  if (NULL == nkey) return DPL_ENOMEM;
 
   dpl_strlower(nkey);
 
@@ -184,11 +171,9 @@ dpl_dict_get_lowered(const dpl_dict_t *dict,
 
   free(nkey);
 
-  if (NULL == var)
-    return DPL_ENOENT;
+  if (NULL == var) return DPL_ENOENT;
 
-  if (NULL != varp)
-    *varp = var;
+  if (NULL != varp) *varp = var;
 
   return DPL_SUCCESS;
 }
@@ -221,34 +206,28 @@ dpl_dict_get_lowered(const dpl_dict_t *dict,
  * @retval DPL_SUCCESS on success, or
  * @retval DPL_* a Droplet error code returned by the callback function
  */
-dpl_status_t
-dpl_dict_iterate(const dpl_dict_t *dict,
-                 dpl_dict_func_t cb_func,
-                 void *cb_arg)
+dpl_status_t dpl_dict_iterate(const dpl_dict_t* dict,
+                              dpl_dict_func_t cb_func,
+                              void* cb_arg)
 {
   int bucket;
   dpl_dict_var_t *var, *prev;
   dpl_status_t ret2;
 
-  for (bucket = 0;bucket < dict->n_buckets;bucket++)
-    {
-      for (var = dict->buckets[bucket];var;var = prev)
-        {
-          prev = var->prev;
-          ret2 = cb_func(var, cb_arg);
-          if (DPL_SUCCESS != ret2)
-            return ret2;
-        }
+  for (bucket = 0; bucket < dict->n_buckets; bucket++) {
+    for (var = dict->buckets[bucket]; var; var = prev) {
+      prev = var->prev;
+      ret2 = cb_func(var, cb_arg);
+      if (DPL_SUCCESS != ret2) return ret2;
     }
+  }
 
   return DPL_SUCCESS;
 }
 
-static dpl_status_t
-cb_var_count(dpl_dict_var_t *var,
-             void *cb_arg)
+static dpl_status_t cb_var_count(dpl_dict_var_t* var, void* cb_arg)
 {
-  int *count = (int *) cb_arg;
+  int* count = (int*)cb_arg;
 
   (*count)++;
   return DPL_SUCCESS;
@@ -262,8 +241,7 @@ cb_var_count(dpl_dict_var_t *var,
  * @param dict the dict whose entries are to be counted
  * @return the number of entries in the dict
  */
-int
-dpl_dict_count(const dpl_dict_t *dict)
+int dpl_dict_count(const dpl_dict_t* dict)
 {
   int count;
 
@@ -273,16 +251,13 @@ dpl_dict_count(const dpl_dict_t *dict)
   return count;
 }
 
-void
-dpl_dict_var_free(dpl_dict_var_t *var)
+void dpl_dict_var_free(dpl_dict_var_t* var)
 {
   dpl_value_free(var->val);
   free(var);
 }
 
-static dpl_status_t
-cb_var_free(dpl_dict_var_t *var,
-            void *arg)
+static dpl_status_t cb_var_free(dpl_dict_var_t* var, void* arg)
 {
   free(var->key);
   dpl_dict_var_free(var);
@@ -296,29 +271,24 @@ cb_var_free(dpl_dict_var_t *var,
  *
  * @param dict the dict to free
  */
-void
-dpl_dict_free(dpl_dict_t *dict)
+void dpl_dict_free(dpl_dict_t* dict)
 {
   dpl_dict_iterate(dict, cb_var_free, NULL);
   free(dict->buckets);
   free(dict);
 }
 
-struct print_data
-{
-  FILE *f;
+struct print_data {
+  FILE* f;
   int level;
 };
 
-static dpl_status_t
-cb_var_print(dpl_dict_var_t *var,
-             void *arg)
+static dpl_status_t cb_var_print(dpl_dict_var_t* var, void* arg)
 {
-  struct print_data *pd = (struct print_data *) arg;
+  struct print_data* pd = (struct print_data*)arg;
   int i;
-  
-  for (i = 0;i < pd->level;i++)
-    fprintf(pd->f, " ");
+
+  for (i = 0; i < pd->level; i++) fprintf(pd->f, " ");
 
   fprintf(pd->f, "%s=", var->key);
   dpl_value_print(var->val, pd->f, pd->level + 1, 0);
@@ -340,10 +310,7 @@ cb_var_print(dpl_dict_var_t *var,
  * @param f a stdio file to which to print the entries
  * @param level you should pass 0 for this argument
  */
-void
-dpl_dict_print(const dpl_dict_t *dict,
-               FILE *f,
-               int level)
+void dpl_dict_print(const dpl_dict_t* dict, FILE* f, int level)
 {
   struct print_data pd;
 
@@ -363,71 +330,62 @@ dpl_dict_print(const dpl_dict_t *dict,
  *
  * @param dict the dict to add an entry to
  * @param key the key for the new
- * @param value the new value to be entered, any allocated value is duplicated, not consumed
+ * @param value the new value to be entered, any allocated value is duplicated,
+ * not consumed
  * @param lowered if nonzero, @a key is converted to lower case
  * @retval DPL_SUCCESS on success, or
  * @retval DPL_* a Droplet error code on failure
  */
-dpl_status_t
-dpl_dict_add_value(dpl_dict_t *dict,
-                   const char *key,
-                   dpl_value_t *value,
-                   int lowered)
+dpl_status_t dpl_dict_add_value(dpl_dict_t* dict,
+                                const char* key,
+                                dpl_value_t* value,
+                                int lowered)
 {
-  dpl_dict_var_t *var = NULL;
+  dpl_dict_var_t* var = NULL;
 
   if (lowered)
     dpl_dict_get_lowered(dict, key, &var);
   else
     var = dpl_dict_get(dict, key);
 
-  if (NULL == var)
-    {
-      int bucket;
+  if (NULL == var) {
+    int bucket;
 
-      var = malloc(sizeof (*var));
-      if (NULL == var)
-        return DPL_ENOMEM;
+    var = malloc(sizeof(*var));
+    if (NULL == var) return DPL_ENOMEM;
 
-      memset(var, 0, sizeof (*var));
+    memset(var, 0, sizeof(*var));
 
-      var->key = strdup(key);
-      if (NULL == var->key)
-        {
-          free(var);
-          return DPL_ENOMEM;
-        }
-
-      if (1 == lowered)
-        dpl_strlower(var->key);
-
-      var->val = dpl_value_dup(value);
-      if (NULL == var->val)
-        {
-          free(var->key);
-          free(var);
-          return DPL_ENOMEM;
-        }
-
-      bucket = dict_hashcode(var->key) % dict->n_buckets;
-
-      var->next = NULL;
-      var->prev = dict->buckets[bucket];
-      if (NULL != dict->buckets[bucket])
-        dict->buckets[bucket]->next = var;
-      dict->buckets[bucket] = var;
+    var->key = strdup(key);
+    if (NULL == var->key) {
+      free(var);
+      return DPL_ENOMEM;
     }
-  else
-    {
-      dpl_value_t *nval;
 
-      nval = dpl_value_dup(value);
-      if (NULL == nval)
-          return DPL_ENOMEM;
+    if (1 == lowered) dpl_strlower(var->key);
 
-      dpl_value_free(var->val);
-      var->val = nval;
+    var->val = dpl_value_dup(value);
+    if (NULL == var->val) {
+      free(var->key);
+      free(var);
+      return DPL_ENOMEM;
     }
+
+    bucket = dict_hashcode(var->key) % dict->n_buckets;
+
+    var->next = NULL;
+    var->prev = dict->buckets[bucket];
+    if (NULL != dict->buckets[bucket]) dict->buckets[bucket]->next = var;
+    dict->buckets[bucket] = var;
+  } else {
+    dpl_value_t* nval;
+
+    nval = dpl_value_dup(value);
+    if (NULL == nval) return DPL_ENOMEM;
+
+    dpl_value_free(var->val);
+    var->val = nval;
+  }
 
   return DPL_SUCCESS;
 }
@@ -447,47 +405,39 @@ dpl_dict_add_value(dpl_dict_t *dict,
  * @retval DPL_SUCCESS on success, or
  * @retval DPL_* a Droplet error code on failure
  */
-dpl_status_t
-dpl_dict_add(dpl_dict_t *dict,
-             const char *key,
-             const char *string,
-             int lowered)
+dpl_status_t dpl_dict_add(dpl_dict_t* dict,
+                          const char* key,
+                          const char* string,
+                          int lowered)
 {
   dpl_sbuf_t sbuf;
   dpl_value_t value;
 
   sbuf.allocated = 0;
-  sbuf.buf = (char *)string;
+  sbuf.buf = (char*)string;
   sbuf.len = strlen(string);
   value.type = DPL_VALUE_STRING;
   value.string = &sbuf;
   return dpl_dict_add_value(dict, key, &value, lowered);
 }
 
-void
-dpl_dict_remove(dpl_dict_t *dict,
-                dpl_dict_var_t *var)
+void dpl_dict_remove(dpl_dict_t* dict, dpl_dict_var_t* var)
 {
   int bucket;
 
   bucket = dict_hashcode(var->key) % dict->n_buckets;
 
-  if (var->prev)
-    var->prev->next = var->next;
-  if (var->next)
-    var->next->prev = var->prev;
-  if (dict->buckets[bucket] == var)
-    dict->buckets[bucket] = var->prev;
+  if (var->prev) var->prev->next = var->next;
+  if (var->next) var->next->prev = var->prev;
+  if (dict->buckets[bucket] == var) dict->buckets[bucket] = var->prev;
 
   free(var->key);
   dpl_dict_var_free(var);
 }
 
-static dpl_status_t
-cb_var_copy(dpl_dict_var_t *var,
-            void *arg)
+static dpl_status_t cb_var_copy(dpl_dict_var_t* var, void* arg)
 {
-  return dpl_dict_add_value((dpl_dict_t *)arg, var->key, var->val, 0);
+  return dpl_dict_add_value((dpl_dict_t*)arg, var->key, var->val, 0);
 }
 
 /**
@@ -502,22 +452,18 @@ cb_var_copy(dpl_dict_var_t *var,
  * @retval DPL_SUCCESS on success, or
  * @retval DPL_* a Droplet error code on failure
  */
-dpl_status_t
-dpl_dict_copy(dpl_dict_t *dst,
-              const dpl_dict_t *src)
+dpl_status_t dpl_dict_copy(dpl_dict_t* dst, const dpl_dict_t* src)
 {
   dpl_status_t ret;
 
-  if (! dst)
-    return DPL_FAILURE;
+  if (!dst) return DPL_FAILURE;
 
   if (src)
     ret = dpl_dict_iterate(src, cb_var_copy, dst);
-  else
-    {
-      dpl_dict_free(dst);
-      ret = DPL_SUCCESS;
-    }
+  else {
+    dpl_dict_free(dst);
+    ret = DPL_SUCCESS;
+  }
 
   return ret;
 }
@@ -532,58 +478,48 @@ dpl_dict_copy(dpl_dict_t *dst,
  * @param src the dict to copy entries from
  * @returns a new dict or NULL on failure
  */
-dpl_dict_t *
-dpl_dict_dup(const dpl_dict_t *src)
+dpl_dict_t* dpl_dict_dup(const dpl_dict_t* src)
 {
-  dpl_dict_t *dst;
+  dpl_dict_t* dst;
   dpl_status_t status;
 
   assert(NULL != src);
 
   dst = dpl_dict_new(src->n_buckets);
-  if (NULL == dst)
-    return NULL;
+  if (NULL == dst) return NULL;
 
   status = dpl_dict_copy(dst, src);
-  if (DPL_SUCCESS != status)
-    {
-      dpl_dict_free(dst);
-      return NULL;
-    }
-  
+  if (DPL_SUCCESS != status) {
+    dpl_dict_free(dst);
+    return NULL;
+  }
+
   return dst;
 }
 
-struct conviterate 
-{
-  dpl_dict_t *dict;
-  const char *prefix;
+struct conviterate {
+  dpl_dict_t* dict;
+  const char* prefix;
   int reverse_logic;
 };
 
-static dpl_status_t
-cb_var_filter_string(dpl_dict_var_t *var,
-                     void *cb_arg)
+static dpl_status_t cb_var_filter_string(dpl_dict_var_t* var, void* cb_arg)
 {
-  struct conviterate *conv = cb_arg;
+  struct conviterate* conv = cb_arg;
   size_t prefix_len;
   dpl_status_t ret = DPL_SUCCESS;
 
-  if (! conv->prefix)
-    return DPL_SUCCESS;
+  if (!conv->prefix) return DPL_SUCCESS;
 
   prefix_len = strlen(conv->prefix);
 
-  if (0 == strncmp(var->key, conv->prefix, prefix_len))
-    {
-      if (!conv->reverse_logic)
-        ret = dpl_dict_add_value(conv->dict, var->key + prefix_len, var->val, 0);
-    }
-  else
-    {
-      if (conv->reverse_logic)
-        ret = dpl_dict_add_value(conv->dict, var->key, var->val, 0);
-    }
+  if (0 == strncmp(var->key, conv->prefix, prefix_len)) {
+    if (!conv->reverse_logic)
+      ret = dpl_dict_add_value(conv->dict, var->key + prefix_len, var->val, 0);
+  } else {
+    if (conv->reverse_logic)
+      ret = dpl_dict_add_value(conv->dict, var->key, var->val, 0);
+  }
 
   return ret;
 }
@@ -605,18 +541,17 @@ cb_var_filter_string(dpl_dict_var_t *var,
  * @retval DPL_SUCCESS on success, or
  * @retval DPL_* a Droplet error code on failure
  */
-dpl_status_t
-dpl_dict_filter_prefix(dpl_dict_t *dst,
-                       const dpl_dict_t *src,
-                       const char *prefix)
+dpl_status_t dpl_dict_filter_prefix(dpl_dict_t* dst,
+                                    const dpl_dict_t* src,
+                                    const char* prefix)
 {
   dpl_status_t ret;
 
-  if (! dst)
-    return DPL_FAILURE;
+  if (!dst) return DPL_FAILURE;
 
   if (src) {
-    struct conviterate conv = { .dict = dst, .prefix = prefix, .reverse_logic = 0 };
+    struct conviterate conv
+        = {.dict = dst, .prefix = prefix, .reverse_logic = 0};
     ret = dpl_dict_iterate(src, cb_var_filter_string, &conv);
   } else {
     dpl_dict_free(dst);
@@ -643,18 +578,17 @@ dpl_dict_filter_prefix(dpl_dict_t *dst,
  * @retval DPL_SUCCESS on success, or
  * @retval DPL_* a Droplet error code on failure
  */
-dpl_status_t
-dpl_dict_filter_no_prefix(dpl_dict_t *dst,
-                          const dpl_dict_t *src,
-                          const char *prefix)
+dpl_status_t dpl_dict_filter_no_prefix(dpl_dict_t* dst,
+                                       const dpl_dict_t* src,
+                                       const char* prefix)
 {
   dpl_status_t ret;
 
-  if (! dst)
-    return DPL_FAILURE;
+  if (!dst) return DPL_FAILURE;
 
   if (src) {
-    struct conviterate conv = { .dict = dst, .prefix = prefix, .reverse_logic = 1 };
+    struct conviterate conv
+        = {.dict = dst, .prefix = prefix, .reverse_logic = 1};
     ret = dpl_dict_iterate(src, cb_var_filter_string, &conv);
   } else {
     dpl_dict_free(dst);
@@ -679,15 +613,12 @@ dpl_dict_filter_no_prefix(dpl_dict_t *dst,
  * @param key the key to look up
  * @return the matching entry's value if found, or `NULL`
  */
-char *
-dpl_dict_get_value(const dpl_dict_t *dict,
-                   const char *key)
+char* dpl_dict_get_value(const dpl_dict_t* dict, const char* key)
 {
-  dpl_dict_var_t *var;
+  dpl_dict_var_t* var;
 
   var = dpl_dict_get(dict, key);
-  if (NULL == var)
-    return NULL;
+  if (NULL == var) return NULL;
 
   assert(var->val->type == DPL_VALUE_STRING);
   return dpl_sbuf_get_str(var->val->string);

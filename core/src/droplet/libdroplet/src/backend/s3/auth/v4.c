@@ -35,51 +35,48 @@
 #include "dropletp.h"
 #include "droplet/s3/s3.h"
 
-static dpl_status_t
-add_payload_signature_to_headers(const dpl_req_t *req, dpl_dict_t *headers)
+static dpl_status_t add_payload_signature_to_headers(const dpl_req_t* req,
+                                                     dpl_dict_t* headers)
 {
-  uint8_t               digest[SHA256_DIGEST_LENGTH];
-  char                  digest_hex[DPL_HEX_LENGTH(sizeof digest) + 1];
-  int                   i;
-  dpl_dict_var_t        *var;
+  uint8_t digest[SHA256_DIGEST_LENGTH];
+  char digest_hex[DPL_HEX_LENGTH(sizeof digest) + 1];
+  int i;
+  dpl_dict_var_t* var;
 
   var = dpl_dict_get(headers, "x-amz-content-sha256");
-  if (var != NULL)
-    return DPL_SUCCESS;
+  if (var != NULL) return DPL_SUCCESS;
 
   if (req->data_enabled)
-    dpl_sha256((uint8_t *) req->data_buf, req->data_len, digest);
+    dpl_sha256((uint8_t*)req->data_buf, req->data_len, digest);
   else
-    dpl_sha256((uint8_t *) "", 0, digest);
+    dpl_sha256((uint8_t*)"", 0, digest);
 
   for (i = 0; i < sizeof digest; i++)
-    sprintf(digest_hex + 2 * i, "%02x", (u_char) digest[i]);
+    sprintf(digest_hex + 2 * i, "%02x", (u_char)digest[i]);
 
   return dpl_dict_add(headers, "x-amz-content-sha256", digest_hex, 0);
 }
 
-static int
-var_cmp(const void *p1,
-        const void *p2)
+static int var_cmp(const void* p1, const void* p2)
 {
-  dpl_value_t *val1 = *(dpl_value_t **) p1;
-  dpl_value_t *val2 = *(dpl_value_t **) p2;
-  dpl_dict_var_t *var1 = (dpl_dict_var_t *) val1->ptr;
-  dpl_dict_var_t *var2 = (dpl_dict_var_t *) val2->ptr;
+  dpl_value_t* val1 = *(dpl_value_t**)p1;
+  dpl_value_t* val2 = *(dpl_value_t**)p2;
+  dpl_dict_var_t* var1 = (dpl_dict_var_t*)val1->ptr;
+  dpl_dict_var_t* var2 = (dpl_dict_var_t*)val2->ptr;
 
   return strcasecmp(var1->key, var2->key);
 }
 
-static dpl_status_t
-create_canonical_request(const dpl_req_t *req,
-                         dpl_dict_t *headers,
-                         dpl_vec_t *canonical_headers,
-                         dpl_vec_t *canonical_params,
-                         char *p, unsigned int len)
+static dpl_status_t create_canonical_request(const dpl_req_t* req,
+                                             dpl_dict_t* headers,
+                                             dpl_vec_t* canonical_headers,
+                                             dpl_vec_t* canonical_params,
+                                             char* p,
+                                             unsigned int len)
 {
   // Method
   {
-    const char    *method = dpl_method_str(req->method);
+    const char* method = dpl_method_str(req->method);
 
     DPL_APPEND_STR(method);
     DPL_APPEND_STR("\n");
@@ -87,10 +84,9 @@ create_canonical_request(const dpl_req_t *req,
 
   // Resource
   if (req->resource != NULL) {
-    char        resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
+    char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
 
-    if (req->resource[0] != '/')
-      DPL_APPEND_STR("/");
+    if (req->resource[0] != '/') DPL_APPEND_STR("/");
 
     dpl_url_encode_no_slashes(req->resource, resource_ue);
     DPL_APPEND_STR(resource_ue);
@@ -102,13 +98,12 @@ create_canonical_request(const dpl_req_t *req,
     int item;
 
     for (item = 0; item < canonical_params->n_items; item++) {
-      dpl_dict_var_t    *param = (dpl_dict_var_t *) dpl_vec_get(canonical_params, item);
+      dpl_dict_var_t* param
+          = (dpl_dict_var_t*)dpl_vec_get(canonical_params, item);
 
-      if (param == NULL)
-        continue;
+      if (param == NULL) continue;
 
-      if (item > 0)
-        DPL_APPEND_STR("&");
+      if (item > 0) DPL_APPEND_STR("&");
 
       DPL_APPEND_STR(param->key);
       DPL_APPEND_STR("=");
@@ -119,18 +114,16 @@ create_canonical_request(const dpl_req_t *req,
 
   // Headers
   if (canonical_headers != NULL) {
-    int                 item;
-    char                *c;
-    dpl_dict_var_t      *header;
+    int item;
+    char* c;
+    dpl_dict_var_t* header;
 
     for (item = 0; item < canonical_headers->n_items; item++) {
-      header = (dpl_dict_var_t *) dpl_vec_get(canonical_headers, item);
+      header = (dpl_dict_var_t*)dpl_vec_get(canonical_headers, item);
 
-      if (header == NULL)
-        continue;
+      if (header == NULL) continue;
 
-      for (c = header->key; *c != '\0'; c++)
-        DPL_APPEND_CHAR(tolower(*c));
+      for (c = header->key; *c != '\0'; c++) DPL_APPEND_CHAR(tolower(*c));
       DPL_APPEND_STR(":");
       DPL_APPEND_STR(dpl_sbuf_get_str(header->val->string));
       DPL_APPEND_STR("\n");
@@ -138,16 +131,13 @@ create_canonical_request(const dpl_req_t *req,
     DPL_APPEND_STR("\n");
 
     for (item = 0; item < canonical_headers->n_items; item++) {
-      header = (dpl_dict_var_t *) dpl_vec_get(canonical_headers, item);
+      header = (dpl_dict_var_t*)dpl_vec_get(canonical_headers, item);
 
-      if (header == NULL)
-        continue;
+      if (header == NULL) continue;
 
-      if (item > 0)
-        DPL_APPEND_STR(";");
+      if (item > 0) DPL_APPEND_STR(";");
 
-      for (c = header->key; *c != '\0'; c++)
-        DPL_APPEND_CHAR(tolower(*c));
+      for (c = header->key; *c != '\0'; c++) DPL_APPEND_CHAR(tolower(*c));
     }
     DPL_APPEND_STR("\n");
   } else {
@@ -160,23 +150,23 @@ create_canonical_request(const dpl_req_t *req,
 
   // Hashed payload
   if (headers != NULL) {
-    char        *value = dpl_dict_get_value(headers, "x-amz-content-sha256");
-    if (value != NULL)
-      DPL_APPEND_STR(value);
+    char* value = dpl_dict_get_value(headers, "x-amz-content-sha256");
+    if (value != NULL) DPL_APPEND_STR(value);
   } else
     DPL_APPEND_STR("UNSIGNED-PAYLOAD");
 
   return DPL_SUCCESS;
 }
 
-static dpl_status_t
-get_current_utc_date(struct tm *tm, struct tm *i_tm,
-                     char *date_str, size_t date_size)
+static dpl_status_t get_current_utc_date(struct tm* tm,
+                                         struct tm* i_tm,
+                                         char* date_str,
+                                         size_t date_size)
 {
-  int           ret;
+  int ret;
 
   if (i_tm == NULL) {
-    time_t        t;
+    time_t t;
 
     time(&t);
     gmtime_r(&t, tm);
@@ -188,10 +178,12 @@ get_current_utc_date(struct tm *tm, struct tm *i_tm,
   return (ret == 0 ? DPL_FAILURE : DPL_SUCCESS);
 }
 
-static dpl_status_t
-create_sign_request(const dpl_req_t *req,
-                    char *canonical_request, struct tm *tm, char *date_str,
-                    char *p, unsigned int len)
+static dpl_status_t create_sign_request(const dpl_req_t* req,
+                                        char* canonical_request,
+                                        struct tm* tm,
+                                        char* date_str,
+                                        char* p,
+                                        unsigned int len)
 {
   DPL_APPEND_STR("AWS4-HMAC-SHA256\n");
 
@@ -199,12 +191,11 @@ create_sign_request(const dpl_req_t *req,
   DPL_APPEND_STR("\n");
 
   {
-    int         ret;
-    char        date_buf[9];
+    int ret;
+    char date_buf[9];
 
     ret = strftime(date_buf, sizeof(date_buf), "%Y%m%d", tm);
-    if (ret == 0)
-      return DPL_FAILURE;
+    if (ret == 0) return DPL_FAILURE;
 
     DPL_APPEND_STR(date_buf);
     DPL_APPEND_STR("/");
@@ -213,13 +204,13 @@ create_sign_request(const dpl_req_t *req,
   }
 
   {
-    uint8_t     digest[SHA256_DIGEST_LENGTH];
-    char        digest_hex[DPL_HEX_LENGTH(sizeof digest) + 1];
-    int         i;
+    uint8_t digest[SHA256_DIGEST_LENGTH];
+    char digest_hex[DPL_HEX_LENGTH(sizeof digest) + 1];
+    int i;
 
-    dpl_sha256((uint8_t *) canonical_request, strlen(canonical_request), digest);
+    dpl_sha256((uint8_t*)canonical_request, strlen(canonical_request), digest);
     for (i = 0; i < sizeof digest; i++)
-      sprintf(digest_hex + 2 * i, "%02x", (u_char) digest[i]);
+      sprintf(digest_hex + 2 * i, "%02x", (u_char)digest[i]);
 
     DPL_APPEND_STR(digest_hex);
   }
@@ -227,18 +218,18 @@ create_sign_request(const dpl_req_t *req,
   return DPL_SUCCESS;
 }
 
-static dpl_status_t
-create_signature(const dpl_req_t *req, struct tm *tm,
-                 char *sign_request, char *signature)
+static dpl_status_t create_signature(const dpl_req_t* req,
+                                     struct tm* tm,
+                                     char* sign_request,
+                                     char* signature)
 {
-  char          digest[64];
-  char          date_buf[9];
-  unsigned int  digest_len, i;
-  int           ret;
+  char digest[64];
+  char date_buf[9];
+  unsigned int digest_len, i;
+  int ret;
 
   ret = strftime(date_buf, sizeof(date_buf), "%Y%m%d", tm);
-  if (ret == 0)
-    return DPL_FAILURE;
+  if (ret == 0) return DPL_FAILURE;
 
   digest_len = snprintf(digest, sizeof(digest), "AWS4%s", req->ctx->secret_key);
 
@@ -252,29 +243,27 @@ create_signature(const dpl_req_t *req, struct tm *tm,
   H(sign_request);
 
   for (i = 0; i < SHA256_DIGEST_LENGTH; i++)
-    sprintf(signature + 2 * i, "%02x", (u_char) digest[i]);
+    sprintf(signature + 2 * i, "%02x", (u_char)digest[i]);
 
   return DPL_SUCCESS;
 }
 
-static dpl_vec_t *
-get_canonical_headers(dpl_dict_t *headers)
+static dpl_vec_t* get_canonical_headers(dpl_dict_t* headers)
 {
-  int                 bucket;
-  dpl_vec_t           *canonical_headers;
-  dpl_dict_var_t      *header;
+  int bucket;
+  dpl_vec_t* canonical_headers;
+  dpl_dict_var_t* header;
 
   canonical_headers = dpl_vec_new(1, 0);
-  if (canonical_headers == NULL)
-    return NULL;
+  if (canonical_headers == NULL) return NULL;
 
   for (bucket = 0; bucket < headers->n_buckets; bucket++) {
     header = headers->buckets[bucket];
     while (header != NULL) {
-      dpl_status_t    ret;
+      dpl_status_t ret;
 
       assert(header->val->type == DPL_VALUE_STRING);
-      
+
       ret = dpl_vec_add(canonical_headers, header);
       if (ret != DPL_SUCCESS) {
         dpl_vec_free(canonical_headers);
@@ -290,17 +279,18 @@ get_canonical_headers(dpl_dict_t *headers)
   return canonical_headers;
 }
 
-static dpl_status_t
-create_authorization(const dpl_req_t *req, struct tm *tm,
-                     dpl_vec_t *canonical_headers, char *signature,
-                     char *p, unsigned int len)
+static dpl_status_t create_authorization(const dpl_req_t* req,
+                                         struct tm* tm,
+                                         dpl_vec_t* canonical_headers,
+                                         char* signature,
+                                         char* p,
+                                         unsigned int len)
 {
-  int   ret;
-  char  date_buf[9];
+  int ret;
+  char date_buf[9];
 
   ret = strftime(date_buf, sizeof(date_buf), "%Y%m%d", tm);
-  if (ret == 0)
-    return DPL_FAILURE;
+  if (ret == 0) return DPL_FAILURE;
 
   DPL_APPEND_STR("AWS4-HMAC-SHA256");
 
@@ -318,21 +308,18 @@ create_authorization(const dpl_req_t *req, struct tm *tm,
 
   DPL_APPEND_STR("SignedHeaders=");
   {
-    int                 item;
-    char                *c;
-    dpl_dict_var_t      *header;
+    int item;
+    char* c;
+    dpl_dict_var_t* header;
 
     for (item = 0; item < canonical_headers->n_items; item++) {
-      header = (dpl_dict_var_t *) dpl_vec_get(canonical_headers, item);
+      header = (dpl_dict_var_t*)dpl_vec_get(canonical_headers, item);
 
-      if (header == NULL)
-        continue;
+      if (header == NULL) continue;
 
-      if (item > 0)
-        DPL_APPEND_STR(";");
+      if (item > 0) DPL_APPEND_STR(";");
 
-      for (c = header->key; *c != '\0'; c++)
-        DPL_APPEND_CHAR(tolower(*c));
+      for (c = header->key; *c != '\0'; c++) DPL_APPEND_CHAR(tolower(*c));
     }
   }
 
@@ -344,30 +331,29 @@ create_authorization(const dpl_req_t *req, struct tm *tm,
   return DPL_SUCCESS;
 }
 
-static dpl_status_t
-insert_query_params_in_vec(dpl_vec_t *params, const dpl_dict_t *query_params,
-                           unsigned char encode_url)
+static dpl_status_t insert_query_params_in_vec(dpl_vec_t* params,
+                                               const dpl_dict_t* query_params,
+                                               unsigned char encode_url)
 {
-  int   bucket;
+  int bucket;
 
   for (bucket = 0; bucket < query_params->n_buckets; bucket++) {
-    dpl_dict_var_t  *param = query_params->buckets[bucket];
+    dpl_dict_var_t* param = query_params->buckets[bucket];
 
     while (param != NULL) {
-      size_t            new_size;
-      dpl_dict_var_t    *new_param;
-      dpl_status_t      ret;
+      size_t new_size;
+      dpl_dict_var_t* new_param;
+      dpl_status_t ret;
 
-      new_param = (dpl_dict_var_t *) malloc (sizeof (dpl_dict_var_t));
-      if (new_param == NULL)
-        return DPL_FAILURE;
+      new_param = (dpl_dict_var_t*)malloc(sizeof(dpl_dict_var_t));
+      if (new_param == NULL) return DPL_FAILURE;
 
       if (encode_url)
         new_size = DPL_URL_LENGTH(strlen(param->key)) + 1;
       else
         new_size = strlen(param->key) + 1;
 
-      new_param->key = (char *) malloc(new_size);
+      new_param->key = (char*)malloc(new_size);
       if (new_param->key == NULL) {
         free(new_param);
         return DPL_FAILURE;
@@ -404,24 +390,24 @@ insert_query_params_in_vec(dpl_vec_t *params, const dpl_dict_t *query_params,
   return DPL_SUCCESS;
 }
 
-static dpl_status_t
-parse_query_params_from_subresource(dpl_vec_t *params, const char *subresource,
-                                    unsigned char encode_url)
+static dpl_status_t parse_query_params_from_subresource(
+    dpl_vec_t* params,
+    const char* subresource,
+    unsigned char encode_url)
 {
   // TODO: Parse subresource
   return DPL_SUCCESS;
 }
 
-static dpl_vec_t *
-get_canonical_params(const char *subresource, const dpl_dict_t *query_params,
-                     unsigned char encode_url)
+static dpl_vec_t* get_canonical_params(const char* subresource,
+                                       const dpl_dict_t* query_params,
+                                       unsigned char encode_url)
 {
-  dpl_status_t  ret = DPL_SUCCESS;
-  dpl_vec_t     *params;
+  dpl_status_t ret = DPL_SUCCESS;
+  dpl_vec_t* params;
 
   params = dpl_vec_new(1, 0);
-  if (params == NULL)
-    return NULL;
+  if (params == NULL) return NULL;
 
   if (subresource != NULL)
     ret = parse_query_params_from_subresource(params, subresource, encode_url);
@@ -433,13 +419,13 @@ get_canonical_params(const char *subresource, const dpl_dict_t *query_params,
     int item;
 
     for (item = 0; item < params->n_items; item++) {
-      dpl_dict_var_t    *param = (dpl_dict_var_t *) dpl_vec_get(params, item);
+      dpl_dict_var_t* param = (dpl_dict_var_t*)dpl_vec_get(params, item);
 
       free(param->key);
       dpl_dict_var_free(param);
     }
     dpl_vec_free(params);
-    
+
     return NULL;
   }
 
@@ -448,38 +434,34 @@ get_canonical_params(const char *subresource, const dpl_dict_t *query_params,
   return params;
 }
 
-dpl_status_t
-dpl_s3_add_authorization_v4_to_headers(const dpl_req_t *req,
-                                       dpl_dict_t *headers,
-                                       const dpl_dict_t *query_params,
-                                       struct tm *i_tm)
+dpl_status_t dpl_s3_add_authorization_v4_to_headers(
+    const dpl_req_t* req,
+    dpl_dict_t* headers,
+    const dpl_dict_t* query_params,
+    struct tm* i_tm)
 {
-  int           item;
-  dpl_status_t  ret;
-  char          canonical_request[4096] = "";
-  char          sign_request[1024] = "";
-  char          signature[DPL_HEX_LENGTH(SHA256_DIGEST_LENGTH) + 1];
-  char          authorization[1024] = "";
-  char          date_str[32] = "";
-  dpl_vec_t     *canonical_headers;
-  dpl_vec_t     *canonical_params;
-  struct tm     tm;
+  int item;
+  dpl_status_t ret;
+  char canonical_request[4096] = "";
+  char sign_request[1024] = "";
+  char signature[DPL_HEX_LENGTH(SHA256_DIGEST_LENGTH) + 1];
+  char authorization[1024] = "";
+  char date_str[32] = "";
+  dpl_vec_t* canonical_headers;
+  dpl_vec_t* canonical_params;
+  struct tm tm;
 
   ret = add_payload_signature_to_headers(req, headers);
-  if (ret != DPL_SUCCESS)
-    return ret;
+  if (ret != DPL_SUCCESS) return ret;
 
   ret = get_current_utc_date(&tm, i_tm, date_str, sizeof(date_str));
-  if (ret != DPL_SUCCESS)
-    return ret;
+  if (ret != DPL_SUCCESS) return ret;
 
   ret = dpl_dict_add(headers, "x-amz-date", date_str, 0);
-  if (ret != DPL_SUCCESS)
-    return ret;
+  if (ret != DPL_SUCCESS) return ret;
 
   canonical_headers = get_canonical_headers(headers);
-  if (canonical_headers == NULL)
-    return DPL_FAILURE;
+  if (canonical_headers == NULL) return DPL_FAILURE;
 
   canonical_params = get_canonical_params(req->subresource, query_params, 1);
   if (canonical_params == NULL) {
@@ -487,9 +469,9 @@ dpl_s3_add_authorization_v4_to_headers(const dpl_req_t *req,
     return DPL_FAILURE;
   }
 
-  ret = create_canonical_request(req, headers,
-                                 canonical_headers, canonical_params,
-                                 canonical_request, sizeof(canonical_request));
+  ret = create_canonical_request(req, headers, canonical_headers,
+                                 canonical_params, canonical_request,
+                                 sizeof(canonical_request));
 
   if (ret == DPL_SUCCESS) {
     DPRINTF("Canonical request:\n%s\n", canonical_request);
@@ -512,7 +494,8 @@ dpl_s3_add_authorization_v4_to_headers(const dpl_req_t *req,
     ret = dpl_dict_add(headers, "Authorization", authorization, 0);
 
   for (item = 0; item < canonical_params->n_items; item++) {
-    dpl_dict_var_t    *param = (dpl_dict_var_t *) dpl_vec_get(canonical_params, item);
+    dpl_dict_var_t* param
+        = (dpl_dict_var_t*)dpl_vec_get(canonical_params, item);
     free(param->key);
     dpl_dict_var_free(param);
   }
@@ -522,19 +505,20 @@ dpl_s3_add_authorization_v4_to_headers(const dpl_req_t *req,
   return ret;
 }
 
-static dpl_status_t
-dpl_s3_insert_signature_v4_params(const dpl_req_t *req, dpl_dict_t *query_params,
-                                  struct tm *tm, char *date_str, char *signature)
+static dpl_status_t dpl_s3_insert_signature_v4_params(const dpl_req_t* req,
+                                                      dpl_dict_t* query_params,
+                                                      struct tm* tm,
+                                                      char* date_str,
+                                                      char* signature)
 {
-  int           item;
-  dpl_status_t  ret;
-  dpl_vec_t     *canonical_params;
-  char          canonical_request[4096] = "";
-  char          sign_request[1024] = "";
+  int item;
+  dpl_status_t ret;
+  dpl_vec_t* canonical_params;
+  char canonical_request[4096] = "";
+  char sign_request[1024] = "";
 
   canonical_params = get_canonical_params(req->subresource, query_params, 0);
-  if (canonical_params == NULL)
-    return DPL_FAILURE;
+  if (canonical_params == NULL) return DPL_FAILURE;
 
   ret = create_canonical_request(req, NULL, NULL, canonical_params,
                                  canonical_request, sizeof(canonical_request));
@@ -550,11 +534,11 @@ dpl_s3_insert_signature_v4_params(const dpl_req_t *req, dpl_dict_t *query_params
     ret = create_signature(req, tm, sign_request, signature);
   }
 
-  if (ret == DPL_SUCCESS)
-    DPRINTF("Signature: %s\n", signature);
+  if (ret == DPL_SUCCESS) DPRINTF("Signature: %s\n", signature);
 
   for (item = 0; item < canonical_params->n_items; item++) {
-    dpl_dict_var_t    *param = (dpl_dict_var_t *) dpl_vec_get(canonical_params, item);
+    dpl_dict_var_t* param
+        = (dpl_dict_var_t*)dpl_vec_get(canonical_params, item);
     free(param->key);
     dpl_dict_var_free(param);
   }
@@ -563,31 +547,28 @@ dpl_s3_insert_signature_v4_params(const dpl_req_t *req, dpl_dict_t *query_params
   return ret;
 }
 
-dpl_status_t
-dpl_s3_get_authorization_v4_params(const dpl_req_t *req, dpl_dict_t *query_params,
-                                   struct tm *i_tm)
+dpl_status_t dpl_s3_get_authorization_v4_params(const dpl_req_t* req,
+                                                dpl_dict_t* query_params,
+                                                struct tm* i_tm)
 {
-  dpl_status_t  ret;
-  char          date_str[32] = "";
-  char          signature[DPL_HEX_LENGTH(SHA256_DIGEST_LENGTH) + 1];
-  struct tm     tm;
+  dpl_status_t ret;
+  char date_str[32] = "";
+  char signature[DPL_HEX_LENGTH(SHA256_DIGEST_LENGTH) + 1];
+  struct tm tm;
 
   ret = get_current_utc_date(&tm, i_tm, date_str, sizeof(date_str));
-  if (ret != DPL_SUCCESS)
-    return ret;
+  if (ret != DPL_SUCCESS) return ret;
 
   ret = dpl_dict_add(query_params, "X-Amz-Algorithm", "AWS4-HMAC-SHA256", 0);
-  if (ret != DPL_SUCCESS)
-    return DPL_FAILURE;
+  if (ret != DPL_SUCCESS) return DPL_FAILURE;
 
   {
-    int         ret2;
-    char        credentials[128], date_buf[9];
-    char        credentials_ue[DPL_URL_LENGTH(sizeof(credentials)) + 1];
+    int ret2;
+    char credentials[128], date_buf[9];
+    char credentials_ue[DPL_URL_LENGTH(sizeof(credentials)) + 1];
 
     ret2 = strftime(date_buf, sizeof(date_buf), "%Y%m%d", &tm);
-    if (ret2 == 0)
-      return DPL_FAILURE;
+    if (ret2 == 0) return DPL_FAILURE;
 
     snprintf(credentials, sizeof(credentials), "%s/%s/%s/s3/aws4_request",
              req->ctx->access_key, date_buf, req->ctx->aws_region);
@@ -595,32 +576,27 @@ dpl_s3_get_authorization_v4_params(const dpl_req_t *req, dpl_dict_t *query_param
     dpl_url_encode(credentials, credentials_ue);
 
     ret = dpl_dict_add(query_params, "X-Amz-Credential", credentials_ue, 0);
-    if (ret != DPL_SUCCESS)
-      return DPL_FAILURE;
+    if (ret != DPL_SUCCESS) return DPL_FAILURE;
   }
 
   ret = dpl_dict_add(query_params, "X-Amz-Date", date_str, 0);
-  if (ret != DPL_SUCCESS)
-    return DPL_FAILURE;
+  if (ret != DPL_SUCCESS) return DPL_FAILURE;
 
   {
-    char        expires_str[128];
+    char expires_str[128];
 
     snprintf(expires_str, sizeof(expires_str), "%ld", req->expires - time(0));
 
     ret = dpl_dict_add(query_params, "X-Amz-Expires", expires_str, 0);
-    if (ret != DPL_SUCCESS)
-      return DPL_FAILURE;
+    if (ret != DPL_SUCCESS) return DPL_FAILURE;
   }
 
   ret = dpl_dict_add(query_params, "X-Amz-SignedHeaders", "host", 0);
-  if (ret != DPL_SUCCESS)
-    return DPL_FAILURE;
+  if (ret != DPL_SUCCESS) return DPL_FAILURE;
 
-  ret = dpl_s3_insert_signature_v4_params(req, query_params,
-                                          &tm, date_str, signature);
-  if (ret != DPL_SUCCESS)
-    return DPL_FAILURE;
+  ret = dpl_s3_insert_signature_v4_params(req, query_params, &tm, date_str,
+                                          signature);
+  if (ret != DPL_SUCCESS) return DPL_FAILURE;
 
   return dpl_dict_add(query_params, "X-Amz-Signature", signature, 0);
 }

@@ -35,21 +35,20 @@
 
 /** @file */
 
-/** 
- * 
- * 
- * @param blob 
- * @param key 
- * @param data 
- * @param datalen 
- * 
- * @return 
+/**
+ *
+ *
+ * @param blob
+ * @param key
+ * @param data
+ * @param datalen
+ *
+ * @return
  */
-dpl_status_t
-dpl_ntinydb_set(dpl_sbuf_t *blob,
-                const char *key, 
-                const char *data,
-                int datalen)
+dpl_status_t dpl_ntinydb_set(dpl_sbuf_t* blob,
+                             const char* key,
+                             const char* data,
+                             int datalen)
 {
   char flag;
   int keylen, ret;
@@ -57,42 +56,36 @@ dpl_ntinydb_set(dpl_sbuf_t *blob,
 
   flag = 0;
   ret = dpl_sbuf_add(blob, &flag, 1);
-  if (-1 == ret)
-    return DPL_FAILURE;
+  if (-1 == ret) return DPL_FAILURE;
 
   keylen = strlen(key);
   len = htonl(keylen);
 
-  ret = dpl_sbuf_add(blob, (char *)&len, sizeof (len));
-  if (-1 == ret)
-    return DPL_FAILURE;
+  ret = dpl_sbuf_add(blob, (char*)&len, sizeof(len));
+  if (-1 == ret) return DPL_FAILURE;
 
   ret = dpl_sbuf_add(blob, key, keylen);
-  if (-1 == ret)
-    return DPL_FAILURE;
+  if (-1 == ret) return DPL_FAILURE;
 
   len = htonl(datalen);
-  ret = dpl_sbuf_add(blob, (char *)&len, sizeof (len));
-  if (-1 == ret)
-    return DPL_FAILURE;
+  ret = dpl_sbuf_add(blob, (char*)&len, sizeof(len));
+  if (-1 == ret) return DPL_FAILURE;
 
   ret = dpl_sbuf_add(blob, data, datalen);
-  if (-1 == ret)
-    return DPL_FAILURE;
+  if (-1 == ret) return DPL_FAILURE;
 
-  //printf("ntinydb_set '%s' '%.*s'\n", key, datalen, data);
+  // printf("ntinydb_set '%s' '%.*s'\n", key, datalen, data);
 
   dpl_sbuf_print(stdout, blob);
 
   return DPL_SUCCESS;
 }
 
-dpl_status_t
-dpl_ntinydb_get(const char *blob_buf,
-                int blob_len,
-                const char *key,
-                const char **data_returned,
-                int *datalen_returned)
+dpl_status_t dpl_ntinydb_get(const char* blob_buf,
+                             int blob_len,
+                             const char* key,
+                             const char** data_returned,
+                             int* datalen_returned)
 {
   int i, keylenref, keylen, datalen, match;
   __attribute__((unused)) char flag;
@@ -102,66 +95,61 @@ dpl_ntinydb_get(const char *blob_buf,
 
   match = 0;
   i = 0;
-  while (1)
-    {
-      //fprintf(stderr, "%d\n", blob_buf[i]);
+  while (1) {
+    // fprintf(stderr, "%d\n", blob_buf[i]);
 
-      if ((i + 1) < blob_len)
-        flag = blob_buf[i];
-      else
-        break ;
+    if ((i + 1) < blob_len)
+      flag = blob_buf[i];
+    else
+      break;
 
-      i++;
+    i++;
 
-      if ((i + sizeof (len)) < blob_len)
-        memcpy(&len, blob_buf + i, sizeof (len));
-      else
-        break ;
+    if ((i + sizeof(len)) < blob_len)
+      memcpy(&len, blob_buf + i, sizeof(len));
+    else
+      break;
 
-      i += sizeof (len);
+    i += sizeof(len);
 
-      keylen = ntohl(len);
+    keylen = ntohl(len);
 
-      if (keylen == keylenref)
-        {
-          //fprintf(stderr, "%.*s\n", keylen, blob_buf + i);
+    if (keylen == keylenref) {
+      // fprintf(stderr, "%.*s\n", keylen, blob_buf + i);
 
-          if (!memcmp(key, blob_buf + i, keylenref))
-            match = 1;
-        }
-
-      i += keylen;
-
-      if ((i + sizeof (len)) < blob_len)
-        memcpy(&len, blob_buf + i, sizeof (len));
-      else
-        break ;
-
-      i += sizeof (len);
-
-      datalen = ntohl(len);
-
-      if (1 == match)
-        {
-          //fprintf(stderr, "match datalen=%d\n", datalen);
-
-          *data_returned = blob_buf + i;
-          *datalen_returned = datalen;
-
-          return DPL_SUCCESS;
-        }
-
-      i += datalen;
+      if (!memcmp(key, blob_buf + i, keylenref)) match = 1;
     }
+
+    i += keylen;
+
+    if ((i + sizeof(len)) < blob_len)
+      memcpy(&len, blob_buf + i, sizeof(len));
+    else
+      break;
+
+    i += sizeof(len);
+
+    datalen = ntohl(len);
+
+    if (1 == match) {
+      // fprintf(stderr, "match datalen=%d\n", datalen);
+
+      *data_returned = blob_buf + i;
+      *datalen_returned = datalen;
+
+      return DPL_SUCCESS;
+    }
+
+    i += datalen;
+  }
 
   return DPL_FAILURE;
 }
 
-dpl_status_t
-dpl_ntinydb_list(const char *blob_buf,
-                 int blob_len,
-                 dpl_ntinydb_func_t cb_func,
-                 void *cb_arg)
+dpl_status_t dpl_ntinydb_list(const char* blob_buf,
+                              int blob_len,
+                              dpl_ntinydb_func_t cb_func,
+                              void* cb_arg)
 {
   int i, keylen, datalen;
   __attribute__((unused)) int match;
@@ -170,48 +158,45 @@ dpl_ntinydb_list(const char *blob_buf,
 
   match = 0;
   i = 0;
-  while (1)
-    {
-      //fprintf(stderr, "%d\n", blob_buf[i]);
+  while (1) {
+    // fprintf(stderr, "%d\n", blob_buf[i]);
 
-      if ((i + 1) < blob_len)
-        flag = blob_buf[i];
-      else
-        break ;
+    if ((i + 1) < blob_len)
+      flag = blob_buf[i];
+    else
+      break;
 
-      i++;
+    i++;
 
-      if ((i + sizeof (len)) < blob_len)
-        memcpy(&len, blob_buf + i, sizeof (len));
-      else
-        break ;
+    if ((i + sizeof(len)) < blob_len)
+      memcpy(&len, blob_buf + i, sizeof(len));
+    else
+      break;
 
-      i += sizeof (len);
+    i += sizeof(len);
 
-      keylen = ntohl(len);
+    keylen = ntohl(len);
 
-      if (NULL != cb_func)
-        {
-          int ret;
+    if (NULL != cb_func) {
+      int ret;
 
-          ret = cb_func(blob_buf + i, keylen, cb_arg);
-          if (0 != ret)
-            return DPL_FAILURE;
-        }
-
-      i += keylen;
-
-      if ((i + sizeof (len)) < blob_len)
-        memcpy(&len, blob_buf + i, sizeof (len));
-      else
-        break ;
-
-      i += sizeof (len);
-
-      datalen = ntohl(len);
-
-      i += datalen;
+      ret = cb_func(blob_buf + i, keylen, cb_arg);
+      if (0 != ret) return DPL_FAILURE;
     }
+
+    i += keylen;
+
+    if ((i + sizeof(len)) < blob_len)
+      memcpy(&len, blob_buf + i, sizeof(len));
+    else
+      break;
+
+    i += sizeof(len);
+
+    datalen = ntohl(len);
+
+    i += datalen;
+  }
 
   return DPL_SUCCESS;
 }

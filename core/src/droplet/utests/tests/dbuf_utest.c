@@ -7,7 +7,7 @@
 
 START_TEST(dbuf_test)
 {
-  dpl_dbuf_t    * b = dpl_dbuf_new();
+  dpl_dbuf_t* b = dpl_dbuf_new();
   dpl_assert_ptr_not_null(b);
   dpl_assert_int_eq(0, dpl_dbuf_length(b));
   dpl_dbuf_free(b);
@@ -16,7 +16,7 @@ START_TEST(dbuf_test)
   dpl_assert_ptr_not_null(b);
 
   const char str[] = "abcdefghijklmnopqrstuvwxyz";
-  int             ret;
+  int ret;
 
   ret = dpl_dbuf_add(b, str, sizeof(str));
   dpl_assert_int_eq(1, ret);
@@ -61,13 +61,12 @@ START_TEST(long_consume_test)
 END_TEST;
 #endif
 
-Suite *
-dbuf_suite()
+Suite* dbuf_suite()
 {
-  Suite *s = suite_create("dbuf");
-  TCase *t = tcase_create("base");
+  Suite* s = suite_create("dbuf");
+  TCase* t = tcase_create("base");
   tcase_add_test(t, dbuf_test);
-//   tcase_add_test(t, long_consume_test);
+  //   tcase_add_test(t, long_consume_test);
   suite_add_tcase(s, t);
   return s;
 }

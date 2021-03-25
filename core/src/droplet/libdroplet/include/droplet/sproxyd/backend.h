@@ -44,8 +44,21 @@ DCL_BACKEND_DELETE_FN(dpl_sproxyd_delete_id);
 DCL_BACKEND_DELETE_ALL_ID_FN(dpl_sproxyd_delete_all_id);
 DCL_BACKEND_COPY_FN(dpl_sproxyd_copy_id);
 
-DCL_BACKEND_FN(dpl_sproxyd_put_internal, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, const dpl_range_t *, const dpl_dict_t *, const dpl_sysmd_t *, const char *, unsigned int, int, char **);
+DCL_BACKEND_FN(dpl_sproxyd_put_internal,
+               const char*,
+               const char*,
+               const char*,
+               const dpl_option_t*,
+               dpl_ftype_t,
+               const dpl_condition_t*,
+               const dpl_range_t*,
+               const dpl_dict_t*,
+               const dpl_sysmd_t*,
+               const char*,
+               unsigned int,
+               int,
+               char**);
 
-extern dpl_backend_t    dpl_backend_sproxyd;
+extern dpl_backend_t dpl_backend_sproxyd;
 
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_BACKEND_H_

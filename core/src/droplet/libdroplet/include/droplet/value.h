@@ -40,30 +40,28 @@ struct dpl_vec;
 struct dpl_dict;
 
 typedef enum
-  {
-    DPL_VALUE_STRING = 0,
-    DPL_VALUE_SUBDICT,
-    DPL_VALUE_VECTOR,
-    DPL_VALUE_VOIDPTR,
-  } dpl_value_type_t;
-
-typedef struct dpl_value
 {
-  union
-  {
-    dpl_sbuf_t *string;
-    struct dpl_dict *subdict;
-    struct dpl_vec *vector;
-    void *ptr;
+  DPL_VALUE_STRING = 0,
+  DPL_VALUE_SUBDICT,
+  DPL_VALUE_VECTOR,
+  DPL_VALUE_VOIDPTR,
+} dpl_value_type_t;
+
+typedef struct dpl_value {
+  union {
+    dpl_sbuf_t* string;
+    struct dpl_dict* subdict;
+    struct dpl_vec* vector;
+    void* ptr;
   };
 
   dpl_value_type_t type;
 } dpl_value_t;
 
-typedef int (*dpl_value_cmp_func_t)(const void *p1, const void *p2);
+typedef int (*dpl_value_cmp_func_t)(const void* p1, const void* p2);
 
 /* PROTO value.c */
-void dpl_value_free(dpl_value_t *value);
-dpl_value_t *dpl_value_dup(dpl_value_t *src);
-void dpl_value_print(dpl_value_t *val, FILE *f, int level, int indent);
+void dpl_value_free(dpl_value_t* value);
+dpl_value_t* dpl_value_dup(dpl_value_t* src);
+void dpl_value_print(dpl_value_t* val, FILE* f, int level, int indent);
 #endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VALUE_H_
