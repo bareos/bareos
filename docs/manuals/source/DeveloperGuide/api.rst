@@ -453,7 +453,7 @@ Python3 is needed to run the REST API.
 Installation
 ~~~~~~~~~~~~
 Use pip to install:
-:command:`pip3 install python-bareos-restapi`
+:command:`pip3 install python-bareos-restapi` **This Python package doesn't exist**
 This will also install dependencies like fastapi, uvicorn and some more.
 
 
