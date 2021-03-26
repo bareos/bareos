@@ -6,10 +6,13 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Fixed
+- fix possible read/write problems when using droplet with https [PR #773]
 
 ### Added
+- systemtests for S3 functionalities (droplet, libcloud) now use https [PR #773]
 
 ### Changed
+- repaired or added all header guards in libdroplet [PR #773]
 
 ### Deprecated
 
