@@ -83,19 +83,28 @@
      IO_WRITE = 3
  */
 
-#define ConstSet_StrLong(dict, string, value)           \
-  if (PyDict_SetItem(dict, PyBytes_FromString(#string), \
-                     PyLong_FromLong(value))) {         \
-    return MOD_ERROR_VAL;                               \
-  }                                                     \
-  if (PyModule_AddIntConstant(m, #string, value)) { return MOD_ERROR_VAL; }
-
-#define ConstSet_StrStr(dict, string, value)            \
-  if (PyDict_SetItem(dict, PyBytes_FromString(#string), \
-                     PyBytes_FromString(value))) {      \
-    return MOD_ERROR_VAL;                               \
-  }                                                     \
-  if (PyModule_AddStringConstant(m, #string, value)) { return MOD_ERROR_VAL; }
+#define ConstSet_StrLong(dict, string, value)                                 \
+  {                                                                           \
+    PyObject* stringKey = PyBytes_FromString(#string);                        \
+    PyObject* longValue = PyLong_FromLong(value);                             \
+    if (PyDict_SetItem(dict, stringKey, longValue)) { return MOD_ERROR_VAL; } \
+    if (PyModule_AddIntConstant(m, #string, value)) { return MOD_ERROR_VAL; } \
+    Py_DECREF(stringKey);                                                     \
+    Py_DECREF(longValue);                                                     \
+  }
+#define ConstSet_StrStr(dict, string, value)             \
+  {                                                      \
+    PyObject* stringKey = PyBytes_FromString(#string);   \
+    PyObject* stringValue = PyBytes_FromString(value);   \
+    if (PyDict_SetItem(dict, stringKey, stringValue)) {  \
+      return MOD_ERROR_VAL;                              \
+    }                                                    \
+    if (PyModule_AddStringConstant(m, #string, value)) { \
+      return MOD_ERROR_VAL;                              \
+    }                                                    \
+    Py_DECREF(stringKey);                                \
+    Py_DECREF(stringValue);                              \
+  }
 
 
 /* commonly used definitions in multiple python modules */
