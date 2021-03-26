@@ -1,0 +1,176 @@
+#!/bin/bash
+set -e
+set -u
+
+#
+# Check if the volume blocks really use the configured block sizes.
+# Runs backups to File and Tape,
+# but only Tape has MaximumBlockSize larger than the  Default Block Size.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+# set other test specific variables
+Client=bareos-fd
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+. ./tape-config
+
+if ! ./invalidate_tapes.sh ${1:-}
+then
+  echo "Could not invalidate tapes"
+  exit 1
+fi
+
+if ! ./create_autochanger_configs.sh ${1:-}
+then
+  echo "Could not create autochanger configs"
+  exit 1
+fi
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+VolumeName=TestVolume001
+# VolumePath=storage/${VolumeName}
+DEFAULT_BLOCK_SIZE=64512
+LABEL_BLOCK_SIZE=${DEFAULT_BLOCK_SIZE}
+
+
+bls_blocks()
+{
+  DEVICE="$1"
+  VOLUME="${2:-*}"
+  ${BAREOS_BLS_BINARY} -c ${configs} ${DEVICE} -V"${VOLUME}" -k -d 250
+}
+
+get_block_and_data_size()
+{
+    # block 1 and 2 are label blocks.
+    # blocks >= 3 are data blocks.
+    # Parameter 3 is the block of interest. Default is block 1.
+    DEVICE="$1"
+    VOLUME="${2:-*}"
+    LINE=${3:-1}
+    bls_blocks "$DEVICE" "$VOLUME" | sed -r -n -e "s/^bls .* Exit read_block (read_len=[0-9]+) (block_len=[0-9]*)/\1 \2/p" | sed "${LINE}q;d"
+}
+
+get_block_size()
+{
+    # block 1 and 2 are label blocks.
+    # blocks >= 3 are data blocks.
+    # Parameter 3 is the block of interest. Default is block 1.
+    DEVICE="$1"
+    VOLUME="${2:-*}"
+    LINE=${3:-1}
+    bls_blocks "$DEVICE" "$VOLUME" | sed -r -n -e "s/^bls .* Exit read_block read_len=([0-9]+) block_len=[0-9]*/\1/p" | sed "${LINE}q;d"
+}
+
+get_data_size()
+{
+    # block 1 and 2 are label blocks.
+    # blocks >= 3 are data blocks.
+    # Parameter 3 is the block of interest. Default is block 1.
+    DEVICE="$1"
+    VOLUME="${2:-*}"
+    LINE=${3:-1}
+    bls_blocks "$DEVICE" "$VOLUME" | sed -r -n -e "s/^bls .* Exit read_block read_len=[0-9]+ block_len=([0-9]*)/\1/p" | sed "${LINE}q;d"
+}
+
+
+
+# start the test
+start_test
+
+cat <<END_OF_DATA >tmp/bconcmds
+@$out tmp/log1.out
+label storage=File1 pool=File volume=${VolumeName} yes
+label barcodes storage=Tape-0 pool=Tape drive=0 slot=1 yes
+run job=$JobName level=Full pool=File yes
+run job=$JobName level=Full pool=Tape yes
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out ${tmp}/log2.out w
+restore client=${Client} pool=Tape where=${tmp}/bareos-restores select
+unmark *
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+# Start the bareos daemons
+# and run the bconsole commands from ${tmp}/bconcmds
+# Further bconsole commands can be executed by "run_bconsole".
+run_bareos
+
+# verify that all are terminated
+if ! check_for_zombie_jobs storage=File1 client=${Client}; then
+    set_error "zombie jobs File1"
+fi
+
+if ! check_for_zombie_jobs storage=Tape-0 client=${Client}; then
+    set_error "zombie jobs Tape-0"
+fi
+
+
+# stop bareos
+stop_bareos
+
+# check log files for common error messages
+check_log ${tmp}/log1.out
+check_log ${tmp}/log2.out
+
+# check tmp/log1.out and tmp/log2.out for errors
+check_two_logs
+
+# check for differences between original files and restored files
+check_restore_diff ${BackupDirectory}
+
+# do some manual testing
+if [ ! -d ${BackupDirectory} ]; then
+    set_error "Directory ${BackupDirectory} does not exists any more."
+fi
+
+blocksize_label=$(get_block_size File1 ${VolumeName} 1)
+print_debug "File Label block size: $blocksize_label"
+if [ $blocksize_label != $DEFAULT_BLOCK_SIZE ]; then
+    set_error "Wrong label block size: expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_label"
+fi
+
+blocksize_data=$(get_block_size File1 ${VolumeName} 3)
+print_debug "File Data block size (block 3): $blocksize_data"
+if [ $blocksize_data != $DEFAULT_BLOCK_SIZE ]; then
+    set_error "Wrong data block size (block 3): expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_data"
+fi
+
+blocksize_label=$(get_block_size tapedrive0-0 "*" 1)
+print_debug "Tape Label block size: $blocksize_label"
+if [ $blocksize_label != $DEFAULT_BLOCK_SIZE ]; then
+    set_error "Wrong label block size: expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_label"
+fi
+
+blocksize_data=$(get_block_size tapedrive0-0 "*" 3)
+print_debug "Tape Data block size (block 3): $blocksize_data"
+if [ $blocksize_data -le $DEFAULT_BLOCK_SIZE ]; then
+    set_error "Wrong data block size (block 3): expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_data"
+fi
+
+
+# end tests and check for error codes
+end_test

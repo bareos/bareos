@@ -1,0 +1,9 @@
+# source this file
+
+logfile="${logdir}/${0}.log"
+echo "Writing log to ${logfile}"
+if [ "${REGRESS_DEBUG:-0}" -gt 0 ]; then
+  exec &> >(tee "${logfile}")
+else
+  exec &> "${logfile}"
+fi

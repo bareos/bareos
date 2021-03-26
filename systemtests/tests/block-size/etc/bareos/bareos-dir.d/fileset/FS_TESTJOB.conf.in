@@ -1,0 +1,10 @@
+FileSet {
+  Name = FS_TESTJOB
+  Include {
+    Options {
+      Signature = MD5
+      xattrsupport = no           # Prevent problems on FreeBSD
+    }
+    File = "<@tmpdir@/file-list"
+  }
+}

@@ -1,0 +1,23 @@
+# source this file
+
+#maximum of 9 changer devices possible
+
+readonly CHANGER_DEVICE0="@CHANGER_DEVICE0@"
+readonly TAPE_DEVICES0=(@TAPE_DEVICES0@)
+
+# testrunner currently supports only a single autochanger
+#readonly CHANGER_DEVICE1="/dev/tape/by-id/scsi-SSTK_L80_XYZZY_B"
+#readonly TAPE_DEVICES1=(\
+#  "/dev/tape/by-id/scsi-XYZZY_B1-nst"\
+#  "/dev/tape/by-id/scsi-XYZZY_B2-nst"\
+#  "/dev/tape/by-id/scsi-XYZZY_B3-nst"\
+#  "/dev/tape/by-id/scsi-XYZZY_B4-nst"\
+#)
+
+readonly USE_TAPE_DEVICE=0 # use this tape device to invalidate tapes
+
+readonly NUMBER_OF_POOLS=1
+readonly NUMBER_OF_TAPES_PER_POOL=1
+
+readonly FIRST_SLOT_NUMBER=1
+readonly LAST_SLOT_NUMBER=$(( ${NUMBER_OF_POOLS}*${NUMBER_OF_TAPES_PER_POOL} ))
