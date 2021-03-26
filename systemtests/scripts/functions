@@ -297,7 +297,7 @@ check_compression()
    local JOBID=${3}
    local FILENAME=${4}
    local COMPRESSION=${5:-'GZIP'}
-   local COMPRESSION_LEVEL="$6"
+   local COMPRESSION_LEVEL=${6:-}
 
    local COMPRESSION_DESCRIPTION="${COMPRESSION}"
    if [ "${COMPRESSION_LEVEL}" ]; then

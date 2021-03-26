@@ -1,0 +1,93 @@
+#!/bin/bash
+set -e
+set -u
+
+#
+# Check backups with different compression options.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+# set other test specific variables
+Client=bareos-fd
+JobName=backup-bareos-fd
+Storage=File1
+VolumeName=TestVolume001
+DataDirs="1 2 3 4"
+
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+BackupFileExtra=${BackupDirectory}/extrafile.txt
+
+for i in $DataDirs; do
+    mkdir -p ${tmp}/data/data$i
+    echo "test" > ${tmp}/data/data$i/test.dat
+done
+
+start_test
+
+# ${tmp}/bconcmds lists the bconsole commands executed by "run_bareos"
+cat <<END_OF_DATA >${tmp}/bconcmds
+messages
+show fileset=FS_TESTJOB
+@$out ${tmp}/log1.out w
+label storage=${Storage} volume=${VolumeName} pool=Full
+run job=$JobName yes
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out ${tmp}/log2.out w
+restore client=${Client} where=${tmp}/bareos-restores select
+unmark *
+mark *
+done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+# Start the bareos daemons
+# and run the bconsole commands from ${tmp}/bconcmds
+# Further bconsole commands can be executed by "run_bconsole".
+run_bareos
+
+# verify that all are terminated
+check_for_zombie_jobs storage=File1 client=${Client}
+
+# stop bareos
+stop_bareos
+
+# check tmp/log1.out and tmp/log2.out for errors
+check_two_logs
+
+# check for differences between original files and restored files
+# gives an error, because top-level data directory is not backed up
+# (and has therefore other permissions)
+for i in $DataDirs; do
+   check_restore_diff ${BackupDirectory}/data$i
+done
+
+# do some manual testing
+if ! [ -d ${BackupDirectory} ]; then
+    set_error "Directory ${BackupDirectory} does not exists any more."
+fi
+
+
+check_compression "${Storage}" "${VolumeName}" "1" "${tmp}/data/data2/test.dat" "gzip"
+check_compression "${Storage}" "${VolumeName}" "1" "${tmp}/data/data3/test.dat" "gzip" "9"
+# Warning: LZ4 compression support requested in fileset but not available on this platform. Disabling ...
+#check_compression "${Storage}" "${VolumeName}" "1" "${tmp}/data/data3/test.dat" "LZ4"
+
+# end tests and check for error codes
+end_test
