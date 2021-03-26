@@ -859,14 +859,12 @@ Backup of MySQL Databases using the Python MySQL plugin
 .. index::
    single: Plugin; MySQL Backup
 
-The Python plugin from https://github.com/bareos/bareos/tree/master/contrib/fd-plugins/mysql-python makes a backup of all or selected MySQL databases from the |fd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps.
+The Python plugin from https://github.com/bareos/bareos/tree/master/contrib/fd-plugins/bareos_mysql_dump makes a backup of all or selected MySQL databases from the |fd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps.
 Following settings must be done on the Bareos client (|fd|):
 
 -  install and enable the |fd| Python plugin
 
 -  install the Python MySQL plugin (for some platforms it is available prepackaged, on the other platforms: copy the plugin files to the Bareos Plugin Directory)
-
--  disable bacula compatibility (default for Bareos >= 15.2)
 
 .. code-block:: bareosconfig
    :caption: bareos-fd.d/client/myself.conf
@@ -875,7 +873,6 @@ Following settings must be done on the Bareos client (|fd|):
      ...
      Plugin Directory = /usr/lib64/bareos/plugins
      Plugin Names = "python"
-     compatible = no
    }
 
 Configure the plugin in the |dir|:
@@ -891,10 +888,10 @@ Configure the plugin in the |dir|:
            compression = lz4
          }
          Plugin = "python3"
-                  ":module_name=bareos-fd-mysql"
+                  ":module_name=bareos_mysql_dump"
                   ":db=test,wikidb"
          #Plugin = "python3"
-         #         ":module_name=bareos-fd-mysql"
+         #         ":module_name=bareos_mysql_dump"
          #         ":mysqlhost=dbhost"
          #         ":mysqluser=bareos"
          #         ":mysqlpassword=bareos"         
@@ -903,7 +900,7 @@ Configure the plugin in the |dir|:
 
 In the above example the plugin creates and saves a dump from the databases called :strong:`test` and :strong:`wikidb`, running on the file-daemon. The commented example below specifies an explicit MySQL server called :strong:`dbhost`, and connects with user :strong:`bareos`, password :strong:`bareos`, to create and save a backup of all databases.
 
-The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory :file:`/_mysqlbackups_`.
+The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory :file:`@mysqlbackups@`.
 
 List of supported options:
 
@@ -928,7 +925,7 @@ mysqluser
 mysqlpassword
    MySQL password. Default: unset (better use :file:`my.cnf` to store passwords)
 
-On restore, the database dumps are restored to the subdirectory :file:`_mysqlbackups_` in the restore path. The database restore must be triggered manually (:command:`mysql < _mysqlbackups_/DATABASENAME.sql`).
+On restore, the database dumps are restored to the subdirectory :file:`@mysqlbackups@` in the restore path. The database restore must be triggered manually (:command:`mysql < @mysqlbackups@/DATABASENAME.sql`).
 
 
 

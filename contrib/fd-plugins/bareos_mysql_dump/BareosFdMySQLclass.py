@@ -30,7 +30,7 @@ from  BareosFdPluginBaseclass import *
 import BareosFdWrapper
 
 
-class BareosFdMySQLclass (BareosFdPluginBaseclass):
+class BareosFdMySQLclass(BareosFdPluginBaseclass):
     '''
         Plugin for backing up all mysql databases found in a specific mysql server
     '''       
@@ -86,7 +86,10 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         else:
             showDbCommand = "mysql %s -B -N -e 'show databases'" % self.mysqlconnect
             showDb = Popen(showDbCommand, shell=True, stdout=PIPE, stderr=PIPE)
-            self.databases = showDb.stdout.read().splitlines()
+            databases = showDb.stdout.read()
+            if isinstance(databases, bytes):
+                databases = databases.decode('UTF-8')
+            self.databases = databases.splitlines()
             if 'performance_schema' in self.databases:
                 self.databases.remove('performance_schema')
             if 'information_schema' in self.databases:
@@ -96,7 +99,7 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
             if returnCode == None:
                 JobMessage(
                     M_FATAL,
-                    "No databases specified and show databases failed for unknown reason"
+                    "No databases specified and show databases failed for unknown reason.\n"
                 )
                 DebugMessage(
                     10,
@@ -108,7 +111,7 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
                 (stdOut, stdError) = showDb.communicate()    
                 JobMessage(
                     M_FATAL,
-                    "No databases specified and show databases failed. %s"
+                    "No databases specified and show databases failed. %s\n"
                     % stdError
                 )
                 DebugMessage(
@@ -150,7 +153,7 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         if not self.databases:
             DebugMessage(
                 100,
-                "No databases to backup"
+                "No databases to backup.\n"
             )
             JobMessage(
                 M_ERROR,
@@ -168,7 +171,7 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
 
         statp = StatPacket()
         savepkt.statp = statp
-        savepkt.fname = "/_mysqlbackups_/" + db + ".sql"
+        savepkt.fname = "@mysqlbackup@/{}.sql".format(db)
         savepkt.type = FT_REG
 
         dumpcommand = ("%s %s %s %s" % (self.dumpbinary, self.mysqlconnect, db, self.dumpoptions))
@@ -199,13 +202,13 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
             try:
                 if IOP.flags & (os.O_CREAT | os.O_WRONLY):
                     self.file = open(IOP.fname, 'wb');
-            except Exception,msg:
+            except Exception as exception:
                 IOP.status = -1;
                 DebugMessage(
                     100,
                     "Error opening file: " + IOP.fname + "\n"
                 )
-                print msg;
+                print(exception);
                 return bRC_Error
             return bRC_OK
 
@@ -220,11 +223,11 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
                 self.file.write(IOP.buf);
                 IOP.status = IOP.count
                 IOP.io_errno = 0
-            except IOError,msg:
+            except IOError as msg:
                 IOP.io_errno = -1
                 DebugMessage(
                     100,
-                    "Error writing data: " + msg + "\n"
+                    "Error writing data: " + str(msg) + "\n"
                 )
             return bRC_OK
 
@@ -254,7 +257,7 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         if returnCode == None:
             JobMessage(
                 M_ERROR,
-                "Dump command not finished properly for unknown reason"
+                "Dump command not finished properly for unknown reason.\n"
             )
             returnCode = -99
         else:

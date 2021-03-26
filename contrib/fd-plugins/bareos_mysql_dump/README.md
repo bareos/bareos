@@ -1,13 +1,13 @@
 # MySQL Plugin
 
 This plugin makes a backup of each database found in mysql in a single file.
-For restore select the needed database file, found in `/_mysqlbackups_` in the catalog.
+For restore select the needed database file, found in `@mysqlbackup@` in the catalog.
 
 ## Prerequisites
 The `mysqldump` and `mysql` command must be installed and user root (running the fd) must have read-access to the databases. See below, if you
 want to use another user / password or want to restrict database access for the backup user.
 
-You need the packages bareos-filedaemon-python-plugin installed on your client.
+You need the packages `bareos-filedaemon-python-plugin` installed on your client.
 
 ## Configuration
 
@@ -25,13 +25,9 @@ FileDaemon {
 FileSet {
     Name = "client-data"
        Include  {
-                Options {
-                        compression=GZIP
-                        signature = MD5
-                }
-                File = /etc
-                #...
-                Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql"
+                Plugin = "python:"
+                         "module_path=/usr/lib64/bareos/plugins:"
+                         "module_name=bareos_mysql_dump:"
         }
 }
 ```
@@ -56,7 +52,7 @@ mysqlhost=hostname
 
 ##### mysqldump options #####
 
-By default the opition string
+By default the option string
 ```
 --events --single-transaction --add-drop-database --databases
 ```
@@ -87,4 +83,3 @@ GRANT SELECT, LOCK TABLES, SHOW VIEW, EVENT, TRIGGER ON *.* TO 'bareos'@'localho
 ##### dumpbinary #####
 
 Command (with or without full path) to create the dumps. Default: mysqldump
-
