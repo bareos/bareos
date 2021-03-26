@@ -196,7 +196,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   /* import the bareosfd module */
   PyObject* bareosfdModule = PyImport_ImportModule("bareosfd");
   if (!bareosfdModule) {
-    printf("loading of bareosfd failed\n");
+    printf("loading of bareosfd extension module failed\n");
     if (PyErr_Occurred()) { PyErrorHandler(); }
   }
 

@@ -227,7 +227,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   /* import the bareossd module */
   PyObject* bareossdModule = PyImport_ImportModule("bareossd");
   if (!bareossdModule) {
-    printf("loading of bareossd failed\n");
+    printf("loading of bareossd extension module failed\n");
     if (PyErr_Occurred()) { PyErrorHandler(); }
   }
 
