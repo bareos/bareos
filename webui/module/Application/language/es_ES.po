@@ -60,11 +60,6 @@ msgstr "Clientes"
 msgid "Schedules"
 msgstr "Programación"
 
-#: ../module/Application/config/module.config.php:163
-#: ../module/Storage/view/storage/storage/index.phtml:26
-msgid "Storages"
-msgstr "Almacenamiento"
-
 #: ../module/Job/src/Job/Form/RunJobForm.php:197
 #: ../module/Job/src/Job/Form/RunJobForm.php:213
 #: ../module/Job/view/job/job/index.phtml:303
@@ -166,7 +161,7 @@ msgstr "Mensaje"
 #: ../module/Application/view/error/404.phtml:66
 #: ../module/Application/view/error/404.phtml:90
 msgid "Stack trace"
-msgstr "Rastro de pila"
+msgstr "Rastreo de pila"
 
 #: ../module/Application/view/error/index.phtml:32
 #: ../module/Application/view/error/404.phtml:76
@@ -192,7 +187,7 @@ msgstr "Listas de correo"
 
 #: ../module/Application/view/layout/layout.phtml:158
 msgid "Bugtracker"
-msgstr "Gestor de errores"
+msgstr "Sistema de seguimiento de errores"
 
 #: ../module/Application/view/layout/layout.phtml:159
 msgid "Support"
@@ -461,7 +456,7 @@ msgstr "No hay trabajos en ejecución"
 
 #: ../module/Dashboard/view/partial/JobTotals.phtml:31
 msgid "Job Totals"
-msgstr "Total de trabajos"
+msgstr "Totales de trabajos"
 
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
 msgid "Most recent job status per job name"
@@ -1092,7 +1087,7 @@ msgstr "Ubicación donde se restaurará en el cliente"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:446
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:462
 msgid "e.g. / or /tmp/bareos-restores/"
-msgstr "ej: / ó /tmp/bareos-restauraciones/"
+msgstr "ej: / ó /tmp/bareos-restores/"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:439
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:456
@@ -1277,7 +1272,7 @@ msgstr "Copia de un trabajo"
 
 #: ../public/js/bootstrap-table-formatter.js:71
 msgid "Copy job"
-msgstr "Copiar trabajo"
+msgstr "Trabajo de copia"
 
 #: ../public/js/bootstrap-table-formatter.js:74
 msgid "Migration job"
@@ -1307,7 +1302,7 @@ msgstr "Incremental"
 
 #: ../public/js/bootstrap-table-formatter.js:98
 msgid "VirtualFull"
-msgstr "Sintético"
+msgstr "Completo virtual"
 
 #: ../public/js/bootstrap-table-formatter.js:100
 msgid "Base"
@@ -1371,7 +1366,6 @@ msgid "expires in 1 day"
 msgstr "vence en 1 día"
 
 #: ../public/js/bootstrap-table-formatter.js:160
-#, fuzzy
 msgid "expires in"
 msgstr "vence en"
 
@@ -1554,22 +1548,128 @@ msgstr "Terminada con normalidad y con advertencias"
 
 #: ../module/Restore/view/restore/restore/index.phtml:32
 #: ../module/Restore/view/restore/restore/versions.phtml:32
-#, fuzzy
 msgid "Restore multiple files"
-msgstr "Restaurar al cliente"
+msgstr "Restaurar varios archivos"
+
+#: ../module/Restore/view/restore/restore/index.phtml:33
+#: ../module/Restore/view/restore/restore/versions.phtml:33
+msgid "Restore specific file version"
+msgstr "Restaurar una versión específica de un archivo"
 
 #: ../module/Restore/view/restore/restore/index.phtml:75
 #: ../module/Restore/view/restore/restore/versions.phtml:76
-#, fuzzy
 msgid "Job report"
-msgstr "Total de trabajos"
+msgstr "Reporte de trabajo"
+
+#: ../module/Restore/view/restore/restore/index.phtml:89
+#: ../module/Restore/view/restore/restore/versions.phtml:90
+msgid "Confirm restore job submit"
+msgstr "Confirmar trabajo de restaurar"
+
+#: ../module/Restore/view/restore/restore/index.phtml:98
+#: ../module/Restore/view/restore/restore/index.phtml:117
+#: ../module/Restore/view/restore/restore/versions.phtml:99
+#: ../module/Restore/view/restore/restore/versions.phtml:118
+msgid "OK"
+msgstr "Ok"
+
+#: ../module/Restore/view/restore/restore/index.phtml:114
+msgid "No files or directories selected to restore!"
+msgstr "Ningun archivo o directorio seleccionado para restaurar!"
+
+#: ../module/Restore/view/restore/restore/index.phtml:424
+#: ../module/Restore/view/restore/restore/versions.phtml:193
+#: ../module/Restore/view/restore/restore/versions.phtml:544
+msgid "Last modification"
+msgstr "Última modificación"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:115
+msgid "No file selected to restore!"
+msgstr "Ningun archivo seleccionado para restaurar!"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:172
+msgid "Selected file"
+msgstr "Archivo seleccionado"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:180
+msgid "Available versions"
+msgstr "Versiones disponibles"
 
 #: ../module/Restore/view/restore/restore/versions.phtml:195
-#, fuzzy
 msgid "Checksum"
 msgstr "Suma de control MD5"
 
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
 msgid "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
 msgstr "Por favor lea la <a href=\"%s\" target=\"_blank\">Documentación de Bareos</a> para cualquier información adicional de como configurar la directiva del Comando ACL de sus recursos de Consola/Perfil. La siguiente es una lista de comandos requeridos que deben estar en su Comando ACL para ejecutar este módulo adecuadamente:"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:60
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:77
+msgid "Please choose a backup"
+msgstr "Elija una copia de seguridad"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:96
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:113
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:132
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:149
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:166
+msgid "Please choose a client"
+msgstr "Elija un cliente"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:234
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:251
+msgid "Please choose a restore job"
+msgstr "Elija un trabajo de restaurar"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:36
+msgid "<b>Access denied</b><br><br>Permission to execute the following commands is required:<br><br><kbd>"
+msgstr "\n"
+"<b>Accesso denegado</b><br><br>Se requiere permiso para ejecutar los siguientes comandos:<br><br><kbd>\n"
+""
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Access denied"
+msgstr "Accesso denegado"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:40
+msgid "Read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> on how to configure ACL settings in your Console/Profile resources."
+msgstr "Lea la <a href=\"%s\" target=\"_blank\"> documentación de Bareos </a> sobre cómo configurar las opciones de ACL en los recursos de su consola / perfil."
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:42
+msgid "Back"
+msgstr "Atrás"
+
+#: ../module/Job/view/job/job/index.phtml:56
+msgid "Clear search filters"
+msgstr "Borrar filtros de búsqueda"
+
+#: ../module/Job/view/job/job/index.phtml:165
+msgid "Please try to reduce the amount of data to display."
+msgstr "Intente reducir la cantidad de datos que se mostrarán."
+
+#: ../module/Client/view/client/client/index.phtml:65
+#: ../module/Client/view/client/client/index.phtml:66
+msgid "OS"
+msgstr "Sistema operativo"
+
+#: ../public/js/bootstrap-table-formatter.js:521
+msgid "Download update"
+msgstr "descarga de la actualización"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:315
+#: ../module/Job/src/Job/Form/RunJobForm.php:331
+msgid "Next Pool"
+msgstr "Siguiente grupo"
+
+#: ../module/Restore/view/restore/restore/index.phtml:392
+msgid "Mode"
+msgstr "Modo"
+
+#: ../module/Restore/view/restore/restore/index.phtml:400
+msgid "User"
+msgstr "Usario"
+
+#: ../module/Restore/view/restore/restore/index.phtml:408
+msgid "Group"
+msgstr "Grupo"
 
