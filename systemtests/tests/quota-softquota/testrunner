@@ -1,0 +1,175 @@
+#!/bin/bash
+set -e
+set -u
+
+#
+# Run a backup of generated data and check if the soft quota limits are respected
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+# set other test specific variables
+Client=bareos-fd
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+check_backup()
+{
+    jobid=$1
+    if grep "^  Termination: *Backup OK" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+        print_debug "jobid ${jobid}: Backup OK => OK"
+    else
+        print_debug "jobid ${jobid}: Backup failed => NOK"
+        estat=${jobid}
+    fi
+    return $estat
+}
+
+# create test data
+mkdir -p ${BackupDirectory}
+MEGABYTE=1000000
+dd if=/dev/zero of=${BackupDirectory}/testdata bs=$MEGABYTE count=10 >/dev/null
+
+echo ${BackupDirectory}/testdata >${tmp}/file-list
+
+
+start_test
+
+#
+# we store each job to log${jobid}.out
+#
+# verify logs by:
+# grep -E -i '(quota|grace)' tmp/log*.out
+
+cat >${cwd}/tmp/bconcmds <<END_OF_DATA
+messages
+label storage=File1 pool=Full volume=TestVolume001
+
+
+
+@$out ${cwd}/tmp/log1.out
+@# 1: backup data less than the Soft Quota => ok - 10MB
+
+run job=$JobName Level=Full yes
+wait
+messages
+
+
+
+@$out ${cwd}/tmp/log2.out
+@# 2: backup data less than the Soft Quota => ok - 20MB
+
+run job=$JobName Level=Full yes
+wait
+messages
+
+
+
+@$out ${cwd}/tmp/log3.out
+@# 3: backup data. "Quota Used" > "Soft Quota" => ok - 30MB ("Soft Quota exceeded, Grace Period starts now.")
+
+run job=$JobName Level=Full yes
+wait
+messages
+
+
+
+@$out ${cwd}/tmp/log4.out
+@# 4: backup data. job notices that quota is exceeded but continues => ok - 40MB ("Soft Quota exceeded, will be enforced after Grace Period expires.")
+
+run job=$JobName Level=Full yes
+wait
+messages
+
+
+
+@$out ${cwd}/tmp/log5.out
+@# 5: wait till the grace time is over.
+@#    backup data outside the grace time => fail - 40MB
+
+@sleep 5
+
+run job=$JobName Level=Full yes
+wait
+messages
+
+
+
+@$out ${cwd}/tmp/log6.out
+@# 6: delete jobs, so that "Quota Used" < "Soft Quota",
+@#    backup data => ok - 20MB
+
+delete job jobid=1 yes
+delete job jobid=2 yes
+delete job jobid=3 yes
+
+run job=$JobName Level=Full yes
+wait
+messages
+
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File1
+stop_bareos
+
+# check if backup run successful
+check_backup 1
+check_backup 2
+
+# check if job gets a over quota warning
+check_backup 3
+jobid=3
+if grep -i "Soft Quota exceeded," ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+   print_debug "jobid ${jobid}: Soft Quota exceeded => OK"
+else
+   print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
+   estat=${jobid}
+fi
+
+check_backup 4
+jobid=4
+if grep -i "Soft Quota exceeded," ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+   print_debug "jobid ${jobid}: Soft Quota exceeded => OK"
+else
+   print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
+   estat=${jobid}
+fi
+
+# check if job is gets the Grace Time expired and Over Quota warning
+jobid=5
+if grep -i "Fatal error: Soft Quota exceeded / Grace Time expired" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+   print_debug "jobid ${jobid}: Soft Quota exceeded and Grace Time expired => OK"
+else
+   print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
+   estat=${jobid}
+fi
+# check if job is canceled as expected (some job as previous test)
+if grep -i "^  Termination: .*Backup Error" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+   print_debug "jobid ${jobid}: Backup failed (quota exceeded) => OK"
+else
+   print_debug "jobid ${jobid}: no 'Backup Error' message found => NOK"
+   estat=${jobid}
+fi
+
+# check if job is successful
+check_backup 6
+jobid=6
+if grep -i "Soft Quota reset" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+   print_debug "jobid ${jobid}: Soft Quota reset => OK"
+else
+   print_debug "jobid ${jobid}: no 'Soft Quota reset' message found => NOK"
+   estat=${jobid}
+fi
+
+# end tests and check for error codes
+end_test
