@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -669,7 +669,7 @@ endif()
 
 check_pymodule_available(3 fastapi)
 check_pymodule_available(3 uvicorn)
-find_program (CURL curl)
+find_program(CURL curl)
 
 # python-restapi-test does not work on installed files and needs some modules
 if(PYTHON_EXECUTABLE
@@ -683,7 +683,6 @@ if(PYTHON_EXECUTABLE
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-restapi")
 endif()
-
 
 bareosfindlibrary("gtest")
 if(GTEST_FOUND AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
@@ -758,11 +757,13 @@ if(TARGET python3-fd)
   if(S3CMD
      AND MINIO
      AND PYMODULE_3_LIBCLOUD_FOUND
+     AND (${Python3_VERSION_MAJOR} EQUAL 3)
+     AND (${Python3_VERSION_MINOR} LESS 8)
   )
     list(APPEND SYSTEM_TESTS "py3plug-fd-libcloud")
   else()
     message(
-      "S3CMD, MINIO or LIBCLOUD MODULE not found, disabling py3plug-fd-libcloud"
+      "S3CMD, MINIO or LIBCLOUD MODULE not found or Python > 3.7, disabling py3plug-fd-libcloud"
     )
     list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-libcloud")
   endif()
@@ -797,13 +798,18 @@ else()
 endif()
 
 message("checking for requirements of py3plug-fd-postgres:")
-check_pymodule_available(3 psycopg2)
-check_pymodule_available(3 dateutil)
-if(TARGET python-fd
-   AND PYMODULE_3_PSYCOPG2_FOUND
-   AND PYMODULE_3_DATEUTIL_FOUND
-)
-  list(APPEND SYSTEM_TESTS "py3plug-fd-postgres")
+if(TARGET python3-fd)
+  check_pymodule_available(3 psycopg2)
+  check_pymodule_available(3 dateutil)
+  if(PYMODULE_3_PSYCOPG2_FOUND
+     AND PYMODULE_3_DATEUTIL_FOUND
+     AND (${Python3_VERSION_MAJOR} EQUAL 3)
+     AND (${Python3_VERSION_MINOR} LESS 8)
+  )
+    list(APPEND SYSTEM_TESTS "py3plug-fd-postgres")
+  else()
+    list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-postgres")
+  endif()
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-postgres")
 endif()
