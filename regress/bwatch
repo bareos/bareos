@@ -1,2 +1,0 @@
-#!/bin/sh
-watch -n15 'echo status client | bin/bconsole'

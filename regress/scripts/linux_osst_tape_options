@@ -1,6 +1,0 @@
-  Minimum Block Size = 32768
-  Maximum Block Size = 32768
-  Hardware End of Medium = yes
-  BSF at EOM = yes
-  Fast Forward Space File = yes
-  Two EOF = no

@@ -1,8 +1,0 @@
-#!/bin/sh
-#
-# Setup for using the Virtual Disk Changer (simulates tape changer)
-#
-/bin/cp -f scripts/bareos-dir-migration.conf bin/bareos-dir.conf
-/bin/cp -f scripts/bareos-sd-migration.conf bin/bareos-sd.conf
-/bin/cp -f scripts/test-bareos-fd.conf bin/bareos-fd.conf
-/bin/cp -f scripts/test-console.conf bin/bconsole.conf

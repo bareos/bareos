@@ -1,8 +1,0 @@
-#!/bin/sh
-. scripts/functions
-# get proper SD tape definitions
-mkdir -p ${conf}
-cp -f ${rscripts}/linux_tape_options ${conf}/tape_options
-if test x`uname` = "xFreeBSD"; then
-   cp -f ${rscripts}/freebsd_tape_options ${conf}/tape_options
-fi

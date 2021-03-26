@@ -929,7 +929,7 @@ static void ListRunningJobs(UaContext* ua)
   endeach_jcr(jcr);
 
   if (njobs == 0) {
-    /* Note the following message is used in regress -- don't change */
+    // Note the following message is used by external programs -- don't change
     if (!ua->api) ua->SendMsg(_("No Jobs running.\n====\n"));
     Dmsg0(200, "leave list_run_jobs()\n");
     return;

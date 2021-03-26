@@ -1,6 +1,0 @@
-Director {
-  Name = bareos-dir
-  DIRport = @dir_port@
-  address = localhost
-  Password = "@dir_password@"
-}

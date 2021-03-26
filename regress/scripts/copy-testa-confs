@@ -1,8 +1,0 @@
-#!/bin/sh
-/bin/cp -f scripts/testa-bareos-dir.conf bin/bareos-dir.conf
-/bin/cp -f scripts/test-bareos-sd.conf bin/bareos-sd.conf
-/bin/cp -f scripts/test-bareos-fd.conf bin/bareos-fd.conf
-/bin/cp -f scripts/test-console.conf bin/bconsole.conf
-
-
-scripts/set_tape_options

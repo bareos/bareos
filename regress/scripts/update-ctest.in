@@ -1,7 +1,0 @@
-#!/bin/sh
-
-if [ ! -d build ] ; then
-    echo "Build directory not present, will run make setup"
-    make setup
-    exit
-fi

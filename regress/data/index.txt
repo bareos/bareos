@@ -1,9 +1,0 @@
-Description of the files in this directory
-==========================================
-
-  * flat-c.tgz
-    * flat structure, no directories, only *.c files.
-  * small.tgz
-    * directory structure with some files.
-  * po.tgz
-    * the Bareos build/po/ directory, as it is used for a number of tests.
