@@ -18,6 +18,7 @@ export config_directory_dir_additional_test_config=@config_directory_dir_additio
 working=${current_test_directory}/working
 working_dir=${working}
 tmp=${current_test_directory}/tmp
+export BackupDirectory="${tmp}/data"
 systemtests_s3_use_https=@systemtests_s3_use_https@
 
 
@@ -63,7 +64,7 @@ export BAREOS_BLS_BINARY=@BLS_BINARY@
 export BAREOS_BCONSOLE_BINARY=@BCONSOLE_BINARY@
 export BAREOS_DBCOPY_BINARY=@BAREOS_DBCOPY_BINARY@
 export BAREOS_BEXTRACT_BINARY=@BEXTRACT_BINARY@
-
+export BAREOS_DBCHECK_BINARY=@BAREOS_DBCHECK_BINARY@
 
 
 export PIDDIR=@piddir@

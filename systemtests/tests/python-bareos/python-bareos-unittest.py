@@ -26,6 +26,7 @@ import json
 import logging
 import os
 import re
+import subprocess
 from time import sleep
 import unittest
 import warnings
@@ -40,6 +41,8 @@ import bareos.exceptions
 
 class PythonBareosBase(unittest.TestCase):
 
+    config_directory = "/etc/bareos"
+
     director_name = u"bareos-dir"
 
     director_address = "localhost"
@@ -51,6 +54,8 @@ class PythonBareosBase(unittest.TestCase):
     filedaemon_address = "localhost"
     filedaemon_port = 9102
     filedaemon_director_password = u"secret"
+
+    dbcheck_binary = "dbcheck"
 
     # restorefile = '/usr/sbin/bconsole'
     # path to store logging files
@@ -104,6 +109,13 @@ class PythonBareosBase(unittest.TestCase):
         with open(filename, "a") as writer:
             writer.write(data)
             writer.flush()
+
+    def run_dbcheck(self):
+        logger = logging.getLogger()
+        cmd = [self.dbcheck_binary, "-c", self.config_directory, "-vvv", "-b", "-f"]
+        logger.debug("calling: {}".format(" ".join(cmd)))
+        output = subprocess.check_output(cmd, stderr=subprocess.PIPE)
+        logger.debug("result: {}".format(output))
 
 
 class PythonBareosModuleTest(PythonBareosBase):
@@ -1717,68 +1729,46 @@ class PythonBareosDeleteTest(PythonBareosJsonBase):
 
 
 class PythonBareosBvfsTest(PythonBareosJsonBase):
-    def test_bvfs(self):
-        """
-        Test BVFS functionality:
-        Run 1 full and 1 incremental backup job.
-        These jobs have the normal "/" directory and an additional BPIPE-ROOT/ directory.
-        Also do a restore using bvfs.
-        """
-
-        def get_sql_table_count(director, sql_from, minimum=None, maximum=None):
-            # expect:
-            # .sql query="SELECT count(*) FROM Job WHERE HasCache!=0;"
-            # +----------+
-            # | count    |
-            # +----------+
-            # | 0        |
-            # +----------+
-            cmd = '.sql query="SELECT count(*) FROM {};"'.format(sql_from)
-            count = int(director.call(cmd)["query"][0]["count"])
-            if minimum is not None:
-                self.assertGreaterEqual(
-                    count,
-                    minimum,
-                    "{}: expecting at least {} entries, got {}".format(
-                        sql_from, minimum, count
-                    ),
-                )
-            if maximum is not None:
-                self.assertLessEqual(
-                    count,
-                    maximum,
-                    "{}: expecting at most {} entries, got {}".format(
-                        sql_from, minimum, count
-                    ),
-                )
-            logger.debug(
-                "{}: {} entries ({}, {})\n".format(sql_from, count, minimum, maximum)
-            )
-            return count
-
+    def get_sql_table_count(self, director, sql_from, minimum=None, maximum=None):
+        # expect:
+        # .sql query="SELECT count(*) FROM Job WHERE HasCache!=0;"
+        # .api 0
+        # +----------+
+        # | count    |
+        # +----------+
+        # | 12       |
+        # +----------+
+        # .api 2
+        # "query": [
+        #   {
+        #     "count": "12"
+        #   }
+        # ]
         logger = logging.getLogger()
-
-        username = self.get_operator_username()
-        password = self.get_operator_password(username)
-
-        jobname = u"backup-bareos-fd-bpipe"
-
-        format_params = {
-            "Client": self.client,
-            "BvfsPathId": "b201",
-            "BackupDirectory": self.backup_directory,
-            "BackupFileNameExtra": "bvfstest.txt",
-            "BackupFileExtra": self.backup_directory + "/bvfstest.txt",
-        }
-
-        director = bareos.bsock.DirectorConsoleJson(
-            address=self.director_address,
-            port=self.director_port,
-            name=username,
-            password=password,
-            **self.director_extra_options
+        cmd = '.sql query="SELECT count(*) FROM {};"'.format(sql_from)
+        count = int(director.call(cmd)["query"][0]["count"])
+        if minimum is not None:
+            self.assertGreaterEqual(
+                count,
+                minimum,
+                "{}: expecting at least {} entries, got {}".format(
+                    sql_from, minimum, count
+                ),
+            )
+        if maximum is not None:
+            self.assertLessEqual(
+                count,
+                maximum,
+                "{}: expecting at most {} entries, got {}".format(
+                    sql_from, minimum, count
+                ),
+            )
+        logger.debug(
+            "{}: {} entries ({}, {})\n".format(sql_from, count, minimum, maximum)
         )
+        return count
 
+    def prepare_bvfs_jobs(self, director, jobname, format_params):
         self.append_to_file(format_params["BackupFileExtra"], "Test Content: initial\n")
 
         jobid1 = self.run_job(director, jobname, level="Full", wait=True)
@@ -1807,34 +1797,113 @@ class PythonBareosBvfsTest(PythonBareosJsonBase):
             ".bvfs_update jobid={BackupJobIds}".format(**format_params)
         )
 
-        get_sql_table_count(
+        self.get_sql_table_count(
             director, "Job WHERE HasCache!=0", minimum=len(backup_job_ids)
         )
-        get_sql_table_count(director, "PathHierarchy", minimum=1)
-        get_sql_table_count(director, "PathVisibility", minimum=1)
+        self.get_sql_table_count(director, "PathHierarchy", minimum=1)
+        self.get_sql_table_count(director, "PathVisibility", minimum=1)
+
+        return bvfs_jobids
+
+    def verify_bvfs_dirs(self, bvfs_lsdirs_result, expected_dirs):
+        # bvfs_lsdirs_result contains the result of ".bvfs_lsdir ...".
+        # Example:
+        # .api 0
+        # 10    0   0   A A A A A A A A A A A A A A .
+        # 9   0   0   A A A A A A A A A A A A A A /
+        # 8   0   0   A A A A A A A A A A A A A A BPIPE_ROOT/
+        # .api 2
+        # "directories": [
+        #   {
+        #      "type": "D",
+        #      "pathid": 10,
+        #      "fileid": 0,
+        #      "jobid": 0,
+        #      "lstat": "A A A A A A A A A A A A A A",
+        #      "name": ".",
+        #      "fullpath": ".",
+        #      "stat": {
+        #          ...
+        #      },
+        #      "linkfileindex": 0
+        #   },
+        #   {
+        #     "type": "D",
+        #     "pathid": 15,
+        #     "fileid": 0,
+        #     "jobid": 0,
+        #     "lstat": "A A A A A A A A A A A A A A",
+        #     "name": "/",
+        #     "fullpath": "/",
+        #     "stat": {
+        #        ...
+        #     },
+        #     "linkfileindex": 0
+        #   },
+        #   {
+        #     "type": "D",
+        #     "pathid": 14,
+        #     "fileid": 0,
+        #     "jobid": 0,
+        #     "lstat": "A A A A A A A A A A A A A A",
+        #     "name": "BPIPE-ROOT/",
+        #     "fullpath": "BPIPE-ROOT/",
+        #     "stat": {
+        #       ...
+        #     },
+        #     "linkfileindex": 0
+        #   }
+        # ]
+
+        directories = [item["name"] for item in bvfs_lsdirs_result]
+
+        for directory in expected_dirs:
+            self.assertIn(
+                directory,
+                directories,
+                'Expecting "{}" in list of directories, instead received: {}'.format(
+                    directory, bvfs_lsdirs_result
+                ),
+            )
+
+    def test_bvfs(self):
+        """
+        Test BVFS functionality:
+        Run 1 full and 1 incremental backup job.
+        These jobs have the normal "/" directory and an additional BPIPE-ROOT/ directory.
+        Also do a restore using bvfs.
+        """
+
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        jobname = u"backup-bareos-fd-bpipe"
+
+        format_params = {
+            "Client": self.client,
+            "BvfsPathId": "b201",
+            "BackupDirectory": self.backup_directory,
+            "BackupFileNameExtra": "bvfstest.txt",
+            "BackupFileExtra": self.backup_directory + "/bvfstest.txt",
+        }
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        bvfs_jobids = self.prepare_bvfs_jobs(director, jobname, format_params)
 
         bvfs_get_root_path = director.call(
             ".bvfs_lsdir jobid={BackupJobIds} path=".format(**format_params)
         )["directories"]
-        # expect:
-        # 10    0   0   A A A A A A A A A A A A A A .
-        # 9   0   0   A A A A A A A A A A A A A A /
-        # 8   0   0   A A A A A A A A A A A A A A BPIPE_ROOT/
-        directories = [item["name"] for item in bvfs_get_root_path]
-        self.assertIn(
-            "/",
-            directories,
-            'Expecting "/" in list of directories, instead received: {}'.format(
-                bvfs_get_root_path
-            ),
-        )
-        self.assertIn(
-            "BPIPE-ROOT/",
-            directories,
-            'Expecting "BPIPE-ROOT/" in list of directories, instead received: {}'.format(
-                bvfs_get_root_path
-            ),
-        )
+
+        self.verify_bvfs_dirs(bvfs_get_root_path, ["/", "BPIPE-ROOT/"])
 
         # Test offset
         cmd = ".bvfs_lsdir jobid={BackupJobIds} path= offset=1000 limit=1000".format(
@@ -1945,7 +2014,7 @@ class PythonBareosBvfsTest(PythonBareosJsonBase):
             **format_params
         )
         bvfs_restore_prepare = director.call(cmd)
-        get_sql_table_count(director, format_params["BvfsPathId"], minimum=1)
+        self.get_sql_table_count(director, format_params["BvfsPathId"], minimum=1)
 
         cmd = "restore client={Client} file=?{BvfsPathId} yes".format(**format_params)
         bvfs_restore = director.call(cmd)
@@ -1958,16 +2027,74 @@ class PythonBareosBvfsTest(PythonBareosJsonBase):
 
         # table does not exist any more, so query will fail.
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
-            get_sql_table_count(director, format_params["BvfsPathId"])
+            self.get_sql_table_count(director, format_params["BvfsPathId"])
 
         bvfs_clear_cache = director.call(".bvfs_clear_cache yes")
 
-        get_sql_table_count(director, "Job WHERE HasCache!=0", maximum=0)
-        get_sql_table_count(director, "PathHierarchy", maximum=0)
-        get_sql_table_count(director, "PathVisibility", maximum=0)
+        self.get_sql_table_count(director, "Job WHERE HasCache!=0", maximum=0)
+        self.get_sql_table_count(director, "PathHierarchy", maximum=0)
+        self.get_sql_table_count(director, "PathVisibility", maximum=0)
 
         ## check for differences between original files and restored files
         # check_restore_diff ${BackupDirectory}
+
+    def test_bvfs_and_dbcheck(self):
+        """
+        Test BVFS together with dbcheck:
+        previous versions (<= 17.2.4) had a problem with bvfs after running dbcheck.
+        Therefore this test checks
+          * check bvfs root directory
+          * run all dbcheck fixes
+          * check bvfs root directory again
+        """
+
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        jobname = u"backup-bareos-fd-bpipe"
+
+        format_params = {
+            "Client": self.client,
+            "BvfsPathId": "b201",
+            "BackupDirectory": self.backup_directory,
+            "BackupFileNameExtra": "bvfstest.txt",
+            "BackupFileExtra": self.backup_directory + "/bvfstest.txt",
+        }
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        bvfs_jobids = self.prepare_bvfs_jobs(director, jobname, format_params)
+
+        bvfs_get_root_path = director.call(
+            ".bvfs_lsdir jobid={BackupJobIds} path=".format(**format_params)
+        )["directories"]
+
+        self.verify_bvfs_dirs(bvfs_get_root_path, ["/", "BPIPE-ROOT/"])
+
+        self.run_dbcheck()
+
+        bvfs_get_root_path = director.call(
+            ".bvfs_lsdir jobid={BackupJobIds} path=".format(**format_params)
+        )["directories"]
+
+        self.verify_bvfs_dirs(bvfs_get_root_path, ["/", "BPIPE-ROOT/"])
+
+        self.run_dbcheck()
+
+        bvfs_clear_cache = director.call(".bvfs_clear_cache yes")
+        result = director.call(
+            ".bvfs_update jobid={BackupJobIds}".format(**format_params)
+        )
+
+        self.run_dbcheck()
 
 
 class PythonBareosFiledaemonTest(PythonBareosBase):
@@ -2090,6 +2217,11 @@ def get_env():
     Get attributes as environment variables,
     if not available or set use defaults.
     """
+
+    config_directory = os.environ.get("confdir")
+    if config_directory:
+        PythonBareosBase.config_directory = config_directory
+
     director_root_password = os.environ.get("dir_password")
     if director_root_password:
         PythonBareosBase.director_root_password = director_root_password
@@ -2106,10 +2238,6 @@ def get_env():
     if filedaemon_port:
         PythonBareosBase.filedaemon_port = filedaemon_port
 
-    backup_directory = os.environ.get("BackupDirectory")
-    if backup_directory:
-        PythonBareosBase.backup_directory = backup_directory
-
     tls_version_str = os.environ.get("PYTHON_BAREOS_TLS_VERSION")
     if tls_version_str is not None:
         tls_version_parser = bareos.bsock.TlsVersionParser()
@@ -2125,6 +2253,14 @@ def get_env():
                     ", ".join(tls_version_parser.get_protocol_versions()),
                 )
             )
+
+    backup_directory = os.environ.get("BackupDirectory")
+    if backup_directory:
+        PythonBareosBase.backup_directory = backup_directory
+
+    dbcheck_binary = os.environ.get("BAREOS_DBCHECK_BINARY")
+    if dbcheck_binary:
+        PythonBareosBase.dbcheck_binary = dbcheck_binary
 
     if os.environ.get("REGRESS_DEBUG"):
         PythonBareosBase.debug = True

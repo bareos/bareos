@@ -597,7 +597,6 @@ set(SYSTEM_TESTS
     copy-archive-job
     copy-bscan
     copy-remote-bscan
-    dbcheck
     deprecation
     encrypt-signature
     encrypt-signature-tls-cert
