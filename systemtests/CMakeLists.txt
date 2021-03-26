@@ -542,6 +542,9 @@ configurefilestosystemtest(
 configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
 configurefilestosystemtest("systemtests" "scripts" "setup" @ONLY "")
 configurefilestosystemtest(
+  "systemtests" "scripts" "create_sparse_file.sh" @ONLY ""
+)
+configurefilestosystemtest(
   "systemtests" "scripts" "check_for_zombie_jobs" @ONLY ""
 )
 configurefilestosystemtest("systemtests" "scripts" "diff.pl.in" @ONLY "")
@@ -613,6 +616,7 @@ set(SYSTEM_TESTS
     reload-add-uncommented-string
     reload-unchanged-config
     scheduler-backup
+    sparse-file
     spool
     upgrade-database
     virtualfull

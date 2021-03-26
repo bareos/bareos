@@ -1,0 +1,6 @@
+Job {
+  Name = "backup-bareos-fd"
+  JobDefs = "DefaultJob"
+  Type = Backup
+  Client = "bareos-fd"
+}

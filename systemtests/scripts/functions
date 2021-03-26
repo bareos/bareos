@@ -87,6 +87,34 @@ setup_data()
   return 0
 }
 
+create_sparse_file()
+{
+    verbose=""
+    if [ "${1:-}" = "-v" ]; then
+      verbose="yes"
+      shift
+    fi
+
+    filename=${1:-sparse.dat}
+    size=${2:-100M}
+
+    echo "start" > $filename
+    dd if=/dev/zero of=$filename bs=1 count=0 seek=$size 2>/dev/null
+    echo "end" >> $filename
+
+    if [ "$verbose" ]; then
+        printf "$filename created.\n"
+    fi
+
+    size=$(get_file_size "${filename}")
+    realsize=$(get_real_file_size "${filename}")
+
+    if [ "$realsize" -gt "$size" ]; then
+        printf "ERROR: realsize has to be smaller than size.\n"
+        return 1
+    fi
+}
+
 start_test()
 {
    # in case of an exit during the test,
@@ -531,12 +559,35 @@ change_files()
    return 0
 }
 
+get_real_file_size()
+{
+   FILE="$1"
+   SIZE=-1
+   if [ -e "$FILE" ]; then
+     if [ "$(uname -s)" == FreeBSD ]; then
+       # gdu: GNU coreutils du
+       DU="gdu"
+     else
+       DU="du"
+     fi
+     SIZE="$(du -B 1 "$FILE" | cut -f 1)"
+   fi
+   print_debug "$FILE: $SIZE bytes"
+   echo "$SIZE"
+}
+
 get_file_size()
 {
    FILE="$1"
    SIZE=-1
    if [ -e "$FILE" ]; then
-     SIZE="$(du "$FILE" | cut -f 1)"
+     if [ "$(uname -s)" == FreeBSD ]; then
+       # gdu: GNU coreutils du     
+       DU="gdu"
+     else
+       DU="du"
+     fi
+     SIZE="$(${DU} -B 1 --apparent-size "$FILE" | cut -f 1)"
    fi
    print_debug "$FILE: $SIZE bytes"
    echo "$SIZE"
