@@ -106,6 +106,15 @@ We like simple rather than complex code, but complex code is still better than c
 
 Currently there is still a lot of old C++ and C code in the code base and a lot of existing code violates our `do's`_ and `don'ts`_. Therefore our long-term goal is to modernize the code-base to make it easier to understand, easier to maintain and better approachable for new developers.
 
+Usage of C++ Exceptions
+-----------------------
+
+We encourage developers to use C++ exceptions for the reason of simplicity and readability of the code. In contrast to long if/else constructs C++ exceptions are the state-of-the-art error handling mechanism of this programming language. With exceptions it is easier to transport errors and information about errors from the lowest stack level to the uppermost function.
+
+In order to avoid memory leaks it is very advisable to use RAII or smart pointers for memory allocation. With regard to legacy code it is important to understand how memory management in detail works before throwing exceptions across several stack levels and causing leaks by accident.
+
+General advice, many examples and debunked myths about C++ Exceptions can be found here: https://isocpp.org/wiki/faq/exceptions.
+
 Automatic Sourcecode Formatting
 -------------------------------
 
