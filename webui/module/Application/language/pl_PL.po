@@ -165,7 +165,6 @@ msgstr "Wiadomość"
 #: ../module/Application/view/error/index.phtml:46
 #: ../module/Application/view/error/404.phtml:66
 #: ../module/Application/view/error/404.phtml:90
-#, fuzzy
 msgid "Stack trace"
 msgstr "Stack trace"
 
@@ -192,7 +191,6 @@ msgid "Mailinglists"
 msgstr "Listy mailingowe"
 
 #: ../module/Application/view/layout/layout.phtml:158
-#, fuzzy
 msgid "Bugtracker"
 msgstr "Rejestrator błędów (Bugtracker)"
 
@@ -272,7 +270,6 @@ msgid "Version"
 msgstr "Wersja"
 
 #: ../module/Client/view/client/client/details.phtml:54
-#, fuzzy
 msgid "Autoprune"
 msgstr "Automatyczne przycinanie (Autoprune)"
 
@@ -382,7 +379,7 @@ msgstr "Pliki"
 #: ../module/Client/view/client/client/details.phtml:133
 #: ../module/Client/view/client/client/details.phtml:134
 msgid "Bytes"
-msgstr "najty"
+msgstr "Bajty"
 
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:40
 #: ../module/Dashboard/view/partial/JobsLastStatus.phtml:41
@@ -965,11 +962,11 @@ msgstr "Wstępny zapis"
 
 #: ../module/Media/view/media/media/details.phtml:431
 msgid "Scratch Pool Id"
-msgstr "Scratch Pool Id"
+msgstr "Id puli Scratch"
 
 #: ../module/Media/view/media/media/details.phtml:435
 msgid "Recycle Pool Id"
-msgstr "Odzyskaj identyfikator puli"
+msgstr "Odzyskaj id puli"
 
 #: ../module/Media/view/media/media/details.phtml:439
 msgid "Comment"
@@ -995,13 +992,13 @@ msgstr "Retencja wolumenów"
 #: ../module/Pool/view/pool/pool/index.phtml:92
 #: ../module/Pool/view/pool/pool/details.phtml:61
 msgid "Maximum volume jobs"
-msgstr "Zadania o maksymalnej objętości"
+msgstr "Maksymalnie zadań wolumenu"
 
 #: ../module/Pool/view/pool/pool/index.phtml:97
 #: ../module/Pool/view/pool/pool/index.phtml:98
 #: ../module/Pool/view/pool/pool/details.phtml:62
 msgid "Maximum volume bytes"
-msgstr "Maksymalna ilość bajtów"
+msgstr "Maksymalnie bajtów wolumenu"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:59
 msgid "Backup jobs"
@@ -1118,7 +1115,7 @@ msgstr "Limit"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:511
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:528
 msgid "Offset"
-msgstr "Offsetowy"
+msgstr "Odstęp"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:487
 msgid "Related jobs for a most recent full restore"
@@ -1170,7 +1167,7 @@ msgstr "Kody kreskowe etykiet"
 
 #: ../module/Storage/view/storage/storage/details.phtml:82
 msgid "Assign media to this pool."
-msgstr "Przypisz multimedia do tej puli."
+msgstr "Przypisz media do tej puli."
 
 #: ../module/Storage/view/storage/storage/details.phtml:84
 msgid "Use this drive for labeling."
@@ -1316,9 +1313,10 @@ msgstr "Różnicowa"
 msgid "Incremental"
 msgstr "Przyrostowa"
 
+#. Unable to translate - config parameter name
 #: ../public/js/bootstrap-table-formatter.js:98
 msgid "VirtualFull"
-msgstr ""
+msgstr "VirtualFull"
 
 #: ../public/js/bootstrap-table-formatter.js:100
 msgid "Base"
@@ -1332,13 +1330,15 @@ msgstr "Katalog"
 msgid "InitCatalog"
 msgstr "InitCatalog"
 
+#. Unable to translate - config parameter name
 #: ../public/js/bootstrap-table-formatter.js:106
 msgid "VolumeToCatalog"
-msgstr ""
+msgstr "VolumeToCatalog"
 
+#. Unable to translate - config parameter name
 #: ../public/js/bootstrap-table-formatter.js:108
 msgid "DiskToCatalog"
-msgstr ""
+msgstr "DiskToCatalog"
 
 #: ../public/js/bootstrap-table-formatter.js:110
 msgid "Data"
@@ -1655,35 +1655,35 @@ msgstr "Cofnij"
 
 #: ../module/Job/view/job/job/index.phtml:56
 msgid "Clear search filters"
-msgstr ""
+msgstr "Wyczyść filtry wyszukiwania"
 
 #: ../module/Job/view/job/job/index.phtml:165
 msgid "Please try to reduce the amount of data to display."
-msgstr ""
+msgstr "Spróbuj zmniejszyć ilość danych do wyświetlenia."
 
 #: ../module/Client/view/client/client/index.phtml:65
 #: ../module/Client/view/client/client/index.phtml:66
 msgid "OS"
-msgstr ""
+msgstr "System operacyjny"
 
 #: ../public/js/bootstrap-table-formatter.js:521
 msgid "Download update"
-msgstr ""
+msgstr "Pobierz aktualizację"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:315
 #: ../module/Job/src/Job/Form/RunJobForm.php:331
 msgid "Next Pool"
-msgstr ""
+msgstr "Następna Pula"
 
 #: ../module/Restore/view/restore/restore/index.phtml:392
 msgid "Mode"
-msgstr ""
+msgstr "Tryb"
 
 #: ../module/Restore/view/restore/restore/index.phtml:400
 msgid "User"
-msgstr ""
+msgstr "Użytkownik"
 
 #: ../module/Restore/view/restore/restore/index.phtml:408
 msgid "Group"
-msgstr ""
+msgstr "Grupa"
 
