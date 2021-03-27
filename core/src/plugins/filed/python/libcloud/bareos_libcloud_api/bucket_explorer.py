@@ -123,6 +123,7 @@ class BucketExplorer(ProcessBase):
                 "size": obj.size,
                 "mtime": mtime_ts,
                 "type": TASK_TYPE.UNDEFINED,
+                "download_retries": self.options["download_retries"],
             }
 
             object_name = "%s/%s" % (obj.container.name, obj.name)

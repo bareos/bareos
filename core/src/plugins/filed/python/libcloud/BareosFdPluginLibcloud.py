@@ -97,6 +97,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         super(BareosFdPluginLibcloud, self).parse_plugin_definition(plugindef)
         self.options["fail_on_download_error"] = False
         self.options["job_message_after_each_number_of_objects"] = 100
+        self.options["download_retries"] = 3
         self._parse_options()
 
         self.last_run = datetime.datetime.fromtimestamp(self.since)
@@ -233,6 +234,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                         self.options["job_message_after_each_number_of_objects"] = int(
                             value
                         )
+                    elif option == "download_retries":
+                        self.options["download_retries"] = int(value)
                 except:
                     debugmessage(
                         100,
