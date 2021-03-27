@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,20 +32,27 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_ID_SCHEME_H__
-#define __DROPLET_ID_SCHEME_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_ID_SCHEME_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_ID_SCHEME_H_
 
 /* general */
-typedef dpl_status_t (*dpl_gen_random_key_t)(dpl_ctx_t *ctx, dpl_storage_class_t storage_class, char *custom, char *id_buf, int max_len);
+typedef dpl_status_t (*dpl_gen_random_key_t)(dpl_ctx_t* ctx,
+                                             dpl_storage_class_t storage_class,
+                                             char* custom,
+                                             char* id_buf,
+                                             int max_len);
 
-typedef struct dpl_id_scheme_s
-{
-  const char *name; /*!< name of the id_scheme */
+typedef struct dpl_id_scheme_s {
+  const char* name; /*!< name of the id_scheme */
   dpl_gen_random_key_t gen_random_key;
 } dpl_id_scheme_t;
 
-#define DPL_ID_SCHEME_ANY ((dpl_id_scheme_t *) 0x1)
+#define DPL_ID_SCHEME_ANY ((dpl_id_scheme_t*)0x1)
 
-dpl_status_t dpl_gen_random_key(dpl_ctx_t *ctx, dpl_storage_class_t storage_class, char *custom, char *id_buf, int max_len);
+dpl_status_t dpl_gen_random_key(dpl_ctx_t* ctx,
+                                dpl_storage_class_t storage_class,
+                                char* custom,
+                                char* id_buf,
+                                int max_len);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_ID_SCHEME_H_

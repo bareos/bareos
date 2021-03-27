@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -178,6 +178,18 @@ set(tls_con_certificate
 )
 set(tls_con_key ${CMAKE_CURRENT_SOURCE_DIR}/tls/console.bareos.org-key.pem)
 
+option(SYSTEMTESTS_S3_USE_HTTPS "Use tls for S3 connections in systemtests"
+       "yes"
+)
+
+message("   SYSTEMTESTS_S3_USE_HTTPS: ${SYSTEMTESTS_S3_USE_HTTPS}")
+
+if(SYSTEMTESTS_S3_USE_HTTPS)
+  set(systemtests_s3_use_https "false")
+else()
+  set(systemtests_s3_use_https "true")
+endif()
+
 macro(link_binaries_to_test_to_current_sbin_dir_with_individual_filename)
   foreach(binary_name ${ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS})
     create_variable_binary_name_to_test_for_binary_name(${binary_name})
@@ -252,6 +264,7 @@ macro(prepare_testdir_for_daemon_run)
   file(MAKE_DIRECTORY ${confdir})
   file(MAKE_DIRECTORY ${working_dir})
   file(MAKE_DIRECTORY ${config_directory_dir_additional_test_config})
+  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/systemtests/tls/minio/)
 
   # create a bin/bareos and bin/bconsole script in every testdir for start/stop
   # and bconsole
@@ -520,6 +533,9 @@ configurefilestosystemtest(
   "systemtests" "scripts" "check_for_zombie_jobs" @ONLY ""
 )
 configurefilestosystemtest("systemtests" "scripts" "diff.pl.in" @ONLY "")
+configurefilestosystemtest(
+  "systemtests" "scripts" "generate_minio_certs.sh.in" @ONLY ""
+)
 
 configurefilestosystemtest("core/src" "defaultconfigs" "*.conf" @ONLY "")
 configurefilestosystemtest("core/src" "defaultconfigs" "*.in" @ONLY "")
@@ -669,7 +685,7 @@ endif()
 
 check_pymodule_available(3 fastapi)
 check_pymodule_available(3 uvicorn)
-find_program (CURL curl)
+find_program(CURL curl)
 
 # python-restapi-test does not work on installed files and needs some modules
 if(PYTHON_EXECUTABLE
@@ -683,7 +699,6 @@ if(PYTHON_EXECUTABLE
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "python-restapi")
 endif()
-
 
 bareosfindlibrary("gtest")
 if(GTEST_FOUND AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
@@ -1114,3 +1129,16 @@ configure_file(
   "ctest_custom_pretest.sh.in"
   "${CMAKE_CURRENT_BINARY_DIR}/ctest_custom_pretest.sh" @ONLY
 )
+
+execute_process(
+  COMMAND "${CMAKE_BINARY_DIR}/systemtests/scripts/generate_minio_certs.sh"
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/systemtests/tls/minio/"
+  RESULT_VARIABLE RESULT_GENERATE_MINIO_CERTS
+  OUTPUT_QUIET ERROR_QUIET
+)
+if(NOT "${RESULT_GENERATE_MINIO_CERTS}" STREQUAL "0")
+  message(
+    FATAL_ERROR
+      "Creation of certificates failed: ${RESULT_GENERATE_MINIO_CERTS} ${CMAKE_BINARY_DIR}"
+  )
+endif()

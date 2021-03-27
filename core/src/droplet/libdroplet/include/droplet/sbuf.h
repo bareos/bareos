@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,26 +32,26 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SBUF_H__
-#define __DROPLET_SBUF_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SBUF_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SBUF_H_
 
-typedef struct
-{
-  char *buf;
-  size_t  len;
-  size_t  allocated;
+typedef struct {
+  char* buf;
+  size_t len;
+  size_t allocated;
 } dpl_sbuf_t;
 
 /* PROTO sbuf.c */
-dpl_sbuf_t *dpl_sbuf_new(size_t size);
-dpl_sbuf_t *dpl_sbuf_new_from_str(const char *str);
-dpl_status_t dpl_sbuf_add(dpl_sbuf_t *sb, const char *buf, size_t len);
-dpl_status_t dpl_sbuf_add_str(dpl_sbuf_t *sb, const char *str);
-dpl_status_t __attribute__((format (printf, 2, 3))) dpl_sbuf_add_str_fmt(dpl_sbuf_t *sb, const char *format, ...);
-dpl_sbuf_t *dpl_sbuf_dup(const dpl_sbuf_t *src);
-char *dpl_sbuf_get_str(dpl_sbuf_t *sbuf);
-void dpl_sbuf_free(dpl_sbuf_t *sb);
-void dpl_sbuf_print(FILE *f, dpl_sbuf_t *sb);
-dpl_status_t dpl_sbuf_url_encode(dpl_sbuf_t *sb);
+dpl_sbuf_t* dpl_sbuf_new(size_t size);
+dpl_sbuf_t* dpl_sbuf_new_from_str(const char* str);
+dpl_status_t dpl_sbuf_add(dpl_sbuf_t* sb, const char* buf, size_t len);
+dpl_status_t dpl_sbuf_add_str(dpl_sbuf_t* sb, const char* str);
+dpl_status_t __attribute__((format(printf, 2, 3)))
+dpl_sbuf_add_str_fmt(dpl_sbuf_t* sb, const char* format, ...);
+dpl_sbuf_t* dpl_sbuf_dup(const dpl_sbuf_t* src);
+char* dpl_sbuf_get_str(dpl_sbuf_t* sbuf);
+void dpl_sbuf_free(dpl_sbuf_t* sb);
+void dpl_sbuf_print(FILE* f, dpl_sbuf_t* sb);
+dpl_status_t dpl_sbuf_url_encode(dpl_sbuf_t* sb);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SBUF_H_

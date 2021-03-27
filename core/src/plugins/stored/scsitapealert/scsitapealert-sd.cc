@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -213,26 +213,26 @@ static bRC handle_tapealert_readout(void* value)
   if (!device_resource->drive_tapealert_enabled) {
     Dmsg1(debuglevel,
           "scsitapealert-sd: tapealert is not enabled on device %s\n",
-          dev->dev_name);
+          dev->archive_device_string);
     return bRC_OK;
   }
 
   Dmsg1(debuglevel, "scsitapealert-sd: checking for tapealerts on device %s\n",
-        dev->dev_name);
+        dev->archive_device_string);
   P(tapealert_operation_mutex);
-  GetTapealertFlags(dev->fd(), dev->dev_name, &flags);
+  GetTapealertFlags(dev->fd, dev->archive_device_string, &flags);
   V(tapealert_operation_mutex);
 
   Dmsg1(debuglevel,
         "scsitapealert-sd: checking for tapealerts on device %s DONE\n",
-        dev->dev_name);
+        dev->archive_device_string);
   Dmsg1(debuglevel, "scsitapealert-sd: flags: %ld \n", flags);
 
   if (flags) {
     Dmsg1(
         debuglevel,
         "scsitapealert-sd: tapealerts on device %s, calling UpdateTapeAlerts\n",
-        dev->dev_name);
+        dev->archive_device_string);
     bareos_core_functions->UpdateTapeAlert(dcr, flags);
   }
 

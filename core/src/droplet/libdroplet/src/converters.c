@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -36,10 +37,9 @@
 /** @file */
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt, ...)
 
-dpl_method_t
-dpl_method(char *str)
+dpl_method_t dpl_method(char* str)
 {
   if (!strcasecmp(str, "GET"))
     return DPL_METHOD_GET;
@@ -55,11 +55,9 @@ dpl_method(char *str)
   return -1;
 }
 
-char *
-dpl_method_str(dpl_method_t method)
+char* dpl_method_str(dpl_method_t method)
 {
-  switch (method)
-    {
+  switch (method) {
     case DPL_METHOD_GET:
       return "GET";
     case DPL_METHOD_PUT:
@@ -70,15 +68,14 @@ dpl_method_str(dpl_method_t method)
       return "HEAD";
     case DPL_METHOD_POST:
       return "POST";
-    }
+  }
 
   return NULL;
 }
 
 /**/
 
-dpl_location_constraint_t
-dpl_location_constraint(char *str)
+dpl_location_constraint_t dpl_location_constraint(char* str)
 {
   if (!strcasecmp(str, ""))
     return DPL_LOCATION_CONSTRAINT_US_STANDARD;
@@ -106,11 +103,9 @@ dpl_location_constraint(char *str)
   return -1;
 }
 
-char *
-dpl_location_constraint_str(dpl_location_constraint_t location_constraint)
+char* dpl_location_constraint_str(dpl_location_constraint_t location_constraint)
 {
-  switch (location_constraint)
-    {
+  switch (location_constraint) {
     case DPL_LOCATION_CONSTRAINT_UNDEF:
       return NULL;
     /* case DPL_LOCATION_CONSTRAINT_US_STANDARD: */
@@ -133,15 +128,14 @@ dpl_location_constraint_str(dpl_location_constraint_t location_constraint)
       return "ap-northeast-1";
     case DPL_LOCATION_CONSTRAINT_SA_EAST_1:
       return "sa-east-1";
-    }
+  }
 
   return NULL;
 }
 
 /**/
 
-dpl_canned_acl_t
-dpl_canned_acl(char *str)
+dpl_canned_acl_t dpl_canned_acl(char* str)
 {
   if (!strcasecmp(str, "private"))
     return DPL_CANNED_ACL_PRIVATE;
@@ -159,11 +153,9 @@ dpl_canned_acl(char *str)
   return -1;
 }
 
-char *
-dpl_canned_acl_str(dpl_canned_acl_t canned_acl)
+char* dpl_canned_acl_str(dpl_canned_acl_t canned_acl)
 {
-  switch (canned_acl)
-    {
+  switch (canned_acl) {
     case DPL_CANNED_ACL_UNDEF:
       return "undef";
     case DPL_CANNED_ACL_PRIVATE:
@@ -178,15 +170,14 @@ dpl_canned_acl_str(dpl_canned_acl_t canned_acl)
       return "bucket-owner-read";
     case DPL_CANNED_ACL_BUCKET_OWNER_FULL_CONTROL:
       return "bucket-owner-full-control";
-    }
+  }
 
   return NULL;
 }
 
 /**/
 
-dpl_storage_class_t
-dpl_storage_class(char *str)
+dpl_storage_class_t dpl_storage_class(char* str)
 {
   if (!strcasecmp(str, "standard"))
     return DPL_STORAGE_CLASS_STANDARD;
@@ -200,11 +191,9 @@ dpl_storage_class(char *str)
   return -1;
 }
 
-char *
-dpl_storage_class_str(dpl_storage_class_t storage_class)
+char* dpl_storage_class_str(dpl_storage_class_t storage_class)
 {
-  switch (storage_class)
-    {
+  switch (storage_class) {
     case DPL_STORAGE_CLASS_UNDEF:
       return NULL;
     case DPL_STORAGE_CLASS_STANDARD:
@@ -215,15 +204,14 @@ dpl_storage_class_str(dpl_storage_class_t storage_class)
       return "REDUCED_REDUNDANCY";
     case DPL_STORAGE_CLASS_CUSTOM:
       return "CUSTOM";
-    }
+  }
 
   return NULL;
 }
 
 /**/
 
-dpl_copy_directive_t
-dpl_copy_directive(char *str)
+dpl_copy_directive_t dpl_copy_directive(char* str)
 {
   if (!strcasecmp(str, "copy"))
     return DPL_COPY_DIRECTIVE_COPY;
@@ -245,38 +233,35 @@ dpl_copy_directive(char *str)
   return -1;
 }
 
-char *
-dpl_copy_directive_str(dpl_copy_directive_t copy_directive)
+char* dpl_copy_directive_str(dpl_copy_directive_t copy_directive)
 {
-  switch (copy_directive)
-    {
+  switch (copy_directive) {
     case DPL_COPY_DIRECTIVE_UNDEF:
       return NULL;
     case DPL_COPY_DIRECTIVE_COPY:
-      return "COPY"; //case is important
+      return "COPY";  // case is important
     case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
-      return "METADATA_REPLACE"; //case is important
+      return "METADATA_REPLACE";  // case is important
     case DPL_COPY_DIRECTIVE_LINK:
-      return "LINK"; //case is important
+      return "LINK";  // case is important
     case DPL_COPY_DIRECTIVE_SYMLINK:
-      return "SYMLINK"; //case is important
+      return "SYMLINK";  // case is important
     case DPL_COPY_DIRECTIVE_MOVE:
-      return "MOVE"; //case is important
+      return "MOVE";  // case is important
     case DPL_COPY_DIRECTIVE_MKDENT:
-      return "MKDENT"; //case is important
+      return "MKDENT";  // case is important
     case DPL_COPY_DIRECTIVE_RMDENT:
-      return "RMDENT"; //case is important
+      return "RMDENT";  // case is important
     case DPL_COPY_DIRECTIVE_MVDENT:
-      return "MVDENT"; //case is important
-    }
+      return "MVDENT";  // case is important
+  }
 
   return NULL;
 }
 
 /**/
 
-dpl_ftype_t
-dpl_object_type(char *str)
+dpl_ftype_t dpl_object_type(char* str)
 {
   if (!strcasecmp(str, "any"))
     return DPL_FTYPE_ANY;
@@ -284,17 +269,15 @@ dpl_object_type(char *str)
     return DPL_FTYPE_REG;
   else if (!strcasecmp(str, "dir") || !strcasecmp(str, "container"))
     return DPL_FTYPE_DIR;
-  else if (!strcasecmp(str, "cap")|| !strcasecmp(str, "capability"))
+  else if (!strcasecmp(str, "cap") || !strcasecmp(str, "capability"))
     return DPL_FTYPE_CAP;
 
   return -1;
 }
 
-char *
-dpl_object_type_str(dpl_ftype_t object_type)
+char* dpl_object_type_str(dpl_ftype_t object_type)
 {
-  switch (object_type)
-    {
+  switch (object_type) {
     case DPL_FTYPE_UNDEF:
       return NULL;
     case DPL_FTYPE_ANY:
@@ -317,53 +300,47 @@ dpl_object_type_str(dpl_ftype_t object_type)
       return "socket";
     case DPL_FTYPE_SYMLINK:
       return "symlink";
-    }
+  }
 
   return NULL;
 }
 
-dpl_dict_t *
-dpl_parse_metadata(char *metadata)
+dpl_dict_t* dpl_parse_metadata(char* metadata)
 {
-  char *saveptr = NULL;
+  char* saveptr = NULL;
   char *str, *tok, *p;
   int ret;
-  dpl_dict_t *dict;
-  char *nmetadata;
+  dpl_dict_t* dict;
+  char* nmetadata;
 
   nmetadata = strdup(metadata);
-  if (NULL == nmetadata)
-    return NULL;
+  if (NULL == nmetadata) return NULL;
 
   dict = dpl_dict_new(13);
-  if (NULL == dict)
-    {
+  if (NULL == dict) {
+    free(nmetadata);
+    return NULL;
+  }
+
+  for (str = metadata;; str = NULL) {
+    tok = strtok_r(str, ";,", &saveptr);
+    if (NULL == tok) break;
+
+    DPRINTF("tok=%s\n", tok);
+
+    p = index(tok, '=');
+    if (NULL == p)
+      p = "";
+    else
+      *p++ = 0;
+
+    ret = dpl_dict_add(dict, tok, p, 0);
+    if (DPL_SUCCESS != ret) {
+      dpl_dict_free(dict);
       free(nmetadata);
       return NULL;
     }
-
-  for (str = metadata;;str = NULL)
-    {
-      tok = strtok_r(str, ";,", &saveptr);
-      if (NULL == tok)
-        break ;
-
-      DPRINTF("tok=%s\n", tok);
-
-      p = index(tok, '=');
-      if (NULL == p)
-        p = "";
-      else
-        *p++ = 0;
-
-      ret = dpl_dict_add(dict, tok, p, 0);
-      if (DPL_SUCCESS != ret)
-        {
-          dpl_dict_free(dict);
-          free(nmetadata);
-          return NULL;
-        }
-    }
+  }
 
   free(nmetadata);
 
@@ -377,48 +354,42 @@ dpl_parse_metadata(char *metadata)
  *
  * @return
  */
-dpl_dict_t *
-dpl_parse_query_params(char *query_params)
+dpl_dict_t* dpl_parse_query_params(char* query_params)
 {
-  char *saveptr = NULL;
+  char* saveptr = NULL;
   char *str, *tok, *p;
   int ret;
-  dpl_dict_t *dict;
-  char *nquery_params;
+  dpl_dict_t* dict;
+  char* nquery_params;
 
   nquery_params = strdup(query_params);
-  if (NULL == nquery_params)
-    return NULL;
+  if (NULL == nquery_params) return NULL;
 
   dict = dpl_dict_new(13);
-  if (NULL == dict)
-    {
+  if (NULL == dict) {
+    free(nquery_params);
+    return NULL;
+  }
+
+  for (str = query_params;; str = NULL) {
+    tok = strtok_r(str, ";", &saveptr);
+    if (NULL == tok) break;
+
+    DPRINTF("tok=%s\n", tok);
+
+    p = index(tok, '=');
+    if (NULL == p)
+      p = "";
+    else
+      *p++ = 0;
+
+    ret = dpl_dict_add(dict, tok, p, 0);
+    if (DPL_SUCCESS != ret) {
+      dpl_dict_free(dict);
       free(nquery_params);
       return NULL;
     }
-
-  for (str = query_params;;str = NULL)
-    {
-      tok = strtok_r(str, ";", &saveptr);
-      if (NULL == tok)
-        break ;
-
-      DPRINTF("tok=%s\n", tok);
-
-      p = index(tok, '=');
-      if (NULL == p)
-        p = "";
-      else
-        *p++ = 0;
-
-      ret = dpl_dict_add(dict, tok, p, 0);
-      if (DPL_SUCCESS != ret)
-        {
-          dpl_dict_free(dict);
-          free(nquery_params);
-          return NULL;
-        }
-    }
+  }
 
   free(nquery_params);
 
@@ -427,20 +398,16 @@ dpl_parse_query_params(char *query_params)
 
 /**/
 
-static dpl_status_t
-condition_add(dpl_condition_t *cond,
-              time_t *now,
-              char *key,
-              char *value)
+static dpl_status_t condition_add(dpl_condition_t* cond,
+                                  time_t* now,
+                                  char* key,
+                                  char* value)
 {
   dpl_condition_type_t type;
   size_t len;
   time_t dt;
 
-  if (cond->n_conds >= DPL_COND_MAX)
-    {
-      return DPL_ENAMETOOLONG;
-    }
+  if (cond->n_conds >= DPL_COND_MAX) { return DPL_ENAMETOOLONG; }
 
   type = 0;
 
@@ -455,79 +422,68 @@ condition_add(dpl_condition_t *cond,
   else
     return DPL_EINVAL;
 
-  switch (type)
-    {
+  switch (type) {
     case DPL_CONDITION_IF_MODIFIED_SINCE:
     case DPL_CONDITION_IF_UNMODIFIED_SINCE:
       dt = dpl_get_date(value, now);
-      if (dt < 0)
-	return DPL_EINVAL;
+      if (dt < 0) return DPL_EINVAL;
       cond->conds[cond->n_conds].time = dt;
-      break ;
+      break;
     case DPL_CONDITION_IF_MATCH:
     case DPL_CONDITION_IF_NONE_MATCH:
       len = strlen(value);
-      if (len > DPL_ETAG_SIZE)
-	return DPL_EINVAL;
+      if (len > DPL_ETAG_SIZE) return DPL_EINVAL;
       strcpy(cond->conds[cond->n_conds].etag, value);
-      break ;
-    }
+      break;
+  }
 
   cond->conds[cond->n_conds].type = type;
 
   cond->n_conds++;
-  
+
   return DPL_SUCCESS;
 }
 
-dpl_status_t
-dpl_parse_condition(const char *str,
-                    dpl_condition_t *condp)
+dpl_status_t dpl_parse_condition(const char* str, dpl_condition_t* condp)
 {
-  char *nstr = NULL;
+  char* nstr = NULL;
   dpl_status_t ret, ret2;
   char *saveptr, *s, *tok, *p;
   dpl_condition_t cond;
   time_t now = time(0);
 
-  memset(&cond, 0, sizeof (cond));
+  memset(&cond, 0, sizeof(cond));
 
   nstr = strdup(str);
-  if (NULL == nstr)
-    {
-      ret = DPL_ENOMEM;
+  if (NULL == nstr) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  for (s = nstr;; s = NULL) {
+    tok = strtok_r(s, ";, ", &saveptr);
+    if (NULL == tok) break;
+
+    p = index(tok, ':');
+    if (NULL == p) {
+      ret = DPL_EINVAL;
       goto end;
     }
 
-  for (s = nstr;;s = NULL)
-    {
-      tok = strtok_r(s, ";, ", &saveptr);
-      if (NULL == tok)
-        break ;
+    *p++ = 0;
 
-      p = index(tok, ':');
-      if (NULL == p)
-        {
-          ret = DPL_EINVAL;
-          goto end;
-        }
-
-      *p++ = 0;
-      
-      ret2 = condition_add(&cond, &now, tok, p);
-      if (0 != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
+    ret2 = condition_add(&cond, &now, tok, p);
+    if (0 != ret2) {
+      ret = ret2;
+      goto end;
     }
+  }
 
-  if (NULL != condp)
-    memcpy(condp, &cond, sizeof (cond));
-  
+  if (NULL != condp) memcpy(condp, &cond, sizeof(cond));
+
   ret = DPL_SUCCESS;
-  
- end:
+
+end:
 
   free(nstr);
 
@@ -536,10 +492,7 @@ dpl_parse_condition(const char *str,
 
 /**/
 
-static dpl_status_t
-option_add(dpl_option_t *opt,
-           char *key,
-           char *value)
+static dpl_status_t option_add(dpl_option_t* opt, char* key, char* value)
 {
   if (!strcmp(key, "lazy"))
     opt->mask |= DPL_OPTION_LAZY;
@@ -551,69 +504,57 @@ option_add(dpl_option_t *opt,
     opt->mask |= DPL_OPTION_APPEND_METADATA;
   else if (!strcmp(key, "consistent"))
     opt->mask |= DPL_OPTION_CONSISTENT;
-  else if (!strcmp(key, "expect_version"))
-    {
-      opt->mask |= DPL_OPTION_EXPECT_VERSION;
-      snprintf(opt->expect_version, sizeof (opt->expect_version), "%s", value);
-    }
-  else if (!strcmp(key, "force_version"))
-    {
-      opt->mask |= DPL_OPTION_FORCE_VERSION;
-      snprintf(opt->force_version, sizeof (opt->force_version), "%s", value);
-    }
-  else
+  else if (!strcmp(key, "expect_version")) {
+    opt->mask |= DPL_OPTION_EXPECT_VERSION;
+    snprintf(opt->expect_version, sizeof(opt->expect_version), "%s", value);
+  } else if (!strcmp(key, "force_version")) {
+    opt->mask |= DPL_OPTION_FORCE_VERSION;
+    snprintf(opt->force_version, sizeof(opt->force_version), "%s", value);
+  } else
     return DPL_EINVAL;
-  
+
   return DPL_SUCCESS;
 }
 
-dpl_status_t
-dpl_parse_option(const char *str,
-                 dpl_option_t *optp)
+dpl_status_t dpl_parse_option(const char* str, dpl_option_t* optp)
 {
-  char *nstr = NULL;
+  char* nstr = NULL;
   dpl_status_t ret, ret2;
   char *saveptr, *s, *tok, *p;
   dpl_option_t opt;
 
-  memset(&opt, 0, sizeof (opt));
+  memset(&opt, 0, sizeof(opt));
 
   nstr = strdup(str);
-  if (NULL == nstr)
-    {
-      ret = DPL_ENOMEM;
+  if (NULL == nstr) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  for (s = nstr;; s = NULL) {
+    tok = strtok_r(s, ";, ", &saveptr);
+    if (NULL == tok) break;
+
+    p = index(tok, ':');
+    if (NULL == p) {
+      ret = DPL_EINVAL;
       goto end;
     }
 
-  for (s = nstr;;s = NULL)
-    {
-      tok = strtok_r(s, ";, ", &saveptr);
-      if (NULL == tok)
-        break ;
+    *p++ = 0;
 
-      p = index(tok, ':');
-      if (NULL == p)
-        {
-          ret = DPL_EINVAL;
-          goto end;
-        }
-
-      *p++ = 0;
-      
-      ret2 = option_add(&opt, tok, p);
-      if (0 != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
+    ret2 = option_add(&opt, tok, p);
+    if (0 != ret2) {
+      ret = ret2;
+      goto end;
     }
+  }
 
-  if (NULL != optp)
-    memcpy(optp, &opt, sizeof (opt));
-  
+  if (NULL != optp) memcpy(optp, &opt, sizeof(opt));
+
   ret = DPL_SUCCESS;
-  
- end:
+
+end:
 
   free(nstr);
 

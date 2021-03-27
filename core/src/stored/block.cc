@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -818,7 +818,7 @@ bool DeviceControlRecord::WriteBlockToDev()
       be.SetErrno(dev->dev_errno);
       Mmsg5(dev->errmsg,
             _("Write error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"),
-            dev->fd(), dev->file, dev->block_num, dev->print_name(),
+            dev->fd, dev->file, dev->block_num, dev->print_name(),
             be.bstrerror());
     }
 
@@ -833,7 +833,7 @@ bool DeviceControlRecord::WriteBlockToDev()
       Dmsg7(100,
             "=== Write error. fd=%d size=%u rtn=%d dev_blk=%d blk_blk=%d "
             "errno=%d: ERR=%s\n",
-            dev->fd(), wlen, status, dev->block_num, block->BlockNumber,
+            dev->fd, wlen, status, dev->block_num, block->BlockNumber,
             dev->dev_errno, be.bstrerror(dev->dev_errno));
     }
 
@@ -1011,7 +1011,7 @@ DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDev(
     Mmsg4(dev->errmsg,
           _("Attempt to read closed device: fd=%d at file:blk %u:%u on device "
             "%s\n"),
-          dev->fd(), dev->file, dev->block_num, dev->print_name());
+          dev->fd, dev->file, dev->block_num, dev->print_name());
     Jmsg(dcr->jcr, M_WARNING, 0, "%s", dev->errmsg);
     block->read_len = 0;
     return ReadStatus::Error;
@@ -1052,7 +1052,7 @@ reread:
     block->read_len = 0;
     Mmsg5(dev->errmsg,
           _("Read error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"),
-          dev->fd(), dev->file, dev->block_num, dev->print_name(),
+          dev->fd, dev->file, dev->block_num, dev->print_name(),
           be.bstrerror());
 
     GeneratePluginEvent(jcr, bSdEventReadError, dcr);
@@ -1146,9 +1146,9 @@ reread:
     } else {
       Dmsg0(250, "Seek to beginning of block for reread.\n");
       boffset_t pos
-          = dev->lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
+          = dev->d_lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
       pos -= block->read_len;
-      dev->lseek(dcr, pos, SEEK_SET);
+      dev->d_lseek(dcr, pos, SEEK_SET);
       dev->file_addr = pos;
     }
     Mmsg1(dev->errmsg, _("Setting block buffer size to %u bytes.\n"),
@@ -1225,10 +1225,11 @@ reread:
   Dmsg0(250, "At end of read block\n");
   if (block->read_len > block->block_len && !dev->IsTape()) {
     char ed1[50];
-    boffset_t pos = dev->lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
+    boffset_t pos
+        = dev->d_lseek(dcr, (boffset_t)0, SEEK_CUR); /* get curr pos */
     Dmsg1(250, "Current lseek pos=%s\n", edit_int64(pos, ed1));
     pos -= (block->read_len - block->block_len);
-    dev->lseek(dcr, pos, SEEK_SET);
+    dev->d_lseek(dcr, pos, SEEK_SET);
     Dmsg3(250, "Did lseek pos=%s blk_size=%d rdlen=%d\n", edit_int64(pos, ed1),
           block->block_len, block->read_len);
     dev->file_addr = pos;

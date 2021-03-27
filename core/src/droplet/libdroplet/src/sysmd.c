@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -34,37 +35,28 @@
 #include "dropletp.h"
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt, ...)
 
-dpl_sysmd_t *
-dpl_sysmd_dup(const dpl_sysmd_t *sysmd)
+dpl_sysmd_t* dpl_sysmd_dup(const dpl_sysmd_t* sysmd)
 {
-  dpl_sysmd_t *nsysmd;
-  
-  nsysmd = malloc(sizeof (*nsysmd));
-  if (NULL == nsysmd)
-    return NULL;
-  
-  //for now simple ocpy
-  memcpy(nsysmd, sysmd, sizeof (*sysmd));
+  dpl_sysmd_t* nsysmd;
+
+  nsysmd = malloc(sizeof(*nsysmd));
+  if (NULL == nsysmd) return NULL;
+
+  // for now simple ocpy
+  memcpy(nsysmd, sysmd, sizeof(*sysmd));
 
   return nsysmd;
 }
 
-void
-dpl_sysmd_free(dpl_sysmd_t *sysmd)
-{
-  free(sysmd);
-}
+void dpl_sysmd_free(dpl_sysmd_t* sysmd) { free(sysmd); }
 
-void
-dpl_sysmd_print(dpl_sysmd_t *sysmd,
-                FILE *f)
+void dpl_sysmd_print(dpl_sysmd_t* sysmd, FILE* f)
 {
   int i;
 
-  if (sysmd->mask & DPL_SYSMD_MASK_ID)
-    fprintf(f, "id=%s\n", sysmd->id);
+  if (sysmd->mask & DPL_SYSMD_MASK_ID) fprintf(f, "id=%s\n", sysmd->id);
 
   if (sysmd->mask & DPL_SYSMD_MASK_VERSION)
     fprintf(f, "version=%s\n", sysmd->version);
@@ -82,10 +74,10 @@ dpl_sysmd_print(dpl_sysmd_t *sysmd,
     fprintf(f, "canned_acl=%s\n", dpl_canned_acl_str(sysmd->canned_acl));
 
   if (sysmd->mask & DPL_SYSMD_MASK_STORAGE_CLASS)
-    fprintf(f, "storage_class=%s\n", dpl_storage_class_str(sysmd->storage_class));
+    fprintf(f, "storage_class=%s\n",
+            dpl_storage_class_str(sysmd->storage_class));
 
-  if (sysmd->mask & DPL_SYSMD_MASK_SIZE)
-    fprintf(f, "size=%lu\n", sysmd->size);
+  if (sysmd->mask & DPL_SYSMD_MASK_SIZE) fprintf(f, "size=%lu\n", sysmd->size);
 
   if (sysmd->mask & DPL_SYSMD_MASK_ATIME)
     fprintf(f, "atime=%lu\n", sysmd->atime);
@@ -95,12 +87,12 @@ dpl_sysmd_print(dpl_sysmd_t *sysmd,
 
   if (sysmd->mask & DPL_SYSMD_MASK_CTIME)
     fprintf(f, "ctime=%lu\n", sysmd->ctime);
-  
-  if (sysmd->mask & DPL_SYSMD_MASK_ETAG)
-    fprintf(f, "etag=%s\n", sysmd->etag);
+
+  if (sysmd->mask & DPL_SYSMD_MASK_ETAG) fprintf(f, "etag=%s\n", sysmd->etag);
 
   if (sysmd->mask & DPL_SYSMD_MASK_LOCATION_CONSTRAINT)
-    fprintf(f, "location_constraint=%s\n", dpl_location_constraint_str(sysmd->location_constraint));
+    fprintf(f, "location_constraint=%s\n",
+            dpl_location_constraint_str(sysmd->location_constraint));
 
   if (sysmd->mask & DPL_SYSMD_MASK_OWNER)
     fprintf(f, "owner=%s\n", sysmd->owner);
@@ -108,16 +100,13 @@ dpl_sysmd_print(dpl_sysmd_t *sysmd,
   if (sysmd->mask & DPL_SYSMD_MASK_GROUP)
     fprintf(f, "group=%s\n", sysmd->group);
 
-  if (sysmd->mask & DPL_SYSMD_MASK_ACL)
-    {
-      for (i = 0;i < sysmd->n_aces;i++)
-        {
-          fprintf(f, "ace%d: type=0x%x flag=0x%x access_mask=0x%x who=0x%x\n",
-                 i, sysmd->aces[i].type, sysmd->aces[i].flag, sysmd->aces[i].access_mask,
-                 sysmd->aces[i].who);
-        }
+  if (sysmd->mask & DPL_SYSMD_MASK_ACL) {
+    for (i = 0; i < sysmd->n_aces; i++) {
+      fprintf(f, "ace%d: type=0x%x flag=0x%x access_mask=0x%x who=0x%x\n", i,
+              sysmd->aces[i].type, sysmd->aces[i].flag,
+              sysmd->aces[i].access_mask, sysmd->aces[i].who);
     }
+  }
 
-  if (sysmd->mask & DPL_SYSMD_MASK_PATH)
-    fprintf(f, "path=%s\n", sysmd->path);
+  if (sysmd->mask & DPL_SYSMD_MASK_PATH) fprintf(f, "path=%s\n", sysmd->path);
 }

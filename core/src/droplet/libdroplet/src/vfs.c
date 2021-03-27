@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -37,452 +38,394 @@
 /** @file */
 
 // #define DPRINTF(fmt,...) fprintf(stderr, "*** " fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt, ...)
 
-static dpl_status_t
-dir_lookup(dpl_ctx_t *ctx,
-           const char *bucket,
-           dpl_fqn_t parent_fqn,
-           const char *obj_name,
-           dpl_fqn_t *obj_fqnp,
-           dpl_ftype_t *obj_typep)
+static dpl_status_t dir_lookup(dpl_ctx_t* ctx,
+                               const char* bucket,
+                               dpl_fqn_t parent_fqn,
+                               const char* obj_name,
+                               dpl_fqn_t* obj_fqnp,
+                               dpl_ftype_t* obj_typep)
 {
   int ret, ret2;
-  dpl_vec_t *files = NULL;
-  dpl_vec_t *directories = NULL;
+  dpl_vec_t* files = NULL;
+  dpl_vec_t* directories = NULL;
   int i;
   dpl_fqn_t obj_fqn;
   dpl_ftype_t obj_type;
   int obj_name_len = strlen(obj_name);
-  char *skip_slashes;
+  char* skip_slashes;
 
-  memset(&obj_fqn, 0, sizeof (obj_fqn));
+  memset(&obj_fqn, 0, sizeof(obj_fqn));
 
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "lookup bucket=%s parent_fqn=%s obj_name=%s", bucket, parent_fqn.path, obj_name);
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "lookup bucket=%s parent_fqn=%s obj_name=%s",
+            bucket, parent_fqn.path, obj_name);
 
-  if (!strcmp(obj_name, "."))
-    {
-      if (NULL != obj_fqnp)
-        *obj_fqnp = parent_fqn;
+  if (!strcmp(obj_name, ".")) {
+    if (NULL != obj_fqnp) *obj_fqnp = parent_fqn;
 
-      if (NULL != obj_typep)
-        *obj_typep = DPL_FTYPE_DIR;
+    if (NULL != obj_typep) *obj_typep = DPL_FTYPE_DIR;
 
-      ret = DPL_SUCCESS;
-      goto end;
-    }
-  else if (!strcmp(obj_name, ".."))
-    {
-      char *p, *p2;
+    ret = DPL_SUCCESS;
+    goto end;
+  } else if (!strcmp(obj_name, "..")) {
+    char *p, *p2;
 
-      if (!strcmp(parent_fqn.path, ""))
-        {
-          //silent success for root dir
-          if (NULL != obj_fqnp)
-            *obj_fqnp = DPL_ROOT_FQN;
+    if (!strcmp(parent_fqn.path, "")) {
+      // silent success for root dir
+      if (NULL != obj_fqnp) *obj_fqnp = DPL_ROOT_FQN;
 
-          if (NULL != obj_typep)
-            *obj_typep = DPL_FTYPE_DIR;
-
-          ret = DPL_SUCCESS;
-          goto end;
-        }
-
-      obj_fqn = parent_fqn;
-
-      p = rindex(obj_fqn.path, '/');
-      if (NULL == p)
-        {
-          DPL_LOG(ctx, DPL_ERROR, "parent path shall contain delimiter");
-          ret = DPL_FAILURE;
-          goto end;
-        }
-
-      p--;
-
-      for (p2 = p;p2 > obj_fqn.path;p2--)
-        {
-          if (*p2 == '/')
-            {
-              DPRINTF("found delim\n");
-
-              p2++;
-              break ;
-            }
-        }
-
-      *p2 = 0;
-
-      if (NULL != obj_fqnp)
-        *obj_fqnp = obj_fqn;
-
-      if (NULL != obj_typep)
-        *obj_typep = DPL_FTYPE_DIR;
+      if (NULL != obj_typep) *obj_typep = DPL_FTYPE_DIR;
 
       ret = DPL_SUCCESS;
       goto end;
     }
+
+    obj_fqn = parent_fqn;
+
+    p = rindex(obj_fqn.path, '/');
+    if (NULL == p) {
+      DPL_LOG(ctx, DPL_ERROR, "parent path shall contain delimiter");
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+    p--;
+
+    for (p2 = p; p2 > obj_fqn.path; p2--) {
+      if (*p2 == '/') {
+        DPRINTF("found delim\n");
+
+        p2++;
+        break;
+      }
+    }
+
+    *p2 = 0;
+
+    if (NULL != obj_fqnp) *obj_fqnp = obj_fqn;
+
+    if (NULL != obj_typep) *obj_typep = DPL_FTYPE_DIR;
+
+    ret = DPL_SUCCESS;
+    goto end;
+  }
 
   skip_slashes = parent_fqn.path;
-  while ('/' == *skip_slashes)
-    ++skip_slashes;
+  while ('/' == *skip_slashes) ++skip_slashes;
 
-  //AWS do not like "" as a prefix
-  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(skip_slashes, "") ? NULL : skip_slashes, "/", -1, &files, &directories);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, skip_slashes);
-      ret = ret2;
+  // AWS do not like "" as a prefix
+  ret2 = dpl_list_bucket(ctx, bucket,
+                         !strcmp(skip_slashes, "") ? NULL : skip_slashes, "/",
+                         -1, &files, &directories);
+  if (DPL_SUCCESS != ret2) {
+    DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket,
+              skip_slashes);
+    ret = ret2;
+    goto end;
+  }
+
+  for (i = 0; i < directories->n_items; i++) {
+    dpl_common_prefix_t* prefix
+        = (dpl_common_prefix_t*)dpl_vec_get(directories, i);
+    int path_len;
+    char *p, *p2;
+
+    p = rindex(prefix->prefix, '/');
+    if (NULL == p) {
+      DPL_LOG(ctx, DPL_ERROR, "prefix '%s' shall contain delimiter",
+              prefix->prefix);
+      continue;
+    }
+
+    DPRINTF("p='%s'\n", p);
+
+    p--;
+
+    for (p2 = p; p2 > prefix->prefix; p2--) {
+      DPRINTF("p2='%s'\n", p2);
+
+      if (*p2 == '/') {
+        DPRINTF("found delim\n");
+
+        p2++;
+        break;
+      }
+    }
+
+    path_len = p - p2 + 1;
+
+    DPRINTF("cmp (prefix=%s) prefix=%.*s obj_name=%s\n", prefix->prefix,
+            path_len, p2, obj_name);
+
+    if (path_len == obj_name_len && !memcmp(p2, obj_name, obj_name_len)) {
+      DPRINTF("ok\n");
+
+      path_len = strlen(prefix->prefix);
+      if (path_len >= DPL_MAXNAMLEN) {
+        DPL_TRACE(ctx, DPL_TRACE_ERR, "path is too long");
+        ret = DPL_FAILURE;
+        goto end;
+      }
+      memcpy(obj_fqn.path, prefix->prefix, path_len);
+      obj_fqn.path[path_len] = 0;
+      obj_type = DPL_FTYPE_DIR;
+
+      if (NULL != obj_fqnp) *obj_fqnp = obj_fqn;
+
+      if (NULL != obj_typep) *obj_typep = obj_type;
+
+      ret = DPL_SUCCESS;
       goto end;
     }
+  }
 
-  for (i = 0;i < directories->n_items;i++)
-    {
-      dpl_common_prefix_t *prefix = (dpl_common_prefix_t *) dpl_vec_get(directories, i);
-      int path_len;
-      char *p, *p2;
+  for (i = 0; i < files->n_items; i++) {
+    dpl_object_t* obj = (dpl_object_t*)dpl_vec_get(files, i);
+    int path_len;
+    char* p;
 
-      p = rindex(prefix->prefix, '/');
-      if (NULL == p)
-        {
-          DPL_LOG(ctx, DPL_ERROR, "prefix '%s' shall contain delimiter", prefix->prefix);
-          continue ;
-        }
+    p = rindex(obj->path, '/');
+    if (NULL != p)
+      p++;
+    else
+      p = obj->path;
 
-      DPRINTF("p='%s'\n", p);
+    DPRINTF("cmp obj_path=%s obj_name=%s\n", p, obj_name);
 
-      p--;
+    if (!strcmp(p, obj_name)) {
+      DPRINTF("ok\n");
 
-      for (p2 = p;p2 > prefix->prefix;p2--)
-        {
-          DPRINTF("p2='%s'\n", p2);
-
-          if (*p2 == '/')
-            {
-              DPRINTF("found delim\n");
-
-              p2++;
-              break ;
-            }
-        }
-
-      path_len = p - p2 + 1;
-
-      DPRINTF("cmp (prefix=%s) prefix=%.*s obj_name=%s\n", prefix->prefix, path_len, p2, obj_name);
-
-      if (path_len == obj_name_len && !memcmp(p2, obj_name, obj_name_len))
-        {
-          DPRINTF("ok\n");
-
-          path_len = strlen(prefix->prefix);
-          if (path_len >= DPL_MAXNAMLEN)
-            {
-              DPL_TRACE(ctx, DPL_TRACE_ERR, "path is too long");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-          memcpy(obj_fqn.path, prefix->prefix, path_len);
-          obj_fqn.path[path_len] = 0;
-          obj_type = DPL_FTYPE_DIR;
-
-          if (NULL != obj_fqnp)
-            *obj_fqnp = obj_fqn;
-
-          if (NULL != obj_typep)
-            *obj_typep = obj_type;
-
-          ret = DPL_SUCCESS;
-          goto end;
-        }
-    }
-
-  for (i = 0;i < files->n_items;i++)
-    {
-      dpl_object_t *obj = (dpl_object_t *) dpl_vec_get(files, i);
-      int path_len;
-      char *p;
-
-      p = rindex(obj->path, '/');
-      if (NULL != p)
-        p++;
+      path_len = strlen(obj->path);
+      if (path_len >= DPL_MAXNAMLEN) {
+        DPL_TRACE(ctx, DPL_TRACE_ERR, "path is too long");
+        ret = DPL_FAILURE;
+        goto end;
+      }
+      memcpy(obj_fqn.path, obj->path, path_len);
+      obj_fqn.path[path_len] = 0;
+      if (path_len >= 1 && *(obj->path + path_len - 1) == '/')
+        obj_type = DPL_FTYPE_DIR;
       else
-        p = obj->path;
+        obj_type = DPL_FTYPE_REG;
 
-      DPRINTF("cmp obj_path=%s obj_name=%s\n", p, obj_name);
+      if (NULL != obj_fqnp) *obj_fqnp = obj_fqn;
 
-      if (!strcmp(p, obj_name))
-        {
-          DPRINTF("ok\n");
+      if (NULL != obj_typep) *obj_typep = obj_type;
 
-          path_len = strlen(obj->path);
-          if (path_len >= DPL_MAXNAMLEN)
-            {
-              DPL_TRACE(ctx, DPL_TRACE_ERR, "path is too long");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-          memcpy(obj_fqn.path, obj->path, path_len);
-          obj_fqn.path[path_len] = 0;
-          if (path_len >= 1 && *(obj->path + path_len - 1) == '/')
-            obj_type = DPL_FTYPE_DIR;
-          else
-            obj_type = DPL_FTYPE_REG;
-
-          if (NULL != obj_fqnp)
-            *obj_fqnp = obj_fqn;
-
-          if (NULL != obj_typep)
-            *obj_typep = obj_type;
-
-          ret = DPL_SUCCESS;
-          goto end;
-        }
+      ret = DPL_SUCCESS;
+      goto end;
     }
+  }
 
   ret = DPL_ENOENT;
 
- end:
+end:
 
-  if (NULL != files)
-    dpl_vec_objects_free(files);
+  if (NULL != files) dpl_vec_objects_free(files);
 
-  if (NULL != directories)
-    dpl_vec_common_prefixes_free(directories);
+  if (NULL != directories) dpl_vec_common_prefixes_free(directories);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
 }
 
-static dpl_status_t
-dir_open_attrs(dpl_ctx_t *ctx,
-               const char *bucket,
-               dpl_fqn_t fqn,
-               dpl_dict_t **metadatap,
-               dpl_sysmd_t *sysmdp,
-               void **dir_hdlp)
+static dpl_status_t dir_open_attrs(dpl_ctx_t* ctx,
+                                   const char* bucket,
+                                   dpl_fqn_t fqn,
+                                   dpl_dict_t** metadatap,
+                                   dpl_sysmd_t* sysmdp,
+                                   void** dir_hdlp)
 {
-  dpl_dir_t *dir;
+  dpl_dir_t* dir;
   int ret, ret2;
-  char *skip_slashes;
+  char* skip_slashes;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "opendir bucket=%s fqn=%s", bucket, fqn.path);
 
-  dir = malloc(sizeof (*dir));
-  if (NULL == dir)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+  dir = malloc(sizeof(*dir));
+  if (NULL == dir) {
+    ret = DPL_FAILURE;
+    goto end;
+  }
 
-  memset(dir, 0, sizeof (*dir));
+  memset(dir, 0, sizeof(*dir));
 
   dir->ctx = ctx;
   dir->fqn = fqn;
 
   skip_slashes = fqn.path;
-  while ('/' == *skip_slashes)
-    ++skip_slashes;
+  while ('/' == *skip_slashes) ++skip_slashes;
 
-  //AWS prefers NULL for listing the root dir
-  ret2 = dpl_list_bucket_attrs(ctx,
-                               bucket,
-                               !strcmp(skip_slashes, "") ? NULL : skip_slashes,
-                               "/",
-                               -1,
-                               metadatap,
-                               sysmdp,
-                               &dir->files,
-                               &dir->directories);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, skip_slashes);
-      ret = ret2;
-      goto end;
-    }
+  // AWS prefers NULL for listing the root dir
+  ret2 = dpl_list_bucket_attrs(
+      ctx, bucket, !strcmp(skip_slashes, "") ? NULL : skip_slashes, "/", -1,
+      metadatap, sysmdp, &dir->files, &dir->directories);
+  if (DPL_SUCCESS != ret2) {
+    DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket,
+              skip_slashes);
+    ret = ret2;
+    goto end;
+  }
 
-  if (NULL != dir_hdlp)
-    *dir_hdlp = dir;
+  if (NULL != dir_hdlp) *dir_hdlp = dir;
 
   DPL_TRACE(dir->ctx, DPL_TRACE_VFS, "dir_hdl=%p", dir);
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (DPL_SUCCESS != ret)
-    {
-      if (NULL != dir)
-        {
-          if (NULL != dir->files)
-            dpl_vec_objects_free(dir->files);
+  if (DPL_SUCCESS != ret) {
+    if (NULL != dir) {
+      if (NULL != dir->files) dpl_vec_objects_free(dir->files);
 
-          if (NULL != dir->directories)
-            dpl_vec_common_prefixes_free(dir->directories);
+      if (NULL != dir->directories)
+        dpl_vec_common_prefixes_free(dir->directories);
 
-          free(dir);
-        }
+      free(dir);
     }
+  }
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
 }
 
-static dpl_status_t
-dir_read(void *dir_hdl,
-         dpl_dirent_t *dirent)
+static dpl_status_t dir_read(void* dir_hdl, dpl_dirent_t* dirent)
 {
-  dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
-  char *name;
+  dpl_dir_t* dir = (dpl_dir_t*)dir_hdl;
+  char* name;
   int name_len;
   int path_len;
-  char *skip_slashes;
+  char* skip_slashes;
 
-  DPL_TRACE(dir->ctx, DPL_TRACE_VFS, "readdir dir_hdl=%p files_cursor=%d directories_cursor=%d", dir_hdl, dir->files_cursor, dir->directories_cursor);
+  DPL_TRACE(dir->ctx, DPL_TRACE_VFS,
+            "readdir dir_hdl=%p files_cursor=%d directories_cursor=%d", dir_hdl,
+            dir->files_cursor, dir->directories_cursor);
 
-  memset(dirent, 0, sizeof (*dirent));
+  memset(dirent, 0, sizeof(*dirent));
 
   skip_slashes = dir->fqn.path;
-  while ('/' == *skip_slashes)
-    ++skip_slashes;
+  while ('/' == *skip_slashes) ++skip_slashes;
 
-  if (dir->files_cursor >= dir->files->n_items)
-    {
-      if (dir->directories_cursor >= dir->directories->n_items)
-        {
-          DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "beyond cursors");
-          return DPL_ENOENT;
-        }
-      else
-        {
-          dpl_common_prefix_t *prefix;
+  if (dir->files_cursor >= dir->files->n_items) {
+    if (dir->directories_cursor >= dir->directories->n_items) {
+      DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "beyond cursors");
+      return DPL_ENOENT;
+    } else {
+      dpl_common_prefix_t* prefix;
 
-          prefix = (dpl_common_prefix_t *) dpl_vec_get(dir->directories, dir->directories_cursor);
+      prefix = (dpl_common_prefix_t*)dpl_vec_get(dir->directories,
+                                                 dir->directories_cursor);
 
-          path_len = strlen(prefix->prefix);
-          name = prefix->prefix + strlen(skip_slashes);
-          name_len = strlen(name);
-
-          if (!strcmp(name, "/") || !strcmp(name, ""))
-            {
-              memcpy(dirent->name, ".", 1);
-              dirent->name[1] = 0;
-            }
-          else
-            {
-              if (name_len >= DPL_MAXNAMLEN)
-                {
-                  DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
-                  return DPL_FAILURE;
-                }
-              memcpy(dirent->name, name, name_len);
-              dirent->name[name_len] = 0;
-            }
-
-          if (path_len >= DPL_MAXPATHLEN)
-            {
-              DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "path is too long");
-              return DPL_FAILURE;
-            }
-          memcpy(dirent->fqn.path, prefix->prefix, path_len);
-          dirent->fqn.path[path_len] = 0;
-          dirent->type = DPL_FTYPE_DIR;
-
-          dirent->last_modified = 0; //?
-          dirent->size = 0;
-
-          dir->directories_cursor++;
-
-          return DPL_SUCCESS;
-        }
-    }
-  else
-    {
-      dpl_object_t *obj;
-
-      obj = (dpl_object_t *) dpl_vec_get(dir->files, dir->files_cursor);
-
-      path_len = strlen(obj->path);
-      name = obj->path + strlen(skip_slashes);
+      path_len = strlen(prefix->prefix);
+      name = prefix->prefix + strlen(skip_slashes);
       name_len = strlen(name);
 
-      if (name_len >= DPL_MAXNAMLEN)
-        {
+      if (!strcmp(name, "/") || !strcmp(name, "")) {
+        memcpy(dirent->name, ".", 1);
+        dirent->name[1] = 0;
+      } else {
+        if (name_len >= DPL_MAXNAMLEN) {
           DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
           return DPL_FAILURE;
         }
-      memcpy(dirent->name, name, name_len);
-      dirent->name[name_len] = 0;
+        memcpy(dirent->name, name, name_len);
+        dirent->name[name_len] = 0;
+      }
 
-      if (path_len >= DPL_MAXPATHLEN)
-        {
-          DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "path is too long");
-          return DPL_FAILURE;
-        }
-      memcpy(dirent->fqn.path, obj->path, path_len);
+      if (path_len >= DPL_MAXPATHLEN) {
+        DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "path is too long");
+        return DPL_FAILURE;
+      }
+      memcpy(dirent->fqn.path, prefix->prefix, path_len);
       dirent->fqn.path[path_len] = 0;
+      dirent->type = DPL_FTYPE_DIR;
 
-      dirent->type = obj->type;
-      if (dirent->type == DPL_FTYPE_UNDEF)
-          dirent->type = DPL_FTYPE_REG;
+      dirent->last_modified = 0;  //?
+      dirent->size = 0;
 
-      dirent->last_modified = obj->last_modified;
-      dirent->size = obj->size;
-
-      dir->files_cursor++;
+      dir->directories_cursor++;
 
       return DPL_SUCCESS;
     }
-}
+  } else {
+    dpl_object_t* obj;
 
-static int
-dir_eof(void *dir_hdl)
-{
-  dpl_dir_t *dir = (dpl_dir_t *) dir_hdl;
+    obj = (dpl_object_t*)dpl_vec_get(dir->files, dir->files_cursor);
 
-  return dir->files_cursor == dir->files->n_items &&
-    dir->directories_cursor == dir->directories->n_items;
-}
+    path_len = strlen(obj->path);
+    name = obj->path + strlen(skip_slashes);
+    name_len = strlen(name);
 
-static void
-dir_close(void *dir_hdl)
-{
-  dpl_dir_t *dir = dir_hdl;
-
-  if (dir)
-    {
-      DPL_TRACE(dir->ctx, DPL_TRACE_VFS, "closedir dir_hdl=%p", dir_hdl);
-
-      if (dir->files)
-        dpl_vec_objects_free(dir->files);
-
-      if (dir->directories)
-        dpl_vec_common_prefixes_free(dir->directories);
-
-      free(dir);
+    if (name_len >= DPL_MAXNAMLEN) {
+      DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "name is too long");
+      return DPL_FAILURE;
     }
+    memcpy(dirent->name, name, name_len);
+    dirent->name[name_len] = 0;
+
+    if (path_len >= DPL_MAXPATHLEN) {
+      DPL_TRACE(dir->ctx, DPL_TRACE_ERR, "path is too long");
+      return DPL_FAILURE;
+    }
+    memcpy(dirent->fqn.path, obj->path, path_len);
+    dirent->fqn.path[path_len] = 0;
+
+    dirent->type = obj->type;
+    if (dirent->type == DPL_FTYPE_UNDEF) dirent->type = DPL_FTYPE_REG;
+
+    dirent->last_modified = obj->last_modified;
+    dirent->size = obj->size;
+
+    dir->files_cursor++;
+
+    return DPL_SUCCESS;
+  }
 }
 
-static int
-is_rel_path(dpl_ctx_t *ctx,
-            const char *path)
+static int dir_eof(void* dir_hdl)
 {
-  //absolute path
-  if (*path == '/')
-    return 0;
+  dpl_dir_t* dir = (dpl_dir_t*)dir_hdl;
+
+  return dir->files_cursor == dir->files->n_items
+         && dir->directories_cursor == dir->directories->n_items;
+}
+
+static void dir_close(void* dir_hdl)
+{
+  dpl_dir_t* dir = dir_hdl;
+
+  if (dir) {
+    DPL_TRACE(dir->ctx, DPL_TRACE_VFS, "closedir dir_hdl=%p", dir_hdl);
+
+    if (dir->files) dpl_vec_objects_free(dir->files);
+
+    if (dir->directories) dpl_vec_common_prefixes_free(dir->directories);
+
+    free(dir);
+  }
+}
+
+static int is_rel_path(dpl_ctx_t* ctx, const char* path)
+{
+  // absolute path
+  if (*path == '/') return 0;
   return 1;
 }
 
-static dpl_status_t
-__make_abs_path(dpl_ctx_t *ctx, const char *bucket,
-                const char *path, dpl_fqn_t *obj_fqn)
+static dpl_status_t __make_abs_path(dpl_ctx_t* ctx,
+                                    const char* bucket,
+                                    const char* path,
+                                    dpl_fqn_t* obj_fqn)
 {
-  const char    *p1, *p2;
-  char          name[DPL_MAXNAMLEN];
-  int           namelen;
-  dpl_fqn_t     parent_fqn;
-  dpl_ftype_t   obj_type;
+  const char *p1, *p2;
+  char name[DPL_MAXNAMLEN];
+  int namelen;
+  dpl_fqn_t parent_fqn;
+  dpl_ftype_t obj_type;
 
   DPRINTF("make_abs_path() - '%s'\n", path);
 
@@ -506,8 +449,7 @@ __make_abs_path(dpl_ctx_t *ctx, const char *bucket,
       namelen = p2 - p1 - 1;
     }
 
-    if (namelen >= DPL_MAXNAMLEN)
-      return DPL_ENAMETOOLONG;
+    if (namelen >= DPL_MAXNAMLEN) return DPL_ENAMETOOLONG;
 
     memcpy(name, p1, namelen);
     name[namelen] = '\0';
@@ -518,11 +460,12 @@ __make_abs_path(dpl_ctx_t *ctx, const char *bucket,
       // this is a dir terminator
       *obj_fqn = parent_fqn;
     } else {
-      dpl_status_t        ret;
+      dpl_status_t ret;
 
       ret = dir_lookup(ctx, bucket, parent_fqn, name, obj_fqn, &obj_type);
       if (ret != DPL_SUCCESS) {
-        size_t plen = strlen(parent_fqn.path);;
+        size_t plen = strlen(parent_fqn.path);
+        ;
         // make a fake path
 
         *obj_fqn->path = '\0';
@@ -537,11 +480,9 @@ __make_abs_path(dpl_ctx_t *ctx, const char *bucket,
 
     DPRINTF("p2='%s'\n", p2);
 
-    if (p2 == NULL)
-      break;
+    if (p2 == NULL) break;
 
-    if (obj_type != DPL_FTYPE_DIR)
-      return DPL_ENOTDIR;
+    if (obj_type != DPL_FTYPE_DIR) return DPL_ENOTDIR;
 
     parent_fqn = *obj_fqn;
     p1 = p2;
@@ -552,11 +493,12 @@ __make_abs_path(dpl_ctx_t *ctx, const char *bucket,
   return DPL_SUCCESS;
 }
 
-static dpl_status_t
-make_abs_path(dpl_ctx_t *ctx, const char *bucket,
-              const char *path, dpl_fqn_t *obj_fqn)
+static dpl_status_t make_abs_path(dpl_ctx_t* ctx,
+                                  const char* bucket,
+                                  const char* path,
+                                  dpl_fqn_t* obj_fqn)
 {
-  dpl_status_t  ret;
+  dpl_status_t ret;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "namei path=%s bucket=%s", path, bucket);
 
@@ -567,30 +509,26 @@ make_abs_path(dpl_ctx_t *ctx, const char *bucket,
   return ret;
 }
 
-static void
-fqn_append_trailing_slash(dpl_fqn_t *obj_fqnp)
+static void fqn_append_trailing_slash(dpl_fqn_t* obj_fqnp)
 {
   size_t len;
 
   len = strlen(obj_fqnp->path);
-  if (len < sizeof(obj_fqnp->path) - 1 &&
-      (0lu == len || obj_fqnp->path[len - 1] != '/'))
-    {
-      obj_fqnp->path[len] = '/';
-      obj_fqnp->path[len + 1] = '\0';
-    }
+  if (len < sizeof(obj_fqnp->path) - 1
+      && (0lu == len || obj_fqnp->path[len - 1] != '/')) {
+    obj_fqnp->path[len] = '/';
+    obj_fqnp->path[len + 1] = '\0';
+  }
 }
 
-static const char *
-obj_type_ext(dpl_ftype_t type)
+static const char* obj_type_ext(dpl_ftype_t type)
 {
-  switch (type)
-    {
+  switch (type) {
     case DPL_FTYPE_DIR:
       return "/";
     default:
       return "";
-    }
+  }
 
   return "";
 }
@@ -599,74 +537,65 @@ obj_type_ext(dpl_ftype_t type)
  * path based routines
  */
 
-dpl_fqn_t
-dpl_cwd(dpl_ctx_t *ctx,
-        const char *bucket)
+dpl_fqn_t dpl_cwd(dpl_ctx_t* ctx, const char* bucket)
 {
-  dpl_dict_var_t *var;
+  dpl_dict_var_t* var;
   dpl_fqn_t cwd;
-  char *p = NULL;
+  char* p = NULL;
 
   dpl_ctx_lock(ctx);
   var = dpl_dict_get(ctx->cwds, bucket);
-  if (NULL != var)
-    {
-      assert(var->val->type == DPL_VALUE_STRING);
-      p = dpl_sbuf_get_str(var->val->string);
+  if (NULL != var) {
+    assert(var->val->type == DPL_VALUE_STRING);
+    p = dpl_sbuf_get_str(var->val->string);
 
-      if (strlen(p) >= sizeof cwd.path - 1)
-        {
-          // fallback on default value and log
-          DPL_TRACE(ctx, DPL_TRACE_VFS, "cwd too long: %s", p);
-          cwd = DPL_ROOT_FQN;
-          goto end;
-        }
-
-      strcpy(cwd.path, p);
+    if (strlen(p) >= sizeof cwd.path - 1) {
+      // fallback on default value and log
+      DPL_TRACE(ctx, DPL_TRACE_VFS, "cwd too long: %s", p);
+      cwd = DPL_ROOT_FQN;
+      goto end;
     }
-  else
+
+    strcpy(cwd.path, p);
+  } else
     cwd = DPL_ROOT_FQN;
 
- end:
+end:
   dpl_ctx_unlock(ctx);
 
   return cwd;
 }
 
-static dpl_status_t
-dir_is_empty(dpl_ctx_t *ctx,
-             const char *path)
+static dpl_status_t dir_is_empty(dpl_ctx_t* ctx, const char* path)
 {
   dpl_status_t ret;
   dpl_status_t ret2;
-  dpl_vec_t *objects = NULL;
-  dpl_vec_t *common_prefixes = NULL;
+  dpl_vec_t* objects = NULL;
+  dpl_vec_t* common_prefixes = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "dir_is_empty path=%s", path);
 
-  /* since dir_is_empty(<directory>) returns at least 1 common_prefix (itself), ask for two... */
-  ret2 = dpl_list_bucket(ctx, ctx->cur_bucket, path, "/", 10, &objects, &common_prefixes);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  /* since dir_is_empty(<directory>) returns at least 1 common_prefix (itself),
+   * ask for two... */
+  ret2 = dpl_list_bucket(ctx, ctx->cur_bucket, path, "/", 10, &objects,
+                         &common_prefixes);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
-  if (objects->n_items + common_prefixes->n_items >= 2)
-    {
-      ret = DPL_ENOTEMPTY;
-      goto end;
-    }
+  if (objects->n_items + common_prefixes->n_items >= 2) {
+    ret = DPL_ENOTEMPTY;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (objects)
-    dpl_vec_objects_free(objects);
+  if (objects) dpl_vec_objects_free(objects);
 
-  if (common_prefixes)
-    dpl_vec_common_prefixes_free(common_prefixes);
+  if (common_prefixes) dpl_vec_common_prefixes_free(common_prefixes);
 
   return ret;
 }
@@ -680,78 +609,67 @@ dir_is_empty(dpl_ctx_t *ctx,
  *
  * @return
  */
-dpl_status_t
-dpl_opendir_attrs(dpl_ctx_t *ctx,
-                  const char *locator,
-                  dpl_dict_t **metadatap,
-                  dpl_sysmd_t *sysmdp,
-                  void **dir_hdlp)
+dpl_status_t dpl_opendir_attrs(dpl_ctx_t* ctx,
+                               const char* locator,
+                               dpl_dict_t** metadatap,
+                               dpl_sysmd_t* sysmdp,
+                               void** dir_hdlp)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path;
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "opendir locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
+  if (NULL == nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (NULL != path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (NULL == bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
-
-  ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == bucket) {
+      ret = DPL_ENOMEM;
       goto end;
     }
+    path = nlocator;
+  }
+
+  ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   fqn_append_trailing_slash(&obj_fqn);
 
   ret2 = dir_open_attrs(ctx, bucket, obj_fqn, metadatap, sysmdp, dir_hdlp);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPL_TRACE(ctx, DPL_TRACE_ERR, "unable to open %s:%s", bucket, obj_fqn.path);
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    DPL_TRACE(ctx, DPL_TRACE_ERR, "unable to open %s:%s", bucket, obj_fqn.path);
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (NULL != bucket)
-    free(bucket);
+  if (NULL != bucket) free(bucket);
 
-  if (NULL != nlocator)
-    free(nlocator);
+  if (NULL != nlocator) free(nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
@@ -767,181 +685,146 @@ dpl_opendir_attrs(dpl_ctx_t *ctx,
  *
  * @return
  */
-dpl_status_t
-dpl_opendir(dpl_ctx_t *ctx,
-            const char *locator,
-            void **dir_hdlp)
+dpl_status_t dpl_opendir(dpl_ctx_t* ctx, const char* locator, void** dir_hdlp)
 {
   return dpl_opendir_attrs(ctx, locator, NULL, NULL, dir_hdlp);
 }
 
-dpl_status_t
-dpl_readdir(void *dir_hdl,
-            dpl_dirent_t *dirent)
+dpl_status_t dpl_readdir(void* dir_hdl, dpl_dirent_t* dirent)
 {
   return dir_read(dir_hdl, dirent);
 }
 
-int
-dpl_eof(void *dir_hdl)
-{
-  return dir_eof(dir_hdl);
-}
+int dpl_eof(void* dir_hdl) { return dir_eof(dir_hdl); }
 
-void
-dpl_closedir(void *dir_hdl)
-{
-  dir_close(dir_hdl);
-}
+void dpl_closedir(void* dir_hdl) { dir_close(dir_hdl); }
 
-dpl_status_t
-dpl_iterate(dpl_ctx_t *ctx,
-            const char *locator,
-            int (* cb)(dpl_dirent_t *dirent, void *ctx),
-            void *user_data)
+dpl_status_t dpl_iterate(dpl_ctx_t* ctx,
+                         const char* locator,
+                         int (*cb)(dpl_dirent_t* dirent, void* ctx),
+                         void* user_data)
 {
   dpl_status_t ret, ret2;
-  void *dir_hdl = NULL;
+  void* dir_hdl = NULL;
   dpl_dirent_t dirent;
 
   ret2 = dpl_opendir(ctx, locator, &dir_hdl);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
+
+  while (DPL_SUCCESS == dpl_readdir(dir_hdl, &dirent)) {
+    if (-1 == cb(&dirent, user_data)) {
+      ret = DPL_FAILURE;
       goto end;
     }
-
-  while (DPL_SUCCESS == dpl_readdir(dir_hdl, &dirent))
-    {
-      if (-1 == cb(&dirent, user_data))
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
-    }
+  }
 
   ret = DPL_SUCCESS;
- end:
+end:
 
-  if (dir_hdl)
-    dpl_closedir(dir_hdl);
+  if (dir_hdl) dpl_closedir(dir_hdl);
 
   return ret;
 }
 
-dpl_status_t
-dpl_chdir(dpl_ctx_t *ctx,
-          const char *locator)
+dpl_status_t dpl_chdir(dpl_ctx_t* ctx, const char* locator)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn, tmp_fqn;
-  char *nlocator = NULL;
-  char *nbucket;
-  char *path;
-  char *bucket = NULL;
+  char* nlocator = NULL;
+  char* nbucket;
+  char* path;
+  char* bucket = NULL;
   dpl_sysmd_t sysmd;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "chdir locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
+  if (NULL == nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (NULL != path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (NULL == bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
-
-  ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == bucket) {
+      ret = DPL_ENOMEM;
       goto end;
     }
+    path = nlocator;
+  }
+
+  ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   fqn_append_trailing_slash(&obj_fqn);
 
   dpl_ctx_lock(ctx);
-  if (strcmp(bucket, ctx->cur_bucket))
-    {
-      nbucket = strdup(bucket);
-      if (NULL == nbucket)
-        {
-          dpl_ctx_unlock(ctx);
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      free(ctx->cur_bucket);
-      ctx->cur_bucket = nbucket;
+  if (strcmp(bucket, ctx->cur_bucket)) {
+    nbucket = strdup(bucket);
+    if (NULL == nbucket) {
+      dpl_ctx_unlock(ctx);
+      ret = DPL_ENOMEM;
+      goto end;
     }
+    free(ctx->cur_bucket);
+    ctx->cur_bucket = nbucket;
+  }
   dpl_ctx_unlock(ctx);
 
-  //recheck obj_type: append delim at the end of object to be compatible with all backend
+  // recheck obj_type: append delim at the end of object to be compatible with
+  // all backend
   tmp_fqn = obj_fqn;
 
-  if (strcmp(tmp_fqn.path, ""))
-    {
-      int len = strlen(tmp_fqn.path);
+  if (strcmp(tmp_fqn.path, "")) {
+    int len = strlen(tmp_fqn.path);
 
-      //append delim if not present
-      if (len >= 1 && *(tmp_fqn.path + len - 1) != '/')
-        strcat(tmp_fqn.path, "/");
-    }
+    // append delim if not present
+    if (len >= 1 && *(tmp_fqn.path + len - 1) != '/') strcat(tmp_fqn.path, "/");
+  }
 
-  ret2 = dpl_head(ctx, ctx->cur_bucket, tmp_fqn.path, NULL, DPL_FTYPE_UNDEF, NULL, NULL, &sysmd);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
+  ret2 = dpl_head(ctx, ctx->cur_bucket, tmp_fqn.path, NULL, DPL_FTYPE_UNDEF,
+                  NULL, NULL, &sysmd);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
+
+  if (sysmd.mask & DPL_SYSMD_MASK_FTYPE) {
+    if (DPL_FTYPE_DIR != sysmd.ftype) {
+      ret = DPL_ENOTDIR;
       goto end;
     }
-
-  if (sysmd.mask & DPL_SYSMD_MASK_FTYPE)
-    {
-      if (DPL_FTYPE_DIR != sysmd.ftype)
-        {
-          ret = DPL_ENOTDIR;
-          goto end;
-        }
-    }
+  }
 
   ret2 = dpl_dict_add(ctx->cwds, ctx->cur_bucket, obj_fqn.path, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (NULL != bucket)
-    free(bucket);
+  if (NULL != bucket) free(bucket);
 
-  if (NULL != nlocator)
-    free(nlocator);
+  if (NULL != nlocator) free(nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
@@ -952,31 +835,23 @@ dpl_chdir(dpl_ctx_t *ctx,
  * vfile
  */
 
-dpl_status_t
-dpl_close(dpl_vfile_t *vfile)
+dpl_status_t dpl_close(dpl_vfile_t* vfile)
 {
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "close vfile=%p", vfile);
 
-  if (NULL != vfile->stream)
-    dpl_stream_close(vfile->ctx, vfile->stream);
+  if (NULL != vfile->stream) dpl_stream_close(vfile->ctx, vfile->stream);
 
-  if (NULL != vfile->bucket)
-    free(vfile->bucket);
+  if (NULL != vfile->bucket) free(vfile->bucket);
 
-  if (NULL != vfile->metadata)
-    dpl_dict_free(vfile->metadata);
+  if (NULL != vfile->metadata) dpl_dict_free(vfile->metadata);
 
-  if (NULL != vfile->sysmd)
-    dpl_sysmd_free(vfile->sysmd);
+  if (NULL != vfile->sysmd) dpl_sysmd_free(vfile->sysmd);
 
-  if (NULL != vfile->query_params)
-    dpl_dict_free(vfile->query_params);
+  if (NULL != vfile->query_params) dpl_dict_free(vfile->query_params);
 
-  if (NULL != vfile->option)
-    dpl_option_free(vfile->option);
+  if (NULL != vfile->option) dpl_option_free(vfile->option);
 
-  if (NULL != vfile->condition)
-    dpl_condition_free(vfile->condition);
+  if (NULL != vfile->condition) dpl_condition_free(vfile->condition);
 
   free(vfile);
 
@@ -997,40 +872,30 @@ dpl_close(dpl_vfile_t *vfile)
  *
  * @return dpl_status_t
  */
-dpl_status_t
-dpl_pwrite(dpl_vfile_t *vfile,
-           char *buf,
-           unsigned int len,
-           unsigned long long offset)
+dpl_status_t dpl_pwrite(dpl_vfile_t* vfile,
+                        char* buf,
+                        unsigned int len,
+                        unsigned long long offset)
 {
   dpl_status_t ret, ret2;
   dpl_range_t range;
 
-  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "start=%llu end=%llu",
-            offset, offset+len);
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "start=%llu end=%llu", offset,
+            offset + len);
 
   range.start = offset;
-  range.end   = offset+len;
+  range.end = offset + len;
 
-  ret2 = dpl_put(vfile->ctx,
-		 vfile->bucket,
-		 vfile->obj_fqn.path,
-		 vfile->option,
-		 DPL_FTYPE_REG,
-		 vfile->condition,
-		 &range,
-		 vfile->metadata,
-		 vfile->sysmd,
-		 buf,
-		 len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  ret2 = dpl_put(vfile->ctx, vfile->bucket, vfile->obj_fqn.path, vfile->option,
+                 DPL_FTYPE_REG, vfile->condition, &range, vfile->metadata,
+                 vfile->sysmd, buf, len);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
- end:
+end:
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "ret=%s (%d)", dpl_status_str(ret), ret);
 
@@ -1052,41 +917,32 @@ dpl_pwrite(dpl_vfile_t *vfile,
  *
  * @return dpl_status_t
  */
-dpl_status_t
-dpl_pread(dpl_vfile_t *vfile,
-          unsigned int len,
-          unsigned long long offset,
-          char **bufp,
-          unsigned int *buf_lenp)
+dpl_status_t dpl_pread(dpl_vfile_t* vfile,
+                       unsigned int len,
+                       unsigned long long offset,
+                       char** bufp,
+                       unsigned int* buf_lenp)
 {
   dpl_status_t ret, ret2;
   dpl_range_t range;
 
-  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "start=%llu end=%llu", offset, offset+len);
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "start=%llu end=%llu", offset,
+            offset + len);
 
   range.start = offset;
-  range.end   = offset+len;
+  range.end = offset + len;
 
-  ret2 = dpl_get(vfile->ctx,
-                 vfile->bucket,
-                 vfile->obj_fqn.path,
-                 vfile->option,
-                 DPL_FTYPE_ANY,
-                 vfile->condition,
-                 &range,
-                 bufp,
-                 buf_lenp,
-                 NULL,
+  ret2 = dpl_get(vfile->ctx, vfile->bucket, vfile->obj_fqn.path, vfile->option,
+                 DPL_FTYPE_ANY, vfile->condition, &range, bufp, buf_lenp, NULL,
                  NULL);
 
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
- end:
+end:
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "ret=%s (%d)", dpl_status_str(ret), ret);
 
@@ -1094,7 +950,8 @@ dpl_pread(dpl_vfile_t *vfile,
 }
 
 /**
- * Write Metadata to a streamed file (only works on files opened with STREAM flag)
+ * Write Metadata to a streamed file (only works on files opened with STREAM
+ * flag)
  *
  * @param vfile     the vfile descriptor
  * @param metadata  the metadata to write
@@ -1103,25 +960,22 @@ dpl_pread(dpl_vfile_t *vfile,
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
-dpl_status_t
-dpl_fstream_putmd(dpl_vfile_t *vfile, dpl_dict_t *metadata, dpl_sysmd_t *sysmd)
+dpl_status_t dpl_fstream_putmd(dpl_vfile_t* vfile,
+                               dpl_dict_t* metadata,
+                               dpl_sysmd_t* sysmd)
 {
   dpl_status_t ret = DPL_FAILURE;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "fstream_putmd vfile=%p md=%p sysmd=%p",
             vfile, metadata, sysmd);
 
-  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
-  {
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM)) {
     ret = DPL_EINVAL;
     goto end;
   }
 
   ret = dpl_stream_putmd(vfile->ctx, vfile->stream, metadata, sysmd);
-  if (DPL_SUCCESS != ret)
-    {
-      goto end;
-    }
+  if (DPL_SUCCESS != ret) { goto end; }
 
   ret = DPL_SUCCESS;
 
@@ -1142,25 +996,22 @@ end:
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
-dpl_status_t
-dpl_fstream_put(dpl_vfile_t *vfile, char *buf, unsigned int len,
-                struct json_object **statusp)
+dpl_status_t dpl_fstream_put(dpl_vfile_t* vfile,
+                             char* buf,
+                             unsigned int len,
+                             struct json_object** statusp)
 {
   dpl_status_t ret = DPL_FAILURE;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "fstream_put vfile=%p", vfile);
 
-  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
-  {
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM)) {
     ret = DPL_EINVAL;
     goto end;
   }
 
   ret = dpl_stream_put(vfile->ctx, vfile->stream, buf, len, statusp);
-  if (DPL_SUCCESS != ret)
-    {
-      goto end;
-    }
+  if (DPL_SUCCESS != ret) { goto end; }
 
   ret = DPL_SUCCESS;
 
@@ -1180,26 +1031,23 @@ end:
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
-dpl_status_t
-dpl_fstream_getmd(dpl_vfile_t *vfile, dpl_dict_t **metadatap, dpl_sysmd_t **sysmdp)
+dpl_status_t dpl_fstream_getmd(dpl_vfile_t* vfile,
+                               dpl_dict_t** metadatap,
+                               dpl_sysmd_t** sysmdp)
 {
-  dpl_status_t  ret = DPL_FAILURE;
+  dpl_status_t ret = DPL_FAILURE;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS,
-            "fstream_getmd vfile=%p mdp=%p sysmdp=%p",
-            vfile, metadatap, sysmdp);
+            "fstream_getmd vfile=%p mdp=%p sysmdp=%p", vfile, metadatap,
+            sysmdp);
 
-  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
-  {
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM)) {
     ret = DPL_EINVAL;
     goto end;
   }
 
   ret = dpl_stream_getmd(vfile->ctx, vfile->stream, metadatap, sysmdp);
-  if (DPL_SUCCESS != ret)
-    {
-      goto end;
-    }
+  if (DPL_SUCCESS != ret) { goto end; }
 
   ret = DPL_SUCCESS;
 
@@ -1221,26 +1069,23 @@ end:
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
-dpl_status_t
-dpl_fstream_get(dpl_vfile_t *vfile, unsigned int len,
-                char **bufp, unsigned int *lenp,
-                struct json_object **statusp)
+dpl_status_t dpl_fstream_get(dpl_vfile_t* vfile,
+                             unsigned int len,
+                             char** bufp,
+                             unsigned int* lenp,
+                             struct json_object** statusp)
 {
-  dpl_status_t  ret = DPL_FAILURE;
+  dpl_status_t ret = DPL_FAILURE;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "fstream_get vfile=%p", vfile);
 
-  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
-  {
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM)) {
     ret = DPL_EINVAL;
     goto end;
   }
 
   ret = dpl_stream_get(vfile->ctx, vfile->stream, len, bufp, lenp, statusp);
-  if (DPL_SUCCESS != ret)
-    {
-      goto end;
-    }
+  if (DPL_SUCCESS != ret) { goto end; }
 
   ret = DPL_SUCCESS;
 
@@ -1262,24 +1107,19 @@ end:
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
-dpl_status_t
-dpl_fstream_resume(dpl_vfile_t *vfile, struct json_object *status)
+dpl_status_t dpl_fstream_resume(dpl_vfile_t* vfile, struct json_object* status)
 {
-  dpl_status_t  ret = DPL_FAILURE;
+  dpl_status_t ret = DPL_FAILURE;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "fstream_resume vfile=%p", vfile);
 
-  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
-  {
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM)) {
     ret = DPL_EINVAL;
     goto end;
   }
 
   ret = dpl_stream_resume(vfile->ctx, vfile->stream, status);
-  if (DPL_SUCCESS != ret)
-    {
-      goto end;
-    }
+  if (DPL_SUCCESS != ret) { goto end; }
 
   ret = DPL_SUCCESS;
 
@@ -1297,22 +1137,19 @@ end:
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
-dpl_status_t
-dpl_fstream_flush(dpl_vfile_t *vfile)
+dpl_status_t dpl_fstream_flush(dpl_vfile_t* vfile)
 {
-  dpl_status_t  ret = DPL_FAILURE;
+  dpl_status_t ret = DPL_FAILURE;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "fstream_flush vfile=%p", vfile->ctx);
 
-  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM)) {
+    ret = DPL_EINVAL;
+    goto end;
+  }
 
   ret = dpl_stream_flush(vfile->ctx, vfile->stream);
-  if (DPL_SUCCESS != ret)
-    goto end;
+  if (DPL_SUCCESS != ret) goto end;
 
   ret = DPL_SUCCESS;
 
@@ -1337,145 +1174,121 @@ end:
  *
  * @return dpl_status_t
  */
-dpl_status_t
-dpl_open(dpl_ctx_t *ctx,
-         const char *locator,
-         dpl_vfile_flag_t flag,
-	 dpl_option_t *option,
-         dpl_condition_t *condition,
-         dpl_dict_t *metadata,
-         dpl_sysmd_t *sysmd,
-         dpl_dict_t *query_params,
-         struct json_object *stream_status,
-         dpl_vfile_t **vfilep)
+dpl_status_t dpl_open(dpl_ctx_t* ctx,
+                      const char* locator,
+                      dpl_vfile_flag_t flag,
+                      dpl_option_t* option,
+                      dpl_condition_t* condition,
+                      dpl_dict_t* metadata,
+                      dpl_sysmd_t* sysmd,
+                      dpl_dict_t* query_params,
+                      struct json_object* stream_status,
+                      dpl_vfile_t** vfilep)
 {
   dpl_status_t ret, ret2;
-  dpl_vfile_t *vfile = NULL;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path;
+  dpl_vfile_t* vfile = NULL;
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path;
 
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "bucket=%s, locator=%s",
-            ctx->cur_bucket, locator);
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "bucket=%s, locator=%s", ctx->cur_bucket,
+            locator);
 
   nlocator = strdup(locator);
-  if (! nlocator)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
+  if (!nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
 
   path = index(nlocator, ':');
-  if (path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (! bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (! bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
-
-  vfile = malloc(sizeof *vfile);
-  if (! vfile)
-    {
+  if (path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (!bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (!bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+    path = nlocator;
+  }
+
+  vfile = malloc(sizeof *vfile);
+  if (!vfile) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
 
   memset(vfile, 0, sizeof *vfile);
 
   ret2 = make_abs_path(ctx, bucket, path, &vfile->obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   vfile->ctx = ctx;
   vfile->flags = flag;
   vfile->bucket = strdup(bucket);
-  if (NULL == vfile->bucket)
-    {
+  if (NULL == vfile->bucket) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+  if (option) {
+    vfile->option = dpl_option_dup(option);
+    if (NULL == vfile->option) {
       ret = DPL_ENOMEM;
       goto end;
     }
-  if (option)
-    {
-      vfile->option = dpl_option_dup(option);
-      if (NULL == vfile->option)
-	{
-	  ret = DPL_ENOMEM;
-	  goto end;
-	}
+  }
+  if (condition) {
+    vfile->condition = dpl_condition_dup(condition);
+    if (NULL == vfile->condition) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  if (condition)
-    {
-      vfile->condition = dpl_condition_dup(condition);
-      if (NULL == vfile->condition)
-	{
-	  ret = DPL_ENOMEM;
-	  goto end;
-	}
+  }
+  if (metadata) {
+    vfile->metadata = dpl_dict_dup(metadata);
+    if (NULL == vfile->metadata) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  if (metadata)
-    {
-      vfile->metadata = dpl_dict_dup(metadata);
-      if (NULL == vfile->metadata)
-	{
-	  ret = DPL_ENOMEM;
-	  goto end;
-	}
+  }
+  if (sysmd) {
+    vfile->sysmd = dpl_sysmd_dup(sysmd);
+    if (NULL == vfile->sysmd) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  if (sysmd)
-    {
-      vfile->sysmd = dpl_sysmd_dup(sysmd);
-      if (NULL == vfile->sysmd)
-	{
-	  ret = DPL_ENOMEM;
-	  goto end;
-	}
-    }
-  if (flag & DPL_VFILE_FLAG_STREAM)
-    {
-      ret = dpl_stream_open(ctx, bucket, path, vfile->option, vfile->condition,
-                            vfile->metadata, vfile->sysmd, &vfile->stream);
-      if (DPL_SUCCESS != ret)
-          goto end;
+  }
+  if (flag & DPL_VFILE_FLAG_STREAM) {
+    ret = dpl_stream_open(ctx, bucket, path, vfile->option, vfile->condition,
+                          vfile->metadata, vfile->sysmd, &vfile->stream);
+    if (DPL_SUCCESS != ret) goto end;
 
-      if (NULL != stream_status)
-        {
-          ret = dpl_stream_resume(ctx, vfile->stream, stream_status);
-          if (DPL_SUCCESS != ret)
-              goto end;
-        }
+    if (NULL != stream_status) {
+      ret = dpl_stream_resume(ctx, vfile->stream, stream_status);
+      if (DPL_SUCCESS != ret) goto end;
     }
+  }
 
-  if (vfilep)
-    {
-      *vfilep = vfile;
-      vfile = NULL;
-    }
+  if (vfilep) {
+    *vfilep = vfile;
+    vfile = NULL;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (vfile)
-    dpl_close(vfile);
+  if (vfile) dpl_close(vfile);
 
   free(bucket);
   free(nlocator);
@@ -1504,68 +1317,52 @@ dpl_open(dpl_ctx_t *ctx,
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
-dpl_status_t
-dpl_fput(dpl_ctx_t *ctx,
-	 const char *locator,
-	 dpl_option_t *option,
-	 dpl_condition_t *condition,
-	 dpl_range_t *range,
-	 dpl_dict_t *metadata,
-	 dpl_sysmd_t *sysmd,
-	 char *data_buf,
-	 unsigned int data_len)
+dpl_status_t dpl_fput(dpl_ctx_t* ctx,
+                      const char* locator,
+                      dpl_option_t* option,
+                      dpl_condition_t* condition,
+                      dpl_range_t* range,
+                      dpl_dict_t* metadata,
+                      dpl_sysmd_t* sysmd,
+                      char* data_buf,
+                      unsigned int data_len)
 {
   int ret = DPL_SUCCESS;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path = NULL;
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "fput locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (! nlocator)
-    {
+  if (!nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (!bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (! bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (!bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (! bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
+    path = nlocator;
+  }
 
-  ret = dpl_put(ctx,
-                bucket,
-                path,
-                option,
-                DPL_FTYPE_REG,
-                condition,
-                range,
-                metadata,
-                sysmd,
-                data_buf,
-                data_len);
+  ret = dpl_put(ctx, bucket, path, option, DPL_FTYPE_REG, condition, range,
+                metadata, sysmd, data_buf, data_len);
 
- end:
+end:
 
   free(nlocator);
   free(bucket);
@@ -1590,83 +1387,65 @@ dpl_fput(dpl_ctx_t *ctx,
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
-dpl_status_t
-dpl_fget(dpl_ctx_t *ctx,
-	 const char *locator,
-	 const dpl_option_t *option,
-	 const dpl_condition_t *condition,
-	 const dpl_range_t *range,
-	 char **data_bufp,
-	 unsigned int *data_lenp,
-	 dpl_dict_t **metadatap,
-	 dpl_sysmd_t *sysmdp)
+dpl_status_t dpl_fget(dpl_ctx_t* ctx,
+                      const char* locator,
+                      const dpl_option_t* option,
+                      const dpl_condition_t* condition,
+                      const dpl_range_t* range,
+                      char** data_bufp,
+                      unsigned int* data_lenp,
+                      dpl_dict_t** metadatap,
+                      dpl_sysmd_t* sysmdp)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path = NULL;
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "fget locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (! nlocator)
-    {
+  if (!nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (!bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (! bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (!bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (! bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
+    path = nlocator;
+  }
 
   ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
-  ret2 = dpl_get(ctx,
-		 bucket,
-		 obj_fqn.path,
-		 option,
-		 DPL_FTYPE_ANY,
-		 condition,
-		 range,
-		 data_bufp,
-		 data_lenp,
-		 metadatap,
-		 sysmdp);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  ret2 = dpl_get(ctx, bucket, obj_fqn.path, option, DPL_FTYPE_ANY, condition,
+                 range, data_bufp, data_lenp, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
   free(bucket);
   free(nlocator);
@@ -1680,305 +1459,267 @@ dpl_fget(dpl_ctx_t *ctx,
  *
  */
 
-static dpl_status_t
-dpl_mkobj(dpl_ctx_t *ctx,
-          const char *locator,
-          dpl_ftype_t obj_type,
-          dpl_dict_t *metadata,
-          dpl_sysmd_t *sysmd)
+static dpl_status_t dpl_mkobj(dpl_ctx_t* ctx,
+                              const char* locator,
+                              dpl_ftype_t obj_type,
+                              dpl_dict_t* metadata,
+                              dpl_sysmd_t* sysmd)
 {
   dpl_fqn_t obj_fqn;
   int ret, ret2;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path;
-  char resource[DPL_MAXPATHLEN];
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "mkobj locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
+  if (NULL == nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (NULL != path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (NULL == bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
+    path = nlocator;
+  }
 
   ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
-  snprintf(resource, sizeof (resource), "%s%s", obj_fqn.path, obj_type_ext(obj_type));
+  {
+    size_t len = 1;  // maximum strlen of obj_type_ext()
+    len += strlen(obj_fqn.path);
 
-  ret2 = dpl_put(ctx, bucket, resource, NULL, obj_type, NULL, NULL, metadata, sysmd, NULL, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+    char resource[len + 1];
+    snprintf(resource, sizeof(resource), "%s%s", obj_fqn.path,
+             obj_type_ext(obj_type));
+
+    ret2 = dpl_put(ctx, bucket, resource, NULL, obj_type, NULL, NULL, metadata,
+                   sysmd, NULL, 0);
+  }
+
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (NULL != bucket)
-    free(bucket);
+  if (NULL != bucket) free(bucket);
 
-  if (NULL != nlocator)
-    free(nlocator);
+  if (NULL != nlocator) free(nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
 }
 
-dpl_status_t
-dpl_mkdir(dpl_ctx_t *ctx,
-          const char *locator,
-          dpl_dict_t *metadata,
-          dpl_sysmd_t *sysmd)
+dpl_status_t dpl_mkdir(dpl_ctx_t* ctx,
+                       const char* locator,
+                       dpl_dict_t* metadata,
+                       dpl_sysmd_t* sysmd)
 {
   return dpl_mkobj(ctx, locator, DPL_FTYPE_DIR, metadata, sysmd);
 }
 
-dpl_status_t
-dpl_mknod(dpl_ctx_t *ctx,
-          const char *locator,
-          dpl_ftype_t object_type,
-          dpl_dict_t *metadata,
-          dpl_sysmd_t *sysmd)
+dpl_status_t dpl_mknod(dpl_ctx_t* ctx,
+                       const char* locator,
+                       dpl_ftype_t object_type,
+                       dpl_dict_t* metadata,
+                       dpl_sysmd_t* sysmd)
 {
   return dpl_mkobj(ctx, locator, object_type, metadata, sysmd);
 }
 
-dpl_status_t
-dpl_rmdir(dpl_ctx_t *ctx,
-          const char *locator)
+dpl_status_t dpl_rmdir(dpl_ctx_t* ctx, const char* locator)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path;
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path;
   size_t path_len;
-  char *npath = NULL;
+  char* npath = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "rmdir locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
+  if (NULL == nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (NULL != path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (NULL == bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
-
-  ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == bucket) {
+      ret = DPL_ENOMEM;
       goto end;
     }
+    path = nlocator;
+  }
+
+  ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   fqn_append_trailing_slash(&obj_fqn);
 
   path_len = strlen(obj_fqn.path);
   npath = malloc(path_len + 2);
-  if (NULL == npath)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
+  if (NULL == npath) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
 
   memcpy(npath, obj_fqn.path, path_len);
-  if (path_len == 0 || npath[path_len - 1] != '/')
-    {
-      npath[path_len] = '/';
-      ++path_len;
-    }
+  if (path_len == 0 || npath[path_len - 1] != '/') {
+    npath[path_len] = '/';
+    ++path_len;
+  }
   npath[path_len] = '\0';
 
-  if (0 != strcmp((char *) dpl_get_backend_name(ctx), "posix"))
-    {
-      //posix does it server-side
-      ret2 = dir_is_empty(ctx, npath);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
-
-  ret2 = dpl_delete(ctx, bucket, npath, NULL, DPL_FTYPE_DIR, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
+  if (0 != strcmp((char*)dpl_get_backend_name(ctx), "posix")) {
+    // posix does it server-side
+    ret2 = dir_is_empty(ctx, npath);
+    if (DPL_SUCCESS != ret2) {
       ret = ret2;
       goto end;
     }
+  }
+
+  ret2 = dpl_delete(ctx, bucket, npath, NULL, DPL_FTYPE_DIR, NULL);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (NULL != npath)
-    free(npath);
+  if (NULL != npath) free(npath);
 
-  if (NULL != bucket)
-    free(bucket);
+  if (NULL != bucket) free(bucket);
 
-  if (NULL != nlocator)
-    free(nlocator);
+  if (NULL != nlocator) free(nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
 }
 
-dpl_status_t
-dpl_unlink(dpl_ctx_t *ctx,
-           const char *locator)
+dpl_status_t dpl_unlink(dpl_ctx_t* ctx, const char* locator)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path;
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "unlink locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
+  if (NULL == nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (NULL != path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (NULL == bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
+    path = nlocator;
+  }
 
   ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret2 = dpl_delete(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_REG, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (NULL != bucket)
-    free(bucket);
+  if (NULL != bucket) free(bucket);
 
-  if (NULL != nlocator)
-    free(nlocator);
+  if (NULL != nlocator) free(nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
 }
 
-dpl_status_t
-dpl_unlink_all(dpl_ctx_t *ctx,
-               const char *bucket,
-               dpl_locators_t *locators,
-               dpl_vec_t **objectsp)
+dpl_status_t dpl_unlink_all(dpl_ctx_t* ctx,
+                            const char* bucket,
+                            dpl_locators_t* locators,
+                            dpl_vec_t** objectsp)
 {
-  int   i;
+  int i;
 
-  if (locators == NULL || locators->size == 0)
-    return DPL_EINVAL;
+  if (locators == NULL || locators->size == 0) return DPL_EINVAL;
 
   for (i = 0; i < locators->size; i++) {
-    dpl_locator_t       *locator = &locators->tab[i];
-    char                *path;
-    dpl_status_t        ret;
-    struct dpl_fqn      obj_fqn;
+    dpl_locator_t* locator = &locators->tab[i];
+    char* path;
+    dpl_status_t ret;
+    struct dpl_fqn obj_fqn;
 
     ret = make_abs_path(ctx, bucket, locator->name, &obj_fqn);
-    if (ret != DPL_SUCCESS)
-      return ret;
+    if (ret != DPL_SUCCESS) return ret;
 
     path = strdup(obj_fqn.path);
-    if (path == NULL)
-      return DPL_ENOMEM;
+    if (path == NULL) return DPL_ENOMEM;
 
     free(locator->name);
     locator->name = path;
@@ -1987,230 +1728,196 @@ dpl_unlink_all(dpl_ctx_t *ctx,
   return dpl_delete_all(ctx, bucket, locators, NULL, NULL, objectsp);
 }
 
-dpl_status_t
-dpl_getattr(dpl_ctx_t *ctx,
-            const char *locator,
-            dpl_dict_t **metadatap,
-            dpl_sysmd_t *sysmdp)
+dpl_status_t dpl_getattr(dpl_ctx_t* ctx,
+                         const char* locator,
+                         dpl_dict_t** metadatap,
+                         dpl_sysmd_t* sysmdp)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path;
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "getattr locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
+  if (NULL == nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (NULL != path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (NULL == bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
+    path = nlocator;
+  }
 
   ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
-  ret2 = dpl_head(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_UNDEF, NULL, metadatap, sysmdp);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  ret2 = dpl_head(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_UNDEF, NULL,
+                  metadatap, sysmdp);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   /* if sysmd.ftype is not set, do it! (s3 does not know the ftype) */
-  if (sysmdp)
-    {
-      if (! (sysmdp->mask & DPL_SYSMD_MASK_FTYPE))
-        {
-          sysmdp->mask |= DPL_SYSMD_MASK_FTYPE;
-          size_t path_len = strlen(obj_fqn.path);
+  if (sysmdp) {
+    if (!(sysmdp->mask & DPL_SYSMD_MASK_FTYPE)) {
+      sysmdp->mask |= DPL_SYSMD_MASK_FTYPE;
+      size_t path_len = strlen(obj_fqn.path);
 
-          if (path_len > 0 && '/' == obj_fqn.path[path_len - 1])
-            sysmdp->ftype = DPL_FTYPE_DIR;
-          else
-            {
-              if (0 == strcmp(obj_fqn.path, ""))
-                {
-                  sysmdp->ftype = DPL_FTYPE_DIR;
-                }
-              else
-                {
-                  sysmdp->ftype = DPL_FTYPE_REG;
-                }
-            }
+      if (path_len > 0 && '/' == obj_fqn.path[path_len - 1])
+        sysmdp->ftype = DPL_FTYPE_DIR;
+      else {
+        if (0 == strcmp(obj_fqn.path, "")) {
+          sysmdp->ftype = DPL_FTYPE_DIR;
+        } else {
+          sysmdp->ftype = DPL_FTYPE_REG;
         }
+      }
     }
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (NULL != bucket)
-    free(bucket);
+  if (NULL != bucket) free(bucket);
 
-  if (NULL != nlocator)
-    free(nlocator);
+  if (NULL != nlocator) free(nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
 }
 
-dpl_status_t
-dpl_getattr_raw(dpl_ctx_t *ctx,
-                const char *locator,
-                dpl_dict_t **metadatap)
+dpl_status_t dpl_getattr_raw(dpl_ctx_t* ctx,
+                             const char* locator,
+                             dpl_dict_t** metadatap)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path;
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "getattr locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
+  if (NULL == nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (NULL != path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (NULL == bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
+    path = nlocator;
+  }
 
   ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
-  ret2 = dpl_head_raw(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_UNDEF, NULL, metadatap);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  ret2 = dpl_head_raw(ctx, bucket, obj_fqn.path, NULL, DPL_FTYPE_UNDEF, NULL,
+                      metadatap);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (NULL != bucket)
-    free(bucket);
+  if (NULL != bucket) free(bucket);
 
-  if (NULL != nlocator)
-    free(nlocator);
+  if (NULL != nlocator) free(nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
 }
 
-dpl_status_t
-dpl_setattr(dpl_ctx_t *ctx,
-            const char *locator,
-            dpl_dict_t *metadata,
-            dpl_sysmd_t *sysmd)
+dpl_status_t dpl_setattr(dpl_ctx_t* ctx,
+                         const char* locator,
+                         dpl_dict_t* metadata,
+                         dpl_sysmd_t* sysmd)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path;
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path;
   size_t path_len;
   dpl_ftype_t object_type;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "setattr locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
+  if (NULL == nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (NULL != path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (NULL == bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
-
-  ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == bucket) {
+      ret = DPL_ENOMEM;
       goto end;
     }
+    path = nlocator;
+  }
+
+  ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   path_len = strlen(path);
   if (path_len > 0u && path[path_len - 1] == '/')
@@ -2218,324 +1925,283 @@ dpl_setattr(dpl_ctx_t *ctx,
   else
     object_type = DPL_FTYPE_REG;
 
-  ret2 = dpl_copy(ctx, bucket, obj_fqn.path, bucket, obj_fqn.path, NULL, object_type, DPL_COPY_DIRECTIVE_METADATA_REPLACE, metadata, sysmd, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  ret2 = dpl_copy(ctx, bucket, obj_fqn.path, bucket, obj_fqn.path, NULL,
+                  object_type, DPL_COPY_DIRECTIVE_METADATA_REPLACE, metadata,
+                  sysmd, NULL);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (NULL != bucket)
-    free(bucket);
+  if (NULL != bucket) free(bucket);
 
-  if (NULL != nlocator)
-    free(nlocator);
+  if (NULL != nlocator) free(nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
 }
 
-static dpl_status_t
-copy_path_to_path(dpl_ctx_t *ctx,
-                  const char *src_locator,
-                  const char *dst_locator,
-                  dpl_ftype_t object_type,
-                  dpl_copy_directive_t copy_directive,
-                  dpl_dict_t *metadata,
-                  dpl_sysmd_t *sysmd)
+static dpl_status_t copy_path_to_path(dpl_ctx_t* ctx,
+                                      const char* src_locator,
+                                      const char* dst_locator,
+                                      dpl_ftype_t object_type,
+                                      dpl_copy_directive_t copy_directive,
+                                      dpl_dict_t* metadata,
+                                      dpl_sysmd_t* sysmd)
 {
   int ret, ret2;
-  char *src_nlocator = NULL;
-  char *src_bucket = NULL;
-  char *src_path;
-  char *dst_nlocator = NULL;
-  char *dst_bucket = NULL;
-  char *dst_path;
+  char* src_nlocator = NULL;
+  char* src_bucket = NULL;
+  char* src_path;
+  char* dst_nlocator = NULL;
+  char* dst_bucket = NULL;
+  char* dst_path;
   dpl_fqn_t dst_obj_fqn, src_obj_fqn;
   size_t path_len;
 
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_path_to_path src_locator=%s dst_locator=%s", src_locator, dst_locator);
+  DPL_TRACE(ctx, DPL_TRACE_VFS,
+            "copy_path_to_path src_locator=%s dst_locator=%s", src_locator,
+            dst_locator);
 
   src_nlocator = strdup(src_locator);
-  if (NULL == src_nlocator)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
+  if (NULL == src_nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
 
   src_path = index(src_nlocator, ':');
-  if (NULL != src_path)
-    {
-      *src_path++ = 0;
-      src_bucket = strdup(src_nlocator);
-      if (NULL == src_bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      src_bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == src_bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      src_path = src_nlocator;
-    }
-
-  dst_nlocator = strdup(dst_locator);
-  if (NULL == dst_nlocator)
-    {
+  if (NULL != src_path) {
+    *src_path++ = 0;
+    src_bucket = strdup(src_nlocator);
+    if (NULL == src_bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
+  } else {
+    dpl_ctx_lock(ctx);
+    src_bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == src_bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+    src_path = src_nlocator;
+  }
+
+  dst_nlocator = strdup(dst_locator);
+  if (NULL == dst_nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
 
   dst_path = index(dst_nlocator, ':');
-  if (NULL != dst_path)
-    {
-      *dst_path++ = 0;
-      dst_bucket = strdup(dst_nlocator);
-      if (NULL == dst_bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
+  if (NULL != dst_path) {
+    *dst_path++ = 0;
+    dst_bucket = strdup(dst_nlocator);
+    if (NULL == dst_bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      dst_bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == dst_bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      dst_path = dst_nlocator;
+  } else {
+    dpl_ctx_lock(ctx);
+    dst_bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == dst_bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
+    dst_path = dst_nlocator;
+  }
 
   if ((NULL == src_bucket || 0 == src_bucket[0]) /* there is no src_bucket */
-      && DPL_COPY_DIRECTIVE_SYMLINK == copy_directive)
-    {
-      strcpy(src_obj_fqn.path, src_path);
+      && DPL_COPY_DIRECTIVE_SYMLINK == copy_directive) {
+    strcpy(src_obj_fqn.path, src_path);
+  } else {
+    ret2 = make_abs_path(ctx, src_bucket, src_path, &src_obj_fqn);
+    if (DPL_SUCCESS != ret2) {
+      ret = ret2;
+      goto end;
     }
-  else
-    {
-      ret2 = make_abs_path(ctx, src_bucket, src_path, &src_obj_fqn);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-    }
+  }
   ret2 = make_abs_path(ctx, dst_bucket, dst_path, &dst_obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
-  if (DPL_FTYPE_DIR == object_type)
-    {
-      path_len = strlen(src_obj_fqn.path);
-      if (src_obj_fqn.path[path_len - 1] != '/')
-        {
-          src_obj_fqn.path[path_len] = '/';
-          src_obj_fqn.path[path_len + 1] = '\0'; //XXX
-        }
-      path_len = strlen(dst_obj_fqn.path);
-      if (dst_obj_fqn.path[path_len - 1] != '/')
-        {
-          dst_obj_fqn.path[path_len] = '/';
-          dst_obj_fqn.path[path_len + 1] = '\0'; //XXX
-        }
+  if (DPL_FTYPE_DIR == object_type) {
+    path_len = strlen(src_obj_fqn.path);
+    if (src_obj_fqn.path[path_len - 1] != '/') {
+      src_obj_fqn.path[path_len] = '/';
+      src_obj_fqn.path[path_len + 1] = '\0';  // XXX
     }
-  ret2 = dpl_copy(ctx, src_bucket, src_obj_fqn.path, dst_bucket, dst_obj_fqn.path, NULL, object_type, copy_directive, metadata, sysmd, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
+    path_len = strlen(dst_obj_fqn.path);
+    if (dst_obj_fqn.path[path_len - 1] != '/') {
+      dst_obj_fqn.path[path_len] = '/';
+      dst_obj_fqn.path[path_len + 1] = '\0';  // XXX
     }
+  }
+  ret2 = dpl_copy(ctx, src_bucket, src_obj_fqn.path, dst_bucket,
+                  dst_obj_fqn.path, NULL, object_type, copy_directive, metadata,
+                  sysmd, NULL);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (NULL != dst_bucket)
-    free(dst_bucket);
+  if (NULL != dst_bucket) free(dst_bucket);
 
-  if (NULL != src_bucket)
-    free(src_bucket);
+  if (NULL != src_bucket) free(src_bucket);
 
-  if (NULL != dst_nlocator)
-    free(dst_nlocator);
+  if (NULL != dst_nlocator) free(dst_nlocator);
 
-  if (NULL != src_nlocator)
-    free(src_nlocator);
+  if (NULL != src_nlocator) free(src_nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
 }
 
-static dpl_status_t
-copy_id_to_path(dpl_ctx_t *ctx,
-                const char *src_id,
-                uint32_t enterprise_number,
-                const char *dst_locator,
-                dpl_ftype_t object_type,
-                dpl_copy_directive_t copy_directive,
-                dpl_dict_t *metadata,
-                dpl_sysmd_t *sysmd)
+static dpl_status_t copy_id_to_path(dpl_ctx_t* ctx,
+                                    const char* src_id,
+                                    uint32_t enterprise_number,
+                                    const char* dst_locator,
+                                    dpl_ftype_t object_type,
+                                    dpl_copy_directive_t copy_directive,
+                                    dpl_dict_t* metadata,
+                                    dpl_sysmd_t* sysmd)
 {
   int ret, ret2;
-  char *dst_nlocator = NULL;
-  char *dst_bucket = NULL;
-  char *dst_path;
+  char* dst_nlocator = NULL;
+  char* dst_bucket = NULL;
+  char* dst_path;
   dpl_fqn_t dst_obj_fqn;
 
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_id_to_path src_id=%s dst_locator=%s", src_id, dst_locator);
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_id_to_path src_id=%s dst_locator=%s",
+            src_id, dst_locator);
 
   dst_nlocator = strdup(dst_locator);
-  if (NULL == dst_nlocator)
-    {
+  if (NULL == dst_nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  dst_path = index(dst_nlocator, ':');
+  if (NULL != dst_path) {
+    *dst_path++ = 0;
+    dst_bucket = strdup(dst_nlocator);
+    if (NULL == dst_bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  dst_path = index(dst_nlocator, ':');
-  if (NULL != dst_path)
-    {
-      *dst_path++ = 0;
-      dst_bucket = strdup(dst_nlocator);
-      if (NULL == dst_bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
+  } else {
+    dpl_ctx_lock(ctx);
+    dst_bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == dst_bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      dst_bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == dst_bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      dst_path = dst_nlocator;
-    }
+    dst_path = dst_nlocator;
+  }
 
   ret2 = make_abs_path(ctx, dst_bucket, dst_path, &dst_obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
-  ret2 = dpl_copy_id(ctx, dst_bucket, src_id, dst_bucket, dst_obj_fqn.path, NULL, object_type, copy_directive, metadata, sysmd, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  ret2 = dpl_copy_id(ctx, dst_bucket, src_id, dst_bucket, dst_obj_fqn.path,
+                     NULL, object_type, copy_directive, metadata, sysmd, NULL);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (NULL != dst_bucket)
-    free(dst_bucket);
+  if (NULL != dst_bucket) free(dst_bucket);
 
-  if (NULL != dst_nlocator)
-    free(dst_nlocator);
+  if (NULL != dst_nlocator) free(dst_nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
 }
 
-static dpl_status_t
-copy_name_to_path(dpl_ctx_t *ctx,
-                  const char *src_name,
-                  const char *dst_locator,
-                  dpl_ftype_t object_type,
-                  dpl_copy_directive_t copy_directive,
-                  dpl_dict_t *metadata,
-                  dpl_sysmd_t *sysmd)
+static dpl_status_t copy_name_to_path(dpl_ctx_t* ctx,
+                                      const char* src_name,
+                                      const char* dst_locator,
+                                      dpl_ftype_t object_type,
+                                      dpl_copy_directive_t copy_directive,
+                                      dpl_dict_t* metadata,
+                                      dpl_sysmd_t* sysmd)
 {
   int ret, ret2;
-  char *dst_nlocator = NULL;
-  char *dst_bucket = NULL;
-  char *dst_path;
+  char* dst_nlocator = NULL;
+  char* dst_bucket = NULL;
+  char* dst_path;
   dpl_fqn_t dst_obj_fqn;
 
-  DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_name_to_path src_id=%s dst_locator=%s", src_name, dst_locator);
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "copy_name_to_path src_id=%s dst_locator=%s",
+            src_name, dst_locator);
 
   dst_nlocator = strdup(dst_locator);
-  if (NULL == dst_nlocator)
-    {
+  if (NULL == dst_nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  dst_path = index(dst_nlocator, ':');
+  if (NULL != dst_path) {
+    *dst_path++ = 0;
+    dst_bucket = strdup(dst_nlocator);
+    if (NULL == dst_bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  dst_path = index(dst_nlocator, ':');
-  if (NULL != dst_path)
-    {
-      *dst_path++ = 0;
-      dst_bucket = strdup(dst_nlocator);
-      if (NULL == dst_bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
+  } else {
+    dpl_ctx_lock(ctx);
+    dst_bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == dst_bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      dst_bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == dst_bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      dst_path = dst_nlocator;
-    }
+    dst_path = dst_nlocator;
+  }
 
   ret2 = make_abs_path(ctx, dst_bucket, dst_path, &dst_obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
-  ret2 = dpl_copy(ctx, dst_bucket, src_name, dst_bucket, dst_obj_fqn.path, NULL, object_type, copy_directive, metadata, sysmd, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  ret2 = dpl_copy(ctx, dst_bucket, src_name, dst_bucket, dst_obj_fqn.path, NULL,
+                  object_type, copy_directive, metadata, sysmd, NULL);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (NULL != dst_bucket)
-    free(dst_bucket);
+  if (NULL != dst_bucket) free(dst_bucket);
 
-  if (NULL != dst_nlocator)
-    free(dst_nlocator);
+  if (NULL != dst_nlocator) free(dst_nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
@@ -2551,90 +2217,82 @@ copy_name_to_path(dpl_ctx_t *ctx,
  *
  * @return
  */
-dpl_status_t
-dpl_fcopy(dpl_ctx_t *ctx,
-          const char *src_locator,
-          const char *dst_locator)
+dpl_status_t dpl_fcopy(dpl_ctx_t* ctx,
+                       const char* src_locator,
+                       const char* dst_locator)
 {
-  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_COPY, NULL, NULL);
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_FTYPE_REG,
+                           DPL_COPY_DIRECTIVE_COPY, NULL, NULL);
 }
 
-dpl_status_t
-dpl_rename(dpl_ctx_t *ctx,
-           const char *src_locator,
-           const char *dst_locator,
-           dpl_ftype_t object_type)
+dpl_status_t dpl_rename(dpl_ctx_t* ctx,
+                        const char* src_locator,
+                        const char* dst_locator,
+                        dpl_ftype_t object_type)
 {
-  return copy_path_to_path(ctx, src_locator, dst_locator, object_type, DPL_COPY_DIRECTIVE_MOVE, NULL, NULL);
+  return copy_path_to_path(ctx, src_locator, dst_locator, object_type,
+                           DPL_COPY_DIRECTIVE_MOVE, NULL, NULL);
 }
 
-dpl_status_t
-dpl_readlink(dpl_ctx_t *ctx, const char *locator, char **target_locatorp)
+dpl_status_t dpl_readlink(dpl_ctx_t* ctx,
+                          const char* locator,
+                          char** target_locatorp)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path = NULL;
-  char *target = NULL;
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path = NULL;
+  char* target = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "readlink locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (! nlocator)
-    {
+  if (!nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (!bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (! bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (!bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (! bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
+    path = nlocator;
+  }
 
   ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
-  ret2 = dpl_get_noredirect(ctx, bucket, obj_fqn.path,
-                            DPL_FTYPE_SYMLINK, &target);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  ret2 = dpl_get_noredirect(ctx, bucket, obj_fqn.path, DPL_FTYPE_SYMLINK,
+                            &target);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
-  if (target_locatorp)
-    {
-      *target_locatorp = target;
-      target = NULL;
-    }
+  if (target_locatorp) {
+    *target_locatorp = target;
+    target = NULL;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
   free(bucket);
   free(nlocator);
@@ -2645,117 +2303,106 @@ dpl_readlink(dpl_ctx_t *ctx, const char *locator, char **target_locatorp)
   return ret;
 }
 
-dpl_status_t
-dpl_symlink(dpl_ctx_t *ctx,
-            const char *src_locator,
-            const char *dst_locator)
+dpl_status_t dpl_symlink(dpl_ctx_t* ctx,
+                         const char* src_locator,
+                         const char* dst_locator)
 {
-  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_SYMLINK, NULL, NULL);
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_FTYPE_REG,
+                           DPL_COPY_DIRECTIVE_SYMLINK, NULL, NULL);
 }
 
-dpl_status_t
-dpl_link(dpl_ctx_t *ctx,
-         const char *src_locator,
-         const char *dst_locator)
+dpl_status_t dpl_link(dpl_ctx_t* ctx,
+                      const char* src_locator,
+                      const char* dst_locator)
 {
-  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_LINK, NULL, NULL);
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_FTYPE_REG,
+                           DPL_COPY_DIRECTIVE_LINK, NULL, NULL);
 }
 
-dpl_status_t
-dpl_mkdent(dpl_ctx_t *ctx,
-           const char *src_id,
-           const char *dst_locator,
-           dpl_ftype_t object_type)
+dpl_status_t dpl_mkdent(dpl_ctx_t* ctx,
+                        const char* src_id,
+                        const char* dst_locator,
+                        dpl_ftype_t object_type)
 {
-  return copy_id_to_path(ctx, src_id, ctx->enterprise_number, dst_locator, object_type, DPL_COPY_DIRECTIVE_MKDENT, NULL, NULL);
+  return copy_id_to_path(ctx, src_id, ctx->enterprise_number, dst_locator,
+                         object_type, DPL_COPY_DIRECTIVE_MKDENT, NULL, NULL);
 }
 
-dpl_status_t
-dpl_rmdent(dpl_ctx_t *ctx,
-           const char *src_name,
-           const char *dst_locator)
+dpl_status_t dpl_rmdent(dpl_ctx_t* ctx,
+                        const char* src_name,
+                        const char* dst_locator)
 {
-  return copy_name_to_path(ctx, src_name, dst_locator, DPL_FTYPE_DIR, DPL_COPY_DIRECTIVE_RMDENT, NULL, NULL);
+  return copy_name_to_path(ctx, src_name, dst_locator, DPL_FTYPE_DIR,
+                           DPL_COPY_DIRECTIVE_RMDENT, NULL, NULL);
 }
 
-dpl_status_t
-dpl_mvdent(dpl_ctx_t *ctx,
-           const char *src_locator,
-           const char *dst_locator)
+dpl_status_t dpl_mvdent(dpl_ctx_t* ctx,
+                        const char* src_locator,
+                        const char* dst_locator)
 {
-  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_FTYPE_REG, DPL_COPY_DIRECTIVE_MVDENT, NULL, NULL);
+  return copy_path_to_path(ctx, src_locator, dst_locator, DPL_FTYPE_REG,
+                           DPL_COPY_DIRECTIVE_MVDENT, NULL, NULL);
 }
 
-dpl_status_t
-dpl_fgenurl(dpl_ctx_t *ctx,
-            const char *locator,
-            time_t expires,
-            char *buf,
-            unsigned int len,
-            unsigned int *lenp)
+dpl_status_t dpl_fgenurl(dpl_ctx_t* ctx,
+                         const char* locator,
+                         time_t expires,
+                         char* buf,
+                         unsigned int len,
+                         unsigned int* lenp)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
-  char *nlocator = NULL;
-  char *bucket = NULL;
-  char *path;
+  char* nlocator = NULL;
+  char* bucket = NULL;
+  char* path;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "fgenurl locator=%s", locator);
 
   nlocator = strdup(locator);
-  if (NULL == nlocator)
-    {
+  if (NULL == nlocator) {
+    ret = DPL_ENOMEM;
+    goto end;
+  }
+
+  path = index(nlocator, ':');
+  if (NULL != path) {
+    *path++ = 0;
+    bucket = strdup(nlocator);
+    if (NULL == bucket) {
       ret = DPL_ENOMEM;
       goto end;
     }
-
-  path = index(nlocator, ':');
-  if (NULL != path)
-    {
-      *path++ = 0;
-      bucket = strdup(nlocator);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
+  } else {
+    dpl_ctx_lock(ctx);
+    bucket = strdup(ctx->cur_bucket);
+    dpl_ctx_unlock(ctx);
+    if (NULL == bucket) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
-  else
-    {
-      dpl_ctx_lock(ctx);
-      bucket = strdup(ctx->cur_bucket);
-      dpl_ctx_unlock(ctx);
-      if (NULL == bucket)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-      path = nlocator;
-    }
+    path = nlocator;
+  }
 
   ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret2 = dpl_genurl(ctx, bucket, obj_fqn.path, NULL, expires, buf, len, lenp);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
-  if (bucket)
-    free(bucket);
+  if (bucket) free(bucket);
 
-  if (nlocator)
-    free(nlocator);
+  if (nlocator) free(nlocator);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 

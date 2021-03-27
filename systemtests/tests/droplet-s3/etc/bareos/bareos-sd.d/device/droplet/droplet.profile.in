@@ -1,5 +1,5 @@
 host = localhost:@minio_port@
-use_https = false
+use_https = @systemtests_s3_use_https@
 access_key = minioadmin
 secret_key = minioadmin
 pricing_dir = ""

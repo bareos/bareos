@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -45,126 +46,114 @@
 #include <grp.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt, ...)
 
-static dpl_status_t
-cb_posix_setattr(dpl_dict_var_t *var,
-                 void *cb_arg)
+static dpl_status_t cb_posix_setattr(dpl_dict_var_t* var, void* cb_arg)
 {
-  char *path = (char *) cb_arg;
+  char* path = (char*)cb_arg;
   int iret;
   char buf[256];
 
   assert(var->val->type == DPL_VALUE_STRING);
 
-  snprintf(buf, sizeof (buf), "%s%s", DPL_POSIX_XATTR_PREFIX, var->key);
- 
+  snprintf(buf, sizeof(buf), "%s%s", DPL_POSIX_XATTR_PREFIX, var->key);
+
   iret = lsetxattr(path, buf, dpl_sbuf_get_str(var->val->string),
                    strlen(dpl_sbuf_get_str(var->val->string)), 0);
-  if (-1 == iret)
-    {
-      perror("lsetxattr");
-      return DPL_FAILURE;
-    }
+  if (-1 == iret) {
+    perror("lsetxattr");
+    return DPL_FAILURE;
+  }
 
   return DPL_SUCCESS;
 }
 
-dpl_status_t
-dpl_posix_setattr(const char *path,
-                  const dpl_dict_t *metadata,
-                  const dpl_sysmd_t *sysmd)
+dpl_status_t dpl_posix_setattr(const char* path,
+                               const dpl_dict_t* metadata,
+                               const dpl_sysmd_t* sysmd)
 {
   dpl_status_t ret, ret2;
   int iret;
 
-  if (sysmd)
-    {
-      switch (sysmd->mask)
-        {
-        case DPL_SYSMD_MASK_SIZE:
-          iret = truncate(path, sysmd->size);
-          if (-1 == iret)
-            {
-              perror("truncate");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-          break ;
-        case DPL_SYSMD_MASK_CANNED_ACL:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_STORAGE_CLASS:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_ATIME:
-        case DPL_SYSMD_MASK_MTIME:
-          {
-            struct utimbuf times;
-            
-            times.actime = sysmd->atime;
-            times.modtime = sysmd->mtime;
-            iret = utime(path, &times);
-            if (-1 == iret)
-              {
-                perror("utime");
-                ret = DPL_FAILURE;
-                goto end;
-              }
-          }
-          break ;
-        case DPL_SYSMD_MASK_CTIME:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_ETAG:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_LOCATION_CONSTRAINT:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_OWNER:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_GROUP:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_ACL:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_ID:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_PARENT_ID:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_FTYPE:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_ENTERPRISE_NUMBER:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_PATH:
-          ret = DPL_ENOTSUPP;
-          goto end;
-        case DPL_SYSMD_MASK_VERSION:
-          ret = DPL_ENOTSUPP;
+  if (sysmd) {
+    switch (sysmd->mask) {
+      case DPL_SYSMD_MASK_SIZE:
+        iret = truncate(path, sysmd->size);
+        if (-1 == iret) {
+          perror("truncate");
+          ret = DPL_FAILURE;
           goto end;
         }
-    }
+        break;
+      case DPL_SYSMD_MASK_CANNED_ACL:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_STORAGE_CLASS:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_ATIME:
+      case DPL_SYSMD_MASK_MTIME: {
+        struct utimbuf times;
 
-  if (metadata)
-    {
-      ret2 = dpl_dict_iterate(metadata, cb_posix_setattr, (char *) path);
-      if (DPL_SUCCESS != ret2)
-      {
-          ret = ret2;
+        times.actime = sysmd->atime;
+        times.modtime = sysmd->mtime;
+        iret = utime(path, &times);
+        if (-1 == iret) {
+          perror("utime");
+          ret = DPL_FAILURE;
           goto end;
-      }
+        }
+      } break;
+      case DPL_SYSMD_MASK_CTIME:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_ETAG:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_LOCATION_CONSTRAINT:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_OWNER:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_GROUP:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_ACL:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_ID:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_PARENT_ID:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_FTYPE:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_ENTERPRISE_NUMBER:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_PATH:
+        ret = DPL_ENOTSUPP;
+        goto end;
+      case DPL_SYSMD_MASK_VERSION:
+        ret = DPL_ENOTSUPP;
+        goto end;
     }
-     
+  }
+
+  if (metadata) {
+    ret2 = dpl_dict_iterate(metadata, cb_posix_setattr, (char*)path);
+    if (DPL_SUCCESS != ret2) {
+      ret = ret2;
+      goto end;
+    }
+  }
+
   ret = DPL_SUCCESS;
-  
- end:
+
+end:
 
   return ret;
 }

@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -33,17 +34,11 @@
  */
 #include "dropletp.h"
 
-dpl_dbuf_t *
-dpl_dbuf_new(void)
-{
-  return calloc(1, sizeof (dpl_dbuf_t));
-}
+dpl_dbuf_t* dpl_dbuf_new(void) { return calloc(1, sizeof(dpl_dbuf_t)); }
 
-void
-dpl_dbuf_free(dpl_dbuf_t *nbuf)
+void dpl_dbuf_free(dpl_dbuf_t* nbuf)
 {
-  if (nbuf->data)
-    free(nbuf->data);
+  if (nbuf->data) free(nbuf->data);
   free(nbuf);
 }
 
@@ -69,56 +64,48 @@ buf_drain(dpl_dbuf_t *nbuf, size_t len)
 }
 #endif
 
-int
-dpl_dbuf_length(dpl_dbuf_t *nbuf)
-{
-  return nbuf->data_max - nbuf->offset;
-}
+int dpl_dbuf_length(dpl_dbuf_t* nbuf) { return nbuf->data_max - nbuf->offset; }
 
-static void *
-buf_recompute_length(dpl_dbuf_t *nbuf, size_t size)
+static void* buf_recompute_length(dpl_dbuf_t* nbuf, size_t size)
 {
-  int	 real_size;
-  unsigned char	*data;
+  int real_size;
+  unsigned char* data;
 
   /* there is enough room without doing a shift */
-  if (size <= nbuf->real_size - nbuf->data_max)
-    return nbuf->data;
+  if (size <= nbuf->real_size - nbuf->data_max) return nbuf->data;
 
   /* there is enough room if we reshift */
   if (size <= nbuf->real_size - nbuf->data_max + nbuf->offset) {
-    memmove(nbuf->data, nbuf->data + nbuf->offset, nbuf->data_max-nbuf->offset);
+    memmove(nbuf->data, nbuf->data + nbuf->offset,
+            nbuf->data_max - nbuf->offset);
     nbuf->data_max -= nbuf->offset;
-    nbuf->offset    = 0;
+    nbuf->offset = 0;
     return nbuf->data;
   }
 
   /* not enough room, we realloc AND shift */
   real_size = MAX(dpl_pow2_next(nbuf->real_size + size), 1024);
   data = realloc(nbuf->data, real_size);
-  if (NULL == data)
-    return NULL;
+  if (NULL == data) return NULL;
   nbuf->data = data;
 
-  memmove(nbuf->data, nbuf->data + nbuf->offset, nbuf->data_max-nbuf->offset);
-  nbuf->offset    = 0;
+  memmove(nbuf->data, nbuf->data + nbuf->offset, nbuf->data_max - nbuf->offset);
+  nbuf->offset = 0;
   nbuf->data_max -= nbuf->offset;
   nbuf->real_size = real_size;
 
   return nbuf->data;
 }
 
-int
-dpl_dbuf_add(dpl_dbuf_t *nbuf, const void *buf, int size)
+int dpl_dbuf_add(dpl_dbuf_t* nbuf, const void* buf, int size)
 {
-  unsigned char	*data;
+  unsigned char* data;
 
   data = buf_recompute_length(nbuf, size);
-  if (NULL == data)
-    return 0;
+  if (NULL == data) return 0;
   memcpy(data + nbuf->data_max, buf, size);
 
-  nbuf->data  = data;
+  nbuf->data = data;
   nbuf->data_max += size;
   return 1;
 }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -212,8 +212,6 @@ enum
 /* clang-format off */
 
 class Device {
- protected:
-  int fd_{-1};           /**< File descriptor */
  private:
   int blocked_{};        /**< Set if we must wait (i.e. change tape) */
   int count_{};          /**< Mutex use count -- DEBUG only */
@@ -250,7 +248,7 @@ class Device {
   int label_type{};           /**< Bareos/ANSI/IBM label types */
   drive_number_t drive{};     /**< Autochanger logical drive number (base 0) */
   drive_number_t drive_index{}; /**< Autochanger physical drive index (base 0) */
-  POOLMEM* dev_name{};        /**< Physical device name */
+  POOLMEM* archive_device_string{};  /**< Physical device name */
   POOLMEM* dev_options{};     /**< Device specific options */
   POOLMEM* prt_name{};        /**< Name used for display purposes */
   char* errmsg{};             /**< Nicely edited error message */
@@ -277,6 +275,7 @@ class Device {
   DeviceResource* device_resource{};   /**< Pointer to Device Resource */
   VolumeReservationItem* vol{};        /**< Pointer to Volume reservation item */
   btimer_t* tid{};            /**< Timer id */
+  int fd{-1};                 /**< File descriptor */
 
   VolumeCatalogInfo VolCatInfo;       /**< Volume Catalog Information */
   Volume_Label VolHdr;                /**< Actual volume label */
@@ -320,7 +319,7 @@ class Device {
   }
   bool IsFifo() const { return dev_type == DeviceType::B_FIFO_DEV; }
   bool IsVtl() const { return dev_type == DeviceType::B_VTL_DEV; }
-  bool IsOpen() const { return fd_ >= 0; }
+  bool IsOpen() const { return fd >= 0; }
   bool IsOffline() const { return BitIsSet(ST_OFFLINE, state); }
   bool IsLabeled() const { return BitIsSet(ST_LABEL, state); }
   bool IsMounted() const { return BitIsSet(ST_MOUNTED, state); }
@@ -391,7 +390,7 @@ class Device {
   void clear_offline() { ClearBit(ST_OFFLINE, state); }
   void ClearEot() { ClearBit(ST_EOT, state); }
   void ClearEof() { ClearBit(ST_EOF, state); }
-  void ClearOpened() { fd_ = -1; }
+  void ClearOpened() { fd = -1; }
   void ClearMounted() { ClearBit(ST_MOUNTED, state); }
   void clear_media() { ClearBit(ST_MEDIA, state); }
   void ClearShortBlock() { ClearBit(ST_SHORT, state); }
@@ -434,7 +433,6 @@ class Device {
 
   uint32_t GetFile() const { return file; }
   uint32_t GetBlockNum() const { return block_num; }
-  int fd() const { return fd_; }
 
   /*
    * Tape specific operations.
@@ -474,12 +472,6 @@ class Device {
     return true;
   }
   virtual bool DeviceStatus(DeviceStatusInformation* dst) { return false; }
-  boffset_t lseek(DeviceControlRecord* dcr, boffset_t offset, int whence)
-  {
-    return d_lseek(dcr, offset, whence);
-  }
-  bool truncate(DeviceControlRecord* dcr) { return d_truncate(dcr); }
-  bool flush(DeviceControlRecord* dcr) { return d_flush(dcr); };
 
   /*
    * Low level operations
@@ -541,7 +533,10 @@ class SpoolDevice :public Device
 /* clang-format on */
 
 inline const char* Device::strerror() const { return errmsg; }
-inline const char* Device::archive_name() const { return dev_name; }
+inline const char* Device::archive_name() const
+{
+  return archive_device_string;
+}
 inline const char* Device::print_name() const { return prt_name; }
 
 Device* FactoryCreateDevice(JobControlRecord* jcr, DeviceResource* device);

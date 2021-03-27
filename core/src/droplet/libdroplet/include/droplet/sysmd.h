@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,10 +32,10 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SYSMD_H__
-#define __DROPLET_SYSMD_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SYSMD_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SYSMD_H_
 
-dpl_sysmd_t *dpl_sysmd_dup(const dpl_sysmd_t *sysmd);
-void dpl_sysmd_free(dpl_sysmd_t *sysmd);
-void dpl_sysmd_print(dpl_sysmd_t *sysmd, FILE *f);
-#endif
+dpl_sysmd_t* dpl_sysmd_dup(const dpl_sysmd_t* sysmd);
+void dpl_sysmd_free(dpl_sysmd_t* sysmd);
+void dpl_sysmd_print(dpl_sysmd_t* sysmd, FILE* f);
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SYSMD_H_

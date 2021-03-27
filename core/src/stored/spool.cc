@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -293,8 +293,9 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
    * in rdev and rdcr.
    */
   auto rdev(std::make_unique<SpoolDevice>());
-  rdev->dev_name = GetMemory(strlen(spool_name) + 1);
-  bstrncpy(rdev->dev_name, spool_name, SizeofPoolMemory(rdev->dev_name));
+  rdev->archive_device_string = GetMemory(strlen(spool_name) + 1);
+  bstrncpy(rdev->archive_device_string, spool_name,
+           SizeofPoolMemory(rdev->archive_device_string));
   rdev->errmsg = GetPoolMemory(PM_EMSG);
   rdev->errmsg[0] = 0;
   rdev->max_block_size = dcr->dev->max_block_size;

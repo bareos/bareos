@@ -1,3 +1,4 @@
+/* check-sources:disable-copyright-check */
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -15,35 +16,31 @@ int verbose = 0;
  * valgrind, but using libtool and a local shared library makes this
  * pretty much impossible.  So we have to do it this way.
  */
-#define VALGRIND_BIN	"/usr/bin/valgrind"
+#define VALGRIND_BIN "/usr/bin/valgrind"
 #define MAGIC_VAR "DONT_VALGRIND_YOURSELF_FOOL"
 
-static void
-be_valground(int argc, char **argv)
+static void be_valground(int argc, char** argv)
 {
-  struct stat   sb;
-  int           r;
-  char          **newargv;
-  int           newargc = 0;
+  struct stat sb;
+  int r;
+  char** newargv;
+  int newargc = 0;
 
   /* Note: we don't use VALGRIND_IS_RUNNING() to avoid
    * depending on the valgrind package at build time */
-  if (getenv(MAGIC_VAR))
-    return;
+  if (getenv(MAGIC_VAR)) return;
 
   r = stat(VALGRIND_BIN, &sb);
-  if (r < 0 || !S_ISREG(sb.st_mode))
-    return;
+  if (r < 0 || !S_ISREG(sb.st_mode)) return;
 
-  newargv = (char **) malloc((argc+7) * sizeof(char **));
+  newargv = (char**)malloc((argc + 7) * sizeof(char**));
   newargv[newargc++] = VALGRIND_BIN;
   newargv[newargc++] = "--tool=memcheck";
   newargv[newargc++] = "-q";
   newargv[newargc++] = "--leak-check=full";
   newargv[newargc++] = "--suppressions=" SRCDIR "/tools/valgrind.supp";
   newargv[newargc++] = "--num-callers=32";
-  while (*argv)
-    newargv[newargc++] = *argv++;
+  while (*argv) newargv[newargc++] = *argv++;
   newargv[newargc] = NULL;
 
   fprintf(stderr, "Running self under valgrind\n");
@@ -67,37 +64,33 @@ be_valground(int argc, char **argv)
  *
  */
 
-int
-main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
-  SRunner               *r;
-  int                   debug_flag = 0;
-  enum print_output     output = CK_NORMAL;
+  SRunner* r;
+  int debug_flag = 0;
+  enum print_output output = CK_NORMAL;
 
-  static const struct option options[] = {
-    { "debug",   no_argument, 0, 'd' },
-    { "verbose", no_argument, 0, 'v' },
-    { NULL,                0, 0,  0 }
-  };
+  static const struct option options[] = {{"debug", no_argument, 0, 'd'},
+                                          {"verbose", no_argument, 0, 'v'},
+                                          {NULL, 0, 0, 0}};
 
   while (1) {
     int c, opt_idx = 0;
 
     c = getopt_long(argc, argv, "dv", options, &opt_idx);
-    if (c == -1)
-      break;
+    if (c == -1) break;
 
     switch (c) {
-    case 'v':
-      output = CK_VERBOSE;
-      break;
-    case 'd':
-      debug_flag = 1;
-      break;
-    case '?':
-    default:
-      fprintf(stderr, "ERROR %d %s\n", c, optarg);
-      exit(1);
+      case 'v':
+        output = CK_VERBOSE;
+        break;
+      case 'd':
+        debug_flag = 1;
+        break;
+      case '?':
+      default:
+        fprintf(stderr, "ERROR %d %s\n", c, optarg);
+        exit(1);
     }
   }
 
@@ -125,8 +118,7 @@ main(int argc, char ** argv)
   /* srunner_add_suite(r, s3_auth_v2_suite()); */
   srunner_add_suite(r, s3_auth_v4_suite());
 
-  if (debug_flag)
-    srunner_set_fork_status(r, CK_NOFORK);
+  if (debug_flag) srunner_set_fork_status(r, CK_NOFORK);
   srunner_run_all(r, output);
 
   int number_failed = srunner_ntests_failed(r);

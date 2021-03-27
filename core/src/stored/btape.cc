@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -696,7 +696,7 @@ static void capcmd()
   printf("\n");
 
   printf(_("Device parameters:\n"));
-  printf("Device name: %s\n", dev->dev_name);
+  printf("Device name: %s\n", dev->archive_device_string);
   printf("File=%u block=%u\n", dev->file, dev->block_num);
   printf("Min block=%u Max block=%u\n", dev->min_block_size,
          dev->max_block_size);
@@ -885,7 +885,7 @@ static bool SpeedTestRaw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
   for (uint32_t j = 0; j < nb; j++) {
     init_speed();
     for (; jcr->JobBytes < nb_gb;) {
-      status = dev->d_write(dev->fd(), block->buf, block->buf_len);
+      status = dev->d_write(dev->fd, block->buf, block->buf_len);
       if (status == (int)block->buf_len) {
         if ((block_num++ % 500) == 0) {
           printf("+");
@@ -1863,7 +1863,7 @@ static void rrcmd()
     len = 1024;
   }
   buf = (char*)malloc(len);
-  status = read(dev->fd(), buf, len);
+  status = read(dev->fd, buf, len);
   if (status > 0 && status <= len) { errno = 0; }
   BErrNo be;
   Pmsg3(0, _("Read of %d bytes gives status=%d. ERR=%s\n"), len, status,
@@ -1896,11 +1896,11 @@ static void scancmd()
   tot_files = dev->file;
   Pmsg1(0, _("Starting scan at file %u\n"), dev->file);
   for (;;) {
-    if ((status = read(dev->fd(), buf, sizeof(buf))) < 0) {
+    if ((status = read(dev->fd, buf, sizeof(buf))) < 0) {
       BErrNo be;
       dev->clrerror(-1);
-      Mmsg2(dev->errmsg, _("read error on %s. ERR=%s.\n"), dev->dev_name,
-            be.bstrerror());
+      Mmsg2(dev->errmsg, _("read error on %s. ERR=%s.\n"),
+            dev->archive_device_string, be.bstrerror());
       Pmsg2(0, _("Bad status from read %d. ERR=%s\n"), status,
             dev->bstrerror());
       if (blocks > 0) {
@@ -2799,7 +2799,7 @@ static void rawfill_cmd()
   Pmsg1(0, _("Begin writing raw blocks of %u bytes.\n"), block->buf_len);
   for (;;) {
     *p = block_num;
-    status = dev->d_write(dev->fd(), block->buf, block->buf_len);
+    status = dev->d_write(dev->fd, block->buf, block->buf_len);
     if (status == (int)block->buf_len) {
       if ((block_num++ % 100) == 0) {
         printf("+");

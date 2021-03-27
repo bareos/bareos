@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,7 @@
 
 namespace storagedaemon {
 /*
- * Generic callback for the droplet_device::walk_directory() function.
+ * Generic callback for the DropletDevice::walk_directory() function.
  *
  * Returns DPL_SUCCESS - success
  *         other dpl_status_t value: failure
@@ -48,7 +48,7 @@ typedef dpl_status_t (*t_dpl_walk_chunks_call_back)(dpl_sysmd_t* sysmd,
                                                     void* data);
 
 
-class droplet_device : public chunked_device {
+class DropletDevice : public ChunkedDevice {
  private:
   /* maximun number of chunks in a volume (0000 to 9999) */
   const int max_chunks_ = 10000;
@@ -65,26 +65,21 @@ class droplet_device : public chunked_device {
   dpl_status_t check_path(const char* path);
 
   /*
-   * Interface from chunked_device
+   * Interface from ChunkedDevice
    */
-  bool CheckRemote() override;
-  bool remote_chunked_volume_exists() override;
+  bool CheckRemoteConnection() override;
   bool FlushRemoteChunk(chunk_io_request* request) override;
   bool ReadRemoteChunk(chunk_io_request* request) override;
-  ssize_t chunked_remote_volume_size() override;
-  bool TruncateRemoteChunkedVolume(DeviceControlRecord* dcr) override;
-
-  bool walk_directory(const char* dirname,
-                      t_dpl_walk_directory_call_back callback,
-                      void* data);
-  bool walk_chunks(const char* dirname,
-                   t_dpl_walk_chunks_call_back callback,
-                   void* data,
-                   bool ignore_gaps = false);
+  ssize_t RemoteVolumeSize() override;
+  bool TruncateRemoteVolume(DeviceControlRecord* dcr) override;
+  bool ForEachChunkInDirectoryRunCallback(const char* dirname,
+                                          t_dpl_walk_chunks_call_back callback,
+                                          void* data,
+                                          bool ignore_gaps = false);
 
  public:
-  droplet_device() = default;
-  ~droplet_device();
+  DropletDevice() = default;
+  ~DropletDevice();
 
   /*
    * Interface from Device

@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -37,21 +38,18 @@
 #include <sys/param.h>
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt, ...)
 
-dpl_status_t
-dpl_srws_gen_key(BIGNUM *id,
-                 uint64_t oid,
-                 uint32_t volid,
-                 uint8_t serviceid,
-                 uint32_t specific)
+dpl_status_t dpl_srws_gen_key(BIGNUM* id,
+                              uint64_t oid,
+                              uint32_t volid,
+                              uint8_t serviceid,
+                              uint32_t specific)
 {
   return dpl_uks_gen_key(id, oid, volid, serviceid, specific);
 }
 
-dpl_status_t
-dpl_srws_set_class(BIGNUM *k,
-                   int class)
+dpl_status_t dpl_srws_set_class(BIGNUM* k, int class)
 {
   return dpl_uks_set_class(k, class);
 }

@@ -1,71 +1,81 @@
-#ifndef __TOYSERVER_H__
-#define __TOYSERVER_H__ 1
+/* check-sources:disable-copyright-check */
+#ifndef BAREOS_DROPLET_UTESTS_TOYSERVER_H_
+#define BAREOS_DROPLET_UTESTS_TOYSERVER_H_
 
-#define TOY_USERNAME	"leviathan"
-#define TOY_PASSWORD	"shibboleth"
+#define TOY_USERNAME "leviathan"
+#define TOY_PASSWORD "shibboleth"
 
-struct server_config
-{
-    int require_basic_auth;
+struct server_config {
+  int require_basic_auth;
 };
 
-struct connection
-{
-    int is_connected;
-    int is_authenticated;
-    int is_tls;
-    int is_persistent;
+struct connection {
+  int is_connected;
+  int is_authenticated;
+  int is_tls;
+  int is_persistent;
 #if 0
     SSL *tls_conn;
 #endif
-    FILE *in;
-    FILE *out;
+  FILE* in;
+  FILE* out;
 };
 
-enum http_versions { V_1_0, V_1_1 };
-enum http_methods { M_OPTIONS, M_GET, M_HEAD, M_POST, M_PUT, M_DELETE, M_TRACE, M_CONNECT };
-
-struct request
+enum http_versions
 {
-    enum http_versions version;
-    enum http_methods method;
-    char uri[1024];
-    char host[1024];
-    struct kv *headers;
-    int has_authorization;
-    char username[128];
-    char password[128];
-    int body_len;
-    char body[4096];
+  V_1_0,
+  V_1_1
 };
-
-struct reply
+enum http_methods
 {
-    int status;
-    struct kv *headers;
-    int body_len;
-    char body[4096];
+  M_OPTIONS,
+  M_GET,
+  M_HEAD,
+  M_POST,
+  M_PUT,
+  M_DELETE,
+  M_TRACE,
+  M_CONNECT
 };
 
-struct server_state
-{
-    /* dynamic configuration */
-    struct server_config config;
-
-    /* global state */
-    pid_t pid;
-    int rend_sock;
-    int port;
-    char url[256];
-
-    /* per-connection state */
-    struct connection connection;
-
-    /* per-request state */
-    struct request request;
-
-    /* reply state */
-    struct reply reply;
+struct request {
+  enum http_versions version;
+  enum http_methods method;
+  char uri[1024];
+  char host[1024];
+  struct kv* headers;
+  int has_authorization;
+  char username[128];
+  char password[128];
+  int body_len;
+  char body[4096];
 };
 
-#endif /* __TOYSERVER_H__ */
+struct reply {
+  int status;
+  struct kv* headers;
+  int body_len;
+  char body[4096];
+};
+
+struct server_state {
+  /* dynamic configuration */
+  struct server_config config;
+
+  /* global state */
+  pid_t pid;
+  int rend_sock;
+  int port;
+  char url[256];
+
+  /* per-connection state */
+  struct connection connection;
+
+  /* per-request state */
+  struct request request;
+
+  /* reply state */
+  struct reply reply;
+};
+
+#endif  // BAREOS_DROPLET_UTESTS_TOYSERVER_H_

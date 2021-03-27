@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,16 +32,18 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SRWS_REQBUILDER_H__
-#define __DROPLET_SRWS_REQBUILDER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_REQBUILDER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_REQBUILDER_H_
 
 typedef enum
-  {
-    DPL_SRWS_REQ_MD_ONLY = (1u<<0),
-    DPL_SRWS_REQ_LAZY    = (1u<<1),
-  } dpl_srws_req_mask_t;
+{
+  DPL_SRWS_REQ_MD_ONLY = (1u << 0),
+  DPL_SRWS_REQ_LAZY = (1u << 1),
+} dpl_srws_req_mask_t;
 
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */
-dpl_status_t dpl_srws_req_build(const dpl_req_t *req, dpl_srws_req_mask_t req_mask, dpl_dict_t **headersp);
-#endif
+dpl_status_t dpl_srws_req_build(const dpl_req_t* req,
+                                dpl_srws_req_mask_t req_mask,
+                                dpl_dict_t** headersp);
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SRWS_REQBUILDER_H_

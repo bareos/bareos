@@ -141,7 +141,7 @@ const char* Device::mode_to_str(DeviceMode mode)
 /**
  * Fabric to allocate and initialize the Device structure
  *
- * Note, for a tape, the device->device_name is the device name
+ * Note, for a tape, the device->archive_device_string is the device name
  * (e.g. /dev/nst0), and for a file, the device name
  * is the directory in which the file will be placed.
  */
@@ -160,10 +160,10 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
     /*
      * Check that device is available
      */
-    if (stat(device_resource->device_name, &statp) < 0) {
+    if (stat(device_resource->archive_device_string, &statp) < 0) {
       BErrNo be;
       Jmsg2(jcr, M_ERROR, 0, _("Unable to stat device %s: ERR=%s\n"),
-            device_resource->device_name, be.bstrerror());
+            device_resource->archive_device_string, be.bstrerror());
       return nullptr;
     }
     if (S_ISDIR(statp.st_mode)) {
@@ -176,7 +176,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
       Jmsg2(jcr, M_ERROR, 0,
             _("%s is an unknown device type. Must be tape or directory, "
               "st_mode=%04o\n"),
-            device_resource->device_name, (statp.st_mode & ~S_IFMT));
+            device_resource->archive_device_string, (statp.st_mode & ~S_IFMT));
       return nullptr;
     }
   }
@@ -196,7 +196,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 #  endif
 #  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
     case DeviceType::B_DROPLET_DEV:
-      dev = new droplet_device;
+      dev = new DropletDevice;
       break;
 #  endif
 #  ifdef HAVE_RADOS
@@ -244,7 +244,8 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
                   "device \"%s\" failed. Backend "
                   "library might be missing or backend directory incorrect.\n"),
                 device_type_to_name_mapping.at(device_resource->dev_type),
-                device_resource->resource_name_, device_resource->device_name);
+                device_resource->resource_name_,
+                device_resource->archive_device_string);
         } catch (const std::out_of_range&) {
           // device_resource->dev_type could exceed limits of map
         }
@@ -256,7 +257,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 
   if (!dev) {
     Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %d\n"),
-          device_resource->device_name, device_resource->dev_type);
+          device_resource->archive_device_string, device_resource->dev_type);
     return nullptr;
   }
   dev->InvalidateSlotNumber(); /* unknown */
@@ -264,18 +265,19 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   /*
    * Copy user supplied device parameters from Resource
    */
-  dev->dev_name = GetMemory(strlen(device_resource->device_name) + 1);
-  PmStrcpy(dev->dev_name, device_resource->device_name);
+  dev->archive_device_string
+      = GetMemory(strlen(device_resource->archive_device_string) + 1);
+  PmStrcpy(dev->archive_device_string, device_resource->archive_device_string);
   if (device_resource->device_options) {
     dev->dev_options = GetMemory(strlen(device_resource->device_options) + 1);
     PmStrcpy(dev->dev_options, device_resource->device_options);
   }
-  dev->prt_name = GetMemory(strlen(device_resource->device_name)
+  dev->prt_name = GetMemory(strlen(device_resource->archive_device_string)
                             + strlen(device_resource->resource_name_) + 20);
 
 
   Mmsg(dev->prt_name, "\"%s\" (%s)", device_resource->resource_name_,
-       device_resource->device_name);
+       device_resource->archive_device_string);
   Dmsg1(400, "Allocate dev=%s\n", dev->print_name());
   CopySetBits(CAP_MAX, device_resource->cap_bits, dev->capabilities);
 
@@ -406,10 +408,10 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 
   dev->ClearOpened();
   dev->attached_dcrs.clear();
-  Dmsg2(100, "FactoryCreateDevice: tape=%d dev_name=%s\n", dev->IsTape(),
-        dev->dev_name);
+  Dmsg2(100, "FactoryCreateDevice: tape=%d archive_device_string=%s\n",
+        dev->IsTape(), dev->archive_device_string);
   dev->initiated = true;
-  Dmsg3(100, "dev=%s dev_max_bs=%u max_bs=%u\n", dev->dev_name,
+  Dmsg3(100, "dev=%s dev_max_bs=%u max_bs=%u\n", dev->archive_device_string,
         dev->device_resource->max_block_size, dev->max_block_size);
 
   return dev;
@@ -613,7 +615,7 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
     if (open_mode == omode) {
       return true;
     } else {
-      d_close(fd_);
+      d_close(fd);
       ClearOpened();
       Dmsg0(100, "Close fd for mode change.\n");
 
@@ -628,8 +630,8 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
     VolCatInfo = dcr->VolCatInfo; /* structure assign */
   }
 
-  Dmsg4(100, "open dev: type=%d dev_name=%s vol=%s mode=%s\n", dev_type,
-        print_name(), getVolCatName(), mode_to_str(omode));
+  Dmsg4(100, "open dev: type=%d archive_device_string=%s vol=%s mode=%s\n",
+        dev_type, print_name(), getVolCatName(), mode_to_str(omode));
 
   ClearBit(ST_LABEL, state);
   ClearBit(ST_APPENDREADY, state);
@@ -656,9 +658,9 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
    */
   CopySetBits(ST_MAX, preserve, state);
 
-  Dmsg2(100, "preserve=%08o fd=%d\n", preserve, fd_);
+  Dmsg2(100, "preserve=%08o fd=%d\n", preserve, fd);
 
-  return fd_ >= 0;
+  return fd >= 0;
 }
 
 void Device::set_mode(DeviceMode mode)
@@ -693,7 +695,7 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   /*
    * Handle opening of File Archive (not a tape)
    */
-  PmStrcpy(archive_name, dev_name);
+  PmStrcpy(archive_name, archive_device_string);
 
   /*
    * If this is a virtual autochanger (i.e. changer_res != NULL) we simply use
@@ -721,27 +723,28 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   open_mode = omode;
   set_mode(omode);
 
-  /*
-   * If creating file, give 0640 permissions
-   */
-  Dmsg3(100, "open disk: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
+  Dmsg3(100, "open archive: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
         archive_name.c_str(), oflags);
 
-  if ((fd_ = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
+  if ((fd = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
     BErrNo be;
     dev_errno = errno;
-    Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
-          be.bstrerror());
+    if (dev_errno == 0) {
+      Mmsg2(errmsg, _("Could not open: %s\n"), archive_name.c_str());
+    } else {
+      Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
+            be.bstrerror());
+    }
     Dmsg1(100, "open failed: %s", errmsg);
   }
 
-  if (fd_ >= 0) {
+  if (fd >= 0) {
     dev_errno = 0;
     file = 0;
     file_addr = 0;
   }
 
-  Dmsg1(100, "open dev: disk fd=%d opened\n", fd_);
+  Dmsg1(100, "open dev: disk fd=%d opened\n", fd);
 }
 
 /**
@@ -752,7 +755,7 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
  */
 bool Device::rewind(DeviceControlRecord* dcr)
 {
-  Dmsg3(400, "rewind res=%d fd=%d %s\n", NumReserved(), fd_, print_name());
+  Dmsg3(400, "rewind res=%d fd=%d %s\n", NumReserved(), fd, print_name());
 
   /*
    * Remove EOF/EOT flags
@@ -765,11 +768,11 @@ bool Device::rewind(DeviceControlRecord* dcr)
   file_size = 0;
   file_addr = 0;
 
-  if (fd_ < 0) { return false; }
+  if (fd < 0) { return false; }
 
   if (IsFifo() || IsVtl()) { return true; }
 
-  if (lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
+  if (d_lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
     BErrNo be;
     dev_errno = errno;
     Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(), be.bstrerror());
@@ -815,7 +818,7 @@ bool Device::eod(DeviceControlRecord* dcr)
 {
   boffset_t pos;
 
-  if (fd_ < 0) {
+  if (fd < 0) {
     dev_errno = EBADF;
     Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), print_name());
     return false;
@@ -832,7 +835,7 @@ bool Device::eod(DeviceControlRecord* dcr)
   file_size = 0;
   file_addr = 0;
 
-  pos = lseek(dcr, (boffset_t)0, SEEK_END);
+  pos = d_lseek(dcr, (boffset_t)0, SEEK_END);
   Dmsg1(200, "====== Seek to %lld\n", pos);
 
   if (pos >= 0) {
@@ -872,7 +875,7 @@ bool Device::UpdatePos(DeviceControlRecord* dcr)
 
   file = 0;
   file_addr = 0;
-  pos = lseek(dcr, (boffset_t)0, SEEK_CUR);
+  pos = d_lseek(dcr, (boffset_t)0, SEEK_CUR);
   if (pos < 0) {
     BErrNo be;
     dev_errno = errno;
@@ -914,7 +917,7 @@ char* Device::StatusDev()
 
 bool Device::OfflineOrRewind()
 {
-  if (fd_ < 0) { return false; }
+  if (fd < 0) { return false; }
   if (HasCap(CAP_OFFLINEUNMOUNT)) {
     return offline();
   } else {
@@ -963,7 +966,7 @@ bool Device::Reposition(DeviceControlRecord* dcr,
 
   boffset_t pos = (((boffset_t)rfile) << 32) | rblock;
   Dmsg1(100, "===== lseek to %d\n", (int)pos);
-  if (lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
+  if (d_lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
     BErrNo be;
     dev_errno = errno;
     Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
@@ -1022,7 +1025,7 @@ bool Device::close(DeviceControlRecord* dcr)
        * Fall through wanted
        */
     default:
-      status = d_close(fd_);
+      status = d_close(fd);
       if (status < 0) {
         BErrNo be;
 
@@ -1169,7 +1172,7 @@ void Device::EditMountCodes(PoolMem& omsg, const char* imsg)
           str = "%";
           break;
         case 'a':
-          str = dev_name;
+          str = archive_device_string;
           break;
         case 'm':
           str = device_resource->mount_point;
@@ -1213,7 +1216,7 @@ ssize_t Device::read(void* buf, size_t len)
 
   GetTimerCount();
 
-  read_len = d_read(fd_, buf, len);
+  read_len = d_read(fd, buf, len);
 
   last_tick = GetTimerCount();
 
@@ -1236,7 +1239,7 @@ ssize_t Device::write(const void* buf, size_t len)
 
   GetTimerCount();
 
-  write_len = d_write(fd_, buf, len);
+  write_len = d_write(fd, buf, len);
 
   last_tick = GetTimerCount();
 
@@ -1269,9 +1272,9 @@ Device::~Device()
    */
   close(nullptr);
 
-  if (dev_name) {
-    FreeMemory(dev_name);
-    dev_name = nullptr;
+  if (archive_device_string) {
+    FreeMemory(archive_device_string);
+    archive_device_string = nullptr;
   }
   if (dev_options) {
     FreeMemory(dev_options);

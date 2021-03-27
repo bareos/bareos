@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -235,7 +235,7 @@ boffset_t unix_file_device::d_lseek(DeviceControlRecord* dcr,
                                     boffset_t offset,
                                     int whence)
 {
-  return ::lseek(fd_, offset, whence);
+  return ::lseek(fd, offset, whence);
 }
 
 bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
@@ -247,7 +247,7 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
    * When secure erase is configured never truncate the file.
    */
   if (!me->secure_erase_cmdline) {
-    if (ftruncate(fd_, 0) != 0) {
+    if (ftruncate(fd, 0) != 0) {
       BErrNo be;
 
       Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name,
@@ -255,7 +255,7 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
       return false;
     }
 
-    if (fstat(fd_, &st) != 0) {
+    if (fstat(fd, &st) != 0) {
       BErrNo be;
 
       Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name,
@@ -269,7 +269,7 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
           _("Device %s doesn't support ftruncate(). Recreating file %s.\n"),
           prt_name, archive_name.c_str());
   } else {
-    if (fstat(fd_, &st) != 0) {
+    if (fstat(fd, &st) != 0) {
       BErrNo be;
 
       Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name,
@@ -288,7 +288,7 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
    * 3. open new file with same mode
    * 4. change ownership to original
    */
-  PmStrcpy(archive_name, dev_name);
+  PmStrcpy(archive_name, archive_device_string);
   if (!IsPathSeparator(
           archive_name.c_str()[strlen(archive_name.c_str()) - 1])) {
     PmStrcat(archive_name, "/");
@@ -298,14 +298,14 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
   /*
    * Close file and blow it away
    */
-  ::close(fd_);
+  ::close(fd);
   SecureErase(dcr->jcr, archive_name.c_str());
 
   /*
    * Recreate the file -- of course, empty
    */
   oflags = O_CREAT | O_RDWR | O_BINARY;
-  if ((fd_ = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
+  if ((fd = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
     BErrNo be;
 
     dev_errno = errno;

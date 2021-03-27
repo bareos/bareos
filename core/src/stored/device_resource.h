@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +36,7 @@ class AutochangerResource;
 class DeviceResource : public BareosResource {
  public:
   char* media_type;             /**< User assigned media type */
-  char* device_name;            /**< Archive device name */
+  char* archive_device_string;  /**< Archive device name */
   char* device_options;         /**< Device specific option string */
   char* diag_device_name;       /**< Diagnostic device name */
   char* changer_name;           /**< Changer device name */

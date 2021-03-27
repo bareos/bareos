@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -369,7 +369,7 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
   if (relabel) {
     VolumeUnused(dcr); /* mark current volume unused */
     /* Truncate device */
-    if (!dev->truncate(dcr)) { goto bail_out; }
+    if (!dev->d_truncate(dcr)) { goto bail_out; }
     if (!dev->IsTape()) {
       dev->close(dcr); /* make sure file closed for rename */
     }
@@ -1101,8 +1101,8 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
     return false;
   }
 
-  Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%x\n",
-        dev->fd(), dev);
+  Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%x\n", dev->fd,
+        dev);
 
   /*
    * Let any stored plugin know that we are (re)writing the label.
@@ -1139,7 +1139,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
     }
     if (recycle) {
       Dmsg1(150, "Doing recycle. Vol=%s\n", dcr->VolumeName);
-      if (!dev->truncate(dcr)) {
+      if (!dev->d_truncate(dcr)) {
         Jmsg2(jcr, M_FATAL, 0, _("Truncate error on device %s: ERR=%s\n"),
               dev->print_name(), dev->print_errmsg());
         return false;
@@ -1168,7 +1168,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
     }
 
     /* Attempt write to check write permission */
-    Dmsg1(200, "Attempt to write to device fd=%d.\n", dev->fd());
+    Dmsg1(200, "Attempt to write to device fd=%d.\n", dev->fd);
     if (!dcr->WriteBlockToDev()) {
       Jmsg2(jcr, M_ERROR, 0, _("Unable to write device %s: ERR=%s\n"),
             dev->print_name(), dev->print_errmsg());

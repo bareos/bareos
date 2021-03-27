@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,11 +32,11 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SWIFT_H__
-#define __DROPLET_SWIFT_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_SWIFT_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_SWIFT_H_
 
 #include <droplet/swift/reqbuilder.h>
 #include <droplet/swift/replyparser.h>
 #include <droplet/swift/backend.h>
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_SWIFT_H_

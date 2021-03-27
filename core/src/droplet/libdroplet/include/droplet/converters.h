@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,25 +32,26 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_CONVERTERS_H__
-#define __DROPLET_CONVERTERS_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONVERTERS_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONVERTERS_H_
 
 /* PROTO converters.c */
 /* src/converters.c */
-dpl_method_t dpl_method(char *str);
-char *dpl_method_str(dpl_method_t method);
-dpl_location_constraint_t dpl_location_constraint(char *str);
-char *dpl_location_constraint_str(dpl_location_constraint_t location_constraint);
-dpl_canned_acl_t dpl_canned_acl(char *str);
-char *dpl_canned_acl_str(dpl_canned_acl_t canned_acl);
-dpl_storage_class_t dpl_storage_class(char *str);
-char *dpl_storage_class_str(dpl_storage_class_t storage_class);
-dpl_copy_directive_t dpl_copy_directive(char *str);
-char *dpl_copy_directive_str(dpl_copy_directive_t copy_directive);
-dpl_ftype_t dpl_object_type(char *str);
-char *dpl_object_type_str(dpl_ftype_t object_type);
-dpl_dict_t *dpl_parse_metadata(char *metadata);
-dpl_dict_t *dpl_parse_query_params(char *query_params);
-dpl_status_t dpl_parse_condition(const char *str, dpl_condition_t *condp);
-dpl_status_t dpl_parse_option(const char *str, dpl_option_t *optp);
-#endif
+dpl_method_t dpl_method(char* str);
+char* dpl_method_str(dpl_method_t method);
+dpl_location_constraint_t dpl_location_constraint(char* str);
+char* dpl_location_constraint_str(
+    dpl_location_constraint_t location_constraint);
+dpl_canned_acl_t dpl_canned_acl(char* str);
+char* dpl_canned_acl_str(dpl_canned_acl_t canned_acl);
+dpl_storage_class_t dpl_storage_class(char* str);
+char* dpl_storage_class_str(dpl_storage_class_t storage_class);
+dpl_copy_directive_t dpl_copy_directive(char* str);
+char* dpl_copy_directive_str(dpl_copy_directive_t copy_directive);
+dpl_ftype_t dpl_object_type(char* str);
+char* dpl_object_type_str(dpl_ftype_t object_type);
+dpl_dict_t* dpl_parse_metadata(char* metadata);
+dpl_dict_t* dpl_parse_query_params(char* query_params);
+dpl_status_t dpl_parse_condition(const char* str, dpl_condition_t* condp);
+dpl_status_t dpl_parse_option(const char* str, dpl_option_t* optp);
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONVERTERS_H_

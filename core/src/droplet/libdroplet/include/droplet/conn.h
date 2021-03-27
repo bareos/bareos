@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,48 +32,46 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_CONN_H__
-#define __DROPLET_CONN_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONN_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONN_H_
 
-struct dpl_hash_info
-{
+struct dpl_hash_info {
   union {
-    struct in_addr      v4;
-    struct in6_addr     v6;
-  }             addr;
-  u_short       port;
+    struct in_addr v4;
+    struct in6_addr v6;
+  } addr;
+  u_short port;
 };
 
 typedef enum
-  {
-    DPL_CONN_TYPE_HTTP,
-    DPL_CONN_TYPE_FILE,
-  } dpl_conn_type_t;
-
-typedef struct dpl_conn
 {
+  DPL_CONN_TYPE_HTTP,
+  DPL_CONN_TYPE_FILE,
+} dpl_conn_type_t;
+
+typedef struct dpl_conn {
   dpl_conn_type_t type;
 
-  struct dpl_ctx *ctx;
+  struct dpl_ctx* ctx;
 
-  struct dpl_conn *next;
-  struct dpl_conn *prev;
+  struct dpl_conn* next;
+  struct dpl_conn* prev;
 
   struct dpl_hash_info hash_info;
 
-  char *host; //string used to resolve ip addr
-  char *port; //string used to resolve port
+  char* host;  // string used to resolve ip addr
+  char* port;  // string used to resolve port
 
   int fd;
   time_t start_time;
   time_t close_time;
-  unsigned int	n_hits;
+  unsigned int n_hits;
 
   /*
    * buffer
    */
   size_t read_buf_size;
-  char *read_buf;
+  char* read_buf;
   int read_buf_pos;
 
   /*
@@ -82,24 +81,32 @@ typedef struct dpl_conn
   int max_blocks;
   ssize_t cc;
   dpl_status_t status;
-  int eof;           /*!< set to 1 at EOF            */
+  int eof; /*!< set to 1 at EOF            */
 
   /*
    * ssl
    */
-  SSL *ssl;
-  BIO *bio;
+  SSL* ssl;
+  BIO* bio;
 } dpl_conn_t;
 
 /* PROTO conn.c */
 /* src/conn.c */
-dpl_conn_t *dpl_conn_open_host(dpl_ctx_t *ctx, int af, const char *host, const char *portstr);
-void dpl_blacklist_host(dpl_ctx_t *ctx, const char *host, const char *portstr);
-dpl_status_t dpl_try_connect(dpl_ctx_t *ctx, dpl_req_t *req, dpl_conn_t **connp);
-void dpl_conn_release(dpl_conn_t *conn);
-void dpl_conn_terminate(dpl_conn_t *conn);
-dpl_status_t dpl_conn_pool_init(dpl_ctx_t *ctx);
-void dpl_conn_pool_destroy(dpl_ctx_t *ctx);
-dpl_status_t dpl_conn_writev_all(dpl_conn_t *conn, struct iovec *iov, int n_iov, int timeout);
-dpl_conn_t *dpl_conn_open_file(dpl_ctx_t *ctx, int fd);
-#endif
+dpl_conn_t* dpl_conn_open_host(dpl_ctx_t* ctx,
+                               int af,
+                               const char* host,
+                               const char* portstr);
+void dpl_blacklist_host(dpl_ctx_t* ctx, const char* host, const char* portstr);
+dpl_status_t dpl_try_connect(dpl_ctx_t* ctx,
+                             dpl_req_t* req,
+                             dpl_conn_t** connp);
+void dpl_conn_release(dpl_conn_t* conn);
+void dpl_conn_terminate(dpl_conn_t* conn);
+dpl_status_t dpl_conn_pool_init(dpl_ctx_t* ctx);
+void dpl_conn_pool_destroy(dpl_ctx_t* ctx);
+dpl_status_t dpl_conn_writev_all(dpl_conn_t* conn,
+                                 struct iovec* iov,
+                                 int n_iov,
+                                 int timeout);
+dpl_conn_t* dpl_conn_open_file(dpl_ctx_t* ctx, int fd);
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CONN_H_

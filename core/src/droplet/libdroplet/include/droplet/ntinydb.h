@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,13 +32,25 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_NTINYDB_H__
-#define __DROPLET_NTINYDB_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_NTINYDB_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_NTINYDB_H_
 
-typedef int (*dpl_ntinydb_func_t)(const char *key_ptr, int key_len, void *cb_arg);
+typedef int (*dpl_ntinydb_func_t)(const char* key_ptr,
+                                  int key_len,
+                                  void* cb_arg);
 
 /* PROTO ntinydb.c */
-dpl_status_t dpl_ntinydb_set(dpl_sbuf_t *blob, const char *key, const char *buf, int len);
-dpl_status_t dpl_ntinydb_get(const char *buf, int len, const char *key, const char **data_returned, int *datalen_returned);
-dpl_status_t dpl_ntinydb_list(const char *buf, int len, dpl_ntinydb_func_t cb_func, void *cb_arg);
-#endif
+dpl_status_t dpl_ntinydb_set(dpl_sbuf_t* blob,
+                             const char* key,
+                             const char* buf,
+                             int len);
+dpl_status_t dpl_ntinydb_get(const char* buf,
+                             int len,
+                             const char* key,
+                             const char** data_returned,
+                             int* datalen_returned);
+dpl_status_t dpl_ntinydb_list(const char* buf,
+                              int len,
+                              dpl_ntinydb_func_t cb_func,
+                              void* cb_arg);
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_NTINYDB_H_

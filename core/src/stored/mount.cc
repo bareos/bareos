@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -717,7 +717,7 @@ bool DeviceControlRecord::is_eod_valid()
     char ed1[50], ed2[50];
 
     boffset_t pos;
-    pos = dev->lseek(dcr, (boffset_t)0, SEEK_CUR);
+    pos = dev->d_lseek(dcr, (boffset_t)0, SEEK_CUR);
     if (dev->VolCatInfo.VolCatBytes == (uint64_t)pos) {
       Jmsg(jcr, M_INFO, 0,
            _("Ready to append to end of Volume \"%s\""

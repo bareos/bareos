@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -227,14 +227,14 @@ boffset_t win32_file_device::d_lseek(DeviceControlRecord* dcr,
                                      boffset_t offset,
                                      int whence)
 {
-  return ::_lseeki64(fd_, (__int64)offset, whence);
+  return ::_lseeki64(fd, (__int64)offset, whence);
 }
 
 bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
 {
   struct stat st;
 
-  if (ftruncate(fd_, 0) != 0) {
+  if (ftruncate(fd, 0) != 0) {
     BErrNo be;
 
     Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), print_name(),
@@ -251,7 +251,7 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
    * 3. open new file with same mode
    * 4. change ownership to original
    */
-  if (fstat(fd_, &st) != 0) {
+  if (fstat(fd, &st) != 0) {
     BErrNo be;
 
     Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), print_name(),
@@ -262,7 +262,7 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
   if (st.st_size != 0) { /* ftruncate() didn't work */
     PoolMem archive_name(PM_FNAME);
 
-    PmStrcpy(archive_name, dev_name);
+    PmStrcpy(archive_name, archive_device_string);
     if (!IsPathSeparator(
             archive_name.c_str()[strlen(archive_name.c_str()) - 1])) {
       PmStrcat(archive_name, "/");
@@ -276,14 +276,14 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
     /*
      * Close file and blow it away
      */
-    ::close(fd_);
+    ::close(fd);
     SecureErase(dcr->jcr, archive_name.c_str());
 
     /*
      * Recreate the file -- of course, empty
      */
     oflags = O_CREAT | O_RDWR | O_BINARY;
-    if ((fd_ = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
+    if ((fd = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
       BErrNo be;
 
       dev_errno = errno;

@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,9 +32,9 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_POSIX_BACKEND_H__
-#define __DROPLET_POSIX_BACKEND_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_BACKEND_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_BACKEND_H_
 
 extern dpl_backend_t dpl_backend_posix;
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_BACKEND_H_

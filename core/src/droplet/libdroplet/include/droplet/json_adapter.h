@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,27 +32,25 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DPL_JSON_ADAPTER_H__
-#define __DPL_JSON_ADAPTER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_JSON_ADAPTER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_JSON_ADAPTER_H_
 
 #ifdef SCAL_JSON_C
 
-static inline long_t
-json_object_get_string_length(struct json_object *o)
+static inline long_t json_object_get_string_length(struct json_object* o)
 {
   long_t len;
   json_object_get_string_len(o, &len);
   return len;
 }
 
-#define json_type_int json_type_integer
-#define json_object_new_int(i) json_object_new_integer(i)
-#define json_object_get_int(o) json_ojbect_get_integer(o)
+#  define json_type_int json_type_integer
+#  define json_object_new_int(i) json_object_new_integer(i)
+#  define json_object_get_int(o) json_ojbect_get_integer(o)
 
 #else
 
-static inline int
-json_object_get_string_length(struct json_object *o)
+static inline int json_object_get_string_length(struct json_object* o)
 {
   return json_object_get_string_len(o);
 }
@@ -59,4 +58,4 @@ json_object_get_string_length(struct json_object *o)
 
 #endif
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_JSON_ADAPTER_H_

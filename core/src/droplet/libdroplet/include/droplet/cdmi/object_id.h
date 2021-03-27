@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,11 +32,10 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_CDMI_OBJECT_ID_H__
-#define __DROPLET_CDMI_OBJECT_ID_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_OBJECT_ID_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_OBJECT_ID_H_
 
-typedef struct
-{
+typedef struct {
   uint32_t enterprise_number;
   unsigned char reserved;
   unsigned char length;
@@ -43,15 +43,25 @@ typedef struct
   char opaque[32];
 } dpl_cdmi_object_id_t;
 
-#define DPL_CDMI_OBJECT_ID_LEN (sizeof(dpl_cdmi_object_id_t)*2+1)
+#define DPL_CDMI_OBJECT_ID_LEN (sizeof(dpl_cdmi_object_id_t) * 2 + 1)
 
-dpl_status_t dpl_cdmi_object_id_init(dpl_cdmi_object_id_t *object_id, uint32_t enterprise_number, const void *opaque_data, char opaque_len);
-dpl_status_t dpl_cdmi_object_id_to_string(const dpl_cdmi_object_id_t *object_id, char *output);
-dpl_status_t dpl_cdmi_opaque_to_string(const dpl_cdmi_object_id_t *object_id, char *output);
-dpl_status_t dpl_cdmi_string_to_object_id(const char *input, dpl_cdmi_object_id_t *output);
-dpl_status_t dpl_cdmi_string_to_opaque(const char *input, char *output, int *opaque_lenp);
-void dpl_cdmi_object_id_undef(dpl_cdmi_object_id_t *object_id);
-int dpl_cdmi_object_id_is_def(const dpl_cdmi_object_id_t *object_id);
-dpl_status_t dpl_cdmi_object_id_opaque_len(const dpl_cdmi_object_id_t *object_id, size_t *lenp);
+dpl_status_t dpl_cdmi_object_id_init(dpl_cdmi_object_id_t* object_id,
+                                     uint32_t enterprise_number,
+                                     const void* opaque_data,
+                                     char opaque_len);
+dpl_status_t dpl_cdmi_object_id_to_string(const dpl_cdmi_object_id_t* object_id,
+                                          char* output);
+dpl_status_t dpl_cdmi_opaque_to_string(const dpl_cdmi_object_id_t* object_id,
+                                       char* output);
+dpl_status_t dpl_cdmi_string_to_object_id(const char* input,
+                                          dpl_cdmi_object_id_t* output);
+dpl_status_t dpl_cdmi_string_to_opaque(const char* input,
+                                       char* output,
+                                       int* opaque_lenp);
+void dpl_cdmi_object_id_undef(dpl_cdmi_object_id_t* object_id);
+int dpl_cdmi_object_id_is_def(const dpl_cdmi_object_id_t* object_id);
+dpl_status_t dpl_cdmi_object_id_opaque_len(
+    const dpl_cdmi_object_id_t* object_id,
+    size_t* lenp);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_OBJECT_ID_H_

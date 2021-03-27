@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,8 +32,8 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLETP_H__
-#define __DROPLETP_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLETP_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLETP_H_
 
 /*
  * dependencies
@@ -76,7 +77,7 @@
 #include <droplet/ntinydb.h>
 #include <droplet/task.h>
 
-#define UNUSED  __attribute__((__unused__))
-#define PRINTF(idx, chk) __attribute__((format (printf, idx, chk)))
+#define UNUSED __attribute__((__unused__))
+#define PRINTF(idx, chk) __attribute__((format(printf, idx, chk)))
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLETP_H_

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -100,19 +100,19 @@ struct chunk_descriptor {
 };
 
 
-class chunked_device : public Device {
+class ChunkedDevice : public Device {
  private:
   /*
    * Private Members
    */
-  bool io_threads_started_;
-  bool end_of_media_;
-  bool readonly_;
-  uint8_t inflight_chunks_;
-  char* current_volname_;
-  ordered_circbuf* cb_;
-  alist* thread_ids_;
-  chunk_descriptor* current_chunk_;
+  bool io_threads_started_{};
+  bool end_of_media_{};
+  bool readonly_{};
+  uint8_t inflight_chunks_{};
+  char* current_volname_{};
+  ordered_circbuf* cb_{};
+  alist* thread_ids_{};
+  chunk_descriptor* current_chunk_{};
 
   /*
    * Private Methods
@@ -131,12 +131,12 @@ class chunked_device : public Device {
   /*
    * Protected Members
    */
-  uint8_t io_threads_;
-  uint8_t io_slots_;
-  uint8_t retries_;
-  uint64_t chunk_size_;
-  boffset_t offset_;
-  bool use_mmap_;
+  uint8_t io_threads_{};
+  uint8_t io_slots_{};
+  uint8_t retries_{};
+  uint64_t chunk_size_{};
+  boffset_t offset_{};
+  bool use_mmap_{};
 
   /*
    * Protected Methods
@@ -157,19 +157,18 @@ class chunked_device : public Device {
   /*
    * Methods implemented by inheriting class.
    */
-  virtual bool CheckRemote() = 0;
-  virtual bool remote_chunked_volume_exists() = 0;
+  virtual bool CheckRemoteConnection() = 0;
   virtual bool FlushRemoteChunk(chunk_io_request* request) = 0;
   virtual bool ReadRemoteChunk(chunk_io_request* request) = 0;
-  virtual ssize_t chunked_remote_volume_size() = 0;
-  virtual bool TruncateRemoteChunkedVolume(DeviceControlRecord* dcr) = 0;
+  virtual ssize_t RemoteVolumeSize() = 0;
+  virtual bool TruncateRemoteVolume(DeviceControlRecord* dcr) = 0;
 
  public:
   /*
    * Public Methods
    */
-  chunked_device();
-  virtual ~chunked_device();
+  ChunkedDevice() = default;
+  virtual ~ChunkedDevice();
 
   bool DequeueChunk();
   bool DeviceStatus(DeviceStatusInformation* dst) override;

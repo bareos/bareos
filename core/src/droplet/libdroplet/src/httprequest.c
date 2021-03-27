@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -36,42 +37,35 @@
 /** @file */
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt, ...)
 
-dpl_status_t
-dpl_add_host_to_headers(dpl_req_t *req,
-                        dpl_dict_t *headers)
+dpl_status_t dpl_add_host_to_headers(dpl_req_t* req, dpl_dict_t* headers)
 {
   dpl_status_t ret;
 
-  if (NULL != req->host)
-    {
-      char buf[256];
+  if (NULL != req->host) {
+    char buf[256];
 
-      if (strcmp("80", req->port))
-        snprintf(buf, sizeof (buf), "%s:%s", req->host, req->port);
-      else
-        snprintf(buf, sizeof (buf), "%s", req->host);
+    if (strcmp("80", req->port))
+      snprintf(buf, sizeof(buf), "%s:%s", req->host, req->port);
+    else
+      snprintf(buf, sizeof(buf), "%s", req->host);
 
-      ret = dpl_dict_add(headers, "Host", buf, 0);
-      if (DPL_SUCCESS != ret)
-        {
-          return ret;
-        }
-    }
+    ret = dpl_dict_add(headers, "Host", buf, 0);
+    if (DPL_SUCCESS != ret) { return ret; }
+  }
 
   return DPL_SUCCESS;
 }
 
-dpl_status_t
-dpl_add_range_to_headers_internal(const dpl_range_t *range,
-                                  const char *field,
-                                  dpl_dict_t *headers)
+dpl_status_t dpl_add_range_to_headers_internal(const dpl_range_t* range,
+                                               const char* field,
+                                               dpl_dict_t* headers)
 {
   int ret;
   char buf[1024];
-  int len = sizeof (buf);
-  char *p;
+  int len = sizeof(buf);
+  char* p;
   int first = 1;
   char str[128];
 
@@ -83,121 +77,91 @@ dpl_add_range_to_headers_internal(const dpl_range_t *range,
     first = 0;
   else
     DPL_APPEND_STR(",");
-  
+
   if (DPL_UNDEF == range->start && DPL_UNDEF == range->end)
     return DPL_EINVAL;
-  else if (DPL_UNDEF == range->start)
-    {
-      snprintf(str, sizeof (str), "-%lu", range->end);
-      DPL_APPEND_STR(str);
-    }
-  else if (DPL_UNDEF == range->end)
-    {
-      snprintf(str, sizeof (str), "%lu-", range->start);
-      DPL_APPEND_STR(str);
-    }
-  else
-    {
-      snprintf(str, sizeof (str), "%lu-%lu", range->start, range->end);
-      DPL_APPEND_STR(str);
-    }
+  else if (DPL_UNDEF == range->start) {
+    snprintf(str, sizeof(str), "-%lu", range->end);
+    DPL_APPEND_STR(str);
+  } else if (DPL_UNDEF == range->end) {
+    snprintf(str, sizeof(str), "%lu-", range->start);
+    DPL_APPEND_STR(str);
+  } else {
+    snprintf(str, sizeof(str), "%lu-%lu", range->start, range->end);
+    DPL_APPEND_STR(str);
+  }
 
   DPL_APPEND_CHAR(0);
-  
+
   ret = dpl_dict_add(headers, field, buf, 0);
-  if (DPL_SUCCESS != ret)
-    {
-      return DPL_FAILURE;
-    }
+  if (DPL_SUCCESS != ret) { return DPL_FAILURE; }
 
   return DPL_SUCCESS;
 }
 
-dpl_status_t
-dpl_add_range_to_headers(const dpl_range_t *range,
-                         dpl_dict_t *headers)
+dpl_status_t dpl_add_range_to_headers(const dpl_range_t* range,
+                                      dpl_dict_t* headers)
 {
   return dpl_add_range_to_headers_internal(range, "Range", headers);
 }
 
-dpl_status_t
-dpl_add_content_range_to_headers(const dpl_range_t *range,
-                                 dpl_dict_t *headers)
+dpl_status_t dpl_add_content_range_to_headers(const dpl_range_t* range,
+                                              dpl_dict_t* headers)
 {
   return dpl_add_range_to_headers_internal(range, "Content-Range", headers);
 }
 
-dpl_status_t
-dpl_add_condition_to_headers(const dpl_condition_t *cond,
-                             dpl_dict_t *headers)
+dpl_status_t dpl_add_condition_to_headers(const dpl_condition_t* cond,
+                                          dpl_dict_t* headers)
 {
   int ret;
-  char *header;
+  char* header;
   int i;
 
-  for (i = 0;i < cond->n_conds;i++)
-    {
-      const dpl_condition_one_t *condition = &cond->conds[i];
+  for (i = 0; i < cond->n_conds; i++) {
+    const dpl_condition_one_t* condition = &cond->conds[i];
 
-      if (condition->type == DPL_CONDITION_IF_MODIFIED_SINCE ||
-          condition->type == DPL_CONDITION_IF_UNMODIFIED_SINCE)
-        {
-          char date_str[128];
-          struct tm tm_buf;
-          
-          ret = strftime(date_str, sizeof (date_str), "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&condition->time, &tm_buf));
-          if (0 == ret)
-            return DPL_FAILURE;
-          
-          if (condition->type == DPL_CONDITION_IF_MODIFIED_SINCE)
-            {
-              header = "If-Modified-Since";
-              ret = dpl_dict_add(headers, header, date_str, 0);
-              if (DPL_SUCCESS != ret)
-                {
-                  return DPL_FAILURE;
-                }
-            }
-          
-          if (condition->type == DPL_CONDITION_IF_UNMODIFIED_SINCE)
-            {
-              header = "If-Unmodified-Since";
-              ret = dpl_dict_add(headers, header, date_str, 0);
-              if (DPL_SUCCESS != ret)
-                {
-                  return DPL_FAILURE;
-                }
-            }
-        }
-      
-      if (condition->type == DPL_CONDITION_IF_MATCH)
-        {
-          header = "If-Match";
-          ret = dpl_dict_add(headers, header, condition->etag, 0);
-          if (DPL_SUCCESS != ret)
-            {
-              return DPL_FAILURE;
-            }
-        }
-      
-      if (condition->type == DPL_CONDITION_IF_NONE_MATCH)
-        {
-          header = "If-None-Match";
-          ret = dpl_dict_add(headers, header, condition->etag, 0);
-          if (DPL_SUCCESS != ret)
-            {
-              return DPL_FAILURE;
-            }
-        }
+    if (condition->type == DPL_CONDITION_IF_MODIFIED_SINCE
+        || condition->type == DPL_CONDITION_IF_UNMODIFIED_SINCE) {
+      char date_str[128];
+      struct tm tm_buf;
+
+      ret = strftime(date_str, sizeof(date_str), "%a, %d %b %Y %H:%M:%S GMT",
+                     gmtime_r(&condition->time, &tm_buf));
+      if (0 == ret) return DPL_FAILURE;
+
+      if (condition->type == DPL_CONDITION_IF_MODIFIED_SINCE) {
+        header = "If-Modified-Since";
+        ret = dpl_dict_add(headers, header, date_str, 0);
+        if (DPL_SUCCESS != ret) { return DPL_FAILURE; }
+      }
+
+      if (condition->type == DPL_CONDITION_IF_UNMODIFIED_SINCE) {
+        header = "If-Unmodified-Since";
+        ret = dpl_dict_add(headers, header, date_str, 0);
+        if (DPL_SUCCESS != ret) { return DPL_FAILURE; }
+      }
     }
+
+    if (condition->type == DPL_CONDITION_IF_MATCH) {
+      header = "If-Match";
+      ret = dpl_dict_add(headers, header, condition->etag, 0);
+      if (DPL_SUCCESS != ret) { return DPL_FAILURE; }
+    }
+
+    if (condition->type == DPL_CONDITION_IF_NONE_MATCH) {
+      header = "If-None-Match";
+      ret = dpl_dict_add(headers, header, condition->etag, 0);
+      if (DPL_SUCCESS != ret) { return DPL_FAILURE; }
+    }
+  }
 
   return DPL_SUCCESS;
 }
 
 /* Add RFC2617 Basic authorization to a request's headers */
-dpl_status_t
-dpl_add_basic_authorization_to_headers(const dpl_req_t *req,
-				       dpl_dict_t *headers)
+dpl_status_t dpl_add_basic_authorization_to_headers(const dpl_req_t* req,
+                                                    dpl_dict_t* headers)
 {
   int ret, ret2;
   char basic_str[1024];
@@ -208,27 +172,27 @@ dpl_add_basic_authorization_to_headers(const dpl_req_t *req,
 
   /* No username or no password in the profile means
    * we silently don't send the header */
-  if (NULL == req->ctx->access_key ||
-      NULL == req->ctx->secret_key)
+  if (NULL == req->ctx->access_key || NULL == req->ctx->secret_key)
     return DPL_SUCCESS;
 
-  snprintf(basic_str, sizeof (basic_str), "%s:%s", req->ctx->access_key, req->ctx->secret_key);
+  snprintf(basic_str, sizeof(basic_str), "%s:%s", req->ctx->access_key,
+           req->ctx->secret_key);
   basic_len = strlen(basic_str);
 
-  base64_len = dpl_base64_encode((const u_char *) basic_str, basic_len, (u_char *) base64_str);
+  base64_len = dpl_base64_encode((const u_char*)basic_str, basic_len,
+                                 (u_char*)base64_str);
 
-  snprintf(auth_str, sizeof (auth_str), "Basic %.*s", base64_len, base64_str);
+  snprintf(auth_str, sizeof(auth_str), "Basic %.*s", base64_len, base64_str);
 
   ret2 = dpl_dict_add(headers, "Authorization", auth_str, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
   return ret;
 }
@@ -246,25 +210,25 @@ dpl_add_basic_authorization_to_headers(const dpl_req_t *req,
  *
  * @return
  */
-dpl_status_t
-dpl_req_gen_http_request(dpl_ctx_t *ctx,
-                         dpl_req_t *req,
-                         const dpl_dict_t *headers,
-                         const dpl_dict_t *query_params,
-                         char *buf,
-                         int len,
-                         unsigned int *lenp)
+dpl_status_t dpl_req_gen_http_request(dpl_ctx_t* ctx,
+                                      dpl_req_t* req,
+                                      const dpl_dict_t* headers,
+                                      const dpl_dict_t* query_params,
+                                      char* buf,
+                                      int len,
+                                      unsigned int* lenp)
 {
   int ret;
-  char *p;
-  char *method = dpl_method_str(req->method);
-  char *resource_ue = NULL;
+  char* p;
+  char* method = dpl_method_str(req->method);
+  char* resource_ue = NULL;
 
-  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_gen_http_request resource=%s", req->resource);
+  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_gen_http_request resource=%s",
+            req->resource);
 
   p = buf;
 
-  //resource
+  // resource
   if (NULL != req->resource) {
     resource_ue = malloc(DPL_URL_LENGTH(strlen(req->resource)) + 3);
     if (resource_ue == NULL) {
@@ -294,85 +258,72 @@ dpl_req_gen_http_request(dpl_ctx_t *ctx,
         strcpy(resource_ue, req->resource);
     }
   }
-      
-  //method
+
+  // method
   DPL_APPEND_STR(method);
 
   DPL_APPEND_STR(" ");
 
-  if (resource_ue != NULL)
-    DPL_APPEND_STR(resource_ue);
+  if (resource_ue != NULL) DPL_APPEND_STR(resource_ue);
 
-  //subresource and query params
-  if (NULL != req->subresource || NULL != query_params)
-    DPL_APPEND_STR("?");
+  // subresource and query params
+  if (NULL != req->subresource || NULL != query_params) DPL_APPEND_STR("?");
 
-  if (NULL != req->subresource)
-    DPL_APPEND_STR(req->subresource);
+  if (NULL != req->subresource) DPL_APPEND_STR(req->subresource);
 
-  if (NULL != query_params)
-    {
-      int bucket;
-      dpl_dict_var_t *var;
-      int amp = 0;
+  if (NULL != query_params) {
+    int bucket;
+    dpl_dict_var_t* var;
+    int amp = 0;
 
-      if (NULL != req->subresource)
+    if (NULL != req->subresource) amp = 1;
+
+    for (bucket = 0; bucket < query_params->n_buckets; bucket++) {
+      for (var = query_params->buckets[bucket]; var; var = var->prev) {
+        if (amp) DPL_APPEND_STR("&");
+        DPL_APPEND_STR(var->key);
+        DPL_APPEND_STR("=");
+        assert(var->val->type == DPL_VALUE_STRING);
+        DPL_APPEND_STR(dpl_sbuf_get_str(var->val->string));
         amp = 1;
-
-      for (bucket = 0;bucket < query_params->n_buckets;bucket++)
-        {
-          for (var = query_params->buckets[bucket];var;var = var->prev)
-            {
-              if (amp)
-                DPL_APPEND_STR("&");
-              DPL_APPEND_STR(var->key);
-              DPL_APPEND_STR("=");
-              assert(var->val->type == DPL_VALUE_STRING);
-              DPL_APPEND_STR(dpl_sbuf_get_str(var->val->string));
-              amp = 1;
-            }
-        }
+      }
     }
+  }
 
   DPL_APPEND_STR(" ");
 
-  //version
+  // version
   DPL_APPEND_STR("HTTP/1.1");
   DPL_APPEND_STR("\r\n");
 
-  //headers
-  if (NULL != headers)
-    {
-      int bucket;
-      dpl_dict_var_t *var;
+  // headers
+  if (NULL != headers) {
+    int bucket;
+    dpl_dict_var_t* var;
 
-      for (bucket = 0;bucket < headers->n_buckets;bucket++)
-        {
-          for (var = headers->buckets[bucket];var;var = var->prev)
-            {
-              assert(var->val->type == DPL_VALUE_STRING);
-              DPL_TRACE(req->ctx, DPL_TRACE_REQ, "header='%s' value='%s'",
-			var->key, dpl_sbuf_get_str(var->val->string));
+    for (bucket = 0; bucket < headers->n_buckets; bucket++) {
+      for (var = headers->buckets[bucket]; var; var = var->prev) {
+        assert(var->val->type == DPL_VALUE_STRING);
+        DPL_TRACE(req->ctx, DPL_TRACE_REQ, "header='%s' value='%s'", var->key,
+                  dpl_sbuf_get_str(var->val->string));
 
-              DPL_APPEND_STR(var->key);
-              DPL_APPEND_STR(": ");
-              DPL_APPEND_STR(dpl_sbuf_get_str(var->val->string));
-              DPL_APPEND_STR("\r\n");
-            }
-        }
+        DPL_APPEND_STR(var->key);
+        DPL_APPEND_STR(": ");
+        DPL_APPEND_STR(dpl_sbuf_get_str(var->val->string));
+        DPL_APPEND_STR("\r\n");
+      }
     }
+  }
 
-  //final crlf managed by caller
+  // final crlf managed by caller
 
-  if (NULL != lenp)
-    *lenp = (p - buf);
+  if (NULL != lenp) *lenp = (p - buf);
 
   ret = DPL_SUCCESS;
-  
- end:
-  
-  if (NULL != resource_ue)
-    free(resource_ue);
+
+end:
+
+  if (NULL != resource_ue) free(resource_ue);
 
   return ret;
 }
