@@ -16,6 +16,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix python-bareos for Python < 2.7.13 [PR #748]
 - fixed bug when user could enter wrong dates such as 2000-66-100 55:55:89 without being denied [PR #707]
 - fix volume-pruning to be relyable on all test platforms [PR #761]
+- fix memory leak in python module constants [PR #778]
 
 
 ### Added
