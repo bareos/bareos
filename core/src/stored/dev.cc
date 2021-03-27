@@ -196,7 +196,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 #  endif
 #  ifdef HAVE_BAREOSSD_DROPLET_DEVICE
     case DeviceType::B_DROPLET_DEV:
-      dev = new droplet_device;
+      dev = new DropletDevice;
       break;
 #  endif
 #  ifdef HAVE_RADOS
@@ -615,7 +615,7 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
     if (open_mode == omode) {
       return true;
     } else {
-      d_close(fd_);
+      d_close(fd);
       ClearOpened();
       Dmsg0(100, "Close fd for mode change.\n");
 
@@ -658,9 +658,9 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
    */
   CopySetBits(ST_MAX, preserve, state);
 
-  Dmsg2(100, "preserve=%08o fd=%d\n", preserve, fd_);
+  Dmsg2(100, "preserve=%08o fd=%d\n", preserve, fd);
 
-  return fd_ >= 0;
+  return fd >= 0;
 }
 
 void Device::set_mode(DeviceMode mode)
@@ -723,27 +723,28 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   open_mode = omode;
   set_mode(omode);
 
-  /*
-   * If creating file, give 0640 permissions
-   */
-  Dmsg3(100, "open disk: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
+  Dmsg3(100, "open archive: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
         archive_name.c_str(), oflags);
 
-  if ((fd_ = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
+  if ((fd = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
     BErrNo be;
     dev_errno = errno;
-    Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
-          be.bstrerror());
+    if (dev_errno == 0) {
+      Mmsg2(errmsg, _("Could not open: %s\n"), archive_name.c_str());
+    } else {
+      Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
+            be.bstrerror());
+    }
     Dmsg1(100, "open failed: %s", errmsg);
   }
 
-  if (fd_ >= 0) {
+  if (fd >= 0) {
     dev_errno = 0;
     file = 0;
     file_addr = 0;
   }
 
-  Dmsg1(100, "open dev: disk fd=%d opened\n", fd_);
+  Dmsg1(100, "open dev: disk fd=%d opened\n", fd);
 }
 
 /**
@@ -754,7 +755,7 @@ void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
  */
 bool Device::rewind(DeviceControlRecord* dcr)
 {
-  Dmsg3(400, "rewind res=%d fd=%d %s\n", NumReserved(), fd_, print_name());
+  Dmsg3(400, "rewind res=%d fd=%d %s\n", NumReserved(), fd, print_name());
 
   /*
    * Remove EOF/EOT flags
@@ -767,11 +768,11 @@ bool Device::rewind(DeviceControlRecord* dcr)
   file_size = 0;
   file_addr = 0;
 
-  if (fd_ < 0) { return false; }
+  if (fd < 0) { return false; }
 
   if (IsFifo() || IsVtl()) { return true; }
 
-  if (lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
+  if (d_lseek(dcr, (boffset_t)0, SEEK_SET) < 0) {
     BErrNo be;
     dev_errno = errno;
     Mmsg2(errmsg, _("lseek error on %s. ERR=%s"), print_name(), be.bstrerror());
@@ -817,7 +818,7 @@ bool Device::eod(DeviceControlRecord* dcr)
 {
   boffset_t pos;
 
-  if (fd_ < 0) {
+  if (fd < 0) {
     dev_errno = EBADF;
     Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), print_name());
     return false;
@@ -834,7 +835,7 @@ bool Device::eod(DeviceControlRecord* dcr)
   file_size = 0;
   file_addr = 0;
 
-  pos = lseek(dcr, (boffset_t)0, SEEK_END);
+  pos = d_lseek(dcr, (boffset_t)0, SEEK_END);
   Dmsg1(200, "====== Seek to %lld\n", pos);
 
   if (pos >= 0) {
@@ -874,7 +875,7 @@ bool Device::UpdatePos(DeviceControlRecord* dcr)
 
   file = 0;
   file_addr = 0;
-  pos = lseek(dcr, (boffset_t)0, SEEK_CUR);
+  pos = d_lseek(dcr, (boffset_t)0, SEEK_CUR);
   if (pos < 0) {
     BErrNo be;
     dev_errno = errno;
@@ -916,7 +917,7 @@ char* Device::StatusDev()
 
 bool Device::OfflineOrRewind()
 {
-  if (fd_ < 0) { return false; }
+  if (fd < 0) { return false; }
   if (HasCap(CAP_OFFLINEUNMOUNT)) {
     return offline();
   } else {
@@ -965,7 +966,7 @@ bool Device::Reposition(DeviceControlRecord* dcr,
 
   boffset_t pos = (((boffset_t)rfile) << 32) | rblock;
   Dmsg1(100, "===== lseek to %d\n", (int)pos);
-  if (lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
+  if (d_lseek(dcr, pos, SEEK_SET) == (boffset_t)-1) {
     BErrNo be;
     dev_errno = errno;
     Mmsg2(errmsg, _("lseek error on %s. ERR=%s.\n"), print_name(),
@@ -1024,7 +1025,7 @@ bool Device::close(DeviceControlRecord* dcr)
        * Fall through wanted
        */
     default:
-      status = d_close(fd_);
+      status = d_close(fd);
       if (status < 0) {
         BErrNo be;
 
@@ -1215,7 +1216,7 @@ ssize_t Device::read(void* buf, size_t len)
 
   GetTimerCount();
 
-  read_len = d_read(fd_, buf, len);
+  read_len = d_read(fd, buf, len);
 
   last_tick = GetTimerCount();
 
@@ -1238,7 +1239,7 @@ ssize_t Device::write(const void* buf, size_t len)
 
   GetTimerCount();
 
-  write_len = d_write(fd_, buf, len);
+  write_len = d_write(fd, buf, len);
 
   last_tick = GetTimerCount();
 

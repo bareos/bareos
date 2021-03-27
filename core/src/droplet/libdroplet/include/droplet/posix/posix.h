@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,11 +32,11 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_POSIX_H__
-#define __DROPLET_POSIX_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_POSIX_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_POSIX_H_
 
 #include <droplet/posix/backend.h>
 #include <droplet/posix/reqbuilder.h>
 #include <droplet/posix/replyparser.h>
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_POSIX_POSIX_H_

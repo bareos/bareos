@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -32,8 +33,8 @@
  * https://github.com/scality/Droplet
  */
 
-#ifndef __DROPLET_S3_BACKEND_H__
-#define __DROPLET_S3_BACKEND_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_BACKEND_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_BACKEND_H_
 
 DCL_BACKEND_GET_CAPABILITIES_FN(dpl_s3_get_capabilities);
 DCL_BACKEND_LIST_ALL_MY_BUCKETS_FN(dpl_s3_list_all_my_buckets);
@@ -63,4 +64,4 @@ DCL_BACKEND_STREAM_FLUSH_FN(dpl_s3_stream_flush);
 
 extern dpl_backend_t dpl_backend_s3;
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_BACKEND_H_

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,7 +47,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  * <actual_device_type>::
  *          |
  *          v
- *   chunked_device::
+ *   ChunkedDevice::
  *          |
  *          v
  *       Device::
@@ -71,8 +71,8 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  *
  * FlushRemoteChunk() - Flush a chunk to the remote backing store.
  * ReadRemoteChunk() - Read a chunk from the remote backing store.
- * chunked_remote_volume_size - Return the current size of a volume.
- * TruncateRemoteChunkedVolume() - Truncate a chunked volume on the
+ * RemoteVolumeSize - Return the current size of a volume.
+ * TruncateRemoteVolume() - Truncate a chunked volume on the
  *                                    remote backing store.
  */
 
@@ -82,7 +82,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static void* io_thread(void* data)
 {
   char ed1[50];
-  chunked_device* dev = (chunked_device*)data;
+  ChunkedDevice* dev = (ChunkedDevice*)data;
 
   /*
    * Dequeue from the circular buffer until we are done.
@@ -100,7 +100,7 @@ static void* io_thread(void* data)
 /*
  * Allocate a new chunk buffer.
  */
-char* chunked_device::allocate_chunkbuffer()
+char* ChunkedDevice::allocate_chunkbuffer()
 {
   char* buffer = (char*)malloc(current_chunk_->chunk_size);
 
@@ -113,7 +113,7 @@ char* chunked_device::allocate_chunkbuffer()
 /*
  * Free a chunk buffer.
  */
-void chunked_device::FreeChunkbuffer(char* buffer)
+void ChunkedDevice::FreeChunkbuffer(char* buffer)
 {
   Dmsg2(100, "Freeing buffer of %d bytes at %p\n", current_chunk_->chunk_size,
         buffer);
@@ -129,7 +129,7 @@ void chunked_device::FreeChunkbuffer(char* buffer)
 /*
  * Free a chunk_io_request.
  */
-void chunked_device::FreeChunkIoRequest(chunk_io_request* request)
+void ChunkedDevice::FreeChunkIoRequest(chunk_io_request* request)
 {
   Dmsg2(100, "Freeing chunk io request of %d bytes at %p\n",
         sizeof(chunk_io_request), request);
@@ -142,7 +142,7 @@ void chunked_device::FreeChunkIoRequest(chunk_io_request* request)
 /*
  * Start the io-threads that are used for uploading.
  */
-bool chunked_device::StartIoThreads()
+bool ChunkedDevice::StartIoThreads()
 {
   char ed1[50];
   uint8_t thread_nr;
@@ -187,7 +187,7 @@ bool chunked_device::StartIoThreads()
 /*
  * Stop the io-threads that are used for uploading.
  */
-void chunked_device::StopThreads()
+void ChunkedDevice::StopThreads()
 {
   char ed1[50];
   thread_handle* handle = nullptr;
@@ -228,7 +228,7 @@ void chunked_device::StopThreads()
 /*
  * Set the inflight flag for a chunk.
  */
-bool chunked_device::SetInflightChunk(chunk_io_request* request)
+bool ChunkedDevice::SetInflightChunk(chunk_io_request* request)
 {
   int fd;
   PoolMem inflight_file(PM_FNAME);
@@ -256,7 +256,7 @@ bool chunked_device::SetInflightChunk(chunk_io_request* request)
 /*
  * Clear the inflight flag for a chunk.
  */
-void chunked_device::ClearInflightChunk(chunk_io_request* request)
+void ChunkedDevice::ClearInflightChunk(chunk_io_request* request)
 {
   struct stat st;
   PoolMem inflight_file(PM_FNAME);
@@ -282,7 +282,7 @@ void chunked_device::ClearInflightChunk(chunk_io_request* request)
 /*
  * Check if a certain chunk is inflight to the backing store.
  */
-bool chunked_device::IsInflightChunk(chunk_io_request* request)
+bool ChunkedDevice::IsInflightChunk(chunk_io_request* request)
 {
   struct stat st;
   PoolMem inflight_file(PM_FNAME);
@@ -299,7 +299,7 @@ bool chunked_device::IsInflightChunk(chunk_io_request* request)
 /*
  * Number of inflight chunks to the backing store.
  */
-int chunked_device::NrInflightChunks()
+int ChunkedDevice::NrInflightChunks()
 {
   int retval = 0;
 
@@ -366,7 +366,7 @@ static void UpdateChunkIoRequest(void* item1, void* item2)
 /*
  * Enqueue a chunk flush request onto the ordered circular buffer.
  */
-bool chunked_device::EnqueueChunk(chunk_io_request* request)
+bool ChunkedDevice::EnqueueChunk(chunk_io_request* request)
 {
   chunk_io_request *new_request, *enqueued_request;
 
@@ -413,7 +413,7 @@ bool chunked_device::EnqueueChunk(chunk_io_request* request)
  * Dequeue a chunk flush request from the ordered circular buffer and process
  * it.
  */
-bool chunked_device::DequeueChunk()
+bool ChunkedDevice::DequeueChunk()
 {
   char ed1[50];
   struct timeval tv;
@@ -550,7 +550,7 @@ bool chunked_device::DequeueChunk()
  * return an IO error to the upper level callers. That way the
  * volume will go into error.
  */
-bool chunked_device::FlushChunk(bool release_chunk, bool move_to_next_chunk)
+bool ChunkedDevice::FlushChunk(bool release_chunk, bool move_to_next_chunk)
 {
   bool retval = false;
   chunk_io_request request;
@@ -604,7 +604,7 @@ bool chunked_device::FlushChunk(bool release_chunk, bool move_to_next_chunk)
 /*
  * Internal method for reading a chunk from the backing store.
  */
-bool chunked_device::ReadChunk()
+bool ChunkedDevice::ReadChunk()
 {
   chunk_io_request request;
 
@@ -638,7 +638,7 @@ bool chunked_device::ReadChunk()
  *  -1: failure
  *   0: success
  */
-int chunked_device::SetupChunk(const char* pathname, int flags, int mode)
+int ChunkedDevice::SetupChunk(const char* pathname, int flags, int mode)
 {
   int retval = -1;
   /*
@@ -651,7 +651,7 @@ int chunked_device::SetupChunk(const char* pathname, int flags, int mode)
     return -1;
   }
 
-  if (!CheckRemote()) {
+  if (!CheckRemoteConnection()) {
     Dmsg0(100, "setup_chunk failed, as remote device is not available\n");
     dev_errno = EIO; /**< I/O error */
     return -1;
@@ -734,7 +734,7 @@ int chunked_device::SetupChunk(const char* pathname, int flags, int mode)
 /*
  * Read a chunked volume.
  */
-ssize_t chunked_device::ReadChunked(int fd, void* buffer, size_t count)
+ssize_t ChunkedDevice::ReadChunked(int fd, void* buffer, size_t count)
 {
   ssize_t retval = 0;
 
@@ -875,7 +875,7 @@ bail_out:
 /*
  * Write a chunked volume.
  */
-ssize_t chunked_device::WriteChunked(int fd, const void* buffer, size_t count)
+ssize_t ChunkedDevice::WriteChunked(int fd, const void* buffer, size_t count)
 {
   ssize_t retval = 0;
 
@@ -1008,7 +1008,7 @@ bail_out:
 /*
  * Close a chunked volume.
  */
-int chunked_device::CloseChunk()
+int ChunkedDevice::CloseChunk()
 {
   int retval = -1;
 
@@ -1021,7 +1021,7 @@ int chunked_device::CloseChunk()
       }
     } else {
       /*
-       * If chunked_device::wait_until_chunks_written() has been called before,
+       * If ChunkedDevice::wait_until_chunks_written() has been called before,
        * chunk has been flushed (buffer given to an io thread),
        * but not released. Therefore the buffer is set to NULL,
        * as normally done by flush_chunk(true, *).
@@ -1053,10 +1053,10 @@ int chunked_device::CloseChunk()
 /*
  * Truncate a chunked volume.
  */
-bool chunked_device::TruncateChunkedVolume(DeviceControlRecord* dcr)
+bool ChunkedDevice::TruncateChunkedVolume(DeviceControlRecord* dcr)
 {
   if (current_chunk_->opened) {
-    if (!TruncateRemoteChunkedVolume(dcr)) { return false; }
+    if (!TruncateRemoteVolume(dcr)) { return false; }
 
     /*
      * Reinitialize the initial chunk.
@@ -1089,12 +1089,12 @@ static int CompareVolumeName(void* item1, void* item2)
 /*
  * Get the current size of a volume.
  */
-ssize_t chunked_device::ChunkedVolumeSize()
+ssize_t ChunkedDevice::ChunkedVolumeSize()
 {
   /*
    * See if we are using io-threads or not and the ordered CircularBuffer is
    * created. We try to make sure that nothing of the volume being requested is
-   * still inflight as then the chunked_remote_volume_size() method will fail to
+   * still inflight as then the RemoteVolumeSize() method will fail to
    * determine the size of the data as its not fully stored on the backing store
    * yet.
    */
@@ -1180,15 +1180,15 @@ ssize_t chunked_device::ChunkedVolumeSize()
   /*
    * Get the actual length by contacting the remote backing store.
    */
-  return chunked_remote_volume_size();
+  return RemoteVolumeSize();
 }
 
-bool chunked_device::is_written()
+bool ChunkedDevice::is_written()
 {
   /*
    * See if we are using io-threads or not and the ordered circbuf is created.
    * We try to make sure that nothing of the volume being requested is still
-   * inflight as then the chunked_remote_volume_size() method will fail to
+   * inflight as then the RemoteVolumeSize() method will fail to
    * determine the size of the data as its not fully stored on the backing store
    * yet.
    */
@@ -1232,9 +1232,9 @@ bool chunked_device::is_written()
   }
 
   /* compare expected to written volume size */
-  size_t remote_volume_size = chunked_remote_volume_size();
+  size_t remote_volume_size = RemoteVolumeSize();
   Dmsg3(100,
-        "volume: %s, chunked_remote_volume_size = %lld, VolCatInfo.VolCatBytes "
+        "volume: %s, RemoteVolumeSize = %lld, VolCatInfo.VolCatBytes "
         "= %lld\n",
         current_volname_, remote_volume_size, VolCatInfo.VolCatBytes);
 
@@ -1253,7 +1253,7 @@ bool chunked_device::is_written()
 /*
  * Busy waits until write buffer is empty.
  */
-bool chunked_device::WaitUntilChunksWritten()
+bool ChunkedDevice::WaitUntilChunksWritten()
 {
   if (current_chunk_->need_flushing) {
     if (!FlushChunk(false /* release */, false /* move_to_next_chunk */)) {
@@ -1294,7 +1294,7 @@ static int CloneIoRequest(void* item1, void* item2)
 /*
  * Make sure we have the right chunk in memory.
  */
-bool chunked_device::LoadChunk()
+bool ChunkedDevice::LoadChunk()
 {
   boffset_t start_offset;
 
@@ -1428,14 +1428,14 @@ static int ListIoRequest(void* request, void* data)
 /**
  * Return specific device status information.
  */
-bool chunked_device::DeviceStatus(DeviceStatusInformation* dst)
+bool ChunkedDevice::DeviceStatus(DeviceStatusInformation* dst)
 {
   bool pending = false;
   int inflight_chunks = 0;
   PoolMem inflights(PM_MESSAGE);
 
   dst->status_length = 0;
-  if (CheckRemote()) {
+  if (CheckRemoteConnection()) {
     dst->status_length
         = PmStrcpy(dst->status, _("Backend connection is working.\n"));
   } else {
@@ -1471,7 +1471,7 @@ bool chunked_device::DeviceStatus(DeviceStatusInformation* dst)
   return (dst->status_length > 0);
 }
 
-chunked_device::~chunked_device()
+ChunkedDevice::~ChunkedDevice()
 {
   if (thread_ids_) { StopThreads(); }
 
@@ -1501,24 +1501,6 @@ chunked_device::~chunked_device()
   }
 
   if (current_volname_) { free(current_volname_); }
-}
-
-chunked_device::chunked_device()
-{
-  current_volname_ = NULL;
-  current_chunk_ = NULL;
-  io_threads_ = 0;
-  io_slots_ = 0;
-  retries_ = 0;
-  chunk_size_ = 0;
-  io_threads_started_ = false;
-  end_of_media_ = false;
-  readonly_ = false;
-  inflight_chunks_ = 0;
-  cb_ = NULL;
-  chunk_size_ = 0;
-  offset_ = 0;
-  use_mmap_ = false;
 }
 
 } /* namespace storagedaemon */

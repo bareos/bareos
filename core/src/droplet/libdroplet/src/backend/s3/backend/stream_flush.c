@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2014 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -35,58 +36,48 @@
 #include <dropletp.h>
 #include <droplet/s3/s3.h>
 
-dpl_status_t
-dpl_s3_stream_flush(dpl_ctx_t *ctx, dpl_stream_t *stream)
+dpl_status_t dpl_s3_stream_flush(dpl_ctx_t* ctx, dpl_stream_t* stream)
 {
-  dpl_status_t        ret;
-  struct json_object  *obj = NULL;
-  const char          *uploadid = NULL;
-  unsigned int        nparts = 0;
+  dpl_status_t ret;
+  struct json_object* obj = NULL;
+  const char* uploadid = NULL;
+  unsigned int nparts = 0;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
-  if (NULL == stream->status)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+  if (NULL == stream->status) {
+    ret = DPL_FAILURE;
+    goto end;
+  }
 
-  if (json_object_object_get_ex(stream->status, "uploadId",  &obj) == 0
-      || !json_object_is_type(obj, json_type_string))
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+  if (json_object_object_get_ex(stream->status, "uploadId", &obj) == 0
+      || !json_object_is_type(obj, json_type_string)) {
+    ret = DPL_FAILURE;
+    goto end;
+  }
   uploadid = json_object_get_string(obj);
 
-  if (json_object_object_get_ex(stream->status, "nparts",  &obj) == 0
-      || !json_object_is_type(obj, json_type_int))
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+  if (json_object_object_get_ex(stream->status, "nparts", &obj) == 0
+      || !json_object_is_type(obj, json_type_int)) {
+    ret = DPL_FAILURE;
+    goto end;
+  }
   nparts = json_object_get_int64(obj);
 
-  if (json_object_object_get_ex(stream->status, "parts",  &obj) == 0
-      || !json_object_is_type(obj, json_type_array))
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  ret = dpl_s3_stream_multipart_complete(ctx,
-                                         stream->bucket,
-                                         stream->locator,
-                                         uploadid,
-                                         obj, nparts,
-                                         stream->md,
-                                         stream->sysmd);
-  if (DPL_SUCCESS != ret)
+  if (json_object_object_get_ex(stream->status, "parts", &obj) == 0
+      || !json_object_is_type(obj, json_type_array)) {
+    ret = DPL_FAILURE;
     goto end;
+  }
+
+  ret = dpl_s3_stream_multipart_complete(ctx, stream->bucket, stream->locator,
+                                         uploadid, obj, nparts, stream->md,
+                                         stream->sysmd);
+  if (DPL_SUCCESS != ret) goto end;
 
   ret = DPL_SUCCESS;
 
- end:
+end:
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 

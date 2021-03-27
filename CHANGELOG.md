@@ -6,6 +6,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Fixed
+- fix possible read/write problems when using droplet with https [PR #765]
 - fix config-dump systemtest [PR #736]
 - fix systemtests daemon control scripts [PR #762]
 - fix invalid file descriptor issue in the libcloud plugin [PR #702]
@@ -19,6 +20,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 
 ### Added
+- systemtests for S3 functionalities (droplet, libcloud) now use https [PR #765]
 - added reload commands to systemd service [PR #694]
 - Build the package **bareos-filedaemon-postgresql-python-plugin** also for Debian, Ubuntu and UCS (deb packages) [PR #723].
 - added an informative debugmessage when a dynamic backend cannot be loaded [PR #740]
@@ -26,6 +28,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - added external repo bareos-contrib as subtree [PR #752]
 
 ### Changed
+- repaired or added all header guards in libdroplet [PR #765]
 - bstrncpy: workaround when used with overlapping strings [PR #736]
 - Disabled test "statefile" for big endian, use temporary state files for all other architectures [PR #757]
 - Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page

@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,22 +32,22 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_UTILS_H__
-#define __DROPLET_UTILS_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UTILS_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UTILS_H_
 
 #include <stdarg.h>
 /*
  * general
  */
 #if defined(SOLARIS) || defined(__sun__)
-# include <sys/filio.h> //FIONBIO
-# include <strings.h>
-# include <alloca.h>
+#  include <sys/filio.h>  //FIONBIO
+#  include <strings.h>
+#  include <alloca.h>
 #else
-//linux
-# define HAVE_DRAND48_R 1
-# define HAVE_GETTID 1
-# define HAVE_CANONICALIZE_FILE_NAME
+// linux
+#  define HAVE_DRAND48_R 1
+#  define HAVE_GETTID 1
+#  define HAVE_CANONICALIZE_FILE_NAME
 #endif
 
 
@@ -54,68 +55,68 @@
  * endianness
  */
 #if defined(SOLARIS) || defined(__sun__)
-# include <sys/isa_defs.h>
-#define __LITTLE_ENDIAN 1234
-#define __BIG_ENDIAN 4321
+#  include <sys/isa_defs.h>
+#  define __LITTLE_ENDIAN 1234
+#  define __BIG_ENDIAN 4321
 
-#ifdef _LITTLE_ENDIAN
-#define __BYTE_ORDER __LITTLE_ENDIAN
+#  ifdef _LITTLE_ENDIAN
+#    define __BYTE_ORDER __LITTLE_ENDIAN
 
-#else // default to big endian
-#define __BYTE_ORDER __BIG_ENDIAN
-#endif
+#  else  // default to big endian
+#    define __BYTE_ORDER __BIG_ENDIAN
+#  endif
 
-/* Mac OSX has __BIG_ENDIAN__ or __LITTLE_ENDIAN__ automatically set by the compiler (at least with GCC) */
-#elif defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+/* Mac OSX has __BIG_ENDIAN__ or __LITTLE_ENDIAN__ automatically set by the
+ * compiler (at least with GCC) */
+#elif defined(__APPLE__) && defined(__MACH_) || defined(__ellcc__)
 
-    #ifdef _LITTLE_ENDIAN__
-    #define __BYTE_ORDER __LITTLE_ENDIAN__
-    #else // default to big endian
-    #define __BYTE_ORDER __BIG_ENDIAN__
-    #endif
+#  ifdef _LITTLE_ENDIAN__
+#    define __BYTE_ORDER __LITTLE_ENDIAN__
+#  else  // default to big endian
+#    define __BYTE_ORDER __BIG_ENDIAN__
+#  endif
 
 #else
 // linux case
-# include <endian.h>
+#  include <endian.h>
 #endif
 
 #if defined(SOLARIS) || defined(__sun__)
-# include <asm/byteorder.h>
+#  include <asm/byteorder.h>
 
-#elif defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
-    #include <libkern/OSByteOrder.h>
-    #define le32toh OSSwapLittleToHostInt32
-    #define htole32 OSSwapHostToLittleInt32
-    #define bswap_32 OSSwapInt32
+#elif defined(__APPLE__) && defined(__MACH_) || defined(__ellcc__)
+#  include <libkern/OSByteOrder.h>
+#  define le32toh OSSwapLittleToHostInt32
+#  define htole32 OSSwapHostToLittleInt32
+#  define bswap_32 OSSwapInt32
 #else
-//defines htonll() and ntohll() natively
-# include <byteswap.h>
+// defines htonll() and ntohll() natively
+#  include <byteswap.h>
 
-# ifndef __BYTE_ORDER
-#  error "byte order is not defined"
-# endif
-
-# ifndef ntohll
-#  if __BYTE_ORDER == __BIG_ENDIAN
-#   define ntohll(x)       (x)
-#   define htonll(x)       (x)
-#   else
-#    if __BYTE_ORDER == __LITTLE_ENDIAN
-#     define ntohll(x)     bswap_64 (x)
-#     define htonll(x)     bswap_64 (x)
-#    endif
+#  ifndef __BYTE_ORDER
+#    error "byte order is not defined"
 #  endif
-# endif /* ndef ntohll */
+
+#  ifndef ntohll
+#    if __BYTE_ORDER == __BIG_ENDIAN
+#      define ntohll(x) (x)
+#      define htonll(x) (x)
+#    else
+#      if __BYTE_ORDER == __LITTLE_ENDIAN
+#        define ntohll(x) bswap_64(x)
+#        define htonll(x) bswap_64(x)
+#      endif
+#    endif
+#  endif /* ndef ntohll */
 #endif
 
 #ifndef HAVE_DRAND48_R
-//emulate drand48_r with rand_r()
-struct drand48_data
-{
+// emulate drand48_r with rand_r()
+struct drand48_data {
   int seed;
 };
-int srand48_r(long int seedval, struct drand48_data *buffer);
-int lrand48_r(struct drand48_data *buffer, long int *result);
+int srand48_r(long int seedval, struct drand48_data* buffer);
+int lrand48_r(struct drand48_data* buffer, long int* result);
 #endif
 
 /**/
@@ -126,36 +127,35 @@ pid_t dpl_gettid();
 /**/
 
 #ifndef HAVE_CANONICALIZE_FILE_NAME
-char *canonicalize_file_name(const char *path);
+char* canonicalize_file_name(const char* path);
 #endif
 
 /**/
 
-//one fits all
-int dpl_gethostbyname_r(const char *name,
-                          struct hostent *ret,
-                          char *buf,
-                          size_t buflen,
-                          struct hostent **result,
-                          int *h_errnop);
+// one fits all
+int dpl_gethostbyname_r(const char* name,
+                        struct hostent* ret,
+                        char* buf,
+                        size_t buflen,
+                        struct hostent** result,
+                        int* h_errnop);
 
 /**/
 
 #ifndef MIN
-# define MIN(a,b) ((a) < (b) ? (a) : (b))
+#  define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 #ifndef MAX
-# define MAX(a,b) ((a) > (b) ? (a) : (b))
+#  define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
 /**/
 
-#define DPL_DUMP_LINE_SIZE    16
+#define DPL_DUMP_LINE_SIZE 16
 
-struct dpl_dump_ctx
-{
-  FILE *file;
+struct dpl_dump_ctx {
+  FILE* file;
   char prevb[DPL_DUMP_LINE_SIZE];
   int prevb_inited;
   int star_displayed;
@@ -165,28 +165,23 @@ struct dpl_dump_ctx
 
 /**/
 
-typedef int
-(*dpl_conf_cb_func_t)(void *cb_arg,
-                      const char *var,
-                      char *value);
+typedef int (*dpl_conf_cb_func_t)(void* cb_arg, const char* var, char* value);
 
-struct dpl_conf_buf
-{
+struct dpl_conf_buf {
 #define DPL_CONF_MAX_BUF 256
-  char buf[DPL_CONF_MAX_BUF+1];
+  char buf[DPL_CONF_MAX_BUF + 1];
   int pos;
 };
 
-struct dpl_conf_ctx
-{
+struct dpl_conf_ctx {
   int backslash;
   int comment;
   int quote;
   struct dpl_conf_buf var_cbuf;
   struct dpl_conf_buf value_cbuf;
-  struct dpl_conf_buf *cur_cbuf;
+  struct dpl_conf_buf* cur_cbuf;
   dpl_conf_cb_func_t cb_func;
-  void *cb_arg;
+  void* cb_arg;
 };
 
 /**/
@@ -195,76 +190,135 @@ int dpl_base64_init(void);
 #define DPL_BASE64_LENGTH(len) (((len) + 2) / 3 * 4)
 #define DPL_BASE64_ORIG_LENGTH(len) (((len) + 3) / 4 * 3)
 
-#define DPL_HEX_LENGTH(len) ((len) * 2)
-#define DPL_URL_LENGTH(len) ((len)*3+1)
-#define DPL_BCD_LENGTH(len) (2*(len))
+#define DPL_HEX_LENGTH(len) ((len)*2)
+#define DPL_URL_LENGTH(len) ((len)*3 + 1)
+#define DPL_BCD_LENGTH(len) (2 * (len))
 
 /**/
 
-#define DPL_APPEND_CHAR(Char)                                   \
-  do {                                                          \
-    if (len < 1)                                                \
-      return DPL_FAILURE;                                       \
-    *p = (Char);p++;len--;                                      \
+#define DPL_APPEND_CHAR(Char)        \
+  do {                               \
+    if (len < 1) return DPL_FAILURE; \
+    *p = (Char);                     \
+    p++;                             \
+    len--;                           \
   } while (0)
 
-#define DPL_APPEND_BUF(Buf, Len)                                \
-  do {                                                          \
-    if (len < (Len))                                            \
-      return DPL_FAILURE;                                       \
-    memcpy(p, (Buf), (Len)); p += (Len); len -= (Len);          \
+#define DPL_APPEND_BUF(Buf, Len)         \
+  do {                                   \
+    if (len < (Len)) return DPL_FAILURE; \
+    memcpy(p, (Buf), (Len));             \
+    p += (Len);                          \
+    len -= (Len);                        \
   } while (0)
 
 #define DPL_APPEND_STR(Str) DPL_APPEND_BUF((Str), strlen(Str))
 
 /**/
 
-#define DPL_TRACE(ctx, level, format, ...) do {if (ctx->trace_level & level) dpl_trace(ctx, level, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__  );} while (0)
-#define DPL_LOG(ctx, level, format, ...) do { dpl_log(ctx, level, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__); } while(0)
-#define DPL_SSL_PERROR(ctx, str) do { dpl_ssl_perror(ctx, __FILE__, __func__, __LINE__, str); } while(0)
+#define DPL_TRACE(ctx, level, format, ...)                        \
+  do {                                                            \
+    if (ctx->trace_level & level)                                 \
+      dpl_trace(ctx, level, __FILE__, __func__, __LINE__, format, \
+                ##__VA_ARGS__);                                   \
+  } while (0)
+#define DPL_LOG(ctx, level, format, ...)                                      \
+  do {                                                                        \
+    dpl_log(ctx, level, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__); \
+  } while (0)
+#define DPL_SSL_PERROR(ctx, str)                            \
+  do {                                                      \
+    dpl_ssl_perror(ctx, __FILE__, __func__, __LINE__, str); \
+  } while (0)
 
 /* PROTO utils.c */
 /* src/utils.c */
 pid_t dpl_gettid(void);
-int dpl_gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
-int dpl_gethostbyname2_r(const char *name, int af, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
-void dpl_set_addr_family_from_host(const char *host, char *new_host, int *af);
-void dpl_dump_init(struct dpl_dump_ctx *ctx, int binary);
-void dpl_dump_line(struct dpl_dump_ctx *ctx, unsigned int off, unsigned char *b, unsigned int l);
-void dpl_dump(struct dpl_dump_ctx *ctx, char *buf, int len);
-void dpl_dump_simple(char *buf, int len, int binary);
-void dpl_trace(dpl_ctx_t *ctx, unsigned int level, const char *file, const char *func, int lineno, const char *fmt, ...);
-size_t dpl_iov_size(struct iovec *iov, int n_iov);
-void dpl_iov_dump(struct iovec *iov, int n_iov, size_t n_bytes, int binary);
-time_t dpl_iso8601totime(const char *str);
-dpl_status_t dpl_timetoiso8601(time_t t, char *buf, int buf_size);
-char *dpl_strrstr(const char *haystack, const char *needle);
+int dpl_gethostbyname_r(const char* name,
+                        struct hostent* ret,
+                        char* buf,
+                        size_t buflen,
+                        struct hostent** result,
+                        int* h_errnop);
+int dpl_gethostbyname2_r(const char* name,
+                         int af,
+                         struct hostent* ret,
+                         char* buf,
+                         size_t buflen,
+                         struct hostent** result,
+                         int* h_errnop);
+void dpl_set_addr_family_from_host(const char* host, char* new_host, int* af);
+void dpl_dump_init(struct dpl_dump_ctx* ctx, int binary);
+void dpl_dump_line(struct dpl_dump_ctx* ctx,
+                   unsigned int off,
+                   unsigned char* b,
+                   unsigned int l);
+void dpl_dump(struct dpl_dump_ctx* ctx, char* buf, int len);
+void dpl_dump_simple(char* buf, int len, int binary);
+void dpl_trace(dpl_ctx_t* ctx,
+               unsigned int level,
+               const char* file,
+               const char* func,
+               int lineno,
+               const char* fmt,
+               ...);
+size_t dpl_iov_size(struct iovec* iov, int n_iov);
+void dpl_iov_dump(struct iovec* iov, int n_iov, size_t n_bytes, int binary);
+time_t dpl_iso8601totime(const char* str);
+dpl_status_t dpl_timetoiso8601(time_t t, char* buf, int buf_size);
+char* dpl_strrstr(const char* haystack, const char* needle);
 void test_strrstr(void);
-void dpl_strlower(char *str);
-unsigned int dpl_hmac(const char *key_buf, unsigned int key_len, const char *data_buf, unsigned int data_len, char *digest_buf, const EVP_MD *md);
-unsigned int dpl_hmac_sha1(const char *key_buf, unsigned int key_len, const char *data_buf, unsigned int data_len, char *digest_buf);
-unsigned int dpl_hmac_sha256(const char *key_buf, unsigned int key_len, const char *data_buf, unsigned int data_len, char *digest_buf);
-void dpl_sha256(const uint8_t *, size_t, uint8_t *);
-u_int dpl_base64_encode(const u_char *in_buf, u_int in_len, u_char *out_buf);
-u_int dpl_base64_decode(const u_char *in_buf, u_int in_len, u_char *out_buf);
-size_t dpl_url_encode(const char *str, char *str_ue);
-size_t dpl_url_encode_no_slashes(const char *str, char *str_ue);
-void dpl_url_decode(char *str);
-unsigned int dpl_bcd_encode(unsigned char *in_buf, unsigned int in_len, char *out_buf);
-dpl_status_t dpl_rand(char *buf, int len);
+void dpl_strlower(char* str);
+unsigned int dpl_hmac(const char* key_buf,
+                      unsigned int key_len,
+                      const char* data_buf,
+                      unsigned int data_len,
+                      char* digest_buf,
+                      const EVP_MD* md);
+unsigned int dpl_hmac_sha1(const char* key_buf,
+                           unsigned int key_len,
+                           const char* data_buf,
+                           unsigned int data_len,
+                           char* digest_buf);
+unsigned int dpl_hmac_sha256(const char* key_buf,
+                             unsigned int key_len,
+                             const char* data_buf,
+                             unsigned int data_len,
+                             char* digest_buf);
+void dpl_sha256(const uint8_t*, size_t, uint8_t*);
+u_int dpl_base64_encode(const u_char* in_buf, u_int in_len, u_char* out_buf);
+u_int dpl_base64_decode(const u_char* in_buf, u_int in_len, u_char* out_buf);
+size_t dpl_url_encode(const char* str, char* str_ue);
+size_t dpl_url_encode_no_slashes(const char* str, char* str_ue);
+void dpl_url_decode(char* str);
+unsigned int dpl_bcd_encode(unsigned char* in_buf,
+                            unsigned int in_len,
+                            char* out_buf);
+dpl_status_t dpl_rand(char* buf, int len);
 uint64_t dpl_rand_u64(void);
 uint32_t dpl_rand_u32(void);
-dpl_status_t dpl_uuid_rand(dpl_uuid_t *uuid);
-void dpl_uuid_tostr(dpl_uuid_t *uuid, char *ostr);
-time_t dpl_get_date(const char *p, const time_t *now);
+dpl_status_t dpl_uuid_rand(dpl_uuid_t* uuid);
+void dpl_uuid_tostr(dpl_uuid_t* uuid, char* ostr);
+time_t dpl_get_date(const char* p, const time_t* now);
 u_int dpl_pow2_next(u_int v);
-dpl_status_t dpl_log(dpl_ctx_t *ctx, dpl_log_level_t level, const char *file,
-		     const char *func, int lineno, const char *fmt, ...);
-void dpl_ssl_perror(dpl_ctx_t *ctx, const char *file, const char *func,
-		    int line, const char *str);
-dpl_status_t dpl_get_xattrs(char *path, dpl_dict_t *dict, char *prefix, int do_64encode);
+dpl_status_t dpl_log(dpl_ctx_t* ctx,
+                     dpl_log_level_t level,
+                     const char* file,
+                     const char* func,
+                     int lineno,
+                     const char* fmt,
+                     ...);
+void dpl_ssl_perror(dpl_ctx_t* ctx,
+                    const char* file,
+                    const char* func,
+                    int line,
+                    const char* str);
+dpl_status_t dpl_get_xattrs(char* path,
+                            dpl_dict_t* dict,
+                            char* prefix,
+                            int do_64encode);
 
 #define XATTRS_ENCODE_BASE64 1
 #define XATTRS_NO_ENCODING 0
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UTILS_H_

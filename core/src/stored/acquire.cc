@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -558,7 +558,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   UpdateJobStatistics(jcr, now);
 
   /*
-   * Some devices do cache write operations (e.g. droplet_device).
+   * Some devices do cache write operations (e.g. DropletDevice).
    * Therefore flushing the cache is required to determine
    * if a job have been written successfully.
    * As a flush operation can take quite a long time,
@@ -567,7 +567,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
    * which resulted in various locking problems.
    */
   if (!JobCanceled(jcr)) {
-    if (!dev->flush(dcr)) {
+    if (!dev->d_flush(dcr)) {
       Jmsg(jcr, M_FATAL, 0, "Failed to flush device %s.\n", dev->print_name());
     }
   }

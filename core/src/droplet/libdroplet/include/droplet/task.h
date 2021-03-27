@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,27 +32,25 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DPL_TASK_H__
-#define __DPL_TASK_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_TASK_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_TASK_H_
 
 #define DPL_TASK_DEFAULT_N_WORKERS 10
 
-typedef void (*dpl_task_func_t)(void *handle);
+typedef void (*dpl_task_func_t)(void* handle);
 
-typedef struct dpl_task
-{
-  struct dpl_task *next;
+typedef struct dpl_task {
+  struct dpl_task* next;
   dpl_task_func_t func;
 } dpl_task_t;
 
-typedef struct dpl_task_pool
-{
-  dpl_ctx_t *ctx;
+typedef struct dpl_task_pool {
+  dpl_ctx_t* ctx;
   int n_workers;
   int n_workers_needed;
   int n_workers_running;
-  dpl_task_t *task_queue;
-  dpl_task_t *task_last;
+  dpl_task_t* task_queue;
+  dpl_task_t* task_last;
   pthread_mutex_t task_lock;
   pthread_cond_t task_cond;
   pthread_cond_t idle_cond;
@@ -61,18 +60,20 @@ typedef struct dpl_task_pool
   int enable_congestion_logging;
   int congestion_threshold;
   int congestion_log_threshold;
-  char *name;
+  char* name;
   int worker_id;
 } dpl_task_pool_t;
 
-dpl_task_t *dpl_task_get(dpl_task_pool_t *pool);
-void dpl_task_pool_put(dpl_task_pool_t *pool, dpl_task_t *task);
-dpl_task_pool_t *dpl_task_pool_create(dpl_ctx_t *ctx, char *name, int n_workers);
-void dpl_task_pool_cancel(dpl_task_pool_t *pool);
-void dpl_task_pool_destroy(dpl_task_pool_t *pool);
-int dpl_task_pool_set_workers(dpl_task_pool_t *pool, int n_workers);
-int dpl_task_pool_get_workers(dpl_task_pool_t *pool);
-void dpl_task_pool_enable_congestion(dpl_task_pool_t *pool, int threshold);
-void dpl_task_pool_wait_idle(dpl_task_pool_t *pool);
+dpl_task_t* dpl_task_get(dpl_task_pool_t* pool);
+void dpl_task_pool_put(dpl_task_pool_t* pool, dpl_task_t* task);
+dpl_task_pool_t* dpl_task_pool_create(dpl_ctx_t* ctx,
+                                      char* name,
+                                      int n_workers);
+void dpl_task_pool_cancel(dpl_task_pool_t* pool);
+void dpl_task_pool_destroy(dpl_task_pool_t* pool);
+int dpl_task_pool_set_workers(dpl_task_pool_t* pool, int n_workers);
+int dpl_task_pool_get_workers(dpl_task_pool_t* pool);
+void dpl_task_pool_enable_congestion(dpl_task_pool_t* pool, int threshold);
+void dpl_task_pool_wait_idle(dpl_task_pool_t* pool);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_TASK_H_

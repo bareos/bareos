@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,38 +32,49 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SPROXYD_REPLYPARSER_H__
-#define __DROPLET_SPROXYD_REPLYPARSER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_REPLYPARSER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_REPLYPARSER_H_
 
-#define DPL_SPROXYD_X_SCAL_SIZE           "X-Scal-Size"
-#define DPL_SPROXYD_X_SCAL_ATIME          "X-Scal-Atime"
-#define DPL_SPROXYD_X_SCAL_MTIME          "X-Scal-Mtime"
-#define DPL_SPROXYD_X_SCAL_CTIME          "X-Scal-Ctime"
-#define DPL_SPROXYD_X_SCAL_VERSION        "X-Scal-Version"
-#define DPL_SPROXYD_X_SCAL_CRC32          "X-Scal-Crc32"
+#define DPL_SPROXYD_X_SCAL_SIZE "X-Scal-Size"
+#define DPL_SPROXYD_X_SCAL_ATIME "X-Scal-Atime"
+#define DPL_SPROXYD_X_SCAL_MTIME "X-Scal-Mtime"
+#define DPL_SPROXYD_X_SCAL_CTIME "X-Scal-Ctime"
+#define DPL_SPROXYD_X_SCAL_VERSION "X-Scal-Version"
+#define DPL_SPROXYD_X_SCAL_CRC32 "X-Scal-Crc32"
 
-#define DPL_SPROXYD_X_SCAL_USERMD         "X-Scal-Usermd"
+#define DPL_SPROXYD_X_SCAL_USERMD "X-Scal-Usermd"
 
-#define DPL_SPROXYD_X_SCAL_CMD            "X-Scal-Cmd"
-#define DPL_SPROXYD_UPDATE_USERMD         "update-usermd"
+#define DPL_SPROXYD_X_SCAL_CMD "X-Scal-Cmd"
+#define DPL_SPROXYD_UPDATE_USERMD "update-usermd"
 
 #define DPL_SPROXYD_X_SCAL_REPLICA_POLICY "X-Scal-Replica-Policy"
-#define DPL_SPROXYD_CONSISTENT            "consistent"
+#define DPL_SPROXYD_CONSISTENT "consistent"
 
-#define DPL_SPROXYD_X_SCAL_GET_USERMD     "X-Scal-Get-Usermd"
+#define DPL_SPROXYD_X_SCAL_GET_USERMD "X-Scal-Get-Usermd"
 
-#define DPL_SPROXYD_X_SCAL_FORCE_VERSION  "X-Scal-Force-Version"
+#define DPL_SPROXYD_X_SCAL_FORCE_VERSION "X-Scal-Force-Version"
 
-#define DPL_SPROXYD_X_SCAL_RING_STATUS    "X-Scal-Ring-Status"
+#define DPL_SPROXYD_X_SCAL_RING_STATUS "X-Scal-Ring-Status"
 
-#define DPL_SPROXYD_X_SCAL_COND           "X-Scal-Cond"
+#define DPL_SPROXYD_X_SCAL_COND "X-Scal-Cond"
 
-#define DPL_SPROXYD_YES                   "Yes"
-#define DPL_SPROXYD_NO                    "No"
+#define DPL_SPROXYD_YES "Yes"
+#define DPL_SPROXYD_NO "No"
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */
-dpl_status_t dpl_sproxyd_get_metadatum_from_header(const char *header, const char *value, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
-dpl_status_t dpl_sproxyd_get_metadata_from_headers(const dpl_dict_t *headers, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
-dpl_status_t dpl_sproxyd_parse_delete_all(const dpl_ctx_t *ctx, const char *buf, int len, dpl_vec_t *vec);
-#endif
+dpl_status_t dpl_sproxyd_get_metadatum_from_header(
+    const char* header,
+    const char* value,
+    dpl_metadatum_func_t metadatum_func,
+    void* cb_arg,
+    dpl_dict_t* metadata,
+    dpl_sysmd_t* sysmdp);
+dpl_status_t dpl_sproxyd_get_metadata_from_headers(const dpl_dict_t* headers,
+                                                   dpl_dict_t** metadatap,
+                                                   dpl_sysmd_t* sysmdp);
+dpl_status_t dpl_sproxyd_parse_delete_all(const dpl_ctx_t* ctx,
+                                          const char* buf,
+                                          int len,
+                                          dpl_vec_t* vec);
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SPROXYD_REPLYPARSER_H_

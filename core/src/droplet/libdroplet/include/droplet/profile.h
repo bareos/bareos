@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,21 +32,24 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_PROFILE_H__
-#define __DROPLET_PROFILE_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_PROFILE_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_PROFILE_H_
 
 /* PROTO profile.c */
 /* src/profile.c */
-struct dpl_conf_ctx *dpl_conf_new(dpl_conf_cb_func_t cb_func, void *cb_arg);
-void dpl_conf_free(struct dpl_conf_ctx *ctx);
-dpl_status_t dpl_conf_parse(struct dpl_conf_ctx *ctx, const char *buf, int len);
-dpl_status_t dpl_conf_finish(struct dpl_conf_ctx *ctx);
-dpl_status_t dpl_profile_parse(dpl_ctx_t *ctx, const char *path);
-dpl_status_t dpl_profile_default(dpl_ctx_t *ctx);
-dpl_status_t dpl_open_event_log(dpl_ctx_t *ctx);
-void dpl_close_event_log(dpl_ctx_t *ctx);
-dpl_status_t dpl_profile_post(dpl_ctx_t *ctx);
-dpl_status_t dpl_profile_load(dpl_ctx_t *ctx, const char *droplet_dir, const char *profile_name);
-dpl_status_t dpl_profile_set_from_dict(dpl_ctx_t *ctx, const dpl_dict_t *profile);
-void dpl_profile_free(dpl_ctx_t *ctx);
-#endif
+struct dpl_conf_ctx* dpl_conf_new(dpl_conf_cb_func_t cb_func, void* cb_arg);
+void dpl_conf_free(struct dpl_conf_ctx* ctx);
+dpl_status_t dpl_conf_parse(struct dpl_conf_ctx* ctx, const char* buf, int len);
+dpl_status_t dpl_conf_finish(struct dpl_conf_ctx* ctx);
+dpl_status_t dpl_profile_parse(dpl_ctx_t* ctx, const char* path);
+dpl_status_t dpl_profile_default(dpl_ctx_t* ctx);
+dpl_status_t dpl_open_event_log(dpl_ctx_t* ctx);
+void dpl_close_event_log(dpl_ctx_t* ctx);
+dpl_status_t dpl_profile_post(dpl_ctx_t* ctx);
+dpl_status_t dpl_profile_load(dpl_ctx_t* ctx,
+                              const char* droplet_dir,
+                              const char* profile_name);
+dpl_status_t dpl_profile_set_from_dict(dpl_ctx_t* ctx,
+                                       const dpl_dict_t* profile);
+void dpl_profile_free(dpl_ctx_t* ctx);
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_PROFILE_H_

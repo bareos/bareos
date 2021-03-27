@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -35,7 +36,7 @@
 #include "droplet/uks/uks.h"
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt, ...)
 
 /**
  * list all buckets
@@ -52,49 +53,44 @@
  * @return DPL_SUCCESS
  * @return other failure codes
  */
-dpl_status_t 
-dpl_gen_random_key(dpl_ctx_t *ctx,
-                   dpl_storage_class_t storage_class,
-                   char *custom,
-                   char *id_buf,
-                   int max_len)
+dpl_status_t dpl_gen_random_key(dpl_ctx_t* ctx,
+                                dpl_storage_class_t storage_class,
+                                char* custom,
+                                char* id_buf,
+                                int max_len)
 {
   dpl_status_t ret, ret2;
-  dpl_id_scheme_t *id_scheme;
+  dpl_id_scheme_t* id_scheme;
 
   DPL_TRACE(ctx, DPL_TRACE_ID_SCHEME, "gen_random_key");
 
-  if (NULL == ctx->backend->get_id_scheme)
-    {
-      ret = DPL_ENOTSUPP;
-      goto end;
-    }
-  
-  ret2 = ctx->backend->get_id_scheme(ctx, &id_scheme);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (NULL == ctx->backend->get_id_scheme) {
+    ret = DPL_ENOTSUPP;
+    goto end;
+  }
 
-  if (DPL_ID_SCHEME_ANY == id_scheme)
-    {
-      //choose UKS
-      id_scheme = &dpl_id_scheme_uks;
-    }
+  ret2 = ctx->backend->get_id_scheme(ctx, &id_scheme);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
+
+  if (DPL_ID_SCHEME_ANY == id_scheme) {
+    // choose UKS
+    id_scheme = &dpl_id_scheme_uks;
+  }
 
   ret2 = id_scheme->gen_random_key(ctx, storage_class, custom, id_buf, max_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
+
   ret = DPL_SUCCESS;
-  
- end:
-  
+
+end:
+
   DPL_TRACE(ctx, DPL_TRACE_ID_SCHEME, "ret=%d", ret);
-  
+
   return ret;
 }

@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -33,136 +34,122 @@
  */
 #include "dropletp.h"
 
-dpl_sbuf_t *
-dpl_sbuf_new(size_t size)
+dpl_sbuf_t* dpl_sbuf_new(size_t size)
 {
-  dpl_sbuf_t *sb = NULL;
+  dpl_sbuf_t* sb = NULL;
 
   sb = malloc(sizeof(dpl_sbuf_t));
-  if (NULL == sb)
-    return NULL;
+  if (NULL == sb) return NULL;
 
   sb->buf = malloc(size);
   if (NULL == sb->buf) {
     free(sb);
     return NULL;
   }
-  
+
   sb->len = 0;
   sb->allocated = size;
 
   return sb;
 }
 
-dpl_sbuf_t *
-dpl_sbuf_new_from_str(const char *str)
+dpl_sbuf_t* dpl_sbuf_new_from_str(const char* str)
 {
-  dpl_sbuf_t *sb = NULL;
+  dpl_sbuf_t* sb = NULL;
 
   sb = malloc(sizeof(dpl_sbuf_t));
-  if (NULL == sb)
-    return NULL;
+  if (NULL == sb) return NULL;
 
   sb->allocated = strlen(str) + 1;
-  sb->buf       = malloc(sb->allocated);
+  sb->buf = malloc(sb->allocated);
 
   if (NULL == sb->buf) {
     free(sb);
     return NULL;
   }
   memcpy(sb->buf, str, sb->allocated);
-  
+
   sb->len = sb->allocated - 1;
 
   return sb;
 }
 
-dpl_status_t
-dpl_sbuf_url_encode(dpl_sbuf_t *sb)
+dpl_status_t dpl_sbuf_url_encode(dpl_sbuf_t* sb)
 {
-  char          *data;
-  size_t        expected_size, data_size;
-                                
+  char* data;
+  size_t expected_size, data_size;
+
   expected_size = DPL_URL_LENGTH(sb->len) + 1;
-  
-  data = (char *) malloc(expected_size);
-  if (data == NULL)
-    return DPL_FAILURE;
+
+  data = (char*)malloc(expected_size);
+  if (data == NULL) return DPL_FAILURE;
 
   data_size = dpl_url_encode(sb->buf, data);
 
   free(sb->buf);
   sb->buf = data;
 
-  sb->len       = data_size;
+  sb->len = data_size;
   sb->allocated = expected_size;
 
   return DPL_SUCCESS;
 }
 
-dpl_status_t
-dpl_sbuf_add(dpl_sbuf_t *sb, const char *buf, size_t len)
+dpl_status_t dpl_sbuf_add(dpl_sbuf_t* sb, const char* buf, size_t len)
 {
-  if (sb->len+len+1 > sb->allocated) {
-    char *tmp = NULL;
+  if (sb->len + len + 1 > sb->allocated) {
+    char* tmp = NULL;
 
-    tmp = realloc(sb->buf, sb->len+len+1);
-    if (NULL == tmp)
-      return DPL_FAILURE;
+    tmp = realloc(sb->buf, sb->len + len + 1);
+    if (NULL == tmp) return DPL_FAILURE;
 
     sb->buf = tmp;
-    sb->allocated = sb->len+len+1;
+    sb->allocated = sb->len + len + 1;
   }
 
   memcpy(&sb->buf[sb->len], buf, len);
-  sb->buf[sb->len+len] = '\0';
-  sb->len = sb->len+len;
+  sb->buf[sb->len + len] = '\0';
+  sb->len = sb->len + len;
 
   return DPL_SUCCESS;
 }
 
-dpl_status_t dpl_sbuf_add_str(dpl_sbuf_t *sb, const char *str)
+dpl_status_t dpl_sbuf_add_str(dpl_sbuf_t* sb, const char* str)
 {
   return dpl_sbuf_add(sb, str, strlen(str));
 }
 
 dpl_status_t PRINTF(2, 3)
-dpl_sbuf_add_str_fmt(dpl_sbuf_t *sb, const char *format, ...)
+    dpl_sbuf_add_str_fmt(dpl_sbuf_t* sb, const char* format, ...)
 {
-  char          buffer[4096];
-  size_t        size;
-  va_list       args;
+  char buffer[4096];
+  size_t size;
+  va_list args;
 
   va_start(args, format);
   size = vsnprintf(buffer, sizeof(buffer), format, args);
   va_end(args);
 
-  if (size >= sizeof(buffer))
-    return DPL_ENOMEM;
+  if (size >= sizeof(buffer)) return DPL_ENOMEM;
 
   return dpl_sbuf_add(sb, buffer, size);
 }
 
-dpl_sbuf_t *dpl_sbuf_dup(const dpl_sbuf_t *src)
+dpl_sbuf_t* dpl_sbuf_dup(const dpl_sbuf_t* src)
 {
-  dpl_sbuf_t *dst;
+  dpl_sbuf_t* dst;
 
   dst = dpl_sbuf_new(src->allocated);
-  if (NULL == dst)
-    return NULL;
+  if (NULL == dst) return NULL;
 
   (void)dpl_sbuf_add(dst, src->buf, src->len);
 
   return dst;
 }
 
-char *dpl_sbuf_get_str(dpl_sbuf_t *sbuf)
-{
-  return sbuf->buf;
-}
+char* dpl_sbuf_get_str(dpl_sbuf_t* sbuf) { return sbuf->buf; }
 
-void 
-dpl_sbuf_free(dpl_sbuf_t *sb)
+void dpl_sbuf_free(dpl_sbuf_t* sb)
 {
   free(sb->buf);
   free(sb);
@@ -170,8 +157,7 @@ dpl_sbuf_free(dpl_sbuf_t *sb)
   return;
 }
 
-void
-dpl_sbuf_print(FILE *f, dpl_sbuf_t *sb)
+void dpl_sbuf_print(FILE* f, dpl_sbuf_t* sb)
 {
-  fprintf(f, "%.*s", (int) sb->len, sb->buf);
+  fprintf(f, "%.*s", (int)sb->len, sb->buf);
 }

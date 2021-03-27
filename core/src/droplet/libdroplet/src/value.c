@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -36,7 +37,7 @@
 /** @file */
 
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt, ...)
 
 /**
  * @defgroup value Values
@@ -45,137 +46,114 @@
  * Nestable values
  */
 
-/** 
+/**
  * allow null contained values
- * 
+ *
  * @note a value of DPL_VALUE_VOIDPTR will not be freed
  *
  * @param value must not be null
  */
-void
-dpl_value_free(dpl_value_t *value)
+void dpl_value_free(dpl_value_t* value)
 {
-  switch (value->type)
-    {
+  switch (value->type) {
     case DPL_VALUE_STRING:
-      if (NULL != value->string)
-        dpl_sbuf_free(value->string);
-      break ;
+      if (NULL != value->string) dpl_sbuf_free(value->string);
+      break;
     case DPL_VALUE_SUBDICT:
-      if (NULL != value->subdict)
-        dpl_dict_free(value->subdict);
-      break ;
+      if (NULL != value->subdict) dpl_dict_free(value->subdict);
+      break;
     case DPL_VALUE_VECTOR:
-      if (NULL != value->vector)
-        dpl_vec_free(value->vector);
-      break ;
+      if (NULL != value->vector) dpl_vec_free(value->vector);
+      break;
     case DPL_VALUE_VOIDPTR:
-      //cannot take decision
-      break ;
-    }
+      // cannot take decision
+      break;
+  }
   free(value);
 }
 
-/** 
+/**
  * duplicate a value
- * 
+ *
  * @note duping a VOIDPTR causes a pointer stealing
  *
- * @param src 
- * 
- * @return 
+ * @param src
+ *
+ * @return
  */
-dpl_value_t *
-dpl_value_dup(dpl_value_t *src)
+dpl_value_t* dpl_value_dup(dpl_value_t* src)
 {
-  dpl_value_t *dst = NULL;
+  dpl_value_t* dst = NULL;
 
   assert(NULL != src);
 
-  dst = malloc(sizeof (*dst));
-  if (NULL == dst)
-    return NULL;
-  
-  memset(dst, 0, sizeof (*dst));
+  dst = malloc(sizeof(*dst));
+  if (NULL == dst) return NULL;
+
+  memset(dst, 0, sizeof(*dst));
 
   dst->type = src->type;
 
-  switch (src->type)
-    {
+  switch (src->type) {
     case DPL_VALUE_STRING:
-      if (NULL != src->string)
-        {
-          dst->string = dpl_sbuf_dup(src->string);
-          if (NULL == dst->string)
-            goto bad;
-        }
-      break ;
+      if (NULL != src->string) {
+        dst->string = dpl_sbuf_dup(src->string);
+        if (NULL == dst->string) goto bad;
+      }
+      break;
     case DPL_VALUE_SUBDICT:
-      if (NULL != src->subdict)
-        {
-          dst->subdict = dpl_dict_dup(src->subdict);
-          if (NULL == dst->subdict)
-            goto bad;
-        }
-      break ;
+      if (NULL != src->subdict) {
+        dst->subdict = dpl_dict_dup(src->subdict);
+        if (NULL == dst->subdict) goto bad;
+      }
+      break;
     case DPL_VALUE_VECTOR:
-      if (NULL != src->vector)
-        {
-          dst->vector = dpl_vec_dup(src->vector);
-          if (NULL == dst->vector)
-            goto bad;
-        }
-      break ;
+      if (NULL != src->vector) {
+        dst->vector = dpl_vec_dup(src->vector);
+        if (NULL == dst->vector) goto bad;
+      }
+      break;
     case DPL_VALUE_VOIDPTR:
       dst->ptr = src->ptr;
-      break ;
-    }
+      break;
+  }
 
   return dst;
 
- bad:
+bad:
 
-  if (NULL != dst)
-    free(dst);
+  if (NULL != dst) free(dst);
 
   return NULL;
 }
 
-void
-dpl_value_print(dpl_value_t *val,
-                FILE *f,
-                int level,
-                int indent)
+void dpl_value_print(dpl_value_t* val, FILE* f, int level, int indent)
 {
   int i;
 
-  switch (val->type)
-    {
+  switch (val->type) {
     case DPL_VALUE_STRING:
       dpl_sbuf_print(f, val->string);
-      break ;
+      break;
     case DPL_VALUE_SUBDICT:
       if (indent)
-        for (i = 0;i < level;i++)
-          fprintf(f, " ");
+        for (i = 0; i < level; i++) fprintf(f, " ");
       fprintf(f, "{\n");
-      dpl_dict_print(val->subdict, f, level+1);
-      for (i = 0;i < level;i++)
-        fprintf(f, " ");
+      dpl_dict_print(val->subdict, f, level + 1);
+      for (i = 0; i < level; i++) fprintf(f, " ");
       fprintf(f, "}");
-      break ;
+      break;
     case DPL_VALUE_VECTOR:
       if (indent)
-        for (i = 0;i < level;i++)
-          fprintf(f, " ");
+        for (i = 0; i < level; i++) fprintf(f, " ");
       fprintf(f, "[");
-      dpl_vec_print(val->vector, f, level+1);
+      dpl_vec_print(val->vector, f, level + 1);
       fprintf(f, "]");
-      break ;
+      break;
     case DPL_VALUE_VOIDPTR:
       fprintf(f, "%p", val->ptr);
-      break ;
-    }
+      break;
+  }
 }
 
 /* @} */

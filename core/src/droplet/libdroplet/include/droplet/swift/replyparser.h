@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,21 +32,50 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SWIFT_REPLYPARSER_H__
-#define __DROPLET_SWIFT_REPLYPARSER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REPLYPARSER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REPLYPARSER_H_
 
 #define DPL_X_OBJECT_META_PREFIX "X-Object-Meta-"
 #define DPL_X_CONTAINER_META_PREFIX "X-Container-Meta-"
 
 /* PROTO replyparser.c */
 /* src/replyparser.c */
-dpl_status_t cb_swift_req_add_metadata(dpl_dict_var_t *var, void *cb_arg);
-dpl_status_t dpl_swift_req_add_metadata(dpl_req_t *req, const dpl_dict_t *metadata, int append);
-dpl_status_t dpl_swift_get_metadatum_from_value(const char *key, dpl_value_t *val, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
-dpl_status_t dpl_swift_get_metadatum_from_string(const char *key, const char *value, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
-dpl_status_t dpl_swift_get_metadatum_from_header(const char *header, const char *value, dpl_metadatum_func_t metadatum_func, void *cb_arg, dpl_dict_t *metadata, dpl_sysmd_t *sysmdp);
-dpl_status_t dpl_swift_get_metadata_from_headers(const dpl_dict_t *headers, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
-dpl_status_t dpl_swift_get_metadata_from_values(const dpl_dict_t *values, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
-dpl_status_t dpl_swift_parse_list_bucket(dpl_ctx_t *ctx, const char *buf, int len, const char *prefix, dpl_vec_t *objects, dpl_vec_t *common_prefixes);
-dpl_ftype_t dpl_swift_content_type_to_ftype(const char *str);
-#endif
+dpl_status_t cb_swift_req_add_metadata(dpl_dict_var_t* var, void* cb_arg);
+dpl_status_t dpl_swift_req_add_metadata(dpl_req_t* req,
+                                        const dpl_dict_t* metadata,
+                                        int append);
+dpl_status_t dpl_swift_get_metadatum_from_value(
+    const char* key,
+    dpl_value_t* val,
+    dpl_metadatum_func_t metadatum_func,
+    void* cb_arg,
+    dpl_dict_t* metadata,
+    dpl_sysmd_t* sysmdp);
+dpl_status_t dpl_swift_get_metadatum_from_string(
+    const char* key,
+    const char* value,
+    dpl_metadatum_func_t metadatum_func,
+    void* cb_arg,
+    dpl_dict_t* metadata,
+    dpl_sysmd_t* sysmdp);
+dpl_status_t dpl_swift_get_metadatum_from_header(
+    const char* header,
+    const char* value,
+    dpl_metadatum_func_t metadatum_func,
+    void* cb_arg,
+    dpl_dict_t* metadata,
+    dpl_sysmd_t* sysmdp);
+dpl_status_t dpl_swift_get_metadata_from_headers(const dpl_dict_t* headers,
+                                                 dpl_dict_t** metadatap,
+                                                 dpl_sysmd_t* sysmdp);
+dpl_status_t dpl_swift_get_metadata_from_values(const dpl_dict_t* values,
+                                                dpl_dict_t** metadatap,
+                                                dpl_sysmd_t* sysmdp);
+dpl_status_t dpl_swift_parse_list_bucket(dpl_ctx_t* ctx,
+                                         const char* buf,
+                                         int len,
+                                         const char* prefix,
+                                         dpl_vec_t* objects,
+                                         dpl_vec_t* common_prefixes);
+dpl_ftype_t dpl_swift_content_type_to_ftype(const char* str);
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REPLYPARSER_H_

@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,12 +32,11 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_VEC_H__
-#define __DROPLET_VEC_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VEC_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VEC_H_
 
-typedef struct dpl_vec
-{
-  dpl_value_t **items;
+typedef struct dpl_vec {
+  dpl_value_t** items;
   int n_items;
   int size;
   int incr_size;
@@ -44,12 +44,12 @@ typedef struct dpl_vec
 
 /* PROTO vec.c */
 /* src/vec.c */
-void dpl_vec_free(dpl_vec_t *vec);
-dpl_vec_t *dpl_vec_new(int init_size, int incr_size);
-dpl_status_t dpl_vec_add_value(dpl_vec_t *vec, dpl_value_t *value);
-dpl_status_t dpl_vec_add(dpl_vec_t *vec, void *item);
-void *dpl_vec_get(dpl_vec_t *vec, int i);
-void dpl_vec_print(dpl_vec_t *vec, FILE *f, int level);
-dpl_vec_t *dpl_vec_dup(dpl_vec_t *vec);
-void dpl_vec_sort(dpl_vec_t *vec, dpl_value_cmp_func_t cmp_func);
-#endif
+void dpl_vec_free(dpl_vec_t* vec);
+dpl_vec_t* dpl_vec_new(int init_size, int incr_size);
+dpl_status_t dpl_vec_add_value(dpl_vec_t* vec, dpl_value_t* value);
+dpl_status_t dpl_vec_add(dpl_vec_t* vec, void* item);
+void* dpl_vec_get(dpl_vec_t* vec, int i);
+void dpl_vec_print(dpl_vec_t* vec, FILE* f, int level);
+dpl_vec_t* dpl_vec_dup(dpl_vec_t* vec);
+void dpl_vec_sort(dpl_vec_t* vec, dpl_value_cmp_func_t cmp_func);
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_VEC_H_

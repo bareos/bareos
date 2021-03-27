@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -37,40 +38,33 @@
 
 /* #include <sys/param.h> */
 
-dpl_status_t
-dpl_sproxyd_get_capabilities(dpl_ctx_t *ctx,
-                             dpl_capability_t *maskp)
+dpl_status_t dpl_sproxyd_get_capabilities(dpl_ctx_t* ctx,
+                                          dpl_capability_t* maskp)
 {
   if (NULL != maskp) {
-    *maskp = DPL_CAP_IDS  |
-      DPL_CAP_CONSISTENCY |
-      DPL_CAP_VERSIONING  |
-      DPL_CAP_CONDITIONS  |
-      DPL_CAP_PUT_RANGE;
+    *maskp = DPL_CAP_IDS | DPL_CAP_CONSISTENCY | DPL_CAP_VERSIONING
+             | DPL_CAP_CONDITIONS | DPL_CAP_PUT_RANGE;
   }
 
   return DPL_SUCCESS;
 }
 
-dpl_status_t
-dpl_sproxyd_get_id_scheme(dpl_ctx_t *ctx,
-                          dpl_id_scheme_t **id_schemep)
+dpl_status_t dpl_sproxyd_get_id_scheme(dpl_ctx_t* ctx,
+                                       dpl_id_scheme_t** id_schemep)
 {
-  if (NULL != id_schemep)
-    *id_schemep = &dpl_id_scheme_uks;
+  if (NULL != id_schemep) *id_schemep = &dpl_id_scheme_uks;
 
   return DPL_SUCCESS;
 }
 
-dpl_backend_t   dpl_backend_sproxyd = {
-  "sproxyd",
-  .get_capabilities = dpl_sproxyd_get_capabilities,
-  .get_id_scheme    = dpl_sproxyd_get_id_scheme,
-  .put_id           = dpl_sproxyd_put_id,
-  .get_id           = dpl_sproxyd_get_id,
-  .head_id          = dpl_sproxyd_head_id,
-  .head_id_raw      = dpl_sproxyd_head_id_raw,
-  .delete_id        = dpl_sproxyd_delete_id,
-  .delete_all_id    = dpl_sproxyd_delete_all_id,
-  .copy_id          = dpl_sproxyd_copy_id
-};
+dpl_backend_t dpl_backend_sproxyd
+    = {"sproxyd",
+       .get_capabilities = dpl_sproxyd_get_capabilities,
+       .get_id_scheme = dpl_sproxyd_get_id_scheme,
+       .put_id = dpl_sproxyd_put_id,
+       .get_id = dpl_sproxyd_get_id,
+       .head_id = dpl_sproxyd_head_id,
+       .head_id_raw = dpl_sproxyd_head_id_raw,
+       .delete_id = dpl_sproxyd_delete_id,
+       .delete_all_id = dpl_sproxyd_delete_all_id,
+       .copy_id = dpl_sproxyd_copy_id};

@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -349,7 +349,7 @@ int main(int argc, char* argv[])
   if (showProgress) {
     char ed1[50];
     struct stat sb;
-    fstat(dev->fd(), &sb);
+    fstat(dev->fd, &sb);
     currentVolumeSize = sb.st_size;
     Pmsg1(000, _("First Volume Size = %s\n"),
           edit_uint64(currentVolumeSize, ed1));
@@ -433,7 +433,7 @@ static bool BscanMountNextReadVolume(DeviceControlRecord* dcr)
   if (showProgress) {
     char ed1[50];
     struct stat sb;
-    fstat(dev->fd(), &sb);
+    fstat(dev->fd, &sb);
     currentVolumeSize = sb.st_size;
     Pmsg1(000, _("First Volume Size = %s\n"),
           edit_uint64(currentVolumeSize, ed1));

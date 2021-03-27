@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,29 +32,45 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_S3_REQBUILDER_H__
-#define __DROPLET_S3_REQBUILDER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_REQBUILDER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_REQBUILDER_H_
 
 typedef enum
-  {
-    DPL_S3_REQ_COPY = (1u<<0),
-  } dpl_s3_req_mask_t;
+{
+  DPL_S3_REQ_COPY = (1u << 0),
+} dpl_s3_req_mask_t;
 
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */
-dpl_status_t dpl_s3_req_build(const dpl_req_t *req, dpl_s3_req_mask_t req_mask, dpl_dict_t **headersp);
-dpl_status_t dpl_s3_req_gen_url(const dpl_req_t *req, dpl_dict_t *headers, char *buf, int len, unsigned int *lenp);
-dpl_status_t dpl_s3_add_authorization_to_headers(const dpl_req_t *, dpl_dict_t *,
-                                                 const dpl_dict_t *, struct tm *);
+dpl_status_t dpl_s3_req_build(const dpl_req_t* req,
+                              dpl_s3_req_mask_t req_mask,
+                              dpl_dict_t** headersp);
+dpl_status_t dpl_s3_req_gen_url(const dpl_req_t* req,
+                                dpl_dict_t* headers,
+                                char* buf,
+                                int len,
+                                unsigned int* lenp);
+dpl_status_t dpl_s3_add_authorization_to_headers(const dpl_req_t*,
+                                                 dpl_dict_t*,
+                                                 const dpl_dict_t*,
+                                                 struct tm*);
 
 /* src/s3/auth/v2.c */
-dpl_status_t dpl_s3_add_authorization_v2_to_headers(const dpl_req_t *, dpl_dict_t *,
-                                                    const dpl_dict_t *, struct tm *);
-dpl_status_t dpl_s3_get_authorization_v2_params(const dpl_req_t *, dpl_dict_t *, struct tm *);
+dpl_status_t dpl_s3_add_authorization_v2_to_headers(const dpl_req_t*,
+                                                    dpl_dict_t*,
+                                                    const dpl_dict_t*,
+                                                    struct tm*);
+dpl_status_t dpl_s3_get_authorization_v2_params(const dpl_req_t*,
+                                                dpl_dict_t*,
+                                                struct tm*);
 
 /* src/s3/auth/v4.c */
-dpl_status_t dpl_s3_add_authorization_v4_to_headers(const dpl_req_t *, dpl_dict_t *,
-                                                    const dpl_dict_t *, struct tm *);
-dpl_status_t dpl_s3_get_authorization_v4_params(const dpl_req_t *, dpl_dict_t *, struct tm *);
+dpl_status_t dpl_s3_add_authorization_v4_to_headers(const dpl_req_t*,
+                                                    dpl_dict_t*,
+                                                    const dpl_dict_t*,
+                                                    struct tm*);
+dpl_status_t dpl_s3_get_authorization_v4_params(const dpl_req_t*,
+                                                dpl_dict_t*,
+                                                struct tm*);
 
-#endif
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_S3_REQBUILDER_H_

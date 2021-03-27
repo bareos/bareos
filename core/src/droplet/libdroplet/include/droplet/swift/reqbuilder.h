@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020-2021 Bareos GmbH & Co. KG
  * Copyright (C) 2010 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
@@ -31,27 +32,32 @@
  *
  * https://github.com/scality/Droplet
  */
-#ifndef __DROPLET_SWIFT_REQBUILDER_H__
-#define __DROPLET_SWIFT_REQBUILDER_H__ 1
+#ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REQBUILDER_H_
+#define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REQBUILDER_H_
 
 typedef enum
-  {
-    DPL_SWIFT_REQ_HTTP_COMPAT = (1u<<0),
-  } dpl_swift_req_mask_t;
+{
+  DPL_SWIFT_REQ_HTTP_COMPAT = (1u << 0),
+} dpl_swift_req_mask_t;
 
-#define DPL_SWIFT_CONTENT_TYPE_CONTAINER  "application/swift-container"
-#define DPL_SWIFT_CONTENT_TYPE_OBJECT     "application/swift-object"
+#define DPL_SWIFT_CONTENT_TYPE_CONTAINER "application/swift-container"
+#define DPL_SWIFT_CONTENT_TYPE_OBJECT "application/swift-object"
 #define DPL_SWIFT_CONTENT_TYPE_CAPABILITY "application/swift-capability"
-#define DPL_SWIFT_CONTENT_TYPE_DOMAIN     "application/swift-domain"
-#define DPL_SWIFT_CONTENT_TYPE_CHARDEVICE     "inode/chardevice"
-#define DPL_SWIFT_CONTENT_TYPE_BLOCKDEVICE    "inode/blockdevice"
-#define DPL_SWIFT_CONTENT_TYPE_FIFO       "inode/fifo"
-#define DPL_SWIFT_CONTENT_TYPE_SOCKET     "inode/socket"
-#define DPL_SWIFT_CONTENT_TYPE_SYMLINK    "inode/symlink"
-#define DPL_SWIFT_CONTENT_TYPE_ANY        "*/*"
+#define DPL_SWIFT_CONTENT_TYPE_DOMAIN "application/swift-domain"
+#define DPL_SWIFT_CONTENT_TYPE_CHARDEVICE "inode/chardevice"
+#define DPL_SWIFT_CONTENT_TYPE_BLOCKDEVICE "inode/blockdevice"
+#define DPL_SWIFT_CONTENT_TYPE_FIFO "inode/fifo"
+#define DPL_SWIFT_CONTENT_TYPE_SOCKET "inode/socket"
+#define DPL_SWIFT_CONTENT_TYPE_SYMLINK "inode/symlink"
+#define DPL_SWIFT_CONTENT_TYPE_ANY "*/*"
 
 /* PROTO reqbuilder.c */
 /* src/reqbuilder.c */
-dpl_status_t dpl_swift_req_set_resource(dpl_req_t *req, const char *resource);
-dpl_status_t dpl_swift_req_build(dpl_ctx_t *ctx, const dpl_req_t *req, dpl_swift_req_mask_t req_mask, dpl_dict_t **headersp, char **body_strp, int *lenp);
-#endif
+dpl_status_t dpl_swift_req_set_resource(dpl_req_t* req, const char* resource);
+dpl_status_t dpl_swift_req_build(dpl_ctx_t* ctx,
+                                 const dpl_req_t* req,
+                                 dpl_swift_req_mask_t req_mask,
+                                 dpl_dict_t** headersp,
+                                 char** body_strp,
+                                 int* lenp);
+#endif  // BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_SWIFT_REQBUILDER_H_
