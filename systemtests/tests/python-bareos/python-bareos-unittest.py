@@ -99,6 +99,12 @@ class PythonBareosBase(unittest.TestCase):
     def get_operator_password(self, username=None):
         return bareos.bsock.Password(u"secret")
 
+    @staticmethod
+    def append_to_file(filename, data):
+        with open(filename, "a") as writer:
+            writer.write(data)
+            writer.flush()
+
 
 class PythonBareosModuleTest(PythonBareosBase):
     def versiontuple(self, versionstring):
@@ -715,6 +721,18 @@ class PythonBareosJsonBase(PythonBareosBase):
                 ),
             )
 
+    def wait_job(self, director, jobId):
+        result = director.call("wait jobid={}".format(jobId))
+        # "result": {
+        #    "job": {
+        #    "jobid": 1,
+        #    "jobstatuslong": "OK",
+        #    "jobstatus": "T",
+        #    "exitstatus": 0
+        #    }
+        # }
+        self.assertEqual(result["job"]["jobstatuslong"], u"OK")
+
     def run_job(self, director, jobname, level=None, wait=False):
         logger = logging.getLogger()
         run_parameter = ["job={}".format(jobname), "yes"]
@@ -723,16 +741,7 @@ class PythonBareosJsonBase(PythonBareosBase):
         result = director.call("run {}".format(u" ".join(run_parameter)))
         jobId = result["run"]["jobid"]
         if wait:
-            result = director.call("wait jobid={}".format(jobId))
-            # "result": {
-            #    "job": {
-            #    "jobid": 1,
-            #    "jobstatuslong": "OK",
-            #    "jobstatus": "T",
-            #    "exitstatus": 0
-            #    }
-            # }
-            self.assertEqual(result["job"]["jobstatuslong"], u"OK")
+            self.wait_job(director, jobId)
 
         return jobId
 
@@ -1136,9 +1145,7 @@ class PythonBareosJsonAclTest(PythonBareosJsonBase):
         # make sure, timestamp differs
         sleep(2)
 
-        with open(u"{}/extrafile.txt".format(self.backup_directory), "a") as writer:
-            writer.write("Test\n")
-            writer.flush()
+        self.append_to_file(u"{}/extrafile.txt".format(self.backup_directory), "Test\n")
 
         sleep(2)
 
@@ -1707,6 +1714,260 @@ class PythonBareosDeleteTest(PythonBareosJsonBase):
         self.assertIn(volume, result["deleted"]["volumes"])
         with self.assertRaises(ValueError):
             job = self.list_jobid(director, jobid)
+
+
+class PythonBareosBvfsTest(PythonBareosJsonBase):
+    def test_bvfs(self):
+        """
+        Test BVFS functionality:
+        Run 1 full and 1 incremental backup job.
+        These jobs have the normal "/" directory and an additional BPIPE-ROOT/ directory.
+        Also do a restore using bvfs.
+        """
+
+        def get_sql_table_count(director, sql_from, minimum=None, maximum=None):
+            # expect:
+            # .sql query="SELECT count(*) FROM Job WHERE HasCache!=0;"
+            # +----------+
+            # | count    |
+            # +----------+
+            # | 0        |
+            # +----------+
+            cmd = '.sql query="SELECT count(*) FROM {};"'.format(sql_from)
+            count = int(director.call(cmd)["query"][0]["count"])
+            if minimum is not None:
+                self.assertGreaterEqual(
+                    count,
+                    minimum,
+                    "{}: expecting at least {} entries, got {}".format(
+                        sql_from, minimum, count
+                    ),
+                )
+            if maximum is not None:
+                self.assertLessEqual(
+                    count,
+                    maximum,
+                    "{}: expecting at most {} entries, got {}".format(
+                        sql_from, minimum, count
+                    ),
+                )
+            logger.debug(
+                "{}: {} entries ({}, {})\n".format(sql_from, count, minimum, maximum)
+            )
+            return count
+
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        jobname = u"backup-bareos-fd-bpipe"
+
+        format_params = {
+            "Client": self.client,
+            "BvfsPathId": "b201",
+            "BackupDirectory": self.backup_directory,
+            "BackupFileNameExtra": "bvfstest.txt",
+            "BackupFileExtra": self.backup_directory + "/bvfstest.txt",
+        }
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        self.append_to_file(format_params["BackupFileExtra"], "Test Content: initial\n")
+
+        jobid1 = self.run_job(director, jobname, level="Full", wait=True)
+        files1 = director.call("list files jobid={}".format(jobid1))["filenames"]
+
+        # modify file and rerun backup
+        self.append_to_file(
+            format_params["BackupFileExtra"],
+            "Additional content, after job {}\n".format(jobid1),
+        )
+
+        jobid2 = self.run_job(director, jobname, wait=True)
+
+        bvfs_jobids = director.call(".bvfs_get_jobids jobid={}".format(jobid2))[
+            "jobids"
+        ]
+        backup_job_ids = [jobid["id"] for jobid in bvfs_jobids]
+        self.assertGreaterEqual(
+            len(backup_job_ids),
+            2,
+            u"Expecting at least 2 jobs, got {}.".format(backup_job_ids),
+        )
+        format_params["BackupJobIds"] = ",".join(backup_job_ids)
+
+        result = director.call(
+            ".bvfs_update jobid={BackupJobIds}".format(**format_params)
+        )
+
+        get_sql_table_count(
+            director, "Job WHERE HasCache!=0", minimum=len(backup_job_ids)
+        )
+        get_sql_table_count(director, "PathHierarchy", minimum=1)
+        get_sql_table_count(director, "PathVisibility", minimum=1)
+
+        bvfs_get_root_path = director.call(
+            ".bvfs_lsdir jobid={BackupJobIds} path=".format(**format_params)
+        )["directories"]
+        # expect:
+        # 10    0   0   A A A A A A A A A A A A A A .
+        # 9   0   0   A A A A A A A A A A A A A A /
+        # 8   0   0   A A A A A A A A A A A A A A BPIPE_ROOT/
+        directories = [item["name"] for item in bvfs_get_root_path]
+        self.assertIn(
+            "/",
+            directories,
+            'Expecting "/" in list of directories, instead received: {}'.format(
+                bvfs_get_root_path
+            ),
+        )
+        self.assertIn(
+            "BPIPE-ROOT/",
+            directories,
+            'Expecting "BPIPE-ROOT/" in list of directories, instead received: {}'.format(
+                bvfs_get_root_path
+            ),
+        )
+
+        # Test offset
+        cmd = ".bvfs_lsdir jobid={BackupJobIds} path= offset=1000 limit=1000".format(
+            **format_params
+        )
+        bvfs_get_root_path_offset = director.call(cmd)["directories"]
+        self.assertEqual(
+            len(bvfs_get_root_path_offset),
+            0,
+            'Expecting "{}" to return empty list, instead received: {}'.format(
+                cmd, bvfs_get_root_path_offset
+            ),
+        )
+
+        cmd = ".bvfs_lsdir jobid={BackupJobIds} path=/".format(**format_params)
+        bvfs_lsdir_root = director.call(cmd)["directories"]
+        # expect:
+        # 9   0   0   0   A A A A A A A A A A A A A A .
+        # 10  0   0   0   A A A A A A A A A A A A A A ..
+        # 8   0   0   0   A A A A A A A A A A A A A A TOP_DIRECTORY
+        self.assertGreaterEqual(
+            len(bvfs_lsdir_root),
+            3,
+            'Expecting at least 3 directories from "{}", instead received: {}'.format(
+                cmd, bvfs_lsdir_root
+            ),
+        )
+
+        cmd = ".bvfs_lsdir jobid={BackupJobIds} path={BackupDirectory}/".format(
+            **format_params
+        )
+        bvfs_lsdir_BackupDirectory = director.call(cmd)["directories"]
+        # expect:
+        # 1 0   19  1   x GoHK EHt C GHH GHH A BAA BAA I BWDNOj BZwlgI BZwlgI A A C .
+        # 2   0   0   0   A A A A A A A A A A A A A A ..
+        # need to get dirid of "."
+        backup_directory_pathid = next(
+            directory["pathid"]
+            for directory in bvfs_lsdir_BackupDirectory
+            if directory["name"] == "."
+        )
+        self.assertIsInstance(
+            backup_directory_pathid,
+            int,
+            'Failed to determine "pathid" of {} from {}. Received: {}'.format(
+                cmd, format_params["BackupDirectory"], bvfs_lsdir_BackupDirectory
+            ),
+        )
+        format_params["BackupDirectoryPathId"] = backup_directory_pathid
+
+        cmd = ".bvfs_lsfiles jobid={BackupJobIds} path={BackupDirectory}/".format(
+            **format_params
+        )
+        bvfs_lsfiles_BackupDirectory = director.call(cmd)["files"]
+        backup_extrafile_id = next(
+            directory["fileid"]
+            for directory in bvfs_lsfiles_BackupDirectory
+            if directory["name"] == "{BackupFileNameExtra}".format(**format_params)
+        )
+        self.assertIsInstance(
+            backup_extrafile_id,
+            int,
+            'Failed to "{}" from "{}". Received: {}'.format(
+                format_params["BackupFileNameExtra"], cmd, bvfs_lsdir_BackupDirectory
+            ),
+        )
+
+        # test limit.
+        cmd = ".bvfs_lsfiles jobid={BackupJobIds} path={BackupDirectory}/ offset 0 limit 1".format(
+            **format_params
+        )
+        bvfs_lsfiles_BackupDirectory_limit1 = director.call(cmd)["files"]
+        # TODO: bug, this returns multiple entires
+        # self.assertEqual(len(bvfs_lsfiles_BackupDirectory_limit1), 1, 'Expecting 1 file from "{}", instead received: {}'.format(cmd, bvfs_lsfiles_BackupDirectory_limit1))
+
+        cmd = ".bvfs_versions jobid=0 client={Client} path={BackupDirectory}/ fname={BackupFileNameExtra}".format(
+            **format_params
+        )
+        bvfs_versions_extrafile = director.call(cmd)["versions"]
+        self.assertGreaterEqual(
+            len(bvfs_versions_extrafile),
+            2,
+            'Expecting at least 2 versions of file "{}" from "{}". Received: {}'.format(
+                format_params["BackupFileNameExtra"], cmd, bvfs_versions_extrafile
+            ),
+        )
+
+        cmd = ".bvfs_lsfiles jobid={BackupJobIds} path=BPIPE-ROOT/".format(
+            **format_params
+        )
+        bvfs_lsfiles_bpipe_directory = director.call(cmd)["files"]
+        files = [item["name"] for item in bvfs_lsfiles_bpipe_directory]
+        self.assertIn(
+            "bpipe-dir-as-root-test.txt",
+            files,
+            'Failed to get "bpipe-dir-as-root-test.txt" from "{}". Received: {}'.format(
+                cmd, bvfs_lsfiles_bpipe_directory
+            ),
+        )
+
+        #
+        # now do a restore
+        #
+
+        # syntax:
+        #   .bvfs_restore path=b201 fileid=numlist dirid=numlist hardlink=numlist path=b201
+        cmd = ".bvfs_restore path={BvfsPathId} jobid={BackupJobIds} dirid={BackupDirectoryPathId}".format(
+            **format_params
+        )
+        bvfs_restore_prepare = director.call(cmd)
+        get_sql_table_count(director, format_params["BvfsPathId"], minimum=1)
+
+        cmd = "restore client={Client} file=?{BvfsPathId} yes".format(**format_params)
+        bvfs_restore = director.call(cmd)
+        jobId = bvfs_restore["run"]["jobid"]
+        self.wait_job(director, jobId)
+
+        bvfs_cleanup = director.call(
+            ".bvfs_cleanup path={BvfsPathId}".format(**format_params)
+        )
+
+        # table does not exist any more, so query will fail.
+        with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
+            get_sql_table_count(director, format_params["BvfsPathId"])
+
+        bvfs_clear_cache = director.call(".bvfs_clear_cache yes")
+
+        get_sql_table_count(director, "Job WHERE HasCache!=0", maximum=0)
+        get_sql_table_count(director, "PathHierarchy", maximum=0)
+        get_sql_table_count(director, "PathVisibility", maximum=0)
+
+        ## check for differences between original files and restored files
+        # check_restore_diff ${BackupDirectory}
 
 
 class PythonBareosFiledaemonTest(PythonBareosBase):
