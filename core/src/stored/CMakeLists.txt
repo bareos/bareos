@@ -237,7 +237,7 @@ if(HAVE_NDMP)
 endif()
 
 add_executable(bls ${BLSSRCS})
-target_link_libraries(bls PRIVATE bareos bareossd bareosfind ${ACL_LIBRARIES})
+target_link_libraries(bls PRIVATE bareos bareossd bareosfind)
 
 if(HAVE_FREEBSD_OS)
   target_link_libraries(bls PRIVATE Threads::Threads ${JANSSON_LIBRARIES})
@@ -245,7 +245,7 @@ endif()
 
 add_executable(bextract ${BEXTRACTSRS})
 target_link_libraries(
-  bextract bareossd bareosfind bareos ${ACL_LIBRARIES}
+  bextract bareossd bareosfind bareos
   $<$<PLATFORM_ID:FreeBSD>:Threads::Threads>
   $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
 )

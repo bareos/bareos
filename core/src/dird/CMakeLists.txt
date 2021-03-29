@@ -154,7 +154,6 @@ target_sources(bareos-dir PRIVATE dird.cc)
 
 target_link_libraries(
   bareos-dir PRIVATE dird_objects bareos bareoscats bareossql bareosfind
-                     ${ACL_LIBRARIES}
 )
 
 if(HAVE_WIN32)
@@ -179,9 +178,8 @@ endif()
 add_subdirectory(dbcopy)
 
 add_executable(bareos-dbcheck ${DBCHKSRCS})
-set(DBCHECK_LIBRARIES
-    bareossql bareos bareosfind bareoscats ${OPENSSL_LIBRARIES}
-    ${JANSSON_LIBRARIES} ${ACL_LIBRARIES}
+set(DBCHECK_LIBRARIES bareossql bareos bareosfind bareoscats
+                      ${OPENSSL_LIBRARIES} ${JANSSON_LIBRARIES}
 )
 
 target_link_libraries(bareos-dbcheck ${DBCHECK_LIBRARIES})

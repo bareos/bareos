@@ -153,14 +153,8 @@ set_target_properties(version-obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_link_libraries(
   bareos
-  PRIVATE bareosfastlz
-          ${OPENSSL_LIBRARIES}
-          Threads::Threads
-          ${ZLIB_LIBRARIES}
-          ${ACL_LIBRARIES}
-          ${LZO2_LIBRARIES}
-          ${CAP_LIBRARIES}
-          ${JANSSON_LIBRARIES}
+  PRIVATE bareosfastlz ${OPENSSL_LIBRARIES} Threads::Threads ${ZLIB_LIBRARIES}
+          ${LZO2_LIBRARIES} ${CAP_LIBRARIES} ${JANSSON_LIBRARIES}
           ${CAM_LIBRARIES}
 )
 

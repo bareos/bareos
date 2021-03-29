@@ -138,18 +138,16 @@ add_definitions(
 if(NOT client-only)
   bareos_add_test(
     run_on_incoming_connect_interval
-    LINK_LIBRARIES
-      dird_objects bareos bareosfind bareoscats bareossql
-      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main ${ACL_LIBRARIES}
+    LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
 endif() # NOT client-only
 
 if(NOT client-only)
   bareos_add_test(
     scheduler
-    LINK_LIBRARIES
-      dird_objects bareos bareosfind bareoscats bareossql
-      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main ${ACL_LIBRARIES}
+    LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
 endif() # NOT client-only
 
@@ -157,7 +155,7 @@ if(NOT client-only)
   bareos_add_test(
     scheduler_job_item_queue
     LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql
-                   GTest::gtest_main ${ACL_LIBRARIES}
+                   GTest::gtest_main
   )
 endif() # NOT client-only
 
@@ -175,7 +173,6 @@ if(NOT client-only)
     test_dir_plugins
     ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
     LINK_LIBRARIES bareos bareoscats bareossql GTest::gtest_main
-                   ${ACL_LIBRARIES}
   )
 endif() # NOT client-only
 
@@ -183,7 +180,7 @@ bareos_add_test(
   test_fd_plugins
   ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/filed/fd_plugins.cc
                      ${PROJECT_SOURCE_DIR}/src/filed/fileset.cc
-  LINK_LIBRARIES bareos bareosfind GTest::gtest_main ${ACL_LIBRARIES}
+  LINK_LIBRARIES bareos bareosfind GTest::gtest_main
 )
 
 bareos_add_test(test_is_name_valid LINK_LIBRARIES bareos GTest::gtest_main)
@@ -246,21 +243,21 @@ if(NOT client-only)
   bareos_add_test(
     show_cmd_available_resources_equals_config_resources
     LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql
-                   GTest::gtest_main ${ACL_LIBRARIES}
+                   GTest::gtest_main
   )
 endif() # NOT client-only
 
 bareos_add_test(
   test_config_parser_console
   LINK_LIBRARIES console_objects bareos bareosfind GTest::gtest_main
-                 ${JANSSON_LIBRARIES} ${ACL_LIBRARIES}
+                 ${JANSSON_LIBRARIES}
 )
 
 if(NOT client-only)
   bareos_add_test(
     test_config_parser_dir
     LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql
-                   GTest::gtest_main ${ACL_LIBRARIES}
+                   GTest::gtest_main
   )
 endif() # NOT client-only
 
@@ -286,18 +283,16 @@ if(NOT client-only)
 
   bareos_add_test(
     test_fileindex_list
-    LINK_LIBRARIES
-      dird_objects bareos bareosfind bareoscats bareossql
-      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main ${ACL_LIBRARIES}
+    LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
 endif() # NOT client-only
 
 if(NOT client-only)
   bareos_add_test(
     test_setdebug
-    LINK_LIBRARIES
-      dird_objects bareos bareosfind bareoscats bareossql
-      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main ${ACL_LIBRARIES}
+    LINK_LIBRARIES dird_objects bareos bareosfind bareoscats bareossql
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
 endif() # NOT client-only
 
@@ -311,9 +306,8 @@ bareos_add_test(timer_thread LINK_LIBRARIES bareos GTest::gtest_main)
 if(NOT client-only)
   bareos_add_test(
     catalog
-    LINK_LIBRARIES
-      bareos dird_objects bareosfind bareoscats bareossql
-      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main ${ACL_LIBRARIES}
+    LINK_LIBRARIES bareos dird_objects bareosfind bareoscats bareossql
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
     SKIP_GTEST
   )
 endif()
@@ -352,7 +346,7 @@ if(NOT client-only)
   bareos_add_test(
     bsock_test_connection_setup
     ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
-    LINK_LIBRARIES ${LINK_LIBRARIES} ${ACL_LIBRARIES}
+    LINK_LIBRARIES ${LINK_LIBRARIES}
   )
 
   bareos_add_test(bool_string LINK_LIBRARIES bareos GTest::gtest_main)
@@ -379,9 +373,8 @@ endif() # NOT client-only
 if(NOT client-only)
   bareos_add_test(
     messages_resource
-    LINK_LIBRARIES
-      bareos dird_objects bareosfind bareoscats bareossql
-      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main ${ACL_LIBRARIES}
+    LINK_LIBRARIES bareos dird_objects bareosfind bareoscats bareossql
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
     SKIP_GTEST
   )
 endif() # NOT client-only
@@ -391,17 +384,15 @@ bareos_add_test(test_edit LINK_LIBRARIES bareos GTest::gtest_main)
 if(NOT client-only)
   bareos_add_test(
     setdevice
-    LINK_LIBRARIES
-      bareos dird_objects bareosfind bareoscats bareossql
-      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main ${ACL_LIBRARIES}
+    LINK_LIBRARIES bareos dird_objects bareosfind bareoscats bareossql
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
 endif() # NOT client-only
 
 if(NOT client-only)
   bareos_add_test(
     time_format_test
-    LINK_LIBRARIES
-      bareos dird_objects bareosfind bareoscats bareossql
-      $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main ${ACL_LIBRARIES}
+    LINK_LIBRARIES bareos dird_objects bareosfind bareoscats bareossql
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
 endif() # NOT client-only
