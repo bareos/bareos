@@ -19,7 +19,7 @@ Director {                            # define myself
   # if "Plugin Names" is defined, only the specified plugins will be loaded,
   # otherwise all director plugins (*-dir.so) from the "Plugin Directory".
   #
-  Plugin Directory = "@dir_plugin_binary_path@"
+  Plugin Directory = "@DIR_PLUGINS_DIR_TO_TEST@"
   Plugin Names = "@python_module_name@"
   Working Directory =  "@working_dir@"
   Pid Directory =  "@piddir@"

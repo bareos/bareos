@@ -38,7 +38,6 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
 @$out $tmp/log1.out
-label volume=TestVolume001 storage=File pool=Full
 setdebug level=1000 client=bareos-fd trace=1
 run job=$JobName yes
 status director

@@ -2,19 +2,7 @@ Client {
   Name = @basename@-fd
   Maximum Concurrent Jobs = 20
 
-  # remove comment from "Plugin Directory" to load plugins from specified directory.
-  # if "Plugin Names" is defined, only the specified plugins will be loaded,
-  # otherwise all filedaemon plugins (*-fd.so) from the "Plugin Directory".
-  #
-  # Plugin Directory = "@python_plugin_module_src_fd@"
-  # Plugin Names = ""
-
-  # if compatible is set to yes, we are compatible with bacula
-  # if set to no, new bareos features are enabled which is the default
-  # compatible = yes
-
   Working Directory =  "@working_dir@"
   Pid Directory =  "@piddir@"
   FD Port = @fd_port@
-
 }

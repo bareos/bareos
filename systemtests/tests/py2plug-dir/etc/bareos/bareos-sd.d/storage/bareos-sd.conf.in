@@ -6,7 +6,7 @@ Storage {
   # if "Plugin Names" is defined, only the specified plugins will be loaded,
   # otherwise all storage plugins (*-sd.so) from the "Plugin Directory".
   #
-  # Plugin Directory = "@sd_plugin_binary_path@"
+  # Plugin Directory = "@SD_PLUGINS_DIR_TO_TEST@"
   # Plugin Names = ""
   Working Directory =  "@working_dir@"
   Pid Directory =  "@piddir@"

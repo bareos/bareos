@@ -512,16 +512,6 @@ set(python_plugin_module_src_test_dir_relative "python-modules")
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
 
-if(TARGET python-dir OR TARGET python3-dir)
-  set(dir_plugin_binary_path ${DIR_PLUGINS_DIR_TO_TEST})
-endif()
-if(TARGET python-sd OR TARGET python3-sd)
-  set(sd_plugin_binary_path ${SD_PLUGINS_DIR_TO_TEST})
-endif()
-if(TARGET python-fd OR TARGET python3-fd)
-  set(fd_plugin_binary_path ${FD_PLUGINS_DIR_TO_TEST})
-endif()
-
 set(sbindir ${PROJECT_BINARY_DIR}/sbin)
 
 set(scriptdir ${PROJECT_BINARY_DIR}/scripts)
