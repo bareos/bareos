@@ -789,11 +789,13 @@ if(TARGET python3-fd)
   if(S3CMD
      AND MINIO
      AND PYMODULE_3_LIBCLOUD_FOUND
+     AND (${Python3_VERSION_MAJOR} EQUAL 3)
+     AND (${Python3_VERSION_MINOR} LESS 10)
   )
     list(APPEND SYSTEM_TESTS "py3plug-fd-libcloud")
   else()
     message(
-      "S3CMD, MINIO or LIBCLOUD MODULE not found, disabling py3plug-fd-libcloud"
+      "S3CMD, MINIO or LIBCLOUD MODULE not found or Python > 3.7, disabling py3plug-fd-libcloud"
     )
     list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-libcloud")
   endif()
@@ -828,13 +830,18 @@ else()
 endif()
 
 message("checking for requirements of py3plug-fd-postgres:")
-check_pymodule_available(3 psycopg2)
-check_pymodule_available(3 dateutil)
-if(TARGET python-fd
-   AND PYMODULE_3_PSYCOPG2_FOUND
-   AND PYMODULE_3_DATEUTIL_FOUND
-)
-  list(APPEND SYSTEM_TESTS "py3plug-fd-postgres")
+if(TARGET python3-fd)
+  check_pymodule_available(3 psycopg2)
+  check_pymodule_available(3 dateutil)
+  if(PYMODULE_3_PSYCOPG2_FOUND
+     AND PYMODULE_3_DATEUTIL_FOUND
+     AND (${Python3_VERSION_MAJOR} EQUAL 3)
+     AND (${Python3_VERSION_MINOR} LESS 10)
+  )
+    list(APPEND SYSTEM_TESTS "py3plug-fd-postgres")
+  else()
+    list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-postgres")
+  endif()
 else()
   list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-postgres")
 endif()

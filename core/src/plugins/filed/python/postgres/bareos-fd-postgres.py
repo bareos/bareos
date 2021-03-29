@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,8 @@
 # Author: Maik Aussendorf
 #
 
+from sys import version_info
+
 # Provided by the Bareos FD Python plugin interface
 import bareosfd
 from bareosfd import *
@@ -36,24 +38,34 @@ import BareosFdWrapper
 # from BareosFdWrapper import parse_plugin_definition, handle_plugin_event, start_backup_file, end_backup_file, start_restore_file, end_restore_file, restore_object_data, plugin_io, create_file, check_file, handle_backup_file  # noqa
 from BareosFdWrapper import *  # noqa
 
-# This module contains the used plugin class
-import BareosFdPluginPostgres
-
 
 def load_bareos_plugin(plugindef):
     """
     This function is called by the Bareos-FD to load the plugin
     We use it to instantiate the plugin class
     """
+    if version_info.major >= 3 and version_info.minor >= 8:
+        bareosfd.JobMessage(
+            M_FATAL,
+            "Need Python version < 3.8 (current version: {}.{}.{})\n".format(
+                version_info.major, version_info.minor, version_info.micro
+            ),
+        )
+        return bRC_Error
+
     # Check for needed python modules
     try:
         import psycopg2
     except Exception as e:
         bareosfd.JobMessage(
             M_FATAL,
-            "could not import Python module. %s" % e.message,
+            "could not import Python module: %s\n" % e,
         )
         return bRC_Error
+
+    # This module contains the used plugin class
+    import BareosFdPluginPostgres
+
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that
     # holds the plugin class object
     BareosFdWrapper.bareos_fd_plugin_object = (

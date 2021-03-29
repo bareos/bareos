@@ -29,6 +29,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - repaired or added all header guards in libdroplet [PR #765]
+- When using Python > 3.7 the postgres and libcloud plugins will cancel the job and write an error message [PR #769]
 - bstrncpy: workaround when used with overlapping strings [PR #736]
 - Disabled test "statefile" for big endian, use temporary state files for all other architectures [PR #757]
 - Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page

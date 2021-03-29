@@ -40,6 +40,16 @@ else()
   find_package(Python2 COMPONENTS Interpreter Development)
   find_package(Python3 COMPONENTS Interpreter Development)
 
+  set(Python3_VERSION_MAJOR
+      ${Python3_VERSION_MAJOR}
+      PARENT_SCOPE
+  )
+
+  set(Python3_VERSION_MINOR
+      ${Python3_VERSION_MINOR}
+      PARENT_SCOPE
+  )
+
   if(${Python2_FOUND} OR ${Python3_FOUND})
     set(HAVE_PYTHON 1)
   endif()
