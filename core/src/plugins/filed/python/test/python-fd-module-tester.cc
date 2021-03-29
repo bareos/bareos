@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,7 +19,7 @@
    02110-1301, USA.
 */
 
-/* Load the python-fd plugin and test it */
+/* Load the python-fd extension module and test it */
 
 #if defined(HAVE_MINGW)
 #  include "include/bareos.h"
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
   if (bareosfdModule) {
     printf("loaded bareosfd successfully\n");
   } else {
-    printf("loading of bareosfd failed\n");
+    printf("loading of bareosfd extension module failed\n");
   }
   if (PyErr_Occurred()) { PyErrorHandler(); }
 
