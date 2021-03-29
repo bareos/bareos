@@ -54,6 +54,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Documentation
 - Restore error "could not hard link" documented: what is the cause and how it can be avoided or solved. [PR #759]
-
+- Developer guide: add small chapter about c++ exceptions. [PR #777]
 
 [unreleased]: https://github.com/bareos/bareos/tree/master
