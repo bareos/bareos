@@ -32,15 +32,7 @@ if(dynamic-cats-backends)
     progress.cc
   )
   target_link_libraries(
-    bareos-dbcopy
-    bareos
-    dird_objects
-    bareosfind
-    bareoscats
-    bareossql
-    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}>
-    ${LMDB_LIBS}
-    ${ACL_LIBRARIES}
+    bareos-dbcopy bareos dird_objects bareosfind bareoscats bareossql
   )
 
   install(TARGETS bareos-dbcopy DESTINATION "${sbindir}")

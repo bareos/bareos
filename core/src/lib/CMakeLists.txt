@@ -155,7 +155,7 @@ target_link_libraries(
   bareos
   PRIVATE bareosfastlz
           ${OPENSSL_LIBRARIES}
-          ${PTHREAD_LIBRARIES}
+          Threads::Threads
           ${ZLIB_LIBRARIES}
           ${ACL_LIBRARIES}
           ${LZO2_LIBRARIES}

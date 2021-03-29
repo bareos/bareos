@@ -680,13 +680,11 @@ set(have_glusterfs ${HAVE_GLUSTERFS_API_GLFS_H})
 if(NOT HAVE_WIN32)
   if(${ndmp})
     set(HAVE_NDMP 1)
-    set(NDMP_LIBS bareosndmp)
   endif()
 endif()
 
 if(${lmdb})
   set(HAVE_LMDB 1)
-  set(LMDB_LIBS bareoslmdb)
 endif()
 
 # info what the config files need to be installed PLUGINS  ############

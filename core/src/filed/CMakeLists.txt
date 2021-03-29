@@ -61,9 +61,7 @@ if(HAVE_WIN32)
   list(APPEND FDSRCS ../win32/filed/filedres.rc)
 endif()
 
-include_directories(
-  ${OPENSSL_INCLUDE_DIR} ${PROJECT_SOURCE_DIR}/src/fastlz/include
-)
+include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(fd_objects STATIC ${FDSRCS})
 target_link_libraries(
@@ -71,9 +69,13 @@ target_link_libraries(
                     ${ACL_LIBRARIES}
 )
 
+if(HAVE_LMDB)
+  target_link_libraries(fd_objects PRIVATE bareoslmdb)
+endif()
+
 add_executable(bareos-fd filed.cc)
 
-set(BAREOS_FD_LIBRARIES bareosfind bareos pthread ${LMDB_LIBS})
+set(BAREOS_FD_LIBRARIES bareosfind bareos Threads::Threads)
 if(HAVE_WIN32)
   target_sources(bareos-fd PRIVATE ../win32/generic/main.cc)
   list(APPEND BAREOS_FD_LIBRARIES comctl32)
