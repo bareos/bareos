@@ -54,6 +54,7 @@ debian/bareos-filedaemon-glusterfs-plugin.install
 debian/bareos-filedaemon-ldap-python-plugin.install
 debian/bareos-filedaemon-libcloud-python-plugin.install
 debian/bareos-filedaemon-percona-xtrabackup-python-plugin.install
+debian/bareos-filedaemon-postgresql-python-plugin.install
 debian/bareos-filedaemon-python-plugin.install
 debian/bareos-filedaemon-python-plugins-common.install
 debian/bareos-filedaemon-python2-plugin.install
