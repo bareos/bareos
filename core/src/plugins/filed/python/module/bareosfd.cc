@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -308,7 +308,11 @@ static inline bool PySavePacketToNative(
        */
       if (PyUnicode_Check(pSavePkt->fname)) {
         if (plugin_priv_ctx->fname) { free(plugin_priv_ctx->fname); }
-        plugin_priv_ctx->fname = strdup(PyUnicode_AsUTF8(pSavePkt->fname));
+
+        const char* fileName_AsUTF8 = PyUnicode_AsUTF8(pSavePkt->fname);
+        if (!fileName_AsUTF8) return false;
+
+        plugin_priv_ctx->fname = strdup(fileName_AsUTF8);
         sp->fname = plugin_priv_ctx->fname;
       }
     } else {

@@ -241,6 +241,15 @@ macro(prepare_testdir_for_daemon_run)
   set(sd_backenddir ${SD_BACKEND_DIR_TO_TEST})
   set(BAREOS_WEBUI_PUBLIC_DIR ${WEBUI_PUBLIC_DIR_TO_TEST})
 
+  set(dbHost ${current_test_directory}/tmp)
+  string(LENGTH ${dbHost} dbHostLength)
+  if(${dbHostLength} GREATER 110) # psql does not accept PGHOST length > 127
+    # message( STATUS "${current_test_directory}/tmp is too
+    # long(${dbHostLength}) PGHOST, using ${dbHost}" )
+    set(dbHost /tmp/${TEST_NAME})
+    file(MAKE_DIRECTORY ${dbHost})
+  endif()
+
   if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
     set(bin /bin)
     set(sbin /sbin)
@@ -329,6 +338,11 @@ endmacro()
 # Main starts here...
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
+
+find_program(PG_CTL pg_ctl /usr/lib/postgresql/*/bin /usr/bin /bin)
+get_filename_component(POSTGRES_BIN_PATH ${PG_CTL} DIRECTORY)
+# message(STATUS "PG_CTL is ${PG_CTL}")
+message(STATUS "POSTGRES_BIN_PATH is ${POSTGRES_BIN_PATH}")
 
 find_program(PERL perl)
 
@@ -612,15 +626,10 @@ set(SYSTEM_TESTS_DISABLED # initially empty
 # add tests also here that are unreliable they are excluded when running tests
 # during build in jenkins
 set(SYSTEM_TESTS_BROKEN
-    dbcopy-mysql-postgresql
-    py2plug-fd-postgres
-    py3plug-fd-local-fileset
-    py3plug-fd-postgres
-    python-bareos
-    scheduler-backup
-    # the next two fail on FreeBSD 11.4
-    filesets
-    py3plug-fd-local-fileset-restoreobject
+    python-bareos # Fails on FreeBSD
+    py3plug-fd-local-fileset # Fails with UnicodeEncodeError: 'utf-8' codec
+                             # can't encode characters in position 133-142:
+                             # surrogates not allowed
 )
 
 set(glusterfs_uri

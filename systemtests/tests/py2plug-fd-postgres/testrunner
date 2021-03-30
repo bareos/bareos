@@ -18,8 +18,8 @@ JobName=backup-bareos-fd
 
 # setup local database server
 DBNAME="backuptest"
-TESTPGHOST="${current_test_directory}/tmp"
-PSQL="psql --host $TESTPGHOST"
+TESTPGHOST="$dbHost"
+PSQL="${POSTGRES_BIN_PATH}/psql --host $TESTPGHOST"
 
 [ -d "$TESTPGHOST" ] && rm -R  "$TESTPGHOST"
 mkdir -p "$TESTPGHOST"
