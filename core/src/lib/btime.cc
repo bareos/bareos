@@ -121,6 +121,11 @@ char* bstrutime(char* dt, int maxlen, utime_t utime)
   return bstrftime(dt, maxlen, utime, "%Y-%m-%d %H:%M:%S");
 }
 
+static bool is_leap(const tm& datetime)
+{
+  const int year = datetime.tm_year + 1900;
+  return year % 4 == 0 && !(year % 100 == 0 && year % 400 != 0);
+}
 
 /*
  * Check if a given date is valid
@@ -128,46 +133,33 @@ char* bstrutime(char* dt, int maxlen, utime_t utime)
 
 static bool DateIsValid(const tm& datetime)
 {
-  if (datetime.tm_year <= 0 || datetime.tm_mon <= 0 || datetime.tm_mday <= 0
-      || datetime.tm_mon > 12 || datetime.tm_hour > 23 || datetime.tm_min > 59
-      || datetime.tm_sec > 59 || datetime.tm_mon < 0 || datetime.tm_hour < 0
-      || datetime.tm_min < 0 || datetime.tm_sec < 0) {
+  if (datetime.tm_year <= 0
+      || (datetime.tm_mon < month::january || datetime.tm_mon > month::december)
+      || datetime.tm_mday <= 0
+      || (datetime.tm_hour < 0 || datetime.tm_hour > 23)
+      || (datetime.tm_min < 0 || datetime.tm_min > 59)
+      || (datetime.tm_sec < 0 || datetime.tm_sec > 59)) {
     return false;
   }
 
-  /*
-   * taking into context leap years in february:
-   * leap years are years that are divisible by 4 or are divisible by 4, 100 and
-   * 400 simultaniously
-   */
-
-  if (datetime.tm_mon == 2) {
-    if (datetime.tm_year % 4 == 0) {
-      if (datetime.tm_year % 100 == 0 && datetime.tm_year % 400 != 0) {
+  switch (datetime.tm_mon) {
+    case month::february:
+      if (is_leap(datetime)) {
+        if (datetime.tm_mday > 29) { return false; }
+      } else {
         if (datetime.tm_mday > 28) { return false; }
-      } else if (datetime.tm_mday > 29) {
-        return false;
       }
-
-    } else if (datetime.tm_mday > 28) {
-      return false;
-    }
+      break;
+    case month::april:
+    case month::june:
+    case month::september:
+    case month::november:
+      if (datetime.tm_mday > 30) { return false; }
+      break;
+    default:
+      if (datetime.tm_mday > 31) { return false; }
+      break;
   }
-
-  /*
-   * taking into context 31-day and 30-day months
-   */
-
-  if ((datetime.tm_mon == 1 || datetime.tm_mon == 3 || datetime.tm_mon == 5
-       || datetime.tm_mon == 7 || datetime.tm_mon == 8 || datetime.tm_mon == 10
-       || datetime.tm_mon == 12)
-      && datetime.tm_mday > 31) {
-    return false;
-
-  } else if (datetime.tm_mday > 30 || datetime.tm_mday < 0) {
-    return false;
-  }
-
   return true;
 }
 
@@ -194,22 +186,19 @@ utime_t StrToUtime(const char* str)
     return 0;
   }
 
+  // range for tm_mon is defined as 0-11
+  --datetime.tm_mon;
+  // tm_year is years since 1900
+  datetime.tm_year -= 1900;
+
+  // we don't know these, so we initialize to sane defaults
+  datetime.tm_wday = datetime.tm_yday = 0;
+
+  // set to -1 for "I don't know"
+  datetime.tm_isdst = -1;
+
   if (!DateIsValid(datetime)) { return 0; }
 
-  if (datetime.tm_mon > 0) {
-    datetime.tm_mon--;
-  } else {
-    return 0;
-  }
-
-  if (datetime.tm_year >= 1900) {
-    datetime.tm_year -= 1900;
-  } else {
-    return 0;
-  }
-
-  datetime.tm_wday = datetime.tm_yday = 0;
-  datetime.tm_isdst = -1;
   time = mktime(&datetime);
   if (time == -1) { time = 0; }
   return (utime_t)time;
@@ -315,7 +304,8 @@ void get_current_time(struct date_time* dt)
 /* Deprecated. Do not use. */
 fdate_t DateEncode(uint32_t year, uint8_t month, uint8_t day)
 {
-  /* Algorithm as given in Meeus, Astronomical Algorithms, Chapter 7, page 61 */
+  /* Algorithm as given in Meeus, Astronomical Algorithms, Chapter 7, page 61
+   */
 
   int32_t a, b, m;
   uint32_t y;
