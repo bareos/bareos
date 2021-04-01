@@ -876,12 +876,12 @@ Backup of MySQL Databases using the Python MySQL plugin
 .. index::
    single: Plugin; MySQL Backup
 
-The Python plugin from https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python makes a backup of all or selected MySQL databases from the |fd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps.
+The Python plugin from https://github.com/bareos/bareos/tree/master/contrib/fd-plugins/mysql-python makes a backup of all or selected MySQL databases from the |fd| or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe. This plugin is suitable to backup database dumps.
 Following settings must be done on the Bareos client (|fd|):
 
 -  install and enable the |fd| Python plugin
 
--  install the Python MySQL plugin (for some platforms it is available prepackaged from http://download.bareos.org/bareos/contrib/\ , on the other platforms: copy the plugin files to the Bareos Plugin Directory)
+-  install the Python MySQL plugin (for some platforms it is available prepackaged, on the other platforms: copy the plugin files to the Bareos Plugin Directory)
 
 -  disable bacula compatibility (default for Bareos >= 15.2)
 

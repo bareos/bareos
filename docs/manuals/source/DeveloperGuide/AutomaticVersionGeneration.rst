@@ -86,7 +86,7 @@ You can verify this with ``git tag -l 'WIP/*'`` and ``cmake -P get_version.cmake
 Building in the wrong directory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 If you try to run ``cmake`` in :file:`core/` or :file:`webui/` it will not be able to determine the version using git.
-Either build in the top directory or :ref:`generate BareosVersion.cmake <subsubsection-generating-bareosversion>` so information is not retrieved from git.
+Either build in the top directory or :ref:`generate BareosVersion.cmake <section-generating-bareosversion>` so information is not retrieved from git.
 
 Last resort
 ~~~~~~~~~~~
