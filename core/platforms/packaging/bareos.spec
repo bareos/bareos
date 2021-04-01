@@ -125,10 +125,15 @@ BuildRequires: libtirpc-devel
 %define ceph 1
 %endif
 
-# use Developer Toolset 7 compiler as standard is too old
-%if 0%{?centos_version} == 600 || 0%{?rhel_version} == 600
-BuildRequires: devtoolset-7-gcc
-BuildRequires: devtoolset-7-gcc-c++
+# use Developer Toolset 8 compiler as standard is too old
+%if 0%{?centos_version} == 700 || 0%{?rhel_version} == 700
+BuildRequires: devtoolset-8-gcc
+BuildRequires: devtoolset-8-gcc-c++
+%endif
+
+%if 0%{?suse_version}
+BuildRequires: gcc9
+BuildRequires: gcc9-c++
 %endif
 
 %if 0%{?systemd_support}
@@ -928,9 +933,15 @@ export MTX=/usr/sbin/mtx
 mkdir %{CMAKE_BUILDDIR}
 pushd %{CMAKE_BUILDDIR}
 
-# use Developer Toolset 7 compiler as standard is too old
-%if 0%{?centos_version} == 600 || 0%{?rhel_version} == 600
-export PATH=/opt/rh/devtoolset-7/root/usr/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+# use Developer Toolset 8 compiler as standard is too old
+%if 0%{?centos_version} == 700 || 0%{?rhel_version} == 700
+source /opt/rh/devtoolset-8/enable
+%endif
+
+# use gcc9 on SuSE
+%if 0%{?suse_version}
+CC=gcc-9  ; export CC
+CXX=g++-9 ; export CXX
 %endif
 
 CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ;
