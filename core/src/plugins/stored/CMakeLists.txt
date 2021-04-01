@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -34,7 +34,9 @@ add_subdirectory(python)
 
 add_library(autoxflate-sd MODULE autoxflate/autoxflate-sd.cc)
 set_target_properties(autoxflate-sd PROPERTIES PREFIX "")
-target_link_libraries(autoxflate-sd bareos)
+target_link_libraries(
+  autoxflate-sd bareos bareosfastlz $<$<PLATFORM_ID:Windows>:${ZLIB_LIBRARIES}>
+)
 install(TARGETS autoxflate-sd DESTINATION ${plugindir})
 
 if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)

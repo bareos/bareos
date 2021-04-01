@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -113,7 +113,6 @@ if(HAVE_WIN32)
     ${PROJECT_SOURCE_DIR}/src/win32/generic
     ${PROJECT_SOURCE_DIR}/src/win32/dird
   )
-  list(APPEND DIRDSRCS ../win32/generic/main.cc ../win32/generic/service.cc)
 endif()
 
 set(DBCHKSRCS dbcheck.cc dird_conf.cc dird_globals.cc ua_acl.cc ua_audit.cc
@@ -145,28 +144,43 @@ set(DIRD_RESTYPES
 
 # dird_objects is also used as library for unittests
 add_library(dird_objects STATIC ${DIRD_OBJECTS_SRCS})
-target_link_libraries(dird_objects ${NDMP_LIBS})
+target_link_libraries(
+  dird_objects PRIVATE ${OPENSSL_LIBRARIES} Threads::Threads
+                       ${JANSSON_LIBRARIES}
+)
 
-add_executable(bareos-dir ${DIRDSRCS})
+add_executable(bareos-dir)
+target_sources(bareos-dir PRIVATE dird.cc)
 
-set(BAREOS_DIR_LIBRARIES dird_objects bareos bareoscats bareossql bareosfind
-                         ${LMDB_LIBS} ${NDMP_LIBS}
+target_link_libraries(
+  bareos-dir PRIVATE dird_objects bareos bareoscats bareossql bareosfind
 )
 
 if(HAVE_WIN32)
-  list(APPEND BAREOS_DIR_LIBRARIES comctl32)
+  target_sources(
+    bareos-dir PRIVATE ../win32/generic/main.cc ../win32/generic/service.cc
+  )
+  target_link_libraries(bareos-dir PRIVATE comctl32)
+endif()
+
+if(HAVE_NDMP)
+  target_link_libraries(dird_objects PRIVATE bareosndmp)
+endif()
+
+if(HAVE_LMDB)
+  target_link_libraries(dird_objects PRIVATE bareoslmdb)
 endif()
 
 if(HAVE_PAM)
-  target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES} ${PAM_LIBRARIES})
-else()
-  target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES})
+  target_link_libraries(dird_objects PRIVATE ${PAM_LIBRARIES})
 endif()
 
 add_subdirectory(dbcopy)
 
 add_executable(bareos-dbcheck ${DBCHKSRCS})
-set(DBCHECK_LIBRARIES bareossql bareos bareosfind bareoscats)
+set(DBCHECK_LIBRARIES bareossql bareos bareosfind bareoscats
+                      ${OPENSSL_LIBRARIES} ${JANSSON_LIBRARIES}
+)
 
 target_link_libraries(bareos-dbcheck ${DBCHECK_LIBRARIES})
 

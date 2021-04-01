@@ -294,8 +294,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
   set(HAVE_WIN32 1)
 
-  set(WINDOWS_LIBRARIES ws2_32)
-
   set(Python2_LIBRARIES python27.dll)
   set(Python3_LIBRARIES python38.dll)
 
@@ -652,7 +650,7 @@ if(${acl})
   if(NOT HAVE_WIN32)
     if(${HAVE_SYS_ACL_H})
       set(HAVE_ACL 1)
-      message(STATUS "acl found, libs: ${ACL_LIBS}")
+      message(STATUS "acl found, libs: ${ACL_LIBRARIES}")
     else()
       message(FATAL_ERROR "build with acl requested, but lib not found")
     endif()
@@ -682,13 +680,11 @@ set(have_glusterfs ${HAVE_GLUSTERFS_API_GLFS_H})
 if(NOT HAVE_WIN32)
   if(${ndmp})
     set(HAVE_NDMP 1)
-    set(NDMP_LIBS bareosndmp)
   endif()
 endif()
 
 if(${lmdb})
   set(HAVE_LMDB 1)
-  set(LMDB_LIBS bareoslmdb)
 endif()
 
 # info what the config files need to be installed PLUGINS  ############
@@ -875,7 +871,7 @@ message("   build-dird:                   ${build_dird} ")
 message("   build-stored:                 ${build_stored} ")
 message("   Plugin support:               ${have_plugins} ")
 message("   AFS support:                  ${have_afs} ")
-message("   ACL support:                  ${HAVE_ACL} ${ACL_LIBS}")
+message("   ACL support:                  ${HAVE_ACL} ${ACL_LIBRARIES}")
 message("   XATTR support:                ${have_xattr} ")
 message(
   "   SCSI Crypto support:          ${scsi-crypto} ${HAVE_LOWLEVEL_SCSI_INTERFACE} "
@@ -901,24 +897,7 @@ message(
 message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
 message("   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ")
-if(GTEST_FOUND)
-  message(
-    "   gtest support:                ${GTEST_FOUND} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} "
-  )
-  if(GMOCK_FOUND)
-    message(
-      "   gmock support:                ${GMOCK_FOUND} ${GMOCK_LIBRARIES} "
-    )
-  else()
-    message(
-      "   gmock support:                ${GMOCK_FOUND} (some unit tests will be disabled)"
-    )
-  endif()
-else()
-  message(
-    "   gtest support:                ${GTEST_FOUND} (unit tests will be disabled)"
-  )
-endif()
+message("   GTest enabled:                ${GTest_FOUND}")
 message(
   "   Intl support:                 ${Intl_FOUND} ${INTLINCLUDE_DIRS} ${INTL_LIBRARIES}"
 )
