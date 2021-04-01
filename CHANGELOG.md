@@ -6,6 +6,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Fixed
+- fix a bug in a date function that leads to errors on the 31st day of a month [PR #782]
 - fix possible read/write problems when using droplet with https [PR #765]
 - fix "configure add" handling of quoted strings [PR #764]
 - fix config-dump systemtest [PR #736]
