@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,9 @@
 #include "dird/dird_globals.h"
 #include "dird/ua_select.h"
 #include "lib/parse_conf.h"
+#include "lib/util.h"
+#include <array>
+#include <algorithm>
 
 namespace directordaemon {
 
@@ -135,17 +138,42 @@ static inline bool config_add_directive(UaContext* ua,
 {
   PoolMem temp(PM_MESSAGE);
   ResourceItem* item = NULL;
+  std::string format("%-*s%s = %s\n");
+
+  const std::array<int, 15> quotable_types{
+      CFG_TYPE_AUTOPASSWORD,   CFG_TYPE_CLEARPASSWORD, CFG_TYPE_DIR,
+      CFG_TYPE_DIR_OR_CMD,     CFG_TYPE_LABEL,         CFG_TYPE_MD5PASSWORD,
+      CFG_TYPE_NAME,           CFG_TYPE_RES,           CFG_TYPE_RUNSCRIPT_CMD,
+      CFG_TYPE_RUNSCRIPT_WHEN, CFG_TYPE_SHRTRUNSCRIPT, CFG_TYPE_STDSTR,
+      CFG_TYPE_STDSTRDIR,      CFG_TYPE_STR,           CFG_TYPE_STRNAME};
+
+  const std::array<int, 3> script_types{
+      CFG_TYPE_RUNSCRIPT_CMD, CFG_TYPE_DIR_OR_CMD, CFG_TYPE_SHRTRUNSCRIPT};
+
+  std::string temp_value(value);
 
   item = config_get_res_item(ua, res_table, key, value);
+
   if (res_table && (!item)) { return false; }
 
-  /*
-   * Use item->name instead of key for uniform formatting.
-   */
-  if (item) { key = item->name; }
+  if (item) {
+    /*
+     * Use item->name instead of key for uniform formatting.
+     */
+    key = item->name;
+    if (std::find(quotable_types.begin(), quotable_types.end(), item->type)
+        != quotable_types.end()) {
+      format = "%-*s%s = \"%s\"\n";
 
-  /* TODO: check type, to see if quotes should be used */
-  temp.bsprintf("%-*s%s = %s\n", indent, "", key, value);
+      if (std::find(script_types.begin(), script_types.end(), item->type)
+          != script_types.end()) {
+        temp_value = EscapeString(value);
+      }
+    }
+  }
+
+  temp.bsprintf(format.c_str(), indent, "", key, temp_value.c_str());
+
   resource.strcat(temp);
 
   return true;
@@ -372,7 +400,7 @@ static inline bool ConfigureAddResource(UaContext* ua,
   }
 
   /*
-   * When adding a client, also create the client configuration file.
+   * When adding a client, also create the File Daemon client resource file.
    */
   if (res_table->rcode == R_CLIENT) {
     ConfigureCreateFdResource(ua, name.c_str());

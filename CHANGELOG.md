@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - fix possible read/write problems when using droplet with https [PR #765]
+- fix "configure add" handling of quoted strings [PR #764]
 - fix config-dump systemtest [PR #736]
 - fix systemtests daemon control scripts [PR #762]
 - fix invalid file descriptor issue in the libcloud plugin [PR #702]
