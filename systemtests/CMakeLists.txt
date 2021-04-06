@@ -332,7 +332,13 @@ macro(prepare_test)
 endmacro()
 
 macro(create_symlink target link)
-  execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${target} ${link})
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.14")
+    file(CREATE_LINK ${target} ${link} SYMBOLIC)
+  else()
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E create_symlink ${target} ${link}
+    )
+  endif()
 endmacro()
 
 # Main starts here...
