@@ -1662,17 +1662,17 @@ msgstr "Завантажте оновлення"
 #: ../module/Job/src/Job/Form/RunJobForm.php:315
 #: ../module/Job/src/Job/Form/RunJobForm.php:331
 msgid "Next Pool"
-msgstr ""
+msgstr "Наступний пул"
 
 #: ../module/Restore/view/restore/restore/index.phtml:392
 msgid "Mode"
-msgstr ""
+msgstr "Режим"
 
 #: ../module/Restore/view/restore/restore/index.phtml:400
 msgid "User"
-msgstr ""
+msgstr "Користувач"
 
 #: ../module/Restore/view/restore/restore/index.phtml:408
 msgid "Group"
-msgstr ""
+msgstr "Група"
 

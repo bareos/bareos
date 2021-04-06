@@ -43,6 +43,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Ctest now runs in scripted mode. [PR #742]
 - storage daemon: class Device: rename dev_name to archive_device_string (as the value stored here is the value of the "Archive Device" directive) [PR #744]
 - Enable c++17 support [PR #741]
+- webui: Localization updated [PR #776]
 
 ### Deprecated
 

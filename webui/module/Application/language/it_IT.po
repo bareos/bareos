@@ -183,7 +183,6 @@ msgid "An error occurred"
 msgstr "Si è verificato un errore"
 
 #: ../module/Application/view/layout/layout.phtml:156
-#, fuzzy
 msgid "Documentation"
 msgstr "Documentazione"
 
@@ -196,7 +195,6 @@ msgid "Bugtracker"
 msgstr "Bugtracker"
 
 #: ../module/Application/view/layout/layout.phtml:159
-#, fuzzy
 msgid "Support"
 msgstr "Supporto"
 
@@ -302,7 +300,6 @@ msgid "Actions"
 msgstr "Operazioni"
 
 #: ../module/Client/view/client/client/details.phtml:69
-#, fuzzy
 msgid "Last successful backups"
 msgstr "Ultimi backups"
 
@@ -439,7 +436,6 @@ msgid "Enabled"
 msgstr "Abilitato"
 
 #: ../public/js/bootstrap-table-formatter.js:410
-#, fuzzy
 msgid "Disabled"
 msgstr "Disabilitato"
 
@@ -464,7 +460,6 @@ msgid "There are no jobs running."
 msgstr "Non ci sono job in corso."
 
 #: ../module/Dashboard/view/partial/JobTotals.phtml:31
-#, fuzzy
 msgid "Job Totals"
 msgstr "Lista Job"
 
@@ -515,12 +510,10 @@ msgid "Waiting"
 msgstr "In attesa"
 
 #: ../module/Dashboard/view/partial/JobsPast24h.phtml:68
-#, fuzzy
 msgid "Successful"
 msgstr "Successo"
 
 #: ../module/Dashboard/view/partial/JobsPast24h.phtml:90
-#, fuzzy
 msgid "Failed"
 msgstr "Fallito"
 
@@ -529,7 +522,6 @@ msgid "Current Director messages"
 msgstr "Messaggi recenti del Director"
 
 #: ../module/Dashboard/view/partial/RunningJobs.phtml:31
-#, fuzzy
 msgid "Running Jobs"
 msgstr "In esecuzione"
 
@@ -588,7 +580,6 @@ msgid "Creation time"
 msgstr "Creato il"
 
 #: ../module/Job/src/Job/Form/JobForm.php:60
-#, fuzzy
 msgid "jobname"
 msgstr "Nome Job"
 
@@ -702,7 +693,6 @@ msgid "Errors"
 msgstr "Errori"
 
 #: ../module/Job/view/job/job/details.phtml:98
-#, fuzzy
 msgid "Used Volumes"
 msgstr "Volumi"
 
@@ -736,7 +726,6 @@ msgstr "Messaggio di errore ricevuto dal director:"
 #: ../module/Media/view/media/media/index.phtml:136
 #: ../module/Media/view/media/media/details.phtml:174
 #: ../module/Pool/view/pool/pool/details.phtml:168
-#, fuzzy
 msgid "Failed to send result as json. Maybe the result message is too long?"
 msgstr "Errore nell'invio del risultato in formato json. Forse il messaggio è troppo lungo?"
 
@@ -754,12 +743,10 @@ msgid "Last Index"
 msgstr "Ultimo indice"
 
 #: ../module/Job/view/job/job/details.phtml:188
-#, fuzzy
 msgid "Start Block"
 msgstr "Blocco iniziale"
 
 #: ../module/Job/view/job/job/details.phtml:192
-#, fuzzy
 msgid "End Block"
 msgstr "Blocco finale"
 
@@ -970,7 +957,6 @@ msgid "Scratch Pool Id"
 msgstr "Id pool scratch"
 
 #: ../module/Media/view/media/media/details.phtml:435
-#, fuzzy
 msgid "Recycle Pool Id"
 msgstr "Id pool riutilizzi"
 
@@ -1129,7 +1115,6 @@ msgstr "Jobs relativi per il più recente ripristino totale"
 
 #: ../module/Restore/view/restore/restore/index.phtml:49
 #: ../module/Restore/view/restore/restore/versions.phtml:49
-#, fuzzy
 msgid "Error message received:"
 msgstr "Messaggio di errore ricevuto dal director:"
 
@@ -1259,7 +1244,6 @@ msgid "Status Scheduler"
 msgstr "Stato pianificazione"
 
 #: ../public/js/bootstrap-table-formatter.js:44
-#, fuzzy
 msgid "Backup"
 msgstr "Backups"
 
@@ -1272,7 +1256,6 @@ msgid "Verify"
 msgstr "Verifica"
 
 #: ../public/js/bootstrap-table-formatter.js:56
-#, fuzzy
 msgid "Console program"
 msgstr "Console"
 
@@ -1297,7 +1280,6 @@ msgid "Copy job"
 msgstr "Copia job"
 
 #: ../public/js/bootstrap-table-formatter.js:74
-#, fuzzy
 msgid "Migration job"
 msgstr "Migration job"
 
@@ -1306,7 +1288,6 @@ msgid "Scan"
 msgstr "Scansione"
 
 #: ../public/js/bootstrap-table-formatter.js:80
-#, fuzzy
 msgid "Consolidate"
 msgstr "Consolida"
 
@@ -1337,12 +1318,10 @@ msgid "Catalog"
 msgstr "Catalogo"
 
 #: ../public/js/bootstrap-table-formatter.js:104
-#, fuzzy
 msgid "InitCatalog"
 msgstr "non nel catalogo"
 
 #: ../public/js/bootstrap-table-formatter.js:106
-#, fuzzy
 msgid "VolumeToCatalog"
 msgstr "Dettagli Volume"
 
@@ -1359,12 +1338,10 @@ msgid "None"
 msgstr "Nessuno"
 
 #: ../public/js/bootstrap-table-formatter.js:120
-#, fuzzy
 msgid "year(s)"
 msgstr "anno(i) fa"
 
 #: ../public/js/bootstrap-table-formatter.js:123
-#, fuzzy
 msgid "month(s)"
 msgstr "mese(i) fa"
 
@@ -1394,7 +1371,6 @@ msgid "expires in 1 day"
 msgstr "scade tra 1 giorno"
 
 #: ../public/js/bootstrap-table-formatter.js:160
-#, fuzzy
 msgid "expires in"
 msgstr "Scadenza"
 
@@ -1419,12 +1395,10 @@ msgid "year(s) ago"
 msgstr "anno(i) fa"
 
 #: ../public/js/bootstrap-table-formatter.js:247
-#, fuzzy
 msgid "enabled"
 msgstr "Abilitato"
 
 #: ../public/js/bootstrap-table-formatter.js:250
-#, fuzzy
 msgid "disabled"
 msgstr "Disabilita"
 
@@ -1444,7 +1418,6 @@ msgstr "In coda"
 
 #: ../public/js/bootstrap-table-formatter.js:301
 #: ../public/js/bootstrap-table-formatter.js:302
-#, fuzzy
 msgid "Blocked"
 msgstr "Bloccato"
 
@@ -1453,7 +1426,6 @@ msgid "Verify found differences"
 msgstr "La Verifica ha rilevato differenze"
 
 #: ../public/js/bootstrap-table-formatter.js:312
-#, fuzzy
 msgid "Canceled"
 msgstr "Annullato"
 
@@ -1477,7 +1449,6 @@ msgstr "Inserimento dati"
 
 #: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
 #: ../public/js/bootstrap-table-formatter.js:387
-#, fuzzy
 msgid "Warning"
 msgstr "Avviso"
 
@@ -1493,12 +1464,10 @@ msgstr "In coda in attesa di dispositivo"
 
 #: ../public/js/bootstrap-table-formatter.js:25
 #: ../public/js/bootstrap-table-formatter.js:560
-#, fuzzy
 msgid "View Job Details"
 msgstr "Lista Job"
 
 #: ../module/Job/src/Job/Form/JobForm.php:102
-#, fuzzy
 msgid "warning"
 msgstr "avviso"
 
@@ -1507,7 +1476,6 @@ msgid "Non-fatal error"
 msgstr "Errore non-fatale"
 
 #: ../public/js/bootstrap-table-formatter.js:276
-#, fuzzy
 msgid "Job terminated in error"
 msgstr "Terminati senza successo"
 
@@ -1516,7 +1484,6 @@ msgid "Fatal error"
 msgstr "Errore fatale"
 
 #: ../public/js/bootstrap-table-formatter.js:286
-#, fuzzy
 msgid "Terminated normally"
 msgstr "Terminati normalmente"
 
@@ -1525,12 +1492,10 @@ msgid "Created but not yet running"
 msgstr "Creato ma ancora non avviato"
 
 #: ../public/js/bootstrap-table-formatter.js:306
-#, fuzzy
 msgid "Verify differences"
 msgstr "La Verifica ha rilevato differenze"
 
 #: ../public/js/bootstrap-table-formatter.js:311
-#, fuzzy
 msgid "Canceled by user"
 msgstr "Annullato dall'utente"
 
@@ -1575,23 +1540,19 @@ msgid "Waiting for higher priority jobs to finish"
 msgstr "In attesa che finiscano jobs a più alta priorità "
 
 #: ../public/js/bootstrap-table-formatter.js:376
-#, fuzzy
 msgid "Incomplete Job"
 msgstr "Incompleto"
 
 #: ../public/js/bootstrap-table-formatter.js:381
-#, fuzzy
 msgid "Committing data (last despool)"
 msgstr "Inserimento dati (ultimo despool)"
 
 #: ../public/js/bootstrap-table-formatter.js:386
-#, fuzzy
 msgid "Terminated normally with warnings"
 msgstr "Terminati con successo con avvisi"
 
 #: ../module/Restore/view/restore/restore/index.phtml:32
 #: ../module/Restore/view/restore/restore/versions.phtml:32
-#, fuzzy
 msgid "Restore multiple files"
 msgstr "Ripristina file multipli"
 
@@ -1602,7 +1563,6 @@ msgstr "Ripristina una versione specifica dei file"
 
 #: ../module/Restore/view/restore/restore/index.phtml:75
 #: ../module/Restore/view/restore/restore/versions.phtml:76
-#, fuzzy
 msgid "Job report"
 msgstr "Lista Job"
 
@@ -1641,7 +1601,6 @@ msgid "Available versions"
 msgstr "Versioni disponibili"
 
 #: ../module/Restore/view/restore/restore/versions.phtml:195
-#, fuzzy
 msgid "Checksum"
 msgstr "Checksum MD5"
 
@@ -1699,4 +1658,21 @@ msgstr "OS"
 #: ../public/js/bootstrap-table-formatter.js:521
 msgid "Download update"
 msgstr "Scarica l'aggiornamento"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:315
+#: ../module/Job/src/Job/Form/RunJobForm.php:331
+msgid "Next Pool"
+msgstr "Prossimo Pool"
+
+#: ../module/Restore/view/restore/restore/index.phtml:392
+msgid "Mode"
+msgstr "Modo"
+
+#: ../module/Restore/view/restore/restore/index.phtml:400
+msgid "User"
+msgstr "Usuario"
+
+#: ../module/Restore/view/restore/restore/index.phtml:408
+msgid "Group"
+msgstr "Gruppo"
 

@@ -1575,11 +1575,50 @@ msgstr "Finalizado normalmente com mensagens de atenção"
 msgid "Restore multiple files"
 msgstr "Restaurar múltiplos arquivos"
 
+#: ../module/Restore/view/restore/restore/index.phtml:33
+#: ../module/Restore/view/restore/restore/versions.phtml:33
+msgid "Restore specific file version"
+msgstr "Restaurar versão específica do arquivo"
+
 #: ../module/Restore/view/restore/restore/index.phtml:75
 #: ../module/Restore/view/restore/restore/versions.phtml:76
 #, fuzzy
 msgid "Job report"
 msgstr "Reportar Job"
+
+#: ../module/Restore/view/restore/restore/index.phtml:89
+#: ../module/Restore/view/restore/restore/versions.phtml:90
+msgid "Confirm restore job submit"
+msgstr "Confirmar envio da tarefa de restauração"
+
+#: ../module/Restore/view/restore/restore/index.phtml:98
+#: ../module/Restore/view/restore/restore/index.phtml:117
+#: ../module/Restore/view/restore/restore/versions.phtml:99
+#: ../module/Restore/view/restore/restore/versions.phtml:118
+msgid "OK"
+msgstr "Ok"
+
+#: ../module/Restore/view/restore/restore/index.phtml:114
+msgid "No files or directories selected to restore!"
+msgstr "Nenhum arquivo ou diretório selecionados para restaurar!"
+
+#: ../module/Restore/view/restore/restore/index.phtml:424
+#: ../module/Restore/view/restore/restore/versions.phtml:193
+#: ../module/Restore/view/restore/restore/versions.phtml:544
+msgid "Last modification"
+msgstr "Última modificação"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:115
+msgid "No file selected to restore!"
+msgstr "Nenhum arquivo selecionado para restaurar!"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:172
+msgid "Selected file"
+msgstr "Arquivo selecionado"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:180
+msgid "Available versions"
+msgstr "Versões disponíveis"
 
 #: ../module/Restore/view/restore/restore/versions.phtml:195
 #, fuzzy
@@ -1589,4 +1628,74 @@ msgstr "MD5 checksum"
 #: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
 msgid "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
 msgstr "Por favor, leia a <a href=“%s” target=“_blank”>Documentação do Bareos</a> para informações adicionais de como configurar as diretivas de ACL do seu Console / Profile. Segue uma lista dos comandos requeridos e que precisam estar na sua ACL para que este módulo funcione corretamente."
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:60
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:77
+msgid "Please choose a backup"
+msgstr "Por favor escolha um backup"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:96
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:113
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:132
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:149
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:166
+msgid "Please choose a client"
+msgstr "Por favor escolha um cliente"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:234
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:251
+msgid "Please choose a restore job"
+msgstr "Por favor escolha uma tarefa de reztauração"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:36
+msgid "<b>Access denied</b><br><br>Permission to execute the following commands is required:<br><br><kbd>"
+msgstr "<b>Acesso negado </b><br>\n"
+"<br>Permissão para executar os seguintes comandos é requerida:<br><br><kbd>"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Access denied"
+msgstr "Acesso negado"
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:40
+msgid "Read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> on how to configure ACL settings in your Console/Profile resources."
+msgstr "\n"
+"Leia a <a href=\"%s\" target=\"_blank\">documentação do Bareos</a> sobre como configurar as configuraçôes ACL em seus recursos de Console/Perfil."
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:42
+msgid "Back"
+msgstr "Voltar"
+
+#: ../module/Job/view/job/job/index.phtml:56
+msgid "Clear search filters"
+msgstr "Limpar filtros de pesquisa"
+
+#: ../module/Job/view/job/job/index.phtml:165
+msgid "Please try to reduce the amount of data to display."
+msgstr "Por favor tente reduzir a quantidade de dados para mostrar."
+
+#: ../module/Client/view/client/client/index.phtml:65
+#: ../module/Client/view/client/client/index.phtml:66
+msgid "OS"
+msgstr "SO"
+
+#: ../public/js/bootstrap-table-formatter.js:521
+msgid "Download update"
+msgstr "Baixar atualização"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:315
+#: ../module/Job/src/Job/Form/RunJobForm.php:331
+msgid "Next Pool"
+msgstr "Próximo Pool"
+
+#: ../module/Restore/view/restore/restore/index.phtml:392
+msgid "Mode"
+msgstr "Modo"
+
+#: ../module/Restore/view/restore/restore/index.phtml:400
+msgid "User"
+msgstr "Usuário"
+
+#: ../module/Restore/view/restore/restore/index.phtml:408
+msgid "Group"
+msgstr "Grupo"
 
