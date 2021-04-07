@@ -291,7 +291,8 @@ BuildRequires: lsb-release
 # Note: __requires_exclude only works for dists with rpm version >= 4.9
 #       SLES12 has suse_version 1315, SLES11 has 1110
 %if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 16 || 0%{?suse_version} >= 1110
-%global __requires_exclude ^.*libvixDiskLib.*$
+%global __requires_exclude ^(.*libvixDiskLib.*|.*CXXABI_1.3.9.*)$
+
 %else
 %define _use_internal_dependency_generator 0
 %define our_find_requires %{_builddir}/%{name}-%{version}/find_requires
@@ -314,6 +315,8 @@ easy to use and efficient, while offering many advanced storage management \
 features that make it easy to find and recover lost or damaged files. \
 Bareos source code has been released under the AGPL version 3 license.
 %endif
+
+
 
 %description
 %{dscr}
