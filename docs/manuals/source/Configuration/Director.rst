@@ -851,7 +851,7 @@ The directives within an Options resource may be one of the following:
    See the example below for more details.
 
    If you think that Bareos should be backing up a particular directory
-   and it is not, and you have :strong:`onefs=no` set, before you complain,
+   and it is not, and you have :strong:`onefs=yes` set, before you complain,
    please do:
 
    .. code-block:: shell-session
