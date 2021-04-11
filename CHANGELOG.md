@@ -62,6 +62,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - buildsystem: switch to cross build chain of Fedora 34 [PR #819]
 - FreeBSD: adapt pkglists for FreeBSD 13.0 [PR #819]
 - Fedora34: do not build mysql db backend, adapt pkglist [PR #819]
+- bscan and bareos systemtests: also test bextract and bls binaries, use autoxflate plugin and FSType fileset options [PR #790]
 
 ### Deprecated
 
