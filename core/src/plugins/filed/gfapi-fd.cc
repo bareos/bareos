@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1733,11 +1733,6 @@ static bRC pluginIO(bpContext* ctx, struct io_pkt* io)
 
   switch (io->func) {
     case IO_OPEN:
-      /*
-       * Close the gfd when it was not closed before.
-       */
-      if (p_ctx->gfd) { glfs_close(p_ctx->gfd); }
-
       if (io->flags & (O_CREAT | O_WRONLY)) {
         p_ctx->gfd = glfs_creat(p_ctx->glfs, io->fname, io->flags, io->mode);
       } else {
@@ -1780,11 +1775,11 @@ static bRC pluginIO(bpContext* ctx, struct io_pkt* io)
     case IO_CLOSE:
       if (p_ctx->gfd) {
         io->status = glfs_close(p_ctx->gfd);
+        p_ctx->gfd = NULL;
         if (io->status < 0) {
           io->io_errno = errno;
           goto bail_out;
         }
-        p_ctx->gfd = NULL;
       } else {
         io->status = -1;
         io->io_errno = EBADF;
