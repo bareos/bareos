@@ -631,7 +631,6 @@ set(SYSTEM_TESTS_DISABLED # initially empty
 # add tests also here that are unreliable they are excluded when running tests
 # during build in jenkins
 set(SYSTEM_TESTS_BROKEN
-    python-bareos # Fails on FreeBSD
     py3plug-fd-local-fileset # Fails with UnicodeEncodeError: 'utf-8' codec
                              # can't encode characters in position 133-142:
                              # surrogates not allowed
