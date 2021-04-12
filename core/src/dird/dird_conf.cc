@@ -530,7 +530,6 @@ static ResourceItem counter_items[] = {
 };
 
 #include "lib/messages_resource_items.h"
-#include "lib/json.h"
 
 /**
  * This is the master resource definition.
@@ -838,8 +837,6 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 {
   DatatypeName* datatype;
   ResourceTable* resources = my_config->resources_;
-
-  InitializeJson();
 
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));

@@ -28,7 +28,6 @@
 #include "console/console_globals.h"
 #include "console/console_conf.h"
 #include "lib/alist.h"
-#include "lib/json.h"
 #include "lib/resource_item.h"
 #include "lib/tls_resource_items.h"
 #include "lib/output_formatter.h"
@@ -274,8 +273,6 @@ ConfigurationParser* InitConsConfig(const char* configfile, int exit_code)
 #ifdef HAVE_JANSSON
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
-  InitializeJson();
-
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
   json_object_set_new(json, "component", json_string("bconsole"));

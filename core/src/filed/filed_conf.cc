@@ -282,8 +282,6 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 {
   ResourceTable* resources = my_config->resources_;
 
-  InitializeJson();
-
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
   json_object_set_new(json, "component", json_string("bareos-fd"));

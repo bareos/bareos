@@ -45,7 +45,6 @@
 #define NEED_JANSSON_NAMESPACE 1
 #include "lib/output_formatter.h"
 #include "lib/output_formatter_resource.h"
-#include "lib/json.h"
 #include "include/auth_types.h"
 #include "include/jcr.h"
 
@@ -621,8 +620,6 @@ bool ParseSdConfig(const char* configfile, int exit_code)
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
   ResourceTable* resources = my_config->resources_;
-
-  InitializeJson();
 
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));

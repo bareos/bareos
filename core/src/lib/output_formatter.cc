@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,6 @@
 #include "include/bareos.h"
 #define NEED_JANSSON_NAMESPACE
 #include "lib/output_formatter.h"
-#include "lib/json.h"
 
 const char* json_error_message_template
     = "{ "
@@ -51,8 +50,6 @@ OutputFormatter::OutputFormatter(SEND_HANDLER* send_func_arg,
                                  void* filter_ctx_arg,
                                  int api_mode)
 {
-  InitializeJson();
-
   send_func = send_func_arg;
   filter_func = filter_func_arg;
   send_ctx = send_ctx_arg;

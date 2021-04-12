@@ -65,7 +65,6 @@ set(BAREOS_SRCS
     hmac.cc
     htable.cc
     jcr.cc
-    json.cc
     lockmgr.cc
     mem_pool.cc
     message.cc
