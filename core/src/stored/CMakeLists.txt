@@ -186,7 +186,6 @@ else()
   if(TARGET droplet)
     list(APPEND LIBBAREOSSD_LIBRARIES droplet)
   endif()
-
   if(${HAVE_RADOS})
     list(APPEND LIBBAREOSSD_LIBRARIES ${RADOS_LIBRARIES})
   endif()
@@ -196,9 +195,7 @@ else()
   if(${HAVE_GFAPI})
     list(APPEND LIBBAREOSSD_LIBRARIES ${GFAPI_LIBRARIES})
   endif()
-  set(LIBBAREOSSD_LIBRARIES bareos ${LIBBAREOSSD_LIBRARIES}
-                            ${JANSSON_LIBRARIES}
-  )
+  set(LIBBAREOSSD_LIBRARIES bareos ${LIBBAREOSSD_LIBRARIES})
   message(STATUS "LIBBAREOSSD_LIBRARIES ARE ${LIBBAREOSSD_LIBRARIES}")
 endif()
 
@@ -207,13 +204,10 @@ if(${HAVE_DYNAMIC_SD_BACKENDS})
 endif()
 
 add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
+target_link_libraries(bareossd PRIVATE bareos Threads::Threads)
 
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
-  target_link_libraries(bareossd ${LIBBAREOSSD_LIBRARIES})
-endif()
-
-if(HAVE_DARWIN_OS)
-  target_link_libraries(bareossd bareos)
+  target_link_libraries(bareossd PRIVATE ${LIBBAREOSSD_LIBRARIES})
 endif()
 
 add_library(stored_objects STATIC ${SDSRCS})
@@ -228,9 +222,6 @@ if(HAVE_WIN32)
   target_sources(bareos-sd PRIVATE ../win32/generic/main.cc)
   target_link_libraries(bareos-sd PRIVATE comctl32)
 endif()
-if(HAVE_FREEBSD_OS)
-  target_link_libraries(bareos-sd PRIVATE ${JANSSON_LIBRARIES})
-endif()
 if(HAVE_NDMP)
   target_link_libraries(stored_objects PRIVATE bareosndmp)
   target_link_libraries(bareos-sd PRIVATE bareosndmp)
@@ -239,36 +230,20 @@ endif()
 add_executable(bls ${BLSSRCS})
 target_link_libraries(bls PRIVATE bareos bareossd bareosfind)
 
-if(HAVE_FREEBSD_OS)
-  target_link_libraries(bls PRIVATE Threads::Threads ${JANSSON_LIBRARIES})
-endif()
-
 add_executable(bextract ${BEXTRACTSRS})
-target_link_libraries(
-  bextract bareossd bareosfind bareos
-  $<$<PLATFORM_ID:FreeBSD>:Threads::Threads>
-  $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
-)
+target_link_libraries(bextract PRIVATE bareossd bareosfind bareos)
 
 add_executable(bscan ${BSCANSRCS})
 target_link_libraries(
-  bscan bareos bareossd bareosfind bareossql bareoscats
-  $<$<PLATFORM_ID:FreeBSD>:Threads::Threads>
-  $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
+  bscan PRIVATE bareos bareossd bareosfind bareossql bareoscats
 )
 
 add_executable(btape ${BTAPESRCS})
-target_link_libraries(
-  btape bareossd bareos $<$<PLATFORM_ID:FreeBSD>:Threads::Threads>
-  $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
-)
+target_link_libraries(btape PRIVATE bareossd bareos)
 
 add_executable(bcopy ${BCOPYSRCS})
 
-target_link_libraries(
-  bcopy bareossd bareos $<$<PLATFORM_ID:FreeBSD>:Threads::Threads>
-  $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
-)
+target_link_libraries(bcopy PRIVATE bareossd bareos)
 
 install(TARGETS bareossd DESTINATION ${libdir})
 

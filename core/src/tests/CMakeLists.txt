@@ -104,7 +104,6 @@ set(LINK_LIBRARIES
     bareoscats
     bareossql
     bareosfind
-    ${JANSSON_LIBRARIES}
     GTest::gtest_main
 )
 
@@ -185,10 +184,7 @@ bareos_add_test(
 
 bareos_add_test(test_is_name_valid LINK_LIBRARIES bareos GTest::gtest_main)
 
-bareos_add_test(
-  test_output_formatter LINK_LIBRARIES GTest::gtest_main ${JANSSON_LIBRARIES}
-                                       bareos
-)
+bareos_add_test(test_output_formatter LINK_LIBRARIES GTest::gtest_main bareos)
 
 if(NOT client-only)
   bareos_add_test(
@@ -248,9 +244,8 @@ if(NOT client-only)
 endif() # NOT client-only
 
 bareos_add_test(
-  test_config_parser_console
-  LINK_LIBRARIES console_objects bareos bareosfind GTest::gtest_main
-                 ${JANSSON_LIBRARIES}
+  test_config_parser_console LINK_LIBRARIES console_objects bareos bareosfind
+                                            GTest::gtest_main
 )
 
 if(NOT client-only)
@@ -268,9 +263,8 @@ bareos_add_test(
 
 if(NOT client-only)
   bareos_add_test(
-    test_config_parser_sd
-    LINK_LIBRARIES stored_objects bareossd bareos GTest::gtest_main
-                   $<$<PLATFORM_ID:FreeBSD>:${JANSSON_LIBRARIES}>
+    test_config_parser_sd LINK_LIBRARIES stored_objects bareossd bareos
+                                         GTest::gtest_main
   )
 endif() # NOT client-only
 
@@ -339,8 +333,7 @@ if(NOT client-only)
       alist_test.cc bareos_test_sockets.cc bsys_test.cc dlist_test.cc
       htable_test.cc qualified_resource_name_type_converter_test.cc
       ${PROJECT_SOURCE_DIR}/src/filed/evaluate_job_command.cc
-    LINK_LIBRARIES stored_objects bareossd bareos ${JANSSON_LIBRARIES}
-                   GTest::gtest_main
+    LINK_LIBRARIES stored_objects bareossd bareos GTest::gtest_main
   )
 
   bareos_add_test(

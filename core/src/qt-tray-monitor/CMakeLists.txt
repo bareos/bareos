@@ -63,23 +63,21 @@ if(HAVE_WIN32)
   list(APPEND SOURCES ../win32/qt-tray-monitor/traymon.rc)
 endif()
 
-if(Qt4_FOUND)
-  set(TRAYMON_LIBRARIES bareos-tray-monitor Qt4::QtGui bareos)
-else()
-  set(TRAYMON_LIBRARIES bareos-tray-monitor bareos)
-endif()
-
 if(HAVE_WIN32)
   add_executable(bareos-tray-monitor WIN32 ${SOURCES} main.qrc)
 else()
   add_executable(bareos-tray-monitor ${SOURCES} main.qrc)
 endif()
 
-if(Qt5Widgets_FOUND)
-  qt5_use_modules(bareos-tray-monitor Widgets)
+target_link_libraries(bareos-tray-monitor PRIVATE bareos)
+
+if(Qt4_FOUND)
+  target_link_libraries(bareos-tray-monitor PRIVATE Qt4::QtGui)
 endif()
 
-target_link_libraries(${TRAYMON_LIBRARIES} ${JANSSON_LIBRARIES})
+if(TARGET Qt5::Widgets)
+  target_link_libraries(bareos-tray-monitor PRIVATE Qt5::Widgets)
+endif()
 
 install(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
 

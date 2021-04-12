@@ -164,7 +164,6 @@ elseif(
   )
 endif()
 
-bareosfindlibraryandheaders("jansson" "jansson.h" "")
 bareosfindlibraryandheaders("rados" "rados/librados.h" "")
 bareosfindlibraryandheaders("radosstriper" "radosstriper/libradosstriper.h" "")
 bareosfindlibraryandheaders("cephfs" "cephfs/libcephfs.h" "")
@@ -204,4 +203,5 @@ if(${ZLIB_FOUND})
 endif()
 
 find_package(Readline)
+find_package(Jansson)
 include(thread)
