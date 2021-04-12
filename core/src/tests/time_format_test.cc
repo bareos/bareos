@@ -45,6 +45,22 @@ TEST(time_format, correct_time_and_date_format)
   EXPECT_TRUE(StrToUtime("2020-11-22 1:5:7") != 0);
   EXPECT_TRUE(StrToUtime("1999-01-02 22:22:") != 0);
 
+  // day 31 in long months
+  EXPECT_TRUE(StrToUtime("2021-01-31 22:22:22") != 0);
+  EXPECT_TRUE(StrToUtime("2021-03-31 22:22:22") != 0);
+  EXPECT_TRUE(StrToUtime("2021-05-31 22:22:22") != 0);
+  EXPECT_TRUE(StrToUtime("2021-07-31 22:22:22") != 0);
+  EXPECT_TRUE(StrToUtime("2021-08-31 22:22:22") != 0);
+  EXPECT_TRUE(StrToUtime("2021-10-31 22:22:22") != 0);
+  EXPECT_TRUE(StrToUtime("2021-12-31 22:22:22") != 0);
+
+  // day 31 in short months
+  EXPECT_EQ(StrToUtime("2021-02-31 22:22:22"), 0);
+  EXPECT_EQ(StrToUtime("2021-04-31 22:22:22"), 0);
+  EXPECT_EQ(StrToUtime("2021-06-31 22:22:22"), 0);
+  EXPECT_EQ(StrToUtime("2021-09-31 22:22:22"), 0);
+  EXPECT_EQ(StrToUtime("2021-11-31 22:22:22"), 0);
+
   // Correct format, but wrong date
   EXPECT_EQ(StrToUtime("199-01-02 22:22:22"), 0);
   EXPECT_EQ(StrToUtime("1999-13-02 22:22:22"), 0);

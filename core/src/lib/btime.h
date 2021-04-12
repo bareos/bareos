@@ -66,6 +66,24 @@ struct date_time {
 
 */
 
+struct month {
+  enum : int
+  {
+    january,
+    february,
+    march,
+    april,
+    may,
+    june,
+    july,
+    august,
+    september,
+    october,
+    november,
+    december
+  };
+};
+
 
 extern fdate_t DateEncode(uint32_t year, uint8_t month, uint8_t day);
 extern ftime_t TimeEncode(uint8_t hour,
