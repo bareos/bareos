@@ -85,15 +85,15 @@ function(configurefilestosystemtest srcbasedir dirname globexpression
     string(REPLACE "${srcbasedir}/${srcdirname}" "" TARGET_FILE ${TARGET_FILE})
     get_filename_component(DIR_NAME ${TARGET_FILE} DIRECTORY)
 
+    if(NOT EXISTS ${PROJECT_BINARY_DIR}/${dirname}/${DIR_NAME})
+      file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${dirname}/${DIR_NAME})
+    endif()
     if(${CURRENT_FILE} MATCHES ".in$")
       configure_file(
         ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
         ${configure_option}
       )
     else()
-      if(NOT EXISTS ${PROJECT_BINARY_DIR}/${dirname}/${DIR_NAME})
-        file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${dirname}/${DIR_NAME})
-      endif()
       create_symlink(
         ${CURRENT_FILE} ${PROJECT_BINARY_DIR}/${dirname}/${TARGET_FILE}
       )
