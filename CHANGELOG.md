@@ -22,6 +22,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix memory leak in python module constants [PR #778]
 - fix systemtests: reduce the number of broken tests to two [PR #771]
 - [Issue #1329]: If CommandACL limits any command, no messages can be read but "you have messages" is displayed. [PR #763]
+- fix gfapi-fd: avoid possible crash on second glfs_close() call [PR #792]
 
 ### Added
 - systemtests for S3 functionalities (droplet, libcloud) now use https [PR #765]
