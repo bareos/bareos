@@ -97,17 +97,13 @@ int DevLock::destroy()
   if (rwl->valid != DEVLOCK_VALID) { return EINVAL; }
   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) { return status; }
 
-  /*
-   * If any threads are active, report EBUSY
-   */
+  // If any threads are active, report EBUSY
   if (rwl->r_active > 0 || rwl->w_active) {
     pthread_mutex_unlock(&rwl->mutex);
     return EBUSY;
   }
 
-  /*
-   * If any threads are waiting, report EBUSY
-   */
+  // If any threads are waiting, report EBUSY
   if (rwl->r_wait > 0 || rwl->w_wait > 0) {
     pthread_mutex_unlock(&rwl->mutex);
     return EBUSY;
@@ -153,9 +149,7 @@ void DevLock::WriteRelease()
   pthread_mutex_unlock(&mutex);
 }
 
-/*
- * Lock for read access, wait until locked (or error).
- */
+// Lock for read access, wait until locked (or error).
 int DevLock::readlock()
 {
   DevLock* rwl = this;
@@ -178,9 +172,7 @@ int DevLock::readlock()
   return status;
 }
 
-/*
- * Attempt to lock for read access, don't wait
- */
+// Attempt to lock for read access, don't wait
 int DevLock::readtrylock()
 {
   DevLock* rwl = this;
@@ -197,9 +189,7 @@ int DevLock::readtrylock()
   return (status == 0 ? status2 : status);
 }
 
-/*
- * Unlock read lock
- */
+// Unlock read lock
 int DevLock::readunlock()
 {
   DevLock* rwl = this;
@@ -253,9 +243,7 @@ int DevLock::Writelock(int areason, bool acan_take)
   return status;
 }
 
-/*
- * Attempt to lock for write access, don't wait
- */
+// Attempt to lock for write access, don't wait
 int DevLock::writetrylock()
 {
   DevLock* rwl = this;

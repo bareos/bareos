@@ -50,9 +50,7 @@
  * -----------------------------------------------------------------------
  */
 
-/*
- * List of open databases
- */
+// List of open databases
 static dlist* db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -81,9 +79,7 @@ BareosDbSqlite::BareosDbSqlite(JobControlRecord* jcr,
                                bool exit_on_fatal,
                                bool need_private)
 {
-  /*
-   * Initialize the parent class members.
-   */
+  // Initialize the parent class members.
   db_interface_type_ = SQL_INTERFACE_TYPE_SQLITE3;
   db_type_ = SQL_TYPE_SQLITE3;
   db_driver_ = strdup("SQLite3");
@@ -119,16 +115,12 @@ BareosDbSqlite::BareosDbSqlite(JobControlRecord* jcr,
   try_reconnect_ = try_reconnect;
   exit_on_fatal_ = exit_on_fatal;
 
-  /*
-   * Initialize the private members.
-   */
+  // Initialize the private members.
   db_handle_ = NULL;
   result_ = NULL;
   lowlevel_errmsg_ = NULL;
 
-  /*
-   * Put the db in the list.
-   */
+  // Put the db in the list.
   if (db_list == NULL) { db_list = new dlist(this, &this->link_); }
   db_list->append(this);
 
@@ -168,9 +160,7 @@ bool BareosDbSqlite::OpenDatabase(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  /*
-   * Open the database
-   */
+  // Open the database
   len = strlen(working_directory) + strlen(db_name_) + 5;
   db_path = (char*)malloc(len);
   strcpy(db_path, working_directory);
@@ -206,9 +196,7 @@ bool BareosDbSqlite::OpenDatabase(JobControlRecord* jcr)
   connected_ = true;
   free(db_path);
 
-  /*
-   * Set busy handler to wait when we use mult_db_connections = true
-   */
+  // Set busy handler to wait when we use mult_db_connections = true
   sqlite3_busy_handler(db_handle_, SqliteBusyHandler, NULL);
 
 #  if defined(SQLITE3_INIT_QUERY)
@@ -291,9 +279,7 @@ void BareosDbSqlite::StartTransaction(JobControlRecord* jcr)
   if (!allow_transactions_) { return; }
 
   DbLock(this);
-  /*
-   * Allow only 10,000 changes per transaction
-   */
+  // Allow only 10,000 changes per transaction
   if (transaction_ && changes > 10000) { EndTransaction(jcr); }
   if (!transaction_) {
     SqlQueryWithoutHandler("BEGIN"); /* begin transaction */
@@ -332,9 +318,7 @@ struct rh_data {
   bool initialized;
 };
 
-/**
- * Convert SQLite's callback into BAREOS DB callback
- */
+// Convert SQLite's callback into BAREOS DB callback
 static int SqliteResultHandler(void* arh_data,
                                int num_fields,
                                char** rows,
@@ -400,9 +384,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Submit a sqlite query and retrieve all the data
- */
+// Submit a sqlite query and retrieve all the data
 bool BareosDbSqlite::SqlQueryWithoutHandler(const char* query, int flags)
 {
   int status;
@@ -446,9 +428,7 @@ void BareosDbSqlite::SqlFreeResult(void)
   DbUnlock(this);
 }
 
-/**
- * Fetch one row at a time
- */
+// Fetch one row at a time
 SQL_ROW BareosDbSqlite::SqlFetchRow(void)
 {
   if (!result_ || (row_number_ >= num_rows_)) { return NULL; }
@@ -463,9 +443,7 @@ const char* BareosDbSqlite::sql_strerror(void)
 
 void BareosDbSqlite::SqlDataSeek(int row)
 {
-  /*
-   * Set the row number to be returned on the next call to sql_fetch_row
-   */
+  // Set the row number to be returned on the next call to sql_fetch_row
   row_number_ = row;
 }
 
@@ -477,9 +455,7 @@ int BareosDbSqlite::SqlAffectedRows(void)
 uint64_t BareosDbSqlite::SqlInsertAutokeyRecord(const char* query,
                                                 const char* table_name)
 {
-  /*
-   * First execute the insert query and then retrieve the currval.
-   */
+  // First execute the insert query and then retrieve the currval.
   if (!SqlQueryWithoutHandler(query)) { return 0; }
 
   num_rows_ = SqlAffectedRows();
@@ -546,9 +522,7 @@ SQL_FIELD* BareosDbSqlite::SqlFetchField(void)
     }
   }
 
-  /*
-   * Increment field number for the next time around
-   */
+  // Increment field number for the next time around
   return &fields_[field_number_++];
 }
 
@@ -696,9 +670,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
   P(mutex); /* lock DB queue */
 
-  /*
-   * Look to see if DB already open
-   */
+  // Look to see if DB already open
   if (db_list && !mult_db_connections && !need_private) {
     foreach_dlist (mdb, db_list) {
       if (mdb->IsPrivate()) { continue; }

@@ -20,9 +20,7 @@
    02110-1301, USA.
 */
 
-/*
- * Kern Sibbald, September MMVII
- */
+// Kern Sibbald, September MMVII
 
 /*
  * This is tricky code, especially when writing from scratch. Fortunately,
@@ -41,16 +39,12 @@
 
 #define debuglevel 50
 
-/**
- *  * For old systems that don't have lchown() use chown()
- *   */
+// For old systems that don't have lchown() use chown()
 #ifndef HAVE_LCHOWN
 #  define lchown chown
 #endif
 
-/**
- *  * For old systems that don't have lchmod() use chmod()
- *   */
+// For old systems that don't have lchmod() use chmod()
 #ifndef HAVE_LCHMOD
 #  define lchmod chmod
 #endif
@@ -77,9 +71,7 @@ static bool makedir(JobControlRecord* jcr,
   }
 
   if (jcr->keep_path_list) {
-    /*
-     * When replace = NEVER, we keep track of all directories newly created
-     */
+    // When replace = NEVER, we keep track of all directories newly created
     if (!jcr->path_list) { jcr->path_list = path_list_init(); }
 
     PathListAdd(jcr->path_list, strlen(path), path);
@@ -167,9 +159,7 @@ bool makepath(Attributes* attr,
   tmode = 0777;
 
 #if defined(HAVE_WIN32)
-  /*
-   * Validate drive letter
-   */
+  // Validate drive letter
   if (path[1] == ':') {
     char drive[4] = "X:\\";
 
@@ -195,9 +185,7 @@ bool makepath(Attributes* attr,
   p = path;
 #endif
 
-  /*
-   * Skip leading slash(es)
-   */
+  // Skip leading slash(es)
   while (IsPathSeparator(*p)) { p++; }
   while ((p = first_path_separator(p))) {
     char save_p;
@@ -208,9 +196,7 @@ bool makepath(Attributes* attr,
     *p = save_p;
     while (IsPathSeparator(*p)) { p++; }
   }
-  /*
-   * Create final component if not a junction/symlink
-   */
+  // Create final component if not a junction/symlink
   if (attr->type != FT_JUNCTION) {
     if (!makedir(jcr, path, tmode, &created)) { goto bail_out; }
   }
@@ -221,14 +207,10 @@ bool makepath(Attributes* attr,
           _("Too many subdirectories. Some permissions not reset.\n"));
   }
 
-  /*
-   * Now set the proper owner and modes
-   */
+  // Now set the proper owner and modes
 #if defined(HAVE_WIN32)
 
-  /*
-   * Don't propagate the hidden attribute to parent directories
-   */
+  // Don't propagate the hidden attribute to parent directories
   parent_mode &= ~S_ISVTX;
 
   if (path[1] == ':') {
@@ -239,9 +221,7 @@ bool makepath(Attributes* attr,
 #else
   p = path;
 #endif
-  /*
-   * Skip leading slash(es)
-   */
+  // Skip leading slash(es)
   while (IsPathSeparator(*p)) { p++; }
   while ((p = first_path_separator(p))) {
     char save_p;
@@ -254,9 +234,7 @@ bool makepath(Attributes* attr,
     while (IsPathSeparator(*p)) { p++; }
   }
 
-  /*
-   * Set for final component
-   */
+  // Set for final component
   if (i < ndir && new_dir[i++] && !keep_dir_modes) {
     SetOwnMod(attr, path, owner, group, mode);
   }

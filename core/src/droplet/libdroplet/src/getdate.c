@@ -111,9 +111,7 @@
 
 #define MAX_BUFF_LEN 128 /* size of buffer to read the date into */
 
-/*
-**  An entry in the lexical lookup table.
-*/
+//  An entry in the lexical lookup table.
 typedef struct _TABLE {
   const char* name;
   int type;
@@ -121,9 +119,7 @@ typedef struct _TABLE {
 } TABLE;
 
 
-/*
-**  Meridian:  am, pm, or 24-hour style.
-*/
+//  Meridian:  am, pm, or 24-hour style.
 typedef enum _MERIDIAN
 {
   MERam,

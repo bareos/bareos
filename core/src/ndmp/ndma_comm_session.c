@@ -49,22 +49,16 @@ int ndma_client_session(struct ndm_session* sess,
   rc = ndma_job_audit(job, 0, 0);
   if (rc) return -1;
 
-  /*
-   * Old behaviour enable all agents.
-   */
+  // Old behaviour enable all agents.
   sess->control_agent_enabled = 1;
   sess->data_agent_enabled = 1;
   sess->tape_agent_enabled = 1;
   sess->robot_agent_enabled = 1;
 
-  /*
-   * Old behaviour enable session snooping
-   */
+  // Old behaviour enable session snooping
   sess->conn_snooping = 1;
 
-  /*
-   * Old behaviour enable media info dumping.
-   */
+  // Old behaviour enable media info dumping.
   sess->dump_media_info = 1;
 
   rc = ndma_session_initialize(sess);
@@ -105,22 +99,16 @@ int ndma_server_session(struct ndm_session* sess, int control_sock)
   struct sockaddr sa;
   socklen_t len;
 
-  /*
-   * Old behaviour enable all agents.
-   */
+  // Old behaviour enable all agents.
   sess->control_agent_enabled = 1;
   sess->data_agent_enabled = 1;
   sess->tape_agent_enabled = 1;
   sess->robot_agent_enabled = 1;
 
-  /*
-   * Old behaviour enable session snooping
-   */
+  // Old behaviour enable session snooping
   sess->conn_snooping = 1;
 
-  /*
-   * Old behaviour enable media info dumping.
-   */
+  // Old behaviour enable media info dumping.
   sess->dump_media_info = 1;
 
   rc = ndma_session_initialize(sess);
@@ -291,9 +279,7 @@ int ndma_session_quantum(struct ndm_session* sess, int max_delay_secs)
   int i;
   int max_delay_usec = max_delay_secs * 1000;
 
-  /*
-   * Gather distinct connections
-   */
+  // Gather distinct connections
   n_conntab = 0;
   if ((conn = sess->plumb.control)) conntab[n_conntab++] = conn;
   if ((conn = sess->plumb.data) && conn != sess->plumb.control)
@@ -305,9 +291,7 @@ int ndma_session_quantum(struct ndm_session* sess, int max_delay_secs)
       conn != sess->plumb.data && conn != sess->plumb.control)
     conntab[n_conntab++] = conn;
 
-  /*
-   * Add connections to channel table
-   */
+  // Add connections to channel table
   n_chtab = 0;
   for (i = 0; i < n_conntab; i++) {
     conn = conntab[i];

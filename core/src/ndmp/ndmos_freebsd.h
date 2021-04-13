@@ -76,9 +76,7 @@
 
 #define NDMOS_API_STRTOLL(P, PP, BASE) strtoq(P, PP, BASE)
 
-/*
- * #ifndef'ed so they can be set from the Makefile command line
- */
+// #ifndef'ed so they can be set from the Makefile command line
 #ifndef NDMOS_CONST_NDMJOBLIB_REVISION
 #define NDMOS_CONST_NDMJOBLIB_REVISION "0"
 #endif /* !NDMOS_CONST_NDMJOBLIB_REVISION */

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Matthew Ife Matthew.Ife@ukfast.co.uk
- */
+// Matthew Ife Matthew.Ife@ukfast.co.uk
 /**
  * @file
  * Quota processing routines.
@@ -45,18 +43,14 @@ uint64_t FetchRemainingQuotas(JobControlRecord* jcr)
   uint64_t remaining = 0;
   uint64_t now = (uint64_t)time(NULL);
 
-  /*
-   * Quotas not being used ?
-   */
+  // Quotas not being used ?
   if (!jcr->impl->HasQuota) { return 0; }
 
   Dmsg2(debuglevel, "JobSumTotalBytes for JobId %d is %llu\n", jcr->JobId,
         jcr->impl->jr.JobSumTotalBytes);
   Dmsg1(debuglevel, "Fetching remaining quotas for JobId %d\n", jcr->JobId);
 
-  /*
-   * If strict quotas on and grace exceeded, enforce the softquota
-   */
+  // If strict quotas on and grace exceeded, enforce the softquota
   if (jcr->impl->res.client->StrictQuotas && jcr->impl->res.client->SoftQuota
       && jcr->impl->res.client->GraceTime > 0
       && (now - (uint64_t)jcr->impl->res.client->GraceTime)
@@ -70,9 +64,7 @@ uint64_t FetchRemainingQuotas(JobControlRecord* jcr)
              && jcr->impl->res.client->SoftQuotaGracePeriod > 0
              && (now - (uint64_t)jcr->impl->res.client->GraceTime)
                     > (uint64_t)jcr->impl->res.client->SoftQuotaGracePeriod) {
-    /*
-     * If strict quotas turned off and grace exceeded use the last known limit
-     */
+    // If strict quotas turned off and grace exceeded use the last known limit
     if (jcr->impl->res.client->QuotaLimit > jcr->impl->res.client->SoftQuota) {
       remaining
           = jcr->impl->res.client->QuotaLimit - jcr->impl->jr.JobSumTotalBytes;
@@ -82,9 +74,7 @@ uint64_t FetchRemainingQuotas(JobControlRecord* jcr)
     }
   } else if (jcr->impl->jr.JobSumTotalBytes
              < jcr->impl->res.client->HardQuota) {
-    /*
-     * If within the hardquota.
-     */
+    // If within the hardquota.
     remaining
         = jcr->impl->res.client->HardQuota - jcr->impl->jr.JobSumTotalBytes;
   } else {
@@ -116,9 +106,7 @@ bool CheckHardquotas(JobControlRecord* jcr)
 {
   bool retval = false;
 
-  /*
-   * Do not check if hardquota is not set
-   */
+  // Do not check if hardquota is not set
   if (jcr->impl->res.client->HardQuota == 0) { goto bail_out; }
 
   Dmsg1(debuglevel, "Checking hard quotas for JobId %d\n", jcr->JobId);
@@ -174,9 +162,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
   bool retval = false;
   uint64_t now = (uint64_t)time(NULL);
 
-  /*
-   * Do not check if the softquota is not set
-   */
+  // Do not check if the softquota is not set
   if (jcr->impl->res.client->SoftQuota == 0) { goto bail_out; }
 
   Dmsg1(debuglevel, "Checking soft quotas for JobId %d\n", jcr->JobId);
@@ -275,9 +261,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
           retval = true;
           goto bail_out;
         } else {
-          /*
-           * If we use strict quotas enforce the pure soft quota limit.
-           */
+          // If we use strict quotas enforce the pure soft quota limit.
           if (jcr->impl->res.client->StrictQuotas) {
             if (jcr->impl->jr.JobSumTotalBytes
                 > jcr->impl->res.client->SoftQuota) {
@@ -289,9 +273,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
           } else {
             if (jcr->impl->jr.JobSumTotalBytes
                 >= jcr->impl->res.client->QuotaLimit) {
-              /*
-               * If strict quotas turned off use the last known limit
-               */
+              // If strict quotas turned off use the last known limit
               Jmsg(jcr, M_WARNING, 0,
                    _("Soft Quota exceeded, enforcing Burst Quota Limit.\n"));
               retval = true;
@@ -302,9 +284,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
       }
     }
   } else if (jcr->impl->res.client->GraceTime != 0) {
-    /*
-     * Reset softquota
-     */
+    // Reset softquota
     ClientDbRecord cr;
     cr.ClientId = jcr->impl->jr.ClientId;
     if (!jcr->db->ResetQuotaRecord(jcr, &cr)) {

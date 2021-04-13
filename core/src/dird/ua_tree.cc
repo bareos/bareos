@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, July MMII
- */
+// Kern Sibbald, July MMII
 /**
  * @file
  * User Agent Database File tree for Restore
@@ -128,9 +126,7 @@ bool UserSelectFilesFromTree(TreeContext* tree)
   BareosSocket* user;
   bool status;
 
-  /*
-   * Get a new context so we don't destroy restore command args
-   */
+  // Get a new context so we don't destroy restore command args
   ua = new_ua_context(tree->ua->jcr);
   ua->UA_sock = tree->ua->UA_sock; /* patch in UA socket */
   ua->api = tree->ua->api;         /* keep API flag too */
@@ -144,9 +140,7 @@ bool UserSelectFilesFromTree(TreeContext* tree)
         "Enter \"done\" to leave this mode.\n\n"));
   user->signal(BNET_START_RTREE);
 
-  /*
-   * Enter interactive command handler allowing selection of individual files.
-   */
+  // Enter interactive command handler allowing selection of individual files.
   tree->node = (TREE_NODE*)tree->root;
   cwd = tree_getpath(tree->node);
   if (cwd) {
@@ -258,9 +252,7 @@ int InsertTreeHandler(void* ctx, int num_fields, char** row)
         node, row[3], row[2], row[5], node->delta_seq, LinkFI, node->fhinfo,
         node->fhnode);
 
-  /*
-   * TODO: check with hardlinks
-   */
+  // TODO: check with hardlinks
   if (delta_seq > 0) {
     if (delta_seq == (node->delta_seq + 1)) {
       TreeAddDeltaPart(tree->root, node, node->JobId, node->FileIndex);
@@ -317,34 +309,24 @@ int InsertTreeHandler(void* ctx, int num_fields, char** row)
       }
     }
 
-    /*
-     * Insert file having hardlinks into hardlink hashtable.
-     */
+    // Insert file having hardlinks into hardlink hashtable.
     if (statp.st_nlink > 1 && type != TN_DIR && type != TN_DIR_NLS) {
       if (!LinkFI) {
-        /*
-         * First occurence - file hardlinked to
-         */
+        // First occurence - file hardlinked to
         entry = (HL_ENTRY*)tree->root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
         entry->key = (((uint64_t)JobId) << 32) + FileIndex;
         entry->node = node;
         tree->root->hardlinks.insert(entry->key, entry);
       } else {
-        /*
-         * See if we are optimizing for speed or size.
-         */
+        // See if we are optimizing for speed or size.
         if (!me->optimize_for_size && me->optimize_for_speed) {
-          /*
-           * Hardlink to known file index: lookup original file
-           */
+          // Hardlink to known file index: lookup original file
           uint64_t file_key = (((uint64_t)JobId) << 32) + LinkFI;
           HL_ENTRY* first_hl
               = (HL_ENTRY*)tree->root->hardlinks.lookup(file_key);
 
           if (first_hl && first_hl->node) {
-            /*
-             * Then add hardlink entry to linked node.
-             */
+            // Then add hardlink entry to linked node.
             entry = (HL_ENTRY*)tree->root->hardlinks.hash_malloc(
                 sizeof(HL_ENTRY));
             entry->key = (((uint64_t)JobId) << 32) + FileIndex;
@@ -388,20 +370,14 @@ static int SetExtract(UaContext* ua,
 
   if (node->type != TN_NEWDIR) { count++; }
 
-  /*
-   * For a non-file (i.e. directory), we see all the children
-   */
+  // For a non-file (i.e. directory), we see all the children
   if (node->type != TN_FILE || (node->soft_link && TreeNodeHasChild(node))) {
-    /*
-     * Recursive set children within directory
-     */
+    // Recursive set children within directory
     foreach_child (n, node) {
       count += SetExtract(ua, n, tree, extract);
     }
 
-    /*
-     * Walk up tree marking any unextracted parent to be extracted.
-     */
+    // Walk up tree marking any unextracted parent to be extracted.
     if (extract) {
       while (node->parent && !node->parent->extract_dir) {
         node = node->parent;
@@ -413,14 +389,10 @@ static int SetExtract(UaContext* ua,
       uint64_t key = 0;
       bool is_hardlinked = false;
 
-      /*
-       * See if we are optimizing for speed or size.
-       */
+      // See if we are optimizing for speed or size.
       if (!me->optimize_for_size && me->optimize_for_speed) {
         if (node->hard_link) {
-          /*
-           * Every hardlink is in hashtable, and it points to linked file.
-           */
+          // Every hardlink is in hashtable, and it points to linked file.
           key = (((uint64_t)node->JobId) << 32) + node->FileIndex;
           is_hardlinked = true;
         }
@@ -498,30 +470,22 @@ static int markcmd(UaContext* ua, TreeContext* tree)
     return 1;
   }
 
-  /*
-   * Save the current CWD.
-   */
+  // Save the current CWD.
   cwd = tree_getpath(tree->node);
 
   for (int i = 1; i < ua->argc; i++) {
     StripTrailingSlash(ua->argk[i]);
 
-    /*
-     * See if this is a full path.
-     */
+    // See if this is a full path.
     if (strchr(ua->argk[i], '/')) {
       int pnl, fnl;
       POOLMEM* file = GetPoolMemory(PM_FNAME);
       POOLMEM* path = GetPoolMemory(PM_FNAME);
 
-      /*
-       * Split the argument into a path and file part.
-       */
+      // Split the argument into a path and file part.
       SplitPathAndFilename(ua->argk[i], path, &pnl, file, &fnl);
 
-      /*
-       * First change the CWD to the correct PATH.
-       */
+      // First change the CWD to the correct PATH.
       node = tree_cwd(path, tree->root, tree->node);
       if (!node) {
         ua->WarningMsg(_("Invalid path %s given.\n"), path);
@@ -541,9 +505,7 @@ static int markcmd(UaContext* ua, TreeContext* tree)
       FreePoolMemory(file);
       FreePoolMemory(path);
     } else {
-      /*
-       * Only a pattern without a / so do things relative to CWD.
-       */
+      // Only a pattern without a / so do things relative to CWD.
       foreach_child (node, tree->node) {
         if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
           count += SetExtract(ua, node, tree, true);
@@ -560,9 +522,7 @@ static int markcmd(UaContext* ua, TreeContext* tree)
     ua->SendMsg(_("%s files marked.\n"), edit_uint64_with_commas(count, ec1));
   }
 
-  /*
-   * Restore the CWD when we changed it.
-   */
+  // Restore the CWD when we changed it.
   if (restore_cwd && cwd) {
     node = tree_cwd(cwd, tree->root, tree->node);
     if (!node) {
@@ -720,9 +680,7 @@ static int lscmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-/**
- * Ls command that lists only the marked files
- */
+// Ls command that lists only the marked files
 static int DotLsmarkcmd(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
@@ -736,9 +694,7 @@ static int DotLsmarkcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-/**
- * This recursive ls command that lists only the marked files
- */
+// This recursive ls command that lists only the marked files
 static void rlsmark(UaContext* ua, TREE_NODE* tnode, int level)
 {
   TREE_NODE* node;
@@ -780,9 +736,7 @@ static int Lsmarkcmd(UaContext* ua, TreeContext* tree)
   return 1;
 }
 
-/**
- * This is actually the long form used for "dir"
- */
+// This is actually the long form used for "dir"
 static inline void ls_output(guid_list* guid,
                              POOLMEM*& buf,
                              const char* fname,
@@ -795,9 +749,7 @@ static inline void ls_output(guid_list* guid,
   char ec1[30];
   char en1[30], en2[30];
 
-  /*
-   * Insert mode e.g. -r-xr-xr-x
-   */
+  // Insert mode e.g. -r-xr-xr-x
   encode_mode(statp->st_mode, mode_str);
 
   if (dot_cmd) {

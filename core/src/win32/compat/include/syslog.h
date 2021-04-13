@@ -35,9 +35,7 @@
 extern "C" {
 #endif
 
-/*
- *  Facility codes
- */
+//  Facility codes
 #define LOG_KERN (0 << 3)   /* kernel messages */
 #define LOG_USER (1 << 3)   /* random user-level messages */
 #define LOG_MAIL (2 << 3)   /* mail system */
@@ -62,9 +60,7 @@ extern "C" {
 #define LOG_NFACILITIES 24 /* maximum number of facilities */
 #define LOG_FACMASK 0x03f8 /* mask to extract facility part */
 
-/*
- *  Priorities (these are ordered)
- */
+//  Priorities (these are ordered)
 #define LOG_EMERG 0   /* system is unusable */
 #define LOG_ALERT 1   /* action must be taken immediately */
 #define LOG_CRIT 2    /* critical conditions */
@@ -76,9 +72,7 @@ extern "C" {
 
 #define LOG_PRIMASK 0x0007 /* mask to extract priority part (internal) */
 
-/*
- * arguments to setlogmask.
- */
+// arguments to setlogmask.
 #define LOG_MASK(pri) (1 << (pri)) /* mask for one priority */
 #define LOG_UPTO(pri)                                    \
   ((1 << ((pri) + 1)) - 1) /* all priorities through pri \

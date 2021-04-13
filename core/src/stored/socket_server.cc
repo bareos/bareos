@@ -46,9 +46,7 @@ static ThreadList thread_list;
 static alist* sock_fds = NULL;
 static pthread_t tcp_server_tid;
 
-/**
- * Sanity check for the lengths of the Hello messages.
- */
+// Sanity check for the lengths of the Hello messages.
 #define MIN_MSG_LEN 25
 #define MAX_MSG_LEN (int)sizeof(name) + 30
 
@@ -85,9 +83,7 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
     return NULL;
   }
 
-  /*
-   * Do a sanity check on the message received
-   */
+  // Do a sanity check on the message received
   if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
     Dmsg1(000, "<filed: %s", bs->msg);
     Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(),
@@ -100,18 +96,14 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   Dmsg1(110, "Conn: %s", bs->msg);
 
-  /*
-   * See if this is a File daemon connection. If so call FD handler.
-   */
+  // See if this is a File daemon connection. If so call FD handler.
   if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
     Dmsg1(110, "Got a FD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
     return HandleFiledConnection(bs, name);
   }
 
-  /*
-   * See if this is a Storage daemon connection. If so call SD handler.
-   */
+  // See if this is a Storage daemon connection. If so call SD handler.
   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
     Dmsg1(110, "Got a SD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
@@ -139,9 +131,7 @@ void StartSocketServer(dlist* addrs)
 
   tcp_server_tid = pthread_self();
 
-  /*
-   * Become server, and handle requests
-   */
+  // Become server, and handle requests
   foreach_dlist (p, addrs) {
     Dmsg1(10, "stored: listening on port %d\n", p->GetPortHostOrder());
   }

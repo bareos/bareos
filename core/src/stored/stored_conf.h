@@ -41,9 +41,7 @@ namespace storagedaemon {
 
 static const std::string default_config_filename("bareos-sd.conf");
 
-/*
- * Resource codes -- they must be sequential for indexing
- */
+// Resource codes -- they must be sequential for indexing
 enum
 {
   R_DIRECTOR = 3001,

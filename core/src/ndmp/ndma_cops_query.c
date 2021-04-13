@@ -43,9 +43,7 @@
 void ndmca_query_register_callbacks(struct ndm_session* sess,
                                     struct ndmca_query_callbacks* callbacks)
 {
-  /*
-   * Only allow one register and make sure callbacks are set
-   */
+  // Only allow one register and make sure callbacks are set
   if (!sess->query_cbs && callbacks) {
     sess->query_cbs = NDMOS_API_MALLOC(sizeof(struct ndmca_query_callbacks));
     if (sess->query_cbs) {

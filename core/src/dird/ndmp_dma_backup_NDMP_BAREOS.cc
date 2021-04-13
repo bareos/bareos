@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, May 2015
- */
+// Marco van Wieringen, May 2015
 /**
  * @file
  * Backup specific NDMP Data Management Application (DMA) routines
@@ -59,9 +57,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 /* Forward referenced functions */
 
 
-/**
- * Extract any post backup statistics.
- */
+// Extract any post backup statistics.
 static inline bool extract_post_backup_stats(JobControlRecord* jcr,
                                              char* filesystem,
                                              struct ndm_session* sess)
@@ -71,20 +67,14 @@ static inline bool extract_post_backup_stats(JobControlRecord* jcr,
   ndmp_backup_format_option* nbf_options;
   struct ndm_env_entry* ndm_ee;
 
-  /*
-   * See if we know this backup format and get it options.
-   */
+  // See if we know this backup format and get it options.
   nbf_options
       = ndmp_lookup_backup_format_options(sess->control_acb->job.bu_type);
 
-  /*
-   * See if an error was raised during the backup session.
-   */
+  // See if an error was raised during the backup session.
   if (sess->error_raised) { return false; }
 
-  /*
-   * See if there is any media error.
-   */
+  // See if there is any media error.
   for (media = sess->control_acb->job.result_media_tab.head; media;
        media = media->next) {
     if (media->media_open_error || media->media_io_error
@@ -94,14 +84,10 @@ static inline bool extract_post_backup_stats(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * Process the FHDB.
-   */
+  // Process the FHDB.
   ProcessFhdb(&sess->control_acb->job.index_log);
 
-  /*
-   * Update the Job statistics from the NDMP statistics.
-   */
+  // Update the Job statistics from the NDMP statistics.
   jcr->JobBytes += sess->control_acb->job.bytes_written;
 
   /*
@@ -129,9 +115,7 @@ static inline bool extract_post_backup_stats(JobControlRecord* jcr,
   return retval;
 }
 
-/**
- * Setup a NDMP backup session.
- */
+// Setup a NDMP backup session.
 bool DoNdmpBackupInit(JobControlRecord* jcr)
 {
   FreeRstorage(jcr); /* we don't read so release */
@@ -149,9 +133,7 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * If pool storage specified, use it instead of job storage
-   */
+  // If pool storage specified, use it instead of job storage
   CopyWstorage(jcr, jcr->impl->res.pool->storage, _("Pool resource"));
 
   if (!jcr->impl->res.write_storage_list) {
@@ -160,9 +142,7 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * Validate the Job to have a NDMP client and NDMP storage.
-   */
+  // Validate the Job to have a NDMP client and NDMP storage.
   if (!NdmpValidateClient(jcr)) { return false; }
 
   if (!NdmpValidateStorage(jcr)) { return false; }
@@ -182,9 +162,7 @@ bool DoNdmpBackupInit(JobControlRecord* jcr)
 }
 
 
-/**
- * Run a NDMP backup session.
- */
+// Run a NDMP backup session.
 bool DoNdmpBackup(JobControlRecord* jcr)
 {
   unsigned int cnt;
@@ -202,9 +180,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   NdmpLoglevel
       = std::max(jcr->impl->res.client->ndmp_loglevel, me->ndmp_loglevel);
 
-  /*
-   * Print Job Start message
-   */
+  // Print Job Start message
   Jmsg(jcr, M_INFO, 0, _("Start NDMP Backup JobId %s, Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
@@ -244,9 +220,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       return false;
     }
 
-    /*
-     * Now start a job with the Storage daemon
-     */
+    // Now start a job with the Storage daemon
     if (!StartStorageDaemonJob(jcr, NULL, jcr->impl->res.write_storage_list)) {
       return false;
     }
@@ -297,9 +271,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
     IncludeExcludeItem* ie = fileset->include_items[i];
     PoolMem virtual_filename(PM_FNAME);
 
-    /*
-     * Loop over each file = entry of the fileset.
-     */
+    // Loop over each file = entry of the fileset.
     for (j = 0; j < ie->name_list.size(); j++) {
       item = (char*)ie->name_list.get(j);
 
@@ -340,15 +312,11 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       ndmp_sess.param->log.ctx = nis;
       ndmp_sess.param->log_tag = strdup("DIR-NDMP");
 
-      /*
-       * Initialize the session structure.
-       */
+      // Initialize the session structure.
       if (ndma_session_initialize(&ndmp_sess)) { goto cleanup; }
       session_initialized = true;
 
-      /*
-       * Copy the actual job to perform.
-       */
+      // Copy the actual job to perform.
       memcpy(&ndmp_sess.control_acb->job, &ndmp_job,
              sizeof(struct ndm_job_param));
 
@@ -383,14 +351,10 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       ndma_job_auto_adjust(&ndmp_sess.control_acb->job);
       if (!NdmpValidateJob(jcr, &ndmp_sess.control_acb->job)) { goto cleanup; }
 
-      /*
-       * Commission the session for a run.
-       */
+      // Commission the session for a run.
       if (ndma_session_commission(&ndmp_sess)) { goto cleanup; }
 
-      /*
-       * Setup the DMA.
-       */
+      // Setup the DMA.
       if (ndmca_connect_control_agent(&ndmp_sess)) { goto cleanup; }
 
       ndmp_sess.conn_open = 1;
@@ -398,42 +362,30 @@ bool DoNdmpBackup(JobControlRecord* jcr)
 
       RegisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
 
-      /*
-       * Let the DMA perform its magic.
-       */
+      // Let the DMA perform its magic.
       if (ndmca_control_agent(&ndmp_sess) != 0) { goto cleanup; }
 
-      /*
-       * See if there were any errors during the backup.
-       */
+      // See if there were any errors during the backup.
       jcr->impl->jr.FileIndex = cnt + 1;
       if (!extract_post_backup_stats(jcr, item, &ndmp_sess)) { goto cleanup; }
 
       UnregisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
 
-      /*
-       * Reset the NDMP session states.
-       */
+      // Reset the NDMP session states.
       ndma_session_decommission(&ndmp_sess);
 
-      /*
-       * Cleanup the job after it has run.
-       */
+      // Cleanup the job after it has run.
       ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
       ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
       ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
 
-      /*
-       * Release any tape device name allocated.
-       */
+      // Release any tape device name allocated.
       if (ndmp_sess.control_acb->job.tape_device) {
         free(ndmp_sess.control_acb->job.tape_device);
         ndmp_sess.control_acb->job.tape_device = NULL;
       }
 
-      /*
-       * Destroy the session.
-       */
+      // Destroy the session.
       ndma_session_destroy(&ndmp_sess);
 
       /*

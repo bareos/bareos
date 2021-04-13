@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October 2007
- */
+// Kern Sibbald, October 2007
 /**
  * @file
  * Interface definition for Bareos DIR Plugins
@@ -53,13 +51,9 @@ class alist;
 
 namespace directordaemon {
 
-/*
- *  Bareos definitions
- */
+//  Bareos definitions
 
-/**
- * Bareos Variable Ids (Read)
- */
+// Bareos Variable Ids (Read)
 typedef enum
 {
   bDirVarJob = 1,
@@ -91,9 +85,7 @@ typedef enum
   bDirVarReadBytes = 27
 } brDirVariable;
 
-/**
- * Bareos Variable Ids (Write)
- */
+// Bareos Variable Ids (Write)
 typedef enum
 {
   bwDirVarJobReport = 1,
@@ -102,9 +94,7 @@ typedef enum
   bwDirVarJobLevel = 4
 } bwDirVariable;
 
-/**
- * Events that are passed to plugin
- */
+// Events that are passed to plugin
 typedef enum
 {
   bDirEventJobStart = 1,
@@ -135,9 +125,7 @@ typedef struct s_dirbareosInfo {
 extern "C" {
 #endif
 
-/**
- * Bareos interface version and function pointers
- */
+// Bareos interface version and function pointers
 typedef struct s_dirbareosFuncs {
   uint32_t size;
   uint32_t version;
@@ -161,9 +149,7 @@ typedef struct s_dirbareosFuncs {
                       ...);
 } CoreFunctions;
 
-/**
- * Bareos Core Routines -- not used within a plugin
- */
+// Bareos Core Routines -- not used within a plugin
 #ifdef DIRECTOR_DAEMON
 void LoadDirPlugins(const char* plugin_dir, alist* plugin_names);
 void UnloadDirPlugins(void);
@@ -177,9 +163,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
                         bool reverse = false);
 #endif
 
-/**
- * Plugin definitions
- */
+// Plugin definitions
 typedef enum
 {
   pVarName = 1,

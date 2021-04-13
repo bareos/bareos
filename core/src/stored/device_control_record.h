@@ -141,9 +141,7 @@ class DeviceControlRecord {
   }
   char* getVolCatName() { return VolCatInfo.VolCatName; }
 
-  /*
-   * Methods in askdir.c
-   */
+  // Methods in askdir.c
   virtual DeviceControlRecord* get_new_spooling_dcr();
   virtual bool DirFindNextAppendableVolume() { return true; }
   virtual bool DirUpdateVolumeInfo(bool label, bool update_LastWritten)
@@ -156,34 +154,24 @@ class DeviceControlRecord {
   virtual bool DirAskSysopToCreateAppendableVolume() { return true; }
   virtual bool DirGetVolumeInfo(enum get_vol_info_rw writing);
 
-  /*
-   * Methods in lock.c
-   */
+  // Methods in lock.c
   void dblock(int why);
   void mLock(bool locked);
   void mUnlock();
 
-  /*
-   * Methods in record.c
-   */
+  // Methods in record.c
   bool WriteRecord();
 
-  /*
-   * Methods in reserve.c
-   */
+  // Methods in reserve.c
   void ClearReserved();
   void SetReserved();
   void UnreserveDevice();
 
-  /*
-   * Methods in vol_mgr.c
-   */
+  // Methods in vol_mgr.c
   bool Can_i_use_volume();
   bool Can_i_write_volume();
 
-  /*
-   * Methods in mount.c
-   */
+  // Methods in mount.c
   bool MountNextWriteVolume();
   bool MountNextReadVolume();
   void MarkVolumeInError();
@@ -199,9 +187,7 @@ class DeviceControlRecord {
   bool DoLoad(bool IsWriting);
   bool IsTapePositionOk();
 
-  /*
-   * Methods in block.c
-   */
+  // Methods in block.c
   bool WriteBlockToDevice();
   bool WriteBlockToDev();
 
@@ -216,9 +202,7 @@ class DeviceControlRecord {
   ReadStatus ReadBlockFromDevice(bool check_block_numbers);
   ReadStatus ReadBlockFromDev(bool check_block_numbers);
 
-  /*
-   * Methods in label.c
-   */
+  // Methods in label.c
   bool RewriteVolumeLabel(bool recycle);
 };
 /* clang-format on */

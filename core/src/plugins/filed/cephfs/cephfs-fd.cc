@@ -47,9 +47,7 @@ static const int debuglevel = 150;
 
 #define CEPHFS_PATH_MAX 4096
 
-/**
- * Forward referenced functions
- */
+// Forward referenced functions
 static bRC newPlugin(PluginContext* ctx);
 static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
@@ -73,15 +71,11 @@ static bRC setup_backup(PluginContext* ctx, void* value);
 static bRC setup_restore(PluginContext* ctx, void* value);
 static bRC end_restore_job(PluginContext* ctx, void* value);
 
-/**
- * Pointers to Bareos functions
- */
+// Pointers to Bareos functions
 static CoreFunctions* bareos_core_functions = NULL;
 static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
-/**
- * Plugin Information block
- */
+// Plugin Information block
 static PluginInformation pluginInfo
     = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
        FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
@@ -89,9 +83,7 @@ static PluginInformation pluginInfo
        PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
        PLUGIN_USAGE};
 
-/**
- * Plugin entry points for Bareos
- */
+// Plugin entry points for Bareos
 static PluginFunctions pluginFuncs
     = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
@@ -102,9 +94,7 @@ static PluginFunctions pluginFuncs
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
        setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
 
-/**
- * Plugin private context
- */
+// Plugin private context
 struct plugin_ctx {
   int32_t backup_level;    /* Backup level e.g. Full/Differential/Incremental */
   utime_t since;           /* Since time for Differential/Incremental */
@@ -133,9 +123,7 @@ struct plugin_ctx {
   int cfd;                        /* CEPHFS file handle */
 };
 
-/**
- * This defines the arguments that the plugin parser understands.
- */
+// This defines the arguments that the plugin parser understands.
 enum plugin_argument_type
 {
   argument_none,
@@ -194,9 +182,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   return bRC_OK;
 }
 
-/**
- * External entry point to unload the plugin
- */
+// External entry point to unload the plugin
 bRC unloadPlugin() { return bRC_OK; }
 
 #ifdef __cplusplus
@@ -231,9 +217,7 @@ static bRC newPlugin(PluginContext* ctx)
   p_ctx->link_target = GetPoolMemory(PM_FNAME);
   p_ctx->xattr_list = GetPoolMemory(PM_MESSAGE);
 
-  /*
-   * Resize all buffers for PATH like names to CEPHFS_PATH_MAX.
-   */
+  // Resize all buffers for PATH like names to CEPHFS_PATH_MAX.
   p_ctx->cwd = CheckPoolMemorySize(p_ctx->cwd, CEPHFS_PATH_MAX);
   p_ctx->next_filename
       = CheckPoolMemorySize(p_ctx->next_filename, CEPHFS_PATH_MAX);
@@ -247,9 +231,7 @@ static bRC newPlugin(PluginContext* ctx)
    */
   p_ctx->dir_stack = new alist(10, owned_by_alist);
 
-  /*
-   * Only register the events we are really interested in.
-   */
+  // Only register the events we are really interested in.
   bareos_core_functions->registerBareosEvents(
       ctx, 7, bEventLevel, bEventSince, bEventRestoreCommand,
       bEventBackupCommand, bEventPluginCommand, bEventEndRestoreJob,
@@ -258,9 +240,7 @@ static bRC newPlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Free a plugin instance, i.e. release our private storage
- */
+// Free a plugin instance, i.e. release our private storage
 static bRC freePlugin(PluginContext* ctx)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -304,25 +284,19 @@ static bRC freePlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Return some plugin value (none defined)
- */
+// Return some plugin value (none defined)
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   return bRC_OK;
 }
 
-/**
- * Set a plugin value (none defined)
- */
+// Set a plugin value (none defined)
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   return bRC_OK;
 }
 
-/**
- * Handle an event that was generated in Bareos
- */
+// Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 {
   bRC retval;
@@ -351,9 +325,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       retval = parse_plugin_definition(ctx, value);
       break;
     case bEventNewPluginOptions:
-      /*
-       * Free any previous value.
-       */
+      // Free any previous value.
       if (p_ctx->plugin_options) {
         free(p_ctx->plugin_options);
         p_ctx->plugin_options = NULL;
@@ -361,9 +333,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 
       retval = parse_plugin_definition(ctx, value);
 
-      /*
-       * Save that we got a plugin override.
-       */
+      // Save that we got a plugin override.
       p_ctx->plugin_options = strdup((char*)value);
       break;
     case bEventEndRestoreJob:
@@ -379,9 +349,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   return retval;
 }
 
-/**
- * Get the next file to backup.
- */
+// Get the next file to backup.
 static bRC get_next_file_to_backup(PluginContext* ctx)
 {
   int status;
@@ -403,9 +371,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         const char* cwd;
         struct dir_stack_entry* entry;
 
-        /*
-         * Change the GLFS cwd back one dir.
-         */
+        // Change the GLFS cwd back one dir.
         status = ceph_chdir(p_ctx->cmount, "..");
         if (status < 0) {
           BErrNo be;
@@ -415,15 +381,11 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
           return bRC_Error;
         }
 
-        /*
-         * Save where we are in the tree.
-         */
+        // Save where we are in the tree.
         cwd = ceph_getcwd(p_ctx->cmount);
         PmStrcpy(p_ctx->cwd, cwd);
 
-        /*
-         * Pop the previous directory handle and continue processing that.
-         */
+        // Pop the previous directory handle and continue processing that.
         entry = (struct dir_stack_entry*)p_ctx->dir_stack->pop();
 #if HAVE_CEPH_STATX
         memcpy(&p_ctx->statx, &entry->statx, sizeof(p_ctx->statx));
@@ -442,9 +404,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
 
   if (!p_ctx->cdir) { return bRC_Error; }
 
-  /*
-   * Loop until we know what file is next or when we are done.
-   */
+  // Loop until we know what file is next or when we are done.
   while (1) {
 #if HAVE_CEPH_STATX
     unsigned int stmask = 0;
@@ -461,9 +421,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
 
     memset(&p_ctx->de, 0, sizeof(p_ctx->de));
 
-    /*
-     * No more entries in this directory ?
-     */
+    // No more entries in this directory ?
     if (status == 0) {
 #if HAVE_CEPH_STATX
       status = ceph_statx(p_ctx->cmount, p_ctx->cwd, &p_ctx->statx,
@@ -501,9 +459,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
 
     entry = &p_ctx->de;
 
-    /*
-     * Skip `.', `..', and excluded file names.
-     */
+    // Skip `.', `..', and excluded file names.
     if (entry->d_name[0] == '\0'
         || (entry->d_name[0] == '.'
             && (entry->d_name[1] == '\0'
@@ -513,9 +469,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
 
     Mmsg(p_ctx->next_filename, "%s/%s", p_ctx->cwd, entry->d_name);
 
-    /*
-     * Determine the FileType.
-     */
+    // Determine the FileType.
 #if HAVE_CEPH_STATX
     switch (p_ctx->statx.stx_mode & S_IFMT) {
 #else
@@ -562,9 +516,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         return bRC_Error;
     }
 
-    /*
-     * See if we accept this file under the currently loaded fileset.
-     */
+    // See if we accept this file under the currently loaded fileset.
     memset(&sp, 0, sizeof(sp));
     sp.pkt_size = sizeof(sp);
     sp.pkt_end = sizeof(sp);

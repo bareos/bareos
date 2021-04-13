@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October MM
- */
+// Kern Sibbald, October MM
 /**
  * @file
  * Verify files.
@@ -215,9 +213,7 @@ static int VerifyFile(JobControlRecord* jcr,
    * For a directory, link is the same as fname, but with trailing
    * slash. For a linked file, link is the link.
    */
-  /*
-   * Send file attributes to Director (note different format than for Storage)
-   */
+  // Send file attributes to Director (note different format than for Storage)
   Dmsg2(400, "send Attributes inx=%d fname=%s\n", jcr->JobFiles, ff_pkt->fname);
   if (ff_pkt->type == FT_LNK || ff_pkt->type == FT_LNKSAVED) {
     status = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
@@ -225,9 +221,7 @@ static int VerifyFile(JobControlRecord* jcr,
                         ff_pkt->fname, 0, attribs.c_str(), 0, ff_pkt->link, 0);
   } else if (ff_pkt->type == FT_DIREND || ff_pkt->type == FT_REPARSE
              || ff_pkt->type == FT_JUNCTION) {
-    /*
-     * Here link is the canonical filename (i.e. with trailing slash)
-     */
+    // Here link is the canonical filename (i.e. with trailing slash)
     status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
                         STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts,
                         ff_pkt->link, 0, attribs.c_str(), 0, 0);
@@ -255,9 +249,7 @@ static int VerifyFile(JobControlRecord* jcr,
 
     if (calculate_file_chksum(jcr, ff_pkt, &digest, &digest_stream, &digest_buf,
                               &digest_name)) {
-      /*
-       * Did digest initialization fail?
-       */
+      // Did digest initialization fail?
       if (digest_stream != STREAM_NONE && digest == NULL) {
         Jmsg(jcr, M_WARNING, 0, _("%s digest initialization failed\n"),
              stream_to_ascii(digest_stream));
@@ -271,9 +263,7 @@ static int VerifyFile(JobControlRecord* jcr,
       }
     }
 
-    /*
-     * Cleanup.
-     */
+    // Cleanup.
     if (digest_buf) { free(digest_buf); }
 
     if (digest) { CryptoDigestFree(digest); }
@@ -309,9 +299,7 @@ int DigestFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, DIGEST* digest)
   bclose(&bfd);
 
   if (have_darwin_os) {
-    /*
-     * Open resource fork if necessary
-     */
+    // Open resource fork if necessary
     if (BitIsSet(FO_HFSPLUS, ff_pkt->flags) && ff_pkt->hfsinfo.rsrclength > 0) {
       if (BopenRsrc(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
         ff_pkt->ff_errno = errno;
@@ -419,9 +407,7 @@ static bool calculate_file_chksum(JobControlRecord* jcr,
     *digest_stream = STREAM_SHA512_DIGEST;
   }
 
-  /*
-   * compute MD5 or SHA1 hash
-   */
+  // compute MD5 or SHA1 hash
   if (*digest) {
     uint32_t size;
     char md[CRYPTO_DIGEST_MAX_SIZE];

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March MMIII
- */
+// Kern Sibbald, March MMIII
 /*
  * @file
  * Configuration file parser for new and old Include and
@@ -60,9 +58,7 @@ typedef struct {
 } options_default_value_s;
 
 
-/*
- * Define FileSet KeyWord values
- */
+// Define FileSet KeyWord values
 enum
 {
   INC_KW_NONE,
@@ -135,9 +131,7 @@ static struct s_kw FS_option_kw[]
        {"forceencryption", INC_KW_FORCE_ENCRYPTION},
        {NULL, 0}};
 
-/*
- * Options for FileSet keywords
- */
+// Options for FileSet keywords
 struct s_fs_opt {
   const char* name;
   int keyword;
@@ -227,9 +221,7 @@ static struct s_fs_opt FS_options[]
        {"no", INC_KW_FORCE_ENCRYPTION, "0"},
        {NULL, 0, 0}};
 
-/*
- * Imported subroutines
- */
+// Imported subroutines
 extern void StoreInc(LEX* lc, ResourceItem* item, int index, int pass);
 
 /* We build the current new Include and Exclude items here */
@@ -298,9 +290,7 @@ ResourceItem options_items[] = {
 
 /* clang-format on */
 
-/**
- * determine used compression algorithms
- */
+// determine used compression algorithms
 void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
 {
   int cnt = 0;
@@ -347,9 +337,7 @@ void FindUsedCompressalgos(PoolMem* compressalgos, JobControlRecord* jcr)
   if (cnt > 0) { compressalgos->strcat(")"); }
 }
 
-/**
- * Check if the configured options are valid.
- */
+// Check if the configured options are valid.
 static inline void IsInPermittedSet(LEX* lc,
                                     const char* SetType,
                                     const char* permitted_set)
@@ -428,9 +416,7 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else {
-    /*
-     * Standard keyword options for Include/Exclude
-     */
+    // Standard keyword options for Include/Exclude
     for (i = 0; FS_options[i].name; i++) {
       if (FS_options[i].keyword == keyword
           && Bstrcasecmp(lc->str, FS_options[i].name)) {
@@ -449,15 +435,11 @@ static void ScanIncludeOptions(LEX* lc, int keyword, char* opts, int optlen)
   }
   lc->options = lcopts;
 
-  /*
-   * If option terminated by comma, eat it
-   */
+  // If option terminated by comma, eat it
   if (lc->ch == ',') { LexGetToken(lc, BCT_ALL); /* yes, eat comma */ }
 }
 
-/**
- * Store regex info
- */
+// Store regex info
 static void StoreRegex(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int token, rc;
@@ -506,39 +488,29 @@ static void StoreRegex(LEX* lc, ResourceItem* item, int index, int pass)
   ScanToEol(lc);
 }
 
-/**
- * Store Base info
- */
+// Store Base info
 static void StoreBase(LEX* lc, ResourceItem* item, int index, int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
-    /*
-     * Pickup Base Job Name
-     */
+    // Pickup Base Job Name
     res_incexe->current_opts->base.append(strdup(lc->str));
   }
   ScanToEol(lc);
 }
 
-/**
- * Store reader info
- */
+// Store reader info
 static void StorePlugin(LEX* lc, ResourceItem* item, int index, int pass)
 {
   LexGetToken(lc, BCT_NAME);
   if (pass == 1) {
-    /*
-     * Pickup plugin command
-     */
+    // Pickup plugin command
     res_incexe->current_opts->plugin = strdup(lc->str);
   }
   ScanToEol(lc);
 }
 
-/**
- * Store Wild-card info
- */
+// Store Wild-card info
 static void StoreWild(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int token;
@@ -547,9 +519,7 @@ static void StoreWild(LEX* lc, ResourceItem* item, int index, int pass)
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (pass == 1) {
-    /*
-     * Pickup Wild-card string
-     */
+    // Pickup Wild-card string
     switch (token) {
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
@@ -584,9 +554,7 @@ static void StoreWild(LEX* lc, ResourceItem* item, int index, int pass)
   ScanToEol(lc);
 }
 
-/**
- * Store fstype info
- */
+// Store fstype info
 static void StoreFstype(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int token;
@@ -610,9 +578,7 @@ static void StoreFstype(LEX* lc, ResourceItem* item, int index, int pass)
   ScanToEol(lc);
 }
 
-/**
- * Store Drivetype info
- */
+// Store Drivetype info
 static void StoreDrivetype(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int token;
@@ -659,9 +625,7 @@ static void StoreMeta(LEX* lc, ResourceItem* item, int index, int pass)
   ScanToEol(lc);
 }
 
-/**
- * New style options come here
- */
+// New style options come here
 static void StoreOption(
     LEX* lc,
     ResourceItem* item,
@@ -676,9 +640,7 @@ static void StoreOption(
   inc_opts[0] = 0;
   keyword = INC_KW_NONE;
 
-  /*
-   * Look up the keyword
-   */
+  // Look up the keyword
   for (i = 0; FS_option_kw[i].name; i++) {
     if (Bstrcasecmp(item->name, FS_option_kw[i].name)) {
       keyword = FS_option_kw[i].token;
@@ -694,9 +656,7 @@ static void StoreOption(
     return;
   }
 
-  /*
-   * Now scan for the value
-   */
+  // Now scan for the value
   ScanIncludeOptions(lc, keyword, inc_opts, sizeof(inc_opts));
   if (pass == 1) {
     bstrncat(res_incexe->current_opts->opts, inc_opts, MAX_FOPTS);
@@ -707,9 +667,7 @@ static void StoreOption(
   ScanToEol(lc);
 }
 
-/**
- * If current_opts not defined, create first entry
- */
+// If current_opts not defined, create first entry
 static void SetupCurrentOpts(void)
 {
   FileOptions* fo = new FileOptions;
@@ -728,9 +686,7 @@ static void SetupCurrentOpts(void)
   res_incexe->file_options_list.push_back(fo);
 }
 
-/**
- * Come here when Options seen in Include/Exclude
- */
+// Come here when Options seen in Include/Exclude
 static void StoreOptionsRes(LEX* lc,
                             ResourceItem* item,
                             int index,
@@ -901,9 +857,7 @@ static void StorePluginName(LEX* lc,
   }
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (pass == 1) {
-    /*
-     * Pickup Filename string
-     */
+    // Pickup Filename string
     switch (token) {
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
@@ -936,9 +890,7 @@ static void StorePluginName(LEX* lc,
   ScanToEol(lc);
 }
 
-/**
- * Store exclude directory containing info
- */
+// Store exclude directory containing info
 static void StoreExcludedir(LEX* lc,
                             ResourceItem* item,
                             int index,

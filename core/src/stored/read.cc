@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, November MM
- */
+// Kern Sibbald, November MM
 /**
  * @file
  * Read code for Storage daemon
@@ -78,32 +76,24 @@ bool DoReadData(JobControlRecord* jcr)
   Dmsg2(200, "Found %d volumes names to restore. First=%s\n",
         jcr->impl->NumReadVolumes, jcr->impl->VolList->VolumeName);
 
-  /*
-   * Ready device for reading
-   */
+  // Ready device for reading
   if (!AcquireDeviceForRead(dcr)) {
     fd->fsend(FD_error);
     return false;
   }
 
-  /*
-   * Let any SD plugin know now its time to setup the record translation infra.
-   */
+  // Let any SD plugin know now its time to setup the record translation infra.
   if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) != bRC_OK) {
     jcr->setJobStatus(JS_ErrorTerminated);
     return false;
   }
 
-  /*
-   * Tell File daemon we will send data
-   */
+  // Tell File daemon we will send data
   fd->fsend(OK_data);
   jcr->sendJobStatus(JS_Running);
   ok = ReadRecords(dcr, RecordCb, MountNextReadVolume);
 
-  /*
-   * Send end of data to FD
-   */
+  // Send end of data to FD
   fd->signal(BNET_EOD);
 
   if (!ReleaseDevice(jcr->impl->read_dcr)) { ok = false; }
@@ -133,9 +123,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         FI_to_ascii(ec1, rec->FileIndex),
         stream_to_ascii(ec2, rec->Stream, rec->FileIndex), rec->data_len);
 
-  /*
-   * Send record header to File daemon
-   */
+  // Send record header to File daemon
   if (!fd->fsend(rec_header, rec->VolSessionId, rec->VolSessionTime,
                  rec->FileIndex, rec->Stream, rec->data_len)) {
     Pmsg1(000, _(">filed: Error Hdr=%s"), fd->msg);
@@ -146,9 +134,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     Dmsg1(400, ">filed: Hdr=%s\n", fd->msg);
   }
 
-  /*
-   * Send data record to File daemon
-   */
+  // Send data record to File daemon
   save_msg = fd->msg;  /* save fd message pointer */
   fd->msg = rec->data; /* pass data directly to the FD */
   fd->message_length = rec->data_len;

@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/**
- * Laurent Papier
- */
+// Laurent Papier
 /**
  * @file
  * Compressed stream header struct
@@ -30,9 +28,7 @@
 #ifndef BAREOS_INCLUDE_CH_H_
 #define BAREOS_INCLUDE_CH_H_
 
-/**
- * Compression algorithm signature. 4 letters as a 32bits integer
- */
+// Compression algorithm signature. 4 letters as a 32bits integer
 #define COMPRESS_NONE 0x4e4f4e45 /* used for incompressible block */
 #define COMPRESS_GZIP 0x475a4950
 #define COMPRESS_LZO1X 0x4c5a4f58
@@ -40,9 +36,7 @@
 #define COMPRESS_FZ4L 0x465A344C
 #define COMPRESS_FZ4H 0x465A3448
 
-/**
- * Compression header version
- */
+// Compression header version
 #define COMP_HEAD_VERSION 0x1
 
 /* Compressed data stream header */

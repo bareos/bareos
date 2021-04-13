@@ -41,9 +41,7 @@
 
 namespace storagedaemon {
 
-/**
- * Open a tape device
- */
+// Open a tape device
 void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
 {
   file_size = 0;
@@ -66,9 +64,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   errno = 0;
   Dmsg2(100, "Try open %s mode=%s\n", prt_name, mode_to_str(omode));
 #if defined(HAVE_WIN32)
-  /*
-   * Windows Code
-   */
+  // Windows Code
   if ((fd = d_open(archive_device_string, oflags, 0)) < 0) {
     dev_errno = errno;
   }
@@ -79,9 +75,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
    * If busy retry each second for max_open_wait seconds
    */
   for (;;) {
-    /*
-     * Try non-blocking open
-     */
+    // Try non-blocking open
     fd = d_open(archive_device_string, oflags | O_NONBLOCK, 0);
     if (fd < 0) {
       BErrNo be;
@@ -89,16 +83,12 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
       Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
             prt_name, omode, oflags, errno, be.bstrerror());
     } else {
-      /*
-       * Tape open, now rewind it
-       */
+      // Tape open, now rewind it
       Dmsg0(100, "Rewind after open\n");
       mt_com.mt_op = MTREW;
       mt_com.mt_count = 1;
 
-      /*
-       * Rewind only if dev is a tape
-       */
+      // Rewind only if dev is a tape
       if (d_ioctl(fd, MTIOCTOP, (char*)&mt_com) < 0) {
         BErrNo be;
         dev_errno = errno; /* set error status from rewind */
@@ -106,14 +96,10 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
         ClearOpened();
         Dmsg2(100, "Rewind error on %s close: ERR=%s\n", prt_name,
               be.bstrerror(dev_errno));
-        /*
-         * If we get busy, device is probably rewinding, try again
-         */
+        // If we get busy, device is probably rewinding, try again
         if (dev_errno != EBUSY) { break; /* error -- no medium */ }
       } else {
-        /*
-         * Got fd and rewind worked, so we must have medium in drive
-         */
+        // Got fd and rewind worked, so we must have medium in drive
         d_close(fd);
         fd = d_open(archive_device_string, oflags, 0); /* open normally */
         if (fd < 0) {
@@ -131,9 +117,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     }
     Bmicrosleep(5, 0);
 
-    /*
-     * Exceed wait time ?
-     */
+    // Exceed wait time ?
     if (time(NULL) - start_time >= max_open_wait) { break; /* yes, get out */ }
   }
 #endif
@@ -181,9 +165,7 @@ bool generic_tape_device::eod(DeviceControlRecord* dcr)
 #ifdef MTEOM
   if (HasCap(CAP_FASTFSF) && !HasCap(CAP_EOM)) {
     Dmsg0(100, "Using FAST FSF for EOM\n");
-    /*
-     * If unknown position, rewind
-     */
+    // If unknown position, rewind
     if (GetOsTapeFile() < 0) {
       if (!rewind(NULL)) {
         Dmsg0(100, "Rewind error\n");
@@ -191,9 +173,7 @@ bool generic_tape_device::eod(DeviceControlRecord* dcr)
       }
     }
     mt_com.mt_op = MTFSF;
-    /*
-     * ***FIXME*** fix code to handle case that INT16_MAX is not large enough.
-     */
+    // fix code to handle case that INT16_MAX is not large enough.
     mt_com.mt_count = INT16_MAX; /* use big positive number */
     if (mt_com.mt_count < 0) {
       mt_com.mt_count = INT16_MAX; /* brain damaged system */
@@ -232,17 +212,13 @@ bool generic_tape_device::eod(DeviceControlRecord* dcr)
     file = os_file;
   } else {
 #endif
-    /*
-     * Rewind then use FSF until EOT reached
-     */
+    // Rewind then use FSF until EOT reached
     if (!rewind(NULL)) {
       Dmsg0(100, "Rewind error.\n");
       return false;
     }
 
-    /*
-     * Move file by file to the end of the tape
-     */
+    // Move file by file to the end of the tape
     int file_num;
     for (file_num = file; !AtEot(); file_num++) {
       Dmsg0(200, "eod: doing fsf 1\n");
@@ -250,9 +226,7 @@ bool generic_tape_device::eod(DeviceControlRecord* dcr)
         Dmsg0(100, "fsf error.\n");
         return false;
       }
-      /*
-       * Avoid infinite loop by ensuring we advance.
-       */
+      // Avoid infinite loop by ensuring we advance.
       if (!AtEot() && file_num == (int)file) {
         Dmsg1(100, "fsf did not advance from file %d\n", file_num);
         SetAteof();
@@ -273,14 +247,10 @@ bool generic_tape_device::eod(DeviceControlRecord* dcr)
    * so that appending overwrites the second EOF.
    */
   if (HasCap(CAP_BSFATEOM)) {
-    /*
-     * Backup over EOF
-     */
+    // Backup over EOF
     ok = bsf(1);
 
-    /*
-     * If BSF worked and fileno is known (not -1), set file
-     */
+    // If BSF worked and fileno is known (not -1), set file
     os_file = GetOsTapeFile();
     if (os_file >= 0) {
       Dmsg2(100, "BSFATEOF adjust file from %d to %d\n", file, os_file);
@@ -296,9 +266,7 @@ bool generic_tape_device::eod(DeviceControlRecord* dcr)
   return ok;
 }
 
-/**
- * Called to indicate that we have just read an EOF from the device.
- */
+// Called to indicate that we have just read an EOF from the device.
 void generic_tape_device::SetAteof()
 {
   SetEof();
@@ -314,9 +282,7 @@ void generic_tape_device::SetAteof()
  */
 void generic_tape_device::SetAteot()
 {
-  /*
-   * Make volume effectively read-only
-   */
+  // Make volume effectively read-only
   SetBit(ST_EOF, state);
   SetBit(ST_EOT, state);
   SetBit(ST_WEOT, state);
@@ -333,9 +299,7 @@ bool generic_tape_device::offline()
 {
   mtop mt_com{};
 
-  /*
-   * Remove EOF/EOT flags.
-   */
+  // Remove EOF/EOT flags.
   ClearBit(ST_APPENDREADY, state);
   ClearBit(ST_READREADY, state);
   ClearBit(ST_EOT, state);
@@ -497,9 +461,7 @@ bool generic_tape_device::fsf(int num)
       if ((status = this->read((char*)rbuf, rbuf_len)) < 0) {
         if (errno == ENOMEM) { /* tape record exceeds buf len */
           status = rbuf_len;   /* This is OK */
-          /*
-           * On IBM drives, they return ENOSPC at EOM instead of EOF status
-           */
+          // On IBM drives, they return ENOSPC at EOM instead of EOF status
         } else if (AtEof() && errno == ENOSPC) {
           status = 0;
         } else if (HasCap(CAP_IOERRATEOM) && AtEof() && errno == EIO) {
@@ -537,9 +499,7 @@ bool generic_tape_device::fsf(int num)
       }
       if (status == 0) { /* EOF */
         Dmsg1(100, "End of File mark from read. File=%d\n", file + 1);
-        /*
-         * Two reads of zero means end of tape
-         */
+        // Two reads of zero means end of tape
         if (AtEof()) {
           SetEot();
           Dmsg0(100, "Set ST_EOT\n");
@@ -571,9 +531,7 @@ bool generic_tape_device::fsf(int num)
     }
     FreeMemory(rbuf);
 
-    /*
-     * No FSF, so use FSR to simulate it
-     */
+    // No FSF, so use FSR to simulate it
   } else {
     Dmsg0(200, "Doing FSR for FSF\n");
     while (num-- && !AtEot()) { fsr(INT32_MAX); /* returns -1 on EOF or EOT */ }
@@ -805,26 +763,20 @@ void generic_tape_device::UnlockDoor()
 }
 
 #if defined(MTIOCLRERR)
-/**
- * Found on Solaris
- */
+// Found on Solaris
 static inline void OsClrerror(Device* dev)
 {
   if (dev->d_ioctl(dev->fd, MTIOCLRERR) < 0) { dev->clrerror(MTIOCLRERR); }
   Dmsg0(200, "Did MTIOCLRERR\n");
 }
 #elif defined(MTIOCERRSTAT)
-/**
- * Typically on FreeBSD
- */
+// Typically on FreeBSD
 static inline void OsClrerror(Device* dev)
 {
   BErrNo be;
   union mterrstat mt_errstat;
 
-  /*
-   * Read and clear SCSI error status
-   */
+  // Read and clear SCSI error status
   Dmsg2(200, "Doing MTIOCERRSTAT errno=%d ERR=%s\n", dev->dev_errno,
         be.bstrerror(dev->dev_errno));
   if (dev->d_ioctl(dev->fd, MTIOCERRSTAT, (char*)&mt_errstat) < 0) {

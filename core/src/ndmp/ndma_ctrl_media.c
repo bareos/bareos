@@ -43,9 +43,7 @@
 void ndmca_media_register_callbacks(struct ndm_session* sess,
                                     struct ndmca_media_callbacks* callbacks)
 {
-  /*
-   * Only allow one register.
-   */
+  // Only allow one register.
   if (!sess->media_cbs) {
     sess->media_cbs = NDMOS_API_MALLOC(sizeof(struct ndmca_media_callbacks));
     if (sess->media_cbs) {
@@ -440,9 +438,7 @@ int ndmca_media_read_label(struct ndm_session* sess, char labbuf[])
   return rc;
 }
 
-/*
- * type is either 'm' or 'V', see above
- */
+// type is either 'm' or 'V', see above
 int ndmca_media_write_label(struct ndm_session* sess, int type, char labbuf[])
 {
   int rc;
@@ -463,9 +459,7 @@ int ndmca_media_write_label(struct ndm_session* sess, int type, char labbuf[])
   return rc;
 }
 
-/*
- * type is either 'm' or 'V', see above
- */
+// type is either 'm' or 'V', see above
 int ndmca_media_check_label(struct ndm_session* sess, int type, char labbuf[])
 {
   int rc;
@@ -596,9 +590,7 @@ int ndmca_media_capture_mover_window(struct ndm_session* sess)
   me->nb_determined = 1;
   me->n_bytes = wlen;
 
-  /*
-   * Only print the data when a deliver function was defined.
-   */
+  // Only print the data when a deliver function was defined.
   if (ixlog->deliver) {
     ndmmedia_pp(me, 0, buf);
     ndmlogf(ixlog, "CM", 0, "%02d %s", ca->cur_media_ix, buf);

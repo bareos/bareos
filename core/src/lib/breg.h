@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Eric Bollengier March 2007
- */
+// Eric Bollengier March 2007
 /**
  * @file
  * BAREOS BareosRegex Structure definition for FileDaemon
@@ -51,9 +49,7 @@
 
 #define BREG_NREGS 11
 
-/**
- * Structure for BareosRegex ressource
- */
+// Structure for BareosRegex ressource
 class BareosRegex {
  public:
   BareosRegex() = default;

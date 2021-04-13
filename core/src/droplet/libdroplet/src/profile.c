@@ -232,9 +232,7 @@ dpl_status_t dpl_conf_finish(struct dpl_conf_ctx* ctx)
   return DPL_SUCCESS;
 }
 
-/*
- *
- */
+//
 static int conf_cb_func(void* cb_arg, const char* var, char* value)
 {
   dpl_ctx_t* ctx = (dpl_ctx_t*)cb_arg;
@@ -923,9 +921,7 @@ void dpl_profile_free(dpl_ctx_t* ctx)
 
   if (ctx->ssl_ctx != NULL) { SSL_CTX_free(ctx->ssl_ctx); }
 
-  /*
-   * profile
-   */
+  // profile
 
   if (NULL != ctx->addrlist) dpl_addrlist_free(ctx->addrlist);
   if (NULL != ctx->base_path) free(ctx->base_path);

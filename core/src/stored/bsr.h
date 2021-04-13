@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, June 2002
- */
+// Kern Sibbald, June 2002
 /**
  * @file
  * BootStrap record definition -- for restoring files.

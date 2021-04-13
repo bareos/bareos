@@ -533,9 +533,7 @@ static const char* obj_type_ext(dpl_ftype_t type)
   return "";
 }
 
-/*
- * path based routines
- */
+// path based routines
 
 dpl_fqn_t dpl_cwd(dpl_ctx_t* ctx, const char* bucket)
 {
@@ -831,9 +829,7 @@ end:
   return ret;
 }
 
-/*
- * vfile
- */
+// vfile
 
 dpl_status_t dpl_close(dpl_vfile_t* vfile)
 {
@@ -1298,9 +1294,7 @@ end:
   return ret;
 }
 
-/*
- * blob operations
- */
+// blob operations
 
 /**
  * put a blob
@@ -1455,9 +1449,7 @@ end:
   return ret;
 }
 
-/*
- *
- */
+//
 
 static dpl_status_t dpl_mkobj(dpl_ctx_t* ctx,
                               const char* locator,

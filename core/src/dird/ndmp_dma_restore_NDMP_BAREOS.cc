@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, May 2015
- */
+// Marco van Wieringen, May 2015
 /**
  * @file
  * Restore specific NDMP Data Management Application (DMA) routines
@@ -73,15 +71,11 @@ static inline char* lookup_fileindex(JobControlRecord* jcr, int32_t FileIndex)
 
   node = FirstTreeNode(jcr->impl->restore_tree_root);
   while (node) {
-    /*
-     * See if this is the wanted FileIndex.
-     */
+    // See if this is the wanted FileIndex.
     if (node->FileIndex == FileIndex) {
       PmStrcpy(restore_pathname, node->fname);
 
-      /*
-       * Walk up the parent until we hit the head of the list.
-       */
+      // Walk up the parent until we hit the head of the list.
       for (parent = node->parent; parent; parent = parent->parent) {
         PmStrcpy(tmp, restore_pathname.c_str());
         Mmsg(restore_pathname, "%s/%s", parent->fname, tmp.c_str());
@@ -98,9 +92,7 @@ static inline char* lookup_fileindex(JobControlRecord* jcr, int32_t FileIndex)
   return NULL;
 }
 
-/**
- * See in the tree with selected files what files were selected to be restored.
- */
+// See in the tree with selected files what files were selected to be restored.
 static inline int set_files_to_restore(JobControlRecord* jcr,
                                        struct ndm_job_param* job,
                                        int32_t FileIndex,
@@ -114,15 +106,11 @@ static inline int set_files_to_restore(JobControlRecord* jcr,
 
   node = FirstTreeNode(jcr->impl->restore_tree_root);
   while (node) {
-    /*
-     * See if this is the wanted FileIndex and the user asked to extract it.
-     */
+    // See if this is the wanted FileIndex and the user asked to extract it.
     if (node->FileIndex == FileIndex && node->extract) {
       PmStrcpy(restore_pathname, node->fname);
 
-      /*
-       * Walk up the parent until we hit the head of the list.
-       */
+      // Walk up the parent until we hit the head of the list.
       for (parent = node->parent; parent; parent = parent->parent) {
         PmStrcpy(tmp, restore_pathname.c_str());
         Mmsg(restore_pathname, "%s/%s", parent->fname, tmp.c_str());
@@ -133,9 +121,7 @@ static inline int set_files_to_restore(JobControlRecord* jcr,
        * backup stream name.
        */
       if (!bstrncmp(restore_pathname.c_str(), "/@NDMP/", 7)) {
-        /*
-         * See if we need to strip the prefix from the filename.
-         */
+        // See if we need to strip the prefix from the filename.
         len = strlen(ndmp_filesystem);
         if (bstrncmp(restore_pathname.c_str(), ndmp_filesystem, len)) {
           AddToNamelist(job, restore_pathname.c_str() + len, restore_prefix,
@@ -173,27 +159,19 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
   PoolMem destination_path;
   ndmp_backup_format_option* nbf_options;
 
-  /*
-   * See if we know this backup format and get it options.
-   */
+  // See if we know this backup format and get it options.
   nbf_options = ndmp_lookup_backup_format_options(job->bu_type);
 
-  /*
-   * Lookup the current fileindex and map it to an actual pathname.
-   */
+  // Lookup the current fileindex and map it to an actual pathname.
   restore_pathname = lookup_fileindex(jcr, current_fi);
   if (!restore_pathname) {
     return false;
   } else {
-    /*
-     * Skip over the /@NDMP prefix.
-     */
+    // Skip over the /@NDMP prefix.
     ndmp_filesystem = restore_pathname + 6;
   }
 
-  /*
-   * See if there is a level embedded in the pathname.
-   */
+  // See if there is a level embedded in the pathname.
   bp = strrchr(ndmp_filesystem, '%');
   if (bp) {
     *bp++ = '\0';
@@ -202,9 +180,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
     level = NULL;
   }
 
-  /*
-   * Lookup the environment stack saved during the backup so we can restore it.
-   */
+  // Lookup the environment stack saved during the backup so we can restore it.
   if (!jcr->db->GetNdmpEnvironmentString(current_session, current_fi,
                                          NdmpEnvHandler, &job->env_tab)) {
     /*
@@ -217,17 +193,13 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
          _("Could not load NDMP environment. Using fallback.\n"));
 
     if (!nbf_options || nbf_options->uses_file_history) {
-      /*
-       * We asked during the NDMP backup to receive file history info.
-       */
+      // We asked during the NDMP backup to receive file history info.
       pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
       pv.value = ndmp_env_values[NDMP_ENV_VALUE_YES];
       ndma_store_env_list(&job->env_tab, &pv);
     }
 
-    /*
-     * Tell the data agent what type of restore stream to expect.
-     */
+    // Tell the data agent what type of restore stream to expect.
     pv.name = ndmp_env_keywords[NDMP_ENV_KW_TYPE];
     pv.value = job->bu_type;
     ndma_store_env_list(&job->env_tab, &pv);
@@ -242,33 +214,23 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
       ndma_store_env_list(&job->env_tab, &pv);
     }
 
-    /*
-     * Tell the data engine what was backed up.
-     */
+    // Tell the data engine what was backed up.
     pv.name = ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM];
     pv.value = ndmp_filesystem;
     ndma_store_env_list(&job->env_tab, &pv);
   }
 
-  /*
-   * Lookup any meta tags that need to be added.
-   */
+  // Lookup any meta tags that need to be added.
   fileset = jcr->impl->res.fileset;
   for (IncludeExcludeItem* ie : fileset->include_items) {
-    /*
-     * Loop over each file = entry of the fileset.
-     */
+    // Loop over each file = entry of the fileset.
     for (int j = 0; j < ie->name_list.size(); j++) {
       char* item = (char*)ie->name_list.get(j);
 
-      /*
-       * See if the original path matches.
-       */
+      // See if the original path matches.
       if (Bstrcasecmp(item, ndmp_filesystem)) {
         for (FileOptions* fo : ie->file_options_list) {
-          /*
-           * Parse all specific META tags for this option block.
-           */
+          // Parse all specific META tags for this option block.
           for (int l = 0; l < fo->meta.size(); l++) {
             NdmpParseMetaTag(&job->env_tab, (char*)fo->meta.get(l));
           }
@@ -277,9 +239,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * See where to restore the data.
-   */
+  // See where to restore the data.
   restore_prefix = NULL;
   if (jcr->where) {
     restore_prefix = jcr->where;
@@ -289,9 +249,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
 
   if (!restore_prefix) { return false; }
 
-  /*
-   * Tell the data engine where to restore.
-   */
+  // Tell the data engine where to restore.
   if (nbf_options && nbf_options->restore_prefix_relative) {
     switch (*restore_prefix) {
       case '^':
@@ -302,9 +260,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
         PmStrcpy(destination_path, restore_prefix + 1);
         break;
       default:
-        /*
-         * Use the restore_prefix as an relative restore prefix.
-         */
+        // Use the restore_prefix as an relative restore prefix.
         if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
           PmStrcpy(destination_path, ndmp_filesystem);
         } else {
@@ -314,14 +270,10 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
     }
   } else {
     if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
-      /*
-       * Use the original pathname as restore prefix.
-       */
+      // Use the original pathname as restore prefix.
       PmStrcpy(destination_path, ndmp_filesystem);
     } else {
-      /*
-       * Use the restore_prefix as an absolute restore prefix.
-       */
+      // Use the restore_prefix as an absolute restore prefix.
       PmStrcpy(destination_path, restore_prefix);
     }
   }
@@ -334,9 +286,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
     if (set_files_to_restore(jcr, job, current_fi, destination_path.c_str(),
                              ndmp_filesystem)
         == 0) {
-      /*
-       * There is no specific filename selected so restore everything.
-       */
+      // There is no specific filename selected so restore everything.
       AddToNamelist(job, (char*)"", destination_path.c_str(), (char*)"",
                     (char*)"", NDMP_INVALID_U_QUAD, NDMP_INVALID_U_QUAD);
     }
@@ -357,9 +307,7 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
   return true;
 }
 
-/**
- * Setup a NDMP restore session.
- */
+// Setup a NDMP restore session.
 bool DoNdmpRestoreInit(JobControlRecord* jcr)
 {
   FreeWstorage(jcr); /* we don't write */
@@ -388,9 +336,7 @@ static inline int NdmpWaitForJobTermination(JobControlRecord* jcr)
     CancelStorageDaemonJob(jcr);
   }
 
-  /*
-   * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
-   */
+  // Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
   WaitForStorageDaemonTermination(jcr);
 
   jcr->impl->FDJobStatus = JS_Terminated;
@@ -432,18 +378,14 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     NdmpLoglevel = me->ndmp_loglevel;
   }
 
-  /*
-   * We first parse the BootStrapRecord ourself so we know what to restore.
-   */
+  // We first parse the BootStrapRecord ourself so we know what to restore.
   jcr->impl->bsr = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
   if (!jcr->impl->bsr) {
     Jmsg(jcr, M_FATAL, 0, _("Error parsing bootstrap file.\n"));
     goto bail_out;
   }
 
-  /*
-   * Setup all paired read storage.
-   */
+  // Setup all paired read storage.
   SetPairedStorage(jcr);
   if (!jcr->impl->res.paired_read_write_storage) {
     Jmsg(jcr, M_FATAL, 0,
@@ -453,17 +395,13 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  /*
-   * Open the bootstrap file
-   */
+  // Open the bootstrap file
   if (!OpenBootstrapFile(jcr, info)) { goto bail_out; }
 
   nis = (NIS*)malloc(sizeof(NIS));
   memset(nis, 0, sizeof(NIS));
 
-  /*
-   * Read the bootstrap file
-   */
+  // Read the bootstrap file
   bsr = jcr->impl->bsr;
   while (!feof(info.bs)) {
     if (!SelectNextRstore(jcr, info)) { goto cleanup; }
@@ -489,9 +427,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     Dmsg0(10, "Open connection to storage daemon\n");
     jcr->setJobStatus(JS_WaitSD);
 
-    /*
-     * Start conversation with Storage daemon
-     */
+    // Start conversation with Storage daemon
     if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
       goto cleanup;
     }

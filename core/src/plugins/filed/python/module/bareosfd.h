@@ -45,9 +45,7 @@
 
 namespace filedaemon {
 
-/**
- * Python structures mapping C++ ones.
- */
+// Python structures mapping C++ ones.
 
 /**
  * This packet is used for the restore objects.
@@ -66,9 +64,7 @@ typedef struct {
   uint32_t JobId;                      /* JobId object came from */
 } PyRestoreObject;
 
-/**
- * Forward declarations of type specific functions.
- */
+// Forward declarations of type specific functions.
 static void PyRestoreObject_dealloc(PyRestoreObject* self);
 static int PyRestoreObject_init(PyRestoreObject* self,
                                 PyObject* args,
@@ -144,9 +140,7 @@ static PyTypeObject PyRestoreObjectType = {
     0,                                               /* tp_new */
 };
 
-/**
- * The PyStatPacket type
- */
+// The PyStatPacket type
 typedef struct {
   PyObject_HEAD uint32_t dev;
   uint64_t ino;
@@ -163,9 +157,7 @@ typedef struct {
   uint64_t blocks;
 } PyStatPacket;
 
-/**
- * Forward declarations of type specific functions.
- */
+// Forward declarations of type specific functions.
 static void PyStatPacket_dealloc(PyStatPacket* self);
 static int PyStatPacket_init(PyStatPacket* self,
                              PyObject* args,
@@ -242,9 +234,7 @@ static PyTypeObject PyStatPacketType = {
     0,                                         /* tp_new */
 };
 
-/**
- * The PySavePacket type
- */
+// The PySavePacket type
 typedef struct {
   PyObject_HEAD PyObject* fname; /* Full path and filename */
   PyObject* link;                /* Link name if any */
@@ -263,9 +253,7 @@ typedef struct {
   int32_t object_index;  /* Restore object index */
 } PySavePacket;
 
-/**
- * Forward declarations of type specific functions.
- */
+// Forward declarations of type specific functions.
 static void PySavePacket_dealloc(PySavePacket* self);
 static int PySavePacket_init(PySavePacket* self,
                              PyObject* args,
@@ -347,9 +335,7 @@ static PyTypeObject PySavePacketType = {
     0,                                         /* tp_new */
 };
 
-/**
- * The PyRestorePacket type
- */
+// The PyRestorePacket type
 typedef struct {
   PyObject_HEAD int32_t stream; /* Attribute stream id */
   int32_t data_stream;          /* Id of data stream to follow */
@@ -367,9 +353,7 @@ typedef struct {
   int create_status;            /* Status from createFile() */
 } PyRestorePacket;
 
-/**
- * Forward declarations of type specific functions.
- */
+// Forward declarations of type specific functions.
 static void PyRestorePacket_dealloc(PyRestorePacket* self);
 static int PyRestorePacket_init(PyRestorePacket* self,
                                 PyObject* args,
@@ -450,9 +434,7 @@ static PyTypeObject PyRestorePacketType = {
     0,                                            /* tp_new */
 };
 
-/**
- * The PyIOPacket type
- */
+// The PyIOPacket type
 typedef struct {
   PyObject_HEAD uint16_t func; /* Function code */
   int32_t count;               /* Read/Write count */
@@ -468,9 +450,7 @@ typedef struct {
   bool win32;                  /* Win32 GetLastError returned */
 } PyIoPacket;
 
-/**
- * Forward declarations of type specific functions.
- */
+// Forward declarations of type specific functions.
 static void PyIoPacket_dealloc(PyIoPacket* self);
 static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds);
 static PyObject* PyIoPacket_repr(PyIoPacket* self);
@@ -546,17 +526,13 @@ static PyTypeObject PyIoPacketType = {
     0,                                        /* tp_new */
 };
 
-/**
- * The PyAclPacket type
- */
+// The PyAclPacket type
 typedef struct {
   PyObject_HEAD const char* fname; /* Filename */
   PyObject* content;               /* ACL content */
 } PyAclPacket;
 
-/**
- * Forward declarations of type specific functions.
- */
+// Forward declarations of type specific functions.
 static void PyAclPacket_dealloc(PyAclPacket* self);
 static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds);
 static PyObject* PyAclPacket_repr(PyAclPacket* self);
@@ -612,18 +588,14 @@ static PyTypeObject PyAclPacketType = {
     0,                                        /* tp_new */
 };
 
-/**
- * The PyXattrPacket type
- */
+// The PyXattrPacket type
 typedef struct {
   PyObject_HEAD const char* fname; /* Filename */
   PyObject* name;                  /* XATTR name */
   PyObject* value;                 /* XATTR value */
 } PyXattrPacket;
 
-/**
- * Forward declarations of type specific functions.
- */
+// Forward declarations of type specific functions.
 static void PyXattrPacket_dealloc(PyXattrPacket* self);
 static int PyXattrPacket_init(PyXattrPacket* self,
                               PyObject* args,
@@ -683,9 +655,7 @@ static PyTypeObject PyXattrPacketType = {
     0,                                          /* tp_new */
 };
 
-/**
- * Callback methods from Python.
- */
+// Callback methods from Python.
 static PyObject* PyBareosGetValue(PyObject* self, PyObject* args);
 static PyObject* PyBareosSetValue(PyObject* self, PyObject* args);
 static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args);

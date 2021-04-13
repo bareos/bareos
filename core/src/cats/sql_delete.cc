@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, December 2000
- */
+// Kern Sibbald, December 2000
 /**
  * @file
  * BAREOS Catalog Database Delete record interface routines
@@ -225,14 +223,10 @@ bool BareosDb::PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   DbLock(this);
   if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { goto bail_out; }
 
-  /*
-   * Delete associated records
-   */
+  // Delete associated records
   DoMediaPurge(this, mr); /* Note, always purge */
 
-  /*
-   * Mark Volume as purged
-   */
+  // Mark Volume as purged
   strcpy(mr->VolStatus, "Purged");
   if (!UpdateMediaRecord(jcr, mr)) { goto bail_out; }
 

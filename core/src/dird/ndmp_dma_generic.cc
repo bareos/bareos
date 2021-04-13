@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, May 2015
- */
+// Marco van Wieringen, May 2015
 /**
  * @file
  * Generic NDMP Data Management Application (DMA) routines
@@ -50,9 +48,7 @@ namespace directordaemon {
 
 /* Forward referenced functions */
 
-/**
- * Per NDMP format specific options.
- */
+// Per NDMP format specific options.
 static ndmp_backup_format_option ndmp_backup_format_options[] = {
     /* format uses_file_history  uses_level restore_prefix_relative
        needs_namelist */
@@ -88,9 +84,7 @@ ndmp_backup_format_option* ndmp_lookup_backup_format_options(
   return (ndmp_backup_format_option*)NULL;
 }
 
-/**
- * Validation functions.
- */
+// Validation functions.
 bool NdmpValidateClient(JobControlRecord* jcr)
 {
   switch (jcr->impl->res.client->Protocol) {
@@ -165,9 +159,7 @@ bool NdmpValidateJob(JobControlRecord* jcr, struct ndm_job_param* job)
   int n_err, i;
   char audit_buffer[256];
 
-  /*
-   * Audit the job so we only submit a valid NDMP job.
-   */
+  // Audit the job so we only submit a valid NDMP job.
   n_err = 0;
   i = 0;
   do {
@@ -231,9 +223,7 @@ static inline bool fill_ndmp_agent_config(JobControlRecord* jcr,
       Jmsg(jcr, M_FATAL, 0, _("Illegal authtype %d for NDMP Job\n"), authtype);
       return false;
   }
-  /*
-   *  sanity checks
-   */
+  //  sanity checks
   if (!address) {
     Jmsg(jcr, M_FATAL, 0, _("fill_ndmp_agent_config: address is missing\n"));
     return false;
@@ -262,30 +252,22 @@ static inline bool fill_ndmp_agent_config(JobControlRecord* jcr,
   return true;
 }
 
-/**
- * Parse a meta-tag and convert it into a ndmp_pval
- */
+// Parse a meta-tag and convert it into a ndmp_pval
 void NdmpParseMetaTag(struct ndm_env_table* env_tab, char* meta_tag)
 {
   char* p;
   ndmp9_pval pv;
 
-  /*
-   * See if the meta-tag is parseable.
-   */
+  // See if the meta-tag is parseable.
   if ((p = strchr(meta_tag, '=')) == NULL) { return; }
 
-  /*
-   * Split the tag on the '='
-   */
+  // Split the tag on the '='
   *p = '\0';
   pv.name = meta_tag;
   pv.value = p + 1;
   ndma_update_env_list(env_tab, &pv);
 
-  /*
-   * Restore the '='
-   */
+  // Restore the '='
   *p = '=';
 }
 
@@ -311,9 +293,7 @@ int NativeToNdmpLoglevel(int NdmpLoglevel, int debuglevel, NIS* nis)
   level = debuglevel / 100;
   if (level < nis->LogLevel) { level = nis->LogLevel; }
 
-  /*
-   * Make sure the level is in the wanted range.
-   */
+  // Make sure the level is in the wanted range.
   if (level > 9) { level = 9; }
 
   return level;
@@ -339,9 +319,7 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  /*
-   * The data_agent is the client being backed up or restored using NDMP.
-   */
+  // The data_agent is the client being backed up or restored using NDMP.
   ASSERT(client->password_.encoding == p_encoding_clear);
   if (!fill_ndmp_agent_config(jcr, &job->data_agent, client->Protocol,
                               client->AuthType, client->address, client->FDport,
@@ -349,9 +327,7 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  /*
-   * The tape_agent is the storage daemon via the NDMP protocol.
-   */
+  // The tape_agent is the storage daemon via the NDMP protocol.
   ASSERT(store->password_.encoding == p_encoding_clear);
   if (!fill_ndmp_agent_config(jcr, &job->tape_agent, store->Protocol,
                               store->AuthType, store->address, store->SDport,
@@ -360,9 +336,7 @@ bool NdmpBuildClientJob(JobControlRecord* jcr,
   }
 
   if (Bstrcasecmp(jcr->impl->backup_format, "smtape")) {
-    /*
-     * SMTAPE only wants certain blocksizes.
-     */
+    // SMTAPE only wants certain blocksizes.
     if (jcr->impl->res.client->ndmp_blocksize < SMTAPE_MIN_BLOCKSIZE
         || jcr->impl->res.client->ndmp_blocksize > SMTAPE_MAX_BLOCKSIZE) {
       Jmsg(jcr, M_FATAL, 0,
@@ -414,9 +388,7 @@ bool NdmpBuildStorageJob(JobControlRecord* jcr,
 
 
   if (init_tape) {
-    /*
-     * Setup the TAPE agent of the NDMP job.
-     */
+    // Setup the TAPE agent of the NDMP job.
     ASSERT(store->password_.encoding == p_encoding_clear);
     if (!fill_ndmp_agent_config(jcr, &job->tape_agent, store->Protocol,
                                 store->AuthType, store->address, store->SDport,
@@ -426,9 +398,7 @@ bool NdmpBuildStorageJob(JobControlRecord* jcr,
   }
 
   if (init_robot) {
-    /*
-     * Setup the ROBOT agent of the NDMP job.
-     */
+    // Setup the ROBOT agent of the NDMP job.
     if (!fill_ndmp_agent_config(jcr, &job->robot_agent, store->Protocol,
                                 store->AuthType, store->address, store->SDport,
                                 store->username, store->password_.value)) {
@@ -484,14 +454,10 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
   int internal_level;
   NIS* nis;
 
-  /*
-   * We don't want any trailing newline in log messages.
-   */
+  // We don't want any trailing newline in log messages.
   StripTrailingNewline(msg);
 
-  /*
-   * Make sure if the logging system was setup properly.
-   */
+  // Make sure if the logging system was setup properly.
   nis = (NIS*)log->ctx;
   if (!nis) { return; }
 
@@ -501,9 +467,7 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
    */
   if (level <= (int)nis->LogLevel) {
     if (nis->jcr) {
-      /*
-       * Look at the tag field to see what is logged.
-       */
+      // Look at the tag field to see what is logged.
       if (bstrncmp(tag + 1, "LM", 2)) {
         /*
          * *LM* messages. E.g. log message NDMP protocol msgs.
@@ -562,9 +526,7 @@ extern "C" void ndmp_log_delivery_cb_to_dmsg(struct ndmlog* log,
 {
   NIS* nis;
 
-  /*
-   * Make sure if the logging system was setup properly.
-   */
+  // Make sure if the logging system was setup properly.
   nis = (NIS*)log->ctx;
   if (!nis || !nis->jcr) { return; }
 
@@ -583,9 +545,7 @@ extern "C" void ndmp_log_delivery_cb_to_jmsg(struct ndmlog* log,
 {
   NIS* nis;
 
-  /*
-   * Make sure if the logging system was setup properly.
-   */
+  // Make sure if the logging system was setup properly.
   nis = (NIS*)log->ctx;
   if (!nis || !nis->jcr) { return; }
 
@@ -603,9 +563,7 @@ extern "C" void ndmp_log_delivery_cb_to_ua(struct ndmlog* log,
 {
   NIS* nis;
 
-  /*
-   * Make sure if the logging system was setup properly.
-   */
+  // Make sure if the logging system was setup properly.
   nis = (NIS*)log->ctx;
   if (!nis) { return; }
 
@@ -626,9 +584,7 @@ void NdmpDoQuery(UaContext* ua,
   NIS* nis;
   struct ndm_session ndmp_sess;
   JobControlRecord* local_jcr = nullptr;
-  /*
-   * Initialize a new NDMP session
-   */
+  // Initialize a new NDMP session
   memset(&ndmp_sess, 0, sizeof(ndmp_sess));
   ndmp_sess.param
       = (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
@@ -656,14 +612,10 @@ void NdmpDoQuery(UaContext* ua,
   } else {
     goto bail_out;
   }
-  /*
-   * Register the query callbacks that give us the query results
-   */
+  // Register the query callbacks that give us the query results
   ndmca_query_register_callbacks(&ndmp_sess, query_cbs);
 
-  /*
-   * Initialize the session structure.
-   */
+  // Initialize the session structure.
   if (ndma_session_initialize(&ndmp_sess)) { goto bail_out; }
 
   /*

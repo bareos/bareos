@@ -18,9 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Philipp Storz, May 2016
- */
+// Philipp Storz, May 2016
 /** @file
  * responsible for doing consolidation jobs
  *
@@ -104,17 +102,13 @@ bool DoConsolidate(JobControlRecord* jcr)
 
   tmpjob = jcr->impl->res.job; /* Memorize job */
 
-  /*
-   * Get Value for MaxFullConsolidations from Consolidation job
-   */
+  // Get Value for MaxFullConsolidations from Consolidation job
   max_full_consolidations = jcr->impl->res.job->MaxFullConsolidations;
 
   jcr->impl->jr.JobId = jcr->JobId;
   jcr->impl->fname = (char*)GetPoolMemory(PM_FNAME);
 
-  /*
-   * Print Job Start message
-   */
+  // Print Job Start message
   Jmsg(jcr, M_INFO, 0, _("Start Consolidate JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);
 
@@ -130,9 +124,7 @@ bool DoConsolidate(JobControlRecord* jcr)
       Jmsg(jcr, M_INFO, 0, _("Looking at always incremental job %s\n"),
            job->resource_name_);
 
-      /*
-       * Fake always incremental job as job of current jcr.
-       */
+      // Fake always incremental job as job of current jcr.
       jcr->impl->res.job = job;
       jcr->impl->res.fileset = job->fileset;
       jcr->impl->res.client = job->client;
@@ -152,9 +144,7 @@ bool DoConsolidate(JobControlRecord* jcr)
         goto bail_out;
       }
 
-      /*
-       * First determine the number of total incrementals
-       */
+      // First determine the number of total incrementals
       jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
       incrementals_total = jobids_ctx.size() - 1;
       Dmsg1(10, "unlimited jobids list:  %s.\n",
@@ -236,9 +226,7 @@ bool DoConsolidate(JobControlRecord* jcr)
       jobids = strdup(jobids_ctx.GetAsString().c_str());
       p = jobids;
 
-      /**
-       * Check if we need to skip the first (full) job from consolidation
-       */
+      // Check if we need to skip the first (full) job from consolidation
       if (job->AlwaysIncrementalMaxFullAge) {
         char sdt_allowed[50];
         char sdt_starttime[50];
@@ -256,9 +244,7 @@ bool DoConsolidate(JobControlRecord* jcr)
         p = strchr(jobids, ','); /* find oldest jobid and optionally skip it */
         if (p) { *p = '\0'; }
 
-        /**
-         * Get db record of oldest jobid and check its age
-         */
+        // Get db record of oldest jobid and check its age
         jcr->impl->previous_jr = JobDbRecord{};
         jcr->impl->previous_jr.JobId = str_to_int64(jobids);
         Dmsg1(10, "Previous JobId=%s\n", jobids);
@@ -275,9 +261,7 @@ bool DoConsolidate(JobControlRecord* jcr)
         bstrftimes(sdt_allowed, sizeof(sdt_allowed), oldest_allowed_starttime);
         bstrftimes(sdt_starttime, sizeof(sdt_starttime), starttime);
 
-        /**
-         * Check if job is older than AlwaysIncrementalMaxFullAge
-         */
+        // Check if job is older than AlwaysIncrementalMaxFullAge
         Jmsg(jcr, M_INFO, 0, _("check full age: full is %s, allowed is %s\n"),
              sdt_starttime, sdt_allowed);
         if (starttime > oldest_allowed_starttime) {
@@ -309,9 +293,7 @@ bool DoConsolidate(JobControlRecord* jcr)
         Jmsg(jcr, M_INFO, 0, _("after ConsolidateFull: jobids: %s\n"), p);
       }
 
-      /**
-       * Set the virtualfull jobids to be consolidated
-       */
+      // Set the virtualfull jobids to be consolidated
       if (!jcr->impl->vf_jobids) {
         jcr->impl->vf_jobids = GetPoolMemory(PM_MESSAGE);
       }
@@ -324,9 +306,7 @@ bool DoConsolidate(JobControlRecord* jcr)
   }
 
 bail_out:
-  /**
-   * Restore original job back to jcr.
-   */
+  // Restore original job back to jcr.
   jcr->impl->res.job = tmpjob;
   jcr->setJobStatus(JS_Terminated);
   ConsolidateCleanup(jcr, JS_Terminated);
@@ -336,9 +316,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Release resources allocated during backup.
- */
+// Release resources allocated during backup.
 void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
 {
   int msg_type;

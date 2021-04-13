@@ -154,9 +154,7 @@ void MyNameIs(int argc, char* argv[], const char* name)
   }
   bstrncpy(my_name, name, sizeof(my_name));
   if (argc > 0 && argv && argv[0]) {
-    /*
-     * Strip trailing filename and save exepath
-     */
+    // Strip trailing filename and save exepath
     for (l = p = argv[0]; *p; p++) {
       if (IsPathSeparator(*p)) { l = p; /* set pos of last slash */ }
     }
@@ -165,9 +163,7 @@ void MyNameIs(int argc, char* argv[], const char* name)
     } else {
       l = argv[0];
 #if defined(HAVE_WIN32)
-      /*
-       * On Windows allow c: drive specification
-       */
+      // On Windows allow c: drive specification
       if (l[1] == ':') { l += 2; }
 #endif
     }
@@ -306,9 +302,7 @@ static Bpipe* open_mail_pipe(JobControlRecord* jcr,
   }
 
   if ((bpipe = OpenBpipe(cmd, 120, "rw"))) {
-    /*
-     * If we had to use sendmail, add subject
-     */
+    // If we had to use sendmail, add subject
     if (d->mail_cmd_.empty()) {
       fprintf(bpipe->wfd, "Subject: %s\r\n\r\n", _("BAREOS Message"));
     }
@@ -341,15 +335,11 @@ void CloseMsg(JobControlRecord* jcr)
   }
   if (msgs == NULL) { return; }
 
-  /*
-   * Wait for item to be not in use, then mark closing
-   */
+  // Wait for item to be not in use, then mark closing
   if (msgs->IsClosing()) { return; }
   msgs->WaitNotInUse(); /* leaves fides_mutex set */
 
-  /*
-   * Note GetClosing() does not lock because we are already locked
-   */
+  // Note GetClosing() does not lock because we are already locked
   if (msgs->GetClosing()) {
     msgs->Unlock();
     return;
@@ -425,9 +415,7 @@ void CloseMsg(JobControlRecord* jcr)
            * kaboom.
            */
           if (msgs != daemon_msgs) {
-            /*
-             * Read what mail prog returned -- should be nothing
-             */
+            // Read what mail prog returned -- should be nothing
             while (fgets(line, len, bpipe->rfd)) {
               DeliveryError(_("Mail prog: %s"), line);
             }
@@ -445,17 +433,13 @@ void CloseMsg(JobControlRecord* jcr)
           }
           FreeMemory(line);
         rem_temp_file:
-          /*
-           * Remove temp file
-           */
+          // Remove temp file
           if (d->file_pointer_) {
             fclose(d->file_pointer_);
             d->file_pointer_ = NULL;
           }
           if (!d->mail_filename_.empty()) {
-            /*
-             * Exclude spaces in mail_filename
-             */
+            // Exclude spaces in mail_filename
             SaferUnlink(d->mail_filename_.c_str(), MAIL_REGEX);
             d->mail_filename_.clear();
           }
@@ -575,9 +559,7 @@ static inline bool SetSyslogFacility(JobControlRecord* jcr,
       }
     }
 
-    /*
-     * Make sure we got a match otherwise fallback to LOG_DAEMON
-     */
+    // Make sure we got a match otherwise fallback to LOG_DAEMON
     if (i != 0) { d->syslog_facility_ = LOG_DAEMON; }
   } else {
     d->syslog_facility_ = LOG_DAEMON;
@@ -615,9 +597,7 @@ void RegisterSyslogCallback(SyslogCallback c) { SendToSyslog = c; }
 static DbLogInsertCallback SendToDbLog = NULL;
 void SetDbLogInsertCallback(DbLogInsertCallback f) { SendToDbLog = f; }
 
-/*
- * Handle sending the message to the appropriate place
- */
+// Handle sending the message to the appropriate place
 void DispatchMessage(JobControlRecord* jcr,
                      int type,
                      utime_t mtime,
@@ -649,17 +629,13 @@ void DispatchMessage(JobControlRecord* jcr,
     dt_conversion = true;
   }
 
-  /*
-   * If the program registered a callback, send it there
-   */
+  // If the program registered a callback, send it there
   if (message_callback) {
     message_callback(type, msg);
     return;
   }
 
-  /*
-   * For serious errors make sure message is printed or logged
-   */
+  // For serious errors make sure message is printed or logged
   if (type == M_ABORT || type == M_ERROR_TERM) {
     fputs(dt, stdout);
     fputs(msg, stdout);
@@ -667,16 +643,12 @@ void DispatchMessage(JobControlRecord* jcr,
     if (type == M_ABORT) { syslog(LOG_DAEMON | LOG_ERR, "%s", msg); }
   }
 
-  /*
-   * Now figure out where to send the message
-   */
+  // Now figure out where to send the message
   msgs = NULL;
   if (!jcr) { jcr = GetJcrFromThreadSpecificData(); }
 
   if (jcr) {
-    /*
-     * See if we need to suppress the messages.
-     */
+    // See if we need to suppress the messages.
     if (jcr->suppress_output) {
       /*
        * See if this JobControlRecord has a controlling JobControlRecord and if
@@ -685,9 +657,7 @@ void DispatchMessage(JobControlRecord* jcr,
       if (jcr->cjcr) {
         jcr = jcr->cjcr;
       } else {
-        /*
-         * Ignore this Job Message.
-         */
+        // Ignore this Job Message.
         return;
       }
     }
@@ -701,9 +671,7 @@ void DispatchMessage(JobControlRecord* jcr,
     return;
   }
 
-  /*
-   * If closing this message resource, print and send to syslog, then get out.
-   */
+  // If closing this message resource, print and send to syslog, then get out.
   if (msgs->IsClosing()) {
     if (dt_conversion) {
       bstrftime(dt, sizeof(dt), mtime, log_timestamp_format);
@@ -819,9 +787,7 @@ void DispatchMessage(JobControlRecord* jcr,
             int status;
             fputs(dt, bpipe->wfd);
             fputs(msg, bpipe->wfd);
-            /*
-             * Messages to the operator go one at a time
-             */
+            // Messages to the operator go one at a time
             status = CloseBpipe(bpipe);
             if (status != 0) {
               BErrNo be;
@@ -878,9 +844,7 @@ void DispatchMessage(JobControlRecord* jcr,
           }
           fputs(dt, d->file_pointer_);
           fputs(msg, d->file_pointer_);
-          /*
-           * On error, we close and reopen to handle log rotation
-           */
+          // On error, we close and reopen to handle log rotation
           if (ferror(d->file_pointer_)) {
             fclose(d->file_pointer_);
             d->file_pointer_ = NULL;
@@ -942,9 +906,7 @@ const char* get_basename(const char* pathname)
   return basename;
 }
 
-/*
- * Print or write output to trace file
- */
+// Print or write output to trace file
 static void pt_out(char* buf)
 {
   /*
@@ -963,16 +925,12 @@ static void pt_out(char* buf)
       fflush(trace_fd);
       return;
     } else {
-      /*
-       * Some problem, turn off tracing
-       */
+      // Some problem, turn off tracing
       trace = false;
     }
   }
 
-  /*
-   * Not tracing
-   */
+  // Not tracing
   fputs(buf, stdout);
   fflush(stdout);
 }
@@ -1034,9 +992,7 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
   }
 }
 
-/*
- * Set trace flag on/off. If argument is negative, there is no change
- */
+// Set trace flag on/off. If argument is negative, there is no change
 void SetTrace(int trace_flag)
 {
   if (trace_flag < 0) {
@@ -1196,9 +1152,7 @@ void t_msg(const char* file, int line, int level, const char* fmt, ...)
   }
 }
 
-/*
- * print an error message
- */
+// print an error message
 void e_msg(const char* file,
            int line,
            int type,
@@ -1263,9 +1217,7 @@ void e_msg(const char* file,
     break;
   }
 
-  /*
-   * show error message also as debug message (level 10)
-   */
+  // show error message also as debug message (level 10)
   d_msg(file, line, 10, "%s: %s", typestr.c_str(), more.c_str());
 
   /*

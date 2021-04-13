@@ -39,18 +39,14 @@ struct DbiFieldGet {
 
 class BareosDbDBI : public BareosDbPrivateInterface {
  private:
-  /*
-   * Members.
-   */
+  // Members.
   dbi_inst instance_;
   dbi_conn* db_handle_;
   dbi_result* result_;
   DbiFieldGet* field_get_;
 
  private:
-  /*
-   * Methods.
-   */
+  // Methods.
   bool OpenDatabase(JobControlRecord* jcr);
   void CloseDatabase(JobControlRecord* jcr);
   bool ValidateConnection(void);
@@ -88,9 +84,7 @@ class BareosDbDBI : public BareosDbPrivateInterface {
   bool SqlCopyEnd();
 
  public:
-  /*
-   * Methods.
-   */
+  // Methods.
   BareosDbDBI(JobControlRecord* jcr,
               const char* db_driver,
               const char* db_name,

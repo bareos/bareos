@@ -67,17 +67,13 @@
     abort();                                         \
   }
 
-/**
- * Allow printing of NULL pointers
- */
+// Allow printing of NULL pointers
 #define NPRT(x) (x) ? (x) : _("*None*")
 #define NSTDPRNT(x) x.empty() ? "*None*" : x.c_str()
 #define NPRTB(x) (x) ? (x) : ""
 
 #if defined(HAVE_WIN32)
-/**
- * Reduce compiler warnings from Windows vss code
- */
+// Reduce compiler warnings from Windows vss code
 #  define uuid(x)
 
 void InitWinAPIWrapper();
@@ -174,21 +170,15 @@ void InitWinAPIWrapper();
  */
 #define AUTH_TIMEOUT 60 * 10
 
-/**
- * Default network buffer size
- */
+// Default network buffer size
 #define DEFAULT_NETWORK_BUFFER_SIZE (64 * 1024)
 
-/**
- * Tape label types -- stored in catalog
- */
+// Tape label types -- stored in catalog
 #define B_BAREOS_LABEL 0
 #define B_ANSI_LABEL 1
 #define B_IBM_LABEL 2
 
-/**
- * Actions on purge (bit mask)
- */
+// Actions on purge (bit mask)
 #define ON_PURGE_NONE 0
 #define ON_PURGE_TRUNCATE 1
 
@@ -542,9 +532,7 @@ int Getdomainname(char* name, int len);
 #define TRACEFILEDIRECTORY working_directory ? working_directory : "c:"
 
 #if defined(HAVE_WIN32)
-/**
- *   Windows
- */
+//   Windows
 #  define DEFAULT_CONFIGDIR \
     "C:\\Documents and Settings\\All Users\\Application Data\\Bareos"
 #  define PathSeparator '\\'
@@ -564,9 +552,7 @@ extern void PauseMsg(const char* file,
     if (debug_level) PauseMsg(__FILE__, __func__, __LINE__, (msg))
 
 #else
-/**
- *   Unix/Linux
- */
+//   Unix/Linux
 #  define PathSeparator '/'
 
 /* Define Winsock functions if we aren't on Windows */

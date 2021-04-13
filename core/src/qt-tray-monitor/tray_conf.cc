@@ -184,9 +184,7 @@ static ResourceTable resources[] = {
 
 /* clang-format on */
 
-/*
- * Dump contents of resource
- */
+// Dump contents of resource
 static void DumpResource(int type,
                          BareosResource* res,
                          bool sendit(void* sock, const char* fmt, ...),
@@ -281,9 +279,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   int i;
   int error = 0;
 
-  /*
-   * Ensure that all required items are present
-   */
+  // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
       if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
@@ -396,9 +392,7 @@ ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
   return config;
 }
 
-/*
- * Print configuration file schema in json format
- */
+// Print configuration file schema in json format
 #ifdef HAVE_JANSSON
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
@@ -411,9 +405,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set_new(json, "component", json_string("bareos-tray-monitor"));
   json_object_set_new(json, "version", json_string(kBareosVersionStrings.Full));
 
-  /*
-   * Resources
-   */
+  // Resources
   json_t* resource = json_object();
   json_object_set(json, "resource", resource);
   json_t* bareos_tray_monitor = json_object();

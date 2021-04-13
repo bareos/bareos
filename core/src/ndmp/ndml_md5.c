@@ -131,23 +131,17 @@ int ndmmd5_digest(char challenge[NDMP_MD5_CHALLENGE_LENGTH],
    */
   if (pwlength > 32) pwlength = 32;
 
-  /*
-   * Compose the 128-byte buffer according to NDMP rules
-   */
+  // Compose the 128-byte buffer according to NDMP rules
   NDMOS_API_BZERO(message, sizeof message);
   NDMOS_API_BCOPY(clear_text_password, &message[0], pwlength);
   NDMOS_API_BCOPY(clear_text_password, &message[128 - pwlength], pwlength);
   NDMOS_API_BCOPY(challenge, &message[64 - pwlength], 64);
 
-  /*
-   * Grind it up, ala MD5
-   */
+  // Grind it up, ala MD5
   MD5Init(&mdContext);
   MD5Update(&mdContext, message, 128);
   MD5Final((unsigned char*)digest, &mdContext);
 
-  /*
-   * ding! done
-   */
+  // ding! done
   return 0;
 }

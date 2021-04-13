@@ -480,9 +480,7 @@ int ndmp_9to4_connect_client_auth_request(
  * no arg request, **NO REPLY**
  */
 
-/*
- * ndmp_connect_server_auth
- */
+// ndmp_connect_server_auth
 
 /* TBD */
 int ndmp_4to9_connect_server_auth_request(
@@ -596,9 +594,7 @@ int ndmp_9to4_config_get_connection_type_reply(
 }
 
 
-/*
- * ndmp_config_get_auth_attr
- */
+// ndmp_config_get_auth_attr
 
 int ndmp_4to9_config_get_auth_attr_request(
     struct ndmp4_config_get_auth_attr_request* request4,
@@ -1382,9 +1378,7 @@ int ndmp_9to4_execute_cdb_reply(ndmp9_execute_cdb_reply* reply9,
  */
 
 
-/*
- * ndmp_tape_open_request
- */
+// ndmp_tape_open_request
 
 struct enum_conversion ndmp_49_tape_open_mode[] = {
     {
@@ -1523,9 +1517,7 @@ extern int ndmp_9to4_tape_get_state_reply(ndmp9_tape_get_state_reply* reply9,
 }
 
 
-/*
- * ndmp_tape_mtio_request
- */
+// ndmp_tape_mtio_request
 
 struct enum_conversion ndmp_49_tape_mtio_op[] = {
     {
@@ -1593,9 +1585,7 @@ int ndmp_9to4_tape_mtio_reply(ndmp9_tape_mtio_reply* reply9,
 }
 
 
-/*
- * ndmp_tape_write
- */
+// ndmp_tape_write
 
 int ndmp_4to9_tape_write_request(ndmp4_tape_write_request* request4,
                                  ndmp9_tape_write_request* request9)
@@ -1652,9 +1642,7 @@ int ndmp_9to4_tape_write_reply(ndmp9_tape_write_reply* reply9,
 }
 
 
-/*
- * ndmp_tape_read
- */
+// ndmp_tape_read
 
 int ndmp_4to9_tape_read_request(ndmp4_tape_read_request* request4,
                                 ndmp9_tape_read_request* request9)
@@ -1832,9 +1820,7 @@ int ndmp_9to4_mover_get_state_free_reply(ndmp4_mover_get_state_reply* reply4)
   return 0;
 }
 
-/*
- * ndmp_mover_listen
- */
+// ndmp_mover_listen
 
 int ndmp_4to9_mover_listen_request(ndmp4_mover_listen_request* request4,
                                    ndmp9_mover_listen_request* request9)
@@ -2002,9 +1988,7 @@ int ndmp_9to4_mover_read_request(ndmp9_mover_read_request* request9,
  */
 
 
-/*
- * DATA INTERFACES
- */
+// DATA INTERFACES
 
 
 /*

@@ -3,9 +3,7 @@
 #include <assert.h>
 #include <sys/param.h>
 
-/*
- * Scenario: simple get (file object), without metadata
- */
+// Scenario: simple get (file object), without metadata
 
 int main(int argc, char** argv)
 {

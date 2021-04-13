@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Joerg Steffens, April 2015
- */
+// Joerg Steffens, April 2015
 /**
  * @file
  * Output Formatter prototypes
@@ -57,9 +55,7 @@ typedef struct json_t json_t;
 
 class PoolMem;
 
-/**
- * Filtering states.
- */
+// Filtering states.
 typedef enum of_filter_state
 {
   OF_FILTER_STATE_SHOW,
@@ -67,9 +63,7 @@ typedef enum of_filter_state
   OF_FILTER_STATE_UNKNOWN
 } of_filter_state;
 
-/**
- * Filtering types.
- */
+// Filtering types.
 typedef enum of_filter_type
 {
   OF_FILTER_LIMIT,
@@ -108,14 +102,10 @@ typedef struct of_filter_tuple {
   } u;
 } of_filter_tuple;
 
-/**
- * Actual output formatter class.
- */
+// Actual output formatter class.
 class OutputFormatter {
  public:
-  /*
-   * Typedefs.
-   */
+  // Typedefs.
   typedef bool(SEND_HANDLER)(void* ctx, const char* fmt, ...);
 
   typedef of_filter_state(FILTER_HANDLER)(void* ctx,
@@ -123,9 +113,7 @@ class OutputFormatter {
                                           of_filter_tuple* tuple);
 
  private:
-  /*
-   * Members
-   */
+  // Members
   int api = 0;
   bool compact = false;
   SEND_HANDLER* send_func = nullptr;
@@ -144,9 +132,7 @@ class OutputFormatter {
 #endif
 
  private:
-  /*
-   * Methods
-   */
+  // Methods
   int get_num_rows_filtered() { return num_rows_filtered; }
   void SetNumRowsFiltered(int value) { num_rows_filtered = value; }
   void ClearNumRowsFiltered() { SetNumRowsFiltered(0); }
@@ -168,9 +154,7 @@ class OutputFormatter {
 #endif
 
  public:
-  /*
-   * Methods
-   */
+  // Methods
   OutputFormatter(SEND_HANDLER* send_func,
                   void* send_ctx,
                   FILTER_HANDLER* filter_func,
@@ -252,9 +236,7 @@ class OutputFormatter {
    */
   void SendBuffer();
 
-  /*
-   * Filtering.
-   */
+  // Filtering.
   void AddLimitFilterTuple(int limit);
   void AddOffsetFilterTuple(int offset);
   void AddAclFilterTuple(int column, int acltype);
@@ -266,9 +248,7 @@ class OutputFormatter {
   bool has_acl_filters();
   bool FilterData(void* data);
 
-  /*
-   * Hidden columns.
-   */
+  // Hidden columns.
   void AddHiddenColumn(int column);
   bool IsHiddenColumn(int column);
   void ClearHiddenColumns();
@@ -289,9 +269,7 @@ class OutputFormatter {
 };
 
 #ifdef HAVE_JANSSON
-/*
- * JSON output helper functions
- */
+// JSON output helper functions
 struct s_kw;
 struct ResourceItem;
 

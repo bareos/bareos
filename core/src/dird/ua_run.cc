@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, December MMI
- */
+// Kern Sibbald, December MMI
 /**
  * @file
  * BAREOS Director -- Run Command
@@ -81,9 +79,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     goto bail_out;
   }
 
-  /*
-   * Only perform rerun on JobTypes where it makes sense.
-   */
+  // Only perform rerun on JobTypes where it makes sense.
   switch (jr.JobType) {
     case JT_BACKUP:
     case JT_COPY:
@@ -126,9 +122,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
       goto bail_out;
     }
 
-    /*
-     * Source pool.
-     */
+    // Source pool.
     switch (jr.JobType) {
       case JT_COPY:
       case JT_MIGRATE: {
@@ -160,9 +154,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
         }
     }
 
-    /*
-     * Next pool.
-     */
+    // Next pool.
     switch (jr.JobType) {
       case JT_COPY:
       case JT_MIGRATE:
@@ -244,9 +236,7 @@ bool reRunCmd(UaContext* ua, const char* cmd)
 
   now = (utime_t)time(NULL);
 
-  /*
-   * Determine what cmdline arguments are given.
-   */
+  // Determine what cmdline arguments are given.
   j = FindArgWithValue(ua, NT_("jobid"));
   d = FindArgWithValue(ua, NT_("days"));
   h = FindArgWithValue(ua, NT_("hours"));
@@ -295,9 +285,7 @@ bool reRunCmd(UaContext* ua, const char* cmd)
       schedtime = now - secs_in_hour * hours; /* Hours in the past */
     }
 
-    /*
-     * Job Query Start
-     */
+    // Job Query Start
     bstrutime(dt, sizeof(dt), schedtime);
 
     if (since_jobid_given) {
@@ -337,13 +325,9 @@ bool reRunCmd(UaContext* ua, const char* cmd)
             || !ua->pint32_val)) {
       goto bail_out;
     }
-    /*
-     * Job Query End
-     */
+    // Job Query End
 
-    /*
-     * Loop over all selected JobIds.
-     */
+    // Loop over all selected JobIds.
     for (i = 0; i < ids.num_ids; i++) {
       JobId = ids.DBId[i];
       if (!reRunJob(ua, JobId, yes, now)) { goto bail_out; }
@@ -399,17 +383,13 @@ int DoRunCmd(UaContext* ua, const char* cmd)
     ua->jcr->impl->unlink_bsr = false;
   }
 
-  /*
-   * Transfer JobIds to new restore Job
-   */
+  // Transfer JobIds to new restore Job
   if (ua->jcr->JobIds) {
     jcr->JobIds = ua->jcr->JobIds;
     ua->jcr->JobIds = NULL;
   }
 
-  /*
-   * Transfer selected restore tree to new restore Job
-   */
+  // Transfer selected restore tree to new restore Job
   if (ua->jcr->impl->restore_tree_root) {
     jcr->impl->restore_tree_root = ua->jcr->impl->restore_tree_root;
     ua->jcr->impl->restore_tree_root = NULL;
@@ -418,9 +398,7 @@ int DoRunCmd(UaContext* ua, const char* cmd)
 try_again:
   if (!ResetRestoreContext(ua, jcr, rc)) { goto bail_out; }
 
-  /*
-   * Run without prompting?
-   */
+  // Run without prompting?
   if (ua->batch || FindArg(ua, NT_("yes")) > 0) { goto start_job; }
 
   /*
@@ -449,9 +427,7 @@ try_again:
    */
   if (!DisplayJobParameters(ua, jcr, rc)) { goto bail_out; }
 
-  /*
-   * Prompt User until we have a valid response.
-   */
+  // Prompt User until we have a valid response.
   do {
     if (!GetCmd(ua, _("OK to run? (yes/mod/no): "))) { goto bail_out; }
 
@@ -478,9 +454,7 @@ try_again:
     }
   } while (!valid_response);
 
-  /*
-   * See if the .mod or mod has arguments.
-   */
+  // See if the .mod or mod has arguments.
   if (bstrncasecmp(ua->cmd, ".mod ", 5)
       || (bstrncasecmp(ua->cmd, "mod ", 4) && strlen(ua->cmd) > 6)) {
     ParseUaArgs(ua);
@@ -489,9 +463,7 @@ try_again:
     goto try_again;
   }
 
-  /*
-   * Allow the user to modify the settings
-   */
+  // Allow the user to modify the settings
   status = ModifyJobParameters(ua, jcr, rc);
   switch (status) {
     case 0:
@@ -526,9 +498,7 @@ try_again:
 
     jcr->impl->job_trigger = JobTrigger::kUser;
 
-    /*
-     * For interactive runs we send a message to the audit log
-     */
+    // For interactive runs we send a message to the audit log
     if (jcr->impl->IgnoreLevelPoolOverrides) {
       char buf[50];
       ua->LogAuditEventInfoMsg(_("Job queued. JobId=%s"),
@@ -566,9 +536,7 @@ int ModifyJobParameters(UaContext* ua, JobControlRecord* jcr, RunContext& rc)
 {
   int opt;
 
-  /*
-   * At user request modify parameters of job to be run.
-   */
+  // At user request modify parameters of job to be run.
   if (ua->cmd[0] != 0 && bstrncasecmp(ua->cmd, _("mod"), strlen(ua->cmd))) {
     StartPrompt(ua, _("Parameters to modify:\n"));
 
@@ -972,9 +940,7 @@ static bool ResetRestoreContext(UaContext* ua,
     rc.cloned = false;
   }
 
-  /*
-   * If pool changed, update migration write storage
-   */
+  // If pool changed, update migration write storage
   if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)
       || (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL))) {
     if (!SetMigrationWstorage(jcr, rc.pool, rc.next_pool,
@@ -1004,9 +970,7 @@ static bool ResetRestoreContext(UaContext* ua,
       }
       PmStrcpy(jcr->impl->vf_jobids, rc.jid);
     } else {
-      /*
-       * Note, this is also MigrateJobId and a VerifyJobId
-       */
+      // Note, this is also MigrateJobId and a VerifyJobId
       jcr->impl->RestoreJobId = str_to_int64(rc.jid);
     }
     rc.jid = NULL;
@@ -1801,14 +1765,10 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
     Dmsg2(800, "Doing arg %d = %s\n", i, ua->argk[i]);
     kw_ok = false;
 
-    /*
-     * Keep looking until we find a good keyword
-     */
+    // Keep looking until we find a good keyword
     for (j = 0; !kw_ok && kw[j]; j++) {
       if (Bstrcasecmp(ua->argk[i], kw[j])) {
-        /*
-         * Note, yes and run have no value, so do not fail
-         */
+        // Note, yes and run have no value, so do not fail
         if (!ua->argv[i] && j != YES_POS /*yes*/) {
           ua->SendMsg(_("Value missing for keyword %s\n"), ua->argk[i]);
           return false;
@@ -2065,9 +2025,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
       } /* end strcase compare */
     }   /* end keyword loop */
 
-    /*
-     * End of keyword for loop -- if not found, we got a bogus keyword
-     */
+    // End of keyword for loop -- if not found, we got a bogus keyword
     if (!kw_ok) {
       Dmsg1(800, "%s not found\n", ua->argk[i]);
       /*

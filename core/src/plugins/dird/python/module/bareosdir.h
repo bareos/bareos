@@ -42,13 +42,9 @@
 
 namespace directordaemon {
 
-/**
- * Python structures mapping C++ ones.
- */
+// Python structures mapping C++ ones.
 
-/**
- * Callback methods from Python.
- */
+// Callback methods from Python.
 static PyObject* PyBareosGetValue(PyObject* self, PyObject* args);
 static PyObject* PyBareosSetValue(PyObject* self, PyObject* args);
 static PyObject* PyBareosDebugMessage(PyObject* self, PyObject* args);

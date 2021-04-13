@@ -64,18 +64,14 @@ static int MyCompare(void* item1, void* item2)
   return comp;
 }
 
-/*
- * we expect, that the list is filled with strings of numbers from 0 to n.
- */
+// we expect, that the list is filled with strings of numbers from 0 to n.
 void TestForeachDlist(dlist* list)
 {
   ListItem* val = NULL;
   char buf[30];
   int i = 0;
 
-  /*
-   * test all available foreach loops
-   */
+  // test all available foreach loops
   foreach_dlist (val, list) {
     sprintf(buf, "%d", i);
     EXPECT_STREQ(val->buf, buf);

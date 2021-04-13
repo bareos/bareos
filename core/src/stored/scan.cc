@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MMVI
- */
+// Kern Sibbald, MMVI
 /**
  * scan.c scan a directory (on a removable file) for a valid
  * Volume name. If found, open the file for append.

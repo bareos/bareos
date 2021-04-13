@@ -241,9 +241,7 @@ int ndmca_tt_basic_getstate(struct ndm_session* sess)
   return 0; /* pass */
 }
 
-/*
- * Precedes tt_basic_read() so that we can make a "known" tape.
- */
+// Precedes tt_basic_read() so that we can make a "known" tape.
 int ndmca_tt_basic_write(struct ndm_session* sess)
 {
   int rc, ix;
@@ -255,9 +253,7 @@ int ndmca_tt_basic_write(struct ndm_session* sess)
   rc = ndmca_test_tape_write(sess, NDMP9_DEV_NOT_OPEN_ERR, buf, 1024);
   if (rc) return rc;
 
-  /*
-   * Write w/ read-only open mode
-   */
+  // Write w/ read-only open mode
   rc = ndmca_test_tape_open(sess, NDMP9_NO_ERR, 0, NDMP9_TAPE_READ_MODE);
   if (rc) return rc;
 
@@ -270,9 +266,7 @@ int ndmca_tt_basic_write(struct ndm_session* sess)
   rc = ndmca_test_tape_close(sess, NDMP9_NO_ERR);
   if (rc) return rc;
 
-  /*
-   * Write w/ bogus lengths
-   */
+  // Write w/ bogus lengths
   rc = ndmca_test_tape_open(sess, NDMP9_NO_ERR, 0, NDMP9_TAPE_RDWR_MODE);
   if (rc) return rc;
 
@@ -297,13 +291,9 @@ int ndmca_tt_basic_write(struct ndm_session* sess)
   rc = ndmca_test_tape_close(sess, NDMP9_NO_ERR);
   if (rc) return rc;
 
-  /*
-   * TODO: bogus length
-   */
+  // TODO: bogus length
 
-  /*
-   * Write works
-   */
+  // Write works
   rc = ndmca_test_tape_open(sess, NDMP9_NO_ERR, 0, NDMP9_TAPE_RDWR_MODE);
   if (rc) return rc;
 
@@ -323,9 +313,7 @@ int ndmca_tt_basic_write(struct ndm_session* sess)
 }
 
 
-/*
- * Assumes tt_basic_write() passed. Uses resulting tape.
- */
+// Assumes tt_basic_write() passed. Uses resulting tape.
 
 int ndmca_tt_basic_read(struct ndm_session* sess)
 {
@@ -339,9 +327,7 @@ int ndmca_tt_basic_read(struct ndm_session* sess)
   if (rc) return rc;
 
 
-  /*
-   * Read w/ bogus lengths -- mode=READ_MODE
-   */
+  // Read w/ bogus lengths -- mode=READ_MODE
   rc = ndmca_test_tape_open(sess, NDMP9_NO_ERR, 0, NDMP9_TAPE_READ_MODE);
   if (rc) return rc;
 
@@ -368,9 +354,7 @@ int ndmca_tt_basic_read(struct ndm_session* sess)
   rc = ndmca_test_tape_close(sess, NDMP9_NO_ERR);
   if (rc) return rc;
 
-  /*
-   * Read works -- mode=WRITE_MODE (just to mix it up)
-   */
+  // Read works -- mode=WRITE_MODE (just to mix it up)
   rc = ndmca_test_tape_open(sess, NDMP9_NO_ERR, 0, NDMP9_TAPE_RDWR_MODE);
   if (rc) return rc;
 

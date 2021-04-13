@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, December 2013
- */
+// Marco van Wieringen, December 2013
 /**
  * @file
  * This file contains the HTABLE abstraction of the accurate payload storage.
@@ -96,9 +94,7 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
 
 bool BareosAccurateFilelistHtable::EndLoad()
 {
-  /*
-   * Nothing to do.
-   */
+  // Nothing to do.
   return true;
 }
 
@@ -113,9 +109,7 @@ accurate_payload* BareosAccurateFilelistHtable::lookup_payload(char* fname)
 bool BareosAccurateFilelistHtable::UpdatePayload(char* fname,
                                                  accurate_payload* payload)
 {
-  /*
-   * Nothing to do.
-   */
+  // Nothing to do.
   return true;
 }
 

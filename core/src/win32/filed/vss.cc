@@ -41,9 +41,7 @@
 
 using namespace filedaemon;
 
-/*
- * { b5946137-7b9f-4925-af80-51abd60b20d5 }
- */
+// { b5946137-7b9f-4925-af80-51abd60b20d5 }
 static const GUID VSS_SWPRV_ProviderID
     = {0xb5946137,
        0x7b9f,
@@ -80,9 +78,7 @@ static bool VSSPathConvertW(const wchar_t* szFilePath,
 
 void VSSInit(JobControlRecord* jcr)
 {
-  /*
-   * Decide which vss class to initialize
-   */
+  // Decide which vss class to initialize
   if (g_MajorVersion == 5) {
     switch (g_MinorVersion) {
       case 1:
@@ -92,24 +88,18 @@ void VSSInit(JobControlRecord* jcr)
         jcr->impl->pVSSClient = new VSSClient2003();
         break;
     }
-    /*
-     * Vista or Longhorn or later
-     */
+    // Vista or Longhorn or later
   } else if (g_MajorVersion >= 6) {
     jcr->impl->pVSSClient = new VSSClientVista();
   }
 
-  /*
-   * Setup the callback functions.
-   */
+  // Setup the callback functions.
   if (!SetVSSPathConvert(VSSPathConvert, VSSPathConvertW)) {
     Jmsg(jcr, M_FATAL, 0, "Failed to setup VSS Path Conversion callbacks.\n");
   }
 }
 
-/*
- * Destructor
- */
+// Destructor
 VSSClient::~VSSClient()
 {
   /*
@@ -123,9 +113,7 @@ VSSClient::~VSSClient()
 
   DestroyWriterInfo();
 
-  /*
-   * Call CoUninitialize if the CoInitialize was performed successfully
-   */
+  // Call CoUninitialize if the CoInitialize was performed successfully
   if (bCoInitializeCalled_) { CoUninitialize(); }
 }
 
@@ -154,9 +142,7 @@ bool VSSClient::GetShadowPath(const char* szFilePath,
 {
   if (!bBackupIsInitialized_) return false;
 
-  /*
-   * Check for valid pathname
-   */
+  // Check for valid pathname
   bool bIsValidName;
 
   bIsValidName = strlen(szFilePath) > 3;
@@ -187,9 +173,7 @@ bool VSSClient::GetShadowPathW(const wchar_t* szFilePath,
 {
   if (!bBackupIsInitialized_) return false;
 
-  /*
-   * Check for valid pathname
-   */
+  // Check for valid pathname
   bool bIsValidName;
 
   bIsValidName = wcslen(szFilePath) > 3;
@@ -236,8 +220,6 @@ void VSSClient::AppendWriterInfo(int nState, const char* pszInfo)
   writer_info_.push_back(info);
 }
 
-/*
- * Note, this is called at the end of every job, so release all items
- */
+// Note, this is called at the end of every job, so release all items
 void VSSClient::DestroyWriterInfo() { writer_info_.clear(); }
 #endif

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, February MMII
- */
+// Kern Sibbald, February MMII
 /**
  * @file
  * BAREOS Director -- User Agent Database Purge Command
@@ -165,9 +163,7 @@ bool PurgeCmd(UaContext* ua, const char* cmd)
       break;
     /* Volume */
     case 2:
-      /*
-       * Store cmd for later reuse.
-       */
+      // Store cmd for later reuse.
       PmStrcpy(cmd_holder, ua->cmd);
       while ((i = FindArg(ua, NT_("volume"))) >= 0) {
         if (SelectMediaDbr(ua, &mr)) {
@@ -187,15 +183,11 @@ bool PurgeCmd(UaContext* ua, const char* cmd)
         }
       }
 
-      /*
-       * Restore ua args based on cmd_holder
-       */
+      // Restore ua args based on cmd_holder
       PmStrcpy(ua->cmd, cmd_holder);
       ParseArgs(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
 
-      /*
-       * Perform ActionOnPurge (action=truncate)
-       */
+      // Perform ActionOnPurge (action=truncate)
       if (FindArg(ua, "action") >= 0) { return ActionOnPurgeCmd(ua, ua->cmd); }
       return true;
     /* Quota */
@@ -326,9 +318,7 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 }
 
 
-/**
- * Remove File records from a list of JobIds
- */
+// Remove File records from a list of JobIds
 void PurgeFilesFromJobs(UaContext* ua, const char* jobs)
 {
   PoolMem query(PM_MESSAGE);
@@ -481,9 +471,7 @@ void UpgradeCopies(UaContext* ua, const char* jobs)
   DbUnlock(ua->db);
 }
 
-/**
- * Remove all records from catalog for a list of JobIds
- */
+// Remove all records from catalog for a list of JobIds
 void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
 {
   PoolMem query(PM_MESSAGE);
@@ -549,16 +537,12 @@ bool PurgeJobsFromVolume(UaContext* ua, MediaDbRecord* mr, bool force)
     return false;
   }
 
-  /*
-   * Check if he wants to purge a single jobid
-   */
+  // Check if he wants to purge a single jobid
   i = FindArgWithValue(ua, "jobid");
   if (i >= 0 && Is_a_number_list(ua->argv[i])) {
     jobids = std::string(ua->argv[i]);
   } else {
-    /*
-     * Purge ALL JobIds
-     */
+    // Purge ALL JobIds
     if (!ua->db->GetVolumeJobids(ua->jcr, mr, &lst)) {
       ua->ErrorMsg("%s", ua->db->strerror());
       Dmsg0(050, "Count failed\n");
@@ -643,14 +627,10 @@ static void do_truncate_on_purge(UaContext* ua,
   bool ok = false;
   uint64_t VolBytes = 0;
 
-  /*
-   * TODO: Return if not mr->Recyle ?
-   */
+  // TODO: Return if not mr->Recyle ?
   if (!mr->Recycle) { return; }
 
-  /*
-   * Do it only if action on purge = truncate is set
-   */
+  // Do it only if action on purge = truncate is set
   if (!(mr->ActionOnPurge & ON_PURGE_TRUNCATE)) {
     ua->ErrorMsg(_("\nThe option \"Action On Purge = Truncate\" was not "
                    "defined in the Pool resource.\n"
@@ -664,25 +644,19 @@ static void do_truncate_on_purge(UaContext* ua,
    * is disabled for the specific device, this will be a no-op.
    */
 
-  /*
-   * Protect us from spaces
-   */
+  // Protect us from spaces
   BashSpaces(mr->VolumeName);
   BashSpaces(mr->MediaType);
   BashSpaces(pool);
   BashSpaces(storage);
 
-  /*
-   * Do it by relabeling the Volume, which truncates it
-   */
+  // Do it by relabeling the Volume, which truncates it
   sd->fsend(
       "relabel %s OldName=%s NewName=%s PoolName=%s "
       "MediaType=%s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d\n",
       storage, mr->VolumeName, mr->VolumeName, pool, mr->MediaType, mr->Slot,
       drive,
-      /*
-       * If relabeling, keep blocksize settings
-       */
+      // If relabeling, keep blocksize settings
       mr->MinBlocksize, mr->MaxBlocksize);
 
   UnbashSpaces(mr->VolumeName);
@@ -690,9 +664,7 @@ static void do_truncate_on_purge(UaContext* ua,
   UnbashSpaces(pool);
   UnbashSpaces(storage);
 
-  /*
-   * Send relabel command, and check for valid response
-   */
+  // Send relabel command, and check for valid response
   while (sd->recv() >= 0) {
     ua->SendMsg("%s", sd->msg);
     if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
@@ -734,9 +706,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
 
   PmStrcpy(volumes, "");
 
-  /*
-   * Look at arguments
-   */
+  // Look at arguments
   for (int i = 1; i < ua->argc; i++) {
     if (Bstrcasecmp(ua->argk[i], NT_("allpools"))) {
       allpools = true;
@@ -761,9 +731,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
     }
   }
 
-  /*
-   * Choose storage
-   */
+  // Choose storage
   ua->jcr->impl->res.write_storage = store = get_storage_resource(ua);
   if (!store) { goto bail_out; }
 
@@ -783,9 +751,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
   }
 
   if (!allpools) {
-    /*
-     * Force pool selection
-     */
+    // Force pool selection
     pool = get_pool_resource(ua);
     if (!pool) {
       Dmsg0(100, "Can't get pool resource\n");
@@ -823,9 +789,7 @@ static bool ActionOnPurgeCmd(UaContext* ua, const char* cmd)
     goto bail_out;
   }
 
-  /*
-   * Loop over the candidate Volumes and actually truncate them
-   */
+  // Loop over the candidate Volumes and actually truncate them
   for (int i = 0; i < nb; i++) {
     MediaDbRecord mr_temp;
     mr_temp.MediaId = results[i];
@@ -870,18 +834,14 @@ bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr)
     PmStrcpy(jcr->VolumeName, mr->VolumeName);
     GeneratePluginEvent(jcr, bDirEventVolumePurged);
 
-    /*
-     * If the RecyclePool is defined, move the volume there
-     */
+    // If the RecyclePool is defined, move the volume there
     if (mr->RecyclePoolId && mr->RecyclePoolId != mr->PoolId) {
       PoolDbRecord oldpr, newpr;
       newpr.PoolId = mr->RecyclePoolId;
       oldpr.PoolId = mr->PoolId;
       if (ua->db->GetPoolRecord(jcr, &oldpr)
           && ua->db->GetPoolRecord(jcr, &newpr)) {
-        /*
-         * Check if destination pool size is ok
-         */
+        // Check if destination pool size is ok
         if (newpr.MaxVols > 0 && newpr.NumVols >= newpr.MaxVols) {
           ua->ErrorMsg(_("Unable move recycled Volume in full "
                          "Pool \"%s\" MaxVols=%d\n"),
@@ -895,9 +855,7 @@ bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr)
       }
     }
 
-    /*
-     * Send message to Job report, if it is a *real* job
-     */
+    // job
     if (jcr->JobId > 0) {
       Jmsg(jcr, M_INFO, 0,
            _("All records pruned from Volume \"%s\"; marking it \"Purged\"\n"),

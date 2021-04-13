@@ -313,9 +313,7 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
   }
 }
 
-/**
- * Modify the Pool in which this Volume is located
- */
+// Modify the Pool in which this Volume is located
 void UpdateVolPool(UaContext* ua,
                    char* val,
                    MediaDbRecord* mr,
@@ -348,9 +346,7 @@ void UpdateVolPool(UaContext* ua,
   DbUnlock(ua->db);
 }
 
-/**
- * Modify the RecyclePool of a Volume
- */
+// Modify the RecyclePool of a Volume
 void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
 {
   PoolDbRecord pr;
@@ -359,17 +355,13 @@ void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
   const char* poolname;
 
   if (val && *val) { /* update volume recyclepool="Scratch" */
-    /*
-     * If a pool name is given, look up the PoolId
-     */
+    // If a pool name is given, look up the PoolId
     bstrncpy(pr.Name, val, sizeof(pr.Name));
     if (!GetPoolDbr(ua, &pr, NT_("recyclepool"))) { return; }
     mr->RecyclePoolId = pr.PoolId; /* get the PoolId */
     poolname = pr.Name;
   } else { /* update volume recyclepool="" */
-    /*
-     * If no pool name is given, set the PoolId to 0 (the default)
-     */
+    // If no pool name is given, set the PoolId to 0 (the default)
     mr->RecyclePoolId = 0;
     poolname = _("*None*");
   }
@@ -385,9 +377,7 @@ void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
   DbUnlock(ua->db);
 }
 
-/**
- * Modify the Storage in which this Volume is located
- */
+// Modify the Storage in which this Volume is located
 void UpdateVolStorage(UaContext* ua, char* val, MediaDbRecord* mr)
 {
   StorageDbRecord sr;
@@ -408,9 +398,7 @@ void UpdateVolStorage(UaContext* ua, char* val, MediaDbRecord* mr)
   DbUnlock(ua->db);
 }
 
-/**
- * Refresh the Volume information from the Pool record
- */
+// Refresh the Volume information from the Pool record
 static void UpdateVolFromPool(UaContext* ua, MediaDbRecord* mr)
 {
   PoolDbRecord pr;
@@ -429,9 +417,7 @@ static void UpdateVolFromPool(UaContext* ua, MediaDbRecord* mr)
   }
 }
 
-/**
- * Refresh the Volume information from the Pool record for all Volumes
- */
+// Refresh the Volume information from the Pool record for all Volumes
 static void UpdateAllVolsFromPool(UaContext* ua, const char* pool_name)
 {
   PoolDbRecord pr;
@@ -470,9 +456,7 @@ static void UpdateAllVols(UaContext* ua)
       continue;
     }
 
-    /*
-     * Check access to pool.
-     */
+    // Check access to pool.
     if (!ua->AclAccessOk(Pool_ACL, pr.Name, false)) { continue; }
 
     SetPoolDbrDefaultsInMediaDbr(&mr, &pr);
@@ -857,9 +841,7 @@ static bool UpdateVolume(UaContext* ua)
   return true;
 }
 
-/**
- * Update long term statistics
- */
+// Update long term statistics
 static bool UpdateStats(UaContext* ua)
 {
   int i = FindArgWithValue(ua, NT_("days"));
@@ -873,9 +855,7 @@ static bool UpdateStats(UaContext* ua)
   return true;
 }
 
-/**
- * Update pool record -- pull info from current POOL resource
- */
+// Update pool record -- pull info from current POOL resource
 static bool UpdatePool(UaContext* ua)
 {
   int id;
@@ -906,9 +886,7 @@ static bool UpdatePool(UaContext* ua)
   return true;
 }
 
-/**
- * Update a Job record -- allows to change the fields in a Job record.
- */
+// Update a Job record -- allows to change the fields in a Job record.
 static bool UpdateJob(UaContext* ua)
 {
   int i;
@@ -1008,9 +986,7 @@ static bool UpdateJob(UaContext* ua)
   return true;
 }
 
-/**
- * Update Slots corresponding to Volumes in autochanger
- */
+// Update Slots corresponding to Volumes in autochanger
 static void UpdateSlots(UaContext* ua)
 {
   UnifiedStorageResource store;
@@ -1062,30 +1038,22 @@ static void UpdateSlots(UaContext* ua)
     goto bail_out;
   }
 
-  /*
-   * First zap out any InChanger with StorageId=0
-   */
+  // First zap out any InChanger with StorageId=0
   ua->db->SqlQuery("UPDATE Media SET InChanger=0 WHERE StorageId=0");
 
-  /*
-   * Walk through the list updating the media records
-   */
+  // Walk through the list updating the media records
   foreach_dlist (vl, vol_list->contents) {
     if (vl->bareos_slot_number > max_slots) {
       ua->WarningMsg(_("Slot %d greater than max %d ignored.\n"),
                      vl->bareos_slot_number, max_slots);
       continue;
     }
-    /*
-     * Check if user wants us to look at this slot
-     */
+    // Check if user wants us to look at this slot
     if (!BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
       Dmsg1(100, "Skipping slot=%d\n", vl->bareos_slot_number);
       continue;
     }
-    /*
-     * If scanning, we read the label rather than the barcode
-     */
+    // If scanning, we read the label rather than the barcode
     if (scan) {
       if (vl->VolName) {
         free(vl->VolName);
@@ -1110,9 +1078,7 @@ static void UpdateSlots(UaContext* ua)
     Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
     DbLock(ua->db);
-    /*
-     * Set InChanger to zero for this Slot
-     */
+    // Set InChanger to zero for this Slot
     ua->db->MakeInchangerUnique(ua->jcr, &mr);
     DbUnlock(ua->db);
     Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
@@ -1132,9 +1098,7 @@ static void UpdateSlots(UaContext* ua)
     if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
       Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
             mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
-      /*
-       * If Slot, Inchanger, and StorageId have changed, update the Media record
-       */
+      // If Slot, Inchanger, and StorageId have changed, update the Media record
       if (mr.Slot != vl->bareos_slot_number || !mr.InChanger
           || mr.StorageId != store.store->StorageId) {
         mr.Slot = vl->bareos_slot_number;
@@ -1164,15 +1128,11 @@ static void UpdateSlots(UaContext* ua)
     mr.InChanger = 1;
     SetStorageidInMr(store.store, &mr);
 
-    /*
-     * Any slot not visited gets it Inchanger flag reset.
-     */
+    // Any slot not visited gets it Inchanger flag reset.
     DbLock(ua->db);
     for (i = 1; i <= max_slots; i++) {
       if (BitIsSet(i - 1, slot_list)) {
-        /*
-         * Set InChanger to zero for this Slot
-         */
+        // Set InChanger to zero for this Slot
         mr.Slot = i;
         ua->db->MakeInchangerUnique(ua->jcr, &mr);
       }
@@ -1207,13 +1167,9 @@ void UpdateSlotsFromVolList(UaContext* ua,
 
   if (!OpenClientDb(ua)) { return; }
 
-  /*
-   * Walk through the list updating the media records
-   */
+  // Walk through the list updating the media records
   foreach_dlist (vl, vol_list->contents) {
-    /*
-     * We are only interested in normal slots.
-     */
+    // We are only interested in normal slots.
     switch (vl->slot_type) {
       case slot_type_t::kSlotTypeStorage:
         break;
@@ -1221,14 +1177,10 @@ void UpdateSlotsFromVolList(UaContext* ua,
         continue;
     }
 
-    /*
-     * Only update entries of slots marked in the slot_list.
-     */
+    // Only update entries of slots marked in the slot_list.
     if (!BitIsSet(vl->bareos_slot_number - 1, slot_list)) { continue; }
 
-    /*
-     * Set InChanger to zero for this Slot
-     */
+    // Set InChanger to zero for this Slot
     MediaDbRecord mr;
     mr.Slot = vl->bareos_slot_number;
     mr.InChanger = 1;

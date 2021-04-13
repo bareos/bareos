@@ -3,9 +3,7 @@
 #include <assert.h>
 #include <sys/param.h>
 
-/*
- * Scenario: simple put (object)
- */
+// Scenario: simple put (object)
 
 int main(int argc, char** argv)
 {

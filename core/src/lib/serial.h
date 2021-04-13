@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by John Walker, MM
- */
+// Written by John Walker, MM
 /**
  * @file
  *  Serialisation support functions from serial.c

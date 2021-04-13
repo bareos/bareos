@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /*
  * Some elementary bit manipulations
  * NOTE:  base 0
@@ -30,52 +28,36 @@
 #ifndef BAREOS_LIB_BITS_H_
 #define BAREOS_LIB_BITS_H_
 
-/*
- * Number of bytes to hold n bits
- */
+// Number of bytes to hold n bits
 #define NbytesForBits(n) ((((n)-1) >> 3) + 1)
 
-/*
- * Test if bit is set
- */
+// Test if bit is set
 #define BitIsSet(b, var) (((var)[(b) >> 3] & (1 << ((b)&0x7))) != 0)
 
-/*
- * Set bit
- */
+// Set bit
 #define SetBit(b, var) ((var)[(b) >> 3] |= (1 << ((b)&0x7)))
 
-/*
- * Clear bit
- */
+// Clear bit
 #define ClearBit(b, var) ((var)[(b) >> 3] &= ~(1 << ((b)&0x7)))
 
-/*
- * Clear all bits
- */
+// Clear all bits
 #define ClearAllBits(b, var) memset((var), 0, NbytesForBits((b)))
 
-/*
- * Set range of bits
- */
+// Set range of bits
 #define SetBitRange(f, l, var)                             \
   {                                                        \
     int bit;                                               \
     for (bit = (f); bit <= (l); bit++) SetBit(bit, (var)); \
   }
 
-/*
- * Clear range of bits
- */
+// Clear range of bits
 #define ClearBitRange(f, l, var)                             \
   {                                                          \
     int bit;                                                 \
     for (bit = (f); bit <= (l); bit++) ClearBit(bit, (var)); \
   }
 
-/*
- * Clone all set bits from var1 to var2
- */
+// Clone all set bits from var1 to var2
 #define CopySetBits(l, var1, var2)                    \
   {                                                   \
     int bit;                                          \
@@ -83,9 +65,7 @@
       if (BitIsSet(bit, (var1))) SetBit(bit, (var2)); \
   }
 
-/*
- * Copy all bits from var1 to var2
- */
+// Copy all bits from var1 to var2
 #define CopyBits(b, var1, var2) memcpy((var2), (var1), NbytesForBits((b)))
 
 #endif  // BAREOS_LIB_BITS_H_

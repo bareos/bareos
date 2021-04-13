@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March 2000
- */
+// Kern Sibbald, March 2000
 /**
  * @file
  * BAREOS Catalog Database Create record interface routines
@@ -44,9 +42,7 @@ static const int dbglevel = 100;
  * -----------------------------------------------------------------------
  */
 
-/**
- * Forward referenced subroutines
- */
+// Forward referenced subroutines
 
 /**
  * Create a new record for the Job
@@ -141,9 +137,7 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
     Mmsg2(errmsg, _("Create JobMedia record %s failed: ERR=%s\n"), cmd,
           sql_strerror());
   } else {
-    /*
-     * Worked, now update the Media record with the EndFile and EndBlock
-     */
+    // Worked, now update the Media record with the EndFile and EndBlock
     Mmsg(cmd, "UPDATE Media SET EndFile=%u, EndBlock=%u WHERE MediaId=%u",
          jm->EndFile, jm->EndBlock, jm->MediaId);
     if (!UPDATE_DB(jcr, cmd)) {
@@ -251,9 +245,7 @@ bool BareosDb::CreateDeviceRecord(JobControlRecord* jcr, DeviceDbRecord* dr)
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
 
-    /*
-     * If more than one, report error, but return first row
-     */
+    // If more than one, report error, but return first row
     if (num_rows > 1) {
       Mmsg1(errmsg, _("More than one Device!: %d\n"), num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -313,14 +305,10 @@ bool BareosDb::CreateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
 
   sr->StorageId = 0;
   sr->created = false;
-  /*
-   * Check if it already exists
-   */
+  // Check if it already exists
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
-    /*
-     * If more than one, report error, but return first row
-     */
+    // If more than one, report error, but return first row
     if (num_rows > 1) {
       Mmsg1(errmsg, _("More than one Storage record!: %d\n"), num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -535,9 +523,7 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
   cr->ClientId = 0;
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
-    /*
-     * If more than one, report error, but return first row
-     */
+    // If more than one, report error, but return first row
     if (num_rows > 1) {
       Mmsg1(errmsg, _("More than one Client!: %d\n"), num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -617,9 +603,7 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
             edit_uint64(num_rows, ed1), path);
       Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
     }
-    /*
-     * Even if there are multiple paths, take the first one
-     */
+    // Even if there are multiple paths, take the first one
     if (num_rows >= 1) {
       if ((row = SqlFetchRow()) == NULL) {
         Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
@@ -631,9 +615,7 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
       }
       ar->PathId = str_to_int64(row[0]);
       SqlFreeResult();
-      /*
-       * Cache path
-       */
+      // Cache path
       if (ar->PathId != cached_path_id) {
         cached_path_id = ar->PathId;
         cached_path_len = pnl;
@@ -657,9 +639,7 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
     goto bail_out;
   }
 
-  /*
-   * Cache path
-   */
+  // Cache path
   if (ar->PathId != cached_path_id) {
     cached_path_id = ar->PathId;
     cached_path_len = pnl;
@@ -906,9 +886,7 @@ bool BareosDb::CreateBatchFileAttributesRecord(JobControlRecord* jcr,
     jcr->db_batch->WriteBatchFileRecords(jcr);
   }
 
-  /*
-   * Open the dedicated connection
-   */
+  // Open the dedicated connection
   if (!jcr->batch_started) {
     if (!OpenBatchConnection(jcr)) { return false; /* error already printed */ }
     if (!jcr->db_batch->SqlBatchStartFileTable(jcr)) {
@@ -1018,9 +996,7 @@ bool BareosDb::CreateAttributesRecord(JobControlRecord* jcr,
   bool retval;
 
   errmsg[0] = 0;
-  /*
-   * Make sure we have an acceptable attributes record.
-   */
+  // Make sure we have an acceptable attributes record.
   if (!ar) {
     Mmsg0(errmsg, _("Attempt to create file attributes record with no data\n"));
     Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
@@ -1037,9 +1013,7 @@ bool BareosDb::CreateAttributesRecord(JobControlRecord* jcr,
   if (ar->FileType != FT_BASE) {
     if (BatchInsertAvailable()) {
       retval = CreateBatchFileAttributesRecord(jcr, ar);
-      /*
-       * Error message already printed
-       */
+      // Error message already printed
     } else {
       retval = CreateFileAttributesRecord(jcr, ar);
     }
@@ -1084,9 +1058,7 @@ bool BareosDb::CreateBaseFileAttributesRecord(JobControlRecord* jcr,
   return retval;
 }
 
-/**
- * Cleanup the base file temporary tables
- */
+// Cleanup the base file temporary tables
 void BareosDb::CleanupBaseFile(JobControlRecord* jcr)
 {
   PoolMem buf(PM_MESSAGE);
@@ -1370,9 +1342,7 @@ bool BareosDb::CreateJobStatistics(JobControlRecord* jcr,
 
   bstrutime(dt, sizeof(dt), stime);
 
-  /*
-   * Create job statistics record
-   */
+  // Create job statistics record
   Mmsg(cmd,
        "INSERT INTO JobStats (SampleTime, JobId, JobFiles, JobBytes, DeviceId)"
        " VALUES ('%s', %s, %s, %s, %s)",

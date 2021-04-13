@@ -54,9 +54,7 @@ bool BareosDbPostgresql::SqlBatchStartFileTable(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * We are starting a new query.  reset everything.
-   */
+  // We are starting a new query.  reset everything.
   num_rows_ = -1;
   row_number_ = -1;
   field_number_ = -1;
@@ -75,9 +73,7 @@ bool BareosDbPostgresql::SqlBatchStartFileTable(JobControlRecord* jcr)
 
   status_ = PQresultStatus(result_);
   if (status_ == PGRES_COPY_IN) {
-    /*
-     * How many fields in the set?
-     */
+    // How many fields in the set?
     num_fields_ = (int)PQnfields(result_);
     num_rows_ = 0;
     status_ = 1;
@@ -98,9 +94,7 @@ bail_out:
   return false;
 }
 
-/**
- * Set error to something to abort operation
- */
+// Set error to something to abort operation
 bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord* jcr,
                                               const char* error)
 {
@@ -126,9 +120,7 @@ bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord* jcr,
     Dmsg1(500, "failure %s\n", errmsg);
   }
 
-  /*
-   * Check command status and return to normal libpq state
-   */
+  // Check command status and return to normal libpq state
   pg_result = PQgetResult(db_handle_);
   if (PQresultStatus(pg_result) != PGRES_COMMAND_OK) {
     Mmsg1(errmsg, _("error ending batch mode: %s"), PQerrorMessage(db_handle_));

@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, May 2015
- */
+// Marco van Wieringen, May 2015
 /**
  * @file
  * FHDB helper routines for NDMP Data Management Application (DMA)
@@ -121,9 +119,7 @@ void NdmpConvertFstat(ndmp9_file_stat* fstat,
 {
   struct stat statp;
 
-  /*
-   * Convert the NDMP file_stat structure into a UNIX one.
-   */
+  // Convert the NDMP file_stat structure into a UNIX one.
   memset(&statp, 0, sizeof(statp));
 
   Dmsg11(100,
@@ -134,9 +130,7 @@ void NdmpConvertFstat(ndmp9_file_stat* fstat,
          fstat->mode.value, fstat->size.value, fstat->links.value,
          fstat->node.value, fstat->fh_info.value);
 
-  /*
-   * If we got a valid mode of the file fill the UNIX stat struct.
-   */
+  // If we got a valid mode of the file fill the UNIX stat struct.
   if (fstat->mode.valid == NDMP9_VALIDITY_VALID) {
     switch (fstat->ftype) {
       case NDMP9_FILE_DIR:
@@ -204,9 +198,7 @@ void NdmpConvertFstat(ndmp9_file_stat* fstat,
     }
   }
 
-  /*
-   * Encode a stat structure into an ASCII string.
-   */
+  // Encode a stat structure into an ASCII string.
   EncodeStat(attribs.c_str(), &statp, sizeof(statp), FileIndex,
              STREAM_UNIX_ATTRIBUTES);
 }

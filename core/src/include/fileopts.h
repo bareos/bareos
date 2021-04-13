@@ -74,14 +74,10 @@ enum
   FO_FORCE_ENCRYPT = 32 /**< Force encryption */
 };
 
-/**
- * Keep this set to the last entry in the enum.
- */
+// Keep this set to the last entry in the enum.
 #define FO_MAX FO_FORCE_ENCRYPT
 
-/**
- * Make sure you have enough bits to store all above bit fields.
- */
+// Make sure you have enough bits to store all above bit fields.
 #define FOPTS_BYTES NbytesForBits(FO_MAX + 1)
 
 #endif  // BAREOS_INCLUDE_FILEOPTS_H_

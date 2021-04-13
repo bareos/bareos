@@ -58,9 +58,7 @@ VolumeReservationItem* read_vol_walk_start();
 VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol);
 void ReadVolWalkEnd(VolumeReservationItem* vol);
 
-/**
- * Volume reservation class -- see vol_mgr.c and reserve.c
- */
+// Volume reservation class -- see vol_mgr.c and reserve.c
 class VolumeReservationItem {
   bool swapping_{false};          /**< set when swapping to another drive */
   bool in_use_{false};            /**< set when volume reserved or in use */

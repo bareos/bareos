@@ -36,9 +36,7 @@
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_UTILS_H_
 
 #include <stdarg.h>
-/*
- * general
- */
+// general
 #if defined(SOLARIS) || defined(__sun__)
 #  include <sys/filio.h>  //FIONBIO
 #  include <strings.h>
@@ -51,9 +49,7 @@
 #endif
 
 
-/*
- * endianness
- */
+// endianness
 #if defined(SOLARIS) || defined(__sun__)
 #  include <sys/isa_defs.h>
 #  define __LITTLE_ENDIAN 1234

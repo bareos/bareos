@@ -20,9 +20,7 @@
    02110-1301, USA.
 */
 
-/**
- * Assertion definitions
- */
+// Assertion definitions
 
 #ifndef BAREOS_TOOLS_ASSERT_MACRO_H_
 #define BAREOS_TOOLS_ASSERT_MACRO_H_

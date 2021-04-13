@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, August MMII
- */
+// Kern Sibbald, August MMII
 /**
  * @file
  * Routines for handling mounting tapes for reading and for writing.
@@ -96,13 +94,9 @@ bool DeviceControlRecord::MountNextWriteVolume()
 
 mount_next_vol:
   Dmsg1(150, "mount_next_vol retry=%d\n", retry);
-  /*
-   * Ignore retry if this is poll request
-   */
+  // Ignore retry if this is poll request
   if (retry++ > 4) {
-    /*
-     * Last ditch effort before giving up, force operator to respond
-     */
+    // Last ditch effort before giving up, force operator to respond
     VolCatInfo.Slot = 0;
     V(mount_mutex);
     if (!dcr->DirAskSysopToMountVolume(ST_APPENDREADY)) {
@@ -169,17 +163,13 @@ mount_next_vol:
       break;
     case -2:
     case -1:
-      /*
-       * -1 => error on autochanger
-       */
+      // -1 => error on autochanger
       autochanger = false;
       VolCatInfo.Slot = 0;
       ask = retry >= 2;
       break;
     case 0:
-      /*
-       * 0 => failure (no changer available)
-       */
+      // 0 => failure (no changer available)
       autochanger = false;
       VolCatInfo.Slot = 0;
 
@@ -195,9 +185,7 @@ mount_next_vol:
       }
       break;
     default:
-      /*
-       * Success
-       */
+      // Success
       autochanger = true;
       ask = false;
       break;
@@ -215,9 +203,7 @@ mount_next_vol:
     ask = false; /* don't ask SYSOP this time */
   }
 
-  /*
-   * Don't ask if not removable
-   */
+  // Don't ask if not removable
   if (!dev->IsRemovable()) {
     Dmsg0(250, "(2)Ask=0\n");
     ask = false;
@@ -244,18 +230,14 @@ mount_next_vol:
     FreeVolume(dev);
   }
 
-  /*
-   * Ensure the device is open
-   */
+  // Ensure the device is open
   if (dev->HasCap(CAP_STREAM)) {
     mode = DeviceMode::OPEN_WRITE_ONLY;
   } else {
     mode = DeviceMode::OPEN_READ_WRITE;
   }
 
-  /*
-   * Try autolabel if enabled
-   */
+  // Try autolabel if enabled
   if (!dev->open(dcr, mode)) {
     TryAutolabel(false); /* try to create a new volume label */
   }
@@ -281,9 +263,7 @@ mount_next_vol:
     goto mount_next_vol;
   }
 
-  /*
-   * Now check the volume label to make sure we have the right tape mounted
-   */
+  // Now check the volume label to make sure we have the right tape mounted
 read_volume:
   switch (CheckVolumeLabel(ask, autochanger)) {
     case check_next_vol:
@@ -298,18 +278,14 @@ read_volume:
     case check_ok:
       break;
   }
-  /*
-   * Check that volcatinfo is good
-   */
+  // Check that volcatinfo is good
   if (!dev->haveVolCatInfo()) {
     Dmsg0(210, "Do not have volcatinfo\n");
     if (!find_a_volume()) { goto mount_next_vol; }
 
     dev->VolCatInfo = VolCatInfo; /* structure assignment */
 
-    /*
-     * Apply the Volume Blocksizes to device
-     */
+    // Apply the Volume Blocksizes to device
     dcr->VolMinBlocksize = VolCatInfo.VolMinBlocksize;
     dcr->VolMaxBlocksize = VolCatInfo.VolMaxBlocksize;
     Dmsg3(200,
@@ -317,9 +293,7 @@ read_volume:
           "%u, dcr->VolMaxBlocksize set to %u\n",
           dev->print_name(), dcr->VolMinBlocksize, dcr->VolMaxBlocksize);
 
-    /*
-     * Set the block sizes of the dcr in the device.
-     */
+    // Set the block sizes of the dcr in the device.
     dev->SetBlocksizes(dcr);
   }
 
@@ -406,9 +380,7 @@ bool DeviceControlRecord::find_a_volume()
   if (!IsSuitableVolumeMounted()) {
     bool have_vol = false;
 
-    /*
-     * Do we have a candidate volume?
-     */
+    // Do we have a candidate volume?
     if (dev->vol) {
       bstrncpy(VolumeName, dev->vol->vol_name, sizeof(VolumeName));
       have_vol = dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE);
@@ -545,9 +517,7 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
       }
       break; /* got a Volume */
     }
-    /*
-     * At this point, we assume we have a blank tape mounted.
-     */
+    // At this point, we assume we have a blank tape mounted.
     case VOL_IO_ERROR:
       /* Fall through wanted */
     case VOL_NO_LABEL:
@@ -826,9 +796,7 @@ int DeviceControlRecord::TryAutolabel(bool opened)
   return try_default;
 }
 
-/**
- * Mark volume in error in catalog
- */
+// Mark volume in error in catalog
 void DeviceControlRecord::MarkVolumeInError()
 {
   DeviceControlRecord* dcr = this;
@@ -880,9 +848,7 @@ void DeviceControlRecord::ReleaseVolume()
     Jmsg0(jcr, M_ERROR, 0, _("Hey!!!!! WroteVol non-zero !!!!!\n"));
     Pmsg0(190, "Hey!!!!! WroteVol non-zero !!!!!\n");
   }
-  /*
-   * First erase all memory of the current volume
-   */
+  // First erase all memory of the current volume
   FreeVolume(dev);
   dev->block_num = dev->file = 0;
   dev->EndBlock = dev->EndFile = 0;
@@ -890,9 +856,7 @@ void DeviceControlRecord::ReleaseVolume()
   dev->VolCatInfo = empty_VolumeCatalogInfo;
   dev->ClearVolhdr();
 
-  /*
-   * Force re-read of label
-   */
+  // Force re-read of label
   dev->ClearLabeled();
   dev->ClearRead();
   dev->ClearAppend();
@@ -903,9 +867,7 @@ void DeviceControlRecord::ReleaseVolume()
     dev->close(dcr);
   }
 
-  /*
-   * If we have not closed the device, then at least rewind the tape
-   */
+  // If we have not closed the device, then at least rewind the tape
   if (dev->IsOpen()) { dev->OfflineOrRewind(); }
   Dmsg0(190, "ReleaseVolume\n");
 }
@@ -958,9 +920,7 @@ bool MountNextReadVolume(DeviceControlRecord* dcr)
         jcr->impl->CurReadVolume);
 
   VolumeUnused(dcr); /* release current volume */
-  /*
-   * End Of Tape -- mount next Volume (if another specified)
-   */
+  // End Of Tape -- mount next Volume (if another specified)
   if (jcr->impl->NumReadVolumes > 1
       && jcr->impl->CurReadVolume < jcr->impl->NumReadVolumes) {
     dev->Lock();

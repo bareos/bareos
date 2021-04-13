@@ -30,21 +30,15 @@
 #define NEED_JANSSON_NAMESPACE 1
 #include "lib/output_formatter.h"
 
-/**
- * Actual output formatter class.
- */
+// Actual output formatter class.
 class OutputFormatterResource {
  private:
-  /*
-   * Members
-   */
+  // Members
   OutputFormatter* send_;
   int indent_level_ = 0;
 
  private:
-  /*
-   * Methods
-   */
+  // Methods
   bool requiresEscaping(const char* o);
   void KeyMultipleStringsOnePerLineAddItem(const char* key,
                                            const char* item,
@@ -54,9 +48,7 @@ class OutputFormatterResource {
 
 
  public:
-  /*
-   * Methods
-   */
+  // Methods
   OutputFormatterResource(OutputFormatter* send, int indent_level = 0);
   ~OutputFormatterResource();
 

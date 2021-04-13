@@ -24,9 +24,7 @@
 #ifndef BAREOS_LIB_KEYWORD_TABLE_S_H_
 #define BAREOS_LIB_KEYWORD_TABLE_S_H_
 
-/*
- * Used for certain KeyWord tables
- */
+// Used for certain KeyWord tables
 struct s_kw {
   const char* name;
   uint32_t token;

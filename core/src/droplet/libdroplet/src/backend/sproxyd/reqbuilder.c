@@ -116,9 +116,7 @@ dpl_status_t dpl_sproxyd_req_build(const dpl_req_t* req,
     goto end;
   }
 
-  /*
-   * per method headers
-   */
+  // per method headers
   if (DPL_METHOD_GET == req->method || DPL_METHOD_HEAD == req->method) {
     if (req->range_enabled) {
       ret2 = dpl_add_range_to_headers(&req->range, headers);
@@ -184,9 +182,7 @@ dpl_status_t dpl_sproxyd_req_build(const dpl_req_t* req,
     goto end;
   }
 
-  /*
-   * common headers
-   */
+  // common headers
 
   ret2 = dpl_add_condition_to_headers(&req->condition, headers);
   if (DPL_SUCCESS != ret2) {

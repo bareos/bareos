@@ -311,9 +311,7 @@ START_TEST(s3_auth_headers_test5)
 }
 END_TEST
 
-/**
- * @todo Fix dpl_s3_make_signature_v2() for support uppercase x-amz-* header
- */
+// header
 
 START_TEST(s3_auth_headers_test6)
 {
@@ -455,9 +453,7 @@ START_TEST(s3_auth_headers_test7)
 }
 END_TEST
 
-/**
- * @todo Correct dpl_url_encode() for support already encoded character
- */
+// @todo Correct dpl_url_encode() for support already encoded character
 
 START_TEST(s3_auth_headers_test8)
 {

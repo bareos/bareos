@@ -52,9 +52,7 @@
  * -----------------------------------------------------------------------
  */
 
-/**
- * List of open databases
- */
+// List of open databases
 static dlist* db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -73,9 +71,7 @@ BareosDbMysql::BareosDbMysql(JobControlRecord* jcr,
                              bool exit_on_fatal,
                              bool need_private)
 {
-  /*
-   * Initialize the parent class members.
-   */
+  // Initialize the parent class members.
   db_interface_type_ = SQL_INTERFACE_TYPE_MYSQL;
   db_type_ = SQL_TYPE_MYSQL;
   db_driver_ = strdup("MySQL");
@@ -119,15 +115,11 @@ BareosDbMysql::BareosDbMysql(JobControlRecord* jcr,
   last_hash_key_ = 0;
   last_query_text_ = NULL;
 
-  /*
-   * Initialize the private members.
-   */
+  // Initialize the private members.
   db_handle_ = NULL;
   result_ = NULL;
 
-  /*
-   * Put the db in the list.
-   */
+  // Put the db in the list.
   if (db_list == NULL) { db_list = new dlist(this, &this->link_); }
   db_list->append(this);
 
@@ -167,15 +159,11 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  /*
-   * Connect to the database
-   */
+  // Connect to the database
   mysql_init(&instance_);
 
   Dmsg0(50, "mysql_init done\n");
-  /*
-   * If connection fails, try at 5 sec intervals for 30 seconds.
-   */
+  // If connection fails, try at 5 sec intervals for 30 seconds.
   for (int retry = 0; retry < 6; retry++) {
     db_handle_ = mysql_real_connect(&instance_,   /* db */
                                     db_address_,  /* default = localhost */
@@ -186,9 +174,7 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord* jcr)
                                     db_socket_,   /* default = socket */
                                     CLIENT_FOUND_ROWS); /* flags */
 
-    /*
-     * If no connect, try once more in case it is a timing problem
-     */
+    // If no connect, try once more in case it is a timing problem
     if (db_handle_ != NULL) { break; }
     Bmicrosleep(5, 0);
   }
@@ -222,9 +208,7 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord* jcr)
   Dmsg3(100, "opendb ref=%d connected=%d db=%p\n", ref_count_, connected_,
         db_handle_);
 
-  /*
-   * Set connection timeout to 8 days specialy for batch mode
-   */
+  // Set connection timeout to 8 days specialy for batch mode
   SqlQueryWithoutHandler("SET wait_timeout=691200");
   SqlQueryWithoutHandler("SET interactive_timeout=691200");
 
@@ -351,9 +335,7 @@ char* BareosDbMysql::EscapeObject(JobControlRecord* jcr, char* old, int len)
   return esc_obj;
 }
 
-/**
- * Unescape binary object so that MySQL is happy
- */
+// Unescape binary object so that MySQL is happy
 void BareosDbMysql::UnescapeObject(JobControlRecord* jcr,
                                    char* from,
                                    int32_t expected_len,
@@ -417,9 +399,7 @@ retry_query:
     case CR_SERVER_GONE_ERROR:
     case CR_SERVER_LOST:
       if (exit_on_fatal_) {
-        /*
-         * Any fatal error should result in the daemon exiting.
-         */
+        // Any fatal error should result in the daemon exiting.
         Emsg0(M_ERROR_TERM, 0, "Fatal database error\n");
       }
 
@@ -434,9 +414,7 @@ retry_query:
 
           mysql_threadid = mysql_thread_id(db_handle_);
           if (mysql_ping(db_handle_) == 0) {
-            /*
-             * See if the threadid changed e.g. new connection to the DB.
-             */
+            // See if the threadid changed e.g. new connection to the DB.
             if (mysql_thread_id(db_handle_) != mysql_threadid) {
               mysql_query(db_handle_, "SET wait_timeout=691200");
               mysql_query(db_handle_, "SET interactive_timeout=691200");
@@ -461,9 +439,7 @@ retry_query:
     if ((result_ = mysql_use_result(db_handle_)) != NULL) {
       num_fields_ = mysql_num_fields(result_);
 
-      /*
-       * We *must* fetch all rows
-       */
+      // fetch all rows
       while ((row = mysql_fetch_row(result_)) != NULL) {
         if (send) {
           /* the result handler returns 1 when it has
@@ -493,9 +469,7 @@ bool BareosDbMysql::SqlQueryWithoutHandler(const char* query, int flags)
 
   Dmsg1(500, "SqlQueryWithoutHandler starts with '%s'\n", query);
 
-  /*
-   * We are starting a new query. reset everything.
-   */
+  // We are starting a new query. reset everything.
 retry_query:
   num_rows_ = -1;
   row_number_ = -1;
@@ -536,9 +510,7 @@ retry_query:
     case CR_SERVER_GONE_ERROR:
     case CR_SERVER_LOST:
       if (exit_on_fatal_) {
-        /*
-         * Any fatal error should result in the daemon exiting.
-         */
+        // Any fatal error should result in the daemon exiting.
         Emsg0(M_ERROR_TERM, 0, "Fatal database error\n");
       }
 
@@ -553,9 +525,7 @@ retry_query:
 
           mysql_threadid = mysql_thread_id(db_handle_);
           if (mysql_ping(db_handle_) == 0) {
-            /*
-             * See if the threadid changed e.g. new connection to the DB.
-             */
+            // See if the threadid changed e.g. new connection to the DB.
             if (mysql_thread_id(db_handle_) != mysql_threadid) {
               mysql_query(db_handle_, "SET wait_timeout=691200");
               mysql_query(db_handle_, "SET interactive_timeout=691200");
@@ -620,9 +590,7 @@ int BareosDbMysql::SqlAffectedRows(void)
 uint64_t BareosDbMysql::SqlInsertAutokeyRecord(const char* query,
                                                const char* table_name)
 {
-  /*
-   * First execute the insert query and then retrieve the currval.
-   */
+  // First execute the insert query and then retrieve the currval.
   if (mysql_query(db_handle_, query) != 0) { return 0; }
 
   num_rows_ = mysql_affected_rows(db_handle_);
@@ -664,9 +632,7 @@ SQL_FIELD* BareosDbMysql::SqlFetchField(void)
     }
   }
 
-  /*
-   * Increment field number for the next time around
-   */
+  // Increment field number for the next time around
   return &fields_[field_number_++];
 }
 
@@ -722,9 +688,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
   }
   P(mutex); /* lock DB queue */
 
-  /*
-   * Look to see if DB already open
-   */
+  // Look to see if DB already open
   if (db_list && !mult_db_connections && !need_private) {
     foreach_dlist (mdb, db_list) {
       if (mdb->IsPrivate()) { continue; }

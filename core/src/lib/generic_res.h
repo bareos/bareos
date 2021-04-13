@@ -32,17 +32,13 @@
 #include "lib/keyword_table_s.h"
 
 #ifndef DIRECTOR_DAEMON
-/*
- * Used for message types.
- */
+// Used for message types.
 struct s_mtypes {
   const char* name;
   uint32_t token;
 };
 
-/*
- * Various message types
- */
+// Various message types
 static struct s_mtypes msg_types[]
     = {{"debug", M_DEBUG},       {"abort", M_ABORT},
        {"fatal", M_FATAL},       {"error", M_ERROR},

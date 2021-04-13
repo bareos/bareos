@@ -62,9 +62,7 @@ typedef struct s_rwlock_tag {
 
 #define RwlWritelock(x) RwlWritelock_p((x), __FILE__, __LINE__)
 
-/**
- * read/write lock prototypes
- */
+// read/write lock prototypes
 extern int RwlInit(brwlock_t* rwl, int priority = 0);
 extern int RwlDestroy(brwlock_t* rwl);
 extern bool RwlIsInit(brwlock_t* rwl);

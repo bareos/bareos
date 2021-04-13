@@ -29,9 +29,7 @@
 #include "include/bareos.h"
 #include "jcr.h"
 
-/*
- * Strip leading space from command line arguments
- */
+// Strip leading space from command line arguments
 void StripLeadingSpace(char* str)
 {
   char* p = str;
@@ -40,23 +38,17 @@ void StripLeadingSpace(char* str)
   if (p != str) { bstrinlinecpy(str, p); }
 }
 
-/*
- * Strip any trailing junk from the command
- */
+// Strip any trailing junk from the command
 void StripTrailingJunk(char* cmd)
 {
   char* p;
 
-  /*
-   * Strip trailing junk from command
-   */
+  // Strip trailing junk from command
   p = cmd + strlen(cmd) - 1;
   while ((p >= cmd) && (*p == '\n' || *p == '\r' || *p == ' ')) { *p-- = 0; }
 }
 
-/*
- * Strip any trailing newline characters from the string
- */
+// Strip any trailing newline characters from the string
 void StripTrailingNewline(char* cmd)
 {
   char* p;
@@ -65,16 +57,12 @@ void StripTrailingNewline(char* cmd)
   while ((p >= cmd) && (*p == '\n' || *p == '\r')) { *p-- = 0; }
 }
 
-/*
- * Strip any trailing slashes from a directory path
- */
+// Strip any trailing slashes from a directory path
 void StripTrailingSlashes(char* dir)
 {
   char* p;
 
-  /*
-   * Strip trailing slashes
-   */
+  // Strip trailing slashes
   p = dir + strlen(dir) - 1;
   while (p >= dir && IsPathSeparator(*p)) { *p-- = 0; }
 }
@@ -110,9 +98,7 @@ bool SkipNonspaces(char** msg)
   return *p ? true : false;
 }
 
-/*
- * Folded search for string - case insensitive
- */
+// Folded search for string - case insensitive
 int fstrsch(const char* a, const char* b) /* folded case search */
 {
   const char *s1, *s2;
@@ -259,9 +245,7 @@ int ParseArgsOnly(const POOLMEM* cmd,
   StripTrailingJunk(args);
   p = args;
   *argc = 0;
-  /*
-   * Pick up all arguments
-   */
+  // Pick up all arguments
   while (*argc < max_args) {
     n = next_arg(&p);
     if (*n) {
@@ -330,9 +314,7 @@ void SplitPathAndFilename(const char* fname,
   Dmsg3(200, "split fname=%s path=%s file=%s\n", fname, path, file);
 }
 
-/*
- * Extremely simple sscanf. Handles only %(u,d,hu,hd,ld,qd,qu,lu,lld,llu,c,nns)
- */
+// Extremely simple sscanf. Handles only %(u,d,hu,hd,ld,qd,qu,lu,lld,llu,c,nns)
 const int BIG = 1000;
 int bsscanf(const char* buf, const char* fmt, ...)
 {

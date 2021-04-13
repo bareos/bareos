@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, December 2000
- */
+// Kern Sibbald, December 2000
 /**
  * @file
  * BAREOS Catalog Database Find record interface routines
@@ -445,9 +443,7 @@ int BareosDb::FindNextVolume(JobControlRecord* jcr,
 
 retry_fetch:
   if (find_oldest) {
-    /*
-     * Find oldest volume(s)
-     */
+    // Find oldest volume(s)
     Mmsg(cmd,
          "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
@@ -466,9 +462,7 @@ retry_fetch:
     PoolMem changer(PM_MESSAGE);
     PoolMem order(PM_MESSAGE);
 
-    /*
-     * Find next available volume
-     */
+    // Find next available volume
     if (InChanger) {
       Mmsg(changer, "AND InChanger=1 AND StorageId=%s",
            edit_int64(mr->StorageId, ed1));
@@ -543,9 +537,7 @@ retry_fetch:
       continue;
     }
 
-    /*
-     * Return fields in Media Record
-     */
+    // Return fields in Media Record
     mr->MediaId = str_to_int64(row[0]);
     bstrncpy(mr->VolumeName, (row[1] != NULL) ? row[1] : "",
              sizeof(mr->VolumeName));

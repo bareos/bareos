@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, March 2012
- */
+// Marco van Wieringen, March 2012
 /**
  * @file
  * Load and clear an SCSI encryption key used by a tape drive
@@ -206,14 +204,10 @@ int main(int argc, char* const* argv)
   InitMsg(NULL, NULL);
 
   if (dump_cache) {
-    /*
-     * Load any keys currently in the cache.
-     */
+    // Load any keys currently in the cache.
     ReadCryptoCache(cache_file);
 
-    /*
-     * Dump the content of the cache.
-     */
+    // Dump the content of the cache.
     DumpCryptoCache(1);
 
     FlushCryptoCache();
@@ -224,9 +218,7 @@ int main(int argc, char* const* argv)
     char *VolumeName, *EncrKey;
     char new_cache_entry[256];
 
-    /*
-     * Load any keys currently in the cache.
-     */
+    // Load any keys currently in the cache.
     ReadCryptoCache(cache_file);
 
     /*
@@ -240,9 +232,7 @@ int main(int argc, char* const* argv)
     while (read(1, new_cache_entry, sizeof(new_cache_entry)) > 0) {
       StripTrailingJunk(new_cache_entry);
 
-      /*
-       * Try to parse the entry.
-       */
+      // Try to parse the entry.
       VolumeName = new_cache_entry;
       EncrKey = strchr(new_cache_entry, '\t');
       if (!EncrKey) { break; }
@@ -252,9 +242,7 @@ int main(int argc, char* const* argv)
       memset(new_cache_entry, 0, sizeof(new_cache_entry));
     }
 
-    /*
-     * Write out the new cache entries.
-     */
+    // Write out the new cache entries.
     WriteCryptoCache(cache_file);
 
     FlushCryptoCache();
@@ -262,19 +250,13 @@ int main(int argc, char* const* argv)
   }
 
   if (reset_cache) {
-    /*
-     * Load any keys currently in the cache.
-     */
+    // Load any keys currently in the cache.
     ReadCryptoCache(cache_file);
 
-    /*
-     * Reset all entries.
-     */
+    // Reset all entries.
     ResetCryptoCache();
 
-    /*
-     * Write out the new cache entries.
-     */
+    // Write out the new cache entries.
     WriteCryptoCache(cache_file);
 
     FlushCryptoCache();
@@ -323,9 +305,7 @@ int main(int argc, char* const* argv)
 
     Dmsg1(10, "Generated passphrase = %s\n", passphrase);
 
-    /*
-     * See if we need to wrap the passphrase.
-     */
+    // See if we need to wrap the passphrase.
     if (wrapped_keys) {
       char* wrapped_passphrase;
 
@@ -406,9 +386,7 @@ int main(int argc, char* const* argv)
     StripTrailingJunk(keydata);
     Dmsg1(10, "Keydata = %s\n", keydata);
 
-    /*
-     * See if we need to unwrap the passphrase.
-     */
+    // See if we need to unwrap the passphrase.
     if (wrapped_keys) {
       char* wrapped_passphrase;
       /*
@@ -475,9 +453,7 @@ int main(int argc, char* const* argv)
     goto bail_out;
   }
 
-  /*
-   * Clear the loaded encryption key of the given drive.
-   */
+  // Clear the loaded encryption key of the given drive.
   if (clear_encryption) {
     if (ClearScsiEncryptionKey(-1, argv[0])) {
       goto bail_out;
@@ -487,9 +463,7 @@ int main(int argc, char* const* argv)
     }
   }
 
-  /*
-   * Get the drive encryption status of the given drive.
-   */
+  // Get the drive encryption status of the given drive.
   if (drive_encryption_status) {
     POOLMEM* encryption_status = GetPoolMemory(PM_MESSAGE);
 
@@ -503,9 +477,7 @@ int main(int argc, char* const* argv)
     }
   }
 
-  /*
-   * Load a new encryption key onto the given drive.
-   */
+  // Load a new encryption key onto the given drive.
   if (set_encryption) {
     /*
      * Read the key bits from the keyfile.

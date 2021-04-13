@@ -36,9 +36,7 @@ class win32_file_device : public Device {
   win32_file_device();
   ~win32_file_device();
 
-  /*
-   * Interface from Device
-   */
+  // Interface from Device
   bool MountBackend(DeviceControlRecord* dcr, int timeout) override;
   bool UnmountBackend(DeviceControlRecord* dcr, int timeout) override;
   int d_close(int) override;

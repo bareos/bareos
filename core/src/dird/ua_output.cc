@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, September MM
- */
+// Kern Sibbald, September MM
 /**
  * @file
  * User Agent Output Commands
@@ -62,15 +60,11 @@ static bool ParseListBackupsCmd(UaContext* ua,
                                 const char* range,
                                 e_list_type llist);
 
-/**
- * Some defaults.
- */
+// Some defaults.
 #define DEFAULT_LOG_LINES 5
 #define DEFAULT_NR_DAYS 50
 
-/**
- * Turn auto display of console messages on/off
- */
+// Turn auto display of console messages on/off
 bool AutodisplayCmd(UaContext* ua, const char* cmd)
 {
   static const char* kw[] = {NT_("on"), NT_("off"), NULL};
@@ -89,9 +83,7 @@ bool AutodisplayCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-/**
- * Turn GUI mode on/off
- */
+// Turn GUI mode on/off
 bool gui_cmd(UaContext* ua, const char* cmd)
 {
   static const char* kw[] = {NT_("on"), NT_("off"), NULL};
@@ -110,9 +102,7 @@ bool gui_cmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-/**
- * Enter with Resources locked
- */
+// Enter with Resources locked
 static void ShowDisabledJobs(UaContext* ua)
 {
   JobResource* job;
@@ -135,9 +125,7 @@ static void ShowDisabledJobs(UaContext* ua)
   ua->send->ArrayEnd("jobs");
 }
 
-/**
- * Enter with Resources locked
- */
+// Enter with Resources locked
 static void ShowDisabledClients(UaContext* ua)
 {
   ClientResource* client;
@@ -162,9 +150,7 @@ static void ShowDisabledClients(UaContext* ua)
   ua->send->ArrayEnd("clients");
 }
 
-/**
- * Enter with Resources locked
- */
+// Enter with Resources locked
 static void ShowDisabledSchedules(UaContext* ua)
 {
   ScheduleResource* sched;
@@ -189,17 +175,13 @@ static void ShowDisabledSchedules(UaContext* ua)
   ua->send->ArrayEnd("schedules");
 }
 
-/**
- * Enter with Resources locked
- */
+// Enter with Resources locked
 static void ShowAll(UaContext* ua, bool hide_sensitive_data, bool verbose)
 {
   for (int j = my_config->r_first_; j <= my_config->r_last_; j++) {
     switch (j) {
       case R_DEVICE:
-        /*
-         * Skip R_DEVICE since it is really not used or updated
-         */
+        // Skip R_DEVICE since it is really not used or updated
         continue;
       default:
         if (my_config->res_head_[j - my_config->r_first_]) {
@@ -245,15 +227,11 @@ bool show_cmd(UaContext* ua, const char* cmd)
 
   LockRes(my_config);
 
-  /*
-   * Without parameter, show all ressources.
-   */
+  // Without parameter, show all ressources.
   if (ua->argc == 1) { ShowAll(ua, hide_sensitive_data, verbose); }
 
   for (i = 1; i < ua->argc; i++) {
-    /*
-     * skip verbose keyword, already handled earlier.
-     */
+    // skip verbose keyword, already handled earlier.
     if (Bstrcasecmp(ua->argk[i], NT_("verbose"))) { continue; }
 
     if (Bstrcasecmp(ua->argk[i], NT_("disabled"))) {
@@ -278,9 +256,7 @@ bool show_cmd(UaContext* ua, const char* cmd)
     type = 0;
     res_name = ua->argk[i];
     if (!ua->argv[i]) { /* was a name given? */
-      /*
-       * No name, dump all resources of specified type
-       */
+      // No name, dump all resources of specified type
       recurse = 1;
       len = strlen(res_name);
       for (j = 0; show_cmd_available_resources[j].res_name; j++) {
@@ -296,9 +272,7 @@ bool show_cmd(UaContext* ua, const char* cmd)
         }
       }
     } else {
-      /*
-       * Dump a single resource with specified name
-       */
+      // Dump a single resource with specified name
       recurse = 0;
       len = strlen(res_name);
       for (j = 0; show_cmd_available_resources[j].res_name; j++) {
@@ -502,9 +476,7 @@ static void SetQueryRange(PoolMem& query_range, UaContext* ua, JobDbRecord* jr)
     PmStrcpy(query_range, "");
   }
 
-  /*
-   * Apply any limit
-   */
+  // Apply any limit
   i = FindArgWithValue(ua, NT_("limit"));
   if (i >= 0) {
     PoolMem temp(PM_MESSAGE);
@@ -515,9 +487,7 @@ static void SetQueryRange(PoolMem& query_range, UaContext* ua, JobDbRecord* jr)
     temp.bsprintf(" LIMIT %d", jr->limit);
     PmStrcat(query_range, temp.c_str());
 
-    /*
-     * offset is only valid, if limit is given
-     */
+    // offset is only valid, if limit is given
     i = FindArgWithValue(ua, NT_("offset"));
     if (i >= 0) {
       jr->offset = atoi(ua->argv[i]);
@@ -554,9 +524,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     return false;
   }
 
-  /*
-   * days or hours given?
-   */
+  // days or hours given?
   d = FindArgWithValue(ua, NT_("days"));
   h = FindArgWithValue(ua, NT_("hours"));
 
@@ -590,32 +558,24 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
   }
 
-  /*
-   * jobstatus=X
-   */
+  // jobstatus=X
   if (!GetUserJobStatusSelection(ua, &jobstatus)) {
     ua->ErrorMsg(_("invalid jobstatus parameter\n"));
     return false;
   }
 
-  /*
-   * joblevel=X
-   */
+  // joblevel=X
   if (!GetUserJobLevelSelection(ua, &joblevel)) {
     ua->ErrorMsg(_("invalid joblevel parameter\n"));
     return false;
   }
 
-  /*
-   * Select what to do based on the first argument.
-   */
+  // Select what to do based on the first argument.
   if ((Bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL))
       || ((Bstrcasecmp(ua->argk[1], NT_("job"))
            || Bstrcasecmp(ua->argk[1], NT_("jobname")))
           && ua->argv[1])) {
-    /*
-     * List jobs or List job=xxx
-     */
+    // List jobs or List job=xxx
     i = FindArgWithValue(ua, NT_("jobname"));
     if (i < 0) { i = FindArgWithValue(ua, NT_("job")); }
     if (i >= 0) {
@@ -666,9 +626,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
                            jobstatus, joblevel, volumename, poolname, schedtime,
                            last, count, ua->send, llist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
-    /*
-     * List JOBTOTALS
-     */
+    // List JOBTOTALS
     ua->db->ListJobTotals(ua->jcr, &jr, ua->send);
   } else if ((Bstrcasecmp(ua->argk[1], NT_("jobid"))
               || Bstrcasecmp(ua->argk[1], NT_("ujobid")))
@@ -720,9 +678,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       }
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
-    /*
-     * List BASEFILES
-     */
+    // List BASEFILES
     jobid = GetJobidFromCmdline(ua);
     if (jobid > 0) {
       ua->db->ListBaseFilesForJob(ua->jcr, jobid, ua->send);
@@ -732,9 +688,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
             "client not found in db\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("files"))) {
-    /*
-     * List FILES
-     */
+    // List FILES
     jobid = GetJobidFromCmdline(ua);
     if (jobid > 0) {
       ua->db->ListFilesForJob(ua->jcr, jobid, ua->send);
@@ -746,9 +700,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   } else if (Bstrcasecmp(ua->argk[1], NT_("fileset"))) {
     int filesetid = 0;
 
-    /*
-     * List FileSet
-     */
+    // List FileSet
     i = FindArgWithValue(ua, NT_("filesetid"));
     if (i > 0) { filesetid = str_to_int64(ua->argv[i]); }
 

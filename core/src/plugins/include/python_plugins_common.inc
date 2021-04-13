@@ -20,9 +20,7 @@
 */
 
 
-/**
- * Strip any backslashes in the string.
- */
+// Strip any backslashes in the string.
 static inline void StripBackSlashes(char* value)
 {
   char* bp;
@@ -55,17 +53,13 @@ static inline bool ParseBoolean(const char* argument_value)
   }
 }
 
-/**
- * Parse a integer value.
- */
+// Parse a integer value.
 static inline int64_t parse_integer(const char* argument_value)
 {
   return str_to_int64(argument_value);
 }
 
-/**
- * Always set destination to value and clean any previous one.
- */
+// Always set destination to value and clean any previous one.
 static inline void SetString(char** destination, char* value)
 {
   if (*destination) { free(*destination); }
@@ -130,17 +124,13 @@ static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype)
   free(error_string);
 }
 
-/**
- * Convert a return value into a bRC enum value.
- */
+// Convert a return value into a bRC enum value.
 static inline bRC ConvertPythonRetvalTobRCRetval(PyObject* pRetVal)
 {
   return (bRC)PyLong_AsLong(pRetVal);
 }
 
-/**
- * Convert a return value from bRC enum value into Python Object.
- */
+// Convert a return value from bRC enum value into Python Object.
 static inline PyObject* ConvertbRCRetvalToPythonRetval(bRC retval)
 {
   return (PyObject*)PyLong_FromLong((int)retval);

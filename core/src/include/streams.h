@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- *  Kern Sibbald, MM
- */
+//  Kern Sibbald, MM
 /**
  * @file
  * Stream definitions.  Split from baconfig.h Nov 2010
@@ -32,9 +30,7 @@
 
 /* clang-format off */
 
-/**
- * Stream bits  -- these bits are new as of 24Nov10
- */
+// Stream bits  -- these bits are new as of 24Nov10
 #define STREAM_BIT_64                         (1 << 30) /**< 64 bit stream (not yet implemented) */
 #define STREAM_BIT_BITS                       (1 << 29) /**< Following bits may be set */
 #define STREAM_BIT_PLUGIN                     (1 << 28) /**< Item written by a plugin */
@@ -42,9 +38,7 @@
 #define STREAM_BIT_OFFSETS                    (1 << 26) /**< Stream has data offset */
 #define STREAM_BIT_PORTABLE_DATA              (1 << 25) /**< Data is portable */
 
-/**
- * TYPE represents our current (old) stream types -- e.g. values 0 - 2047
- */
+// TYPE represents our current (old) stream types -- e.g. values 0 - 2047
 #define STREAMBASE_TYPE                         0       /**< base for types */
 #define STREAMBITS_TYPE                         11      /**< type bit size */
 #define STREAMMASK_TYPE                         (~((~0U)<< STREAMBITS_TYPE) << STREAMBASE_TYPE)
@@ -193,9 +187,7 @@
 #define STREAM_XATTR_LINUX                   1998       /**< Linux specific extended attributes */
 #define STREAM_XATTR_NETBSD                  1999       /**< NetBSD specific extended attributes */
 
-/**
- * WARNING!!! do not define more than 2047 of these old types
- */
+// WARNING!!! do not define more than 2047 of these old types
 
 /* clang-format on */
 

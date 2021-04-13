@@ -54,9 +54,7 @@
  * -----------------------------------------------------------------------
  */
 
-/**
- * List of open databases
- */
+// List of open databases
 static dlist* db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -75,9 +73,7 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord* jcr,
                                        bool exit_on_fatal,
                                        bool need_private)
 {
-  /*
-   * Initialize the parent class members.
-   */
+  // Initialize the parent class members.
   db_interface_type_ = SQL_INTERFACE_TYPE_POSTGRESQL;
   db_type_ = SQL_TYPE_POSTGRESQL;
   db_driver_ = strdup("PostgreSQL");
@@ -126,15 +122,11 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord* jcr,
   last_hash_key_ = 0;
   last_query_text_ = NULL;
 
-  /*
-   * Initialize the private members.
-   */
+  // Initialize the private members.
   db_handle_ = NULL;
   result_ = NULL;
 
-  /*
-   * Put the db in the list.
-   */
+  // Put the db in the list.
   if (db_list == NULL) { db_list = new dlist(this, &this->link_); }
   db_list->append(this);
 
@@ -145,9 +137,7 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord* jcr,
 
 BareosDbPostgresql::~BareosDbPostgresql() {}
 
-/**
- * Check that the database correspond to the encoding we want
- */
+// Check that the database correspond to the encoding we want
 bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
 {
   SQL_ROW row;
@@ -172,9 +162,7 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
        */
       SqlQueryWithoutHandler("SET client_encoding TO 'SQL_ASCII'");
     } else {
-      /*
-       * Something is wrong with database encoding
-       */
+      // Something is wrong with database encoding
       Mmsg(errmsg,
            _("Encoding error for database \"%s\". Wanted SQL_ASCII, got %s\n"),
            get_db_name(), row[0]);
@@ -218,13 +206,9 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
     port = NULL;
   }
 
-  /*
-   * If connection fails, try at 5 sec intervals for 30 seconds.
-   */
+  // If connection fails, try at 5 sec intervals for 30 seconds.
   for (int retry = 0; retry < 6; retry++) {
-    /*
-     * Connect to the database
-     */
+    // Connect to the database
     db_handle_ = PQsetdbLogin(db_address_,   /* default = localhost */
                               port,          /* default port */
                               NULL,          /* pg options */
@@ -233,9 +217,7 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
                               db_user_,      /* login name */
                               db_password_); /* password */
 
-    /*
-     * If no connect, try once more in case it is a timing problem
-     */
+    // If no connect, try once more in case it is a timing problem
     if (PQstatus(db_handle_) == CONNECTION_OK) { break; }
 
     Bmicrosleep(5, 0);
@@ -268,9 +250,7 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
    */
   SqlQueryWithoutHandler("SET standard_conforming_strings=on");
 
-  /*
-   * Check that encoding is SQL_ASCII
-   */
+  // Check that encoding is SQL_ASCII
   CheckDatabaseEncoding(jcr);
 
   retval = true;
@@ -318,14 +298,10 @@ bool BareosDbPostgresql::ValidateConnection(void)
 {
   bool retval = false;
 
-  /*
-   * Perform a null query to see if the connection is still valid.
-   */
+  // Perform a null query to see if the connection is still valid.
   DbLock(this);
   if (!SqlQueryWithoutHandler("SELECT 1", true)) {
-    /*
-     * Try resetting the connection.
-     */
+    // Try resetting the connection.
     PQreset(db_handle_);
     if (PQstatus(db_handle_) != CONNECTION_OK) { goto bail_out; }
 
@@ -333,9 +309,7 @@ bool BareosDbPostgresql::ValidateConnection(void)
     SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
     SqlQueryWithoutHandler("SET standard_conforming_strings=on");
 
-    /*
-     * Retry the null query.
-     */
+    // Retry the null query.
     if (!SqlQueryWithoutHandler("SELECT 1", true)) { goto bail_out; }
   }
 
@@ -474,9 +448,7 @@ void BareosDbPostgresql::StartTransaction(JobControlRecord* jcr)
   if (!allow_transactions_) { return; }
 
   DbLock(this);
-  /*
-   * Allow only 25,000 changes per transaction
-   */
+  // Allow only 25,000 changes per transaction
   if (transaction_ && changes > 25000) { EndTransaction(jcr); }
   if (!transaction_) {
     SqlQueryWithoutHandler("BEGIN"); /* begin transaction */
@@ -628,9 +600,7 @@ bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query, int flags)
 
   Dmsg1(500, "SqlQueryWithoutHandler starts with '%s'\n", query);
 
-  /*
-   * We are starting a new query. reset everything.
-   */
+  // We are starting a new query. reset everything.
 retry_query:
   num_rows_ = -1;
   row_number_ = -1;
@@ -653,9 +623,7 @@ retry_query:
     case PGRES_COMMAND_OK:
       Dmsg0(500, "we have a result\n");
 
-      /*
-       * How many fields in the set?
-       */
+      // How many fields in the set?
       num_fields_ = (int)PQnfields(result_);
       Dmsg1(500, "we have %d fields\n", num_fields_);
 
@@ -669,9 +637,7 @@ retry_query:
     case PGRES_FATAL_ERROR:
       Dmsg1(50, "Result status fatal: %s\n", query);
       if (exit_on_fatal_) {
-        /*
-         * Any fatal error should result in the daemon exiting.
-         */
+        // Any fatal error should result in the daemon exiting.
         Emsg0(M_ERROR_TERM, 0, "Fatal database error\n");
       }
 
@@ -684,13 +650,9 @@ retry_query:
         if (retry) {
           PQreset(db_handle_);
 
-          /*
-           * See if we got a working connection again.
-           */
+          // See if we got a working connection again.
           if (PQstatus(db_handle_) == CONNECTION_OK) {
-            /*
-             * Reset the connection settings.
-             */
+            // Reset the connection settings.
             PQexec(db_handle_, "SET datestyle TO 'ISO, YMD'");
             PQexec(db_handle_, "SET cursor_tuple_fraction=1");
             result_ = PQexec(db_handle_, "SET standard_conforming_strings=on");
@@ -764,28 +726,20 @@ SQL_ROW BareosDbPostgresql::SqlFetchRow(void)
     rows_ = (SQL_ROW)malloc(sizeof(char*) * num_fields_);
     rows_size_ = num_fields_;
 
-    /*
-     * Now reset the row_number now that we have the space allocated
-     */
+    // Now reset the row_number now that we have the space allocated
     row_number_ = 0;
   }
 
-  /*
-   * If still within the result set
-   */
+  // If still within the result set
   if (row_number_ >= 0 && row_number_ < num_rows_) {
     Dmsg2(500, "SqlFetchRow row number '%d' is acceptable (0..%d)\n",
           row_number_, num_rows_);
-    /*
-     * Get each value from this row
-     */
+    // Get each value from this row
     for (j = 0; j < num_fields_; j++) {
       rows_[j] = PQgetvalue(result_, row_number_, j);
       Dmsg2(500, "SqlFetchRow field '%d' has value '%s'\n", j, rows_[j]);
     }
-    /*
-     * Increment the row number for the next call
-     */
+    // Increment the row number for the next call
     row_number_++;
     row = rows_;
   } else {
@@ -805,9 +759,7 @@ const char* BareosDbPostgresql::sql_strerror(void)
 
 void BareosDbPostgresql::SqlDataSeek(int row)
 {
-  /*
-   * Set the row number to be returned on the next call to sql_fetch_row
-   */
+  // Set the row number to be returned on the next call to sql_fetch_row
   row_number_ = row;
 }
 

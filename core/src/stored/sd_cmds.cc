@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, November 2012
- */
+// Marco van Wieringen, November 2012
 /**
  * @file
  * This file handles commands from another Storage daemon.
@@ -67,9 +65,7 @@ struct s_cmds {
   bool (*func)(JobControlRecord* jcr);
 };
 
-/**
- * The following are the recognized commands from the Remote Storage daemon
- */
+// The following are the recognized commands from the Remote Storage daemon
 static struct s_cmds sd_cmds[] = {
     {"start replicate", StartReplicationSession},
     {"replicate data", ReplicateData},
@@ -77,18 +73,14 @@ static struct s_cmds sd_cmds[] = {
     {NULL, NULL} /* list terminator */
 };
 
-/**
- * Responses sent to the Remote Storage daemon
- */
+// Responses sent to the Remote Storage daemon
 static char NO_open[] = "3901 Error replicate session already open\n";
 static char NOT_opened[] = "3902 Error replicate session not opened\n";
 static char ERROR_replicate[] = "3903 Error replicate data\n";
 static char OK_end_replicate[] = "3000 OK end replicate\n";
 static char OK_start_replicate[] = "3000 OK start replicate ticket = %d\n";
 
-/**
- * Responses sent to the Director
- */
+// Responses sent to the Director
 static char Job_start[] = "3010 Job %s start\n";
 static char Job_end[]
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
@@ -132,9 +124,7 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
   jcr->store_bsock = sd;
   jcr->store_bsock->SetJcr(jcr);
 
-  /*
-   * Authenticate the Storage daemon
-   */
+  // Authenticate the Storage daemon
   if (jcr->authenticated || !AuthenticateStoragedaemon(jcr)) {
     Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
     Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Storage daemon\n"));
@@ -152,9 +142,7 @@ void* handle_stored_connection(BareosSocket* sd, char* job_name)
   return NULL;
 }
 
-/**
- * Now talk to the SD and do what he says
- */
+// Now talk to the SD and do what he says
 static void DoSdCommands(JobControlRecord* jcr)
 {
   int i, status;
@@ -164,9 +152,7 @@ static void DoSdCommands(JobControlRecord* jcr)
   sd->SetJcr(jcr);
   quit = false;
   while (!quit) {
-    /*
-     * Read command coming from the Storage daemon
-     */
+    // Read command coming from the Storage daemon
     status = sd->recv();
     if (IsBnetStop(sd)) { /* hardeof or error */
       break;              /* connection terminated */
@@ -180,9 +166,7 @@ static void DoSdCommands(JobControlRecord* jcr)
         found = true; /* indicate command found */
         jcr->errmsg[0] = 0;
         if (!sd_cmds[i].func(jcr)) { /* do command */
-          /*
-           * Note sd->msg command may be destroyed by comm activity
-           */
+          // Note sd->msg command may be destroyed by comm activity
           if (!JobCanceled(jcr)) {
             if (jcr->errmsg[0]) {
               Jmsg1(jcr, M_FATAL, 0,
@@ -261,9 +245,7 @@ bool DoListenRun(JobControlRecord* jcr)
   jcr->run_time = jcr->start_time;
   jcr->sendJobStatus(JS_Running);
 
-  /*
-   * See if we need to limit the inbound bandwidth.
-   */
+  // See if we need to limit the inbound bandwidth.
   if (me->max_bandwidth_per_job && jcr->store_bsock) {
     jcr->store_bsock->SetBwlimit(me->max_bandwidth_per_job);
     if (me->allow_bw_bursting) { jcr->store_bsock->SetBwlimitBursting(); }
@@ -286,15 +268,11 @@ cleanup:
 
   FreePlugins(jcr); /* release instantiated plugins */
 
-  /*
-   * After a listen cmd we are done e.g. return false.
-   */
+  // After a listen cmd we are done e.g. return false.
   return false;
 }
 
-/**
- * Start of replication.
- */
+// Start of replication.
 static bool StartReplicationSession(JobControlRecord* jcr)
 {
   BareosSocket* sd = jcr->store_bsock;
@@ -308,9 +286,7 @@ static bool StartReplicationSession(JobControlRecord* jcr)
 
   jcr->impl->session_opened = true;
 
-  /*
-   * Send "Ticket" to Storage Daemon
-   */
+  // Send "Ticket" to Storage Daemon
   sd->fsend(OK_start_replicate, jcr->VolSessionId);
   Dmsg1(110, ">stored: %s", sd->msg);
 
@@ -330,9 +306,7 @@ static bool ReplicateData(JobControlRecord* jcr)
   if (jcr->impl->session_opened) {
     utime_t now;
 
-    /*
-     * Update the initial Job Statistics.
-     */
+    // Update the initial Job Statistics.
     now = (utime_t)time(NULL);
     UpdateJobStatistics(jcr, now);
 
@@ -352,9 +326,7 @@ static bool ReplicateData(JobControlRecord* jcr)
   return false;
 }
 
-/**
- * End a replication session.
- */
+// End a replication session.
 static bool EndReplicationSession(JobControlRecord* jcr)
 {
   BareosSocket* sd = jcr->store_bsock;

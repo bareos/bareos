@@ -15,9 +15,7 @@ static void* nullpointer = NULL;
 
 /* Test the dpl_assert_*() macros in utest_main.h */
 
-/*
- * This test has all the checks that are supposed to pass
- */
+// This test has all the checks that are supposed to pass
 START_TEST(pass_test)
 {
   dpl_assert_int_eq(three, two_plus_one);

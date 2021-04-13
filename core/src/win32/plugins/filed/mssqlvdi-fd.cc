@@ -29,14 +29,10 @@
 #include "fd_plugins.h"
 #include "plugins/include/common.h"
 
-/**
- * Microsoft® Component Object Model (COM)
- */
+// Microsoft® Component Object Model (COM)
 #include <comutil.h>
 
-/**
- * Microsoft® MSSQL Virtual Device Interface (VDI)
- */
+// Microsoft® MSSQL Virtual Device Interface (VDI)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #include "vdi.h"
@@ -44,9 +40,7 @@
 #include "vdiguid.h"
 #pragma GCC diagnostic pop
 
-/**
- * Microsoft® ActiveX® Data Objects
- */
+// Microsoft® ActiveX® Data Objects
 #include <initguid.h>
 #include <adoid.h>
 #include <adoint.h>
@@ -88,9 +82,7 @@ static const int debuglevel = 150;
 #define VDI_DEFAULT_WAIT 60000      /* 60 seconds */
 #define VDI_WAIT_TIMEOUT 0xFFFFFFFF /* INFINITE */
 
-/**
- * Forward referenced functions
- */
+// Forward referenced functions
 static bRC newPlugin(PluginContext* ctx);
 static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
@@ -110,15 +102,11 @@ static bRC end_restore_job(PluginContext* ctx, void* value);
 static void CloseVdiDeviceset(struct plugin_ctx* p_ctx);
 static bool adoReportError(PluginContext* ctx);
 
-/**
- * Pointers to Bareos functions
- */
+// Pointers to Bareos functions
 static CoreFunctions* bareos_core_functions = NULL;
 static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
-/**
- * Plugin Information block
- */
+// Plugin Information block
 static PluginInformation pluginInfo
     = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
        FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
@@ -126,9 +114,7 @@ static PluginInformation pluginInfo
        PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
        PLUGIN_USAGE};
 
-/**
- * Plugin entry points for Bareos
- */
+// Plugin entry points for Bareos
 static PluginFunctions pluginFuncs
     = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
 
@@ -139,9 +125,7 @@ static PluginFunctions pluginFuncs
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
        setFileAttributes, checkFile};
 
-/**
- * Plugin private context
- */
+// Plugin private context
 struct plugin_ctx {
   int RestoreFD;
   bool RestoreToFile;
@@ -177,9 +161,7 @@ struct adoThreadContext {
   BSTR ado_query;
 };
 
-/**
- * This defines the arguments that the plugin parser understands.
- */
+// This defines the arguments that the plugin parser understands.
 enum plugin_argument_type
 {
   argument_none,
@@ -243,9 +225,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   return bRC_OK;
 }
 
-/**
- * External entry point to unload the plugin
- */
+// External entry point to unload the plugin
 bRC unloadPlugin() { return bRC_OK; }
 
 #ifdef __cplusplus
@@ -264,9 +244,7 @@ static bRC newPlugin(PluginContext* ctx)
   HRESULT hr;
   plugin_ctx* p_ctx;
 
-  /*
-   * Initialize COM for this thread.
-   */
+  // Initialize COM for this thread.
   hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
   if (!SUCCEEDED(hr)) { return bRC_Error; }
 
@@ -277,9 +255,7 @@ static bRC newPlugin(PluginContext* ctx)
   memset(p_ctx, 0, sizeof(plugin_ctx));
   ctx->plugin_private_context = (void*)p_ctx; /* set our context pointer */
 
-  /*
-   * Only register the events we are really interested in.
-   */
+  // Only register the events we are really interested in.
   bareos_core_functions->registerBareosEvents(
       ctx, 6, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
       bEventPluginCommand, bEventEndRestoreJob, bEventNewPluginOptions);
@@ -287,9 +263,7 @@ static bRC newPlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Free a plugin instance, i.e. release our private storage
- */
+// Free a plugin instance, i.e. release our private storage
 static bRC freePlugin(PluginContext* ctx)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -297,19 +271,13 @@ static bRC freePlugin(PluginContext* ctx)
 
   Dmsg(ctx, debuglevel, "mssqlvdi-fd: entering freePlugin\n");
 
-  /*
-   * Close any open VDI deviceset.
-   */
+  // Close any open VDI deviceset.
   CloseVdiDeviceset(p_ctx);
 
-  /*
-   * See if there is any error to report from the ADO layer.
-   */
+  // See if there is any error to report from the ADO layer.
   adoReportError(ctx);
 
-  /*
-   * Cleanup the context.
-   */
+  // Cleanup the context.
   if (p_ctx->plugin_options) { free(p_ctx->plugin_options); }
 
   if (p_ctx->filename) { free(p_ctx->filename); }
@@ -339,9 +307,7 @@ static bRC freePlugin(PluginContext* ctx)
   free(p_ctx);
   p_ctx = NULL;
 
-  /*
-   * Tear down COM for this thread.
-   */
+  // Tear down COM for this thread.
   CoUninitialize();
 
   Dmsg(ctx, debuglevel, "mssqlvdi-fd: leaving freePlugin\n");
@@ -349,25 +315,19 @@ static bRC freePlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Return some plugin value (none defined)
- */
+// Return some plugin value (none defined)
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   return bRC_OK;
 }
 
-/**
- * Set a plugin value (none defined)
- */
+// Set a plugin value (none defined)
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   return bRC_OK;
 }
 
-/**
- * Handle an event that was generated in Bareos
- */
+// Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 {
   bRC retval;
@@ -381,20 +341,14 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       retval = bRC_OK;
       break;
     case bEventRestoreCommand:
-      /*
-       * Fall-through wanted
-       */
+      // Fall-through wanted
     case bEventBackupCommand:
-      /*
-       * Fall-through wanted
-       */
+      // Fall-through wanted
     case bEventPluginCommand:
       retval = parse_plugin_definition(ctx, value);
       break;
     case bEventNewPluginOptions:
-      /*
-       * Free any previous value.
-       */
+      // Free any previous value.
       if (p_ctx->plugin_options) {
         free(p_ctx->plugin_options);
         p_ctx->plugin_options = NULL;
@@ -402,9 +356,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 
       retval = parse_plugin_definition(ctx, value);
 
-      /*
-       * Save that we got a plugin override.
-       */
+      // Save that we got a plugin override.
       p_ctx->plugin_options = strdup((char*)value);
       break;
     case bEventEndRestoreJob:

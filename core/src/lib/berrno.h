@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, July MMIV
- */
+// Kern Sibbald, July MMIV
 /**
  * @file
  * BErrNo header file
@@ -33,9 +31,7 @@
 #include "lib/berrno.h"
 #include "include/bareos.h"
 
-/**
- * Extra bits set to interpret errno value differently from errno
- */
+// Extra bits set to interpret errno value differently from errno
 #ifdef HAVE_WIN32
 #  define b_errno_win32 (1 << 29) /* user reserved bit */
 #else

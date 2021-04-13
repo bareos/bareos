@@ -3,9 +3,7 @@
 #include <assert.h>
 #include <sys/param.h>
 
-/*
- * Scenario: simple putdir (folder)
- */
+// Scenario: simple putdir (folder)
 
 int main(int argc, char** argv)
 {

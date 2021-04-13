@@ -31,22 +31,16 @@
 #include "win32.h"
 #include "who.h"
 
-/*
- * Other Window component dependencies
- */
+// Other Window component dependencies
 #define BAREOS_DEPENDENCIES __TEXT("tcpip\0afd\0")
 
-/*
- * Service globals
- */
+// Service globals
 SERVICE_STATUS_HANDLE service_handle;
 SERVICE_STATUS service_status;
 DWORD service_error = 0;
 static bool is_service = false;
 
-/*
- * Forward references
- */
+// Forward references
 static void SetServiceDescription(SC_HANDLE hSCManager,
                                   SC_HANDLE hService,
                                   LPSTR lpDesc);
@@ -54,32 +48,22 @@ void WINAPI serviceControlCallback(DWORD ctrlcode);
 BOOL ReportStatus(DWORD state, DWORD exitcode, DWORD waithint);
 DWORD WINAPI bareosWorkerThread(LPVOID lpwThreadParam);
 
-/*
- * Post a message to a running instance of the app
- */
+// Post a message to a running instance of the app
 bool postToBareos(UINT message, WPARAM wParam, LPARAM lParam)
 {
-  /*
-   * Locate the Bareos menu window
-   */
+  // Locate the Bareos menu window
   HWND hservwnd = FindWindow(APP_NAME, NULL);
   if (hservwnd == NULL) { return false; }
 
-  /*
-   * Post the message to Bareos
-   */
+  // Post the message to Bareos
   PostMessage(hservwnd, message, wParam, lParam);
   return true;
 }
 
-/*
- * Running as a service?
- */
+// Running as a service?
 bool isAService() { return is_service; }
 
-/*
- * Terminate any running Bareos
- */
+// Terminate any running Bareos
 int stopRunningBareos()
 {
   postToBareos(WM_CLOSE, 0, 0);
@@ -96,9 +80,7 @@ void WINAPI serviceStartCallback(DWORD argc, char** argv)
 {
   DWORD dwThreadID;
 
-  /*
-   * Register our service
-   */
+  // Register our service
   service_handle = RegisterServiceCtrlHandler(APP_NAME, serviceControlCallback);
   if (!service_handle) {
     LogErrorMessage(_("RegisterServiceCtlHandler failed"));
@@ -110,25 +92,19 @@ void WINAPI serviceStartCallback(DWORD argc, char** argv)
   service_status.dwServiceType = SERVICE_WIN32;
   service_status.dwServiceSpecificExitCode = 0;
 
-  /*
-   * Report status
-   */
+  // Report status
   if (!ReportStatus(SERVICE_START_PENDING, NO_ERROR, 45000)) {
     ReportStatus(SERVICE_STOPPED, service_error, 0);
     LogErrorMessage(_("Service start report failed"));
     return;
   }
 
-  /*
-   * Now create the Bareos worker thread
-   */
+  // Now create the Bareos worker thread
   (void)CreateThread(NULL, 0, bareosWorkerThread, NULL, 0, &dwThreadID);
   return;
 }
 
-/*
- *  Stop our service
- */
+//  Stop our service
 static void serviceStop()
 {
   /* Post a quit message our service thread */
@@ -154,30 +130,22 @@ void WINAPI serviceControlCallback(DWORD ctrlcode)
   ReportStatus(service_status.dwCurrentState, NO_ERROR, 0);
 }
 
-/*
- * Run Bareos as a service
- */
+// Run Bareos as a service
 int bareosServiceMain()
 {
   is_service = true; /* indicate we are running as a service */
 
   if (have_service_api) { /* New style service API */
-    /*
-     * Tell OS where to dispatch service calls to us
-     */
+    // Tell OS where to dispatch service calls to us
     SERVICE_TABLE_ENTRY dispatchTable[]
         = {{(char*)APP_NAME, (LPSERVICE_MAIN_FUNCTION)serviceStartCallback},
            {(char*)NULL, NULL}};
 
-    /*
-     * Start the service control dispatcher
-     */
+    // Start the service control dispatcher
     if (!StartServiceCtrlDispatcher(dispatchTable)) {
       LogErrorMessage(_("StartServiceCtrlDispatcher failed."));
     }
-    /*
-     * Note, this thread continues in the ServiceCallback routine
-     */
+    // Note, this thread continues in the ServiceCallback routine
   } else { /* old style Win95/98/Me */
     HINSTANCE kerneldll = LoadLibrary("KERNEL32.DLL");
     if (kerneldll == NULL) {
@@ -186,9 +154,7 @@ int bareosServiceMain()
       return 1;
     }
 
-    /*
-     * Get entry point for RegisterServiceProcess function
-     */
+    // Get entry point for RegisterServiceProcess function
     DWORD(WINAPI * RegisterService)(DWORD, DWORD);
     RegisterService = (DWORD(WINAPI*)(DWORD, DWORD))GetProcAddress(
         kerneldll, "RegisterServiceProcess");
@@ -209,9 +175,7 @@ int bareosServiceMain()
   return 0;
 }
 
-/*
- * New style service bareos worker thread
- */
+// New style service bareos worker thread
 DWORD WINAPI bareosWorkerThread(LPVOID lpwThreadParam)
 {
   service_thread_id = GetCurrentThreadId();
@@ -222,26 +186,18 @@ DWORD WINAPI bareosWorkerThread(LPVOID lpwThreadParam)
     return 0;
   }
 
-  /*
-   * Call Bareos main code
-   */
+  // Call Bareos main code
   BareosAppMain();
 
-  /*
-   * Mark that we're no longer running
-   */
+  // Mark that we're no longer running
   service_thread_id = 0;
 
-  /*
-   * Tell the service manager that we've stopped
-   */
+  // Tell the service manager that we've stopped
   ReportStatus(SERVICE_STOPPED, service_error, 0);
   return 0;
 }
 
-/*
- * Install the Bareos service on the OS -- very complicated
- */
+// Install the Bareos service on the OS -- very complicated
 int installService(const char* cmdOpts)
 {
   const int maxlen = 2048;
@@ -251,18 +207,14 @@ int installService(const char* cmdOpts)
   Bsnprintf(svcmd, sizeof(svcmd), "service: install: %s", cmdOpts, APP_DESC,
             MB_OK);
 
-  /*
-   * Get our filename
-   */
+  // Get our filename
   if (GetModuleFileName(NULL, path, maxlen - 11) == 0) {
     MessageBox(NULL, _("Unable to install the service"), APP_DESC,
                MB_ICONEXCLAMATION | MB_OK);
     return 0;
   }
 
-  /*
-   * Create a valid command for starting the service
-   */
+  // Create a valid command for starting the service
   if ((int)strlen(path) + (int)strlen(cmdOpts) + 30 < maxlen) {
     Bsnprintf(svcmd, sizeof(svcmd), "\"%s\" /service %s", path, cmdOpts);
   } else {

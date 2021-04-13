@@ -57,17 +57,13 @@ int SaferUnlink(const char* pathname, const char* regx)
   char prbuf[500];
   int rtn;
 
-  /*
-   * Name must start with working directory
-   */
+  // Name must start with working directory
   if (strncmp(pathname, working_directory, strlen(working_directory)) != 0) {
     Pmsg1(000, "Safe_unlink excluded: %s\n", pathname);
     return EROFS;
   }
 
-  /*
-   * Compile regex expression
-   */
+  // Compile regex expression
   rc = regcomp(&preg1, regx, REG_EXTENDED);
   if (rc != 0) {
     regerror(rc, &preg1, prbuf, sizeof(prbuf));
@@ -76,9 +72,7 @@ int SaferUnlink(const char* pathname, const char* regx)
     return ENOENT;
   }
 
-  /*
-   * Unlink files that match regexes
-   */
+  // Unlink files that match regexes
   if (regexec(&preg1, pathname, 0, NULL, 0) == 0) {
     Dmsg1(100, "safe_unlink unlinking: %s\n", pathname);
     rtn = SecureErase(NULL, pathname);
@@ -91,9 +85,7 @@ int SaferUnlink(const char* pathname, const char* regx)
   return rtn;
 }
 
-/*
- * This routine will use an external secure erase program to delete a file.
- */
+// This routine will use an external secure erase program to delete a file.
 int SecureErase(JobControlRecord* jcr, const char* pathname)
 {
   int retval = -1;
@@ -173,14 +165,10 @@ int Bmicrosleep(int32_t sec, int32_t usec)
 #ifdef HAVE_NANOSLEEP
   status = nanosleep(&timeout, NULL);
   if (!(status < 0 && errno == ENOSYS)) { return status; }
-  /*
-   * If we reach here it is because nanosleep is not supported by the OS
-   */
+  // If we reach here it is because nanosleep is not supported by the OS
 #endif
 
-  /*
-   * Do it the old way
-   */
+  // Do it the old way
   gettimeofday(&tv, &tz);
   timeout.tv_nsec += tv.tv_usec * 1000;
   timeout.tv_sec += tv.tv_sec;
@@ -191,9 +179,7 @@ int Bmicrosleep(int32_t sec, int32_t usec)
 
   Dmsg2(200, "pthread_cond_timedwait sec=%lld usec=%d\n", sec, usec);
 
-  /*
-   * Note, this unlocks mutex during the sleep
-   */
+  // Note, this unlocks mutex during the sleep
   P(timer_mutex);
   status = pthread_cond_timedwait(&timer, &timer_mutex, &timeout);
   V(timer_mutex);
@@ -253,9 +239,7 @@ char* bstrncpy(char* dest, const char* src, int maxlen)
   return dest;
 }
 
-/*
- * Guarantee that the string is properly terminated
- */
+// Guarantee that the string is properly terminated
 char* bstrncpy(char* dest, PoolMem& src, int maxlen)
 {
   return bstrncpy(dest, src.c_str(), maxlen);
@@ -291,9 +275,7 @@ char* bstrncat(char* dest, PoolMem& src, int maxlen)
   return bstrncat(dest, src.c_str(), maxlen);
 }
 
-/*
- * Allows one or both pointers to be NULL
- */
+// Allows one or both pointers to be NULL
 bool bstrcmp(const char* s1, const char* s2)
 {
   if (s1 == s2) return true;
@@ -438,9 +420,7 @@ int b_strerror(int errnum, char* buf, size_t bufsiz)
 static bool del_pid_file_ok = false;
 #endif
 
-/*
- * Create a standard "Unix" pid file.
- */
+// Create a standard "Unix" pid file.
 void CreatePidFile(char* dir, const char* progname, int port)
 {
 #if !defined(HAVE_WIN32)
@@ -484,15 +464,11 @@ void CreatePidFile(char* dir, const char* progname, int port)
 
     if (pidfd >= 0) { close(pidfd); }
 
-    /*
-     * He is not alive, so take over file ownership
-     */
+    // He is not alive, so take over file ownership
     unlink(fname); /* remove stale pid file */
   }
 
-  /*
-   * Create new pid file
-   */
+  // Create new pid file
   if ((pidfd = open(fname, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0640))
       >= 0) {
     len = sprintf(pidbuf, "%d\n", (int)getpid());
@@ -508,9 +484,7 @@ void CreatePidFile(char* dir, const char* progname, int port)
 #endif
 }
 
-/*
- * Delete the pid file if we created it
- */
+// Delete the pid file if we created it
 int DeletePidFile(char* dir, const char* progname, int port)
 {
 #if !defined(HAVE_WIN32)
@@ -807,15 +781,11 @@ bool PathIsDirectory(PoolMem& path) { return PathIsDirectory(path.c_str()); }
 bool PathIsAbsolute(const char* path)
 {
   if (!path || !strlen(path)) {
-    /*
-     * No path: not an absolute path
-     */
+    // No path: not an absolute path
     return false;
   }
 
-  /*
-   * Is path absolute?
-   */
+  // Is path absolute?
   if (IsPathSeparator(path[0])) { return true; }
 
 #ifdef HAVE_WIN32
@@ -857,9 +827,7 @@ bool PathContainsDirectory(PoolMem& path)
 }
 
 
-/*
- * Get directory from path.
- */
+// Get directory from path.
 bool PathGetDirectory(PoolMem& directory, PoolMem& path)
 {
   char* dir = NULL;
@@ -875,9 +843,7 @@ bool PathGetDirectory(PoolMem& directory, PoolMem& path)
   }
 
   if (PathIsDirectory(directory)) {
-    /*
-     * Make sure, path ends with path separator
-     */
+    // Make sure, path ends with path separator
     PathAppend(directory, "");
     return true;
   }
@@ -896,9 +862,7 @@ bool PathAppend(char* path, const char* extra, unsigned int max_path)
   required_length = path_len + 1 + strlen(extra);
   if (required_length > max_path) { return false; }
 
-  /*
-   * Add path separator after original path if missing.
-   */
+  // Add path separator after original path if missing.
   if (!IsPathSeparator(path[path_len - 1])) {
     path[path_len] = PathSeparator;
     path_len++;
@@ -921,9 +885,7 @@ bool PathAppend(PoolMem& path, const char* extra)
   return PathAppend(path.c_str(), extra, required_length);
 }
 
-/*
- * Append to paths together.
- */
+// Append to paths together.
 bool PathAppend(PoolMem& path, PoolMem& extra)
 {
   return PathAppend(path, extra.c_str());
@@ -977,9 +939,7 @@ bool PathCreate(const char* apath, mode_t mode)
   StripTrailingSlashes(path);
 
 #if defined(HAVE_WIN32)
-  /*
-   * Validate drive letter
-   */
+  // Validate drive letter
   if (path[1] == ':') {
     char drive[4] = "X:\\";
 
@@ -1005,9 +965,7 @@ bool PathCreate(const char* apath, mode_t mode)
   p = path;
 #endif
 
-  /*
-   * Skip leading slash(es)
-   */
+  // Skip leading slash(es)
   while (IsPathSeparator(*p)) { p++; }
   while ((p = first_path_separator(p))) {
     char save_p;
@@ -1031,9 +989,7 @@ bool PathCreate(PoolMem& path, mode_t mode)
   return PathCreate(path.c_str(), mode);
 }
 
-/*
- * Some Solaris specific support needed for Solaris 10 and lower.
- */
+// Some Solaris specific support needed for Solaris 10 and lower.
 #if defined(HAVE_SUN_OS)
 
 /*
@@ -1072,9 +1028,7 @@ static char** backtrace_symbols(void* const* array, int size)
   return (ret);
 }
 
-/*
- * Define that we now know backtrace_symbols()
- */
+// Define that we now know backtrace_symbols()
 #    define HAVE_BACKTRACE_SYMBOLS 1
 
 #  endif /* HAVE_BACKTRACE_SYMBOLS */
@@ -1122,9 +1076,7 @@ static int backtrace(void** buffer, int count)
   return (bt.bt_actcount);
 }
 
-/*
- * Define that we now know backtrace()
- */
+// Define that we now know backtrace()
 #    define HAVE_BACKTRACE 1
 
 #  endif /* HAVE_BACKTRACE */

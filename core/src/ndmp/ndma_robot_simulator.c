@@ -46,17 +46,13 @@
 #define ROBOT_ID 7
 #define ROBOT_LUN 1
 
-/*
- * interface
- */
+// interface
 
 void ndmos_scsi_register_callbacks(
     struct ndm_session* sess,
     struct ndm_robot_simulator_callbacks* callbacks)
 {
-  /*
-   * Only allow one register.
-   */
+  // Only allow one register.
   if (!sess->nrsc) {
     sess->nrsc = NDMOS_API_MALLOC(sizeof(struct ndm_robot_simulator_callbacks));
     if (sess->nrsc) {

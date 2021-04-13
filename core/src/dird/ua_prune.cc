@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, February MMII
- */
+// Kern Sibbald, February MMII
 /**
  * @file
  * User Agent Database prune Command
@@ -49,9 +47,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client);
 static bool PruneStats(UaContext* ua, utime_t retention);
 static bool GrowDelList(del_ctx* del);
 
-/**
- * Called here to count entries to be deleted
- */
+// Called here to count entries to be deleted
 int DelCountHandler(void* ctx, int num_fields, char** row)
 {
   s_count_ctx* cnt = static_cast<s_count_ctx*>(ctx);
@@ -94,9 +90,7 @@ int FileDeleteHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/**
- * Prune records from database
- */
+// Prune records from database
 bool PruneCmd(UaContext* ua, const char* cmd)
 {
   ClientResource* client;
@@ -128,14 +122,10 @@ bool PruneCmd(UaContext* ua, const char* cmd)
 
   if (!OpenClientDb(ua, true)) { return false; }
 
-  /*
-   * First search args
-   */
+  // First search args
   kw = FindArgKeyword(ua, keywords);
   if (kw < 0 || kw > 4) {
-    /*
-     * No args, so ask user
-     */
+    // No args, so ask user
     kw = DoKeywordPrompt(ua, _("Choose item to prune"), keywords);
   }
 
@@ -151,9 +141,7 @@ bool PruneCmd(UaContext* ua, const char* cmd)
         pool = NULL;
       }
 
-      /*
-       * Pool File Retention takes precedence over client File Retention
-       */
+      // Pool File Retention takes precedence over client File Retention
       if (pool && pool->FileRetention > 0) {
         if (!ConfirmRetention(ua, &pool->FileRetention, "File")) {
           return false;
@@ -177,19 +165,13 @@ bool PruneCmd(UaContext* ua, const char* cmd)
         pool = NULL;
       }
 
-      /*
-       * Ask what jobtype to prune.
-       */
+      // Ask what jobtype to prune.
       if (!GetUserJobTypeSelection(ua, &jobtype)) { return false; }
 
-      /*
-       * Verify that result jobtype is valid (this should always be the case).
-       */
+      // Verify that result jobtype is valid (this should always be the case).
       if (jobtype < 0) { return false; }
 
-      /*
-       * Pool Job Retention takes precedence over client Job Retention
-       */
+      // Pool Job Retention takes precedence over client Job Retention
       if (pool && pool->JobRetention > 0) {
         if (!ConfirmRetention(ua, &pool->JobRetention, "Job")) { return false; }
       } else if (!ConfirmRetention(ua, &client->JobRetention, "Job")) {
@@ -255,9 +237,7 @@ bool PruneCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-/**
- * Prune Directory meta data records from the database.
- */
+// Prune Directory meta data records from the database.
 static bool PruneDirectory(UaContext* ua, ClientResource* client)
 {
   int i, len;
@@ -267,9 +247,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
   bool recursive = false;
   bool retval = false;
 
-  /*
-   * See if a client was selected.
-   */
+  // See if a client was selected.
   if (!client) {
     if (!GetYesno(ua, _("No client restriction given really remove "
                         "directory for all clients (yes/no): "))
@@ -278,14 +256,10 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
     }
   }
 
-  /*
-   * See if we need to recursively remove all directories under a certain path.
-   */
+  // See if we need to recursively remove all directories under a certain path.
   recursive = FindArg(ua, NT_("recursive")) >= 0;
 
-  /*
-   * Get the directory to prune.
-   */
+  // Get the directory to prune.
   i = FindArgWithValue(ua, NT_("directory"));
   if (i >= 0) {
     PmStrcpy(temp, ua->argv[i]);
@@ -315,9 +289,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
   prune_topdir = (char*)malloc(len * 2 + 1);
   ua->db->EscapeString(ua->jcr, prune_topdir, temp.c_str(), len);
 
-  /*
-   * Remove all files in particular directory.
-   */
+  // Remove all files in particular directory.
   if (recursive) {
     Mmsg(query,
          "DELETE FROM file WHERE pathid IN ("
@@ -391,9 +363,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Prune Job stat records from the database.
- */
+// Prune Job stat records from the database.
 static bool PruneStats(UaContext* ua, utime_t retention)
 {
   char ed1[50];
@@ -599,33 +569,23 @@ struct accurate_check_ctx {
   DBId_t FileSetId; /* Id of FileSet */
 };
 
-/**
- * row: Job.Name, FileSet, Client.Name, FileSetId, ClientId, Type
- */
+// row: Job.Name, FileSet, Client.Name, FileSetId, ClientId, Type
 static int JobSelectHandler(void* ctx, int num_fields, char** row)
 {
   alist* lst = (alist*)ctx;
   struct accurate_check_ctx* res;
   ASSERT(num_fields == 6);
 
-  /*
-   * If this job doesn't exist anymore in the configuration, delete it.
-   */
+  // If this job doesn't exist anymore in the configuration, delete it.
   if (my_config->GetResWithName(R_JOB, row[0], false) == NULL) { return 0; }
 
-  /*
-   * If this fileset doesn't exist anymore in the configuration, delete it.
-   */
+  // If this fileset doesn't exist anymore in the configuration, delete it.
   if (my_config->GetResWithName(R_FILESET, row[1], false) == NULL) { return 0; }
 
-  /*
-   * If this client doesn't exist anymore in the configuration, delete it.
-   */
+  // If this client doesn't exist anymore in the configuration, delete it.
   if (my_config->GetResWithName(R_CLIENT, row[2], false) == NULL) { return 0; }
 
-  /*
-   * Don't compute accurate things for Verify jobs
-   */
+  // Don't compute accurate things for Verify jobs
   if (*row[5] == 'V') { return 0; }
 
   res = (struct accurate_check_ctx*)malloc(sizeof(struct accurate_check_ctx));
@@ -740,9 +700,7 @@ static bool PruneBackupJobs(UaContext* ua,
    * current backup & restore
    */
 
-  /*
-   * To find useful jobs, we do like an incremental
-   */
+  // To find useful jobs, we do like an incremental
   jr.JobLevel = L_INCREMENTAL;
   foreach_alist (elt, jobids_check) {
     jr.ClientId = elt->ClientId; /* should be always the same */
@@ -817,9 +775,7 @@ bail_out:
   return 1;
 }
 
-/**
- * Dispatch to the right prune jobs function.
- */
+// Dispatch to the right prune jobs function.
 bool PruneJobs(UaContext* ua,
                ClientResource* client,
                PoolResource* pool,
@@ -833,9 +789,7 @@ bool PruneJobs(UaContext* ua,
   }
 }
 
-/**
- * Prune a given Volume
- */
+// Prune a given Volume
 bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
 {
   PoolMem query(PM_MESSAGE);
@@ -886,9 +840,7 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
   return VolumeIsNowEmtpy;
 }
 
-/**
- * Get prune list for a volume
- */
+// Get prune list for a volume
 int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
 {
   PoolMem query(PM_MESSAGE);

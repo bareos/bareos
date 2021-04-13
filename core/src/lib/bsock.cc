@@ -151,9 +151,7 @@ void BareosSocket::CloseTlsConnectionAndFreeMemory()
   }
 }
 
-/**
- * Copy the address from the configuration dlist that gets passed in
- */
+// Copy the address from the configuration dlist that gets passed in
 void BareosSocket::SetSourceAddress(dlist* src_addr_list)
 {
   char allbuf[256 * 10];
@@ -162,9 +160,7 @@ void BareosSocket::SetSourceAddress(dlist* src_addr_list)
   Dmsg1(100, "All source addresses %s\n",
         BuildAddressesString(src_addr_list, allbuf, sizeof(allbuf)));
 
-  /*
-   * Delete the object we already have, if it's allocated
-   */
+  // Delete the object we already have, if it's allocated
   if (src_addr) {
     free(src_addr);
     src_addr = nullptr;
@@ -200,9 +196,7 @@ void BareosSocket::UnlockMutex()
   if (mutex_) { mutex_->unlock(); }
 }
 
-/**
- * Send a signal
- */
+// Send a signal
 bool BareosSocket::signal(int signal)
 {
   message_length = signal;
@@ -210,9 +204,7 @@ bool BareosSocket::signal(int signal)
   return send();
 }
 
-/**
- * Despool spooled attributes
- */
+// Despool spooled attributes
 bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size),
                            ssize_t tsize)
 {
@@ -777,22 +769,16 @@ void BareosSocket::OutputCipherMessageString(
   output_cb(str.c_str());
 }
 
-/**
- * Try to limit the bandwidth of a network connection
- */
+// Try to limit the bandwidth of a network connection
 void BareosSocket::ControlBwlimit(int bytes)
 {
   btime_t now, temp;
   int64_t usec_sleep;
 
-  /*
-   * If nothing written or read nothing todo.
-   */
+  // If nothing written or read nothing todo.
   if (bytes == 0) { return; }
 
-  /*
-   * See if this is the first time we enter here.
-   */
+  // See if this is the first time we enter here.
   now = GetCurrentBtime();
   if (last_tick_ == 0) {
     nb_bytes_ = bytes;
@@ -800,22 +786,16 @@ void BareosSocket::ControlBwlimit(int bytes)
     return;
   }
 
-  /*
-   * Calculate the number of microseconds since the last check.
-   */
+  // Calculate the number of microseconds since the last check.
   temp = now - last_tick_;
 
-  /*
-   * Less than 0.1ms since the last call, see the next time
-   */
+  // Less than 0.1ms since the last call, see the next time
   if (temp < 100) {
     nb_bytes_ += bytes;
     return;
   }
 
-  /*
-   * Keep track of how many bytes are written in this timeslice.
-   */
+  // Keep track of how many bytes are written in this timeslice.
   nb_bytes_ += bytes;
   last_tick_ = now;
   if (debug_level >= 400) {
@@ -823,14 +803,10 @@ void BareosSocket::ControlBwlimit(int bytes)
           temp, nb_bytes_);
   }
 
-  /*
-   * Take care of clock problems (>10s)
-   */
+  // Take care of clock problems (>10s)
   if (temp > 10000000) { return; }
 
-  /*
-   * Remove what was authorised to be written in temp usecs.
-   */
+  // Remove what was authorised to be written in temp usecs.
   nb_bytes_ -= (int64_t)(temp * ((double)bwlimit_ / 1000000.0));
   if (nb_bytes_ < 0) {
     /*
@@ -842,25 +818,19 @@ void BareosSocket::ControlBwlimit(int bytes)
     return;
   }
 
-  /*
-   * What exceed should be converted in sleep time
-   */
+  // What exceed should be converted in sleep time
   usec_sleep = (int64_t)(nb_bytes_ / ((double)bwlimit_ / 1000000.0));
   if (usec_sleep > 100) {
     if (debug_level >= 400) {
       Dmsg1(400, "ControlBwlimit: sleeping for %lld usecs\n", usec_sleep);
     }
 
-    /*
-     * Sleep the right number of usecs.
-     */
+    // Sleep the right number of usecs.
     while (1) {
       Bmicrosleep(0, usec_sleep);
       now = GetCurrentBtime();
 
-      /*
-       * See if we slept enough or that Bmicrosleep() returned early.
-       */
+      // See if we slept enough or that Bmicrosleep() returned early.
       if ((now - last_tick_) < usec_sleep) {
         usec_sleep -= (now - last_tick_);
         continue;

@@ -50,9 +50,7 @@
 #include "findlib/find_one.h"
 #include "findlib/hardlink.h"
 
-/**
- * Function pointers to be set here (findlib)
- */
+// Function pointers to be set here (findlib)
 extern int (*plugin_bopen)(BareosWinFilePacket* bfd,
                            const char* fname,
                            int flags,

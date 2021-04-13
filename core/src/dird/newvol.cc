@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, May MMI
- */
+// Kern Sibbald, May MMI
 /**
  * @file
  * creates new Volumes in
@@ -47,9 +45,7 @@
 
 namespace directordaemon {
 
-/*
- * Forward referenced functions
- */
+// Forward referenced functions
 static bool CreateSimpleName(JobControlRecord* jcr,
                              MediaDbRecord* mr,
                              PoolDbRecord* pr);
@@ -68,9 +64,7 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
   bool retval = false;
   PoolDbRecord pr;
 
-  /*
-   * See if we can create a new Volume
-   */
+  // See if we can create a new Volume
   DbLock(jcr->db);
   pr.PoolId = mr->PoolId;
   if (!jcr->db->GetPoolRecord(jcr, &pr)) { goto bail_out; }
@@ -84,18 +78,12 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
     if (jcr->VolumeName[0] && IsVolumeNameLegal(NULL, jcr->VolumeName)) {
       bstrncpy(mr->VolumeName, jcr->VolumeName, sizeof(mr->VolumeName));
     } else if (pr.LabelFormat[0] && pr.LabelFormat[0] != '*') {
-      /*
-       * Check for special characters
-       */
+      // Check for special characters
       if (IsVolumeNameLegal(NULL, pr.LabelFormat)) {
-        /*
-         * No special characters, so apply simple algorithm
-         */
+        // No special characters, so apply simple algorithm
         if (!CreateSimpleName(jcr, mr, &pr)) { goto bail_out; }
       } else {
-        /*
-         * Found special characters, so try full substitution
-         */
+        // Found special characters, so try full substitution
         if (!PerformFullNameSubstitution(jcr, mr, &pr)) { goto bail_out; }
         if (!IsVolumeNameLegal(NULL, mr->VolumeName)) {
           Jmsg(jcr, M_ERROR, 0, _("Illegal character in Volume name \"%s\"\n"),
@@ -171,9 +159,7 @@ static bool CreateSimpleName(JobControlRecord* jcr,
   return true;
 }
 
-/**
- * Perform full substitution on Label
- */
+// Perform full substitution on Label
 static bool PerformFullNameSubstitution(JobControlRecord* jcr,
                                         MediaDbRecord* mr,
                                         PoolDbRecord* pr)

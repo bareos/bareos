@@ -49,21 +49,15 @@ struct s_pool_ctl {
   struct abufhead* free_buf; /* pointer to free buffers */
 };
 
-/*
- * Bareos Name length plus extra
- */
+// Bareos Name length plus extra
 #define NLEN (MAX_NAME_LENGTH + 2)
 
-/*
- * Bareos Record length
- */
+// Bareos Record length
 #define RLEN 128
 
 /* #define STRESS_TEST_POOL */
 
-/*
- * Define default Pool buffer sizes
- */
+// Define default Pool buffer sizes
 #ifndef STRESS_TEST_POOL
 static struct s_pool_ctl pool_ctl[] = {
     {256, 256, 0, 0, NULL},   /* PM_NOPOOL no pooling */
@@ -75,9 +69,7 @@ static struct s_pool_ctl pool_ctl[] = {
     {RLEN, RLEN, 0, 0, NULL}  /* PM_RECORD message buffer */
 };
 #else
-/*
- * This is used ONLY when stress testing the code
- */
+// This is used ONLY when stress testing the code
 static struct s_pool_ctl pool_ctl[] = {
     {20, 20, 0, 0, NULL},     /* PM_NOPOOL no pooling */
     {NLEN, NLEN, 0, 0, NULL}, /* PM_NAME Bareos name */
@@ -89,9 +81,7 @@ static struct s_pool_ctl pool_ctl[] = {
 };
 #endif
 
-/*
- * Memory allocation control structures and storage.
- */
+// Memory allocation control structures and storage.
 struct abufhead {
   int32_t ablen;         /* Buffer length in bytes */
   int32_t pool;          /* pool */
@@ -310,9 +300,7 @@ static const char* pool_name(int pool)
   return buf;
 }
 
-/*
- * Print staticstics on memory pool usage
- */
+// Print staticstics on memory pool usage
 void PrintMemoryPoolStats()
 {
   Pmsg0(-1, "Pool   Maxsize  Maxused  Inuse\n");
@@ -460,9 +448,7 @@ int PmMemcpy(PoolMem*& pm, const char* data, int32_t n)
 
 /* ==============  CLASS PoolMem   ============== */
 
-/*
- * Return the size of a memory buffer
- */
+// Return the size of a memory buffer
 int32_t PoolMem::MaxSize()
 {
   int32_t size;

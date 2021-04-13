@@ -21,9 +21,7 @@
    02110-1301, USA.
 */
 
-/*
- * Kern Sibbald MMIII
- */
+// Kern Sibbald MMIII
 
 /* @file
  * Windows APIs that are different for each system.
@@ -33,16 +31,12 @@
 
 #include "include/bareos.h"
 
-/*
- * Init with win9x, but maybe set to NT in InitWinAPI
- */
+// Init with win9x, but maybe set to NT in InitWinAPI
 DWORD g_platform_id = VER_PLATFORM_WIN32_WINDOWS;
 DWORD g_MinorVersion = 0;
 DWORD g_MajorVersion = 0;
 
-/*
- * API Pointers
- */
+// API Pointers
 t_OpenProcessToken p_OpenProcessToken = NULL;
 t_AdjustTokenPrivileges p_AdjustTokenPrivileges = NULL;
 t_LookupPrivilegeValue p_LookupPrivilegeValue = NULL;
@@ -117,9 +111,7 @@ void InitWinAPIWrapper()
 {
   OSVERSIONINFO osversioninfo = {sizeof(OSVERSIONINFO)};
 
-  /*
-   * Get the current OS version
-   */
+  // Get the current OS version
   if (!GetVersionEx(&osversioninfo)) {
     g_platform_id = 0;
   } else {
@@ -130,23 +122,17 @@ void InitWinAPIWrapper()
 
   HMODULE hLib = LoadLibraryA("KERNEL32.DLL");
   if (hLib) {
-    /*
-     * Get logical drive calls
-     */
+    // Get logical drive calls
     p_GetLogicalDriveStringsA = (t_GetLogicalDriveStringsA)GetProcAddress(
         hLib, "GetLogicalDriveStringsA");
     p_GetLogicalDriveStringsW = (t_GetLogicalDriveStringsW)GetProcAddress(
         hLib, "GetLogicalDriveStringsW");
 
-    /*
-     * Create process calls
-     */
+    // Create process calls
     p_CreateProcessA = (t_CreateProcessA)GetProcAddress(hLib, "CreateProcessA");
     p_CreateProcessW = (t_CreateProcessW)GetProcAddress(hLib, "CreateProcessW");
 
-    /*
-     * Create file calls
-     */
+    // Create file calls
     p_CreateFileA = (t_CreateFileA)GetProcAddress(hLib, "CreateFileA");
     p_CreateDirectoryA
         = (t_CreateDirectoryA)GetProcAddress(hLib, "CreateDirectoryA");
@@ -154,17 +140,13 @@ void InitWinAPIWrapper()
         = (t_CreateSymbolicLinkA)GetProcAddress(hLib, "CreateSymbolicLinkA");
 
 #if (_WIN32_WINNT >= 0x0600)
-    /*
-     * File Information calls
-     */
+    // File Information calls
     p_GetFileInformationByHandleEx
         = (t_GetFileInformationByHandleEx)GetProcAddress(
             hLib, "GetFileInformationByHandleEx");
 #endif
 
-    /*
-     * Attribute calls
-     */
+    // Attribute calls
     p_GetFileAttributesA
         = (t_GetFileAttributesA)GetProcAddress(hLib, "GetFileAttributesA");
     p_GetFileAttributesExA
@@ -172,30 +154,22 @@ void InitWinAPIWrapper()
     p_SetFileAttributesA
         = (t_SetFileAttributesA)GetProcAddress(hLib, "SetFileAttributesA");
 
-    /*
-     * Process calls
-     */
+    // Process calls
     p_SetProcessShutdownParameters
         = (t_SetProcessShutdownParameters)GetProcAddress(
             hLib, "SetProcessShutdownParameters");
 
-    /*
-     * Char conversion calls
-     */
+    // Char conversion calls
     p_WideCharToMultiByte
         = (t_WideCharToMultiByte)GetProcAddress(hLib, "WideCharToMultiByte");
     p_MultiByteToWideChar
         = (t_MultiByteToWideChar)GetProcAddress(hLib, "MultiByteToWideChar");
 
-    /*
-     * Find files
-     */
+    // Find files
     p_FindFirstFileA = (t_FindFirstFileA)GetProcAddress(hLib, "FindFirstFileA");
     p_FindNextFileA = (t_FindNextFileA)GetProcAddress(hLib, "FindNextFileA");
 
-    /*
-     * Get and set directory
-     */
+    // Get and set directory
     p_GetCurrentDirectoryA
         = (t_GetCurrentDirectoryA)GetProcAddress(hLib, "GetCurrentDirectoryA");
     p_SetCurrentDirectoryA
@@ -208,9 +182,7 @@ void InitWinAPIWrapper()
       p_CreateSymbolicLinkW
           = (t_CreateSymbolicLinkW)GetProcAddress(hLib, "CreateSymbolicLinkW");
 
-      /*
-       * Backup calls
-       */
+      // Backup calls
       p_BackupRead = (t_BackupRead)GetProcAddress(hLib, "BackupRead");
       p_BackupWrite = (t_BackupWrite)GetProcAddress(hLib, "BackupWrite");
 
@@ -260,9 +232,7 @@ void InitWinAPIWrapper()
       p_LookupPrivilegeValue = (t_LookupPrivilegeValue)GetProcAddress(
           hLib, "LookupPrivilegeValueA");
 
-      /*
-       * EFS calls
-       */
+      // EFS calls
       p_OpenEncryptedFileRawA = (t_OpenEncryptedFileRawA)GetProcAddress(
           hLib, "OpenEncryptedFileRawA");
       p_OpenEncryptedFileRawW = (t_OpenEncryptedFileRawW)GetProcAddress(
@@ -281,9 +251,7 @@ void InitWinAPIWrapper()
     p_SHGetFolderPath
         = (t_SHGetFolderPath)GetProcAddress(hLib, "SHGetFolderPathA");
   } else {
-    /*
-     * If SHELL32 isn't found try SHFOLDER for older systems
-     */
+    // If SHELL32 isn't found try SHFOLDER for older systems
     hLib = LoadLibraryA("SHFOLDER.DLL");
     if (hLib) {
       p_SHGetFolderPath

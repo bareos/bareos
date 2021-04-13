@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, pulled out of dev.h June 2007
- */
+// Kern Sibbald, pulled out of dev.h June 2007
 /**
  * @file
  * Definitions for locking and blocking functions in the SD
@@ -41,9 +39,7 @@ namespace storagedaemon {
 #define GiveBackDeviceLock(d, p) \
   _giveBackDeviceLock(__FILE__, __LINE__, (d), (p))
 
-/**
- * blocked_ states (mutually exclusive)
- */
+// blocked_ states (mutually exclusive)
 enum
 {
   BST_NOT_BLOCKED = 0,             /**< Not blocked */
@@ -63,9 +59,7 @@ typedef struct s_steal_lock {
   int dev_prev_blocked; /**< previous blocked state */
 } bsteal_lock_t;
 
-/**
- * Used in unblock() call
- */
+// Used in unblock() call
 enum
 {
   DEV_LOCKED = true,

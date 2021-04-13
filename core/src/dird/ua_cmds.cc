@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, September MM
- */
+// Kern Sibbald, September MM
 /**
  * @file
  * User Agent Commands
@@ -62,9 +60,7 @@ namespace directordaemon {
 
 /* Imported variables */
 
-/*
- * Imported functions
- */
+// Imported functions
 
 /* ua_cmds.c */
 extern bool AutodisplayCmd(UaContext* ua, const char* cmd);
@@ -569,9 +565,7 @@ bool UaContext::execute(ua_cmdstruct* cmd)
   return (cmd->func)(this, this->cmd);
 }
 
-/**
- * Execute a command from the UA
- */
+// Execute a command from the UA
 bool Do_a_command(UaContext* ua)
 {
   int i;
@@ -591,26 +585,20 @@ bool Do_a_command(UaContext* ua)
   len = strlen(ua->argk[0]);
   for (i = 0; i < comsize; i++) { /* search for command */
     if (bstrncasecmp(ua->argk[0], commands[i].key, len)) {
-      /*
-       * Check if command permitted, but "quit" and "whoami" is always OK
-       */
+      // Check if command permitted, but "quit" and "whoami" is always OK
       if (!bstrcmp(ua->argk[0], NT_("quit"))
           && !bstrcmp(ua->argk[0], NT_("whoami"))
           && !ua->AclAccessOk(Command_ACL, ua->argk[0], true)) {
         break;
       }
 
-      /*
-       * Check if this command is authorized in RunScript
-       */
+      // Check if this command is authorized in RunScript
       if (ua->runscript && !commands[i].use_in_rs) {
         ua->ErrorMsg(_("Can't use %s command in a runscript"), ua->argk[0]);
         break;
       }
 
-      /*
-       * If we need to audit this event do it now.
-       */
+      // If we need to audit this event do it now.
       if (ua->AuditEventWanted(commands[i].audit_event)) {
         ua->LogAuditEventCmdline();
       }
@@ -649,9 +637,7 @@ static bool IsDotCommand(const char* cmd)
   return false;
 }
 
-/**
- * Add Volumes to an existing Pool
- */
+// Add Volumes to an existing Pool
 static bool add_cmd(UaContext* ua, const char* cmd)
 {
   PoolDbRecord pr;
@@ -682,9 +668,7 @@ static bool add_cmd(UaContext* ua, const char* cmd)
     pr.MaxVols = ua->pint32_val;
   }
 
-  /*
-   * Get media type
-   */
+  // Get media type
   if ((store = get_storage_resource(ua)) != NULL) {
     bstrncpy(mr.MediaType, store->media_type, sizeof(mr.MediaType));
   } else if (!GetMediaType(ua, mr.MediaType, sizeof(mr.MediaType))) {
@@ -718,9 +702,7 @@ static bool add_cmd(UaContext* ua, const char* cmd)
       if (!GetCmd(ua, _("Enter base volume name: "))) { return true; }
     }
 
-    /*
-     * Don't allow | in Volume name because it is the volume separator character
-     */
+    // Don't allow | in Volume name because it is the volume separator character
     if (!IsVolumeNameLegal(ua, ua->cmd)) { continue; }
     if (strlen(ua->cmd) >= MAX_NAME_LENGTH - 10) {
       ua->WarningMsg(_("Volume name too long.\n"));
@@ -810,9 +792,7 @@ static inline bool CancelStorageDaemonJob(UaContext* ua, const char* cmd)
 
   store = get_storage_resource(ua);
   if (store) {
-    /*
-     * See what JobId to cancel on the storage daemon.
-     */
+    // See what JobId to cancel on the storage daemon.
     i = FindArgWithValue(ua, NT_("jobid"));
     if (i >= 0) {
       if (!Is_a_number(ua->argv[i])) {
@@ -837,9 +817,7 @@ static inline bool CancelJobs(UaContext* ua, const char* cmd)
   selection = select_jobs(ua, "cancel");
   if (!selection) { return true; }
 
-  /*
-   * Loop over the different JobIds selected.
-   */
+  // Loop over the different JobIds selected.
   foreach_alist (JobId, selection) {
     if (!(jcr = get_jcr_by_id(*JobId))) { continue; }
 
@@ -852,16 +830,12 @@ static inline bool CancelJobs(UaContext* ua, const char* cmd)
   return true;
 }
 
-/**
- * Cancel a job
- */
+// Cancel a job
 static bool CancelCmd(UaContext* ua, const char* cmd)
 {
   int i;
 
-  /*
-   * See if we need to explicitly cancel a storage daemon Job.
-   */
+  // See if we need to explicitly cancel a storage daemon Job.
   i = FindArgWithValue(ua, NT_("storage"));
   if (i >= 0) {
     return CancelStorageDaemonJob(ua, cmd);
@@ -906,15 +880,11 @@ static inline bool SetbwlimitFiled(UaContext* ua,
                                    int64_t limit,
                                    char* Job)
 {
-  /*
-   * Connect to File daemon
-   */
+  // Connect to File daemon
   ua->jcr->impl->res.client = client;
   ua->jcr->max_bandwidth = limit;
 
-  /*
-   * Try to connect for 15 seconds
-   */
+  // Try to connect for 15 seconds
   ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);
 
@@ -945,9 +915,7 @@ static inline bool setbwlimit_stored(UaContext* ua,
                                      int64_t limit,
                                      char* Job)
 {
-  /*
-   * Check the storage daemon protocol.
-   */
+  // Check the storage daemon protocol.
   switch (store->Protocol) {
     case APT_NDMPV2:
     case APT_NDMPV3:
@@ -960,15 +928,11 @@ static inline bool setbwlimit_stored(UaContext* ua,
       break;
   }
 
-  /*
-   * Connect to Storage daemon
-   */
+  // Connect to Storage daemon
   ua->jcr->impl->res.write_storage = store;
   ua->jcr->max_bandwidth = limit;
 
-  /*
-   * Try to connect for 15 seconds
-   */
+  // Try to connect for 15 seconds
   ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
               store->resource_name_, store->address, store->SDport);
 
@@ -1019,9 +983,7 @@ static bool SetbwlimitCmd(UaContext* ua, const char* cmd)
     selection = select_jobs(ua, "limit");
     if (!selection) { return true; }
 
-    /*
-     * Loop over the different JobIds selected.
-     */
+    // Loop over the different JobIds selected.
     foreach_alist (JobId, selection) {
       if (!(jcr = get_jcr_by_id(*JobId))) { continue; }
 
@@ -1203,9 +1165,7 @@ static void DoStorageSetdebug(UaContext* ua,
   PmStrcpy(lstore.store_source, _("unknown source"));
   SetWstorage(jcr, &lstore);
 
-  /*
-   * Try connecting for up to 15 seconds
-   */
+  // Try connecting for up to 15 seconds
   ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
               store->resource_name_, store->address, store->SDport);
 
@@ -1256,14 +1216,10 @@ static void DoClientSetdebug(UaContext* ua,
       break;
   }
 
-  /*
-   * Connect to File daemon
-   */
+  // Connect to File daemon
   ua->jcr->impl->res.client = client;
 
-  /*
-   * Try to connect for 15 seconds
-   */
+  // Try to connect for 15 seconds
   ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
               client->address, client->FDport);
 
@@ -1431,9 +1387,7 @@ void DoAllSetDebug(UaContext* ua,
   AllClientSetdebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
 }
 
-/**
- * setdebug level=nn all trace=1/0 timestamp=1/0
- */
+// setdebug level=nn all trace=1/0 timestamp=1/0
 static bool SetdebugCmd(UaContext* ua, const char* cmd)
 {
   int i;
@@ -1454,9 +1408,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
     level = ua->pint32_val;
   }
 
-  /*
-   * Look for trace flag. -1 => not change
-   */
+  // Look for trace flag. -1 => not change
   i = FindArgWithValue(ua, NT_("trace"));
   if (i >= 0) {
     trace_flag = atoi(ua->argv[i]);

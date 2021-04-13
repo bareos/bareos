@@ -124,9 +124,7 @@ static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
       = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
-  /*
-   * Lookup the parse_plugin_definition() function in the python module.
-   */
+  // Lookup the parse_plugin_definition() function in the python module.
   pFunc = PyDict_GetItemString(
       plugin_priv_ctx->pyModuleFunctionsDict,
       "parse_plugin_definition"); /* Borrowed reference */
@@ -184,9 +182,7 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
       = (plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
-  /*
-   * Lookup the handle_plugin_event() function in the python module.
-   */
+  // Lookup the handle_plugin_event() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "handle_plugin_event"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -294,13 +290,9 @@ static inline bool PySavePacketToNative(
     struct plugin_private_context* plugin_priv_ctx,
     bool is_options_plugin)
 {
-  /*
-   * See if this is for an Options Plugin.
-   */
+  // See if this is for an Options Plugin.
   if (!is_options_plugin) {
-    /*
-     * Only copy back the arguments that are allowed to change.
-     */
+    // Only copy back the arguments that are allowed to change.
     if (pSavePkt->fname) {
       /*
        * As this has to linger as long as the backup is running we save it in
@@ -319,9 +311,7 @@ static inline bool PySavePacketToNative(
       goto bail_out;
     }
 
-    /*
-     * Optional field.
-     */
+    // Optional field.
     if (pSavePkt->link) {
       /*
        * As this has to linger as long as the backup is running we save it in
@@ -334,9 +324,7 @@ static inline bool PySavePacketToNative(
       }
     }
 
-    /*
-     * Handle the stat structure.
-     */
+    // Handle the stat structure.
     if (pSavePkt->statp) {
       PyStatPacketToNative((PyStatPacket*)pSavePkt->statp, &sp->statp);
     } else {
@@ -361,13 +349,9 @@ static inline bool PySavePacketToNative(
       goto bail_out;
     }
 
-    /*
-     * Special code for handling restore objects.
-     */
+    // Special code for handling restore objects.
     if (IS_FT_OBJECT(sp->type)) {
-      /*
-       * See if a proper restore object was created.
-       */
+      // See if a proper restore object was created.
       if (pSavePkt->object_len > 0) {
         /*
          * As this has to linger as long as the backup is running we save it
@@ -447,9 +431,7 @@ static bRC PyStartBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp)
       = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
-  /*
-   * Lookup the start_backup_file() function in the python module.
-   */
+  // Lookup the start_backup_file() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "start_backup_file"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -499,9 +481,7 @@ static bRC PyEndBackupFile(PluginContext* plugin_ctx)
       = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
-  /*
-   * Lookup the end_backup_file() function in the python module.
-   */
+  // Lookup the end_backup_file() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "end_backup_file"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -531,9 +511,7 @@ static inline PyIoPacket* NativeToPyIoPacket(struct io_pkt* io)
   PyIoPacket* pIoPkt = PyObject_New(PyIoPacket, &PyIoPacketType);
 
   if (pIoPkt) {
-    /*
-     * Initialize the Python IoPkt with the data we got passed in.
-     */
+    // Initialize the Python IoPkt with the data we got passed in.
     pIoPkt->func = io->func;
     pIoPkt->count = io->count;
     pIoPkt->flags = io->flags;
@@ -570,17 +548,13 @@ static inline PyIoPacket* NativeToPyIoPacket(struct io_pkt* io)
 
 static inline bool PyIoPacketToNative(PyIoPacket* pIoPkt, struct io_pkt* io)
 {
-  /*
-   * Only copy back the arguments that are allowed to change.
-   */
+  // Only copy back the arguments that are allowed to change.
   io->io_errno = pIoPkt->io_errno;
   io->lerror = pIoPkt->lerror;
   io->win32 = pIoPkt->win32;
   io->status = pIoPkt->status;
   if (io->func == IO_READ && io->status > 0) {
-    /*
-     * Only copy back the data when doing a read and there is data.
-     */
+    // Only copy back the data when doing a read and there is data.
     if (PyByteArray_Check(pIoPkt->buf)) {
       char* buf;
 
@@ -608,9 +582,7 @@ static bRC PyPluginIO(PluginContext* plugin_ctx, struct io_pkt* io)
       = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
-  /*
-   * Lookup the plugin_io() function in the python module.
-   */
+  // Lookup the plugin_io() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "plugin_io"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -660,9 +632,7 @@ static bRC PyStartRestoreFile(PluginContext* plugin_ctx, const char* cmd)
       = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
-  /*
-   * Lookup the start_restore_file() function in the python module.
-   */
+  // Lookup the start_restore_file() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "start_restore_file"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -693,9 +663,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Called when a command plugin is done restoring a file.
- */
+// Called when a command plugin is done restoring a file.
 static bRC PyEndRestoreFile(PluginContext* plugin_ctx)
 {
   bRC retval = bRC_Error;
@@ -703,9 +671,7 @@ static bRC PyEndRestoreFile(PluginContext* plugin_ctx)
       = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
-  /*
-   * Lookup the end_restore_file() function in the python module.
-   */
+  // Lookup the end_restore_file() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "end_restore_file"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -758,9 +724,7 @@ static inline PyRestorePacket* NativeToPyRestorePacket(struct restore_pkt* rp)
 static inline void PyRestorePacketToNative(PyRestorePacket* pRestorePacket,
                                            struct restore_pkt* rp)
 {
-  /*
-   * Only copy back the fields that are allowed to be changed.
-   */
+  // Only copy back the fields that are allowed to be changed.
   rp->create_status = pRestorePacket->create_status;
 }
 
@@ -786,9 +750,7 @@ static bRC PyCreateFile(PluginContext* plugin_ctx, struct restore_pkt* rp)
 
   if (!rp) { return bRC_Error; }
 
-  /*
-   * Lookup the create_file() function in the python module.
-   */
+  // Lookup the create_file() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "create_file"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -832,9 +794,7 @@ static bRC PySetFileAttributes(PluginContext* plugin_ctx,
 
   if (!rp) { return bRC_Error; }
 
-  /*
-   * Lookup the set_file_attributes() function in the python module.
-   */
+  // Lookup the set_file_attributes() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "set_file_attributes"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -875,9 +835,7 @@ static bRC PyCheckFile(PluginContext* plugin_ctx, char* fname)
 
   if (!fname) { return bRC_Error; }
 
-  /*
-   * Lookup the check_file() function in the python module.
-   */
+  // Lookup the check_file() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "check_file"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -955,9 +913,7 @@ static bRC PyGetAcl(PluginContext* plugin_ctx, acl_pkt* ap)
 
   if (!ap) { return bRC_Error; }
 
-  /*
-   * Lookup the get_acl() function in the python module.
-   */
+  // Lookup the get_acl() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "get_acl"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -1003,9 +959,7 @@ static bRC PySetAcl(PluginContext* plugin_ctx, acl_pkt* ap)
 
   if (!ap) { return bRC_Error; }
 
-  /*
-   * Lookup the set_acl() function in the python module.
-   */
+  // Lookup the set_acl() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "set_acl"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -1109,9 +1063,7 @@ static bRC PyGetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
 
   if (!xp) { return bRC_Error; }
 
-  /*
-   * Lookup the get_xattr() function in the python module.
-   */
+  // Lookup the get_xattr() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "get_xattr"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {

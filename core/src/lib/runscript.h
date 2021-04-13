@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Eric Bollengier May 2006
- */
+// Eric Bollengier May 2006
 /**
  * @file
  * BAREOS RunScript Structure definition for FileDaemon and Director
@@ -48,9 +46,7 @@ class alist;
  * special keyword FreeRunscript(script);
  */
 
-/**
- * RunScript->when can take following bit values:
- */
+// RunScript->when can take following bit values:
 enum
 {
   SCRIPT_Never = 0,

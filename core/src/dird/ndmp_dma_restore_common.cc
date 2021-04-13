@@ -94,9 +94,7 @@ void AddToNamelist(struct ndm_job_param* job,
 
   memset(&nl, 0, sizeof(ndmp9_name));
 
-  /*
-   * See if the filename is an absolute pathname.
-   */
+  // See if the filename is an absolute pathname.
   if (*filename == '\0') {
     PmStrcpy(destination_path, restore_prefix);
   } else if (*filename == '/') {
@@ -111,9 +109,7 @@ void AddToNamelist(struct ndm_job_param* job,
   nl.other_name = other_name;
 
 
-  /*
-   * add fh_node and fh_info for DAR for native NDMP backup
-   */
+  // add fh_node and fh_info for DAR for native NDMP backup
   nl.node = node;
 
   if (fhinfo) {
@@ -144,22 +140,16 @@ int NdmpEnvHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/*
- * Extract any post backup statistics.
- */
+// Extract any post backup statistics.
 bool ExtractPostRestoreStats(JobControlRecord* jcr, struct ndm_session* sess)
 {
   bool retval = true;
   struct ndmmedia* media;
 
-  /*
-   * See if an error was raised during the backup session.
-   */
+  // See if an error was raised during the backup session.
   if (sess->error_raised) { return false; }
 
-  /*
-   * See if there is any media error.
-   */
+  // See if there is any media error.
   for (media = sess->control_acb->job.result_media_tab.head; media;
        media = media->next) {
     if (media->media_open_error || media->media_io_error
@@ -169,18 +159,14 @@ bool ExtractPostRestoreStats(JobControlRecord* jcr, struct ndm_session* sess)
     }
   }
 
-  /*
-   * Update the Job statistics from the NDMP statistics.
-   */
+  // Update the Job statistics from the NDMP statistics.
   jcr->JobBytes += sess->control_acb->job.bytes_read;
   jcr->JobFiles++;
 
   return retval;
 }
 
-/**
- * Cleanup a NDMP restore session.
- */
+// Cleanup a NDMP restore session.
 void NdmpRestoreCleanup(JobControlRecord* jcr, int TermCode)
 {
   char term_code[100];

@@ -42,9 +42,7 @@
 
 namespace filedaemon {
 
-/**
- * For compression we enable all used compressors in the fileset.
- */
+// For compression we enable all used compressors in the fileset.
 bool AdjustCompressionBuffers(JobControlRecord* jcr)
 {
   findFILESET* fileset = jcr->impl->ff->fileset;
@@ -75,9 +73,7 @@ bool AdjustCompressionBuffers(JobControlRecord* jcr)
   return true;
 }
 
-/**
- * For decompression we use the same decompression buffer for each algorithm.
- */
+// For decompression we use the same decompression buffer for each algorithm.
 bool AdjustDecompressionBuffers(JobControlRecord* jcr)
 {
   uint32_t decompress_buf_size;
@@ -97,15 +93,11 @@ bool SetupCompressionContext(b_ctx& bctx)
   bool retval = false;
 
   if (BitIsSet(FO_COMPRESS, bctx.ff_pkt->flags)) {
-    /*
-     * See if we need to be compatible with the old GZIP stream encoding.
-     */
+    // See if we need to be compatible with the old GZIP stream encoding.
     if (!me->compatible || bctx.ff_pkt->Compress_algo != COMPRESS_GZIP) {
       memset(&bctx.ch, 0, sizeof(comp_stream_header));
 
-      /*
-       * Calculate buffer offsets.
-       */
+      // Calculate buffer offsets.
       if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags)
           || BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
         bctx.chead
@@ -131,9 +123,7 @@ bool SetupCompressionContext(b_ctx& bctx)
       bctx.ch.magic = bctx.ff_pkt->Compress_algo;
       bctx.ch.version = COMP_HEAD_VERSION;
     } else {
-      /*
-       * Calculate buffer offsets.
-       */
+      // Calculate buffer offsets.
       bctx.chead = NULL;
       if (BitIsSet(FO_SPARSE, bctx.ff_pkt->flags)
           || BitIsSet(FO_OFFSETS, bctx.ff_pkt->flags)) {
@@ -170,9 +160,7 @@ bool SetupCompressionContext(b_ctx& bctx)
         if (pZlibStream->total_in == 0) {
           int zstat;
 
-          /*
-           * Set gzip compression level - must be done per file
-           */
+          // Set gzip compression level - must be done per file
           if ((zstat = deflateParams(pZlibStream, bctx.ff_pkt->Compress_level,
                                      Z_DEFAULT_STRATEGY))
               != Z_OK) {

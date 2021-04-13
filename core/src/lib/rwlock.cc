@@ -72,17 +72,13 @@ int RwlDestroy(brwlock_t* rwl)
   if (rwl->valid != RWLOCK_VALID) { return EINVAL; }
   if ((status = pthread_mutex_lock(&rwl->mutex)) != 0) { return status; }
 
-  /*
-   * If any threads are active, report EBUSY
-   */
+  // If any threads are active, report EBUSY
   if (rwl->r_active > 0 || rwl->w_active) {
     pthread_mutex_unlock(&rwl->mutex);
     return EBUSY;
   }
 
-  /*
-   * If any threads are waiting, report EBUSY
-   */
+  // If any threads are waiting, report EBUSY
   if (rwl->r_wait > 0 || rwl->w_wait > 0) {
     pthread_mutex_unlock(&rwl->mutex);
     return EBUSY;
@@ -122,9 +118,7 @@ static void RwlWriteRelease(void* arg)
   pthread_mutex_unlock(&rwl->mutex);
 }
 
-/*
- * Lock for read access, wait until locked (or error).
- */
+// Lock for read access, wait until locked (or error).
 int RwlReadlock(brwlock_t* rwl)
 {
   int status;
@@ -146,9 +140,7 @@ int RwlReadlock(brwlock_t* rwl)
   return status;
 }
 
-/*
- * Attempt to lock for read access, don't wait
- */
+// Attempt to lock for read access, don't wait
 int RwlReadtrylock(brwlock_t* rwl)
 {
   int status, status2;
@@ -164,9 +156,7 @@ int RwlReadtrylock(brwlock_t* rwl)
   return (status == 0 ? status2 : status);
 }
 
-/*
- * Unlock read lock
- */
+// Unlock read lock
 int RwlReadunlock(brwlock_t* rwl)
 {
   int status, status2;
@@ -216,9 +206,7 @@ int RwlWritelock_p(brwlock_t* rwl, const char* file, int line)
   return status;
 }
 
-/*
- * Attempt to lock for write access, don't wait
- */
+// Attempt to lock for write access, don't wait
 int RwlWritetrylock(brwlock_t* rwl)
 {
   int status, status2;

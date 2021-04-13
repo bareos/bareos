@@ -252,9 +252,7 @@ int ndmca_td_listen(struct ndm_session* sess)
 
   ndmca_test_done_phase(sess);
 
-  /*
-   * Bogus arguments
-   */
+  // Bogus arguments
   ndmca_test_phase(sess, "D-LISTEN/bogus-args",
                    "Data LISTEN State Series w/ bogus args");
 

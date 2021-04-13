@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, May MMII
- */
+// Kern Sibbald, May MMII
 /**
  * @file
  * BAREOS Director -- Automatic Recycling of Volumes
@@ -58,9 +56,7 @@ bool FindRecycledVolume(JobControlRecord* jcr,
   return false;
 }
 
-/**
- * Look for oldest Purged volume
- */
+// Look for oldest Purged volume
 bool RecycleOldestPurgedVolume(JobControlRecord* jcr,
                                bool InChanger,
                                MediaDbRecord* mr,
@@ -86,9 +82,7 @@ bool RecycleOldestPurgedVolume(JobControlRecord* jcr,
   return false;
 }
 
-/**
- * Recycle the specified volume
- */
+// Recycle the specified volume
 bool RecycleVolume(JobControlRecord* jcr, MediaDbRecord* mr)
 {
   bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));

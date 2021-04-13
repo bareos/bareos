@@ -235,9 +235,7 @@ TEST(ConfigParser_Dir, CFG_TYPE_FNAME)
 void test_CFG_TYPE_TIME(DirectorResource* me)
 {
   /* clang-format off */
-  /*
-   * Heartbeat Interval = 1 years 2 months 3 weeks 4 days 5 hours 6 minutes 7 seconds
-   */
+  // Heartbeat Interval = 1 years 2 months 3 weeks 4 days 5 hours 6 minutes 7 seconds
   /* clang-format on */
   EXPECT_EQ(me->heartbeat_interval, 38898367);
 }

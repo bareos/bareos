@@ -18,9 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, August 2013.
- */
+// Marco van Wieringen, August 2013.
 /**
  * @file
  * Circular buffer used for producer/consumer problem with pthread.
@@ -59,14 +57,10 @@ class CircularBuffer {
   int capacity() const { return capacity_; }
 };
 
-/**
- * Constructor
- */
+// Constructor
 inline CircularBuffer::CircularBuffer(int capacity) { init(capacity); }
 
-/**
- * Destructor
- */
+// Destructor
 inline CircularBuffer::~CircularBuffer() { destroy(); }
 
 #endif  // BAREOS_LIB_CBUF_H_

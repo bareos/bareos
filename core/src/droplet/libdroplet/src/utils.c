@@ -44,9 +44,7 @@
 
 //#define DEBUG
 
-/*
- * port
- */
+// port
 
 #ifndef HAVE_DRAND48_R
 int srand48_r(long int seedval, struct drand48_data* buffer)
@@ -146,9 +144,7 @@ int dpl_gethostbyname2_r(const char* name,
 #endif
 }
 
-/**
- * Warning: new_host str size must be egal or greater than host str size
- */
+// Warning: new_host str size must be egal or greater than host str size
 
 void dpl_set_addr_family_from_host(const char* host, char* new_host, int* af)
 {
@@ -167,9 +163,7 @@ void dpl_set_addr_family_from_host(const char* host, char* new_host, int* af)
   }
 }
 
-/*
- * debug
- */
+// debug
 
 void dpl_dump_init(struct dpl_dump_ctx* ctx, int binary)
 {
@@ -335,9 +329,7 @@ void dpl_iov_dump(struct iovec* iov, int n_iov, size_t n_bytes, int binary)
   }
 }
 
-/*
- * utils
- */
+// utils
 
 static int check_string(const char* str, const char* format)
 {

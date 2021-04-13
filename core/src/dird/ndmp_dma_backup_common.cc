@@ -60,43 +60,31 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
   PoolMem tape_device;
   ndmp_backup_format_option* nbf_options;
 
-  /*
-   * See if we know this backup format and get it options.
-   */
+  // See if we know this backup format and get it options.
   nbf_options = ndmp_lookup_backup_format_options(job->bu_type);
 
   if (!nbf_options || nbf_options->uses_file_history) {
-    /*
-     * We want to receive file history info from the NDMP backup.
-     */
+    // We want to receive file history info from the NDMP backup.
     pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
     pv.value = ndmp_env_values[NDMP_ENV_VALUE_YES];
     ndma_store_env_list(&job->env_tab, &pv);
   } else {
-    /*
-     * We don't want to receive file history info from the NDMP backup.
-     */
+    // We don't want to receive file history info from the NDMP backup.
     pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
     pv.value = ndmp_env_values[NDMP_ENV_VALUE_NO];
     ndma_store_env_list(&job->env_tab, &pv);
   }
 
-  /*
-   * Tell the data agent what type of backup to make.
-   */
+  // Tell the data agent what type of backup to make.
   pv.name = ndmp_env_keywords[NDMP_ENV_KW_TYPE];
   pv.value = job->bu_type;
   ndma_store_env_list(&job->env_tab, &pv);
 
-  /*
-   * See if we are doing a backup type that uses dumplevels.
-   */
+  // See if we are doing a backup type that uses dumplevels.
   if (nbf_options && nbf_options->uses_level) {
     char text_level[50];
 
-    /*
-     * Set the dump level for the backup.
-     */
+    // Set the dump level for the backup.
     jcr->impl->DumpLevel = NativeToNdmpLevel(jcr, filesystem);
     job->bu_level = jcr->impl->DumpLevel;
     if (job->bu_level == -1) { return false; }
@@ -105,17 +93,13 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
     pv.value = edit_uint64(job->bu_level, text_level);
     ndma_store_env_list(&job->env_tab, &pv);
 
-    /*
-     * Update the dumpdates
-     */
+    // Update the dumpdates
     pv.name = ndmp_env_keywords[NDMP_ENV_KW_UPDATE];
     pv.value = ndmp_env_values[NDMP_ENV_VALUE_YES];
     ndma_store_env_list(&job->env_tab, &pv);
   }
 
-  /*
-   * Tell the data engine what to backup.
-   */
+  // Tell the data engine what to backup.
   pv.name = ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM];
   pv.value = filesystem;
   ndma_store_env_list(&job->env_tab, &pv);
@@ -127,9 +111,7 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
   for (i = 0; i < ie->file_options_list.size(); i++) {
     fo = ie->file_options_list[i];
 
-    /*
-     * Pickup any interesting patterns.
-     */
+    // Pickup any interesting patterns.
     cnt = 0;
     PmStrcpy(pattern, "");
     for (j = 0; j < fo->wild.size(); j++) {
@@ -148,9 +130,7 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
       cnt++;
     }
 
-    /*
-     * See if this is a INCLUDE or EXCLUDE block.
-     */
+    // See if this is a INCLUDE or EXCLUDE block.
     if (cnt > 0) {
       exclude = false;
       for (j = 0; fo->opts[j] != '\0'; j++) {
@@ -170,9 +150,7 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
       ndma_store_env_list(&job->env_tab, &pv);
     }
 
-    /*
-     * Parse all specific META tags for this option block.
-     */
+    // Parse all specific META tags for this option block.
     for (j = 0; j < fo->meta.size(); j++) {
       NdmpParseMetaTag(&job->env_tab, (char*)fo->meta.get(j));
     }
@@ -200,9 +178,7 @@ bool FillBackupEnvironment(JobControlRecord* jcr,
 }
 
 
-/*
- * Translate bareos native backup level to NDMP backup level
- */
+// Translate bareos native backup level to NDMP backup level
 int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem)
 {
   int level = -1;
@@ -227,9 +203,7 @@ int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem)
       break;
   }
 
-  /*
-   * Dump level can be from 0 - 9
-   */
+  // Dump level can be from 0 - 9
   if (level < 0 || level > 9) {
     Jmsg(jcr, M_FATAL, 0,
          _("NDMP dump format doesn't support more than 8 "
@@ -240,9 +214,7 @@ int NativeToNdmpLevel(JobControlRecord* jcr, char* filesystem)
   return level;
 }
 
-/*
- * This glues the NDMP File Handle DB with internal code.
- */
+// This glues the NDMP File Handle DB with internal code.
 void RegisterCallbackHooks(struct ndmlog* ixlog)
 {
 #  ifdef HAVE_LMDB
@@ -288,9 +260,7 @@ void ProcessFhdb(struct ndmlog* ixlog)
 #  endif
 }
 
-/*
- * Cleanup a NDMP backup session.
- */
+// Cleanup a NDMP backup session.
 void NdmpBackupCleanup(JobControlRecord* jcr, int TermCode)
 {
   const char* TermMsg;

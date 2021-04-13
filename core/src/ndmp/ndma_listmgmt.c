@@ -362,9 +362,7 @@ struct ndmmedia* ndma_clone_media_entry(struct ndm_media_table* mtab,
   return me;
 }
 
-/*
- * Destroy a Media Table.
- */
+// Destroy a Media Table.
 void ndmca_destroy_media_table(struct ndm_media_table* mtab)
 {
   struct ndmmedia *me, *next;

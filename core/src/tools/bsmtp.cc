@@ -112,9 +112,7 @@ static char* cleanup_addr(char* addr, char* buf, int buf_len)
   return buf;
 }
 
-/*
- *  examine message from server
- */
+//  examine message from server
 static void GetResponse(void)
 {
   char buf[1000];
@@ -138,9 +136,7 @@ static void GetResponse(void)
   return;
 }
 
-/*
- *  say something to server and check the response
- */
+//  say something to server and check the response
 static void chat(const char* fmt, ...)
 {
   va_list ap;
@@ -356,9 +352,7 @@ int main(int argc, char* argv[])
     exit(1);
   }
 
-  /*
-   *  Determine SMTP server
-   */
+  //  Determine SMTP server
   if (mailhost == NULL) {
     if ((cp = getenv("SMTPSERVER")) != NULL) {
       mailhost = cp;
@@ -408,9 +402,7 @@ int main(int argc, char* argv[])
 #endif
   Dmsg1(20, "My hostname is: %s\n", my_hostname);
 
-  /*
-   *  Determine from address.
-   */
+  //  Determine from address.
   if (from_addr == NULL) {
 #if defined(HAVE_WIN32)
     DWORD dwSize = UNLEN + 1;
@@ -432,9 +424,7 @@ int main(int argc, char* argv[])
   }
   Dmsg1(20, "From addr=%s\n", from_addr);
 
-  /*
-   *  Connect to smtp daemon on mailhost.
-   */
+  //  Connect to smtp daemon on mailhost.
 lookup_host:
 #ifdef HAVE_GETADDRINFO
   memset(&hints, 0, sizeof(struct addrinfo));
@@ -581,9 +571,7 @@ lookup_host:
   Dmsg0(20, "Data\n");
   chat("DATA\r\n");
 
-  /*
-   *  Send message header
-   */
+  //  Send message header
   fprintf(sfp, "From: %s\r\n", from_addr);
   Dmsg1(10, "From: %s\r\n", from_addr);
   if (subject) {
@@ -645,9 +633,7 @@ lookup_host:
 
   fprintf(sfp, "\r\n");
 
-  /*
-   *  Send message body
-   */
+  //  Send message body
   lines = 0;
   while (fgets(buf, sizeof(buf), stdin)) {
     if (maxlines > 0 && ++lines > maxlines) {
@@ -672,14 +658,10 @@ lookup_host:
             maxlines, lines - maxlines);
   }
 
-  /*
-   *  Send SMTP quit command
-   */
+  //  Send SMTP quit command
   chat(".\r\n");
   chat("QUIT\r\n");
 
-  /*
-   *  Go away gracefully ...
-   */
+  //  Go away gracefully ...
   exit(0);
 }

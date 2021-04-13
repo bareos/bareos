@@ -165,9 +165,7 @@ int ndma_dispatch_request(struct ndm_session* sess,
   }
 
 have_drt:
-  /*
-   * Permission checks, always.
-   */
+  // Permission checks, always.
 
   if (!sess->conn_open && !(drt->flags & NDM_DRT_FLAG_OK_NOT_CONNECTED)) {
     xa->reply.header.error = NDMP0_PERMISSION_ERR;
@@ -180,9 +178,7 @@ have_drt:
     return 0;
   }
 
-  /*
-   * If there is a translation afoot, translate the request now.
-   */
+  // If there is a translation afoot, translate the request now.
 
   if (rrxl) {
     NDMOS_MACRO_ZEROFILL(&xl_xa);
@@ -551,9 +547,7 @@ int ndma_tattle(struct ndmconn* conn, struct ndmp_xa_buf* xa, int rc)
  */
 
 
-/*
- * NDMP[0234]_CONNECT_OPEN
- */
+// NDMP[0234]_CONNECT_OPEN
 int ndmp_sxa_connect_open(struct ndm_session* sess,
                           struct ndmp_xa_buf* xa,
                           struct ndmconn* ref_conn)
@@ -609,9 +603,7 @@ static int connect_open_common(struct ndm_session* sess,
 }
 
 
-/*
- * NDMP[234]_CONNECT_CLIENT_AUTH
- */
+// NDMP[234]_CONNECT_CLIENT_AUTH
 int ndmp_sxa_connect_client_auth(struct ndm_session* sess,
                                  struct ndmp_xa_buf* xa,
                                  struct ndmconn* ref_conn)
@@ -661,9 +653,7 @@ int ndmp_sxa_connect_client_auth(struct ndm_session* sess,
 }
 
 
-/*
- * NDMP[023]_CONNECT_CLOSE
- */
+// NDMP[023]_CONNECT_CLOSE
 int ndmp_sxa_connect_close(struct ndm_session* sess,
                            struct ndmp_xa_buf* xa,
                            struct ndmconn* ref_conn)
@@ -678,9 +668,7 @@ int ndmp_sxa_connect_close(struct ndm_session* sess,
 }
 
 
-/*
- * NDMP[23]_CONNECT_SERVER_AUTH
- */
+// NDMP[23]_CONNECT_SERVER_AUTH
 int ndmp_sxa_connect_server_auth(struct ndm_session* sess,
                                  struct ndmp_xa_buf* xa,
                                  struct ndmconn* ref_conn)
@@ -744,9 +732,7 @@ int ndmp_sxa_config_get_info(struct ndm_session* sess,
 
 
 #ifndef NDMOS_OPTION_NO_NDMP2
-/*
- * NDMP2_CONFIG_GET_BUTYPE_ATTR
- */
+// NDMP2_CONFIG_GET_BUTYPE_ATTR
 int ndmp2_sxa_config_get_butype_attr(struct ndm_session* sess,
                                      struct ndmp_xa_buf* xa,
                                      struct ndmconn* ref_conn)
@@ -829,9 +815,7 @@ static ndmp9_error scsi_open_ok(struct ndm_session* sess);
 static ndmp9_error scsi_op_ok(struct ndm_session* sess);
 
 
-/*
- * NDMP[234]_SCSI_OPEN
- */
+// NDMP[234]_SCSI_OPEN
 int ndmp_sxa_scsi_open(struct ndm_session* sess,
                        struct ndmp_xa_buf* xa,
                        struct ndmconn* ref_conn)

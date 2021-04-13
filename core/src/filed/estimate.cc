@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, September MMI
- */
+// Kern Sibbald, September MMI
 /**
  * @file
  * Bareos File Daemon estimate.c
@@ -37,9 +35,7 @@ namespace filedaemon {
 
 static int TallyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool);
 
-/**
- * Find all the requested files and count them.
- */
+// Find all the requested files and count them.
 int MakeEstimate(JobControlRecord* jcr)
 {
   int status;

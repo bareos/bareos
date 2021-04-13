@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern E. Sibbald, August MMII
- */
+// Kern E. Sibbald, August MMII
 /**
  * This file provides routines that will handle all
  * the gory little details of reading a record from a Bareos
@@ -132,16 +130,12 @@ READ_CTX* new_read_context(void)
   return rctx;
 }
 
-/**
- * Free a read context which contains accumulated data from a read session.
- */
+// Free a read context which contains accumulated data from a read session.
 void FreeReadContext(READ_CTX* rctx)
 {
   DeviceRecord* rec;
 
-  /*
-   * Walk down list and free all remaining allocated recs
-   */
+  // Walk down list and free all remaining allocated recs
   while (!rctx->recs->empty()) {
     rec = (DeviceRecord*)rctx->recs->first();
     rctx->recs->remove(rec);
@@ -247,9 +241,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
         FreeRecord(trec);
         PositionDeviceToFirstFile(jcr, dcr);
 
-        /*
-         * After reading label, we must read first data block
-         */
+        // After reading label, we must read first data block
         continue;
       case DeviceControlRecord::ReadStatus::EndOfFile:
         Dmsg3(200, "End of file %u on device %s, Volume \"%s\"\n",
@@ -260,9 +252,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
           Jmsg1(jcr, M_ERROR, 0, "%s", dcr->dev->errmsg);
           continue;
         } else {
-          /*
-           * I/O error or strange end of tape
-           */
+          // I/O error or strange end of tape
           DisplayTapeErrorStatus(jcr, dcr->dev);
           if (forge_on || jcr->impl->ignore_label_errors) {
             dcr->dev->fsr(1); /* try skipping bad record */
@@ -325,15 +315,11 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
       return false;
     }
 
-    /*
-     * Some sort of label?
-     */
+    // Some sort of label?
     if (rec->FileIndex < 0) {
       HandleSessionRecord(dcr->dev, rec, &rctx->sessrec);
       if (jcr->impl->read_session.bsr) {
-        /*
-         * We just check block FI and FT not FileIndex
-         */
+        // We just check block FI and FT not FileIndex
         rec->match_stat
             = MatchBsrBlock(jcr->impl->read_session.bsr, dcr->block);
       } else {
@@ -343,9 +329,7 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
       return true;
     }
 
-    /*
-     * Apply BootStrapRecord filter
-     */
+    // Apply BootStrapRecord filter
     if (jcr->impl->read_session.bsr) {
       rec->match_stat = MatchBsr(jcr->impl->read_session.bsr, rec, &dev->VolHdr,
                                  &rctx->sessrec, jcr);
@@ -422,9 +406,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
       break;
     }
 
-    /*
-     * Read the next block into our buffers.
-     */
+    // Read the next block into our buffers.
     if (!ReadNextBlockFromDevice(dcr, &rctx->sessrec, RecordCb, mount_cb,
                                  &ok)) {
       break;
@@ -471,9 +453,7 @@ bool ReadRecords(DeviceControlRecord* dcr,
               dcr->block->BlockNumber, rctx->rec->VolSessionId,
               rctx->rec->VolSessionTime, rctx->rec->FileIndex);
 
-        /*
-         * Perform record translations.
-         */
+        // Perform record translations.
         dcr->before_rec = rctx->rec;
         dcr->after_rec = NULL;
 

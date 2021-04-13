@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, November MM
- */
+// Kern Sibbald, November MM
 /**
  * @file
  * Bareos File Daemon restore.c Restorefiles.
@@ -88,14 +86,10 @@ const bool have_xattr = true;
 const bool have_xattr = false;
 #endif
 
-/**
- * Data received from Storage Daemon
- */
+// Data received from Storage Daemon
 static char rec_header[] = "rechdr %ld %ld %ld %ld %ld";
 
-/**
- * Forward referenced functions
- */
+// Forward referenced functions
 #if defined(HAVE_LIBZ)
 const bool have_libz = true;
 #else
@@ -175,9 +169,7 @@ static inline bool RestoreFinderinfo(JobControlRecord* jcr,
 #endif
 }
 
-/**
- * Cleanup of delayed restore stack with streams for later processing.
- */
+// Cleanup of delayed restore stack with streams for later processing.
 static inline void DropDelayedDataStreams(r_ctx& rctx, bool reuse)
 {
   DelayedDataStream* dds = nullptr;
@@ -192,9 +184,7 @@ static inline void DropDelayedDataStreams(r_ctx& rctx, bool reuse)
   if (reuse) { rctx.delayed_streams->init(10, owned_by_alist); }
 }
 
-/**
- * Push a data stream onto the delayed restore stack for later processing.
- */
+// Push a data stream onto the delayed restore stack for later processing.
 static inline void PushDelayedDataStream(r_ctx& rctx, BareosSocket* sd)
 {
   DelayedDataStream* dds;
@@ -309,9 +299,7 @@ static inline bool PopDelayedDataStreams(JobControlRecord* jcr, r_ctx& rctx)
 {
   DelayedDataStream* dds = nullptr;
 
-  /*
-   * See if there is anything todo.
-   */
+  // See if there is anything todo.
   if (!rctx.delayed_streams || rctx.delayed_streams->empty()) { return true; }
 
   /*
@@ -380,31 +368,23 @@ static inline bool PopDelayedDataStreams(JobControlRecord* jcr, r_ctx& rctx)
     }
   }
 
-  /*
-   * We processed the stack so we can destroy it.
-   */
+  // We processed the stack so we can destroy it.
   rctx.delayed_streams->destroy();
 
-  /*
-   * (Re)Initialize the stack for a new use.
-   */
+  // (Re)Initialize the stack for a new use.
   rctx.delayed_streams->init(10, owned_by_alist);
 
   return true;
 
 bail_out:
 
-  /*
-   * Destroy the content of the stack and (re)initialize it for a new use.
-   */
+  // Destroy the content of the stack and (re)initialize it for a new use.
   DropDelayedDataStreams(rctx, true);
 
   return false;
 }
 
-/**
- * Restore the requested files.
- */
+// Restore the requested files.
 void DoRestore(JobControlRecord* jcr)
 {
   BareosSocket* sd;
@@ -419,9 +399,7 @@ void DoRestore(JobControlRecord* jcr)
   /* ***FIXME*** make configurable */
   crypto_digest_t signing_algorithm
       = have_sha2 ? CRYPTO_DIGEST_SHA256 : CRYPTO_DIGEST_SHA1;
-  /*
-   * The following variables keep track of "known unknowns"
-   */
+  // The following variables keep track of "known unknowns"
   int non_support_data = 0;
   int non_support_attr = 0;
   int non_support_rsrc = 0;
@@ -504,14 +482,10 @@ void DoRestore(JobControlRecord* jcr)
   }
 
   while (BgetMsg(sd) >= 0 && !JobCanceled(jcr)) {
-    /*
-     * Remember previous stream type
-     */
+    // Remember previous stream type
     rctx.prev_stream = rctx.stream;
 
-    /*
-     * First we expect a Stream Record Header
-     */
+    // First we expect a Stream Record Header
     if (sscanf(sd->msg, rec_header, &VolSessionId, &VolSessionTime, &file_index,
                &rctx.full_stream, &rctx.size)
         != 5) {
@@ -524,9 +498,7 @@ void DoRestore(JobControlRecord* jcr)
           jcr->JobFiles, file_index, rctx.size, rctx.stream,
           stream_to_ascii(rctx.stream));
 
-    /*
-     * Now we expect the Stream Data
-     */
+    // Now we expect the Stream Data
     if (BgetMsg(sd) < 0) {
       Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"), sd->bstrerror());
       goto bail_out;
@@ -541,35 +513,25 @@ void DoRestore(JobControlRecord* jcr)
     Dmsg3(130, "Got stream: %s len=%d extract=%d\n",
           stream_to_ascii(rctx.stream), sd->message_length, rctx.extract);
 
-    /*
-     * If we change streams, close and reset alternate data streams
-     */
+    // If we change streams, close and reset alternate data streams
     if (rctx.prev_stream != rctx.stream) {
       if (IsBopen(&rctx.forkbfd)) {
         DeallocateForkCipher(rctx);
         BcloseChksize(jcr, &rctx.forkbfd, rctx.fork_size);
       }
-      /*
-       * Use an impossible value and set a proper one below
-       */
+      // Use an impossible value and set a proper one below
       rctx.fork_size = -1;
       rctx.fork_addr = 0;
     }
 
-    /*
-     * File Attributes stream
-     */
+    // File Attributes stream
     switch (rctx.stream) {
       case STREAM_UNIX_ATTRIBUTES:
       case STREAM_UNIX_ATTRIBUTES_EX:
-        /*
-         * if any previous stream open, close it
-         */
+        // if any previous stream open, close it
         if (!ClosePreviousStream(jcr, rctx)) { goto bail_out; }
 
-        /*
-         * TODO: manage deleted files
-         */
+        // TODO: manage deleted files
         if (rctx.type == FT_DELETED) { /* deleted file */
           continue;
         }
@@ -579,9 +541,7 @@ void DoRestore(JobControlRecord* jcr)
          */
         if (IS_FT_OBJECT(rctx.type)) { continue; }
 
-        /*
-         * Unpack attributes and do sanity check them
-         */
+        // Unpack attributes and do sanity check them
         if (!UnpackAttributesRecord(jcr, rctx.stream, sd->msg,
                                     sd->message_length, attr)) {
           goto bail_out;
@@ -633,24 +593,16 @@ void DoRestore(JobControlRecord* jcr)
             jcr->JobFiles++;
             break;
           case CF_EXTRACT:
-            /*
-             * File created and we expect file data
-             */
+            // File created and we expect file data
             rctx.extract = true;
-            /*
-             * FALLTHROUGH
-             */
+            // FALLTHROUGH
           case CF_CREATED:
-            /*
-             * File created, but there is no content
-             */
+            // File created, but there is no content
             rctx.fileAddr = 0;
             PrintLsOutput(jcr, attr);
 
             if (have_darwin_os) {
-              /*
-               * Only restore the resource fork for regular files
-               */
+              // Only restore the resource fork for regular files
               FromBase64(&rsrc_len, attr->attrEx);
               if (attr->type == FT_REG && rsrc_len > 0) { rctx.extract = true; }
 

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM, MMI
- */
+// Kern Sibbald, MM, MMI
 /**
  * @file
  * Higher Level Device routines.
@@ -99,9 +97,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
 
   Dmsg0(100, "=== Enter FixupDeviceBlockWriteError\n");
 
-  /*
-   * If we are blocked at entry, unblock it, and set our own block status
-   */
+  // If we are blocked at entry, unblock it, and set our own block status
   if (blocked != BST_NOT_BLOCKED) { UnblockDevice(dev); }
   BlockDevice(dev, BST_DOING_ACQUIRE);
 
@@ -159,9 +155,7 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   FreeBlock(dcr->block);
   dcr->block = block;
 
-  /*
-   * Walk through all attached jcrs indicating the volume has changed
-   */
+  // Walk through all attached jcrs indicating the volume has changed
   Dmsg1(100, "Notify vol change. Volume=%s\n", dev->getVolCatName());
   for (auto mdcr : dev->attached_dcrs) {
     JobControlRecord* mjcr = mdcr->jcr;
@@ -300,9 +294,7 @@ bail_out:
   return ok;
 }
 
-/**
- * Position to the first file on this volume
- */
+// Position to the first file on this volume
 BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
                                            DeviceControlRecord* dcr)
 {

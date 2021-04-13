@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October 2000
- */
+// Kern Sibbald, October 2000
 /**
  * @file
  * Authenticate caller
@@ -63,9 +61,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
   POOLMEM* dirname;
   DirectorResource* director = NULL;
 
-  /*
-   * Sanity check.
-   */
+  // Sanity check.
   if (dir->message_length < 25 || dir->message_length > 500) {
     Dmsg2(debuglevel, "Bad Hello command from Director at %s. Len=%d.\n",
           dir->who(), dir->message_length);

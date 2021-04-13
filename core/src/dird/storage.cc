@@ -49,9 +49,7 @@ namespace directordaemon {
 
 /* Forward referenced functions */
 
-/**
- * Copy the storage definitions from an alist to the JobControlRecord
- */
+// Copy the storage definitions from an alist to the JobControlRecord
 void CopyRwstorage(JobControlRecord* jcr, alist* storage, const char* where)
 {
   if (jcr->JobReads()) { CopyRstorage(jcr, storage, where); }
@@ -78,9 +76,7 @@ void FreeRwstorage(JobControlRecord* jcr)
   FreeWstorage(jcr);
 }
 
-/**
- * Copy the storage definitions from an alist to the JobControlRecord
- */
+// Copy the storage definitions from an alist to the JobControlRecord
 void CopyRstorage(JobControlRecord* jcr, alist* storage, const char* where)
 {
   if (storage) {
@@ -137,9 +133,7 @@ void FreeRstorage(JobControlRecord* jcr)
   jcr->impl->res.read_storage = NULL;
 }
 
-/**
- * Copy the storage definitions from an alist to the JobControlRecord
- */
+// Copy the storage definitions from an alist to the JobControlRecord
 void CopyWstorage(JobControlRecord* jcr, alist* storage, const char* where)
 {
   if (storage) {
@@ -191,9 +185,7 @@ void SetWstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
     if (store->store == storage) { return; }
   }
 
-  /*
-   * Store not in list, so add it
-   */
+  // Store not in list, so add it
   jcr->impl->res.write_storage_list->prepend(store->store);
 }
 
@@ -218,9 +210,7 @@ void SetPairedStorage(JobControlRecord* jcr)
 
   switch (jcr->getJobType()) {
     case JT_BACKUP:
-      /*
-       * For a backup we look at the write storage.
-       */
+      // For a backup we look at the write storage.
       if (jcr->impl->res.write_storage_list) {
         /*
          * Setup the jcr->impl_->res.write_storage_list to point to all
@@ -256,9 +246,7 @@ void SetPairedStorage(JobControlRecord* jcr)
       }
       break;
     case JT_RESTORE:
-      /*
-       * For a restores we look at the read storage.
-       */
+      // For a restores we look at the read storage.
       if (jcr->impl->res.read_storage_list) {
         /*
          * Setup the jcr->impl_->res.paired_read_write_storage_list to point to
@@ -301,9 +289,7 @@ void SetPairedStorage(JobControlRecord* jcr)
       break;
     case JT_MIGRATE:
     case JT_COPY:
-      /*
-       * For a migrate or copy we look at the read storage.
-       */
+      // For a migrate or copy we look at the read storage.
       if (jcr->impl->res.read_storage_list) {
         /*
          * Setup the jcr->impl_->res.read_storage_list to point to all
@@ -356,9 +342,7 @@ void FreePairedStorage(JobControlRecord* jcr)
   if (jcr->impl->res.paired_read_write_storage_list) {
     switch (jcr->getJobType()) {
       case JT_BACKUP:
-        /*
-         * For a backup we look at the write storage.
-         */
+        // For a backup we look at the write storage.
         if (jcr->impl->res.write_storage_list) {
           /*
            * The jcr->impl_->res.write_storage_list contain a set of paired
@@ -386,9 +370,7 @@ void FreePairedStorage(JobControlRecord* jcr)
         break;
       case JT_MIGRATE:
       case JT_COPY:
-        /*
-         * For a migrate or copy we look at the read storage.
-         */
+        // For a migrate or copy we look at the read storage.
         if (jcr->impl->res.read_storage_list) {
           /*
            * The jcr->impl_->res.read_storage_list contains a set of paired
@@ -413,18 +395,14 @@ void FreePairedStorage(JobControlRecord* jcr)
   }
 }
 
-/**
- * Check if every possible storage has paired storage associated.
- */
+// Check if every possible storage has paired storage associated.
 bool HasPairedStorage(JobControlRecord* jcr)
 {
   StorageResource* store = nullptr;
 
   switch (jcr->getJobType()) {
     case JT_BACKUP:
-      /*
-       * For a backup we look at the write storage.
-       */
+      // For a backup we look at the write storage.
       if (jcr->impl->res.write_storage_list) {
         foreach_alist (store, jcr->impl->res.write_storage_list) {
           if (!store->paired_storage) { return false; }
@@ -462,9 +440,7 @@ bool HasPairedStorage(JobControlRecord* jcr)
 
 #define MAX_TRIES 6 * 360 /* 6 hours (10 sec intervals) */
 
-/**
- * Change the read storage resource for the current job.
- */
+// Change the read storage resource for the current job.
 bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
 {
   UnifiedStorageResource ustore;
@@ -491,21 +467,15 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
     jcr->store_bsock = NULL;
   }
 
-  /*
-   * Release current read storage and get a new one
-   */
+  // Release current read storage and get a new one
   DecReadStore(jcr);
   FreeRstorage(jcr);
   SetRstorage(jcr, &ustore);
   jcr->setJobStatus(JS_WaitSD);
 
-  /*
-   * Wait for up to 6 hours to increment read stoage counter
-   */
+  // Wait for up to 6 hours to increment read stoage counter
   for (int i = 0; i < MAX_TRIES; i++) {
-    /*
-     * Try to get read storage counter incremented
-     */
+    // Try to get read storage counter incremented
     if (IncReadStore(jcr)) {
       jcr->setJobStatus(JS_Running);
       return true;
@@ -517,9 +487,7 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
     }
   }
 
-  /*
-   * Failed to IncReadStore()
-   */
+  // Failed to IncReadStore()
   FreeRstorage(jcr);
   Jmsg(jcr, M_FATAL, 0, _("Could not acquire read storage lock for \"%s\""),
        info.storage);
@@ -540,9 +508,7 @@ void StorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   }
 }
 
-/**
- * Simple comparison function for binary insert of vol_list_t
- */
+// Simple comparison function for binary insert of vol_list_t
 int StorageCompareVolListEntry(void* e1, void* e2)
 {
   vol_list_t *v1, *v2;
@@ -579,9 +545,7 @@ static inline void FreeVolList(changer_vol_list_t* vol_list)
   }
 }
 
-/**
- * Generic routine to get the content of a storage autochanger.
- */
+// Generic routine to get the content of a storage autochanger.
 changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
                                               StorageResource* store,
                                               bool listall,
@@ -600,17 +564,13 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
     type = VOL_LIST_PARTIAL;
   }
 
-  /*
-   * Do we have a cached version of the content that is still valid ?
-   */
+  // Do we have a cached version of the content that is still valid ?
   if (store->runtime_storage_status->vol_list) {
     utime_t now;
 
     now = (utime_t)time(NULL);
 
-    /*
-     * Are we allowed to return a cached list ?
-     */
+    // Are we allowed to return a cached list ?
     if (cached && store->runtime_storage_status->vol_list->type == type) {
       if ((now - store->runtime_storage_status->vol_list->timestamp)
           <= store->cache_status_interval) {
@@ -644,9 +604,7 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
     }
   }
 
-  /*
-   * Nothing cached or uncached data wanted so perform retrieval.
-   */
+  // Nothing cached or uncached data wanted so perform retrieval.
   switch (store->Protocol) {
     case APT_NATIVE:
       contents = native_get_vol_list(ua, store, listall, scan);
@@ -661,9 +619,7 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
   }
 
   if (contents) {
-    /*
-     * Cache the returned content of the autochanger.
-     */
+    // Cache the returned content of the autochanger.
     if (!store->runtime_storage_status->vol_list) {
       store->runtime_storage_status->vol_list
           = (changer_vol_list_t*)malloc(sizeof(changer_vol_list_t));
@@ -687,9 +643,7 @@ slot_number_t GetNumSlots(UaContext* ua, StorageResource* store)
 {
   slot_number_t slots = 0;
 
-  /*
-   * See if we can use the cached number of slots.
-   */
+  // See if we can use the cached number of slots.
   if (store->runtime_storage_status->slots > 0) {
     return store->runtime_storage_status->slots;
   }
@@ -720,9 +674,7 @@ slot_number_t GetNumDrives(UaContext* ua, StorageResource* store)
 {
   drive_number_t drives = 0;
 
-  /*
-   * See if we can use the cached number of drives.
-   */
+  // See if we can use the cached number of drives.
   if (store->runtime_storage_status->drives > 0) {
     return store->runtime_storage_status->drives;
   }

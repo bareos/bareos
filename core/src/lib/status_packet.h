@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March MMVII
- */
+// Kern Sibbald, March MMVII
 /**
  * @file
  * Status packet definition that is used in both the SD and FD. It
@@ -38,9 +36,7 @@
 
 class BareosSocket;
 
-/**
- * Packet to send to OutputStatus()
- */
+// Packet to send to OutputStatus()
 class StatusPacket {
  public:
   StatusPacket() = default;

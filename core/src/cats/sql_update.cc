@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March 2000
- */
+// Kern Sibbald, March 2000
 /**
  * @file
  * BAREOS Catalog Database Update record interface routines
@@ -121,9 +119,7 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
   return retval;
 }
 
-/**
- * Update Long term statistics with all jobs that were run before age seconds
- */
+// Update Long term statistics with all jobs that were run before age seconds
 int BareosDb::UpdateStats(JobControlRecord* jcr, utime_t age)
 {
   char ed1[30];
@@ -379,9 +375,7 @@ bool BareosDb::UpdateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
 
   retval = UPDATE_DB(jcr, cmd);
 
-  /*
-   * Make sure InChanger is 0 for any record having the same Slot
-   */
+  // Make sure InChanger is 0 for any record having the same Slot
   MakeInchangerUnique(jcr, mr);
 
   DbUnlock(this);

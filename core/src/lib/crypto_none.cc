@@ -223,9 +223,7 @@ const char* crypto_digest_name(DIGEST* digest)
 #endif /* HAVE_CRYPTO */
 
 #if !defined(HAVE_OPENSSL) && !defined(HAVE_NSS)
-/*
- * Dummy initialization functions when no crypto framework found.
- */
+// Dummy initialization functions when no crypto framework found.
 int InitCrypto(void) { return 0; }
 
 int CleanupCrypto(void) { return 0; }

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * low level operations on device (storage device)
@@ -152,14 +150,10 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   Dmsg1(400, "max_block_size in device_resource res is %u\n",
         device_resource->max_block_size);
 
-  /*
-   * If no device type specified, try to guess
-   */
+  // If no device type specified, try to guess
   if (device_resource->dev_type == DeviceType::B_UNKNOWN_DEV) {
     struct stat statp;
-    /*
-     * Check that device is available
-     */
+    // Check that device is available
     if (stat(device_resource->archive_device_string, &statp) < 0) {
       BErrNo be;
       Jmsg2(jcr, M_ERROR, 0, _("Unable to stat device %s: ERR=%s\n"),
@@ -262,9 +256,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   }
   dev->InvalidateSlotNumber(); /* unknown */
 
-  /*
-   * Copy user supplied device parameters from Resource
-   */
+  // Copy user supplied device parameters from Resource
   dev->archive_device_string
       = GetMemory(strlen(device_resource->archive_device_string) + 1);
   PmStrcpy(dev->archive_device_string, device_resource->archive_device_string);
@@ -417,9 +409,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   return dev;
 }
 
-/**
- * This routine initializes the device wait timers
- */
+// This routine initializes the device wait timers
 void InitDeviceWaitTimers(DeviceControlRecord* dcr)
 {
   Device* dev = dcr->dev;
@@ -508,9 +498,7 @@ void Device::SetBlocksizes(DeviceControlRecord* dcr)
     dev->max_block_size = dcr->VolMaxBlocksize;
   }
 
-  /*
-   * Sanity check
-   */
+  // Sanity check
   if (dev->max_block_size == 0) {
     max_bs = DEFAULT_BLOCK_SIZE;
   } else {
@@ -642,9 +630,7 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
 
   label_type = B_BAREOS_LABEL;
 
-  /*
-   * We are about to open the device so let any plugin know we are.
-   */
+  // We are about to open the device so let any plugin know we are.
   if (dcr && GeneratePluginEvent(dcr->jcr, bSdEventDeviceOpen, dcr) != bRC_OK) {
     Dmsg0(100, "open_dev: bSdEventDeviceOpen failed\n");
     return false;
@@ -653,9 +639,7 @@ bool Device::open(DeviceControlRecord* dcr, DeviceMode omode)
   Dmsg1(100, "call OpenDevice mode=%s\n", mode_to_str(omode));
   OpenDevice(dcr, omode);
 
-  /*
-   * Reset any important state info
-   */
+  // Reset any important state info
   CopySetBits(ST_MAX, preserve, state);
 
   Dmsg2(100, "preserve=%08o fd=%d\n", preserve, fd);
@@ -683,18 +667,14 @@ void Device::set_mode(DeviceMode mode)
   }
 }
 
-/**
- * Open a device.
- */
+// Open a device.
 void Device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
 {
   PoolMem archive_name(PM_FNAME);
 
   GetAutochangerLoadedSlot(dcr);
 
-  /*
-   * Handle opening of File Archive (not a tape)
-   */
+  // Handle opening of File Archive (not a tape)
   PmStrcpy(archive_name, archive_device_string);
 
   /*
@@ -757,9 +737,7 @@ bool Device::rewind(DeviceControlRecord* dcr)
 {
   Dmsg3(400, "rewind res=%d fd=%d %s\n", NumReserved(), fd, print_name());
 
-  /*
-   * Remove EOF/EOT flags
-   */
+  // Remove EOF/EOT flags
   ClearBit(ST_EOT, state);
   ClearBit(ST_EOF, state);
   ClearBit(ST_WEOT, state);
@@ -782,9 +760,7 @@ bool Device::rewind(DeviceControlRecord* dcr)
   return true;
 }
 
-/**
- * Called to indicate that we have just read an EOF from the device.
- */
+// Called to indicate that we have just read an EOF from the device.
 void Device::SetAteof()
 {
   SetEof();
@@ -799,9 +775,7 @@ void Device::SetAteof()
  */
 void Device::SetAteot()
 {
-  /*
-   * Make volume effectively read-only
-   */
+  // Make volume effectively read-only
   SetBit(ST_EOF, state);
   SetBit(ST_EOT, state);
   SetBit(ST_WEOT, state);
@@ -979,9 +953,7 @@ bool Device::Reposition(DeviceControlRecord* dcr,
   return true;
 }
 
-/**
- * Set to unload the current volume in the drive.
- */
+// Set to unload the current volume in the drive.
 void Device::SetUnload()
 {
   if (!unload_ && VolHdr.VolumeName[0] != 0) {
@@ -990,9 +962,7 @@ void Device::SetUnload()
   }
 }
 
-/**
- * Clear volume header.
- */
+// Clear volume header.
 void Device::ClearVolhdr()
 {
   Dmsg1(100, "Clear volhdr vol=%s\n", VolHdr.VolumeName);
@@ -1000,9 +970,7 @@ void Device::ClearVolhdr()
   setVolCatInfo(false);
 }
 
-/**
- * Close the device.
- */
+// Close the device.
 bool Device::close(DeviceControlRecord* dcr)
 {
   bool retval = true;
@@ -1021,9 +989,7 @@ bool Device::close(DeviceControlRecord* dcr)
     case DeviceType::B_VTL_DEV:
     case DeviceType::B_TAPE_DEV:
       UnlockDoor();
-      /*
-       * Fall through wanted
-       */
+      // Fall through wanted
     default:
       status = d_close(fd);
       if (status < 0) {
@@ -1039,9 +1005,7 @@ bool Device::close(DeviceControlRecord* dcr)
 
   unmount(dcr, 1); /* do unmount if required */
 
-  /*
-   * Clean up device packet so it can be reused.
-   */
+  // Clean up device packet so it can be reused.
   ClearOpened();
 
   ClearBit(ST_LABEL, state);
@@ -1067,9 +1031,7 @@ bool Device::close(DeviceControlRecord* dcr)
     tid = 0;
   }
 
-  /*
-   * We closed the device so let any plugin know we did.
-   */
+  // We closed the device so let any plugin know we did.
   if (dcr) { GeneratePluginEvent(dcr->jcr, bSdEventDeviceClose, dcr); }
 
 bail_out:
@@ -1100,9 +1062,7 @@ bool Device::mount(DeviceControlRecord* dcr, int timeout)
     retval = false;
   }
 
-  /*
-   * Mark the device mounted if we succeed.
-   */
+  // Mark the device mounted if we succeed.
   if (retval) { SetMounted(); }
 
   return retval;
@@ -1118,9 +1078,7 @@ bool Device::unmount(DeviceControlRecord* dcr, int timeout)
   bool retval = true;
   Dmsg0(100, "Enter unmount\n");
 
-  /*
-   * See if the device is mounted.
-   */
+  // See if the device is mounted.
   if (!IsMounted()) { return true; }
 
   /*
@@ -1136,9 +1094,7 @@ bool Device::unmount(DeviceControlRecord* dcr, int timeout)
 
   retval = UnmountBackend(dcr, timeout);
 
-  /*
-   * Mark the device unmounted if we succeed.
-   */
+  // Mark the device unmounted if we succeed.
   if (retval) { ClearMounted(); }
 
 bail_out:
@@ -1195,9 +1151,7 @@ void Device::EditMountCodes(PoolMem& omsg, const char* imsg)
   }
 }
 
-/**
- * Return the last timer interval (ms) or 0 if something goes wrong
- */
+// Return the last timer interval (ms) or 0 if something goes wrong
 btime_t Device::GetTimerCount()
 {
   btime_t temp = last_timer;
@@ -1207,9 +1161,7 @@ btime_t Device::GetTimerCount()
   return (temp > 0) ? temp : 0; /* take care of skewed clock */
 }
 
-/**
- * Read from device.
- */
+// Read from device.
 ssize_t Device::read(void* buf, size_t len)
 {
   ssize_t read_len;

@@ -132,9 +132,7 @@ void OutputFormatter::ObjectStart(const char* name,
         return;
       }
       if (name == NULL) {
-        /*
-         * Add nameless object.
-         */
+        // Add nameless object.
         if (json_is_array(json_object_current)) {
           json_object_new = json_object();
           json_array_append_new(json_object_current, json_object_new);
@@ -734,9 +732,7 @@ bool OutputFormatter::FilterData(void* data)
 void OutputFormatter::AddHiddenColumn(int column)
 {
   if (column >= 0 && column <= OF_MAX_NR_HIDDEN_COLUMNS) {
-    /*
-     * See if the bitmap was already allocated.
-     */
+    // See if the bitmap was already allocated.
     if (!hidden_columns) {
       hidden_columns = (char*)malloc(NbytesForBits(OF_MAX_NR_HIDDEN_COLUMNS));
       ClearAllBits(OF_MAX_NR_HIDDEN_COLUMNS, hidden_columns);
@@ -840,19 +836,13 @@ void OutputFormatter::FinalizeResult(bool result)
       break;
   }
 
-  /*
-   * Clear any pending filters.
-   */
+  // Clear any pending filters.
   ClearFilters();
 
-  /*
-   * Clear any pending hidden columns.
-   */
+  // Clear any pending hidden columns.
   ClearHiddenColumns();
 
-  /*
-   * Clear num_rows_filtered
-   */
+  // Clear num_rows_filtered
   ClearNumRowsFiltered();
 }
 
@@ -1039,16 +1029,12 @@ void OutputFormatter::JsonFinalizeResult(bool result)
     string = json_dumps(msg_obj, UA_JSON_FLAGS_NORMAL);
   }
   if (string == NULL) {
-    /*
-     * json_dumps return NULL on failure (this should not happen).
-     */
+    // json_dumps return NULL on failure (this should not happen).
     Emsg0(M_ERROR, 0, "Failed to generate json string.\n");
   } else {
     size_t string_length = strlen(string);
     Dmsg1(800, "message length (json): %lld\n", string_length);
-    /*
-     * send json string, on failure, send json error message
-     */
+    // send json string, on failure, send json error message
     if (!send_func(send_ctx, "%s", string)) {
       /*
        * If send failed, include short messages in error messages.

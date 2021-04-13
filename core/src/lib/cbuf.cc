@@ -18,19 +18,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, August 2013.
- */
+// Marco van Wieringen, August 2013.
 
-/*
- * Circular buffer used for producer/consumer problem with pthreads.
- */
+// Circular buffer used for producer/consumer problem with pthreads.
 #include "include/bareos.h"
 #include "cbuf.h"
 
-/*
- * Initialize a new circular buffer.
- */
+// Initialize a new circular buffer.
 int CircularBuffer::init(int capacity)
 {
   if (pthread_mutex_init(&lock_, NULL) != 0) { return -1; }
@@ -56,9 +50,7 @@ int CircularBuffer::init(int capacity)
   return 0;
 }
 
-/*
- * Destroy a circular buffer.
- */
+// Destroy a circular buffer.
 void CircularBuffer::destroy()
 {
   pthread_cond_destroy(&notempty_);
@@ -70,24 +62,18 @@ void CircularBuffer::destroy()
   }
 }
 
-/*
- * Enqueue a new item into the circular buffer.
- */
+// Enqueue a new item into the circular buffer.
 int CircularBuffer::enqueue(void* data)
 {
   if (pthread_mutex_lock(&lock_) != 0) { return -1; }
 
-  /*
-   * Wait while the buffer is full.
-   */
+  // Wait while the buffer is full.
   while (full()) { pthread_cond_wait(&notfull_, &lock_); }
   data_[next_in_++] = data;
   size_++;
   next_in_ %= capacity_;
 
-  /*
-   * Let any waiting consumer know there is data.
-   */
+  // Let any waiting consumer know there is data.
   pthread_cond_broadcast(&notempty_);
 
   pthread_mutex_unlock(&lock_);
@@ -95,32 +81,24 @@ int CircularBuffer::enqueue(void* data)
   return 0;
 }
 
-/*
- * Dequeue an item from the circular buffer.
- */
+// Dequeue an item from the circular buffer.
 void* CircularBuffer::dequeue()
 {
   void* data = NULL;
 
   if (pthread_mutex_lock(&lock_) != 0) { return NULL; }
 
-  /*
-   * Wait while there is nothing in the buffer
-   */
+  // Wait while there is nothing in the buffer
   while (empty() && !flush_) { pthread_cond_wait(&notempty_, &lock_); }
 
-  /*
-   * When we are requested to flush and there is no data left return NULL.
-   */
+  // When we are requested to flush and there is no data left return NULL.
   if (empty() && flush_) { goto bail_out; }
 
   data = data_[next_out_++];
   size_--;
   next_out_ %= capacity_;
 
-  /*
-   * Let all waiting producers know there is room.
-   */
+  // Let all waiting producers know there is room.
   pthread_cond_broadcast(&notfull_);
 
 bail_out:
@@ -137,9 +115,7 @@ int CircularBuffer::NextSlot()
 {
   if (pthread_mutex_lock(&lock_) != 0) { return -1; }
 
-  /*
-   * Wait while the buffer is full.
-   */
+  // Wait while the buffer is full.
   while (full()) { pthread_cond_wait(&notfull_, &lock_); }
 
   pthread_mutex_unlock(&lock_);
@@ -155,14 +131,10 @@ int CircularBuffer::flush()
 {
   if (pthread_mutex_lock(&lock_) != 0) { return -1; }
 
-  /*
-   * Set the flush flag.
-   */
+  // Set the flush flag.
   flush_ = true;
 
-  /*
-   * Let all waiting consumers know there will be no more data.
-   */
+  // Let all waiting consumers know there will be no more data.
   pthread_cond_broadcast(&notempty_);
 
   pthread_mutex_unlock(&lock_);

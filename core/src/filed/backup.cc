@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March MM
- */
+// Kern Sibbald, March MM
 /**
  * @file
  * Bareos File Daemon  backup.c  send file attributes and data to the Storage
@@ -135,9 +133,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   SetFindOptions((FindFilesPacket*)jcr->impl->ff, jcr->impl->incremental,
                  jcr->impl->since_time);
 
-  /**
-   * In accurate mode, we overload the find_one check function
-   */
+  // In accurate mode, we overload the find_one check function
   if (jcr->accurate) {
     SetFindChangedFunction((FindFilesPacket*)jcr->impl->ff, AccurateCheckFile);
   }
@@ -160,9 +156,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
     jcr->impl->xattr_data->u.build->content = GetPoolMemory(PM_MESSAGE);
   }
 
-  /**
-   * Subroutine SaveFile() is called for each file
-   */
+  // Subroutine SaveFile() is called for each file
   if (!FindFiles(jcr, (FindFilesPacket*)jcr->impl->ff, SaveFile, PluginSave)) {
     ok = false; /* error */
     jcr->setJobStatus(JS_ErrorTerminated);
@@ -209,9 +203,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr,
   return ok;
 }
 
-/**
- * Save OSX specific resource forks and finder info.
- */
+// Save OSX specific resource forks and finder info.
 static inline bool SaveRsrcAndFinder(b_save_ctx& bsctx)
 {
   char flags[FOPTS_BYTES];
@@ -306,9 +298,7 @@ static inline bool SetupEncryptionDigests(b_save_ctx& bsctx)
     bsctx.digest_stream = STREAM_SHA512_DIGEST;
   }
 
-  /*
-   * Did digest initialization fail?
-   */
+  // Did digest initialization fail?
   if (bsctx.digest_stream != STREAM_NONE && bsctx.digest == NULL) {
     Jmsg(bsctx.jcr, M_WARNING, 0, _("%s digest initialization failed\n"),
          stream_to_ascii(bsctx.digest_stream));
@@ -324,9 +314,7 @@ static inline bool SetupEncryptionDigests(b_save_ctx& bsctx)
   if (bsctx.jcr->impl->crypto.pki_sign) {
     bsctx.signing_digest = crypto_digest_new(bsctx.jcr, signing_algorithm);
 
-    /*
-     * Full-stop if a failure occurred initializing the signature digest
-     */
+    // Full-stop if a failure occurred initializing the signature digest
     if (bsctx.signing_digest == NULL) {
       Jmsg(bsctx.jcr, M_NOTSAVED, 0,
            _("%s signature digest initialization failed\n"),
@@ -336,9 +324,7 @@ static inline bool SetupEncryptionDigests(b_save_ctx& bsctx)
     }
   }
 
-  /*
-   * Enable encryption
-   */
+  // Enable encryption
   if (bsctx.jcr->impl->crypto.pki_encrypt) {
     SetBit(FO_ENCRYPT, bsctx.ff_pkt->flags);
   }
@@ -348,9 +334,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Terminate the signing digest and send it to the Storage daemon
- */
+// Terminate the signing digest and send it to the Storage daemon
 static inline bool TerminateSigningDigest(b_save_ctx& bsctx)
 {
   uint32_t size = 0;
@@ -371,31 +355,23 @@ static inline bool TerminateSigningDigest(b_save_ctx& bsctx)
     goto bail_out;
   }
 
-  /*
-   * Get signature size
-   */
+  // Get signature size
   if (!CryptoSignEncode(signature, NULL, &size)) {
     Jmsg(bsctx.jcr, M_FATAL, 0,
          _("An error occurred while signing the stream.\n"));
     goto bail_out;
   }
 
-  /*
-   * Grow the bsock buffer to fit our message if necessary
-   */
+  // Grow the bsock buffer to fit our message if necessary
   if (SizeofPoolMemory(sd->msg) < (int32_t)size) {
     sd->msg = ReallocPoolMemory(sd->msg, size);
   }
 
-  /*
-   * Send our header
-   */
+  // Send our header
   sd->fsend("%ld %ld 0", bsctx.jcr->JobFiles, STREAM_SIGNED_DIGEST);
   Dmsg1(300, "filed>stored:header %s", sd->msg);
 
-  /*
-   * Encode signature data
-   */
+  // Encode signature data
   if (!CryptoSignEncode(signature, (uint8_t*)sd->msg, &size)) {
     Jmsg(bsctx.jcr, M_FATAL, 0,
          _("An error occurred while signing the stream.\n"));
@@ -412,9 +388,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Terminate any digest and send it to Storage daemon
- */
+// Terminate any digest and send it to Storage daemon
 static inline bool TerminateDigest(b_save_ctx& bsctx)
 {
   uint32_t size;
@@ -426,9 +400,7 @@ static inline bool TerminateDigest(b_save_ctx& bsctx)
 
   size = CRYPTO_DIGEST_MAX_SIZE;
 
-  /*
-   * Grow the bsock buffer to fit our message if necessary
-   */
+  // Grow the bsock buffer to fit our message if necessary
   if (SizeofPoolMemory(sd->msg) < (int32_t)size) {
     sd->msg = ReallocPoolMemory(sd->msg, size);
   }
@@ -439,9 +411,7 @@ static inline bool TerminateDigest(b_save_ctx& bsctx)
     goto bail_out;
   }
 
-  /*
-   * Keep the checksum if this file is a hardlink
-   */
+  // Keep the checksum if this file is a hardlink
   if (bsctx.ff_pkt->linked) {
     FfPktSetLinkDigest(bsctx.ff_pkt, bsctx.digest_stream, sd->msg, size);
   }
@@ -659,38 +629,28 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
 
   Dmsg1(130, "filed: sending %s to stored\n", ff_pkt->fname);
 
-  /*
-   * Setup backup signing context.
-   */
+  // Setup backup signing context.
   memset(&bsctx, 0, sizeof(b_save_ctx));
   bsctx.digest_stream = STREAM_NONE;
   bsctx.jcr = jcr;
   bsctx.ff_pkt = ff_pkt;
 
-  /*
-   * Digests and encryption are only useful if there's file data
-   */
+  // Digests and encryption are only useful if there's file data
   if (has_file_data) {
     if (!SetupEncryptionDigests(bsctx)) { goto good_rtn; }
   }
 
-  /*
-   * Initialize the file descriptor we use for data and other streams.
-   */
+  // Initialize the file descriptor we use for data and other streams.
   binit(&ff_pkt->bfd);
   if (BitIsSet(FO_PORTABLE, ff_pkt->flags)) {
     SetPortableBackup(&ff_pkt->bfd); /* disable Win32 BackupRead() */
   }
 
-  /*
-   * Option and cmd plugin are not compatible together
-   */
+  // Option and cmd plugin are not compatible together
   if (ff_pkt->cmd_plugin) {
     do_plugin_set = true;
   } else if (ff_pkt->opt_plugin) {
-    /*
-     * Ask the option plugin what to do with this file
-     */
+    // Ask the option plugin what to do with this file
     switch (PluginOptionHandleFile(jcr, ff_pkt, &sp)) {
       case bRC_OK:
         Dmsg2(10, "Option plugin %s will be used to backup %s\n",
@@ -714,27 +674,19 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
   }
 
   if (do_plugin_set) {
-    /*
-     * Tell bfile that it needs to call plugin
-     */
+    // Tell bfile that it needs to call plugin
     if (!SetCmdPlugin(&ff_pkt->bfd, jcr)) { goto bail_out; }
     SendPluginName(jcr, sd, true); /* signal start of plugin data */
     plugin_started = true;
   }
 
-  /*
-   * Send attributes -- must be done after binit()
-   */
+  // Send attributes -- must be done after binit()
   if (!EncodeAndSendAttributes(jcr, ff_pkt, data_stream)) { goto bail_out; }
 
-  /*
-   * Meta data only for restore object
-   */
+  // Meta data only for restore object
   if (IS_FT_OBJECT(ff_pkt->type)) { goto good_rtn; }
 
-  /*
-   * Meta data only for deleted files
-   */
+  // Meta data only for deleted files
   if (ff_pkt->type == FT_DELETED) { goto good_rtn; }
 
   /*

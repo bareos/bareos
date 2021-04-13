@@ -56,9 +56,7 @@ struct ndmp3_unfortunate_error {
   ndmp9_error error;
 };
 
-/*
- * NDMNMB_IS_UNFORTUNATE_REPLY_TYPE(vers,msg)
- */
+// NDMNMB_IS_UNFORTUNATE_REPLY_TYPE(vers,msg)
 #ifdef NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4
 #define NDMNMB_IS_UNFORTUNATE_REPLY_TYPE(vers, msg) 0
 #else /* NDMOS_EFFECT_NO_NDMP3_NOR_NDMP4 */

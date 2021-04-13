@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, February MMVI
- */
+// Kern Sibbald, February MMVI
 /**
  * @file
  * Definitions for reservation system.

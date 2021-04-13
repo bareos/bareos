@@ -58,9 +58,7 @@ static inline bool extract_post_backup_stats_ndmp_native(
     struct ndm_session* sess);
 
 
-/**
- * callback to check if job is cancelled and NDMP should stop
- */
+// callback to check if job is cancelled and NDMP should stop
 int is_job_canceled_cb(struct ndm_session* sess)
 {
   NIS* nis = (NIS*)sess->param->log.ctx;
@@ -93,9 +91,7 @@ int NdmpLoadNext(struct ndm_session* sess)
   int index = 1;
   StorageResource* store = jcr->impl->res.write_storage;
 
-  /*
-   * get the poolid for pool name
-   */
+  // get the poolid for pool name
   mr.PoolId = jcr->impl->jr.PoolId;
 
 
@@ -103,15 +99,11 @@ int NdmpLoadNext(struct ndm_session* sess)
                               prune)) {
     Jmsg(jcr, M_INFO, 0, _("Found volume for append: %s\n"), mr.VolumeName);
 
-    /*
-     * reserve medium so that it cannot be used by other job while we use it
-     */
+    // reserve medium so that it cannot be used by other job while we use it
     bstrncpy(mr.VolStatus, NT_("Used"), sizeof(mr.VolStatus));
 
 
-    /*
-     * set FirstWritten Timestamp
-     */
+    // set FirstWritten Timestamp
     mr.FirstWritten = (utime_t)time(NULL);
 
     if (!jcr->db->UpdateMediaRecord(jcr, &mr)) {
@@ -120,18 +112,14 @@ int NdmpLoadNext(struct ndm_session* sess)
       goto bail_out;
     }
 
-    /*
-     * insert volume info in ndmmedia list
-     */
+    // insert volume info in ndmmedia list
     media = ndma_store_media(media_tab, mr.Slot);
 
     bstrncpy(media->label, mr.VolumeName, NDMMEDIA_LABEL_MAX - 1);
     media->valid_label = NDMP9_VALIDITY_VALID;
 
 
-    /*
-     * we want to append, so we need to skip what is already written
-     */
+    // we want to append, so we need to skip what is already written
     media->file_mark_offset = mr.VolFiles + 1;
     media->valid_filemark = NDMP9_VALIDITY_VALID;
 
@@ -165,9 +153,7 @@ int NdmpLoadNext(struct ndm_session* sess)
   }
 }
 
-/*
- * Run a NDMP backup session for NDMP_NATIVE backup
- */
+// Run a NDMP backup session for NDMP_NATIVE backup
 bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
 {
   int status;
@@ -196,9 +182,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   jobcontrol_callbacks.is_job_canceled = is_job_canceled_cb;
 
 
-  /*
-   * Print Job Start message
-   */
+  // Print Job Start message
   Jmsg(jcr, M_INFO, 0, _("Start NDMP Backup JobId %s, Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
@@ -283,15 +267,11 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   ndmp_sess.param->log_tag = strdup("DIR-NDMP");
   ndmp_sess.dump_media_info = 1;
 
-  /*
-   * Initialize the session structure.
-   */
+  // Initialize the session structure.
   if (ndma_session_initialize(&ndmp_sess)) { goto cleanup; }
   session_initialized = true;
 
-  /*
-   * Copy the actual job to perform.
-   */
+  // Copy the actual job to perform.
   memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
 
   /*
@@ -329,14 +309,10 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
   //   goto cleanup;
   //}
 
-  /*
-   * Commission the session for a run.
-   */
+  // Commission the session for a run.
   if (ndma_session_commission(&ndmp_sess)) { goto cleanup; }
 
-  /*
-   * Setup the DMA.
-   */
+  // Setup the DMA.
   if (ndmca_connect_control_agent(&ndmp_sess)) { goto cleanup; }
 
   ndmp_sess.conn_open = 1;
@@ -344,9 +320,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
 
   RegisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
 
-  /*
-   * Let the DMA perform its magic.
-   */
+  // Let the DMA perform its magic.
   if (ndmca_control_agent(&ndmp_sess) != 0) { goto cleanup; }
 
   if (!unreserve_ndmp_tapedevice_for_job(store, jcr)) {
@@ -354,42 +328,30 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
          ndmp_job.tape_device, jcr->JobId);
   }
 
-  /*
-   * See if there were any errors during the backup.
-   */
+  // See if there were any errors during the backup.
   jcr->impl->jr.FileIndex = 1;
   if (!extract_post_backup_stats_ndmp_native(jcr, item, &ndmp_sess)) {
     goto cleanup;
   }
   UnregisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
 
-  /*
-   * Reset the NDMP session states.
-   */
+  // Reset the NDMP session states.
   ndma_session_decommission(&ndmp_sess);
 
-  /*
-   * Cleanup the job after it has run.
-   */
+  // Cleanup the job after it has run.
   ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
   ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
   ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
 
-  /*
-   * Destroy the session.
-   */
+  // Destroy the session.
   ndma_session_destroy(&ndmp_sess);
 
-  /*
-   * Free the param block.
-   */
+  // Free the param block.
   free(ndmp_sess.param->log_tag);
   free(ndmp_sess.param);
   ndmp_sess.param = NULL;
 
-  /*
-   * Reset the initialized state so we don't try to cleanup again.
-   */
+  // Reset the initialized state so we don't try to cleanup again.
   session_initialized = false;
 
 
@@ -405,9 +367,7 @@ bool DoNdmpBackupNdmpNative(JobControlRecord* jcr)
    */
   if (jcr->JobFiles == 0) { jcr->JobFiles = 1; }
 
-  /*
-   * Jump to the generic cleanup done for every Job.
-   */
+  // Jump to the generic cleanup done for every Job.
   goto ok_out;
 
 cleanup:
@@ -417,9 +377,7 @@ cleanup:
          ndmp_job.tape_device, jcr->JobId);
   }
 
-  /*
-   * Only need to cleanup when things are initialized.
-   */
+  // Only need to cleanup when things are initialized.
   if (session_initialized) {
     ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
     ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
@@ -431,23 +389,17 @@ cleanup:
        */
     UnregisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
 
-    /*
-     * Destroy the session.
-     */
+    // Destroy the session.
     ndma_session_destroy(&ndmp_sess);
   }
 
-  /*
-   * Free the param block.
-   */
+  // Free the param block.
   free(ndmp_sess.param->log_tag);
   free(ndmp_sess.param);
   ndmp_sess.param = NULL;
 
 bail_out:
-  /*
-   * Error handling of failed Job.
-   */
+  // Error handling of failed Job.
   status = JS_ErrorTerminated;
   jcr->setJobStatus(JS_ErrorTerminated);
 

@@ -14,9 +14,7 @@
  *
  *  For disclaimer see below.
  */
-/*
- * Adapted by Kern Sibbald to BACULA June 2003
- */
+// Adapted by Kern Sibbald to BACULA June 2003
 /* check-sources:disable-copyright-check */
 
 #include "include/bareos.h"

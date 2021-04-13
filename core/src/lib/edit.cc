@@ -32,9 +32,7 @@
 
 #define DEFAULT_FORMAT_LENGTH 27
 
-/*
- * We assume ASCII input and don't worry about overflow
- */
+// We assume ASCII input and don't worry about overflow
 uint64_t str_to_uint64(const char* str)
 {
   const char* p = str;
@@ -207,9 +205,7 @@ static bool GetModifier(char* str,
   }
   num_begin = i;
 
-  /*
-   * Walk through integer part
-   */
+  // Walk through integer part
   for (; i < len; i++) {
     if (!B_ISDIGIT(str[i]) && str[i] != '.') { break; }
   }
@@ -220,9 +216,7 @@ static bool GetModifier(char* str,
   }
   if (num_len == 0) { return false; }
 
-  /*
-   * Eat any spaces in front of modifier
-   */
+  // Eat any spaces in front of modifier
   for (; i < len; i++) {
     if (!B_ISSPACE(str[i])) { break; }
   }
@@ -261,9 +255,7 @@ bool DurationToUtime(char* str, utime_t* value)
   double val, total = 0.0;
   char mod_str[20];
   char num_str[50];
-  /*
-   * The "n" = mins and months appears before minutes so that m maps to months.
-   */
+  // The "n" = mins and months appears before minutes so that m maps to months.
   static const char* mod[]
       = {"n",    "seconds", "months",   "minutes", "mins",     "hours",
          "days", "weeks",   "quarters", "years",   (char*)NULL};
@@ -284,9 +276,7 @@ bool DurationToUtime(char* str, utime_t* value)
       return false;
     }
 
-    /*
-     * Now find the multiplier corresponding to the modifier
-     */
+    // Now find the multiplier corresponding to the modifier
     mod_len = strlen(mod_str);
     if (mod_len == 0) {
       i = 1; /* Default to seconds */
@@ -310,9 +300,7 @@ bool DurationToUtime(char* str, utime_t* value)
   return true;
 }
 
-/*
- * Edit a utime "duration" into ASCII
- */
+// Edit a utime "duration" into ASCII
 char* edit_utime(utime_t val, char* buf, int buf_len)
 {
   char mybuf[200];
@@ -392,9 +380,7 @@ static bool strunit_to_uint64(char* str, uint64_t* value, const char** mod)
     return 0;
   }
 
-  /*
-   * Now find the multiplier corresponding to the modifier
-   */
+  // Now find the multiplier corresponding to the modifier
   mod_len = strlen(mod_str);
   if (mod_len == 0) {
     i = 0; /* Default with no modifier = 1 */
@@ -421,9 +407,7 @@ std::string SizeAsSiPrefixFormat(uint64_t value_in)
   uint64_t value = value_in;
   int factor;
   std::string result{};
-  /*
-   * convert default value string to numeric value
-   */
+  // convert default value string to numeric value
   static const char* modifier[]
       = {" e", " p", " t", " g", " m", " k", "", NULL};
   const uint64_t multiplier[] = {1152921504606846976,  // EiB Exbibyte
@@ -458,9 +442,7 @@ std::string SizeAsSiPrefixFormat(uint64_t value_in)
  */
 bool size_to_uint64(char* str, uint64_t* value)
 {
-  /*
-   * First item * not used
-   */
+  // not used
   // clang-format off
   static const char* mod[] = {"*",
                               // kibibyte, kilobyte
@@ -488,9 +470,7 @@ bool size_to_uint64(char* str, uint64_t* value)
  */
 bool speed_to_uint64(char* str, uint64_t* value)
 {
-  /*
-   * First item * not used
-   */
+  // not used
   static const char* mod[] = {"*", "k/s", "kb/s", "m/s", "mb/s", NULL};
 
   return strunit_to_uint64(str, value, mod);
@@ -526,9 +506,7 @@ bool Is_a_number(const char* n)
   return digit_seen && *n == 0;
 }
 
-/*
- * Check if specified string is a list of numbers or not
- */
+// Check if specified string is a list of numbers or not
 bool Is_a_number_list(const char* n)
 {
   bool previous_digit = false;
@@ -549,9 +527,7 @@ bool Is_a_number_list(const char* n)
   return digit_seen && *n == 0;
 }
 
-/*
- * Check if the specified string is an integer
- */
+// Check if the specified string is an integer
 bool IsAnInteger(const char* n)
 {
   bool digit_seen = false;
@@ -571,9 +547,7 @@ bool IsNameValid(const char* name, POOLMEM*& msg)
 {
   int len;
   const char* p;
-  /*
-   * Special characters to accept
-   */
+  // Special characters to accept
   const char* accept = ":.-_/ ";
 
   /* Empty name is invalid */
@@ -588,9 +562,7 @@ bool IsNameValid(const char* name, POOLMEM*& msg)
     return false;
   }
 
-  /*
-   * Restrict the characters permitted in the Volume name
-   */
+  // Restrict the characters permitted in the Volume name
   for (p = name; *p; p++) {
     if (B_ISALPHA(*p) || B_ISDIGIT(*p) || strchr(accept, (int)(*p))) {
       continue;
@@ -631,9 +603,7 @@ bool IsNameValid(const char* name)
   return retval;
 }
 
-/*
- * Add commas to a string, which is presumably a number.
- */
+// Add commas to a string, which is presumably a number.
 char* add_commas(char* val, char* buf)
 {
   int len, nc;

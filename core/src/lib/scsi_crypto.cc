@@ -36,18 +36,14 @@ static void IndentStatusMsg(POOLMEM*& status, const char* msg, int indent);
 
 #ifdef HAVE_LOWLEVEL_SCSI_INTERFACE
 
-/*
- * Store a value as 2 bytes MSB/LSB
- */
+// Store a value as 2 bytes MSB/LSB
 static inline void set_2_byte_value(unsigned char* field, int value)
 {
   field[0] = (unsigned char)((value & 0xff00) >> 8);
   field[1] = (unsigned char)(value & 0x00ff);
 }
 
-/*
- * Store a value as 4 bytes MSB/LSB
- */
+// Store a value as 4 bytes MSB/LSB
 static inline void set_4_byte_value(unsigned char* field, int value)
 {
   field[0] = (unsigned char)((value & 0xff000000) >> 24);
@@ -92,9 +88,7 @@ bool ClearScsiEncryptionKey(int fd, const char* device_name)
   sps->kadFormat = SPP_KAD_KEY_FORMAT_NORMAL;
   set_2_byte_value(sps->keyLength, SPP_KEY_LENGTH);
 
-  /*
-   * Set the length to the size of the SPP_PAGE_SDE we just filled.
-   */
+  // Set the length to the size of the SPP_PAGE_SDE we just filled.
   cmd_page_len = sizeof(SPP_PAGE_SDE);
 
   /*
@@ -103,9 +97,7 @@ bool ClearScsiEncryptionKey(int fd, const char* device_name)
    */
   set_2_byte_value(cmd_page.length, cmd_page_len - 4);
 
-  /*
-   * Fill the SCSI CDB.
-   */
+  // Fill the SCSI CDB.
   cdb_len = sizeof(cdb);
   memset(&cdb, 0, cdb_len);
   cdb.opcode = SCSI_SPOUT_OPCODE;
@@ -113,9 +105,7 @@ bool ClearScsiEncryptionKey(int fd, const char* device_name)
   set_2_byte_value(cdb.scp_specific, SPOUT_SET_DATA_ENCRYPTION_PAGE);
   set_4_byte_value(cdb.allocation_length, cmd_page_len);
 
-  /*
-   * Clear the encryption key.
-   */
+  // Clear the encryption key.
   return send_scsi_cmd_page(fd, device_name, (void*)&cdb, cdb_len,
                             (void*)&cmd_page, cmd_page_len);
 }
@@ -157,9 +147,7 @@ bool SetScsiEncryptionKey(int fd, const char* device_name, char* encryption_key)
   set_2_byte_value(sps->keyLength, SPP_KEY_LENGTH);
   bstrncpy((char*)sps->keyData, encryption_key, SPP_KEY_LENGTH);
 
-  /*
-   * Set the length to the size of the SPP_PAGE_SDE we just filled.
-   */
+  // Set the length to the size of the SPP_PAGE_SDE we just filled.
   cmd_page_len = sizeof(SPP_PAGE_SDE);
 
   /*
@@ -168,9 +156,7 @@ bool SetScsiEncryptionKey(int fd, const char* device_name, char* encryption_key)
    */
   set_2_byte_value(cmd_page.length, cmd_page_len - 4);
 
-  /*
-   * Fill the SCSI CDB.
-   */
+  // Fill the SCSI CDB.
   cdb_len = sizeof(cdb);
   memset(&cdb, 0, cdb_len);
   cdb.opcode = SCSI_SPOUT_OPCODE;
@@ -178,9 +164,7 @@ bool SetScsiEncryptionKey(int fd, const char* device_name, char* encryption_key)
   set_2_byte_value(cdb.scp_specific, SPOUT_SET_DATA_ENCRYPTION_PAGE);
   set_4_byte_value(cdb.allocation_length, cmd_page_len);
 
-  /*
-   * Set the new encryption key.
-   */
+  // Set the new encryption key.
   return send_scsi_cmd_page(fd, device_name, (void*)&cdb, cdb_len,
                             (void*)&cmd_page, cmd_page_len);
 }
@@ -208,9 +192,7 @@ int GetScsiDriveEncryptionStatus(int fd,
   cmd_page_len = sizeof(cmd_page);
   memset(&cmd_page, 0, cmd_page_len);
 
-  /*
-   * Fill the SCSI CDB.
-   */
+  // Fill the SCSI CDB.
   cdb_len = sizeof(cdb);
   memset(&cdb, 0, cdb_len);
   cdb.opcode = SCSI_SPIN_OPCODE;
@@ -218,9 +200,7 @@ int GetScsiDriveEncryptionStatus(int fd,
   set_2_byte_value(cdb.scp_specific, SPIN_DATA_ENCR_STATUS_PAGE);
   set_4_byte_value(cdb.allocation_length, cmd_page_len);
 
-  /*
-   * Retrieve the drive encryption status.
-   */
+  // Retrieve the drive encryption status.
   if (!RecvScsiCmdPage(fd, device_name, (void*)&cdb, cdb_len, (void*)&cmd_page,
                        cmd_page_len)) {
     return 0;
@@ -236,9 +216,7 @@ int GetScsiDriveEncryptionStatus(int fd,
   PmStrcpy(status, "");
   IndentStatusMsg(status, _("Drive encryption status:\n"), indent);
 
-  /*
-   * See what encrption mode is enabled.
-   */
+  // See what encrption mode is enabled.
   switch (spd->encryptionMode) {
     case SPP_ENCR_MODE_DISABLE:
       IndentStatusMsg(status, _("Encryption Mode: Disabled\n"), indent + 3);
@@ -253,9 +231,7 @@ int GetScsiDriveEncryptionStatus(int fd,
       break;
   }
 
-  /*
-   * See what decryption mode is enabled.
-   */
+  // See what decryption mode is enabled.
   switch (spd->decryptionMode) {
     case SPP_DECR_MODE_DISABLE:
       IndentStatusMsg(status, _("Decryption Mode: Disabled\n"), indent + 3);
@@ -273,9 +249,7 @@ int GetScsiDriveEncryptionStatus(int fd,
       break;
   }
 
-  /*
-   * See if RDMD is enabled.
-   */
+  // See if RDMD is enabled.
   if (spd->RDMD) {
     IndentStatusMsg(status, _("Raw Decryption Mode Disabled (RDMD): Enabled\n"),
                     indent + 3);
@@ -285,9 +259,7 @@ int GetScsiDriveEncryptionStatus(int fd,
                     indent + 3);
   }
 
-  /*
-   * See what Check External Encryption Mode Status is set.
-   */
+  // See what Check External Encryption Mode Status is set.
   switch (spd->CEEMS) {
     case SPP_CEEM_NO_ENCR_CHECK:
       IndentStatusMsg(status,
@@ -310,9 +282,7 @@ int GetScsiDriveEncryptionStatus(int fd,
       break;
   }
 
-  /*
-   * See if VCELB is enabled.
-   */
+  // See if VCELB is enabled.
   if (spd->VCELB) {
     IndentStatusMsg(
         status,
@@ -325,9 +295,7 @@ int GetScsiDriveEncryptionStatus(int fd,
         indent + 3);
   }
 
-  /*
-   * See what is providing the encryption keys.
-   */
+  // See what is providing the encryption keys.
   switch (spd->parametersControl) {
     case SPP_PARM_LOG_BLOCK_ENCR_NONE:
       IndentStatusMsg(status,
@@ -421,9 +389,7 @@ int GetScsiVolumeEncryptionStatus(int fd,
   cmd_page_len = sizeof(cmd_page);
   memset(&cmd_page, 0, cmd_page_len);
 
-  /*
-   * Fill the SCSI CDB.
-   */
+  // Fill the SCSI CDB.
   cdb_len = sizeof(cdb);
   memset(&cdb, 0, cdb_len);
   cdb.opcode = SCSI_SPIN_OPCODE;
@@ -431,9 +397,7 @@ int GetScsiVolumeEncryptionStatus(int fd,
   set_2_byte_value(cdb.scp_specific, SPIN_NEXT_BLOCK_ENCR_STATUS_PAGE);
   set_4_byte_value(cdb.allocation_length, cmd_page_len);
 
-  /*
-   * Retrieve the volume encryption status.
-   */
+  // Retrieve the volume encryption status.
   if (!RecvScsiCmdPage(fd, device_name, (void*)&cdb, cdb_len, (void*)&cmd_page,
                        cmd_page_len)) {
     return 0;
@@ -586,9 +550,7 @@ bool NeedScsiCryptoKey(int fd, const char* device_name, bool use_drive_status)
   cmd_page_len = sizeof(cmd_page);
   memset(&cmd_page, 0, cmd_page_len);
 
-  /*
-   * Fill the SCSI CDB.
-   */
+  // Fill the SCSI CDB.
   cdb_len = sizeof(cdb);
   memset(&cdb, 0, cdb_len);
   cdb.opcode = SCSI_SPIN_OPCODE;
@@ -600,9 +562,7 @@ bool NeedScsiCryptoKey(int fd, const char* device_name, bool use_drive_status)
   }
   set_4_byte_value(cdb.allocation_length, cmd_page_len);
 
-  /*
-   * Retrieve the volume encryption status.
-   */
+  // Retrieve the volume encryption status.
   if (!RecvScsiCmdPage(fd, device_name, (void*)&cdb, cdb_len, (void*)&cmd_page,
                        cmd_page_len)) {
     return false;
@@ -662,9 +622,7 @@ bool IsScsiEncryptionEnabled(int fd, const char* device_name)
   cmd_page_len = sizeof(cmd_page);
   memset(&cmd_page, 0, cmd_page_len);
 
-  /*
-   * Fill the SCSI CDB.
-   */
+  // Fill the SCSI CDB.
   cdb_len = sizeof(cdb);
   memset(&cdb, 0, cdb_len);
   cdb.opcode = SCSI_SPIN_OPCODE;
@@ -672,9 +630,7 @@ bool IsScsiEncryptionEnabled(int fd, const char* device_name)
   set_2_byte_value(cdb.scp_specific, SPIN_DATA_ENCR_STATUS_PAGE);
   set_4_byte_value(cdb.allocation_length, cmd_page_len);
 
-  /*
-   * Retrieve the drive encryption status.
-   */
+  // Retrieve the drive encryption status.
   if (!RecvScsiCmdPage(fd, device_name, (void*)&cdb, cdb_len, (void*)&cmd_page,
                        cmd_page_len)) {
     return false;
@@ -737,9 +693,7 @@ static void IndentStatusMsg(POOLMEM*& status, const char* msg, int indent)
   int cnt;
   char indent_level[17];
 
-  /*
-   * See if we need to indent the line.
-   */
+  // See if we need to indent the line.
   if (indent > 0) {
     for (cnt = 0; cnt < indent && cnt < 16; cnt++) { indent_level[cnt] = ' '; }
     indent_level[cnt] = '\0';

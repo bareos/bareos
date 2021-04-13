@@ -140,9 +140,7 @@ static AuthenticationResult AuthenticateWithStorageDaemon(
     }
   }
 
-  /**
-   * Send my name to the Storage daemon then do authentication
-   */
+  // Send my name to the Storage daemon then do authentication
   char dirname[MAX_NAME_LENGTH];
   bstrncpy(dirname, monitor->resource_name_, sizeof(dirname));
   BashSpaces(dirname);
@@ -218,9 +216,7 @@ static AuthenticationResult AuthenticateWithFileDaemon(JobControlRecord* jcr,
     }
   }
 
-  /**
-   * Send my name to the File daemon then do authentication
-   */
+  // Send my name to the File daemon then do authentication
   char dirname[MAX_NAME_LENGTH];
   bstrncpy(dirname, monitor->resource_name_, sizeof(dirname));
   BashSpaces(dirname);

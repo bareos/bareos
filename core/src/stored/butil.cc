@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * Utility routines for "tool" programs such as bscan, bls,
@@ -300,9 +298,7 @@ static DeviceResource* find_device_res(char* archive_device_string,
   return device_resource;
 }
 
-/**
- * Device got an error, attempt to analyse it
- */
+// Device got an error, attempt to analyse it
 void DisplayTapeErrorStatus(JobControlRecord* jcr, Device* dev)
 {
   char* status;

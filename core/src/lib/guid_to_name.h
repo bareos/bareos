@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Kern Sibbald, July 2007 to replace idcache.c
- */
+// Written by Kern Sibbald, July 2007 to replace idcache.c
 /**
  * @file
  * Program to convert uid and gid into names, and cache the results

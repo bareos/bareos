@@ -36,9 +36,7 @@
 
 namespace storagedaemon {
 
-/**
- * This defines the arguments that the plugin parser understands.
- */
+// This defines the arguments that the plugin parser understands.
 enum plugin_argument_type
 {
   argument_none,

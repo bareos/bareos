@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, May 2014
- */
+// Marco van Wieringen, May 2014
 /**
  * @file
  * Gluster Filesystem API device abstraction.
@@ -37,9 +35,7 @@
 
 namespace storagedaemon {
 
-/**
- * Options that can be specified for this device type.
- */
+// Options that can be specified for this device type.
 enum device_option_type
 {
   argument_none = 0,
@@ -57,9 +53,7 @@ static device_option device_options[] = {{"conffile=", argument_conffile, 9},
                                          {"basedir=", argument_basedir, 9},
                                          {NULL, argument_none}};
 
-/**
- * Open a volume using libcephfs.
- */
+// Open a volume using libcephfs.
 int cephfs_device::d_open(const char* pathname, int flags, int mode)
 {
   int status;
@@ -84,9 +78,7 @@ int cephfs_device::d_open(const char* pathname, int flags, int mode)
 
       done = false;
       for (int i = 0; !done && device_options[i].name; i++) {
-        /*
-         * Try to find a matching device option.
-         */
+        // Try to find a matching device option.
         if (bstrncasecmp(bp, device_options[i].name,
                          device_options[i].compare_size)) {
           switch (device_options[i].type) {
@@ -147,17 +139,13 @@ int cephfs_device::d_open(const char* pathname, int flags, int mode)
     }
   }
 
-  /*
-   * See if we don't have a file open already.
-   */
+  // See if we don't have a file open already.
   if (fd >= 0) {
     ceph_close(cmount_, fd);
     fd = -1;
   }
 
-  /*
-   * See if we store in an explicit directory.
-   */
+  // See if we store in an explicit directory.
   if (basedir_) {
 #  if HAVE_CEPH_STATX
     struct ceph_statx stx;
@@ -165,9 +153,7 @@ int cephfs_device::d_open(const char* pathname, int flags, int mode)
     struct stat st;
 #  endif
 
-    /*
-     * Make sure the dir exists if one is defined.
-     */
+    // Make sure the dir exists if one is defined.
 #  if HAVE_CEPH_STATX
     status = ceph_statx(cmount_, basedir_, &stx, CEPH_STATX_SIZE,
                         AT_SYMLINK_NOFOLLOW);
@@ -213,9 +199,7 @@ int cephfs_device::d_open(const char* pathname, int flags, int mode)
   return 0;
 
 bail_out:
-  /*
-   * Cleanup the CEPHFS context.
-   */
+  // Cleanup the CEPHFS context.
   if (cmount_) {
     ceph_shutdown(cmount_);
     cmount_ = NULL;
@@ -225,9 +209,7 @@ bail_out:
   return -1;
 }
 
-/**
- * Read data from a volume using libcephfs.
- */
+// Read data from a volume using libcephfs.
 ssize_t cephfs_device::d_read(int fd, void* buffer, size_t count)
 {
   if (fd >= 0) {
@@ -238,9 +220,7 @@ ssize_t cephfs_device::d_read(int fd, void* buffer, size_t count)
   }
 }
 
-/**
- * Write data to a volume using libcephfs.
- */
+// Write data to a volume using libcephfs.
 ssize_t cephfs_device::d_write(int fd, const void* buffer, size_t count)
 {
   if (fd >= 0) {
@@ -344,9 +324,7 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
       ceph_close(cmount_, fd);
       ceph_unlink(cmount_, virtual_filename_);
 
-      /*
-       * Recreate the file -- of course, empty
-       */
+      // Recreate the file -- of course, empty
       oflags = O_CREAT | O_RDWR | O_BINARY;
 #  if HAVE_CEPH_STATX
       fd = ceph_open(cmount_, virtual_filename_, oflags, stx.stx_mode);
@@ -366,9 +344,7 @@ bool cephfs_device::d_truncate(DeviceControlRecord* dcr)
         return false;
       }
 
-      /*
-       * Reset proper owner
-       */
+      // Reset proper owner
 #  if HAVE_CEPH_STATX
       ceph_chown(cmount_, virtual_filename_, stx.stx_uid, stx.stx_gid);
 #  else

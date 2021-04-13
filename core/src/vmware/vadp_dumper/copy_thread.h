@@ -18,13 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, August 2014.
- */
+// Marco van Wieringen, August 2014.
 
-/*
- * Copy thread used for producer/consumer problem with pthreads.
- */
+// Copy thread used for producer/consumer problem with pthreads.
 
 #ifndef BAREOS_VMWARE_VADP_DUMPER_COPY_THREAD_H_
 #define BAREOS_VMWARE_VADP_DUMPER_COPY_THREAD_H_

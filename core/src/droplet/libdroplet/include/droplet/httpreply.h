@@ -35,9 +35,7 @@
 #ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_HTTPREPLY_H_
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_HTTPREPLY_H_
 
-/*
- *
- */
+//
 typedef enum
 {
   DPL_HTTP_CODE_CONTINUE = 100,
@@ -63,9 +61,7 @@ struct dpl_http_reply {
   char* descr_end;
 };
 
-/*
- *
- */
+//
 typedef dpl_status_t (*dpl_header_func_t)(void* cb_arg,
                                           const char* header,
                                           const char* value);

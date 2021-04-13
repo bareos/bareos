@@ -1,7 +1,5 @@
 /* check-sources:disable-copyright-check */
-/*
- * get ID with a provided buffer
- */
+// get ID with a provided buffer
 
 #include <droplet.h>
 #include <assert.h>

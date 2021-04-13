@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October 2007
- */
+// Kern Sibbald, October 2007
 /**
  * @file
  * Common plugin definitions
@@ -36,9 +34,7 @@
  *                                                                          *
  ****************************************************************************/
 
-/**
- * Universal return codes from all plugin functions
- */
+// Universal return codes from all plugin functions
 typedef enum
 {
   PYTHON_UNDEFINED_RETURN_VALUE = -1,
@@ -76,9 +72,7 @@ class Plugin {
   void* plugin_handle;
 };
 
-/**
- * Context packet as first argument of all functions
- */
+// Context packet as first argument of all functions
 struct PluginContext {
   uint32_t instance;
   Plugin* plugin;

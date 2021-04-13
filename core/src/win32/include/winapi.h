@@ -267,15 +267,11 @@ extern t_AttachConsole p_AttachConsole;
 
 void InitWinAPIWrapper();
 
-/*
- * In SHFOLDER.DLL on older systems, and now SHELL32.DLL
- */
+// In SHFOLDER.DLL on older systems, and now SHELL32.DLL
 typedef BOOL(WINAPI* t_SHGetFolderPath)(HWND, int, HANDLE, DWORD, LPTSTR);
 extern t_SHGetFolderPath p_SHGetFolderPath;
 
-/*
- * In WS2_32.DLL
- */
+// In WS2_32.DLL
 typedef INT(WSAAPI* t_InetPton)(INT Family,
                                 PCTSTR pszAddrString,
                                 PVOID pAddrBuf);

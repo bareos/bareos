@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, July MMII
- */
+// Kern Sibbald, July MMII
 /**
  * @file
  * Verify files on a Volume
@@ -89,13 +87,9 @@ void DoVerifyVolume(JobControlRecord* jcr)
   fname = GetPoolMemory(PM_FNAME);
   lname = GetPoolMemory(PM_FNAME);
 
-  /*
-   * Get a record from the Storage daemon
-   */
+  // Get a record from the Storage daemon
   while (BgetMsg(sd) >= 0 && !JobCanceled(jcr)) {
-    /*
-     * First we expect a Stream Record Header
-     */
+    // First we expect a Stream Record Header
     if (sscanf(sd->msg, rec_header, &VolSessionId, &VolSessionTime, &file_index,
                &stream, &size)
         != 5) {
@@ -104,9 +98,7 @@ void DoVerifyVolume(JobControlRecord* jcr)
     }
     Dmsg2(30, "Got hdr: FilInx=%d Stream=%d.\n", file_index, stream);
 
-    /*
-     * Now we expect the Stream Data
-     */
+    // Now we expect the Stream Data
     if (BgetMsg(sd) < 0) {
       Jmsg1(jcr, M_FATAL, 0, _("Data record error. ERR=%s\n"),
             BnetStrerror(sd));

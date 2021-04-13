@@ -58,21 +58,15 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
   errno = 0;
 
   if (timeout) {
-    /*
-     * Set open timer
-     */
+    // Set open timer
     tid = start_thread_timer(dcr->jcr, pthread_self(), timeout);
   }
 
   Dmsg2(100, "Try open %s mode=%s\n", prt_name, mode_to_str(omode));
 
-  /*
-   * If busy retry each second for max_open_wait seconds
-   */
+  // If busy retry each second for max_open_wait seconds
   for (;;) {
-    /*
-     * Try non-blocking open
-     */
+    // Try non-blocking open
     fd = d_open(archive_device_string, oflags | O_NONBLOCK, 0);
     if (fd < 0) {
       BErrNo be;
@@ -95,9 +89,7 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     }
     Bmicrosleep(5, 0);
 
-    /*
-     * Exceed wait time ?
-     */
+    // Exceed wait time ?
     if (time(NULL) - start_time >= max_open_wait) { break; /* yes, get out */ }
   }
 
@@ -108,9 +100,7 @@ void win32_fifo_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
     Dmsg1(100, "%s", errmsg);
   }
 
-  /*
-   * Stop any open() timer we started
-   */
+  // Stop any open() timer we started
   if (tid) {
     StopThreadTimer(tid);
     tid = 0;
@@ -138,9 +128,7 @@ bool win32_fifo_device::eod(DeviceControlRecord* dcr)
   return true;
 }
 
-/**
- * (Un)mount the device (For a FILE device)
- */
+// (Un)mount the device (For a FILE device)
 static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
 {
   DeviceResource* device_resource = dcr->dev->device_resource;
@@ -200,9 +188,7 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
     Mmsg(dcr->dev->errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
          dcr->dev->print_name(), (mount ? "" : "un"), be.bstrerror(status));
 
-    /*
-     * Now, just to be sure it is not mounted, try to read the filesystem.
-     */
+    // Now, just to be sure it is not mounted, try to read the filesystem.
     name_max = pathconf(".", _PC_NAME_MAX);
     if (name_max < 1024) { name_max = 1024; }
 

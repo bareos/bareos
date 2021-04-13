@@ -32,9 +32,7 @@ class JobControlRecord;
 
 class BareosDbPrivateInterface : public BareosDb {
  protected:
-  /*
-   * Members
-   */
+  // Members
   int status_ = 0;              /**< Status */
   int num_fields_ = 0;          /**< Number of fields returned by last query */
   int rows_size_ = 0;           /**< Size of malloced rows */
@@ -47,9 +45,7 @@ class BareosDbPrivateInterface : public BareosDb {
   bool transaction_ = false;        /**< Transaction started ? */
 
  private:
-  /*
-   * Methods
-   */
+  // Methods
   void SqlFieldSeek(int field) override { field_number_ = field; }
   int SqlNumFields(void) override { return num_fields_; }
   virtual void SqlFreeResult(void) override = 0;

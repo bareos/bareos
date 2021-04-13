@@ -37,17 +37,13 @@ class dlist;
 
 namespace directordaemon {
 
-/**
- * Structure to keep track of job queue request
- */
+// Structure to keep track of job queue request
 struct jobq_item_t {
   dlink link;
   JobControlRecord* jcr;
 };
 
-/**
- * Structure describing a work queue
- */
+// Structure describing a work queue
 struct jobq_t {
   pthread_mutex_t mutex;      /* queue access control */
   pthread_cond_t work;        /* wait for work */

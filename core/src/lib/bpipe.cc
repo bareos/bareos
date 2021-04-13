@@ -66,16 +66,12 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool dup_stderr)
   mode_read = (mode[0] == 'r');
   mode_write = (mode[0] == 'w' || mode[1] == 'w');
 
-  /*
-   * Build arguments for running program.
-   */
+  // Build arguments for running program.
   tprog = GetPoolMemory(PM_FNAME);
   PmStrcpy(tprog, prog);
   BuildArgcArgv(tprog, &bargc, bargv, MAX_ARGV);
 
-  /*
-   * Each pipe is one way, write one end, read the other, so we need two
-   */
+  // Each pipe is one way, write one end, read the other, so we need two
   if (mode_write && pipe(writep) == -1) {
     save_errno = errno;
     free(bpipe);
@@ -95,9 +91,7 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool dup_stderr)
     return NULL;
   }
 
-  /*
-   * Start worker process
-   */
+  // Start worker process
   switch (bpipe->worker_pid = fork()) {
     case -1: /* error */
       save_errno = errno;
@@ -126,14 +120,10 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool dup_stderr)
       }
 
 #  if defined(HAVE_FCNTL_F_CLOSEM)
-      /*
-       * fcntl(fd, F_CLOSEM) needs the lowest filedescriptor to close.
-       */
+      // fcntl(fd, F_CLOSEM) needs the lowest filedescriptor to close.
       fcntl(3, F_CLOSEM);
 #  elif defined(HAVE_CLOSEFROM)
-      /*
-       * closefrom needs the lowest filedescriptor to close.
-       */
+      // closefrom needs the lowest filedescriptor to close.
       closefrom(3);
 #  else
       for (i = 3; i <= 32; i++) { /* close any open file descriptors */
@@ -143,9 +133,7 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool dup_stderr)
 
       execvp(bargv[0], bargv); /* call the program */
 
-      /*
-       * Convert errno into an exit code for later analysis
-       */
+      // Convert errno into an exit code for later analysis
       for (i = 0; i < num_execvp_errors; i++) {
         if (execvp_errors[i] == errno) {
           exit(200 + i); /* exit code => errno */
@@ -179,9 +167,7 @@ Bpipe* OpenBpipe(char* prog, int wait, const char* mode, bool dup_stderr)
   return bpipe;
 }
 
-/*
- * Close the write pipe only
- */
+// Close the write pipe only
 int CloseWpipe(Bpipe* bpipe)
 {
   int status = 1;
@@ -209,9 +195,7 @@ int CloseBpipe(Bpipe* bpipe)
   pid_t wpid = 0;
 
 
-  /*
-   * Close pipes
-   */
+  // Close pipes
   if (bpipe->rfd) {
     fclose(bpipe->rfd);
     bpipe->rfd = NULL;
@@ -229,9 +213,7 @@ int CloseBpipe(Bpipe* bpipe)
   }
   remaining_wait = bpipe->wait;
 
-  /*
-   * Wait for worker child to exit
-   */
+  // Wait for worker child to exit
   for (;;) {
     Dmsg2(800, "Wait for %d opt=%d\n", bpipe->worker_pid, wait_option);
     do {
@@ -280,9 +262,7 @@ int CloseBpipe(Bpipe* bpipe)
   return status;
 }
 
-/*
- * Build argc and argv from a string
- */
+// Build argc and argv from a string
 static void BuildArgcArgv(char* cmd, int* bargc, char* bargv[], int max_argv)
 {
   int i;

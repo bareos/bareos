@@ -40,9 +40,7 @@
 #include "lib/address_conf.h"
 #include "lib/output_formatter.h"
 
-/*
- * Set default indention e.g. 2 spaces.
- */
+// Set default indention e.g. 2 spaces.
 #define DEFAULT_INDENT_STRING "  "
 
 static int res_locked = 0; /* resource chain lock count -- for debug */
@@ -88,9 +86,7 @@ void ConfigurationParser::b_UnlockRes(const char* file, int line) const
 #endif
 }
 
-/*
- * Return resource of type rcode that matches name
- */
+// Return resource of type rcode that matches name
 BareosResource* ConfigurationParser::GetResWithName(int rcode,
                                                     const char* name,
                                                     bool lock) const
@@ -245,9 +241,7 @@ void ConfigurationParser::ScanTypes(LEX* lc,
   Dmsg0(900, "Done ScanTypes()\n");
 }
 
-/*
- * Store Messages Destination information
- */
+// Store Messages Destination information
 void ConfigurationParser::StoreMsgs(LEX* lc,
                                     ResourceItem* item,
                                     int index,
@@ -297,9 +291,7 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
               break;
             case ',':
             case ';':
-              /*
-               * No need to continue scanning when we encounter a ',' or ';'
-               */
+              // No need to continue scanning when we encounter a ',' or ';'
               done = true;
               break;
             default:
@@ -314,9 +306,7 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
          */
         if (cnt > 1) {
           dest = GetPoolMemory(PM_MESSAGE);
-          /*
-           * Pick up a single facility.
-           */
+          // Pick up a single facility.
           token = LexGetToken(lc, BCT_NAME); /* Scan destination */
           PmStrcpy(dest, lc->str);
           dest_len = lc->str_len;
@@ -349,9 +339,7 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
         dest[0] = 0;
         dest_len = 0;
 
-        /*
-         * Pick up comma separated list of destinations.
-         */
+        // Pick up comma separated list of destinations.
         for (;;) {
           token = LexGetToken(lc, BCT_NAME); /* Scan destination */
           dest = CheckPoolMemorySize(dest, dest_len + lc->str_len + 2);
@@ -379,9 +367,7 @@ void ConfigurationParser::StoreMsgs(LEX* lc,
         break;
       case MessageDestinationCode::kFile:
       case MessageDestinationCode::kAppend: {
-        /*
-         * Pick up a single destination.
-         */
+        // Pick up a single destination.
         token = LexGetToken(lc, BCT_STRING); /* Scan destination */
         std::string dest_file_path(lc->str);
         dest_len = lc->str_len;
@@ -426,9 +412,7 @@ void ConfigurationParser::StoreName(LEX* lc,
     return;
   }
   FreePoolMemory(msg);
-  /*
-   * Store the name both in pass 1 and pass 2
-   */
+  // Store the name both in pass 1 and pass 2
   char** p = GetItemVariablePointer<char**>(*item);
 
   if (*p) {
@@ -461,9 +445,7 @@ void ConfigurationParser::StoreStrname(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store a string at specified address
- */
+// Store a string at specified address
 void ConfigurationParser::StoreStr(LEX* lc,
                                    ResourceItem* item,
                                    int index,
@@ -476,9 +458,7 @@ void ConfigurationParser::StoreStr(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store a string at specified address
- */
+// Store a string at specified address
 void ConfigurationParser::StoreStdstr(LEX* lc,
                                       ResourceItem* item,
                                       int index,
@@ -532,9 +512,7 @@ void ConfigurationParser::StoreStdstrdir(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store a password at specified address in MD5 coding
- */
+// Store a password at specified address in MD5 coding
 void ConfigurationParser::StoreMd5Password(LEX* lc,
                                            ResourceItem* item,
                                            int index,
@@ -546,9 +524,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
 
     if (pwd->value) { free(pwd->value); }
 
-    /*
-     * See if we are parsing an MD5 encoded password already.
-     */
+    // See if we are parsing an MD5 encoded password already.
     if (bstrncmp(lc->str, "[md5]", 5)) {
       if ((item->code & CFG_ITEM_REQUIRED) == CFG_ITEM_REQUIRED) {
         static const char* empty_password_md5_hash
@@ -591,9 +567,7 @@ void ConfigurationParser::StoreMd5Password(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store a password at specified address in MD5 coding
- */
+// Store a password at specified address in MD5 coding
 void ConfigurationParser::StoreClearpassword(LEX* lc,
                                              ResourceItem* item,
                                              int index,
@@ -695,9 +669,7 @@ void ConfigurationParser::StoreAlistRes(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store a std::string in an std::vector<std::string>.
- */
+// Store a std::string in an std::vector<std::string>.
 void ConfigurationParser::StoreStdVectorStr(LEX* lc,
                                             ResourceItem* item,
                                             int index,
@@ -733,9 +705,7 @@ void ConfigurationParser::StoreStdVectorStr(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store a string in an alist.
- */
+// Store a string in an alist.
 void ConfigurationParser::StoreAlistStr(LEX* lc,
                                         ResourceItem* item,
                                         int index,
@@ -825,9 +795,7 @@ void ConfigurationParser::StoreAlistDir(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store a list of plugin names to load by the daemon on startup.
- */
+// Store a list of plugin names to load by the daemon on startup.
 void ConfigurationParser::StorePluginNames(LEX* lc,
                                            ResourceItem* item,
                                            int index,
@@ -902,9 +870,7 @@ void ConfigurationParser::StoreDefs(LEX* lc,
   ScanToEol(lc);
 }
 
-/*
- * Store an integer at specified address
- */
+// Store an integer at specified address
 void ConfigurationParser::store_int16(LEX* lc,
                                       ResourceItem* item,
                                       int index,
@@ -929,9 +895,7 @@ void ConfigurationParser::store_int32(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store a positive integer at specified address
- */
+// Store a positive integer at specified address
 void ConfigurationParser::store_pint16(LEX* lc,
                                        ResourceItem* item,
                                        int index,
@@ -956,9 +920,7 @@ void ConfigurationParser::store_pint32(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store an 64 bit integer at specified address
- */
+// Store an 64 bit integer at specified address
 void ConfigurationParser::store_int64(LEX* lc,
                                       ResourceItem* item,
                                       int index,
@@ -971,9 +933,7 @@ void ConfigurationParser::store_int64(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store a size in bytes
- */
+// Store a size in bytes
 void ConfigurationParser::store_int_unit(LEX* lc,
                                          ResourceItem* item,
                                          int index,
@@ -992,9 +952,7 @@ void ConfigurationParser::store_int_unit(LEX* lc,
     case BCT_IDENTIFIER:
     case BCT_UNQUOTED_STRING:
       bstrncpy(bsize, lc->str, sizeof(bsize)); /* save first part */
-      /*
-       * If terminated by space, scan and get modifier
-       */
+      // If terminated by space, scan and get modifier
       while (lc->ch == ' ') {
         token = LexGetToken(lc, BCT_ALL);
         switch (token) {
@@ -1048,9 +1006,7 @@ void ConfigurationParser::store_int_unit(LEX* lc,
   Dmsg0(900, "Leave store_unit\n");
 }
 
-/*
- * Store a size in bytes
- */
+// Store a size in bytes
 void ConfigurationParser::store_size32(LEX* lc,
                                        ResourceItem* item,
                                        int index,
@@ -1059,9 +1015,7 @@ void ConfigurationParser::store_size32(LEX* lc,
   store_int_unit(lc, item, index, pass, true /* 32 bit */, STORE_SIZE);
 }
 
-/*
- * Store a size in bytes
- */
+// Store a size in bytes
 void ConfigurationParser::store_size64(LEX* lc,
                                        ResourceItem* item,
                                        int index,
@@ -1070,9 +1024,7 @@ void ConfigurationParser::store_size64(LEX* lc,
   store_int_unit(lc, item, index, pass, false /* not 32 bit */, STORE_SIZE);
 }
 
-/*
- * Store a speed in bytes/s
- */
+// Store a speed in bytes/s
 void ConfigurationParser::StoreSpeed(LEX* lc,
                                      ResourceItem* item,
                                      int index,

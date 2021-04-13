@@ -41,9 +41,7 @@ class JobControlRecord;
 
 class BareosDbMysql : public BareosDbPrivateInterface {
  private:
-  /*
-   * Members.
-   */
+  // Members.
   MYSQL* db_handle_;
   MYSQL instance_;
   MYSQL_RES* result_;
@@ -51,9 +49,7 @@ class BareosDbMysql : public BareosDbPrivateInterface {
       query_definitions[]; /**< table of predefined sql queries */
 
  private:
-  /*
-   * Methods.
-   */
+  // Methods.
   bool OpenDatabase(JobControlRecord* jcr) override;
   void CloseDatabase(JobControlRecord* jcr) override;
   bool ValidateConnection(void) override;
@@ -94,9 +90,7 @@ class BareosDbMysql : public BareosDbPrivateInterface {
   bool SqlCopyEnd() override;
 
  public:
-  /*
-   * Methods.
-   */
+  // Methods.
   BareosDbMysql(JobControlRecord* jcr,
                 const char* db_driver,
                 const char* db_name,

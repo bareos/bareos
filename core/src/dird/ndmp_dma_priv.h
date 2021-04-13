@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, May 2015
- */
+// Marco van Wieringen, May 2015
 /**
  * @file
  * NDMP internal routines used by the different NDMP components.
@@ -42,9 +40,7 @@ static char* ndmp_env_keywords[]
        (char*)"LEVEL",   (char*)"UPDATE",     (char*)"EXCLUDE",
        (char*)"INCLUDE", (char*)"FILESYSTEM", (char*)"PREFIX"};
 
-/**
- * Index values for above keyword.
- */
+// Index values for above keyword.
 enum
 {
   NDMP_ENV_KW_HIST = 0,
@@ -64,9 +60,7 @@ enum
  */
 static char* ndmp_env_values[] = {(char*)"n", (char*)"y"};
 
-/**
- * Index values for above values.
- */
+// Index values for above values.
 enum
 {
   NDMP_ENV_VALUE_NO = 0,
@@ -82,9 +76,7 @@ struct ndmp_backup_format_option {
   bool needs_namelist;
 };
 
-/**
- * Internal structure to keep track of private data.
- */
+// Internal structure to keep track of private data.
 struct ndmp_internal_state {
   uint32_t LogLevel;
   JobControlRecord* jcr;
@@ -98,9 +90,7 @@ struct ndmp_internal_state {
 };
 typedef struct ndmp_internal_state NIS;
 
-/*
- * Generic DMA functions.
- */
+// Generic DMA functions.
 ndmp_backup_format_option* ndmp_lookup_backup_format_options(
     const char* backup_format);
 
@@ -133,9 +123,7 @@ void NdmpDoQuery(UaContext* ua,
                  int NdmpLoglevel,
                  ndmca_query_callbacks* query_cbs);
 
-/*
- * NDMP FHDB specific helpers.
- */
+// NDMP FHDB specific helpers.
 void NdmpStoreAttributeRecord(JobControlRecord* jcr,
                               char* fname,
                               char* linked_fname,
@@ -148,23 +136,17 @@ void NdmpConvertFstat(ndmp9_file_stat* fstat,
                       int8_t* FileType,
                       PoolMem& attribs);
 
-/*
- * FHDB using LMDB.
- */
+// FHDB using LMDB.
 void NdmpFhdbLmdbRegister(struct ndmlog* ixlog);
 void NdmpFhdbLmdbUnregister(struct ndmlog* ixlog);
 void NdmpFhdbLmdbProcessDb(struct ndmlog* ixlog);
 
-/*
- * FHDB using in memory tree.
- */
+// FHDB using in memory tree.
 void NdmpFhdbMemRegister(struct ndmlog* ixlog);
 void NdmpFhdbMemUnregister(struct ndmlog* ixlog);
 void NdmpFhdbMemProcessDb(struct ndmlog* ixlog);
 
-/*
- * NDMP Media Info in DB storage and retrieval
- */
+// NDMP Media Info in DB storage and retrieval
 bool StoreNdmmediaInfoInDatabase(ndmmedia* media, JobControlRecord* jcr);
 bool GetNdmmediaInfoFromDatabase(ndm_media_table* media_tab,
                                  JobControlRecord* jcr);

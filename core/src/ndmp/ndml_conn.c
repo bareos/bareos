@@ -89,9 +89,7 @@ struct ndmconn* ndmconn_initialize(struct ndmconn* aconn, char* name)
   return conn;
 }
 
-/*
- * Get rid of an ndmconn.
- */
+// Get rid of an ndmconn.
 void ndmconn_destruct(struct ndmconn* conn)
 {
   if (conn->chan.fd >= 0) {
@@ -240,9 +238,7 @@ int ndmconn_connect_sockaddr_in(struct ndmconn* conn,
     goto error_out;
   }
 
-  /*
-   * Send the OPEN request
-   */
+  // Send the OPEN request
   NDMC_WITH(ndmp0_connect_open, 0)
   request->protocol_version = want_protocol_version;
   rc = NDMC_CALL(conn);
@@ -274,9 +270,7 @@ int ndmconn_try_open(struct ndmconn* conn, unsigned protocol_version)
 {
   int rc;
 
-  /*
-   * Send the OPEN request
-   */
+  // Send the OPEN request
   NDMC_WITH(ndmp0_connect_open, 0)
   request->protocol_version = protocol_version;
   rc = NDMC_CALL(conn);

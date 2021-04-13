@@ -176,9 +176,7 @@ static void PyErrorHandler()
 }
 
 
-/**
- * Plugin called here when it is first loaded
- */
+// Plugin called here when it is first loaded
 bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                CoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
@@ -306,9 +304,7 @@ static bRC freePlugin(PluginContext* plugin_ctx)
 
   if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
 
-  /*
-   * Stop any sub interpreter started per plugin instance.
-   */
+  // Stop any sub interpreter started per plugin instance.
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
 
 
@@ -538,9 +534,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Done backing up a file.
- */
+// Done backing up a file.
 static bRC endBackupFile(PluginContext* plugin_ctx)
 {
   bRC retval = bRC_Error;
@@ -580,9 +574,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Start restore of a file.
- */
+// Start restore of a file.
 static bRC startRestoreFile(PluginContext* plugin_ctx, const char* cmd)
 {
   bRC retval = bRC_Error;
@@ -599,9 +591,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Done restoring a file.
- */
+// Done restoring a file.
 static bRC endRestoreFile(PluginContext* plugin_ctx)
 {
   bRC retval = bRC_Error;
@@ -661,9 +651,7 @@ bail_out:
   return retval;
 }
 
-/**
- * When using Incremental dump, all previous dumps are necessary
- */
+// When using Incremental dump, all previous dumps are necessary
 static bRC checkFile(PluginContext* plugin_ctx, char* fname)
 {
   bRC retval = bRC_Error;
@@ -754,9 +742,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Only set destination to value when it has no previous setting.
- */
+// Only set destination to value when it has no previous setting.
 static inline void SetStringIfNull(char** destination, char* value)
 {
   if (!*destination) {
@@ -826,9 +812,7 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
       goto bail_out;
     }
 
-    /*
-     * See if option string end with ':'
-     */
+    // See if option string end with ':'
     if (plugin_priv_ctx->plugin_options[len - 1] != ':') {
       PmStrcat(plugin_definition, (char*)bp);
     } else {
@@ -847,9 +831,7 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
     goto bail_out;
   }
 
-  /*
-   * Skip the first ':'
-   */
+  // Skip the first ':'
   bp++;
 
   cnt = 0;
@@ -874,9 +856,7 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
     }
     *argument_value++ = '\0';
 
-    /*
-     * See if there are more arguments and setup for the next run.
-     */
+    // See if there are more arguments and setup for the next run.
     bp = argument_value;
     do {
       bp = strchr(bp, ':');
@@ -907,9 +887,7 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
             break;
         }
 
-        /*
-         * Keep the first value, ignore any next setting.
-         */
+        // Keep the first value, ignore any next setting.
         if (str_destination) {
           if (keep_existing) {
             SetStringIfNull(str_destination, argument_value);
@@ -918,24 +896,18 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
           }
         }
 
-        /*
-         * Set any boolean variable.
-         */
+        // Set any boolean variable.
         if (bool_destination) {
           *bool_destination = ParseBoolean(argument_value);
         }
 
-        /*
-         * When we have a match break the loop.
-         */
+        // When we have a match break the loop.
         found = true;
         break;
       }
     }
 
-    /*
-     * If we didn't consume this parameter we add it to the plugin_options list.
-     */
+    // If we didn't consume this parameter we add it to the plugin_options list.
     if (!found) {
       PoolMem option(PM_FNAME);
 
@@ -1034,9 +1006,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
       goto bail_out;
     }
 
-    /*
-     * Keep track we successfully loaded.
-     */
+    // Keep track we successfully loaded.
     plugin_priv_ctx->python_loaded = true;
   }
 

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, January MM, September MM
- */
+// Kern Sibbald, January MM, September MM
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
 #include "console/console_globals.h"

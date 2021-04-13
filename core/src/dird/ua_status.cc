@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, August MMI
- */
+// Kern Sibbald, August MMI
 /**
  * @file
  * User Agent Status Command
@@ -92,9 +90,7 @@ static void ClientStatus(UaContext* ua, ClientResource* client, char* cmd)
   }
 }
 
-/**
- * .status command
- */
+// .status command
 bool DotStatusCmd(UaContext* ua, const char* cmd)
 {
   StorageResource* store;
@@ -164,9 +160,7 @@ bool DotStatusCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-/**
- * status command
- */
+// status command
 bool StatusCmd(UaContext* ua, const char* cmd)
 {
   StorageResource* store;
@@ -200,9 +194,7 @@ bool StatusCmd(UaContext* ua, const char* cmd)
       DoConfigurationStatus(ua);
       return true;
     } else {
-      /*
-       * limit storages to autochangers if slots is given
-       */
+      // limit storages to autochangers if slots is given
       autochangers_only = (FindArg(ua, NT_("slots")) > 0);
       store = get_storage_resource(ua, false, autochangers_only);
 
@@ -409,9 +401,7 @@ static bool show_scheduled_preview(UaContext* ua,
     run_now = run_hour_validator.TriggersOn(run->date_time_bitfield);
 
     if (run_now) {
-      /*
-       * Find time (time_t) job is to be run
-       */
+      // Find time (time_t) job is to be run
       struct tm tm;
       Blocaltime(&time_to_check, &tm); /* Reset tm structure */
       tm.tm_min = run->minute;         /* Set run minute */
@@ -513,9 +503,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   int available;
   bool retval = false;
 
-  /*
-   * See if we need to check.
-   */
+  // See if we need to check.
   if (me->subscriptions == 0) {
     ua->SendMsg(_("No subscriptions configured in director.\n"));
     retval = true;
@@ -588,31 +576,23 @@ static void DoSchedulerStatus(UaContext* ua)
     }
   }
 
-  /*
-   * Schedule given ?
-   */
+  // Schedule given ?
   i = FindArgWithValue(ua, NT_("schedule"));
   if (i >= 0) {
     bstrncpy(schedulename, ua->argv[i], sizeof(schedulename));
     schedule_given_by_cmdline_args = true;
   }
 
-  /*
-   * Client given ?
-   */
+  // Client given ?
   i = FindArgWithValue(ua, NT_("client"));
   if (i >= 0) { client = get_client_resource(ua); }
 
-  /*
-   * Jobname given ?
-   */
+  // Jobname given ?
   i = FindArgWithValue(ua, NT_("job"));
   if (i >= 0) {
     job = ua->GetJobResWithName(ua->argv[i]);
 
-    /*
-     * If a bogus jobname was given ask for it interactively.
-     */
+    // If a bogus jobname was given ask for it interactively.
     if (!job) { job = select_job_resource(ua); }
   }
 
@@ -666,9 +646,7 @@ static void DoSchedulerStatus(UaContext* ua)
   }
   UnlockRes(my_config);
 
-  /*
-   * Build an overview.
-   */
+  // Build an overview.
   if (days > 0) { /* future */
     start = now;
     stop = now + (days * seconds_per_day);
@@ -681,9 +659,7 @@ start_again:
   time_to_check = start;
   while (time_to_check < stop) {
     if (client || job) {
-      /*
-       * List specific schedule.
-       */
+      // List specific schedule.
       if (job) {
         if (job->schedule && job->schedule->enabled && job->enabled
             && job->client->enabled) {
@@ -711,9 +687,7 @@ start_again:
         job = NULL;
       }
     } else {
-      /*
-       * List all schedules.
-       */
+      // List all schedules.
       LockRes(my_config);
       foreach_res (sched, R_SCHEDULE) {
         if (!sched->enabled) { continue; }
@@ -750,19 +724,13 @@ static void DoDirectorStatus(UaContext* ua)
 {
   ListDirStatusHeader(ua);
 
-  /*
-   * List scheduled Jobs
-   */
+  // List scheduled Jobs
   ListScheduledJobs(ua);
 
-  /*
-   * List running jobs
-   */
+  // List running jobs
   ListRunningJobs(ua);
 
-  /*
-   * List terminated jobs
-   */
+  // List terminated jobs
   ListTerminatedJobs(ua);
 
   ListConnectedClients(ua);
@@ -846,9 +814,7 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   jcr->setJobType(orig_jobtype);
 }
 
-/**
- * Sort items by runtime, priority
- */
+// Sort items by runtime, priority
 static int CompareByRuntimePriority(void* item1, void* item2)
 {
   sched_pkt* p1 = (sched_pkt*)item1;
@@ -869,9 +835,7 @@ static int CompareByRuntimePriority(void* item1, void* item2)
   return 0;
 }
 
-/**
- * Find all jobs to be run in roughly the next 24 hours.
- */
+// Find all jobs to be run in roughly the next 24 hours.
 static void ListScheduledJobs(UaContext* ua)
 {
   utime_t runtime;
@@ -896,9 +860,7 @@ static void ListScheduledJobs(UaContext* ua)
     }
   }
 
-  /*
-   * Loop through all jobs
-   */
+  // Loop through all jobs
   LockRes(my_config);
   foreach_res (job, R_JOB) {
     if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled
@@ -1091,9 +1053,7 @@ static void ListRunningJobs(UaContext* ua)
         msg = emsg;
         break;
     }
-    /*
-     * Now report Storage daemon status code
-     */
+    // Now report Storage daemon status code
     switch (jcr->impl->SDJobStatus) {
       case JS_WaitMount:
         if (pool_mem) {
@@ -1115,9 +1075,7 @@ static void ListRunningJobs(UaContext* ua)
           pool_mem = true;
         }
         if (!jcr->file_bsock) {
-          /*
-           * client initiated connection
-           */
+          // client initiated connection
           Mmsg(emsg, _("is waiting for Client to connect (Client Initiated "
                        "Connection)"));
         } else if (!jcr->impl->res.client || !jcr->impl->res.write_storage) {
@@ -1611,9 +1569,7 @@ bail_out:
   return;
 }
 
-/**
- * Print slots from AutoChanger
- */
+// Print slots from AutoChanger
 static void StatusSlots(UaContext* ua, StorageResource* store)
 {
   char* slot_list;
@@ -1623,9 +1579,7 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
 
   ua->jcr->impl->res.write_storage = store;
 
-  /*
-   * Slot | Volume | Status | MediaType | Pool
-   */
+  // Slot | Volume | Status | MediaType | Pool
   const char* slot_hformat = " %4i%c| %16s | %9s | %14s | %24s |\n";
 
   if (!OpenClientDb(ua)) { return; }
@@ -1665,9 +1619,7 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
     vl2 = NULL;
     switch (vl1->slot_type) {
       case slot_type_t::kSlotTypeDrive:
-        /*
-         * We are not interested in drive slots.
-         */
+        // We are not interested in drive slots.
         continue;
       case slot_type_t::kSlotTypeStorage:
       case slot_type_t::kSlotTypeImport:

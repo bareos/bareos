@@ -23,9 +23,7 @@
 #include "ndmp/smc.h"
 
 namespace directordaemon {
-/**
- * calculate the element address for given slotnumber and slot_type
- */
+// calculate the element address for given slotnumber and slot_type
 /* clang-format off */
 slot_number_t GetElementAddressByBareosSlotNumber(
     smc_element_address_assignment* smc_elem_aa,
@@ -82,9 +80,7 @@ slot_number_t GetElementAddressByBareosSlotNumber(
   return calculated_slot;
 }
 
-/**
- * calculate the slotnumber for element address and slot_type
- */
+// calculate the slotnumber for element address and slot_type
 slot_number_t GetBareosSlotNumberByElementAddress(
     smc_element_address_assignment* smc_elem_aa,
     slot_type_t slot_type,

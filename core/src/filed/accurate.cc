@@ -108,9 +108,7 @@ void AccurateFree(JobControlRecord* jcr)
   }
 }
 
-/**
- * Send the deleted or the base file list and cleanup.
- */
+// Send the deleted or the base file list and cleanup.
 bool AccurateFinish(JobControlRecord* jcr)
 {
   bool retval = true;
@@ -164,9 +162,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   if (!jcr->impl->file_list) { return true; /** Not initialized properly */ }
 
-  /**
-   * Apply path stripping for lookup in accurate data.
-   */
+  // Apply path stripping for lookup in accurate data.
   StripPath(ff_pkt);
 
   if (S_ISDIR(ff_pkt->statp.st_mode)) {
@@ -202,9 +198,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
     opts = ff_pkt->AccurateOpts;
   }
 
-  /**
-   * Loop over options supplied by user and verify the fields he requests.
-   */
+  // Loop over options supplied by user and verify the fields he requests.
   for (char* p = opts; !status && *p; p++) {
     char ed1[30], ed2[30];
     switch (*p) {
@@ -321,9 +315,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
    */
   if (jcr->getJobLevel() == L_FULL) {
     if (!status) {
-      /**
-       * Compute space saved with basefile.
-       */
+      // Compute space saved with basefile.
       jcr->impl->base_size += ff_pkt->statp.st_size;
       jcr->impl->file_list->MarkFileAsSeen(payload);
     }
@@ -369,18 +361,14 @@ bool AccurateCmd(JobControlRecord* jcr)
 
   jcr->accurate = true;
 
-  /**
-   * dirmsg = fname + \0 + lstat + \0 + checksum + \0 + delta_seq + \0
-   */
+  // dirmsg = fname + \0 + lstat + \0 + checksum + \0 + delta_seq + \0
   while (dir->recv() >= 0) {
     fname = dir->msg;
     fname_length = strlen(fname);
     lstat = dir->msg + fname_length + 1;
     lstat_length = strlen(lstat);
 
-    /**
-     * No checksum.
-     */
+    // No checksum.
     if ((fname_length + lstat_length + 2) >= dir->message_length) {
       chksum = NULL;
       chksum_length = 0;

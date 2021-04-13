@@ -49,9 +49,7 @@ void Blocaltime(const time_t* time, struct tm* tm)
   (void)localtime_r(time, tm);
 }
 
-/*
- * Formatted time for user display: dd-Mon-yyyy hh:mm
- */
+// Formatted time for user display: dd-Mon-yyyy hh:mm
 char* bstrftime(char* dt, int maxlen, utime_t utime, const char* fmt)
 {
   time_t time = (time_t)utime;
@@ -67,45 +65,33 @@ char* bstrftime(char* dt, int maxlen, utime_t utime, const char* fmt)
   return dt;
 }
 
-/*
- * Formatted time for user display: dd-Mon-yyyy hh:mm:ss
- */
+// Formatted time for user display: dd-Mon-yyyy hh:mm:ss
 char* bstrftimes(char* dt, int maxlen, utime_t utime)
 {
   return bstrftime(dt, maxlen, utime, "%d-%b-%Y %H:%M:%S");
 }
 
-/*
- * Formatted time for user display: dd-Mon hh:mm
- */
+// Formatted time for user display: dd-Mon hh:mm
 char* bstrftime_ny(char* dt, int maxlen, utime_t utime)
 {
   return bstrftime(dt, maxlen, utime, "%d-%b %H:%M");
 }
 
-/*
- * Formatted time for user display with weekday: weekday dd-Mon hh:mm
- */
+// Formatted time for user display with weekday: weekday dd-Mon hh:mm
 char* bstrftime_wd(char* dt, int maxlen, utime_t utime)
 {
   return bstrftime(dt, maxlen, utime, "%a %d-%b-%Y %H:%M");
 }
 
-/*
- * Formatted time for user display: dd-Mon-yy hh:mm (no century)
- */
+// Formatted time for user display: dd-Mon-yy hh:mm (no century)
 char* bstrftime_nc(char* dt, int maxlen, utime_t utime)
 {
   char *p, *q;
 
-  /*
-   * NOTE! since the compiler complains about %y, I use %Y and cut the century
-   */
+  // NOTE! since the compiler complains about %y, I use %Y and cut the century
   bstrftime(dt, maxlen, utime, "%d-%b-%Y %H:%M");
 
-  /*
-   * Overlay the century
-   */
+  // Overlay the century
   p = dt + 7;
   q = dt + 9;
   while (*q) { *p++ = *q++; }
@@ -113,9 +99,7 @@ char* bstrftime_nc(char* dt, int maxlen, utime_t utime)
   return dt;
 }
 
-/*
- * Unix time to standard time string yyyy-mm-dd hh:mm:ss
- */
+// Unix time to standard time string yyyy-mm-dd hh:mm:ss
 char* bstrutime(char* dt, int maxlen, utime_t utime)
 {
   return bstrftime(dt, maxlen, utime, "%Y-%m-%d %H:%M:%S");
@@ -127,9 +111,7 @@ static bool is_leap(const tm& datetime)
   return year % 4 == 0 && !(year % 100 == 0 && year % 400 != 0);
 }
 
-/*
- * Check if a given date is valid
- */
+// Check if a given date is valid
 
 static bool DateIsValid(const tm& datetime)
 {
@@ -163,9 +145,7 @@ static bool DateIsValid(const tm& datetime)
   return true;
 }
 
-/*
- * Convert standard time string yyyy-mm-dd hh:mm:ss to Unix time
- */
+// Convert standard time string yyyy-mm-dd hh:mm:ss to Unix time
 utime_t StrToUtime(const char* str)
 {
   tm datetime{};
@@ -173,9 +153,7 @@ utime_t StrToUtime(const char* str)
 
   char trailinggarbage[16]{""};
 
-  /*
-   * Check for bad argument
-   */
+  // Check for bad argument
   if (!str || *str == 0) { return 0; }
 
   if ((sscanf(str, "%u-%u-%u %u:%u:%u%15s", &datetime.tm_year, &datetime.tm_mon,
@@ -220,14 +198,10 @@ btime_t GetCurrentBtime()
   return ((btime_t)tv.tv_sec) * 1000000 + (btime_t)tv.tv_usec;
 }
 
-/*
- * Convert btime to Unix time
- */
+// Convert btime to Unix time
 time_t BtimeToUnix(btime_t bt) { return (time_t)(bt / 1000000); }
 
-/*
- * Convert btime to utime
- */
+// Convert btime to utime
 utime_t BtimeToUtime(btime_t bt) { return (utime_t)(bt / 1000000); }
 
 /*
@@ -278,9 +252,7 @@ int TmWoy(time_t stime)
   return 1 + woy / 7;
 }
 
-/*
- * Deprecated. Do not use.
- */
+// Deprecated. Do not use.
 void get_current_time(struct date_time* dt)
 {
   struct tm tm;

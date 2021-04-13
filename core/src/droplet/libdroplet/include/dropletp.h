@@ -35,9 +35,7 @@
 #ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLETP_H_
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLETP_H_
 
-/*
- * dependencies
- */
+// dependencies
 #include <droplet.h>
 #include <stdio.h>
 #include <string.h>

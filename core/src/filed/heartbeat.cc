@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, May MMIII
- */
+// Kern Sibbald, May MMIII
 /**
  * @file
  * Bareos File Daemon heartbeat routines
@@ -61,9 +59,7 @@ extern "C" void* sd_heartbeat_thread(void* arg)
 
   pthread_detach(pthread_self());
 
-  /*
-   * Get our own local copy
-   */
+  // Get our own local copy
   sd.reset(jcr->store_bsock->clone());
   dir.reset(jcr->dir_bsock->clone());
 
@@ -161,9 +157,7 @@ void StopHeartbeatMonitor(JobControlRecord* jcr)
   }
   cnt = 0;
 
-  /*
-   * Wait max 100 secs for heartbeat thread to stop
-   */
+  // Wait max 100 secs for heartbeat thread to stop
   while (jcr->impl->hb_running && cnt++ < 200) {
     pthread_kill(jcr->impl->heartbeat_id,
                  TIMEOUT_SIGNAL); /* make heartbeat thread go away */
@@ -196,9 +190,7 @@ extern "C" void* dir_heartbeat_thread(void* arg)
 
   pthread_detach(pthread_self());
 
-  /*
-   * Get our own local copy
-   */
+  // Get our own local copy
   dir = jcr->dir_bsock->clone();
 
   jcr->impl->hb_bsock.reset(dir);
@@ -225,9 +217,7 @@ extern "C" void* dir_heartbeat_thread(void* arg)
   return NULL;
 }
 
-/**
- * Same as above but we don't listen to the SD
- */
+// Same as above but we don't listen to the SD
 void StartDirHeartbeat(JobControlRecord* jcr)
 {
   if (me->heartbeat_interval) {

@@ -35,9 +35,7 @@ class unix_file_device : public Device {
   unix_file_device() = default;
   ~unix_file_device() = default;
 
-  /*
-   * Interface from Device
-   */
+  // Interface from Device
   bool MountBackend(DeviceControlRecord* dcr, int timeout) override;
   bool UnmountBackend(DeviceControlRecord* dcr, int timeout) override;
   int d_close(int) override;

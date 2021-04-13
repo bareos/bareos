@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, May MM
- */
+// Kern Sibbald, May MM
 /**
  * @file
  * Configuration parser for Director Run Configuration
@@ -41,9 +39,7 @@ namespace directordaemon {
 
 extern struct s_jl joblevels[];
 
-/*
- * Forward referenced subroutines
- */
+// Forward referenced subroutines
 enum e_state
 {
   s_none = 0,
@@ -69,9 +65,7 @@ struct s_keyw {
   int code;           /* state value */
 };
 
-/*
- * Keywords understood by parser
- */
+// Keywords understood by parser
 static struct s_keyw keyw[] = {{NT_("on"), s_none, 0},
                                {NT_("at"), s_at, 0},
                                {NT_("last"), s_last, 0},
@@ -144,9 +138,7 @@ static void set_defaults()
   SetBitRange(0, 53, res_run->date_time_bitfield.woy);
 }
 
-/**
- * Keywords (RHS) permitted in Run records
- */
+// Keywords (RHS) permitted in Run records
 struct s_kw RunFields[] = {{"pool", 'P'},
                            {"fullpool", 'f'},
                            {"incrementalpool", 'i'},
@@ -186,14 +178,10 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
 
   lc->options |= LOPT_NO_IDENT; /* Want only "strings" */
 
-  /*
-   * Clear local copy of run record
-   */
+  // Clear local copy of run record
   res_run = new RunResource;
 
-  /*
-   * Scan for Job level "full", "incremental", ...
-   */
+  // Scan for Job level "full", "incremental", ...
   for (found = true; found;) {
     found = false;
     token = LexGetToken(lc, BCT_NAME);
@@ -392,9 +380,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           state = s_woy; /* Week of year */
           break;
         }
-        /*
-         * Everything else must be a keyword
-         */
+        // Everything else must be a keyword
         for (i = 0; keyw[i].name; i++) {
           if (Bstrcasecmp(lc->str, keyw[i].name)) {
             state = keyw[i].state;
@@ -488,14 +474,10 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
          *  12am as 00:00 and 12pm as 12:00.
          */
         if (pm) {
-          /*
-           * Convert to 24 hour time
-           */
+          // Convert to 24 hour time
           if (code != 12) { code += 12; }
         } else if (am && code == 12) {
-          /*
-           * AM
-           */
+          // AM
           code -= 12;
         }
         if (code < 0 || code > 23 || code2 < 0 || code2 > 59) {
@@ -525,9 +507,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         *p++ = 0; /* Separate two halves */
 
         if (IsAnInteger(lc->str) && IsAnInteger(p)) {
-          /*
-           * Check for day modulo specification.
-           */
+          // Check for day modulo specification.
           code = atoi(lc->str) - 1;
           code2 = atoi(p);
           if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
@@ -543,9 +523,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             ClearBitRange(0, 30, res_run->date_time_bitfield.mday);
             have_mday = true;
           }
-          /*
-           * Set the bits according to the modulo specification.
-           */
+          // Set the bits according to the modulo specification.
           for (i = 0; i < 31; i++) {
             if (i % code2 == 0) {
               SetBit(i + code, res_run->date_time_bitfield.mday);
@@ -555,9 +533,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
                    && (lc->str[0] == 'w' || lc->str[0] == 'W')
                    && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1)
                    && IsAnInteger(p + 1)) {
-          /*
-           * Check for week modulo specification.
-           */
+          // Check for week modulo specification.
           code = atoi(lc->str + 1);
           code2 = atoi(p + 1);
           if (code < 0 || code > 53 || code2 < 0 || code2 > 53) {
@@ -573,9 +549,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             ClearBitRange(0, 53, res_run->date_time_bitfield.woy);
             have_woy = true;
           }
-          /*
-           * Set the bits according to the modulo specification.
-           */
+          // Set the bits according to the modulo specification.
           for (i = 0; i < 54; i++) {
             if (i % code2 == 0) {
               SetBit(i + code - 1, res_run->date_time_bitfield.woy);
@@ -596,9 +570,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         *p++ = 0; /* Separate two halves */
 
         if (IsAnInteger(lc->str) && IsAnInteger(p)) {
-          /*
-           * Check for day range.
-           */
+          // Check for day range.
           code = atoi(lc->str) - 1;
           code2 = atoi(p) - 1;
           if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
@@ -619,9 +591,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
                    && (lc->str[0] == 'w' || lc->str[0] == 'W')
                    && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1)
                    && IsAnInteger(p + 1)) {
-          /*
-           * Check for week of year range.
-           */
+          // Check for week of year range.
           code = atoi(lc->str + 1);
           code2 = atoi(p + 1);
           if (code < 0 || code > 53 || code2 < 0 || code2 > 53) {
@@ -639,9 +609,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             SetBitRange(0, code2, res_run->date_time_bitfield.woy);
           }
         } else {
-          /*
-           * lookup first half of keyword range (week days or months).
-           */
+          // lookup first half of keyword range (week days or months).
           lcase(lc->str);
           for (i = 0; keyw[i].name; i++) {
             if (bstrcmp(lc->str, keyw[i].name)) {
@@ -657,9 +625,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             return;
           }
 
-          /*
-           * Lookup end of range.
-           */
+          // Lookup end of range.
           lcase(p);
           for (i = 0; keyw[i].name; i++) {
             if (bstrcmp(p, keyw[i].name)) {
@@ -692,16 +658,12 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             if (code < code2) {
               SetBitRange(code, code2, res_run->date_time_bitfield.month);
             } else {
-              /*
-               * This is a bit odd, but we accept it anyway
-               */
+              // This is a bit odd, but we accept it anyway
               SetBitRange(code, 11, res_run->date_time_bitfield.month);
               SetBitRange(0, code2, res_run->date_time_bitfield.month);
             }
           } else {
-            /*
-             * Must be position
-             */
+            // Must be position
             if (!have_wom) {
               ClearBitRange(0, 4, res_run->date_time_bitfield.wom);
               have_wom = true;

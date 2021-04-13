@@ -165,9 +165,7 @@ extern "C" {
 #endif
 
 
-/**
- * Local Bareos includes. Be sure to put all the system includes before these.
- */
+// Local Bareos includes. Be sure to put all the system includes before these.
 #include "lib/version.h"
 #include "bc_types.h"
 

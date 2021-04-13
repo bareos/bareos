@@ -49,9 +49,7 @@
  ****************************************************************
  */
 
-/*
- * ndmp_error
- */
+// ndmp_error
 
 struct enum_conversion ndmp_29_error[] = {
     {NDMP2_UNDEFINED_ERR, NDMP9_UNDEFINED_ERR}, /* default */
@@ -154,9 +152,7 @@ int ndmp_9to2_pval_vec_dup(ndmp9_pval* pval9,
 }
 
 
-/*
- * ndmp[_mover]_addr
- */
+// ndmp[_mover]_addr
 
 struct enum_conversion ndmp_29_mover_addr_type[] = {
     {NDMP_INVALID_GENERAL, NDMP_INVALID_GENERAL}, /* default */
@@ -435,9 +431,7 @@ int ndmp_9to2_connect_client_auth_request(
  * no arg request, **NO REPLY**
  */
 
-/*
- * ndmp_connect_server_auth
- */
+// ndmp_connect_server_auth
 
 /* TBD */
 int ndmp_2to9_connect_server_auth_request(
@@ -598,9 +592,7 @@ int ndmp_9to2_config_get_mover_type_reply(
 }
 
 
-/*
- * ndmp_config_get_auth_attr
- */
+// ndmp_config_get_auth_attr
 
 int ndmp_2to9_config_get_auth_attr_request(
     struct ndmp2_config_get_auth_attr_request* request2,
@@ -1089,9 +1081,7 @@ int ndmp_9to2_tape_get_state_reply(ndmp9_tape_get_state_reply* reply9,
 }
 
 
-/*
- * ndmp_tape_mtio_request
- */
+// ndmp_tape_mtio_request
 
 struct enum_conversion ndmp_29_tape_mtio_op[] = {
     {
@@ -1159,9 +1149,7 @@ int ndmp_9to2_tape_mtio_reply(ndmp9_tape_mtio_reply* reply9,
 }
 
 
-/*
- * ndmp_tape_write
- */
+// ndmp_tape_write
 
 int ndmp_2to9_tape_write_request(ndmp2_tape_write_request* request2,
                                  ndmp9_tape_write_request* request9)
@@ -1218,9 +1206,7 @@ int ndmp_9to2_tape_write_reply(ndmp9_tape_write_reply* reply9,
 }
 
 
-/*
- * ndmp_tape_read
- */
+// ndmp_tape_read
 
 int ndmp_2to9_tape_read_request(ndmp2_tape_read_request* request2,
                                 ndmp9_tape_read_request* request9)
@@ -1390,9 +1376,7 @@ int ndmp_9to2_mover_get_state_reply(ndmp9_mover_get_state_reply* reply9,
 }
 
 
-/*
- * ndmp_mover_listen
- */
+// ndmp_mover_listen
 
 int ndmp_2to9_mover_listen_request(ndmp2_mover_listen_request* request2,
                                    ndmp9_mover_listen_request* request9)

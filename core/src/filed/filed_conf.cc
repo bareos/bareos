@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, September MM
- */
+// Kern Sibbald, September MM
 /**
  * @file
  * Main configuration file parser for Bareos File Daemon (Client)
@@ -82,9 +80,7 @@ static MessagesResource* res_msgs;
 
 /* clang-format off */
 
-/**
- * Client or File daemon "Global" resources
- */
+// Client or File daemon "Global" resources
 static ResourceItem cli_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_client, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL,
       "The name of this resource. It is used to reference to it."},
@@ -133,9 +129,7 @@ static ResourceItem cli_items[] = {
     TLS_CERT_CONFIG(res_client),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
-/**
- * Directors that can use our services
- */
+// Directors that can use our services
 static ResourceItem dir_items[] = {
   {"Name", CFG_TYPE_NAME, ITEM(res_dir, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL},
   {"Description", CFG_TYPE_STR, ITEM(res_dir, description_), 0, 0, NULL, NULL, NULL},
@@ -156,9 +150,7 @@ static ResourceItem dir_items[] = {
     TLS_CERT_CONFIG(res_dir),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
 };
-/**
- * Message resource
- */
+// Message resource
 #include "lib/messages_resource_items.h"
 
 static ResourceTable resources[] = {
@@ -193,9 +185,7 @@ static void StoreCipher(LEX* lc, ResourceItem* item, int index, int pass)
   int i;
   LexGetToken(lc, BCT_NAME);
 
-  /*
-   * Scan Crypto Ciphers name.
-   */
+  // Scan Crypto Ciphers name.
   for (i = 0; CryptoCiphers[i].name; i++) {
     if (Bstrcasecmp(lc->str, CryptoCiphers[i].name)) {
       SetItemVariable<uint32_t>(*item, CryptoCiphers[i].token);
@@ -274,9 +264,7 @@ ConfigurationParser* InitFdConfig(const char* configfile, int exit_code)
   return config;
 }
 
-/**
- * Print configuration file schema in json format
- */
+// Print configuration file schema in json format
 #ifdef HAVE_JANSSON
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
@@ -289,9 +277,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set_new(json, "component", json_string("bareos-fd"));
   json_object_set_new(json, "version", json_string(kBareosVersionStrings.Full));
 
-  /*
-   * Resources
-   */
+  // Resources
   json_t* resource = json_object();
   json_object_set(json, "resource", resource);
   json_t* bareos_fd = json_object();
@@ -366,9 +352,7 @@ static void FreeResource(BareosResource* res, int type)
 
   if (res == NULL) { return; }
 
-  /*
-   * Common stuff -- free the resource name
-   */
+  // Common stuff -- free the resource name
   next_resource = (BareosResource*)res->next_;
 
   if (res->resource_name_) { free(res->resource_name_); }
@@ -446,9 +430,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
   int i;
   int error = 0;
 
-  /*
-   * Ensure that all required items are present
-   */
+  // Ensure that all required items are present
   for (i = 0; items[i].name; i++) {
     if (items[i].flags & CFG_ITEM_REQUIRED) {
       if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {

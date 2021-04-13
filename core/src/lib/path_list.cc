@@ -20,9 +20,7 @@
    02110-1301, USA.
 */
 
-/*
- * Kern Sibbald, September MMVII
- */
+// Kern Sibbald, September MMVII
 
 #include "include/bareos.h"
 #include "lib/path_list.h"
@@ -35,9 +33,7 @@ typedef struct PrivateCurDir {
   char fname[1];
 } CurDir;
 
-/*
- * Initialize the path hash table
- */
+// Initialize the path hash table
 htable* path_list_init()
 {
   htable* path_list;
@@ -45,9 +41,7 @@ htable* path_list_init()
 
   path_list = (htable*)malloc(sizeof(htable));
 
-  /*
-   * Hard to know in advance how many directories will be stored in this hash
-   */
+  // Hard to know in advance how many directories will be stored in this hash
   path_list->init(elt, &elt->link, 10000);
 
   return path_list;
@@ -63,9 +57,7 @@ bool PathListAdd(htable* path_list, uint32_t len, const char* fname)
 
   if (!path_list) { return false; }
 
-  /*
-   * We store CurDir, fname in the same chunk
-   */
+  // We store CurDir, fname in the same chunk
   item = (CurDir*)path_list->hash_malloc(sizeof(CurDir) + len + 1);
 
   memset(item, 0, sizeof(CurDir));
@@ -89,9 +81,7 @@ bool PathListLookup(htable* path_list, const char* fname)
   filename = GetPoolMemory(PM_FNAME);
   PmStrcpy(filename, fname);
 
-  /*
-   * Strip trailing /
-   */
+  // Strip trailing /
   len = strlen(filename);
   if (len == 0) {
     FreePoolMemory(filename);

@@ -13,9 +13,7 @@
  *
  *  For disclaimer see below.
  */
-/*
- * Modified for use with BACULA by Kern Sibbald, June 2003
- */
+// Modified for use with BACULA by Kern Sibbald, June 2003
 /**
  * @file
  * OSSP var - Variable Expansion

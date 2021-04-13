@@ -95,9 +95,7 @@
 #ifndef _NDMOS_H
 #define _NDMOS_H
 
-/*
- * Silence compiler for known warnings.
- */
+// Silence compiler for known warnings.
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wunused-const-variable"
 #pragma clang diagnostic ignored "-Wformat"
@@ -116,9 +114,7 @@
                        E_STATEMENT_NOT_REACHED)
 #endif
 
-/*
- * Operating system idents
- */
+// Operating system idents
 #define NDMOS_IDENT(A, B, C, D) (((A) << 24) + ((B) << 16) + ((C) << 8) + (D))
 
 #define NDMOS_ID_FREEBSD NDMOS_IDENT('F', 'B', 's', 'd')
@@ -159,17 +155,13 @@
 #endif
 #endif /* !NDMOS_ID */
 
-/*
- * Do we got it?
- */
+// Do we got it?
 #ifndef NDMOS_ID
 @ @ @ @You need to use - DNDMOS_ID = NDMOS_ID_xxxx
 #endif
 
 
-/*
- * Based on NDMOS_ID, #include the right O/S specific header file
- */
+// Based on NDMOS_ID, #include the right O/S specific header file
 #if NDMOS_ID == NDMOS_ID_FREEBSD
 #include "ndmos_freebsd.h"
 #endif
@@ -329,9 +321,7 @@
 #define NDMOS_OPTION_ROBOT_SIMULATOR 1
 #define NDMOS_OPTION_GAP_SIMULATOR 1
 
-/*
- * Constants
- */
+// Constants
 #ifndef NDMOS_CONST_ALIGN
 #define NDMOS_CONST_ALIGN sizeof(uint64_t)
 #endif /* !NDMOS_CONST_ALIGN */
@@ -377,9 +367,7 @@
 #endif /* !NDMOS_CONST_NDMOS_REVISION */
 
 
-/*
- * Application Program Interfaces (APIs)
- */
+// Application Program Interfaces (APIs)
 #ifndef NDMOS_API_BZERO
 #define NDMOS_API_BZERO(P, N) (void)bzero((void*)(P), (N))
 #endif /* !NDMOS_API_BZERO */
@@ -421,9 +409,7 @@
 #endif /* !NDMOS_API_STREND */
 
 
-/*
- * Macros
- */
+// Macros
 #ifndef NDMOS_MACRO_NEW
 #define NDMOS_MACRO_NEW(T) ((T*)NDMOS_API_MALLOC(sizeof(T)))
 #endif /* !NDMOS_MACRO_NEW */
@@ -475,9 +461,7 @@
 #endif /* !NDMOS_MACRO_SET_SOCKADDR */
 
 
-/*
- * Composite effects
- */
+// Composite effects
 
 #ifdef NDMOS_OPTION_NO_DATA_AGENT
 #ifdef NDMOS_OPTION_NO_TAPE_AGENT
@@ -503,9 +487,7 @@
 #endif
 #endif /* NDMOS_OPTION_ROBOT_SIMULATOR */
 
-/*
- * simulator fields
- */
+// simulator fields
 
 #ifdef NDMOS_OPTION_TAPE_SIMULATOR
 #define NDMOS_MACRO_TAPE_AGENT_ADDITIONS \

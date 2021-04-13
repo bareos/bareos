@@ -204,9 +204,7 @@ char* get_volume_name_from_SD(UaContext* ua,
   sd->fsend(readlabelcmd, dev_name, Slot, drive);
   Dmsg1(100, "Sent: %s", sd->msg);
 
-  /*
-   * Get Volume name in this Slot
-   */
+  // Get Volume name in this Slot
   while (sd->recv() >= 0) {
     ua->SendMsg("%s", sd->msg);
     Dmsg1(100, "Got: %s", sd->msg);
@@ -273,9 +271,7 @@ dlist* native_get_vol_list(UaContext* ua,
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
   BashSpaces(dev_name);
 
-  /*
-   * Ask for autochanger list of volumes
-   */
+  // Ask for autochanger list of volumes
   if (listall) {
     sd->fsend(changerlistallcmd, dev_name);
   } else {
@@ -284,15 +280,11 @@ dlist* native_get_vol_list(UaContext* ua,
 
   vol_list = new dlist(vl, &vl->link);
 
-  /*
-   * Read and organize list of Volumes
-   */
+  // Read and organize list of Volumes
   while (BnetRecv(sd) >= 0) {
     StripTrailingJunk(sd->msg);
 
-    /*
-     * Check for returned SD messages
-     */
+    // Check for returned SD messages
     if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) && B_ISDIGIT(sd->msg[2])
         && B_ISDIGIT(sd->msg[3]) && sd->msg[4] == ' ') {
       ua->SendMsg("%s\n", sd->msg); /* pass them on to user */
@@ -368,9 +360,7 @@ dlist* native_get_vol_list(UaContext* ua,
     }
 
     if (scan && !listall) {
-      /*
-       * Scanning -- require only valid slot
-       */
+      // Scanning -- require only valid slot
       vl->bareos_slot_number = atoi(field1);
       if (vl->bareos_slot_number <= 0) {
         ua->ErrorMsg(_("Invalid Slot number: %s\n"), sd->msg);
@@ -387,9 +377,7 @@ dlist* native_get_vol_list(UaContext* ua,
       }
       vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
     } else if (!listall) {
-      /*
-       * Not scanning and not listall.
-       */
+      // Not scanning and not listall.
       if (strlen(field2) == 0) {
         free(vl);
         continue;
@@ -413,9 +401,7 @@ dlist* native_get_vol_list(UaContext* ua,
       vl->VolName = strdup(field2);
       vl->element_address = INDEX_SLOT_OFFSET + vl->bareos_slot_number;
     } else {
-      /*
-       * Listall.
-       */
+      // Listall.
       if (!field3) { goto parse_error; }
 
       switch (*field1) {
@@ -540,9 +526,7 @@ dlist* native_get_vol_list(UaContext* ua,
   return vol_list;
 }
 
-/**
- * We get the number of slots in the changer from the SD
- */
+// We get the number of slots in the changer from the SD
 slot_number_t NativeGetNumSlots(UaContext* ua, StorageResource* store)
 {
   char dev_name[MAX_NAME_LENGTH];
@@ -555,9 +539,7 @@ slot_number_t NativeGetNumSlots(UaContext* ua, StorageResource* store)
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
   BashSpaces(dev_name);
 
-  /*
-   * Ask for autochanger number of slots
-   */
+  // Ask for autochanger number of slots
   sd->fsend(changerslotscmd, dev_name);
   while (sd->recv() >= 0) {
     if (sscanf(sd->msg, changerslotsresponse, &slots) == 1) {
@@ -572,9 +554,7 @@ slot_number_t NativeGetNumSlots(UaContext* ua, StorageResource* store)
   return slots;
 }
 
-/**
- * We get the number of drives in the changer from the SD
- */
+// We get the number of drives in the changer from the SD
 drive_number_t NativeGetNumDrives(UaContext* ua, StorageResource* store)
 {
   char dev_name[MAX_NAME_LENGTH];
@@ -587,9 +567,7 @@ drive_number_t NativeGetNumDrives(UaContext* ua, StorageResource* store)
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
   BashSpaces(dev_name);
 
-  /*
-   * Ask for autochanger number of drives
-   */
+  // Ask for autochanger number of drives
   sd->fsend(changerdrivescmd, dev_name);
   while (sd->recv() >= 0) {
     if (sscanf(sd->msg, changerdrivesresponse, &drives) == 1) {
@@ -741,9 +719,7 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
     DeviceResource* device_resource = nullptr;
     PoolMem devicenames;
 
-    /*
-     * Build a list of devicenames that belong to this storage defintion.
-     */
+    // Build a list of devicenames that belong to this storage defintion.
     foreach_alist (device_resource, store->device) {
       if (cnt == 0) {
         PmStrcpy(devicenames, device_resource->resource_name_);
@@ -786,21 +762,15 @@ bool NativeTransferVolume(UaContext* ua,
   bstrncpy(dev_name, store->dev_name(), sizeof(dev_name));
   BashSpaces(dev_name);
 
-  /*
-   * Ask for autochanger transfer of volumes
-   */
+  // Ask for autochanger transfer of volumes
   sd->fsend(changertransfercmd, dev_name, src_slot, dst_slot);
   while (BnetRecv(sd) >= 0) {
     StripTrailingJunk(sd->msg);
 
-    /*
-     * Check for returned SD messages
-     */
+    // Check for returned SD messages
     if (sd->msg[0] == '3' && B_ISDIGIT(sd->msg[1]) && B_ISDIGIT(sd->msg[2])
         && B_ISDIGIT(sd->msg[3]) && sd->msg[4] == ' ') {
-      /*
-       * See if this is a failure msg.
-       */
+      // See if this is a failure msg.
       if (sd->msg[1] == '9') retval = false;
 
       ua->SendMsg("%s\n", sd->msg); /* pass them on to user */
@@ -814,9 +784,7 @@ bool NativeTransferVolume(UaContext* ua,
   return retval;
 }
 
-/**
- * Ask the autochanger to perform a mount, umount or release operation.
- */
+// Ask the autochanger to perform a mount, umount or release operation.
 bool NativeAutochangerVolumeOperation(UaContext* ua,
                                       StorageResource* store,
                                       const char* operation,

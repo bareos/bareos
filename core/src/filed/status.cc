@@ -21,9 +21,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, August MMI
- */
+// Kern Sibbald, August MMI
 /**
  * @file
  * Bareos File Daemon Status routines
@@ -68,9 +66,7 @@ static int privs = 0;
 #  define VSS ""
 #endif
 
-/**
- * General status generator
- */
+// General status generator
 static void OutputStatus(StatusPacket* sp)
 {
   ListStatusHeader(sp);
@@ -164,9 +160,7 @@ static void ListRunningJobsPlain(StatusPacket* sp)
   PoolMem msg(PM_MESSAGE);
   char dt[MAX_TIME_LENGTH], b1[32], b2[32], b3[32], b4[32];
 
-  /*
-   * List running jobs
-   */
+  // List running jobs
   Dmsg0(1000, "Begin status jcr loop.\n");
   len = Mmsg(msg, _("\nRunning Jobs:\n"));
   sp->send(msg, len);
@@ -251,9 +245,7 @@ static void ListRunningJobsApi(StatusPacket* sp)
   PoolMem msg(PM_MESSAGE);
   char dt[MAX_TIME_LENGTH], b1[32], b2[32], b3[32], b4[32];
 
-  /*
-   * List running jobs for Bat/Bweb (simple to parse)
-   */
+  // List running jobs for Bat/Bweb (simple to parse)
   foreach_jcr (njcr) {
     bstrutime(dt, sizeof(dt), njcr->start_time);
     if (njcr->JobId == 0) {
@@ -386,9 +378,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
     }
     bstrncpy(JobName, je.Job, sizeof(JobName));
 
-    /*
-     * There are three periods after the Job name
-     */
+    // There are three periods after the Job name
     for (int i = 0; i < 3; i++) {
       if ((p = strrchr(JobName, '.')) != NULL) { *p = 0; }
     }
@@ -413,9 +403,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
   }
 }
 
-/**
- * Status command from Director
- */
+// Status command from Director
 bool StatusCmd(JobControlRecord* jcr)
 {
   BareosSocket* user = jcr->dir_bsock;
@@ -430,9 +418,7 @@ bool StatusCmd(JobControlRecord* jcr)
   return true;
 }
 
-/**
- * .status command from Director
- */
+// .status command from Director
 bool QstatusCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -491,9 +477,7 @@ bool QstatusCmd(JobControlRecord* jcr)
   return true;
 }
 
-/**
- * Convert Job Level into a string
- */
+// Convert Job Level into a string
 static const char* JobLevelToString(int level)
 {
   const char* str;

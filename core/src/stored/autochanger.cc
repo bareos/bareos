@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, August MMII
- */
+// Kern Sibbald, August MMII
 /**
  * @file
  * Routines for handling the autochanger.
@@ -57,18 +55,14 @@ static char* transfer_edit_device_codes(DeviceControlRecord* dcr,
                                         slot_number_t src_slot,
                                         slot_number_t dst_slot);
 
-/**
- * Init all the autochanger resources found
- */
+// Init all the autochanger resources found
 bool InitAutochangers()
 {
   bool OK = true;
   AutochangerResource* changer;
   drive_number_t logical_drive_number;
 
-  /*
-   * Ensure that the media_type for each device is the same
-   */
+  // Ensure that the media_type for each device is the same
   foreach_res (changer, R_AUTOCHANGER) {
     DeviceResource* device_resource = nullptr;
 
@@ -100,9 +94,7 @@ bool InitAutochangers()
         OK = false;
       }
 
-      /*
-       * Give the drive in the autochanger a logical drive number.
-       */
+      // Give the drive in the autochanger a logical drive number.
       device_resource->drive = logical_drive_number++;
     }
   }
@@ -139,9 +131,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
     return 0;
   }
 
-  /*
-   * An empty ChangerCommand => virtual disk autochanger
-   */
+  // An empty ChangerCommand => virtual disk autochanger
   if (dcr->device_resource->changer_command
       && dcr->device_resource->changer_command[0] == 0) {
     Dmsg0(100, "ChangerCommand=0, virtual disk changer\n");
@@ -160,9 +150,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
   if (writing && (!IsSlotNumberValid(wanted_slot))) {
     if (dir) { return 0; /* For user, bail out right now */ }
 
-    /*
-     * ***FIXME*** this really should not be here
-     */
+    // this really should not be here
     if (dcr->DirFindNextAppendableVolume()) {
       wanted_slot = dcr->VolCatInfo.InChanger ? dcr->VolCatInfo.Slot : 0;
     } else {
@@ -173,9 +161,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
 
   changer = GetPoolMemory(PM_FNAME);
   if (!IsSlotNumberValid(wanted_slot)) {
-    /*
-     * Suppress info when polling
-     */
+    // Suppress info when polling
     if (!dev->poll) {
       Jmsg(
           jcr, M_INFO, 0,
@@ -186,9 +172,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
     }
     rtn_stat = 0;
   } else if (!dcr->device_resource->changer_name) {
-    /*
-     * Suppress info when polling
-     */
+    // Suppress info when polling
     if (!dev->poll) {
       Jmsg(jcr, M_INFO, 0,
            _("No \"Changer Device\" for %s. Manual load of Volume may be "
@@ -197,9 +181,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
     }
     rtn_stat = 0;
   } else if (!dcr->device_resource->changer_command) {
-    /*
-     * Suppress info when polling
-     */
+    // Suppress info when polling
     if (!dev->poll) {
       Jmsg(jcr, M_INFO, 0,
            _("No \"Changer Command\" for %s. Manual load of Volume may be "
@@ -212,9 +194,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
     int status;
     slot_number_t loaded_slot;
 
-    /*
-     * Attempt to load the Volume
-     */
+    // Attempt to load the Volume
     loaded_slot = GetAutochangerLoadedSlot(dcr);
     if (loaded_slot != wanted_slot) {
       PoolMem results(PM_MESSAGE);
@@ -224,25 +204,19 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
         goto bail_out;
       }
 
-      /*
-       * Unload anything in our drive
-       */
+      // Unload anything in our drive
       if (!UnloadAutochanger(dcr, loaded_slot, true)) {
         UnlockChanger(dcr);
         goto bail_out;
       }
 
-      /*
-       * Make sure desired slot is unloaded
-       */
+      // Make sure desired slot is unloaded
       if (!UnloadOtherDrive(dcr, wanted_slot, true)) {
         UnlockChanger(dcr);
         goto bail_out;
       }
 
-      /*
-       * Load the desired volume.
-       */
+      // Load the desired volume.
       Dmsg2(100, "Doing changer load slot %hd %s\n", wanted_slot,
             dev->print_name());
       Jmsg(
@@ -264,9 +238,7 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
               drive);
         dev->SetSlotNumber(wanted_slot); /* set currently loaded slot */
         if (dev->vol) {
-          /*
-           * We just swapped this Volume so it cannot be swapping any more
-           */
+          // We just swapped this Volume so it cannot be swapping any more
           dev->vol->ClearSwapping();
         }
       } else {
@@ -331,9 +303,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
   slot_number_t slot = dev->GetSlot();
   if (IsSlotNumberValid(slot)) { return slot; }
 
-  /*
-   * Virtual disk autochanger
-   */
+  // Virtual disk autochanger
   if (dcr->device_resource->changer_command[0] == 0) { return 1; }
 
   /*
@@ -364,9 +334,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
   if (status == 0) {
     loaded_slot = str_to_uint16(results.c_str());
     if (IsSlotNumberValid(loaded_slot)) {
-      /*
-       * Suppress info when polling
-       */
+      // Suppress info when polling
       if (!dev->poll && debug_level >= 1) {
         Jmsg(jcr, M_INFO, 0,
              _("3302 Autochanger \"loaded? drive %hd\", result is Slot %hd.\n"),
@@ -374,9 +342,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
       }
       dev->SetSlotNumber(loaded_slot);
     } else {
-      /*
-       * Suppress info when polling
-       */
+      // Suppress info when polling
       if (!dev->poll && debug_level >= 1) {
         Jmsg(jcr, M_INFO, 0,
              _("3302 Autochanger \"loaded? drive %hd\", result: nothing "
@@ -472,9 +438,7 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
     return false;
   }
 
-  /*
-   * Virtual disk autochanger
-   */
+  // Virtual disk autochanger
   if (dcr->device_resource->changer_command[0] == 0) {
     dev->ClearUnload();
     return true;
@@ -542,9 +506,7 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
   return retval;
 }
 
-/**
- * Unload the slot if mounted in a different drive
- */
+// Unload the slot if mounted in a different drive
 static bool UnloadOtherDrive(DeviceControlRecord* dcr,
                              slot_number_t slot,
                              bool lock_set)
@@ -592,9 +554,7 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
     Dmsg1(100, "Slot=%hd found in another device\n", slot);
   }
 
-  /*
-   * The Volume we want is on another device.
-   */
+  // The Volume we want is on another device.
   if (dev->IsBusy()) {
     Dmsg4(100, "Vol %s for dev=%s in use dev=%s slot=%hd\n", dcr->VolumeName,
           dcr->dev->print_name(), dev->print_name(), slot);
@@ -623,9 +583,7 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
   return UnloadDev(dcr, dev, lock_set);
 }
 
-/**
- * Unconditionally unload a specified drive
- */
+// Unconditionally unload a specified drive
 bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
 {
   int status;
@@ -641,17 +599,13 @@ bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
   save_dev = dcr->dev; /* save dcr device */
   dcr->SetDev(dev);    /* temporarily point dcr at other device */
 
-  /*
-   * Update slot if not set or not always_open
-   */
+  // Update slot if not set or not always_open
   slot_number_t slot = dev->GetSlot();
   if (!IsSlotNumberValid(slot) || !dev->HasCap(CAP_ALWAYSOPEN)) {
     GetAutochangerLoadedSlot(dcr, lock_set);
   }
 
-  /*
-   * Fail if we have no slot to unload
-   */
+  // Fail if we have no slot to unload
   slot = dev->GetSlot();
   if (!IsSlotNumberValid(slot)) {
     dcr->SetDev(save_dev);
@@ -755,9 +709,7 @@ bool AutochangerCmd(DeviceControlRecord* dcr,
     return true;
   }
 
-  /*
-   * If listing, reprobe changer
-   */
+  // If listing, reprobe changer
   if (bstrcmp(cmd, "list") || bstrcmp(cmd, "listall")) {
     dcr->dev->SetSlotNumber(0);
     GetAutochangerLoadedSlot(dcr);

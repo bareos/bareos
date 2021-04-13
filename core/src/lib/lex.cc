@@ -56,9 +56,7 @@ void ScanToEol(LEX* lc)
   }
 }
 
-/*
- * Get next token, but skip EOL
- */
+// Get next token, but skip EOL
 int ScanToNextNotEol(LEX* lc)
 {
   int token;
@@ -70,9 +68,7 @@ int ScanToNextNotEol(LEX* lc)
   return token;
 }
 
-/*
- * Format a scanner error message
- */
+// Format a scanner error message
 static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;
@@ -116,9 +112,7 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
   lc->error_counter++;
 }
 
-/*
- * Format a scanner warning message
- */
+// Format a scanner warning message
 static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;
@@ -160,9 +154,7 @@ void LexSetDefaultErrorHandler(LEX* lf) { lf->ScanError = s_err; }
 
 void LexSetDefaultWarningHandler(LEX* lf) { lf->scan_warning = s_warn; }
 
-/*
- * Set err_type used in error_handler
- */
+// Set err_type used in error_handler
 void LexSetErrorHandlerErrorType(LEX* lf, int err_type)
 {
   LEX* lex = lf;
@@ -208,9 +200,7 @@ LEX* LexCloseFile(LEX* lf)
   return lf;
 }
 
-/*
- * Add lex structure for an included config file.
- */
+// Add lex structure for an included config file.
 static inline LEX* lex_add(LEX* lf,
                            const char* filename,
                            FILE* fd,
@@ -308,9 +298,7 @@ LEX* lex_open_file(LEX* lf,
      * is a wildcard string.
      */
 
-    /*
-     * Clear fileglob at least required for mingw version of glob()
-     */
+    // Clear fileglob at least required for mingw version of glob()
     memset(&fileglob, 0, sizeof(fileglob));
     globrc = glob(filename, 0, NULL, &fileglob);
 
@@ -321,9 +309,7 @@ LEX* lex_open_file(LEX* lf,
        */
       return lf;
     } else if (globrc != 0) {
-      /*
-       * glob() error has occurred. Giving up.
-       */
+      // glob() error has occurred. Giving up.
       return NULL;
     }
 
@@ -371,9 +357,7 @@ int LexGetChar(LEX* lf)
   }
 
   if (lf->ch == L_EOL) {
-    /*
-     * See if we are really reading a file otherwise we have reached EndOfFile.
-     */
+    // See if we are really reading a file otherwise we have reached EndOfFile.
     if (!lf->fd || bfgets(lf->line, lf->fd) == NULL) {
       lf->ch = L_EOF;
       if (lf->next) {
@@ -409,9 +393,7 @@ void LexUngetChar(LEX* lf)
   }
 }
 
-/*
- * Add a character to the current string
- */
+// Add a character to the current string
 static void add_str(LEX* lf, int ch)
 {
   /*
@@ -427,9 +409,7 @@ static void add_str(LEX* lf, int ch)
   lf->str[lf->str_len] = 0;
 }
 
-/*
- * Begin the string
- */
+// Begin the string
 static void BeginStr(LEX* lf, int ch)
 {
   lf->str_len = 0;

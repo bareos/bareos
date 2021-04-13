@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, July 2002
- */
+// Kern Sibbald, July 2002
 /**
  * @file
  * Bootstrap routines.
@@ -110,9 +108,7 @@ RestoreBootstrapRecordFileIndex::GetRanges()
   }
 }
 
-/**
- * Get storage device name from Storage resource
- */
+// Get storage device name from Storage resource
 static bool GetStorageDevice(char* device, char* storage)
 {
   StorageResource* store;
@@ -125,9 +121,7 @@ static bool GetStorageDevice(char* device, char* storage)
   return true;
 }
 
-/**
- * Print a BootStrapRecord entry into a memory buffer.
- */
+// Print a BootStrapRecord entry into a memory buffer.
 static void PrintBsrItem(std::string& buffer, const char* fmt, ...)
 {
   va_list arg_ptr;
@@ -266,9 +260,7 @@ static void MakeUniqueRestoreFilename(UaContext* ua, PoolMem& fname)
   jcr->RestoreBootstrap = strdup(fname.c_str());
 }
 
-/**
- * Write the bootstrap records to file
- */
+// Write the bootstrap records to file
 uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx)
 {
   FILE* fd;
@@ -286,14 +278,10 @@ uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx)
     goto bail_out;
   }
 
-  /*
-   * Write them to a buffer.
-   */
+  // Write them to a buffer.
   count = WriteBsr(ua, rx, buffer);
 
-  /*
-   * Write the buffer to file
-   */
+  // Write the buffer to file
   fprintf(fd, "%s", buffer.c_str());
 
   err = ferror(fd);
@@ -351,9 +339,7 @@ void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
   const char* p;
   JobId_t JobId;
 
-  /*
-   * Tell the user what he will need to mount
-   */
+  // Tell the user what he will need to mount
   ua->SendMsg("\n");
   ua->SendMsg(
       _("The job will require the following\n"
@@ -361,19 +347,13 @@ void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
         "======================================================================"
         "=====\n"));
 
-  /*
-   * Create Unique list of Volumes using prompt list
-   */
+  // Create Unique list of Volumes using prompt list
   StartPrompt(ua, "");
   if (*rx.JobIds == 0) {
-    /*
-     * Print Volumes in any order
-     */
+    // Print Volumes in any order
     DisplayVolInfo(ua, rx, 0);
   } else {
-    /*
-     * Ensure that the volumes are printed in JobId order
-     */
+    // Ensure that the volumes are printed in JobId order
     for (p = rx.JobIds; GetNextJobidFromList(&p, &JobId) > 0;) {
       DisplayVolInfo(ua, rx, JobId);
     }
@@ -396,9 +376,7 @@ void DisplayBsrInfo(UaContext* ua, RestoreContext& rx)
   return;
 }
 
-/**
- * Write bsr data for a single bsr record
- */
+// Write bsr data for a single bsr record
 static uint32_t write_bsr_item(RestoreBootstrapRecord* bsr,
                                UaContext* ua,
                                RestoreContext& rx,
@@ -528,9 +506,7 @@ void AddFindex(RestoreBootstrapRecord* bsr, uint32_t JobId, int32_t findex)
     bsr->JobId = JobId;
   }
 
-  /*
-   * Walk down list of bsrs until we find the JobId
-   */
+  // Walk down list of bsrs until we find the JobId
   if (bsr->JobId != JobId) {
     for (nbsr = bsr->next.get(); nbsr; nbsr = nbsr->next.get()) {
       if (nbsr->JobId == JobId) {
@@ -540,9 +516,7 @@ void AddFindex(RestoreBootstrapRecord* bsr, uint32_t JobId, int32_t findex)
     }
 
     if (!nbsr) { /* Must add new JobId */
-      /*
-       * Add new JobId at end of chain
-       */
+      // Add new JobId at end of chain
       for (nbsr = bsr; nbsr->next.get(); nbsr = nbsr->next.get()) {}
       nbsr->next = std::make_unique<RestoreBootstrapRecord>(JobId);
       bsr = nbsr->next.get();
@@ -565,9 +539,7 @@ void AddFindexAll(RestoreBootstrapRecord* bsr, uint32_t JobId)
     bsr->JobId = JobId;
   }
 
-  /*
-   * Walk down list of bsrs until we find the JobId
-   */
+  // Walk down list of bsrs until we find the JobId
   if (bsr->JobId != JobId) {
     for (nbsr = bsr->next.get(); nbsr; nbsr = nbsr->next.get()) {
       if (nbsr->JobId == JobId) {
@@ -641,19 +613,13 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
 {
   StorageResource* new_store;
 
-  /*
-   * With old FD, we send the whole bootstrap to the storage
-   */
+  // With old FD, we send the whole bootstrap to the storage
   if (jcr->impl->FDVersion < FD_VERSION_2) { return true; }
 
-  /*
-   * We are in init loop ? shoudn't fail here
-   */
+  // We are in init loop ? shoudn't fail here
   if (!*new_one) { return true; }
 
-  /*
-   * Same name
-   */
+  // Same name
   if (bstrcmp(new_one, jcr->impl->res.read_storage->resource_name_)) {
     return true;
   }
@@ -694,14 +660,10 @@ static inline bool CheckForNewStorage(JobControlRecord* jcr,
   if (ua->argc != 1) { return false; }
 
   if (Bstrcasecmp(ua->argk[0], "Storage")) {
-    /*
-     * Continue if this is a volume from the same storage.
-     */
+    // Continue if this is a volume from the same storage.
     if (IsOnSameStorage(jcr, ua->argv[0])) { return false; }
 
-    /*
-     * Note the next storage name
-     */
+    // Note the next storage name
     bstrncpy(info.storage, ua->argv[0], MAX_NAME_LENGTH);
     Dmsg1(5, "Change storage to %s\n", info.storage);
     return true;
@@ -710,9 +672,7 @@ static inline bool CheckForNewStorage(JobControlRecord* jcr,
   return false;
 }
 
-/**
- * Send bootstrap file to Storage daemon section by section.
- */
+// Send bootstrap file to Storage daemon section by section.
 bool SendBootstrapFile(JobControlRecord* jcr,
                        BareosSocket* sock,
                        bootstrap_info& info)
@@ -746,9 +706,7 @@ bool SendBootstrapFile(JobControlRecord* jcr,
   return true;
 }
 
-/**
- * Clean the bootstrap_info struct
- */
+// Clean the bootstrap_info struct
 void CloseBootstrapFile(bootstrap_info& info)
 {
   if (info.bs) { fclose(info.bs); }

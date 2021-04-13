@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, April MMII
- */
+// Kern Sibbald, April MMII
 /**
  * @file
  * User Agent Commands
@@ -188,9 +186,7 @@ static int BvfsResultHandler(void* ctx, int fields, char** row)
   char zero[] = "0";
   int32_t LinkFI = 0;
 
-  /*
-   * We need to deal with non existant path
-   */
+  // We need to deal with non existant path
   if (!fileid || !Is_a_number(fileid)) {
     lstat = empty;
     jobid = zero;
@@ -377,9 +373,7 @@ static bool BvfsValidateJobids(UaContext* ua,
     bp = strchr(cur_id, ',');
     if (bp) { *bp++ = '\0'; }
 
-    /*
-     * See if this JobId is allowed under the current ACLs.
-     */
+    // See if this JobId is allowed under the current ACLs.
     if (BvfsValidateJobid(ua, cur_id, audit_event)) {
       if (!cnt) {
         PmStrcpy(filtered_jobids, cur_id);
@@ -398,9 +392,7 @@ static bool BvfsValidateJobids(UaContext* ua,
   return (cnt > 0) ? true : false;
 }
 
-/**
- * .bvfs_cleanup path=b2XXXXX
- */
+// .bvfs_cleanup path=b2XXXXX
 bool DotBvfsCleanupCmd(UaContext* ua, const char* cmd)
 {
   int i;
@@ -418,9 +410,7 @@ bool DotBvfsCleanupCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-/**
- * .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2 hardlink=1,2,3,4
- */
+// .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2 hardlink=1,2,3,4
 bool DotBvfsRestoreCmd(UaContext* ua, const char* cmd)
 {
   DBId_t pathid = 0;
@@ -635,9 +625,7 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, const char* cmd)
     return false;
   }
 
-  /*
-   * When in level base, we don't rely on any Full/Incr/Diff
-   */
+  // When in level base, we don't rely on any Full/Incr/Diff
   if (jr.JobLevel == L_BASE) {
     jobids.add(edit_int64(jr.JobId, ed1));
   } else {
@@ -656,26 +644,18 @@ bool DotBvfsGetJobidsCmd(UaContext* ua, const char* cmd)
 
     jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
 
-    /*
-     * Foreach different FileSet, we build a restore jobid list
-     */
+    // Foreach different FileSet, we build a restore jobid list
     for (int i = 0; i < ids.num_ids; i++) {
       FileSetDbRecord fs;
 
-      /*
-       * Lookup the FileSet.
-       */
+      // Lookup the FileSet.
       fs.FileSetId = ids.DBId[i];
       if (!ua->db->GetFilesetRecord(ua->jcr, &fs)) { continue; }
 
-      /*
-       * Make sure the FileSet is allowed under the current ACLs.
-       */
+      // Make sure the FileSet is allowed under the current ACLs.
       if (!ua->AclAccessOk(FileSet_ACL, fs.FileSet, false)) { continue; }
 
-      /*
-       * Lookup the actual JobIds for the given fileset.
-       */
+      // Lookup the actual JobIds for the given fileset.
       jr.FileSetId = fs.FileSetId;
       if (!ua->db->AccurateGetJobids(ua->jcr, &jr, &tempids)) { return true; }
       jobids.add(tempids);
@@ -795,9 +775,7 @@ bool DotAdminCmds(UaContext* ua, const char* cmd)
     return true;
   }
 
-  /*
-   * General debug?
-   */
+  // General debug?
   for (i = 1; i < ua->argc; i++) {
     if (Bstrcasecmp(ua->argk[i], "dir")
         || Bstrcasecmp(ua->argk[i], "director")) {
@@ -877,9 +855,7 @@ bool DotAdminCmds(UaContext* ua, const char* cmd)
   return result;
 }
 #else
-/**
- * Dummy routine for non-development version
- */
+// Dummy routine for non-development version
 bool DotAdminCmds(UaContext* ua, const char* cmd)
 {
   ua->ErrorMsg(_("Unknown command: %s\n"), ua->argk[0]);
@@ -1275,15 +1251,11 @@ bool DotSqlCmd(UaContext* ua, const char* cmd)
 
   switch (ua->api) {
     case API_MODE_ON:
-      /*
-       * BAT uses the ".sql" command and expects this format
-       */
+      // BAT uses the ".sql" command and expects this format
       retval = ua->db->SqlQuery(ua->argv[pos], SqlHandler, (void*)ua);
       break;
     default:
-      /*
-       * General format
-       */
+      // General format
       retval = ua->db->ListSqlQuery(ua->jcr, ua->argv[pos], ua->send, HORZ_LIST,
                                     false);
       break;
@@ -1383,9 +1355,7 @@ bool DotLocationsCmd(UaContext* ua, const char* cmd)
 
 bool DotLevelsCmd(UaContext* ua, const char* cmd)
 {
-  /*
-   * Note some levels are blank, which means none is needed
-   */
+  // Note some levels are blank, which means none is needed
   ua->send->ArrayStart("levels");
   if (ua->argc == 1) {
     for (int i = 0; joblevels[i].level_name; i++) {
@@ -1400,9 +1370,7 @@ bool DotLevelsCmd(UaContext* ua, const char* cmd)
   } else if (ua->argc == 2) {
     int jobtype = 0;
 
-    /*
-     * Assume that first argument is the Job Type
-     */
+    // Assume that first argument is the Job Type
     for (int i = 0; jobtypes[i].type_name; i++) {
       if (Bstrcasecmp(ua->argk[1], jobtypes[i].type_name)) {
         jobtype = jobtypes[i].job_type;
@@ -1439,9 +1407,7 @@ bool DotVolstatusCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-/**
- * Return default values for a job
- */
+// Return default values for a job
 bool DotDefaultsCmd(UaContext* ua, const char* cmd)
 {
   char ed1[50];
@@ -1451,9 +1417,7 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
   if ((pos = FindArgWithValue(ua, "job")) >= 0) {
     JobResource* job;
 
-    /*
-     * Job defaults
-     */
+    // Job defaults
     job = ua->GetJobResWithName(ua->argv[pos]);
     if (job) {
       UnifiedStorageResource store;
@@ -1511,9 +1475,7 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
   } else if ((pos = FindArgWithValue(ua, "client")) >= 0) {
     ClientResource* client;
 
-    /*
-     * Client defaults
-     */
+    // Client defaults
     client = ua->GetClientResWithName(ua->argv[pos]);
     if (client) {
       ua->send->ObjectKeyValue("client", "%s=", client->resource_name_, "%s\n");
@@ -1533,9 +1495,7 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
   } else if ((pos = FindArgWithValue(ua, "storage")) >= 0) {
     StorageResource* storage;
 
-    /*
-     * Storage defaults
-     */
+    // Storage defaults
     storage = ua->GetStoreResWithName(ua->argv[pos]);
     if (storage) {
       DeviceResource* device_resource;
@@ -1564,9 +1524,7 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
   } else if ((pos = FindArgWithValue(ua, "pool")) >= 0) {
     PoolResource* pool;
 
-    /*
-     * Pool defaults
-     */
+    // Pool defaults
     pool = ua->GetPoolResWithName(ua->argv[pos]);
     if (pool) {
       ua->send->ObjectKeyValue("pool", "%s=", pool->resource_name_, "%s\n");

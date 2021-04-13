@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, November 2010
- */
+// Marco van Wieringen, November 2010
 /**
  * @file
  * Dynamic loading of catalog plugins.
@@ -36,9 +34,7 @@
 
 #  if defined(HAVE_DYNAMIC_CATS_BACKENDS)
 
-/**
- * Known backend to interface mappings.
- */
+// Known backend to interface mappings.
 static struct backend_interface_mapping_t {
   const char* interface_name;
   bool partly_compare;
@@ -57,9 +53,7 @@ static struct backend_interface_mapping_t {
 #      define RTLD_NOW 2
 #    endif
 
-/**
- * All loaded backends.
- */
+// All loaded backends.
 static alist* loaded_backends = NULL;
 static std::vector<std::string> backend_dirs;
 
@@ -82,9 +76,7 @@ static inline backend_interface_mapping_t* lookup_backend_interface_mapping(
           interface_name, backend_interface_mapping->interface_name,
           (backend_interface_mapping->partly_compare) ? "true" : "false");
 
-    /*
-     * See if this is a match.
-     */
+    // See if this is a match.
     if (backend_interface_mapping->partly_compare) {
       if (bstrncasecmp(interface_name,
                        backend_interface_mapping->interface_name,
@@ -132,9 +124,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
     Jmsg(jcr, M_ERROR_TERM, 0, _("Catalog Backends Dir not configured.\n"));
   }
 
-  /*
-   * A db_driver is mandatory for dynamic loading of backends to work.
-   */
+  // A db_driver is mandatory for dynamic loading of backends to work.
   if (!db_driver) {
     Jmsg(jcr, M_ERROR_TERM, 0,
          _("Driver type not specified in Catalog resource.\n"));
@@ -150,9 +140,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
     return (BareosDb*)NULL;
   }
 
-  /*
-   * See if the backend is already loaded.
-   */
+  // See if the backend is already loaded.
   if (loaded_backends) {
     foreach_alist (backend_shared_library, loaded_backends) {
       if (backend_shared_library->interface_type_id
@@ -177,9 +165,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
           backend_dir.c_str(), backend_interface_mapping->interface_name,
           DYN_LIB_EXTENSION);
 
-    /*
-     * Make sure the shared library with this name exists.
-     */
+    // Make sure the shared library with this name exists.
     struct stat st;
     if (stat(shared_library_name.c_str(), &st) == 0) {
 #    else
@@ -197,9 +183,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
         continue;
       }
 
-      /*
-       * Lookup the backend_instantiate function.
-       */
+      // Lookup the backend_instantiate function.
       backend_instantiate
           = (t_backend_instantiate)dlsym(dl_handle, "backend_instantiate");
       if (backend_instantiate == NULL) {
@@ -217,9 +201,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
         continue;
       }
 
-      /*
-       * Lookup the flush_backend function.
-       */
+      // Lookup the flush_backend function.
       flush_backend = (t_flush_backend)dlsym(dl_handle, "flush_backend");
       if (flush_backend == NULL) {
         PmStrcpy(error, dlerror());
@@ -235,9 +217,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
         continue;
       }
 
-      /*
-       * We found the shared library and it has the right entry points.
-       */
+      // We found the shared library and it has the right entry points.
       break;
     }
   }
@@ -281,14 +261,10 @@ void DbFlushBackends(void)
 
   if (loaded_backends) {
     foreach_alist (backend_shared_library, loaded_backends) {
-      /*
-       * Call the flush entry point in the lib.
-       */
+      // Call the flush entry point in the lib.
       backend_shared_library->flush_backend();
 
-      /*
-       * Close the shared library and unload it.
-       */
+      // Close the shared library and unload it.
       dlclose(backend_shared_library->handle);
       free(backend_shared_library);
     }
@@ -298,9 +274,7 @@ void DbFlushBackends(void)
   }
 }
 #  else
-/**
- * Dummy bareos backend function replaced with the correct one at install time.
- */
+// Dummy bareos backend function replaced with the correct one at install time.
 BareosDb* db_init_database(JobControlRecord* jcr,
                            const char* db_driver,
                            const char* db_name,

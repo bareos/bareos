@@ -52,9 +52,7 @@ using namespace std;
 #  include "ms_atl.h"
 #  include <objbase.h>
 
-/*
- * Kludges to get Vista code to compile.
- */
+// Kludges to get Vista code to compile.
 #  define __in IN
 #  define __out OUT
 #  define __RPC_unique_pointer
@@ -70,9 +68,7 @@ using namespace std;
 #  endif
 
 #  ifdef HAVE_STRSAFE_H
-/*
- * Used for safe string manipulation
- */
+// Used for safe string manipulation
 #    include <strsafe.h>
 #  endif
 
@@ -80,9 +76,7 @@ using namespace std;
 class IXMLDOMDocument;
 #  endif
 
-/*
- * Reduce compiler warnings from Windows vss code
- */
+// Reduce compiler warnings from Windows vss code
 #  undef uuid
 #  define uuid(x)
 
@@ -194,17 +188,13 @@ static void JmsgVssWriterStatus(JobControlRecord* jcr,
 {
   const char* errmsg;
 
-  /*
-   * The following are normal states
-   */
+  // The following are normal states
   if (eWriterStatus == VSS_WS_STABLE
       || eWriterStatus == VSS_WS_WAITING_FOR_BACKUP_COMPLETE) {
     return;
   }
 
-  /*
-   * Potential errors
-   */
+  // Potential errors
   switch (eWriterStatus) {
     default:
     case VSS_WS_UNKNOWN:
@@ -274,13 +264,9 @@ static void JmsgVssWriterStatus(JobControlRecord* jcr,
        writer_name, errmsg);
 }
 
-/*
- * Some helper functions
- */
+// Some helper functions
 
-/*
- * strdup a wchar_t string.
- */
+// strdup a wchar_t string.
 static inline wchar_t* wbstrdup(const wchar_t* str)
 {
   int len;
@@ -293,9 +279,7 @@ static inline wchar_t* wbstrdup(const wchar_t* str)
   return dup;
 }
 
-/*
- * Append a backslash to the current string.
- */
+// Append a backslash to the current string.
 static inline wstring AppendBackslash(wstring str)
 {
   if (str.length() == 0) { return wstring(L"\\"); }
@@ -303,9 +287,7 @@ static inline wstring AppendBackslash(wstring str)
   return str.append(L"\\");
 }
 
-/*
- * Get the unique volume name for the given path.
- */
+// Get the unique volume name for the given path.
 static inline wstring GetUniqueVolumeNameForPath(wstring path)
 {
   wchar_t volumeRootPath[MAX_PATH];
@@ -314,14 +296,10 @@ static inline wstring GetUniqueVolumeNameForPath(wstring path)
 
   if (path.length() <= 0) { return L""; }
 
-  /*
-   * Add the backslash termination, if needed.
-   */
+  // Add the backslash termination, if needed.
   path = AppendBackslash(path);
 
-  /*
-   * Get the root path of the volume.
-   */
+  // Get the root path of the volume.
   if (!p_GetVolumePathNameW
       || !p_GetVolumePathNameW((LPCWSTR)path.c_str(), volumeRootPath,
                                MAX_PATH)) {
@@ -338,9 +316,7 @@ static inline wstring GetUniqueVolumeNameForPath(wstring path)
     return L"";
   }
 
-  /*
-   * Get the unique volume name.
-   */
+  // Get the unique volume name.
   if (!p_GetVolumeNameForVolumeMountPointW(volumeName, volumeUniqueName,
                                            MAX_PATH)) {
     return L"";
@@ -355,9 +331,7 @@ static inline POOLMEM* GetMountedVolumeForMountPointPath(POOLMEM* volumepath,
   POOLMEM *fullPath, *buf, *vol;
   int len;
 
-  /*
-   * GetUniqueVolumeNameForPath() should be used here
-   */
+  // GetUniqueVolumeNameForPath() should be used here
   len = strlen(volumepath) + 1;
   fullPath = GetPoolMemory(PM_FNAME);
   PmStrcpy(fullPath, volumepath);
@@ -412,9 +386,7 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
   return retval;
 }
 
-/*
- * Helper macro for quick treatment of case statements for error codes
- */
+// Helper macro for quick treatment of case statements for error codes
 #  define GEN_MERGE(A, B) A##B
 #  define GEN_MAKE_W(A) GEN_MERGE(L, A)
 
@@ -422,9 +394,7 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric* pVssClient,
     case value:                          \
       return (GEN_MAKE_W(#value));
 
-/*
- * Convert a writer status into a string
- */
+// Convert a writer status into a string
 static inline const wchar_t* GetStringFromWriterStatus(
     VSS_WRITER_STATE eWriterStatus)
 {
@@ -458,9 +428,7 @@ static inline const wchar_t* GetStringFromWriterStatus(
       "?CreateVssBackupComponents@@YGJPAPAVIVssBackupComponents@@@Z"
 #  endif
 
-/*
- * Constructor
- */
+// Constructor
 VSSClientGeneric::VSSClientGeneric()
 {
   hLib_ = LoadLibraryA("VSSAPI.DLL");
@@ -472,17 +440,13 @@ VSSClientGeneric::VSSClientGeneric()
   }
 }
 
-/*
- * Destructor
- */
+// Destructor
 VSSClientGeneric::~VSSClientGeneric()
 {
   if (hLib_) { FreeLibrary(hLib_); }
 }
 
-/*
- * Initialize the COM infrastructure and the internal pointers
- */
+// Initialize the COM infrastructure and the internal pointers
 bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
 {
   VMPs = 0;
@@ -502,9 +466,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
     return false;
   }
 
-  /*
-   * Initialize COM
-   */
+  // Initialize COM
   if (!bCoInitializeCalled_) {
     hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     if (FAILED(hr)) {
@@ -517,25 +479,19 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
     bCoInitializeCalled_ = true;
   }
 
-  /*
-   * Initialize COM security
-   */
+  // Initialize COM security
   if (!InitializeComSecurity()) {
     JmsgVssApiStatus(jcr_, M_FATAL, hr, "CoInitializeSecurity");
     return false;
   }
 
-  /*
-   * Release the any old IVssBackupComponents interface
-   */
+  // Release the any old IVssBackupComponents interface
   if (pVssObj) {
     pVssObj->Release();
     pVssObject_ = NULL;
   }
 
-  /*
-   * Create new internal backup components object
-   */
+  // Create new internal backup components object
   hr = CreateVssBackupComponents_((IVssBackupComponents**)&pVssObject_);
   if (FAILED(hr)) {
     BErrNo be;
@@ -548,9 +504,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
     return false;
   }
 
-  /*
-   * Define shorthand VssObject with time
-   */
+  // Define shorthand VssObject with time
   pVssObj = (IVssBackupComponents*)pVssObject_;
 
   if (!bDuringRestore) {
@@ -569,9 +523,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
     }
 #  endif
 
-    /*
-     * 1. InitializeForBackup
-     */
+    // 1. InitializeForBackup
     hr = pVssObj->InitializeForBackup();
     if (FAILED(hr)) {
       Dmsg1(0,

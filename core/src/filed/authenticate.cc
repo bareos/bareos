@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October 2000
- */
+// Kern Sibbald, October 2000
 /**
  * @file
  * Authenticate Director who is attempting to connect.
@@ -69,9 +67,7 @@ static inline void delay()
 {
   static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-  /*
-   * Single thread all failures to avoid DOS
-   */
+  // Single thread all failures to avoid DOS
   P(mutex);
   Bmicrosleep(6, 0);
   V(mutex);
@@ -155,9 +151,7 @@ bool AuthenticateDirector(JobControlRecord* jcr)
   return dir->fsend("%s", (me->compatible) ? OK_hello_compat : OK_hello);
 }
 
-/**
- * Authenticate with a remote director.
- */
+// Authenticate with a remote director.
 bool AuthenticateWithDirector(JobControlRecord* jcr, DirectorResource* director)
 {
   return jcr->dir_bsock->AuthenticateOutboundConnection(
@@ -165,9 +159,7 @@ bool AuthenticateWithDirector(JobControlRecord* jcr, DirectorResource* director)
       me->resource_name_, director->password_, director);
 }
 
-/**
- * Authenticate a remote storage daemon.
- */
+// Authenticate a remote storage daemon.
 bool AuthenticateStoragedaemon(JobControlRecord* jcr)
 {
   bool result = false;
@@ -179,18 +171,14 @@ bool AuthenticateStoragedaemon(JobControlRecord* jcr)
   result = sd->AuthenticateInboundConnection(jcr, my_config, jcr->client_name,
                                              password, me);
 
-  /*
-   * Destroy session key
-   */
+  // Destroy session key
   memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
   if (!result) { delay(); }
 
   return result;
 }
 
-/**
- * Authenticate with a remote storage daemon.
- */
+// Authenticate with a remote storage daemon.
 bool AuthenticateWithStoragedaemon(JobControlRecord* jcr)
 {
   bool result = false;
@@ -203,9 +191,7 @@ bool AuthenticateWithStoragedaemon(JobControlRecord* jcr)
       jcr, my_config->CreateOwnQualifiedNameForNetworkDump(),
       (char*)jcr->client_name, password, me);
 
-  /*
-   * Destroy session key
-   */
+  // Destroy session key
   memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
 
   return result;

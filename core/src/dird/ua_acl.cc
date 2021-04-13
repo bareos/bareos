@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, January MMIV
- */
+// Kern Sibbald, January MMIV
 /**
  * @file
  * User Agent Access Control List (ACL) handling
@@ -38,9 +36,7 @@
 
 namespace directordaemon {
 
-/**
- * Check if access is permitted to item in acl
- */
+// Check if access is permitted to item in acl
 bool UaContext::AclAccessOk(int acl, const char* item, bool audit_event)
 {
   return AclAccessOk(acl, item, strlen(item), audit_event);
@@ -72,9 +68,7 @@ static inline bool FindInAclList(alist* list,
   regmatch_t pmatch[1]{};
   const char* list_value;
 
-  /*
-   * See if we have an empty list.
-   */
+  // See if we have an empty list.
   if (!list) {
     /*
      * Empty list for Where => empty where accept anything.
@@ -87,20 +81,14 @@ static inline bool FindInAclList(alist* list,
     goto bail_out;
   }
 
-  /*
-   * Search list for item
-   */
+  // Search list for item
   for (int i = 0; i < list->size(); i++) {
     list_value = (char*)list->get(i);
 
-    /*
-     * See if this is a deny acl.
-     */
+    // See if this is a deny acl.
     if (*list_value == '!') {
       if (Bstrcasecmp(item, list_value + 1)) {
-        /*
-         * Explicit deny.
-         */
+        // Explicit deny.
         Dmsg3(1400, "Deny ACL found %s in %d %s\n", item, acl, list_value);
         goto bail_out;
       }
@@ -115,18 +103,14 @@ static inline bool FindInAclList(alist* list,
         match_length = strlen(item);
         rc = regcomp(&preg, list_value + 1, REG_EXTENDED | REG_ICASE);
         if (rc != 0) {
-          /*
-           * Not a valid regular expression so skip it.
-           */
+          // Not a valid regular expression so skip it.
           Dmsg1(1400, "Not a valid regex %s, ignoring for regex compare\n",
                 list_value);
           continue;
         }
 
         if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
-          /*
-           * Make sure its not a partial match but a full match.
-           */
+          // Make sure its not a partial match but a full match.
           Dmsg2(1400, "Found match start offset %d end offset %d\n",
                 pmatch[0].rm_so, pmatch[0].rm_eo);
           if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= match_length) {
@@ -140,9 +124,7 @@ static inline bool FindInAclList(alist* list,
         regfree(&preg);
       }
     } else {
-      /*
-       * Special case *all* gives full access
-       */
+      // gives full access
       if (Bstrcasecmp("*all*", list_value)) {
         Dmsg2(1400, "Global ACL found in %d %s\n", acl, list_value);
         retval = true;
@@ -165,18 +147,14 @@ static inline bool FindInAclList(alist* list,
         match_length = strlen(item);
         rc = regcomp(&preg, list_value, REG_EXTENDED | REG_ICASE);
         if (rc != 0) {
-          /*
-           * Not a valid regular expression so skip it.
-           */
+          // Not a valid regular expression so skip it.
           Dmsg1(1400, "Not a valid regex %s, ignoring for regex compare\n",
                 list_value);
           continue;
         }
 
         if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
-          /*
-           * Make sure its not a partial match but a full match.
-           */
+          // Make sure its not a partial match but a full match.
           Dmsg2(1400, "Found match start offset %d end offset %d\n",
                 pmatch[0].rm_so, pmatch[0].rm_eo);
           if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= match_length) {
@@ -197,9 +175,7 @@ bail_out:
   return retval;
 }
 
-/**
- * This version expects the length of the item which we must check.
- */
+// This version expects the length of the item which we must check.
 bool UaContext::AclAccessOk(int acl,
                             const char* item,
                             int len,
@@ -207,9 +183,7 @@ bool UaContext::AclAccessOk(int acl,
 {
   bool retval = false;
 
-  /*
-   * The resource name contains nasty characters
-   */
+  // The resource name contains nasty characters
   switch (acl) {
     case Where_ACL:
     case PluginOptions_ACL:
@@ -222,9 +196,7 @@ bool UaContext::AclAccessOk(int acl,
       break;
   }
 
-  /*
-   * If no console resource => default console and all is permitted
-   */
+  // If no console resource => default console and all is permitted
   if (!user_acl) {
     Dmsg0(1400, "Root user access OK.\n");
     retval = true;
@@ -243,9 +215,7 @@ bool UaContext::AclAccessOk(int acl,
     foreach_alist (profile, user_acl->profiles) {
       retval = FindInAclList(profile->ACL_lists[acl], acl, item, len);
 
-      /*
-       * If we found a match break the loop.
-       */
+      // If we found a match break the loop.
       if (retval) { break; }
     }
   }
@@ -265,9 +235,7 @@ bool UaContext::AclNoRestrictions(int acl)
   const char* list_value;
   ProfileResource* profile = nullptr;
 
-  /*
-   * If no console resource => default console and all is permitted
-   */
+  // If no console resource => default console and all is permitted
   if (!user_acl) { return true; }
 
   if (user_acl->ACL_lists[acl]) {
@@ -331,9 +299,7 @@ int UaContext::RcodeToAcltype(int rcode)
   return acl;
 }
 
-/**
- * This checks the right ACL if the UA has access to the wanted resource.
- */
+// This checks the right ACL if the UA has access to the wanted resource.
 bool UaContext::IsResAllowed(BareosResource* res)
 {
   int acl;

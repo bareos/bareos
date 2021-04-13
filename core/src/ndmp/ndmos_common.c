@@ -121,9 +121,7 @@ void ndmos_sync_config_info(struct ndm_session* sess)
 void ndmos_auth_register_callbacks(struct ndm_session* sess,
                                    struct ndm_auth_callbacks* callbacks)
 {
-  /*
-   * Only allow one register.
-   */
+  // Only allow one register.
   if (!sess->nac) {
     sess->nac = (struct ndm_auth_callbacks*)NDMOS_API_MALLOC(
         sizeof(struct ndm_auth_callbacks));
@@ -398,9 +396,7 @@ ndmp9_error ndmos_scsi_execute_cdb(struct ndm_session* sess,
 
 #ifndef I_HAVE_DISPATCH_REQUEST
 
-/*
- * If we're not intercepting, keep it simple
- */
+// If we're not intercepting, keep it simple
 int ndmos_dispatch_request(struct ndm_session* sess,
                            struct ndmp_xa_buf* xa,
                            struct ndmconn* ref_conn)
@@ -432,9 +428,7 @@ int ndmos_dispatch_request(struct ndm_session* sess,
 
   if (!drt) { return -1; /* not intercepted */ }
 
-  /*
-   * Replicate the ndma_dispatch_request() permission checks
-   */
+  // Replicate the ndma_dispatch_request() permission checks
   if (!sess->conn_open && !(drt->flags & NDM_DRT_FLAG_OK_NOT_CONNECTED)) {
     xa->reply.header.error = NDMP0_PERMISSION_ERR;
     return 0;

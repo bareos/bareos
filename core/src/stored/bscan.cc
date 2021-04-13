@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern E. Sibbald, December 2001
- */
+// Kern E. Sibbald, December 2001
 /**
  * @file
  * Program to scan a Bareos Volume and compare it with
@@ -459,9 +457,7 @@ static void do_scan()
   fsr = fsr_empty;
   fr = fr_empty;
 
-  /*
-   * Detach bscan's jcr as we are not a real Job on the tape
-   */
+  // Detach bscan's jcr as we are not a real Job on the tape
   ReadRecords(bjcr->impl->read_dcr, RecordCb, BscanMountNextReadVolume);
 
   if (update_db) {
@@ -491,9 +487,7 @@ static inline bool UnpackRestoreObject(JobControlRecord* jcr,
     return false;
   }
 
-  /*
-   * Skip over the first 6 fields we scanned in the previous scan.
-   */
+  // Skip over the first 6 fields we scanned in the previous scan.
   bp = rec;
   for (int i = 0; i < 6; i++) {
     bp = strchr(bp, ' ');
@@ -546,9 +540,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           rec->data_len);
   }
 
-  /*
-   * Check for Start or End of Session Record
-   */
+  // Check for Start or End of Session Record
   if (rec->FileIndex < 0) {
     bool save_update_db = update_db;
 
@@ -561,9 +553,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
       case VOL_LABEL:
         UnserVolumeLabel(dev, rec);
-        /*
-         * Check Pool info
-         */
+        // Check Pool info
         bstrncpy(pr.Name, dev->VolHdr.PoolName, sizeof(pr.Name));
         bstrncpy(pr.PoolType, dev->VolHdr.PoolType, sizeof(pr.PoolType));
         num_pools++;
@@ -586,9 +576,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           Pmsg1(000, _("Pool type \"%s\" is OK.\n"), pr.PoolType);
         }
 
-        /*
-         * Check Media Info
-         */
+        // Check Media Info
         mr = MediaDbRecord{};
         bstrncpy(mr.VolumeName, dev->VolHdr.VolumeName, sizeof(mr.VolumeName));
         mr.PoolId = pr.PoolId;
@@ -597,9 +585,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           if (verbose) {
             Pmsg1(000, _("Media record for %s found in DB.\n"), mr.VolumeName);
           }
-          /*
-           * Clear out some volume statistics that will be updated
-           */
+          // Clear out some volume statistics that will be updated
           mr.VolJobs = mr.VolFiles = mr.VolBlocks = 0;
           mr.VolBytes = rec->data_len + 20;
         } else {
@@ -618,9 +604,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           Pmsg1(000, _("Media type \"%s\" is OK.\n"), mr.MediaType);
         }
 
-        /*
-         * Reset some DeviceControlRecord variables
-         */
+        // Reset some DeviceControlRecord variables
         for (auto dcr : dev->attached_dcrs) {
           dcr->VolFirstIndex = dcr->FileIndex = 0;
           dcr->StartBlock = dcr->EndBlock = 0;
@@ -633,9 +617,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
       case SOS_LABEL:
         if (bsr && rec->match_stat < 1) {
-          /*
-           * Skipping record, because does not match BootStrapRecord filter
-           */
+          // Skipping record, because does not match BootStrapRecord filter
           Dmsg0(200, _("SOS_LABEL skipped. Record does not match "
                        "BootStrapRecord filter.\n"));
         } else {
@@ -652,34 +634,26 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           jr = JobDbRecord{};
           bstrncpy(jr.Job, label.Job, sizeof(jr.Job));
           if (db->GetJobRecord(bjcr, &jr)) {
-            /*
-             * Job record already exists in DB
-             */
+            // Job record already exists in DB
             update_db = false; /* don't change db in CreateJobRecord */
             if (verbose) {
               Pmsg1(000, _("SOS_LABEL: Found Job record for JobId: %d\n"),
                     jr.JobId);
             }
           } else {
-            /*
-             * Must create a Job record in DB
-             */
+            // Must create a Job record in DB
             if (!update_db) {
               Pmsg1(000, _("SOS_LABEL: Job record not found for JobId: %d\n"),
                     jr.JobId);
             }
           }
 
-          /*
-           * Create Client record if not already there
-           */
+          // Create Client record if not already there
           bstrncpy(cr.Name, label.ClientName, sizeof(cr.Name));
           CreateClientRecord(db, &cr);
           jr.ClientId = cr.ClientId;
 
-          /*
-           * Process label, if Job record exists don't update db
-           */
+          // Process label, if Job record exists don't update db
           mjcr = CreateJobRecord(db, &jr, &label, rec);
           dcr = mjcr->impl->read_dcr;
           update_db = save_update_db;
@@ -735,17 +709,13 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 
       case EOS_LABEL:
         if (bsr && rec->match_stat < 1) {
-          /*
-           * Skipping record, because does not match BootStrapRecord filter
-           */
+          // Skipping record, because does not match BootStrapRecord filter
           Dmsg0(200, _("EOS_LABEL skipped. Record does not match "
                        "BootStrapRecord filter.\n"));
         } else {
           UnserSessionLabel(&elabel, rec);
 
-          /*
-           * Create FileSet record
-           */
+          // Create FileSet record
           bstrncpy(fsr.FileSet, label.FileSetName, sizeof(fsr.FileSet));
           bstrncpy(fsr.MD5, label.FileSetMD5, sizeof(fsr.MD5));
           CreateFilesetRecord(db, &fsr);
@@ -759,17 +729,13 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             break;
           }
 
-          /*
-           * Do the final update to the Job record
-           */
+          // Do the final update to the Job record
           UpdateJobRecord(db, &jr, &elabel, rec);
 
           mjcr->end_time = jr.EndTime;
           mjcr->setJobStatus(JS_Terminated);
 
-          /*
-           * Create JobMedia record
-           */
+          // Create JobMedia record
           mjcr->impl->read_dcr->VolLastIndex = dcr->VolLastIndex;
           if (mjcr->impl->insert_jobmedia_records) {
             CreateJobmediaRecord(db, mjcr);
@@ -783,9 +749,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         break;
 
       case EOT_LABEL: /* end of all tapes */
-        /*
-         * Wiffle through all jobs still open and close them.
-         */
+        // Wiffle through all jobs still open and close them.
         if (update_db) {
           for (auto mdcr : dev->attached_dcrs) {
             JobControlRecord* mjcr = mdcr->jcr;
@@ -833,9 +797,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
   dcr = mjcr->impl->read_dcr;
   if (dcr->VolFirstIndex == 0) { dcr->VolFirstIndex = block->FirstIndex; }
 
-  /*
-   * File Attributes stream
-   */
+  // File Attributes stream
   switch (rec->maskedStream) {
     case STREAM_UNIX_ATTRIBUTES:
     case STREAM_UNIX_ATTRIBUTES_EX:
@@ -883,9 +845,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       FreeJcr(mjcr); /* done using JobControlRecord */
       break;
 
-    /*
-     * Data streams
-     */
+    // Data streams
     case STREAM_WIN32_DATA:
     case STREAM_FILE_DATA:
     case STREAM_SPARSE_DATA:
@@ -911,9 +871,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
     case STREAM_ENCRYPTED_WIN32_GZIP_DATA:
     case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
-      /*
-       * Not correct, we should (decrypt and) expand it.
-       */
+      // Not correct, we should (decrypt and) expand it.
       mjcr->JobBytes += rec->data_len;
       FreeJcr(mjcr);
       break;
@@ -926,9 +884,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       FreeJcr(mjcr);             /* done using JobControlRecord */
       break;
 
-    /*
-     * Win32 GZIP stream
-     */
+    // Win32 GZIP stream
     case STREAM_WIN32_GZIP_DATA:
     case STREAM_WIN32_COMPRESSED_DATA:
       mjcr->JobBytes += rec->data_len;
@@ -1131,17 +1087,13 @@ static bool CreateFileAttributesRecord(BareosDb* db,
   return true;
 }
 
-/**
- * For each Volume we see, we create a Medium record
- */
+// For each Volume we see, we create a Medium record
 static bool CreateMediaRecord(BareosDb* db, MediaDbRecord* mr, Volume_Label* vl)
 {
   struct date_time dt;
   struct tm tm;
 
-  /*
-   * We mark Vols as Archive to keep them from being re-written
-   */
+  // We mark Vols as Archive to keep them from being re-written
   bstrncpy(mr->VolStatus, "Archive", sizeof(mr->VolStatus));
   mr->VolRetention = 365 * 3600 * 24; /* 1 year */
   mr->Enabled = 1;

@@ -66,14 +66,10 @@ extern const struct BareosVersionStrings kBareosVersionStrings;
 #  define SMCHECK
 #endif
 
-/*
- * for fastest speed but you must have a UPS to avoid unwanted shutdowns
- */
+// for fastest speed but you must have a UPS to avoid unwanted shutdowns
 //#define SQLITE3_INIT_QUERY "PRAGMA synchronous = OFF"
 
-/*
- * for more safety, but is 30 times slower than above
- */
+// for more safety, but is 30 times slower than above
 #define SQLITE3_INIT_QUERY "PRAGMA synchronous = NORMAL"
 
 /* Debug flags not normally turned on */

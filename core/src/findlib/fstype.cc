@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Preben 'Peppe' Guldberg, December MMIV
- */
+// Written by Preben 'Peppe' Guldberg, December MMIV
 /**
  * @file
  * Implement routines to determine file system types.

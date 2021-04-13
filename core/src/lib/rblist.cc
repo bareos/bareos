@@ -134,9 +134,7 @@ void* rblist::insert(void* item, int compare(void* item1, void* item2))
   return item;
 }
 
-/*
- * Search for item
- */
+// Search for item
 void* rblist::search(void* item, int compare(void* item1, void* item2))
 {
   void* found = NULL;
@@ -158,9 +156,7 @@ void* rblist::search(void* item, int compare(void* item1, void* item2))
   return found;
 }
 
-/*
- * Get first item (i.e. lowest value)
- */
+// Get first item (i.e. lowest value)
 void* rblist::first(void)
 {
   void* x;

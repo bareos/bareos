@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Marco van Wieringen, November 2011
- */
+// Written by Marco van Wieringen, November 2011
 /**
  * @file
  * Detect fileset shadowing e.g. when an include entry pulls in data
@@ -37,9 +35,7 @@
 #include "find.h"
 #include "findlib/shadowing.h"
 
-/**
- * Check if a certain fileset include pattern shadows another pattern.
- */
+// Check if a certain fileset include pattern shadows another pattern.
 static inline bool check_include_pattern_shadowing(JobControlRecord* jcr,
                                                    const char* pattern1,
                                                    const char* pattern2,
@@ -68,16 +64,12 @@ static inline bool check_include_pattern_shadowing(JobControlRecord* jcr,
   }
 
   if (S_ISDIR(st1.st_mode) && S_ISDIR(st2.st_mode)) {
-    /*
-     * Only check shadowing of directories when recursion is turned on.
-     */
+    // Only check shadowing of directories when recursion is turned on.
     if (recursive) {
       len1 = strlen(pattern1);
       len2 = strlen(pattern2);
 
-      /*
-       * See if one pattern shadows the other.
-       */
+      // See if one pattern shadows the other.
       if (((len1 < len2 && pattern1[len1] == '\0'
             && IsPathSeparator(pattern2[len1]))
            || (len1 > len2 && IsPathSeparator(pattern1[len2])
@@ -91,9 +83,7 @@ static inline bool check_include_pattern_shadowing(JobControlRecord* jcr,
       }
     }
   } else {
-    /*
-     * See if the two files are hardlinked.
-     */
+    // See if the two files are hardlinked.
     if (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino) { retval = true; }
   }
 
@@ -184,9 +174,7 @@ static inline b_fileset_shadow_type IncludeBlockGetShadowType(
   return shadow_type;
 }
 
-/**
- * See if there is any local shadowing within an include block.
- */
+// See if there is any local shadowing within an include block.
 static void check_local_fileset_shadowing(JobControlRecord* jcr,
                                           findIncludeExcludeItem* incexe,
                                           bool remove)
@@ -194,9 +182,7 @@ static void check_local_fileset_shadowing(JobControlRecord* jcr,
   dlistString *str1, *str2, *next;
   bool recursive;
 
-  /*
-   * See if this is a recursive include block.
-   */
+  // See if this is a recursive include block.
   recursive = IncludeBlockIsRecursive(incexe);
 
   /*
@@ -285,9 +271,7 @@ static inline void check_global_fileset_shadowing(JobControlRecord* jcr,
   for (i = 0; i < fileset->include_list.size(); i++) {
     current = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
-    /*
-     * See if there is any local shadowing.
-     */
+    // See if there is any local shadowing.
     check_local_fileset_shadowing(jcr, current, remove);
 
     /*
@@ -321,9 +305,7 @@ static inline void check_global_fileset_shadowing(JobControlRecord* jcr,
        */
       if (IncludeBlockHasPatterns(compare_against)) { continue; }
 
-      /*
-       * See if both include blocks are recursive.
-       */
+      // See if both include blocks are recursive.
       global_recursive
           = (local_recursive && IncludeBlockIsRecursive(compare_against));
 
@@ -399,9 +381,7 @@ void CheckIncludeListShadowing(JobControlRecord* jcr, findFILESET* fileset)
   findIncludeExcludeItem* incexe;
   b_fileset_shadow_type shadow_type;
 
-  /*
-   * Walk the list of include blocks.
-   */
+  // Walk the list of include blocks.
   for (i = 0; i < fileset->include_list.size(); i++) {
     incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
@@ -415,9 +395,7 @@ void CheckIncludeListShadowing(JobControlRecord* jcr, findFILESET* fileset)
         continue;
       case check_shadow_local_warn:
       case check_shadow_local_remove:
-        /*
-         * Check only for local shadowing within the same include block.
-         */
+        // Check only for local shadowing within the same include block.
         check_local_fileset_shadowing(jcr, incexe,
                                       shadow_type == check_shadow_local_remove);
         break;

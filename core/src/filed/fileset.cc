@@ -95,9 +95,7 @@ static void append_file(JobControlRecord* jcr,
                         bool IsFile)
 {
   if (IsFile) {
-    /*
-     * Sanity check never append empty file patterns.
-     */
+    // Sanity check never append empty file patterns.
     if (strlen(buf) > 0) { incexe->name_list.append(new_dlistString(buf)); }
   } else if (me->plugin_directory) {
     GeneratePluginEvent(jcr, bEventPluginCommand, (void*)buf);
@@ -187,9 +185,7 @@ void SetIncexe(JobControlRecord* jcr, findIncludeExcludeItem* incexe)
   fileset->incexe = incexe;
 }
 
-/**
- * Add a regex to the current fileset
- */
+// Add a regex to the current fileset
 int AddRegexToFileset(JobControlRecord* jcr, const char* item, int type)
 {
   findFOPTS* current_opts = start_options(jcr->impl->ff);
@@ -223,9 +219,7 @@ int AddRegexToFileset(JobControlRecord* jcr, const char* item, int type)
   return state_options;
 }
 
-/**
- * Add a wild card to the current fileset
- */
+// Add a wild card to the current fileset
 int AddWildToFileset(JobControlRecord* jcr, const char* item, int type)
 {
   findFOPTS* current_opts = start_options(jcr->impl->ff);
@@ -245,9 +239,7 @@ int AddWildToFileset(JobControlRecord* jcr, const char* item, int type)
   return state_options;
 }
 
-/**
- * Add options to the current fileset
- */
+// Add options to the current fileset
 int AddOptionsToFileset(JobControlRecord* jcr, const char* item)
 {
   findFOPTS* current_opts = start_options(jcr->impl->ff);
@@ -265,9 +257,7 @@ void AddFileset(JobControlRecord* jcr, const char* item)
   int state = fileset->state;
   findFOPTS* current_opts;
 
-  /*
-   * Get code, optional subcode, and position item past the dividing space
-   */
+  // Get code, optional subcode, and position item past the dividing space
   Dmsg1(100, "%s\n", item);
   code = item[0];
   if (code != '\0') { ++item; }
@@ -280,9 +270,7 @@ void AddFileset(JobControlRecord* jcr, const char* item)
 
   if (*item == ' ') { ++item; }
 
-  /*
-   * Skip all lines we receive after an error
-   */
+  // Skip all lines we receive after an error
   if (state == state_error) {
     Dmsg0(100, "State=error return\n");
     return;
@@ -378,17 +366,13 @@ bool TermFileset(JobControlRecord* jcr)
    */
   if (!expand_win32_fileset(jcr->impl->ff->fileset)) { return false; }
 
-  /*
-   * Exclude entries in NotToBackup registry key
-   */
+  // Exclude entries in NotToBackup registry key
   if (!exclude_win32_not_to_backup_registry_entries(jcr, jcr->impl->ff)) {
     return false;
   }
 #endif
 
-  /*
-   * Generate bEventPluginCommand events for each Options Plugin.
-   */
+  // Generate bEventPluginCommand events for each Options Plugin.
   for (int i = 0; i < fileset->include_list.size(); i++) {
     findIncludeExcludeItem* incexe
         = (findIncludeExcludeItem*)fileset->include_list.get(i);
@@ -426,9 +410,7 @@ static int SetOptions(findFOPTS* fo, const char* opts)
       case '0': /* No option */
         break;
       case 'C': /* Accurate options */
-        /*
-         * Copy Accurate Options
-         */
+        // Copy Accurate Options
         for (j = 0; *p && *p != ':'; p++) {
           fo->AccurateOpts[j] = *p;
           if (j < (int)sizeof(fo->AccurateOpts) - 1) { j++; }
@@ -533,9 +515,7 @@ static int SetOptions(findFOPTS* fo, const char* opts)
         SetBit(FO_IGNORECASE, fo->flags);
         break;
       case 'J': /* Basejob options */
-        /*
-         * Copy BaseJob Options
-         */
+        // Copy BaseJob Options
         for (j = 0; *p && *p != ':'; p++) {
           fo->BaseJobOpts[j] = *p;
           if (j < (int)sizeof(fo->BaseJobOpts) - 1) { j++; }
@@ -561,9 +541,7 @@ static int SetOptions(findFOPTS* fo, const char* opts)
         SetBit(FO_NOREPLACE, fo->flags);
         break;
       case 'P': /* Strip path */
-        /*
-         * Get integer
-         */
+        // Get integer
         p++; /* skip P */
         for (j = 0; *p && *p != ':'; p++) {
           strip[j] = *p;
@@ -613,9 +591,7 @@ static int SetOptions(findFOPTS* fo, const char* opts)
         SetBit(FO_SPARSE, fo->flags);
         break;
       case 'V': /* verify options */
-        /*
-         * Copy Verify Options
-         */
+        // Copy Verify Options
         for (j = 0; *p && *p != ':'; p++) {
           fo->VerifyOpts[j] = *p;
           if (j < (int)sizeof(fo->VerifyOpts) - 1) { j++; }

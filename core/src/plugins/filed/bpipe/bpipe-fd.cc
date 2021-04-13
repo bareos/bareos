@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October 2007
- */
+// Kern Sibbald, October 2007
 /**
  * @file
  * A simple pipe plugin for the Bareos File Daemon
@@ -91,9 +89,7 @@ static PluginFunctions pluginFuncs
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
        setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
 
-/**
- * Plugin private context
- */
+// Plugin private context
 struct plugin_ctx {
   boffset_t offset;
   Bpipe* pfd;           /* bpipe() descriptor */
@@ -106,9 +102,7 @@ struct plugin_ctx {
   int replace;
 };
 
-/**
- * This defines the arguments that the plugin parser understands.
- */
+// This defines the arguments that the plugin parser understands.
 enum plugin_argument_type
 {
   argument_none = 0,
@@ -137,9 +131,7 @@ extern "C" {
  *  exported, so Bareos can directly call these two entry points
  *  they are common to all Bareos plugins.
  */
-/**
- * External entry point called by Bareos to "load" the plugin
- */
+// External entry point called by Bareos to "load" the plugin
 bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                CoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
@@ -154,9 +146,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   return bRC_OK;
 }
 
-/**
- * External entry point to unload the plugin
- */
+// External entry point to unload the plugin
 bRC unloadPlugin() { return bRC_OK; }
 
 #ifdef __cplusplus
@@ -168,9 +158,7 @@ bRC unloadPlugin() { return bRC_OK; }
  *   pointers we supplied to Bareos. Each plugin type (dir, fd, sd)
  *   has its own set of entry points that the plugin must define.
  */
-/**
- * Create a new instance of the plugin i.e. allocate our private storage
- */
+// Create a new instance of the plugin i.e. allocate our private storage
 static bRC newPlugin(PluginContext* ctx)
 {
   struct plugin_ctx* p_ctx
@@ -186,9 +174,7 @@ static bRC newPlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Free a plugin instance, i.e. release our private storage
- */
+// Free a plugin instance, i.e. release our private storage
 static bRC freePlugin(PluginContext* ctx)
 {
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
@@ -208,25 +194,19 @@ static bRC freePlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Return some plugin value (none defined)
- */
+// Return some plugin value (none defined)
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   return bRC_OK;
 }
 
-/**
- * Set a plugin value (none defined)
- */
+// Set a plugin value (none defined)
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   return bRC_OK;
 }
 
-/**
- * Handle an event that was generated in Bareos
- */
+// Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 {
   bRC retval = bRC_OK;
@@ -239,24 +219,16 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       Dmsg(ctx, debuglevel, "bpipe-fd: JobStart=%s\n", (char*)value);
       break;
     case bEventRestoreCommand:
-      /*
-       * Fall-through wanted
-       */
+      // Fall-through wanted
     case bEventBackupCommand:
-      /*
-       * Fall-through wanted
-       */
+      // Fall-through wanted
     case bEventEstimateCommand:
-      /*
-       * Fall-through wanted
-       */
+      // Fall-through wanted
     case bEventPluginCommand:
       retval = parse_plugin_definition(ctx, value);
       break;
     case bEventNewPluginOptions:
-      /*
-       * Free any previous value.
-       */
+      // Free any previous value.
       if (p_ctx->plugin_options) {
         free(p_ctx->plugin_options);
         p_ctx->plugin_options = NULL;
@@ -264,9 +236,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 
       retval = parse_plugin_definition(ctx, value);
 
-      /*
-       * Save that we got a plugin override.
-       */
+      // Save that we got a plugin override.
       p_ctx->plugin_options = strdup((char*)value);
       break;
     default:
@@ -279,9 +249,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   return retval;
 }
 
-/**
- * Start the backup of a specific file
- */
+// Start the backup of a specific file
 static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
 {
   time_t now;
@@ -306,9 +274,7 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
   return bRC_OK;
 }
 
-/**
- * Done with backup of this file
- */
+// Done with backup of this file
 static bRC endBackupFile(PluginContext* ctx)
 {
   /*
@@ -318,9 +284,7 @@ static bRC endBackupFile(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Bareos is calling us to do the actual I/O
- */
+// Bareos is calling us to do the actual I/O
 static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
 {
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
@@ -474,9 +438,7 @@ static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
   return bRC_OK;
 }
 
-/**
- * When using Incremental dump, all previous dumps are necessary
- */
+// When using Incremental dump, all previous dumps are necessary
 static bRC checkFile(PluginContext* ctx, char* fname) { return bRC_OK; }
 
 static bRC getAcl(PluginContext* ctx, acl_pkt* ap) { return bRC_OK; }
@@ -573,9 +535,7 @@ static char* apply_rp_codes(PluginContext* ctx)
   return omsg;
 }
 
-/**
- * Strip any backslashes in the string.
- */
+// Strip any backslashes in the string.
 static inline void StripBackSlashes(char* value)
 {
   char* bp;
@@ -594,9 +554,7 @@ static inline void StripBackSlashes(char* value)
   }
 }
 
-/**
- * Only set destination to value when it has no previous setting.
- */
+// Only set destination to value when it has no previous setting.
 static inline void SetStringIfNull(char** destination, char* value)
 {
   if (!*destination) {
@@ -605,9 +563,7 @@ static inline void SetStringIfNull(char** destination, char* value)
   }
 }
 
-/**
- * Always set destination to value and clean any previous one.
- */
+// Always set destination to value and clean any previous one.
 static inline void SetString(char** destination, char* value)
 {
   if (*destination) { free(*destination); }
@@ -650,14 +606,10 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     goto bail_out;
   }
 
-  /*
-   * Skip the first ':'
-   */
+  // Skip the first ':'
   bp++;
 
-  /*
-   * See if we are parsing a new plugin definition e.g. one with keywords.
-   */
+  // See if we are parsing a new plugin definition e.g. one with keywords.
   argument = bp;
   while (argument) {
     if (strlen(argument) == 0) { break; }

@@ -43,9 +43,7 @@ struct b_ctx {
   int32_t rsize;           /* Read size */
   uint64_t fileAddr;       /* File address */
 
-  /*
-   * Compression data.
-   */
+  // Compression data.
   const unsigned char* chead; /* Compression header */
   unsigned char*
       cbuf; /* Compression buffer when using generic comp_stream_header */
@@ -55,9 +53,7 @@ struct b_ctx {
   comp_stream_header
       ch; /* Compression Stream Header with info about compression used */
 
-  /*
-   * Encryption data.
-   */
+  // Encryption data.
   uint32_t cipher_input_len;   /* Actual length of the data to encrypt */
   const uint8_t* cipher_input; /* Data to encrypt */
   uint32_t encrypted_len;      /* Actual length after encryption */

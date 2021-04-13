@@ -1114,14 +1114,10 @@ int wrap_reco_align_to_wanted(struct wrap_ccb* wccb)
   uint64_t unwanted_length;
 
 top:
-  /*
-   * If there is an error, we're toast.
-   */
+  // If there is an error, we're toast.
   if (wccb->error) return wccb->error;
 
-  /*
-   * If we're aligned, we're done.
-   */
+  // If we're aligned, we're done.
   if (wccb->expect_offset == wccb->want_offset) {
     if (wccb->expect_length < wccb->want_length && wccb->reading_length == 0) {
       wrap_reco_issue_read(wccb);
@@ -1129,9 +1125,7 @@ top:
     return wccb->error;
   }
 
-  /*
-   * If we have a portion we don't want, consume it now
-   */
+  // If we have a portion we don't want, consume it now
   if (wccb->have_length > 0) {
     if (wccb->have_offset < wccb->want_offset) {
       distance = wccb->want_offset - wccb->have_offset;

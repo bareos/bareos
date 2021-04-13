@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October MM
- */
+// Kern Sibbald, October MM
 /**
  * @file
  * BAREOS Director Job processing routines
@@ -125,9 +123,7 @@ JobId_t RunJob(JobControlRecord* jcr)
 
   if (SetupJob(jcr)) {
     Dmsg0(200, "Add jrc to work queue\n");
-    /*
-     * Queue the job to be run
-     */
+    // Queue the job to be run
     if ((status = JobqAdd(&job_queue, jcr)) != 0) {
       BErrNo be;
       Jmsg(jcr, M_FATAL, 0, _("Could not add job queue: ERR=%s\n"),
@@ -146,18 +142,14 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
 
   jcr->lock();
 
-  /*
-   * See if we should suppress all output.
-   */
+  // See if we should suppress all output.
   if (!suppress_output) {
     InitMsg(jcr, jcr->impl->res.messages, job_code_callback_director);
   } else {
     jcr->suppress_output = true;
   }
 
-  /*
-   * Initialize termination condition variable
-   */
+  // Initialize termination condition variable
   if ((errstat = pthread_cond_init(&jcr->impl->term_wait, NULL)) != 0) {
     BErrNo be;
     Jmsg1(jcr, M_FATAL, 0, _("Unable to init job cond variable: ERR=%s\n"),
@@ -167,9 +159,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
   }
   jcr->impl->term_wait_inited = true;
 
-  /*
-   * Initialize nextrun ready condition variable
-   */
+  // Initialize nextrun ready condition variable
   if ((errstat = pthread_cond_init(&jcr->impl->nextrun_ready, NULL)) != 0) {
     BErrNo be;
     Jmsg1(jcr, M_FATAL, 0,
@@ -184,9 +174,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
   jcr->setJobStatus(JS_Created);
   jcr->unlock();
 
-  /*
-   * Open database
-   */
+  // Open database
   Dmsg0(100, "Open database\n");
   jcr->db = GetDatabaseConnection(jcr);
   if (jcr->db == NULL) {
@@ -214,9 +202,7 @@ bool SetupJob(JobControlRecord* jcr, bool suppress_output)
     }
   }
 
-  /*
-   * Create Job record
-   */
+  // Create Job record
   InitJcrJobRecord(jcr);
 
   if (jcr->impl->res.client) {
@@ -460,9 +446,7 @@ static void* job_thread(void* arg)
   jcr->start_time = time(NULL);  /* set the real start time */
   jcr->impl->jr.StartTime = jcr->start_time;
 
-  /*
-   * Let the statistics subsystem know a new Job was started.
-   */
+  // Let the statistics subsystem know a new Job was started.
   stats_job_started();
 
   if (jcr->impl->res.job->MaxStartDelay != 0
@@ -479,9 +463,7 @@ static void* job_thread(void* arg)
          _("Job canceled because max run sched time exceeded.\n"));
   }
 
-  /*
-   * TODO : check if it is used somewhere
-   */
+  // TODO : check if it is used somewhere
   if (jcr->impl->res.job->RunScripts == NULL) {
     Dmsg0(200, "Warning, job->RunScripts is empty\n");
     jcr->impl->res.job->RunScripts = new alist(10, not_owned_by_alist);
@@ -491,9 +473,7 @@ static void* job_thread(void* arg)
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
-  /*
-   * Run any script BeforeJob on dird
-   */
+  // Run any script BeforeJob on dird
   RunScripts(jcr, jcr->impl->res.job->RunScripts, "BeforeJob");
 
   /*
@@ -661,9 +641,7 @@ static void* job_thread(void* arg)
       break;
   }
 
-  /*
-   * Check for subscriptions and issue a warning when exceeded.
-   */
+  // Check for subscriptions and issue a warning when exceeded.
   if (me->subscriptions && me->subscriptions < me->subscriptions_used) {
     Jmsg(jcr, M_WARNING, 0, _("Subscriptions exceeded: (used/total) (%d/%d)\n"),
          me->subscriptions_used, me->subscriptions);
@@ -671,9 +649,7 @@ static void* job_thread(void* arg)
 
   RunScripts(jcr, jcr->impl->res.job->RunScripts, "AfterJob");
 
-  /*
-   * Send off any queued messages
-   */
+  // Send off any queued messages
   if (jcr->msg_queue && jcr->msg_queue->size() > 0) { DequeueMessages(jcr); }
 
   GeneratePluginEvent(jcr, bDirEventJobEnd);
@@ -721,23 +697,17 @@ bool CancelJob(UaContext* ua, JobControlRecord* jcr)
       break;
 
     default:
-      /*
-       * Cancel File daemon
-       */
+      // Cancel File daemon
       if (jcr->file_bsock) {
         if (!CancelFileDaemonJob(ua, jcr)) { return false; }
       }
 
-      /*
-       * Cancel Storage daemon
-       */
+      // Cancel Storage daemon
       if (jcr->store_bsock) {
         if (!CancelStorageDaemonJob(ua, jcr)) { return false; }
       }
 
-      /*
-       * Cancel second Storage daemon for SD-SD replication.
-       */
+      // Cancel second Storage daemon for SD-SD replication.
       if (jcr->impl->mig_jcr && jcr->impl->mig_jcr->store_bsock) {
         if (!CancelStorageDaemonJob(ua, jcr->impl->mig_jcr)) { return false; }
       }
@@ -975,9 +945,7 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
               cancel_me = true;
             }
         }
-        /*
-         * cancel_dup will be done below
-         */
+        // cancel_dup will be done below
         if (cancel_me) {
           /* Zap current job */
           jcr->setJobStatus(JS_Canceled);
@@ -1009,9 +977,7 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
       }
 
       if (cancel_dup || job->CancelRunningDuplicates) {
-        /*
-         * Zap the duplicated job djcr
-         */
+        // Zap the duplicated job djcr
         UaContext* ua = new_ua_context(jcr);
         Jmsg(jcr, M_INFO, 0, _("Cancelling duplicate JobId=%d.\n"),
              djcr->JobId);
@@ -1022,9 +988,7 @@ bool AllowDuplicateJob(JobControlRecord* jcr)
         FreeUaContext(ua);
         Dmsg2(800, "Cancel dup %p JobId=%d\n", djcr, djcr->JobId);
       } else {
-        /*
-         * Zap current job
-         */
+        // Zap current job
         jcr->setJobStatus(JS_Canceled);
         Jmsg(jcr, M_FATAL, 0,
              _("JobId %d already running. Duplicate job not allowed.\n"),
@@ -1063,9 +1027,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
 
   jcr->impl->since[0] = 0;
 
-  /*
-   * If since time was given on command line use it
-   */
+  // If since time was given on command line use it
   if (jcr->starttime_string && jcr->starttime_string[0]) {
     bstrncpy(jcr->impl->since, _(", since="), sizeof(jcr->impl->since));
     bstrncat(jcr->impl->since, jcr->starttime_string, sizeof(jcr->impl->since));
@@ -1092,9 +1054,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
     case L_INCREMENTAL:
       POOLMEM* start_time = GetPoolMemory(PM_MESSAGE);
 
-      /*
-       * Look up start time of last Full job
-       */
+      // Look up start time of last Full job
       now = (utime_t)time(NULL);
       jcr->impl->jr.JobId = 0; /* flag to return since time */
 
@@ -1118,29 +1078,21 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
       Dmsg4(50, "have_full=%d do_full=%d now=%lld full_time=%lld\n", have_full,
             do_full, now, last_full_time);
 
-      /*
-       * Make sure the last diff is recent enough
-       */
+      // Make sure the last diff is recent enough
       if (have_full && JobLevel == L_INCREMENTAL
           && jcr->impl->res.job->MaxDiffInterval > 0) {
-        /*
-         * Lookup last diff job
-         */
+        // Lookup last diff job
         if (jcr->db->FindLastJobStartTime(jcr, &jcr->impl->jr, start_time,
                                           prev_job, L_DIFFERENTIAL)) {
           last_diff_time = StrToUtime(start_time);
-          /*
-           * If no Diff since Full, use Full time
-           */
+          // If no Diff since Full, use Full time
           if (last_diff_time < last_full_time) {
             last_diff_time = last_full_time;
           }
           Dmsg2(50, "last_diff_time=%lld last_full_time=%lld\n", last_diff_time,
                 last_full_time);
         } else {
-          /*
-           * No last differential, so use last full time
-           */
+          // No last differential, so use last full time
           last_diff_time = last_full_time;
           Dmsg1(50, "No last_diff_time setting to full_time=%lld\n",
                 last_full_time);

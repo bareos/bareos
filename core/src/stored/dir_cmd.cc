@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, May MMI
- */
+// Kern Sibbald, May MMI
 /**
  * @file
  * This file handles accepting Director Commands
@@ -252,17 +250,13 @@ void* HandleDirectorConnection(BareosSocket* dir)
     return NULL;
   }
 
-  /*
-   * This is a connection from the Director, so setup a JobControlRecord
-   */
+  // This is a connection from the Director, so setup a JobControlRecord
   jcr = NewStoredJcr();
   NewPlugins(jcr);      /* instantiate plugins */
   jcr->dir_bsock = dir; /* save Director bsock */
   jcr->dir_bsock->SetJcr(jcr);
 
-  /*
-   * Initialize Start Job condition variable
-   */
+  // Initialize Start Job condition variable
   errstat = pthread_cond_init(&jcr->impl->job_start_wait, NULL);
   if (errstat != 0) {
     BErrNo be;
@@ -272,9 +266,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
     goto bail_out;
   }
 
-  /*
-   * Initialize End Job condition variable
-   */
+  // Initialize End Job condition variable
   errstat = pthread_cond_init(&jcr->impl->job_end_wait, NULL);
   if (errstat != 0) {
     BErrNo be;
@@ -287,9 +279,7 @@ void* HandleDirectorConnection(BareosSocket* dir)
 
   SetJcrInThreadSpecificData(jcr);
 
-  /*
-   * Authenticate the Director
-   */
+  // Authenticate the Director
   if (!AuthenticateDirector(jcr)) {
     Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Director\n"));
     goto bail_out;
@@ -299,16 +289,12 @@ void* HandleDirectorConnection(BareosSocket* dir)
 
   quit = false;
   while (!quit) {
-    /*
-     * Read command
-     */
+    // Read command
     if ((bnet_stat = dir->recv()) <= 0) { break; /* connection terminated */ }
 
     Dmsg1(199, "<dird: %s", dir->msg);
 
-    /*
-     * Ensure that device initialization is complete
-     */
+    // Ensure that device initialization is complete
     while (!init_done) { Bmicrosleep(1, 0); }
 
     found = false;
@@ -390,9 +376,7 @@ static bool SecureerasereqCmd(JobControlRecord* jcr)
       (me->secure_erase_cmdline ? me->secure_erase_cmdline : "*None*"));
 }
 
-/**
- * Set bandwidth limit as requested by the Director
- */
+// Set bandwidth limit as requested by the Director
 static bool SetbandwidthCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -425,9 +409,7 @@ static bool SetbandwidthCmd(JobControlRecord* jcr)
   return dir->fsend(OKBandwidth);
 }
 
-/**
- * Set debug level as requested by the Director
- */
+// Set debug level as requested by the Director
 static bool SetdebugCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -519,9 +501,7 @@ static bool CancelCmd(JobControlRecord* cjcr)
     goto bail_out;
   }
 
-  /*
-   * See if the Jobname is a number only then its a JobId.
-   */
+  // See if the Jobname is a number only then its a JobId.
   if (Is_a_number(Job)) {
     JobId = str_to_int64(Job);
     if (!(jcr = get_jcr_by_id(JobId))) {
@@ -550,17 +530,13 @@ static bool CancelCmd(JobControlRecord* cjcr)
     Dmsg2(800, "Term bsock jid=%d %p\n", jcr->JobId, jcr);
   } else {
     if (oldStatus != JS_WaitSD) {
-      /*
-       * Still waiting for FD to connect, release it
-       */
+      // Still waiting for FD to connect, release it
       pthread_cond_signal(&jcr->impl->job_start_wait); /* wake waiting job */
       Dmsg2(800, "Signal FD connect jid=%d %p\n", jcr->JobId, jcr);
     }
   }
 
-  /*
-   * If thread waiting on mount, wake him
-   */
+  // If thread waiting on mount, wake him
   if (jcr->impl->dcr && jcr->impl->dcr->dev
       && jcr->impl->dcr->dev->waiting_for_mount()) {
     pthread_cond_broadcast(&jcr->impl->dcr->dev->wait_next_vol);
@@ -607,9 +583,7 @@ bail_out:
   return true;
 }
 
-/**
- * Resolve a hostname
- */
+// Resolve a hostname
 static bool ResolveCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -739,9 +713,7 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   return true;
 }
 
-/**
- * Label a Volume
- */
+// Label a Volume
 static bool LabelCmd(JobControlRecord* jcr) { return DoLabel(jcr, false); }
 
 static bool RelabelCmd(JobControlRecord* jcr) { return DoLabel(jcr, true); }
@@ -781,18 +753,14 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
       break;
   }
 
-  /*
-   * Ensure that the device is open -- AutoloadDevice() closes it
-   */
+  // Ensure that the device is open -- AutoloadDevice() closes it
   if (dev->IsTape()) {
     mode = DeviceMode::OPEN_READ_WRITE;
   } else {
     mode = DeviceMode::CREATE_READ_WRITE;
   }
 
-  /*
-   * Set old volume name for open if relabeling
-   */
+  // Set old volume name for open if relabeling
   dcr->setVolCatName(volname);
 
   if (!dev->open(dcr, mode)) {
@@ -801,14 +769,10 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
     goto cleanup;
   }
 
-  /*
-   * See what we have for a Volume
-   */
+  // See what we have for a Volume
   label_status = ReadDevVolumeLabel(dcr);
 
-  /*
-   * Set new volume name
-   */
+  // Set new volume name
   dcr->setVolCatName(newname);
   switch (label_status) {
     case VOL_NAME_ERROR:
@@ -822,9 +786,7 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
         goto cleanup;
       }
 
-      /*
-       * Relabel request. If oldname matches, continue
-       */
+      // Relabel request. If oldname matches, continue
       if (!bstrcmp(oldname, dev->VolHdr.VolumeName)) {
         dir->fsend(_("3921 Wrong volume mounted.\n"));
         goto cleanup;
@@ -834,9 +796,7 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
         dir->fsend(_("3922 Cannot relabel an ANSI/IBM labeled Volume.\n"));
         goto cleanup;
       }
-      /*
-       * Fall through wanted!
-       */
+      // Fall through wanted!
     case VOL_IO_ERROR:
     case VOL_NO_LABEL:
       if (!WriteNewVolumeLabelToDev(dcr, newname, poolname, relabel)) {
@@ -846,9 +806,7 @@ static void LabelVolumeIfOk(DeviceControlRecord* dcr,
       }
       bstrncpy(dcr->VolumeName, newname, sizeof(dcr->VolumeName));
 
-      /*
-       * The following 3000 OK label. string is scanned in ua_label.c
-       */
+      // The following 3000 OK label. string is scanned in ua_label.c
       dir->fsend("3000 OK label. VolBytes=%s Volume=\"%s\" Device=%s\n",
                  edit_uint64(dev->VolCatInfo.VolCatBytes, ed1), newname,
                  dev->print_name());
@@ -909,9 +867,7 @@ static bool ReadLabel(DeviceControlRecord* dcr)
   return ok;
 }
 
-/**
- * Searches for device by name, and if found, creates a dcr and returns it.
- */
+// Searches for device by name, and if found, creates a dcr and returns it.
 static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
                                        PoolMem& devname,
                                        drive_number_t drive,
@@ -924,9 +880,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
 
   UnbashSpaces(devname);
   foreach_res (device_resource, R_DEVICE) {
-    /*
-     * Find resource, and make sure we were able to open it
-     */
+    // Find resource, and make sure we were able to open it
     if (bstrcmp(device_resource->resource_name_, devname.c_str())) {
       if (!device_resource->dev) {
         device_resource->dev = FactoryCreateDevice(jcr, device_resource);
@@ -947,9 +901,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
 
   if (!found) {
     foreach_res (changer, R_AUTOCHANGER) {
-      /*
-       * Find resource, and make sure we were able to open it
-       */
+      // Find resource, and make sure we were able to open it
       if (bstrcmp(devname.c_str(), changer->resource_name_)) {
         /*
          * Try each device in this AutoChanger

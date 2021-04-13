@@ -39,9 +39,7 @@
 
 namespace storagedaemon {
 
-/**
- * (Un)mount the device (For a FILE device)
- */
+// (Un)mount the device (For a FILE device)
 static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
 {
   DeviceResource* device_resource = dcr->dev->device_resource;
@@ -102,9 +100,7 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
     Mmsg(dcr->dev->errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
          dcr->dev->print_name(), (mount ? "" : "un"), be.bstrerror(status));
 
-    /*
-     * Now, just to be sure it is not mounted, try to read the filesystem.
-     */
+    // Now, just to be sure it is not mounted, try to read the filesystem.
     name_max = pathconf(".", _PC_NAME_MAX);
     if (name_max < 1024) { name_max = 1024; }
 
@@ -243,9 +239,7 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
   struct stat st;
   PoolMem archive_name(PM_FNAME);
 
-  /*
-   * When secure erase is configured never truncate the file.
-   */
+  // When secure erase is configured never truncate the file.
   if (!me->secure_erase_cmdline) {
     if (ftruncate(fd, 0) != 0) {
       BErrNo be;
@@ -295,15 +289,11 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
   }
   PmStrcat(archive_name, dcr->VolumeName);
 
-  /*
-   * Close file and blow it away
-   */
+  // Close file and blow it away
   ::close(fd);
   SecureErase(dcr->jcr, archive_name.c_str());
 
-  /*
-   * Recreate the file -- of course, empty
-   */
+  // Recreate the file -- of course, empty
   oflags = O_CREAT | O_RDWR | O_BINARY;
   if ((fd = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
     BErrNo be;
@@ -316,9 +306,7 @@ bool unix_file_device::d_truncate(DeviceControlRecord* dcr)
     return false;
   }
 
-  /*
-   * Reset proper owner
-   */
+  // Reset proper owner
   (void)!chown(archive_name.c_str(), st.st_uid, st.st_gid);
 
 bail_out:

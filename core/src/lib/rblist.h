@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MMV
- */
+// Kern Sibbald, MMV
 /**
  * @file
  * red-black binary tree routines -- rblist.h

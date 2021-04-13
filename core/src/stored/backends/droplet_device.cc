@@ -52,9 +52,7 @@
 
 namespace storagedaemon {
 
-/**
- * Options that can be specified for this device type.
- */
+// Options that can be specified for this device type.
 enum device_option_type
 {
   argument_none = 0,
@@ -92,9 +90,7 @@ static device_option device_options[]
 static int droplet_reference_count = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-/**
- * Generic log function that glues libdroplet with BAREOS.
- */
+// Generic log function that glues libdroplet with BAREOS.
 static void DropletDeviceLogfunc(dpl_ctx_t* ctx,
                                  dpl_log_level_t level,
                                  const char* message)
@@ -117,9 +113,7 @@ static void DropletDeviceLogfunc(dpl_ctx_t* ctx,
   }
 }
 
-/**
- * Map the droplet errno's to system ones.
- */
+// Map the droplet errno's to system ones.
 static inline int DropletErrnoToSystemErrno(dpl_status_t status)
 {
   switch (status) {
@@ -164,9 +158,7 @@ static inline int DropletErrnoToSystemErrno(dpl_status_t status)
 }
 
 
-/*
- * Callback for getting the total size of a chunked volume.
- */
+// Callback for getting the total size of a chunked volume.
 static dpl_status_t chunked_volume_size_callback(dpl_sysmd_t* sysmd,
                                                  dpl_ctx_t* ctx,
                                                  const char* chunkpath,
@@ -416,9 +408,7 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
   Mmsg(chunk_dir, "/%s", request->volname);
   Mmsg(chunk_name, "%s/%04d", chunk_dir.c_str(), request->chunk);
 
-  /*
-   * Set that we are uploading the chunk.
-   */
+  // Set that we are uploading the chunk.
   if (!SetInflightChunk(request)) { return false; }
 
   int tries = 0;
@@ -450,9 +440,7 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
         }
         break;
       default:
-        /*
-         * Check on the remote backing store if the chunkdir exists.
-         */
+        // Check on the remote backing store if the chunkdir exists.
         dpl_sysmd_free(sysmd);
         sysmd = dpl_sysmd_dup(&sysmd_);
         status = dpl_getattr(ctx_,              /* context */
@@ -541,9 +529,7 @@ bool DropletDevice::FlushRemoteChunk(chunk_io_request* request)
 
 bail_out:
   retval = success;
-  /*
-   * Clear that we are uploading the chunk.
-   */
+  // Clear that we are uploading the chunk.
   ClearInflightChunk(request);
 
   if (sysmd) { dpl_sysmd_free(sysmd); }
@@ -551,9 +537,7 @@ bail_out:
   return retval;
 }
 
-/*
- * Internal method for reading a chunk from the remote backing store.
- */
+// Internal method for reading a chunk from the remote backing store.
 bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
 {
   bool retval = false;
@@ -566,9 +550,7 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
   Mmsg(chunk_name, "/%s/%04d", request->volname, request->chunk);
   Dmsg1(100, "Reading chunk %s\n", chunk_name.c_str());
 
-  /*
-   * See if chunk exists.
-   */
+  // See if chunk exists.
   int tries = 0;
   bool success = false;
 
@@ -706,16 +688,12 @@ bool DropletDevice::d_flush(DeviceControlRecord* dcr)
   return WaitUntilChunksWritten();
 };
 
-/*
- * Initialize backend.
- */
+// Initialize backend.
 bool DropletDevice::initialize()
 {
   dpl_status_t status;
 
-  /*
-   * Initialize the droplet library when its not done previously.
-   */
+  // Initialize the droplet library when its not done previously.
   P(mutex);
   if (droplet_reference_count == 0) {
     dpl_set_log_func(DropletDeviceLogfunc);
@@ -753,18 +731,14 @@ bool DropletDevice::initialize()
 
       done = false;
       for (int i = 0; !done && device_options[i].name; i++) {
-        /*
-         * Try to find a matching device option.
-         */
+        // Try to find a matching device option.
         if (bstrncasecmp(bp, device_options[i].name,
                          device_options[i].compare_size)) {
           switch (device_options[i].type) {
             case argument_profile: {
               char* profile;
 
-              /*
-               * Strip any .profile prefix from the libdroplet profile name.
-               */
+              // Strip any .profile prefix from the libdroplet profile name.
               profile = bp + device_options[i].compare_size;
               len = strlen(profile);
               if (len > 8 && Bstrcasecmp(profile + (len - 8), ".profile")) {
@@ -836,16 +810,12 @@ bool DropletDevice::initialize()
     }
   }
 
-  /*
-   * See if we need to setup a new context for this device.
-   */
+  // See if we need to setup a new context for this device.
   if (!ctx_) {
     char* bp;
     PoolMem temp(PM_NAME);
 
-    /*
-     * Setup global sysmd settings which are cloned for each operation.
-     */
+    // Setup global sysmd settings which are cloned for each operation.
     memset(&sysmd_, 0, sizeof(sysmd_));
     if (location_) {
       PmStrcpy(temp, location_);
@@ -880,34 +850,24 @@ bool DropletDevice::initialize()
       }
     }
 
-    /*
-     * See if this is a path.
-     */
+    // See if this is a path.
     PmStrcpy(temp, profile_);
     bp = strrchr(temp.c_str(), '/');
     if (!bp) {
-      /*
-       * Only a profile name.
-       */
+      // Only a profile name.
       ctx_ = dpl_ctx_new(NULL, temp.c_str());
     } else {
       if (bp == temp.c_str()) {
-        /*
-         * Profile in root of filesystem
-         */
+        // Profile in root of filesystem
         ctx_ = dpl_ctx_new("/", bp + 1);
       } else {
-        /*
-         * Profile somewhere else.
-         */
+        // Profile somewhere else.
         *bp++ = '\0';
         ctx_ = dpl_ctx_new(temp.c_str(), bp);
       }
     }
 
-    /*
-     * If we failed to allocate a new context fail the open.
-     */
+    // If we failed to allocate a new context fail the open.
     if (!ctx_) {
       Mmsg1(errmsg, _("Failed to create a new context using config %s\n"),
             dev_options);
@@ -915,18 +875,14 @@ bool DropletDevice::initialize()
       goto bail_out;
     }
 
-    /*
-     * Login if that is needed for this backend.
-     */
+    // Login if that is needed for this backend.
     status = dpl_login(ctx_);
 
     switch (status) {
       case DPL_SUCCESS:
         break;
       case DPL_ENOTSUPP:
-        /*
-         * Backend doesn't support login which is fine.
-         */
+        // Backend doesn't support login which is fine.
         break;
       default:
         Mmsg2(errmsg,
@@ -936,9 +892,7 @@ bool DropletDevice::initialize()
         goto bail_out;
     }
 
-    /*
-     * If a bucketname was defined set it in the context.
-     */
+    // If a bucketname was defined set it in the context.
     if (bucketname_) { ctx_->cur_bucket = strdup(bucketname_); }
   }
 
@@ -948,9 +902,7 @@ bail_out:
   return false;
 }
 
-/*
- * Open a volume using libdroplet.
- */
+// Open a volume using libdroplet.
 int DropletDevice::d_open(const char* pathname, int flags, int mode)
 {
   if (!initialize()) { return -1; }

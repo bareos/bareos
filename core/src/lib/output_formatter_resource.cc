@@ -19,9 +19,7 @@
    02110-1301, USA.
 */
 
-/*
- * Output Formatter for Bareos Resources.
- */
+// Output Formatter for Bareos Resources.
 
 
 #include "include/bareos.h"
@@ -205,9 +203,7 @@ void OutputFormatterResource::KeyMultipleStringsInOneLine(
     bool as_comment,
     bool quoted_strings)
 {
-  /*
-   * Each member of the list is comma-separated
-   */
+  // Each member of the list is comma-separated
   int cnt = 0;
   char* item = nullptr;
   std::string format = "%s";
@@ -263,9 +259,7 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLine(
     bool quoted_strings,
     bool escape_strings)
 {
-  /*
-   * One line for each member of the list
-   */
+  // One line for each member of the list
   char* item = nullptr;
 
   if ((list == NULL) or (list->empty())) {

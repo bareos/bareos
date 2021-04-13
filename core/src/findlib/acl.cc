@@ -88,9 +88,7 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
   return bacl_exit_fatal;
 }
 #else
-/**
- * Send an ACL stream to the SD.
- */
+// Send an ACL stream to the SD.
 bacl_exit_code SendAclStream(JobControlRecord* jcr,
                              AclData* acl_data,
                              int stream)
@@ -101,23 +99,17 @@ bacl_exit_code SendAclStream(JobControlRecord* jcr,
   return bacl_exit_ok;
 #  endif
 
-  /*
-   * Sanity check
-   */
+  // Sanity check
   if (acl_data->u.build->content_length <= 0) { return bacl_exit_ok; }
 
-  /*
-   * Send header
-   */
+  // Send header
   if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
     Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return bacl_exit_fatal;
   }
 
-  /*
-   * Send the buffer to the storage deamon
-   */
+  // Send the buffer to the storage deamon
   Dmsg1(400, "Backing up ACL <%s>\n", acl_data->u.build->content);
   msgsave = sd->msg;
   sd->msg = acl_data->u.build->content;
@@ -142,9 +134,7 @@ bacl_exit_code SendAclStream(JobControlRecord* jcr,
   return bacl_exit_ok;
 }
 
-/**
- * First the native ACLs.
- */
+// First the native ACLs.
 #  if defined(HAVE_ACL)
 #    if defined(HAVE_AIX_OS)
 
@@ -181,9 +171,7 @@ static bool acl_nfs4_is_trivial(nfs4_acl_int_t* acl)
   return true;
 }
 
-/**
- * Define the supported ACL streams for this OS
- */
+// Define the supported ACL streams for this OS
 static int os_access_acl_streams[3]
     = {STREAM_ACL_AIX_TEXT, STREAM_ACL_AIX_AIXC, STREAM_ACL_AIX_NFS4};
 static int os_default_acl_streams[1] = {-1};
@@ -198,9 +186,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
   bacl_exit_code retval = bacl_exit_error;
   POOLMEM* aclbuf = GetPoolMemory(PM_MESSAGE);
 
-  /*
-   * First see how big the buffers should be.
-   */
+  // First see how big the buffers should be.
   memset(&type, 0, sizeof(acl_type_t));
   type.u64 = ACL_ANY;
   if (aclx_get(acl_data->last_fname,
@@ -236,14 +222,10 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * Make sure the buffers are big enough.
-   */
+  // Make sure the buffers are big enough.
   aclbuf = CheckPoolMemorySize(aclbuf, aclsize + 1);
 
-  /*
-   * Retrieve the ACL info.
-   */
+  // Retrieve the ACL info.
   if (aclx_get(acl_data->last_fname,
 #        if defined(GET_ACL_FOR_LINK)
                GET_ACL_FOR_LINK,
@@ -267,9 +249,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * See if the acl is non trivial.
-   */
+  // See if the acl is non trivial.
   switch (type.u64) {
     case ACL_AIXC:
       if (AclIsTrivial((struct acl*)aclbuf)) {
@@ -292,9 +272,7 @@ static bacl_exit_code aix_build_acl_streams(JobControlRecord* jcr,
       goto bail_out;
   }
 
-  /*
-   * We have a non-trivial acl lets convert it into some ASCII form.
-   */
+  // We have a non-trivial acl lets convert it into some ASCII form.
   acltxtsize = SizeofPoolMemory(acl_data->u.build->content);
   if (aclx_printStr(acl_data->u.build->content, &acltxtsize, aclbuf, aclsize,
                     type, acl_data->last_fname, 0)
@@ -386,9 +364,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
 
   switch (stream) {
     case STREAM_ACL_AIX_TEXT:
-      /*
-       * Handle the old stream using the old system call for now.
-       */
+      // Handle the old stream using the old system call for now.
       if (acl_put(acl_data->last_fname, content, 0) != 0) {
         retval = bacl_exit_error;
         goto bail_out;
@@ -447,9 +423,7 @@ static bacl_exit_code aix_parse_acl_streams(JobControlRecord* jcr,
           switch (errno) {
             case ENOSPC:
               if (cnt < 3) { continue; }
-              /*
-               * FALLTHROUGH
-               */
+              // FALLTHROUGH
             default:
               Mmsg2(jcr->errmsg,
                     _("aclx_scanStr error on file \"%s\": ERR=%s\n"),
@@ -506,9 +480,7 @@ bail_out:
 
 #        include <sys/access.h>
 
-/**
- * Define the supported ACL streams for this OS
- */
+// Define the supported ACL streams for this OS
 static int os_access_acl_streams[1] = {STREAM_ACL_AIX_TEXT};
 static int os_default_acl_streams[1] = {-1};
 
@@ -567,16 +539,12 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 #        error "configure failed to detect availability of sys/acl.h"
 #      endif
 
-/**
- * On IRIX we can get shortened ACLs
- */
+// On IRIX we can get shortened ACLs
 #      if defined(HAVE_IRIX_OS) && defined(BACL_WANT_SHORT_ACLS)
 #        define acl_to_text(acl, len) acl_to_short_text((acl), (len))
 #      endif
 
-/**
- * On Linux we can get numeric and/or shorted ACLs
- */
+// On Linux we can get numeric and/or shorted ACLs
 #      if defined(HAVE_LINUX_OS)
 #        if defined(BACL_WANT_SHORT_ACLS) && defined(BACL_WANT_NUMERIC_IDS)
 #          define BACL_ALTERNATE_TEXT (TEXT_ABBREVIATE | TEXT_NUMERIC_IDS)
@@ -592,9 +560,7 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 #        endif
 #      endif
 
-/**
- * On FreeBSD we can get numeric ACLs
- */
+// On FreeBSD we can get numeric ACLs
 #      if defined(HAVE_FREEBSD_OS)
 #        if defined(BACL_WANT_NUMERIC_IDS)
 #          define BACL_ALTERNATE_TEXT ACL_TEXT_NUMERIC_IDS
@@ -605,9 +571,7 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 #        endif
 #      endif
 
-/**
- * Some generic functions used by multiple OSes.
- */
+// Some generic functions used by multiple OSes.
 static acl_type_t BacToOsAcltype(bacl_type acltype)
 {
   acl_type_t ostype;
@@ -620,26 +584,20 @@ static acl_type_t BacToOsAcltype(bacl_type acltype)
       ostype = ACL_TYPE_DEFAULT;
       break;
 #      ifdef HAVE_ACL_TYPE_NFS4
-      /*
-       * FreeBSD has an additional acl type named ACL_TYPE_NFS4.
-       */
+      // FreeBSD has an additional acl type named ACL_TYPE_NFS4.
     case BACL_TYPE_NFS4:
       ostype = ACL_TYPE_NFS4;
       break;
 #      endif
 #      ifdef HAVE_ACL_TYPE_DEFAULT_DIR
     case BACL_TYPE_DEFAULT_DIR:
-      /*
-       * TRU64 has an additional acl type named ACL_TYPE_DEFAULT_DIR.
-       */
+      // TRU64 has an additional acl type named ACL_TYPE_DEFAULT_DIR.
       ostype = ACL_TYPE_DEFAULT_DIR;
       break;
 #      endif
 #      ifdef HAVE_ACL_TYPE_EXTENDED
     case BACL_TYPE_EXTENDED:
-      /*
-       * MacOSX has an additional acl type named ACL_TYPE_EXTENDED.
-       */
+      // MacOSX has an additional acl type named ACL_TYPE_EXTENDED.
       ostype = ACL_TYPE_EXTENDED;
       break;
 #      endif
@@ -762,9 +720,7 @@ static bool AclIsTrivial(acl_t acl)
 }
 #      endif
 
-/**
- * Generic wrapper around acl_get_file call.
- */
+// Generic wrapper around acl_get_file call.
 static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
                                               AclData* acl_data,
                                               bacl_type acltype)
@@ -788,9 +744,7 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
      */
     if (AclCountEntries(acl) <= 0) { goto bail_out; }
 
-    /*
-     * Make sure this is not just a trivial ACL.
-     */
+    // Make sure this is not just a trivial ACL.
 #      if !defined(HAVE_DARWIN_OS)
     if (acltype == BACL_TYPE_ACCESS && AclIsTrivial(acl)) {
       /*
@@ -815,9 +769,7 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
     }
 #      endif
 
-    /*
-     * Convert the internal acl representation into a text representation.
-     */
+    // Convert the internal acl representation into a text representation.
     if ((acl_text = acl_to_text(acl, NULL)) != NULL) {
       acl_data->u.build->content_length
           = PmStrcpy(acl_data->u.build->content, acl_text);

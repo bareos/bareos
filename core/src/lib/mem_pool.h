@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * Memory Pool prototypes
@@ -38,9 +36,7 @@ POOLMEM* CheckPoolMemorySize(POOLMEM* buf, int32_t size);
 #define FreeMemory(x) FreePoolMemory(x)
 void FreePoolMemory(POOLMEM* buf);
 
-/**
- * Macro to simplify free/reset pointers
- */
+// Macro to simplify free/reset pointers
 #define FreeAndNullPoolMemory(a) \
   do {                           \
     if (a) {                     \

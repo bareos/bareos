@@ -38,9 +38,7 @@
 #include "ndmlib.h"
 
 
-/*
- * Initialize a channel. Make sure it won't be confused for active.
- */
+// Initialize a channel. Make sure it won't be confused for active.
 void ndmchan_initialize(struct ndmchan* ch, char* name)
 {
   NDMOS_MACRO_ZEROFILL(ch);
@@ -49,9 +47,7 @@ void ndmchan_initialize(struct ndmchan* ch, char* name)
   ch->mode = NDMCHAN_MODE_IDLE;
 }
 
-/*
- * Set the data buffer
- */
+// Set the data buffer
 int ndmchan_setbuf(struct ndmchan* ch, char* data, unsigned data_size)
 {
   ch->data = data;
@@ -64,9 +60,7 @@ int ndmchan_setbuf(struct ndmchan* ch, char* data, unsigned data_size)
 }
 
 
-/*
- * Interfaces for starting a channel in various modes.
- */
+// Interfaces for starting a channel in various modes.
 int ndmchan_start_mode(struct ndmchan* ch, int fd, int chan_mode)
 {
   ch->fd = fd;
@@ -104,9 +98,7 @@ int ndmchan_start_pending(struct ndmchan* ch, int fd)
   return ndmchan_start_mode(ch, fd, NDMCHAN_MODE_PENDING);
 }
 
-/*
- * Change a PENDING channel to an active (READ/WRITE) channel
- */
+// Change a PENDING channel to an active (READ/WRITE) channel
 int ndmchan_pending_to_mode(struct ndmchan* ch, int chan_mode)
 {
   ch->mode = chan_mode;
@@ -302,9 +294,7 @@ int ndmchan_post_poll(struct ndmchan* chtab[], unsigned n_chtab)
 }
 
 
-/*
- * Channel data buffer space manipulation.
- */
+// Channel data buffer space manipulation.
 
 void ndmchan_compress(struct ndmchan* ch)
 {
@@ -346,9 +336,7 @@ int ndmchan_n_avail_total(struct ndmchan* ch)
 int ndmchan_n_ready(struct ndmchan* ch) { return ch->end_ix - ch->beg_ix; }
 
 
-/*
- * Interfaces for interpreting channel state, obtaining pointers, lengths
- */
+// Interfaces for interpreting channel state, obtaining pointers, lengths
 
 enum ndmchan_read_interpretation ndmchan_read_interpret(struct ndmchan* ch,
                                                         char** data_p,
@@ -412,9 +400,7 @@ enum ndmchan_write_interpretation ndmchan_write_interpret(struct ndmchan* ch,
 }
 
 
-/*
- * Pretty printer
- */
+// Pretty printer
 void ndmchan_pp(struct ndmchan* ch, char* buf)
 {
   int show_ra = 0;
@@ -473,9 +459,7 @@ void ndmchan_pp(struct ndmchan* ch, char* buf)
 
 
 #ifdef NDMOS_OPTION_USE_SELECT_FOR_CHAN_POLL
-/*
- * Here because it is almost always used
- */
+// Here because it is almost always used
 
 int ndmos_chan_poll(struct ndmchan* chtab[], unsigned n_chtab, int milli_timo)
 {

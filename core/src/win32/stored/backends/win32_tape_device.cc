@@ -56,9 +56,7 @@
 
 namespace storagedaemon {
 
-/**
- * SCSI bus status codes.
- */
+// SCSI bus status codes.
 #define SCSISTAT_GOOD 0x00
 #define SCSISTAT_CHECK_CONDITION 0x02
 #define SCSISTAT_CONDITION_MET 0x04
@@ -776,15 +774,11 @@ int win32_tape_device::TapeGet(struct mtget* mt_get)
 
   mt_get->mt_type = MT_ISSCSI2;
 
-  /*
-   * Partition #
-   */
+  // Partition #
   mt_get->mt_resid
       = pos_info.PartitionBlockValid ? pos_info.Partition : (ULONG)-1;
 
-  /*
-   * Density / Block Size
-   */
+  // Density / Block Size
   mt_get->mt_dsreg
       = ((density << MT_ST_DENSITY_SHIFT) & MT_ST_DENSITY_MASK)
         | ((blocksize << MT_ST_BLKSIZE_SHIFT) & MT_ST_BLKSIZE_MASK);
@@ -820,19 +814,13 @@ int win32_tape_device::TapeGet(struct mtget* mt_get)
     mt_get->mt_gstat |= 0x01000000; /* GMT_ONLINE */
   }
 
-  /*
-   * Recovered Error Count
-   */
+  // Recovered Error Count
   mt_get->mt_erreg = 0;
 
-  /*
-   * File Number
-   */
+  // File Number
   mt_get->mt_fileno = (__daddr_t)pHandleInfo->ulFile;
 
-  /*
-   * Block Number
-   */
+  // Block Number
   mt_get->mt_blkno
       = (__daddr_t)(pHandleInfo->bBlockValid
                         ? pos_info.BlockNumber - pHandleInfo->ullFileStart
@@ -977,9 +965,7 @@ static DWORD GetTapePositionInfo(HANDLE hDevice,
             break;
           }
           case 1: {
-            /*
-             * SERVICEACTION_SHORT_FORM_BLOCKID
-             */
+            // SERVICEACTION_SHORT_FORM_BLOCKID
             // pPosResult->ShortBuffer.PERR;
             // pPosResult->ShortBuffer.BYCU;
             // pPosResult->ShortBuffer.BCU;

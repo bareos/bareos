@@ -141,9 +141,7 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
     V(mutex);
   }
 
-  /*
-   * Add a new tapealert message.
-   */
+  // Add a new tapealert message.
   tape_alert
       = (struct device_tapealert*)malloc(sizeof(struct device_tapealert));
   struct device_tapealert empty_device_tapealert;
@@ -174,9 +172,7 @@ static inline void UpdateDeviceStatistics(const char* devname,
 
   if (!me || !me->collect_dev_stats || !device_statistics) { return; }
 
-  /*
-   * See if we already have statistics for this device.
-   */
+  // See if we already have statistics for this device.
   foreach_dlist (dev_stats, device_statistics) {
     if (bstrcmp(dev_stats->DevName, devname)) {
       found = true;
@@ -209,9 +205,7 @@ static inline void UpdateDeviceStatistics(const char* devname,
     V(mutex);
   }
 
-  /*
-   * Add a new set of statistics.
-   */
+  // Add a new set of statistics.
   dev_stat = (struct device_statistic*)malloc(sizeof(struct device_statistic));
 
   struct device_statistic empty_device_statistic;
@@ -260,14 +254,10 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
 
   if (!me || !me->collect_job_stats || !job_statistics) { return; }
 
-  /*
-   * Skip job 0 info
-   */
+  // Skip job 0 info
   if (!jcr->JobId) { return; }
 
-  /*
-   * See if we already have statistics for this job.
-   */
+  // See if we already have statistics for this job.
   foreach_dlist (job_stats, job_statistics) {
     if (job_stats->JobId == jcr->JobId) {
       found = true;
@@ -298,9 +288,7 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
     V(mutex);
   }
 
-  /*
-   * Add a new set of statistics.
-   */
+  // Add a new set of statistics.
   job_stat = (struct job_statistic*)malloc(sizeof(struct job_statistic));
   struct job_statistic empty_job_statistic;
   *job_stat = empty_job_statistic;
@@ -358,9 +346,7 @@ static inline void cleanup_cached_statistics()
   V(mutex);
 }
 
-/**
- * Entry point for a separate statistics thread.
- */
+// Entry point for a separate statistics thread.
 extern "C" void* statistics_thread_runner(void* arg)
 {
   utime_t now;
@@ -372,16 +358,12 @@ extern "C" void* statistics_thread_runner(void* arg)
 
   setup_statistics();
 
-  /*
-   * Do our work as long as we are not signaled to quit.
-   */
+  // Do our work as long as we are not signaled to quit.
   while (!quit) {
     now = (utime_t)time(NULL);
 
     if (me->collect_dev_stats) {
-      /*
-       * Loop over all defined devices.
-       */
+      // Loop over all defined devices.
       foreach_res (device_resource, R_DEVICE) {
         if (device_resource->collectstats) {
           Device* dev;
@@ -395,9 +377,7 @@ extern "C" void* statistics_thread_runner(void* arg)
     }
 
     if (me->collect_job_stats) {
-      /*
-       * Loop over all running Jobs in the Storage Daemon.
-       */
+      // Loop over all running Jobs in the Storage Daemon.
       foreach_jcr (jcr) {
         UpdateJobStatistics(jcr, now);
       }
@@ -418,9 +398,7 @@ extern "C" void* statistics_thread_runner(void* arg)
     V(mutex);
   }
 
-  /*
-   * Cleanup the cached statistics.
-   */
+  // Cleanup the cached statistics.
   cleanup_cached_statistics();
 
   return NULL;
@@ -430,9 +408,7 @@ int StartStatisticsThread(void)
 {
   int status;
 
-  /*
-   * First see if device and job stats collection is enabled.
-   */
+  // First see if device and job stats collection is enabled.
   if (!me->stats_collect_interval
       || (!me->collect_dev_stats && !me->collect_job_stats)) {
     return 0;
@@ -493,9 +469,7 @@ bool StatsCmd(JobControlRecord* jcr)
           next_dev_stat
               = (struct device_statistic*)dev_stats->statistics->next(dev_stat);
 
-          /*
-           * If the entry was already collected no need to do it again.
-           */
+          // If the entry was already collected no need to do it again.
           if (!dev_stat->collected) {
             PmStrcpy(dev_tmp, dev_stats->DevName);
             BashSpaces(dev_tmp);
@@ -511,9 +485,7 @@ bool StatsCmd(JobControlRecord* jcr)
           }
 
           P(mutex);
-          /*
-           * If this is the last one on the list leave it for comparison.
-           */
+          // If this is the last one on the list leave it for comparison.
           if (!next_dev_stat) {
             dev_stat->collected = true;
           } else {
@@ -565,9 +537,7 @@ bool StatsCmd(JobControlRecord* jcr)
           next_job_stat
               = (struct job_statistic*)job_stats->statistics->next(job_stat);
 
-          /*
-           * If the entry was already collected no need to do it again.
-           */
+          // If the entry was already collected no need to do it again.
           if (!job_stat->collected) {
             PmStrcpy(dev_tmp, job_stat->DevName);
             BashSpaces(dev_tmp);
@@ -578,9 +548,7 @@ bool StatsCmd(JobControlRecord* jcr)
           }
 
           P(mutex);
-          /*
-           * If this is the last one on the list leave it for comparison.
-           */
+          // If this is the last one on the list leave it for comparison.
           if (!next_job_stat) {
             job_stat->collected = true;
           } else {
@@ -592,9 +560,7 @@ bool StatsCmd(JobControlRecord* jcr)
         }
       }
 
-      /*
-       * If the Job doesn't exist anymore remove it from the job_statistics.
-       */
+      // If the Job doesn't exist anymore remove it from the job_statistics.
       next_job_stats = (struct job_statistics*)job_statistics->next(job_stats);
 
       found = false;

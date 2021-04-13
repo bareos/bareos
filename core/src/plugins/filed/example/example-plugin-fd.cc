@@ -70,9 +70,7 @@ static PluginFunctions pluginFuncs
 extern "C" {
 #endif
 
-/*
- * Plugin called here when it is first loaded
- */
+// Plugin called here when it is first loaded
 bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                CoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
@@ -191,15 +189,11 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       printf("plugin: EndRestoreJob\n");
       break;
     case bEventRestoreCommand:
-      /*
-       * Plugin command e.g. plugin = <plugin-name>:<name-space>:command
-       */
+      // Plugin command e.g. plugin = <plugin-name>:<name-space>:command
       printf("plugin: backup command=%s\n", NPRT((char*)value));
       break;
     case bEventBackupCommand:
-      /*
-       * Plugin command e.g. plugin = <plugin-name>:<name-space>:command
-       */
+      // Plugin command e.g. plugin = <plugin-name>:<name-space>:command
       printf("plugin: backup command=%s\n", NPRT((char*)value));
       break;
     default:
@@ -222,9 +216,7 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
   return bRC_OK;
 }
 
-/*
- * Done backing up a file.
- */
+// Done backing up a file.
 static bRC endBackupFile(PluginContext* ctx) { return bRC_OK; }
 
 /*
@@ -288,9 +280,7 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp) { return bRC_OK; }
 
 static bRC setXattr(PluginContext* ctx, xattr_pkt* xp) { return bRC_OK; }
 
-/*
- * When using Incremental dump, all previous dumps are necessary
- */
+// When using Incremental dump, all previous dumps are necessary
 static bRC checkFile(PluginContext* ctx, char* fname) { return bRC_OK; }
 
 } /* namespace filedaemon */

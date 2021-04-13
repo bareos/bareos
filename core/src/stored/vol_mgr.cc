@@ -56,9 +56,7 @@ static VolumeReservationItem* new_vol_item(DeviceControlRecord* dcr,
                                            const char* VolumeName);
 static void DebugListVolumes(const char* imsg);
 
-/**
- * For append volumes the key is the VolumeName.
- */
+// For append volumes the key is the VolumeName.
 static int CompareByVolumename(void* item1, void* item2)
 {
   VolumeReservationItem* vol1 = (VolumeReservationItem*)item1;
@@ -70,9 +68,7 @@ static int CompareByVolumename(void* item1, void* item2)
   return strcmp(vol1->vol_name, vol2->vol_name);
 }
 
-/**
- * For read volumes the key is JobId, VolumeName.
- */
+// For read volumes the key is JobId, VolumeName.
 static int ReadCompare(void* item1, void* item2)
 {
   VolumeReservationItem* vol1 = (VolumeReservationItem*)item1;
@@ -92,9 +88,7 @@ static int ReadCompare(void* item1, void* item2)
 
 bool IsVolListEmpty() { return vol_list->empty(); }
 
-/**
- *  Initialized the main volume list. Note, we are using a recursive lock.
- */
+//  Initialized the main volume list. Note, we are using a recursive lock.
 void InitVolListLock()
 {
   int errstat;
@@ -108,9 +102,7 @@ void InitVolListLock()
 
 void TermVolListLock() { RwlDestroy(&vol_list_lock); }
 
-/**
- * This allows a given thread to recursively call to LockVolumes()
- */
+// This allows a given thread to recursively call to LockVolumes()
 void _lockVolumes(const char* file, int line)
 {
   int errstat;
@@ -178,9 +170,7 @@ void AddReadVolume(JobControlRecord* jcr, const char* VolumeName)
   UnlockReadVolumes();
 }
 
-/**
- * Remove a given volume name from the read list.
- */
+// Remove a given volume name from the read list.
 void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
 {
   VolumeReservationItem vol, *fvol;
@@ -220,15 +210,11 @@ static VolumeReservationItem* find_read_volume(const char* VolumeName)
     return NULL;
   }
 
-  /*
-   * Do not lock reservations here
-   */
+  // Do not lock reservations here
   LockReadVolumes();
   vol.vol_name = strdup(VolumeName);
 
-  /*
-   * Note, we do want a simple CompareByVolumename on volume name only here
-   */
+  // Note, we do want a simple CompareByVolumename on volume name only here
   fvol = (VolumeReservationItem*)read_vol_list->binary_search(
       &vol, CompareByVolumename);
   free(vol.vol_name);
@@ -239,9 +225,7 @@ static VolumeReservationItem* find_read_volume(const char* VolumeName)
   return fvol;
 }
 
-/**
- * List Volumes -- this should be moved to status.c
- */
+// List Volumes -- this should be moved to status.c
 enum
 {
   debug_lock = true,
@@ -390,9 +374,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
   Dmsg2(debuglevel, "enter reserve_volume=%s drive=%s\n", VolumeName,
         dcr->dev->print_name());
 
-  /*
-   * If aquiring a volume for writing it may not be on the read volume list.
-   */
+  // If aquiring a volume for writing it may not be on the read volume list.
   if (me->filedevice_concurrent_read && dcr->IsWriting()
       && find_read_volume(VolumeName)) {
     Mmsg(dcr->jcr->errmsg,
@@ -427,9 +409,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
             vol->dev->print_name());
       goto get_out; /* Volume already on this device */
     } else {
-      /*
-       * Don't release a volume if it was reserved by someone other than us
-       */
+      // Don't release a volume if it was reserved by someone other than us
       if (vol->IsInUse() && !dcr->reserved_volume) {
         Dmsg1(debuglevel, "Cannot free vol=%s. It is reserved.\n",
               vol->vol_name);
@@ -439,9 +419,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
       Dmsg2(debuglevel, "reserve_vol free vol=%s at %p\n", vol->vol_name,
             vol->vol_name);
 
-      /*
-       * If old Volume is still mounted, must unload it
-       */
+      // If old Volume is still mounted, must unload it
       if (bstrcmp(vol->vol_name, dev->VolHdr.VolumeName)) {
         Dmsg0(50, "SetUnload\n");
         dev->SetUnload(); /* have to unload current volume */
@@ -452,9 +430,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
     }
   }
 
-  /*
-   * Create a new Volume entry
-   */
+  // Create a new Volume entry
   nvol = new_vol_item(dcr, VolumeName);
 
   /*
@@ -473,9 +449,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
      */
     goto get_out;
   } else {
-    /*
-     * Now try to insert the new Volume
-     */
+    // Now try to insert the new Volume
     vol = (VolumeReservationItem*)vol_list->binary_insert(nvol,
                                                           CompareByVolumename);
   }
@@ -492,9 +466,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
     Dmsg2(debuglevel, "reserve_vol free-tmp vol=%s at %p\n", vol->vol_name,
           vol->vol_name);
 
-    /*
-     * Clear dev pointer so that FreeVolItem() doesn't take away our volume.
-     */
+    // Clear dev pointer so that FreeVolItem() doesn't take away our volume.
     nvol->dev = NULL; /* don't zap dev entry */
     FreeVolItem(nvol);
 
@@ -508,9 +480,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
      * device vol->dev is where the Volume we want is
      */
     if (dev != vol->dev) {
-      /*
-       * Caller wants to switch Volume to another device
-       */
+      // Caller wants to switch Volume to another device
 
       // should be different devices with different names
       if (bstrcmp(dev->print_name(), vol->dev->print_name())) {
@@ -611,9 +581,7 @@ VolumeReservationItem* vol_walk_start()
   return vol;
 }
 
-/**
- * Get next vol from chain, and release current one
- */
+// Get next vol from chain, and release current one
 VolumeReservationItem* VolWalkNext(VolumeReservationItem* prev_vol)
 {
   VolumeReservationItem* vol;
@@ -631,9 +599,7 @@ VolumeReservationItem* VolWalkNext(VolumeReservationItem* prev_vol)
   return vol;
 }
 
-/**
- * Release last vol referenced
- */
+// Release last vol referenced
 void VolWalkEnd(VolumeReservationItem* vol)
 {
   if (vol) {
@@ -675,9 +641,7 @@ VolumeReservationItem* read_vol_walk_start()
   return vol;
 }
 
-/*
- * Get next vol from chain, and release current one
- */
+// Get next vol from chain, and release current one
 VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol)
 {
   VolumeReservationItem* vol;
@@ -695,9 +659,7 @@ VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol)
   return vol;
 }
 
-/*
- * Release last vol referenced
- */
+// Release last vol referenced
 void ReadVolWalkEnd(VolumeReservationItem* vol)
 {
   if (vol) {
@@ -791,9 +753,7 @@ bool VolumeUnused(DeviceControlRecord* dcr)
   }
 }
 
-/**
- * Unconditionally release the volume entry
- */
+// Unconditionally release the volume entry
 bool FreeVolume(Device* dev)
 {
   VolumeReservationItem* vol;
@@ -806,9 +766,7 @@ bool FreeVolume(Device* dev)
     return false;
   }
 
-  /*
-   * Don't free a volume while it is being swapped
-   */
+  // Don't free a volume while it is being swapped
   if (!vol->IsSwapping()) {
     Dmsg1(debuglevel, "=== clear in_use vol=%s\n", vol->vol_name);
     dev->vol = NULL;
@@ -836,9 +794,7 @@ bool FreeVolume(Device* dev)
   return true;
 }
 
-/**
- * Create the Volume list
- */
+// Create the Volume list
 void CreateVolumeLists()
 {
   VolumeReservationItem* vol = NULL;
@@ -846,9 +802,7 @@ void CreateVolumeLists()
   if (read_vol_list == NULL) { read_vol_list = new dlist(vol, &vol->link); }
 }
 
-/**
- * Free normal append volumes list
- */
+// Free normal append volumes list
 static inline void FreeVolumeList(const char* what, dlist* vollist)
 {
   VolumeReservationItem* vol;
@@ -866,9 +820,7 @@ static inline void FreeVolumeList(const char* what, dlist* vollist)
   }
 }
 
-/**
- * Release all Volumes from the list
- */
+// Release all Volumes from the list
 void FreeVolumeLists()
 {
   if (vol_list) {

@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Marco van Wieringen, December 2011
- */
+// Written by Marco van Wieringen, December 2011
 /**
  * @file
  * BAREOS Director -- Import/Export and Move functions.
@@ -94,9 +92,7 @@ static inline void validate_slot_list(UaContext* ua,
 {
   vol_list_t* vl;
 
-  /*
-   * Walk the list of drives and slots available.
-   */
+  // Walk the list of drives and slots available.
   foreach_dlist (vl, vol_list->contents) {
     switch (vl->slot_type) {
       case slot_type_t::kSlotTypeStorage:
@@ -104,9 +100,7 @@ static inline void validate_slot_list(UaContext* ua,
         if (BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
           switch (status) {
             case slot_status_t::kSlotStatusFull:
-              /*
-               * If it has the correct status we are done.
-               */
+              // If it has the correct status we are done.
               if (vl->slot_status == status) { continue; }
               /*
                * If the request is for a slot with status
@@ -130,9 +124,7 @@ static inline void validate_slot_list(UaContext* ua,
               ClearBit(vl->bareos_slot_number - 1, slot_list);
               break;
             case slot_status_t::kSlotStatusEmpty:
-              /*
-               * If it has the correct status we are done.
-               */
+              // If it has the correct status we are done.
               if (vl->slot_status == status) { continue; }
               /*
                * If the slot is empty and this is normal slot
@@ -258,9 +250,7 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
   vol_list_t vls;
   vol_list_t *vl1, *vl2;
 
-  /*
-   * Walk the list of drives and slots available.
-   */
+  // Walk the list of drives and slots available.
   foreach_dlist (vl1, vol_list->contents) {
     switch (vl1->slot_type) {
       case slot_type_t::kSlotTypeDrive:
@@ -322,9 +312,7 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
                                            true /* want to see all slots */,
                                            false /* non cached list */);
   if (!new_vol_list) {
-    /*
-     * Free the old vol_list and return a NULL vol_list.
-     */
+    // Free the old vol_list and return a NULL vol_list.
     StorageFreeVolList(store, vol_list);
     return NULL;
   }
@@ -342,18 +330,14 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
       case slot_type_t::kSlotTypeDrive:
         switch (vl1->slot_status) {
           case slot_status_t::kSlotStatusFull:
-            /*
-             * Lookup the drive in the old list.
-             */
+            // Lookup the drive in the old list.
             vls.element_address = vl1->element_address;
             vl2 = (vol_list_t*)vol_list->contents->binary_search(
                 (void*)&vls, StorageCompareVolListEntry);
             if (vl2 && vl2->slot_status == slot_status_t::kSlotStatusFull
                 && vl2->currently_loaded_slot_number
                        == vl1->currently_loaded_slot_number) {
-              /*
-               * Volume in drive is the same copy the volume name.
-               */
+              // Volume in drive is the same copy the volume name.
               if (vl2->VolName) { free(vl2->VolName); }
               vl2->VolName = vl1->VolName;
               vl1->VolName = NULL;
@@ -389,17 +373,13 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
         }
         switch (vl1->slot_status) {
           case slot_status_t::kSlotStatusFull:
-            /*
-             * Lookup the slot in the old list.
-             */
+            // Lookup the slot in the old list.
             vls.element_address = vl1->element_address;
             vl2 = (vol_list_t*)vol_list->contents->binary_search(
                 (void*)&vls, StorageCompareVolListEntry);
             if (vl2 && vl2->slot_status == slot_status_t::kSlotStatusFull
                 && vl2->bareos_slot_number == vl1->bareos_slot_number) {
-              /*
-               * Volume in slot is the same copy the volume name.
-               */
+              // Volume in slot is the same copy the volume name.
               if (vl2->VolName) { free(vl2->VolName); }
               vl2->VolName = vl1->VolName;
               vl1->VolName = NULL;
@@ -426,16 +406,12 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
     }
   }
 
-  /*
-   * Free the old vol_list and return the new data.
-   */
+  // Free the old vol_list and return the new data.
   StorageFreeVolList(store, vol_list);
   return new_vol_list;
 }
 
-/**
- * Convert a volume name into a slot selection.
- */
+// Convert a volume name into a slot selection.
 static inline bool get_slot_list_using_volname(UaContext* ua,
                                                StorageResource* store,
                                                const char* volumename,
@@ -449,9 +425,7 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
 
   if (IsNameValid(volumename)) {
     foreach_dlist (vl1, vol_list->contents) {
-      /*
-       * We only select normal and import/export slots.
-       */
+      // We only select normal and import/export slots.
       switch (vl1->slot_type) {
         case slot_type_t::kSlotTypeStorage:
         case slot_type_t::kSlotTypeImport:
@@ -466,9 +440,7 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
 
           switch (vl1->slot_status) {
             case slot_status_t::kSlotStatusFull:
-              /*
-               * See if the wanted volume is loaded in this slot.
-               */
+              // See if the wanted volume is loaded in this slot.
               Dmsg3(
                   100,
                   "Checking for volume name in slot %hd, wanted %s, found %s\n",
@@ -507,9 +479,7 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
           break;
       }
 
-      /*
-       * If we found a match break the loop.
-       */
+      // If we found a match break the loop.
       if (found) { break; }
     }
 
@@ -536,9 +506,7 @@ static inline bool get_slot_list_using_volname(UaContext* ua,
   return found;
 }
 
-/**
- * Convert a number of volume names into a slot selection.
- */
+// Convert a number of volume names into a slot selection.
 static inline slot_number_t get_slot_list_using_volnames(
     UaContext* ua,
     StorageResource* store,
@@ -559,9 +527,7 @@ static inline slot_number_t get_slot_list_using_volnames(
    */
   for (i = arg; i < ua->argc; i++) {
     if (Bstrcasecmp(ua->argk[i], "volume")) {
-      /*
-       * Parse a volumelist e.g. vol1|vol2 and a single volume e.g. vol1
-       */
+      // Parse a volumelist e.g. vol1|vol2 and a single volume e.g. vol1
       s = strdup(ua->argv[i]);
       token = s;
 
@@ -584,9 +550,7 @@ static inline slot_number_t get_slot_list_using_volnames(
         sep = strchr(token, '|');
       }
 
-      /*
-       * Pick up the last token.
-       */
+      // Pick up the last token.
       if (*token) {
         if (get_slot_list_using_volname(ua, store, token, vol_list,
                                         wanted_slot_list, selected_slot_list,
@@ -616,13 +580,9 @@ static inline slot_number_t auto_fill_slot_selection(
   slot_number_t cnt = 0;
   vol_list_t* vl;
 
-  /*
-   * Walk the list of drives and slots available.
-   */
+  // Walk the list of drives and slots available.
   foreach_dlist (vl, vol_list->contents) {
-    /*
-     * Make sure slot_type and slot_status match.
-     */
+    // Make sure slot_type and slot_status match.
     if (vl->slot_type != type || vl->slot_status != content) {
       Dmsg3(100, "Skipping slot %hd, Type %hd, Content %hd\n",
             vl->bareos_slot_number, vl->slot_type, vl->slot_status);
@@ -670,9 +630,7 @@ static inline bool verify_slot_list(StorageResource* store,
 {
   vol_list_t* vl;
 
-  /*
-   * Walk the list of drives and slots available.
-   */
+  // Walk the list of drives and slots available.
   foreach_dlist (vl, vol_list->contents) {
     /*
      * Move operations are only allowed between
@@ -683,9 +641,7 @@ static inline bool verify_slot_list(StorageResource* store,
       case slot_type_t::kSlotTypeStorage:
       case slot_type_t::kSlotTypeImport:
         if (BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
-          /*
-           * If the type and content is ok we can continue with the next one.
-           */
+          // If the type and content is ok we can continue with the next one.
           if (vl->slot_type == type && vl->slot_status == content) { continue; }
 
           /*
@@ -722,9 +678,7 @@ static inline bool verify_slot_list(StorageResource* store,
             }
           }
 
-          /*
-           * Not the wanted type or content and not a special case.
-           */
+          // Not the wanted type or content and not a special case.
           Dmsg3(100, "Skipping slot %hd, Type %hd, Content %hd\n",
                 vl->bareos_slot_number, vl->slot_type, vl->slot_status);
           return false;
@@ -748,9 +702,7 @@ static inline bool update_internal_slot_list(changer_vol_list_t* vol_list,
   bool found;
   vol_list_t *vl1, *vl2;
 
-  /*
-   * First lookup the source and destination slots in the vol_list.
-   */
+  // First lookup the source and destination slots in the vol_list.
   found = false;
   foreach_dlist (vl1, vol_list->contents) {
     switch (vl1->slot_type) {

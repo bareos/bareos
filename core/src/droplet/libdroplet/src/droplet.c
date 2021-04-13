@@ -353,9 +353,7 @@ void dpl_ctx_free(dpl_ctx_t* ctx)
 
 /** @} */
 
-/*
- * eval
- */
+// eval
 
 double dpl_price_storage(dpl_ctx_t* ctx, size_t size)
 {
@@ -426,9 +424,7 @@ char* dpl_size_str(uint64_t size)
   return str;
 }
 
-/*
- *
- */
+//
 
 extern dpl_backend_t dpl_backend_s3;
 extern dpl_backend_t dpl_backend_cdmi;

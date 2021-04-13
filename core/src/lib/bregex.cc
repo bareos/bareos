@@ -1376,9 +1376,7 @@ void re_registers_to_regmatch(regexp_registers_t old_regs,
   if (!(nmatch == 0 && pmatch == NULL)) {
     size_t i = 0;
 
-    /*
-     * We have to set the last entry to -1
-     */
+    // We have to set the last entry to -1
     nmatch = nmatch - 1;
     for (i = 0; (i < nmatch) && (old_regs->start[i] > -1); i++) {
       pmatch[i].rm_so = old_regs->start[i];
@@ -1740,9 +1738,7 @@ continue_matching:
        /*NOTREACHED*/}
   }
 
-  /*
-   *NOTREACHED
-   */
+  //NOTREACHED
 
   /* Using "break;" in the above switch statement is equivalent to "goto fail;"
    */

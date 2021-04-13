@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * Bareos routines to handle labels
@@ -118,16 +116,12 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
     return VOL_NO_MEDIA;
   }
 
-  /*
-   * Read ANSI/IBM label if so requested
-   */
+  // Read ANSI/IBM label if so requested
   want_ansi_label = dcr->VolCatInfo.LabelType != B_BAREOS_LABEL
                     || dcr->device_resource->label_type != B_BAREOS_LABEL;
   if (want_ansi_label || dev->HasCap(CAP_CHECKLABELS)) {
     status = ReadAnsiIbmLabel(dcr);
-    /*
-     * If we want a label and didn't find it, return error
-     */
+    // If we want a label and didn't find it, return error
     if (want_ansi_label && status != VOL_OK) { goto bail_out; }
     if (status == VOL_NAME_ERROR || status == VOL_LABEL_ERROR) {
       Mmsg(jcr->errmsg,
@@ -145,9 +139,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
     }
   }
 
-  /*
-   * Read the Bareos Volume label block
-   */
+  // Read the Bareos Volume label block
   record = new_record();
   EmptyBlock(dcr->block);
 
@@ -249,16 +241,12 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
   if (debug_level >= 200) { DumpVolumeLabel(dev); }
 
   Dmsg0(130, "Leave ReadVolumeLabel() VOL_OK\n");
-  /*
-   * If we are a streaming device, we only get one chance to read
-   */
+  // If we are a streaming device, we only get one chance to read
   if (!dev->HasCap(CAP_STREAM)) {
     dev->rewind(dcr);
     if (have_ansi_label) {
       status = ReadAnsiIbmLabel(dcr);
-      /*
-       * If we want a label and didn't find it, return error
-       */
+      // If we want a label and didn't find it, return error
       if (status != VOL_OK) { goto bail_out; }
     }
   }
@@ -356,9 +344,7 @@ bool WriteNewVolumeLabelToDev(DeviceControlRecord* dcr,
   JobControlRecord* jcr = dcr->jcr;
   Device* dev = dcr->dev;
 
-  /*
-   * Set the default blocksize to read the label
-   */
+  // Set the default blocksize to read the label
   dev->SetLabelBlocksize(dcr);
 
   Dmsg0(150, "write_volume_label()\n");
@@ -549,9 +535,7 @@ static void CreateVolumeLabelRecord(DeviceControlRecord* dcr,
         FI_to_ascii(buf, rec->FileIndex), rec->data_len);
 }
 
-/**
- * Create a volume label in memory
- */
+// Create a volume label in memory
 void CreateVolumeLabel(Device* dev, const char* VolName, const char* PoolName)
 {
   DeviceResource* device_resource = dev->device_resource;
@@ -1090,9 +1074,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
 {
   DeviceControlRecord* dcr = this;
 
-  /*
-   * Set the label blocksize to write the label
-   */
+  // Set the label blocksize to write the label
   dev->SetLabelBlocksize(dcr);
 
   if (!dev->open(dcr, DeviceMode::OPEN_READ_WRITE)) {
@@ -1104,9 +1086,7 @@ bool DeviceControlRecord::RewriteVolumeLabel(bool recycle)
   Dmsg2(190, "set append found freshly labeled volume. fd=%d dev=%x\n", dev->fd,
         dev);
 
-  /*
-   * Let any stored plugin know that we are (re)writing the label.
-   */
+  // Let any stored plugin know that we are (re)writing the label.
   if (GeneratePluginEvent(jcr, bSdEventLabelWrite, dcr) != bRC_OK) {
     Dmsg0(200, "Error from bSdEventLabelWrite plugin event.\n");
     return false;

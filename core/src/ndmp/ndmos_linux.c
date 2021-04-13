@@ -54,9 +54,7 @@
 #include <sys/utsname.h>
 
 
-/*
- * Select common code fragments from ndmos_common.c
- */
+// Select common code fragments from ndmos_common.c
 #define NDMOS_COMMON_SYNC_CONFIG_INFO /* from config file (ndmjob.conf) */
 #define NDMOS_COMMON_OK_NAME_PASSWORD
 #define NDMOS_COMMON_MD5

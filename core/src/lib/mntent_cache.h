@@ -21,9 +21,7 @@
    02110-1301, USA.
 */
 
-/*
- *  Marco van Wieringen, August 2009
- */
+//  Marco van Wieringen, August 2009
 
 #ifndef BAREOS_LIB_MNTENT_CACHE_H_
 #define BAREOS_LIB_MNTENT_CACHE_H_
@@ -40,9 +38,7 @@
  */
 #define NR_MNTENT_CACHE_ENTRIES 256
 
-/*
- * Number of pages to allocate for the big_buffer used by htable.
- */
+// Number of pages to allocate for the big_buffer used by htable.
 #define NR_MNTENT_HTABLE_PAGES 32
 
 struct mntent_cache_entry_t {

@@ -81,9 +81,7 @@ struct TlsCrlReloadContext {
   X509_CRL* crls[MAX_CRLS];
 };
 
-/*
- * Automatic Certificate Revocation List reload logic.
- */
+// Automatic Certificate Revocation List reload logic.
 static int CrlReloaderNew(X509_LOOKUP* lookup)
 {
   TlsCrlReloadContext* data;
@@ -114,9 +112,7 @@ static void CrlReloaderFree(X509_LOOKUP* lookup)
   }
 }
 
-/*
- * Load the new content from a Certificate Revocation List (CRL).
- */
+// Load the new content from a Certificate Revocation List (CRL).
 static int CrlReloaderReloadFile(X509_LOOKUP* lookup)
 {
   int cnt, ok = 0;
@@ -132,18 +128,14 @@ static int CrlReloaderReloadFile(X509_LOOKUP* lookup)
   in = BIO_new_file(data->crl_file_name, "r");
   if (!in) { goto bail_out; }
 
-  /*
-   * Load a maximum of MAX_CRLS Certificate Revocation Lists.
-   */
+  // Load a maximum of MAX_CRLS Certificate Revocation Lists.
   data->mtime = st.st_mtime;
   for (cnt = 0; cnt < MAX_CRLS; cnt++) {
     X509_CRL* crl;
 
     if ((crl = PEM_read_bio_X509_CRL(in, NULL, NULL, NULL)) == NULL) {
       if (cnt == 0) {
-        /*
-         * We try to read multiple times only the first is fatal.
-         */
+        // We try to read multiple times only the first is fatal.
         goto bail_out;
       } else {
         break;
@@ -154,9 +146,7 @@ static int CrlReloaderReloadFile(X509_LOOKUP* lookup)
     data->crls[cnt] = crl;
   }
 
-  /*
-   * Clear the other slots.
-   */
+  // Clear the other slots.
   while (++cnt < MAX_CRLS) {
     if (data->crls[cnt]) {
       X509_CRL_free(data->crls[cnt]);
@@ -196,9 +186,7 @@ bail_out:
   return ok;
 }
 
-/*
- * Load the data from a Certificate Revocation List (CRL) into memory.
- */
+// Load the data from a Certificate Revocation List (CRL) into memory.
 static int CrlReloaderFileLoad(X509_LOOKUP* lookup, const char* argp)
 {
   int ok = 0;
@@ -235,9 +223,7 @@ static int CrlReloaderCtrl(X509_LOOKUP* lookup,
   return ok;
 }
 
-/*
- * Check if a CRL entry is expired.
- */
+// Check if a CRL entry is expired.
 static int CrlEntryExpired(X509_CRL* crl)
 {
   int lastUpdate, nextUpdate;
@@ -252,9 +238,7 @@ static int CrlEntryExpired(X509_CRL* crl)
   return 1;
 }
 
-/*
- * Retrieve a CRL entry by Subject.
- */
+// Retrieve a CRL entry by Subject.
 static int CrlReloaderGetBySubject(X509_LOOKUP* lookup,
                                    int type,
                                    X509_NAME* name,

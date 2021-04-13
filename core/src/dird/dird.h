@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, December MM
- */
+// Kern Sibbald, December MM
 /**
  * @file
  * Includes specific to the Director
@@ -138,9 +136,7 @@ enum s_mapping_type
   PHYSICAL_TO_LOGICAL
 };
 
-/*
- * Slot list definition
- */
+// Slot list definition
 /* clang-format off */
 struct vol_list_t {
   dlink link;                                            /**< Link for list */
@@ -163,9 +159,7 @@ struct changer_vol_list_t {
   dlist* contents{};         /**< Contents of autochanger */
 };
 
-/*
- * Mapping from logical to physical storage address
- */
+// Mapping from logical to physical storage address
 struct storage_mapping_t {
   dlink link{};                                         /**< Link for list */
   slot_type_t slot_type{slot_type_t::kSlotTypeUnknown}; /**< See slot_type_* */

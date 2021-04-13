@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, December MMI
- */
+// Kern Sibbald, December MMI
 /**
  * @file
  * BAREOS Director -- User Agent Database Query Commands
@@ -226,9 +224,7 @@ static POOLMEM* substitute_prompts(UaContext* ua,
   return new_query;
 }
 
-/**
- * Get general SQL query for Catalog
- */
+// Get general SQL query for Catalog
 bool SqlqueryCmd(UaContext* ua, const char* cmd)
 {
   PoolMem query(PM_MESSAGE);
@@ -251,9 +247,7 @@ bool SqlqueryCmd(UaContext* ua, const char* cmd)
     PmStrcat(query, ua->cmd);
     if (ua->cmd[len - 1] == ';') {
       ua->cmd[len - 1] = 0; /* zap ; */
-      /*
-       * Submit query
-       */
+      // Submit query
       ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
       *query.c_str() = 0; /* start new query */
       msg = _("Enter SQL query: ");

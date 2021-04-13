@@ -36,9 +36,7 @@
 #include <algorithm>
 #include <string>
 
-/*
- * Various BAREOS Utility subroutines
- */
+// Various BAREOS Utility subroutines
 
 /*
  * Escape special characters in bareos configuration strings
@@ -94,9 +92,7 @@ std::string EscapeString(const char* old)
 }
 
 
-/*
- * Return true of buffer has all zero bytes
- */
+// Return true of buffer has all zero bytes
 bool IsBufZero(char* buf, int len)
 {
   uint64_t* ip;
@@ -106,9 +102,7 @@ bool IsBufZero(char* buf, int len)
   if (buf[0] != 0) { return false; }
   ip = (uint64_t*)buf;
 
-  /*
-   * Optimize by checking uint64_t for zero
-   */
+  // Optimize by checking uint64_t for zero
   len64 = len / sizeof(uint64_t);
   for (i = 0; i < len64; i++) {
     if (ip[i] != 0) { return false; }
@@ -123,9 +117,7 @@ bool IsBufZero(char* buf, int len)
 }
 
 
-/*
- * Convert a string in place to lower case
- */
+// Convert a string in place to lower case
 void lcase(char* str)
 {
   while (*str) {
@@ -160,9 +152,7 @@ void BashSpaces(PoolMem& pm)
   }
 }
 
-/*
- * Convert non-space characters (0x1) back into spaces
- */
+// Convert non-space characters (0x1) back into spaces
 void UnbashSpaces(char* str)
 {
   while (*str) {
@@ -171,9 +161,7 @@ void UnbashSpaces(char* str)
   }
 }
 
-/*
- * Convert non-space characters (0x1) back into spaces
- */
+// Convert non-space characters (0x1) back into spaces
 void UnbashSpaces(PoolMem& pm)
 {
   char* str = pm.c_str();
@@ -362,9 +350,7 @@ bool ConvertTimeoutToTimespec(timespec& timeout, int timeout_in_seconds)
   return true;
 }
 
-/*
- * Convert a JobStatus code into a human readable form
- */
+// Convert a JobStatus code into a human readable form
 void JobstatusToAscii(int JobStatus, char* msg, int maxlen)
 {
   const char* jobstat;
@@ -459,9 +445,7 @@ void JobstatusToAscii(int JobStatus, char* msg, int maxlen)
   bstrncpy(msg, jobstat, maxlen);
 }
 
-/*
- * Convert a JobStatus code into a human readable form - gui version
- */
+// Convert a JobStatus code into a human readable form - gui version
 void JobstatusToAsciiGui(int JobStatus, char* msg, int maxlen)
 {
   const char* cnv = NULL;
@@ -508,9 +492,7 @@ void JobstatusToAsciiGui(int JobStatus, char* msg, int maxlen)
   }
 }
 
-/*
- * Convert Job Termination Status into a string
- */
+// Convert Job Termination Status into a string
 const char* job_status_to_str(int stat)
 {
   const char* str;
@@ -542,9 +524,7 @@ const char* job_status_to_str(int stat)
   return str;
 }
 
-/*
- * Convert Job Type into a string
- */
+// Convert Job Type into a string
 const char* job_type_to_str(int type)
 {
   const char* str = NULL;
@@ -617,9 +597,7 @@ const char* job_replace_to_str(int replace)
   return str;
 }
 
-/*
- * Convert ActionOnPurge to string (Truncate, Erase, Destroy)
- */
+// Convert ActionOnPurge to string (Truncate, Erase, Destroy)
 char* action_on_purge_to_string(int aop, PoolMem& ret)
 {
   if (aop & ON_PURGE_TRUNCATE) { PmStrcpy(ret, _("Truncate")); }
@@ -627,9 +605,7 @@ char* action_on_purge_to_string(int aop, PoolMem& ret)
   return ret.c_str();
 }
 
-/*
- * Convert Job Level into a string
- */
+// Convert Job Level into a string
 const char* job_level_to_str(int level)
 {
   const char* str;
@@ -700,9 +676,7 @@ const char* volume_status_to_str(const char* status)
 }
 
 
-/*
- * Encode the mode bits into a 10 character string like LS does
- */
+// Encode the mode bits into a 10 character string like LS does
 char* encode_mode(mode_t mode, char* buf)
 {
   char* cp = buf;
@@ -754,9 +728,7 @@ int DoShellExpansion(char* name, int name_len)
   Bpipe* bpipe;
   const char* shellcmd;
 
-  /*
-   * Check if any meta characters are present
-   */
+  // Check if any meta characters are present
   len = strlen(meta);
   for (i = 0; i < len; i++) {
     if (strchr(name, meta[i])) {
@@ -767,9 +739,7 @@ int DoShellExpansion(char* name, int name_len)
   if (found) {
     cmd = GetPoolMemory(PM_FNAME);
     line = GetPoolMemory(PM_FNAME);
-    /*
-     * Look for shell
-     */
+    // Look for shell
     if ((shellcmd = getenv("SHELL")) == NULL) { shellcmd = "/bin/sh"; }
     PmStrcpy(cmd, shellcmd);
     PmStrcat(cmd, " -c \"echo ");
@@ -1024,9 +994,7 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
         case 'n': /* Unadorned Job name */
           if (jcr) {
             bstrncpy(name, jcr->Job, sizeof(name));
-            /*
-             * There are three periods after the Job name
-             */
+            // There are three periods after the Job name
             for (i = 0; i < 3; i++) {
               if ((q = strrchr(name, '.')) != NULL) { *q = 0; }
             }

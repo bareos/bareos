@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MMV
- */
+// Kern Sibbald, MMV
 /**
  * @file
  * ansi_label.c routines to handle ANSI tape labels.
@@ -75,9 +73,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
 
   dev->label_type = B_BAREOS_LABEL; /* assume Bareos label */
 
-  /*
-   * Read a maximum of 5 records VOL1, HDR1, ... HDR4
-   */
+  // Read a maximum of 5 records VOL1, HDR1, ... HDR4
   for (i = 0; i < 6; i++) {
     do {
       status = dev->read(label, sizeof(label));
@@ -114,9 +110,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
             dev->label_type = B_ANSI_LABEL;
             Dmsg0(100, "Got ANSI VOL1 label\n");
           } else {
-            /*
-             * Try EBCDIC
-             */
+            // Try EBCDIC
             EbcdicToAscii(label, label, sizeof(label));
             if (bstrncmp("VOL1", label, 4)) {
               ok = true;
@@ -135,9 +129,7 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
           return VOL_NO_LABEL; /* No ANSI label */
         }
 
-        /*
-         * Compare Volume Names allow special wild card
-         */
+        // Compare Volume Names allow special wild card
         if (VolName && *VolName && *VolName != '*') {
           if (!SameLabelNames(VolName, &label[4])) {
             char* p = &label[4];
@@ -145,16 +137,12 @@ int ReadAnsiIbmLabel(DeviceControlRecord* dcr)
 
             FreeVolume(dev);
 
-            /*
-             * Store new Volume name
-             */
+            // Store new Volume name
             q = dev->VolHdr.VolumeName;
             for (int i = 0; *p != ' ' && i < 6; i++) { *q++ = *p++; }
             *q = 0;
             Dmsg0(100, "Call reserve_volume\n");
-            /*
-             * ***FIXME***  why is this reserve_volume() needed???? KES
-             */
+            //  why is this reserve_volume() needed???? KES
             reserve_volume(dcr, dev->VolHdr.VolumeName);
             dev = dcr->dev; /* may have changed in reserve_volume */
             Dmsg2(100, "Wanted ANSI Vol %s got %6s\n", VolName,
@@ -350,9 +338,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
         SerBytes("VOL1", 4);
         SerBytes(ansi_volname, 6);
 
-        /*
-         * Write VOL1 label
-         */
+        // Write VOL1 label
         if (label_type == B_IBM_LABEL) {
           AsciiToEbcdic(label, label, sizeof(label));
         } else {
@@ -370,9 +356,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
         }
       }
 
-      /*
-       * Now construct HDR1 label
-       */
+      // Now construct HDR1 label
       memset(label, ' ', sizeof(label));
       SerBegin(label, sizeof(label));
       SerBytes(labels[type], 3);
@@ -392,16 +376,12 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
       SerBytes(ansi_date(now - 24 * 3600, date), 6); /* created yesterday */
       SerBytes(" 000000Bareos              ", 27);
 
-      /*
-       * Write HDR1 label
-       */
+      // Write HDR1 label
       if (label_type == B_IBM_LABEL) {
         AsciiToEbcdic(label, label, sizeof(label));
       }
 
-      /*
-       * This could come at the end of a tape, ignore EOT errors.
-       */
+      // This could come at the end of a tape, ignore EOT errors.
       status = dev->write(label, sizeof(label));
       if (status != sizeof(label)) {
         BErrNo be;
@@ -422,17 +402,13 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
         }
       }
 
-      /*
-       * Now construct HDR2 label
-       */
+      // Now construct HDR2 label
       memset(label, ' ', sizeof(label));
       SerBegin(label, sizeof(label));
       SerBytes(labels[type], 3);
       SerBytes("2D3200032000", 12);
 
-      /*
-       * Write HDR2 label
-       */
+      // Write HDR2 label
       if (label_type == B_IBM_LABEL) {
         label[4] = 'V';
         AsciiToEbcdic(label, label, sizeof(label));
@@ -471,34 +447,26 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
   }
 }
 
-/**
- * Check a Bareos Volume name against an ANSI Volume name
- */
+// Check a Bareos Volume name against an ANSI Volume name
 static bool SameLabelNames(char* bareos_name, char* ansi_name)
 {
   char* a = ansi_name;
   char* b = bareos_name;
 
-  /*
-   * Six characters max
-   */
+  // Six characters max
   for (int i = 0; i < 6; i++) {
     if (*a == *b) {
       a++;
       b++;
       continue;
     }
-    /*
-     * ANSI labels are blank filled, Bareos's are zero terminated
-     */
+    // ANSI labels are blank filled, Bareos's are zero terminated
     if (*a == ' ' && *b == 0) { return true; }
 
     return false;
   }
 
-  /*
-   * Reached 6 characters
-   */
+  // Reached 6 characters
   b++;
   if (*b == 0) { return true; }
 

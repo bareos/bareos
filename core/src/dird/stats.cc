@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Marco van Wieringen and Philipp Storz, April 2014
- */
+// Written by Marco van Wieringen and Philipp Storz, April 2014
 /**
  * @file
  * Statistics collector thread.
@@ -42,9 +40,7 @@
 
 namespace directordaemon {
 
-/*
- * Commands received from storage daemon that need scanning
- */
+// Commands received from storage daemon that need scanning
 static char DevStats[]
     = "Devicestats [%lld]: Device=%s Read=%llu, Write=%llu, SpoolSize=%llu, "
       "NumWaiting=%lu, NumWriters=%lu, "
@@ -62,9 +58,7 @@ static pthread_t statistics_tid;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t wait_for_next_run_cond = PTHREAD_COND_INITIALIZER;
 
-/*
- * Cache the last lookup of a DeviceId.
- */
+// Cache the last lookup of a DeviceId.
 static struct cached_device {
   char device_name[MAX_NAME_LENGTH];
   DBId_t StorageId;
@@ -207,9 +201,7 @@ extern "C" void* statistics_thread(void* arg)
 
       UnlockRes(my_config);
 
-      /*
-       * Do our work retrieving the statistics from the remote SD.
-       */
+      // Do our work retrieving the statistics from the remote SD.
       if (sd->fsend("stats")) {
         while (BnetRecv(sd) >= 0) {
           Dmsg1(200, "<stored: %s", sd->msg);

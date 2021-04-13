@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, January MM
- */
+// Kern Sibbald, January MM
 #ifndef BAREOS_LIB_PARSE_CONF_H_
 #define BAREOS_LIB_PARSE_CONF_H_
 
@@ -65,15 +63,11 @@ struct ResourceTable {
   BareosResource** allocated_resource_;
 };
 
-/*
- * Common Resource definitions
- */
+// Common Resource definitions
 #define MAX_RES_NAME_LENGTH \
   (MAX_NAME_LENGTH - 1) /* maximum resource name length */
 
-/*
- * Config item flags.
- */
+// Config item flags.
 #define CFG_ITEM_REQUIRED 0x1   /* Item required */
 #define CFG_ITEM_DEFAULT 0x2    /* Default supplied */
 #define CFG_ITEM_NO_EQUALS 0x4  /* Don't scan = after name */
@@ -89,9 +83,7 @@ struct ResourceTable {
 
 enum
 {
-  /*
-   * Standard resource types. handlers in res.c
-   */
+  // Standard resource types. handlers in res.c
   /* clang-format off */
   CFG_TYPE_STR = 1,                 /* String */
   CFG_TYPE_DIR = 2,                 /* Directory */
@@ -129,9 +121,7 @@ enum
   CFG_TYPE_DIR_OR_CMD = 34,         /* Directory or command (starting with "|") */
   /* clang-format on */
 
-  /*
-   * Director resource types. handlers in dird_conf.
-   */
+  // Director resource types. handlers in dird_conf.
   CFG_TYPE_ACL = 50,              /* User Access Control List */
   CFG_TYPE_AUDIT = 51,            /* Auditing Command List */
   CFG_TYPE_AUTHPROTOCOLTYPE = 52, /* Authentication Protocol */
@@ -153,9 +143,7 @@ enum
   CFG_TYPE_ACTIONONPURGE = 68,    /* Action to perform on Purge */
   CFG_TYPE_POOLTYPE = 69,         /* Pool Type */
 
-  /*
-   * Director fileset options. handlers in dird_conf.
-   */
+  // Director fileset options. handlers in dird_conf.
   CFG_TYPE_FNAME = 80,      /* Filename */
   CFG_TYPE_PLUGINNAME = 81, /* Pluginname */
   CFG_TYPE_EXCLUDEDIR = 82, /* Exclude directory */
@@ -169,17 +157,13 @@ enum
   CFG_TYPE_DRIVETYPE = 90,  /* DriveType match criterium (Windows) */
   CFG_TYPE_META = 91,       /* Meta tag */
 
-  /*
-   * Storage daemon resource types
-   */
+  // Storage daemon resource types
   CFG_TYPE_DEVTYPE = 201,      /* Device Type */
   CFG_TYPE_MAXBLOCKSIZE = 202, /* Maximum Blocksize */
   CFG_TYPE_IODIRECTION = 203,  /* AutoXflateMode IO Direction */
   CFG_TYPE_CMPRSALGO = 204,    /* Compression Algorithm */
 
-  /*
-   * File daemon resource types
-   */
+  // File daemon resource types
   CFG_TYPE_CIPHER = 301 /* Encryption Cipher */
 };
 
@@ -427,24 +411,18 @@ bool IsTlsConfigured(TlsResource* tls_resource);
 const char* GetName(ResourceItem& item, s_kw* keywords);
 bool HasDefaultValue(ResourceItem& item, s_kw* keywords);
 
-/*
- * Data type routines
- */
+// Data type routines
 DatatypeName* GetDatatype(int number);
 const char* DatatypeToString(int type);
 const char* DatatypeToDescription(int type);
 
-/*
- * Resource routines
- */
+// Resource routines
 void IndentConfigItem(PoolMem& cfg_str,
                       int level,
                       const char* config_item,
                       bool inherited = false);
 
-/*
- * Loop through each resource of type, returning in var
- */
+// Loop through each resource of type, returning in var
 #ifdef HAVE_TYPEOF
 #  define foreach_res(var, type)                                    \
     for ((var) = NULL; ((var) = (typeof(var))my_config->GetNextRes( \

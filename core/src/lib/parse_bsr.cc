@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -106,9 +106,7 @@ struct kw_items {
   ITEM_HANDLER* handler;
 };
 
-/*
- * List of all keywords permitted in bsr files and their handlers
- */
+// List of all keywords permitted in bsr files and their handlers
 struct kw_items items[] = {{"volume", store_vol},
                            {"mediatype", store_mediatype},
                            {"client", store_client},
@@ -132,9 +130,7 @@ struct kw_items items[] = {{"volume", store_vol},
                            {"storage", store_nothing},
                            {NULL, NULL}};
 
-/*
- * Create a storagedaemon::BootStrapRecord record
- */
+// Create a storagedaemon::BootStrapRecord record
 static storagedaemon::BootStrapRecord* new_bsr()
 {
   storagedaemon::BootStrapRecord* bsr = (storagedaemon::BootStrapRecord*)malloc(
@@ -143,9 +139,7 @@ static storagedaemon::BootStrapRecord* new_bsr()
   return bsr;
 }
 
-/*
- * Format a scanner error message
- */
+// Format a scanner error message
 static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;
@@ -180,9 +174,7 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
   }
 }
 
-/*
- * Format a scanner warning message
- */
+// Format a scanner warning message
 static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;
@@ -243,9 +235,7 @@ static inline bool IsPositioningOk(storagedaemon::BootStrapRecord* bsr)
   return true;
 }
 
-/*
- * Parse Bootstrap file
- */
+// Parse Bootstrap file
 storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
 {
   LEX* lc = NULL;
@@ -273,9 +263,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
           break;
         }
         Dmsg1(300, "calling handler for %s\n", items[i].name);
-        /*
-         * Call item handler
-         */
+        // Call item handler
         bsr = items[i].handler(lc, bsr);
         i = -1;
         break;
@@ -329,9 +317,7 @@ static storagedaemon::BootStrapRecord* store_vol(
     memset(volume, 0, sizeof(storagedaemon::BsrVolume));
     bstrncpy(volume->VolumeName, p, sizeof(volume->VolumeName));
 
-    /*
-     * Add it to the end of the volume chain
-     */
+    // Add it to the end of the volume chain
     if (!bsr->volume) {
       bsr->volume = volume;
     } else {
@@ -344,9 +330,7 @@ static storagedaemon::BootStrapRecord* store_vol(
   return bsr;
 }
 
-/*
- * Shove the MediaType in each Volume in the current bsr\
- */
+// Shove the MediaType in each Volume in the current bsr
 static storagedaemon::BootStrapRecord* store_mediatype(
     LEX* lc,
     storagedaemon::BootStrapRecord* bsr)
@@ -378,9 +362,7 @@ static storagedaemon::BootStrapRecord* store_nothing(
   return bsr;
 }
 
-/*
- * Shove the Device name in each Volume in the current bsr
- */
+// Shove the Device name in each Volume in the current bsr
 static storagedaemon::BootStrapRecord* StoreDevice(
     LEX* lc,
     storagedaemon::BootStrapRecord* bsr)
@@ -416,9 +398,7 @@ static storagedaemon::BootStrapRecord* store_client(
     memset(client, 0, sizeof(storagedaemon::BsrClient));
     bstrncpy(client->ClientName, lc->str, sizeof(client->ClientName));
 
-    /*
-     * Add it to the end of the client chain
-     */
+    // Add it to the end of the client chain
     if (!bsr->client) {
       bsr->client = client;
     } else {
@@ -446,15 +426,11 @@ static storagedaemon::BootStrapRecord* store_job(
     memset(job, 0, sizeof(storagedaemon::BsrJob));
     bstrncpy(job->Job, lc->str, sizeof(job->Job));
 
-    /*
-     * Add it to the end of the client chain
-     */
+    // Add it to the end of the client chain
     if (!bsr->job) {
       bsr->job = job;
     } else {
-      /*
-       * Add to end of chain
-       */
+      // Add to end of chain
       storagedaemon::BsrJob* bc = bsr->job;
       for (; bc->next; bc = bc->next) {}
       bc->next = job;
@@ -481,15 +457,11 @@ static storagedaemon::BootStrapRecord* store_findex(
     findex->findex = lc->u.pint32_val;
     findex->findex2 = lc->u2.pint32_val;
 
-    /*
-     * Add it to the end of the chain
-     */
+    // Add it to the end of the chain
     if (!bsr->FileIndex) {
       bsr->FileIndex = findex;
     } else {
-      /*
-       * Add to end of chain
-       */
+      // Add to end of chain
       storagedaemon::BsrFileIndex* bs = bsr->FileIndex;
       for (; bs->next; bs = bs->next) {}
       bs->next = findex;
@@ -515,15 +487,11 @@ static storagedaemon::BootStrapRecord* store_jobid(
     jobid->JobId = lc->u.pint32_val;
     jobid->JobId2 = lc->u2.pint32_val;
 
-    /*
-     * Add it to the end of the chain
-     */
+    // Add it to the end of the chain
     if (!bsr->JobId) {
       bsr->JobId = jobid;
     } else {
-      /*
-       * Add to end of chain
-       */
+      // Add to end of chain
       storagedaemon::BsrJobid* bs = bsr->JobId;
       for (; bs->next; bs = bs->next) {}
       bs->next = jobid;
@@ -593,9 +561,7 @@ static storagedaemon::BootStrapRecord* store_joblevel(
   return bsr;
 }
 
-/*
- * Routine to handle Volume start/end file
- */
+// Routine to handle Volume start/end file
 static storagedaemon::BootStrapRecord* store_volfile(
     LEX* lc,
     storagedaemon::BootStrapRecord* bsr)
@@ -612,15 +578,11 @@ static storagedaemon::BootStrapRecord* store_volfile(
     volfile->sfile = lc->u.pint32_val;
     volfile->efile = lc->u2.pint32_val;
 
-    /*
-     * Add it to the end of the chain
-     */
+    // Add it to the end of the chain
     if (!bsr->volfile) {
       bsr->volfile = volfile;
     } else {
-      /*
-       * Add to end of chain
-       */
+      // Add to end of chain
       storagedaemon::BsrVolumeFile* bs = bsr->volfile;
       for (; bs->next; bs = bs->next) {}
       bs->next = volfile;
@@ -631,9 +593,7 @@ static storagedaemon::BootStrapRecord* store_volfile(
   return bsr;
 }
 
-/*
- * Routine to handle Volume start/end Block
- */
+// Routine to handle Volume start/end Block
 static storagedaemon::BootStrapRecord* store_volblock(
     LEX* lc,
     storagedaemon::BootStrapRecord* bsr)
@@ -650,15 +610,11 @@ static storagedaemon::BootStrapRecord* store_volblock(
     volblock->sblock = lc->u.pint32_val;
     volblock->eblock = lc->u2.pint32_val;
 
-    /*
-     * Add it to the end of the chain
-     */
+    // Add it to the end of the chain
     if (!bsr->volblock) {
       bsr->volblock = volblock;
     } else {
-      /*
-       * Add to end of chain
-       */
+      // Add to end of chain
       storagedaemon::BsrVolumeBlock* bs = bsr->volblock;
       for (; bs->next; bs = bs->next) {}
       bs->next = volblock;
@@ -669,9 +625,7 @@ static storagedaemon::BootStrapRecord* store_volblock(
   return bsr;
 }
 
-/*
- * Routine to handle Volume start/end address
- */
+// Routine to handle Volume start/end address
 static storagedaemon::BootStrapRecord* store_voladdr(
     LEX* lc,
     storagedaemon::BootStrapRecord* bsr)
@@ -688,9 +642,7 @@ static storagedaemon::BootStrapRecord* store_voladdr(
     voladdr->saddr = lc->u.pint64_val;
     voladdr->eaddr = lc->u2.pint64_val;
 
-    /*
-     * Add it to the end of the chain
-     */
+    // Add it to the end of the chain
     if (!bsr->voladdr) {
       bsr->voladdr = voladdr;
     } else {

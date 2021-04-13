@@ -19,12 +19,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, December 2013
- */
-/**
- * This file contains the LMDB abstraction of the accurate payload storage.
- */
+// Marco van Wieringen, December 2013
+// This file contains the LMDB abstraction of the accurate payload storage.
 
 #include "include/bareos.h"
 #include "filed/filed.h"
@@ -92,9 +88,7 @@ bool BareosAccurateFilelistLmdb::init()
       goto bail_out;
     }
 
-    /*
-     * Explicitly set the number of readers to 1.
-     */
+    // Explicitly set the number of readers to 1.
     result = mdb_env_set_maxreaders(env, 1);
     if (result) {
       Jmsg1(jcr_, M_FATAL, 0, _("Unable to set MDB maxreaders: %s\n"),
@@ -155,9 +149,7 @@ bool BareosAccurateFilelistLmdb::AddFile(char* fname,
 
   total_length = sizeof(accurate_payload) + lstat_length + chksulength_ + 2;
 
-  /*
-   * Make sure pay_load_ is large enough.
-   */
+  // Make sure pay_load_ is large enough.
   pay_load_ = CheckPoolMemorySize(pay_load_, total_length);
 
   /*
@@ -228,9 +220,7 @@ bool BareosAccurateFilelistLmdb::EndLoad()
 {
   int result;
 
-  /*
-   * Commit any pending write transactions.
-   */
+  // Commit any pending write transactions.
   if (db_rw_txn_) {
     result = mdb_txn_commit(db_rw_txn_);
     if (result != 0) {
@@ -305,9 +295,7 @@ accurate_payload* BareosAccurateFilelistLmdb::lookup_payload(char* fname)
       }
       break;
     case MDB_NOTFOUND:
-      /*
-       * Failed to find the given key.
-       */
+      // Failed to find the given key.
       break;
     default:
       break;
@@ -328,9 +316,7 @@ bool BareosAccurateFilelistLmdb::UpdatePayload(char* fname,
   chksulength_ = strlen(payload->chksum);
   total_length = sizeof(accurate_payload) + lstat_length + chksulength_ + 2;
 
-  /*
-   * Make sure pay_load_ is large enough.
-   */
+  // Make sure pay_load_ is large enough.
   pay_load_ = CheckPoolMemorySize(pay_load_, total_length);
 
   /*
@@ -418,9 +404,7 @@ bool BareosAccurateFilelistLmdb::SendBaseFileList()
 
   if (!jcr_->accurate || jcr_->getJobLevel() != L_FULL) { return true; }
 
-  /*
-   * Commit any pending write transactions.
-   */
+  // Commit any pending write transactions.
   if (db_rw_txn_) {
     result = mdb_txn_commit(db_rw_txn_);
     if (result != 0) {
@@ -481,9 +465,7 @@ bool BareosAccurateFilelistLmdb::SendDeletedList()
 
   if (!jcr_->accurate) { return true; }
 
-  /*
-   * Commit any pending write transactions.
-   */
+  // Commit any pending write transactions.
   if (db_rw_txn_) {
     result = mdb_txn_commit(db_rw_txn_);
     if (result != 0) {
@@ -538,26 +520,20 @@ bail_out:
 
 void BareosAccurateFilelistLmdb::destroy()
 {
-  /*
-   * Abort any pending read transaction.
-   */
+  // Abort any pending read transaction.
   if (db_ro_txn_) {
     mdb_txn_abort(db_ro_txn_);
     db_ro_txn_ = NULL;
   }
 
-  /*
-   * Abort any pending write transaction.
-   */
+  // Abort any pending write transaction.
   if (db_rw_txn_) {
     mdb_txn_abort(db_rw_txn_);
     db_rw_txn_ = NULL;
   }
 
   if (db_env_) {
-    /*
-     * Drop the contents of the LMDB.
-     */
+    // Drop the contents of the LMDB.
     if (db_dbi_) {
       int result;
       MDB_txn* txn;
@@ -574,9 +550,7 @@ void BareosAccurateFilelistLmdb::destroy()
       db_dbi_ = 0;
     }
 
-    /*
-     * Close the environment.
-     */
+    // Close the environment.
     mdb_env_close(db_env_);
     db_env_ = NULL;
   }
