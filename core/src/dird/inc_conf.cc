@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1066,7 +1066,6 @@ void StoreInc(LEX* lc, ResourceItem* item, int index, int pass)
   scan_err0(lc, _("Old style Include/Exclude not supported\n"));
 }
 
-#ifdef HAVE_JANSSON
 json_t* json_incexc(const int type)
 {
   return json_datatype(type, newinc_items);
@@ -1076,5 +1075,5 @@ json_t* json_options(const int type)
 {
   return json_datatype(type, options_items);
 }
-#endif
+
 } /* namespace directordaemon */

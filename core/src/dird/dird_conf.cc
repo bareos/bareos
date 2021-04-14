@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -738,7 +738,6 @@ struct s_kw PoolTypes[]
     = {{"Backup", 0},    {"Copy", 0},    {"Cloned", 0}, {"Archive", 0},
        {"Migration", 0}, {"Scratch", 0}, {NULL, 0}};
 
-#ifdef HAVE_JANSSON
 json_t* json_item(s_jl* item)
 {
   json_t* json = json_object();
@@ -945,14 +944,6 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
   return true;
 }
-#else
-bool PrintConfigSchemaJson(PoolMem& buffer)
-{
-  PmStrcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
-
-  return false;
-}
-#endif
 
 static bool CmdlineItem(PoolMem* buffer, ResourceItem* item)
 {
