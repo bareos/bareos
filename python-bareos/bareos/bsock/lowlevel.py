@@ -600,7 +600,7 @@ class LowLevel(object):
         """
         msg = self.recv_bytes(length)
         if type(msg) is str:
-            msg = bytearray(msg.decode("utf-8"), "utf-8")
+            msg = bytearray(msg.decode("utf-8", 'replace'), "utf-8")
         if type(msg) is bytes:
             msg = bytearray(msg)
         self.logger.debug(str(msg))
@@ -642,7 +642,7 @@ class LowLevel(object):
 
     def _show_result(self, msg):
         # print(msg.decode('utf-8'))
-        sys.stdout.write(msg.decode("utf-8"))
+        sys.stdout.write(msg.decode("utf-8", 'replace'))
         # add a linefeed, if there isn't one already
         if len(msg) >= 2:
             if msg[-2] != ord(b"\n"):
