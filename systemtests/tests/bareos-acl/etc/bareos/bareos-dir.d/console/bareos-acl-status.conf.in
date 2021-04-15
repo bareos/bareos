@@ -1,0 +1,5 @@
+Console {
+  Name = bareos-acl-status
+  Password = "@dir_password@"
+  CommandACL = status, .status
+}

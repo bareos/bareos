@@ -1,0 +1,4 @@
+Console {
+  Name = bareos-acl-none
+  Password = "@dir_password@"
+}
