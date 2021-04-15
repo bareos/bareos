@@ -15,6 +15,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - repaired or added all header guards in libdroplet [PR #773]
+- [Issue #1329]: If CommandACL limits any command, no messages can be read but "you have messages" is displayed. [PR #795](backport of [PR #763])
+
 
 ### Deprecated
 
