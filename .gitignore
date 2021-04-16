@@ -57,6 +57,7 @@ debian/bareos-filedaemon-python-plugin.install
 debian/bareos-filedaemon-python-plugins-common.install
 debian/bareos-filedaemon-python2-plugin.install
 debian/bareos-filedaemon-python3-plugin.install
+debian/bareos-filedaemon-postgresql-python-plugin.install
 debian/bareos-filedaemon.bareos-fd.init
 debian/bareos-filedaemon.install
 debian/bareos-filedaemon.postinst

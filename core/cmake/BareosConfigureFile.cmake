@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,16 +21,13 @@
 # configure file all *.in files
 #
 
-# if we're not the toplevel project, then we want to glob in core and debian
-# subdirectories only
-get_directory_property(have_parent PARENT_DIRECTORY)
-if(have_parent)
-  file(GLOB_RECURSE IN_FILES "${CMAKE_SOURCE_DIR}/core/*.in"
-       "${CMAKE_SOURCE_DIR}/debian/*.in"
-  )
-else()
-  file(GLOB_RECURSE IN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.in")
-endif()
+file(
+  GLOB_RECURSE IN_FILES
+  "${CMAKE_SOURCE_DIR}/debian/*.in"
+  "${CMAKE_SOURCE_DIR}/core/src/*.in"
+  "${CMAKE_SOURCE_DIR}/core/scripts/*.in"
+  "${CMAKE_SOURCE_DIR}/core/platforms/*.in"
+)
 
 foreach(in_file ${IN_FILES})
   string(REGEX REPLACE ".in\$" "" file ${in_file})

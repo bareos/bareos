@@ -21,6 +21,13 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 cmake_minimum_required(VERSION 3.12)
 project(bareos C CXX)
 
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  message(
+    FATAL_ERROR
+      "Building from bareos/core/ is not supported anymore. Use bareos/ instead"
+  )
+endif()
+
 if(POLICY CMP0054)
   cmake_policy(SET CMP0054 NEW)
 endif(POLICY CMP0054)
