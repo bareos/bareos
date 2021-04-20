@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1069,6 +1069,59 @@ void AddPrompt(UaContext* ua, std::string&& prompt)
   AddPrompt(ua, p.c_str());
 }
 
+
+/**
+ * Formats the prompts of a UaContext to be displayed in a multicolumn output
+ * when possible
+ */
+std::string FormatMulticolumnPrompts(const UaContext* ua,
+                                     const int window_width,
+                                     const int min_lines_threshold)
+{
+  size_t max_prompt_length = 1;
+
+  const int max_prompt_index_length = std::to_string(ua->num_prompts).length();
+
+  for (int i = 1; i < ua->num_prompts; i++) {
+    if (strlen(ua->prompt[i]) > max_prompt_length) {
+      max_prompt_length = strlen(ua->prompt[i]);
+    }
+  }
+
+  const int extra_formatting_characters = 4;
+  const int max_formatted_prompt_length = max_prompt_length
+                                          + max_prompt_index_length
+                                          + extra_formatting_characters;
+  const int prompts_perline
+      = std::max(1, window_width / (max_formatted_prompt_length - 1));
+
+  std::vector<char> formatted_prompt(max_formatted_prompt_length);
+
+  std::string output{};
+
+  for (int i = 1; i < ua->num_prompts; i++) {
+    std::string prompt = ua->prompt[i];
+    if (ua->num_prompts > min_lines_threshold) {
+      if (i % prompts_perline == 0 || i == ua->num_prompts - 1) {
+        snprintf(formatted_prompt.data(), max_formatted_prompt_length,
+                 "%*d: %s\n", max_prompt_index_length, i, prompt.c_str());
+      } else {
+        snprintf(formatted_prompt.data(), max_formatted_prompt_length,
+                 "%*d: %-*s ", max_prompt_index_length, i, max_prompt_length,
+                 prompt.c_str());
+      }
+    } else {
+      snprintf(formatted_prompt.data(), max_formatted_prompt_length,
+               "%*d: %s\n", max_prompt_index_length, i, prompt.c_str());
+    }
+
+    output += formatted_prompt.data();
+  }
+
+  return output;
+}
+
+
 /**
  * Display prompts and get user's choice
  *
@@ -1086,6 +1139,9 @@ int DoPrompt(UaContext* ua,
   PoolMem pmsg(PM_MESSAGE);
   BareosSocket* user = ua->UA_sock;
 
+  int window_width = 80;
+  int min_lines_threshold = 20;
+
   if (prompt) { *prompt = 0; }
   if (ua->num_prompts == 2) {
     item = 1;
@@ -1100,9 +1156,8 @@ int DoPrompt(UaContext* ua,
   if (ua->batch) {
     // First print the choices he wanted to make
     ua->SendMsg(ua->prompt[0]);
-    for (int i = 1; i < ua->num_prompts; i++) {
-      ua->SendMsg("%6d: %s\n", i, ua->prompt[i]);
-    }
+    ua->SendMsg(FormatMulticolumnPrompts(ua, window_width, min_lines_threshold)
+                    .c_str());
 
     // Now print error message
     ua->SendMsg(_("Your request has multiple choices for \"%s\". Selection is "
@@ -1115,13 +1170,17 @@ int DoPrompt(UaContext* ua,
   if (ua->api) { user->signal(BNET_START_SELECT); }
 
   ua->SendMsg(ua->prompt[0]);
-  for (int i = 1; i < ua->num_prompts; i++) {
-    if (ua->api) {
+
+
+  if (ua->api) {
+    for (int i = 1; i < ua->num_prompts; i++) {
       ua->SendMsg("%s", ua->prompt[i]);
-    } else {
-      ua->SendMsg("%6d: %s\n", i, ua->prompt[i]);
     }
+  } else {
+    ua->SendMsg(FormatMulticolumnPrompts(ua, window_width, min_lines_threshold)
+                    .c_str());
   }
+
 
   if (ua->api) { user->signal(BNET_END_SELECT); }
 

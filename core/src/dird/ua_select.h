@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,6 +54,9 @@ bool SelectClientDbr(UaContext* ua, ClientDbRecord* cr);
 void StartPrompt(UaContext* ua, const char* msg);
 void AddPrompt(UaContext* ua, const char* prompt);
 void AddPrompt(UaContext* ua, std::string&& prompt);
+std::string FormatMulticolumnPrompts(const UaContext* ua,
+                                     int window_width,
+                                     int min_lines_threshold);
 int DoPrompt(UaContext* ua,
              const char* automsg,
              const char* msg,
