@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -o pipefail
 set -u
 #
 # Start and stop the daemons to make sure our configuration does not crash them.

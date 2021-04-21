@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -o pipefail
 set -u
 #
 # Run a simple backup on a mysql database

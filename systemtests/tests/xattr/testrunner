@@ -1,8 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 set -e
+set -o pipefail
+set -u
 #
-# Run a simple backup
-#   then restore it.
+# Backup and restore a file with extended attributes.
 #
 TestName="$(basename "$(pwd)")"
 export TestName
