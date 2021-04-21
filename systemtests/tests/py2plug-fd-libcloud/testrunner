@@ -30,13 +30,9 @@ JobName=backup-bareos-fd
 S3="${S3CMD} --no-check-certificate --config ${S3CFG}"
 
 
-# Directory to backup.
-# This directory will be created by setup_data "$@"().
-BackupDirectory="${tmp}/data"
 
-# Use a tgz to setup data to be backed up.
-# Data will be placed at "${tmp}/data/".
-setup_data "$@"
+# Fill ${BackupDirectory} with data.
+setup_data
 
 # create files to test the temporary-file and the stream-download path
 prefetch_size=$(( $(grep prefetch_size etc/libcloud_config.ini | cut -d '=' -f 2) ))

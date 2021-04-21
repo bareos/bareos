@@ -22,14 +22,6 @@ JobName=backup-bareos-fd
 
 curl -k -o ${BAREOS_CONFIG_DIR}/ovirt-ca.cert "https://$OVIRT_SERVER/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
 
-# Directory to backup.
-# This directory will be created by setup_data().
-# BackupDirectory="${tmp}/data"
-
-# Use a tgz to setup data to be backed up.
-# Data will be placed at "${tmp}/data/".
-# setup_data
-
 start_test
 
 cat <<END_OF_DATA >$tmp/bconcmds

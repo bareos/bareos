@@ -27,13 +27,10 @@ JobName=backup-bareos-fd
 
 
 
-# Directory to backup.
-# This directory will be created by setup_data "$@"().
-BackupDirectory="${tmp}/data"
 
 # Use a tgz to setup data to be backuped.
-# Data will be placed at "${tmp}/data/".
-setup_data "$@"
+# Fill ${BackupDirectory} with data.
+setup_data
 
 start_test
 

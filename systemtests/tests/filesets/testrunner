@@ -31,15 +31,6 @@ JobName=backup-bareos-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-
-# Directory to backup.
-# This directory will be created by setup_data "$@"().
-#BackupDirectory="${tmp}/data"
-
-# Use a tgz to setup data to be backed up.
-# Data will be placed at "${tmp}/data/".
-#setup_data "$@"
-
 TESTS="command-server command-client include-server include-client"
 
 for i in common $TESTS; do

@@ -23,13 +23,9 @@ S3="${S3CMD} --no-check-certificate --config ${S3CFG}"
 
 $S3 mb S3://backup
 
-# Directory to backup.
-# This directory will be created by setup_data "$@"().
-BackupDirectory="${tmp}/data"
 
-# Use a tgz to setup data to be backed up.
-# Data will be placed at "${tmp}/data/".
-setup_data "$@"
+# Fill ${BackupDirectory} with data.
+setup_data
 
 if [ "$1" == "init" ]; then
   exit 0

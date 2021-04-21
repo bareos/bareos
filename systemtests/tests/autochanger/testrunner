@@ -62,8 +62,7 @@ done
 
 
 # setup backup data
-BackupDirectory="${tmp}/data"
-setup_data "$@"
+setup_data
 
 
 # create the test backup jobs

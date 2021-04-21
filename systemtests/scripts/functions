@@ -64,7 +64,7 @@ cleanup()
 #
 setup_data()
 {
-  data_dir="${tmp}/data"
+  data_dir="${BackupDirectory}"
 
   # gnu tar is required
   if [ "$(uname -s)" == SunOS ]; then

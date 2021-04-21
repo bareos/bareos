@@ -18,9 +18,6 @@ JobName=backup-bareos-fd
 "${rscripts}"/setup
 
 
-# Directory to backup.
-# This directory will be created by setup_data "$@"().
-BackupDirectory="${tmp}/data"
 BackupFile="${tmp}/file-with-xattr"
 RestoreFile="${tmp}/bareos-restores/${BackupFile}"
 
