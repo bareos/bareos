@@ -38,13 +38,14 @@
 #ifndef BAREOS_STORED_RESERVE_H_
 #define BAREOS_STORED_RESERVE_H_
 
+template <typename T>
 class alist;
 
 namespace storagedaemon {
 
 class DirectorStorage {
  public:
-  alist* device;
+  alist<const char*>* device;
   bool append;
   char name[MAX_NAME_LENGTH];
   char media_type[MAX_NAME_LENGTH];

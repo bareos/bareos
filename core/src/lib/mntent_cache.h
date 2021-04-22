@@ -42,7 +42,7 @@
 #define NR_MNTENT_HTABLE_PAGES 32
 
 struct mntent_cache_entry_t {
-  dlink link;
+  dlink<mntent_cache_entry_t> link;
   uint32_t dev{0};
   char* special{nullptr};
   char* mountpoint{nullptr};

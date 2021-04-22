@@ -20,18 +20,17 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_DLINK_H_
-#define BAREOS_LIB_DLINK_H_
+#ifndef BAREOS_LIB_OLD_DLINK_H_
+#define BAREOS_LIB_OLD_DLINK_H_
 
-template <typename T>
-struct dlink {
-  T* next;
-  T* prev;
-  dlink()
+struct old_dlink {
+  void* next;
+  void* prev;
+  old_dlink()
   {
     next = nullptr;
     prev = nullptr;
   }
 };
 
-#endif  // BAREOS_LIB_DLINK_H_
+#endif  // BAREOS_LIB_OLD_DLINK_H_

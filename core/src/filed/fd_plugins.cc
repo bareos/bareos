@@ -66,7 +66,7 @@ const char* plugin_type = "-fd.dll";
 #else
 const char* plugin_type = "-fd.so";
 #endif
-static alist* fd_plugin_list = NULL;
+static alist<Plugin*>* fd_plugin_list = NULL;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 extern int SaveFile(JobControlRecord* jcr,
@@ -258,7 +258,7 @@ static inline bool trigger_plugin_event(JobControlRecord* jcr,
                                         bEvent* event,
                                         PluginContext* ctx,
                                         void* value,
-                                        alist* plugin_ctx_list,
+                                        alist<PluginContext*>* plugin_ctx_list,
                                         int* index,
                                         bRC* rc)
 
@@ -310,7 +310,7 @@ static inline bool trigger_plugin_event(JobControlRecord* jcr,
          * that moved back a position in the alist.
          */
         if (index) {
-          UnloadPlugin(plugin_ctx_list, ctx->plugin, *index);
+          UnloadPlugin(fd_plugin_list, ctx->plugin, *index);
           *index = ((*index) - 1);
         }
         break;
@@ -349,7 +349,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   bool call_if_canceled = false;
   restore_object_pkt* rop;
   PluginContext* ctx = nullptr;
-  alist* plugin_ctx_list;
+  alist<PluginContext*>* plugin_ctx_list;
   bRC rc = bRC_OK;
 
   if (!fd_plugin_list) {
@@ -463,7 +463,7 @@ bail_out:
 bool PluginCheckFile(JobControlRecord* jcr, char* fname)
 {
   PluginContext* ctx = nullptr;
-  alist* plugin_ctx_list;
+  alist<PluginContext*>* plugin_ctx_list;
   int retval = bRC_OK;
 
   if (!fd_plugin_list || !jcr || !jcr->plugin_ctx_list
@@ -573,7 +573,7 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
   bEvent event;
   bEventType eventType;
   PluginContext* ctx = nullptr;
-  alist* plugin_ctx_list;
+  alist<PluginContext*>* plugin_ctx_list;
 
   cmd = ff_pkt->plugin;
   eventType = bEventHandleBackupFile;
@@ -660,7 +660,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
   bEventType eventType;
   PoolMem fname(PM_FNAME);
   PoolMem link(PM_FNAME);
-  alist* plugin_ctx_list;
+  alist<PluginContext*>* plugin_ctx_list;
   char flags[FOPTS_BYTES];
 
   cmd = ff_pkt->top_fname;
@@ -900,7 +900,7 @@ int PluginEstimate(JobControlRecord* jcr,
   PoolMem fname(PM_FNAME);
   PoolMem link(PM_FNAME);
   PluginContext* ctx = nullptr;
-  alist* plugin_ctx_list;
+  alist<PluginContext*>* plugin_ctx_list;
   Attributes attr;
 
   plugin_ctx_list = jcr->plugin_ctx_list;
@@ -1087,7 +1087,7 @@ bool PluginNameStream(JobControlRecord* jcr, char* name)
   bool start;
   bool retval = true;
   PluginContext* ctx = nullptr;
-  alist* plugin_ctx_list;
+  alist<PluginContext*>* plugin_ctx_list;
 
   Dmsg1(debuglevel, "Read plugin stream string=%s\n", name);
   SkipNonspaces(&p); /* skip over jcr->JobFiles */
@@ -1430,7 +1430,7 @@ BxattrExitCode PluginBuildXattrStreams(JobControlRecord* jcr,
 {
   Plugin* plugin;
 #if defined(HAVE_XATTR)
-  alist* xattr_value_list = NULL;
+  alist<xattr_t*>* xattr_value_list = NULL;
 #endif
   BxattrExitCode retval = BxattrExitCode::kError;
 
@@ -1488,7 +1488,7 @@ BxattrExitCode PluginBuildXattrStreams(JobControlRecord* jcr,
                                   + current_xattr->value_length;
 
         if (xattr_value_list == NULL) {
-          xattr_value_list = new alist(10, not_owned_by_alist);
+          xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
         }
 
         xattr_value_list->append(current_xattr);
@@ -1547,7 +1547,7 @@ BxattrExitCode PluginParseXattrStreams(JobControlRecord* jcr,
 {
 #if defined(HAVE_XATTR)
   Plugin* plugin;
-  alist* xattr_value_list = NULL;
+  alist<xattr_t*>* xattr_value_list = NULL;
 #endif
   BxattrExitCode retval = BxattrExitCode::kError;
 
@@ -1561,7 +1561,7 @@ BxattrExitCode PluginParseXattrStreams(JobControlRecord* jcr,
     xattr_t* current_xattr = nullptr;
     struct xattr_pkt xp;
 
-    xattr_value_list = new alist(10, not_owned_by_alist);
+    xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
 
     if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                                xattr_value_list)
@@ -1622,7 +1622,7 @@ static void DumpFdPlugins(FILE* fp) { DumpPlugins(fd_plugin_list, fp); }
  * This entry point is called internally by Bareos to ensure that the plugin
  * IO calls come into this code.
  */
-void LoadFdPlugins(const char* plugin_dir, alist* plugin_names)
+void LoadFdPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
 {
   Plugin* plugin;
 
@@ -1631,7 +1631,7 @@ void LoadFdPlugins(const char* plugin_dir, alist* plugin_names)
     return;
   }
 
-  fd_plugin_list = new alist(10, not_owned_by_alist);
+  fd_plugin_list = new alist<Plugin*>(10, not_owned_by_alist);
   if (!LoadPlugins((void*)&bareos_plugin_interface_version,
                    (void*)&bareos_core_functions, fd_plugin_list, plugin_dir,
                    plugin_names, plugin_type, IsPluginCompatible)) {
@@ -1769,7 +1769,7 @@ void NewPlugins(JobControlRecord* jcr)
     return;
   }
 
-  jcr->plugin_ctx_list = new alist(10, owned_by_alist);
+  jcr->plugin_ctx_list = new alist<PluginContext*>(10, owned_by_alist);
   Dmsg2(debuglevel, "Instantiate plugin_ctx=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
 

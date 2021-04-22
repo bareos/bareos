@@ -42,7 +42,7 @@
 
 #include <string>
 #include <vector>
-
+template <typename T>
 class dlist;
 
 /* import automatically generated SQL_QUERY */
@@ -492,7 +492,6 @@ typedef struct sql_field {
 class BareosDb : public BareosDbQueryEnum {
  protected:
   brwlock_t lock_; /**< Transaction lock */
-  dlink link_;     /**< Queue control */
   SQL_INTERFACETYPE db_interface_type_
       = SQL_INTERFACE_TYPE_UNKNOWN;       /**< Type of backend used */
   SQL_DBTYPE db_type_ = SQL_TYPE_UNKNOWN; /**< Database type */
@@ -1018,12 +1017,11 @@ struct SqlPoolEntry {
   time_t last_update = 0; /**< When was this connection last updated either used
                          or put back on the pool */
   BareosDb* db_handle = nullptr; /**< Connection handle to the database */
-  dlink link;                    /**< list management */
+  dlink<SqlPoolEntry> link;      /**< list management */
 };
 
 // Pooled backend list descriptor (one defined per backend defined in config)
 struct SqlPoolDescriptor {
-  dlist* pool_entries = nullptr; /**< Linked list of all pool entries */
   bool active = false;    /**< Is this an active pool, after a config reload an
                       pool is    made inactive */
   time_t last_update = 0; /**< When was this pool last updated */
@@ -1040,7 +1038,7 @@ struct SqlPoolDescriptor {
   int validate_timeout = 0; /**< Number of seconds after which an idle
                            connection should be validated */
   int nr_connections = 0;   /**< Number of active connections in the pool */
-  dlink link;               /**< list management */
+  dlink<SqlPoolDescriptor> link; /**< list management */
 };
 
 #include "include/jcr.h"

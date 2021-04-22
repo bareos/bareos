@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -587,7 +587,7 @@ bail_out:
 static bool ResolveCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
-  dlist* addr_list;
+  dlist<IPADDR>* addr_list;
   const char* errstr;
   char addresses[2048];
   char hostname[2048];
@@ -1818,7 +1818,7 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
 
   UnbashSpaces(plugin_options);
   if (!jcr->impl->plugin_options) {
-    jcr->impl->plugin_options = new alist(10, owned_by_alist);
+    jcr->impl->plugin_options = new alist<const char*>(10, owned_by_alist);
   }
   jcr->impl->plugin_options->append(strdup(plugin_options));
 

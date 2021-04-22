@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2016 Planets Communications B.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,7 +56,7 @@ static bool is_regex(std::string string_to_check)
  * Loop over the items in the alist and verify if they match the given item
  * that access was requested for.
  */
-static inline bool FindInAclList(alist* list,
+static inline bool FindInAclList(alist<const char*>* list,
                                  int acl,
                                  const char* item,
                                  int len)

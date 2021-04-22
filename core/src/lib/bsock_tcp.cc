@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -168,7 +168,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
                            int* fatal)
 {
   int sockfd = -1;
-  dlist* addr_list;
+  dlist<IPADDR>* addr_list;
   IPADDR *ipaddr, *next, *to_free;
   bool connected = false;
   int value;
@@ -194,11 +194,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
        ipaddr = (IPADDR*)addr_list->next(ipaddr)) {
     next = (IPADDR*)addr_list->next(ipaddr);
     while (next) {
-      // See if the addresses match.
-      if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen()
-          && memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
-                    ipaddr->GetSockaddrLen())
-                 == 0) {
+      if (IsSameIpAddress(ipaddr, next)) {
         to_free = next;
         next = (IPADDR*)addr_list->next(next);
         addr_list->remove(to_free);

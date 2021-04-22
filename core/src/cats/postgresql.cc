@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,7 @@
  * -----------------------------------------------------------------------
  */
 
-static dlist* db_list = NULL;
+static dlist<BareosDbPostgresql>* db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -126,7 +126,9 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord* jcr,
   result_ = NULL;
 
   // Put the db in the list.
-  if (db_list == NULL) { db_list = new dlist(this, &this->link_); }
+  if (db_list == NULL) {
+    db_list = new dlist<BareosDbPostgresql>(this, &this->link);
+  }
   db_list->append(this);
 
   /* make the queries available using the queries variable from the parent class
@@ -633,9 +635,7 @@ retry_query:
       break;
     case PGRES_FATAL_ERROR:
       Dmsg1(50, "Result status fatal: %s\n", query);
-      if (exit_on_fatal_) {
-        Emsg0(M_ERROR_TERM, 0, "Fatal database error\n");
-      }
+      if (exit_on_fatal_) { Emsg0(M_ERROR_TERM, 0, "Fatal database error\n"); }
 
       if (try_reconnect_ && !transaction_) {
         /*

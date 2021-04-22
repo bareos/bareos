@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,7 +43,7 @@ namespace filedaemon {
 /* Global variables */
 static ThreadList thread_list;
 static pthread_t tcp_server_tid;
-static alist* sock_fds = NULL;
+static alist<s_sockfd*>* sock_fds = nullptr;
 
 /**
  * Connection request. We accept connections either from the Director or the
@@ -111,7 +111,7 @@ static void* UserAgentShutdownCallback(void* bsock)
   return nullptr;
 }
 
-void StartSocketServer(dlist* addrs)
+void StartSocketServer(dlist<IPADDR>* addrs)
 {
   IPADDR* p;
 
@@ -123,7 +123,7 @@ void StartSocketServer(dlist* addrs)
   }
 
   // Permit MaxConnections connections.
-  sock_fds = new alist(10, not_owned_by_alist);
+  sock_fds = new alist<s_sockfd*>(10, not_owned_by_alist);
   BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, thread_list,
                       HandleConnectionRequest, my_config, nullptr,
                       UserAgentShutdownCallback);

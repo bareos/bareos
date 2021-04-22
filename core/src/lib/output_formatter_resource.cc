@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -198,7 +198,7 @@ void OutputFormatterResource::KeyUnquotedString(const char* name,
 
 void OutputFormatterResource::KeyMultipleStringsInOneLine(
     const char* key,
-    alist* list,
+    alist<const char*>* list,
     std::function<const char*(void* item)> GetValue,
     bool as_comment,
     bool quoted_strings)
@@ -220,10 +220,11 @@ void OutputFormatterResource::KeyMultipleStringsInOneLine(
   send_->ArrayEnd(key, "\n");
 }
 
-void OutputFormatterResource::KeyMultipleStringsInOneLine(const char* key,
-                                                          alist* list,
-                                                          bool as_comment,
-                                                          bool quoted_strings)
+void OutputFormatterResource::KeyMultipleStringsInOneLine(
+    const char* key,
+    alist<const char*>* list,
+    bool as_comment,
+    bool quoted_strings)
 {
   KeyMultipleStringsInOneLine(key, list, GetAsCString, as_comment,
                               quoted_strings);
@@ -253,7 +254,7 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLineAddItem(
 
 void OutputFormatterResource::KeyMultipleStringsOnePerLine(
     const char* key,
-    alist* list,
+    alist<const char*>* list,
     std::function<const char*(void* item)> GetValue,
     bool as_comment,
     bool quoted_strings,
@@ -279,11 +280,12 @@ void OutputFormatterResource::KeyMultipleStringsOnePerLine(
 }
 
 
-void OutputFormatterResource::KeyMultipleStringsOnePerLine(const char* key,
-                                                           alist* list,
-                                                           bool as_comment,
-                                                           bool quoted_strings,
-                                                           bool escape_strings)
+void OutputFormatterResource::KeyMultipleStringsOnePerLine(
+    const char* key,
+    alist<const char*>* list,
+    bool as_comment,
+    bool quoted_strings,
+    bool escape_strings)
 {
   KeyMultipleStringsOnePerLine(key, list, GetAsCString, as_comment,
                                quoted_strings, escape_strings);

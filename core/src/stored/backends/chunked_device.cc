@@ -146,7 +146,9 @@ bool ChunkedDevice::StartIoThreads()
   }
 
   // Start all IO threads and keep track of their thread ids in thread_ids_.
-  if (!thread_ids_) { thread_ids_ = new alist(10, owned_by_alist); }
+  if (!thread_ids_) {
+    thread_ids_ = new alist<thread_handle*>(10, owned_by_alist);
+  }
 
   for (thread_nr = 1; thread_nr <= io_threads_; thread_nr++) {
     if (pthread_create(&thread_id, NULL, io_thread, (void*)this)) {

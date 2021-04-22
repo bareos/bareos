@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,7 @@ static struct backend_interface_mapping_t {
 #      define RTLD_NOW 2
 #    endif
 
-static alist* loaded_backends = NULL;
+static alist<backend_shared_library_t*>* loaded_backends = NULL;
 static std::vector<std::string> backend_dirs;
 
 void DbSetBackendDirs(std::vector<std::string>& new_backend_dirs)
@@ -233,7 +233,8 @@ BareosDb* db_init_database(JobControlRecord* jcr,
     backend_shared_library->flush_backend = flush_backend;
 
     if (loaded_backends == NULL) {
-      loaded_backends = new alist(10, not_owned_by_alist);
+      loaded_backends
+          = new alist<backend_shared_library_t*>(10, not_owned_by_alist);
     }
     loaded_backends->append(backend_shared_library);
 
@@ -294,5 +295,5 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
 void DbFlushBackends(void) {}
 #  endif /* HAVE_DYNAMIC_CATS_BACKENDS */
-#endif   /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-            HAVE_DBI */
+#endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
+          HAVE_DBI */

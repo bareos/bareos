@@ -58,23 +58,23 @@ enum
  * On the Plugin side, it can get back the C structure and use it.
  * RestoreObject R2 -> parse() -> struct ini_items[]
  */
-
+template <class T>
+class alist;
 class ConfigFile;
 struct ini_items;
 
 // Used to store result
-class alist;
 typedef union {
   char* strval;
   char nameval[MAX_NAME_LENGTH];
   int64_t int64val;
   int32_t int32val;
-  alist* alistval;
+  alist<char*>* alistval;
   bool boolval;
 } item_value;
 
 /*
- * If no items are registred at the scan time, we detect this list from
+ * If no items are registered at the scan time, we detect this list from
  * the file itself
  */
 struct ini_items {

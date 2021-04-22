@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -102,9 +102,9 @@ int JobqInit(jobq_t* jq, int max_workers, void* (*engine)(void* arg))
   jq->valid = JOBQ_VALID;
 
   // Initialize the job queues
-  jq->waiting_jobs = new dlist(item, &item->link);
-  jq->running_jobs = new dlist(item, &item->link);
-  jq->ready_jobs = new dlist(item, &item->link);
+  jq->waiting_jobs = new dlist<jobq_item_t>(item, &item->link);
+  jq->running_jobs = new dlist<jobq_item_t>(item, &item->link);
+  jq->ready_jobs = new dlist<jobq_item_t>(item, &item->link);
 
   return 0;
 }

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,15 +23,17 @@
 #define BAREOS_DIRD_NDMP_DMA_STORAGE_H_
 
 struct ndm_job_param;
+template <typename T>
 class dlist;
+struct vol_list_t;
 
 namespace directordaemon {
 
 void DoNdmpStorageStatus(UaContext* ua, StorageResource* store, char* cmd);
-dlist* ndmp_get_vol_list(UaContext* ua,
-                         StorageResource* store,
-                         bool listall,
-                         bool scan);
+dlist<vol_list_t>* ndmp_get_vol_list(UaContext* ua,
+                                     StorageResource* store,
+                                     bool listall,
+                                     bool scan);
 slot_number_t NdmpGetNumSlots(UaContext* ua, StorageResource* store);
 drive_number_t NdmpGetNumDrives(UaContext* ua, StorageResource* store);
 bool NdmpTransferVolume(UaContext* ua,

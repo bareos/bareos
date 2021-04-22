@@ -92,19 +92,20 @@ typedef struct gen_pluginInfo {
   const char* plugin_usage;
 } PluginInformation;
 
+template <typename T>
 class alist;
 
 /* Functions */
 bool LoadPlugins(void* bareos_plugin_interface_version,
                  void* bareos_core_functions,
-                 alist* plugin_list,
+                 alist<Plugin*>* plugin_list,
                  const char* plugin_dir,
-                 alist* plugin_names,
+                 alist<const char*>* plugin_names,
                  const char* type,
                  bool IsPluginCompatible(Plugin* plugin));
-void UnloadPlugins(alist* plugin_list);
-void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index);
-int ListPlugins(alist* plugin_list, PoolMem& msg);
+void UnloadPlugins(alist<Plugin*>* plugin_list);
+void UnloadPlugin(alist<Plugin*>* plugin_list, Plugin* plugin, int index);
+int ListPlugins(alist<Plugin*>* plugin_list, PoolMem& msg);
 
 /* Each daemon can register a debug hook that will be called
  * after a fatal signal
@@ -113,6 +114,6 @@ typedef void(dbg_plugin_hook_t)(Plugin* plug, FILE* fp);
 void DbgPluginAddHook(dbg_plugin_hook_t* fct);
 typedef void(dbg_print_plugin_hook_t)(FILE* fp);
 void DbgPrintPluginAddHook(dbg_print_plugin_hook_t* fct);
-void DumpPlugins(alist* plugin_list, FILE* fp);
+void DumpPlugins(alist<Plugin*>* plugin_list, FILE* fp);
 
 #endif  // BAREOS_LIB_PLUGINS_H_

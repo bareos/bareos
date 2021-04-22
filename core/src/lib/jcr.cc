@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +66,7 @@ static void JcrTimeoutCheck(watchdog_t* self);
 int num_jobs_run;
 
 static std::vector<std::weak_ptr<JobControlRecord>> job_control_record_cache;
-static dlist* job_control_record_chain = nullptr;
+static dlist<JobControlRecord>* job_control_record_chain = nullptr;
 static int watch_dog_timeout = 0;
 
 static std::mutex jcr_chain_mutex;
@@ -168,7 +168,7 @@ void RegisterJobEndCallback(JobControlRecord* jcr,
   item->JobEndCb = JobEndCb;
   item->ctx = ctx;
 
-  jcr->job_end_callbacks.push((void*)item);
+  jcr->job_end_callbacks.push(item);
 }
 
 // Pop each job_callback_item and process it.
@@ -191,7 +191,8 @@ JobControlRecord::JobControlRecord()
   Dmsg0(100, "Construct JobControlRecord\n");
 
   MessageQueueItem* item = nullptr;
-  msg_queue = new dlist(item, &item->link_);  // calculate offset
+  msg_queue
+      = new dlist<MessageQueueItem>(item, &item->link_);  // calculate offset
 
   int status;
   if ((status = pthread_mutex_init(&msg_queue_mutex, nullptr)) != 0) {
@@ -909,7 +910,7 @@ void InitJcrChain()
 {
   JobControlRecord* jcr = nullptr;
   if (!job_control_record_chain) {
-    job_control_record_chain = new dlist(jcr, &jcr->link);
+    job_control_record_chain = new dlist<JobControlRecord>(jcr, &jcr->link);
   }
 }
 

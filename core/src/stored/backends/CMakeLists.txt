@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -40,7 +40,9 @@ if(${HAVE_GLUSTERFS})
 endif()
 
 if(TARGET droplet)
-  add_library(bareossd-chunked SHARED ordered_cbuf.cc chunked_device.cc)
+  add_library(
+    bareossd-chunked SHARED ordered_cbuf.cc chunked_device.cc old_dlist.cc
+  )
   target_link_libraries(bareossd-chunked droplet)
   install(TARGETS bareossd-chunked DESTINATION ${backenddir})
 

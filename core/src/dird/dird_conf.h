@@ -35,8 +35,11 @@
 #include "lib/resource_item.h"
 #include "lib/tls_conf.h"
 
+template <typename T>
 class dlist;
 struct json_t;
+class RunScript;
+class IPADDR;
 
 namespace directordaemon {
 
@@ -108,16 +111,15 @@ class DirectorResource
  public:
   DirectorResource() = default;
   virtual ~DirectorResource() = default;
-
-  dlist* DIRaddrs = nullptr;
-  dlist* DIRsrc_addr = nullptr;      /* Address to source connections from */
-  char* query_file = nullptr;        /* SQL query file */
-  char* working_directory = nullptr; /* WorkingDirectory */
-  char* scripts_directory = nullptr; /* ScriptsDirectory */
-  char* plugin_directory = nullptr;  /* Plugin Directory */
-  alist* plugin_names = nullptr;     /* Plugin names to load */
-  char* pid_directory = nullptr;     /* PidDirectory */
-  char* subsys_directory = nullptr;  /* SubsysDirectory */
+  dlist<IPADDR>* DIRaddrs = nullptr;
+  dlist<IPADDR>* DIRsrc_addr = nullptr; /* Address to source connections from */
+  char* query_file = nullptr;           /* SQL query file */
+  char* working_directory = nullptr;    /* WorkingDirectory */
+  char* scripts_directory = nullptr;    /* ScriptsDirectory */
+  char* plugin_directory = nullptr;     /* Plugin Directory */
+  alist<const char*>* plugin_names = nullptr; /* Plugin names to load */
+  char* pid_directory = nullptr;              /* PidDirectory */
+  char* subsys_directory = nullptr;           /* SubsysDirectory */
   std::vector<std::string> backend_directories;
   MessagesResource* messages = nullptr; /* Daemon message handler */
   uint32_t MaxConcurrentJobs = 0; /* Max concurrent jobs for whole director */
@@ -134,7 +136,8 @@ class DirectorResource
                          dumping the config */
   bool ndmp_snooping = false; /* NDMP Protocol specific snooping enabled */
   bool auditing = false;      /* Auditing enabled */
-  alist* audit_events = nullptr;   /* Specific audit events to enable */
+  alist<const char*>* audit_events
+      = nullptr;                   /* Specific audit events to enable */
   uint32_t ndmp_loglevel = 0;      /* NDMP Protocol specific loglevel to use */
   uint32_t subscriptions = 0;      /* Number of subscribtions available */
   uint32_t subscriptions_used = 0; /* Number of subscribtions used */
@@ -204,13 +207,13 @@ class ProfileResource : public BareosResource {
   ProfileResource() = default;
   virtual ~ProfileResource() = default;
 
-  alist* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
+  alist<const char*>* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
 };
 
 struct UserAcl {
   BareosResource* corresponding_resource = nullptr;
-  alist* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
-  alist* profiles = nullptr;       /**< Pointers to profile resources */
+  alist<const char*>* ACL_lists[Num_ACL] = {0}; /**< Pointers to ACLs */
+  alist<const char*>* profiles = nullptr; /**< Pointers to profile resources */
 };
 
 // Console Resource
@@ -341,7 +344,8 @@ class StorageResource
   char* media_type = nullptr; /**< Media Type provided by this Storage */
   char* ndmp_changer_device = nullptr; /**< If DIR controls storage directly
                                 (NDMP_NATIVE) changer device used */
-  alist* device = nullptr;           /**< Alternate devices for this Storage */
+  alist<const char*>* device
+      = nullptr;                     /**< Alternate devices for this Storage */
   int32_t MaxConcurrentJobs = 0;     /**< Maximum concurrent jobs */
   int32_t MaxConcurrentReadJobs = 0; /**< Maximum concurrent jobs reading */
   bool enabled = false;              /**< Set if device is enabled */
@@ -460,7 +464,7 @@ class JobResource : public BareosResource {
   ClientResource* client = nullptr;     /**< Who to backup */
   FilesetResource* fileset = nullptr;   /**< What to backup -- Fileset */
   CatalogResource* catalog = nullptr;   /**< Which Catalog to use */
-  alist* storage = nullptr; /**< Where is device -- list of Storage to be used */
+  alist<StorageResource*>* storage = nullptr; /**< Where is device -- list of Storage to be used */
   PoolResource* pool = nullptr;       /**< Where is media -- Media Pool */
   PoolResource* full_pool = nullptr;  /**< Pool for Full backups */
   PoolResource* vfull_pool = nullptr; /**< Pool for Virtual Full backups */
@@ -470,12 +474,12 @@ class JobResource : public BareosResource {
   char* selection_pattern = nullptr;
   JobResource* verify_job = nullptr; /**< Job name to verify */
   JobResource* jobdefs = nullptr;    /**< Job defaults */
-  alist* run_cmds = nullptr;         /**< Run commands */
-  alist* RunScripts = nullptr; /**< Run {client} program {after|before} Job */
-  alist* FdPluginOptions = nullptr; /**< Generic FD plugin options used by this Job */
-  alist* SdPluginOptions = nullptr; /**< Generic SD plugin options used by this Job */
-  alist* DirPluginOptions = nullptr;           /**< Generic DIR plugin options used by this Job */
-  alist* base = nullptr; /**< Base jobs */
+  alist<const char*>* run_cmds = nullptr;         /**< Run commands */
+  alist<RunScript*>* RunScripts = nullptr; /**< Run {client} program {after|before} Job */
+  alist<const char*>* FdPluginOptions = nullptr; /**< Generic FD plugin options used by this Job */
+  alist<const char*>* SdPluginOptions = nullptr; /**< Generic SD plugin options used by this Job */
+  alist<const char*>* DirPluginOptions = nullptr;           /**< Generic DIR plugin options used by this Job */
+  alist<const char*>* base = nullptr; /**< Base jobs */
 
   bool allow_mixed_priority = false; /**< Allow jobs with higher priority concurrently with this */
   bool where_use_regexp = false;  /**< true if RestoreWhere is a BareosRegex */
@@ -517,21 +521,21 @@ struct FileOptions {
   FileOptions() = default;
   virtual ~FileOptions() = default;
 
-  char opts[MAX_FOPTS] = {0}; /**< Options string */
-  alist regex;                /**< Regex string(s) */
-  alist regexdir;             /**< Regex string(s) for directories */
-  alist regexfile;            /**< Regex string(s) for files */
-  alist wild;                 /**< Wild card strings */
-  alist wilddir;              /**< Wild card strings for directories */
-  alist wildfile;             /**< Wild card strings for files */
-  alist wildbase;             /**< Wild card strings for files without '/' */
-  alist base;                 /**< List of base names */
-  alist fstype;               /**< File system type limitation */
-  alist Drivetype;            /**< Drive type limitation */
-  alist meta;                 /**< Backup meta information */
-  char* reader = nullptr;     /**< Reader program */
-  char* writer = nullptr;     /**< Writer program */
-  char* plugin = nullptr;     /**< Plugin program */
+  char opts[MAX_FOPTS] = {0};   /**< Options string */
+  alist<const char*> regex;     /**< Regex string(s) */
+  alist<const char*> regexdir;  /**< Regex string(s) for directories */
+  alist<const char*> regexfile; /**< Regex string(s) for files */
+  alist<const char*> wild;      /**< Wild card strings */
+  alist<const char*> wilddir;   /**< Wild card strings for directories */
+  alist<const char*> wildfile;  /**< Wild card strings for files */
+  alist<const char*> wildbase;  /**< Wild card strings for files without '/' */
+  alist<const char*> base;      /**< List of base names */
+  alist<const char*> fstype;    /**< File system type limitation */
+  alist<const char*> Drivetype; /**< Drive type limitation */
+  alist<const char*> meta;      /**< Backup meta information */
+  char* reader = nullptr;       /**< Reader program */
+  char* writer = nullptr;       /**< Writer program */
+  char* plugin = nullptr;       /**< Plugin program */
 };
 
 // This is either an include item or an exclude item
@@ -542,9 +546,9 @@ class IncludeExcludeItem {
 
   FileOptions* current_opts = nullptr;
   std::vector<FileOptions*> file_options_list;
-  alist name_list;   /**< Filename list -- holds char * */
-  alist plugin_list; /**< Filename list for plugins */
-  alist ignoredir;   /**< Ignoredir string */
+  alist<const char*> name_list;   /**< Filename list -- holds char * */
+  alist<const char*> plugin_list; /**< Filename list for plugins */
+  alist<const char*> ignoredir;   /**< Ignoredir string */
 };
 
 // FileSet Resource
@@ -617,7 +621,8 @@ class PoolResource : public BareosResource {
   uint64_t MigrationHighBytes = 0;  /* When migration starts */
   uint64_t MigrationLowBytes = 0;   /* When migration stops */
   PoolResource* NextPool = nullptr; /* Next pool for migration */
-  alist* storage = nullptr; /* Where is device -- list of Storage to be used */
+  alist<StorageResource*>* storage
+      = nullptr;            /* Where is device -- list of Storage to be used */
   bool use_catalog = false; /* Maintain catalog for media */
   bool catalog_files = false;          /* Maintain file entries in catalog */
   bool use_volume_once = false;        /* Write on volume only once */

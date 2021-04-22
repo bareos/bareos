@@ -26,6 +26,7 @@
 
 class ConfigurationParser;
 class ThreadList;
+class IPADDR;
 
 enum class BnetServerState
 {
@@ -36,13 +37,18 @@ enum class BnetServerState
   kEnded
 };
 
-class alist;
+template <typename T>
 class dlist;
 
+struct s_sockfd {
+  int fd;
+  int port;
+};
+
 void BnetThreadServerTcp(
-    dlist* addr_list,
+    dlist<IPADDR>* addr_list,
     int max_clients,
-    alist* sockfds,
+    alist<s_sockfd*>* sockfds,
     ThreadList& thread_list,
     std::function<void*(ConfigurationParser* config, void* bsock)>
         HandleConnectionRequest,

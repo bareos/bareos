@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,17 +24,24 @@
 
 #include "ndmp/smc.h"
 
+template <class T>
 class alist;
 
 namespace directordaemon {
 
-void CopyRwstorage(JobControlRecord* jcr, alist* storage, const char* where);
+void CopyRwstorage(JobControlRecord* jcr,
+                   alist<StorageResource*>* storage,
+                   const char* where);
 void SetRwstorage(JobControlRecord* jcr, UnifiedStorageResource* store);
 void FreeRwstorage(JobControlRecord* jcr);
-void CopyWstorage(JobControlRecord* jcr, alist* storage, const char* where);
+void CopyWstorage(JobControlRecord* jcr,
+                  alist<StorageResource*>* storage,
+                  const char* where);
 void SetWstorage(JobControlRecord* jcr, UnifiedStorageResource* store);
 void FreeWstorage(JobControlRecord* jcr);
-void CopyRstorage(JobControlRecord* jcr, alist* storage, const char* where);
+void CopyRstorage(JobControlRecord* jcr,
+                  alist<StorageResource*>* storage,
+                  const char* where);
 void SetRstorage(JobControlRecord* jcr, UnifiedStorageResource* store);
 void FreeRstorage(JobControlRecord* jcr);
 void SetPairedStorage(JobControlRecord* jcr);
@@ -42,7 +49,7 @@ void FreePairedStorage(JobControlRecord* jcr);
 bool HasPairedStorage(JobControlRecord* jcr);
 bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info);
 void StorageStatus(UaContext* ua, StorageResource* store, char* cmd);
-int StorageCompareVolListEntry(void* e1, void* e2);
+int StorageCompareVolListEntry(vol_list_t* e1, vol_list_t* e2);
 changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
                                               StorageResource* store,
                                               bool listall,

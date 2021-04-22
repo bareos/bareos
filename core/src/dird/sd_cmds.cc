@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -252,17 +252,17 @@ char* get_volume_name_from_SD(UaContext* ua,
  *
  * If a drive is loaded, the slot *should* be empty
  */
-dlist* native_get_vol_list(UaContext* ua,
-                           StorageResource* store,
-                           bool listall,
-                           bool scan)
+dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
+                                       StorageResource* store,
+                                       bool listall,
+                                       bool scan)
 {
   int nr_fields;
   char* bp;
   char dev_name[MAX_NAME_LENGTH];
   char *field1, *field2, *field3, *field4, *field5;
   vol_list_t* vl = nullptr;
-  dlist* vol_list;
+  dlist<vol_list_t>* vol_list;
   BareosSocket* sd = nullptr;
 
   ua->jcr->impl->res.write_storage = store;
@@ -278,7 +278,7 @@ dlist* native_get_vol_list(UaContext* ua,
     sd->fsend(changerlistcmd, dev_name);
   }
 
-  vol_list = new dlist(vl, &vl->link);
+  vol_list = new dlist<vol_list_t>(vl, &vl->link);
 
   // Read and organize list of Volumes
   while (BnetRecv(sd) >= 0) {

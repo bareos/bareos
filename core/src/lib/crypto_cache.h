@@ -39,7 +39,7 @@ struct s_crypto_cache_hdr {
 };
 
 struct crypto_cache_entry_t {
-  dlink link;
+  dlink<crypto_cache_entry_t> link;
   char VolumeName[MAX_NAME_LENGTH];
   char EncryptionKey[MAX_NAME_LENGTH];
   utime_t added;

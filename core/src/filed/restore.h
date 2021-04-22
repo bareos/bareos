@@ -24,7 +24,7 @@
 #define BAREOS_FILED_RESTORE_H_
 
 #include "findlib/bfile.h"
-
+template <class T>
 class alist;
 
 namespace filedaemon {
@@ -62,7 +62,7 @@ struct r_ctx {
   int32_t type{0};                    /* file type FT_ */
   Attributes* attr{nullptr};          /* Pointer to attributes */
   bool extract{false};                /* set when extracting */
-  alist* delayed_streams{nullptr};    /* streams that should be restored as last */
+  alist<DelayedDataStream*>* delayed_streams{nullptr};    /* streams that should be restored as last */
   SIGNATURE* sig{nullptr};            /* Cryptographic signature (if any) for file */
   CRYPTO_SESSION* cs{nullptr};        /* Cryptographic session data (if any) for file */
   RestoreCipherContext cipher_ctx{0}; /* Cryptographic restore context (if any) for file */

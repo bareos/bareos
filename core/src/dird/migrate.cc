@@ -479,21 +479,21 @@ static int UniqueDbidHandler(void* ctx, int num_fields, char** row)
 }
 
 struct uitem {
-  dlink link;
+  dlink<uitem> link;
   char* item;
 };
 
-static int ItemCompare(void* item1, void* item2)
+static int ItemCompare(uitem* item1, uitem* item2)
 {
-  uitem* i1 = (uitem*)item1;
-  uitem* i2 = (uitem*)item2;
+  uitem* i1 = item1;
+  uitem* i2 = item2;
 
   return strcmp(i1->item, i2->item);
 }
 
 static int UniqueNameHandler(void* ctx, int num_fields, char** row)
 {
-  dlist* list = (dlist*)ctx;
+  dlist<uitem>* list = (dlist<uitem>*)ctx;
 
   uitem* new_item = (uitem*)malloc(sizeof(uitem));
   new (new_item) uitem();
@@ -502,7 +502,7 @@ static int UniqueNameHandler(void* ctx, int num_fields, char** row)
   new_item->item = strdup(row[0]);
   Dmsg1(dbglevel, "Unique_name_hdlr Item=%s\n", row[0]);
 
-  item = (uitem*)list->binary_insert((void*)new_item, ItemCompare);
+  item = list->binary_insert(new_item, ItemCompare);
   if (item != new_item) { /* already in list */
     free(new_item->item);
     free((char*)new_item);
@@ -618,7 +618,7 @@ static bool regex_find_jobids(JobControlRecord* jcr,
                               const char* query2,
                               const char* type)
 {
-  dlist* item_chain;
+  dlist<uitem>* item_chain;
   uitem* item = NULL;
   uitem* last_item = NULL;
   regex_t preg{};
@@ -627,7 +627,7 @@ static bool regex_find_jobids(JobControlRecord* jcr,
   bool ok = false;
   PoolMem query(PM_MESSAGE);
 
-  item_chain = new dlist(item, &item->link);
+  item_chain = new dlist<uitem>(item, &item->link);
   if (!jcr->impl->res.job->selection_pattern) {
     Jmsg(jcr, M_FATAL, 0, _("No %s %s selection pattern specified.\n"),
          jcr->get_OperationName(), type);
@@ -1301,7 +1301,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
             ->resource_name_);
 
   if (jcr->impl->remote_replicate) {
-    alist* write_storage_list;
+    alist<StorageResource*>* write_storage_list;
 
     /*
      * See if we need to apply any bandwidth limiting.
@@ -1509,7 +1509,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
 
 bail_out:
   if (jcr->impl->remote_replicate && mig_jcr) {
-    alist* write_storage_list;
+    alist<StorageResource*>* write_storage_list;
 
     // Swap the write_storage_list between the jcr and the mig_jcr.
     write_storage_list = mig_jcr->impl->res.write_storage_list;

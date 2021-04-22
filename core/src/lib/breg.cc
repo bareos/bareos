@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,7 +63,7 @@ void FreeBregexp(BareosRegex* self)
 
 /* Free a bregexps alist
  */
-void FreeBregexps(alist* bregexps)
+void FreeBregexps(alist<BareosRegex*>* bregexps)
 {
   Dmsg0(500, "bregexp: freeing all BareosRegex object\n");
 
@@ -75,7 +75,9 @@ void FreeBregexps(alist* bregexps)
 
 /* Apply all regexps to fname
  */
-bool ApplyBregexps(const char* fname, alist* bregexps, char** result)
+bool ApplyBregexps(const char* fname,
+                   alist<BareosRegex*>* bregexps,
+                   char** result)
 {
   BareosRegex* elt = nullptr;
   bool ok = false;
@@ -94,10 +96,10 @@ bool ApplyBregexps(const char* fname, alist* bregexps, char** result)
 /* return an alist of BareosRegex or return NULL if it's not a
  * where=!tmp!opt!ig,!temp!opt!i
  */
-alist* get_bregexps(const char* where)
+alist<BareosRegex*>* get_bregexps(const char* where)
 {
   char* p = (char*)where;
-  alist* list = new alist(10, not_owned_by_alist);
+  alist<BareosRegex*>* list = new alist<BareosRegex*>(10, not_owned_by_alist);
   BareosRegex* reg;
 
   reg = NewBregexp(p);

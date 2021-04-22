@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -171,7 +171,8 @@ int CryptoKeypairLoadKey(X509_KEYPAIR* keypair,
 
 void CryptoKeypairFree(X509_KEYPAIR* keypair) {}
 
-CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher, alist* pubkeys)
+CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
+                                   alist<X509_KEYPAIR*>* pubkeys)
 {
   return NULL;
 }
@@ -185,7 +186,7 @@ bool CryptoSessionEncode(CRYPTO_SESSION* cs, uint8_t* dest, uint32_t* length)
 
 crypto_error_t CryptoSessionDecode(const uint8_t* data,
                                    uint32_t length,
-                                   alist* keypairs,
+                                   alist<X509_KEYPAIR*>* keypairs,
                                    CRYPTO_SESSION** session)
 {
   return CRYPTO_ERROR_INTERNAL;

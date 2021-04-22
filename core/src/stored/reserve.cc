@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -193,7 +193,6 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
   int32_t Copy, Stripe;
   DirectorStorage* store;
   ReserveContext rctx;
-  alist* dirstore;
 
   memset(&rctx, 0, sizeof(ReserveContext));
   rctx.jcr = jcr;
@@ -202,14 +201,15 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
    * If there are multiple devices, the director sends us
    * use_device for each device that it wants to use.
    */
-  jcr->impl->reserve_msgs = new alist(10, not_owned_by_alist);
+  jcr->impl->reserve_msgs = new alist<const char*>(10, not_owned_by_alist);
   do {
     Dmsg1(debuglevel, "<dird: %s", dir->msg);
     ok = sscanf(dir->msg, use_storage, StoreName.c_str(), media_type.c_str(),
                 pool_name.c_str(), pool_type.c_str(), &append, &Copy, &Stripe)
          == 7;
     if (!ok) { break; }
-    dirstore = new alist(10, not_owned_by_alist);
+    alist<DirectorStorage*>* dirstore
+        = new alist<DirectorStorage*>(10, not_owned_by_alist);
     if (append) {
       jcr->impl->write_store = dirstore;
     } else {
@@ -223,7 +223,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     store = new DirectorStorage;
     dirstore->append(store);
     memset(store, 0, sizeof(DirectorStorage));
-    store->device = new alist(10);
+    store->device = new alist<const char*>(10);
     bstrncpy(store->name, StoreName, sizeof(store->name));
     bstrncpy(store->media_type, media_type, sizeof(store->media_type));
     bstrncpy(store->pool_name, pool_name, sizeof(store->pool_name));
@@ -406,7 +406,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
   bool ok = false;
   DirectorStorage* store = nullptr;
   char* device_name = nullptr;
-  alist* dirstore;
+  alist<DirectorStorage*>* dirstore;
   DeviceControlRecord* dcr = jcr->impl->dcr;
 
   if (rctx.append) {
@@ -427,7 +427,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
    * start by looking at all the Volumes in the volume list.
    */
   if (!IsVolListEmpty() && rctx.append && rctx.PreferMountedVols) {
-    dlist* temp_vol_list;
+    dlist<VolumeReservationItem>* temp_vol_list;
     VolumeReservationItem* vol = NULL;
     temp_vol_list = dup_vol_list(jcr);
 
@@ -1135,16 +1135,15 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
 static void QueueReserveMessage(JobControlRecord* jcr)
 {
   int i;
-  alist* msgs;
-  char* msg;
+  const char* msg;
 
   jcr->lock();
 
-  msgs = jcr->impl->reserve_msgs;
+  auto msgs = jcr->impl->reserve_msgs;
   if (!msgs) { goto bail_out; }
   // Look for duplicate message.  If found, do not insert
   for (i = msgs->size() - 1; i >= 0; i--) {
-    msg = (char*)msgs->get(i);
+    msg = msgs->get(i);
     if (!msg) { goto bail_out; }
 
     // Comparison based on 4 digit message number
@@ -1161,11 +1160,10 @@ bail_out:
 // Pop and release any reservations messages
 static void PopReserveMessages(JobControlRecord* jcr)
 {
-  alist* msgs;
   char* msg;
 
   jcr->lock();
-  msgs = jcr->impl->reserve_msgs;
+  auto msgs = jcr->impl->reserve_msgs;
   if (!msgs) { goto bail_out; }
   while ((msg = (char*)msgs->pop())) { free(msg); }
 bail_out:

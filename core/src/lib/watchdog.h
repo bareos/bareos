@@ -45,7 +45,7 @@ struct s_watchdog_t {
   void (*destructor)(struct s_watchdog_t* wd);
   void* data;
   /* Private data below - don't touch outside of watchdog.c */
-  dlink link;
+  dlink<s_watchdog_t> link;
   utime_t next_fire;
 };
 typedef struct s_watchdog_t watchdog_t;

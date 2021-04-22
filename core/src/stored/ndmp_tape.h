@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,13 +21,14 @@
 #ifndef BAREOS_STORED_NDMP_TAPE_H_
 #define BAREOS_STORED_NDMP_TAPE_H_
 
+template <typename T>
 class dlist;
 
 namespace storagedaemon {
 
 void EndOfNdmpBackup(JobControlRecord* jcr);
 void EndOfNdmpRestore(JobControlRecord* jcr);
-int StartNdmpThreadServer(dlist* addr_list, int max_clients);
+int StartNdmpThreadServer(dlist<IPADDR>* addr_list, int max_clients);
 void StopNdmpThreadServer();
 
 } /* namespace storagedaemon */

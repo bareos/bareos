@@ -70,7 +70,7 @@ struct xattr_build_data_t {
   uint32_t nr_saved;
   POOLMEM* content;
   uint32_t content_length;
-  alist* link_cache;
+  alist<xattr_link_cache_entry_t*>* link_cache;
 };
 
 struct xattr_parse_data_t {
@@ -94,21 +94,22 @@ struct XattrData {
 
 // Upperlimit on a xattr internal buffer
 #define XATTR_BUFSIZ 1024
+template <class T>
 class alist;
 
 BxattrExitCode SendXattrStream(JobControlRecord* jcr,
                                XattrData* xattr_data,
                                int stream);
-void XattrDropInternalTable(alist* xattr_value_list);
+void XattrDropInternalTable(alist<xattr_t*>* xattr_value_list);
 uint32_t SerializeXattrStream(JobControlRecord* jcr,
                               XattrData* xattr_data,
                               uint32_t expected_serialize_len,
-                              alist* xattr_value_list);
+                              alist<xattr_t*>* xattr_value_list);
 BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
                                       XattrData* xattr_data,
                                       char* content,
                                       uint32_t content_length,
-                                      alist* xattr_value_list);
+                                      alist<xattr_t*>* xattr_value_list);
 BxattrExitCode BuildXattrStreams(JobControlRecord* jcr,
                                  struct XattrData* xattr_data,
                                  FindFilesPacket* ff_pkt);

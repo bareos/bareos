@@ -131,33 +131,33 @@ struct findFOPTS {
   char AccurateOpts[MAX_OPTS]{}; /**< Accurate mode options */
   char BaseJobOpts[MAX_OPTS]{};  /**< Basejob mode options */
   char* plugin{};                /**< Plugin that handle this section */
-  alist regex;                   /**< Regex string(s) */
-  alist regexdir;                /**< Regex string(s) for directories */
-  alist regexfile;               /**< Regex string(s) for files */
-  alist wild;                    /**< Wild card strings */
-  alist wilddir;                 /**< Wild card strings for directories */
-  alist wildfile;                /**< Wild card strings for files */
-  alist wildbase;                /**< Wild card strings for basenames */
-  alist base;                    /**< List of base names */
-  alist fstype;                  /**< File system type limitation */
-  alist Drivetype;               /**< Drive type limitation */
+  alist<regex_t*> regex;         /**< Regex string(s) */
+  alist<regex_t*> regexdir;      /**< Regex string(s) for directories */
+  alist<regex_t*> regexfile;     /**< Regex string(s) for files */
+  alist<const char*> wild;       /**< Wild card strings */
+  alist<const char*> wilddir;    /**< Wild card strings for directories */
+  alist<const char*> wildfile;   /**< Wild card strings for files */
+  alist<const char*> wildbase;   /**< Wild card strings for basenames */
+  alist<const char*> base;       /**< List of base names */
+  alist<const char*> fstype;     /**< File system type limitation */
+  alist<const char*> Drivetype;  /**< Drive type limitation */
 };
 
 // This is either an include item or an exclude item
 struct findIncludeExcludeItem {
-  findFOPTS* current_opts; /**< Points to current options structure */
-  alist opts_list;         /**< Options list */
-  dlist name_list;         /**< Filename list -- holds dlistString */
-  dlist plugin_list;       /**< Plugin list -- holds dlistString */
-  alist ignoredir;         /**< Ignore directories with this file(s) */
+  findFOPTS* current_opts;        /**< Points to current options structure */
+  alist<findFOPTS*> opts_list;    /**< Options list */
+  dlist<dlistString> name_list;   /**< Filename list -- holds dlistString */
+  dlist<dlistString> plugin_list; /**< Plugin list -- holds dlistString */
+  alist<const char*> ignoredir;   /**< Ignore directories with this file(s) */
 };
 
 // FileSet Resource
 struct findFILESET {
   int state;
   findIncludeExcludeItem* incexe; /**< Current item */
-  alist include_list;
-  alist exclude_list;
+  alist<findIncludeExcludeItem*> include_list;
+  alist<findIncludeExcludeItem*> exclude_list;
 };
 
 // OSX resource fork.
@@ -246,8 +246,8 @@ struct FindFilesPacket {
   struct s_sz_matching* size_match{nullptr}; /**< Perform size matching ? */
   bool cmd_plugin{false}; /**< Set if we have a command plugin */
   bool opt_plugin{false}; /**< Set if we have an option plugin */
-  alist fstypes;          /**< Allowed file system types */
-  alist drivetypes;       /**< Allowed drive types */
+  alist<const char*> fstypes;          /**< Allowed file system types */
+  alist<const char*> drivetypes;       /**< Allowed drive types */
 
   // List of all hard linked files found
   htable* linkhash{nullptr};       /**< Hard linked files */

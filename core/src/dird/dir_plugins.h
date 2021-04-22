@@ -47,6 +47,7 @@
 #include "include/bc_types.h"
 #include "lib/plugins.h"
 
+template <typename T>
 class alist;
 
 namespace directordaemon {
@@ -151,7 +152,7 @@ typedef struct s_dirbareosFuncs {
 
 // Bareos Core Routines -- not used within a plugin
 #ifdef DIRECTOR_DAEMON
-void LoadDirPlugins(const char* plugin_dir, alist* plugin_names);
+void LoadDirPlugins(const char* plugin_dir, alist<const char*>* plugin_names);
 void UnloadDirPlugins(void);
 int ListDirPlugins(PoolMem& msg);
 void DispatchNewPluginOptions(JobControlRecord* jcr);

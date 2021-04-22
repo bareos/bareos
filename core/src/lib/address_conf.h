@@ -84,18 +84,18 @@ class IPADDR {
   const char* build_address_str(char* buf, int blen, bool print_port = true);
 
   /* private */
-  dlink link;
+  dlink<IPADDR> link;
 };
 /* clang-format on */
 
-void InitDefaultAddresses(dlist** addr, const char* port);
-void FreeAddresses(dlist* addrs);
+void InitDefaultAddresses(dlist<IPADDR>** addr, const char* port);
+void FreeAddresses(dlist<IPADDR>* addrs);
 
-const char* GetFirstAddress(dlist* addrs, char* outputbuf, int outlen);
-int GetFirstPortNetOrder(dlist* addrs);
-int GetFirstPortHostOrder(dlist* addrs);
+const char* GetFirstAddress(dlist<IPADDR>* addrs, char* outputbuf, int outlen);
+int GetFirstPortNetOrder(dlist<IPADDR>* addrs);
+int GetFirstPortHostOrder(dlist<IPADDR>* addrs);
 
-int AddAddress(dlist** out,
+int AddAddress(dlist<IPADDR>** out,
                IPADDR::i_type type,
                unsigned short defaultport,
                int family,
@@ -103,7 +103,8 @@ int AddAddress(dlist** out,
                const char* port_str,
                char* buf,
                int buflen);
-const char* BuildAddressesString(dlist* addrs,
+bool IsSameIpAddress(IPADDR* first, IPADDR* second);
+const char* BuildAddressesString(dlist<IPADDR>* addrs,
                                  char* buf,
                                  int blen,
                                  bool print_port = true);

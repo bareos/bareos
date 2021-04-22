@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -139,7 +139,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
  * First some generic functions for OSes that use the same xattr encoding
  * scheme. Currently for all OSes except for Solaris.
  */
-void XattrDropInternalTable(alist* xattr_value_list)
+void XattrDropInternalTable(alist<xattr_t*>* xattr_value_list)
 {
   xattr_t* current_xattr = nullptr;
 
@@ -174,7 +174,7 @@ void XattrDropInternalTable(alist* xattr_value_list)
 uint32_t SerializeXattrStream(JobControlRecord* jcr,
                               XattrData* xattr_data,
                               uint32_t expected_serialize_len,
-                              alist* xattr_value_list)
+                              alist<xattr_t*>* xattr_value_list)
 {
   xattr_t* current_xattr = nullptr;
   ser_declare;
@@ -217,7 +217,7 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
                                       XattrData* xattr_data,
                                       char* content,
                                       uint32_t content_length,
-                                      alist* xattr_value_list)
+                                      alist<xattr_t*>* xattr_value_list)
 {
   unser_declare;
   xattr_t* current_xattr;
@@ -330,7 +330,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
   int32_t xattr_list_len, xattr_value_len;
   uint32_t expected_serialize_len = 0;
   xattr_t* current_xattr;
-  alist* xattr_value_list = NULL;
+  alist<xattr_t*>* xattr_value_list = NULL;
   BxattrExitCode retval = BxattrExitCode::kError;
 
   // First get the length of the available list with extended attributes.
@@ -501,7 +501,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
     }
 
     if (xattr_value_list == NULL) {
-      xattr_value_list = new alist(10, not_owned_by_alist);
+      xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
     }
 
     xattr_value_list->append(current_xattr);
@@ -553,10 +553,10 @@ static BxattrExitCode aix_parse_xattr_streams(JobControlRecord* jcr,
                                               uint32_t content_length)
 {
   xattr_t* current_xattr;
-  alist* xattr_value_list;
+  alist<xattr_t*>* xattr_value_list;
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  xattr_value_list = new alist(10, not_owned_by_alist);
+  xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
 
   if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                              xattr_value_list)
@@ -648,7 +648,7 @@ static BxattrExitCode irix_build_xattr_streams(JobControlRecord* jcr,
   attrlist_t* attrlist;
   attrlist_ent_t* attrlist_ent;
   xattr_t* current_xattr;
-  alist* xattr_value_list = NULL;
+  alist<xattr_t*>* xattr_value_list = NULL;
   uint32_t expected_serialize_len = 0;
   BxattrExitCode retval = BxattrExitCode::kError;
   POOLMEM* xattrbuf = GetMemory(ATTR_MAX_VALUELEN);
@@ -797,7 +797,7 @@ static BxattrExitCode irix_build_xattr_streams(JobControlRecord* jcr,
                                   + current_xattr->value_length;
 
         if (xattr_value_list == NULL) {
-          xattr_value_list = new alist(10, not_owned_by_alist);
+          xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
         }
 
         xattr_value_list->append(current_xattr);
@@ -855,10 +855,10 @@ static BxattrExitCode irix_parse_xattr_streams(JobControlRecord* jcr,
   char* bp;
   int cnt, cmp_size, name_space_index, flags;
   xattr_t* current_xattr;
-  alist* xattr_value_list;
+  alist<xattr_t*>* xattr_value_list;
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  xattr_value_list = new alist(10, not_owned_by_alist);
+  xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
 
   if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                              xattr_value_list)
@@ -1021,7 +1021,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
   int32_t xattr_list_len, xattr_value_len;
   uint32_t expected_serialize_len = 0;
   xattr_t* current_xattr;
-  alist* xattr_value_list = NULL;
+  alist<xattr_t*>* xattr_value_list = NULL;
   BxattrExitCode retval = BxattrExitCode::kError;
 
   // First get the length of the available list with extended attributes.
@@ -1214,7 +1214,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
     }
 
     if (xattr_value_list == NULL) {
-      xattr_value_list = new alist(10, not_owned_by_alist);
+      xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
     }
 
     xattr_value_list->append(current_xattr);
@@ -1266,10 +1266,10 @@ static BxattrExitCode generic_parse_xattr_streams(JobControlRecord* jcr,
                                                   uint32_t content_length)
 {
   xattr_t* current_xattr = nullptr;
-  alist* xattr_value_list;
+  alist<xattr_t*>* xattr_value_list;
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  xattr_value_list = new alist(10, not_owned_by_alist);
+  xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
 
   if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                              xattr_value_list)
@@ -1400,7 +1400,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
   char* current_attrnamespace = NULL;
   char current_attrname[XATTR_BUFSIZ], current_attrtuple[XATTR_BUFSIZ];
   xattr_t* current_xattr;
-  alist* xattr_value_list = NULL;
+  alist<xattr_t*>* xattr_value_list = NULL;
   BxattrExitCode retval = BxattrExitCode::kError;
 
   // Loop over all available xattr namespaces.
@@ -1636,7 +1636,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
       }
 
       if (xattr_value_list == NULL) {
-        xattr_value_list = new alist(10, not_owned_by_alist);
+        xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
       }
 
       xattr_value_list->append(current_xattr);
@@ -1696,12 +1696,12 @@ static BxattrExitCode bsd_parse_xattr_streams(JobControlRecord* jcr,
                                               uint32_t content_length)
 {
   xattr_t* current_xattr = nullptr;
-  alist* xattr_value_list;
+  alist<xattr_t*>* xattr_value_list;
   int current_attrnamespace, cnt;
   char *attrnamespace, *attrname;
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  xattr_value_list = new alist(10, not_owned_by_alist);
+  xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
 
   if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                              xattr_value_list)
@@ -1812,7 +1812,7 @@ static BxattrExitCode tru64_build_xattr_streams(JobControlRecord* jcr,
   int32_t xattr_list_len, xattrbuf_size, xattrbuf_min_size;
   uint32_t expected_serialize_len = 0;
   xattr_t* current_xattr;
-  alist* xattr_value_list = NULL;
+  alist<xattr_t*>* xattr_value_list = NULL;
   struct proplistname_args prop_args;
   BxattrExitCode retval = BxattrExitCode::kError;
   POOLMEM* xattrbuf = GetPoolMemory(PM_MESSAGE);
@@ -1965,7 +1965,7 @@ static BxattrExitCode tru64_build_xattr_streams(JobControlRecord* jcr,
         += sizeof(current_xattr->value_length) + current_xattr->value_length;
 
     if (xattr_value_list == NULL) {
-      xattr_value_list = new alist(10, not_owned_by_alist);
+      xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
     }
 
     xattr_value_list->append(current_xattr);
@@ -2016,10 +2016,10 @@ static BxattrExitCode tru64_parse_xattr_streams(JobControlRecord* jcr,
   char *bp, *xattrbuf = NULL;
   int32_t xattrbuf_size, cnt;
   xattr_t* current_xattr;
-  alist* xattr_value_list;
+  alist<xattr_t*>* xattr_value_list;
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  xattr_value_list = new alist(10, not_owned_by_alist);
+  xattr_value_list = new alist<xattr_t*>(10, not_owned_by_alist);
 
   if (UnSerializeXattrStream(jcr, xattr_data, content, content_length,
                              xattr_value_list)
@@ -2251,7 +2251,8 @@ static inline void add_xattr_link_cache_entry(XattrData* xattr_data,
   ptr->target = strdup(target);
 
   if (!xattr_data->u.build->link_cache) {
-    xattr_data->u.build->link_cache = new alist(10, not_owned_by_alist);
+    xattr_data->u.build->link_cache
+        = new alist<xattr_t*>(10, not_owned_by_alist);
   }
   xattr_data->u.build->link_cache->append(ptr);
 }
@@ -2410,7 +2411,7 @@ static BxattrExitCode solaris_save_xattr_acl(JobControlRecord* jcr,
     *acl_text = NULL;
   }
   retval = BxattrExitCode::kSuccess;
-#      else    /* HAVE_EXTENDED_ACL */
+#      else /* HAVE_EXTENDED_ACL */
   int n;
   aclent_t* acls = NULL;
 
@@ -2465,9 +2466,9 @@ static BxattrExitCode solaris_save_xattr_acl(JobControlRecord* jcr,
     *acl_text = NULL;
   }
   retval = BxattrExitCode::kSuccess;
-#      endif   /* HAVE_EXTENDED_ACL */
+#      endif /* HAVE_EXTENDED_ACL */
 
-#    else  /* HAVE_ACL */
+#    else /* HAVE_ACL */
   retval = BxattrExitCode::kSuccess;
 #    endif /* HAVE_ACL */
 
@@ -3014,7 +3015,7 @@ static BxattrExitCode solaris_restore_xattr_acl(JobControlRecord* jcr,
 
 #      endif /* HAVE_EXTENDED_ACL */
 }
-#    endif   /* HAVE_ACL */
+#    endif /* HAVE_ACL */
 
 static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
                                              XattrData* xattr_data,

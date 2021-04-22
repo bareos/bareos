@@ -33,7 +33,7 @@ struct DeviceRecord;
 /* clang-format off */
 struct Read_Context {
   DeviceRecord* rec = nullptr;    /**< Record currently being processed */
-  dlist* recs = nullptr;          /**< Linked list of record packets open */
+  dlist<DeviceRecord>* recs = nullptr;          /**< Linked list of record packets open */
   Session_Label sessrec;          /**< Start Of Session record info */
   uint32_t records_processed = 0; /**< Number of records processed from this block */
   int32_t lastFileIndex = 0;      /**< Last File Index processed */

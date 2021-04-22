@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -380,7 +380,7 @@ static char* get_previous_keyword(int current_point, int nb)
 }
 
 struct ItemList {
-  alist list; /* holds the completion list */
+  alist<const char*> list; /* holds the completion list */
 };
 
 static ItemList* items = NULL;
@@ -464,8 +464,8 @@ static char* item_generator(const char* text,
                             const char* item,
                             cpl_item_t type)
 {
-  static int list_index, len;
-  char* name;
+  static std::size_t list_index, len;
+  const char* name;
 
   if (!state) {
     list_index = 0;
@@ -1075,7 +1075,7 @@ int main(int argc, char* argv[])
     TerminateConsole(0);
     return 1;
 #endif /* HAVE_PAM */
-  }    /* kMessageIdPamRequired */
+  } /* kMessageIdPamRequired */
 
   if (response_id == kMessageIdOk) {
     ConsoleOutput(response_args.JoinReadable().c_str());

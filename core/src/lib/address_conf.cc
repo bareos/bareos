@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -263,7 +263,19 @@ const char* IPADDR::build_address_str(char* buf,
   return buf;
 }
 
-const char* BuildAddressesString(dlist* addrs,
+
+// check if two addresses are the same
+bool IsSameIpAddress(IPADDR* first, IPADDR* second)
+{
+  if (first == nullptr || second == nullptr) { return false; }
+  return (first->GetSockaddrLen() == second->GetSockaddrLen()
+          && memcmp(first->get_sockaddr(), second->get_sockaddr(),
+                    first->GetSockaddrLen())
+                 == 0);
+}
+
+
+const char* BuildAddressesString(dlist<IPADDR>* addrs,
                                  char* buf,
                                  int blen,
                                  bool print_port /*=true*/)
@@ -285,12 +297,12 @@ const char* BuildAddressesString(dlist* addrs,
   return buf;
 }
 
-const char* GetFirstAddress(dlist* addrs, char* outputbuf, int outlen)
+const char* GetFirstAddress(dlist<IPADDR>* addrs, char* outputbuf, int outlen)
 {
   return ((IPADDR*)(addrs->first()))->GetAddress(outputbuf, outlen);
 }
 
-int GetFirstPortNetOrder(dlist* addrs)
+int GetFirstPortNetOrder(dlist<IPADDR>* addrs)
 {
   if (!addrs) {
     return 0;
@@ -299,7 +311,7 @@ int GetFirstPortNetOrder(dlist* addrs)
   }
 }
 
-int GetFirstPortHostOrder(dlist* addrs)
+int GetFirstPortHostOrder(dlist<IPADDR>* addrs)
 {
   if (!addrs) {
     return 0;
@@ -308,7 +320,8 @@ int GetFirstPortHostOrder(dlist* addrs)
   }
 }
 
-int AddAddress(dlist** out,
+
+int AddAddress(dlist<IPADDR>** out,
                IPADDR::i_type type,
                unsigned short defaultport,
                int family,
@@ -319,15 +332,15 @@ int AddAddress(dlist** out,
 {
   IPADDR* iaddr;
   IPADDR* jaddr;
-  dlist* hostaddrs;
+  dlist<IPADDR>* hostaddrs;
   unsigned short port;
   IPADDR::i_type intype = type;
 
   buf[0] = 0;
-  dlist* addrs = (dlist*)(*(out));
+  dlist<IPADDR>* addrs = (dlist<IPADDR>*)(*(out));
   if (!addrs) {
     IPADDR* tmp = 0;
-    addrs = *out = new dlist(tmp, &tmp->link);
+    addrs = *out = new dlist<IPADDR>(tmp, &tmp->link);
   }
 
   type = (type == IPADDR::R_SINGLE_PORT || type == IPADDR::R_SINGLE_ADDR)
@@ -395,11 +408,7 @@ int AddAddress(dlist** out,
       IPADDR* clone;
       /* for duplicates */
       foreach_dlist (jaddr, addrs) {
-        if (iaddr->GetSockaddrLen() == jaddr->GetSockaddrLen()
-            && !memcmp(iaddr->get_sockaddr(), jaddr->get_sockaddr(),
-                       iaddr->GetSockaddrLen())) {
-          goto skip; /* no price */
-        }
+        if (IsSameIpAddress(iaddr, jaddr)) { goto skip; /* no price */ }
       }
       clone = new IPADDR(*iaddr);
       clone->SetType(type);
@@ -413,7 +422,7 @@ int AddAddress(dlist** out,
   return 1;
 }
 
-void InitDefaultAddresses(dlist** out, const char* port)
+void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
 {
   char buf[1024];
   unsigned short sport = str_to_int32(port);
@@ -424,7 +433,7 @@ void InitDefaultAddresses(dlist** out, const char* port)
   }
 }
 
-void FreeAddresses(dlist* addrs)
+void FreeAddresses(dlist<IPADDR>* addrs)
 {
   while (!addrs->empty()) {
     IPADDR* ptr = (IPADDR*)addrs->first();

@@ -120,14 +120,14 @@ class OutputFormatter {
   FILTER_HANDLER* filter_func = nullptr;
   void* send_ctx = nullptr;
   void* filter_ctx = nullptr;
-  alist* filters = nullptr;
+  alist<of_filter_tuple*>* filters = nullptr;
   char* hidden_columns = nullptr;
   PoolMem* result_message_plain = nullptr;
   static const unsigned int max_message_length_shown_in_error = 1024;
   int num_rows_filtered = 0;
 #if HAVE_JANSSON
   json_t* result_json = nullptr;
-  alist* result_stack_json = nullptr;
+  alist<json_t*>* result_stack_json = nullptr;
   json_t* message_object_json = nullptr;
 #endif
 

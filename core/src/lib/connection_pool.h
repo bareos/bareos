@@ -28,7 +28,7 @@
 #ifndef BAREOS_LIB_CONNECTION_POOL_H_
 #define BAREOS_LIB_CONNECTION_POOL_H_
 
-
+template <typename T>
 class alist;
 class BareosSocket;
 
@@ -73,11 +73,11 @@ class ConnectionPool {
                              BareosSocket* socket,
                              bool authenticated = true);
   Connection* remove(const char* name, int timeout_in_seconds = 0);
-  alist* get_as_alist();
+  alist<Connection*>* get_as_alist();
   void cleanup();
 
  private:
-  alist* connections_;
+  alist<Connection*>* connections_;
   int WaitForNewConnection(timespec& timeout);
   bool add(Connection* connection);
   bool remove(Connection* connection);

@@ -25,9 +25,13 @@
 #define BAREOS_STORED_JCR_PRIVATE_H_
 
 #include "stored/read_ctx.h"
+#include "stored/stored_conf.h"
 
 #define SD_APPEND 1
 #define SD_READ 0
+
+template <class T>
+class alist;
 
 namespace storagedaemon {
 
@@ -35,6 +39,7 @@ struct VolumeList;
 class DeviceControlRecord;
 class DirectorResource;
 struct BootStrapRecord;
+class DirectorStorage;
 
 struct ReadSession {
   READ_CTX* rctx{};
@@ -86,10 +91,10 @@ struct JobControlRecordPrivate {
   int64_t spool_size{};           /**< Spool size for this job */
   bool spool_data{};              /**< Set to spool data */
   storagedaemon::DirectorResource* director{}; /**< Director resource */
-  alist* plugin_options{};        /**< Specific Plugin Options sent by DIR */
-  alist* write_store{};           /**< List of write storage devices sent by DIR */
-  alist* read_store{};            /**< List of read devices sent by DIR */
-  alist* reserve_msgs{};          /**< Reserve fail messages */
+  alist<const char*>* plugin_options{};        /**< Specific Plugin Options sent by DIR */
+  alist<storagedaemon::DirectorStorage*>* write_store{};           /**< List of write storage devices sent by DIR */
+  alist<storagedaemon::DirectorStorage*>* read_store{};            /**< List of read devices sent by DIR */
+  alist<const char*>* reserve_msgs{};          /**< Reserve fail messages */
   bool acquired_storage{};        /**< Did we acquire our reserved storage already or not */
   bool PreferMountedVols{};       /**< Prefer mounted vols rather than new */
   bool insert_jobmedia_records{}; /**< Need to insert job media records */

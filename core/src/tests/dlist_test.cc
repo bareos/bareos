@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,7 +41,7 @@
 
 struct MYJCR {
   char* buf;
-  dlink link;
+  dlink<MYJCR> link;
 };
 
 /*
@@ -50,22 +50,19 @@ struct MYJCR {
  * (otherwise loffset must be calculated)
  */
 struct ListItem {
-  dlink link;
+  dlink<ListItem> link;
   char* buf;
 };
-
-static int MyCompare(void* item1, void* item2)
+template <typename T>
+static int MyCompare(T* item1, T* item2)
 {
-  MYJCR *jcr1, *jcr2;
   int comp;
-  jcr1 = (MYJCR*)item1;
-  jcr2 = (MYJCR*)item2;
-  comp = strcmp(jcr1->buf, jcr2->buf);
+  comp = strcmp(item1->buf, item2->buf);
   return comp;
 }
 
 // we expect, that the list is filled with strings of numbers from 0 to n.
-void TestForeachDlist(dlist* list)
+void TestForeachDlist(dlist<ListItem>* list)
 {
   ListItem* val = NULL;
   char buf[30];
@@ -79,7 +76,7 @@ void TestForeachDlist(dlist* list)
   }
 }
 
-void DlistFill(dlist* list, int max)
+void DlistFill(dlist<ListItem>* list, int max)
 {
   ListItem* jcr = NULL;
   char buf[30];
@@ -106,7 +103,7 @@ void FreeItem(ListItem* item)
   }
 }
 
-void FreeDlist(dlist* list)
+void FreeDlist(dlist<ListItem>* list)
 {
   ListItem* val = NULL;
   int number = list->size();
@@ -124,7 +121,7 @@ void FreeDlist(dlist* list)
 
 void test_dlist_dynamic()
 {
-  dlist* list = NULL;
+  dlist<ListItem>* list = NULL;
   ListItem* item = NULL;
 
   // NULL->size() will segfault
@@ -134,7 +131,7 @@ void test_dlist_dynamic()
   TestForeachDlist(list);
 
   // create empty list
-  list = new dlist();
+  list = new dlist<ListItem>();
   EXPECT_EQ(list->size(), 0);
 
   // does foreach work for empty lists?
@@ -170,7 +167,7 @@ void test_dlist_dynamic()
 TEST(dlist, dlist)
 {
   char buf[30];
-  dlist* jcr_chain;
+  dlist<MYJCR>* jcr_chain;
   MYJCR* jcr = NULL;
   MYJCR* jcr1;
   MYJCR* save_jcr = NULL;
@@ -178,7 +175,7 @@ TEST(dlist, dlist)
   int count;
   int index = 0;
 
-  jcr_chain = (dlist*)malloc(sizeof(dlist));
+  jcr_chain = (dlist<MYJCR>*)malloc(sizeof(dlist<MYJCR>));
   jcr_chain->init(jcr, &jcr->link);
 
   for (int i = 0; i < 20; i++) {
@@ -210,7 +207,7 @@ TEST(dlist, dlist)
    *  of jcr objects.  Within a jcr object, there is a buf
    *  that points to a malloced string containing data
    */
-  jcr_chain = new dlist(jcr, &jcr->link);
+  jcr_chain = new dlist<MYJCR>(jcr, &jcr->link);
   for (int i = 0; i < 20; i++) {
     sprintf(buf, "%d", i);
     jcr = (MYJCR*)malloc(sizeof(MYJCR));
@@ -238,7 +235,7 @@ TEST(dlist, dlist)
 
 
   /* Now do a binary insert for the list */
-  jcr_chain = new dlist(jcr, &jcr->link);
+  jcr_chain = new dlist<MYJCR>(jcr, &jcr->link);
 #define CNT 6
   strcpy(buf, "ZZZ");
   count = 0;
@@ -248,7 +245,7 @@ TEST(dlist, dlist)
         count++;
         jcr = (MYJCR*)malloc(sizeof(MYJCR));
         jcr->buf = strdup(buf);
-        jcr1 = (MYJCR*)jcr_chain->binary_insert(jcr, MyCompare);
+        jcr1 = jcr_chain->binary_insert(jcr, MyCompare<MYJCR>);
         EXPECT_EQ(jcr, jcr1);
         buf[1]--;
       }
@@ -287,7 +284,7 @@ TEST(dlist, dlist)
    *  allocates a dlist node and stores the string directly in
    *  it.
    */
-  auto chain = std::make_unique<dlist>();
+  auto chain = std::make_unique<dlist<dlistString>>();
   chain->append(new_dlistString("This is a long test line"));
 #define CNT 6
   strcpy(buf, "ZZZ");

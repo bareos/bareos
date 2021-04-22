@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -333,7 +333,7 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
             // Lookup the drive in the old list.
             vls.element_address = vl1->element_address;
             vl2 = (vol_list_t*)vol_list->contents->binary_search(
-                (void*)&vls, StorageCompareVolListEntry);
+                &vls, StorageCompareVolListEntry);
             if (vl2 && vl2->slot_status == slot_status_t::kSlotStatusFull
                 && vl2->currently_loaded_slot_number
                        == vl1->currently_loaded_slot_number) {
@@ -376,7 +376,7 @@ static inline changer_vol_list_t* scan_slots_for_volnames(
             // Lookup the slot in the old list.
             vls.element_address = vl1->element_address;
             vl2 = (vol_list_t*)vol_list->contents->binary_search(
-                (void*)&vls, StorageCompareVolListEntry);
+                &vls, StorageCompareVolListEntry);
             if (vl2 && vl2->slot_status == slot_status_t::kSlotStatusFull
                 && vl2->bareos_slot_number == vl1->bareos_slot_number) {
               // Volume in slot is the same copy the volume name.

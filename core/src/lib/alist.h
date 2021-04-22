@@ -20,16 +20,14 @@
    02110-1301, USA.
 */
 // Kern Sibbald, June MMIII
-/**
- * @file
+/* @file
  * alist header file
  */
 #ifndef BAREOS_LIB_ALIST_H_
 #define BAREOS_LIB_ALIST_H_
 
 
-/**
- * There is a lot of extra casting here to work around the fact
+/* There is a lot of extra casting here to work around the fact
  * that some compilers (Sun and Visual C++) do not accept
  * (void *) as an lvalue on the left side of an equal.
  *
@@ -80,6 +78,11 @@
          (inx)--)
 #endif
 
+
+#include <string>
+#include <list>
+
+
 // Second arg of init
 enum
 {
@@ -87,12 +90,13 @@ enum
   not_owned_by_alist = false
 };
 
-/**
- * Array list -- much like a simplified STL vector
+/* Array list -- much like a simplified STL vector
  *               array of pointers to inserted items
  */
+
+template <class T>
 class alist {
-  void** items = nullptr;
+  T* items = nullptr;
   int num_items = 0;
   int max_items = 0;
   int num_grow = 0;
@@ -101,44 +105,52 @@ class alist {
   void GrowList(void);
 
  public:
+  // Ueb disable non pointer initialization
   alist(int num = 1, bool own = true);
   ~alist();
   void init(int num = 1, bool own = true);
-  void append(void* item);
-  void prepend(void* item);
-  void* remove(int index);
-  void* get(int index);
+  void append(T item);
+  void prepend(T item);
+  T remove(int index);
+  T get(int index);
   bool empty() const;
-  void* prev();
-  void* next();
-  void* first();
-  void* last();
-  void* operator[](int index) const;
+  T prev();
+  T next();
+  T first();
+  T last();
+  T operator[](int index) const;
   int current() const { return cur_item; }
   int size() const;
   void destroy();
   void grow(int num);
 
-  // Use it as a stack, pushing and poping from the end
-  void push(void* item) { append(item); }
-  void* pop() { return remove(num_items - 1); }
+  std::list<std::string> to_std_list_string();
+
+  // Use it as a stack, pushing and popping from the end
+  void push(T item) { append(item); }
+  T pop() { return remove(num_items - 1); }
 };
 
 // Define index operator []
-inline void* alist::operator[](int index) const
+template <class T>
+inline T alist<T>::operator[](int index) const
 {
   if (index < 0 || index >= num_items) { return nullptr; }
   return items[index];
 }
 
-inline bool alist::empty() const { return num_items == 0; }
+template <class T>
+inline bool alist<T>::empty() const
+{
+  return num_items == 0;
+}
 
-/**
- * This allows us to do explicit initialization,
+/* This allows us to do explicit initialization,
  *   allowing us to mix C++ classes inside malloc'ed
  *   C structures. Define before called in constructor.
  */
-inline void alist::init(int num, bool own)
+template <class T>
+inline void alist<T>::init(int num, bool own)
 {
   items = nullptr;
   num_items = 0;
@@ -148,18 +160,22 @@ inline void alist::init(int num, bool own)
   cur_item = 0;
 }
 
-/* Constructor */
-inline alist::alist(int num, bool own) { init(num, own); }
-
-/* Destructor */
-inline alist::~alist() { destroy(); }
-
-
-/* Current size of list */
-inline int alist::size() const
+template <class T>
+inline alist<T>::alist(int num, bool own)
 {
-  /*
-   * Check for null pointer, which allows test
+  init(num, own);
+}
+
+template <class T>
+inline alist<T>::~alist()
+{
+  destroy();
+}
+
+template <class T>
+inline int alist<T>::size() const
+{
+  /* Check for null pointer, which allows test
    *  on size to succeed even if nothing put in
    *  alist.
    */
@@ -167,6 +183,128 @@ inline int alist::size() const
 }
 
 /* How much to grow by each time */
-inline void alist::grow(int num) { num_grow = num; }
+template <class T>
+inline void alist<T>::grow(int num)
+{
+  num_grow = num;
+}
+
+/* Private grow list function. Used to insure that
+ *   at least one more "slot" is available.
+ */
+template <class T>
+void alist<T>::GrowList()
+{
+  if (items == NULL) {
+    if (num_grow == 0) { num_grow = 1; /* default if not initialized */ }
+    items = (T*)malloc(num_grow * sizeof(T));
+    max_items = num_grow;
+  } else if (num_items == max_items) {
+    max_items += num_grow;
+    items = (T*)realloc(items, max_items * sizeof(T));
+  }
+}
+
+template <class T>
+T alist<T>::first()
+{
+  cur_item = 1;
+  if (num_items == 0) {
+    return NULL;
+  } else {
+    return items[0];
+  }
+}
+
+template <class T>
+T alist<T>::last()
+{
+  if (num_items == 0) {
+    return NULL;
+  } else {
+    cur_item = num_items;
+    return items[num_items - 1];
+  }
+}
+
+template <class T>
+T alist<T>::next()
+{
+  if (cur_item >= num_items) {
+    return NULL;
+  } else {
+    return items[cur_item++];
+  }
+}
+
+template <class T>
+T alist<T>::prev()
+{
+  if (cur_item <= 1) {
+    return NULL;
+  } else {
+    return items[--cur_item];
+  }
+}
+
+// prepend an item to the list -- i.e. add to beginning
+template <class T>
+void alist<T>::prepend(T item)
+{
+  GrowList();
+  if (num_items == 0) {
+    items[num_items++] = item;
+    return;
+  }
+  for (int i = num_items; i > 0; i--) { items[i] = items[i - 1]; }
+  items[0] = item;
+  num_items++;
+}
+
+
+// Append an item to the list
+template <class T>
+void alist<T>::append(T item)
+{
+  GrowList();
+  items[num_items++] = item;
+}
+
+template <class T>
+/* Remove an item from the list */
+T alist<T>::remove(int index)
+{
+  T item;
+  if (index < 0 || index >= num_items) { return NULL; }
+  item = items[index];
+  num_items--;
+  for (int i = index; i < num_items; i++) { items[i] = items[i + 1]; }
+  return item;
+}
+
+
+/* Get the index item -- we should probably allow real indexing here */
+template <class T>
+T alist<T>::get(int index)
+{
+  if (index < 0 || index >= num_items) { return NULL; }
+  return items[index];
+}
+
+/* Destroy the list and its contents */
+template <class T>
+void alist<T>::destroy()
+{
+  if (items) {
+    if (own_items) {
+      for (int i = 0; i < num_items; i++) {
+        free((void*)(items[i]));
+        items[i] = NULL;
+      }
+    }
+    free(items);
+    items = NULL;
+  }
+}
 
 #endif  // BAREOS_LIB_ALIST_H_

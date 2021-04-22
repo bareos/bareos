@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -55,8 +55,8 @@ static bool wd_is_init = false;
 static brwlock_t lock; /* watchdog lock */
 
 static pthread_t wd_tid;
-static dlist* wd_queue;
-static dlist* wd_inactive;
+static dlist<watchdog_t>* wd_queue;
+static dlist<watchdog_t>* wd_inactive;
 
 /*
  * Returns: 0 if the current thread is NOT the watchdog
@@ -92,8 +92,8 @@ int StartWatchdog(void)
     Jmsg1(NULL, M_ABORT, 0, _("Unable to initialize watchdog lock. ERR=%s\n"),
           be.bstrerror(errstat));
   }
-  wd_queue = new dlist(dummy, &dummy->link);
-  wd_inactive = new dlist(dummy, &dummy->link);
+  wd_queue = new dlist<watchdog_t>(dummy, &dummy->link);
+  wd_inactive = new dlist<watchdog_t>(dummy, &dummy->link);
   wd_is_init = true;
 
   if ((status = pthread_create(&wd_tid, NULL, watchdog_thread, NULL)) != 0) {
@@ -133,9 +133,9 @@ int StopWatchdog(void)
   status = pthread_join(wd_tid, NULL);
 
   while (!wd_queue->empty()) {
-    void* item = wd_queue->first();
+    watchdog_t* item = wd_queue->first();
     wd_queue->remove(item);
-    p = (watchdog_t*)item;
+    p = item;
     if (p->destructor != NULL) { p->destructor(p); }
     free(p);
   }
@@ -143,9 +143,9 @@ int StopWatchdog(void)
   wd_queue = NULL;
 
   while (!wd_inactive->empty()) {
-    void* item = wd_inactive->first();
+    watchdog_t* item = wd_inactive->first();
     wd_inactive->remove(item);
-    p = (watchdog_t*)item;
+    p = item;
     if (p->destructor != NULL) { p->destructor(p); }
     free(p);
   }

@@ -25,7 +25,9 @@
 #define BAREOS_LIB_RESOURCE_ITEM_H_
 
 struct s_password;
+template <typename T>
 class alist;
+template <typename T>
 class dlist;
 
 /*
@@ -35,24 +37,6 @@ class dlist;
 struct ResourceItem {
   const char* name; /* Resource name i.e. Director, ... */
   const int type;
-  // union {
-  //  char** value; /* Where to store the item */
-  //  std::string* strValue;
-  //  uint16_t* ui16value;
-  //  uint32_t* ui32value;
-  //  int16_t* i16value;
-  //  int32_t* i32value;
-  //  uint64_t* ui64value;
-  //  int64_t* i64value;
-  //  bool* boolvalue;
-  //  utime_t* utimevalue;
-  //  s_password* pwdvalue;
-  //  BareosResource** resvalue;
-  //  alist** alistvalue;
-  //  dlist** dlistvalue;
-  //  char* bitvalue;
-  //  std::vector<std::string>* std_vector_of_strings;
-  //};
   std::size_t offset;
   BareosResource** allocated_resource;
   int32_t code;              /* Item code/additional info */

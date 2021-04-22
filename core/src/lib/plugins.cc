@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -111,7 +111,7 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
                           const char* plugin_pathname,
                           const char* plugin_name,
                           const char* type,
-                          alist* plugin_list,
+                          alist<Plugin*>* plugin_list,
                           bool IsPluginCompatible(Plugin* plugin))
 {
   t_loadPlugin loadPlugin;
@@ -193,9 +193,9 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
  */
 bool LoadPlugins(void* bareos_plugin_interface_version,
                  void* bareos_core_functions,
-                 alist* plugin_list,
+                 alist<Plugin*>* plugin_list,
                  const char* plugin_dir,
-                 alist* plugin_names,
+                 alist<const char*>* plugin_names,
                  const char* type,
                  bool IsPluginCompatible(Plugin* plugin))
 {
@@ -317,7 +317,7 @@ bail_out:
 }
 
 // Unload all the loaded plugins
-void UnloadPlugins(alist* plugin_list)
+void UnloadPlugins(alist<Plugin*>* plugin_list)
 {
   int i{};
   Plugin* plugin{};
@@ -332,7 +332,7 @@ void UnloadPlugins(alist* plugin_list)
   }
 }
 
-void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index)
+void UnloadPlugin(alist<Plugin*>* plugin_list, Plugin* plugin, int index)
 {
   // Shut it down and unload it
   plugin->unloadPlugin();
@@ -342,7 +342,7 @@ void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index)
   free(plugin);
 }
 
-int ListPlugins(alist* plugin_list, PoolMem& msg)
+int ListPlugins(alist<Plugin*>* plugin_list, PoolMem& msg)
 {
   int i{};
   int len{};
@@ -411,7 +411,7 @@ void DbgPrintPluginAddHook(dbg_print_plugin_hook_t* fct)
   dbg_print_plugin_hook = fct;
 }
 
-void DumpPlugins(alist* plugin_list, FILE* fp)
+void DumpPlugins(alist<Plugin*>* plugin_list, FILE* fp)
 {
   int i{};
   Plugin* plugin{};

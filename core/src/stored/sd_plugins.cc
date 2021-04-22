@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,7 +45,7 @@ const char* plugin_type = "-sd.dll";
 #else
 const char* plugin_type = "-sd.so";
 #endif
-static alist* sd_plugin_list = NULL;
+static alist<Plugin*>* sd_plugin_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -238,7 +238,7 @@ static inline bool trigger_plugin_event(JobControlRecord* jcr,
                                         bSdEvent* event,
                                         PluginContext* ctx,
                                         void* value,
-                                        alist* plugin_ctx_list,
+                                        alist<PluginContext*>* plugin_ctx_list,
                                         int* index,
                                         bRC* rc)
 {
@@ -274,7 +274,7 @@ static inline bool trigger_plugin_event(JobControlRecord* jcr,
          * that moved back a position in the alist.
          */
         if (index) {
-          UnloadPlugin(plugin_ctx_list, ctx->plugin, *index);
+          UnloadPlugin(sd_plugin_list, ctx->plugin, *index);
           *index = ((*index) - 1);
         }
         break;
@@ -306,7 +306,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
 {
   int i;
   bSdEvent event;
-  alist* plugin_ctx_list;
+  alist<PluginContext*>* plugin_ctx_list;
   bRC rc = bRC_OK;
 
   if (!sd_plugin_list) {
@@ -384,7 +384,7 @@ static void DumpSdPlugins(FILE* fp) { DumpPlugins(sd_plugin_list, fp); }
  * This entry point is called internally by Bareos to ensure
  *  that the plugin IO calls come into this code.
  */
-void LoadSdPlugins(const char* plugin_dir, alist* plugin_names)
+void LoadSdPlugins(const char* plugin_dir, alist<const char*>* plugin_names)
 {
   Plugin* plugin;
   int i;
@@ -394,7 +394,7 @@ void LoadSdPlugins(const char* plugin_dir, alist* plugin_names)
     Dmsg0(debuglevel, "No sd plugin dir!\n");
     return;
   }
-  sd_plugin_list = new alist(10, not_owned_by_alist);
+  sd_plugin_list = new alist<Plugin*>(10, not_owned_by_alist);
   if (!LoadPlugins((void*)&bareos_plugin_interface_version,
                    (void*)&bareos_core_functions, sd_plugin_list, plugin_dir,
                    plugin_names, plugin_type, IsPluginCompatible)) {
@@ -611,7 +611,7 @@ void NewPlugins(JobControlRecord* jcr)
   Dmsg1(debuglevel, "sd-plugin-list size=%d\n", num);
   if (num == 0) { return; }
 
-  jcr->plugin_ctx_list = new alist(10, owned_by_alist);
+  jcr->plugin_ctx_list = new alist<PluginContext*>(10, owned_by_alist);
   foreach_alist_index (i, plugin, sd_plugin_list) {
     // Start a new instance of each plugin
     instantiate_plugin(jcr, plugin, 0);
