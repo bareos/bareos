@@ -35,10 +35,10 @@ endif()
 
 if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
   message(
-    status "Skipping unit tests as testing on installed files is requested"
+    STATUS "Skipping unit tests as testing on installed files is requested"
   )
 elseif(NOT GTest_FOUND)
-  message(status "Skipping unit tests as gtest was not found")
+  message(STATUS "Skipping unit tests as gtest was not found")
 else()
   add_subdirectory(tests)
 endif()

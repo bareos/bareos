@@ -23,9 +23,7 @@ set(TEST_SRC # drivetype_test.cc
 )
 
 add_executable(test_findlib ${TEST_SRC})
-target_link_libraries(
-  test_findlib bareosfind bareos ${JANSSON_LIBRARIES} GTest::gtest_main
-)
+target_link_libraries(test_findlib PRIVATE bareosfind bareos GTest::gtest_main)
 
 add_test(NAME test_findlib COMMAND "test_findlib")
 set_property(

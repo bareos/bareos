@@ -41,10 +41,8 @@ bool print_options_schema_json(PoolMem& buffer,
                                int level,
                                const int type,
                                const bool last = false);
-#ifdef HAVE_JANSSON
 json_t* json_incexc(const int type);
 json_t* json_options(const int type);
-#endif
 
 } /* namespace directordaemon */
 

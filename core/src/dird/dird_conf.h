@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -722,9 +722,7 @@ bool print_datatype_schema_json(PoolMem& buffer,
                                 const int type,
                                 ResourceItem items[],
                                 const bool last = false);
-#ifdef HAVE_JANSSON
 json_t* json_datatype(const int type, ResourceItem items[]);
-#endif
 const char* AuthenticationProtocolTypeToString(uint32_t auth_protocol);
 const char* JobLevelToString(int level);
 extern "C" char* job_code_callback_director(JobControlRecord* jcr, const char*);

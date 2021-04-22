@@ -18,6 +18,8 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+find_package(Jansson REQUIRED)
+
 set(DIRDSRCS dird.cc)
 
 # DIRD_OBJECTS_SRCS also used in a separate library for unittests
@@ -99,6 +101,7 @@ set(DIRD_OBJECTS_SRCS
     verify.cc
     pthread_detach_if_not_detached.cc
 )
+
 if(HAVE_WIN32)
   list(APPEND DIRD_OBJECTS_SRCS ../win32/dird/dirdres.rc)
 endif()
@@ -145,15 +148,14 @@ set(DIRD_RESTYPES
 # dird_objects is also used as library for unittests
 add_library(dird_objects STATIC ${DIRD_OBJECTS_SRCS})
 target_link_libraries(
-  dird_objects PRIVATE ${OPENSSL_LIBRARIES} Threads::Threads
-                       ${JANSSON_LIBRARIES}
+  dird_objects PRIVATE bareos ${OPENSSL_LIBRARIES} Threads::Threads
 )
 
 add_executable(bareos-dir)
 target_sources(bareos-dir PRIVATE dird.cc)
 
 target_link_libraries(
-  bareos-dir PRIVATE dird_objects bareos bareoscats bareossql bareosfind
+  bareos-dir PRIVATE dird_objects bareoscats bareossql bareosfind
 )
 
 if(HAVE_WIN32)
@@ -178,11 +180,11 @@ endif()
 add_subdirectory(dbcopy)
 
 add_executable(bareos-dbcheck ${DBCHKSRCS})
-set(DBCHECK_LIBRARIES bareossql bareos bareosfind bareoscats
-                      ${OPENSSL_LIBRARIES} ${JANSSON_LIBRARIES}
-)
 
-target_link_libraries(bareos-dbcheck ${DBCHECK_LIBRARIES})
+target_link_libraries(
+  bareos-dbcheck PRIVATE bareossql bareos bareosfind bareoscats
+                         ${OPENSSL_LIBRARIES}
+)
 
 # is not built by default
 

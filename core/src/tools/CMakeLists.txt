@@ -23,38 +23,37 @@ if(HAVE_WIN32)
   list(APPEND BSMTPSRCS ../win32/tools/bsmtpres.rc)
 endif()
 add_executable(bsmtp ${BSMTPSRCS})
-target_link_libraries(bsmtp bareos ${JANSSON_LIBRARIES})
+target_link_libraries(bsmtp bareos)
 
 add_executable(drivetype drivetype.cc)
-target_link_libraries(drivetype bareos bareosfind ${JANSSON_LIBRARIES})
+target_link_libraries(drivetype bareos bareosfind)
 
 add_executable(fstype fstype.cc)
-target_link_libraries(fstype bareos bareosfind ${JANSSON_LIBRARIES})
+target_link_libraries(fstype bareos bareosfind)
 
 set(BREGEXSRCS bregex.cc)
 if(HAVE_WIN32)
   list(APPEND BREGEXSRCS ../win32/tools/bregexres.rc)
 endif()
 add_executable(bregex ${BREGEXSRCS})
-target_link_libraries(bregex bareos bareosfind ${JANSSON_LIBRARIES})
+target_link_libraries(bregex bareos bareosfind)
 
 set(BWILDSRCS bwild.cc)
 if(HAVE_WIN32)
   list(APPEND BWILDSRCS ../win32/tools/bwildres.rc)
 endif()
 add_executable(bwild ${BWILDSRCS})
-target_link_libraries(bwild bareos ${JANSSON_LIBRARIES})
+target_link_libraries(bwild bareos)
 
 add_executable(bscrypto bscrypto.cc)
-target_link_libraries(bscrypto bareos ${JANSSON_LIBRARIES})
+target_link_libraries(bscrypto bareos)
 
 if(NOT HAVE_WIN32)
-
   add_executable(btestls btestls.cc)
-  target_link_libraries(btestls bareosfind bareos ${JANSSON_LIBRARIES})
+  target_link_libraries(btestls bareosfind bareos)
 
   add_executable(bpluginfo bpluginfo.cc)
-  target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} ${JANSSON_LIBRARIES})
+  target_link_libraries(bpluginfo bareos ${DL_LIBRARIES})
 endif()
 
 set(TOOLS_BIN bsmtp bwild bregex)

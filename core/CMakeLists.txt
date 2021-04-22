@@ -852,16 +852,16 @@ message(
   "   OpenSSL support:              ${OPENSSL_FOUND} ${OPENSSL_VERSION} ${OPENSSL_INCLUDE_DIR} ${OPENSSL_LIBRARIES} "
 )
 message(
-  "   PAM support:                  ${PAM_FOUND} ${PAM_LIBRARIES} ${PAM_INCLUDE_DIRS} "
+  "   PAM support:                  ${PAM_FOUND} ${PAM_INCLUDE_DIRS} ${PAM_LIBRARIES} "
 )
 message(
-  "   ZLIB support:                 ${ZLIB_FOUND} ${ZLIB_LIBRARIES} ${ZLIB_INCLUDE_DIRS} "
+  "   ZLIB support:                 ${ZLIB_FOUND} ${ZLIB_INCLUDE_DIRS} ${ZLIB_LIBRARIES} "
 )
 message(
-  "   LZO2 support:                 ${LZO2_FOUND} ${LZO2_LIBRARIES} ${LZO2_INCLUDE_DIRS} "
+  "   LZO2 support:                 ${LZO2_FOUND} ${LZO2_INCLUDE_DIRS} ${LZO2_LIBRARIES} "
 )
 message(
-  "   JANSSON support:              ${JANSSON_FOUND} ${JANSSON_LIBRARIES} ${JANSSON_INCLUDE_DIRS} "
+  "   JANSSON support:              ${JANSSON_FOUND} ${JANSSON_VERSION_STRING} ${JANSSON_INCLUDE_DIRS} ${JANSSON_LIBRARIES}"
 )
 message(
   "   VIXDISKLIB support:           ${VIXDISKLIB_FOUND} ${VIXDISKLIB_LIBRARIES} ${VIXDISKLIB_INCLUDE_DIRS} "
@@ -870,7 +870,6 @@ message("   LMDB support:                 ${lmdb} ")
 message("   NDMP support:                 ${ndmp} ")
 message("   Build ndmjob binary:          ${build_ndmjob} ")
 message("   enable-lockmgr:               ${lockmgr} ")
-message("   bat support:                  ${support_bat} ")
 message("   tray-monitor support:         ${HAVE_TRAYMONITOR} ")
 message("   test-plugin support:          ${HAVE_TEST_PLUGIN} ")
 message("   client-only:                  ${build_client_only} ")

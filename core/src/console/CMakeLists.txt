@@ -35,15 +35,8 @@ add_executable(bconsole console.cc)
 
 add_library(console_objects STATIC ${BCONSSRCS})
 
-if(HAVE_PAM)
-  set(CONSOLE_LINK_LIBRARIES console_objects bareos ${Readline_LIBRARY}
-                             ${PAM_LIBRARIES}
-  )
-else()
-  set(CONSOLE_LINK_LIBRARIES console_objects bareos ${Readline_LIBRARY})
-endif()
-
-target_link_libraries(bconsole ${CONSOLE_LINK_LIBRARIES} ${JANSSON_LIBRARIES})
+target_link_libraries(console_objects PRIVATE bareos)
+target_link_libraries(bconsole PRIVATE console_objects ${Readline_LIBRARY})
 
 install(
   TARGETS bconsole

@@ -64,9 +64,7 @@ endif()
 include_directories(${OPENSSL_INCLUDE_DIR})
 
 add_library(fd_objects STATIC ${FDSRCS})
-target_link_libraries(
-  fd_objects PUBLIC bareos bareosfastlz ${ZLIB_LIBRARIES} ${JANSSON_LIBRARIES}
-)
+target_link_libraries(fd_objects PRIVATE bareos bareosfastlz ${ZLIB_LIBRARIES})
 
 if(HAVE_LMDB)
   target_link_libraries(fd_objects PRIVATE bareoslmdb)
@@ -89,7 +87,7 @@ if(HAVE_WIN32)
   target_compile_definitions(bareos-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
 endif()
 
-target_link_libraries(bareos-fd fd_objects ${BAREOS_FD_LIBRARIES})
+target_link_libraries(bareos-fd PRIVATE fd_objects ${BAREOS_FD_LIBRARIES})
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set_target_properties(
