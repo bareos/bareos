@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix possible read/write problems when using droplet with https [PR #773]
 - fix memory leak in python module constants [PR #781]
 - fix german localization errors [PR #786]
+- fix gfapi-fd: avoid possible crash on second glfs_close() call [PR #797]
 
 ### Added
 - systemtests for S3 functionalities (droplet, libcloud) now use https [PR #773]
