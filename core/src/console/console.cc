@@ -325,7 +325,6 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
 #include "lib/tls_openssl.h"
 #include "lib/bsignal.h"
 
-// Get the first keyword of the line
 static char* get_first_keyword()
 {
   char* ret = NULL;
@@ -856,7 +855,6 @@ static bool ExaminePamAuthentication(
 }
 #endif /* HAVE_PAM */
 
-// Main Bareos Console -- User Interface Program
 int main(int argc, char* argv[])
 {
   int ch;

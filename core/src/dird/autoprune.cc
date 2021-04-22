@@ -104,7 +104,6 @@ void PruneVolumes(JobControlRecord* jcr,
   ua = new_ua_context(jcr);
   DbLock(jcr->db);
 
-  // Edit PoolId
   edit_int64(mr->PoolId, ed1);
 
   // Get Pool record for Scratch Pool

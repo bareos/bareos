@@ -207,7 +207,6 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
                 edit_int64(PathId, ed1));
           PathId = 0;
         } else {
-          // Cache path
           if (PathId != cached_path_id) {
             cached_path_id = PathId;
             cached_path_len = pnl;
@@ -829,7 +828,6 @@ bool BareosDb::GetCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
 
-    // If more than one, report error, but return first row
     if (num_rows > 1) {
       Mmsg1(errmsg, _("More than one Counter!: %d\n"), num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1286,7 +1284,6 @@ bool BareosDb::GetFileList(JobControlRecord* jcr,
   return BigSqlQuery(query.c_str(), ResultHandler, ctx);
 }
 
-// This procedure gets the base jobid list used by jobids,
 bool BareosDb::GetUsedBaseJobids(JobControlRecord* jcr,
                                  const char* jobids,
                                  db_list_ctx* result)
@@ -1467,7 +1464,6 @@ bail_out:
   return retval;
 }
 
-// Get JobIds associated with a volume
 bool BareosDb::GetVolumeJobids(JobControlRecord* jcr,
                                MediaDbRecord* mr,
                                db_list_ctx* lst)

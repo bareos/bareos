@@ -144,7 +144,6 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       Dmsg3(050, "find_media ok=%d idx=%d vol=%s\n", ok, index, mr.VolumeName);
     }
 
-    // Send Find Media response to Storage daemon
     if (ok) {
       SendVolumeInfoToStorageDaemon(jcr, bs, &mr);
     } else {
@@ -191,7 +190,6 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       }
 
       if (reason == NULL) {
-        // Send Find Media response to Storage daemon
         SendVolumeInfoToStorageDaemon(jcr, bs, &mr);
       } else {
         /* Not suitable volume */
@@ -393,7 +391,6 @@ static void UpdateAttribute(JobControlRecord* jcr,
   SkipNonspaces(&p); /* "FileAttributes" */
   p += 1;
 
-  // The following "SD header" fields are serialized
   UnserBegin(p, 0);
   unser_uint32(VolSessionId);   /* VolSessionId */
   unser_uint32(VolSessionTime); /* VolSessionTime */
@@ -437,7 +434,6 @@ static void UpdateAttribute(JobControlRecord* jcr,
   jcr->impl->SDJobBytes
       += reclen; /* update number of bytes transferred for quotas */
 
-  // Depending on the stream we are handling dispatch.
   switch (Stream) {
     case STREAM_UNIX_ATTRIBUTES:
     case STREAM_UNIX_ATTRIBUTES_EX:
@@ -588,7 +584,6 @@ static void UpdateAttribute(JobControlRecord* jcr,
               type = CRYPTO_DIGEST_SHA512;
               break;
             default:
-              // Never reached ...
               Jmsg(jcr, M_ERROR, 0,
                    _("Catalog error updating file digest. Unsupported digest "
                      "stream type: %d"),

@@ -96,7 +96,6 @@ class dbid_list {
  * it also contains fields found in the JobMedia record.
  */
 
-// Job record
 struct JobDbRecord {
   JobId_t JobId = 0;
   char Job[MAX_NAME_LENGTH]{0};  /**< Job unique name */
@@ -164,7 +163,6 @@ struct JobMediaDbRecord {
 };
 
 
-// Volume Parameter structure
 struct VolumeParameters {
   char VolumeName[MAX_NAME_LENGTH]{0}; /**< Volume name */
   char MediaType[MAX_NAME_LENGTH]{0};  /**< Media Type */
@@ -204,7 +202,6 @@ struct AttributesDbRecord {
   uint64_t Fhnode = 0; /**< NDMP fh_node for DAR*/
 };
 
-// Restore object database record
 struct RestoreObjectDbRecord {
   char* object_name = nullptr;
   char* object = nullptr;
@@ -220,7 +217,6 @@ struct RestoreObjectDbRecord {
   DBId_t RestoreObjectId = 0;
 };
 
-// File record -- same format as database
 struct FileDbRecord {
   FileId_t FileId = 0;
   uint32_t FileIndex = 0;
@@ -233,7 +229,6 @@ struct FileDbRecord {
   int DigestType = 0; /**< NO_SIG/MD5_SIG/SHA1_SIG */
 };
 
-// Pool record -- same format as database
 struct PoolDbRecord {
   DBId_t PoolId = 0;
   char Name[MAX_NAME_LENGTH]{0}; /**< Pool name */
@@ -263,7 +258,6 @@ struct PoolDbRecord {
   faddr_t rec_addr = 0;
 };
 
-// Device record
 struct DeviceDbRecord {
   DBId_t DeviceId = 0;
   char Name[MAX_NAME_LENGTH]{0};         /**< Device name */
@@ -281,7 +275,6 @@ struct DeviceDbRecord {
   utime_t CleaningPeriod = 0;            /**< time between cleanings */
 };
 
-// Storage database record
 struct StorageDbRecord {
   DBId_t StorageId = 0;
   char Name[MAX_NAME_LENGTH]{0}; /**< Device name */
@@ -291,14 +284,12 @@ struct StorageDbRecord {
   bool created = false; /**< set if created by db_create ... */
 };
 
-// mediatype database record
 struct MediaTypeDbRecord {
   DBId_t MediaTypeId = 0;
   char MediaType[MAX_NAME_LENGTH]{0}; /**< MediaType string */
   int ReadOnly = 0;                   /**< Set if read-only */
 };
 
-// Media record -- same as the database
 struct MediaDbRecord {
   DBId_t MediaId = 0;                  /**< Unique volume id */
   char VolumeName[MAX_NAME_LENGTH]{0}; /**< Volume name */
@@ -356,7 +347,6 @@ struct MediaDbRecord {
   bool set_label_date = false;
 };
 
-// Client record -- same as the database
 struct ClientDbRecord {
   DBId_t ClientId = 0; /**< Unique Client id */
   int AutoPrune = 0;
@@ -368,7 +358,6 @@ struct ClientDbRecord {
   char Uname[256]{0};            /**< Uname for client */
 };
 
-// Counter record -- same as in database
 struct CounterDbRecord {
   char Counter[MAX_NAME_LENGTH]{0};
   int32_t MinValue{0};
@@ -377,7 +366,6 @@ struct CounterDbRecord {
   char WrapCounter[MAX_NAME_LENGTH]{0};
 };
 
-// FileSet record -- same as the database
 struct FileSetDbRecord {
   DBId_t FileSetId = 0;             /**< Unique FileSet id */
   char FileSet[MAX_NAME_LENGTH]{0}; /**< FileSet name */
@@ -390,7 +378,6 @@ struct FileSetDbRecord {
   bool created = false; /**< set when record newly created */
 };
 
-// Device Statistics record -- same as in database
 struct DeviceStatisticsDbRecord {
   DBId_t DeviceId = 0;       /**< Device record id */
   time_t SampleTime = 0;     /**< Timestamp statistic was captured */
@@ -407,14 +394,12 @@ struct DeviceStatisticsDbRecord {
   uint64_t VolCatBlocks = 0; /**< Volume Blocks */
 };
 
-// TapeAlert record -- same as in database
 struct TapealertStatsDbRecord {
   DBId_t DeviceId = 0;     /**< Device record id */
   time_t SampleTime = 0;   /**< Timestamp statistic was captured */
   uint64_t AlertFlags = 0; /**< Tape Alerts raised */
 };
 
-// Job Statistics record -- same as in database
 struct JobStatisticsDbRecord {
   DBId_t DeviceId = 0;   /**< Device record id */
   time_t SampleTime = 0; /**< Timestamp statistic was captured */
@@ -494,10 +479,8 @@ class pathid_cache;
 #define BDB_VERSION 2192
 
 #ifdef _BDB_PRIV_INTERFACE_
-// Generic definition of a sql_row.
 typedef char** SQL_ROW;
 
-// Generic definition of a a sql_field.
 typedef struct sql_field {
   char* name = nullptr; /* name of column */
   int max_length = 0;   /* max length */
@@ -508,7 +491,6 @@ typedef struct sql_field {
 
 class BareosDb : public BareosDbQueryEnum {
  protected:
-  // Members
   brwlock_t lock_; /**< Transaction lock */
   dlink link_;     /**< Queue control */
   SQL_INTERFACETYPE db_interface_type_
@@ -551,7 +533,6 @@ class BareosDb : public BareosDbQueryEnum {
   int num_rows_ = 0; /**< Number of rows returned by last query */
 
  private:
-  // Methods
   int GetFilenameRecord(JobControlRecord* jcr);
   bool GetFileRecord(JobControlRecord* jcr,
                      JobDbRecord* jr,
@@ -576,7 +557,6 @@ class BareosDb : public BareosDbQueryEnum {
                        va_list arg_ptr);
 
  public:
-  // Methods
   BareosDb() {}
   virtual ~BareosDb() {}
   const char* get_db_name(void) { return db_name_; }
@@ -985,7 +965,6 @@ class BareosDb : public BareosDbQueryEnum {
   virtual bool SqlCopyEnd() = 0;
 
 #ifdef _BDB_PRIV_INTERFACE_
-  // Backend methods
  private:
   virtual void SqlFieldSeek(int field) = 0;
   virtual int SqlNumFields(void) = 0;

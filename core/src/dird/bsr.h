@@ -37,7 +37,6 @@ struct VolumeParameters;
 
 namespace directordaemon {
 
-// FileIndex entry in restore bootstrap record
 class RestoreBootstrapRecordFileIndex {
  private:
   std::vector<int32_t> fileIds_;
@@ -82,7 +81,6 @@ struct RestoreBootstrapRecord {
 
 class UaContext;
 
-// Open bootstrap file.
 struct bootstrap_info {
   FILE* bs;
   UaContext* ua;

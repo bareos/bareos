@@ -54,7 +54,6 @@
  * -----------------------------------------------------------------------
  */
 
-// List of open databases
 static dlist* db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -208,7 +207,6 @@ bool BareosDbPostgresql::OpenDatabase(JobControlRecord* jcr)
 
   // If connection fails, try at 5 sec intervals for 30 seconds.
   for (int retry = 0; retry < 6; retry++) {
-    // Connect to the database
     db_handle_ = PQsetdbLogin(db_address_,   /* default = localhost */
                               port,          /* default port */
                               NULL,          /* pg options */
@@ -623,7 +621,6 @@ retry_query:
     case PGRES_COMMAND_OK:
       Dmsg0(500, "we have a result\n");
 
-      // How many fields in the set?
       num_fields_ = (int)PQnfields(result_);
       Dmsg1(500, "we have %d fields\n", num_fields_);
 
@@ -637,7 +634,6 @@ retry_query:
     case PGRES_FATAL_ERROR:
       Dmsg1(50, "Result status fatal: %s\n", query);
       if (exit_on_fatal_) {
-        // Any fatal error should result in the daemon exiting.
         Emsg0(M_ERROR_TERM, 0, "Fatal database error\n");
       }
 
@@ -650,7 +646,6 @@ retry_query:
         if (retry) {
           PQreset(db_handle_);
 
-          // See if we got a working connection again.
           if (PQstatus(db_handle_) == CONNECTION_OK) {
             // Reset the connection settings.
             PQexec(db_handle_, "SET datestyle TO 'ISO, YMD'");
@@ -734,7 +729,6 @@ SQL_ROW BareosDbPostgresql::SqlFetchRow(void)
   if (row_number_ >= 0 && row_number_ < num_rows_) {
     Dmsg2(500, "SqlFetchRow row number '%d' is acceptable (0..%d)\n",
           row_number_, num_rows_);
-    // Get each value from this row
     for (j = 0; j < num_fields_; j++) {
       rows_[j] = PQgetvalue(result_, row_number_, j);
       Dmsg2(500, "SqlFetchRow field '%d' has value '%s'\n", j, rows_[j]);

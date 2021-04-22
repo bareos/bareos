@@ -34,7 +34,6 @@
 
 #  if defined(HAVE_DYNAMIC_CATS_BACKENDS)
 
-// Known backend to interface mappings.
 static struct backend_interface_mapping_t {
   const char* interface_name;
   bool partly_compare;
@@ -53,7 +52,6 @@ static struct backend_interface_mapping_t {
 #      define RTLD_NOW 2
 #    endif
 
-// All loaded backends.
 static alist* loaded_backends = NULL;
 static std::vector<std::string> backend_dirs;
 
@@ -124,7 +122,6 @@ BareosDb* db_init_database(JobControlRecord* jcr,
     Jmsg(jcr, M_ERROR_TERM, 0, _("Catalog Backends Dir not configured.\n"));
   }
 
-  // A db_driver is mandatory for dynamic loading of backends to work.
   if (!db_driver) {
     Jmsg(jcr, M_ERROR_TERM, 0,
          _("Driver type not specified in Catalog resource.\n"));
@@ -261,10 +258,8 @@ void DbFlushBackends(void)
 
   if (loaded_backends) {
     foreach_alist (backend_shared_library, loaded_backends) {
-      // Call the flush entry point in the lib.
       backend_shared_library->flush_backend();
 
-      // Close the shared library and unload it.
       dlclose(backend_shared_library->handle);
       free(backend_shared_library);
     }

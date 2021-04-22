@@ -260,7 +260,6 @@ static void MakeUniqueRestoreFilename(UaContext* ua, PoolMem& fname)
   jcr->RestoreBootstrap = strdup(fname.c_str());
 }
 
-// Write the bootstrap records to file
 uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx)
 {
   FILE* fd;
@@ -278,10 +277,8 @@ uint32_t WriteBsrFile(UaContext* ua, RestoreContext& rx)
     goto bail_out;
   }
 
-  // Write them to a buffer.
   count = WriteBsr(ua, rx, buffer);
 
-  // Write the buffer to file
   fprintf(fd, "%s", buffer.c_str());
 
   err = ferror(fd);

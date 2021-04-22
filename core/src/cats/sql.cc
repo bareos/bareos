@@ -62,7 +62,6 @@ DBId_t dbid_list::get(int i) const
 }
 
 
-// Called here to retrieve an integer from the database
 int DbIntHandler(void* ctx, int num_fields, char** row)
 {
   uint32_t* val = (uint32_t*)ctx;
@@ -127,7 +126,6 @@ struct max_connections_context {
   uint32_t nr_connections;
 };
 
-// Called here to retrieve an integer from the database
 static inline int DbMaxConnectionsHandler(void* ctx, int num_fields, char** row)
 {
   struct max_connections_context* context;
@@ -152,7 +150,6 @@ static inline int DbMaxConnectionsHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-// Check catalog max_connections setting
 bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
                                    uint32_t max_concurrent_jobs)
 {
@@ -191,7 +188,6 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
  *  calling subroutine sets and clears the mutex
  */
 
-// Check that the tables correspond to the version we want
 bool BareosDb::CheckTablesVersion(JobControlRecord* jcr)
 {
   uint32_t bareos_db_version = 0;
@@ -353,7 +349,6 @@ int BareosDb::GetSqlRecordMax(JobControlRecord* jcr)
   return retval;
 }
 
-// Return pre-edited error message
 char* BareosDb::strerror() { return errmsg; }
 
 /**
@@ -410,7 +405,6 @@ void BareosDb::SplitPathAndFile(JobControlRecord* jcr, const char* filename)
   Dmsg2(500, "split path=%s file=%s\n", path, fname);
 }
 
-// Set maximum field length to something reasonable
 static int MaxLength(int MaxLength)
 {
   int max_len = MaxLength;
@@ -457,7 +451,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
   int col_len, max_len = 0;
   ListContext* pctx = (ListContext*)vctx;
 
-  // Get pointers from context.
   type = pctx->type;
   send = pctx->send;
   jcr = pctx->jcr;
@@ -489,7 +482,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
           field = SqlFetchField();
           if (!field) { break; }
 
-          // See if this is a hidden column.
           if (send->IsHiddenColumn(i)) {
             Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
@@ -521,7 +513,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         Dmsg1(800, "ListResult starts second loop looking at %d fields\n",
               num_fields);
 
-        // Keep the result to display the same line at the end of the table
         ListDashes(send);
 
         send->Decoration("|");
@@ -532,7 +523,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
           field = SqlFetchField();
           if (!field) { break; }
 
-          // See if this is a hidden column.
           if (send->IsHiddenColumn(i)) {
             Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
@@ -559,7 +549,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         field = SqlFetchField();
         if (!field) { break; }
 
-        // See if this is a hidden column.
         if (send->IsHiddenColumn(i)) {
           Dmsg1(800, "ListResult field %d is hidden\n", i);
           continue;
@@ -583,7 +572,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         field = SqlFetchField();
         if (!field) { break; }
 
-        // See if this is a hidden column.
         if (send->IsHiddenColumn(i)) {
           Dmsg1(800, "ListResult field %d is hidden\n", i);
           continue;
@@ -611,7 +599,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         field = SqlFetchField();
         if (!field) { break; }
 
-        // See if this is a hidden column.
         if (send->IsHiddenColumn(i)) {
           Dmsg1(800, "ListResult field %d is hidden\n", i);
           continue;

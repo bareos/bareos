@@ -34,7 +34,6 @@ class JobControlRecord;
 
 class BareosDbPostgresql : public BareosDbPrivateInterface {
  private:
-  // Members.
   PGconn* db_handle_;
   PGresult* result_;
   POOLMEM* buf_; /**< Buffer to manipulate queries */
@@ -42,7 +41,6 @@ class BareosDbPostgresql : public BareosDbPrivateInterface {
       query_definitions[]; /**< table of predefined sql queries */
 
  private:
-  // Methods.
   bool OpenDatabase(JobControlRecord* jcr) override;
   void CloseDatabase(JobControlRecord* jcr) override;
   bool ValidateConnection(void) override;
@@ -91,7 +89,6 @@ class BareosDbPostgresql : public BareosDbPrivateInterface {
   bool CheckDatabaseEncoding(JobControlRecord* jcr);
 
  public:
-  // Methods.
   BareosDbPostgresql(JobControlRecord* jcr,
                      const char* db_driver,
                      const char* db_name,

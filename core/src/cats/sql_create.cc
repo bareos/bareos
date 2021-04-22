@@ -42,7 +42,6 @@ static const int dbglevel = 100;
  * -----------------------------------------------------------------------
  */
 
-// Forward referenced subroutines
 
 /**
  * Create a new record for the Job
@@ -245,7 +244,6 @@ bool BareosDb::CreateDeviceRecord(JobControlRecord* jcr, DeviceDbRecord* dr)
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
 
-    // If more than one, report error, but return first row
     if (num_rows > 1) {
       Mmsg1(errmsg, _("More than one Device!: %d\n"), num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -308,7 +306,6 @@ bool BareosDb::CreateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
   // Check if it already exists
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
-    // If more than one, report error, but return first row
     if (num_rows > 1) {
       Mmsg1(errmsg, _("More than one Storage record!: %d\n"), num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -523,7 +520,6 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
   cr->ClientId = 0;
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
-    // If more than one, report error, but return first row
     if (num_rows > 1) {
       Mmsg1(errmsg, _("More than one Client!: %d\n"), num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -615,7 +611,6 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
       }
       ar->PathId = str_to_int64(row[0]);
       SqlFreeResult();
-      // Cache path
       if (ar->PathId != cached_path_id) {
         cached_path_id = ar->PathId;
         cached_path_len = pnl;
@@ -639,7 +634,6 @@ bool BareosDb::CreatePathRecord(JobControlRecord* jcr, AttributesDbRecord* ar)
     goto bail_out;
   }
 
-  // Cache path
   if (ar->PathId != cached_path_id) {
     cached_path_id = ar->PathId;
     cached_path_len = pnl;
@@ -886,7 +880,6 @@ bool BareosDb::CreateBatchFileAttributesRecord(JobControlRecord* jcr,
     jcr->db_batch->WriteBatchFileRecords(jcr);
   }
 
-  // Open the dedicated connection
   if (!jcr->batch_started) {
     if (!OpenBatchConnection(jcr)) { return false; /* error already printed */ }
     if (!jcr->db_batch->SqlBatchStartFileTable(jcr)) {
@@ -1058,7 +1051,6 @@ bool BareosDb::CreateBaseFileAttributesRecord(JobControlRecord* jcr,
   return retval;
 }
 
-// Cleanup the base file temporary tables
 void BareosDb::CleanupBaseFile(JobControlRecord* jcr)
 {
   PoolMem buf(PM_MESSAGE);
@@ -1342,7 +1334,6 @@ bool BareosDb::CreateJobStatistics(JobControlRecord* jcr,
 
   bstrutime(dt, sizeof(dt), stime);
 
-  // Create job statistics record
   Mmsg(cmd,
        "INSERT INTO JobStats (SampleTime, JobId, JobFiles, JobBytes, DeviceId)"
        " VALUES ('%s', %s, %s, %s, %s)",

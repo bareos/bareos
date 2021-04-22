@@ -533,7 +533,6 @@ bail_out:
   DbUnlock(this);
 }
 
-// List Job record(s) that match JobDbRecord
 void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               JobDbRecord* jr,
                               const char* range,
@@ -627,7 +626,6 @@ bail_out:
   DbUnlock(this);
 }
 
-// List Job totals
 void BareosDb::ListJobTotals(JobControlRecord* jcr,
                              JobDbRecord* jr,
                              OutputFormatter* sendit)
@@ -673,7 +671,6 @@ void BareosDb::ListFilesForJob(JobControlRecord* jcr,
 
   DbLock(this);
 
-  // Stupid MySQL is NON-STANDARD !
   if (GetTypeIndex() == SQL_TYPE_MYSQL) {
     Mmsg(cmd,
          "SELECT CONCAT(Path.Path,Name) AS Filename "
@@ -719,7 +716,6 @@ void BareosDb::ListBaseFilesForJob(JobControlRecord* jcr,
 
   DbLock(this);
 
-  // Stupid MySQL is NON-STANDARD !
   if (GetTypeIndex() == SQL_TYPE_MYSQL) {
     Mmsg(cmd,
          "SELECT CONCAT(Path.Path,File.Name) AS Filename "
@@ -748,7 +744,6 @@ bail_out:
   DbUnlock(this);
 }
 
-// List fileset
 void BareosDb::ListFilesets(JobControlRecord* jcr,
                             JobDbRecord* jr,
                             const char* range,

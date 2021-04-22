@@ -223,10 +223,8 @@ bool BareosDb::PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   DbLock(this);
   if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { goto bail_out; }
 
-  // Delete associated records
   DoMediaPurge(this, mr); /* Note, always purge */
 
-  // Mark Volume as purged
   strcpy(mr->VolStatus, "Purged");
   if (!UpdateMediaRecord(jcr, mr)) { goto bail_out; }
 

@@ -50,7 +50,6 @@
  * -----------------------------------------------------------------------
  */
 
-// List of open databases
 static dlist* db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -428,7 +427,6 @@ void BareosDbSqlite::SqlFreeResult(void)
   DbUnlock(this);
 }
 
-// Fetch one row at a time
 SQL_ROW BareosDbSqlite::SqlFetchRow(void)
 {
   if (!result_ || (row_number_ >= num_rows_)) { return NULL; }

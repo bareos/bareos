@@ -147,7 +147,6 @@ static inline bool ValidateStorage(JobControlRecord* jcr)
   return true;
 }
 
-// Called here before the job is run to do the job specific setup.
 bool DoNativeBackupInit(JobControlRecord* jcr)
 {
   FreeRstorage(jcr); /* we don't read so release */
@@ -166,7 +165,6 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
     return false;
   }
 
-  // Validate that we have a native client and storage(s).
   if (!ValidateClient(jcr) || !ValidateStorage(jcr)) { return false; }
 
   CreateClones(jcr); /* run any clone jobs */
@@ -411,13 +409,11 @@ bool DoNativeBackup(JobControlRecord* jcr)
   Dmsg0(110, "Open connection with storage daemon\n");
   jcr->setJobStatus(JS_WaitSD);
 
-  // Start conversation with Storage daemon
   if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
     return false;
   }
   sd = jcr->store_bsock;
 
-  // Now start a job with the Storage daemon
   if (!StartStorageDaemonJob(jcr, NULL, jcr->impl->res.write_storage_list)) {
     return false;
   }
@@ -454,7 +450,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
   SendJobInfoToFileDaemon(jcr);
   fd = jcr->file_bsock;
 
-  // Check if the file daemon supports passive client mode.
   if (jcr->passive_client && jcr->impl->FDVersion < FD_VERSION_51) {
     Jmsg(jcr, M_FATAL, 0,
          _("Client \"%s\" doesn't support passive client mode. "
@@ -493,7 +488,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
   store = jcr->impl->res.write_storage;
   char* connection_target_address;
 
-  // See if the client is a passive client or not.
   if (!jcr->passive_client) {
     // Send Storage daemon address to the File daemon
     if (store->SDDport == 0) { store->SDDport = store->SDport; }
@@ -534,7 +528,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
 
     connection_target_address = ClientAddressToContact(client, store);
 
-    // Tell the SD to connect to the FD.
     sd->fsend(passiveclientcmd, connection_target_address, client->FDport,
               tls_policy);
     Bmicrosleep(2, 0);
@@ -563,7 +556,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
   // Declare the job started to start the MaxRunTime check
   jcr->setJobStarted();
 
-  // Send and run the RunBefore
   if (!SendRunscriptsCommands(jcr)) { goto bail_out; }
 
   /*
@@ -588,12 +580,10 @@ bool DoNativeBackup(JobControlRecord* jcr)
    */
   if (!SendAccurateCurrentFiles(jcr)) { goto bail_out; /* error */ }
 
-  // Send backup command
   fd->fsend(backupcmd, jcr->JobFiles);
   Dmsg1(100, ">filed: %s", fd->msg);
   if (!response(jcr, fd, OKbackup, "Backup", DISPLAY_ERROR)) { goto bail_out; }
 
-  // Pickup Job termination data
   status = WaitForJobTermination(jcr);
   jcr->db_batch->WriteBatchFileRecords(
       jcr); /* used by bulk batch file insert */

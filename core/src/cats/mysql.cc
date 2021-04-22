@@ -159,7 +159,6 @@ bool BareosDbMysql::OpenDatabase(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  // Connect to the database
   mysql_init(&instance_);
 
   Dmsg0(50, "mysql_init done\n");
@@ -399,7 +398,6 @@ retry_query:
     case CR_SERVER_GONE_ERROR:
     case CR_SERVER_LOST:
       if (exit_on_fatal_) {
-        // Any fatal error should result in the daemon exiting.
         Emsg0(M_ERROR_TERM, 0, "Fatal database error\n");
       }
 
@@ -414,7 +412,6 @@ retry_query:
 
           mysql_threadid = mysql_thread_id(db_handle_);
           if (mysql_ping(db_handle_) == 0) {
-            // See if the threadid changed e.g. new connection to the DB.
             if (mysql_thread_id(db_handle_) != mysql_threadid) {
               mysql_query(db_handle_, "SET wait_timeout=691200");
               mysql_query(db_handle_, "SET interactive_timeout=691200");
@@ -439,7 +436,6 @@ retry_query:
     if ((result_ = mysql_use_result(db_handle_)) != NULL) {
       num_fields_ = mysql_num_fields(result_);
 
-      // fetch all rows
       while ((row = mysql_fetch_row(result_)) != NULL) {
         if (send) {
           /* the result handler returns 1 when it has
@@ -510,7 +506,6 @@ retry_query:
     case CR_SERVER_GONE_ERROR:
     case CR_SERVER_LOST:
       if (exit_on_fatal_) {
-        // Any fatal error should result in the daemon exiting.
         Emsg0(M_ERROR_TERM, 0, "Fatal database error\n");
       }
 
@@ -525,7 +520,6 @@ retry_query:
 
           mysql_threadid = mysql_thread_id(db_handle_);
           if (mysql_ping(db_handle_) == 0) {
-            // See if the threadid changed e.g. new connection to the DB.
             if (mysql_thread_id(db_handle_) != mysql_threadid) {
               mysql_query(db_handle_, "SET wait_timeout=691200");
               mysql_query(db_handle_, "SET interactive_timeout=691200");

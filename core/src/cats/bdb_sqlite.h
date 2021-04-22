@@ -34,7 +34,6 @@ class JobControlRecord;
 
 class BareosDbSqlite : public BareosDbPrivateInterface {
  private:
-  // Members.
   struct sqlite3* db_handle_;
   char** result_; /**< sql_store_results() and SqlQueryWithoutHandler() */
   char**
@@ -46,7 +45,6 @@ class BareosDbSqlite : public BareosDbPrivateInterface {
       query_definitions[]; /**< table of predefined sql queries */
 
  private:
-  // Methods.
   bool OpenDatabase(JobControlRecord* jcr) override;
   void CloseDatabase(JobControlRecord* jcr) override;
   bool ValidateConnection(void) override;
@@ -77,7 +75,6 @@ class BareosDbSqlite : public BareosDbPrivateInterface {
   bool SqlCopyEnd() override;
 
  public:
-  // Methods.
   BareosDbSqlite(JobControlRecord* jcr,
                  const char* db_driver,
                  const char* db_name,

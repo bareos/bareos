@@ -443,7 +443,6 @@ int BareosDb::FindNextVolume(JobControlRecord* jcr,
 
 retry_fetch:
   if (find_oldest) {
-    // Find oldest volume(s)
     Mmsg(cmd,
          "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
          "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"

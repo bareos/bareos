@@ -37,7 +37,6 @@
 #  define dbglevel 10
 #  define dbglevel_sql 15
 
-// Working Object to store PathId already seen (avoid database queries),
 #  define NITEMS 50000
 class pathid_cache {
  private:
@@ -138,7 +137,6 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
 
       if (!QUERY_DB(jcr, cmd)) { goto bail_out; /* Query failed, just leave */ }
 
-      // Do we have a result ?
       if (SqlNumRows() > 0) {
         ppathid_cache.insert(pathid);
         /* This dir was in the db ...
@@ -405,7 +403,6 @@ int BareosDb::BvfsBuildLsFileQuery(PoolMem& query,
   return nb_record;
 }
 
-// Generic result handler.
 static int ResultHandler(void* ctx, int fields, char** row)
 {
   Dmsg1(100, "ResultHandler(*,%d,**)", fields);
@@ -423,7 +420,6 @@ static int ResultHandler(void* ctx, int fields, char** row)
   return 0;
 }
 
-// BVFS class methods.
 Bvfs::Bvfs(JobControlRecord* j, BareosDb* mdb)
 {
   jcr = j;
@@ -535,7 +531,6 @@ char* bvfs_basename_dir(char* path)
 }
 
 
-// Update the bvfs cache for current jobids
 void Bvfs::update_cache() { db->BvfsUpdatePathHierarchyCache(jcr, jobids); }
 
 // Change the current directory, returns true if the path exists
