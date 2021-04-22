@@ -20,7 +20,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fixed bug when user could enter wrong dates such as 2000-66-100 55:55:89 without being denied [PR #707]
 - fix volume-pruning to be reliable on all test platforms [PR #761]
 - fix memory leak in python module constants [PR #778]
-- fix systemtests: reduce the number of broken tests to two [PR #771]
+- fix systemtests: reduce the number of broken tests [PR #771] [PR #791]
 - [Issue #1329]: If CommandACL limits any command, no messages can be read but "you have messages" is displayed. [PR #763]
 
 ### Added

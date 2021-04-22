@@ -1,7 +1,7 @@
 #!/bin/sh
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,7 +22,7 @@
 file=$1
 shift
 
-printf "date=%s\n" "$(LANG=C date)" | tee --append $file
+printf "date=%s\n" "$(LANG=C date)" | tee -a $file
 for i in "$@"; do
-    echo "$i" | tee --append $file
+    echo "$i" | tee -a $file
 done
