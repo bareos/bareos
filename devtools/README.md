@@ -13,3 +13,7 @@ Script to find common link references in CHANGELOG.md (i.e. versions and bugs) a
 ## `new-changelog-release.sh`
 
 Update the changelog when a release is made. Will either add a new "Unreleased" chapter in the changelog or replace an existing one with a provided version number and release-date.
+
+## tools in pip-tools
+
+There are several tools in the pip-tools directory that have frontends installed here. See the pip-tools directory for more details.
