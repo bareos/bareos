@@ -398,6 +398,7 @@ cephfs_device::~cephfs_device()
   }
 
   FreePoolMemory(virtual_filename_);
+  close(nullptr);
 }
 
 cephfs_device::cephfs_device()
