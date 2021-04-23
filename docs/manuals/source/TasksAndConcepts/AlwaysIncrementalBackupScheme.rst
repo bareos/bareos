@@ -296,7 +296,7 @@ The basic always incremental scheme
 
 The basic always incremental scheme does an incremental backup from the client daily which is relatively small and as such is very good.
 
-During the consolidation, each day the full backup is consolidated with the oldest incremental backup, which means that more or less the full amount of data being stored on the client is moved. Although this consolidation only is performed locally on the storage daemon without client interaction, it is still an enormous amount of data being touched and can take an considerable amount of time.
+During the consolidation, each day the full backup is consolidated with the oldest incremental backup, which means that more or less the full amount of data being stored on the client is moved. Although this consolidation only is performed locally on the storage daemon without client interaction, it is still an enormous amount of data being touched and can take a considerable amount of time.
 
 If all clients use the "always incremental" backup scheme, this means that the complete data being stored in the backup system needs to be moved every day!
 
@@ -306,7 +306,7 @@ The following figure shows the Data Volume being moved during the normal always 
 
 -  The red bar shows the amount of the first full backup being copied from the client.
 
--  The blue bars show the amount of the daily incremental backups. They are so little that the can be barely seen.
+-  The blue bars show the amount of the daily incremental backups. They are so little that they can barely be seen.
 
 -  The green bars show the amount of data being moved every day during the consolidation jobs.
 
@@ -402,7 +402,7 @@ What is missing in the always incremental backup scheme in comparison to the tra
 
 When using always incremental, the usual maximum age of data stored during the backup cycle is :config:option:`dir/job/AlwaysIncrementalJobRetention`\ .
 
-Usually, it is desired to be able to store a certain backup for a longer time, e.g. monthly a backup should be kept for half a year.
+Usually, it is desired to be able to store a certain backup for a longer time, e.g. a monthly backup should be kept for half a year.
 
 There are two options to achieve this goal.
 
