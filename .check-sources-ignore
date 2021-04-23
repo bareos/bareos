@@ -1,3 +1,4 @@
+contrib
 core/src/lmdb
 core/src/fastlz
 core/src/ndmp/*.c
