@@ -137,6 +137,7 @@ The :config:option:`dir/job = Consolidate`\  job evaluates all jobs configured w
 
 The always incremental jobs need to be executed during the backup window (usually at night), while the consolidation jobs should be scheduled during the daytime when no backups are executed.
 
+Virtual backup jobs of a consolidation are not affected by :config:option:`dir/job/AllowDuplicateJobs`\ settings.
 
 
 .. warning::
