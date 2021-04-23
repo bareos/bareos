@@ -492,6 +492,8 @@ class Device {
 class SpoolDevice :public Device
 {
  public:
+  SpoolDevice() = default;
+  ~SpoolDevice() {   close(nullptr); }
   int d_ioctl(int fd, ioctl_req_t request, char* mt_com = NULL) override {return -1;}
   int d_open(const char* pathname, int flags, int mode) override {return -1;}
   int d_close(int fd) override {return -1;}

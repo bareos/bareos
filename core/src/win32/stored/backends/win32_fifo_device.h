@@ -39,7 +39,7 @@ class DeviceControlRecord;
 class win32_fifo_device : public Device {
  public:
   win32_fifo_device() = default;
-  ~win32_fifo_device() = default;
+  ~win32_fifo_device() { close(nullptr); }
 
   // Interface from Device
   void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode) override;

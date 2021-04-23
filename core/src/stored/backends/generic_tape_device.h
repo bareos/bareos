@@ -34,8 +34,8 @@ namespace storagedaemon {
 
 class generic_tape_device : public Device {
  public:
-  generic_tape_device(){};
-  virtual ~generic_tape_device(){};
+  generic_tape_device() = default;
+  virtual ~generic_tape_device() { close(nullptr); }
 
   // Interface from Device
   virtual void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode) override;

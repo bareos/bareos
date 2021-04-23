@@ -973,6 +973,8 @@ void Device::ClearVolhdr()
 // Close the device.
 bool Device::close(DeviceControlRecord* dcr)
 {
+  // Called with dcr=nullptr on termination (from destructor) .
+
   bool retval = true;
   int status;
   Dmsg1(100, "close_dev %s\n", print_name());
@@ -1037,6 +1039,7 @@ bool Device::close(DeviceControlRecord* dcr)
 bail_out:
   return retval;
 }
+
 
 /**
  * Mount the device.
@@ -1209,16 +1212,6 @@ const char* Device::name() const { return device_resource->resource_name_; }
 Device::~Device()
 {
   Dmsg1(900, "term dev: %s\n", print_name());
-
-  /*
-   * On termination we don't have any DCRs left
-   * so we call close with a nullptr argument as
-   * the dcr argument is only used in the unmount
-   * method to generate a plugin_event we just check
-   * there if the dcr is not nullptr and otherwise skip
-   * the plugin event generation.
-   */
-  close(nullptr);
 
   if (archive_device_string) {
     FreeMemory(archive_device_string);

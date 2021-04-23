@@ -37,7 +37,7 @@ class DeviceControlRecord;
 class unix_fifo_device : public Device {
  public:
   unix_fifo_device() = default;
-  ~unix_fifo_device() = default;
+  ~unix_fifo_device() { close(nullptr); }
 
   // Interface from Device
   void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode) override;

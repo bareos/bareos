@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -559,6 +559,7 @@ gfapi_device::~gfapi_device()
   }
 
   FreePoolMemory(virtual_filename_);
+  close(nullptr);
 }
 
 gfapi_device::gfapi_device()
