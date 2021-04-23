@@ -275,9 +275,7 @@ dpl_status_t dpl_s3_req_build(const dpl_req_t* req,
     goto end;
   }
 
-  /*
-   * per method headers
-   */
+  // per method headers
   if (DPL_METHOD_GET == req->method || DPL_METHOD_HEAD == req->method) {
     if (req->range_enabled) {
       ret2 = dpl_add_range_to_headers(&req->range, headers);
@@ -410,9 +408,7 @@ dpl_status_t dpl_s3_req_build(const dpl_req_t* req,
       }
     }
 
-    /*
-     * copy
-     */
+    // copy
     if (req_mask & DPL_S3_REQ_COPY) {
       ret2 = add_source_to_headers(req, headers);
       if (DPL_SUCCESS != ret2) {
@@ -459,9 +455,7 @@ dpl_status_t dpl_s3_req_build(const dpl_req_t* req,
     goto end;
   }
 
-  /*
-   * common headers
-   */
+  // common headers
   if (req->behavior_flags & DPL_BEHAVIOR_KEEP_ALIVE) {
     ret2 = dpl_dict_add(headers, "Connection", "Keep-Alive", 0);
     if (DPL_SUCCESS != ret2) {
@@ -490,9 +484,7 @@ end:
   return ret;
 }
 
-/**
- * @todo Support signing version 4 to gen_url command
- */
+// @todo Support signing version 4 to gen_url command
 
 dpl_status_t dpl_s3_req_gen_url(const dpl_req_t* req,
                                 dpl_dict_t* headers,

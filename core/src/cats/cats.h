@@ -59,9 +59,7 @@ class dlist;
 
 struct VolumeSessionInfo;
 
-/**
- * Generic definitions of list types, list handlers and result handlers.
- */
+// Generic definitions of list types, list handlers and result handlers.
 enum e_list_type
 {
   NF_LIST,
@@ -98,9 +96,6 @@ class dbid_list {
  * it also contains fields found in the JobMedia record.
  */
 
-/**
- * Job record
- */
 struct JobDbRecord {
   JobId_t JobId = 0;
   char Job[MAX_NAME_LENGTH]{0};  /**< Job unique name */
@@ -143,9 +138,7 @@ struct JobDbRecord {
   char cEndTime[MAX_TIME_LENGTH]{0};
   char cRealEndTime[MAX_TIME_LENGTH]{0};
 
-  /*
-   * Extra stuff not in DB
-   */
+  // Extra stuff not in DB
   int limit = 0;  /**< limit records to display */
   int offset = 0; /**< offset records to display */
   faddr_t rec_addr = 0;
@@ -155,9 +148,7 @@ struct JobDbRecord {
 /* Job Media information used to create the media records
  * for each Volume used for the job.
  */
-/**
- * JobMedia record
- */
+// JobMedia record
 struct JobMediaDbRecord {
   DBId_t JobMediaId = 0;   /**< record id */
   JobId_t JobId = 0;       /**< JobId */
@@ -172,9 +163,6 @@ struct JobMediaDbRecord {
 };
 
 
-/**
- * Volume Parameter structure
- */
 struct VolumeParameters {
   char VolumeName[MAX_NAME_LENGTH]{0}; /**< Volume name */
   char MediaType[MAX_NAME_LENGTH]{0};  /**< Media Type */
@@ -214,9 +202,6 @@ struct AttributesDbRecord {
   uint64_t Fhnode = 0; /**< NDMP fh_node for DAR*/
 };
 
-/**
- * Restore object database record
- */
 struct RestoreObjectDbRecord {
   char* object_name = nullptr;
   char* object = nullptr;
@@ -232,9 +217,6 @@ struct RestoreObjectDbRecord {
   DBId_t RestoreObjectId = 0;
 };
 
-/**
- * File record -- same format as database
- */
 struct FileDbRecord {
   FileId_t FileId = 0;
   uint32_t FileIndex = 0;
@@ -247,9 +229,6 @@ struct FileDbRecord {
   int DigestType = 0; /**< NO_SIG/MD5_SIG/SHA1_SIG */
 };
 
-/**
- * Pool record -- same format as database
- */
 struct PoolDbRecord {
   DBId_t PoolId = 0;
   char Name[MAX_NAME_LENGTH]{0}; /**< Pool name */
@@ -275,15 +254,10 @@ struct PoolDbRecord {
   uint32_t MinBlocksize = 0; /**< Minimum Block Size */
   uint32_t MaxBlocksize = 0; /**< Maximum Block Size */
 
-  /*
-   * Extra stuff not in DB
-   */
+  // Extra stuff not in DB
   faddr_t rec_addr = 0;
 };
 
-/**
- * Device record
- */
 struct DeviceDbRecord {
   DBId_t DeviceId = 0;
   char Name[MAX_NAME_LENGTH]{0};         /**< Device name */
@@ -301,32 +275,21 @@ struct DeviceDbRecord {
   utime_t CleaningPeriod = 0;            /**< time between cleanings */
 };
 
-/**
- * Storage database record
- */
 struct StorageDbRecord {
   DBId_t StorageId = 0;
   char Name[MAX_NAME_LENGTH]{0}; /**< Device name */
   int AutoChanger = 0;           /**< Set if autochanger */
 
-  /*
-   * Extra stuff not in DB
-   */
+  // Extra stuff not in DB
   bool created = false; /**< set if created by db_create ... */
 };
 
-/**
- * mediatype database record
- */
 struct MediaTypeDbRecord {
   DBId_t MediaTypeId = 0;
   char MediaType[MAX_NAME_LENGTH]{0}; /**< MediaType string */
   int ReadOnly = 0;                   /**< Set if read-only */
 };
 
-/**
- * Media record -- same as the database
- */
 struct MediaDbRecord {
   DBId_t MediaId = 0;                  /**< Unique volume id */
   char VolumeName[MAX_NAME_LENGTH]{0}; /**< Volume name */
@@ -372,14 +335,10 @@ struct MediaDbRecord {
   DBId_t ScratchPoolId = 0;  /**< Where to move if scratch */
   DBId_t RecyclePoolId = 0;  /**< Where to move when recycled */
 
-  /*
-   * Extra stuff not in DB
-   */
+  // Extra stuff not in DB
   faddr_t rec_addr = 0; /**< found record address */
 
-  /*
-   * Since the database returns times as strings, this is how we pass them back.
-   */
+  // Since the database returns times as strings, this is how we pass them back.
   char cFirstWritten[MAX_TIME_LENGTH]{0}; /**< FirstWritten returned from DB */
   char cLastWritten[MAX_TIME_LENGTH]{0};  /**< LastWritten returned from DB */
   char cLabelDate[MAX_TIME_LENGTH]{0};    /**< LabelData returned from DB */
@@ -388,9 +347,6 @@ struct MediaDbRecord {
   bool set_label_date = false;
 };
 
-/**
- * Client record -- same as the database
- */
 struct ClientDbRecord {
   DBId_t ClientId = 0; /**< Unique Client id */
   int AutoPrune = 0;
@@ -402,9 +358,6 @@ struct ClientDbRecord {
   char Uname[256]{0};            /**< Uname for client */
 };
 
-/**
- * Counter record -- same as in database
- */
 struct CounterDbRecord {
   char Counter[MAX_NAME_LENGTH]{0};
   int32_t MinValue{0};
@@ -413,28 +366,18 @@ struct CounterDbRecord {
   char WrapCounter[MAX_NAME_LENGTH]{0};
 };
 
-/**
- * FileSet record -- same as the database
- */
 struct FileSetDbRecord {
   DBId_t FileSetId = 0;             /**< Unique FileSet id */
   char FileSet[MAX_NAME_LENGTH]{0}; /**< FileSet name */
   char* FileSetText = nullptr;      /**< FileSet as Text */
   char MD5[50]{0};                  /**< MD5 signature of include/exclude */
   time_t CreateTime = 0;            /**< Date created */
-  /*
-   * This is where we return CreateTime
-   */
+  // This is where we return CreateTime
   char cCreateTime[MAX_TIME_LENGTH]{0}; /**< CreateTime as returned from DB */
-  /*
-   * Not in DB but returned by db_create_fileset()
-   */
+  // Not in DB but returned by db_create_fileset()
   bool created = false; /**< set when record newly created */
 };
 
-/**
- * Device Statistics record -- same as in database
- */
 struct DeviceStatisticsDbRecord {
   DBId_t DeviceId = 0;       /**< Device record id */
   time_t SampleTime = 0;     /**< Timestamp statistic was captured */
@@ -451,18 +394,12 @@ struct DeviceStatisticsDbRecord {
   uint64_t VolCatBlocks = 0; /**< Volume Blocks */
 };
 
-/**
- * TapeAlert record -- same as in database
- */
 struct TapealertStatsDbRecord {
   DBId_t DeviceId = 0;     /**< Device record id */
   time_t SampleTime = 0;   /**< Timestamp statistic was captured */
   uint64_t AlertFlags = 0; /**< Tape Alerts raised */
 };
 
-/**
- * Job Statistics record -- same as in database
- */
 struct JobStatisticsDbRecord {
   DBId_t DeviceId = 0;   /**< Device record id */
   time_t SampleTime = 0; /**< Timestamp statistic was captured */
@@ -471,9 +408,7 @@ struct JobStatisticsDbRecord {
   uint64_t JobBytes = 0; /**< Number of Bytes in Job */
 };
 
-/**
- * Call back context for getting a 32/64 bit value from the database
- */
+// Call back context for getting a 32/64 bit value from the database
 class db_int64_ctx {
  public:
   int64_t value = 0; /**< value returned */
@@ -536,26 +471,16 @@ typedef int(DB_RESULT_HANDLER)(void*, int, char**);
 
 class pathid_cache;
 
-/*
- * Initial size of query hash table and hint for number of pages.
- */
+// Initial size of query hash table and hint for number of pages.
 #define QUERY_INITIAL_HASH_SIZE 1024
 #define QUERY_HTABLE_PAGES 128
 
-/**
- * Current database version number for all drivers
- */
+// Current database version number for all drivers
 #define BDB_VERSION 2192
 
 #ifdef _BDB_PRIV_INTERFACE_
-/*
- * Generic definition of a sql_row.
- */
 typedef char** SQL_ROW;
 
-/*
- * Generic definition of a a sql_field.
- */
 typedef struct sql_field {
   char* name = nullptr; /* name of column */
   int max_length = 0;   /* max length */
@@ -566,9 +491,6 @@ typedef struct sql_field {
 
 class BareosDb : public BareosDbQueryEnum {
  protected:
-  /*
-   * Members
-   */
   brwlock_t lock_; /**< Transaction lock */
   dlink link_;     /**< Queue control */
   SQL_INTERFACETYPE db_interface_type_
@@ -611,9 +533,6 @@ class BareosDb : public BareosDbQueryEnum {
   int num_rows_ = 0; /**< Number of rows returned by last query */
 
  private:
-  /*
-   * Methods
-   */
   int GetFilenameRecord(JobControlRecord* jcr);
   bool GetFileRecord(JobControlRecord* jcr,
                      JobDbRecord* jr,
@@ -638,9 +557,6 @@ class BareosDb : public BareosDbQueryEnum {
                        va_list arg_ptr);
 
  public:
-  /*
-   * Methods
-   */
   BareosDb() {}
   virtual ~BareosDb() {}
   const char* get_db_name(void) { return db_name_; }
@@ -1049,9 +965,6 @@ class BareosDb : public BareosDbQueryEnum {
   virtual bool SqlCopyEnd() = 0;
 
 #ifdef _BDB_PRIV_INTERFACE_
-  /*
-   * Backend methods
-   */
  private:
   virtual void SqlFieldSeek(int field) = 0;
   virtual int SqlNumFields(void) = 0;
@@ -1097,9 +1010,7 @@ class BareosDb : public BareosDbQueryEnum {
 #define QUERY_DB(jcr, cmd) QueryDB(__FILE__, __LINE__, jcr, cmd)
 #define DELETE_DB(jcr, cmd) DeleteDB(__FILE__, __LINE__, jcr, cmd)
 
-/**
- * Pooled backend connection.
- */
+// Pooled backend connection.
 struct SqlPoolEntry {
   int id = 0; /**< Unique ID, connection numbering can have holes and the pool
              is not sorted on it */
@@ -1110,9 +1021,7 @@ struct SqlPoolEntry {
   dlink link;                    /**< list management */
 };
 
-/**
- * Pooled backend list descriptor (one defined per backend defined in config)
- */
+// Pooled backend list descriptor (one defined per backend defined in config)
 struct SqlPoolDescriptor {
   dlist* pool_entries = nullptr; /**< Linked list of all pool entries */
   bool active = false;    /**< Is this an active pool, after a config reload an
@@ -1136,9 +1045,7 @@ struct SqlPoolDescriptor {
 
 #include "include/jcr.h"
 
-/**
- * Object used in db_list_xxx function
- */
+// Object used in db_list_xxx function
 class ListContext {
  public:
   char line[256]{0}; /**< Used to print last dash line */
@@ -1176,9 +1083,7 @@ class ListContext {
   }
 };
 
-/**
- * Some functions exported by sql.c for use within the cats directory.
- */
+// Some functions exported by sql.c for use within the cats directory.
 int ListResult(void* vctx, int cols, char** row);
 int ListResult(JobControlRecord* jcr,
                BareosDb* mdb,

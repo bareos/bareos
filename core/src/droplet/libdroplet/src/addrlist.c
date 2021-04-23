@@ -74,9 +74,7 @@ void dpl_addrlist_unlock(dpl_addrlist_t* addrlist)
   pthread_mutex_unlock(&addrlist->lock);
 }
 
-/**
- *
- */
+//
 
 dpl_addrlist_t* dpl_addrlist_create(const char* default_port)
 {

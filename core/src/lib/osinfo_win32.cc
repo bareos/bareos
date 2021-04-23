@@ -139,9 +139,7 @@ const char* GetOsInfoString()
 typedef void(WINAPI* PGNSI)(LPSYSTEM_INFO);
 typedef BOOL(WINAPI* PGPI)(DWORD, DWORD, DWORD, DWORD, PDWORD);
 
-/*
- * Get Windows version display string
- */
+// Get Windows version display string
 static bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
 {
   OSVERSIONINFOEX osvi;
@@ -171,9 +169,7 @@ static bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
   if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT && osvi.dwMajorVersion > 4) {
     strncpy(osbuf, TEXT("Microsoft "), maxsiz);
 
-    /*
-     * Test for the specific product.
-     */
+    // Test for the specific product.
     switch (osvi.dwMajorVersion) {
       case 6:
         switch (osvi.dwMinorVersion) {
@@ -291,9 +287,7 @@ static bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
               strncat(osbuf, TEXT("Windows Server 2003 "), maxsiz);
             }
 
-            /*
-             * Test for the server type.
-             */
+            // Test for the server type.
             if (osvi.wProductType != VER_NT_WORKSTATION) {
               if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_IA64) {
                 if (osvi.wSuiteMask & VER_SUITE_DATACENTER) {
@@ -357,9 +351,7 @@ static bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
         break;
     }
 
-    /*
-     * Include service pack (if any) and build number.
-     */
+    // Include service pack (if any) and build number.
     if (_tcslen(osvi.szCSDVersion) > 0) {
       strncat(osbuf, TEXT(" "), maxsiz);
       strncat(osbuf, osvi.szCSDVersion, maxsiz);

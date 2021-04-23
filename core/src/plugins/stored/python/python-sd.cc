@@ -310,9 +310,7 @@ static bRC freePlugin(PluginContext* plugin_ctx)
 
   if (!plugin_priv_ctx) { return bRC_Error; }
 
-  /*
-   * Stop any sub interpreter started per plugin instance.
-   */
+  // Stop any sub interpreter started per plugin instance.
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
 
 
@@ -373,9 +371,7 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
      */
     switch (event->eventType) {
       case bSdEventNewPluginOptions:
-        /*
-         * See if we already loaded the Python modules.
-         */
+        // See if we already loaded the Python modules.
         if (!plugin_priv_ctx->python_loaded) {
           retval = PyLoadModule(plugin_ctx, plugin_options.c_str());
         }
@@ -442,9 +438,7 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
     goto bail_out;
   }
 
-  /*
-   * Skip the first ':'
-   */
+  // Skip the first ':'
   bp++;
 
   cnt = 0;
@@ -469,9 +463,7 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
     }
     *argument_value++ = '\0';
 
-    /*
-     * See if there are more arguments and setup for the next run.
-     */
+    // See if there are more arguments and setup for the next run.
     bp = argument_value;
     do {
       bp = strchr(bp, ':');
@@ -516,17 +508,13 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
           *bool_destination = ParseBoolean(argument_value);
         }
 
-        /*
-         * When we have a match break the loop.
-         */
+        // When we have a match break the loop.
         found = true;
         break;
       }
     }
 
-    /*
-     * If we didn't consume this parameter we add it to the plugin_options list.
-     */
+    // If we didn't consume this parameter we add it to the plugin_options list.
     if (!found) {
       PoolMem option(PM_FNAME);
 
@@ -623,9 +611,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, void* value)
       goto bail_out;
     }
 
-    /*
-     * Keep track we successfully loaded.
-     */
+    // Keep track we successfully loaded.
     plugin_priv_ctx->python_loaded = true;
   }
 

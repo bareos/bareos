@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March MM
- */
+// Kern Sibbald, March MM
 /**
  * @file
  * Bareos File Daemon
@@ -202,17 +200,13 @@ int main(int argc, char* argv[])
     Emsg0(M_ERROR_TERM, 0, _("-k option has no meaning without -u option.\n"));
   }
 
-  /*
-   * See if we want to drop privs.
-   */
+  // See if we want to drop privs.
   if (geteuid() == 0) { drop(uid, gid, keep_readall_caps); }
 
   if (!no_signals) {
     InitSignals(TerminateFiled);
   } else {
-    /*
-     * This reduces the number of signals facilitating debugging
-     */
+    // This reduces the number of signals facilitating debugging
     watchdog_sleep_time = 120; /* long timeout for debugging */
   }
 
@@ -287,14 +281,10 @@ int main(int argc, char* argv[])
     }
   }
 
-  /*
-   * if configured, start threads and connect to Director.
-   */
+  // if configured, start threads and connect to Director.
   StartConnectToDirectorThreads();
 
-  /*
-   * start socket server to listen for new connections.
-   */
+  // start socket server to listen for new connections.
   StartSocketServer(me->FDaddrs);
 
   TerminateFiled(0);
@@ -362,9 +352,7 @@ static bool CheckResources()
           configfile.c_str());
     OK = false;
   } else {
-    /*
-     * Sanity check.
-     */
+    // Sanity check.
     if (me->MaxConnections < (2 * me->MaxConcurrentJobs)) {
       me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
     }
@@ -430,9 +418,7 @@ static bool CheckResources()
         }
       }
 
-      /*
-       * Trusted Signers. We're always trusted.
-       */
+      // Trusted Signers. We're always trusted.
       me->pki_signers = new alist(10, not_owned_by_alist);
       if (me->pki_keypair) {
         me->pki_signers->append(crypto_keypair_dup(me->pki_keypair));

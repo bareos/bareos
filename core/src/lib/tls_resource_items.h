@@ -26,9 +26,7 @@
 
 /* clang-format off */
 
-/**
- * Common TLS-Settings for both (Certificate and PSK).
- */
+// Common TLS-Settings for both (Certificate and PSK).
 #define TLS_COMMON_CONFIG(res) \
   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res, authenticate_), 0, CFG_ITEM_DEFAULT, "false", \
      NULL, "Use TLS only to authenticate, not for encryption."}, \
@@ -48,9 +46,7 @@
   { "TlsProtocol", CFG_TYPE_STDSTR, ITEM(res, protocol_), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, \
      "20.0.0-", "OpenSSL Configuration: Protocol"}
 
-/*
- * TLS Settings for Certificate only
- */
+// TLS Settings for Certificate only
 #define TLS_CERT_CONFIG(res)                                                \
   { "TlsVerifyPeer",  CFG_TYPE_BOOL, ITEM(res, tls_cert_.verify_peer_), 0, CFG_ITEM_DEFAULT, "false", \
      NULL, "If disabled, all certificates signed by a known CA will be accepted. "  \

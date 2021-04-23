@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, July 2002
- */
+// Kern Sibbald, July 2002
 /**
  * @file
  * Bootstrap Record header file
@@ -39,9 +37,6 @@ struct VolumeParameters;
 
 namespace directordaemon {
 
-/**
- * FileIndex entry in restore bootstrap record
- */
 class RestoreBootstrapRecordFileIndex {
  private:
   std::vector<int32_t> fileIds_;
@@ -86,9 +81,6 @@ struct RestoreBootstrapRecord {
 
 class UaContext;
 
-/**
- * Open bootstrap file.
- */
 struct bootstrap_info {
   FILE* bs;
   UaContext* ua;

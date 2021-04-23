@@ -125,9 +125,7 @@ int ndmca_op_test_mover(struct ndm_session* sess)
   struct ndm_control_agent* ca = sess->control_acb;
 
   if (sess->control_acb->job.data_agent.conn_type != NDMCONN_TYPE_NONE) {
-    /*
-     * Sometimes needed to aid resident tape agent test
-     */
+    // Sometimes needed to aid resident tape agent test
     rc = ndmca_connect_data_agent(sess);
     if (rc) {
       ndmconn_destruct(sess->plumb.data);
@@ -249,9 +247,7 @@ int ndmca_tm_listen(struct ndm_session* sess)
 
   ndmca_test_done_phase(sess);
 
-  /*
-   * Bogus arguments
-   */
+  // Bogus arguments
   ndmca_test_phase(sess, "M-LISTEN/bogus-args",
                    "Mover LISTEN State Series w/ bogus args");
 
@@ -267,9 +263,7 @@ int ndmca_tm_listen(struct ndm_session* sess)
 
   ndmca_test_done_phase(sess);
 
-  /*
-   * Tape drive not open
-   */
+  // Tape drive not open
 
   ndmca_test_phase(sess, "M-LISTEN/not-open",
                    "Mover LISTEN State Series w/o tape open");
@@ -300,9 +294,7 @@ int ndmca_tm_listen(struct ndm_session* sess)
 
   ndmca_test_done_phase(sess);
 
-  /*
-   * Tape drive open for READ
-   */
+  // Tape drive open for READ
   ndmca_test_phase(sess, "M-LISTEN/tape-ro",
                    "Mover LISTEN State Series w/ tape r/o");
 
@@ -338,9 +330,7 @@ int ndmca_tm_listen(struct ndm_session* sess)
 
   ndmca_test_done_phase(sess);
 
-  /*
-   * Tape drive open for WRITE
-   */
+  // Tape drive open for WRITE
   ndmca_test_phase(sess, "M-LISTEN/tape-rw",
                    "Mover LISTEN State Series w/ tape r/w");
 
@@ -374,13 +364,9 @@ int ndmca_tm_listen(struct ndm_session* sess)
   rc = ndmca_test_tape_close(sess, NDMP9_NO_ERR);
   if (rc) return rc;
 
-  /*
-   * TODO: NDMP9_MOVER_MODE_DATA
-   */
+  // TODO: NDMP9_MOVER_MODE_DATA
 
-  /*
-   * Good enough
-   */
+  // Good enough
 
   return 0; /* pass */
 }

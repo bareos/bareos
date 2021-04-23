@@ -79,9 +79,7 @@ int32_t BnetRecv(BareosSocket* bsock) { return bsock->recv(); }
  */
 bool IsBnetStop(BareosSocket* bsock) { return bsock->IsStop(); }
 
-/**
- * Return number of errors on socket
- */
+// Return number of errors on socket
 int IsBnetError(BareosSocket* bsock) { return bsock->IsError(); }
 
 /**
@@ -229,9 +227,7 @@ bool BnetTlsClient(std::shared_ptr<TLS_IMPLEMENTATION> tls_implementation,
  */
 int BnetWaitData(BareosSocket* bsock, int sec) { return bsock->WaitData(sec); }
 
-/**
- * As above, but returns on interrupt
- */
+// As above, but returns on interrupt
 int BnetWaitDataIntr(BareosSocket* bsock, int sec)
 {
   return bsock->WaitDataIntr(sec);
@@ -312,9 +308,7 @@ const char* resolv_host(int family, const char* host, dlist* addr_list)
   return NULL;
 }
 #else
-/**
- * Get human readable error for gethostbyname()
- */
+// Get human readable error for gethostbyname()
 static const char* gethost_strerror()
 {
   const char* msg;
@@ -395,9 +389,7 @@ static IPADDR* add_any(int family)
   return addr;
 }
 
-/**
- * i host = 0 mean INADDR_ANY only ipv4
- */
+// i host = 0 mean INADDR_ANY only ipv4
 dlist* BnetHost2IpAddrs(const char* host, int family, const char** errstr)
 {
   struct in_addr inaddr;
@@ -523,9 +515,7 @@ int BnetSetNonblocking(BareosSocket* bsock) { return bsock->SetNonblocking(); }
  */
 int BnetSetBlocking(BareosSocket* bsock) { return bsock->SetBlocking(); }
 
-/**
- * Restores socket flags
- */
+// Restores socket flags
 void BnetRestoreBlocking(BareosSocket* bsock, int flags)
 {
   bsock->RestoreBlocking(flags);

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October MM
- */
+// Kern Sibbald, October MM
 /**
  * @file
  * This file handles accepting Director Commands
@@ -189,19 +187,13 @@ static struct s_cmds cmds[] = {
     {nullptr, nullptr, false} /* list terminator */
 };
 
-/**
- * Commands send to director
- */
+// Commands send to director
 static char hello_client[] = "Hello Client %s FdProtocolVersion=%d calling\n";
 
-/**
- * Responses received from the director
- */
+// Responses received from the director
 static const char OKversion[] = "1000 OK: %s Version: %s (%u %s %u)";
 
-/**
- * Commands received from director that need scanning
- */
+// Commands received from director that need scanning
 static char setauthorizationcmd[] = "setauthorization Authorization=%100s";
 static char setbandwidthcmd[] = "setbandwidth=%lld Job=%127s";
 static char setdebugv0cmd[] = "setdebug=%d trace=%d";
@@ -226,9 +218,7 @@ static char runscriptcmd[]
     = "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
 static char resolvecmd[] = "resolve %s";
 
-/**
- * Responses sent to Director
- */
+// Responses sent to Director
 static char errmsg[] = "2999 Invalid command\n";
 static char invalid_cmd[]
     = "2997 Invalid command for a Director with Monitor directive enabled.\n";
@@ -266,18 +256,14 @@ static char OKRestoreObject[] = "2000 OK ObjectRestored\n";
 static char OKPluginOptions[] = "2000 OK PluginOptions\n";
 static char BadPluginOptions[] = "2905 Bad PluginOptions command.\n";
 
-/**
- * Responses received from Storage Daemon
- */
+// Responses received from Storage Daemon
 static char OK_end[] = "3000 OK end\n";
 static char OK_close[] = "3000 OK close Status = %d\n";
 static char OK_open[] = "3000 OK open ticket = %d\n";
 static char OK_data[] = "3000 OK data\n";
 static char OK_append[] = "3000 OK append data\n";
 
-/**
- * Commands sent to Storage Daemon
- */
+// Commands sent to Storage Daemon
 static char append_open[] = "append open session\n";
 static char append_data[] = "append data %d\n";
 static char append_end[] = "append end session %d\n";
@@ -286,9 +272,7 @@ static char read_open[] = "read open session = %s %ld %ld %ld %ld %ld %ld\n";
 static char read_data[] = "read data %d\n";
 static char read_close[] = "read close session %d\n";
 
-/**
- * See if we are allowed to execute the command issued.
- */
+// See if we are allowed to execute the command issued.
 static bool ValidateCommand(JobControlRecord* jcr,
                             const char* cmd,
                             alist* allowed_job_cmds)
@@ -296,9 +280,7 @@ static bool ValidateCommand(JobControlRecord* jcr,
   char* allowed_job_cmd = nullptr;
   bool allowed = false;
 
-  /*
-   * If there is no explicit list of allowed cmds allow all cmds.
-   */
+  // If there is no explicit list of allowed cmds allow all cmds.
   if (!allowed_job_cmds) { return true; }
 
   foreach_alist (allowed_job_cmd, allowed_job_cmds) {
@@ -326,9 +308,7 @@ static inline void CleanupFileset(JobControlRecord* jcr)
 
   fileset = jcr->impl->ff->fileset;
   if (fileset) {
-    /*
-     * Delete FileSet Include lists
-     */
+    // Delete FileSet Include lists
     for (int i = 0; i < fileset->include_list.size(); i++) {
       incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
       for (int j = 0; j < incexe->opts_list.size(); j++) {
@@ -362,9 +342,7 @@ static inline void CleanupFileset(JobControlRecord* jcr)
     }
     fileset->include_list.destroy();
 
-    /*
-     * Delete FileSet Exclude lists
-     */
+    // Delete FileSet Exclude lists
     for (int i = 0; i < fileset->exclude_list.size(); i++) {
       incexe = (findIncludeExcludeItem*)fileset->exclude_list.get(i);
       for (int j = 0; j < incexe->opts_list.size(); j++) {
@@ -453,9 +431,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   /**********FIXME******* add command handler error code */
 
   while (jcr->authenticated && (!quit)) {
-    /*
-     * Read command
-     */
+    // Read command
     if (dir->recv() < 0) { break; /* connection terminated */ }
 
     dir->msg[dir->message_length] = 0;
@@ -485,14 +461,10 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
     }
   }
 
-  /*
-   * Inform Storage daemon that we are done
-   */
+  // Inform Storage daemon that we are done
   if (jcr->store_bsock) { jcr->store_bsock->signal(BNET_TERMINATE); }
 
-  /*
-   * Run the after job
-   */
+  // Run the after job
   if (jcr->impl->RunScripts) {
     RunScripts(jcr, jcr->impl->RunScripts, "ClientAfterJob",
                (jcr->impl->director && jcr->impl->director->allowed_script_dirs)
@@ -502,9 +474,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 
   if (jcr->JobId) { /* send EndJob if running a job */
     char ed1[50], ed2[50];
-    /*
-     * Send termination status back to Dir
-     */
+    // Send termination status back to Dir
     dir->fsend(EndJob, jcr->JobStatus, jcr->JobFiles,
                edit_uint64(jcr->ReadBytes, ed1),
                edit_uint64(jcr->JobBytes, ed2), jcr->JobErrors,
@@ -516,17 +486,13 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 
   DequeueMessages(jcr); /* send any queued messages */
 
-  /*
-   * Inform Director that we are done
-   */
+  // Inform Director that we are done
   dir->signal(BNET_TERMINATE);
 
   FreePlugins(jcr); /* release instantiated plugins */
   FreeAndNullPoolMemory(jcr->impl->job_metadata);
 
-  /*
-   * Clean up fileset
-   */
+  // Clean up fileset
   CleanupFileset(jcr);
 
   FreeJcr(jcr); /* destroy JobControlRecord record */
@@ -540,9 +506,7 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
   return nullptr;
 }
 
-/**
- * Create a new thread to handle director connection.
- */
+// Create a new thread to handle director connection.
 static bool StartProcessDirectorCommands(JobControlRecord* jcr)
 {
   int result = 0;
@@ -640,9 +604,7 @@ static void* handle_connection_to_director(void* director_resource)
     } else {
       Dmsg1(120, "Connected to \"%s\".\n", dir_res->resource_name_);
 
-      /*
-       * Returns: 1 if data available, 0 if timeout, -1 if error
-       */
+      // Returns: 1 if data available, 0 if timeout, -1 if error
       data_available = 0;
       while ((data_available == 0) && (!quit_client_initiate_connection)) {
         Dmsg2(120, "Waiting for data from Director \"%s\" (timeout: %ds)\n",
@@ -655,15 +617,11 @@ static void* handle_connection_to_director(void* director_resource)
                 _("Failed while waiting for data from Director \"%s\"\n"),
                 dir_res->resource_name_);
         } else {
-          /*
-           * data is available
-           */
+          // data is available
           dir_bsock->SetJcr(jcr);
           jcr->dir_bsock = dir_bsock;
           if (StartProcessDirectorCommands(jcr)) {
-            /*
-             * jcr (and dir_bsock) are now used by another thread.
-             */
+            // jcr (and dir_bsock) are now used by another thread.
             dir_bsock = nullptr;
             jcr = nullptr;
           }
@@ -675,9 +633,7 @@ static void* handle_connection_to_director(void* director_resource)
   Dmsg1(100, "Exiting Client Initiated Connection thread for %s\n",
         dir_res->resource_name_);
   if (jcr) {
-    /*
-     * cleanup old data structures
-     */
+    // cleanup old data structures
     FreeJcr(jcr);
   }
 
@@ -748,9 +704,7 @@ bool StopConnectToDirectorThreads(bool wait)
   return result;
 }
 
-/**
- * Resolve a hostname
- */
+// Resolve a hostname
 static bool ResolveCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -796,9 +750,7 @@ static bool exit_cmd(JobControlRecord* jcr)
 }
 #endif
 
-/**
- * Cancel a Job
- */
+// Cancel a Job
 static bool CancelCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;

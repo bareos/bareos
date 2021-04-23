@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, September MM
- */
+// Kern Sibbald, September MM
 /**
  * @file
  * Bareos Console interface to the Director
@@ -154,9 +152,7 @@ static int ZedKeyscmd(FILE* input, BareosSocket* UA_sock)
   return 1;
 }
 
-/**
- * These are the @commands that run only in bconsole
- */
+// These are the @commands that run only in bconsole
 struct cmdstruct {
   const char* key;
   int (*func)(FILE* input, BareosSocket* UA_sock);
@@ -234,9 +230,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       if (usrbrk() == 1) { clrbrk(); }
       if (usrbrk()) { break; }
     } else {
-      /*
-       * Reading input from a file
-       */
+      // Reading input from a file
       int len = SizeofPoolMemory(UA_sock->msg) - 1;
       if (usrbrk()) { break; }
       if (fgets(UA_sock->msg, len, input) == NULL) {
@@ -260,9 +254,7 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
       }
     } else {
       at_prompt = false;
-      /*
-       * @ => internal command for us
-       */
+      // @ => internal command for us
       if (UA_sock->msg[0] == '@') {
         ParseArgs(UA_sock->msg, args, &argc, argk, argv, MAX_CMD_ARGS);
         if (!Do_a_command(input, UA_sock)) { break; }
@@ -333,9 +325,6 @@ static void ReadAndProcessInput(FILE* input, BareosSocket* UA_sock)
 #include "lib/tls_openssl.h"
 #include "lib/bsignal.h"
 
-/**
- * Get the first keyword of the line
- */
 static char* get_first_keyword()
 {
   char* ret = NULL;
@@ -360,9 +349,7 @@ static char* get_previous_keyword(int current_point, int nb)
   char* s = NULL;
 
   while (nb-- >= 0) {
-    /*
-     * First we look for a space before the current word
-     */
+    // First we look for a space before the current word
     for (i = current_point; i >= 0; i--) {
       if (rl_line_buffer[i] == ' ' || rl_line_buffer[i] == '=') { break; }
     }
@@ -576,9 +563,7 @@ static char** readline_completion(const char* text, int start, int end)
   cmd = get_first_keyword();
   if (s) {
     for (int i = 0; i < key_size; i++) {
-      /*
-       * See if this keyword is allowed with the current file_selection setting.
-       */
+      // See if this keyword is allowed with the current file_selection setting.
       if (cpl_keywords[i].file_selection != file_selection) { continue; }
 
       if (Bstrcasecmp(s, cpl_keywords[i].key)) {
@@ -788,9 +773,7 @@ static bool SelectDirector(const char* director,
     UnlockRes(my_config);
   }
 
-  /*
-   * Look for a console linked to this director
-   */
+  // Look for a console linked to this director
   LockRes(my_config);
   for (i = 0; i < numcon; i++) {
     console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
@@ -803,9 +786,7 @@ static bool SelectDirector(const char* director,
     console_resource_tmp = NULL;
   }
 
-  /*
-   * Look for the first non-linked console
-   */
+  // Look for the first non-linked console
   if (console_resource_tmp == NULL) {
     for (i = 0; i < numcon; i++) {
       console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
@@ -815,9 +796,7 @@ static bool SelectDirector(const char* director,
     }
   }
 
-  /*
-   * If no console, take first one
-   */
+  // If no console, take first one
   if (!console_resource_tmp) {
     console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
         R_CONSOLE, (BareosResource*)NULL);
@@ -876,9 +855,6 @@ static bool ExaminePamAuthentication(
 }
 #endif /* HAVE_PAM */
 
-/*
- * Main Bareos Console -- User Interface Program
- */
 int main(int argc, char* argv[])
 {
   int ch;
@@ -1132,9 +1108,7 @@ int main(int argc, char* argv[])
   char* env = getenv("HOME");
 #endif
 
-  /*
-   * Run commands in ~/.bconsolerc if any
-   */
+  // Run commands in ~/.bconsolerc if any
   if (env) {
     FILE* fp;
 
@@ -1297,9 +1271,7 @@ static int DoOutputcmd(FILE* input, BareosSocket* UA_sock)
   return 1;
 }
 
-/**
- * @exec "some-command" [wait-seconds]
- */
+// @exec "some-command" [wait-seconds]
 static int ExecCmd(FILE* input, BareosSocket* UA_sock)
 {
   Bpipe* bpipe;

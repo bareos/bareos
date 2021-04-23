@@ -20,16 +20,12 @@
    02110-1301, USA.
 */
 
-/*
- * Marco van Wieringen, March 2012
- */
+// Marco van Wieringen, March 2012
 
 #ifndef BAREOS_LIB_SCSI_LLI_H_
 #define BAREOS_LIB_SCSI_LLI_H_
 
-/*
- * Device Inquiry Response
- */
+// Device Inquiry Response
 typedef struct {
 #if HAVE_BIG_ENDIAN
   uint8_t peripheralQualifier : 3;
@@ -118,9 +114,7 @@ typedef struct {
   uint8_t copyright[1];
 } SCSI_PAGE_INQ;
 
-/*
- * Sense Data Response
- */
+// Sense Data Response
 typedef struct {
 #if HAVE_BIG_ENDIAN
   uint8_t valid : 1;

@@ -85,9 +85,7 @@ enum
  */
 #  define GLOB_DIRSEP ('\\')
 #  define glob_is_dirsep(c) (((c) == ('/')) || ((c) == GLOB_DIRSEP))
-/*
- * ...and we use the ASCII ESC code as our escape character.
- */
+// ...and we use the ASCII ESC code as our escape character.
 static int glob_escape_char = GLOB_HARD_ESC;
 
 GLOB_INLINE char* glob_strdup(const char* pattern)
@@ -260,9 +258,7 @@ static const char* glob_in_set(const char* set, int test, int flags)
      * first character in the set, where it must match literally...
      */
     if (lastc == test)
-      /*
-       * ...which it does, so immediately report it so.
-       */
+      // ...which it does, so immediately report it so.
       return glob_set_adjusted(++set, flags);
 
     /* ...otherwise we didn't match this special case of ']' or '-',
@@ -286,9 +282,7 @@ static const char* glob_in_set(const char* set, int test, int flags)
          * character following the '-'...
          */
         if (lastc++ == test)
-          /*
-           * ...returning immediately on a successful match...
-           */
+          // ...returning immediately on a successful match...
           return glob_set_adjusted(set, flags);
       }
       while (lastc > c) {
@@ -297,9 +291,7 @@ static const char* glob_in_set(const char* set, int test, int flags)
          * sequence order...
          */
         if (lastc-- == test)
-          /*
-           * ...once again, return immediately on a successful match.
-           */
+          // ...once again, return immediately on a successful match.
           return glob_set_adjusted(set, flags);
       }
     }
@@ -397,9 +389,7 @@ static int GlobStrcmp(const char* pattern, const char* text, int flags)
         /* Match any sequence of zero or more characters...
          */
         while (*p == '*')
-          /*
-           * ...ignoring any repeated '*' in the pattern...
-           */
+          //' in the pattern...
           p++;
 
         /* ...and if we've exhausted the pattern...
@@ -488,9 +478,7 @@ static int GlobStrcmp(const char* pattern, const char* text, int flags)
          * in the candidate text string...
          */
         if ((*t == '\0') || (GlobCaseMatch(flags, c, *t) != 0))
-          /*
-           * ...otherwise we return a mismatch.
-           */
+          // ...otherwise we return a mismatch.
           return c - *t;
 
         /* No mismatch yet; proceed to test the following character
@@ -548,9 +536,7 @@ int GLOB_ISDIR(const char* path, const struct dirent* ent)
  */
 #  define D_NAMLEN(entry) ((entry)->d_namlen)
 #else
-/*
- * ...otherwise, we have to scan for it.
- */
+// ...otherwise, we have to scan for it.
 #  define D_NAMLEN(entry) (strlen((entry)->d_name))
 #endif
 
@@ -566,18 +552,14 @@ static int GlobInitialise(glob_t* gl_data)
      */
     int entries = gl_data->gl_offs + 1;
     if ((gl_data->gl_pathv = (char**)malloc(entries * sizeof(char**))) == NULL)
-      /*
-       * ...bailing out, if insufficient free heap memory.
-       */
+      // ...bailing out, if insufficient free heap memory.
       return GLOB_NOSPACE;
 
     /* On successful allocation, clear the initial path count...
      */
     gl_data->gl_pathc = 0;
     while (entries > 0)
-      /*
-       * ...and place a NULL pointer in each allocated slot...
-       */
+      // ...and place a NULL pointer in each allocated slot...
       gl_data->gl_pathv[--entries] = NULL;
   }
   /* ...ultimately returning a successful initialisation status.
@@ -614,9 +596,7 @@ static int GlobStoreEntry(char* path, glob_t* gl_buf)
      * slot, to mark the new end of the vector...
      */
     gl_buf->gl_pathv[gl_buf->gl_offs + gl_buf->gl_pathc] = NULL;
-    /*
-     * ...before returning a successful completion status.
-     */
+    // ...before returning a successful completion status.
     return GLOB_SUCCESS;
   }
   /* If we get to here, then we were unsuccessful.
@@ -671,9 +651,7 @@ glob_collate_entry(struct glob_collator* collator, char* entry, int flags)
       /* ...either...
        */
       if (seq > 0)
-        /*
-         * ...after...
-         */
+        // ...after...
         lastref->next = ref;
 
       else
@@ -748,9 +726,7 @@ static int glob_match(const char* pattern,
    */
   local_gl_buf.gl_offs = 0;
   if ((status = GlobInitialise(&local_gl_buf)) != GLOB_SUCCESS)
-    /*
-     * ...bailing out if unsuccessful.
-     */
+    // ...bailing out if unsuccessful.
     return status;
 
   /* Check if there are any globbing tokens in the path prefix...
@@ -770,9 +746,7 @@ static int glob_match(const char* pattern,
   /* Check nothing has gone wrong, so far...
    */
   if (status != GLOB_SUCCESS)
-    /*
-     * ...and bail out if necessary.
-     */
+    // ...and bail out if necessary.
     return status;
 
   /* The original "pattern" argument may have included a path name
@@ -877,9 +851,7 @@ static int glob_match(const char* pattern,
                     * and we haven't trapped any prior error...
                     */
               if (status == GLOB_NOMATCH)
-                /*
-                 * ...then record this successful match.
-                 */
+                // ...then record this successful match.
                 status = GLOB_SUCCESS;
 
               if ((flags & GLOB_NOSORT) == 0) {

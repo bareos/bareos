@@ -58,13 +58,9 @@
 
 static const int debuglevel = 500;
 
-/*
- * htable (Hash Table) class.
- */
+// htable (Hash Table) class.
 
-/*
- * This subroutine gets a big buffer.
- */
+// This subroutine gets a big buffer.
 void htable::MallocBigBuf(int size)
 {
   struct h_mem* hmem;
@@ -79,9 +75,7 @@ void htable::MallocBigBuf(int size)
   Dmsg3(100, "malloc buf=%p size=%d rem=%d\n", hmem, size, hmem->rem);
 }
 
-/*
- * This routine frees the whole tree.
- */
+// This routine frees the whole tree.
 void htable::HashBigFree()
 {
   struct h_mem *hmem, *rel;
@@ -94,9 +88,7 @@ void htable::HashBigFree()
   }
 }
 
-/*
- * Normal hash malloc routine that gets a "small" buffer from the big buffer
- */
+// Normal hash malloc routine that gets a "small" buffer from the big buffer
 char* htable::hash_malloc(int size)
 {
   int mb_size;
@@ -129,9 +121,7 @@ void htable::HashIndex(char* key)
     hash += ((hash << 5) | (hash >> (sizeof(hash) * 8 - 5))) + (uint32_t)*p;
   }
 
-  /*
-   * Multiply by large prime number, take top bits, mask for remainder.
-   */
+  // Multiply by large prime number, take top bits, mask for remainder.
   index = ((hash * 1103515249) >> rshift) & mask;
   Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%d\n", hash, index);
 }
@@ -140,9 +130,7 @@ void htable::HashIndex(uint32_t key)
 {
   hash = key;
 
-  /*
-   * Multiply by large prime number, take top bits, mask for remainder.
-   */
+  // Multiply by large prime number, take top bits, mask for remainder.
   index = ((hash * 1103515249) >> rshift) & mask;
   Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%d\n", hash, index);
 }
@@ -151,9 +139,7 @@ void htable::HashIndex(uint64_t key)
 {
   hash = key;
 
-  /*
-   * Multiply by large prime number, take top bits, mask for remainder.
-   */
+  // Multiply by large prime number, take top bits, mask for remainder.
   index = ((hash * 1103515249) >> rshift) & mask;
   Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%d\n", hash, index);
 }
@@ -165,16 +151,12 @@ void htable::HashIndex(uint8_t* key, uint32_t keylen)
     hash += ((hash << 5) | (hash >> (sizeof(hash) * 8 - 5))) + (uint32_t)*p;
   }
 
-  /*
-   * Multiply by large prime number, take top bits, mask for remainder.
-   */
+  // Multiply by large prime number, take top bits, mask for remainder.
   index = ((hash * 1103515249) >> rshift) & mask;
   Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%d\n", hash, index);
 }
 
-/*
- * tsize is the estimated number of entries in the hash table
- */
+// tsize is the estimated number of entries in the hash table
 htable::htable(void* item, void* link, int tsize, int nr_pages, int nr_entries)
 {
   init(item, link, tsize, nr_pages, nr_entries);
@@ -269,9 +251,7 @@ void htable::grow_table()
 
   Dmsg1(100, "Grow called old size = %d\n", buckets);
 
-  /*
-   * Setup a bigger table.
-   */
+  // Setup a bigger table.
   big = (htable*)malloc(sizeof(htable));
   big->hash = hash;
   big->total_size = total_size;
@@ -286,17 +266,13 @@ void htable::grow_table()
   big->buckets = buckets * 2;
   big->max_items = big->buckets * 4;
 
-  /*
-   * Create a bigger hash table.
-   */
+  // Create a bigger hash table.
   big->table = (hlink**)malloc(big->buckets * sizeof(hlink*));
   memset(big->table, 0, big->buckets * sizeof(hlink*));
   big->walkptr = NULL;
   big->walk_index = 0;
 
-  /*
-   * Insert all the items in the new hash table
-   */
+  // Insert all the items in the new hash table
   Dmsg1(100, "Before copy num_items=%d\n", num_items);
 
   /*

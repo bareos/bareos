@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Marco van Wieringen, March 2010
- */
+// Written by Marco van Wieringen, March 2010
 /**
  * @file
  * BAREOS sql pooling code that manages the database connection pools.

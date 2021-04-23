@@ -619,9 +619,7 @@ int CryptoKeypairLoadKey(X509_KEYPAIR* keypair,
   return true;
 }
 
-/*
- * Free memory associated with a keypair object.
- */
+// Free memory associated with a keypair object.
 void CryptoKeypairFree(X509_KEYPAIR* keypair)
 {
   if (keypair->pubkey) { EVP_PKEY_free(keypair->pubkey); }
@@ -712,9 +710,7 @@ bool CryptoDigestFinalize(DIGEST* digest, uint8_t* dest, uint32_t* length)
   }
 }
 
-/*
- * Free memory associated with a digest object.
- */
+// Free memory associated with a digest object.
 void CryptoDigestFree(DIGEST* digest) { delete digest; }
 
 /*
@@ -1005,9 +1001,7 @@ SIGNATURE* crypto_sign_decode(JobControlRecord* jcr,
   return sig;
 }
 
-/*
- * Free memory associated with a signature object.
- */
+// Free memory associated with a signature object.
 void CryptoSignFree(SIGNATURE* sig)
 {
   SignatureData_free(sig->sigData);
@@ -1047,9 +1041,7 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher, alist* pubkeys)
   /* Set the ASN.1 structure version number */
   ASN1_INTEGER_set(cs->cryptoData->version, BAREOS_ASN1_VERSION);
 
-  /*
-   * Acquire a cipher instance and set the ASN.1 cipher NID
-   */
+  // Acquire a cipher instance and set the ASN.1 cipher NID
   switch (cipher) {
     case CRYPTO_CIPHER_BLOWFISH_CBC:
       /* Blowfish CBC */
@@ -1349,9 +1341,7 @@ err:
   return retval;
 }
 
-/*
- * Free memory associated with a crypto session object.
- */
+// Free memory associated with a crypto session object.
 void CryptoSessionFree(CRYPTO_SESSION* cs)
 {
   if (cs->cryptoData) { CryptoData_free(cs->cryptoData); }
@@ -1371,9 +1361,7 @@ CIPHER_CONTEXT* crypto_cipher_new(CRYPTO_SESSION* cs,
   CIPHER_CONTEXT* cipher_ctx = new CIPHER_CONTEXT;
   const EVP_CIPHER* ec;
 
-  /*
-   * Acquire a cipher instance for the given ASN.1 cipher NID
-   */
+  // Acquire a cipher instance for the given ASN.1 cipher NID
   if ((ec = EVP_get_cipherbyobj(cs->cryptoData->contentEncryptionAlgorithm))
       == NULL) {
     Jmsg1(NULL, M_ERROR, 0, _("Unsupported contentEncryptionAlgorithm: %d\n"),
@@ -1468,9 +1456,7 @@ bool CryptoCipherFinalize(CIPHER_CONTEXT* cipher_ctx,
   }
 }
 
-/*
- * Free memory associated with a cipher context.
- */
+// Free memory associated with a cipher context.
 void CryptoCipherFree(CIPHER_CONTEXT* cipher_ctx) { delete cipher_ctx; }
 
 const char* crypto_digest_name(DIGEST* digest)
@@ -1480,9 +1466,7 @@ const char* crypto_digest_name(DIGEST* digest)
 
 #  endif /* HAVE_CRYPTO */
 
-/*
- * Generic OpenSSL routines used for both TLS and CRYPTO support.
- */
+// Generic OpenSSL routines used for both TLS and CRYPTO support.
 /* Are we initialized? */
 static int crypto_initialized = false;
 
@@ -1518,9 +1502,7 @@ int InitCrypto(void)
 #  ifdef HAVE_ENGINE_LOAD_PK11
   ENGINE_load_pk11();
 #  else
-  /*
-   * Load all the builtin engines.
-   */
+  // Load all the builtin engines.
   ENGINE_load_builtin_engines();
   ENGINE_register_all_complete();
 #  endif
@@ -1546,9 +1528,7 @@ int CleanupCrypto(void)
   if (!crypto_initialized) { return 0; }
 
 #  ifndef HAVE_SUN_OS
-  /*
-   * Cleanup the builtin engines.
-   */
+  // Cleanup the builtin engines.
   ENGINE_cleanup();
 #  endif
 
@@ -1587,9 +1567,7 @@ void OpensslPostErrors(int type, const char* errstring)
   OpensslPostErrors(NULL, type, errstring);
 }
 
-/*
- * Post all per-thread openssl errors
- */
+// Post all per-thread openssl errors
 void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring)
 {
   char buf[512];
@@ -1624,9 +1602,7 @@ static unsigned long GetOpensslThreadId(void)
 #  endif /* not HAVE_WIN32 */
 }
 
-/*
- * Allocate a dynamic OpenSSL mutex
- */
+// Allocate a dynamic OpenSSL mutex
 static struct CRYPTO_dynlock_value* openssl_create_dynamic_mutex(
     const char* file,
     int line)
@@ -1673,9 +1649,7 @@ static void OpensslDestroyDynamicMutex(struct CRYPTO_dynlock_value* dynlock,
   free(dynlock);
 }
 
-/*
- * (Un)Lock a static OpenSSL mutex
- */
+// (Un)Lock a static OpenSSL mutex
 static void openssl_update_static_mutex(int mode,
                                         int i,
                                         const char* file,
@@ -1725,9 +1699,7 @@ int OpensslInitThreads(void)
   return 0;
 }
 
-/*
- * Clean up OpenSSL threading support
- */
+// Clean up OpenSSL threading support
 void OpensslCleanupThreads(void)
 {
   int i, numlocks;

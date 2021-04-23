@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, June MMIII  (code pulled from filed/restore.c and updated)
- */
+// Kern Sibbald, June MMIII  (code pulled from filed/restore.c and updated)
 /**
  * @file
  * attr.c  Unpack an Attribute record returned from the tape
@@ -211,9 +209,7 @@ void BuildAttrOutputFnames(JobControlRecord* jcr, Attributes* attr)
       PmStrcat(attr->ofname, "/");
     }
     PmStrcat(attr->ofname, fn); /* copy rest of name */
-    /*
-     * Fixup link name -- if it is an absolute path
-     */
+    // Fixup link name -- if it is an absolute path
     if (attr->type == FT_LNKSAVED || attr->type == FT_LNK) {
       bool add_link;
       /* Always add prefix to hard links (FT_LNKSAVED) and
@@ -311,9 +307,7 @@ static const char* attr_to_ls_output(PoolMem& resultbuffer,
   return resultbuffer.c_str();
 }
 
-/**
- * Print an ls style message, also send M_RESTORED
- */
+// Print an ls style message, also send M_RESTORED
 void PrintLsOutput(JobControlRecord* jcr, Attributes* attr)
 {
   PoolMem resultbuffer(PM_MESSAGE);

@@ -18,9 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, June 2016
- */
+// Marco van Wieringen, June 2016
 
 /**
  * @file
@@ -57,9 +55,6 @@ bool DoArchive(JobControlRecord* jcr)
 
   jcr->impl->fname = (char*)GetPoolMemory(PM_FNAME);
 
-  /*
-   * Print Job Start message
-   */
   Jmsg(jcr, M_INFO, 0, _("Start Archive JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);
 
@@ -69,9 +64,6 @@ bool DoArchive(JobControlRecord* jcr)
   return true;
 }
 
-/**
- * Release resources allocated during archive.
- */
 void ArchiveCleanup(JobControlRecord* jcr, int TermCode)
 {
   char sdt[50], edt[50], schedt[50];

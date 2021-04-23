@@ -37,9 +37,6 @@
 #  define dbglevel 10
 #  define dbglevel_sql 15
 
-/*
- * Working Object to store PathId already seen (avoid database queries),
- */
 #  define NITEMS 50000
 class pathid_cache {
  private:
@@ -92,9 +89,7 @@ class pathid_cache {
   pathid_cache& operator=(const pathid_cache&); /* prohibit class assignment*/
 };
 
-/*
- * Generic path handlers used for database queries.
- */
+// Generic path handlers used for database queries.
 static int GetPathHandler(void* ctx, int fields, char** row)
 {
   PoolMem* buf = (PoolMem*)ctx;
@@ -111,9 +106,7 @@ static int PathHandler(void* ctx, int fields, char** row)
   return fs->_handlePath(ctx, fields, row);
 }
 
-/*
- * BVFS specific methods part of the BareosDb database abstraction.
- */
+// BVFS specific methods part of the BareosDb database abstraction.
 void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
                                   pathid_cache& ppathid_cache,
                                   char* org_pathid,
@@ -144,9 +137,6 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
 
       if (!QUERY_DB(jcr, cmd)) { goto bail_out; /* Query failed, just leave */ }
 
-      /*
-       * Do we have a result ?
-       */
       if (SqlNumRows() > 0) {
         ppathid_cache.insert(pathid);
         /* This dir was in the db ...
@@ -155,9 +145,7 @@ void BareosDb::BuildPathHierarchy(JobControlRecord* jcr,
          */
         goto bail_out;
       } else {
-        /*
-         * Search or create parent PathId in Path table
-         */
+        // Search or create parent PathId in Path table
         path = bvfs_parent_dir(new_path);
         pnl = strlen(path);
 
@@ -351,9 +339,7 @@ void BareosDb::BvfsUpdateCache(JobControlRecord* jcr)
   DbUnlock(this);
 }
 
-/*
- * Update the bvfs cache for given jobids (1,2,3,4)
- */
+// Update the bvfs cache for given jobids (1,2,3,4)
 bool BareosDb::BvfsUpdatePathHierarchyCache(JobControlRecord* jcr,
                                             const char* jobids)
 {
@@ -369,9 +355,7 @@ bool BareosDb::BvfsUpdatePathHierarchyCache(JobControlRecord* jcr,
     if (status < 0) { goto bail_out; }
 
     if (status == 0) {
-      /*
-       * We reached the end of the list.
-       */
+      // We reached the end of the list.
       goto bail_out;
     }
 
@@ -419,9 +403,6 @@ int BareosDb::BvfsBuildLsFileQuery(PoolMem& query,
   return nb_record;
 }
 
-/*
- * Generic result handler.
- */
 static int ResultHandler(void* ctx, int fields, char** row)
 {
   Dmsg1(100, "ResultHandler(*,%d,**)", fields);
@@ -439,9 +420,6 @@ static int ResultHandler(void* ctx, int fields, char** row)
   return 0;
 }
 
-/*
- * BVFS class methods.
- */
 Bvfs::Bvfs(JobControlRecord* j, BareosDb* mdb)
 {
   jcr = j;
@@ -553,14 +531,9 @@ char* bvfs_basename_dir(char* path)
 }
 
 
-/**
- * Update the bvfs cache for current jobids
- */
 void Bvfs::update_cache() { db->BvfsUpdatePathHierarchyCache(jcr, jobids); }
 
-/**
- * Change the current directory, returns true if the path exists
- */
+// Change the current directory, returns true if the path exists
 bool Bvfs::ChDir(const char* path)
 {
   DbLock(db);
@@ -628,9 +601,7 @@ DBId_t Bvfs::get_root()
 int Bvfs::_handlePath(void* ctx, int fields, char** row)
 {
   if (BvfsIsDir(row)) {
-    /*
-     * Can have the same path 2 times
-     */
+    // Can have the same path 2 times
     if (!bstrcmp(row[BVFS_Name], prev_dir)) {
       PmStrcpy(prev_dir, row[BVFS_Name]);
       return list_entries(user_data, fields, row);
@@ -655,9 +626,7 @@ bool Bvfs::ls_dirs()
   /* convert pathid to string */
   edit_uint64(pwd_id, pathid);
 
-  /*
-   * The sql query displays same directory multiple time, take the first one
-   */
+  // The sql query displays same directory multiple time, take the first one
   *prev_dir = 0;
 
   db->FillQuery(special_dirs_query, BareosDb::SQL_QUERY::bvfs_ls_special_dirs_3,
@@ -697,9 +666,7 @@ static void build_ls_files_query(JobControlRecord* jcr,
   }
 }
 
-/*
- * Returns true if we have files to read
- */
+// Returns true if we have files to read
 bool Bvfs::ls_files()
 {
   char pathid[50];

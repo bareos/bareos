@@ -81,9 +81,7 @@ static int simu_back_one(struct ndm_session* sess, int over_file_mark)
 
   ta->sent_leom = 0;
 
-  /*
-   * This is the new position. We need to update simu_prev_gap.
-   */
+  // This is the new position. We need to update simu_prev_gap.
 
   lseek(ta->tape_fd, new_pos, 0);
 
@@ -1095,9 +1093,7 @@ static int robot_state_move(struct ndm_session* sess,
  ****************************************************************
  */
 
-/*
- * Utilities
- */
+// Utilities
 
 static ndmp9_error scsi_fail_with_sense_code(struct ndm_session* sess,
                                              ndmp9_execute_cdb_reply* reply,
@@ -1127,9 +1123,7 @@ static ndmp9_error scsi_fail_with_sense_code(struct ndm_session* sess,
   return NDMP9_NO_ERR;
 }
 
-/*
- * Command implementations
- */
+// Command implementations
 
 static ndmp9_error execute_cdb_test_unit_ready(
     struct ndm_session* sess,

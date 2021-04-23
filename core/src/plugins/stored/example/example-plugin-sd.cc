@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- *  Kern Sibbald, October 2007
- */
+//  Kern Sibbald, October 2007
 /**
  * @file
  * Sample Storage daemon Plugin program
@@ -88,9 +86,7 @@ bRC loadPlugin(bsdInfo* lbareos_plugin_interface_version,
   return bRC_OK;
 }
 
-/**
- * External entry point to unload the plugin
- */
+// External entry point to unload the plugin
 bRC unloadPlugin()
 {
   printf("example-plugin-sd: Unloaded\n");
@@ -106,9 +102,7 @@ bRC unloadPlugin()
  *   pointers we supplied to Bareos. Each plugin type (dir, fd, sd)
  *   has its own set of entry points that the plugin must define.
  */
-/**
- * Create a new instance of the plugin i.e. allocate our private storage
- */
+// Create a new instance of the plugin i.e. allocate our private storage
 static bRC newPlugin(PluginContext* ctx)
 {
   int JobId = 0;
@@ -119,9 +113,7 @@ static bRC newPlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Free a plugin instance, i.e. release our private storage
- */
+// Free a plugin instance, i.e. release our private storage
 static bRC freePlugin(PluginContext* ctx)
 {
   int JobId = 0;
@@ -130,27 +122,21 @@ static bRC freePlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Return some plugin value (none defined)
- */
+// Return some plugin value (none defined)
 static bRC getPluginValue(PluginContext* ctx, psdVariable var, void* value)
 {
   printf("example-plugin-sd: getPluginValue var=%d\n", var);
   return bRC_OK;
 }
 
-/**
- * Set a plugin value (none defined)
- */
+// Set a plugin value (none defined)
 static bRC setPluginValue(PluginContext* ctx, psdVariable var, void* value)
 {
   printf("example-plugin-sd: setPluginValue var=%d\n", var);
   return bRC_OK;
 }
 
-/**
- * Handle an event that was generated in Bareos
- */
+// Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bsdEvent* event, void* value)
 {
   char* name;

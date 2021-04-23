@@ -22,9 +22,7 @@
 #ifndef BAREOS_PLUGINS_STORED_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
 #define BAREOS_PLUGINS_STORED_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
 
-/**
- * Plugin private context
- */
+// Plugin private context
 struct plugin_private_context {
   int64_t instance;     /* Instance number of plugin */
   bool python_loaded;   /* Plugin has python module loaded ? */

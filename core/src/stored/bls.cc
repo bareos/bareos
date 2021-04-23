@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * Dumb program to do an "ls" of a Bareos 2.0 mortal file.
@@ -366,9 +364,7 @@ static void DoBlocks(char* infname)
   return;
 }
 
-/**
- * We are only looking for labels or in particular Job Session records
- */
+// We are only looking for labels or in particular Job Session records
 static bool jobs_cb(DeviceControlRecord* dcr, DeviceRecord* rec)
 {
   if (rec->FileIndex < 0) { DumpLabelRecord(dcr->dev, rec, verbose); }
@@ -393,9 +389,7 @@ static void do_ls(char* infname)
   printf("%u files and directories found.\n", num_files);
 }
 
-/**
- * Called here for each record from ReadRecords()
- */
+// Called here for each record from ReadRecords()
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 {
   PoolMem record_str(PM_MESSAGE);
@@ -405,9 +399,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     return true;
   }
 
-  /*
-   * File Attributes stream
-   */
+  // File Attributes stream
   switch (rec->maskedStream) {
     case STREAM_UNIX_ATTRIBUTES:
     case STREAM_UNIX_ATTRIBUTES_EX:

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * Second generation Storage daemon.
@@ -142,9 +140,7 @@ int main(int argc, char* argv[])
   InitMsg(NULL, NULL);
   daemon_start_time = time(NULL);
 
-  /*
-   * Sanity checks
-   */
+  // Sanity checks
   if (TAPE_BSIZE % B_DEV_BSIZE != 0 || TAPE_BSIZE / B_DEV_BSIZE == 0) {
     Emsg2(M_ABORT, 0,
           _("Tape block size (%d) not multiple of system size (%d)\n"),
@@ -236,9 +232,7 @@ int main(int argc, char* argv[])
   }
   if (argc) { usage(); }
 
-  /*
-   * See if we want to drop privs.
-   */
+  // See if we want to drop privs.
   if (geteuid() == 0) { drop(uid, gid, false); }
 
   if (export_config_schema) {
@@ -316,9 +310,7 @@ int main(int argc, char* argv[])
     Jmsg0(NULL, M_ABORT, 0, _("Volume Session Time is ZERO!\n"));
   }
 
-  /*
-   * Start the device allocation thread
-   */
+  // Start the device allocation thread
   CreateVolumeLists(); /* do before device_init */
   if (pthread_create(&thid, NULL, device_initialization, NULL) != 0) {
     BErrNo be;
@@ -335,17 +327,13 @@ int main(int argc, char* argv[])
   StartStatisticsThread();
 
 #if HAVE_NDMP
-  /*
-   * Separate thread that handles NDMP connections
-   */
+  // Separate thread that handles NDMP connections
   if (me->ndmp_enable) {
     StartNdmpThreadServer(me->NDMPaddrs, me->MaxConnections);
   }
 #endif
 
-  /*
-   * Single server used for Director/Storage and File daemon
-   */
+  // Single server used for Director/Storage and File daemon
   StartSocketServer(me->SDaddrs);
 
   /* to keep compiler quiet */
@@ -381,9 +369,7 @@ static int CheckResources()
     OK = false;
   }
 
-  /*
-   * Sanity check.
-   */
+  // Sanity check.
   if (me->MaxConnections < ((2 * me->MaxConcurrentJobs) + 2)) {
     me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
   }
@@ -442,9 +428,7 @@ static int CheckResources()
   return OK;
 }
 
-/**
- * Remove old .spool files written by me from the working directory.
- */
+// Remove old .spool files written by me from the working directory.
 static void CleanUpOldFiles()
 {
   DIR* dp;
@@ -548,9 +532,7 @@ extern "C" void* device_initialization(void* arg)
   NewPlugins(jcr); /* instantiate plugins */
   jcr->setJobType(JT_SYSTEM);
 
-  /*
-   * Initialize job start condition variable
-   */
+  // Initialize job start condition variable
   errstat = pthread_cond_init(&jcr->impl->job_start_wait, NULL);
   if (errstat != 0) {
     BErrNo be;
@@ -559,9 +541,7 @@ extern "C" void* device_initialization(void* arg)
           be.bstrerror(errstat));
   }
 
-  /*
-   * Initialize job end condition variable
-   */
+  // Initialize job end condition variable
   errstat = pthread_cond_init(&jcr->impl->job_end_wait, NULL);
   if (errstat != 0) {
     BErrNo be;
@@ -587,9 +567,7 @@ extern "C" void* device_initialization(void* arg)
     jcr->impl->dcr->SetWillWrite();
     GeneratePluginEvent(jcr, bSdEventDeviceInit, dcr);
     if (dev->AttachedToAutochanger()) {
-      /*
-       * If autochanger set slot in dev structure
-       */
+      // If autochanger set slot in dev structure
       GetAutochangerLoadedSlot(dcr);
     }
 
@@ -626,9 +604,7 @@ extern "C" void* device_initialization(void* arg)
   return NULL;
 }
 
-/**
- * Clean up and then exit
- */
+// Clean up and then exit
 namespace storagedaemon {
 
 #if !defined(HAVE_WIN32)

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern E. Sibbald, MM
- */
+// Kern E. Sibbald, MM
 /**
  * @file
  * Dumb program to extract files from a Bareos backup.
@@ -260,9 +258,7 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-/*
- * Cleanup of delayed restore stack with streams for later processing.
- */
+// Cleanup of delayed restore stack with streams for later processing.
 static inline void DropDelayedDataStreams()
 {
   DelayedDataStream* dds = nullptr;
@@ -276,9 +272,7 @@ static inline void DropDelayedDataStreams()
   delayed_streams->destroy();
 }
 
-/*
- * Push a data stream onto the delayed restore stack for later processing.
- */
+// Push a data stream onto the delayed restore stack for later processing.
 static inline void PushDelayedDataStream(int stream,
                                          char* content,
                                          uint32_t content_length)
@@ -307,9 +301,7 @@ static inline void PopDelayedDataStreams()
 {
   DelayedDataStream* dds = nullptr;
 
-  /*
-   * See if there is anything todo.
-   */
+  // See if there is anything todo.
   if (!delayed_streams || delayed_streams->empty()) { return; }
 
   /*
@@ -373,14 +365,10 @@ static inline void PopDelayedDataStreams()
     }
   }
 
-  /*
-   * We processed the stack so we can destroy it.
-   */
+  // We processed the stack so we can destroy it.
   delayed_streams->destroy();
 
-  /*
-   * (Re)Initialize the stack for a new use.
-   */
+  // (Re)Initialize the stack for a new use.
   delayed_streams->init(10, owned_by_alist);
 
   return;
@@ -407,9 +395,7 @@ static void DoExtract(char* devname)
   if (!dev) { exit(1); }
   dcr = jcr->impl->read_dcr;
 
-  /*
-   * Make sure where directory exists and that it is a directory
-   */
+  // Make sure where directory exists and that it is a directory
   if (stat(where, &statp) < 0) {
     BErrNo be;
     Emsg2(M_ERROR_TERM, 0, _("Cannot stat %s. It must exist. ERR=%s\n"), where,
@@ -486,9 +472,7 @@ static bool StoreData(BareosWinFilePacket* bfd,
   return true;
 }
 
-/*
- * Called here for each record from ReadRecords()
- */
+// Called here for each record from ReadRecords()
 static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
 {
   int status;
@@ -720,9 +704,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
       break;
 
     default:
-      /*
-       * If extracting, weird stream (not 1 or 2), close output file anyway
-       */
+      // If extracting, weird stream (not 1 or 2), close output file anyway
       if (extract) {
         if (!IsBopen(&bfd)) {
           Emsg0(M_ERROR, 0,

@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, June MMII
- */
+// Kern Sibbald, June MMII
 /**
  * @file
  * Directory tree build/traverse routines

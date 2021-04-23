@@ -81,9 +81,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   Dmsg1(110, "Conn: %s\n", bs->msg);
 
-  /*
-   * See if its a director making a connection.
-   */
+  // See if its a director making a connection.
   char tbuf[100];
   if (bstrncmp(bs->msg, "Hello Director", 14)) {
     Dmsg1(110, "Got a DIR connection at %s\n",
@@ -91,9 +89,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
     return handle_director_connection(bs);
   }
 
-  /*
-   * See if its a storage daemon making a connection.
-   */
+  // See if its a storage daemon making a connection.
   if (bstrncmp(bs->msg, "Hello Storage", 13)) {
     Dmsg1(110, "Got a SD connection at %s\n",
           bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
@@ -121,16 +117,12 @@ void StartSocketServer(dlist* addrs)
 
   tcp_server_tid = pthread_self();
 
-  /*
-   * Become server, and handle requests
-   */
+  // Become server, and handle requests
   foreach_dlist (p, addrs) {
     Dmsg1(10, "filed: listening on port %d\n", p->GetPortHostOrder());
   }
 
-  /*
-   * Permit MaxConnections connections.
-   */
+  // Permit MaxConnections connections.
   sock_fds = new alist(10, not_owned_by_alist);
   BnetThreadServerTcp(addrs, me->MaxConnections, sock_fds, thread_list,
                       HandleConnectionRequest, my_config, nullptr,

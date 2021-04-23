@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, Feb MM
- */
+// Kern Sibbald, Feb MM
 /**
  * @file
  * Director specific configuration and defines
@@ -44,9 +42,7 @@ namespace directordaemon {
 
 static std::string default_config_filename("bareos-dir.conf");
 
-/**
- * Resource codes -- they must be sequential for indexing
- */
+// Resource codes -- they must be sequential for indexing
 enum
 {
   R_DIRECTOR = 1001,
@@ -68,9 +64,7 @@ enum
   R_LAST = R_USER /* keep this updated */
 };
 
-/**
- * Some resource attributes
- */
+// Some resource attributes
 enum
 {
   R_NAME = 1020,
@@ -80,18 +74,14 @@ enum
   R_BACKUP
 };
 
-/**
- * Job Level keyword structure
- */
+// Job Level keyword structure
 struct s_jl {
   const char* level_name; /* level keyword */
   uint32_t level;         /* level */
   int32_t job_type;       /* JobType permitting this level */
 };
 
-/**
- * Job Type keyword structure
- */
+// Job Type keyword structure
 struct s_jt {
   const char* type_name;
   uint32_t job_type;
@@ -108,14 +98,10 @@ class PoolResource;
 class RunResource;
 class DeviceResource;
 
-/*
- * Print configuration file schema in json format
- */
+// Print configuration file schema in json format
 bool PrintConfigSchemaJson(PoolMem& buff);
 
-/*
- *   Director Resource
- */
+//   Director Resource
 class DirectorResource
     : public BareosResource
     , public TlsResource {
@@ -196,9 +182,7 @@ class DeviceResource : public BareosResource {
   char MediaType[MAX_NAME_LENGTH] = {0};
 };
 
-/**
- * Console ACL positions
- */
+// Console ACL positions
 enum
 {
   Job_ACL = 0,
@@ -214,9 +198,7 @@ enum
   Num_ACL /**< keep last */
 };
 
-/**
- * Profile Resource
- */
+// Profile Resource
 class ProfileResource : public BareosResource {
  public:
   ProfileResource() = default;
@@ -231,9 +213,7 @@ struct UserAcl {
   alist* profiles = nullptr;       /**< Pointers to profile resources */
 };
 
-/**
- * Console Resource
- */
+// Console Resource
 class ConsoleResource
     : public BareosResource
     , public TlsResource {
@@ -251,9 +231,7 @@ class UserResource : public BareosResource {
   UserAcl user_acl;
 };
 
-/**
- * Catalog Resource
- */
+// Catalog Resource
 class CatalogResource : public BareosResource {
  public:
   CatalogResource() = default;
@@ -293,16 +271,12 @@ class CatalogResource : public BareosResource {
   char* display(POOLMEM* dst); /**< Get catalog information */
 };
 
-/**
- * Forward referenced structures
- */
+// Forward referenced structures
 struct runtime_client_status_t;
 struct RuntimeStorageStatus;
 struct runtime_job_status_t;
 
-/**
- * Client Resource
- */
+// Client Resource
 class ClientResource
     : public BareosResource
     , public TlsResource {
@@ -347,9 +321,7 @@ class ClientResource
       = ClientConnectionHandshakeMode::kUndefined;
 };
 
-/**
- * Store Resource
- */
+// Store Resource
 class StorageResource
     : public BareosResource
     , public TlsResource {
@@ -434,9 +406,7 @@ inline void UnifiedStorageResource::SetSource(const char* where)
   PmStrcpy(store_source, where);
 }
 
-/**
- * Job Resource
- */
+// Job Resource
 /* clang-format off */
 class JobResource : public BareosResource {
  public:
@@ -542,9 +512,7 @@ class JobResource : public BareosResource {
 #undef MAX_FOPTS
 #define MAX_FOPTS 40
 
-/**
- * File options structure
- */
+// File options structure
 struct FileOptions {
   FileOptions() = default;
   virtual ~FileOptions() = default;
@@ -566,9 +534,7 @@ struct FileOptions {
   char* plugin = nullptr;     /**< Plugin program */
 };
 
-/**
- * This is either an include item or an exclude item
- */
+// This is either an include item or an exclude item
 class IncludeExcludeItem {
  public:
   IncludeExcludeItem() = default;
@@ -581,9 +547,7 @@ class IncludeExcludeItem {
   alist ignoredir;   /**< Ignoredir string */
 };
 
-/**
- * FileSet Resource
- */
+// FileSet Resource
 class FilesetResource : public BareosResource {
  public:
   FilesetResource() = default;
@@ -609,9 +573,7 @@ class FilesetResource : public BareosResource {
   std::string GetOptionValue(const char** option);
 };
 
-/**
- * Schedule Resource
- */
+// Schedule Resource
 class ScheduleResource : public BareosResource {
  public:
   ScheduleResource() = default;
@@ -621,9 +583,7 @@ class ScheduleResource : public BareosResource {
   bool enabled = false; /* Set if schedule is enabled */
 };
 
-/**
- * Counter Resource
- */
+// Counter Resource
 class CounterResource : public BareosResource {
  public:
   CounterResource() = default;
@@ -637,9 +597,7 @@ class CounterResource : public BareosResource {
   bool created;                           /* Created in DB */
 };
 
-/**
- * Pool Resource
- */
+// Pool Resource
 class PoolResource : public BareosResource {
  public:
   PoolResource() = default;
@@ -681,9 +639,7 @@ class PoolResource : public BareosResource {
   uint32_t MaxBlocksize = 0;          /* Maximum Blocksize */
 };
 
-/**
- * Run structure contained in Schedule Resource
- */
+// Run structure contained in Schedule Resource
 class RunResource : public BareosResource {
  public:
   RunResource() = default;

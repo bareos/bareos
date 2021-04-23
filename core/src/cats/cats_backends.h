@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, November 2010
- */
+// Marco van Wieringen, November 2010
 /**
  * @file
  * Dynamic loading of catalog plugins.
@@ -50,15 +48,11 @@ typedef BareosDb* (*t_backend_instantiate)(JobControlRecord* jcr,
 typedef void (*t_flush_backend)(void);
 }
 
-/**
- * Loaded shared library with a certain backend interface type.
- */
+// Loaded shared library with a certain backend interface type.
 struct backend_shared_library_t {
   int interface_type_id;
   void* handle;
-  /*
-   * Entry points into loaded shared library.
-   */
+  // Entry points into loaded shared library.
   t_backend_instantiate backend_instantiate;
   t_flush_backend flush_backend;
 };

@@ -46,9 +46,7 @@ void ndmos_tape_register_callbacks(
     struct ndm_session* sess,
     struct ndm_tape_simulator_callbacks* callbacks)
 {
-  /*
-   * Only allow one register.
-   */
+  // Only allow one register.
   if (!sess->ntsc) {
     sess->ntsc = NDMOS_API_MALLOC(sizeof(struct ndm_tape_simulator_callbacks));
     memcpy(sess->ntsc, callbacks, sizeof(struct ndm_tape_simulator_callbacks));

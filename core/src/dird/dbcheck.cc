@@ -20,12 +20,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern E. Sibbald, August 2002
- */
-/**
- * Program to check a BAREOS database for consistency and to make repairs
- */
+// Kern E. Sibbald, August 2002
+// Program to check a BAREOS database for consistency and to make repairs
 
 #include "include/bareos.h"
 #include "cats/cats.h"
@@ -57,9 +53,7 @@ typedef struct s_name_ctx {
   int tot_ids; /* total to process */
 } NameList;
 
-/*
- * Global variables
- */
+// Global variables
 static bool fix = false;
 static bool batch = false;
 static BareosDb* db;
@@ -74,9 +68,7 @@ static const char* backend_directory = PATH_BAREOS_BACKENDDIR;
 
 #define MAX_ID_LIST_LEN 10000000
 
-/*
- * Forward referenced functions
- */
+// Forward referenced functions
 static void set_quit();
 static void toggle_modify();
 static void toggle_verbose();
@@ -146,13 +138,9 @@ static void usage()
   exit(1);
 }
 
-/**
- * helper functions
- */
+// helper functions
 
-/**
- * Gen next input command from the terminal
- */
+// Gen next input command from the terminal
 static char* GetCmd(const char* prompt)
 {
   static char cmd[1000];
@@ -171,9 +159,7 @@ static char* GetCmd(const char* prompt)
 static bool yes_no(const char* prompt, bool batchvalue = true)
 {
   char* cmd;
-  /*
-   * return the batchvalue if batch operation is set
-   */
+  // return the batchvalue if batch operation is set
   if (batch) { return batchvalue; }
   cmd = GetCmd(prompt);
   if (!cmd) {
@@ -209,9 +195,7 @@ static void PrintCatalogDetails(CatalogResource* catalog,
 {
   POOLMEM* catalog_details = GetPoolMemory(PM_MESSAGE);
 
-  /*
-   * Instantiate a BareosDb class and see what db_type gets assigned to it.
-   */
+  // Instantiate a BareosDb class and see what db_type gets assigned to it.
   db = db_init_database(NULL, catalog->db_driver, catalog->db_name,
                         catalog->db_user, catalog->db_password.value,
                         catalog->db_address, catalog->db_port,
@@ -288,9 +272,7 @@ typedef struct s_idx_list {
   int CountCol;  /* how many times meets the desired column name */
 } IDX_LIST;
 
-/**
- * Drop temporary index
- */
+// Drop temporary index
 static bool DropTmpIdx(const char* idx_name, const char* table_name)
 {
   if (idx_tmp_name != NULL) {
@@ -311,9 +293,7 @@ static bool DropTmpIdx(const char* idx_name, const char* table_name)
 }
 
 
-/*
- * Called here with each id to be added to the list
- */
+// Called here with each id to be added to the list
 static int IdListHandler(void* ctx, int num_fields, char** row)
 {
   ID_LIST* lst = (ID_LIST*)ctx;
@@ -332,9 +312,7 @@ static int IdListHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/*
- * Construct record id list
- */
+// Construct record id list
 static int MakeIdList(const char* query, ID_LIST* id_list)
 {
   id_list->num_ids = 0;
@@ -348,9 +326,7 @@ static int MakeIdList(const char* query, ID_LIST* id_list)
   return 1;
 }
 
-/*
- * Delete all entries in the list
- */
+// Delete all entries in the list
 static int DeleteIdList(const char* query, ID_LIST* id_list)
 {
   char ed1[50];
@@ -363,9 +339,7 @@ static int DeleteIdList(const char* query, ID_LIST* id_list)
   return 1;
 }
 
-/*
- * Called here with each name to be added to the list
- */
+// Called here with each name to be added to the list
 static int NameListHandler(void* ctx, int num_fields, char** row)
 {
   NameList* name = (NameList*)ctx;
@@ -384,9 +358,7 @@ static int NameListHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/*
- * Construct name list
- */
+// Construct name list
 static int MakeNameList(const char* query, NameList* name_list)
 {
   name_list->num_ids = 0;
@@ -400,9 +372,7 @@ static int MakeNameList(const char* query, NameList* name_list)
   return 1;
 }
 
-/*
- * Print names in the list
- */
+// Print names in the list
 static void PrintNameList(NameList* name_list)
 {
   for (int i = 0; i < name_list->num_ids; i++) {
@@ -410,9 +380,7 @@ static void PrintNameList(NameList* name_list)
   }
 }
 
-/*
- * Free names in the list
- */
+// Free names in the list
 static void FreeNameList(NameList* name_list)
 {
   for (int i = 0; i < name_list->num_ids; i++) { free(name_list->name[i]); }
@@ -427,9 +395,7 @@ static void eliminate_duplicate_paths()
   printf(_("Checking for duplicate Path entries.\n"));
   fflush(stdout);
 
-  /*
-   * Make list of duplicated names
-   */
+  // Make list of duplicated names
   query
       = "SELECT Path, count(Path) as Count FROM Path "
         "GROUP BY Path HAVING count(Path) > 1";
@@ -442,13 +408,9 @@ static void eliminate_duplicate_paths()
   }
   if (quit) { return; }
   if (fix) {
-    /*
-     * Loop through list of duplicate names
-     */
+    // Loop through list of duplicate names
     for (int i = 0; i < name_list.num_ids; i++) {
-      /*
-       * Get all the Ids of each name
-       */
+      // Get all the Ids of each name
       db->EscapeString(NULL, esc_name, name_list.name[i],
                        strlen(name_list.name[i]));
       Bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'",
@@ -458,9 +420,7 @@ static void eliminate_duplicate_paths()
       if (verbose) {
         printf(_("Found %d for: %s\n"), id_list.num_ids, name_list.name[i]);
       }
-      /*
-       * Force all records to use the first id then delete the other ids
-       */
+      // Force all records to use the first id then delete the other ids
       for (int j = 1; j < id_list.num_ids; j++) {
         char ed1[50], ed2[50];
         Bsnprintf(buf, sizeof(buf), "UPDATE File SET PathId=%s WHERE PathId=%s",
@@ -478,9 +438,7 @@ static void eliminate_duplicate_paths()
   FreeNameList(&name_list);
 }
 
-/*
- * repair functions
- */
+// repair functions
 
 static void eliminate_orphaned_jobmedia_records()
 {
@@ -492,9 +450,7 @@ static void eliminate_orphaned_jobmedia_records()
   printf(_("Checking for orphaned JobMedia entries.\n"));
   fflush(stdout);
   if (!MakeIdList(query, &id_list)) { exit(1); }
-  /*
-   * Loop doing 300000 at a time
-   */
+  // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
     printf(_("Found %d orphaned JobMedia records.\n"), id_list.num_ids);
     if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
@@ -535,9 +491,7 @@ static void eliminate_orphaned_file_records()
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
   if (!MakeIdList(query, &id_list)) { exit(1); }
-  /*
-   * Loop doing 300000 at a time
-   */
+  // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
     printf(_("Found %d orphaned File records.\n"), id_list.num_ids);
     if (name_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
@@ -578,9 +532,7 @@ static void eliminate_orphaned_path_records()
   if (verbose > 1) { printf("%s\n", query.c_str()); }
   fflush(stdout);
   if (!MakeIdList(query.c_str(), &id_list)) { exit(1); }
-  /*
-   * Loop doing 300000 at a time
-   */
+  // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
     printf(_("Found %d orphaned Path records.\n"), id_list.num_ids);
     fflush(stdout);

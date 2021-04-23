@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, September MM
- */
+// Kern Sibbald, September MM
 /**
  * @file
  * BAREOS Director -- User Agent database handling.
@@ -54,9 +52,7 @@ bool OpenClientDb(UaContext* ua, bool use_private)
   ClientResource* client;
   JobResource* job;
 
-  /*
-   * Try for catalog keyword
-   */
+  // Try for catalog keyword
   i = FindArgWithValue(ua, NT_("catalog"));
   if (i >= 0) {
     catalog = ua->GetCatalogResWithName(ua->argv[i]);
@@ -67,9 +63,7 @@ bool OpenClientDb(UaContext* ua, bool use_private)
     }
   }
 
-  /*
-   * Try for client keyword
-   */
+  // Try for client keyword
   i = FindArgWithValue(ua, NT_("client"));
   if (i >= 0) {
     client = ua->GetClientResWithName(ua->argv[i]);
@@ -86,9 +80,7 @@ bool OpenClientDb(UaContext* ua, bool use_private)
     }
   }
 
-  /*
-   * Try for Job keyword
-   */
+  // Try for Job keyword
   i = FindArgWithValue(ua, NT_("job"));
   if (i >= 0) {
     job = ua->GetJobResWithName(ua->argv[i]);
@@ -108,9 +100,7 @@ bool OpenClientDb(UaContext* ua, bool use_private)
   return OpenDb(ua, use_private);
 }
 
-/**
- * Open the catalog database.
- */
+// Open the catalog database.
 bool OpenDb(UaContext* ua, bool use_private)
 {
   bool mult_db_conn;
@@ -129,9 +119,7 @@ bool OpenDb(UaContext* ua, bool use_private)
     return true;
   }
 
-  /*
-   * Select the right catalog to use.
-   */
+  // Select the right catalog to use.
   if (!ua->catalog) {
     ua->catalog = get_catalog_resource(ua);
     if (!ua->catalog) {
@@ -140,9 +128,7 @@ bool OpenDb(UaContext* ua, bool use_private)
     }
   }
 
-  /*
-   * Some modules like bvfs need their own private catalog connection
-   */
+  // Some modules like bvfs need their own private catalog connection
   mult_db_conn = ua->catalog->mult_db_connections;
   if (use_private) { mult_db_conn = true; }
 
@@ -211,9 +197,7 @@ int CreatePool(JobControlRecord* jcr,
   bstrncpy(pr.Name, pool->resource_name_, sizeof(pr.Name));
 
   if (db->GetPoolRecord(jcr, &pr)) {
-    /*
-     * Pool Exists
-     */
+    // Pool Exists
     if (op == POOL_OP_UPDATE) { /* update request */
       SetPooldbrFromPoolres(&pr, pool, op);
       SetPooldbrReferences(jcr, db, &pr, pool);
@@ -317,9 +301,7 @@ void SetPooldbrFromPoolres(PoolDbRecord* pr, PoolResource* pool, e_pool_op op)
     pr->MaxVols = pool->max_volumes;
     pr->NumVols = 0;
   } else {
-    /*
-     * Update pool
-     */
+    // Update pool
     if (pr->MaxVols != pool->max_volumes) { pr->MaxVols = pool->max_volumes; }
     if (pr->MaxVols != 0 && pr->MaxVols < pr->NumVols) {
       pr->MaxVols = pr->NumVols;
@@ -347,9 +329,7 @@ void SetPooldbrFromPoolres(PoolDbRecord* pr, PoolResource* pool, e_pool_op op)
   }
 }
 
-/**
- * set/update Pool.RecyclePoolId and Pool.ScratchPoolId in Catalog
- */
+// set/update Pool.RecyclePoolId and Pool.ScratchPoolId in Catalog
 int UpdatePoolReferences(JobControlRecord* jcr,
                          BareosDb* db,
                          PoolResource* pool)

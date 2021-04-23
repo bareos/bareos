@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, May MMI
- */
+// Kern Sibbald, May MMI
 /**
  * @file
  * handles authorization of Consoles, Storage and File daemons.
@@ -58,9 +56,7 @@ static const int debuglevel = 50;
  */
 static char hello[] = "Hello Director %s calling\n";
 
-/*
- * Response from Storage daemon
- */
+// Response from Storage daemon
 static char OKhello[] = "3000 OK Hello\n";
 static char FDOKhello[] = "2000 OK Hello\n";
 static char FDOKnewHello[] = "2000 OK Hello %d\n";
@@ -217,9 +213,7 @@ bool AuthenticateFileDaemon(BareosSocket* fd, char* client_name)
     }
   }
 
-  /*
-   * Authorization Completed
-   */
+  // Authorization Completed
   if (!auth_success) {
     fd->fsend("%s", _(dir_not_authorized_message));
     Emsg4(M_ERROR, 0, _("Unable to authenticate client \"%s\" at %s:%s:%d.\n"),

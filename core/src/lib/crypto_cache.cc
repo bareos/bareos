@@ -35,9 +35,7 @@ static dlist* cached_crypto_keys = NULL;
 
 static s_crypto_cache_hdr crypto_cache_hdr = {"BAREOS Crypto Cache\n", 1, 0};
 
-/*
- * Read the content of the crypto cache from the filesystem.
- */
+// Read the content of the crypto cache from the filesystem.
 void ReadCryptoCache(const char* cache_file)
 {
   int fd, cnt;
@@ -78,9 +76,7 @@ void ReadCryptoCache(const char* cache_file)
 
   if (!cached_crypto_keys) { cached_crypto_keys = new dlist(cce, &cce->link); }
 
-  /*
-   * Read as many crypto cache entries as available.
-   */
+  // Read as many crypto cache entries as available.
   cnt = 0;
   cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
   while (read(fd, cce, sizeof(crypto_cache_entry_t))
@@ -97,9 +93,7 @@ void ReadCryptoCache(const char* cache_file)
    */
   free(cce);
 
-  /*
-   * Check if we read the number of entries the header said are in the file.
-   */
+  // Check if we read the number of entries the header said are in the file.
   if (cnt == hdr.nr_entries) {
     ok = true;
     Dmsg2(010, "Crypto cache read %d entries in file %s\n", cnt, cache_file);
@@ -132,9 +126,7 @@ void ReadCryptoCache(const char* dir, const char* progname, int port)
   FreePoolMemory(fname);
 }
 
-/*
- * Write the content of the crypto cache to the filesystem.
- */
+// Write the content of the crypto cache to the filesystem.
 void WriteCryptoCache(const char* cache_file)
 {
   int fd;
@@ -143,9 +135,7 @@ void WriteCryptoCache(const char* cache_file)
 
   if (!cached_crypto_keys) { return; }
 
-  /*
-   * Lock the cache.
-   */
+  // Lock the cache.
   P(crypto_cache_lock);
 
   SecureErase(NULL, cache_file);
@@ -210,14 +200,10 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
   crypto_cache_entry_t* cce = NULL;
   crypto_cache_entry_t* next_cce;
 
-  /*
-   * Lock the cache.
-   */
+  // Lock the cache.
   P(crypto_cache_lock);
 
-  /*
-   * See if there are any cached encryption keys.
-   */
+  // See if there are any cached encryption keys.
   if (!cached_crypto_keys) {
     cached_crypto_keys = new dlist(cce, &cce->link);
 
@@ -236,9 +222,7 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
       if (bstrcmp(cce->VolumeName, VolumeName)) {
         found = true;
 
-        /*
-         * If the key changed update the cached entry.
-         */
+        // If the key changed update the cached entry.
         if (!bstrcmp(cce->EncryptionKey, EncryptionKey)) {
           bstrncpy(cce->EncryptionKey, EncryptionKey,
                    sizeof(cce->EncryptionKey));
@@ -261,9 +245,7 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
       cce = next_cce;
     }
 
-    /*
-     * New entry.
-     */
+    // New entry.
     if (!found) {
       cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
       bstrncpy(cce->VolumeName, VolumeName, sizeof(cce->VolumeName));
@@ -288,9 +270,7 @@ char* lookup_crypto_cache_entry(const char* VolumeName)
 
   if (!cached_crypto_keys) { return NULL; }
 
-  /*
-   * Lock the cache.
-   */
+  // Lock the cache.
   P(crypto_cache_lock);
 
   foreach_dlist (cce, cached_crypto_keys) {
@@ -304,9 +284,7 @@ char* lookup_crypto_cache_entry(const char* VolumeName)
   return NULL;
 }
 
-/*
- * Dump the content of the crypto cache to a filedescriptor.
- */
+// Dump the content of the crypto cache to a filedescriptor.
 void DumpCryptoCache(int fd)
 {
   int len;
@@ -317,14 +295,10 @@ void DumpCryptoCache(int fd)
 
   if (!cached_crypto_keys) { return; }
 
-  /*
-   * Lock the cache.
-   */
+  // Lock the cache.
   P(crypto_cache_lock);
 
-  /*
-   * See how long the biggest volumename and key are.
-   */
+  // See how long the biggest volumename and key are.
   max_vol_length = strlen(_("Volumename"));
   max_key_length = strlen(_("EncryptionKey"));
   foreach_dlist (cce, cached_crypto_keys) {
@@ -354,9 +328,7 @@ void DumpCryptoCache(int fd)
   V(crypto_cache_lock);
 }
 
-/*
- * Reset all entries in the cache to the current time.
- */
+// Reset all entries in the cache to the current time.
 void ResetCryptoCache(void)
 {
   time_t now;
@@ -366,9 +338,7 @@ void ResetCryptoCache(void)
 
   now = time(NULL);
 
-  /*
-   * Lock the cache.
-   */
+  // Lock the cache.
   P(crypto_cache_lock);
 
   foreach_dlist (cce, cached_crypto_keys) {
@@ -378,16 +348,12 @@ void ResetCryptoCache(void)
   V(crypto_cache_lock);
 }
 
-/*
- * Flush the date from the internal cache.
- */
+// Flush the date from the internal cache.
 void FlushCryptoCache(void)
 {
   if (!cached_crypto_keys) { return; }
 
-  /*
-   * Lock the cache.
-   */
+  // Lock the cache.
   P(crypto_cache_lock);
 
   cached_crypto_keys->destroy();

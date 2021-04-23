@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern E. Sibbald, MM
- */
+// Kern E. Sibbald, MM
 /**
  * @file
  * Main routine for finding files on a file system.
@@ -49,9 +47,7 @@ static int OurCallback(JobControlRecord* jcr,
 
 static const int fnmode = 0;
 
-/**
- * Initialize the find files "global" variables
- */
+// Initialize the find files "global" variables
 FindFilesPacket* init_find_files()
 {
   FindFilesPacket* ff;
@@ -130,9 +126,7 @@ int FindFiles(JobControlRecord* jcr,
           = (findIncludeExcludeItem*)fileset->include_list.get(i);
       fileset->incexe = incexe;
 
-      /*
-       * Here, we reset some values between two different Include{}
-       */
+      // Here, we reset some values between two different Include{}
       strcpy(ff->VerifyOpts, "V");
       strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
       strcpy(ff->BaseJobOpts, "Jspug5"); /* size+perm+user+group+chk  */
@@ -350,9 +344,7 @@ bool AcceptFile(FindFilesPacket* ff)
       }
     }
 
-    /*
-     * If we have an empty Options clause with exclude, then exclude the file
-     */
+    // If we have an empty Options clause with exclude, then exclude the file
     if (BitIsSet(FO_EXCLUDE, ff->flags) && fo->regex.size() == 0
         && fo->wild.size() == 0 && fo->regexdir.size() == 0
         && fo->wilddir.size() == 0 && fo->regexfile.size() == 0
@@ -362,9 +354,7 @@ bool AcceptFile(FindFilesPacket* ff)
     }
   }
 
-  /*
-   * Now apply the Exclude { } directive
-   */
+  // Now apply the Exclude { } directive
   for (i = 0; i < fileset->exclude_list.size(); i++) {
     dlistString* node;
     findIncludeExcludeItem* incexe
@@ -446,9 +436,7 @@ static int OurCallback(JobControlRecord* jcr,
   }
 }
 
-/**
- * Terminate FindFiles() and release all allocated memory
- */
+// Terminate FindFiles() and release all allocated memory
 int TermFindFiles(FindFilesPacket* ff)
 {
   int hard_links = 0;
@@ -465,9 +453,7 @@ int TermFindFiles(FindFilesPacket* ff)
   return hard_links;
 }
 
-/**
- * Allocate a new include/exclude block.
- */
+// Allocate a new include/exclude block.
 findIncludeExcludeItem* allocate_new_incexe(void)
 {
   findIncludeExcludeItem* incexe;
@@ -481,28 +467,20 @@ findIncludeExcludeItem* allocate_new_incexe(void)
   return incexe;
 }
 
-/**
- * Define a new Exclude block in the FileSet
- */
+// Define a new Exclude block in the FileSet
 findIncludeExcludeItem* new_exclude(findFILESET* fileset)
 {
-  /*
-   * New exclude
-   */
+  // New exclude
   fileset->incexe = allocate_new_incexe();
   fileset->exclude_list.append(fileset->incexe);
 
   return fileset->incexe;
 }
 
-/**
- * Define a new Include block in the FileSet
- */
+// Define a new Include block in the FileSet
 findIncludeExcludeItem* new_include(findFILESET* fileset)
 {
-  /*
-   * New include
-   */
+  // New include
   fileset->incexe = allocate_new_incexe();
   fileset->include_list.append(fileset->incexe);
 
@@ -516,23 +494,17 @@ findIncludeExcludeItem* new_include(findFILESET* fileset)
  */
 findIncludeExcludeItem* new_preinclude(findFILESET* fileset)
 {
-  /*
-   * New pre-include
-   */
+  // New pre-include
   fileset->incexe = allocate_new_incexe();
   fileset->include_list.prepend(fileset->incexe);
 
   return fileset->incexe;
 }
 
-/**
- * Create a new exclude block and prepend it to the list of exclude blocks.
- */
+// Create a new exclude block and prepend it to the list of exclude blocks.
 findIncludeExcludeItem* new_preexclude(findFILESET* fileset)
 {
-  /*
-   * New pre-exclude
-   */
+  // New pre-exclude
   fileset->incexe = allocate_new_incexe();
   fileset->exclude_list.prepend(fileset->incexe);
 
@@ -565,9 +537,7 @@ findFOPTS* start_options(FindFilesPacket* ff)
   return incexe->current_opts;
 }
 
-/**
- * Used by plugins to define a new options block
- */
+// Used by plugins to define a new options block
 void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
 {
   findFOPTS* fo;

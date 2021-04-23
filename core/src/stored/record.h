@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * Record, and label definitions for Bareos media data format.
@@ -37,9 +35,7 @@ class dlist;
 
 namespace storagedaemon {
 
-/**
- * Return codes from read_device_volume_label()
- */
+// Return codes from read_device_volume_label()
 enum
 {
   VOL_NOT_READ = 1,  /**< Volume label not read */
@@ -81,9 +77,7 @@ enum rec_state
 
  */
 
-/**
- * Record state bit definitions
- */
+// Record state bit definitions
 enum
 {
   REC_NO_HEADER = 0,      /**< No header read */
@@ -94,14 +88,10 @@ enum
   REC_ISTAPE = 5          /**< Set if device is tape */
 };
 
-/*
- * Keep this set to the last entry in the enum.
- */
+// Keep this set to the last entry in the enum.
 #define REC_STATE_MAX REC_ISTAPE
 
-/*
- * Make sure you have enough bits to store all above bit fields.
- */
+// Make sure you have enough bits to store all above bit fields.
 #define REC_STATE_BYTES NbytesForBits(REC_STATE_MAX + 1)
 
 #define IsPartialRecord(r) (BitIsSet(REC_PARTIAL_RECORD, (r)->state_bits))

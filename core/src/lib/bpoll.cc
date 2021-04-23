@@ -20,9 +20,7 @@
    02110-1301, USA.
 */
 
-/*
- *  Marco van Wieringen, May 2012
- */
+//  Marco van Wieringen, May 2012
 
 #include "include/bareos.h"
 

@@ -437,9 +437,7 @@ int ndmp_9to3_connect_client_auth_request(
  * no arg request, **NO REPLY**
  */
 
-/*
- * ndmp_connect_server_auth
- */
+// ndmp_connect_server_auth
 
 /* TBD */
 int ndmp_3to9_connect_server_auth_request(
@@ -651,9 +649,7 @@ int ndmp_9to3_config_get_connection_type_reply(
 }
 
 
-/*
- * ndmp_config_get_auth_attr
- */
+// ndmp_config_get_auth_attr
 
 int ndmp_3to9_config_get_auth_attr_request(
     struct ndmp3_config_get_auth_attr_request* request3,
@@ -1503,9 +1499,7 @@ extern int ndmp_9to3_tape_get_state_reply(ndmp9_tape_get_state_reply* reply9,
 }
 
 
-/*
- * ndmp_tape_mtio_request
- */
+// ndmp_tape_mtio_request
 
 struct enum_conversion ndmp_39_tape_mtio_op[] = {
     {
@@ -1573,9 +1567,7 @@ int ndmp_9to3_tape_mtio_reply(ndmp9_tape_mtio_reply* reply9,
 }
 
 
-/*
- * ndmp_tape_write
- */
+// ndmp_tape_write
 
 int ndmp_3to9_tape_write_request(ndmp3_tape_write_request* request3,
                                  ndmp9_tape_write_request* request9)
@@ -1632,9 +1624,7 @@ int ndmp_9to3_tape_write_reply(ndmp9_tape_write_reply* reply9,
 }
 
 
-/*
- * ndmp_tape_read
- */
+// ndmp_tape_read
 
 int ndmp_3to9_tape_read_request(ndmp3_tape_read_request* request3,
                                 ndmp9_tape_read_request* request9)
@@ -1810,9 +1800,7 @@ extern int ndmp_9to3_mover_get_state_reply(ndmp9_mover_get_state_reply* reply9,
 }
 
 
-/*
- * ndmp_mover_listen
- */
+// ndmp_mover_listen
 
 int ndmp_3to9_mover_listen_request(ndmp3_mover_listen_request* request3,
                                    ndmp9_mover_listen_request* request9)
@@ -2358,9 +2346,7 @@ int ndmp_9to3_data_get_env_reply(ndmp9_data_get_env_reply* reply9,
  * no args request, just error reply
  */
 
-/*
- * ndmp_data_listen
- */
+// ndmp_data_listen
 
 int ndmp_3to9_data_listen_request(ndmp3_data_listen_request* request3,
                                   ndmp9_data_listen_request* request9)
@@ -2671,9 +2657,7 @@ int ndmp_9to3_log_file_request(ndmp9_log_file_request* request9,
 }
 
 
-/*
- * ndmp_log_type
- */
+// ndmp_log_type
 
 struct enum_conversion ndmp_39_log_type[] = {
     {

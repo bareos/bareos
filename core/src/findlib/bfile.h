@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald May MMIII
- */
+// Kern Sibbald May MMIII
 /**
  * @file
  * Bareos low level File I/O routines.  This routine simulates

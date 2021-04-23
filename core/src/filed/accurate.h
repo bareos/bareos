@@ -57,9 +57,7 @@ struct accurate_payload {
 };
 
 
-/*
- * Accurate payload storage abstraction classes.
- */
+// Accurate payload storage abstraction classes.
 class BareosAccurateFilelist {
  protected:
   int64_t filenr_ = 0;

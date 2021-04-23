@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern E. Sibbald, October 2002
- */
+// Kern E. Sibbald, October 2002
 /**
  * @file
  * Program to copy a Bareos from one volume to another.
@@ -198,9 +196,7 @@ int main(int argc, char* argv[])
   ReadCryptoCache(me->working_directory, "bareos-sd",
                   GetFirstPortHostOrder(me->SDaddrs));
 
-  /*
-   * Setup and acquire input device for reading
-   */
+  // Setup and acquire input device for reading
   Dmsg0(100, "About to setup input jcr\n");
 
   in_dcr = new DeviceControlRecord;
@@ -213,9 +209,7 @@ int main(int argc, char* argv[])
   in_dev = in_jcr->impl->dcr->dev;
   if (!in_dev) { exit(1); }
 
-  /*
-   * Setup output device for writing
-   */
+  // Setup output device for writing
   Dmsg0(100, "About to setup output jcr\n");
 
   out_dcr = new DeviceControlRecord;
@@ -228,9 +222,7 @@ int main(int argc, char* argv[])
 
   Dmsg0(100, "About to acquire device for writing\n");
 
-  /*
-   * For we must now acquire the device for writing
-   */
+  // For we must now acquire the device for writing
   out_dev->rLock(false);
   if (!out_dev->open(out_jcr->impl->dcr, DeviceMode::OPEN_READ_WRITE)) {
     Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), out_dev->errmsg);
@@ -264,9 +256,7 @@ int main(int argc, char* argv[])
 }
 
 
-/*
- * ReadRecords() calls back here for each record it gets
- */
+// ReadRecords() calls back here for each record it gets
 static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
 {
   if (list_records) {

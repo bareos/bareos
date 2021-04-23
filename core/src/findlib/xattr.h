@@ -24,9 +24,7 @@
 #ifndef BAREOS_FINDLIB_XATTR_H_
 #define BAREOS_FINDLIB_XATTR_H_
 
-/*
- * Return codes from xattr subroutines.
- */
+// Return codes from xattr subroutines.
 enum class BxattrExitCode
 {
   kErrorFatal,
@@ -49,9 +47,7 @@ enum class BxattrExitCode
  */
 #define XATTR_MAGIC 0x5C5884
 
-/*
- * Internal representation of an extended attribute.
- */
+// Internal representation of an extended attribute.
 struct xattr_t {
   uint32_t magic;
   uint32_t name_length;
@@ -60,9 +56,7 @@ struct xattr_t {
   char* value;
 };
 
-/*
- * Internal representation of an extended attribute hardlinked file.
- */
+// Internal representation of an extended attribute hardlinked file.
 struct xattr_link_cache_entry_t {
   uint32_t inum;
   char* target;
@@ -83,9 +77,7 @@ struct xattr_parse_data_t {
   uint32_t nr_errors;
 };
 
-/*
- * Internal tracking data.
- */
+// Internal tracking data.
 struct XattrData {
   POOLMEM* last_fname;
   uint32_t flags{0}; /* See BXATTR_FLAG_* */
@@ -97,14 +89,10 @@ struct XattrData {
   } u;
 };
 
-/*
- * Maximum size of the XATTR stream this prevents us from blowing up the filed.
- */
+// Maximum size of the XATTR stream this prevents us from blowing up the filed.
 #define MAX_XATTR_STREAM (1 * 1024 * 1024) /* 1 Mb */
 
-/*
- * Upperlimit on a xattr internal buffer
- */
+// Upperlimit on a xattr internal buffer
 #define XATTR_BUFSIZ 1024
 class alist;
 

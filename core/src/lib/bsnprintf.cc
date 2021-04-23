@@ -750,9 +750,7 @@ static int32_t fmtfp(char* buffer,
     r_length = strlen(result);
   }
 
-  /*
-   * Fix broken fcvt implementation returns..
-   */
+  // Fix broken fcvt implementation returns..
 
   if (r_length == 0) {
     result[0] = '0';

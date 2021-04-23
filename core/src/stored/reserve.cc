@@ -78,9 +78,7 @@ static char BAD_use[] = "3913 Bad use command: %s\n";
 
 bool use_cmd(JobControlRecord* jcr)
 {
-  /*
-   * Get the device, media, and pool information
-   */
+  // Get the device, media, and pool information
   if (!UseDeviceCmd(jcr)) {
     jcr->setJobStatus(JS_ErrorTerminated);
     memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
@@ -111,9 +109,7 @@ void TermReservationsLock()
   TermVolListLock();
 }
 
-/**
- * This applies to a drive and to Volumes
- */
+// This applies to a drive and to Volumes
 void _lockReservations(const char* file, int line)
 {
   int errstat;
@@ -165,9 +161,7 @@ void DeviceControlRecord::UnreserveDevice()
     ClearReserved();
     reserved_volume = false;
 
-    /*
-     * If we set read mode in reserving, remove it
-     */
+    // If we set read mode in reserving, remove it
     if (dev->CanRead()) { dev->ClearRead(); }
 
     if (dev->num_writers < 0) {
@@ -236,9 +230,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     bstrncpy(store->pool_type, pool_type, sizeof(store->pool_type));
     store->append = append;
 
-    /*
-     * Now get all devices
-     */
+    // Now get all devices
     while (dir->recv() >= 0) {
       Dmsg1(debuglevel, "<dird device: %s", dir->msg);
       ok = sscanf(dir->msg, use_device, dev_name.c_str()) == 1;
@@ -276,9 +268,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
     bool fail = false;
     rctx.notify_dir = true;
 
-    /*
-     * Put new dcr in proper location
-     */
+    // Put new dcr in proper location
     if (rctx.append) {
       rctx.jcr->impl->dcr = jcr->impl->dcr;
     } else {
@@ -304,9 +294,7 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
         rctx.autochanger_only = true;
         if ((ok = FindSuitableDeviceForJob(jcr, rctx))) { break; }
 
-        /*
-         * Look through all drives possibly for low_use drive
-         */
+        // Look through all drives possibly for low_use drive
         if (rctx.low_use_drive) {
           rctx.try_low_use_drive = true;
           if ((ok = FindSuitableDeviceForJob(jcr, rctx))) { break; }
@@ -325,21 +313,15 @@ static bool UseDeviceCmd(JobControlRecord* jcr)
       rctx.autochanger_only = false;
       if ((ok = FindSuitableDeviceForJob(jcr, rctx))) { break; }
 
-      /*
-       * Look for any mounted drive
-       */
+      // Look for any mounted drive
       rctx.exact_match = false;
       if ((ok = FindSuitableDeviceForJob(jcr, rctx))) { break; }
 
-      /*
-       * Try any drive
-       */
+      // Try any drive
       rctx.any_drive = true;
       if ((ok = FindSuitableDeviceForJob(jcr, rctx))) { break; }
 
-      /*
-       * Keep reservations locked *except* during WaitForDevice()
-       */
+      // during WaitForDevice()
       UnlockReservations();
 
       /*
@@ -401,9 +383,7 @@ static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
 
   if (!changer) { return false; }
 
-  /*
-   * Find resource, and make sure we were able to open it
-   */
+  // Find resource, and make sure we were able to open it
   if (bstrcmp(rctx.device_name, changer->resource_name_)) {
     Dmsg1(debuglevel, "Found changer device %s\n",
           vol->dev->device_resource->resource_name_);
@@ -451,9 +431,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
     VolumeReservationItem* vol = NULL;
     temp_vol_list = dup_vol_list(jcr);
 
-    /*
-     * Look through reserved volumes for one we can use
-     */
+    // Look through reserved volumes for one we can use
     Dmsg0(debuglevel, "look for vol in vol list\n");
     foreach_dlist (vol, temp_vol_list) {
       if (!vol->dev) {
@@ -461,9 +439,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
         continue;
       }
 
-      /*
-       * Check with Director if this Volume is OK
-       */
+      // Check with Director if this Volume is OK
       bstrncpy(dcr->VolumeName, vol->vol_name, sizeof(dcr->VolumeName));
       if (!dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_WRITE)) { continue; }
 
@@ -472,9 +448,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
         int status;
         rctx.store = store;
         foreach_alist (device_name, store->device) {
-          /*
-           * Found a device, try to use it
-           */
+          // Found a device, try to use it
           rctx.device_name = device_name;
           rctx.device_resource = vol->dev->device_resource;
 
@@ -493,9 +467,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
           bstrncpy(rctx.VolumeName, vol->vol_name, sizeof(rctx.VolumeName));
           rctx.have_volume = true;
 
-          /*
-           * Try reserving this device and volume
-           */
+          // Try reserving this device and volume
           Dmsg2(debuglevel, "try vol=%s on device=%s\n", rctx.VolumeName,
                 device_name);
           status = ReserveDevice(rctx);
@@ -569,19 +541,13 @@ int SearchResForDevice(ReserveContext& rctx)
   int status;
   AutochangerResource* changer;
 
-  /*
-   * Look through Autochangers first
-   */
+  // Look through Autochangers first
   foreach_res (changer, R_AUTOCHANGER) {
     Dmsg2(debuglevel, "Try match changer res=%s, wanted %s\n",
           changer->resource_name_, rctx.device_name);
-    /*
-     * Find resource, and make sure we were able to open it
-     */
+    // Find resource, and make sure we were able to open it
     if (bstrcmp(rctx.device_name, changer->resource_name_)) {
-      /*
-       * Try each device_resource in this AutoChanger
-       */
+      // Try each device_resource in this AutoChanger
       foreach_alist (rctx.device_resource, changer->device_resources) {
         Dmsg1(debuglevel, "Try changer device %s\n",
               rctx.device_resource->resource_name_);
@@ -595,9 +561,7 @@ int SearchResForDevice(ReserveContext& rctx)
           continue;
         }
 
-        /*
-         * Debug code
-         */
+        // Debug code
         if (rctx.store->append == SD_APPEND) {
           Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
                 rctx.device_resource->resource_name_,
@@ -612,25 +576,19 @@ int SearchResForDevice(ReserveContext& rctx)
     }
   }
 
-  /*
-   * Now if requested look through regular devices
-   */
+  // Now if requested look through regular devices
   if (!rctx.autochanger_only) {
     foreach_res (rctx.device_resource, R_DEVICE) {
       Dmsg2(debuglevel, "Try match res=%s wanted %s\n",
             rctx.device_resource->resource_name_, rctx.device_name);
 
-      /*
-       * Find resource, and make sure we were able to open it
-       */
+      // Find resource, and make sure we were able to open it
       if (bstrcmp(rctx.device_name, rctx.device_resource->resource_name_)) {
         status = ReserveDevice(rctx);
         if (status != 1) { /* Try another device_resource */
           continue;
         }
-        /*
-         * Debug code
-         */
+        // Debug code
         if (rctx.store->append == SD_APPEND) {
           Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
                 rctx.device_resource->resource_name_,
@@ -662,9 +620,7 @@ int SearchResForDevice(ReserveContext& rctx)
             continue;
           }
 
-          /*
-           * Debug code
-           */
+          // Debug code
           if (rctx.store->append == SD_APPEND) {
             Dmsg2(debuglevel, "Device %s reserved=%d for append.\n",
                   rctx.device_resource->resource_name_,
@@ -696,18 +652,14 @@ static int ReserveDevice(ReserveContext& rctx)
   DeviceControlRecord* dcr;
   const int name_len = MAX_NAME_LENGTH;
 
-  /*
-   * Make sure MediaType is OK
-   */
+  // Make sure MediaType is OK
   Dmsg2(debuglevel, "chk MediaType device=%s request=%s\n",
         rctx.device_resource->media_type, rctx.store->media_type);
   if (!bstrcmp(rctx.device_resource->media_type, rctx.store->media_type)) {
     return -1;
   }
 
-  /*
-   * Make sure device_resource exists -- i.e. we can stat() it
-   */
+  // Make sure device_resource exists -- i.e. we can stat() it
   if (!rctx.device_resource->dev) {
     rctx.device_resource->dev
         = FactoryCreateDevice(rctx.jcr, rctx.device_resource);

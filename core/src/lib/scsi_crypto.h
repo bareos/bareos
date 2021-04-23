@@ -20,18 +20,14 @@
    02110-1301, USA.
 */
 
-/*
- * Marco van Wieringen, March 2012
- */
+// Marco van Wieringen, March 2012
 
 #ifndef BAREOS_LIB_SCSI_CRYPTO_H_
 #define BAREOS_LIB_SCSI_CRYPTO_H_
 
 /* clang-format off */
 
-/*
- * Include the SCSI Low Level Interface functions and definitions.
- */
+// Include the SCSI Low Level Interface functions and definitions.
 #include "scsi_lli.h"
 
 #define SPP_SP_PROTOCOL_TDE       0x20
@@ -44,17 +40,13 @@
 #define SPP_PAGE_ALLOCATION       8192
 #define SPP_UKAD_LENGTH           0x1e
 
-/*
- * SCSI CDB opcodes
- */
+// SCSI CDB opcodes
 enum {
    SCSI_SPIN_OPCODE = 0xa2,
    SCSI_SPOUT_OPCODE = 0xb5
 };
 
-/*
- * SCSI SPIN pagecodes.
- */
+// SCSI SPIN pagecodes.
 enum {
    SPIN_TAPE_DATA_ENCR_IN_SUP_PAGE = 0x00,     /* Tape Data Encryption In Support page */
    SPIN_TAPE_DATE_ENCR_OUT_SUP_PAGE = 0x01,    /* Tape Data Encryption Out Support page */
@@ -67,17 +59,13 @@ enum {
    SPIN_DEV_SVR_KEY_WRAP_PUB_KEY_PAGE = 0x31   /* Device Server Key Wrapping Public Key page */
 };
 
-/*
- * SCSI SPOUT pagecodes.
- */
+// SCSI SPOUT pagecodes.
 enum {
    SPOUT_SET_DATA_ENCRYPTION_PAGE = 0x10,      /* Set Data Encryption page */
    SPOUT_SA_ENCAP_PAGE = 0x11                  /* SA Encapsulation page */
 };
 
-/*
- * SPP SCSI Control Descriptor Block
- */
+// SPP SCSI Control Descriptor Block
 typedef struct {
    uint8_t opcode;                             /* Operation Code See SCSI_*_OPCODE */
    uint8_t scp;                                /* Security Protocol */
@@ -88,18 +76,14 @@ typedef struct {
    uint8_t control_byte;                       /* Control Byte */
 } SPP_SCSI_CDB;
 
-/*
- * Generic SPP Page Buffer
- */
+// Generic SPP Page Buffer
 typedef struct {
    uint8_t pageCode[2];
    uint8_t length[2];
    uint8_t buffer[SPP_PAGE_ALLOCATION];
 } SPP_PAGE_BUFFER;
 
-/*
- * Nexus Scopes
- */
+// Nexus Scopes
 enum {
    SPP_NEXUS_SC_PUBLIC = 0,                    /* All fields other than the scope field and LOCK bit shall be ignored.
                                                   The I_T nexus shall use data encryption parameters that are shared
@@ -111,9 +95,7 @@ enum {
    SPP_NEXUS_SC_ALL_I_T_NEXUS = 2              /* The data encryption parameters shall be shared with all I_T nexuses. */
 };
 
-/*
- * Check External Encryption Mode
- */
+// Check External Encryption Mode
 enum {
    SPP_CEEM_VENDOR_SPECIFIC = 0,               /* Vendor specific */
    SPP_CEEM_NO_ENCR_CHECK = 1,                 /* Do not check the encryption mode that was in use when the block
@@ -126,9 +108,7 @@ enum {
                                                   an error if the block was written in ENCRYPT mode */
 };
 
-/*
- * Raw Decryption Mode Control
- */
+// Raw Decryption Mode Control
 enum {
    SPP_RDMC_DEFAULT = 0,                       /* The device server shall mark each encrypted block per the default
                                                   setting for the algorithm */
@@ -140,9 +120,7 @@ enum {
                                                   decryption mode operations. */
 };
 
-/*
- * Encryption Modes.
- */
+// Encryption Modes.
 enum {
    SPP_ENCR_MODE_DISABLE = 0,                  /* Data encryption is disabled. */
    SPP_ENCR_MODE_EXTERNAL = 1,                 /* The data associated with the WRITE(6) and WRITE(16) commands has been
@@ -153,9 +131,7 @@ enum {
                                                   ALGORITHM INDEX field and the key specified in the KEY field. */
 };
 
-/*
- * Decryption Modes.
- */
+// Decryption Modes.
 enum {
    SPP_DECR_MODE_DISABLE = 0,                  /* Data decryption is disabled. If the device server encounters an
                                                   encrypted logical block while reading, it shall not allow access
@@ -183,9 +159,7 @@ enum {
                                                   without decrypting */
 };
 
-/*
- * Key Format Types.
- */
+// Key Format Types.
 enum {
    SPP_KAD_KEY_FORMAT_NORMAL = 0,              /* The KEY field contains the key to be used to encrypt or decrypt data. */
    SPP_KAD_KEY_FORMAT_REFERENCE = 1,           /* The KEY field contains a vendor-specific key reference. */
@@ -194,9 +168,7 @@ enum {
 };
 
 
-/*
- * Key Descriptor Types
- */
+// Key Descriptor Types
 enum {
    SPP_KAD_KEY_DESC_UKAD = 0,                  /* Unauthenticated key-associated data */
    SPP_KAD_KEY_DESC_AKAD = 1,                  /* Authenticated key-associated data */
@@ -204,9 +176,7 @@ enum {
    SPP_KAD_KEY_DESC_META = 3                   /* Metadata key-associated data */
 };
 
-/*
- * SPOUT Page Set Data Encryption (0x10)
- */
+// SPOUT Page Set Data Encryption (0x10)
 typedef struct {
    uint8_t pageCode[2];                        /* Page Code, 2 bytes MSB/LSB */
    uint8_t length[2];                          /* Page Length, 2 bytes MSB/LSB */
@@ -252,9 +222,7 @@ enum {
    SPP_PARM_LOG_BLOCK_UNSUP = 4                /* Not supported. */
 };
 
-/*
- * Device Encryption Status Page (0x20)
- */
+// Device Encryption Status Page (0x20)
 typedef struct {
    uint8_t pageCode[2];                        /* Page Code, 2 bytes MSB/LSB */
    uint8_t length[2];                          /* Page Length, 2 bytes MSB/LSB */
@@ -337,9 +305,7 @@ enum {
                                                   decrypt the encrypted block. */
 };
 
-/*
- * Next Block Encryption Status Page (0x21)
- */
+// Next Block Encryption Status Page (0x21)
 typedef struct {
    uint8_t pageCode[2];                        /* Page Code, 2 bytes MSB/LSB */
    uint8_t length[2];                          /* Page Length, 2 bytes MSB/LSB */
@@ -364,9 +330,7 @@ typedef struct {
    uint8_t nextBlockKADFormat;                 /* Next Block KAD Format, See SPP_KAD_KEY_FORMAT_* */
 } SPP_PAGE_NBES;
 
-/*
- * Key Associated Data (KAD) Descriptors
- */
+// Key Associated Data (KAD) Descriptors
 typedef struct {
    uint8_t type;                               /* Key Descriptor Type, See SPP_KAD_KEY_DESC_* */
 #if HAVE_BIG_ENDIAN

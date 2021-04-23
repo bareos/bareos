@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March 2000
- */
+// Kern Sibbald, March 2000
 /**
  * @file
  * BAREOS Catalog Database Get record interface routines
@@ -209,9 +207,6 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
                 edit_int64(PathId, ed1));
           PathId = 0;
         } else {
-          /*
-           * Cache path
-           */
           if (PathId != cached_path_id) {
             cached_path_id = PathId;
             cached_path_len = pnl;
@@ -337,9 +332,7 @@ int BareosDb::GetJobVolumeNames(JobControlRecord* jcr,
 
   DbLock(this);
 
-  /*
-   * Get one entry per VolumeName, but "sort" by VolIndex
-   */
+  // Get one entry per VolumeName, but "sort" by VolIndex
   Mmsg(cmd,
        "SELECT VolumeName,MAX(VolIndex) FROM JobMedia,Media WHERE "
        "JobMedia.JobId=%s AND JobMedia.MediaId=Media.MediaId "
@@ -835,9 +828,6 @@ bool BareosDb::GetCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   if (QUERY_DB(jcr, cmd)) {
     num_rows = SqlNumRows();
 
-    /*
-     * If more than one, report error, but return first row
-     */
     if (num_rows > 1) {
       Mmsg1(errmsg, _("More than one Counter!: %d\n"), num_rows);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1228,9 +1218,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Remove all MD5 from a query (can save lot of memory with many files)
- */
+// Remove all MD5 from a query (can save lot of memory with many files)
 static void strip_md5(char* q)
 {
   char* p = q;
@@ -1296,9 +1284,6 @@ bool BareosDb::GetFileList(JobControlRecord* jcr,
   return BigSqlQuery(query.c_str(), ResultHandler, ctx);
 }
 
-/**
- * This procedure gets the base jobid list used by jobids,
- */
 bool BareosDb::GetUsedBaseJobids(JobControlRecord* jcr,
                                  const char* jobids,
                                  db_list_ctx* result)
@@ -1343,9 +1328,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   bstrutime(date, sizeof(date), StartTime + 1);
   jobids->clear();
 
-  /*
-   * First, find the last good Full backup for this job/client/fileset
-   */
+  // First, find the last good Full backup for this job/client/fileset
   FillQuery(query, SQL_QUERY::create_temp_accurate_jobids,
             edit_uint64(jcr->JobId, jobid), edit_uint64(jr->ClientId, clientid),
             date, edit_uint64(jr->FileSetId, filesetid));
@@ -1353,9 +1336,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
   if (!SqlQuery(query.c_str())) { goto bail_out; }
 
   if (jr->JobLevel == L_INCREMENTAL || jr->JobLevel == L_VIRTUAL_FULL) {
-    /*
-     * Now, find the last differential backup after the last full
-     */
+    // Now, find the last differential backup after the last full
     Mmsg(query,
          "INSERT INTO btemp3%s (JobId, StartTime, EndTime, JobTDate, "
          "PurgedFiles) "
@@ -1399,9 +1380,7 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
     if (!SqlQuery(query.c_str())) { goto bail_out; }
   }
 
-  /*
-   * Build a jobid list ie: 1,2,3,4
-   */
+  // Build a jobid list ie: 1,2,3,4
   if (jr->limit) {
     Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate LIMIT %d", jobid,
          jr->limit);
@@ -1485,9 +1464,6 @@ bail_out:
   return retval;
 }
 
-/**
- * Get JobIds associated with a volume
- */
 bool BareosDb::GetVolumeJobids(JobControlRecord* jcr,
                                MediaDbRecord* mr,
                                db_list_ctx* lst)
@@ -1520,9 +1496,7 @@ bool BareosDb::get_quota_jobbytes(JobControlRecord* jcr,
   bool retval = false;
   time_t now, schedtime;
 
-  /*
-   * Determine the first schedtime we are interested in.
-   */
+  // Determine the first schedtime we are interested in.
   now = time(NULL);
   schedtime = now - JobRetention;
 
@@ -1575,9 +1549,7 @@ bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord* jcr,
   bool retval = false;
   time_t now, schedtime;
 
-  /*
-   * Determine the first schedtime we are interested in.
-   */
+  // Determine the first schedtime we are interested in.
   now = time(NULL);
   schedtime = now - JobRetention;
 
@@ -1909,9 +1881,7 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
   return ok;
 }
 
-/**
- * verify that all media use the same storage.
- */
+// verify that all media use the same storage.
 bool BareosDb::VerifyMediaIdsFromSingleStorage(JobControlRecord* jcr,
                                                dbid_list& mediaIds)
 {

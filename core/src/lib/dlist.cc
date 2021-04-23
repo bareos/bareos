@@ -31,9 +31,7 @@
 #include "lib/dlist.h"
 
 
-/**
- * Init dlist
- */
+// Init dlist
 void dlist::init(void* item, dlink* link)
 {
   head = tail = NULL;
@@ -44,9 +42,7 @@ void dlist::init(void* item, dlink* link)
   num_items = 0;
 }
 
-/*
- * Append an item to the list
- */
+// Append an item to the list
 void dlist::append(void* item)
 {
   SetNext(item, NULL);
@@ -59,9 +55,7 @@ void dlist::append(void* item)
   num_items++;
 }
 
-/*
- * Prepend an item to the list
- */
+// Prepend an item to the list
 void dlist::prepend(void* item)
 {
   SetNext(item, head);
@@ -209,9 +203,7 @@ void dlist::BinaryInsertMultiple(void* item,
   if (ins_item != item) { InsertAfter(item, ins_item); }
 }
 
-/*
- * Search for item
- */
+// Search for item
 void* dlist::binary_search(void* item, int compare(void* item1, void* item2))
 {
   int comp;

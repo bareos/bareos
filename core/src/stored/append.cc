@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, May MM
- */
+// Kern Sibbald, May MM
 /**
  * @file
  * Append code for Storage daemon
@@ -54,9 +52,7 @@ static char OK_replicate[] = "3000 OK replicate data\n";
 
 void PossibleIncompleteJob(JobControlRecord* jcr, int32_t last_file_index) {}
 
-/**
- * Append Data sent from File daemon
- */
+// Append Data sent from File daemon
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 {
   int32_t n, file_index, stream, last_file_index, job_elapsed;
@@ -110,9 +106,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
   }
 
-  /*
-   * Write Begin Session Record
-   */
+  // Write Begin Session Record
   if (!WriteSessionLabel(dcr, SOS_LABEL)) {
     Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
           dev->bstrerror());
@@ -123,9 +117,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     Pmsg0(000, _("NULL Volume name. This shouldn't happen!!!\n"));
   }
 
-  /*
-   * Tell daemon to send data
-   */
+  // Tell daemon to send data
   if (!bs->fsend(OK_data)) {
     BErrNo be;
     Jmsg2(jcr, M_FATAL, 0, _("Network send error to %s. ERR=%s\n"), what,
@@ -240,9 +232,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     }
     Dmsg2(650, "End read loop with %s. Stat=%d\n", what, n);
 
-    /*
-     * Restore the original data pointer.
-     */
+    // Restore the original data pointer.
     dcr->rec->data = rec_data;
 
     if (bs->IsError()) {
@@ -258,15 +248,11 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     }
   }
 
-  /*
-   * Create Job status for end of session label
-   */
+  // Create Job status for end of session label
   jcr->setJobStatus(ok ? JS_Terminated : JS_ErrorTerminated);
 
   if (ok && bs == jcr->file_bsock) {
-    /*
-     * Terminate connection with FD
-     */
+    // Terminate connection with FD
     bs->fsend(OK_append);
     DoFdCommands(jcr); /* finish dialog with FD */
   } else if (bs == jcr->store_bsock) {
@@ -283,9 +269,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
    */
   if (ok || dev->CanWrite()) {
     if (!WriteSessionLabel(dcr, EOS_LABEL)) {
-      /*
-       * Print only if ok and not cancelled to avoid spurious messages
-       */
+      // Print only if ok and not cancelled to avoid spurious messages
       if (ok && !jcr->IsJobCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
               dev->bstrerror());
@@ -296,13 +280,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     }
     Dmsg0(90, "back from write_end_session_label()\n");
 
-    /*
-     * Flush out final partial block of this session
-     */
+    // Flush out final partial block of this session
     if (!dcr->WriteBlockToDevice()) {
-      /*
-       * Print only if ok and not cancelled to avoid spurious messages
-       */
+      // Print only if ok and not cancelled to avoid spurious messages
       if (ok && !jcr->IsJobCanceled()) {
         Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
               dev->print_name(), dev->bstrerror());
@@ -317,15 +297,11 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   if (!ok && !jcr->is_JobStatus(JS_Incomplete)) {
     DiscardDataSpool(dcr);
   } else {
-    /*
-     * Note: if commit is OK, the device will remain blocked
-     */
+    // Note: if commit is OK, the device will remain blocked
     CommitDataSpool(dcr);
   }
 
-  /*
-   * Release the device -- and send final Vol info to DIR and unlock it.
-   */
+  // Release the device -- and send final Vol info to DIR and unlock it.
   ReleaseDevice(dcr);
 
   /*
@@ -356,9 +332,7 @@ bail_out:
   return false;
 }
 
-/**
- * Send attributes and digest to Director for Catalog
- */
+// Send attributes and digest to Director for Catalog
 bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec)
 {
   if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * Definitions for using the Device functions in Bareos Tape and File storage
@@ -100,9 +98,7 @@ enum class DeviceType : int
   B_CEPHFS_DEV
 };
 
-/**
- * Generic status bits returned from StatusDev()
- */
+// Generic status bits returned from StatusDev()
 enum
 {
   BMT_TAPE = 0,     /**< Is tape device */
@@ -117,19 +113,13 @@ enum
   BMT_IM_REP_EN = 9 /**< Immediate report enabled */
 };
 
-/**
- * Keep this set to the last entry in the enum.
- */
+// Keep this set to the last entry in the enum.
 #define BMT_MAX BMT_IM_REP_EN
 
-/**
- * Make sure you have enough bits to store all above bit fields.
- */
+// Make sure you have enough bits to store all above bit fields.
 #define BMT_BYTES NbytesForBits(BMT_MAX + 1)
 
-/**
- * Bits for device capabilities
- */
+// Bits for device capabilities
 enum
 {
   CAP_EOF = 0,         /**< Has MTWEOF */
@@ -161,19 +151,13 @@ enum
   CAP_ADJWRITESIZE = 26             /**< Adjust write size to min/max */
 };
 
-/**
- * Keep this set to the last entry in the enum.
- */
+// Keep this set to the last entry in the enum.
 constexpr int CAP_MAX = CAP_ADJWRITESIZE;
 
-/**
- * Make sure you have enough bits to store all above bit fields.
- */
+// Make sure you have enough bits to store all above bit fields.
 constexpr int CAP_BYTES = NbytesForBits(CAP_MAX + 1);
 
-/**
- * Device state bits
- */
+// Device state bits
 enum
 {
   ST_LABEL = 0,         /**< Label found */
@@ -192,14 +176,10 @@ enum
   ST_CRYPTOKEY = 13     /**< The device has a crypto key loaded */
 };
 
-/**
- * Keep this set to the last entry in the enum.
- */
+// Keep this set to the last entry in the enum.
 #define ST_MAX ST_CRYPTOKEY
 
-/**
- * Make sure you have enough bits to store all above bit fields.
- */
+// Make sure you have enough bits to store all above bit fields.
 #define ST_BYTES NbytesForBits(ST_MAX + 1)
 
 /*
@@ -434,9 +414,7 @@ class Device {
   uint32_t GetFile() const { return file; }
   uint32_t GetBlockNum() const { return block_num; }
 
-  /*
-   * Tape specific operations.
-   */
+  // Tape specific operations.
   virtual bool offline() { return true; }
   virtual bool weof(int num) { return true; }
   virtual bool fsf(int num) { return true; }
@@ -450,9 +428,7 @@ class Device {
   virtual void SetOsDeviceParameters(DeviceControlRecord* dcr){};
   virtual int32_t GetOsTapeFile() { return -1; }
 
-  /*
-   * Generic operations.
-   */
+  // Generic operations.
   virtual void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode);
   virtual char* StatusDev();
   virtual bool eod(DeviceControlRecord* dcr);
@@ -473,9 +449,7 @@ class Device {
   }
   virtual bool DeviceStatus(DeviceStatusInformation* dst) { return false; }
 
-  /*
-   * Low level operations
-   */
+  // Low level operations
   virtual int d_ioctl(int fd, ioctl_req_t request, char* mt_com = NULL) = 0;
   virtual int d_open(const char* pathname, int flags, int mode) = 0;
   virtual int d_close(int fd) = 0;
@@ -487,9 +461,7 @@ class Device {
   virtual bool d_truncate(DeviceControlRecord* dcr) = 0;
   virtual bool d_flush(DeviceControlRecord* dcr) { return true; };
 
-    /*
-     * Locking and blocking calls
-     */
+    // Locking and blocking calls
   void rLock(bool locked = false);
   void rUnlock();
   void Lock();

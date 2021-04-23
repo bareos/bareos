@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, May 2015
- */
+// Marco van Wieringen, May 2015
 /**
  * @file
  * In memory FHDB for NDMP Data Management Application (DMA)
@@ -150,9 +148,7 @@ static inline N_TREE_ROOT* ndmp_fhdb_new_tree()
   static const N_TREE_ROOT empty_N_TREE_ROOT{};
   *root = empty_N_TREE_ROOT;
 
-  /*
-   * Assume filename + node  = 40 characters average length
-   */
+  // Assume filename + node  = 40 characters average length
   size = count * (BALIGN(sizeof(N_TREE_ROOT)) + 40);
   if (size > (MAX_BUF_SIZE / 2)) { size = MAX_BUF_SIZE; }
 
@@ -190,9 +186,7 @@ static inline char* ndmp_fhdb_tree_alloc(N_TREE_ROOT* root, int size)
   return buf;
 }
 
-/*
- * This routine can be called to release the previously allocated tree node.
- */
+// This routine can be called to release the previously allocated tree node.
 static inline void NdmpFhdbFreeTreeNode(N_TREE_ROOT* root)
 {
   int asize = BALIGN(sizeof(N_TREE_NODE));
@@ -201,9 +195,7 @@ static inline void NdmpFhdbFreeTreeNode(N_TREE_ROOT* root)
   root->mem->mem -= asize;
 }
 
-/*
- * Create a new tree node.
- */
+// Create a new tree node.
 static N_TREE_NODE* ndmp_fhdb_new_tree_node(N_TREE_ROOT* root)
 {
   N_TREE_NODE* node;
@@ -216,9 +208,7 @@ static N_TREE_NODE* ndmp_fhdb_new_tree_node(N_TREE_ROOT* root)
   return node;
 }
 
-/*
- * This routine frees the whole tree
- */
+// This routine frees the whole tree
 static inline void NdmpFhdbFreeTree(N_TREE_ROOT* root)
 {
   struct ndmp_fhdb_mem *mem, *rel;
@@ -284,20 +274,14 @@ static N_TREE_NODE* search_and_insert_tree_node(char* fname,
     found_node = (N_TREE_NODE*)parent->child.insert(node, NodeCompareByName);
   }
 
-  /*
-   * Already in list ?
-   */
+  // Already in list ?
   if (found_node != node) {
-    /*
-     * Free node allocated above.
-     */
+    // Free node allocated above.
     NdmpFhdbFreeTreeNode(root);
     return found_node;
   }
 
-  /*
-   * Its was not found, but now inserted.
-   */
+  // Its was not found, but now inserted.
   node->parent = parent;
   node->FileIndex = FileIndex;
   node->fname_len = strlen(fname);
@@ -308,9 +292,7 @@ static N_TREE_NODE* search_and_insert_tree_node(char* fname,
   node->fname = ndmp_fhdb_tree_alloc(root, node->fname_len + 2);
   bstrncpy(node->fname, fname, node->fname_len + 1);
 
-  /*
-   * Maintain a linear chain of nodes.
-   */
+  // Maintain a linear chain of nodes.
   if (!root->first) {
     root->first = node;
     root->last = node;
@@ -339,9 +321,7 @@ static N_TREE_NODE* search_and_insert_tree_node(N_TREE_NODE* node,
 
   node->parent = parent;
 
-  /*
-   * Maintain a linear chain of nodes.
-   */
+  // Maintain a linear chain of nodes.
   if (!root->first) {
     root->first = node;
     root->last = node;
@@ -353,9 +333,7 @@ static N_TREE_NODE* search_and_insert_tree_node(N_TREE_NODE* node,
   return node;
 }
 
-/*
- * Recursively search the tree for a certain inode number.
- */
+// Recursively search the tree for a certain inode number.
 static N_TREE_NODE* find_tree_node(N_TREE_NODE* node, uint64_t inode)
 {
   N_TREE_NODE match_node;
@@ -363,9 +341,7 @@ static N_TREE_NODE* find_tree_node(N_TREE_NODE* node, uint64_t inode)
 
   match_node.inode = inode;
 
-  /*
-   * Start searching in the children of this node.
-   */
+  // Start searching in the children of this node.
   found_node = (N_TREE_NODE*)node->child.search(&match_node, NodeCompareById);
   if (found_node) { return found_node; }
 
@@ -374,9 +350,7 @@ static N_TREE_NODE* find_tree_node(N_TREE_NODE* node, uint64_t inode)
    * deeper.
    */
   foreach_rblist (walker, &node->child) {
-    /*
-     * See if the node has any children otherwise no need to search it.
-     */
+    // See if the node has any children otherwise no need to search it.
     if (walker->child.empty()) { continue; }
 
     found_node = find_tree_node(walker, inode);
@@ -386,17 +360,13 @@ static N_TREE_NODE* find_tree_node(N_TREE_NODE* node, uint64_t inode)
   return (N_TREE_NODE*)NULL;
 }
 
-/*
- * Recursively search the tree for a certain inode number.
- */
+// Recursively search the tree for a certain inode number.
 static N_TREE_NODE* find_tree_node(N_TREE_ROOT* root, uint64_t inode)
 {
   N_TREE_NODE match_node;
   N_TREE_NODE *found_node, *walker;
 
-  /*
-   * See if this is a request for the root of the tree.
-   */
+  // See if this is a request for the root of the tree.
   if (root->inode == inode) { return (N_TREE_NODE*)root; }
 
   match_node.inode = inode;
@@ -411,9 +381,7 @@ static N_TREE_NODE* find_tree_node(N_TREE_ROOT* root, uint64_t inode)
     if (found_node) { return found_node; }
   }
 
-  /*
-   * Start searching from the root node.
-   */
+  // Start searching from the root node.
   found_node = (N_TREE_NODE*)root->child.search(&match_node, NodeCompareById);
   if (found_node) { return found_node; }
 
@@ -422,9 +390,7 @@ static N_TREE_NODE* find_tree_node(N_TREE_ROOT* root, uint64_t inode)
    * deeper.
    */
   foreach_rblist (walker, &root->child) {
-    /*
-     * See if the node has any children otherwise no need to search it.
-     */
+    // See if the node has any children otherwise no need to search it.
     if (walker->child.empty()) { continue; }
 
     found_node = find_tree_node(walker, inode);
@@ -462,9 +428,7 @@ static inline void add_out_of_order_metadata(NIS* nis,
   nt_node->fname = ndmp_fhdb_tree_alloc(fhdb_root, nt_node->fname_len + 2);
   bstrncpy(nt_node->fname, raw_name, nt_node->fname_len + 1);
 
-  /*
-   * See if we already allocated the htable.
-   */
+  // See if we already allocated the htable.
   if (!meta_data) {
     uint32_t nr_pages, nr_items, item_size;
 
@@ -477,9 +441,7 @@ static inline void add_out_of_order_metadata(NIS* nis,
     ((struct fhdb_state*)nis->fhdb_state)->out_of_order_metadata = meta_data;
   }
 
-  /*
-   * Create a new entry and insert it into the hash with the node number as key.
-   */
+  // Create a new entry and insert it into the hash with the node number as key.
   md_entry = (OOO_MD*)meta_data->hash_malloc(sizeof(OOO_MD));
   md_entry->dir_node = dir_node;
   md_entry->nt_node = nt_node;
@@ -500,9 +462,7 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog* ixlog,
 {
   NIS* nis = (NIS*)ixlog->ctx;
 
-  /*
-   * Ignore . and .. directory entries.
-   */
+  // Ignore . and .. directory entries.
   if (bstrcmp(raw_name, ".") || bstrcmp(raw_name, "..")) { return 0; }
 
   if (nis->save_filehist) {
@@ -519,17 +479,13 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog* ixlog,
       return 1;
     }
 
-    /*
-     * See if this entry is in the cached parent.
-     */
+    // See if this entry is in the cached parent.
     if (fhdb_root->cached_parent
         && fhdb_root->cached_parent->inode == dir_node) {
       search_and_insert_tree_node(raw_name, fhdb_root->FileIndex, node,
                                   fhdb_root, fhdb_root->cached_parent);
     } else {
-      /*
-       * Not the cached parent search the tree where it need to be put.
-       */
+      // Not the cached parent search the tree where it need to be put.
       fhdb_root->cached_parent = find_tree_node(fhdb_root, dir_node);
       if (fhdb_root->cached_parent) {
         search_and_insert_tree_node(raw_name, fhdb_root->FileIndex, node,
@@ -543,9 +499,7 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog* ixlog,
   return 0;
 }
 
-/*
- * This tries recursivly to add the missing parents to the tree.
- */
+// This tries recursivly to add the missing parents to the tree.
 static N_TREE_NODE* insert_metadata_parent_node(htable* meta_data,
                                                 N_TREE_ROOT* fhdb_root,
                                                 uint64_t dir_node)
@@ -557,9 +511,7 @@ static N_TREE_NODE* insert_metadata_parent_node(htable* meta_data,
         "bndmp_fhdb_mem_add_dir: Inserting node for parent %llu into tree\n",
         dir_node);
 
-  /*
-   * lookup the dir_node
-   */
+  // lookup the dir_node
   md_entry = (OOO_MD*)meta_data->lookup(dir_node);
   if (!md_entry || !md_entry->nt_node) {
     /*

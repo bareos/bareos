@@ -44,9 +44,7 @@ class cephfs_device : public Device {
   cephfs_device();
   ~cephfs_device();
 
-  /*
-   * Interface from Device
-   */
+  // Interface from Device
   int d_close(int) override;
   int d_open(const char* pathname, int flags, int mode) override;
   int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;

@@ -53,9 +53,7 @@ bool BareosDbMysql::SqlBatchStartFileTable(JobControlRecord* jcr)
       "Fhnode NUMERIC(20) )");
   DbUnlock(this);
 
-  /*
-   * Keep track of the number of changes in batch mode.
-   */
+  // Keep track of the number of changes in batch mode.
   changes = 0;
 
   return retval;
@@ -71,9 +69,7 @@ bool BareosDbMysql::SqlBatchEndFileTable(JobControlRecord* jcr,
 {
   status_ = 0;
 
-  /*
-   * Flush any pending inserts.
-   */
+  // Flush any pending inserts.
   if (changes) { return SqlQuery(cmd); }
 
   return true;
@@ -101,9 +97,7 @@ bool BareosDbMysql::SqlBatchInsertFileTable(JobControlRecord* jcr,
     digest = ar->Digest;
   }
 
-  /*
-   * Try to batch up multiple inserts using multi-row inserts.
-   */
+  // Try to batch up multiple inserts using multi-row inserts.
   if (changes == 0) {
     Mmsg(cmd,
          "INSERT INTO batch VALUES "

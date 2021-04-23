@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Kern Sibbald, MMIV
- */
+// Written by Kern Sibbald, MMIV
 /**
  * @file
  * Hash table class -- htable
@@ -30,9 +28,7 @@
 #ifndef BAREOS_LIB_HTABLE_H_
 #define BAREOS_LIB_HTABLE_H_
 
-/**
- * Loop var through each member of table
- */
+// Loop var through each member of table
 #ifdef HAVE_TYPEOF
 #  define foreach_htable(var, tbl)                     \
     for ((var) = (typeof(var))((tbl)->first()); (var); \

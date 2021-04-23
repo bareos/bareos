@@ -3,9 +3,7 @@
 #include <assert.h>
 #include <sys/param.h>
 
-/*
- * Scenario: simple getdir (dir object), without metadata
- */
+// Scenario: simple getdir (dir object), without metadata
 
 int main(int argc, char** argv)
 {

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern E. Sibbald, December MMI
- */
+// Kern E. Sibbald, December MMI
 /**
  * @file
  * Old style
@@ -112,9 +110,7 @@ void TermIncludeExcludeFiles(FindFilesPacket* ff)
   ff->excluded_paths_list = NULL;
 }
 
-/**
- * Add a filename to list of included files
- */
+// Add a filename to list of included files
 void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
 {
   int len, j;
@@ -445,9 +441,7 @@ void AddFnameToExcludeList(FindFilesPacket* ff, const char* fname)
 }
 
 
-/**
- * Get next included file
- */
+// Get next included file
 struct s_included_file* get_next_included_file(FindFilesPacket* ff,
                                                struct s_included_file* ainc)
 {
@@ -458,9 +452,7 @@ struct s_included_file* get_next_included_file(FindFilesPacket* ff,
   } else {
     inc = ainc->next;
   }
-  /*
-   * copy inc_options for this file into the ff packet
-   */
+  // copy inc_options for this file into the ff packet
   if (inc) {
     CopyBits(FO_MAX, inc->options, ff->flags);
     ff->Compress_algo = inc->algo;
@@ -548,9 +540,7 @@ bool FileIsExcluded(FindFilesPacket* ff, const char* file)
   return false;
 }
 
-/**
- * Parse a size matching fileset option.
- */
+// Parse a size matching fileset option.
 bool ParseSizeMatch(const char* size_match_pattern,
                     struct s_sz_matching* size_matching)
 {
@@ -564,9 +554,7 @@ bool ParseSizeMatch(const char* size_match_pattern,
    */
   private_copy = strdup(size_match_pattern);
 
-  /*
-   * Empty the matching arguments.
-   */
+  // Empty the matching arguments.
   *size_matching = s_sz_matching{};
 
   /*

@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, May 2015
- */
+// Marco van Wieringen, May 2015
 /**
  * @file
  * Storage specific NDMP Data Management Application (DMA) routines
@@ -47,9 +45,7 @@ namespace directordaemon {
 
 /* Forward referenced functions */
 
-/**
- * ndmp query callback
- */
+// ndmp query callback
 int get_tape_info_cb(struct ndm_session* sess,
                      ndmp9_device_info* info,
                      unsigned n_info)
@@ -138,9 +134,7 @@ int get_tape_info_cb(struct ndm_session* sess,
   return 0;
 }
 
-/**
- *  execute NDMP_QUERY_AGENTS on Tape and Robot
- */
+//  execute NDMP_QUERY_AGENTS on Tape and Robot
 bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
                                                 StorageResource* store)
 {
@@ -159,9 +153,7 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
 
   NdmpDoQuery(NULL, jcr, &ndmp_job, me->ndmp_loglevel, query_cbs);
 
-  /*
-   * Debug output
-   */
+  // Debug output
 
   if (!store->runtime_storage_status->ndmp_deviceinfo.empty()) {
     Jmsg(jcr, M_INFO, 0, "NDMP Devices for storage %s:(%s)\n",
@@ -223,9 +215,7 @@ void DoNdmpNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
  */
 void DoNdmpStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
 {
-  /*
-   * See if the storage is just a NDMP instance of a normal storage daemon.
-   */
+  // See if the storage is just a NDMP instance of a normal storage daemon.
   if (store->paired_storage) {
     DoNativeStorageStatus(ua, store->paired_storage, cmd);
   } else {
@@ -244,9 +234,7 @@ extern "C" void NdmpRobotStatusHandler(struct ndmlog* log,
 {
   NIS* nis;
 
-  /*
-   * Make sure if the logging system was setup properly.
-   */
+  // Make sure if the logging system was setup properly.
   nis = (NIS*)log->ctx;
   if (!nis) { return; }
 
@@ -261,23 +249,17 @@ static void CleanupNdmpSession(struct ndm_session* ndmp_sess)
 {
   Dmsg0(200, "Start to clean up ndmp session.\n");
 
-  /*
-   * Destroy the session.
-   */
+  // Destroy the session.
   ndma_session_destroy(ndmp_sess);
 
-  /*
-   * Free the param block.
-   */
+  // Free the param block.
   free(ndmp_sess->param->log_tag);
   free(ndmp_sess->param->log.ctx);
   free(ndmp_sess->param);
   free(ndmp_sess);
 }
 
-/**
- * Generic function to run a storage Job on a remote NDMP server.
- */
+// Generic function to run a storage Job on a remote NDMP server.
 static bool NdmpRunStorageJob(JobControlRecord* jcr,
                               StorageResource* store,
                               struct ndm_session* ndmp_sess,
@@ -300,34 +282,26 @@ static bool NdmpRunStorageJob(JobControlRecord* jcr,
   ndmp_sess->param->log_tag = strdup("DIR-NDMP");
   nis->jcr = jcr;
 
-  /*
-   * Initialize the session structure.
-   */
+  // Initialize the session structure.
   if (ndma_session_initialize(ndmp_sess)) {
     Dmsg0(200, "Could not initialize ndma session.\n");
     return false;
   }
 
-  /*
-   * Copy the actual job to perform.
-   */
+  // Copy the actual job to perform.
   memcpy(&ndmp_sess->control_acb->job, ndmp_job, sizeof(struct ndm_job_param));
   if (!NdmpValidateJob(jcr, &ndmp_sess->control_acb->job)) {
     Dmsg0(200, "Could not validate ndma job.\n");
     return false;
   }
 
-  /*
-   * Commission the session for a run.
-   */
+  // Commission the session for a run.
   if (ndma_session_commission(ndmp_sess)) {
     Dmsg0(200, "Could not commission the ndma session.\n");
     return false;
   }
 
-  /*
-   * Setup the DMA.
-   */
+  // Setup the DMA.
   if (ndmca_connect_control_agent(ndmp_sess)) {
     Dmsg0(200, "Could not connect to control agent.\n");
     return false;
@@ -340,9 +314,7 @@ static bool NdmpRunStorageJob(JobControlRecord* jcr,
   Dmsg2(200, "ndma job.operation - job_type: %#x - %c\n",
         ndmp_sess->control_acb->job.operation, ndm_job_type);
 
-  /*
-   * Let the DMA perform its magic.
-   */
+  // Let the DMA perform its magic.
   int err{};
   if ((err = ndmca_control_agent(ndmp_sess)) != 0) {
     Dmsg1(200, "Ndma control agent error: %d\n", err);
@@ -352,18 +324,14 @@ static bool NdmpRunStorageJob(JobControlRecord* jcr,
   return true;
 }
 
-/**
- * Generic function to get the current element status of a NDMP robot.
- */
+// Generic function to get the current element status of a NDMP robot.
 static bool GetRobotElementStatus(JobControlRecord* jcr,
                                   StorageResource* store,
                                   struct ndm_session** ndmp_sess)
 {
   struct ndm_job_param ndmp_job;
 
-  /*
-   * See if this is an autochanger.
-   */
+  // See if this is an autochanger.
   if (!store->autochanger || !store->ndmp_changer_device) {
     Dmsg2(200, "Autochanger: %s - NDMP Changer device: %s\n",
           store->autochanger ? "true" : "false",
@@ -396,9 +364,7 @@ static bool GetRobotElementStatus(JobControlRecord* jcr,
   ndmp_job.have_robot = 1;
   ndmp_job.auto_remedy = 1;
 
-  /*
-   * Initialize a new NDMP session
-   */
+  // Initialize a new NDMP session
   *ndmp_sess = (struct ndm_session*)malloc(sizeof(struct ndm_session));
   memset(*ndmp_sess, 0, sizeof(struct ndm_session));
 
@@ -411,9 +377,7 @@ static bool GetRobotElementStatus(JobControlRecord* jcr,
   return true;
 }
 
-/**
- * Get the volume names from a smc_element_descriptor.
- */
+// Get the volume names from a smc_element_descriptor.
 static void FillVolumeName(vol_list_t* vl, struct smc_element_descriptor* edp)
 {
   if (edp->PVolTag) {
@@ -453,9 +417,7 @@ static void NdmpFillStorageMappings(StorageResource* store,
   }
 }
 
-/**
- * Get the current content of the autochanger as a generic vol_list dlist.
- */
+// Get the current content of the autochanger as a generic vol_list dlist.
 dlist* ndmp_get_vol_list(UaContext* ua,
                          StorageResource* store,
                          bool listall,
@@ -478,28 +440,20 @@ dlist* ndmp_get_vol_list(UaContext* ua,
    */
   NdmpFillStorageMappings(store, ndmp_sess);
 
-  /*
-   * Start with an empty dlist().
-   */
+  // Start with an empty dlist().
   vol_list = new dlist(vl, &vl->link);
 
-  /*
-   * Process the robot element status retrieved.
-   */
+  // Process the robot element status retrieved.
   smc = ndmp_sess->control_acb->smc_cb;
   for (edp = smc->elem_desc; edp; edp = edp->next) {
     vl = (vol_list_t*)malloc(sizeof(vol_list_t));
     *vl = vol_list_t{};
 
     if (scan && !listall) {
-      /*
-       * Scanning -- require only valid slot
-       */
+      // Scanning -- require only valid slot
       switch (edp->element_type_code) {
         case SMC_ELEM_TYPE_SE:
-          /*
-           * Normal slot
-           */
+          // Normal slot
           vl->slot_type = slot_type_t::kSlotTypeStorage;
           if (edp->Full) {
             vl->slot_status = slot_status_t::kSlotStatusFull;
@@ -514,9 +468,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           continue;
       }
     } else if (!listall) {
-      /*
-       * Not scanning and not listall.
-       */
+      // Not scanning and not listall.
       switch (edp->element_type_code) {
         case SMC_ELEM_TYPE_SE:
           /*

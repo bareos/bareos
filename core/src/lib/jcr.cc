@@ -156,9 +156,7 @@ struct job_callback_item {
   void* ctx{};
 };
 
-/*
- * Push a job_callback_item onto the job end callback stack.
- */
+// Push a job_callback_item onto the job end callback stack.
 void RegisterJobEndCallback(JobControlRecord* jcr,
                             void JobEndCb(JobControlRecord* jcr, void*),
                             void* ctx)
@@ -173,9 +171,7 @@ void RegisterJobEndCallback(JobControlRecord* jcr,
   jcr->job_end_callbacks.push((void*)item);
 }
 
-/*
- * Pop each job_callback_item and process it.
- */
+// Pop each job_callback_item and process it.
 static void CallJobEndCallbacks(JobControlRecord* jcr)
 {
   job_callback_item* item;
@@ -217,9 +213,7 @@ JobControlRecord::JobControlRecord()
   comment = GetPoolMemory(PM_FNAME);
   comment[0] = 0;
 
-  /*
-   * Setup some dummy values
-   */
+  // Setup some dummy values
   bstrncpy(Job, "*System*", sizeof(Job));
   JobId = 0;
   setJobType(JT_SYSTEM); /* internal job until defined */
@@ -419,9 +413,7 @@ static bool RunJcrGarbageCollector(JobControlRecord* jcr)
   return true;
 }
 
-/*
- * Global routine to free a jcr
- */
+// Global routine to free a jcr
 void b_free_jcr(const char* file, int line, JobControlRecord* jcr)
 {
   Dmsg3(debuglevel, "Enter FreeJcr jid=%u from %s:%d\n", jcr->JobId, file,
@@ -709,17 +701,13 @@ static void UpdateWaitTime(JobControlRecord* jcr, int newJobStatus)
       }
       break;
     default:
-      /*
-       * If wait state is new, we keep current time for watchdog MaxWaitTime
-       */
+      // If wait state is new, we keep current time for watchdog MaxWaitTime
       if (enter_in_waittime) { jcr->wait_time = time(nullptr); }
       break;
   }
 }
 
-/*
- * Priority runs from 0 (lowest) to 10 (highest)
- */
+// Priority runs from 0 (lowest) to 10 (highest)
 static int GetStatusPriority(int JobStatus)
 {
   int priority = 0;
@@ -744,9 +732,7 @@ static int GetStatusPriority(int JobStatus)
   return priority;
 }
 
-/*
- * Send Job status to Director
- */
+// Send Job status to Director
 bool JobControlRecord::sendJobStatus()
 {
   if (dir_bsock) { return dir_bsock->fsend(Job_status, Job, JobStatus); }
@@ -754,9 +740,7 @@ bool JobControlRecord::sendJobStatus()
   return true;
 }
 
-/*
- * Set and send Job status to Director
- */
+// Set and send Job status to Director
 bool JobControlRecord::sendJobStatus(int newJobStatus)
 {
   if (!is_JobStatus(newJobStatus)) {
@@ -792,9 +776,7 @@ void JobControlRecord::setJobStatus(int newJobStatus)
 
   Dmsg2(800, "setJobStatus(%s, %c)\n", Job, newJobStatus);
 
-  /*
-   * Update wait_time depending on newJobStatus and oldJobStatus
-   */
+  // Update wait_time depending on newJobStatus and oldJobStatus
   UpdateWaitTime(this, newJobStatus);
 
   /*
@@ -858,9 +840,7 @@ JobControlRecord* jcr_walk_start()
   return jcr;
 }
 
-/*
- * Get next jcr from chain, and release current one
- */
+// Get next jcr from chain, and release current one
 JobControlRecord* jcr_walk_next(JobControlRecord* prev_jcr)
 {
   JobControlRecord* jcr;
@@ -879,9 +859,7 @@ JobControlRecord* jcr_walk_next(JobControlRecord* prev_jcr)
   return jcr;
 }
 
-/*
- * Release last jcr referenced
- */
+// Release last jcr referenced
 void JcrWalkEnd(JobControlRecord* jcr)
 {
   if (jcr) {
@@ -893,9 +871,7 @@ void JcrWalkEnd(JobControlRecord* jcr)
   }
 }
 
-/*
- * Return number of Jobs
- */
+// Return number of Jobs
 int JobCount()
 {
   JobControlRecord* jcr;
@@ -1090,9 +1066,7 @@ void DbgPrintJcr(FILE* fp)
     fprintf(fp, "\tdb=%p db_batch=%p batch_started=%i\n", jcr->db,
             jcr->db_batch, jcr->batch_started);
 
-    /*
-     * Call all the jcr debug hooks
-     */
+    // Call all the jcr debug hooks
     for (int i = 0; i < dbg_jcr_handler_count; i++) {
       dbg_jcr_hook_t* hook = dbg_jcr_hooks[i];
       hook(jcr, fp);

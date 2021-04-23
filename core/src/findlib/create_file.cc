@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, November MM
- */
+// Kern Sibbald, November MM
 /**
  * @file
  * Create a file, and reset the modes
@@ -99,9 +97,7 @@ int CreateFile(JobControlRecord* jcr,
 
 #ifdef HAVE_WIN32
   if (!bfd->use_backup_api) {
-    /*
-     * Eliminate invalid windows filename characters from foreign filenames
-     */
+    // Eliminate invalid windows filename characters from foreign filenames
     char* ch = (char*)attr->ofname;
     if (ch[0] != 0 && ch[1] != 0) {
       ch += 2;
@@ -141,9 +137,7 @@ int CreateFile(JobControlRecord* jcr,
         }
         break;
       case REPLACE_NEVER:
-        /*
-         * Set attributes if we created this directory
-         */
+        // Set attributes if we created this directory
         if (attr->type == FT_DIREND
             && PathListLookup(jcr->path_list, attr->ofname)) {
           break;
@@ -218,9 +212,7 @@ int CreateFile(JobControlRecord* jcr,
         attr->ofname[pnl] = savechr; /* restore full name */
       }
 
-      /*
-       * Now we do the specific work for each file type
-       */
+      // Now we do the specific work for each file type
       switch (attr->type) {
         case FT_REGE:
         case FT_REG:
@@ -312,9 +304,7 @@ int CreateFile(JobControlRecord* jcr,
           if (attr->type == FT_RAW || attr->type == FT_FIFO) {
             btimer_t* tid;
             Dmsg1(400, "FT_RAW|FT_FIFO %s\n", attr->ofname);
-            /*
-             * Timeout open() in 60 seconds
-             */
+            // Timeout open() in 60 seconds
             if (attr->type == FT_FIFO) {
               Dmsg0(400, "Set FIFO timer\n");
               tid = start_thread_timer(jcr, pthread_self(), 60);
@@ -356,9 +346,7 @@ int CreateFile(JobControlRecord* jcr,
             if (stat(attr->olname, &s) == 0 && s.st_flags != 0) {
               if (chflags(attr->olname, 0) == 0) {
                 if (link(attr->olname, attr->ofname) != 0) {
-                  /*
-                   * Restore original file flags even when linking failed
-                   */
+                  // Restore original file flags even when linking failed
                   if (chflags(attr->olname, s.st_flags) < 0) {
                     Qmsg2(
                         jcr, M_ERROR, 0,
@@ -374,9 +362,7 @@ int CreateFile(JobControlRecord* jcr,
                   return CF_ERROR;
 #  ifdef HAVE_CHFLAGS
                 }
-                /*
-                 * Finally restore original file flags
-                 */
+                // Finally restore original file flags
                 if (chflags(attr->olname, s.st_flags) < 0) {
                   Qmsg2(jcr, M_ERROR, 0,
                         _("Could not restore file flags for file %s: ERR=%s\n"),
@@ -410,9 +396,7 @@ int CreateFile(JobControlRecord* jcr,
           Dmsg2(130, "FT_LNK should restore: %s -> %s\n", attr->ofname,
                 attr->olname);
           if (attr->statp.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT) {
-            /*
-             * We do not restore volume mount points
-             */
+            // We do not restore volume mount points
             Dmsg0(130, "Skipping Volume Mount Point\n");
             return CF_SKIP;
           }
@@ -427,9 +411,7 @@ int CreateFile(JobControlRecord* jcr,
           return CF_CREATED;
 #else
         case FT_LNK:
-          /*
-           * Unix/Linux symlink handling
-           */
+          // Unix/Linux symlink handling
           Dmsg2(130, "FT_LNK should restore: %s -> %s\n", attr->ofname,
                 attr->olname);
           if (symlink(attr->olname, attr->ofname) != 0 && errno != EEXIST) {
@@ -445,9 +427,7 @@ int CreateFile(JobControlRecord* jcr,
     case FT_REPARSE:
     case FT_JUNCTION:
       bfd->reparse_point = true;
-      /*
-       * Fall through wanted
-       */
+      // Fall through wanted
     case FT_DIRBEGIN:
     case FT_DIREND:
       Dmsg2(200, "Make dir mode=%04o dir=%s\n", (new_mode & ~S_IFMT),
@@ -469,9 +449,7 @@ int CreateFile(JobControlRecord* jcr,
           BErrNo be;
           be.SetErrno(bfd->BErrNo);
 #ifdef HAVE_WIN32
-          /*
-           * Check for trying to create a drive, if so, skip
-           */
+          // Check for trying to create a drive, if so, skip
           if (attr->ofname[1] == ':' && IsPathSeparator(attr->ofname[2])
               && attr->ofname[3] == '\0') {
             return CF_SKIP;
@@ -490,9 +468,7 @@ int CreateFile(JobControlRecord* jcr,
       Qmsg2(jcr, M_INFO, 0, _("Original file %s have been deleted: type=%d\n"),
             attr->fname, attr->type);
       break;
-    /*
-     * The following should not occur
-     */
+    // The following should not occur
     case FT_NOACCESS:
     case FT_NOFOLLOW:
     case FT_NOSTAT:

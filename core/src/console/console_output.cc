@@ -28,9 +28,6 @@
 static FILE* output_file_ = stdout;
 static bool teeout_enabled_ = false;
 
-/**
- * Send a line to the output file and or the terminal
- */
 void ConsoleOutputFormat(const char* fmt, ...)
 {
   std::vector<char> buf(3000);

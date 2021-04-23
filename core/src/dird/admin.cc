@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, May MMIII
- */
+// Kern Sibbald, May MMIII
 
 /**
  * @file
@@ -58,9 +56,6 @@ bool do_admin(JobControlRecord* jcr)
 
   jcr->impl->fname = (char*)GetPoolMemory(PM_FNAME);
 
-  /*
-   * Print Job Start message
-   */
   Jmsg(jcr, M_INFO, 0, _("Start Admin JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);
 
@@ -70,9 +65,6 @@ bool do_admin(JobControlRecord* jcr)
   return true;
 }
 
-/**
- * Release resources allocated during backup.
- */
 void AdminCleanup(JobControlRecord* jcr, int TermCode)
 {
   char sdt[50], edt[50], schedt[50];

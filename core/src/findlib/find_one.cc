@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * This file was derived from GNU TAR source code. Except for a few key
@@ -77,9 +75,7 @@ static inline FindFilesPacket* new_dir_ff_pkt(FindFilesPacket* ff_pkt)
   return dir_ff_pkt;
 }
 
-/**
- * Free the temp directory ff_pkt
- */
+// Free the temp directory ff_pkt
 static void FreeDirFfPkt(FindFilesPacket* dir_ff_pkt)
 {
   free(dir_ff_pkt->fname);
@@ -186,9 +182,7 @@ static bool VolumeHasAttrlist(const char* fname)
   attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
   attrList.volattr = ATTR_VOL_INFO | ATTR_VOL_CAPABILITIES;
   if (statfs(fname, &st) == 0) {
-    /*
-     * We need to check on the mount point
-     */
+    // We need to check on the mount point
     if (getattrlist(st.f_mntonname, &attrList, &vol, sizeof(vol),
                     FSOPT_NOFOLLOW)
             == 0
@@ -203,9 +197,7 @@ static bool VolumeHasAttrlist(const char* fname)
   return false;
 }
 
-/**
- * check for BSD nodump flag
- */
+// check for BSD nodump flag
 static inline bool no_dump(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
 #if defined(HAVE_CHFLAGS) && defined(UF_NODUMP)
@@ -219,17 +211,13 @@ static inline bool no_dump(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   return false; /* do backup */
 }
 
-/**
- * check for sizes
- */
+// check for sizes
 static inline bool CheckSizeMatching(JobControlRecord* jcr,
                                      FindFilesPacket* ff_pkt)
 {
   int64_t begin_size, end_size, difference;
 
-  /*
-   * See if size matching is turned on.
-   */
+  // See if size matching is turned on.
   if (!ff_pkt->size_match) { return true; }
 
   /*
@@ -240,23 +228,17 @@ static inline bool CheckSizeMatching(JobControlRecord* jcr,
   begin_size = ff_pkt->size_match->begin_size;
   end_size = ff_pkt->size_match->end_size;
 
-  /*
-   * See what kind of matching should be done.
-   */
+  // See what kind of matching should be done.
   switch (ff_pkt->size_match->type) {
     case size_match_approx:
-      /*
-       * Calculate the fraction this size is of the wanted size.
-       */
+      // Calculate the fraction this size is of the wanted size.
       if ((int64_t)ff_pkt->statp.st_size > begin_size) {
         difference = ff_pkt->statp.st_size - begin_size;
       } else {
         difference = begin_size - ff_pkt->statp.st_size;
       }
 
-      /*
-       * See if the difference is less then 1% of the total.
-       */
+      // See if the difference is less then 1% of the total.
       return (difference < (begin_size / 100));
     case size_match_smaller:
       return (int64_t)ff_pkt->statp.st_size < begin_size;
@@ -270,9 +252,7 @@ static inline bool CheckSizeMatching(JobControlRecord* jcr,
   }
 }
 
-/**
- * Check if a file have changed during backup and display an error
- */
+// Check if a file have changed during backup and display an error
 bool HasFileChanged(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
   struct stat statp;
@@ -338,9 +318,7 @@ bool CheckChanges(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
    */
   if (ff_pkt->CheckFct) { return ff_pkt->CheckFct(jcr, ff_pkt); }
 
-  /*
-   * For normal backups (incr/diff), we use this default behaviour
-   */
+  // For normal backups (incr/diff), we use this default behaviour
   if (ff_pkt->incremental
       && (ff_pkt->statp.st_mtime < ff_pkt->save_time
           && (BitIsSet(FO_MTIMEONLY, ff_pkt->flags)
@@ -356,9 +334,7 @@ static inline bool HaveIgnoredir(FindFilesPacket* ff_pkt)
   struct stat sb;
   char* ignoredir;
 
-  /*
-   * Ensure that pointers are defined
-   */
+  // Ensure that pointers are defined
   if (!ff_pkt->fileset || !ff_pkt->fileset->incexe) { return false; }
 
   for (int i = 0; i < ff_pkt->fileset->incexe->ignoredir.size(); i++) {
@@ -380,9 +356,7 @@ static inline bool HaveIgnoredir(FindFilesPacket* ff_pkt)
   return false;
 }
 
-/**
- * Restore file times.
- */
+// Restore file times.
 static inline void RestoreFileTimes(FindFilesPacket* ff_pkt, char* fname)
 {
 #if defined(HAVE_LUTIMES)
@@ -414,9 +388,7 @@ static inline void RestoreFileTimes(FindFilesPacket* ff_pkt, char* fname)
 }
 
 #ifdef HAVE_DARWIN_OS
-/**
- * Handling of a HFS+ attributes.
- */
+// Handling of a HFS+ attributes.
 static inline int process_hfsattributes(JobControlRecord* jcr,
                                         FindFilesPacket* ff_pkt,
                                         int HandleFile(JobControlRecord* jcr,
@@ -425,9 +397,7 @@ static inline int process_hfsattributes(JobControlRecord* jcr,
                                         char* fname,
                                         bool top_level)
 {
-  /*
-   * TODO: initialise attrList once elsewhere?
-   */
+  // TODO: initialise attrList once elsewhere?
   struct attrlist attrList;
 
   memset(&attrList, 0, sizeof(attrList));
@@ -446,9 +416,7 @@ static inline int process_hfsattributes(JobControlRecord* jcr,
 }
 #endif
 
-/**
- * Handling of a hardlinked file.
- */
+// Handling of a hardlinked file.
 static inline int process_hardlink(JobControlRecord* jcr,
                                    FindFilesPacket* ff_pkt,
                                    int HandleFile(JobControlRecord* jcr,
@@ -463,9 +431,7 @@ static inline int process_hardlink(JobControlRecord* jcr,
 
   hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino, ff_pkt->statp.st_dev);
   if (hl) {
-    /*
-     * If we have already backed up the hard linked file don't do it again
-     */
+    // If we have already backed up the hard linked file don't do it again
     if (bstrcmp(hl->name, fname)) {
       Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl->FileIndex,
             fname);
@@ -486,9 +452,7 @@ static inline int process_hardlink(JobControlRecord* jcr,
           hl->FileIndex, hl->name);
     *done = true;
   } else {
-    /*
-     * File not previously dumped. Chain it into our list.
-     */
+    // File not previously dumped. Chain it into our list.
     hl = new_hardlink(jcr, ff_pkt, fname, ff_pkt->statp.st_ino,
                       ff_pkt->statp.st_dev);
     ff_pkt->linked = hl; /* Mark saved link */
@@ -499,9 +463,7 @@ static inline int process_hardlink(JobControlRecord* jcr,
   return rtn_stat;
 }
 
-/**
- * Handling of a regular file.
- */
+// Handling of a regular file.
 static inline int process_regular_file(JobControlRecord* jcr,
                                        FindFilesPacket* ff_pkt,
                                        int HandleFile(JobControlRecord* jcr,
@@ -539,9 +501,7 @@ static inline int process_regular_file(JobControlRecord* jcr,
   return rtn_stat;
 }
 
-/**
- * Handling of a symlink.
- */
+// Handling of a symlink.
 static inline int process_symlink(JobControlRecord* jcr,
                                   FindFilesPacket* ff_pkt,
                                   int HandleFile(JobControlRecord* jcr,
@@ -556,9 +516,7 @@ static inline int process_symlink(JobControlRecord* jcr,
 
   size = readlink(fname, buffer, path_max + name_max + 101);
   if (size < 0) {
-    /*
-     * Could not follow link
-     */
+    // Could not follow link
     ff_pkt->type = FT_NOFOLLOW;
     ff_pkt->ff_errno = errno;
     rtn_stat = HandleFile(jcr, ff_pkt, top_level);
@@ -576,9 +534,7 @@ static inline int process_symlink(JobControlRecord* jcr,
   return rtn_stat;
 }
 
-/**
- * Handling of a directory.
- */
+// Handling of a directory.
 static inline int process_directory(JobControlRecord* jcr,
                                     FindFilesPacket* ff_pkt,
                                     int HandleFile(JobControlRecord* jcr,
@@ -608,17 +564,13 @@ static inline int process_directory(JobControlRecord* jcr,
    */
   if (HaveIgnoredir(ff_pkt)) { return 1; /* Just ignore this directory */ }
 
-  /*
-   * Build a canonical directory name with a trailing slash in link var
-   */
+  // Build a canonical directory name with a trailing slash in link var
   len = strlen(fname);
   link_len = len + 200;
   link = (char*)malloc(link_len + 2);
   bstrncpy(link, fname, link_len);
 
-  /*
-   * Strip all trailing slashes
-   */
+  // Strip all trailing slashes
   while (len >= 1 && IsPathSeparator(link[len - 1])) { len--; }
   link[len++] = '/'; /* add back one */
   link[len] = 0;

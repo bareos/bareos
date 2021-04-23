@@ -67,25 +67,19 @@ typedef struct dpl_conn {
   time_t close_time;
   unsigned int n_hits;
 
-  /*
-   * buffer
-   */
+  // buffer
   size_t read_buf_size;
   char* read_buf;
   int read_buf_pos;
 
-  /*
-   * read line state
-   */
+  // read line state
   int block_size;
   int max_blocks;
   ssize_t cc;
   dpl_status_t status;
   int eof; /*!< set to 1 at EOF            */
 
-  /*
-   * ssl
-   */
+  // ssl
   SSL* ssl;
   BIO* bio;
 } dpl_conn_t;

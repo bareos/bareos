@@ -18,9 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Philipp Storz, Nov 2016
- */
+// Philipp Storz, Nov 2016
 /**
  * @file
  * Functions common to mem and lmdb backends of fhdb handling
@@ -58,9 +56,7 @@ extern "C" int BndmpFhdbAddFile(struct ndmlog* ixlog,
           raw_name);
 
     // if (nis->jcr->ar) {
-    /*
-     * See if this is the top level entry of the tree e.g. len == 0
-     */
+    // See if this is the top level entry of the tree e.g. len == 0
     if (strlen(raw_name) == 0) {
       NdmpConvertFstat(fstat, nis->FileIndex, &FileType, attribs);
 
@@ -76,14 +72,10 @@ extern "C" int BndmpFhdbAddFile(struct ndmlog* ixlog,
       bool raw_name_ends_with_slash = (raw_name[strlen(raw_name) - 1] == '/');
 
       PmStrcpy(pathname, nis->filesystem);
-      /*
-       * make sure we have a trailing slash
-       */
+      // make sure we have a trailing slash
       if (!filesystem_ends_with_slash) { PmStrcat(pathname, "/"); }
 
-      /*
-       * skip leading slash to avoid double slashes
-       */
+      // skip leading slash to avoid double slashes
       if (raw_name_starts_with_slash) {
         PmStrcat(pathname, raw_name + 1);
       } else {

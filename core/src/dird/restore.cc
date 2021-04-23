@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, November MM
- */
+// Kern Sibbald, November MM
 /**
  * @file
  * responsible for restoring files
@@ -81,9 +79,7 @@ static void BuildRestoreCommand(JobControlRecord* jcr, PoolMem& ret)
   char replace, *where, *cmd;
   char empty = '\0';
 
-  /*
-   * Build the restore command
-   */
+  // Build the restore command
   if (jcr->impl->replace != 0) {
     replace = jcr->impl->replace;
   } else if (jcr->impl->res.job->replace != 0) {
@@ -138,19 +134,13 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
   char* connection_target_address;
 
   client = jcr->impl->res.client;
-  /*
-   * This command is used for each part
-   */
+  // This command is used for each part
   BuildRestoreCommand(jcr, RestoreCmd);
 
-  /*
-   * Open the bootstrap file
-   */
+  // Open the bootstrap file
   if (!OpenBootstrapFile(jcr, info)) { goto bail_out; }
 
-  /*
-   * Read the bootstrap file
-   */
+  // Read the bootstrap file
   jcr->passive_client = client->passive;
   while (!feof(info.bs)) {
     if (!SelectNextRstore(jcr, info)) { goto bail_out; }
@@ -165,25 +155,19 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
     Dmsg0(10, "Open connection with storage daemon\n");
     jcr->setJobStatus(JS_WaitSD);
 
-    /*
-     * Start conversation with Storage daemon
-     */
+    // Start conversation with Storage daemon
     if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
       goto bail_out;
     }
     sd = jcr->store_bsock;
 
-    /*
-     * Now start a job with the Storage daemon
-     */
+    // Now start a job with the Storage daemon
     if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list, NULL)) {
       goto bail_out;
     }
 
     if (first_time) {
-      /*
-       * Start conversation with File daemon
-       */
+      // Start conversation with File daemon
       jcr->setJobStatus(JS_WaitFD);
       jcr->impl->keep_sd_auth_key = true; /* don't clear the sd_auth_key now */
 
@@ -197,9 +181,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
         Dmsg1(500, "Unexpected %s secure erase\n", "client");
       }
 
-      /*
-       * Check if the file daemon supports passive client mode.
-       */
+      // Check if the file daemon supports passive client mode.
       if (jcr->passive_client && jcr->impl->FDVersion < FD_VERSION_51) {
         Jmsg(jcr, M_FATAL, 0,
              _("Client \"%s\" doesn't support passive client mode. "
@@ -211,9 +193,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
 
     jcr->setJobStatus(JS_Running);
 
-    /*
-     * Send the bootstrap file -- what Volumes/files to restore
-     */
+    // Send the bootstrap file -- what Volumes/files to restore
     bool success = false;
     if (SendBootstrapFile(jcr, sd, info)) {
       Bmicrosleep(2, 0);
@@ -231,9 +211,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
        */
       if (!sd->fsend("run")) { goto bail_out; }
 
-      /*
-       * Now start a Storage daemon message thread
-       */
+      // Now start a Storage daemon message thread
       if (!StartStorageDaemonMessageThread(jcr)) { goto bail_out; }
       Dmsg0(50, "Storage daemon connection OK\n");
 
@@ -244,9 +222,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
        */
       if (store->SDDport == 0) { store->SDDport = store->SDport; }
 
-      /*
-       * TLS Requirement
-       */
+      // TLS Requirement
 
       TlsPolicy tls_policy;
       if (jcr->impl->res.client->connection_successful_handshake_
@@ -296,9 +272,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
       Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
 
       connection_target_address = ClientAddressToContact(client, store);
-      /*
-       * Tell the SD to connect to the FD.
-       */
+      // Tell the SD to connect to the FD.
       sd->fsend(passiveclientcmd, connection_target_address, client->FDport,
                 tls_policy);
       Bmicrosleep(2, 0);
@@ -307,33 +281,23 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
         goto bail_out;
       }
 
-      /*
-       * Start the Job in the SD.
-       */
+      // Start the Job in the SD.
       if (!sd->fsend("run")) { goto bail_out; }
 
-      /*
-       * Now start a Storage daemon message thread
-       */
+      // Now start a Storage daemon message thread
       if (!StartStorageDaemonMessageThread(jcr)) { goto bail_out; }
       Dmsg0(50, "Storage daemon connection OK\n");
     }
 
-    /*
-     * Declare the job started to start the MaxRunTime check
-     */
+    // Declare the job started to start the MaxRunTime check
     jcr->setJobStarted();
 
-    /*
-     * Only pass "global" commands to the FD once
-     */
+    // Only pass "global" commands to the FD once
     if (first_time) {
       first_time = false;
       if (!SendRunscriptsCommands(jcr)) { goto bail_out; }
 
-      /*
-       * Only FD version 52 and later understand the sending of plugin options.
-       */
+      // Only FD version 52 and later understand the sending of plugin options.
       if (jcr->impl->FDVersion >= FD_VERSION_52) {
         if (!SendPluginOptions(jcr)) {
           Dmsg0(000, "FAIL: Send plugin options\n");
@@ -432,19 +396,13 @@ bool DoNativeRestore(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  /*
-   * Print Job Start message
-   */
+  // Print Job Start message
   Jmsg(jcr, M_INFO, 0, _("Start Restore Job %s\n"), jcr->Job);
 
-  /*
-   * Read the bootstrap file and do the restore
-   */
+  // Read the bootstrap file and do the restore
   if (!DoNativeRestoreBootstrap(jcr)) { goto bail_out; }
 
-  /*
-   * Wait for Job Termination
-   */
+  // Wait for Job Termination
   status = WaitForJobTermination(jcr);
   NativeRestoreCleanup(jcr, status);
   return true;
@@ -454,9 +412,7 @@ bail_out:
   return false;
 }
 
-/**
- * Release resources allocated during restore.
- */
+// Release resources allocated during restore.
 void NativeRestoreCleanup(JobControlRecord* jcr, int TermCode)
 {
   char term_code[100];

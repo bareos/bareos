@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, February 2014
- */
+// Marco van Wieringen, February 2014
 /**
  * @file
  * Gluster Filesystem API device abstraction.
@@ -38,9 +36,7 @@
 
 namespace storagedaemon {
 
-/**
- * Options that can be specified for this device type.
- */
+// Options that can be specified for this device type.
 enum device_option_type
 {
   argument_none = 0,
@@ -111,14 +107,10 @@ static inline bool parse_gfapi_devicename(char* devicename,
 {
   char* bp;
 
-  /*
-   * Make sure its a URI that starts with gluster.
-   */
+  // Make sure its a URI that starts with gluster.
   if (!bstrncasecmp(devicename, "gluster", 7)) { return false; }
 
-  /*
-   * Parse any explicit protocol.
-   */
+  // Parse any explicit protocol.
   bp = strchr(devicename, '+');
   if (bp) {
     *transport = ++bp;
@@ -134,23 +126,15 @@ static inline bool parse_gfapi_devicename(char* devicename,
     if (!bp) { goto bail_out; }
   }
 
-  /*
-   * When protocol is not UNIX parse servername and portnr.
-   */
+  // When protocol is not UNIX parse servername and portnr.
   if (!*transport || !Bstrcasecmp(*transport, "unix")) {
-    /*
-     * Parse servername of gluster management server.
-     */
+    // Parse servername of gluster management server.
     bp = strchr(bp, '/');
 
-    /*
-     * Validate URI.
-     */
+    // Validate URI.
     if (!bp || !(*bp == '/')) { goto bail_out; }
 
-    /*
-     * Skip the two //
-     */
+    // Skip the two //
     *bp++ = '\0';
     bp++;
     *servername = bp;
@@ -173,9 +157,7 @@ static inline bool parse_gfapi_devicename(char* devicename,
       *serverport = str_to_int64(port);
       *volumename = bp;
 
-      /*
-       * See if there is a dir specified.
-       */
+      // See if there is a dir specified.
       bp = strchr(bp, '/');
       if (bp) {
         *bp++ = '\0';
@@ -185,17 +167,13 @@ static inline bool parse_gfapi_devicename(char* devicename,
       *serverport = 0;
       bp = *servername;
 
-      /*
-       * Parse the volume name.
-       */
+      // Parse the volume name.
       bp = strchr(bp, '/');
       if (!bp) { goto bail_out; }
       *bp++ = '\0';
       *volumename = bp;
 
-      /*
-       * See if there is a dir specified.
-       */
+      // See if there is a dir specified.
       bp = strchr(bp, '/');
       if (bp) {
         *bp++ = '\0';
@@ -203,40 +181,28 @@ static inline bool parse_gfapi_devicename(char* devicename,
       }
     }
   } else {
-    /*
-     * For UNIX serverport is zero.
-     */
+    // For UNIX serverport is zero.
     *serverport = 0;
 
-    /*
-     * Validate URI.
-     */
+    // Validate URI.
     if (*bp != '/' || *(bp + 1) != '/') { goto bail_out; }
 
-    /*
-     * Skip the two //
-     */
+    // Skip the two //
     *bp++ = '\0';
     bp++;
 
-    /*
-     * For UNIX URIs the server part of the URI needs to be empty.
-     */
+    // For UNIX URIs the server part of the URI needs to be empty.
     if (*bp++ != '/') { goto bail_out; }
     *volumename = bp;
 
-    /*
-     * See if there is a dir specified.
-     */
+    // See if there is a dir specified.
     bp = strchr(bp, '/');
     if (bp) {
       *bp++ = '\0';
       *dir = bp;
     }
 
-    /*
-     * Parse any socket parameters.
-     */
+    // Parse any socket parameters.
     bp = strchr(bp, '?');
     if (bp) {
       if (bstrncasecmp(bp + 1, "socket=", 7)) {
@@ -252,9 +218,7 @@ bail_out:
   return false;
 }
 
-/**
- * Create a parent directory using the gfapi.
- */
+// Create a parent directory using the gfapi.
 static inline bool GfapiMakedirs(glfs_t* glfs, const char* directory)
 {
   int len;
@@ -266,9 +230,7 @@ static inline bool GfapiMakedirs(glfs_t* glfs, const char* directory)
   PmStrcpy(new_directory, directory);
   len = strlen(new_directory.c_str());
 
-  /*
-   * Strip any trailing slashes.
-   */
+  // Strip any trailing slashes.
   for (char* p = new_directory.c_str() + (len - 1);
        (p >= new_directory.c_str()) && *p == '/'; p--) {
     *p = '\0';
@@ -276,23 +238,17 @@ static inline bool GfapiMakedirs(glfs_t* glfs, const char* directory)
 
   if (strlen(new_directory.c_str())
       && glfs_stat(glfs, new_directory.c_str(), &st) != 0) {
-    /*
-     * See if the parent exists.
-     */
+    // See if the parent exists.
     switch (errno) {
       case ENOENT:
         bp = strrchr(new_directory.c_str(), '/');
         if (bp) {
-          /*
-           * Make sure our parent exists.
-           */
+          // Make sure our parent exists.
           *bp = '\0';
           retval = GfapiMakedirs(glfs, new_directory.c_str());
           if (!retval) { return false; }
 
-          /*
-           * Create the directory.
-           */
+          // Create the directory.
           if (glfs_mkdir(glfs, directory, 0750) == 0) { retval = true; }
         }
         break;
@@ -306,16 +262,12 @@ static inline bool GfapiMakedirs(glfs_t* glfs, const char* directory)
   return retval;
 }
 
-/**
- * Open a volume using gfapi.
- */
+// Open a volume using gfapi.
 int gfapi_device::d_open(const char* pathname, int flags, int mode)
 {
   int status;
 
-  /*
-   * Parse the gluster URI.
-   */
+  // Parse the gluster URI.
   if (!gfapi_configstring_) {
     char *bp, *next_option;
     bool done;

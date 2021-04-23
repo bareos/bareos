@@ -52,9 +52,7 @@
  * filesystem when added to the kernel.
  */
 
-/*
- *  Marco van Wieringen, August 2009
- */
+//  Marco van Wieringen, August 2009
 
 #include "include/bareos.h"
 #include "mntent_cache.h"
@@ -94,16 +92,12 @@
 #  include <sys/mount.h>
 #endif
 
-/*
- * Protected data by mutex lock.
- */
+// Protected data by mutex lock.
 static pthread_mutex_t mntent_cache_lock = PTHREAD_MUTEX_INITIALIZER;
 static mntent_cache_entry_t* previous_cache_hit = NULL;
 static dlist* mntent_cache_entries = NULL;
 
-/*
- * Last time a rescan of the mountlist took place.
- */
+// Last time a rescan of the mountlist took place.
 static time_t last_rescan = 0;
 
 static const char* skipped_fs_types[] = {
@@ -112,9 +106,7 @@ static const char* skipped_fs_types[] = {
 #endif
     NULL};
 
-/**
- * Simple comparison function for binary search and insert.
- */
+// Simple comparison function for binary search and insert.
 static int CompareMntentMapping(void* e1, void* e2)
 {
   mntent_cache_entry_t *mce1, *mce2;
@@ -129,9 +121,7 @@ static int CompareMntentMapping(void* e1, void* e2)
   }
 }
 
-/**
- * Free the members of the mntent_cache structure not the structure itself.
- */
+// Free the members of the mntent_cache structure not the structure itself.
 static inline void DestroyMntentCacheEntry(mntent_cache_entry_t* mce)
 {
   if (mce->mntopts) { free(mce->mntopts); }
@@ -182,9 +172,7 @@ static mntent_cache_entry_t* update_mntent_mapping(uint32_t dev,
   mce = (mntent_cache_entry_t*)mntent_cache_entries->binary_search(
       &lookup, CompareMntentMapping);
   if (mce) {
-    /*
-     * See if the info changed.
-     */
+    // See if the info changed.
     if (!bstrcmp(mce->special, special)) {
       free(mce->special);
       mce->special = strdup(special);
@@ -388,9 +376,7 @@ static inline void InitializeMntentCache(void)
 
   mntent_cache_entries = new dlist(mce, &mce->link);
 
-  /**
-   * Refresh the cache.
-   */
+  // Refresh the cache.
   refresh_mount_cache(add_mntent_mapping);
 }
 
@@ -402,16 +388,12 @@ static void RepopulateMntentCache(void)
 {
   mntent_cache_entry_t *mce, *next_mce;
 
-  /**
-   * Reset validated flag on all entries in the cache.
-   */
+  // Reset validated flag on all entries in the cache.
   foreach_dlist (mce, mntent_cache_entries) {
     mce->validated = false;
   }
 
-  /**
-   * Refresh the cache.
-   */
+  // Refresh the cache.
   refresh_mount_cache(update_mntent_mapping);
 
   /**
@@ -422,9 +404,7 @@ static void RepopulateMntentCache(void)
   while (mce) {
     next_mce = (mntent_cache_entry_t*)mntent_cache_entries->next(mce);
     if (!mce->validated) {
-      /**
-       * Invalidate the previous cache hit if we are removing it.
-       */
+      // Invalidate the previous cache hit if we are removing it.
       if (previous_cache_hit == mce) { previous_cache_hit = NULL; }
 
       /**
@@ -448,16 +428,12 @@ static void RepopulateMntentCache(void)
   }
 }
 
-/**
- * Flush the current content from the cache.
- */
+// Flush the current content from the cache.
 void FlushMntentCache(void)
 {
   mntent_cache_entry_t* mce;
 
-  /**
-   * Lock the cache.
-   */
+  // Lock the cache.
   P(mntent_cache_lock);
 
   if (mntent_cache_entries) {
@@ -479,16 +455,12 @@ void FlushMntentCache(void)
  */
 void ReleaseMntentMapping(mntent_cache_entry_t* mce)
 {
-  /**
-   * Lock the cache.
-   */
+  // Lock the cache.
   P(mntent_cache_lock);
 
   mce->reference_count--;
 
-  /**
-   * See if this entry is a dangling entry.
-   */
+  // See if this entry is a dangling entry.
   if (mce->reference_count == 0 && mce->destroyed) {
     DestroyMntentCacheEntry(mce);
     free(mce);
@@ -497,31 +469,23 @@ void ReleaseMntentMapping(mntent_cache_entry_t* mce)
   V(mntent_cache_lock);
 }
 
-/**
- * Find a mapping in the cache.
- */
+// Find a mapping in the cache.
 mntent_cache_entry_t* find_mntent_mapping(uint32_t dev)
 {
   mntent_cache_entry_t lookup, *mce = NULL;
   time_t now;
 
-  /**
-   * Lock the cache.
-   */
+  // Lock the cache.
   P(mntent_cache_lock);
 
-  /**
-   * Shortcut when we get a request for the same device again.
-   */
+  // Shortcut when we get a request for the same device again.
   if (previous_cache_hit && previous_cache_hit->dev == dev) {
     mce = previous_cache_hit;
     mce->reference_count++;
     goto ok_out;
   }
 
-  /**
-   * Initialize the cache if that was not done before.
-   */
+  // Initialize the cache if that was not done before.
   if (!mntent_cache_entries) {
     InitializeMntentCache();
     last_rescan = time(NULL);

@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, June MMIII
- */
+// Kern Sibbald, June MMIII
 /**
  * @file
  * alist header file
@@ -82,9 +80,7 @@
          (inx)--)
 #endif
 
-/**
- * Second arg of init
- */
+// Second arg of init
 enum
 {
   owned_by_alist = true,
@@ -123,16 +119,12 @@ class alist {
   void destroy();
   void grow(int num);
 
-  /*
-   * Use it as a stack, pushing and poping from the end
-   */
+  // Use it as a stack, pushing and poping from the end
   void push(void* item) { append(item); }
   void* pop() { return remove(num_items - 1); }
 };
 
-/**
- * Define index operator []
- */
+// Define index operator []
 inline void* alist::operator[](int index) const
 {
   if (index < 0 || index >= num_items) { return nullptr; }

@@ -61,9 +61,7 @@ struct s_addr_port {
   char* port;
 };
 
-/*
- * Sanity check for the lengths of the Hello messages.
- */
+// Sanity check for the lengths of the Hello messages.
 #define MIN_MSG_LEN 15
 #define MAX_MSG_LEN (int)sizeof(name) + 25
 
@@ -92,9 +90,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
     return nullptr;
   }
 
-  /*
-   * Do a sanity check on the message received
-   */
+  // Do a sanity check on the message received
   if (bs->message_length < MIN_MSG_LEN || bs->message_length > MAX_MSG_LEN) {
     Dmsg1(000, "<filed: %s", bs->msg);
     Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(),
@@ -108,9 +104,7 @@ static void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
 
   Dmsg1(110, "Conn: %s", bs->msg);
 
-  /*
-   * See if this is a File daemon connection. If so call FD handler.
-   */
+  // See if this is a File daemon connection. If so call FD handler.
   if ((sscanf(bs->msg, hello_client_with_version, name, &fd_protocol_version)
        == 2)
       || (sscanf(bs->msg, hello_client, name) == 1)) {
@@ -140,9 +134,7 @@ extern "C" void* connect_thread(void* arg)
 {
   SetJcrInThreadSpecificData(nullptr);
 
-  /*
-   * Permit MaxConnections connections.
-   */
+  // Permit MaxConnections connections.
   sock_fds = new alist(10, not_owned_by_alist);
   BnetThreadServerTcp((dlist*)arg, me->MaxConnections, sock_fds, thread_list,
                       HandleConnectionRequest, my_config, &server_state,

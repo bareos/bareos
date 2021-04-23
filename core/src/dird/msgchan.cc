@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, August MM
- */
+// Kern Sibbald, August MM
 
 /**
  * @file
@@ -149,9 +147,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
     return false;
   }
 
-  /*
-   * Now send JobId and permissions, and get back the authorization key.
-   */
+  // Now send JobId and permissions, and get back the authorization key.
   PmStrcpy(job_name, jcr->impl->res.job->resource_name_);
   BashSpaces(job_name);
 
@@ -193,9 +189,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
     while (sd->recv() >= 0) { continue; }
   }
 
-  /*
-   * Retrieve available quota 0 bytes means dont perform the check
-   */
+  // Retrieve available quota 0 bytes means dont perform the check
   remainingquota = FetchRemainingQuotas(jcr);
   Dmsg1(50, "Remainingquota: %llu\n", remainingquota);
 
@@ -422,9 +416,7 @@ extern "C" void* msg_thread(void* arg)
   pthread_cleanup_push(MsgThreadCleanup, arg);
   sd = jcr->store_bsock;
 
-  /*
-   * Read the Storage daemon's output.
-   */
+  // Read the Storage daemon's output.
   Dmsg0(100, "Start msg_thread loop\n");
   n = 0;
   while (!JobCanceled(jcr) && (n = BgetDirmsg(sd)) >= 0) {
@@ -441,9 +433,7 @@ extern "C" void* msg_thread(void* arg)
       continue;
     }
 
-    /*
-     * Check for "3010 Job <jobid> start"
-     */
+    // Check for "3010 Job <jobid> start"
     if (sscanf(sd->msg, Job_start, Job) == 1) { continue; }
 
     /*

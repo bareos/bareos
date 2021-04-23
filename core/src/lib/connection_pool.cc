@@ -19,9 +19,7 @@
    02110-1301, USA.
 */
 
-/*
- * Connection and Connection Pool
- */
+// Connection and Connection Pool
 
 #include "include/bareos.h"
 #include "connection_pool.h"
@@ -30,9 +28,7 @@
 #include "lib/bsys.h"
 #include "lib/bsock.h"
 
-/*
- * Connection
- */
+// Connection
 Connection::Connection(const char* name,
                        int protocol_version,
                        BareosSocket* socket,
@@ -50,22 +46,16 @@ Connection::Connection(const char* name,
 
 Connection::~Connection() { pthread_mutex_destroy(&mutex_); }
 
-/*
- * Check if connection is still active.
- */
+// Check if connection is still active.
 bool Connection::check(int timeout_data)
 {
   int data_available = 0;
   bool ok = true;
 
-  /*
-   * Returns: 1 if data available, 0 if timeout, -1 if error
-   */
+  // Returns: 1 if data available, 0 if timeout, -1 if error
   data_available = socket_->WaitDataIntr(timeout_data);
 
-  /*
-   * Use lock to prevent that data is read for job thread.
-   */
+  // Use lock to prevent that data is read for job thread.
   lock();
   if (data_available < 0) {
     ok = false;
@@ -81,9 +71,7 @@ bool Connection::check(int timeout_data)
   return ok;
 }
 
-/*
- * Request to take over the connection (socket) from another thread.
- */
+// Request to take over the connection (socket) from another thread.
 bool Connection::take()
 {
   bool result = false;
@@ -97,15 +85,11 @@ bool Connection::take()
   return result;
 }
 
-/*
- * Connection Pool
- */
+// Connection Pool
 ConnectionPool::ConnectionPool()
 {
   connections_ = new alist(10, false);
-  /*
-   * Initialize mutex and condition variable objects.
-   */
+  // Initialize mutex and condition variable objects.
   pthread_mutex_init(&add_mutex_, nullptr);
   pthread_cond_init(&add_cond_var_, nullptr);
 }
@@ -246,9 +230,7 @@ Connection* ConnectionPool::remove(const char* name, int timeout_in_seconds)
   while (!done) {
     connection = get_connection(name, timeout);
     if (!connection) {
-      /*
-       * nullptr is returned only on timeout (or other internal errors).
-       */
+      // nullptr is returned only on timeout (or other internal errors).
       return nullptr;
     }
     if (connection->take()) {

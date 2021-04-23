@@ -290,9 +290,7 @@ extern "C" void* watchdog_thread(void* arg)
     }
     wd_unlock();
 
-    /*
-     * Wait sleep time or until someone wakes us
-     */
+    // Wait sleep time or until someone wakes us
     gettimeofday(&tv, &tz);
     timeout.tv_nsec = tv.tv_usec * 1000;
     timeout.tv_sec = tv.tv_sec + next_time - time(NULL);

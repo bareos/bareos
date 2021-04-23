@@ -145,9 +145,7 @@ DeviceBlock* new_block(Device* dev)
   return block;
 }
 
-/**
- * Duplicate an existing block (eblock)
- */
+// Duplicate an existing block (eblock)
 DeviceBlock* dup_block(DeviceBlock* eblock)
 {
   DeviceBlock* block = (DeviceBlock*)GetMemory(sizeof(DeviceBlock));
@@ -171,9 +169,7 @@ void PrintBlockReadErrors(JobControlRecord* jcr, DeviceBlock* block)
   }
 }
 
-/**
- * Free block
- */
+// Free block
 void FreeBlock(DeviceBlock* block)
 {
   if (block) {
@@ -184,9 +180,7 @@ void FreeBlock(DeviceBlock* block)
   }
 }
 
-/**
- * Empty the block -- for writing
- */
+// Empty the block -- for writing
 void EmptyBlock(DeviceBlock* block)
 {
   block->binbuf = WRITE_BLKHDR_LENGTH;
@@ -219,9 +213,7 @@ static uint32_t SerBlockHeader(DeviceBlock* block, bool DoChecksum)
     ser_uint32(block->VolSessionTime);
   }
 
-  /*
-   * Checksum whole block except for the checksum
-   */
+  // Checksum whole block except for the checksum
   if (DoChecksum) {
     CheckSum = crc32_fast((uint8_t*)block->buf + BLKHDR_CS_LENGTH,
                           block_len - BLKHDR_CS_LENGTH);
@@ -309,9 +301,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
     return false;
   }
 
-  /*
-   * Sanity check
-   */
+  // Sanity check
   if (block_len > MAX_BLOCK_LENGTH) {
     dev->dev_errno = EIO;
     Mmsg3(dev->errmsg,
@@ -326,9 +316,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
   }
 
   Dmsg1(390, "unSerBlockHeader block_len=%d\n", block_len);
-  /*
-   * Find end of block or end of buffer whichever is smaller
-   */
+  // Find end of block or end of buffer whichever is smaller
   if (block_len > block->read_len) {
     block_end = block->read_len;
   } else {
@@ -376,9 +364,7 @@ static void RereadLastBlock(DeviceControlRecord* dcr)
    *   correct.
    */
   if (dev->IsTape() && dev->HasCap(CAP_BSR)) {
-    /*
-     * Now back up over what we wrote and read the last block
-     */
+    // Now back up over what we wrote and read the last block
     if (!dev->bsf(1)) {
       BErrNo be;
       ok = false;
@@ -391,9 +377,7 @@ static void RereadLastBlock(DeviceControlRecord* dcr)
       Jmsg(jcr, M_ERROR, 0, _("Backspace file at EOT failed. ERR=%s\n"),
            be.bstrerror(dev->dev_errno));
     }
-    /*
-     * Backspace over record
-     */
+    // Backspace over record
     if (ok && !dev->bsr(1)) {
       BErrNo be;
       ok = false;
@@ -411,9 +395,7 @@ static void RereadLastBlock(DeviceControlRecord* dcr)
     }
     if (ok) {
       DeviceBlock* lblock = new_block(dev);
-      /*
-       * Note, this can destroy dev->errmsg
-       */
+      // Note, this can destroy dev->errmsg
       dcr->block = lblock;
       if (DeviceControlRecord::ReadStatus::Ok
           != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
@@ -502,16 +484,12 @@ static bool TerminateWritingVolume(DeviceControlRecord* dcr)
     if (mdcr->jcr->JobId == 0) { continue; }
     mdcr->NewFile = true; /* set reminder to do set_new_file_params */
   }
-  /*
-   * Set new file/block parameters for current dcr
-   */
+  // Set new file/block parameters for current dcr
   SetNewFileParameters(dcr);
 
   if (ok && dev->HasCap(CAP_TWOEOF) && !dev->weof(1)) { /* end the tape */
     dev->VolCatInfo.VolCatErrors++;
-    /*
-     * This may not be fatal since we already wrote an EOF
-     */
+    // This may not be fatal since we already wrote an EOF
     Jmsg(dcr->jcr, M_ERROR, 0, "%s", dev->errmsg);
     Dmsg0(50, "Writing second EOF failed.\n");
   }
@@ -531,9 +509,7 @@ static bool DoNewFileBookkeeping(DeviceControlRecord* dcr)
   Device* dev = dcr->dev;
   JobControlRecord* jcr = dcr->jcr;
 
-  /*
-   * Create a JobMedia record so restore can seek
-   */
+  // Create a JobMedia record so restore can seek
   if (!dcr->DirCreateJobmediaRecord(false)) {
     Dmsg0(50, "Error from create_job_media.\n");
     dev->dev_errno = EIO;
@@ -561,9 +537,7 @@ static bool DoNewFileBookkeeping(DeviceControlRecord* dcr)
     if (mdcr->jcr->JobId == 0) { continue; }
     mdcr->NewFile = true; /* set reminder to do set_new_file_params */
   }
-  /*
-   * Set new file/block parameters for current dcr
-   */
+  // Set new file/block parameters for current dcr
   SetNewFileParameters(dcr);
   return true;
 }
@@ -652,20 +626,14 @@ bool DeviceControlRecord::WriteBlockToDev()
     } else {
       /* (dev->HasCap(CAP_ADJWRITESIZE)) */
       if (dev->min_block_size == dev->max_block_size) {
-        /*
-         * Fixed block size
-         */
+        // Fixed block size
         wlen = block->buf_len; /* fixed block size already rounded */
       } else if (wlen < dev->min_block_size) {
-        /*
-         * Min block size
-         */
+        // Min block size
         wlen = ((dev->min_block_size + TAPE_BSIZE - 1) / TAPE_BSIZE)
                * TAPE_BSIZE;
       } else {
-        /*
-         * Ensure size is rounded
-         */
+        // Ensure size is rounded
         wlen = ((wlen + TAPE_BSIZE - 1) / TAPE_BSIZE) * TAPE_BSIZE;
       }
 
@@ -683,9 +651,7 @@ bool DeviceControlRecord::WriteBlockToDev()
 
   checksum = SerBlockHeader(block, dev->DoChecksum());
 
-  /*
-   * Limit maximum Volume size to value specified by user
-   */
+  // Limit maximum Volume size to value specified by user
   hit_max1 = (dev->max_volume_size > 0)
              && ((dev->VolCatInfo.VolCatBytes + block->binbuf))
                     >= dev->max_volume_size;
@@ -713,9 +679,7 @@ bool DeviceControlRecord::WriteBlockToDev()
     return false;
   }
 
-  /*
-   * Limit maximum File size on volume to user specified value
-   */
+  // Limit maximum File size on volume to user specified value
   if ((dev->max_file_size > 0)
       && (dev->file_size + block->binbuf) >= dev->max_file_size) {
     dev->file_size = 0; /* reset file size */
@@ -733,9 +697,7 @@ bool DeviceControlRecord::WriteBlockToDev()
     }
 
     if (!DoNewFileBookkeeping(dcr)) {
-      /*
-       * Error message already sent
-       */
+      // Error message already sent
       return false;
     }
   }
@@ -843,9 +805,7 @@ bool DeviceControlRecord::WriteBlockToDev()
     return false;
   }
 
-  /*
-   * We successfully wrote the block, now do housekeeping
-   */
+  // We successfully wrote the block, now do housekeeping
   Dmsg2(1300, "VolCatBytes=%d newVolCatBytes=%d\n",
         (int)dev->VolCatInfo.VolCatBytes,
         (int)(dev->VolCatInfo.VolCatBytes + wlen));
@@ -856,17 +816,13 @@ bool DeviceControlRecord::WriteBlockToDev()
   dev->LastBlock = block->BlockNumber;
   block->BlockNumber++;
 
-  /*
-   * Update dcr values
-   */
+  // Update dcr values
   if (dev->IsTape()) {
     dcr->EndBlock = dev->EndBlock;
     dcr->EndFile = dev->EndFile;
     dev->block_num++;
   } else {
-    /*
-     * Save address of block just written
-     */
+    // Save address of block just written
     uint64_t addr = dev->file_addr + wlen - 1;
     dcr->EndBlock = (uint32_t)addr;
     dcr->EndFile = (uint32_t)(addr >> 32);
@@ -906,9 +862,7 @@ bool DeviceControlRecord::WriteBlockToDevice()
   }
 
   if (!dcr->IsDevLocked()) { /* device already locked? */
-    /*
-     * Note, do not change this to dcr->r_dlock
-     */
+    // Note, do not change this to dcr->r_dlock
     dev->rLock(); /* no, lock it */
   }
 
@@ -937,9 +891,7 @@ bool DeviceControlRecord::WriteBlockToDevice()
       goto bail_out;
     }
     if (dcr->NewVol) {
-      /*
-       * Note, setting a new volume also handles any pending new file
-       */
+      // Note, setting a new volume also handles any pending new file
       SetNewVolumeParameters(dcr);
     } else {
       SetNewFileParameters(dcr);

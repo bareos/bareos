@@ -218,9 +218,7 @@ void ConfigurationParser::lex_error(const char* cf,
                                     LEX_ERROR_HANDLER* ScanError,
                                     LEX_WARNING_HANDLER* scan_warning) const
 {
-  /*
-   * We must create a lex packet to print the error
-   */
+  // We must create a lex packet to print the error
   LEX* lexical_parser_ = (LEX*)malloc(sizeof(LEX));
   memset(lexical_parser_, 0, sizeof(LEX));
 
@@ -466,9 +464,7 @@ bool ConfigurationParser::GetConfigIncludePath(PoolMem& full_path,
     PathAppend(full_path, config_include_dir_.c_str());
     if (PathIsDirectory(full_path)) {
       config_dir_ = config_dir;
-      /*
-       * Set full_path to wildcard path.
-       */
+      // Set full_path to wildcard path.
       if (GetPathOfResource(full_path, nullptr, nullptr, nullptr, true)) {
         use_config_include_dir_ = true;
         found = true;
@@ -490,9 +486,7 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
   PoolMem config_path_file;
 
   if (cf_.empty()) {
-    /*
-     * No path is given, so use the defaults.
-     */
+    // No path is given, so use the defaults.
     found = GetConfigFile(full_path, GetDefaultConfigDir(),
                           config_default_filename_.c_str());
     if (!found) {
@@ -507,9 +501,7 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
             config_path_file.c_str(), full_path.c_str());
     }
   } else if (PathExists(cf_.c_str())) {
-    /*
-     * Path is given and exists.
-     */
+    // Path is given and exists.
     if (PathIsDirectory(cf_.c_str())) {
       found = GetConfigFile(full_path, cf_.c_str(),
                             config_default_filename_.c_str());
@@ -598,9 +590,7 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
     last = res;
   }
 
-  /*
-   * Resource with this name not found
-   */
+  // Resource with this name not found
   return false;
 }
 
@@ -697,9 +687,7 @@ bool ConfigurationParser::GetPathOfNewResource(PoolMem& path,
 
   if (!error_if_exists) { return true; }
 
-  /*
-   * File should not exists, as it is going to be created.
-   */
+  // File should not exists, as it is going to be created.
   if (PathExists(path)) {
     extramsg.bsprintf("Resource config file \"%s\" already exists.\n",
                       path.c_str());

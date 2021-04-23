@@ -173,9 +173,7 @@ void MessagesResource::AddMessageDestination(
   }
 }
 
-/*
- * Called only during parsing of the config file.
- */
+// Called only during parsing of the config file.
 void MessagesResource::RemoveMessageDestination(
     MessageDestinationCode dest_code,
     int msg_type,

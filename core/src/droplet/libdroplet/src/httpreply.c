@@ -134,9 +134,7 @@ static char* read_line(dpl_conn_t* conn)
   errno = 0;
 
   if (conn->eof) {
-    /*
-     * EOF was previously encountered
-     */
+    // EOF was previously encountered
     conn->status = DPL_EINVAL;
     return NULL;
   }
@@ -145,9 +143,7 @@ static char* read_line(dpl_conn_t* conn)
 
   size = 1;
 
-  /*
-   * alloc a new line
-   */
+  // alloc a new line
   if ((line = malloc(conn->block_size * size + 1)) == NULL) {
     conn->status = DPL_ENOMEM;
     return NULL;
@@ -257,17 +253,13 @@ static char* read_line(dpl_conn_t* conn)
       DPRINTF("not enough mem line_pos=%d\n", line_pos);
 
       if (size == conn->max_blocks) {
-        /*
-         * we didn't find a newline within limit
-         */
+        // we didn't find a newline within limit
         free(line);
         conn->status = DPL_ELIMIT;
         return NULL;
       }
 
-      /*
-       * line is not large enough: realloc line
-       */
+      // line is not large enough: realloc line
 
       size++;
       DPRINTF("reallocing %d chunks\n", size);
@@ -650,9 +642,7 @@ char* dpl_location(dpl_dict_t* headers_returned)
   }
 }
 
-/*
- * convenience function
- */
+// convenience function
 struct httreply_conven {
   char* data_buf;
   u_int data_len;

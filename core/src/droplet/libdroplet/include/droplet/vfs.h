@@ -39,9 +39,7 @@
 extern "C" {
 #endif
 
-/*
- * vdir
- */
+// vdir
 typedef struct dpl_fqn {
   char path[DPL_MAXPATHLEN];
 } dpl_fqn_t;
@@ -65,9 +63,7 @@ typedef struct {
   size_t size;
 } dpl_dirent_t;
 
-/*
- * vfile
- */
+// vfile
 #ifndef __cplusplus
 typedef enum
 #else

@@ -88,9 +88,7 @@ int ndmbstf_first_with_bounds(
   if (upper_bound == 0) {
     off_t end_off;
 
-    /*
-     * Determine the file size using fseek()/ftell()
-     */
+    // Determine the file size using fseek()/ftell()
 
     fseeko(fp, 0, SEEK_END);
     end_off = ftello(fp);
@@ -98,9 +96,7 @@ int ndmbstf_first_with_bounds(
     upper_bound = end_off;
   }
 
-  /*
-   * Set lower and upper bounds of the binary search
-   */
+  // Set lower and upper bounds of the binary search
   lower = lower_bound;
   upper = upper_bound;
   for (;;) {
@@ -138,9 +134,7 @@ int ndmbstf_first_with_bounds(
       return -4; /* fseek() for hop failed */
     }
 
-    /*
-     * Read the next line up into buf[].
-     */
+    // Read the next line up into buf[].
 
     buf_len = ndmbstf_getline(fp, buf, max_buf);
     if (buf_len <= 0) {
@@ -200,9 +194,7 @@ int ndmbstf_first_with_bounds(
     return -4; /* fseek() for hop failed */
   }
 
-  /*
-   * Read the next line up into buf[].
-   */
+  // Read the next line up into buf[].
   for (;;) {
     buf_len = ndmbstf_getline(fp, buf, max_buf);
 
@@ -229,9 +221,7 @@ int ndmbstf_next(FILE* fp,         /* the file to search */
 {
   int rc, buf_len;
 
-  /*
-   * Read the next line up into buf[].
-   */
+  // Read the next line up into buf[].
   buf_len = ndmbstf_getline(fp, buf, max_buf);
 
   if (buf_len <= 0) {

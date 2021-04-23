@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Robert Nelson, June 2006
- */
+// Written by Robert Nelson, June 2006
 /**
  * @file
  * Implement routines to determine drive type (Windows specific).
@@ -44,9 +42,7 @@ bool Drivetype(const char* fname, char* dt, int dtlen)
   CHAR rootpath[4];
   UINT type;
 
-  /*
-   * Copy Drive Letter, colon, and backslash to rootpath
-   */
+  // Copy Drive Letter, colon, and backslash to rootpath
   bstrncpy(rootpath, fname, 3);
   rootpath[3] = '\0';
 

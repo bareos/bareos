@@ -127,18 +127,14 @@ static int setup_state(const char* statefile)
 
   if (verbose) fprintf(stderr, "Creating statefile \"%s\"\n", statefile);
 
-  /*
-   * Open the file.
-   */
+  // Open the file.
   fd = open(statefile, O_RDWR | O_CREAT, 0666);
   if (fd < 0) {
     perror(statefile);
     return -1;
   }
 
-  /*
-   * Request a write lock on the whole file.
-   */
+  // Request a write lock on the whole file.
   memset(&flock, 0, sizeof(flock));
   flock.l_type = F_WRLCK;
   flock.l_whence = SEEK_SET;
@@ -325,9 +321,7 @@ static void server_unaccept(void)
 #endif
 }
 
-/*
- * Main routine for pushing text back to the client.
- */
+// Main routine for pushing text back to the client.
 static void server_printf(const char* fmt, ...)
     __attribute__((format(printf, 1, 2)));
 
@@ -353,9 +347,7 @@ static void server_printf(const char* fmt, ...)
   assert(r >= 0);
 }
 
-/*
- * Flush any pending output back to the client.
- */
+// Flush any pending output back to the client.
 static void server_flush(void) { fflush(state->connection.out); }
 
 /*

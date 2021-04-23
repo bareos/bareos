@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October 2007
- */
+// Kern Sibbald, October 2007
 /**
  * @file
  * A simple test plugin for the Bareos File Daemon derived from
@@ -93,9 +91,7 @@ static struct ini_items test_items[] = {
     // { "ok", INI_CFG_TYPE_BOOL, "boolean", 0, ITEMS_DEFAULT },
     {NULL, 0, NULL, 0}};
 
-/**
- * Plugin private context
- */
+// Plugin private context
 struct plugin_ctx {
   boffset_t offset;
   FILE* fd;     /* pipe file descriptor */
@@ -120,9 +116,7 @@ extern "C" {
  *  exported, so Bareos can directly call these two entry points
  *  they are common to all Bareos plugins.
  */
-/**
- * External entry point called by Bareos to "load" the plugin
- */
+// External entry point called by Bareos to "load" the plugin
 bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
                CoreFunctions* lbareos_core_functions,
                PluginInformation** plugin_information,
@@ -137,9 +131,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   return bRC_OK;
 }
 
-/**
- * External entry point to unload the plugin
- */
+// External entry point to unload the plugin
 bRC unloadPlugin() { return bRC_OK; }
 
 #ifdef __cplusplus
@@ -151,9 +143,7 @@ bRC unloadPlugin() { return bRC_OK; }
  *   pointers we supplied to Bareos. Each plugin type (dir, fd, sd)
  *   has its own set of entry points that the plugin must define.
  */
-/**
- * Create a new instance of the plugin i.e. allocate our private storage
- */
+// Create a new instance of the plugin i.e. allocate our private storage
 static bRC newPlugin(PluginContext* ctx)
 {
   struct plugin_ctx* p_ctx
@@ -169,9 +159,7 @@ static bRC newPlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Free a plugin instance, i.e. release our private storage
- */
+// Free a plugin instance, i.e. release our private storage
 static bRC freePlugin(PluginContext* ctx)
 {
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
@@ -183,25 +171,19 @@ static bRC freePlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Return some plugin value (none defined)
- */
+// Return some plugin value (none defined)
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   return bRC_OK;
 }
 
-/**
- * Set a plugin value (none defined)
- */
+// Set a plugin value (none defined)
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   return bRC_OK;
 }
 
-/**
- * Handle an event that was generated in Bareos
- */
+// Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 {
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
@@ -215,9 +197,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
       Dmsg(ctx, debuglevel, "test-plugin-fd: JobStart=%s\n", (char*)value);
       break;
     case bEventEndFileSet:
-      /*
-       * End of Dir FileSet commands, now we can add excludes
-       */
+      // End of Dir FileSet commands, now we can add excludes
       bareos_core_functions->NewOptions(ctx);
       bareos_core_functions->AddWild(ctx, "*.c", ' ');
       bareos_core_functions->AddWild(ctx, "*.cpp", ' ');
@@ -317,9 +297,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   return bRC_OK;
 }
 
-/**
- * Start the backup of a specific file
- */
+// Start the backup of a specific file
 static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
 {
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
@@ -589,9 +567,7 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp) { return bRC_OK; }
 
 static bRC setXattr(PluginContext* ctx, xattr_pkt* xp) { return bRC_OK; }
 
-/**
- * Done with backup of this file
- */
+// Done with backup of this file
 static bRC endBackupFile(PluginContext* ctx)
 {
   /*
@@ -602,9 +578,7 @@ static bRC endBackupFile(PluginContext* ctx)
 }
 
 
-/**
- * Bareos is calling us to do the actual I/O
- */
+// Bareos is calling us to do the actual I/O
 static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
 {
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;

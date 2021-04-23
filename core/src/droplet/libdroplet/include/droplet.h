@@ -42,9 +42,7 @@ extern "C" {
 #define DPL_VERSION_MAJOR 3
 #define DPL_VERSION_MINOR 0
 
-/*
- * dependencies
- */
+// dependencies
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <openssl/ssl.h>
@@ -56,9 +54,7 @@ extern "C" {
 #  define SSL_OP_NO_COMPRESSION 0
 #endif
 
-/*
- * default values
- */
+// default values
 #define DPL_DEFAULT_HEADER_SIZE 8192
 #define DPL_DEFAULT_N_CONN_BUCKETS 1021
 #define DPL_DEFAULT_N_CONN_MAX 900
@@ -87,9 +83,7 @@ extern int dpl_header_size;
 
 #define DPL_DEFAULT_BASE_PATH "/"
 
-/*
- * types
- */
+// types
 typedef enum
 {
   DPL_SUCCESS = 0,           /*!< Success */
@@ -211,9 +205,7 @@ typedef enum
 } dpl_canned_acl_t;
 #define DPL_N_CANNED_ACL (DPL_CANNED_ACL_BUCKET_OWNER_FULL_CONTROL + 1)
 
-/*
- * ACL mgmt (follow RFC3530)
- */
+// ACL mgmt (follow RFC3530)
 
 typedef enum
 {
@@ -502,9 +494,7 @@ typedef struct {
 struct dpl_backend_s;
 
 typedef struct dpl_ctx {
-  /*
-   * Profile
-   */
+  // Profile
   int use_https : 1;
   int encode_slashes : 1;         /*!< Client wants slashes encoded */
   int empty_folder_emulation : 1; /*!< Folders are represented as empty objects
@@ -555,38 +545,26 @@ typedef struct dpl_ctx {
   uint32_t enterprise_number; /*!< for generating native IDs */
   struct dpl_backend_s* backend;
 
-  /*
-   * http
-   */
+  // http
   int header_size;
 
-  /*
-   * pricing
-   */
+  // pricing
   dpl_vec_t* request_pricing;
   dpl_vec_t* data_pricing[DPL_N_DATA_TYPE];
 
-  /*
-   * ssl
-   */
+  // ssl
   SSL_CTX* ssl_ctx;
   BIO* ssl_bio;
 
-  /*
-   * conn pool
-   */
+  // conn pool
   struct dpl_conn** conn_buckets; /*!< idle connections buckets  */
   int n_conn_fds;                 /*!< number of active fds      */
 
-  /*
-   * vdir
-   */
+  // vdir
   dpl_dict_t* cwds;
   char* cur_bucket;
 
-  /*
-   * common
-   */
+  // common
   char* droplet_dir;
   char* profile_name;
 
@@ -599,9 +577,7 @@ typedef struct dpl_ctx {
   pthread_mutex_t lock;
   int canary; /*!< for debugging lock */
 
-  /*
-   * backend ctx (for session, etc...)
-   */
+  // backend ctx (for session, etc...)
   void* backend_ctx;
 } dpl_ctx_t;
 
@@ -664,9 +640,7 @@ typedef struct {
 
   time_t expires; /*!< for query strings */
 
-  /*
-   * server side copy
-   */
+  // server side copy
   char* src_bucket;
   char* src_resource;
   char* src_subresource;
@@ -687,9 +661,7 @@ typedef enum
 } dpl_log_level_t;
 /** @} */
 
-/*
- * public functions
- */
+// public functions
 
 typedef dpl_status_t (*dpl_metadatum_func_t)(void* cb_arg,
                                              const char* key,

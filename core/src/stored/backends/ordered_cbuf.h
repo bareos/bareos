@@ -19,13 +19,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, December 2016.
- */
+// Marco van Wieringen, December 2016.
 
-/*
- * Ordered Circular buffer used for producer/consumer problem with pthread.
- */
+// Ordered Circular buffer used for producer/consumer problem with pthread.
 
 #ifndef BAREOS_STORED_BACKENDS_ORDERED_CBUF_H_
 #define BAREOS_STORED_BACKENDS_ORDERED_CBUF_H_
@@ -89,14 +85,10 @@ class ordered_circbuf {
   int capacity() const { return capacity_; }
 };
 
-/*
- * Constructor
- */
+// Constructor
 inline ordered_circbuf::ordered_circbuf(int capacity) { init(capacity); }
 
-/*
- * Destructor
- */
+// Destructor
 inline ordered_circbuf::~ordered_circbuf() { destroy(); }
 }  // namespace storagedaemon
 

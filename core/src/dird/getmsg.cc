@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, August MM
- */
+// Kern Sibbald, August MM
 /**
  * @file
  * routines to receive network data and
@@ -66,9 +64,7 @@ static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
 
   Dmsg2(800, "SetJcrSdJobStatus(%s, %c)\n", jcr->Job, SDJobStatus);
 
-  /*
-   * If wait state is new, we keep current time for watchdog MaxWaitTime
-   */
+  // If wait state is new, we keep current time for watchdog MaxWaitTime
   switch (SDJobStatus) {
     case JS_WaitMedia:
     case JS_WaitMount:
@@ -81,17 +77,13 @@ static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
   if (JobWaiting(jcr)) { set_waittime = false; }
 
   if (set_waittime) {
-    /*
-     * Set it before JobStatus
-     */
+    // Set it before JobStatus
     Dmsg0(800, "Setting wait_time\n");
     jcr->wait_time = time(NULL);
   }
   jcr->impl->SDJobStatus = SDJobStatus;
 
-  /*
-   * Some SD Job status setting are propagated to the controlling Job.
-   */
+  // Some SD Job status setting are propagated to the controlling Job.
   switch (jcr->impl->SDJobStatus) {
     case JS_Incomplete:
       jcr->setJobStatus(JS_Incomplete);
@@ -182,9 +174,7 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
       continue;
     }
 
-    /*
-     * Handle normal data
-     */
+    // Handle normal data
     if (n > 0 && B_ISDIGIT(bs->msg[0])) { /* response? */
       return n;                           /* yes, return it */
     }
@@ -207,9 +197,7 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
       }
     }
 
-    /*
-     * Skip past "Jmsg Job=nnn"
-     */
+    // Skip past "Jmsg Job=nnn"
     if (!(msg = find_msg_start(bs->msg))) {
       Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
       continue;

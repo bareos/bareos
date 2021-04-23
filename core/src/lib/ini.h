@@ -22,9 +22,7 @@
 #ifndef BAREOS_LIB_INI_H_
 #define BAREOS_LIB_INI_H_
 
-/*
- * Standard global types with handlers defined in ini.c
- */
+// Standard global types with handlers defined in ini.c
 enum
 {
   INI_CFG_TYPE_INT32 = 1,    /* 32 bits Integer */
@@ -64,9 +62,7 @@ enum
 class ConfigFile;
 struct ini_items;
 
-/*
- * Used to store result
- */
+// Used to store result
 class alist;
 typedef union {
   char* strval;
@@ -95,14 +91,10 @@ struct ini_items {
   item_value val; /* val contains the value */
 };
 
-/*
- * When reading a ini file, we limit the number of items that we can create
- */
+// When reading a ini file, we limit the number of items that we can create
 #define MAX_INI_ITEMS 32
 
-/*
- * Special RestoreObject name used to get user input at restore time
- */
+// Special RestoreObject name used to get user input at restore time
 #define INI_RESTORE_OBJECT_NAME "RestoreOptions"
 
 /*
@@ -157,29 +149,19 @@ class ConfigFile {
     FreeItems();
   }
 
-  /*
-   * Dump a config string to out_fname
-   */
+  // Dump a config string to out_fname
   bool DumpString(const char* buf, int32_t len);
 
-  /*
-   * JobControlRecord needed for Jmsg
-   */
+  // JobControlRecord needed for Jmsg
   void SetJcr(JobControlRecord* ajcr) { jcr = ajcr; }
 
-  /*
-   * Free malloced items such as char* or alist or items
-   */
+  // or alist or items
   void FreeItems();
 
-  /*
-   * Clear items member
-   */
+  // Clear items member
   void ClearItems();
 
-  /*
-   * Dump the item table to a file (used on plugin side)
-   */
+  // Dump the item table to a file (used on plugin side)
   bool Serialize(const char* fname);
 
   /*
@@ -188,19 +170,13 @@ class ConfigFile {
    */
   int Serialize(PoolMem* buf);
 
-  /*
-   * Dump the item table content to a buffer
-   */
+  // Dump the item table content to a buffer
   int DumpResults(PoolMem* buf);
 
-  /*
-   * Get item position in items list (useful when dynamic)
-   */
+  // Get item position in items list (useful when dynamic)
   int GetItem(const char* name);
 
-  /*
-   * Register config file structure, if size doesn't match
-   */
+  // Register config file structure, if size doesn't match
   bool RegisterItems(struct ini_items* aitems, int size)
   {
     int i;
@@ -215,25 +191,17 @@ class ConfigFile {
     return false;
   }
 
-  /*
-   * Parse a ini file with a item list previously registred (plugin side)
-   */
+  // Parse a ini file with a item list previously registred (plugin side)
   bool parse(const char* filename);
 
-  /*
-   * Create a item list from a ini file (director side)
-   */
+  // Create a item list from a ini file (director side)
   bool UnSerialize(const char* filename);
 };
 
-/*
- * Get handler code from storage type.
- */
+// Get handler code from storage type.
 const char* ini_get_store_code(int type);
 
-/*
- * Get storage type from handler name.
- */
+// Get storage type from handler name.
 int IniGetStoreType(const char* key);
 
 #endif  // BAREOS_LIB_INI_H_

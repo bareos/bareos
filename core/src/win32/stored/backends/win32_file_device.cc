@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * Windows File API device abstraction.
@@ -36,9 +34,7 @@
 
 namespace storagedaemon {
 
-/**
- * (Un)mount the device (For a FILE device)
- */
+// (Un)mount the device (For a FILE device)
 static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
 {
   DeviceResource* device_resource = dcr->dev->device_resource;
@@ -95,9 +91,7 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
     Mmsg(dcr->dev->errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
          dcr->dev->print_name(), (mount ? "" : "un"), be.bstrerror(status));
 
-    /*
-     * Now, just to be sure it is not mounted, try to read the filesystem.
-     */
+    // Now, just to be sure it is not mounted, try to read the filesystem.
     name_max = pathconf(".", _PC_NAME_MAX);
     if (name_max < 1024) { name_max = 1024; }
 
@@ -273,15 +267,11 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
           _("Device %s doesn't support ftruncate(). Recreating file %s.\n"),
           print_name(), archive_name.c_str());
 
-    /*
-     * Close file and blow it away
-     */
+    // Close file and blow it away
     ::close(fd);
     SecureErase(dcr->jcr, archive_name.c_str());
 
-    /*
-     * Recreate the file -- of course, empty
-     */
+    // Recreate the file -- of course, empty
     oflags = O_CREAT | O_RDWR | O_BINARY;
     if ((fd = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
       BErrNo be;
@@ -294,9 +284,7 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
       return false;
     }
 
-    /*
-     * Reset proper owner
-     */
+    // Reset proper owner
     chown(archive_name.c_str(), st.st_uid, st.st_gid);
   }
 

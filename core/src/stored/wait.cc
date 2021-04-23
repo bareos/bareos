@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March 2005
- */
+// Kern Sibbald, March 2005
 /**
  * @file
  * Subroutines to handle waiting for operator intervention
@@ -144,9 +142,7 @@ int WaitForSysop(DeviceControlRecord* dcr)
       break;
     }
 
-    /*
-     * Continue waiting if operator is labeling volumes
-     */
+    // Continue waiting if operator is labeling volumes
     if (dev->blocked() == BST_WRITING_LABEL) { continue; }
 
     if (dev->rem_wait_sec <= 0) { /* on exceeding wait time return */
@@ -155,9 +151,7 @@ int WaitForSysop(DeviceControlRecord* dcr)
       break;
     }
 
-    /*
-     * Check if user unmounted the device while we were waiting
-     */
+    // Check if user unmounted the device while we were waiting
     unmounted = dev->IsDeviceUnmounted();
 
     if (!unmounted && dev->vol_poll_interval
@@ -168,9 +162,7 @@ int WaitForSysop(DeviceControlRecord* dcr)
       status = W_POLL;
       break;
     }
-    /*
-     * Check if user mounted the device while we were waiting
-     */
+    // Check if user mounted the device while we were waiting
     if (dev->blocked() == BST_MOUNT) { /* mount request ? */
       Dmsg0(debuglevel, "Mounted return.\n");
       status = W_MOUNT;
@@ -263,9 +255,7 @@ bool WaitForDevice(JobControlRecord* jcr, int& retries)
   return ok;
 }
 
-/**
- * Signal the above WaitForDevice function.
- */
+// Signal the above WaitForDevice function.
 void ReleaseDeviceCond() { pthread_cond_broadcast(&wait_device_release); }
 
 } /* namespace storagedaemon */

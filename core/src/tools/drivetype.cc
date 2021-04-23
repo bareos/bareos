@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Robert Nelson, June 2006
- */
+// Written by Robert Nelson, June 2006
 /**
  * @file
  * Program for determining drive type

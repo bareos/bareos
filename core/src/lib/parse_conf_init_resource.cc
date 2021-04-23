@@ -154,9 +154,7 @@ void ConfigurationParser::SetResourceDefaultsParserPass2(ResourceItem* item)
         if (*item->default_value != '|') {
           int size;
 
-          /*
-           * Make sure we have enough room
-           */
+          // Make sure we have enough room
           size = pathname.size() + 1024;
           pathname.check_size(size);
           DoShellExpansion(pathname.c_str(), pathname.size());

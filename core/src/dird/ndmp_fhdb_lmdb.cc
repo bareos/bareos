@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen & Philipp Storz, May 2015
- */
+// Marco van Wieringen & Philipp Storz, May 2015
 /*
  * @file
  * FHDB using LMDB for NDMP Data Management Application (DMA)
@@ -38,9 +36,7 @@
 
 namespace directordaemon {
 
-/*
- * What is actually stored in the LMDB
- */
+// What is actually stored in the LMDB
 struct fhdb_payload {
   ndmp9_u_quad node;
   ndmp9_u_quad dir_node;
@@ -61,9 +57,7 @@ struct fhdb_state {
 
 static int debuglevel = 100;
 
-/*
- * Payload = 8 + 8 + 96 = 112 bytes + namelength.
- */
+// Payload = 8 + 8 + 96 = 112 bytes + namelength.
 #  define AVG_NR_BYTES_PER_ENTRY 256
 #  define B_PAGE_SIZE 4096
 
@@ -75,9 +69,7 @@ extern "C" int bndmp_fhdb_lmdb_add_dir(struct ndmlog* ixlog,
 {
   NIS* nis = (NIS*)ixlog->ctx;
 
-  /*
-   * Ignore . and .. directory entries.
-   */
+  // Ignore . and .. directory entries.
   if (bstrcmp(raw_name, ".") || bstrcmp(raw_name, "..")) { return 0; }
 
   if (nis->save_filehist) {
@@ -93,9 +85,7 @@ extern "C" int bndmp_fhdb_lmdb_add_dir(struct ndmlog* ixlog,
           "node:[%llu]\n",
           raw_name, dir_node, node);
 
-    /*
-     * Make sure fhdb_state->pay_load is large enough.
-     */
+    // Make sure fhdb_state->pay_load is large enough.
     length = strlen(raw_name);
     total_length = sizeof(struct fhdb_payload) + length + 2;
     fhdb_state->pay_load
@@ -194,22 +184,16 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
     result = mdb_get(fhdb_state->db_rw_txn, fhdb_state->db_dbi, &key, &data);
     switch (result) {
       case 0:
-        /*
-         * Make a copy of the current pay_load.
-         */
+        // Make a copy of the current pay_load.
         fhdb_state->pay_load
             = CheckPoolMemorySize(fhdb_state->pay_load, data.mv_size);
         memcpy(fhdb_state->pay_load, data.mv_data, data.mv_size);
         payload = (struct fhdb_payload*)fhdb_state->pay_load;
 
-        /*
-         * Copy the new file statistics,
-         */
+        // Copy the new file statistics,
         memcpy(&payload->ndmp_fstat, ndmp_fstat, sizeof(ndmp9_file_stat));
 
-        /*
-         * Keys and length don't change only content.
-         */
+        // Keys and length don't change only content.
         data.mv_data = payload;
 
       retry_del:
@@ -255,9 +239,7 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog* ixlog,
         }
 
       retry_put:
-        /*
-         * Overwrite existing key
-         */
+        // Overwrite existing key
         result = mdb_put(fhdb_state->db_rw_txn, fhdb_state->db_dbi, &key, &data,
                          MDB_NODUPDATA);
         switch (result) {
@@ -358,9 +340,7 @@ extern "C" int bndmp_fhdb_lmdb_add_dirnode_root(struct ndmlog* ixlog,
     Dmsg1(100, "bndmp_fhdb_lmdb_add_dirnode_root: New root node [%llu]\n",
           root_node);
 
-    /*
-     * Make sure fhdb_state->pay_load is large enough.
-     */
+    // Make sure fhdb_state->pay_load is large enough.
     total_length = sizeof(struct fhdb_payload);
     fhdb_state->pay_load
         = CheckPoolMemorySize(fhdb_state->pay_load, total_length);
@@ -428,17 +408,13 @@ bail_out:
   return 1;
 }
 
-/**
- * This glues the NDMP File Handle DB with internal code.
- */
+// This glues the NDMP File Handle DB with internal code.
 void NdmpFhdbLmdbRegister(struct ndmlog* ixlog)
 {
   NIS* nis = (NIS*)ixlog->ctx;
   struct ndm_fhdb_callbacks fhdb_callbacks;
 
-  /*
-   * Register the FileHandleDB callbacks.
-   */
+  // Register the FileHandleDB callbacks.
   fhdb_callbacks.add_file = BndmpFhdbAddFile;
   fhdb_callbacks.add_dir = bndmp_fhdb_lmdb_add_dir;
   fhdb_callbacks.add_node = bndmp_fhdb_lmdb_add_node;
@@ -453,9 +429,7 @@ void NdmpFhdbLmdbRegister(struct ndmlog* ixlog)
     NIS* nis = (NIS*)ixlog->ctx;
     struct fhdb_state* fhdb_state;
 
-    /*
-     * Initiate LMDB environment
-     */
+    // Initiate LMDB environment
     fhdb_state = (struct fhdb_state*)malloc(sizeof(struct fhdb_state));
     memset(fhdb_state, 0, sizeof(struct fhdb_state));
 
@@ -494,9 +468,7 @@ void NdmpFhdbLmdbRegister(struct ndmlog* ixlog)
       goto bail_out;
     }
 
-    /*
-     * Explicitly set the number of readers to 1.
-     */
+    // Explicitly set the number of readers to 1.
     result = mdb_env_set_maxreaders(fhdb_state->db_env, 1);
     if (result) {
       Dmsg1(debuglevel, _("Unable to set MDB maxreaders: %s\n"),
@@ -568,15 +540,11 @@ void NdmpFhdbLmdbUnregister(struct ndmlog* ixlog)
   ndmfhdb_unregister_callbacks(ixlog);
 
   if (fhdb_state) {
-    /*
-     * Abort any pending write transaction.
-     */
+    // Abort any pending write transaction.
     if (fhdb_state->db_rw_txn) { mdb_txn_abort(fhdb_state->db_rw_txn); }
 
     if (fhdb_state->db_env) {
-      /*
-       * Drop the contents of the LMDB.
-       */
+      // Drop the contents of the LMDB.
       if (fhdb_state->db_dbi) {
         int result;
         MDB_txn* txn;
@@ -592,9 +560,7 @@ void NdmpFhdbLmdbUnregister(struct ndmlog* ixlog)
         }
       }
 
-      /*
-       * Close the environment.
-       */
+      // Close the environment.
       mdb_env_close(fhdb_state->db_env);
     }
 
@@ -633,9 +599,7 @@ static inline void CalculatePath(uint64_t node, fhdb_state* fhdb_state)
           PmStrcpy(fhdb_state->path, temp.c_str());
           node = payload->dir_node;
         } else {
-          /*
-           * Root reached
-           */
+          // Root reached
           root_node_reached = true;
         }
         break;
@@ -725,9 +689,7 @@ void NdmpFhdbLmdbProcessDb(struct ndmlog* ixlog)
 
   Dmsg0(100, "NdmpFhdbLmdbProcessDb called\n");
 
-  /*
-   * Commit any pending write transactions.
-   */
+  // Commit any pending write transactions.
   if (fhdb_state->db_rw_txn) {
     int result = mdb_txn_commit(fhdb_state->db_rw_txn);
     if (result != MDB_SUCCESS) {

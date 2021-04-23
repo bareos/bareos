@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, April MM
- */
+// Kern Sibbald, April MM
 /**
  * @file
  * Bareos Tape manipulation program
@@ -416,9 +414,7 @@ static void PrintSpeed(uint64_t bytes)
         edit_uint64_with_suffix(rate, ec2));
 }
 
-/**
- * Helper that fill a buffer with random data or not
- */
+// Helper that fill a buffer with random data or not
 typedef enum
 {
   FILL_RANDOM,
@@ -490,9 +486,7 @@ bail_out:
 
 void QuitCmd() { quit = 1; }
 
-/**
- * Write a label to the tape
- */
+// Write a label to the tape
 static void labelcmd()
 {
   if (volumename) {
@@ -511,9 +505,7 @@ static void labelcmd()
   Pmsg1(-1, _("Wrote Volume label for volume \"%s\".\n"), cmd);
 }
 
-/**
- * Read the tape label
- */
+// Read the tape label
 static void readlabelcmd()
 {
   int save_debug_level = debug_level;
@@ -565,9 +557,7 @@ static void loadcmd()
     Pmsg1(0, _("Loaded %s\n"), dev->print_name());
 }
 
-/**
- * Rewind the tape.
- */
+// Rewind the tape.
 static void rewindcmd()
 {
   if (!dev->rewind(dcr)) {
@@ -578,14 +568,10 @@ static void rewindcmd()
   }
 }
 
-/**
- * Clear any tape error
- */
+// Clear any tape error
 static void clearcmd() { dev->clrerror(-1); }
 
-/**
- * Write and end of file on the tape
- */
+// Write and end of file on the tape
 static void weofcmd()
 {
   int num = 1;
@@ -627,9 +613,7 @@ static void eomcmd()
  */
 static void eodcmd() { eomcmd(); }
 
-/**
- * Backspace file
- */
+// Backspace file
 static void bsfcmd()
 {
   int num = 1;
@@ -643,9 +627,7 @@ static void bsfcmd()
   }
 }
 
-/**
- * Backspace record
- */
+// Backspace record
 static void bsrcmd()
 {
   int num = 1;
@@ -658,9 +640,7 @@ static void bsrcmd()
   }
 }
 
-/**
- * List device capabilities as defined in the stored.conf file.
- */
+// List device capabilities as defined in the stored.conf file.
 static void capcmd()
 {
   printf(_("Configured device capabilities:\n"));
@@ -1180,9 +1160,7 @@ static bool write_read_test()
   rec->data_len = block->buf_len - 100;
   len = rec->data_len / sizeof(uint32_t);
 
-  /*
-   * Now read it back
-   */
+  // Now read it back
   for (uint32_t i = 1; i <= 2 * num_recs; i++) {
   read_again:
     if (DeviceControlRecord::ReadStatus::Ok
@@ -1412,9 +1390,7 @@ static int append_test()
 }
 
 
-/**
- * This test exercises the autochanger
- */
+// This test exercises the autochanger
 static int autochanger_test()
 {
   POOLMEM *results, *changer;
@@ -1488,9 +1464,7 @@ try_again:
     }
   }
 
-  /*
-   * Load the Slot 1
-   */
+  // Load the Slot 1
 
   slot = 1;
   dcr->VolCatInfo.Slot = slot;
@@ -1805,18 +1779,14 @@ static void fsrcmd()
   }
 }
 
-/**
- * Read a Bareos block from the tape
- */
+// Read a Bareos block from the tape
 static void rbcmd()
 {
   dev->open(dcr, DeviceMode::OPEN_READ_ONLY);
   dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK);
 }
 
-/**
- * Write a Bareos block to the tape
- */
+// Write a Bareos block to the tape
 static void wrcmd()
 {
   DeviceBlock* block = dcr->block;
@@ -1848,9 +1818,7 @@ bail_out:
   return;
 }
 
-/**
- * Read a record from the tape
- */
+// Read a record from the tape
 static void rrcmd()
 {
   char* buf;
@@ -2173,9 +2141,7 @@ static void fillcmd()
   block = jcr->impl->dcr->block;
 
   Dmsg0(100, "Just after AcquireDeviceForAppend\n");
-  /*
-   * Write Begin Session Record
-   */
+  // Write Begin Session Record
   if (!WriteSessionLabel(dcr, SOS_LABEL)) {
     jcr->setJobStatus(JS_ErrorTerminated);
     Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
@@ -2188,14 +2154,10 @@ static void fillcmd()
   rec.data = GetMemory(100'000); /* max record size */
   rec.data_len = REC_SIZE;
 
-  /*
-   * Put some random data in the record
-   */
+  // Put some random data in the record
   FillBuffer(FILL_RANDOM, rec.data, rec.data_len);
 
-  /*
-   * Generate data as if from File daemon, write to device
-   */
+  // Generate data as if from File daemon, write to device
   jcr->impl->dcr->VolFirstIndex = 0;
   time(&jcr->run_time); /* start counting time for rates */
 
@@ -2221,9 +2183,7 @@ static void fillcmd()
           stream_to_ascii(buf1, rec.Stream, rec.FileIndex), rec.data_len);
 
     while (!WriteRecordToBlock(dcr, &rec)) {
-      /*
-       * When we get here we have just filled a block
-       */
+      // When we get here we have just filled a block
       Dmsg2(150, "!WriteRecordToBlock data_len=%d rem=%d\n", rec.data_len,
             rec.remainder);
 
@@ -2781,9 +2741,7 @@ bail_out:
   return;
 }
 
-/**
- * Fill a tape using raw write() command
- */
+// Fill a tape using raw write() command
 static void rawfill_cmd()
 {
   DeviceBlock* block = dcr->block;

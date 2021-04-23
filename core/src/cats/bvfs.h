@@ -92,9 +92,7 @@ class Bvfs {
     pwd_id = pathid;
   }
 
-  /*
-   * Returns true if the directory exists
-   */
+  // Returns true if the directory exists
   bool ChDir(const char* path);
 
   bool ls_files(); /* Returns true if we have more files to read */

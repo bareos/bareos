@@ -19,22 +19,16 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, December 2016.
- */
+// Marco van Wieringen, December 2016.
 
-/*
- * Ordered Circular buffer used for producer/consumer problem with pthreads.
- */
+// Ordered Circular buffer used for producer/consumer problem with pthreads.
 #include "include/bareos.h"
 #include "lib/dlist.h"
 #include "ordered_cbuf.h"
 namespace storagedaemon {
 
 
-/*
- * Initialize a new ordered circular buffer.
- */
+// Initialize a new ordered circular buffer.
 int ordered_circbuf::init(int capacity)
 {
   struct ocbuf_item* item = NULL;
@@ -64,9 +58,7 @@ int ordered_circbuf::init(int capacity)
   return 0;
 }
 
-/*
- * Destroy a ordered circular buffer.
- */
+// Destroy a ordered circular buffer.
 void ordered_circbuf::destroy()
 {
   pthread_cond_destroy(&notempty_);
@@ -78,9 +70,7 @@ void ordered_circbuf::destroy()
   }
 }
 
-/*
- * Enqueue a new item into the ordered circular buffer.
- */
+// Enqueue a new item into the ordered circular buffer.
 void* ordered_circbuf::enqueue(void* data,
                                uint32_t data_size,
                                int compare(void* item1, void* item2),
@@ -92,13 +82,9 @@ void* ordered_circbuf::enqueue(void* data,
 
   if (pthread_mutex_lock(&lock_) != 0) { return NULL; }
 
-  /*
-   * See if we should use a reserved slot and there are actually slots reserved.
-   */
+  // See if we should use a reserved slot and there are actually slots reserved.
   if (!use_reserved_slot || !reserved_) {
-    /*
-     * Wait while the buffer is full.
-     */
+    // Wait while the buffer is full.
     while (full()) { pthread_cond_wait(&notfull_, &lock_); }
   }
 
@@ -133,9 +119,7 @@ void* ordered_circbuf::enqueue(void* data,
      */
     update(item->data, new_item->data);
 
-    /*
-     * Release the unused ocbuf_item.
-     */
+    // Release the unused ocbuf_item.
     free(new_item);
 
     /*
@@ -145,13 +129,9 @@ void* ordered_circbuf::enqueue(void* data,
     data = item->data;
   }
 
-  /*
-   * See if we need to signal any workers that work is available or not.
-   */
+  // See if we need to signal any workers that work is available or not.
   if (!no_signal) {
-    /*
-     * Let any waiting consumer know there is data.
-     */
+    // Let any waiting consumer know there is data.
     pthread_cond_broadcast(&notempty_);
   }
 
@@ -164,9 +144,7 @@ void* ordered_circbuf::enqueue(void* data,
   return data;
 }
 
-/*
- * Dequeue an item from the ordered circular buffer.
- */
+// Dequeue an item from the ordered circular buffer.
 void* ordered_circbuf::dequeue(bool reserve_slot,
                                bool requeued,
                                struct timespec* ts,
@@ -177,13 +155,9 @@ void* ordered_circbuf::dequeue(bool reserve_slot,
 
   if (pthread_mutex_lock(&lock_) != 0) { return NULL; }
 
-  /*
-   * Wait while there is nothing in the buffer
-   */
+  // Wait while there is nothing in the buffer
   while ((requeued || empty()) && !flush_) {
-    /*
-     * The requeued state is only valid one time so clear it.
-     */
+    // The requeued state is only valid one time so clear it.
     requeued = false;
 
     /*
@@ -233,34 +207,24 @@ void* ordered_circbuf::dequeue(bool reserve_slot,
     }
   }
 
-  /*
-   * When we are requested to flush and there is no data left return NULL.
-   */
+  // When we are requested to flush and there is no data left return NULL.
   if (empty() && flush_) { goto bail_out; }
 
-  /*
-   * Get the first item from the dlist and remove it.
-   */
+  // Get the first item from the dlist and remove it.
   item = (struct ocbuf_item*)data_->first();
   if (!item) { goto bail_out; }
 
   data_->remove(item);
   size_--;
 
-  /*
-   * Let all waiting producers know there is room.
-   */
+  // Let all waiting producers know there is room.
   pthread_cond_broadcast(&notfull_);
 
-  /*
-   * Extract the payload and drop the placeholder.
-   */
+  // Extract the payload and drop the placeholder.
   data = item->data;
   free(item);
 
-  /*
-   * Increase the reserved slot count when we are asked to reserve the slot.
-   */
+  // Increase the reserved slot count when we are asked to reserve the slot.
   if (reserve_slot) { reserved_++; }
 
 bail_out:
@@ -284,9 +248,7 @@ void* ordered_circbuf::peek(enum oc_peek_types type,
 
   if (pthread_mutex_lock(&lock_) != 0) { return NULL; }
 
-  /*
-   * There is nothing to be seen on an empty ordered circular buffer.
-   */
+  // There is nothing to be seen on an empty ordered circular buffer.
   if (empty()) { goto bail_out; }
 
   /*
@@ -345,9 +307,7 @@ bail_out:
   return retval;
 }
 
-/*
- * Unreserve a slot which was reserved by dequeue().
- */
+// Unreserve a slot which was reserved by dequeue().
 int ordered_circbuf::unreserve_slot()
 {
   int retval = -1;
@@ -361,9 +321,7 @@ int ordered_circbuf::unreserve_slot()
   if (reserved_) {
     reserved_--;
 
-    /*
-     * Let all waiting producers know there is room.
-     */
+    // Let all waiting producers know there is room.
     pthread_cond_broadcast(&notfull_);
 
     retval = 0;
@@ -382,14 +340,10 @@ int ordered_circbuf::flush()
 {
   if (pthread_mutex_lock(&lock_) != 0) { return -1; }
 
-  /*
-   * Set the flush flag.
-   */
+  // Set the flush flag.
   flush_ = true;
 
-  /*
-   * Let all waiting consumers know there will be no more data.
-   */
+  // Let all waiting consumers know there will be no more data.
   pthread_cond_broadcast(&notempty_);
 
   pthread_mutex_unlock(&lock_);

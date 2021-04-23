@@ -107,9 +107,7 @@ static tapealert_mapping tapealert_mappings[] = {
     {0, NULL}};
 
 
-/*
- * Store a value as 2 bytes MSB/LSB
- */
+// Store a value as 2 bytes MSB/LSB
 static inline void set_2_byte_value(unsigned char* field, int value)
 {
   field[0] = (unsigned char)((value & 0xff00) >> 8);
@@ -127,34 +125,26 @@ bool GetTapealertFlags(int fd, const char* device_name, uint64_t* flags)
   cmd_page_len = sizeof(cmd_page);
   memset(&cmd_page, 0, cmd_page_len);
 
-  /*
-   * Fill the SCSI CDB.
-   */
+  // Fill the SCSI CDB.
   cdb_len = sizeof(cdb);
   memset(&cdb, 0, cdb_len);
   cdb.opcode = SCSI_LOG_OPCODE;
   cdb.pagecode = SCSI_TAPE_ALERT_FLAGS;
   set_2_byte_value(cdb.allocation_length, cmd_page_len);
 
-  /*
-   * Retrieve the tapealert status.
-   */
+  // Retrieve the tapealert status.
   if (!RecvScsiCmdPage(fd, device_name, (void*)&cdb, cdb_len, (void*)&cmd_page,
                        cmd_page_len)) {
     return false;
   }
 
-  /*
-   * See if we got TapeAlert info back.
-   */
+  // See if we got TapeAlert info back.
   if ((cmd_page.pagecode & 0x3f) != SCSI_TAPE_ALERT_FLAGS) { return false; }
 
   tapealert_length = (cmd_page.page_length[0] << 8) + cmd_page.page_length[1];
   if (!tapealert_length) { return true; }
 
-  /*
-   * Walk over all tape alert parameters.
-   */
+  // Walk over all tape alert parameters.
   cnt = 0;
   while (cnt < tapealert_length) {
     uint16_t result_index;
@@ -164,9 +154,7 @@ bool GetTapealertFlags(int fd, const char* device_name, uint64_t* flags)
     result_index
         = (ta_param->parameter_code[0] << 8) + ta_param->parameter_code[1];
     if (result_index > 0 && result_index < MAX_TAPE_ALERTS) {
-      /*
-       * See if the TapeAlert is raised.
-       */
+      // See if the TapeAlert is raised.
       if (ta_param->parameter_value) {
         for (int j = 0; tapealert_mappings[j].alert_msg; j++) {
           if (result_index == tapealert_mappings[j].flag) {

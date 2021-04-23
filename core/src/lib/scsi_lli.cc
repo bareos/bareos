@@ -44,9 +44,7 @@
 #      define SIOC_REQSENSE _IOR('C', 0x02, SCSI_PAGE_SENSE)
 #    endif
 
-/*
- * Core interface function to lowlevel SCSI interface.
- */
+// Core interface function to lowlevel SCSI interface.
 static inline bool do_scsi_cmd_page(int fd,
                                     const char* device_name,
                                     void* cdb,
@@ -61,9 +59,7 @@ static inline bool do_scsi_cmd_page(int fd,
   bool opened_device = false;
   bool retval = false;
 
-  /*
-   * See if we need to open the device_name or if we got an open filedescriptor.
-   */
+  // See if we need to open the device_name or if we got an open filedescriptor.
   if (fd == -1) {
     fd = open(device_name, O_RDWR | O_NONBLOCK | O_BINARY);
     if (fd < 0) {
@@ -108,9 +104,7 @@ static inline bool do_scsi_cmd_page(int fd,
   retval = true;
 
 bail_out:
-  /*
-   * See if we opened the device in this function, if so close it.
-   */
+  // See if we opened the device in this function, if so close it.
   if (opened_device) { close(fd); }
 
   return retval;
@@ -146,9 +140,7 @@ bool send_scsi_cmd_page(int fd,
                           SG_DXFER_TO_DEV);
 }
 
-/*
- * Check if the SCSI sense is EOD.
- */
+// Check if the SCSI sense is EOD.
 bool CheckScsiAtEod(int fd)
 {
   int rc;
@@ -173,9 +165,7 @@ bool CheckScsiAtEod(int fd)
 #      define LOBYTE(_w) ((_w)&0xff)
 #    endif
 
-/*
- * Core interface function to lowlevel SCSI interface.
- */
+// Core interface function to lowlevel SCSI interface.
 static inline bool do_scsi_cmd_page(int fd,
                                     const char* device_name,
                                     void* cdb,
@@ -190,9 +180,7 @@ static inline bool do_scsi_cmd_page(int fd,
   bool opened_device = false;
   bool retval = false;
 
-  /*
-   * See if we need to open the device_name or if we got an open filedescriptor.
-   */
+  // See if we need to open the device_name or if we got an open filedescriptor.
   if (fd == -1) {
     fd = open(device_name, O_RDWR | O_NONBLOCK | O_BINARY);
     if (fd < 0) {
@@ -230,9 +218,7 @@ static inline bool do_scsi_cmd_page(int fd,
   retval = true;
 
 bail_out:
-  /*
-   * See if we opened the device in this function, if so close it.
-   */
+  // See if we opened the device in this function, if so close it.
   if (opened_device) { close(fd); }
   return retval;
 }
@@ -282,9 +268,7 @@ bool CheckScsiAtEod(int fd) { return false; }
 #      define SAM_STAT_COMMAND_TERMINATED 0x22
 #    endif
 
-/*
- * Core interface function to lowlevel SCSI interface.
- */
+// Core interface function to lowlevel SCSI interface.
 static inline bool do_scsi_cmd_page(int fd,
                                     const char* device_name,
                                     void* cdb,
@@ -301,9 +285,7 @@ static inline bool do_scsi_cmd_page(int fd,
   SCSI_PAGE_SENSE sense;
   bool retval = false;
 
-  /*
-   * See what CAM device to use.
-   */
+  // See what CAM device to use.
   if (cam_get_device(device_name, cam_devicename, sizeof(cam_devicename),
                      &unitnum)
       == -1) {
@@ -329,9 +311,7 @@ static inline bool do_scsi_cmd_page(int fd,
     goto bail_out;
   }
 
-  /*
-   * Clear out structure, except for header that was filled for us.
-   */
+  // Clear out structure, except for header that was filled for us.
   memset(&(&ccb->ccb_h)[1], 0,
          sizeof(struct ccb_scsiio) - sizeof(struct ccb_hdr));
 
@@ -354,9 +334,7 @@ static inline bool do_scsi_cmd_page(int fd,
     goto bail_out;
   }
 
-  /*
-   * Retrieve the SCSI sense data.
-   */
+  // Retrieve the SCSI sense data.
   if (((ccb->ccb_h.status & CAM_STATUS_MASK) == CAM_REQ_CMP)
       || ((ccb->ccb_h.status & CAM_STATUS_MASK) == CAM_SCSI_STATUS_ERROR)) {
     if ((SAM_STAT_CHECK_CONDITION == ccb->csio.scsi_status)
@@ -369,9 +347,7 @@ static inline bool do_scsi_cmd_page(int fd,
   retval = true;
 
 bail_out:
-  /*
-   * Close the CAM device.
-   */
+  // Close the CAM device.
   cam_close_device(cam_dev);
   return retval;
 }
@@ -420,9 +396,7 @@ bool CheckScsiAtEod(int fd) { return false; }
 #      define LOBYTE(_w) ((_w)&0xff)
 #    endif
 
-/*
- * Core interface function to lowlevel SCSI interface.
- */
+// Core interface function to lowlevel SCSI interface.
 static inline bool do_scsi_cmd_page(int fd,
                                     const char* device_name,
                                     void* cdb,
@@ -437,9 +411,7 @@ static inline bool do_scsi_cmd_page(int fd,
   bool opened_device = false;
   bool retval = false;
 
-  /*
-   * See if we need to open the device_name or if we got an open filedescriptor.
-   */
+  // See if we need to open the device_name or if we got an open filedescriptor.
   if (fd == -1) {
     fd = open(device_name, O_RDWR | O_NONBLOCK | O_BINARY);
     if (fd < 0) {
@@ -500,9 +472,7 @@ static inline bool do_scsi_cmd_page(int fd,
   }
 
 bail_out:
-  /*
-   * See if we opened the device in this function, if so close it.
-   */
+  // See if we opened the device in this function, if so close it.
   if (opened_device) { close(fd); }
   return retval;
 }
@@ -540,9 +510,7 @@ bool send_scsi_cmd_page(int fd,
 bool CheckScsiAtEod(int fd) { return false; }
 #  endif
 #else
-/*
- * Dummy lowlevel functions when no support for platform.
- */
+// Dummy lowlevel functions when no support for platform.
 bool RecvScsiCmdPage(int fd,
                      const char* device_name,
                      void* cdb,

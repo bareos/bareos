@@ -40,9 +40,7 @@
 void ndmfhdb_register_callbacks(struct ndmlog* ixlog,
                                 struct ndm_fhdb_callbacks* callbacks)
 {
-  /*
-   * Only allow one register.
-   */
+  // Only allow one register.
   if (!ixlog->nfc) {
     ixlog->nfc = NDMOS_API_MALLOC(sizeof(struct ndm_fhdb_callbacks));
     if (ixlog->nfc) {

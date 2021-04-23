@@ -4759,9 +4759,7 @@ mdb_hash_val(MDB_val *val, mdb_hash_t hval)
 {
 	unsigned char *s = (unsigned char *)val->mv_data;	/* unsigned string */
 	unsigned char *end = s + val->mv_size;
-	/*
-	 * FNV-1a hash each octet of the string
-	 */
+	// FNV-1a hash each octet of the string
 	while (s < end) {
 		/* xor the bottom with the current octet */
 		hval ^= (mdb_hash_t)*s++;

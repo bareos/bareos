@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, May MMIII
- */
+// Kern Sibbald, May MMIII
 /**
  * @file
  * This file handles the status command
@@ -70,9 +68,7 @@ static void ListVolumes(StatusPacket* sp, const char* devicenames);
 
 static const char* JobLevelToString(int level);
 
-/**
- * Status command from Director
- */
+// Status command from Director
 static void OutputStatus(JobControlRecord* jcr,
                          StatusPacket* sp,
                          const char* devicenames)
@@ -82,24 +78,16 @@ static void OutputStatus(JobControlRecord* jcr,
 
   ListStatusHeader(sp);
 
-  /*
-   * List running jobs
-   */
+  // List running jobs
   ListRunningJobs(sp);
 
-  /*
-   * List jobs stuck in reservation system
-   */
+  // List jobs stuck in reservation system
   ListJobsWaitingOnReservation(sp);
 
-  /*
-   * List terminated jobs
-   */
+  // List terminated jobs
   ListTerminatedJobs(sp);
 
-  /*
-   * List devices
-   */
+  // List devices
   ListDevices(jcr, sp, devicenames);
 
   if (!sp->api) {
@@ -133,14 +121,10 @@ static bool NeedToListDevice(const char* devicenames, const char* devicename)
   Dmsg2(200, "NeedToListDevice devicenames %s, devicename %s\n", devicenames,
         devicename);
 
-  /*
-   * Make a local copy that we can split on ','
-   */
+  // Make a local copy that we can split on ','
   PmStrcpy(namelist, devicenames);
 
-  /*
-   * See if devicename is in the list.
-   */
+  // See if devicename is in the list.
   cur = namelist.c_str();
   while (cur) {
     bp = strchr(cur, ',');
@@ -165,9 +149,7 @@ static bool NeedToListDevice(const char* devicenames,
    * a autochanger via its own storage definition or an non autochanger device.
    */
   if (!NeedToListDevice(devicenames, device_resource->resource_name_)) {
-    /*
-     * See if this device is part of an autochanger.
-     */
+    // See if this device is part of an autochanger.
     if (device_resource->changer_res) {
       /*
        * See if we need to list this particular device part of the given
@@ -244,9 +226,7 @@ static void ListDevices(JobControlRecord* jcr,
   }
 
   foreach_res (changer, R_AUTOCHANGER) {
-    /*
-     * See if we need to list this autochanger.
-     */
+    // See if we need to list this autochanger.
     if (devicenames
         && !NeedToListDevice(devicenames, changer->resource_name_)) {
       continue;
@@ -382,9 +362,7 @@ static void ListDevices(JobControlRecord* jcr,
   }
 }
 
-/*
- * List Volumes
- */
+// List Volumes
 static void ListVolumes(StatusPacket* sp, const char* devicenames)
 {
   int len;
@@ -579,9 +557,7 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
       break;
   }
 
-  /*
-   * Send autochanger slot status
-   */
+  // Send autochanger slot status
   if (dev->AttachedToAutochanger()) {
     if (dev->GetSlot() > 0) {
       len = Mmsg(msg, _("    Slot %hd %s loaded in drive %hd.\n"),
@@ -771,9 +747,7 @@ static void ListRunningJobs(StatusPacket* sp)
   }
 }
 
-/*
- * Send any reservation messages queued for this jcr
- */
+// Send any reservation messages queued for this jcr
 static inline void SendDriveReserveMessages(JobControlRecord* jcr,
                                             StatusPacket* sp)
 {
@@ -916,9 +890,7 @@ static void ListTerminatedJobs(StatusPacket* sp)
   }
 }
 
-/**
- * Convert Job Level into a string
- */
+// Convert Job Level into a string
 static const char* JobLevelToString(int level)
 {
   const char* str;
@@ -964,9 +936,7 @@ static const char* JobLevelToString(int level)
   return str;
 }
 
-/**
- * Status command from Director
- */
+// Status command from Director
 bool StatusCmd(JobControlRecord* jcr)
 {
   PoolMem devicenames;
@@ -991,9 +961,7 @@ bool StatusCmd(JobControlRecord* jcr)
   return true;
 }
 
-/**
- * .status command from Director
- */
+// .status command from Director
 bool DotstatusCmd(JobControlRecord* jcr)
 {
   JobControlRecord* njcr;

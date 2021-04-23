@@ -68,9 +68,7 @@ extern "C" {
  **/
 typedef z_stream zfast_stream;
 
-/**
- * Backend compressor type.
- **/
+// Backend compressor type.
 typedef enum zfast_stream_compressor {
   COMPRESSOR_FASTLZ,
   COMPRESSOR_LZ4,

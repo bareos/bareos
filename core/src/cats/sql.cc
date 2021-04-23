@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March 2000
- */
+// Kern Sibbald, March 2000
 /**
  * @file
  * BAREOS Catalog Database interface routines
@@ -64,9 +62,6 @@ DBId_t dbid_list::get(int i) const
 }
 
 
-/**
- * Called here to retrieve an integer from the database
- */
 int DbIntHandler(void* ctx, int num_fields, char** row)
 {
   uint32_t* val = (uint32_t*)ctx;
@@ -114,9 +109,7 @@ int DbStrtimeHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/**
- * Use to build a comma separated list of values from a query. "10,20,30"
- */
+// Use to build a comma separated list of values from a query. "10,20,30"
 int DbListHandler(void* ctx, int num_fields, char** row)
 {
   db_list_ctx* lctx = (db_list_ctx*)ctx;
@@ -133,9 +126,6 @@ struct max_connections_context {
   uint32_t nr_connections;
 };
 
-/**
- * Called here to retrieve an integer from the database
- */
 static inline int DbMaxConnectionsHandler(void* ctx, int num_fields, char** row)
 {
   struct max_connections_context* context;
@@ -160,26 +150,19 @@ static inline int DbMaxConnectionsHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/**
- * Check catalog max_connections setting
- */
 bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
                                    uint32_t max_concurrent_jobs)
 {
   PoolMem query(PM_MESSAGE);
   struct max_connections_context context;
 
-  /*
-   * Without Batch insert, no need to verify max_connections
-   */
+  // Without Batch insert, no need to verify max_connections
   if (!BatchInsertAvailable()) return true;
 
   context.db = this;
   context.nr_connections = 0;
 
-  /*
-   * Check max_connections setting
-   */
+  // Check max_connections setting
   FillQuery(query, SQL_QUERY::sql_get_max_connections);
   if (!SqlQueryWithHandler(query.c_str(), DbMaxConnectionsHandler, &context)) {
     Jmsg(jcr, M_ERROR, 0, "Can't verify max_connections settings %s", errmsg);
@@ -205,9 +188,6 @@ bool BareosDb::CheckMaxConnections(JobControlRecord* jcr,
  *  calling subroutine sets and clears the mutex
  */
 
-/*
- * Check that the tables correspond to the version we want
- */
 bool BareosDb::CheckTablesVersion(JobControlRecord* jcr)
 {
   uint32_t bareos_db_version = 0;
@@ -369,9 +349,6 @@ int BareosDb::GetSqlRecordMax(JobControlRecord* jcr)
   return retval;
 }
 
-/**
- * Return pre-edited error message
- */
 char* BareosDb::strerror() { return errmsg; }
 
 /**
@@ -428,9 +405,6 @@ void BareosDb::SplitPathAndFile(JobControlRecord* jcr, const char* filename)
   Dmsg2(500, "split path=%s file=%s\n", path, fname);
 }
 
-/**
- * Set maximum field length to something reasonable
- */
 static int MaxLength(int MaxLength)
 {
   int max_len = MaxLength;
@@ -443,9 +417,7 @@ static int MaxLength(int MaxLength)
   return max_len;
 }
 
-/**
- * List dashes as part of header for listing SQL results in a table
- */
+// List dashes as part of header for listing SQL results in a table
 void BareosDb::ListDashes(OutputFormatter* send)
 {
   int len;
@@ -465,9 +437,7 @@ void BareosDb::ListDashes(OutputFormatter* send)
   send->Decoration("\n");
 }
 
-/**
- * List result handler used by queries done with db_big_sql_query()
- */
+// List result handler used by queries done with db_big_sql_query()
 int BareosDb::ListResult(void* vctx, int nb_col, char** row)
 {
   JobControlRecord* jcr;
@@ -481,16 +451,11 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
   int col_len, max_len = 0;
   ListContext* pctx = (ListContext*)vctx;
 
-  /*
-   * Get pointers from context.
-   */
   type = pctx->type;
   send = pctx->send;
   jcr = pctx->jcr;
 
-  /*
-   * See if this row must be filtered.
-   */
+  // See if this row must be filtered.
   if (send->HasFilters() && !send->FilterData(row)) { return 0; }
 
   send->ObjectStart();
@@ -510,18 +475,13 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         pctx->once = true;
 
         Dmsg1(800, "ListResult starts looking at %d fields\n", num_fields);
-        /*
-         * Determine column display widths
-         */
+        // Determine column display widths
         SqlFieldSeek(0);
         for (int i = 0; i < num_fields; i++) {
           Dmsg1(800, "ListResult processing field %d\n", i);
           field = SqlFetchField();
           if (!field) { break; }
 
-          /*
-           * See if this is a hidden column.
-           */
           if (send->IsHiddenColumn(i)) {
             Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
@@ -553,9 +513,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         Dmsg1(800, "ListResult starts second loop looking at %d fields\n",
               num_fields);
 
-        /*
-         * Keep the result to display the same line at the end of the table
-         */
         ListDashes(send);
 
         send->Decoration("|");
@@ -566,9 +523,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
           field = SqlFetchField();
           if (!field) { break; }
 
-          /*
-           * See if this is a hidden column.
-           */
           if (send->IsHiddenColumn(i)) {
             Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
@@ -595,9 +549,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         field = SqlFetchField();
         if (!field) { break; }
 
-        /*
-         * See if this is a hidden column.
-         */
         if (send->IsHiddenColumn(i)) {
           Dmsg1(800, "ListResult field %d is hidden\n", i);
           continue;
@@ -621,9 +572,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         field = SqlFetchField();
         if (!field) { break; }
 
-        /*
-         * See if this is a hidden column.
-         */
         if (send->IsHiddenColumn(i)) {
           Dmsg1(800, "ListResult field %d is hidden\n", i);
           continue;
@@ -639,9 +587,7 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
           value.bsprintf(" %-*s |", max_len, row[i]);
         }
 
-        /*
-         * Use value format string to send preformated value.
-         */
+        // Use value format string to send preformated value.
         send->ObjectKeyValue(field->name, row[i], value.c_str());
       }
       send->Decoration("\n");
@@ -653,9 +599,6 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
         field = SqlFetchField();
         if (!field) { break; }
 
-        /*
-         * See if this is a hidden column.
-         */
         if (send->IsHiddenColumn(i)) {
           Dmsg1(800, "ListResult field %d is hidden\n", i);
           continue;
@@ -673,9 +616,7 @@ int BareosDb::ListResult(void* vctx, int nb_col, char** row)
           value.bsprintf("%s\n", row[i]);
         }
 
-        /*
-         * Use value format string to send preformated value.
-         */
+        // Use value format string to send preformated value.
         send->ObjectKeyValue(field->name, key.c_str(), row[i], value.c_str());
       }
       send->Decoration("\n");
@@ -734,9 +675,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
     case HORZ_LIST:
     case VERT_LIST:
       Dmsg1(800, "ListResult starts looking at %d fields\n", num_fields);
-      /*
-       * Determine column display widths
-       */
+      // Determine column display widths
       SqlFieldSeek(0);
       for (int i = 0; i < num_fields; i++) {
         Dmsg1(800, "ListResult processing field %d\n", i);

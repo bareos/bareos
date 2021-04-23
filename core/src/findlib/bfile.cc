@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, April MMIII
- */
+// Kern Sibbald, April MMIII
 /**
  * @file
  * Bareos low level File I/O routines.  This routine simulates
@@ -225,9 +223,7 @@ const char* stream_to_ascii(int stream)
   }
 }
 
-/**
- *  Convert a 64 bit little endian to a big endian
- */
+//  Convert a 64 bit little endian to a big endian
 static inline void int64_LE2BE(int64_t* pBE, const int64_t v)
 {
   /* convert little endian to big endian */
@@ -243,9 +239,7 @@ static inline void int64_LE2BE(int64_t* pBE, const int64_t v)
   }
 }
 
-/**
- *  Convert a 32 bit little endian to a big endian
- */
+//  Convert a 32 bit little endian to a big endian
 static inline void int32_LE2BE(int32_t* pBE, const int32_t v)
 {
   /* convert little endian to big endian */
@@ -261,9 +255,7 @@ static inline void int32_LE2BE(int32_t* pBE, const int32_t v)
   }
 }
 
-/**
- *  Read a BackupRead block and pull out the file data
- */
+//  Read a BackupRead block and pull out the file data
 bool processWin32BackupAPIBlock(BareosWinFilePacket* bfd,
                                 void* pBuffer,
                                 ssize_t dwSize)
@@ -434,9 +426,7 @@ bool have_win32_api() { return p_BackupRead && p_BackupWrite; }
 bool IsRestoreStreamSupported(int stream)
 {
   switch (stream) {
-    /*
-     * Streams known not to be supported
-     */
+    // Streams known not to be supported
 #  ifndef HAVE_LIBZ
     case STREAM_GZIP_DATA:
     case STREAM_SPARSE_GZIP_DATA:
@@ -447,9 +437,7 @@ bool IsRestoreStreamSupported(int stream)
     case STREAM_ENCRYPTED_MACOS_FORK_DATA:
       return false;
 
-      /*
-       * Known streams
-       */
+      // Known streams
 #  ifdef HAVE_LIBZ
     case STREAM_GZIP_DATA:
     case STREAM_SPARSE_GZIP_DATA:
@@ -491,9 +479,7 @@ HANDLE BgetHandle(BareosWinFilePacket* bfd)
   return (bfd->mode == BF_CLOSED) ? INVALID_HANDLE_VALUE : bfd->fh;
 }
 
-/**
- * Windows flags for the OpenEncryptedFileRaw functions.
- */
+// Windows flags for the OpenEncryptedFileRaw functions.
 #  ifndef CREATE_FOR_EXPORT
 #    define CREATE_FOR_EXPORT 0
 #  endif
@@ -525,9 +511,7 @@ static inline int BopenEncrypted(BareosWinFilePacket* bfd,
 
   is_dir = S_ISDIR(mode);
 
-  /*
-   * Convert to Windows path format
-   */
+  // Convert to Windows path format
   win32_fname = GetPoolMemory(PM_FNAME);
   win32_fname_wchar = GetPoolMemory(PM_FNAME);
 
@@ -536,9 +520,7 @@ static inline int BopenEncrypted(BareosWinFilePacket* bfd,
     make_win32_path_UTF8_2_wchar(win32_fname_wchar, fname);
   }
 
-  /*
-   * See if we open the file for create or read-write.
-   */
+  // See if we open the file for create or read-write.
   if ((flags & O_CREAT) || (flags & O_WRONLY)) {
     if (is_dir) {
       ulFlags |= CREATE_FOR_IMPORT | OVERWRITE_HIDDEN | CREATE_FOR_DIR;
@@ -552,18 +534,14 @@ static inline int BopenEncrypted(BareosWinFilePacket* bfd,
   }
 
   if (p_OpenEncryptedFileRawW && p_MultiByteToWideChar) {
-    /*
-     * Unicode open.
-     */
+    // Unicode open.
     Dmsg1(100, "OpenEncryptedFileRawW=%s\n", win32_fname);
     if (p_OpenEncryptedFileRawW((LPCWSTR)win32_fname_wchar, ulFlags,
                                 &(bfd->pvContext))) {
       bfd->mode = BF_CLOSED;
     }
   } else {
-    /*
-     * ASCII open.
-     */
+    // ASCII open.
     Dmsg1(100, "OpenEncryptedFileRawA=%s\n", win32_fname);
     if (p_OpenEncryptedFileRawA(win32_fname_wchar, ulFlags,
                                 &(bfd->pvContext))) {
@@ -588,9 +566,7 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
   POOLMEM* win32_fname_wchar;
   DWORD dwaccess, dwflags, dwshare;
 
-  /*
-   * Convert to Windows path format
-   */
+  // Convert to Windows path format
   win32_fname = GetPoolMemory(PM_FNAME);
   win32_fname_wchar = GetPoolMemory(PM_FNAME);
 
@@ -637,9 +613,7 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
       dwflags = 0;
     }
 
-    /*
-     * Unicode open for create write
-     */
+    // Unicode open for create write
     if (p_CreateFileW && p_MultiByteToWideChar) {
       Dmsg1(100, "Create CreateFileW=%s\n", win32_fname);
       bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
@@ -650,9 +624,7 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
                               dwflags,       /* Flags and attributes */
                               NULL);         /* TemplateFile */
     } else {
-      /*
-       * ASCII open
-       */
+      // ASCII open
       Dmsg1(100, "Create CreateFileA=%s\n", win32_fname);
       bfd->fh = p_CreateFileA(win32_fname, dwaccess, /* Requested access */
                               0,                     /* Shared mode */
@@ -664,9 +636,7 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
 
     bfd->mode = BF_WRITE;
   } else if (flags & O_WRONLY) {
-    /*
-     * Open existing for write
-     */
+    // Open existing for write
     if (bfd->use_backup_api) {
       dwaccess = GENERIC_READ | GENERIC_WRITE | WRITE_OWNER | WRITE_DAC;
       if (flags & O_NOFOLLOW) {
@@ -680,9 +650,7 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
     }
 
     if (p_CreateFileW && p_MultiByteToWideChar) {
-      /*
-       * unicode open for open existing write
-       */
+      // unicode open for open existing write
       Dmsg1(100, "Write only CreateFileW=%s\n", win32_fname);
       bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
                               dwaccess,      /* Requested access */
@@ -692,9 +660,7 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
                               dwflags,       /* Flags and attributes */
                               NULL);         /* TemplateFile */
     } else {
-      /*
-       * ASCII open
-       */
+      // ASCII open
       Dmsg1(100, "Write only CreateFileA=%s\n", win32_fname);
       bfd->fh = p_CreateFileA(win32_fname, dwaccess, /* Requested access */
                               0,                     /* Shared mode */
@@ -706,9 +672,7 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
 
     bfd->mode = BF_WRITE;
   } else {
-    /*
-     * Open existing for read
-     */
+    // Open existing for read
     if (bfd->use_backup_api) {
       dwaccess = GENERIC_READ | READ_CONTROL | ACCESS_SYSTEM_SECURITY;
       if (flags & O_NOFOLLOW) {
@@ -725,9 +689,7 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
     }
 
     if (p_CreateFileW && p_MultiByteToWideChar) {
-      /*
-       * Unicode open for open existing read
-       */
+      // Unicode open for open existing read
       Dmsg1(100, "Read CreateFileW=%s\n", win32_fname);
       bfd->fh = p_CreateFileW((LPCWSTR)win32_fname_wchar,
                               dwaccess,      /* Requested access */
@@ -737,9 +699,7 @@ static inline int BopenNonencrypted(BareosWinFilePacket* bfd,
                               dwflags,       /* Flags and attributes */
                               NULL);         /* TemplateFile */
     } else {
-      /*
-       * ASCII open for open existing read
-       */
+      // ASCII open for open existing read
       Dmsg1(100, "Read CreateFileA=%s\n", win32_fname);
       bfd->fh = p_CreateFileA(win32_fname, dwaccess, /* Requested access */
                               dwshare,               /* Share modes */
@@ -1031,9 +991,7 @@ bool SetCmdPlugin(BareosWinFilePacket* bfd, JobControlRecord* jcr)
   return true;
 }
 
-/**
- * This code is running on a non-Win32 machine
- */
+// This code is running on a non-Win32 machine
 bool IsRestoreStreamSupported(int stream)
 {
   /* No Win32 backup on this machine */
@@ -1153,9 +1111,7 @@ int bopen(BareosWinFilePacket* bfd,
 }
 
 #  ifdef HAVE_DARWIN_OS
-/**
- * Open the resource fork of a file.
- */
+// Open the resource fork of a file.
 int BopenRsrc(BareosWinFilePacket* bfd,
               const char* fname,
               int flags,

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * Job control and execution for Storage Daemon
@@ -87,9 +85,7 @@ bool job_cmd(JobControlRecord* jcr)
   uint64_t quota = 0;
   JobControlRecord* ojcr;
 
-  /*
-   * Get JobId and permissions from Director
-   */
+  // Get JobId and permissions from Director
   Dmsg1(100, "<dird: %s", dir->msg);
   bstrncpy(spool_size, "0", sizeof(spool_size));
   status = sscanf(dir->msg, jobcmd, &JobId, job.c_str(), job_name.c_str(),
@@ -161,9 +157,7 @@ bool job_cmd(JobControlRecord* jcr)
 
   Dmsg1(50, "Quota set as %llu\n", quota);
 
-  /*
-   * Pass back an authorization key for the File daemon
-   */
+  // Pass back an authorization key for the File daemon
   Bsnprintf(seed, sizeof(seed), "%p%d", jcr, JobId);
   MakeSessionKey(auth_key, seed, 1);
   jcr->sd_auth_key = strdup(auth_key);
@@ -239,9 +233,7 @@ bool DoJobRun(JobControlRecord* jcr)
        */
       return true;
     default:
-      /*
-       * Handle the file daemon session.
-       */
+      // Handle the file daemon session.
       if (jcr->authenticated && !JobCanceled(jcr)) {
         Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
         RunJob(jcr); /* Run the job */
@@ -274,9 +266,7 @@ bool nextRunCmd(JobControlRecord* jcr)
        */
       jcr->authenticated = false;
 
-      /*
-       * Pass back a new authorization key for the File daemon
-       */
+      // Pass back a new authorization key for the File daemon
       Bsnprintf(seed, sizeof(seed), "%p%d", jcr, jcr->JobId);
       MakeSessionKey(auth_key, seed, 1);
       if (jcr->sd_auth_key) { free(jcr->sd_auth_key); }
@@ -444,9 +434,7 @@ void StoredFreeJcr(JobControlRecord* jcr)
     CleanupCompression(jcr);
   }
 
-  /*
-   * Free any restore volume list created
-   */
+  // Free any restore volume list created
   FreeRestoreVolumeList(jcr);
   if (jcr->RestoreBootstrap) {
     SecureErase(jcr, jcr->RestoreBootstrap);
@@ -461,9 +449,7 @@ void StoredFreeJcr(JobControlRecord* jcr)
   pthread_cond_destroy(&jcr->impl->job_start_wait);
   pthread_cond_destroy(&jcr->impl->job_end_wait);
 
-  /*
-   * Avoid a double free
-   */
+  // Avoid a double free
   if (jcr->impl->dcr == jcr->impl->read_dcr) { jcr->impl->read_dcr = NULL; }
 
   if (jcr->impl->dcr) {

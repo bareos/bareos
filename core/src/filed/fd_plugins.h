@@ -88,9 +88,7 @@ struct restore_object_pkt {
   int32_t pkt_end;            /* End packet sentinel */
 };
 
-/*
- * This packet is used for file save info transfer.
- */
+// This packet is used for file save info transfer.
 struct save_pkt {
   int32_t pkt_size;        /* Size of this packet */
   char* fname;             /* Full path and filename */
@@ -111,9 +109,7 @@ struct save_pkt {
   int32_t pkt_end;     /* End packet sentinel */
 };
 
-/*
- * This packet is used for file restore info transfer.
- */
+// This packet is used for file restore info transfer.
 struct restore_pkt {
   int32_t pkt_size;       /* Size of this packet */
   int32_t stream;         /* Attribute stream id */
@@ -184,9 +180,7 @@ struct xattr_pkt {
  *                                                                          *
  ****************************************************************************/
 
-/*
- * Bareos Variable Ids
- */
+// Bareos Variable Ids
 typedef enum
 {
   bVarJobId = 1,
@@ -210,9 +204,7 @@ typedef enum
   bVarPrefixLinks = 19
 } bVariable;
 
-/*
- * Events that are passed to plugin
- */
+// Events that are passed to plugin
 typedef enum
 {
   bEventJobStart = 1,
@@ -259,9 +251,7 @@ typedef struct s_bareosInfo {
   uint32_t version;
 } PluginApiDefinition;
 
-/*
- * Bareos Core Routines -- not used within a plugin
- */
+// Bareos Core Routines -- not used within a plugin
 #ifdef FILE_DAEMON
 void LoadFdPlugins(const char* plugin_dir, alist* plugin_names);
 void UnloadFdPlugins(void);
@@ -372,9 +362,7 @@ typedef enum
 #define FD_PLUGIN_MAGIC "*FDPluginData*"
 #define FD_PLUGIN_INTERFACE_VERSION 10
 
-/*
- * This is a set of function pointers that Bareos can call within the plugin.
- */
+// This is a set of function pointers that Bareos can call within the plugin.
 typedef struct s_pluginFuncs {
   uint32_t size;
   uint32_t version;

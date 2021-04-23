@@ -65,14 +65,10 @@ static bool ScriptDirAllowed(JobControlRecord* jcr,
   bool allowed = false;
   PoolMem script_dir(PM_FNAME);
 
-  /*
-   * If there is no explicit list of allowed dirs allow any dir.
-   */
+  // If there is no explicit list of allowed dirs allow any dir.
   if (!allowed_script_dirs) { return true; }
 
-  /*
-   * Determine the dir the script is in.
-   */
+  // Determine the dir the script is in.
   PmStrcpy(script_dir, script->command.c_str());
   if ((bp = strrchr(script_dir.c_str(), '/'))) { *bp = '\0'; }
 
@@ -181,9 +177,7 @@ int RunScripts(JobControlRecord* jcr,
       }
     }
 
-    /*
-     * We execute it
-     */
+    // We execute it
     if (runit) {
       if (!ScriptDirAllowed(jcr, script, allowed_script_dirs)) {
         Dmsg1(200,

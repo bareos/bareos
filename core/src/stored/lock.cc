@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, June 2007
- */
+// Kern Sibbald, June 2007
 /*+
  * @file
  * Collection of Bacula Storage daemon locking software
@@ -139,12 +137,8 @@ void Device::dunblock(bool locked)
   Unlock();
 }
 
-/**
- * DeviceControlRecord locks N.B.
- */
-/**
- * Multiple rLock implementation
- */
+// DeviceControlRecord locks N.B.
+// Multiple rLock implementation
 void DeviceControlRecord::mLock(bool locked)
 {
   P(r_mutex);
@@ -158,9 +152,7 @@ void DeviceControlRecord::mLock(bool locked)
   return;
 }
 
-/**
- * Multiple rUnlock implementation
- */
+// Multiple rUnlock implementation
 void DeviceControlRecord::mUnlock()
 {
   P(r_mutex);
@@ -169,17 +161,13 @@ void DeviceControlRecord::mUnlock()
     Emsg1(M_ABORT, 0, "Call on dcr mUnlock when not locked\n");
   }
   DecDevLock();
-  /*
-   * When the count goes to zero, unlock it
-   */
+  // When the count goes to zero, unlock it
   if (!IsDevLocked()) { dev->rUnlock(); }
   V(r_mutex);
   return;
 }
 
-/**
- * Device locks N.B.
- */
+// Device locks N.B.
 void Device::rUnlock() { Unlock(); }
 
 void Device::Lock() { P(mutex_); }
@@ -194,22 +182,16 @@ void Device::Lock_read_acquire() { P(read_acquire_mutex); }
 
 void Device::Unlock_read_acquire() { V(read_acquire_mutex); }
 
-/**
- * Main device access control
- */
+// Main device access control
 int Device::InitMutex() { return pthread_mutex_init(&mutex_, NULL); }
 
-/**
- * Write device acquire mutex
- */
+// Write device acquire mutex
 int Device::InitAcquireMutex()
 {
   return pthread_mutex_init(&acquire_mutex, NULL);
 }
 
-/**
- * Read device acquire mutex
- */
+// Read device acquire mutex
 int Device::InitReadAcquireMutex()
 {
   return pthread_mutex_init(&read_acquire_mutex, NULL);
@@ -357,9 +339,7 @@ const char* Device::print_blocked() const
   }
 }
 
-/**
- * Check if the device is blocked or not
- */
+// Check if the device is blocked or not
 bool Device::IsDeviceUnmounted()
 {
   bool status;

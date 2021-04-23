@@ -280,9 +280,7 @@ START_TEST(iterate_break_test)
 }
 END_TEST
 
-/*
- * Test replacing an existing value with dpl_dict_add(
- */
+// Test replacing an existing value with dpl_dict_add(
 START_TEST(replace_test)
 {
   dpl_dict_t* dict;

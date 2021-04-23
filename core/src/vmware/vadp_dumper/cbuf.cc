@@ -18,19 +18,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, August 2013.
- */
+// Marco van Wieringen, August 2013.
 
-/*
- * Circular buffer used for producer/consumer problem with pthreads.
- */
+// Circular buffer used for producer/consumer problem with pthreads.
 #include <pthread.h>
 #include "cbuf.h"
 
-/*
- * Initialize a new circular buffer.
- */
+// Initialize a new circular buffer.
 int circbuf::init()
 {
   if (pthread_mutex_init(&m_lock, NULL) != 0) { return -1; }
@@ -54,9 +48,7 @@ int circbuf::init()
   return 0;
 }
 
-/*
- * Destroy a circular buffer.
- */
+// Destroy a circular buffer.
 void circbuf::destroy()
 {
   pthread_cond_destroy(&m_notempty);
@@ -64,24 +56,18 @@ void circbuf::destroy()
   pthread_mutex_destroy(&m_lock);
 }
 
-/*
- * Enqueue a new item into the circular buffer.
- */
+// Enqueue a new item into the circular buffer.
 int circbuf::enqueue(void* data)
 {
   if (pthread_mutex_lock(&m_lock) != 0) { return -1; }
 
-  /*
-   * Wait while the buffer is full.
-   */
+  // Wait while the buffer is full.
   while (full()) { pthread_cond_wait(&m_notfull, &m_lock); }
   m_data[m_next_in++] = data;
   m_size++;
   m_next_in %= m_capacity;
 
-  /*
-   * Let a waiting consumer know there is data.
-   */
+  // Let a waiting consumer know there is data.
   pthread_cond_signal(&m_notempty);
 
   pthread_mutex_unlock(&m_lock);
@@ -89,23 +75,17 @@ int circbuf::enqueue(void* data)
   return 0;
 }
 
-/*
- * Dequeue an item from the circular buffer.
- */
+// Dequeue an item from the circular buffer.
 void* circbuf::dequeue()
 {
   void* data;
 
   if (pthread_mutex_lock(&m_lock) != 0) { return NULL; }
 
-  /*
-   * Wait while there is nothing in the buffer
-   */
+  // Wait while there is nothing in the buffer
   while (empty() && !m_flush) { pthread_cond_wait(&m_notempty, &m_lock); }
 
-  /*
-   * When we are requested to flush and there is no data left return NULL.
-   */
+  // When we are requested to flush and there is no data left return NULL.
   if (empty() && m_flush) {
     m_flush = false;
     pthread_mutex_unlock(&m_lock);
@@ -117,9 +97,7 @@ void* circbuf::dequeue()
   m_size--;
   m_next_out %= m_capacity;
 
-  /*
-   * Let a waiting producer know there is room.
-   */
+  // Let a waiting producer know there is room.
   pthread_cond_signal(&m_notfull);
 
   pthread_mutex_unlock(&m_lock);
@@ -135,9 +113,7 @@ int circbuf::next_slot()
 {
   if (pthread_mutex_lock(&m_lock) != 0) { return -1; }
 
-  /*
-   * Wait while the buffer is full.
-   */
+  // Wait while the buffer is full.
   while (full()) { pthread_cond_wait(&m_notfull, &m_lock); }
 
   pthread_mutex_unlock(&m_lock);
@@ -155,9 +131,7 @@ int circbuf::flush()
 
   m_flush = true;
 
-  /*
-   * Let a waiting consumer know there will be no more data.
-   */
+  // Let a waiting consumer know there will be no more data.
   pthread_cond_signal(&m_notempty);
 
   pthread_mutex_unlock(&m_lock);

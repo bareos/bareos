@@ -20,23 +20,17 @@
    02110-1301, USA.
 */
 
-/*
- * Marco van Wieringen, November 2013
- */
+// Marco van Wieringen, November 2013
 
 #ifndef BAREOS_LIB_SCSI_TAPEALERT_H_
 #define BAREOS_LIB_SCSI_TAPEALERT_H_
 
-/*
- * Include the SCSI Low Level Interface functions and definitions.
- */
+// Include the SCSI Low Level Interface functions and definitions.
 #include "scsi_lli.h"
 
 #define MAX_TAPE_ALERTS 64
 
-/*
- * SCSI CDB opcodes
- */
+// SCSI CDB opcodes
 enum
 {
   SCSI_LOG_OPCODE = 0x4d
@@ -47,9 +41,7 @@ enum
   SCSI_TAPE_ALERT_FLAGS = 0x2e
 };
 
-/*
- * SCSI Control Descriptor Block
- */
+// SCSI Control Descriptor Block
 typedef struct {
   uint8_t opcode;               /* Operation Code See SCSI_*_OPCODE */
   uint8_t res_bits_1[1];        /* Reserved, 1 byte */

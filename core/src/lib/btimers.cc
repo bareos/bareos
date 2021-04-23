@@ -70,9 +70,7 @@ btimer_t* start_child_timer(JobControlRecord* jcr, pid_t pid, uint32_t wait)
   return wid;
 }
 
-/*
- * Stop child timer
- */
+// Stop child timer
 void StopChildTimer(btimer_t* wid)
 {
   if (wid == NULL) {
@@ -181,9 +179,7 @@ btimer_t* StartBsockTimer(BareosSocket* bsock, uint32_t wait)
   return wid;
 }
 
-/*
- * Stop bsock timer
- */
+// Stop bsock timer
 void StopBsockTimer(btimer_t* wid)
 {
   char ed1[50];
@@ -199,9 +195,7 @@ void StopBsockTimer(btimer_t* wid)
 }
 
 
-/*
- * Stop thread timer
- */
+// Stop thread timer
 void StopThreadTimer(btimer_t* wid)
 {
   char ed1[50];

@@ -64,9 +64,7 @@ class DropletDevice : public ChunkedDevice {
   bool initialize();
   dpl_status_t check_path(const char* path);
 
-  /*
-   * Interface from ChunkedDevice
-   */
+  // Interface from ChunkedDevice
   bool CheckRemoteConnection() override;
   bool FlushRemoteChunk(chunk_io_request* request) override;
   bool ReadRemoteChunk(chunk_io_request* request) override;
@@ -81,9 +79,7 @@ class DropletDevice : public ChunkedDevice {
   DropletDevice() = default;
   ~DropletDevice();
 
-  /*
-   * Interface from Device
-   */
+  // Interface from Device
   int d_close(int fd) override;
   int d_open(const char* pathname, int flags, int mode) override;
   int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;

@@ -105,29 +105,21 @@ static void dbg_print_bareos()
   }
 }
 
-/*
- * Handle signals here
- */
+// Handle signals here
 extern "C" void SignalHandler(int sig)
 {
   static int already_dead = 0;
   int chld_status = -1;
 
-  /*
-   * If we come back more than once, get out fast!
-   */
+  // If we come back more than once, get out fast!
   if (already_dead) { exit(1); }
   Dmsg2(900, "sig=%d %s\n", sig, sig_names[sig]);
 
-  /*
-   * Ignore certain signals -- SIGUSR2 used to interrupt threads
-   */
+  // Ignore certain signals -- SIGUSR2 used to interrupt threads
   if (sig == SIGCHLD || sig == SIGUSR2) { return; }
   already_dead++;
 
-  /*
-   * Don't use Emsg here as it may lock and thus block us
-   */
+  // Don't use Emsg here as it may lock and thus block us
   if (sig == SIGTERM) {
     syslog(LOG_DAEMON | LOG_ERR, "Shutting down BAREOS service: %s ...\n",
            my_name);
@@ -173,9 +165,7 @@ extern "C" void SignalHandler(int sig)
     SecureErase(NULL, "./core"); /* get rid of any old core file */
 
 #  ifdef DEVELOPER /* When DEVELOPER not set, this is done below */
-    /*
-     * Print information about the current state into working/<file>.bactrace
-     */
+    // Print information about the current state into working/<file>.bactrace
     dbg_print_bareos();
 #  endif
 
@@ -203,9 +193,7 @@ extern "C" void SignalHandler(int sig)
         break;
     }
 
-    /*
-     * Parent continue here, waiting for child
-     */
+    // Parent continue here, waiting for child
     sigdefault.sa_flags = 0;
     sigdefault.sa_handler = SIG_DFL;
     sigfillset(&sigdefault.sa_mask);
@@ -226,9 +214,7 @@ extern "C" void SignalHandler(int sig)
               WEXITSTATUS(chld_status));
     }
 
-    /*
-     * If we want it printed, do so
-     */
+    // If we want it printed, do so
     if (prt_kaboom) {
       FILE* fd;
 
@@ -243,9 +229,7 @@ extern "C" void SignalHandler(int sig)
       }
     }
 #  ifndef DEVELOPER /* When DEVELOPER set, this is done above */
-    /*
-     * Print information about the current state into working/<file>.bactrace
-     */
+    // Print information about the current state into working/<file>.bactrace
     dbg_print_bareos();
 #  endif
   }
@@ -259,9 +243,7 @@ extern "C" void SignalHandler(int sig)
  */
 void InitStackDump(void) { main_pid = getpid(); /* save main thread's pid */ }
 
-/*
- * Initialize signals
- */
+// Initialize signals
 void InitSignals(void Terminate(int sig))
 {
   struct sigaction sighandle;
@@ -340,9 +322,7 @@ void InitSignals(void Terminate(int sig))
 #    endif
 #  endif
 
-  /*
-   * Now setup signal handlers
-   */
+  // Now setup signal handlers
   sighandle.sa_flags = 0;
   sighandle.sa_handler = SignalHandler;
   sigfillset(&sighandle.sa_mask);

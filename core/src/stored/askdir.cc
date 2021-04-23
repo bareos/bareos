@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, December 2000
- */
+// Kern Sibbald, December 2000
 /**
  * @file
  * Subroutines to handle Catalog reqests sent to the Director
@@ -148,9 +146,7 @@ static bool DoGetVolumeInfo(DeviceControlRecord* dcr)
         "setting dcr->VolMaxBlocksize(%u) to vol.VolMaxBlocksize(%u)\n",
         dcr->VolMaxBlocksize, vol.VolMaxBlocksize);
 
-  /*
-   * Assign the volcatinfo to the dcr.
-   */
+  // Assign the volcatinfo to the dcr.
   dcr->VolMinBlocksize = vol.VolMinBlocksize;
   dcr->VolMaxBlocksize = vol.VolMaxBlocksize;
 
@@ -250,9 +246,7 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
       } else {
         Dmsg1(debuglevel, "Volume %s is in use.\n", VolumeName);
 
-        /*
-         * If volume is not usable, it is in use by someone else
-         */
+        // If volume is not usable, it is in use by someone else
         SetFoundInUse();
         continue;
       }
@@ -286,9 +280,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
   bool ok = false;
   PoolMem volume_name;
 
-  /*
-   * If system job, do not update catalog
-   */
+  // If system job, do not update catalog
   if (jcr->is_JobType(JT_SYSTEM)) { return true; }
 
   if (vol->VolCatName[0] == 0) {
@@ -297,15 +289,11 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
     return false;
   }
 
-  /*
-   * Lock during Volume update
-   */
+  // Lock during Volume update
   P(vol_info_mutex);
   Dmsg1(debuglevel, "Update cat VolBytes=%lld\n", vol->VolCatBytes);
 
-  /*
-   * Just labeled or relabeled the tape
-   */
+  // Just labeled or relabeled the tape
   if (label) {
     bstrncpy(vol->VolCatStatus, "Append", sizeof(vol->VolCatStatus));
   }
@@ -326,9 +314,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
       edit_uint64(vol->VolFirstWritten, ed5));
   Dmsg1(debuglevel, ">dird %s", dir->msg);
 
-  /*
-   * Do not lock device here because it may be locked from label
-   */
+  // Do not lock device here because it may be locked from label
   if (!jcr->IsCanceled()) {
     if (!DoGetVolumeInfo(this)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
@@ -338,9 +324,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
     }
     Dmsg1(420, "get_volume_info() %s", dir->msg);
 
-    /*
-     * Update dev Volume info in case something changed (e.g. expired)
-     */
+    // Update dev Volume info in case something changed (e.g. expired)
     dev->VolCatInfo = VolCatInfo;
     ok = true;
   }
@@ -350,22 +334,16 @@ bail_out:
   return ok;
 }
 
-/**
- * After writing a Volume, create the JobMedia record.
- */
+// After writing a Volume, create the JobMedia record.
 bool StorageDaemonDeviceControlRecord::DirCreateJobmediaRecord(bool zero)
 {
   BareosSocket* dir = jcr->dir_bsock;
   char ed1[50];
 
-  /*
-   * If system job, do not update catalog
-   */
+  // If system job, do not update catalog
   if (jcr->is_JobType(JT_SYSTEM)) { return true; }
 
-  /*
-   * Throw out records where FI is zero -- i.e. nothing done
-   */
+  // Throw out records where FI is zero -- i.e. nothing done
   if (!zero && VolFirstIndex == 0 && (StartBlock != 0 || EndBlock != 0)) {
     Dmsg0(debuglevel, "JobMedia FI=0 StartBlock!=0 record suppressed\n");
     return true;
@@ -375,9 +353,7 @@ bool StorageDaemonDeviceControlRecord::DirCreateJobmediaRecord(bool zero)
 
   WroteVol = false;
   if (zero) {
-    /*
-     * Send dummy place holder to avoid purging
-     */
+    // Send dummy place holder to avoid purging
     dir->fsend(Create_job_media, jcr->Job, 0, 0, 0, 0, 0, 0, 0, 0,
                edit_uint64(VolMediaId, ed1));
   } else {
@@ -642,9 +618,7 @@ get_out:
   return true;
 }
 
-/**
- * Dummy methods for everything but SD and BTAPE.
- */
+// Dummy methods for everything but SD and BTAPE.
 bool DeviceControlRecord::DirAskSysopToMountVolume(int /*mode*/)
 {
   fprintf(stderr,

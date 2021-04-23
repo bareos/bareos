@@ -61,9 +61,7 @@ static inline bool fill_restore_environment_ndmp_native(
   PoolMem destination_path;
   ndmp_backup_format_option* nbf_options;
 
-  /*
-   * See if we know this backup format and get it options.
-   */
+  // See if we know this backup format and get it options.
   nbf_options = ndmp_lookup_backup_format_options(job->bu_type);
 
 
@@ -101,9 +99,7 @@ static inline bool fill_restore_environment_ndmp_native(
     return false;
   }
 
-  /*
-   * See where to restore the data.
-   */
+  // See where to restore the data.
   char* restore_prefix = nullptr;
   if (jcr->where) {
     restore_prefix = jcr->where;
@@ -113,9 +109,7 @@ static inline bool fill_restore_environment_ndmp_native(
 
   if (!restore_prefix) { return false; }
 
-  /*
-   * Tell the data engine where to restore.
-   */
+  // Tell the data engine where to restore.
   if (nbf_options && nbf_options->restore_prefix_relative) {
     switch (*restore_prefix) {
       case '^':
@@ -126,9 +120,7 @@ static inline bool fill_restore_environment_ndmp_native(
         PmStrcpy(destination_path, restore_prefix + 1);
         break;
       default:
-        /*
-         * Use the restore_prefix as an relative restore prefix.
-         */
+        // Use the restore_prefix as an relative restore prefix.
         if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
           PmStrcpy(destination_path, ndmp_filesystem);
         } else {
@@ -138,14 +130,10 @@ static inline bool fill_restore_environment_ndmp_native(
     }
   } else {
     if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
-      /*
-       * Use the original pathname as restore prefix.
-       */
+      // Use the original pathname as restore prefix.
       PmStrcpy(destination_path, ndmp_filesystem);
     } else {
-      /*
-       * Use the restore_prefix as an absolute restore prefix.
-       */
+      // Use the restore_prefix as an absolute restore prefix.
       PmStrcpy(destination_path, restore_prefix);
     }
   }
@@ -164,9 +152,7 @@ static inline bool fill_restore_environment_ndmp_native(
   return true;
 }
 
-/*
- * See in the tree with selected files what files were selected to be restored.
- */
+// See in the tree with selected files what files were selected to be restored.
 int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
                                 struct ndm_job_param* job,
                                 int32_t FileIndex,
@@ -196,9 +182,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
      */
     if (node->extract_dir || node->extract) {
       PmStrcpy(restore_pathname, node->fname);
-      /*
-       * Walk up the parent until we hit the head of the list.
-       */
+      // Walk up the parent until we hit the head of the list.
       for (parent = node->parent; parent; parent = parent->parent) {
         PmStrcpy(tmp, restore_pathname.c_str());
         Mmsg(restore_pathname, "%s/%s", parent->fname, tmp.c_str());
@@ -208,9 +192,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
        * NDMP9_INVALID_U_QUAD
        */
       if (node->fhinfo != NDMP9_INVALID_U_QUAD) {
-        /*
-         * See if we need to strip the prefix from the filename.
-         */
+        // See if we need to strip the prefix from the filename.
         len = 0;
         if (ndmp_filesystem
             && bstrncmp(restore_pathname.c_str(), ndmp_filesystem,
@@ -239,9 +221,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
   return cnt;
 }
 
-/**
- * Execute native NDMP restore.
- */
+// Execute native NDMP restore.
 static bool DoNdmpNativeRestore(JobControlRecord* jcr)
 {
   NIS* nis = NULL;
@@ -281,9 +261,7 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
   }
 
 
-  /*
-   * Get media from database and put into ndmmmedia table
-   */
+  // Get media from database and put into ndmmmedia table
 
   GetNdmmediaInfoFromDatabase(&ndmp_job.media_tab, jcr);
 
@@ -311,9 +289,7 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
     goto cleanup_ndmp;
   }
 
-  /*
-   * session initialize
-   */
+  // session initialize
   ndmp_sess.param
       = (struct ndm_session_param*)malloc(sizeof(struct ndm_session_param));
   memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
@@ -331,17 +307,13 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
 
   jcr->setJobStatus(JS_Running);
 
-  /*
-   * Initialize the session structure.
-   */
+  // Initialize the session structure.
   if (ndma_session_initialize(&ndmp_sess)) { goto cleanup_ndmp; }
   session_initialized = true;
 
   ndmca_media_calculate_offsets(&ndmp_sess);
 
-  /*
-   * copy our prepared ndmp_job into the session
-   */
+  // copy our prepared ndmp_job into the session
   memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
 
 
@@ -351,17 +323,13 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
     goto cleanup_ndmp;
   }
 
-  /*
-   * Commission the session for a run.
-   */
+  // Commission the session for a run.
   if (ndma_session_commission(&ndmp_sess)) {
     Jmsg(jcr, M_ERROR, 0, _("ERROR in ndma_session_commission\n"));
     goto cleanup_ndmp;
   }
 
-  /*
-   * Setup the DMA.
-   */
+  // Setup the DMA.
   if (ndmca_connect_control_agent(&ndmp_sess)) {
     Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmca_connect_control_agent\n"));
     goto cleanup_ndmp;
@@ -370,9 +338,7 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
   ndmp_sess.conn_open = 1;
   ndmp_sess.conn_authorized = 1;
 
-  /*
-   * Let the DMA perform its magic.
-   */
+  // Let the DMA perform its magic.
   if (ndmca_control_agent(&ndmp_sess) != 0) {
     Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmca_control_agent\n"));
     goto cleanup_ndmp;
@@ -383,46 +349,32 @@ static bool DoNdmpNativeRestore(JobControlRecord* jcr)
          ndmp_job.tape_device, jcr->JobId);
   }
 
-  /*
-   * See if there were any errors during the restore.
-   */
+  // See if there were any errors during the restore.
   if (!ExtractPostRestoreStats(jcr, &ndmp_sess)) {
     Jmsg(jcr, M_ERROR, 0, _("ERROR in ExtractPostRestoreStats\n"));
     goto cleanup_ndmp;
   }
 
-  /*
-   * Reset the NDMP session states.
-   */
+  // Reset the NDMP session states.
   ndma_session_decommission(&ndmp_sess);
 
-  /*
-   * Cleanup the job after it has run.
-   */
+  // Cleanup the job after it has run.
   ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
   ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
   ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
 
-  /*
-   * Destroy the session.
-   */
+  // Destroy the session.
   ndma_session_destroy(&ndmp_sess);
 
-  /*
-   * Free the param block.
-   */
+  // Free the param block.
   free(ndmp_sess.param->log_tag);
   free(ndmp_sess.param);
   ndmp_sess.param = NULL;
 
-  /*
-   * Reset the initialized state so we don't try to cleanup again.
-   */
+  // Reset the initialized state so we don't try to cleanup again.
   session_initialized = false;
 
-  /*
-   * Jump to the generic cleanup done for every Job.
-   */
+  // Jump to the generic cleanup done for every Job.
   retval = true;
   goto cleanup;
 

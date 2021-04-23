@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, March 2012
- */
+// Marco van Wieringen, March 2012
 /**
  * @file
  * SCSI Encryption Storage daemon Plugin
@@ -77,9 +75,7 @@ using namespace storagedaemon;
 #define PLUGIN_DESCRIPTION "SCSI Encryption Storage Daemon Plugin"
 #define PLUGIN_USAGE "(No usage yet)"
 
-/**
- * Forward referenced functions
- */
+// Forward referenced functions
 static bRC newPlugin(PluginContext* ctx);
 static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
@@ -91,9 +87,7 @@ static bRC handle_read_error(void* value);
 static bRC send_device_encryption_status(void* value);
 static bRC send_volume_encryption_status(void* value);
 
-/**
- * Pointers to Bareos functions
- */
+// Pointers to Bareos functions
 static CoreFunctions* bareos_core_functions = NULL;
 static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
@@ -107,9 +101,7 @@ static PluginInformation pluginInfo
 static PluginFunctions pluginFuncs
     = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
 
-       /*
-        * Entry points into plugin
-        */
+       // Entry points into plugin
        newPlugin,  /* new plugin instance */
        freePlugin, /* free plugin instance */
        getPluginValue, setPluginValue, handlePluginEvent};
@@ -143,9 +135,7 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   return bRC_OK;
 }
 
-/**
- * External entry point to unload the plugin
- */
+// External entry point to unload the plugin
 bRC unloadPlugin() { return bRC_OK; }
 
 #ifdef __cplusplus
@@ -201,9 +191,7 @@ static bRC newPlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Free a plugin instance, i.e. release our private storage
- */
+// Free a plugin instance, i.e. release our private storage
 static bRC freePlugin(PluginContext* ctx)
 {
   int JobId = 0;
@@ -214,9 +202,7 @@ static bRC freePlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Return some plugin value (none defined)
- */
+// Return some plugin value (none defined)
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   Dmsg1(debuglevel, "scsicrypto-sd: getPluginValue var=%d\n", var);
@@ -224,9 +210,7 @@ static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
   return bRC_OK;
 }
 
-/**
- * Set a plugin value (none defined)
- */
+// Set a plugin value (none defined)
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   Dmsg1(debuglevel, "scsicrypto-sd: setPluginValue var=%d\n", var);
@@ -234,9 +218,7 @@ static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
   return bRC_OK;
 }
 
-/**
- * Handle an event that was generated in Bareos
- */
+// Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value)
 {
   switch (event->eventType) {
@@ -265,9 +247,7 @@ static pthread_mutex_t crypto_operation_mutex = PTHREAD_MUTEX_INITIALIZER;
 static inline bool GetVolumeEncryptionKey(DeviceControlRecord* dcr,
                                           char* VolEncrKey)
 {
-  /*
-   * See if we have valid VolCatInfo.
-   */
+  // See if we have valid VolCatInfo.
   if (dcr->haveVolCatInfo()) {
     bstrncpy(VolEncrKey, dcr->VolCatInfo.VolEncrKey, MAX_NAME_LENGTH);
     return true;
@@ -308,9 +288,7 @@ static bRC do_set_scsi_encryption_key(void* value)
   char StoredVolEncrKey[MAX_NAME_LENGTH];
   char VolEncrKey[MAX_NAME_LENGTH];
 
-  /*
-   * Unpack the arguments passed in.
-   */
+  // Unpack the arguments passed in.
   dcr = (DeviceControlRecord*)value;
   if (!dcr) {
     Dmsg0(debuglevel, "scsicrypto-sd: Error: dcr is not set!\n");
@@ -327,18 +305,14 @@ static bRC do_set_scsi_encryption_key(void* value)
     return bRC_Error;
   }
 
-  /*
-   * See if device_resource supports hardware encryption.
-   */
+  // See if device_resource supports hardware encryption.
   if (!device_resource->drive_crypto_enabled) { return bRC_OK; }
 
   *StoredVolEncrKey = '\0';
   if (!GetVolumeEncryptionKey(dcr, StoredVolEncrKey)) {
     Dmsg0(debuglevel, "scsicrypto-sd: Could not GetVolumeEncryptionKey!\n");
 
-    /*
-     * Check if encryption key is needed for reading this volume.
-     */
+    // Check if encryption key is needed for reading this volume.
     P(crypto_operation_mutex);
     if (!NeedScsiCryptoKey(dev->fd, dev->archive_device_string, true)) {
       V(crypto_operation_mutex);
@@ -350,9 +324,7 @@ static bRC do_set_scsi_encryption_key(void* value)
     return bRC_Error;
   }
 
-  /*
-   * See if a volume encryption key is available.
-   */
+  // See if a volume encryption key is available.
   if (!*StoredVolEncrKey) {
     Dmsg0(debuglevel,
           "scsicrypto-sd: No encryption key to load on device_resource\n");
@@ -413,9 +385,7 @@ static bRC do_clear_scsi_encryption_key(void* value)
   DeviceResource* device_resource;
   bool need_to_clear;
 
-  /*
-   * Unpack the arguments passed in.
-   */
+  // Unpack the arguments passed in.
   dcr = (DeviceControlRecord*)value;
   if (!dcr) {
     Dmsg0(debuglevel, "scsicrypto-sd: Error: dcr is not set!\n");
@@ -432,9 +402,7 @@ static bRC do_clear_scsi_encryption_key(void* value)
     return bRC_Error;
   }
 
-  /*
-   * See if device_resource supports hardware encryption.
-   */
+  // See if device_resource supports hardware encryption.
   if (!device_resource->drive_crypto_enabled) { return bRC_OK; }
 
   P(crypto_operation_mutex);
@@ -474,9 +442,7 @@ static bRC handle_read_error(void* value)
   DeviceResource* device_resource;
   bool decryption_needed;
 
-  /*
-   * Unpack the arguments passed in.
-   */
+  // Unpack the arguments passed in.
   dcr = (DeviceControlRecord*)value;
   if (!dcr) { return bRC_Error; }
   dev = dcr->dev;
@@ -484,9 +450,7 @@ static bRC handle_read_error(void* value)
   device_resource = dev->device_resource;
   if (!device_resource) { return bRC_Error; }
 
-  /*
-   * See if drive crypto is enabled.
-   */
+  // See if drive crypto is enabled.
   if (device_resource->drive_crypto_enabled) {
     /*
      * See if the read error is an EIO which can be returned when we try to read
@@ -540,15 +504,11 @@ static bRC send_device_encryption_status(void* value)
 {
   DeviceStatusInformation* dst;
 
-  /*
-   * Unpack the arguments passed in.
-   */
+  // Unpack the arguments passed in.
   dst = (DeviceStatusInformation*)value;
   if (!dst) { return bRC_Error; }
 
-  /*
-   * See if drive crypto is enabled.
-   */
+  // See if drive crypto is enabled.
   if (dst->device_resource->drive_crypto_enabled) {
     P(crypto_operation_mutex);
     dst->status_length = GetScsiDriveEncryptionStatus(
@@ -563,15 +523,11 @@ static bRC send_volume_encryption_status(void* value)
 {
   DeviceStatusInformation* dst;
 
-  /*
-   * Unpack the arguments passed in.
-   */
+  // Unpack the arguments passed in.
   dst = (DeviceStatusInformation*)value;
   if (!dst) { return bRC_Error; }
 
-  /*
-   * See if drive crypto is enabled.
-   */
+  // See if drive crypto is enabled.
   if (dst->device_resource->drive_crypto_enabled) {
     P(crypto_operation_mutex);
     dst->status_length = GetScsiVolumeEncryptionStatus(

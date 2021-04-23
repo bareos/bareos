@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, June MMIII
- */
+// Kern Sibbald, June MMIII
 /**
  * @file
  * BAREOS array list routines
@@ -88,9 +86,7 @@ void* alist::prev()
   }
 }
 
-/**
- * prepend an item to the list -- i.e. add to beginning
- */
+// prepend an item to the list -- i.e. add to beginning
 void alist::prepend(void* item)
 {
   GrowList();
@@ -104,9 +100,7 @@ void alist::prepend(void* item)
 }
 
 
-/**
- * Append an item to the list
- */
+// Append an item to the list
 void alist::append(void* item)
 {
   GrowList();

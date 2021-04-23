@@ -41,9 +41,7 @@ class win32_fifo_device : public Device {
   win32_fifo_device() = default;
   ~win32_fifo_device() = default;
 
-  /*
-   * Interface from Device
-   */
+  // Interface from Device
   void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode) override;
   bool eod(DeviceControlRecord* dcr) override;
   bool MountBackend(DeviceControlRecord* dcr, int timeout) override;

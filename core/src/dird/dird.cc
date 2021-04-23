@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March MM
- */
+// Kern Sibbald, March MM
 /**
  * @file
  * the main program
@@ -317,9 +315,7 @@ int main(int argc, char* argv[])
   }
   if (argc) { usage(); }
 
-  /*
-   * See if we want to drop privs.
-   */
+  // See if we want to drop privs.
   if (geteuid() == 0) {
     drop(uid, gid, false); /* reduce privileges if requested */
   }
@@ -379,9 +375,7 @@ int main(int argc, char* argv[])
 #endif
   LoadDirPlugins(me->plugin_directory, me->plugin_names);
 
-  /*
-   * If we are in testing mode, we don't try to fix the catalog
-   */
+  // If we are in testing mode, we don't try to fix the catalog
   mode = (test_config) ? CHECK_CONNECTION : UPDATE_AND_FIX;
 
   if (!CheckCatalog(mode)) {
@@ -693,9 +687,7 @@ static bool CheckResources()
     OK = false;
     goto bail_out;
   } else {
-    /*
-     * Sanity check.
-     */
+    // Sanity check.
     if (me->MaxConsoleConnections > me->MaxConnections) {
       me->MaxConnections = me->MaxConsoleConnections + 10;
     }
@@ -703,9 +695,7 @@ static bool CheckResources()
     my_config->omit_defaults_ = me->omit_defaults;
     SetWorkingDirectory(me->working_directory);
 
-    /*
-     * See if message resource is specified.
-     */
+    // See if message resource is specified.
     if (!me->messages) {
       me->messages = (MessagesResource*)my_config->GetNextRes(R_MSGS, NULL);
       if (!me->messages) {
@@ -716,9 +706,7 @@ static bool CheckResources()
       }
     }
 
-    /*
-     * When the user didn't force us we optimize for size.
-     */
+    // When the user didn't force us we optimize for size.
     if (!me->optimize_for_size && !me->optimize_for_speed) {
       me->optimize_for_size = true;
     } else if (me->optimize_for_size && me->optimize_for_speed) {
@@ -758,9 +746,7 @@ static bool CheckResources()
     goto bail_out;
   }
 
-  /*
-   * Loop over Jobs
-   */
+  // Loop over Jobs
   foreach_res (job, R_JOB) {
     if (job->MaxFullConsolidations && job->JobType != JT_CONSOLIDATE) {
       Jmsg(NULL, M_FATAL, 0,
@@ -861,9 +847,7 @@ bail_out:
   return OK;
 }
 
-/**
- * Initialize the sql pooling.
- */
+// Initialize the sql pooling.
 static bool InitializeSqlPooling(void)
 {
   bool retval = true;

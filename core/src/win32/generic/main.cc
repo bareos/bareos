@@ -219,9 +219,7 @@ int WINAPI WinMain(HINSTANCE Instance,
   return BareosAppMain();
 }
 
-/*
- * Minimalist winproc when don't have tray monitor
- */
+// Minimalist winproc when don't have tray monitor
 LRESULT CALLBACK bacWinProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
   switch (iMsg) {

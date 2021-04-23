@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, 2000
- */
+// Kern Sibbald, 2000
 /**
  * @file
  * Define Message Types for BAREOS

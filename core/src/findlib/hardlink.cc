@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Marco van Wieringen, May 2014
- */
+// Written by Marco van Wieringen, May 2014
 /**
  * @file
  * Hardlinked files handling. The hardlinks are tracked using a htable.
@@ -31,9 +29,7 @@
 #include "find.h"
 #include "findlib/hardlink.h"
 
-/**
- * Lookup a inode/dev in the list of hardlinked files.
- */
+// Lookup a inode/dev in the list of hardlinked files.
 CurLink* lookup_hardlink(JobControlRecord* jcr,
                          FindFilesPacket* ff_pkt,
                          ino_t ino,
@@ -44,9 +40,7 @@ CurLink* lookup_hardlink(JobControlRecord* jcr,
 
   if (!ff_pkt->linkhash) { return NULL; }
 
-  /*
-   * Search link list of hard linked files
-   */
+  // Search link list of hard linked files
   memset(binary_search_key, 0, sizeof(binary_search_key));
   binary_search_key[0] = dev;
   binary_search_key[1] = ino;

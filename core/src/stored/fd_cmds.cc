@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, MM
- */
+// Kern Sibbald, MM
 /**
  * @file
  * This file handles commands from the File daemon.
@@ -71,9 +69,7 @@ struct s_cmds {
   bool (*func)(JobControlRecord* jcr);
 };
 
-/**
- * The following are the recognized commands from the File daemon
- */
+// The following are the recognized commands from the File daemon
 static struct s_cmds fd_cmds[] = {
     {"append open", AppendOpenSession}, {"append data", AppendDataCmd},
     {"append end", AppendEndSession},   {"append close", AppendCloseSession},
@@ -134,9 +130,7 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
   jcr->file_bsock = fd;
   jcr->file_bsock->SetJcr(jcr);
 
-  /*
-   * Authenticate the File daemon
-   */
+  // Authenticate the File daemon
   if (!AuthenticateFiledaemon(jcr)) {
     Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
     Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
@@ -148,9 +142,7 @@ void* HandleFiledConnection(BareosSocket* fd, char* job_name)
     Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId,
           jcr->Job);
 
-    /*
-     * Update the initial Job Statistics.
-     */
+    // Update the initial Job Statistics.
     now = (utime_t)time(NULL);
     UpdateJobStatistics(jcr, now);
   }
@@ -196,9 +188,7 @@ void RunJob(JobControlRecord* jcr)
   FreePlugins(jcr); /* release instantiated plugins */
 }
 
-/**
- * Now talk to the FD and do what he says
- */
+// Now talk to the FD and do what he says
 void DoFdCommands(JobControlRecord* jcr)
 {
   int i, status;
@@ -208,9 +198,7 @@ void DoFdCommands(JobControlRecord* jcr)
   fd->SetJcr(jcr);
   quit = false;
   while (!quit) {
-    /*
-     * Read command coming from the File daemon
-     */
+    // Read command coming from the File daemon
     status = fd->recv();
     if (IsBnetStop(fd)) { /* hardeof or error */
       break;              /* connection terminated */
@@ -224,9 +212,7 @@ void DoFdCommands(JobControlRecord* jcr)
         found = true; /* indicate command found */
         jcr->errmsg[0] = 0;
         if (!fd_cmds[i].func(jcr)) { /* do command */
-          /*
-           * Note fd->msg command may be destroyed by comm activity
-           */
+          // Note fd->msg command may be destroyed by comm activity
           if (!JobCanceled(jcr)) {
             if (jcr->errmsg[0]) {
               Jmsg1(jcr, M_FATAL, 0,
@@ -294,9 +280,7 @@ static bool AppendEndSession(JobControlRecord* jcr)
   return fd->fsend(OK_end);
 }
 
-/**
- * Append Open session command
- */
+// Append Open session command
 static bool AppendOpenSession(JobControlRecord* jcr)
 {
   BareosSocket* fd = jcr->file_bsock;
@@ -333,9 +317,7 @@ static bool AppendCloseSession(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * Send final statistics to File daemon
-   */
+  // Send final statistics to File daemon
   fd->fsend(OK_close, jcr->JobStatus);
   Dmsg1(120, ">filed: %s", fd->msg);
 
@@ -410,9 +392,7 @@ static bool ReadOpenSession(JobControlRecord* jcr)
   jcr->impl->session_opened = true;
   jcr->setJobType(JT_RESTORE);
 
-  /*
-   * Send "Ticket" to File Daemon
-   */
+  // Send "Ticket" to File Daemon
   fd->fsend(OK_open, jcr->VolSessionId);
   Dmsg1(110, ">filed: %s", fd->msg);
 
@@ -433,9 +413,7 @@ static bool ReadCloseSession(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * Send final close msg to File daemon
-   */
+  // Send final close msg to File daemon
   fd->fsend(OK_close, jcr->JobStatus);
   Dmsg1(160, ">filed: %s", fd->msg);
 

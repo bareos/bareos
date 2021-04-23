@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March MM
- */
+// Kern Sibbald, March MM
 /**
  * @file
  * responsible for doing backup jobs
@@ -149,9 +147,6 @@ static inline bool ValidateStorage(JobControlRecord* jcr)
   return true;
 }
 
-/*
- * Called here before the job is run to do the job specific setup.
- */
 bool DoNativeBackupInit(JobControlRecord* jcr)
 {
   FreeRstorage(jcr); /* we don't read so release */
@@ -162,9 +157,7 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
       = GetOrCreatePoolRecord(jcr, jcr->impl->res.pool->resource_name_);
   if (jcr->impl->jr.PoolId == 0) { return false; }
 
-  /*
-   * If pool storage specified, use it instead of job storage
-   */
+  // If pool storage specified, use it instead of job storage
   CopyWstorage(jcr, jcr->impl->res.pool->storage, _("Pool resource"));
   if (!jcr->impl->res.write_storage_list) {
     Jmsg(jcr, M_FATAL, 0,
@@ -172,9 +165,6 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * Validate that we have a native client and storage(s).
-   */
   if (!ValidateClient(jcr) || !ValidateStorage(jcr)) { return false; }
 
   CreateClones(jcr); /* run any clone jobs */
@@ -182,9 +172,7 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
   return true;
 }
 
-/*
- * Take all base jobs from job resource and find the last L_BASE jobid.
- */
+// Take all base jobs from job resource and find the last L_BASE jobid.
 static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
 {
   JobDbRecord jr;
@@ -305,17 +293,13 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   db_list_ctx jobids;
   db_list_ctx nb;
 
-  /*
-   * In base level, no previous job is used and no restart incomplete jobs
-   */
+  // In base level, no previous job is used and no restart incomplete jobs
   if (jcr->IsCanceled() || jcr->is_JobLevel(L_BASE)) { return true; }
 
   if (!jcr->accurate) { return true; }
 
   if (jcr->is_JobLevel(L_FULL)) {
-    /*
-     * On Full mode, if no previous base job, no accurate things
-     */
+    // On Full mode, if no previous base job, no accurate things
     if (GetBaseJobids(jcr, &jobids)) {
       jcr->HasBase = true;
       Jmsg(jcr, M_INFO, 0, _("Using BaseJobId(s): %s\n"),
@@ -324,31 +308,23 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
       return true;
     }
   } else {
-    /*
-     * For Incr/Diff level, we search for older jobs
-     */
+    // For Incr/Diff level, we search for older jobs
     jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids);
 
-    /*
-     * We are in Incr/Diff, but no Full to build the accurate list...
-     */
+    // We are in Incr/Diff, but no Full to build the accurate list...
     if (jobids.empty()) {
       Jmsg(jcr, M_FATAL, 0, _("Cannot find previous jobids.\n"));
       return false; /* fail */
     }
   }
 
-  /*
-   * Don't send and store the checksum if fileset doesn't require it
-   */
+  // Don't send and store the checksum if fileset doesn't require it
   jcr->impl->use_accurate_chksum = IsChecksumNeededByFileset(jcr);
   if (jcr->JobId) { /* display the message only for real jobs */
     Jmsg(jcr, M_INFO, 0, _("Sending Accurate information.\n"));
   }
 
-  /*
-   * To be able to allocate the right size for htable
-   */
+  // To be able to allocate the right size for htable
   Mmsg(buf, "SELECT sum(JobFiles) FROM Job WHERE JobId IN (%s)",
        jobids.GetAsString().c_str());
   jcr->db->SqlQuery(buf.c_str(), DbListHandler, &nb);
@@ -433,17 +409,11 @@ bool DoNativeBackup(JobControlRecord* jcr)
   Dmsg0(110, "Open connection with storage daemon\n");
   jcr->setJobStatus(JS_WaitSD);
 
-  /*
-   * Start conversation with Storage daemon
-   */
   if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
     return false;
   }
   sd = jcr->store_bsock;
 
-  /*
-   * Now start a job with the Storage daemon
-   */
   if (!StartStorageDaemonJob(jcr, NULL, jcr->impl->res.write_storage_list)) {
     return false;
   }
@@ -480,9 +450,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
   SendJobInfoToFileDaemon(jcr);
   fd = jcr->file_bsock;
 
-  /*
-   * Check if the file daemon supports passive client mode.
-   */
   if (jcr->passive_client && jcr->impl->FDVersion < FD_VERSION_51) {
     Jmsg(jcr, M_FATAL, 0,
          _("Client \"%s\" doesn't support passive client mode. "
@@ -521,18 +488,11 @@ bool DoNativeBackup(JobControlRecord* jcr)
   store = jcr->impl->res.write_storage;
   char* connection_target_address;
 
-  /*
-   * See if the client is a passive client or not.
-   */
   if (!jcr->passive_client) {
-    /*
-     * Send Storage daemon address to the File daemon
-     */
+    // Send Storage daemon address to the File daemon
     if (store->SDDport == 0) { store->SDDport = store->SDport; }
 
-    /*
-     * TLS Requirement
-     */
+    // TLS Requirement
 
     TlsPolicy tls_policy;
     if (jcr->impl->res.client->connection_successful_handshake_
@@ -568,9 +528,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
 
     connection_target_address = ClientAddressToContact(client, store);
 
-    /*
-     * Tell the SD to connect to the FD.
-     */
     sd->fsend(passiveclientcmd, connection_target_address, client->FDport,
               tls_policy);
     Bmicrosleep(2, 0);
@@ -596,14 +553,9 @@ bool DoNativeBackup(JobControlRecord* jcr)
     Dmsg0(150, "Storage daemon connection OK\n");
   } /* if (!jcr->passive_client) */
 
-  /*
-   * Declare the job started to start the MaxRunTime check
-   */
+  // Declare the job started to start the MaxRunTime check
   jcr->setJobStarted();
 
-  /*
-   * Send and run the RunBefore
-   */
   if (!SendRunscriptsCommands(jcr)) { goto bail_out; }
 
   /*
@@ -628,16 +580,10 @@ bool DoNativeBackup(JobControlRecord* jcr)
    */
   if (!SendAccurateCurrentFiles(jcr)) { goto bail_out; /* error */ }
 
-  /*
-   * Send backup command
-   */
   fd->fsend(backupcmd, jcr->JobFiles);
   Dmsg1(100, ">filed: %s", fd->msg);
   if (!response(jcr, fd, OKbackup, "Backup", DISPLAY_ERROR)) { goto bail_out; }
 
-  /*
-   * Pickup Job termination data
-   */
   status = WaitForJobTermination(jcr);
   jcr->db_batch->WriteBatchFileRecords(
       jcr); /* used by bulk batch file insert */
@@ -701,9 +647,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
       tid = StartBsockTimer(fd, timeout); /* TODO: New timeout directive??? */
     }
 
-    /*
-     * Wait for Client to terminate
-     */
+    // Wait for Client to terminate
     while ((n = BgetDirmsg(fd)) >= 0) {
       if (!fd_ok
           && sscanf(fd->msg, EndJob, &jcr->impl->FDJobStatus, &JobFiles,
@@ -745,9 +689,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
     CancelStorageDaemonJob(jcr);
   }
 
-  /*
-   * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
-   */
+  // Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
   WaitForStorageDaemonTermination(jcr);
 
   /*

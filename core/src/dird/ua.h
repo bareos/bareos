@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, August MMI
- */
+// Kern Sibbald, August MMI
 /**
  * @file
  * Includes specific to the Director User Agent Server
@@ -107,16 +105,12 @@ class UaContext {
   void signal(int sig) { UA_sock->signal(sig); }
   bool execute(ua_cmdstruct* cmd);
 
-  /*
-   * ACL check method.
-   */
+  // ACL check method.
   bool AclAccessOk(int rcode, const char* item, bool audit_event = false);
   bool AclNoRestrictions(int acl);
   bool AclHasRestrictions(int acl) { return !AclNoRestrictions(acl); }
 
-  /*
-   * Resource retrieval methods including check on ACL.
-   */
+  // Resource retrieval methods including check on ACL.
   bool IsResAllowed(BareosResource* res);
   BareosResource* GetResWithName(int rcode,
                                  const char* name,
@@ -147,16 +141,12 @@ class UaContext {
                                            bool audit_event = true,
                                            bool lock = true);
 
-  /*
-   * Audit event methods.
-   */
+  // Audit event methods.
   bool AuditEventWanted(bool audit_event_enabled);
   void LogAuditEventCmdline();
   void LogAuditEventInfoMsg(const char* fmt, ...);
 
-  /*
-   * The below are in ua_output.c
-   */
+  // The below are in ua_output.c
   void SendRawMsg(const char* msg);
   void SendMsg(const char* fmt, ...);
   void ErrorMsg(const char* fmt, ...);
@@ -165,9 +155,7 @@ class UaContext {
   void SendCmdUsage(const char* fmt, ...);
 };
 
-/*
- * Context for InsertTreeHandler()
- */
+// Context for InsertTreeHandler()
 struct TreeContext {
   TREE_ROOT* root = nullptr;       /**< Root */
   TREE_NODE* node = nullptr;       /**< Current node */
@@ -195,9 +183,7 @@ struct NameList {
   ~NameList() = default;
 };
 
-/*
- * Context for restore job.
- */
+// Context for restore job.
 struct RestoreContext {
   utime_t JobTDate = {0};
   uint32_t TotalFiles = 0;
@@ -232,9 +218,7 @@ struct RestoreContext {
   ~RestoreContext() = default;
 };
 
-/*
- * Context for run job.
- */
+// Context for run job.
 class RunContext {
  public:
   char* backup_format = nullptr;

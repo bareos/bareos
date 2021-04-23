@@ -1,7 +1,5 @@
 /* check-sources:disable-copyright-check */
-/*
- * simple example which recurses a directory tree in using VFS abstraction
- */
+// simple example which recurses a directory tree in using VFS abstraction
 
 #include <droplet.h>
 #include <droplet/vfs.h>

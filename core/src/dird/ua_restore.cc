@@ -94,9 +94,7 @@ static bool InsertTableIntoFindexList(UaContext* ua,
                                       char* table);
 static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx);
 
-/**
- * Restore files
- */
+// Restore files
 bool RestoreCmd(UaContext* ua, const char* cmd)
 {
   RestoreContext rx; /* restore context */
@@ -270,9 +268,7 @@ bool RestoreCmd(UaContext* ua, const char* cmd)
        escaped_bsr_name ? escaped_bsr_name : jcr->RestoreBootstrap,
        rx.selected_files, ua->catalog->resource_name_);
 
-  /*
-   * Build run command
-   */
+  // Build run command
   if (rx.backup_format) {
     Mmsg(buf, " backupformat=%s", rx.backup_format);
     PmStrcat(ua->cmd, buf);
@@ -318,9 +314,7 @@ bool RestoreCmd(UaContext* ua, const char* cmd)
 
   Dmsg1(200, "Submitting: %s\n", ua->cmd);
 
-  /*
-   * Transfer jobids to jcr to for picking up restore objects
-   */
+  // Transfer jobids to jcr to for picking up restore objects
   jcr->JobIds = rx.JobIds;
   rx.JobIds = NULL;
 
@@ -342,9 +336,7 @@ bail_out:
   return false;
 }
 
-/**
- * Fill the rx->BaseJobIds and display the list
- */
+// Fill the rx->BaseJobIds and display the list
 static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
 {
   db_list_ctx jobids;
@@ -395,21 +387,15 @@ static bool HasValue(UaContext* ua, int i)
   return true;
 }
 
-/**
- * This gets the client name from which the backup was made
- */
+// This gets the client name from which the backup was made
 static bool GetClientName(UaContext* ua, RestoreContext* rx)
 {
   int i;
   ClientDbRecord cr;
 
-  /*
-   * If no client name specified yet, get it now
-   */
+  // If no client name specified yet, get it now
   if (!rx->ClientName) {
-    /*
-     * Try command line argument
-     */
+    // Try command line argument
     i = FindArgWithValue(ua, NT_("client"));
     if (i < 0) { i = FindArgWithValue(ua, NT_("backupclient")); }
     if (i >= 0) {
@@ -432,16 +418,12 @@ static bool GetClientName(UaContext* ua, RestoreContext* rx)
   return true;
 }
 
-/**
- * This is where we pick up a client name to restore to.
- */
+// This is where we pick up a client name to restore to.
 static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx)
 {
   int i;
 
-  /*
-   * Try command line argument
-   */
+  // Try command line argument
   i = FindArgWithValue(ua, NT_("restoreclient"));
   if (i >= 0) {
     if (!IsNameValid(ua->argv[i], ua->errmsg)) {
@@ -495,9 +477,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
          _("Cancel"),
          NULL};
 
-  const char* kw[] = {             /*
-                                    * These keywords are handled in a for loop
-                                    */
+  const char* kw[] = {             // These keywords are handled in a for loop
                       "jobid",     /* 0 */
                       "current",   /* 1 */
                       "before",    /* 2 */
@@ -507,9 +487,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
                       "pool",      /* 6 */
                       "all",       /* 7 */
 
-                      /*
-                       * The keyword below are handled by individual arg lookups
-                       */
+                      // The keyword below are handled by individual arg lookups
                       "client",        /* 8 */
                       "storage",       /* 9 */
                       "fileset",       /* 10 */
@@ -600,9 +578,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         rx->all = true;
         break;
       default:
-        /*
-         * All keywords 7 or greater are ignored or handled by a select prompt
-         */
+        // All keywords 7 or greater are ignored or handled by a select prompt
         break;
     }
   }
@@ -837,9 +813,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   return true;
 }
 
-/**
- * Get date from user
- */
+// Get date from user
 static bool get_date(UaContext* ua, char* date, int date_len)
 {
   ua->SendMsg(
@@ -904,9 +878,7 @@ std::string CompensateShortDate(const char* cmd)
   return cmd;
 }
 
-/**
- * Insert a single file, or read a list of files from a file
- */
+// Insert a single file, or read a list of files from a file
 static void InsertOneFileOrDir(UaContext* ua,
                                RestoreContext* rx,
                                char* date,
@@ -976,9 +948,7 @@ static bool InsertFileIntoFindexList(UaContext* ua,
                       rx->JobIds, date, rx->path, rx->fname, rx->ClientName);
   }
 
-  /*
-   * Find and insert jobid and File Index
-   */
+  // Find and insert jobid and File Index
   rx->found = false;
   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
     ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query,
@@ -1011,9 +981,7 @@ static bool InsertDirIntoFindexList(UaContext* ua,
                       rx->JobIds, dir, rx->ClientName);
   }
 
-  /*
-   * Find and insert jobid and File Index
-   */
+  // Find and insert jobid and File Index
   rx->found = false;
   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
     ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query,
@@ -1026,9 +994,7 @@ static bool InsertDirIntoFindexList(UaContext* ua,
   return true;
 }
 
-/**
- * Get the JobId and FileIndexes of all files in the specified table
- */
+// Get the JobId and FileIndexes of all files in the specified table
 static bool InsertTableIntoFindexList(UaContext* ua,
                                       RestoreContext* rx,
                                       char* table)
@@ -1038,9 +1004,7 @@ static bool InsertTableIntoFindexList(UaContext* ua,
   ua->db->FillQuery(rx->query,
                     BareosDb::SQL_QUERY::uar_jobid_fileindex_from_table, table);
 
-  /*
-   * Find and insert jobid and File Index
-   */
+  // Find and insert jobid and File Index
   rx->found = false;
   if (!ua->db->SqlQuery(rx->query, JobidFileindexHandler, (void*)rx)) {
     ua->ErrorMsg(_("Query failed: %s. ERR=%s\n"), rx->query,
@@ -1158,9 +1122,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   bool OK = true;
   char ed1[50];
 
-  /*
-   * Build the directory tree containing JobIds user selected
-   */
+  // Build the directory tree containing JobIds user selected
   tree.root = new_tree(rx->TotalFiles);
   tree.ua = ua;
   tree.all = rx->all;
@@ -1174,18 +1136,14 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
   tree.FileEstimate = 0;
 
   if (GetNextJobidFromList(&p, &JobId) > 0) {
-    /*
-     * Use first JobId as estimate of the number of files to restore
-     */
+    // Use first JobId as estimate of the number of files to restore
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_count_files,
                       edit_int64(JobId, ed1));
     if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void*)rx)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }
     if (rx->found) {
-      /*
-       * Add about 25% more than this job for over estimate
-       */
+      // Add about 25% more than this job for over estimate
       tree.FileEstimate = rx->JobId + (rx->JobId >> 2);
       tree.DeltaCount = rx->JobId / 50; /* print 50 ticks */
     }
@@ -1220,17 +1178,13 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
    *  the Job was pruned, so the tree is incomplete.
    */
   if (tree.FileCount != 0) {
-    /*
-     * Find out if any Job is purged
-     */
+    // Find out if any Job is purged
     Mmsg(rx->query, "SELECT SUM(PurgedFiles) FROM Job WHERE JobId IN (%s)",
          rx->JobIds);
     if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void*)rx)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }
-    /*
-     * rx->JobId is the PurgedFiles flag
-     */
+    // rx->JobId is the PurgedFiles flag
     if (rx->found && rx->JobId > 0) {
       tree.FileCount = 0; /* set count to zero, no tree selection */
     }
@@ -1257,9 +1211,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     }
 
     if (FindArg(ua, NT_("done")) < 0) {
-      /*
-       * Let the user interact in selecting which files to restore
-       */
+      // Let the user interact in selecting which files to restore
       OK = UserSelectFilesFromTree(&tree);
     }
 

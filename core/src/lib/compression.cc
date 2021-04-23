@@ -72,9 +72,7 @@ const char* cmprs_algo_to_text(uint32_t compression_algorithm)
   }
 }
 
-/**
- * Convert ZLIB error code into an ASCII message
- */
+// Convert ZLIB error code into an ASCII message
 static const char* zlib_strerror(int stat)
 {
   if (stat >= 0) { return _("None"); }
@@ -122,9 +120,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
 
   switch (compression_algorithm) {
     case 0:
-      /*
-       * No compression requested.
-       */
+      // No compression requested.
       break;
 #ifdef HAVE_LIBZ
     case COMPRESS_GZIP: {
@@ -150,9 +146,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
         *compress_buf_size = wanted_compress_buf_size;
       }
 
-      /*
-       * See if this compression algorithm is already setup.
-       */
+      // See if this compression algorithm is already setup.
       if (jcr->compress.workset.pZLIB) { return true; }
 
       pZlibStream = (z_stream*)malloc(sizeof(z_stream));
@@ -191,9 +185,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
         *compress_buf_size = wanted_compress_buf_size;
       }
 
-      /*
-       * See if this compression algorithm is already setup.
-       */
+      // See if this compression algorithm is already setup.
       if (jcr->compress.workset.pLZO) { return true; }
 
       pLzoMem = (lzo_voidp)malloc(LZO1X_1_MEM_COMPRESS);
@@ -241,9 +233,7 @@ bool SetupCompressionBuffers(JobControlRecord* jcr,
         *compress_buf_size = wanted_compress_buf_size;
       }
 
-      /*
-       * See if this compression algorithm is already setup.
-       */
+      // See if this compression algorithm is already setup.
       if (jcr->compress.workset.pZFAST) { return true; }
 
       pZfastStream = (zfast_stream*)malloc(sizeof(zfast_stream));
@@ -275,9 +265,7 @@ bool SetupDecompressionBuffers(JobControlRecord* jcr,
 {
   uint32_t compress_buf_size;
 
-  /*
-   * Use the same buffer size to decompress all data.
-   */
+  // Use the same buffer size to decompress all data.
   compress_buf_size = jcr->buf_size;
   if (compress_buf_size < DEFAULT_NETWORK_BUFFER_SIZE) {
     compress_buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
@@ -322,9 +310,7 @@ static bool compress_with_zlib(JobControlRecord* jcr,
 
   *compress_len = pZlibStream->total_out;
 
-  /*
-   * Reset zlib stream to be able to begin from scratch again
-   */
+  // Reset zlib stream to be able to begin from scratch again
   if ((zstat = deflateReset(pZlibStream)) != Z_OK) {
     Jmsg(jcr, M_FATAL, 0, _("Compression deflateReset error: %d\n"), zstat);
     jcr->setJobStatus(JS_ErrorTerminated);
@@ -356,9 +342,7 @@ static bool compress_with_lzo(JobControlRecord* jcr,
   *compress_len = len;
 
   if (lzores != LZO_E_OK || *compress_len > max_compress_len) {
-    /*
-     * This should NEVER happen
-     */
+    // This should NEVER happen
     Jmsg(jcr, M_FATAL, 0, _("Compression LZO error: %d\n"), lzores);
     jcr->setJobStatus(JS_ErrorTerminated);
     return false;
@@ -398,9 +382,7 @@ static bool compress_with_fastlz(JobControlRecord* jcr,
 
   *compress_len = pZfastStream->total_out;
 
-  /*
-   * Reset fastlz stream to be able to begin from scratch again
-   */
+  // Reset fastlz stream to be able to begin from scratch again
   if ((zstat = fastlzlibCompressReset(pZfastStream)) != Z_OK) {
     Jmsg(jcr, M_FATAL, 0, _("Compression fastlzlibCompressReset error: %d\n"),
          zstat);
@@ -506,9 +488,7 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
   while ((status = uncompress((Byte*)wbuf, &compress_len, (const Byte*)cbuf,
                               (uLong)real_compress_len))
          == Z_BUF_ERROR) {
-    /*
-     * The buffer size is too small, try with a bigger one
-     */
+    // The buffer size is too small, try with a bigger one
     jcr->compress.inflate_buffer_size
         = jcr->compress.inflate_buffer_size
           + (jcr->compress.inflate_buffer_size >> 1);
@@ -578,9 +558,7 @@ static bool decompress_with_lzo(JobControlRecord* jcr,
   while ((status = lzo1x_decompress_safe(cbuf, real_compress_len, wbuf,
                                          &compress_len, NULL))
          == LZO_E_OUTPUT_OVERRUN) {
-    /*
-     * The buffer size is too small, try with a bigger one
-     */
+    // The buffer size is too small, try with a bigger one
     jcr->compress.inflate_buffer_size
         = jcr->compress.inflate_buffer_size
           + (jcr->compress.inflate_buffer_size >> 1);
@@ -670,9 +648,7 @@ static bool decompress_with_fastlz(JobControlRecord* jcr,
     zstat = fastlzlibDecompress(&stream);
     switch (zstat) {
       case Z_BUF_ERROR:
-        /*
-         * The buffer size is too small, try with a bigger one
-         */
+        // The buffer size is too small, try with a bigger one
         jcr->compress.inflate_buffer_size
             = jcr->compress.inflate_buffer_size
               + (jcr->compress.inflate_buffer_size >> 1);
@@ -738,9 +714,7 @@ bool DecompressData(JobControlRecord* jcr,
       uint32_t comp_magic, comp_len;
       uint16_t comp_level, comp_version;
 
-      /*
-       * Read compress header
-       */
+      // Read compress header
       unser_declare;
       UnserBegin(*data, sizeof(comp_stream_header));
       unser_uint32(comp_magic);
@@ -753,9 +727,7 @@ bool DecompressData(JobControlRecord* jcr,
             "ver=0x%x\n",
             comp_magic, comp_len, comp_level, comp_version);
 
-      /*
-       * Version check
-       */
+      // Version check
       if (comp_version != COMP_HEAD_VERSION) {
         Qmsg(jcr, M_ERROR, 0,
              _("Compressed header version error. version=0x%x\n"),
@@ -763,9 +735,7 @@ bool DecompressData(JobControlRecord* jcr,
         return false;
       }
 
-      /*
-       * Size check
-       */
+      // Size check
       if (comp_len + sizeof(comp_stream_header) != *length) {
         Qmsg(
             jcr, M_ERROR, 0,
@@ -853,9 +823,7 @@ void CleanupCompression(JobControlRecord* jcr)
 
 #ifdef HAVE_LIBZ
   if (jcr->compress.workset.pZLIB) {
-    /*
-     * Free the zlib stream
-     */
+    // Free the zlib stream
     deflateEnd((z_stream*)jcr->compress.workset.pZLIB);
     free(jcr->compress.workset.pZLIB);
     jcr->compress.workset.pZLIB = NULL;

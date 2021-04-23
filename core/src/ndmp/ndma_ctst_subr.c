@@ -315,9 +315,7 @@ int ndmca_test_call(struct ndmconn* conn,
   return rc;
 }
 
-/*
- * start or open a test if not already opened
- */
+// start or open a test if not already opened
 void ndmca_test_open(struct ndm_session* sess,
                      char* test_name,
                      char* sub_test_name)
@@ -360,9 +358,7 @@ void ndmca_test_fail(struct ndm_session* sess, char* fail_msg)
 }
 
 
-/*
- * close or end a test if not already closed
- */
+// close or end a test if not already closed
 void ndmca_test_close(struct ndm_session* sess)
 {
   if (sess->control_acb->active_test != 0) {
@@ -402,9 +398,7 @@ void ndmca_test_close(struct ndm_session* sess)
 }
 
 
-/*
- * start a test phase (part of a series)
- */
+// start a test phase (part of a series)
 void ndmca_test_phase(struct ndm_session* sess, char* test_phase, char* desc)
 {
   ndmalogf(sess, "TEST", 0, "Test %s -- %s", test_phase, desc);
@@ -437,9 +431,7 @@ void ndmca_test_log_note(struct ndm_session* sess, int level, char* msg)
            sess->control_acb->test_step, msg);
 }
 
-/*
- * finish a test phase (part of a series)
- */
+// finish a test phase (part of a series)
 void ndmca_test_done_phase(struct ndm_session* sess)
 {
   struct ndm_control_agent* ca = sess->control_acb;
@@ -473,9 +465,7 @@ void ndmca_test_done_phase(struct ndm_session* sess)
   if (!had_active) sess->control_acb->test_step++;
 }
 
-/*
- * finish a test series (which may include test phases)
- */
+// finish a test series (which may include test phases)
 void ndmca_test_done_series(struct ndm_session* sess, char* series_name)
 {
   struct ndm_control_agent* ca = sess->control_acb;

@@ -141,9 +141,7 @@ struct qm_trace {
 #  define TRASHIT(x)
 #endif /* QUEUE_MACRO_DEBUG */
 
-/*
- * Singly-linked List declarations.
- */
+// Singly-linked List declarations.
 #define SLIST_HEAD(name, type)                  \
   struct name {                                 \
     struct type* slh_first; /* first element */ \
@@ -159,9 +157,7 @@ struct qm_trace {
     struct type* sle_next; /* next element */ \
   }
 
-/*
- * Singly-linked List functions.
- */
+// Singly-linked List functions.
 #define SLIST_EMPTY(head) ((head)->slh_first == NULL)
 
 #define SLIST_FIRST(head) ((head)->slh_first)
@@ -227,9 +223,7 @@ struct qm_trace {
     SLIST_FIRST(head2) = swap_first;              \
   } while (0)
 
-/*
- * Singly-linked Tail queue declarations.
- */
+// Singly-linked Tail queue declarations.
 #define STAILQ_HEAD(name, type)                              \
   struct name {                                              \
     struct type* stqh_first; /* first element */             \
@@ -246,9 +240,7 @@ struct qm_trace {
     struct type* stqe_next; /* next element */ \
   }
 
-/*
- * Singly-linked Tail queue functions.
- */
+// Singly-linked Tail queue functions.
 #define STAILQ_CONCAT(head1, head2)              \
   do {                                           \
     if (!STAILQ_EMPTY((head2))) {                \
@@ -347,9 +339,7 @@ struct qm_trace {
   } while (0)
 
 
-/*
- * List declarations.
- */
+// List declarations.
 #define LIST_HEAD(name, type)                  \
   struct name {                                \
     struct type* lh_first; /* first element */ \
@@ -366,9 +356,7 @@ struct qm_trace {
     struct type** le_prev; /* address of previous next element */ \
   }
 
-/*
- * List functions.
- */
+// List functions.
 
 #if (defined(_KERNEL) && defined(INVARIANTS))
 #  define QMD_LIST_CHECK_HEAD(head, field)                             \
@@ -466,9 +454,7 @@ struct qm_trace {
       swap_tmp->field.le_prev = &LIST_FIRST((head2)); \
   } while (0)
 
-/*
- * Tail queue declarations.
- */
+// Tail queue declarations.
 #define TAILQ_HEAD(name, type)                              \
   struct name {                                             \
     struct type* tqh_first; /* first element */             \
@@ -488,9 +474,7 @@ struct qm_trace {
     TRACEBUF                                                       \
   }
 
-/*
- * Tail queue functions.
- */
+// Tail queue functions.
 #if (defined(_KERNEL) && defined(INVARIANTS))
 #  define QMD_TAILQ_CHECK_HEAD(head, field)                               \
     do {                                                                  \

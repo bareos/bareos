@@ -76,17 +76,13 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  *                                    remote backing store.
  */
 
-/*
- * Actual thread runner that processes IO request from circular buffer.
- */
+// Actual thread runner that processes IO request from circular buffer.
 static void* io_thread(void* data)
 {
   char ed1[50];
   ChunkedDevice* dev = (ChunkedDevice*)data;
 
-  /*
-   * Dequeue from the circular buffer until we are done.
-   */
+  // Dequeue from the circular buffer until we are done.
   while (1) {
     if (!dev->DequeueChunk()) { break; }
   }
@@ -97,9 +93,7 @@ static void* io_thread(void* data)
   return NULL;
 }
 
-/*
- * Allocate a new chunk buffer.
- */
+// Allocate a new chunk buffer.
 char* ChunkedDevice::allocate_chunkbuffer()
 {
   char* buffer = (char*)malloc(current_chunk_->chunk_size);
@@ -110,9 +104,7 @@ char* ChunkedDevice::allocate_chunkbuffer()
   return buffer;
 }
 
-/*
- * Free a chunk buffer.
- */
+// Free a chunk buffer.
 void ChunkedDevice::FreeChunkbuffer(char* buffer)
 {
   Dmsg2(100, "Freeing buffer of %d bytes at %p\n", current_chunk_->chunk_size,
@@ -120,15 +112,11 @@ void ChunkedDevice::FreeChunkbuffer(char* buffer)
 
   free(buffer);
 
-  /*
-   * As we released a big memory chunk let the garbage collector run.
-   */
+  // As we released a big memory chunk let the garbage collector run.
   GarbageCollectMemory();
 }
 
-/*
- * Free a chunk_io_request.
- */
+// Free a chunk_io_request.
 void ChunkedDevice::FreeChunkIoRequest(chunk_io_request* request)
 {
   Dmsg2(100, "Freeing chunk io request of %d bytes at %p\n",
@@ -139,9 +127,7 @@ void ChunkedDevice::FreeChunkIoRequest(chunk_io_request* request)
   free(request);
 }
 
-/*
- * Start the io-threads that are used for uploading.
- */
+// Start the io-threads that are used for uploading.
 bool ChunkedDevice::StartIoThreads()
 {
   char ed1[50];
@@ -159,9 +145,7 @@ bool ChunkedDevice::StartIoThreads()
     cb_ = new storagedaemon::ordered_circbuf(io_threads_ * OQSIZE);
   }
 
-  /*
-   * Start all IO threads and keep track of their thread ids in thread_ids_.
-   */
+  // Start all IO threads and keep track of their thread ids in thread_ids_.
   if (!thread_ids_) { thread_ids_ = new alist(10, owned_by_alist); }
 
   for (thread_nr = 1; thread_nr <= io_threads_; thread_nr++) {
@@ -184,9 +168,7 @@ bool ChunkedDevice::StartIoThreads()
   return true;
 }
 
-/*
- * Stop the io-threads that are used for uploading.
- */
+// Stop the io-threads that are used for uploading.
 void ChunkedDevice::StopThreads()
 {
   char ed1[50];
@@ -198,9 +180,7 @@ void ChunkedDevice::StopThreads()
    */
   cb_->flush();
 
-  /*
-   * Wait for all threads to exit.
-   */
+  // Wait for all threads to exit.
   if (thread_ids_) {
     foreach_alist (handle, thread_ids_) {
       switch (handle->type) {
@@ -225,9 +205,7 @@ void ChunkedDevice::StopThreads()
   }
 }
 
-/*
- * Set the inflight flag for a chunk.
- */
+// Set the inflight flag for a chunk.
 bool ChunkedDevice::SetInflightChunk(chunk_io_request* request)
 {
   int fd;
@@ -253,9 +231,7 @@ bool ChunkedDevice::SetInflightChunk(chunk_io_request* request)
   return true;
 }
 
-/*
- * Clear the inflight flag for a chunk.
- */
+// Clear the inflight flag for a chunk.
 void ChunkedDevice::ClearInflightChunk(chunk_io_request* request)
 {
   struct stat st;
@@ -279,9 +255,7 @@ void ChunkedDevice::ClearInflightChunk(chunk_io_request* request)
   V(mutex);
 }
 
-/*
- * Check if a certain chunk is inflight to the backing store.
- */
+// Check if a certain chunk is inflight to the backing store.
 bool ChunkedDevice::IsInflightChunk(chunk_io_request* request)
 {
   struct stat st;
@@ -296,9 +270,7 @@ bool ChunkedDevice::IsInflightChunk(chunk_io_request* request)
   return false;
 }
 
-/*
- * Number of inflight chunks to the backing store.
- */
+// Number of inflight chunks to the backing store.
 int ChunkedDevice::NrInflightChunks()
 {
   int retval = 0;
@@ -310,9 +282,7 @@ int ChunkedDevice::NrInflightChunks()
   return retval;
 }
 
-/*
- * Call back function for comparing two chunk_io_requests.
- */
+// Call back function for comparing two chunk_io_requests.
 static int CompareChunkIoRequest(void* item1, void* item2)
 {
   storagedaemon::ocbuf_item* ocbuf1 = (storagedaemon::ocbuf_item*)item1;
@@ -320,13 +290,9 @@ static int CompareChunkIoRequest(void* item1, void* item2)
   chunk_io_request* chunk1 = (chunk_io_request*)ocbuf1->data;
   chunk_io_request* chunk2 = (chunk_io_request*)ocbuf2->data;
 
-  /*
-   * Same volume name ?
-   */
+  // Same volume name ?
   if (bstrcmp(chunk1->volname, chunk2->volname)) {
-    /*
-     * Compare on chunk number.
-     */
+    // Compare on chunk number.
     if (chunk1->chunk == chunk2->chunk) {
       return 0;
     } else {
@@ -337,9 +303,7 @@ static int CompareChunkIoRequest(void* item1, void* item2)
   }
 }
 
-/*
- * Call back function for updating two chunk_io_requests.
- */
+// Call back function for updating two chunk_io_requests.
 static void UpdateChunkIoRequest(void* item1, void* item2)
 {
   chunk_io_request* chunk1 = (chunk_io_request*)item1;
@@ -363,9 +327,7 @@ static void UpdateChunkIoRequest(void* item1, void* item2)
   chunk2->release = false;
 }
 
-/*
- * Enqueue a chunk flush request onto the ordered circular buffer.
- */
+// Enqueue a chunk flush request onto the ordered circular buffer.
 bool ChunkedDevice::EnqueueChunk(chunk_io_request* request)
 {
   chunk_io_request *new_request, *enqueued_request;
@@ -399,9 +361,7 @@ bool ChunkedDevice::EnqueueChunk(chunk_io_request* request)
       UpdateChunkIoRequest, false, /* use_reserved_slot */
       false /* no_signal */);
 
-  /*
-   * Compare the return value from the enqueue.
-   */
+  // Compare the return value from the enqueue.
   if (enqueued_request && enqueued_request != new_request) {
     FreeChunkIoRequest(new_request);
   }
@@ -502,9 +462,7 @@ bool ChunkedDevice::DequeueChunk()
           new_request, sizeof(chunk_io_request), CompareChunkIoRequest,
           UpdateChunkIoRequest, true, /* use_reserved_slot */
           true /* no_signal */);
-      /*
-       * See if the enqueue succeeded.
-       */
+      // See if the enqueue succeeded.
       if (!enqueued_request) {
         Dmsg2(100, "Error: Chunk %d of volume %s not appended to queue\n",
               new_request->chunk, new_request->volname);
@@ -527,14 +485,10 @@ bool ChunkedDevice::DequeueChunk()
     }
 
   bail_out:
-    /*
-     * Unreserve the slot on the ordered circular buffer reserved by dequeue().
-     */
+    // Unreserve the slot on the ordered circular buffer reserved by dequeue().
     cb_->unreserve_slot();
 
-    /*
-     * Processed the chunk so clean it up now.
-     */
+    // Processed the chunk so clean it up now.
     FreeChunkIoRequest(new_request);
 
     return true;
@@ -555,9 +509,7 @@ bool ChunkedDevice::FlushChunk(bool release_chunk, bool move_to_next_chunk)
   bool retval = false;
   chunk_io_request request;
 
-  /*
-   * Calculate in which chunk we are currently.
-   */
+  // Calculate in which chunk we are currently.
   request.chunk = current_chunk_->start_offset / current_chunk_->chunk_size;
   request.volname = current_volname_;
   request.buffer = current_chunk_->buffer;

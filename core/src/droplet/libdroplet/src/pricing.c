@@ -39,9 +39,7 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt, ...)
 
-/*
- * misc
- */
+// misc
 
 static const char* currency_str(enum dpl_currency currency)
 {
@@ -73,9 +71,7 @@ static const char* duration_str(enum dpl_duration_type duration)
   return "unknown";
 }
 
-/*
- * lexer
- */
+// lexer
 
 static void lex_reset(struct dpl_parse_ctx* parse_ctx)
 {
@@ -318,9 +314,7 @@ static int lex(struct dpl_parse_ctx* parse_ctx, int c)
   return DPL_TOK_ERROR;
 }
 
-/*
- * parser
- */
+// parser
 
 struct dpl_request_pricing* dpl_request_pricing_new()
 {

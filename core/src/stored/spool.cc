@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March 2004
- */
+// Kern Sibbald, March 2004
 /**
  * @file
  * Spooling code
@@ -382,9 +380,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
 
   dcr->block = block; /* reset block */
 
-  /*
-   * See if we are using secure erase.
-   */
+  // See if we are using secure erase.
   if (me->secure_erase_cmdline) {
     CloseDataSpoolFile(dcr, false);
     BeginDataSpool(dcr);
@@ -395,9 +391,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
 
       Jmsg(jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"),
            be.bstrerror());
-      /*
-       * Note, try continuing despite ftruncate problem
-       */
+      // Note, try continuing despite ftruncate problem
     }
 
     P(mutex);
@@ -633,9 +627,7 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
   DeviceBlock* block = dcr->block;
   JobControlRecord* jcr = dcr->jcr;
 
-  /*
-   * Write data
-   */
+  // Write data
   for (int retry = 0; retry <= 1; retry++) {
     status = write(dcr->spool_fd, block->buf, (size_t)block->binbuf);
     if (status == -1) {
@@ -646,9 +638,7 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
       jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
     }
     if (status != (ssize_t)block->binbuf) {
-      /*
-       * If we wrote something, truncate it and the header, then despool
-       */
+      // If we wrote something, truncate it and the header, then despool
       if (status != -1) {
 #if defined(HAVE_WIN32)
         boffset_t pos = _lseeki64(dcr->spool_fd, (__int64)0, SEEK_CUR);
@@ -743,9 +733,7 @@ static bool BlastAttrSpoolFile(JobControlRecord* jcr, boffset_t size)
 {
   POOLMEM* name = GetPoolMemory(PM_MESSAGE);
 
-  /*
-   * Send full spool file name
-   */
+  // Send full spool file name
   MakeUniqueSpoolFilename(jcr, name, jcr->dir_bsock->fd_);
   BashSpaces(name);
   jcr->dir_bsock->fsend("BlastAttr Job=%s File=%s\n", jcr->Job, name);
@@ -785,9 +773,7 @@ bool CommitAttributeSpool(JobControlRecord* jcr)
     if (jcr->is_JobStatus(JS_Incomplete)) {
       data_end = dir->get_data_end();
 
-      /*
-       * Check and truncate to last valid data_end if necssary
-       */
+      // Check and truncate to last valid data_end if necssary
       if (size > data_end) {
         if (ftruncate(dir->spool_fd_, data_end) != 0) {
           BErrNo be;

@@ -37,9 +37,7 @@ class generic_tape_device : public Device {
   generic_tape_device(){};
   virtual ~generic_tape_device(){};
 
-  /*
-   * Interface from Device
-   */
+  // Interface from Device
   virtual void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode) override;
   virtual char* StatusDev() override;
   virtual bool eod(DeviceControlRecord* dcr) override;

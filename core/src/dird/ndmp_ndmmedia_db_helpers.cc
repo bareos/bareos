@@ -87,19 +87,13 @@ void NdmmediaToBareosDbRecords(ndmmedia* media,
 
   Dmsg2(100, "Set Medium %s: to VolStatus %s", mr->VolumeName, mr->VolStatus);
 
-  /*
-   * Update LastWritten Timestamp
-   */
+  // Update LastWritten Timestamp
   mr->LastWritten = (utime_t)time(NULL);
 
-  /*
-   * VolBytes
-   */
+  // VolBytes
   mr->VolBytes += media->n_bytes;
 
-  /*
-   * also store file_marks
-   */
+  // also store file_marks
   mr->VolFiles = media->file_mark_offset;
 }
 
@@ -129,9 +123,7 @@ bool StoreNdmmediaInfoInDatabase(ndmmedia* media, JobControlRecord* jcr)
   JobMediaDbRecord jm;
   MediaDbRecord mr;
 
-  /*
-   * get media record by name
-   */
+  // get media record by name
   bstrncpy(mr.VolumeName, media->label, NDMMEDIA_LABEL_MAX);
   if (!jcr->db->GetMediaRecord(jcr, &mr)) {
     Jmsg(jcr, M_FATAL, 0,
@@ -140,15 +132,11 @@ bool StoreNdmmediaInfoInDatabase(ndmmedia* media, JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * map media info into db records
-   */
+  // map media info into db records
   NdmmediaToBareosDbRecords(media, &mr, &jm);
 
 
-  /*
-   * store db records
-   */
+  // store db records
   jm.MediaId = mr.MediaId;
   jm.JobId = jcr->JobId;
   if (!jcr->db->CreateJobmediaRecord(jcr, &jm)) {
@@ -167,9 +155,7 @@ bool StoreNdmmediaInfoInDatabase(ndmmedia* media, JobControlRecord* jcr)
 }
 
 
-/*
- * get ndmmedia from database for certain job
- */
+// get ndmmedia from database for certain job
 bool GetNdmmediaInfoFromDatabase(ndm_media_table* media_tab,
                                  JobControlRecord* jcr)
 {
@@ -178,24 +164,18 @@ bool GetNdmmediaInfoFromDatabase(ndm_media_table* media_tab,
   bool retval = false;
 
 
-  /*
-   * Find restore JobId
-   */
+  // Find restore JobId
   JobId_t restoreJobId;
   const char* p = jcr->JobIds;
 
-  /*
-   *  TODO: what happens with multiple IDs?
-   */
+  //  TODO: what happens with multiple IDs?
   if (!GetNextJobidFromList(&p, &restoreJobId)) {
     Jmsg(jcr, M_FATAL, 0, _("Error getting next jobid from list\n"));
   }
   if (restoreJobId == 0) {
     Jmsg(jcr, M_FATAL, 0, _("RestoreJobId is zero, cannot go on\n"));
   }
-  /*
-   * Get Media for certain job
-   */
+  // Get Media for certain job
   VolCount = jcr->db->GetJobVolumeParameters(jcr, restoreJobId, &VolParams);
 
   if (!VolCount) {
@@ -206,9 +186,7 @@ bool GetNdmmediaInfoFromDatabase(ndm_media_table* media_tab,
     goto bail_out;
   }
 
-  /*
-   * create a ndmmedium for each volume
-   */
+  // create a ndmmedium for each volume
   for (int i = 0; i < VolCount; i++) {
     ndmmedia* media = ndma_store_media(media_tab, i);
 

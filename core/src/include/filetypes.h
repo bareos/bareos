@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/**
- *  Kern Sibbald, MM
- */
+//  Kern Sibbald, MM
 /**
  * @file
  * Stream definitions.  Split from baconfig.h Nov 2010

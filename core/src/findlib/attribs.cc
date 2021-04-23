@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October MMII
- */
+// Kern Sibbald, October MMII
 /**
  * @file
  * Encode and decode Extended attributes for Win32 and
@@ -52,17 +50,13 @@ static bool set_win32_attributes(JobControlRecord* jcr,
 void WinError(JobControlRecord* jcr, const char* prefix, POOLMEM* ofile);
 #endif /* HAVE_WIN32 */
 
-/**
- * For old systems that don't have lchown() use chown()
- */
+// For old systems that don't have lchown() use chown()
 
 #ifndef HAVE_LCHOWN
 #  define lchown chown
 #endif
 
-/**
- * For old systems that don't have lchmod() use chmod()
- */
+// For old systems that don't have lchmod() use chmod()
 #ifndef HAVE_LCHMOD
 #  define lchmod chmod
 #endif
@@ -73,9 +67,7 @@ void WinError(JobControlRecord* jcr, const char* prefix, POOLMEM* ofile);
 /*                                                             */
 /*=============================================================*/
 
-/**
- * Return the data stream that will be used
- */
+// Return the data stream that will be used
 int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible)
 {
   int stream;
@@ -86,20 +78,14 @@ int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible)
     return STREAM_FILE_DATA;
   }
 
-  /*
-   * Fix all incompatible options
-   */
+  // Fix all incompatible options
 
-  /**
-   * No sparse option for encrypted data
-   */
+  // No sparse option for encrypted data
   if (BitIsSet(FO_ENCRYPT, ff_pkt->flags)) {
     ClearBit(FO_SPARSE, ff_pkt->flags);
   }
 
-  /*
-   * Note, no sparse option for win32_data
-   */
+  // Note, no sparse option for win32_data
   if (!IsPortableBackup(&ff_pkt->bfd)) {
     stream = STREAM_WIN32_DATA;
     ClearBit(FO_SPARSE, ff_pkt->flags);
@@ -110,24 +96,18 @@ int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible)
   }
   if (BitIsSet(FO_OFFSETS, ff_pkt->flags)) { stream = STREAM_SPARSE_DATA; }
 
-  /*
-   * Encryption is only supported for file data
-   */
+  // Encryption is only supported for file data
   if (stream != STREAM_FILE_DATA && stream != STREAM_WIN32_DATA
       && stream != STREAM_MACOS_FORK_DATA) {
     ClearBit(FO_ENCRYPT, ff_pkt->flags);
   }
 
-  /*
-   * Compression is not supported for Mac fork data
-   */
+  // Compression is not supported for Mac fork data
   if (stream == STREAM_MACOS_FORK_DATA) {
     ClearBit(FO_COMPRESS, ff_pkt->flags);
   }
 
-  /*
-   * Handle compression and encryption options
-   */
+  // Handle compression and encryption options
   if (BitIsSet(FO_COMPRESS, ff_pkt->flags)) {
     if (compatible && ff_pkt->Compress_algo == COMPRESS_GZIP) {
       switch (stream) {
@@ -205,9 +185,7 @@ int SelectDataStream(FindFilesPacket* ff_pkt, bool compatible)
   return stream;
 }
 
-/**
- * Restore all file attributes like owner, mode and file times.
- */
+// Restore all file attributes like owner, mode and file times.
 static inline bool RestoreFileAttributes(JobControlRecord* jcr,
                                          Attributes* attr,
                                          BareosWinFilePacket* ofd)
@@ -218,20 +196,14 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
     || defined(FUTIMENS)
   bool file_is_open;
 
-  /*
-   * Save if we are working on an open file.
-   */
+  // Save if we are working on an open file.
   file_is_open = IsBopen(ofd);
 #endif
 
-  /*
-   * See if we want to print errors.
-   */
+  // See if we want to print errors.
   suppress_errors = (debug_level >= 100 || my_uid != 0);
 
-  /*
-   * Restore owner and group.
-   */
+  // Restore owner and group.
 #ifdef HAVE_FCHOWN
   if (file_is_open) {
     if (fchown(ofd->fid, attr->statp.st_uid, attr->statp.st_gid) < 0
@@ -256,9 +228,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * Restore filemode.
-   */
+  // Restore filemode.
 #ifdef HAVE_FCHMOD
   if (file_is_open) {
     if (fchmod(ofd->fid, attr->statp.st_mode) < 0 && !suppress_errors) {
@@ -286,9 +256,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * Reset file times.
-   */
+  // Reset file times.
 #if defined(HAVE_FUTIMES)
   if (file_is_open) {
     struct timeval restore_times[2];
@@ -398,9 +366,7 @@ bool SetAttributes(JobControlRecord* jcr,
     uid_set = true;
   }
 
-  /*
-   * See if we want to print errors.
-   */
+  // See if we want to print errors.
   suppress_errors = (debug_level >= 100 || my_uid != 0);
 
 #if defined(HAVE_WIN32)
@@ -455,9 +421,7 @@ bool SetAttributes(JobControlRecord* jcr,
     }
   }
 
-  /**
-   * We do not restore sockets, so skip trying to restore their attributes.
-   */
+  // We do not restore sockets, so skip trying to restore their attributes.
   if (attr->type == FT_SPEC && S_ISSOCK(attr->statp.st_mode)) { goto bail_out; }
 
   /* ***FIXME**** optimize -- don't do if already correct */
@@ -466,9 +430,7 @@ bool SetAttributes(JobControlRecord* jcr,
    * that will update the file behind it.
    */
   if (attr->type == FT_LNK) {
-    /*
-     * Change owner of link, not of real file
-     */
+    // Change owner of link, not of real file
     if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0
         && !suppress_errors) {
       BErrNo be;
@@ -581,9 +543,7 @@ int encode_attribsEx(JobControlRecord* jcr,
 
   unix_name_to_win32(ff_pkt->sys_fname, ff_pkt->fname);
   if (p_GetFileAttributesExW) {
-    /**
-     * Try unicode version
-     */
+    // Try unicode version
     POOLMEM* pwszBuf = GetPoolMemory(PM_FNAME);
     make_win32_path_UTF8_2_wchar(pwszBuf, ff_pkt->fname);
 
@@ -634,15 +594,11 @@ int encode_attribsEx(JobControlRecord* jcr,
   return STREAM_UNIX_ATTRIBUTES_EX;
 }
 
-/**
- * Do casting according to unknown type to keep compiler happy
- */
+// Do casting according to unknown type to keep compiler happy
 #  ifdef HAVE_TYPEOF
 #    define plug(st, val) st = (typeof st)val
 #  else
-/*
- * Use templates to do the casting
- */
+// Use templates to do the casting
 template <class T>
 void plug(T& st, uint64_t val)
 {
@@ -711,9 +667,7 @@ static bool set_win32_attributes(JobControlRecord* jcr,
           0); /* attempt to open the file */
   }
 
-  /*
-   * Restore file attributes and times on the restored file.
-   */
+  // Restore file attributes and times on the restored file.
   if (!win32_restore_file_attributes(attr->ofname, BgetHandle(ofd), &atts)) {
     WinError(jcr, "win32_restore_file_attributes:", attr->ofname);
   }

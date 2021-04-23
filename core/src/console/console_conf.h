@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, Sep MM
- */
+// Kern Sibbald, Sep MM
 /**
  * @file
  * Bareos User Agent specific configuration and defines
@@ -40,9 +38,7 @@ namespace console {
 
 static const std::string default_config_filename("bconsole.conf");
 
-/**
- * Resource codes -- they must be sequential for indexing
- */
+// Resource codes -- they must be sequential for indexing
 
 enum
 {

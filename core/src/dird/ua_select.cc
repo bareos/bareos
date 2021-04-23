@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October MMI
- */
+// Kern Sibbald, October MMI
 /**
  * @file
  * User Agent Prompt and Selection code
@@ -49,9 +47,7 @@ namespace directordaemon {
 extern struct s_jt jobtypes[];
 extern struct s_jl joblevels[];
 
-/**
- * Confirm a retention period
- */
+// Confirm a retention period
 bool ConfirmRetention(UaContext* ua, utime_t* ret, const char* msg)
 {
   bool retval;
@@ -149,9 +145,7 @@ int DoKeywordPrompt(UaContext* ua, const char* msg, const char** list)
   return DoPrompt(ua, "", msg, NULL, 0);
 }
 
-/**
- * Select a Storage resource from prompt list
- */
+// Select a Storage resource from prompt list
 StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
 {
   StorageResource* store;
@@ -192,9 +186,7 @@ StorageResource* select_storage_resource(UaContext* ua, bool autochanger_only)
   return store;
 }
 
-/**
- * Select a FileSet resource from prompt list
- */
+// Select a FileSet resource from prompt list
 FilesetResource* select_fileset_resource(UaContext* ua)
 {
   FilesetResource* fs;
@@ -228,9 +220,7 @@ FilesetResource* select_fileset_resource(UaContext* ua)
   return fs;
 }
 
-/**
- * Get a catalog resource from prompt list
- */
+// Get a catalog resource from prompt list
 CatalogResource* get_catalog_resource(UaContext* ua)
 {
   CatalogResource* catalog = NULL;
@@ -284,9 +274,7 @@ CatalogResource* get_catalog_resource(UaContext* ua)
   return catalog;
 }
 
-/**
- * Select a job to enable or disable
- */
+// Select a job to enable or disable
 JobResource* select_enable_disable_job_resource(UaContext* ua, bool enable)
 {
   JobResource* job;
@@ -321,9 +309,7 @@ JobResource* select_enable_disable_job_resource(UaContext* ua, bool enable)
   return job;
 }
 
-/**
- * Select a Job resource from prompt list
- */
+// Select a Job resource from prompt list
 JobResource* select_job_resource(UaContext* ua)
 {
   JobResource* job;
@@ -356,9 +342,7 @@ JobResource* select_job_resource(UaContext* ua)
   return job;
 }
 
-/**
- * Select a Restore Job resource from argument or prompt
- */
+// Select a Restore Job resource from argument or prompt
 JobResource* get_restore_job(UaContext* ua)
 {
   int i;
@@ -375,9 +359,7 @@ JobResource* get_restore_job(UaContext* ua)
   return select_restore_job_resource(ua);
 }
 
-/**
- * Select a Restore Job resource from prompt list
- */
+// Select a Restore Job resource from prompt list
 JobResource* select_restore_job_resource(UaContext* ua)
 {
   JobResource* job;
@@ -410,9 +392,7 @@ JobResource* select_restore_job_resource(UaContext* ua)
   return job;
 }
 
-/**
- * Select a client resource from prompt list
- */
+// Select a client resource from prompt list
 ClientResource* select_client_resource(UaContext* ua)
 {
   ClientResource* client;
@@ -446,9 +426,7 @@ ClientResource* select_client_resource(UaContext* ua)
   return client;
 }
 
-/**
- * Select a client to enable or disable
- */
+// Select a client to enable or disable
 ClientResource* select_enable_disable_client_resource(UaContext* ua,
                                                       bool enable)
 {
@@ -510,9 +488,7 @@ ClientResource* get_client_resource(UaContext* ua)
   return select_client_resource(ua);
 }
 
-/**
- * Select a schedule to enable or disable
- */
+// Select a schedule to enable or disable
 ScheduleResource* select_enable_disable_schedule_resource(UaContext* ua,
                                                           bool enable)
 {
@@ -785,9 +761,7 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
   return true;
 }
 
-/**
- * Select a Pool and a Media (Volume) record from the database
- */
+// Select a Pool and a Media (Volume) record from the database
 bool SelectPoolAndMediaDbr(UaContext* ua, PoolDbRecord* pr, MediaDbRecord* mr)
 {
   if (!SelectMediaDbr(ua, mr)) { return false; }
@@ -887,9 +861,7 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
   return true;
 }
 
-/**
- * Select a Media (Volume) record from the database
- */
+// Select a Media (Volume) record from the database
 bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
 {
   int i;
@@ -909,9 +881,7 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
 
   if (mr->VolumeName[0] == 0) {
     PoolDbRecord pr;
-    /*
-     * Get the pool from pool=<pool-name>
-     */
+    // Get the pool from pool=<pool-name>
     if (!GetPoolDbr(ua, &pr)) { goto bail_out; }
 
     mr->PoolId = pr.PoolId;
@@ -944,9 +914,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Select a pool resource from prompt list
- */
+// Select a pool resource from prompt list
 PoolResource* select_pool_resource(UaContext* ua)
 {
   PoolResource* pool;
@@ -999,9 +967,7 @@ PoolResource* get_pool_resource(UaContext* ua)
   return select_pool_resource(ua);
 }
 
-/**
- * List all jobs and ask user to select one
- */
+// List all jobs and ask user to select one
 int SelectJobDbr(UaContext* ua, JobDbRecord* jr)
 {
   ua->db->ListJobRecords(ua->jcr, jr, "", NULL, 0, 0, NULL, NULL, 0, 0, 0,
@@ -1071,9 +1037,7 @@ int GetJobDbr(UaContext* ua, JobDbRecord* jr)
   return jr->JobId;
 }
 
-/**
- * Implement unique set of prompts
- */
+// Implement unique set of prompts
 void StartPrompt(UaContext* ua, const char* msg)
 {
   if (ua->max_prompts == 0) {
@@ -1134,21 +1098,15 @@ int DoPrompt(UaContext* ua,
     goto done;
   }
 
-  /*
-   * If running non-interactive, bail out
-   */
+  // If running non-interactive, bail out
   if (ua->batch) {
-    /*
-     * First print the choices he wanted to make
-     */
+    // First print the choices he wanted to make
     ua->SendMsg(ua->prompt[0]);
     for (int i = 1; i < ua->num_prompts; i++) {
       ua->SendMsg("%6d: %s\n", i, ua->prompt[i]);
     }
 
-    /*
-     * Now print error message
-     */
+    // Now print error message
     ua->SendMsg(_("Your request has multiple choices for \"%s\". Selection is "
                   "not possible in batch mode.\n"),
                 automsg);
@@ -1170,9 +1128,7 @@ int DoPrompt(UaContext* ua,
   if (ua->api) { user->signal(BNET_END_SELECT); }
 
   while (1) {
-    /*
-     * First item is the prompt string, not the items
-     */
+    // First item is the prompt string, not the items
     if (ua->num_prompts == 1) {
       ua->ErrorMsg(_("Selection list for \"%s\" is empty!\n"), automsg);
       item = -1; /* list is empty ! */
@@ -1187,9 +1143,7 @@ int DoPrompt(UaContext* ua,
       Mmsg(pmsg, "%s (1-%d): ", msg, ua->num_prompts - 1);
     }
 
-    /*
-     * Either a . or an @ will get you out of the loop
-     */
+    // Either a . or an @ will get you out of the loop
     if (ua->api) { user->signal(BNET_SELECT_INPUT); }
 
     if (!GetPint(ua, pmsg.c_str())) {
@@ -1242,9 +1196,7 @@ StorageResource* get_storage_resource(UaContext* ua,
         autochangers_only);
 
   for (i = 1; i < ua->argc; i++) {
-    /*
-     * Ignore any zapped keyword.
-     */
+    // Ignore any zapped keyword.
     if (*ua->argk[i] == 0) { continue; }
     if (use_default && !ua->argv[i]) {
       /*

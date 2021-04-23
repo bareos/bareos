@@ -87,9 +87,7 @@ BxattrExitCode ParseXattrStreams(JobControlRecord* jcr,
   return BxattrExitCode::kErrorFatal;
 }
 #else
-/**
- * Send a XATTR stream to the SD.
- */
+// Send a XATTR stream to the SD.
 BxattrExitCode SendXattrStream(JobControlRecord* jcr,
                                XattrData* xattr_data,
                                int stream)
@@ -100,25 +98,19 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
   return BxattrExitCode::kSuccess;
 #  endif
 
-  /*
-   * Sanity check
-   */
+  // Sanity check
   if (xattr_data->u.build->content_length <= 0) {
     return BxattrExitCode::kSuccess;
   }
 
-  /*
-   * Send header
-   */
+  // Send header
   if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
     Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return BxattrExitCode::kErrorFatal;
   }
 
-  /*
-   * Send the buffer to the storage deamon
-   */
+  // Send the buffer to the storage deamon
   Dmsg1(400, "Backing up XATTR <%s>\n", xattr_data->u.build->content);
   msgsave = sd->msg;
   sd->msg = xattr_data->u.build->content;
@@ -151,13 +143,9 @@ void XattrDropInternalTable(alist* xattr_value_list)
 {
   xattr_t* current_xattr = nullptr;
 
-  /*
-   * Walk the list of xattrs and free allocated memory on traversing.
-   */
+  // Walk the list of xattrs and free allocated memory on traversing.
   foreach_alist (current_xattr, xattr_value_list) {
-    /*
-     * See if we can shortcut.
-     */
+    // See if we can shortcut.
     if (current_xattr == NULL || current_xattr->magic != XATTR_MAGIC) break;
 
     free(current_xattr->name);
@@ -199,13 +187,9 @@ uint32_t SerializeXattrStream(JobControlRecord* jcr,
       xattr_data->u.build->content, expected_serialize_len + 10);
   SerBegin(xattr_data->u.build->content, expected_serialize_len + 10);
 
-  /*
-   * Walk the list of xattrs and Serialize the data.
-   */
+  // Walk the list of xattrs and Serialize the data.
   foreach_alist (current_xattr, xattr_value_list) {
-    /*
-     * See if we can shortcut.
-     */
+    // See if we can shortcut.
     if (current_xattr == NULL || current_xattr->magic != XATTR_MAGIC) break;
 
     ser_uint32(current_xattr->magic);
@@ -263,9 +247,7 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
       return BxattrExitCode::kError;
     }
 
-    /*
-     * Decode the valuepair. First decode the length of the name.
-     */
+    // Decode the valuepair. First decode the length of the name.
     unser_uint32(current_xattr->name_length);
     if (current_xattr->name_length == 0) {
       Mmsg1(jcr->errmsg,
@@ -278,26 +260,18 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
       return BxattrExitCode::kError;
     }
 
-    /*
-     * Allocate room for the name and decode its content.
-     */
+    // Allocate room for the name and decode its content.
     current_xattr->name = (char*)malloc(current_xattr->name_length + 1);
     UnserBytes(current_xattr->name, current_xattr->name_length);
 
-    /*
-     * The xattr_name needs to be null terminated.
-     */
+    // The xattr_name needs to be null terminated.
     current_xattr->name[current_xattr->name_length] = '\0';
 
-    /*
-     * Decode the value length.
-     */
+    // Decode the value length.
     unser_uint32(current_xattr->value_length);
 
     if (current_xattr->value_length > 0) {
-      /*
-       * Allocate room for the value and decode its content.
-       */
+      // Allocate room for the value and decode its content.
       current_xattr->value = (char*)malloc(current_xattr->value_length);
       UnserBytes(current_xattr->value, current_xattr->value_length);
 
@@ -315,9 +289,7 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
   return BxattrExitCode::kSuccess;
 }
 
-/**
- * This is a supported OS, See what kind of interface we should use.
- */
+// This is a supported OS, See what kind of interface we should use.
 #  if defined(HAVE_AIX_OS)
 
 #    if (!defined(HAVE_LISTEA) && !defined(HAVE_LLISTEA))  \
@@ -332,14 +304,10 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
 #      error "Missing sys/ea.h header file"
 #    endif
 
-/**
- * Define the supported XATTR streams for this OS
- */
+// Define the supported XATTR streams for this OS
 static int os_default_xattr_streams[1] = {STREAM_XATTR_AIX};
 
-/**
- * Fallback to the non l-functions when those are not available.
- */
+// Fallback to the non l-functions when those are not available.
 #    if defined(HAVE_GETEA) && !defined(HAVE_LGETEA)
 #      define lgetea getea
 #    endif
@@ -365,9 +333,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
   alist* xattr_value_list = NULL;
   BxattrExitCode retval = BxattrExitCode::kError;
 
-  /*
-   * First get the length of the available list with extended attributes.
-   */
+  // First get the length of the available list with extended attributes.
   xattr_list_len = llistea(xattr_data->last_fname, NULL, 0);
   switch (xattr_list_len) {
     case -1: {
@@ -408,15 +374,11 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
       break;
   }
 
-  /*
-   * Allocate room for the extented attribute list.
-   */
+  // Allocate room for the extented attribute list.
   xattr_list = (char*)malloc(xattr_list_len + 1);
   memset(xattr_list, 0, xattr_list_len + 1);
 
-  /*
-   * Get the actual list of extended attributes names for a file.
-   */
+  // Get the actual list of extended attributes names for a file.
   xattr_list_len = llistea(xattr_data->last_fname, xattr_list, xattr_list_len);
   switch (xattr_list_len) {
     case -1: {
@@ -449,9 +411,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
        bp = strchr(bp, '\0') + 1) {
     skip_xattr = false;
 
-    /*
-     * We want to skip certain xattrs which start with a 0xF8 character on AIX.
-     */
+    // We want to skip certain xattrs which start with a 0xF8 character on AIX.
     if (*bp == 0xF8) { skip_xattr = true; }
 
     name_length = strlen(bp);
@@ -460,9 +420,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
       continue;
     }
 
-    /*
-     * First see how long the value is for the extended attribute.
-     */
+    // First see how long the value is for the extended attribute.
     xattr_value_len = lgetea(xattr_data->last_fname, bp, NULL, 0);
     switch (xattr_value_len) {
       case -1: {
@@ -486,16 +444,12 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
         break;
     }
 
-    /*
-     * Each xattr valuepair starts with a magic so we can parse it easier.
-     */
+    // Each xattr valuepair starts with a magic so we can parse it easier.
     current_xattr = (xattr_t*)malloc(sizeof(xattr_t));
     current_xattr->magic = XATTR_MAGIC;
     expected_serialize_len += sizeof(current_xattr->magic);
 
-    /*
-     * Allocate space for storing the name.
-     */
+    // Allocate space for storing the name.
     current_xattr->name_length = name_length;
     current_xattr->name = (char*)malloc(current_xattr->name_length);
     memcpy(current_xattr->name, bp, current_xattr->name_length);
@@ -510,9 +464,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
         expected_serialize_len += sizeof(current_xattr->value_length);
         break;
       default:
-        /*
-         * Allocate space for storing the value.
-         */
+        // Allocate space for storing the value.
         current_xattr->value = (char*)malloc(xattr_value_len);
         memset(current_xattr->value, 0, xattr_value_len);
 

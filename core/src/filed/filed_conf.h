@@ -39,9 +39,7 @@ namespace filedaemon {
 
 static const std::string default_config_filename("bareos-fd.conf");
 
-/*
- * Resource codes -- they must be sequential for indexing
- */
+// Resource codes -- they must be sequential for indexing
 enum
 {
   R_DIRECTOR = 1001,
@@ -53,9 +51,7 @@ enum
   R_LAST = R_JOB /* keep this updated */
 };
 
-/*
- * Some resource attributes
- */
+// Some resource attributes
 enum
 {
   R_NAME = 1020,

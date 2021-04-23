@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, August 2007
- */
+// Kern Sibbald, August 2007
 
 #ifndef BAREOS_WIN32_GENERIC_PROTOS_H_
 #define BAREOS_WIN32_GENERIC_PROTOS_H_

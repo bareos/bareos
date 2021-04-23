@@ -53,9 +53,7 @@
 
 #define VSPHERE_DEFAULT_ADMIN_PORT 0
 
-/*
- * VixDiskLib does all processing in sectors of 512 bytes.
- */
+// VixDiskLib does all processing in sectors of 512 bytes.
 #define DEFAULT_SECTOR_SIZE VIXDISKLIB_SECTOR_SIZE
 
 /*
@@ -178,9 +176,7 @@ static VixDiskLibInfo* info = NULL;
 static json_t* json_config = NULL;
 static int exit_code = 1;
 
-/*
- * Encode the VDDK VixDiskLibInfo into an internal representation.
- */
+// Encode the VDDK VixDiskLibInfo into an internal representation.
 static inline void fill_runtime_disk_info_encoding(
     struct runtime_disk_info_encoding* rdie)
 {
@@ -295,9 +291,7 @@ bail_out:
   return 0;
 }
 
-/*
- * Writer function that handles partial writes.
- */
+// Writer function that handles partial writes.
 static inline size_t robust_writer(int fd, void* buffer, int size)
 {
   size_t total_bytes = 0;
@@ -318,9 +312,7 @@ bail_out:
   return total_bytes;
 }
 
-/*
- * Reader function that handles partial reads.
- */
+// Reader function that handles partial reads.
 static inline size_t robust_reader(int fd, void* buffer, int size)
 {
   size_t total_bytes = 0;
@@ -341,9 +333,7 @@ bail_out:
   return total_bytes;
 }
 
-/*
- * VDDK helper functions.
- */
+// VDDK helper functions.
 static void LogFunction(const char* fmt, va_list args)
 {
   if (verbose) {
@@ -401,9 +391,7 @@ static inline void cleanup_vixdisklib()
   VixDiskLib_Cleanup(&cnxParams, &numCleanedUp, &numRemaining);
 }
 
-/*
- * Generic cleanup function.
- */
+// Generic cleanup function.
 static void cleanup(void)
 {
   VixError err;
@@ -456,9 +444,7 @@ static void cleanup(void)
   _exit(exit_code);
 }
 
-/*
- * Convert the configured disktype to the right VADP type.
- */
+// Convert the configured disktype to the right VADP type.
 static inline VixDiskLibDiskType lookup_disktype()
 {
   int cnt;
@@ -475,9 +461,7 @@ static inline VixDiskLibDiskType lookup_disktype()
   return disk_types[cnt].vadp_type;
 }
 
-/*
- * Connect using VDDK to a VSPHERE server.
- */
+// Connect using VDDK to a VSPHERE server.
 static inline void do_vixdisklib_connect(const char* key,
                                          json_t* connect_params,
                                          bool readonly,
@@ -503,9 +487,7 @@ static inline void do_vixdisklib_connect(const char* key,
     goto bail_out;
   }
 
-  /*
-   * Start extracting the wanted information from the JSON passed in.
-   */
+  // Start extracting the wanted information from the JSON passed in.
   if (!local_vmdk) {
     json_t* object;
 
@@ -609,9 +591,7 @@ static inline void do_vixdisklib_connect(const char* key,
     goto bail_out;
   }
 
-  /*
-   * Register our exit handler.
-   */
+  // Register our exit handler.
   atexit(cleanup);
 
   succeeded = 1;
@@ -620,9 +600,7 @@ bail_out:
   if (!succeeded) { exit(1); }
 }
 
-/*
- * Open a VMDK using VDDK.
- */
+// Open a VMDK using VDDK.
 static inline void do_vixdisklib_open(const char* key,
                                       const char* disk_name,
                                       json_t* disk_params,
@@ -638,9 +616,7 @@ static inline void do_vixdisklib_open(const char* key,
   if (!disk_name) {
     json_t* object;
 
-    /*
-     * Start extracting the wanted information from the JSON passed in.
-     */
+    // Start extracting the wanted information from the JSON passed in.
     object = json_object_get(disk_params, DISK_PARAMS_DISK_PATH_KEY);
     if (!object) {
       fprintf(stderr, "Failed to find %s in JSON definition of object %s\n",
@@ -668,9 +644,7 @@ static inline void do_vixdisklib_open(const char* key,
   }
 
   if (getdiskinfo) {
-    /*
-     * See how big the logical disk is.
-     */
+    // See how big the logical disk is.
     err = VixDiskLib_GetInfo(*diskHandle, &info);
     if (VIX_FAILED(err)) {
       char* error_txt;
@@ -702,9 +676,7 @@ bail_out:
   if (!succeeded) { exit(1); }
 }
 
-/*
- * Create a VMDK using VDDK.
- */
+// Create a VMDK using VDDK.
 static inline void do_vixdisklib_create(const char* key,
                                         const char* disk_name,
                                         json_t* disk_params,
@@ -723,9 +695,7 @@ static inline void do_vixdisklib_create(const char* key,
   if (!disk_name) {
     json_t* object;
 
-    /*
-     * Start extracting the wanted information from the JSON passed in.
-     */
+    // Start extracting the wanted information from the JSON passed in.
     object = json_object_get(disk_params, DISK_PARAMS_DISK_PATH_KEY);
     if (!object) {
       fprintf(stderr, "Failed to find %s in JSON definition of object %s\n",
@@ -767,9 +737,7 @@ bail_out:
   if (!succeeded) { exit(1); }
 }
 
-/*
- * Read data from a VMDK using the VDDP functions.
- */
+// Read data from a VMDK using the VDDP functions.
 static size_t read_from_vmdk(size_t sector_offset, size_t nbyte, void* buf)
 {
   VixError err;
@@ -787,9 +755,7 @@ static size_t read_from_vmdk(size_t sector_offset, size_t nbyte, void* buf)
   return nbyte;
 }
 
-/*
- * Write data to a VMDK using the VDDP functions.
- */
+// Write data to a VMDK using the VDDP functions.
 static size_t write_to_vmdk(size_t sector_offset, size_t nbyte, void* buf)
 {
   VixError err;
@@ -807,27 +773,19 @@ static size_t write_to_vmdk(size_t sector_offset, size_t nbyte, void* buf)
   return nbyte;
 }
 
-/*
- * Read data from a stream using the robust reader function.
- */
+// Read data from a stream using the robust reader function.
 static size_t read_from_stream(size_t sector_offset, size_t nbyte, void* buf)
 {
   return robust_reader(STDOUT_FILENO, buf, nbyte);
 }
 
-/*
- * Write data from a stream using the robust reader function.
- */
+// Write data from a stream using the robust reader function.
 static size_t write_to_stream(size_t sector_offset, size_t nbyte, void* buf)
 {
-  /*
-   * Should we clone to rawdevice ?
-   */
+  // Should we clone to rawdevice ?
   if (raw_disk_fd != -1) { robust_writer(raw_disk_fd, buf, nbyte); }
 
-  /*
-   * Should we clone to new VMDK file ?
-   */
+  // Should we clone to new VMDK file ?
   if (write_diskHandle) {
     VixError err;
 
@@ -844,9 +802,7 @@ static size_t write_to_stream(size_t sector_offset, size_t nbyte, void* buf)
   return robust_writer(STDOUT_FILENO, buf, nbyte);
 }
 
-/*
- * Encode the disk info of the disk saved into the backup output stream.
- */
+// Encode the disk info of the disk saved into the backup output stream.
 static inline bool save_disk_info(const char* key,
                                   json_t* cbt,
                                   uint64_t* absolute_disk_length)
@@ -875,9 +831,7 @@ static inline bool save_disk_info(const char* key,
 
   rdie.absolute_start_offset = json_integer_value(object);
 
-  /*
-   * Save the absolute offset we should use.
-   */
+  // Save the absolute offset we should use.
   absolute_start_offset = rdie.absolute_start_offset;
 
   if (robust_writer(STDOUT_FILENO, (char*)&rdie, rdie_size) != rdie_size) {
@@ -896,9 +850,7 @@ bail_out:
   return retval;
 }
 
-/*
- * Decode the disk info of the disk restored from the backup input stream.
- */
+// Decode the disk info of the disk restored from the backup input stream.
 static inline bool process_disk_info(bool validate_only, json_t* value)
 {
   struct runtime_disk_info_encoding rdie;

@@ -65,9 +65,7 @@ void AesWrap(uint8_t* kek, int n, uint8_t* plain, uint8_t* cipher)
   a = cipher;
   r = cipher + 8;
 
-  /*
-   * 1) Initialize variables.
-   */
+  // 1) Initialize variables.
   memset(a, 0xa6, 8);
   memcpy(r, plain, 8 * n);
 
@@ -119,9 +117,7 @@ int AesUnwrap(uint8_t* kek, int n, uint8_t* cipher, uint8_t* plain)
   AES_KEY key;
 #  endif
 
-  /*
-   * 1) Initialize variables.
-   */
+  // 1) Initialize variables.
   memcpy(a, cipher, 8);
   r = plain;
   memcpy(r, cipher + 8, 8 * n);

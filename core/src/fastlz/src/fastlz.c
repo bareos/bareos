@@ -34,9 +34,7 @@
  */
 #define FASTLZ_SAFE
 
-/*
- * Give hints to the compiler for branch prediction optimization.
- */
+// Give hints to the compiler for branch prediction optimization.
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #define FASTLZ_EXPECT_CONDITIONAL(c)    (__builtin_expect((c), 1))
 #define FASTLZ_UNEXPECT_CONDITIONAL(c)  (__builtin_expect((c), 0))
@@ -45,9 +43,7 @@
 #define FASTLZ_UNEXPECT_CONDITIONAL(c)  (c)
 #endif
 
-/*
- * Use inlined functions for supported systems.
- */
+// Use inlined functions for supported systems.
 #if defined(__GNUC__) || defined(__DMC__) || defined(__POCC__) || defined(__WATCOMC__) || defined(__SUNPRO_C)
 #define FASTLZ_INLINE inline
 #elif defined(__BORLANDC__) || defined(_MSC_VER) || defined(__LCC__)
@@ -56,9 +52,7 @@
 #define FASTLZ_INLINE
 #endif
 
-/*
- * Prevent accessing more than 8-bit at once, except on x86 architectures.
- */
+// Prevent accessing more than 8-bit at once, except on x86 architectures.
 #if !defined(FASTLZ_STRICT_ALIGN)
 #define FASTLZ_STRICT_ALIGN
 #if defined(__i386__) || defined(__386)  /* GNU C, Sun Studio */
@@ -76,9 +70,7 @@
 #endif
 #endif
 
-/*
- * FIXME: use preprocessor magic to set this on different platforms!
- */
+// FIXME: use preprocessor magic to set this on different platforms!
 typedef unsigned char  flzuint8;
 typedef unsigned short flzuint16;
 typedef unsigned int   flzuint32;

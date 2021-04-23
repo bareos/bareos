@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, May MMI previously in src/stored/fdmsg.c
- */
+// Kern Sibbald, May MMI previously in src/stored/fdmsg.c
 /**
  * @file
  * Subroutines to receive network data and handle

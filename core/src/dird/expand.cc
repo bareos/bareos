@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, June MMIII
- */
+// Kern Sibbald, June MMIII
 /**
  * @file
  * does variable expansion
@@ -212,9 +210,7 @@ static var_rc_t lookup_built_in_var(var_t* ctx,
   return VAR_ERR_UNDEFINED_VARIABLE;
 }
 
-/**
- * Search counter variables
- */
+// Search counter variables
 static var_rc_t lookup_counter_var(var_t* ctx,
                                    void* my_ctx,
                                    const char* var_ptr,
@@ -238,9 +234,7 @@ static var_rc_t lookup_counter_var(var_t* ctx,
                             R_COUNTER, (BareosResource*)counter));) {
     if (bstrcmp(counter->resource_name_, buf.c_str())) {
       Dmsg2(100, "Counter=%s val=%d\n", buf.c_str(), counter->CurrentValue);
-      /*
-       * -1 => return size of array
-       */
+      // -1 => return size of array
       if (var_index == -1) {
         Mmsg(buf, "%d", counter->CurrentValue);
         *val_len = Mmsg(buf, "%d", strlen(buf.c_str()));
@@ -289,9 +283,7 @@ static var_rc_t lookup_counter_var(var_t* ctx,
   return status;
 }
 
-/**
- * Called here from "core" expand code to look up a variable
- */
+// Called here from "core" expand code to look up a variable
 static var_rc_t lookup_var(var_t* ctx,
                            void* my_ctx,
                            const char* var_ptr,
@@ -307,9 +299,7 @@ static var_rc_t lookup_var(var_t* ctx,
   var_rc_t status;
   int count;
 
-  /*
-   * Note, if val_size > 0 and val_ptr!=NULL, the core code will free() it
-   */
+  // Note, if val_size > 0 and val_ptr!=NULL, the core code will free() it
   if ((status = lookup_built_in_var(ctx, my_ctx, var_ptr, var_len, var_index,
                                     val_ptr, val_len, val_size))
       == VAR_OK) {
@@ -322,9 +312,7 @@ static var_rc_t lookup_var(var_t* ctx,
     return VAR_OK;
   }
 
-  /*
-   * Look in environment
-   */
+  // Look in environment
   buf.check_size(var_len + 1);
   PmMemcpy(buf, var_ptr, var_len);
   (buf.c_str())[var_len] = 0;
@@ -334,14 +322,10 @@ static var_rc_t lookup_var(var_t* ctx,
     return VAR_ERR_UNDEFINED_VARIABLE;
   }
 
-  /*
-   * He wants to index the "array"
-   */
+  // He wants to index the "array"
   count = 1;
 
-  /*
-   * Find the size of the "array" each element is separated by a |
-   */
+  // Find the size of the "array" each element is separated by a |
   for (p = val; *p; p++) {
     if (*p == '|') { count++; }
   }
@@ -349,9 +333,7 @@ static var_rc_t lookup_var(var_t* ctx,
   Dmsg3(100, "For %s, reqest index=%d have=%d\n", buf.c_str(), var_index,
         count);
 
-  /*
-   * -1 => return size of array
-   */
+  // -1 => return size of array
   if (var_index == -1) {
     int len;
     if (count == 1) {    /* if not array */
@@ -371,9 +353,7 @@ static var_rc_t lookup_var(var_t* ctx,
     return VAR_ERR_UNDEFINED_VARIABLE;
   }
 
-  /*
-   * Now find the particular item (var_index) he wants
-   */
+  // Now find the particular item (var_index) he wants
   count = 0;
   for (p = val; *p;) {
     if (*p == '|') {
@@ -390,9 +370,7 @@ static var_rc_t lookup_var(var_t* ctx,
   buf.check_size(p - val);
   Dmsg2(100, "val=%s len=%d\n", val, p - val);
 
-  /*
-   * Make a copy of item, and pass it back
-   */
+  // Make a copy of item, and pass it back
   v = (char*)malloc(p - val + 1);
   memcpy(v, val, p - val);
   v[p - val] = 0;
@@ -477,18 +455,14 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   outp = NULL;
   out_len = 0;
 
-  /*
-   * Create context
-   */
+  // Create context
   if ((status = var_create(&var_ctx)) != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot create var context: ERR=%s\n"),
          var_strerror(var_ctx, status));
     goto bail_out;
   }
 
-  /*
-   * Define callback
-   */
+  // Define callback
   if ((status = var_config(var_ctx, var_config_t::VAR_CONFIG_CB_VALUE,
                            lookup_var, (void*)jcr))
       != VAR_OK) {
@@ -497,9 +471,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
     goto bail_out;
   }
 
-  /*
-   * Define special operations
-   */
+  // Define special operations
   if ((status = var_config(var_ctx, var_config_t::VAR_CONFIG_CB_OPERATION,
                            operate_var, (void*)jcr))
       != VAR_OK) {
@@ -508,9 +480,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
     goto bail_out;
   }
 
-  /*
-   * Unescape in place
-   */
+  // Unescape in place
   if ((status = var_unescape(var_ctx, inp, in_len, inp, in_len + 1, 0))
       != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"),
@@ -520,9 +490,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
 
   in_len = strlen(inp);
 
-  /*
-   * Expand variables
-   */
+  // Expand variables
   if ((status = var_expand(var_ctx, inp, in_len, &outp, &out_len, 0))
       != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot expand expression \"%s\": ERR=%s\n"), inp,
@@ -530,9 +498,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
     goto bail_out;
   }
 
-  /*
-   * Unescape once more in place
-   */
+  // Unescape once more in place
   if ((status = var_unescape(var_ctx, outp, out_len, outp, out_len + 1, 1))
       != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"),
@@ -545,9 +511,7 @@ int VariableExpansion(JobControlRecord* jcr, char* inp, POOLMEM*& exp)
   rtn_stat = 1;
 
 bail_out:
-  /*
-   * Destroy expansion context
-   */
+  // Destroy expansion context
   if ((status = var_destroy(var_ctx)) != VAR_OK) {
     Jmsg(jcr, M_ERROR, 0, _("Cannot destroy var context: ERR=%s\n"),
          var_strerror(var_ctx, status));

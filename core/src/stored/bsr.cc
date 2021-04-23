@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, June MMII
- */
+// Kern Sibbald, June MMII
 
 /**
  * @file
@@ -836,9 +834,7 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
   char *p, *n;
   VolumeList* vol;
 
-  /*
-   * Build a list of volumes to be processed
-   */
+  // Build a list of volumes to be processed
   jcr->impl->NumReadVolumes = 0;
   jcr->impl->CurReadVolume = 0;
   if (jcr->impl->read_session.bsr) {

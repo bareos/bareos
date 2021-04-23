@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Kern Sibbald, February 2008
- */
+// Written by Kern Sibbald, February 2008
 
 #ifndef BAREOS_WIN32_COMPAT_INCLUDE_DLFCN_H_
 #define BAREOS_WIN32_COMPAT_INCLUDE_DLFCN_H_

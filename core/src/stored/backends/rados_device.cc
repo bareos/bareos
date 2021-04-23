@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, February 2014
- */
+// Marco van Wieringen, February 2014
 /**
  * @file
  * CEPH (librados) API device abstraction.
@@ -38,9 +36,7 @@
 
 namespace storagedaemon {
 
-/**
- * Options that can be specified for this device type.
- */
+// Options that can be specified for this device type.
 enum device_option_type
 {
   argument_none = 0,
@@ -78,9 +74,7 @@ static device_option device_options[]
 #  endif
        {NULL, argument_none}};
 
-/**
- * Open a volume using librados.
- */
+// Open a volume using librados.
 int rados_device::d_open(const char* pathname, int flags, int mode)
 {
   int status;
@@ -107,9 +101,7 @@ int rados_device::d_open(const char* pathname, int flags, int mode)
 
       done = false;
       for (int i = 0; !done && device_options[i].name; i++) {
-        /*
-         * Try to find a matching device option.
-         */
+        // Try to find a matching device option.
         if (bstrncasecmp(bp, device_options[i].name,
                          device_options[i].compare_size)) {
           switch (device_options[i].type) {
@@ -303,9 +295,7 @@ int rados_device::d_open(const char* pathname, int flags, int mode)
 
   Mmsg(virtual_filename_, "%s", getVolCatName());
 
-  /*
-   * See if the object already exists.
-   */
+  // See if the object already exists.
 #  ifdef HAVE_RADOS_STRIPER
   if (stripe_volume_) {
     status = rados_striper_stat(striper_, virtual_filename_, &object_size,
@@ -317,9 +307,7 @@ int rados_device::d_open(const char* pathname, int flags, int mode)
   status = rados_stat(ctx_, virtual_filename_, &object_size, &object_mtime);
 #  endif
 
-  /*
-   * See if the O_CREAT flag is set.
-   */
+  // See if the O_CREAT flag is set.
   if (flags & O_CREAT) {
     if (status < 0) {
       switch (status) {
@@ -365,9 +353,7 @@ bail_out:
   return -1;
 }
 
-/**
- * Read some data from an object at a given offset.
- */
+// Read some data from an object at a given offset.
 ssize_t rados_device::ReadObjectData(boffset_t offset,
                                      char* buffer,
                                      size_t count)
@@ -384,9 +370,7 @@ ssize_t rados_device::ReadObjectData(boffset_t offset,
 #  endif
 }
 
-/**
- * Read data from a volume using librados.
- */
+// Read data from a volume using librados.
 ssize_t rados_device::d_read(int fd, void* buffer, size_t count)
 {
   if (ctx_) {
@@ -440,9 +424,7 @@ ssize_t rados_device::WriteObjectData(boffset_t offset,
 #  endif
 }
 
-/**
- * Write data to a volume using librados.
- */
+// Write data to a volume using librados.
 ssize_t rados_device::d_write(int fd, const void* buffer, size_t count)
 {
   if (ctx_) {
@@ -460,9 +442,7 @@ ssize_t rados_device::d_write(int fd, const void* buffer, size_t count)
 
 int rados_device::d_close(int fd)
 {
-  /*
-   * Destroy the IOcontext.
-   */
+  // Destroy the IOcontext.
   if (ctx_) {
 #  ifdef HAVE_RADOS_STRIPER
     if (striper_) {

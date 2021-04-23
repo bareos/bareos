@@ -78,8 +78,6 @@ int ndmra_destroy(struct ndm_session* sess)
   return 0;
 }
 
-/*
- * Semantic actions are all handled directly by ndmos_scsi_*
- */
+//
 
 #endif /* !NDMOS_OPTION_NO_ROBOT_AGENT */

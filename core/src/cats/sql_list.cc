@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March 2000
- */
+// Kern Sibbald, March 2000
 /**
  * @file
  * BAREOS Catalog Database List records interface routines
@@ -42,9 +40,7 @@
  * -----------------------------------------------------------------------
  */
 
-/**
- * Submit general SQL query
- */
+// Submit general SQL query
 bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
                             const char* query,
                             OutputFormatter* sendit,
@@ -537,9 +533,6 @@ bail_out:
   DbUnlock(this);
 }
 
-/**
- * List Job record(s) that match JobDbRecord
- */
 void BareosDb::ListJobRecords(JobControlRecord* jcr,
                               JobDbRecord* jr,
                               const char* range,
@@ -633,18 +626,13 @@ bail_out:
   DbUnlock(this);
 }
 
-/**
- * List Job totals
- */
 void BareosDb::ListJobTotals(JobControlRecord* jcr,
                              JobDbRecord* jr,
                              OutputFormatter* sendit)
 {
   DbLock(this);
 
-  /*
-   * List by Job
-   */
+  // List by Job
   Mmsg(cmd,
        "SELECT count(*) AS Jobs,sum(JobFiles) "
        "AS Files,sum(JobBytes) AS Bytes,Name AS Job FROM Job GROUP BY Name");
@@ -657,9 +645,7 @@ void BareosDb::ListJobTotals(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-  /*
-   * Do Grand Total
-   */
+  // Do Grand Total
   Mmsg(cmd,
        "SELECT COUNT(*) AS Jobs,sum(JobFiles) "
        "AS Files,sum(JobBytes) As Bytes FROM Job");
@@ -685,9 +671,6 @@ void BareosDb::ListFilesForJob(JobControlRecord* jcr,
 
   DbLock(this);
 
-  /*
-   * Stupid MySQL is NON-STANDARD !
-   */
   if (GetTypeIndex() == SQL_TYPE_MYSQL) {
     Mmsg(cmd,
          "SELECT CONCAT(Path.Path,Name) AS Filename "
@@ -733,9 +716,6 @@ void BareosDb::ListBaseFilesForJob(JobControlRecord* jcr,
 
   DbLock(this);
 
-  /*
-   * Stupid MySQL is NON-STANDARD !
-   */
   if (GetTypeIndex() == SQL_TYPE_MYSQL) {
     Mmsg(cmd,
          "SELECT CONCAT(Path.Path,File.Name) AS Filename "
@@ -764,9 +744,6 @@ bail_out:
   DbUnlock(this);
 }
 
-/**
- * List fileset
- */
 void BareosDb::ListFilesets(JobControlRecord* jcr,
                             JobDbRecord* jr,
                             const char* range,

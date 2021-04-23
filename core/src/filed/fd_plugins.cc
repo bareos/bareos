@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October 2007
- */
+// Kern Sibbald, October 2007
 /**
  * @file
  * Bareos pluginloader
@@ -42,9 +40,7 @@
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 
-/**
- * Function pointers to be set here (findlib)
- */
+// Function pointers to be set here (findlib)
 extern int (*plugin_bopen)(BareosWinFilePacket* bfd,
                            const char* fname,
                            int flags,
@@ -77,9 +73,7 @@ extern int SaveFile(JobControlRecord* jcr,
                     FindFilesPacket* ff_pkt,
                     bool top_level);
 
-/**
- * Forward referenced functions
- */
+// Forward referenced functions
 static bRC bareosGetValue(PluginContext* ctx, bVariable var, void* value);
 static bRC bareosSetValue(PluginContext* ctx, bVariable var, void* value);
 static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...);
@@ -121,9 +115,7 @@ static bRC bareosSetSeenBitmap(PluginContext* ctx, bool all, char* fname);
 static bRC bareosClearSeenBitmap(PluginContext* ctx, bool all, char* fname);
 static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret);
 
-/**
- * These will be plugged into the global pointer structure for the findlib.
- */
+// These will be plugged into the global pointer structure for the findlib.
 static int MyPluginBopen(BareosWinFilePacket* bfd,
                          const char* fname,
                          int flags,
@@ -166,9 +158,7 @@ static CoreFunctions bareos_core_functions = {sizeof(CoreFunctions),
                                               bareosSetSeenBitmap,
                                               bareosClearSeenBitmap};
 
-/**
- * Bareos private context
- */
+// Bareos private context
 struct b_plugin_ctx {
   JobControlRecord* jcr; /* jcr for plugin */
   bRC ret;               /* last return code */
@@ -220,9 +210,7 @@ static bool IsCtxGood(PluginContext* ctx,
   return true;
 }
 
-/**
- * Test if event is for this plugin
- */
+// Test if event is for this plugin
 static bool IsEventForThisPlugin(Plugin* plugin, char* name, int len)
 {
   Dmsg4(debuglevel, "IsEventForThisPlugin? name=%s len=%d plugin=%s plen=%d\n",
@@ -231,9 +219,7 @@ static bool IsEventForThisPlugin(Plugin* plugin, char* name, int len)
     return true;
   }
 
-  /*
-   * Return global VSS job metadata to all plugins
-   */
+  // Return global VSS job metadata to all plugins
   if (bstrcmp("job", name)) { /* old V4.0 name for VSS job metadata */
     return true;
   }
@@ -242,9 +228,7 @@ static bool IsEventForThisPlugin(Plugin* plugin, char* name, int len)
     return true;
   }
 
-  /*
-   * Check if this is the correct plugin
-   */
+  // Check if this is the correct plugin
   if (len == plugin->file_len && bstrncmp(plugin->file, name, len)) {
     Dmsg4(debuglevel,
           "IsEventForThisPlugin: yes, full match (plugin=%s, name=%s)\n",
@@ -268,9 +252,7 @@ static bool IsEventForThisPlugin(Plugin* plugin, char* name, int len)
   return false;
 }
 
-/**
- * Raise a certain plugin event.
- */
+// Raise a certain plugin event.
 static inline bool trigger_plugin_event(JobControlRecord* jcr,
                                         bEventType eventType,
                                         bEvent* event,
@@ -308,9 +290,7 @@ static inline bool trigger_plugin_event(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * See if we should care about the return code.
-   */
+  // See if we should care about the return code.
   if (rc) {
     *rc = PlugFunc(ctx->plugin)->handlePluginEvent(ctx, event, value);
     switch (*rc) {
@@ -400,13 +380,9 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       if (!GetPluginName(jcr, name, &len)) { goto bail_out; }
       break;
     case bEventRestoreObject:
-      /*
-       * After all RestoreObject, we have it one more time with value = NULL
-       */
+      // After all RestoreObject, we have it one more time with value = NULL
       if (value) {
-        /*
-         * Some RestoreObjects may not have a plugin name
-         */
+        // Some RestoreObjects may not have a plugin name
         rop = (restore_object_pkt*)value;
         if (*rop->plugin_name) {
           name = rop->plugin_name;
@@ -431,9 +407,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
       break;
   }
 
-  /*
-   * If call_if_canceled is set, we call the plugin anyway
-   */
+  // If call_if_canceled is set, we call the plugin anyway
   if (!call_if_canceled && jcr->IsJobCanceled()) { goto bail_out; }
 
   event.eventType = eventType;
@@ -485,9 +459,7 @@ bail_out:
   return rc;
 }
 
-/**
- * Check if file was seen for accurate
- */
+// Check if file was seen for accurate
 bool PluginCheckFile(JobControlRecord* jcr, char* fname)
 {
   PluginContext* ctx = nullptr;
@@ -503,9 +475,7 @@ bool PluginCheckFile(JobControlRecord* jcr, char* fname)
   Dmsg2(debuglevel, "plugin_ctx=%p JobId=%d\n", jcr->plugin_ctx_list,
         jcr->JobId);
 
-  /*
-   * Pass event to every plugin
-   */
+  // Pass event to every plugin
   foreach_alist (ctx, plugin_ctx_list) {
     if (IsPluginDisabled(ctx)) { continue; }
 
@@ -536,9 +506,7 @@ static bool GetPluginName(JobControlRecord* jcr, char* cmd, int* ret)
 
   if (!cmd || (*cmd == '\0')) { return false; }
 
-  /*
-   * Handle plugin command here backup
-   */
+  // Handle plugin command here backup
   Dmsg1(debuglevel, "plugin cmd=%s\n", cmd);
   if ((p = strchr(cmd, ':')) == NULL) {
     if (strchr(cmd, ' ') == NULL) { /* we have just the plugin name */
@@ -594,9 +562,7 @@ void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, struct save_pkt* sp)
   SetBit(FO_PLUGIN, ff_pkt->flags); /* data from plugin */
 }
 
-/**
- * Ask to a Option Plugin what to do with the current file
- */
+// Ask to a Option Plugin what to do with the current file
 bRC PluginOptionHandleFile(JobControlRecord* jcr,
                            FindFilesPacket* ff_pkt,
                            struct save_pkt* sp)
@@ -645,9 +611,7 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
 
   if (!GetPluginName(jcr, cmd, &len)) { goto bail_out; }
 
-  /*
-   * Note, we stop the loop on the first plugin that matches the name
-   */
+  // Note, we stop the loop on the first plugin that matches the name
   foreach_alist (ctx, plugin_ctx_list) {
     Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd, len);
@@ -725,9 +689,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
 
   if (!GetPluginName(jcr, cmd, &len)) { goto bail_out; }
 
-  /*
-   * Note, we stop the loop on the first plugin that matches the name
-   */
+  // Note, we stop the loop on the first plugin that matches the name
   foreach_alist (ctx, plugin_ctx_list) {
     Dmsg4(debuglevel, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file,
           ctx->plugin->file_len, cmd, len);
@@ -747,18 +709,14 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
 
     jcr->plugin_ctx = ctx;
 
-    /*
-     * Send the backup command to the right plugin
-     */
+    // Send the backup command to the right plugin
     Dmsg1(debuglevel, "Command plugin = %s\n", cmd);
     if (PlugFunc(ctx->plugin)->handlePluginEvent(jcr->plugin_ctx, &event, cmd)
         != bRC_OK) {
       goto bail_out;
     }
 
-    /*
-     * Loop getting filenames to backup then saving them
-     */
+    // Loop getting filenames to backup then saving them
     while (!jcr->IsJobCanceled()) {
       memset(&sp, 0, sizeof(sp));
       sp.pkt_size = sizeof(sp);
@@ -770,9 +728,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
       Dmsg3(debuglevel, "startBackup st_size=%p st_blocks=%p sp=%p\n",
             &sp.statp.st_size, &sp.statp.st_blocks, &sp);
 
-      /*
-       * Get the file save parameters. I.e. the stat pkt ...
-       */
+      // Get the file save parameters. I.e. the stat pkt ...
       if (PlugFunc(ctx->plugin)->startBackupFile(ctx, &sp) != bRC_OK) {
         goto bail_out;
       }
@@ -787,9 +743,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
       jcr->impl->plugin_sp = &sp;
       ff_pkt = jcr->impl->ff;
 
-      /*
-       * Save original flags.
-       */
+      // Save original flags.
       CopyBits(FO_MAX, ff_pkt->flags, flags);
 
       /*
@@ -882,9 +836,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
                 ff_pkt->no_read = true;
               }
             } else {
-              /*
-               * File not previously dumped. Chain it into our list.
-               */
+              // File not previously dumped. Chain it into our list.
               hl = new_hardlink(jcr, ff_pkt, sp.fname, ff_pkt->statp.st_ino,
                                 ff_pkt->statp.st_dev);
               ff_pkt->linked = hl; /* Mark saved link */

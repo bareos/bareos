@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, May MMII
- */
+// Kern Sibbald, May MMII
 /**
  * @file
  * Automatic Pruning Applies retention periods
@@ -106,14 +104,9 @@ void PruneVolumes(JobControlRecord* jcr,
   ua = new_ua_context(jcr);
   DbLock(jcr->db);
 
-  /*
-   * Edit PoolId
-   */
   edit_int64(mr->PoolId, ed1);
 
-  /*
-   * Get Pool record for Scratch Pool
-   */
+  // Get Pool record for Scratch Pool
   PoolDbRecord spr;
   bstrncpy(spr.Name, "Scratch", sizeof(spr.Name));
   if (jcr->db->GetPoolRecord(jcr, &spr)) {

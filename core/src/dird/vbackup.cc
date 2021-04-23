@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, July MMVIII
- */
+// Kern Sibbald, July MMVIII
 /* @file
  * responsible for doing virtual backup jobs or
  *                    in other words, consolidation or synthetic backups.
@@ -60,9 +58,7 @@ static const int dbglevel = 10;
 
 static bool CreateBootstrapFile(JobControlRecord* jcr, char* jobids);
 
-/**
- * Called here before the job is run to do the job specific setup.
- */
+// Called here before the job is run to do the job specific setup.
 bool DoNativeVbackupInit(JobControlRecord* jcr)
 {
   const char* storage_source;
@@ -93,9 +89,7 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
   jcr->impl->res.rpool = jcr->impl->res.pool; /* save read pool */
   PmStrcpy(jcr->impl->res.rpool_source, jcr->impl->res.pool_source);
 
-  /*
-   * If pool storage specified, use it for restore
-   */
+  // If pool storage specified, use it for restore
   CopyRstorage(jcr, jcr->impl->res.pool->storage, _("Pool resource"));
 
   Dmsg2(dbglevel, "Read pool=%s (From %s)\n",
@@ -107,26 +101,20 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
 
-  /*
-   * See if there is a next pool override.
-   */
+  // See if there is a next pool override.
   if (jcr->impl->res.run_next_pool_override) {
     PmStrcpy(jcr->impl->res.npool_source, _("Run NextPool override"));
     PmStrcpy(jcr->impl->res.pool_source, _("Run NextPool override"));
     storage_source = _("Storage from Run NextPool override");
   } else {
-    /*
-     * See if there is a next pool override in the Job definition.
-     */
+    // See if there is a next pool override in the Job definition.
     if (jcr->impl->res.job->next_pool) {
       jcr->impl->res.next_pool = jcr->impl->res.job->next_pool;
       PmStrcpy(jcr->impl->res.npool_source, _("Job's NextPool resource"));
       PmStrcpy(jcr->impl->res.pool_source, _("Job's NextPool resource"));
       storage_source = _("Storage from Job's NextPool resource");
     } else {
-      /*
-       * Fall back to the pool's NextPool definition.
-       */
+      // Fall back to the pool's NextPool definition.
       jcr->impl->res.next_pool = jcr->impl->res.pool->NextPool;
       PmStrcpy(jcr->impl->res.npool_source, _("Job Pool's NextPool resource"));
       PmStrcpy(jcr->impl->res.pool_source, _("Job Pool's NextPool resource"));
@@ -194,9 +182,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
         ((StorageResource*)jcr->impl->res.write_storage_list->first())
             ->resource_name_);
 
-  /*
-   * Print Job Start message
-   */
+  // Print Job Start message
   Jmsg(jcr, M_INFO, 0, _("Start Virtual Backup JobId %s, Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), jcr->Job);
 
@@ -206,9 +192,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
            "backup.\n"));
   }
 
-  /*
-   * See if we already got a list of jobids to use.
-   */
+  // See if we already got a list of jobids to use.
   if (jcr->impl->vf_jobids) {
     Dmsg1(10, "jobids=%s\n", jcr->impl->vf_jobids);
     jobids = strdup(jcr->impl->vf_jobids);
@@ -229,18 +213,14 @@ bool DoNativeVbackup(JobControlRecord* jcr)
 
   Jmsg(jcr, M_INFO, 0, _("Consolidating JobIds %s\n"), jobids);
 
-  /*
-   * Find oldest Jobid, get the db record and find its level
-   */
+  // Find oldest Jobid, get the db record and find its level
   p = strchr(jobids, ','); /* find oldest jobid */
   if (p) { *p = '\0'; }
   jcr->impl->previous_jr = JobDbRecord{};
   jcr->impl->previous_jr.JobId = str_to_int64(jobids);
   Dmsg1(10, "Previous JobId=%s\n", jobids);
 
-  /*
-   * See if we need to restore the stripped ','
-   */
+  // See if we need to restore the stripped ','
   if (p) { *p = ','; }
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
@@ -289,17 +269,13 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   Dmsg0(110, "Open connection with storage daemon\n");
   jcr->setJobStatus(JS_WaitSD);
 
-  /*
-   * Start conversation with Storage daemon
-   */
+  // Start conversation with Storage daemon
   if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
     goto bail_out;
   }
   sd = jcr->store_bsock;
 
-  /*
-   * Now start a job with the Storage daemon
-   */
+  // Now start a job with the Storage daemon
   if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list,
                              jcr->impl->res.write_storage_list,
                              /* send_bsr */ true)) {
@@ -322,17 +298,13 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   jcr->impl->jr.JobTDate = jcr->start_time;
   jcr->setJobStatus(JS_Running);
 
-  /*
-   * Update job start record
-   */
+  // Update job start record
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
     goto bail_out;
   }
 
-  /*
-   * Declare the job started to start the MaxRunTime check
-   */
+  // Declare the job started to start the MaxRunTime check
   jcr->setJobStarted();
 
   /*
@@ -342,9 +314,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    */
   if (!sd->fsend("run")) { goto bail_out; }
 
-  /*
-   * Now start a Storage daemon message thread
-   */
+  // Now start a Storage daemon message thread
   if (!StartStorageDaemonMessageThread(jcr)) { goto bail_out; }
 
   jcr->setJobStatus(JS_Running);
@@ -361,9 +331,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
 
   NativeVbackupCleanup(jcr, jcr->JobStatus, JobLevel_of_first_job);
 
-  /*
-   * Remove the successfully consolidated jobids from the database
-   */
+  // Remove the successfully consolidated jobids from the database
   if (jcr->impl->res.job->AlwaysIncremental
       && jcr->impl->res.job->AlwaysIncrementalJobRetention) {
     UaContext* ua;
@@ -382,9 +350,7 @@ bail_out:
   return false;
 }
 
-/**
- * Release resources allocated during backup.
- */
+// Release resources allocated during backup.
 void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
 {
   char ec1[30], ec2[30];
@@ -419,9 +385,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
 
   UpdateJobEnd(jcr, TermCode);
 
-  /*
-   * Update final items to set them to the previous job's values
-   */
+  // Update final items to set them to the previous job's values
   Mmsg(query,
        "UPDATE Job SET StartTime='%s',EndTime='%s',"
        "JobTDate=%s WHERE JobId=%s",
@@ -430,9 +394,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
        edit_uint64(jcr->JobId, ec2));
   jcr->db->SqlQuery(query.c_str());
 
-  /*
-   * Get the fully updated job record
-   */
+  // Get the fully updated job record
   if (!jcr->db->GetJobRecord(jcr, &jcr->impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
          _("Error getting Job record for Job report: ERR=%s"),

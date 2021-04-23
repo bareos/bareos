@@ -34,9 +34,7 @@
  *
  */
 
-/*
- * All invalid values are all 1s
- */
+// All invalid values are all 1s
 #define NDMP_INVALID_U_SHORT (0xFFFFu)
 #define NDMP_INVALID_U_LONG (0xFFFFFFFFul)
 #define NDMP_INVALID_U_QUAD (0xFFFFFFFFFFFFFFFFull)

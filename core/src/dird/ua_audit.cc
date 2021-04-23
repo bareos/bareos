@@ -18,9 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Marco van Wieringen, April 2014
- */
+// Written by Marco van Wieringen, April 2014
 /**
  * @file
  * BAREOS Director -- User agent auditing.
@@ -34,9 +32,7 @@ namespace directordaemon {
 
 /* Forward referenced functions */
 
-/**
- * See if we need to audit this event.
- */
+// See if we need to audit this event.
 bool UaContext::AuditEventWanted(bool audit_event_enabled)
 {
   if (!me->audit_events) { return audit_event_enabled; }
@@ -125,9 +121,7 @@ void UaContext::LogAuditEventAclSuccess(int acl, const char* item)
       this, _("Console [%s] from [%s], Audit acl success %s %s\n"), acl, item);
 }
 
-/**
- * Log an audit event
- */
+// Log an audit event
 void UaContext::LogAuditEventCmdline()
 {
   const char* user_name;

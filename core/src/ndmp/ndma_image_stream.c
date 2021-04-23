@@ -823,9 +823,7 @@ int ndmis_tcp_listen(struct ndm_session* sess, struct ndmp9_addr* listen_addr)
   len = sizeof l_sa;
   if (getsockname(listen_sock, &l_sa, &len) < 0) goto fail;
 
-  /*
-   * Fill in the return address
-   */
+  // Fill in the return address
 
   listen_addr->addr_type = NDMP9_ADDR_TCP;
   tcp_addr = &listen_addr->ndmp9_addr_u.tcp_addr;
@@ -838,9 +836,7 @@ int ndmis_tcp_listen(struct ndm_session* sess, struct ndmp9_addr* listen_addr)
   sin = (struct sockaddr_in*)&l_sa;
   tcp_addr->port = ntohs(sin->sin_port);
 
-  /*
-   * Start the listen channel
-   */
+  // Start the listen channel
 
   ndmchan_start_listen(&is->remote.listen_chan, listen_sock);
 

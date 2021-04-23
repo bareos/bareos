@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October MM
- */
+// Kern Sibbald, October MM
 /**
  * @file
  * responsible for running file verification
@@ -150,9 +148,7 @@ bool DoVerify(JobControlRecord* jcr)
       }
       Dmsg1(100, "find last jobid for: %s\n", NPRT(Name));
 
-      /*
-       * See if user supplied a jobid= as run argument or from menu
-       */
+      // See if user supplied a jobid= as run argument or from menu
       if (jcr->impl->VerifyJobId) {
         verify_jobid = jcr->impl->VerifyJobId;
         Dmsg1(100, "Supplied jobid=%d\n", verify_jobid);
@@ -234,26 +230,20 @@ bool DoVerify(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * Print Job Start message
-   */
+  // Print Job Start message
   Jmsg(jcr, M_INFO, 0, _("Start Verify JobId=%s Level=%s Job=%s\n"),
        edit_uint64(jcr->JobId, ed1), JobLevelToString(JobLevel), jcr->Job);
 
   switch (JobLevel) {
     case L_VERIFY_VOLUME_TO_CATALOG:
-      /*
-       * Start conversation with Storage daemon
-       */
+      // Start conversation with Storage daemon
       jcr->setJobStatus(JS_Blocked);
       if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
         return false;
       }
       sd = jcr->store_bsock;
 
-      /*
-       * Now start a job with the Storage daemon
-       */
+      // Now start a job with the Storage daemon
       if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list, NULL,
                                  /* send_bsr */ true)) {
         return false;
@@ -261,21 +251,15 @@ bool DoVerify(JobControlRecord* jcr)
 
       jcr->passive_client = jcr->impl->res.client->passive;
       if (!jcr->passive_client) {
-        /*
-         * Start the Job in the SD.
-         */
+        // Start the Job in the SD.
         if (!sd->fsend("run")) { return false; }
 
-        /*
-         * Now start a Storage daemon message thread
-         */
+        // Now start a Storage daemon message thread
         if (!StartStorageDaemonMessageThread(jcr)) { return false; }
         Dmsg0(50, "Storage daemon connection OK\n");
       }
 
-      /*
-       * OK, now connect to the File daemon and ask him for the files.
-       */
+      // OK, now connect to the File daemon and ask him for the files.
       jcr->setJobStatus(JS_Blocked);
       if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
         goto bail_out;
@@ -283,9 +267,7 @@ bool DoVerify(JobControlRecord* jcr)
       SendJobInfoToFileDaemon(jcr);
       fd = jcr->file_bsock;
 
-      /*
-       * Check if the file daemon supports passive client mode.
-       */
+      // Check if the file daemon supports passive client mode.
       if (jcr->passive_client && jcr->impl->FDVersion < FD_VERSION_51) {
         Jmsg(jcr, M_FATAL, 0,
              _("Client \"%s\" doesn't support passive client mode. "
@@ -295,9 +277,7 @@ bool DoVerify(JobControlRecord* jcr)
       }
       break;
     default:
-      /*
-       * OK, now connect to the File daemon and ask him for the files.
-       */
+      // OK, now connect to the File daemon and ask him for the files.
       jcr->setJobStatus(JS_Blocked);
       if (!ConnectToFileDaemon(jcr, 10, me->FDConnectTimeout, true)) {
         goto bail_out;
@@ -335,9 +315,7 @@ bool DoVerify(JobControlRecord* jcr)
       if (!jcr->passive_client) {
         StorageResource* store = jcr->impl->res.read_storage;
 
-        /*
-         * Send Storage daemon address to the File daemon
-         */
+        // Send Storage daemon address to the File daemon
         if (store->SDDport == 0) { store->SDDport = store->SDport; }
 
         TlsPolicy tls_policy;
@@ -370,9 +348,7 @@ bool DoVerify(JobControlRecord* jcr)
 
         Dmsg1(200, "Tls Policy for passive client is: %d\n", tls_policy);
 
-        /*
-         * Tell the SD to connect to the FD.
-         */
+        // Tell the SD to connect to the FD.
         sd->fsend(passiveclientcmd, client->address, client->FDport,
                   tls_policy);
         Bmicrosleep(2, 0);
@@ -381,14 +357,10 @@ bool DoVerify(JobControlRecord* jcr)
           goto bail_out;
         }
 
-        /*
-         * Start the Job in the SD.
-         */
+        // Start the Job in the SD.
         if (!sd->fsend("run")) { goto bail_out; }
 
-        /*
-         * Now start a Storage daemon message thread
-         */
+        // Now start a Storage daemon message thread
         if (!StartStorageDaemonMessageThread(jcr)) { goto bail_out; }
         Dmsg0(50, "Storage daemon connection OK\n");
       }
@@ -409,9 +381,7 @@ bool DoVerify(JobControlRecord* jcr)
 
   if (!SendRunscriptsCommands(jcr)) { goto bail_out; }
 
-  /*
-   * Send verify command/level to File daemon
-   */
+  // Send verify command/level to File daemon
   fd->fsend(verifycmd, level);
   if (!response(jcr, fd, OKverify, "Verify", DISPLAY_ERROR)) { goto bail_out; }
 
@@ -422,9 +392,7 @@ bool DoVerify(JobControlRecord* jcr)
    */
   switch (JobLevel) {
     case L_VERIFY_CATALOG:
-      /*
-       * Verify from catalog
-       */
+      // Verify from catalog
       Dmsg0(10, "Verify level=catalog\n");
       jcr->impl->sd_msg_thread_done
           = true; /* no SD msg thread, so it is done */
@@ -432,16 +400,12 @@ bool DoVerify(JobControlRecord* jcr)
       GetAttributesAndCompareToCatalog(jcr, jcr->impl->previous_jr.JobId);
       break;
     case L_VERIFY_VOLUME_TO_CATALOG:
-      /*
-       * Verify Volume to catalog entries
-       */
+      // Verify Volume to catalog entries
       Dmsg0(10, "Verify level=volume\n");
       GetAttributesAndCompareToCatalog(jcr, jcr->impl->previous_jr.JobId);
       break;
     case L_VERIFY_DISK_TO_CATALOG:
-      /*
-       * Verify Disk attributes to catalog
-       */
+      // Verify Disk attributes to catalog
       Dmsg0(10, "Verify level=disk_to_catalog\n");
       jcr->impl->sd_msg_thread_done
           = true; /* no SD msg thread, so it is done */
@@ -449,9 +413,7 @@ bool DoVerify(JobControlRecord* jcr)
       GetAttributesAndCompareToCatalog(jcr, jcr->impl->previous_jr.JobId);
       break;
     case L_VERIFY_INIT:
-      /*
-       * Build catalog
-       */
+      // Build catalog
       Dmsg0(10, "Verify level=init\n");
       jcr->impl->sd_msg_thread_done
           = true; /* no SD msg thread, so it is done */
@@ -480,9 +442,7 @@ bail_out:
   return false;
 }
 
-/**
- * Release resources allocated during verify.
- */
+// Release resources allocated during verify.
 void VerifyCleanup(JobControlRecord* jcr, int TermCode)
 {
   int JobLevel;
@@ -614,9 +574,7 @@ void VerifyCleanup(JobControlRecord* jcr, int TermCode)
   Dmsg0(100, "Leave VerifyCleanup()\n");
 }
 
-/**
- * This routine is called only during a Verify
- */
+// This routine is called only during a Verify
 void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
 {
   BareosSocket* fd;
@@ -679,9 +637,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
     *fn = *p++; /* term filename and point to attribs */
     attr = p;
 
-    /*
-     * Got attributes stream, decode it
-     */
+    // Got attributes stream, decode it
     switch (stream) {
       case STREAM_UNIX_ATTRIBUTES:
       case STREAM_UNIX_ATTRIBUTES_EX:
@@ -700,9 +656,7 @@ void GetAttributesAndCompareToCatalog(JobControlRecord* jcr, JobId_t JobId)
         Dmsg2(040, "dird<filed: stream=%d %s\n", stream, jcr->impl->fname);
         Dmsg1(020, "dird<filed: attr=%s\n", attr);
 
-        /*
-         * Find equivalent record in the database
-         */
+        // Find equivalent record in the database
         fdbr.FileId = 0;
         if (!jcr->db->GetFileAttributesRecord(jcr, jcr->impl->fname,
                                               &jcr->impl->previous_jr, &fdbr)) {
@@ -918,9 +872,7 @@ static int MissingHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/**
- * Print filename for verify
- */
+// Print filename for verify
 static void PrtFname(JobControlRecord* jcr)
 {
   if (!jcr->impl->fn_printed) {

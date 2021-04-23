@@ -97,18 +97,14 @@ static char to_ebcdic_table[256]
        '\374', '\375', '\376', '\377'};
 
 
-/**
- * Convert from ASCII to EBCDIC
- */
+// Convert from ASCII to EBCDIC
 void AsciiToEbcdic(char* dst, char* src, int count)
 {
   while (count--) { *dst++ = to_ebcdic_table[0377 & *src++]; }
 }
 
 
-/**
- * Convert from EBCDIC to ASCII
- */
+// Convert from EBCDIC to ASCII
 void EbcdicToAscii(char* dst, char* src, int count)
 {
   while (count--) { *dst++ = to_ascii_table[0377 & *src++]; }

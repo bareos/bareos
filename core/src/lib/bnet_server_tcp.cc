@@ -134,9 +134,7 @@ static void RemoveDuplicateAddresses(dlist* addr_list)
        ipaddr = (IPADDR*)addr_list->next(ipaddr)) {
     next = (IPADDR*)addr_list->next(ipaddr);
     while (next) {
-      /*
-       * See if the addresses match.
-       */
+      // See if the addresses match.
       if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen()
           && memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
                     ipaddr->GetSockaddrLen())
@@ -376,9 +374,7 @@ void BnetThreadServerTcp(
                 be.bstrerror());
         }
 
-        /*
-         * See who client is. i.e. who connected to us.
-         */
+        // See who client is. i.e. who connected to us.
         char buf[128];
 
         P(mutex);

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March MMI
- */
+// Kern Sibbald, March MMI
 /**
  * @file
  * handles the message channel
@@ -51,9 +49,7 @@ namespace directordaemon {
  *  For now, we simply return next Volume to be used
  */
 
-/*
- * Requests from the Storage daemon
- */
+// Requests from the Storage daemon
 static char Find_media[]
     = "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s "
       "unwanted_volumes=%s\n";
@@ -70,9 +66,7 @@ static char Create_job_media[]
       " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
       " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%lld\n";
 
-/*
- * Responses sent to Storage daemon
- */
+// Responses sent to Storage daemon
 static char OK_media[]
     = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
       " VolBlocks=%u VolBytes=%s VolMounts=%u VolErrors=%u VolWrites=%u"
@@ -120,9 +114,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
   utime_t VolFirstWritten;
   utime_t VolLastWritten;
 
-  /*
-   * Request to find next appendable Volume for this Job
-   */
+  // Request to find next appendable Volume for this Job
   Dmsg1(100, "catreq %s", bs->msg);
   if (!jcr->db) {
     omsg = GetMemory(bs->message_length + 1);
@@ -134,9 +126,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     return;
   }
 
-  /*
-   * Find next appendable medium for SD
-   */
+  // Find next appendable medium for SD
   unwanted_volumes.check_size(bs->message_length);
   if (sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType,
              unwanted_volumes.c_str())
@@ -154,9 +144,6 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       Dmsg3(050, "find_media ok=%d idx=%d vol=%s\n", ok, index, mr.VolumeName);
     }
 
-    /*
-     * Send Find Media response to Storage daemon
-     */
     if (ok) {
       SendVolumeInfoToStorageDaemon(jcr, bs, &mr);
     } else {
@@ -165,14 +152,10 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     }
   } else if (sscanf(bs->msg, Get_Vol_Info, &Job, &mr.VolumeName, &writing)
              == 3) {
-    /*
-     * Request to find specific Volume information
-     */
+    // Request to find specific Volume information
     Dmsg1(100, "CatReq GetVolInfo Vol=%s\n", mr.VolumeName);
 
-    /*
-     * Find the Volume
-     */
+    // Find the Volume
     UnbashSpaces(mr.VolumeName);
     if (jcr->db->GetMediaRecord(jcr, &mr)) {
       const char* reason = NULL; /* detailed reason for rejection */
@@ -207,9 +190,6 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       }
 
       if (reason == NULL) {
-        /*
-         * Send Find Media response to Storage daemon
-         */
         SendVolumeInfoToStorageDaemon(jcr, bs, &mr);
       } else {
         /* Not suitable volume */
@@ -247,9 +227,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       goto bail_out;
     }
 
-    /*
-     * Set first written time if this is first job
-     */
+    // Set first written time if this is first job
     if (mr.FirstWritten == 0) {
       if (VolFirstWritten == 0) {
         mr.FirstWritten
@@ -260,18 +238,14 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       mr.set_first_written = true;
     }
 
-    /*
-     * If we just labeled the tape set time
-     */
+    // If we just labeled the tape set time
     if (label || mr.LabelDate == 0) {
       mr.LabelDate = jcr->start_time;
       mr.set_label_date = true;
       if (mr.InitialWrite == 0) { mr.InitialWrite = jcr->start_time; }
       Dmsg2(400, "label=%d labeldate=%d\n", label, mr.LabelDate);
     } else {
-      /*
-       * Insanity check for VolFiles get set to a smaller value
-       */
+      // Insanity check for VolFiles get set to a smaller value
       if (sdmr.VolFiles < mr.VolFiles) {
         Jmsg(jcr, M_FATAL, 0,
              _("Volume Files at %u being set to %u"
@@ -301,20 +275,14 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     if (jcr->impl->res.write_storage && sdmr.VolWrites > mr.VolWrites) {
       Dmsg2(050, "Update StorageId old=%d new=%d\n", mr.StorageId,
             jcr->impl->res.write_storage->StorageId);
-      /*
-       * Update StorageId after write
-       */
+      // Update StorageId after write
       SetStorageidInMr(jcr->impl->res.write_storage, &mr);
     } else {
-      /*
-       * Nothing written, reset same StorageId
-       */
+      // Nothing written, reset same StorageId
       SetStorageidInMr(NULL, &mr);
     }
 
-    /*
-     * Copy updated values to original media record
-     */
+    // Copy updated values to original media record
     mr.VolJobs = sdmr.VolJobs;
     mr.VolFiles = sdmr.VolFiles;
     mr.VolBlocks = sdmr.VolBlocks;
@@ -355,9 +323,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
                     &jm.LastIndex, &jm.StartFile, &jm.EndFile, &jm.StartBlock,
                     &jm.EndBlock, &Copy, &Stripe, &MediaId)
              == 10) {
-    /*
-     * Request to create a JobMedia record
-     */
+    // Request to create a JobMedia record
     if (jcr->impl->mig_jcr) {
       jm.JobId = jcr->impl->mig_jcr->JobId;
     } else {
@@ -408,9 +374,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
   AttributesDbRecord* ar = NULL;
   uint32_t reclen;
 
-  /*
-   * Start transaction allocates jcr->attr and jcr->ar if needed
-   */
+  // Start transaction allocates jcr->attr and jcr->ar if needed
   jcr->db->StartTransaction(jcr); /* start transaction if not already open */
   ar = jcr->ar;
 
@@ -427,9 +391,6 @@ static void UpdateAttribute(JobControlRecord* jcr,
   SkipNonspaces(&p); /* "FileAttributes" */
   p += 1;
 
-  /*
-   * The following "SD header" fields are serialized
-   */
   UnserBegin(p, 0);
   unser_uint32(VolSessionId);   /* VolSessionId */
   unser_uint32(VolSessionTime); /* VolSessionTime */
@@ -473,9 +434,6 @@ static void UpdateAttribute(JobControlRecord* jcr,
   jcr->impl->SDJobBytes
       += reclen; /* update number of bytes transferred for quotas */
 
-  /*
-   * Depending on the stream we are handling dispatch.
-   */
   switch (Stream) {
     case STREAM_UNIX_ATTRIBUTES:
     case STREAM_UNIX_ATTRIBUTES_EX:
@@ -488,9 +446,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
         jcr->cached_attribute = false;
       }
 
-      /*
-       * Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
-       */
+      // Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
       jcr->attr = CheckPoolMemorySize(jcr->attr, message_length);
       memcpy(jcr->attr, msg, message_length);
       p = jcr->attr - msg + p; /* point p into jcr->attr */
@@ -507,9 +463,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
         p = attr + strlen(attr) + 1; /* point to link */
         p = p + strlen(p) + 1;       /* point to extended attributes */
         p = p + strlen(p) + 1;       /* point to delta sequence */
-        /*
-         * Older FDs don't have a delta sequence, so check if it is there
-         */
+        // Older FDs don't have a delta sequence, so check if it is there
         if (p - jcr->attr < message_length) {
           ar->DeltaSeq = str_to_int32(p); /* delta_seq */
         }
@@ -593,9 +547,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
             ro.object_name, ro.Stream, ro.FileType, ro.FileIndex, ro.JobId,
             ro.object_len, ro.object);
 
-      /*
-       * Store it.
-       */
+      // Store it.
       if (!jcr->db->CreateRestoreObjectRecord(jcr, &ro)) {
         Jmsg1(jcr, M_FATAL, 0, _("Restore object create error. %s"),
               jcr->db->strerror());
@@ -609,9 +561,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
           Jmsg3(jcr, M_WARNING, 0, _("%s not same File=%d as attributes=%d\n"),
                 stream_to_ascii(Stream), FileIndex, ar->FileIndex);
         } else {
-          /*
-           * Update digest in catalog
-           */
+          // Update digest in catalog
           char digestbuf[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
           int len = 0;
           int type = CRYPTO_DIGEST_NONE;
@@ -634,9 +584,6 @@ static void UpdateAttribute(JobControlRecord* jcr,
               type = CRYPTO_DIGEST_SHA512;
               break;
             default:
-              /*
-               * Never reached ...
-               */
               Jmsg(jcr, M_ERROR, 0,
                    _("Catalog error updating file digest. Unsupported digest "
                      "stream type: %d"),

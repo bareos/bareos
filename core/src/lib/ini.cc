@@ -38,9 +38,7 @@
   } while (0)
 static int dbglevel = 100;
 
-/*
- * We use this structure to associate a key to the function
- */
+// We use this structure to associate a key to the function
 struct ini_store {
   const char* key;
   const char* comment;
@@ -58,9 +56,7 @@ static struct ini_store funcs[]
        {"@ALIST@", "String list", INI_CFG_TYPE_ALIST_STR},
        {NULL, NULL, 0}};
 
-/*
- * Get handler code from storage type.
- */
+// Get handler code from storage type.
 const char* ini_get_store_code(int type)
 {
   int i;
@@ -71,9 +67,7 @@ const char* ini_get_store_code(int type)
   return NULL;
 }
 
-/*
- * Get storage type from handler name.
- */
+// Get storage type from handler name.
 int IniGetStoreType(const char* key)
 {
   int i;
@@ -95,9 +89,7 @@ static bool IniStoreStr(LEX* lc, ConfigFile* inifile, ini_items* item)
     return true;
   }
   if (LexGetToken(lc, BCT_STRING) == BCT_ERROR) { return false; }
-  /*
-   * If already allocated, free first
-   */
+  // If already allocated, free first
   if (item->found && item->val.strval) { free(item->val.strval); }
   item->val.strval = strdup(lc->str);
   ScanToEol(lc);
@@ -120,9 +112,7 @@ static bool IniStoreAlistStr(LEX* lc, ConfigFile* inifile, ini_items* item)
 {
   alist* list;
   if (!lc) {
-    /*
-     * TODO, write back the alist to edit buffer
-     */
+    // TODO, write back the alist to edit buffer
     return true;
   }
   if (LexGetToken(lc, BCT_STRING) == BCT_ERROR) { return false; }
@@ -202,9 +192,7 @@ static bool IniStoreBool(LEX* lc, ConfigFile* inifile, ini_items* item)
   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
     item->val.boolval = false;
   } else {
-    /*
-     * YES and NO must not be translated
-     */
+    // YES and NO must not be translated
     scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str);
     return false;
   }
@@ -212,9 +200,7 @@ static bool IniStoreBool(LEX* lc, ConfigFile* inifile, ini_items* item)
   return true;
 }
 
-/*
- * Format a scanner error message
- */
+// Format a scanner error message
 static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;
@@ -259,9 +245,7 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
   }
 }
 
-/*
- * Format a scanner error message
- */
+// Format a scanner error message
 static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
 {
   va_list ap;
@@ -306,18 +290,14 @@ static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
   }
 }
 
-/*
- * Reset free items
- */
+// Reset free items
 void ConfigFile::ClearItems()
 {
   if (!items) { return; }
 
   for (int i = 0; items[i].name; i++) {
     if (items[i].found) {
-      /*
-       * Special members require delete or free
-       */
+      // Special members require delete or free
       switch (items[i].type) {
         case INI_CFG_TYPE_STR:
           free(items[i].val.strval);
@@ -348,9 +328,7 @@ void ConfigFile::FreeItems()
   items_allocated = false;
 }
 
-/*
- * Get a particular item from the items list
- */
+// Get a particular item from the items list
 int ConfigFile::GetItem(const char* name)
 {
   if (!items) { return -1; }
@@ -384,9 +362,7 @@ bool ConfigFile::DumpString(const char* buf, int32_t len)
   return ret;
 }
 
-/*
- * Dump the item table format to a text file (used by plugin)
- */
+// Dump the item table format to a text file (used by plugin)
 bool ConfigFile::Serialize(const char* fname)
 {
   FILE* fp;
@@ -406,9 +382,7 @@ bool ConfigFile::Serialize(const char* fname)
   return ret;
 }
 
-/*
- * Dump the item table format to a text file (used by plugin)
- */
+// Dump the item table format to a text file (used by plugin)
 int ConfigFile::Serialize(PoolMem* buf)
 {
   int len;
@@ -445,9 +419,7 @@ int ConfigFile::Serialize(PoolMem* buf)
   return len;
 }
 
-/*
- * Dump the item table content to a text file (used by director)
- */
+// Dump the item table content to a text file (used by director)
 int ConfigFile::DumpResults(PoolMem* buf)
 {
   int len;
@@ -504,9 +476,7 @@ int ConfigFile::DumpResults(PoolMem* buf)
   return len;
 }
 
-/*
- * Parse a config file used by Plugin/Director
- */
+// Parse a config file used by Plugin/Director
 bool ConfigFile::parse(const char* fname)
 {
   int token, i;
@@ -535,9 +505,7 @@ bool ConfigFile::parse(const char* fname)
 
         Dmsg1(dbglevel, "calling handler for %s\n", items[i].name);
 
-        /*
-         * Call item handler
-         */
+        // Call item handler
         switch (items[i].type) {
           case INI_CFG_TYPE_INT32:
             ret = ini_store_int32(lc, this, &items[i]);
@@ -573,9 +541,7 @@ bool ConfigFile::parse(const char* fname)
     if (i >= 0) {
       Dmsg1(dbglevel, "Keyword = %s\n", lc->str);
       scan_err1(lc, "Keyword %s not found", lc->str);
-      /*
-       * We can raise an error here
-       */
+      // We can raise an error here
       break;
     }
     if (!ret) { break; }
@@ -609,18 +575,14 @@ bool ConfigFile::UnSerialize(const char* fname)
   bool ret = false;
   const char** assign;
 
-  /*
-   * At this time, we allow only 32 different items
-   */
+  // At this time, we allow only 32 different items
   int s = MAX_INI_ITEMS * sizeof(struct ini_items);
 
   items = (struct ini_items*)malloc(s);
   memset(items, 0, s);
   items_allocated = true;
 
-  /*
-   * Parse the file and generate the items structure on the fly
-   */
+  // Parse the file and generate the items structure on the fly
   if ((lc = lex_open_file(lc, fname, s_err, s_warn)) == NULL) {
     BErrNo be;
     Emsg2(M_ERROR, 0, _("Cannot open config file %s: %s\n"), fname,
@@ -660,9 +622,7 @@ bool ConfigFile::UnSerialize(const char* fname)
       break;
     }
 
-    /*
-     * We may allow blank variable
-     */
+    // We may allow blank variable
     if (LexGetToken(lc, BCT_STRING) == BCT_ERROR) { break; }
 
     if (assign) {

@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Meno Abels, June MMIV
- */
+// Written by Meno Abels, June MMIV
 /**
  * @file
  * address configuration

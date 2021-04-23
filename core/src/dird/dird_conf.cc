@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/**
- * Kern Sibbald, January MM
- */
+// Kern Sibbald, January MM
 /***
  * @file
  * Main configuration file parser for BAREOS Directors,
@@ -71,9 +69,7 @@
 
 namespace directordaemon {
 
-/**
- * Used by print_config_schema_json
- */
+// Used by print_config_schema_json
 extern struct s_kw RunFields[];
 
 /**
@@ -830,9 +826,7 @@ json_t* json_datatype(const int type, ResourceItem items[])
   return json;
 }
 
-/**
- * Print configuration file schema in json format
- */
+// Print configuration file schema in json format
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
   DatatypeName* datatype;
@@ -843,9 +837,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set_new(json, "component", json_string("bareos-dir"));
   json_object_set_new(json, "version", json_string(kBareosVersionStrings.Full));
 
-  /*
-   * Resources
-   */
+  // Resources
   json_t* resource = json_object();
   json_object_set(json, "resource", resource);
   json_t* bareos_dir = json_object();
@@ -856,9 +848,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
     json_object_set(bareos_dir, resource.name, json_items(resource.items));
   }
 
-  /*
-   * Datatypes
-   */
+  // Datatypes
   json_t* json_datatype_obj = json_object();
   json_object_set(json, "datatype", json_datatype_obj);
 
@@ -964,9 +954,7 @@ static bool CmdlineItem(PoolMem* buffer, ResourceItem* item)
     mod_end = "]";
   }
 
-  /*
-   * Tab completion only supports lower case keywords.
-   */
+  // Tab completion only supports lower case keywords.
   key.strcat(item->name);
   key.toLower();
 
@@ -1000,13 +988,9 @@ const char* GetUsageStringForConsoleConfigureCommand()
     configure_usage_string = new PoolMem(PM_BSOCK);
   }
 
-  /*
-   * Only fill the configure_usage_string once. The content is static.
-   */
+  // Only fill the configure_usage_string once. The content is static.
   if (configure_usage_string->strlen() == 0) {
-    /*
-     * subcommand: add
-     */
+    // subcommand: add
     for (int r = 0; resources[r].name; r++) {
       /*
        * Only one Director is allowed.
@@ -1021,9 +1005,7 @@ const char* GetUsageStringForConsoleConfigureCommand()
         configure_usage_string->strcat(" |\n");
       }
     }
-    /*
-     * subcommand: export
-     */
+    // subcommand: export
     configure_usage_string->strcat("export client=<client>");
   }
 
@@ -1058,9 +1040,7 @@ static void PropagateResource(ResourceItem* items,
         case CFG_TYPE_DIR_OR_CMD: {
           char **def_svalue, **svalue;
 
-          /*
-           * Handle strings and directory strings
-           */
+          // Handle strings and directory strings
           def_svalue = (char**)((char*)(source) + offset);
           svalue = (char**)((char*)dest + offset);
           if (*svalue) { free(*svalue); }
@@ -1072,9 +1052,7 @@ static void PropagateResource(ResourceItem* items,
         case CFG_TYPE_RES: {
           char **def_svalue, **svalue;
 
-          /*
-           * Handle resources
-           */
+          // Handle resources
           def_svalue = (char**)((char*)(source) + offset);
           svalue = (char**)((char*)dest + offset);
           if (*svalue) {
@@ -1089,14 +1067,10 @@ static void PropagateResource(ResourceItem* items,
           const char* str = nullptr;
           alist *orig_list, **new_list;
 
-          /*
-           * Handle alist strings
-           */
+          // Handle alist strings
           orig_list = *(alist**)((char*)(source) + offset);
 
-          /*
-           * See if there is anything on the list.
-           */
+          // See if there is anything on the list.
           if (orig_list && orig_list->size()) {
             new_list = (alist**)((char*)(dest) + offset);
 
@@ -1115,14 +1089,10 @@ static void PropagateResource(ResourceItem* items,
           BareosResource* res = nullptr;
           alist *orig_list, **new_list;
 
-          /*
-           * Handle alist resources
-           */
+          // Handle alist resources
           orig_list = *(alist**)((char*)(source) + offset);
 
-          /*
-           * See if there is anything on the list.
-           */
+          // See if there is anything on the list.
           if (orig_list && orig_list->size()) {
             new_list = (alist**)((char*)(dest) + offset);
 
@@ -1141,14 +1111,10 @@ static void PropagateResource(ResourceItem* items,
           const char* str = nullptr;
           alist *orig_list, **new_list;
 
-          /*
-           * Handle ACL lists.
-           */
+          // Handle ACL lists.
           orig_list = ((alist**)((char*)(source) + offset))[items[i].code];
 
-          /*
-           * See if there is anything on the list.
-           */
+          // See if there is anything on the list.
           if (orig_list && orig_list->size()) {
             new_list = &(((alist**)((char*)(dest) + offset))[items[i].code]);
 
@@ -1191,9 +1157,7 @@ static void PropagateResource(ResourceItem* items,
         case CFG_TYPE_SPEED: {
           int64_t *def_lvalue, *lvalue;
 
-          /*
-           * Handle 64 bit integer fields
-           */
+          // Handle 64 bit integer fields
           def_lvalue = (int64_t*)((char*)(source) + offset);
           lvalue = (int64_t*)((char*)dest + offset);
           *lvalue = *def_lvalue;
@@ -1204,9 +1168,7 @@ static void PropagateResource(ResourceItem* items,
         case CFG_TYPE_BOOL: {
           bool *def_bvalue, *bvalue;
 
-          /*
-           * Handle bool fields
-           */
+          // Handle bool fields
           def_bvalue = (bool*)((char*)(source) + offset);
           bvalue = (bool*)((char*)dest + offset);
           *bvalue = *def_bvalue;
@@ -1217,9 +1179,7 @@ static void PropagateResource(ResourceItem* items,
         case CFG_TYPE_AUTOPASSWORD: {
           s_password *s_pwd, *d_pwd;
 
-          /*
-           * Handle password fields
-           */
+          // Handle password fields
           s_pwd = (s_password*)((char*)(source) + offset);
           d_pwd = (s_password*)((char*)(dest) + offset);
 
@@ -1240,15 +1200,11 @@ static void PropagateResource(ResourceItem* items,
 }
 
 
-/**
- * Ensure that all required items are present
- */
+// Ensure that all required items are present
 bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
 {
   if (res_type == R_JOBDEFS) {
-    /*
-     * a jobdef don't have to be fully defined.
-     */
+    // a jobdef don't have to be fully defined.
     return true;
   } else if (!res->Validate()) {
     return false;
@@ -1265,9 +1221,7 @@ bool ValidateResource(int res_type, ResourceItem* items, BareosResource* res)
       }
     }
 
-    /*
-     * If this triggers, take a look at lib/parse_conf.h
-     */
+    // If this triggers, take a look at lib/parse_conf.h
     if (i >= MAX_RES_ITEMS) {
       Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"),
             my_config->ResToStr(res_type));
@@ -1291,9 +1245,7 @@ bool JobResource::Validate()
     case JT_MIGRATE:
       break;
     default:
-      /*
-       * All others must have a client and fileset.
-       */
+      // All others must have a client and fileset.
       if (!client) {
         Jmsg(NULL, M_ERROR, 0,
              _("\"client\" directive in Job \"%s\" resource is required, but "

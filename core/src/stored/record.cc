@@ -125,9 +125,7 @@ static const char* record_compression_to_str(PoolMem& resultbuffer,
       uint32_t comp_magic, comp_len;
       uint16_t comp_level, comp_version;
 
-      /*
-       * Read compress header
-       */
+      // Read compress header
       UnserBegin(buf, sizeof(comp_stream_header));
       unser_uint32(comp_magic);
       unser_uint32(comp_len);
@@ -235,9 +233,7 @@ const char* stream_to_ascii(char* buf, int stream, int fi)
   if (stream < 0) {
     stream = -stream;
     stream &= STREAMMASK_TYPE;
-    /*
-     * Stream was negative => all are continuation items
-     */
+    // Stream was negative => all are continuation items
     switch (stream) {
       case STREAM_UNIX_ATTRIBUTES:
         return "contUATTR";
@@ -517,9 +513,7 @@ void DumpRecord(const char* tag, const DeviceRecord* rec)
   Dmsg2(100, "%-14s %s\n", "own_mempool", rec->own_mempool ? "true" : "false");
 }
 
-/**
- * Return a new record entity
- */
+// Return a new record entity
 DeviceRecord* new_record(bool with_data)
 {
   DeviceRecord* rec;
@@ -557,9 +551,7 @@ void CopyRecordState(DeviceRecord* dst, DeviceRecord* src)
   uint32_t data_len;
   POOLMEM* data;
 
-  /*
-   * Preserve some important fields all other can be overwritten.
-   */
+  // Preserve some important fields all other can be overwritten.
   Stream = dst->Stream;
   maskedStream = dst->maskedStream;
   data = dst->data;
@@ -575,9 +567,7 @@ void CopyRecordState(DeviceRecord* dst, DeviceRecord* src)
   dst->own_mempool = own_mempool;
 }
 
-/**
- * Free the record entity
- */
+// Free the record entity
 void FreeRecord(DeviceRecord* rec)
 {
   Dmsg0(950, "Enter FreeRecord.\n");
@@ -593,9 +583,7 @@ static inline ssize_t WriteHeaderToBlock(DeviceBlock* block,
 {
   ser_declare;
 
-  /*
-   * Require enough room to write a full header
-   */
+  // Require enough room to write a full header
   if (BlockWriteNavail(block) < WRITE_RECHDR_LENGTH) return -1;
 
   SerBegin(block->bufp, WRITE_RECHDR_LENGTH);
@@ -618,9 +606,7 @@ static inline ssize_t WriteHeaderToBlock(DeviceBlock* block,
   block->binbuf += WRITE_RECHDR_LENGTH;
 
   if (rec->FileIndex > 0) {
-    /*
-     * If data record, update what we have in this block
-     */
+    // If data record, update what we have in this block
     if (block->FirstIndex == 0) { block->FirstIndex = rec->FileIndex; }
     block->LastIndex = rec->FileIndex;
   }
@@ -653,9 +639,7 @@ bool DeviceControlRecord::WriteRecord()
   bool translated_record = false;
   char buf1[100], buf2[100];
 
-  /*
-   * Perform record translations.
-   */
+  // Perform record translations.
   before_rec = rec;
   after_rec = NULL;
   if (GeneratePluginEvent(jcr, bSdEventWriteRecordTranslation, this)
@@ -748,17 +732,13 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
 
     switch (rec->state) {
       case st_none:
-        /*
-         * Figure out what to do
-         */
+        // Figure out what to do
         rec->state = st_header;
         rec->remainder = rec->data_len; /* length of data remaining to write */
         continue;                       /* goto st_header */
 
       case st_header:
-        /*
-         * Write header
-         */
+        // Write header
         n = WriteHeaderToBlock(block, rec, rec->Stream);
         if (n < 0) {
           /*
@@ -787,9 +767,7 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
         continue;
 
       case st_header_cont:
-        /*
-         * Write continuation header
-         */
+        // Write continuation header
         n = WriteHeaderToBlock(block, rec, -rec->Stream);
         if (n < 0) {
           /*
@@ -903,9 +881,7 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
 
   remlen = dcr->block->binbuf;
 
-  /*
-   * Clear state flags
-   */
+  // Clear state flags
   ClearAllBits(REC_STATE_MAX, rec->state_bits);
   if (dcr->block->dev->IsTape()) { SetBit(REC_ISTAPE, rec->state_bits); }
   rec->Block = ((Device*)(dcr->block->dev))->EndBlock;
@@ -1032,17 +1008,13 @@ bool ReadRecordFromBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
    * record.
    */
   if (remlen >= data_bytes) {
-    /*
-     * Got whole record
-     */
+    // Got whole record
     memcpy(rec->data + rec->data_len, dcr->block->bufp, data_bytes);
     dcr->block->bufp += data_bytes;
     dcr->block->binbuf -= data_bytes;
     rec->data_len += data_bytes;
   } else {
-    /*
-     * Partial record
-     */
+    // Partial record
     memcpy(rec->data + rec->data_len, dcr->block->bufp, remlen);
     dcr->block->bufp += remlen;
     dcr->block->binbuf -= remlen;

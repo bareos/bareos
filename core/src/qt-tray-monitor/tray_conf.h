@@ -29,9 +29,7 @@
 
 /* NOTE:  #includes at the end of this file */
 
-/*
- * Resource codes -- they must be sequential for indexing
- */
+// Resource codes -- they must be sequential for indexing
 
 #ifndef BAREOS_QT_TRAY_MONITOR_TRAY_CONF_H_
 #define BAREOS_QT_TRAY_MONITOR_TRAY_CONF_H_
@@ -53,9 +51,7 @@ enum Rescode
   R_LAST = R_CONSOLE_FONT /* keep this updated */
 };
 
-/*
- * Some resource attributes
- */
+// Some resource attributes
 enum
 {
   R_NAME = 1020,
@@ -65,9 +61,7 @@ enum
   R_BACKUP
 };
 
-/*
- * Director Resource
- */
+// Director Resource
 class DirectorResource
     : public BareosResource
     , public TlsResource {
@@ -79,9 +73,7 @@ class DirectorResource
   char* address = nullptr; /* UA server address */
 };
 
-/*
- * Tray Monitor Resource
- */
+// Tray Monitor Resource
 class MonitorResource
     : public BareosResource
     , public TlsResource {
@@ -97,9 +89,7 @@ class MonitorResource
   utime_t DIRConnectTimeout = {0};      /* timeout in seconds */
 };
 
-/*
- * Client Resource
- */
+// Client Resource
 class ClientResource
     : public BareosResource
     , public TlsResource {
@@ -112,9 +102,7 @@ class ClientResource
   s_password password;
 };
 
-/*
- * Store Resource
- */
+// Store Resource
 class StorageResource
     : public BareosResource
     , public TlsResource {

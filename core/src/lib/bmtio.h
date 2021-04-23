@@ -87,9 +87,7 @@ struct mtop {
 #  define MT_COMP_DISABLED 0xfffffffe
 #  define MT_COMP_UNSUPP 0xfffffffd
 
-/*
- * Values in mt_dsreg that say what the device is doing
- */
+// Values in mt_dsreg that say what the device is doing
 #  define MTIO_DSREG_NIL 0  /**< Unknown */
 #  define MTIO_DSREG_REST 1 /**< Doing Nothing */
 #  define MTIO_DSREG_RBSY 2 /**< Communicating with tape (but no motion) */

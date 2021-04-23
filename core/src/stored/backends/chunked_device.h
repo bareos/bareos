@@ -33,9 +33,7 @@ class alist;
 #include "ordered_cbuf.h"
 namespace storagedaemon {
 
-/*
- * Let io-threads check for work every 300 seconds.
- */
+// Let io-threads check for work every 300 seconds.
 #define DEFAULT_RECHECK_INTERVAL 300
 
 /*
@@ -102,9 +100,7 @@ struct chunk_descriptor {
 
 class ChunkedDevice : public Device {
  private:
-  /*
-   * Private Members
-   */
+  // Private Members
   bool io_threads_started_{};
   bool end_of_media_{};
   bool readonly_{};
@@ -114,9 +110,7 @@ class ChunkedDevice : public Device {
   alist* thread_ids_{};
   chunk_descriptor* current_chunk_{};
 
-  /*
-   * Private Methods
-   */
+  // Private Methods
   char* allocate_chunkbuffer();
   void FreeChunkbuffer(char* buffer);
   void FreeChunkIoRequest(chunk_io_request* request);
@@ -128,9 +122,7 @@ class ChunkedDevice : public Device {
   bool is_written();
 
  protected:
-  /*
-   * Protected Members
-   */
+  // Protected Members
   uint8_t io_threads_{};
   uint8_t io_slots_{};
   uint8_t retries_{};
@@ -138,9 +130,7 @@ class ChunkedDevice : public Device {
   boffset_t offset_{};
   bool use_mmap_{};
 
-  /*
-   * Protected Methods
-   */
+  // Protected Methods
   bool SetInflightChunk(chunk_io_request* request);
   void ClearInflightChunk(chunk_io_request* request);
   bool IsInflightChunk(chunk_io_request* request);
@@ -154,9 +144,7 @@ class ChunkedDevice : public Device {
   bool LoadChunk();
   bool WaitUntilChunksWritten();
 
-  /*
-   * Methods implemented by inheriting class.
-   */
+  // Methods implemented by inheriting class.
   virtual bool CheckRemoteConnection() = 0;
   virtual bool FlushRemoteChunk(chunk_io_request* request) = 0;
   virtual bool ReadRemoteChunk(chunk_io_request* request) = 0;
@@ -164,9 +152,7 @@ class ChunkedDevice : public Device {
   virtual bool TruncateRemoteVolume(DeviceControlRecord* dcr) = 0;
 
  public:
-  /*
-   * Public Methods
-   */
+  // Public Methods
   ChunkedDevice() = default;
   virtual ~ChunkedDevice();
 

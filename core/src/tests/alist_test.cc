@@ -44,9 +44,7 @@ struct FileSet {
   alist mylist;
 };
 
-/*
- * helper functions
- */
+// helper functions
 
 void AlistFill(alist* list, int max)
 {
@@ -55,32 +53,24 @@ void AlistFill(alist* list, int max)
 
   if (list) { start = list->size(); }
 
-  /*
-   * fill list with strings of numbers from 0 to n.
-   */
+  // fill list with strings of numbers from 0 to n.
   for (int i = 0; i < max; i++) {
     sprintf(buf, "%d", start + i);
     list->append(strdup(buf));
   }
 
-  /*
-   * verify that max elements have been added
-   */
+  // verify that max elements have been added
   EXPECT_EQ(list->size(), start + max);
 }
 
-/*
- * we expect, that the list is filled with strings of numbers from 0 to n.
- */
+// we expect, that the list is filled with strings of numbers from 0 to n.
 void TestForeachAlist(alist* list)
 {
   char* str = NULL;
   char buf[30];
   int i = 0;
 
-  /*
-   * test all available foreach loops
-   */
+  // test all available foreach loops
 
   foreach_alist (str, list) {
     sprintf(buf, "%d", i);
@@ -99,9 +89,7 @@ void TestForeachAlist(alist* list)
   }
 }
 
-/*
- * Tests
- */
+// Tests
 
 void test_alist_init_destroy()
 {
@@ -161,9 +149,7 @@ void test_alist_dynamic()
 }
 
 
-/*
- * main entry point
- */
+// main entry point
 
 TEST(alist, alist)
 {

@@ -725,9 +725,7 @@ void dpl_conn_pool_destroy(dpl_ctx_t* ctx)
   }
 }
 
-/*
- * I/O
- */
+// I/O
 
 /*
  * Write an IO vector to a connection with retry and timeout

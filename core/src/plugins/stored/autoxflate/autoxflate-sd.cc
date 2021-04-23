@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, June 2013
- */
+// Marco van Wieringen, June 2013
 /**
  * @file
  * Storage Daemon plugin that handles automatic deflation/inflation of data.
@@ -63,9 +61,7 @@ using namespace storagedaemon;
 #define COMPRESSOR_NAME_FZ4H (char*)"LZ4HC"
 #define COMPRESSOR_NAME_UNSET (char*)"unknown"
 
-/**
- * Forward referenced functions
- */
+// Forward referenced functions
 static bRC newPlugin(PluginContext* ctx);
 static bRC freePlugin(PluginContext* ctx);
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
@@ -81,14 +77,10 @@ static bool SetupAutoInflation(PluginContext* ctx, DeviceControlRecord* dcr);
 static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr);
 static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr);
 
-/**
- * Is the SD in compatible mode or not.
- */
+// Is the SD in compatible mode or not.
 static bool sd_enabled_compatible = false;
 
-/**
- * Pointers to Bareos functions
- */
+// Pointers to Bareos functions
 static CoreFunctions* bareos_core_functions = NULL;
 static PluginApiDefinition* bareos_plugin_interface_version = NULL;
 
@@ -102,20 +94,14 @@ static PluginInformation pluginInfo
 static PluginFunctions pluginFuncs
     = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
 
-       /*
-        * Entry points into plugin
-        */
+       // Entry points into plugin
        newPlugin,  /* new plugin instance */
        freePlugin, /* free plugin instance */
        getPluginValue, setPluginValue, handlePluginEvent};
 
-/**
- * Plugin private context
- */
+// Plugin private context
 struct plugin_ctx {
-  /*
-   * Counters for compression/decompression ratio
-   */
+  // Counters for compression/decompression ratio
   uint64_t deflate_bytes_in;
   uint64_t deflate_bytes_out;
   uint64_t inflate_bytes_in;
@@ -146,18 +132,14 @@ bRC loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   *plugin_information = &pluginInfo; /* return pointer to our info */
   *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
 
-  /*
-   * Get the current setting of the compatible flag.
-   */
+  // Get the current setting of the compatible flag.
   bareos_core_functions->getBareosValue(NULL, bsdVarCompatible,
                                         (void*)&sd_enabled_compatible);
 
   return bRC_OK;
 }
 
-/**
- * External entry point to unload the plugin
- */
+// External entry point to unload the plugin
 bRC unloadPlugin() { return bRC_OK; }
 
 #ifdef __cplusplus
@@ -201,9 +183,7 @@ static bRC newPlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Free a plugin instance, i.e. release our private storage
- */
+// Free a plugin instance, i.e. release our private storage
 static bRC freePlugin(PluginContext* ctx)
 {
   int JobId = 0;
@@ -223,9 +203,7 @@ static bRC freePlugin(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Return some plugin value (none defined)
- */
+// Return some plugin value (none defined)
 static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   Dmsg(ctx, debuglevel, "autoxflate-sd: getPluginValue var=%d\n", var);
@@ -233,9 +211,7 @@ static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value)
   return bRC_OK;
 }
 
-/**
- * Set a plugin value (none defined)
- */
+// Set a plugin value (none defined)
 static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
 {
   Dmsg(ctx, debuglevel, "autoxflate-sd: setPluginValue var=%d\n", var);
@@ -243,9 +219,7 @@ static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value)
   return bRC_OK;
 }
 
-/**
- * Handle an event that was generated in Bareos
- */
+// Handle an event that was generated in Bareos
 static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value)
 {
   switch (event->eventType) {
@@ -266,9 +240,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bSdEvent* event, void* value)
   return bRC_OK;
 }
 
-/**
- * At end of job report how inflate/deflate ratio was.
- */
+// At end of job report how inflate/deflate ratio was.
 static bRC handleJobEnd(PluginContext* ctx)
 {
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
@@ -305,15 +277,11 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
   const char* deflate_in = SETTING_UNSET;
   const char* deflate_out = SETTING_UNSET;
 
-  /*
-   * Unpack the arguments passed in.
-   */
+  // Unpack the arguments passed in.
   dcr = (DeviceControlRecord*)value;
   if (!dcr) { return bRC_Error; }
 
-  /*
-   * Give jobmessage info what is configured
-   */
+  // Give jobmessage info what is configured
   switch (dcr->autodeflate) {
     case AutoXflateMode::IO_DIRECTION_NONE:
       deflate_in = SETTING_NO;
@@ -362,9 +330,7 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
       break;
   }
 
-  /*
-   * Setup auto deflation/inflation of streams when enabled for this device.
-   */
+  // Setup auto deflation/inflation of streams when enabled for this device.
   switch (dcr->autodeflate) {
     case AutoXflateMode::IO_DIRECTION_NONE:
       break;
@@ -404,15 +370,11 @@ static bRC handle_read_translation(PluginContext* ctx, void* value)
   DeviceControlRecord* dcr;
   bool swap_record = false;
 
-  /*
-   * Unpack the arguments passed in.
-   */
+  // Unpack the arguments passed in.
   dcr = (DeviceControlRecord*)value;
   if (!dcr) { return bRC_Error; }
 
-  /*
-   * See if we need to perform auto deflation/inflation of streams.
-   */
+  // See if we need to perform auto deflation/inflation of streams.
   switch (dcr->autoinflate) {
     case AutoXflateMode::IO_DIRECTION_IN:
     case AutoXflateMode::IO_DIRECTION_INOUT:
@@ -441,15 +403,11 @@ static bRC handle_write_translation(PluginContext* ctx, void* value)
   DeviceControlRecord* dcr;
   bool swap_record = false;
 
-  /*
-   * Unpack the arguments passed in.
-   */
+  // Unpack the arguments passed in.
   dcr = (DeviceControlRecord*)value;
   if (!dcr) { return bRC_Error; }
 
-  /*
-   * See if we need to perform auto deflation/inflation of streams.
-   */
+  // See if we need to perform auto deflation/inflation of streams.
   switch (dcr->autoinflate) {
     case AutoXflateMode::IO_DIRECTION_OUT:
     case AutoXflateMode::IO_DIRECTION_INOUT:
@@ -473,9 +431,7 @@ static bRC handle_write_translation(PluginContext* ctx, void* value)
   return bRC_OK;
 }
 
-/**
- * Setup deflate for auto deflate of data streams.
- */
+// Setup deflate for auto deflate of data streams.
 static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
 {
   JobControlRecord* jcr = dcr->jcr;
@@ -570,9 +526,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Setup inflation for auto inflation of data streams.
- */
+// Setup inflation for auto inflation of data streams.
 static bool SetupAutoInflation(PluginContext* ctx, DeviceControlRecord* dcr)
 {
   JobControlRecord* jcr = dcr->jcr;
@@ -680,9 +634,7 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
       break;
   }
 
-  /*
-   * Compress the data using the configured compression algorithm.
-   */
+  // Compress the data using the configured compression algorithm.
   if (!CompressData(dcr->jcr, dcr->device_resource->autodeflate_algorithm,
                     rec->data, rec->data_len, data, max_compression_length,
                     &nrec->data_len)) {

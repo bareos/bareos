@@ -231,9 +231,7 @@ class JobControlRecord {
 };
 /* clang-format on */
 
-/*
- * The following routines are found in lib/jcr.c
- */
+// The following routines are found in lib/jcr.c
 extern int GetNextJobidFromList(const char** p, uint32_t* JobId);
 extern bool InitJcrSubsystem(int timeout);
 extern JobControlRecord* new_jcr(JCR_free_HANDLER* daemon_free_jcr);
@@ -249,9 +247,7 @@ extern int num_jobs_run;
 extern void b_free_jcr(const char* file, int line, JobControlRecord* jcr);
 #define FreeJcr(jcr) b_free_jcr(__FILE__, __LINE__, (jcr))
 
-/*
- * Used to display specific job information after a fatal signal
- */
+// Used to display specific job information after a fatal signal
 typedef void(dbg_jcr_hook_t)(JobControlRecord* jcr, FILE* fp);
 extern void DbgJcrAddHook(dbg_jcr_hook_t* fct);
 

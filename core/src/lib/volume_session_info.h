@@ -17,9 +17,7 @@
  *
  */
 
-/*
- * provides a struct to wrap a pair of VolumeSessionId and VolumeSessionTime
- */
+// provides a struct to wrap a pair of VolumeSessionId and VolumeSessionTime
 
 #ifndef BAREOS_LIB_VOLUME_SESSION_INFO_H_
 #define BAREOS_LIB_VOLUME_SESSION_INFO_H_

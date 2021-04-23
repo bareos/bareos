@@ -136,9 +136,7 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
     return false;
   }
 
-  /*
-   * Get two global entry points
-   */
+  // Get two global entry points
   loadPlugin = (t_loadPlugin)dlsym(plugin->plugin_handle, "loadPlugin");
   if (!loadPlugin) {
     Jmsg(NULL, M_ERROR, 0,
@@ -166,9 +164,7 @@ static bool load_a_plugin(void* bareos_plugin_interface_version,
     return false;
   }
 
-  /*
-   * Initialize the plugin
-   */
+  // Initialize the plugin
   if (loadPlugin(bareos_plugin_interface_version, bareos_core_functions,
                  &plugin->plugin_information, &plugin->plugin_functions)
       != bRC_OK) {
@@ -223,27 +219,19 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
     PoolMem plugin_name(PM_FNAME);
 
     foreach_alist (name, plugin_names) {
-      /*
-       * Generate the plugin name e.g. <name>-<daemon>.so
-       */
+      // Generate the plugin name e.g. <name>-<daemon>.so
       Mmsg(plugin_name, "%s%s", name, type);
 
-      /*
-       * Generate the full pathname to the plugin to load.
-       */
+      // Generate the full pathname to the plugin to load.
       Mmsg(fname, "%s%s%s", plugin_dir, (need_slash) ? "/" : "",
            plugin_name.c_str());
 
-      /*
-       * Make sure the plugin exists and is a regular file.
-       */
+      // Make sure the plugin exists and is a regular file.
       if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
         continue;
       }
 
-      /*
-       * Try to load the plugin and resolve the wanted symbols.
-       */
+      // Try to load the plugin and resolve the wanted symbols.
       if (load_a_plugin(bareos_plugin_interface_version, bareos_core_functions,
                         fname.c_str(), plugin_name.c_str(), type, plugin_list,
                         IsPluginCompatible)) {
@@ -305,16 +293,12 @@ bool LoadPlugins(void* bareos_plugin_interface_version,
       if (need_slash) { PmStrcat(fname, "/"); }
       PmStrcat(fname, result->d_name);
 
-      /*
-       * Make sure the plugin exists and is a regular file.
-       */
+      // Make sure the plugin exists and is a regular file.
       if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
         continue;
       }
 
-      /*
-       * Try to load the plugin and resolve the wanted symbols.
-       */
+      // Try to load the plugin and resolve the wanted symbols.
       if (load_a_plugin(bareos_plugin_interface_version, bareos_core_functions,
                         fname.c_str(), result->d_name, type, plugin_list,
                         IsPluginCompatible)) {
@@ -332,9 +316,7 @@ bail_out:
   return found;
 }
 
-/*
- * Unload all the loaded plugins
- */
+// Unload all the loaded plugins
 void UnloadPlugins(alist* plugin_list)
 {
   int i{};
@@ -342,9 +324,7 @@ void UnloadPlugins(alist* plugin_list)
 
   if (!plugin_list) { return; }
   foreach_alist_index (i, plugin, plugin_list) {
-    /*
-     * Shut it down and unload it
-     */
+    // Shut it down and unload it
     plugin->unloadPlugin();
     dlclose(plugin->plugin_handle);
     if (plugin->file) { free(plugin->file); }
@@ -354,9 +334,7 @@ void UnloadPlugins(alist* plugin_list)
 
 void UnloadPlugin(alist* plugin_list, Plugin* plugin, int index)
 {
-  /*
-   * Shut it down and unload it
-   */
+  // Shut it down and unload it
   plugin->unloadPlugin();
   dlclose(plugin->plugin_handle);
   if (plugin->file) { free(plugin->file); }

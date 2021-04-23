@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Marco van Wieringen, January 2011
- */
+// Written by Marco van Wieringen, January 2011
 /**
  * @file
  * Generic catalog class methods.

@@ -49,9 +49,7 @@ namespace storagedaemon {
 
 class rados_device : public Device {
  private:
-  /*
-   * Private Members
-   */
+  // Private Members
   char* rados_configstring_;
   char* rados_conffile_;
   char* rados_poolname_;
@@ -76,9 +74,7 @@ class rados_device : public Device {
   boffset_t offset_;
   POOLMEM* virtual_filename_;
 
-  /*
-   * Private Methods
-   */
+  // Private Methods
   ssize_t ReadObjectData(boffset_t offset, char* buffer, size_t count);
   ssize_t WriteObjectData(boffset_t offset, char* buffer, size_t count);
 #ifdef HAVE_RADOS_STRIPER
@@ -91,15 +87,11 @@ class rados_device : public Device {
   bool TruncateVolume(DeviceControlRecord* dcr);
 
  public:
-  /*
-   * Public Methods
-   */
+  // Public Methods
   rados_device();
   ~rados_device();
 
-  /*
-   * Interface from Device
-   */
+  // Interface from Device
   int d_close(int) override;
   int d_open(const char* pathname, int flags, int mode) override;
   int d_ioctl(int fd, ioctl_req_t request, char* mt = NULL) override;

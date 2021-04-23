@@ -20,12 +20,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October 2007
- */
-/**
- * Interface definition for Bareos SD Plugins
- */
+// Kern Sibbald, October 2007
+// Interface definition for Bareos SD Plugins
 
 #ifndef BAREOS_STORED_SD_PLUGINS_H_
 #define BAREOS_STORED_SD_PLUGINS_H_
@@ -52,13 +48,9 @@ class alist;
 
 namespace storagedaemon {
 
-/*
- * Bareos definitions
- */
+// Bareos definitions
 
-/**
- * Bareos Variable Ids (Read)
- */
+// Bareos Variable Ids (Read)
 typedef enum
 {
   bsdVarJob = 1,
@@ -80,9 +72,7 @@ typedef enum
   bsdVarPluginDir = 17
 } bsdrVariable;
 
-/**
- * Bareos Variable Ids (Write)
- */
+// Bareos Variable Ids (Write)
 typedef enum
 {
   bsdwVarJobReport = 1,
@@ -91,9 +81,7 @@ typedef enum
   bsdwVarJobLevel = 4
 } bsdwVariable;
 
-/**
- * Events that are passed to plugin
- */
+// Events that are passed to plugin
 typedef enum
 {
   bSdEventJobStart = 1,
@@ -137,9 +125,7 @@ typedef struct s_sdbareosInfo {
 extern "C" {
 #endif
 
-/**
- * Bareos interface version and function pointers
- */
+// Bareos interface version and function pointers
 class DeviceControlRecord;
 struct DeviceRecord;
 
@@ -176,9 +162,7 @@ typedef struct s_sdbareosFuncs {
   void (*FreeRecord)(DeviceRecord* rec);
 } CoreFunctions;
 
-/*
- * Bareos Core Routines -- not used within a plugin
- */
+// Bareos Core Routines -- not used within a plugin
 #ifdef STORAGE_DAEMON
 void LoadSdPlugins(const char* plugin_dir, alist* plugin_names);
 void UnloadSdPlugins(void);
@@ -192,9 +176,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
                         bool reverse = false);
 #endif
 
-/*
- * Plugin definitions
- */
+// Plugin definitions
 
 typedef enum
 {
@@ -205,9 +187,7 @@ typedef enum
 #define SD_PLUGIN_MAGIC "*SDPluginData*"
 #define SD_PLUGIN_INTERFACE_VERSION 4
 
-/*
- * Functions that must be defined in every plugin
- */
+// Functions that must be defined in every plugin
 typedef struct s_sdpluginFuncs {
   uint32_t size;
   uint32_t version;

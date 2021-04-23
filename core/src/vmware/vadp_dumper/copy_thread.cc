@@ -18,13 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, August 2014.
- */
+// Marco van Wieringen, August 2014.
 
-/*
- * Copy thread used for producer/consumer problem with pthreads.
- */
+// Copy thread used for producer/consumer problem with pthreads.
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -37,9 +33,7 @@
 
 static CP_THREAD_CTX* cp_thread;
 
-/*
- * Copy thread cancel handler.
- */
+// Copy thread cancel handler.
 static void copy_cleanup_thread(void* data)
 {
   CP_THREAD_CTX* context = (CP_THREAD_CTX*)data;
@@ -47,9 +41,7 @@ static void copy_cleanup_thread(void* data)
   pthread_mutex_unlock(&context->lock);
 }
 
-/*
- * Actual copy thread that copies data.
- */
+// Actual copy thread that copies data.
 static void* copy_thread(void* data)
 {
   CP_THREAD_SAVE_DATA* save_data;
@@ -57,9 +49,7 @@ static void* copy_thread(void* data)
 
   if (pthread_mutex_lock(&context->lock) != 0) { goto bail_out; }
 
-  /*
-   * When we get canceled make sure we run the cleanup function.
-   */
+  // When we get canceled make sure we run the cleanup function.
   pthread_cleanup_push(copy_cleanup_thread, data);
 
   while (1) {
@@ -74,9 +64,7 @@ static void* copy_thread(void* data)
 
     pthread_mutex_unlock(&context->lock);
 
-    /*
-     * Dequeue an item from the circular buffer.
-     */
+    // Dequeue an item from the circular buffer.
     save_data = (CP_THREAD_SAVE_DATA*)context->cb->dequeue();
 
     while (save_data) {
@@ -92,9 +80,7 @@ static void* copy_thread(void* data)
      */
     if (pthread_mutex_lock(&context->lock) != 0) { goto bail_out; }
 
-    /*
-     * Signal the main thread we flushed the data.
-     */
+    // Signal the main thread we flushed the data.
     pthread_cond_signal(&context->flush);
 
     context->started = false;
@@ -107,9 +93,7 @@ bail_out:
   return NULL;
 }
 
-/*
- * Create a copy thread.
- */
+// Create a copy thread.
 bool setup_copy_thread(IO_FUNCTION* input_function,
                        IO_FUNCTION* output_function)
 {
@@ -175,9 +159,7 @@ bool send_to_copy_thread(size_t sector_offset, size_t nbyte)
   slotnr = cb->next_slot();
   save_data = &cp_thread->save_data[slotnr];
 
-  /*
-   * If this is the first time we use this slot we need to allocate some memory.
-   */
+  // If this is the first time we use this slot we need to allocate some memory.
   if (!save_data->data) { save_data->data = malloc(nbyte + 1); }
 
   save_data->data_len
@@ -187,17 +169,13 @@ bool send_to_copy_thread(size_t sector_offset, size_t nbyte)
 
   cb->enqueue(save_data);
 
-  /*
-   * Signal the copy thread its time to start if it didn't start yet.
-   */
+  // Signal the copy thread its time to start if it didn't start yet.
   if (!cp_thread->started) { pthread_cond_signal(&cp_thread->start); }
 
   return true;
 }
 
-/*
- * Flush the copy thread.
- */
+// Flush the copy thread.
 void flush_copy_thread()
 {
   CP_THREAD_CTX* context = cp_thread;
@@ -209,14 +187,10 @@ void flush_copy_thread()
    * conservative.
    */
   while (!context->flushed) {
-    /*
-     * Tell the copy thread to flush out all data.
-     */
+    // Tell the copy thread to flush out all data.
     context->cb->flush();
 
-    /*
-     * Wait for the copy thread to say it flushed the data out.
-     */
+    // Wait for the copy thread to say it flushed the data out.
     pthread_cond_wait(&context->flush, &context->lock);
   }
 
@@ -225,24 +199,18 @@ void flush_copy_thread()
   pthread_mutex_unlock(&context->lock);
 }
 
-/*
- * Cleanup all data allocated for the copy thread.
- */
+// Cleanup all data allocated for the copy thread.
 void cleanup_copy_thread()
 {
   int slotnr;
 
-  /*
-   * Stop the copy thread.
-   */
+  // Stop the copy thread.
   if (!pthread_equal(cp_thread->thread_id, pthread_self())) {
     pthread_cancel(cp_thread->thread_id);
     pthread_join(cp_thread->thread_id, NULL);
   }
 
-  /*
-   * Free all data allocated along the way.
-   */
+  // Free all data allocated along the way.
   for (slotnr = 0; slotnr < cp_thread->nr_save_elements; slotnr++) {
     if (cp_thread->save_data[slotnr].data) {
       free(cp_thread->save_data[slotnr].data);

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March MMI
- */
+// Kern Sibbald, March MMI
 /**
  * @file
  * handles finding the next volume for append.
@@ -47,9 +45,7 @@ namespace directordaemon {
 
 static int const debuglevel = 50; /* debug level */
 
-/**
- * Set storage id if possible
- */
+// Set storage id if possible
 void SetStorageidInMr(StorageResource* store, MediaDbRecord* mr)
 {
   if (store != NULL) { mr->StorageId = store->StorageId; }
@@ -91,44 +87,32 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
    */
   InChanger = store->autochanger;
 
-  /*
-   * Find the Next Volume for Append
-   */
+  // Find the Next Volume for Append
   DbLock(jcr->db);
   while (1) {
-    /*
-     *  1. Look for volume with "Append" status.
-     */
+    //  1. Look for volume with "Append" status.
     SetStorageidInMr(store, mr);
 
     bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
     ok = jcr->db->FindNextVolume(jcr, index, InChanger, mr, unwanted_volumes);
     if (!ok) {
-      /*
-       * No volume found, apply algorithm
-       */
+      // No volume found, apply algorithm
       Dmsg4(debuglevel,
             "after find_next_vol ok=%d index=%d InChanger=%d Vstat=%s\n", ok,
             index, InChanger, mr->VolStatus);
 
-      /*
-       * 2. Try finding a recycled volume
-       */
+      // 2. Try finding a recycled volume
       ok = FindRecycledVolume(jcr, InChanger, mr, store, unwanted_volumes);
       SetStorageidInMr(store, mr);
       Dmsg2(debuglevel, "FindRecycledVolume ok=%d FW=%d\n", ok,
             mr->FirstWritten);
       if (!ok) {
-        /*
-         * 3. Try recycling any purged volume
-         */
+        // 3. Try recycling any purged volume
         ok = RecycleOldestPurgedVolume(jcr, InChanger, mr, store,
                                        unwanted_volumes);
         SetStorageidInMr(store, mr);
         if (!ok) {
-          /*
-           * 4. Try pruning Volumes
-           */
+          // 4. Try pruning Volumes
           if (prune) {
             Dmsg0(debuglevel, "Call PruneVolumes\n");
             PruneVolumes(jcr, InChanger, mr, store);
@@ -141,9 +125,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
                   "after prune volumes_vol ok=%d index=%d InChanger=%d "
                   "Vstat=%s\n",
                   ok, index, InChanger, mr->VolStatus);
-            /*
-             * 5. Try pulling a volume from the Scratch pool
-             */
+            // 5. Try pulling a volume from the Scratch pool
             ok = GetScratchVolume(jcr, InChanger, mr, store);
             SetStorageidInMr(store, mr); /* put StorageId in new record */
             Dmsg4(debuglevel,
@@ -163,15 +145,11 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
       }
 
       if (!ok && create) {
-        /*
-         * 6. Try "creating" a new Volume
-         */
+        // 6. Try "creating" a new Volume
         ok = newVolume(jcr, mr, store);
       }
 
-      /*
-       *  Look at more drastic ways to find an Appendable Volume
-       */
+      //  Look at more drastic ways to find an Appendable Volume
       if (!ok
           && (jcr->impl->res.pool->purge_oldest_volume
               || jcr->impl->res.pool->recycle_oldest_volume)) {
@@ -180,9 +158,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
               jcr->impl->res.pool->purge_oldest_volume,
               jcr->impl->res.pool->recycle_oldest_volume);
 
-        /*
-         * Find oldest volume to recycle
-         */
+        // Find oldest volume to recycle
         SetStorageidInMr(store, mr);
         ok = jcr->db->FindNextVolume(jcr, -1, InChanger, mr, unwanted_volumes);
         SetStorageidInMr(store, mr);
@@ -190,18 +166,14 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
         if (ok && prune) {
           UaContext* ua;
           Dmsg0(debuglevel, "Try purge Volume.\n");
-          /*
-           * 7.  Try to purging oldest volume only if not UA calling us.
-           */
+          // 7.  Try to purging oldest volume only if not UA calling us.
           ua = new_ua_context(jcr);
           if (jcr->impl->res.pool->purge_oldest_volume && create) {
             Jmsg(jcr, M_INFO, 0, _("Purging oldest volume \"%s\"\n"),
                  mr->VolumeName);
             ok = PurgeJobsFromVolume(ua, mr);
           } else if (jcr->impl->res.pool->recycle_oldest_volume) {
-            /*
-             * 8. Try recycling the oldest volume
-             */
+            // 8. Try recycling the oldest volume
             Jmsg(jcr, M_INFO, 0, _("Pruning oldest volume \"%s\"\n"),
                  mr->VolumeName);
             ok = PruneVolume(ua, mr);
@@ -219,9 +191,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
     Dmsg2(debuglevel, "VolJobs=%d FirstWritten=%d\n", mr->VolJobs,
           mr->FirstWritten);
     if (ok) {
-      /*
-       * If we can use the volume, check if it is expired
-       */
+      // If we can use the volume, check if it is expired
       if (bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr)) {
         if (retry++ < 200) { /* sanity check */
           continue;          /* try again from the top */
@@ -256,9 +226,7 @@ bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
    * mr->VolJobs > 0
    */
   if (bstrcmp(mr->VolStatus, "Append") && mr->VolJobs > 0) {
-    /*
-     * First handle Max Volume Bytes
-     */
+    // First handle Max Volume Bytes
     if ((mr->MaxVolBytes > 0 && mr->VolBytes >= mr->MaxVolBytes)) {
       Jmsg(jcr, M_INFO, 0,
            _("Max Volume bytes=%s exceeded. Marking Volume \"%s\" as Full.\n"),
@@ -266,18 +234,14 @@ bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
       bstrncpy(mr->VolStatus, "Full", sizeof(mr->VolStatus));
       expired = true;
     } else if (mr->VolBytes > 0 && jcr->impl->res.pool->use_volume_once) {
-      /*
-       * Volume should only be used once
-       */
+      // Volume should only be used once
       Jmsg(jcr, M_INFO, 0,
            _("Volume used once. Marking Volume \"%s\" as Used.\n"),
            mr->VolumeName);
       bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
       expired = true;
     } else if (mr->MaxVolJobs > 0 && mr->MaxVolJobs <= mr->VolJobs) {
-      /*
-       * Max Jobs written to volume
-       */
+      // Max Jobs written to volume
       Jmsg(jcr, M_INFO, 0,
            _("Max Volume jobs=%s exceeded. Marking Volume \"%s\" as Used.\n"),
            edit_uint64_with_commas(mr->MaxVolJobs, ed1), mr->VolumeName);
@@ -286,18 +250,14 @@ bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
       bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
       expired = true;
     } else if (mr->MaxVolFiles > 0 && mr->MaxVolFiles <= mr->VolFiles) {
-      /*
-       * Max Files written to volume
-       */
+      // Max Files written to volume
       Jmsg(jcr, M_INFO, 0,
            _("Max Volume files=%s exceeded. Marking Volume \"%s\" as Used.\n"),
            edit_uint64_with_commas(mr->MaxVolFiles, ed1), mr->VolumeName);
       bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
       expired = true;
     } else if (mr->VolUseDuration > 0) {
-      /*
-       * Use duration expiration
-       */
+      // Use duration expiration
       utime_t now = time(NULL);
       if (mr->VolUseDuration <= (now - mr->FirstWritten)) {
         Jmsg(jcr, M_INFO, 0,
@@ -311,9 +271,7 @@ bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
   }
 
   if (expired) {
-    /*
-     * Need to update media
-     */
+    // Need to update media
     Dmsg1(debuglevel, "Vol=%s has expired update media record\n",
           mr->VolumeName);
     SetStorageidInMr(NULL, mr);
@@ -341,19 +299,13 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
 
   *reason = NULL;
 
-  /*
-   * Check if a duration or limit has expired
-   */
+  // Check if a duration or limit has expired
   if (bstrcmp(mr->VolStatus, "Append") && HasVolumeExpired(jcr, mr)) {
     *reason = _("volume has expired");
-    /*
-     * Keep going because we may be able to recycle volume
-     */
+    // Keep going because we may be able to recycle volume
   }
 
-  /*
-   * Now see if we can use the volume as is
-   */
+  // Now see if we can use the volume as is
   if (bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Recycle")) {
     *reason = NULL;
     return;

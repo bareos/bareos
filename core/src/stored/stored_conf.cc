@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, March MM
- */
+// Kern Sibbald, March MM
 /**
  * @file
  * Configuration file parser for Bareos Storage daemon
@@ -298,9 +296,7 @@ static void StoreAuthenticationType(LEX* lc,
   int i;
 
   LexGetToken(lc, BCT_NAME);
-  /*
-   * Store the type both pass 1 and pass 2
-   */
+  // Store the type both pass 1 and pass 2
   for (i = 0; authentication_methods[i].name; i++) {
     if (Bstrcasecmp(lc->str, authentication_methods[i].name)) {
       SetItemVariable<uint32_t>(*item, authentication_methods[i].token);
@@ -317,9 +313,7 @@ static void StoreAuthenticationType(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/**
- * Store password either clear if for NDMP or MD5 hashed for native.
- */
+// Store password either clear if for NDMP or MD5 hashed for native.
 static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 {
   switch ((*item->allocated_resource)->rcode_) {
@@ -353,9 +347,7 @@ static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int pass)
   int i;
 
   LexGetToken(lc, BCT_NAME);
-  /*
-   * Store the label pass 2 so that type is defined
-   */
+  // Store the label pass 2 so that type is defined
   for (i = 0; device_types[i].name; i++) {
     if (Bstrcasecmp(lc->str, device_types[i].name)) {
       SetItemVariable<DeviceType>(*item, device_types[i].token);
@@ -371,9 +363,7 @@ static void StoreDeviceType(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/**
- * Store Maximum Block Size, and check it is not greater than MAX_BLOCK_LENGTH
- */
+// Store Maximum Block Size, and check it is not greater than MAX_BLOCK_LENGTH
 static void StoreMaxblocksize(LEX* lc, ResourceItem* item, int index, int pass)
 {
   my_config->StoreResource(CFG_TYPE_SIZE32, lc, item, index, pass);
@@ -385,9 +375,7 @@ static void StoreMaxblocksize(LEX* lc, ResourceItem* item, int index, int pass)
   }
 }
 
-/**
- * Store the IO direction on a certain device.
- */
+// Store the IO direction on a certain device.
 static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int i;
@@ -408,9 +396,7 @@ static void StoreIoDirection(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/**
- * Store the compression algorithm to use on a certain device.
- */
+// Store the compression algorithm to use on a certain device.
 static void StoreCompressionalgorithm(LEX* lc,
                                       ResourceItem* item,
                                       int index,
@@ -613,9 +599,7 @@ bool ParseSdConfig(const char* configfile, int exit_code)
   return retval;
 }
 
-/**
- * Print configuration file schema in json format
- */
+// Print configuration file schema in json format
 #ifdef HAVE_JANSSON
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
@@ -626,9 +610,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set_new(json, "component", json_string("bareos-sd"));
   json_object_set_new(json, "version", json_string(kBareosVersionStrings.Full));
 
-  /*
-   * Resources
-   */
+  // Resources
   json_t* resource = json_object();
   json_object_set(json, "resource", resource);
   json_t* bareos_sd = json_object();

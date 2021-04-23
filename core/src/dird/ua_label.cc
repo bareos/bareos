@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, April MMIII
- */
+// Kern Sibbald, April MMIII
 /**
  * @file
  * BAREOS Director -- Tape labeling commands
@@ -65,9 +63,7 @@ static inline bool update_database(UaContext* ua,
   bool retval = true;
 
   if (media_record_exists) {
-    /*
-     * Update existing media record.
-     */
+    // Update existing media record.
     mr->InChanger = mr->Slot > 0; /* If slot give assume in changer */
     SetStorageidInMr(ua->jcr->impl->res.write_storage, mr);
     if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
@@ -75,9 +71,7 @@ static inline bool update_database(UaContext* ua,
       retval = false;
     }
   } else {
-    /*
-     * Create the media record
-     */
+    // Create the media record
     SetPoolDbrDefaultsInMediaDbr(mr, pr);
     mr->InChanger = mr->Slot > 0; /* If slot give assume in changer */
     mr->Enabled = 1;
@@ -88,9 +82,7 @@ static inline bool update_database(UaContext* ua,
                     "created.\n"),
                   mr->VolumeName, mr->Slot);
 
-      /*
-       * Update number of volumes in pool
-       */
+      // Update number of volumes in pool
       pr->NumVols++;
       if (!ua->db->UpdatePoolRecord(ua->jcr, pr)) {
         ua->ErrorMsg("%s", ua->db->strerror());
@@ -104,9 +96,7 @@ static inline bool update_database(UaContext* ua,
   return retval;
 }
 
-/*
- * NOTE! This routine opens the SD socket but leaves it open
- */
+// NOTE! This routine opens the SD socket but leaves it open
 static inline bool native_send_label_request(UaContext* ua,
                                              MediaDbRecord* mr,
                                              MediaDbRecord* omr,
@@ -135,9 +125,7 @@ static inline bool native_send_label_request(UaContext* ua,
         "MediaType=%s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d",
         dev_name, omr->VolumeName, mr->VolumeName, pr->Name, mr->MediaType,
         mr->Slot, drive,
-        /*
-         * if relabeling, keep blocksize settings
-         */
+        // if relabeling, keep blocksize settings
         omr->MinBlocksize, omr->MaxBlocksize);
     ua->SendMsg(_("Sending relabel command from \"%s\" to \"%s\" ...\n"),
                 omr->VolumeName, mr->VolumeName);
@@ -146,9 +134,7 @@ static inline bool native_send_label_request(UaContext* ua,
         "label %s VolumeName=%s PoolName=%s MediaType=%s "
         "Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d",
         dev_name, mr->VolumeName, pr->Name, mr->MediaType, mr->Slot, drive,
-        /*
-         * If labeling, use blocksize defined in pool
-         */
+        // If labeling, use blocksize defined in pool
         pr->MinBlocksize, pr->MaxBlocksize);
     ua->SendMsg(_("Sending label command for Volume \"%s\" Slot %hd ...\n"),
                 mr->VolumeName, mr->Slot);
@@ -215,9 +201,7 @@ static bool GenerateNewEncryptionKey(UaContext* ua, MediaDbRecord* mr)
     return false;
   }
 
-  /*
-   * See if we need to wrap the passphrase.
-   */
+  // See if we need to wrap the passphrase.
   if (me->keyencrkey.value) {
     char* wrapped_passphrase;
 
@@ -233,9 +217,7 @@ static bool GenerateNewEncryptionKey(UaContext* ua, MediaDbRecord* mr)
     length = DEFAULT_PASSPHRASE_LENGTH;
   }
 
-  /*
-   * The passphrase is always base64 encoded.
-   */
+  // The passphrase is always base64 encoded.
   BinToBase64(mr->EncrKey, sizeof(mr->EncrKey), passphrase, length, true);
 
   free(passphrase);
@@ -288,9 +270,7 @@ static inline bool IsCleaningTape(UaContext* ua,
 {
   bool retval;
 
-  /*
-   * Find Pool resource
-   */
+  // Find Pool resource
   ua->jcr->impl->res.pool = ua->GetPoolResWithName(pr->Name, false);
   if (!ua->jcr->impl->res.pool) {
     ua->ErrorMsg(_("Pool \"%s\" resource not found for volume \"%s\"!\n"),
@@ -346,9 +326,7 @@ static void label_from_barcodes(UaContext* ua,
     goto bail_out;
   }
 
-  /*
-   * Display list of Volumes and ask if he really wants to proceed
-   */
+  // Display list of Volumes and ask if he really wants to proceed
   ua->SendMsg(
       _("The following Volumes will be labeled:\n"
         "Slot  Volume\n"
@@ -366,14 +344,10 @@ static void label_from_barcodes(UaContext* ua,
     goto bail_out;
   }
 
-  /*
-   * Select a pool
-   */
+  // Select a pool
   if (!SelectPoolDbr(ua, &pr)) { goto bail_out; }
 
-  /*
-   * Fire off the label requests
-   */
+  // Fire off the label requests
   foreach_dlist (vl, vol_list->contents) {
     if (!vl->VolName || !BitIsSet(vl->bareos_slot_number - 1, slot_list)) {
       continue;
@@ -439,9 +413,7 @@ static void label_from_barcodes(UaContext* ua,
     }
     bstrncpy(mr.MediaType, store->media_type, sizeof(mr.MediaType));
 
-    /*
-     * See if we need to generate a new passphrase for hardware encryption.
-     */
+    // See if we need to generate a new passphrase for hardware encryption.
     if (label_encrypt) {
       if (!GenerateNewEncryptionKey(ua, &mr)) { continue; }
     }
@@ -459,9 +431,7 @@ bail_out:
   return;
 }
 
-/*
- * Common routine for both label and relabel
- */
+// Common routine for both label and relabel
 static int do_label(UaContext* ua, const char* cmd, bool relabel)
 {
   int i, j;
@@ -483,22 +453,16 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
 
   if (ua->batch || FindArg(ua, NT_("yes")) > 0) { yes = true; }
 
-  /*
-   * Look for one of the barcode keywords
-   */
+  // Look for one of the barcode keywords
   if (!relabel && (i = FindArgKeyword(ua, barcode_keywords)) >= 0) {
-    /*
-     * Now find the keyword in the list
-     */
+    // Now find the keyword in the list
     if ((j = FindArg(ua, barcode_keywords[i])) > 0) {
       *ua->argk[j] = 0; /* zap barcode keyword */
     }
     label_barcodes = true;
   }
 
-  /*
-   * Look for the encrypt keyword
-   */
+  // Look for the encrypt keyword
   if ((i = FindArg(ua, "encrypt")) > 0) {
     *ua->argk[i] = 0; /* zap encrypt keyword */
     label_encrypt = true;
@@ -533,27 +497,19 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
     return 1;
   }
 
-  /*
-   * If relabel get name of Volume to relabel
-   */
+  // If relabel get name of Volume to relabel
   if (relabel) {
-    /*
-     * Check for oldvolume=name
-     */
+    // Check for oldvolume=name
     i = FindArgWithValue(ua, "oldvolume");
     if (i >= 0) {
       bstrncpy(omr.VolumeName, ua->argv[i], sizeof(omr.VolumeName));
       if (ua->db->GetMediaRecord(ua->jcr, &omr)) { goto checkVol; }
       ua->ErrorMsg("%s", ua->db->strerror());
     }
-    /*
-     * No keyword or Vol not found, ask user to select
-     */
+    // No keyword or Vol not found, ask user to select
     if (!SelectMediaDbr(ua, &omr)) { return 1; }
 
-    /*
-     * Require Volume to be Purged or Recycled
-     */
+    // Require Volume to be Purged or Recycled
   checkVol:
     if (!bstrcmp(omr.VolStatus, "Purged")
         && !bstrcmp(omr.VolStatus, "Recycle")) {
@@ -564,18 +520,14 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
     }
   }
 
-  /*
-   * Check for volume=NewVolume
-   */
+  // Check for volume=NewVolume
   i = FindArgWithValue(ua, "volume");
   if (i >= 0) {
     PmStrcpy(ua->cmd, ua->argv[i]);
     goto checkName;
   }
 
-  /*
-   * Get a new Volume name
-   */
+  // Get a new Volume name
   for (;;) {
     media_record_exists = false;
     if (!GetCmd(ua, _("Enter new Volume name: "))) { return 1; }

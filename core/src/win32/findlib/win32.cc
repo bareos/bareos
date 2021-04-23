@@ -44,9 +44,7 @@ bool win32_onefs_is_disabled(findFILESET* fileset)
 
   for (int i = 0; i < fileset->include_list.size(); i++) {
     incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
-    /*
-     * Look through all files and check
-     */
+    // Look through all files and check
     for (int j = 0; j < incexe->opts_list.size(); j++) {
       findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
       if (BitIsSet(FO_MULTIFS, fo->flags)) { return true; }
@@ -101,9 +99,7 @@ int get_win32_driveletters(findFILESET* fileset, char* szDrives)
     for (i = 0; i < fileset->include_list.size(); i++) {
       incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
-      /*
-       * Look through all files and check
-       */
+      // Look through all files and check
       foreach_dlist (node, &incexe->name_list) {
         fname = node->c_str();
 
@@ -115,30 +111,20 @@ int get_win32_driveletters(findFILESET* fileset, char* szDrives)
           if (sb.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT) { continue; }
         }
 
-        /*
-         * fname should match x:/
-         */
+        // fname should match x:/
         if (strlen(fname) >= 2 && B_ISALPHA(fname[0]) && fname[1] == ':') {
-          /*
-           * VSS can only snapshot fixed drives.
-           */
+          // VSS can only snapshot fixed drives.
           bstrncpy(drive, fname, sizeof(drive));
           drive[2] = '\\';
           drive[3] = '\0';
 
-          /*
-           * Lookup the drive type.
-           */
+          // Lookup the drive type.
           if (Drivetype(drive, dt, sizeof(dt))) {
             if (bstrcmp(dt, "fixed")) {
-              /*
-               * Always add in uppercase
-               */
+              // Always add in uppercase
               ch = toupper(fname[0]);
 
-              /*
-               * If not found in string, add drive letter
-               */
+              // If not found in string, add drive letter
               if (!strchr(szDrives, ch)) {
                 szDrives[nCount] = ch;
                 szDrives[nCount + 1] = 0;
@@ -174,15 +160,11 @@ int get_win32_virtualmountpoints(findFILESET* fileset, dlist** szVmps)
     devicename = GetPoolMemory(PM_FNAME);
     for (i = 0; i < fileset->include_list.size(); i++) {
       incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
-      /*
-       * Look through all files and check
-       */
+      // Look through all files and check
       foreach_dlist (node, &incexe->name_list) {
         fname = node->c_str();
 
-        /*
-         * See if the entry has the FILE_ATTRIBUTE_VOLUME_MOUNT_POINT flag set.
-         */
+        // See if the entry has the FILE_ATTRIBUTE_VOLUME_MOUNT_POINT flag set.
         if (stat(fname, &sb) == 0) {
           if (!(sb.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT)) { continue; }
         } else {
@@ -190,9 +172,7 @@ int get_win32_virtualmountpoints(findFILESET* fileset, dlist** szVmps)
         }
 
         if (win32_get_vmp_devicename(fname, devicename)) {
-          /*
-           * See if we need to allocate a new dlist.
-           */
+          // See if we need to allocate a new dlist.
           if (!cnt) {
             if (!*szVmps) {
               *szVmps = (dlist*)malloc(sizeof(dlist));
@@ -220,9 +200,7 @@ static inline bool WantedDriveType(const char* drive,
   bool done = false;
   bool wanted = true;
 
-  /*
-   * Lookup the drive type.
-   */
+  // Lookup the drive type.
   if (!Drivetype(drive, dt, sizeof(dt))) { return false; }
 
   /*
@@ -263,9 +241,7 @@ bool expand_win32_fileset(findFILESET* fileset)
     foreach_dlist (node, &incexe->name_list) {
       Dmsg1(100, "Checking %s\n", node->c_str());
       if (bstrcmp(node->c_str(), "/")) {
-        /*
-         * Request for auto expansion but no support for it.
-         */
+        // Request for auto expansion but no support for it.
         if (!p_GetLogicalDriveStringsA) { return false; }
 
         /*
@@ -391,14 +367,10 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
     DWORD cchValue;             /* Size of value string */
     findIncludeExcludeItem* include;
 
-    /*
-     * Make sure the variable are big enough to contain the data.
-     */
+    // Make sure the variable are big enough to contain the data.
     achClass.check_size(MAX_PATH);
 
-    /*
-     * Get the class name and the value count.
-     */
+    // Get the class name and the value count.
     cchClassName = achClass.size();
     retCode = RegQueryInfoKey(hKey,             /* Key handle */
                               achClass.c_str(), /* Buffer for class name */
@@ -416,17 +388,13 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
     if (cValues) {
       findFOPTS* fo;
 
-      /*
-       * Prepare include block to do exclusion via wildcards in options
-       */
+      // Prepare include block to do exclusion via wildcards in options
       new_preinclude(ff->fileset);
 
       include = (findIncludeExcludeItem*)ff->fileset->include_list.get(0);
 
       if (include->opts_list.size() == 0) {
-        /*
-         * Create new options block in include block for the wildcard excludes
-         */
+        // Create new options block in include block for the wildcard excludes
         Dmsg0(100, "prepending new options block\n");
         NewOptions(ff, ff->fileset->incexe);
       } else {
@@ -436,9 +404,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
       SetBit(FO_EXCLUDE, fo->flags);    /* exclude = yes */
       SetBit(FO_IGNORECASE, fo->flags); /* ignore case = yes */
 
-      /*
-       * Make sure the variables are big enough to contain the data.
-       */
+      // Make sure the variables are big enough to contain the data.
       achValue.check_size(MAX_VALUE_NAME);
       dwKeyEn.check_size(MAX_PATH);
       expandedKey.check_size(MAX_PATH);
@@ -496,9 +462,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
                 s = expandedKey.c_str();
                 d = destination.c_str();
 
-                /*
-                 * Begin with \ means all drives
-                 */
+                // Begin with \ means all drives
                 if (*s == '\\') { d += PmStrcpy(destination, "[A-Z]:"); }
 
                 while (*s) {
@@ -544,9 +508,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
   return retval;
 }
 
-/**
- * Windows specific code for restoring EFS data.
- */
+// Windows specific code for restoring EFS data.
 struct CopyThreadSaveData {
   uint32_t data_len; /* Length of Data */
   POOLMEM* data;     /* Data */
@@ -566,9 +528,7 @@ struct CopyThreadContext {
   pthread_cond_t flush; /* Flush data from the Circular buffer */
 };
 
-/**
- * Callback method for WriteEncryptedFileRaw()
- */
+// Callback method for WriteEncryptedFileRaw()
 static DWORD WINAPI receive_efs_data(PBYTE pbData,
                                      PVOID pvCallbackContext,
                                      PULONG ulLength)
@@ -576,9 +536,7 @@ static DWORD WINAPI receive_efs_data(PBYTE pbData,
   CopyThreadSaveData* save_data;
   CopyThreadContext* context = (CopyThreadContext*)pvCallbackContext;
 
-  /*
-   * Dequeue an item from the circular buffer.
-   */
+  // Dequeue an item from the circular buffer.
   save_data = (CopyThreadSaveData*)context->cb->dequeue();
 
   if (save_data) {
@@ -597,9 +555,7 @@ static DWORD WINAPI receive_efs_data(PBYTE pbData,
   return ERROR_SUCCESS;
 }
 
-/**
- * Copy thread cancel handler.
- */
+// Copy thread cancel handler.
 static void CopyCleanupThread(void* data)
 {
   CopyThreadContext* context = (CopyThreadContext*)data;
@@ -607,18 +563,14 @@ static void CopyCleanupThread(void* data)
   pthread_mutex_unlock(&context->lock);
 }
 
-/**
- * Actual copy thread that restores EFS data.
- */
+// Actual copy thread that restores EFS data.
 static void* copy_thread(void* data)
 {
   CopyThreadContext* context = (CopyThreadContext*)data;
 
   if (pthread_mutex_lock(&context->lock) != 0) { goto bail_out; }
 
-  /*
-   * When we get canceled make sure we run the cleanup function.
-   */
+  // When we get canceled make sure we run the cleanup function.
   pthread_cleanup_push(CopyCleanupThread, data);
 
   while (1) {

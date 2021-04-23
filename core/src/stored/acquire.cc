@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, August MMII
- */
+// Kern Sibbald, August MMII
 /**
  * @file
  * Routines to acquire and release a device for read/write
@@ -185,9 +183,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     rctx.store = store;
     CleanDevice(dcr); /* clean up the dcr */
 
-    /*
-     * Search for a new device
-     */
+    // Search for a new device
     status = SearchResForDevice(rctx);
     ReleaseReserveMessages(jcr); /* release queued messages */
     UnlockReservations();
@@ -243,9 +239,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
       = dev->CanRead() || dev->CanAppend() || dev->IsLabeled();
   // tape_initially_mounted = tape_previously_mounted;
 
-  /*
-   * Volume info is always needed because of VolParts
-   */
+  // Volume info is always needed because of VolParts
   Dmsg1(rdebuglevel, "DirGetVolumeInfo vol=%s\n", dcr->VolumeName);
   if (!dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_READ)) {
     Dmsg2(rdebuglevel, "dir_get_vol_info failed for vol=%s: %s\n",
@@ -255,9 +249,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   dev->SetLoad(); /* set to load volume */
 
   while (1) {
-    /*
-     * If not polling limit retries
-     */
+    // If not polling limit retries
     if (!dev->poll && retry++ > 10) { break; }
 
     /*
@@ -306,9 +298,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
         && bstrcmp(dev->VolHdr.VolumeName, dcr->VolumeName)) {
       vol_label_status = VOL_OK;
     } else {
-      /*
-       * Read Volume Label
-       */
+      // Read Volume Label
       Dmsg0(rdebuglevel, "calling read-vol-label\n");
       vol_label_status = ReadDevVolumeLabel(dcr);
     }
@@ -336,9 +326,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
         if (dev->IsVolumeToUnload()) { goto default_path; }
         dev->SetUnload(); /* force unload of unwanted tape */
         if (!UnloadAutochanger(dcr, -1)) {
-          /*
-           * At least free the device so we can re-open with correct volume
-           */
+          // At least free the device so we can re-open with correct volume
           dev->close(dcr);
           FreeVolume(dev);
         }
@@ -350,17 +338,13 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
         Dmsg0(rdebuglevel, "default path\n");
         tape_previously_mounted = true;
 
-        /*
-         * If the device requires mount, close it, so the device can be ejected.
-         */
+        // If the device requires mount, close it, so the device can be ejected.
         if (dev->RequiresMount()) {
           dev->close(dcr);
           FreeVolume(dev);
         }
 
-        /*
-         * Call autochanger only once unless ask_sysop called
-         */
+        // Call autochanger only once unless ask_sysop called
         if (try_autochanger) {
           int status;
           Dmsg2(rdebuglevel, "calling autoload Vol=%s Slot=%d\n",
@@ -372,17 +356,13 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
           }
         }
 
-        /*
-         * Mount a specific volume and no other
-         */
+        // Mount a specific volume and no other
         Dmsg0(rdebuglevel, "calling dir_ask_sysop\n");
         if (!dcr->DirAskSysopToMountVolume(ST_READREADY)) {
           goto get_out; /* error return */
         }
 
-        /*
-         * Volume info is always needed because of VolParts
-         */
+        // Volume info is always needed because of VolParts
         Dmsg1(150, "DirGetVolumeInfo vol=%s\n", dcr->VolumeName);
         if (!dcr->DirGetVolumeInfo(GET_VOL_INFO_FOR_READ)) {
           Dmsg2(150, "dir_get_vol_info failed for vol=%s: %s\n",
@@ -459,9 +439,7 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
   dev->Lock();
   Dmsg1(100, "acquire_append device is %s\n", dev->IsTape() ? "tape" : "disk");
 
-  /*
-   * With the reservation system, this should not happen
-   */
+  // With the reservation system, this should not happen
   if (dev->CanRead()) {
     Jmsg1(jcr, M_FATAL, 0,
           _("Want to append, but device %s is busy reading.\n"),
@@ -522,9 +500,7 @@ DeviceControlRecord* AcquireDeviceForAppend(DeviceControlRecord* dcr)
   retval = true;
 
 get_out:
-  /*
-   * Don't plugin close here, we might have multiple writers
-   */
+  // Don't plugin close here, we might have multiple writers
   dcr->ClearReserved();
   dev->Unlock();
   dev->Unlock_acquire();
@@ -551,9 +527,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
 
   Jmsg(jcr, M_INFO, 0, "Releasing device %s.\n", dev->print_name());
 
-  /*
-   * Capture job statistics now that we are done using this device.
-   */
+  // Capture job statistics now that we are done using this device.
   now = (utime_t)time(NULL);
   UpdateJobStatistics(jcr, now);
 
@@ -582,9 +556,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   LockVolumes();
   Dmsg1(100, "releasing device %s\n", dev->print_name());
 
-  /*
-   * If device is reserved, job never started, so release the reserve here
-   */
+  // If device is reserved, job never started, so release the reserve here
   dcr->ClearReserved();
 
   if (dev->CanRead()) {
@@ -615,9 +587,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
               dcr->getVolCatName(), jcr->Job);
       }
 
-      /*
-       * If no more writers, and no errors, and wrote something, write an EOF
-       */
+      // If no more writers, and no errors, and wrote something, write an EOF
       if (!dev->num_writers && dev->CanWrite() && dev->block_num > 0) {
         dev->weof(1);
         WriteAnsiIbmLabels(dcr, ANSI_EOF_LABEL, dev->VolHdr.VolumeName);
@@ -625,9 +595,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
       if (!dev->AtWeot()) {
         dev->VolCatInfo.VolCatFiles = dev->file; /* set number of files */
 
-        /*
-         * Note! do volume update before close, which zaps VolCatInfo
-         */
+        // Note! do volume update before close, which zaps VolCatInfo
         dcr->DirUpdateVolumeInfo(false,
                                  false); /* send Volume info to Director */
         Dmsg2(200, "dir_update_vol_info. Release vol=%s dev=%s\n",
@@ -650,9 +618,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   Dmsg3(100, "%d writers, %d reserve, dev=%s\n", dev->num_writers,
         dev->NumReserved(), dev->print_name());
 
-  /*
-   * If no writers, close if file or !CAP_ALWAYS_OPEN
-   */
+  // If no writers, close if file or !CAP_ALWAYS_OPEN
   if (dev->num_writers == 0
       && (!dev->IsTape() || !dev->HasCap(CAP_ALWAYSOPEN))) {
     dev->close(dcr);
@@ -661,9 +627,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
 
   UnlockVolumes();
 
-  /*
-   * Fire off Alert command and include any output
-   */
+  // Fire off Alert command and include any output
   if (!JobCanceled(jcr)) {
     if (!dcr->device_resource->drive_tapealert_enabled
         && dcr->device_resource->alert_command) {
@@ -677,9 +641,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
       alert = edit_device_codes(dcr, alert, dcr->device_resource->alert_command,
                                 "");
 
-      /*
-       * Wait maximum 5 minutes
-       */
+      // Wait maximum 5 minutes
       bpipe = OpenBpipe(alert, 60 * 5, "r");
       if (bpipe) {
         while (bfgets(line, bpipe->rfd)) {
@@ -715,15 +677,11 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
         bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
   ReleaseDeviceCond();
 
-  /*
-   * If we are the thread that blocked the device, then unblock it
-   */
+  // If we are the thread that blocked the device, then unblock it
   if (pthread_equal(dev->no_wait_id, pthread_self())) {
     dev->dunblock(true);
   } else {
-    /*
-     * Otherwise, reset the prior block status and unlock
-     */
+    // Otherwise, reset the prior block status and unlock
     dev->SetBlocked(was_blocked);
     dev->Unlock();
   }
@@ -740,9 +698,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
   return retval;
 }
 
-/**
- * Clean up the device for reuse without freeing the memory
- */
+// Clean up the device for reuse without freeing the memory
 bool CleanDevice(DeviceControlRecord* dcr)
 {
   bool retval;
@@ -754,9 +710,7 @@ bool CleanDevice(DeviceControlRecord* dcr)
   return retval;
 }
 
-/**
- * Setup DeviceControlRecord with a new device.
- */
+// Setup DeviceControlRecord with a new device.
 void SetupNewDcrDevice(JobControlRecord* jcr,
                        DeviceControlRecord* dcr,
                        Device* dev,
@@ -764,9 +718,7 @@ void SetupNewDcrDevice(JobControlRecord* jcr,
 {
   dcr->jcr = jcr; /* point back to jcr */
 
-  /*
-   * Set device information, possibly change device
-   */
+  // Set device information, possibly change device
   if (dev) {
     /*
      * Set wanted blocksizes

@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, June 2014
- */
+// Marco van Wieringen, June 2014
 /**
  * @file
  * Dynamic loading of SD backend plugins.

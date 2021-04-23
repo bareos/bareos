@@ -150,9 +150,7 @@ void WaitThenUnreserve(std::unique_ptr<TestJob>& job)
   ReleaseDeviceCond();
 }
 
-/*
- * Test that an illegal command passed to use_cmd will fail gracefully
- */
+// Test that an illegal command passed to use_cmd will fail gracefully
 TEST_F(ReservationTest, use_cmd_illegal)
 {
   auto bsock = std::make_unique<BareosSocketMock>();
@@ -191,9 +189,7 @@ TEST_F(ReservationTest, use_cmd_illegal_dev)
   ASSERT_EQ(use_cmd(job->jcr), false);
 }
 
-/*
- * Test reserving a device for read works correctly
- */
+// Test reserving a device for read works correctly
 TEST_F(ReservationTest, use_cmd_reserve_read_twice_success)
 {
   auto bsock = std::make_unique<BareosSocketMock>();
@@ -226,9 +222,7 @@ TEST_F(ReservationTest, use_cmd_reserve_read_twice_success)
   ASSERT_STREQ(bsock->msg, "3000 OK use device device=auto1dev3\n");
 }
 
-/*
- * Test reserving broken device
- */
+// Test reserving broken device
 TEST_F(ReservationTest, use_cmd_reserve_broken)
 {
   auto bsock = std::make_unique<BareosSocketMock>();
@@ -252,9 +246,7 @@ TEST_F(ReservationTest, use_cmd_reserve_broken)
                "matching Media Type.\n");
 }
 
-/*
- * Test reserving device with wrong mediatype
- */
+// Test reserving device with wrong mediatype
 TEST_F(ReservationTest, use_cmd_reserve_wrong_mediatype)
 {
   auto bsock = std::make_unique<BareosSocketMock>();
@@ -278,9 +270,7 @@ TEST_F(ReservationTest, use_cmd_reserve_wrong_mediatype)
                "matching Media Type.\n");
 }
 
-/*
- * Test reserving a reserved device and wait for it to become free
- */
+// Test reserving a reserved device and wait for it to become free
 TEST_F(ReservationTest, use_cmd_reserve_read_twice_wait)
 {
   auto bsock = std::make_unique<BareosSocketMock>();

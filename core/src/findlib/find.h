@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald MMI
- */
+// Kern Sibbald MMI
 /**
  * @file
  * File types as returned by FindFiles()
@@ -63,9 +61,7 @@
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
 #  endif
 #endif
-/**
- * For options FO_xxx values see src/fileopts.h
- */
+// For options FO_xxx values see src/fileopts.h
 enum
 {
   state_none,
@@ -120,9 +116,7 @@ struct s_excluded_file {
 
 #define MAX_OPTS 20
 
-/**
- * File options structure
- */
+// File options structure
 struct findFOPTS {
   char flags[FOPTS_BYTES]{};    /**< Backup options */
   uint32_t Encryption_cipher{}; /**< Encryption cipher forced by fileset */
@@ -149,9 +143,7 @@ struct findFOPTS {
   alist Drivetype;               /**< Drive type limitation */
 };
 
-/**
- * This is either an include item or an exclude item
- */
+// This is either an include item or an exclude item
 struct findIncludeExcludeItem {
   findFOPTS* current_opts; /**< Points to current options structure */
   alist opts_list;         /**< Options list */
@@ -160,9 +152,7 @@ struct findIncludeExcludeItem {
   alist ignoredir;         /**< Ignore directories with this file(s) */
 };
 
-/**
- * FileSet Resource
- */
+// FileSet Resource
 struct findFILESET {
   int state;
   findIncludeExcludeItem* incexe; /**< Current item */
@@ -170,9 +160,7 @@ struct findFILESET {
   alist exclude_list;
 };
 
-/**
- * OSX resource fork.
- */
+// OSX resource fork.
 struct HfsPlusInfo {
   unsigned long length{0}; /**< Mandatory field */
   char fndrinfo[32]{};     /**< Finder Info */
@@ -250,9 +238,7 @@ struct FindFilesPacket {
       JobControlRecord*,
       FindFilesPacket*){};   /**< Optional user fct to check file changes */
 
-  /*
-   * Values set by AcceptFile while processing Options
-   */
+  // Values set by AcceptFile while processing Options
   char flags[FOPTS_BYTES]{}; /**< Backup options */
   uint32_t Compress_algo{0}; /**< Compression algorithm. 4 letters stored as an integer */
   int Compress_level{0};     /**< Compression level */
@@ -263,9 +249,7 @@ struct FindFilesPacket {
   alist fstypes;          /**< Allowed file system types */
   alist drivetypes;       /**< Allowed drive types */
 
-  /*
-   * List of all hard linked files found
-   */
+  // List of all hard linked files found
   htable* linkhash{nullptr};       /**< Hard linked files */
   struct CurLink* linked{nullptr}; /**< Set if this file is hard linked */
 

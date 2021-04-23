@@ -18,9 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Marco van Wieringen, January 2015
- */
+// Written by Marco van Wieringen, January 2015
 /**
  * @file
  * Interactive configuration engine for director.
@@ -57,9 +55,7 @@ static void ConfigureLexErrorHandler(const char* file,
                                      const char* msg,
                                      ...)
 {
-  /*
-   * This function is an error handler, used by lex.
-   */
+  // This function is an error handler, used by lex.
   PoolMem buf(PM_NAME);
   va_list ap;
 
@@ -157,9 +153,7 @@ static inline bool config_add_directive(UaContext* ua,
   if (res_table && (!item)) { return false; }
 
   if (item) {
-    /*
-     * Use item->name instead of key for uniform formatting.
-     */
+    // Use item->name instead of key for uniform formatting.
     key = item->name;
     if (std::find(quotable_types.begin(), quotable_types.end(), item->type)
         != quotable_types.end()) {
@@ -275,9 +269,7 @@ static inline bool ConfigureCreateFdResource(UaContext* ua,
     return false;
   }
 
-  /*
-   * Get the path where the resource should get stored.
-   */
+  // Get the path where the resource should get stored.
   basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
   dirname = my_config->GetNextRes(R_DIRECTOR, NULL)->resource_name_;
   if (!my_config->GetPathOfNewResource(filename, temp, basedir.c_str(),
@@ -288,9 +280,7 @@ static inline bool ConfigureCreateFdResource(UaContext* ua,
   }
   filename_tmp.strcpy(temp);
 
-  /*
-   * Write resource to file.
-   */
+  // Write resource to file.
   if (!configure_write_resource(filename.c_str(), "filedaemon-export",
                                 clientname, resource.c_str(), overwrite)) {
     ua->ErrorMsg("failed to write filedaemon config resource file\n");
@@ -389,9 +379,7 @@ static inline bool ConfigureAddResource(UaContext* ua,
     }
   }
 
-  /*
-   * new config resource is working fine. Rename file to its permanent name.
-   */
+  // new config resource is working fine. Rename file to its permanent name.
   if (rename(filename_tmp.c_str(), filename.c_str()) != 0) {
     ua->ErrorMsg("failed to create config file \"%s\"\n", filename.c_str());
     unlink(filename_tmp.c_str());
@@ -399,9 +387,7 @@ static inline bool ConfigureAddResource(UaContext* ua,
     return false;
   }
 
-  /*
-   * When adding a client, also create the File Daemon client resource file.
-   */
+  // When adding a client, also create the File Daemon client resource file.
   if (res_table->rcode == R_CLIENT) {
     ConfigureCreateFdResource(ua, name.c_str());
   }

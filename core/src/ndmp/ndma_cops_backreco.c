@@ -43,9 +43,7 @@ void ndmca_jobcontrol_register_callbacks(
     struct ndm_session* sess,
     struct ndmca_jobcontrol_callbacks* callbacks)
 {
-  /*
-   * Only allow one register.
-   */
+  // Only allow one register.
   if (!sess->jobcontrol_cbs) {
     sess->jobcontrol_cbs =
         NDMOS_API_MALLOC(sizeof(struct ndmca_jobcontrol_callbacks));
@@ -201,9 +199,7 @@ int ndmca_monitor_backup(struct ndm_session* sess)
   ndmalogf(sess, 0, 3, "Monitoring backup");
 
   for (count = 0; count < 10; count++) {
-    /*
-     * check if job needs to be cancelled
-     */
+    // check if job needs to be cancelled
     if (sess->jobcontrol_cbs && sess->jobcontrol_cbs->is_job_canceled) {
       if (sess->jobcontrol_cbs->is_job_canceled(sess)) {
         ndmalogf(sess, 0, 0, "Job was cancelled, cancelling NDMP operation");
@@ -281,9 +277,7 @@ int ndmca_monitor_backup(struct ndm_session* sess)
       return -1;
     }
 
-    /*
-     * If DATA has halted, the show is over.
-     */
+    // If DATA has halted, the show is over.
     if (ds == NDMP9_DATA_STATE_HALTED) {
       if (ms != NDMP9_MOVER_STATE_HALTED) {
         ndmalogf(sess, 0, 3, "DATA halted, MOVER active");
@@ -305,9 +299,7 @@ int ndmca_monitor_backup(struct ndm_session* sess)
     if (ms == NDMP9_MOVER_STATE_HALTED) {
       if (ds == NDMP9_DATA_STATE_ACTIVE) {
         ndmalogf(sess, 0, 3, "MOVER halted, DATA active");
-        /*
-         * DATA still occupied.
-         */
+        // DATA still occupied.
         continue;
       }
     }
@@ -351,9 +343,7 @@ int ndmca_monitor_backup_tape_tcp(struct ndm_session* sess)
       continue;
     }
 
-    /*
-     * If DATA has halted, the show is over.
-     */
+    // If DATA has halted, the show is over.
     if (ds == NDMP9_DATA_STATE_HALTED) {
       ndmalogf(sess, 0, 2, "Operation done, cleaning up");
 
@@ -384,9 +374,7 @@ int ndmca_monitor_get_post_backup_env(struct ndm_session* sess)
     return -1;
   }
 
-  /*
-   * Only print the data when a deliver function was defined.
-   */
+  // Only print the data when a deliver function was defined.
   if (ixlog->deliver) {
     for (entry = ca->job.result_env_tab.head; entry; entry = entry->next) {
       ndmlogf(ixlog, "DE", 0, "%s=%s", entry->pval.name, entry->pval.value);
@@ -506,9 +494,7 @@ int ndmca_monitor_recover(struct ndm_session* sess)
       return -1;
     }
 
-    /*
-     * If DATA has halted, the show is over.
-     */
+    // If DATA has halted, the show is over.
     if (ds == NDMP9_DATA_STATE_HALTED) {
       if (ms != NDMP9_MOVER_STATE_HALTED) {
         ndmalogf(sess, 0, 3, "DATA halted, MOVER active");
@@ -576,9 +562,7 @@ int ndmca_monitor_recover_tape_tcp(struct ndm_session* sess)
       continue;
     }
 
-    /*
-     * If DATA has halted, the show is over.
-     */
+    // If DATA has halted, the show is over.
     if (ds == NDMP9_DATA_STATE_HALTED) {
       ndmalogf(sess, 0, 2, "Operation done, cleaning up");
 

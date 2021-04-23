@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, September MM
- */
+// Kern Sibbald, September MM
 /**
  * @file
  * User Agent Server
@@ -78,9 +76,7 @@ JobControlRecord* new_control_jcr(const char* base_name, int job_type)
   return jcr;
 }
 
-/**
- * Handle Director User Agent commands
- */
+// Handle Director User Agent commands
 void* HandleUserAgentClientRequest(BareosSocket* user_agent_socket)
 {
   DetachIfNotDetached(pthread_self());

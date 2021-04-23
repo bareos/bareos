@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, May 2012
- */
+// Marco van Wieringen, May 2012
 /**
  * @file
  * ndmp_tape.c implements the NDMP TAPE service which interfaces to
@@ -108,9 +106,7 @@ struct ndmp_session_handle {
       jcr; /* Internal JobControlRecord bound to this NDMP session */
 };
 
-/**
- * Internal structure to keep track of private data.
- */
+// Internal structure to keep track of private data.
 struct ndmp_internal_state {
   uint32_t LogLevel;
   JobControlRecord* jcr;
@@ -136,9 +132,7 @@ static inline int NativeToNdmpLoglevel(int debuglevel, NIS* nis)
 
   memset(nis, 0, sizeof(NIS));
 
-  /*
-   * Lookup the initial default log_level from the default StorageResource.
-   */
+  // Lookup the initial default log_level from the default StorageResource.
   nis->LogLevel = me->ndmploglevel;
 
   /*
@@ -153,9 +147,7 @@ static inline int NativeToNdmpLoglevel(int debuglevel, NIS* nis)
   level = debuglevel / 100;
   if (level < nis->LogLevel) { level = nis->LogLevel; }
 
-  /*
-   * Make sure the level is in the wanted range.
-   */
+  // Make sure the level is in the wanted range.
   if (level > 9) { level = 9; }
 
   return level;
@@ -170,14 +162,10 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
   int internal_level;
   NIS* nis;
 
-  /*
-   * We don't want any trailing newline in log messages.
-   */
+  // We don't want any trailing newline in log messages.
   StripTrailingNewline(msg);
 
-  /*
-   * Make sure if the logging system was setup properly.
-   */
+  // Make sure if the logging system was setup properly.
   nis = (NIS*)log->ctx;
   if (!nis) { return; }
 
@@ -187,9 +175,7 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
    */
   if (level <= (int)nis->LogLevel) {
     if (nis->jcr) {
-      /*
-       * Look at the tag field to see what is logged.
-       */
+      // Look at the tag field to see what is logged.
       if (bstrncmp(tag + 1, "LM", 2)) {
         /*
          * *LM* messages. E.g. log message NDMP protocol msgs.
@@ -237,26 +223,20 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
   Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, level, msg);
 }
 
-/**
- * Clear text authentication callback.
- */
+// Clear text authentication callback.
 extern "C" int BndmpAuthClear(struct ndm_session* sess, char* name, char* pass)
 {
   NdmpResource* auth_config;
 
   foreach_res (auth_config, R_NDMP) {
-    /*
-     * Only consider entries for AT_CLEAR authentication type.
-     */
+    // Only consider entries for AT_CLEAR authentication type.
     if (auth_config->AuthType != AT_CLEAR) { continue; }
 
     ASSERT(auth_config->password.encoding == p_encoding_clear);
 
     if (bstrcmp(name, auth_config->username)
         && bstrcmp(pass, auth_config->password.value)) {
-      /*
-       * See if we need to adjust the logging level.
-       */
+      // See if we need to adjust the logging level.
       if (sess->param->log.ctx) {
         NIS* nis;
 
@@ -274,9 +254,7 @@ extern "C" int BndmpAuthClear(struct ndm_session* sess, char* name, char* pass)
   return 0;
 }
 
-/**
- * MD5 authentication callback.
- */
+// MD5 authentication callback.
 extern "C" int bndmp_auth_md5(struct ndm_session* sess,
                               char* name,
                               char digest[16])
@@ -284,9 +262,7 @@ extern "C" int bndmp_auth_md5(struct ndm_session* sess,
   NdmpResource* auth_config;
 
   foreach_res (auth_config, R_NDMP) {
-    /*
-     * Only consider entries for AT_MD5 authentication type.
-     */
+    // Only consider entries for AT_MD5 authentication type.
     if (auth_config->AuthType != AT_MD5) { continue; }
 
     if (!bstrcmp(name, auth_config->username)) { continue; }
@@ -298,9 +274,7 @@ extern "C" int bndmp_auth_md5(struct ndm_session* sess,
       return 0;
     }
 
-    /*
-     * See if we need to adjust the logging level.
-     */
+    // See if we need to adjust the logging level.
     if (sess->param->log.ctx) {
       NIS* nis;
 
@@ -318,9 +292,7 @@ extern "C" int bndmp_auth_md5(struct ndm_session* sess,
   return 0;
 }
 
-/**
- * Save a record using the native routines.
- */
+// Save a record using the native routines.
 static inline bool bndmp_write_data_to_block(JobControlRecord* jcr,
                                              int stream,
                                              char* data,
@@ -384,9 +356,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
   if (!rctx) { return false; }
 
   while (!done) {
-    /*
-     * See if there are any records left to process.
-     */
+    // See if there are any records left to process.
     if (!IsBlockEmpty(rctx->rec)) {
       if (!ReadNextRecordFromBlock(dcr, rctx, &done)) {
         /*
@@ -396,9 +366,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
         continue;
       }
     } else {
-      /*
-       * Read the next block into our buffers.
-       */
+      // Read the next block into our buffers.
       if (!ReadNextBlockFromDevice(dcr, &rctx->sessrec, NULL,
                                    MountNextReadVolume, &ok)) {
         return false;
@@ -426,9 +394,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
       }
     }
 
-    /*
-     * See if we are processing some sort of label?
-     */
+    // See if we are processing some sort of label?
     if (rctx->rec->FileIndex < 0) { continue; }
 
     /*
@@ -475,9 +441,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
   return true;
 }
 
-/**
- * Generate virtual file attributes for the whole NDMP stream.
- */
+// Generate virtual file attributes for the whole NDMP stream.
 static inline bool BndmpCreateVirtualFile(JobControlRecord* jcr, char* filename)
 {
   DeviceControlRecord* dcr = jcr->impl->dcr;
@@ -495,9 +459,7 @@ static inline bool BndmpCreateVirtualFile(JobControlRecord* jcr, char* filename)
   statp.st_blksize = 4096;
   statp.st_blocks = 1;
 
-  /*
-   * Encode a stat structure into an ASCII string.
-   */
+  // Encode a stat structure into an ASCII string.
   EncodeStat(attribs.c_str(), &statp, sizeof(statp), dcr->FileIndex,
              STREAM_UNIX_ATTRIBUTES);
 
@@ -536,9 +498,7 @@ static int BndmpSimuFlushWeof(struct ndm_session* sess)
   return 0;
 }
 
-/**
- * Search the JCRs for one with the given security key.
- */
+// Search the JCRs for one with the given security key.
 static inline JobControlRecord* get_jcr_by_security_key(char* security_key)
 {
   JobControlRecord* jcr;
@@ -563,16 +523,12 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   struct ndmp_session_handle* handle;
   struct ndm_tape_agent* ta;
 
-  /*
-   * The drive_name should be in the form <AuthKey>@<file_system>%<dumplevel>
-   */
+  // The drive_name should be in the form <AuthKey>@<file_system>%<dumplevel>
   if ((filesystem = strchr(drive_name, '@')) == NULL) {
     return NDMP9_NO_DEVICE_ERR;
   }
 
-  /*
-   * Lookup the jobid the drive_name should contain a valid authentication key.
-   */
+  // Lookup the jobid the drive_name should contain a valid authentication key.
   *filesystem++ = '\0';
   if (!(jcr = get_jcr_by_security_key(drive_name))) {
     Jmsg1(NULL, M_FATAL, 0,
@@ -610,9 +566,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   if (handle->jcr) { FreeJcr(handle->jcr); }
   handle->jcr = jcr;
 
-  /*
-   * Keep track of the JobControlRecord for logging purposes.
-   */
+  // Keep track of the JobControlRecord for logging purposes.
   if (sess->param->log.ctx) {
     NIS* nis;
 
@@ -620,9 +574,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
     nis->jcr = jcr;
   }
 
-  /*
-   * Depending on the open mode select the right DeviceControlRecord.
-   */
+  // Depending on the open mode select the right DeviceControlRecord.
   if (will_write) {
     dcr = jcr->impl->dcr;
   } else {

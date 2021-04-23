@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October MMII
- */
+// Kern Sibbald, October MMII
 /**
  * @file
  * Encode and decode standard Unix attributes
@@ -127,9 +125,7 @@ void plug(T& st, uint64_t val)
 #  endif
 #endif
 
-/**
- * Decode a stat packet from base64 characters
- */
+// Decode a stat packet from base64 characters
 int DecodeStat(char* buf, struct stat* statp, int stat_size, int32_t* LinkFI)
 {
   char* p = buf;
@@ -222,9 +218,7 @@ int DecodeStat(char* buf, struct stat* statp, int stat_size, int32_t* LinkFI)
   return (int)val;
 }
 
-/**
- * Decode a LinkFI field of encoded stat packet
- */
+// Decode a LinkFI field of encoded stat packet
 int32_t DecodeLinkFI(char* buf, struct stat* statp, int stat_size)
 {
   char* p = buf;

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, October 2007
- */
+// Kern Sibbald, October 2007
 
 /**
  * @file
@@ -97,9 +95,7 @@ static CoreFunctions bareos_core_functions
        bareosUpdateTapeAlert,  bareosNewRecord,
        bareosCopyRecordState,  bareosFreeRecord};
 
-/**
- * Bareos private context
- */
+// Bareos private context
 struct b_plugin_ctx {
   JobControlRecord* jcr;                        /* jcr for plugin */
   bRC rc;                                       /* last return code */
@@ -258,9 +254,7 @@ static inline bool trigger_plugin_event(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  /*
-   * See if we should care about the return code.
-   */
+  // See if we should care about the return code.
   if (rc) {
     *rc = SdplugFunc(ctx->plugin)->handlePluginEvent(ctx, event, value);
     switch (*rc) {
@@ -304,9 +298,7 @@ bail_out:
   return stop;
 }
 
-/**
- * Create a plugin event
- */
+// Create a plugin event
 bRC GeneratePluginEvent(JobControlRecord* jcr,
                         bSdEventType eventType,
                         void* value,
@@ -327,9 +319,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  /*
-   * Return if no plugins loaded
-   */
+  // Return if no plugins loaded
   if (!jcr->plugin_ctx_list) {
     Dmsg0(debuglevel, "No plugin_ctx_list: GeneratePluginEvent ignored.\n");
     goto bail_out;
@@ -341,9 +331,7 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
   Dmsg2(debuglevel, "sd-plugin_ctx_list=%p JobId=%d\n", plugin_ctx_list,
         jcr->JobId);
 
-  /*
-   * See if we need to trigger the loaded plugins in reverse order.
-   */
+  // See if we need to trigger the loaded plugins in reverse order.
   if (reverse) {
     PluginContext* ctx;
 
@@ -373,9 +361,7 @@ bail_out:
   return rc;
 }
 
-/**
- * Print to file the plugin info.
- */
+// Print to file the plugin info.
 void DumpSdPlugin(Plugin* plugin, FILE* fp)
 {
   PluginInformation* info;
@@ -412,9 +398,7 @@ void LoadSdPlugins(const char* plugin_dir, alist* plugin_names)
   if (!LoadPlugins((void*)&bareos_plugin_interface_version,
                    (void*)&bareos_core_functions, sd_plugin_list, plugin_dir,
                    plugin_names, plugin_type, IsPluginCompatible)) {
-    /*
-     * Either none found, or some error
-     */
+    // Either none found, or some error
     if (sd_plugin_list->size() == 0) {
       delete sd_plugin_list;
       sd_plugin_list = NULL;
@@ -422,9 +406,7 @@ void LoadSdPlugins(const char* plugin_dir, alist* plugin_names)
       return;
     }
   }
-  /*
-   * Verify that the plugin is acceptable, and print information about it.
-   */
+  // Verify that the plugin is acceptable, and print information about it.
   foreach_alist_index (i, plugin, sd_plugin_list) {
     Dmsg1(debuglevel, "Loaded plugin: %s\n", plugin->file);
   }
@@ -488,9 +470,7 @@ static bool IsPluginCompatible(Plugin* plugin)
   return true;
 }
 
-/**
- * Instantiate a new plugin instance.
- */
+// Instantiate a new plugin instance.
 static inline PluginContext* instantiate_plugin(JobControlRecord* jcr,
                                                 Plugin* plugin,
                                                 uint32_t instance)
@@ -542,9 +522,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
     event.eventType = eventType;
 
     foreach_alist_index (i, plugin_options, jcr->impl->plugin_options) {
-      /*
-       * Make a private copy of plugin options.
-       */
+      // Make a private copy of plugin options.
       PmStrcpy(priv_plugin_options, plugin_options);
 
       plugin_name = priv_plugin_options.c_str();
@@ -556,9 +534,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
       }
       *bp++ = '\0';
 
-      /*
-       * See if there is any instance named in the options string.
-       */
+      // See if there is any instance named in the options string.
       instance = 0;
       option = bp;
       while (option) {
@@ -596,9 +572,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
           }
         }
 
-        /*
-         * Found a context in the previous loop ?
-         */
+        // Found a context in the previous loop ?
         if (!ctx) {
           foreach_alist_index (j, plugin, sd_plugin_list) {
             if (plugin->file_len == len
@@ -618,9 +592,7 @@ void DispatchNewPluginOptions(JobControlRecord* jcr)
   }
 }
 
-/**
- * Create a new instance of each plugin for this Job
- */
+// Create a new instance of each plugin for this Job
 void NewPlugins(JobControlRecord* jcr)
 {
   Plugin* plugin;
@@ -632,9 +604,7 @@ void NewPlugins(JobControlRecord* jcr)
     return;
   }
   if (jcr->IsJobCanceled()) { return; }
-  /*
-   * If plugins already loaded, just return
-   */
+  // If plugins already loaded, just return
   if (jcr->plugin_ctx_list) { return; }
 
   num = sd_plugin_list->size();
@@ -643,16 +613,12 @@ void NewPlugins(JobControlRecord* jcr)
 
   jcr->plugin_ctx_list = new alist(10, owned_by_alist);
   foreach_alist_index (i, plugin, sd_plugin_list) {
-    /*
-     * Start a new instance of each plugin
-     */
+    // Start a new instance of each plugin
     instantiate_plugin(jcr, plugin, 0);
   }
 }
 
-/**
- * Free the plugin instances for this Job
- */
+// Free the plugin instances for this Job
 void FreePlugins(JobControlRecord* jcr)
 {
   PluginContext* ctx = nullptr;
@@ -662,9 +628,7 @@ void FreePlugins(JobControlRecord* jcr)
   Dmsg2(debuglevel, "Free instance dir-plugin_ctx_list=%p JobId=%d\n",
         jcr->plugin_ctx_list, jcr->JobId);
   foreach_alist (ctx, jcr->plugin_ctx_list) {
-    /*
-     * Free the plugin instance
-     */
+    // Free the plugin instance
     SdplugFunc(ctx->plugin)->freePlugin(ctx);
     free(ctx->core_private_context); /* Free BAREOS private context */
   }

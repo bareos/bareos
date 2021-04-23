@@ -21,9 +21,7 @@
    02110-1301, USA.
 */
 
-/*
- * Contributed in 2012 by Inteos sp. z o.o.
- */
+// Contributed in 2012 by Inteos sp. z o.o.
 
 /**
  * Utility tool display various information about Bareos plugin,
@@ -63,9 +61,7 @@ enum plugintype
   ERRORPLUGIN
 };
 
-/*
- * PluginFunctions
- */
+// PluginFunctions
 typedef union _plugfuncs plugfuncs;
 union _plugfuncs {
   directordaemon::PluginFunctions pdirfuncs;
@@ -73,9 +69,7 @@ union _plugfuncs {
   storagedaemon::PluginFunctions psdfuncs;
 };
 
-/*
- * CoreFunctions
- */
+// CoreFunctions
 typedef struct _bareosfuncs bareosfuncs;
 struct _bareosfuncs {
   uint32_t size;
@@ -100,9 +94,7 @@ struct _bareosfuncs {
   void (*bareosFree)(void* ctx, const char* file, int line, void* mem);
 };
 
-/*
- * PluginApiDefinition
- */
+// PluginApiDefinition
 typedef union _bareosinfos bareosinfos;
 union _bareosinfos {
   directordaemon::PluginApiDefinition bdirinfo;
@@ -181,9 +173,7 @@ void bareosFree(void* ctx, const char* file, int line, void* mem)
   FREE(mem);
 };
 
-/*
- * displays a short help
- */
+// displays a short help
 void PrintHelp(int argc, char* argv[])
 {
   printf(
@@ -283,9 +273,7 @@ void ParseArgs(progdata* pdata, int argc, char* argv[])
       strcat(dirtmp, argv[0]);
 
       if (realpath(dirtmp, progdir) == NULL) {
-        /*
-         * Error in resolving path
-         */
+        // Error in resolving path
         FREE(progdir);
         progdir = strdup(argv[0]);
       }

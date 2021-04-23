@@ -106,9 +106,7 @@ static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
       = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
-  /*
-   * Lookup the parse_plugin_definition() function in the python module.
-   */
+  // Lookup the parse_plugin_definition() function in the python module.
   pFunc = PyDict_GetItemString(
       plugin_priv_ctx->pyModuleFunctionsDict,
       "parse_plugin_definition"); /* Borrowed reference */
@@ -164,9 +162,7 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
       = (plugin_private_context*)plugin_ctx->plugin_private_context;
   PyObject* pFunc;
 
-  /*
-   * Lookup the handle_plugin_event() function in the python module.
-   */
+  // Lookup the handle_plugin_event() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "handle_plugin_event"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {

@@ -234,9 +234,7 @@ bool TlsOpenSslPrivate::init()
   }
 
   if (verify_peer_) {
-    /*
-     * SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
-     */
+    // SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
     SSL_CTX_set_verify(openssl_ctx_,
                        SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
                        TlsOpenSslPrivate::OpensslVerifyPeer);
@@ -268,9 +266,7 @@ bool TlsOpenSslPrivate::init()
   return true;
 }
 
-/*
- * report any errors that occured
- */
+// report any errors that occured
 int TlsOpenSslPrivate::OpensslVerifyPeer(int preverify_ok,
                                          X509_STORE_CTX* store)
 { /* static */
@@ -544,9 +540,7 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL* ssl,
   return ret;
 }
 
-/*
- * public interfaces from TlsOpenSsl that set private data
- */
+// public interfaces from TlsOpenSsl that set private data
 void TlsOpenSsl::Setca_certfile_(const std::string& ca_certfile)
 {
   Dmsg1(100, "Set ca_certfile:\t<%s>\n", ca_certfile.c_str());

@@ -20,9 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Kern Sibbald, January MMVI
- */
+// Kern Sibbald, January MMVI
 /**
  * @file
  * responsible for doing
@@ -51,23 +49,17 @@
 
 namespace storagedaemon {
 
-/**
- * Responses sent to the Director
- */
+// Responses sent to the Director
 static char Job_end[]
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
-/**
- * Responses received from Storage Daemon
- */
+// Responses received from Storage Daemon
 static char OK_start_replicate[] = "3000 OK start replicate ticket = %d\n";
 static char OK_data[] = "3000 OK data\n";
 static char OK_replicate[] = "3000 OK replicate data\n";
 static char OK_end_replicate[] = "3000 OK end replicate\n";
 
-/**
- * Commands sent to Storage Daemon
- */
+// Commands sent to Storage Daemon
 static char start_replicate[] = "start replicate\n";
 static char ReplicateData[] = "replicate data %d\n";
 static char end_replicate[] = "end replicate\n";
@@ -197,9 +189,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
    *  JobFiles, which we then use as the output FileIndex.
    */
   if (rec->FileIndex >= 0) {
-    /*
-     * If something changed, increment FileIndex
-     */
+    // If something changed, increment FileIndex
     if (rec->VolSessionId != rec->last_VolSessionId
         || rec->VolSessionTime != rec->last_VolSessionTime
         || rec->FileIndex != rec->last_FileIndex) {
@@ -211,9 +201,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
     rec->FileIndex = jcr->JobFiles; /* set sequential output FileIndex */
   }
 
-  /*
-   * Modify record SessionId and SessionTime to correspond to output.
-   */
+  // Modify record SessionId and SessionTime to correspond to output.
   rec->VolSessionId = jcr->VolSessionId;
   rec->VolSessionTime = jcr->VolSessionTime;
 
@@ -221,9 +209,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
         jcr->JobId, FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
 
-  /*
-   * Perform record translations.
-   */
+  // Perform record translations.
   jcr->impl->dcr->before_rec = rec;
   jcr->impl->dcr->after_rec = NULL;
   if (GeneratePluginEvent(jcr, bSdEventWriteRecordTranslation, jcr->impl->dcr)
@@ -257,9 +243,7 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
     Dmsg2(200, "===== Wrote block new pos %u:%u\n", dev->file, dev->block_num);
   }
 
-  /*
-   * Restore packet
-   */
+  // Restore packet
   jcr->impl->dcr->after_rec->VolSessionId
       = jcr->impl->dcr->after_rec->last_VolSessionId;
   jcr->impl->dcr->after_rec->VolSessionTime
@@ -309,14 +293,10 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
   BareosSocket* sd = jcr->store_bsock;
   bool send_eod, send_header;
 
-  /*
-   * If label discard it
-   */
+  // If label discard it
   if (rec->FileIndex < 0) { return true; }
 
-  /*
-   * See if this is the first record being processed.
-   */
+  // See if this is the first record being processed.
   if (rec->last_FileIndex == 0) {
     /*
      * Initialize the last counters so we can compare
@@ -328,15 +308,11 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
     rec->last_Stream = rec->Stream;
     jcr->JobFiles = 1;
 
-    /*
-     * Need to send both a new header only.
-     */
+    // Need to send both a new header only.
     send_eod = false;
     send_header = true;
   } else {
-    /*
-     * See if we are changing file or stream type.
-     */
+    // See if we are changing file or stream type.
     if (rec->VolSessionId != rec->last_VolSessionId
         || rec->VolSessionTime != rec->last_VolSessionTime
         || rec->FileIndex != rec->last_FileIndex
@@ -347,17 +323,13 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
        */
       if (rec->FileIndex != rec->last_FileIndex) { jcr->JobFiles++; }
 
-      /*
-       * Keep track of the new state.
-       */
+      // Keep track of the new state.
       rec->last_VolSessionId = rec->VolSessionId;
       rec->last_VolSessionTime = rec->VolSessionTime;
       rec->last_FileIndex = rec->FileIndex;
       rec->last_Stream = rec->Stream;
 
-      /*
-       * Need to send both a EOD and a new header.
-       */
+      // Need to send both a EOD and a new header.
       send_eod = true;
       send_header = true;
     } else {
@@ -366,9 +338,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
     }
   }
 
-  /*
-   * Send a EOD when needed.
-   */
+  // Send a EOD when needed.
   if (send_eod) {
     if (!sd->signal(BNET_EOD)) { /* indicate end of file data */
       if (!jcr->IsJobCanceled()) {
@@ -379,9 +349,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
     }
   }
 
-  /*
-   * Send a header when needed.
-   */
+  // Send a header when needed.
   if (send_header) {
     if (!sd->fsend("%ld %d 0", rec->FileIndex, rec->Stream)) {
       if (!jcr->IsJobCanceled()) {
@@ -422,9 +390,7 @@ static bool CloneRecordToRemoteSd(DeviceControlRecord* dcr, DeviceRecord* rec)
   return true;
 }
 
-/**
- * Check autoinflation/autodeflation settings.
- */
+// Check autoinflation/autodeflation settings.
 static inline void CheckAutoXflation(JobControlRecord* jcr)
 {
   /*
@@ -433,9 +399,7 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
    */
   if (me->autoxflateonreplication) { return; }
 
-  /*
-   * Check autodeflation.
-   */
+  // Check autodeflation.
   switch (jcr->impl->read_dcr->autodeflate) {
     case AutoXflateMode::IO_DIRECTION_IN:
     case AutoXflateMode::IO_DIRECTION_INOUT:
@@ -458,9 +422,7 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
     }
   }
 
-  /*
-   * Check autoinflation.
-   */
+  // Check autoinflation.
   switch (jcr->impl->read_dcr->autoinflate) {
     case AutoXflateMode::IO_DIRECTION_IN:
     case AutoXflateMode::IO_DIRECTION_INOUT:
@@ -484,9 +446,7 @@ static inline void CheckAutoXflation(JobControlRecord* jcr)
   }
 }
 
-/**
- * Read Data and commit to new job.
- */
+// Read Data and commit to new job.
 bool DoMacRun(JobControlRecord* jcr)
 {
   utime_t now;
@@ -522,14 +482,10 @@ bool DoMacRun(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  /*
-   * Check autoinflation/autodeflation settings.
-   */
+  // Check autoinflation/autodeflation settings.
   CheckAutoXflation(jcr);
 
-  /*
-   * See if we perform both read and write or read only.
-   */
+  // See if we perform both read and write or read only.
   if (jcr->impl->remote_replicate) {
     BareosSocket* sd;
 
@@ -542,9 +498,7 @@ bool DoMacRun(JobControlRecord* jcr)
     Dmsg3(200, "Found %d volumes names for %s. First=%s\n",
           jcr->impl->NumReadVolumes, Type, jcr->impl->VolList->VolumeName);
 
-    /*
-     * Ready devices for reading.
-     */
+    // Ready devices for reading.
     if (!AcquireDeviceForRead(jcr->impl->read_dcr)) {
       ok = false;
       acquire_fail = true;
@@ -556,9 +510,7 @@ bool DoMacRun(JobControlRecord* jcr)
 
     jcr->sendJobStatus(JS_Running);
 
-    /*
-     * Set network buffering.
-     */
+    // Set network buffering.
     sd = jcr->store_bsock;
     if (!sd->SetBufferSize(me->max_network_buffer_size, BNET_SETBUF_WRITE)) {
       Jmsg(jcr, M_FATAL, 0, _("Cannot set buffer size SD->SD.\n"));

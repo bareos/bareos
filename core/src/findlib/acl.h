@@ -28,14 +28,10 @@
 #ifndef BAREOS_FINDLIB_ACL_H_
 #define BAREOS_FINDLIB_ACL_H_
 
-/**
- * Number of acl errors to report per job.
- */
+// Number of acl errors to report per job.
 #define ACL_REPORT_ERR_MAX_PER_JOB 25
 
-/**
- * Return codes from acl subroutines.
- */
+// Return codes from acl subroutines.
 typedef enum
 {
   bacl_exit_fatal = -1,
@@ -49,9 +45,7 @@ typedef enum
 /* For numeric user/group ids when possible, define BACL_WANT_NUMERIC_IDS */
 /* #define BACL_WANT_NUMERIC_IDS */
 
-/**
- * We support the following types of ACLs
- */
+// We support the following types of ACLs
 typedef enum
 {
   BACL_TYPE_NONE = 0,
@@ -92,9 +86,7 @@ struct acl_parse_data_t {
   uint32_t nr_errors;
 };
 
-/**
- * Internal tracking data.
- */
+// Internal tracking data.
 struct AclData {
   int filetype;
   POOLMEM* last_fname;

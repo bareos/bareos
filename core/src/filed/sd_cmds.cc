@@ -18,9 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Marco van Wieringen, March 2013
- */
+// Marco van Wieringen, March 2013
 /**
  * @file
  * This file handles accepting Storage Daemon Commands
@@ -43,9 +41,7 @@ void* handle_stored_connection(BareosSocket* sd)
   JobControlRecord* jcr;
   char job_name[MAX_NAME_LENGTH];
 
-  /*
-   * Do a sanity check on the message received
-   */
+  // Do a sanity check on the message received
   if (sd->message_length < 25 || sd->message_length > 256) {
     Dmsg1(000, "<filed: %s", sd->msg);
     Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), sd->who(),
@@ -84,9 +80,7 @@ void* handle_stored_connection(BareosSocket* sd)
   jcr->store_bsock = sd;
   jcr->store_bsock->SetJcr(jcr);
 
-  /*
-   * Authenticate the Storage Daemon.
-   */
+  // Authenticate the Storage Daemon.
   if (!AuthenticateStoragedaemon(jcr)) {
     Dmsg1(50, "Authentication failed Job %s\n", jcr->Job);
     Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate Storage daemon\n"));

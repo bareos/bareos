@@ -92,9 +92,7 @@ dpl_status_t dpl_swift_req_build(dpl_ctx_t* ctx,
     goto end;
   }
 
-  /*
-   * per method headers
-   */
+  // per method headers
   if (DPL_METHOD_GET == req->method) {
     switch (req->object_type) {
       case DPL_FTYPE_ANY:
@@ -124,9 +122,7 @@ dpl_status_t dpl_swift_req_build(dpl_ctx_t* ctx,
   }
 
 
-  /*
-   * common headers
-   */
+  // common headers
   if (req->behavior_flags & DPL_BEHAVIOR_KEEP_ALIVE) {
     ret2 = dpl_dict_add(headers, "Connection", "keep-alive", 0);
     if (DPL_SUCCESS != ret2) {

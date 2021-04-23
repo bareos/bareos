@@ -177,9 +177,7 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
     return false;
   }
 
-  /*
-   * Check subjectAltName extensions first
-   */
+  // Check subjectAltName extensions first
   if ((extensions = X509_get_ext_count(cert)) > 0) {
     for (i = 0; i < extensions; i++) {
       X509_EXTENSION* ext;
@@ -225,9 +223,7 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
         extstr = method->d2i(NULL, &ext_value_data, ext->value->length);
 #  endif
 
-        /*
-         * Iterate through to find the dNSName field(s)
-         */
+        // Iterate through to find the dNSName field(s)
         val = method->i2v(method, extstr, NULL);
 
         for (j = 0; j < sk_CONF_VALUE_num(val); j++) {
@@ -243,14 +239,10 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * Try verifying against the subject name
-   */
+  // Try verifying against the subject name
   if (!auth_success) {
     if ((subject = X509_get_subject_name(cert)) != NULL) {
-      /*
-       * Loop through all CNs
-       */
+      // Loop through all CNs
       for (;;) {
         cnLastPos
             = X509_NAME_get_index_by_NID(subject, NID_commonName, cnLastPos);

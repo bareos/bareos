@@ -51,9 +51,7 @@ namespace filedaemon {
 
 void TerminateFiled(int sig);
 
-/*
- * File Daemon protocol version
- */
+// File Daemon protocol version
 const int FD_PROTOCOL_VERSION = 54;
 
 } /* namespace filedaemon */

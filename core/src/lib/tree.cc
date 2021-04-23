@@ -41,9 +41,7 @@ static TREE_NODE* search_and_insert_tree_node(char* fname,
 template <typename T>
 static T* tree_alloc(TREE_ROOT* root, int size);
 
-/*
- * NOTE !!!!! we turn off Debug messages for performance reasons.
- */
+// NOTE !!!!! we turn off Debug messages for performance reasons.
 #undef Dmsg0
 #undef Dmsg1
 #undef Dmsg2
@@ -53,9 +51,7 @@ static T* tree_alloc(TREE_ROOT* root, int size);
 #define Dmsg2(n, f, a1, a2)
 #define Dmsg3(n, f, a1, a2, a3)
 
-/*
- * This subroutine gets a big buffer.
- */
+// This subroutine gets a big buffer.
 static void MallocBuf(TREE_ROOT* root, int size)
 {
   struct s_mem* mem;
@@ -87,9 +83,7 @@ TREE_ROOT* new_tree(int count)
   root = static_cast<TREE_ROOT*>(malloc(sizeof(TREE_ROOT)));
   root = new (root) TREE_ROOT();
 
-  /*
-   * Assume filename + node  = 40 characters average length
-   */
+  // Assume filename + node  = 40 characters average length
   size = count * (BALIGN(sizeof(TREE_NODE)) + 40);
   if (count > 1000000 || size > (MAX_BUF_SIZE / 2)) { size = MAX_BUF_SIZE; }
   Dmsg2(400, "count=%d size=%d\n", count, size);
@@ -103,9 +97,7 @@ TREE_ROOT* new_tree(int count)
   return root;
 }
 
-/*
- * Create a new tree node.
- */
+// Create a new tree node.
 static TREE_NODE* new_tree_node(TREE_ROOT* root)
 {
   TREE_NODE* node;
@@ -116,9 +108,7 @@ static TREE_NODE* new_tree_node(TREE_ROOT* root)
   return node;
 }
 
-/*
- * This routine can be called to release the previously allocated tree node.
- */
+// This routine can be called to release the previously allocated tree node.
 static void FreeTreeNode(TREE_ROOT* root)
 {
   int asize = BALIGN(sizeof(TREE_NODE));
@@ -163,9 +153,7 @@ static T* tree_alloc(TREE_ROOT* root, int size)
   return buf;
 }
 
-/*
- * This routine frees the whole tree
- */
+// This routine frees the whole tree
 void FreeTree(TREE_ROOT* root)
 {
   struct s_mem *mem, *rel;
@@ -189,9 +177,7 @@ void FreeTree(TREE_ROOT* root)
   return;
 }
 
-/*
- * Add Delta part for this node
- */
+// Add Delta part for this node
 void TreeAddDeltaPart(TREE_ROOT* root,
                       TREE_NODE* node,
                       JobId_t JobId,
@@ -222,9 +208,7 @@ TREE_NODE* insert_tree_node(char* path,
 
   Dmsg1(100, "insert_tree_node: %s\n", path);
 
-  /*
-   * If trailing slash on path, strip it
-   */
+  // If trailing slash on path, strip it
   if (path_len > 0) {
     q = path + path_len - 1;
     if (IsPathSeparator(*q)) {
@@ -236,9 +220,7 @@ TREE_NODE* insert_tree_node(char* path,
     q = NULL; /* no trailing slash */
   }
 
-  /*
-   * If no filename, strip last component of path as "filename"
-   */
+  // If no filename, strip last component of path as "filename"
   if (*fname == 0) {
     p = (char*)last_path_separator(path); /* separate path and filename */
     if (p) {
@@ -286,9 +268,7 @@ TREE_NODE* insert_tree_node(char* path,
   return node;
 }
 
-/*
- * Ensure that all appropriate nodes for a full path exist in the tree.
- */
+// Ensure that all appropriate nodes for a full path exist in the tree.
 TREE_NODE* make_tree_path(char* path, TREE_ROOT* root)
 {
   TREE_NODE *parent, *node;
@@ -302,9 +282,7 @@ TREE_NODE* make_tree_path(char* path, TREE_ROOT* root)
     return (TREE_NODE*)root;
   }
 
-  /*
-   * Get last dir component of path
-   */
+  // Get last dir component of path
   p = (char*)last_path_separator(path);
   if (p) {
     fname = p + 1;
@@ -336,9 +314,7 @@ static int NodeCompare(void* item1, void* item2)
   return strcmp(tn1->fname, tn2->fname);
 }
 
-/*
- * See if the fname already exists. If not insert a new node for it.
- */
+// See if the fname already exists. If not insert a new node for it.
 static TREE_NODE* search_and_insert_tree_node(char* fname,
                                               int type,
                                               TREE_ROOT* root,
@@ -355,18 +331,14 @@ static TREE_NODE* search_and_insert_tree_node(char* fname,
     return found_node;
   }
 
-  /*
-   * It was not found, but is now inserted
-   */
+  // It was not found, but is now inserted
   node->fname_len = strlen(fname);
   node->fname = tree_alloc<char>(root, node->fname_len + 1);
   strcpy(node->fname, fname);
   node->parent = parent;
   node->type = type;
 
-  /*
-   * Maintain a linear chain of nodes
-   */
+  // Maintain a linear chain of nodes
   if (!root->first) {
     root->first = node;
     root->last = node;
@@ -412,30 +384,22 @@ POOLMEM* tree_getpath(TREE_NODE* node)
 
   if (!node) { return NULL; }
 
-  /*
-   * Allocate a new empty path.
-   */
+  // Allocate a new empty path.
   path = GetPoolMemory(PM_NAME);
   PmStrcpy(path, "");
 
-  /*
-   * Fill the path with the full path.
-   */
+  // Fill the path with the full path.
   TreeGetpathItem(node, path);
 
   return path;
 }
 
-/*
- * Change to specified directory
- */
+// Change to specified directory
 TREE_NODE* tree_cwd(char* path, TREE_ROOT* root, TREE_NODE* node)
 {
   if (path[0] == '.' && path[1] == '\0') { return node; }
 
-  /*
-   * Handle relative path
-   */
+  // Handle relative path
   if (path[0] == '.' && path[1] == '.'
       && (IsPathSeparator(path[2]) || path[2] == '\0')) {
     TREE_NODE* parent = node->parent ? node->parent : node;
@@ -456,9 +420,7 @@ TREE_NODE* tree_cwd(char* path, TREE_ROOT* root, TREE_NODE* node)
   return tree_relcwd(path, root, node);
 }
 
-/*
- * Do a relative cwd -- i.e. relative to current node rather than root node
- */
+// Do a relative cwd -- i.e. relative to current node rather than root node
 TREE_NODE* tree_relcwd(char* path, TREE_ROOT* root, TREE_NODE* node)
 {
   char* p;
@@ -469,9 +431,7 @@ TREE_NODE* tree_relcwd(char* path, TREE_ROOT* root, TREE_NODE* node)
 
   if (*path == 0) { return node; }
 
-  /*
-   * Check the current segment only
-   */
+  // Check the current segment only
   if ((p = first_path_separator(path)) != NULL) {
     len = p - path;
   } else {
@@ -487,9 +447,7 @@ TREE_NODE* tree_relcwd(char* path, TREE_ROOT* root, TREE_NODE* node)
       break;
     }
 
-    /*
-     * fnmatch has no len in call so we truncate the string
-     */
+    // fnmatch has no len in call so we truncate the string
     save_char = path[len];
     path[len] = 0;
     match = fnmatch(path, cd->fname, 0) == 0;
@@ -507,8 +465,6 @@ TREE_NODE* tree_relcwd(char* path, TREE_ROOT* root, TREE_NODE* node)
 
   Dmsg2(100, "recurse tree_relcwd with path=%s, cd=%s\n", p + 1, cd->fname);
 
-  /*
-   * Check the next segment if any
-   */
+  // Check the next segment if any
   return tree_relcwd(p + 1, root, cd);
 }

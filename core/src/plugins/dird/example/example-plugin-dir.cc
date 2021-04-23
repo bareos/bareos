@@ -19,9 +19,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- *  Kern Sibbald, October 2007
- */
+//  Kern Sibbald, October 2007
 /**
  * @file
  * Sample Plugin program
@@ -91,9 +89,7 @@ bRC loadPlugin(bDirInfo* lbareos_plugin_interface_version,
   return bRC_OK;
 }
 
-/**
- * External entry point to unload the plugin
- */
+// External entry point to unload the plugin
 bRC unloadPlugin()
 {
   printf("plugin: Unloaded\n");
