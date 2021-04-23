@@ -287,9 +287,7 @@ int gfapi_device::d_open(const char* pathname, int flags, int mode)
 
       done = false;
       for (int i = 0; !done && device_options[i].name; i++) {
-        /*
-         * Try to find a matching device option.
-         */
+        // Try to find a matching device option.
         if (bstrncasecmp(bp, device_options[i].name,
                          device_options[i].compare_size)) {
           switch (device_options[i].type) {
@@ -329,9 +327,7 @@ int gfapi_device::d_open(const char* pathname, int flags, int mode)
     }
   }
 
-  /*
-   * See if we need to setup a Gluster context.
-   */
+  // See if we need to setup a Gluster context.
   if (!glfs_) {
     glfs_ = glfs_new(volumename_);
     if (!glfs_) {
@@ -372,23 +368,17 @@ int gfapi_device::d_open(const char* pathname, int flags, int mode)
     }
   }
 
-  /*
-   * See if we don't have a file open already.
-   */
+  // See if we don't have a file open already.
   if (gfd_) {
     glfs_close(gfd_);
     gfd_ = NULL;
   }
 
-  /*
-   * See if we store in an explicit directory.
-   */
+  // See if we store in an explicit directory.
   if (basedir_) {
     struct stat st;
 
-    /*
-     * Make sure the dir exists if one is defined.
-     */
+    // Make sure the dir exists if one is defined.
     Mmsg(virtual_filename_, "/%s", basedir_);
     if (glfs_stat(glfs_, virtual_filename_, &st) != 0) {
       switch (errno) {
@@ -434,9 +424,7 @@ int gfapi_device::d_open(const char* pathname, int flags, int mode)
   return 0;
 
 bail_out:
-  /*
-   * Cleanup the Gluster context.
-   */
+  // Cleanup the Gluster context.
   if (glfs_) {
     glfs_fini(glfs_);
     glfs_ = NULL;
@@ -445,9 +433,7 @@ bail_out:
   return -1;
 }
 
-/**
- * Read data from a volume using gfapi.
- */
+// Read data from a volume using gfapi.
 ssize_t gfapi_device::d_read(int fd, void* buffer, size_t count)
 {
   if (gfd_) {
@@ -458,9 +444,7 @@ ssize_t gfapi_device::d_read(int fd, void* buffer, size_t count)
   }
 }
 
-/**
- * Write data to a volume using gfapi.
- */
+// Write data to a volume using gfapi.
 ssize_t gfapi_device::d_write(int fd, const void* buffer, size_t count)
 {
   if (gfd_) {
@@ -535,9 +519,7 @@ bool gfapi_device::d_truncate(DeviceControlRecord* dcr)
       glfs_close(gfd_);
       glfs_unlink(glfs_, virtual_filename_);
 
-      /*
-       * Recreate the file -- of course, empty
-       */
+      // Recreate the file -- of course, empty
       oflags = O_CREAT | O_RDWR | O_BINARY;
       gfd_ = glfs_creat(glfs_, virtual_filename_, oflags, st.st_mode);
       if (!gfd_) {
@@ -551,9 +533,7 @@ bool gfapi_device::d_truncate(DeviceControlRecord* dcr)
         return false;
       }
 
-      /*
-       * Reset proper owner
-       */
+      // Reset proper owner
       glfs_chown(glfs_, virtual_filename_, st.st_uid, st.st_gid);
     }
   }

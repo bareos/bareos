@@ -1182,9 +1182,7 @@ ssize_t Device::read(void* buf, size_t len)
   return read_len;
 }
 
-/**
- * Write to device.
- */
+// Write to device.
 ssize_t Device::write(const void* buf, size_t len)
 {
   ssize_t write_len;
@@ -1205,9 +1203,7 @@ ssize_t Device::write(const void* buf, size_t len)
   return write_len;
 }
 
-/**
- * Return the resource name for the device
- */
+// Return the resource name for the device
 const char* Device::name() const { return device_resource->resource_name_; }
 
 Device::~Device()

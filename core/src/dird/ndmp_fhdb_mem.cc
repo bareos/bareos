@@ -521,14 +521,10 @@ static N_TREE_NODE* insert_metadata_parent_node(htable* meta_data,
     return (N_TREE_NODE*)NULL;
   }
 
-  /*
-   * Lookup the parent of this new node we are about to insert.
-   */
+  // Lookup the parent of this new node we are about to insert.
   parent = find_tree_node(fhdb_root, md_entry->dir_node);
   if (!parent) {
-    /*
-     * If our parent doesn't exist try finding it and inserting it.
-     */
+    // If our parent doesn't exist try finding it and inserting it.
     parent
         = insert_metadata_parent_node(meta_data, fhdb_root, md_entry->dir_node);
     if (!parent) {
@@ -547,9 +543,7 @@ static N_TREE_NODE* insert_metadata_parent_node(htable* meta_data,
    */
   parent = search_and_insert_tree_node(md_entry->nt_node, fhdb_root, parent);
 
-  /*
-   * Keep track we used this entry.
-   */
+  // Keep track we used this entry.
   md_entry->nt_node = (N_TREE_NODE*)NULL;
 
   return parent;
@@ -566,25 +560,19 @@ static inline bool ProcessOutOfOrderMetadata(htable* meta_data,
   OOO_MD* md_entry;
 
   foreach_htable (md_entry, meta_data) {
-    /*
-     * Alread visited ?
-     */
+    // Alread visited ?
     if (!md_entry->nt_node) { continue; }
 
     Dmsg1(100, "bndmp_fhdb_mem_add_dir: Inserting node for %llu into tree\n",
           md_entry->nt_node->inode);
 
-    /*
-     * See if this entry is in the cached parent.
-     */
+    // See if this entry is in the cached parent.
     if (fhdb_root->cached_parent
         && fhdb_root->cached_parent->inode == md_entry->dir_node) {
       search_and_insert_tree_node(md_entry->nt_node, fhdb_root,
                                   fhdb_root->cached_parent);
     } else {
-      /*
-       * See if parent exists in tree.
-       */
+      // See if parent exists in tree.
       fhdb_root->cached_parent = find_tree_node(fhdb_root, md_entry->dir_node);
       if (fhdb_root->cached_parent) {
         search_and_insert_tree_node(md_entry->nt_node, fhdb_root,
@@ -593,9 +581,7 @@ static inline bool ProcessOutOfOrderMetadata(htable* meta_data,
         fhdb_root->cached_parent = insert_metadata_parent_node(
             meta_data, fhdb_root, md_entry->dir_node);
         if (!fhdb_root->cached_parent) {
-          /*
-           * The metadata seems to be fully inconsistent.
-           */
+          // The metadata seems to be fully inconsistent.
           Dmsg0(100,
                 "bndmp_fhdb_mem_add_dir: Inconsistent metadata, giving up\n");
           return false;
@@ -675,9 +661,7 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog* ixlog,
     }
 
     if (FileType == FT_DIREND) {
-      /*
-       * A directory needs to end with a slash.
-       */
+      // A directory needs to end with a slash.
       strcat(wanted_node->fname, "/");
     }
   }
@@ -727,17 +711,13 @@ extern "C" int bndmp_fhdb_mem_add_dirnode_root(struct ndmlog* ixlog,
   return 0;
 }
 
-/*
- * This glues the NDMP File Handle DB with internal code.
- */
+// This glues the NDMP File Handle DB with internal code.
 void NdmpFhdbMemRegister(struct ndmlog* ixlog)
 {
   NIS* nis = (NIS*)ixlog->ctx;
   struct ndm_fhdb_callbacks fhdb_callbacks;
 
-  /*
-   * Register the FileHandleDB callbacks.
-   */
+  // Register the FileHandleDB callbacks.
   fhdb_callbacks.add_file = BndmpFhdbAddFile;
   fhdb_callbacks.add_dir = bndmp_fhdb_mem_add_dir;
   fhdb_callbacks.add_node = bndmp_fhdb_mem_add_node;
@@ -777,17 +757,13 @@ void NdmpFhdbMemProcessDb(struct ndmlog* ixlog)
       N_TREE_NODE *node, *parent;
       PoolMem fname, tmp;
 
-      /*
-       * Store the toplevel entry of the tree.
-       */
+      // Store the toplevel entry of the tree.
       Dmsg2(100, "==> %s [%s]\n", fhdb_root->fname, fhdb_root->attr);
       NdmpStoreAttributeRecord(
           nis->jcr, fhdb_root->fname, nis->virtual_filename, fhdb_root->attr,
           fhdb_root->FileType, fhdb_root->inode, fhdb_root->Offset);
 
-      /*
-       * Store all the other entries in the tree.
-       */
+      // Store all the other entries in the tree.
       for (node = fhdb_root->first; node; node = node->next) {
         PmStrcpy(fname, node->fname);
 
@@ -823,9 +799,7 @@ void NdmpFhdbMemProcessDb(struct ndmlog* ixlog)
       }
     }
 
-    /*
-     * Destroy the tree.
-     */
+    // Destroy the tree.
     NdmpFhdbFreeTree(fhdb_root);
     fhdb_state->fhdb_root = NULL;
   }

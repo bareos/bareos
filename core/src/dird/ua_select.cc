@@ -1048,9 +1048,7 @@ void StartPrompt(UaContext* ua, const char* msg)
   ua->prompt[0] = strdup(msg);
 }
 
-/**
- * Add to prompts -- keeping them unique
- */
+// Add to prompts -- keeping them unique
 void AddPrompt(UaContext* ua, const char* prompt)
 {
   if (ua->num_prompts == ua->max_prompts) {
@@ -1199,9 +1197,7 @@ StorageResource* get_storage_resource(UaContext* ua,
     // Ignore any zapped keyword.
     if (*ua->argk[i] == 0) { continue; }
     if (use_default && !ua->argv[i]) {
-      /*
-       * Ignore barcode, barcodes, encrypt, scan and slots keywords.
-       */
+      // Ignore barcode, barcodes, encrypt, scan and slots keywords.
       if (Bstrcasecmp("barcode", ua->argk[i])
           || Bstrcasecmp("barcodes", ua->argk[i])
           || Bstrcasecmp("encrypt", ua->argk[i])
@@ -1209,9 +1205,7 @@ StorageResource* get_storage_resource(UaContext* ua,
           || Bstrcasecmp("slots", ua->argk[i])) {
         continue;
       }
-      /*
-       * Default argument is storage
-       */
+      // Default argument is storage
       if (StoreName) {
         ua->ErrorMsg(_("Storage name given twice.\n"));
         return NULL;
@@ -1284,26 +1278,20 @@ StorageResource* get_storage_resource(UaContext* ua,
     store = NULL;
   }
 
-  /*
-   * No keywords found, so present a selection list
-   */
+  // No keywords found, so present a selection list
   if (!store) { store = select_storage_resource(ua, autochangers_only); }
 
   return store;
 }
 
-/**
- * Get drive that we are working with for this storage
- */
+// Get drive that we are working with for this storage
 drive_number_t GetStorageDrive(UaContext* ua, StorageResource* store)
 {
   int i;
   char drivename[10];
   drive_number_t drive = kInvalidDriveNumber;
 
-  /*
-   * Get drive for autochanger if possible
-   */
+  // Get drive for autochanger if possible
   i = FindArgWithValue(ua, NT_("drive"));
   if (i >= 0) {
     drive = static_cast<drive_number_t>(atoi(ua->argv[i]));
@@ -1312,15 +1300,11 @@ drive_number_t GetStorageDrive(UaContext* ua, StorageResource* store)
 
     drives = GetNumDrives(ua, store);
 
-    /*
-     * If only one drive, default = 0
-     */
+    // If only one drive, default = 0
     if (drives == 1) {
       drive = 0;
     } else {
-      /*
-       * Ask user to enter drive number
-       */
+      // Ask user to enter drive number
       StartPrompt(ua, _("Select Drive:\n"));
       for (drive_number_t cnt = 0; cnt < drives; cnt++) {
         Bsnprintf(drivename, sizeof(drivename), "Drive %hd", cnt);
@@ -1335,33 +1319,25 @@ drive_number_t GetStorageDrive(UaContext* ua, StorageResource* store)
       }
     }
   } else {
-    /*
-     * If only one drive, default = 0
-     */
+    // If only one drive, default = 0
     drive = 0;
   }
 
   return drive;
 }
 
-/**
- * Get slot that we are working with for this storage
- */
+// Get slot that we are working with for this storage
 slot_number_t GetStorageSlot(UaContext* ua, StorageResource* store)
 {
   int i;
   slot_number_t slot = -1;
 
-  /*
-   * Get slot for autochanger if possible
-   */
+  // Get slot for autochanger if possible
   i = FindArgWithValue(ua, NT_("slot"));
   if (i >= 0) {
     slot = atoi(ua->argv[i]);
   } else if (store && store->autochanger) {
-    /*
-     * Ask user to enter slot number
-     */
+    // Ask user to enter slot number
     ua->cmd[0] = 0;
     if (!GetCmd(ua, _("Enter autochanger slot: "))) {
       slot = -1; /* None */
@@ -1413,9 +1389,7 @@ bool GetLevelFromName(JobControlRecord* jcr, const char* level_name)
 {
   bool found = false;
 
-  /*
-   * Look up level name and pull code
-   */
+  // Look up level name and pull code
   for (int i = 0; joblevels[i].level_name; i++) {
     if (Bstrcasecmp(level_name, joblevels[i].level_name)) {
       jcr->setJobLevel(joblevels[i].level);
@@ -1427,9 +1401,7 @@ bool GetLevelFromName(JobControlRecord* jcr, const char* level_name)
   return found;
 }
 
-/**
- * Insert an JobId into the list of selected JobIds when its a unique new id.
- */
+// Insert an JobId into the list of selected JobIds when its a unique new id.
 static inline bool InsertSelectedJobid(alist* selected_jobids, JobId_t JobId)
 {
   bool found;
@@ -1480,24 +1452,16 @@ alist* select_jobs(UaContext* ua, const char* reason)
     running_jobs
   } selection_criterium;
 
-  /*
-   * Allocate a list for holding the selected JobIds.
-   */
+  // Allocate a list for holding the selected JobIds.
   selected_jobids = new alist(10, owned_by_alist);
 
-  /*
-   * See if "all" is given.
-   */
+  // See if "all" is given.
   if (FindArg(ua, NT_("all")) > 0) { select_all = true; }
 
-  /*
-   * See if "state=" is given.
-   */
+  // See if "state=" is given.
   if (FindArgWithValue(ua, NT_("state")) > 0) { select_by_state = true; }
 
-  /*
-   * See if there are any jobid, job or ujobid keywords.
-   */
+  // See if there are any jobid, job or ujobid keywords.
   if (FindArgKeyword(ua, lst) > 0) {
     for (i = 1; i < ua->argc; i++) {
       if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
@@ -1551,9 +1515,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
     char buf[1000];
     int tjobs = 0; /* Total # number jobs */
 
-    /*
-     * Count Jobs running
-     */
+    // Count Jobs running
     foreach_jcr (jcr) {
       if (jcr->JobId == 0) { /* This is us */
         continue;
@@ -1576,9 +1538,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
     }
 
     if (select_all || select_by_state) {
-      /*
-       * Set selection criterium.
-       */
+      // Set selection criterium.
       selection_criterium = none;
       if (select_all) {
         selection_criterium = all_jobs;
@@ -1622,9 +1582,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
           continue; /* Skip not authorized */
         }
 
-        /*
-         * See if we need to select this JobId.
-         */
+        // See if we need to select this JobId.
         switch (selection_criterium) {
           case all_jobs:
             break;
@@ -1666,9 +1624,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
       char temp[256];
       char JobName[MAX_NAME_LENGTH];
 
-      /*
-       * Interactivly select a Job.
-       */
+      // Interactivly select a Job.
       StartPrompt(ua, _("Select Job:\n"));
       foreach_jcr (jcr) {
         char ed1[50];
@@ -1740,9 +1696,7 @@ bool GetUserSlotList(UaContext* ua,
   char search_argument[20];
   char *p, *e, *h;
 
-  /*
-   * See if the argument given is found on the cmdline.
-   */
+  // See if the argument given is found on the cmdline.
   bstrncpy(search_argument, argument, sizeof(search_argument));
   i = FindArgWithValue(ua, search_argument);
   if (i == -1) { /* not found */
@@ -1758,19 +1712,13 @@ bool GetUserSlotList(UaContext* ua,
   }
 
   if (i > 0) {
-    /*
-     * Scan slot list in ua->argv[i]
-     */
+    // Scan slot list in ua->argv[i]
     StripTrailingJunk(ua->argv[i]);
     for (p = ua->argv[i]; p && *p; p = e) {
-      /*
-       * Check for list
-       */
+      // Check for list
       e = strchr(p, ',');
       if (e) { *e++ = 0; }
-      /*
-       * Check for range
-       */
+      // Check for range
       h = strchr(p, '-'); /* range? */
       if (h == p) {
         msg = _("Negative numbers not permitted\n");
@@ -1810,15 +1758,11 @@ bool GetUserSlotList(UaContext* ua,
         goto bail_out;
       }
 
-      /*
-       * Turn on specified range
-       */
+      // Turn on specified range
       for (i = beg; i <= end; i++) { SetBit(i - 1, slot_list); }
     }
   } else {
-    /*
-     * Turn everything on
-     */
+    // Turn everything on
     for (i = 1; i <= num_slots; i++) { SetBit(i - 1, slot_list); }
   }
 

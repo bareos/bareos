@@ -721,9 +721,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
             "client not found in db or missing filesetid\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("filesets"))) {
-    /*
-     * List FILESETs
-     */
+    // List FILESETs
     SetAclFilter(ua, 1, FileSet_ACL); /* FilesetName */
     if (current) { SetResFilter(ua, 1, R_FILESET); /* FilesetName */ }
 
@@ -731,9 +729,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
     ua->db->ListFilesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("jobmedia"))) {
-    /*
-     * List JOBMEDIA
-     */
+    // List JOBMEDIA
     jobid = GetJobidFromCmdline(ua);
     if (jobid >= 0) {
       ua->db->ListJobmediaRecords(ua->jcr, jobid, ua->send, llist);
@@ -743,9 +739,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
             "client not found in db\n"));
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("joblog"))) {
-    /*
-     * List JOBLOG
-     */
+    // List JOBLOG
     jobid = GetJobidFromCmdline(ua);
     if (jobid >= 0) {
       ua->db->ListJoblogRecords(ua->jcr, jobid, query_range.c_str(), count,
@@ -786,9 +780,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
              || Bstrcasecmp(ua->argk[1], NT_("pools"))) {
     PoolDbRecord pr;
 
-    /*
-     * List POOLS
-     */
+    // List POOLS
     if (ua->argv[1]) { bstrncpy(pr.Name, ua->argv[1], sizeof(pr.Name)); }
 
     SetAclFilter(ua, 1, Pool_ACL); /* PoolName */
@@ -798,9 +790,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
     ua->db->ListPoolRecords(ua->jcr, &pr, ua->send, llist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("clients"))) {
-    /*
-     * List CLIENTS
-     */
+    // List CLIENTS
     SetAclFilter(ua, 1, Client_ACL); /* ClientName */
     if (current) { SetResFilter(ua, 1, R_CLIENT); /* ClientName */ }
     if (enabled) { SetEnabledFilter(ua, 1, R_CLIENT); /* ClientName */ }
@@ -810,9 +800,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
     ua->db->ListClientRecords(ua->jcr, NULL, ua->send, llist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("client")) && ua->argv[1]) {
-    /*
-     * List CLIENT=xxx
-     */
+    // List CLIENT=xxx
     SetAclFilter(ua, 1, Client_ACL); /* ClientName */
     if (current) { SetResFilter(ua, 1, R_CLIENT); /* ClientName */ }
     if (enabled) { SetEnabledFilter(ua, 1, R_CLIENT); /* ClientName */ }
@@ -822,9 +810,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
     ua->db->ListClientRecords(ua->jcr, ua->argv[1], ua->send, llist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("storages"))) {
-    /*
-     * List STORAGES
-     */
+    // List STORAGES
     SetAclFilter(ua, 1, Storage_ACL); /* StorageName */
     if (current) { SetResFilter(ua, 1, R_STORAGE); /* StorageName */ }
     if (enabled) { SetEnabledFilter(ua, 1, R_STORAGE); /* StorageName */ }
@@ -837,16 +823,12 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   } else if (Bstrcasecmp(ua->argk[1], NT_("media"))
              || Bstrcasecmp(ua->argk[1], NT_("volume"))
              || Bstrcasecmp(ua->argk[1], NT_("volumes"))) {
-    /*
-     * List MEDIA or VOLUMES
-     */
+    // List MEDIA or VOLUMES
     jobid = GetJobidFromCmdline(ua);
     if (jobid > 0) {
       ua->db->ListVolumesOfJobid(ua->jcr, jobid, ua->send, llist);
     } else if (jobid == 0) {
-      /*
-       * List a specific volume?
-       */
+      // List a specific volume?
       if (ua->argv[1]) {
         bstrncpy(mr.VolumeName, ua->argv[1], sizeof(mr.VolumeName));
         ua->send->ObjectStart("volume");
@@ -879,9 +861,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
           int num_pools;
           uint32_t* ids = nullptr;
 
-          /*
-           * List all volumes, flat
-           */
+          // List all volumes, flat
           if (FindArg(ua, NT_("all")) > 0) {
             /*
              * The result of "list media all"
@@ -902,9 +882,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
                                      ua->send, llist);
             ua->send->ArrayEnd("volumes");
           } else {
-            /*
-             * List Volumes in all pools
-             */
+            // List Volumes in all pools
             if (!ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
               ua->ErrorMsg(_("Error obtaining pool ids. ERR=%s\n"),
                            ua->db->strerror());
@@ -942,9 +920,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
              || Bstrcasecmp(ua->argk[1], NT_("nextvolume"))) {
     int days;
 
-    /*
-     * List next volume
-     */
+    // List next volume
     days = 1;
 
     i = FindArgWithValue(ua, NT_("days"));
@@ -958,9 +934,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     }
     ListNextvol(ua, days);
   } else if (Bstrcasecmp(ua->argk[1], NT_("copies"))) {
-    /*
-     * List copies
-     */
+    // List copies
     i = FindArgWithValue(ua, NT_("jobid"));
     if (i >= 0) {
       if (Is_a_number_list(ua->argv[i])) {
@@ -1030,9 +1004,7 @@ static inline bool parse_jobstatus_selection_param(
       bp = strchr(cur_stat, ',');
       if (bp) { *bp++ = '\0'; }
 
-      /*
-       * Try matching the status to an internal Job Termination code.
-       */
+      // Try matching the status to an internal Job Termination code.
       if (strlen(cur_stat) == 1 && cur_stat[0] >= 'A' && cur_stat[0] <= 'z') {
         jobstatus = cur_stat[0];
       } else if (Bstrcasecmp(cur_stat, "terminated")) {
@@ -1063,16 +1035,12 @@ static inline bool parse_jobstatus_selection_param(
       cnt++;
     }
 
-    /*
-     * Close set if we opened one.
-     */
+    // Close set if we opened one.
     if (cnt > 0) { PmStrcat(selection, ")"); }
   }
 
   if (selection.strlen() == 0) {
-    /*
-     * When no explicit Job Termination code specified use default
-     */
+    // When no explicit Job Termination code specified use default
     selection.strcpy(default_selection);
   }
 
@@ -1096,9 +1064,7 @@ static inline bool parse_level_selection_param(PoolMem& selection,
       bp = strchr(cur_level, ',');
       if (bp) { *bp++ = '\0'; }
 
-      /*
-       * Try mapping from text level to internal level.
-       */
+      // Try mapping from text level to internal level.
       for (int i = 0; joblevels[i].level_name; i++) {
         if (joblevels[i].job_type == JT_BACKUP
             && bstrncasecmp(joblevels[i].level_name, cur_level,
@@ -1116,9 +1082,7 @@ static inline bool parse_level_selection_param(PoolMem& selection,
       cnt++;
     }
 
-    /*
-     * Close set if we opened one.
-     */
+    // Close set if we opened one.
     if (cnt > 0) { PmStrcat(selection, ")"); }
   }
   if (selection.strlen() == 0) { selection.strcpy(default_selection); }
@@ -1188,9 +1152,7 @@ static bool ParseListBackupsCmd(UaContext* ua,
   selection.bsprintf("AND Job.Type IN('B', 'A', 'a') AND Client.Name='%s' ",
                      ua->argv[client]);
 
-  /*
-   * Build a selection pattern based on the jobstatus and level arguments.
-   */
+  // Build a selection pattern based on the jobstatus and level arguments.
   parse_jobstatus_selection_param(temp, ua, "AND JobStatus IN ('T','W') ");
   PmStrcat(selection, temp.c_str());
 
@@ -1200,9 +1162,7 @@ static bool ParseListBackupsCmd(UaContext* ua,
   if (!parse_fileset_selection_param(temp, ua, true)) { return false; }
   PmStrcat(selection, temp.c_str());
 
-  /*
-   * Build a criteria pattern if the order and/or limit argument are given.
-   */
+  // Build a criteria pattern if the order and/or limit argument are given.
   PmStrcpy(criteria, "");
   if ((pos = FindArgWithValue(ua, "order")) >= 0) {
     if (bstrncasecmp(ua->argv[pos], "ascending", strlen(ua->argv[pos]))) {
@@ -1215,9 +1175,7 @@ static bool ParseListBackupsCmd(UaContext* ua,
     }
   }
 
-  /*
-   * add range settings
-   */
+  // add range settings
   PmStrcat(criteria, range);
 
   if (llist == VERT_LIST) {
@@ -1375,9 +1333,7 @@ RunResource* find_next_run(RunResource* run,
   return NULL;
 }
 
-/**
- * Fill in the remaining fields of the jcr as if it is going to run the job.
- */
+// Fill in the remaining fields of the jcr as if it is going to run the job.
 bool CompleteJcrForJob(JobControlRecord* jcr,
                        JobResource* job,
                        PoolResource* pool)
@@ -1425,9 +1381,7 @@ void DoMessages(UaContext* ua, const char* cmd)
   int mlen;
   bool DoTruncate = false;
 
-  /*
-   * Flush any queued messages.
-   */
+  // Flush any queued messages.
   if (ua->jcr) { DequeueMessages(ua->jcr); }
 
   Pw(con_lock);
@@ -1467,9 +1421,7 @@ bool MessagesCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-/**
- * Callback routine for "filtering" database listing.
- */
+// Callback routine for "filtering" database listing.
 of_filter_state filterit(void* ctx, void* data, of_filter_tuple* tuple)
 {
   char** row = (char**)data;
@@ -1585,9 +1537,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Callback routine for "printing" database listing
- */
+// Callback routine for "printing" database listing
 bool printit(void* ctx, const char* msg)
 {
   bool retval = false;

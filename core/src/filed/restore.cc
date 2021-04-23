@@ -616,9 +616,7 @@ void DoRestore(JobControlRecord* jcr)
             }
 
             if (!rctx.extract) {
-              /*
-               * Set attributes now because file will not be extracted
-               */
+              // Set attributes now because file will not be extracted
               if (jcr->IsPlugin()) {
                 PluginSetAttributes(jcr, attr, &rctx.bfd);
               } else {
@@ -629,16 +627,12 @@ void DoRestore(JobControlRecord* jcr)
         }
         break;
 
-      /*
-       * Data stream
-       */
+      // Data stream
       case STREAM_ENCRYPTED_SESSION_DATA:
         if (rctx.extract) {
           crypto_error_t cryptoerr;
 
-          /*
-           * Is this an unexpected session data entry?
-           */
+          // Is this an unexpected session data entry?
           if (rctx.cs) {
             Jmsg0(jcr, M_ERROR, 0,
                   _("Unexpected cryptographic session data stream.\n"));
@@ -647,9 +641,7 @@ void DoRestore(JobControlRecord* jcr)
             continue;
           }
 
-          /*
-           * Do we have any keys at all?
-           */
+          // Do we have any keys at all?
           if (!jcr->impl->crypto.pki_recipients) {
             Jmsg(jcr, M_ERROR, 0,
                  _("No private decryption keys have been defined to decrypt "
@@ -670,17 +662,13 @@ void DoRestore(JobControlRecord* jcr)
             break;
           }
 
-          /*
-           * Decode and save session keys.
-           */
+          // Decode and save session keys.
           cryptoerr = CryptoSessionDecode(
               (uint8_t*)sd->msg, (uint32_t)sd->message_length,
               jcr->impl->crypto.pki_recipients, &rctx.cs);
           switch (cryptoerr) {
             case CRYPTO_ERROR_NONE:
-              /*
-               * Success
-               */
+              // Success
               break;
             case CRYPTO_ERROR_NORECIPIENT:
               Jmsg(jcr, M_ERROR, 0,
@@ -691,9 +679,7 @@ void DoRestore(JobControlRecord* jcr)
               Jmsg(jcr, M_ERROR, 0, _("Decrypt of the session key failed.\n"));
               break;
             default:
-              /*
-               * Shouldn't happen
-               */
+              // Shouldn't happen
               Jmsg1(jcr, M_ERROR, 0,
                     _("An error occurred while decoding encrypted session data "
                       "stream: %s\n"),
@@ -805,9 +791,7 @@ void DoRestore(JobControlRecord* jcr)
              */
             if (is_win32_stream(rctx.stream) && !have_win32_api()) {
               SetPortableBackup(&rctx.bfd);
-              /*
-               * "decompose" BackupWrite data
-               */
+              // "decompose" BackupWrite data
               SetBit(FO_WIN32DECOMP, rctx.flags);
             }
 
@@ -994,18 +978,14 @@ void DoRestore(JobControlRecord* jcr)
         break;
 
       case STREAM_SIGNED_DIGEST:
-        /*
-         * Is this an unexpected signature?
-         */
+        // Is this an unexpected signature?
         if (rctx.sig) {
           Jmsg0(jcr, M_ERROR, 0,
                 _("Unexpected cryptographic signature data stream.\n"));
           FreeSignature(rctx);
           continue;
         }
-        /*
-         * Save signature.
-         */
+        // Save signature.
         if (rctx.extract
             && (rctx.sig = crypto_sign_decode(jcr, (uint8_t*)sd->msg,
                                               (uint32_t)sd->message_length))
@@ -1066,15 +1046,11 @@ bail_out:
 
 ok_out:
 #ifdef HAVE_WIN32
-  /*
-   * Cleanup the copy thread if we restored any EFS data.
-   */
+  // Cleanup the copy thread if we restored any EFS data.
   if (jcr->cp_thread) { win32_cleanup_copy_thread(jcr); }
 #endif
 
-  /*
-   * First output the statistics.
-   */
+  // First output the statistics.
   Dmsg2(10, "End Do Restore. Files=%d Bytes=%s\n", jcr->JobFiles,
         edit_uint64(jcr->JobBytes, ec1));
   if (have_acl && jcr->impl->acl_data->u.parse->nr_errors > 0) {
@@ -1114,9 +1090,7 @@ ok_out:
          non_support_xattr);
   }
 
-  /*
-   * Free Signature & Crypto Data
-   */
+  // Free Signature & Crypto Data
   FreeSignature(rctx);
   FreeSession(rctx);
   if (jcr->impl->crypto.digest) {
@@ -1124,9 +1098,7 @@ ok_out:
     jcr->impl->crypto.digest = NULL;
   }
 
-  /*
-   * Free file cipher restore context
-   */
+  // Free file cipher restore context
   if (rctx.cipher_ctx.cipher) {
     CryptoCipherFree(rctx.cipher_ctx.cipher);
     rctx.cipher_ctx.cipher = NULL;
@@ -1137,9 +1109,7 @@ ok_out:
     rctx.cipher_ctx.buf = NULL;
   }
 
-  /*
-   * Free alternate stream cipher restore context
-   */
+  // Free alternate stream cipher restore context
   if (rctx.fork_cipher_ctx.cipher) {
     CryptoCipherFree(rctx.fork_cipher_ctx.cipher);
     rctx.fork_cipher_ctx.cipher = NULL;
@@ -1155,9 +1125,7 @@ ok_out:
     free(jcr->impl->xattr_data->u.parse);
   }
 
-  /*
-   * Free the delayed stream stack list.
-   */
+  // Free the delayed stream stack list.
   if (rctx.delayed_streams) {
     DropDelayedDataStreams(rctx, false);
     delete rctx.delayed_streams;
@@ -1300,13 +1268,9 @@ int32_t ExtractData(JobControlRecord* jcr,
   Dmsg2(130, "Write %u bytes, JobBytes=%s\n", wsize,
         edit_uint64(jcr->JobBytes, ec1));
 
-  /*
-   * Clean up crypto buffers
-   */
+  // Clean up crypto buffers
   if (BitIsSet(FO_ENCRYPT, flags)) {
-    /*
-     * Move any remaining data to start of buffer
-     */
+    // Move any remaining data to start of buffer
     if (cipher_ctx->buf_len > 0) {
       Dmsg1(130, "Moving %u buffered bytes to start of buffer\n",
             cipher_ctx->buf_len);
@@ -1326,9 +1290,7 @@ bail_out:
   return -1;
 }
 
-/**
- * If extracting, close any previous stream
- */
+// If extracting, close any previous stream
 static bool ClosePreviousStream(JobControlRecord* jcr, r_ctx& rctx)
 {
   /*
@@ -1359,20 +1321,14 @@ static bool ClosePreviousStream(JobControlRecord* jcr, r_ctx& rctx)
     }
     rctx.extract = false;
 
-    /*
-     * Now perform the delayed restore of some specific data streams.
-     */
+    // Now perform the delayed restore of some specific data streams.
     if (!PopDelayedDataStreams(jcr, rctx)) { return false; }
 
-    /*
-     * Verify the cryptographic signature, if any
-     */
+    // Verify the cryptographic signature, if any
     rctx.type = rctx.attr->type;
     VerifySignature(rctx.jcr, rctx);
 
-    /*
-     * Free Signature
-     */
+    // Free Signature
     FreeSignature(rctx);
     FreeSession(rctx);
     ClearAllBits(FO_MAX, rctx.jcr->impl->ff->flags);

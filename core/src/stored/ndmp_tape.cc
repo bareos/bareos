@@ -591,15 +591,11 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
     return NDMP9_NO_DEVICE_ERR;
   }
 
-  /*
-   * See if need to setup for write or read.
-   */
+  // See if need to setup for write or read.
   if (will_write) {
     PoolMem virtual_filename(PM_FNAME);
 
-    /*
-     * Setup internal system for writing data.
-     */
+    // Setup internal system for writing data.
     Dmsg1(100, "Start append data. res=%d\n", dcr->dev->NumReserved());
 
     /*
@@ -607,9 +603,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
      * track if we already acquired the storage.
      */
     if (!jcr->impl->acquired_storage) {
-      /*
-       * Actually acquire the device which we reserved.
-       */
+      // Actually acquire the device which we reserved.
       if (!AcquireDeviceForAppend(dcr)) { goto bail_out; }
 
       /*
@@ -621,16 +615,12 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
         goto bail_out;
       }
 
-      /*
-       * Keep track that we acquired the storage.
-       */
+      // Keep track that we acquired the storage.
       jcr->impl->acquired_storage = true;
 
       Dmsg1(50, "Begin append device=%s\n", dcr->dev->print_name());
 
-      /*
-       * Change the Job to running state.
-       */
+      // Change the Job to running state.
       jcr->sendJobStatus(JS_Running);
 
       /*
@@ -641,9 +631,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
 
       if (!BeginDataSpool(dcr)) { goto bail_out; }
 
-      /*
-       * Write Begin Session Record
-       */
+      // Write Begin Session Record
       if (!WriteSessionLabel(dcr, SOS_LABEL)) {
         Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
               dcr->dev->bstrerror());
@@ -653,15 +641,11 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       dcr->VolFirstIndex = dcr->VolLastIndex = 0;
       jcr->run_time = time(NULL); /* start counting time for rates */
 
-      /*
-       * The session is saved as one file stream.
-       */
+      // The session is saved as one file stream.
       dcr->FileIndex = 1;
       jcr->JobFiles = 1;
     } else {
-      /*
-       * The next session is saved as one file stream.
-       */
+      // The next session is saved as one file stream.
       dcr->FileIndex++;
       jcr->JobFiles++;
     }
@@ -679,9 +663,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
     bool ok = true;
     READ_CTX* rctx;
 
-    /*
-     * Setup internal system for reading data (if not done before).
-     */
+    // Setup internal system for reading data (if not done before).
     if (!jcr->impl->acquired_storage) {
       Dmsg0(20, "Start read data.\n");
 
@@ -693,9 +675,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       Dmsg2(200, "Found %d volumes names to restore. First=%s\n",
             jcr->impl->NumReadVolumes, jcr->impl->VolList->VolumeName);
 
-      /*
-       * Ready device for reading
-       */
+      // Ready device for reading
       if (!AcquireDeviceForRead(dcr)) { goto bail_out; }
 
       /*
@@ -707,14 +687,10 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
         goto bail_out;
       }
 
-      /*
-       * Keep track that we acquired the storage.
-       */
+      // Keep track that we acquired the storage.
       jcr->impl->acquired_storage = true;
 
-      /*
-       * Change the Job to running state.
-       */
+      // Change the Job to running state.
       jcr->sendJobStatus(JS_Running);
 
       Dmsg1(50, "Begin reading device=%s\n", dcr->dev->print_name());
@@ -722,15 +698,11 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       PositionDeviceToFirstFile(jcr, dcr);
       jcr->impl->read_session.mount_next_volume = false;
 
-      /*
-       * Allocate a new read context for this Job.
-       */
+      // Allocate a new read context for this Job.
       rctx = new_read_context();
       jcr->impl->read_session.rctx = rctx;
 
-      /*
-       * Read the first block and setup record processing.
-       */
+      // Read the first block and setup record processing.
       if (!ReadNextBlockFromDevice(dcr, &rctx->sessrec, NULL,
                                    MountNextReadVolume, &ok)) {
         Jmsg1(jcr, M_FATAL, 0, _("Read session label failed. ERR=%s\n"),
@@ -745,9 +717,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
     }
   }
 
-  /*
-   * Setup NDMP states.
-   */
+  // Setup NDMP states.
   ta = sess->tape_acb;
   ta->tape_fd = 0; /* fake filedescriptor */
   bzero(&ta->tape_state, sizeof ta->tape_state);
@@ -781,9 +751,7 @@ extern "C" ndmp9_error BndmpTapeClose(struct ndm_session* sess)
 
   BndmpSimuFlushWeof(sess);
 
-  /*
-   * Setup the glue between the NDMP layer and the Storage Daemon.
-   */
+  // Setup the glue between the NDMP layer and the Storage Daemon.
   handle = (struct ndmp_session_handle*)sess->session_handle;
 
   jcr = handle->jcr;
@@ -822,9 +790,7 @@ extern "C" ndmp9_error bndmp_tape_mtio(struct ndm_session* sess,
 
   if (ta->tape_fd < 0) { return NDMP9_DEV_NOT_OPEN_ERR; }
 
-  /*
-   * audit for valid op and for tape mode
-   */
+  // audit for valid op and for tape mode
   switch (op) {
     case NDMP9_MTIO_FSF:
       return NDMP9_NO_ERR;
@@ -872,9 +838,7 @@ extern "C" ndmp9_error bndmp_tape_write(struct ndm_session* sess,
 
   if (!NDMTA_TAPE_IS_WRITABLE(ta)) { return NDMP9_PERMISSION_ERR; }
 
-  /*
-   * Setup the glue between the NDMP layer and the Storage Daemon.
-   */
+  // Setup the glue between the NDMP layer and the Storage Daemon.
   handle = (struct ndmp_session_handle*)sess->session_handle;
 
   jcr = handle->jcr;
@@ -883,9 +847,7 @@ extern "C" ndmp9_error bndmp_tape_write(struct ndm_session* sess,
     return NDMP9_DEV_NOT_OPEN_ERR;
   }
 
-  /*
-   * Turn the NDMP data into a internal record and save it.
-   */
+  // Turn the NDMP data into a internal record and save it.
   if (bndmp_write_data_to_block(jcr, STREAM_FILE_DATA, buf, count)) {
     ta->tape_state.blockno.value++;
     *done_count = count;
@@ -928,9 +890,7 @@ extern "C" ndmp9_error bndmp_tape_read(struct ndm_session* sess,
 
   if (ta->tape_fd < 0) { return NDMP9_DEV_NOT_OPEN_ERR; }
 
-  /*
-   * Setup the glue between the NDMP layer and the Storage Daemon.
-   */
+  // Setup the glue between the NDMP layer and the Storage Daemon.
   handle = (struct ndmp_session_handle*)sess->session_handle;
 
   jcr = handle->jcr;
@@ -959,16 +919,12 @@ static inline void RegisterCallbackHooks(struct ndm_session* sess)
   struct ndm_auth_callbacks auth_callbacks;
   struct ndm_tape_simulator_callbacks tape_callbacks;
 
-  /*
-   * Register the authentication callbacks.
-   */
+  // Register the authentication callbacks.
   auth_callbacks.validate_password = BndmpAuthClear;
   auth_callbacks.validate_md5 = bndmp_auth_md5;
   ndmos_auth_register_callbacks(sess, &auth_callbacks);
 
-  /*
-   * Register the tape simulator callbacks.
-   */
+  // Register the tape simulator callbacks.
   tape_callbacks.tape_open = bndmp_tape_open;
   tape_callbacks.tape_close = BndmpTapeClose;
   tape_callbacks.tape_mtio = bndmp_tape_mtio;
@@ -1024,9 +980,7 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
 
       Dmsg0(90, "back from write_end_session_label()\n");
 
-      /*
-       * Flush out final partial block of this session
-       */
+      // Flush out final partial block of this session
       if (!dcr->WriteBlockToDevice()) {
         /*
          * Print only if JobStatus JS_Terminated and not cancelled to avoid
@@ -1041,17 +995,13 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
     }
 
     if (jcr->is_JobStatus(JS_Terminated)) {
-      /*
-       * Note: if commit is OK, the device will remain blocked
-       */
+      // Note: if commit is OK, the device will remain blocked
       CommitDataSpool(dcr);
     } else {
       DiscardDataSpool(dcr);
     }
 
-    /*
-     * Release the device -- and send final Vol info to DIR and unlock it.
-     */
+    // Release the device -- and send final Vol info to DIR and unlock it.
     if (jcr->impl->acquired_storage) {
       ReleaseDevice(dcr);
       jcr->impl->acquired_storage = false;
@@ -1095,9 +1045,7 @@ extern "C" void* HandleNdmpConnectionRequest(ConfigurationParser* config,
     return NULL;
   }
 
-  /*
-   * Initialize a new NDMP session
-   */
+  // Initialize a new NDMP session
   sess = (struct ndm_session*)malloc(sizeof(struct ndm_session));
   memset(sess, 0, sizeof(struct ndm_session));
 
@@ -1149,31 +1097,23 @@ extern "C" void* HandleNdmpConnectionRequest(ConfigurationParser* config,
     goto bail_out;
   }
 
-  /*
-   * Tell the lower levels which socket to use and setup snooping.
-   */
+  // Tell the lower levels which socket to use and setup snooping.
   ndmos_condition_control_socket(sess, handle->fd);
   if (me->ndmp_snooping) {
     ndmconn_set_snoop(conn, &sess->param->log, sess->param->log_level);
   }
   ndmconn_accept(conn, handle->fd);
 
-  /*
-   * Initialize some members now that we have a initialized NDMP connection.
-   */
+  // Initialize some members now that we have a initialized NDMP connection.
   conn->call = ndma_call;
   conn->context = sess;
   sess->plumb.control = conn;
   sess->session_handle = handle;
 
-  /*
-   * This does the actual work e.g. run through the NDMP state machine.
-   */
+  // This does the actual work e.g. run through the NDMP state machine.
   while (!conn->chan.eof) { ndma_session_quantum(sess, 1000); }
 
-  /*
-   * Tear down the NDMP connection.
-   */
+  // Tear down the NDMP connection.
   ndmconn_destruct(conn);
   ndma_session_decommission(sess);
 
@@ -1229,9 +1169,7 @@ extern "C" void* ndmp_thread_server(void* arg)
   ntsa = (struct ndmp_thread_server_args*)arg;
   if (!ntsa) { return NULL; }
 
-  /*
-   * Remove any duplicate addresses.
-   */
+  // Remove any duplicate addresses.
   for (ipaddr = (IPADDR*)ntsa->addr_list->first(); ipaddr;
        ipaddr = (IPADDR*)ntsa->addr_list->next(ipaddr)) {
     for (next = (IPADDR*)ntsa->addr_list->next(ipaddr); next;
@@ -1253,15 +1191,11 @@ extern "C" void* ndmp_thread_server(void* arg)
   nfds = 0;
 #  endif
   foreach_dlist (ipaddr, ntsa->addr_list) {
-    /*
-     * Allocate on stack from -- no need to free
-     */
+    // Allocate on stack from -- no need to free
     fd_ptr = (s_sockfd*)alloca(sizeof(s_sockfd));
     fd_ptr->port = ipaddr->GetPortNetOrder();
 
-    /*
-     * Open a TCP socket
-     */
+    // Open a TCP socket
     for (tlog = 60;
          (fd_ptr->fd = socket(ipaddr->GetFamily(), SOCK_STREAM, 0)) < 0;
          tlog -= 10) {
@@ -1276,9 +1210,7 @@ extern "C" void* ndmp_thread_server(void* arg)
       Bmicrosleep(10, 0);
     }
 
-    /*
-     * Reuse old sockets
-     */
+    // Reuse old sockets
     if (setsockopt(fd_ptr->fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&turnon,
                    sizeof(turnon))
         < 0) {
@@ -1313,9 +1245,7 @@ extern "C" void* ndmp_thread_server(void* arg)
   ntsa->thread_list->Init(ntsa->max_clients, HandleNdmpConnectionRequest);
 
 #  ifdef HAVE_POLL
-  /*
-   * Allocate on stack from -- no need to free
-   */
+  // Allocate on stack from -- no need to free
   pfds = (struct pollfd*)alloca(sizeof(struct pollfd) * nfds);
   memset(pfds, 0, sizeof(struct pollfd) * nfds);
 
@@ -1328,9 +1258,7 @@ extern "C" void* ndmp_thread_server(void* arg)
                 });
 #  endif
 
-  /*
-   * Wait for a connection from the client process.
-   */
+  // Wait for a connection from the client process.
   while (!quit) {
 #  ifndef HAVE_POLL
     unsigned int maxfd = 0;
@@ -1367,18 +1295,14 @@ extern "C" void* ndmp_thread_server(void* arg)
     for (auto fd_ptr : sockfds) {
       if (pfds[cnt++].revents & POLLIN) {
 #  endif
-        /*
-         * Got a connection, now accept it.
-         */
+        // Got a connection, now accept it.
         do {
           clilen = sizeof(cli_addr);
           new_sockfd = accept(fd_ptr->fd, &cli_addr, &clilen);
         } while (new_sockfd < 0 && errno == EINTR);
         if (new_sockfd < 0) { continue; }
 
-        /*
-         * Receive notification when connection dies.
-         */
+        // Receive notification when connection dies.
         if (setsockopt(new_sockfd, SOL_SOCKET, SO_KEEPALIVE,
                        (sockopt_val_t)&turnon, sizeof(turnon))
             < 0) {
@@ -1387,9 +1311,7 @@ extern "C" void* ndmp_thread_server(void* arg)
                 be.bstrerror());
         }
 
-        /*
-         * See who client is. i.e. who connected to us.
-         */
+        // See who client is. i.e. who connected to us.
         P(mutex);
         SockaddrToAscii(&cli_addr, buf, sizeof(buf));
         V(mutex);
@@ -1412,9 +1334,7 @@ extern "C" void* ndmp_thread_server(void* arg)
     }
   }
 
-  /*
-   * Cleanup open files.
-   */
+  // Cleanup open files.
   for (auto fd_ptr : sockfds) {
     if (fd_ptr) { close(fd_ptr->fd); }
   }

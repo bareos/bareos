@@ -594,9 +594,7 @@ static void* copy_thread(void* data)
      */
     if (pthread_mutex_lock(&context->lock) != 0) { goto bail_out; }
 
-    /*
-     * Signal the main thread we flushed the data and the BFD can be closed.
-     */
+    // Signal the main thread we flushed the data and the BFD can be closed.
     pthread_cond_signal(&context->flush);
 
     context->started = false;
@@ -609,9 +607,7 @@ bail_out:
   return NULL;
 }
 
-/**
- * Create a copy thread that restores the EFS data.
- */
+// Create a copy thread that restores the EFS data.
 static inline bool SetupCopyThread(JobControlRecord* jcr,
                                    BareosWinFilePacket* bfd)
 {
@@ -657,9 +653,7 @@ bail_out:
   return false;
 }
 
-/**
- * Send data to the copy thread that restores EFS data.
- */
+// Send data to the copy thread that restores EFS data.
 int win32_send_to_copy_thread(JobControlRecord* jcr,
                               BareosWinFilePacket* bfd,
                               char* data,
@@ -674,9 +668,7 @@ int win32_send_to_copy_thread(JobControlRecord* jcr,
           _("Encrypted file restore but no EFS support functions\n"));
   }
 
-  /*
-   * If no copy thread started do it now.
-   */
+  // If no copy thread started do it now.
   if (!jcr->cp_thread) {
     if (!SetupCopyThread(jcr, bfd)) {
       Jmsg0(jcr, M_FATAL, 0,
@@ -686,9 +678,7 @@ int win32_send_to_copy_thread(JobControlRecord* jcr,
   }
   cb = jcr->cp_thread->cb;
 
-  /*
-   * See if the bfd changed.
-   */
+  // See if the bfd changed.
   if (jcr->cp_thread->bfd != bfd) { jcr->cp_thread->bfd = bfd; }
 
   /*
@@ -699,9 +689,7 @@ int win32_send_to_copy_thread(JobControlRecord* jcr,
   slotnr = cb->NextSlot();
   save_data = &jcr->cp_thread->save_data[slotnr];
 
-  /*
-   * If this is the first time we use this slot we need to allocate some memory.
-   */
+  // If this is the first time we use this slot we need to allocate some memory.
   if (!save_data->data) { save_data->data = GetPoolMemory(PM_BSOCK); }
   save_data->data = CheckPoolMemorySize(save_data->data, length + 1);
   memcpy(save_data->data, data, length);
@@ -709,17 +697,13 @@ int win32_send_to_copy_thread(JobControlRecord* jcr,
 
   cb->enqueue(save_data);
 
-  /*
-   * Signal the copy thread its time to start if it didn't start yet.
-   */
+  // Signal the copy thread its time to start if it didn't start yet.
   if (!jcr->cp_thread->started) { pthread_cond_signal(&jcr->cp_thread->start); }
 
   return length;
 }
 
-/**
- * Flush the copy thread so we can close the BFD.
- */
+// Flush the copy thread so we can close the BFD.
 void win32_flush_copy_thread(JobControlRecord* jcr)
 {
   CopyThreadContext* context = jcr->cp_thread;
@@ -731,14 +715,10 @@ void win32_flush_copy_thread(JobControlRecord* jcr)
    * conservative.
    */
   while (!context->flushed) {
-    /*
-     * Tell the copy thread to flush out all data.
-     */
+    // Tell the copy thread to flush out all data.
     context->cb->flush();
 
-    /*
-     * Wait for the copy thread to say it flushed the data out.
-     */
+    // Wait for the copy thread to say it flushed the data out.
     pthread_cond_wait(&context->flush, &context->lock);
   }
 
@@ -747,24 +727,18 @@ void win32_flush_copy_thread(JobControlRecord* jcr)
   pthread_mutex_unlock(&context->lock);
 }
 
-/**
- * Cleanup all data allocated for the copy thread.
- */
+// Cleanup all data allocated for the copy thread.
 void win32_cleanup_copy_thread(JobControlRecord* jcr)
 {
   int slotnr;
 
-  /*
-   * Stop the copy thread.
-   */
+  // Stop the copy thread.
   if (!pthread_equal(jcr->cp_thread->thread_id, pthread_self())) {
     pthread_cancel(jcr->cp_thread->thread_id);
     pthread_join(jcr->cp_thread->thread_id, NULL);
   }
 
-  /*
-   * Free all data allocated along the way.
-   */
+  // Free all data allocated along the way.
   for (slotnr = 0; slotnr < jcr->cp_thread->nr_save_elements; slotnr++) {
     if (jcr->cp_thread->save_data[slotnr].data) {
       FreePoolMemory(jcr->cp_thread->save_data[slotnr].data);

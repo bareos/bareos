@@ -1347,9 +1347,7 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
       if (runscript->cmd_type == '@') { cmdstring = (char*)"Console"; }
       send.KeyQuotedString(cmdstring, esc.c_str(), inherited);
 
-      /*
-       * Default: never
-       */
+      // Default: never
       char* when = (char*)"never";
       switch (runscript->when) {
         case SCRIPT_Before:
@@ -1370,30 +1368,22 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
         send.KeyQuotedString("RunsWhen", when, inherited);
       }
 
-      /*
-       * Default: fail_on_error = true
-       */
+      // Default: fail_on_error = true
       if (!runscript->fail_on_error) {
         send.KeyBool("FailJobOnError", runscript->fail_on_error, inherited);
       }
 
-      /*
-       * Default: on_success = true
-       */
+      // Default: on_success = true
       if (!runscript->on_success) {
         send.KeyBool("RunsOnSuccess", runscript->on_success, inherited);
       }
 
-      /*
-       * Default: on_failure = false
-       */
+      // Default: on_failure = false
       if (runscript->on_failure) {
         send.KeyBool("RunsOnFailure", runscript->on_failure, inherited);
       }
 
-      /*
-       * Default: runsonclient = yes
-       */
+      // Default: runsonclient = yes
       if (runscript->target.empty()) {
         send.KeyBool("RunsOnClient", runscript->target.empty(), inherited);
       }
@@ -1455,9 +1445,7 @@ static std::string PrintConfigRun(RunResource* run)
   PoolMem run_str;  /* holds the complete run= ... line */
   PoolMem interval; /* is one entry of day/month/week etc. */
 
-  /*
-   * Overrides
-   */
+  // Overrides
   if (run->pool) {
     Mmsg(temp, "pool=\"%s\" ", run->pool->resource_name_);
     PmStrcat(run_str, temp.c_str());
@@ -1527,18 +1515,12 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcat(run_str, temp.c_str());
   }
 
-  /*
-   * Now the time specification
-   */
+  // Now the time specification
 
-  /*
-   * run->mday , output is just the number comma separated
-   */
+  // run->mday , output is just the number comma separated
   PmStrcpy(temp, "");
 
-  /*
-   * First see if not all bits are set.
-   */
+  // First see if not all bits are set.
   all_set = true;
   nr_items = 31;
   for (i = 0; i < nr_items; i++) {
@@ -1647,9 +1629,7 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
   }
 
-  /*
-   * run->wday output is Sun, Mon, ..., Sat comma separated
-   */
+  // run->wday output is Sun, Mon, ..., Sat comma separated
   all_set = true;
   nr_items = 7;
   for (i = 0; i < nr_items; i++) {
@@ -1702,9 +1682,7 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
   }
 
-  /*
-   * run->month output is Jan, Feb, ..., Dec comma separated
-   */
+  // run->month output is Jan, Feb, ..., Dec comma separated
   all_set = true;
   nr_items = 12;
   for (i = 0; i < nr_items; i++) {
@@ -1757,9 +1735,7 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
   }
 
-  /*
-   * run->woy output is w00 - w53, comma separated
-   */
+  // run->woy output is w00 - w53, comma separated
   all_set = true;
   nr_items = 54;
   for (i = 0; i < nr_items; i++) {
@@ -1824,9 +1800,7 @@ static std::string PrintConfigRun(RunResource* run)
     }
   }
 
-  /*
-   * run->minute output is smply the minute in HH:MM
-   */
+  // run->minute output is smply the minute in HH:MM
 
   return std::string(run_str.c_str());
 }
@@ -2086,9 +2060,7 @@ bool FilesetResource::PrintConfig(
 
       send.SubResourceStart(NULL, inherited, "Include {\n");
 
-      /*
-       * Start options blocks
-       */
+      // Start options blocks
       if (incexe->file_options_list.size() > 0) {
         send.ArrayStart("Options", inherited, "");
 
@@ -2100,21 +2072,15 @@ bool FilesetResource::PrintConfig(
         send.ArrayEnd("Options", inherited, "");
       }
 
-      /*
-       * File = entries.
-       */
+      // File = entries.
       send.KeyMultipleStringsOnePerLine(
           "File", std::addressof(incexe->name_list), false, true, true);
 
-      /*
-       * Plugin = entries.
-       */
+      // Plugin = entries.
       send.KeyMultipleStringsOnePerLine("Plugin",
                                         std::addressof(incexe->plugin_list));
 
-      /*
-       * ExcludeDirContaining = entry.
-       */
+      // ExcludeDirContaining = entry.
       send.KeyMultipleStringsOnePerLine("ExcludeDirContaining",
                                         std::addressof(incexe->ignoredir));
 
@@ -2212,9 +2178,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
     case R_MSGS:
     case R_FILESET:
     case R_DEVICE:
-      /*
-       * Resources not containing a resource
-       */
+      // Resources not containing a resource
       break;
     case R_POOL: {
       /*
@@ -2380,9 +2344,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
           p->RegexWhere = (char*)malloc(len * sizeof(char));
           bregexp_build_where(p->RegexWhere, len, p->strip_prefix,
                               p->add_prefix, p->add_suffix);
-          /*
-           * TODO: test bregexp
-           */
+          // TODO: test bregexp
         }
 
         if (p->RegexWhere && p->RestoreWhere) {
@@ -2422,9 +2384,7 @@ static bool UpdateResourcePointer(int type, ResourceItem* items)
         if (res_client->catalog) {
           p->catalog = res_client->catalog;
         } else {
-          /*
-           * No catalog overwrite given use the first catalog definition.
-           */
+          // No catalog overwrite given use the first catalog definition.
           p->catalog = (CatalogResource*)my_config->GetNextRes(R_CATALOG, NULL);
         }
         p->tls_cert_.allowed_certificate_common_names_ = std::move(
@@ -2469,17 +2429,13 @@ bool PropagateJobdefs(int res_type, JobResource* res)
 
   if (!res->jobdefs) { return true; }
 
-  /*
-   * Don't allow the JobDefs pointing to itself.
-   */
+  // Don't allow the JobDefs pointing to itself.
   if (res->jobdefs == res) { return false; }
 
   if (res_type == R_JOB) {
     jobdefs = res->jobdefs;
 
-    /*
-     * Handle RunScripts alists specifically
-     */
+    // Handle RunScripts alists specifically
     if (jobdefs->RunScripts) {
       if (!res->RunScripts) {
         res->RunScripts = new alist(10, not_owned_by_alist);
@@ -2494,9 +2450,7 @@ bool PropagateJobdefs(int res_type, JobResource* res)
     }
   }
 
-  /*
-   * Transfer default items from JobDefs Resource
-   */
+  // Transfer default items from JobDefs Resource
   PropagateResource(job_items, res->jobdefs, res);
 
   return true;
@@ -2507,22 +2461,16 @@ static bool PopulateJobdefaults()
   JobResource *job, *jobdefs;
   bool retval = true;
 
-  /*
-   * Propagate the content of a JobDefs to another.
-   */
+  // Propagate the content of a JobDefs to another.
   foreach_res (jobdefs, R_JOBDEFS) {
     PropagateJobdefs(R_JOBDEFS, jobdefs);
   }
 
-  /*
-   * Propagate the content of the JobDefs to the actual Job.
-   */
+  // Propagate the content of the JobDefs to the actual Job.
   foreach_res (job, R_JOB) {
     PropagateJobdefs(R_JOB, job);
 
-    /*
-     * Ensure that all required items are present
-     */
+    // Ensure that all required items are present
     if (!ValidateResource(R_JOB, job_items, job)) {
       retval = false;
       goto bail_out;
@@ -2633,15 +2581,11 @@ static void StoreDevice(LEX* lc, ResourceItem* item, int index, int pass)
   }
 }
 
-/**
- * Store Migration/Copy type
- */
+// Store Migration/Copy type
 static void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass)
 {
   LexGetToken(lc, BCT_NAME);
-  /*
-   * Store the type both in pass 1 and pass 2
-   */
+  // Store the type both in pass 1 and pass 2
   bool found = false;
   for (int i = 0; migtypes[i].type_name; i++) {
     if (Bstrcasecmp(lc->str, migtypes[i].type_name)) {
@@ -2660,15 +2604,11 @@ static void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/**
- * Store JobType (backup, verify, restore)
- */
+// Store JobType (backup, verify, restore)
 static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int pass)
 {
   LexGetToken(lc, BCT_NAME);
-  /*
-   * Store the type both in pass 1 and pass 2
-   */
+  // Store the type both in pass 1 and pass 2
   bool found = false;
   for (int i = 0; jobtypes[i].type_name; i++) {
     if (Bstrcasecmp(lc->str, jobtypes[i].type_name)) {
@@ -2687,15 +2627,11 @@ static void StoreJobtype(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/**
- * Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
- */
+// Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
 static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int pass)
 {
   LexGetToken(lc, BCT_NAME);
-  /*
-   * Store the type both in pass 1 and pass 2
-   */
+  // Store the type both in pass 1 and pass 2
   bool found = false;
   for (int i = 0; backupprotocols[i].name; i++) {
     if (Bstrcasecmp(lc->str, backupprotocols[i].name)) {
@@ -2717,9 +2653,7 @@ static void StoreProtocoltype(LEX* lc, ResourceItem* item, int index, int pass)
 static void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass)
 {
   LexGetToken(lc, BCT_NAME);
-  /*
-   * Scan Replacement options
-   */
+  // Scan Replacement options
   bool found = false;
   for (int i = 0; ReplaceOptions[i].name; i++) {
     if (Bstrcasecmp(lc->str, ReplaceOptions[i].name)) {
@@ -2738,18 +2672,14 @@ static void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/**
- * Store Auth Protocol (Native, NDMPv2, NDMPv3, NDMPv4)
- */
+// Store Auth Protocol (Native, NDMPv2, NDMPv3, NDMPv4)
 static void StoreAuthprotocoltype(LEX* lc,
                                   ResourceItem* item,
                                   int index,
                                   int pass)
 {
   LexGetToken(lc, BCT_NAME);
-  /*
-   * Store the type both in pass 1 and pass 2
-   */
+  // Store the type both in pass 1 and pass 2
   bool found = false;
   for (int i = 0; authprotocols[i].name; i++) {
     if (Bstrcasecmp(lc->str, authprotocols[i].name)) {
@@ -2768,15 +2698,11 @@ static void StoreAuthprotocoltype(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/**
- * Store authentication type (Mostly for NDMP like clear or MD5).
- */
+// Store authentication type (Mostly for NDMP like clear or MD5).
 static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
 {
   LexGetToken(lc, BCT_NAME);
-  /*
-   * Store the type both in pass 1 and pass 2
-   */
+  // Store the type both in pass 1 and pass 2
   bool found = false;
   for (int i = 0; authmethods[i].name; i++) {
     if (Bstrcasecmp(lc->str, authmethods[i].name)) {
@@ -2796,9 +2722,7 @@ static void StoreAuthtype(LEX* lc, ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/**
- * Store Job Level (Full, Incremental, ...)
- */
+// Store Job Level (Full, Incremental, ...)
 static void StoreLevel(LEX* lc, ResourceItem* item, int index, int pass)
 {
   LexGetToken(lc, BCT_NAME);
@@ -3036,9 +2960,7 @@ static void StoreShortRunscript(LEX* lc,
       script->SetTarget("");
     }
 
-    /*
-     * Remember that the entry was configured in the short runscript form.
-     */
+    // Remember that the entry was configured in the short runscript form.
     script->short_form = true;
 
     if (!*runscripts) { *runscripts = new alist(10, not_owned_by_alist); }
@@ -3518,9 +3440,7 @@ static void PrintConfigCb(ResourceItem& item,
 
   switch (item.type) {
     case CFG_TYPE_DEVICE: {
-      /*
-       * Each member of the list is comma-separated
-       */
+      // Each member of the list is comma-separated
       send.KeyMultipleStringsInOneLine(item.name, GetItemVariable<alist*>(item),
                                        GetResourceName, false, true);
       break;
@@ -3606,9 +3526,7 @@ static void PrintConfigCb(ResourceItem& item,
       break;
     }
     case CFG_TYPE_AUDIT: {
-      /*
-       * Each member of the list is comma-separated
-       */
+      // Each member of the list is comma-separated
       send.KeyMultipleStringsInOneLine(item.name, GetItemVariable<alist*>(item),
                                        inherited);
       break;
@@ -3767,9 +3685,7 @@ ConfigurationParser* InitDirConfig(const char* configfile, int exit_code)
 }
 
 
-/**
- * Dump contents of resource
- */
+// Dump contents of resource
 static void DumpResource(int type,
                          BareosResource* res,
                          bool sendit(void* sock, const char* fmt, ...),
@@ -4114,9 +4030,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       }
       break;
     default:
-      /*
-       * Ensure that all required items are present
-       */
+      // Ensure that all required items are present
       if (!ValidateResource(type, items, allocated_resource)) { return false; }
       break;
   }

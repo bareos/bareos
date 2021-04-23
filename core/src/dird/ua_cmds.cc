@@ -1417,9 +1417,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
     trace_flag = -1;
   }
 
-  /*
-   * Look for hangup (debug only) flag. -1 => not change
-   */
+  // Look for hangup (debug only) flag. -1 => not change
   i = FindArgWithValue(ua, NT_("hangup"));
   if (i >= 0) {
     hangup_flag = atoi(ua->argv[i]);
@@ -1427,9 +1425,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
     hangup_flag = -1;
   }
 
-  /*
-   * Look for timestamp flag. -1 => not change
-   */
+  // Look for timestamp flag. -1 => not change
   i = FindArgWithValue(ua, NT_("timestamp"));
   if (i >= 0) {
     timestamp_flag = atoi(ua->argv[i]);
@@ -1438,9 +1434,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
     timestamp_flag = -1;
   }
 
-  /*
-   * General debug?
-   */
+  // General debug?
   for (i = 1; i < ua->argc; i++) {
     if (Bstrcasecmp(ua->argk[i], "all")) {
       DoAllSetDebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
@@ -1498,9 +1492,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
     }
   }
 
-  /*
-   * We didn't find an appropriate keyword above, so prompt the user.
-   */
+  // We didn't find an appropriate keyword above, so prompt the user.
   StartPrompt(ua, _("Available daemons are: \n"));
   AddPrompt(ua, _("Director"));
   AddPrompt(ua, _("Storage"));
@@ -1510,9 +1502,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   switch (
       DoPrompt(ua, "", _("Select daemon type to set debug level"), NULL, 0)) {
     case 0:
-      /*
-       * Director
-       */
+      // Director
       DoDirectorSetdebug(ua, level, trace_flag, timestamp_flag);
       break;
     case 1:
@@ -1601,9 +1591,7 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
   PmStrcpy(lstore.store_source, _("unknown source"));
   SetWstorage(ua->jcr, &lstore);
 
-  /*
-   * Try connecting for up to 15 seconds
-   */
+  // Try connecting for up to 15 seconds
   ua->SendMsg(_("Connecting to Storage daemon %s at %s:%d\n"),
               store->resource_name_, store->address, store->SDport);
 
@@ -1629,9 +1617,7 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
 }
 
 
-/**
- * setdevice storage=<storage-name> device=<device-name> autoselect=<bool>
- */
+// setdevice storage=<storage-name> device=<device-name> autoselect=<bool>
 bool SetDeviceCommand::Cmd(UaContext* ua, const char* cmd)
 {
   auto arguments = ScanCommandLine(ua);
@@ -1661,9 +1647,7 @@ bool SetDeviceCommand::Cmd(UaContext* ua, const char* cmd)
   return SendToSd(ua, sd, arguments);
 }
 
-/**
- * Resolve a hostname.
- */
+// Resolve a hostname.
 static bool ResolveCmd(UaContext* ua, const char* cmd)
 {
   StorageResource* storage = NULL;
@@ -1728,9 +1712,7 @@ static bool ResolveCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-/**
- * Turn debug tracing to file on/off
- */
+// Turn debug tracing to file on/off
 static bool TraceCmd(UaContext* ua, const char* cmd)
 {
   char* onoff;
@@ -1933,9 +1915,7 @@ static bool EstimateCmd(UaContext* ua, const char* cmd)
     return false;
   }
 
-  /*
-   * The level string change if accurate mode is enabled
-   */
+  // The level string change if accurate mode is enabled
   if (accurate_set) {
     jcr->accurate = accurate;
   } else {
@@ -1954,9 +1934,7 @@ static bool EstimateCmd(UaContext* ua, const char* cmd)
     goto bail_out;
   }
 
-  /*
-   * If the job is in accurate mode, we send the list of all files to FD.
-   */
+  // If the job is in accurate mode, we send the list of all files to FD.
   Dmsg1(40, "estimate accurate=%d\n", jcr->accurate);
   if (!SendAccurateCurrentFiles(jcr)) { goto bail_out; }
 
@@ -1975,9 +1953,7 @@ bail_out:
   return true;
 }
 
-/**
- * Print time
- */
+// Print time
 static bool time_cmd(UaContext* ua, const char* cmd)
 {
   char sdt[50];
@@ -2053,9 +2029,7 @@ static bool TruncateCmd(UaContext* ua, const char* cmd)
   }
   parsed_args++;
 
-  /*
-   * Look for Purged volumes.
-   */
+  // Look for Purged volumes.
   bstrncpy(mr.VolStatus, "Purged", sizeof(mr.VolStatus));
 
   if (!OpenDb(ua)) {
@@ -2168,9 +2142,7 @@ static bool TruncateCmd(UaContext* ua, const char* cmd)
     goto bail_out;
   }
 
-  /*
-   * Loop over the candidate Volumes and actually truncate them
-   */
+  // Loop over the candidate Volumes and actually truncate them
   for (int i = 0; i < mediaIds.size(); i++) {
     mr.MediaId = mediaIds.get(i);
     if (!ua->db->GetMediaRecord(ua->jcr, &mr)) {
@@ -2210,9 +2182,7 @@ static bool DoTruncate(UaContext* ua, MediaDbRecord& mr)
     goto bail_out;
   }
 
-  /*
-   * Choose storage
-   */
+  // Choose storage
   ua->jcr->impl->res.write_storage = ua->GetStoreResWithName(storage_dbr.Name);
   if (!ua->jcr->impl->res.write_storage) {
     ua->ErrorMsg("failed to determine storage resource by name %s\n",
@@ -2239,9 +2209,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Reload the conf file
- */
+// Reload the conf file
 static bool ReloadCmd(UaContext* ua, const char* cmd)
 {
   bool result;
@@ -2350,9 +2318,7 @@ static void DeleteJob(UaContext* ua)
         sep = strchr(tok, ',');
       }
 
-      /*
-       * Pick up the last token
-       */
+      // Pick up the last token
       if (!DeleteJobIdRange(ua, tok)) {
         if (Is_a_number(tok)) {
           JobId = (JobId_t)str_to_uint64(tok);
@@ -2375,9 +2341,7 @@ static void DeleteJob(UaContext* ua)
   ua->send->ArrayEnd("jobids");
 }
 
-/**
- * We call DeleteJobIdRange to parse range tokens and iterate over ranges
- */
+// We call DeleteJobIdRange to parse range tokens and iterate over ranges
 static bool DeleteJobIdRange(UaContext* ua, char* tok)
 {
   char buf[64];
@@ -2418,9 +2382,7 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok)
   return true;
 }
 
-/**
- * DoJobDelete now performs the actual delete operation atomically
- */
+// DoJobDelete now performs the actual delete operation atomically
 static void DoJobDelete(UaContext* ua, JobId_t JobId)
 {
   char ed1[50];
@@ -2431,9 +2393,7 @@ static void DoJobDelete(UaContext* ua, JobId_t JobId)
       ed1, _("Jobid %s and associated records deleted from the catalog.\n"));
 }
 
-/**
- * Delete media records from database -- dangerous
- */
+// Delete media records from database -- dangerous
 static bool DeleteVolume(UaContext* ua)
 {
   MediaDbRecord mr;
@@ -2453,9 +2413,7 @@ static bool DeleteVolume(UaContext* ua)
     if (!ua->pint32_val) { return true; }
   }
 
-  /*
-   * If not purged, do it
-   */
+  // If not purged, do it
   if (!bstrcmp(mr.VolStatus, "Purged")) {
     if (!ua->db->GetVolumeJobids(ua->jcr, &mr, &lst)) {
       ua->ErrorMsg(_("Can't list jobs on this volume\n"));
@@ -2481,9 +2439,7 @@ static bool DeleteVolume(UaContext* ua)
   return true;
 }
 
-/**
- * Delete a pool record from the database -- dangerous.
- */
+// Delete a pool record from the database -- dangerous.
 static bool DeletePool(UaContext* ua)
 {
   PoolDbRecord pr;
@@ -2553,27 +2509,21 @@ static void DoMountCmd(UaContext* ua, const char* cmd)
   InvalidateVolList(store.store);
 }
 
-/**
- * mount [storage=<name>] [drive=nn] [slot=mm]
- */
+// mount [storage=<name>] [drive=nn] [slot=mm]
 static bool MountCmd(UaContext* ua, const char* cmd)
 {
   DoMountCmd(ua, "mount"); /* mount */
   return true;
 }
 
-/**
- * unmount [storage=<name>] [drive=nn]
- */
+// unmount [storage=<name>] [drive=nn]
 static bool UnmountCmd(UaContext* ua, const char* cmd)
 {
   DoMountCmd(ua, "unmount"); /* unmount */
   return true;
 }
 
-/**
- * Perform a NO-OP.
- */
+// Perform a NO-OP.
 static bool noop_cmd(UaContext* ua, const char* cmd)
 {
   if (ua->api) { ua->signal(BNET_CMD_BEGIN); }
@@ -2583,9 +2533,7 @@ static bool noop_cmd(UaContext* ua, const char* cmd)
   return true; /* no op */
 }
 
-/**
- * release [storage=<name>] [drive=nn]
- */
+// release [storage=<name>] [drive=nn]
 static bool ReleaseCmd(UaContext* ua, const char* cmd)
 {
   DoMountCmd(ua, "release"); /* release */
@@ -2622,9 +2570,7 @@ bool quit_cmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-/**
- * Handler to get job status
- */
+// Handler to get job status
 static int StatusHandler(void* ctx, int num_fields, char** row)
 {
   char* val = (char*)ctx;
@@ -2638,9 +2584,7 @@ static int StatusHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/**
- * Wait until no job is running
- */
+// Wait until no job is running
 static bool wait_cmd(UaContext* ua, const char* cmd)
 {
   int i;
@@ -2678,9 +2622,7 @@ static bool wait_cmd(UaContext* ua, const char* cmd)
     stop_time = time(NULL) + str_to_int64(ua->argv[i]);
   }
 
-  /*
-   * We have jobid, jobname or ujobid argument
-   */
+  // We have jobid, jobname or ujobid argument
   if (!OpenClientDb(ua)) {
     ua->ErrorMsg(_("ERR: Can't open db\n"));
     return true;
@@ -2709,9 +2651,7 @@ static bool wait_cmd(UaContext* ua, const char* cmd)
       }
       break;
     } else if (Bstrcasecmp(ua->argk[i], "mount")) {
-      /*
-       * Wait for a mount request
-       */
+      // Wait for a mount request
       for (bool waiting = false; !waiting;) {
         foreach_jcr (jcr) {
           if (jcr->JobId != 0
@@ -2738,9 +2678,7 @@ static bool wait_cmd(UaContext* ua, const char* cmd)
     return true;
   }
 
-  /*
-   * We wait the end of a specific job
-   */
+  // We wait the end of a specific job
   Bmicrosleep(0, 200000); /* let job actually start */
   for (bool running = true; running;) {
     running = false;
@@ -2754,9 +2692,7 @@ static bool wait_cmd(UaContext* ua, const char* cmd)
     if (running) { Bmicrosleep(1, 0); }
   }
 
-  /*
-   * We have to get JobStatus
-   */
+  // We have to get JobStatus
   Mmsg(temp, "SELECT JobStatus FROM Job WHERE JobId='%s'",
        edit_int64(JobId, ed1));
   ua->db->SqlQuery(temp.c_str(), StatusHandler, (void*)&jobstatus);
@@ -2849,9 +2785,7 @@ static bool DotHelpCmd(UaContext* ua, const char* cmd)
    * because comsize and commands are defined here.
    */
 
-  /*
-   * Want to display a specific help section
-   */
+  // Want to display a specific help section
   j = FindArgWithValue(ua, NT_("item"));
   if (j >= 0 && ua->argk[j]) {
     for (i = 0; i < comsize; i++) {
@@ -2871,9 +2805,7 @@ static bool DotHelpCmd(UaContext* ua, const char* cmd)
 
   j = FindArg(ua, NT_("all"));
   if (j >= 0) {
-    /*
-     * Want to display only user commands (except dot commands)
-     */
+    // Want to display only user commands (except dot commands)
     for (i = 0; i < comsize; i++) {
       if (ua->AclAccessOk(Command_ACL, commands[i].key)
           && (!IsDotCommand(commands[i].key))) {
@@ -2886,9 +2818,7 @@ static bool DotHelpCmd(UaContext* ua, const char* cmd)
       }
     }
   } else {
-    /*
-     * Want to display everything
-     */
+    // Want to display everything
     for (i = 0; i < comsize; i++) {
       if (ua->AclAccessOk(Command_ACL, commands[i].key)) {
         ua->send->ObjectStart(commands[i].key);

@@ -903,9 +903,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
     foreach_res (changer, R_AUTOCHANGER) {
       // Find resource, and make sure we were able to open it
       if (bstrcmp(devname.c_str(), changer->resource_name_)) {
-        /*
-         * Try each device in this AutoChanger
-         */
+        // Try each device in this AutoChanger
         foreach_alist (device_resource, changer->device_resources) {
           Dmsg1(100, "Try changer device %s\n",
                 device_resource->resource_name_);
@@ -951,9 +949,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
   return dcr;
 }
 
-/**
- * Mount command from Director
- */
+// Mount command from Director
 static bool MountCmd(JobControlRecord* jcr)
 {
   PoolMem devname;
@@ -1126,9 +1122,7 @@ static bool MountCmd(JobControlRecord* jcr)
   return true;
 }
 
-/**
- * unmount command from Director
- */
+// unmount command from Director
 static bool UnmountCmd(JobControlRecord* jcr)
 {
   PoolMem devname;
@@ -1349,9 +1343,7 @@ static bool BootstrapCmd(JobControlRecord* jcr)
   return GetBootstrapFile(jcr, jcr->dir_bsock);
 }
 
-/**
- * Autochanger command from Director
- */
+// Autochanger command from Director
 static bool ChangerCmd(JobControlRecord* jcr)
 {
   slot_number_t src_slot, dst_slot;
@@ -1429,9 +1421,7 @@ static bool ChangerCmd(JobControlRecord* jcr)
   return true;
 }
 
-/**
- * Read and return the Volume label
- */
+// Read and return the Volume label
 static bool ReadlabelCmd(JobControlRecord* jcr)
 {
   PoolMem devname;
@@ -1593,9 +1583,7 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
   Dmsg1(5, "set sd ssl_policy to %d\n", policy);
 }
 
-/**
- * Listen for incoming replication session from other SD.
- */
+// Listen for incoming replication session from other SD.
 static bool ListenCmd(JobControlRecord* jcr) { return DoListenRun(jcr); }
 
 enum class ReplicateCmdState
@@ -1728,9 +1716,7 @@ static bool RunCmd(JobControlRecord* jcr)
 {
   Dmsg1(200, "Run_cmd: %s\n", jcr->dir_bsock->msg);
 
-  /*
-   * If we do not need the FD, we are doing a migrate, copy, or virtual backup.
-   */
+  // If we do not need the FD, we are doing a migrate, copy, or virtual backup.
   if (jcr->NoClientUsed()) {
     return DoMacRun(jcr);
   } else {
@@ -1762,9 +1748,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
   fd = new BareosSocketTCP;
   fd->SetSourceAddress(me->SDsrc_addr);
 
-  /*
-   * Open command communications with passive filedaemon
-   */
+  // Open command communications with passive filedaemon
   if (!fd->connect(jcr, 10, (int)me->FDConnectTimeout, me->heartbeat_interval,
                    _("File Daemon"), filed_addr, NULL, filed_port, 1)) {
     delete fd;
@@ -1807,16 +1791,12 @@ static bool PassiveCmd(JobControlRecord* jcr)
 
     Dmsg0(110, "Authenticated with FD.\n");
 
-    /*
-     * Update the initial Job Statistics.
-     */
+    // Update the initial Job Statistics.
     now = (utime_t)time(NULL);
     UpdateJobStatistics(jcr, now);
   }
 
-  /*
-   * Send OK to Director
-   */
+  // Send OK to Director
   return dir->fsend(OKpassive);
 
 bail_out:
@@ -1842,9 +1822,7 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
   }
   jcr->impl->plugin_options->append(strdup(plugin_options));
 
-  /*
-   * Send OK to Director
-   */
+  // Send OK to Director
   return dir->fsend(OKpluginoptions);
 
 bail_out:

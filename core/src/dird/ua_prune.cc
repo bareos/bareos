@@ -851,9 +851,7 @@ int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
     return 0; /* cannot prune Archived volumes */
   }
 
-  /*
-   * Now add to the  list of JobIds for Jobs written to this Volume
-   */
+  // Now add to the  list of JobIds for Jobs written to this Volume
   utime_t VolRetention = mr->VolRetention;
   now = (utime_t)time(NULL);
   ua->db->FillQuery(query, BareosDb::SQL_QUERY::sel_JobMedia,

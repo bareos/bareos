@@ -642,9 +642,7 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
     goto bail_out;
   }
 
-  /*
-   * Map the streams.
-   */
+  // Map the streams.
   switch (rec->maskedStream) {
     case STREAM_FILE_DATA:
       nrec->Stream = STREAM_COMPRESSED_DATA;
@@ -662,9 +660,7 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
       break;
   }
 
-  /*
-   * Generate a compression header.
-   */
+  // Generate a compression header.
   ch.magic = dcr->device_resource->autodeflate_algorithm;
   ch.level = dcr->device_resource->autodeflate_level;
   ch.version = COMP_HEAD_VERSION;
@@ -682,9 +678,7 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
       nrec->data_len += sizeof(comp_stream_header);
       break;
     case STREAM_SPARSE_COMPRESSED_DATA:
-      /*
-       * Copy the sparse offset from the original.
-       */
+      // Copy the sparse offset from the original.
       memcpy(nrec->data, rec->data, OFFSET_FADDR_SIZE);
       SerBegin(nrec->data + OFFSET_FADDR_SIZE, sizeof(comp_stream_header));
       ser_uint32(ch.magic);
@@ -704,9 +698,7 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   p_ctx->deflate_bytes_in += rec->data_len;
   p_ctx->deflate_bytes_out += nrec->data_len;
 
-  /*
-   * If the input is just an intermediate value free it now.
-   */
+  // If the input is just an intermediate value free it now.
   if (intermediate_value) { bareos_core_functions->FreeRecord(dcr->after_rec); }
   dcr->after_rec = nrec;
   retval = true;
@@ -783,9 +775,7 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
     goto bail_out;
   }
 
-  /*
-   * If we succeeded in decompressing the data update the stream type.
-   */
+  // If we succeeded in decompressing the data update the stream type.
   switch (rec->maskedStream) {
     case STREAM_COMPRESSED_DATA:
       nrec->Stream = STREAM_FILE_DATA;
@@ -811,9 +801,7 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   p_ctx->inflate_bytes_in += rec->data_len;
   p_ctx->inflate_bytes_out += nrec->data_len;
 
-  /*
-   * If the input is just an intermediate value free it now.
-   */
+  // If the input is just an intermediate value free it now.
   if (intermediate_value) { bareos_core_functions->FreeRecord(dcr->after_rec); }
   dcr->after_rec = nrec;
   retval = true;

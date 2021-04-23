@@ -414,9 +414,7 @@ ok_out:
   return retval;
 }
 
-/*
- * Setup a NDMP backup session.
- */
+// Setup a NDMP backup session.
 bool DoNdmpBackupInitNdmpNative(JobControlRecord* jcr)
 {
   FreeRstorage(jcr); /* we don't read so release */
@@ -434,9 +432,7 @@ bool DoNdmpBackupInitNdmpNative(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * If pool storage specified, use it instead of job storage
-   */
+  // If pool storage specified, use it instead of job storage
   CopyWstorage(jcr, jcr->impl->res.pool->storage, _("Pool resource"));
 
   if (!jcr->impl->res.write_storage_list) {
@@ -445,9 +441,7 @@ bool DoNdmpBackupInitNdmpNative(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * Validate the Job to have a NDMP client and NDMP storage.
-   */
+  // Validate the Job to have a NDMP client and NDMP storage.
   if (!NdmpValidateClient(jcr)) { return false; }
 
   if (!NdmpValidateStorage(jcr)) { return false; }
@@ -455,9 +449,7 @@ bool DoNdmpBackupInitNdmpNative(JobControlRecord* jcr)
   return true;
 }
 
-/*
- * Extract any post backup statistics for native NDMP
- */
+// Extract any post backup statistics for native NDMP
 static inline bool extract_post_backup_stats_ndmp_native(
     JobControlRecord* jcr,
     char* filesystem,
@@ -468,25 +460,17 @@ static inline bool extract_post_backup_stats_ndmp_native(
   ndmp_backup_format_option* nbf_options;
   struct ndm_env_entry* ndm_ee;
   char mediabuf[100];
-  /*
-   * See if we know this backup format and get it options.
-   */
+  // See if we know this backup format and get it options.
   nbf_options
       = ndmp_lookup_backup_format_options(sess->control_acb->job.bu_type);
 
-  /*
-   * See if an error was raised during the backup session.
-   */
+  // See if an error was raised during the backup session.
   if (sess->error_raised) { return false; }
 
-  /*
-   * extract_post_backup_stats
-   */
+  // extract_post_backup_stats
   for (media = sess->control_acb->job.media_tab.head; media;
        media = media->next) {
-    /*
-     * translate Physical to Logical Slot before storing into database
-     */
+    // translate Physical to Logical Slot before storing into database
 
     media->slot_addr = GetBareosSlotNumberByElementAddress(
         &jcr->impl->res.write_storage->runtime_storage_status->storage_mapping,
@@ -507,9 +491,7 @@ static inline bool extract_post_backup_stats_ndmp_native(
 
     Jmsg(jcr, M_INFO, 0, _("Media: %s\n"), mediabuf);
 
-    /*
-     * See if there is any media error.
-     */
+    // See if there is any media error.
     if (media->media_open_error || media->media_io_error
         || media->label_io_error || media->label_mismatch
         || media->fmark_error) {
@@ -517,19 +499,13 @@ static inline bool extract_post_backup_stats_ndmp_native(
     }
   }
 
-  /*
-   * Process the FHDB.
-   */
+  // Process the FHDB.
   ProcessFhdb(&sess->control_acb->job.index_log);
 
-  /*
-   * insert batched files into database
-   */
+  // insert batched files into database
 
   jcr->db->WriteBatchFileRecords(jcr);
-  /*
-   * Update the Job statistics from the NDMP statistics.
-   */
+  // Update the Job statistics from the NDMP statistics.
   jcr->JobBytes += sess->control_acb->job.bytes_written;
 
   /*

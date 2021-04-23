@@ -524,27 +524,19 @@ bool ChunkedDevice::FlushChunk(bool release_chunk, bool move_to_next_chunk)
     retval = FlushRemoteChunk(&request);
   }
 
-  /*
-   * Clear the need flushing flag.
-   */
+  // Clear the need flushing flag.
   current_chunk_->need_flushing = false;
 
-  /*
-   * Change to the next chunk ?
-   */
+  // Change to the next chunk ?
   if (move_to_next_chunk) {
-    /*
-     * If we enqueued the data we need to allocate a new buffer.
-     */
+    // If we enqueued the data we need to allocate a new buffer.
     if (io_threads_) { current_chunk_->buffer = allocate_chunkbuffer(); }
     current_chunk_->start_offset += current_chunk_->chunk_size;
     current_chunk_->end_offset
         = current_chunk_->start_offset + (current_chunk_->chunk_size - 1);
     current_chunk_->buflen = 0;
   } else {
-    /*
-     * If we enqueued the data we need to allocate a new buffer.
-     */
+    // If we enqueued the data we need to allocate a new buffer.
     if (release_chunk && io_threads_) { current_chunk_->buffer = NULL; }
   }
 
@@ -553,16 +545,12 @@ bool ChunkedDevice::FlushChunk(bool release_chunk, bool move_to_next_chunk)
   return retval;
 }
 
-/*
- * Internal method for reading a chunk from the backing store.
- */
+// Internal method for reading a chunk from the backing store.
 bool ChunkedDevice::ReadChunk()
 {
   chunk_io_request request;
 
-  /*
-   * Calculate in which chunk we are currently.
-   */
+  // Calculate in which chunk we are currently.
   request.chunk = current_chunk_->start_offset / current_chunk_->chunk_size;
   request.volname = current_volname_;
   request.buffer = current_chunk_->buffer;
@@ -574,9 +562,7 @@ bool ChunkedDevice::ReadChunk()
       = current_chunk_->start_offset + (current_chunk_->chunk_size - 1);
 
   if (!ReadRemoteChunk(&request)) {
-    /*
-     * If the chunk doesn't exist on the backing store it has a size of 0 bytes.
-     */
+    // If the chunk doesn't exist on the backing store it has a size of 0 bytes.
     current_chunk_->buflen = 0;
     return false;
   }
@@ -621,13 +607,9 @@ int ChunkedDevice::SetupChunk(const char* pathname, int flags, int mode)
     current_chunk_->end_offset = -1;
   }
 
-  /*
-   * Reopen of a device.
-   */
+  // Reopen of a device.
   if (current_chunk_->opened) {
-    /*
-     * Invalidate chunk.
-     */
+    // Invalidate chunk.
     current_chunk_->buflen = 0;
     current_chunk_->start_offset = -1;
     current_chunk_->end_offset = -1;
@@ -647,19 +629,13 @@ int ChunkedDevice::SetupChunk(const char* pathname, int flags, int mode)
     max_volume_size = MAX_CHUNKS * current_chunk_->chunk_size;
   }
 
-  /*
-   * On open set begin offset to 0.
-   */
+  // On open set begin offset to 0.
   offset_ = 0;
 
-  /*
-   * On open we are no longer at the End of the Media.
-   */
+  // On open we are no longer at the End of the Media.
   end_of_media_ = false;
 
-  /*
-   * Keep track of the volume currently mounted.
-   */
+  // Keep track of the volume currently mounted.
   if (current_volname_) { free(current_volname_); }
 
   current_volname_ = strdup(getVolCatName());
@@ -683,9 +659,7 @@ int ChunkedDevice::SetupChunk(const char* pathname, int flags, int mode)
   return retval;
 }
 
-/*
- * Read a chunked volume.
- */
+// Read a chunked volume.
 ssize_t ChunkedDevice::ReadChunked(int fd, void* buffer, size_t count)
 {
   ssize_t retval = 0;
@@ -708,9 +682,7 @@ ssize_t ChunkedDevice::ReadChunked(int fd, void* buffer, size_t count)
     if (!current_chunk_->chunk_setup) {
       current_chunk_->start_offset = 0;
 
-      /*
-       * See if we have to allocate a new buffer.
-       */
+      // See if we have to allocate a new buffer.
       if (!current_chunk_->buffer) {
         current_chunk_->buffer = allocate_chunkbuffer();
       }
@@ -722,9 +694,7 @@ ssize_t ChunkedDevice::ReadChunked(int fd, void* buffer, size_t count)
       current_chunk_->chunk_setup = true;
     }
 
-    /*
-     * See if we can fulfill the wanted read from the current chunk.
-     */
+    // See if we can fulfill the wanted read from the current chunk.
     if (current_chunk_->start_offset <= offset_
         && current_chunk_->end_offset >= (boffset_t)((offset_ + count) - 1)) {
       wanted_offset = (offset_ % current_chunk_->chunk_size);
@@ -756,9 +726,7 @@ ssize_t ChunkedDevice::ReadChunked(int fd, void* buffer, size_t count)
        * left and we have reached End Of Media.
        */
       while (retval < (ssize_t)count) {
-        /*
-         * See how much is left in this chunk.
-         */
+        // See how much is left in this chunk.
         if (offset_ < current_chunk_->end_offset) {
           wanted_offset = (offset_ % current_chunk_->chunk_size);
           bytes_left = MIN((ssize_t)(count - offset),
@@ -776,9 +744,7 @@ ssize_t ChunkedDevice::ReadChunked(int fd, void* buffer, size_t count)
           }
         }
 
-        /*
-         * Read in the next chunk.
-         */
+        // Read in the next chunk.
         current_chunk_->start_offset += current_chunk_->chunk_size;
         if (!ReadChunk()) {
           switch (dev_errno) {
@@ -824,9 +790,7 @@ bail_out:
   return retval;
 }
 
-/*
- * Write a chunked volume.
- */
+// Write a chunked volume.
 ssize_t ChunkedDevice::WriteChunked(int fd, const void* buffer, size_t count)
 {
   ssize_t retval = 0;
@@ -855,17 +819,13 @@ ssize_t ChunkedDevice::WriteChunked(int fd, const void* buffer, size_t count)
       current_chunk_->buflen = 0;
       current_chunk_->chunk_setup = true;
 
-      /*
-       * See if we have to allocate a new buffer.
-       */
+      // See if we have to allocate a new buffer.
       if (!current_chunk_->buffer) {
         current_chunk_->buffer = allocate_chunkbuffer();
       }
     }
 
-    /*
-     * See if we can write the whole data inside the current chunk.
-     */
+    // See if we can write the whole data inside the current chunk.
     if (current_chunk_->start_offset <= offset_
         && current_chunk_->end_offset >= (boffset_t)((offset_ + count) - 1)) {
       wanted_offset = (offset_ % current_chunk_->chunk_size);
@@ -892,9 +852,7 @@ ssize_t ChunkedDevice::WriteChunked(int fd, const void* buffer, size_t count)
        * written.
        */
       while (retval < (ssize_t)count) {
-        /*
-         * See how much is left in this chunk.
-         */
+        // See how much is left in this chunk.
         if (offset_ < current_chunk_->end_offset) {
           wanted_offset = (offset_ % current_chunk_->chunk_size);
           bytes_left
@@ -919,9 +877,7 @@ ssize_t ChunkedDevice::WriteChunked(int fd, const void* buffer, size_t count)
           }
         }
 
-        /*
-         * Flush out the current chunk.
-         */
+        // Flush out the current chunk.
         if (!FlushChunk(true /* release */, true /* move_to_next_chunk */)) {
           retval = -1;
           goto bail_out;
@@ -957,9 +913,7 @@ bail_out:
   return retval;
 }
 
-/*
- * Close a chunked volume.
- */
+// Close a chunked volume.
 int ChunkedDevice::CloseChunk()
 {
   int retval = -1;
@@ -986,9 +940,7 @@ int ChunkedDevice::CloseChunk()
     }
 
 
-    /*
-     * Invalidate chunk.
-     */
+    // Invalidate chunk.
     current_chunk_->writing = false;
     current_chunk_->opened = false;
     current_chunk_->chunk_setup = false;
@@ -1002,26 +954,20 @@ int ChunkedDevice::CloseChunk()
   return retval;
 }
 
-/*
- * Truncate a chunked volume.
- */
+// Truncate a chunked volume.
 bool ChunkedDevice::TruncateChunkedVolume(DeviceControlRecord* dcr)
 {
   if (current_chunk_->opened) {
     if (!TruncateRemoteVolume(dcr)) { return false; }
 
-    /*
-     * Reinitialize the initial chunk.
-     */
+    // Reinitialize the initial chunk.
     current_chunk_->start_offset = 0;
     current_chunk_->end_offset = (current_chunk_->chunk_size - 1);
     current_chunk_->buflen = 0;
     current_chunk_->chunk_setup = true;
     current_chunk_->need_flushing = false;
 
-    /*
-     * Reinitialize the volume name on a relabel we could get a new name.
-     */
+    // Reinitialize the volume name on a relabel we could get a new name.
     if (current_volname_) { free(current_volname_); }
 
     current_volname_ = strdup(getVolCatName());
@@ -1038,9 +984,7 @@ static int CompareVolumeName(void* item1, void* item2)
   return strcmp(request->volname, volname);
 }
 
-/*
- * Get the current size of a volume.
- */
+// Get the current size of a volume.
 ssize_t ChunkedDevice::ChunkedVolumeSize()
 {
   /*
@@ -1067,9 +1011,7 @@ ssize_t ChunkedDevice::ChunkedVolumeSize()
         if (request) {
           ssize_t retval;
 
-          /*
-           * Calculate the size of the volume based on the last chunk inflight.
-           */
+          // Calculate the size of the volume based on the last chunk inflight.
           retval = (request->chunk * current_chunk_->chunk_size)
                    + request->wbuflen;
 
@@ -1129,9 +1071,7 @@ ssize_t ChunkedDevice::ChunkedVolumeSize()
     }
   }
 
-  /*
-   * Get the actual length by contacting the remote backing store.
-   */
+  // Get the actual length by contacting the remote backing store.
   return RemoteVolumeSize();
 }
 
@@ -1151,9 +1091,7 @@ bool ChunkedDevice::is_written()
     return false;
   }
 
-  /*
-   * Make sure there is also nothing inflight to the backing store anymore.
-   */
+  // Make sure there is also nothing inflight to the backing store anymore.
   int inflight_chunks = NrInflightChunks();
   if (inflight_chunks > 0) {
     Dmsg2(100, "volume %s is pending, as there are %d inflight chunks\n",
@@ -1202,9 +1140,7 @@ bool ChunkedDevice::is_written()
 }
 
 
-/*
- * Busy waits until write buffer is empty.
- */
+// Busy waits until write buffer is empty.
 bool ChunkedDevice::WaitUntilChunksWritten()
 {
   if (current_chunk_->need_flushing) {
@@ -1231,21 +1167,15 @@ static int CloneIoRequest(void* item1, void* item2)
     memcpy(dst->buffer, src->buffer, src->wbuflen);
     *dst->rbuflen = src->wbuflen;
 
-    /*
-     * Cloning succeeded.
-     */
+    // Cloning succeeded.
     return 0;
   }
 
-  /*
-   * Not the right volname or chunk.
-   */
+  // Not the right volname or chunk.
   return -1;
 }
 
-/*
- * Make sure we have the right chunk in memory.
- */
+// Make sure we have the right chunk in memory.
 bool ChunkedDevice::LoadChunk()
 {
   boffset_t start_offset;
@@ -1253,16 +1183,12 @@ bool ChunkedDevice::LoadChunk()
   start_offset
       = (offset_ / current_chunk_->chunk_size) * current_chunk_->chunk_size;
 
-  /*
-   * See if we have to allocate a new buffer.
-   */
+  // See if we have to allocate a new buffer.
   if (!current_chunk_->buffer) {
     current_chunk_->buffer = allocate_chunkbuffer();
   }
 
-  /*
-   * If the wrong chunk is loaded populate the chunk buffer with the right data.
-   */
+  // If the wrong chunk is loaded populate the chunk buffer with the right data.
   if (start_offset != current_chunk_->start_offset) {
     current_chunk_->buflen = 0;
     current_chunk_->start_offset = start_offset;
@@ -1325,9 +1251,7 @@ bool ChunkedDevice::LoadChunk()
             break;
           }
 
-          /*
-           * Do a new try to clone the data from the ordered circular list.
-           */
+          // Do a new try to clone the data from the ordered circular list.
           continue;
         } else {
           /*
@@ -1340,9 +1264,7 @@ bool ChunkedDevice::LoadChunk()
       }
     }
 
-    /*
-     * Read the chunk from the backing store.
-     */
+    // Read the chunk from the backing store.
     if (!ReadChunk()) {
       switch (dev_errno) {
         case EIO:
@@ -1377,9 +1299,7 @@ static int ListIoRequest(void* request, void* data)
   return 0;
 }
 
-/**
- * Return specific device status information.
- */
+// Return specific device status information.
 bool ChunkedDevice::DeviceStatus(DeviceStatusInformation* dst)
 {
   bool pending = false;
@@ -1408,9 +1328,7 @@ bool ChunkedDevice::DeviceStatus(DeviceStatusInformation* dst)
       dst->status_length
           = PmStrcat(dst->status, _("Pending IO flush requests:\n"));
 
-      /*
-       * Peek on the ordered circular queue and list all pending requests.
-       */
+      // Peek on the ordered circular queue and list all pending requests.
       cb_->peek(storagedaemon::PEEK_LIST, dst, ListIoRequest);
     }
   }
@@ -1428,9 +1346,7 @@ ChunkedDevice::~ChunkedDevice()
   if (thread_ids_) { StopThreads(); }
 
   if (cb_) {
-    /*
-     * If there is any work on the ordered circular buffer remove it.
-     */
+    // If there is any work on the ordered circular buffer remove it.
     if (!cb_->empty()) {
       chunk_io_request* request;
       do {

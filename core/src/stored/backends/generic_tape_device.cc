@@ -784,16 +784,12 @@ static inline void OsClrerror(Device* dev)
   }
 }
 #elif defined(MTCSE)
-/**
- * Clear Subsystem Exception TRU64
- */
+// Clear Subsystem Exception TRU64
 static inline void OsClrerror(Device* dev)
 {
   mtop mt_com{};
 
-  /*
-   * Clear any error condition on the tape
-   */
+  // Clear any error condition on the tape
   mt_com.mt_op = MTCSE;
   mt_com.mt_count = 1;
   if (dev->d_ioctl(dev->fd, MTIOCTOP, (char*)&mt_com) < 0) {
@@ -805,9 +801,7 @@ static inline void OsClrerror(Device* dev)
 static inline void OsClrerror(Device* dev) {}
 #endif
 
-/**
- * If implemented in system, clear the tape error status.
- */
+// If implemented in system, clear the tape error status.
 void generic_tape_device::clrerror(int func)
 {
   const char* msg = NULL;
@@ -926,14 +920,10 @@ void generic_tape_device::clrerror(int func)
    * so that it is not locked for further operations.
    */
 
-  /*
-   * On some systems such as NetBSD, this clears all errors
-   */
+  // On some systems such as NetBSD, this clears all errors
   GetOsTapeFile();
 
-  /*
-   * OS specific clear function.
-   */
+  // OS specific clear function.
   OsClrerror(this);
 }
 
@@ -1036,9 +1026,7 @@ void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)
 #endif
 }
 
-/**
- * Returns file position on tape or -1
- */
+// Returns file position on tape or -1
 int32_t generic_tape_device::GetOsTapeFile()
 {
   struct mtget mt_stat;
@@ -1064,9 +1052,7 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
 
   Dmsg3(400, "rewind res=%d fd=%d %s\n", NumReserved(), fd, prt_name);
 
-  /*
-   * Remove EOF/EOT flags.
-   */
+  // Remove EOF/EOT flags.
   ClearBit(ST_EOT, state);
   ClearBit(ST_EOF, state);
   ClearBit(ST_WEOT, state);
@@ -1129,9 +1115,7 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
   return true;
 }
 
-/**
- * (Un)mount the device (for tape devices)
- */
+// (Un)mount the device (for tape devices)
 static bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
 {
   DeviceResource* device_resource = dcr->dev->device_resource;
@@ -1340,9 +1324,7 @@ bool generic_tape_device::Reposition(DeviceControlRecord* dcr,
   }
 
   if (HasCap(CAP_POSITIONBLOCKS) && rblock > block_num) {
-    /*
-     * Ignore errors as Bareos can read to the correct block.
-     */
+    // Ignore errors as Bareos can read to the correct block.
     Dmsg1(100, "fsr %d\n", rblock - block_num);
     return fsr(rblock - block_num);
   } else {
@@ -1427,9 +1409,7 @@ boffset_t generic_tape_device::d_lseek(DeviceControlRecord* dcr,
 
 bool generic_tape_device::d_truncate(DeviceControlRecord* dcr)
 {
-  /*
-   * Maybe we should rewind and write and eof ????
-   */
+  // Maybe we should rewind and write and eof ????
   return true; /* We don't really truncate tapes */
 }
 

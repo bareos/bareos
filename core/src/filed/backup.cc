@@ -689,9 +689,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
   // Meta data only for deleted files
   if (ff_pkt->type == FT_DELETED) { goto good_rtn; }
 
-  /*
-   * Set up the encryption context and send the session data to the SD
-   */
+  // Set up the encryption context and send the session data to the SD
   if (has_file_data && jcr->impl->crypto.pki_encrypt) {
     if (!CryptoSessionSend(jcr, sd)) { goto bail_out; }
   }
@@ -770,9 +768,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
   }
 
   if (have_darwin_os) {
-    /*
-     * Regular files can have resource forks and Finder Info
-     */
+    // Regular files can have resource forks and Finder Info
     if (ff_pkt->type != FT_LNKSAVED
         && (S_ISREG(ff_pkt->statp.st_mode)
             && BitIsSet(FO_HFSPLUS, ff_pkt->flags))) {
@@ -780,41 +776,31 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool top_level)
     }
   }
 
-  /*
-   * Save ACLs when requested and available for anything not being a symlink.
-   */
+  // Save ACLs when requested and available for anything not being a symlink.
   if (have_acl) {
     if (BitIsSet(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK) {
       if (!DoBackupAcl(jcr, ff_pkt)) { goto bail_out; }
     }
   }
 
-  /*
-   * Save Extended Attributes when requested and available for all files.
-   */
+  // Save Extended Attributes when requested and available for all files.
   if (have_xattr) {
     if (BitIsSet(FO_XATTR, ff_pkt->flags)) {
       if (!DoBackupXattr(jcr, ff_pkt)) { goto bail_out; }
     }
   }
 
-  /*
-   * Terminate the signing digest and send it to the Storage daemon
-   */
+  // Terminate the signing digest and send it to the Storage daemon
   if (bsctx.signing_digest) {
     if (!TerminateSigningDigest(bsctx)) { goto bail_out; }
   }
 
-  /*
-   * Terminate any digest and send it to Storage daemon
-   */
+  // Terminate any digest and send it to Storage daemon
   if (bsctx.digest) {
     if (!TerminateDigest(bsctx)) { goto bail_out; }
   }
 
-  /*
-   * Check if original file has a digest, and send it
-   */
+  // Check if original file has a digest, and send it
   if (ff_pkt->type == FT_LNKSAVED && ff_pkt->digest) {
     Dmsg2(300, "Link %s digest %d\n", ff_pkt->fname, ff_pkt->digest_len);
     sd->fsend("%ld %d 0", jcr->JobFiles, ff_pkt->digest_stream);
@@ -854,9 +840,7 @@ static inline bool SendDataToSd(b_ctx* bctx)
   BareosSocket* sd = bctx->jcr->store_bsock;
   bool need_more_data;
 
-  /*
-   * Check for sparse blocks
-   */
+  // Check for sparse blocks
   if (BitIsSet(FO_SPARSE, bctx->ff_pkt->flags)) {
     bool allZeros;
     ser_declare;
@@ -871,18 +855,14 @@ static inline bool SendDataToSd(b_ctx* bctx)
     }
 
     if (!allZeros) {
-      /*
-       * Put file address as first data in buffer
-       */
+      // Put file address as first data in buffer
       SerBegin(bctx->wbuf, OFFSET_FADDR_SIZE);
       ser_uint64(bctx->fileAddr); /* store fileAddr in begin of buffer */
     }
 
     bctx->fileAddr += sd->message_length; /* update file address */
 
-    /*
-     * Skip block of all zeros
-     */
+    // Skip block of all zeros
     if (allZeros) { return true; }
   } else if (BitIsSet(FO_OFFSETS, bctx->ff_pkt->flags)) {
     ser_declare;
@@ -892,29 +872,21 @@ static inline bool SendDataToSd(b_ctx* bctx)
 
   bctx->jcr->ReadBytes += sd->message_length; /* count bytes read */
 
-  /*
-   * Uncompressed cipher input length
-   */
+  // Uncompressed cipher input length
   bctx->cipher_input_len = sd->message_length;
 
-  /*
-   * Update checksum if requested
-   */
+  // Update checksum if requested
   if (bctx->digest) {
     CryptoDigestUpdate(bctx->digest, (uint8_t*)bctx->rbuf, sd->message_length);
   }
 
-  /*
-   * Update signing digest if requested
-   */
+  // Update signing digest if requested
   if (bctx->signing_digest) {
     CryptoDigestUpdate(bctx->signing_digest, (uint8_t*)bctx->rbuf,
                        sd->message_length);
   }
 
-  /*
-   * Compress the data.
-   */
+  // Compress the data.
   if (BitIsSet(FO_COMPRESS, bctx->ff_pkt->flags)) {
     if (!CompressData(bctx->jcr, bctx->ff_pkt->Compress_algo, bctx->rbuf,
                       bctx->jcr->store_bsock->message_length, bctx->cbuf,
@@ -922,15 +894,11 @@ static inline bool SendDataToSd(b_ctx* bctx)
       return false;
     }
 
-    /*
-     * See if we need to generate a compression header.
-     */
+    // See if we need to generate a compression header.
     if (bctx->chead) {
       ser_declare;
 
-      /*
-       * Complete header
-       */
+      // Complete header
       SerBegin(bctx->chead, sizeof(comp_stream_header));
       ser_uint32(bctx->ch.magic);
       ser_uint32(bctx->compress_len);
@@ -946,9 +914,7 @@ static inline bool SendDataToSd(b_ctx* bctx)
     bctx->cipher_input_len = bctx->compress_len;
   }
 
-  /*
-   * Encrypt the data.
-   */
+  // Encrypt the data.
   need_more_data = false;
   if (BitIsSet(FO_ENCRYPT, bctx->ff_pkt->flags)
       && !EncryptData(bctx, &need_more_data)) {
@@ -956,9 +922,7 @@ static inline bool SendDataToSd(b_ctx* bctx)
     return false;
   }
 
-  /*
-   * Send the buffer to the Storage daemon
-   */
+  // Send the buffer to the Storage daemon
   if (BitIsSet(FO_SPARSE, bctx->ff_pkt->flags)
       || BitIsSet(FO_OFFSETS, bctx->ff_pkt->flags)) {
     sd->message_length += OFFSET_FADDR_SIZE; /* include fileAddr in size */
@@ -982,9 +946,7 @@ static inline bool SendDataToSd(b_ctx* bctx)
 }
 
 #ifdef HAVE_WIN32
-/**
- * Callback method for ReadEncryptedFileRaw()
- */
+// Callback method for ReadEncryptedFileRaw()
 static DWORD WINAPI send_efs_data(PBYTE pbData,
                                   PVOID pvCallbackContext,
                                   ULONG ulLength)
@@ -1003,9 +965,7 @@ static DWORD WINAPI send_efs_data(PBYTE pbData,
     memcpy(bctx->rbuf, pbData, ulLength);
     if (!SendDataToSd(bctx)) { return ERROR_NET_WRITE_FAULT; }
   } else {
-    /*
-     * Need to chunk the data into pieces.
-     */
+    // Need to chunk the data into pieces.
     ULONG offset = 0;
 
     while (ulLength > 0) {
@@ -1021,9 +981,7 @@ static DWORD WINAPI send_efs_data(PBYTE pbData,
   return ERROR_SUCCESS;
 }
 
-/**
- * Send the content of an Encrypted file on an EFS filesystem.
- */
+// Send the content of an Encrypted file on an EFS filesystem.
 static inline bool SendEncryptedData(b_ctx& bctx)
 {
   bool retval = false;
@@ -1051,17 +1009,13 @@ bail_out:
 }
 #endif
 
-/**
- * Send the content of a file on anything but an EFS filesystem.
- */
+// Send the content of a file on anything but an EFS filesystem.
 static inline bool SendPlainData(b_ctx& bctx)
 {
   bool retval = false;
   BareosSocket* sd = bctx.jcr->store_bsock;
 
-  /*
-   * Read the file data
-   */
+  // Read the file data
   while ((sd->message_length
           = (uint32_t)bread(&bctx.ff_pkt->bfd, bctx.rbuf, bctx.rsize))
          > 0) {
@@ -1095,9 +1049,7 @@ static int send_data(JobControlRecord* jcr,
   return 1;
 #endif
 
-  /*
-   * Setup backup context.
-   */
+  // Setup backup context.
   memset(&bctx, 0, sizeof(b_ctx));
   bctx.jcr = jcr;
   bctx.ff_pkt = ff_pkt;
@@ -1137,16 +1089,12 @@ static int send_data(JobControlRecord* jcr,
     bctx.rbuf += OFFSET_FADDR_SIZE;
     bctx.rsize -= OFFSET_FADDR_SIZE;
 #ifdef HAVE_FREEBSD_OS
-    /*
-     * To read FreeBSD partitions, the read size must be a multiple of 512.
-     */
+    // To read FreeBSD partitions, the read size must be a multiple of 512.
     bctx.rsize = (bctx.rsize / 512) * 512;
 #endif
   }
 
-  /*
-   * A RAW device read on win32 only works if the buffer is a multiple of 512
-   */
+  // A RAW device read on win32 only works if the buffer is a multiple of 512
 #ifdef HAVE_WIN32
   if (S_ISBLK(ff_pkt->statp.st_mode)) { bctx.rsize = (bctx.rsize / 512) * 512; }
 
@@ -1168,22 +1116,16 @@ static int send_data(JobControlRecord* jcr,
            jcr->JobErrors);
     }
   } else if (BitIsSet(FO_ENCRYPT, ff_pkt->flags)) {
-    /*
-     * For encryption, we must call finalize to push out any buffered data.
-     */
+    // For encryption, we must call finalize to push out any buffered data.
     if (!CryptoCipherFinalize(bctx.cipher_ctx,
                               (uint8_t*)jcr->impl->crypto.crypto_buf,
                               &bctx.encrypted_len)) {
-      /*
-       * Padding failed. Shouldn't happen.
-       */
+      // Padding failed. Shouldn't happen.
       Jmsg(jcr, M_FATAL, 0, _("Encryption padding error\n"));
       goto bail_out;
     }
 
-    /*
-     * Note, on SSL pre-0.9.7, there is always some output
-     */
+    // Note, on SSL pre-0.9.7, there is always some output
     if (bctx.encrypted_len > 0) {
       sd->message_length = bctx.encrypted_len; /* set encrypted length */
       sd->msg = jcr->impl->crypto.crypto_buf;  /* set correct write buffer */
@@ -1209,17 +1151,13 @@ static int send_data(JobControlRecord* jcr,
     goto bail_out;
   }
 
-  /*
-   * Free the cipher context
-   */
+  // Free the cipher context
   if (bctx.cipher_ctx) { CryptoCipherFree(bctx.cipher_ctx); }
 
   return 1;
 
 bail_out:
-  /*
-   * Free the cipher context
-   */
+  // Free the cipher context
   if (bctx.cipher_ctx) { CryptoCipherFree(bctx.cipher_ctx); }
 
   sd->msg = bctx.msgsave; /* restore bnet buffer */
@@ -1271,9 +1209,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   PmStrcpy(jcr->impl->last_fname, ff_pkt->fname);
   jcr->unlock();
 
-  /*
-   * Debug code: check if we must hangup
-   */
+  // Debug code: check if we must hangup
   if (hangup && (jcr->JobFiles > (uint32_t)hangup)) {
     jcr->setJobStatus(JS_Incomplete);
     Jmsg1(jcr, M_FATAL, 0, "Debug hangup requested after %d files.\n", hangup);
@@ -1345,22 +1281,16 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
       ff_pkt->object_compression = 0;
 
       if (ff_pkt->object_len > 1000) {
-        /*
-         * Big object, compress it
-         */
+        // Big object, compress it
         comp_len = compressBound(ff_pkt->object_len);
         POOLMEM* comp_obj = GetMemory(comp_len);
-        /*
-         * FIXME: check Zdeflate error
-         */
+        // FIXME: check Zdeflate error
         Zdeflate(ff_pkt->object, ff_pkt->object_len, comp_obj, comp_len);
         if (comp_len < ff_pkt->object_len) {
           ff_pkt->object = comp_obj;
           ff_pkt->object_compression = 1; /* zlib level 9 compression */
         } else {
-          /*
-           * Uncompressed object smaller, use it
-           */
+          // Uncompressed object smaller, use it
           comp_len = ff_pkt->object_len;
         }
         Dmsg2(100, "Object compressed from %d to %d bytes\n",
@@ -1374,9 +1304,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
       sd->msg = CheckPoolMemorySize(sd->msg, sd->message_length + comp_len + 2);
       memcpy(sd->msg + sd->message_length, ff_pkt->object, comp_len);
 
-      /*
-       * Note we send one extra byte so Dir can store zero after object
-       */
+      // Note we send one extra byte so Dir can store zero after object
       sd->message_length += comp_len + 1;
       status = sd->send();
       if (ff_pkt->object_compression) { FreeAndNullPoolMemory(ff_pkt->object); }
@@ -1408,18 +1336,14 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
   return status;
 }
 
-/**
- * Do in place strip of path
- */
+// Do in place strip of path
 static bool do_strip(int count, char* in)
 {
   char* out = in;
   int stripped;
   int numsep = 0;
 
-  /**
-   * Copy to first path separator -- Win32 might have c: ...
-   */
+  // Copy to first path separator -- Win32 might have c: ...
   while (*in && !IsPathSeparator(*in)) {
     out++;
     in++;
@@ -1437,9 +1361,7 @@ static bool do_strip(int count, char* in)
     }
   }
 
-  /*
-   * Copy to end
-   */
+  // Copy to end
   while (*in) { /* copy to end */
     if (IsPathSeparator(*in)) { numsep++; }
     *out++ = *in++;
@@ -1487,9 +1409,7 @@ void StripPath(FindFilesPacket* ff_pkt)
     goto rtn;
   }
 
-  /**
-   * Strip links but not symlinks
-   */
+  // Strip links but not symlinks
   if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
     if (!do_strip(ff_pkt->StripPath, ff_pkt->link)) { UnstripPath(ff_pkt); }
   }
@@ -1529,9 +1449,7 @@ static void CloseVssBackupSession(JobControlRecord* jcr)
      */
     GeneratePluginEvent(jcr, bEventVssBackupComplete);
     if (jcr->impl->pVSSClient->CloseBackup()) {
-      /*
-       * Inform user about writer states
-       */
+      // Inform user about writer states
       for (size_t i = 0; i < jcr->impl->pVSSClient->GetWriterCount(); i++) {
         int msg_type = M_INFO;
         if (jcr->impl->pVSSClient->GetWriterState(i) < 1) {
@@ -1543,9 +1461,7 @@ static void CloseVssBackupSession(JobControlRecord* jcr)
       }
     }
 
-    /*
-     * Generate Job global writer metadata
-     */
+    // Generate Job global writer metadata
     wchar_t* metadata = jcr->impl->pVSSClient->GetMetadata();
     if (metadata) {
       FindFilesPacket* ff_pkt = jcr->impl->ff;

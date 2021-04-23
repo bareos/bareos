@@ -471,9 +471,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
       // Not scanning and not listall.
       switch (edp->element_type_code) {
         case SMC_ELEM_TYPE_SE:
-          /*
-           * Normal slot
-           */
+          // Normal slot
           vl->slot_type = slot_type_t::kSlotTypeStorage;
           vl->element_address = edp->element_address;
           if (!edp->Full) {
@@ -489,20 +487,14 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           continue;
       }
     } else {
-      /*
-       * Listall.
-       */
+      // Listall.
       switch (edp->element_type_code) {
         case SMC_ELEM_TYPE_MTE:
-          /*
-           * Transport
-           */
+          // Transport
           free(vl);
           continue;
         case SMC_ELEM_TYPE_SE:
-          /*
-           * Normal slot
-           */
+          // Normal slot
           vl->slot_type = slot_type_t::kSlotTypeStorage;
           vl->element_address = edp->element_address;
           if (edp->Full) {
@@ -513,9 +505,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           }
           break;
         case SMC_ELEM_TYPE_IEE:
-          /*
-           * Import/Export bareos_slot_number
-           */
+          // Import/Export bareos_slot_number
           vl->slot_type = slot_type_t::kSlotTypeImport;
           vl->element_address = edp->element_address;
           if (edp->Full) {
@@ -533,9 +523,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
           }
           break;
         case SMC_ELEM_TYPE_DTE:
-          /*
-           * Drive
-           */
+          // Drive
           vl->slot_type = slot_type_t::kSlotTypeDrive;
           vl->element_address = edp->element_address;
           if (edp->Full) {
@@ -558,9 +546,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
     }
 
 
-    /*
-     * Map physical storage address to logical one using the storage mappings.
-     */
+    // Map physical storage address to logical one using the storage mappings.
     vl->bareos_slot_number = GetBareosSlotNumberByElementAddress(
         &store->runtime_storage_status->storage_mapping, vl->slot_type,
         edp->element_address);
@@ -592,9 +578,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
   return vol_list;
 }
 
-/**
- * Update the mapping table from logical to physical storage addresses.
- */
+// Update the mapping table from logical to physical storage addresses.
 bool NdmpUpdateStorageMappings(JobControlRecord* jcr, StorageResource* store)
 {
   struct ndm_session* ndmp_sess;
@@ -611,9 +595,7 @@ bool NdmpUpdateStorageMappings(JobControlRecord* jcr, StorageResource* store)
   return true;
 }
 
-/**
- * Update the mapping table from logical to physical storage addresses.
- */
+// Update the mapping table from logical to physical storage addresses.
 bool NdmpUpdateStorageMappings(UaContext* ua, StorageResource* store)
 {
   struct ndm_session* ndmp_sess;
@@ -630,16 +612,12 @@ bool NdmpUpdateStorageMappings(UaContext* ua, StorageResource* store)
   return true;
 }
 
-/**
- * Number of slots in a NDMP autochanger.
- */
+// Number of slots in a NDMP autochanger.
 slot_number_t NdmpGetNumSlots(UaContext* ua, StorageResource* store)
 {
   slot_number_t slots = 0;
 
-  /*
-   * See if the mappings are already determined.
-   */
+  // See if the mappings are already determined.
   if (!NdmpUpdateStorageMappings(ua, store)) {
     Dmsg0(200, "NdmpUpdateStorageMappings failed\n");
     return slots;
@@ -649,16 +627,12 @@ slot_number_t NdmpGetNumSlots(UaContext* ua, StorageResource* store)
          + store->runtime_storage_status->storage_mapping.iee_count;
 }
 
-/**
- * Number of drives in a NDMP autochanger.
- */
+// Number of drives in a NDMP autochanger.
 drive_number_t NdmpGetNumDrives(UaContext* ua, StorageResource* store)
 {
   drive_number_t drives = 0;
 
-  /*
-   * See if the mappings are already determined.
-   */
+  // See if the mappings are already determined.
   if (!NdmpUpdateStorageMappings(ua, store)) {
     Dmsg0(200, "NdmpUpdateStorageMappings failed\n");
     return drives;
@@ -667,9 +641,7 @@ drive_number_t NdmpGetNumDrives(UaContext* ua, StorageResource* store)
   return store->runtime_storage_status->storage_mapping.dte_count;
 }
 
-/**
- * Move a volume from one slot to an other in a NDMP autochanger.
- */
+// Move a volume from one slot to an other in a NDMP autochanger.
 bool NdmpTransferVolume(UaContext* ua,
                         StorageResource* store,
                         slot_number_t src_slot,
@@ -681,9 +653,7 @@ bool NdmpTransferVolume(UaContext* ua,
   struct ndm_job_param ndmp_job;
   struct ndm_session* ndmp_sess;
 
-  /*
-   * See if this is an autochanger.
-   */
+  // See if this is an autochanger.
   if (!store->autochanger || !store->ndmp_changer_device) { return retval; }
 
   if (!NdmpBuildStorageJob(ua->jcr, store, false, /* Setup Tape Agent */
@@ -736,9 +706,7 @@ bool NdmpTransferVolume(UaContext* ua,
   ndmp_job.have_robot = 1;
   ndmp_job.auto_remedy = 1;
 
-  /*
-   * Initialize a new NDMP session
-   */
+  // Initialize a new NDMP session
   ndmp_sess = (struct ndm_session*)malloc(sizeof(struct ndm_session));
   memset(ndmp_sess, 0, sizeof(struct ndm_session));
 
@@ -791,9 +759,7 @@ std::string reserve_ndmp_tapedevice_for_job(StorageResource* store,
   return returnvalue;
 }
 
-/*
- * remove job from tapedevice
- */
+// remove job from tapedevice
 bool unreserve_ndmp_tapedevice_for_job(StorageResource* store,
                                        JobControlRecord* jcr)
 {
@@ -819,9 +785,7 @@ bool unreserve_ndmp_tapedevice_for_job(StorageResource* store,
   return retval;
 }
 
-/**
- * Lookup the name of a drive in a NDMP autochanger.
- */
+// Lookup the name of a drive in a NDMP autochanger.
 char* lookup_ndmp_drive(StorageResource* store, drive_number_t drivenumber)
 {
   int cnt = 0;
@@ -841,9 +805,7 @@ char* lookup_ndmp_drive(StorageResource* store, drive_number_t drivenumber)
   return NULL;
 }
 
-/**
- * Lookup the drive index by device name in a NDMP autochanger.
- */
+// Lookup the drive index by device name in a NDMP autochanger.
 int lookup_ndmp_driveindex_by_name(StorageResource* store, char* drivename)
 {
   int cnt = 0;
@@ -861,9 +823,7 @@ int lookup_ndmp_driveindex_by_name(StorageResource* store, char* drivename)
   return -1;
 }
 
-/**
- * Perform an autochanger operation in a NDMP autochanger.
- */
+// Perform an autochanger operation in a NDMP autochanger.
 bool NdmpAutochangerVolumeOperation(UaContext* ua,
                                     StorageResource* store,
                                     const char* operation,
@@ -882,9 +842,7 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
   ua->WarningMsg(
       _("NdmpAutochangerVolumeOperation: operation %s, drive %hd, slot %hd\n"),
       operation, drive, slot);
-  /*
-   * See if this is an autochanger.
-   */
+  // See if this is an autochanger.
   if (!store->autochanger || !store->ndmp_changer_device) { return retval; }
 
   if (bstrcmp(operation, "unmount") || bstrcmp(operation, "release")) {
@@ -902,17 +860,13 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
     return retval;
   }
 
-  /*
-   * See if the mappings are already determined.
-   */
+  // See if the mappings are already determined.
   if (!NdmpUpdateStorageMappings(ua, store)) { return false; }
 
   if (slot != kInvalidSlotNumber) {
     slot_number_t slot_mapping;
 
-    /*
-     * Map the logical address to a physical one.
-     */
+    // Map the logical address to a physical one.
     slot_mapping = GetElementAddressByBareosSlotNumber(
         &store->runtime_storage_status->storage_mapping,
         slot_type_t::kSlotTypeStorage, slot);
@@ -924,9 +878,7 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
     ndmp_job.from_addr_given = 1;
   }
 
-  /*
-   * Map the logical address to a physical one.
-   */
+  // Map the logical address to a physical one.
   drive_mapping = GetElementAddressByBareosSlotNumber(
       &store->runtime_storage_status->storage_mapping,
       slot_type_t::kSlotTypeDrive, slot);
@@ -952,9 +904,7 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
   ndmp_job.have_robot = 1;
   ndmp_job.auto_remedy = 1;
 
-  /*
-   * Initialize a new NDMP session
-   */
+  // Initialize a new NDMP session
   ndmp_sess = (struct ndm_session*)malloc(sizeof(struct ndm_session));
   memset(ndmp_sess, 0, sizeof(struct ndm_session));
 
@@ -970,9 +920,7 @@ bool NdmpAutochangerVolumeOperation(UaContext* ua,
   return retval;
 }
 
-/**
- * Label a volume in a NDMP autochanger.
- */
+// Label a volume in a NDMP autochanger.
 bool NdmpSendLabelRequest(UaContext* ua,
                           StorageResource* store,
                           MediaDbRecord* mr,
@@ -992,9 +940,7 @@ bool NdmpSendLabelRequest(UaContext* ua,
         "drive=%hd\n",
         mr->VolumeName, mr->MediaType, pr->Name, drive);
 
-  /*
-   * See if this is an autochanger.
-   */
+  // See if this is an autochanger.
   if (!store->autochanger || !store->ndmp_changer_device) { return retval; }
 
   if (!NdmpBuildStorageJob(ua->jcr, store, true, /* Setup Tape Agent */
@@ -1019,16 +965,12 @@ bool NdmpSendLabelRequest(UaContext* ua,
   ndmp_job.have_robot = 1;
   ndmp_job.auto_remedy = 1;
 
-  /*
-   * Set the remote tape drive to use.
-   */
+  // Set the remote tape drive to use.
   ndmp_job.tape_device
       = strdup(((DeviceResource*)(store->device->first()))->resource_name_);
   if (!ndmp_job.tape_device) { free(ndmp_job.robot_target); }
 
-  /*
-   * Insert a media entry of the slot to label.
-   */
+  // Insert a media entry of the slot to label.
   if (IsSlotNumberValid(slot)) {
     slot_number_t slot_mapping;
 
@@ -1047,9 +989,7 @@ bool NdmpSendLabelRequest(UaContext* ua,
   media->valid_label = NDMP9_VALIDITY_VALID;
 
 
-  /*
-   * Initialize a new NDMP session
-   */
+  // Initialize a new NDMP session
   ndmp_sess = (struct ndm_session*)malloc(sizeof(struct ndm_session));
   memset(ndmp_sess, 0, sizeof(struct ndm_session));
 
@@ -1130,9 +1070,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
   ndmp_job.drive_addr_given = 1;
 
   ndmp_job.have_robot = 1;
-  /*
-   * unload tape if tape is in drive
-   */
+  // unload tape if tape is in drive
   ndmp_job.auto_remedy = 1;
   ndmp_job.record_size = jcr->impl->res.client->ndmp_blocksize;
 
@@ -1149,9 +1087,7 @@ bool ndmp_native_setup_robot_and_tape_for_native_backup_job(
 
 
 #else
-/**
- * Dummy entry points when NDMP not enabled.
- */
+// Dummy entry points when NDMP not enabled.
 void DoNdmpStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
 {
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));

@@ -518,15 +518,11 @@ bool DoMacRun(JobControlRecord* jcr)
       goto bail_out;
     }
 
-    /*
-     * Let the remote SD know we are about to start the replication.
-     */
+    // Let the remote SD know we are about to start the replication.
     sd->fsend(start_replicate);
     Dmsg1(110, ">stored: %s", sd->msg);
 
-    /*
-     * Expect to receive back the Ticket number.
-     */
+    // Expect to receive back the Ticket number.
     if (BgetMsg(sd) >= 0) {
       Dmsg1(110, "<stored: %s", sd->msg);
       if (sscanf(sd->msg, OK_start_replicate, &jcr->impl->Ticket) != 1) {
@@ -541,29 +537,21 @@ bool DoMacRun(JobControlRecord* jcr)
       goto bail_out;
     }
 
-    /*
-     * Let the remote SD know we are now really going to send the data.
-     */
+    // Let the remote SD know we are now really going to send the data.
     sd->fsend(ReplicateData, jcr->impl->Ticket);
     Dmsg1(110, ">stored: %s", sd->msg);
 
-    /*
-     * Expect to get response to the replicate data cmd from Storage daemon
-     */
+    // Expect to get response to the replicate data cmd from Storage daemon
     if (!response(jcr, sd, OK_data, "replicate data")) {
       ok = false;
       goto bail_out;
     }
 
-    /*
-     * Update the initial Job Statistics.
-     */
+    // Update the initial Job Statistics.
     now = (utime_t)time(NULL);
     UpdateJobStatistics(jcr, now);
 
-    /*
-     * Read all data and send it to remote SD.
-     */
+    // Read all data and send it to remote SD.
     ok = ReadRecords(jcr->impl->read_dcr, CloneRecordToRemoteSd,
                      MountNextReadVolume);
 
@@ -579,23 +567,17 @@ bool DoMacRun(JobControlRecord* jcr)
       goto bail_out;
     }
 
-    /*
-     * Expect to get response that the replicate data succeeded.
-     */
+    // Expect to get response that the replicate data succeeded.
     if (!response(jcr, sd, OK_replicate, "replicate data")) {
       ok = false;
       goto bail_out;
     }
 
-    /*
-     * End replicate session.
-     */
+    // End replicate session.
     sd->fsend(end_replicate);
     Dmsg1(110, ">stored: %s", sd->msg);
 
-    /*
-     * Expect to get response to the end replicate cmd from Storage daemon
-     */
+    // Expect to get response to the end replicate cmd from Storage daemon
     if (!response(jcr, sd, OK_end_replicate, "end replicate")) {
       ok = false;
       goto bail_out;
@@ -614,9 +596,7 @@ bool DoMacRun(JobControlRecord* jcr)
     Dmsg3(200, "Found %d volumes names for %s. First=%s\n",
           jcr->impl->NumReadVolumes, Type, jcr->impl->VolList->VolumeName);
 
-    /*
-     * Ready devices for reading and writing.
-     */
+    // Ready devices for reading and writing.
     if (!AcquireDeviceForRead(jcr->impl->read_dcr)
         || !AcquireDeviceForAppend(jcr->impl->dcr)) {
       ok = false;
@@ -629,9 +609,7 @@ bool DoMacRun(JobControlRecord* jcr)
 
     jcr->sendJobStatus(JS_Running);
 
-    /*
-     * Update the initial Job Statistics.
-     */
+    // Update the initial Job Statistics.
     now = (utime_t)time(NULL);
     UpdateJobStatistics(jcr, now);
 
@@ -650,9 +628,7 @@ bool DoMacRun(JobControlRecord* jcr)
     SetStartVolPosition(jcr->impl->dcr);
     jcr->JobFiles = 0;
 
-    /*
-     * Read all data and make a local clone of it.
-     */
+    // Read all data and make a local clone of it.
     ok = ReadRecords(jcr->impl->read_dcr, CloneRecordInternally,
                      MountNextReadVolume);
   }
@@ -677,14 +653,10 @@ bail_out:
       char currentJobStatus = jcr->JobStatus;
       jcr->setJobStatus(JS_Terminated);
 
-      /*
-       * Write End Of Session Label
-       */
+      // Write End Of Session Label
       DeviceControlRecord* dcr = jcr->impl->dcr;
       if (!WriteSessionLabel(dcr, EOS_LABEL)) {
-        /*
-         * Print only if ok and not cancelled to avoid spurious messages
-         */
+        // Print only if ok and not cancelled to avoid spurious messages
 
         if (ok && !jcr->IsJobCanceled()) {
           Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
@@ -696,9 +668,7 @@ bail_out:
         /* restore JobStatus */
         jcr->setJobStatus(currentJobStatus);
       }
-      /*
-       * Flush out final partial block of this session
-       */
+      // Flush out final partial block of this session
       if (!jcr->impl->dcr->WriteBlockToDevice()) {
         Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
               dev->print_name(), dev->bstrerror());
@@ -713,9 +683,7 @@ bail_out:
     if (!ok) {
       DiscardDataSpool(jcr->impl->dcr);
     } else {
-      /*
-       * Note: if commit is OK, the device will remain blocked
-       */
+      // Note: if commit is OK, the device will remain blocked
       CommitDataSpool(jcr->impl->dcr);
     }
 
@@ -727,9 +695,7 @@ bail_out:
          job_elapsed / 3600, job_elapsed % 3600 / 60, job_elapsed % 60,
          edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec1));
 
-    /*
-     * Release the device -- and send final Vol info to DIR
-     */
+    // Release the device -- and send final Vol info to DIR
     ReleaseDevice(jcr->impl->dcr);
 
     if (!ok || JobCanceled(jcr)) {

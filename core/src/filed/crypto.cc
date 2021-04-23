@@ -398,9 +398,7 @@ bool SetupEncryptionContext(b_ctx& bctx)
     if ((bctx.cipher_ctx = crypto_cipher_new(bctx.jcr->impl->crypto.pki_session,
                                              true, &cipher_block_size))
         == NULL) {
-      /*
-       * Shouldn't happen!
-       */
+      // Shouldn't happen!
       Jmsg0(bctx.jcr, M_FATAL, 0,
             _("Failed to initialize encryption context.\n"));
       goto bail_out;
@@ -431,9 +429,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Setup a decryption context
- */
+// Setup a decryption context
 bool SetupDecryptionContext(r_ctx& rctx, RestoreCipherContext& rcctx)
 {
   if (!rctx.cs) {
@@ -480,9 +476,7 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
     bctx->cipher_input_len += OFFSET_FADDR_SIZE;
   }
 
-  /*
-   * Encrypt the length of the input block
-   */
+  // Encrypt the length of the input block
   uint8_t packet_len[sizeof(uint32_t)];
 
   SerBegin(packet_len, sizeof(uint32_t));
@@ -492,24 +486,18 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
   if (!CryptoCipherUpdate(bctx->cipher_ctx, packet_len, sizeof(packet_len),
                           (uint8_t*)bctx->jcr->impl->crypto.crypto_buf,
                           &initial_len)) {
-    /*
-     * Encryption failed. Shouldn't happen.
-     */
+    // Encryption failed. Shouldn't happen.
     Jmsg(bctx->jcr, M_FATAL, 0, _("Encryption error\n"));
     goto bail_out;
   }
 
-  /*
-   * Encrypt the input block
-   */
+  // Encrypt the input block
   if (CryptoCipherUpdate(
           bctx->cipher_ctx, bctx->cipher_input, bctx->cipher_input_len,
           (uint8_t*)&bctx->jcr->impl->crypto.crypto_buf[initial_len],
           &bctx->encrypted_len)) {
     if ((initial_len + bctx->encrypted_len) == 0) {
-      /*
-       * No full block of data available, read more data
-       */
+      // No full block of data available, read more data
       *need_more_data = true;
       goto bail_out;
     }
@@ -520,9 +508,7 @@ bool EncryptData(b_ctx* bctx, bool* need_more_data)
     bctx->jcr->store_bsock->message_length
         = initial_len + bctx->encrypted_len; /* set encrypted length */
   } else {
-    /*
-     * Encryption failed. Shouldn't happen.
-     */
+    // Encryption failed. Shouldn't happen.
     Jmsg(bctx->jcr, M_FATAL, 0, _("Encryption error\n"));
     goto bail_out;
   }
@@ -553,23 +539,17 @@ bool DecryptData(JobControlRecord* jcr,
   cipher_ctx->buf = CheckPoolMemorySize(
       cipher_ctx->buf, cipher_ctx->buf_len + *length + cipher_ctx->block_size);
 
-  /*
-   * Decrypt the input block
-   */
+  // Decrypt the input block
   if (!CryptoCipherUpdate(cipher_ctx->cipher, (const uint8_t*)*data, *length,
                           (uint8_t*)&cipher_ctx->buf[cipher_ctx->buf_len],
                           &decrypted_len)) {
-    /*
-     * Decryption failed. Shouldn't happen.
-     */
+    // Decryption failed. Shouldn't happen.
     Jmsg(jcr, M_FATAL, 0, _("Decryption error\n"));
     goto bail_out;
   }
 
   if (decrypted_len == 0) {
-    /*
-     * No full block of encrypted data available, write more data
-     */
+    // No full block of encrypted data available, write more data
     *length = 0;
     return true;
   }
@@ -591,16 +571,12 @@ bool DecryptData(JobControlRecord* jcr,
 
   if (cipher_ctx->packet_len == 0
       || cipher_ctx->buf_len < cipher_ctx->packet_len) {
-    /*
-     * No full preserved block is available.
-     */
+    // No full preserved block is available.
     *length = 0;
     return true;
   }
 
-  /*
-   * We have one full block, set up the filter input buffers
-   */
+  // We have one full block, set up the filter input buffers
   *length = cipher_ctx->packet_len - CRYPTO_LEN_SIZE;
   *data = &((*data)[CRYPTO_LEN_SIZE]); /* Skip the block length header */
   cipher_ctx->buf_len -= cipher_ctx->packet_len;

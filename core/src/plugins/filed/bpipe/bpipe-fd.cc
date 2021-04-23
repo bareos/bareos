@@ -623,9 +623,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     }
 
     if (!plugin_arguments[i].name && !compatible) {
-      /*
-       * Parsing something fishy ? e.g. partly with known keywords.
-       */
+      // Parsing something fishy ? e.g. partly with known keywords.
       Jmsg(ctx, M_FATAL,
            "bpipe-fd: Found mixing of old and new syntax, please fix your "
            "plugin definition (%s)\n",
@@ -654,9 +652,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     if (compatible) {
       char** str_destination = NULL;
 
-      /*
-       * See if there are more arguments and setup for the next run.
-       */
+      // See if there are more arguments and setup for the next run.
       do {
         bp = strchr(bp, ':');
         if (bp) {
@@ -669,9 +665,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
         }
       } while (bp);
 
-      /*
-       * See which field this is in the argument string.
-       */
+      // See which field this is in the argument string.
       switch (cnt) {
         case 1:
           str_destination = &p_ctx->fname;
@@ -688,14 +682,10 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
 
       if (str_destination) {
         if (keep_existing) {
-          /*
-           * Keep the first value, ignore any next setting.
-           */
+          // Keep the first value, ignore any next setting.
           SetStringIfNull(str_destination, argument);
         } else {
-          /*
-           * Overwrite any existing value.
-           */
+          // Overwrite any existing value.
           SetString(str_destination, argument);
         }
       }
@@ -710,9 +700,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
       argument_value = strchr(bp, '=');
       *argument_value++ = '\0';
 
-      /*
-       * See if there are more arguments and setup for the next run.
-       */
+      // See if there are more arguments and setup for the next run.
       bp = argument_value;
       do {
         bp = strchr(bp, ':');
@@ -758,28 +746,20 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
 
           if (str_destination) {
             if (keep_existing) {
-              /*
-               * Keep the first value, ignore any next setting.
-               */
+              // Keep the first value, ignore any next setting.
               SetStringIfNull(str_destination, argument_value);
             } else {
-              /*
-               * Overwrite any existing value.
-               */
+              // Overwrite any existing value.
               SetString(str_destination, argument_value);
             }
           }
 
-          /*
-           * When we have a match break the loop.
-           */
+          // When we have a match break the loop.
           break;
         }
       }
 
-      /*
-       * Got an invalid keyword ?
-       */
+      // Got an invalid keyword ?
       if (!plugin_arguments[i].name) {
         Jmsg(ctx, M_FATAL,
              "bpipe-fd: Illegal argument %s with value %s in plugin "

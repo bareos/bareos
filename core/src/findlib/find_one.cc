@@ -577,9 +577,7 @@ static inline int process_directory(JobControlRecord* jcr,
 
   ff_pkt->link = link;
   if (!CheckChanges(jcr, ff_pkt)) {
-    /*
-     * Incremental/Full+Base option, directory entry not changed
-     */
+    // Incremental/Full+Base option, directory entry not changed
     ff_pkt->type = FT_DIRNOCHG;
   } else {
     ff_pkt->type = FT_DIRBEGIN;
@@ -613,9 +611,7 @@ static inline int process_directory(JobControlRecord* jcr,
     return rtn_stat;
   }
 
-  /*
-   * Done with DIRBEGIN, next call will be DIREND
-   */
+  // Done with DIRBEGIN, next call will be DIREND
   if (ff_pkt->type == FT_DIRBEGIN) { ff_pkt->type = FT_DIREND; }
 
   /*
@@ -654,9 +650,7 @@ static inline int process_directory(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * If not recursing, just backup dir and return
-   */
+  // If not recursing, just backup dir and return
   if (!recurse) {
     rtn_stat = HandleFile(jcr, ff_pkt, top_level);
     if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
@@ -671,9 +665,7 @@ static inline int process_directory(JobControlRecord* jcr,
 
   ff_pkt->link = ff_pkt->fname; /* reset "link" */
 
-  /*
-   * Descend into or "recurse" into the directory to read all the files in it.
-   */
+  // Descend into or "recurse" into the directory to read all the files in it.
   errno = 0;
   if ((directory = opendir(fname)) == NULL) {
     ff_pkt->type = FT_NOOPEN;
@@ -719,9 +711,7 @@ static inline int process_directory(JobControlRecord* jcr,
       continue;
     }
 
-    /*
-     * Skip `.', `..', and excluded file names.
-     */
+    // Skip `.', `..', and excluded file names.
     if (entry->d_name[0] == '\0'
         || (entry->d_name[0] == '.'
             && (entry->d_name[1] == '\0'
@@ -729,9 +719,7 @@ static inline int process_directory(JobControlRecord* jcr,
       continue;
     }
 
-    /*
-     * Make sure there is enough room to store the whole name.
-     */
+    // Make sure there is enough room to store the whole name.
     if (name_length + len >= link_len) {
       link_len = len + name_length + 1;
       link = (char*)realloc(link, link_len + 1);
@@ -769,9 +757,7 @@ static inline int process_directory(JobControlRecord* jcr,
       continue;
     }
 
-    /*
-     * Skip `.', `..', and excluded file names.
-     */
+    // Skip `.', `..', and excluded file names.
     if (result->d_name[0] == '\0'
         || (result->d_name[0] == '.'
             && (result->d_name[1] == '\0'
@@ -779,9 +765,7 @@ static inline int process_directory(JobControlRecord* jcr,
       continue;
     }
 
-    /*
-     * Make sure there is enough room to store the whole name.
-     */
+    // Make sure there is enough room to store the whole name.
     if (name_length + len >= link_len) {
       link_len = len + name_length + 1;
       link = (char*)realloc(link, link_len + 1);
@@ -819,9 +803,7 @@ static inline int process_directory(JobControlRecord* jcr,
   return rtn_stat;
 }
 
-/**
- * Handling of a special file.
- */
+// Handling of a special file.
 static inline int process_special_file(JobControlRecord* jcr,
                                        FindFilesPacket* ff_pkt,
                                        int HandleFile(JobControlRecord* jcr,
@@ -856,9 +838,7 @@ static inline int process_special_file(JobControlRecord* jcr,
              && BitIsSet(FO_READFIFO, ff_pkt->flags)) {
     ff_pkt->type = FT_FIFO;
   } else {
-    /*
-     * The only remaining types are special (character, ...) files
-     */
+    // The only remaining types are special (character, ...) files
     ff_pkt->type = FT_SPEC;
   }
 
@@ -868,9 +848,7 @@ static inline int process_special_file(JobControlRecord* jcr,
   return rtn_stat;
 }
 
-/**
- * See if we need to perform any processing for a given file.
- */
+// See if we need to perform any processing for a given file.
 static inline bool NeedsProcessing(JobControlRecord* jcr,
                                    FindFilesPacket* ff_pkt,
                                    char* fname)
@@ -945,9 +923,7 @@ int FindOneFile(JobControlRecord* jcr,
   ff_pkt->fname = ff_pkt->link = fname;
   ff_pkt->type = FT_UNSET;
   if (lstat(fname, &ff_pkt->statp) != 0) {
-    /*
-     * Cannot stat file
-     */
+    // Cannot stat file
     ff_pkt->type = FT_NOSTAT;
     ff_pkt->ff_errno = errno;
     return HandleFile(jcr, ff_pkt, top_level);
@@ -963,9 +939,7 @@ int FindOneFile(JobControlRecord* jcr,
     if (!NeedsProcessing(jcr, ff_pkt, fname)) { return 1; }
   }
 
-  /*
-   * Ignore this entry if no_dump() returns true
-   */
+  // Ignore this entry if no_dump() returns true
   if (no_dump(jcr, ff_pkt)) {
     Dmsg1(100, "'%s' ignored (NODUMP flag set)\n", ff_pkt->fname);
     return 1;
@@ -979,9 +953,7 @@ int FindOneFile(JobControlRecord* jcr,
         Dmsg1(100, "'%s' ignored (Size doesn't match\n", ff_pkt->fname);
         return 1;
       }
-      /*
-       * Fall Through
-       */
+      // Fall Through
     default:
       /*
        * If this is an Incremental backup, see if file was modified

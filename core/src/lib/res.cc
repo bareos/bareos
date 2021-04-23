@@ -1033,9 +1033,7 @@ void ConfigurationParser::StoreSpeed(LEX* lc,
   store_int_unit(lc, item, index, pass, false /* 64 bit */, STORE_SPEED);
 }
 
-/*
- * Store a time period in seconds
- */
+// Store a time period in seconds
 void ConfigurationParser::StoreTime(LEX* lc,
                                     ResourceItem* item,
                                     int index,
@@ -1051,9 +1049,7 @@ void ConfigurationParser::StoreTime(LEX* lc,
     case BCT_IDENTIFIER:
     case BCT_UNQUOTED_STRING:
       bstrncpy(period, lc->str, sizeof(period)); /* get first part */
-      /*
-       * If terminated by space, scan and get modifier
-       */
+      // If terminated by space, scan and get modifier
       while (lc->ch == ' ') {
         token = LexGetToken(lc, BCT_ALL);
         switch (token) {
@@ -1079,9 +1075,7 @@ void ConfigurationParser::StoreTime(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store a yes/no in a bit field
- */
+// Store a yes/no in a bit field
 void ConfigurationParser::StoreBit(LEX* lc,
                                    ResourceItem* item,
                                    int index,
@@ -1103,9 +1097,7 @@ void ConfigurationParser::StoreBit(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store a bool in a bit field
- */
+// Store a bool in a bit field
 void ConfigurationParser::StoreBool(LEX* lc,
                                     ResourceItem* item,
                                     int index,
@@ -1126,18 +1118,14 @@ void ConfigurationParser::StoreBool(LEX* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store Tape Label Type (BAREOS, ANSI, IBM)
- */
+// Store Tape Label Type (BAREOS, ANSI, IBM)
 void ConfigurationParser::StoreLabel(LEX* lc,
                                      ResourceItem* item,
                                      int index,
                                      int pass)
 {
   LexGetToken(lc, BCT_NAME);
-  /*
-   * Store the label pass 2 so that type is defined
-   */
+  // Store the label pass 2 so that type is defined
   int i;
   for (i = 0; tapelabels[i].name; i++) {
     if (Bstrcasecmp(lc->str, tapelabels[i].name)) {
@@ -1345,9 +1333,7 @@ void ConfigurationParser::StoreAddressesPort(LEX* lc,
   }
 }
 
-/*
- * Generic store resource dispatcher.
- */
+// Generic store resource dispatcher.
 bool ConfigurationParser::StoreResource(int type,
                                         LEX* lc,
                                         ResourceItem* item,
@@ -1676,9 +1662,7 @@ static bool HasDefaultValue(ResourceItem& item)
   bool is_default = false;
 
   if (item.flags & CFG_ITEM_DEFAULT) {
-    /*
-     * Check for default values.
-     */
+    // Check for default values.
     switch (item.type) {
       case CFG_TYPE_STR:
       case CFG_TYPE_DIR:
@@ -1810,22 +1794,16 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
   Dmsg3(200, "%s (inherited: %d, verbose: %d):\n", item.name, inherited,
         verbose);
 
-  /*
-   * If this is an alias for another config keyword suppress it.
-   */
+  // If this is an alias for another config keyword suppress it.
   if (item.flags & CFG_ITEM_ALIAS) { return; }
 
   if (inherited && (!verbose)) {
-    /*
-     * If not in verbose mode, skip inherited directives.
-     */
+    // If not in verbose mode, skip inherited directives.
     return;
   }
 
   if ((item.flags & CFG_ITEM_REQUIRED) || !my_config.omit_defaults_) {
-    /*
-     * Always print required items or if my_config.omit_defaults_ is false
-     */
+    // Always print required items or if my_config.omit_defaults_ is false
     print_item = true;
   }
 
@@ -1945,9 +1923,7 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
     }
     case CFG_TYPE_STR_VECTOR:
     case CFG_TYPE_STR_VECTOR_OF_DIRS: {
-      /*
-       * One line for each member of the list
-       */
+      // One line for each member of the list
       const std::vector<std::string>& list
           = GetItemVariable<std::vector<std::string>&>(item);
       send.KeyMultipleStringsOnePerLine(item.name, list, inherited);
@@ -1956,17 +1932,13 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
     case CFG_TYPE_ALIST_STR:
     case CFG_TYPE_ALIST_DIR:
     case CFG_TYPE_PLUGIN_NAMES: {
-      /*
-       * One line for each member of the list
-       */
+      // One line for each member of the list
       send.KeyMultipleStringsOnePerLine(
           item.name, GetItemVariable<alist*>(item), inherited);
       break;
     }
     case CFG_TYPE_ALIST_RES: {
-      /*
-       * Each member of the list is comma-separated
-       */
+      // Each member of the list is comma-separated
       send.KeyMultipleStringsOnePerLine(
           item.name, GetItemVariable<alist*>(item), GetResourceName, inherited,
           true, false);
@@ -2008,14 +1980,10 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
       break;
     }
     case CFG_TYPE_ADDRESSES_PORT:
-      /*
-       * Is stored in CFG_TYPE_ADDRESSES and printed there.
-       */
+      // Is stored in CFG_TYPE_ADDRESSES and printed there.
       break;
     case CFG_TYPE_ADDRESSES_ADDRESS:
-      /*
-       * Is stored in CFG_TYPE_ADDRESSES and printed there.
-       */
+      // Is stored in CFG_TYPE_ADDRESSES and printed there.
       break;
     default:
       /*
@@ -2039,20 +2007,14 @@ bool BareosResource::PrintConfig(OutputFormatterResource& send,
   ResourceItem* items;
   int rindex;
 
-  /*
-   * If entry is not used, then there is nothing to print.
-   */
+  // If entry is not used, then there is nothing to print.
   if (rcode_ < (uint32_t)my_config.r_first_ || refcnt_ <= 0) { return true; }
 
   rindex = rcode_ - my_config.r_first_;
 
-  /*
-   * don't dump internal resources.
-   */
+  // don't dump internal resources.
   if ((internal_) && (!verbose)) { return true; }
-  /*
-   * Make sure the resource class has any items.
-   */
+  // Make sure the resource class has any items.
   if (!my_config.resources_[rindex].items) { return true; }
   items = my_config.resources_[rindex].items;
 
@@ -2158,9 +2120,7 @@ json_t* json_items(ResourceItem items[])
 #endif
 
 static DatatypeName datatype_names[] = {
-    /*
-     * Standard resource types. handlers in res.c
-     */
+    // Standard resource types. handlers in res.c
     {CFG_TYPE_STR, "STRING", "String"},
     {CFG_TYPE_DIR, "DIRECTORY", "directory"},
     {CFG_TYPE_STDSTR, "STRING", "String"},
@@ -2197,9 +2157,7 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_STR_VECTOR_OF_DIRS, "DIRECTORY_LIST", "directory list"},
     {CFG_TYPE_DIR_OR_CMD, "DIRECTORY_OR_COMMAND", "Directory or command"},
 
-    /*
-     * Director resource types. handlers in dird_conf.
-     */
+    // Director resource types. handlers in dird_conf.
     {CFG_TYPE_ACL, "ACL", "User Access Control List"},
     {CFG_TYPE_AUDIT, "AUDIT_COMMAND_LIST", "Auditing Command List"},
     {CFG_TYPE_AUTHPROTOCOLTYPE, "AUTH_PROTOCOL_TYPE",
@@ -2222,9 +2180,7 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_ACTIONONPURGE, "ACTION_ON_PURGE", "Action to perform on Purge"},
     {CFG_TYPE_POOLTYPE, "POOLTYPE", "Pool Type"},
 
-    /*
-     * Director fileset options. handlers in dird_conf.
-     */
+    // Director fileset options. handlers in dird_conf.
     {CFG_TYPE_FNAME, "FILENAME", "Filename"},
     {CFG_TYPE_PLUGINNAME, "PLUGIN_NAME", "Pluginname"},
     {CFG_TYPE_EXCLUDEDIR, "EXCLUDE_DIRECTORY", "Exclude directory"},
@@ -2238,17 +2194,13 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_DRIVETYPE, "DRIVE_TYPE", "DriveType match criterium (Windows)"},
     {CFG_TYPE_META, "META_TAG", "Meta tag"},
 
-    /*
-     * Storage daemon resource types
-     */
+    // Storage daemon resource types
     {CFG_TYPE_DEVTYPE, "DEVICE_TYPE", "Device Type"},
     {CFG_TYPE_MAXBLOCKSIZE, "MAX_BLOCKSIZE", "Maximum Blocksize"},
     {CFG_TYPE_IODIRECTION, "IO_DIRECTION", "IO Direction"},
     {CFG_TYPE_CMPRSALGO, "COMPRESSION_ALGORITHM", "Compression Algorithm"},
 
-    /*
-     * File daemon resource types
-     */
+    // File daemon resource types
     {CFG_TYPE_CIPHER, "ENCRYPTION_CIPHER", "Encryption Cipher"},
 
     {0, NULL, NULL}};
@@ -2258,9 +2210,7 @@ DatatypeName* GetDatatype(int number)
   int size = sizeof(datatype_names) / sizeof(datatype_names[0]);
 
   if (number >= size) {
-    /*
-     * Last entry of array is a dummy entry
-     */
+    // Last entry of array is a dummy entry
     number = size - 1;
   }
 

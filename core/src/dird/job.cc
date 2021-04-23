@@ -1103,9 +1103,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
               jcr->impl->res.job->MaxDiffInterval);
       }
 
-      /*
-       * Note, do_full takes precedence over do_vfull and do_diff
-       */
+      // Note, do_full takes precedence over do_vfull and do_diff
       if (have_full && jcr->impl->res.job->MaxFullInterval > 0) {
         do_full
             = ((now - last_full_time) >= jcr->impl->res.job->MaxFullInterval);
@@ -1116,9 +1114,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
       FreePoolMemory(start_time);
 
       if (do_full) {
-        /*
-         * No recent Full job found, so upgrade this one to Full
-         */
+        // No recent Full job found, so upgrade this one to Full
         Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
         Jmsg(jcr, M_INFO, 0,
              _("No prior or suitable Full backup found in catalog. Doing FULL "
@@ -1151,9 +1147,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
           PmStrcpy(jcr->impl->res.rpool_source, _("unknown source"));
         }
       } else if (do_diff) {
-        /*
-         * No recent diff job found, so upgrade this one to Diff
-         */
+        // No recent diff job found, so upgrade this one to Diff
         Jmsg(jcr, M_INFO, 0,
              _("No prior or suitable Differential backup found in catalog. "
                "Doing Differential backup.\n"));
@@ -1229,9 +1223,7 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
     Dmsg2(100, "Pool set to '%s' because of %s",
           jcr->impl->res.pool->resource_name_, _("Run Pool override\n"));
   } else {
-    /*
-     * Apply any level related Pool selections
-     */
+    // Apply any level related Pool selections
     switch (jcr->getJobLevel()) {
       case L_FULL:
         if (jcr->impl->res.full_pool) {
@@ -1304,18 +1296,14 @@ void ApplyPoolOverrides(JobControlRecord* jcr, bool force)
     }
   }
 
-  /*
-   * Update catalog if pool overridden
-   */
+  // Update catalog if pool overridden
   if (pool_override && jcr->impl->res.pool->catalog) {
     jcr->impl->res.catalog = jcr->impl->res.pool->catalog;
     PmStrcpy(jcr->impl->res.catalog_source, _("Pool resource"));
   }
 }
 
-/**
- * Get or create a Client record for this Job
- */
+// Get or create a Client record for this Job
 bool GetOrCreateClientRecord(JobControlRecord* jcr)
 {
   ClientDbRecord cr;
@@ -1331,9 +1319,7 @@ bool GetOrCreateClientRecord(JobControlRecord* jcr)
          jcr->db->strerror());
     return false;
   }
-  /*
-   * Only initialize quota when a Soft or Hard Limit is set.
-   */
+  // Only initialize quota when a Soft or Hard Limit is set.
   if (jcr->impl->res.client->HardQuota != 0
       || jcr->impl->res.client->SoftQuota != 0) {
     if (!jcr->db->GetQuotaRecord(jcr, &cr)) {
@@ -1363,9 +1349,7 @@ bool GetOrCreateFilesetRecord(JobControlRecord* jcr)
 {
   FileSetDbRecord fsr;
 
-  /*
-   * Get or Create FileSet record
-   */
+  // Get or Create FileSet record
   bstrncpy(fsr.FileSet, jcr->impl->res.fileset->resource_name_,
            sizeof(fsr.FileSet));
   if (jcr->impl->res.fileset->have_MD5) {
@@ -1429,9 +1413,7 @@ void InitJcrJobRecord(JobControlRecord* jcr)
   bstrncpy(jcr->impl->jr.Job, jcr->Job, sizeof(jcr->impl->jr.Job));
 }
 
-/**
- * Write status and such in DB
- */
+// Write status and such in DB
 void UpdateJobEndRecord(JobControlRecord* jcr)
 {
   jcr->impl->jr.EndTime = time(NULL);
@@ -1510,9 +1492,7 @@ void CreateUniqueJobName(JobControlRecord* jcr, const char* base_name)
   Dmsg2(100, "JobId=%u created Job=%s\n", jcr->JobId, jcr->Job);
 }
 
-/**
- * Called directly from job rescheduling
- */
+// Called directly from job rescheduling
 void DirdFreeJcrPointers(JobControlRecord* jcr)
 {
   if (jcr->file_bsock) {
@@ -1597,9 +1577,7 @@ void DirdFreeJcr(JobControlRecord* jcr)
   FreeAndNullPoolMemory(jcr->impl->SDSecureEraseCmd);
   FreeAndNullPoolMemory(jcr->impl->vf_jobids);
 
-  /*
-   * Delete lists setup to hold storage pointers
-   */
+  // Delete lists setup to hold storage pointers
   FreeRwstorage(jcr);
 
   jcr->job_end_callbacks.destroy();
@@ -1697,9 +1675,7 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
 
   jcr->JobPriority = job->Priority;
 
-  /*
-   * Copy storage definitions -- deleted in dir_free_jcr above
-   */
+  // Copy storage definitions -- deleted in dir_free_jcr above
   if (job->storage) {
     CopyRwstorage(jcr, job->storage, _("Job resource"));
   } else if (job->pool) {
@@ -1753,21 +1729,15 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
     jcr->RestoreBootstrap = NULL;
   }
 
-  /*
-   * This can be overridden by Console program
-   */
+  // This can be overridden by Console program
   if (job->RestoreBootstrap) {
     jcr->RestoreBootstrap = strdup(job->RestoreBootstrap);
   }
 
-  /*
-   * This can be overridden by Console program
-   */
+  // This can be overridden by Console program
   jcr->impl->res.verify_job = job->verify_job;
 
-  /*
-   * If no default level given, set one
-   */
+  // If no default level given, set one
   if (jcr->getJobLevel() == 0) {
     switch (jcr->getJobType()) {
       case JT_VERIFY:
@@ -1789,9 +1759,7 @@ void SetJcrDefaults(JobControlRecord* jcr, JobResource* job)
 
 void CreateClones(JobControlRecord* jcr)
 {
-  /*
-   * Fire off any clone jobs (run directives)
-   */
+  // Fire off any clone jobs (run directives)
   Dmsg2(900, "cloned=%d run_cmds=%p\n", jcr->impl->cloned,
         jcr->impl->res.job->run_cmds);
   if (!jcr->impl->cloned && jcr->impl->res.job->run_cmds) {

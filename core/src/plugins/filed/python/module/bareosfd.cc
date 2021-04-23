@@ -1109,9 +1109,7 @@ static bRC PySetXattr(PluginContext* plugin_ctx, xattr_pkt* xp)
 
   if (!xp) { return bRC_Error; }
 
-  /*
-   * Lookup the set_acl() function in the python module.
-   */
+  // Lookup the set_acl() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "set_xattr"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -1175,9 +1173,7 @@ static bRC PyRestoreObjectData(PluginContext* plugin_ctx,
 
   if (!rop) { return bRC_OK; }
 
-  /*
-   * Lookup the restore_object_data() function in the python module.
-   */
+  // Lookup the restore_object_data() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "restore_object_data"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -1218,9 +1214,7 @@ static bRC PyHandleBackupFile(PluginContext* plugin_ctx, struct save_pkt* sp)
 
   if (!sp) { return bRC_Error; }
 
-  /*
-   * Lookup the handle_backup_file() function in the python module.
-   */
+  // Lookup the handle_backup_file() function in the python module.
   pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
                                "handle_backup_file"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
@@ -1724,9 +1718,7 @@ static PyObject* PyBareosCheckChanges(PyObject* self, PyObject* args)
 
   retval = bareos_core_functions->checkChanges(plugin_ctx, &sp);
 
-  /*
-   * Copy back the two fields that are changed by checkChanges().
-   */
+  // Copy back the two fields that are changed by checkChanges().
   pSavePkt->delta_seq = sp.delta_seq;
   pSavePkt->accurate_found = sp.accurate_found;
 
@@ -1826,9 +1818,7 @@ bail_out:
   return ConvertbRCRetvalToPythonRetval(retval);
 }
 
-/**
- * Some helper functions.
- */
+// Some helper functions.
 static inline char* PyGetStringValue(PyObject* object)
 {
   if (!object || !PyUnicode_Check(object)) { return (char*)""; }
@@ -1843,13 +1833,9 @@ static inline char* PyGetByteArrayValue(PyObject* object)
   return PyByteArray_AsString(object);
 }
 
-/**
- * Python specific handlers for PyRestoreObject structure mapping.
- */
+// Python specific handlers for PyRestoreObject structure mapping.
 
-/**
- * Representation.
- */
+// Representation.
 static PyObject* PyRestoreObject_repr(PyRestoreObject* self)
 {
   PyObject* s;
@@ -1868,9 +1854,7 @@ static PyObject* PyRestoreObject_repr(PyRestoreObject* self)
   return s;
 }
 
-/**
- * Initialization.
- */
+// Initialization.
 static int PyRestoreObject_init(PyRestoreObject* self,
                                 PyObject* args,
                                 PyObject* kwds)
@@ -1909,9 +1893,7 @@ static int PyRestoreObject_init(PyRestoreObject* self,
   return 0;
 }
 
-/**
- * Destructor.
- */
+// Destructor.
 static void PyRestoreObject_dealloc(PyRestoreObject* self)
 {
   if (self->object_name) { Py_XDECREF(self->object_name); }
@@ -1919,13 +1901,9 @@ static void PyRestoreObject_dealloc(PyRestoreObject* self)
   PyObject_Del(self);
 }
 
-/**
- * Python specific handlers for PyStatPacket structure mapping.
- */
+// Python specific handlers for PyStatPacket structure mapping.
 
-/**
- * Representation.
- */
+// Representation.
 static PyObject* PyStatPacket_repr(PyStatPacket* self)
 {
   PyObject* s;
@@ -1944,9 +1922,7 @@ static PyObject* PyStatPacket_repr(PyStatPacket* self)
   return s;
 }
 
-/**
- * Initialization.
- */
+// Initialization.
 static int PyStatPacket_init(PyStatPacket* self, PyObject* args, PyObject* kwds)
 {
   time_t now;
@@ -1984,18 +1960,12 @@ static int PyStatPacket_init(PyStatPacket* self, PyObject* args, PyObject* kwds)
   return 0;
 }
 
-/**
- * Destructor.
- */
+// Destructor.
 static void PyStatPacket_dealloc(PyStatPacket* self) { PyObject_Del(self); }
 
-/**
- * Python specific handlers for PySavePacket structure mapping.
- */
+// Python specific handlers for PySavePacket structure mapping.
 
-/**
- * Representation.
- */
+// Representation.
 static inline const char* print_flags_bitmap(PyObject* bitmap)
 {
   static char visual_bitmap[FO_MAX + 1];
@@ -2044,9 +2014,7 @@ static PyObject* PySavePacket_repr(PySavePacket* self)
   return s;
 }
 
-/**
- * Initialization.
- */
+// Initialization.
 static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
 {
   static char* kwlist[]
@@ -2081,9 +2049,7 @@ static int PySavePacket_init(PySavePacket* self, PyObject* args, PyObject* kwds)
   return 0;
 }
 
-/**
- * Destructor.
- */
+// Destructor.
 static void PySavePacket_dealloc(PySavePacket* self)
 {
   if (self->fname) { Py_XDECREF(self->fname); }
@@ -2094,13 +2060,9 @@ static void PySavePacket_dealloc(PySavePacket* self)
   PyObject_Del(self);
 }
 
-/**
- * Python specific handlers for PyRestorePacket structure mapping.
- */
+// Python specific handlers for PyRestorePacket structure mapping.
 
-/**
- * Representation.
- */
+// Representation.
 static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
 {
   PyObject *stat_repr, *s;
@@ -2123,9 +2085,7 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
   return s;
 }
 
-/**
- * Initialization.
- */
+// Initialization.
 static int PyRestorePacket_init(PyRestorePacket* self,
                                 PyObject* args,
                                 PyObject* kwds)
@@ -2164,21 +2124,15 @@ static int PyRestorePacket_init(PyRestorePacket* self,
   return 0;
 }
 
-/**
- * Destructor.
- */
+// Destructor.
 static void PyRestorePacket_dealloc(PyRestorePacket* self)
 {
   PyObject_Del(self);
 }
 
-/**
- * Python specific handlers for PyIoPacket structure mapping.
- */
+// Python specific handlers for PyIoPacket structure mapping.
 
-/**
- * Representation.
- */
+// Representation.
 static PyObject* PyIoPacket_repr(PyIoPacket* self)
 {
   PyObject* s;
@@ -2196,9 +2150,7 @@ static PyObject* PyIoPacket_repr(PyIoPacket* self)
   return s;
 }
 
-/**
- * Initialization.
- */
+// Initialization.
 static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
 {
   static char* kwlist[] = {(char*)"func",
@@ -2239,22 +2191,16 @@ static int PyIoPacket_init(PyIoPacket* self, PyObject* args, PyObject* kwds)
   return 0;
 }
 
-/**
- * Destructor.
- */
+// Destructor.
 static void PyIoPacket_dealloc(PyIoPacket* self)
 {
   if (self->buf) { Py_XDECREF(self->buf); }
   PyObject_Del(self);
 }
 
-/**
- * Python specific handlers for PyAclPacket structure mapping.
- */
+// Python specific handlers for PyAclPacket structure mapping.
 
-/**
- * Representation.
- */
+// Representation.
 static PyObject* PyAclPacket_repr(PyAclPacket* self)
 {
   PyObject* s;
@@ -2267,9 +2213,7 @@ static PyObject* PyAclPacket_repr(PyAclPacket* self)
   return s;
 }
 
-/**
- * Initialization.
- */
+// Initialization.
 static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds)
 {
   static char* kwlist[] = {(char*)"fname", (char*)"content", NULL};
@@ -2285,22 +2229,16 @@ static int PyAclPacket_init(PyAclPacket* self, PyObject* args, PyObject* kwds)
   return 0;
 }
 
-/**
- * Destructor.
- */
+// Destructor.
 static void PyAclPacket_dealloc(PyAclPacket* self)
 {
   if (self->content) { Py_XDECREF(self->content); }
   PyObject_Del(self);
 }
 
-/**
- * Python specific handlers for PyIOPacket structure mapping.
- */
+// Python specific handlers for PyIOPacket structure mapping.
 
-/**
- * Representation.
- */
+// Representation.
 static PyObject* PyXattrPacket_repr(PyXattrPacket* self)
 {
   PyObject* s;
@@ -2313,9 +2251,7 @@ static PyObject* PyXattrPacket_repr(PyXattrPacket* self)
   return s;
 }
 
-/**
- * Initialization.
- */
+// Initialization.
 static int PyXattrPacket_init(PyXattrPacket* self,
                               PyObject* args,
                               PyObject* kwds)
@@ -2334,9 +2270,7 @@ static int PyXattrPacket_init(PyXattrPacket* self,
   return 0;
 }
 
-/**
- * Destructor.
- */
+// Destructor.
 static void PyXattrPacket_dealloc(PyXattrPacket* self)
 {
   if (self->value) { Py_XDECREF(self->value); }

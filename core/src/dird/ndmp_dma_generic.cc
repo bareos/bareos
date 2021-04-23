@@ -618,44 +618,32 @@ void NdmpDoQuery(UaContext* ua,
   // Initialize the session structure.
   if (ndma_session_initialize(&ndmp_sess)) { goto bail_out; }
 
-  /*
-   * Copy the actual job to perform.
-   */
+  // Copy the actual job to perform.
   memcpy(&ndmp_sess.control_acb->job, ndmp_job, sizeof(struct ndm_job_param));
   if (!NdmpValidateJob(local_jcr, &ndmp_sess.control_acb->job)) {
     goto cleanup;
   }
 
-  /*
-   * Commission the session for a run.
-   */
+  // Commission the session for a run.
   if (ndma_session_commission(&ndmp_sess)) { goto cleanup; }
 
-  /*
-   * Setup the DMA.
-   */
+  // Setup the DMA.
   if (ndmca_connect_control_agent(&ndmp_sess)) { goto cleanup; }
 
   ndmp_sess.conn_open = 1;
   ndmp_sess.conn_authorized = 1;
 
-  /*
-   * Let the DMA perform its magic.
-   */
+  // Let the DMA perform its magic.
   if (ndmca_control_agent(&ndmp_sess) != 0) { goto cleanup; }
 
 cleanup:
-  /*
-   * Destroy the session.
-   */
+  // Destroy the session.
   ndma_session_destroy(&ndmp_sess);
 
 bail_out:
 
   ndmca_query_unregister_callbacks(&ndmp_sess);
-  /*
-   * Free the param block.
-   */
+  // Free the param block.
   if (ndmp_sess.param->log_tag) { free(ndmp_sess.param->log_tag); }
   free(ndmp_sess.param);
   free(nis);
@@ -673,9 +661,7 @@ void DoNdmpClientStatus(UaContext* ua, ClientResource* client, char* cmd)
   memset(&ndmp_job, 0, sizeof(struct ndm_job_param));
   ndmp_job.operation = NDM_JOB_OP_QUERY_AGENTS;
 
-  /*
-   * Query the DATA agent of the NDMP server.
-   */
+  // Query the DATA agent of the NDMP server.
   ASSERT(client->password_.encoding == p_encoding_clear);
   if (!fill_ndmp_agent_config(ua->jcr, &ndmp_job.data_agent, client->Protocol,
                               client->AuthType, client->address, client->FDport,

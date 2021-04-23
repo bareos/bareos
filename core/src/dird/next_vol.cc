@@ -311,9 +311,7 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
     return;
   }
 
-  /*
-   * Check if the Volume is already marked for recycling
-   */
+  // Check if the Volume is already marked for recycling
   if (bstrcmp(mr->VolStatus, "Purged")) {
     if (RecycleVolume(jcr, mr)) {
       Jmsg(jcr, M_INFO, 0, _("Recycled current volume \"%s\"\n"),
@@ -321,17 +319,13 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
       *reason = NULL;
       return;
     } else {
-      /*
-       * In principle this shouldn't happen
-       */
+      // In principle this shouldn't happen
       *reason = _("and recycling of current volume failed");
       return;
     }
   }
 
-  /*
-   * At this point, the volume is not valid for writing
-   */
+  // At this point, the volume is not valid for writing
   *reason = _("but should be Append, Purged or Recycle");
 
   /*
@@ -352,9 +346,7 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
   if ((mr->LastWritten + mr->VolRetention - 60) < (utime_t)time(NULL)
       && jcr->impl->res.pool->recycle_current_volume
       && (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used"))) {
-    /*
-     * Attempt prune of current volume to see if we can recycle it for use.
-     */
+    // Attempt prune of current volume to see if we can recycle it for use.
     UaContext* ua;
 
     ua = new_ua_context(jcr);
@@ -362,9 +354,7 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
     FreeUaContext(ua);
 
     if (ok) {
-      /*
-       * If fully purged, recycle current volume
-       */
+      // If fully purged, recycle current volume
       if (RecycleVolume(jcr, mr)) {
         Jmsg(jcr, M_INFO, 0, _("Recycled current volume \"%s\"\n"),
              mr->VolumeName);
@@ -395,9 +385,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
   bool ok = false;
   bool found = false;
 
-  /*
-   * Only one thread at a time can pull from the scratch pool
-   */
+  // Only one thread at a time can pull from the scratch pool
   P(mutex);
 
   /*
@@ -447,9 +435,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
         goto bail_out;
       }
 
-      /*
-       * Make sure there is room for another volume
-       */
+      // Make sure there is room for another volume
       if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
         Jmsg(jcr, M_WARNING, 0,
              _("Unable add Scratch Volume, Pool \"%s\" full MaxVols=%d\n"),
@@ -460,9 +446,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
       memcpy(mr, &smr, sizeof(MediaDbRecord));
       SetStorageidInMr(store, mr);
 
-      /*
-       * Set default parameters from current pool
-       */
+      // Set default parameters from current pool
       SetPoolDbrDefaultsInMediaDbr(mr, &pr);
 
       /*

@@ -908,17 +908,13 @@ bool DeviceControlRecord::WriteBlockToDevice()
 
 bail_out:
   if (!dcr->IsDevLocked()) { /* did we lock dev above? */
-    /*
-     * Note, do not change this to dcr->dunlock
-     */
+    // Note, do not change this to dcr->dunlock
     dev->Unlock(); /* unlock it now */
   }
   return status;
 }
 
-/**
- * Read block with locking
- */
+// Read block with locking
 DeviceControlRecord::ReadStatus DeviceControlRecord::ReadBlockFromDevice(
     bool check_block_numbers)
 {
@@ -1033,9 +1029,7 @@ reread:
     return ReadStatus::EndOfFile;
   }
 
-  /*
-   * successful read (status > 0)
-   */
+  // successful read (status > 0)
 
   block->read_len = status; /* save length read */
   if (block->read_len == 80
@@ -1084,9 +1078,7 @@ reread:
         block->block_len, block->buf_len);
     Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
     Pmsg1(000, "%s", dev->errmsg);
-    /*
-     * Attempt to Reposition to re-read the block
-     */
+    // Attempt to Reposition to re-read the block
     if (dev->IsTape()) {
       Dmsg0(250, "BootStrapRecord for reread; block too big for buffer.\n");
       if (!dev->bsr(1)) {
@@ -1107,9 +1099,7 @@ reread:
           block->block_len);
     Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
     Pmsg1(000, "%s", dev->errmsg);
-    /*
-     * Set new block length
-     */
+    // Set new block length
     dev->max_block_size = block->block_len;
     block->buf_len = block->block_len;
     FreeMemory(block->buf);
@@ -1140,16 +1130,12 @@ reread:
   dev->EndFile = dev->file;
   dev->block_num++;
 
-  /*
-   * Update dcr values
-   */
+  // Update dcr values
   if (dev->IsTape()) {
     dcr->EndBlock = dev->EndBlock;
     dcr->EndFile = dev->EndFile;
   } else {
-    /*
-     * We need to take care about a short block in EndBlock/File computation
-     */
+    // We need to take care about a short block in EndBlock/File computation
     uint32_t len = MIN(block->read_len, block->block_len);
     uint64_t addr = dev->file_addr + len - 1;
     dcr->EndBlock = (uint32_t)addr;

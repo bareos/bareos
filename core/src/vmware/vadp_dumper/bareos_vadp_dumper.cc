@@ -893,9 +893,7 @@ static inline bool process_disk_info(bool validate_only, json_t* value)
     }
   }
 
-  /*
-   * Validate that things make sense to restore on the opened VMDK.
-   */
+  // Validate that things make sense to restore on the opened VMDK.
   if (!validate_only && check_size) {
     if (!validate_runtime_disk_info_encoding(&rdie)) {
       fprintf(stderr,
@@ -905,9 +903,7 @@ static inline bool process_disk_info(bool validate_only, json_t* value)
     }
   }
 
-  /*
-   * Save the absolute offset we should use.
-   */
+  // Save the absolute offset we should use.
   absolute_start_offset = rdie.absolute_start_offset;
 
   return true;
@@ -916,9 +912,7 @@ bail_out:
   return false;
 }
 
-/*
- * Read a specific meta data key and encode it into the output stream.
- */
+// Read a specific meta data key and encode it into the output stream.
 static inline bool read_meta_data_key(char* key)
 {
   bool retval = false;
@@ -952,9 +946,7 @@ static inline bool read_meta_data_key(char* key)
     goto bail_out;
   }
 
-  /*
-   * Should we clone metadata to new VMDK file ?
-   */
+  // Should we clone metadata to new VMDK file ?
   if (write_diskHandle) {
     VixError err;
 
@@ -1002,9 +994,7 @@ bail_out:
   return retval;
 }
 
-/*
- * Read all meta data from a disk and encode it into the output stream.
- */
+// Read all meta data from a disk and encode it into the output stream.
 static inline bool save_meta_data()
 {
   bool retval = false;
@@ -1108,9 +1098,7 @@ static inline bool process_meta_data(bool validate_only)
       goto bail_out;
     }
 
-    /*
-     * See if we processed the last meta data item.
-     */
+    // See if we processed the last meta data item.
     if (rmde.meta_key_length == 0 && rmde.meta_data_length == 0) { break; }
 
     key = (char*)malloc(rmde.meta_key_length);
@@ -1206,9 +1194,7 @@ static inline bool process_cbt(const char* key, json_t* cbt)
   rce.end_magic = BAREOSMAGIC;
   json_array_foreach(object, index, array_element)
   {
-    /*
-     * Get the two members we are interested in.
-     */
+    // Get the two members we are interested in.
     start = json_object_get(array_element, CBT_CHANGEDAREA_START_KEY);
     length = json_object_get(array_element, CBT_CHANGEDAREA_LENGTH_KEY);
 
@@ -1227,9 +1213,7 @@ static inline bool process_cbt(const char* key, json_t* cbt)
     rce.start_offset = start_offset;
     rce.offset_length = offset_length;
 
-    /*
-     * Write the CBT info into the output stream.
-     */
+    // Write the CBT info into the output stream.
     if (robust_writer(STDOUT_FILENO, (char*)&rce, rce_size) != rce_size) {
       fprintf(stderr,
               "Failed to write runtime_cbt_encoding structure to output "
@@ -1281,9 +1265,7 @@ static inline bool process_cbt(const char* key, json_t* cbt)
         }
       }
 
-      /*
-       * Calculate the new offsets for a next run.
-       */
+      // Calculate the new offsets for a next run.
       current_offset += (sectors_to_read * DEFAULT_SECTOR_SIZE);
       sector_offset += sectors_to_read;
       offset_length -= sectors_to_read * DEFAULT_SECTOR_SIZE;
@@ -1333,9 +1315,7 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
     }
   }
 
-  /*
-   * Setup multi threading if requested.
-   */
+  // Setup multi threading if requested.
   if (!validate_only && multi_threaded) {
     if (!setup_copy_thread(read_from_stream, write_to_vmdk)) {
       fprintf(stderr, "Failed to initialize multithreading\n");
@@ -1343,14 +1323,10 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
     }
   }
 
-  /*
-   * Process the disk info data.
-   */
+  // Process the disk info data.
   if (!process_disk_info(validate_only, value)) { goto bail_out; }
 
-  /*
-   * Process the disk meta data,
-   */
+  // Process the disk meta data,
   if (!process_meta_data(validate_only)) { goto bail_out; }
 
   memset(&rce, 0, rce_size);
@@ -1406,9 +1382,7 @@ static inline bool process_restore_stream(bool validate_only, json_t* value)
         }
       }
 
-      /*
-       * Calculate the new offsets for a next run.
-       */
+      // Calculate the new offsets for a next run.
       current_offset += (sectors_to_read * DEFAULT_SECTOR_SIZE);
       sector_offset += sectors_to_read;
       rce.offset_length -= sectors_to_read * DEFAULT_SECTOR_SIZE;
@@ -1441,9 +1415,7 @@ static inline void process_json_work_file(const char* json_work_file)
 {
   json_error_t error;
 
-  /*
-   * Open the JSON work file.
-   */
+  // Open the JSON work file.
   json_config = json_load_file(json_work_file, JSON_DECODE_ANY, &error);
   if (!json_config) {
     fprintf(stderr,
@@ -1453,9 +1425,7 @@ static inline void process_json_work_file(const char* json_work_file)
   }
 
   if (verbose) {
-    /*
-     * Dump the internal parsed data in pretty print format.
-     */
+    // Dump the internal parsed data in pretty print format.
     json_dumpf(json_config, stderr,
                JSON_PRESERVE_ORDER | JSON_COMPACT | JSON_INDENT(3));
     fprintf(stderr, "\n");
@@ -1463,9 +1433,7 @@ static inline void process_json_work_file(const char* json_work_file)
   }
 }
 
-/*
- * Worker function that performs the dump operation of the program.
- */
+// Worker function that performs the dump operation of the program.
 static inline bool dump_vmdk_stream(const char* json_work_file)
 {
   json_t* value;
@@ -1499,9 +1467,7 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
     exit(1);
   }
 
-  /*
-   * Setup multi threading if requested.
-   */
+  // Setup multi threading if requested.
   if (multi_threaded) {
     if (!setup_copy_thread(read_from_vmdk, write_to_stream)) {
       fprintf(stderr, "Failed to initialize multithreading\n");
@@ -1528,9 +1494,7 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
 
   if (!save_meta_data()) { exit(1); }
 
-  /*
-   * See if we are requested to clone the content to a rawdevice.
-   */
+  // See if we are requested to clone the content to a rawdevice.
   if (raw_disk_name) {
     if (verbose) { fprintf(stderr, "Log: RAWFILE: Trying to open RAW file\n"); }
 
@@ -1543,9 +1507,7 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
   return process_cbt(CBT_DISKCHANGEINFO_KEY, value);
 }
 
-/*
- * Worker function that performs the restore operation of the program.
- */
+// Worker function that performs the restore operation of the program.
 static inline bool restore_vmdk_stream(const char* json_work_file)
 {
   json_t* value;
@@ -1571,9 +1533,7 @@ static inline bool restore_vmdk_stream(const char* json_work_file)
   return process_restore_stream(false, value);
 }
 
-/*
- * Worker function that performs the show operation of the program.
- */
+// Worker function that performs the show operation of the program.
 static inline int show_backup_stream()
 {
   return process_restore_stream(true, NULL);
@@ -1698,9 +1658,7 @@ int main(int argc, char** argv)
     }
   }
 
-  /*
-   * Install signal handlers for the most important signals.
-   */
+  // Install signal handlers for the most important signals.
   signal(SIGHUP, signal_handler);
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);

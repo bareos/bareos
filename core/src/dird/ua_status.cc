@@ -1628,9 +1628,7 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
                          vl1->bareos_slot_number, max_slots);
           continue;
         }
-        /*
-         * Check if user wants us to look at this slot
-         */
+        // Check if user wants us to look at this slot
         if (!BitIsSet(vl1->bareos_slot_number - 1, slot_list)) {
           Dmsg1(100, "Skipping slot=%hd\n", vl1->bareos_slot_number);
           continue;
@@ -1697,9 +1695,7 @@ static void StatusSlots(UaContext* ua, StorageResource* store)
                 strcpy(pr.Name, "?");
               }
 
-              /*
-               * Print information
-               */
+              // Print information
               if (vl1->slot_type == slot_type_t::kSlotTypeImport) {
                 ua->SendMsg(slot_hformat, vl1->bareos_slot_number, '@',
                             mr.VolumeName, mr.VolStatus, mr.MediaType, pr.Name);

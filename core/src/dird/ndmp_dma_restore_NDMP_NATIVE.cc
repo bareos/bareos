@@ -383,17 +383,13 @@ cleanup_ndmp:
     Jmsg(jcr, M_ERROR, 0, "could not free ndmp tape device %s from job %d",
          ndmp_job.tape_device, jcr->JobId);
   }
-  /*
-   * Only need to cleanup when things are initialized.
-   */
+  // Only need to cleanup when things are initialized.
   if (session_initialized) {
     ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
     ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
     ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
 
-    /*
-     * Destroy the session.
-     */
+    // Destroy the session.
     ndma_session_destroy(&ndmp_sess);
   }
 
@@ -409,9 +405,7 @@ cleanup:
   return retval;
 }
 
-/*
- * Run a NDMP restore session.
- */
+// Run a NDMP restore session.
 bool DoNdmpRestoreNdmpNative(JobControlRecord* jcr)
 {
   int status;
@@ -425,14 +419,10 @@ bool DoNdmpRestoreNdmpNative(JobControlRecord* jcr)
 
   Dmsg1(20, "RestoreJobId=%d\n", jcr->impl->res.job->RestoreJobId);
 
-  /*
-   * Validate the Job to have a NDMP client.
-   */
+  // Validate the Job to have a NDMP client.
   if (!NdmpValidateClient(jcr)) { return false; }
 
-  /*
-   * Print Job Start message
-   */
+  // Print Job Start message
   Jmsg(jcr, M_INFO, 0, _("Start Restore Job %s\n"), jcr->Job);
 
   if (!DoNdmpNativeRestore(jcr)) { goto bail_out; }

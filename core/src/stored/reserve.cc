@@ -839,9 +839,7 @@ static bool ReserveDeviceForRead(DeviceControlRecord* dcr)
     goto bail_out;
   }
 
-  /*
-   * Note: on failure this returns jcr->errmsg properly edited
-   */
+  // Note: on failure this returns jcr->errmsg properly edited
   if (GeneratePluginEvent(jcr, bSdEventDeviceReserve, dcr) != bRC_OK) {
     QueueReserveMessage(jcr);
     goto bail_out;
@@ -883,9 +881,7 @@ static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
 
   dev->Lock();
 
-  /*
-   * If device is being read, we cannot write it
-   */
+  // If device is being read, we cannot write it
   if (dev->CanRead()) {
     Mmsg(jcr->errmsg, _("3603 JobId=%u device %s is busy reading.\n"),
          jcr->JobId, dev->print_name());
@@ -894,9 +890,7 @@ static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
     goto bail_out;
   }
 
-  /*
-   * If device is unmounted, we are out of luck
-   */
+  // If device is unmounted, we are out of luck
   if (dev->IsDeviceUnmounted()) {
     Mmsg(jcr->errmsg,
          _("3604 JobId=%u device %s is BLOCKED due to user unmount.\n"),
@@ -908,17 +902,13 @@ static bool ReserveDeviceForAppend(DeviceControlRecord* dcr,
 
   Dmsg1(debuglevel, "reserve_append device is %s\n", dev->print_name());
 
-  /*
-   * Now do detailed tests ...
-   */
+  // Now do detailed tests ...
   if (CanReserveDrive(dcr, rctx) != 1) {
     Dmsg0(debuglevel, "CanReserveDrive!=1\n");
     goto bail_out;
   }
 
-  /*
-   * Note: on failure this returns jcr->errmsg properly edited
-   */
+  // Note: on failure this returns jcr->errmsg properly edited
   if (GeneratePluginEvent(jcr, bSdEventDeviceReserve, dcr) != bRC_OK) {
     QueueReserveMessage(jcr);
     goto bail_out;
@@ -936,14 +926,10 @@ static int IsPoolOk(DeviceControlRecord* dcr)
   Device* dev = dcr->dev;
   JobControlRecord* jcr = dcr->jcr;
 
-  /*
-   * Now check if we want the same Pool and pool type
-   */
+  // Now check if we want the same Pool and pool type
   if (bstrcmp(dev->pool_name, dcr->pool_name)
       && bstrcmp(dev->pool_type, dcr->pool_type)) {
-    /*
-     * OK, compatible device
-     */
+    // OK, compatible device
     Dmsg1(debuglevel, "OK dev: %s num_writers=0, reserved, pool matches\n",
           dev->print_name());
     return 1;
@@ -969,15 +955,11 @@ static bool IsMaxJobsOk(DeviceControlRecord* dcr)
         dcr->VolCatInfo.VolCatMaxJobs, dcr->VolCatInfo.VolCatJobs,
         dev->NumReserved(), dcr->VolCatInfo.VolCatStatus, dcr->VolumeName);
 
-  /*
-   * Limit max concurrent jobs on this drive
-   */
+  // Limit max concurrent jobs on this drive
   if (dev->max_concurrent_jobs > 0
       && dev->max_concurrent_jobs
              <= (uint32_t)(dev->num_writers + dev->NumReserved())) {
-    /*
-     * Max Concurrent Jobs depassed or already reserved
-     */
+    // Max Concurrent Jobs depassed or already reserved
     Mmsg(jcr->errmsg,
          _("3609 JobId=%u Max concurrent jobs exceeded on drive %s.\n"),
          (uint32_t)jcr->JobId, dev->print_name());
@@ -989,9 +971,7 @@ static bool IsMaxJobsOk(DeviceControlRecord* dcr)
   if (dcr->VolCatInfo.VolCatMaxJobs > 0
       && dcr->VolCatInfo.VolCatMaxJobs
              <= (dcr->VolCatInfo.VolCatJobs + dev->NumReserved())) {
-    /*
-     * Max Job Vols depassed or already reserved
-     */
+    // Max Job Vols depassed or already reserved
     Mmsg(jcr->errmsg,
          _("3610 JobId=%u Volume max jobs exceeded on drive %s.\n"),
          (uint32_t)jcr->JobId, dev->print_name());
@@ -1016,14 +996,10 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
         rctx.PreferMountedVols, rctx.exact_match, rctx.suitable_device,
         rctx.autochanger_only, rctx.any_drive);
 
-  /*
-   * Check for max jobs on this Volume
-   */
+  // Check for max jobs on this Volume
   if (!IsMaxJobsOk(dcr)) { return 0; }
 
-  /*
-   * Setting any_drive overrides PreferMountedVols flag
-   */
+  // Setting any_drive overrides PreferMountedVols flag
   if (!rctx.any_drive) {
     /*
      * When PreferMountedVols is set, we keep track of the
@@ -1037,13 +1013,9 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
       return 1;
     }
 
-    /*
-     * If he wants a free drive, but this one is busy, no go
-     */
+    // If he wants a free drive, but this one is busy, no go
     if (!rctx.PreferMountedVols && dev->IsBusy()) {
-      /*
-       * Save least used drive
-       */
+      // Save least used drive
       if ((dev->num_writers + dev->NumReserved()) < rctx.num_writers) {
         rctx.num_writers = dev->num_writers + dev->NumReserved();
         rctx.low_use_drive = dev;
@@ -1061,9 +1033,7 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
       return 0;
     }
 
-    /*
-     * Check for prefer mounted volumes
-     */
+    // Check for prefer mounted volumes
     if (rctx.PreferMountedVols && !dev->vol && dev->IsTape()) {
       Mmsg(jcr->errmsg,
            _("3606 JobId=%u prefers mounted drives, but drive %s has no "
@@ -1107,49 +1077,35 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
     }
   }
 
-  /*
-   * Check for unused autochanger drive
-   */
+  // Check for unused autochanger drive
   if (rctx.autochanger_only && !dev->IsBusy()
       && dev->VolHdr.VolumeName[0] == 0) {
-    /*
-     * Device is available but not yet reserved, reserve it for us
-     */
+    // Device is available but not yet reserved, reserve it for us
     Dmsg1(debuglevel, "OK Res Unused autochanger %s.\n", dev->print_name());
     bstrncpy(dev->pool_name, dcr->pool_name, sizeof(dev->pool_name));
     bstrncpy(dev->pool_type, dcr->pool_type, sizeof(dev->pool_type));
     return 1; /* reserve drive */
   }
 
-  /*
-   * Handle the case that there are no writers
-   */
+  // Handle the case that there are no writers
   if (dev->num_writers == 0) {
-    /*
-     * Now check if there are any reservations on the drive
-     */
+    // Now check if there are any reservations on the drive
     if (dev->NumReserved()) {
       return IsPoolOk(dcr);
     } else if (dev->CanAppend()) {
       if (IsPoolOk(dcr)) {
         return 1;
       } else {
-        /*
-         * Changing pool, unload old tape if any in drive
-         */
+        // Changing pool, unload old tape if any in drive
         Dmsg0(debuglevel,
               "OK dev: num_writers=0, not reserved, pool change, unload "
               "changer\n");
-        /*
-         * ***FIXME*** use SetUnload()
-         */
+        // use SetUnload()
         UnloadAutochanger(dcr, -1);
       }
     }
 
-    /*
-     * Device is available but not yet reserved, reserve it for us
-     */
+    // Device is available but not yet reserved, reserve it for us
     Dmsg1(debuglevel, "OK Dev avail reserved %s\n", dev->print_name());
     bstrncpy(dev->pool_name, dcr->pool_name, sizeof(dev->pool_name));
     bstrncpy(dev->pool_type, dcr->pool_type, sizeof(dev->pool_type));
@@ -1175,9 +1131,7 @@ static int CanReserveDrive(DeviceControlRecord* dcr, ReserveContext& rctx)
   }
 }
 
-/**
- * Queue a reservation error or failure message for this jcr
- */
+// Queue a reservation error or failure message for this jcr
 static void QueueReserveMessage(JobControlRecord* jcr)
 {
   int i;
@@ -1188,31 +1142,23 @@ static void QueueReserveMessage(JobControlRecord* jcr)
 
   msgs = jcr->impl->reserve_msgs;
   if (!msgs) { goto bail_out; }
-  /*
-   * Look for duplicate message.  If found, do not insert
-   */
+  // Look for duplicate message.  If found, do not insert
   for (i = msgs->size() - 1; i >= 0; i--) {
     msg = (char*)msgs->get(i);
     if (!msg) { goto bail_out; }
 
-    /*
-     * Comparison based on 4 digit message number
-     */
+    // Comparison based on 4 digit message number
     if (bstrncmp(msg, jcr->errmsg, 4)) { goto bail_out; }
   }
 
-  /*
-   * Message unique, so insert it.
-   */
+  // Message unique, so insert it.
   jcr->impl->reserve_msgs->push(strdup(jcr->errmsg));
 
 bail_out:
   jcr->unlock();
 }
 
-/**
- * Pop and release any reservations messages
- */
+// Pop and release any reservations messages
 static void PopReserveMessages(JobControlRecord* jcr)
 {
   alist* msgs;
@@ -1226,9 +1172,7 @@ bail_out:
   jcr->unlock();
 }
 
-/**
- * Also called from acquire.c
- */
+// Also called from acquire.c
 void ReleaseReserveMessages(JobControlRecord* jcr)
 {
   PopReserveMessages(jcr);

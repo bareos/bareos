@@ -433,18 +433,14 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     }
     sd = jcr->store_bsock;
 
-    /*
-     * Now start a job with the Storage daemon
-     */
+    // Now start a job with the Storage daemon
     if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list, NULL)) {
       goto cleanup;
     }
 
     jcr->setJobStatus(JS_Running);
 
-    /*
-     * Send the bootstrap file -- what Volumes/files to restore
-     */
+    // Send the bootstrap file -- what Volumes/files to restore
     if (!SendBootstrapFile(jcr, sd, info)
         || !response(jcr, sd, OKbootstrap, "Bootstrap", DISPLAY_ERROR)) {
       goto cleanup;
@@ -452,9 +448,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
 
     if (!sd->fsend("run")) { goto cleanup; }
 
-    /*
-     * Now start a Storage daemon message thread
-     */
+    // Now start a Storage daemon message thread
     if (!StartStorageDaemonMessageThread(jcr)) { goto cleanup; }
     Dmsg0(50, "Storage daemon connection OK\n");
 
@@ -551,15 +545,11 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
         ndmp_sess.param->log.ctx = nis;
         ndmp_sess.param->log_tag = strdup("DIR-NDMP");
 
-        /*
-         * Initialize the session structure.
-         */
+        // Initialize the session structure.
         if (ndma_session_initialize(&ndmp_sess)) { goto cleanup_ndmp; }
         session_initialized = true;
 
-        /*
-         * Copy the actual job to perform.
-         */
+        // Copy the actual job to perform.
         jcr->impl->jr.FileIndex = current_fi;
 
         memcpy(&ndmp_sess.control_acb->job, &ndmp_job,
@@ -576,17 +566,13 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
           goto cleanup_ndmp;
         }
 
-        /*
-         * Commission the session for a run.
-         */
+        // Commission the session for a run.
         if (ndma_session_commission(&ndmp_sess)) {
           Jmsg(jcr, M_ERROR, 0, _("ERROR in ndma_session_commission\n"));
           goto cleanup_ndmp;
         }
 
-        /*
-         * Setup the DMA.
-         */
+        // Setup the DMA.
         if (ndmca_connect_control_agent(&ndmp_sess)) {
           Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmca_connect_control_agent\n"));
           goto cleanup_ndmp;
@@ -595,84 +581,60 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
         ndmp_sess.conn_open = 1;
         ndmp_sess.conn_authorized = 1;
 
-        /*
-         * Let the DMA perform its magic.
-         */
+        // Let the DMA perform its magic.
         if (ndmca_control_agent(&ndmp_sess) != 0) {
           Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmca_control_agent\n"));
           goto cleanup_ndmp;
         }
 
-        /*
-         * See if there were any errors during the restore.
-         */
+        // See if there were any errors during the restore.
         if (!ExtractPostRestoreStats(jcr, &ndmp_sess)) {
           Jmsg(jcr, M_ERROR, 0, _("ERROR in ExtractPostRestoreStats\n"));
           goto cleanup_ndmp;
         }
 
-        /*
-         * Reset the NDMP session states.
-         */
+        // Reset the NDMP session states.
         ndma_session_decommission(&ndmp_sess);
 
-        /*
-         * Cleanup the job after it has run.
-         */
+        // Cleanup the job after it has run.
         ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
         ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
         ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
 
-        /*
-         * Release any tape device name allocated.
-         */
+        // Release any tape device name allocated.
         if (ndmp_sess.control_acb->job.tape_device) {
           free(ndmp_sess.control_acb->job.tape_device);
           ndmp_sess.control_acb->job.tape_device = NULL;
         }
 
-        /*
-         * Destroy the session.
-         */
+        // Destroy the session.
         ndma_session_destroy(&ndmp_sess);
 
-        /*
-         * Free the param block.
-         */
+        // Free the param block.
         free(ndmp_sess.param->log_tag);
         free(ndmp_sess.param);
         ndmp_sess.param = NULL;
 
-        /*
-         * Reset the initialized state so we don't try to cleanup again.
-         */
+        // Reset the initialized state so we don't try to cleanup again.
         session_initialized = false;
 
-        /*
-         * Keep track that we finished this part of the restore.
-         */
+        // Keep track that we finished this part of the restore.
         cnt++;
       }
     }
 
 
-    /*
-     * Tell the storage daemon we are done.
-     */
+    // Tell the storage daemon we are done.
     jcr->store_bsock->fsend("finish");
     WaitForStorageDaemonTermination(jcr);
   }
 
-  /*
-   * Jump to the generic cleanup done for every Job.
-   */
+  // Jump to the generic cleanup done for every Job.
   retval = true;
   goto cleanup;
 
 cleanup_ndmp:
-  /*
-   * Only need to cleanup when things are initialized.
-   */
+  // Only need to cleanup when things are initialized.
   if (session_initialized) {
     ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
     ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
@@ -682,9 +644,7 @@ cleanup_ndmp:
       free(ndmp_sess.control_acb->job.tape_device);
     }
 
-    /*
-     * Destroy the session.
-     */
+    // Destroy the session.
     ndma_session_destroy(&ndmp_sess);
   }
 
@@ -705,9 +665,7 @@ bail_out:
 }
 
 
-/**
- * Run a NDMP restore session.
- */
+// Run a NDMP restore session.
 bool DoNdmpRestore(JobControlRecord* jcr)
 {
   int status;
@@ -721,9 +679,7 @@ bool DoNdmpRestore(JobControlRecord* jcr)
 
   Dmsg1(20, "RestoreJobId=%d\n", jcr->impl->res.job->RestoreJobId);
 
-  /*
-   * Validate the Job to have a NDMP client.
-   */
+  // Validate the Job to have a NDMP client.
   if (!NdmpValidateClient(jcr)) { return false; }
 
   if (!jcr->RestoreBootstrap) {
@@ -734,19 +690,13 @@ bool DoNdmpRestore(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  /*
-   * Print Job Start message
-   */
+  // Print Job Start message
   Jmsg(jcr, M_INFO, 0, _("Start Restore Job %s\n"), jcr->Job);
 
-  /*
-   * Read the bootstrap file and do the restore
-   */
+  // Read the bootstrap file and do the restore
   if (!DoNdmpRestoreBootstrap(jcr)) { goto bail_out; }
 
-  /*
-   * Wait for Job Termination
-   */
+  // Wait for Job Termination
   status = NdmpWaitForJobTermination(jcr);
   NdmpRestoreCleanup(jcr, status);
   return true;

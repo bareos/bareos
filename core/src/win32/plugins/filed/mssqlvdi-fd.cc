@@ -373,9 +373,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   return retval;
 }
 
-/**
- * Start the backup of a specific file
- */
+// Start the backup of a specific file
 static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
 {
   time_t now;
@@ -385,14 +383,10 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
 
   if (!p_ctx) { return bRC_Error; }
 
-  /*
-   * If no explicit instance name given use the DEFAULT_INSTANCE.
-   */
+  // If no explicit instance name given use the DEFAULT_INSTANCE.
   if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
 
-  /*
-   * If no explicit server address given use the DEFAULT_SERVER_ADDRESS.
-   */
+  // If no explicit server address given use the DEFAULT_SERVER_ADDRESS.
   if (!p_ctx->server_address) {
     p_ctx->server_address = strdup(DEFAULT_SERVER_ADDRESS);
   }
@@ -438,9 +432,7 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
   return bRC_OK;
 }
 
-/**
- * Done with backup of this file
- */
+// Done with backup of this file
 static bRC endBackupFile(PluginContext* ctx)
 {
   /*
@@ -450,9 +442,7 @@ static bRC endBackupFile(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Strip any backslashes in the string.
- */
+// Strip any backslashes in the string.
 static inline void StripBackSlashes(char* value)
 {
   char* bp;
@@ -485,9 +475,7 @@ static inline bool ParseBoolean(const char* argument_value)
   }
 }
 
-/**
- * Parse a uint32 value
- */
+// Parse a uint32 value
 static inline bool ParseUnsignedInt(const char* argument_value,
                                     uint32_t& value_out)
 {
@@ -500,9 +488,7 @@ static inline bool ParseUnsignedInt(const char* argument_value,
 }
 
 
-/**
- * Only set destination to value when it has no previous setting.
- */
+// Only set destination to value when it has no previous setting.
 static inline void SetStringIfNull(char** destination, char* value)
 {
   if (!*destination) {
@@ -511,9 +497,7 @@ static inline void SetStringIfNull(char** destination, char* value)
   }
 }
 
-/**
- * Always set destination to value and clean any previous one.
- */
+// Always set destination to value and clean any previous one.
 static inline void SetString(char** destination, char* value)
 {
   if (*destination) { free(*destination); }
@@ -553,9 +537,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     goto bail_out;
   }
 
-  /*
-   * Skip the first ':'
-   */
+  // Skip the first ':'
   bp++;
   while (bp) {
     if (strlen(bp) == 0) { break; }
@@ -576,9 +558,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     }
     *argument_value++ = '\0';
 
-    /*
-     * See if there are more arguments and setup for the next run.
-     */
+    // See if there are more arguments and setup for the next run.
     bp = argument_value;
     do {
       bp = strchr(bp, ':');
@@ -639,9 +619,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
             break;
         }
 
-        /*
-         * Keep the first value, ignore any next setting.
-         */
+        // Keep the first value, ignore any next setting.
         if (str_destination) {
           if (keep_existing) {
             SetStringIfNull(str_destination, argument_value);
@@ -650,9 +628,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
           }
         }
 
-        /*
-         * Set any boolean variable.
-         */
+        // Set any boolean variable.
         if (bool_destination) {
           *bool_destination = ParseBoolean(argument_value);
         }
@@ -666,16 +642,12 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
           }
         }
 
-        /*
-         * When we have a match break the loop.
-         */
+        // When we have a match break the loop.
         break;
       }
     }
 
-    /*
-     * Got an invalid keyword ?
-     */
+    // Got an invalid keyword ?
     if (!plugin_arguments[i].name) {
       Jmsg(ctx, M_FATAL,
            "Illegal argument %s with value %s in plugin definition\n", argument,
@@ -695,31 +667,23 @@ bail_out:
   return bRC_Error;
 }
 
-/**
- * Close the VDI deviceset if is is opened.
- */
+// Close the VDI deviceset if is is opened.
 static void CloseVdiDeviceset(plugin_ctx* p_ctx)
 {
-  /*
-   * Close VDI Device.
-   */
+  // Close VDI Device.
   if (p_ctx->VDIDevice) {
     p_ctx->VDIDevice->Release();
     p_ctx->VDIDevice = NULL;
   }
 
-  /*
-   * Close VDI DeviceSet.
-   */
+  // Close VDI DeviceSet.
   if (p_ctx->VDIDeviceSet) {
     p_ctx->VDIDeviceSet->Close();
     p_ctx->VDIDeviceSet->Release();
     p_ctx->VDIDeviceSet = NULL;
   }
 
-  /*
-   * Cancel the started database thread.
-   */
+  // Cancel the started database thread.
   if (p_ctx->AdoThreadStarted) {
     if (!pthread_equal(p_ctx->ADOThread, pthread_self())) {
       pthread_cancel(p_ctx->ADOThread);
@@ -727,9 +691,7 @@ static void CloseVdiDeviceset(plugin_ctx* p_ctx)
   }
 }
 
-/**
- * Generic COM error reporting function.
- */
+// Generic COM error reporting function.
 static void comReportError(PluginContext* ctx, HRESULT hrErr)
 {
   IErrorInfo* pErrorInfo;
@@ -738,24 +700,18 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   HRESULT hr;
   char *source, *description;
 
-  /*
-   * See if there is anything to report.
-   */
+  // See if there is anything to report.
   hr = GetErrorInfo(0, &pErrorInfo);
   if (hr == S_FALSE) { return; }
 
-  /*
-   * Get the description of the COM error.
-   */
+  // Get the description of the COM error.
   hr = pErrorInfo->GetDescription(&pDescription);
   if (!SUCCEEDED(hr)) {
     pErrorInfo->Release();
     return;
   }
 
-  /*
-   * Get the source of the COM error.
-   */
+  // Get the source of the COM error.
   hr = pErrorInfo->GetSource(&pSource);
   if (!SUCCEEDED(hr)) {
     SysFreeString(pDescription);
@@ -763,9 +719,7 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
     return;
   }
 
-  /*
-   * Convert windows BSTR to normal strings.
-   */
+  // Convert windows BSTR to normal strings.
   source = BSTR_2_str(pSource);
   description = BSTR_2_str(pDescription);
   if (source && description) {
@@ -787,9 +741,7 @@ static void comReportError(PluginContext* ctx, HRESULT hrErr)
   pErrorInfo->Release();
 }
 
-/**
- * Retrieve errors from ADO Connection.
- */
+// Retrieve errors from ADO Connection.
 static bool adoGetErrors(PluginContext* ctx,
                          _ADOConnection* adoConnection,
                          PoolMem& ado_errorstr)
@@ -798,18 +750,14 @@ static bool adoGetErrors(PluginContext* ctx,
   ADOErrors* adoErrors;
   long errCount;
 
-  /*
-   * Get any errors that are reported.
-   */
+  // Get any errors that are reported.
   hr = adoConnection->get_Errors(&adoErrors);
   if (!SUCCEEDED(hr)) {
     comReportError(ctx, hr);
     goto bail_out;
   }
 
-  /*
-   * See how many errors there are.
-   */
+  // See how many errors there are.
   hr = adoErrors->get_Count(&errCount);
   if (!SUCCEEDED(hr)) {
     comReportError(ctx, hr);
@@ -817,9 +765,7 @@ static bool adoGetErrors(PluginContext* ctx,
     goto bail_out;
   }
 
-  /*
-   * Loop over all error and append them into one big error string.
-   */
+  // Loop over all error and append them into one big error string.
   PmStrcpy(ado_errorstr, "");
   for (long i = 0; i < errCount; i++) {
     ADOError* adoError;
@@ -853,9 +799,7 @@ static bool adoGetErrors(PluginContext* ctx,
     adoError->Release();
   }
 
-  /*
-   * Generic cleanup.
-   */
+  // Generic cleanup.
   adoErrors->Clear();
   adoErrors->Release();
 
@@ -865,9 +809,7 @@ bail_out:
   return false;
 }
 
-/**
- * Print errors (when available) collected by adoThreadSetError function.
- */
+// Print errors (when available) collected by adoThreadSetError function.
 static bool adoReportError(PluginContext* ctx)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -897,9 +839,7 @@ static void adoThreadSetError(PluginContext* ctx, _ADOConnection* adoConnection)
 
   if (p_ctx->ado_errorstr) { return; }
 
-  /*
-   * Set the threads cancellation type to defered.
-   */
+  // Set the threads cancellation type to defered.
   pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, &cancel_type);
 
   if (!adoGetErrors(ctx, adoConnection, ado_errorstr)) { goto bail_out; }
@@ -911,17 +851,13 @@ static void adoThreadSetError(PluginContext* ctx, _ADOConnection* adoConnection)
   p_ctx->ado_errorstr = strdup(ado_errorstr.c_str());
 
 bail_out:
-  /*
-   * Restore the threads cancellation type.
-   */
+  // Restore the threads cancellation type.
   pthread_setcanceltype(cancel_type, NULL);
 
   return;
 }
 
-/**
- * Cleanup function called on thread destroy.
- */
+// Cleanup function called on thread destroy.
 static void adoCleanupThread(void* data)
 {
   adoThreadContext* ado_ctx;
@@ -929,9 +865,7 @@ static void adoCleanupThread(void* data)
   ado_ctx = (adoThreadContext*)data;
   if (!data) { return; }
 
-  /*
-   * Generic cleanup.
-   */
+  // Generic cleanup.
   if (ado_ctx->ado_connect_string) {
     SysFreeString(ado_ctx->ado_connect_string);
   }
@@ -949,9 +883,7 @@ static void adoCleanupThread(void* data)
     ado_ctx->adoConnection->Release();
   }
 
-  /*
-   * Tear down COM for this thread.
-   */
+  // Tear down COM for this thread.
   CoUninitialize();
 }
 
@@ -969,20 +901,14 @@ static void* adoThread(void* data)
 
   memset(&ado_ctx, 0, sizeof(ado_ctx));
 
-  /*
-   * When we get canceled make sure we run the cleanup function.
-   */
+  // When we get canceled make sure we run the cleanup function.
   pthread_cleanup_push(adoCleanupThread, &ado_ctx);
 
-  /*
-   * Initialize COM for this thread.
-   */
+  // Initialize COM for this thread.
   hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
   if (!SUCCEEDED(hr)) { return NULL; }
 
-  /*
-   * Create a COM instance for an ActiveX® Data Objects connection.
-   */
+  // Create a COM instance for an ActiveX® Data Objects connection.
   hr = CoCreateInstance(CLSID_CADOConnection, NULL, CLSCTX_INPROC_SERVER,
                         IID_IADOConnection, (void**)&ado_ctx.adoConnection);
   if (!SUCCEEDED(hr)) { goto bail_out; }
@@ -1010,9 +936,7 @@ static void* adoThread(void* data)
     goto bail_out;
   }
 
-  /*
-   * Execute the backup or restore command.
-   */
+  // Execute the backup or restore command.
   ado_ctx.ado_query = str_2_BSTR(p_ctx->ado_query);
   hr = ado_ctx.adoConnection->Execute(ado_ctx.ado_query, NULL,
                                       adExecuteNoRecords, NULL);
@@ -1022,17 +946,13 @@ static void* adoThread(void* data)
   }
 
 bail_out:
-  /*
-   * Run the thread cleanup.
-   */
+  // Run the thread cleanup.
   pthread_cleanup_pop(1);
 
   return NULL;
 }
 
-/**
- * Create a connection string for connecting to the master database.
- */
+// Create a connection string for connecting to the master database.
 static void SetAdoConnectString(PluginContext* ctx)
 {
   PoolMem ado_connect_string(PM_NAME);
@@ -1048,9 +968,7 @@ static void SetAdoConnectString(PluginContext* ctx)
          p_ctx->server_address, p_ctx->instance);
   }
 
-  /*
-   * See if we need to use a username/password or a trusted connection.
-   */
+  // See if we need to use a username/password or a trusted connection.
   if (p_ctx->username && p_ctx->password) {
     PoolMem temp(PM_NAME);
 
@@ -1077,9 +995,7 @@ static inline void PerformAdoBackup(PluginContext* ctx)
   PoolMem ado_connect_string(PM_NAME), ado_query(PM_NAME);
   POOLMEM* vdsname;
 
-  /*
-   * If no explicit instance name given usedthe DEFAULT_INSTANCE name.
-   */
+  // If no explicit instance name given usedthe DEFAULT_INSTANCE name.
   if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
 
   SetAdoConnectString(ctx);
@@ -1128,9 +1044,7 @@ static inline void perform_aDoRestore(PluginContext* ctx)
   POOLMEM* vdsname;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
-  /*
-   * If no explicit instance name given use the DEFAULT_INSTANCE name.
-   */
+  // If no explicit instance name given use the DEFAULT_INSTANCE name.
   if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
 
   SetAdoConnectString(ctx);
@@ -1155,33 +1069,25 @@ static inline void perform_aDoRestore(PluginContext* ctx)
       break;
   }
 
-  /*
-   * See if we need to insert any stopbeforemark arguments.
-   */
+  // See if we need to insert any stopbeforemark arguments.
   if (p_ctx->stopbeforemark) {
     Mmsg(temp, ", STOPBEFOREMARK = '%s'", p_ctx->stopbeforemark);
     PmStrcat(ado_query, temp.c_str());
   }
 
-  /*
-   * See if we need to insert any stopatmark arguments.
-   */
+  // See if we need to insert any stopatmark arguments.
   if (p_ctx->stopatmark) {
     Mmsg(temp, ", STOPATMARK = '%s'", p_ctx->stopatmark);
     PmStrcat(ado_query, temp.c_str());
   }
 
-  /*
-   * See if we need to insert any stopat arguments.
-   */
+  // See if we need to insert any stopat arguments.
   if (p_ctx->stopat) {
     Mmsg(temp, ", STOPAT = '%s'", p_ctx->stopat);
     PmStrcat(ado_query, temp.c_str());
   }
 
-  /*
-   * See if we need to insert the REPLACE option.
-   */
+  // See if we need to insert the REPLACE option.
   if (p_ctx->ForceReplace) { PmStrcat(ado_query, ", REPLACE"); }
 
   Dmsg(ctx, debuglevel, "perform_aDoRestore: ADO Query '%s'\n",
@@ -1191,9 +1097,7 @@ static inline void perform_aDoRestore(PluginContext* ctx)
   FreePoolMemory(vdsname);
 }
 
-/**
- * Run a query not in a separate thread.
- */
+// Run a query not in a separate thread.
 static inline bool RunAdoQuery(PluginContext* ctx, const char* query)
 {
   bool retval = false;
@@ -1205,9 +1109,7 @@ static inline bool RunAdoQuery(PluginContext* ctx, const char* query)
 
   Dmsg(ctx, debuglevel, "RunAdoQuery: ADO Query '%s'\n", query);
 
-  /*
-   * Create a COM instance for an ActiveX® Data Objects connection.
-   */
+  // Create a COM instance for an ActiveX® Data Objects connection.
   hr = CoCreateInstance(CLSID_CADOConnection, NULL, CLSCTX_INPROC_SERVER,
                         IID_IADOConnection, (void**)&adoConnection);
   if (!SUCCEEDED(hr)) { goto cleanup; }
@@ -1229,9 +1131,7 @@ static inline bool RunAdoQuery(PluginContext* ctx, const char* query)
     goto cleanup;
   }
 
-  /*
-   * Perform the query.
-   */
+  // Perform the query.
   ado_query = str_2_BSTR(query);
   hr = adoConnection->Execute(ado_query, NULL, adExecuteNoRecords, NULL);
   if (!SUCCEEDED(hr)) {
@@ -1266,9 +1166,7 @@ cleanup:
   return retval;
 }
 
-/**
- * Automatically recover the database at the end of the whole restore process.
- */
+// Automatically recover the database at the end of the whole restore process.
 static inline bool PerformAdoRecover(PluginContext* ctx)
 {
   PoolMem recovery_query(PM_NAME);
@@ -1280,9 +1178,7 @@ static inline bool PerformAdoRecover(PluginContext* ctx)
   return RunAdoQuery(ctx, recovery_query.c_str());
 }
 
-/**
- * Setup a VDI device for performing a backup or restore operation.
- */
+// Setup a VDI device for performing a backup or restore operation.
 static inline bool SetupVdiDevice(PluginContext* ctx, struct io_pkt* io)
 {
   int status;
@@ -1302,9 +1198,7 @@ static inline bool SetupVdiDevice(PluginContext* ctx, struct io_pkt* io)
   p_ctx->vdsname = (wchar_t*)malloc((VDS_NAME_LENGTH * sizeof(wchar_t)) + 2);
   StringFromGUID2(vdsId, p_ctx->vdsname, VDS_NAME_LENGTH);
 
-  /*
-   * Get a handle to the device set.
-   */
+  // Get a handle to the device set.
   hr = CoCreateInstance(CLSID_MSSQL_ClientVirtualDeviceSet, NULL,
                         CLSCTX_INPROC_SERVER, IID_IClientVirtualDeviceSet2,
                         (void**)&p_ctx->VDIDeviceSet);
@@ -1313,16 +1207,12 @@ static inline bool SetupVdiDevice(PluginContext* ctx, struct io_pkt* io)
     return false;
   }
 
-  /*
-   * Setup the VDI configuration.
-   */
+  // Setup the VDI configuration.
   memset(&p_ctx->VDIConfig, 0, sizeof(p_ctx->VDIConfig));
   p_ctx->VDIConfig.deviceCount = 1;
   p_ctx->VDIConfig.features = VDF_LikePipe;
 
-  /*
-   * Create the VDI device set.
-   */
+  // Create the VDI device set.
   if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
     hr = p_ctx->VDIDeviceSet->CreateEx(NULL, p_ctx->vdsname, &p_ctx->VDIConfig);
   } else {
@@ -1339,9 +1229,7 @@ static inline bool SetupVdiDevice(PluginContext* ctx, struct io_pkt* io)
     return false;
   }
 
-  /*
-   * Setup the right backup or restore cmdline and connect info.
-   */
+  // Setup the right backup or restore cmdline and connect info.
   if (io->flags & (O_CREAT | O_WRONLY)) {
     perform_aDoRestore(ctx);
   } else {
@@ -1430,14 +1318,10 @@ static inline bool SetupVdiDevice(PluginContext* ctx, struct io_pkt* io)
   return true;
 
 bail_out:
-  /*
-   * Report any COM errors.
-   */
+  // Report any COM errors.
   comReportError(ctx, hr);
 
-  /*
-   * Wait for the adoThread to exit.
-   */
+  // Wait for the adoThread to exit.
   if (p_ctx->AdoThreadStarted) {
     if (!pthread_equal(p_ctx->ADOThread, pthread_self())) {
       pthread_cancel(p_ctx->ADOThread);
@@ -1449,9 +1333,7 @@ bail_out:
   return false;
 }
 
-/**
- * Perform an I/O operation to a file as part of a restore.
- */
+// Perform an I/O operation to a file as part of a restore.
 static inline bool PerformFileIo(PluginContext* ctx,
                                  struct io_pkt* io,
                                  DWORD* completionCode)
@@ -1520,9 +1402,7 @@ bail_out:
   return false;
 }
 
-/**
- * Perform an I/O operation to a virtual device as part of a backup or restore.
- */
+// Perform an I/O operation to a virtual device as part of a backup or restore.
 static inline bool PerformVdiIo(PluginContext* ctx,
                                 struct io_pkt* io,
                                 DWORD* completionCode)
@@ -1531,9 +1411,7 @@ static inline bool PerformVdiIo(PluginContext* ctx,
   VDC_Command* cmd;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
-  /*
-   * See what command is available on the VDIDevice.
-   */
+  // See what command is available on the VDIDevice.
   hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
   if (!SUCCEEDED(hr)) {
     Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n",
@@ -1600,14 +1478,10 @@ static inline bool PerformVdiIo(PluginContext* ctx,
   return true;
 
 bail_out:
-  /*
-   * Report any COM errors.
-   */
+  // Report any COM errors.
   comReportError(ctx, hr);
 
-  /*
-   * Wait for the adoThread to exit.
-   */
+  // Wait for the adoThread to exit.
   if (p_ctx->AdoThreadStarted) {
     if (!pthread_equal(p_ctx->ADOThread, pthread_self())) {
       pthread_cancel(p_ctx->ADOThread);
@@ -1619,9 +1493,7 @@ bail_out:
   return false;
 }
 
-/**
- * End of I/O tear down the VDI and check if everything did go to plan.
- */
+// End of I/O tear down the VDI and check if everything did go to plan.
 static inline bool TearDownVdiDevice(PluginContext* ctx, struct io_pkt* io)
 {
   HRESULT hr = NOERROR;
@@ -1630,9 +1502,7 @@ static inline bool TearDownVdiDevice(PluginContext* ctx, struct io_pkt* io)
 
   Dmsg(ctx, debuglevel, "mssqlvdi-fd: entering TearDownVdiDevice\n");
 
-  /*
-   * Check if the VDI device is closed.
-   */
+  // Check if the VDI device is closed.
   if (p_ctx->VDIDevice) {
     hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT, &cmd);
     if (hr != VD_E_CLOSE) {
@@ -1642,14 +1512,10 @@ static inline bool TearDownVdiDevice(PluginContext* ctx, struct io_pkt* io)
     }
   }
 
-  /*
-   * Close and release the VDIDevice and VDIDeviceSet.
-   */
+  // Close and release the VDIDevice and VDIDeviceSet.
   CloseVdiDeviceset(p_ctx);
 
-  /*
-   * See if there is any error to report from the ADO layer.
-   */
+  // See if there is any error to report from the ADO layer.
   if (p_ctx->AdoThreadStarted) {
     if (adoReportError(ctx)) { goto bail_out; }
   }
@@ -1664,9 +1530,7 @@ static inline bool TearDownVdiDevice(PluginContext* ctx, struct io_pkt* io)
   return true;
 
 bail_out:
-  /*
-   * Report any COM errors.
-   */
+  // Report any COM errors.
   comReportError(ctx, hr);
 
   Dmsg(ctx, debuglevel, "mssqlvdi-fd: leaving TearDownVdiDevice\n");
@@ -1674,9 +1538,7 @@ bail_out:
   return false;
 }
 
-/**
- * Bareos is calling us to do the actual I/O
- */
+// Bareos is calling us to do the actual I/O
 static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
 {
   DWORD completionCode = ERROR_BAD_ENVIRONMENT;
@@ -1726,14 +1588,10 @@ static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
 
 bail_out:
   if (!p_ctx->RestoreToFile) {
-    /*
-     * Report any ADO errors.
-     */
+    // Report any ADO errors.
     adoReportError(ctx);
 
-    /*
-     * Generic error handling.
-     */
+    // Generic error handling.
     CloseVdiDeviceset(p_ctx);
   }
 
@@ -1745,9 +1603,7 @@ bail_out:
   return bRC_Error;
 }
 
-/**
- * See if we need to do any postprocessing after the restore.
- */
+// See if we need to do any postprocessing after the restore.
 static bRC end_restore_job(PluginContext* ctx, void* value)
 {
   bRC retval = bRC_OK;
@@ -1817,9 +1673,7 @@ static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
   return bRC_OK;
 }
 
-/**
- * When using Incremental dump, all previous dumps are necessary
- */
+// When using Incremental dump, all previous dumps are necessary
 static bRC checkFile(PluginContext* ctx, char* fname) { return bRC_OK; }
 
 } /* namespace filedaemon */

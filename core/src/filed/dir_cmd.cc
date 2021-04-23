@@ -778,9 +778,7 @@ static bool CancelCmd(JobControlRecord* jcr)
   return true;
 }
 
-/**
- * Set new authorization key as requested by the Director
- */
+// Set new authorization key as requested by the Director
 static bool SetauthorizationCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -798,9 +796,7 @@ static bool SetauthorizationCmd(JobControlRecord* jcr)
   return dir->fsend(OkAuthorization);
 }
 
-/**
- * Set bandwidth limit as requested by the Director
- */
+// Set bandwidth limit as requested by the Director
 static bool SetbandwidthCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -833,9 +829,7 @@ static bool SetbandwidthCmd(JobControlRecord* jcr)
   return dir->fsend(OKBandwidth);
 }
 
-/**
- * Set debug level as requested by the Director
- */
+// Set debug level as requested by the Director
 static bool SetdebugCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -886,9 +880,7 @@ static bool EstimateCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   char ed1[50], ed2[50];
 
-  /*
-   * See if we are allowed to run estimate cmds.
-   */
+  // See if we are allowed to run estimate cmds.
   if (!ValidateCommand(
           jcr, "estimate",
           (jcr->impl->director && jcr->impl->director->allowed_job_cmds)
@@ -914,9 +906,7 @@ static bool EstimateCmd(JobControlRecord* jcr)
   return true;
 }
 
-/**
- * Get JobId and Storage Daemon Authorization key from Director
- */
+// Get JobId and Storage Daemon Authorization key from Director
 static bool job_cmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -980,9 +970,7 @@ static bool RunbeforeCmd(JobControlRecord* jcr)
   }
   UnbashSpaces(cmd);
 
-  /*
-   * Run the command now
-   */
+  // Run the command now
 
   Dmsg0(500, "runscript: creating new RunScript object\n");
   script = new RunScript;
@@ -1066,9 +1054,7 @@ static bool RunscriptCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   int on_success, on_failure, fail_on_error;
 
-  /*
-   * See if we are allowed to run runscript cmds.
-   */
+  // See if we are allowed to run runscript cmds.
   if (!ValidateCommand(
           jcr, "runscript",
           (jcr->impl->director && jcr->impl->director->allowed_job_cmds)
@@ -1085,9 +1071,7 @@ static bool RunscriptCmd(JobControlRecord* jcr)
 
   Dmsg1(100, "RunscriptCmd: '%s'\n", dir->msg);
 
-  /*
-   * Note, we cannot sscanf into bools
-   */
+  // Note, we cannot sscanf into bools
   if (sscanf(dir->msg, runscriptcmd, &on_success, &on_failure, &fail_on_error,
              &cmd->when, msg)
       != 5) {
@@ -1113,9 +1097,7 @@ static bool RunscriptCmd(JobControlRecord* jcr)
   return dir->fsend(OKRunScript);
 }
 
-/**
- * This passes plugin specific options.
- */
+// This passes plugin specific options.
 static bool PluginoptionsCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -1166,9 +1148,7 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
              &rop.object_full_len, &rop.object_index, &rop.object_type,
              &rop.object_compression, &FileIndex, rop.plugin_name)
       != 8) {
-    /*
-     * Old version, no plugin_name
-     */
+    // Old version, no plugin_name
     if (sscanf(dir->msg, restoreobjcmd1, &rop.JobId, &rop.object_len,
                &rop.object_full_len, &rop.object_index, &rop.object_type,
                &rop.object_compression, &FileIndex)
@@ -1188,28 +1168,20 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
         rop.JobId, rop.object_len, rop.object_full_len, rop.object_index,
         rop.object_type, FileIndex, rop.plugin_name);
 
-  /*
-   * Read Object name
-   */
+  // Read Object name
   if (dir->recv() < 0) { goto bail_out; }
   Dmsg2(100, "Recv Oname object: len=%d Oname=%s\n", dir->message_length,
         dir->msg);
   rop.object_name = strdup(dir->msg);
 
-  /*
-   * Read Object
-   */
+  // Read Object
   if (dir->recv() < 0) { goto bail_out; }
 
-  /*
-   * Transfer object from message buffer, and get new message buffer
-   */
+  // Transfer object from message buffer, and get new message buffer
   rop.object = dir->msg;
   dir->msg = GetPoolMemory(PM_MESSAGE);
 
-  /*
-   * If object is compressed, uncompress it
-   */
+  // If object is compressed, uncompress it
   switch (rop.object_compression) {
     case 1: { /* zlib level 9 */
       int status;
@@ -1239,9 +1211,7 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
   if (debug_level >= 100) {
     PoolMem object_content(PM_MESSAGE);
 
-    /*
-     * Convert the object into a null terminated string.
-     */
+    // Convert the object into a null terminated string.
     object_content.check_size(rop.object_len + 1);
     memset(object_content.c_str(), 0, rop.object_len + 1);
     memcpy(object_content.c_str(), rop.object, rop.object_len);
@@ -1250,9 +1220,7 @@ static bool RestoreObjectCmd(JobControlRecord* jcr)
           object_content.c_str());
   }
 
-  /*
-   * We still need to do this to detect a vss restore
-   */
+  // We still need to do this to detect a vss restore
   if (bstrcmp(rop.object_name, "job_metadata.xml")) {
     Dmsg0(100, "got job metadata\n");
     jcr->impl->got_metadata = true;
@@ -1293,9 +1261,7 @@ static inline int CountIncludeListFileEntries(JobControlRecord* jcr)
 }
 #endif
 
-/**
- * Director is passing his Fileset
- */
+// Director is passing his Fileset
 static bool FilesetCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -1380,15 +1346,11 @@ static bool BootstrapCmd(JobControlRecord* jcr)
     fputs(dir->msg, bs);
   }
   fclose(bs);
-  /*
-   * Note, do not free the bootstrap yet -- it needs to be sent to the SD
-   */
+  // Note, do not free the bootstrap yet -- it needs to be sent to the SD
   return dir->fsend(OKbootstrap);
 }
 
-/**
- * Get backup level from Director
- */
+// Get backup level from Director
 static bool LevelCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -1398,22 +1360,16 @@ static bool LevelCmd(JobControlRecord* jcr)
   level = GetMemory(dir->message_length + 1);
   Dmsg1(10, "LevelCmd: %s", dir->msg);
 
-  /*
-   * Keep compatibility with older directors
-   */
+  // Keep compatibility with older directors
   if (strstr(dir->msg, "accurate")) { jcr->accurate = true; }
   if (strstr(dir->msg, "rerunning")) { jcr->rerunning = true; }
   if (sscanf(dir->msg, "level = %s ", level) != 1) { goto bail_out; }
 
   if (bstrcmp(level, "base")) {
-    /*
-     * Base backup requested
-     */
+    // Base backup requested
     jcr->setJobLevel(L_BASE);
   } else if (bstrcmp(level, "full")) {
-    /*
-     * Full backup requested
-     */
+    // Full backup requested
     jcr->setJobLevel(L_FULL);
   } else if (strstr(level, "differential")) {
     jcr->setJobLevel(L_DIFFERENTIAL);
@@ -1478,9 +1434,7 @@ static bool LevelCmd(JobControlRecord* jcr)
     adj = BtimeToUtime(bt_adj);
     since_time += adj; /* adjust for clock difference */
 
-    /*
-     * Don't notify if time within 3 seconds
-     */
+    // Don't notify if time within 3 seconds
     if (adj > 3 || adj < -3) {
       int type;
       if (adj > 600 || adj < -600) {
@@ -1578,9 +1532,7 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
   Dmsg1(5, "set sd ssl_policy to %d\n", policy);
 }
 
-/**
- * Get address of storage daemon from Director
- */
+// Get address of storage daemon from Director
 static bool StorageCmd(JobControlRecord* jcr)
 {
   int stored_port;      /* storage daemon port */
@@ -1610,9 +1562,7 @@ static bool StorageCmd(JobControlRecord* jcr)
 
   storage_daemon_socket->SetSourceAddress(me->FDsrc_addr);
 
-  /*
-   * TODO: see if we put limit on restore and backup...
-   */
+  // TODO: see if we put limit on restore and backup...
   if (!jcr->max_bandwidth) {
     if (jcr->impl->director->max_bandwidth_per_job) {
       jcr->max_bandwidth = jcr->impl->director->max_bandwidth_per_job;
@@ -1624,9 +1574,7 @@ static bool StorageCmd(JobControlRecord* jcr)
   storage_daemon_socket->SetBwlimit(jcr->max_bandwidth);
   if (me->allow_bw_bursting) { storage_daemon_socket->SetBwlimitBursting(); }
 
-  /*
-   * Open command communications with Storage daemon
-   */
+  // Open command communications with Storage daemon
   if (!storage_daemon_socket->connect(
           jcr, 10, (int)me->SDConnectTimeout, me->heartbeat_interval,
           _("Storage daemon"), stored_addr, nullptr, stored_port, 1)) {
@@ -1664,9 +1612,7 @@ static bool StorageCmd(JobControlRecord* jcr)
   }
   Dmsg0(110, "Authenticated with SD.\n");
 
-  /*
-   * Send OK to Director
-   */
+  // Send OK to Director
   return dir->fsend(OKstore);
 
 bail_out:
@@ -1754,9 +1700,7 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
       for (int j = 0; j < incexe->opts_list.size(); j++) {
         findFOPTS* fo = (findFOPTS*)incexe->opts_list.get(j);
 
-        /*
-         * See if a compression flag is set in this option block.
-         */
+        // See if a compression flag is set in this option block.
         if (BitIsSet(FO_COMPRESS, fo->flags)) {
           switch (fo->Compress_algo) {
 #if defined(HAVE_LIBZ)
@@ -1791,9 +1735,7 @@ static inline void ClearCompressionFlagInFileset(JobControlRecord* jcr)
   }
 }
 
-/**
- * Find out what encryption cipher to use.
- */
+// Find out what encryption cipher to use.
 static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
                                          crypto_cipher_t* cipher)
 {
@@ -1817,18 +1759,14 @@ static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
         if (BitIsSet(FO_FORCE_ENCRYPT, fo->flags)) { force_encrypt = true; }
 
         if (fo->Encryption_cipher != CRYPTO_CIPHER_NONE) {
-          /*
-           * Make sure we have not found a cipher definition before.
-           */
+          // Make sure we have not found a cipher definition before.
           if (wanted_cipher != CRYPTO_CIPHER_NONE) {
             Jmsg(jcr, M_FATAL, 0,
                  _("Fileset contains multiple cipher settings\n"));
             return false;
           }
 
-          /*
-           * See if pki_encrypt is already set for this Job.
-           */
+          // See if pki_encrypt is already set for this Job.
           if (!jcr->impl->crypto.pki_encrypt) {
             if (!me->pki_keypair_file) {
               Jmsg(jcr, M_FATAL, 0,
@@ -1837,9 +1775,7 @@ static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
               return false;
             }
 
-            /*
-             * Enable encryption and signing for this Job.
-             */
+            // Enable encryption and signing for this Job.
             jcr->impl->crypto.pki_sign = true;
             jcr->impl->crypto.pki_encrypt = true;
           }
@@ -1850,9 +1786,7 @@ static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
     }
   }
 
-  /*
-   * See if fileset forced a certain cipher.
-   */
+  // See if fileset forced a certain cipher.
   if (wanted_cipher == CRYPTO_CIPHER_NONE) { wanted_cipher = me->pki_cipher; }
 
   /*
@@ -1876,9 +1810,7 @@ static inline bool GetWantedCryptoCipher(JobControlRecord* jcr,
   return true;
 }
 
-/**
- * Do a backup.
- */
+// Do a backup.
 static bool BackupCmd(JobControlRecord* jcr)
 {
   int ok = 0;
@@ -1899,9 +1831,7 @@ static bool BackupCmd(JobControlRecord* jcr)
     goto cleanup;
   }
 
-  /*
-   * See if we are allowed to run backup cmds.
-   */
+  // See if we are allowed to run backup cmds.
   if (!ValidateCommand(
           jcr, "backup",
           (jcr->impl->director && jcr->impl->director->allowed_job_cmds)
@@ -1966,15 +1896,11 @@ static bool BackupCmd(JobControlRecord* jcr)
   dir->fsend(OKbackup);
   Dmsg1(110, "filed>dird: %s", dir->msg);
 
-  /**
-   * Send Append Open Session to Storage daemon
-   */
+  // Send Append Open Session to Storage daemon
   sd->fsend(append_open);
   Dmsg1(110, ">stored: %s", sd->msg);
 
-  /**
-   * Expect to receive back the Ticket number
-   */
+  // Expect to receive back the Ticket number
   if (BgetMsg(sd) >= 0) {
     Dmsg1(110, "<stored: %s", sd->msg);
     if (sscanf(sd->msg, OK_open, &jcr->impl->Ticket) != 1) {
@@ -1987,15 +1913,11 @@ static bool BackupCmd(JobControlRecord* jcr)
     goto cleanup;
   }
 
-  /**
-   * Send Append data command to Storage daemon
-   */
+  // Send Append data command to Storage daemon
   sd->fsend(append_data, jcr->impl->Ticket);
   Dmsg1(110, ">stored: %s", sd->msg);
 
-  /**
-   * Expect to get OK data
-   */
+  // Expect to get OK data
   if (!response(jcr, sd, OK_data, "Append Data")) {
     Dmsg1(110, "<stored: %s", sd->msg);
     goto cleanup;
@@ -2005,9 +1927,7 @@ static bool BackupCmd(JobControlRecord* jcr)
   GeneratePluginEvent(jcr, bEventStartBackupJob);
 
 #if defined(WIN32_VSS)
-  /*
-   * START VSS ON WIN32
-   */
+  // START VSS ON WIN32
   if (jcr->impl->pVSSClient) {
     if (jcr->impl->pVSSClient->InitializeForBackup(jcr)) {
       int drive_count;
@@ -2016,14 +1936,10 @@ static bool BackupCmd(JobControlRecord* jcr)
 
       GeneratePluginEvent(jcr, bEventVssBackupAddComponents);
 
-      /*
-       * Tell vss which drives to snapshot
-       */
+      // Tell vss which drives to snapshot
       *szWinDriveLetters = 0;
 
-      /*
-       * Plugin driver can return drive letters
-       */
+      // Plugin driver can return drive letters
       GeneratePluginEvent(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
 
       drive_count
@@ -2046,14 +1962,10 @@ static bool BackupCmd(JobControlRecord* jcr)
         } else {
           GeneratePluginEvent(jcr, bEventVssCreateSnapshots);
 
-          /*
-           * Inform about VMPs if we have them
-           */
+          // Inform about VMPs if we have them
           jcr->impl->pVSSClient->ShowVolumeMountPointStats(jcr);
 
-          /*
-           * Tell user if snapshot creation of a specific drive failed
-           */
+          // Tell user if snapshot creation of a specific drive failed
           for (int i = 0; i < (int)strlen(szWinDriveLetters); i++) {
             if (islower(szWinDriveLetters[i])) {
               Jmsg(jcr, M_FATAL, 0,
@@ -2062,9 +1974,7 @@ static bool BackupCmd(JobControlRecord* jcr)
             }
           }
 
-          /*
-           * Inform user about writer states
-           */
+          // Inform user about writer states
           for (size_t i = 0; i < jcr->impl->pVSSClient->GetWriterCount(); i++) {
             if (jcr->impl->pVSSClient->GetWriterState(i) < 1) {
               Jmsg(jcr, M_INFO, 0, _("VSS Writer (PrepareForBackup): %s\n"),
@@ -2091,9 +2001,7 @@ static bool BackupCmd(JobControlRecord* jcr)
   }
 #endif
 
-  /**
-   * Send Files to Storage daemon
-   */
+  // Send Files to Storage daemon
   Dmsg1(110, "begin blast ff=%p\n", (FindFilesPacket*)jcr->impl->ff);
   if (!BlastDataToStorageDaemon(jcr, nullptr, cipher)) {
     jcr->setJobStatus(JS_ErrorTerminated);
@@ -2106,17 +2014,13 @@ static bool BackupCmd(JobControlRecord* jcr)
       BnetSuppressErrorMessages(sd, 1);
       goto cleanup; /* bail out now */
     }
-    /**
-     * Expect to get response to append_data from Storage daemon
-     */
+    // Expect to get response to append_data from Storage daemon
     if (!response(jcr, sd, OK_append, "Append Data")) {
       jcr->setJobStatus(JS_ErrorTerminated);
       goto cleanup;
     }
 
-    /**
-     * Send Append End Data to Storage daemon
-     */
+    // Send Append End Data to Storage daemon
     sd->fsend(append_end, jcr->impl->Ticket);
     /* Get end OK */
     if (!response(jcr, sd, OK_end, "Append End")) {
@@ -2124,9 +2028,7 @@ static bool BackupCmd(JobControlRecord* jcr)
       goto cleanup;
     }
 
-    /**
-     * Send Append Close to Storage daemon
-     */
+    // Send Append Close to Storage daemon
     sd->fsend(append_close, jcr->impl->Ticket);
     while (BgetMsg(sd) >= 0) { /* stop on signal or error */
       if (sscanf(sd->msg, OK_close, &SDJobStatus) == 1) {
@@ -2163,9 +2065,7 @@ static bool VerifyCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   BareosSocket* sd = jcr->store_bsock;
 
-  /*
-   * See if we are allowed to run verify cmds.
-   */
+  // See if we are allowed to run verify cmds.
   if (!ValidateCommand(
           jcr, "verify",
           (jcr->impl->director && jcr->impl->director->allowed_job_cmds)
@@ -2213,9 +2113,7 @@ static bool VerifyCmd(JobControlRecord* jcr)
       StartDirHeartbeat(jcr);
       DoVerifyVolume(jcr);
       StopDirHeartbeat(jcr);
-      /*
-       * Send Close session command to Storage daemon
-       */
+      // Send Close session command to Storage daemon
       sd->fsend(read_close, jcr->impl->Ticket);
       Dmsg1(130, "filed>stored: %s", sd->msg);
 
@@ -2239,9 +2137,7 @@ static bool VerifyCmd(JobControlRecord* jcr)
   return false; /* return and Terminate command loop */
 }
 
-/**
- * Open connection to Director.
- */
+// Open connection to Director.
 static BareosSocket* connect_to_director(JobControlRecord* jcr,
                                          DirectorResource* dir_res,
                                          bool verbose)
@@ -2299,9 +2195,7 @@ static BareosSocket* connect_to_director(JobControlRecord* jcr,
   return director_socket.release();
 }
 
-/**
- * Do a Restore for Director
- */
+// Do a Restore for Director
 static bool RestoreCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
@@ -2323,9 +2217,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * See if we are allowed to run restore cmds.
-   */
+  // See if we are allowed to run restore cmds.
   if (!ValidateCommand(
           jcr, "restore",
           (jcr->impl->director && jcr->impl->director->allowed_job_cmds)
@@ -2336,14 +2228,10 @@ static bool RestoreCmd(JobControlRecord* jcr)
 
   jcr->setJobType(JT_RESTORE);
 
-  /**
-   * Scan WHERE (base directory for restore) from command
-   */
+  // Scan WHERE (base directory for restore) from command
   Dmsg0(100, "restore command\n");
 
-  /*
-   * Pickup where string
-   */
+  // Pickup where string
   args = GetMemory(dir->message_length + 1);
   *args = 0;
 
@@ -2361,25 +2249,19 @@ static bool RestoreCmd(JobControlRecord* jcr)
   }
 
 #if defined(WIN32_VSS)
-  /**
-   * No need to enable VSS for restore if we do not have plugin data to restore
-   */
+  // No need to enable VSS for restore if we do not have plugin data to restore
   jcr->impl->enable_vss = jcr->impl->got_metadata;
 
   if (jcr->impl->enable_vss) { VSSInit(jcr); }
 #endif
 
-  /*
-   * Turn / into nothing
-   */
+  // Turn / into nothing
   if (IsPathSeparator(args[0]) && args[1] == '\0') { args[0] = '\0'; }
 
   Dmsg2(150, "Got replace %c, where=%s\n", replace, args);
   UnbashSpaces(args);
 
-  /*
-   * Keep track of newly created directories to apply them correct attributes
-   */
+  // Keep track of newly created directories to apply them correct attributes
   if (replace == REPLACE_NEVER) { jcr->keep_path_list = true; }
 
   if (use_regexwhere) {
@@ -2409,16 +2291,12 @@ static bool RestoreCmd(JobControlRecord* jcr)
 
   jcr->setJobStatus(JS_Running);
 
-  /**
-   * Do restore of files and data
-   */
+  // Do restore of files and data
   StartDirHeartbeat(jcr);
   GeneratePluginEvent(jcr, bEventStartRestoreJob);
 
 #if defined(WIN32_VSS)
-  /*
-   * START VSS ON WIN32
-   */
+  // START VSS ON WIN32
   if (jcr->impl->pVSSClient) {
     if (!jcr->impl->pVSSClient->InitializeForRestore(jcr)) {
       BErrNo be;
@@ -2446,9 +2324,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
     jcr->setJobStatus(JS_Terminated);
   }
 
-  /**
-   * Send Close session command to Storage daemon
-   */
+  // Send Close session command to Storage daemon
   sd->fsend(read_close, jcr->impl->Ticket);
   Dmsg1(100, "filed>stored: %s", sd->msg);
 
@@ -2470,9 +2346,7 @@ static bool RestoreCmd(JobControlRecord* jcr)
     Dmsg0(100, "Really about to call CloseRestore\n");
     if (jcr->impl->pVSSClient->CloseRestore()) {
       Dmsg0(100, "CloseRestore success\n");
-      /*
-       * Inform user about writer states
-       */
+      // Inform user about writer states
       for (size_t i = 0; i < jcr->impl->pVSSClient->GetWriterCount(); i++) {
         int msg_type = M_INFO;
 
@@ -2531,17 +2405,13 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
   Dmsg4(120, "VolSessId=%ld VolsessT=%ld SF=%ld EF=%ld\n", jcr->VolSessionId,
         jcr->VolSessionTime, jcr->impl->StartFile, jcr->impl->EndFile);
   Dmsg2(120, "JobId=%d vol=%s\n", jcr->JobId, "DummyVolume");
-  /*
-   * Open Read Session with Storage daemon
-   */
+  // Open Read Session with Storage daemon
   sd->fsend(read_open, "DummyVolume", jcr->VolSessionId, jcr->VolSessionTime,
             jcr->impl->StartFile, jcr->impl->EndFile, jcr->impl->StartBlock,
             jcr->impl->EndBlock);
   Dmsg1(110, ">stored: %s", sd->msg);
 
-  /*
-   * Get ticket number
-   */
+  // Get ticket number
   if (BgetMsg(sd) >= 0) {
     Dmsg1(110, "filed<stored: %s", sd->msg);
     if (sscanf(sd->msg, OK_open, &jcr->impl->Ticket) != 1) {
@@ -2554,23 +2424,17 @@ static bool OpenSdReadSession(JobControlRecord* jcr)
     return false;
   }
 
-  /*
-   * Start read of data with Storage daemon
-   */
+  // Start read of data with Storage daemon
   sd->fsend(read_data, jcr->impl->Ticket);
   Dmsg1(110, ">stored: %s", sd->msg);
 
-  /*
-   * Get OK data
-   */
+  // Get OK data
   if (!response(jcr, sd, OK_data, "Read Data")) { return false; }
 
   return true;
 }
 
-/**
- * Destroy the Job Control Record and associated resources (sockets).
- */
+// Destroy the Job Control Record and associated resources (sockets).
 static void FiledFreeJcr(JobControlRecord* jcr)
 {
 #if defined(WIN32_VSS)

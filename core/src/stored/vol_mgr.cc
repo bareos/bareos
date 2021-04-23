@@ -840,9 +840,7 @@ void FreeVolumeLists()
   }
 }
 
-/**
- * Determine if caller can write on volume
- */
+// Determine if caller can write on volume
 bool DeviceControlRecord::Can_i_write_volume()
 {
   VolumeReservationItem* vol;
@@ -856,9 +854,7 @@ bool DeviceControlRecord::Can_i_write_volume()
   return Can_i_use_volume();
 }
 
-/**
- * Determine if caller can read or write volume
- */
+// Determine if caller can read or write volume
 bool DeviceControlRecord::Can_i_use_volume()
 {
   bool rtn = true;
@@ -938,9 +934,7 @@ dlist* dup_vol_list(JobControlRecord* jcr)
   return temp_vol_list;
 }
 
-/**
- * Free the specified temp list.
- */
+// Free the specified temp list.
 void FreeTempVolList(dlist* temp_vol_list)
 {
   FreeVolumeList("temp_vol_list", temp_vol_list);

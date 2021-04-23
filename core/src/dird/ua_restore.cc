@@ -1263,9 +1263,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   char pool_select[MAX_NAME_LENGTH];
   char fileset_name[MAX_NAME_LENGTH];
 
-  /*
-   * Create temp tables
-   */
+  // Create temp tables
   ua->db->SqlQuery(BareosDb::SQL_QUERY::uar_del_temp);
   ua->db->SqlQuery(BareosDb::SQL_QUERY::uar_del_temp1);
 
@@ -1275,15 +1273,11 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
   if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::uar_create_temp1)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
   }
-  /*
-   * Select Client from the Catalog
-   */
+  // Select Client from the Catalog
   if (!GetClientDbr(ua, &cr)) { goto bail_out; }
   rx->ClientName = strdup(cr.Name);
 
-  /*
-   * Get FileSet
-   */
+  // Get FileSet
   i = FindArgWithValue(ua, "FileSet");
 
   if (i >= 0 && IsNameValid(ua->argv[i], ua->errmsg)) {
@@ -1322,9 +1316,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     }
   }
 
-  /*
-   * If Pool specified, add PoolId specification
-   */
+  // If Pool specified, add PoolId specification
   pool_select[0] = 0;
   if (rx->pool) {
     PoolDbRecord pr;
@@ -1337,9 +1329,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     }
   }
 
-  /*
-   * Find JobId of last Full backup for this client, fileset
-   */
+  // Find JobId of last Full backup for this client, fileset
   if (pool_select[0]) {
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_last_full,
                       edit_int64(cr.ClientId, ed1), date, fsr.FileSet,
@@ -1359,9 +1349,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     }
   }
 
-  /*
-   * Find all Volumes used by that JobId
-   */
+  // Find all Volumes used by that JobId
   if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::uar_full)) {
     ua->ErrorMsg("%s\n", ua->db->strerror());
     goto bail_out;
@@ -1381,9 +1369,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     goto bail_out;
   }
 
-  /*
-   * Now find most recent Differential Job after Full save, if any
-   */
+  // Now find most recent Differential Job after Full save, if any
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_dif,
                     edit_uint64(rx->JobTDate, ed1), date,
                     edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
@@ -1391,9 +1377,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
 
-  /*
-   * Now update JobTDate to look into Differential, if any
-   */
+  // Now update JobTDate to look into Differential, if any
   rx->JobTDate = 0;
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_all_temp);
   if (!ua->db->SqlQuery(rx->query, LastFullHandler, (void*)rx)) {
@@ -1404,9 +1388,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     goto bail_out;
   }
 
-  /*
-   * Now find all Incremental Jobs after Full/dif save
-   */
+  // Now find all Incremental Jobs after Full/dif save
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_inc,
                     edit_uint64(rx->JobTDate, ed1), date,
                     edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
@@ -1414,9 +1396,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
     ua->WarningMsg("%s\n", ua->db->strerror());
   }
 
-  /*
-   * Get the JobIds from that list
-   */
+  // Get the JobIds from that list
   rx->last_jobid[0] = rx->JobIds[0] = 0;
 
   ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_sel_jobid_temp);
@@ -1426,9 +1406,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
 
   if (rx->JobIds[0] != 0) {
     if (FindArg(ua, NT_("copies")) > 0) {
-      /*
-       * Display a list of all copies
-       */
+      // Display a list of all copies
       ua->db->ListCopiesRecords(ua->jcr, "", rx->JobIds, ua->send, HORZ_LIST);
 
       if (FindArg(ua, NT_("yes")) > 0) {
@@ -1455,9 +1433,7 @@ static bool SelectBackupsBeforeDate(UaContext* ua,
       }
     }
 
-    /*
-     * Display a list of Jobs selected for this restore
-     */
+    // Display a list of Jobs selected for this restore
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_list_jobs_by_idlist,
                       rx->JobIds);
     ua->db->ListSqlQuery(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
@@ -1501,9 +1477,7 @@ static int JobidFileindexHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/**
- * Callback handler make list of JobIds
- */
+// Callback handler make list of JobIds
 static int JobidHandler(void* ctx, int num_fields, char** row)
 {
   RestoreContext* rx = (RestoreContext*)ctx;
@@ -1515,9 +1489,7 @@ static int JobidHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/**
- * Callback handler to pickup last Full backup JobTDate
- */
+// Callback handler to pickup last Full backup JobTDate
 static int LastFullHandler(void* ctx, int num_fields, char** row)
 {
   RestoreContext* rx = (RestoreContext*)ctx;
@@ -1526,9 +1498,7 @@ static int LastFullHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/**
- * Callback handler build FileSet name prompt list
- */
+// Callback handler build FileSet name prompt list
 static int FilesetHandler(void* ctx, int num_fields, char** row)
 {
   /* row[0] = FileSet (name) */
@@ -1536,9 +1506,7 @@ static int FilesetHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-/**
- * Free names in the list
- */
+// Free names in the list
 static void FreeNameList(NameList* name_list)
 {
   int i;
@@ -1560,9 +1528,7 @@ void FindStorageResource(UaContext* ua,
     Dmsg1(200, "Already have store=%s\n", rx.store->resource_name_);
     return;
   }
-  /*
-   * Try looking up Storage by name
-   */
+  // Try looking up Storage by name
   LockRes(my_config);
   foreach_res (store, R_STORAGE) {
     if (bstrcmp(Storage, store->resource_name_)) {
@@ -1577,9 +1543,7 @@ void FindStorageResource(UaContext* ua,
   if (rx.store) {
     int i;
 
-    /*
-     * Check if an explicit storage resource is given
-     */
+    // Check if an explicit storage resource is given
     store = NULL;
     i = FindArgWithValue(ua, "storage");
     if (i > 0) { store = ua->GetStoreResWithName(ua->argv[i]); }
@@ -1593,9 +1557,7 @@ void FindStorageResource(UaContext* ua,
     return;
   }
 
-  /*
-   * If no storage resource, try to find one from MediaType
-   */
+  // If no storage resource, try to find one from MediaType
   if (!rx.store) {
     LockRes(my_config);
     foreach_res (store, R_STORAGE) {
@@ -1622,9 +1584,7 @@ void FindStorageResource(UaContext* ua,
                    MediaType);
   }
 
-  /*
-   * Take command line arg, or ask user if none
-   */
+  // Take command line arg, or ask user if none
   rx.store = get_storage_resource(ua);
   if (rx.store) { Dmsg1(200, "Set store=%s\n", rx.store->resource_name_); }
 }

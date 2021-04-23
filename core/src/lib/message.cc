@@ -1240,9 +1240,7 @@ void e_msg(const char* file,
   }
 }
 
-/*
- * Generate a Job message
- */
+// Generate a Job message
 void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 {
   va_list ap;
@@ -1270,9 +1268,7 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
     return;
   }
 
-  /*
-   * The watchdog thread can't use Jmsg directly, we always queued it
-   */
+  // The watchdog thread can't use Jmsg directly, we always queued it
   if (IsWatchdog()) {
     while (1) {
       maxlen = buf.MaxSize() - 1;
@@ -1296,9 +1292,7 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
   if (!jcr) { jcr = GetJcrFromThreadSpecificData(); }
 
   if (jcr) {
-    /*
-     * Dequeue messages to keep the original order
-     */
+    // Dequeue messages to keep the original order
     if (!jcr->dequeuing_msgs) { /* Avoid recursion */
       DequeueMessages(jcr);
     }
@@ -1407,9 +1401,7 @@ void j_msg(const char* file,
   Jmsg(jcr, type, mtime, "%s", buf.c_str());
 }
 
-/*
- * Edit a message into a Pool memory buffer, with file:lineno
- */
+// Edit a message into a Pool memory buffer, with file:lineno
 int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...)
 {
   va_list ap;
@@ -1574,25 +1566,19 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 
   if (!jcr) { jcr = GetJcrFromThreadSpecificData(); }
 
-  /*
-   * If no jcr  or no JobId or no queue or dequeuing send to syslog
-   */
+  // If no jcr  or no JobId or no queue or dequeuing send to syslog
   if (!jcr || !jcr->JobId || !jcr->msg_queue || jcr->dequeuing_msgs) {
     syslog(LOG_DAEMON | LOG_ERR, "%s", item->msg_.c_str());
     free(item);
   } else {
-    /*
-     * Queue message for later sending
-     */
+    // Queue message for later sending
     P(jcr->msg_queue_mutex);
     jcr->msg_queue->append(item);
     V(jcr->msg_queue_mutex);
   }
 }
 
-/*
- * Dequeue messages
- */
+// Dequeue messages
 void DequeueMessages(JobControlRecord* jcr)
 {
   MessageQueueItem* item;
@@ -1605,9 +1591,7 @@ void DequeueMessages(JobControlRecord* jcr)
     Jmsg(jcr, item->type_, item->mtime_, "%s", item->msg_.c_str());
   }
 
-  /*
-   * Remove messages just sent
-   */
+  // Remove messages just sent
   jcr->msg_queue->destroy();
   jcr->dequeuing_msgs = false;
   V(jcr->msg_queue_mutex);
@@ -1649,9 +1633,7 @@ void q_msg(const char* file,
   Qmsg(jcr, type, mtime, "%s", buf.c_str());
 }
 
-/*
- * Set gobal date format used for log messages.
- */
+// Set gobal date format used for log messages.
 void SetLogTimestampFormat(const char* format)
 {
   log_timestamp_format = format;

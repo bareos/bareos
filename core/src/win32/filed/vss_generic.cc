@@ -578,9 +578,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
       }
     }
 
-    /*
-     * 3. GatherWriterMetaData
-     */
+    // 3. GatherWriterMetaData
     hr = pVssObj->GatherWriterMetadata(&pAsync1.p);
     if (FAILED(hr)) {
       Dmsg1(0,
@@ -592,26 +590,18 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
       return false;
     }
 
-    /*
-     * Wait for the async operation to finish and checks the result
-     */
+    // Wait for the async operation to finish and checks the result
     if (!WaitAndCheckForAsyncOperation(pAsync1.p)) {
-      /*
-       * Error message already printed
-       */
+      // Error message already printed
       errno = b_errno_win32;
       return false;
     }
   }
 
-  /*
-   * We are during restore now?
-   */
+  // We are during restore now?
   bDuringRestore_ = bDuringRestore;
 
-  /*
-   * Keep the context
-   */
+  // Keep the context
   dwContext_ = dwContext;
 
   return true;
@@ -638,9 +628,7 @@ bool VSSClientGeneric::WaitAndCheckForAsyncOperation(IVssAsync* pAsync)
     if (FAILED(hr)) { queryErrors++; }
   } while ((timeout-- > 0) && (hrReturned == VSS_S_ASYNC_PENDING));
 
-  /*
-   * Check the result of the asynchronous operation
-   */
+  // Check the result of the asynchronous operation
   if (hrReturned == VSS_S_ASYNC_FINISHED) { return true; }
 
   JmsgVssApiStatus(jcr_, M_FATAL, hr,
@@ -649,9 +637,7 @@ bool VSSClientGeneric::WaitAndCheckForAsyncOperation(IVssAsync* pAsync)
   return false;
 }
 
-/*
- * Add all drive letters that need to be snapshotted.
- */
+// Add all drive letters that need to be snapshotted.
 void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents* pVssObj,
                                          char* szDriveLetters,
                                          bool onefs_disabled)
@@ -672,9 +658,7 @@ void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents* pVssObj,
     szDrive[0] = szDriveLetters[i];
     volume = GetUniqueVolumeNameForPath(szDrive);
 
-    /*
-     * Store uniquevolumname.
-     */
+    // Store uniquevolumname.
 
     if (SUCCEEDED(pVssObj->AddToSnapshotSet((LPWSTR)volume.c_str(), GUID_NULL,
                                             &pid))) {
@@ -724,26 +708,18 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(
 
   hMount = FindFirstVolumeMountPoint(path, mp, len);
   if (hMount != INVALID_HANDLE_VALUE) {
-    /*
-     * Count number of vmps.
-     */
+    // Count number of vmps.
     VMPs += 1;
     if (HandleVolumeMountPoint(this, pVssObj, path, mp)) {
-      /*
-       * Count vmps that were snapshotted
-       */
+      // Count vmps that were snapshotted
       VMP_snapshots += 1;
     }
 
     while ((b = FindNextVolumeMountPoint(hMount, mp, len))) {
-      /*
-       * Count number of vmps.
-       */
+      // Count number of vmps.
       VMPs += 1;
       if (HandleVolumeMountPoint(this, pVssObj, path, mp)) {
-        /*
-         * Count vmps that were snapshotted
-         */
+        // Count vmps that were snapshotted
         VMP_snapshots += 1;
       }
     }
@@ -787,9 +763,7 @@ bool VSSClientGeneric::CreateSnapshots(char* szDriveLetters,
 
   pVssObj = (IVssBackupComponents*)pVssObject_;
 
-  /*
-   * startSnapshotSet
-   */
+  // startSnapshotSet
   hr = pVssObj->StartSnapshotSet(&uidCurrentSnapshotSet_);
   while ((unsigned)hr == VSS_E_SNAPSHOT_SET_IN_PROGRESS) {
     Bmicrosleep(5, 0);
@@ -803,16 +777,12 @@ bool VSSClientGeneric::CreateSnapshots(char* szDriveLetters,
     return false;
   }
 
-  /*
-   * AddToSnapshotSet
-   */
+  // AddToSnapshotSet
   if (szDriveLetters) {
     AddDriveSnapshots(pVssObj, szDriveLetters, onefs_disabled);
   }
 
-  /*
-   * PrepareForBackup
-   */
+  // PrepareForBackup
   GeneratePluginEvent(jcr_, bEventVssPrepareSnapshot);
   hr = pVssObj->PrepareForBackup(&pAsync1.p);
   if (FAILED(hr)) {
@@ -821,25 +791,19 @@ bool VSSClientGeneric::CreateSnapshots(char* szDriveLetters,
     return false;
   }
 
-  /*
-   * Wait for the async operation to finish and checks the result.
-   */
+  // Wait for the async operation to finish and checks the result.
   if (!WaitAndCheckForAsyncOperation(pAsync1.p)) {
     errno = b_errno_win32;
     return false;
   }
 
-  /*
-   * Get latest info about writer status.
-   */
+  // Get latest info about writer status.
   if (!CheckWriterStatus()) {
     errno = b_errno_win32; /* Error already printed */
     return false;
   }
 
-  /*
-   * DoSnapShotSet
-   */
+  // DoSnapShotSet
   hr = pVssObj->DoSnapshotSet(&pAsync2.p);
   if (FAILED(hr)) {
     JmsgVssApiStatus(jcr_, M_FATAL, hr, "DoSnapshotSet");
@@ -847,25 +811,19 @@ bool VSSClientGeneric::CreateSnapshots(char* szDriveLetters,
     return false;
   }
 
-  /*
-   * Waits for the async operation to finish and checks the result.
-   */
+  // Waits for the async operation to finish and checks the result.
   if (!WaitAndCheckForAsyncOperation(pAsync2.p)) {
     errno = b_errno_win32;
     return false;
   }
 
-  /*
-   * Get latest info about writer status.
-   */
+  // Get latest info about writer status.
   if (!CheckWriterStatus()) {
     errno = b_errno_win32; /* Error already printed */
     return false;
   }
 
-  /*
-   * Query snapshot info.
-   */
+  // Query snapshot info.
   QuerySnapshotSet(uidCurrentSnapshotSet_);
 
   bBackupIsInitialized_ = true;
@@ -891,9 +849,7 @@ bool VSSClientGeneric::CloseBackup()
 
   hr = pVssObj->BackupComplete(&pAsync.p);
   if (SUCCEEDED(hr)) {
-    /*
-     * Wait for the async operation to finish and checks the result.
-     */
+    // Wait for the async operation to finish and checks the result.
     WaitAndCheckForAsyncOperation(pAsync.p);
     bRet = true;
   } else {
@@ -902,9 +858,7 @@ bool VSSClientGeneric::CloseBackup()
     pVssObj->AbortBackup();
   }
 
-  /*
-   * Get latest info about writer status.
-   */
+  // Get latest info about writer status.
   CheckWriterStatus();
 
   hr = pVssObj->SaveAsXML(&xml);
@@ -937,9 +891,7 @@ bool VSSClientGeneric::CloseBackup()
   pVssObj->Release();
   pVssObject_ = NULL;
 
-  /*
-   * Call CoUninitialize if the CoInitializeEx was performed sucesfully
-   */
+  // Call CoUninitialize if the CoInitializeEx was performed sucesfully
   if (bCoInitializeCalled_) {
     CoUninitialize();
     bCoInitializeCalled_ = false;
@@ -962,9 +914,7 @@ bool VSSClientGeneric::CloseRestore()
   return true;
 }
 
-/*
- * Query all the shadow copies in the given set
- */
+// Query all the shadow copies in the given set
 void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
 {
   if (!(CreateVssBackupComponents_ && VssFreeSnapshotProperties_)) {
@@ -985,43 +935,31 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
 
   IVssBackupComponents* pVssObj = (IVssBackupComponents*)pVssObject_;
 
-  /*
-   * Get list all shadow copies.
-   */
+  // Get list all shadow copies.
   CComPtr<IVssEnumObject> pIEnumSnapshots;
   HRESULT hr = pVssObj->Query(GUID_NULL, VSS_OBJECT_NONE, VSS_OBJECT_SNAPSHOT,
                               (IVssEnumObject**)(&pIEnumSnapshots));
 
-  /*
-   * If there are no shadow copies, just return
-   */
+  // If there are no shadow copies, just return
   if (FAILED(hr)) {
     Jmsg(jcr_, M_FATAL, 0, "No Volume Shadow copies made.\n");
     errno = b_errno_win32;
     return;
   }
 
-  /*
-   * Enumerate all shadow copies.
-   */
+  // Enumerate all shadow copies.
   VSS_OBJECT_PROP Prop;
   VSS_SNAPSHOT_PROP& Snap = Prop.Obj.Snap;
 
   while (true) {
-    /*
-     * Get the next element
-     */
+    // Get the next element
     ULONG ulFetched;
     hr = (pIEnumSnapshots.p)->Next(1, &Prop, &ulFetched);
 
-    /*
-     * We reached the end of list
-     */
+    // We reached the end of list
     if (ulFetched == 0) break;
 
-    /*
-     * Print the shadow copy (if not filtered out)
-     */
+    // Print the shadow copy (if not filtered out)
     if (Snap.m_SnapshotSetId == snapshotSetID) {
       for (int ch = 'A' - 'A'; ch <= 'Z' - 'A'; ch++) {
         if (wcscmp(Snap.m_pwszOriginalVolumeName, wszUniqueVolumeName_[ch])
@@ -1037,9 +975,7 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
   errno = 0;
 }
 
-/*
- * Check the status for all selected writers
- */
+// Check the status for all selected writers
 bool VSSClientGeneric::CheckWriterStatus()
 {
   /*
@@ -1059,9 +995,7 @@ bool VSSClientGeneric::CheckWriterStatus()
     pVssObj->FreeWriterStatus();
   }
 
-  /*
-   * Gather writer status to detect potential errors
-   */
+  // Gather writer status to detect potential errors
   CComPtr<IVssAsync> pAsync;
 
   HRESULT hr = pVssObj->GatherWriterStatus(&pAsync.p);
@@ -1071,9 +1005,7 @@ bool VSSClientGeneric::CheckWriterStatus()
     return false;
   }
 
-  /*
-   * Waits for the async operation to finish and checks the result
-   */
+  // Waits for the async operation to finish and checks the result
   if (!WaitAndCheckForAsyncOperation(pAsync.p)) {
     errno = b_errno_win32;
     return false;
@@ -1093,9 +1025,7 @@ bool VSSClientGeneric::CheckWriterStatus()
   int nState;
   POOLMEM* szBuf = GetPoolMemory(PM_FNAME);
 
-  /*
-   * Enumerate each writer
-   */
+  // Enumerate each writer
   for (unsigned iWriter = 0; iWriter < cWriters; iWriter++) {
     VSS_ID idInstance = GUID_NULL;
     VSS_ID idWriter = GUID_NULL;
@@ -1103,16 +1033,12 @@ bool VSSClientGeneric::CheckWriterStatus()
     CComBSTR bstrWriterName;
     HRESULT hrWriterFailure = S_OK;
 
-    /*
-     * Get writer status
-     */
+    // Get writer status
     hr = pVssObj->GetWriterStatus(iWriter, &idInstance, &idWriter,
                                   &bstrWriterName, &eWriterStatus,
                                   &hrWriterFailure);
     if (FAILED(hr)) {
-      /*
-       * Api failed
-       */
+      // Api failed
       JmsgVssApiStatus(jcr_, M_WARNING, hr, "GetWriterStatus");
       nState = 0; /* Unknown writer state -- API failed */
     } else {
@@ -1129,9 +1055,7 @@ bool VSSClientGeneric::CheckWriterStatus()
 #  if defined(B_VSS_W2K3) || defined(B_VSS_VISTA)
         case VSS_WS_FAILED_AT_BACKUPSHUTDOWN:
 #  endif
-          /*
-           * Writer status problem
-           */
+          // Writer status problem
           wchar_2_UTF8(szBuf, bstrWriterName.p);
           JmsgVssWriterStatus(jcr_, M_WARNING, eWriterStatus, szBuf);
           nState = -1; /* bad writer state */
@@ -1141,9 +1065,7 @@ bool VSSClientGeneric::CheckWriterStatus()
       }
     }
 
-    /*
-     * store text info
-     */
+    // store text info
     char str[1000];
     bstrncpy(str, "\"", sizeof(str));
     wchar_2_UTF8(szBuf, bstrWriterName.p);

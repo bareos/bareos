@@ -550,16 +550,12 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         return bRC_Error;
       }
 
-      /*
-       * Strip the newline.
-       */
+      // Strip the newline.
       StripTrailingJunk(p_ctx->next_filename);
       Dmsg(ctx, debuglevel, "gfapi-fd: Processing glusterfind entry %s\n",
            p_ctx->next_filename);
 
-      /*
-       * Lookup mapping to see what type of entry we are processing.
-       */
+      // Lookup mapping to see what type of entry we are processing.
       gf_mapping = find_glustermap_eventtype(p_ctx->next_filename);
       if (!gf_mapping) {
         Dmsg(ctx, debuglevel, "gfapi-fd: Unknown glusterfind entry %s\n",
@@ -570,9 +566,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
       switch (gf_mapping->type) {
         case gf_type_new:
         case gf_type_modify:
-          /*
-           * NEW and MODIFY just means we need to backup the file.
-           */
+          // NEW and MODIFY just means we need to backup the file.
           bstrinlinecpy(p_ctx->next_filename,
                         p_ctx->next_filename + gf_mapping->compare_size);
           UrllibUnquotePlus(p_ctx->next_filename);
@@ -600,9 +594,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
           UrllibUnquotePlus(p_ctx->next_filename);
           break;
         case gf_type_delete:
-          /*
-           * DELETE means we clear the seen bitmap for this file and continue.
-           */
+          // DELETE means we clear the seen bitmap for this file and continue.
           if (p_ctx->is_accurate) {
             bstrinlinecpy(p_ctx->next_filename,
                           p_ctx->next_filename + gf_mapping->compare_size);
@@ -619,9 +611,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
           continue;
       }
 
-      /*
-       * If we have a basename we should filter on that.
-       */
+      // If we have a basename we should filter on that.
       if (p_ctx->basedir
           && !bstrncmp(p_ctx->basedir, p_ctx->next_filename,
                        strlen(p_ctx->basedir))) {
@@ -667,9 +657,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
       entry = glfs_readdirplus(p_ctx->gdir, &p_ctx->statp);
 #endif
 
-      /*
-       * No more entries in this directory ?
-       */
+      // No more entries in this directory ?
       if (!entry) {
         status = glfs_stat(p_ctx->glfs, p_ctx->cwd, &p_ctx->statp);
         if (status != 0) {
@@ -692,9 +680,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         return bRC_More;
       }
 
-      /*
-       * Skip `.', `..', and excluded file names.
-       */
+      // Skip `.', `..', and excluded file names.
       if (entry->d_name[0] == '\0'
           || (entry->d_name[0] == '.'
               && (entry->d_name[1] == '\0'
@@ -705,9 +691,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
       Mmsg(p_ctx->next_filename, "%s/%s", p_ctx->cwd, entry->d_name);
     }
 
-    /*
-     * Determine the FileType.
-     */
+    // Determine the FileType.
     switch (p_ctx->statp.st_mode & S_IFMT) {
       case S_IFREG:
         p_ctx->type = FT_REG;
@@ -757,9 +741,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         return bRC_Error;
     }
 
-    /*
-     * See if we accept this file under the currently loaded fileset.
-     */
+    // See if we accept this file under the currently loaded fileset.
     memset(&sp, 0, sizeof(sp));
     sp.pkt_size = sizeof(sp);
     sp.pkt_end = sizeof(sp);
@@ -774,9 +756,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
       continue;
     }
 
-    /*
-     * If we made it here we have the next file to backup.
-     */
+    // If we made it here we have the next file to backup.
     break;
   }
 
@@ -786,17 +766,13 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
   return bRC_More;
 }
 
-/**
- * Start the backup of a specific file
- */
+// Start the backup of a specific file
 static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
 {
   int status;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
-  /*
-   * Save the current flags used to save the next file.
-   */
+  // Save the current flags used to save the next file.
   CopyBits(FO_MAX, sp->flags, p_ctx->flags);
 
   switch (p_ctx->type) {
@@ -811,9 +787,7 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
        */
       if (p_ctx->crawl_fs
           && (!p_ctx->gdir || !BitIsSet(FO_NO_RECURSION, p_ctx->flags))) {
-        /*
-         * Change into the directory and process all entries in it.
-         */
+        // Change into the directory and process all entries in it.
         status = glfs_chdir(p_ctx->glfs, p_ctx->next_filename);
         if (status != 0) {
           BErrNo be;
@@ -836,9 +810,7 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
             p_ctx->dir_stack->push(new_entry);
           }
 
-          /*
-           * Open this directory for processing.
-           */
+          // Open this directory for processing.
           p_ctx->gdir = glfs_opendir(p_ctx->glfs, ".");
           if (!p_ctx->gdir) {
             BErrNo be;
@@ -847,9 +819,7 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
                  p_ctx->next_filename, be.bstrerror());
             p_ctx->type = FT_NOOPEN;
 
-            /*
-             * Pop the previous directory handle and continue processing that.
-             */
+            // Pop the previous directory handle and continue processing that.
             if (!p_ctx->dir_stack->empty()) {
               struct dir_stack_entry* entry;
 
@@ -866,9 +836,7 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
         }
       }
 
-      /*
-       * No link target and read the actual content.
-       */
+      // No link target and read the actual content.
       sp->link = NULL;
       sp->no_read = true;
       break;
@@ -882,9 +850,7 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
       sp->no_read = true;
       break;
     case FT_LNK:
-      /*
-       * Link target and don't read the actual content.
-       */
+      // Link target and don't read the actual content.
       sp->link = p_ctx->link_target;
       sp->no_read = true;
       break;
@@ -893,16 +859,12 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
     case FT_SPEC:
     case FT_RAW:
     case FT_FIFO:
-      /*
-       * No link target and read the actual content.
-       */
+      // No link target and read the actual content.
       sp->link = NULL;
       sp->no_read = false;
       break;
     default:
-      /*
-       * No link target and don't read the actual content.
-       */
+      // No link target and don't read the actual content.
       sp->link = NULL;
       sp->no_read = true;
       break;
@@ -975,18 +937,14 @@ static bRC startBackupFile(PluginContext* ctx, struct save_pkt* sp)
   return bRC_OK;
 }
 
-/**
- * Done with backup of this file
- */
+// Done with backup of this file
 static bRC endBackupFile(PluginContext* ctx)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
   if (!p_ctx) { return bRC_Error; }
 
-  /*
-   * See if we need to fix the utimes.
-   */
+  // See if we need to fix the utimes.
   if (BitIsSet(FO_NOATIME, p_ctx->flags)) {
     struct timespec times[2];
 
@@ -1001,9 +959,7 @@ static bRC endBackupFile(PluginContext* ctx)
   return get_next_file_to_backup(ctx);
 }
 
-/**
- * Strip any backslashes in the string.
- */
+// Strip any backslashes in the string.
 static inline void StripBackSlashes(char* value)
 {
   char* bp;
@@ -1022,9 +978,7 @@ static inline void StripBackSlashes(char* value)
   }
 }
 
-/**
- * Only set destination to value when it has no previous setting.
- */
+// Only set destination to value when it has no previous setting.
 static inline void SetStringIfNull(char** destination, char* value)
 {
   if (!*destination) {
@@ -1033,9 +987,7 @@ static inline void SetStringIfNull(char** destination, char* value)
   }
 }
 
-/**
- * Always set destination to value and clean any previous one.
- */
+// Always set destination to value and clean any previous one.
 static inline void SetString(char** destination, char* value)
 {
   if (*destination) { free(*destination); }
@@ -1070,14 +1022,10 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     free(p_ctx->plugin_definition);
   }
 
-  /*
-   * Keep track of the last processed plugin definition.
-   */
+  // Keep track of the last processed plugin definition.
   p_ctx->plugin_definition = strdup((char*)value);
 
-  /*
-   * Keep overrides passed in via pluginoptions.
-   */
+  // Keep overrides passed in via pluginoptions.
   keep_existing = (p_ctx->plugin_options) ? true : false;
 
   /*
@@ -1095,9 +1043,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     goto bail_out;
   }
 
-  /*
-   * Skip the first ':'
-   */
+  // Skip the first ':'
   bp++;
   while (bp) {
     if (strlen(bp) == 0) { break; }
@@ -1120,9 +1066,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     }
     *argument_value++ = '\0';
 
-    /*
-     * See if there are more arguments and setup for the next run.
-     */
+    // See if there are more arguments and setup for the next run.
     bp = argument_value;
     do {
       bp = strchr(bp, ':');
@@ -1154,9 +1098,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
             break;
         }
 
-        /*
-         * Keep the first value, ignore any next setting.
-         */
+        // Keep the first value, ignore any next setting.
         if (str_destination) {
           if (keep_existing) {
             SetStringIfNull(str_destination, argument_value);
@@ -1165,16 +1107,12 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
           }
         }
 
-        /*
-         * When we have a match break the loop.
-         */
+        // When we have a match break the loop.
         break;
       }
     }
 
-    /*
-     * Got an invalid keyword ?
-     */
+    // Got an invalid keyword ?
     if (!plugin_arguments[i].name) {
       Jmsg(ctx, M_FATAL,
            "gfapi-fd: Illegal argument %s with value %s in plugin definition\n",
@@ -1195,9 +1133,7 @@ bail_out:
   return bRC_Error;
 }
 
-/**
- * Create a parent directory using the gfapi.
- */
+// Create a parent directory using the gfapi.
 static inline bool GfapiMakedirs(plugin_ctx* p_ctx, const char* directory)
 {
   int len;
@@ -1209,9 +1145,7 @@ static inline bool GfapiMakedirs(plugin_ctx* p_ctx, const char* directory)
   PmStrcpy(new_directory, directory);
   len = strlen(new_directory.c_str());
 
-  /*
-   * Strip any trailing slashes.
-   */
+  // Strip any trailing slashes.
   for (char* p = new_directory.c_str() + (len - 1);
        (p >= new_directory.c_str()) && *p == '/'; p--) {
     *p = '\0';
@@ -1219,23 +1153,17 @@ static inline bool GfapiMakedirs(plugin_ctx* p_ctx, const char* directory)
 
   if (strlen(new_directory.c_str())
       && glfs_stat(p_ctx->glfs, new_directory.c_str(), &st) != 0) {
-    /*
-     * See if the parent exists.
-     */
+    // See if the parent exists.
     switch (errno) {
       case ENOENT:
         bp = strrchr(new_directory.c_str(), '/');
         if (bp) {
-          /*
-           * Make sure our parent exists.
-           */
+          // Make sure our parent exists.
           *bp = '\0';
           retval = GfapiMakedirs(p_ctx, new_directory.c_str());
           if (!retval) { return false; }
 
-          /*
-           * Create the directory.
-           */
+          // Create the directory.
           if (glfs_mkdir(p_ctx->glfs, directory, 0750) == 0) {
             if (!p_ctx->path_list) { p_ctx->path_list = path_list_init(); }
             PathListAdd(p_ctx->path_list, strlen(directory), directory);
@@ -1305,14 +1233,10 @@ static inline bool parse_gfapi_devicename(char* devicename,
 {
   char* bp;
 
-  /*
-   * Make sure its a URI that starts with gluster.
-   */
+  // Make sure its a URI that starts with gluster.
   if (!bstrncasecmp(devicename, "gluster", 7)) { return false; }
 
-  /*
-   * Parse any explicit protocol.
-   */
+  // Parse any explicit protocol.
   bp = strchr(devicename, '+');
   if (bp) {
     *transport = ++bp;
@@ -1328,23 +1252,15 @@ static inline bool parse_gfapi_devicename(char* devicename,
     if (!bp) { goto bail_out; }
   }
 
-  /*
-   * When protocol is not UNIX parse servername and portnr.
-   */
+  // When protocol is not UNIX parse servername and portnr.
   if (!*transport || !Bstrcasecmp(*transport, "unix")) {
-    /*
-     * Parse servername of gluster management server.
-     */
+    // Parse servername of gluster management server.
     bp = strchr(bp, '/');
 
-    /*
-     * Validate URI.
-     */
+    // Validate URI.
     if (!bp || *(bp + 1) != '/') { goto bail_out; }
 
-    /*
-     * Skip the two //
-     */
+    // Skip the two //
     *bp++ = '\0';
     bp++;
     *servername = bp;
@@ -1367,9 +1283,7 @@ static inline bool parse_gfapi_devicename(char* devicename,
       *serverport = str_to_int64(port);
       *volumename = bp;
 
-      /*
-       * See if there is a dir specified.
-       */
+      // See if there is a dir specified.
       bp = strchr(bp, '/');
       if (bp) {
         *bp++ = '\0';
@@ -1379,9 +1293,7 @@ static inline bool parse_gfapi_devicename(char* devicename,
       *serverport = 0;
       bp = *servername;
 
-      /*
-       * Parse the volume name.
-       */
+      // Parse the volume name.
       bp = strchr(bp, '/');
       if (!bp) { goto bail_out; }
       *bp++ = '\0';
@@ -1405,40 +1317,28 @@ static inline bool parse_gfapi_devicename(char* devicename,
       }
     }
   } else {
-    /*
-     * For UNIX serverport is zero.
-     */
+    // For UNIX serverport is zero.
     *serverport = 0;
 
-    /*
-     * Validate URI.
-     */
+    // Validate URI.
     if (*bp != '/' || *(bp + 1) != '/') { goto bail_out; }
 
-    /*
-     * Skip the two //
-     */
+    // Skip the two //
     *bp++ = '\0';
     bp++;
 
-    /*
-     * For UNIX URIs the server part of the URI needs to be empty.
-     */
+    // For UNIX URIs the server part of the URI needs to be empty.
     if (*bp++ != '/') { goto bail_out; }
     *volumename = bp;
 
-    /*
-     * See if there is a dir specified.
-     */
+    // See if there is a dir specified.
     bp = strchr(bp, '/');
     if (bp) {
       *bp++ = '\0';
       *dir = bp;
     }
 
-    /*
-     * Parse any socket parameters.
-     */
+    // Parse any socket parameters.
     bp = strchr(bp, '?');
     if (bp) {
       if (bstrncasecmp(bp + 1, "socket=", 7)) {
@@ -1454,9 +1354,7 @@ bail_out:
   return false;
 }
 
-/**
- * Open a volume using GFAPI.
- */
+// Open a volume using GFAPI.
 static bRC connect_to_gluster(PluginContext* ctx, bool is_backup)
 {
   int status;
@@ -1513,9 +1411,7 @@ bail_out:
   return bRC_Error;
 }
 
-/**
- * Generic setup for performing a backup.
- */
+// Generic setup for performing a backup.
 static bRC setup_backup(PluginContext* ctx, void* value)
 {
   bRC retval = bRC_Error;
@@ -1541,9 +1437,7 @@ static bRC setup_backup(PluginContext* ctx, void* value)
   if (p_ctx->gf_file_list) {
     int accurate;
 
-    /*
-     * Get the setting for accurate for this Job.
-     */
+    // Get the setting for accurate for this Job.
     bareos_core_functions->getBareosValue(ctx, bVarAccurate, (void*)&accurate);
     if (accurate) { p_ctx->is_accurate = true; }
 
@@ -1654,9 +1548,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Generic setup for performing a restore.
- */
+// Generic setup for performing a restore.
 static bRC setup_restore(PluginContext* ctx, void* value)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -1675,9 +1567,7 @@ static bRC setup_restore(PluginContext* ctx, void* value)
   return connect_to_gluster(ctx, false);
 }
 
-/**
- * Bareos is calling us to do the actual I/O
- */
+// Bareos is calling us to do the actual I/O
 static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -1764,9 +1654,7 @@ bail_out:
   return bRC_Error;
 }
 
-/**
- * See if we need to do any postprocessing after the restore.
- */
+// See if we need to do any postprocessing after the restore.
 static bRC end_restore_job(PluginContext* ctx, void* value)
 {
   bRC retval = bRC_OK;
@@ -1814,9 +1702,7 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
 
   if (!p_ctx) { return bRC_Error; }
 
-  /*
-   * See if the file already exists.
-   */
+  // See if the file already exists.
   Dmsg(ctx, 400, "gfapi-fd: Replace=%c %d\n", (char)rp->replace, rp->replace);
   status = glfs_lstat(p_ctx->glfs, rp->ofname, &st);
   if (status == 0) {
@@ -1840,9 +1726,7 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
         }
         break;
       case REPLACE_NEVER:
-        /*
-         * Set attributes if we created this directory
-         */
+        // Set attributes if we created this directory
         if (rp->type == FT_DIREND
             && PathListLookup(p_ctx->path_list, rp->ofname)) {
           break;
@@ -1862,9 +1746,7 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
     case FT_SPEC: /* Fifo, ... to be backed up */
     case FT_REGE: /* Empty file */
     case FT_REG:  /* Regular file */
-      /*
-       * See if file already exists then we need to unlink it.
-       */
+      // See if file already exists then we need to unlink it.
       if (exists) {
         Dmsg(ctx, 400, "gfapi-fd: unlink %s\n", rp->ofname);
         status = glfs_unlink(p_ctx->glfs, rp->ofname);
@@ -1875,14 +1757,10 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
                _("gfapi-fd: File %s already exists and could not be replaced. "
                  "ERR=%s.\n"),
                rp->ofname, be.bstrerror());
-          /*
-           * Continue despite error
-           */
+          // Continue despite error
         }
       } else {
-        /*
-         * File doesn't exist see if we need to create the parent directory.
-         */
+        // File doesn't exist see if we need to create the parent directory.
         PoolMem parent_dir(PM_FNAME);
         char* bp;
 
@@ -1899,9 +1777,7 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
         }
       }
 
-      /*
-       * See if we need to perform anything special for the restore file type.
-       */
+      // See if we need to perform anything special for the restore file type.
       switch (rp->type) {
         case FT_LNKSAVED:
           status = glfs_link(p_ctx->glfs, rp->olname, rp->ofname);
@@ -1979,9 +1855,7 @@ static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
 
   if (!p_ctx) { return bRC_Error; }
 
-  /*
-   * Restore uid and gid.
-   */
+  // Restore uid and gid.
   status = glfs_lchown(p_ctx->glfs, rp->ofname, rp->statp.st_uid,
                        rp->statp.st_gid);
   if (status != 0) {
@@ -1992,9 +1866,7 @@ static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
     return bRC_Error;
   }
 
-  /*
-   * Restore mode.
-   */
+  // Restore mode.
   status = glfs_chmod(p_ctx->glfs, rp->ofname, rp->statp.st_mode);
   if (status != 0) {
     BErrNo be;
@@ -2004,9 +1876,7 @@ static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
     return bRC_Error;
   }
 
-  /*
-   * Restore access and modification times.
-   */
+  // Restore access and modification times.
   times[0].tv_sec = rp->statp.st_atime;
   times[0].tv_nsec = 0;
   times[1].tv_sec = rp->statp.st_mtime;
@@ -2024,9 +1894,7 @@ static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
   return bRC_OK;
 }
 
-/**
- * When using Incremental dump, all previous dumps are necessary
- */
+// When using Incremental dump, all previous dumps are necessary
 static bRC checkFile(PluginContext* ctx, char* fname)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -2036,9 +1904,7 @@ static bRC checkFile(PluginContext* ctx, char* fname)
   return bRC_OK;
 }
 
-/**
- * Acls are saved using extended attributes.
- */
+// Acls are saved using extended attributes.
 static const char* xattr_acl_skiplist[3]
     = {"system.posix_acl_access", "system.posix_acl_default", NULL};
 
@@ -2063,15 +1929,11 @@ static inline uint32_t serialize_acl_stream(PoolMem* buf,
   buffer = buf->c_str() + offset;
   SerBegin(buffer, expected_serialize_len + 10);
 
-  /*
-   * Encode the ACL name including the \0
-   */
+  // Encode the ACL name including the \0
   ser_uint32(acl_name_length + 1);
   SerBytes(acl_name, acl_name_length + 1);
 
-  /*
-   * Encode the actual ACL data as stored as XATTR.
-   */
+  // Encode the actual ACL data as stored as XATTR.
   ser_uint32(xattr_value_length);
   SerBytes(xattr_value, xattr_value_length);
 
@@ -2126,9 +1988,7 @@ static bRC getAcl(PluginContext* ctx, acl_pkt* ap)
             break;
 #endif
           case ERANGE:
-            /*
-             * Not enough room in buffer double its size and retry.
-             */
+            // Not enough room in buffer double its size and retry.
             xattr_value.check_size(current_size * 2);
             continue;
           default:
@@ -2138,9 +1998,7 @@ static bRC getAcl(PluginContext* ctx, acl_pkt* ap)
         }
       }
 
-      /*
-       * Retrieved the xattr so break the loop.
-       */
+      // Retrieved the xattr so break the loop.
       break;
     }
 
@@ -2148,9 +2006,7 @@ static bRC getAcl(PluginContext* ctx, acl_pkt* ap)
 
     if (skip_xattr) { continue; }
 
-    /*
-     * Serialize the data.
-     */
+    // Serialize the data.
     expected_serialize_len
         = strlen(xattr_acl_skiplist[cnt]) + xattr_value_length + 4;
     content_length = serialize_acl_stream(
@@ -2184,17 +2040,13 @@ static bRC setAcl(PluginContext* ctx, acl_pkt* ap)
   while (UnserLength(ap->content) < ap->content_length) {
     unser_uint32(acl_name_length);
 
-    /*
-     * Decode the ACL name including the \0
-     */
+    // Decode the ACL name including the \0
     acl_name.check_size(acl_name_length);
     UnserBytes(acl_name.c_str(), acl_name_length);
 
     unser_uint32(xattr_value_length);
 
-    /*
-     * Decode the actual ACL data as stored as XATTR.
-     */
+    // Decode the actual ACL data as stored as XATTR.
     xattr_value.check_size(xattr_value_length);
     UnserBytes(xattr_value.c_str(), xattr_value_length);
 
@@ -2225,9 +2077,7 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
 
   if (!p_ctx) { return bRC_Error; }
 
-  /*
-   * See if we need to retrieve the xattr list.
-   */
+  // See if we need to retrieve the xattr list.
   if (!p_ctx->processing_xattr) {
     while (1) {
       current_size = SizeofPoolMemory(p_ctx->xattr_list);
@@ -2247,9 +2097,7 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
             return bRC_OK;
 #endif
           case ERANGE:
-            /*
-             * Not enough room in buffer double its size and retry.
-             */
+            // Not enough room in buffer double its size and retry.
             p_ctx->xattr_list
                 = CheckPoolMemorySize(p_ctx->xattr_list, current_size * 2);
             continue;
@@ -2259,15 +2107,11 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
             return bRC_Error;
         }
       } else if (status == 0) {
-        /*
-         * Nothing to do.
-         */
+        // Nothing to do.
         return bRC_OK;
       }
 
-      /*
-       * Retrieved the xattr list so break the loop.
-       */
+      // Retrieved the xattr list so break the loop.
       break;
     }
 
@@ -2331,9 +2175,7 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
             break;
 #endif
           case ERANGE:
-            /*
-             * Not enough room in buffer double its size and retry.
-             */
+            // Not enough room in buffer double its size and retry.
             xattr_value.check_size(current_size * 2);
             continue;
           default:
@@ -2343,14 +2185,10 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
         }
       }
 
-      /*
-       * Retrieved the xattr so break the loop.
-       */
+      // Retrieved the xattr so break the loop.
       break;
     } else {
-      /*
-       * No data to retrieve so break the loop.
-       */
+      // No data to retrieve so break the loop.
       break;
     }
   }
@@ -2363,9 +2201,7 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
     xp->value_length = xattr_value_length;
   }
 
-  /*
-   * See if there are more xattr to process.
-   */
+  // See if there are more xattr to process.
   bp = strchr(p_ctx->next_xattr_name, '\0');
   if (bp) {
     bp++;
@@ -2375,9 +2211,7 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
     }
   }
 
-  /*
-   * No more reset processing_xattr flag.
-   */
+  // No more reset processing_xattr flag.
   p_ctx->processing_xattr = false;
   return bRC_OK;
 }

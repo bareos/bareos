@@ -534,15 +534,11 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
   checkName:
     if (!IsVolumeNameLegal(ua, ua->cmd)) { continue; }
 
-    /*
-     * Search by Media name so set VolumeName and clear MediaId.
-     */
+    // Search by Media name so set VolumeName and clear MediaId.
     mr.MediaId = 0;
     bstrncpy(mr.VolumeName, ua->cmd, sizeof(mr.VolumeName));
 
-    /*
-     * If VolBytes are zero the Volume is not labeled
-     */
+    // If VolBytes are zero the Volume is not labeled
     if (ua->db->GetMediaRecord(ua->jcr, &mr)) {
       if (mr.VolBytes != 0) {
         ua->ErrorMsg(_("Media record for new Volume \"%s\" already exists.\n"),
@@ -554,9 +550,7 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
     break; /* Got it */
   }
 
-  /*
-   * If autochanger, request slot
-   */
+  // If autochanger, request slot
   i = FindArgWithValue(ua, "slot");
   if (i >= 0) {
     mr.Slot = atoi(ua->argv[i]);
@@ -572,17 +566,13 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
 
   bstrncpy(mr.MediaType, store.store->media_type, sizeof(mr.MediaType));
 
-  /*
-   * Must select Pool if not already done
-   */
+  // Must select Pool if not already done
   if (pr.PoolId == 0) {
     pr = PoolDbRecord{};
     if (!SelectPoolDbr(ua, &pr)) { return 1; }
   }
 
-  /*
-   * See if we need to generate a new passphrase for hardware encryption.
-   */
+  // See if we need to generate a new passphrase for hardware encryption.
   if (label_encrypt) {
     ua->InfoMsg(_("Generating new hardware encryption key\n"));
     if (!GenerateNewEncryptionKey(ua, &mr)) { return 1; }
@@ -593,18 +583,14 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
   if (ok) {
     sd = ua->jcr->store_bsock;
     if (relabel) {
-      /*
-       * Delete the old media record
-       */
+      // Delete the old media record
       if (!ua->db->DeleteMediaRecord(ua->jcr, &omr)) {
         ua->ErrorMsg(_("Delete of Volume \"%s\" failed. ERR=%s"),
                      omr.VolumeName, ua->db->strerror());
       } else {
         ua->InfoMsg(_("Old volume \"%s\" deleted from catalog.\n"),
                     omr.VolumeName);
-        /*
-         * Update the number of Volumes in the pool
-         */
+        // Update the number of Volumes in the pool
         pr.NumVols--;
         if (!ua->db->UpdatePoolRecord(ua->jcr, &pr)) {
           ua->ErrorMsg("%s", ua->db->strerror());
@@ -650,9 +636,7 @@ static int do_label(UaContext* ua, const char* cmd, bool relabel)
     ua->InfoMsg(_("Do not forget to mount the drive!!!\n"));
   }
 
-  /*
-   * close socket opened by native_send_label_request()
-   */
+  // close socket opened by native_send_label_request()
   CloseSdBsock(ua);
 
   return 1;
@@ -688,9 +672,7 @@ bool IsVolumeNameLegal(UaContext* ua, const char* name)
     return 0;
   }
 
-  /*
-   * Restrict the characters permitted in the Volume name
-   */
+  // Restrict the characters permitted in the Volume name
   for (p = name; *p; p++) {
     if (B_ISALPHA(*p) || B_ISDIGIT(*p) || strchr(accept, (int)(*p))) {
       continue;

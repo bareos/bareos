@@ -514,9 +514,7 @@ extern "C" void* jobq_server(void* arg)
         }
 
         if (!AcquireResources(jcr)) {
-          /*
-           * If resource conflict, job is canceled
-           */
+          // If resource conflict, job is canceled
           if (!JobCanceled(jcr)) {
             je = jn; /* point to next waiting job */
             continue;
@@ -538,17 +536,13 @@ extern "C" void* jobq_server(void* arg)
 
     Dmsg0(2300, "Done checking wait queue.\n");
 
-    /*
-     * If no more ready work and we are asked to quit, then do it
-     */
+    // If no more ready work and we are asked to quit, then do it
     if (jq->ready_jobs->empty() && jq->quit) {
       jq->num_workers--;
       if (jq->num_workers == 0) {
         Dmsg0(2300, "Wake up destroy routine\n");
 
-        /*
-         * Wake up destroy routine if he is waiting
-         */
+        // Wake up destroy routine if he is waiting
         pthread_cond_broadcast(&jq->work);
       }
       break;
@@ -556,9 +550,7 @@ extern "C" void* jobq_server(void* arg)
 
     Dmsg0(2300, "Check for work request\n");
 
-    /*
-     * If no more work requests, and we waited long enough, quit
-     */
+    // If no more work requests, and we waited long enough, quit
     Dmsg2(2300, "timedout=%d read empty=%d\n", timedout,
           jq->ready_jobs->empty());
 
@@ -580,9 +572,7 @@ extern "C" void* jobq_server(void* arg)
       Bmicrosleep(2, 0); /* pause for 2 seconds */
       P(jq->mutex);
 
-      /*
-       * Recompute work as something may have changed in last 2 secs
-       */
+      // Recompute work as something may have changed in last 2 secs
       work = !jq->ready_jobs->empty() || !jq->waiting_jobs->empty();
     }
     Dmsg1(2300, "Loop again. work=%d\n", work);
@@ -595,32 +585,22 @@ extern "C" void* jobq_server(void* arg)
   return NULL;
 }
 
-/**
- * Returns true if cleanup done and we should look for more work
- */
+// Returns true if cleanup done and we should look for more work
 static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
 {
   bool resched = false, retval = false;
 
-  /*
-   * Reschedule the job if requested and possible
-   */
+  // Reschedule the job if requested and possible
 
-  /*
-   * Basic condition is that more reschedule times remain
-   */
+  // Basic condition is that more reschedule times remain
   if (jcr->impl->res.job->RescheduleTimes == 0
       || jcr->impl->reschedule_count < jcr->impl->res.job->RescheduleTimes) {
     resched =
-        /*
-         * Check for incomplete jobs
-         */
+        // Check for incomplete jobs
         (jcr->impl->res.job->RescheduleIncompleteJobs && jcr->IsIncomplete()
          && jcr->is_JobType(JT_BACKUP) && !jcr->is_JobLevel(L_BASE))
         ||
-        /*
-         * Check for failed jobs
-         */
+        // Check for failed jobs
         (jcr->impl->res.job->RescheduleOnError && !jcr->IsTerminatedOk()
          && !jcr->is_JobStatus(JS_Canceled) && jcr->is_JobType(JT_BACKUP));
   }
@@ -731,9 +711,7 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
  */
 static bool AcquireResources(JobControlRecord* jcr)
 {
-  /*
-   * Set that we didn't acquire any resourse locks yet.
-   */
+  // Set that we didn't acquire any resourse locks yet.
   jcr->impl->acquired_resource_locks = false;
 
   /*
@@ -785,9 +763,7 @@ static bool AcquireResources(JobControlRecord* jcr)
   }
 
   if (!IncClientConcurrency(jcr)) {
-    /*
-     * Back out previous locks
-     */
+    // Back out previous locks
     DecWriteStore(jcr);
     DecReadStore(jcr);
     jcr->setJobStatus(JS_WaitClientRes);
@@ -796,9 +772,7 @@ static bool AcquireResources(JobControlRecord* jcr)
   }
 
   if (!IncJobConcurrency(jcr)) {
-    /*
-     * Back out previous locks
-     */
+    // Back out previous locks
     DecWriteStore(jcr);
     DecReadStore(jcr);
     DecClientConcurrency(jcr);

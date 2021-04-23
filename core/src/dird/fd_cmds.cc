@@ -1207,14 +1207,10 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
 {
   BareosSocket* fd;
 
-  /*
-   * Connect to File daemon
-   */
+  // Connect to File daemon
   ua->jcr->impl->res.client = client;
 
-  /*
-   * Try to connect for 15 seconds
-   */
+  // Try to connect for 15 seconds
   if (!ua->api) {
     ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
                 client->address, client->FDport);
@@ -1249,21 +1245,15 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
   return;
 }
 
-/**
- * resolve a host on a filedaemon
- */
+// resolve a host on a filedaemon
 void DoClientResolve(UaContext* ua, ClientResource* client)
 {
   BareosSocket* fd;
 
-  /*
-   * Connect to File daemon
-   */
+  // Connect to File daemon
   ua->jcr->impl->res.client = client;
 
-  /*
-   * Try to connect for 15 seconds
-   */
+  // Try to connect for 15 seconds
   if (!ua->api) {
     ua->SendMsg(_("Connecting to Client %s at %s:%d\n"), client->resource_name_,
                 client->address, client->FDport);

@@ -646,9 +646,7 @@ static storagedaemon::BootStrapRecord* store_voladdr(
     if (!bsr->voladdr) {
       bsr->voladdr = voladdr;
     } else {
-      /*
-       * Add to end of chain
-       */
+      // Add to end of chain
       storagedaemon::BsrVolumeAddress* bs = bsr->voladdr;
       for (; bs->next; bs = bs->next) {}
       bs->next = voladdr;
@@ -675,15 +673,11 @@ static storagedaemon::BootStrapRecord* store_sessid(
     sid->sessid = lc->u.pint32_val;
     sid->sessid2 = lc->u2.pint32_val;
 
-    /*
-     * Add it to the end of the chain
-     */
+    // Add it to the end of the chain
     if (!bsr->sessid) {
       bsr->sessid = sid;
     } else {
-      /*
-       * Add to end of chain
-       */
+      // Add to end of chain
       storagedaemon::BsrSessionId* bs = bsr->sessid;
       for (; bs->next; bs = bs->next) {}
       bs->next = sid;
@@ -709,15 +703,11 @@ static storagedaemon::BootStrapRecord* store_sesstime(
     memset(stime, 0, sizeof(storagedaemon::BsrSessionTime));
     stime->sesstime = lc->u.pint32_val;
 
-    /*
-     * Add it to the end of the chain
-     */
+    // Add it to the end of the chain
     if (!bsr->sesstime) {
       bsr->sesstime = stime;
     } else {
-      /*
-       * Add to end of chain
-       */
+      // Add to end of chain
       storagedaemon::BsrSessionTime* bs = bsr->sesstime;
       for (; bs->next; bs = bs->next) {}
       bs->next = stime;
@@ -743,15 +733,11 @@ static storagedaemon::BootStrapRecord* store_stream(
     memset(stream, 0, sizeof(storagedaemon::BsrStream));
     stream->stream = lc->u.int32_val;
 
-    /*
-     * Add it to the end of the chain
-     */
+    // Add it to the end of the chain
     if (!bsr->stream) {
       bsr->stream = stream;
     } else {
-      /*
-       * Add to end of chain
-       */
+      // Add to end of chain
       storagedaemon::BsrStream* bs = bsr->stream;
       for (; bs->next; bs = bs->next) {}
       bs->next = stream;
@@ -928,9 +914,7 @@ void DumpBsr(storagedaemon::BootStrapRecord* bsr, bool recurse)
   debug_level = save_debug;
 }
 
-/*
- * Free bsr resources
- */
+// Free bsr resources
 static inline void FreeBsrItem(storagedaemon::BootStrapRecord* bsr)
 {
   if (bsr) {
@@ -939,9 +923,7 @@ static inline void FreeBsrItem(storagedaemon::BootStrapRecord* bsr)
   }
 }
 
-/*
- * Remove a single item from the bsr tree
- */
+// Remove a single item from the bsr tree
 static inline void RemoveBsr(storagedaemon::BootStrapRecord* bsr)
 {
   FreeBsrItem((storagedaemon::BootStrapRecord*)bsr->volume);
@@ -967,9 +949,7 @@ static inline void RemoveBsr(storagedaemon::BootStrapRecord* bsr)
   free(bsr);
 }
 
-/*
- * Free all bsrs in chain
- */
+// Free all bsrs in chain
 void FreeBsr(storagedaemon::BootStrapRecord* bsr)
 {
   storagedaemon::BootStrapRecord* next_bsr;
@@ -977,14 +957,10 @@ void FreeBsr(storagedaemon::BootStrapRecord* bsr)
   if (!bsr) { return; }
   next_bsr = bsr->next;
 
-  /*
-   * Remove (free) current bsr
-   */
+  // Remove (free) current bsr
   RemoveBsr(bsr);
 
-  /*
-   * Now get the next one
-   */
+  // Now get the next one
   FreeBsr(next_bsr);
 }
 

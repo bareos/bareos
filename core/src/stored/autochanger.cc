@@ -721,9 +721,7 @@ bool AutochangerCmd(DeviceControlRecord* dcr,
                               dcr->device_resource->changer_command, cmd);
   dir->fsend(_("3306 Issuing autochanger \"%s\" command.\n"), cmd);
 
-  /*
-   * Now issue the command
-   */
+  // Now issue the command
 retry_changercmd:
   bpipe = OpenBpipe(changer, timeout, "r");
   if (!bpipe) {
@@ -732,9 +730,7 @@ retry_changercmd:
   }
 
   if (bstrcmp(cmd, "list") || bstrcmp(cmd, "listall")) {
-    /*
-     * Get output from changer
-     */
+    // Get output from changer
     while (fgets(dir->msg, len, bpipe->rfd)) {
       dir->message_length = strlen(dir->msg);
       Dmsg1(100, "<stored: %s", dir->msg);
@@ -744,21 +740,15 @@ retry_changercmd:
     slot_number_t slots;
     char buf[100], *p;
 
-    /*
-     * For slots command, read a single line
-     */
+    // For slots command, read a single line
     buf[0] = 0;
     fgets(buf, sizeof(buf) - 1, bpipe->rfd);
     buf[sizeof(buf) - 1] = 0;
 
-    /*
-     * Strip any leading space in front of # of slots
-     */
+    // Strip any leading space in front of # of slots
     for (p = buf; B_ISSPACE(*p); p++) {}
 
-    /*
-     * Validate slot count. If slots == 0 retry retries more times.
-     */
+    // Validate slot count. If slots == 0 retry retries more times.
     slots = str_to_uint16(p);
     if (slots == 0 && retries-- >= 0) {
       CloseBpipe(bpipe);
@@ -812,18 +802,14 @@ bool AutochangerTransferCmd(DeviceControlRecord* dcr,
                                        "transfer", src_slot, dst_slot);
   dir->fsend(_("3306 Issuing autochanger transfer command.\n"));
 
-  /*
-   * Now issue the command
-   */
+  // Now issue the command
   bpipe = OpenBpipe(changer, timeout, "r");
   if (!bpipe) {
     dir->fsend(_("3996 Open bpipe failed.\n"));
     goto bail_out; /* TODO: check if we need to return false */
   }
 
-  /*
-   * Get output from changer
-   */
+  // Get output from changer
   while (fgets(dir->msg, len, bpipe->rfd)) {
     dir->message_length = strlen(dir->msg);
     Dmsg1(100, "<stored: %s\n", dir->msg);

@@ -388,16 +388,12 @@ bool DoNdmpBackup(JobControlRecord* jcr)
       // Destroy the session.
       ndma_session_destroy(&ndmp_sess);
 
-      /*
-       * Free the param block.
-       */
+      // Free the param block.
       free(ndmp_sess.param->log_tag);
       free(ndmp_sess.param);
       ndmp_sess.param = NULL;
 
-      /*
-       * Reset the initialized state so we don't try to cleanup again.
-       */
+      // Reset the initialized state so we don't try to cleanup again.
       session_initialized = false;
 
       cnt++;
@@ -407,9 +403,7 @@ bool DoNdmpBackup(JobControlRecord* jcr)
   status = JS_Terminated;
   retval = true;
 
-  /*
-   * Tell the storage daemon we are done.
-   */
+  // Tell the storage daemon we are done.
   if (jcr->store_bsock) {
     jcr->store_bsock->fsend("finish");
     WaitForStorageDaemonTermination(jcr);
@@ -425,15 +419,11 @@ bool DoNdmpBackup(JobControlRecord* jcr)
    */
   if (jcr->JobFiles < cnt) { jcr->JobFiles = cnt; }
 
-  /*
-   * Jump to the generic cleanup done for every Job.
-   */
+  // Jump to the generic cleanup done for every Job.
   goto ok_out;
 
 cleanup:
-  /*
-   * Only need to cleanup when things are initialized.
-   */
+  // Only need to cleanup when things are initialized.
   if (session_initialized) {
     ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
     ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
@@ -445,9 +435,7 @@ cleanup:
 
     UnregisterCallbackHooks(&ndmp_sess.control_acb->job.index_log);
 
-    /*
-     * Destroy the session.
-     */
+    // Destroy the session.
     ndma_session_destroy(&ndmp_sess);
   }
 
@@ -457,9 +445,7 @@ cleanup:
   }
 
 bail_out:
-  /*
-   * Error handling of failed Job.
-   */
+  // Error handling of failed Job.
   status = JS_ErrorTerminated;
   jcr->setJobStatus(JS_ErrorTerminated);
 

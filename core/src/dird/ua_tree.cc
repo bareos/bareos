@@ -769,9 +769,7 @@ static inline void ls_output(guid_list* guid,
       time = statp->st_mtime;
     }
 
-    /*
-     * Display most recent time
-     */
+    // Display most recent time
     encode_time(time, time_str);
 
     Mmsg(buf, "%s  %2d %d (%-.8s) %d (%-.8s)  %12.12s  %s %c %s", mode_str,
@@ -783,9 +781,7 @@ static inline void ls_output(guid_list* guid,
   }
 }
 
-/**
- * Like ls command, but give more detail on each file
- */
+// Like ls command, but give more detail on each file
 static int DoDircmd(UaContext* ua, TreeContext* tree, bool dot_cmd)
 {
   TREE_NODE* node;
@@ -881,9 +877,7 @@ static int Estimatecmd(UaContext* ua, TreeContext* tree)
     if (node->type != TN_NEWDIR) {
       total++;
       if (node->extract && node->type == TN_FILE) {
-        /*
-         * If regular file, get size
-         */
+        // If regular file, get size
         num_extract++;
         cwd = tree_getpath(node);
 
@@ -901,9 +895,7 @@ static int Estimatecmd(UaContext* ua, TreeContext* tree)
 
         FreePoolMemory(cwd);
       } else if (node->extract || node->extract_dir) {
-        /*
-         * Directory, count only
-         */
+        // Directory, count only
         num_extract++;
       }
     }
@@ -919,9 +911,7 @@ static int HelpCmd(UaContext* ua, TreeContext* tree)
 
   ua->SendMsg(_("  Command    Description\n  =======    ===========\n"));
   for (i = 0; i < comsize; i++) {
-    /*
-     * List only non-dot commands
-     */
+    // List only non-dot commands
     if (commands[i].key[0] != '.') {
       ua->SendMsg("  %-10s %s\n", _(commands[i].key), _(commands[i].help));
     }
@@ -948,9 +938,7 @@ static int cdcmd(UaContext* ua, TreeContext* tree)
 
   node = tree_cwd(ua->argk[1], tree->root, tree->node);
   if (!node) {
-    /*
-     * Try once more if Win32 drive -- make absolute
-     */
+    // Try once more if Win32 drive -- make absolute
     if (ua->argk[1][1] == ':') { /* win32 drive */
       cwd = GetPoolMemory(PM_FNAME);
       PmStrcpy(cwd, "/");
@@ -1013,30 +1001,22 @@ static int Unmarkcmd(UaContext* ua, TreeContext* tree)
     return 1;
   }
 
-  /*
-   * Save the current CWD.
-   */
+  // Save the current CWD.
   cwd = tree_getpath(tree->node);
 
   for (int i = 1; i < ua->argc; i++) {
     StripTrailingSlash(ua->argk[i]);
 
-    /*
-     * See if this is a full path.
-     */
+    // See if this is a full path.
     if (strchr(ua->argk[i], '/')) {
       int pnl, fnl;
       POOLMEM* file = GetPoolMemory(PM_FNAME);
       POOLMEM* path = GetPoolMemory(PM_FNAME);
 
-      /*
-       * Split the argument into a path and file part.
-       */
+      // Split the argument into a path and file part.
       SplitPathAndFilename(ua->argk[i], path, &pnl, file, &fnl);
 
-      /*
-       * First change the CWD to the correct PATH.
-       */
+      // First change the CWD to the correct PATH.
       node = tree_cwd(path, tree->root, tree->node);
       if (!node) {
         ua->WarningMsg(_("Invalid path %s given.\n"), path);
@@ -1056,9 +1036,7 @@ static int Unmarkcmd(UaContext* ua, TreeContext* tree)
       FreePoolMemory(file);
       FreePoolMemory(path);
     } else {
-      /*
-       * Only a pattern without a / so do things relative to CWD.
-       */
+      // Only a pattern without a / so do things relative to CWD.
       foreach_child (node, tree->node) {
         if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
           count += SetExtract(ua, node, tree, false);
@@ -1076,9 +1054,7 @@ static int Unmarkcmd(UaContext* ua, TreeContext* tree)
     ua->SendMsg(_("%s files unmarked.\n"), edit_uint64_with_commas(count, ed1));
   }
 
-  /*
-   * Restore the CWD when we changed it.
-   */
+  // Restore the CWD when we changed it.
   if (restore_cwd && cwd) {
     node = tree_cwd(cwd, tree->root, tree->node);
     if (!node) {

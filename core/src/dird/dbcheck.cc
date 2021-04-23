@@ -787,9 +787,7 @@ static void repair_bad_filenames()
       if (!db->SqlQuery(buf, GetNameHandler, name)) {
         printf("%s\n", db->strerror());
       }
-      /*
-       * Strip trailing slash(es)
-       */
+      // Strip trailing slash(es)
       for (len = strlen(name); len > 0 && IsPathSeparator(name[len - 1]);
            len--) {}
       if (len == 0) {
@@ -847,15 +845,11 @@ static void repair_bad_paths()
       if (!db->SqlQuery(buf, GetNameHandler, name)) {
         printf("%s\n", db->strerror());
       }
-      /*
-       * Strip trailing blanks
-       */
+      // Strip trailing blanks
       for (len = strlen(name); len > 0 && name[len - 1] == ' '; len--) {
         name[len - 1] = 0;
       }
-      /*
-       * Add trailing slash
-       */
+      // Add trailing slash
       len = PmStrcat(name, "/");
       db->EscapeString(NULL, esc_name, name, len);
       Bsnprintf(buf, sizeof(buf), "UPDATE Path SET Path='%s' WHERE PathId=%s",
@@ -926,9 +920,7 @@ static void do_interactive_mode()
   }
 }
 
-/**
- * main
- */
+// main
 int main(int argc, char* argv[])
 {
   int ch;
@@ -1044,9 +1036,7 @@ int main(int argc, char* argv[])
       DbSetBackendDirs(me->backend_directories);
 #endif
 
-      /*
-       * Print catalog information and exit (-B)
-       */
+      // Print catalog information and exit (-B)
       if (print_catalog) {
         PrintCatalogDetails(catalog, me->working_directory);
         exit(0);
@@ -1066,9 +1056,7 @@ int main(int argc, char* argv[])
       usage();
     }
 
-    /*
-     * This is needed by SQLite to find the db
-     */
+    // This is needed by SQLite to find the db
     working_directory = argv[0];
     db_name = "bareos";
     user = db_name;
@@ -1112,9 +1100,7 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  /*
-   * Open database
-   */
+  // Open database
   db = db_init_database(NULL, db_driver, db_name, user, password, dbhost,
                         dbport, NULL, false, false, false, false);
   if (!db->OpenDatabase(NULL)) {
@@ -1122,9 +1108,7 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  /*
-   * Drop temporary index idx_tmp_name if it already exists
-   */
+  // Drop temporary index idx_tmp_name if it already exists
   DropTmpIdx("idxPIchk", "File");
 
   if (batch) {
@@ -1133,9 +1117,7 @@ int main(int argc, char* argv[])
     do_interactive_mode();
   }
 
-  /*
-   * Drop temporary index idx_tmp_name
-   */
+  // Drop temporary index idx_tmp_name
   DropTmpIdx("idxPIchk", "File");
 
   db->CloseDatabase(NULL);

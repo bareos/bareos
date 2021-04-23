@@ -720,9 +720,7 @@ void SetupNewDcrDevice(JobControlRecord* jcr,
 
   // Set device information, possibly change device
   if (dev) {
-    /*
-     * Set wanted blocksizes
-     */
+    // Set wanted blocksizes
     if (blocksizes) {
       dev->min_block_size = blocksizes->min_block_size;
       dev->max_block_size = blocksizes->max_block_size;
@@ -739,9 +737,7 @@ void SetupNewDcrDevice(JobControlRecord* jcr,
 
     if (dcr->attached_to_dev) { DetachDcrFromDev(dcr); }
 
-    /*
-     * Use job spoolsize prior to device spoolsize
-     */
+    // Use job spoolsize prior to device spoolsize
     if (jcr && jcr->impl->spool_size) {
       dcr->max_job_spool_size = jcr->impl->spool_size;
     } else {
@@ -786,9 +782,7 @@ static void AttachDcrToDev(DeviceControlRecord* dcr)
   V(dcr->mutex_);
 }
 
-/**
- * DeviceControlRecord is locked before calling this routine
- */
+// DeviceControlRecord is locked before calling this routine
 static void LockedDetachDcrFromDev(DeviceControlRecord* dcr)
 {
   Device* dev = dcr->dev;

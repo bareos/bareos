@@ -910,17 +910,13 @@ int DropletDevice::d_open(const char* pathname, int flags, int mode)
   return SetupChunk(pathname, flags, mode);
 }
 
-/*
- * Read data from a volume using libdroplet.
- */
+// Read data from a volume using libdroplet.
 ssize_t DropletDevice::d_read(int fd, void* buffer, size_t count)
 {
   return ReadChunked(fd, buffer, count);
 }
 
-/**
- * Write data to a volume using libdroplet.
- */
+// Write data to a volume using libdroplet.
 ssize_t DropletDevice::d_write(int fd, const void* buffer, size_t count)
 {
   return WriteChunked(fd, buffer, count);

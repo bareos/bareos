@@ -758,9 +758,7 @@ bool DoAutochangerVolumeOperation(UaContext* ua,
   return retval;
 }
 
-/**
- * See if a specific slot is loaded in one of the drives.
- */
+// See if a specific slot is loaded in one of the drives.
 vol_list_t* vol_is_loaded_in_drive(StorageResource* store,
                                    changer_vol_list_t* vol_list,
                                    slot_number_t slot)
@@ -794,9 +792,7 @@ void StorageReleaseVolList(StorageResource* store, changer_vol_list_t* vol_list)
 
   Dmsg0(100, "Releasing volume list\n");
 
-  /*
-   * See if we are releasing a reference to the currently cached value.
-   */
+  // See if we are releasing a reference to the currently cached value.
   if (store->runtime_storage_status->vol_list == vol_list) {
     vol_list->reference_count--;
   } else {
@@ -814,9 +810,7 @@ void StorageReleaseVolList(StorageResource* store, changer_vol_list_t* vol_list)
   V(store->runtime_storage_status->changer_lock);
 }
 
-/**
- * Destroy the volume list returned from get_vol_list_from_storage()
- */
+// Destroy the volume list returned from get_vol_list_from_storage()
 void StorageFreeVolList(StorageResource* store, changer_vol_list_t* vol_list)
 {
   P(store->runtime_storage_status->changer_lock);
@@ -825,9 +819,7 @@ void StorageFreeVolList(StorageResource* store, changer_vol_list_t* vol_list)
 
   FreeVolList(vol_list);
 
-  /*
-   * Clear the cached vol_list if needed.
-   */
+  // Clear the cached vol_list if needed.
   if (store->runtime_storage_status->vol_list == vol_list) {
     store->runtime_storage_status->vol_list = NULL;
   }

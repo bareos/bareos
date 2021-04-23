@@ -228,9 +228,7 @@ int installService(const char* cmdOpts)
   if (have_service_api) {
     SC_HANDLE bareosService, serviceManager;
 
-    /*
-     * Open the service control manager
-     */
+    // Open the service control manager
     serviceManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (!serviceManager) {
       LogErrorMessage("Open Service Manager failed");
@@ -241,9 +239,7 @@ int installService(const char* cmdOpts)
       return 0;
     }
 
-    /*
-     * Now actually create the Bareos service entry
-     */
+    // Now actually create the Bareos service entry
     bareosService = CreateService(
         serviceManager, APP_NAME, /* Our service name */
         APP_DESC,                 /* Display name */
@@ -261,9 +257,7 @@ int installService(const char* cmdOpts)
       return 0;
     }
 
-    /*
-     * Set a text description in the service manager's control panel
-     */
+    // Set a text description in the service manager's control panel
     SetServiceDescription(serviceManager, bareosService,
                           (char*)_(SERVICE_DESC));
 
@@ -271,9 +265,7 @@ int installService(const char* cmdOpts)
     CloseServiceHandle(bareosService);
 
   } else {
-    /*
-     * Old style service -- create appropriate registry key path
-     */
+    // Old style service -- create appropriate registry key path
     HKEY runservices;
     if (RegCreateKey(
             HKEY_LOCAL_MACHINE,
@@ -288,9 +280,7 @@ int installService(const char* cmdOpts)
       return 0;
     }
 
-    /*
-     * Add the Bareos values
-     */
+    // Add the Bareos values
     if (RegSetValueEx(runservices, APP_NAME, 0, REG_SZ, (unsigned char*)svcmd,
                       strlen(svcmd) + 1)
         != ERROR_SUCCESS) {
@@ -304,9 +294,7 @@ int installService(const char* cmdOpts)
     RegCloseKey(runservices);
   }
 
-  /*
-   * At this point the service is installed
-   */
+  // At this point the service is installed
   if (opt_debug) {
     MessageBox(NULL,
                _("The " APP_DESC "was successfully installed.\n"
@@ -330,16 +318,12 @@ int removeService()
 
     serviceManager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (serviceManager) {
-      /*
-       * Now get the Bareos service entry
-       */
+      // Now get the Bareos service entry
       bareosService = OpenService(serviceManager, APP_NAME, SERVICE_ALL_ACCESS);
       if (bareosService) {
         SERVICE_STATUS status;
 
-        /*
-         * If the service is running, stop it
-         */
+        // If the service is running, stop it
         if (ControlService(bareosService, SERVICE_CONTROL_STOP, &status)) {
           while (QueryServiceStatus(bareosService, &status)) {
             if (status.dwCurrentState == SERVICE_STOP_PENDING) {
@@ -393,9 +377,7 @@ int removeService()
     }
 
   } else { /* Old Win95/98/Me OS */
-    /*
-     * Open the registry path key
-     */
+    // Open the registry path key
     HKEY runservices;
     if (RegOpenKey(HKEY_LOCAL_MACHINE,
                    "Software\\Microsoft\\Windows\\CurrentVersion\\RunServices",
@@ -408,9 +390,7 @@ int removeService()
                    APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       }
     } else {
-      /*
-       * Now delete the Bareos entry
-       */
+      // Now delete the Bareos entry
       if (RegDeleteValue(runservices, APP_NAME) != ERROR_SUCCESS) {
         RegCloseKey(runservices);
         MessageBox(NULL,
@@ -422,9 +402,7 @@ int removeService()
       return 1;
     }
 
-    /*
-     * Stop any running Bareos
-     */
+    // Stop any running Bareos
     if (!stopRunningBareos()) {
       if (opt_debug) {
         MessageBox(NULL,
@@ -434,9 +412,7 @@ int removeService()
       return 0; /* not really an error */
     }
 
-    /*
-     * At this point, the service has been removed
-     */
+    // At this point, the service has been removed
     if (opt_debug) {
       MessageBox(NULL, _("The Bareos service has been removed"), APP_DESC,
                  MB_ICONINFORMATION | MB_OK);
@@ -455,34 +431,26 @@ BOOL ReportStatus(DWORD state, DWORD exitcode, DWORD waithint)
   static DWORD checkpoint = 1;
   BOOL result = TRUE;
 
-  /*
-   * No callbacks until we are started
-   */
+  // No callbacks until we are started
   if (state == SERVICE_START_PENDING) {
     service_status.dwControlsAccepted = 0;
   } else {
     service_status.dwControlsAccepted = SERVICE_ACCEPT_STOP;
   }
 
-  /*
-   * Save global service_status state
-   */
+  // Save global service_status state
   service_status.dwCurrentState = state;
   service_status.dwWin32ExitCode = exitcode;
   service_status.dwWaitHint = waithint;
 
-  /*
-   * Update the checkpoint variable so the service manager knows we are alive.
-   */
+  // Update the checkpoint variable so the service manager knows we are alive.
   if (state == SERVICE_RUNNING || state == SERVICE_STOPPED) {
     service_status.dwCheckPoint = 0;
   } else {
     service_status.dwCheckPoint = checkpoint++;
   }
 
-  /*
-   * Send our new status
-   */
+  // Send our new status
   result = SetServiceStatus(service_handle, &service_status);
   if (!result) { LogErrorMessage(_("SetServiceStatus failed")); }
 
@@ -501,9 +469,7 @@ void LogLastErrorMsg(const char* message, const char* fname, int lineno)
   FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
                 NULL, service_error, 0, (LPTSTR)&msg, 0, NULL);
 
-  /*
-   * Use the OS event logging to log the error
-   */
+  // Use the OS event logging to log the error
   eventHandler = RegisterEventSource(NULL, APP_NAME);
 
   Bsnprintf(msgbuf, sizeof(msgbuf), _("\n\n%s error: %ld at %s:%d"), APP_NAME,
@@ -549,26 +515,18 @@ static void SetServiceDescription(SC_HANDLE hSCManager,
   FreeLibrary(hLib);
   if (!ChangeServiceDescription) { return; }
 
-  /*
-   * Need to acquire database lock before reconfiguring.
-   */
+  // Need to acquire database lock before reconfiguring.
   sclLock = LockServiceDatabase(hSCManager);
 
-  /*
-   * If the database cannot be locked, report the details.
-   */
+  // If the database cannot be locked, report the details.
   if (sclLock == NULL) {
-    /*
-     * Exit if the database is not locked by another process.
-     */
+    // Exit if the database is not locked by another process.
     if (GetLastError() != ERROR_SERVICE_DATABASE_LOCKED) {
       LogErrorMessage("LockServiceDatabase");
       return;
     }
 
-    /*
-     * Allocate a buffer to get details about the lock.
-     */
+    // Allocate a buffer to get details about the lock.
     lpqslsBuf = (LPQUERY_SERVICE_LOCK_STATUS)LocalAlloc(
         LPTR, sizeof(QUERY_SERVICE_LOCK_STATUS) + 256);
     if (lpqslsBuf == NULL) {
@@ -576,9 +534,7 @@ static void SetServiceDescription(SC_HANDLE hSCManager,
       return;
     }
 
-    /*
-     * Get and print the lock status information.
-     */
+    // Get and print the lock status information.
     if (!QueryServiceLockStatus(hSCManager, lpqslsBuf,
                                 sizeof(QUERY_SERVICE_LOCK_STATUS) + 256,
                                 &dwBytesNeeded)) {
@@ -597,9 +553,7 @@ static void SetServiceDescription(SC_HANDLE hSCManager,
     return;
   }
 
-  /*
-   * The database is locked, so it is safe to make changes.
-   */
+  // The database is locked, so it is safe to make changes.
   sdBuf.lpDescription = lpDesc;
 
   if (!ChangeServiceDescription(
@@ -609,8 +563,6 @@ static void SetServiceDescription(SC_HANDLE hSCManager,
     LogErrorMessage("ChangeServiceConfig2");
   }
 
-  /*
-   * Release the database lock.
-   */
+  // Release the database lock.
   UnlockServiceDatabase(sclLock);
 }

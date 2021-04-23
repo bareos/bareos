@@ -692,9 +692,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
   // Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
   WaitForStorageDaemonTermination(jcr);
 
-  /*
-   * Return values from FD
-   */
+  // Return values from FD
   if (fd_ok) {
     jcr->JobFiles = JobFiles;
     jcr->JobErrors += JobErrors; /* Keep total errors */
@@ -711,9 +709,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
   // jcr->impl_->FDJobStatus,
   //   jcr->JobStatus, jcr->impl_->SDJobStatus);
 
-  /*
-   * Return the first error status we find Dir, FD, or SD
-   */
+  // Return the first error status we find Dir, FD, or SD
   if (!fd_ok || IsBnetError(fd)) { /* if fd not set, that use !fd_ok */
     jcr->impl->FDJobStatus = JS_ErrorTerminated;
   }
@@ -724,9 +720,7 @@ int WaitForJobTermination(JobControlRecord* jcr, int timeout)
   return jcr->impl->SDJobStatus;
 }
 
-/*
- * Release resources allocated during backup.
- */
+// Release resources allocated during backup.
 void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
 {
   const char* TermMsg;
@@ -802,9 +796,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
 
 void UpdateBootstrapFile(JobControlRecord* jcr)
 {
-  /*
-   * Now update the bootstrap file if any
-   */
+  // Now update the bootstrap file if any
   if (jcr->IsTerminatedOk() && jcr->impl->jr.JobBytes
       && jcr->impl->res.job->WriteBootstrap) {
     FILE* fd;
@@ -926,9 +918,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    }
 
    if (jcr->VolumeName[0]) {
-      /*
-       * Find last volume name. Multiple vols are separated by |
-       */
+      // Find last volume name. Multiple vols are separated by |
       char *p = strrchr(jcr->VolumeName, '|');
       if (p) {
          p++;                         /* skip | */

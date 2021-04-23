@@ -1102,9 +1102,7 @@ static bool CreateMediaRecord(BareosDb* db, MediaDbRecord* mr, Volume_Label* vl)
     mr->FirstWritten = BtimeToUtime(vl->write_btime);
     mr->LabelDate = BtimeToUtime(vl->label_btime);
   } else {
-    /*
-     * DEPRECATED DO NOT USE
-     */
+    // DEPRECATED DO NOT USE
     dt.julian_day_number = vl->write_date;
     dt.julian_day_fraction = vl->write_time;
     TmDecode(&dt, &tm);
@@ -1137,9 +1135,7 @@ static bool CreateMediaRecord(BareosDb* db, MediaDbRecord* mr, Volume_Label* vl)
   return true;
 }
 
-/**
- * Called at end of media to update it
- */
+// Called at end of media to update it
 static bool UpdateMediaRecord(BareosDb* db, MediaDbRecord* mr)
 {
   if (!update_db && !update_vol_info) { return true; }
@@ -1178,9 +1174,7 @@ static bool CreatePoolRecord(BareosDb* db, PoolDbRecord* pr)
   return true;
 }
 
-/**
- * Called from SOS to create a client for the current Job
- */
+// Called from SOS to create a client for the current Job
 static bool CreateClientRecord(BareosDb* db, ClientDbRecord* cr)
 {
   /*
@@ -1276,17 +1270,13 @@ static JobControlRecord* CreateJobRecord(BareosDb* db,
 
   if (!update_db) { return mjcr; }
 
-  /*
-   * This creates the bare essentials
-   */
+  // This creates the bare essentials
   if (!db->CreateJobRecord(bjcr, jr)) {
     Pmsg1(0, _("Could not create JobId record. ERR=%s\n"), db->strerror());
     return mjcr;
   }
 
-  /*
-   * This adds the client, StartTime, JobTDate, ...
-   */
+  // This adds the client, StartTime, JobTDate, ...
   if (!db->UpdateJobStartRecord(bjcr, jr)) {
     Pmsg1(0, _("Could not update job start record. ERR=%s\n"), db->strerror());
     return mjcr;
@@ -1299,9 +1289,7 @@ static JobControlRecord* CreateJobRecord(BareosDb* db,
   return mjcr;
 }
 
-/**
- * Simulate the database call that updates the Job at Job termination time.
- */
+// Simulate the database call that updates the Job at Job termination time.
 static bool UpdateJobRecord(BareosDb* db,
                             JobDbRecord* jr,
                             Session_Label* elabel,
@@ -1449,9 +1437,7 @@ static bool CreateJobmediaRecord(BareosDb* db, JobControlRecord* mjcr)
   return true;
 }
 
-/**
- * Simulate the database call that updates the MD5/SHA1 record
- */
+// Simulate the database call that updates the MD5/SHA1 record
 static bool UpdateDigestRecord(BareosDb* db,
                                char* digest,
                                DeviceRecord* rec,
@@ -1489,9 +1475,7 @@ static bool UpdateDigestRecord(BareosDb* db,
   return true;
 }
 
-/**
- * Create a JobControlRecord as if we are really starting the job
- */
+// Create a JobControlRecord as if we are really starting the job
 static JobControlRecord* create_jcr(JobDbRecord* jr,
                                     DeviceRecord* rec,
                                     uint32_t JobId)

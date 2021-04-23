@@ -683,9 +683,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
         field = SqlFetchField();
         if (!field) { break; }
 
-        /*
-         * See if this is a hidden column.
-         */
+        // See if this is a hidden column.
         if (send->IsHiddenColumn(i)) {
           Dmsg1(800, "ListResult field %d is hidden\n", i);
           continue;
@@ -725,9 +723,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
       Dmsg1(800, "ListResult starts second loop looking at %d fields\n",
             num_fields);
       while ((row = SqlFetchRow()) != NULL) {
-        /*
-         * See if we should allow this under the current filtering.
-         */
+        // See if we should allow this under the current filtering.
         if (filters_enabled && !send->FilterData(row)) { continue; }
 
         send->ObjectStart();
@@ -736,9 +732,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           field = SqlFetchField();
           if (!field) { break; }
 
-          /*
-           * See if this is a hidden column.
-           */
+          // See if this is a hidden column.
           if (send->IsHiddenColumn(i)) {
             Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
@@ -767,9 +761,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
         field = SqlFetchField();
         if (!field) { break; }
 
-        /*
-         * See if this is a hidden column.
-         */
+        // See if this is a hidden column.
         if (send->IsHiddenColumn(i)) {
           Dmsg1(800, "ListResult field %d is hidden\n", i);
           continue;
@@ -784,9 +776,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
       Dmsg1(800, "ListResult starts third loop looking at %d fields\n",
             num_fields);
       while ((row = SqlFetchRow()) != NULL) {
-        /*
-         * See if we should allow this under the current filtering.
-         */
+        // See if we should allow this under the current filtering.
         if (filters_enabled && !send->FilterData(row)) { continue; }
 
         send->ObjectStart();
@@ -796,9 +786,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           field = SqlFetchField();
           if (!field) { break; }
 
-          /*
-           * See if this is a hidden column.
-           */
+          // See if this is a hidden column.
           if (send->IsHiddenColumn(i)) {
             Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
@@ -815,9 +803,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           }
           if (i == num_fields - 1) { value.strcat("\n"); }
 
-          /*
-           * Use value format string to send preformated value
-           */
+          // Use value format string to send preformated value
           send->ObjectKeyValue(field->name, row[i], value.c_str());
         }
         send->ObjectEnd();
@@ -827,9 +813,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
     case VERT_LIST:
       Dmsg1(800, "ListResult starts vertical list at %d fields\n", num_fields);
       while ((row = SqlFetchRow()) != NULL) {
-        /*
-         * See if we should allow this under the current filtering.
-         */
+        // See if we should allow this under the current filtering.
         if (filters_enabled && !send->FilterData(row)) { continue; }
 
         send->ObjectStart();
@@ -838,9 +822,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           field = SqlFetchField();
           if (!field) { break; }
 
-          /*
-           * See if this is a hidden column.
-           */
+          // See if this is a hidden column.
           if (send->IsHiddenColumn(i)) {
             Dmsg1(800, "ListResult field %d is hidden\n", i);
             continue;
@@ -858,9 +840,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
             value.bsprintf("%s\n", row[i]);
           }
 
-          /*
-           * Use value format string to send preformated value
-           */
+          // Use value format string to send preformated value
           send->ObjectKeyValue(field->name, key.c_str(), row[i], value.c_str());
         }
         send->Decoration("\n");

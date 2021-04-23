@@ -1082,9 +1082,7 @@ static int backtrace(void** buffer, int count)
 #  endif /* HAVE_BACKTRACE */
 #endif   /* HAVE_SUN_OS */
 
-/*
- * Support strack_trace support on platforms that use GCC as compiler.
- */
+// Support strack_trace support on platforms that use GCC as compiler.
 #if defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) \
     && defined(HAVE_GCC)
 
@@ -1111,9 +1109,7 @@ void stack_trace()
     sz = 200; /* Just a guess, template names will go much wider */
     function = (char*)malloc(sz);
     begin = end = 0;
-    /*
-     * Find the parentheses and address offset surrounding the mangled name
-     */
+    // Find the parentheses and address offset surrounding the mangled name
     for (j = stack_strings[i]; *j; ++j) {
       if (*j == '(') {
         begin = j;
@@ -1124,19 +1120,13 @@ void stack_trace()
     if (begin && end) {
       *begin++ = '\0';
       *end = '\0';
-      /*
-       * Found our mangled name, now in [begin, end]
-       */
+      // Found our mangled name, now in [begin, end]
       ret = abi::__cxa_demangle(begin, function, &sz, &status);
       if (ret) {
-        /*
-         * Return value may be a realloc() of the input
-         */
+        // Return value may be a realloc() of the input
         function = ret;
       } else {
-        /*
-         * Demangling failed, just pretend it's a C function with no args
-         */
+        // Demangling failed, just pretend it's a C function with no args
         strncpy(function, begin, sz - 3);
         strcat(function, "()");
         function[sz - 1] = '\0';
@@ -1152,9 +1142,7 @@ void stack_trace()
   free(stack_strings); /* malloc()ed by backtrace_symbols */
 }
 
-/*
- * Support strack_trace support on Solaris when using the SUNPRO_CC compiler.
- */
+// Support strack_trace support on Solaris when using the SUNPRO_CC compiler.
 #elif defined(HAVE_SUN_OS) && !defined(HAVE_NON_WORKING_WALKCONTEXT) \
     && defined(HAVE_UCONTEXT_H) && defined(HAVE_DEMANGLE_H)          \
     && defined(HAVE_CPLUS_DEMANGLE) && defined(__SUNPRO_CC)
@@ -1185,9 +1173,7 @@ void stack_trace()
   for (i = 1; i < stack_depth; i++) {
     function = (char*)malloc(sz);
     begin = end = 0;
-    /*
-     * Find the single quote and address offset surrounding the mangled name
-     */
+    // Find the single quote and address offset surrounding the mangled name
     for (j = stack_strings[i]; *j; ++j) {
       if (*j == '\'') {
         begin = j;
@@ -1198,25 +1184,19 @@ void stack_trace()
     if (begin && end) {
       *begin++ = '\0';
       *end = '\0';
-      /*
-       * Found our mangled name, now in [begin, end)
-       */
+      // Found our mangled name, now in [begin, end)
       demangled_symbol = false;
       while (!demangled_symbol) {
         ret = cplus_demangle(begin, function, sz);
         switch (ret) {
           case DEMANGLE_ENAME:
-            /*
-             * Demangling failed, just pretend it's a C function with no args
-             */
+            // Demangling failed, just pretend it's a C function with no args
             strcat(function, "()");
             function[sz - 1] = '\0';
             demangled_symbol = true;
             break;
           case DEMANGLE_ESPACE:
-            /*
-             * Need more space for demangled function name.
-             */
+            // Need more space for demangled function name.
             free(function);
             sz = sz * 2;
             function = (char*)malloc(sz);
@@ -1228,9 +1208,7 @@ void stack_trace()
       }
       Pmsg2(000, "    %s:%s\n", stack_strings[i], function);
     } else {
-      /*
-       * Didn't find the mangled name, just print the whole line
-       */
+      // Didn't find the mangled name, just print the whole line
       Pmsg1(000, "    %s\n", stack_strings[i]);
     }
     free(function);

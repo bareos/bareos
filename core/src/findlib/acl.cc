@@ -789,9 +789,7 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
   } else {
     BErrNo be;
 
-    /*
-     * Handle errors gracefully.
-     */
+    // Handle errors gracefully.
     switch (errno) {
 #      if defined(BACL_ENOTSUP)
       case BACL_ENOTSUP:
@@ -825,9 +823,7 @@ bail_out:
   return retval;
 }
 
-/**
- * Generic wrapper around acl_set_file call.
- */
+// Generic wrapper around acl_set_file call.
 static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
                                             AclData* acl_data,
                                             bacl_type acltype,
@@ -837,9 +833,7 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
   acl_t acl;
   acl_type_t ostype;
 
-  /*
-   * If we get empty default ACLs, clear ACLs now
-   */
+  // If we get empty default ACLs, clear ACLs now
   ostype = BacToOsAcltype(acltype);
   if (ostype == ACL_TYPE_DEFAULT && strlen(content) == 0) {
     if (acl_delete_def_file(acl_data->last_fname) == 0) { return bacl_exit_ok; }
@@ -888,9 +882,7 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
    */
   switch (acltype) {
     case BACL_TYPE_NFS4:
-      /*
-       * Skip acl_valid tests on NFSv4 acls.
-       */
+      // Skip acl_valid tests on NFSv4 acls.
       break;
     default:
       if (acl_valid(acl) != 0) {
@@ -953,13 +945,9 @@ static bacl_exit_code generic_set_acl_on_os(JobControlRecord* jcr,
   return bacl_exit_ok;
 }
 
-/**
- * OS specific functions for handling different types of acl streams.
- */
+// OS specific functions for handling different types of acl streams.
 #      if defined(HAVE_DARWIN_OS)
-/**
- * Define the supported ACL streams for this OS
- */
+// Define the supported ACL streams for this OS
 static int os_access_acl_streams[1] = {STREAM_ACL_DARWIN_ACCESS_ACL};
 static int os_default_acl_streams[1] = {-1};
 
@@ -981,9 +969,7 @@ static bacl_exit_code darwin_build_acl_streams(JobControlRecord* jcr,
       == bacl_exit_fatal)
     return bacl_exit_fatal;
 #        else
-  /**
-   * Read access ACLs for files, dirs and links
-   */
+  // Read access ACLs for files, dirs and links
   if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_ACCESS)
       == bacl_exit_fatal)
     return bacl_exit_fatal;
@@ -1026,9 +1012,7 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
     = darwin_parse_acl_streams;
 
 #      elif defined(HAVE_FREEBSD_OS)
-/**
- * Define the supported ACL streams for these OSes
- */
+// Define the supported ACL streams for these OSes
 static int os_access_acl_streams[2]
     = {STREAM_ACL_FREEBSD_ACCESS_ACL, STREAM_ACL_FREEBSD_NFS4_ACL};
 static int os_default_acl_streams[1] = {STREAM_ACL_FREEBSD_DEFAULT_ACL};
@@ -1041,9 +1025,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
   bacl_type acltype = BACL_TYPE_NONE;
 
 #        if defined(_PC_ACL_NFS4)
-  /*
-   * See if filesystem supports NFS4 acls.
-   */
+  // See if filesystem supports NFS4 acls.
   acl_enabled = pathconf(acl_data->last_fname, _PC_ACL_NFS4);
   switch (acl_enabled) {
     case -1: {
@@ -1069,9 +1051,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
 #        endif
 
   if (acl_enabled == 0) {
-    /*
-     * See if filesystem supports POSIX acls.
-     */
+    // See if filesystem supports POSIX acls.
     acl_enabled = pathconf(acl_data->last_fname, _PC_ACL_EXTENDED);
     switch (acl_enabled) {
       case -1: {
@@ -1109,14 +1089,10 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
     return bacl_exit_ok;
   }
 
-  /*
-   * Based on the supported ACLs retrieve and store them.
-   */
+  // Based on the supported ACLs retrieve and store them.
   switch (acltype) {
     case BACL_TYPE_NFS4:
-      /*
-       * Read NFS4 ACLs for files, dirs and links
-       */
+      // Read NFS4 ACLs for files, dirs and links
       if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_NFS4)
           == bacl_exit_fatal)
         return bacl_exit_fatal;
@@ -1128,9 +1104,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
       }
       break;
     case BACL_TYPE_ACCESS:
-      /*
-       * Read access ACLs for files, dirs and links
-       */
+      // Read access ACLs for files, dirs and links
       if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_ACCESS)
           == bacl_exit_fatal)
         return bacl_exit_fatal;
@@ -1141,9 +1115,7 @@ static bacl_exit_code freebsd_build_acl_streams(JobControlRecord* jcr,
           return bacl_exit_fatal;
       }
 
-      /*
-       * Directories can have default ACLs too
-       */
+      // Directories can have default ACLs too
       if (acl_data->filetype == FT_DIREND) {
         if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT)
             == bacl_exit_fatal)
@@ -1171,9 +1143,7 @@ static bacl_exit_code freebsd_parse_acl_streams(JobControlRecord* jcr,
   int acl_enabled = 0;
   const char* acl_type_name;
 
-  /*
-   * First make sure the filesystem supports acls.
-   */
+  // First make sure the filesystem supports acls.
   switch (stream) {
     case STREAM_UNIX_ACCESS_ACL:
     case STREAM_ACL_FREEBSD_ACCESS_ACL:
@@ -1225,9 +1195,7 @@ static bacl_exit_code freebsd_parse_acl_streams(JobControlRecord* jcr,
       break;
   }
 
-  /*
-   * Restore the ACLs.
-   */
+  // Restore the ACLs.
   switch (stream) {
     case STREAM_UNIX_ACCESS_ACL:
     case STREAM_ACL_FREEBSD_ACCESS_ACL:
@@ -1263,9 +1231,7 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 
 #      elif defined(HAVE_IRIX_OS) || defined(HAVE_LINUX_OS) \
           || defined(HAVE_HURD_OS)
-/**
- * Define the supported ACL streams for these OSes
- */
+// Define the supported ACL streams for these OSes
 #        if defined(HAVE_IRIX_OS)
 static int os_access_acl_streams[1] = {STREAM_ACL_IRIX_ACCESS_ACL};
 static int os_default_acl_streams[1] = {STREAM_ACL_IRIX_DEFAULT_ACL};
@@ -1281,9 +1247,7 @@ static bacl_exit_code generic_build_acl_streams(JobControlRecord* jcr,
                                                 AclData* acl_data,
                                                 FindFilesPacket* ff_pkt)
 {
-  /*
-   * Read access ACLs for files, dirs and links
-   */
+  // Read access ACLs for files, dirs and links
   if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_ACCESS)
       == bacl_exit_fatal)
     return bacl_exit_fatal;
@@ -1294,9 +1258,7 @@ static bacl_exit_code generic_build_acl_streams(JobControlRecord* jcr,
       return bacl_exit_fatal;
   }
 
-  /*
-   * Directories can have default ACLs too
-   */
+  // Directories can have default ACLs too
   if (acl_data->filetype == FT_DIREND) {
     if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT)
         == bacl_exit_fatal)
@@ -1326,9 +1288,7 @@ static bacl_exit_code generic_parse_acl_streams(JobControlRecord* jcr,
       return generic_set_acl_on_os(jcr, acl_data, BACL_TYPE_DEFAULT, content,
                                    content_length);
     default:
-      /*
-       * See what type of acl it is.
-       */
+      // See what type of acl it is.
       for (cnt = 0; cnt < sizeof(os_access_acl_streams) / sizeof(int); cnt++) {
         if (os_access_acl_streams[cnt] == stream) {
           return generic_set_acl_on_os(jcr, acl_data, BACL_TYPE_ACCESS, content,
@@ -1363,9 +1323,7 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 
 #      elif defined(HAVE_OSF1_OS)
 
-/**
- * Define the supported ACL streams for this OS
- */
+// Define the supported ACL streams for this OS
 static int os_access_acl_streams[1] = {STREAM_ACL_TRU64_ACCESS_ACL};
 static int os_default_acl_streams[2]
     = {STREAM_ACL_TRU64_DEFAULT_ACL, STREAM_ACL_TRU64_DEFAULT_DIR_ACL};
@@ -1374,9 +1332,7 @@ static bacl_exit_code tru64_build_acl_streams(JobControlRecord* jcr,
                                               AclData* acl_data,
                                               FindFilesPacket* ff_pkt)
 {
-  /*
-   * Read access ACLs for files, dirs and links
-   */
+  // Read access ACLs for files, dirs and links
   if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_ACCESS)
       == bacl_exit_fatal) {
     return bacl_exit_error;
@@ -1384,9 +1340,7 @@ static bacl_exit_code tru64_build_acl_streams(JobControlRecord* jcr,
       if (!SendAclStream(jcr, acl_data, STREAM_ACL_TRU64_ACCESS_ACL))
         return bacl_exit_error;
     }
-    /*
-     * Directories can have default ACLs too
-     */
+    // Directories can have default ACLs too
     if (acl_data->filetype == FT_DIREND) {
       if (generic_get_acl_from_os(jcr, acl_data, BACL_TYPE_DEFAULT)
           == bacl_exit_fatal) {
@@ -1452,9 +1406,7 @@ static bacl_exit_code tru64_build_acl_streams(JobControlRecord* jcr,
 
 #      include <acllib.h>
 
-/**
- * Define the supported ACL streams for this OS
- */
+// Define the supported ACL streams for this OS
 static int os_access_acl_streams[1] = {STREAM_ACL_HPUX_ACL_ENTRY};
 static int os_default_acl_streams[1] = {-1};
 
@@ -1470,9 +1422,7 @@ static bool AclIsTrivial(int count, struct acl_entry* entries, struct stat sb)
       for (n = 0; n < count; n++)
   {
     ace = entries[n];
-    /*
-     * See if this acl just is the stat mode in acl form.
-     */
+    // See if this acl just is the stat mode in acl form.
     if (!((ace.uid == sb.st_uid && ace.gid == ACL_NSGROUP)
           || (ace.uid == ACL_NSUSER && ace.gid == sb.st_gid)
           || (ace.uid == ACL_NSUSER && ace.gid == ACL_NSGROUP)))
@@ -1481,9 +1431,7 @@ static bool AclIsTrivial(int count, struct acl_entry* entries, struct stat sb)
   return true;
 }
 
-/**
- * OS specific functions for handling different types of acl streams.
- */
+// OS specific functions for handling different types of acl streams.
 static bacl_exit_code hpux_build_acl_streams(JobControlRecord* jcr,
                                              AclData* acl_data
                                                  FindFilesPacket* ff_pkt)
@@ -1683,9 +1631,7 @@ int acl_type(acl_t*);
 char* acl_strerror(int);
 }
 
-/**
- * Define the supported ACL streams for this OS
- */
+// Define the supported ACL streams for this OS
 static int os_access_acl_streams[2]
     = {STREAM_ACL_SOLARIS_ACLENT, STREAM_ACL_SOLARIS_ACE};
 static int os_default_acl_streams[1] = {-1};
@@ -1706,9 +1652,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
   char* acl_text;
   bacl_exit_code stream_status = bacl_exit_error;
 
-  /*
-   * See if filesystem supports acls.
-   */
+  // See if filesystem supports acls.
   acl_enabled = pathconf(acl_data->last_fname, _PC_ACL_ENABLED);
   switch (acl_enabled) {
     case 0:
@@ -1740,9 +1684,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
       break;
   }
 
-  /*
-   * Get ACL info: don't bother allocating space if there is only a trivial ACL.
-   */
+  // Get ACL info: don't bother allocating space if there is only a trivial ACL.
   if (acl_get(acl_data->last_fname, ACL_NO_TRIVIAL, &aclp) != 0) {
     BErrNo be;
 
@@ -1769,9 +1711,7 @@ static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
   }
 
 #        if defined(ACL_SID_FMT)
-  /*
-   * New format flag added in newer Solaris versions.
-   */
+  // New format flag added in newer Solaris versions.
   flags = ACL_APPEND_ID | ACL_COMPACT_FMT | ACL_SID_FMT;
 #        else
   flags = ACL_APPEND_ID | ACL_COMPACT_FMT;
@@ -1811,9 +1751,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
     case STREAM_UNIX_ACCESS_ACL:
     case STREAM_ACL_SOLARIS_ACLENT:
     case STREAM_ACL_SOLARIS_ACE:
-      /*
-       * First make sure the filesystem supports acls.
-       */
+      // First make sure the filesystem supports acls.
       acl_enabled = pathconf(acl_data->last_fname, _PC_ACL_ENABLED);
       switch (acl_enabled) {
         case 0:
@@ -1894,9 +1832,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
         return bacl_exit_error;
       }
 
-      /*
-       * Validate that the conversion gave us the correct acl type.
-       */
+      // Validate that the conversion gave us the correct acl type.
       switch (stream) {
         case STREAM_ACL_SOLARIS_ACLENT:
           if (acl_type(aclp) != ACLENT_T) {
@@ -1917,9 +1853,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
           }
           break;
         default:
-          /*
-           * Stream id which doesn't describe the type of acl which is encoded.
-           */
+          // Stream id which doesn't describe the type of acl which is encoded.
           break;
       }
 
@@ -1955,9 +1889,7 @@ static bacl_exit_code solaris_parse_acl_streams(JobControlRecord* jcr,
 
 #      else  /* HAVE_EXTENDED_ACL */
 
-/**
- * Define the supported ACL streams for this OS
- */
+// Define the supported ACL streams for this OS
 static int os_access_acl_streams[1] = {STREAM_ACL_SOLARIS_ACLENT};
 static int os_default_acl_streams[1] = {-1};
 
@@ -1980,9 +1912,7 @@ static bool AclIsTrivial(int count, aclent_t* entries)
   return true;
 }
 
-/**
- * OS specific functions for handling different types of acl streams.
- */
+// OS specific functions for handling different types of acl streams.
 static bacl_exit_code solaris_build_acl_streams(JobControlRecord* jcr,
                                                 AclData* acl_data,
                                                 FindFilesPacket* ff_pkt)
@@ -2170,13 +2100,9 @@ static bacl_exit_code afs_parse_acl_stream(JobControlRecord* jcr,
 }
 #  endif /* HAVE_AFS_ACL */
 
-/**
- * Entry points when compiled with support for ACLs on a supported platform.
- */
+// Entry points when compiled with support for ACLs on a supported platform.
 
-/**
- * Read and send an ACL for the last encountered file.
- */
+// Read and send an ACL for the last encountered file.
 bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
                                AclData* acl_data,
                                FindFilesPacket* ff_pkt)
@@ -2206,9 +2132,7 @@ bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
     acl_data->flags |= BACL_FLAG_SAVE_NATIVE;
 #  endif
 
-    /*
-     * Save that we started scanning a new filesystem.
-     */
+    // Save that we started scanning a new filesystem.
     acl_data->current_dev = ff_pkt->statp.st_dev;
   }
 
@@ -2227,9 +2151,7 @@ bacl_exit_code BuildAclStreams(JobControlRecord* jcr,
    * should save native ACLs.
    */
   if (acl_data->flags & BACL_FLAG_SAVE_NATIVE) {
-    /*
-     * Call the appropriate function.
-     */
+    // Call the appropriate function.
     if (os_build_acl_streams) {
       return os_build_acl_streams(jcr, acl_data, ff_pkt);
     }
@@ -2295,9 +2217,7 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
     acl_data->flags |= BACL_FLAG_RESTORE_NATIVE;
 #  endif
 
-    /*
-     * Save that we started restoring to a new filesystem.
-     */
+    // Save that we started restoring to a new filesystem.
     acl_data->current_dev = st.st_dev;
   }
 
@@ -2319,9 +2239,7 @@ bacl_exit_code parse_acl_streams(JobControlRecord* jcr,
 #  if defined(HAVE_ACL)
     case STREAM_UNIX_ACCESS_ACL:
     case STREAM_UNIX_DEFAULT_ACL:
-      /*
-       * Handle legacy ACL streams.
-       */
+      // Handle legacy ACL streams.
       if ((acl_data->flags & BACL_FLAG_RESTORE_NATIVE)
           && os_parse_acl_streams) {
         return os_parse_acl_streams(jcr, acl_data, stream, content,

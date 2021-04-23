@@ -771,9 +771,7 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char* query,
   char getkeyval_query[NAMEDATALEN + 50];
   PGresult* pg_result;
 
-  /*
-   * First execute the insert query and then retrieve the currval.
-   */
+  // First execute the insert query and then retrieve the currval.
   if (!SqlQueryWithoutHandler(query)) { return 0; }
 
   num_rows_ = SqlAffectedRows();
@@ -864,9 +862,7 @@ SQL_FIELD* BareosDbPostgresql::SqlFetchField(void)
       fields_[i].type = PQftype(result_, i);
       fields_[i].flags = 0;
 
-      /*
-       * For a given column, find the max length.
-       */
+      // For a given column, find the max length.
       max_length = 0;
       for (j = 0; j < num_rows_; j++) {
         if (PQgetisnull(result_, j, i)) {
@@ -887,9 +883,7 @@ SQL_FIELD* BareosDbPostgresql::SqlFetchField(void)
     }
   }
 
-  /*
-   * Increment field number for the next time around
-   */
+  // Increment field number for the next time around
   return &fields_[field_number_++];
 }
 
@@ -905,9 +899,7 @@ bool BareosDbPostgresql::SqlFieldIsNotNull(int field_type)
 
 bool BareosDbPostgresql::SqlFieldIsNumeric(int field_type)
 {
-  /*
-   * TEMP: the following is taken from select OID, typname from pg_type;
-   */
+  // TEMP: the following is taken from select OID, typname from pg_type;
   switch (field_type) {
     case 20:
     case 21:
@@ -962,9 +954,7 @@ BareosDb* db_init_database(JobControlRecord* jcr,
   }
   P(mutex); /* lock DB queue */
 
-  /*
-   * Look to see if DB already open
-   */
+  // Look to see if DB already open
   if (db_list && !mult_db_connections && !need_private) {
     foreach_dlist (mdb, db_list) {
       if (mdb->IsPrivate()) { continue; }

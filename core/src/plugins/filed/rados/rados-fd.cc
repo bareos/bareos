@@ -595,16 +595,12 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
           }
         }
 
-        /*
-         * When we have a match break the loop.
-         */
+        // When we have a match break the loop.
         break;
       }
     }
 
-    /*
-     * Got an invalid keyword ?
-     */
+    // Got an invalid keyword ?
     if (!plugin_arguments[i].name) {
       Jmsg(ctx, M_FATAL,
            "rados-fd: Illegal argument %s with value %s in plugin definition\n",
@@ -624,9 +620,7 @@ bail_out:
   return bRC_Error;
 }
 
-/**
- * Connect via RADOS protocol to a CEPH cluster.
- */
+// Connect via RADOS protocol to a CEPH cluster.
 static bRC connect_to_rados(PluginContext* ctx)
 {
   int status;
@@ -635,9 +629,7 @@ static bRC connect_to_rados(PluginContext* ctx)
 #endif
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
-  /*
-   * See if we need to initialize the cluster connection.
-   */
+  // See if we need to initialize the cluster connection.
   if (!p_ctx->cluster_initialized) {
 #if LIBRADOS_VERSION_CODE < 17408
     if (!p_ctx->rados_clientid) {
@@ -651,9 +643,7 @@ static bRC connect_to_rados(PluginContext* ctx)
     }
 
     if (!p_ctx->rados_username) {
-      /*
-       * See if this uses the old clientid.
-       */
+      // See if this uses the old clientid.
       if (p_ctx->rados_clientid) {
         PoolMem temp;
 
@@ -697,9 +687,7 @@ static bRC connect_to_rados(PluginContext* ctx)
     p_ctx->cluster_initialized = true;
   }
 
-  /*
-   * See if we need to initialize the IO context.
-   */
+  // See if we need to initialize the IO context.
   if (!p_ctx->ioctx) {
     status = rados_ioctx_create(p_ctx->cluster, p_ctx->rados_poolname,
                                 &p_ctx->ioctx);
@@ -717,9 +705,7 @@ static bRC connect_to_rados(PluginContext* ctx)
   return bRC_OK;
 }
 
-/**
- * Generic setup for performing a backup.
- */
+// Generic setup for performing a backup.
 static bRC setup_backup(PluginContext* ctx, void* value)
 {
   int status;
@@ -729,9 +715,7 @@ static bRC setup_backup(PluginContext* ctx, void* value)
 
   if (connect_to_rados(ctx) != bRC_OK) { return bRC_Error; }
 
-  /*
-   * Create a snapshot and use it for consistent reading.
-   */
+  // Create a snapshot and use it for consistent reading.
   if (!p_ctx->rados_snapshotname) {
     PoolMem snapshotname(PM_NAME);
 
@@ -768,9 +752,7 @@ static bRC setup_backup(PluginContext* ctx, void* value)
   }
 #endif
 
-  /*
-   * See if we need to initialize an list iterator.
-   */
+  // See if we need to initialize an list iterator.
   if (!p_ctx->list_iterator) {
 #if defined(HAVE_RADOS_NAMESPACES) && defined(HAVE_RADOS_NOBJECTS_LIST)
     status = rados_nobjects_list_open(p_ctx->ioctx, &p_ctx->list_iterator);
@@ -809,9 +791,7 @@ bail_out:
   return bRC_Error;
 }
 
-/**
- * Generic setup for performing a restore.
- */
+// Generic setup for performing a restore.
 static bRC setup_restore(PluginContext* ctx, void* value)
 {
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
@@ -823,9 +803,7 @@ static bRC setup_restore(PluginContext* ctx, void* value)
   return bRC_OK;
 }
 
-/**
- * Bareos is calling us to do the actual I/O
- */
+// Bareos is calling us to do the actual I/O
 static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
 {
   int io_count;
@@ -891,9 +869,7 @@ bail_out:
   return bRC_Error;
 }
 
-/**
- * See if we need to do any postprocessing after the restore.
- */
+// See if we need to do any postprocessing after the restore.
 static bRC end_restore_job(PluginContext* ctx, void* value)
 {
   bRC retval = bRC_OK;
@@ -941,9 +917,7 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
 
   if (!p_ctx) { return bRC_Error; }
 
-  /*
-   * Filename is in the form <pool_name>/<object_name>
-   */
+  // Filename is in the form <pool_name>/<object_name>
   PmStrcpy(p_ctx->next_filename, rp->ofname);
   bp = strrchr(p_ctx->next_filename, '/');
   if (!bp) {
@@ -990,9 +964,7 @@ static bRC createFile(PluginContext* ctx, struct restore_pkt* rp)
 
   switch (rp->type) {
     case FT_REG: /* Regular file */
-      /*
-       * See if object already exists then we need to unlink it.
-       */
+      // See if object already exists then we need to unlink it.
       if (exists) {
         status = rados_remove(p_ctx->ioctx, p_ctx->object_name);
         if (status < 0) {
@@ -1027,9 +999,7 @@ static bRC setFileAttributes(PluginContext* ctx, struct restore_pkt* rp)
   return bRC_OK;
 }
 
-/**
- * When using Incremental dump, all previous dumps are necessary
- */
+// When using Incremental dump, all previous dumps are necessary
 static bRC checkFile(PluginContext* ctx, char* fname) { return bRC_OK; }
 
 static bRC getAcl(PluginContext* ctx, acl_pkt* ap) { return bRC_OK; }
@@ -1045,9 +1015,7 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
 
   if (!p_ctx) { return bRC_Error; }
 
-  /*
-   * See if we need to open a new xattr iterator.
-   */
+  // See if we need to open a new xattr iterator.
   if (!p_ctx->xattr_iterator) {
     status = rados_getxattrs(p_ctx->ioctx, p_ctx->object_name,
                              &p_ctx->xattr_iterator);
@@ -1060,9 +1028,7 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
     }
   }
 
-  /*
-   * Get the next xattr value.
-   */
+  // Get the next xattr value.
   status = rados_getxattrs_next(p_ctx->xattr_iterator, &xattr_name,
                                 &xattr_value, &xattr_value_length);
   if (status < 0) {
@@ -1073,9 +1039,7 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
     goto bail_out;
   }
 
-  /*
-   * Got last xattr ?
-   */
+  // Got last xattr ?
   if (!xattr_name) {
     rados_getxattrs_end(p_ctx->xattr_iterator);
     p_ctx->xattr_iterator = NULL;

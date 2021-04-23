@@ -1196,18 +1196,14 @@ void UpdateSlotsFromVolList(UaContext* ua,
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
     DbLock(ua->db);
 
-    /*
-     * Set InChanger to zero for this Slot
-     */
+    // Set InChanger to zero for this Slot
     ua->db->MakeInchangerUnique(ua->jcr, &mr);
 
     DbUnlock(ua->db);
     Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
 
-    /*
-     * See if there is anything in the slot.
-     */
+    // See if there is anything in the slot.
     switch (vl->slot_status) {
       case slot_status_t::kSlotStatusFull:
         if (!vl->VolName) {
@@ -1266,13 +1262,9 @@ void UpdateInchangerForExport(UaContext* ua,
 
   if (!OpenClientDb(ua)) { return; }
 
-  /*
-   * Walk through the list updating the media records
-   */
+  // Walk through the list updating the media records
   foreach_dlist (vl, vol_list->contents) {
-    /*
-     * We are only interested in normal slots.
-     */
+    // We are only interested in normal slots.
     switch (vl->slot_type) {
       case slot_type_t::kSlotTypeStorage:
         break;
@@ -1280,14 +1272,10 @@ void UpdateInchangerForExport(UaContext* ua,
         continue;
     }
 
-    /*
-     * Only update entries of slots marked in the slot_list.
-     */
+    // Only update entries of slots marked in the slot_list.
     if (!BitIsSet(vl->bareos_slot_number - 1, slot_list)) { continue; }
 
-    /*
-     * Set InChanger to zero for this Slot
-     */
+    // Set InChanger to zero for this Slot
     MediaDbRecord mr;
     mr.Slot = vl->bareos_slot_number;
     mr.InChanger = 1;
@@ -1303,9 +1291,7 @@ void UpdateInchangerForExport(UaContext* ua,
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
     DbLock(ua->db);
 
-    /*
-     * Set InChanger to zero for this Slot
-     */
+    // Set InChanger to zero for this Slot
     ua->db->MakeInchangerUnique(ua->jcr, &mr);
 
     DbUnlock(ua->db);

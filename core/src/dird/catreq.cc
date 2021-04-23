@@ -602,9 +602,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
             Dmsg2(400, "Cached attr with digest. Stream=%d fname=%s\n",
                   ar->Stream, ar->fname);
 
-            /*
-             * Update BaseFile table
-             */
+            // Update BaseFile table
             if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
               Jmsg1(jcr, M_FATAL, 0, _("attribute create error. %s"),
                     jcr->db->strerror());
@@ -623,9 +621,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
   }
 }
 
-/**
- * Update File Attributes in the catalog with data sent by the Storage daemon.
- */
+// Update File Attributes in the catalog with data sent by the Storage daemon.
 void CatalogUpdate(JobControlRecord* jcr, BareosSocket* bs)
 {
   if (!jcr->impl->res.pool->catalog_files) {
@@ -687,9 +683,7 @@ bool DespoolAttributesFromFile(JobControlRecord* jcr, const char* file)
     message_length = ntohl(pktsiz);
 
     if (message_length > 0) {
-      /*
-       * check for message_length + \0
-       */
+      // check for message_length + \0
       if ((message_length + 1) > (int32_t)SizeofPoolMemory(msg)) {
         msg = ReallocPoolMemory(msg, message_length + 1);
       }
