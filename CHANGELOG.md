@@ -6,6 +6,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Fixed
+- fix a bug where the restore browser would not recognize globbing wildcards in paths [PR #801]
 - fix shutdown of the Storage Daemon backends, especially call UnlockDoor on tape devices [PR #809]
 - fix possible deadlock in storage backend on Solaris and FreeBSD [PR #809]
 - [bug-0001194]: when doing an accurate incremental backup, if there is a database error, a full backup is done instead of reporting the error [PR #810]
