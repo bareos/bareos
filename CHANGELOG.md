@@ -23,6 +23,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix systemtests: reduce the number of broken tests [PR #771] [PR #791]
 - [Issue #1329]: If CommandACL limits any command, no messages can be read but "you have messages" is displayed. [PR #763]
 - fix gfapi-fd: avoid possible crash on second glfs_close() call [PR #792]
+- docs: declare shell scripts code blocks as "sh" instead of "shell-session" [PR #802]
 
 ### Added
 - systemtests for S3 functionalities (droplet, libcloud) now use https [PR #765]
@@ -31,6 +32,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - added an informative debugmessage when a dynamic backend cannot be loaded [PR #740]
 - support for shorter date formats, where shorter dates are compensated with lowest value possible to make a full date [PR #707]
 - added external repo bareos-contrib as subtree [PR #752]
+- add "copy button" to code snippets in documentation for easy copying [PR #802]
 
 ### Changed
 . core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
