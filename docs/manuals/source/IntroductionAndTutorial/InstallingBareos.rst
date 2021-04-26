@@ -96,8 +96,8 @@ RHEL, CentOS, Fedora
 
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included in the main repository.
 
-.. code-block:: shell-session
-   :caption: Shell example script for Bareos installation on RHEL 7 / CentOS 7 / Fedora
+.. code-block:: sh
+   :caption: Shell example script for Bareos installation on RHEL / CentOS / Fedora
 
    #!/bin/sh
 
@@ -134,7 +134,7 @@ SUSE Linux Enterprise Server (SLES), openSUSE
    single: Platform; SLES
    single: Platform; openSUSE
 
-.. code-block:: shell-session
+.. code-block:: sh
    :caption: Shell example script for Bareos installation on SLES / openSUSE
 
    #!/bin/sh
@@ -172,7 +172,7 @@ Debian / Ubuntu
 
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the :ref:`Jansson library <jansson>` package. On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
 
-.. code-block:: shell-session
+.. code-block:: sh
    :caption: Shell example script for Bareos installation on Debian / Ubuntu
 
    #!/bin/sh
@@ -211,7 +211,7 @@ Install on FreeBSD based Distributions
 .. index::
    single: Platform; FreeBSD
 
-.. code-block:: shell-session
+.. code-block:: sh
    :caption: Shell example script for Bareos installation on FreeBSD
 
    #!/bin/sh
