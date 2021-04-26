@@ -589,6 +589,14 @@ check_two_logs()
    fi
 }
 
+check_job_canceled()
+{
+    grep "^  Termination: *Backup Canceled" "${tmp}/log1.out" >/dev/null 2>&1
+    if test $? -eq 0; then
+      bstat=2
+    fi
+}
+
 check_log()
 {
    LOG=$1

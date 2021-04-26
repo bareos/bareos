@@ -24,3 +24,5 @@ If this directive is enabled duplicate jobs will be run. If the directive is set
    :config:option:`dir/job/CancelRunningDuplicates`\
 
 If none of these directives is set to :strong:`yes`, Allow Duplicate Jobs is set to :strong:`no` and two jobs are present, then the current job (the second one started) will be cancelled.
+
+Virtual backup jobs of a consolidation are not affected by the directive. In those cases the directive is going to be ignored.

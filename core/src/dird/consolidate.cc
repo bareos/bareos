@@ -108,6 +108,9 @@ bool DoConsolidate(JobControlRecord* jcr)
   jcr->impl->jr.JobId = jcr->JobId;
   jcr->impl->fname = (char*)GetPoolMemory(PM_FNAME);
 
+  // do not cancel virtual fulls started by consolidation
+  jcr->impl->IgnoreDuplicateJobChecking = true;
+
   // Print Job Start message
   Jmsg(jcr, M_INFO, 0, _("Start Consolidate JobId %d, Job=%s\n"), jcr->JobId,
        jcr->Job);

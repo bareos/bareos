@@ -49,6 +49,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Enable c++17 support [PR #741]
 - webui: Localization updated [PR #776]
 - running cmake for the core-directory only is now forbidden [PR #767]
+- dird: ignore duplicate job checking on virtual fulls started by consolidation [PR #552]
 
 ### Deprecated
 

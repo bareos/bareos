@@ -593,25 +593,25 @@ endforeach()
 
 set(tests_dir ${PROJECT_BINARY_DIR}/tests)
 set(SYSTEM_TESTS
-    client-initiated
-    config-dump
-    encrypt-signature
-    encrypt-signature-tls-cert
-    filesets
-    notls
-    passive
-    spool
+    ai-consolidate-ignore-duplicate-job
     bareos
     bareos-acl
-    bscan
     bconsole-status-client
+    bscan
+    client-initiated
+    config-dump
     config-syntax-crash
     copy-archive-job
     copy-bscan
     copy-remote-bscan
     deprecation
+    encrypt-signature
+    encrypt-signature-tls-cert
+    filesets
     list-backups
     multiplied-device
+    notls
+    passive
     reload-add-client
     reload-add-duplicate-job
     reload-add-empty-job
@@ -619,6 +619,7 @@ set(SYSTEM_TESTS
     reload-add-uncommented-string
     reload-unchanged-config
     scheduler-backup
+    spool
     upgrade-database
     virtualfull
     virtualfull-bscan
