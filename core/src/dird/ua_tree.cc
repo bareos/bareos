@@ -453,25 +453,10 @@ static void StripTrailingSlash(char* arg)
   }
 }
 
-/**
- * Recursively mark the current directory to be restored as
- *  well as all directories and files below it.
- */
-static int markcmd(UaContext* ua, TreeContext* tree)
+static int MarkElements(UaContext* ua, TreeContext* tree)
 {
   TREE_NODE* node;
   int count = 0;
-  char ec1[50];
-  POOLMEM* cwd;
-  bool restore_cwd = false;
-
-  if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
-    ua->SendMsg(_("No files marked.\n"));
-    return 1;
-  }
-
-  // Save the current CWD.
-  cwd = tree_getpath(tree->node);
 
   for (int i = 1; i < ua->argc; i++) {
     StripTrailingSlash(ua->argk[i]);
@@ -479,31 +464,45 @@ static int markcmd(UaContext* ua, TreeContext* tree)
     // See if this is a full path.
     if (strchr(ua->argk[i], '/')) {
       int pnl, fnl;
-      POOLMEM* file = GetPoolMemory(PM_FNAME);
-      POOLMEM* path = GetPoolMemory(PM_FNAME);
+      POOLMEM* file_pattern = GetPoolMemory(PM_FNAME);
+      POOLMEM* path_pattern = GetPoolMemory(PM_FNAME);
 
-      // Split the argument into a path and file part.
-      SplitPathAndFilename(ua->argk[i], path, &pnl, file, &fnl);
+      // Split the argument into a path pattern and file pattern.
+      SplitPathAndFilename(ua->argk[i], path_pattern, &pnl, file_pattern, &fnl);
 
-      // First change the CWD to the correct PATH.
-      node = tree_cwd(path, tree->root, tree->node);
+      // Initialize the node by CDing into current cwd
+      node = tree_cwd(path_pattern, tree->root, tree->node);
+
       if (!node) {
-        ua->WarningMsg(_("Invalid path %s given.\n"), path);
-        FreePoolMemory(file);
-        FreePoolMemory(path);
+        ua->WarningMsg(_("Invalid path %s given.\n"), path_pattern);
+        FreePoolMemory(file_pattern);
+        FreePoolMemory(path_pattern);
         continue;
       }
-      tree->node = node;
-      restore_cwd = true;
 
-      foreach_child (node, tree->node) {
-        if (fnmatch(file, node->fname, 0) == 0) {
-          count += SetExtract(ua, node, tree, true);
+      std::string fullpath_pattern = tree_getpath(tree->node);
+      fullpath_pattern.append(path_pattern);
+
+
+      POOLMEM* node_filename = GetPoolMemory(PM_FNAME);
+      POOLMEM* node_path = GetPoolMemory(PM_FNAME);
+      for (node = tree->node; node; node = NextTreeNode(node)) {
+        std::string node_cwd = tree_getpath(node);
+
+        SplitPathAndFilename(node_cwd.c_str(), node_path, &pnl, node_filename,
+                             &fnl);
+
+        if (fnmatch(fullpath_pattern.c_str(), node_path, 0) == 0) {
+          if (fnmatch(file_pattern, node->fname, 0) == 0) {
+            count += SetExtract(ua, node, tree, true);
+          }
         }
       }
 
-      FreePoolMemory(file);
-      FreePoolMemory(path);
+      FreePoolMemory(file_pattern);
+      FreePoolMemory(path_pattern);
+      FreePoolMemory(node_filename);
+      FreePoolMemory(node_path);
     } else {
       // Only a pattern without a / so do things relative to CWD.
       foreach_child (node, tree->node) {
@@ -513,6 +512,23 @@ static int markcmd(UaContext* ua, TreeContext* tree)
       }
     }
   }
+  return count;
+}
+
+/**
+ * Recursively mark the current directory to be restored as
+ *  well as all directories and files below it.
+ */
+static int markcmd(UaContext* ua, TreeContext* tree)
+{
+  if (ua->argc < 2 || !TreeNodeHasChild(tree->node)) {
+    ua->SendMsg(_("No files marked.\n"));
+    return 1;
+  }
+
+  char ec1[50];
+
+  int count = MarkElements(ua, tree);
 
   if (count == 0) {
     ua->SendMsg(_("No files marked.\n"));
@@ -521,18 +537,6 @@ static int markcmd(UaContext* ua, TreeContext* tree)
   } else {
     ua->SendMsg(_("%s files marked.\n"), edit_uint64_with_commas(count, ec1));
   }
-
-  // Restore the CWD when we changed it.
-  if (restore_cwd && cwd) {
-    node = tree_cwd(cwd, tree->root, tree->node);
-    if (!node) {
-      ua->WarningMsg(_("Invalid path %s given.\n"), cwd);
-    } else {
-      tree->node = node;
-    }
-  }
-
-  if (cwd) { FreePoolMemory(cwd); }
 
   return 1;
 }
