@@ -111,6 +111,7 @@ extensions = [
     "sphinxcontrib.seqdiag",
     "crate.sphinx.csv",
     "m2r2",
+    "sphinx_copybutton",
 ]
 
 #    'limitation',
