@@ -401,3 +401,11 @@ if(NOT client-only)
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
 endif() # NOT client-only
+
+if(NOT client-only)
+  bareos_add_test(
+    globbing_test
+    LINK_LIBRARIES bareos dird_objects bareosfind bareoscats bareossql
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+  )
+endif() # NOT client-only
