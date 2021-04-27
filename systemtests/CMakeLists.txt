@@ -626,11 +626,9 @@ set(SYSTEM_TESTS
     volume-pruning
 )
 
-if(TARGET gfapi-fd AND gfapi_fd_host)
+if (TARGET gfapi-fd AND gfapi_fd_host)
   list(APPEND SYSTEM_TESTS gfapi-fd)
-  message(
-    "   gfapi-fd test settings: gfapi_fd_host=${gfapi_fd_host}, gfapi_fd_testvolume=${gfapi_fd_testvolume}"
-  )
+  message("   gfapi-fd test settings: gfapi_fd_host=${gfapi_fd_host}, gfapi_fd_testvolume=${gfapi_fd_testvolume}")
 else()
   list(APPEND SYSTEM_TESTS_DISABLED gfapi-fd)
 endif()

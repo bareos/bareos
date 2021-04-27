@@ -736,3 +736,9 @@ if(autochanger_devices_found)
       "Found these devices for autochanger test: \"${changer-device}\" \"${joined_tape_devices_0}\""
   )
 endif()
+# gfapi-fd
+
+
+if(NOT DEFINED gfapi_fd_testvolume)
+  set(gfapi_fd_testvolume testvol PARENT_SCOPE)
+endif()

@@ -656,6 +656,11 @@ check_log()
    return 0
 }
 
+check_recursive_diff_of_dirs()
+{
+   "$rscripts/diff.pl" -s "$1" -d "$2"
+}
+
 check_restore_diff()
 {
    # $dest will be set to

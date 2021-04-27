@@ -1,0 +1,92 @@
+#!/bin/bash
+set -e
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+# Directory to backup.
+# This directory will be created by setup_data "$@"().
+BackupDirectory="${tmp}/data"
+
+
+sudo umount  "${tmp}/data" || :
+[ -d "${tmp}/data" ] ||  mkdir -p "${tmp}/data"
+sudo mount -t glusterfs 172.18.0.2:/testvol "${tmp}/data"
+
+
+# Use a tgz to setup data to be backed up.
+# Data will be placed at "${tmp}/data/".
+setup_data "$@"
+# remove fifos and links
+find "${tmp}/data" -type p -exec rm '{}' \;
+find "${tmp}/data" -type l -exec rm '{}' \;
+
+
+
+start_test
+
+cat <<END_OF_DATA_BACKUP >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+END_OF_DATA_BACKUP
+run_bareos "$@"
+check_for_zombie_jobs storage=File
+stop_bareos
+
+
+#[ -d "${tmp}/bareos-restores" ] && rm -Rvf "${tmp}/bareos-restores"
+#mkdir -p "${tmp}"/bareos-restores/"${tmp}/data"
+#now move the data away from gluster volume, restore and compare to moved data
+#mv "${tmp}/data"/* "${tmp}"/bareos-restores"${tmp}/data"
+
+cat <<END_OF_DATA_RESTORE >"$tmp/bconcmds"
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+status storage=File
+wait
+setdebug client=bareos-fd level=1000 trace=1
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores/data select all done
+yes
+status client
+messages
+wait
+messages
+quit
+END_OF_DATA_RESTORE
+run_bareos "$@"
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+ln -s  "${tmp}" "${tmp}/bareos-restores"
+check_recursive_diff_of_dirs $tmp/data/weird-files  $tmp/data/$tmp/bareos-restores/data/weird-files
+
+sudo umount "${tmp}/data"
+
+end_test
