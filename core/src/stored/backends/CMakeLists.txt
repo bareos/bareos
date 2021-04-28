@@ -40,9 +40,7 @@ if(${HAVE_GLUSTERFS})
 endif()
 
 if(TARGET droplet)
-  add_library(
-    bareossd-chunked SHARED ordered_cbuf.cc chunked_device.cc old_dlist.cc
-  )
+  add_library(bareossd-chunked SHARED ordered_cbuf.cc chunked_device.cc)
   target_link_libraries(bareossd-chunked droplet)
   install(TARGETS bareossd-chunked DESTINATION ${backenddir})
 
