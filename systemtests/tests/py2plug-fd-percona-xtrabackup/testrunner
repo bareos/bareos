@@ -9,11 +9,11 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-MYSQL="mysql --defaults-file=mysqldefaults --user=root"
 
 JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
+MYQL_CLIENT="${MYSQL} --defaults-file=mysqldefaults --user=root"
 
 JobName=backup-bareos-fd
 #shellcheck source=../scripts/functions
@@ -21,25 +21,57 @@ JobName=backup-bareos-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
+shutdown_mysql_server(){
+if [ -z "${MYSQL_INSTALL_DB:-}" ] ; then
+  [ -f "mysql/mysqld.pid" ] && kill "$(cat mysql/mysqld.pid)" || :
+else
+  [ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
+fi
+}
 
-[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
+
+shutdown_mysql_server
+
+# kill running mysqld instance listening on our port
+sudo fuser "${test_db_port}"/tcp -k || :
+
 rm -Rf mysql/data/*
 mkdir -p mysql/data/
+# directory for socket, depending on length (socket length is limited)
+rm -Rf  ${dbHost}
+mkdir -p ${dbHost}
+
+
 # initialize mysql db
-mysql_install_db --user="$USER" --defaults-file=mysqldefaults > mysql/mysql_init.log
 
+if [ "${MYSQL_INSTALL_DB}" = "MYSQL_INSTALL_DB-NOTFOUND" ]; then
+	mysqld --defaults-file=mysqldefaults --initialize-insecure --user="$USER" > mysql/mysql_init.log
+else
+	mysql_install_db --user="$USER" --defaults-file=mysqldefaults > mysql/mysql_init.log
+fi
 # start mysql server
-mysqld_safe --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
+mysqld --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
 
-sleep 4
+tries=60
+echo "waiting for mysql server to start"
+while ! $MYQL_CLIENT <<< "select version();"  > /dev/null 2>&1; do
+  [ $((tries-=1)) -eq 0 ] && {
+    echo "Could not start mysql server"
+    cat mysql/mysql.log
+    shutdown_mysql_server
+    exit 1
+  }
+  echo -n "."
+  sleep 1
+done
 
 xtrabackup_test_db="${db_name}_xtrabackup"
 
 start_test
 
-echo "create database ${xtrabackup_test_db}" | $MYSQL
-echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYSQL "${xtrabackup_test_db}"
-echo "insert into test (data) VALUES ('test entry 1') " | $MYSQL "${xtrabackup_test_db}"
+echo "create database ${xtrabackup_test_db}" | $MYQL_CLIENT
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYQL_CLIENT "${xtrabackup_test_db}"
+echo "insert into test (data) VALUES ('test entry 1') " | $MYQL_CLIENT "${xtrabackup_test_db}"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $tmp/log1.out
@@ -76,14 +108,7 @@ END_OF_DATA3
 
 run_bareos "$@"
 
-#JOBID=$(echo "$RESTORECMD" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf | grep "Job queued. JobId=" | sed s'/.*=//')
-#
-#if ! echo "wait jobid=$JOBID" | $BAREOS_BCONSOLE_BINARY -c "$conf"/bconsole.conf | grep -q "JobStatus=OK";
-#then
-#    echo "Restore Job $JOBID failed"
-#    estat=1
-#fi
-
+shutdown_mysql_server
 
 
 # Check if xtrabackup has extracted some files at least
@@ -95,10 +120,6 @@ if [ -z "$(ls -A "$tmp"/bareos-restores/_percona/)" ]; then
 fi
 
 
-
-# shutdown mysql
-[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)"
-rm -Rf mysql/data
 
 check_for_zombie_jobs storage=File
 stop_bareos
