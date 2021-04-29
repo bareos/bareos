@@ -7,15 +7,15 @@ The program selects files in your source directory to look at based on their git
 ## Installation
 The program was developed and tested with python 3.6, so this is the minimum required version (we cannot describe this in the Pipfile).
 First of all, you need the virtualenv for the project. To install all required dependencies, just all `pipenv sync` in the top directory.
-After that can run included software with symlinks pointing to the supplied `pipenv-wrapper.sh`. If you add a symlink `check-sources` from one of your binary dirs (e.g. ~/.local/bin) to that script you'll have it available in your path.
+After that can run included software with symlinks pointing to the supplied `pipenv-wrapper.sh`. If you add a symlink `bareos-check-sources` from one of your binary dirs (e.g. ~/.local/bin) to that script you'll have it available in your path.
 When updating, you may need to rerun `pipenv sync` up update dependencies.
 
-### Upgrading `check-sources` or your python installation
+### Upgrading `bareos-check-sources` or your python installation
 When you upgrade the software or your python install, you should clear out the virtualenv using `pipenv --rm` and the recreate it using `pipenv sync`.
 
 ## Usage
-See `check-sources --help` for current online-documentation.
-By default check-sources runs all installed plugins on all changed files in the git repository it is invoked from. To also check untracked files, you can use the `--untracked` or `-u` option.
+See `bareos-check-sources --help` for current online-documentation.
+By default bareos-check-sources runs all installed plugins on all changed files in the git repository it is invoked from. To also check untracked files, you can use the `--untracked` or `-u` option.
 To select more files, you can run it with `--since=<commit-ref>` to check everything changed since that commit, `--since-merge` to check all files changed since the last merge commit or `--all` to just check all files (this may take a very long time)
 
 By default all plugins will check and report if changes are required. For modifier plugins, you can also add `--modify` or `--diff` as a parameter. These will write-back the changes and/or show a diff of what needs to be changed.

@@ -50,9 +50,10 @@ def parse_cmdline_args():
     )
     parser.add_argument(
         "--ignore-file",
-        default=".check-sources-ignore",
+        default=".bareos-check-sources-ignore",
         metavar=("<ignore-file>"),
-        help="ignore patterns listed in <ignore-file> (default: .check-sources-ignore)",
+        help="ignore patterns listed in <ignore-file> "
+        + "(default: .bareos-check-sources-ignore)",
     )
     parser.add_argument(
         "filename", nargs="+", help="the files to which we add a header"

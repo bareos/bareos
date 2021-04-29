@@ -18,7 +18,7 @@
  * @file
  * OSSP var - Variable Expansion
  */
-/* check-sources:disable-copyright-check */
+/* bareos-check-sources:disable-copyright-check */
 
 #ifndef BAREOS_LIB_VAR_H_
 #define BAREOS_LIB_VAR_H_

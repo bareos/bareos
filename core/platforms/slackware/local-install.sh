@@ -1,5 +1,5 @@
 #!/bin/sh
-# check-sources:disable-copyright-check
+# bareos-check-sources:disable-copyright-check
 
 # local-install.sh
 # for Bareos on Slackware platform

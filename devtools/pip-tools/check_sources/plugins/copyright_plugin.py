@@ -47,7 +47,7 @@ def check_copyright_notice(file_path, file_content, **kwargs):
     if file_path.match("*.rst.inc"):
         return True
     # the string is split, so we don't disable the check for this file
-    if file_content.find("check-sources:" + "disable-copyright-check") >= 0:
+    if file_content.find("bareos-check-sources:" + "disable-copyright-check") >= 0:
         return True
     m = COPYRIGHT_REGEX.search(file_content)
     return m is not None

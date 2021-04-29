@@ -1,4 +1,4 @@
-/* check-sources:disable-copyright-check */
+/* bareos-check-sources:disable-copyright-check */
 #define _GNU_SOURCE /* for RTLD_NEXT */
 #include <sys/types.h>
 #include <stdlib.h>

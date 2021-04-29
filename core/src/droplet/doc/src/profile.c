@@ -1,4 +1,4 @@
-/* check-sources:disable-copyright-check */
+/* bareos-check-sources:disable-copyright-check */
 /*
  * This is not real source code.  It is source for documentation which
  * will go into the Doxygen-produced documentation, in a form which is

@@ -1,4 +1,4 @@
-/* check-sources:disable-copyright-check */
+/* bareos-check-sources:disable-copyright-check */
 // simple example which recurses a directory tree in using VFS abstraction
 
 #include <droplet.h>

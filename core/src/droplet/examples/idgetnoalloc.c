@@ -1,4 +1,4 @@
-/* check-sources:disable-copyright-check */
+/* bareos-check-sources:disable-copyright-check */
 // get ID with a provided buffer
 
 #include <droplet.h>
