@@ -241,6 +241,15 @@ macro(prepare_testdir_for_daemon_run)
   set(sd_backenddir ${SD_BACKEND_DIR_TO_TEST})
   set(BAREOS_WEBUI_PUBLIC_DIR ${WEBUI_PUBLIC_DIR_TO_TEST})
 
+  set(dbHost ${current_test_directory}/tmp)
+  string(LENGTH ${dbHost} dbHostLength)
+  if(${dbHostLength} GREATER 100)
+    # unix domain sockets (used by mysql and psql) cannot be longer than 107
+    # chars. If too long, the socket is created under /tmp
+    set(dbHost /tmp/${TEST_NAME})
+    file(MAKE_DIRECTORY ${dbHost})
+  endif()
+
   if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
     set(bin /bin)
     set(sbin /sbin)
@@ -601,6 +610,15 @@ set(SYSTEM_TESTS
     virtualfull-bscan
     volume-pruning
 )
+
+if(TARGET gfapi-fd AND gfapi_fd_host)
+  list(APPEND SYSTEM_TESTS gfapi-fd)
+  message(
+    "   gfapi-fd test settings: gfapi_fd_host=${gfapi_fd_host}, gfapi_fd_testvolume=${gfapi_fd_testvolume}"
+  )
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED gfapi-fd)
+endif()
 
 set(SYSTEM_TESTS_DISABLED # initially empty
 )
