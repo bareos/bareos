@@ -596,8 +596,8 @@ set(SYSTEM_TESTS
     ai-consolidate-ignore-duplicate-job
     bareos
     bareos-acl
+    bscan-bextract-bls
     bconsole-status-client
-    bscan
     client-initiated
     config-dump
     config-syntax-crash

@@ -472,6 +472,26 @@ run_bscan()
    fi
 }
 
+run_bls()
+{
+   print_debug "bls with ${BAREOS_BLS_BINARY}"
+   if test "$debug" -eq 1 ; then
+      "${BAREOS_BLS_BINARY}" -c "${conf}" "$@" </dev/null | tee "${tmp}/bls.out"
+   else
+      "${BAREOS_BLS_BINARY}" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bls.out"
+   fi
+}
+
+run_bextract()
+{
+   print_debug "bextract with ${BAREOS_BEXTRACT_BINARY}"
+   if test "$debug" -eq 1 ; then
+      "${BAREOS_BEXTRACT_BINARY}" -c "${conf}" "$@" </dev/null | tee "${tmp}/bextract.out"
+   else
+      "${BAREOS_BEXTRACT_BINARY}" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bextract.out"
+   fi
+}
+
 run_bscan_db()
 {
   run_bscan -n "$db_name" -u "$db_user" -P "$db_password" "$@"
