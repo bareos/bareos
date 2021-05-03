@@ -29,7 +29,7 @@ If you have any questions or problems, please give a comment in the PR.
 - [ ] Variable and function names are meaningful
 - [ ] Code comments are correct (logically and spelling)
 - [ ] Required documentation changes are present and part of the PR
-- [ ] `check-sources --since-merge` does not report any problems
+- [ ] `bareos-check-sources --since-merge` does not report any problems
 - [ ] `git status` should not report modifications in the source tree after building and testing
 
 ##### Tests

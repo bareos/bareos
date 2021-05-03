@@ -1,4 +1,4 @@
-/* check-sources:disable-copyright-check */
+/* bareos-check-sources:disable-copyright-check */
 /*
  * Timo use cases:
  *

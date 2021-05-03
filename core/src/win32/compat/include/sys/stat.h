@@ -1,4 +1,4 @@
-/* check-sources:disable-copyright-check */
+/* bareos-check-sources:disable-copyright-check */
 #ifndef BAREOS_WIN32_COMPAT_INCLUDE_SYS_STAT_H_
 #define BAREOS_WIN32_COMPAT_INCLUDE_SYS_STAT_H_
 #include "compat.h"

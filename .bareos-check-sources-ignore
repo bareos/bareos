@@ -5,6 +5,7 @@ core/src/ndmp/*.c
 core/src/ndmp/*.h
 core/src/stored/crc32
 debian/control
+devtools/pip-tools/check_sources.egg-info/*
 webui/vendor
 webui/module/Application/language
 webui/public/js/*.min.*

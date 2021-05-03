@@ -1,4 +1,4 @@
-/* check-sources:disable-copyright-check */
+/* bareos-check-sources:disable-copyright-check */
 /* Structures and definitions for magnetic tape I/O control commands.
    Copyright (C) 1996, 1997 Free Software Foundation, Inc.
    This file is part of the GNU C Library.

@@ -29,7 +29,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-/* check-sources:disable-copyright-check */
+/* bareos-check-sources:disable-copyright-check */
 
 /* OpenBSD: fnmatch.c,v 1.6 1998/03/19 00:29:59 millert */
 

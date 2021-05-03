@@ -1,4 +1,4 @@
-# check-sources:disable-copyright-check
+# bareos-check-sources:disable-copyright-check
 
 # Copyright (c) 2012 - 2017, Lars Bilke All rights reserved.
 #
