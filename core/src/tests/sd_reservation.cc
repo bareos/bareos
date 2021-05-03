@@ -32,6 +32,7 @@
 
 #include <chrono>
 #include <future>
+#include <thread>
 
 #define STORAGE_DAEMON 1
 #include "include/jcr.h"
