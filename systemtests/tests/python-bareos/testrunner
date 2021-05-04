@@ -29,7 +29,20 @@ start_test
 
 start_bareos
 
-sleep 1  # allow daemons to start listening before python connects
+# allow daemons to start listening before python connects
+tries=60
+echo "waiting for director to start"
+while ! bin/bconsole <<< "quit" > /dev/null 2>&1; do
+  [ $((tries-=1)) -eq 0 ] && {
+    echo "could not connect to Director"
+    exit 1
+  }
+  echo -n "."
+  sleep 1
+done
+
+
+
 
 run_python_unittests "$@"
 
