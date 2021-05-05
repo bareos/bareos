@@ -39,6 +39,8 @@
 #include "lib/berrno.h"
 #include "lib/util.h"
 
+#include <string>
+
 namespace storagedaemon {
 
 // Open a tape device
@@ -762,55 +764,43 @@ void generic_tape_device::UnlockDoor()
 #endif
 }
 
+void generic_tape_device::OsClrError()
+{
 #if defined(MTIOCLRERR)
-// Found on Solaris
-static inline void OsClrerror(Device* dev)
-{
-  if (dev->d_ioctl(dev->fd, MTIOCLRERR) < 0) { dev->clrerror(MTIOCLRERR); }
+  // Found on Solaris
+  if (d_ioctl(fd, MTIOCLRERR) < 0) { HandleError(MTIOCLRERR); }
   Dmsg0(200, "Did MTIOCLRERR\n");
-}
 #elif defined(MTIOCERRSTAT)
-// Typically on FreeBSD
-static inline void OsClrerror(Device* dev)
-{
+  // Typically on FreeBSD
   BErrNo be;
   union mterrstat mt_errstat;
 
   // Read and clear SCSI error status
-  Dmsg2(200, "Doing MTIOCERRSTAT errno=%d ERR=%s\n", dev->dev_errno,
-        be.bstrerror(dev->dev_errno));
-  if (dev->d_ioctl(dev->fd, MTIOCERRSTAT, (char*)&mt_errstat) < 0) {
-    dev->clrerror(MTIOCERRSTAT);
+  Dmsg2(200, "Doing MTIOCERRSTAT errno=%d ERR=%s\n", dev_errno,
+        be.bstrerror(dev_errno));
+  if (d_ioctl(fd, MTIOCERRSTAT, (char*)&mt_errstat) < 0) {
+    HandleError(MTIOCERRSTAT);
   }
-}
 #elif defined(MTCSE)
-// Clear Subsystem Exception TRU64
-static inline void OsClrerror(Device* dev)
-{
+  // Clear Subsystem Exception TRU64
   mtop mt_com{};
 
   // Clear any error condition on the tape
   mt_com.mt_op = MTCSE;
   mt_com.mt_count = 1;
-  if (dev->d_ioctl(dev->fd, MTIOCTOP, (char*)&mt_com) < 0) {
-    dev->clrerror(mt_com.mt_op);
-  }
+  if (d_ioctl(fd, MTIOCTOP, (char*)&mt_com) < 0) { HandleError(mt_com.mt_op); }
   Dmsg0(200, "Did MTCSE\n");
-}
-#else
-static inline void OsClrerror(Device* dev) {}
 #endif
+}
 
-// If implemented in system, clear the tape error status.
-void generic_tape_device::clrerror(int func)
+void generic_tape_device::HandleError(int func)
 {
-  const char* msg = NULL;
-  char buf[100];
-
-  dev_errno = errno; /* save errno */
-  if (errno == EIO) { VolCatInfo.VolCatErrors++; }
-
-  if (errno == ENOTTY || errno == ENOSYS) { /* Function not implemented */
+  dev_errno = errno;
+  if (errno == EIO) {
+    VolCatInfo.VolCatErrors++;
+  } else if (errno == ENOTTY
+             || errno == ENOSYS) { /* Function not implemented */
+    std::string msg;
     switch (func) {
       case -1:
         break; /* ignore message printed later */
@@ -858,7 +848,6 @@ void generic_tape_device::clrerror(int func)
         msg = "MTRESET";
         break;
 #endif
-
 #ifdef MTSETBSIZ
       case MTSETBSIZ:
         msg = "MTSETBSIZ";
@@ -903,17 +892,23 @@ void generic_tape_device::clrerror(int func)
         break;
 #endif
       default:
+        char buf[100];
         Bsnprintf(buf, sizeof(buf), _("unknown func code %d"), func);
         msg = buf;
         break;
     }
-    if (msg != NULL) {
+    if (!msg.empty()) {
       dev_errno = ENOSYS;
       Mmsg1(errmsg, _("I/O function \"%s\" not supported on this device.\n"),
-            msg);
+            msg.c_str());
       Emsg0(M_ERROR, 0, errmsg);
     }
   }
+}
+
+void generic_tape_device::clrerror(int func)
+{
+  HandleError(func);
 
   /*
    * Now we try different methods of clearing the error status on the drive
@@ -924,7 +919,7 @@ void generic_tape_device::clrerror(int func)
   GetOsTapeFile();
 
   // OS specific clear function.
-  OsClrerror(this);
+  OsClrError();
 }
 
 void generic_tape_device::SetOsDeviceParameters(DeviceControlRecord* dcr)

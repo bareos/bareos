@@ -71,6 +71,10 @@ class generic_tape_device : public Device {
   virtual ssize_t d_read(int fd, void* buffer, size_t count) override;
   virtual ssize_t d_write(int fd, const void* buffer, size_t count) override;
   virtual bool d_truncate(DeviceControlRecord* dcr) override;
+
+ private:
+  void OsClrError();
+  void HandleError(int func);
 };
 
 } /* namespace storagedaemon */
