@@ -242,9 +242,9 @@ macro(prepare_testdir_for_daemon_run)
 
   set(dbHost ${current_test_directory}/tmp)
   string(LENGTH ${dbHost} dbHostLength)
-  if(${dbHostLength} GREATER 110) # psql does not accept PGHOST length > 127
-    # message( STATUS "${current_test_directory}/tmp is too
-    # long(${dbHostLength}) PGHOST, using ${dbHost}" )
+  if(${dbHostLength} GREATER 90)
+    # unix domain sockets (used by mysql and psql) cannot be longer than 107
+    # chars. If too long, the socket is created under /tmp
     set(dbHost /tmp/${TEST_NAME})
     file(MAKE_DIRECTORY ${dbHost})
   endif()
@@ -626,12 +626,22 @@ set(SYSTEM_TESTS
     volume-pruning
 )
 
+if(TARGET gfapi-fd AND gfapi_fd_host)
+  list(APPEND SYSTEM_TESTS gfapi-fd)
+  message(
+    "   gfapi-fd test settings: gfapi_fd_host=${gfapi_fd_host}, gfapi_fd_testvolume=${gfapi_fd_testvolume}"
+  )
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED gfapi-fd)
+endif()
+
 set(SYSTEM_TESTS_DISABLED # initially empty
 )
 
 # add tests also here that are unreliable they are excluded when running tests
 # during build in jenkins
 set(SYSTEM_TESTS_BROKEN
+    py3plug-fd-postgres # fails because of psycopg2
     py3plug-fd-local-fileset # Fails with UnicodeEncodeError: 'utf-8' codec
                              # can't encode characters in position 133-142:
                              # surrogates not allowed
@@ -1083,7 +1093,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
     )
   endif()
 
-  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 300)
+  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 120 COST 1.0)
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
@@ -1144,7 +1154,7 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
     set_tests_properties(
-      ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 300
+      ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 120 COST 1.0
     )
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()

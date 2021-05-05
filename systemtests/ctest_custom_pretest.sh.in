@@ -63,7 +63,7 @@ if [ -n "$mysql" ]; then
 fi
 
 nr_killed=0
-for pidfile in $(find . -name bareos-\*.pid); do
+for pidfile in $(find . -name \*.pid); do
   ((nr_killed=nr_killed+1))
   kill -9 "$(cat "$pidfile")" >/dev/null 2>&1 || :
   rm -f "$pidfile"

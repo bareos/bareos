@@ -65,6 +65,8 @@ find ${tmp}/data/weird-files -links +1 -type f -exec rm {} \;
 rm ${tmp}/data/weird-files/fifo*
 rm ${tmp}/data/weird-files/newline*
 rm ${tmp}/data/weird-files/tab*
+# the following file also makes problems
+rm ${tmp}/data/weird-files/filename-with-non-utf8-bytestring*
 # s3cmd does not sync empty dirs
 rmdir ${tmp}/data/weird-files/big-X
 rmdir ${tmp}/data/weird-files/subdir
