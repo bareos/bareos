@@ -36,7 +36,7 @@ Known Limitations of PAM Modules
     By default, the user *bareos* do not have the permission to read this file.
     If this functionality is required, adapt the priviliges accordingly
     (e.g. add the user bareos to the group owning the file).
-    
+
 :pam_ldap:
     When using pam_ldap make sure
     your configuration does not require the rootbinddn and :file:`/etc/pam_ldap.secret` settings.
@@ -51,7 +51,7 @@ As the user is unknown, the authentication fails.
 One method to circumvent this
 is to provide the PAM credentials to the bconsole by an extra credentials file.
 This credentials file is adressed by the bconsole -p parameter.
-    
+
 Testing PAM Authentication
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -94,7 +94,7 @@ Test to connect via bconsole to the bareos-dir::
    Passwort: ********
    1000 OK: bareos-dir Version: 19.1.2 (01 February 2019)
    You are logged in as: USER_TO_TEST
-   
+
    Enter a period to cancel a command.
    *
 
@@ -112,7 +112,13 @@ Reuse your existing PamConsole or create an additional one::
 As PHP does not yet support TLS-PSK, the setting ``TLS Enable = no`` is required.
 Therefore it is advised to run the Bareos Director and Bareos WebUI on the same host.
 
-You may want to add following section to your :file:`/etc/bareos-webui/directors.ini`::
+Configure the ``pam_console_name`` and the ``pam_console_password`` in :file:`/etc/bareos-webui/directors.ini`
+as defined in the Console Resource, see above.
+
+You may want to add an additional Bareos Director section like this or add the
+parameters to an already existing one if heading for PAM usage only.
+
+::
 
    [localhost-dir-pam]
    enabled              = "yes"
@@ -126,7 +132,17 @@ You may want to add following section to your :file:`/etc/bareos-webui/directors
    pam_console_name     = "pam-webui"
    pam_console_password = "secret"
 
-Now you should be able to login to the WebUI using PAM users.
+PAM users require a dedicated User Resource, see https://docs.bareos.org/master/Configuration/Director.html#user-resource .
+
+A User Resource for a user named `alice` in the file :file:`/etc/bareos/bareos-dir.d/user/alice.conf` could
+look like folllowing::
+
+   User {
+      Name = "alice"
+      Profile = "webui-admin"
+   }
+
+Now you should be able to login using PAM user `alice` for example.
 
 
 Auto Create Bareos Users
