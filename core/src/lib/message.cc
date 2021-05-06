@@ -1617,7 +1617,7 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
   item = (MessageQueueItem*)malloc(sizeof(MessageQueueItem));
   item->type_ = type;
   item->mtime_ = time(NULL);
-  item->msg_ = new std::string(buf.c_str());
+  item->msg_ = strdup(buf.c_str());
 
   if (!jcr) { jcr = GetJcrFromThreadSpecificData(); }
 
@@ -1625,8 +1625,9 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
    * If no jcr  or no JobId or no queue or dequeuing send to syslog
    */
   if (!jcr || !jcr->JobId || !jcr->msg_queue || jcr->dequeuing_msgs) {
-    syslog(LOG_DAEMON | LOG_ERR, "%s", item->msg_->c_str());
-    delete item->msg_;
+    syslog(LOG_DAEMON | LOG_ERR, "%s", item->msg_);
+    free(item->msg_);
+    item->msg_ = nullptr;
     free(item);
   } else {
     /*
@@ -1651,7 +1652,8 @@ void DequeueMessages(JobControlRecord* jcr)
   jcr->dequeuing_msgs = true;
   foreach_dlist (item, jcr->msg_queue) {
     Jmsg(jcr, item->type_, item->mtime_, "%s", item->msg_->c_str());
-    delete (item->msg_);
+    free(item->msg_);
+    item->msg_ = nullptr;
   }
 
   /*
