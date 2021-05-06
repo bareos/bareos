@@ -24,7 +24,7 @@ JobName=backup-bareos-fd
 BackupDirectory="${tmp}/data"
 
 
-sudo umount  "${tmp}/data" || :
+sudo mount | grep "${tmp}/data" && umount "${tmp}/data"
 [ -d "${tmp}/data" ] ||  mkdir -p "${tmp}/data"
 sudo mount -t glusterfs 172.18.0.2:/testvol "${tmp}/data"
 
