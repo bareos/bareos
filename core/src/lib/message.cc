@@ -1626,7 +1626,7 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
    */
   if (!jcr || !jcr->JobId || !jcr->msg_queue || jcr->dequeuing_msgs) {
     syslog(LOG_DAEMON | LOG_ERR, "%s", item->msg_);
-    free(item->msg_);
+    free(const_cast<char*>(item->msg_));
     item->msg_ = nullptr;
     free(item);
   } else {
@@ -1651,8 +1651,8 @@ void DequeueMessages(JobControlRecord* jcr)
   P(jcr->msg_queue_mutex);
   jcr->dequeuing_msgs = true;
   foreach_dlist (item, jcr->msg_queue) {
-    Jmsg(jcr, item->type_, item->mtime_, "%s", item->msg_->c_str());
-    free(item->msg_);
+    Jmsg(jcr, item->type_, item->mtime_, "%s", item->msg_);
+    free(const_cast<char*>(item->msg_));
     item->msg_ = nullptr;
   }
 
