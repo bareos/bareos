@@ -6,8 +6,8 @@ The program selects files in your source directory to look at based on their git
 
 ## Installation
 The program was developed and tested with python 3.6, so this is the minimum required version (we cannot describe this in the Pipfile).
-First of all, you need the virtualenv for the project. To install all required dependencies, just all `pipenv sync` in the top directory.
-After that can run included software with symlinks pointing to the supplied `pipenv-wrapper.sh`. If you add a symlink `bareos-check-sources` from one of your binary dirs (e.g. ~/.local/bin) to that script you'll have it available in your path.
+First of all, you need the virtualenv for the project. To install all required dependencies, just `pipenv sync` inside the `pip-tools` directory.
+After that you can run included software with symlinks pointing to the supplied `pipenv-wrapper.sh`. If you add a symlink `bareos-check-sources` from one of your binary dirs (e.g. ~/.local/bin) to that script you'll have it available in your path.
 When updating, you may need to rerun `pipenv sync` up update dependencies.
 
 ### Upgrading `bareos-check-sources` or your python installation
