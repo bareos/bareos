@@ -116,4 +116,4 @@ Users have limited access to commands and jobs. Therefore the appropriate rights
   }
 
 
-Additional information can be found at https://github.com/bareos/bareos-contrib/tree/master/misc/bareos_pam_integration
+Additional information can be found at https://github.com/bareos/bareos/tree/master/contrib/misc/bareos_pam_integration
