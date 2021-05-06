@@ -116,5 +116,3 @@ Users have limited access to commands and jobs. Therefore the appropriate rights
      JobACL = *all*
   }
 
-
-Additional information can be found at https://github.com/bareos/bareos-contrib/tree/master/misc/bareos_pam_integration
