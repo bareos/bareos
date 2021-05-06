@@ -5,7 +5,7 @@
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/fileset/Catalog.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/fileset/LinuxAll.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/fileset/SelfTest.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/fileset/Windows All Drives.conf.sample
+@sample(bareos,bareos,0640) "%%ETCDIR%%/bareos-dir.d/fileset/Windows All Drives.conf.sample"
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/job/backup-bareos-fd.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/job/BackupCatalog.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/jobdefs/DefaultJob.conf.sample
