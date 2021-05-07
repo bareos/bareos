@@ -125,6 +125,9 @@ else
 fi
 export PYTHONPATH=@pythonpath@
 
+
+dbHost="@dbHost@"
+test_db_port=@test_db_port@
 # enable deprecated database handling in scripts
 export BAREOS_TEST_RUNNING=yes
 
@@ -138,3 +141,12 @@ SYSTEMTEST_LDAP_ADDRESS="@SYSTEMTEST_LDAP_ADDRESS@"
 SYSTEMTEST_LDAP_BASEDN="@SYSTEMTEST_LDAP_BASEDN@"
 SYSTEMTEST_LDAP_BINDDN="@SYSTEMTEST_LDAP_BINDDN@"
 SYSTEMTEST_LDAP_PASSWORD="@SYSTEMTEST_LDAP_PASSWORD@"
+
+LANG=en_US.UTF-8
+
+# path to real postgres binaries, NOT debian wrappers
+POSTGRES_BIN_PATH=@POSTGRES_BIN_PATH@
+
+MYSQL=@MYSQL@
+MYSQLD=@MYSQLD@
+MYSQL_INSTALL_DB=@MYSQL_INSTALL_DB@
