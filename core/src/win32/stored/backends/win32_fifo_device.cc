@@ -129,9 +129,8 @@ bool win32_fifo_device::eod(DeviceControlRecord* dcr)
 }
 
 // (Un)mount the device (For a FILE device)
-static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
+bool win32_fifo_device::do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
 {
-  DeviceResource* device_resource = dcr->dev->device_resource;
   PoolMem ocmd(PM_FNAME);
   POOLMEM* results;
   DIR* dp;
@@ -149,10 +148,10 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
     icmd = device_resource->unmount_command;
   }
 
-  dcr->dev->EditMountCodes(ocmd, icmd);
+  EditMountCodes(ocmd, icmd);
 
   Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(),
-        dcr->dev->IsMounted());
+        IsMounted());
 
   if (dotimeout) {
     /* Try at most 10 times to (un)mount the device. This should perhaps be
@@ -166,7 +165,7 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
   /* If busy retry each second */
   Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
   while ((status = RunProgramFullOutput(ocmd.c_str(),
-                                        dcr->dev->max_open_wait / 2, results))
+                                        max_open_wait / 2, results))
          != 0) {
     /* Doesn't work with internationalization (This is not a problem) */
     if (mount && fnmatch("*is already mounted on*", results, 0) == 0) { break; }
@@ -176,17 +175,17 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
        * Try to unmount it, then remount it */
       if (mount) {
         Dmsg1(400, "Trying to unmount the device %s...\n",
-              dcr->dev->print_name());
+              print_name());
         do_mount(dcr, 0, 0);
       }
       Bmicrosleep(1, 0);
       continue;
     }
     Dmsg5(100, "Device %s cannot be %smounted. status=%d result=%s ERR=%s\n",
-          dcr->dev->print_name(), (mount ? "" : "un"), status, results,
+          print_name(), (mount ? "" : "un"), status, results,
           be.bstrerror(status));
-    Mmsg(dcr->dev->errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
-         dcr->dev->print_name(), (mount ? "" : "un"), be.bstrerror(status));
+    Mmsg(errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
+         print_name(), (mount ? "" : "un"), be.bstrerror(status));
 
     // Now, just to be sure it is not mounted, try to read the filesystem.
     name_max = pathconf(".", _PC_NAME_MAX);
@@ -194,9 +193,9 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
 
     if (!(dp = opendir(device_resource->mount_point))) {
       BErrNo be;
-      dcr->dev->dev_errno = errno;
+      dev_errno = errno;
       Dmsg3(100, "do_mount: failed to open dir %s (dev=%s), ERR=%s\n",
-            device_resource->mount_point, dcr->dev->print_name(),
+            device_resource->mount_point, print_name(),
             be.bstrerror());
       goto get_out;
     }
@@ -211,10 +210,10 @@ static bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout)
       result = readdir(dp);
       if (result == NULL) {
 #endif
-        dcr->dev->dev_errno = EIO;
+        dev_errno = EIO;
         Dmsg2(129,
               "do_mount: failed to find suitable file in dir %s (dev=%s)\n",
-              device_resource->mount_point, dcr->dev->print_name());
+              device_resource->mount_point, print_name());
         break;
       }
       if (!bstrcmp(result->d_name, ".") && !bstrcmp(result->d_name, "..")

@@ -1111,9 +1111,8 @@ bool generic_tape_device::rewind(DeviceControlRecord* dcr)
 }
 
 // (Un)mount the device (for tape devices)
-static bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
+bool generic_tape_device::do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
 {
-  DeviceResource* device_resource = dcr->dev->device_resource;
   PoolMem ocmd(PM_FNAME);
   POOLMEM* results;
   char* icmd;
@@ -1126,9 +1125,9 @@ static bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
     icmd = device_resource->unmount_command;
   }
 
-  dcr->dev->EditMountCodes(ocmd, icmd);
+  EditMountCodes(ocmd, icmd);
   Dmsg2(100, "do_mount: cmd=%s mounted=%d\n", ocmd.c_str(),
-        dcr->dev->IsMounted());
+        IsMounted());
 
   if (dotimeout) {
     /* Try at most 10 times to (un)mount the device. This should perhaps be
@@ -1142,15 +1141,15 @@ static bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout)
   /* If busy retry each second */
   Dmsg1(100, "do_mount run_prog=%s\n", ocmd.c_str());
   while ((status = RunProgramFullOutput(ocmd.c_str(),
-                                        dcr->dev->max_open_wait / 2, results))
+                                        max_open_wait / 2, results))
          != 0) {
     if (tries-- > 0) { continue; }
 
     Dmsg5(100, "Device %s cannot be %smounted. stat=%d result=%s ERR=%s\n",
-          dcr->dev->print_name(), (mount ? "" : "un"), status, results,
+          print_name(), (mount ? "" : "un"), status, results,
           be.bstrerror(status));
-    Mmsg(dcr->dev->errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
-         dcr->dev->print_name(), (mount ? "" : "un"), be.bstrerror(status));
+    Mmsg(errmsg, _("Device %s cannot be %smounted. ERR=%s\n"),
+         print_name(), (mount ? "" : "un"), be.bstrerror(status));
 
     FreePoolMemory(results);
     Dmsg0(200, "============ mount=0\n");

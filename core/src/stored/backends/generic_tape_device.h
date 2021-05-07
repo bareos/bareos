@@ -73,6 +73,7 @@ class generic_tape_device : public Device {
   virtual bool d_truncate(DeviceControlRecord* dcr) override;
 
  private:
+  bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout);
   void OsClrError();
   void HandleError(int func);
 };
