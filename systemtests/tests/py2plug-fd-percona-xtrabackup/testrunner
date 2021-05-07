@@ -27,13 +27,13 @@ if [ "${MYSQL_INSTALL_DB}" != MYSQL_INSTALL_DB-NOTFOUND ] ; then
 else
   [ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
 fi
+# kill running mysqld instance listening on our port
+sudo fuser "${test_db_port}"/tcp -k || :
 }
 
 
 shutdown_mysql_server
 
-# kill running mysqld instance listening on our port
-sudo fuser "${test_db_port}"/tcp -k || :
 
 rm -Rf mysql/data/*
 mkdir -p mysql/data/
