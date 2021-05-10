@@ -1,10 +1,15 @@
 #!/bin/bash
 set -e
 set -u
+set -x
 #
 # Run a simple backup
 #   then restore it.
 #
+
+
+
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -13,8 +18,28 @@ JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
 
+umount_glusterfs(){
+#  make sure umount is successful
+tries=60
+echo "umounting glusterfs..."
+while sudo mount | grep "${tmp}/data" >/dev/null 2>&1; do
+  [ $((tries-=1)) -eq 0 ] && {
+    echo "could not umount glustrfs ${tmp}/data"
+    exit 1
+  }
+  sudo umount "${tmp}/data"
+  echo -n "."
+  sleep 1
+done
+}
+
+
+
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+
+
+umount_glusterfs
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
@@ -24,10 +49,13 @@ JobName=backup-bareos-fd
 BackupDirectory="${tmp}/data"
 
 
-sudo mount | grep "${tmp}/data" && umount "${tmp}/data"
+
+
+
 [ -d "${tmp}/data" ] ||  mkdir -p "${tmp}/data"
 sudo mount -t glusterfs 172.18.0.2:/testvol "${tmp}/data"
 
+sudo rm -Rvf "${tmp}/data/*"
 
 # Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
@@ -35,8 +63,6 @@ setup_data "$@"
 # remove fifos and links
 find "${tmp}/data" -type p -exec rm '{}' \;
 find "${tmp}/data" -type l -exec rm '{}' \;
-
-
 
 start_test
 
@@ -52,6 +78,32 @@ status client
 status storage=File
 wait
 messages
+status director
+status client
+status storage=File
+messages
+wait
+status director
+status client
+status storage=File
+messages
+wait
+status director
+status client
+status storage=File
+messages
+wait
+status director
+status client
+status storage=File
+messages
+wait
+status director
+status client
+status storage=File
+messages
+wait
+quit
 END_OF_DATA_BACKUP
 run_bareos "$@"
 check_for_zombie_jobs storage=File
@@ -76,7 +128,11 @@ yes
 status client
 messages
 wait
+status director
+status client
+status storage=File
 messages
+wait
 quit
 END_OF_DATA_RESTORE
 run_bareos "$@"
@@ -87,6 +143,5 @@ check_two_logs
 ln -s  "${tmp}" "${tmp}/bareos-restores"
 check_recursive_diff_of_dirs $tmp/data/weird-files  $tmp/data/$tmp/bareos-restores/data/weird-files
 
-sudo umount "${tmp}/data"
-
+umount_glusterfs
 end_test
