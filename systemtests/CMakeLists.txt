@@ -639,6 +639,7 @@ set(SYSTEM_TESTS_DISABLED # initially empty
 # add tests also here that are unreliable they are excluded when running tests
 # during build in jenkins
 set(SYSTEM_TESTS_BROKEN
+    python-restapi
     py3plug-fd-postgres # fails because of psycopg2
     py3plug-fd-local-fileset # Fails with UnicodeEncodeError: 'utf-8' codec
                              # can't encode characters in position 133-142:
