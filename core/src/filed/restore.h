@@ -24,7 +24,7 @@
 #define BAREOS_FILED_RESTORE_H_
 
 #include "findlib/bfile.h"
-template <class T> class alist;
+template <typename T> class alist;
 
 namespace filedaemon {
 

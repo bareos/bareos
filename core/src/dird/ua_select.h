@@ -23,7 +23,7 @@
 #define BAREOS_DIRD_UA_SELECT_H_
 
 #include "dird/ua.h"
-template <class T> class alist;
+template <typename T> class alist;
 
 struct PoolDbRecord;
 struct MediaDbRecord;

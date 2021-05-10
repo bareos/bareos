@@ -3317,7 +3317,7 @@ static bool HasDefaultValue(ResourceItem& item, s_jl* keywords)
   return is_default;
 }
 
-template <class T>
+template <typename T>
 static bool HasDefaultValue(ResourceItem& item, alist<T>* values)
 {
   if (item.flags & CFG_ITEM_DEFAULT) {

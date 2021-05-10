@@ -22,7 +22,7 @@
 #ifndef BAREOS_DIRD_MSGCHAN_H_
 #define BAREOS_DIRD_MSGCHAN_H_
 
-template <class T> class alist;
+template <typename T> class alist;
 
 namespace directordaemon {
 

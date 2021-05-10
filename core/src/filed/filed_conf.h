@@ -31,8 +31,8 @@
 
 #include "lib/messages_resource.h"
 #include "lib/tls_conf.h"
-template <class T> class alist;
-template <class T> class dlist;
+template <typename T> class alist;
+template <typename T> class dlist;
 class IPADDR;
 
 typedef struct X509_Keypair X509_KEYPAIR;
