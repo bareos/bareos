@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
 #   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
@@ -17,8 +18,6 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
-
-# -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 import io
