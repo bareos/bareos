@@ -22,8 +22,7 @@
 #ifndef BAREOS_DIRD_SOCKET_SERVER_H_
 #define BAREOS_DIRD_SOCKET_SERVER_H_
 
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 class IPADDR;
 
 namespace directordaemon {

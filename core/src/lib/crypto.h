@@ -28,8 +28,7 @@
 #ifndef BAREOS_LIB_CRYPTO_H_
 #define BAREOS_LIB_CRYPTO_H_
 
-template <class T>
-class alist;
+template <class T> class alist;
 
 /* Opaque X509 Public/Private Key Pair Structure */
 typedef struct X509_Keypair X509_KEYPAIR;
@@ -103,8 +102,8 @@ typedef enum
 } crypto_error_t;
 
 /* Message Digest Sizes */
-#define CRYPTO_DIGEST_MD5_SIZE 16 /* 128 bits */
-#define CRYPTO_DIGEST_SHA1_SIZE 20 /* 160 bits */
+#define CRYPTO_DIGEST_MD5_SIZE 16    /* 128 bits */
+#define CRYPTO_DIGEST_SHA1_SIZE 20   /* 160 bits */
 #define CRYPTO_DIGEST_SHA256_SIZE 32 /* 256 bits */
 #define CRYPTO_DIGEST_SHA512_SIZE 64 /* 512 bits */
 

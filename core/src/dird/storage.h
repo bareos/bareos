@@ -24,8 +24,7 @@
 
 #include "ndmp/smc.h"
 
-template <class T>
-class alist;
+template <class T> class alist;
 
 namespace directordaemon {
 

@@ -43,4 +43,3 @@ dlistString* new_dlistString(const char* str, int len)
   bstrncpy(node->c_str(), str, len + 1);
   return node;
 }
-

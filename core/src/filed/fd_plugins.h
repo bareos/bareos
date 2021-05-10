@@ -64,8 +64,7 @@ struct BareosWinFilePacket;
 struct FindFilesPacket;
 #endif /* FILE_DAEMON */
 
-template <typename T>
-class alist;
+template <typename T> class alist;
 
 namespace filedaemon {
 

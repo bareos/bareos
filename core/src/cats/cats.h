@@ -42,8 +42,7 @@
 
 #include <string>
 #include <vector>
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 
 /* import automatically generated SQL_QUERY */
 #include "bdb_query_enum_class.h"

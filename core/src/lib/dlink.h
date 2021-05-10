@@ -23,8 +23,7 @@
 #ifndef BAREOS_LIB_DLINK_H_
 #define BAREOS_LIB_DLINK_H_
 
-template <typename T>
-struct dlink {
+template <typename T> struct dlink {
   T* next;
   T* prev;
   dlink()

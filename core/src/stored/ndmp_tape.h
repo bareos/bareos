@@ -21,8 +21,7 @@
 #ifndef BAREOS_STORED_NDMP_TAPE_H_
 #define BAREOS_STORED_NDMP_TAPE_H_
 
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 
 namespace storagedaemon {
 

@@ -53,8 +53,7 @@ struct ListItem {
   dlink<ListItem> link;
   char* buf;
 };
-template <typename T>
-static int MyCompare(T* item1, T* item2)
+template <typename T> static int MyCompare(T* item1, T* item2)
 {
   int comp;
   comp = strcmp(item1->buf, item2->buf);

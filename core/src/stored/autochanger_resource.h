@@ -26,8 +26,7 @@
 
 #include "lib/bareos_resource.h"
 
-template <typename T>
-class alist;
+template <typename T> class alist;
 
 namespace storagedaemon {
 class DeviceResource;

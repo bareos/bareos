@@ -58,8 +58,7 @@ enum
  * On the Plugin side, it can get back the C structure and use it.
  * RestoreObject R2 -> parse() -> struct ini_items[]
  */
-template <class T>
-class alist;
+template <class T> class alist;
 class ConfigFile;
 struct ini_items;
 

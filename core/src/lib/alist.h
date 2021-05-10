@@ -94,8 +94,7 @@ enum
  *               array of pointers to inserted items
  */
 
-template <class T>
-class alist {
+template <class T> class alist {
   T* items = nullptr;
   int num_items = 0;
   int max_items = 0;
@@ -132,15 +131,13 @@ class alist {
 };
 
 // Define index operator []
-template <class T>
-inline T alist<T>::operator[](int index) const
+template <class T> inline T alist<T>::operator[](int index) const
 {
   if (index < 0 || index >= num_items) { return nullptr; }
   return items[index];
 }
 
-template <class T>
-inline bool alist<T>::empty() const
+template <class T> inline bool alist<T>::empty() const
 {
   return num_items == 0;
 }
@@ -149,8 +146,7 @@ inline bool alist<T>::empty() const
  *   allowing us to mix C++ classes inside malloc'ed
  *   C structures. Define before called in constructor.
  */
-template <class T>
-inline void alist<T>::init(int num, bool own)
+template <class T> inline void alist<T>::init(int num, bool own)
 {
   items = nullptr;
   num_items = 0;
@@ -160,20 +156,11 @@ inline void alist<T>::init(int num, bool own)
   cur_item = 0;
 }
 
-template <class T>
-inline alist<T>::alist(int num, bool own)
-{
-  init(num, own);
-}
+template <class T> inline alist<T>::alist(int num, bool own) { init(num, own); }
 
-template <class T>
-inline alist<T>::~alist()
-{
-  destroy();
-}
+template <class T> inline alist<T>::~alist() { destroy(); }
 
-template <class T>
-inline int alist<T>::size() const
+template <class T> inline int alist<T>::size() const
 {
   /* Check for null pointer, which allows test
    *  on size to succeed even if nothing put in
@@ -183,17 +170,12 @@ inline int alist<T>::size() const
 }
 
 /* How much to grow by each time */
-template <class T>
-inline void alist<T>::grow(int num)
-{
-  num_grow = num;
-}
+template <class T> inline void alist<T>::grow(int num) { num_grow = num; }
 
 /* Private grow list function. Used to insure that
  *   at least one more "slot" is available.
  */
-template <class T>
-void alist<T>::GrowList()
+template <class T> void alist<T>::GrowList()
 {
   if (items == NULL) {
     if (num_grow == 0) { num_grow = 1; /* default if not initialized */ }
@@ -205,8 +187,7 @@ void alist<T>::GrowList()
   }
 }
 
-template <class T>
-T alist<T>::first()
+template <class T> T alist<T>::first()
 {
   cur_item = 1;
   if (num_items == 0) {
@@ -216,8 +197,7 @@ T alist<T>::first()
   }
 }
 
-template <class T>
-T alist<T>::last()
+template <class T> T alist<T>::last()
 {
   if (num_items == 0) {
     return NULL;
@@ -227,8 +207,7 @@ T alist<T>::last()
   }
 }
 
-template <class T>
-T alist<T>::next()
+template <class T> T alist<T>::next()
 {
   if (cur_item >= num_items) {
     return NULL;
@@ -237,8 +216,7 @@ T alist<T>::next()
   }
 }
 
-template <class T>
-T alist<T>::prev()
+template <class T> T alist<T>::prev()
 {
   if (cur_item <= 1) {
     return NULL;
@@ -248,8 +226,7 @@ T alist<T>::prev()
 }
 
 // prepend an item to the list -- i.e. add to beginning
-template <class T>
-void alist<T>::prepend(T item)
+template <class T> void alist<T>::prepend(T item)
 {
   GrowList();
   if (num_items == 0) {
@@ -263,8 +240,7 @@ void alist<T>::prepend(T item)
 
 
 // Append an item to the list
-template <class T>
-void alist<T>::append(T item)
+template <class T> void alist<T>::append(T item)
 {
   GrowList();
   items[num_items++] = item;
@@ -284,16 +260,14 @@ T alist<T>::remove(int index)
 
 
 /* Get the index item -- we should probably allow real indexing here */
-template <class T>
-T alist<T>::get(int index)
+template <class T> T alist<T>::get(int index)
 {
   if (index < 0 || index >= num_items) { return NULL; }
   return items[index];
 }
 
 /* Destroy the list and its contents */
-template <class T>
-void alist<T>::destroy()
+template <class T> void alist<T>::destroy()
 {
   if (items) {
     if (own_items) {

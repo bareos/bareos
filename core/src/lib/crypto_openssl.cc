@@ -1101,7 +1101,7 @@ CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
       break;
 #        endif
 #      endif /* OPENSSL_NO_CAMELLIA */
-#    endif /* HAVE_OPENSSL_EXPORT_LIBRARY */
+#    endif   /* HAVE_OPENSSL_EXPORT_LIBRARY */
 #    if !defined(OPENSSL_NO_SHA) && !defined(OPENSSL_NO_SHA1)
 #      ifdef NID_aes_128_cbc_hmac_sha1
     case CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1:

@@ -21,8 +21,7 @@
 #ifndef BAREOS_STORED_SOCKET_SERVER_H_
 #define BAREOS_STORED_SOCKET_SERVER_H_
 
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 class ConfigurationParser;
 class IPADDR;
 

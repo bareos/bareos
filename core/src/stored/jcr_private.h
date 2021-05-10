@@ -30,8 +30,7 @@
 #define SD_APPEND 1
 #define SD_READ 0
 
-template <class T>
-class alist;
+template <class T> class alist;
 
 namespace storagedaemon {
 

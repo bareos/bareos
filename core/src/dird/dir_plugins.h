@@ -47,8 +47,7 @@
 #include "include/bc_types.h"
 #include "lib/plugins.h"
 
-template <typename T>
-class alist;
+template <typename T> class alist;
 
 namespace directordaemon {
 

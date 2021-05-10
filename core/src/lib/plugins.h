@@ -92,8 +92,7 @@ typedef struct gen_pluginInfo {
   const char* plugin_usage;
 } PluginInformation;
 
-template <typename T>
-class alist;
+template <typename T> class alist;
 
 /* Functions */
 bool LoadPlugins(void* bareos_plugin_interface_version,

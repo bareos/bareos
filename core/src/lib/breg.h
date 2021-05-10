@@ -76,8 +76,7 @@ class BareosRegex {
 
 /* create new BareosRegex and compile regex_t */
 BareosRegex* NewBregexp(const char* motif);
-template <typename T>
-class alist;
+template <typename T> class alist;
 
 /* launch each bregexp on filename */
 int RunBregexp(alist<BareosRegex*>* bregexps, const char* fname);

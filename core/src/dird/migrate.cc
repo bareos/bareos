@@ -1155,7 +1155,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
      */
     SetJcrDefaults(mig_jcr, prev_job);
 
-    //Time value on this Job
+    // Time value on this Job
     mig_jcr->impl->no_maxtime = true;
 
     // Don't check for duplicates on migration and copy jobs

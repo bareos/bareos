@@ -46,8 +46,7 @@
 #ifndef BAREOS_STORED_VOL_MGR_H_
 #define BAREOS_STORED_VOL_MGR_H_
 
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 
 namespace storagedaemon {
 

@@ -2411,7 +2411,7 @@ static BxattrExitCode solaris_save_xattr_acl(JobControlRecord* jcr,
     *acl_text = NULL;
   }
   retval = BxattrExitCode::kSuccess;
-#      else /* HAVE_EXTENDED_ACL */
+#      else    /* HAVE_EXTENDED_ACL */
   int n;
   aclent_t* acls = NULL;
 
@@ -2466,9 +2466,9 @@ static BxattrExitCode solaris_save_xattr_acl(JobControlRecord* jcr,
     *acl_text = NULL;
   }
   retval = BxattrExitCode::kSuccess;
-#      endif /* HAVE_EXTENDED_ACL */
+#      endif   /* HAVE_EXTENDED_ACL */
 
-#    else /* HAVE_ACL */
+#    else  /* HAVE_ACL */
   retval = BxattrExitCode::kSuccess;
 #    endif /* HAVE_ACL */
 
@@ -3015,7 +3015,7 @@ static BxattrExitCode solaris_restore_xattr_acl(JobControlRecord* jcr,
 
 #      endif /* HAVE_EXTENDED_ACL */
 }
-#    endif /* HAVE_ACL */
+#    endif   /* HAVE_ACL */
 
 static BxattrExitCode solaris_restore_xattrs(JobControlRecord* jcr,
                                              XattrData* xattr_data,

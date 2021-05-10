@@ -38,8 +38,7 @@
 #ifndef BAREOS_STORED_RESERVE_H_
 #define BAREOS_STORED_RESERVE_H_
 
-template <typename T>
-class alist;
+template <typename T> class alist;
 
 namespace storagedaemon {
 

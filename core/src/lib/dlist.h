@@ -58,8 +58,7 @@
          != nullptr;)
 #endif
 
-template <typename T>
-class dlist {
+template <typename T> class dlist {
   T* head;
   T* tail;
   int16_t loffset;
@@ -93,8 +92,7 @@ class dlist {
   T* last() const;
 };
 
-template <typename T>
-inline void dlist<T>::init()
+template <typename T> inline void dlist<T>::init()
 {
   head = tail = nullptr;
   loffset = 0;
@@ -110,8 +108,7 @@ inline void dlist<T>::init()
  *   then there is no need to specify the link address
  *   since the offset is zero.
  */
-template <typename T>
-inline dlist<T>::dlist(T* item, dlink<T>* link)
+template <typename T> inline dlist<T>::dlist(T* item, dlink<T>* link)
 {
   init(item, link);
 }
@@ -124,62 +121,44 @@ inline dlist<T>::dlist(void)
   return;
 }
 
-template <typename T>
-inline void dlist<T>::SetPrev(T* item, T* prev)
+template <typename T> inline void dlist<T>::SetPrev(T* item, T* prev)
 {
   ((dlink<T>*)(((char*)item) + loffset))->prev = prev;
 }
 
-template <typename T>
-inline void dlist<T>::SetNext(T* item, T* next)
+template <typename T> inline void dlist<T>::SetNext(T* item, T* next)
 {
   ((dlink<T>*)(((char*)item) + loffset))->next = next;
 }
 
-template <typename T>
-inline T* dlist<T>::get_prev(T* item)
+template <typename T> inline T* dlist<T>::get_prev(T* item)
 {
   return ((dlink<T>*)(((char*)item) + loffset))->prev;
 }
 
-template <typename T>
-inline T* dlist<T>::get_next(T* item)
+template <typename T> inline T* dlist<T>::get_next(T* item)
 {
   return ((dlink<T>*)(((char*)item) + loffset))->next;
 }
 
 
-template <typename T>
-inline dlink<T>* dlist<T>::get_link(T* item)
+template <typename T> inline dlink<T>* dlist<T>::get_link(T* item)
 {
   return (dlink<T>*)(((char*)item) + loffset);
 }
 
 
-template <typename T>
-inline bool dlist<T>::empty() const
+template <typename T> inline bool dlist<T>::empty() const
 {
   return head == nullptr;
 }
 
-template <typename T>
-inline int dlist<T>::size() const
-{
-  return num_items;
-}
+template <typename T> inline int dlist<T>::size() const { return num_items; }
 
 
-template <typename T>
-inline T* dlist<T>::first() const
-{
-  return head;
-}
+template <typename T> inline T* dlist<T>::first() const { return head; }
 
-template <typename T>
-inline T* dlist<T>::last() const
-{
-  return tail;
-}
+template <typename T> inline T* dlist<T>::last() const { return tail; }
 
 /**
  * C string helper routines for dlist
@@ -212,8 +191,7 @@ extern dlistString* new_dlistString(const char* str);
 
 
 // Init dlist
-template <typename T>
-void dlist<T>::init(T* item, dlink<T>* link)
+template <typename T> void dlist<T>::init(T* item, dlink<T>* link)
 {
   head = tail = NULL;
   loffset = (int)((char*)link - (char*)item);
@@ -224,8 +202,7 @@ void dlist<T>::init(T* item, dlink<T>* link)
 }
 
 // Append an item to the list
-template <typename T>
-void dlist<T>::append(T* item)
+template <typename T> void dlist<T>::append(T* item)
 {
   SetNext(item, NULL);
   SetPrev(item, tail);
@@ -238,8 +215,7 @@ void dlist<T>::append(T* item)
 }
 
 // Prepend an item to the list
-template <typename T>
-void dlist<T>::prepend(T* item)
+template <typename T> void dlist<T>::prepend(T* item)
 {
   SetNext(item, head);
   SetPrev(item, NULL);
@@ -251,8 +227,7 @@ void dlist<T>::prepend(T* item)
   num_items++;
 }
 
-template <typename T>
-void dlist<T>::InsertBefore(T* item, T* where)
+template <typename T> void dlist<T>::InsertBefore(T* item, T* where)
 {
   dlink<T>* where_link = get_link(where);
 
@@ -265,8 +240,7 @@ void dlist<T>::InsertBefore(T* item, T* where)
   num_items++;
 }
 
-template <typename T>
-void dlist<T>::InsertAfter(T* item, T* where)
+template <typename T> void dlist<T>::InsertAfter(T* item, T* where)
 {
   dlink<T>* where_link = get_link(where);
 
@@ -450,8 +424,7 @@ T* dlist<T>::binary_search(T* item, int compare(T* item1, T* item2))
 }
 
 
-template <typename T>
-void dlist<T>::remove(T* item)
+template <typename T> void dlist<T>::remove(T* item)
 {
   T* xitem;
   dlink<T>* ilink = get_link(item); /* item's link */
@@ -472,15 +445,13 @@ void dlist<T>::remove(T* item)
   if (num_items == 0) { head = tail = NULL; }
 }
 
-template <typename T>
-T* dlist<T>::next(T* item)
+template <typename T> T* dlist<T>::next(T* item)
 {
   if (item == NULL) { return head; }
   return get_next(item);
 }
 
-template <typename T>
-T* dlist<T>::prev(T* item)
+template <typename T> T* dlist<T>::prev(T* item)
 {
   if (item == NULL) { return tail; }
   return get_prev(item);
@@ -488,8 +459,7 @@ T* dlist<T>::prev(T* item)
 
 
 /* Destroy the list contents */
-template <typename T>
-void dlist<T>::destroy()
+template <typename T> void dlist<T>::destroy()
 {
   for (T* n = head; n;) {
     T* ni = get_next(n);

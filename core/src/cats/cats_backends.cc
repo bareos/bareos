@@ -295,5 +295,5 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
 void DbFlushBackends(void) {}
 #  endif /* HAVE_DYNAMIC_CATS_BACKENDS */
-#endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
-          HAVE_DBI */
+#endif   /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
+            HAVE_DBI */

@@ -55,7 +55,7 @@ class ordered_circbuf {
       = PTHREAD_COND_INITIALIZER; /* Full -> not full condition */
   pthread_cond_t notempty_
       = PTHREAD_COND_INITIALIZER; /* Empty -> not empty condition */
-  dlist<void>* data_ = nullptr;     /* Circular buffer of pointers */
+  dlist<void>* data_ = nullptr;   /* Circular buffer of pointers */
 
  public:
   ordered_circbuf(int capacity = OQSIZE);

@@ -43,8 +43,7 @@
 #include "include/jcr.h"
 #include "jobq.h"
 #include "ua.h"
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 
 namespace directordaemon {
 

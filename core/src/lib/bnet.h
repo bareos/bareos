@@ -23,8 +23,7 @@
 
 #include "tls.h"
 #include "lib/address_conf.h"
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 
 int32_t BnetRecv(BareosSocket* bsock);
 bool BnetSend(BareosSocket* bsock);

@@ -52,8 +52,7 @@ class BareosSocket;
 class Tls;
 class BStringList;
 class QualifiedResourceNameTypeConverter;
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 btimer_t* StartBsockTimer(BareosSocket* bs, uint32_t wait);
 void StopBsockTimer(btimer_t* wid);
 
@@ -317,7 +316,7 @@ enum
   BNET_TEXT_INPUT = -28    /* Get text input from user */
 };
 
-#define BNET_SETBUF_READ 1 /* Arg for BnetSetBufferSize */
+#define BNET_SETBUF_READ 1  /* Arg for BnetSetBufferSize */
 #define BNET_SETBUF_WRITE 2 /* Arg for BnetSetBufferSize */
 
 /**

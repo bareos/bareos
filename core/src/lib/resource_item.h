@@ -25,10 +25,8 @@
 #define BAREOS_LIB_RESOURCE_ITEM_H_
 
 struct s_password;
-template <typename T>
-class alist;
-template <typename T>
-class dlist;
+template <typename T> class alist;
+template <typename T> class dlist;
 
 /*
  * This is the structure that defines the record types (items) permitted within
@@ -62,15 +60,13 @@ static inline void* CalculateAddressOfMemberVariable(const ResourceItem& item)
   return static_cast<void*>(base + item.offset);
 }
 
-template <typename P>
-P GetItemVariable(const ResourceItem& item)
+template <typename P> P GetItemVariable(const ResourceItem& item)
 {
   void* p = CalculateAddressOfMemberVariable(item);
   return *(static_cast<typename std::remove_reference<P>::type*>(p));
 }
 
-template <typename P>
-P GetItemVariablePointer(const ResourceItem& item)
+template <typename P> P GetItemVariablePointer(const ResourceItem& item)
 {
   void* p = CalculateAddressOfMemberVariable(item);
   return static_cast<P>(p);

@@ -31,8 +31,7 @@
 
 #include "lib/dlist.h"
 
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 
 namespace storagedaemon {
 

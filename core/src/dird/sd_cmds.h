@@ -23,8 +23,7 @@
 #define BAREOS_DIRD_SD_CMDS_H_
 
 class JobControlRecord;
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 
 namespace directordaemon {
 

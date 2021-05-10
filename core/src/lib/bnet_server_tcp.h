@@ -37,8 +37,7 @@ enum class BnetServerState
   kEnded
 };
 
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 
 struct s_sockfd {
   int fd;

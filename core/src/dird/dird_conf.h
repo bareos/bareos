@@ -35,8 +35,7 @@
 #include "lib/resource_item.h"
 #include "lib/tls_conf.h"
 
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 struct json_t;
 class RunScript;
 class IPADDR;

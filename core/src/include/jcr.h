@@ -50,8 +50,7 @@
 struct job_callback_item;
 class BareosDb;
 class BareosSocket;
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 class htable;
 class JobControlRecord;
 

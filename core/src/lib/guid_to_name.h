@@ -28,8 +28,7 @@
 
 #ifndef BAREOS_LIB_GUID_TO_NAME_H_
 #define BAREOS_LIB_GUID_TO_NAME_H_
-template <typename T>
-class dlist;
+template <typename T> class dlist;
 struct guitem;
 class guid_list {
  public:
