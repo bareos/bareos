@@ -22,12 +22,12 @@ umount_glusterfs(){
 #  make sure umount is successful
 tries=60
 echo "umounting glusterfs..."
-while sudo mount | grep "${tmp}/data" >/dev/null 2>&1; do
+while "${SUDO}" mount | grep "${tmp}/data" >/dev/null 2>&1; do
   [ $((tries-=1)) -eq 0 ] && {
     echo "could not umount glustrfs ${tmp}/data"
     exit 1
   }
-  sudo umount "${tmp}/data"
+  "${SUDO}" umount "${tmp}/data"
   echo -n "."
   sleep 1
 done
@@ -53,9 +53,9 @@ BackupDirectory="${tmp}/data"
 
 
 [ -d "${tmp}/data" ] ||  mkdir -p "${tmp}/data"
-sudo mount -t glusterfs 172.18.0.2:/testvol "${tmp}/data"
+"${SUDO}" mount -t glusterfs ${gfapi_fd_host}:/testvol "${tmp}/data"
 
-sudo rm -Rvf "${tmp}/data/*"
+"${SUDO}" rm -Rvf "${tmp}/data/*"
 
 # Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".

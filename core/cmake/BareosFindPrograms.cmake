@@ -63,6 +63,9 @@ find_program(MDB mdb)
 find_program(XTRABACKUP xtrabackup)
 find_program(S3CMD s3cmd)
 find_program(MINIO minio)
+
 find_program(MYSQL mysql)
 find_program(MYSQLD mysqld)
 find_program(MYSQL_INSTALL_DB mysql_install_db)
+
+find_program(SUDO sudo)

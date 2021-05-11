@@ -36,6 +36,10 @@ if(POLICY CMP0057)
   cmake_policy(SET CMP0057 NEW)
 endif(POLICY CMP0057)
 
+if(POLICY CMP0109)
+  cmake_policy(SET CMP0109 NEW)
+endif(POLICY CMP0109)
+
 # disable in-source builds
 if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are not allowed.")

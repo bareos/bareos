@@ -626,9 +626,14 @@ set(SYSTEM_TESTS
     volume-pruning
 )
 
-if (TARGET gfapi-fd AND gfapi_fd_host)
+if(TARGET gfapi-fd
+   AND gfapi_fd_host
+   AND SUDO
+)
   list(APPEND SYSTEM_TESTS gfapi-fd)
-  message("   gfapi-fd test settings: gfapi_fd_host=${gfapi_fd_host}, gfapi_fd_testvolume=${gfapi_fd_testvolume}")
+  message(
+    "SUDO: ${SUDO},  gfapi-fd test settings: gfapi_fd_host=${gfapi_fd_host}, gfapi_fd_testvolume=${gfapi_fd_testvolume}"
+  )
 else()
   list(APPEND SYSTEM_TESTS_DISABLED gfapi-fd)
 endif()
@@ -1092,7 +1097,9 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
     )
   endif()
 
-  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 120 COST 1.0)
+  set_tests_properties(
+    ${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 120 COST 1.0
+  )
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()

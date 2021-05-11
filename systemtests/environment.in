@@ -126,6 +126,7 @@ else
 fi
 export PYTHONPATH=@pythonpath@
 
+gfapi_fd_host=@gfapi_fd_host@
 
 dbHost="@dbHost@"
 test_db_port=@test_db_port@
@@ -151,3 +152,5 @@ POSTGRES_BIN_PATH=@POSTGRES_BIN_PATH@
 MYSQL=@MYSQL@
 MYSQLD=@MYSQLD@
 MYSQL_INSTALL_DB=@MYSQL_INSTALL_DB@
+
+SUDO=@SUDO@
