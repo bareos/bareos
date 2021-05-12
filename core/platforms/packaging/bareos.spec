@@ -39,6 +39,7 @@ Vendor: 	The Bareos Team
 %define client_only 0
 %define build_qt_monitor 1
 %define build_sqlite3 1
+%define build_mysql 1
 %define glusterfs 0
 %define droplet 1
 %define have_git 1
@@ -60,6 +61,11 @@ BuildConflicts: libtirpc-devel
 %if 0%{?fedora} >= 28 || 0%{?rhel} > 7 || 0%{?suse_version} >= 1550 || 0%{?sle_version} >= 150300
 BuildRequires: rpcgen
 BuildRequires: libtirpc-devel
+%endif
+
+# remove mysql from fedora >= 34
+%if 0%{?fedora} >= 34
+%define build_mysql 0
 %endif
 
 #
@@ -201,7 +207,9 @@ BuildRequires: sqlite3-devel
 BuildRequires: sqlite-devel
 %endif
 %endif
+%if 0%{?build_mysql}
 BuildRequires: mysql-devel
+%endif
 BuildRequires: postgresql-devel
 BuildRequires: openssl
 BuildRequires: libcap-devel
@@ -447,12 +455,14 @@ Requires:   %{name}-database-common = %{version}
 Provides:   %{name}-catalog-postgresql
 Provides:   %{name}-database-backend
 
+%if 0%{?build_mysql}
 %package    database-mysql
 Summary:    Libs & tools for mysql catalog
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-database-common = %{version}
 Provides:   %{name}-catalog-mysql
 Provides:   %{name}-database-backend
+%endif
 
 %if 0%{?build_sqlite3}
 %package    database-sqlite3
@@ -882,10 +892,12 @@ This package contains the shared libraries that abstract the catalog interface
 
 This package contains the shared library to access postgresql as catalog db.
 
+%if 0%{?build_mysql}
 %description database-mysql
 %{dscr}
 
 This package contains the shared library to use mysql as catalog db.
+%endif
 
 %if 0%{?build_sqlite3}
 %description database-sqlite3
@@ -998,7 +1010,9 @@ cmake  .. \
   -Dclient-only=yes \
 %endif
   -Dpostgresql=yes \
+%if 0%{?build_mysql}
   -Dmysql=yes \
+%endif
 %if 0%{?build_sqlite3}
   -Dsqlite3=yes \
 %endif
@@ -1511,11 +1525,13 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{script_dir}/ddl/*/postgresql*.sql
 %{backend_dir}/libbareoscats-postgresql.so*
 
+%if 0%{?build_mysql}
 %files database-mysql
 # mysql catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/mysql*.sql
 %{backend_dir}/libbareoscats-mysql.so*
+%endif
 
 %if 0%{?build_sqlite3}
 %files database-sqlite3
@@ -1939,11 +1955,13 @@ a2enmod php5 &> /dev/null || true
 %postun database-postgresql
 /sbin/ldconfig
 
+%if 0%{?build_mysql}
 %post database-mysql
 /sbin/ldconfig
 
 %postun database-mysql
 /sbin/ldconfig
+%endif
 
 %if 0%{?build_sqlite3}
 %post database-sqlite3
