@@ -1,13 +1,6 @@
 #!/bin/bash
 set -e
 set -u
-set -x
-#
-# Run a simple backup
-#   then restore it.
-#
-
-
 
 
 TestName="$(basename "$(pwd)")"
@@ -17,6 +10,15 @@ JobName=backup-bareos-fd
 
 #shellcheck source=../environment.in
 . ./environment
+
+CTEST_SKIP_RETURN_CODE=77
+
+# check if required sudo commands can be executed, otherwise skip test
+for SUDO_CMD in mount umount rm; do
+  if ! "${SUDO}" -l "${SUDO_CMD}" >/dev/null 2>&1 ; then
+  echo "cannot execute $SUDO_CMD via sudo" && exit "${CTEST_SKIP_RETURN_CODE}"
+  fi
+done
 
 umount_glusterfs(){
 #  make sure umount is successful
@@ -47,9 +49,6 @@ umount_glusterfs
 # Directory to backup.
 # This directory will be created by setup_data "$@"().
 BackupDirectory="${tmp}/data"
-
-
-
 
 
 [ -d "${tmp}/data" ] ||  mkdir -p "${tmp}/data"

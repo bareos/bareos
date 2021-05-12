@@ -1099,6 +1099,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
 
   set_tests_properties(
     ${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 120 COST 1.0
+                                                SKIP_RETURN_CODE 77
   )
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
