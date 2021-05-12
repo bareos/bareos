@@ -57,7 +57,7 @@ BuildConflicts: libtirpc-devel
 %endif
 
 # fedora 28: rpc was removed from libc
-%if 0%{?fedora} >= 28 || 0%{?rhel} > 7 || 0%{?suse_version} >= 1550
+%if 0%{?fedora} >= 28 || 0%{?rhel} > 7 || 0%{?suse_version} >= 1550 || 0%{?sle_version} >= 150300
 BuildRequires: rpcgen
 BuildRequires: libtirpc-devel
 %endif
