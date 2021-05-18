@@ -14,8 +14,8 @@
 [Unit]
 Description=Bareos Storage Daemon service
 Documentation=man:bareos-sd(8)
-Requires=nss-lookup.target network.target remote-fs.target time-sync.target
-After=nss-lookup.target network.target remote-fs.target time-sync.target
+Requires=nss-lookup.target network.target time-sync.target
+After=nss-lookup.target network-online.target remote-fs.target time-sync.target
 # Wants=
 # Before=
 # Conflicts=
@@ -29,6 +29,8 @@ PIDFile=@piddir@/bareos-sd.@sd_port@.pid
 # EnvironmentFile=-/etc/sysconfig/bareos-sd
 StandardOutput=syslog
 ExecStart=@sbindir@/bareos-sd
+# enable this for scsicrypto-sd
+# CapabilityBoundingSet=cap_sys_rawio+ep
 SuccessExitStatus=0 15
 Restart=on-failure
 

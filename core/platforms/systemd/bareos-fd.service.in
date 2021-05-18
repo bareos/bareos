@@ -14,7 +14,7 @@
 [Unit]
 Description=Bareos File Daemon service
 Documentation=man:bareos-fd(8)
-Requires=nss-lookup.target network-online.target remote-fs.target time-sync.target
+Requires=nss-lookup.target network.target time-sync.target
 After=nss-lookup.target network-online.target remote-fs.target time-sync.target
 # Wants=
 # Before=
