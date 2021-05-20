@@ -351,9 +351,13 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
       return false; /* Fail */
     }
 
-    jcr->db_batch->GetFileList(
-        jcr, jobids.GetAsString().c_str(), jcr->impl->use_accurate_chksum,
-        false /* no delta */, AccurateListHandler, (void*)jcr);
+    if (!jcr->db_batch->GetFileList(
+            jcr, jobids.GetAsString().c_str(), jcr->impl->use_accurate_chksum,
+            false /* no delta */, AccurateListHandler, (void*)jcr)) {
+      Jmsg(jcr, M_FATAL, 0, "error in jcr->db_batch->GetBaseFileList:%s\n",
+           jcr->db_batch->strerror());
+      return false;
+    }
   }
 
   jcr->file_bsock->signal(BNET_EOD);
