@@ -34,8 +34,8 @@ namespace storagedaemon {
 
 class generic_tape_device : public Device {
  public:
-  generic_tape_device(){};
-  virtual ~generic_tape_device(){};
+  generic_tape_device() = default;
+  virtual ~generic_tape_device() { close(nullptr); }
 
   // Interface from Device
   virtual void OpenDevice(DeviceControlRecord* dcr, DeviceMode omode) override;
@@ -71,6 +71,11 @@ class generic_tape_device : public Device {
   virtual ssize_t d_read(int fd, void* buffer, size_t count) override;
   virtual ssize_t d_write(int fd, const void* buffer, size_t count) override;
   virtual bool d_truncate(DeviceControlRecord* dcr) override;
+
+ private:
+  bool do_mount(DeviceControlRecord* dcr, int mount, int dotimeout);
+  void OsClrError();
+  void HandleError(int func);
 };
 
 } /* namespace storagedaemon */

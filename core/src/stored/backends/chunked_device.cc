@@ -1369,6 +1369,7 @@ ChunkedDevice::~ChunkedDevice()
   }
 
   if (current_volname_) { free(current_volname_); }
+  close(nullptr);
 }
 
 } /* namespace storagedaemon */

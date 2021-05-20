@@ -34,7 +34,7 @@ namespace storagedaemon {
 class win32_file_device : public Device {
  public:
   win32_file_device();
-  ~win32_file_device();
+  ~win32_file_device() { close(nullptr); }
 
   // Interface from Device
   bool MountBackend(DeviceControlRecord* dcr, int timeout) override;

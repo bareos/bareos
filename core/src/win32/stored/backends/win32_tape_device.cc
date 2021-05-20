@@ -1094,8 +1094,6 @@ int win32_tape_device::TapePos(struct mtpos* mt_pos)
   return -1;
 }
 
-win32_tape_device::~win32_tape_device() {}
-
 win32_tape_device::win32_tape_device()
 {
   SetCap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */

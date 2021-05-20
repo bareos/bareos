@@ -33,7 +33,7 @@ namespace storagedaemon {
 class unix_file_device : public Device {
  public:
   unix_file_device() = default;
-  ~unix_file_device() = default;
+  ~unix_file_device() { close(nullptr); }
 
   // Interface from Device
   bool MountBackend(DeviceControlRecord* dcr, int timeout) override;

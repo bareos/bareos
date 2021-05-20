@@ -291,8 +291,6 @@ bool win32_file_device::d_truncate(DeviceControlRecord* dcr)
   return true;
 }
 
-win32_file_device::~win32_file_device() {}
-
 win32_file_device::win32_file_device() {}
 
 } /* namespace storagedaemon */

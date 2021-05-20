@@ -56,17 +56,10 @@ static DeviceResource* find_device_res(char* archive_device_string,
                                        bool readonly);
 static void MyFreeJcr(JobControlRecord* jcr);
 
-/**
- * Setup a "daemon" JobControlRecord for the various standalone tools (e.g. bls,
- * bextract, bscan, ...)
- */
-JobControlRecord* SetupJcr(const char* name,
-                           char* dev_name,
-                           BootStrapRecord* bsr,
-                           DirectorResource* director,
-                           DeviceControlRecord* dcr,
-                           const char* VolumeName,
-                           bool readonly)
+
+JobControlRecord* SetupDummyJcr(const char* name,
+                                BootStrapRecord* bsr,
+                                DirectorResource* director)
 {
   JobControlRecord* jcr = new_jcr(MyFreeJcr);
   jcr->impl = new JobControlRecordPrivate;
@@ -93,6 +86,24 @@ JobControlRecord* SetupJcr(const char* name,
   PmStrcpy(jcr->impl->fileset_md5, "Dummy.fileset.md5");
 
   NewPlugins(jcr); /* instantiate plugins */
+
+  return jcr;
+}
+
+
+/**
+ * Setup a "daemon" JobControlRecord for the various standalone tools (e.g. bls,
+ * bextract, bscan, ...)
+ */
+JobControlRecord* SetupJcr(const char* name,
+                           char* dev_name,
+                           BootStrapRecord* bsr,
+                           DirectorResource* director,
+                           DeviceControlRecord* dcr,
+                           const char* VolumeName,
+                           bool readonly)
+{
+  JobControlRecord* jcr = SetupDummyJcr(name, bsr, director);
 
   InitAutochangers();
   CreateVolumeLists();

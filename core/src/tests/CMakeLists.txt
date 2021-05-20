@@ -327,6 +327,10 @@ if(NOT client-only)
 endif()
 
 if(NOT client-only)
+  bareos_add_test(sd_backend LINK_LIBRARIES ${LINK_LIBRARIES} GTest::gmock)
+endif()
+
+if(NOT client-only)
   bareos_add_test(
     lib_tests
     ADDITIONAL_SOURCES
