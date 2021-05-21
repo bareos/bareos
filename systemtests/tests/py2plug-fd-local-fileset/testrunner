@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 set -u
 #
@@ -15,6 +14,7 @@ set -u
 #
 TestName="$(basename "$(pwd)")"
 export TestName
+
 JobName=backup-bareos-fd
 
 #shellcheck source=../environment.in
@@ -24,8 +24,6 @@ JobName=backup-bareos-fd
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
-
 
 # Directory to backup.
 # This directory will be created by setup_data().
@@ -75,6 +73,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @$out $tmp/log2.out
 restore client=bareos-fd fileset=PluginTest where=$tmp/bareos-restores select all done yes
+status client=bareos-fd
 wait
 messages
 END_OF_DATA

@@ -16,24 +16,22 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
+
 #shellcheck source=../environment.in
 . ./environment
 
-JobName=backup-bareos-fd
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-
-
 # Directory to backup.
-# This directory will be created by setup_data "$@"().
+# This directory will be created by setup_data().
 BackupDirectory="${tmp}/data"
 
 # Use a tgz to setup data to be backed up.
 # Data will be placed at "${tmp}/data/".
-setup_data "$@"
+setup_data
 
 # this test does not work with links because of the restore objects
 rm -r "${tmp}"/data/weird-files >/dev/null 2>&1
@@ -57,11 +55,10 @@ messages
 @#
 @$out $tmp/log2.out
 wait
-restore client=bareos-fd fileset=PluginTest where=$tmp/bareos-restores select all done
-yes
+restore client=bareos-fd fileset=PluginTest where=$tmp/bareos-restores select all done yes
+status client=bareos-fd
 wait
 messages
-quit
 END_OF_DATA
 
 run_bareos "$@"
