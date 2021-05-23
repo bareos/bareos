@@ -27,12 +27,13 @@
 import os
 import sys
 import re
-import psycopg2
+import pg8000.native
 import time
 import datetime
 from dateutil import parser
 import dateutil
 import json
+import getpass
 from BareosFdPluginLocalFilesBaseclass import BareosFdPluginLocalFilesBaseclass
 from BareosFdPluginBaseclass import *
 
@@ -56,9 +57,6 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         self.ignoreSubdirs = ["pg_wal", "pg_log", "pg_xlog"]
 
         self.dbCon = None
-        self.dbCursor = None
-        # Additional db options for psycopg2 connectino
-        self.dbOpts = ""
         # This will be set to True between SELECT pg_start_backup
         # and SELECT pg_stop_backup. We backup database file during
         # this time
@@ -104,15 +102,34 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         self.labelFileName = self.options["postgresDataDir"] + "backup_label"
         if not self.options["walArchive"].endswith("/"):
             self.options["walArchive"] += "/"
+
+
         if "ignoreSubdirs" in self.options:
             self.ignoreSubdirs = self.options["ignoreSubdirs"]
-        self.dbname = self.options.get("dbname", "postgres")
-        self.dbuser = self.options.get("dbuser", "root")
+
+        # get postgresql connection settings from environment as libpq also uses them
+        self.dbuser = os.environ.get('PGUSER', getpass.getuser())
+        self.dbpassword = os.environ.get('PGPASSWORD', '')
+        self.dbHost = os.environ.get('PGHOST', 'localhost')
+        self.dbport = os.environ.get('PGPORT', '5432')
+        self.dbname = os.environ.get('PGDATABASE', "postgres")
+
+        if "dbname" in self.options:
+            self.dbname = self.options.get("dbname", "postgres")
+        if "dbuser" in self.options:
+            self.dbuser = self.options.get("dbuser")
+        if "dbHost" in self.options:
+            if self.options["dbHost"].startswith("/"):
+                if not self.options["dbHost"].endswith("/"):
+                    self.options["dbHost"] += "/"
+                self.dbHost = self.options["dbHost"] + ".s.PGSQL." + self.dbport
+            else:
+                self.dbHost = self.options["dbHost"]
+
+
         self.switchWal = True
         if "switchWal" in self.options:
             self.switchWal = self.options["switchWal"].lower() == "true"
-        if "dbHost" in self.options:
-            self.dbOpts += " host='%s'" % self.options["dbHost"]
         return bRC_OK
 
     def execute_SQL(self, sqlStatement):
@@ -120,7 +137,7 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         Executes the SQL statement using the classes dbCursor
         """
         try:
-            self.dbCursor.execute(sqlStatement)
+            self.dbCon.run(sqlStatement)
         except Exception as e:
             bareosfd.JobMessage(
                 M_ERROR,
@@ -146,25 +163,23 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         """
         bareosfd.DebugMessage(100, "start_backup_job in PostgresPlugin called")
         try:
-            self.dbCon = psycopg2.connect(
-                "dbname=%s user=%s %s" % (self.dbname, self.dbuser, self.dbOpts)
-            )
-            self.dbCursor = self.dbCon.cursor()
-            self.dbCursor.execute("SELECT current_setting('server_version_num')")
-            self.pgVersion = int(self.dbCursor.fetchone()[0])
-            # bareosfd.DebugMessage(
-            #    1, "Connected to Postgres version %d\n" % self.pgVersion,
-            # )
+            if self.options["dbHost"].startswith("/"):
+                self.dbCon = pg8000.native.Connection(self.dbuser, database=self.dbname, unix_sock=self.dbHost)
+            else:
+                self.dbCon = pg8000.native.Connection(self.dbuser, database=self.dbname, host=self.dbHost)
+
+            result = self.dbCon.run("SELECT current_setting('server_version_num')")
+            self.pgVersion = int(result[0][0])
             ## WARNING: JobMessages cause fatal errors at this stage
             JobMessage(
                 M_INFO,
-                "Connected to Postgres version %d\n" % (self.pgVersion),
+                "Connected to Postgres version %d\n" % self.pgVersion,
             )
-        except:
+        except Exception as e:
             bareosfd.JobMessage(
                 M_FATAL,
-                "Could not connect to database %s, user %s\n"
-                % (self.dbname, self.dbuser),
+                "Could not connect to database %s, user %s, host: %s: %s\n"
+                % (self.dbname, self.dbuser, self.dbHost, e),
             )
             return bRC_Error
         if chr(self.level) == "F":
@@ -175,6 +190,10 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.files_to_backup.append(startDir)
             bareosfd.DebugMessage(
                 100, "dataDir: %s\n" % self.options["postgresDataDir"]
+            )
+            JobMessage(
+                M_INFO,
+                "dataDir: %s\n" % self.options["postgresDataDir"]
             )
         else:
             # If level is not Full, we only backup WAL files
@@ -198,34 +217,37 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                     "WAL switching not supported on Postgres Version < 9\n",
                 )
             else:
-                if self.execute_SQL(getLsnStmt):
-                    currentLSN = self.formatLSN(self.dbCursor.fetchone()[0])
+                try:
+                    currentLSN = self.formatLSN(self.dbCon.run(getLsnStmt)[0][0])
                     bareosfd.JobMessage(
                         M_INFO,
                         "Current LSN %s, last LSN: %s\n" % (currentLSN, self.lastLSN),
                     )
-                else:
-                    currrentLSN = 0
+                except Exception as e:
+                    currentLSN = 0
                     bareosfd.JobMessage(
                         M_WARNING,
-                        "Could not get current LSN, last LSN was: %s\n" % self.lastLSN,
+                        "Could not get current LSN, last LSN was: %s : %s \n" % (self.lastLSN, e),
                     )
                 if currentLSN > self.lastLSN and self.switchWal:
                     # Let Postgres write latest transaction into a new WAL file now
-                    if not self.execute_SQL(switchLsnStmt):
+                    try:
+                        result = self.dbCon.run(switchLsnStmt)
+                    except Exception as e:
                         bareosfd.JobMessage(
                             M_WARNING,
-                            "Could not switch to next WAL segment\n",
+                            "Could not switch to next WAL segment: %s\n" % e,
                         )
-                    if self.execute_SQL(getLsnStmt):
-                        currentLSN = self.formatLSN(self.dbCursor.fetchone()[0])
+                    try:
+                        result = self.dbCon.run(getLsnStmt)
+                        currentLSN = self.formatLSN(result[0][0])
                         self.lastLSN = currentLSN
                         # wait some seconds to make sure WAL file gets written
-                        time.sleep(10)
-                    else:
+                        time.sleep(10) #wtf
+                    except Exception as e:
                         bareosfd.JobMessage(
                             M_WARNING,
-                            "Could not read LSN after switching to new WAL segment\n",
+                            "Could not read LSN after switching to new WAL segment: %s\n" % e
                         )
                 else:
                     # Nothing has changed since last backup - only send ROP this time
@@ -296,13 +318,13 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         self.backupStartTime = datetime.datetime.now(
             tz=dateutil.tz.tzoffset(None, self.tzOffset)
         )
-        if not self.execute_SQL(
-            "SELECT pg_start_backup('%s');" % self.backupLabelString
-        ):
+        try:
+            result = self.dbCon.run( "SELECT pg_start_backup('%s');" % self.backupLabelString)
+        except:
             bareosfd.JobMessage(M_FATAL, "pg_start_backup statement failed.")
             return bRC_Error
-        results = self.dbCursor.fetchall()
-        bareosfd.DebugMessage(150, "Start response: %s\n" % str(results))
+
+        bareosfd.DebugMessage(150, "Start response: %s\n" % str(result))
         bareosfd.DebugMessage(
             150, "Adding label file %s to fileset\n" % self.labelFileName
         )
@@ -401,10 +423,10 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         # self.execute_SQL("SELECT pg_backup_start_time()")
         # self.backupStartTime = self.dbCursor.fetchone()[0]
         # Tell Postgres we are done
-        if self.execute_SQL("SELECT pg_stop_backup();"):
-            self.lastLSN = self.formatLSN(self.dbCursor.fetchone()[0])
+        try:
+            results = self.dbCon.run("SELECT pg_stop_backup();")
+            self.lastLSN = self.formatLSN(results[0][0])
             self.lastBackupStopTime = int(time.time())
-            results = self.dbCursor.fetchall()
             bareosfd.JobMessage(
                 M_INFO,
                 "Database connection closed. "
@@ -412,8 +434,8 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                 + "START WAL LOCATION: %s\n" % self.labelItems["START WAL LOCATION"],
             )
             self.PostgressFullBackupRunning = False
-        else:
-            bareosfd.JobMessage(M_ERROR, "pg_stop_backup statement failed.")
+        except Exception as e:
+            bareosfd.JobMessage(M_ERROR, "pg_stop_backup statement failed: %s\n" % (e))
 
     def checkForWalFiles(self):
         """

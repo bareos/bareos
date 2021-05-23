@@ -893,10 +893,10 @@ else()
 endif()
 
 message("checking for requirements of py2plug-fd-postgres:")
-check_pymodule_available(2 psycopg2)
+check_pymodule_available(2 pg8000)
 check_pymodule_available(2 dateutil)
 if(TARGET python-fd
-   AND PYMODULE_2_PSYCOPG2_FOUND
+   AND PYMODULE_2_PG8000_FOUND
    AND PYMODULE_2_DATEUTIL_FOUND
 )
   message("OK, enabling py2plug-fd-postgres:")
@@ -908,9 +908,9 @@ endif()
 
 message("checking for requirements of py3plug-fd-postgres:")
 if(TARGET python3-fd)
-  check_pymodule_available(3 psycopg2)
+  check_pymodule_available(3 pg8000)
   check_pymodule_available(3 dateutil)
-  if(PYMODULE_3_PSYCOPG2_FOUND
+  if(PYMODULE_3_PG8000_FOUND
      AND PYMODULE_3_DATEUTIL_FOUND
      AND (${Python3_VERSION_MAJOR} EQUAL 3)
      AND (${Python3_VERSION_MINOR} LESS 10)
