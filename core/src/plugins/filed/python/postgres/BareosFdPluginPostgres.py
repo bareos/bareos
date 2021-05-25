@@ -27,7 +27,7 @@
 import os
 import sys
 import re
-import pg8000
+import pg8000  # minimum required version is 1.16
 import time
 import datetime
 from dateutil import parser
@@ -36,6 +36,8 @@ import json
 import getpass
 from BareosFdPluginLocalFilesBaseclass import BareosFdPluginLocalFilesBaseclass
 from BareosFdPluginBaseclass import *
+
+
 
 
 class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
@@ -50,6 +52,15 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             "Constructor called in module %s with plugindef=%s\n"
             % (__name__, plugindef),
         )
+
+        # check if pg8000 module is new enough
+        major, minor, iter = pg8000.__version__.split('.')
+        if int(major) < 1 or ( int(major) == 1 and int(minor) < 16):
+            JobMessage(
+                M_FATAL,
+                "FATAL ERROR: pg8000 module is too old({}), required is >=1.16\n".format(pg8000.__version__),
+            )
+
         # Last argument of super constructor is a list of mandatory arguments
         super(BareosFdPluginPostgres, self).__init__(
             plugindef, ["postgresDataDir", "walArchive"]
