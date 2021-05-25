@@ -27,7 +27,7 @@
 import os
 import sys
 import re
-import pg8000.native
+import pg8000
 import time
 import datetime
 from dateutil import parser
@@ -150,9 +150,9 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         bareosfd.DebugMessage(100, "start_backup_job in PostgresPlugin called")
         try:
             if self.options["dbHost"].startswith("/"):
-                self.dbCon = pg8000.native.Connection(self.dbuser, database=self.dbname, unix_sock=self.dbHost)
+                self.dbCon = pg8000.Connection(self.dbuser, database=self.dbname, unix_sock=self.dbHost)
             else:
-                self.dbCon = pg8000.native.Connection(self.dbuser, database=self.dbname, host=self.dbHost)
+                self.dbCon = pg8000.Connection(self.dbuser, database=self.dbname, host=self.dbHost)
 
             result = self.dbCon.run("SELECT current_setting('server_version_num')")
             self.pgVersion = int(result[0][0])
