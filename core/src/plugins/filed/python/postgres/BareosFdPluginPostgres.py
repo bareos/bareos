@@ -132,20 +132,6 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.switchWal = self.options["switchWal"].lower() == "true"
         return bRC_OK
 
-    def execute_SQL(self, sqlStatement):
-        """
-        Executes the SQL statement using the classes dbCursor
-        """
-        try:
-            self.dbCon.run(sqlStatement)
-        except Exception as e:
-            bareosfd.JobMessage(
-                M_ERROR,
-                'Query "%s" failed: %s\n' % (sqlStatement, e),
-            )
-            return False
-        return True
-
     def formatLSN(self, rawLSN):
         """
         Postgres returns LSN in a non-comparable format with varying length, e.g.
