@@ -118,6 +118,10 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.dbname = self.options.get("dbname", "postgres")
         if "dbuser" in self.options:
             self.dbuser = self.options.get("dbuser")
+
+        # emulate behaviour of libpq handling of unix domain sockets
+        # i.e. there only the socket directory is set and ".s.PGSQL.<dbport>"
+        # is appended before opening
         if "dbHost" in self.options:
             if self.options["dbHost"].startswith("/"):
                 if not self.options["dbHost"].endswith("/"):
