@@ -54,6 +54,17 @@ restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all 
 yes
 wait
 messages
+@#
+@# now purge and truncate
+@#
+@$out $tmp/log3.out
+purge volume=Full-0001
+truncate volstatus=Purged drive=0 yes
+purge volume=Full-0002
+truncate volstatus=Purged drive=1 yes
+purge volume=Full-0003
+truncate volstatus=Purged drive=2 yes
+messages
 quit
 END_OF_DATA
 
@@ -82,6 +93,28 @@ if test $estat -ne 1 ; then
     echo "Not all MultiFileStorage devices are used."
     estat=1;
   fi
+fi
+
+#make sure all volumes are purged
+grep "There are no more Jobs associated with Volume \"Full-0001\". Marking it purged." "${tmp}"/log3.out >/dev/null 2>&1 &&
+grep "There are no more Jobs associated with Volume \"Full-0002\". Marking it purged." "${tmp}"/log3.out >/dev/null 2>&1 &&
+grep "There are no more Jobs associated with Volume \"Full-0003\". Marking it purged." "${tmp}"/log3.out >/dev/null 2>&1
+if test $? -ne 0 ; then
+  echo "The Purge command failed for a MultiFileStorage."
+  estat=1;
+fi
+
+
+#make sure all volumes are correctly truncated with the correct drive
+grep "3000 OK label. VolBytes=223 Volume=\"Full-0001\" Device=\"MultiFileStorage0001\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
+grep "3000 OK label. VolBytes=223 Volume=\"Full-0002\" Device=\"MultiFileStorage0002\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
+grep "3000 OK label. VolBytes=223 Volume=\"Full-0003\" Device=\"MultiFileStorage0003\" (storage)" "${tmp}"/log3.out >/dev/null 2>&1 &&
+grep "The volume 'Full-0001' has been truncated." "${tmp}"/log3.out >/dev/null 2>&1 &&
+grep "The volume 'Full-0002' has been truncated." "${tmp}"/log3.out >/dev/null 2>&1 &&
+grep "The volume 'Full-0003' has been truncated." "${tmp}"/log3.out >/dev/null 2>&1
+if test $? -ne 0 ; then
+  echo "The Truncate command failed for a MultiFileStorage."
+  estat=1;
 fi
 
 end_test
