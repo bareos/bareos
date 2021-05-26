@@ -1397,7 +1397,7 @@ truncate
       truncate volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [yes]
 
    When using a disk volume (and other volume types also) the volume file still resides on the |sd|. If you want to reclaim disk space, you can use the :bcommand:`truncate volstatus=Purged` command. When used on a volume, it rewrites the header and by this frees the rest of the disk space.
-   By default the first drive of an autochanger is used. By specifying `drive=<drivenum>`, a different drive can be selected.
+   By default the first drive (number 0) of an autochanger is used. By specifying `drive=<drivenum>`, a different drive can be selected.
 
    If the volume you want to get rid of has not the **Purged** status, you first have to use the :bcommand:`prune volume` or even the :bcommand:`purge volume` command to free the volume from all remaining jobs.
 
