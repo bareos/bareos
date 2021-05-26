@@ -1394,7 +1394,8 @@ truncate
    .. code-block:: bconsole
       :caption: truncate
 
-      truncate volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [yes]
+      truncate volstatus=Purged [storage=<storage>] [pool=<pool>]
+               [volume=<volume>] [drive=<drivenum>] [yes]
 
    When using a disk volume (and other volume types also) the volume file still resides on the |sd|. If you want to reclaim disk space, you can use the :bcommand:`truncate volstatus=Purged` command. When used on a volume, it rewrites the header and by this frees the rest of the disk space.
 
