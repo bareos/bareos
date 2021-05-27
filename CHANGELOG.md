@@ -38,6 +38,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - add "copy button" to code snippets in documentation for easy copying [PR #802]
 
 ### Changed
+- core: cleanup systemd service dependencies: Requires network.target, but start after the network-online.target [PR #700]
 . core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
 - repaired or added all header guards in libdroplet [PR #765]
 - When using Python > 3.7 the postgres and libcloud plugins will cancel the job and write an error message [PR #769]
