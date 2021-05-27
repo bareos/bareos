@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,12 +23,13 @@
 #define BAREOS_DIRD_SD_CMDS_H_
 
 class JobControlRecord;
-class dlist;
+template <typename T> class dlist;
 
 namespace directordaemon {
 
 class UaContext;
 class StorageResource;
+struct vol_list_t;
 
 bool ConnectToStorageDaemon(JobControlRecord* jcr,
                             int retry_interval,
@@ -39,10 +40,10 @@ void CloseSdBsock(UaContext* ua);
 char* get_volume_name_from_SD(UaContext* ua,
                               slot_number_t Slot,
                               drive_number_t drive);
-dlist* native_get_vol_list(UaContext* ua,
-                           StorageResource* store,
-                           bool listall,
-                           bool scan);
+dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
+                                       StorageResource* store,
+                                       bool listall,
+                                       bool scan);
 slot_number_t NativeGetNumSlots(UaContext* ua, StorageResource* store);
 drive_number_t NativeGetNumDrives(UaContext* ua, StorageResource* store);
 bool CancelStorageDaemonJob(UaContext* ua, StorageResource* store, char* JobId);

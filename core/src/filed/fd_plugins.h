@@ -64,7 +64,7 @@ struct BareosWinFilePacket;
 struct FindFilesPacket;
 #endif /* FILE_DAEMON */
 
-class alist;
+template <typename T> class alist;
 
 namespace filedaemon {
 
@@ -253,7 +253,7 @@ typedef struct s_bareosInfo {
 
 // Bareos Core Routines -- not used within a plugin
 #ifdef FILE_DAEMON
-void LoadFdPlugins(const char* plugin_dir, alist* plugin_names);
+void LoadFdPlugins(const char* plugin_dir, alist<const char*>* plugin_names);
 void UnloadFdPlugins(void);
 int ListFdPlugins(PoolMem& msg);
 void NewPlugins(JobControlRecord* jcr);

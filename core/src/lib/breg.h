@@ -76,23 +76,24 @@ class BareosRegex {
 
 /* create new BareosRegex and compile regex_t */
 BareosRegex* NewBregexp(const char* motif);
-
-class alist;
+template <typename T> class alist;
 
 /* launch each bregexp on filename */
-int RunBregexp(alist* bregexps, const char* fname);
+int RunBregexp(alist<BareosRegex*>* bregexps, const char* fname);
 
 /* free BareosRegex (and all POOLMEM) */
 void FreeBregexp(BareosRegex* script);
 
 /* fill an alist with BareosRegex from where */
-alist* get_bregexps(const char* where);
+alist<BareosRegex*>* get_bregexps(const char* where);
 
 /* apply every regexps from the alist */
-bool ApplyBregexps(const char* fname, alist* bregexps, char** result);
+bool ApplyBregexps(const char* fname,
+                   alist<BareosRegex*>* bregexps,
+                   char** result);
 
 /* foreach_alist free RunScript */
-void FreeBregexps(alist* bregexps); /* you have to free alist */
+void FreeBregexps(alist<BareosRegex*>* bregexps); /* you have to free alist */
 
 /* get regexp size */
 int BregexpGetBuildWhereSize(char* strip_prefix,

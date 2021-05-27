@@ -52,7 +52,7 @@ class BareosSocket;
 class Tls;
 class BStringList;
 class QualifiedResourceNameTypeConverter;
-class dlist;
+template <typename T> class dlist;
 btimer_t* StartBsockTimer(BareosSocket* bs, uint32_t wait);
 void StopBsockTimer(btimer_t* wid);
 
@@ -207,7 +207,7 @@ class BareosSocket {
                                JobControlRecord* jcr = nullptr);
   bool SetLocking();   /* in bsock.c */
   void ClearLocking(); /* in bsock.c */
-  void SetSourceAddress(dlist* src_addr_list);
+  void SetSourceAddress(dlist<IPADDR>* src_addr_list);
   void ControlBwlimit(int bytes); /* in bsock.c */
   bool EvaluateCleartextBareosHello(bool& cleartext,
                                     std::string& client_name_out,

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,13 +22,13 @@
 #ifndef BAREOS_DIRD_MSGCHAN_H_
 #define BAREOS_DIRD_MSGCHAN_H_
 
-class alist;
+template <typename T> class alist;
 
 namespace directordaemon {
 
 bool StartStorageDaemonJob(JobControlRecord* jcr,
-                           alist* read_storage,
-                           alist* write_storage,
+                           alist<StorageResource*>* read_storage,
+                           alist<StorageResource*>* write_storage,
                            bool send_bsr = false);
 bool StartStorageDaemonMessageThread(JobControlRecord* jcr);
 int BgetDirmsg(BareosSocket* bs, bool allow_any_msg = false);

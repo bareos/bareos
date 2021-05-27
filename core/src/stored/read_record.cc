@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -126,7 +126,7 @@ READ_CTX* new_read_context(void)
   READ_CTX empty_READ_CTX;
   *rctx = empty_READ_CTX;
 
-  rctx->recs = new dlist(rec, &rec->link);
+  rctx->recs = new dlist<DeviceRecord>(rec, &rec->link);
   return rctx;
 }
 

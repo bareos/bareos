@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -79,7 +79,7 @@ static DirectorResource* director = NULL;
 
 static AclData acl_data;
 static XattrData xattr_data;
-static alist* delayed_streams = NULL;
+static alist<DelayedDataStream*>* delayed_streams = NULL;
 
 static char* wbuf;            /* write buffer address */
 static uint32_t wsize;        /* write size */
@@ -279,7 +279,9 @@ static inline void PushDelayedDataStream(int stream,
 {
   DelayedDataStream* dds;
 
-  if (!delayed_streams) { delayed_streams = new alist(10, owned_by_alist); }
+  if (!delayed_streams) {
+    delayed_streams = new alist<DelayedDataStream*>(10, owned_by_alist);
+  }
 
   dds = (DelayedDataStream*)malloc(sizeof(DelayedDataStream));
   dds->stream = stream;

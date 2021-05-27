@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,8 +43,7 @@
 #include "include/jcr.h"
 #include "jobq.h"
 #include "ua.h"
-
-class dlist;
+template <typename T> class dlist;
 
 namespace directordaemon {
 
@@ -139,7 +138,7 @@ enum s_mapping_type
 // Slot list definition
 /* clang-format off */
 struct vol_list_t {
-  dlink link;                                            /**< Link for list */
+  dlink<vol_list_t> link;                                            /**< Link for list */
   slot_number_t element_address = kInvalidSlotNumber;    /**< scsi element address */
   slot_flags_t flags = 0;                                /**< Slot specific flags see e_slot_flag enum */
   slot_type_t slot_type = slot_type_t::kSlotTypeUnknown;
@@ -153,15 +152,15 @@ struct vol_list_t {
 /* clang-format on */
 
 struct changer_vol_list_t {
-  int16_t reference_count{}; /**< Number of references to this vol_list */
-  vol_list_type type{};      /**< Type of vol_list see vol_list_type enum */
-  utime_t timestamp{};       /**< When was this vol_list created */
-  dlist* contents{};         /**< Contents of autochanger */
+  int16_t reference_count{};     /**< Number of references to this vol_list */
+  vol_list_type type{};          /**< Type of vol_list see vol_list_type enum */
+  utime_t timestamp{};           /**< When was this vol_list created */
+  dlist<vol_list_t>* contents{}; /**< Contents of autochanger */
 };
 
 // Mapping from logical to physical storage address
 struct storage_mapping_t {
-  dlink link{};                                         /**< Link for list */
+  dlink<storage_mapping_t> link{};                      /**< Link for list */
   slot_type_t slot_type{slot_type_t::kSlotTypeUnknown}; /**< See slot_type_* */
   slot_number_t element_address{}; /**< scsi element address */
   slot_number_t Slot{};            /**< Drive number when kSlotTypeDrive

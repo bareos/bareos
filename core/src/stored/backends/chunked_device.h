@@ -28,7 +28,7 @@
 #ifndef BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
 #define BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
 
-class alist;
+template <typename T> class alist;
 
 #include "ordered_cbuf.h"
 namespace storagedaemon {
@@ -107,7 +107,7 @@ class ChunkedDevice : public Device {
   uint8_t inflight_chunks_{};
   char* current_volname_{};
   ordered_circbuf* cb_{};
-  alist* thread_ids_{};
+  alist<thread_handle*>* thread_ids_{};
   chunk_descriptor* current_chunk_{};
 
   // Private Methods

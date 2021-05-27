@@ -34,8 +34,10 @@
 #include "lib/messages_resource.h"
 #include "lib/tls_conf.h"
 
-class alist;
-class dlist;
+template <typename T> class alist;
+template <typename T> class dlist;
+
+class IPADDR;
 
 namespace storagedaemon {
 
@@ -95,14 +97,15 @@ class StorageResource
     : public BareosResource
     , public TlsResource {
  public:
-  dlist* SDaddrs = nullptr;
-  dlist* SDsrc_addr = nullptr; /**< Address to source connections from */
-  dlist* NDMPaddrs = nullptr;
+  dlist<IPADDR>* SDaddrs = nullptr;
+  dlist<IPADDR>* SDsrc_addr
+      = nullptr; /**< Address to source connections from */
+  dlist<IPADDR>* NDMPaddrs = nullptr;
   char* working_directory = nullptr; /**< Working directory for checkpoints */
   char* pid_directory = nullptr;
   char* subsys_directory = nullptr;
   char* plugin_directory = nullptr; /**< Plugin directory */
-  alist* plugin_names = nullptr;
+  alist<const char*>* plugin_names = nullptr;
   char* scripts_directory = nullptr;
   std::vector<std::string> backend_directories;
   uint32_t MaxConcurrentJobs = 0;      /**< Maximum concurrent jobs to run */

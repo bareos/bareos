@@ -1461,7 +1461,8 @@ bool GetLevelFromName(JobControlRecord* jcr, const char* level_name)
 }
 
 // Insert an JobId into the list of selected JobIds when its a unique new id.
-static inline bool InsertSelectedJobid(alist* selected_jobids, JobId_t JobId)
+static inline bool InsertSelectedJobid(alist<JobId_t*>* selected_jobids,
+                                       JobId_t JobId)
 {
   bool found;
   JobId_t* selected_jobid = nullptr;
@@ -1491,7 +1492,7 @@ static inline bool InsertSelectedJobid(alist* selected_jobids, JobId_t JobId)
  * Returns: NULL on error
  *          alist on success with the selected jobids.
  */
-alist* select_jobs(UaContext* ua, const char* reason)
+alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
 {
   int i;
   int cnt = 0;
@@ -1499,7 +1500,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
   JobControlRecord* jcr = NULL;
   bool select_all = false;
   bool select_by_state = false;
-  alist* selected_jobids;
+  alist<JobId_t*>* selected_jobids;
   const char* lst[] = {"job", "jobid", "ujobid", NULL};
   enum
   {
@@ -1512,7 +1513,7 @@ alist* select_jobs(UaContext* ua, const char* reason)
   } selection_criterium;
 
   // Allocate a list for holding the selected JobIds.
-  selected_jobids = new alist(10, owned_by_alist);
+  selected_jobids = new alist<JobId_t*>(10, owned_by_alist);
 
   // See if "all" is given.
   if (FindArg(ua, NT_("all")) > 0) { select_all = true; }

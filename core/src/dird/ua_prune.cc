@@ -572,7 +572,7 @@ struct accurate_check_ctx {
 // row: Job.Name, FileSet, Client.Name, FileSetId, ClientId, Type
 static int JobSelectHandler(void* ctx, int num_fields, char** row)
 {
-  alist* lst = (alist*)ctx;
+  alist<accurate_check_ctx*>* lst = (alist<accurate_check_ctx*>*)ctx;
   struct accurate_check_ctx* res;
   ASSERT(num_fields == 6);
 
@@ -618,7 +618,7 @@ static bool PruneBackupJobs(UaContext* ua,
   PoolMem sql_from(PM_MESSAGE);
   utime_t period;
   char ed1[50];
-  alist* jobids_check = NULL;
+  alist<JobId_t*>* jobids_check = NULL;
   struct accurate_check_ctx* elt = nullptr;
   db_list_ctx jobids, tempids;
   JobDbRecord jr;
@@ -673,7 +673,7 @@ static bool PruneBackupJobs(UaContext* ua,
    * able to restore files. (ie, last full, last diff, last incrs)
    * Note: The DISTINCT could be more useful if we don't get FileSetId
    */
-  jobids_check = new alist(10, owned_by_alist);
+  jobids_check = new alist<JobId_t*>(10, owned_by_alist);
   Mmsg(query,
        "SELECT DISTINCT Job.Name, FileSet, Client.Name, Job.FileSetId, "
        "Job.ClientId, Job.Type "

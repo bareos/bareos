@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,7 +53,7 @@
  */
 
 // List of open databases
-static dlist* db_list = NULL;
+static dlist<BareosDbMysql>* db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -120,7 +120,9 @@ BareosDbMysql::BareosDbMysql(JobControlRecord* jcr,
   result_ = NULL;
 
   // Put the db in the list.
-  if (db_list == NULL) { db_list = new dlist(this, &this->link_); }
+  if (db_list == NULL) {
+    db_list = new dlist<BareosDbMysql>(this, &this->link);
+  }
   db_list->append(this);
 
   /* make the queries available using the queries variable from the parent class
@@ -397,9 +399,7 @@ retry_query:
       break;
     case CR_SERVER_GONE_ERROR:
     case CR_SERVER_LOST:
-      if (exit_on_fatal_) {
-        Emsg0(M_ERROR_TERM, 0, "Fatal database error\n");
-      }
+      if (exit_on_fatal_) { Emsg0(M_ERROR_TERM, 0, "Fatal database error\n"); }
 
       if (try_reconnect_ && !transaction_) {
         /*
@@ -505,9 +505,7 @@ retry_query:
       break;
     case CR_SERVER_GONE_ERROR:
     case CR_SERVER_LOST:
-      if (exit_on_fatal_) {
-        Emsg0(M_ERROR_TERM, 0, "Fatal database error\n");
-      }
+      if (exit_on_fatal_) { Emsg0(M_ERROR_TERM, 0, "Fatal database error\n"); }
 
       if (try_reconnect_ && !transaction_) {
         /*

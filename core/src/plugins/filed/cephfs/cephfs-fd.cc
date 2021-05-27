@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2015 Planets Communications B.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,8 @@
 #include <cephfs/libcephfs.h>
 
 namespace filedaemon {
+
+struct dir_stack_entry;
 
 static const int debuglevel = 150;
 
@@ -115,9 +117,9 @@ struct plugin_ctx {
   POOLMEM* next_filename; /* Next filename to save */
   POOLMEM* link_target;   /* Target symlink points to */
   POOLMEM* xattr_list;    /* List of xattrs */
-  alist* dir_stack;       /* Stack of directories when recursing */
-  htable* path_list;      /* Hash table with directories created on restore. */
-  struct dirent de;       /* Current directory entry being processed. */
+  alist<dir_stack_entry*>* dir_stack; /* Stack of directories when recursing */
+  htable* path_list; /* Hash table with directories created on restore. */
+  struct dirent de;  /* Current directory entry being processed. */
   struct ceph_mount_info* cmount; /* CEPHFS mountpoint */
   struct ceph_dir_result* cdir;   /* CEPHFS directory handle */
   int cfd;                        /* CEPHFS file handle */
@@ -229,7 +231,7 @@ static bRC newPlugin(PluginContext* ctx)
    * processing a sub directory and pop it from this list when we are
    * done processing that sub directory.
    */
-  p_ctx->dir_stack = new alist(10, owned_by_alist);
+  p_ctx->dir_stack = new alist<dir_stack_entry*>(10, owned_by_alist);
 
   // Only register the events we are really interested in.
   bareos_core_functions->registerBareosEvents(

@@ -41,6 +41,7 @@ class JobControlRecord;
 
 class BareosDbMysql : public BareosDbPrivateInterface {
  private:
+  dlink<BareosDbMysql> link; /**< Queue control */
   MYSQL* db_handle_;
   MYSQL instance_;
   MYSQL_RES* result_;

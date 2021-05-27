@@ -41,8 +41,8 @@ namespace storagedaemon {
 const int debuglevel = 150;
 
 static brwlock_t vol_list_lock;
-static dlist* vol_list = NULL;
-static dlist* read_vol_list = NULL;
+static dlist<VolumeReservationItem>* vol_list = NULL;
+static dlist<VolumeReservationItem>* read_vol_list = NULL;
 static pthread_mutex_t read_vol_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* Global static variables */
@@ -57,10 +57,11 @@ static VolumeReservationItem* new_vol_item(DeviceControlRecord* dcr,
 static void DebugListVolumes(const char* imsg);
 
 // For append volumes the key is the VolumeName.
-static int CompareByVolumename(void* item1, void* item2)
+static int CompareByVolumename(VolumeReservationItem* item1,
+                               VolumeReservationItem* item2)
 {
-  VolumeReservationItem* vol1 = (VolumeReservationItem*)item1;
-  VolumeReservationItem* vol2 = (VolumeReservationItem*)item2;
+  VolumeReservationItem* vol1 = item1;
+  VolumeReservationItem* vol2 = item2;
 
   ASSERT(vol1->vol_name);
   ASSERT(vol2->vol_name);
@@ -69,10 +70,11 @@ static int CompareByVolumename(void* item1, void* item2)
 }
 
 // For read volumes the key is JobId, VolumeName.
-static int ReadCompare(void* item1, void* item2)
+static int ReadCompare(VolumeReservationItem* item1,
+                       VolumeReservationItem* item2)
 {
-  VolumeReservationItem* vol1 = (VolumeReservationItem*)item1;
-  VolumeReservationItem* vol2 = (VolumeReservationItem*)item2;
+  VolumeReservationItem* vol1 = item1;
+  VolumeReservationItem* vol2 = item2;
 
   ASSERT(vol1->vol_name);
   ASSERT(vol2->vol_name);
@@ -798,12 +800,17 @@ bool FreeVolume(Device* dev)
 void CreateVolumeLists()
 {
   VolumeReservationItem* vol = NULL;
-  if (vol_list == NULL) { vol_list = new dlist(vol, &vol->link); }
-  if (read_vol_list == NULL) { read_vol_list = new dlist(vol, &vol->link); }
+  if (vol_list == NULL) {
+    vol_list = new dlist<VolumeReservationItem>(vol, &vol->link);
+  }
+  if (read_vol_list == NULL) {
+    read_vol_list = new dlist<VolumeReservationItem>(vol, &vol->link);
+  }
 }
 
 // Free normal append volumes list
-static inline void FreeVolumeList(const char* what, dlist* vollist)
+static inline void FreeVolumeList(const char* what,
+                                  dlist<VolumeReservationItem>* vollist)
 {
   VolumeReservationItem* vol;
 
@@ -904,15 +911,15 @@ get_out:
  * we can take note and act accordingly (probably redo the
  * search at least a few times).
  */
-dlist* dup_vol_list(JobControlRecord* jcr)
+dlist<VolumeReservationItem>* dup_vol_list(JobControlRecord* jcr)
 {
-  dlist* temp_vol_list;
+  dlist<VolumeReservationItem>* temp_vol_list;
   VolumeReservationItem* vol = NULL;
 
   Dmsg0(debuglevel, "lock volumes\n");
 
   Dmsg0(debuglevel, "duplicate vol list\n");
-  temp_vol_list = new dlist(vol, &vol->link);
+  temp_vol_list = new dlist<VolumeReservationItem>(vol, &vol->link);
   foreach_vol (vol) {
     VolumeReservationItem *nvol, *tvol;
 
@@ -935,7 +942,7 @@ dlist* dup_vol_list(JobControlRecord* jcr)
 }
 
 // Free the specified temp list.
-void FreeTempVolList(dlist* temp_vol_list)
+void FreeTempVolList(dlist<VolumeReservationItem>* temp_vol_list)
 {
   FreeVolumeList("temp_vol_list", temp_vol_list);
   delete temp_vol_list;

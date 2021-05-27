@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -59,7 +59,7 @@ void FreeRunscript(RunScript* script)
 
 static bool ScriptDirAllowed(JobControlRecord* jcr,
                              RunScript* script,
-                             alist* allowed_script_dirs)
+                             alist<const char*>* allowed_script_dirs)
 {
   char *bp, *allowed_script_dir = nullptr;
   bool allowed = false;
@@ -102,9 +102,9 @@ static bool ScriptDirAllowed(JobControlRecord* jcr,
 }
 
 int RunScripts(JobControlRecord* jcr,
-               alist* runscripts,
+               alist<RunScript*>* runscripts,
                const char* label,
-               alist* allowed_script_dirs)
+               alist<const char*>* allowed_script_dirs)
 {
   RunScript* script = nullptr;
   bool runit;
@@ -277,7 +277,7 @@ bail_out:
   return false;
 }
 
-void FreeRunscripts(alist* runscripts)
+void FreeRunscripts(alist<RunScript*>* runscripts)
 {
   Dmsg0(500, "runscript: freeing all RUNSCRIPTS object\n");
 

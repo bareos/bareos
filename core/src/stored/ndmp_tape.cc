@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -87,7 +87,7 @@ namespace storagedaemon {
  * structure.
  */
 struct ndmp_thread_server_args {
-  dlist* addr_list;
+  dlist<IPADDR>* addr_list;
   int max_clients;
   ThreadList* thread_list;
 };
@@ -1155,7 +1155,7 @@ extern "C" void* ndmp_thread_server(void* arg)
   int turnon = 1;
   IPADDR *ipaddr, *next;
   struct s_sockfd {
-    dlink link; /* this MUST be the first item */
+    dlink<s_sockfd> link; /* this MUST be the first item */
     int fd;
     int port;
   }* fd_ptr = NULL;
@@ -1174,12 +1174,7 @@ extern "C" void* ndmp_thread_server(void* arg)
        ipaddr = (IPADDR*)ntsa->addr_list->next(ipaddr)) {
     for (next = (IPADDR*)ntsa->addr_list->next(ipaddr); next;
          next = (IPADDR*)ntsa->addr_list->next(next)) {
-      if (ipaddr->GetSockaddrLen() == next->GetSockaddrLen()
-          && memcmp(ipaddr->get_sockaddr(), next->get_sockaddr(),
-                    ipaddr->GetSockaddrLen())
-                 == 0) {
-        ntsa->addr_list->remove(next);
-      }
+      if (IsSameIpAddress(ipaddr, next)) { ntsa->addr_list->remove(next); }
     }
   }
 
@@ -1346,7 +1341,7 @@ extern "C" void* ndmp_thread_server(void* arg)
   return NULL;
 }
 
-int StartNdmpThreadServer(dlist* addr_list, int max_clients)
+int StartNdmpThreadServer(dlist<IPADDR>* addr_list, int max_clients)
 {
   int status;
 

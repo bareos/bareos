@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -753,7 +753,7 @@ static void PrtRunhdr(UaContext* ua)
 
 /* Scheduling packet */
 struct sched_pkt {
-  dlink link; /* keep this as first item!!! */
+  dlink<sched_pkt> link; /* keep this as first item!!! */
   JobResource* job;
   int level;
   int priority;
@@ -815,11 +815,8 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
 }
 
 // Sort items by runtime, priority
-static int CompareByRuntimePriority(void* item1, void* item2)
+static int CompareByRuntimePriority(sched_pkt* p1, sched_pkt* p2)
 {
-  sched_pkt* p1 = (sched_pkt*)item1;
-  sched_pkt* p2 = (sched_pkt*)item2;
-
   if (p1->runtime < p2->runtime) {
     return -1;
   } else if (p1->runtime > p2->runtime) {
@@ -844,7 +841,7 @@ static void ListScheduledJobs(UaContext* ua)
   int level, num_jobs = 0;
   int priority;
   bool hdr_printed = false;
-  auto sched = std::make_unique<dlist>();
+  auto sched = std::make_unique<dlist<sched_pkt>>();
   sched_pkt* sp;
   int days, i;
 
@@ -1223,7 +1220,7 @@ static void ListTerminatedJobs(UaContext* ua)
 static void ListConnectedClients(UaContext* ua)
 {
   Connection* connection = NULL;
-  alist* connections = NULL;
+  alist<Connection*>* connections = NULL;
   const char* separator = "====================";
   char dt[MAX_TIME_LENGTH];
 

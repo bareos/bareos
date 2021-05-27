@@ -109,6 +109,14 @@ static PluginFunctions pluginFuncs
        endBackupFile, startRestoreFile, endRestoreFile, pluginIO, createFile,
        setFileAttributes, checkFile, getAcl, setAcl, getXattr, setXattr};
 
+/**
+ * If we recurse into a subdir we push the current directory onto
+ * a stack so we can pop it after we have processed the subdir.
+ */
+struct dir_stack_entry {
+  struct stat statp; /* Stat struct of directory */
+  glfs_fd_t* gdir;   /* Gluster directory handle */
+};
 // Plugin private context
 struct plugin_ctx {
   int32_t backup_level;    /* Backup level e.g. Full/Differential/Incremental */
@@ -138,7 +146,7 @@ struct plugin_ctx {
 #ifndef HAVE_GLFS_READDIRPLUS
   POOLMEM* dirent_buffer; /* Temporary buffer for current dirent structure */
 #endif
-  alist* dir_stack;       /* Stack of directories when recursing */
+  alist<dir_stack_entry*>* dir_stack; /* Stack of directories when recursing */
   htable* path_list;      /* Hash table with directories created on restore. */
   glfs_t* glfs;           /* Gluster volume handle */
   glfs_fd_t* gdir;        /* Gluster directory handle */
@@ -175,14 +183,6 @@ enum gluster_find_type
   gf_type_delete
 };
 
-/**
- * If we recurse into a subdir we push the current directory onto
- * a stack so we can pop it after we have processed the subdir.
- */
-struct dir_stack_entry {
-  struct stat statp; /* Stat struct of directory */
-  glfs_fd_t* gdir;   /* Gluster directory handle */
-};
 
 struct gluster_find_mapping {
   const char* name;
@@ -1527,7 +1527,7 @@ static bRC setup_backup(PluginContext* ctx, void* value)
      * processing a sub directory and pop it from this list when we are
      * done processing that sub directory.
      */
-    p_ctx->dir_stack = new alist(10, owned_by_alist);
+    p_ctx->dir_stack = new alist<dir_stack_entry*>(10, owned_by_alist);
 
     /*
      * Setup the directory we need to start scanning by setting the filetype

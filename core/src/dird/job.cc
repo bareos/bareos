@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -466,7 +466,8 @@ static void* job_thread(void* arg)
   // TODO : check if it is used somewhere
   if (jcr->impl->res.job->RunScripts == NULL) {
     Dmsg0(200, "Warning, job->RunScripts is empty\n");
-    jcr->impl->res.job->RunScripts = new alist(10, not_owned_by_alist);
+    jcr->impl->res.job->RunScripts
+        = new alist<RunScript*>(10, not_owned_by_alist);
   }
 
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {

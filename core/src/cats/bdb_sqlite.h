@@ -34,6 +34,7 @@ class JobControlRecord;
 
 class BareosDbSqlite : public BareosDbPrivateInterface {
  private:
+  dlink<BareosDbSqlite> link; /**< Queue control */
   struct sqlite3* db_handle_;
   char** result_; /**< sql_store_results() and SqlQueryWithoutHandler() */
   char**

@@ -31,7 +31,7 @@
 
 #include "lib/dlist.h"
 
-class dlist;
+template <typename T> class dlist;
 
 namespace storagedaemon {
 
@@ -105,7 +105,7 @@ enum
  */
 struct BootStrapRecord; /* satisfy forward reference */
 struct DeviceRecord {
-  dlink link; /**< link for chaining in read_record.c */
+  dlink<DeviceRecord> link; /**< link for chaining in read_record.c */
   /**<
    * File and Block are always returned during reading and writing records.
    */

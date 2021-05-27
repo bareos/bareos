@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -253,7 +253,7 @@ int BnetWaitDataIntr(BareosSocket* bsock, int sec)
 #endif
 
 #if HAVE_GETADDRINFO
-const char* resolv_host(int family, const char* host, dlist* addr_list)
+const char* resolv_host(int family, const char* host, dlist<IPADDR>* addr_list)
 {
   int res;
   struct addrinfo hints;
@@ -390,7 +390,9 @@ static IPADDR* add_any(int family)
 }
 
 // i host = 0 mean INADDR_ANY only ipv4
-dlist* BnetHost2IpAddrs(const char* host, int family, const char** errstr)
+dlist<IPADDR>* BnetHost2IpAddrs(const char* host,
+                                int family,
+                                const char** errstr)
 {
   struct in_addr inaddr;
   IPADDR* addr = 0;
@@ -399,7 +401,7 @@ dlist* BnetHost2IpAddrs(const char* host, int family, const char** errstr)
   struct in6_addr inaddr6;
 #endif
 
-  dlist* addr_list = new dlist(addr, &addr->link);
+  dlist<IPADDR>* addr_list = new dlist<IPADDR>(addr, &addr->link);
   if (!host || host[0] == '\0') {
     if (family != 0) {
       addr_list->append(add_any(family));

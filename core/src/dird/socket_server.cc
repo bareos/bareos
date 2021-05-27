@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -50,7 +50,7 @@ static char hello_client[] = "Hello Client %127s calling";
 
 /* Global variables */
 static ThreadList thread_list;
-static alist* sock_fds = NULL;
+static alist<s_sockfd*>* sock_fds = NULL;
 static pthread_t tcp_server_tid;
 static ConnectionPool* client_connections = NULL;
 
@@ -135,10 +135,11 @@ extern "C" void* connect_thread(void* arg)
   SetJcrInThreadSpecificData(nullptr);
 
   // Permit MaxConnections connections.
-  sock_fds = new alist(10, not_owned_by_alist);
-  BnetThreadServerTcp((dlist*)arg, me->MaxConnections, sock_fds, thread_list,
-                      HandleConnectionRequest, my_config, &server_state,
-                      UserAgentShutdownCallback, CleanupConnectionPool);
+  sock_fds = new alist<s_sockfd*>(10, not_owned_by_alist);
+  BnetThreadServerTcp((dlist<IPADDR>*)arg, me->MaxConnections, sock_fds,
+                      thread_list, HandleConnectionRequest, my_config,
+                      &server_state, UserAgentShutdownCallback,
+                      CleanupConnectionPool);
 
   return NULL;
 }
@@ -148,7 +149,7 @@ extern "C" void* connect_thread(void* arg)
  * command thread. This routine creates the thread and then
  * returns.
  */
-bool StartSocketServer(dlist* addrs)
+bool StartSocketServer(dlist<IPADDR>* addrs)
 {
   int status;
 

@@ -23,9 +23,9 @@
 #ifndef BAREOS_LIB_DLINK_H_
 #define BAREOS_LIB_DLINK_H_
 
-struct dlink {
-  void* next;
-  void* prev;
+template <typename T> struct dlink {
+  T* next;
+  T* prev;
   dlink()
   {
     next = nullptr;

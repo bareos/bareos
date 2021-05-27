@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -55,8 +55,8 @@ static pthread_t statistics_tid;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t wait_for_next_run = PTHREAD_COND_INITIALIZER;
 
-struct device_statistic {
-  dlink link;
+struct device_statistic_item {
+  dlink<device_statistic_item> link;
   bool collected{false};
   utime_t timestamp{0};
   btime_t DevReadTime{0};
@@ -72,22 +72,22 @@ struct device_statistic {
   uint64_t VolCatBlocks{0};
 };
 
-struct device_tapealert {
-  dlink link;
+struct device_tapealert_item {
+  dlink<device_tapealert_item> link;
   utime_t timestamp{0};
   uint64_t flags{0};
 };
 
-struct device_statistics {
-  dlink link;
+struct device_statistics_t {
+  dlink<device_statistics_t> link;
   char DevName[MAX_NAME_LENGTH]{};
-  struct device_statistic* cached{nullptr};
-  dlist* statistics{nullptr};
-  dlist* tapealerts{nullptr};
+  struct device_statistic_item* cached{nullptr};
+  dlist<device_statistic_item>* device_statistics{nullptr};
+  dlist<device_tapealert_item>* device_tapealerts{nullptr};
 };
 
-struct job_statistic {
-  dlink link;
+struct jobstatistic_item {
+  dlink<jobstatistic_item> link;
   bool collected{false};
   utime_t timestamp{0};
   uint32_t JobFiles{0};
@@ -95,30 +95,31 @@ struct job_statistic {
   char* DevName{nullptr};
 };
 
-struct job_statistics {
-  dlink link;
+struct job_statistics_t {
+  dlink<job_statistics_t> link;
   uint32_t JobId{0};
-  struct job_statistic* cached{nullptr};
-  dlist* statistics{nullptr};
+  struct jobstatistic_item* cached{nullptr};
+  dlist<jobstatistic_item>* job_statistics{nullptr};
 };
 
-static dlist* device_statistics = NULL;
-static dlist* job_statistics = NULL;
+static dlist<device_statistics_t>* device_statistics = NULL;
+static dlist<job_statistics_t>* job_statistics = NULL;
 
 static inline void setup_statistics()
 {
-  struct device_statistics* dev_stats = NULL;
-  struct job_statistics* job_stats = NULL;
+  device_statistics_t* dev_stats = NULL;
+  job_statistics_t* job_stats = NULL;
 
-  device_statistics = new dlist(dev_stats, &dev_stats->link);
-  job_statistics = new dlist(job_stats, &job_stats->link);
+  device_statistics
+      = new dlist<device_statistics_t>(dev_stats, &dev_stats->link);
+  job_statistics = new dlist<job_statistics_t>(job_stats, &job_stats->link);
 }
 
 void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
 {
   bool found = false;
-  struct device_statistics* dev_stats = NULL;
-  struct device_tapealert* tape_alert = NULL;
+  device_statistics_t* dev_stats = NULL;
+  struct device_tapealert_item* tape_alert = NULL;
 
   if (!me || !me->collect_dev_stats || !device_statistics) { return; }
 
@@ -130,9 +131,8 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
   }
 
   if (!found) {
-    dev_stats
-        = (struct device_statistics*)malloc(sizeof(struct device_statistics));
-    struct device_statistics empty_device_statistics;
+    dev_stats = (device_statistics_t*)malloc(sizeof(device_statistics_t));
+    device_statistics_t empty_device_statistics;
     *dev_stats = empty_device_statistics;
 
     bstrncpy(dev_stats->DevName, devname, sizeof(dev_stats->DevName));
@@ -142,20 +142,21 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
   }
 
   // Add a new tapealert message.
-  tape_alert
-      = (struct device_tapealert*)malloc(sizeof(struct device_tapealert));
-  struct device_tapealert empty_device_tapealert;
+  tape_alert = (struct device_tapealert_item*)malloc(
+      sizeof(struct device_tapealert_item));
+  struct device_tapealert_item empty_device_tapealert;
   *tape_alert = empty_device_tapealert;
 
   tape_alert->timestamp = now;
   tape_alert->flags = flags;
 
-  if (!dev_stats->tapealerts) {
-    dev_stats->tapealerts = new dlist(tape_alert, &tape_alert->link);
+  if (!dev_stats->device_tapealerts) {
+    dev_stats->device_tapealerts
+        = new dlist<device_tapealert_item>(tape_alert, &tape_alert->link);
   }
 
   P(mutex);
-  dev_stats->tapealerts->append(tape_alert);
+  dev_stats->device_tapealerts->append(tape_alert);
   V(mutex);
 
   Dmsg3(200, "New stats [%lld]: Device %s TapeAlert %llu\n",
@@ -167,8 +168,8 @@ static inline void UpdateDeviceStatistics(const char* devname,
                                           utime_t now)
 {
   bool found = false;
-  struct device_statistics* dev_stats = NULL;
-  struct device_statistic* dev_stat = NULL;
+  device_statistics_t* dev_stats = NULL;
+  struct device_statistic_item* dev_stat = NULL;
 
   if (!me || !me->collect_dev_stats || !device_statistics) { return; }
 
@@ -194,9 +195,8 @@ static inline void UpdateDeviceStatistics(const char* devname,
       return;
     }
   } else if (!found) {
-    dev_stats
-        = (struct device_statistics*)malloc(sizeof(struct device_statistics));
-    struct device_statistics empty_device_statistics;
+    dev_stats = (device_statistics_t*)malloc(sizeof(device_statistics_t));
+    device_statistics_t empty_device_statistics;
     *dev_stats = empty_device_statistics;
 
     bstrncpy(dev_stats->DevName, devname, sizeof(dev_stats->DevName));
@@ -206,9 +206,10 @@ static inline void UpdateDeviceStatistics(const char* devname,
   }
 
   // Add a new set of statistics.
-  dev_stat = (struct device_statistic*)malloc(sizeof(struct device_statistic));
+  dev_stat = (struct device_statistic_item*)malloc(
+      sizeof(struct device_statistic_item));
 
-  struct device_statistic empty_device_statistic;
+  struct device_statistic_item empty_device_statistic;
   *dev_stat = empty_device_statistic;
 
   dev_stat->timestamp = now;
@@ -225,13 +226,14 @@ static inline void UpdateDeviceStatistics(const char* devname,
   dev_stat->VolCatBlocks = dev->VolCatInfo.VolCatBlocks;
 
 
-  if (!dev_stats->statistics) {
-    dev_stats->statistics = new dlist(dev_stat, &dev_stat->link);
+  if (!dev_stats->device_statistics) {
+    dev_stats->device_statistics
+        = new dlist<device_statistic_item>(dev_stat, &dev_stat->link);
   }
 
   P(mutex);
   dev_stats->cached = dev_stat;
-  dev_stats->statistics->append(dev_stat);
+  dev_stats->device_statistics->append(dev_stat);
   V(mutex);
 
   Dmsg5(200,
@@ -249,8 +251,8 @@ static inline void UpdateDeviceStatistics(const char* devname,
 void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
 {
   bool found = false;
-  struct job_statistics* job_stats = NULL;
-  struct job_statistic* job_stat = NULL;
+  job_statistics_t* job_stats = NULL;
+  jobstatistic_item* job_stat = NULL;
 
   if (!me || !me->collect_job_stats || !job_statistics) { return; }
 
@@ -278,8 +280,8 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
       return;
     }
   } else if (!found) {
-    job_stats = (struct job_statistics*)malloc(sizeof(struct job_statistics));
-    struct job_statistics empty_job_statistics;
+    job_stats = (job_statistics_t*)malloc(sizeof(job_statistics_t));
+    job_statistics_t empty_job_statistics;
     *job_stats = empty_job_statistics;
 
     job_stats->JobId = jcr->JobId;
@@ -289,8 +291,9 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
   }
 
   // Add a new set of statistics.
-  job_stat = (struct job_statistic*)malloc(sizeof(struct job_statistic));
-  struct job_statistic empty_job_statistic;
+  job_stat
+      = (struct jobstatistic_item*)malloc(sizeof(struct jobstatistic_item));
+  struct jobstatistic_item empty_job_statistic;
   *job_stat = empty_job_statistic;
 
   job_stat->timestamp = now;
@@ -302,13 +305,14 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
     job_stat->DevName = strdup("unknown");
   }
 
-  if (!job_stats->statistics) {
-    job_stats->statistics = new dlist(job_stat, &job_stat->link);
+  if (!job_stats->job_statistics) {
+    job_stats->job_statistics
+        = new dlist<jobstatistic_item>(job_stat, &job_stat->link);
   }
 
   P(mutex);
   job_stats->cached = job_stat;
-  job_stats->statistics->append(job_stat);
+  job_stats->job_statistics->append(job_stat);
   V(mutex);
 
   Dmsg5(
@@ -320,14 +324,14 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
 
 static inline void cleanup_cached_statistics()
 {
-  struct device_statistics* dev_stats;
-  struct job_statistics* job_stats;
+  device_statistics_t* dev_stats;
+  job_statistics_t* job_stats;
 
   P(mutex);
   if (device_statistics) {
     foreach_dlist (dev_stats, device_statistics) {
-      dev_stats->statistics->destroy();
-      dev_stats->statistics = NULL;
+      dev_stats->device_statistics->destroy();
+      dev_stats->device_statistics = NULL;
     }
 
     device_statistics->destroy();
@@ -336,8 +340,8 @@ static inline void cleanup_cached_statistics()
 
   if (job_statistics) {
     foreach_dlist (job_stats, job_statistics) {
-      job_stats->statistics->destroy();
-      job_stats->statistics = NULL;
+      job_stats->job_statistics->destroy();
+      job_stats->job_statistics = NULL;
     }
 
     job_statistics->destroy();
@@ -458,16 +462,15 @@ bool StatsCmd(JobControlRecord* jcr)
   PoolMem dev_tmp(PM_MESSAGE);
 
   if (device_statistics) {
-    struct device_statistics* dev_stats;
+    device_statistics_t* dev_stats;
 
     foreach_dlist (dev_stats, device_statistics) {
-      if (dev_stats->statistics) {
-        struct device_statistic *dev_stat, *next_dev_stat;
+      if (dev_stats->device_statistics) {
+        struct device_statistic_item *dev_stat, *next_dev_stat;
 
-        dev_stat = (struct device_statistic*)dev_stats->statistics->first();
+        dev_stat = dev_stats->device_statistics->first();
         while (dev_stat) {
-          next_dev_stat
-              = (struct device_statistic*)dev_stats->statistics->next(dev_stat);
+          next_dev_stat = dev_stats->device_statistics->next(dev_stat);
 
           // If the entry was already collected no need to do it again.
           if (!dev_stat->collected) {
@@ -489,7 +492,7 @@ bool StatsCmd(JobControlRecord* jcr)
           if (!next_dev_stat) {
             dev_stat->collected = true;
           } else {
-            dev_stats->statistics->remove(dev_stat);
+            dev_stats->device_statistics->remove(dev_stat);
 
             if (dev_stats->cached == dev_stat) { dev_stats->cached = NULL; }
           }
@@ -498,10 +501,10 @@ bool StatsCmd(JobControlRecord* jcr)
         }
       }
 
-      if (dev_stats->tapealerts) {
-        struct device_tapealert *tape_alert, *next_tape_alert;
+      if (dev_stats->device_tapealerts) {
+        struct device_tapealert_item *tape_alert, *next_tape_alert;
 
-        tape_alert = (struct device_tapealert*)dev_stats->tapealerts->first();
+        tape_alert = dev_stats->device_tapealerts->first();
         while (tape_alert) {
           PmStrcpy(dev_tmp, dev_stats->DevName);
           BashSpaces(dev_tmp);
@@ -510,11 +513,9 @@ bool StatsCmd(JobControlRecord* jcr)
           Dmsg1(100, ">dird: %s", msg.c_str());
           dir->fsend(msg.c_str());
 
-          next_tape_alert
-              = (struct device_tapealert*)dev_stats->tapealerts->next(
-                  tape_alert);
+          next_tape_alert = dev_stats->device_tapealerts->next(tape_alert);
           P(mutex);
-          dev_stats->tapealerts->remove(tape_alert);
+          dev_stats->device_tapealerts->remove(tape_alert);
           V(mutex);
           tape_alert = next_tape_alert;
         }
@@ -525,17 +526,16 @@ bool StatsCmd(JobControlRecord* jcr)
   if (job_statistics) {
     bool found;
     JobControlRecord* jcr;
-    struct job_statistics *job_stats, *next_job_stats;
+    job_statistics_t *job_stats, *next_job_stats;
 
-    job_stats = (struct job_statistics*)job_statistics->first();
+    job_stats = (job_statistics_t*)job_statistics->first();
     while (job_stats) {
-      if (job_stats->statistics) {
-        struct job_statistic *job_stat, *next_job_stat;
+      if (job_stats->job_statistics) {
+        struct jobstatistic_item *job_stat, *next_job_stat;
 
-        job_stat = (struct job_statistic*)job_stats->statistics->first();
+        job_stat = job_stats->job_statistics->first();
         while (job_stat) {
-          next_job_stat
-              = (struct job_statistic*)job_stats->statistics->next(job_stat);
+          next_job_stat = job_stats->job_statistics->next(job_stat);
 
           // If the entry was already collected no need to do it again.
           if (!job_stat->collected) {
@@ -552,7 +552,7 @@ bool StatsCmd(JobControlRecord* jcr)
           if (!next_job_stat) {
             job_stat->collected = true;
           } else {
-            job_stats->statistics->remove(job_stat);
+            job_stats->job_statistics->remove(job_stat);
             if (job_stats->cached == job_stat) { job_stats->cached = NULL; }
           }
           V(mutex);
@@ -561,7 +561,7 @@ bool StatsCmd(JobControlRecord* jcr)
       }
 
       // If the Job doesn't exist anymore remove it from the job_statistics.
-      next_job_stats = (struct job_statistics*)job_statistics->next(job_stats);
+      next_job_stats = job_statistics->next(job_stats);
 
       found = false;
       foreach_jcr (jcr) {

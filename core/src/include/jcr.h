@@ -39,12 +39,18 @@
 #include "include/job_level.h"
 #include "include/job_status.h"
 #include "include/job_types.h"
+#include "lib/message_queue_item.h"
 #include "lib/alist.h"
 #include "lib/tls_conf.h"
+#include "lib/breg.h"
+#include "lib/dlink.h"
+#include <unordered_set>
 
+
+struct job_callback_item;
 class BareosDb;
 class BareosSocket;
-class dlist;
+template <typename T> class dlist;
 class htable;
 class JobControlRecord;
 
@@ -138,16 +144,16 @@ class JobControlRecord {
   void SetKillable(bool killable);               /**< in lib/jcr.c */
   bool IsKillable() const { return my_thread_killable; }
 
-  dlink link;                     /**< JobControlRecord chain link */
+  dlink<JobControlRecord> link;                     /**< JobControlRecord chain link */
   pthread_t my_thread_id{};       /**< Id of thread controlling jcr */
   BareosSocket* dir_bsock{};      /**< Director bsock or NULL if we are him */
   BareosSocket* store_bsock{};    /**< Storage connection socket */
   BareosSocket* file_bsock{};     /**< File daemon connection socket */
   JCR_free_HANDLER* daemon_free_jcr{}; /**< Local free routine */
-  dlist* msg_queue{};             /**< Queued messages */
+  dlist<MessageQueueItem>* msg_queue{};             /**< Queued messages */
   pthread_mutex_t msg_queue_mutex = PTHREAD_MUTEX_INITIALIZER; /**< message queue mutex */
   bool dequeuing_msgs{};          /**< Set when dequeuing messages */
-  alist job_end_callbacks;        /**< callbacks called at Job end */
+  alist<job_callback_item*> job_end_callbacks;        /**< callbacks called at Job end */
   POOLMEM* VolumeName{};          /**< Volume name desired -- pool_memory */
   POOLMEM* errmsg{};              /**< Edited error message */
   char Job[MAX_NAME_LENGTH]{};    /**< Unique name of this Job */
@@ -185,7 +191,7 @@ class JobControlRecord {
   uint32_t ClientId{};          /**< Client associated with Job */
   char* where{};                /**< Prefix to restore files to */
   char* RegexWhere{};           /**< File relocation in restore */
-  alist* where_bregexp{};       /**< BareosRegex alist for path manipulation */
+  alist<BareosRegex*>* where_bregexp{};       /**< BareosRegex alist for path manipulation */
   int32_t cached_pnl{};         /**< Cached path length */
   POOLMEM* cached_path{};   /**< Cached path */
   bool passive_client{};    /**< Client is a passive client e.g. doesn't initiate any network connection */
@@ -220,7 +226,7 @@ class JobControlRecord {
   AttributesDbRecord* ar{}; /**< DB attribute record */
   guid_list* id_list{};     /**< User/group id to name list */
 
-  alist* plugin_ctx_list{}; /**< List of contexts for plugins */
+  alist<PluginContext*>* plugin_ctx_list{}; /**< List of contexts for plugins */
   PluginContext* plugin_ctx{};  /**< Current plugin context */
   POOLMEM* comment{};       /**< Comment for this Job */
   int64_t max_bandwidth{};  /**< Bandwidth limit for this Job */

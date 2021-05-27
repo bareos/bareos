@@ -65,8 +65,7 @@
 #include "stored/volume_catalog_info.h"
 
 #include <vector>
-
-class dlist;
+template <typename T> class dlist;
 
 namespace storagedaemon {
 

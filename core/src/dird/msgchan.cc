@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -120,8 +120,8 @@ static inline bool SendBootstrapFileToSd(JobControlRecord* jcr,
 /** Start a job with the Storage daemon
  */
 bool StartStorageDaemonJob(JobControlRecord* jcr,
-                           alist* read_storage,
-                           alist* write_storage,
+                           alist<StorageResource*>* read_storage,
+                           alist<StorageResource*>* write_storage,
                            bool send_bsr)
 {
   bool ok = true;

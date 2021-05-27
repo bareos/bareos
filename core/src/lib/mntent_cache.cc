@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -95,7 +95,7 @@
 // Protected data by mutex lock.
 static pthread_mutex_t mntent_cache_lock = PTHREAD_MUTEX_INITIALIZER;
 static mntent_cache_entry_t* previous_cache_hit = NULL;
-static dlist* mntent_cache_entries = NULL;
+static dlist<mntent_cache_entry_t>* mntent_cache_entries = NULL;
 
 // Last time a rescan of the mountlist took place.
 static time_t last_rescan = 0;
@@ -107,12 +107,13 @@ static const char* skipped_fs_types[] = {
     NULL};
 
 // Simple comparison function for binary search and insert.
-static int CompareMntentMapping(void* e1, void* e2)
+static int CompareMntentMapping(mntent_cache_entry_t* e1,
+                                mntent_cache_entry_t* e2)
 {
   mntent_cache_entry_t *mce1, *mce2;
 
-  mce1 = (mntent_cache_entry_t*)e1;
-  mce2 = (mntent_cache_entry_t*)e2;
+  mce1 = e1;
+  mce2 = e2;
 
   if (mce1->dev == mce2->dev) {
     return 0;
@@ -374,7 +375,7 @@ static inline void InitializeMntentCache(void)
 {
   mntent_cache_entry_t* mce = NULL;
 
-  mntent_cache_entries = new dlist(mce, &mce->link);
+  mntent_cache_entries = new dlist<mntent_cache_entry_t>(mce, &mce->link);
 
   // Refresh the cache.
   refresh_mount_cache(add_mntent_mapping);

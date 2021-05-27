@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,12 +41,12 @@ struct FileSet {
   FileSet() = default;
   ~FileSet() = default;
 
-  alist mylist;
+  alist<const char*> mylist;
 };
 
 // helper functions
 
-void AlistFill(alist* list, int max)
+void AlistFill(alist<const char*>* list, int max)
 {
   char buf[30];
   int start = 0;
@@ -64,7 +64,7 @@ void AlistFill(alist* list, int max)
 }
 
 // we expect, that the list is filled with strings of numbers from 0 to n.
-void TestForeachAlist(alist* list)
+void TestForeachAlist(alist<const char*>* list)
 {
   char* str = NULL;
   char buf[30];
@@ -108,7 +108,7 @@ void test_alist_init_destroy()
 
 void test_alist_dynamic()
 {
-  alist* list = NULL;
+  alist<const char*>* list = nullptr;
   char* buf;
 
   // NULL->size() will segfault
@@ -118,7 +118,7 @@ void test_alist_dynamic()
   TestForeachAlist(list);
 
   // create empty list, which is prepared for a number of entires
-  list = new alist(10);
+  list = new alist<const char*>(10);
   EXPECT_EQ(list->size(), 0);
 
   // does foreach work for empty lists?

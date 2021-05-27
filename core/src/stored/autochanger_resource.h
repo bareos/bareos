@@ -26,9 +26,10 @@
 
 #include "lib/bareos_resource.h"
 
-class alist;
+template <typename T> class alist;
 
 namespace storagedaemon {
+class DeviceResource;
 
 class AutochangerResource : public BareosResource {
  public:
@@ -41,10 +42,11 @@ class AutochangerResource : public BareosResource {
                    bool verbose = false) override;
 
 
-  alist* device_resources; /**< List of DeviceResource device pointers */
-  char* changer_name;      /**< Changer device name */
-  char* changer_command;   /**< Changer command  -- external program */
-  brwlock_t changer_lock;  /**< One changer operation at a time */
+  alist<DeviceResource*>*
+      device_resources;   /**< List of DeviceResource device pointers */
+  char* changer_name;     /**< Changer device name */
+  char* changer_command;  /**< Changer command  -- external program */
+  brwlock_t changer_lock; /**< One changer operation at a time */
 };
 } /* namespace storagedaemon */
 

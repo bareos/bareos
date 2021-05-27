@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -90,7 +90,7 @@ const bool have_encryption = true;
 
 /* Global variables to handle Client Initiated Connections */
 static bool quit_client_initiate_connection = false;
-static alist* client_initiated_connection_threads = nullptr;
+static alist<pthread_t*>* client_initiated_connection_threads = nullptr;
 
 /* Imported functions */
 extern bool AccurateCmd(JobControlRecord* jcr);
@@ -275,7 +275,7 @@ static char read_close[] = "read close session %d\n";
 // See if we are allowed to execute the command issued.
 static bool ValidateCommand(JobControlRecord* jcr,
                             const char* cmd,
-                            alist* allowed_job_cmds)
+                            alist<const char*>* allowed_job_cmds)
 {
   char* allowed_job_cmd = nullptr;
   bool allowed = false;
@@ -398,7 +398,7 @@ JobControlRecord* create_new_director_session(BareosSocket* dir)
   jcr->dir_bsock = dir;
   jcr->impl->ff = init_find_files();
   jcr->start_time = time(nullptr);
-  jcr->impl->RunScripts = new alist(10, not_owned_by_alist);
+  jcr->impl->RunScripts = new alist<RunScript*>(10, not_owned_by_alist);
   jcr->impl->last_fname = GetPoolMemory(PM_FNAME);
   jcr->impl->last_fname[0] = 0;
   jcr->client_name = GetMemory(strlen(my_name) + 1);
@@ -646,7 +646,7 @@ bool StartConnectToDirectorThreads()
   DirectorResource* dir_res = nullptr;
   int pthread_create_result = 0;
   if (!client_initiated_connection_threads) {
-    client_initiated_connection_threads = new alist();
+    client_initiated_connection_threads = new alist<pthread_t*>();
   }
   pthread_t* thread;
 
@@ -708,7 +708,7 @@ bool StopConnectToDirectorThreads(bool wait)
 static bool ResolveCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
-  dlist* addr_list;
+  dlist<IPADDR>* addr_list;
   const char* errstr;
   char addresses[2048];
   char hostname[2048];

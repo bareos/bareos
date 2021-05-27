@@ -26,8 +26,6 @@
 #ifndef BAREOS_STORED_BACKENDS_ORDERED_CBUF_H_
 #define BAREOS_STORED_BACKENDS_ORDERED_CBUF_H_
 
-class dlist;
-
 #define OQSIZE 10 /* # of pointers in the queue */
 
 namespace storagedaemon {
@@ -41,7 +39,7 @@ enum oc_peek_types
 };
 
 struct ocbuf_item {
-  dlink link;
+  dlink<void> link;
   uint32_t data_size = 0;
   void* data = nullptr;
 };
@@ -57,7 +55,7 @@ class ordered_circbuf {
       = PTHREAD_COND_INITIALIZER; /* Full -> not full condition */
   pthread_cond_t notempty_
       = PTHREAD_COND_INITIALIZER; /* Empty -> not empty condition */
-  dlist* data_ = nullptr;         /* Circular buffer of pointers */
+  dlist<void>* data_ = nullptr;   /* Circular buffer of pointers */
 
  public:
   ordered_circbuf(int capacity = OQSIZE);

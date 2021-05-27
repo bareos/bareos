@@ -34,6 +34,7 @@ class JobControlRecord;
 
 class BareosDbPostgresql : public BareosDbPrivateInterface {
  private:
+  dlink<BareosDbPostgresql> link; /**< Queue control */
   PGconn* db_handle_;
   PGresult* result_;
   POOLMEM* buf_; /**< Buffer to manipulate queries */

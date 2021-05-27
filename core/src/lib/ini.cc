@@ -1,7 +1,7 @@
 /*
    Copyright (C) 2011-2011 Bacula Systems(R) SA
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -110,7 +110,7 @@ static bool IniStoreName(LEX* lc, ConfigFile* inifile, ini_items* item)
 
 static bool IniStoreAlistStr(LEX* lc, ConfigFile* inifile, ini_items* item)
 {
-  alist* list;
+  alist<char*>* list;
   if (!lc) {
     // TODO, write back the alist to edit buffer
     return true;
@@ -118,7 +118,7 @@ static bool IniStoreAlistStr(LEX* lc, ConfigFile* inifile, ini_items* item)
   if (LexGetToken(lc, BCT_STRING) == BCT_ERROR) { return false; }
 
   if (item->val.alistval == NULL) {
-    list = new alist(10, owned_by_alist);
+    list = new alist<char*>(10, owned_by_alist);
   } else {
     list = item->val.alistval;
   }

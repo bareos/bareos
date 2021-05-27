@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -92,7 +92,8 @@ void InitDeviceResources();
 static char* runjob = NULL;
 static bool background = true;
 static bool test_config = false;
-static alist* reload_table = NULL;
+struct resource_table_reference;
+static alist<resource_table_reference*>* reload_table = NULL;
 
 /* Globals Imported */
 extern ResourceItem job_items[];
@@ -628,7 +629,10 @@ bool DoReloadConfig()
     Dmsg0(10, "Director's configuration file reread.\n");
 
     if (num_running_jobs > 0) {
-      if (!reload_table) { reload_table = new alist(10, not_owned_by_alist); }
+      if (!reload_table) {
+        reload_table
+            = new alist<resource_table_reference*>(10, not_owned_by_alist);
+      }
       reload_table->push(new_table);
     } else {  // no jobs running
       FreeSavedResources(&prev_config);

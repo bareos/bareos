@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -418,20 +418,20 @@ static void NdmpFillStorageMappings(StorageResource* store,
 }
 
 // Get the current content of the autochanger as a generic vol_list dlist.
-dlist* ndmp_get_vol_list(UaContext* ua,
-                         StorageResource* store,
-                         bool listall,
-                         bool scan)
+dlist<vol_list_t>* ndmp_get_vol_list(UaContext* ua,
+                                     StorageResource* store,
+                                     bool listall,
+                                     bool scan)
 {
   struct ndm_session* ndmp_sess;
   struct smc_ctrl_block* smc;
   struct smc_element_descriptor* edp;
   vol_list_t* vl = NULL;
-  dlist* vol_list = NULL;
+  dlist<vol_list_t>* vol_list = NULL;
 
   ua->WarningMsg(_("get ndmp_vol_list...\n"));
   if (!GetRobotElementStatus(ua->jcr, store, &ndmp_sess)) {
-    return (dlist*)NULL;
+    return (dlist<vol_list_t>*)NULL;
   }
 
   /*
@@ -441,7 +441,7 @@ dlist* ndmp_get_vol_list(UaContext* ua,
   NdmpFillStorageMappings(store, ndmp_sess);
 
   // Start with an empty dlist().
-  vol_list = new dlist(vl, &vl->link);
+  vol_list = new dlist<vol_list_t>(vl, &vl->link);
 
   // Process the robot element status retrieved.
   smc = ndmp_sess->control_acb->smc_cb;
@@ -1093,13 +1093,13 @@ void DoNdmpStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }
 
-dlist* ndmp_get_vol_list(UaContext* ua,
-                         StorageResource* store,
-                         bool listall,
-                         bool scan)
+dlist<vol_list_t>* ndmp_get_vol_list(UaContext* ua,
+                                     StorageResource* store,
+                                     bool listall,
+                                     bool scan)
 {
   Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
-  return (dlist*)NULL;
+  return (dlist<vol_list_t>*)NULL;
 }
 
 slot_number_t NdmpGetNumSlots(UaContext* ua, StorageResource* store)

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -119,7 +119,8 @@ void ConfigurationParser::SetResourceDefaultsParserPass1(ResourceItem* item)
         break;
       }
       case CFG_TYPE_ADDRESSES: {
-        dlist** dlistvalue = GetItemVariablePointer<dlist**>(*item);
+        dlist<IPADDR>** dlistvalue
+            = GetItemVariablePointer<dlist<IPADDR>**>(*item);
         InitDefaultAddresses(dlistvalue, item->default_value);
         break;
       }
@@ -139,16 +140,22 @@ void ConfigurationParser::SetResourceDefaultsParserPass2(ResourceItem* item)
   if (item->flags & CFG_ITEM_DEFAULT && item->default_value) {
     switch (item->type) {
       case CFG_TYPE_ALIST_STR: {
-        alist** alistvalue = GetItemVariablePointer<alist**>(*item);
-        if (!alistvalue) { *(alistvalue) = new alist(10, owned_by_alist); }
+        alist<const char*>** alistvalue
+            = GetItemVariablePointer<alist<const char*>**>(*item);
+        if (!alistvalue) {
+          *(alistvalue) = new alist<const char*>(10, owned_by_alist);
+        }
         (*alistvalue)->append(strdup(item->default_value));
         break;
       }
       case CFG_TYPE_ALIST_DIR: {
         PoolMem pathname(PM_FNAME);
-        alist** alistvalue = GetItemVariablePointer<alist**>(*item);
+        alist<const char*>** alistvalue
+            = GetItemVariablePointer<alist<const char*>**>(*item);
 
-        if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
+        if (!*alistvalue) {
+          *alistvalue = new alist<const char*>(10, owned_by_alist);
+        }
 
         PmStrcpy(pathname, item->default_value);
         if (*item->default_value != '|') {

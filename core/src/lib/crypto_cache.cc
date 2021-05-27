@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,7 +31,7 @@
 #include "lib/dlist.h"
 
 static pthread_mutex_t crypto_cache_lock = PTHREAD_MUTEX_INITIALIZER;
-static dlist* cached_crypto_keys = NULL;
+static dlist<crypto_cache_entry_t>* cached_crypto_keys = NULL;
 
 static s_crypto_cache_hdr crypto_cache_hdr = {"BAREOS Crypto Cache\n", 1, 0};
 
@@ -74,7 +74,9 @@ void ReadCryptoCache(const char* cache_file)
     goto bail_out;
   }
 
-  if (!cached_crypto_keys) { cached_crypto_keys = new dlist(cce, &cce->link); }
+  if (!cached_crypto_keys) {
+    cached_crypto_keys = new dlist<crypto_cache_entry_t>(cce, &cce->link);
+  }
 
   // Read as many crypto cache entries as available.
   cnt = 0;
@@ -205,7 +207,7 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
 
   // See if there are any cached encryption keys.
   if (!cached_crypto_keys) {
-    cached_crypto_keys = new dlist(cce, &cce->link);
+    cached_crypto_keys = new dlist<crypto_cache_entry_t>(cce, &cce->link);
 
     cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
     bstrncpy(cce->VolumeName, VolumeName, sizeof(cce->VolumeName));

@@ -28,7 +28,7 @@
 #ifndef BAREOS_LIB_CRYPTO_H_
 #define BAREOS_LIB_CRYPTO_H_
 
-class alist;
+template <typename T> class alist;
 
 /* Opaque X509 Public/Private Key Pair Structure */
 typedef struct X509_Keypair X509_KEYPAIR;
@@ -153,12 +153,13 @@ SIGNATURE* crypto_sign_decode(JobControlRecord* jcr,
                               const uint8_t* sigData,
                               uint32_t length);
 void CryptoSignFree(SIGNATURE* sig);
-CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher, alist* pubkeys);
+CRYPTO_SESSION* crypto_session_new(crypto_cipher_t cipher,
+                                   alist<X509_KEYPAIR*>* pubkeys);
 void CryptoSessionFree(CRYPTO_SESSION* cs);
 bool CryptoSessionEncode(CRYPTO_SESSION* cs, uint8_t* dest, uint32_t* length);
 crypto_error_t CryptoSessionDecode(const uint8_t* data,
                                    uint32_t length,
-                                   alist* keypairs,
+                                   alist<X509_KEYPAIR*>* keypairs,
                                    CRYPTO_SESSION** session);
 CRYPTO_SESSION* CryptoSessionDecode(const uint8_t* data, uint32_t length);
 CIPHER_CONTEXT* crypto_cipher_new(CRYPTO_SESSION* cs,

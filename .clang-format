@@ -10,6 +10,7 @@ AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: true
 AllowShortFunctionsOnASingleLine: true
 AllowShortLambdasOnASingleLine: All
+AlwaysBreakTemplateDeclarations: MultiLine
 BinPackParameters: false
 BraceWrapping:
    AfterFunction: true

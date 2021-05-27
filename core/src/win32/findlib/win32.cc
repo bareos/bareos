@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -146,7 +146,8 @@ int get_win32_driveletters(findFILESET* fileset, char* szDrives)
  * function returns the number of used virtual mountpoints and fills szVmps with
  * a list of all virtual mountpoints.
  */
-int get_win32_virtualmountpoints(findFILESET* fileset, dlist** szVmps)
+int get_win32_virtualmountpoints(findFILESET* fileset,
+                                 dlist<dlistString>** szVmps)
 {
   int i, cnt;
   char* fname;
@@ -175,7 +176,7 @@ int get_win32_virtualmountpoints(findFILESET* fileset, dlist** szVmps)
           // See if we need to allocate a new dlist.
           if (!cnt) {
             if (!*szVmps) {
-              *szVmps = (dlist*)malloc(sizeof(dlist));
+              *szVmps = (dlist<dlistString>*)malloc(sizeof(dlist<dlistString>));
               (*szVmps)->init();
             }
           }

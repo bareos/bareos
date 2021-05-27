@@ -41,8 +41,8 @@ struct CryptoContext {
   bool pki_encrypt{};             /**< Enable PKI Encryption? */
   DIGEST* digest{};               /**< Last file's digest context */
   X509_KEYPAIR* pki_keypair{};    /**< Encryption key pair */
-  alist* pki_signers{};           /**< Trusted Signers */
-  alist* pki_recipients{};        /**< Trusted Recipients */
+  alist<X509_KEYPAIR*>* pki_signers{};           /**< Trusted Signers */
+  alist<X509_KEYPAIR*>* pki_recipients{};        /**< Trusted Recipients */
   CRYPTO_SESSION* pki_session{};  /**< PKE Public Keys + Symmetric Session Keys */
   POOLMEM* crypto_buf{};          /**< Encryption/Decryption buffer */
   POOLMEM* pki_session_encoded{}; /**< Cached DER-encoded copy of pki_session */
@@ -74,7 +74,7 @@ struct JobControlRecordPrivate {
   std::atomic<bool> hb_running{};             /**< Heartbeat running */
   std::shared_ptr<BareosSocket> hb_bsock;     /**< Duped SD socket */
   std::shared_ptr<BareosSocket> hb_dir_bsock; /**< Duped DIR socket */
-  alist* RunScripts{};            /**< Commands to run before and after job */
+  alist<RunScript*>* RunScripts{};            /**< Commands to run before and after job */
   CryptoContext crypto;           /**< Crypto ctx */
   filedaemon::DirectorResource* director{}; /**< Director resource */
   bool enable_vss{};              /**< VSS used by FD */

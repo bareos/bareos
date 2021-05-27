@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -50,7 +50,9 @@ namespace directordaemon {
 /* Forward referenced functions */
 
 // Copy the storage definitions from an alist to the JobControlRecord
-void CopyRwstorage(JobControlRecord* jcr, alist* storage, const char* where)
+void CopyRwstorage(JobControlRecord* jcr,
+                   alist<StorageResource*>* storage,
+                   const char* where)
 {
   if (jcr->JobReads()) { CopyRstorage(jcr, storage, where); }
   CopyWstorage(jcr, storage, where);
@@ -77,14 +79,17 @@ void FreeRwstorage(JobControlRecord* jcr)
 }
 
 // Copy the storage definitions from an alist to the JobControlRecord
-void CopyRstorage(JobControlRecord* jcr, alist* storage, const char* where)
+void CopyRstorage(JobControlRecord* jcr,
+                  alist<StorageResource*>* storage,
+                  const char* where)
 {
   if (storage) {
     StorageResource* store = nullptr;
     if (jcr->impl->res.read_storage_list) {
       delete jcr->impl->res.read_storage_list;
     }
-    jcr->impl->res.read_storage_list = new alist(10, not_owned_by_alist);
+    jcr->impl->res.read_storage_list
+        = new alist<StorageResource*>(10, not_owned_by_alist);
     foreach_alist (store, storage) {
       jcr->impl->res.read_storage_list->append(store);
     }
@@ -110,7 +115,8 @@ void SetRstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
   if (!store->store) { return; }
   if (jcr->impl->res.read_storage_list) { FreeRstorage(jcr); }
   if (!jcr->impl->res.read_storage_list) {
-    jcr->impl->res.read_storage_list = new alist(10, not_owned_by_alist);
+    jcr->impl->res.read_storage_list
+        = new alist<StorageResource*>(10, not_owned_by_alist);
   }
   jcr->impl->res.read_storage = store->store;
   if (!jcr->impl->res.rstore_source) {
@@ -134,14 +140,17 @@ void FreeRstorage(JobControlRecord* jcr)
 }
 
 // Copy the storage definitions from an alist to the JobControlRecord
-void CopyWstorage(JobControlRecord* jcr, alist* storage, const char* where)
+void CopyWstorage(JobControlRecord* jcr,
+                  alist<StorageResource*>* storage,
+                  const char* where)
 {
   if (storage) {
     StorageResource* st = nullptr;
     if (jcr->impl->res.write_storage_list) {
       delete jcr->impl->res.write_storage_list;
     }
-    jcr->impl->res.write_storage_list = new alist(10, not_owned_by_alist);
+    jcr->impl->res.write_storage_list
+        = new alist<StorageResource*>(10, not_owned_by_alist);
     foreach_alist (st, storage) {
       Dmsg1(100, "write_storage_list=%s\n", st->resource_name_);
       jcr->impl->res.write_storage_list->append(st);
@@ -171,7 +180,8 @@ void SetWstorage(JobControlRecord* jcr, UnifiedStorageResource* store)
   if (!store->store) { return; }
   if (jcr->impl->res.write_storage_list) { FreeWstorage(jcr); }
   if (!jcr->impl->res.write_storage_list) {
-    jcr->impl->res.write_storage_list = new alist(10, not_owned_by_alist);
+    jcr->impl->res.write_storage_list
+        = new alist<StorageResource*>(10, not_owned_by_alist);
   }
   jcr->impl->res.write_storage = store->store;
   if (!jcr->impl->res.wstore_source) {
@@ -220,7 +230,8 @@ void SetPairedStorage(JobControlRecord* jcr)
          */
         jcr->impl->res.paired_read_write_storage_list
             = jcr->impl->res.write_storage_list;
-        jcr->impl->res.write_storage_list = new alist(10, not_owned_by_alist);
+        jcr->impl->res.write_storage_list
+            = new alist<StorageResource*>(10, not_owned_by_alist);
         foreach_alist (store, jcr->impl->res.paired_read_write_storage_list) {
           if (store->paired_storage) {
             Dmsg1(100, "write_storage_list=%s\n",
@@ -254,7 +265,7 @@ void SetPairedStorage(JobControlRecord* jcr)
          * jcr->impl_->res.read_storage_list.
          */
         jcr->impl->res.paired_read_write_storage_list
-            = new alist(10, not_owned_by_alist);
+            = new alist<StorageResource*>(10, not_owned_by_alist);
         foreach_alist (paired_read_write_storage,
                        jcr->impl->res.read_storage_list) {
           store = (StorageResource*)my_config->GetNextRes(R_STORAGE, NULL);
@@ -299,7 +310,8 @@ void SetPairedStorage(JobControlRecord* jcr)
          */
         jcr->impl->res.paired_read_write_storage_list
             = jcr->impl->res.read_storage_list;
-        jcr->impl->res.read_storage_list = new alist(10, not_owned_by_alist);
+        jcr->impl->res.read_storage_list
+            = new alist<StorageResource*>(10, not_owned_by_alist);
         foreach_alist (store, jcr->impl->res.paired_read_write_storage_list) {
           if (store->paired_storage) {
             Dmsg1(100, "read_storage_list=%s\n",
@@ -509,12 +521,12 @@ void StorageStatus(UaContext* ua, StorageResource* store, char* cmd)
 }
 
 // Simple comparison function for binary insert of vol_list_t
-int StorageCompareVolListEntry(void* e1, void* e2)
+int StorageCompareVolListEntry(vol_list_t* e1, vol_list_t* e2)
 {
   vol_list_t *v1, *v2;
 
-  v1 = (vol_list_t*)e1;
-  v2 = (vol_list_t*)e2;
+  v1 = e1;
+  v2 = e2;
 
   ASSERT(v1);
   ASSERT(v2);
@@ -553,7 +565,7 @@ changer_vol_list_t* get_vol_list_from_storage(UaContext* ua,
                                               bool cached)
 {
   vol_list_type type;
-  dlist* contents = NULL;
+  dlist<vol_list_t>* contents = NULL;
   changer_vol_list_t* vol_list = NULL;
 
   P(store->runtime_storage_status->changer_lock);
@@ -776,7 +788,7 @@ vol_list_t* vol_is_loaded_in_drive(StorageResource* store,
       default:
         break;
     }
-    vl = (vol_list_t*)vol_list->contents->next((void*)vl);
+    vl = vol_list->contents->next(vl);
   }
 
   return NULL;

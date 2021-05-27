@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Kern Sibbald
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,7 +35,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 struct guitem {
-  dlink link;
+  dlink<guitem> link;
   char* name;
   union {
     uid_t uid;
@@ -47,10 +47,10 @@ struct guitem {
 guid_list* new_guid_list()
 {
   guid_list* list;
-  guitem* item = NULL;
+  guitem* item = nullptr;
   list = (guid_list*)malloc(sizeof(guid_list));
-  list->uid_list = new dlist(item, &item->link);
-  list->gid_list = new dlist(item, &item->link);
+  list->uid_list = new dlist<guitem>(item, &item->link);
+  list->gid_list = new dlist<guitem>(item, &item->link);
   return list;
 }
 
@@ -68,10 +68,10 @@ void FreeGuidList(guid_list* list)
   free(list);
 }
 
-static int UidCompare(void* item1, void* item2)
+static int UidCompare(guitem* item1, guitem* item2)
 {
-  guitem* i1 = (guitem*)item1;
-  guitem* i2 = (guitem*)item2;
+  guitem* i1 = item1;
+  guitem* i2 = item2;
   if (i1->uid < i2->uid) {
     return -1;
   } else if (i1->uid > i2->uid) {
@@ -81,10 +81,10 @@ static int UidCompare(void* item1, void* item2)
   }
 }
 
-static int GidCompare(void* item1, void* item2)
+static int GidCompare(guitem* item1, guitem* item2)
 {
-  guitem* i1 = (guitem*)item1;
-  guitem* i2 = (guitem*)item2;
+  guitem* i1 = item1;
+  guitem* i2 = item2;
   if (i1->gid < i2->gid) {
     return -1;
   } else if (i1->gid > i2->gid) {

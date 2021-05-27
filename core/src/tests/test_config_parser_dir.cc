@@ -220,8 +220,9 @@ void test_CFG_TYPE_FNAME(DirectorResource* me)
   EXPECT_EQ(fileset1->exclude_items.size(), 0);
   EXPECT_EQ(fileset1->include_items.size(), 1);
 
-  alist* files = std::addressof(fileset1->include_items.at(0)->name_list);
-  char* val = nullptr;
+  alist<const char*>* files
+      = std::addressof(fileset1->include_items.at(0)->name_list);
+  const char* val = nullptr;
   foreach_alist (val, files) {
     printf("Files = %s\n", val);
   }

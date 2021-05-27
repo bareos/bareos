@@ -1033,7 +1033,7 @@ static void PropagateResource(ResourceItem* items,
   for (int i = 0; items[i].name; i++) {
     if (!BitIsSet(i, dest->item_present_)
         && BitIsSet(i, source->item_present_)) {
-      offset = items[i].offset;  // Ueb
+      offset = items[i].offset;
       switch (items[i].type) {
         case CFG_TYPE_STR:
         case CFG_TYPE_DIR:
@@ -1065,16 +1065,18 @@ static void PropagateResource(ResourceItem* items,
         }
         case CFG_TYPE_ALIST_STR: {
           const char* str = nullptr;
-          alist *orig_list, **new_list;
+          alist<const char*>*orig_list, **new_list;
 
           // Handle alist strings
-          orig_list = *(alist**)((char*)(source) + offset);
+          orig_list = *(alist<const char*>**)((char*)(source) + offset);
 
           // See if there is anything on the list.
           if (orig_list && orig_list->size()) {
-            new_list = (alist**)((char*)(dest) + offset);
+            new_list = (alist<const char*>**)((char*)(dest) + offset);
 
-            if (!*new_list) { *new_list = new alist(10, owned_by_alist); }
+            if (!*new_list) {
+              *new_list = new alist<const char*>(10, owned_by_alist);
+            }
 
             foreach_alist (str, orig_list) {
               (*new_list)->append(strdup(str));
@@ -1087,16 +1089,18 @@ static void PropagateResource(ResourceItem* items,
         }
         case CFG_TYPE_ALIST_RES: {
           BareosResource* res = nullptr;
-          alist *orig_list, **new_list;
+          alist<BareosResource*>*orig_list, **new_list;
 
           // Handle alist resources
-          orig_list = *(alist**)((char*)(source) + offset);
+          orig_list = *(alist<BareosResource*>**)((char*)(source) + offset);
 
           // See if there is anything on the list.
           if (orig_list && orig_list->size()) {
-            new_list = (alist**)((char*)(dest) + offset);
+            new_list = (alist<BareosResource*>**)((char*)(dest) + offset);
 
-            if (!*new_list) { *new_list = new alist(10, not_owned_by_alist); }
+            if (!*new_list) {
+              *new_list = new alist<BareosResource*>(10, not_owned_by_alist);
+            }
 
             foreach_alist (res, orig_list) {
               (*new_list)->append(res);
@@ -1109,16 +1113,20 @@ static void PropagateResource(ResourceItem* items,
         }
         case CFG_TYPE_ACL: {
           const char* str = nullptr;
-          alist *orig_list, **new_list;
+          alist<const char*>*orig_list, **new_list;
 
           // Handle ACL lists.
-          orig_list = ((alist**)((char*)(source) + offset))[items[i].code];
+          orig_list = ((alist<const char*>**)((char*)(source)
+                                              + offset))[items[i].code];
 
           // See if there is anything on the list.
           if (orig_list && orig_list->size()) {
-            new_list = &(((alist**)((char*)(dest) + offset))[items[i].code]);
+            new_list = &((
+                (alist<const char*>**)((char*)(dest) + offset))[items[i].code]);
 
-            if (!*new_list) { *new_list = new alist(10, owned_by_alist); }
+            if (!*new_list) {
+              *new_list = new alist<const char*>(10, owned_by_alist);
+            }
 
             foreach_alist (str, orig_list) {
               (*new_list)->append(strdup(str));
@@ -1305,7 +1313,7 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
 {
   if (!Bstrcasecmp(item.name, "runscript")) { return; }
 
-  alist* list = GetItemVariable<alist*>(item);
+  alist<RunScript*>* list = GetItemVariable<alist<RunScript*>*>(item);
   if ((!list) or (list->empty())) { return; }
 
   send.ArrayStart(item.name, inherited, "");
@@ -2438,7 +2446,7 @@ bool PropagateJobdefs(int res_type, JobResource* res)
     // Handle RunScripts alists specifically
     if (jobdefs->RunScripts) {
       if (!res->RunScripts) {
-        res->RunScripts = new alist(10, not_owned_by_alist);
+        res->RunScripts = new alist<RunScript*>(10, not_owned_by_alist);
       }
 
       RunScript* rs = nullptr;
@@ -2806,14 +2814,15 @@ static void StoreAutopassword(LEX* lc, ResourceItem* item, int index, int pass)
 
 static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
 {
-  alist** alistvalue = GetItemVariablePointer<alist**>(*item);
+  alist<const char*>** alistvalue
+      = GetItemVariablePointer<alist<const char*>**>(*item);
   if (pass == 1) {
     if (!alistvalue[item->code]) {
-      alistvalue[item->code] = new alist(10, owned_by_alist);
+      alistvalue[item->code] = new alist<const char*>(10, owned_by_alist);
       Dmsg1(900, "Defined new ACL alist at %d\n", item->code);
     }
   }
-  alist* list = alistvalue[item->code];
+  alist<const char*>* list = alistvalue[item->code];
   std::vector<char> msg(256);
   int token = BCT_COMMA;
   while (token == BCT_COMMA) {
@@ -2835,12 +2844,15 @@ static void StoreAcl(LEX* lc, ResourceItem* item, int index, int pass)
 static void StoreAudit(LEX* lc, ResourceItem* item, int index, int pass)
 {
   int token;
-  alist* list;
+  alist<const char*>* list;
 
-  alist** alistvalue = GetItemVariablePointer<alist**>(*item);
+  alist<const char*>** alistvalue
+      = GetItemVariablePointer<alist<const char*>**>(*item);
 
   if (pass == 1) {
-    if (!*alistvalue) { *alistvalue = new alist(10, owned_by_alist); }
+    if (!*alistvalue) {
+      *alistvalue = new alist<const char*>(10, owned_by_alist);
+    }
   }
   list = *alistvalue;
 
@@ -2925,7 +2937,8 @@ static void StoreShortRunscript(LEX* lc,
                                 int pass)
 {
   LexGetToken(lc, BCT_STRING);
-  alist** runscripts = GetItemVariablePointer<alist**>(*item);
+  alist<RunScript*>** runscripts
+      = GetItemVariablePointer<alist<RunScript*>**>(*item);
 
   if (pass == 2) {
     Dmsg0(500, "runscript: creating new RunScript object\n");
@@ -2963,7 +2976,9 @@ static void StoreShortRunscript(LEX* lc,
     // Remember that the entry was configured in the short runscript form.
     script->short_form = true;
 
-    if (!*runscripts) { *runscripts = new alist(10, not_owned_by_alist); }
+    if (!*runscripts) {
+      *runscripts = new alist<RunScript*>(10, not_owned_by_alist);
+    }
 
     (*runscripts)->append(script);
     script->Debug();
@@ -3062,8 +3077,11 @@ static void StoreRunscript(LEX* lc, ResourceItem* item, int index, int pass)
   }
 
   if (pass == 2) {
-    alist** runscripts = GetItemVariablePointer<alist**>(*item);
-    if (!*runscripts) { *runscripts = new alist(10, not_owned_by_alist); }
+    alist<RunScript*>** runscripts
+        = GetItemVariablePointer<alist<RunScript*>**>(*item);
+    if (!*runscripts) {
+      *runscripts = new alist<RunScript*>(10, not_owned_by_alist);
+    }
 
     res_runscript->SetJobCodeCallback(job_code_callback_director);
 
@@ -3299,8 +3317,8 @@ static bool HasDefaultValue(ResourceItem& item, s_jl* keywords)
   return is_default;
 }
 
-
-static bool HasDefaultValue(ResourceItem& item, alist* values)
+template <typename T>
+static bool HasDefaultValue(ResourceItem& item, alist<T>* values)
 {
   if (item.flags & CFG_ITEM_DEFAULT) {
     if ((values->size() == 1)
@@ -3316,7 +3334,7 @@ static bool HasDefaultValue(ResourceItem& item, alist* values)
 
 static bool HasDefaultValueAlistConstChar(ResourceItem& item)
 {
-  alist* values = GetItemVariable<alist*>(item);
+  alist<const char*>* values = GetItemVariable<alist<const char*>*>(item);
   return HasDefaultValue(item, values);
 }
 
@@ -3335,7 +3353,7 @@ static bool HasDefaultValue(ResourceItem& item)
         /* this should not happen */
         is_default = false;
       } else {
-        is_default = (GetItemVariable<alist*>(item) == NULL);
+        is_default = (GetItemVariable<alist<RunScript*>*>(item) == NULL);
       }
       break;
     }
@@ -3346,8 +3364,9 @@ static bool HasDefaultValue(ResourceItem& item)
        */
       break;
     case CFG_TYPE_ACL: {
-      alist** alistvalue = GetItemVariablePointer<alist**>(item);
-      alist* list = alistvalue[item.code];
+      alist<const char*>** alistvalue
+          = GetItemVariablePointer<alist<const char*>**>(item);
+      alist<const char*>* list = alistvalue[item.code];
       is_default = HasDefaultValue(item, list);
       break;
     }
@@ -3393,7 +3412,8 @@ static bool HasDefaultValue(ResourceItem& item)
       break;
     }
     case CFG_TYPE_AUDIT: {
-      is_default = HasDefaultValue(item, GetItemVariable<alist*>(item));
+      is_default
+          = HasDefaultValue(item, GetItemVariable<alist<const char*>*>(item));
       break;
     }
     case CFG_TYPE_POOLTYPE:
@@ -3441,8 +3461,9 @@ static void PrintConfigCb(ResourceItem& item,
   switch (item.type) {
     case CFG_TYPE_DEVICE: {
       // Each member of the list is comma-separated
-      send.KeyMultipleStringsInOneLine(item.name, GetItemVariable<alist*>(item),
-                                       GetResourceName, false, true);
+      send.KeyMultipleStringsInOneLine(
+          item.name, GetItemVariable<alist<const char*>*>(item),
+          GetResourceName, false, true);
       break;
     }
     case CFG_TYPE_RUNSCRIPT:
@@ -3456,8 +3477,9 @@ static void PrintConfigCb(ResourceItem& item,
        */
       break;
     case CFG_TYPE_ACL: {
-      alist** alistvalue = GetItemVariablePointer<alist**>(item);
-      alist* list = alistvalue[item.code];
+      alist<const char*>** alistvalue
+          = GetItemVariablePointer<alist<const char*>**>(item);
+      alist<const char*>* list = alistvalue[item.code];
       send.KeyMultipleStringsInOneLine(item.name, list, inherited);
       break;
     }
@@ -3527,8 +3549,8 @@ static void PrintConfigCb(ResourceItem& item,
     }
     case CFG_TYPE_AUDIT: {
       // Each member of the list is comma-separated
-      send.KeyMultipleStringsInOneLine(item.name, GetItemVariable<alist*>(item),
-                                       inherited);
+      send.KeyMultipleStringsInOneLine(
+          item.name, GetItemVariable<alist<const char*>*>(item), inherited);
       break;
     }
     case CFG_TYPE_POOLTYPE:
