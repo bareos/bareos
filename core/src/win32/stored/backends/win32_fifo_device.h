@@ -39,7 +39,7 @@ class DeviceControlRecord;
 class win32_fifo_device : public Device {
  public:
   win32_fifo_device() = default;
-  ~win32_fifo_device() = default;
+  ~win32_fifo_device() { close(nullptr); }
 
   /*
    * Interface from Device
@@ -57,6 +57,9 @@ class win32_fifo_device : public Device {
   ssize_t d_read(int fd, void* buffer, size_t count) override;
   ssize_t d_write(int fd, const void* buffer, size_t count) override;
   bool d_truncate(DeviceControlRecord* dcr) override;
+
+ private:
+  bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout);
 };
 
 } /* namespace storagedaemon */

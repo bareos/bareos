@@ -33,7 +33,7 @@ namespace storagedaemon {
 class unix_tape_device : public generic_tape_device {
  public:
   unix_tape_device();
-  ~unix_tape_device() = default;
+  ~unix_tape_device() { close(nullptr); };
 
   int d_ioctl(int fd, ioctl_req_t request, char* op) override;
 };

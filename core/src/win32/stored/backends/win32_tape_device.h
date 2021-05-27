@@ -33,7 +33,7 @@ namespace storagedaemon {
 class win32_tape_device : public generic_tape_device {
  public:
   win32_tape_device();
-  ~win32_tape_device();
+  ~win32_tape_device() { close(nullptr); }
 
   int d_close(int) override;
   int d_open(const char* pathname, int flags, int mode) override;

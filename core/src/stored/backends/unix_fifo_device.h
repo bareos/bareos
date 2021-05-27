@@ -37,7 +37,7 @@ class DeviceControlRecord;
 class unix_fifo_device : public Device {
  public:
   unix_fifo_device() = default;
-  ~unix_fifo_device() = default;
+  ~unix_fifo_device() { close(nullptr); }
 
   /*
    * Interface from Device
@@ -55,6 +55,9 @@ class unix_fifo_device : public Device {
   ssize_t d_read(int fd, void* buffer, size_t count) override;
   ssize_t d_write(int fd, const void* buffer, size_t count) override;
   bool d_truncate(DeviceControlRecord* dcr) override;
+
+ private:
+  bool do_mount(DeviceControlRecord* dcr, bool mount, int dotimeout);
 };
 
 } /* namespace storagedaemon */
