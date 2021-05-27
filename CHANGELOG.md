@@ -40,6 +40,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - added multicolumn prompt selection for selection of more than 20 items [PR #731]
 
 ### Changed
+- core: cleanup systemd service dependencies: Requires network.target, but start after the network-online.target [PR #700]
 . core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
 - repaired or added all header guards in libdroplet [PR #765]
 - When using Python > 3.7 the postgres and libcloud plugins will cancel the job and write an error message [PR #769]
