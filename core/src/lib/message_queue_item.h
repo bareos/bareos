@@ -35,7 +35,7 @@ class MessageQueueItem {
   dlink link_;
   int type_ = 0;
   utime_t mtime_ = {0};
-  const char* msg_{nullptr};
+  char* msg_{nullptr};
 };
 
 
