@@ -1078,7 +1078,7 @@ std::string FormatMulticolumnPrompts(const UaContext* ua,
                                      const int window_width,
                                      const int min_lines_threshold)
 {
-  size_t max_prompt_length = 1;
+  unsigned int max_prompt_length = 1;
 
   const int max_prompt_index_length = std::to_string(ua->num_prompts).length();
 
