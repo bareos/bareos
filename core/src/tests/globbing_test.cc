@@ -156,8 +156,29 @@ TEST(globbing, globbing_in_markcmd)
 
   PopulateTree(files, &tree);
 
-  FakeCdCmd(&ua, &tree, "/some/weirdfiles/");
+  // testing full paths
+  FakeCdCmd(&ua, &tree, "/");
+  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "*"), files.size());
 
+  EXPECT_EQ(
+      FakeMarkCmd(&ua, &tree, "/testingwildcards/lonesubdirectory/whatever"),
+      1);
+
+  EXPECT_EQ(
+      FakeMarkCmd(&ua, &tree, "testingwildcards/lonesubdirectory/whatever"), 1);
+
+  // Using full path while being in a different folder than root
+  FakeCdCmd(&ua, &tree, "/some/weirdfiles/");
+  EXPECT_EQ(
+      FakeMarkCmd(&ua, &tree, "/testingwildcards/lonesubdirectory/whatever"),
+      1);
+  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "/testingwildcards/sub*"), 6);
+
+  EXPECT_EQ(
+      FakeMarkCmd(&ua, &tree, "testingwildcards/lonesubdirectory/whatever"), 0);
+
+  // Testing patterns in different folders
+  FakeCdCmd(&ua, &tree, "/some/weirdfiles/");
   EXPECT_EQ(FakeMarkCmd(&ua, &tree, "nope"), 0);
   EXPECT_EQ(FakeMarkCmd(&ua, &tree, "potato"), 1);
   EXPECT_EQ(FakeMarkCmd(&ua, &tree, "potato*"), 2);
@@ -170,9 +191,6 @@ TEST(globbing, globbing_in_markcmd)
   EXPECT_EQ(FakeMarkCmd(&ua, &tree, "wei*/sub*/*"), 6);
   EXPECT_EQ(FakeMarkCmd(&ua, &tree, "wei*/subroza/*"), 0);
   EXPECT_EQ(FakeMarkCmd(&ua, &tree, "w*efiles/sub*/*"), 6);
-
-  FakeCdCmd(&ua, &tree, "/");
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "*"), files.size());
 
   FakeCdCmd(&ua, &tree, "/testingwildcards/");
   EXPECT_EQ(FakeMarkCmd(&ua, &tree, "p?tato"), 1);
