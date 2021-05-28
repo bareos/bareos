@@ -461,46 +461,49 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
   for (int i = 1; i < ua->argc; i++) {
     StripTrailingSlash(ua->argk[i]);
 
-    // See if this is a full path.
+    // See if this is a complex path.
     if (strchr(ua->argk[i], '/')) {
       int pnl, fnl;
-      POOLMEM* file_pattern = GetPoolMemory(PM_FNAME);
-      POOLMEM* path_pattern = GetPoolMemory(PM_FNAME);
+      POOLMEM* given_file_pattern = GetPoolMemory(PM_FNAME);
+      POOLMEM* given_path_pattern = GetPoolMemory(PM_FNAME);
 
       // Split the argument into a path pattern and file pattern.
-      SplitPathAndFilename(ua->argk[i], path_pattern, &pnl, file_pattern, &fnl);
+      SplitPathAndFilename(ua->argk[i], given_path_pattern, &pnl,
+                           given_file_pattern, &fnl);
 
-      // Initialize the node by CDing into current cwd
-      node = tree_cwd(path_pattern, tree->root, tree->node);
-
-      if (!node) {
-        ua->WarningMsg(_("Invalid path %s given.\n"), path_pattern);
-        FreePoolMemory(file_pattern);
-        FreePoolMemory(path_pattern);
+      if (!tree_cwd(given_path_pattern, tree->root, tree->node)) {
+        ua->WarningMsg(_("Invalid path %s given.\n"), given_path_pattern);
+        FreePoolMemory(given_file_pattern);
+        FreePoolMemory(given_path_pattern);
         continue;
       }
 
-      std::string fullpath_pattern = tree_getpath(tree->node);
-      fullpath_pattern.append(path_pattern);
+      std::string fullpath_pattern{};
+      if (ua->argk[i][0] != '/') {
+        fullpath_pattern = tree_getpath(tree->node);
+      }
 
+      fullpath_pattern.append(given_path_pattern);
 
       POOLMEM* node_filename = GetPoolMemory(PM_FNAME);
       POOLMEM* node_path = GetPoolMemory(PM_FNAME);
-      for (node = tree->node; node; node = NextTreeNode(node)) {
-        std::string node_cwd = tree_getpath(node);
 
-        SplitPathAndFilename(node_cwd.c_str(), node_path, &pnl, node_filename,
+      for (node = (strcmp(tree_getpath(tree->node), "/") == 0)
+                      ? FirstTreeNode(tree->root)
+                      : tree->node;
+           node; node = NextTreeNode(node)) {
+        SplitPathAndFilename(tree_getpath(node), node_path, &pnl, node_filename,
                              &fnl);
 
         if (fnmatch(fullpath_pattern.c_str(), node_path, 0) == 0) {
-          if (fnmatch(file_pattern, node->fname, 0) == 0) {
+          if (fnmatch(given_file_pattern, node->fname, 0) == 0) {
             count += SetExtract(ua, node, tree, true);
           }
         }
       }
 
-      FreePoolMemory(file_pattern);
-      FreePoolMemory(path_pattern);
+      FreePoolMemory(given_file_pattern);
+      FreePoolMemory(given_path_pattern);
       FreePoolMemory(node_filename);
       FreePoolMemory(node_path);
     } else {
