@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1559,16 +1559,17 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
   }
 
   item = (MessageQueueItem*)malloc(sizeof(MessageQueueItem));
-  new (item) MessageQueueItem();
   item->type_ = type;
   item->mtime_ = time(NULL);
-  item->msg_ = buf.c_str();
+  item->msg_ = strdup(buf.c_str());
 
   if (!jcr) { jcr = GetJcrFromThreadSpecificData(); }
 
   // If no jcr  or no JobId or no queue or dequeuing send to syslog
   if (!jcr || !jcr->JobId || !jcr->msg_queue || jcr->dequeuing_msgs) {
-    syslog(LOG_DAEMON | LOG_ERR, "%s", item->msg_.c_str());
+    syslog(LOG_DAEMON | LOG_ERR, "%s", item->msg_);
+    free(item->msg_);
+    item->msg_ = nullptr;
     free(item);
   } else {
     // Queue message for later sending
@@ -1588,7 +1589,9 @@ void DequeueMessages(JobControlRecord* jcr)
   P(jcr->msg_queue_mutex);
   jcr->dequeuing_msgs = true;
   foreach_dlist (item, jcr->msg_queue) {
-    Jmsg(jcr, item->type_, item->mtime_, "%s", item->msg_.c_str());
+    Jmsg(jcr, item->type_, item->mtime_, "%s", item->msg_);
+    free(item->msg_);
+    item->msg_ = nullptr;
   }
 
   // Remove messages just sent
