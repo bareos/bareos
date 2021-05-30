@@ -48,7 +48,7 @@ bin/bwild
 %%ETCDIR%%/bareos-dir.d/fileset/Catalog.conf
 %%ETCDIR%%/bareos-dir.d/fileset/LinuxAll.conf
 %%ETCDIR%%/bareos-dir.d/fileset/SelfTest.conf
-%%ETCDIR%%/bareos-dir.d/fileset/Windows All Drives.conf
+"%%ETCDIR%%/bareos-dir.d/fileset/Windows All Drives.conf"
 %%ETCDIR%%/bareos-dir.d/fileset/plugin-ldap.conf.example
 %%ETCDIR%%/bareos-dir.d/job/BackupCatalog.conf
 %%ETCDIR%%/bareos-dir.d/job/RestoreFiles.conf

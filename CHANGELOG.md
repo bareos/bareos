@@ -41,7 +41,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - core: cleanup systemd service dependencies: Requires network.target, but start after the network-online.target [PR #700]
-. core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
+- core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
+- core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
 - repaired or added all header guards in libdroplet [PR #765]
 - When using Python > 3.7 the postgres and libcloud plugins will cancel the job and write an error message [PR #769]
 - bstrncpy: workaround when used with overlapping strings [PR #736]
@@ -58,6 +59,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: Localization updated [PR #776]
 - running cmake for the core-directory only is now forbidden [PR #767]
 - dird: ignore duplicate job checking on virtual fulls started by consolidation [PR #552]
+- buildsystem: switch to cross build chain of Fedora 34 [PR #819]
+- FreeBSD: adapt pkglists for FreeBSD 13.0 [PR #819]
+- Fedora34: do not build mysql db backend, adapt pkglist [PR #819]
 
 ### Deprecated
 
