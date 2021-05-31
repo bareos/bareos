@@ -626,6 +626,9 @@ set(SYSTEM_TESTS
     volume-pruning
 )
 
+set(SYSTEM_TESTS_DISABLED # initially empty
+)
+
 if(TARGET gfapi-fd
    AND gfapi_fd_host
    AND SUDO
@@ -638,8 +641,6 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED gfapi-fd)
 endif()
 
-set(SYSTEM_TESTS_DISABLED # initially empty
-)
 
 # add tests also here that are unreliable they are excluded when running tests
 # during build in jenkins
