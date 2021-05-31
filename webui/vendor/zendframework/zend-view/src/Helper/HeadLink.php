@@ -395,6 +395,8 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
             }
         }
 
+        $extras = [];
+
         if (0 < count($args) && is_array($args[0])) {
             $extras = array_shift($args);
             $extras = (array) $extras;
@@ -442,6 +444,8 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
         $href  = array_shift($args);
         $type  = array_shift($args);
         $title = array_shift($args);
+
+        $extras = [];
 
         if (0 < count($args) && is_array($args[0])) {
             $extras = array_shift($args);
