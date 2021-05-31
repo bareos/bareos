@@ -596,8 +596,8 @@ set(SYSTEM_TESTS
     ai-consolidate-ignore-duplicate-job
     bareos
     bareos-acl
+    bscan-bextract-bls
     bconsole-status-client
-    bscan
     client-initiated
     config-dump
     config-syntax-crash
@@ -626,10 +626,13 @@ set(SYSTEM_TESTS
     volume-pruning
 )
 
-if(TARGET gfapi-fd AND gfapi_fd_host)
+if(TARGET gfapi-fd
+   AND gfapi_fd_host
+   AND SUDO
+)
   list(APPEND SYSTEM_TESTS gfapi-fd)
   message(
-    "   gfapi-fd test settings: gfapi_fd_host=${gfapi_fd_host}, gfapi_fd_testvolume=${gfapi_fd_testvolume}"
+    "SUDO: ${SUDO},  gfapi-fd test settings: gfapi_fd_host=${gfapi_fd_host}, gfapi_fd_testvolume=${gfapi_fd_testvolume}"
   )
 else()
   list(APPEND SYSTEM_TESTS_DISABLED gfapi-fd)
@@ -641,6 +644,7 @@ set(SYSTEM_TESTS_DISABLED # initially empty
 # add tests also here that are unreliable they are excluded when running tests
 # during build in jenkins
 set(SYSTEM_TESTS_BROKEN
+    python-restapi
     py3plug-fd-postgres # fails because of psycopg2
     py3plug-fd-local-fileset # Fails with UnicodeEncodeError: 'utf-8' codec
                              # can't encode characters in position 133-142:
@@ -1093,7 +1097,10 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
     )
   endif()
 
-  set_tests_properties(${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 120 COST 1.0)
+  set_tests_properties(
+    ${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 120 COST 1.0
+                                                SKIP_RETURN_CODE 77
+  )
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()

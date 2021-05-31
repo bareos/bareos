@@ -36,6 +36,10 @@ if(POLICY CMP0057)
   cmake_policy(SET CMP0057 NEW)
 endif(POLICY CMP0057)
 
+if(POLICY CMP0109)
+  cmake_policy(SET CMP0109 NEW)
+endif(POLICY CMP0109)
+
 # disable in-source builds
 if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
   message(FATAL_ERROR "In-source builds are not allowed.")
@@ -952,7 +956,6 @@ if(HAVE_WIN32)
   message("   WINDOWS_BITS:                 ${WINDOWS_BITS}")
   message("   WINEPATH environment:         $ENV{WINEPATH}")
 endif()
-
 # REPEAT_UNTIL requires cmake 3.17+
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.17.0")
   set(REPEAT_UNTIL "REPEAT UNTIL_PASS:2")

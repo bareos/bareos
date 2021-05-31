@@ -49,6 +49,39 @@ END_OF_DATA
 
 run_bconsole "$tmp/bconcmds"
 
+run_bls -vv -V TestVolume001 FileStorage
+ret=$?
+if [ $ret -ne 0 ]; then
+  echo "bls exit code: $ret"
+  stop_bareos
+  exit $ret
+fi
+
+if ! grep -q "weird-files/dangling-link" "$tmp/bls.out"; then
+  echo 'Expected string \"weird-files/dangling-link\" not found in  bls output'
+  stop_bareos
+  exit 1
+fi
+
+
+rm -rf "$tmp/bareos-restores"
+mkdir -p  "$tmp/bareos-restores"
+run_bextract -vv -V TestVolume001 FileStorage "$tmp/bareos-restores"
+ret=$?
+if [ $ret -ne 0 ]; then
+  echo "bextract exit code: $ret"
+  stop_bareos
+  exit $ret
+else
+  find "$tmp/bareos-restores"
+  check_restore_diff "${BackupDirectory}" # check extracted files
+  mv "$tmp/bareos-restores" "$tmp/bextract-restores" # move extracted files away
+  mkdir -p  "$tmp/bareos-restores"
+fi
+
+
+
+
 run_bscan_db -vv -s -V TestVolume001 FileStorage
 ret=$?
 if [ $ret -ne 0 ]; then
@@ -88,7 +121,7 @@ if [ "$my_jobid_records" -ne 2 ]; then
   exit 1
 fi
 if [ "$my_jobid_records" -ne "$total_jobid_records" ]; then
-  echo "Volume containes excess session records:"
+  echo "Volume contains excess session records:"
   echo "Got $total_jobid_records in total, only $my_jobid_records mention my original jobid"
   stop_bareos
   exit 1

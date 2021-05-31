@@ -3,8 +3,8 @@
 coverage:
   lines:
     healthy: 70
-    unhealthy: 20
-    unstable: 22
+    unhealthy: 38
+    unstable: 40
 
 docs:
   warnings_unhealthy: 72
