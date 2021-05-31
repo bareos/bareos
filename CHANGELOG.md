@@ -6,6 +6,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Fixed
+- fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option localvmdk=yes [PR #830]
 - fix possible read/write problems when using droplet with https [PR #773]
 - fix memory leak in python module constants [PR #781]
 - fix german localization errors [PR #786]
