@@ -28,6 +28,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1329]: If CommandACL limits any command, no messages can be read but "you have messages" is displayed. [PR #763]
 - fix gfapi-fd: avoid possible crash on second glfs_close() call [PR #792]
 - docs: declare shell scripts code blocks as "sh" instead of "shell-session" [PR #802]
+- [Issue #1205]: PHP 7.3 issue with compact() in HeadLink.php [PR #829]
 
 ### Added
 - systemtests for S3 functionalities (droplet, libcloud) now use https [PR #765]
