@@ -24,6 +24,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Deprecated
 
 ### Removed
+- packaging: Do not build for EOL FreeBSD 12.1 anymore.
 
 ### Security
 
