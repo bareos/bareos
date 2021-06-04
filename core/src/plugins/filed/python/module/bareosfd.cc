@@ -2135,6 +2135,7 @@ static void PySavePacket_dealloc(PySavePacket* self)
   if (self->flags) { Py_XDECREF(self->flags); }
   if (self->object_name) { Py_XDECREF(self->object_name); }
   if (self->object) { Py_XDECREF(self->object); }
+  if (self->statp) { Py_XDECREF(self->statp); }
   PyObject_Del(self);
 }
 

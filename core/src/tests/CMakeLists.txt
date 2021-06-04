@@ -20,6 +20,15 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include_directories(${OPENSSL_INCLUDE_DIR})
 
+# clang 11.0.1 on FreBSD 13  fails to skip suggest-override for gtest
+if(CMAKE_C_COMPILER_ID MATCHES Clang AND CMAKE_C_COMPILER_VERSION
+                                         VERSION_EQUAL 11.0.1
+)
+  add_compile_options(-Wno-suggest-override)
+endif()
+
+
+
 macro(bareos_gtest_add_tests testname)
   gtest_add_tests(
     TARGET ${testname}
@@ -376,10 +385,9 @@ if(GMOCK_FOUND AND NOT client-only)
   bareos_add_test(
     sd_reservation LINK_LIBRARIES ${LINK_LIBRARIES} ${GMOCK_LIBRARIES}
   )
-endif()
-
-if(NOT client-only)
-  bareos_add_test(sd_backend LINK_LIBRARIES ${LINK_LIBRARIES} ${GMOCK_LIBRARIES})
+  bareos_add_test(
+    sd_backend LINK_LIBRARIES ${LINK_LIBRARIES} ${GMOCK_LIBRARIES}
+  )
 endif()
 
 if(NOT client-only)
