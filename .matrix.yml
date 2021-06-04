@@ -1,0 +1,526 @@
+JENKINS_TESTTYPES:
+  - bareos-client-only
+  - bareos-mysql
+  - bareos-postgresql
+  - univention-bareos
+
+OS:
+  xUbuntu:
+    "20.04":
+      TYPE: deb
+      IMAGE: "ubuntu20.04"
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+      ARCH:
+        - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+
+    "18.04":
+      TYPE: deb
+      IMAGE: "ubuntu18.04"
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+        - bareos-17.2
+      ARCH:
+        - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+
+    "16.04":
+      TYPE: deb
+      IMAGE: "ubuntu16.04"
+      BUILD_FOR_VERSIONS:
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+        - bareos-17.2
+      ARCH:
+        - i586
+        - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+        i586:
+           - bareos
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+
+  openSUSE:
+    "Leap_15.1":
+      TYPE: rpm
+      IMAGE: opensuse-leap151
+      BUILD_FOR_VERSIONS:
+        - bareos-19.2
+        - bareos-18.2
+        - bareos-17.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+       x86_64:
+          - bareos
+          - bareos-webui
+          - libfastlz
+          - python-bareos
+
+    "Leap_15.2":
+      TYPE: rpm
+      IMAGE: opensuse-leap152
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-18.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+       x86_64:
+          - bareos
+          - bareos-webui
+          - libfastlz
+          - python-bareos
+
+  Univention:
+    "4.3":
+      TYPE: deb
+      IMAGE: univention4.3
+      BUILD_FOR_VERSIONS:
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+
+    "4.4":
+      TYPE: deb
+      IMAGE: univention4.4
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+
+
+  SLE:
+
+    "15_SP1":
+      TYPE: rpm
+      IMAGE: sle151
+      BUILD_FOR_VERSIONS:
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+        - bareos-17.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+
+    "15_SP2":
+      TYPE: rpm
+      IMAGE: sle152
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+
+    "12_SP4":
+      TYPE: rpm
+      IMAGE: sles12sp4
+      BUILD_FOR_VERSIONS:
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+        - bareos-17.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - libdroplet
+           - libfastlz
+           - libjansson
+           - python-bareos
+
+    "12_SP5":
+      TYPE: rpm
+      IMAGE: sles12sp5
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - libdroplet
+           - libfastlz
+           - libjansson
+           - python-bareos
+
+  RHEL:
+    "8":
+      TYPE: rpm
+      IMAGE: rhel8
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - bareos-webui
+           - python-bareos
+    "7":
+      TYPE: rpm
+      IMAGE: rhel7
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+        - bareos-17.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - bareos-webui
+           - libdroplet
+           - libfastlz
+           - python-bareos
+
+    "6":
+      TYPE: rpm
+      IMAGE: rhel6
+      BUILD_FOR_VERSIONS:
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+        - bareos-17.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - libfastlz
+           - python-bareos
+
+  Fedora:
+    "33":
+      TYPE: rpm
+      IMAGE: fedora33
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - python-bareos
+    "32":
+      TYPE: rpm
+      IMAGE: fedora32
+      BUILD_FOR_VERSIONS:
+        - bareos-20
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - python-bareos
+
+    "31":
+      TYPE: rpm
+      IMAGE: fedora31
+      BUILD_FOR_VERSIONS:
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - python-bareos
+
+  Debian:
+    "10":
+      TYPE: deb
+      IMAGE: "debian10"
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+        - bareos-17.2
+      ARCH:
+        - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+    "9.0":
+      TYPE: deb
+      IMAGE: "debian9.0"
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+        - bareos-17.2
+      ARCH:
+        - i586
+        - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+        i586:
+           - bareos
+           - bareos-webui
+           - libfastlz
+           - python-bareos
+
+  CentOS:
+    "8":
+      TYPE: rpm
+      IMAGE: centos8
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - bareos-vmware-vix-disklib65
+           - bareos-webui
+           - libdroplet
+           - libfastlz
+           - python-bareos
+
+    "7":
+      TYPE: rpm
+      IMAGE: centos7
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+        - bareos-17.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - bareos-vmware-vix-disklib65
+           - bareos-webui
+           - libdroplet
+           - libfastlz
+           - python-bareos
+
+    "6":
+      TYPE: rpm
+      IMAGE: centos6
+      BUILD_FOR_VERSIONS:
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+        - bareos-17.2
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - libfastlz
+           - python-bareos
+
+  FreeBSD:
+    "11.4":
+      TYPE: freebsd
+      BUILD_FOR_VERSIONS:
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+      ARCH:
+        - amd64
+      PROJECTPACKAGES:
+        amd64:
+           - bareos-freebsd
+    "12.1":
+      TYPE: freebsd
+      BUILD_FOR_VERSIONS:
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+      ARCH:
+        - amd64
+      PROJECTPACKAGES:
+        amd64:
+           - bareos-freebsd
+    "12.2":
+      TYPE: freebsd
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+      ARCH:
+        - amd64
+      PROJECTPACKAGES:
+        amd64:
+           - bareos-freebsd
+    "13.0":
+      TYPE: freebsd
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+      ARCH:
+        - amd64
+      PROJECTPACKAGES:
+        amd64:
+           - bareos-freebsd
+
+  MacOS:
+    "10.13.6":
+      TYPE: macos
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+      ARCH:
+        - x64
+      PROJECTPACKAGES:
+        x64:
+  Solaris:
+    "11.4":
+      TYPE: solaris
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+      ARCH:
+        - i386
+        - sparc
+      PROJECTPACKAGES:
+        i386:
+           - bareos
+        sparc:
+           - bareos
+
+  win:
+    cross:
+      TYPE: win
+      BUILD_FOR_VERSIONS:
+        - bareos-21
+        - bareos-20
+        - bareos-19.2
+        - bareos-19.1
+        - bareos-18.2
+        - bareos-17.2
+      STAGES:
+        - win-32-release
+        - win-32-debug
+        - win-64-release
+        - win-64-debug
+      ARCH:
+       - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - mingw-debugsrc
+           - mingw32-winbareos
+           - mingw64-winbareos
+           - winbareos-nsi
+           - winbareos-opsi
+      WINVERSIONS:
+         - windows-10-32
+         - windows-10-64
+
