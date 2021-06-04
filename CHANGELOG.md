@@ -31,6 +31,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: declare shell scripts code blocks as "sh" instead of "shell-session" [PR #802]
 
 ### Added
+- systemtests for NDMP functionalities [PR #822]
 - systemtests for S3 functionalities (droplet, libcloud) now use https [PR #765]
 - added reload commands to systemd service [PR #694]
 - Build the package **bareos-filedaemon-postgresql-python-plugin** also for Debian, Ubuntu and UCS (deb packages) [PR #723].

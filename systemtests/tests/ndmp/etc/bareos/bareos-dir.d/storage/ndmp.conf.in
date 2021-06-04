@@ -1,0 +1,50 @@
+# This are the local disk storages.
+# Same storage daemon but via NDMP protocol.
+# We link via the PairedStorage config option the Bareos SD instance definition to a NDMP TAPE AGENT.
+#
+Storage {
+  Name = isilonfile
+  Address = @IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
+  Port = 10000
+  Protocol = NDMPv4                         # Need to specify protocol before password as protocol determines password encoding used.
+  Auth Type = Clear                         # Clear == Clear Text, MD5 == Challenge protocol
+  Username = "@ndmp_data_agent_user@"       # username of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
+  Password = "@ndmp_data_agent_password@"   # password of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
+  Device = FileStorage
+  Media Type = file
+  PairedStorage = LocalfileStorage
+}
+
+
+Storage {
+  Name = LocalfileStorage
+  Address = @IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
+  Password = "@sd_password@"
+  Device = FileStorage
+  Media Type = File
+  SD Port = @sd_port@
+}
+
+
+Storage {
+  Name = isilonfile-copy
+  Address = @IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
+  Port = 10000
+  Protocol = NDMPv4                         # Need to specify protocol before password as protocol determines password encoding used.
+  Auth Type = Clear                         # Clear == Clear Text, MD5 == Challenge protocol
+  Username = "@ndmp_data_agent_user@"       # username of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
+  Password = "@ndmp_data_agent_password@"   # password of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
+  Device = FileStorage
+  Media Type = file
+  PairedStorage = isilonfile-copytarget
+}
+
+
+Storage {
+  Name = isilonfile-copytarget
+  Address = @IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
+  Password = @sd_password@
+  Device = FileStorage2
+  Media Type = File
+  SD Port = @sd_port@
+}
