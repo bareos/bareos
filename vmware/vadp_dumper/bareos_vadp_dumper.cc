@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
    Copyright (C) 2015-2015 Planets Communications B.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -929,7 +929,7 @@ static inline bool process_disk_info(bool validate_only, json_t* value)
 
   if (create_disk && !validate_only) {
     do_vixdisklib_create(DISK_PARAMS_KEY, vmdk_disk_name, value,
-                         rdie.absolute_disk_length);
+                         rdie.phys_capacity * VIXDISKLIB_SECTOR_SIZE);
     do_vixdisklib_open(DISK_PARAMS_KEY, vmdk_disk_name, value, false, true,
                        &write_diskHandle);
 
