@@ -432,18 +432,7 @@ OS:
       PROJECTPACKAGES:
         amd64:
            - bareos-freebsd
-    "12.1":
-      TYPE: freebsd
-      BUILD_FOR_VERSIONS:
-        - bareos-20
-        - bareos-19.2
-        - bareos-19.1
-        - bareos-18.2
-      ARCH:
-        - amd64
-      PROJECTPACKAGES:
-        amd64:
-           - bareos-freebsd
+
     "12.2":
       TYPE: freebsd
       BUILD_FOR_VERSIONS:
