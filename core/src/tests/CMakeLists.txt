@@ -345,6 +345,8 @@ endif() # NOT client-only
 bareos_add_test(
   thread_list LINK_LIBRARIES bareos ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
 )
+set_tests_properties(gtest:thread_list.thread_list_startup_and_shutdown PROPERTIES LABELS broken)
+
 bareos_add_test(
   thread_specific_data LINK_LIBRARIES bareos ${GTEST_LIBRARIES}
                                       ${GTEST_MAIN_LIBRARIES}
