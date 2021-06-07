@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix gfapi-fd: avoid possible crash on second glfs_close() call [PR #797]
 - fix shutdown of the Storage Daemon backends, especially call UnlockDoor on tape devices [PR #818] (backport of [PR #809])
 - fix possible deadlock in storage backend on Solaris and FreeBSD [PR #818] (backport of [PR #809])
+- [Issue #1205]: PHP 7.3 issue with compact() in HeadLink.php [PR #833] (backport of [PR #829])
 
 ### Added
 - systemtests for S3 functionalities (droplet, libcloud) now use https [PR #765]
