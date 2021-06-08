@@ -62,7 +62,7 @@ messages
 quit
 END_OF_DATA
 
-"${rscripts}"/bareos-ctl-dir start
+start_dir
 sleep 1
 
 echo "Waiting for the director to start"
@@ -71,8 +71,8 @@ if ! echo "status dir" | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf > 
 fi
 echo "Director is running"
 
-"${rscripts}"/bareos-ctl-sd start
-"${rscripts}"/bareos-ctl-fd start
+start_sd
+start_fd
 
 echo "Check if the filedaemon is connected to the director"
 i=0
@@ -93,9 +93,7 @@ run_bconsole "$tmp/bconcmds"
 
 check_for_zombie_jobs storage=File
 
-"${rscripts}"/bareos-ctl-dir stop
-"${rscripts}"/bareos-ctl-sd stop
-"${rscripts}"/bareos-ctl-fd stop
+stop_bareos
 
 check_two_logs
 check_restore_diff "${BackupDirectory}"

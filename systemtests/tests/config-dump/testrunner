@@ -17,6 +17,7 @@ start_bareos_dir()
     else
         "${BAREOS_DIRECTOR_BINARY}" ${BAREOS_DIR_EXTRA_OPTIONS} -f                       >$output 2>&1 &
     fi
+    dir_pid=$!
 
     sleep 1
 

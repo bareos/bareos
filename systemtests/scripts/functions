@@ -409,19 +409,30 @@ check_duration_lt()
    fi
 }
 
+start_dir() {
+   "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
+   dir_pid=$!
+}
+
+start_fd() {
+   "${BAREOS_FILEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
+   fd_pid=$!
+}
+
+start_sd() {
+   "${BAREOS_STORAGEDAEMON_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f </dev/null &
+   sd_pid=$!
+}
+
 start_bareos()
 {
-   DOLLAR1="${1:-}"
    debug_wait
    zstat=0
    estat=0
-   if test "$debug" -eq 1 ; then
-     "${rscripts}/bareos-ctl-dir" start -m -d 100
-     "${rscripts}/bareos-ctl-sd" start -m -d 100
-     "${rscripts}/bareos-ctl-fd" start -m "$DOLLAR1" -d 100
-   else
-     "${rscripts}/bareos" start >/dev/null 2>&1
-   fi
+
+   start_dir
+   start_sd
+   start_fd
 
    # check daemons
    DAEMON_STATUS_OUT="$("${rscripts}/bareos" status)"
@@ -497,13 +508,40 @@ run_bscan_db()
   run_bscan -n "$db_name" -u "$db_user" -P "$db_password" "$@"
 }
 
+kill_process() {
+  if [ "$1" -gt 0 ] && kill -0 "$1" 2>/dev/null; then
+    kill -TERM "$1"
+    for i in $(seq 1 5); do
+      kill -0 "$1" 2>/dev/null || break
+      sleep 1
+    done
+    if kill -0 "$1" 2>/dev/null; then
+      kill -KILL "$1"
+    fi
+    if kill -0 "$1" 2>/dev/null; then
+      echo "Process $1 could not be killed." >&2
+    else
+      echo "Process $1 has exited." >&2
+    fi
+  else
+    echo "$1 is not a valid pid to kill" >&2
+  fi
+}
+
 stop_bareos()
 {
-   if test "$debug" -eq 1 ; then
-      "${rscripts}/bareos" stop
-   else
-      "${rscripts}/bareos" stop >/dev/null 2>&1
-   fi
+  if [ "$fd_pid" -gt 0 ]; then
+    kill_process "$fd_pid"
+    fd_pid=0
+  fi
+  if [ "$sd_pid" -gt 0 ]; then
+    kill_process "$sd_pid"
+    sd_pid=0
+  fi
+  if [ "$dir_pid" -gt 0 ]; then
+    kill_process "$dir_pid"
+    dir_pid=0
+  fi
 }
 
 
@@ -781,6 +819,9 @@ end_test()
       cat "$tmp/err.log"
    fi
    ENDDATE="$(date +%R:%S)"
+
+   "${rscripts}/bareos" stop
+
    if [ "$estat" != "0" ] ; then
       echo " "
       echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! "
@@ -1020,4 +1061,8 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
 LD_LIBRARY_PATH=$bin:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
 
-trap "{ estat=999; end_test; }" TERM
+fd_pid=0
+sd_pid=0
+dir_pid=0
+
+trap "{ estat=999; end_test; }" TERM INT
