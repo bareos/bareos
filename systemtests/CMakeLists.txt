@@ -892,19 +892,8 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED "py3plug-fd-local-fileset-restoreobject")
 endif()
 
-message("checking for requirements of py2plug-fd-postgres:")
-check_pymodule_available(2 pg8000)
-check_pymodule_available(2 dateutil)
-if(TARGET python-fd
-   AND PYMODULE_2_PG8000_FOUND
-   AND PYMODULE_2_DATEUTIL_FOUND
-)
-  message("OK, enabling py2plug-fd-postgres:")
-  list(APPEND SYSTEM_TESTS "py2plug-fd-postgres")
-else()
-  list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-postgres")
-  message("NOT OK, disabling py2plug-fd-postgres:")
-endif()
+message("disabling py2plug-fd-postgres, Python2 not supported for this plugin")
+list(APPEND SYSTEM_TESTS_DISABLED "py2plug-fd-postgres")
 
 message("checking for requirements of py3plug-fd-postgres:")
 if(TARGET python3-fd)
