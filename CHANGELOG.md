@@ -78,6 +78,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bscan and bareos systemtests: also test bextract and bls binaries, use autoxflate plugin and FSType fileset options [PR #790]
 - Windows release package now ships source code as optional component, so there is no need for a debug-package anymore [PR #858]
 - packages: Build also for Fedora_34 [PR #869]
+- postgresql filedaemon plugin: switched from psycopg2 to pg8000, dropped support for python2.
 
 ### Deprecated
 
