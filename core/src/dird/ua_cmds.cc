@@ -154,7 +154,9 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok);
 static bool DeleteVolume(UaContext* ua);
 static bool DeletePool(UaContext* ua);
 static void DeleteJob(UaContext* ua);
-static bool DoTruncate(UaContext* ua, MediaDbRecord& mr);
+static bool DoTruncate(UaContext* ua,
+                       MediaDbRecord& mr,
+                       drive_number_t drive_number);
 
 bool quit_cmd(UaContext* ua, const char* cmd);
 
@@ -512,6 +514,7 @@ static struct ua_cmdstruct commands[] = {
      true, true},
     {NT_("truncate"), TruncateCmd, _("Truncate purged volumes"),
      NT_("volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] "
+         "[drive=<drivenum>] "
          "[yes]"),
      true, true},
     {NT_("unmount"), UnmountCmd, _("Unmount storage"),
@@ -1988,7 +1991,7 @@ static bool time_cmd(UaContext* ua, const char* cmd)
  *
  * usage:
  * truncate volstatus=Purged [storage=<storage>] [pool=<pool>]
- * [volume=<volume>] [yes]
+ * [volume=<volume>] [drive=<drivenum>] [yes]
  */
 static bool TruncateCmd(UaContext* ua, const char* cmd)
 {
@@ -2002,7 +2005,7 @@ static bool TruncateCmd(UaContext* ua, const char* cmd)
   MediaDbRecord mr;
   PoolDbRecord pool_dbr;
   StorageDbRecord storage_dbr;
-
+  drive_number_t drive_number = 0;
   /*
    * Look for volumes that can be recycled,
    * are enabled and have used more than the first block.
@@ -2084,6 +2087,17 @@ static bool TruncateCmd(UaContext* ua, const char* cmd)
     }
   }
 
+  i = FindArgWithValue(ua, "drive");
+  if (i >= 0) {
+    if (!IsAnInteger(ua->argv[i])) {
+      ua->SendCmdUsage(_("Drive number must be integer but was : %s\n"),
+                       ua->argv[i]);
+    } else {
+      drive_number = atoi(ua->argv[i]);
+      parsed_args++;
+    }
+  }
+
   if (FindArg(ua, NT_("yes")) >= 0) {
     /* parameter yes is evaluated at 'GetConfirmation' */
     parsed_args++;
@@ -2148,7 +2162,7 @@ static bool TruncateCmd(UaContext* ua, const char* cmd)
     if (!ua->db->GetMediaRecord(ua->jcr, &mr)) {
       Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t)mr.MediaId);
     } else {
-      DoTruncate(ua, mr);
+      DoTruncate(ua, mr, drive_number);
     }
   }
 
@@ -2163,12 +2177,13 @@ bail_out:
   return result;
 }
 
-static bool DoTruncate(UaContext* ua, MediaDbRecord& mr)
+static bool DoTruncate(UaContext* ua,
+                       MediaDbRecord& mr,
+                       drive_number_t drive_number)
 {
   bool retval = false;
   StorageDbRecord storage_dbr;
   PoolDbRecord pool_dbr;
-
 
   storage_dbr.StorageId = mr.StorageId;
   if (!ua->db->GetStorageRecord(ua->jcr, &storage_dbr)) {
@@ -2197,7 +2212,7 @@ static bool DoTruncate(UaContext* ua, MediaDbRecord& mr)
                        /* bool relabel */
                        true,
                        /* drive_number_t drive */
-                       0,
+                       drive_number,
                        /* slot_number_t slot */
                        0)) {
     ua->SendMsg(_("The volume '%s' has been truncated.\n"), mr.VolumeName);

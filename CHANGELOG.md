@@ -33,6 +33,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Added
 - systemtests for NDMP functionalities [PR #822]
+- added choice for the drive number in the truncate command [PR #823]
 - systemtests for S3 functionalities (droplet, libcloud) now use https [PR #765]
 - added reload commands to systemd service [PR #694]
 - Build the package **bareos-filedaemon-postgresql-python-plugin** also for Debian, Ubuntu and UCS (deb packages) [PR #723].
