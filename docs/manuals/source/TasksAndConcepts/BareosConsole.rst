@@ -1403,7 +1403,7 @@ truncate
    If the volume you want to get rid of has not the **Purged** status, you first have to use the :bcommand:`prune volume` or even the :bcommand:`purge volume` command to free the volume from all remaining jobs.
 
    This command is available since Bareos :sinceVersion:`16.2.5: truncate command`.
-   The *drive=<drivenum>* selection was added in  :sinceVersion:`21.0.0: truncate command drive selection`.
+   The *drive=<drivenum>* selection was added in  :sinceVersion:`20.0.2: truncate command drive selection`.
 
 umount
    :index:`\ <single: Console; Command; umount>`\  Alias for :bcommand:`unmount`.
