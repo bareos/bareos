@@ -14,6 +14,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix shutdown of the Storage Daemon backends, especially call UnlockDoor on tape devices [PR #818] (backport of [PR #809])
 - fix possible deadlock in storage backend on Solaris and FreeBSD [PR #818] (backport of [PR #809])
 - [Issue #1205]: PHP 7.3 issue with compact() in HeadLink.php [PR #833] (backport of [PR #829])
+- reorder acquire on migrate/copy to avoid possible deadlock [PR #828]
+
 
 ### Added
 - added choice for the drive number in the truncate command [PR #837]
@@ -206,6 +208,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1184]: https://bugs.bareos.org/view.php?id=1184
 [Issue #1190]: https://bugs.bareos.org/view.php?id=1190
 [Issue #1192]: https://bugs.bareos.org/view.php?id=1192
+[Issue #1205]: https://bugs.bareos.org/view.php?id=1205
 [Issue #1206]: https://bugs.bareos.org/view.php?id=1206
 [Issue #1210]: https://bugs.bareos.org/view.php?id=1210
 [Issue #1211]: https://bugs.bareos.org/view.php?id=1211
@@ -215,6 +218,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1257]: https://bugs.bareos.org/view.php?id=1257
 [Issue #1281]: https://bugs.bareos.org/view.php?id=1281
 [Issue #1316]: https://bugs.bareos.org/view.php?id=1316
+[Issue #1329]: https://bugs.bareos.org/view.php?id=1329
 [PR #383]: https://github.com/bareos/bareos/pull/383
 [PR #384]: https://github.com/bareos/bareos/pull/384
 [PR #385]: https://github.com/bareos/bareos/pull/385
@@ -334,4 +338,21 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #746]: https://github.com/bareos/bareos/pull/746
 [PR #751]: https://github.com/bareos/bareos/pull/751
 [PR #753]: https://github.com/bareos/bareos/pull/753
+[PR #758]: https://github.com/bareos/bareos/pull/758
+[PR #759]: https://github.com/bareos/bareos/pull/759
+[PR #763]: https://github.com/bareos/bareos/pull/763
+[PR #765]: https://github.com/bareos/bareos/pull/765
+[PR #773]: https://github.com/bareos/bareos/pull/773
+[PR #775]: https://github.com/bareos/bareos/pull/775
+[PR #781]: https://github.com/bareos/bareos/pull/781
+[PR #786]: https://github.com/bareos/bareos/pull/786
+[PR #795]: https://github.com/bareos/bareos/pull/795
+[PR #797]: https://github.com/bareos/bareos/pull/797
+[PR #802]: https://github.com/bareos/bareos/pull/802
+[PR #809]: https://github.com/bareos/bareos/pull/809
+[PR #818]: https://github.com/bareos/bareos/pull/818
+[PR #828]: https://github.com/bareos/bareos/pull/828
+[PR #829]: https://github.com/bareos/bareos/pull/829
+[PR #830]: https://github.com/bareos/bareos/pull/830
+[PR #833]: https://github.com/bareos/bareos/pull/833
 [unreleased]: https://github.com/bareos/bareos/tree/master
