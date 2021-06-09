@@ -16,6 +16,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1205]: PHP 7.3 issue with compact() in HeadLink.php [PR #833] (backport of [PR #829])
 
 ### Added
+- added choice for the drive number in the truncate command [PR #837]
 - systemtests for S3 functionalities (droplet, libcloud) now use https [PR #765]
 - add "copy button" to code snippets in documentation for easy copying [PR #802]
 
