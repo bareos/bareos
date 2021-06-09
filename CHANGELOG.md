@@ -30,6 +30,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix gfapi-fd: avoid possible crash on second glfs_close() call [PR #792]
 - docs: declare shell scripts code blocks as "sh" instead of "shell-session" [PR #802]
 - [Issue #1205]: PHP 7.3 issue with compact() in HeadLink.php [PR #829]
+- reorder acquire on migrate/copy to avoid possible deadlock [PR #828]
 
 ### Added
 - systemtests for NDMP functionalities [PR #822]
@@ -86,4 +87,51 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Restore error "could not hard link" documented: what is the cause and how it can be avoided or solved. [PR #759]
 - Developer guide: add small chapter about c++ exceptions. [PR #777]
 
+[Issue #1316]: https://bugs.bareos.org/view.php?id=1316
+[Issue #1329]: https://bugs.bareos.org/view.php?id=1329
+[PR #552]: https://github.com/bareos/bareos/pull/552
+[PR #694]: https://github.com/bareos/bareos/pull/694
+[PR #700]: https://github.com/bareos/bareos/pull/700
+[PR #702]: https://github.com/bareos/bareos/pull/702
+[PR #707]: https://github.com/bareos/bareos/pull/707
+[PR #709]: https://github.com/bareos/bareos/pull/709
+[PR #717]: https://github.com/bareos/bareos/pull/717
+[PR #723]: https://github.com/bareos/bareos/pull/723
+[PR #729]: https://github.com/bareos/bareos/pull/729
+[PR #730]: https://github.com/bareos/bareos/pull/730
+[PR #731]: https://github.com/bareos/bareos/pull/731
+[PR #736]: https://github.com/bareos/bareos/pull/736
+[PR #739]: https://github.com/bareos/bareos/pull/739
+[PR #740]: https://github.com/bareos/bareos/pull/740
+[PR #741]: https://github.com/bareos/bareos/pull/741
+[PR #742]: https://github.com/bareos/bareos/pull/742
+[PR #744]: https://github.com/bareos/bareos/pull/744
+[PR #748]: https://github.com/bareos/bareos/pull/748
+[PR #752]: https://github.com/bareos/bareos/pull/752
+[PR #757]: https://github.com/bareos/bareos/pull/757
+[PR #759]: https://github.com/bareos/bareos/pull/759
+[PR #761]: https://github.com/bareos/bareos/pull/761
+[PR #762]: https://github.com/bareos/bareos/pull/762
+[PR #763]: https://github.com/bareos/bareos/pull/763
+[PR #764]: https://github.com/bareos/bareos/pull/764
+[PR #765]: https://github.com/bareos/bareos/pull/765
+[PR #767]: https://github.com/bareos/bareos/pull/767
+[PR #769]: https://github.com/bareos/bareos/pull/769
+[PR #771]: https://github.com/bareos/bareos/pull/771
+[PR #776]: https://github.com/bareos/bareos/pull/776
+[PR #777]: https://github.com/bareos/bareos/pull/777
+[PR #778]: https://github.com/bareos/bareos/pull/778
+[PR #782]: https://github.com/bareos/bareos/pull/782
+[PR #790]: https://github.com/bareos/bareos/pull/790
+[PR #791]: https://github.com/bareos/bareos/pull/791
+[PR #792]: https://github.com/bareos/bareos/pull/792
+[PR #793]: https://github.com/bareos/bareos/pull/793
+[PR #801]: https://github.com/bareos/bareos/pull/801
+[PR #802]: https://github.com/bareos/bareos/pull/802
+[PR #809]: https://github.com/bareos/bareos/pull/809
+[PR #810]: https://github.com/bareos/bareos/pull/810
+[PR #819]: https://github.com/bareos/bareos/pull/819
+[PR #822]: https://github.com/bareos/bareos/pull/822
+[PR #826]: https://github.com/bareos/bareos/pull/826
+[PR #828]: https://github.com/bareos/bareos/pull/828
 [unreleased]: https://github.com/bareos/bareos/tree/master
