@@ -1849,9 +1849,9 @@ Prerequisites
 ^^^^^^^^^^^^^
 
 This plugin is a Bareos Python plugin.
-It requires |postgresql| >= 9 and the Python module **psycopg2** to be installed.
+It requires |postgresql| >= 9 and the Python module **pg8000** to be installed.
 
-Since :sinceVersion:`20.0.2: PostgreSQL Plugin` the plugin was changed to the Python module **pg8000** instead of **psycopg2** and using Python >= 3 is mandatory. The minimum required version of **pg8000** is 1.16. If a distribution provided package exists and is the same or newer version, it can be used. Otherwise it must be installed using the command :command:`pip3 install pg8000`.
+Since :sinceVersion:`21: PostgreSQL Plugin` the plugin was changed to the Python module **pg8000** instead of **psycopg2** and using Python >= 3 is mandatory. The minimum required version of **pg8000** is 1.16. If a distribution provided package exists and is the same or newer version, it can be used. Otherwise it must be installed using the command :command:`pip3 install pg8000`.
 
 
 
