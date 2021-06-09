@@ -551,8 +551,7 @@ bool DoMacRun(JobControlRecord* jcr)
     }
 
     Dmsg2(200, "===== After acquire pos %u:%u\n",
-          jcr->impl->read_dcr->dev->file,
-          jcr->impl->read_dcr->dev->block_num);
+          jcr->impl->read_dcr->dev->file, jcr->impl->read_dcr->dev->block_num);
 
     jcr->sendJobStatus(JS_Running);
 
@@ -665,8 +664,8 @@ bool DoMacRun(JobControlRecord* jcr)
     /*
      * Ready devices for reading and writing.
      */
-    if (!AcquireDeviceForRead(jcr->impl->read_dcr) ||
-        !AcquireDeviceForAppend(jcr->impl->dcr)) {
+    if (!AcquireDeviceForAppend(jcr->impl->dcr) ||
+        !AcquireDeviceForRead(jcr->impl->read_dcr)) {
       ok = false;
       acquire_fail = true;
       goto bail_out;
