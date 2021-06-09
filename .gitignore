@@ -85,6 +85,8 @@ debian/bareos-traymonitor.install
 debian/bareos-traymonitor.postinst
 debian/univention-bareos.postinst
 
+core/CTestScript.cmake
+
 # generated sample-configuration
 core/src/plugins/filed/python/ldap/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example
 core/src/plugins/filed/python/ovirt/python-ovirt-conf.d/bareos-dir.d/fileset/plugin-ovirt.conf.example
