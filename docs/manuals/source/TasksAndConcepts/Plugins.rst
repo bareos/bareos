@@ -1847,8 +1847,8 @@ Prerequisites
 ^^^^^^^^^^^^^
 
 This plugin is a Bareos Python plugin.
-It requires |postgresql| >= 9 and the Python module **psycopg2** to be installed.
-Best use Python >= 3.
+It requires |postgresql| >= 9, Python 2 and the Python module **psycopg2**.
+A new version of this plugin supporting Python 3 is in development.
 
 The plugin must be installed on the same host where the |postgresql| database runs.
 
