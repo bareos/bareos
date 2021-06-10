@@ -33,6 +33,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1205]: PHP 7.3 issue with compact() in HeadLink.php [PR #829]
 - reorder acquire on migrate/copy to avoid possible deadlock [PR #828]
 - fix drive parameter handling on big endian architectures [PR #850]
+- [Issue #1324]: Infinite loop when trying to log in with invalid account [PR #840]
 
 ### Added
 - systemtests for NDMP functionalities [PR #822]
