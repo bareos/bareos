@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [20.0.2] - 2021-06-10
 
 ### Fixed
 - fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option localvmdk=yes [PR #830]
@@ -197,6 +197,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 [20.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.0
 [20.0.1]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.1
+[20.0.2]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.2
 [Issue #1039]: https://bugs.bareos.org/view.php?id=1039
 [Issue #1174]: https://bugs.bareos.org/view.php?id=1174
 [Issue #1175]: https://bugs.bareos.org/view.php?id=1175
@@ -351,4 +352,4 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #829]: https://github.com/bareos/bareos/pull/829
 [PR #830]: https://github.com/bareos/bareos/pull/830
 [PR #833]: https://github.com/bareos/bareos/pull/833
-[unreleased]: https://github.com/bareos/bareos/tree/master
+[PR #837]: https://github.com/bareos/bareos/pull/837
