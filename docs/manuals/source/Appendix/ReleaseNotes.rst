@@ -47,6 +47,7 @@ Bugs Fixed
 * fix gfapi-fd: avoid possible crash on second glfs_close() call [PR #792]
 * fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option localvmdk=yes [PR #826]
 * reorder acquire on migrate/copy to avoid possible deadlock [PR #828]
+* [Issue #1205]: PHP 7.3 issue with compact() in HeadLink.php [PR #834]
 
 Other Improvements
 ^^^^^^^^^^^^^^^^^^
