@@ -35,21 +35,22 @@ General Information
    :widths: auto
 
    * - **Release Date**
-     - YYYY-MM-DD
+     - 2021-06-11
    * - **Database Version**
      - 2192
    * - **URL**
      - https://download.bareos.com/bareos/release/19.2/
-   * - **Release Ticket**
-     - :mantis:`????`
 
 Bugs Fixed
 ^^^^^^^^^^
 * fix python-bareos for Python < 2.7.13 [PR #753]
+* fix gfapi-fd: avoid possible crash on second glfs_close() call [PR #792]
+* fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option localvmdk=yes [PR #826]
+* reorder acquire on migrate/copy to avoid possible deadlock [PR #828]
 
 Other Improvements
 ^^^^^^^^^^^^^^^^^^
-
+* webui: Localization updated
 
 .. _bareos-1929-releasenotes:
 
