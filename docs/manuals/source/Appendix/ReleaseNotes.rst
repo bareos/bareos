@@ -21,6 +21,38 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 Bareos-18.2
 -----------
 
+.. _bareos-18211-releasenotes:
+
+.. _bareos-18.2.11:
+
+Bareos-18.2.11
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+
+.. list-table:: Bareos 18.2.11 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 11 June 2020
+   * - **Database Version**
+     -  2171
+   * - **URL**
+     - https://download.bareos.com/bareos/release/18.2/
+
+
+Bugs Fixed
+^^^^^^^^^^
+* fix gfapi-fd: avoid possible crash on second glfs_close() call [PR #792]
+* fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option localvmdk=yes [PR #826]
+* [Issue #1205]: PHP 7.3 issue with compact() in HeadLink.php [PR #835]
+
+Other Improvements
+^^^^^^^^^^^^^^^^^^
+* webui: Localization updated
+
 .. _bareos-18210-releasenotes:
 
 .. _bareos-18.2.10:
