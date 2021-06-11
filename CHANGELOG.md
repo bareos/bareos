@@ -6,6 +6,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Fixed
+- docs: Adapted the documentation of the VMware plugin due to update to VDDK 7 [PR #844]
 - fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option localvmdk=yes [PR #826]
 - fix a bug where the restore browser would not recognize globbing wildcards in paths [PR #801]
 - fix shutdown of the Storage Daemon backends, especially call UnlockDoor on tape devices [PR #809]
