@@ -1,9 +1,9 @@
 #ifndef VERSION
-#define VERSION "18.2.10"
+#define VERSION "18.2.11"
 #endif
 
-#define BDATE   "11 December 2020"
-#define LSMDATE "11Dec20"
+#define BDATE   "11 June 2021"
+#define LSMDATE "11Jun21"
 
 #ifndef BAREOS_BINARY_INFO
 #define BAREOS_BINARY_INFO "self-compiled"
@@ -26,7 +26,7 @@
                        "Copyright (C) 2013-" BYEAR " Bareos GmbH & Co. KG\n" \
                        "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
                        "Copyright (C) 2010-2017 Planets Communications B.V.\n"
-#define BYEAR "2020"       /* year for copyright messages in programs */
+#define BYEAR "2021"       /* year for copyright messages in programs */
 
 
 /*
