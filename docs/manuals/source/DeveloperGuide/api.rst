@@ -183,20 +183,20 @@ API mode 1 (on).
 
     .api 1
 
-or (form times where they have only been one API flavour)
+or (from times where they was only one API flavour)
 
 ::
 
     .api
 
-This mode is intended to create output that is earlier parsable.
-Internaly some commands vary there output for the API mode 1, but not
+This mode is intended to create output that is earlier to parse.
+Internaly some commands vary their output for API mode 1, but not
 all.
 
-In API mode 1 some output is only delimted by the end of a packet, by
-not a new line. bconsole does not display end of packets (for good
-reason, as some output (e.g. :bcommand:`status`) is send in multiple packets).
-If running in a bconsole, this leads not parsable output for human.
+In API mode 1 some output is only delimited by the end of a packet, not
+by a new line. bconsole does not display the end of packets (for good
+reason, as some output (e.g. :bcommand:`status`) is sent in multiple packets).
+If running in a bconsole, this leads to unparsable output for human.
 
 Example:
 
@@ -237,9 +237,9 @@ differs from API mode 1 in several aspects:
    make it easier to implement a full JSON-RPC service later.
 -  No user interaction inside a command (meaning: if not all parameter
    are given to a :bcommand:`run` command, the command fails).
--  Each command creates exaclty one responce object.
+-  Each command creates exactly one responce object.
 
-Currently a subset of the available commands return there result in JSON
+Currently a subset of the available commands return their result in JSON
 format, while others still write plain text output. When finished, it
 should be safe to run all commands in JSON mode.
 
@@ -429,7 +429,7 @@ Example of a JSON-RPC Error Response
       }
     }
 
--  an error response is emitted, if the command returns false or emitted
+-  an error response is emitted if the command returns false or emitted
    an error message
    (``void UAContext::error_msg(const char *fmt, ...)``). Messages and
    the result so far will be part of the error response object.
@@ -441,7 +441,7 @@ REST API
 
 Introduction
 ~~~~~~~~~~~~
-This is an experimental and preliminary backend for development purposes. The endpoints are subject for review and maybe changed in the future.
+This is an experimental and preliminary backend for development purposes. The endpoints are subject to review and may be changed in the future.
 
 It provides a REST API using `fastapi <https://fastapi.tiangolo.com/>`_ and python-bareos to connect to
 a Bareos director. It supports the :command:`configure add` commands to create configuration for clients, jobs, filesets and some more resources. It also provides endpoints to query job information and job control (i.e. start / restart jobs, trigger restores).
