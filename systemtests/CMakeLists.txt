@@ -641,7 +641,6 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED gfapi-fd)
 endif()
 
-
 # add tests also here that are unreliable they are excluded when running tests
 # during build in jenkins
 set(SYSTEM_TESTS_BROKEN
@@ -651,6 +650,8 @@ set(SYSTEM_TESTS_BROKEN
                              # can't encode characters in position 133-142:
                              # surrogates not allowed
 )
+
+set(SYSTEMTEST_TIMEOUT 300 CACHE STRING "Timeout for systemtests (in seconds)")
 
 set(glusterfs_uri
     ""
@@ -1141,19 +1142,12 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   endif()
 
   set_tests_properties(
-    ${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 120 COST 1.0
-                                                SKIP_RETURN_CODE 77
+    ${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT SYSTEMTEST_TIMEOUT
+                                                COST 1.0 SKIP_RETURN_CODE 77
   )
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
-
-# NDMP test requires more time
-if("ndmp" IN_LIST SYSTEM_TESTS)
-  set_tests_properties(${SYSTEMTEST_PREFIX}ndmp PROPERTIES TIMEOUT 300)
-else()
-  list(APPEND SYSTEM_TESTS_DISABLED ndmp)
-endif()
 
 # webui specific settings
 if(ENABLE_WEBUI_SELENIUM_TEST)

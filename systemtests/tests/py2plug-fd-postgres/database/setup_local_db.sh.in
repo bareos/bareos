@@ -47,11 +47,10 @@ local_db_prepare_files() {
   else
     LANG= ${POSTGRES_BIN_PATH}/pg_ctl  --silent --pgdata=data --log=log/postgres.log initdb
   fi
-  sed -i.bak "s@#listen_addresses.*@listen_addresses = ''@g" data/postgresql.conf
-  sed -i.bak "s@#unix_socket_directories.*@unix_socket_directories = \'$1\'@g" data/postgresql.conf
 
   {
-  # for online backups we need wal_archiving
+    echo "listen_addresses = ''"
+    echo "unix_socket_directories = '$1'"
     echo "wal_level = archive"
     echo "archive_mode = on"
     echo "archive_command = 'cp %p ../wal_archive'"
