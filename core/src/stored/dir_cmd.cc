@@ -609,7 +609,7 @@ bail_out:
   return true;
 }
 
-static drive_number_t IntToDriveNumber(int drive_input)
+static drive_number_t IntToDriveNumber(short int drive_input)
 {
   return (drive_input == -1) ? kInvalidDriveNumber
                              : static_cast<drive_number_t>(drive_input);
@@ -643,7 +643,7 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   poolname = GetMemory(len);
   mediatype = GetMemory(len);
 
-  int drive_input = -1;
+  short int drive_input = -1;
 
   if (relabel) {
     if (sscanf(dir->msg, relabelcmd, dev_name.c_str(), oldname, newname,
@@ -965,7 +965,7 @@ static bool MountCmd(JobControlRecord* jcr)
   DeviceControlRecord* dcr;
   slot_number_t slot = 0;
 
-  int drive_input = -1;
+  short int drive_input = -1;
   bool ok = sscanf(dir->msg, mountslotcmd, devname.c_str(), &drive_input, &slot)
             == 3;
 
@@ -1137,7 +1137,7 @@ static bool UnmountCmd(JobControlRecord* jcr)
   Device* dev;
   DeviceControlRecord* dcr;
 
-  int drive_input = -1;
+  short int drive_input = -1;
   if (sscanf(dir->msg, unmountcmd, devname.c_str(), &drive_input) == 2) {
     drive_number_t drive = IntToDriveNumber(drive_input);
     dcr = FindDevice(jcr, devname, drive, NULL);
@@ -1230,7 +1230,7 @@ static bool ReleaseCmd(JobControlRecord* jcr)
   BareosSocket* dir = jcr->dir_bsock;
   Device* dev;
   DeviceControlRecord* dcr;
-  int drive_input = -1;
+  short int drive_input = -1;
 
   if (sscanf(dir->msg, releasecmd, devname.c_str(), &drive_input) == 2) {
     drive_number_t drive = IntToDriveNumber(drive_input);
@@ -1436,7 +1436,7 @@ static bool ReadlabelCmd(JobControlRecord* jcr)
   Device* dev;
   DeviceControlRecord* dcr;
   slot_number_t slot;
-  int drive_input = -1;
+  short int drive_input = -1;
 
   if (sscanf(dir->msg, readlabelcmd, devname.c_str(), &slot, &drive_input)
       == 3) {
