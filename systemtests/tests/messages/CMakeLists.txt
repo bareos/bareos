@@ -1,0 +1,6 @@
+get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+if(TARGET messages_resource)
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+else()
+  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
+endif()

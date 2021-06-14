@@ -48,7 +48,7 @@ dd if=/dev/random \
   of="${tmp}/data/object-size-downloads-with-plugin-process" \
   bs=$(( prefetch_size +1 )) count=1
 
-"${SYSTEMTESTS_DIR}"/scripts/start_minio.sh "$MINIO_PORT" "$TestName"
+"${rscripts}"/start_minio.sh "$MINIO_PORT" "$TestName"
 
 # create s3 content for test
 ${S3} rb --recursive --force s3://$bucket_name || echo "s3://$bucket_name does not exist"
@@ -111,6 +111,6 @@ if ! diff -r tmp/data tmp/bareos-restores/$bucket_name/data; then
   export estat=1
 fi
 
-"${SYSTEMTESTS_DIR}"/scripts/stop_minio.sh "$TestName"
+"${rscripts}"/stop_minio.sh "$TestName"
 
 end_test

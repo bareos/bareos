@@ -56,6 +56,13 @@ cleanup()
     fi
 }
 
+get_test_name()
+{
+    testscriptpath=$1
+    # get last two components of the path (subdirectory + filename)
+    printf "%s/%s\n" "$(basename "$(dirname "$testscriptpath")")" "$(basename "$testscriptpath")"
+}
+
 #
 # Creates a directory "${tmp}/data" from a tgz file.
 # This directory can be used a data to backup.
@@ -702,6 +709,7 @@ check_restore_diff()
    #   * ${BackupDirectory} (set by test), or
    #   * ${src}
    dest=${1:-${BackupDirectory:-$src}}
+   result=0
 
    if "$rscripts/diff.pl" -s "${dest}" -d "${tmp}/bareos-restores/${dest}"; then
        result=$?
