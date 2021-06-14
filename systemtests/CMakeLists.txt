@@ -651,7 +651,7 @@ set(SYSTEM_TESTS_BROKEN
                              # surrogates not allowed
 )
 
-set(SYSTEMTEST_TIMEOUT 300 CACHE STRING "Timeout for systemtests (in seconds)")
+set(SYSTEMTEST_TIMEOUT "300" CACHE STRING "Timeout for systemtests (in seconds)")
 
 set(glusterfs_uri
     ""
@@ -1142,7 +1142,7 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   endif()
 
   set_tests_properties(
-    ${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT SYSTEMTEST_TIMEOUT
+    ${SYSTEMTEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT "${SYSTEMTEST_TIMEOUT}"
                                                 COST 1.0 SKIP_RETURN_CODE 77
   )
   math(EXPR BASEPORT "${BASEPORT} + 10")
