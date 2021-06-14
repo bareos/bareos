@@ -209,9 +209,9 @@ Current limitations amongst others are:
 
 
 
-.. limitation:: VMware Plugin: Virtual Disks have to be smaller than 2TB.
+.. limitation:: VMware Plugin: Virtual Disks have to be smaller than 2TB for restore to local VMDK.
 
-       Virtual Disks have to be smaller than 2 TB, see :mantis:`670`.
+       Virtual Disks have to be smaller than 2 TB for being able to restore to local VMDK files, see :mantis:`670`.
 
 
 
@@ -228,16 +228,16 @@ Current limitations amongst others are:
 Requirements
 ^^^^^^^^^^^^
 
-As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 5.x. It does not work with standalone unlicensed |vmware| ESXi\ |trade|.
+As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 7.0.1. It does not work with standalone unlicensed |vmware| ESXi\ |trade|.
 
-Since Bareos :sinceVersion:`17.2.4: VMware Plugin: VDDK 6.5.2` the plugin is using the Virtual Disk Development Kit (VDDK) 6.5.2, as of the VDDK 6.5 release notes, it should be compatible with vSphere 6.5 and the next major release (except new features) and backward compatible with vSphere 5.5 and 6.0, see VDDK release notes at https://code.vmware.com/web/sdk/65/vddk for details.
+Since Bareos :sinceVersion:`19.2.9: VMware Plugin: VDDK 7.0.1` the plugin is using the Virtual Disk Development Kit (VDDK) 7.0.1, as of the VDDK 7.0 release notes, it should be compatible with vSphere 7.0 and the next major release (except new features) and backward compatible with vSphere 6.5 and 6.7, see VDDK release notes at https://code.vmware.com/web/sdk/7.0/vddk for details.
+
+This plugin requires the pyVmomi module. Since Bareos :sinceVersion:`19.2.9: VMware Plugin: pyVmomi` the package **bareos-vmware-plugin** no longer includes a dependency on a pyVmomi package, because some Linux distributions don't provide current versions. Consequently, pyVmomi must be either installed by using :command:`pip install pyvmomi` or by manually installing a distribution provided pyVmomi package.
 
 Installation
 ^^^^^^^^^^^^
 
 Install the package **bareos-vmware-plugin** including its requirments by using an appropriate package management tool (eg. :command:`yum`, :command:`zypper`, :command:`apt`)
-
-The `FAQ <http://www.bareos.org/en/faq.html>`_ may have additional useful information.
 
 Configuration
 ^^^^^^^^^^^^^
