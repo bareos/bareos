@@ -154,6 +154,7 @@ static void CheckEncryption(const BareosSocket* UA_sock, TlsPolicy tls_policy)
 
 static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
 {
+  debug_level = 10; // set debug level high enough so we can see error messages
   InitSignalHandler();
   InitGlobals();
 
