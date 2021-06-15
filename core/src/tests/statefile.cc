@@ -84,7 +84,7 @@ TEST(statefile, read)
   char orig_path[]{TEST_ORIGINAL_FILE_DIR};
   char test_path[]{TEST_TEMP_DIR};
 
-  const char* fname = Is32BitAligned() ? "bareos-dir-32bit" : "bareos-dir";
+  const char* fname = Is32BitAligned() ? "bareos-dir-32bit-read" : "bareos-dir-read";
 
   ASSERT_TRUE(CopyTestStateFileFromOriginal(
       orig_path, test_path, std::string(fname) + ".42001.state"));
