@@ -19,7 +19,7 @@ class FormFile extends FormInput
      *
      * @var array
      */
-    protected $validTagAttributes = array(
+    protected $validTagAttributes = [
         'name'           => true,
         'accept'         => true,
         'autofocus'      => true,
@@ -28,7 +28,7 @@ class FormFile extends FormInput
         'multiple'       => true,
         'required'       => true,
         'type'           => true,
-    );
+    ];
 
     /**
      * Render a form <input> element from the provided $element
@@ -55,7 +55,7 @@ class FormFile extends FormInput
         }
 
         $value = $element->getValue();
-        if (is_array($value) && isset($value['name']) && !is_array($value['name'])) {
+        if (is_array($value) && isset($value['name']) && ! is_array($value['name'])) {
             $attributes['value'] = $value['name'];
         } elseif (is_string($value)) {
             $attributes['value'] = $value;

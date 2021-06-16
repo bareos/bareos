@@ -25,10 +25,10 @@ class Bz2 extends AbstractCompressionAlgorithm
      *
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'blocksize' => 4,
         'archive'   => null,
-    );
+    ];
 
     /**
      * Class constructor
@@ -38,7 +38,7 @@ class Bz2 extends AbstractCompressionAlgorithm
      */
     public function __construct($options = null)
     {
-        if (!extension_loaded('bz2')) {
+        if (! extension_loaded('bz2')) {
             throw new Exception\ExtensionNotLoadedException('This filter needs the bz2 extension');
         }
         parent::__construct($options);
@@ -103,9 +103,9 @@ class Bz2 extends AbstractCompressionAlgorithm
     public function compress($content)
     {
         $archive = $this->getArchive();
-        if (!empty($archive)) {
+        if (! empty($archive)) {
             $file = bzopen($archive, 'w');
-            if (!$file) {
+            if (! $file) {
                 throw new Exception\RuntimeException("Error opening the archive '" . $archive . "'");
             }
 
@@ -135,13 +135,13 @@ class Bz2 extends AbstractCompressionAlgorithm
         $archive = $this->getArchive();
 
         //check if there are null byte characters before doing a file_exists check
-        if (!strstr($content, "\0") && file_exists($content)) {
+        if (false === strpos($content, "\0") && file_exists($content)) {
             $archive = $content;
         }
 
         if (file_exists($archive)) {
             $file = bzopen($archive, 'r');
-            if (!$file) {
+            if (! $file) {
                 throw new Exception\RuntimeException("Error opening the archive '" . $content . "'");
             }
 

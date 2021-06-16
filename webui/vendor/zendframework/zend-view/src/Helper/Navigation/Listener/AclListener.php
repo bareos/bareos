@@ -38,7 +38,7 @@ class AclListener
         $page     = $params['page'];
         $role     = $params['role'];
 
-        if (!$acl) {
+        if (! $acl) {
             return $accepted;
         }
 

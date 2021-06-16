@@ -1,15 +1,15 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-form for the canonical source repository
+ * @copyright Copyright (c) 2005-2018 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-form/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\Form\View\Helper;
 
+use Zend\Escaper\Exception\RuntimeException as EscaperException;
 use Zend\Form\ElementInterface;
+use Zend\Form\Exception\InvalidArgumentException;
 use Zend\I18n\View\Helper\AbstractTranslatorHelper as BaseAbstractHelper;
 use Zend\View\Helper\Doctype;
 use Zend\View\Helper\EscapeHtml;
@@ -21,29 +21,51 @@ use Zend\View\Helper\EscapeHtmlAttr;
 abstract class AbstractHelper extends BaseAbstractHelper
 {
     /**
+     * The default translatable HTML attributes
+     *
+     * @var array
+     */
+    protected static $defaultTranslatableHtmlAttributes = [
+        'title' => true,
+    ];
+
+    /**
+     * The default translatable HTML attribute prefixes
+     *
+     * @var array
+     */
+    protected static $defaultTranslatableHtmlAttributePrefixes = [];
+
+    /**
      * Standard boolean attributes, with expected values for enabling/disabling
      *
      * @var array
      */
-    protected $booleanAttributes = array(
-        'autofocus'    => array('on' => 'autofocus', 'off' => ''),
-        'checked'      => array('on' => 'checked',   'off' => ''),
-        'disabled'     => array('on' => 'disabled',  'off' => ''),
-        'multiple'     => array('on' => 'multiple',  'off' => ''),
-        'readonly'     => array('on' => 'readonly',  'off' => ''),
-        'required'     => array('on' => 'required',  'off' => ''),
-        'selected'     => array('on' => 'selected',  'off' => ''),
-    );
+    protected $booleanAttributes = [
+        'autofocus'    => ['on' => 'autofocus', 'off' => ''],
+        'checked'      => ['on' => 'checked',   'off' => ''],
+        'disabled'     => ['on' => 'disabled',  'off' => ''],
+        'multiple'     => ['on' => 'multiple',  'off' => ''],
+        'readonly'     => ['on' => 'readonly',  'off' => ''],
+        'required'     => ['on' => 'required',  'off' => ''],
+        'selected'     => ['on' => 'selected',  'off' => ''],
+    ];
 
     /**
      * Translatable attributes
      *
      * @var array
      */
-    protected $translatableAttributes = array(
+    protected $translatableAttributes = [
         'placeholder' => true,
-        'title' => true,
-    );
+    ];
+
+    /**
+     * Prefixes of translatable HTML attributes
+     *
+     * @var array
+     */
+    protected $translatableAttributePrefixes = [];
 
     /**
      * @var Doctype
@@ -65,7 +87,7 @@ abstract class AbstractHelper extends BaseAbstractHelper
      *
      * @var array
      */
-    protected $validGlobalAttributes = array(
+    protected $validGlobalAttributes = [
         'accesskey'          => true,
         'class'              => true,
         'contenteditable'    => true,
@@ -130,8 +152,6 @@ abstract class AbstractHelper extends BaseAbstractHelper
         'onvolumechange'     => true,
         'onwaiting'          => true,
         'role'               => true,
-        'aria-labelledby'    => true,
-        'aria-describedby'   => true,
         'spellcheck'         => true,
         'style'              => true,
         'tabindex'           => true,
@@ -139,7 +159,18 @@ abstract class AbstractHelper extends BaseAbstractHelper
         'xml:base'           => true,
         'xml:lang'           => true,
         'xml:space'          => true,
-    );
+    ];
+
+    /**
+     * Attribute prefixes valid for all tags
+     *
+     * @var array
+     */
+    protected $validTagAttributePrefixes = [
+        'data-',
+        'aria-',
+        'x-',
+    ];
 
     /**
      * Attributes valid for the tag represented by this helper
@@ -148,8 +179,8 @@ abstract class AbstractHelper extends BaseAbstractHelper
      *
      * @var array
      */
-    protected $validTagAttributes = array(
-    );
+    protected $validTagAttributes = [
+    ];
 
     /**
      * Set value for doctype
@@ -209,27 +240,29 @@ abstract class AbstractHelper extends BaseAbstractHelper
         $attributes = $this->prepareAttributes($attributes);
         $escape     = $this->getEscapeHtmlHelper();
         $escapeAttr = $this->getEscapeHtmlAttrHelper();
-        $strings    = array();
+        $strings    = [];
 
         foreach ($attributes as $key => $value) {
             $key = strtolower($key);
 
-            if (!$value && isset($this->booleanAttributes[$key])) {
+            if (! $value && isset($this->booleanAttributes[$key])) {
                 // Skip boolean attributes that expect empty string as false value
                 if ('' === $this->booleanAttributes[$key]['off']) {
                     continue;
                 }
             }
 
-            //check if attribute is translatable
-            if (isset($this->translatableAttributes[$key]) && !empty($value)) {
-                if (($translator = $this->getTranslator()) !== null) {
-                    $value = $translator->translate($value, $this->getTranslatorTextDomain());
-                }
-            }
+            //check if attribute is translatable and translate it
+            $value = $this->translateHtmlAttributeValue($key, $value);
 
-            //@TODO Escape event attributes like AbstractHtmlElement view helper does in htmlAttribs ??
-            $strings[] = sprintf('%s="%s"', $escape($key), $escapeAttr($value));
+            // @todo Escape event attributes like AbstractHtmlElement view helper does in htmlAttribs ??
+            try {
+                $escapedAttribute = $escapeAttr($value);
+                $strings[] = sprintf('%s="%s"', $escape($key), $escapedAttribute);
+            } catch (EscaperException $x) {
+                // If an escaper exception happens, escape only the key, and use a blank value.
+                $strings[] = sprintf('%s=""', $escape($key));
+            }
         }
 
         return implode(' ', $strings);
@@ -285,7 +318,7 @@ abstract class AbstractHelper extends BaseAbstractHelper
             $this->doctypeHelper = $this->view->plugin('doctype');
         }
 
-        if (!$this->doctypeHelper instanceof Doctype) {
+        if (! $this->doctypeHelper instanceof Doctype) {
             $this->doctypeHelper = new Doctype();
         }
 
@@ -307,7 +340,7 @@ abstract class AbstractHelper extends BaseAbstractHelper
             $this->escapeHtmlHelper = $this->view->plugin('escapehtml');
         }
 
-        if (!$this->escapeHtmlHelper instanceof EscapeHtml) {
+        if (! $this->escapeHtmlHelper instanceof EscapeHtml) {
             $this->escapeHtmlHelper = new EscapeHtml();
         }
 
@@ -329,7 +362,7 @@ abstract class AbstractHelper extends BaseAbstractHelper
             $this->escapeHtmlAttrHelper = $this->view->plugin('escapehtmlattr');
         }
 
-        if (!$this->escapeHtmlAttrHelper instanceof EscapeHtmlAttr) {
+        if (! $this->escapeHtmlAttrHelper instanceof EscapeHtmlAttr) {
             $this->escapeHtmlAttrHelper = new EscapeHtmlAttr();
         }
 
@@ -352,12 +385,10 @@ abstract class AbstractHelper extends BaseAbstractHelper
         foreach ($attributes as $key => $value) {
             $attribute = strtolower($key);
 
-            if (!isset($this->validGlobalAttributes[$attribute])
-                && !isset($this->validTagAttributes[$attribute])
-                && 'data-' != substr($attribute, 0, 5)
-                && 'x-' != substr($attribute, 0, 2)
+            if (! isset($this->validGlobalAttributes[$attribute])
+                && ! isset($this->validTagAttributes[$attribute])
+                && ! $this->hasAllowedPrefix($attribute)
             ) {
-                // Invalid attribute for the current tag
                 unset($attributes[$key]);
                 continue;
             }
@@ -388,7 +419,7 @@ abstract class AbstractHelper extends BaseAbstractHelper
      */
     protected function prepareBooleanAttributeValue($attribute, $value)
     {
-        if (!is_bool($value) && in_array($value, $this->booleanAttributes[$attribute])) {
+        if (! is_bool($value) && in_array($value, $this->booleanAttributes[$attribute])) {
             return $value;
         }
 
@@ -397,5 +428,153 @@ abstract class AbstractHelper extends BaseAbstractHelper
             ? $this->booleanAttributes[$attribute]['on']
             : $this->booleanAttributes[$attribute]['off']
         );
+    }
+
+    /**
+     * Translates the value of the HTML attribute if it should be translated and this view helper has a translator
+     *
+     * @param string $key
+     * @param string $value
+     *
+     * @return string
+     */
+    protected function translateHtmlAttributeValue($key, $value)
+    {
+        if (empty($value) || ($this->getTranslator() === null)) {
+            return $value;
+        }
+
+        if (isset($this->translatableAttributes[$key]) || isset(self::$defaultTranslatableHtmlAttributes[$key])) {
+            return $this->getTranslator()->translate($value, $this->getTranslatorTextDomain());
+        } else {
+            foreach ($this->translatableAttributePrefixes as $prefix) {
+                if (0 === mb_strpos($key, $prefix)) {
+                    // prefix matches => return translated $value
+                    return $this->getTranslator()->translate($value, $this->getTranslatorTextDomain());
+                }
+            }
+            foreach (self::$defaultTranslatableHtmlAttributePrefixes as $prefix) {
+                if (0 === mb_strpos($key, $prefix)) {
+                    // default prefix matches => return translated $value
+                    return $this->getTranslator()->translate($value, $this->getTranslatorTextDomain());
+                }
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * Adds an HTML attribute to the list of valid attributes
+     *
+     * @param string $attribute
+     * @return AbstractHelper
+     * @throws InvalidArgumentException for attribute names that are invalid
+     *     per the HTML specifications.
+     */
+    public function addValidAttribute($attribute)
+    {
+        if (! $this->isValidAttributeName($attribute)) {
+            throw new InvalidArgumentException(sprintf('%s is not a valid attribute name', $attribute));
+        }
+
+        $this->validTagAttributes[$attribute] = true;
+        return $this;
+    }
+
+    /**
+     * Adds a prefix to the list of valid attribute prefixes
+     *
+     * @param string $prefix
+     * @return AbstractHelper
+     * @throws InvalidArgumentException for attribute prefixes that are invalid
+     *     per the HTML specifications for attribute names.
+     */
+    public function addValidAttributePrefix($prefix)
+    {
+        if (! $this->isValidAttributeName($prefix)) {
+            throw new InvalidArgumentException(sprintf('%s is not a valid attribute prefix', $prefix));
+        }
+
+        $this->validTagAttributePrefixes[] = $prefix;
+        return $this;
+    }
+
+    /**
+     * Adds an HTML attribute to the list of translatable attributes
+     *
+     * @param string $attribute
+     *
+     * @return AbstractHelper
+     */
+    public function addTranslatableAttribute($attribute)
+    {
+        $this->translatableAttributes[$attribute] = true;
+
+        return $this;
+    }
+
+    /**
+     * Adds an HTML attribute to the list of the default translatable attributes
+     *
+     * @param string $attribute
+     */
+    public static function addDefaultTranslatableAttribute($attribute)
+    {
+        self::$defaultTranslatableHtmlAttributes[$attribute] = true;
+    }
+
+    /**
+     * Adds an HTML attribute to the list of translatable attributes
+     *
+     * @param string $prefix
+     *
+     * @return AbstractHelper
+     */
+    public function addTranslatableAttributePrefix($prefix)
+    {
+        $this->translatableAttributePrefixes[] = $prefix;
+
+        return $this;
+    }
+
+    /**
+     * Adds an HTML attribute to the list of translatable attributes
+     *
+     * @param string $prefix
+     */
+    public static function addDefaultTranslatableAttributePrefix($prefix)
+    {
+        self::$defaultTranslatableHtmlAttributePrefixes[] = $prefix;
+    }
+
+    /**
+     * Whether the passed attribute is valid or not
+     *
+     * @see https://html.spec.whatwg.org/multipage/syntax.html#attributes-2
+     *     Description of valid attributes
+     * @param string  $attribute
+     * @return bool
+     */
+    protected function isValidAttributeName($attribute)
+    {
+        return preg_match('/^[^\t\n\f \/>"\'=]+$/', $attribute);
+    }
+
+    /**
+     * Whether the passed attribute has a valid prefix or not
+     *
+     * @param string  $attribute
+     * @return bool
+     */
+    protected function hasAllowedPrefix($attribute)
+    {
+        foreach ($this->validTagAttributePrefixes as $prefix) {
+            if (substr($attribute, 0, strlen($prefix)) === $prefix) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

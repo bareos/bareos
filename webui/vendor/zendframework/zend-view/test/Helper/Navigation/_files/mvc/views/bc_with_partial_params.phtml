@@ -1,0 +1,11 @@
+<?php
+echo $this->variable . PHP_EOL;
+echo implode(
+    $this->vars()->separator,
+    array_map(
+        function($a) {
+            return $a->getLabel();
+        },
+        $this->vars()->pages
+    )
+);

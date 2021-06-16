@@ -25,10 +25,10 @@ class ExcludeExtension extends Extension
     /**
      * @var array Error message templates
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::FALSE_EXTENSION => "File has an incorrect extension",
         self::NOT_FOUND       => "File is not readable or does not exist",
-    );
+    ];
 
     /**
      * Returns true if and only if the file extension of $value is not included in the
@@ -45,7 +45,7 @@ class ExcludeExtension extends Extension
             $filename = $file['name'];
             $file     = $file['tmp_name'];
         } elseif (is_array($value)) {
-            if (!isset($value['tmp_name']) || !isset($value['name'])) {
+            if (! isset($value['tmp_name']) || ! isset($value['name'])) {
                 throw new Exception\InvalidArgumentException(
                     'Value array must be in $_FILES format'
                 );
@@ -59,7 +59,7 @@ class ExcludeExtension extends Extension
         $this->setValue($filename);
 
         // Is file readable ?
-        if (empty($file) || false === stream_resolve_include_path($file)) {
+        if (empty($file) || false === is_readable($file)) {
             $this->error(self::NOT_FOUND);
             return false;
         }
@@ -67,9 +67,9 @@ class ExcludeExtension extends Extension
         $extension  = substr($filename, strrpos($filename, '.') + 1);
         $extensions = $this->getExtension();
 
-        if ($this->getCase() && (!in_array($extension, $extensions))) {
+        if ($this->getCase() && (! in_array($extension, $extensions))) {
             return true;
-        } elseif (!$this->getCase()) {
+        } elseif (! $this->getCase()) {
             foreach ($extensions as $ext) {
                 if (strtolower($ext) == strtolower($extension)) {
                     $this->error(self::FALSE_EXTENSION);

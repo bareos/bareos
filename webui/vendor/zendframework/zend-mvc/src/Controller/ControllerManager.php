@@ -9,13 +9,14 @@
 
 namespace Zend\Mvc\Controller;
 
+use Interop\Container\ContainerInterface;
 use Zend\EventManager\EventManagerAwareInterface;
-use Zend\EventManager\EventManagerInterface;
+use Zend\EventManager\SharedEventManagerInterface;
 use Zend\Mvc\Exception;
-use Zend\ServiceManager\AbstractPluginManager;
+use Zend\ServiceManager\AbstractPluginManager as BasePluginManager;
 use Zend\ServiceManager\ConfigInterface;
+use Zend\ServiceManager\Exception\InvalidServiceException;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\Stdlib\DispatchableInterface;
 
 /**
@@ -23,7 +24,7 @@ use Zend\Stdlib\DispatchableInterface;
  *
  * Does not define any controllers by default, but does add a validator.
  */
-class ControllerManager extends AbstractPluginManager
+class ControllerManager extends BasePluginManager
 {
     /**
      * We do not want arbitrary classes instantiated as controllers.
@@ -33,107 +34,214 @@ class ControllerManager extends AbstractPluginManager
     protected $autoAddInvokableClass = false;
 
     /**
+     * Controllers must be of this type.
+     *
+     * @var string
+     */
+    protected $instanceOf = DispatchableInterface::class;
+
+    /**
      * Constructor
      *
-     * After invoking parent constructor, add an initializer to inject the
-     * service manager, event manager, and plugin manager
+     * Injects an initializer for injecting controllers with an
+     * event manager and plugin manager.
      *
-     * @param  null|ConfigInterface $configuration
+     * @param  ConfigInterface|ContainerInterface $container
+     * @param  array $v3config
      */
-    public function __construct(ConfigInterface $configuration = null)
+    public function __construct($configOrContainerInstance, array $v3config = [])
     {
-        parent::__construct($configuration);
-        // Pushing to bottom of stack to ensure this is done last
-        $this->addInitializer(array($this, 'injectControllerDependencies'), false);
+        $this->addInitializer([$this, 'injectEventManager']);
+        $this->addInitializer([$this, 'injectConsole']);
+        $this->addInitializer([$this, 'injectPluginManager']);
+        parent::__construct($configOrContainerInstance, $v3config);
+
+        // Added after parent construction, as v2 abstract plugin managers add
+        // one during construction.
+        $this->addInitializer([$this, 'injectServiceLocator']);
     }
 
     /**
-     * Inject required dependencies into the controller.
+     * Validate a plugin (v3)
      *
-     * @param  DispatchableInterface $controller
-     * @param  ServiceLocatorInterface $serviceLocator
-     * @return void
+     * {@inheritDoc}
      */
-    public function injectControllerDependencies($controller, ServiceLocatorInterface $serviceLocator)
+    public function validate($plugin)
     {
-        if (!$controller instanceof DispatchableInterface) {
-            return;
-        }
-
-        $parentLocator = $serviceLocator->getServiceLocator();
-
-        if ($controller instanceof ServiceLocatorAwareInterface) {
-            $controller->setServiceLocator($parentLocator->get('Zend\ServiceManager\ServiceLocatorInterface'));
-        }
-
-        if ($controller instanceof EventManagerAwareInterface) {
-            // If we have an event manager composed already, make sure it gets
-            // injected with the shared event manager.
-            // The AbstractController lazy-instantiates an EM instance, which
-            // is why the shared EM injection needs to happen; the conditional
-            // will always pass.
-            $events = $controller->getEventManager();
-            if (!$events instanceof EventManagerInterface) {
-                $controller->setEventManager($parentLocator->get('EventManager'));
-            } else {
-                $events->setSharedManager($parentLocator->get('SharedEventManager'));
-            }
-        }
-
-        if ($controller instanceof AbstractConsoleController) {
-            $controller->setConsole($parentLocator->get('Console'));
-        }
-
-        if (method_exists($controller, 'setPluginManager')) {
-            $controller->setPluginManager($parentLocator->get('ControllerPluginManager'));
+        if (! $plugin instanceof $this->instanceOf) {
+            throw new InvalidServiceException(sprintf(
+                'Plugin of type "%s" is invalid; must implement %s',
+                (is_object($plugin) ? get_class($plugin) : gettype($plugin)),
+                $this->instanceOf
+            ));
         }
     }
 
     /**
-     * Validate the plugin
+     * Validate a plugin (v2)
      *
-     * Ensure we have a dispatchable.
+     * {@inheritDoc}
      *
-     * @param  mixed $plugin
-     * @return true
      * @throws Exception\InvalidControllerException
      */
     public function validatePlugin($plugin)
     {
-        if ($plugin instanceof DispatchableInterface) {
-            // we're okay
+        try {
+            $this->validate($plugin);
+        } catch (InvalidServiceException $e) {
+            throw new Exception\InvalidControllerException(
+                $e->getMessage(),
+                $e->getCode(),
+                $e
+            );
+        }
+    }
+
+    /**
+     * Initializer: inject EventManager instance
+     *
+     * If we have an event manager composed already, make sure it gets injected
+     * with the shared event manager.
+     *
+     * The AbstractController lazy-instantiates an EM instance, which is why
+     * the shared EM injection needs to happen; the conditional will always
+     * pass.
+     *
+     * @param ContainerInterface|DispatchableInterface $first Container when
+     *     using zend-servicemanager v3; controller under v2.
+     * @param DispatchableInterface|ContainerInterface $second Controller when
+     *     using zend-servicemanager v3; container under v2.
+     */
+    public function injectEventManager($first, $second)
+    {
+        if ($first instanceof ContainerInterface) {
+            $container = $first;
+            $controller = $second;
+        } else {
+            $container = $second;
+            $controller = $first;
+        }
+
+        if (! $controller instanceof EventManagerAwareInterface) {
             return;
         }
 
-        throw new Exception\InvalidControllerException(sprintf(
-            'Controller of type %s is invalid; must implement Zend\Stdlib\DispatchableInterface',
-            (is_object($plugin) ? get_class($plugin) : gettype($plugin))
-        ));
+        $events = $controller->getEventManager();
+        if (! $events || ! $events->getSharedManager() instanceof SharedEventManagerInterface) {
+            // For v2, we need to pull the parent service locator
+            if (! method_exists($container, 'configure')) {
+                $container = $container->getServiceLocator() ?: $container;
+            }
+
+            $controller->setEventManager($container->get('EventManager'));
+        }
     }
 
     /**
-     * Override: do not use peering service managers
+     * Initializer: inject Console adapter instance
      *
-     * @param  string|array $name
-     * @param  bool         $checkAbstractFactories
-     * @param  bool         $usePeeringServiceManagers
-     * @return bool
+     * @param ContainerInterface|DispatchableInterface $first Container when
+     *     using zend-servicemanager v3; controller under v2.
+     * @param DispatchableInterface|ContainerInterface $second Controller when
+     *     using zend-servicemanager v3; container under v2.
      */
-    public function has($name, $checkAbstractFactories = true, $usePeeringServiceManagers = false)
+    public function injectConsole($first, $second)
     {
-        return parent::has($name, $checkAbstractFactories, $usePeeringServiceManagers);
+        if ($first instanceof ContainerInterface) {
+            $container = $first;
+            $controller = $second;
+        } else {
+            $container = $second;
+            $controller = $first;
+        }
+
+        if (! $controller instanceof AbstractConsoleController) {
+            return;
+        }
+
+        // For v2, we need to pull the parent service locator
+        if (! method_exists($container, 'configure')) {
+            $container = $container->getServiceLocator() ?: $container;
+        }
+
+        $controller->setConsole($container->get('Console'));
     }
 
     /**
-     * Override: do not use peering service managers
+     * Initializer: inject plugin manager
      *
-     * @param  string $name
-     * @param  array $options
-     * @param  bool $usePeeringServiceManagers
-     * @return mixed
+     * @param ContainerInterface|DispatchableInterface $first Container when
+     *     using zend-servicemanager v3; controller under v2.
+     * @param DispatchableInterface|ContainerInterface $second Controller when
+     *     using zend-servicemanager v3; container under v2.
      */
-    public function get($name, $options = array(), $usePeeringServiceManagers = false)
+    public function injectPluginManager($first, $second)
     {
-        return parent::get($name, $options, $usePeeringServiceManagers);
+        if ($first instanceof ContainerInterface) {
+            $container = $first;
+            $controller = $second;
+        } else {
+            $container = $second;
+            $controller = $first;
+        }
+
+        if (! method_exists($controller, 'setPluginManager')) {
+            return;
+        }
+
+        // For v2, we need to pull the parent service locator
+        if (! method_exists($container, 'configure')) {
+            $container = $container->getServiceLocator() ?: $container;
+        }
+
+        $controller->setPluginManager($container->get('ControllerPluginManager'));
+    }
+
+    /**
+     * Initializer: inject service locator
+     *
+     * @param ContainerInterface|DispatchableInterface $first Container when
+     *     using zend-servicemanager v3; controller under v2.
+     * @param DispatchableInterface|ContainerInterface $second Controller when
+     *     using zend-servicemanager v3; container under v2.
+     */
+    public function injectServiceLocator($first, $second)
+    {
+        if ($first instanceof ContainerInterface) {
+            $container = $first;
+            $controller = $second;
+        } else {
+            $container = $second;
+            $controller = $first;
+        }
+
+        // For v2, we need to pull the parent service locator
+        if (! method_exists($container, 'configure')) {
+            $container = $container->getServiceLocator() ?: $container;
+        }
+
+        // Inject AbstractController extensions that are not ServiceLocatorAware
+        // with the service manager, but do not emit a deprecation notice. We'll
+        // emit it from AbstractController::getServiceLocator() instead.
+        if (! $controller instanceof ServiceLocatorAwareInterface
+            && $controller instanceof AbstractController
+            && method_exists($controller, 'setServiceLocator')
+        ) {
+            // Do not emit deprecation notice in this case
+            $controller->setServiceLocator($container);
+        }
+
+        // If a controller implements ServiceLocatorAwareInterface explicitly, we
+        // inject, but emit a deprecation notice. Since AbstractController no longer
+        // explicitly does this, this will only affect userland controllers.
+        if ($controller instanceof ServiceLocatorAwareInterface) {
+            trigger_error(sprintf(
+                'ServiceLocatorAwareInterface is deprecated and will be removed in version 3.0, along '
+                . 'with the ServiceLocatorAwareInitializer. Please update your class %s to remove '
+                . 'the implementation, and start injecting your dependencies via factory instead.',
+                get_class($controller)
+            ), E_USER_DEPRECATED);
+            $controller->setServiceLocator($container);
+        }
     }
 }

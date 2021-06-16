@@ -25,7 +25,7 @@ class FormCheckbox extends FormInput
      */
     public function render(ElementInterface $element)
     {
-        if (!$element instanceof CheckboxElement) {
+        if (! $element instanceof CheckboxElement) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s requires that the element is of type Zend\Form\Element\Checkbox',
                 __METHOD__
@@ -57,11 +57,11 @@ class FormCheckbox extends FormInput
         );
 
         if ($element->useHiddenElement()) {
-            $hiddenAttributes = array(
+            $hiddenAttributes = [
                 'disabled' => isset($attributes['disabled']) ? $attributes['disabled'] : false,
                 'name'     => $attributes['name'],
                 'value'    => $element->getUncheckedValue(),
-            );
+            ];
 
             $rendered = sprintf(
                 '<input type="hidden" %s%s',

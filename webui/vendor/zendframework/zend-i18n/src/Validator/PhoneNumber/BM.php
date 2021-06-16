@@ -1,16 +1,14 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-i18n for the canonical source repository
+ * @copyright Copyright (c) 2005-2019 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-i18n/blob/master/LICENSE.md New BSD License
  */
 
-return array(
+return [
     'code' => '1',
-    'patterns' => array(
-        'national' => array(
+    'patterns' => [
+        'national' => [
             'general' => '/^[4589]\\d{9}$/',
             'fixed' => '/^441(?:2(?:02|23|61|[3479]\\d)|[46]\\d{2}|5(?:4\\d|60|89)|824)\\d{4}$/',
             'mobile' => '/^441(?:[37]\\d|5[0-39])\\d{5}$/',
@@ -18,14 +16,14 @@ return array(
             'premium' => '/^900[2-9]\\d{6}$/',
             'personal' => '/^5(?:00|33|44)[2-9]\\d{6}$/',
             'emergency' => '/^911$/',
-        ),
-        'possible' => array(
+        ],
+        'possible' => [
             'general' => '/^\\d{7}(?:\\d{3})?$/',
             'mobile' => '/^\\d{10}$/',
             'tollfree' => '/^\\d{10}$/',
             'premium' => '/^\\d{10}$/',
             'personal' => '/^\\d{10}$/',
             'emergency' => '/^\\d{3}$/',
-        ),
-    ),
-);
+        ],
+    ],
+];

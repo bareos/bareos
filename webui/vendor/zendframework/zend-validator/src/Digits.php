@@ -29,11 +29,11 @@ class Digits extends AbstractValidator
      *
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::NOT_DIGITS   => "The input must contain only digits",
         self::STRING_EMPTY => "The input is an empty string",
         self::INVALID      => "Invalid type given. String, integer or float expected",
-    );
+    ];
 
     /**
      * Returns true if and only if $value only contains digit characters
@@ -43,7 +43,7 @@ class Digits extends AbstractValidator
      */
     public function isValid($value)
     {
-        if (!is_string($value) && !is_int($value) && !is_float($value)) {
+        if (! is_string($value) && ! is_int($value) && ! is_float($value)) {
             $this->error(self::INVALID);
             return false;
         }

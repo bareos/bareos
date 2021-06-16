@@ -1,16 +1,16 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-i18n for the canonical source repository
+ * @copyright Copyright (c) 2005-2019 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-i18n/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\I18n\Translator;
 
 use Zend\I18n\Exception;
 use Zend\ServiceManager\AbstractPluginManager;
+use Zend\ServiceManager\Exception\InvalidServiceException;
+use Zend\ServiceManager\Factory\InvokableFactory;
 
 /**
  * Plugin manager implementation for translation loaders.
@@ -54,16 +54,27 @@ use Zend\ServiceManager\AbstractPluginManager;
  */
 class LoaderPluginManager extends AbstractPluginManager
 {
-    /**
-     * Default set of loaders.
-     *
-     * @var array
-     */
-    protected $invokableClasses = array(
-        'gettext'  => 'Zend\I18n\Translator\Loader\Gettext',
-        'ini'      => 'Zend\I18n\Translator\Loader\Ini',
-        'phparray' => 'Zend\I18n\Translator\Loader\PhpArray',
-    );
+    protected $aliases = [
+        'gettext'  => Loader\Gettext::class,
+        'getText'  => Loader\Gettext::class,
+        'GetText'  => Loader\Gettext::class,
+        'ini'      => Loader\Ini::class,
+        'phparray' => Loader\PhpArray::class,
+        'phpArray' => Loader\PhpArray::class,
+        'PhpArray' => Loader\PhpArray::class,
+    ];
+
+    protected $factories = [
+        Loader\Gettext::class  => InvokableFactory::class,
+        Loader\Ini::class      => InvokableFactory::class,
+        Loader\PhpArray::class => InvokableFactory::class,
+        // Legacy (v2) due to alias resolution; canonical form of resolved
+        // alias is used to look up the factory, while the non-normalized
+        // resolved alias is used as the requested name passed to the factory.
+        'zendi18ntranslatorloadergettext'  => InvokableFactory::class,
+        'zendi18ntranslatorloaderini'      => InvokableFactory::class,
+        'zendi18ntranslatorloaderphparray' => InvokableFactory::class
+    ];
 
     /**
      * Validate the plugin.
@@ -75,17 +86,42 @@ class LoaderPluginManager extends AbstractPluginManager
      * @return void
      * @throws Exception\RuntimeException if invalid
      */
-    public function validatePlugin($plugin)
+    public function validate($plugin)
     {
         if ($plugin instanceof Loader\FileLoaderInterface || $plugin instanceof Loader\RemoteLoaderInterface) {
             // we're okay
             return;
         }
 
-        throw new Exception\RuntimeException(sprintf(
-            'Plugin of type %s is invalid; must implement %s\Loader\FileLoaderInterface or %s\Loader\RemoteLoaderInterface',
+        throw new InvalidServiceException(sprintf(
+            'Plugin of type %s is invalid; must implement %s\Loader\FileLoaderInterface '
+            . 'or %s\Loader\RemoteLoaderInterface',
             (is_object($plugin) ? get_class($plugin) : gettype($plugin)),
+            __NAMESPACE__,
             __NAMESPACE__
         ));
+    }
+
+    /**
+     * Validate the plugin is of the expected type (v2).
+     *
+     * Proxies to `validate()`.
+     *
+     * @param mixed $plugin
+     * @throws Exception\RuntimeException
+     */
+    public function validatePlugin($plugin)
+    {
+        try {
+            $this->validate($plugin);
+        } catch (InvalidServiceException $e) {
+            throw new Exception\RuntimeException(sprintf(
+                'Plugin of type %s is invalid; must implement %s\Loader\FileLoaderInterface '
+                . 'or %s\Loader\RemoteLoaderInterface',
+                (is_object($plugin) ? get_class($plugin) : gettype($plugin)),
+                __NAMESPACE__,
+                __NAMESPACE__
+            ));
+        }
     }
 }

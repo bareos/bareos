@@ -90,7 +90,7 @@ class Virtual extends AbstractAdapter
     protected function runProbeCommand()
     {
         exec('mode', $output, $return);
-        if ($return || !count($output)) {
+        if ($return || ! count($output)) {
             $this->modeResult = '';
         } else {
             $this->modeResult = trim(implode('', $output));
@@ -125,7 +125,7 @@ class Virtual extends AbstractAdapter
     {
         // Try to use powershell to retrieve console window title
         exec('powershell -command "write $Host.UI.RawUI.WindowTitle"', $output, $result);
-        if ($result || !$output) {
+        if ($result || ! $output) {
             return '';
         }
 

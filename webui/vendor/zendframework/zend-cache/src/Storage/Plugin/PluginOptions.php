@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -56,7 +56,7 @@ class PluginOptions extends AbstractOptions
      * - Serializer
      * @var array
      */
-    protected $serializerOptions = array();
+    protected $serializerOptions = [];
 
     /**
      * Used by:
@@ -72,7 +72,7 @@ class PluginOptions extends AbstractOptions
      * - ClearExpiredByFactor
      *
      * @param  int $clearingFactor
-     * @return PluginOptions
+     * @return PluginOptions Provides a fluent interface
      */
     public function setClearingFactor($clearingFactor)
     {
@@ -101,11 +101,11 @@ class PluginOptions extends AbstractOptions
      *
      * @param  null|callable $exceptionCallback
      * @throws Exception\InvalidArgumentException
-     * @return PluginOptions
+     * @return PluginOptions Provides a fluent interface
      */
     public function setExceptionCallback($exceptionCallback)
     {
-        if ($exceptionCallback !== null && !is_callable($exceptionCallback, true)) {
+        if ($exceptionCallback !== null && ! is_callable($exceptionCallback, true)) {
             throw new Exception\InvalidArgumentException('Not a valid callback');
         }
         $this->exceptionCallback = $exceptionCallback;
@@ -129,7 +129,7 @@ class PluginOptions extends AbstractOptions
      * Exit if connection aborted and ignore_user_abort is disabled.
      *
      * @param  bool $exitOnAbort
-     * @return PluginOptions
+     * @return PluginOptions Provides a fluent interface
      */
     public function setExitOnAbort($exitOnAbort)
     {
@@ -154,7 +154,7 @@ class PluginOptions extends AbstractOptions
      * - OptimizeByFactor
      *
      * @param  int $optimizingFactor
-     * @return PluginOptions
+     * @return PluginOptions Provides a fluent interface
      */
     public function setOptimizingFactor($optimizingFactor)
     {
@@ -183,11 +183,11 @@ class PluginOptions extends AbstractOptions
      *
      * @param  string|SerializerAdapter $serializer
      * @throws Exception\InvalidArgumentException
-     * @return self
+     * @return PluginOptions Provides a fluent interface
      */
     public function setSerializer($serializer)
     {
-        if (!is_string($serializer) && !$serializer instanceof SerializerAdapter) {
+        if (! is_string($serializer) && ! $serializer instanceof SerializerAdapter) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s expects either a string serializer name or Zend\Serializer\Adapter\AdapterInterface instance; '
                 . 'received "%s"',
@@ -209,9 +209,9 @@ class PluginOptions extends AbstractOptions
      */
     public function getSerializer()
     {
-        if (!$this->serializer instanceof SerializerAdapter) {
+        if (! $this->serializer instanceof SerializerAdapter) {
             // use default serializer
-            if (!$this->serializer) {
+            if (! $this->serializer) {
                 $this->setSerializer(SerializerFactory::getDefaultAdapter());
             // instantiate by class name + serializer_options
             } else {
@@ -229,7 +229,7 @@ class PluginOptions extends AbstractOptions
      * - Serializer
      *
      * @param  mixed $serializerOptions
-     * @return PluginOptions
+     * @return PluginOptions Provides a fluent interface
      */
     public function setSerializerOptions($serializerOptions)
     {
@@ -257,7 +257,7 @@ class PluginOptions extends AbstractOptions
      * - ExceptionHandler
      *
      * @param  bool $throwExceptions
-     * @return PluginOptions
+     * @return PluginOptions Provides a fluent interface
      */
     public function setThrowExceptions($throwExceptions)
     {

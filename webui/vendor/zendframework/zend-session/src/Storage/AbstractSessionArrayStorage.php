@@ -45,11 +45,11 @@ abstract class AbstractSessionArrayStorage implements
     {
         if ((null === $input) && isset($_SESSION)) {
             $input = $_SESSION;
-            if (is_object($input) && !$_SESSION instanceof \ArrayObject) {
+            if (is_object($input) && ! $_SESSION instanceof \ArrayObject) {
                 $input = (array) $input;
             }
         } elseif (null === $input) {
-            $input = array();
+            $input = [];
         }
         $_SESSION = $input;
         $this->setRequestAccessTime(microtime(true));
@@ -253,7 +253,7 @@ abstract class AbstractSessionArrayStorage implements
             return $this;
         }
         if (isset($_SESSION[$key])) {
-            $this->setMetadata('_LOCKS', array($key => true));
+            $this->setMetadata('_LOCKS', [$key => true]);
         }
 
         return $this;
@@ -280,7 +280,7 @@ abstract class AbstractSessionArrayStorage implements
         $locks    = $this->getMetadata('_LOCKS');
         $readOnly = $this->getMetadata('_READONLY');
 
-        if ($readOnly && !$locks) {
+        if ($readOnly && ! $locks) {
             // global lock in play; all keys are locked
             return true;
         }
@@ -289,7 +289,7 @@ abstract class AbstractSessionArrayStorage implements
         }
 
         // test for individual locks
-        if (!$locks) {
+        if (! $locks) {
             return false;
         }
 
@@ -313,8 +313,8 @@ abstract class AbstractSessionArrayStorage implements
         }
 
         $locks = $this->getMetadata('_LOCKS');
-        if (!$locks) {
-            if (!$this->getMetadata('_READONLY')) {
+        if (! $locks) {
+            if (! $this->getMetadata('_READONLY')) {
                 return $this;
             }
             $array = $this->toArray();
@@ -355,8 +355,8 @@ abstract class AbstractSessionArrayStorage implements
             );
         }
 
-        if (!isset($_SESSION['__ZF'])) {
-            $_SESSION['__ZF'] = array();
+        if (! isset($_SESSION['__ZF']) || ! is_array($_SESSION['__ZF'])) {
+            $_SESSION['__ZF'] = [];
         }
         if (isset($_SESSION['__ZF'][$key]) && is_array($value)) {
             if ($overwriteArray) {
@@ -389,7 +389,7 @@ abstract class AbstractSessionArrayStorage implements
      */
     public function getMetadata($key = null)
     {
-        if (!isset($_SESSION['__ZF'])) {
+        if (! isset($_SESSION['__ZF'])) {
             return false;
         }
 
@@ -397,7 +397,7 @@ abstract class AbstractSessionArrayStorage implements
             return $_SESSION['__ZF'];
         }
 
-        if (!array_key_exists($key, $_SESSION['__ZF'])) {
+        if (! array_key_exists($key, $_SESSION['__ZF'])) {
             return false;
         }
 
@@ -417,12 +417,12 @@ abstract class AbstractSessionArrayStorage implements
             throw new Exception\RuntimeException('Cannot clear storage as it is marked immutable');
         }
         if (null === $key) {
-            $this->fromArray(array());
+            $this->fromArray([]);
 
             return $this;
         }
 
-        if (!isset($_SESSION[$key])) {
+        if (! isset($_SESSION[$key])) {
             return $this;
         }
 
@@ -470,7 +470,7 @@ abstract class AbstractSessionArrayStorage implements
         if (isset($_SESSION)) {
             $values = $_SESSION;
         } else {
-            $values = array();
+            $values = [];
         }
 
         if ($metaData) {

@@ -28,7 +28,7 @@ class Container extends AbstractContainer
     public function &offsetGet($key)
     {
         $ret = null;
-        if (!$this->offsetExists($key)) {
+        if (! $this->offsetExists($key)) {
             return $ret;
         }
         $storage = $this->getStorage();

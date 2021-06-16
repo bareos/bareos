@@ -22,19 +22,19 @@ class LessThan extends AbstractValidator
      *
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::NOT_LESS           => "The input is not less than '%max%'",
         self::NOT_LESS_INCLUSIVE => "The input is not less or equal than '%max%'"
-    );
+    ];
 
     /**
      * Additional variables available for validation failure messages
      *
      * @var array
      */
-    protected $messageVariables = array(
+    protected $messageVariables = [
         'max' => 'max'
-    );
+    ];
 
     /**
      * Maximum value
@@ -64,22 +64,22 @@ class LessThan extends AbstractValidator
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
         }
-        if (!is_array($options)) {
+        if (! is_array($options)) {
             $options = func_get_args();
             $temp['max'] = array_shift($options);
 
-            if (!empty($options)) {
+            if (! empty($options)) {
                 $temp['inclusive'] = array_shift($options);
             }
 
             $options = $temp;
         }
 
-        if (!array_key_exists('max', $options)) {
+        if (! array_key_exists('max', $options)) {
             throw new Exception\InvalidArgumentException("Missing option 'max'");
         }
 
-        if (!array_key_exists('inclusive', $options)) {
+        if (! array_key_exists('inclusive', $options)) {
             $options['inclusive'] = false;
         }
 

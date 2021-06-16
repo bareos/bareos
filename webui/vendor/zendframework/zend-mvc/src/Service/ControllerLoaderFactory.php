@@ -13,6 +13,11 @@ use Zend\Mvc\Controller\ControllerManager;
 use Zend\ServiceManager\FactoryInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
 
+/**
+ * @see \Zend\Mvc\Service\ControllerManagerFactory
+ * @deprecated please use Zend\Mvc\Service\ControllerManagerFactory instead;
+ *     this class will be removed in release 3.0
+ */
 class ControllerLoaderFactory implements FactoryInterface
 {
     /**
@@ -33,8 +38,13 @@ class ControllerLoaderFactory implements FactoryInterface
      */
     public function createService(ServiceLocatorInterface $serviceLocator)
     {
-        $controllerLoader = new ControllerManager();
-        $controllerLoader->setServiceLocator($serviceLocator);
+        trigger_error(sprintf(
+            '%s is deprecated; please use %s instead',
+            __CLASS__,
+            ControllerManagerFactory::class
+        ), E_USER_DEPRECATED);
+
+        $controllerLoader = new ControllerManager($serviceLocator);
         $controllerLoader->addPeeringServiceManager($serviceLocator);
 
         $config = $serviceLocator->get('Config');

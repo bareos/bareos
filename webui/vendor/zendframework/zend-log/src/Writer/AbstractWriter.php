@@ -2,8 +2,8 @@
 /**
  * Zend Framework (http://framework.zend.com/)
  *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @link      http://github.com/zendframework/zend-log for the canonical source repository
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -12,9 +12,17 @@ namespace Zend\Log\Writer;
 use Traversable;
 use Zend\Log\Exception;
 use Zend\Log\Filter;
+use Zend\Log\FilterPluginManager as LogFilterPluginManager;
 use Zend\Log\Formatter;
+use Zend\Log\FormatterPluginManager as LogFormatterPluginManager;
+use Zend\ServiceManager\ServiceManager;
 use Zend\Stdlib\ErrorHandler;
 
+/**
+ * @todo Remove aliases for parent namespace's FilterPluginManager and
+ *    FormatterPluginManager once the deprecated versions in the current
+ *    namespace are removed (likely v3.0).
+ */
 abstract class AbstractWriter implements WriterInterface
 {
     /**
@@ -36,7 +44,7 @@ abstract class AbstractWriter implements WriterInterface
      *
      * @var Filter\FilterInterface[]
      */
-    protected $filters = array();
+    protected $filters = [];
 
     /**
      * Formats the log message before writing
@@ -76,6 +84,14 @@ abstract class AbstractWriter implements WriterInterface
         }
 
         if (is_array($options)) {
+            if (isset($options['filter_manager'])) {
+                $this->setFilterPluginManager($options['filter_manager']);
+            }
+
+            if (isset($options['formatter_manager'])) {
+                $this->setFormatterPluginManager($options['formatter_manager']);
+            }
+
             if (isset($options['filters'])) {
                 $filters = $options['filters'];
                 if (is_int($filters) || is_string($filters) || $filters instanceof Filter\FilterInterface) {
@@ -85,8 +101,10 @@ abstract class AbstractWriter implements WriterInterface
                         if (is_int($filter) || is_string($filter) || $filter instanceof Filter\FilterInterface) {
                             $this->addFilter($filter);
                         } elseif (is_array($filter)) {
-                            if (!isset($filter['name'])) {
-                                throw new Exception\InvalidArgumentException('Options must contain a name for the filter');
+                            if (! isset($filter['name'])) {
+                                throw new Exception\InvalidArgumentException(
+                                    'Options must contain a name for the filter'
+                                );
                             }
                             $filterOptions = (isset($filter['options'])) ? $filter['options'] : null;
                             $this->addFilter($filter['name'], $filterOptions);
@@ -100,7 +118,7 @@ abstract class AbstractWriter implements WriterInterface
                 if (is_string($formatter) || $formatter instanceof Formatter\FormatterInterface) {
                     $this->setFormatter($formatter);
                 } elseif (is_array($formatter)) {
-                    if (!isset($formatter['name'])) {
+                    if (! isset($formatter['name'])) {
                         throw new Exception\InvalidArgumentException('Options must contain a name for the formatter');
                     }
                     $formatterOptions = (isset($formatter['options'])) ? $formatter['options'] : null;
@@ -128,7 +146,7 @@ abstract class AbstractWriter implements WriterInterface
             $filter = $this->filterPlugin($filter, $options);
         }
 
-        if (!$filter instanceof Filter\FilterInterface) {
+        if (! $filter instanceof Filter\FilterInterface) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Filter must implement %s\Filter\FilterInterface; received "%s"',
                 __NAMESPACE__,
@@ -143,12 +161,12 @@ abstract class AbstractWriter implements WriterInterface
     /**
      * Get filter plugin manager
      *
-     * @return FilterPluginManager
+     * @return LogFilterPluginManager
      */
     public function getFilterPluginManager()
     {
         if (null === $this->filterPlugins) {
-            $this->setFilterPluginManager(new FilterPluginManager());
+            $this->setFilterPluginManager(new LogFilterPluginManager(new ServiceManager()));
         }
         return $this->filterPlugins;
     }
@@ -156,7 +174,7 @@ abstract class AbstractWriter implements WriterInterface
     /**
      * Set filter plugin manager
      *
-     * @param  string|FilterPluginManager $plugins
+     * @param  string|LogFilterPluginManager $plugins
      * @return self
      * @throws Exception\InvalidArgumentException
      */
@@ -165,10 +183,10 @@ abstract class AbstractWriter implements WriterInterface
         if (is_string($plugins)) {
             $plugins = new $plugins;
         }
-        if (!$plugins instanceof FilterPluginManager) {
+        if (! $plugins instanceof LogFilterPluginManager) {
             throw new Exception\InvalidArgumentException(sprintf(
-                'Writer plugin manager must extend %s\FilterPluginManager; received %s',
-                __NAMESPACE__,
+                'Writer plugin manager must extend %s; received %s',
+                LogFilterPluginManager::class,
                 is_object($plugins) ? get_class($plugins) : gettype($plugins)
             ));
         }
@@ -192,12 +210,12 @@ abstract class AbstractWriter implements WriterInterface
     /**
      * Get formatter plugin manager
      *
-     * @return FormatterPluginManager
+     * @return LogFormatterPluginManager
      */
     public function getFormatterPluginManager()
     {
         if (null === $this->formatterPlugins) {
-            $this->setFormatterPluginManager(new FormatterPluginManager());
+            $this->setFormatterPluginManager(new LogFormatterPluginManager(new ServiceManager()));
         }
         return $this->formatterPlugins;
     }
@@ -205,7 +223,7 @@ abstract class AbstractWriter implements WriterInterface
     /**
      * Set formatter plugin manager
      *
-     * @param  string|FormatterPluginManager $plugins
+     * @param  string|LogFormatterPluginManager $plugins
      * @return self
      * @throws Exception\InvalidArgumentException
      */
@@ -214,11 +232,11 @@ abstract class AbstractWriter implements WriterInterface
         if (is_string($plugins)) {
             $plugins = new $plugins;
         }
-        if (!$plugins instanceof FormatterPluginManager) {
+        if (! $plugins instanceof LogFormatterPluginManager) {
             throw new Exception\InvalidArgumentException(
                 sprintf(
-                    'Writer plugin manager must extend %s\FormatterPluginManager; received %s',
-                    __NAMESPACE__,
+                    'Writer plugin manager must extend %s; received %s',
+                    LogFormatterPluginManager::class,
                     is_object($plugins) ? get_class($plugins) : gettype($plugins)
                 )
             );
@@ -249,14 +267,14 @@ abstract class AbstractWriter implements WriterInterface
     public function write(array $event)
     {
         foreach ($this->filters as $filter) {
-            if (!$filter->filter($event)) {
+            if (! $filter->filter($event)) {
                 return;
             }
         }
 
         $errorHandlerStarted = false;
 
-        if ($this->convertWriteErrorsToExceptions && !ErrorHandler::started()) {
+        if ($this->convertWriteErrorsToExceptions && ! ErrorHandler::started()) {
             ErrorHandler::start($this->errorsToExceptionsConversionLevel);
             $errorHandlerStarted = true;
         }
@@ -292,7 +310,7 @@ abstract class AbstractWriter implements WriterInterface
             $formatter = $this->formatterPlugin($formatter, $options);
         }
 
-        if (!$formatter instanceof Formatter\FormatterInterface) {
+        if (! $formatter instanceof Formatter\FormatterInterface) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Formatter must implement %s\Formatter\FormatterInterface; received "%s"',
                 __NAMESPACE__,

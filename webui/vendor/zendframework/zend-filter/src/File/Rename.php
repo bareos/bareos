@@ -19,7 +19,7 @@ class Rename extends Filter\AbstractFilter
     /**
      * Internal array of array(source, target, overwrite)
      */
-    protected $files = array();
+    protected $files = [];
 
     /**
      * Class constructor
@@ -34,13 +34,13 @@ class Rename extends Filter\AbstractFilter
      * @param  string|array|Traversable $options Target file or directory to be renamed
      * @throws Exception\InvalidArgumentException
      */
-    public function __construct($options)
+    public function __construct($options = [])
     {
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
         } elseif (is_string($options)) {
-            $options = array('target' => $options);
-        } elseif (!is_array($options)) {
+            $options = ['target' => $options];
+        } elseif (! is_array($options)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid options argument provided to filter'
             );
@@ -73,7 +73,7 @@ class Rename extends Filter\AbstractFilter
      */
     public function setFile($options)
     {
-        $this->files = array();
+        $this->files = [];
         $this->addFile($options);
 
         return $this;
@@ -95,8 +95,8 @@ class Rename extends Filter\AbstractFilter
     public function addFile($options)
     {
         if (is_string($options)) {
-            $options = array('target' => $options);
-        } elseif (!is_array($options)) {
+            $options = ['target' => $options];
+        } elseif (! is_array($options)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid options to rename filter provided'
             );
@@ -112,22 +112,22 @@ class Rename extends Filter\AbstractFilter
      * But existing files will be erased when the overwrite option is true
      *
      * @param  string  $value  Full path of file to change
-     * @param  bool $source Return internal informations
+     * @param  bool $source Return internal information
      * @return string The new filename which has been set
      * @throws Exception\InvalidArgumentException If the target file already exists.
      */
     public function getNewName($value, $source = false)
     {
         $file = $this->_getFileName($value);
-        if (!is_array($file)) {
+        if (! is_array($file)) {
             return $file;
         }
 
-        if ($file['source'] == $file['target']) {
+        if ($file['source'] === $file['target']) {
             return $value;
         }
 
-        if (!file_exists($file['source'])) {
+        if (! file_exists($file['source'])) {
             return $value;
         }
 
@@ -136,9 +136,11 @@ class Rename extends Filter\AbstractFilter
         }
 
         if (file_exists($file['target'])) {
-            throw new Exception\InvalidArgumentException(
-                sprintf("File '%s' could not be renamed. It already exists.", $value)
-            );
+            throw new Exception\InvalidArgumentException(sprintf(
+                '"File "%s" could not be renamed to "%s"; target file already exists',
+                $value,
+                realpath($file['target'])
+            ));
         }
 
         if ($source) {
@@ -160,14 +162,14 @@ class Rename extends Filter\AbstractFilter
      */
     public function filter($value)
     {
-        if (!is_scalar($value) && !is_array($value)) {
+        if (! is_scalar($value) && ! is_array($value)) {
             return $value;
         }
 
         // An uploaded file? Retrieve the 'tmp_name'
         $isFileUpload = false;
         if (is_array($value)) {
-            if (!isset($value['tmp_name'])) {
+            if (! isset($value['tmp_name'])) {
                 return $value;
             }
 
@@ -211,9 +213,11 @@ class Rename extends Filter\AbstractFilter
      * @param  array $options
      * @return array
      */
+    // @codingStandardsIgnoreStart
     protected function _convertOptions($options)
     {
-        $files = array();
+        // @codingStandardsIgnoreEnd
+        $files = [];
         foreach ($options as $key => $value) {
             if (is_array($value)) {
                 $this->_convertOptions($value);
@@ -264,13 +268,13 @@ class Rename extends Filter\AbstractFilter
 
         $found = false;
         foreach ($this->files as $key => $value) {
-            if ($value['source'] == $files['source']) {
+            if ($value['source'] === $files['source']) {
                 $this->files[$key] = $files;
                 $found             = true;
             }
         }
 
-        if (!$found) {
+        if (! $found) {
             $count               = count($this->files);
             $this->files[$count] = $files;
         }
@@ -282,38 +286,40 @@ class Rename extends Filter\AbstractFilter
      * Internal method to resolve the requested source
      * and return all other related parameters
      *
-     * @param  string $file Filename to get the informations for
+     * @param  string $file Filename to get the information for
      * @return array|string
      */
+    // @codingStandardsIgnoreStart
     protected function _getFileName($file)
     {
-        $rename = array();
+        // @codingStandardsIgnoreEnd
+        $rename = [];
         foreach ($this->files as $value) {
-            if ($value['source'] == '*') {
-                if (!isset($rename['source'])) {
+            if ($value['source'] === '*') {
+                if (! isset($rename['source'])) {
                     $rename           = $value;
                     $rename['source'] = $file;
                 }
             }
 
-            if ($value['source'] == $file) {
+            if ($value['source'] === $file) {
                 $rename = $value;
                 break;
             }
         }
 
-        if (!isset($rename['source'])) {
+        if (! isset($rename['source'])) {
             return $file;
         }
 
-        if (!isset($rename['target']) || $rename['target'] == '*') {
+        if (! isset($rename['target']) || $rename['target'] === '*') {
             $rename['target'] = $rename['source'];
         }
 
         if (is_dir($rename['target'])) {
             $name = basename($rename['source']);
             $last = $rename['target'][strlen($rename['target']) - 1];
-            if (($last != '/') && ($last != '\\')) {
+            if ($last !== '/' && $last !== '\\') {
                 $rename['target'] .= DIRECTORY_SEPARATOR;
             }
 
@@ -323,7 +329,7 @@ class Rename extends Filter\AbstractFilter
         if ($rename['randomize']) {
             $info = pathinfo($rename['target']);
             $newTarget = $info['dirname'] . DIRECTORY_SEPARATOR .
-                $info['filename'] . uniqid('_');
+                $info['filename'] . uniqid('_', false);
             if (isset($info['extension'])) {
                 $newTarget .= '.' . $info['extension'];
             }

@@ -21,7 +21,7 @@ class SeparatorToCamelCase extends AbstractSeparator
      */
     public function filter($value)
     {
-        if (!is_scalar($value) && !is_array($value)) {
+        if (! is_scalar($value) && ! is_array($value)) {
             return $value;
         }
 
@@ -29,42 +29,48 @@ class SeparatorToCamelCase extends AbstractSeparator
         $pregQuotedSeparator = preg_quote($this->separator, '#');
 
         if (StringUtils::hasPcreUnicodeSupport()) {
-            $patterns = array(
+            $patterns = [
                 '#(' . $pregQuotedSeparator.')(\P{Z}{1})#u',
                 '#(^\P{Z}{1})#u',
-            );
-            if (!extension_loaded('mbstring')) {
-                $replacements = array(
-                    function ($matches) {
+            ];
+            if (! extension_loaded('mbstring')) {
+                $replacements = [
+                    // @codingStandardsIgnoreStart
+                    static function ($matches) {
                         return strtoupper($matches[2]);
                     },
-                    function ($matches) {
+                    static function ($matches) {
                         return strtoupper($matches[1]);
                     },
-                );
+                    // @codingStandardsIgnoreEnd
+                ];
             } else {
-                $replacements = array(
-                    function ($matches) {
+                $replacements = [
+                    // @codingStandardsIgnoreStart
+                    static function ($matches) {
                         return mb_strtoupper($matches[2], 'UTF-8');
                     },
-                    function ($matches) {
+                    static function ($matches) {
                         return mb_strtoupper($matches[1], 'UTF-8');
                     },
-                );
+                    // @codingStandardsIgnoreEnd
+                ];
             }
         } else {
-            $patterns = array(
+            $patterns = [
                 '#(' . $pregQuotedSeparator.')([\S]{1})#',
                 '#(^[\S]{1})#',
-            );
-            $replacements = array(
-                function ($matches) {
+            ];
+            $replacements = [
+                // @codingStandardsIgnoreStart
+                static function ($matches) {
                     return strtoupper($matches[2]);
                 },
-                function ($matches) {
+                static function ($matches) {
                     return strtoupper($matches[1]);
                 },
-            );
+                // @codingStandardsIgnoreEnd
+            ];
         }
 
         $filtered = $value;

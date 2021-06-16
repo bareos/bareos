@@ -23,7 +23,9 @@ class Lastmod extends AbstractValidator
      * Regular expression to use when validating
      *
      */
+    // @codingStandardsIgnoreStart
     const LASTMOD_REGEX = '/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])(T([0-1][0-9]|2[0-3])(:[0-5][0-9])(:[0-5][0-9])?(\\+|-)([0-1][0-9]|2[0-3]):[0-5][0-9])?$/';
+    // @codingStandardsIgnoreEnd
 
     /**
      * Validation key for not valid
@@ -37,10 +39,10 @@ class Lastmod extends AbstractValidator
      *
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::NOT_VALID => "The input is not a valid sitemap lastmod",
         self::INVALID   => "Invalid type given. String expected",
-    );
+    ];
 
     /**
      * Validates if a string is valid as a sitemap lastmod
@@ -52,7 +54,7 @@ class Lastmod extends AbstractValidator
      */
     public function isValid($value)
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             $this->error(self::INVALID);
             return false;
         }

@@ -11,10 +11,6 @@ namespace Zend\Filter\Word;
 
 class DashToCamelCase extends SeparatorToCamelCase
 {
-    /**
-     * Constructor
-     *
-     */
     public function __construct()
     {
         parent::__construct('-');

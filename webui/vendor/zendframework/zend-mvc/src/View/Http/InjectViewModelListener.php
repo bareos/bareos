@@ -18,20 +18,13 @@ use Zend\View\Model\ModelInterface as ViewModel;
 class InjectViewModelListener extends AbstractListenerAggregate
 {
     /**
-     * FilterInterface/inflector used to normalize names for use as template identifiers
-     *
-     * @var mixed
-     */
-    protected $inflector;
-
-    /**
      * {@inheritDoc}
      */
-    public function attach(Events $events)
+    public function attach(Events $events, $priority = 1)
     {
-        $this->listeners[] = $events->attach(MvcEvent::EVENT_DISPATCH, array($this, 'injectViewModel'), -100);
-        $this->listeners[] = $events->attach(MvcEvent::EVENT_DISPATCH_ERROR, array($this, 'injectViewModel'), -100);
-        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER_ERROR, array($this, 'injectViewModel'), -100);
+        $this->listeners[] = $events->attach(MvcEvent::EVENT_DISPATCH, [$this, 'injectViewModel'], -100);
+        $this->listeners[] = $events->attach(MvcEvent::EVENT_DISPATCH_ERROR, [$this, 'injectViewModel'], -100);
+        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER_ERROR, [$this, 'injectViewModel'], -100);
     }
 
     /**

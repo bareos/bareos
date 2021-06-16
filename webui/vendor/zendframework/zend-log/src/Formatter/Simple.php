@@ -2,8 +2,8 @@
 /**
  * Zend Framework (http://framework.zend.com/)
  *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @link      http://github.com/zendframework/zend-log for the canonical source repository
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -38,11 +38,11 @@ class Simple extends Base
         }
 
         if (is_array($format)) {
-            $dateTimeFormat = isset($format['dateTimeFormat'])? $format['dateTimeFormat'] : null;
-            $format         = isset($format['format'])? $format['format'] : null;
+            $dateTimeFormat = isset($format['dateTimeFormat']) ? $format['dateTimeFormat'] : null;
+            $format         = isset($format['format']) ? $format['format'] : null;
         }
 
-        if (isset($format) && !is_string($format)) {
+        if (isset($format) && ! is_string($format)) {
             throw new Exception\InvalidArgumentException('Format must be a string');
         }
 

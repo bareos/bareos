@@ -24,7 +24,7 @@ class Lzf implements CompressionAlgorithmInterface
      */
     public function __construct($options = null)
     {
-        if (!extension_loaded('lzf')) {
+        if (! extension_loaded('lzf')) {
             throw new Exception\ExtensionNotLoadedException('This filter needs the lzf extension');
         }
     }
@@ -39,7 +39,7 @@ class Lzf implements CompressionAlgorithmInterface
     public function compress($content)
     {
         $compressed = lzf_compress($content);
-        if (!$compressed) {
+        if (! $compressed) {
             throw new Exception\RuntimeException('Error during compression');
         }
 
@@ -56,7 +56,7 @@ class Lzf implements CompressionAlgorithmInterface
     public function decompress($content)
     {
         $compressed = lzf_decompress($content);
-        if (!$compressed) {
+        if (! $compressed) {
             throw new Exception\RuntimeException('Error during decompression');
         }
 

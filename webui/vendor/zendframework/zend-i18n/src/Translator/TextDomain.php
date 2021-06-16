@@ -1,10 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-i18n for the canonical source repository
+ * @copyright Copyright (c) 2005-2019 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-i18n/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\I18n\Translator;
@@ -36,7 +34,7 @@ class TextDomain extends ArrayObject
      * Set the plural rule
      *
      * @param  PluralRule $rule
-     * @return TextDomain
+     * @return $this
      */
     public function setPluralRule(PluralRule $rule)
     {
@@ -91,14 +89,16 @@ class TextDomain extends ArrayObject
      * same rule could be made up with different expression.
      *
      * @param  TextDomain $textDomain
-     * @return TextDomain
+     * @return $this
      * @throws Exception\RuntimeException
      */
     public function merge(TextDomain $textDomain)
     {
         if ($this->hasPluralRule() && $textDomain->hasPluralRule()) {
             if ($this->getPluralRule()->getNumPlurals() !== $textDomain->getPluralRule()->getNumPlurals()) {
-                throw new Exception\RuntimeException('Plural rule of merging text domain is not compatible with the current one');
+                throw new Exception\RuntimeException(
+                    'Plural rule of merging text domain is not compatible with the current one'
+                );
             }
         } elseif ($textDomain->hasPluralRule()) {
             $this->setPluralRule($textDomain->getPluralRule());

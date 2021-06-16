@@ -18,7 +18,7 @@ class FormUrl extends FormInput
      *
      * @var array
      */
-    protected $validTagAttributes = array(
+    protected $validTagAttributes = [
         'name'           => true,
         'autocomplete'   => true,
         'autofocus'      => true,
@@ -26,6 +26,7 @@ class FormUrl extends FormInput
         'form'           => true,
         'list'           => true,
         'maxlength'      => true,
+        'minlength'      => true,
         'pattern'        => true,
         'placeholder'    => true,
         'readonly'       => true,
@@ -33,7 +34,7 @@ class FormUrl extends FormInput
         'size'           => true,
         'type'           => true,
         'value'          => true,
-    );
+    ];
 
     /**
      * Determine input type to use

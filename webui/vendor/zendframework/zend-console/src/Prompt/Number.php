@@ -81,14 +81,14 @@ class Number extends Line
         do {
             $valid = true;
             $number = parent::show();
-            if ($number === "" && !$this->allowEmpty) {
+            if ($number === "" && ! $this->allowEmpty) {
                 $valid = false;
             } elseif ($number === "") {
                 $number = null;
-            } elseif (!is_numeric($number)) {
+            } elseif (! is_numeric($number)) {
                 $this->getConsole()->writeLine("$number is not a number\n");
                 $valid = false;
-            } elseif (!$this->allowFloat && (round($number) != $number)) {
+            } elseif (! $this->allowFloat && (round($number) != $number)) {
                 $this->getConsole()->writeLine("Please enter a non-floating number, i.e. " . round($number) . "\n");
                 $valid = false;
             } elseif ($this->max !== null && $number > $this->max) {
@@ -98,7 +98,7 @@ class Number extends Line
                 $this->getConsole()->writeLine("Please enter a number not smaller than " . $this->min . "\n");
                 $valid = false;
             }
-        } while (!$valid);
+        } while (! $valid);
 
         /**
          * Cast proper type

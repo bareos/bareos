@@ -26,7 +26,7 @@ class Image extends AbstractWord
     {
         $captcha = $element->getCaptcha();
 
-        if ($captcha === null || !$captcha instanceof CaptchaAdapter) {
+        if ($captcha === null || ! $captcha instanceof CaptchaAdapter) {
             throw new Exception\DomainException(sprintf(
                 '%s requires that the element has a "captcha" attribute of type Zend\Captcha\Image; none found',
                 __METHOD__
@@ -35,12 +35,12 @@ class Image extends AbstractWord
 
         $captcha->generate();
 
-        $imgAttributes = array(
+        $imgAttributes = [
             'width'  => $captcha->getWidth(),
             'height' => $captcha->getHeight(),
             'alt'    => $captcha->getImgAlt(),
             'src'    => $captcha->getImgUrl() . $captcha->getId() . $captcha->getSuffix(),
-        );
+        ];
 
         if ($element->hasAttribute('id')) {
             $imgAttributes['id'] = $element->getAttribute('id') . '-image';

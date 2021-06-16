@@ -11,7 +11,9 @@ namespace Zend\Form\Element;
 
 use DateInterval;
 use DateTime as PhpDateTime;
+use DateTimeInterface;
 use Zend\Form\Element;
+use Zend\Form\Exception\InvalidArgumentException;
 use Zend\InputFilter\InputProviderInterface;
 use Zend\Validator\Date as DateValidator;
 use Zend\Validator\DateStep as DateStepValidator;
@@ -27,9 +29,9 @@ class DateTime extends Element implements InputProviderInterface
      *
      * @var array
      */
-    protected $attributes = array(
+    protected $attributes = [
         'type' => 'datetime',
-    );
+    ];
 
     /**
      * A valid format string accepted by date()
@@ -64,9 +66,9 @@ class DateTime extends Element implements InputProviderInterface
     /**
      * Retrieve the element value
      *
-     * If the value is a DateTime object, and $returnFormattedValue is true
-     * (the default), we return the string
-     * representation using the currently registered format.
+     * If the value is instance of DateTimeInterface, and $returnFormattedValue
+     * is true (the default), we return the string representation using the
+     * currently registered format.
      *
      * If $returnFormattedValue is false, the original value will be
      * returned, regardless of type.
@@ -77,7 +79,7 @@ class DateTime extends Element implements InputProviderInterface
     public function getValue($returnFormattedValue = true)
     {
         $value = parent::getValue();
-        if (!$value instanceof PhpDateTime || !$returnFormattedValue) {
+        if (! $value instanceof DateTimeInterface || ! $returnFormattedValue) {
             return $value;
         }
         $format = $this->getFormat();
@@ -117,22 +119,45 @@ class DateTime extends Element implements InputProviderInterface
             return $this->validators;
         }
 
-        $validators = array();
+        $validators = [];
         $validators[] = $this->getDateValidator();
 
-        if (isset($this->attributes['min'])) {
-            $validators[] = new GreaterThanValidator(array(
-                'min'       => $this->attributes['min'],
+        if (isset($this->attributes['min'])
+            && $this->valueIsValidDateTimeFormat($this->attributes['min'])
+        ) {
+            $validators[] = new GreaterThanValidator([
+                'min' => $this->attributes['min'],
                 'inclusive' => true,
+            ]);
+        } elseif (isset($this->attributes['min'])
+            && ! $this->valueIsValidDateTimeFormat($this->attributes['min'])
+        ) {
+            throw new InvalidArgumentException(sprintf(
+                '%1$s expects "min" to conform to %2$s; received "%3$s"',
+                __METHOD__,
+                $this->format,
+                $this->attributes['min']
             ));
         }
-        if (isset($this->attributes['max'])) {
-            $validators[] = new LessThanValidator(array(
-                'max'       => $this->attributes['max'],
+
+        if (isset($this->attributes['max'])
+            && $this->valueIsValidDateTimeFormat($this->attributes['max'])
+        ) {
+            $validators[] = new LessThanValidator([
+                'max' => $this->attributes['max'],
                 'inclusive' => true,
+            ]);
+        } elseif (isset($this->attributes['max'])
+            && ! $this->valueIsValidDateTimeFormat($this->attributes['max'])
+        ) {
+            throw new InvalidArgumentException(sprintf(
+                '%1$s expects "max" to conform to %2$s; received "%3$s"',
+                __METHOD__,
+                $this->format,
+                $this->attributes['max']
             ));
         }
-        if (!isset($this->attributes['step'])
+        if (! isset($this->attributes['step'])
             || 'any' !== $this->attributes['step']
         ) {
             $validators[] = $this->getStepValidator();
@@ -145,17 +170,17 @@ class DateTime extends Element implements InputProviderInterface
     /**
      * Retrieves a Date Validator configured for a DateTime Input type
      *
-     * @return DateTime
+     * @return DateValidator
      */
     protected function getDateValidator()
     {
-        return new DateValidator(array('format' => $this->format));
+        return new DateValidator(['format' => $this->format]);
     }
 
     /**
      * Retrieves a DateStep Validator configured for a DateTime Input type
      *
-     * @return DateTime
+     * @return DateStepValidator
      */
     protected function getStepValidator()
     {
@@ -166,11 +191,11 @@ class DateTime extends Element implements InputProviderInterface
         $baseValue = (isset($this->attributes['min']))
                    ? $this->attributes['min'] : date($format, 0);
 
-        return new DateStepValidator(array(
+        return new DateStepValidator([
             'format'    => $format,
             'baseValue' => $baseValue,
             'step'      => new DateInterval("PT{$stepValue}M"),
-        ));
+        ]);
     }
 
     /**
@@ -182,13 +207,27 @@ class DateTime extends Element implements InputProviderInterface
      */
     public function getInputSpecification()
     {
-        return array(
+        return [
             'name' => $this->getName(),
             'required' => true,
-            'filters' => array(
-                array('name' => 'Zend\Filter\StringTrim'),
-            ),
+            'filters' => [
+                ['name' => 'Zend\Filter\StringTrim'],
+            ],
             'validators' => $this->getValidators(),
-        );
+        ];
+    }
+
+    /**
+     * Indicate whether or not a value represents a valid DateTime format.
+     *
+     * @param string $value
+     * @return bool
+     */
+    private function valueIsValidDateTimeFormat($value)
+    {
+        return PhpDateTime::createFromFormat(
+            $this->format,
+            $value
+        ) instanceof DateTimeInterface;
     }
 }

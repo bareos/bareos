@@ -14,14 +14,17 @@ use Zend\Validator\DateStep as DateStepValidator;
 
 class Time extends DateTime
 {
+
+    const DATETIME_FORMAT = 'H:i:s';
+
     /**
      * Seed attributes
      *
      * @var array
      */
-    protected $attributes = array(
+    protected $attributes = [
         'type' => 'time',
-    );
+    ];
 
     /**
      * Default date format
@@ -43,10 +46,10 @@ class Time extends DateTime
         $baseValue = (isset($this->attributes['min']))
                      ? $this->attributes['min'] : date($format, 0);
 
-        return new DateStepValidator(array(
+        return new DateStepValidator([
             'format'    => $format,
             'baseValue' => $baseValue,
             'step'      => new DateInterval("PT{$stepValue}S"),
-        ));
+        ]);
     }
 }

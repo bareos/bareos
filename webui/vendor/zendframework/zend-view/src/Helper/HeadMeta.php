@@ -31,6 +31,10 @@ use Zend\View\Exception;
  * @method HeadMeta offsetGetProperty($index, $keyValue, $content, $modifiers = array())
  * @method HeadMeta prependProperty($keyValue, $content, $modifiers = array())
  * @method HeadMeta setProperty($keyValue, $content, $modifiers = array())
+ * @method HeadMeta appendItemprop($keyValue, $content, $modifiers = array())
+ * @method HeadMeta offsetGetItemprop($index, $keyValue, $content, $modifiers = array())
+ * @method HeadMeta prependItemprop($keyValue, $content, $modifiers = array())
+ * @method HeadMeta setItemprop($keyValue, $content, $modifiers = array())
  */
 class HeadMeta extends Placeholder\Container\AbstractStandalone
 {
@@ -39,28 +43,21 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
      *
      * @var array
      */
-    protected $typeKeys = array('name', 'http-equiv', 'charset', 'property', 'itemprop');
+    protected $typeKeys = ['name', 'http-equiv', 'charset', 'property', 'itemprop'];
 
     /**
      * Required attributes for meta tag
      *
      * @var array
      */
-    protected $requiredKeys = array('content');
+    protected $requiredKeys = ['content'];
 
     /**
      * Allowed modifier keys
      *
      * @var array
      */
-    protected $modifierKeys = array('lang', 'scheme');
-
-    /**
-     * Registry key for placeholder
-     *
-     * @var string
-     */
-    protected $regKey = 'Zend_View_Helper_HeadMeta';
+    protected $modifierKeys = ['lang', 'scheme'];
 
     /**
      * Constructor
@@ -89,7 +86,7 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
         $content = null,
         $keyValue = null,
         $keyType = 'name',
-        $modifiers = array(),
+        $modifiers = [],
         $placement = Placeholder\Container\AbstractContainer::APPEND
     ) {
         if ((null !== $content) && (null !== $keyValue)) {
@@ -120,7 +117,11 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
      */
     public function __call($method, $args)
     {
-        if (preg_match('/^(?P<action>set|(pre|ap)pend|offsetSet)(?P<type>Name|HttpEquiv|Property|Itemprop)$/', $method, $matches)) {
+        if (preg_match(
+            '/^(?P<action>set|(pre|ap)pend|offsetSet)(?P<type>Name|HttpEquiv|Property|Itemprop)$/',
+            $method,
+            $matches
+        )) {
             $action = $matches['action'];
             $type   = $this->normalizeType($matches['type']);
             $argc   = count($args);
@@ -140,7 +141,7 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
             }
 
             if (3 > $argc) {
-                $args[] = array();
+                $args[] = [];
             }
 
             $item  = $this->createData($type, $args[0], $args[1], $args[2]);
@@ -169,12 +170,21 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
             ? $this->getWhitespace($indent)
             : $this->getIndent();
 
-        $items = array();
+        $items = [];
         $this->getContainer()->ksort();
+
+        $isHtml5 = $this->view->plugin('doctype')->isHtml5();
 
         try {
             foreach ($this as $item) {
-                $items[] = $this->itemToString($item);
+                $content = $this->itemToString($item);
+
+                if ($isHtml5 && $item->type == 'charset') {
+                    array_unshift($items, $content);
+                    continue;
+                }
+
+                $items[] = $content;
             }
         } catch (Exception\InvalidArgumentException $e) {
             trigger_error($e->getMessage(), E_USER_WARNING);
@@ -213,7 +223,7 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
      */
     public function itemToString(stdClass $item)
     {
-        if (!in_array($item->type, $this->typeKeys)) {
+        if (! in_array($item->type, $this->typeKeys)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Invalid type "%s" provided for meta',
                 $item->type
@@ -230,10 +240,10 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
                     'Invalid modifier "scheme" provided; not supported by HTML5'
                 );
             }
-            if (!in_array($key, $this->modifierKeys)) {
+            if (! in_array($key, $this->modifierKeys)) {
                 continue;
             }
-            $modifiersString .= $key . '="' . $this->escape($value) . '" ';
+            $modifiersString .= sprintf('%s="%s"', $key, $this->autoEscape ? $this->escapeAttribute($value) : $value);
         }
 
         $modifiersString = rtrim($modifiersString);
@@ -261,13 +271,13 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
         $meta = sprintf(
             $tpl,
             $type,
-            $this->escape($item->$type),
-            $this->escape($item->content),
+            $this->autoEscape ? $this->escapeAttribute($item->$type) : $item->$type,
+            $this->autoEscape ? $this->escapeAttribute($item->content) : $item->content,
             $modifiersString
         );
 
         if (isset($item->modifiers['conditional'])
-            && !empty($item->modifiers['conditional'])
+            && ! empty($item->modifiers['conditional'])
             && is_string($item->modifiers['conditional'])
         ) {
             // inner wrap with comment end and start if !IE
@@ -309,34 +319,39 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
     /**
      * Determine if item is valid
      *
-     * @param  mixed $item
+     * @param  stdClass $item
      * @return bool
      */
     protected function isValid($item)
     {
-        if ((!$item instanceof stdClass)
-            || !isset($item->type)
-            || !isset($item->modifiers)
+        if ((! $item instanceof stdClass)
+            || ! isset($item->type)
+            || ! isset($item->modifiers)
         ) {
             return false;
         }
 
-        if (!isset($item->content)
-            && (! $this->view->plugin('doctype')->isHtml5()
-            || (! $this->view->plugin('doctype')->isHtml5() && $item->type !== 'charset'))
+        $doctype = $this->view->plugin('doctype');
+        if ($item->type === 'charset' && $doctype->isXhtml()) {
+            return false;
+        }
+
+        if (! isset($item->content)
+            && (! $doctype->isHtml5()
+            || (! $doctype->isHtml5() && $item->type !== 'charset'))
         ) {
             return false;
         }
 
         // <meta itemprop= ... /> is only supported with doctype html
-        if (! $this->view->plugin('doctype')->isHtml5()
+        if (! $doctype->isHtml5()
             && $item->type === 'itemprop'
         ) {
             return false;
         }
 
         // <meta property= ... /> is only supported with doctype RDFa
-        if (!$this->view->plugin('doctype')->isRdfa()
+        if (! $doctype->isRdfa()
             && $item->type === 'property'
         ) {
             return false;
@@ -348,15 +363,15 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
     /**
      * Append
      *
-     * @param  string $value
-     * @return void
+     * @param  stdClass $value
+     * @return View\Helper\Placeholder\Container\AbstractContainer
      * @throws Exception\InvalidArgumentException
      */
     public function append($value)
     {
-        if (!$this->isValid($value)) {
+        if (! $this->isValid($value)) {
             throw new Exception\InvalidArgumentException(
-                'Invalid value passed to append; please use appendMeta()'
+                'Invalid value passed to append'
             );
         }
 
@@ -369,11 +384,10 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
      * @param  string|int $index
      * @param  string     $value
      * @throws Exception\InvalidArgumentException
-     * @return void
      */
     public function offsetSet($index, $value)
     {
-        if (!$this->isValid($value)) {
+        if (! $this->isValid($value)) {
             throw  new Exception\InvalidArgumentException(
                 'Invalid value passed to offsetSet; please use offsetSetName() or offsetSetHttpEquiv()'
             );
@@ -387,11 +401,10 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
      *
      * @param  string|int $index
      * @throws Exception\InvalidArgumentException
-     * @return void
      */
     public function offsetUnset($index)
     {
-        if (!in_array($index, $this->getContainer()->getKeys())) {
+        if (! in_array($index, $this->getContainer()->getKeys())) {
             throw new Exception\InvalidArgumentException('Invalid index passed to offsetUnset()');
         }
 
@@ -401,15 +414,15 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
     /**
      * Prepend
      *
-     * @param  string $value
+     * @param  stdClass $value
      * @throws Exception\InvalidArgumentException
-     * @return void
+     * @return View\Helper\Placeholder\Container\AbstractContainer
      */
     public function prepend($value)
     {
-        if (!$this->isValid($value)) {
+        if (! $this->isValid($value)) {
             throw new Exception\InvalidArgumentException(
-                'Invalid value passed to prepend; please use prependMeta()'
+                'Invalid value passed to prepend'
             );
         }
 
@@ -419,14 +432,14 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
     /**
      * Set
      *
-     * @param  string $value
+     * @param  stdClass $value
      * @throws Exception\InvalidArgumentException
-     * @return void
+     * @return View\Helper\Placeholder\Container\AbstractContainer
      */
     public function set($value)
     {
-        if (!$this->isValid($value)) {
-            throw new Exception\InvalidArgumentException('Invalid value passed to set; please use setMeta()');
+        if (! $this->isValid($value)) {
+            throw new Exception\InvalidArgumentException('Invalid value passed to set');
         }
 
         $container = $this->getContainer();
@@ -445,6 +458,7 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
      * Not valid in a non-HTML5 doctype
      *
      * @param  string $charset
+     * @param  Exception\InvalidArgumentException
      * @return HeadMeta Provides a fluent interface
      */
     public function setCharset($charset)
@@ -453,7 +467,14 @@ class HeadMeta extends Placeholder\Container\AbstractStandalone
         $item->type = 'charset';
         $item->charset = $charset;
         $item->content = null;
-        $item->modifiers = array();
+        $item->modifiers = [];
+
+        if (! $this->isValid($item)) {
+            throw new Exception\InvalidArgumentException(
+                'XHTML* doctype has no attribute charset; please use appendHttpEquiv()'
+            );
+        }
+
         $this->set($item);
 
         return $this;

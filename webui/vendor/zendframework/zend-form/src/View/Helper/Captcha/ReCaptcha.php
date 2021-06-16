@@ -26,7 +26,7 @@ class ReCaptcha extends FormInput
      */
     public function __invoke(ElementInterface $element = null)
     {
-        if (!$element) {
+        if (! $element) {
             return $this;
         }
 
@@ -45,58 +45,56 @@ class ReCaptcha extends FormInput
         $attributes = $element->getAttributes();
         $captcha = $element->getCaptcha();
 
-        if ($captcha === null || !$captcha instanceof CaptchaAdapter) {
+        if ($captcha === null || ! $captcha instanceof CaptchaAdapter) {
             throw new Exception\DomainException(sprintf(
-                '%s requires that the element has a "captcha" attribute implementing Zend\Captcha\AdapterInterface; none found',
+                '%s requires that the element has a "captcha" attribute implementing Zend\Captcha\AdapterInterface; '
+                . 'none found',
                 __METHOD__
             ));
         }
 
-        $name          = $element->getName();
-        $id            = isset($attributes['id']) ? $attributes['id'] : $name;
-        $challengeName = empty($name) ? 'recaptcha_challenge_field' : $name . '[recaptcha_challenge_field]';
-        $responseName  = empty($name) ? 'recaptcha_response_field'  : $name . '[recaptcha_response_field]';
-        $challengeId   = $id . '-challenge';
-        $responseId    = $id . '-response';
+        $name = $element->getName();
 
         $markup = $captcha->getService()->getHtml($name);
-        $hidden = $this->renderHiddenInput($challengeName, $challengeId, $responseName, $responseId);
-        $js     = $this->renderJsEvents($challengeId, $responseId);
+        $hidden = $this->renderHiddenInput($name);
 
-        return $hidden . $markup . $js;
+        return $hidden . $markup;
     }
 
     /**
-     * Render hidden input elements for the challenge and response
+     * Render hidden input element if the element's name is not 'g-recaptcha-response'
+     * so that required validation works
      *
-     * @param  string $challengeName
-     * @param  string $challengeId
-     * @param  string $responseName
-     * @param  string $responseId
+     * Note that only the first parameter is needed, the other three parameters
+     * are deprecated.
+     *
+     * @param  string $name
+     * @param  string $challengeId @deprecated
+     * @param  string $responseName @deprecated
+     * @param  string $responseId @deprecated
      * @return string
      */
-    protected function renderHiddenInput($challengeName, $challengeId, $responseName, $responseId)
+    protected function renderHiddenInput($name, $challengeId = '', $responseName = '', $responseId = '')
     {
+        if ($name === 'g-recaptcha-response') {
+            return '';
+        }
+
         $pattern        = '<input type="hidden" %s%s';
         $closingBracket = $this->getInlineClosingBracket();
 
-        $attributes = $this->createAttributesString(array(
-            'name' => $challengeName,
-            'id'   => $challengeId,
-        ));
+        $attributes = $this->createAttributesString([
+            'name'  => $name,
+            'value' => 'g-recaptcha-response',
+        ]);
         $challenge = sprintf($pattern, $attributes, $closingBracket);
-
-        $attributes = $this->createAttributesString(array(
-            'name' => $responseName,
-            'id'   => $responseId,
-        ));
-        $response = sprintf($pattern, $attributes, $closingBracket);
-
-        return $challenge . $response;
+        return $challenge;
     }
 
     /**
-     * Create the JS events used to bind the challenge and response values to the submitted form.
+     * No longer used with v2 of Recaptcha API
+     *
+     * @deprecated
      *
      * @param  string $challengeId
      * @param  string $responseId
@@ -104,39 +102,6 @@ class ReCaptcha extends FormInput
      */
     protected function renderJsEvents($challengeId, $responseId)
     {
-        $elseif = 'else if'; // php-cs-fixer bug
-        $js =<<<EOJ
-<script type="text/javascript" language="JavaScript">
-function windowOnLoad(fn)
-{
-    var old = window.onload;
-    window.onload = function () {
-        if (old) {
-            old();
-        }
-        fn();
-    };
-}
-function zendBindEvent(el, eventName, eventHandler)
-{
-    if (el.addEventListener) {
-        el.addEventListener(eventName, eventHandler, false);
-    } $elseif (el.attachEvent) {
-        el.attachEvent('on'+eventName, eventHandler);
-    }
-}
-windowOnLoad(function () {
-    zendBindEvent(
-        document.getElementById("$challengeId").form,
-        'submit',
-        function (e) {
-            document.getElementById("$challengeId").value = document.getElementById("recaptcha_challenge_field").value;
-            document.getElementById("$responseId").value = document.getElementById("recaptcha_response_field").value;
-        }
-    );
-});
-</script>
-EOJ;
-        return $js;
+        return '';
     }
 }

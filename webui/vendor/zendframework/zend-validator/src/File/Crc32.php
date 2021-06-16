@@ -26,21 +26,21 @@ class Crc32 extends Hash
     /**
      * @var array Error message templates
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::DOES_NOT_MATCH => "File does not match the given crc32 hashes",
         self::NOT_DETECTED   => "A crc32 hash could not be evaluated for the given file",
         self::NOT_FOUND      => "File is not readable or does not exist",
-    );
+    ];
 
     /**
      * Options for this validator
      *
      * @var string
      */
-    protected $options = array(
+    protected $options = [
         'algorithm' => 'crc32',
         'hash'      => null,
-    );
+    ];
 
     /**
      * Returns all set crc32 hashes
@@ -56,7 +56,7 @@ class Crc32 extends Hash
      * Sets the crc32 hash for one or multiple files
      *
      * @param  string|array $options
-     * @return Crc32 Provides a fluent interface
+     * @return self Provides a fluent interface
      */
     public function setCrc32($options)
     {
@@ -68,7 +68,7 @@ class Crc32 extends Hash
      * Adds the crc32 hash for one or multiple files
      *
      * @param  string|array $options
-     * @return Crc32 Provides a fluent interface
+     * @return self Provides a fluent interface
      */
     public function addCrc32($options)
     {
@@ -90,7 +90,7 @@ class Crc32 extends Hash
             $filename = $file['name'];
             $file     = $file['tmp_name'];
         } elseif (is_array($value)) {
-            if (!isset($value['tmp_name']) || !isset($value['name'])) {
+            if (! isset($value['tmp_name']) || ! isset($value['name'])) {
                 throw new Exception\InvalidArgumentException(
                     'Value array must be in $_FILES format'
                 );
@@ -104,12 +104,12 @@ class Crc32 extends Hash
         $this->setValue($filename);
 
         // Is file readable ?
-        if (empty($file) || false === stream_resolve_include_path($file)) {
+        if (empty($file) || false === is_readable($file)) {
             $this->error(self::NOT_FOUND);
             return false;
         }
 
-        $hashes = array_unique(array_keys($this->getHash()));
+        $hashes   = array_unique(array_keys($this->getHash()));
         $filehash = hash_file('crc32', $file);
         if ($filehash === false) {
             $this->error(self::NOT_DETECTED);

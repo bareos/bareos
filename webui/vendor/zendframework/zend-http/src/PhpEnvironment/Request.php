@@ -1,10 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-http for the canonical source repository
+ * @copyright Copyright (c) 2005-2017 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   https://github.com/zendframework/zend-http/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\Http\PhpEnvironment;
@@ -47,14 +45,14 @@ class Request extends HttpRequest
      *
      * @var ParametersInterface
      */
-    protected $serverParams = null;
+    protected $serverParams;
 
     /**
      * PHP environment params ($_ENV)
      *
      * @var ParametersInterface
      */
-    protected $envParams = null;
+    protected $envParams;
 
     /**
      * Construct
@@ -207,7 +205,7 @@ class Request extends HttpRequest
         // This seems to be the only way to get the Authorization header on Apache
         if (function_exists('apache_request_headers')) {
             $apacheRequestHeaders = apache_request_headers();
-            if (!isset($this->serverParams['HTTP_AUTHORIZATION'])) {
+            if (! isset($this->serverParams['HTTP_AUTHORIZATION'])) {
                 if (isset($apacheRequestHeaders['Authorization'])) {
                     $this->serverParams->set('HTTP_AUTHORIZATION', $apacheRequestHeaders['Authorization']);
                 } elseif (isset($apacheRequestHeaders['authorization'])) {
@@ -217,10 +215,10 @@ class Request extends HttpRequest
         }
 
         // set headers
-        $headers = array();
+        $headers = [];
 
         foreach ($server as $key => $value) {
-            if ($value || (!is_array($value) && strlen($value))) {
+            if ($value || (! is_array($value) && strlen($value))) {
                 if (strpos($key, 'HTTP_') === 0) {
                     if (strpos($key, 'HTTP_COOKIE') === 0) {
                         // Cookies are handled using the $_COOKIE superglobal
@@ -253,8 +251,8 @@ class Request extends HttpRequest
         $uri = new HttpUri();
 
         // URI scheme
-        if ((!empty($this->serverParams['HTTPS']) && strtolower($this->serverParams['HTTPS']) !== 'off')
-            || (!empty($this->serverParams['HTTP_X_FORWARDED_PROTO'])
+        if ((! empty($this->serverParams['HTTPS']) && strtolower($this->serverParams['HTTPS']) !== 'off')
+            || (! empty($this->serverParams['HTTP_X_FORWARDED_PROTO'])
                  && $this->serverParams['HTTP_X_FORWARDED_PROTO'] == 'https')
         ) {
             $scheme = 'https';
@@ -278,19 +276,19 @@ class Request extends HttpRequest
             }
 
             // set up a validator that check if the hostname is legal (not spoofed)
-            $hostnameValidator = new HostnameValidator(array(
+            $hostnameValidator = new HostnameValidator([
                 'allow'       => HostnameValidator::ALLOW_ALL,
                 'useIdnCheck' => false,
                 'useTldCheck' => false,
-            ));
+            ]);
             // If invalid. Reset the host & port
-            if (!$hostnameValidator->isValid($host)) {
+            if (! $hostnameValidator->isValid($host)) {
                 $host = null;
                 $port = null;
             }
         }
 
-        if (!$host && isset($this->serverParams['SERVER_NAME'])) {
+        if (! $host && isset($this->serverParams['SERVER_NAME'])) {
             $host = $this->serverParams['SERVER_NAME'];
             if (isset($this->serverParams['SERVER_PORT'])) {
                 $port = (int) $this->serverParams['SERVER_PORT'];
@@ -299,7 +297,7 @@ class Request extends HttpRequest
             // Reported at least for Safari on Windows
             if (isset($this->serverParams['SERVER_ADDR']) && preg_match('/^\[[0-9a-fA-F\:]+\]$/', $host)) {
                 $host = '[' . $this->serverParams['SERVER_ADDR'] . ']';
-                if ($port . ']' == substr($host, strrpos($host, ':')+1)) {
+                if ($port . ']' == substr($host, strrpos($host, ':') + 1)) {
                     // The last digit of the IPv6-Address has been taken as port
                     // Unset the port so the default port can be used
                     $port = null;
@@ -389,11 +387,11 @@ class Request extends HttpRequest
      */
     protected function mapPhpFiles()
     {
-        $files = array();
+        $files = [];
         foreach ($_FILES as $fileName => $fileParams) {
-            $files[$fileName] = array();
+            $files[$fileName] = [];
             foreach ($fileParams as $param => $data) {
-                if (!is_array($data)) {
+                if (! is_array($data)) {
                     $files[$fileName][$param] = $data;
                 } else {
                     foreach ($data as $i => $v) {
@@ -414,7 +412,7 @@ class Request extends HttpRequest
      */
     protected function mapPhpFileParam(&$array, $paramName, $index, $value)
     {
-        if (!is_array($value)) {
+        if (! is_array($value)) {
             $array[$index][$paramName] = $value;
         } else {
             foreach ($value as $i => $v) {
@@ -436,18 +434,6 @@ class Request extends HttpRequest
         $requestUri = null;
         $server     = $this->getServer();
 
-        // Check this first so IIS will catch.
-        $httpXRewriteUrl = $server->get('HTTP_X_REWRITE_URL');
-        if ($httpXRewriteUrl !== null) {
-            $requestUri = $httpXRewriteUrl;
-        }
-
-        // Check for IIS 7.0 or later with ISAPI_Rewrite
-        $httpXOriginalUrl = $server->get('HTTP_X_ORIGINAL_URL');
-        if ($httpXOriginalUrl !== null) {
-            $requestUri = $httpXOriginalUrl;
-        }
-
         // IIS7 with URL Rewrite: make sure we get the unencoded url
         // (double slash problem).
         $iisUrlRewritten = $server->get('IIS_WasUrlRewritten');
@@ -456,12 +442,10 @@ class Request extends HttpRequest
             return $unencodedUrl;
         }
 
+        $requestUri = $server->get('REQUEST_URI');
+
         // HTTP proxy requests setup request URI with scheme and host [and port]
         // + the URL path, only use URL path.
-        if (!$httpXRewriteUrl) {
-            $requestUri = $server->get('REQUEST_URI');
-        }
-
         if ($requestUri !== null) {
             return preg_replace('#^[^/:]+://[^/]+#', '', $requestUri);
         }
@@ -485,7 +469,6 @@ class Request extends HttpRequest
      * Uses a variety of criteria in order to detect the base URL of the request
      * (i.e., anything additional to the document root).
      *
-     *
      * @return string
      */
     protected function detectBaseUrl()
@@ -506,6 +489,11 @@ class Request extends HttpRequest
             // Backtrack up the SCRIPT_FILENAME to find the portion
             // matching PHP_SELF.
 
+            $argv = $this->getServer()->get('argv', []);
+            if (isset($argv[0]) && strpos($filename, $argv[0]) === 0) {
+                $filename = substr($filename, strlen($argv[0]));
+            }
+
             $baseUrl  = '/';
             $basename = basename($filename);
             if ($basename) {
@@ -513,6 +501,11 @@ class Request extends HttpRequest
                 $basePos  = strpos($path, $basename) ?: 0;
                 $baseUrl .= substr($path, 0, $basePos) . $basename;
             }
+        }
+
+        // If the baseUrl is empty, then simply return it.
+        if (empty($baseUrl)) {
+            return '';
         }
 
         // Does the base URL have anything in common with the request URI?
@@ -563,13 +556,14 @@ class Request extends HttpRequest
      */
     protected function detectBasePath()
     {
-        $filename = basename($this->getServer()->get('SCRIPT_FILENAME', ''));
         $baseUrl  = $this->getBaseUrl();
 
         // Empty base url detected
         if ($baseUrl === '') {
             return '';
         }
+
+        $filename = basename($this->getServer()->get('SCRIPT_FILENAME', ''));
 
         // basename() matches the script filename; return the directory
         if (basename($baseUrl) === $filename) {

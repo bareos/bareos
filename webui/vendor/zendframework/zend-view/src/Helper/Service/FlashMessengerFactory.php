@@ -9,6 +9,7 @@
 
 namespace Zend\View\Helper\Service;
 
+use Interop\Container\ContainerInterface;
 use Zend\ServiceManager\FactoryInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\View\Helper\FlashMessenger;
@@ -18,17 +19,24 @@ class FlashMessengerFactory implements FactoryInterface
     /**
      * Create service
      *
-     * @param  ServiceLocatorInterface $serviceLocator
+     * @param ContainerInterface $container
+     * @param string $name
+     * @param null|array $options
      * @return FlashMessenger
      */
-    public function createService(ServiceLocatorInterface $serviceLocator)
+    public function __invoke(ContainerInterface $container, $name, array $options = null)
     {
-        $serviceLocator = $serviceLocator->getServiceLocator();
-        $helper = new FlashMessenger();
-        $controllerPluginManager = $serviceLocator->get('ControllerPluginManager');
-        $flashMessenger = $controllerPluginManager->get('flashmessenger');
+        // test if we are using Zend\ServiceManager v2 or v3
+        if (! method_exists($container, 'configure')) {
+            $container = $container->getServiceLocator();
+        }
+        $helper                  = new FlashMessenger();
+        $controllerPluginManager = $container->get('ControllerPluginManager');
+        $flashMessenger          = $controllerPluginManager->get('flashmessenger');
+
         $helper->setPluginFlashMessenger($flashMessenger);
-        $config = $serviceLocator->get('Config');
+
+        $config = $container->get('config');
         if (isset($config['view_helper_config']['flashmessenger'])) {
             $configHelper = $config['view_helper_config']['flashmessenger'];
             if (isset($configHelper['message_open_format'])) {
@@ -43,5 +51,18 @@ class FlashMessengerFactory implements FactoryInterface
         }
 
         return $helper;
+    }
+
+    /**
+     * Create service (v2)
+     *
+     * @param ServiceLocatorInterface $container
+     * @param string $normalizedName
+     * @param string $requestedName
+     * @return FlashMessenger
+     */
+    public function createService(ServiceLocatorInterface $container, $normalizedName = null, $requestedName = null)
+    {
+        return $this($container, $requestedName);
     }
 }

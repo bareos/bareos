@@ -26,21 +26,21 @@ class Md5 extends Hash
     /**
      * @var array Error message templates
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::DOES_NOT_MATCH => "File does not match the given md5 hashes",
         self::NOT_DETECTED   => "An md5 hash could not be evaluated for the given file",
         self::NOT_FOUND      => "File is not readable or does not exist",
-    );
+    ];
 
     /**
      * Options for this validator
      *
      * @var string
      */
-    protected $options = array(
+    protected $options = [
         'algorithm' => 'md5',
         'hash'      => null,
-    );
+    ];
 
     /**
      * Returns all set md5 hashes
@@ -90,7 +90,7 @@ class Md5 extends Hash
             $filename = $file['name'];
             $file     = $file['tmp_name'];
         } elseif (is_array($value)) {
-            if (!isset($value['tmp_name']) || !isset($value['name'])) {
+            if (! isset($value['tmp_name']) || ! isset($value['name'])) {
                 throw new Exception\InvalidArgumentException(
                     'Value array must be in $_FILES format'
                 );
@@ -104,12 +104,12 @@ class Md5 extends Hash
         $this->setValue($filename);
 
         // Is file readable ?
-        if (empty($file) || false === stream_resolve_include_path($file)) {
+        if (empty($file) || false === is_readable($file)) {
             $this->error(self::NOT_FOUND);
             return false;
         }
 
-        $hashes = array_unique(array_keys($this->getHash()));
+        $hashes   = array_unique(array_keys($this->getHash()));
         $filehash = hash_file('md5', $file);
         if ($filehash === false) {
             $this->error(self::NOT_DETECTED);

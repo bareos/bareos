@@ -36,11 +36,11 @@ class SessionStorage extends ArrayStorage
             $input = $_SESSION;
             if (is_object($input) && $_SESSION instanceof ArrayObject) {
                 $resetSession = false;
-            } elseif (is_object($input) && !$_SESSION instanceof ArrayObject) {
+            } elseif (is_object($input) && ! $_SESSION instanceof ArrayObject) {
                 $input = (array) $input;
             }
         } elseif (null === $input) {
-            $input = array();
+            $input = [];
         }
 
         parent::__construct($input, $flags, $iteratorClass);

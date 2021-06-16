@@ -35,7 +35,7 @@ class Registry
      *
      * @var array
      */
-    protected $items = array();
+    protected $items = [];
 
     /**
      * Retrieve or create registry instance
@@ -118,7 +118,7 @@ class Registry
      * @param  array  $value
      * @return Container\AbstractContainer
      */
-    public function createContainer($key, array $value = array())
+    public function createContainer($key, array $value = [])
     {
         $key = (string) $key;
 
@@ -154,7 +154,7 @@ class Registry
      */
     public function setContainerClass($name)
     {
-        if (!class_exists($name)) {
+        if (! class_exists($name)) {
             throw new Exception\DomainException(
                 sprintf(
                     '%s expects a valid registry class name; received "%s", which did not resolve',
@@ -164,7 +164,7 @@ class Registry
             );
         }
 
-        if (!in_array('Zend\View\Helper\Placeholder\Container\AbstractContainer', class_parents($name))) {
+        if (! in_array('Zend\View\Helper\Placeholder\Container\AbstractContainer', class_parents($name))) {
             throw new Exception\InvalidArgumentException('Invalid Container class specified');
         }
 

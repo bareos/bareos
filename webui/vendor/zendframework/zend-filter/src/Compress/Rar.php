@@ -27,12 +27,12 @@ class Rar extends AbstractCompressionAlgorithm
      *
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'callback' => null,
         'archive'  => null,
         'password' => null,
         'target'   => '.',
-    );
+    ];
 
     /**
      * Class constructor
@@ -42,7 +42,7 @@ class Rar extends AbstractCompressionAlgorithm
      */
     public function __construct($options = null)
     {
-        if (!extension_loaded('rar')) {
+        if (! extension_loaded('rar')) {
             throw new Exception\ExtensionNotLoadedException('This filter needs the rar extension');
         }
         parent::__construct($options);
@@ -67,7 +67,7 @@ class Rar extends AbstractCompressionAlgorithm
      */
     public function setCallback($callback)
     {
-        if (!is_callable($callback)) {
+        if (! is_callable($callback)) {
             throw new Exception\InvalidArgumentException('Invalid callback provided');
         }
 
@@ -93,7 +93,7 @@ class Rar extends AbstractCompressionAlgorithm
      */
     public function setArchive($archive)
     {
-        $archive = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $archive);
+        $archive = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $archive);
         $this->options['archive'] = (string) $archive;
 
         return $this;
@@ -140,11 +140,11 @@ class Rar extends AbstractCompressionAlgorithm
      */
     public function setTarget($target)
     {
-        if (!file_exists(dirname($target))) {
+        if (! file_exists(dirname($target))) {
             throw new Exception\InvalidArgumentException("The directory '$target' does not exist");
         }
 
-        $target = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, (string) $target);
+        $target = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, (string) $target);
         $this->options['target'] = $target;
         return $this;
     }
@@ -166,7 +166,7 @@ class Rar extends AbstractCompressionAlgorithm
         $options = $this->getOptions();
         unset($options['callback']);
 
-        $result = call_user_func($callback, $options, $content);
+        $result = $callback($options, $content);
         if ($result !== true) {
             throw new Exception\RuntimeException('Error compressing the RAR Archive');
         }
@@ -184,11 +184,11 @@ class Rar extends AbstractCompressionAlgorithm
      */
     public function decompress($content)
     {
-        if (!file_exists($content)) {
+        if (! file_exists($content)) {
             throw new Exception\RuntimeException('RAR Archive not found');
         }
 
-        $archive  = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, realpath($content));
+        $archive  = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, realpath($content));
         $password = $this->getPassword();
         if ($password !== null) {
             $archive = rar_open($archive, $password);
@@ -196,17 +196,17 @@ class Rar extends AbstractCompressionAlgorithm
             $archive = rar_open($archive);
         }
 
-        if (!$archive) {
-            throw new Exception\RuntimeException("Error opening the RAR Archive");
+        if (! $archive) {
+            throw new Exception\RuntimeException('Error opening the RAR Archive');
         }
 
         $target = $this->getTarget();
-        if (!is_dir($target)) {
+        if (! is_dir($target)) {
             $target = dirname($target);
         }
 
         $filelist = rar_list($archive);
-        if (!$filelist) {
+        if (! $filelist) {
             throw new Exception\RuntimeException("Error reading the RAR Archive");
         }
 

@@ -9,6 +9,7 @@
 
 namespace Zend\Mvc\Service;
 
+use Interop\Container\ContainerInterface;
 use Zend\Console\Console;
 use Zend\ServiceManager\Exception\ServiceNotCreatedException;
 use Zend\ServiceManager\FactoryInterface;
@@ -20,17 +21,32 @@ class ConsoleViewManagerFactory implements FactoryInterface
     /**
      * Create and return the view manager for the console environment
      *
-     * @param  ServiceLocatorInterface $serviceLocator
+     * @param  ContainerInterface $container
+     * @param  string $name
+     * @param  null|array $options
      * @return ConsoleViewManager
      */
-    public function createService(ServiceLocatorInterface $serviceLocator)
+    public function __invoke(ContainerInterface $container, $name, array $options = null)
     {
-        if (!Console::isConsole()) {
+        if (! Console::isConsole()) {
             throw new ServiceNotCreatedException(
                 'ConsoleViewManager requires a Console environment; console environment not detected'
             );
         }
 
         return new ConsoleViewManager();
+    }
+
+    /**
+     * Create and return ConsoleViewManager instance
+     *
+     * For use with zend-servicemanager v2; proxies to __invoke().
+     *
+     * @param ServiceLocatorInterface $container
+     * @return ConsoleViewManager
+     */
+    public function createService(ServiceLocatorInterface $container)
+    {
+        return $this($container, ConsoleViewManager::class);
     }
 }

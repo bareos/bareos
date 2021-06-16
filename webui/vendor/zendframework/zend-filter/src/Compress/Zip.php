@@ -27,10 +27,10 @@ class Zip extends AbstractCompressionAlgorithm
      *
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'archive' => null,
         'target'  => null,
-    );
+    ];
 
     /**
      * Class constructor
@@ -40,7 +40,7 @@ class Zip extends AbstractCompressionAlgorithm
      */
     public function __construct($options = null)
     {
-        if (!extension_loaded('zip')) {
+        if (! extension_loaded('zip')) {
             throw new Exception\ExtensionNotLoadedException('This filter needs the zip extension');
         }
         parent::__construct($options);
@@ -64,7 +64,7 @@ class Zip extends AbstractCompressionAlgorithm
      */
     public function setArchive($archive)
     {
-        $archive = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, (string) $archive);
+        $archive = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, (string) $archive);
         $this->options['archive'] = $archive;
 
         return $this;
@@ -89,11 +89,11 @@ class Zip extends AbstractCompressionAlgorithm
      */
     public function setTarget($target)
     {
-        if (!file_exists(dirname($target))) {
+        if (! file_exists(dirname($target))) {
             throw new Exception\InvalidArgumentException("The directory '$target' does not exist");
         }
 
-        $target = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, (string) $target);
+        $target = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, (string) $target);
         $this->options['target'] = $target;
         return $this;
     }
@@ -115,24 +115,24 @@ class Zip extends AbstractCompressionAlgorithm
         }
 
         if (file_exists($content)) {
-            $content  = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, realpath($content));
+            $content  = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, realpath($content));
             $basename = substr($content, strrpos($content, DIRECTORY_SEPARATOR) + 1);
             if (is_dir($content)) {
                 $index    = strrpos($content, DIRECTORY_SEPARATOR) + 1;
                 $content .= DIRECTORY_SEPARATOR;
-                $stack    = array($content);
-                while (!empty($stack)) {
+                $stack    = [$content];
+                while (! empty($stack)) {
                     $current = array_pop($stack);
-                    $files   = array();
+                    $files   = [];
 
                     $dir = dir($current);
                     while (false !== ($node = $dir->read())) {
-                        if (($node == '.') || ($node == '..')) {
+                        if ($node === '.' || $node === '..') {
                             continue;
                         }
 
                         if (is_dir($current . $node)) {
-                            array_push($stack, $current . $node . DIRECTORY_SEPARATOR);
+                            $stack[] = $current . $node . DIRECTORY_SEPARATOR;
                         }
 
                         if (is_file($current . $node)) {
@@ -158,10 +158,10 @@ class Zip extends AbstractCompressionAlgorithm
             }
         } else {
             $file = $this->getTarget();
-            if (!is_dir($file)) {
+            if (! is_dir($file)) {
                 $file = basename($file);
             } else {
-                $file = "zip.tmp";
+                $file = 'zip.tmp';
             }
 
             $res = $zip->addFromString($file, $content);
@@ -184,9 +184,9 @@ class Zip extends AbstractCompressionAlgorithm
      */
     public function decompress($content)
     {
-        $archive = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, realpath($content));
+        $archive = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, realpath($content));
 
-        if (empty($archive) || !file_exists($archive)) {
+        if (empty($archive) || ! file_exists($archive)) {
             throw new Exception\RuntimeException('ZIP Archive not found');
         }
 
@@ -194,15 +194,15 @@ class Zip extends AbstractCompressionAlgorithm
         $res     = $zip->open($archive);
 
         $target = $this->getTarget();
-        if (!empty($target) && !is_dir($target)) {
+        if (! empty($target) && ! is_dir($target)) {
             $target = dirname($target);
         }
 
-        if (!empty($target)) {
+        if (! empty($target)) {
             $target = rtrim($target, '/\\') . DIRECTORY_SEPARATOR;
         }
 
-        if (empty($target) || !is_dir($target)) {
+        if (empty($target) || ! is_dir($target)) {
             throw new Exception\RuntimeException('No target for ZIP decompression set');
         }
 

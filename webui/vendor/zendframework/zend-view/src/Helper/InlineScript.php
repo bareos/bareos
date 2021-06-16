@@ -16,13 +16,6 @@ namespace Zend\View\Helper;
 class InlineScript extends HeadScript
 {
     /**
-     * Registry key for placeholder
-     *
-     * @var string
-     */
-    protected $regKey = 'Zend_View_Helper_InlineScript';
-
-    /**
      * Return InlineScript object
      *
      * Returns InlineScript helper object; optionally, allows specifying a
@@ -39,7 +32,7 @@ class InlineScript extends HeadScript
         $mode = self::FILE,
         $spec = null,
         $placement = 'APPEND',
-        array $attrs = array(),
+        array $attrs = [],
         $type = 'text/javascript'
     ) {
         return parent::__invoke($mode, $spec, $placement, $attrs, $type);

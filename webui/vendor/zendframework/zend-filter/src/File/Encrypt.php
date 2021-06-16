@@ -58,14 +58,14 @@ class Encrypt extends Filter\Encrypt
      */
     public function filter($value)
     {
-        if (!is_scalar($value) && !is_array($value)) {
+        if (! is_scalar($value) && ! is_array($value)) {
             return $value;
         }
 
         // An uploaded file? Retrieve the 'tmp_name'
         $isFileUpload = false;
         if (is_array($value)) {
-            if (!isset($value['tmp_name'])) {
+            if (! isset($value['tmp_name'])) {
                 return $value;
             }
 
@@ -74,27 +74,27 @@ class Encrypt extends Filter\Encrypt
             $value      = $value['tmp_name'];
         }
 
-        if (!file_exists($value)) {
+        if (! file_exists($value)) {
             throw new Exception\InvalidArgumentException("File '$value' not found");
         }
 
-        if (!isset($this->filename)) {
+        if (! isset($this->filename)) {
             $this->filename = $value;
         }
 
-        if (file_exists($this->filename) and !is_writable($this->filename)) {
+        if (file_exists($this->filename) && ! is_writable($this->filename)) {
             throw new Exception\RuntimeException("File '{$this->filename}' is not writable");
         }
 
         $content = file_get_contents($value);
-        if (!$content) {
+        if (! $content) {
             throw new Exception\RuntimeException("Problem while reading file '$value'");
         }
 
         $encrypted = parent::filter($content);
         $result    = file_put_contents($this->filename, $encrypted);
 
-        if (!$result) {
+        if (! $result) {
             throw new Exception\RuntimeException("Problem while writing file '{$this->filename}'");
         }
 

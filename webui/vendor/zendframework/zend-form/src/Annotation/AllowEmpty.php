@@ -34,13 +34,13 @@ class AllowEmpty
      */
     public function __construct(array $data)
     {
-        if (!isset($data['value'])) {
+        if (! isset($data['value'])) {
             $data['value'] = false;
         }
 
         $allowEmpty = $data['value'];
 
-        if (!is_bool($allowEmpty)) {
+        if (! is_bool($allowEmpty)) {
             $filter   = new BooleanFilter();
             $allowEmpty = $filter->filter($allowEmpty);
         }

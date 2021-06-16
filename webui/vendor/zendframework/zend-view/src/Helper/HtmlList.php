@@ -38,7 +38,7 @@ class HtmlList extends AbstractHtmlElement
         $list = '';
 
         foreach ($items as $item) {
-            if (!is_array($item)) {
+            if (! is_array($item)) {
                 if ($escape) {
                     $escaper = $this->getView()->plugin('escapeHtml');
                     $item    = $escaper($item);

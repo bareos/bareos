@@ -43,7 +43,7 @@ abstract class AbstractPrompt implements PromptInterface
      */
     public function getConsole()
     {
-        if (!$this->console) {
+        if (! $this->console) {
             $this->console = Console::getInstance();
         }
 

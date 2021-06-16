@@ -104,13 +104,13 @@ class Encrypt extends AbstractFilter
             $adapter = 'BlockCipher';
         }
 
-        if (!is_array($options)) {
-            $options = array();
+        if (! is_array($options)) {
+            $options = [];
         }
 
         if (class_exists('Zend\Filter\Encrypt\\' . ucfirst($adapter))) {
             $adapter = 'Zend\Filter\Encrypt\\' . ucfirst($adapter);
-        } elseif (!class_exists($adapter)) {
+        } elseif (! class_exists($adapter)) {
             throw new Exception\DomainException(
                 sprintf(
                     '%s expects a valid registry class name; received "%s", which did not resolve',
@@ -121,7 +121,7 @@ class Encrypt extends AbstractFilter
         }
 
         $this->adapter = new $adapter($options);
-        if (!$this->adapter instanceof Encrypt\EncryptionAlgorithmInterface) {
+        if (! $this->adapter instanceof Encrypt\EncryptionAlgorithmInterface) {
             throw new Exception\InvalidArgumentException(
                 "Encoding adapter '" . $adapter
                 . "' does not implement Zend\\Filter\\Encrypt\\EncryptionAlgorithmInterface"
@@ -142,11 +142,11 @@ class Encrypt extends AbstractFilter
     public function __call($method, $options)
     {
         $part = substr($method, 0, 3);
-        if ((($part != 'get') && ($part != 'set')) || !method_exists($this->adapter, $method)) {
+        if (($part !== 'get' && $part !== 'set') || ! method_exists($this->adapter, $method)) {
             throw new Exception\BadMethodCallException("Unknown method '{$method}'");
         }
 
-        return call_user_func_array(array($this->adapter, $method), $options);
+        return call_user_func_array([$this->adapter, $method], $options);
     }
 
     /**
@@ -159,7 +159,7 @@ class Encrypt extends AbstractFilter
      */
     public function filter($value)
     {
-        if (!is_string($value) && !is_numeric($value)) {
+        if (! is_string($value) && ! is_numeric($value)) {
             return $value;
         }
 

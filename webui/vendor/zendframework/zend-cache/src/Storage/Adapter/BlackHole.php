@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -71,12 +71,12 @@ class BlackHole implements
      * Set options.
      *
      * @param array|\Traversable|AdapterOptions $options
-     * @return StorageInterface Fluent interface
+     * @return BlackHole Provides a fluent interface
      */
     public function setOptions($options)
     {
         if ($this->options !== $options) {
-            if (!$options instanceof AdapterOptions) {
+            if (! $options instanceof AdapterOptions) {
                 $options = new AdapterOptions($options);
             }
 
@@ -96,7 +96,7 @@ class BlackHole implements
      */
     public function getOptions()
     {
-        if (!$this->options) {
+        if (! $this->options) {
             $this->setOptions(new AdapterOptions());
         }
         return $this->options;
@@ -124,7 +124,7 @@ class BlackHole implements
      */
     public function getItems(array $keys)
     {
-        return array();
+        return [];
     }
 
     /**
@@ -146,7 +146,7 @@ class BlackHole implements
      */
     public function hasItems(array $keys)
     {
-        return array();
+        return [];
     }
 
     /**
@@ -168,7 +168,7 @@ class BlackHole implements
      */
     public function getMetadatas(array $keys)
     {
-        return array();
+        return [];
     }
 
     /**
@@ -320,7 +320,7 @@ class BlackHole implements
      */
     public function incrementItems(array $keyValuePairs)
     {
-        return array();
+        return [];
     }
 
     /**
@@ -343,7 +343,7 @@ class BlackHole implements
      */
     public function decrementItems(array $keyValuePairs)
     {
-        return array();
+        return [];
     }
 
     /**
@@ -432,7 +432,7 @@ class BlackHole implements
      */
     public function getIterator()
     {
-        return new KeyListIterator($this, array());
+        return new KeyListIterator($this, []);
     }
 
     /* OptimizableInterface */

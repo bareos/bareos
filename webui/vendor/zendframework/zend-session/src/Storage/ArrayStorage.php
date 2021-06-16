@@ -37,7 +37,7 @@ class ArrayStorage extends ArrayObject implements StorageInterface
      * @param string $iteratorClass
      */
     public function __construct(
-        $input = array(),
+        $input = [],
         $flags = ArrayObject::ARRAY_AS_PROPS,
         $iteratorClass = '\\ArrayIterator'
     ) {
@@ -114,7 +114,7 @@ class ArrayStorage extends ArrayObject implements StorageInterface
             return $this;
         }
         if (isset($this[$key])) {
-            $this->setMetadata('_LOCKS', array($key => true));
+            $this->setMetadata('_LOCKS', [$key => true]);
         }
 
         return $this;
@@ -141,7 +141,7 @@ class ArrayStorage extends ArrayObject implements StorageInterface
         $locks    = $this->getMetadata('_LOCKS');
         $readOnly = $this->getMetadata('_READONLY');
 
-        if ($readOnly && !$locks) {
+        if ($readOnly && ! $locks) {
             // global lock in play; all keys are locked
             return true;
         } elseif ($readOnly && $locks) {
@@ -149,7 +149,7 @@ class ArrayStorage extends ArrayObject implements StorageInterface
         }
 
         // test for individual locks
-        if (!$locks) {
+        if (! $locks) {
             return false;
         }
 
@@ -173,8 +173,8 @@ class ArrayStorage extends ArrayObject implements StorageInterface
         }
 
         $locks = $this->getMetadata('_LOCKS');
-        if (!$locks) {
-            if (!$this->getMetadata('_READONLY')) {
+        if (! $locks) {
+            if (! $this->getMetadata('_READONLY')) {
                 return $this;
             }
             $array = $this->toArray();
@@ -237,8 +237,8 @@ class ArrayStorage extends ArrayObject implements StorageInterface
             );
         }
 
-        if (!isset($this['__ZF'])) {
-            $this['__ZF'] = array();
+        if (! isset($this['__ZF'])) {
+            $this['__ZF'] = [];
         }
 
         if (isset($this['__ZF'][$key]) && is_array($value)) {
@@ -275,7 +275,7 @@ class ArrayStorage extends ArrayObject implements StorageInterface
      */
     public function getMetadata($key = null)
     {
-        if (!isset($this['__ZF'])) {
+        if (! isset($this['__ZF'])) {
             return false;
         }
 
@@ -283,7 +283,7 @@ class ArrayStorage extends ArrayObject implements StorageInterface
             return $this['__ZF'];
         }
 
-        if (!array_key_exists($key, $this['__ZF'])) {
+        if (! array_key_exists($key, $this['__ZF'])) {
             return false;
         }
 
@@ -303,12 +303,12 @@ class ArrayStorage extends ArrayObject implements StorageInterface
             throw new Exception\RuntimeException('Cannot clear storage as it is marked immutable');
         }
         if (null === $key) {
-            $this->fromArray(array());
+            $this->fromArray([]);
 
             return $this;
         }
 
-        if (!isset($this[$key])) {
+        if (! isset($this[$key])) {
             return $this;
         }
 

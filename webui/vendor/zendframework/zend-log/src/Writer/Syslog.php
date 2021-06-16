@@ -2,8 +2,8 @@
 /**
  * Zend Framework (http://framework.zend.com/)
  *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @link      http://github.com/zendframework/zend-log for the canonical source repository
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -24,7 +24,7 @@ class Syslog extends AbstractWriter
      *
      * @var array
      */
-    protected $priorities = array(
+    protected $priorities = [
         Logger::EMERG  => LOG_EMERG,
         Logger::ALERT  => LOG_ALERT,
         Logger::CRIT   => LOG_CRIT,
@@ -33,7 +33,7 @@ class Syslog extends AbstractWriter
         Logger::NOTICE => LOG_NOTICE,
         Logger::INFO   => LOG_INFO,
         Logger::DEBUG  => LOG_DEBUG,
-    );
+    ];
 
     /**
      * The default log priority - for unmapped custom priorities
@@ -75,7 +75,7 @@ class Syslog extends AbstractWriter
      *
      * @var array
      */
-    protected $validFacilities = array();
+    protected $validFacilities = [];
 
     /**
      * Constructor
@@ -120,7 +120,7 @@ class Syslog extends AbstractWriter
      */
     protected function initializeValidFacilities()
     {
-        $constants = array(
+        $constants = [
             'LOG_AUTH',
             'LOG_AUTHPRIV',
             'LOG_CRON',
@@ -140,7 +140,7 @@ class Syslog extends AbstractWriter
             'LOG_SYSLOG',
             'LOG_USER',
             'LOG_UUCP'
-        );
+        ];
 
         foreach ($constants as $constant) {
             if (defined($constant)) {
@@ -174,17 +174,17 @@ class Syslog extends AbstractWriter
             return $this;
         }
 
-        if (!count($this->validFacilities)) {
+        if (empty($this->validFacilities)) {
             $this->initializeValidFacilities();
         }
 
-        if (!in_array($facility, $this->validFacilities)) {
+        if (! in_array($facility, $this->validFacilities)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid log facility provided; please see http://php.net/openlog for a list of valid facility values'
             );
         }
 
-        if ('WIN' == strtoupper(substr(PHP_OS, 0, 3))
+        if (0 === stripos(PHP_OS, 'WIN')
             && ($facility !== LOG_USER)
         ) {
             throw new Exception\InvalidArgumentException(

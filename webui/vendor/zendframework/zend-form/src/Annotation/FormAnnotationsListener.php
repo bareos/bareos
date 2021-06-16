@@ -37,19 +37,19 @@ class FormAnnotationsListener extends AbstractAnnotationsListener
      * @param  EventManagerInterface $events
      * @return void
      */
-    public function attach(EventManagerInterface $events)
+    public function attach(EventManagerInterface $events, $priority = 1)
     {
-        $this->listeners[] = $events->attach('configureForm', array($this, 'handleAttributesAnnotation'));
-        $this->listeners[] = $events->attach('configureForm', array($this, 'handleFlagsAnnotation'));
-        $this->listeners[] = $events->attach('configureForm', array($this, 'handleHydratorAnnotation'));
-        $this->listeners[] = $events->attach('configureForm', array($this, 'handleInputFilterAnnotation'));
-        $this->listeners[] = $events->attach('configureForm', array($this, 'handleObjectAnnotation'));
-        $this->listeners[] = $events->attach('configureForm', array($this, 'handleOptionsAnnotation'));
-        $this->listeners[] = $events->attach('configureForm', array($this, 'handleTypeAnnotation'));
-        $this->listeners[] = $events->attach('configureForm', array($this, 'handleValidationGroupAnnotation'));
+        $this->listeners[] = $events->attach('configureForm', [$this, 'handleAttributesAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureForm', [$this, 'handleFlagsAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureForm', [$this, 'handleHydratorAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureForm', [$this, 'handleInputFilterAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureForm', [$this, 'handleObjectAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureForm', [$this, 'handleOptionsAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureForm', [$this, 'handleTypeAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureForm', [$this, 'handleValidationGroupAnnotation'], $priority);
 
-        $this->listeners[] = $events->attach('discoverName', array($this, 'handleNameAnnotation'));
-        $this->listeners[] = $events->attach('discoverName', array($this, 'discoverFallbackName'));
+        $this->listeners[] = $events->attach('discoverName', [$this, 'handleNameAnnotation'], $priority);
+        $this->listeners[] = $events->attach('discoverName', [$this, 'discoverFallbackName'], $priority);
     }
 
     /**
@@ -63,7 +63,7 @@ class FormAnnotationsListener extends AbstractAnnotationsListener
     public function handleAttributesAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Attributes) {
+        if (! $annotation instanceof Attributes) {
             return;
         }
 
@@ -82,7 +82,7 @@ class FormAnnotationsListener extends AbstractAnnotationsListener
     public function handleFlagsAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Flags) {
+        if (! $annotation instanceof Flags) {
             return;
         }
 
@@ -101,7 +101,7 @@ class FormAnnotationsListener extends AbstractAnnotationsListener
     public function handleHydratorAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Hydrator) {
+        if (! $annotation instanceof Hydrator) {
             return;
         }
 
@@ -120,7 +120,7 @@ class FormAnnotationsListener extends AbstractAnnotationsListener
     public function handleInputFilterAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof InputFilter) {
+        if (! $annotation instanceof InputFilter) {
             return;
         }
 
@@ -160,7 +160,7 @@ class FormAnnotationsListener extends AbstractAnnotationsListener
     public function handleOptionsAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Options) {
+        if (! $annotation instanceof Options) {
             return;
         }
 
@@ -179,7 +179,7 @@ class FormAnnotationsListener extends AbstractAnnotationsListener
     public function handleTypeAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Type) {
+        if (! $annotation instanceof Type) {
             return;
         }
 
@@ -198,7 +198,7 @@ class FormAnnotationsListener extends AbstractAnnotationsListener
     public function handleValidationGroupAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof ValidationGroup) {
+        if (! $annotation instanceof ValidationGroup) {
             return;
         }
 

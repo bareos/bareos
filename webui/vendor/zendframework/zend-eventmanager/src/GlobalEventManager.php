@@ -17,6 +17,10 @@ use Zend\Stdlib\PriorityQueue;
  *
  * Use the EventManager when you want to create a per-instance notification
  * system for your objects.
+ *
+ * @deprecated This class is deprecated with 2.6.0, and will be removed in 3.0.0.
+ *     See {@link https://github.com/zendframework/zend-eventmanager/blob/develop/doc/book/migration/removed.md}
+ *     for details.
  */
 class GlobalEventManager
 {
@@ -58,7 +62,7 @@ class GlobalEventManager
      * @param  null|callable $callback
      * @return ResponseCollection
      */
-    public static function trigger($event, $context, $argv = array(), $callback = null)
+    public static function trigger($event, $context, $argv = [], $callback = null)
     {
         return static::getEventCollection()->trigger($event, $context, $argv, $callback);
     }

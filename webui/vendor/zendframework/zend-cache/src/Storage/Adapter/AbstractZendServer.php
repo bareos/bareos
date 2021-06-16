@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -39,7 +39,8 @@ abstract class AbstractZendServer extends AbstractAdapter
         $prefix      = ($namespace === '') ? '' : $namespace . self::NAMESPACE_SEPARATOR;
 
         $result = $this->zdcFetch($prefix . $normalizedKey);
-        if ($result === null) {
+        if ($result === false) {
+            $result  = null;
             $success = false;
         } else {
             $success  = true;
@@ -64,13 +65,13 @@ abstract class AbstractZendServer extends AbstractAdapter
         }
 
         $prefix       = $namespace . self::NAMESPACE_SEPARATOR;
-        $internalKeys = array();
+        $internalKeys = [];
         foreach ($normalizedKeys as $normalizedKey) {
             $internalKeys[] = $prefix . $normalizedKey;
         }
 
         $fetch   = $this->zdcFetchMulti($internalKeys);
-        $result  = array();
+        $result  = [];
         $prefixL = strlen($prefix);
         foreach ($fetch as $k => & $v) {
             $result[substr($k, $prefixL)] = $v;
@@ -108,13 +109,13 @@ abstract class AbstractZendServer extends AbstractAdapter
         }
 
         $prefix       = $namespace . self::NAMESPACE_SEPARATOR;
-        $internalKeys = array();
+        $internalKeys = [];
         foreach ($normalizedKeys as $normalizedKey) {
             $internalKeys[] = $prefix . $normalizedKey;
         }
 
         $fetch   = $this->zdcFetchMulti($internalKeys);
-        $result  = array();
+        $result  = [];
         $prefixL = strlen($prefix);
         foreach ($fetch as $internalKey => & $value) {
             $result[] = substr($internalKey, $prefixL);
@@ -138,20 +139,20 @@ abstract class AbstractZendServer extends AbstractAdapter
         $namespace = $this->getOptions()->getNamespace();
         if ($namespace === '') {
             $result = $this->zdcFetchMulti($normalizedKeys);
-            return array_fill_keys(array_keys($result), array());
+            return array_fill_keys(array_keys($result), []);
         }
 
         $prefix       = $namespace . self::NAMESPACE_SEPARATOR;
-        $internalKeys = array();
+        $internalKeys = [];
         foreach ($normalizedKeys as $normalizedKey) {
             $internalKeys[] = $prefix . $normalizedKey;
         }
 
         $fetch   = $this->zdcFetchMulti($internalKeys);
-        $result  = array();
+        $result  = [];
         $prefixL = strlen($prefix);
         foreach ($fetch as $internalKey => $value) {
-            $result[substr($internalKey, $prefixL)] = array();
+            $result[substr($internalKey, $prefixL)] = [];
         }
 
         return $result;
@@ -204,8 +205,8 @@ abstract class AbstractZendServer extends AbstractAdapter
             $this->capabilities     = new Capabilities(
                 $this,
                 $this->capabilityMarker,
-                array(
-                    'supportedDatatypes' => array(
+                [
+                    'supportedDatatypes' => [
                         'NULL'     => true,
                         'boolean'  => true,
                         'integer'  => true,
@@ -214,17 +215,18 @@ abstract class AbstractZendServer extends AbstractAdapter
                         'array'    => true,
                         'object'   => 'object',
                         'resource' => false,
-                    ),
-                    'supportedMetadata'  => array(),
+                    ],
+                    'supportedMetadata'  => [],
+                    'minTtl'             => 1,
                     'maxTtl'             => 0,
                     'staticTtl'          => true,
                     'ttlPrecision'       => 1,
                     'useRequestTime'     => false,
-                    'expiredRead'        => false,
+                    'lockOnExpire'       => ini_get('zend_datacache.lock_on_expire') ? 120 : 0,
                     'maxKeyLength'       => 0,
                     'namespaceIsPrefix'  => true,
                     'namespaceSeparator' => self::NAMESPACE_SEPARATOR,
-                )
+                ]
             );
         }
 

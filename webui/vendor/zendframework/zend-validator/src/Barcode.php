@@ -18,28 +18,28 @@ class Barcode extends AbstractValidator
     const INVALID_CHARS  = 'barcodeInvalidChars';
     const INVALID_LENGTH = 'barcodeInvalidLength';
 
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::FAILED         => "The input failed checksum validation",
         self::INVALID_CHARS  => "The input contains invalid characters",
         self::INVALID_LENGTH => "The input should have a length of %length% characters",
         self::INVALID        => "Invalid type given. String expected",
-    );
+    ];
 
     /**
      * Additional variables available for validation failure messages
      *
      * @var array
      */
-    protected $messageVariables = array(
-        'length' => array('options' => 'length'),
-    );
+    protected $messageVariables = [
+        'length' => ['options' => 'length'],
+    ];
 
-    protected $options = array(
+    protected $options = [
         'adapter'     => null,  // Barcode adapter Zend\Validator\Barcode\AbstractAdapter
         'options'     => null,  // Options for this adapter
         'length'      => null,
         'useChecksum' => null,
-    );
+    ];
 
     /**
      * Constructor for barcodes
@@ -48,12 +48,16 @@ class Barcode extends AbstractValidator
      */
     public function __construct($options = null)
     {
-        if (!is_array($options) && !($options instanceof Traversable)) {
-            $options = array('adapter' => $options);
+        if ($options === null) {
+            $options = [];
+        }
+
+        if (! is_array($options) && ! ($options instanceof Traversable)) {
+            $options = ['adapter' => $options];
         }
 
         if (array_key_exists('options', $options)) {
-            $options['options'] = array('options' => $options['options']);
+            $options['options'] = ['options' => $options['options']];
         }
 
         parent::__construct($options);
@@ -66,7 +70,7 @@ class Barcode extends AbstractValidator
      */
     public function getAdapter()
     {
-        if (!($this->options['adapter'] instanceof Barcode\AdapterInterface)) {
+        if (! ($this->options['adapter'] instanceof Barcode\AdapterInterface)) {
             $this->setAdapter('Ean13');
         }
 
@@ -87,14 +91,14 @@ class Barcode extends AbstractValidator
             $adapter = ucfirst(strtolower($adapter));
             $adapter = 'Zend\\Validator\\Barcode\\' . $adapter;
 
-            if (!class_exists($adapter)) {
+            if (! class_exists($adapter)) {
                 throw new Exception\InvalidArgumentException('Barcode adapter matching "' . $adapter . '" not found');
             }
 
             $adapter = new $adapter($options);
         }
 
-        if (!$adapter instanceof Barcode\AdapterInterface) {
+        if (! $adapter instanceof Barcode\AdapterInterface) {
             throw new Exception\InvalidArgumentException(
                 sprintf(
                     "Adapter %s does not implement Zend\\Validator\\Barcode\\AdapterInterface",
@@ -139,7 +143,7 @@ class Barcode extends AbstractValidator
      */
     public function isValid($value)
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             $this->error(self::INVALID);
             return false;
         }
@@ -148,7 +152,7 @@ class Barcode extends AbstractValidator
         $adapter                 = $this->getAdapter();
         $this->options['length'] = $adapter->getLength();
         $result                  = $adapter->hasValidLength($value);
-        if (!$result) {
+        if (! $result) {
             if (is_array($this->options['length'])) {
                 $temp = $this->options['length'];
                 $this->options['length'] = "";
@@ -165,14 +169,14 @@ class Barcode extends AbstractValidator
         }
 
         $result = $adapter->hasValidCharacters($value);
-        if (!$result) {
+        if (! $result) {
             $this->error(self::INVALID_CHARS);
             return false;
         }
 
         if ($this->useChecksum(null)) {
             $result = $adapter->hasValidChecksum($value);
-            if (!$result) {
+            if (! $result) {
                 $this->error(self::FAILED);
                 return false;
             }

@@ -34,10 +34,10 @@ class ExceptionStrategy extends AbstractListenerAggregate
     /**
      * {@inheritDoc}
      */
-    public function attach(EventManagerInterface $events)
+    public function attach(EventManagerInterface $events, $priority = 1)
     {
-        $this->listeners[] = $events->attach(MvcEvent::EVENT_DISPATCH_ERROR, array($this, 'prepareExceptionViewModel'));
-        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER_ERROR, array($this, 'prepareExceptionViewModel'));
+        $this->listeners[] = $events->attach(MvcEvent::EVENT_DISPATCH_ERROR, [$this, 'prepareExceptionViewModel']);
+        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER_ERROR, [$this, 'prepareExceptionViewModel']);
     }
 
     /**
@@ -118,11 +118,11 @@ class ExceptionStrategy extends AbstractListenerAggregate
 
             case Application::ERROR_EXCEPTION:
             default:
-                $model = new ViewModel(array(
+                $model = new ViewModel([
                     'message'            => 'An error occurred during execution; please try again later.',
                     'exception'          => $e->getParam('exception'),
                     'display_exceptions' => $this->displayExceptions(),
-                ));
+                ]);
                 $model->setTemplate($this->getExceptionTemplate());
                 $e->setResult($model);
 

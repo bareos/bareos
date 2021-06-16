@@ -23,7 +23,7 @@ class Redirect extends AbstractPlugin
     protected $response;
 
     /**
-     * Generates a URL based on a route
+     * Generate redirect response based on given route
      *
      * @param  string $route RouteInterface name
      * @param  array $params Parameters to use in url generation, if any
@@ -33,7 +33,7 @@ class Redirect extends AbstractPlugin
      * @throws Exception\DomainException if composed controller does not implement InjectApplicationEventInterface, or
      *         router cannot be found in controller event
      */
-    public function toRoute($route = null, $params = array(), $options = array(), $reuseMatchedParams = false)
+    public function toRoute($route = null, $params = [], $options = [], $reuseMatchedParams = false)
     {
         $controller = $this->getController();
         if (!$controller || !method_exists($controller, 'plugin')) {
@@ -52,7 +52,7 @@ class Redirect extends AbstractPlugin
     }
 
     /**
-     * Redirect to the given URL
+     * Generate redirect response based on given URL
      *
      * @param  string $url
      * @return Response
@@ -72,7 +72,7 @@ class Redirect extends AbstractPlugin
      */
     public function refresh()
     {
-        return $this->toRoute(null, array(), array(), true);
+        return $this->toRoute(null, [], [], true);
     }
 
     /**

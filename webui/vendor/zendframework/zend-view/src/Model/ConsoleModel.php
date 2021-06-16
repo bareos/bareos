@@ -31,10 +31,12 @@ class ConsoleModel extends ViewModel
      * Set error level to return after the application ends.
      *
      * @param int $errorLevel
+     * @return $this
      */
     public function setErrorLevel($errorLevel)
     {
         $this->options['errorLevel'] = $errorLevel;
+        return $this;
     }
 
     /**

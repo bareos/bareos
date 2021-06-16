@@ -45,20 +45,20 @@ class Xterm256
     public static function calculate($hexColor)
     {
         $hex = str_split($hexColor, 2);
-        if (count($hex) !== 3 || !preg_match('#[0-9A-F]{6}#i', $hexColor)) {
+        if (count($hex) !== 3 || ! preg_match('#[0-9A-F]{6}#i', $hexColor)) {
             // Invalid/unknown color string
             return new static();
         }
 
         $ahex = array_map(function ($hex) {
-            $val = round(((hexdec($hex) - 55)/40), 0);
+            $val = round(((hexdec($hex) - 55) / 40), 0);
             return $val > 0 ? (int) $val : 0;
         }, $hex);
 
         $dhex = array_map('hexdec', $hex);
 
         if (array_fill(0, 3, $dhex[0]) === $dhex && (int) substr($dhex[0], -1) === 8) {
-            $x11 = 232 + (int) floor($dhex[0]/10);
+            $x11 = 232 + (int) floor($dhex[0] / 10);
             return new static($x11);
         }
 

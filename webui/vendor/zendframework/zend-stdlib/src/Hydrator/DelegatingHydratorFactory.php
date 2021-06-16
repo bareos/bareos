@@ -12,14 +12,11 @@ namespace Zend\Stdlib\Hydrator;
 use Zend\ServiceManager\FactoryInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
 
+/**
+ * @deprecated Use Zend\Hydrator\DelegatingHydratorFactory from zendframework/zend-hydrator instead.
+ */
 class DelegatingHydratorFactory implements FactoryInterface
 {
-    /**
-     * Creates DelegatingHydrator
-     *
-     * @param  ServiceLocatorInterface $serviceLocator
-     * @return DelegatingHydrator
-     */
     public function createService(ServiceLocatorInterface $serviceLocator)
     {
         // Assume that this factory is registered with the HydratorManager,

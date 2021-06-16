@@ -1,19 +1,19 @@
 <?php
-
 /**
  * Zend Framework (http://framework.zend.com/)
  *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @link      http://github.com/zendframework/zend-log for the canonical source repository
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
 namespace Zend\Log\Writer;
 
-use DateTime;
-use Mongo;
-use MongoClient;
-use MongoDate;
+use DateTimeInterface;
+use MongoDB\Driver\BulkWrite;
+use MongoDB\Driver\Manager;
+use MongoDB\Driver\WriteConcern;
+use MongoDB\BSON\UTCDateTime;
 use Traversable;
 use Zend\Log\Exception;
 use Zend\Log\Formatter\FormatterInterface;
@@ -25,68 +25,87 @@ use Zend\Stdlib\ArrayUtils;
 class MongoDB extends AbstractWriter
 {
     /**
-     * MongoCollection instance
-     *
-     * @var MongoCollection
+     * @var Manager
      */
-    protected $mongoCollection;
+    protected $manager;
 
     /**
-     * Options used for MongoCollection::save()
-     *
-     * @var array
+     * @var string
      */
-    protected $saveOptions;
+    protected $database;
+
+    /**
+     * @var WriteConcern
+     */
+    protected $writeConcern;
 
     /**
      * Constructor
      *
-     * @param Mongo|MongoClient|array|Traversable $mongo
-     * @param string|MongoDB $database
+     * @param Manager|array|Traversable $manager
+     * @param string $database
      * @param string $collection
-     * @param array $saveOptions
+     * @param WriteConcern|array|Traversable $writeConcern
      * @throws Exception\InvalidArgumentException
      */
-    public function __construct($mongo, $database = null, $collection = null, array $saveOptions = array())
+    public function __construct($manager, $database = null, $collection = null, $writeConcern = null)
     {
-        if ($mongo instanceof Traversable) {
-            // Configuration may be multi-dimensional due to save options
-            $mongo = ArrayUtils::iteratorToArray($mongo);
-        }
-        if (is_array($mongo)) {
-            parent::__construct($mongo);
-            $saveOptions = isset($mongo['save_options']) ? $mongo['save_options'] : array();
-            $collection  = isset($mongo['collection']) ? $mongo['collection'] : null;
-            $database    = isset($mongo['database']) ? $mongo['database'] : null;
-            $mongo       = isset($mongo['mongo']) ? $mongo['mongo'] : null;
+        if (! extension_loaded('mongodb')) {
+            throw new Exception\ExtensionNotLoadedException('Missing ext/mongodb');
         }
 
-        if (null === $collection) {
-            throw new Exception\InvalidArgumentException('The collection parameter cannot be empty');
+        if ($manager instanceof Traversable) {
+            // Configuration may be multi-dimensional due to save options
+            $manager = ArrayUtils::iteratorToArray($manager);
+        }
+
+        if (is_array($manager)) {
+            parent::__construct($manager);
+            $writeConcern = isset($manager['write_concern']) ? $manager['write_concern'] : new WriteConcern(1);
+            $collection   = isset($manager['collection']) ? $manager['collection'] : null;
+            $database     = isset($manager['database']) ? $manager['database'] : null;
+            $manager      = isset($manager['manager']) ? $manager['manager'] : null;
         }
 
         if (null === $database) {
             throw new Exception\InvalidArgumentException('The database parameter cannot be empty');
         }
 
-        if (!($mongo instanceof MongoClient || $mongo instanceof Mongo)) {
+        if (null !== $collection) {
+            $database = sprintf('%s.%s', $database, $collection);
+        }
+
+        if (! $manager instanceof Manager) {
             throw new Exception\InvalidArgumentException(sprintf(
-                'Parameter of type %s is invalid; must be MongoClient or Mongo',
-                (is_object($mongo) ? get_class($mongo) : gettype($mongo))
+                'Parameter of type %s is invalid; must be MongoDB\Driver\Manager',
+                (is_object($manager) ? get_class($manager) : gettype($manager))
             ));
         }
 
-        $this->mongoCollection = $mongo->selectCollection($database, $collection);
-        $this->saveOptions     = $saveOptions;
+        if ($writeConcern instanceof Traversable) {
+            $writeConcern = iterator_to_array($writeConcern);
+        }
+
+        if (is_array($writeConcern)) {
+            $wstring      = isset($writeConcern['wstring']) ? $writeConcern['wstring'] : 1;
+            $wtimeout     = isset($writeConcern['wtimeout']) ? $writeConcern['wtimeout'] : 0;
+            $journal      = isset($writeConcern['journal']) ? $writeConcern['journal'] : false;
+            $writeConcern = new WriteConcern($wstring, $wtimeout, $journal);
+        }
+
+        $this->manager      = $manager;
+        $this->database     = $database;
+        $this->writeConcern = $writeConcern;
     }
 
     /**
      * This writer does not support formatting.
      *
      * @param string|FormatterInterface $formatter
+     * @param array|null $options (unused)
      * @return WriterInterface
      */
-    public function setFormatter($formatter)
+    public function setFormatter($formatter, array $options = null)
     {
         return $this;
     }
@@ -100,14 +119,18 @@ class MongoDB extends AbstractWriter
      */
     protected function doWrite(array $event)
     {
-        if (null === $this->mongoCollection) {
-            throw new Exception\RuntimeException('MongoCollection must be defined');
+        if (null === $this->manager) {
+            throw new Exception\RuntimeException('MongoDB\Driver\Manager must be defined');
         }
 
-        if (isset($event['timestamp']) && $event['timestamp'] instanceof DateTime) {
-            $event['timestamp'] = new MongoDate($event['timestamp']->getTimestamp());
+        if (isset($event['timestamp']) && $event['timestamp'] instanceof DateTimeInterface) {
+            $millis = (int) floor((float) $event['timestamp']->format('U.u') * 1000);
+            $event['timestamp'] = new UTCDateTime($millis);
         }
 
-        $this->mongoCollection->save($event, $this->saveOptions);
+        $bulkWrite = new BulkWrite();
+        $bulkWrite->insert($event);
+
+        $this->manager->executeBulkWrite($this->database, $bulkWrite, $this->writeConcern);
     }
 }

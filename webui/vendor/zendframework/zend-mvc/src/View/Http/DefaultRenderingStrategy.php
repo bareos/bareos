@@ -45,10 +45,10 @@ class DefaultRenderingStrategy extends AbstractListenerAggregate
     /**
      * {@inheritDoc}
      */
-    public function attach(EventManagerInterface $events)
+    public function attach(EventManagerInterface $events, $priority = 1)
     {
-        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER, array($this, 'render'), -10000);
-        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER_ERROR, array($this, 'render'), -10000);
+        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER, [$this, 'render'], -10000);
+        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER_ERROR, [$this, 'render'], -10000);
     }
 
     /**
@@ -99,18 +99,28 @@ class DefaultRenderingStrategy extends AbstractListenerAggregate
         $view->setRequest($request);
         $view->setResponse($response);
 
+        $caughtException = null;
+
         try {
             $view->render($viewModel);
-        } catch (\Exception $ex) {
+        } catch (\Throwable $ex) {
+            $caughtException = $ex;
+        } catch (\Exception $ex) {  // @TODO clean up once PHP 7 requirement is enforced
+            $caughtException = $ex;
+        }
+
+        if ($caughtException !== null) {
             if ($e->getName() === MvcEvent::EVENT_RENDER_ERROR) {
-                throw $ex;
+                throw $caughtException;
             }
 
             $application = $e->getApplication();
             $events      = $application->getEventManager();
-            $e->setError(Application::ERROR_EXCEPTION)
-              ->setParam('exception', $ex);
-            $events->trigger(MvcEvent::EVENT_RENDER_ERROR, $e);
+
+            $e->setError(Application::ERROR_EXCEPTION);
+            $e->setParam('exception', $caughtException);
+            $e->setName(MvcEvent::EVENT_RENDER_ERROR);
+            $events->triggerEvent($e);
         }
 
         return $response;

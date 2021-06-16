@@ -14,27 +14,27 @@ class Char extends AbstractPrompt
     /**
      * @var string
      */
-    protected $promptText = 'Please select one option ';
+    protected $promptText;
 
     /**
      * @var bool
      */
-    protected $allowEmpty = false;
+    protected $allowEmpty;
 
     /**
      * @var string
      */
-    protected $allowedChars = 'yn';
+    protected $allowedChars;
 
     /**
      * @var bool
      */
-    protected $ignoreCase = true;
+    protected $ignoreCase;
 
     /**
      * @var bool
      */
-    protected $echo = true;
+    protected $echo;
 
     /**
      * Ask the user for a single key stroke
@@ -77,27 +77,27 @@ class Char extends AbstractPrompt
         $this->getConsole()->write($this->promptText);
         $mask = $this->getAllowedChars();
 
-        /**
+        /*
          * Normalize the mask if case is irrelevant
          */
         if ($this->ignoreCase) {
-            $mask = strtolower($mask);   // lowercase all
-            $mask .= strtoupper($mask);  // uppercase and append
-            $mask = str_split($mask);    // convert to array
-            $mask = array_unique($mask); // remove duplicates
-            $mask = implode("", $mask);   // convert back to string
+            $mask = strtolower($mask);    // lowercase all
+            $mask .= strtoupper($mask);   // uppercase and append
+            $mask = str_split($mask);     // convert to array
+            $mask = array_unique($mask);  // remove duplicates
+            $mask = implode('', $mask);   // convert back to string
         }
 
-        /**
+        /*
          * Read char from console
          */
         $char = $this->getConsole()->readChar($mask);
 
         if ($this->echo) {
-            echo trim($char)."\n";
+            $this->getConsole()->writeLine(trim($char));
         } else {
             if ($this->promptText) {
-                echo "\n";  // skip to next line but only if we had any prompt text
+                $this->getConsole()->writeLine();  // skip to next line but only if we had any prompt text
             }
         }
 

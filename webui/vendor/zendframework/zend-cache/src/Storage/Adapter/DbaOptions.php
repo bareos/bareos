@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -48,7 +48,7 @@ class DbaOptions extends AdapterOptions
      * Set namespace separator
      *
      * @param  string $namespaceSeparator
-     * @return DbaOptions
+     * @return DbaOptions Provides a fluent interface
      */
     public function setNamespaceSeparator($namespaceSeparator)
     {
@@ -72,7 +72,7 @@ class DbaOptions extends AdapterOptions
      * Set pathname to database file
      *
      * @param string $pathname
-     * @return DbaOptions
+     * @return DbaOptions Provides a fluent interface
      */
     public function setPathname($pathname)
     {
@@ -95,7 +95,7 @@ class DbaOptions extends AdapterOptions
      *
      *
      * @param string $mode
-     * @return \Zend\Cache\Storage\Adapter\DbaOptions
+     * @return DbaOptions Provides a fluent interface
      */
     public function setMode($mode)
     {
@@ -109,11 +109,17 @@ class DbaOptions extends AdapterOptions
         return $this->mode;
     }
 
+    /**
+     *
+     *
+     * @param string $handler
+     * @return DbaOptions Provides a fluent interface
+     */
     public function setHandler($handler)
     {
         $handler = (string) $handler;
 
-        if (!function_exists('dba_handlers') || !in_array($handler, dba_handlers())) {
+        if (! function_exists('dba_handlers') || ! in_array($handler, dba_handlers())) {
             throw new Exception\ExtensionNotLoadedException("DBA-Handler '{$handler}' not supported");
         }
 

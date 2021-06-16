@@ -9,83 +9,54 @@
 
 namespace Zend\Form\View;
 
+use Zend\Form\ConfigProvider;
 use Zend\ServiceManager\ConfigInterface;
 use Zend\ServiceManager\ServiceManager;
 
 /**
  * Service manager configuration for form view helpers
+ *
+ * @deprecated since 2.8.0, and scheduled for removal with v3.0.0.
  */
 class HelperConfig implements ConfigInterface
 {
-    /**
-     * Pre-aliased view helpers
-     *
-     * @var array
-     */
-    protected $invokables = array(
-        'form'                    => 'Zend\Form\View\Helper\Form',
-        'formbutton'              => 'Zend\Form\View\Helper\FormButton',
-        'formcaptcha'             => 'Zend\Form\View\Helper\FormCaptcha',
-        'captchadumb'             => 'Zend\Form\View\Helper\Captcha\Dumb',
-        'formcaptchadumb'         => 'Zend\Form\View\Helper\Captcha\Dumb',
-        'captchafiglet'           => 'Zend\Form\View\Helper\Captcha\Figlet',
-        'formcaptchafiglet'       => 'Zend\Form\View\Helper\Captcha\Figlet',
-        'captchaimage'            => 'Zend\Form\View\Helper\Captcha\Image',
-        'formcaptchaimage'        => 'Zend\Form\View\Helper\Captcha\Image',
-        'captcharecaptcha'        => 'Zend\Form\View\Helper\Captcha\ReCaptcha',
-        'formcaptcharecaptcha'    => 'Zend\Form\View\Helper\Captcha\ReCaptcha',
-        'formcheckbox'            => 'Zend\Form\View\Helper\FormCheckbox',
-        'formcollection'          => 'Zend\Form\View\Helper\FormCollection',
-        'formcolor'               => 'Zend\Form\View\Helper\FormColor',
-        'formdate'                => 'Zend\Form\View\Helper\FormDate',
-        'formdatetime'            => 'Zend\Form\View\Helper\FormDateTime',
-        'formdatetimelocal'       => 'Zend\Form\View\Helper\FormDateTimeLocal',
-        'formdatetimeselect'      => 'Zend\Form\View\Helper\FormDateTimeSelect',
-        'formdateselect'          => 'Zend\Form\View\Helper\FormDateSelect',
-        'formelement'             => 'Zend\Form\View\Helper\FormElement',
-        'formelementerrors'       => 'Zend\Form\View\Helper\FormElementErrors',
-        'formemail'               => 'Zend\Form\View\Helper\FormEmail',
-        'formfile'                => 'Zend\Form\View\Helper\FormFile',
-        'formfileapcprogress'     => 'Zend\Form\View\Helper\File\FormFileApcProgress',
-        'formfilesessionprogress' => 'Zend\Form\View\Helper\File\FormFileSessionProgress',
-        'formfileuploadprogress'  => 'Zend\Form\View\Helper\File\FormFileUploadProgress',
-        'formhidden'              => 'Zend\Form\View\Helper\FormHidden',
-        'formimage'               => 'Zend\Form\View\Helper\FormImage',
-        'forminput'               => 'Zend\Form\View\Helper\FormInput',
-        'formlabel'               => 'Zend\Form\View\Helper\FormLabel',
-        'formmonth'               => 'Zend\Form\View\Helper\FormMonth',
-        'formmonthselect'         => 'Zend\Form\View\Helper\FormMonthSelect',
-        'formmulticheckbox'       => 'Zend\Form\View\Helper\FormMultiCheckbox',
-        'formnumber'              => 'Zend\Form\View\Helper\FormNumber',
-        'formpassword'            => 'Zend\Form\View\Helper\FormPassword',
-        'formradio'               => 'Zend\Form\View\Helper\FormRadio',
-        'formrange'               => 'Zend\Form\View\Helper\FormRange',
-        'formreset'               => 'Zend\Form\View\Helper\FormReset',
-        'formrow'                 => 'Zend\Form\View\Helper\FormRow',
-        'formsearch'              => 'Zend\Form\View\Helper\FormSearch',
-        'formselect'              => 'Zend\Form\View\Helper\FormSelect',
-        'formsubmit'              => 'Zend\Form\View\Helper\FormSubmit',
-        'formtel'                 => 'Zend\Form\View\Helper\FormTel',
-        'formtext'                => 'Zend\Form\View\Helper\FormText',
-        'formtextarea'            => 'Zend\Form\View\Helper\FormTextarea',
-        'formtime'                => 'Zend\Form\View\Helper\FormTime',
-        'formurl'                 => 'Zend\Form\View\Helper\FormUrl',
-        'formweek'                => 'Zend\Form\View\Helper\FormWeek',
-    );
-
     /**
      * Configure the provided service manager instance with the configuration
      * in this class.
      *
      * Adds the invokables defined in this class to the SM managing helpers.
      *
-     * @param  ServiceManager $serviceManager
-     * @return void
+     * @param ServiceManager $serviceManager
+     * @return ServiceManager
      */
     public function configureServiceManager(ServiceManager $serviceManager)
     {
-        foreach ($this->invokables as $name => $service) {
-            $serviceManager->setInvokableClass($name, $service);
+        $config = $this->toArray();
+
+        if (method_exists($serviceManager, 'configure')) {
+            $serviceManager->configure($config);
+            return $serviceManager;
         }
+
+        foreach ($config['factories'] as $service => $factory) {
+            $serviceManager->setFactory($service, $factory);
+        }
+        foreach ($config['aliases'] as $alias => $target) {
+            $serviceManager->setAlias($alias, $target);
+        }
+
+        return $serviceManager;
+    }
+
+    /**
+     * Provide all configuration as an array.
+     *
+     * Required by zend-servicemanager v3.
+     *
+     * @return array
+     */
+    public function toArray()
+    {
+        return (new ConfigProvider())->getViewHelperConfig();
     }
 }

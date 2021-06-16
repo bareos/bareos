@@ -59,7 +59,7 @@ class RenderChildModel extends AbstractHelper
     public function render($child)
     {
         $model = $this->findChild($child);
-        if (!$model) {
+        if (! $model) {
             return '';
         }
 
@@ -103,7 +103,7 @@ class RenderChildModel extends AbstractHelper
     protected function getCurrent()
     {
         $helper = $this->getViewModelHelper();
-        if (!$helper->hasCurrent()) {
+        if (! $helper->hasCurrent()) {
             throw new Exception\RuntimeException(sprintf(
                 '%s: no view model currently registered in renderer; cannot query for children',
                 __METHOD__

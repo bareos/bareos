@@ -25,7 +25,7 @@ trait LabelAwareTrait
      *
      * @var array
      */
-    protected $labelOptions = array();
+    protected $labelOptions = [];
 
     /**
      * Set the attributes to use with the label
@@ -60,7 +60,7 @@ trait LabelAwareTrait
      */
     public function setLabelOptions($arrayOrTraversable)
     {
-        if (!is_array($arrayOrTraversable) && !$arrayOrTraversable instanceof Traversable) {
+        if (! is_array($arrayOrTraversable) && ! $arrayOrTraversable instanceof Traversable) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s expects an array or Traversable argument; received "%s"',
                 __METHOD__,
@@ -90,7 +90,7 @@ trait LabelAwareTrait
      */
     public function clearLabelOptions()
     {
-        $this->labelOptions = array();
+        $this->labelOptions = [];
         return $this;
     }
 
@@ -130,7 +130,7 @@ trait LabelAwareTrait
      */
     public function getLabelOption($key)
     {
-        if (!array_key_exists($key, $this->labelOptions)) {
+        if (! array_key_exists($key, $this->labelOptions)) {
             return;
         }
         return $this->labelOptions[$key];

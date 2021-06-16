@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -33,7 +33,7 @@ class MemoryOptions extends AdapterOptions
      *
      * @link http://php.net/manual/faq.using.php#faq.using.shorthandbytes
      * @param  string|int $memoryLimit
-     * @return MemoryOptions
+     * @return MemoryOptions Provides a fluent interface
      */
     public function setMemoryLimit($memoryLimit)
     {
@@ -84,7 +84,7 @@ class MemoryOptions extends AdapterOptions
             return (int) $value;
         }
 
-        if (!preg_match('/(\-?\d+)\s*(\w*)/', ini_get('memory_limit'), $matches)) {
+        if (! preg_match('/(\-?\d+)\s*(\w*)/', ini_get('memory_limit'), $matches)) {
             throw new Exception\InvalidArgumentException("Invalid  memory limit '{$value}'");
         }
 
@@ -95,15 +95,15 @@ class MemoryOptions extends AdapterOptions
 
         switch (strtoupper($matches[2])) {
             case 'G':
-                $value*= 1024;
+                $value *= 1024;
                 // no break
 
             case 'M':
-                $value*= 1024;
+                $value *= 1024;
                 // no break
 
             case 'K':
-                $value*= 1024;
+                $value *= 1024;
                 // no break
         }
 

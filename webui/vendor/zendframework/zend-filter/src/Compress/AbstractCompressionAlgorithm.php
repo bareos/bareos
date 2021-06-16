@@ -20,7 +20,7 @@ abstract class AbstractCompressionAlgorithm implements CompressionAlgorithmInter
     /**
      * @var array
      */
-    protected $options = array();
+    protected $options = [];
 
     /**
      * Class constructor
@@ -41,7 +41,7 @@ abstract class AbstractCompressionAlgorithm implements CompressionAlgorithmInter
     /**
      * Returns one or all set options
      *
-     * @param  string $option (Optional) Option to return
+     * @param  string|null $option Option to return
      * @return mixed
      */
     public function getOptions($option = null)
@@ -50,8 +50,8 @@ abstract class AbstractCompressionAlgorithm implements CompressionAlgorithmInter
             return $this->options;
         }
 
-        if (!array_key_exists($option, $this->options)) {
-            return;
+        if (! isset($this->options[$option])) {
+            return null;
         }
 
         return $this->options[$option];

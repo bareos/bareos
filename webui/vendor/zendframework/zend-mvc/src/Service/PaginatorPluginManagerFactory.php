@@ -9,7 +9,9 @@
 
 namespace Zend\Mvc\Service;
 
+use Zend\Paginator\AdapterPluginManager as PaginatorPluginManager;
+
 class PaginatorPluginManagerFactory extends AbstractPluginManagerFactory
 {
-    const PLUGIN_MANAGER_CLASS = 'Zend\Paginator\AdapterPluginManager';
+    const PLUGIN_MANAGER_CLASS = PaginatorPluginManager::class;
 }

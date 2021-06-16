@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -26,9 +26,8 @@ class CaptureCache extends AbstractPattern
             $pageId = $this->detectPageId();
         }
 
-        $that = $this;
-        ob_start(function ($content) use ($that, $pageId) {
-            $that->set($content, $pageId);
+        ob_start(function ($content) use ($pageId) {
+            $this->set($content, $pageId);
 
             // http://php.net/manual/function.ob-start.php
             // -> If output_callback  returns FALSE original input is sent to the browser.
@@ -149,7 +148,7 @@ class CaptureCache extends AbstractPattern
             ErrorHandler::start();
             $res = unlink($file);
             $err = ErrorHandler::stop();
-            if (!$res) {
+            if (! $res) {
                 throw new Exception\RuntimeException("Failed to remove cached pageId '{$pageId}'", 0, $err);
             }
             return true;
@@ -190,7 +189,7 @@ class CaptureCache extends AbstractPattern
      */
     protected function detectPageId()
     {
-        if (!isset($_SERVER['REQUEST_URI'])) {
+        if (! isset($_SERVER['REQUEST_URI'])) {
             throw new Exception\RuntimeException("Can't auto-detect current page identity");
         }
 
@@ -265,7 +264,7 @@ class CaptureCache extends AbstractPattern
             throw new Exception\RuntimeException("Error writing file '{$file}'", 0, $err);
         }
 
-        if ($perm !== false && !chmod($file, $perm)) {
+        if ($perm !== false && ! chmod($file, $perm)) {
             $oct = decoct($perm);
             $err = ErrorHandler::stop();
             throw new Exception\RuntimeException("chmod('{$file}', 0{$oct}) failed", 0, $err);
@@ -298,7 +297,7 @@ class CaptureCache extends AbstractPattern
         ErrorHandler::start();
 
         if ($perm === false) {
-            // build-in mkdir function is enough
+            // built-in mkdir function is enough
 
             $umask = ($umask !== false) ? umask($umask) : false;
             $res   = mkdir($pathname, ($perm !== false) ? $perm : 0775, true);
@@ -307,26 +306,26 @@ class CaptureCache extends AbstractPattern
                 umask($umask);
             }
 
-            if (!$res) {
+            if (! $res) {
                 $oct = ($perm === false) ? '775' : decoct($perm);
                 $err = ErrorHandler::stop();
                 throw new Exception\RuntimeException("mkdir('{$pathname}', 0{$oct}, true) failed", 0, $err);
             }
 
-            if ($perm !== false && !chmod($pathname, $perm)) {
+            if ($perm !== false && ! chmod($pathname, $perm)) {
                 $oct = decoct($perm);
                 $err = ErrorHandler::stop();
                 throw new Exception\RuntimeException("chmod('{$pathname}', 0{$oct}) failed", 0, $err);
             }
         } else {
-            // build-in mkdir function sets permission together with current umask
+            // built-in mkdir function sets permission together with current umask
             // which doesn't work well on multo threaded webservers
             // -> create directories one by one and set permissions
 
             // find existing path and missing path parts
-            $parts = array();
+            $parts = [];
             $path  = $pathname;
-            while (!file_exists($path)) {
+            while (! file_exists($path)) {
                 array_unshift($parts, basename($path));
                 $nextPath = dirname($path);
                 if ($nextPath === $path) {
@@ -337,7 +336,7 @@ class CaptureCache extends AbstractPattern
 
             // make all missing path parts
             foreach ($parts as $part) {
-                $path.= DIRECTORY_SEPARATOR . $part;
+                $path .= DIRECTORY_SEPARATOR . $part;
 
                 // create a single directory, set and reset umask immediately
                 $umask = ($umask !== false) ? umask($umask) : false;
@@ -346,7 +345,7 @@ class CaptureCache extends AbstractPattern
                     umask($umask);
                 }
 
-                if (!$res) {
+                if (! $res) {
                     $oct = ($perm === false) ? '775' : decoct($perm);
                     ErrorHandler::stop();
                     throw new Exception\RuntimeException(
@@ -354,7 +353,7 @@ class CaptureCache extends AbstractPattern
                     );
                 }
 
-                if ($perm !== false && !chmod($path, $perm)) {
+                if ($perm !== false && ! chmod($path, $perm)) {
                     $oct = decoct($perm);
                     ErrorHandler::stop();
                     throw new Exception\RuntimeException(

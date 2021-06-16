@@ -211,11 +211,11 @@ class ViewEvent extends Event
     public function setParams($params)
     {
         parent::setParams($params);
-        if (!is_array($params) && !$params instanceof ArrayAccess) {
+        if (! is_array($params) && ! $params instanceof ArrayAccess) {
             return $this;
         }
 
-        foreach (array('model', 'renderer', 'request', 'response', 'result') as $param) {
+        foreach (['model', 'renderer', 'request', 'response', 'result'] as $param) {
             if (isset($params[$param])) {
                 $method = 'set' . $param;
                 $this->$method($params[$param]);

@@ -46,7 +46,7 @@ abstract class AbstractWord extends FormInput
      */
     public function __invoke(ElementInterface $element = null)
     {
-        if (!$element) {
+        if (! $element) {
             return $this;
         }
 
@@ -79,9 +79,10 @@ abstract class AbstractWord extends FormInput
         $attributes = $element->getAttributes();
         $captcha = $element->getCaptcha();
 
-        if ($captcha === null || !$captcha instanceof CaptchaAdapter) {
+        if ($captcha === null || ! $captcha instanceof CaptchaAdapter) {
             throw new Exception\DomainException(sprintf(
-                '%s requires that the element has a "captcha" attribute implementing Zend\Captcha\AdapterInterface; none found',
+                '%s requires that the element has a "captcha" attribute implementing Zend\Captcha\AdapterInterface; '
+                . 'none found',
                 __METHOD__
             ));
         }
@@ -159,7 +160,7 @@ abstract class AbstractWord extends FormInput
     public function setCaptchaPosition($captchaPosition)
     {
         $captchaPosition = strtolower($captchaPosition);
-        if (!in_array($captchaPosition, array(self::CAPTCHA_APPEND, self::CAPTCHA_PREPEND))) {
+        if (! in_array($captchaPosition, [self::CAPTCHA_APPEND, self::CAPTCHA_PREPEND])) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s expects either %s::CAPTCHA_APPEND or %s::CAPTCHA_PREPEND; received "%s"',
                 __METHOD__,

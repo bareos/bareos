@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -12,6 +12,7 @@ namespace Zend\Cache;
 use Traversable;
 use Zend\EventManager\EventsCapableInterface;
 use Zend\Stdlib\ArrayUtils;
+use Zend\ServiceManager\ServiceManager;
 
 abstract class StorageFactory
 {
@@ -43,7 +44,7 @@ abstract class StorageFactory
             $cfg = ArrayUtils::iteratorToArray($cfg);
         }
 
-        if (!is_array($cfg)) {
+        if (! is_array($cfg)) {
             throw new Exception\InvalidArgumentException(
                 'The factory needs an associative array '
                 . 'or a Traversable object as an argument'
@@ -51,18 +52,18 @@ abstract class StorageFactory
         }
 
         // instantiate the adapter
-        if (!isset($cfg['adapter'])) {
+        if (! isset($cfg['adapter'])) {
             throw new Exception\InvalidArgumentException('Missing "adapter"');
         }
         $adapterName    = $cfg['adapter'];
-        $adapterOptions = array();
+        $adapterOptions = [];
         if (is_array($cfg['adapter'])) {
-            if (!isset($cfg['adapter']['name'])) {
+            if (! isset($cfg['adapter']['name'])) {
                 throw new Exception\InvalidArgumentException('Missing "adapter.name"');
             }
 
             $adapterName    = $cfg['adapter']['name'];
-            $adapterOptions = isset($cfg['adapter']['options']) ? $cfg['adapter']['options'] : array();
+            $adapterOptions = isset($cfg['adapter']['options']) ? $cfg['adapter']['options'] : [];
         }
         if (isset($cfg['options'])) {
             $adapterOptions = array_merge($adapterOptions, $cfg['options']);
@@ -72,7 +73,7 @@ abstract class StorageFactory
 
         // add plugins
         if (isset($cfg['plugins'])) {
-            if (!$adapter instanceof EventsCapableInterface) {
+            if (! $adapter instanceof EventsCapableInterface) {
                 throw new Exception\RuntimeException(sprintf(
                     "The adapter '%s' doesn't implement '%s' and therefore can't handle plugins",
                     get_class($adapter),
@@ -80,7 +81,7 @@ abstract class StorageFactory
                 ));
             }
 
-            if (!is_array($cfg['plugins'])) {
+            if (! is_array($cfg['plugins'])) {
                 throw new Exception\InvalidArgumentException(
                     'Plugins needs to be an array'
                 );
@@ -90,7 +91,7 @@ abstract class StorageFactory
                 $pluginPrio = 1; // default priority
 
                 if (is_string($k)) {
-                    if (!is_array($v)) {
+                    if (! is_array($v)) {
                         throw new Exception\InvalidArgumentException(
                             "'plugins.{$k}' needs to be an array"
                         );
@@ -98,15 +99,17 @@ abstract class StorageFactory
                     $pluginName    = $k;
                     $pluginOptions = $v;
                 } elseif (is_array($v)) {
-                    if (!isset($v['name'])) {
-                        throw new Exception\InvalidArgumentException("Invalid plugins[{$k}] or missing plugins[{$k}].name");
+                    if (! isset($v['name'])) {
+                        throw new Exception\InvalidArgumentException(
+                            "Invalid plugins[{$k}] or missing plugins[{$k}].name"
+                        );
                     }
                     $pluginName = (string) $v['name'];
 
                     if (isset($v['options'])) {
                         $pluginOptions = $v['options'];
                     } else {
-                        $pluginOptions = array();
+                        $pluginOptions = [];
                     }
 
                     if (isset($v['priority'])) {
@@ -114,11 +117,13 @@ abstract class StorageFactory
                     }
                 } else {
                     $pluginName    = $v;
-                    $pluginOptions = array();
+                    $pluginOptions = [];
                 }
 
                 $plugin = static::pluginFactory($pluginName, $pluginOptions);
-                $adapter->addPlugin($plugin, $pluginPrio);
+                if (! $adapter->hasPlugin($plugin)) {
+                    $adapter->addPlugin($plugin, $pluginPrio);
+                }
             }
         }
 
@@ -133,7 +138,7 @@ abstract class StorageFactory
      * @return Storage\StorageInterface
      * @throws Exception\RuntimeException
      */
-    public static function adapterFactory($adapterName, $options = array())
+    public static function adapterFactory($adapterName, $options = [])
     {
         if ($adapterName instanceof Storage\StorageInterface) {
             // $adapterName is already an adapter object
@@ -157,7 +162,7 @@ abstract class StorageFactory
     public static function getAdapterPluginManager()
     {
         if (static::$adapters === null) {
-            static::$adapters = new Storage\AdapterPluginManager();
+            static::$adapters = new Storage\AdapterPluginManager(new ServiceManager);
         }
         return static::$adapters;
     }
@@ -191,7 +196,7 @@ abstract class StorageFactory
      * @return Storage\Plugin\PluginInterface
      * @throws Exception\RuntimeException
      */
-    public static function pluginFactory($pluginName, $options = array())
+    public static function pluginFactory($pluginName, $options = [])
     {
         if ($pluginName instanceof Storage\Plugin\PluginInterface) {
             // $pluginName is already a plugin object
@@ -200,11 +205,10 @@ abstract class StorageFactory
             $plugin = static::getPluginManager()->get($pluginName);
         }
 
-        if (!$options instanceof Storage\Plugin\PluginOptions) {
-            $options = new Storage\Plugin\PluginOptions($options);
-        }
-
         if ($options) {
+            if (! $options instanceof Storage\Plugin\PluginOptions) {
+                $options = new Storage\Plugin\PluginOptions($options);
+            }
             $plugin->setOptions($options);
         }
 
@@ -219,7 +223,7 @@ abstract class StorageFactory
     public static function getPluginManager()
     {
         if (static::$plugins === null) {
-            static::$plugins = new Storage\PluginManager();
+            static::$plugins = new Storage\PluginManager(new ServiceManager);
         }
         return static::$plugins;
     }

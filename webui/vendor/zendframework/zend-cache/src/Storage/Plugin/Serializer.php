@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -20,7 +20,7 @@ class Serializer extends AbstractPlugin
     /**
      * @var array
      */
-    protected $capabilities = array();
+    protected $capabilities = [];
 
     /**
      * {@inheritDoc}
@@ -33,30 +33,30 @@ class Serializer extends AbstractPlugin
         $postPriority = -$priority;
 
         // read
-        $this->listeners[] = $events->attach('getItem.post', array($this, 'onReadItemPost'), $postPriority);
-        $this->listeners[] = $events->attach('getItems.post', array($this, 'onReadItemsPost'), $postPriority);
+        $this->listeners[] = $events->attach('getItem.post', [$this, 'onReadItemPost'], $postPriority);
+        $this->listeners[] = $events->attach('getItems.post', [$this, 'onReadItemsPost'], $postPriority);
 
         // write
-        $this->listeners[] = $events->attach('setItem.pre', array($this, 'onWriteItemPre'), $prePriority);
-        $this->listeners[] = $events->attach('setItems.pre', array($this, 'onWriteItemsPre'), $prePriority);
+        $this->listeners[] = $events->attach('setItem.pre', [$this, 'onWriteItemPre'], $prePriority);
+        $this->listeners[] = $events->attach('setItems.pre', [$this, 'onWriteItemsPre'], $prePriority);
 
-        $this->listeners[] = $events->attach('addItem.pre', array($this, 'onWriteItemPre'), $prePriority);
-        $this->listeners[] = $events->attach('addItems.pre', array($this, 'onWriteItemsPre'), $prePriority);
+        $this->listeners[] = $events->attach('addItem.pre', [$this, 'onWriteItemPre'], $prePriority);
+        $this->listeners[] = $events->attach('addItems.pre', [$this, 'onWriteItemsPre'], $prePriority);
 
-        $this->listeners[] = $events->attach('replaceItem.pre', array($this, 'onWriteItemPre'), $prePriority);
-        $this->listeners[] = $events->attach('replaceItems.pre', array($this, 'onWriteItemsPre'), $prePriority);
+        $this->listeners[] = $events->attach('replaceItem.pre', [$this, 'onWriteItemPre'], $prePriority);
+        $this->listeners[] = $events->attach('replaceItems.pre', [$this, 'onWriteItemsPre'], $prePriority);
 
-        $this->listeners[] = $events->attach('checkAndSetItem.pre', array($this, 'onWriteItemPre'), $prePriority);
+        $this->listeners[] = $events->attach('checkAndSetItem.pre', [$this, 'onWriteItemPre'], $prePriority);
 
         // increment / decrement item(s)
-        $this->listeners[] = $events->attach('incrementItem.pre', array($this, 'onIncrementItemPre'), $prePriority);
-        $this->listeners[] = $events->attach('incrementItems.pre', array($this, 'onIncrementItemsPre'), $prePriority);
+        $this->listeners[] = $events->attach('incrementItem.pre', [$this, 'onIncrementItemPre'], $prePriority);
+        $this->listeners[] = $events->attach('incrementItems.pre', [$this, 'onIncrementItemsPre'], $prePriority);
 
-        $this->listeners[] = $events->attach('decrementItem.pre', array($this, 'onDecrementItemPre'), $prePriority);
-        $this->listeners[] = $events->attach('decrementItems.pre', array($this, 'onDecrementItemsPre'), $prePriority);
+        $this->listeners[] = $events->attach('decrementItem.pre', [$this, 'onDecrementItemPre'], $prePriority);
+        $this->listeners[] = $events->attach('decrementItems.pre', [$this, 'onDecrementItemsPre'], $prePriority);
 
         // overwrite capabilities
-        $this->listeners[] = $events->attach('getCapabilities.post', array($this, 'onGetCapabilitiesPost'), $postPriority);
+        $this->listeners[] = $events->attach('getCapabilities.post', [$this, 'onGetCapabilitiesPost'], $postPriority);
     }
 
     /**
@@ -67,10 +67,12 @@ class Serializer extends AbstractPlugin
      */
     public function onReadItemPost(PostEvent $event)
     {
-        $serializer = $this->getOptions()->getSerializer();
-        $result     = $event->getResult();
-        $result     = $serializer->unserialize($result);
-        $event->setResult($result);
+        $result = $event->getResult();
+        if ($result !== null) {
+            $serializer = $this->getOptions()->getSerializer();
+            $result     = $serializer->unserialize($result);
+            $event->setResult($result);
+        }
     }
 
     /**
@@ -156,7 +158,7 @@ class Serializer extends AbstractPlugin
         $keyValuePairs = $storage->getItems(array_keys($params['keyValuePairs']));
         foreach ($params['keyValuePairs'] as $key => & $value) {
             if (isset($keyValuePairs[$key])) {
-                $keyValuePairs[$key]+= $value;
+                $keyValuePairs[$key] += $value;
             } else {
                 $keyValuePairs[$key] = $value;
             }
@@ -210,7 +212,7 @@ class Serializer extends AbstractPlugin
         $keyValuePairs = $storage->getItems(array_keys($params['keyValuePairs']));
         foreach ($params['keyValuePairs'] as $key => &$value) {
             if (isset($keyValuePairs[$key])) {
-                $keyValuePairs[$key]-= $value;
+                $keyValuePairs[$key] -= $value;
             } else {
                 $keyValuePairs[$key] = -$value;
             }
@@ -236,11 +238,11 @@ class Serializer extends AbstractPlugin
         $baseCapabilities = $event->getResult();
         $index = spl_object_hash($baseCapabilities);
 
-        if (!isset($this->capabilities[$index])) {
+        if (! isset($this->capabilities[$index])) {
             $this->capabilities[$index] = new Capabilities(
                 $baseCapabilities->getAdapter(),
                 new stdClass(), // marker
-                array('supportedDatatypes' => array(
+                ['supportedDatatypes' => [
                     'NULL'     => true,
                     'boolean'  => true,
                     'integer'  => true,
@@ -249,7 +251,7 @@ class Serializer extends AbstractPlugin
                     'array'    => true,
                     'object'   => 'object',
                     'resource' => false,
-                )),
+                ]],
                 $baseCapabilities
             );
         }

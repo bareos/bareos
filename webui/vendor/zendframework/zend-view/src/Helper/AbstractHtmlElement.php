@@ -32,7 +32,7 @@ abstract class AbstractHtmlElement extends AbstractHelper
      */
     public function getClosingBracket()
     {
-        if (!$this->closingBracket) {
+        if (! $this->closingBracket) {
             if ($this->isXhtml()) {
                 $this->closingBracket = ' />';
             } else {
@@ -72,9 +72,9 @@ abstract class AbstractHtmlElement extends AbstractHelper
         foreach ((array) $attribs as $key => $val) {
             $key = $escaper($key);
 
-            if (('on' == substr($key, 0, 2)) || ('constraints' == $key)) {
+            if (0 === strpos($key, 'on') || ('constraints' == $key)) {
                 // Don't escape event attributes; _do_ substitute double quotes with singles
-                if (!is_scalar($val)) {
+                if (! is_scalar($val)) {
                     // non-scalar data should be cast to JSON first
                     $val = \Zend\Json\Json::encode($val);
                 }
@@ -108,7 +108,7 @@ abstract class AbstractHtmlElement extends AbstractHelper
      */
     protected function normalizeId($value)
     {
-        if (strstr($value, '[')) {
+        if (false !== strpos($value, '[')) {
             if ('[]' == substr($value, -2)) {
                 $value = substr($value, 0, strlen($value) - 2);
             }

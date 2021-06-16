@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -31,7 +31,7 @@ class Session extends AbstractAdapter implements
      */
     public function setOptions($options)
     {
-        if (!$options instanceof SessionOptions) {
+        if (! $options instanceof SessionOptions) {
             $options = new SessionOptions($options);
         }
 
@@ -46,7 +46,7 @@ class Session extends AbstractAdapter implements
      */
     public function getOptions()
     {
-        if (!$this->options) {
+        if (! $this->options) {
             $this->setOptions(new SessionOptions());
         }
         return $this->options;
@@ -60,7 +60,7 @@ class Session extends AbstractAdapter implements
     protected function getSessionContainer()
     {
         $sessionContainer = $this->getOptions()->getSessionContainer();
-        if (!$sessionContainer) {
+        if (! $sessionContainer) {
             throw new Exception\RuntimeException("No session container configured");
         }
         return $sessionContainer;
@@ -81,7 +81,7 @@ class Session extends AbstractAdapter implements
         if ($cntr->offsetExists($ns)) {
             $keys = array_keys($cntr->offsetGet($ns));
         } else {
-            $keys = array();
+            $keys = [];
         }
 
         return new KeyListIterator($this, $keys);
@@ -96,7 +96,7 @@ class Session extends AbstractAdapter implements
      */
     public function flush()
     {
-        $this->getSessionContainer()->exchangeArray(array());
+        $this->getSessionContainer()->exchangeArray([]);
         return true;
     }
 
@@ -118,14 +118,13 @@ class Session extends AbstractAdapter implements
         $cntr = $this->getSessionContainer();
         $ns   = $this->getOptions()->getNamespace();
 
-        if (!$cntr->offsetExists($ns)) {
+        if (! $cntr->offsetExists($ns)) {
             return true;
         }
 
         $data    = $cntr->offsetGet($ns);
-        $prefixL = strlen($prefix);
         foreach ($data as $key => & $item) {
-            if (substr($key, 0, $prefixL) === $prefix) {
+            if (strpos($key, $prefix) === 0) {
                 unset($data[$key]);
             }
         }
@@ -150,14 +149,14 @@ class Session extends AbstractAdapter implements
         $cntr    = $this->getSessionContainer();
         $ns      = $this->getOptions()->getNamespace();
 
-        if (!$cntr->offsetExists($ns)) {
+        if (! $cntr->offsetExists($ns)) {
             $success = false;
             return;
         }
 
         $data    = $cntr->offsetGet($ns);
         $success = array_key_exists($normalizedKey, $data);
-        if (!$success) {
+        if (! $success) {
             return;
         }
 
@@ -177,12 +176,12 @@ class Session extends AbstractAdapter implements
         $cntr = $this->getSessionContainer();
         $ns   = $this->getOptions()->getNamespace();
 
-        if (!$cntr->offsetExists($ns)) {
-            return array();
+        if (! $cntr->offsetExists($ns)) {
+            return [];
         }
 
         $data   = $cntr->offsetGet($ns);
-        $result = array();
+        $result = [];
         foreach ($normalizedKeys as $normalizedKey) {
             if (array_key_exists($normalizedKey, $data)) {
                 $result[$normalizedKey] = $data[$normalizedKey];
@@ -203,7 +202,7 @@ class Session extends AbstractAdapter implements
         $cntr = $this->getSessionContainer();
         $ns   = $this->getOptions()->getNamespace();
 
-        if (!$cntr->offsetExists($ns)) {
+        if (! $cntr->offsetExists($ns)) {
             return false;
         }
 
@@ -222,12 +221,12 @@ class Session extends AbstractAdapter implements
         $cntr = $this->getSessionContainer();
         $ns   = $this->getOptions()->getNamespace();
 
-        if (!$cntr->offsetExists($ns)) {
-            return array();
+        if (! $cntr->offsetExists($ns)) {
+            return [];
         }
 
         $data   = $cntr->offsetGet($ns);
-        $result = array();
+        $result = [];
         foreach ($normalizedKeys as $normalizedKey) {
             if (array_key_exists($normalizedKey, $data)) {
                 $result[] = $normalizedKey;
@@ -250,7 +249,7 @@ class Session extends AbstractAdapter implements
      */
     protected function internalGetMetadata(& $normalizedKey)
     {
-        return $this->internalHasItem($normalizedKey) ? array() : false;
+        return $this->internalHasItem($normalizedKey) ? [] : false;
     }
 
     /* writing */
@@ -267,7 +266,7 @@ class Session extends AbstractAdapter implements
     {
         $cntr = $this->getSessionContainer();
         $ns   = $this->getOptions()->getNamespace();
-        $data = $cntr->offsetExists($ns) ? $cntr->offsetGet($ns) : array();
+        $data = $cntr->offsetExists($ns) ? $cntr->offsetGet($ns) : [];
         $data[$normalizedKey] = $value;
         $cntr->offsetSet($ns, $data);
         return true;
@@ -292,7 +291,7 @@ class Session extends AbstractAdapter implements
         }
         $cntr->offsetSet($ns, $data);
 
-        return array();
+        return [];
     }
 
     /**
@@ -317,7 +316,7 @@ class Session extends AbstractAdapter implements
 
             $data[$normalizedKey] = $value;
         } else {
-            $data = array($normalizedKey => $value);
+            $data = [$normalizedKey => $value];
         }
 
         $cntr->offsetSet($ns, $data);
@@ -336,7 +335,7 @@ class Session extends AbstractAdapter implements
         $cntr = $this->getSessionContainer();
         $ns   = $this->getOptions()->getNamespace();
 
-        $result = array();
+        $result = [];
         if ($cntr->offsetExists($ns)) {
             $data = $cntr->offsetGet($ns);
 
@@ -368,12 +367,12 @@ class Session extends AbstractAdapter implements
         $cntr = $this->getSessionContainer();
         $ns   = $this->getOptions()->getNamespace();
 
-        if (!$cntr->offsetExists($ns)) {
+        if (! $cntr->offsetExists($ns)) {
             return false;
         }
 
         $data = $cntr->offsetGet($ns);
-        if (!array_key_exists($normalizedKey, $data)) {
+        if (! array_key_exists($normalizedKey, $data)) {
             return false;
         }
         $data[$normalizedKey] = $value;
@@ -393,14 +392,14 @@ class Session extends AbstractAdapter implements
     {
         $cntr = $this->getSessionContainer();
         $ns   = $this->getOptions()->getNamespace();
-        if (!$cntr->offsetExists($ns)) {
+        if (! $cntr->offsetExists($ns)) {
             return array_keys($normalizedKeyValuePairs);
         }
 
         $data   = $cntr->offsetGet($ns);
-        $result = array();
+        $result = [];
         foreach ($normalizedKeyValuePairs as $normalizedKey => $value) {
-            if (!array_key_exists($normalizedKey, $data)) {
+            if (! array_key_exists($normalizedKey, $data)) {
                 $result[] = $normalizedKey;
             } else {
                 $data[$normalizedKey] = $value;
@@ -423,18 +422,18 @@ class Session extends AbstractAdapter implements
         $cntr = $this->getSessionContainer();
         $ns   = $this->getOptions()->getNamespace();
 
-        if (!$cntr->offsetExists($ns)) {
+        if (! $cntr->offsetExists($ns)) {
             return false;
         }
 
         $data = $cntr->offsetGet($ns);
-        if (!array_key_exists($normalizedKey, $data)) {
+        if (! array_key_exists($normalizedKey, $data)) {
             return false;
         }
 
         unset($data[$normalizedKey]);
 
-        if (!$data) {
+        if (! $data) {
             $cntr->offsetUnset($ns);
         } else {
             $cntr->offsetSet($ns, $data);
@@ -459,11 +458,11 @@ class Session extends AbstractAdapter implements
         if ($cntr->offsetExists($ns)) {
             $data = $cntr->offsetGet($ns);
         } else {
-            $data = array();
+            $data = [];
         }
 
         if (array_key_exists($normalizedKey, $data)) {
-            $data[$normalizedKey]+= $value;
+            $data[$normalizedKey] += $value;
             $newValue = $data[$normalizedKey];
         } else {
             // initial value
@@ -491,11 +490,11 @@ class Session extends AbstractAdapter implements
         if ($cntr->offsetExists($ns)) {
             $data = $cntr->offsetGet($ns);
         } else {
-            $data = array();
+            $data = [];
         }
 
         if (array_key_exists($normalizedKey, $data)) {
-            $data[$normalizedKey]-= $value;
+            $data[$normalizedKey] -= $value;
             $newValue = $data[$normalizedKey];
         } else {
             // initial value
@@ -521,8 +520,8 @@ class Session extends AbstractAdapter implements
             $this->capabilities = new Capabilities(
                 $this,
                 $this->capabilityMarker,
-                array(
-                    'supportedDatatypes' => array(
+                [
+                    'supportedDatatypes' => [
                         'NULL'     => true,
                         'boolean'  => true,
                         'integer'  => true,
@@ -531,13 +530,13 @@ class Session extends AbstractAdapter implements
                         'array'    => 'array',
                         'object'   => 'object',
                         'resource' => false,
-                    ),
-                    'supportedMetadata'  => array(),
+                    ],
+                    'supportedMetadata'  => [],
                     'minTtl'             => 0,
                     'maxKeyLength'       => 0,
                     'namespaceIsPrefix'  => false,
                     'namespaceSeparator' => '',
-                )
+                ]
             );
         }
 

@@ -38,7 +38,7 @@ class Response extends Message implements ResponseInterface
      */
     public function setErrorLevel($errorLevel)
     {
-        if (is_string($errorLevel) && !ctype_digit($errorLevel)) {
+        if (is_string($errorLevel) && ! ctype_digit($errorLevel)) {
             return $this;
         }
 

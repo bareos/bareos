@@ -66,11 +66,11 @@ abstract class AbstractManager implements Manager
         Config $config = null,
         Storage $storage = null,
         SaveHandler $saveHandler = null,
-        array $validators = array()
+        array $validators = []
     ) {
         // init config
         if ($config === null) {
-            if (!class_exists($this->defaultConfigClass)) {
+            if (! class_exists($this->defaultConfigClass)) {
                 throw new Exception\RuntimeException(sprintf(
                     'Unable to locate config class "%s"; class does not exist',
                     $this->defaultConfigClass
@@ -79,7 +79,7 @@ abstract class AbstractManager implements Manager
 
             $config = new $this->defaultConfigClass();
 
-            if (!$config instanceof Config) {
+            if (! $config instanceof Config) {
                 throw new Exception\RuntimeException(sprintf(
                     'Default config class %s is invalid; must implement %s\Config\ConfigInterface',
                     $this->defaultConfigClass,
@@ -92,7 +92,7 @@ abstract class AbstractManager implements Manager
 
         // init storage
         if ($storage === null) {
-            if (!class_exists($this->defaultStorageClass)) {
+            if (! class_exists($this->defaultStorageClass)) {
                 throw new Exception\RuntimeException(sprintf(
                     'Unable to locate storage class "%s"; class does not exist',
                     $this->defaultStorageClass
@@ -101,7 +101,7 @@ abstract class AbstractManager implements Manager
 
             $storage = new $this->defaultStorageClass();
 
-            if (!$storage instanceof Storage) {
+            if (! $storage instanceof Storage) {
                 throw new Exception\RuntimeException(sprintf(
                     'Default storage class %s is invalid; must implement %s\Storage\StorageInterface',
                     $this->defaultConfigClass,

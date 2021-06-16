@@ -1,10 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-i18n for the canonical source repository
+ * @copyright Copyright (c) 2005-2019 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-i18n/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\I18n\Translator\Loader;
@@ -24,14 +22,14 @@ class PhpArray extends AbstractFileLoader
      * @see    FileLoaderInterface::load()
      * @param  string $locale
      * @param  string $filename
-     * @return TextDomain|null
+     * @return TextDomain
      * @throws Exception\InvalidArgumentException
      */
     public function load($locale, $filename)
     {
         $resolvedIncludePath = stream_resolve_include_path($filename);
         $fromIncludePath = ($resolvedIncludePath !== false) ? $resolvedIncludePath : $filename;
-        if (!$fromIncludePath || !is_file($fromIncludePath) || !is_readable($fromIncludePath)) {
+        if (! $fromIncludePath || ! is_file($fromIncludePath) || ! is_readable($fromIncludePath)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Could not find or open file %s for reading',
                 $filename
@@ -40,7 +38,7 @@ class PhpArray extends AbstractFileLoader
 
         $messages = include $fromIncludePath;
 
-        if (!is_array($messages)) {
+        if (! is_array($messages)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Expected an array, but received %s',
                 gettype($messages)
@@ -49,7 +47,7 @@ class PhpArray extends AbstractFileLoader
 
         $textDomain = new TextDomain($messages);
 
-        if (array_key_exists('', $textDomain)) {
+        if ($textDomain->offsetExists('')) {
             if (isset($textDomain['']['plural_forms'])) {
                 $textDomain->setPluralRule(
                     PluralRule::fromString($textDomain['']['plural_forms'])

@@ -53,7 +53,7 @@ class FormDateTimeSelect extends FormDateSelectHelper
         $timeType = IntlDateFormatter::LONG,
         $locale = null
     ) {
-        if (!$element) {
+        if (! $element) {
             return $this;
         }
 
@@ -77,7 +77,7 @@ class FormDateTimeSelect extends FormDateSelectHelper
      */
     public function render(ElementInterface $element)
     {
-        if (!$element instanceof DateTimeSelectElement) {
+        if (! $element instanceof DateTimeSelectElement) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s requires that the element is of type Zend\Form\Element\DateTimeSelect',
                 __METHOD__
@@ -119,7 +119,7 @@ class FormDateTimeSelect extends FormDateSelectHelper
             $secondElement->setEmptyOption('');
         }
 
-        $data = array();
+        $data = [];
         $data[$pattern['day']]    = $selectHelper->render($dayElement);
         $data[$pattern['month']]  = $selectHelper->render($monthElement);
         $data[$pattern['year']]   = $selectHelper->render($yearElement);
@@ -198,9 +198,14 @@ class FormDateTimeSelect extends FormDateSelectHelper
     protected function parsePattern($renderDelimiters = true)
     {
         $pattern    = $this->getPattern();
-        $pregResult = preg_split("/([ -,.:\/]*'.*?'[ -,.:\/]*)|([ -,.:\/]+)/", $pattern, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+        $pregResult = preg_split(
+            "/([ -,.:\/]*'.*?'[ -,.:\/]*)|([ -,.:\/]+)/",
+            $pattern,
+            -1,
+            PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY
+        );
 
-        $result = array();
+        $result = [];
         foreach ($pregResult as $value) {
             if (stripos($value, "'") === false && stripos($value, 'd') !== false) {
                 $result['day'] = $value;
@@ -208,7 +213,7 @@ class FormDateTimeSelect extends FormDateSelectHelper
                 $result['month'] = $value;
             } elseif (stripos($value, "'") === false && stripos($value, 'y') !== false) {
                 $result['year'] = $value;
-            } elseif (stripos($value, "'") === false && stripos($value, 'h') !==  false) {
+            } elseif (stripos($value, "'") === false && stripos($value, 'h') !== false) {
                 $result['hour'] = $value;
             } elseif (stripos($value, "'") === false && stripos($value, 'm') !== false) {
                 $result['minute'] = $value;
@@ -237,7 +242,7 @@ class FormDateTimeSelect extends FormDateSelectHelper
         $valueFormatter = new IntlDateFormatter($this->getLocale(), null, null, null, null, $pattern);
         $date           = new DateTime('1970-01-01 00:00:00');
 
-        $result = array();
+        $result = [];
         for ($hour = 1; $hour <= 24; $hour++) {
             $key   = $keyFormatter->format($date);
             $value = $valueFormatter->format($date);
@@ -261,7 +266,7 @@ class FormDateTimeSelect extends FormDateSelectHelper
         $valueFormatter = new IntlDateFormatter($this->getLocale(), null, null, null, null, $pattern);
         $date           = new DateTime('1970-01-01 00:00:00');
 
-        $result = array();
+        $result = [];
         for ($min = 1; $min <= 60; $min++) {
             $key   = $keyFormatter->format($date);
             $value = $valueFormatter->format($date);
@@ -285,7 +290,7 @@ class FormDateTimeSelect extends FormDateSelectHelper
         $valueFormatter = new IntlDateFormatter($this->getLocale(), null, null, null, null, $pattern);
         $date           = new DateTime('1970-01-01 00:00:00');
 
-        $result = array();
+        $result = [];
         for ($sec = 1; $sec <= 60; $sec++) {
             $key   = $keyFormatter->format($date);
             $value = $valueFormatter->format($date);

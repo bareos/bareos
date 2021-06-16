@@ -20,7 +20,7 @@ class FormButton extends FormInput
      *
      * @var array
      */
-    protected $validTagAttributes = array(
+    protected $validTagAttributes = [
         'name'           => true,
         'autofocus'      => true,
         'disabled'       => true,
@@ -32,18 +32,18 @@ class FormButton extends FormInput
         'formtarget'     => true,
         'type'           => true,
         'value'          => true,
-    );
+    ];
 
     /**
      * Valid values for the button type
      *
      * @var array
      */
-    protected $validTypes = array(
+    protected $validTypes = [
         'button'         => true,
         'reset'          => true,
         'submit'         => true,
-    );
+    ];
 
     /**
      * Invoke helper as functor
@@ -56,7 +56,7 @@ class FormButton extends FormInput
      */
     public function __invoke(ElementInterface $element = null, $buttonContent = null)
     {
-        if (!$element) {
+        if (! $element) {
             return $this;
         }
 
@@ -91,7 +91,8 @@ class FormButton extends FormInput
 
         if (null !== ($translator = $this->getTranslator())) {
             $buttonContent = $translator->translate(
-                $buttonContent, $this->getTranslatorTextDomain()
+                $buttonContent,
+                $this->getTranslatorTextDomain()
             );
         }
 
@@ -123,7 +124,7 @@ class FormButton extends FormInput
             return sprintf('<button %s>', $attributes);
         }
 
-        if (!$attributesOrElement instanceof ElementInterface) {
+        if (! $attributesOrElement instanceof ElementInterface) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s expects an array or Zend\Form\ElementInterface instance; received "%s"',
                 __METHOD__,
@@ -175,7 +176,7 @@ class FormButton extends FormInput
         }
 
         $type = strtolower($type);
-        if (!isset($this->validTypes[$type])) {
+        if (! isset($this->validTypes[$type])) {
             return 'submit';
         }
 

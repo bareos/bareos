@@ -28,8 +28,8 @@ class Code128 extends AbstractAdapter
     public function __construct()
     {
         $this->setLength(-1);
-        $this->setCharacters(array(
-            'A' => array(
+        $this->setCharacters([
+            'A' => [
                  0 => ' ',  1 => '!',  2 => '"',  3 => '#',  4 => '$',  5 => '%',  6 => '&',  7 => "'",
                  8 => '(',  9 => ')', 10 => '*', 11 => '+', 12 => ',', 13 => '-', 14 => '.', 15 => '/',
                 16 => '0', 17 => '1', 18 => '2', 19 => '3', 20 => '4', 21 => '5', 22 => '6', 23 => '7',
@@ -38,13 +38,13 @@ class Code128 extends AbstractAdapter
                 40 => 'H', 41 => 'I', 42 => 'J', 43 => 'K', 44 => 'L', 45 => 'M', 46 => 'N', 47 => 'O',
                 48 => 'P', 49 => 'Q', 50 => 'R', 51 => 'S', 52 => 'T', 53 => 'U', 54 => 'V', 55 => 'W',
                 56 => 'X', 57 => 'Y', 58 => 'Z', 59 => '[', 60 => '\\', 61 => ']', 62 => '^', 63 => '_',
-                64 =>0x00, 65 =>0x01, 66 =>0x02, 67 =>0x03, 68 =>0x04, 69 =>0x05, 70 =>0x06, 71 =>0x07,
-                72 =>0x08, 73 =>0x09, 74 =>0x0A, 75 =>0x0B, 76 =>0x0C, 77 =>0x0D, 78 =>0x0E, 79 =>0x0F,
-                80 =>0x10, 81 =>0x11, 82 =>0x12, 83 =>0x13, 84 =>0x14, 85 =>0x15, 86 =>0x16, 87 =>0x17,
-                88 =>0x18, 89 =>0x19, 90 =>0x1A, 91 =>0x1B, 92 =>0x1C, 93 =>0x1D, 94 =>0x1E, 95 =>0x1F,
+                64 => 0x00, 65 => 0x01, 66 => 0x02, 67 => 0x03, 68 => 0x04, 69 => 0x05, 70 => 0x06, 71 => 0x07,
+                72 => 0x08, 73 => 0x09, 74 => 0x0A, 75 => 0x0B, 76 => 0x0C, 77 => 0x0D, 78 => 0x0E, 79 => 0x0F,
+                80 => 0x10, 81 => 0x11, 82 => 0x12, 83 => 0x13, 84 => 0x14, 85 => 0x15, 86 => 0x16, 87 => 0x17,
+                88 => 0x18, 89 => 0x19, 90 => 0x1A, 91 => 0x1B, 92 => 0x1C, 93 => 0x1D, 94 => 0x1E, 95 => 0x1F,
                 96 => 'Ç', 97 => 'ü', 98 => 'é', 99 => 'â', 100 => 'ä', 101 => 'à', 102 => 'å', 103 => '‡',
-               104 => 'ˆ', 105 => '‰', 106 => 'Š'),
-            'B' => array(
+               104 => 'ˆ', 105 => '‰', 106 => 'Š'],
+            'B' => [
                  0 => ' ',  1 => '!',  2 => '"',  3 => '#',  4 => '$',  5 => '%',  6 => '&',  7 => "'",
                  8 => '(',  9 => ')', 10 => '*', 11 => '+', 12 => ',', 13 => '-', 14 => '.', 15 => '/',
                 16 => '0', 17 => '1', 18 => '2', 19 => '3', 20 => '4', 21 => '5', 22 => '6', 23 => '7',
@@ -56,10 +56,10 @@ class Code128 extends AbstractAdapter
                 64 => '`', 65 => 'a', 66 => 'b', 67 => 'c', 68 => 'd', 69 => 'e', 70 => 'f', 71 => 'g',
                 72 => 'h', 73 => 'i', 74 => 'j', 75 => 'k', 76 => 'l', 77 => 'm', 78 => 'n', 79 => 'o',
                 80 => 'p', 81 => 'q', 82 => 'r', 83 => 's', 84 => 't', 85 => 'u', 86 => 'v', 87 => 'w',
-                88 => 'x', 89 => 'y', 90 => 'z', 91 => '{', 92 => '|', 93 => '}', 94 => '~', 95 =>0x7F,
+                88 => 'x', 89 => 'y', 90 => 'z', 91 => '{', 92 => '|', 93 => '}', 94 => '~', 95 => 0x7F,
                 96 => 'Ç', 97 => 'ü', 98 => 'é', 99 => 'â', 100 => 'ä', 101 => 'à', 102 => 'å', 103 => '‡',
-               104 => 'ˆ', 105 => '‰', 106 => 'Š'),
-            'C' => array(
+               104 => 'ˆ', 105 => '‰', 106 => 'Š'],
+            'C' => [
                  0 => '00',  1 => '01',  2 => '02',  3 => '03',  4 => '04',  5 => '05',  6 => '06',  7 => '07',
                  8 => '08',  9 => '09', 10 => '10', 11 => '11', 12 => '12', 13 => '13', 14 => '14', 15 => '15',
                 16 => '16', 17 => '17', 18 => '18', 19 => '19', 20 => '20', 21 => '21', 22 => '22', 23 => '23',
@@ -73,14 +73,14 @@ class Code128 extends AbstractAdapter
                 80 => '80', 81 => '81', 82 => '82', 83 => '83', 84 => '84', 85 => '85', 86 => '86', 87 => '87',
                 88 => '88', 89 => '89', 90 => '90', 91 => '91', 92 => '92', 93 => '93', 94 => '94', 95 => '95',
                 96 => '96', 97 => '97', 98 => '98', 99 => '99', 100 => 'ä', 101 => 'à', 102 => 'å', 103 => '‡',
-               104 => 'ˆ', 105 => '‰', 106 => 'Š')
-        ));
+               104 => 'ˆ', 105 => '‰', 106 => 'Š']
+        ]);
         $this->setChecksum('code128');
     }
 
     public function setUtf8StringWrapper(StringWrapperInterface $utf8StringWrapper)
     {
-        if (!$utf8StringWrapper->isSupported('UTF-8')) {
+        if (! $utf8StringWrapper->isSupported('UTF-8')) {
             throw new Exception\InvalidArgumentException(
                 "The string wrapper needs to support UTF-8 character encoding"
             );
@@ -95,7 +95,7 @@ class Code128 extends AbstractAdapter
      */
     public function getUtf8StringWrapper()
     {
-        if (!$this->utf8StringWrapper) {
+        if (! $this->utf8StringWrapper) {
             $this->utf8StringWrapper = StringUtils::getWrapper('UTF-8');
         }
         return $this->utf8StringWrapper;
@@ -109,7 +109,7 @@ class Code128 extends AbstractAdapter
      */
     public function hasValidCharacters($value)
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             return false;
         }
 
@@ -289,7 +289,7 @@ class Code128 extends AbstractAdapter
 
         if (($strWrapper->strpos($value, 'Š') != 1) || ($strWrapper->strlen($value) != 2)) {
             // return false if checksum is not readable and true if no startvalue is detected
-            return (!$usecheck);
+            return (! $usecheck);
         }
 
         $mod = $sum % 103;
@@ -378,7 +378,7 @@ class Code128 extends AbstractAdapter
             }
         } else {
             if ($ord < 32) {
-                return ($ord +64);
+                return ($ord + 64);
             } elseif ($ord <= 138) {
                 return ($ord - 32);
             } else {

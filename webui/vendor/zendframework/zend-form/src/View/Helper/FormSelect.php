@@ -31,7 +31,7 @@ class FormSelect extends AbstractHelper
      *
      * @var array
      */
-    protected $validSelectAttributes = array(
+    protected $validSelectAttributes = [
         'name'         => true,
         'autocomplete' => true,
         'autofocus'    => true,
@@ -40,33 +40,33 @@ class FormSelect extends AbstractHelper
         'multiple'     => true,
         'required'     => true,
         'size'         => true
-    );
+    ];
 
     /**
      * Attributes valid for options
      *
      * @var array
      */
-    protected $validOptionAttributes = array(
+    protected $validOptionAttributes = [
         'disabled' => true,
         'selected' => true,
         'label'    => true,
         'value'    => true,
-    );
+    ];
 
     /**
      * Attributes valid for option groups
      *
      * @var array
      */
-    protected $validOptgroupAttributes = array(
+    protected $validOptgroupAttributes = [
         'disabled' => true,
         'label'    => true,
-    );
+    ];
 
-    protected $translatableAttributes = array(
+    protected $translatableAttributes = [
         'label' => true,
-    );
+    ];
 
     /**
      * @var FormHidden|null
@@ -83,7 +83,7 @@ class FormSelect extends AbstractHelper
      */
     public function __invoke(ElementInterface $element = null)
     {
-        if (!$element) {
+        if (! $element) {
             return $this;
         }
 
@@ -100,7 +100,7 @@ class FormSelect extends AbstractHelper
      */
     public function render(ElementInterface $element)
     {
-        if (!$element instanceof SelectElement) {
+        if (! $element instanceof SelectElement) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s requires that the element is of type Zend\Form\Element\Select',
                 __METHOD__
@@ -118,7 +118,7 @@ class FormSelect extends AbstractHelper
         $options = $element->getValueOptions();
 
         if (($emptyOption = $element->getEmptyOption()) !== null) {
-            $options = array('' => $emptyOption) + $options;
+            $options = ['' => $emptyOption] + $options;
         }
 
         $attributes = $element->getAttributes();
@@ -166,10 +166,10 @@ class FormSelect extends AbstractHelper
      * @param  array $selectedOptions Option values that should be marked as selected
      * @return string
      */
-    public function renderOptions(array $options, array $selectedOptions = array())
+    public function renderOptions(array $options, array $selectedOptions = [])
     {
         $template      = '<option %s>%s</option>';
-        $optionStrings = array();
+        $optionStrings = [];
         $escapeHtml    = $this->getEscapeHtmlHelper();
 
         foreach ($options as $key => $optionSpec) {
@@ -179,10 +179,10 @@ class FormSelect extends AbstractHelper
             $disabled = false;
 
             if (is_scalar($optionSpec)) {
-                $optionSpec = array(
+                $optionSpec = [
                     'label' => $optionSpec,
                     'value' => $key
-                );
+                ];
             }
 
             if (isset($optionSpec['options']) && is_array($optionSpec['options'])) {
@@ -242,11 +242,11 @@ class FormSelect extends AbstractHelper
      * @param  array $selectedOptions
      * @return string
      */
-    public function renderOptgroup(array $optgroup, array $selectedOptions = array())
+    public function renderOptgroup(array $optgroup, array $selectedOptions = [])
     {
         $template = '<optgroup%s>%s</optgroup>';
 
-        $options = array();
+        $options = [];
         if (isset($optgroup['options']) && is_array($optgroup['options'])) {
             $options = $optgroup['options'];
             unset($optgroup['options']);
@@ -254,7 +254,7 @@ class FormSelect extends AbstractHelper
 
         $this->validTagAttributes = $this->validOptgroupAttributes;
         $attributes = $this->createAttributesString($optgroup);
-        if (!empty($attributes)) {
+        if (! empty($attributes)) {
             $attributes = ' ' . $attributes;
         }
 
@@ -281,16 +281,17 @@ class FormSelect extends AbstractHelper
     protected function validateMultiValue($value, array $attributes)
     {
         if (null === $value) {
-            return array();
+            return [];
         }
 
-        if (!is_array($value)) {
-            return (array) $value;
+        if (! is_array($value)) {
+            return [$value];
         }
 
-        if (!isset($attributes['multiple']) || !$attributes['multiple']) {
+        if (! isset($attributes['multiple']) || ! $attributes['multiple']) {
             throw new Exception\DomainException(sprintf(
-                '%s does not allow specifying multiple selected values when the element does not have a multiple attribute set to a boolean true',
+                '%s does not allow specifying multiple selected values when the element does not have a multiple '
+                . 'attribute set to a boolean true',
                 __CLASS__
             ));
         }
@@ -311,12 +312,12 @@ class FormSelect extends AbstractHelper
      */
     protected function getFormHiddenHelper()
     {
-        if (!$this->formHiddenHelper) {
+        if (! $this->formHiddenHelper) {
             if (method_exists($this->view, 'plugin')) {
                 $this->formHiddenHelper = $this->view->plugin('formhidden');
             }
 
-            if (!$this->formHiddenHelper instanceof FormHidden) {
+            if (! $this->formHiddenHelper instanceof FormHidden) {
                 $this->formHiddenHelper = new FormHidden();
             }
         }

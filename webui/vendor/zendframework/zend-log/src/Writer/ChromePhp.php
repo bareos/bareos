@@ -2,8 +2,8 @@
 /**
  * Zend Framework (http://framework.zend.com/)
  *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @link      http://github.com/zendframework/zend-log for the canonical source repository
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -42,8 +42,10 @@ class ChromePhp extends AbstractWriter
             $instance = isset($instance['instance']) ? $instance['instance'] : null;
         }
 
-        if (!($instance instanceof ChromePhpInterface || $instance === null)) {
-            throw new Exception\InvalidArgumentException('You must pass a valid Zend\Log\Writer\ChromePhp\ChromePhpInterface');
+        if (! ($instance instanceof ChromePhpInterface || $instance === null)) {
+            throw new Exception\InvalidArgumentException(
+                'You must pass a valid Zend\Log\Writer\ChromePhp\ChromePhpInterface'
+            );
         }
 
         $this->chromephp = $instance === null ? $this->getChromePhp() : $instance;
@@ -92,7 +94,7 @@ class ChromePhp extends AbstractWriter
     {
         // Remember: class names in strings are absolute; thus the class_exists
         // here references the canonical name for the ChromePhp class
-        if (!$this->chromephp instanceof ChromePhpInterface
+        if (! $this->chromephp instanceof ChromePhpInterface
             && class_exists('ChromePhp')
         ) {
             $this->setChromePhp(new ChromePhpBridge());

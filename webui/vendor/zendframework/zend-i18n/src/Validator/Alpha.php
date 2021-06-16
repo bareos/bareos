@@ -1,10 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-i18n for the canonical source repository
+ * @copyright Copyright (c) 2005-2019 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-i18n/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\I18n\Validator;
@@ -22,27 +20,27 @@ class Alpha extends Alnum
      *
      * @var AlphaFilter
      */
-    protected static $filter = null;
+    protected static $filter;
 
     /**
      * Validation failure message template definitions
      *
-     * @var array
+     * @var string[]
      */
-    protected $messageTemplates = array(
-        self::INVALID      => "Invalid type given. String expected",
-        self::NOT_ALPHA    => "The input contains non alphabetic characters",
-        self::STRING_EMPTY => "The input is an empty string"
-    );
+    protected $messageTemplates = [
+        self::INVALID      => 'Invalid type given. String expected',
+        self::NOT_ALPHA    => 'The input contains non alphabetic characters',
+        self::STRING_EMPTY => 'The input is an empty string'
+    ];
 
     /**
      * Options for this validator
      *
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'allowWhiteSpace' => false,  // Whether to allow white space characters; off by default
-    );
+    ];
 
     /**
      * Returns true if and only if $value contains only alphabetic characters
@@ -52,7 +50,7 @@ class Alpha extends Alnum
      */
     public function isValid($value)
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             $this->error(self::INVALID);
             return false;
         }

@@ -9,14 +9,18 @@
 
 namespace Zend\Navigation\Service;
 
+use Interop\Container\ContainerInterface;
+use Traversable;
 use Zend\Config;
 use Zend\Http\Request;
-use Zend\Mvc\Router\RouteMatch;
-use Zend\Mvc\Router\RouteStackInterface as Router;
+use Zend\Mvc\Router as MvcRouter;
 use Zend\Navigation\Exception;
 use Zend\Navigation\Navigation;
+use Zend\Router\RouteMatch;
+use Zend\Router\RouteStackInterface as Router;
 use Zend\ServiceManager\FactoryInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
+use Zend\Stdlib\ArrayUtils;
 
 /**
  * Abstract navigation factory
@@ -29,13 +33,29 @@ abstract class AbstractNavigationFactory implements FactoryInterface
     protected $pages;
 
     /**
-     * @param ServiceLocatorInterface $serviceLocator
-     * @return \Zend\Navigation\Navigation
+     * Create and return a new Navigation instance (v3).
+     *
+     * @param ContainerInterface $container
+     * @param string $requestedName
+     * @param null|array $options
+     * @return Navigation
      */
-    public function createService(ServiceLocatorInterface $serviceLocator)
+    public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
-        $pages = $this->getPages($serviceLocator);
-        return new Navigation($pages);
+        return new Navigation($this->getPages($container));
+    }
+
+    /**
+     * Create and return a new Navigation instance (v2).
+     *
+     * @param ServiceLocatorInterface $container
+     * @param null|string $name
+     * @param null|string $requestedName
+     * @return Navigation
+     */
+    public function createService(ServiceLocatorInterface $container)
+    {
+        return $this($container, Navigation::class);
     }
 
     /**
@@ -45,19 +65,19 @@ abstract class AbstractNavigationFactory implements FactoryInterface
     abstract protected function getName();
 
     /**
-     * @param ServiceLocatorInterface $serviceLocator
+     * @param ContainerInterface $container
      * @return array
      * @throws \Zend\Navigation\Exception\InvalidArgumentException
      */
-    protected function getPages(ServiceLocatorInterface $serviceLocator)
+    protected function getPages(ContainerInterface $container)
     {
         if (null === $this->pages) {
-            $configuration = $serviceLocator->get('Config');
+            $configuration = $container->get('config');
 
-            if (!isset($configuration['navigation'])) {
+            if (! isset($configuration['navigation'])) {
                 throw new Exception\InvalidArgumentException('Could not find navigation configuration key');
             }
-            if (!isset($configuration['navigation'][$this->getName()])) {
+            if (! isset($configuration['navigation'][$this->getName()])) {
                 throw new Exception\InvalidArgumentException(sprintf(
                     'Failed to find a navigation container by the name "%s"',
                     $this->getName()
@@ -65,26 +85,26 @@ abstract class AbstractNavigationFactory implements FactoryInterface
             }
 
             $pages       = $this->getPagesFromConfig($configuration['navigation'][$this->getName()]);
-            $this->pages = $this->preparePages($serviceLocator, $pages);
+            $this->pages = $this->preparePages($container, $pages);
         }
         return $this->pages;
     }
 
     /**
-     * @param ServiceLocatorInterface $serviceLocator
+     * @param ContainerInterface $container
      * @param array|\Zend\Config\Config $pages
      * @return null|array
      * @throws \Zend\Navigation\Exception\InvalidArgumentException
      */
-    protected function preparePages(ServiceLocatorInterface $serviceLocator, $pages)
+    protected function preparePages(ContainerInterface $container, $pages)
     {
-        $application = $serviceLocator->get('Application');
+        $application = $container->get('Application');
         $routeMatch  = $application->getMvcEvent()->getRouteMatch();
         $router      = $application->getMvcEvent()->getRouter();
         $request     = $application->getMvcEvent()->getRequest();
 
         // HTTP request is the only one that may be injected
-        if (!$request instanceof Request) {
+        if (! $request instanceof Request) {
             $request = null;
         }
 
@@ -99,19 +119,18 @@ abstract class AbstractNavigationFactory implements FactoryInterface
     protected function getPagesFromConfig($config = null)
     {
         if (is_string($config)) {
-            if (file_exists($config)) {
-                $config = Config\Factory::fromFile($config);
-            } else {
+            if (! file_exists($config)) {
                 throw new Exception\InvalidArgumentException(sprintf(
                     'Config was a string but file "%s" does not exist',
                     $config
                 ));
             }
-        } elseif ($config instanceof Config\Config) {
-            $config = $config->toArray();
-        } elseif (!is_array($config)) {
+            $config = Config\Factory::fromFile($config);
+        } elseif ($config instanceof Traversable) {
+            $config = ArrayUtils::iteratorToArray($config);
+        } elseif (! is_array($config)) {
             throw new Exception\InvalidArgumentException(
-                'Invalid input, expected array, filename, or Zend\Config object'
+                'Invalid input, expected array, filename, or Traversable object'
             );
         }
 
@@ -120,29 +139,32 @@ abstract class AbstractNavigationFactory implements FactoryInterface
 
     /**
      * @param array $pages
-     * @param RouteMatch $routeMatch
-     * @param Router $router
+     * @param RouteMatch|MvcRouter\RouteMatch $routeMatch
+     * @param Router|MvcRouter\RouteStackInterface $router
      * @param null|Request $request
      * @return array
      */
     protected function injectComponents(
         array $pages,
-        RouteMatch $routeMatch = null,
-        Router $router = null,
+        $routeMatch = null,
+        $router = null,
         $request = null
     ) {
+        $this->validateRouteMatch($routeMatch);
+        $this->validateRouter($router);
+
         foreach ($pages as &$page) {
             $hasUri = isset($page['uri']);
             $hasMvc = isset($page['action']) || isset($page['controller']) || isset($page['route']);
             if ($hasMvc) {
-                if (!isset($page['routeMatch']) && $routeMatch) {
+                if (! isset($page['routeMatch']) && $routeMatch) {
                     $page['routeMatch'] = $routeMatch;
                 }
-                if (!isset($page['router'])) {
+                if (! isset($page['router'])) {
                     $page['router'] = $router;
                 }
             } elseif ($hasUri) {
-                if (!isset($page['request'])) {
+                if (! isset($page['request'])) {
                     $page['request'] = $request;
                 }
             }
@@ -152,5 +174,57 @@ abstract class AbstractNavigationFactory implements FactoryInterface
             }
         }
         return $pages;
+    }
+
+    /**
+     * Validate that a route match argument provided to injectComponents is valid.
+     *
+     * @param null|RouteMatch|MvcRouter\RouteMatch
+     * @return void
+     * @throws Exception\InvalidArgumentException
+     */
+    private function validateRouteMatch($routeMatch)
+    {
+        if (null === $routeMatch) {
+            return;
+        }
+
+        if (! $routeMatch instanceof RouteMatch
+            && ! $routeMatch instanceof MvcRouter\RouteMatch
+        ) {
+            throw new Exception\InvalidArgumentException(sprintf(
+                '%s or %s expected by %s::injectComponents; received %s',
+                RouteMatch::class,
+                MvcRouter\RouteMatch::class,
+                __CLASS__,
+                (is_object($routeMatch) ? get_class($routeMatch) : gettype($routeMatch))
+            ));
+        }
+    }
+
+    /**
+     * Validate that a router argument provided to injectComponents is valid.
+     *
+     * @param null|Router|MvcRouter\RouteStackInterface
+     * @return void
+     * @throws Exception\InvalidArgumentException
+     */
+    private function validateRouter($router)
+    {
+        if (null === $router) {
+            return;
+        }
+
+        if (! $router instanceof Router
+            && ! $router instanceof MvcRouter\RouteStackInterface
+        ) {
+            throw new Exception\InvalidArgumentException(sprintf(
+                '%s or %s expected by %s::injectComponents; received %s',
+                RouteMatch::class,
+                MvcRouter\RouteMatch::class,
+                __CLASS__,
+                (is_object($router) ? get_class($router) : gettype($router))
+            ));
+        }
     }
 }

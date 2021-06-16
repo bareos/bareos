@@ -36,7 +36,7 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function setOptions($options)
     {
-        if (!$options instanceof AdapterOptions) {
+        if (! $options instanceof AdapterOptions) {
             $options = new AdapterOptions($options);
         }
 

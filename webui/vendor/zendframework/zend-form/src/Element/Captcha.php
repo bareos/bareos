@@ -51,9 +51,10 @@ class Captcha extends Element implements InputProviderInterface
     {
         if (is_array($captcha) || $captcha instanceof Traversable) {
             $captcha = ZendCaptcha\Factory::factory($captcha);
-        } elseif (!$captcha instanceof ZendCaptcha\AdapterInterface) {
+        } elseif (! $captcha instanceof ZendCaptcha\AdapterInterface) {
             throw new Exception\InvalidArgumentException(sprintf(
-                '%s expects either a Zend\Captcha\AdapterInterface or specification to pass to Zend\Captcha\Factory; received "%s"',
+                '%s expects either a Zend\Captcha\AdapterInterface or specification to pass to Zend\Captcha\Factory; '
+                . 'received "%s"',
                 __METHOD__,
                 (is_object($captcha) ? get_class($captcha) : gettype($captcha))
             ));
@@ -82,18 +83,18 @@ class Captcha extends Element implements InputProviderInterface
      */
     public function getInputSpecification()
     {
-        $spec = array(
+        $spec = [
             'name' => $this->getName(),
             'required' => true,
-            'filters' => array(
-                array('name' => 'Zend\Filter\StringTrim'),
-            ),
-        );
+            'filters' => [
+                ['name' => 'Zend\Filter\StringTrim'],
+            ],
+        ];
 
         // Test that we have a captcha before adding it to the spec
         $captcha = $this->getCaptcha();
         if ($captcha instanceof ZendCaptcha\AdapterInterface) {
-            $spec['validators'] = array($captcha);
+            $spec['validators'] = [$captcha];
         }
 
         return $spec;

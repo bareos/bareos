@@ -9,6 +9,7 @@
 
 namespace Zend\Mvc\Controller\Plugin\Service;
 
+use Interop\Container\ContainerInterface;
 use Zend\ServiceManager\Exception\ServiceNotCreatedException;
 use Zend\ServiceManager\FactoryInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
@@ -22,25 +23,31 @@ class ForwardFactory implements FactoryInterface
      * @return Forward
      * @throws ServiceNotCreatedException if Controllermanager service is not found in application service locator
      */
-    public function createService(ServiceLocatorInterface $plugins)
+    public function __invoke(ContainerInterface $container, $name, array $options = null)
     {
-        $services = $plugins->getServiceLocator();
-        if (!$services instanceof ServiceLocatorInterface) {
-            throw new ServiceNotCreatedException(sprintf(
-                '%s requires that the application service manager has been injected; none found',
-                __CLASS__
-            ));
-        }
-
-        if (!$services->has('ControllerManager')) {
+        if (! $container->has('ControllerManager')) {
             throw new ServiceNotCreatedException(sprintf(
                 '%s requires that the application service manager contains a "%s" service; none found',
                 __CLASS__,
                 'ControllerManager'
             ));
         }
-        $controllers = $services->get('ControllerManager');
+        $controllers = $container->get('ControllerManager');
 
         return new Forward($controllers);
+    }
+
+    /**
+     * Create and return Forward instance
+     *
+     * For use with zend-servicemanager v2; proxies to __invoke().
+     *
+     * @param ServiceLocatorInterface $container
+     * @return Forward
+     */
+    public function createService(ServiceLocatorInterface $container)
+    {
+        $parentContainer = $container->getServiceLocator() ?: $container;
+        return $this($parentContainer, Forward::class);
     }
 }

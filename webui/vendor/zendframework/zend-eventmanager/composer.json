@@ -6,30 +6,34 @@
         "zf2",
         "eventmanager"
     ],
-    "homepage": "https://github.com/zendframework/zend-event-manager",
+    "homepage": "https://github.com/zendframework/zend-eventmanager",
     "autoload": {
         "psr-4": {
             "Zend\\EventManager\\": "src/"
         }
     },
     "require": {
-        "php": ">=5.3.23",
-        "zendframework/zend-stdlib": "self.version"
+        "php": "^5.5 || ^7.0",
+        "zendframework/zend-stdlib": "^2.7"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "extra": {
         "branch-alias": {
-            "dev-master": "2.4-dev",
-            "dev-develop": "2.5-dev"
+            "dev-release-2.6": "2.6-dev",
+            "dev-master": "3.0-dev",
+            "dev-develop": "3.1-dev"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "ZendTest\\EventManager\\": "test/"
+            "ZendTest\\EventManager\\": "test/",
+            "ZendBench\\EventManager\\": "benchmarks/"
         }
     },
     "require-dev": {
         "fabpot/php-cs-fixer": "1.7.*",
-        "satooshi/php-coveralls": "dev-master",
-        "phpunit/PHPUnit": "~4.0"
+        "phpunit/PHPUnit": "~4.0",
+        "athletic/athletic": "dev-master"
     }
 }

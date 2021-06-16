@@ -13,16 +13,19 @@ use Zend\Validator\DateStep as DateStepValidator;
 
 class DateTimeLocal extends DateTime
 {
+
     const DATETIME_LOCAL_FORMAT = 'Y-m-d\TH:i';
+
+    const DATETIME_FORMAT = self::DATETIME_LOCAL_FORMAT;
 
     /**
      * Seed attributes
      *
      * @var array
      */
-    protected $attributes = array(
+    protected $attributes = [
         'type' => 'datetime-local',
-    );
+    ];
 
     /**
      * {@inheritDoc}
@@ -42,10 +45,10 @@ class DateTimeLocal extends DateTime
         $baseValue = (isset($this->attributes['min']))
                      ? $this->attributes['min'] : '1970-01-01T00:00';
 
-        return new DateStepValidator(array(
+        return new DateStepValidator([
             'format'    => $this->format,
             'baseValue' => $baseValue,
             'step'      => new \DateInterval("PT{$stepValue}M"),
-        ));
+        ]);
     }
 }

@@ -16,9 +16,9 @@ class StringTrim extends AbstractFilter
     /**
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'charlist' => null,
-    );
+    ];
 
     /**
      * Sets filter options
@@ -28,7 +28,7 @@ class StringTrim extends AbstractFilter
     public function __construct($charlistOrOptions = null)
     {
         if ($charlistOrOptions !== null) {
-            if (!is_array($charlistOrOptions) && !$charlistOrOptions  instanceof Traversable) {
+            if (! is_array($charlistOrOptions) && ! $charlistOrOptions  instanceof Traversable) {
                 $this->setCharList($charlistOrOptions);
             } else {
                 $this->setOptions($charlistOrOptions);
@@ -73,7 +73,7 @@ class StringTrim extends AbstractFilter
      */
     public function filter($value)
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             return $value;
         }
         $value = (string) $value;
@@ -96,8 +96,8 @@ class StringTrim extends AbstractFilter
     protected function unicodeTrim($value, $charlist = '\\\\s')
     {
         $chars = preg_replace(
-            array('/[\^\-\]\\\]/S', '/\\\{4}/S', '/\//'),
-            array('\\\\\\0', '\\', '\/'),
+            ['/[\^\-\]\\\]/S', '/\\\{4}/S', '/\//'],
+            ['\\\\\\0', '\\', '\/'],
             $charlist
         );
 

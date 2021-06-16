@@ -40,33 +40,33 @@ class HtmlEntities extends AbstractFilter
      *
      * @param array|Traversable $options
      */
-    public function __construct($options = array())
+    public function __construct($options = [])
     {
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
         }
-        if (!is_array($options)) {
+        if (! is_array($options)) {
             $options = func_get_args();
             $temp['quotestyle'] = array_shift($options);
-            if (!empty($options)) {
+            if (! empty($options)) {
                 $temp['charset'] = array_shift($options);
             }
 
             $options = $temp;
         }
 
-        if (!isset($options['quotestyle'])) {
+        if (! isset($options['quotestyle'])) {
             $options['quotestyle'] = ENT_QUOTES;
         }
 
-        if (!isset($options['encoding'])) {
+        if (! isset($options['encoding'])) {
             $options['encoding'] = 'UTF-8';
         }
         if (isset($options['charset'])) {
             $options['encoding'] = $options['charset'];
         }
 
-        if (!isset($options['doublequote'])) {
+        if (! isset($options['doublequote'])) {
             $options['doublequote'] = true;
         }
 
@@ -180,20 +180,20 @@ class HtmlEntities extends AbstractFilter
      */
     public function filter($value)
     {
-        if (!is_scalar($value)) {
+        if (! is_scalar($value)) {
             return $value;
         }
         $value = (string) $value;
 
         $filtered = htmlentities($value, $this->getQuoteStyle(), $this->getEncoding(), $this->getDoubleQuote());
-        if (strlen($value) && !strlen($filtered)) {
-            if (!function_exists('iconv')) {
+        if (strlen($value) && ! strlen($filtered)) {
+            if (! function_exists('iconv')) {
                 throw new Exception\DomainException('Encoding mismatch has resulted in htmlentities errors');
             }
             $enc      = $this->getEncoding();
             $value    = iconv('', $this->getEncoding() . '//IGNORE', $value);
             $filtered = htmlentities($value, $this->getQuoteStyle(), $enc, $this->getDoubleQuote());
-            if (!strlen($filtered)) {
+            if (! strlen($filtered)) {
                 throw new Exception\DomainException('Encoding mismatch has resulted in htmlentities errors');
             }
         }

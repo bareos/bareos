@@ -13,16 +13,19 @@
         }
     },
     "require": {
-        "php": ">=5.3.23"
+        "php": "^5.5 || ^7.0",
+        "zendframework/zend-hydrator": "~1.1"
     },
     "require-dev": {
-        "zendframework/zend-eventmanager": "self.version",
-        "zendframework/zend-serializer": "self.version",
-        "zendframework/zend-servicemanager": "self.version",
-        "zendframework/zend-filter": "self.version",
+        "zendframework/zend-config": "~2.5",
+        "zendframework/zend-eventmanager": "~2.5",
+        "zendframework/zend-inputfilter": "~2.5",
+        "zendframework/zend-serializer": "~2.5",
+        "zendframework/zend-servicemanager": "~2.5",
+        "zendframework/zend-filter": "~2.5",
         "fabpot/php-cs-fixer": "1.7.*",
-        "satooshi/php-coveralls": "dev-master",
-        "phpunit/PHPUnit": "~4.0"
+        "phpunit/PHPUnit": "~4.0",
+        "athletic/athletic": "~0.1"
     },
     "suggest": {
         "zendframework/zend-eventmanager": "To support aggregate hydrator usage",
@@ -30,15 +33,19 @@
         "zendframework/zend-servicemanager": "To support hydrator plugin manager usage",
         "zendframework/zend-filter": "To support naming strategy hydrator usage"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "extra": {
         "branch-alias": {
-            "dev-master": "2.4-dev",
-            "dev-develop": "2.5-dev"
+            "dev-release-2.7": "2.7-dev",
+            "dev-master": "3.0-dev",
+            "dev-develop": "3.1-dev"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "ZendTest\\Stdlib\\": "test/"
+            "ZendTest\\Stdlib\\": "test/",
+            "ZendBench\\Stdlib\\": "benchmark/"
         }
     }
 }

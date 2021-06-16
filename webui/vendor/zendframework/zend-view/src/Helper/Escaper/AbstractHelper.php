@@ -52,7 +52,7 @@ abstract class AbstractHelper extends Helper\AbstractHelper
         }
 
         if (is_array($value)) {
-            if (!(self::RECURSE_ARRAY & $recurse)) {
+            if (! (self::RECURSE_ARRAY & $recurse)) {
                 throw new Exception\InvalidArgumentException(
                     'Array provided to Escape helper, but flags do not allow recursion'
                 );
@@ -64,7 +64,7 @@ abstract class AbstractHelper extends Helper\AbstractHelper
         }
 
         if (is_object($value)) {
-            if (!(self::RECURSE_OBJECT & $recurse)) {
+            if (! (self::RECURSE_OBJECT & $recurse)) {
                 // Attempt to cast it to a string
                 if (method_exists($value, '__toString')) {
                     return $this->escape((string) $value);

@@ -16,9 +16,9 @@ class StringToUpper extends AbstractUnicode
     /**
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'encoding' => null,
-    );
+    ];
 
     /**
      * Constructor
@@ -28,7 +28,7 @@ class StringToUpper extends AbstractUnicode
     public function __construct($encodingOrOptions = null)
     {
         if ($encodingOrOptions !== null) {
-            if (!static::isOptions($encodingOrOptions)) {
+            if (! static::isOptions($encodingOrOptions)) {
                 $this->setEncoding($encodingOrOptions);
             } else {
                 $this->setOptions($encodingOrOptions);
@@ -48,7 +48,7 @@ class StringToUpper extends AbstractUnicode
      */
     public function filter($value)
     {
-        if (!is_scalar($value)) {
+        if (! is_scalar($value)) {
             return $value;
         }
         $value = (string) $value;

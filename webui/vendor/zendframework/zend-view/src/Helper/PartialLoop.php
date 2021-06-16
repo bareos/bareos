@@ -38,9 +38,9 @@ class PartialLoop extends Partial
      *
      * @var array indexed by nesting level
      */
-    private $objectKeyStack = array(
+    private $objectKeyStack = [
         0 => null,
-    );
+    ];
 
     /**
      * Renders a template fragment within a variable scope distinct from the
@@ -58,7 +58,20 @@ class PartialLoop extends Partial
         if (0 == func_num_args()) {
             return $this;
         }
+        return $this->loop($name, $values);
+    }
 
+    /**
+     * Renders a template fragment within a variable scope distinct from the
+     * calling View object.
+     *
+     * @param  string $name   Name of view script
+     * @param  array  $values Variables to populate in the view
+     * @throws Exception\InvalidArgumentException
+     * @return string
+     */
+    public function loop($name = null, $values = null)
+    {
         // reset the counter if it's called again
         $this->partialCounter = 0;
         $content = '';

@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -46,7 +46,7 @@ class XCacheOptions extends AdapterOptions
      * Set namespace separator
      *
      * @param  string $namespaceSeparator
-     * @return XCacheOptions
+     * @return XCacheOptions Provides a fluent interface
      */
     public function setNamespaceSeparator($namespaceSeparator)
     {
@@ -70,7 +70,7 @@ class XCacheOptions extends AdapterOptions
      * Set username to call admin functions
      *
      * @param  null|string $adminUser
-     * @return XCacheOptions
+     * @return XCacheOptions Provides a fluent interface
      */
     public function setAdminUser($adminUser)
     {
@@ -96,7 +96,7 @@ class XCacheOptions extends AdapterOptions
      * Enable/Disable admin authentication handling
      *
      * @param  bool $adminAuth
-     * @return XCacheOptions
+     * @return XCacheOptions Provides a fluent interface
      */
     public function setAdminAuth($adminAuth)
     {
@@ -122,7 +122,7 @@ class XCacheOptions extends AdapterOptions
      * Set password to call admin functions
      *
      * @param  null|string $adminPass
-     * @return XCacheOptions
+     * @return XCacheOptions Provides a fluent interface
      */
     public function setAdminPass($adminPass)
     {

@@ -86,7 +86,7 @@ class StandardConfig implements ConfigInterface
      *
      * @var array
      */
-    protected $options = array();
+    protected $options = [];
 
     /**
      * Set many options at once
@@ -101,7 +101,7 @@ class StandardConfig implements ConfigInterface
      */
     public function setOptions($options)
     {
-        if (!is_array($options) && !$options instanceof Traversable) {
+        if (! is_array($options) && ! $options instanceof Traversable) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'Parameter provided to %s must be an array or Traversable',
                 __METHOD__
@@ -225,10 +225,10 @@ class StandardConfig implements ConfigInterface
      */
     public function setSavePath($savePath)
     {
-        if (!is_dir($savePath)) {
+        if (! is_dir($savePath)) {
             throw new Exception\InvalidArgumentException('Invalid save_path provided; not a directory');
         }
-        if (!is_writable($savePath)) {
+        if (! is_writable($savePath)) {
             throw new Exception\InvalidArgumentException('Invalid save_path provided; not writable');
         }
 
@@ -289,7 +289,7 @@ class StandardConfig implements ConfigInterface
      */
     public function setGcProbability($gcProbability)
     {
-        if (!is_numeric($gcProbability)) {
+        if (! is_numeric($gcProbability)) {
             throw new Exception\InvalidArgumentException('Invalid gc_probability; must be numeric');
         }
         $gcProbability = (int) $gcProbability;
@@ -308,7 +308,7 @@ class StandardConfig implements ConfigInterface
      */
     public function getGcProbability()
     {
-        if (!isset($this->options['gc_probability'])) {
+        if (! isset($this->options['gc_probability'])) {
             $this->options['gc_probability'] = $this->getStorageOption('gc_probability');
         }
 
@@ -324,7 +324,7 @@ class StandardConfig implements ConfigInterface
      */
     public function setGcDivisor($gcDivisor)
     {
-        if (!is_numeric($gcDivisor)) {
+        if (! is_numeric($gcDivisor)) {
             throw new Exception\InvalidArgumentException('Invalid gc_divisor; must be numeric');
         }
         $gcDivisor = (int) $gcDivisor;
@@ -343,7 +343,7 @@ class StandardConfig implements ConfigInterface
      */
     public function getGcDivisor()
     {
-        if (!isset($this->options['gc_divisor'])) {
+        if (! isset($this->options['gc_divisor'])) {
             $this->options['gc_divisor'] = $this->getStorageOption('gc_divisor');
         }
 
@@ -359,7 +359,7 @@ class StandardConfig implements ConfigInterface
      */
     public function setGcMaxlifetime($gcMaxlifetime)
     {
-        if (!is_numeric($gcMaxlifetime)) {
+        if (! is_numeric($gcMaxlifetime)) {
             throw new Exception\InvalidArgumentException('Invalid gc_maxlifetime; must be numeric');
         }
 
@@ -380,7 +380,7 @@ class StandardConfig implements ConfigInterface
      */
     public function getGcMaxlifetime()
     {
-        if (!isset($this->options['gc_maxlifetime'])) {
+        if (! isset($this->options['gc_maxlifetime'])) {
             $this->options['gc_maxlifetime'] = $this->getStorageOption('gc_maxlifetime');
         }
 
@@ -396,7 +396,7 @@ class StandardConfig implements ConfigInterface
      */
     public function setCookieLifetime($cookieLifetime)
     {
-        if (!is_numeric($cookieLifetime)) {
+        if (! is_numeric($cookieLifetime)) {
             throw new Exception\InvalidArgumentException('Invalid cookie_lifetime; must be numeric');
         }
         if (0 > $cookieLifetime) {
@@ -466,13 +466,13 @@ class StandardConfig implements ConfigInterface
      */
     public function setCookieDomain($cookieDomain)
     {
-        if (!is_string($cookieDomain)) {
+        if (! is_string($cookieDomain)) {
             throw new Exception\InvalidArgumentException('Invalid cookie domain: must be a string');
         }
 
         $validator = new HostnameValidator(HostnameValidator::ALLOW_ALL);
 
-        if (!empty($cookieDomain) && !$validator->isValid($cookieDomain)) {
+        if (! empty($cookieDomain) && ! $validator->isValid($cookieDomain)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid cookie domain: ' . implode('; ', $validator->getMessages())
             );
@@ -586,7 +586,11 @@ class StandardConfig implements ConfigInterface
      */
     public function setEntropyFile($entropyFile)
     {
-        if (!is_readable($entropyFile)) {
+        if (PHP_VERSION_ID >= 70100) {
+            trigger_error('session.entropy_file is removed starting with PHP 7.1', E_USER_DEPRECATED);
+        }
+
+        if (! is_readable($entropyFile)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 "Invalid entropy_file provided: '%s'; doesn't exist or not readable",
                 $entropyFile
@@ -605,7 +609,11 @@ class StandardConfig implements ConfigInterface
      */
     public function getEntropyFile()
     {
-        if (!isset($this->options['entropy_file'])) {
+        if (PHP_VERSION_ID >= 70100) {
+            trigger_error('session.entropy_file is removed starting with PHP 7.1', E_USER_DEPRECATED);
+        }
+
+        if (! isset($this->options['entropy_file'])) {
             $this->options['entropy_file'] = $this->getStorageOption('entropy_file');
         }
 
@@ -621,7 +629,11 @@ class StandardConfig implements ConfigInterface
      */
     public function setEntropyLength($entropyLength)
     {
-        if (!is_numeric($entropyLength)) {
+        if (PHP_VERSION_ID >= 70100) {
+            trigger_error('session.entropy_length is removed starting with PHP 7.1', E_USER_DEPRECATED);
+        }
+
+        if (! is_numeric($entropyLength)) {
             throw new Exception\InvalidArgumentException('Invalid entropy_length; must be numeric');
         }
         if (0 > $entropyLength) {
@@ -640,7 +652,11 @@ class StandardConfig implements ConfigInterface
      */
     public function getEntropyLength()
     {
-        if (!isset($this->options['entropy_length'])) {
+        if (PHP_VERSION_ID >= 70100) {
+            trigger_error('session.entropy_length is removed starting with PHP 7.1', E_USER_DEPRECATED);
+        }
+
+        if (! isset($this->options['entropy_length'])) {
             $this->options['entropy_length'] = $this->getStorageOption('entropy_length');
         }
 
@@ -656,7 +672,7 @@ class StandardConfig implements ConfigInterface
      */
     public function setCacheExpire($cacheExpire)
     {
-        if (!is_numeric($cacheExpire)) {
+        if (! is_numeric($cacheExpire)) {
             throw new Exception\InvalidArgumentException('Invalid cache_expire; must be numeric');
         }
 
@@ -677,11 +693,40 @@ class StandardConfig implements ConfigInterface
      */
     public function getCacheExpire()
     {
-        if (!isset($this->options['cache_expire'])) {
+        if (! isset($this->options['cache_expire'])) {
             $this->options['cache_expire'] = $this->getStorageOption('cache_expire');
         }
 
         return $this->options['cache_expire'];
+    }
+
+    /**
+     * Set session.hash_function
+     *
+     * @param  string $hashFunction
+     * @return mixed
+     */
+    public function setHashFunction($hashFunction)
+    {
+        if (PHP_VERSION_ID >= 70100) {
+            trigger_error('session.hash_function is removed starting with PHP 7.1', E_USER_DEPRECATED);
+        }
+
+        return $this->setOption('hash_function', $hashFunction);
+    }
+
+    /**
+     * Get session.hash_function
+     *
+     * @return string
+     */
+    public function getHashFunction()
+    {
+        if (PHP_VERSION_ID >= 70100) {
+            trigger_error('session.hash_function is removed starting with PHP 7.1', E_USER_DEPRECATED);
+        }
+
+        return $this->getOption('hash_function');
     }
 
     /**
@@ -693,7 +738,11 @@ class StandardConfig implements ConfigInterface
      */
     public function setHashBitsPerCharacter($hashBitsPerCharacter)
     {
-        if (!is_numeric($hashBitsPerCharacter)) {
+        if (PHP_VERSION_ID >= 70100) {
+            trigger_error('session.hash_bits_per_character is removed starting with PHP 7.1', E_USER_DEPRECATED);
+        }
+
+        if (! is_numeric($hashBitsPerCharacter)) {
             throw new Exception\InvalidArgumentException('Invalid hash bits per character provided');
         }
         $hashBitsPerCharacter = (int) $hashBitsPerCharacter;
@@ -709,11 +758,79 @@ class StandardConfig implements ConfigInterface
      */
     public function getHashBitsPerCharacter()
     {
-        if (!isset($this->options['hash_bits_per_character'])) {
+        if (PHP_VERSION_ID >= 70100) {
+            trigger_error('session.hash_bits_per_character is removed starting with PHP 7.1', E_USER_DEPRECATED);
+        }
+
+        if (! isset($this->options['hash_bits_per_character'])) {
             $this->options['hash_bits_per_character'] = $this->getStorageOption('hash_bits_per_character');
         }
 
         return $this->options['hash_bits_per_character'];
+    }
+
+    /**
+     * Set session.sid_length
+     *
+     * @param  int $sidLength
+     * @return StandardConfig
+     * @throws Exception\InvalidArgumentException
+     */
+    public function setSidLength($sidLength)
+    {
+        if (! is_numeric($sidLength) || $sidLength < 22 || $sidLength > 256) {
+            throw new Exception\InvalidArgumentException('Invalid length provided');
+        }
+        $sidLength = (int) $sidLength;
+        $this->setOption('sid_length', $sidLength);
+        $this->setStorageOption('sid_length', $sidLength);
+        return $this;
+    }
+
+    /**
+     * Get session.sid_length
+     *
+     * @return string
+     */
+    public function getSidLength()
+    {
+        if (! isset($this->options['sid_length'])) {
+            $this->options['sid_length'] = $this->getStorageOption('sid_length');
+        }
+
+        return $this->options['sid_length'];
+    }
+
+    /**
+     * Set session.sid_bits_per_character
+     *
+     * @param  int $sidBitsPerCharacter
+     * @return StandardConfig
+     * @throws Exception\InvalidArgumentException
+     */
+    public function setSidBitsPerCharacter($sidBitsPerCharacter)
+    {
+        if (! is_numeric($sidBitsPerCharacter)) {
+            throw new Exception\InvalidArgumentException('Invalid sid bits per character provided');
+        }
+        $sidBitsPerCharacter = (int) $sidBitsPerCharacter;
+        $this->setOption('sid_bits_per_character', $sidBitsPerCharacter);
+        $this->setStorageOption('sid_bits_per_character', $sidBitsPerCharacter);
+        return $this;
+    }
+
+    /**
+     * Get session.sid_bits_per_character
+     *
+     * @return string
+     */
+    public function getSidBitsPerCharacter()
+    {
+        if (! isset($this->options['sid_bits_per_character'])) {
+            $this->options['sid_bits_per_character'] = $this->getStorageOption('sid_bits_per_character');
+        }
+
+        return $this->options['sid_bits_per_character'];
     }
 
     /**
@@ -725,7 +842,7 @@ class StandardConfig implements ConfigInterface
      */
     public function setRememberMeSeconds($rememberMeSeconds)
     {
-        if (!is_numeric($rememberMeSeconds)) {
+        if (! is_numeric($rememberMeSeconds)) {
             throw new Exception\InvalidArgumentException('Invalid remember_me_seconds; must be numeric');
         }
 
@@ -759,7 +876,7 @@ class StandardConfig implements ConfigInterface
      */
     public function toArray()
     {
-        $extraOpts = array(
+        $extraOpts = [
             'cookie_domain'       => $this->getCookieDomain(),
             'cookie_httponly'     => $this->getCookieHttpOnly(),
             'cookie_lifetime'     => $this->getCookieLifetime(),
@@ -769,7 +886,7 @@ class StandardConfig implements ConfigInterface
             'remember_me_seconds' => $this->getRememberMeSeconds(),
             'save_path'           => $this->getSavePath(),
             'use_cookies'         => $this->getUseCookies(),
-        );
+        ];
         return array_merge($this->options, $extraOpts);
     }
 

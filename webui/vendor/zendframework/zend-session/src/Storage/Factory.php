@@ -25,18 +25,18 @@ abstract class Factory
      * @return StorageInterface
      * @throws Exception\InvalidArgumentException for unrecognized $type or individual options
      */
-    public static function factory($type, $options = array())
+    public static function factory($type, $options = [])
     {
-        if (!is_string($type)) {
+        if (! is_string($type)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s expects the $type argument to be a string class name; received "%s"',
                 __METHOD__,
                 (is_object($type) ? get_class($type) : gettype($type))
             ));
         }
-        if (!class_exists($type)) {
+        if (! class_exists($type)) {
             $class = __NAMESPACE__ . '\\' . $type;
-            if (!class_exists($class)) {
+            if (! class_exists($class)) {
                 throw new Exception\InvalidArgumentException(sprintf(
                     '%s expects the $type argument to be a valid class name; received "%s"',
                     __METHOD__,
@@ -49,7 +49,7 @@ abstract class Factory
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
         }
-        if (!is_array($options)) {
+        if (! is_array($options)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s expects the $options argument to be an array or Traversable; received "%s"',
                 __METHOD__,
@@ -83,12 +83,12 @@ abstract class Factory
      */
     protected static function createArrayStorage($type, $options)
     {
-        $input         = array();
+        $input         = [];
         $flags         = ArrayObject::ARRAY_AS_PROPS;
         $iteratorClass = 'ArrayIterator';
 
         if (isset($options['input']) && null !== $options['input']) {
-            if (!is_array($options['input'])) {
+            if (! is_array($options['input'])) {
                 throw new Exception\InvalidArgumentException(sprintf(
                     '%s expects the "input" option to be an array; received "%s"',
                     $type,
@@ -103,11 +103,14 @@ abstract class Factory
         }
 
         if (isset($options['iterator_class'])) {
-            if (!class_exists($options['iterator_class'])) {
+            if (! class_exists($options['iterator_class'])) {
                 throw new Exception\InvalidArgumentException(sprintf(
                     '%s expects the "iterator_class" option to be a valid class; received "%s"',
                     $type,
-                    (is_object($options['iterator_class']) ? get_class($options['iterator_class']) : gettype($options['iterator_class']))
+                    (is_object($options['iterator_class'])
+                        ? get_class($options['iterator_class'])
+                        : gettype($options['iterator_class'])
+                    )
                 ));
             }
             $iteratorClass = $options['iterator_class'];
@@ -128,17 +131,16 @@ abstract class Factory
     {
         $input = null;
         if (isset($options['input'])) {
-            if (null !== $options['input']
-                && !is_array($options['input'])
-                && !$input instanceof ArrayAccess
+            $input = $options['input'];
+            if (! is_array($input)
+                && ! $input instanceof ArrayAccess
             ) {
                 throw new Exception\InvalidArgumentException(sprintf(
                     '%s expects the "input" option to be null, an array, or to implement ArrayAccess; received "%s"',
                     $type,
-                    (is_object($options['input']) ? get_class($options['input']) : gettype($options['input']))
+                    is_object($input) ? get_class($input) : gettype($input)
                 ));
             }
-            $input = $options['input'];
         }
 
         return new $type($input);

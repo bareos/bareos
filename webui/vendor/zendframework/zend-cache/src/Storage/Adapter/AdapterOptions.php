@@ -3,13 +3,14 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
 namespace Zend\Cache\Storage\Adapter;
 
 use ArrayObject;
+use Traversable;
 use Zend\Cache\Exception;
 use Zend\Cache\Storage\Event;
 use Zend\Cache\Storage\StorageInterface;
@@ -22,6 +23,16 @@ use Zend\Stdlib\ErrorHandler;
  */
 class AdapterOptions extends AbstractOptions
 {
+    // @codingStandardsIgnoreStart
+    /**
+     * Prioritized properties ordered by prio to be set first
+     * in case a bulk of options sets set at once
+     *
+     * @var string[]
+     */
+    protected $__prioritizedProperties__ = [];
+    // @codingStandardsIgnoreEnd
+
     /**
      * The adapter using these options
      *
@@ -68,7 +79,7 @@ class AdapterOptions extends AbstractOptions
      * Adapter using this instance
      *
      * @param  StorageInterface|null $adapter
-     * @return AdapterOptions
+     * @return AdapterOptions Provides a fluent interface
      */
     public function setAdapter(StorageInterface $adapter = null)
     {
@@ -79,9 +90,9 @@ class AdapterOptions extends AbstractOptions
     /**
      * Set key pattern
      *
-     * @param  null|string $keyPattern
+     * @param  string $keyPattern
      * @throws Exception\InvalidArgumentException
-     * @return AdapterOptions
+     * @return AdapterOptions Provides a fluent interface
      */
     public function setKeyPattern($keyPattern)
     {
@@ -122,7 +133,7 @@ class AdapterOptions extends AbstractOptions
      * Set namespace.
      *
      * @param  string $namespace
-     * @return AdapterOptions
+     * @return AdapterOptions Provides a fluent interface
      */
     public function setNamespace($namespace)
     {
@@ -149,7 +160,7 @@ class AdapterOptions extends AbstractOptions
      * Enable/Disable reading data from cache.
      *
      * @param  bool $readable
-     * @return AbstractAdapter
+     * @return AdapterOptions Provides a fluent interface
      */
     public function setReadable($readable)
     {
@@ -175,7 +186,7 @@ class AdapterOptions extends AbstractOptions
      * Set time to live.
      *
      * @param  int|float $ttl
-     * @return AdapterOptions
+     * @return AdapterOptions Provides a fluent interface
      */
     public function setTtl($ttl)
     {
@@ -201,7 +212,7 @@ class AdapterOptions extends AbstractOptions
      * Enable/Disable writing data to cache.
      *
      * @param  bool $writable
-     * @return AdapterOptions
+     * @return AdapterOptions Provides a fluent interface
      */
     public function setWritable($writable)
     {
@@ -234,8 +245,8 @@ class AdapterOptions extends AbstractOptions
     protected function triggerOptionEvent($optionName, $optionValue)
     {
         if ($this->adapter instanceof EventsCapableInterface) {
-            $event = new Event('option', $this->adapter, new ArrayObject(array($optionName => $optionValue)));
-            $this->adapter->getEventManager()->trigger($event);
+            $event = new Event('option', $this->adapter, new ArrayObject([$optionName => $optionValue]));
+            $this->adapter->getEventManager()->triggerEvent($event);
         }
     }
 
@@ -248,7 +259,7 @@ class AdapterOptions extends AbstractOptions
      */
     protected function normalizeTtl(&$ttl)
     {
-        if (!is_int($ttl)) {
+        if (! is_int($ttl)) {
             $ttl = (float) $ttl;
 
             // convert to int if possible
@@ -260,5 +271,72 @@ class AdapterOptions extends AbstractOptions
         if ($ttl < 0) {
             throw new Exception\InvalidArgumentException("TTL can't be negative");
         }
+    }
+
+    /**
+     * Cast to array
+     *
+     * @return array
+     */
+    public function toArray()
+    {
+        $array = [];
+        $transform = function ($letters) {
+            $letter = array_shift($letters);
+            return '_' . strtolower($letter);
+        };
+        foreach ($this as $key => $value) {
+            if ($key === '__strictMode__' || $key === '__prioritizedProperties__') {
+                continue;
+            }
+            $normalizedKey = preg_replace_callback('/([A-Z])/', $transform, $key);
+            $array[$normalizedKey] = $value;
+        }
+        return $array;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * NOTE: This method was overwritten just to support prioritized properties
+     *       {@link https://github.com/zendframework/zf2/issues/6381}
+     *
+     * @param  array|Traversable|AbstractOptions $options
+     * @throws Exception\InvalidArgumentException
+     * @return AbstractOptions Provides fluent interface
+     */
+    public function setFromArray($options)
+    {
+        if ($this->__prioritizedProperties__) {
+            if ($options instanceof AbstractOptions) {
+                $options = $options->toArray();
+            }
+
+            if ($options instanceof Traversable) {
+                $options = iterator_to_array($options);
+            } elseif (! is_array($options)) {
+                throw new Exception\InvalidArgumentException(
+                    sprintf(
+                        'Parameter provided to %s must be an %s, %s or %s',
+                        __METHOD__,
+                        'array',
+                        'Traversable',
+                        'Zend\Stdlib\AbstractOptions'
+                    )
+                );
+            }
+
+            // Sort prioritized options to top
+            $options = array_change_key_case($options, CASE_LOWER);
+            foreach (array_reverse($this->__prioritizedProperties__) as $key) {
+                if (isset($options[$key])) {
+                    $options = [$key => $options[$key]] + $options;
+                } elseif (isset($options[($key = str_replace('_', '', $key))])) {
+                    $options = [$key => $options[$key]] + $options;
+                }
+            }
+        }
+
+        return parent::setFromArray($options);
     }
 }

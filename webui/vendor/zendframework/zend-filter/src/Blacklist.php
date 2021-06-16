@@ -22,7 +22,7 @@ class Blacklist extends AbstractFilter
     /**
      * @var array
      */
-    protected $list = array();
+    protected $list = [];
 
     /**
      * @param null|array|Traversable $options
@@ -59,9 +59,9 @@ class Blacklist extends AbstractFilter
      *
      * @param  array|Traversable $list
      */
-    public function setList($list = array())
+    public function setList($list = [])
     {
-        if (!is_array($list)) {
+        if (! is_array($list)) {
             $list = ArrayUtils::iteratorToArray($list);
         }
 

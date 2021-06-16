@@ -26,14 +26,14 @@ class LowerCase extends StringToLower
      */
     public function filter($value)
     {
-        if (!is_scalar($value) && !is_array($value)) {
+        if (! is_scalar($value) && ! is_array($value)) {
             return $value;
         }
 
         // An uploaded file? Retrieve the 'tmp_name'
         $isFileUpload = false;
         if (is_array($value)) {
-            if (!isset($value['tmp_name'])) {
+            if (! isset($value['tmp_name'])) {
                 return $value;
             }
 
@@ -42,23 +42,23 @@ class LowerCase extends StringToLower
             $value      = $value['tmp_name'];
         }
 
-        if (!file_exists($value)) {
+        if (! file_exists($value)) {
             throw new Exception\InvalidArgumentException("File '$value' not found");
         }
 
-        if (!is_writable($value)) {
+        if (! is_writable($value)) {
             throw new Exception\RuntimeException("File '$value' is not writable");
         }
 
         $content = file_get_contents($value);
-        if (!$content) {
+        if (! $content) {
             throw new Exception\RuntimeException("Problem while reading file '$value'");
         }
 
         $content = parent::filter($content);
         $result  = file_put_contents($value, $content);
 
-        if (!$result) {
+        if (! $result) {
             throw new Exception\RuntimeException("Problem while writing file '$value'");
         }
 

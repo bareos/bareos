@@ -47,7 +47,7 @@ class Gravatar extends AbstractHtmlElement
      *
      * @var array
      */
-    protected $attribs;
+    protected $attributes;
 
     /**
      * Email Address
@@ -68,12 +68,12 @@ class Gravatar extends AbstractHtmlElement
      *
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'img_size'    => 80,
         'default_img' => self::DEFAULT_MM,
         'rating'      => self::RATING_G,
         'secure'      => null,
-    );
+    ];
 
     /**
      * Returns an avatar from gravatar's service.
@@ -86,21 +86,21 @@ class Gravatar extends AbstractHtmlElement
      *
      * @see    http://pl.gravatar.com/site/implement/url
      * @see    http://pl.gravatar.com/site/implement/url More information about gravatar's service.
-     * @param  string|null $email   Email address.
-     * @param  null|array  $options Options
-     * @param  array       $attribs Attributes for image tag (title, alt etc.)
+     * @param  string|null $email      Email address.
+     * @param  null|array  $options    Options
+     * @param  array       $attributes Attributes for image tag (title, alt etc.)
      * @return Gravatar
      */
-    public function __invoke($email = "", $options = array(), $attribs = array())
+    public function __invoke($email = "", $options = [], $attributes = [])
     {
-        if (!empty($email)) {
+        if (! empty($email)) {
             $this->setEmail($email);
         }
-        if (!empty($options)) {
+        if (! empty($options)) {
             $this->setOptions($options);
         }
-        if (!empty($attribs)) {
-            $this->setAttribs($attribs);
+        if (! empty($attributes)) {
+            $this->setAttributes($attributes);
         }
 
         return $this;
@@ -168,26 +168,61 @@ class Gravatar extends AbstractHtmlElement
     {
         $this->setSrcAttribForImg();
         $html = '<img'
-            . $this->htmlAttribs($this->getAttribs())
+            . $this->htmlAttribs($this->getAttributes())
             . $this->getClosingBracket();
 
         return $html;
     }
 
     /**
-     * Set attribs for image tag
+     * Set attributes for image tag
      *
-     * Warning! You shouldn't set src attrib for image tag.
-     * This attrib is overwritten in protected method setSrcAttribForImg().
+     * Warning! You shouldn't set src attribute for image tag.
+     * This attribute is overwritten in protected method setSrcAttribForImg().
      * This method(_setSrcAttribForImg) is called in public method getImgTag().
+     *
+     * @param  array $attributes
+     * @return Gravatar
+     */
+    public function setAttributes(array $attributes)
+    {
+        $this->attributes = $attributes;
+        return $this;
+    }
+
+    /**
+     * Set attribs for image tag
      *
      * @param  array $attribs
      * @return Gravatar
+     *
+     * @deprecated Please use Zend\View\Helper\Gravatar::setAttributes
      */
     public function setAttribs(array $attribs)
     {
-        $this->attribs = $attribs;
+        trigger_error(sprintf(
+            '%s is deprecated; please use %s::setAttributes',
+            __METHOD__,
+            __CLASS__
+        ), E_USER_DEPRECATED);
+
+        $this->setAttributes($attribs);
         return $this;
+    }
+
+    /**
+     * Get attributes of image
+     *
+     * Warning!
+     * If you set src attribute, you get it, but this value will be overwritten in
+     * protected method setSrcAttribForImg(). And finally your get other src
+     * value!
+     *
+     * @return array
+     */
+    public function getAttributes()
+    {
+        return $this->attributes;
     }
 
     /**
@@ -199,10 +234,18 @@ class Gravatar extends AbstractHtmlElement
      * value!
      *
      * @return array
+     *
+     * @deprecated Please use Zend\View\Helper\Gravatar::getAttributes
      */
     public function getAttribs()
     {
-        return $this->attribs;
+        trigger_error(sprintf(
+            '%s is deprecated; please use %s::getAttributes',
+            __METHOD__,
+            __CLASS__
+        ), E_USER_DEPRECATED);
+
+        return $this->getAttributes();
     }
 
     /**
@@ -352,8 +395,8 @@ class Gravatar extends AbstractHtmlElement
      */
     protected function setSrcAttribForImg()
     {
-        $attribs        = $this->getAttribs();
-        $attribs['src'] = $this->getAvatarUrl();
-        $this->setAttribs($attribs);
+        $attributes        = $this->getAttributes();
+        $attributes['src'] = $this->getAvatarUrl();
+        $this->setAttributes($attributes);
     }
 }

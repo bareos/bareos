@@ -60,7 +60,7 @@ class Layout extends AbstractHelper
     {
         $helper = $this->getViewModelHelper();
 
-        if (!$helper->hasRoot()) {
+        if (! $helper->hasRoot()) {
             throw new Exception\RuntimeException(sprintf(
                 '%s: no view model currently registered as root in renderer',
                 __METHOD__

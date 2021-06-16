@@ -15,7 +15,7 @@ use Zend\Form\ElementInterface;
 use Zend\Form\Element\Collection as CollectionElement;
 use Zend\Form\FieldsetInterface;
 use Zend\Form\LabelAwareInterface;
-use Zend\View\Helper\AbstractHelper as BaseAbstractHelper;
+use Zend\View\Helper\HelperInterface;
 
 class FormCollection extends AbstractHelper
 {
@@ -57,14 +57,14 @@ class FormCollection extends AbstractHelper
     /**
      * The view helper used to render sub elements.
      *
-     * @var AbstractHelper
+     * @var HelperInterface
      */
     protected $elementHelper;
 
     /**
      * The view helper used to render sub fieldsets.
      *
-     * @var AbstractHelper
+     * @var HelperInterface
      */
     protected $fieldsetHelper;
 
@@ -79,7 +79,7 @@ class FormCollection extends AbstractHelper
      */
     public function __invoke(ElementInterface $element = null, $wrap = true)
     {
-        if (!$element) {
+        if (! $element) {
             return $this;
         }
 
@@ -97,7 +97,7 @@ class FormCollection extends AbstractHelper
     public function render(ElementInterface $element)
     {
         $renderer = $this->getView();
-        if (!method_exists($renderer, 'plugin')) {
+        if (! method_exists($renderer, 'plugin')) {
             // Bail early if renderer is not pluggable
             return '';
         }
@@ -123,12 +123,12 @@ class FormCollection extends AbstractHelper
         if ($this->shouldWrap) {
             $attributes = $element->getAttributes();
             unset($attributes['name']);
-            $attributesString = count($attributes) ? ' ' . $this->createAttributesString($attributes) : '';
+            $attributesString = $attributes ? ' ' . $this->createAttributesString($attributes) : '';
 
             $label = $element->getLabel();
             $legend = '';
 
-            if (!empty($label)) {
+            if (! empty($label)) {
                 if (null !== ($translator = $this->getTranslator())) {
                     $label = $translator->translate(
                         $label,
@@ -236,10 +236,10 @@ class FormCollection extends AbstractHelper
     /**
      * Sets the element helper that should be used by this collection.
      *
-     * @param  AbstractHelper $elementHelper The element helper to use.
+     * @param  HelperInterface $elementHelper The element helper to use.
      * @return FormCollection
      */
-    public function setElementHelper(AbstractHelper $elementHelper)
+    public function setElementHelper(HelperInterface $elementHelper)
     {
         $this->elementHelper = $elementHelper;
         return $this;
@@ -248,7 +248,7 @@ class FormCollection extends AbstractHelper
     /**
      * Retrieve the element helper.
      *
-     * @return AbstractHelper
+     * @return HelperInterface
      * @throws RuntimeException
      */
     protected function getElementHelper()
@@ -261,9 +261,9 @@ class FormCollection extends AbstractHelper
             $this->elementHelper = $this->view->plugin($this->getDefaultElementHelper());
         }
 
-        if (!$this->elementHelper instanceof BaseAbstractHelper) {
-            // @todo Ideally the helper should implement an interface.
-            throw new RuntimeException('Invalid element helper set in FormCollection. The helper must be an instance of AbstractHelper.');
+        if (! $this->elementHelper instanceof HelperInterface) {
+            throw new RuntimeException('Invalid element helper set in FormCollection. The helper must be an '
+                . 'instance of Zend\View\Helper\HelperInterface.');
         }
 
         return $this->elementHelper;
@@ -272,10 +272,10 @@ class FormCollection extends AbstractHelper
     /**
      * Sets the fieldset helper that should be used by this collection.
      *
-     * @param  AbstractHelper $fieldsetHelper The fieldset helper to use.
+     * @param  HelperInterface $fieldsetHelper The fieldset helper to use.
      * @return FormCollection
      */
-    public function setFieldsetHelper(AbstractHelper $fieldsetHelper)
+    public function setFieldsetHelper(HelperInterface $fieldsetHelper)
     {
         $this->fieldsetHelper = $fieldsetHelper;
         return $this;

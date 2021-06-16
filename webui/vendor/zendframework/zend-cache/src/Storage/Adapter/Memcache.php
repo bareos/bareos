@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -113,7 +113,7 @@ class Memcache extends AbstractAdapter implements
      */
     public function setOptions($options)
     {
-        if (!$options instanceof MemcacheOptions) {
+        if (! $options instanceof MemcacheOptions) {
             $options = new MemcacheOptions($options);
         }
 
@@ -128,7 +128,7 @@ class Memcache extends AbstractAdapter implements
      */
     public function getOptions()
     {
-        if (!$this->options) {
+        if (! $this->options) {
             $this->setOptions(new MemcacheOptions());
         }
         return $this->options;
@@ -140,7 +140,7 @@ class Memcache extends AbstractAdapter implements
      */
     protected function getWriteFlag(& $value)
     {
-        if (!$this->getOptions()->getCompression()) {
+        if (! $this->getOptions()->getCompression()) {
             return 0;
         }
         // Don't compress numeric or boolean types
@@ -157,7 +157,7 @@ class Memcache extends AbstractAdapter implements
     public function flush()
     {
         $memc = $this->getMemcacheResource();
-        if (!$memc->flush()) {
+        if (! $memc->flush()) {
             return new Exception\RuntimeException("Memcache flush failed");
         }
         return true;
@@ -244,12 +244,12 @@ class Memcache extends AbstractAdapter implements
 
         $result = $memc->get($normalizedKeys);
         if ($result === false) {
-            return array();
+            return [];
         }
 
         // remove namespace prefix from result
         if ($this->namespacePrefix !== '') {
-            $tmp            = array();
+            $tmp            = [];
             $nsPrefixLength = strlen($this->namespacePrefix);
             foreach ($result as $internalKey => & $value) {
                 $tmp[substr($internalKey, $nsPrefixLength)] = & $value;
@@ -291,7 +291,7 @@ class Memcache extends AbstractAdapter implements
 
         $result = $memc->get($normalizedKeys);
         if ($result === false) {
-            return array();
+            return [];
         }
 
         // Convert to a single list
@@ -325,21 +325,21 @@ class Memcache extends AbstractAdapter implements
 
         $result = $memc->get($normalizedKeys);
         if ($result === false) {
-            return array();
+            return [];
         }
 
         // remove namespace prefix and use an empty array as metadata
         if ($this->namespacePrefix === '') {
             foreach ($result as & $value) {
-                $value = array();
+                $value = [];
             }
             return $result;
         }
 
-        $final          = array();
+        $final          = [];
         $nsPrefixLength = strlen($this->namespacePrefix);
         foreach (array_keys($result) as $internalKey) {
-            $final[substr($internalKey, $nsPrefixLength)] = array();
+            $final[substr($internalKey, $nsPrefixLength)] = [];
         }
         return $final;
     }
@@ -360,7 +360,7 @@ class Memcache extends AbstractAdapter implements
         $expiration = $this->expirationTime();
         $flag       = $this->getWriteFlag($value);
 
-        if (!$memc->set($this->namespacePrefix . $normalizedKey, $value, $flag, $expiration)) {
+        if (! $memc->set($this->namespacePrefix . $normalizedKey, $value, $flag, $expiration)) {
             throw new Exception\RuntimeException('Memcache set value failed');
         }
 
@@ -439,7 +439,7 @@ class Memcache extends AbstractAdapter implements
         // Set initial value. Don't use compression!
         // http://www.php.net/manual/memcache.increment.php
         $newValue = $value;
-        if (!$memc->add($internalKey, $newValue, 0, $this->expirationTime())) {
+        if (! $memc->add($internalKey, $newValue, 0, $this->expirationTime())) {
             throw new Exception\RuntimeException('Memcache unable to add increment value');
         }
 
@@ -468,7 +468,7 @@ class Memcache extends AbstractAdapter implements
         // Set initial value. Don't use compression!
         // http://www.php.net/manual/memcache.decrement.php
         $newValue = -$value;
-        if (!$memc->add($internalKey, $newValue, 0, $this->expirationTime())) {
+        if (! $memc->add($internalKey, $newValue, 0, $this->expirationTime())) {
             throw new Exception\RuntimeException('Memcache unable to add decrement value');
         }
 
@@ -495,7 +495,7 @@ class Memcache extends AbstractAdapter implements
             //
             // This effectively removes support for `boolean` types since
             // "not found" return values are === false.
-            $supportedDatatypes = array(
+            $supportedDatatypes = [
                 'NULL'     => true,
                 'boolean'  => false,
                 'integer'  => true,
@@ -504,7 +504,7 @@ class Memcache extends AbstractAdapter implements
                 'array'    => true,
                 'object'   => 'object',
                 'resource' => false,
-            );
+            ];
         } else {
             // In stable 2.x ext/memcache versions, scalar data types are
             // converted to strings and must be manually cast back to original
@@ -514,7 +514,7 @@ class Memcache extends AbstractAdapter implements
             // was previously: (bool)true, (int)1, or (string)"1".
             // Similarly, the saved value: (string)""
             // might have previously been: (bool)false or (string)""
-            $supportedDatatypes = array(
+            $supportedDatatypes = [
                 'NULL'     => true,
                 'boolean'  => 'boolean',
                 'integer'  => 'integer',
@@ -523,25 +523,24 @@ class Memcache extends AbstractAdapter implements
                 'array'    => true,
                 'object'   => 'object',
                 'resource' => false,
-            );
+            ];
         }
 
         $this->capabilityMarker = new stdClass();
         $this->capabilities     = new Capabilities(
             $this,
             $this->capabilityMarker,
-            array(
+            [
                 'supportedDatatypes' => $supportedDatatypes,
-                'supportedMetadata'  => array(),
+                'supportedMetadata'  => [],
                 'minTtl'             => 1,
                 'maxTtl'             => 0,
                 'staticTtl'          => true,
                 'ttlPrecision'       => 1,
                 'useRequestTime'     => false,
-                'expiredRead'        => false,
                 'maxKeyLength'       => 255,
                 'namespaceIsPrefix'  => true,
-            )
+            ]
         );
 
         return $this->capabilities;
