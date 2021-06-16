@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -102,7 +102,7 @@ class AuthController extends AbstractActionController
       $this->bsock->set_user_credentials($username, $password);
 
       if(!$this->bsock->connect_and_authenticate()) {
-         $err_msg = "Sorry, can not authenticate. Wrong username and/or password.";
+         $err_msg = "Sorry, cannot authenticate. Wrong username, password or SSL/TLS handshake failed.";
          return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
       }
 
