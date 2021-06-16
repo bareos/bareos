@@ -36,7 +36,7 @@ This will start a very basic Bareos installation which will regularly backup a d
 Decide about the Bareos release to use
 --------------------------------------
 
-You’ll find Bareos binary package repositories at http://download.bareos.org/. The stable releases are available at http://download.bareos.org/bareos/release/.
+You’ll find Bareos binary package repositories at https://download.bareos.org/. The stable releases are available at https://download.bareos.org/bareos/release/.
 
 The public key to verify the repository is also in repository directory (:file:`Release.key` for Debian based distributions, :file:`repodata/repomd.xml.key` for RPM based distributions).
 
@@ -81,7 +81,7 @@ The package **bareos** is only a meta package which contains dependencies on the
 
 The following code snippets are shell scripts that can be used as orientation how to download the package repositories and install bareos. The release version number for **bareos** and the corresponding Linux distribution have to be updated for your needs, respectively.
 
-**See** http://download.bareos.org/bareos/release/ **for applicable releases and distributions.**
+**See** https://download.bareos.org/bareos/release/ **for applicable releases and distributions.**
 
 Install on RedHat based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,7 +103,7 @@ On CentOS 7 and Fedora is it included in the main repository.
 
    #!/bin/sh
 
-   # See http://download.bareos.org/bareos/release/
+   # See https://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
    DIST=RHEL_8
@@ -119,7 +119,7 @@ On CentOS 7 and Fedora is it included in the main repository.
    # RELEASE=experimental/nightly
 
    # add the Bareos repository
-   URL=http://download.bareos.org/bareos/$RELEASE/$DIST
+   URL=https://download.bareos.org/bareos/$RELEASE/$DIST
    wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
 
    # install Bareos packages
@@ -141,7 +141,7 @@ SUSE Linux Enterprise Server (SLES), openSUSE
 
    #!/bin/sh
 
-   # See http://download.bareos.org/bareos/release/
+   # See https://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
    DIST=SLE_15_SP2
@@ -154,7 +154,7 @@ SUSE Linux Enterprise Server (SLES), openSUSE
    # RELEASE=experimental/nightly
 
    # add the Bareos repository
-   URL=http://download.bareos.org/bareos/$RELEASE/$DIST
+   URL=https://download.bareos.org/bareos/$RELEASE/$DIST
    zypper addrepo --refresh $URL/bareos.repo
 
    # install Bareos packages
@@ -179,7 +179,7 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library pa
 
    #!/bin/sh
 
-   # See http://download.bareos.org/bareos/release/
+   # See https://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
    DIST=Debian_10
@@ -193,7 +193,7 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library pa
    # or
    # RELEASE=experimental/nightly
 
-   URL=http://download.bareos.org/bareos/$RELEASE/$DIST
+   URL=https://download.bareos.org/bareos/$RELEASE/$DIST
 
    # add the Bareos repository
    wget -O /etc/apt/sources.list.d/bareos.list $URL/bareos.list
@@ -221,7 +221,7 @@ Install on FreeBSD based Distributions
 
    #!/bin/sh
 
-   # See http://download.bareos.org/bareos/release/
+   # See https://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
    DIST=FreeBSD_12.2
@@ -233,7 +233,7 @@ Install on FreeBSD based Distributions
    # or
    # RELEASE=experimental/nightly
 
-   URL=http://download.bareos.org/bareos/$RELEASE/$DIST
+   URL=https://download.bareos.org/bareos/$RELEASE/$DIST
 
    # add the Bareos repository
    cd /usr/local/etc/pkg/repos
