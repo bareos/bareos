@@ -639,7 +639,15 @@ set(SYSTEM_TESTS_BROKEN
     filesets
     py3plug-fd-local-fileset-restoreobject
 )
+set(WEBUI_TESTS_BROKEN
+    admin-client_disabling # sometimes fails with a find_element exception
+    readonly-client_disabling # sometimes fails with a find_element exception
+)
 
+set(SYSTEMTEST_TIMEOUT
+    "300"
+    CACHE STRING "Timeout for systemtests (in seconds)"
+)
 set(glusterfs_uri
     ""
     CACHE STRING "URI for GlusterFS backend test"
@@ -1132,6 +1140,11 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
       COMMAND ${tests_dir}/${TEST_NAME}/testrunner
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
+    if(${TEST_NAME} IN_LIST WEBUI_TESTS_BROKEN)
+      set_tests_properties(
+        ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES LABELS "broken"
+      )
+    endif()
     set_tests_properties(
       ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 300
     )
