@@ -1079,7 +1079,7 @@ else()
   endforeach()
 endif()
 
-set(BASEPORT 42001)
+set(BASEPORT 30001)
 
 set(SYSTEMTEST_PREFIX "system:")
 
