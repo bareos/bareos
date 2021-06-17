@@ -1,0 +1,6 @@
+Job {
+  Name = "RestoreFiles"
+  Type = Restore
+  JobDefs = "DefaultJob"
+  Where = @tmp@/bareos-restores
+}
