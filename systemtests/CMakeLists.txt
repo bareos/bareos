@@ -650,8 +650,15 @@ set(SYSTEM_TESTS_BROKEN
                              # can't encode characters in position 133-142:
                              # surrogates not allowed
 )
+set(WEBUI_TESTS_BROKEN
+    admin-client_disabling # sometimes fails with a find_element exception
+    readonly-client_disabling # sometimes fails with a find_element exception
+)
 
-set(SYSTEMTEST_TIMEOUT "300" CACHE STRING "Timeout for systemtests (in seconds)")
+set(SYSTEMTEST_TIMEOUT
+    "300"
+    CACHE STRING "Timeout for systemtests (in seconds)"
+)
 
 set(glusterfs_uri
     ""
@@ -1047,11 +1054,12 @@ check_pymodule_available(3 selenium) # sets PYMODULE_3_SELENIUM_FOUND to TRUE or
 message("   PHP:                    " ${PHP})
 message("   PYTHON_EXECUTABLE:      " ${PYTHON_EXECUTABLE})
 message("   PYMODULE_2_SELENIUM_FOUND:" ${PYMODULE_2_SELENIUM_FOUND})
+message("   PYMODULE_3_SELENIUM_FOUND:" ${PYMODULE_3_SELENIUM_FOUND})
 message("   CHROMEDRIVER:           " ${CHROMEDRIVER})
 
 if(PHP
    AND PYTHON_EXECUTABLE
-   AND PYMODULE_2_SELENIUM_FOUND
+   AND (PYMODULE_2_SELENIUM_FOUND OR PYMODULE_3_SELENIUM_FOUND)
    AND CHROMEDRIVER
 )
   set(ENABLE_WEBUI_SELENIUM_TEST TRUE)
@@ -1204,6 +1212,11 @@ if(ENABLE_WEBUI_SELENIUM_TEST)
       COMMAND ${tests_dir}/${TEST_NAME}/testrunner
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
+    if(${TEST_NAME} IN_LIST WEBUI_TESTS_BROKEN)
+      set_tests_properties(
+        ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES LABELS "broken"
+      )
+    endif()
     set_tests_properties(
       ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 120 COST 1.0
     )
