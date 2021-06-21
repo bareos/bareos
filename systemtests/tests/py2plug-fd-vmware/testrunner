@@ -1,4 +1,7 @@
-#!/bin/sh
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
 #
 # This systemtest tests the vmware plugin functionality
 # of the Bareos FD by using the supplied module
@@ -22,13 +25,6 @@ JobName=backup-bareos-fd
 
 ./reset_cbt.sh
 
-# Directory to backup.
-# This directory will be created by setup_data().
-# BackupDirectory="${tmp}/data"
-
-# Use a tgz to setup data to be backed up.
-# Data will be placed at "${tmp}/data/".
-# setup_data
 
 start_test
 

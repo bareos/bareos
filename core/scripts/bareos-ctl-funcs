@@ -49,14 +49,25 @@ checkPid()
 {
     pid="$1"
     wait="${2:-0}"
+    waittext="${3:-}"
+    output=""
 
     if [ -z "$pid" ]; then
         return 1
     fi
-    while [ $wait -gt 0 ] && ${PS} -p "$pid" >/dev/null 2>&1; do
-        sleep 1
-        wait=$(expr $wait - 1)
+
+    start=$(date +%s)
+    end=$(expr $start + $wait)
+
+    while [ "$(date +%s)" -lt "$end" ] && ${PS} -p "$pid" >/dev/null 2>&1; do
+        if [ "${waittext}" ]; then
+            printf "%s" "$waittext"
+            output="yes"
+        fi
+        # not all systems offer floating point numbers as sleep parameter, therefore try both.
+        sleep 0.1 || sleep 1
     done
+    if [ "${output}" ]; then printf " "; fi
     ${PS} -p "$pid" >/dev/null 2>&1
     return $?
 }
@@ -90,10 +101,10 @@ killproc() {
       if [ "$notset" = "1" ] ; then
          # TERM first, then KILL if not dead
          kill -TERM $pid 2>/dev/null
-         if checkPid "$pid" 1; then
+         if checkPid "$pid" 3 "."; then
             kill -KILL $pid 2>/dev/null
          fi
-         if checkPid "$pid" 1; then
+         if checkPid "$pid" 3 "_"; then
             failure
          else
             success

@@ -38,53 +38,6 @@ copy_configs()
     done
 }
 
-#
-# activates a plugin by copying to $plugindirtmp.
-# For this, daemons must have following setting:
-# Plugin Directory = @plugindirtmp@
-#
-enable_plugin()
-{
-   RC=0
-   PLUGIN="$1"
-
-   if [ -z "$PLUGIN" ]; then
-      set_error "enable_plugin: no plugin name given."
-      exit 1
-   fi
-
-   if ! cp "$plugindir/${PLUGIN}".* "$plugindirtmp/"; then
-      set_error "enable_plugin: failed to enable ${PLUGIN} plugin."
-      RC=1
-      exit 1
-   fi
-
-   print_debug "plugin ${PLUGIN} enabled"
-
-   return $RC
-}
-
-disable_plugin()
-{
-   RC=0
-   PLUGIN="$1"
-
-   if [ -z "$PLUGIN" ]; then
-      set_error "enable_plugin: no plugin name given."
-      exit 1
-   fi
-
-   if ! rm "$plugindirtmp/${PLUGIN}".*; then
-      set_error "disable_plugin: failed to disable ${PLUGIN} plugin."
-      RC=1
-      exit 1
-   fi
-
-   print_debug "plugin ${PLUGIN} disabled"
-
-   return $RC
-}
-
 check_encoding()
 {
    if "${BAREOS_DIRECTOR_BINARY}" -d50 -t 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
@@ -111,7 +64,7 @@ cleanup()
 #
 setup_data()
 {
-  data_dir="${tmp}/data"
+  data_dir="${BackupDirectory}"
 
   # gnu tar is required
   if [ "$(uname -s)" == SunOS ]; then
@@ -134,6 +87,34 @@ setup_data()
   return 0
 }
 
+create_sparse_file()
+{
+    verbose=""
+    if [ "${1:-}" = "-v" ]; then
+      verbose="yes"
+      shift
+    fi
+
+    filename=${1:-sparse.dat}
+    size=${2:-100M}
+
+    echo "start" > $filename
+    dd if=/dev/zero of=$filename bs=1 count=0 seek=$size 2>/dev/null
+    echo "end" >> $filename
+
+    if [ "$verbose" ]; then
+        printf "$filename created.\n"
+    fi
+
+    size=$(get_file_size "${filename}")
+    realsize=$(get_real_file_size "${filename}")
+
+    if [ "$realsize" -gt "$size" ]; then
+        printf "ERROR: realsize has to be smaller than size.\n"
+        return 1
+    fi
+}
+
 start_test()
 {
    # in case of an exit during the test,
@@ -145,14 +126,6 @@ start_test()
          end_test;
       ' EXIT
    check_encoding
-   # Turn off email
-   outf="${tmp}/sed_tmp"
-   echo "s%  mail =%# mail = %g" >"${outf}"
-   echo "s%  operator =%# operator =%g" >>"${outf}"
-   if [ -f "${conf}/bareos-dir.conf" ]; then
-      cp "${conf}/bareos-dir.conf" "${tmp}/1"
-      sed -f "${outf}" "${tmp}/1" > "${conf}/bareos-dir.conf"
-   fi
    STARTDATE="$(date +%R:%S)"
    echo " "
    echo " "
@@ -352,7 +325,7 @@ check_compression()
    local JOBID=${3}
    local FILENAME=${4}
    local COMPRESSION=${5:-'GZIP'}
-   local COMPRESSION_LEVEL="$6"
+   local COMPRESSION_LEVEL=${6:-}
 
    local COMPRESSION_DESCRIPTION="${COMPRESSION}"
    if [ "${COMPRESSION_LEVEL}" ]; then
@@ -586,12 +559,35 @@ change_files()
    return 0
 }
 
+get_real_file_size()
+{
+   FILE="$1"
+   SIZE=-1
+   if [ -e "$FILE" ]; then
+     if [ "$(uname -s)" == FreeBSD ]; then
+       # gdu: GNU coreutils du
+       DU="gdu"
+     else
+       DU="du"
+     fi
+     SIZE="$(du -B 1 "$FILE" | cut -f 1)"
+   fi
+   print_debug "$FILE: $SIZE bytes"
+   echo "$SIZE"
+}
+
 get_file_size()
 {
    FILE="$1"
    SIZE=-1
    if [ -e "$FILE" ]; then
-     SIZE="$(du "$FILE" | cut -f 1)"
+     if [ "$(uname -s)" == FreeBSD ]; then
+       # gdu: GNU coreutils du     
+       DU="gdu"
+     else
+       DU="du"
+     fi
+     SIZE="$(${DU} -B 1 --apparent-size "$FILE" | cut -f 1)"
    fi
    print_debug "$FILE: $SIZE bytes"
    echo "$SIZE"

@@ -36,7 +36,6 @@ platforms/univention/conffiles/etc/apt/sources.list.d/60_bareos.list
 scripts/bareos-config
 scripts/bareos-explorer
 scripts/bareos-glusterfind-wrapper
-scripts/bareos-regress.conf
 scripts/bareos
 scripts/bconsole
 scripts/disk-changer

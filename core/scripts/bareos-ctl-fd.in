@@ -54,7 +54,7 @@ case "$1" in
 
     stop)
         if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
-            echo -n "Stopping the Bareos File daemon: "
+            printf "Stopping the Bareos File daemon: "
             killproc ${BAREOS_FILEDAEMON_BINARY} ${BAREOS_FD_PORT}
         fi
         ;;

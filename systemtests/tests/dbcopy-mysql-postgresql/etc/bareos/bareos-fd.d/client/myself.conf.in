@@ -6,7 +6,7 @@ Client {
   # if "Plugin Names" is defined, only the specified plugins will be loaded,
   # otherwise all filedaemon plugins (*-fd.so) from the "Plugin Directory".
   #
-  Plugin Directory = "@fd_plugin_binary_path@"
+  Plugin Directory = "@FD_PLUGINS_DIR_TO_TEST@"
   Plugin Names = "@python_module_name@"
 
   # if compatible is set to yes, we are compatible with bacula

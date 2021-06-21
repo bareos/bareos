@@ -1,5 +1,0 @@
-Messages {
-  Name = Standard
-  console = all, !skipped, !saved, !audit
-  catalog = all, !audit
-}

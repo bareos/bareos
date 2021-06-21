@@ -1,8 +1,0 @@
-#
-# FreeBSD tape drive options
-#
-Hardware End of Medium = no
-Fast Forward Space File = no
-BSF at EOM = yes
-Backward Space Record = no
-TWO EOF = yes

@@ -1,0 +1,7 @@
+Job {
+  Name = "RestoreFiles"
+  Description = "Standard Restore template. Only one such job is needed for all standard Jobs/Clients/Storage ..."
+  Type = Restore
+  JobDefs = "DefaultJob"
+  Where = @tmp@/bareos-restores
+}

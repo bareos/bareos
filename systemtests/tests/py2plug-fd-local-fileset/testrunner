@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -o pipefail
 set -u
 #
 # This systemtest tests the plugin functionality
@@ -25,12 +26,10 @@ JobName=backup-bareos-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-# Directory to backup.
-# This directory will be created by setup_data().
-BackupDirectory="${tmp}/data"
 
-# Use a tgz to setup data to be backed up.
-# Data will be placed at "${tmp}/data/".
+
+
+# Fill ${BackupDirectory} with data.
 setup_data
 
 # this test does not work with links, because

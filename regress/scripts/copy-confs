@@ -1,9 +1,0 @@
-#!/bin/sh
-. scripts/functions
-/bin/cp -f ${rscripts}/bareos-dir.conf ${conf}/bareos-dir.conf
-/bin/cp -f ${rscripts}/bareos-sd.conf ${conf}/bareos-sd.conf
-/bin/cp -f ${rscripts}/bareos-fd.conf ${conf}/bareos-fd.conf
-/bin/cp -f ${rscripts}/bconsole.conf ${conf}/bconsole.conf
-/bin/cp -f ${rscripts}/bconsole.conf ${conf}/bat.conf
-
-${rscripts}/set_tape_options

@@ -55,7 +55,7 @@ case "$1" in
 
     stop)
         if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
-            echo -n "Stopping the Bareos Director daemon: "
+            printf "Stopping the Bareos Director daemon: "
             killproc "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
         fi
         ;;

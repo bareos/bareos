@@ -1,0 +1,6 @@
+Job {
+  Name = "backup-bareos-fd-bpipe"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  FileSet = "bpipe-fileset"
+}

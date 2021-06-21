@@ -1,6 +1,0 @@
-FileSet {
-  Name = FS_TESTJOB
-  Include {
-    File=<@tmpdir@/file-list
-  }
-}

@@ -87,8 +87,6 @@ Example TLS Configuration Files
 
 Examples of the TLS portions of the configuration files are listed below.
 
-Another example can be found at `Bareos Regression Testing Base Configuration <https://github.com/bareos/bareos/tree/master/regress/configs/BASE/>`_.
-
 Bareos Director
 ~~~~~~~~~~~~~~~
 

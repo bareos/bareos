@@ -1,9 +1,0 @@
-FileSet {
-  Name = FS_TESTJOB
-  Include {
-    Options {
-        signature = SHA512
-    }
-    File=<@tmpdir@/file-list
-  }
-}

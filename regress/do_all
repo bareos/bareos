@@ -1,3 +1,0 @@
-#!/bin/sh
-nice make setup
-./do_all_tests

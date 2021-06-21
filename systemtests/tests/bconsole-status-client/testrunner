@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -o pipefail
 set -u
 #
 # Run a simple backup
@@ -17,9 +18,6 @@ JobName=bconsole-status-client
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-# Directory to backup.
-# This directory will be created by setup_data().
-BackupDirectory="${tmp}/data"
 
 start_test
 rm -f "$tmp/log2.out"

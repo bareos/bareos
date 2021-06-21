@@ -1,7 +1,0 @@
-Catalog {
-  Name = MyCatalog
-  dbdriver = "@db_type@"
-  dbname = "@db_name@"
-  dbuser = "@db_user@"
-  dbpassword = "@db_password@"
-}

@@ -1,0 +1,110 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+set -e
+set -u
+
+. ./environment
+. ./tape-config
+. ./redirect_output
+
+echo "=== $0 Running ==="
+
+autochanger_conf_file="${conf}/bareos-sd.d/autochanger/autochanger.conf"
+tape_device_conf_file="${conf}/bareos-sd.d/device/tape_devices.conf"
+
+dir_storage_conf_file="${conf}/bareos-dir.d/storage/Tape.conf"
+
+[[ -d "${conf}/bareos-sd.d/autochanger" ]] || mkdir "${conf}/bareos-sd.d/autochanger"
+
+rm -f "${autochanger_conf_file}"
+rm -f "${tape_device_conf_file}"
+rm -f "${dir_storage_conf_file}"
+
+# loop over all changer devices
+for changer_index in {0..9}; do
+  ch="CHANGER_DEVICE${changer_index}"
+  changer_device="${!ch:-}"
+  [[ -z "${changer_device}" ]] && break
+
+  echo "Creating devices for autochanger ${changer_device}"
+
+####
+  cat << EOF >> "${autochanger_conf_file}"
+Autochanger {
+  Name = "autochanger-${changer_index}"
+  Changer Device = ${changer_device}
+
+  Changer Command = "${rscripts}/mtx-changer %c %o %S %a %d"
+EOF
+####
+
+  cat << EOF >> "${dir_storage_conf_file}"
+Storage {
+  Name = Tape-${changer_index}
+  Address = @hostname@
+  Password = "sd_password"
+  Device = autochanger-${changer_index}
+  SD Port = @sd_port@
+  Media Type = LTO
+  Auto Changer = yes
+  MaximumConcurrentJobs=2000
+}
+
+EOF
+
+  # loop over all tape devices attached to that changer
+  drive_index=0
+  tape_devices="TAPE_DEVICES${changer_index}[@]"
+  for tape_device in ${!tape_devices}; do
+    bareos_tape_device_name="tapedrive${changer_index}-${drive_index}"
+    echo "  Attaching ${tape_device} to autochanger"
+
+#### add the type device
+    cat << EOF >> ${conf}/bareos-sd.d/autochanger/autochanger.conf
+  Device=${bareos_tape_device_name}
+EOF
+####
+
+    echo "  Creating Device ${bareos_tape_device_name}"
+    cat << EOF >> "${tape_device_conf_file}"
+Device {
+    Name = "${bareos_tape_device_name}"
+    DeviceType = tape
+    DriveIndex = ${drive_index}
+    ArchiveDevice = ${tape_device}
+    MediaType = LTO
+    AutoChanger = yes
+    AutomaticMount = yes
+    MaximumFileSize = 10GB
+    AlwaysOpen = Yes
+    MaximumBlockSize = 1M    # must be larger than real block size, otherwise bls crashes.
+}
+
+EOF
+
+  (( drive_index=drive_index+1 ))
+  done # for tape_device in ${!tape_devices}; do
+
+  echo "" >> "${autochanger_conf_file}"
+  echo "}" >> "${autochanger_conf_file}"
+
+done # for changer_index in {0..9}; do
+
+echo "=== $0 Ready ==="

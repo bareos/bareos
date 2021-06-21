@@ -512,16 +512,6 @@ set(python_plugin_module_src_test_dir_relative "python-modules")
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
 
-if(TARGET python-dir OR TARGET python3-dir)
-  set(dir_plugin_binary_path ${DIR_PLUGINS_DIR_TO_TEST})
-endif()
-if(TARGET python-sd OR TARGET python3-sd)
-  set(sd_plugin_binary_path ${SD_PLUGINS_DIR_TO_TEST})
-endif()
-if(TARGET python-fd OR TARGET python3-fd)
-  set(fd_plugin_binary_path ${FD_PLUGINS_DIR_TO_TEST})
-endif()
-
 set(sbindir ${PROJECT_BINARY_DIR}/sbin)
 
 set(scriptdir ${PROJECT_BINARY_DIR}/scripts)
@@ -551,6 +541,9 @@ configurefilestosystemtest(
 )
 configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
 configurefilestosystemtest("systemtests" "scripts" "setup" @ONLY "")
+configurefilestosystemtest(
+  "systemtests" "scripts" "create_sparse_file.sh" @ONLY ""
+)
 configurefilestosystemtest(
   "systemtests" "scripts" "check_for_zombie_jobs" @ONLY ""
 )
@@ -607,11 +600,14 @@ set(SYSTEM_TESTS
     deprecation
     encrypt-signature
     encrypt-signature-tls-cert
+    fileset-multiple-include-blocks
+    fileset-multiple-options-blocks
     filesets
     list-backups
     multiplied-device
     notls
     passive
+    quota-softquota
     reload-add-client
     reload-add-duplicate-job
     reload-add-empty-job
@@ -619,7 +615,9 @@ set(SYSTEM_TESTS
     reload-add-uncommented-string
     reload-unchanged-config
     scheduler-backup
+    sparse-file
     spool
+    truncate-command
     upgrade-database
     virtualfull
     virtualfull-bscan
@@ -682,9 +680,9 @@ if(AUTOCHANGER_DEVICES_FOUND)
 endif()
 
 if(AUTOCHANGER_TEST_ENABLED)
-  list(APPEND SYSTEM_TESTS autochanger)
+  list(APPEND SYSTEM_TESTS autochanger block-size)
 else()
-  list(APPEND SYSTEM_TESTS_DISABLED autochanger)
+  list(APPEND SYSTEM_TESTS_DISABLED autochanger block-size)
 endif()
 
 if(ndmp_data_agent_address)
@@ -1156,6 +1154,21 @@ foreach(TEST_NAME ${SYSTEM_TESTS})
   math(EXPR BASEPORT "${BASEPORT} + 10")
 
 endforeach()
+
+# NDMP test requires more time
+if("ndmp" IN_LIST SYSTEM_TESTS)
+  set_tests_properties(${SYSTEMTEST_PREFIX}ndmp PROPERTIES TIMEOUT 300)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED ndmp)
+endif()
+
+if(AUTOCHANGER_TEST_ENABLED)
+  # Make sure these tests run sequentially.
+  set_tests_properties(
+    ${SYSTEMTEST_PREFIX}autochanger ${SYSTEMTEST_PREFIX}block-size
+    PROPERTIES RESOURCE_LOCK autochanger_resource
+  )
+endif()
 
 # webui specific settings
 if(ENABLE_WEBUI_SELENIUM_TEST)

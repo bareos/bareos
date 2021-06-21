@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -o pipefail
 set -u
 
 TestName="$(basename "$(pwd)")"
@@ -62,8 +63,7 @@ done
 
 
 # setup backup data
-BackupDirectory="${tmp}/data"
-setup_data "$@"
+setup_data
 
 
 # create the test backup jobs

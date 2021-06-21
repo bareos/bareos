@@ -6,21 +6,7 @@ Director {                            # define myself
   Messages = Daemon
   Auditing = yes
 
-  # Enable the Heartbeat if you experience connection losses
-  # (eg. because of your router or firewall configuration).
-  # Additionally the Heartbeat can be enabled in bareos-sd and bareos-fd.
-  #
-  # Heartbeat Interval = 1 min
-
-  # remove comment in next line to load dynamic backends from specified directory
   Backend Directory = @backenddir@
-
-  # remove comment from "Plugin Directory" to load plugins from specified directory.
-  # if "Plugin Names" is defined, only the specified plugins will be loaded,
-  # otherwise all director plugins (*-dir.so) from the "Plugin Directory".
-  #
-  # Plugin Directory = "@python_plugin_module_src_dir@"
-  # Plugin Names = ""
   Working Directory =  "@working_dir@"
   Pid Directory =  "@piddir@"
   DirPort = @dir_port@

@@ -129,7 +129,7 @@ It is also possible to run the Console program from file input where the file co
 
 where the file named filename contains any set of console commands.
 
-As a real example, the following script is part of the Bareos regression tests. It labels a volume (a disk volume), runs a backup, then does a restore of the files saved.
+As a real example, the following script is part of the Bareos systemtests. It labels a volume (a disk volume), runs a backup, then does a restore of the files saved.
 
 
 
@@ -1513,7 +1513,7 @@ version
    The command prints the Director’s version.
 
 wait
-   :index:`\ <single: Console; Command; wait>`\  The wait command causes the Director to pause until there are no jobs running. This command is useful in a batch situation such as regression testing where you wish to start a job and wait until that job completes before continuing. This command now has the following options:
+   :index:`\ <single: Console; Command; wait>`\  The wait command causes the Director to pause until there are no jobs running. This command is useful when you wish to start a job and wait until that job completes before continuing. This command now has the following options:
 
    .. code-block:: bconsole
       :caption: wait
@@ -1547,7 +1547,7 @@ Normally, all commands entered to the Console program are immediately forwarded 
    :index:`\ <single: Console; Command; @input <filename>>`\  Read and execute the commands contained in the file specified.
 
 @output <filename> <w|a>
-   :index:`\ <single: Console; Command; @output <filename> <w|a>>`\  Send all following output to the filename specified either overwriting the file (w) or appending to the file (a). To redirect the output to the terminal, simply enter @output without a filename specification. WARNING: be careful not to overwrite a valid file. A typical example during a regression test might be:
+   :index:`\ <single: Console; Command; @output <filename> <w|a>>`\  Send all following output to the filename specified either overwriting the file (w) or appending to the file (a). To redirect the output to the terminal, simply enter @output without a filename specification. WARNING: be careful not to overwrite a valid file. A typical example might be:
 
 
 
