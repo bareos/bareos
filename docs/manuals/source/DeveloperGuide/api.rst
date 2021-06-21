@@ -183,15 +183,14 @@ API mode 1 (on).
 
     .api 1
 
-or (from times where they was only one API flavour)
+or (from times when there was only one API flavour)
 
 ::
 
     .api
 
-This mode is intended to create output that is earlier to parse.
-Internaly some commands vary their output for API mode 1, but not
-all.
+This mode is intended to create output that is easier to parse.
+Internaly some commands vary their output for API mode 1.
 
 In API mode 1 some output is only delimited by the end of a packet, not
 by a new line. bconsole does not display the end of packets (for good
@@ -235,13 +234,12 @@ differs from API mode 1 in several aspects:
 -  The JSON output is in the format of JSON-RPC 2.0 responce objects
    (http://www.jsonrpc.org/specification#response_object). This should
    make it easier to implement a full JSON-RPC service later.
--  No user interaction inside a command (meaning: if not all parameter
+-  No user interaction inside a command (meaning: if not all parameters
    are given to a :bcommand:`run` command, the command fails).
--  Each command creates exactly one responce object.
+-  Each command creates exactly one response object.
 
 Currently a subset of the available commands return their result in JSON
-format, while others still write plain text output. When finished, it
-should be safe to run all commands in JSON mode.
+format, while others still write plain text output.
 
 A successful responce should return
 
@@ -441,7 +439,7 @@ REST API
 
 Introduction
 ~~~~~~~~~~~~
-This is an experimental and preliminary backend for development purposes. The endpoints are subject to review and may be changed in the future.
+This is an experimental and preliminary backend for development purposes. The endpoints are subject to review and may change in the future.
 
 It provides a REST API using `fastapi <https://fastapi.tiangolo.com/>`_ and python-bareos to connect to
 a Bareos director. It supports the :command:`configure add` commands to create configuration for clients, jobs, filesets and some more resources. It also provides endpoints to query job information and job control (i.e. start / restart jobs, trigger restores).
