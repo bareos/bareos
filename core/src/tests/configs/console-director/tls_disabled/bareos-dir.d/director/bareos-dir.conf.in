@@ -5,7 +5,7 @@ Director {                            # define myself
   Password = "bareos"         # Console password
   Messages = Daemon
   Auditing = yes
-  DirPort = 58882
+  DirPort = 32663
   TlsEnable = no
 
   # Enable the Heartbeat if you experience connection losses
