@@ -1,40 +1,25 @@
-# This file is part of package Bareos Director Daemon
 #
-# Copyright (c) 2011 Free Software Foundation Europe e.V.
-# Bareos Community
-# Author: Bruno Friedmann
-# Description:
-#    Used to start the bareos director daemon service (bareos-dir)
-#     will be installed as /lib/systemd/system/bareos-dir.service
-#    enable : systemctl enable bareos-dir.service
-#	 start : systemctl start bareos-dir.service
-#
-# Bareos Director Daemon service
+# Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+# Copyright (c) 2011 Free Software Foundation Europe e.V., Author: Bruno Friedmann
 #
 [Unit]
 Description=Bareos Director Daemon service
 Documentation=man:bareos-dir(8)
-Requires=nss-lookup.target network.target time-sync.target
-After=nss-lookup.target network-online.target remote-fs.target time-sync.target postgresql.service mysql.service mariadb.service
+Requires=network.target nss-lookup.target time-sync.target
+After=network-online.target nss-lookup.target remote-fs.target time-sync.target postgresql.service mysql.service mariadb.service
 # Dependency about the database
 # We let administrators decide if they need it (if local db instance)
 # Wants=@DEFAULT_DB_TYPE@.service
 # Check if working dir exist and is a directory
 ConditionPathIsDirectory=@working_dir@
-# Before=
-# Conflicts=
 
 [Service]
-Type=forking
+Type=simple
 User=@dir_user@
 Group=@dir_group@
 WorkingDirectory=@working_dir@
-PIDFile=@piddir@/bareos-dir.@dir_port@.pid
-# EnvironmentFile=-/etc/sysconfig/bareos-dir
-# StandardOutput=syslog
-ExecStartPre=@sbindir@/bareos-dir -t -f
-ExecStart=@sbindir@/bareos-dir
-SuccessExitStatus=0 1 15
+ExecStart=@sbindir@/bareos-dir -f
+SuccessExitStatus=0 15
 ExecReload=@sbindir@/bareos-dir -t -f
 ExecReload=/bin/kill -HUP $MAINPID
 #Restart=on-failure
@@ -46,8 +31,6 @@ ExecReload=/bin/kill -HUP $MAINPID
 # However, as this also have to work for systems with older version of systemd,
 # we stick to this old setting.
 StartLimitInterval=0
-
-
 
 [Install]
 Alias=bareos-dir.service

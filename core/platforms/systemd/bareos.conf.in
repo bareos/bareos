@@ -1,2 +1,0 @@
-# See tmpfiles.d(5) for details
-d @piddir@ 2775 bareos bareos -

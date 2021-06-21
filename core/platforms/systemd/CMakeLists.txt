@@ -20,7 +20,6 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 message(STATUS "CMAKE_CURRENT_LIST_FILE: " ${CMAKE_CURRENT_LIST_FILE})
 message(STATUS "installing systemd files to  ${SYSTEMD_UNITDIR}")
-set(SYSTEMD_TMPFILES ${sysconfdir}/tmpfiles.d)
 
 install(FILES "bareos-sd.service" DESTINATION ${SYSTEMD_UNITDIR})
 install(FILES "bareos-fd.service" DESTINATION ${SYSTEMD_UNITDIR})

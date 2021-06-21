@@ -47,6 +47,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - added multicolumn prompt selection for selection of more than 20 items [PR #731]
 
 ### Changed
+- core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]
 - core: cleanup systemd service dependencies: Requires network.target, but start after the network-online.target [PR #700]
 - core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
 - core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
