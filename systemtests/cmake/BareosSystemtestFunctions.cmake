@@ -26,9 +26,6 @@ macro(create_systemtests_directory)
   configurefilestosystemtest("systemtests" "data" "*.gz" COPYONLY "")
 
   configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
-  configurefilestosystemtest(
-    "systemtests" "scripts" "reload_test_functions" @ONLY ""
-  )
   configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "setup" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "start_bareos.sh" @ONLY "")
