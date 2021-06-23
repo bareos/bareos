@@ -604,30 +604,24 @@ After restarting the service, you will find a file called :file:`C:\bareos-fd.tr
 Installing multiple Windows filedaemon services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is possible to run multiple |fd| instances on Windows. To achieve this, you need to create a service for each instance, and a configuration file that at least has a individual fd port for each instance.
+It is possible to run multiple |fd| instances on Windows. To achieve this, you need to create a service for each instance, and a configuration directory that at least has a individual fd port for each instance.
 
 To create two bareos-fd services, you can call the following service create calls on the commandline on windows as administrator:
 
 .. code-block:: shell-session
 
-   sc create bareosfd2 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd2.conf\""  depend= "tcpip/afd"
-   sc create bareosfd3 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd3.conf\""  depend= "tcpip/afd"
+   sc create bareosfd2 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos2\""  depend= "tcpip/afd"
 
-This will create two |fd| services, one with the name bareosfd2 and the second with the name bareosfd3.
+This will create a second |fd| service with the name bareosfd2.
 
-The configuration files for the two services are :file:`bareos-fd.conf` and :file:`bareos-fd2.conf`, and need to have different network settings.
+The configuration directories for the two services is :file:`\"C:\\ProgramData\\Bareos2\\\"` needs to have different network settings.
 
-The services can be started by calling
+The service can be started by calling
 
 .. code-block:: shell-session
 
    sc start bareosfd2
 
-and
-
-.. code-block:: shell-session
-
-   sc start bareosfd3
 
 Windows Specific Command Line Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
