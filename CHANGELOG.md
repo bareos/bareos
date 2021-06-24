@@ -76,6 +76,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - FreeBSD: adapt pkglists for FreeBSD 13.0 [PR #819]
 - Fedora34: do not build mysql db backend, adapt pkglist [PR #819]
 - bscan and bareos systemtests: also test bextract and bls binaries, use autoxflate plugin and FSType fileset options [PR #790]
+- Windows release package now ships source code as optional component, so there is no need for a debug-package anymore [PR #858]
 
 ### Deprecated
 
@@ -96,6 +97,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Restore error "could not hard link" documented: what is the cause and how it can be avoided or solved. [PR #759]
 - Developer guide: add small chapter about c++ exceptions. [PR #777]
 
+[Issue #1205]: https://bugs.bareos.org/view.php?id=1205
 [Issue #1316]: https://bugs.bareos.org/view.php?id=1316
 [Issue #1329]: https://bugs.bareos.org/view.php?id=1329
 [PR #552]: https://github.com/bareos/bareos/pull/552
@@ -130,6 +132,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #776]: https://github.com/bareos/bareos/pull/776
 [PR #777]: https://github.com/bareos/bareos/pull/777
 [PR #778]: https://github.com/bareos/bareos/pull/778
+[PR #780]: https://github.com/bareos/bareos/pull/780
 [PR #782]: https://github.com/bareos/bareos/pull/782
 [PR #790]: https://github.com/bareos/bareos/pull/790
 [PR #791]: https://github.com/bareos/bareos/pull/791
@@ -141,6 +144,12 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #810]: https://github.com/bareos/bareos/pull/810
 [PR #819]: https://github.com/bareos/bareos/pull/819
 [PR #822]: https://github.com/bareos/bareos/pull/822
+[PR #823]: https://github.com/bareos/bareos/pull/823
+[PR #824]: https://github.com/bareos/bareos/pull/824
 [PR #826]: https://github.com/bareos/bareos/pull/826
 [PR #828]: https://github.com/bareos/bareos/pull/828
+[PR #829]: https://github.com/bareos/bareos/pull/829
+[PR #844]: https://github.com/bareos/bareos/pull/844
+[PR #850]: https://github.com/bareos/bareos/pull/850
+[PR #858]: https://github.com/bareos/bareos/pull/858
 [unreleased]: https://github.com/bareos/bareos/tree/master
