@@ -48,10 +48,6 @@ message(
   STATUS
     "Configuring source tree for version ${VERSION_STRING} with timestamp ${VERSION_TIMESTAMP}"
 )
-foreach(subdir "core" "webui")
-  set(version_file_name
-      "${CMAKE_CURRENT_LIST_DIR}/${subdir}/cmake/BareosVersion.cmake"
-  )
-  message(STATUS "Writing ${version_file_name}")
-  file(WRITE ${version_file_name} "${version_file_contents}")
-endforeach()
+set(version_file_name "${CMAKE_CURRENT_LIST_DIR}/cmake/BareosVersion.cmake")
+message(STATUS "Writing ${version_file_name}")
+file(WRITE ${version_file_name} "${version_file_contents}")

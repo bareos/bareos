@@ -31,14 +31,6 @@ include(BareosLocalBuildDefinitions OPTIONAL
         RESULT_VARIABLE BareosLocalBuildDefinitionsFile
 )
 
-if(NOT DEFINED VERSION_STRING)
-  # try to get version info from version.h
-  include(BareosExtractVersionInfo)
-else()
-  # we got VERSION_STRING from cmake commandline
-  set(BAREOS_FULL_VERSION ${VERSION_STRING})
-endif()
-
 if(BAREOS_FULL_VERSION STREQUAL "")
   message(FATAL_ERROR BAREOS_FULL_VERSION is not set)
 endif()

@@ -152,8 +152,6 @@ set(host ${CMAKE_SYSTEM})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-include(BareosExtractVersionInfo)
-
 include(BareosGetDistInfo)
 
 set(BUILDNAME
