@@ -1946,6 +1946,8 @@ ignoreSubdirs
 switchWal
    If set to *true* (default), the plugin will let Postgres write a new wal file, if the current Log Sequence Number (LSN) is greater than the LSN from the previous job to make sure changes will go into the backup. Default: *true*
 
+switchWalTimeout
+   Timeout in seconds to wait for WAL archiving after WAL switch, default 60 seconds.
 
 
 Restore
