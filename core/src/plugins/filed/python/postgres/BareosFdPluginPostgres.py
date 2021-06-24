@@ -38,8 +38,9 @@ import bareosfd
 
 class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
     """
-    Simple Bareos-FD-Plugin-Class that parses a file and backups all files
-    listed there Filename is taken from plugin argument 'filename'
+    Bareos-FD-Plugin-Class for PostgreSQL online (Hot) backup of database
+    files and database transaction logs (WAL) archiving to allow incrmental
+    backups and point-in-time recovery.
     """
 
     def __init__(self, plugindef):
@@ -141,6 +142,19 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
         self.switchWal = True
         if "switchWal" in self.options:
             self.switchWal = self.options["switchWal"].lower() == "true"
+
+        self.switchWalTimeout = 60
+        if "switchWalTimeout" in self.options:
+            try:
+                self.switchWalTimeout = int(self.options["switchWalTimeout"])
+            except ValueError as e:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "start_backup_job: Plugin option switchWalTimeout %s is not an integer value\n"
+                    % (self.options["switchWalTimeout"]),
+                )
+                return bareosfd.bRC_Error
+
         return bareosfd.bRC_OK
 
     def formatLSN(self, rawLSN):
@@ -241,16 +255,27 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
                         )
                     try:
                         result = self.dbCon.run(getLsnStmt)
-                        currentLSN = self.formatLSN(result[0][0])
+                        currentLSNraw = result[0][0]
+                        currentLSN = self.formatLSN(currentLSNraw)
+
+                        bareosfd.DebugMessage(
+                            150,
+                            "after pg_switch_wal(): currentLSN: %s lastLSN: %s\n"
+                            % (currentLSN, self.lastLSN),
+                        )
+
                         self.lastLSN = currentLSN
-                        # wait some seconds to make sure WAL file gets written
-                        time.sleep(10)
+
                     except Exception as e:
                         bareosfd.JobMessage(
                             bareosfd.M_WARNING,
                             "Could not read LSN after switching to new WAL segment: %s\n"
                             % e,
                         )
+
+                    if not self.wait_for_wal_archiving(currentLSNraw):
+                        return bareosfd.bRC_Error
+
                 else:
                     # Nothing has changed since last backup - only send ROP this time
                     bareosfd.JobMessage(
@@ -505,6 +530,56 @@ class BareosFdPluginPostgres(BareosFdPluginLocalFilesBaseclass):  # noqa
             self.closeDbConnection()
             self.PostgressFullBackupRunning = False
         return bareosfd.bRC_OK
+
+    def wait_for_wal_archiving(self, LSN):
+        """
+        Wait for wal archiving to be finished by checking if the wal file
+        for the given LSN is present in the filesystem.
+        """
+
+        pgMajorVersion = self.pgVersion // 10000
+        if pgMajorVersion >= 10:
+            wal_filename_func = "pg_walfile_name"
+        else:
+            wal_filename_func = "pg_xlogfile_name"
+
+        walfile_stmt = "SELECT %s('%s')" % (wal_filename_func, LSN)
+
+        try:
+            result = self.dbCon.run(walfile_stmt)
+            wal_filename = result[0][0]
+
+            bareosfd.DebugMessage(
+                100,
+                "wait_for_wal_archiving(%s): wal filename=%s\n" % (LSN, wal_filename),
+            )
+
+        except Exception as e:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Error getting WAL filename for LSN %s\n" % (LSN, e),
+            )
+            return False
+
+        wal_file_path = self.options["walArchive"] + wal_filename
+
+        # To finish as quick as possible but with low impact on a heavy loaded
+        # system, we use increasing sleep times here, starting with a small value
+        sleep_time = 0.01
+        slept_sum = 0.0
+        while slept_sum <= self.switchWalTimeout:
+            if os.path.exists(wal_file_path):
+                return True
+            time.sleep(sleep_time)
+            slept_sum += sleep_time
+            sleep_time *= 1.2
+
+        bareosfd.JobMessage(
+            bareosfd.M_FATAL,
+            "Timeout waiting %s s for wal file %s to be archived\n"
+            % (self.switchWalTimeout, wal_filename),
+        )
+        return False
 
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4
