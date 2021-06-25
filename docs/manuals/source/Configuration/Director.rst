@@ -759,6 +759,8 @@ The directives within an Options resource may be one of the following:
    The options letters specified are used when
    running a :strong:`Backup Level=Incremental/Differential` in Accurate mode. The
    options letters are the same than in the :strong:`verify=` option below.
+   The default setting is **mcs** which means that *modification time*, *change time*
+   and *size* are compared.
 
 .. config:option:: dir/fileset/include/options/Verify
 
