@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -17,6 +17,16 @@ use Zend\Cache\Exception;
  */
 class MemcachedOptions extends AdapterOptions
 {
+    // @codingStandardsIgnoreStart
+    /**
+     * Prioritized properties ordered by prio to be set first
+     * in case a bulk of options sets set at once
+     *
+     * @var string[]
+     */
+    protected $__prioritizedProperties__ = ['resource_manager', 'resource_id'];
+    // @codingStandardsIgnoreEnd
+
     /**
      * The namespace separator
      * @var string
@@ -64,7 +74,7 @@ class MemcachedOptions extends AdapterOptions
      * Set namespace separator
      *
      * @param  string $namespaceSeparator
-     * @return MemcachedOptions
+     * @return MemcachedOptions Provides a fluent interface
      */
     public function setNamespaceSeparator($namespaceSeparator)
     {
@@ -90,7 +100,7 @@ class MemcachedOptions extends AdapterOptions
      * A memcached resource to share
      *
      * @param null|MemcachedResource $memcachedResource
-     * @return MemcachedOptions
+     * @return MemcachedOptions Provides a fluent interface
      * @deprecated Please use the resource manager instead
      */
     public function setMemcachedResource(MemcachedResource $memcachedResource = null)
@@ -131,7 +141,7 @@ class MemcachedOptions extends AdapterOptions
      * Set the memcached resource manager to use
      *
      * @param null|MemcachedResourceManager $resourceManager
-     * @return MemcachedOptions
+     * @return MemcachedOptions Provides a fluent interface
      */
     public function setResourceManager(MemcachedResourceManager $resourceManager = null)
     {
@@ -149,7 +159,7 @@ class MemcachedOptions extends AdapterOptions
      */
     public function getResourceManager()
     {
-        if (!$this->resourceManager) {
+        if (! $this->resourceManager) {
             $this->resourceManager = new MemcachedResourceManager();
         }
         return $this->resourceManager;
@@ -169,7 +179,7 @@ class MemcachedOptions extends AdapterOptions
      * Set the memcached resource id
      *
      * @param string $resourceId
-     * @return MemcachedOptions
+     * @return MemcachedOptions Provides a fluent interface
      */
     public function setResourceId($resourceId)
     {
@@ -195,7 +205,7 @@ class MemcachedOptions extends AdapterOptions
      * Set the persistent id
      *
      * @param string $persistentId
-     * @return MemcachedOptions
+     * @return MemcachedOptions Provides a fluent interface
      */
     public function setPersistentId($persistentId)
     {
@@ -210,7 +220,7 @@ class MemcachedOptions extends AdapterOptions
      * @param string $host
      * @param int $port
      * @param int $weight
-     * @return MemcachedOptions
+     * @return MemcachedOptions Provides a fluent interface
      * @deprecated Please use the resource manager instead
      */
     public function addServer($host, $port = 11211, $weight = 0)
@@ -221,11 +231,11 @@ class MemcachedOptions extends AdapterOptions
             E_USER_DEPRECATED
         );
 
-        $this->getResourceManager()->addServer($this->getResourceId(), array(
+        $this->getResourceManager()->addServer($this->getResourceId(), [
             'host'   => $host,
             'port'   => $port,
             'weight' => $weight
-        ));
+        ]);
 
         return $this;
     }
@@ -234,7 +244,7 @@ class MemcachedOptions extends AdapterOptions
     * Set a list of memcached servers to add on initialize
     *
     * @param string|array $servers list of servers
-    * @return MemcachedOptions
+    * @return MemcachedOptions Provides a fluent interface
     * @throws Exception\InvalidArgumentException
     */
     public function setServers($servers)
@@ -257,7 +267,7 @@ class MemcachedOptions extends AdapterOptions
     * Set libmemcached options
     *
     * @param array $libOptions
-    * @return MemcachedOptions
+    * @return MemcachedOptions Provides a fluent interface
     * @link http://php.net/manual/memcached.constants.php
     */
     public function setLibOptions(array $libOptions)
@@ -271,7 +281,7 @@ class MemcachedOptions extends AdapterOptions
      *
      * @param string|int $key
      * @param mixed $value
-     * @return MemcachedOptions
+     * @return MemcachedOptions Provides a fluent interface
      * @link http://php.net/manual/memcached.constants.php
      * @deprecated Please use lib_options or the resource manager instead
      */

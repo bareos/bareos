@@ -26,7 +26,7 @@ abstract class AbstractArrayOrStringAnnotation
      */
     public function __construct(array $data)
     {
-        if (!isset($data['value']) || (!is_array($data['value']) && !is_string($data['value']))) {
+        if (! isset($data['value']) || (! is_array($data['value']) && ! is_string($data['value']))) {
             throw new Exception\DomainException(sprintf(
                 '%s expects the annotation to define an array or string; received "%s"',
                 get_class($this),

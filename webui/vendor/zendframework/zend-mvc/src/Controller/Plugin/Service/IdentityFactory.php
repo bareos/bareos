@@ -9,6 +9,8 @@
 
 namespace Zend\Mvc\Controller\Plugin\Service;
 
+use Interop\Container\ContainerInterface;
+use Zend\Authentication\AuthenticationService;
 use Zend\Mvc\Controller\Plugin\Identity;
 use Zend\ServiceManager\FactoryInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
@@ -18,15 +20,32 @@ class IdentityFactory implements FactoryInterface
     /**
      * {@inheritDoc}
      *
-     * @return \Zend\Mvc\Controller\Plugin\Identity
+     * @return Identity
      */
-    public function createService(ServiceLocatorInterface $serviceLocator)
+    public function __invoke(ContainerInterface $container, $name, array $options = null)
     {
-        $services = $serviceLocator->getServiceLocator();
         $helper = new Identity();
-        if ($services->has('Zend\Authentication\AuthenticationService')) {
-            $helper->setAuthenticationService($services->get('Zend\Authentication\AuthenticationService'));
+        if ($container->has(AuthenticationService::class)) {
+            $helper->setAuthenticationService($container->get(AuthenticationService::class));
         }
         return $helper;
+    }
+
+    /**
+     * Create and return Identity instance
+     *
+     * For use with zend-servicemanager v2; proxies to __invoke().
+     *
+     * @param ServiceLocatorInterface $container
+     * @return Identity
+     */
+    public function createService(ServiceLocatorInterface $container)
+    {
+        // Retrieve the parent container when under zend-servicemanager v2
+        if (! method_exists($container, 'configure')) {
+            $container = $container->getServiceLocator() ?: $container;
+        }
+
+        return $this($container, Identity::class);
     }
 }

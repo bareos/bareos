@@ -26,7 +26,7 @@ class Select extends Char
     /**
      * @var array
      */
-    protected $options = array();
+    protected $options = [];
 
     /**
      * Ask the user to select one of pre-defined options
@@ -39,7 +39,7 @@ class Select extends Char
      */
     public function __construct(
         $promptText = 'Please select one option',
-        $options = array(),
+        $options = [],
         $allowEmpty = false,
         $echo = false
     ) {
@@ -47,7 +47,7 @@ class Select extends Char
             $this->setPromptText($promptText);
         }
 
-        if (!count($options)) {
+        if (! count($options)) {
             throw new Exception\BadMethodCallException(
                 'Cannot construct a "select" prompt without any options'
             );
@@ -119,14 +119,14 @@ class Select extends Char
      */
     public function setOptions($options)
     {
-        if (!is_array($options) && !$options instanceof \Traversable) {
+        if (! is_array($options) && ! $options instanceof \Traversable) {
             throw new Exception\BadMethodCallException(
                 'Please specify an array or Traversable object as options'
             );
         }
 
-        if (!is_array($options)) {
-            $this->options = array();
+        if (! is_array($options)) {
+            $this->options = [];
             foreach ($options as $k => $v) {
                 $this->options[$k] = $v;
             }

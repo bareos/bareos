@@ -39,27 +39,27 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     /**
      * {@inheritDoc}
      */
-    public function attach(EventManagerInterface $events)
+    public function attach(EventManagerInterface $events, $priority = 1)
     {
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleAllowEmptyAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleAttributesAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleComposedObjectAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleContinueIfEmptyAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleErrorMessageAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleFilterAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleFlagsAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleHydratorAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleInputAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleObjectAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleOptionsAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleRequiredAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleTypeAnnotation'));
-        $this->listeners[] = $events->attach('configureElement', array($this, 'handleValidatorAnnotation'));
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleAllowEmptyAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleAttributesAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleComposedObjectAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleContinueIfEmptyAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleErrorMessageAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleFilterAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleFlagsAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleHydratorAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleInputAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleObjectAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleOptionsAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleRequiredAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleTypeAnnotation'], $priority);
+        $this->listeners[] = $events->attach('configureElement', [$this, 'handleValidatorAnnotation'], $priority);
 
-        $this->listeners[] = $events->attach('discoverName', array($this, 'handleNameAnnotation'));
-        $this->listeners[] = $events->attach('discoverName', array($this, 'discoverFallbackName'));
+        $this->listeners[] = $events->attach('discoverName', [$this, 'handleNameAnnotation'], $priority);
+        $this->listeners[] = $events->attach('discoverName', [$this, 'discoverFallbackName'], $priority);
 
-        $this->listeners[] = $events->attach('checkForExclude', array($this, 'handleExcludeAnnotation'));
+        $this->listeners[] = $events->attach('checkForExclude', [$this, 'handleExcludeAnnotation'], $priority);
     }
 
     /**
@@ -73,7 +73,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleAllowEmptyAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof AllowEmpty) {
+        if (! $annotation instanceof AllowEmpty) {
             return;
         }
 
@@ -92,7 +92,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleAttributesAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Attributes) {
+        if (! $annotation instanceof Attributes) {
             return;
         }
 
@@ -117,7 +117,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleComposedObjectAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof ComposedObject) {
+        if (! $annotation instanceof ComposedObject) {
             return;
         }
 
@@ -130,7 +130,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
 
         if ($annotation->isCollection()) {
             // Compose specification as a fieldset into parent form/fieldset
-            if (!isset($specification['type'])) {
+            if (! isset($specification['type'])) {
                 //use input filter provider fieldset so we can compose the input filter into the fieldset
                 //it is assumed that if someone uses a custom fieldset, they will take care of the input
                 //filtering themselves or consume the input_filter_spec option.
@@ -138,7 +138,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
             }
 
             $inputFilter = $specification['input_filter'];
-            if (!isset($inputFilter['type'])) {
+            if (! isset($inputFilter['type'])) {
                 $inputFilter['type'] = 'Zend\InputFilter\InputFilter';
             }
             unset($specification['input_filter']);
@@ -155,19 +155,19 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
         } else {
             // Compose input filter into parent input filter
             $inputFilter = $specification['input_filter'];
-            if (!isset($inputFilter['type'])) {
+            if (! isset($inputFilter['type'])) {
                 $inputFilter['type'] = 'Zend\InputFilter\InputFilter';
             }
             $e->setParam('inputSpec', $inputFilter);
             unset($specification['input_filter']);
 
             // Compose specification as a fieldset into parent form/fieldset
-            if (!isset($specification['type'])) {
+            if (! isset($specification['type'])) {
                 $specification['type'] = 'Zend\Form\Fieldset';
             }
 
             if (isset($elementSpec['spec']['options'])) {
-                $specification['options'] = isset($specification['options']) ? $specification['options'] : array();
+                $specification['options'] = isset($specification['options']) ? $specification['options'] : [];
                 $specification['options'] = array_merge($elementSpec['spec']['options'], $specification['options']);
             }
 
@@ -189,7 +189,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleContinueIfEmptyAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof ContinueIfEmpty) {
+        if (! $annotation instanceof ContinueIfEmpty) {
             return;
         }
 
@@ -208,7 +208,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleErrorMessageAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof ErrorMessage) {
+        if (! $annotation instanceof ErrorMessage) {
             return;
         }
 
@@ -242,13 +242,13 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleFilterAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Filter) {
+        if (! $annotation instanceof Filter) {
             return;
         }
 
         $inputSpec = $e->getParam('inputSpec');
-        if (!isset($inputSpec['filters'])) {
-            $inputSpec['filters'] = array();
+        if (! isset($inputSpec['filters'])) {
+            $inputSpec['filters'] = [];
         }
         $inputSpec['filters'][] = $annotation->getFilter();
     }
@@ -265,7 +265,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleFlagsAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Flags) {
+        if (! $annotation instanceof Flags) {
             return;
         }
 
@@ -284,7 +284,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleHydratorAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Hydrator) {
+        if (! $annotation instanceof Hydrator) {
             return;
         }
 
@@ -304,7 +304,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleInputAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Input) {
+        if (! $annotation instanceof Input) {
             return;
         }
 
@@ -344,7 +344,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleOptionsAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Options) {
+        if (! $annotation instanceof Options) {
             return;
         }
 
@@ -363,7 +363,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleRequiredAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Required) {
+        if (! $annotation instanceof Required) {
             return;
         }
 
@@ -373,8 +373,8 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
 
         if ($required) {
             $elementSpec = $e->getParam('elementSpec');
-            if (!isset($elementSpec['spec']['attributes'])) {
-                $elementSpec['spec']['attributes'] = array();
+            if (! isset($elementSpec['spec']['attributes'])) {
+                $elementSpec['spec']['attributes'] = [];
             }
 
             $elementSpec['spec']['attributes']['required'] = 'required';
@@ -392,7 +392,7 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleTypeAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Type) {
+        if (! $annotation instanceof Type) {
             return;
         }
 
@@ -411,13 +411,13 @@ class ElementAnnotationsListener extends AbstractAnnotationsListener
     public function handleValidatorAnnotation($e)
     {
         $annotation = $e->getParam('annotation');
-        if (!$annotation instanceof Validator) {
+        if (! $annotation instanceof Validator) {
             return;
         }
 
         $inputSpec = $e->getParam('inputSpec');
-        if (!isset($inputSpec['validators'])) {
-            $inputSpec['validators'] = array();
+        if (! isset($inputSpec['validators'])) {
+            $inputSpec['validators'] = [];
         }
         $inputSpec['validators'][] = $annotation->getValidator();
     }

@@ -26,17 +26,17 @@ class Identical extends AbstractValidator
      * Error messages
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::NOT_SAME      => "The two given tokens do not match",
         self::MISSING_TOKEN => 'No token was provided to match against',
-    );
+    ];
 
     /**
      * @var array
      */
-    protected $messageVariables = array(
+    protected $messageVariables = [
         'token' => 'tokenString'
-    );
+    ];
 
     /**
      * Original token against which to validate
@@ -157,8 +157,8 @@ class Identical extends AbstractValidator
 
         $token = $this->getToken();
 
-        if (!$this->getLiteral() && $context !== null) {
-            if (!is_array($context) && !($context instanceof ArrayAccess)) {
+        if (! $this->getLiteral() && $context !== null) {
+            if (! is_array($context) && ! ($context instanceof ArrayAccess)) {
                 throw new Exception\InvalidArgumentException(sprintf(
                     'Context passed to %s must be array, ArrayObject or null; received "%s"',
                     __METHOD__,
@@ -169,7 +169,7 @@ class Identical extends AbstractValidator
             if (is_array($token)) {
                 while (is_array($token)) {
                     $key = key($token);
-                    if (!isset($context[$key])) {
+                    if (! isset($context[$key])) {
                         break;
                     }
                     $context = $context[$key];
@@ -179,7 +179,7 @@ class Identical extends AbstractValidator
 
             // if $token is an array it means the above loop didn't went all the way down to the leaf,
             // so the $token structure doesn't match the $context structure
-            if (is_array($token) || !isset($context[$token])) {
+            if (is_array($token) || ! isset($context[$token])) {
                 $token = $this->getToken();
             } else {
                 $token = $context[$token];
@@ -192,7 +192,7 @@ class Identical extends AbstractValidator
         }
 
         $strict = $this->getStrict();
-        if (($strict && ($value !== $token)) || (!$strict && ($value != $token))) {
+        if (($strict && ($value !== $token)) || (! $strict && ($value != $token))) {
             $this->error(self::NOT_SAME);
             return false;
         }

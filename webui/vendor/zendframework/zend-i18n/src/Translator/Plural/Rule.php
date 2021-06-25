@@ -1,10 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-i18n for the canonical source repository
+ * @copyright Copyright (c) 2005-2019 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-i18n/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\I18n\Translator\Plural;
@@ -40,9 +38,8 @@ class Rule
     /**
      * Create a new plural rule.
      *
-     * @param  int $numPlurals
-     * @param  array   $ast
-     * @return Rule
+     * @param int   $numPlurals
+     * @param array $ast
      */
     protected function __construct($numPlurals, array $ast)
     {
@@ -83,8 +80,8 @@ class Rule
     /**
      * Evaluate a part of an ast.
      *
-     * @param  array   $ast
-     * @param  int $number
+     * @param  array $ast
+     * @param  int   $number
      * @return int
      * @throws Exception\ParseException
      */
@@ -161,7 +158,7 @@ class Rule
                        ? 1 : 0;
 
             case '!':
-                return !$this->evaluateAstPart($ast['arguments'][0], $number)
+                return ! $this->evaluateAstPart($ast['arguments'][0], $number)
                        ? 1 : 0;
 
             case '?':
@@ -190,7 +187,7 @@ class Rule
             static::$parser = new Parser();
         }
 
-        if (!preg_match('(nplurals=(?P<nplurals>\d+))', $string, $match)) {
+        if (! preg_match('(nplurals=(?P<nplurals>\d+))', $string, $match)) {
             throw new Exception\ParseException(sprintf(
                 'Unknown or invalid parser rule: %s',
                 $string
@@ -199,7 +196,7 @@ class Rule
 
         $numPlurals = (int) $match['nplurals'];
 
-        if (!preg_match('(plural=(?P<plural>[^;\n]+))', $string, $match)) {
+        if (! preg_match('(plural=(?P<plural>[^;\n]+))', $string, $match)) {
             throw new Exception\ParseException(sprintf(
                 'Unknown or invalid parser rule: %s',
                 $string
@@ -223,7 +220,7 @@ class Rule
      */
     protected static function createAst(Symbol $symbol)
     {
-        $ast = array('id' => $symbol->id, 'arguments' => array());
+        $ast = ['id' => $symbol->id, 'arguments' => []];
 
         switch ($symbol->id) {
             case 'n':

@@ -1,53 +1,80 @@
 {
     "name": "zendframework/zend-i18n",
-    "description": " ",
+    "description": "Provide translations for your application, and filter and validate internationalized values",
     "license": "BSD-3-Clause",
     "keywords": [
-        "zf2",
+        "zendframework",
+        "zf",
         "i18n"
     ],
-    "homepage": "https://github.com/zendframework/zend-i18n",
-    "autoload": {
-        "psr-4": {
-            "Zend\\I18n\\": "src/"
-        }
+    "support": {
+        "docs": "https://docs.zendframework.com/zend-i18n/",
+        "issues": "https://github.com/zendframework/zend-i18n/issues",
+        "source": "https://github.com/zendframework/zend-i18n",
+        "rss": "https://github.com/zendframework/zend-i18n/releases.atom",
+        "chat": "https://zendframework-slack.herokuapp.com",
+        "forum": "https://discourse.zendframework.com/c/questions/components"
     },
     "require": {
-        "php": ">=5.3.23",
-        "zendframework/zend-stdlib": "self.version"
+        "php": "^5.6 || ^7.0",
+        "ext-intl": "*",
+        "zendframework/zend-stdlib": "^2.7 || ^3.0"
     },
     "require-dev": {
-        "zendframework/zend-cache": "self.version",
-        "zendframework/zend-config": "self.version",
-        "zendframework/zend-eventmanager": "self.version",
-        "zendframework/zend-filter": "self.version",
-        "zendframework/zend-servicemanager": "self.version",
-        "zendframework/zend-validator": "self.version",
-        "zendframework/zend-view": "self.version",
-        "fabpot/php-cs-fixer": "1.7.*",
-        "satooshi/php-coveralls": "dev-master",
-        "phpunit/PHPUnit": "~4.0"
+        "phpunit/phpunit": "^5.7.27 || ^6.5.14 || ^7.5.16",
+        "zendframework/zend-cache": "^2.6.1",
+        "zendframework/zend-coding-standard": "~1.0.0",
+        "zendframework/zend-config": "^2.6",
+        "zendframework/zend-eventmanager": "^2.6.2 || ^3.0",
+        "zendframework/zend-filter": "^2.6.1",
+        "zendframework/zend-servicemanager": "^2.7.5 || ^3.0.3",
+        "zendframework/zend-validator": "^2.6",
+        "zendframework/zend-view": "^2.6.3"
+    },
+    "conflict": {
+        "phpspec/prophecy": "<1.9.0"
     },
     "suggest": {
-        "ext-intl": "Required for most features of Zend\\I18n; included in default builds of PHP",
         "zendframework/zend-cache": "Zend\\Cache component",
         "zendframework/zend-config": "Zend\\Config component",
         "zendframework/zend-eventmanager": "You should install this package to use the events in the translator",
         "zendframework/zend-filter": "You should install this package to use the provided filters",
+        "zendframework/zend-i18n-resources": "Translation resources",
         "zendframework/zend-servicemanager": "Zend\\ServiceManager component",
         "zendframework/zend-validator": "You should install this package to use the provided validators",
-        "zendframework/zend-view": "You should install this package to use the provided view helpers",
-        "zendframework/zend-resources": "Translation resources"
+        "zendframework/zend-view": "You should install this package to use the provided view helpers"
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "2.4-dev",
-            "dev-develop": "2.5-dev"
+    "autoload": {
+        "psr-4": {
+            "Zend\\I18n\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
             "ZendTest\\I18n\\": "test/"
         }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.10.x-dev",
+            "dev-develop": "2.11.x-dev"
+        },
+        "zf": {
+            "component": "Zend\\I18n",
+            "config-provider": "Zend\\I18n\\ConfigProvider"
+        }
+    },
+    "scripts": {
+        "check": [
+            "@cs-check",
+            "@test"
+        ],
+        "cs-check": "phpcs",
+        "cs-fix": "phpcbf",
+        "test": "phpunit --colors=always",
+        "test-coverage": "phpunit --colors=always --coverage-clover clover.xml"
     }
 }

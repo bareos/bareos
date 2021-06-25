@@ -27,7 +27,7 @@ class SharedEventManager implements
      * Identifiers with event connections
      * @var array
      */
-    protected $identifiers = array();
+    protected $identifiers = [];
 
     /**
      * Attach a listener to an event
@@ -62,7 +62,7 @@ class SharedEventManager implements
     public function attach($id, $event, $callback, $priority = 1)
     {
         $ids = (array) $id;
-        $listeners = array();
+        $listeners = [];
         foreach ($ids as $id) {
             if (!array_key_exists($id, $this->identifiers)) {
                 $this->identifiers[$id] = new EventManager($id);
@@ -123,6 +123,9 @@ class SharedEventManager implements
     /**
      * Retrieve all registered events for a given resource
      *
+     * @deprecated This method is deprecated with 2.6.0, and will be removed in 3.0.0.
+     *     See {@link https://github.com/zendframework/zend-eventmanager/blob/develop/doc/book/migration/removed.md}
+     *     for details.
      * @param  string|int $id
      * @return array
      */

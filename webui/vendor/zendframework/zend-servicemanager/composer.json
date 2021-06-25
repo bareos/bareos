@@ -6,34 +6,39 @@
         "zf2",
         "servicemanager"
     ],
-    "homepage": "https://github.com/zendframework/zend-service-manager",
+    "homepage": "https://github.com/zendframework/zend-servicemanager",
     "autoload": {
         "psr-4": {
             "Zend\\ServiceManager\\": "src/"
         }
     },
     "require": {
-        "php": ">=5.3.23"
+        "php": "^5.5 || ^7.0",
+        "container-interop/container-interop": "~1.0"
     },
     "require-dev": {
-        "zendframework/zend-di": "self.version",
+        "zendframework/zend-di": "~2.5",
+        "zendframework/zend-mvc": "~2.5",
         "fabpot/php-cs-fixer": "1.7.*",
-        "satooshi/php-coveralls": "dev-master",
-        "phpunit/PHPUnit": "~4.0"
+        "phpunit/PHPUnit": "~4.0",
+        "athletic/athletic": "dev-master"
     },
     "suggest": {
         "ocramius/proxy-manager": "ProxyManager 0.5.* to handle lazy initialization of services",
         "zendframework/zend-di": "Zend\\Di component"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "extra": {
         "branch-alias": {
-            "dev-master": "2.4-dev",
-            "dev-develop": "2.5-dev"
+            "dev-master": "2.7-dev",
+            "dev-develop": "3.0-dev"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "ZendTest\\ServiceManager\\": "test/"
+            "ZendTest\\ServiceManager\\": "test/",
+            "ZendBench\\ServiceManager\\": "benchmarks/"
         }
     }
 }

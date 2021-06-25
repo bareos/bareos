@@ -2,8 +2,8 @@
 /**
  * Zend Framework (http://framework.zend.com/)
  *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @link      http://github.com/zendframework/zend-log for the canonical source repository
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -41,7 +41,7 @@ class FirePhp extends AbstractWriter
             $instance = isset($instance['instance']) ? $instance['instance'] : null;
         }
 
-        if ($instance !== null && !($instance instanceof FirePhp\FirePhpInterface)) {
+        if ($instance !== null && ! ($instance instanceof FirePhp\FirePhpInterface)) {
             throw new Exception\InvalidArgumentException('You must pass a valid FirePhp\FirePhpInterface');
         }
 
@@ -59,7 +59,7 @@ class FirePhp extends AbstractWriter
     {
         $firephp = $this->getFirePhp();
 
-        if (!$firephp->getEnabled()) {
+        if (! $firephp->getEnabled()) {
             return;
         }
 
@@ -96,8 +96,8 @@ class FirePhp extends AbstractWriter
      */
     public function getFirePhp()
     {
-        if (!$this->firephp instanceof FirePhp\FirePhpInterface
-            && !class_exists('FirePHP')
+        if (! $this->firephp instanceof FirePhp\FirePhpInterface
+            && ! class_exists('FirePHP')
         ) {
             // No FirePHP instance, and no way to create one
             throw new Exception\RuntimeException('FirePHP Class not found');
@@ -105,7 +105,7 @@ class FirePhp extends AbstractWriter
 
         // Remember: class names in strings are absolute; thus the class_exists
         // here references the canonical name for the FirePHP class
-        if (!$this->firephp instanceof FirePhp\FirePhpInterface
+        if (! $this->firephp instanceof FirePhp\FirePhpInterface
             && class_exists('FirePHP')
         ) {
             // FirePHPService is an alias for FirePHP; otherwise the class

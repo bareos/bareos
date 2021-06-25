@@ -1,0 +1,16 @@
+{
+    "title": "Zend\\Cache",
+    "target": "html/",
+    "content": [
+        "book/zend.cache.storage.adapter.md",
+        "book/zend.cache.storage.capabilities.md",
+        "book/zend.cache.storage.plugin.md",
+        "book/zend.cache.pattern.md",
+        "book/zend.cache.pattern.callback-cache.md",
+        "book/zend.cache.pattern.class-cache.md",
+        "book/zend.cache.pattern.object-cache.md",
+        "book/zend.cache.pattern.output-cache.md",
+        "book/zend.cache.pattern.capture-cache.md",
+        "book/zend.cache.psr.cacheitempooladapter.md"
+    ]
+}

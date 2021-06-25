@@ -89,7 +89,7 @@ class JsonRenderer implements Renderer, TreeRendererInterface
     public function setJsonpCallback($callback)
     {
         $callback = (string) $callback;
-        if (!empty($callback)) {
+        if (! empty($callback)) {
             $this->jsonpCallback = $callback;
         }
         return $this;
@@ -147,7 +147,7 @@ class JsonRenderer implements Renderer, TreeRendererInterface
         // use case 2: $nameOrModel is populated, $values is not
         // Serialize $nameOrModel
         if (null === $values) {
-            if (!is_object($nameOrModel) || $nameOrModel instanceof JsonSerializable) {
+            if (! is_object($nameOrModel) || $nameOrModel instanceof JsonSerializable) {
                 $return = Json::encode($nameOrModel);
             } elseif ($nameOrModel instanceof Traversable) {
                 $nameOrModel = ArrayUtils::iteratorToArray($nameOrModel);
@@ -191,7 +191,7 @@ class JsonRenderer implements Renderer, TreeRendererInterface
      */
     protected function recurseModel(Model $model, $mergeWithVariables = true)
     {
-        $values = array();
+        $values = [];
         if ($mergeWithVariables) {
             $values = $model->getVariables();
         }
@@ -200,14 +200,14 @@ class JsonRenderer implements Renderer, TreeRendererInterface
             $values = ArrayUtils::iteratorToArray($values);
         }
 
-        if (!$model->hasChildren()) {
+        if (! $model->hasChildren()) {
             return $values;
         }
 
         $mergeChildren = $this->mergeUnnamedChildren();
         foreach ($model as $child) {
             $captureTo = $child->captureTo();
-            if (!$captureTo && !$mergeChildren) {
+            if (! $captureTo && ! $mergeChildren) {
                 // We don't want to do anything with this child
                 continue;
             }

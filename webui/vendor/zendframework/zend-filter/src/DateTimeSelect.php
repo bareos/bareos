@@ -55,7 +55,7 @@ class DateTimeSelect extends AbstractDateDropdown
                 && empty($value['day'])
                 && empty($value['hour'])
                 && empty($value['minute'])
-                && (!isset($value['second']) || empty($value['second']))
+                && (! isset($value['second']) || empty($value['second']))
             )
         ) {
             // Cannot handle this value

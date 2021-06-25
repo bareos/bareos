@@ -23,7 +23,7 @@ class Form extends AbstractHelper
      *
      * @var array
      */
-    protected $validTagAttributes = array(
+    protected $validTagAttributes = [
         'accept-charset' => true,
         'action'         => true,
         'autocomplete'   => true,
@@ -32,7 +32,7 @@ class Form extends AbstractHelper
         'name'           => true,
         'novalidate'     => true,
         'target'         => true,
-    );
+    ];
 
     /**
      * Invoke as function
@@ -42,7 +42,7 @@ class Form extends AbstractHelper
      */
     public function __invoke(FormInterface $form = null)
     {
-        if (!$form) {
+        if (! $form) {
             return $this;
         }
 
@@ -65,9 +65,9 @@ class Form extends AbstractHelper
 
         foreach ($form as $element) {
             if ($element instanceof FieldsetInterface) {
-                $formContent.= $this->getView()->formCollection($element);
+                $formContent .= $this->getView()->formCollection($element);
             } else {
-                $formContent.= $this->getView()->formRow($element);
+                $formContent .= $this->getView()->formRow($element);
             }
         }
 
@@ -83,18 +83,18 @@ class Form extends AbstractHelper
     public function openTag(FormInterface $form = null)
     {
         $doctype    = $this->getDoctype();
-        $attributes = array();
+        $attributes = [];
 
         if (! (Doctype::HTML5 === $doctype || Doctype::XHTML5 === $doctype)) {
-            $attributes = array(
+            $attributes = [
                 'action' => '',
                 'method' => 'get',
-            );
+            ];
         }
 
         if ($form instanceof FormInterface) {
             $formAttributes = $form->getAttributes();
-            if (!array_key_exists('id', $formAttributes) && array_key_exists('name', $formAttributes)) {
+            if (! array_key_exists('id', $formAttributes) && array_key_exists('name', $formAttributes)) {
                 $formAttributes['id'] = $formAttributes['name'];
             }
             $attributes = array_merge($attributes, $formAttributes);

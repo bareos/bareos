@@ -51,7 +51,7 @@ class FormMonthSelect extends AbstractHelper
      */
     public function __construct()
     {
-        if (!extension_loaded('intl')) {
+        if (! extension_loaded('intl')) {
             throw new Exception\ExtensionNotLoadedException(sprintf(
                 '%s component requires the intl PHP extension',
                 __NAMESPACE__
@@ -74,7 +74,7 @@ class FormMonthSelect extends AbstractHelper
      */
     public function __invoke(ElementInterface $element = null, $dateType = IntlDateFormatter::LONG, $locale = null)
     {
-        if (!$element) {
+        if (! $element) {
             return $this;
         }
 
@@ -97,7 +97,7 @@ class FormMonthSelect extends AbstractHelper
      */
     public function render(ElementInterface $element)
     {
-        if (!$element instanceof MonthSelectElement) {
+        if (! $element instanceof MonthSelectElement) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s requires that the element is of type Zend\Form\Element\MonthSelect',
                 __METHOD__
@@ -130,7 +130,7 @@ class FormMonthSelect extends AbstractHelper
             $yearElement->setEmptyOption('');
         }
 
-        $data = array();
+        $data = [];
         $data[$pattern['month']] = $selectHelper->render($monthElement);
         $data[$pattern['year']]  = $selectHelper->render($yearElement);
 
@@ -156,9 +156,14 @@ class FormMonthSelect extends AbstractHelper
     protected function parsePattern($renderDelimiters = true)
     {
         $pattern    = $this->getPattern();
-        $pregResult = preg_split("/([ -,.\/]*(?:'[a-zA-Z]+')*[ -,.\/]+)/", $pattern, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+        $pregResult = preg_split(
+            "/([ -,.\/]*(?:'[a-zA-Z]+')*[ -,.\/]+)/",
+            $pattern,
+            -1,
+            PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY
+        );
 
-        $result = array();
+        $result = [];
         foreach ($pregResult as $value) {
             if (stripos($value, "'") === false && stripos($value, 'd') !== false) {
                 $result['day'] = $value;
@@ -255,7 +260,7 @@ class FormMonthSelect extends AbstractHelper
         $valueFormatter = new IntlDateFormatter($this->getLocale(), null, null, null, null, $pattern);
         $date           = new DateTime('1970-01-01');
 
-        $result = array();
+        $result = [];
         for ($month = 1; $month <= 12; $month++) {
             $key   = $keyFormatter->format($date->getTimestamp());
             $value = $valueFormatter->format($date->getTimestamp());
@@ -278,7 +283,7 @@ class FormMonthSelect extends AbstractHelper
      */
     protected function getYearsOptions($minYear, $maxYear)
     {
-        $result = array();
+        $result = [];
         for ($i = $maxYear; $i >= $minYear; --$i) {
             $result[$i] = $i;
         }

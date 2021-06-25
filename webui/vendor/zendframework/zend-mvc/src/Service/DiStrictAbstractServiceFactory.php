@@ -9,14 +9,40 @@
 
 namespace Zend\Mvc\Service;
 
+use Interop\Container\ContainerInterface;
 use Zend\Di\Di;
 use Zend\Di\Exception\ClassNotFoundException;
-use Zend\Mvc\Exception\DomainException;
 use Zend\ServiceManager\AbstractFactoryInterface;
 use Zend\ServiceManager\AbstractPluginManager;
 use Zend\ServiceManager\Exception;
 use Zend\ServiceManager\ServiceLocatorInterface;
 
+/**
+ * Create and return instances from a DI container and/or the parent container.
+ *
+ * This abstract factory can be mapped to arbitrary class names, and used to
+ * pull them from the composed Di instance, using the following behaviors:
+ *
+ * - If USE_SL_BEFORE_DI is passed as the second argument to the constructor,
+ *   the factory will attempt to fetch the service from the passed container
+ *   first, and fall back to the composed DI container only on failure.
+ * - If USE_SL_AFTER_DI is passed as the second argument to the constructor,
+ *   the factory will attempt to fetch the service from the composed DI
+ *   container first, and fall back to the passed container only on failure.
+ * - If USE_SL_NONE is passed as the second argument to the constructor (or no
+ *   argument is passed), then the factory will only fetch from the composed
+ *   DI container.
+ *
+ * Unlike DiAbstractServiceFactory and DiServiceFactory, this abstract factory
+ * requires that classes requested are in a provided whitelist; if the requested
+ * service is not, an exception is raised. This is useful to provide a scoped
+ * container, e.g., to limit to known controller classes, etc.
+ *
+ * @deprecated Since 2.7.9. The factory is now defined in zend-servicemanager-di,
+ *     and removed in 3.0.0. Use Zend\ServiceManager\Di\DiStrictAbstractServiceFactory
+ *     from zend-servicemanager-di if you are using zend-servicemanager v3, and/or when
+ *     ready to migrate to zend-mvc 3.0.
+ */
 class DiStrictAbstractServiceFactory extends Di implements AbstractFactoryInterface
 {
     /**@#+
@@ -35,26 +61,27 @@ class DiStrictAbstractServiceFactory extends Di implements AbstractFactoryInterf
     /**
      * @var string
      */
-    protected $useServiceLocator = self::USE_SL_AFTER_DI;
+    protected $useContainer = self::USE_SL_AFTER_DI;
 
     /**
-     * @var ServiceLocatorInterface
+     * @var ContainerInterface
      */
-    protected $serviceLocator = null;
+    protected $container = null;
 
     /**
      * @var array an array of whitelisted service names (keys are the service names)
      */
-    protected $allowedServiceNames = array();
+    protected $allowedServiceNames = [];
 
     /**
      * @param Di $di
-     * @param string $useServiceLocator
+     * @param string $useContainer
      */
-    public function __construct(Di $di, $useServiceLocator = self::USE_SL_NONE)
+    public function __construct(Di $di, $useContainer = self::USE_SL_NONE)
     {
-        $this->useServiceLocator = $useServiceLocator;
-        // since we are using this in a proxy-fashion, localize state
+        $this->useContainer = $useContainer;
+
+        // Since we are using this in a proxy-fashion, localize state
         $this->di              = $di;
         $this->definitions     = $this->di->definitions;
         $this->instanceManager = $this->di->instanceManager;
@@ -81,44 +108,56 @@ class DiStrictAbstractServiceFactory extends Di implements AbstractFactoryInterf
      *
      * Allows creation of services only when in a whitelist
      */
-    public function createServiceWithName(ServiceLocatorInterface $serviceLocator, $serviceName, $requestedName)
+    public function __invoke(ContainerInterface $container, $name, array $options = null)
     {
-        if (!isset($this->allowedServiceNames[$requestedName])) {
-            throw new Exception\InvalidServiceNameException('Service "' . $requestedName . '" is not whitelisted');
+        if (! isset($this->allowedServiceNames[$name])) {
+            throw new Exception\InvalidServiceException(sprintf(
+                'Service "%s" is not whitelisted',
+                $name
+            ));
         }
 
-        if ($serviceLocator instanceof AbstractPluginManager) {
-            /* @var $serviceLocator AbstractPluginManager */
-            $this->serviceLocator = $serviceLocator->getServiceLocator();
-        } else {
-            $this->serviceLocator = $serviceLocator;
-        }
+        $this->container = ($container instanceof AbstractPluginManager)
+            ? $container->getServiceLocator()
+            : $container;
 
-        return parent::get($requestedName);
+        return parent::get($name);
     }
 
     /**
-     * Overrides Zend\Di to allow the given serviceLocator's services to be reused by Di itself
+     * {@inheritDoc}
+     *
+     * For use with zend-servicemanager v2; proxies to __invoke().
+     */
+    public function createServiceWithName(ServiceLocatorInterface $container, $serviceName, $requestedName)
+    {
+        return $this($container, $requestedName);
+    }
+
+    /**
+     * Overrides Zend\Di to allow the given container's services to be reused by Di itself
      *
      * {@inheritDoc}
      *
      * @throws Exception\InvalidServiceNameException
      */
-    public function get($name, array $params = array())
+    public function get($name, array $params = [])
     {
-        if (null === $this->serviceLocator) {
-            throw new DomainException('No ServiceLocator defined, use `createServiceWithName` instead of `get`');
+        if (null === $this->container) {
+            throw new Exception\DomainException(
+                'No ServiceLocator defined, use `createServiceWithName` instead of `get`'
+            );
         }
 
-        if (self::USE_SL_BEFORE_DI === $this->useServiceLocator && $this->serviceLocator->has($name)) {
-            return $this->serviceLocator->get($name);
+        if (self::USE_SL_BEFORE_DI === $this->useContainer && $this->container->has($name)) {
+            return $this->container->get($name);
         }
 
         try {
             return parent::get($name, $params);
         } catch (ClassNotFoundException $e) {
-            if (self::USE_SL_AFTER_DI === $this->useServiceLocator && $this->serviceLocator->has($name)) {
-                return $this->serviceLocator->get($name);
+            if (self::USE_SL_AFTER_DI === $this->useContainer && $this->container->has($name)) {
+                return $this->container->get($name);
             }
 
             throw new Exception\ServiceNotFoundException(
@@ -132,11 +171,21 @@ class DiStrictAbstractServiceFactory extends Di implements AbstractFactoryInterf
     /**
      * {@inheritDoc}
      *
-     * Allows creation of services only when in a whitelist
+     * Allows creation of services only when in a whitelist.
      */
-    public function canCreateServiceWithName(ServiceLocatorInterface $serviceLocator, $name, $requestedName)
+    public function canCreate(ContainerInterface $container, $requestedName)
     {
         // won't check if the service exists, we are trusting the user's whitelist
         return isset($this->allowedServiceNames[$requestedName]);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * For use with zend-servicemanager v2; proxies to canCreate().
+     */
+    public function canCreateServiceWithName(ServiceLocatorInterface $container, $name, $requestedName)
+    {
+        return $this->canCreate($container, $requestedName);
     }
 }

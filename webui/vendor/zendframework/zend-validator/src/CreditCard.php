@@ -31,6 +31,7 @@ class CreditCard extends AbstractValidator
     const MASTERCARD       = 'Mastercard';
     const SOLO             = 'Solo';
     const VISA             = 'Visa';
+    const MIR              = 'Mir';
 
     const CHECKSUM       = 'creditcardChecksum';
     const CONTENT        = 'creditcardContent';
@@ -45,7 +46,7 @@ class CreditCard extends AbstractValidator
      *
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::CHECKSUM       => "The input seems to contain an invalid checksum",
         self::CONTENT        => "The input must contain only digits",
         self::INVALID        => "Invalid type given. String expected",
@@ -53,14 +54,14 @@ class CreditCard extends AbstractValidator
         self::PREFIX         => "The input is not from an allowed institute",
         self::SERVICE        => "The input seems to be an invalid credit card number",
         self::SERVICEFAILURE => "An exception has been raised while validating the input",
-    );
+    ];
 
     /**
      * List of CCV names
      *
      * @var array
      */
-    protected $cardName = array(
+    protected $cardName = [
         0  => self::AMERICAN_EXPRESS,
         1  => self::DINERS_CLUB,
         2  => self::DINERS_CLUB_US,
@@ -72,85 +73,91 @@ class CreditCard extends AbstractValidator
         8  => self::SOLO,
         9  => self::UNIONPAY,
         10 => self::VISA,
-    );
+        11 => self::MIR,
+    ];
 
     /**
      * List of allowed CCV lengths
      *
      * @var array
      */
-    protected $cardLength = array(
-        self::AMERICAN_EXPRESS => array(15),
-        self::DINERS_CLUB      => array(14),
-        self::DINERS_CLUB_US   => array(16),
-        self::DISCOVER         => array(16),
-        self::JCB              => array(15, 16),
-        self::LASER            => array(16, 17, 18, 19),
-        self::MAESTRO          => array(12, 13, 14, 15, 16, 17, 18, 19),
-        self::MASTERCARD       => array(16),
-        self::SOLO             => array(16, 18, 19),
-        self::UNIONPAY         => array(16, 17, 18, 19),
-        self::VISA             => array(16),
-    );
+    protected $cardLength = [
+        self::AMERICAN_EXPRESS => [15],
+        self::DINERS_CLUB      => [14],
+        self::DINERS_CLUB_US   => [16],
+        self::DISCOVER         => [16, 19],
+        self::JCB              => [15, 16],
+        self::LASER            => [16, 17, 18, 19],
+        self::MAESTRO          => [12, 13, 14, 15, 16, 17, 18, 19],
+        self::MASTERCARD       => [16],
+        self::SOLO             => [16, 18, 19],
+        self::UNIONPAY         => [16, 17, 18, 19],
+        self::VISA             => [13, 16, 19],
+        self::MIR              => [13, 16],
+    ];
 
     /**
      * List of accepted CCV provider tags
      *
      * @var array
      */
-    protected $cardType = array(
-        self::AMERICAN_EXPRESS => array('34', '37'),
-        self::DINERS_CLUB      => array('300', '301', '302', '303', '304', '305', '36'),
-        self::DINERS_CLUB_US   => array('54', '55'),
-        self::DISCOVER         => array('6011', '622126', '622127', '622128', '622129', '62213',
+    protected $cardType = [
+        self::AMERICAN_EXPRESS => ['34', '37'],
+        self::DINERS_CLUB      => ['300', '301', '302', '303', '304', '305', '36'],
+        self::DINERS_CLUB_US   => ['54', '55'],
+        self::DISCOVER         => ['6011', '622126', '622127', '622128', '622129', '62213',
                                         '62214', '62215', '62216', '62217', '62218', '62219',
                                         '6222', '6223', '6224', '6225', '6226', '6227', '6228',
                                         '62290', '62291', '622920', '622921', '622922', '622923',
                                         '622924', '622925', '644', '645', '646', '647', '648',
-                                        '649', '65'),
-        self::JCB              => array('1800', '2131', '3528', '3529', '353', '354', '355', '356', '357', '358'),
-        self::LASER            => array('6304', '6706', '6771', '6709'),
-        self::MAESTRO          => array('5018', '5020', '5038', '6304', '6759', '6761', '6762', '6763',
-                                        '6764', '6765', '6766'),
-        self::MASTERCARD       => array('51', '52', '53', '54', '55'),
-        self::SOLO             => array('6334', '6767'),
-        self::UNIONPAY         => array('622126', '622127', '622128', '622129', '62213', '62214',
+                                        '649', '65'],
+        self::JCB              => ['1800', '2131', '3528', '3529', '353', '354', '355', '356', '357', '358'],
+        self::LASER            => ['6304', '6706', '6771', '6709'],
+        self::MAESTRO          => ['5018', '5020', '5038', '6304', '6759', '6761', '6762', '6763',
+                                        '6764', '6765', '6766', '6772'],
+        self::MASTERCARD       => ['2221', '2222', '2223', '2224', '2225', '2226', '2227', '2228', '2229',
+                                        '223', '224', '225', '226', '227', '228', '229',
+                                        '23', '24', '25', '26', '271', '2720',
+                                        '51', '52', '53', '54', '55'],
+        self::SOLO             => ['6334', '6767'],
+        self::UNIONPAY         => ['622126', '622127', '622128', '622129', '62213', '62214',
                                         '62215', '62216', '62217', '62218', '62219', '6222', '6223',
                                         '6224', '6225', '6226', '6227', '6228', '62290', '62291',
-                                        '622920', '622921', '622922', '622923', '622924', '622925'),
-        self::VISA             => array('4'),
-    );
+                                        '622920', '622921', '622922', '622923', '622924', '622925'],
+        self::VISA             => ['4'],
+        self::MIR              => ['2200', '2201', '2202', '2203', '2204'],
+    ];
 
     /**
      * Options for this validator
      *
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'service' => null,     // Service callback for additional validation
-        'type'    => array(),  // CCIs which are accepted by validation
-    );
+        'type'    => [],  // CCIs which are accepted by validation
+    ];
 
     /**
      * Constructor
      *
      * @param string|array|Traversable $options OPTIONAL Type of CCI to allow
      */
-    public function __construct($options = array())
+    public function __construct($options = [])
     {
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
-        } elseif (!is_array($options)) {
+        } elseif (! is_array($options)) {
             $options = func_get_args();
             $temp['type'] = array_shift($options);
-            if (!empty($options)) {
+            if (! empty($options)) {
                 $temp['service'] = array_shift($options);
             }
 
             $options = $temp;
         }
 
-        if (!array_key_exists('type', $options)) {
+        if (! array_key_exists('type', $options)) {
             $options['type'] = self::ALL;
         }
 
@@ -183,7 +190,7 @@ class CreditCard extends AbstractValidator
      */
     public function setType($type)
     {
-        $this->options['type'] = array();
+        $this->options['type'] = [];
         return $this->addType($type);
     }
 
@@ -196,17 +203,24 @@ class CreditCard extends AbstractValidator
     public function addType($type)
     {
         if (is_string($type)) {
-            $type = array($type);
+            $type = [$type];
         }
 
         foreach ($type as $typ) {
-            if (defined('self::' . strtoupper($typ)) && !in_array($typ, $this->options['type'])) {
-                $this->options['type'][] = $typ;
-            }
-
             if (($typ == self::ALL)) {
                 $this->options['type'] = array_keys($this->cardLength);
+                continue;
             }
+
+            if (in_array($typ, $this->options['type'])) {
+                continue;
+            }
+
+            $constant = 'static::' . strtoupper($typ);
+            if (! defined($constant) || in_array(constant($constant), $this->options['type'])) {
+                continue;
+            }
+            $this->options['type'][] = constant($constant);
         }
 
         return $this;
@@ -231,7 +245,7 @@ class CreditCard extends AbstractValidator
      */
     public function setService($service)
     {
-        if (!is_callable($service)) {
+        if (! is_callable($service)) {
             throw new Exception\InvalidArgumentException('Invalid callback given');
         }
 
@@ -249,12 +263,12 @@ class CreditCard extends AbstractValidator
     {
         $this->setValue($value);
 
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             $this->error(self::INVALID, $value);
             return false;
         }
 
-        if (!ctype_digit($value)) {
+        if (! ctype_digit($value)) {
             $this->error(self::CONTENT, $value);
             return false;
         }
@@ -265,7 +279,7 @@ class CreditCard extends AbstractValidator
         $foundl = false;
         foreach ($types as $type) {
             foreach ($this->cardType[$type] as $prefix) {
-                if (substr($value, 0, strlen($prefix)) == $prefix) {
+                if (0 === strpos($value, $prefix)) {
                     $foundp = true;
                     if (in_array($length, $this->cardLength[$type])) {
                         $foundl = true;
@@ -300,11 +314,11 @@ class CreditCard extends AbstractValidator
         }
 
         $service = $this->getService();
-        if (!empty($service)) {
+        if (! empty($service)) {
             try {
                 $callback = new Callback($service);
                 $callback->setOptions($this->getType());
-                if (!$callback->isValid($value)) {
+                if (! $callback->isValid($value)) {
                     $this->error(self::SERVICE, $value);
                     return false;
                 }

@@ -94,7 +94,7 @@ class WindowsAnsicon extends Posix
     protected function runModeCommand()
     {
         exec('mode', $output, $return);
-        if ($return || !count($output)) {
+        if ($return || ! count($output)) {
             $this->modeResult = '';
         } else {
             $this->modeResult = trim(implode('', $output));
@@ -129,7 +129,7 @@ class WindowsAnsicon extends Posix
     {
         // Try to use powershell to retrieve console window title
         exec('powershell -command "write $Host.UI.RawUI.WindowTitle"', $output, $result);
-        if ($result || !$output) {
+        if ($result || ! $output) {
             return '';
         }
 
@@ -203,7 +203,9 @@ class WindowsAnsicon extends Posix
             do {
                 exec('choice /n /cs /c:' . $mask, $output, $return);
                 if ($return == 255 || $return < 1 || $return > strlen($mask)) {
-                    throw new Exception\RuntimeException('"choice" command failed to run. Are you using Windows XP or newer?');
+                    throw new Exception\RuntimeException(
+                        '"choice" command failed to run. Are you using Windows XP or newer?'
+                    );
                 }
 
                 // Fetch the char from mask
@@ -229,9 +231,9 @@ class WindowsAnsicon extends Posix
             );
 
             // Retrieve char from the result.
-            $char = !empty($result) ? implode('', $result) : null;
+            $char = ! empty($result) ? implode('', $result) : null;
 
-            if (!empty($char) && !$return) {
+            if (! empty($char) && ! $return) {
                 // We have obtained an ASCII code, convert back to a char ...
                 $char = chr($char);
 
@@ -268,9 +270,9 @@ class WindowsAnsicon extends Posix
                 $return
             );
 
-            $char = !empty($result) ? trim(implode('', $result)) : null;
+            $char = ! empty($result) ? trim(implode('', $result)) : null;
 
-            if (!$return && $char && ($mask === null || in_array($char, $asciiMask))) {
+            if (! $return && $char && ($mask === null || in_array($char, $asciiMask))) {
                 // We have obtained an ASCII code, check if it is a carriage
                 // return and normalize it as needed
                 if ($char == 13) {
@@ -293,7 +295,7 @@ class WindowsAnsicon extends Posix
         do {
             $char = fgetc($stream);
             $char = substr(trim($char), 0, 1);
-        } while (!$char || ($mask !== null && !stristr($mask, $char)));
+        } while (! $char || ($mask !== null && ! stristr($mask, $char)));
         fclose($stream);
 
         return $char;

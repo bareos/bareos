@@ -1,10 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-uri for the canonical source repository
+ * @copyright Copyright (c) 2005-2018 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-uri/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\Uri;
@@ -16,7 +14,7 @@ namespace Zend\Uri;
  */
 class File extends Uri
 {
-    protected static $validSchemes = array('file');
+    protected static $validSchemes = ['file'];
 
     /**
      * Check if the URI is a valid File URI
@@ -69,7 +67,7 @@ class File extends Uri
     public static function fromUnixPath($path)
     {
         $url = new static('file:');
-        if (substr($path, 0, 1) == '/') {
+        if (0 === strpos($path, '/')) {
             $url->setHost('');
         }
 
@@ -88,7 +86,7 @@ class File extends Uri
         $url = new static('file:');
 
         // Convert directory separators
-        $path = str_replace(array('/', '\\'), array('%2F', '/'), $path);
+        $path = str_replace(['/', '\\'], ['%2F', '/'], $path);
 
         // Is this an absolute path?
         if (preg_match('|^([a-zA-Z]:)?/|', $path)) {

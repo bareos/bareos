@@ -1,26 +1,27 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-inputfilter for the canonical source repository
+ * @copyright Copyright (c) 2005-2018 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-inputfilter/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\InputFilter;
 
-use Zend\Validator\File\UploadFile as UploadValidator;
+use Psr\Http\Message\UploadedFileInterface;
+
+use function is_array;
 
 /**
  * FileInput is a special Input type for handling uploaded files.
  *
  * It differs from Input in a few ways:
  *
- * 1. It expects the raw value to be in the $_FILES array format.
+ * 1. It expects the raw value to either be in the $_FILES array format, or an
+ *    array of PSR-7 UploadedFileInterface instances.
  *
  * 2. The validators are run **before** the filters (the opposite behavior of Input).
- *    This is so is_uploaded_file() validation can be run prior to any filters that
- *    may rename/move/modify the file.
+ *    This is so validation can be run prior to any filters that may
+ *    rename/move/modify the file.
  *
  * 3. Instead of adding a NotEmpty validator, it will (by default) automatically add
  *    a Zend\Validator\File\Upload validator.
@@ -37,8 +38,30 @@ class FileInput extends Input
      */
     protected $autoPrependUploadValidator = true;
 
+    /** @var FileInput\FileInputDecoratorInterface */
+    private $implementation;
+
+    /**
+     * @param array|UploadedFile $value
+     *
+     * @return Input
+     */
+    public function setValue($value)
+    {
+        $this->implementation = $this->createDecoratorImplementation($value);
+        parent::setValue($value);
+        return $this;
+    }
+
+    public function resetValue()
+    {
+        $this->implementation = null;
+        return parent::resetValue();
+    }
+
     /**
      * @param  bool $value Enable/Disable automatically prepending an Upload validator
+     *
      * @return FileInput
      */
     public function setAutoPrependUploadValidator($value)
@@ -60,27 +83,10 @@ class FileInput extends Input
      */
     public function getValue()
     {
-        $value = $this->value;
-        if ($this->isValid && is_array($value)) {
-            // Run filters ~after~ validation, so that is_uploaded_file()
-            // validation is not affected by filters.
-            $filter = $this->getFilterChain();
-            if (isset($value['tmp_name'])) {
-                // Single file input
-                $value = $filter->filter($value);
-            } else {
-                // Multi file input (multiple attribute set)
-                $newValue = array();
-                foreach ($value as $fileData) {
-                    if (is_array($fileData) && isset($fileData['tmp_name'])) {
-                        $newValue[] = $filter->filter($fileData);
-                    }
-                }
-                $value = $newValue;
-            }
+        if ($this->implementation === null) {
+            return $this->value;
         }
-
-        return $value;
+        return $this->implementation->getValue();
     }
 
     /**
@@ -91,19 +97,19 @@ class FileInput extends Input
      */
     public function isEmptyFile($rawValue)
     {
-        if (!is_array($rawValue)) {
-            return true;
+        if ($rawValue instanceof UploadedFileInterface) {
+            return FileInput\PsrFileInputDecorator::isEmptyFileDecorator($rawValue);
         }
 
-        if (isset($rawValue['error']) && $rawValue['error'] === UPLOAD_ERR_NO_FILE) {
-            return true;
+        if (is_array($rawValue)) {
+            if (isset($rawValue[0]) && $rawValue[0] instanceof UploadedFileInterface) {
+                return FileInput\PsrFileInputDecorator::isEmptyFileDecorator($rawValue);
+            }
+
+            return FileInput\HttpServerFileInputDecorator::isEmptyFileDecorator($rawValue);
         }
 
-        if (count($rawValue) === 1 && isset($rawValue[0])) {
-            return $this->isEmptyFile($rawValue[0]);
-        }
-
-        return false;
+        return true;
     }
 
     /**
@@ -138,58 +144,21 @@ class FileInput extends Input
             return true;
         }
 
-        $this->injectUploadValidator();
-        $validator = $this->getValidatorChain();
-        //$value   = $this->getValue(); // Do not run the filters yet for File uploads (see getValue())
-
-        if (!is_array($rawValue)) {
-            // This can happen in an AJAX POST, where the input comes across as a string
-            $rawValue = array(
-                'tmp_name' => $rawValue,
-                'name'     => $rawValue,
-                'size'     => 0,
-                'type'     => '',
-                'error'    => UPLOAD_ERR_NO_FILE,
-            );
-        }
-        if (is_array($rawValue) && isset($rawValue['tmp_name'])) {
-            // Single file input
-            $this->isValid = $validator->isValid($rawValue, $context);
-        } elseif (is_array($rawValue) && !empty($rawValue) && isset($rawValue[0]['tmp_name'])) {
-            // Multi file input (multiple attribute set)
-            $this->isValid = true;
-            foreach ($rawValue as $value) {
-                if (!$validator->isValid($value, $context)) {
-                    $this->isValid = false;
-                    break; // Do not continue processing files if validation fails
-                }
-            }
-        }
-
-        return $this->isValid;
+        return $this->implementation->isValid($context);
     }
 
     /**
-     * @return void
+     * @param  InputInterface $input
+     *
+     * @return FileInput
      */
-    protected function injectUploadValidator()
+    public function merge(InputInterface $input)
     {
-        if (!$this->autoPrependUploadValidator) {
-            return;
+        parent::merge($input);
+        if ($input instanceof FileInput) {
+            $this->setAutoPrependUploadValidator($input->getAutoPrependUploadValidator());
         }
-        $chain = $this->getValidatorChain();
-
-        // Check if Upload validator is already first in chain
-        $validators = $chain->getValidators();
-        if (isset($validators[0]['instance'])
-            && $validators[0]['instance'] instanceof UploadValidator
-        ) {
-            $this->autoPrependUploadValidator = false;
-            return;
-        }
-
-        $chain->prependByName('fileuploadfile', array(), true);
-        $this->autoPrependUploadValidator = false;
+        return $this;
     }
 
     /**
@@ -206,15 +175,27 @@ class FileInput extends Input
     }
 
     /**
-     * @param  InputInterface $input
-     * @return FileInput
+     * @param mixed $value
+     * @return FileInput\FileInputDecoratorInterface
      */
-    public function merge(InputInterface $input)
+    private function createDecoratorImplementation($value)
     {
-        parent::merge($input);
-        if ($input instanceof FileInput) {
-            $this->setAutoPrependUploadValidator($input->getAutoPrependUploadValidator());
+        // Single PSR-7 instance
+        if ($value instanceof UploadedFileInterface) {
+            return new FileInput\PsrFileInputDecorator($this);
         }
-        return $this;
+
+        if (is_array($value)) {
+            if (isset($value[0]) && $value[0] instanceof UploadedFileInterface) {
+                // Array of PSR-7 instances
+                return new FileInput\PsrFileInputDecorator($this);
+            }
+
+            // Single or multiple SAPI file upload arrays
+            return new FileInput\HttpServerFileInputDecorator($this);
+        }
+
+        // AJAX/XHR/Fetch case
+        return new FileInput\HttpServerFileInputDecorator($this);
     }
 }

@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -54,8 +54,10 @@ class MongoDb extends AbstractAdapter implements FlushableInterface
      */
     public function __construct($options = null)
     {
-        if (!class_exists('Mongo') || !class_exists('MongoClient')) {
-            throw new Exception\ExtensionNotLoadedException('MongoDb extension not loaded or Mongo polyfill not included');
+        if (! class_exists('Mongo') || ! class_exists('MongoClient')) {
+            throw new Exception\ExtensionNotLoadedException(
+                'MongoDb extension not loaded or Mongo polyfill not included'
+            );
         }
 
         parent::__construct($options);
@@ -135,8 +137,7 @@ class MongoDb extends AbstractAdapter implements FlushableInterface
             }
 
             if ($result['expires']->sec < time()) {
-                $this->internalRemoveItem($key);
-
+                $this->internalRemoveItem($normalizedKey);
                 return;
             }
         }
@@ -165,10 +166,10 @@ class MongoDb extends AbstractAdapter implements FlushableInterface
         $key       = $this->namespacePrefix . $normalizedKey;
         $ttl       = $this->getOptions()->getTTl();
         $expires   = null;
-        $cacheItem = array(
+        $cacheItem = [
             'key' => $key,
             'value' => $value,
-        );
+        ];
 
         if ($ttl > 0) {
             $expiresMicro         = microtime(true) + $ttl;
@@ -177,7 +178,7 @@ class MongoDb extends AbstractAdapter implements FlushableInterface
         }
 
         try {
-            $mongo->remove(array('key' => $key));
+            $mongo->remove(['key' => $key]);
 
             $result = $mongo->insert($cacheItem);
         } catch (MongoResourceException $e) {
@@ -195,7 +196,7 @@ class MongoDb extends AbstractAdapter implements FlushableInterface
     protected function internalRemoveItem(& $normalizedKey)
     {
         try {
-            $result = $this->getMongoDbResource()->remove(array('key' => $this->namespacePrefix . $normalizedKey));
+            $result = $this->getMongoDbResource()->remove(['key' => $this->namespacePrefix . $normalizedKey]);
         } catch (MongoResourceException $e) {
             throw new Exception\RuntimeException($e->getMessage(), $e->getCode(), $e);
         }
@@ -227,8 +228,8 @@ class MongoDb extends AbstractAdapter implements FlushableInterface
         return $this->capabilities = new Capabilities(
             $this,
             $this->capabilityMarker = new stdClass(),
-            array(
-                'supportedDatatypes' => array(
+            [
+                'supportedDatatypes' => [
                     'NULL'     => true,
                     'boolean'  => true,
                     'integer'  => true,
@@ -237,19 +238,15 @@ class MongoDb extends AbstractAdapter implements FlushableInterface
                     'array'    => true,
                     'object'   => false,
                     'resource' => false,
-                ),
-                'supportedMetadata'  => array(
+                ],
+                'supportedMetadata'  => [
                     '_id',
-                ),
-                'minTtl'             => 0,
-                'maxTtl'             => 0,
+                ],
+                'minTtl'             => 1,
                 'staticTtl'          => true,
-                'ttlPrecision'       => 1,
-                'useRequestTime'     => false,
-                'expiredRead'        => false,
                 'maxKeyLength'       => 255,
                 'namespaceIsPrefix'  => true,
-            )
+            ]
         );
     }
 
@@ -262,7 +259,7 @@ class MongoDb extends AbstractAdapter implements FlushableInterface
     {
         $result = $this->fetchFromCollection($normalizedKey);
 
-        return null !== $result ? array('_id' => $result['_id']) : false;
+        return null !== $result ? ['_id' => $result['_id']] : false;
     }
 
     /**
@@ -277,7 +274,7 @@ class MongoDb extends AbstractAdapter implements FlushableInterface
     private function fetchFromCollection(& $normalizedKey)
     {
         try {
-            return $this->getMongoDbResource()->findOne(array('key' => $this->namespacePrefix . $normalizedKey));
+            return $this->getMongoDbResource()->findOne(['key' => $this->namespacePrefix . $normalizedKey]);
         } catch (MongoResourceException $e) {
             throw new Exception\RuntimeException($e->getMessage(), $e->getCode(), $e);
         }

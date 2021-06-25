@@ -22,10 +22,10 @@ class Uri extends AbstractValidator
     /**
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::INVALID => "Invalid type given. String expected",
         self::NOT_URI => "The input does not appear to be a valid Uri",
-    );
+    ];
 
     /**
      * @var UriHandler
@@ -47,17 +47,17 @@ class Uri extends AbstractValidator
      *
      * @param array|Traversable $options
      */
-    public function __construct($options = array())
+    public function __construct($options = [])
     {
         if ($options instanceof Traversable) {
             $options = iterator_to_array($options);
-        } elseif (!is_array($options)) {
+        } elseif (! is_array($options)) {
             $options = func_get_args();
             $temp['uriHandler'] = array_shift($options);
-            if (!empty($options)) {
+            if (! empty($options)) {
                 $temp['allowRelative'] = array_shift($options);
             }
-            if (!empty($options)) {
+            if (! empty($options)) {
                 $temp['allowAbsolute'] = array_shift($options);
             }
 
@@ -165,7 +165,7 @@ class Uri extends AbstractValidator
      */
     public function isValid($value)
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             $this->error(self::INVALID);
             return false;
         }

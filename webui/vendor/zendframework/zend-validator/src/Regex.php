@@ -22,18 +22,18 @@ class Regex extends AbstractValidator
     /**
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::INVALID   => "Invalid type given. String, integer or float expected",
         self::NOT_MATCH => "The input does not match against pattern '%pattern%'",
         self::ERROROUS  => "There was an internal error while using the pattern '%pattern%'",
-    );
+    ];
 
     /**
      * @var array
      */
-    protected $messageVariables = array(
+    protected $messageVariables = [
         'pattern' => 'pattern'
-    );
+    ];
 
     /**
      * Regular expression pattern
@@ -45,14 +45,14 @@ class Regex extends AbstractValidator
     /**
      * Sets validator options
      *
-     * @param  string|Traversable $pattern
+     * @param  string|array|Traversable $pattern
      * @throws Exception\InvalidArgumentException On missing 'pattern' parameter
      */
     public function __construct($pattern)
     {
         if (is_string($pattern)) {
             $this->setPattern($pattern);
-            parent::__construct(array());
+            parent::__construct([]);
             return;
         }
 
@@ -60,11 +60,11 @@ class Regex extends AbstractValidator
             $pattern = ArrayUtils::iteratorToArray($pattern);
         }
 
-        if (!is_array($pattern)) {
+        if (! is_array($pattern)) {
             throw new Exception\InvalidArgumentException('Invalid options provided to constructor');
         }
 
-        if (!array_key_exists('pattern', $pattern)) {
+        if (! array_key_exists('pattern', $pattern)) {
             throw new Exception\InvalidArgumentException("Missing option 'pattern'");
         }
 
@@ -116,7 +116,7 @@ class Regex extends AbstractValidator
      */
     public function isValid($value)
     {
-        if (!is_string($value) && !is_int($value) && !is_float($value)) {
+        if (! is_string($value) && ! is_int($value) && ! is_float($value)) {
             $this->error(self::INVALID);
             return false;
         }
@@ -131,7 +131,7 @@ class Regex extends AbstractValidator
             return false;
         }
 
-        if (!$status) {
+        if (! $status) {
             $this->error(self::NOT_MATCH);
             return false;
         }

@@ -26,7 +26,7 @@ class MsgPack extends AbstractAdapter
      */
     public function __construct($options = null)
     {
-        if (!extension_loaded('msgpack')) {
+        if (! extension_loaded('msgpack')) {
             throw new Exception\ExtensionNotLoadedException(
                 'PHP extension "msgpack" is required for this adapter'
             );

@@ -1,10 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-i18n for the canonical source repository
+ * @copyright Copyright (c) 2005-2019 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-i18n/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\I18n\Validator;
@@ -23,13 +21,13 @@ class PhoneNumber extends AbstractValidator
     /**
      * Validation failure message template definitions
      *
-     * @var array
+     * @var string[]
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::NO_MATCH    => 'The input does not match a phone number format',
         self::UNSUPPORTED => 'The country provided is currently unsupported',
         self::INVALID     => 'Invalid type given. String expected',
-    );
+    ];
 
     /**
      * Phone Number Patterns
@@ -37,7 +35,7 @@ class PhoneNumber extends AbstractValidator
      * @link http://code.google.com/p/libphonenumber/source/browse/trunk/resources/PhoneNumberMetadata.xml
      * @var array
      */
-    protected static $phone = array();
+    protected static $phone = [];
 
     /**
      * ISO 3611 Country Code
@@ -56,9 +54,9 @@ class PhoneNumber extends AbstractValidator
     /**
      * Allowed Types
      *
-     * @var array
+     * @var string[]
      */
-    protected $allowedTypes = array(
+    protected $allowedTypes = [
         'general',
         'fixed',
         'tollfree',
@@ -66,7 +64,7 @@ class PhoneNumber extends AbstractValidator
         'mobile',
         'voip',
         'uan',
-    );
+    ];
 
     /**
      * Constructor for the PhoneNumber validator
@@ -78,7 +76,7 @@ class PhoneNumber extends AbstractValidator
      *
      * @param array|Traversable $options
      */
-    public function __construct($options = array())
+    public function __construct($options = [])
     {
         if ($options instanceof Traversable) {
             $options = ArrayUtils::iteratorToArray($options);
@@ -91,11 +89,11 @@ class PhoneNumber extends AbstractValidator
             $this->setCountry($country);
         }
 
-        if (array_key_exists('allowed_types', $options)) {
+        if (isset($options['allowed_types'])) {
             $this->allowedTypes($options['allowed_types']);
         }
 
-        if (array_key_exists('allow_possible', $options)) {
+        if (isset($options['allow_possible'])) {
             $this->allowPossible($options['allow_possible']);
         }
 
@@ -105,8 +103,8 @@ class PhoneNumber extends AbstractValidator
     /**
      * Allowed Types
      *
-     * @param  array|null $types
-     * @return self|array
+     * @param  string[]|null $types
+     * @return $this|string[]
      */
     public function allowedTypes(array $types = null)
     {
@@ -123,7 +121,7 @@ class PhoneNumber extends AbstractValidator
      * Allow Possible
      *
      * @param  bool|null $possible
-     * @return self|bool
+     * @return $this|bool
      */
     public function allowPossible($possible = null)
     {
@@ -150,11 +148,11 @@ class PhoneNumber extends AbstractValidator
      * Set Country
      *
      * @param  string $country
-     * @return self
+     * @return $this
      */
     public function setCountry($country)
     {
-        $this->country = strtoupper($country);
+        $this->country = $country;
 
         return $this;
     }
@@ -167,13 +165,13 @@ class PhoneNumber extends AbstractValidator
      */
     protected function loadPattern($code)
     {
-        if (!isset(static::$phone[$code])) {
-            if (!preg_match('/^[A-Z]{2}$/D', $code)) {
+        if (! isset(static::$phone[$code])) {
+            if (! preg_match('/^[A-Z]{2}$/D', $code)) {
                 return false;
             }
 
             $file = __DIR__ . '/PhoneNumber/' . $code . '.php';
-            if (!file_exists($file)) {
+            if (! file_exists($file)) {
                 return false;
             }
 
@@ -186,13 +184,13 @@ class PhoneNumber extends AbstractValidator
     /**
      * Returns true if and only if $value matches phone number format
      *
-     * @param  string $value
-     * @param  array  $context
+     * @param  string|null $value
+     * @param  array|null  $context
      * @return bool
      */
     public function isValid($value = null, $context = null)
     {
-        if (!is_scalar($value)) {
+        if (! is_scalar($value)) {
             $this->error(self::INVALID);
 
             return false;
@@ -201,12 +199,12 @@ class PhoneNumber extends AbstractValidator
 
         $country = $this->getCountry();
 
-        if (!$countryPattern = $this->loadPattern($country)) {
+        if (! $countryPattern = $this->loadPattern(strtoupper($country))) {
             if (isset($context[$country])) {
                 $country = $context[$country];
             }
 
-            if (!$countryPattern = $this->loadPattern($country)) {
+            if (! $countryPattern = $this->loadPattern(strtoupper($country))) {
                 $this->error(self::UNSUPPORTED);
 
                 return false;
@@ -221,21 +219,23 @@ class PhoneNumber extends AbstractValidator
          *   2) International double-O prefix
          *   3) Bare country prefix
          */
-        if (('+' . $countryPattern['code']) == substr($value, 0, $codeLength + 1)) {
+        if (0 === strpos($value, '+' . $countryPattern['code'])) {
             $valueNoCountry = substr($value, $codeLength + 1);
-        } elseif (('00' . $countryPattern['code']) == substr($value, 0, $codeLength + 2)) {
+        } elseif (0 === strpos($value, '00' . $countryPattern['code'])) {
             $valueNoCountry = substr($value, $codeLength + 2);
-        } elseif ($countryPattern['code'] == substr($value, 0, $codeLength)) {
+        } elseif (0 === strpos($value, $countryPattern['code'])) {
             $valueNoCountry = substr($value, $codeLength);
         }
 
         // check against allowed types strict match:
         foreach ($countryPattern['patterns']['national'] as $type => $pattern) {
-            if (in_array($type, $this->allowedTypes)) {
+            if (in_array($type, $this->allowedTypes, true)) {
                 // check pattern:
                 if (preg_match($pattern, $value)) {
                     return true;
-                } elseif (isset($valueNoCountry) && preg_match($pattern, $valueNoCountry)) {
+                }
+
+                if (isset($valueNoCountry) && preg_match($pattern, $valueNoCountry)) {
                     // this handles conditions where the country code and prefix are the same
                     return true;
                 }
@@ -245,11 +245,13 @@ class PhoneNumber extends AbstractValidator
         // check for possible match:
         if ($this->allowPossible()) {
             foreach ($countryPattern['patterns']['possible'] as $type => $pattern) {
-                if (in_array($type, $this->allowedTypes)) {
+                if (in_array($type, $this->allowedTypes, true)) {
                     // check pattern:
                     if (preg_match($pattern, $value)) {
                         return true;
-                    } elseif (isset($valueNoCountry) && preg_match($pattern, $valueNoCountry)) {
+                    }
+
+                    if (isset($valueNoCountry) && preg_match($pattern, $valueNoCountry)) {
                         // this handles conditions where the country code and prefix are the same
                         return true;
                     }

@@ -1,10 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @see       https://github.com/zendframework/zend-i18n for the canonical source repository
+ * @copyright Copyright (c) 2005-2019 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-i18n/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\I18n\View\Helper;
@@ -19,7 +17,7 @@ abstract class AbstractTranslatorHelper extends AbstractHelper implements
     /**
      * Translator (optional)
      *
-     * @var Translator
+     * @var Translator|null
      */
     protected $translator;
 
@@ -40,11 +38,9 @@ abstract class AbstractTranslatorHelper extends AbstractHelper implements
     /**
      * Sets translator to use in helper
      *
-     * @param  Translator $translator  [optional] translator.
-     *                                 Default is null, which sets no translator.
-     * @param  string     $textDomain  [optional] text domain
-     *                                 Default is null, which skips setTranslatorTextDomain
-     * @return AbstractTranslatorHelper
+     * @param  Translator|null $translator Default is null, which sets no translator.
+     * @param  string|null     $textDomain Default is null, which skips setTranslatorTextDomain
+     * @return $this
      */
     public function setTranslator(Translator $translator = null, $textDomain = null)
     {
@@ -64,7 +60,7 @@ abstract class AbstractTranslatorHelper extends AbstractHelper implements
     public function getTranslator()
     {
         if (! $this->isTranslatorEnabled()) {
-            return;
+            return null;
         }
 
         return $this->translator;
@@ -84,7 +80,7 @@ abstract class AbstractTranslatorHelper extends AbstractHelper implements
      * Sets whether translator is enabled and should be used
      *
      * @param  bool $enabled
-     * @return AbstractTranslatorHelper
+     * @return $this
      */
     public function setTranslatorEnabled($enabled = true)
     {
@@ -106,7 +102,7 @@ abstract class AbstractTranslatorHelper extends AbstractHelper implements
      * Set translation text domain
      *
      * @param  string $textDomain
-     * @return AbstractTranslatorHelper
+     * @return $this
      */
     public function setTranslatorTextDomain($textDomain = 'default')
     {

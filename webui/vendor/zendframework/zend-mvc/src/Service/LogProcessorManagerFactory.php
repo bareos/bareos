@@ -9,7 +9,9 @@
 
 namespace Zend\Mvc\Service;
 
+use Zend\Log\ProcessorPluginManager as LogProcessorPluginManager;
+
 class LogProcessorManagerFactory extends AbstractPluginManagerFactory
 {
-    const PLUGIN_MANAGER_CLASS = 'Zend\Log\ProcessorPluginManager';
+    const PLUGIN_MANAGER_CLASS = LogProcessorPluginManager::class;
 }

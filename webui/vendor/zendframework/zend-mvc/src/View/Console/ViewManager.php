@@ -34,13 +34,13 @@ class ViewManager extends BaseViewManager
         $services       = $application->getServiceManager();
         $events         = $application->getEventManager();
         $sharedEvents   = $events->getSharedManager();
-        $this->config   = $this->loadConfig($services->get('Config'));
+        $this->config   = $this->loadConfig($services->get('config'));
         $this->services = $services;
         $this->event    = $event;
 
-        $routeNotFoundStrategy   = $this->getRouteNotFoundStrategy();
-        $exceptionStrategy       = $this->getExceptionStrategy();
-        $mvcRenderingStrategy    = $this->getMvcRenderingStrategy();
+        $routeNotFoundStrategy   = $services->get('ConsoleRouteNotFoundStrategy');
+        $exceptionStrategy       = $services->get('ConsoleExceptionStrategy');
+        $mvcRenderingStrategy    = $services->get('ConsoleDefaultRenderingStrategy');
         $createViewModelListener = new CreateViewModelListener();
         $injectViewModelListener = new InjectViewModelListener();
         $injectParamsListener    = new InjectNamedConsoleParamsListener();
@@ -48,101 +48,17 @@ class ViewManager extends BaseViewManager
         $this->registerMvcRenderingStrategies($events);
         $this->registerViewStrategies();
 
-        $events->attach($routeNotFoundStrategy);
-        $events->attach($exceptionStrategy);
-        $events->attach(MvcEvent::EVENT_DISPATCH_ERROR, array($injectViewModelListener, 'injectViewModel'), -100);
-        $events->attach(MvcEvent::EVENT_RENDER_ERROR, array($injectViewModelListener, 'injectViewModel'), -100);
-        $events->attach($mvcRenderingStrategy);
+        $routeNotFoundStrategy->attach($events);
+        $exceptionStrategy->attach($events);
+        $events->attach(MvcEvent::EVENT_DISPATCH_ERROR, [$injectViewModelListener, 'injectViewModel'], -100);
+        $events->attach(MvcEvent::EVENT_RENDER_ERROR, [$injectViewModelListener, 'injectViewModel'], -100);
+        $mvcRenderingStrategy->attach($events);
 
-        $sharedEvents->attach('Zend\Stdlib\DispatchableInterface', MvcEvent::EVENT_DISPATCH, array($injectParamsListener,  'injectNamedParams'), 1000);
-        $sharedEvents->attach('Zend\Stdlib\DispatchableInterface', MvcEvent::EVENT_DISPATCH, array($createViewModelListener, 'createViewModelFromArray'), -80);
-        $sharedEvents->attach('Zend\Stdlib\DispatchableInterface', MvcEvent::EVENT_DISPATCH, array($createViewModelListener, 'createViewModelFromString'), -80);
-        $sharedEvents->attach('Zend\Stdlib\DispatchableInterface', MvcEvent::EVENT_DISPATCH, array($createViewModelListener, 'createViewModelFromNull'), -80);
-        $sharedEvents->attach('Zend\Stdlib\DispatchableInterface', MvcEvent::EVENT_DISPATCH, array($injectViewModelListener, 'injectViewModel'), -100);
-    }
-
-    /**
-     * Instantiates and configures the default MVC rendering strategy
-     *
-     * Overriding to ensure we pick up the MVC rendering strategy for console,
-     * as well as to ensure that the appropriate aliases are set.
-     *
-     * @return DefaultRenderingStrategy
-     */
-    public function getMvcRenderingStrategy()
-    {
-        if ($this->mvcRenderingStrategy) {
-            return $this->mvcRenderingStrategy;
-        }
-
-        $this->mvcRenderingStrategy = new DefaultRenderingStrategy();
-
-        $this->services->setService('DefaultRenderingStrategy', $this->mvcRenderingStrategy);
-        $this->services->setAlias('Zend\Mvc\View\DefaultRenderingStrategy', 'DefaultRenderingStrategy');
-        $this->services->setAlias('Zend\Mvc\View\Console\DefaultRenderingStrategy', 'DefaultRenderingStrategy');
-
-        return $this->mvcRenderingStrategy;
-    }
-
-    /**
-     * Instantiates and configures the exception strategy
-     *
-     * Overriding to ensure we pick up the exception strategy for console, as
-     * well as to ensure that the appropriate aliases are set.
-     *
-     * @return ExceptionStrategy
-     */
-    public function getExceptionStrategy()
-    {
-        if ($this->exceptionStrategy) {
-            return $this->exceptionStrategy;
-        }
-
-        $this->exceptionStrategy = new ExceptionStrategy();
-
-        if (isset($this->config['display_exceptions'])) {
-            $this->exceptionStrategy->setDisplayExceptions($this->config['display_exceptions']);
-        }
-        if (isset($this->config['exception_message'])) {
-            $this->exceptionStrategy->setMessage($this->config['exception_message']);
-        }
-
-        $this->services->setService('ExceptionStrategy', $this->exceptionStrategy);
-        $this->services->setAlias('Zend\Mvc\View\ExceptionStrategy', 'ExceptionStrategy');
-        $this->services->setAlias('Zend\Mvc\View\Console\ExceptionStrategy', 'ExceptionStrategy');
-
-        return $this->exceptionStrategy;
-    }
-
-    /**
-     * Instantiates and configures the "route not found", or 404, strategy
-     *
-     * Overriding to ensure we pick up the route not found strategy for console,
-     * as well as to ensure that the appropriate aliases are set.
-     *
-     * @return RouteNotFoundStrategy
-     */
-    public function getRouteNotFoundStrategy()
-    {
-        if ($this->routeNotFoundStrategy) {
-            return $this->routeNotFoundStrategy;
-        }
-
-        $this->routeNotFoundStrategy = new RouteNotFoundStrategy();
-
-        $displayNotFoundReason = true;
-
-        if (array_key_exists('display_not_found_reason', $this->config)) {
-            $displayNotFoundReason = $this->config['display_not_found_reason'];
-        }
-        $this->routeNotFoundStrategy->setDisplayNotFoundReason($displayNotFoundReason);
-
-        $this->services->setService('RouteNotFoundStrategy', $this->routeNotFoundStrategy);
-        $this->services->setAlias('Zend\Mvc\View\RouteNotFoundStrategy', 'RouteNotFoundStrategy');
-        $this->services->setAlias('Zend\Mvc\View\Console\RouteNotFoundStrategy', 'RouteNotFoundStrategy');
-        $this->services->setAlias('404Strategy', 'RouteNotFoundStrategy');
-
-        return $this->routeNotFoundStrategy;
+        $sharedEvents->attach('Zend\Stdlib\DispatchableInterface', MvcEvent::EVENT_DISPATCH, [$injectParamsListener,  'injectNamedParams'], 1000);
+        $sharedEvents->attach('Zend\Stdlib\DispatchableInterface', MvcEvent::EVENT_DISPATCH, [$createViewModelListener, 'createViewModelFromArray'], -80);
+        $sharedEvents->attach('Zend\Stdlib\DispatchableInterface', MvcEvent::EVENT_DISPATCH, [$createViewModelListener, 'createViewModelFromString'], -80);
+        $sharedEvents->attach('Zend\Stdlib\DispatchableInterface', MvcEvent::EVENT_DISPATCH, [$createViewModelListener, 'createViewModelFromNull'], -80);
+        $sharedEvents->attach('Zend\Stdlib\DispatchableInterface', MvcEvent::EVENT_DISPATCH, [$injectViewModelListener, 'injectViewModel'], -100);
     }
 
     /**
@@ -154,7 +70,7 @@ class ViewManager extends BaseViewManager
      */
     private function loadConfig($configService)
     {
-        $config = array();
+        $config = [];
 
         // override when console config is provided, otherwise use the standard definition
         if (isset($configService['console']['view_manager'])) {
@@ -165,6 +81,6 @@ class ViewManager extends BaseViewManager
 
         return ($config instanceof ArrayAccess || is_array($config))
             ? $config
-            : array();
+            : [];
     }
 }

@@ -25,7 +25,7 @@ class FormCaptcha extends AbstractHelper
      */
     public function __invoke(ElementInterface $element = null)
     {
-        if (!$element) {
+        if (! $element) {
             return $this;
         }
 
@@ -36,16 +36,18 @@ class FormCaptcha extends AbstractHelper
      * Render a form captcha for an element
      *
      * @param  ElementInterface $element
-     * @throws Exception\DomainException if the element does not compose a captcha, or the renderer does not implement plugin()
+     * @throws Exception\DomainException if the element does not compose a captcha, or the renderer does
+     *                                   not implement plugin()
      * @return string
      */
     public function render(ElementInterface $element)
     {
         $captcha = $element->getCaptcha();
 
-        if ($captcha === null || !$captcha instanceof CaptchaAdapter) {
+        if ($captcha === null || ! $captcha instanceof CaptchaAdapter) {
             throw new Exception\DomainException(sprintf(
-                '%s requires that the element has a "captcha" attribute implementing Zend\Captcha\AdapterInterface; none found',
+                '%s requires that the element has a "captcha" attribute implementing Zend\Captcha\AdapterInterface; '
+                . 'none found',
                 __METHOD__
             ));
         }
@@ -53,7 +55,7 @@ class FormCaptcha extends AbstractHelper
         $helper  = $captcha->getHelperName();
 
         $renderer = $this->getView();
-        if (!method_exists($renderer, 'plugin')) {
+        if (! method_exists($renderer, 'plugin')) {
             throw new Exception\DomainException(sprintf(
                 '%s requires that the renderer implements plugin(); it does not',
                 __METHOD__

@@ -34,12 +34,12 @@ abstract class AbstractAnnotationsListener extends AbstractListenerAggregate
     {
         $annotations = $e->getParam('annotations');
 
-        if (!$annotations->hasAnnotation('Zend\Form\Annotation\Name')) {
+        if (! $annotations->hasAnnotation('Zend\Form\Annotation\Name')) {
             return false;
         }
 
         foreach ($annotations as $annotation) {
-            if (!$annotation instanceof Name) {
+            if (! $annotation instanceof Name) {
                 continue;
             }
             return $annotation->getName();

@@ -99,7 +99,7 @@ class PythonPickle extends AbstractAdapter
     /**
      * @var array Strings representing quotes
      */
-    protected static $quoteString = array(
+    protected static $quoteString = [
         '\\' => '\\\\',
         "\x00" => '\\x00', "\x01" => '\\x01', "\x02" => '\\x02', "\x03" => '\\x03',
         "\x04" => '\\x04', "\x05" => '\\x05', "\x06" => '\\x06', "\x07" => '\\x07',
@@ -110,15 +110,15 @@ class PythonPickle extends AbstractAdapter
         "\x18" => '\\x18', "\x19" => '\\x19', "\x1a" => '\\x1a', "\x1b" => '\\x1b',
         "\x1c" => '\\x1c', "\x1d" => '\\x1d', "\x1e" => '\\x1e', "\x1f" => '\\x1f',
         "\xff" => '\\xff'
-    );
+    ];
 
     // process vars
     protected $protocol  = null;
-    protected $memo      = array();
+    protected $memo      = [];
     protected $pickle    = '';
     protected $pickleLen = 0;
     protected $pos       = 0;
-    protected $stack     = array();
+    protected $stack     = [];
     protected $marker    = null;
 
     /**
@@ -156,7 +156,7 @@ class PythonPickle extends AbstractAdapter
      */
     public function setOptions($options)
     {
-        if (!$options instanceof PythonPickleOptions) {
+        if (! $options instanceof PythonPickleOptions) {
             $options = new PythonPickleOptions($options);
         }
 
@@ -554,7 +554,7 @@ class PythonPickle extends AbstractAdapter
             $this->load($op);
         }
 
-        if (!count($this->stack)) {
+        if (! count($this->stack)) {
             throw new Exception\RuntimeException('No data found');
         }
 
@@ -574,8 +574,8 @@ class PythonPickle extends AbstractAdapter
         $this->pos       = 0;
         $this->pickle    = '';
         $this->pickleLen = 0;
-        $this->memo      = array();
-        $this->stack     = array();
+        $this->memo      = [];
+        $this->stack     = [];
     }
 
     /**
@@ -681,7 +681,7 @@ class PythonPickle extends AbstractAdapter
                 $this->loadDict();
                 break;
             case self::OP_EMPTY_DICT:
-                $this->_loadEmptyDict();
+                $this->loadEmptyDict();
                 break;
             case self::OP_SETITEM:
                 $this->loadSetItem();
@@ -719,7 +719,7 @@ class PythonPickle extends AbstractAdapter
         $id = (int) $this->readline();
 
         $lastStack = count($this->stack) - 1;
-        if (!isset($this->stack[$lastStack])) {
+        if (! isset($this->stack[$lastStack])) {
             throw new Exception\RuntimeException('No stack exist');
         }
         $this->memo[$id] =& $this->stack[$lastStack];
@@ -734,8 +734,8 @@ class PythonPickle extends AbstractAdapter
     {
         $id = ord($this->read(1));
 
-        $lastStack = count($this->stack)-1;
-        if (!isset($this->stack[$lastStack])) {
+        $lastStack = count($this->stack) - 1;
+        if (! isset($this->stack[$lastStack])) {
             throw new Exception\RuntimeException('No stack exist');
         }
         $this->memo[$id] =& $this->stack[$lastStack];
@@ -754,8 +754,8 @@ class PythonPickle extends AbstractAdapter
         }
         list(, $id) = unpack('l', $bin);
 
-        $lastStack = count($this->stack)-1;
-        if (!isset($this->stack[$lastStack])) {
+        $lastStack = count($this->stack) - 1;
+        if (! isset($this->stack[$lastStack])) {
             throw new Exception\RuntimeException('No stack exist');
         }
         $this->memo[$id] =& $this->stack[$lastStack];
@@ -770,7 +770,7 @@ class PythonPickle extends AbstractAdapter
     {
         $id = (int) $this->readline();
 
-        if (!array_key_exists($id, $this->memo)) {
+        if (! array_key_exists($id, $this->memo)) {
             throw new Exception\RuntimeException('Get id "' . $id . '" not found in memo');
         }
         $this->stack[] =& $this->memo[$id];
@@ -785,7 +785,7 @@ class PythonPickle extends AbstractAdapter
     {
         $id = ord($this->read(1));
 
-        if (!array_key_exists($id, $this->memo)) {
+        if (! array_key_exists($id, $this->memo)) {
             throw new Exception\RuntimeException('Get id "' . $id . '" not found in memo');
         }
         $this->stack[] =& $this->memo[$id];
@@ -804,7 +804,7 @@ class PythonPickle extends AbstractAdapter
         }
         list(, $id) = unpack('l', $bin);
 
-        if (!array_key_exists($id, $this->memo)) {
+        if (! array_key_exists($id, $this->memo)) {
             throw new Exception\RuntimeException('Get id "' . $id . '" not found in memo');
         }
         $this->stack[] =& $this->memo[$id];
@@ -911,7 +911,7 @@ class PythonPickle extends AbstractAdapter
     {
         $nBin = $this->read(4);
         if (static::$isLittleEndian === false) {
-            $nBin = strrev($$nBin);
+            $nBin = strrev($nBin);
         }
         list(, $n) = unpack('l', $nBin);
         $data = $this->read($n);
@@ -959,7 +959,7 @@ class PythonPickle extends AbstractAdapter
     protected function loadBinString()
     {
         $bin = $this->read(4);
-        if (!static::$isLittleEndian) {
+        if (! static::$isLittleEndian) {
             $bin = strrev($bin);
         }
         list(, $len)   = unpack('l', $bin);
@@ -984,7 +984,7 @@ class PythonPickle extends AbstractAdapter
         // read byte length
         $nBin = $this->read(4);
         if (static::$isLittleEndian === false) {
-            $nBin = strrev($$nBin);
+            $nBin = strrev($nBin);
         }
         list(, $n)     = unpack('l', $nBin);
         $this->stack[] = $this->read($n);
@@ -1006,7 +1006,7 @@ class PythonPickle extends AbstractAdapter
     {
         $data    = $this->readline();
         $pattern = '/\\\\u([a-fA-F0-9]{4})/u'; // \uXXXX
-        $data    = preg_replace_callback($pattern, array($this, '_convertMatchingUnicodeSequence2Utf8'), $data);
+        $data    = preg_replace_callback($pattern, [$this, 'convertMatchingUnicodeSequence2Utf8'], $data);
 
         $this->stack[] = $data;
     }
@@ -1017,7 +1017,7 @@ class PythonPickle extends AbstractAdapter
      * @param  array $match
      * @return string
      */
-    protected function _convertMatchingUnicodeSequence2Utf8(array $match)
+    protected function convertMatchingUnicodeSequence2Utf8(array $match)
     {
         return $this->hex2Utf8($match[1]);
     }
@@ -1086,7 +1086,7 @@ class PythonPickle extends AbstractAdapter
     protected function loadList()
     {
         $k = $this->lastMarker();
-        $this->stack[$k] = array();
+        $this->stack[$k] = [];
 
         // remove all elements after marker
         for ($i = $k + 1, $max = count($this->stack); $i < $max; $i++) {
@@ -1099,9 +1099,9 @@ class PythonPickle extends AbstractAdapter
      */
     protected function loadAppend()
     {
-        $value  =  array_pop($this->stack);
+        $value  = array_pop($this->stack);
         $list   =& $this->stack[count($this->stack) - 1];
-        $list[] =  $value;
+        $list[] = $value;
     }
 
     /**
@@ -1109,7 +1109,7 @@ class PythonPickle extends AbstractAdapter
      */
     protected function loadEmptyList()
     {
-        $this->stack[] = array();
+        $this->stack[] = [];
     }
 
     /**
@@ -1117,9 +1117,9 @@ class PythonPickle extends AbstractAdapter
      */
     protected function loadAppends()
     {
-        $k    =  $this->lastMarker();
+        $k    = $this->lastMarker();
         $list =& $this->stack[$k - 1];
-        $max  =  count($this->stack);
+        $max  = count($this->stack);
         for ($i = $k + 1; $i < $max; $i++) {
             $list[] = $this->stack[$i];
             unset($this->stack[$i]);
@@ -1133,7 +1133,7 @@ class PythonPickle extends AbstractAdapter
     protected function loadDict()
     {
         $k = $this->lastMarker();
-        $this->stack[$k] = array();
+        $this->stack[$k] = [];
 
         // remove all elements after marker
         $max = count($this->stack);
@@ -1147,8 +1147,8 @@ class PythonPickle extends AbstractAdapter
      */
     protected function loadSetItem()
     {
-        $value =  array_pop($this->stack);
-        $key   =  array_pop($this->stack);
+        $value = array_pop($this->stack);
+        $key   = array_pop($this->stack);
         $dict  =& $this->stack[count($this->stack) - 1];
         $dict[$key] = $value;
     }
@@ -1156,9 +1156,9 @@ class PythonPickle extends AbstractAdapter
     /**
      * Load an empty dictionary
      */
-    protected function _loadEmptyDict()
+    protected function loadEmptyDict()
     {
-        $this->stack[] = array();
+        $this->stack[] = [];
     }
 
     /**
@@ -1166,14 +1166,14 @@ class PythonPickle extends AbstractAdapter
      */
     protected function loadSetItems()
     {
-        $k    =  $this->lastMarker();
+        $k    = $this->lastMarker();
         $dict =& $this->stack[$k - 1];
-        $max  =  count($this->stack);
+        $max  = count($this->stack);
         for ($i = $k + 1; $i < $max; $i += 2) {
             $key        = $this->stack[$i];
             $value      = $this->stack[$i + 1];
             $dict[$key] = $value;
-            unset($this->stack[$i], $this->stack[$i+1]);
+            unset($this->stack[$i], $this->stack[$i + 1]);
         }
         unset($this->stack[$k]);
     }
@@ -1183,10 +1183,10 @@ class PythonPickle extends AbstractAdapter
      */
     protected function loadTuple()
     {
-        $k                =  $this->lastMarker();
-        $this->stack[$k]  =  array();
+        $k                = $this->lastMarker();
+        $this->stack[$k]  = [];
         $tuple            =& $this->stack[$k];
-        $max              =  count($this->stack);
+        $max              = count($this->stack);
         for ($i = $k + 1; $i < $max; $i++) {
             $tuple[] = $this->stack[$i];
             unset($this->stack[$i]);
@@ -1199,7 +1199,7 @@ class PythonPickle extends AbstractAdapter
     protected function loadTuple1()
     {
         $value1        = array_pop($this->stack);
-        $this->stack[] = array($value1);
+        $this->stack[] = [$value1];
     }
 
     /**
@@ -1210,7 +1210,7 @@ class PythonPickle extends AbstractAdapter
     {
         $value2 = array_pop($this->stack);
         $value1 = array_pop($this->stack);
-        $this->stack[] = array($value1, $value2);
+        $this->stack[] = [$value1, $value2];
     }
 
     /**
@@ -1222,7 +1222,7 @@ class PythonPickle extends AbstractAdapter
         $value3 = array_pop($this->stack);
         $value2 = array_pop($this->stack);
         $value1 = array_pop($this->stack);
-        $this->stack[] = array($value1, $value2, $value3);
+        $this->stack[] = [$value1, $value2, $value3];
     }
 
     /**
@@ -1278,7 +1278,7 @@ class PythonPickle extends AbstractAdapter
         if ($eolPos === false) {
             throw new Exception\RuntimeException('No new line found');
         }
-        $ret       = substr($this->pickle, $this->pos, $eolPos-$this->pos);
+        $ret       = substr($this->pickle, $this->pos, $eolPos - $this->pos);
         $this->pos = $eolPos + $eolLen;
 
         return $ret;
@@ -1310,7 +1310,7 @@ class PythonPickle extends AbstractAdapter
      */
     protected function lastMarker()
     {
-        for ($k = count($this->stack)-1; $k >= 0; $k -= 1) {
+        for ($k = count($this->stack) - 1; $k >= 0; $k -= 1) {
             if ($this->stack[$k] === $this->marker) {
                 break;
             }
@@ -1337,9 +1337,10 @@ class PythonPickle extends AbstractAdapter
             if ($this->bigIntegerAdapter === null) {
                 $this->bigIntegerAdapter = BigInteger\BigInteger::getDefaultAdapter();
             }
-            if (static::$isLittleEndian === true) {
-                $data = strrev($data);
-            }
+
+            // bigInt expects binary data as BigEndian
+            $data = strrev($data);
+
             $long = $this->bigIntegerAdapter->binToInt($data, true);
         } else {
             for ($i = 0; $i < $nbytes; $i++) {

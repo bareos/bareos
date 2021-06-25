@@ -25,28 +25,21 @@ use Zend\View\Exception;
 class HeadStyle extends Placeholder\Container\AbstractStandalone
 {
     /**
-     * Registry key for placeholder
-     *
-     * @var string
-     */
-    protected $regKey = 'Zend_View_Helper_HeadStyle';
-
-    /**
      * Allowed optional attributes
      *
      * @var array
      */
-    protected $optionalAttributes = array('lang', 'title', 'media', 'dir');
+    protected $optionalAttributes = ['lang', 'title', 'media', 'dir'];
 
     /**
      * Allowed media types
      *
      * @var array
      */
-    protected $mediaTypes = array(
+    protected $mediaTypes = [
         'all', 'aural', 'braille', 'handheld', 'print',
         'projection', 'screen', 'tty', 'tv'
-    );
+    ];
 
     /**
      * Capture type and/or attributes (used for hinting during capture)
@@ -91,7 +84,7 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
      * @param  string|array $attributes Optional attributes to utilize
      * @return HeadStyle
      */
-    public function __invoke($content = null, $placement = 'APPEND', $attributes = array())
+    public function __invoke($content = null, $placement = 'APPEND', $attributes = [])
     {
         if ((null !== $content) && is_string($content)) {
             switch (strtoupper($placement)) {
@@ -142,7 +135,7 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
             }
 
             $content = $args[0];
-            $attrs   = array();
+            $attrs   = [];
             if (isset($args[1])) {
                 $attrs = (array) $args[1];
             }
@@ -173,10 +166,10 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
             ? $this->getWhitespace($indent)
             : $this->getIndent();
 
-        $items = array();
+        $items = [];
         $this->getContainer()->ksort();
         foreach ($this as $item) {
-            if (!$this->isValid($item)) {
+            if (! $this->isValid($item)) {
                 continue;
             }
             $items[] = $this->itemToString($item, $indent);
@@ -243,7 +236,7 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
      */
     public function createData($content, array $attributes)
     {
-        if (!isset($attributes['media'])) {
+        if (! isset($attributes['media'])) {
             $attributes['media'] = 'screen';
         } elseif (is_array($attributes['media'])) {
             $attributes['media'] = implode(',', $attributes['media']);
@@ -264,7 +257,7 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
      */
     protected function isValid($value)
     {
-        if ((!$value instanceof stdClass) || !isset($value->content) || !isset($value->attributes)) {
+        if ((! $value instanceof stdClass) || ! isset($value->content) || ! isset($value->attributes)) {
             return false;
         }
 
@@ -281,7 +274,7 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
     public function itemToString(stdClass $item, $indent)
     {
         $attrString = '';
-        if (!empty($item->attributes)) {
+        if (! empty($item->attributes)) {
             $enc = 'UTF-8';
             if ($this->view instanceof View\Renderer\RendererInterface
                 && method_exists($this->view, 'getEncoding')
@@ -290,12 +283,12 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
             }
             $escaper = $this->getEscaper($enc);
             foreach ($item->attributes as $key => $value) {
-                if (!in_array($key, $this->optionalAttributes)) {
+                if (! in_array($key, $this->optionalAttributes)) {
                     continue;
                 }
                 if ('media' == $key) {
                     if (false === strpos($value, ',')) {
-                        if (!in_array($value, $this->mediaTypes)) {
+                        if (! in_array($value, $this->mediaTypes)) {
                             continue;
                         }
                     } else {
@@ -303,7 +296,7 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
                         $value = '';
                         foreach ($mediaTypes as $type) {
                             $type = trim($type);
-                            if (!in_array($type, $this->mediaTypes)) {
+                            if (! in_array($type, $this->mediaTypes)) {
                                 continue;
                             }
                             $value .= $type .',';
@@ -318,7 +311,7 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
         $escapeStart = $indent . '<!--' . PHP_EOL;
         $escapeEnd = $indent . '-->' . PHP_EOL;
         if (isset($item->attributes['conditional'])
-            && !empty($item->attributes['conditional'])
+            && ! empty($item->attributes['conditional'])
             && is_string($item->attributes['conditional'])
         ) {
             $escapeStart = null;
@@ -349,7 +342,7 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
      */
     public function append($value)
     {
-        if (!$this->isValid($value)) {
+        if (! $this->isValid($value)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid value passed to append; please use appendStyle()'
             );
@@ -368,7 +361,7 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
      */
     public function offsetSet($index, $value)
     {
-        if (!$this->isValid($value)) {
+        if (! $this->isValid($value)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid value passed to offsetSet; please use offsetSetStyle()'
             );
@@ -386,7 +379,7 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
      */
     public function prepend($value)
     {
-        if (!$this->isValid($value)) {
+        if (! $this->isValid($value)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid value passed to prepend; please use prependStyle()'
             );
@@ -404,7 +397,7 @@ class HeadStyle extends Placeholder\Container\AbstractStandalone
      */
     public function set($value)
     {
-        if (!$this->isValid($value)) {
+        if (! $this->isValid($value)) {
             throw new Exception\InvalidArgumentException('Invalid value passed to set; please use setStyle()');
         }
 

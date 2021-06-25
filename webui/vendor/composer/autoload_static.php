@@ -6,6 +6,20 @@ namespace Composer\Autoload;
 
 class ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7
 {
+    public static $files = array (
+        '34901568a1e26d13dd475cb2c85e0284' => __DIR__ . '/..' . '/zendframework/zend-form/autoload/formElementManagerPolyfill.php',
+        '3a505b5f7faaefce1a399e528c23742b' => __DIR__ . '/..' . '/zendframework/zend-mvc/src/autoload.php',
+        '10a6847eba8a430a134fad89f4a30a26' => __DIR__ . '/..' . '/zendframework/zend-cache/autoload/patternPluginManagerPolyfill.php',
+        'cf97c57bfe0f23854afd2f3818abb7a0' => __DIR__ . '/..' . '/zendframework/zend-diactoros/src/functions/create_uploaded_file.php',
+        '9bf37a3d0dad93e29cb4e1b1bfab04e9' => __DIR__ . '/..' . '/zendframework/zend-diactoros/src/functions/marshal_headers_from_sapi.php',
+        'ce70dccb4bcc2efc6e94d2ee526e6972' => __DIR__ . '/..' . '/zendframework/zend-diactoros/src/functions/marshal_method_from_sapi.php',
+        'f86420df471f14d568bfcb71e271b523' => __DIR__ . '/..' . '/zendframework/zend-diactoros/src/functions/marshal_protocol_version_from_sapi.php',
+        'b87481e008a3700344428ae089e7f9e5' => __DIR__ . '/..' . '/zendframework/zend-diactoros/src/functions/marshal_uri_from_sapi.php',
+        '0b0974a5566a1077e4f2e111341112c1' => __DIR__ . '/..' . '/zendframework/zend-diactoros/src/functions/normalize_server.php',
+        '1ca3bc274755662169f9629d5412a1da' => __DIR__ . '/..' . '/zendframework/zend-diactoros/src/functions/normalize_uploaded_files.php',
+        '40360c0b9b437e69bcbb7f1349ce029e' => __DIR__ . '/..' . '/zendframework/zend-diactoros/src/functions/parse_cookie_header.php',
+    );
+
     public static $prefixLengthsPsr4 = array (
         'Z' => 
         array (
@@ -17,23 +31,37 @@ class ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7
             'Zend\\Session\\' => 13,
             'Zend\\ServiceManager\\' => 20,
             'Zend\\Serializer\\' => 16,
+            'Zend\\Psr7Bridge\\' => 16,
             'Zend\\Navigation\\' => 16,
             'Zend\\Mvc\\' => 9,
             'Zend\\ModuleManager\\' => 19,
-            'Zend\\Math\\' => 10,
             'Zend\\Log\\' => 9,
             'Zend\\Loader\\' => 12,
             'Zend\\Json\\' => 10,
             'Zend\\InputFilter\\' => 17,
             'Zend\\I18n\\' => 10,
+            'Zend\\Hydrator\\' => 14,
             'Zend\\Http\\' => 10,
             'Zend\\Form\\' => 10,
             'Zend\\Filter\\' => 12,
             'Zend\\EventManager\\' => 18,
             'Zend\\Escaper\\' => 13,
+            'Zend\\Diactoros\\' => 15,
             'Zend\\Console\\' => 13,
             'Zend\\Config\\' => 12,
             'Zend\\Cache\\' => 11,
+        ),
+        'P' => 
+        array (
+            'Psr\\SimpleCache\\' => 16,
+            'Psr\\Log\\' => 8,
+            'Psr\\Http\\Message\\' => 17,
+            'Psr\\Container\\' => 14,
+            'Psr\\Cache\\' => 10,
+        ),
+        'I' => 
+        array (
+            'Interop\\Container\\' => 18,
         ),
     );
 
@@ -70,6 +98,10 @@ class ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7
         array (
             0 => __DIR__ . '/..' . '/zendframework/zend-serializer/src',
         ),
+        'Zend\\Psr7Bridge\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/zendframework/zend-psr7bridge/src',
+        ),
         'Zend\\Navigation\\' => 
         array (
             0 => __DIR__ . '/..' . '/zendframework/zend-navigation/src',
@@ -81,10 +113,6 @@ class ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7
         'Zend\\ModuleManager\\' => 
         array (
             0 => __DIR__ . '/..' . '/zendframework/zend-modulemanager/src',
-        ),
-        'Zend\\Math\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/zendframework/zend-math/src',
         ),
         'Zend\\Log\\' => 
         array (
@@ -106,6 +134,10 @@ class ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7
         array (
             0 => __DIR__ . '/..' . '/zendframework/zend-i18n/src',
         ),
+        'Zend\\Hydrator\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/zendframework/zend-hydrator/src',
+        ),
         'Zend\\Http\\' => 
         array (
             0 => __DIR__ . '/..' . '/zendframework/zend-http/src',
@@ -126,6 +158,10 @@ class ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7
         array (
             0 => __DIR__ . '/..' . '/zendframework/zend-escaper/src',
         ),
+        'Zend\\Diactoros\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/zendframework/zend-diactoros/src',
+        ),
         'Zend\\Console\\' => 
         array (
             0 => __DIR__ . '/..' . '/zendframework/zend-console/src',
@@ -138,6 +174,34 @@ class ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7
         array (
             0 => __DIR__ . '/..' . '/zendframework/zend-cache/src',
         ),
+        'Psr\\SimpleCache\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/simple-cache/src',
+        ),
+        'Psr\\Log\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
+        ),
+        'Psr\\Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+        ),
+        'Psr\\Container\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'Psr\\Cache\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/cache/src',
+        ),
+        'Interop\\Container\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/container-interop/container-interop/src/Interop/Container',
+        ),
+    );
+
+    public static $classMap = array (
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
@@ -145,6 +209,7 @@ class ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7::$classMap;
 
         }, null, ClassLoader::class);
     }

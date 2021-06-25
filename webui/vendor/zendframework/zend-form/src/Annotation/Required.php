@@ -35,13 +35,13 @@ class Required
      */
     public function __construct(array $data)
     {
-        if (!isset($data['value'])) {
+        if (! isset($data['value'])) {
             $data['value'] = false;
         }
 
         $required = $data['value'];
 
-        if (!is_bool($required)) {
+        if (! is_bool($required)) {
             $filter   = new BooleanFilter();
             $required = $filter->filter($required);
         }

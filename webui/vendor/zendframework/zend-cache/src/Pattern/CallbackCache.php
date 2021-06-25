@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -18,14 +18,14 @@ class CallbackCache extends AbstractPattern
      * Set options
      *
      * @param  PatternOptions $options
-     * @return CallbackCache
+     * @return CallbackCache Provides a fluent interface
      * @throws Exception\InvalidArgumentException if missing storage option
      */
     public function setOptions(PatternOptions $options)
     {
         parent::setOptions($options);
 
-        if (!$options->getStorage()) {
+        if (! $options->getStorage()) {
             throw new Exception\InvalidArgumentException("Missing option 'storage'");
         }
         return $this;
@@ -40,7 +40,7 @@ class CallbackCache extends AbstractPattern
      * @throws Exception\RuntimeException if invalid cached data
      * @throws \Exception
      */
-    public function call($callback, array $args = array())
+    public function call($callback, array $args = [])
     {
         $options = $this->getOptions();
         $storage = $options->getStorage();
@@ -48,7 +48,7 @@ class CallbackCache extends AbstractPattern
         $key     = $this->generateCallbackKey($callback, $args);
         $result  = $storage->getItem($key, $success);
         if ($success) {
-            if (!array_key_exists(0, $result)) {
+            if (! array_key_exists(0, $result)) {
                 throw new Exception\RuntimeException("Invalid cached data for key '{$key}'");
             }
 
@@ -78,9 +78,9 @@ class CallbackCache extends AbstractPattern
         }
 
         if ($cacheOutput) {
-            $data = array($ret, ob_get_flush());
+            $data = [$ret, ob_get_flush()];
         } else {
-            $data = array($ret);
+            $data = [$ret];
         }
 
         $storage->setItem($key, $data);
@@ -112,7 +112,7 @@ class CallbackCache extends AbstractPattern
      * @throws Exception\RuntimeException
      * @throws Exception\InvalidArgumentException
      */
-    public function generateKey($callback, array $args = array())
+    public function generateKey($callback, array $args = [])
     {
         return $this->generateCallbackKey($callback, $args);
     }
@@ -129,7 +129,7 @@ class CallbackCache extends AbstractPattern
      */
     protected function generateCallbackKey($callback, array $args)
     {
-        if (!is_callable($callback, false, $callbackKey)) {
+        if (! is_callable($callback, false, $callbackKey)) {
             throw new Exception\InvalidArgumentException('Invalid callback');
         }
 
@@ -154,14 +154,14 @@ class CallbackCache extends AbstractPattern
             }
             $error = ErrorHandler::stop();
 
-            if (!$serializedObject) {
+            if (! $serializedObject) {
                 throw new Exception\RuntimeException(
                     sprintf('Cannot serialize callback%s', ($error ? ': ' . $error->getMessage() : '')),
                     0,
                     $error
                 );
             }
-            $callbackKey.= $serializedObject;
+            $callbackKey .= $serializedObject;
         }
 
         return md5($callbackKey) . $this->generateArgumentsKey($args);
@@ -176,7 +176,7 @@ class CallbackCache extends AbstractPattern
      */
     protected function generateArgumentsKey(array $args)
     {
-        if (!$args) {
+        if (! $args) {
             return '';
         }
 
@@ -189,7 +189,7 @@ class CallbackCache extends AbstractPattern
         }
         $error = ErrorHandler::stop();
 
-        if (!$serializedArgs) {
+        if (! $serializedArgs) {
             throw new Exception\RuntimeException(
                 sprintf('Cannot serialize arguments%s', ($error ? ': ' . $error->getMessage() : '')),
                 0,

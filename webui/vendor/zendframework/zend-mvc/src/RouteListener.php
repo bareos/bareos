@@ -18,11 +18,12 @@ class RouteListener extends AbstractListenerAggregate
      * Attach to an event manager
      *
      * @param  EventManagerInterface $events
+     * @param  int $priority
      * @return void
      */
-    public function attach(EventManagerInterface $events)
+    public function attach(EventManagerInterface $events, $priority = 1)
     {
-        $this->listeners[] = $events->attach(MvcEvent::EVENT_ROUTE, array($this, 'onRoute'));
+        $this->listeners[] = $events->attach(MvcEvent::EVENT_ROUTE, [$this, 'onRoute']);
     }
 
     /**
@@ -44,9 +45,10 @@ class RouteListener extends AbstractListenerAggregate
         $routeMatch = $router->match($request);
 
         if (!$routeMatch instanceof Router\RouteMatch) {
+            $e->setName(MvcEvent::EVENT_DISPATCH_ERROR);
             $e->setError(Application::ERROR_ROUTER_NO_MATCH);
 
-            $results = $target->getEventManager()->trigger(MvcEvent::EVENT_DISPATCH_ERROR, $e);
+            $results = $target->getEventManager()->triggerEvent($e);
             if (count($results)) {
                 return $results->last();
             }

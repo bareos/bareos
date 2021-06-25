@@ -19,10 +19,10 @@ class DashToSeparator extends AbstractSeparator
      */
     public function filter($value)
     {
-        if (!is_scalar($value) && !is_array($value)) {
+        if (! is_scalar($value) && ! is_array($value)) {
             return $value;
         }
 
-        return preg_replace('#-#', $this->separator, $value);
+        return str_replace('-', $this->separator, $value);
     }
 }

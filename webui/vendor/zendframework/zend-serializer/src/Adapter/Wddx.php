@@ -31,7 +31,7 @@ class Wddx extends AbstractAdapter
      */
     public function __construct($options = null)
     {
-        if (!extension_loaded('wddx')) {
+        if (! extension_loaded('wddx')) {
             throw new Exception\ExtensionNotLoadedException(
                 'PHP extension "wddx" is required for this adapter'
             );
@@ -48,7 +48,7 @@ class Wddx extends AbstractAdapter
      */
     public function setOptions($options)
     {
-        if (!$options instanceof WddxOptions) {
+        if (! $options instanceof WddxOptions) {
             $options = new WddxOptions($options);
         }
 

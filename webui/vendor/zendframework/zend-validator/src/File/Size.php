@@ -28,20 +28,20 @@ class Size extends AbstractValidator
     /**
      * @var array Error message templates
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::TOO_BIG   => "Maximum allowed size for file is '%max%' but '%size%' detected",
         self::TOO_SMALL => "Minimum expected size for file is '%min%' but '%size%' detected",
         self::NOT_FOUND => "File is not readable or does not exist",
-    );
+    ];
 
     /**
      * @var array Error message template variables
      */
-    protected $messageVariables = array(
-        'min'  => array('options' => 'min'),
-        'max'  => array('options' => 'max'),
+    protected $messageVariables = [
+        'min'  => ['options' => 'min'],
+        'max'  => ['options' => 'max'],
         'size' => 'size',
-    );
+    ];
 
     /**
      * Detected size
@@ -55,11 +55,11 @@ class Size extends AbstractValidator
      *
      * @var array
      */
-    protected $options = array(
+    protected $options = [
         'min'           => null, // Minimum file size, if null there is no minimum
         'max'           => null, // Maximum file size, if null there is no maximum
         'useByteString' => true, // Use byte string?
-    );
+    ];
 
     /**
      * Sets validator options
@@ -75,14 +75,14 @@ class Size extends AbstractValidator
     public function __construct($options = null)
     {
         if (is_string($options) || is_numeric($options)) {
-            $options = array('max' => $options);
+            $options = ['max' => $options];
         }
 
         if (1 < func_num_args()) {
             $argv = func_get_args();
             array_shift($argv);
             $options['max'] = array_shift($argv);
-            if (!empty($argv)) {
+            if (! empty($argv)) {
                 $options['useByteString'] = array_shift($argv);
             }
         }
@@ -121,7 +121,7 @@ class Size extends AbstractValidator
     public function getMin($raw = false)
     {
         $min = $this->options['min'];
-        if (!$raw && $this->getByteString()) {
+        if (! $raw && $this->getByteString()) {
             $min = $this->toByteString($min);
         }
 
@@ -136,12 +136,12 @@ class Size extends AbstractValidator
      * For example: 2000, 2MB, 0.2GB
      *
      * @param  int|string $min The minimum file size
-     * @return Size Provides a fluent interface
      * @throws Exception\InvalidArgumentException When min is greater than max
+     * @return self Provides a fluent interface
      */
     public function setMin($min)
     {
-        if (!is_string($min) and !is_numeric($min)) {
+        if (! is_string($min) && ! is_numeric($min)) {
             throw new Exception\InvalidArgumentException('Invalid options to validator provided');
         }
 
@@ -166,7 +166,7 @@ class Size extends AbstractValidator
     public function getMax($raw = false)
     {
         $max = $this->options['max'];
-        if (!$raw && $this->getByteString()) {
+        if (! $raw && $this->getByteString()) {
             $max = $this->toByteString($max);
         }
 
@@ -181,12 +181,12 @@ class Size extends AbstractValidator
      * For example: 2000, 2MB, 0.2GB
      *
      * @param  int|string $max The maximum file size
-     * @return Size Provides a fluent interface
      * @throws Exception\InvalidArgumentException When max is smaller than min
+     * @return self Provides a fluent interface
      */
     public function setMax($max)
     {
-        if (!is_string($max) && !is_numeric($max)) {
+        if (! is_string($max) && ! is_numeric($max)) {
             throw new Exception\InvalidArgumentException('Invalid options to validator provided');
         }
 
@@ -216,7 +216,7 @@ class Size extends AbstractValidator
      * Set current size
      *
      * @param  int $size
-     * @return Size
+     * @return self
      */
     protected function setSize($size)
     {
@@ -239,7 +239,7 @@ class Size extends AbstractValidator
             $filename = $file['name'];
             $file     = $file['tmp_name'];
         } elseif (is_array($value)) {
-            if (!isset($value['tmp_name']) || !isset($value['name'])) {
+            if (! isset($value['tmp_name']) || ! isset($value['name'])) {
                 throw new Exception\InvalidArgumentException(
                     'Value array must be in $_FILES format'
                 );
@@ -253,7 +253,7 @@ class Size extends AbstractValidator
         $this->setValue($filename);
 
         // Is file readable ?
-        if (empty($file) || false === stream_resolve_include_path($file)) {
+        if (empty($file) || false === is_readable($file)) {
             $this->error(self::NOT_FOUND);
             return false;
         }
@@ -270,10 +270,10 @@ class Size extends AbstractValidator
         if (($min !== null) && ($size < $min)) {
             if ($this->getByteString()) {
                 $this->options['min'] = $this->toByteString($min);
-                $this->size          = $this->toByteString($size);
+                $this->size           = $this->toByteString($size);
                 $this->error(self::TOO_SMALL);
                 $this->options['min'] = $min;
-                $this->size          = $size;
+                $this->size           = $size;
             } else {
                 $this->error(self::TOO_SMALL);
             }
@@ -283,16 +283,16 @@ class Size extends AbstractValidator
         if (($max !== null) && ($max < $size)) {
             if ($this->getByteString()) {
                 $this->options['max'] = $this->toByteString($max);
-                $this->size          = $this->toByteString($size);
+                $this->size           = $this->toByteString($size);
                 $this->error(self::TOO_BIG);
                 $this->options['max'] = $max;
-                $this->size          = $size;
+                $this->size           = $size;
             } else {
                 $this->error(self::TOO_BIG);
             }
         }
 
-        if (count($this->getMessages()) > 0) {
+        if ($this->getMessages()) {
             return false;
         }
 
@@ -307,8 +307,8 @@ class Size extends AbstractValidator
      */
     protected function toByteString($size)
     {
-        $sizes = array('B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB');
-        for ($i=0; $size >= 1024 && $i < 9; $i++) {
+        $sizes = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        for ($i = 0; $size >= 1024 && $i < 9; $i++) {
             $size /= 1024;
         }
 
@@ -330,8 +330,8 @@ class Size extends AbstractValidator
         $type  = trim(substr($size, -2, 1));
 
         $value = substr($size, 0, -1);
-        if (!is_numeric($value)) {
-            $value = substr($value, 0, -1);
+        if (! is_numeric($value)) {
+            $value = trim(substr($value, 0, -1));
         }
 
         switch (strtoupper($type)) {

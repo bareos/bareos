@@ -2,8 +2,8 @@
 /**
  * Zend Framework (http://framework.zend.com/)
  *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @link      http://github.com/zendframework/zend-log for the canonical source repository
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -27,7 +27,7 @@ class Sample implements FilterInterface
      * If 0.5, only half of the values will be logged.
      * If 0.1 only 1 among 10 values will be logged.
      *
-     * @param  float|int $samplerate Sample rate [0-1].
+     * @param  float|int $sampleRate Sample rate [0-1].
      * @return Priority
      * @throws Exception\InvalidArgumentException
      */

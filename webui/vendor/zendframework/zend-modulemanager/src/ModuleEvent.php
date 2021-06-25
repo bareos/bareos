@@ -1,10 +1,8 @@
 <?php
 /**
- * Zend Framework (http://framework.zend.com/)
- *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   http://framework.zend.com/license/new-bsd New BSD License
+ * @link      https://github.com/zendframework/zend-modulemanager for the canonical source repository
+ * @copyright Copyright (c) 2005-2019 Zend Technologies USA Inc. (https://www.zend.com)
+ * @license   https://github.com/zendframework/zend-modulemanager/blob/master/LICENSE.md New BSD License
  */
 
 namespace Zend\ModuleManager;
@@ -14,6 +12,8 @@ use Zend\EventManager\Event;
 /**
  * Custom event for use with module manager
  * Composes Module objects
+ *
+ * @method ModuleManager getTarget()
  */
 class ModuleEvent extends Event
 {
@@ -60,7 +60,7 @@ class ModuleEvent extends Event
      */
     public function setModuleName($moduleName)
     {
-        if (!is_string($moduleName)) {
+        if (! is_string($moduleName)) {
             throw new Exception\InvalidArgumentException(
                 sprintf(
                     '%s expects a string as an argument; %s provided',
@@ -94,7 +94,7 @@ class ModuleEvent extends Event
      */
     public function setModule($module)
     {
-        if (!is_object($module)) {
+        if (! is_object($module)) {
             throw new Exception\InvalidArgumentException(
                 sprintf(
                     '%s expects a module object as an argument; %s provided',

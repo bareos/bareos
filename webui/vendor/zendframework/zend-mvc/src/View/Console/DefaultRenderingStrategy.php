@@ -22,9 +22,9 @@ class DefaultRenderingStrategy extends AbstractListenerAggregate
     /**
      * {@inheritDoc}
      */
-    public function attach(EventManagerInterface $events)
+    public function attach(EventManagerInterface $events, $priority = 1)
     {
-        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER, array($this, 'render'), -10000);
+        $this->listeners[] = $events->attach(MvcEvent::EVENT_RENDER, [$this, 'render'], -10000);
     }
 
     /**
@@ -75,7 +75,7 @@ class DefaultRenderingStrategy extends AbstractListenerAggregate
 
         // Append console response to response object
         $content = $response->getContent() . $responseText;
-        if (is_callable(array($console, 'encodeText'))) {
+        if (is_callable([$console, 'encodeText'])) {
             $content = $console->encodeText($content);
         }
         $response->setContent($content);

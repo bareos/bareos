@@ -27,21 +27,21 @@ class Hash extends AbstractValidator
     /**
      * @var array Error message templates
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::DOES_NOT_MATCH => "File does not match the given hashes",
         self::NOT_DETECTED   => "A hash could not be evaluated for the given file",
         self::NOT_FOUND      => "File is not readable or does not exist"
-    );
+    ];
 
     /**
      * Options for this validator
      *
      * @var string
      */
-    protected $options = array(
+    protected $options = [
         'algorithm' => 'crc32',
         'hash'      => null,
-    );
+    ];
 
     /**
      * Sets validator options
@@ -51,8 +51,8 @@ class Hash extends AbstractValidator
     public function __construct($options = null)
     {
         if (is_scalar($options) ||
-            (is_array($options) && !array_key_exists('hash', $options))) {
-            $options = array('hash' => $options);
+            (is_array($options) && ! array_key_exists('hash', $options))) {
+            $options = ['hash' => $options];
         }
 
         if (1 < func_num_args()) {
@@ -76,7 +76,7 @@ class Hash extends AbstractValidator
      * Sets the hash for one or multiple files
      *
      * @param  string|array $options
-     * @return Hash Provides a fluent interface
+     * @return self Provides a fluent interface
      */
     public function setHash($options)
     {
@@ -90,26 +90,26 @@ class Hash extends AbstractValidator
      * Adds the hash for one or multiple files
      *
      * @param  string|array $options
-     * @return Hash Provides a fluent interface
      * @throws Exception\InvalidArgumentException
+     * @return self Provides a fluent interface
      */
     public function addHash($options)
     {
         if (is_string($options)) {
-            $options = array($options);
-        } elseif (!is_array($options)) {
+            $options = [$options];
+        } elseif (! is_array($options)) {
             throw new Exception\InvalidArgumentException("False parameter given");
         }
 
         $known = hash_algos();
-        if (!isset($options['algorithm'])) {
+        if (! isset($options['algorithm'])) {
             $algorithm = $this->options['algorithm'];
         } else {
             $algorithm = $options['algorithm'];
             unset($options['algorithm']);
         }
 
-        if (!in_array($algorithm, $known)) {
+        if (! in_array($algorithm, $known)) {
             throw new Exception\InvalidArgumentException("Unknown algorithm '{$algorithm}'");
         }
 
@@ -134,7 +134,7 @@ class Hash extends AbstractValidator
             $filename = $file['name'];
             $file     = $file['tmp_name'];
         } elseif (is_array($value)) {
-            if (!isset($value['tmp_name']) || !isset($value['name'])) {
+            if (! isset($value['tmp_name']) || ! isset($value['name'])) {
                 throw new Exception\InvalidArgumentException(
                     'Value array must be in $_FILES format'
                 );
@@ -148,7 +148,7 @@ class Hash extends AbstractValidator
         $this->setValue($filename);
 
         // Is file readable ?
-        if (empty($file) || false === stream_resolve_include_path($file)) {
+        if (empty($file) || false === is_readable($file)) {
             $this->error(self::NOT_FOUND);
             return false;
         }

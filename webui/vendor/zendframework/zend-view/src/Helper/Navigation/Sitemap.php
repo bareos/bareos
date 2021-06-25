@@ -58,7 +58,7 @@ class Sitemap extends AbstractHelper
      *
      * @var array
      */
-    protected $urls = array();
+    protected $urls = [];
 
     /**
      * Whether sitemap should be validated using Zend\Validate\Sitemap\*
@@ -134,7 +134,7 @@ class Sitemap extends AbstractHelper
     public function getDomSitemap(AbstractContainer $container = null)
     {
         // Reset the urls
-        $this->urls = array();
+        $this->urls = [];
 
         if (null === $container) {
             $container = $this->getContainer();
@@ -165,19 +165,19 @@ class Sitemap extends AbstractHelper
             $iterator->setMaxDepth($maxDepth);
         }
         $minDepth = $this->getMinDepth();
-        if (!is_int($minDepth) || $minDepth < 0) {
+        if (! is_int($minDepth) || $minDepth < 0) {
             $minDepth = 0;
         }
 
         // iterate container
         foreach ($iterator as $page) {
-            if ($iterator->getDepth() < $minDepth || !$this->accept($page)) {
+            if ($iterator->getDepth() < $minDepth || ! $this->accept($page)) {
                 // page should not be included
                 continue;
             }
 
             // get absolute url from page
-            if (!$url = $this->url($page)) {
+            if (! $url = $this->url($page)) {
                 // skip page if it has no url (rare case)
                 // or already is in the sitemap
                 continue;
@@ -188,7 +188,7 @@ class Sitemap extends AbstractHelper
             $urlSet->appendChild($urlNode);
 
             if ($this->getUseSitemapValidators()
-                && !$locValidator->isValid($url)
+                && ! $locValidator->isValid($url)
             ) {
                 throw new Exception\RuntimeException(sprintf(
                     'Encountered an invalid URL for Sitemap XML: "%s"',
@@ -208,7 +208,7 @@ class Sitemap extends AbstractHelper
                     $lastmod = date('c', $lastmod);
                 }
 
-                if (!$this->getUseSitemapValidators()
+                if (! $this->getUseSitemapValidators()
                     || $lastmodValidator->isValid($lastmod)
                 ) {
                     // Cast $lastmod to string in case no validation was used
@@ -221,7 +221,7 @@ class Sitemap extends AbstractHelper
             // add 'changefreq' element if a valid changefreq is set in page
             if (isset($page->changefreq)) {
                 $changefreq = $page->changefreq;
-                if (!$this->getUseSitemapValidators() ||
+                if (! $this->getUseSitemapValidators() ||
                     $changefreqValidator->isValid($changefreq)) {
                     $urlNode->appendChild(
                         $dom->createElementNS(self::SITEMAP_NS, 'changefreq', $changefreq)
@@ -232,7 +232,7 @@ class Sitemap extends AbstractHelper
             // add 'priority' element if a valid priority is set in page
             if (isset($page->priority)) {
                 $priority = $page->priority;
-                if (!$this->getUseSitemapValidators() ||
+                if (! $this->getUseSitemapValidators() ||
                     $priorityValidator->isValid($priority)) {
                     $urlNode->appendChild(
                         $dom->createElementNS(self::SITEMAP_NS, 'priority', $priority)
@@ -246,7 +246,7 @@ class Sitemap extends AbstractHelper
             ErrorHandler::start();
             $test  = $dom->schemaValidate(self::SITEMAP_XSD);
             $error = ErrorHandler::stop();
-            if (!$test) {
+            if (! $test) {
                 throw new Exception\RuntimeException(sprintf(
                     'Sitemap is invalid according to XML Schema at "%s"',
                     self::SITEMAP_XSD
@@ -267,10 +267,10 @@ class Sitemap extends AbstractHelper
     {
         $href = $page->getHref();
 
-        if (!isset($href{0})) {
+        if (! isset($href[0])) {
             // no href
             return '';
-        } elseif ($href{0} == '/') {
+        } elseif ($href[0] == '/') {
             // href is relative to root; use serverUrl helper
             $url = $this->getServerUrl() . $href;
         } elseif (preg_match('/^[a-z]+:/im', (string) $href)) {
@@ -363,7 +363,7 @@ class Sitemap extends AbstractHelper
      */
     public function getServerUrl()
     {
-        if (!isset($this->serverUrl)) {
+        if (! isset($this->serverUrl)) {
             $serverUrlHelper  = $this->getView()->plugin('serverUrl');
             $this->serverUrl = $serverUrlHelper();
         }

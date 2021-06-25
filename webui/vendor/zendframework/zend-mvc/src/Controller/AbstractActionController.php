@@ -12,6 +12,7 @@ namespace Zend\Mvc\Controller;
 use Zend\Http\Response as HttpResponse;
 use Zend\Mvc\Exception;
 use Zend\Mvc\MvcEvent;
+use Zend\View\Model\ConsoleModel;
 use Zend\View\Model\ViewModel;
 
 /**
@@ -27,19 +28,19 @@ abstract class AbstractActionController extends AbstractController
     /**
      * Default action if none provided
      *
-     * @return array
+     * @return ViewModel
      */
     public function indexAction()
     {
-        return new ViewModel(array(
+        return new ViewModel([
             'content' => 'Placeholder page'
-        ));
+        ]);
     }
 
     /**
      * Action called if matched action does not exist
      *
-     * @return array
+     * @return ViewModel|ConsoleModel
      */
     public function notFoundAction()
     {
@@ -59,7 +60,8 @@ abstract class AbstractActionController extends AbstractController
      *
      * @param  MvcEvent $e
      * @return mixed
-     * @throws Exception\DomainException
+     *
+     * @throws Exception\DomainException If no RouteMatch was found within MvcEvent.
      */
     public function onDispatch(MvcEvent $e)
     {
@@ -94,7 +96,7 @@ abstract class AbstractActionController extends AbstractController
      */
     protected function createHttpNotFoundModel(HttpResponse $response)
     {
-        return $this->__call('createHttpNotFoundModel', array($response));
+        return $this->__call('createHttpNotFoundModel', [$response]);
     }
 
     /**
@@ -105,6 +107,6 @@ abstract class AbstractActionController extends AbstractController
      */
     protected function createConsoleNotFoundModel($response)
     {
-        return $this->__call('createConsoleNotFoundModel', array($response));
+        return $this->__call('createConsoleNotFoundModel', [$response]);
     }
 }

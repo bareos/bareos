@@ -26,7 +26,7 @@ class IgBinary extends AbstractAdapter
      */
     public function __construct($options = null)
     {
-        if (!extension_loaded('igbinary')) {
+        if (! extension_loaded('igbinary')) {
             throw new Exception\ExtensionNotLoadedException(
                 'PHP extension "igbinary" is required for this adapter'
             );

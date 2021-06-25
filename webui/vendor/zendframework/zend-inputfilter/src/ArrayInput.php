@@ -14,7 +14,7 @@ class ArrayInput extends Input
     /**
      * @var array
      */
-    protected $value = array();
+    protected $value = [];
 
     /**
      * @param  array $value
@@ -23,10 +23,11 @@ class ArrayInput extends Input
      */
     public function setValue($value)
     {
-        if (!is_array($value)) {
-            throw new Exception\InvalidArgumentException(
-                sprintf('Value must be an array, %s given.', gettype($value))
-            );
+        if (! is_array($value)) {
+            throw new Exception\InvalidArgumentException(sprintf(
+                'Value must be an array, %s given.',
+                gettype($value)
+            ));
         }
         return parent::setValue($value);
     }
@@ -36,7 +37,7 @@ class ArrayInput extends Input
      */
     public function resetValue()
     {
-        $this->value = array();
+        $this->value = [];
         $this->hasValue = false;
         return $this;
     }
@@ -47,7 +48,7 @@ class ArrayInput extends Input
     public function getValue()
     {
         $filter = $this->getFilterChain();
-        $result = array();
+        $result = [];
         foreach ($this->value as $key => $value) {
             $result[$key] = $filter->filter($value);
         }
@@ -76,24 +77,32 @@ class ArrayInput extends Input
             return false;
         }
 
-        if (!$this->continueIfEmpty() && !$this->allowEmpty()) {
+        if (! $this->continueIfEmpty() && ! $this->allowEmpty()) {
             $this->injectNotEmptyValidator();
         }
         $validator = $this->getValidatorChain();
         $values    = $this->getValue();
         $result    = true;
+
+        if ($required && empty($values)) {
+            if ($this->errorMessage === null) {
+                $this->errorMessage = $this->prepareRequiredValidationFailureMessage();
+            }
+            return false;
+        }
+
         foreach ($values as $value) {
-            $empty = ($value === null || $value === '' || $value === array());
-            if ($empty && !$this->isRequired() && !$this->continueIfEmpty()) {
+            $empty = ($value === null || $value === '' || $value === []);
+            if ($empty && ! $this->isRequired() && ! $this->continueIfEmpty()) {
                 $result = true;
                 continue;
             }
-            if ($empty && $this->allowEmpty() && !$this->continueIfEmpty()) {
+            if ($empty && $this->allowEmpty() && ! $this->continueIfEmpty()) {
                 $result = true;
                 continue;
             }
             $result = $validator->isValid($value, $context);
-            if (!$result) {
+            if (! $result) {
                 if ($hasFallback) {
                     $this->setValue($this->getFallbackValue());
                     return true;

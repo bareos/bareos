@@ -22,10 +22,12 @@ use Zend\View\Resolver\ResolverInterface;
  */
 class ConsoleRenderer implements RendererInterface, TreeRendererInterface
 {
+    // @codingStandardsIgnoreStart
     /**
      * @var FilterChain
      */
     protected $__filterChain;
+    // @codingStandardsIgnoreEnd
 
     /**
      * Constructor.
@@ -37,7 +39,7 @@ class ConsoleRenderer implements RendererInterface, TreeRendererInterface
      * @todo handle passing resolver object, options
      * @param array $config Configuration key-value pairs.
      */
-    public function __construct($config = array())
+    public function __construct($config = [])
     {
         $this->init();
     }
@@ -106,7 +108,7 @@ class ConsoleRenderer implements RendererInterface, TreeRendererInterface
      */
     public function render($model, $values = null)
     {
-        if (!$model instanceof ModelInterface) {
+        if (! $model instanceof ModelInterface) {
             return '';
         }
 

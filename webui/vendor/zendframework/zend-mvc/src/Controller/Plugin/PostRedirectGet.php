@@ -67,7 +67,7 @@ class PostRedirectGet extends AbstractPlugin
      */
     public function getSessionContainer()
     {
-        if (!isset($this->sessionContainer)) {
+        if (!$this->sessionContainer) {
             $this->sessionContainer = new Container('prg_post1');
         }
         return $this->sessionContainer;
@@ -94,8 +94,8 @@ class PostRedirectGet extends AbstractPlugin
     protected function redirect($redirect, $redirectToUrl)
     {
         $controller         = $this->getController();
-        $params             = array();
-        $options            = array('query' => $controller->params()->fromQuery());
+        $params             = [];
+        $options            = ['query' => $controller->params()->fromQuery()];
         $reuseMatchedParams = false;
 
         if (null === $redirect) {

@@ -2,8 +2,8 @@
 /**
  * Zend Framework (http://framework.zend.com/)
  *
- * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @link      http://github.com/zendframework/zend-log for the canonical source repository
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -62,13 +62,13 @@ class Timestamp implements FilterInterface
         if ($value instanceof DateTime) {
             $this->value = $value;
         } else {
-            if (!is_int($value)) {
+            if (! is_int($value)) {
                 throw new Exception\InvalidArgumentException(sprintf(
                     'Value must be either DateTime instance or integer; received "%s"',
                     gettype($value)
                 ));
             }
-            if (!is_string($dateFormatChar)) {
+            if (! is_string($dateFormatChar)) {
                 throw new Exception\InvalidArgumentException(sprintf(
                     'Date format character must be supplied as string; received "%s"',
                     gettype($dateFormatChar)
@@ -81,9 +81,9 @@ class Timestamp implements FilterInterface
 
         if ($operator === null) {
             $operator = '<=';
-        } elseif (!in_array(
+        } elseif (! in_array(
             $operator,
-            array('<', 'lt', '<=', 'le', '>', 'gt', '>=', 'ge', '==', '=', 'eq', '!=', '<>')
+            ['<', 'lt', '<=', 'le', '>', 'gt', '>=', 'ge', '==', '=', 'eq', '!=', '<>']
         )) {
             throw new Exception\InvalidArgumentException(
                 "Unsupported comparison operator: '$operator'"

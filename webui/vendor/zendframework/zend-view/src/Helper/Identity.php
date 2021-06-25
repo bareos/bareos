@@ -34,11 +34,11 @@ class Identity extends AbstractHelper
      */
     public function __invoke()
     {
-        if (!$this->authenticationService instanceof AuthenticationServiceInterface) {
+        if (! $this->authenticationService instanceof AuthenticationServiceInterface) {
             throw new Exception\RuntimeException('No AuthenticationServiceInterface instance provided');
         }
 
-        if (!$this->authenticationService->hasIdentity()) {
+        if (! $this->authenticationService->hasIdentity()) {
             return;
         }
 

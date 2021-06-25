@@ -9,7 +9,9 @@
 
 namespace Zend\Mvc\Service;
 
+use Zend\InputFilter\InputFilterPluginManager;
+
 class InputFilterManagerFactory extends AbstractPluginManagerFactory
 {
-    const PLUGIN_MANAGER_CLASS = 'Zend\InputFilter\InputFilterPluginManager';
+    const PLUGIN_MANAGER_CLASS = InputFilterPluginManager::class;
 }

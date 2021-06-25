@@ -3,7 +3,7 @@
  * Zend Framework (http://framework.zend.com/)
  *
  * @link      http://github.com/zendframework/zf2 for the canonical source repository
- * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -38,14 +38,18 @@ class Capabilities
     protected $baseCapabilities;
 
     /**
-     * Expire read
+     * "lock-on-expire" support in seconds.
+     *
+     *      0 = Expired items will never be retrieved
+     *     >0 = Time in seconds an expired item could be retrieved
+     *     -1 = Expired items could be retrieved forever
      *
      * If it's NULL the capability isn't set and the getter
      * returns the base capability or the default value.
      *
      * @var null|bool
      */
-    protected $expiredRead;
+    protected $lockOnExpire;
 
     /**
      * Max. key length
@@ -118,7 +122,7 @@ class Capabilities
     protected $supportedDatatypes;
 
     /**
-     * Supported metdata
+     * Supported metadata
      *
      * If it's NULL the capability isn't set and the getter
      * returns the base capability or the default value.
@@ -158,7 +162,7 @@ class Capabilities
     public function __construct(
         StorageInterface $storage,
         stdClass $marker,
-        array $capabilities = array(),
+        array $capabilities = [],
         Capabilities $baseCapabilities = null
     ) {
         $this->storage = $storage;
@@ -187,7 +191,7 @@ class Capabilities
      */
     public function getSupportedDatatypes()
     {
-        return $this->getCapability('supportedDatatypes', array(
+        return $this->getCapability('supportedDatatypes', [
             'NULL'     => false,
             'boolean'  => false,
             'integer'  => false,
@@ -196,7 +200,7 @@ class Capabilities
             'array'    => false,
             'object'   => false,
             'resource' => false,
-        ));
+        ]);
     }
 
     /**
@@ -209,7 +213,7 @@ class Capabilities
      */
     public function setSupportedDatatypes(stdClass $marker, array $datatypes)
     {
-        $allTypes = array(
+        $allTypes = [
             'array',
             'boolean',
             'double',
@@ -218,17 +222,17 @@ class Capabilities
             'object',
             'resource',
             'string',
-        );
+        ];
 
         // check/normalize datatype values
         foreach ($datatypes as $type => &$toType) {
-            if (!in_array($type, $allTypes)) {
+            if (! in_array($type, $allTypes)) {
                 throw new Exception\InvalidArgumentException("Unknown datatype '{$type}'");
             }
 
             if (is_string($toType)) {
                 $toType = strtolower($toType);
-                if (!in_array($toType, $allTypes)) {
+                if (! in_array($toType, $allTypes)) {
                     throw new Exception\InvalidArgumentException("Unknown datatype '{$toType}'");
                 }
             } else {
@@ -252,7 +256,7 @@ class Capabilities
      */
     public function getSupportedMetadata()
     {
-        return $this->getCapability('supportedMetadata', array());
+        return $this->getCapability('supportedMetadata', []);
     }
 
     /**
@@ -266,7 +270,7 @@ class Capabilities
     public function setSupportedMetadata(stdClass $marker, array $metadata)
     {
         foreach ($metadata as $name) {
-            if (!is_string($name)) {
+            if (! is_string($name)) {
                 throw new Exception\InvalidArgumentException('$metadata must be an array of strings');
             }
         }
@@ -403,10 +407,16 @@ class Capabilities
      * Get if expired items are readable
      *
      * @return bool
+     * @deprecated This capability has been deprecated and will be removed in the future.
+     *             Please use getStaticTtl() instead
      */
     public function getExpiredRead()
     {
-        return $this->getCapability('expiredRead', false);
+        trigger_error(
+            'This capability has been deprecated and will be removed in the future. Please use static_ttl instead',
+            E_USER_DEPRECATED
+        );
+        return ! $this->getCapability('staticTtl', true);
     }
 
     /**
@@ -415,14 +425,44 @@ class Capabilities
      * @param  stdClass $marker
      * @param  bool $flag
      * @return Capabilities Fluent interface
+     * @deprecated This capability has been deprecated and will be removed in the future.
+     *             Please use setStaticTtl() instead
      */
     public function setExpiredRead(stdClass $marker, $flag)
     {
-        return $this->setCapability($marker, 'expiredRead', (bool) $flag);
+        trigger_error(
+            'This capability has been deprecated and will be removed in the future. Please use static_ttl instead',
+            E_USER_DEPRECATED
+        );
+        return $this->setCapability($marker, 'staticTtl', (bool) $flag);
     }
 
     /**
-     * Get maximum key lenth
+     * Get "lock-on-expire" support in seconds.
+     *
+     * @return int 0  = Expired items will never be retrieved
+     *             >0 = Time in seconds an expired item could be retrieved
+     *             -1 = Expired items could be retrieved forever
+     */
+    public function getLockOnExpire()
+    {
+        return $this->getCapability('lockOnExpire', 0);
+    }
+
+    /**
+     * Set "lock-on-expire" support in seconds.
+     *
+     * @param  stdClass $marker
+     * @param  int      $timeout
+     * @return Capabilities Fluent interface
+     */
+    public function setLockOnExpire(stdClass $marker, $timeout)
+    {
+        return $this->setCapability($marker, 'lockOnExpire', (int) $timeout);
+    }
+
+    /**
+     * Get maximum key length
      *
      * @return int -1 means unknown, 0 means infinite
      */
@@ -530,9 +570,9 @@ class Capabilities
 
             // trigger event
             if ($this->storage instanceof EventsCapableInterface) {
-                $this->storage->getEventManager()->trigger('capability', $this->storage, new ArrayObject(array(
+                $this->storage->getEventManager()->trigger('capability', $this->storage, new ArrayObject([
                     $property => $value
-                )));
+                ]));
             }
         }
 

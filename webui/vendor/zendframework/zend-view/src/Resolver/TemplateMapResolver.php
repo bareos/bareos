@@ -21,7 +21,7 @@ class TemplateMapResolver implements IteratorAggregate, ResolverInterface
     /**
      * @var array
      */
-    protected $map = array();
+    protected $map = [];
 
     /**
      * Constructor
@@ -30,7 +30,7 @@ class TemplateMapResolver implements IteratorAggregate, ResolverInterface
      *
      * @param  array|Traversable $map
      */
-    public function __construct($map = array())
+    public function __construct($map = [])
     {
         $this->setMap($map);
     }
@@ -56,7 +56,7 @@ class TemplateMapResolver implements IteratorAggregate, ResolverInterface
      */
     public function setMap($map)
     {
-        if (!is_array($map) && !$map instanceof Traversable) {
+        if (! is_array($map) && ! $map instanceof Traversable) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s: expects an array or Traversable, received "%s"',
                 __METHOD__,
@@ -87,7 +87,7 @@ class TemplateMapResolver implements IteratorAggregate, ResolverInterface
             return $this;
         }
 
-        if (!is_string($nameOrMap)) {
+        if (! is_string($nameOrMap)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s: expects a string, array, or Traversable for the first argument; received "%s"',
                 __METHOD__,
@@ -115,7 +115,7 @@ class TemplateMapResolver implements IteratorAggregate, ResolverInterface
      */
     public function merge($map)
     {
-        if (!is_array($map) && !$map instanceof Traversable) {
+        if (! is_array($map) && ! $map instanceof Traversable) {
             throw new Exception\InvalidArgumentException(sprintf(
                 '%s: expects an array or Traversable, received "%s"',
                 __METHOD__,
@@ -151,7 +151,7 @@ class TemplateMapResolver implements IteratorAggregate, ResolverInterface
      */
     public function get($name)
     {
-        if (!$this->has($name)) {
+        if (! $this->has($name)) {
             return false;
         }
         return $this->map[$name];

@@ -9,8 +9,10 @@
 
 namespace Zend\InputFilter;
 
+use Interop\Container\ContainerInterface;
 use Zend\Filter\FilterPluginManager;
 use Zend\ServiceManager\AbstractFactoryInterface;
+use Zend\ServiceManager\AbstractPluginManager;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\Validator\ValidatorPluginManager;
 
@@ -22,23 +24,35 @@ class InputFilterAbstractServiceFactory implements AbstractFactoryInterface
     protected $factory;
 
     /**
-     * @param ServiceLocatorInterface $inputFilters
-     * @param string                  $cName
+     * @param ContainerInterface      $services
      * @param string                  $rName
+     * @param array                   $options
+     * @return InputFilterInterface
+     */
+    public function __invoke(ContainerInterface $services, $rName, array  $options = null)
+    {
+        $allConfig = $services->get('config');
+        $config    = $allConfig['input_filter_specs'][$rName];
+        $factory   = $this->getInputFilterFactory($services);
+
+        return $factory->createInputFilter($config);
+    }
+
+    /**
+     *
+     * @param ContainerInterface $services
+     * @param string $rName
      * @return bool
      */
-    public function canCreateServiceWithName(ServiceLocatorInterface $inputFilters, $cName, $rName)
+    public function canCreate(ContainerInterface $services, $rName)
     {
-        $services = $inputFilters->getServiceLocator();
-        if (! $services instanceof ServiceLocatorInterface
-            || ! $services->has('Config')
-        ) {
+        if (! $services->has('config')) {
             return false;
         }
 
-        $config = $services->get('Config');
-        if (!isset($config['input_filter_specs'][$rName])
-            || !is_array($config['input_filter_specs'][$rName])
+        $config = $services->get('config');
+        if (! isset($config['input_filter_specs'][$rName])
+            || ! is_array($config['input_filter_specs'][$rName])
         ) {
             return false;
         }
@@ -47,27 +61,46 @@ class InputFilterAbstractServiceFactory implements AbstractFactoryInterface
     }
 
     /**
-     * @param ServiceLocatorInterface $inputFilters
+     * Determine if we can create a service with name (v2)
+     *
+     * @param ServiceLocatorInterface $container
+     * @param $name
+     * @param $requestedName
+     * @return bool
+     */
+    public function canCreateServiceWithName(ServiceLocatorInterface $container, $name, $requestedName)
+    {
+        // v2 => may need to get parent service locator
+        if ($container instanceof AbstractPluginManager) {
+            $container = $container->getServiceLocator() ?: $container;
+        }
+
+        return $this->canCreate($container, $requestedName);
+    }
+
+    /**
+     * Create the requested service (v2)
+     *
+     * @param ServiceLocatorInterface $container
      * @param string                  $cName
      * @param string                  $rName
      * @return InputFilterInterface
      */
-    public function createServiceWithName(ServiceLocatorInterface $inputFilters, $cName, $rName)
+    public function createServiceWithName(ServiceLocatorInterface $container, $cName, $rName)
     {
-        $services  = $inputFilters->getServiceLocator();
-        $allConfig = $services->get('Config');
-        $config    = $allConfig['input_filter_specs'][$rName];
+        // v2 => may need to get parent service locator
+        if ($container instanceof AbstractPluginManager) {
+            $container = $container->getServiceLocator() ?: $container;
+        }
 
-        $factory   = $this->getInputFilterFactory($services);
-
-        return $factory->createInputFilter($config);
+        return $this($container, $rName);
     }
 
     /**
-     * @param ServiceLocatorInterface $services
+     * @param ContainerInterface $container
      * @return Factory
      */
-    protected function getInputFilterFactory(ServiceLocatorInterface $services)
+    protected function getInputFilterFactory(ContainerInterface $container)
     {
         if ($this->factory instanceof Factory) {
             return $this->factory;
@@ -76,37 +109,39 @@ class InputFilterAbstractServiceFactory implements AbstractFactoryInterface
         $this->factory = new Factory();
         $this->factory
             ->getDefaultFilterChain()
-            ->setPluginManager($this->getFilterPluginManager($services));
+            ->setPluginManager($this->getFilterPluginManager($container));
         $this->factory
             ->getDefaultValidatorChain()
-            ->setPluginManager($this->getValidatorPluginManager($services));
+            ->setPluginManager($this->getValidatorPluginManager($container));
+
+        $this->factory->setInputFilterManager($container->get('InputFilterManager'));
 
         return $this->factory;
     }
 
     /**
-     * @param ServiceLocatorInterface $services
+     * @param ContainerInterface $container
      * @return FilterPluginManager
      */
-    protected function getFilterPluginManager(ServiceLocatorInterface $services)
+    protected function getFilterPluginManager(ContainerInterface $container)
     {
-        if ($services->has('FilterManager')) {
-            return $services->get('FilterManager');
+        if ($container->has('FilterManager')) {
+            return $container->get('FilterManager');
         }
 
-        return new FilterPluginManager();
+        return new FilterPluginManager($container);
     }
 
     /**
-     * @param ServiceLocatorInterface $services
+     * @param ContainerInterface $container
      * @return ValidatorPluginManager
      */
-    protected function getValidatorPluginManager(ServiceLocatorInterface $services)
+    protected function getValidatorPluginManager(ContainerInterface $container)
     {
-        if ($services->has('ValidatorManager')) {
-            return $services->get('ValidatorManager');
+        if ($container->has('ValidatorManager')) {
+            return $container->get('ValidatorManager');
         }
 
-        return new ValidatorPluginManager();
+        return new ValidatorPluginManager($container);
     }
 }

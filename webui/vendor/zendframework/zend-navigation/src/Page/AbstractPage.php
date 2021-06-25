@@ -76,7 +76,7 @@ abstract class AbstractPage extends AbstractContainer
      *
      * @var array
      */
-    protected $rel = array();
+    protected $rel = [];
 
     /**
      * Reverse links to other pages
@@ -85,7 +85,7 @@ abstract class AbstractPage extends AbstractContainer
      *
      * @var array
      */
-    protected $rev = array();
+    protected $rev = [];
 
     /**
      * Page order used by parent container
@@ -148,14 +148,14 @@ abstract class AbstractPage extends AbstractContainer
      *
      * @var array
      */
-    protected $properties = array();
+    protected $properties = [];
 
     /**
      * Static factories list for factory pages
      *
      * @var array
      */
-    protected static $factories = array();
+    protected static $factories = [];
 
     // Initialization:
 
@@ -196,7 +196,7 @@ abstract class AbstractPage extends AbstractContainer
             $options = ArrayUtils::iteratorToArray($options);
         }
 
-        if (!is_array($options)) {
+        if (! is_array($options)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid argument: $options must be an array or Traversable'
             );
@@ -204,7 +204,7 @@ abstract class AbstractPage extends AbstractContainer
 
         if (isset($options['type'])) {
             $type = $options['type'];
-            if (is_string($type) && !empty($type)) {
+            if (is_string($type) && ! empty($type)) {
                 switch (strtolower($type)) {
                     case 'mvc':
                         $type = 'Zend\Navigation\Page\Mvc';
@@ -214,14 +214,14 @@ abstract class AbstractPage extends AbstractContainer
                         break;
                 }
 
-                if (!class_exists($type, true)) {
+                if (! class_exists($type, true)) {
                     throw new Exception\InvalidArgumentException(
                         'Cannot find class ' . $type
                     );
                 }
 
                 $page = new $type($options);
-                if (!$page instanceof self) {
+                if (! $page instanceof self) {
                     throw new Exception\InvalidArgumentException(
                         sprintf(
                             'Invalid argument: Detected type "%s", which ' .
@@ -328,7 +328,7 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function setLabel($label)
     {
-        if (null !== $label && !is_string($label)) {
+        if (null !== $label && ! is_string($label)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid argument: $label must be a string or null'
             );
@@ -357,7 +357,7 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function setFragment($fragment)
     {
-        if (null !== $fragment && !is_string($fragment)) {
+        if (null !== $fragment && ! is_string($fragment)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid argument: $fragment must be a string or null'
             );
@@ -387,7 +387,7 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function setId($id = null)
     {
-        if (null !== $id && !is_string($id) && !is_numeric($id)) {
+        if (null !== $id && ! is_string($id) && ! is_numeric($id)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid argument: $id must be a string, number or null'
             );
@@ -418,7 +418,7 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function setClass($class = null)
     {
-        if (null !== $class && !is_string($class)) {
+        if (null !== $class && ! is_string($class)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid argument: $class must be a string or null'
             );
@@ -448,7 +448,7 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function setTitle($title = null)
     {
-        if (null !== $title && !is_string($title)) {
+        if (null !== $title && ! is_string($title)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid argument: $title must be a non-empty string'
             );
@@ -479,7 +479,7 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function setTarget($target = null)
     {
-        if (null !== $target && !is_string($target)) {
+        if (null !== $target && ! is_string($target)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid argument: $target must be a string or null'
             );
@@ -515,14 +515,14 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function setRel($relations = null)
     {
-        $this->rel = array();
+        $this->rel = [];
 
         if (null !== $relations) {
             if ($relations instanceof Traversable) {
                 $relations = ArrayUtils::iteratorToArray($relations);
             }
 
-            if (!is_array($relations)) {
+            if (! is_array($relations)) {
                 throw new Exception\InvalidArgumentException(
                     'Invalid argument: $relations must be an ' .
                     'array or an instance of Traversable'
@@ -581,14 +581,14 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function setRev($relations = null)
     {
-        $this->rev = array();
+        $this->rev = [];
 
         if (null !== $relations) {
             if ($relations instanceof Traversable) {
                 $relations = ArrayUtils::iteratorToArray($relations);
             }
 
-            if (!is_array($relations)) {
+            if (! is_array($relations)) {
                 throw new Exception\InvalidArgumentException(
                     'Invalid argument: $relations must be an ' .
                     'array or an instance of Traversable'
@@ -651,7 +651,7 @@ abstract class AbstractPage extends AbstractContainer
             }
         }
 
-        if (null !== $order && !is_int($order)) {
+        if (null !== $order && ! is_int($order)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid argument: $order must be an integer or null, ' .
                 'or a string that casts to an integer'
@@ -815,7 +815,7 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function isActive($recursive = false)
     {
-        if (!$this->active && $recursive) {
+        if (! $this->active && $recursive) {
             foreach ($this->pages as $page) {
                 if ($page->isActive(true)) {
                     return true;
@@ -872,7 +872,7 @@ abstract class AbstractPage extends AbstractContainer
             && isset($this->parent)
             && $this->parent instanceof self
         ) {
-            if (!$this->parent->isVisible(true)) {
+            if (! $this->parent->isVisible(true)) {
                 return false;
             }
         }
@@ -926,7 +926,7 @@ abstract class AbstractPage extends AbstractContainer
         $this->parent = $parent;
 
         // add to parent if page and not already a child
-        if (null !== $this->parent && !$this->parent->hasPage($this, false)) {
+        if (null !== $this->parent && ! $this->parent->hasPage($this, false)) {
             $this->parent->addPage($this);
         }
 
@@ -956,7 +956,7 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function set($property, $value)
     {
-        if (!is_string($property) || empty($property)) {
+        if (! is_string($property) || empty($property)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid argument: $property must be a non-empty string'
             );
@@ -987,7 +987,7 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function get($property)
     {
-        if (!is_string($property) || empty($property)) {
+        if (! is_string($property) || empty($property)) {
             throw new Exception\InvalidArgumentException(
                 'Invalid argument: $property must be a non-empty string'
             );
@@ -1206,7 +1206,7 @@ abstract class AbstractPage extends AbstractContainer
      */
     public function toArray()
     {
-        return array_merge($this->getCustomProperties(), array(
+        return array_merge($this->getCustomProperties(), [
             'label'     => $this->getLabel(),
             'fragment'  => $this->getFragment(),
             'id'        => $this->getId(),
@@ -1223,7 +1223,7 @@ abstract class AbstractPage extends AbstractContainer
             'visible'   => $this->isVisible(),
             'type'      => get_class($this),
             'pages'     => parent::toArray(),
-        ));
+        ]);
     }
 
     // Internal methods:

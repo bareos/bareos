@@ -152,7 +152,7 @@ abstract class AbstractAdapter implements AdapterInterface
             || $y1 < 0
             || $x2 < $x1
             || $y2 < $y1
-       ) {
+        ) {
             throw new Exception\BadMethodCallException('Supplied X,Y coordinates are invalid.');
         }
 
@@ -361,10 +361,10 @@ abstract class AbstractAdapter implements AdapterInterface
      */
     public function getSize()
     {
-        return array(
+        return [
             $this->getWidth(),
             $this->getHeight(),
-        );
+        ];
     }
 
     /**

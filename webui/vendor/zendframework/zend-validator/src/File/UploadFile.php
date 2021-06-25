@@ -9,6 +9,7 @@
 
 namespace Zend\Validator\File;
 
+use Psr\Http\Message\UploadedFileInterface;
 use Zend\Validator\AbstractValidator;
 use Zend\Validator\Exception;
 
@@ -34,90 +35,135 @@ class UploadFile extends AbstractValidator
     /**
      * @var array Error message templates
      */
-    protected $messageTemplates = array(
-        self::INI_SIZE       => "File exceeds the defined ini size",
-        self::FORM_SIZE      => "File exceeds the defined form size",
-        self::PARTIAL        => "File was only partially uploaded",
-        self::NO_FILE        => "File was not uploaded",
-        self::NO_TMP_DIR     => "No temporary directory was found for file",
-        self::CANT_WRITE     => "File can't be written",
-        self::EXTENSION      => "A PHP extension returned an error while uploading the file",
-        self::ATTACK         => "File was illegally uploaded. This could be a possible attack",
-        self::FILE_NOT_FOUND => "File was not found",
-        self::UNKNOWN        => "Unknown error while uploading file",
-    );
+    protected $messageTemplates = [
+        self::INI_SIZE       => 'The uploaded file exceeds the upload_max_filesize directive in php.ini',
+        self::FORM_SIZE      => 'The uploaded file exceeds the MAX_FILE_SIZE directive that was '
+            . 'specified in the HTML form',
+        self::PARTIAL        => 'The uploaded file was only partially uploaded',
+        self::NO_FILE        => 'No file was uploaded',
+        self::NO_TMP_DIR     => 'Missing a temporary folder',
+        self::CANT_WRITE     => 'Failed to write file to disk',
+        self::EXTENSION      => 'A PHP extension stopped the file upload',
+        self::ATTACK         => 'File was illegally uploaded. This could be a possible attack',
+        self::FILE_NOT_FOUND => 'File was not found',
+        self::UNKNOWN        => 'Unknown error while uploading file',
+    ];
 
     /**
      * Returns true if and only if the file was uploaded without errors
      *
-     * @param  string $value File to check for upload errors
+     * @param  string|array|UploadedFileInterface $value File to check for upload errors
      * @return bool
      * @throws Exception\InvalidArgumentException
      */
     public function isValid($value)
     {
         if (is_array($value)) {
-            if (!isset($value['tmp_name']) || !isset($value['name']) || !isset($value['error'])) {
+            if (! isset($value['tmp_name']) || ! isset($value['name']) || ! isset($value['error'])) {
                 throw new Exception\InvalidArgumentException(
                     'Value array must be in $_FILES format'
                 );
             }
-            $file     = $value['tmp_name'];
-            $filename = $value['name'];
-            $error    = $value['error'];
-        } else {
-            $file     = $value;
-            $filename = basename($file);
-            $error    = 0;
-        }
-        $this->setValue($filename);
 
+            return $this->validateUploadedFile(
+                $value['error'],
+                $value['name'],
+                $value['tmp_name']
+            );
+        }
+
+        if ($value instanceof UploadedFileInterface) {
+            return $this->validatePsr7UploadedFile($value);
+        }
+
+        if (is_string($value)) {
+            return $this->validateUploadedFile(0, basename($value), $value);
+        }
+
+        $this->error(self::UNKNOWN);
+        return false;
+    }
+
+    /**
+     * @param int $error UPLOAD_ERR_* constant value
+     * @return bool
+     */
+    private function validateFileFromErrorCode($error)
+    {
         switch ($error) {
             case UPLOAD_ERR_OK:
-                if (empty($file) || false === is_file($file)) {
-                    $this->error(self::FILE_NOT_FOUND);
-                } elseif (! is_uploaded_file($file)) {
-                    $this->error(self::ATTACK);
-                }
-                break;
+                return true;
 
             case UPLOAD_ERR_INI_SIZE:
                 $this->error(self::INI_SIZE);
-                break;
+                return false;
 
             case UPLOAD_ERR_FORM_SIZE:
                 $this->error(self::FORM_SIZE);
-                break;
+                return false;
 
             case UPLOAD_ERR_PARTIAL:
                 $this->error(self::PARTIAL);
-                break;
+                return false;
 
             case UPLOAD_ERR_NO_FILE:
                 $this->error(self::NO_FILE);
-                break;
+                return false;
 
             case UPLOAD_ERR_NO_TMP_DIR:
                 $this->error(self::NO_TMP_DIR);
-                break;
+                return false;
 
             case UPLOAD_ERR_CANT_WRITE:
                 $this->error(self::CANT_WRITE);
-                break;
+                return false;
 
             case UPLOAD_ERR_EXTENSION:
                 $this->error(self::EXTENSION);
-                break;
+                return false;
 
             default:
                 $this->error(self::UNKNOWN);
-                break;
+                return false;
+        }
+    }
+
+    /**
+     * @param  int $error UPLOAD_ERR_* constant
+     * @param  string $filename
+     * @param  string $uploadedFile Name of uploaded file (gen tmp_name)
+     * @return bool
+     */
+    private function validateUploadedFile($error, $filename, $uploadedFile)
+    {
+        $this->setValue($filename);
+
+        // Normal errors can be validated normally
+        if ($error !== UPLOAD_ERR_OK) {
+            return $this->validateFileFromErrorCode($error);
         }
 
-        if (count($this->getMessages()) > 0) {
+        // Did we get no name? Is the file missing?
+        if (empty($uploadedFile) || false === is_file($uploadedFile)) {
+            $this->error(self::FILE_NOT_FOUND);
+            return false;
+        }
+
+        // Do we have an invalid upload?
+        if (! is_uploaded_file($uploadedFile)) {
+            $this->error(self::ATTACK);
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * @return bool
+     */
+    private function validatePsr7UploadedFile(UploadedFileInterface $uploadedFile)
+    {
+        $this->setValue($uploadedFile);
+        return $this->validateFileFromErrorCode($uploadedFile->getError());
     }
 }

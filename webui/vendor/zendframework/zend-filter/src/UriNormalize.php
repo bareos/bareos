@@ -10,24 +10,24 @@
 namespace Zend\Filter;
 
 use Zend\Uri\Exception\ExceptionInterface as UriException;
-use Zend\Uri\UriFactory;
 use Zend\Uri\Uri;
+use Zend\Uri\UriFactory;
 
 class UriNormalize extends AbstractFilter
 {
     /**
      * The default scheme to use when parsing scheme-less URIs
      *
-     * @var string
+     * @var string|null
      */
-    protected $defaultScheme = null;
+    protected $defaultScheme;
 
     /**
      * Enforced scheme for scheme-less URIs. See setEnforcedScheme docs for info
      *
-     * @var string
+     * @var string|null
      */
-    protected $enforcedScheme = null;
+    protected $enforcedScheme;
 
     /**
      * Sets filter options
@@ -84,7 +84,7 @@ class UriNormalize extends AbstractFilter
      */
     public function filter($value)
     {
-        if (!is_scalar($value)) {
+        if (! is_scalar($value)) {
             return $value;
         }
         $value = (string) $value;
@@ -92,13 +92,13 @@ class UriNormalize extends AbstractFilter
         $defaultScheme = $this->defaultScheme ?: $this->enforcedScheme;
 
         // Reset default scheme if it is not a known scheme
-        if (!UriFactory::getRegisteredSchemeClass($defaultScheme)) {
+        if (! UriFactory::getRegisteredSchemeClass($defaultScheme)) {
             $defaultScheme = null;
         }
 
         try {
             $uri = UriFactory::factory($value, $defaultScheme);
-            if ($this->enforcedScheme && (!$uri->getScheme())) {
+            if ($this->enforcedScheme && ! $uri->getScheme()) {
                 $this->enforceScheme($uri);
             }
         } catch (UriException $ex) {
@@ -108,7 +108,7 @@ class UriNormalize extends AbstractFilter
 
         $uri->normalize();
 
-        if (!$uri->isValid()) {
+        if (! $uri->isValid()) {
             return $value;
         }
 
@@ -135,7 +135,7 @@ class UriNormalize extends AbstractFilter
         }
 
         // We have nothing to do if we have no host
-        if (!$host) {
+        if (! $host) {
             return;
         }
 

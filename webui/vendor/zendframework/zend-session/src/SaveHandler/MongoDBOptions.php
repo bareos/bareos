@@ -38,7 +38,7 @@ class MongoDBOptions extends AbstractOptions
      * @see http://php.net/manual/en/mongocollection.save.php
      * @var string
      */
-    protected $saveOptions = array('w' => 1);
+    protected $saveOptions = ['w' => 1];
 
     /**
      * Name field
@@ -68,6 +68,12 @@ class MongoDBOptions extends AbstractOptions
      */
     protected $modifiedField = 'modified';
 
+    /**
+     * Use expireAfterSeconds index
+     *
+     * @var bool
+     */
+    protected $useExpireAfterSecondsIndex = false;
 
     /**
      * {@inheritdoc}
@@ -77,8 +83,8 @@ class MongoDBOptions extends AbstractOptions
         parent::__construct($options);
 
         $mongoVersion = phpversion('mongo') ?: '0.0.0';
-        if ($this->saveOptions === array('w' => 1) && version_compare($mongoVersion, '1.3.0', '<')) {
-            $this->saveOptions = array('safe' => true);
+        if ($this->saveOptions === ['w' => 1] && version_compare($mongoVersion, '1.3.0', '<')) {
+            $this->saveOptions = ['safe' => true];
         }
     }
 
@@ -285,5 +291,24 @@ class MongoDBOptions extends AbstractOptions
     public function getModifiedField()
     {
         return $this->modifiedField;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function useExpireAfterSecondsIndex()
+    {
+        return $this->useExpireAfterSecondsIndex;
+    }
+
+    /**
+     * Enable expireAfterSeconds index.
+     *
+     * @see http://docs.mongodb.org/manual/tutorial/expire-data/
+     * @param boolean $useExpireAfterSecondsIndex
+     */
+    public function setUseExpireAfterSecondsIndex($useExpireAfterSecondsIndex)
+    {
+        $this->useExpireAfterSecondsIndex = (bool) $useExpireAfterSecondsIndex;
     }
 }

@@ -21,25 +21,27 @@ class StringLength extends AbstractValidator
     /**
      * @var array
      */
-    protected $messageTemplates = array(
+    protected $messageTemplates = [
         self::INVALID   => "Invalid type given. String expected",
         self::TOO_SHORT => "The input is less than %min% characters long",
         self::TOO_LONG  => "The input is more than %max% characters long",
-    );
+    ];
 
     /**
      * @var array
      */
-    protected $messageVariables = array(
-        'min' => array('options' => 'min'),
-        'max' => array('options' => 'max'),
-    );
+    protected $messageVariables = [
+        'min'    => ['options' => 'min'],
+        'max'    => ['options' => 'max'],
+        'length' => ['options' => 'length']
+    ];
 
-    protected $options = array(
+    protected $options = [
         'min'      => 0,       // Minimum length
         'max'      => null,    // Maximum length, null if there is no length limitation
         'encoding' => 'UTF-8', // Encoding to use
-    );
+        'length'   => 0        // Actual length
+    ];
 
     protected $stringWrapper;
 
@@ -48,16 +50,16 @@ class StringLength extends AbstractValidator
      *
      * @param  int|array|\Traversable $options
      */
-    public function __construct($options = array())
+    public function __construct($options = [])
     {
-        if (!is_array($options)) {
+        if (! is_array($options)) {
             $options     = func_get_args();
             $temp['min'] = array_shift($options);
-            if (!empty($options)) {
+            if (! empty($options)) {
                 $temp['max'] = array_shift($options);
             }
 
-            if (!empty($options)) {
+            if (! empty($options)) {
                 $temp['encoding'] = array_shift($options);
             }
 
@@ -135,7 +137,7 @@ class StringLength extends AbstractValidator
      */
     public function getStringWrapper()
     {
-        if (!$this->stringWrapper) {
+        if (! $this->stringWrapper) {
             $this->stringWrapper = StringUtils::getWrapper($this->getEncoding());
         }
         return $this->stringWrapper;
@@ -178,6 +180,28 @@ class StringLength extends AbstractValidator
     }
 
     /**
+     * Returns the length option
+     *
+     * @return int
+     */
+    private function getLength()
+    {
+        return $this->options['length'];
+    }
+
+    /**
+     * Sets the length option
+     *
+     * @param  int $length
+     * @return StringLength Provides a fluent interface
+     */
+    private function setLength($length)
+    {
+        $this->options['length'] = (int) $length;
+        return $this;
+    }
+
+    /**
      * Returns true if and only if the string length of $value is at least the min option and
      * no greater than the max option (when the max option is not null).
      *
@@ -186,23 +210,23 @@ class StringLength extends AbstractValidator
      */
     public function isValid($value)
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             $this->error(self::INVALID);
             return false;
         }
 
         $this->setValue($value);
 
-        $length = $this->getStringWrapper()->strlen($value);
-        if ($length < $this->getMin()) {
+        $this->setLength($this->getStringWrapper()->strlen($value));
+        if ($this->getLength() < $this->getMin()) {
             $this->error(self::TOO_SHORT);
         }
 
-        if (null !== $this->getMax() && $this->getMax() < $length) {
+        if (null !== $this->getMax() && $this->getMax() < $this->getLength()) {
             $this->error(self::TOO_LONG);
         }
 
-        if (count($this->getMessages())) {
+        if ($this->getMessages()) {
             return false;
         }
 

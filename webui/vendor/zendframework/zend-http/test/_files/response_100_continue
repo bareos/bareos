@@ -1,0 +1,17 @@
+HTTP/1.1 100 Continue
+
+HTTP/1.1 200 OK
+Date: Tue, 10 Oct 2017 09:02:53 GMT
+Server: Apache
+X-SLR-RETRY-API: SetExpressCheckout
+X-PAYPAL-OPERATION-NAME: SetExpressCheckout
+X-PAYPAL-API-RC:
+Connection: close
+HTTP_X_PP_AZ_LOCATOR: sandbox.slc
+Paypal-Debug-Id: e8abe44ddc3bd
+Set-Cookie: X-PP-SILOVER=name%3DSANDBOX3.API.1%26silo_version%3D1880%26app%3Dappdispatcher_apit%26TIME%3D3196902489%26HTTP_X_PP_AZ_LOCATOR%3Dsandbox.slc; Expires=Tue, 10 Oct 2017 09:32:55 GMT; domain=.paypal.com; path=/; Secure; HttpOnly
+Set-Cookie: X-PP-SILOVER=; Expires=Thu, 01 Jan 1970 00:00:01 GMT
+Content-Length: 137
+Content-Type: text/plain; charset=utf-8
+
+TOKEN=EC%XXXXXXXXXXXXX&TIMESTAMP=2017%2d10%2d10T09%3a02%3a55Z&CORRELATIONID=XXXXXXXXXX&ACK=Success&VERSION=65%2e1&BUILD=XXXXXXXXXX

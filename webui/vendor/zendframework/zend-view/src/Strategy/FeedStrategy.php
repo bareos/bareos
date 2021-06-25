@@ -38,13 +38,12 @@ class FeedStrategy extends AbstractListenerAggregate
      */
     public function attach(EventManagerInterface $events, $priority = 1)
     {
-        $this->listeners[] = $events->attach(ViewEvent::EVENT_RENDERER, array($this, 'selectRenderer'), $priority);
-        $this->listeners[] = $events->attach(ViewEvent::EVENT_RESPONSE, array($this, 'injectResponse'), $priority);
+        $this->listeners[] = $events->attach(ViewEvent::EVENT_RENDERER, [$this, 'selectRenderer'], $priority);
+        $this->listeners[] = $events->attach(ViewEvent::EVENT_RESPONSE, [$this, 'injectResponse'], $priority);
     }
 
     /**
-     * Detect if we should use the FeedRenderer based on model type and/or
-     * Accept header
+     * Detect if we should use the FeedRenderer based on model type
      *
      * @param  ViewEvent $e
      * @return null|FeedRenderer
@@ -53,7 +52,7 @@ class FeedStrategy extends AbstractListenerAggregate
     {
         $model = $e->getModel();
 
-        if (!$model instanceof Model\FeedModel) {
+        if (! $model instanceof Model\FeedModel) {
             // no FeedModel present; do nothing
             return;
         }
@@ -77,7 +76,7 @@ class FeedStrategy extends AbstractListenerAggregate
         }
 
         $result   = $e->getResult();
-        if (!is_string($result) && !$result instanceof Feed) {
+        if (! is_string($result) && ! $result instanceof Feed) {
             // We don't have a string, and thus, no feed
             return;
         }

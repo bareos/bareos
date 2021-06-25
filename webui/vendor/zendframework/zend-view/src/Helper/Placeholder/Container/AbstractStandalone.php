@@ -47,7 +47,7 @@ abstract class AbstractStandalone extends AbstractHelper implements
     /**
      * @var Escaper[]
      */
-    protected $escapers = array();
+    protected $escapers = [];
 
     /**
      * Constructor
@@ -72,7 +72,7 @@ abstract class AbstractStandalone extends AbstractHelper implements
     {
         $container = $this->getContainer();
         if (method_exists($container, $method)) {
-            $return = call_user_func_array(array($container, $method), $args);
+            $return = call_user_func_array([$container, $method], $args);
             if ($return === $container) {
                 // If the container is returned, we really want the current object
                 return $this;
@@ -166,14 +166,18 @@ abstract class AbstractStandalone extends AbstractHelper implements
      */
     protected function escape($string)
     {
-        if ($this->getView() instanceof RendererInterface
-            && method_exists($this->getView(), 'getEncoding')
-        ) {
-            $escaper = $this->getView()->plugin('escapeHtml');
-            return $escaper((string) $string);
-        }
-
         return $this->getEscaper()->escapeHtml((string) $string);
+    }
+
+    /**
+     * Escape an attribute value
+     *
+     * @param  string $string
+     * @return string
+     */
+    protected function escapeAttribute($string)
+    {
+        return $this->getEscaper()->escapeHtmlAttr((string) $string);
     }
 
     /**
@@ -217,7 +221,7 @@ abstract class AbstractStandalone extends AbstractHelper implements
      */
     public function getContainer()
     {
-        if (!$this->container instanceof AbstractContainer) {
+        if (! $this->container instanceof AbstractContainer) {
             $this->container = new $this->containerClass();
         }
         return $this->container;
@@ -248,7 +252,7 @@ abstract class AbstractStandalone extends AbstractHelper implements
      */
     public function setContainerClass($name)
     {
-        if (!class_exists($name)) {
+        if (! class_exists($name)) {
             throw new Exception\DomainException(
                 sprintf(
                     '%s expects a valid container class name; received "%s", which did not resolve',
@@ -258,7 +262,7 @@ abstract class AbstractStandalone extends AbstractHelper implements
             );
         }
 
-        if (!in_array('Zend\View\Helper\Placeholder\Container\AbstractContainer', class_parents($name))) {
+        if (! in_array('Zend\View\Helper\Placeholder\Container\AbstractContainer', class_parents($name))) {
             throw new Exception\InvalidArgumentException('Invalid Container class specified');
         }
 
@@ -301,7 +305,7 @@ abstract class AbstractStandalone extends AbstractHelper implements
     public function getEscaper($enc = 'UTF-8')
     {
         $enc = strtolower($enc);
-        if (!isset($this->escapers[$enc])) {
+        if (! isset($this->escapers[$enc])) {
             $this->setEscaper(new Escaper($enc));
         }
 

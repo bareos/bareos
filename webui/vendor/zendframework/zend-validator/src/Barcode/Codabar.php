@@ -29,13 +29,13 @@ class Codabar extends AbstractAdapter
     {
         if (strpbrk($value, 'ABCD')) {
             $first = $value[0];
-            if (!strpbrk($first, 'ABCD')) {
+            if (! strpbrk($first, 'ABCD')) {
                 // Missing start char
                 return false;
             }
 
             $last = substr($value, -1, 1);
-            if (!strpbrk($last, 'ABCD')) {
+            if (! strpbrk($last, 'ABCD')) {
                 // Missing stop char
                 return false;
             }
@@ -43,13 +43,13 @@ class Codabar extends AbstractAdapter
             $value = substr($value, 1, -1);
         } elseif (strpbrk($value, 'TN*E')) {
             $first = $value[0];
-            if (!strpbrk($first, 'TN*E')) {
+            if (! strpbrk($first, 'TN*E')) {
                 // Missing start char
                 return false;
             }
 
             $last = substr($value, -1, 1);
-            if (!strpbrk($last, 'TN*E')) {
+            if (! strpbrk($last, 'TN*E')) {
                 // Missing stop char
                 return false;
             }

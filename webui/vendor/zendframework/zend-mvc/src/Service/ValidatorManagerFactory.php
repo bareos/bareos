@@ -9,7 +9,9 @@
 
 namespace Zend\Mvc\Service;
 
+use Zend\Validator\ValidatorPluginManager;
+
 class ValidatorManagerFactory extends AbstractPluginManagerFactory
 {
-    const PLUGIN_MANAGER_CLASS = 'Zend\Validator\ValidatorPluginManager';
+    const PLUGIN_MANAGER_CLASS = ValidatorPluginManager::class;
 }

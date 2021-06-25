@@ -27,14 +27,14 @@ abstract class AbstractContainer implements Countable, RecursiveIterator
      *
      * @var array
      */
-    protected $pages = array();
+    protected $pages = [];
 
     /**
      * An index that contains the order in which to iterate pages
      *
      * @var array
      */
-    protected $index = array();
+    protected $index = [];
 
     /**
      * Whether index is dirty and needs to be re-arranged
@@ -52,11 +52,11 @@ abstract class AbstractContainer implements Countable, RecursiveIterator
      */
     protected function sort()
     {
-        if (!$this->dirtyIndex) {
+        if (! $this->dirtyIndex) {
             return;
         }
 
-        $newIndex = array();
+        $newIndex = [];
         $index    = 0;
 
         foreach ($this->pages as $hash => $page) {
@@ -104,8 +104,8 @@ abstract class AbstractContainer implements Countable, RecursiveIterator
             );
         }
 
-        if (!$page instanceof Page\AbstractPage) {
-            if (!is_array($page) && !$page instanceof Traversable) {
+        if (! $page instanceof Page\AbstractPage) {
+            if (! is_array($page) && ! $page instanceof Traversable) {
                 throw new Exception\InvalidArgumentException(
                     'Invalid argument: $page must be an instance of '
                     . 'Zend\Navigation\Page\AbstractPage or Traversable, or an array'
@@ -142,7 +142,7 @@ abstract class AbstractContainer implements Countable, RecursiveIterator
      */
     public function addPages($pages)
     {
-        if (!is_array($pages) && !$pages instanceof Traversable) {
+        if (! is_array($pages) && ! $pages instanceof Traversable) {
             throw new Exception\InvalidArgumentException(
                 'Invalid argument: $pages must be an array, an '
                 . 'instance of Traversable or an instance of '
@@ -204,7 +204,7 @@ abstract class AbstractContainer implements Countable, RecursiveIterator
             $hash = $page->hashCode();
         } elseif (is_int($page)) {
             $this->sort();
-            if (!$hash = array_search($page, $this->index)) {
+            if (! $hash = array_search($page, $this->index)) {
                 return false;
             }
         } else {
@@ -238,8 +238,8 @@ abstract class AbstractContainer implements Countable, RecursiveIterator
      */
     public function removePages()
     {
-        $this->pages = array();
-        $this->index = array();
+        $this->pages = [];
+        $this->index = [];
         return $this;
     }
 
@@ -283,7 +283,7 @@ abstract class AbstractContainer implements Countable, RecursiveIterator
             // no visible pages found
             return false;
         }
-        return count($this->index) > 0;
+        return $this->index ? true : false;
     }
 
     /**
@@ -316,7 +316,7 @@ abstract class AbstractContainer implements Countable, RecursiveIterator
      */
     public function findAllBy($property, $value)
     {
-        $found = array();
+        $found = [];
 
         $iterator = new RecursiveIteratorIterator($this, RecursiveIteratorIterator::SELF_FIRST);
 
@@ -371,7 +371,7 @@ abstract class AbstractContainer implements Countable, RecursiveIterator
         ErrorHandler::start(E_WARNING);
         $result = preg_match('/(find(?:One|All)?By)(.+)/', $method, $match);
         $error  = ErrorHandler::stop();
-        if (!$result) {
+        if (! $result) {
             throw new Exception\BadMethodCallException(sprintf(
                 'Bad method call: Unknown method %s::%s',
                 get_class($this),
@@ -389,7 +389,7 @@ abstract class AbstractContainer implements Countable, RecursiveIterator
     public function toArray()
     {
         $this->sort();
-        $pages   = array();
+        $pages   = [];
         $indexes = array_keys($this->index);
         foreach ($indexes as $hash) {
             $pages[] = $this->pages[$hash]->toArray();
@@ -413,7 +413,7 @@ abstract class AbstractContainer implements Countable, RecursiveIterator
 
         current($this->index);
         $hash = key($this->index);
-        if (!isset($this->pages[$hash])) {
+        if (! isset($this->pages[$hash])) {
             throw new Exception\OutOfBoundsException(
                 'Corruption detected in container; '
                 . 'invalid key found in internal iterator'

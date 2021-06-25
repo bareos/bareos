@@ -22,6 +22,15 @@ class ExcludeMimeType extends MimeType
     const NOT_READABLE = 'fileExcludeMimeTypeNotReadable';
 
     /**
+     * @var array Error message templates
+     */
+    protected $messageTemplates = [
+        self::FALSE_TYPE   => "File has an incorrect mimetype of '%type%'",
+        self::NOT_DETECTED => "The mimetype could not be detected from the file",
+        self::NOT_READABLE => "File is not readable or does not exist",
+    ];
+
+    /**
      * Returns true if the mimetype of the file does not matche the given ones. Also parts
      * of mimetypes can be checked. If you give for example "image" all image
      * mime types will not be accepted like "image/gif", "image/jpeg" and so on.
@@ -38,7 +47,7 @@ class ExcludeMimeType extends MimeType
             $filetype = $file['type'];
             $file     = $file['tmp_name'];
         } elseif (is_array($value)) {
-            if (!isset($value['tmp_name']) || !isset($value['name']) || !isset($value['type'])) {
+            if (! isset($value['tmp_name']) || ! isset($value['name']) || ! isset($value['type'])) {
                 throw new Exception\InvalidArgumentException(
                     'Value array must be in $_FILES format'
                 );
@@ -54,14 +63,14 @@ class ExcludeMimeType extends MimeType
         $this->setValue($filename);
 
         // Is file readable ?
-        if (empty($file) || false === stream_resolve_include_path($file)) {
+        if (empty($file) || false === is_readable($file)) {
             $this->error(self::NOT_READABLE);
             return false;
         }
 
         $mimefile = $this->getMagicFile();
         if (class_exists('finfo', false)) {
-            if (!$this->isMagicFileDisabled() && (!empty($mimefile) && empty($this->finfo))) {
+            if (! $this->isMagicFileDisabled() && (! empty($mimefile) && empty($this->finfo))) {
                 $this->finfo = finfo_open(FILEINFO_MIME_TYPE, $mimefile);
             }
 
@@ -70,7 +79,7 @@ class ExcludeMimeType extends MimeType
             }
 
             $this->type = null;
-            if (!empty($this->finfo)) {
+            if (! empty($this->finfo)) {
                 $this->type = finfo_file($this->finfo, $file);
             }
         }

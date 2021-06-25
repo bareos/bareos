@@ -9,6 +9,7 @@
 
 namespace Zend\View\Helper;
 
+use Traversable;
 use Zend\View\Exception;
 use Zend\View\Model\ModelInterface;
 
@@ -45,15 +46,15 @@ class Partial extends AbstractHelper
         }
 
         if (is_scalar($values)) {
-            $values = array();
+            $values = [];
         } elseif ($values instanceof ModelInterface) {
             $values = $values->getVariables();
         } elseif (is_object($values)) {
             if (null !== ($objectKey = $this->getObjectKey())) {
-                $values = array($objectKey => $values);
+                $values = [$objectKey => $values];
             } elseif (method_exists($values, 'toArray')) {
                 $values = $values->toArray();
-            } else {
+            } elseif (! $values instanceof Traversable) {
                 $values = get_object_vars($values);
             }
         }

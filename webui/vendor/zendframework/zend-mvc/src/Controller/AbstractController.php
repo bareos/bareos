@@ -17,8 +17,8 @@ use Zend\Http\PhpEnvironment\Response as HttpResponse;
 use Zend\Http\Request as HttpRequest;
 use Zend\Mvc\InjectApplicationEventInterface;
 use Zend\Mvc\MvcEvent;
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
+use Zend\ServiceManager\ServiceManager;
 use Zend\Stdlib\DispatchableInterface as Dispatchable;
 use Zend\Stdlib\RequestInterface as Request;
 use Zend\Stdlib\ResponseInterface as Response;
@@ -41,13 +41,12 @@ use Zend\Stdlib\ResponseInterface as Response;
  * @method \Zend\Mvc\Controller\Plugin\Redirect redirect()
  * @method \Zend\Mvc\Controller\Plugin\Url url()
  * @method \Zend\View\Model\ConsoleModel createConsoleNotFoundModel()
- * @method \Zend\View\Model\ViewModel createHttpNotFoundModel()
+ * @method \Zend\View\Model\ViewModel createHttpNotFoundModel(Response $response)
  */
 abstract class AbstractController implements
     Dispatchable,
     EventManagerAwareInterface,
-    InjectApplicationEventInterface,
-    ServiceLocatorAwareInterface
+    InjectApplicationEventInterface
 {
     /**
      * @var PluginManager
@@ -65,6 +64,11 @@ abstract class AbstractController implements
     protected $response;
 
     /**
+     * @var ServiceLocatorInterface
+     */
+    protected $serviceLocator;
+
+    /**
      * @var Event
      */
     protected $event;
@@ -73,11 +77,6 @@ abstract class AbstractController implements
      * @var EventManagerInterface
      */
     protected $events;
-
-    /**
-     * @var ServiceLocatorInterface
-     */
-    protected $serviceLocator;
 
     /**
      * @var null|string|string[]
@@ -109,13 +108,14 @@ abstract class AbstractController implements
         $this->response = $response;
 
         $e = $this->getEvent();
-        $e->setRequest($request)
-          ->setResponse($response)
-          ->setTarget($this);
+        $e->setName(MvcEvent::EVENT_DISPATCH);
+        $e->setRequest($request);
+        $e->setResponse($response);
+        $e->setTarget($this);
 
-        $result = $this->getEventManager()->trigger(MvcEvent::EVENT_DISPATCH, $e, function ($test) {
+        $result = $this->getEventManager()->triggerEventUntil(function ($test) {
             return ($test instanceof Response);
-        });
+        }, $e);
 
         if ($result->stopped()) {
             return $result->last();
@@ -164,11 +164,11 @@ abstract class AbstractController implements
 
         $nsPos = strpos($className, '\\') ?: 0;
         $events->setIdentifiers(array_merge(
-            array(
+            [
                 __CLASS__,
                 $className,
                 substr($className, 0, $nsPos)
-            ),
+            ],
             array_values(class_implements($className)),
             (array) $this->eventIdentifier
         ));
@@ -233,7 +233,7 @@ abstract class AbstractController implements
     /**
      * Set serviceManager instance
      *
-     * @param  ServiceLocatorInterface $serviceLocator
+     * @param ServiceLocatorInterface $serviceLocator
      * @return void
      */
     public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
@@ -248,6 +248,15 @@ abstract class AbstractController implements
      */
     public function getServiceLocator()
     {
+        trigger_error(sprintf(
+            'You are retrieving the service locator from within the class %s. Please be aware that '
+            . 'ServiceLocatorAwareInterface is deprecated and will be removed in version 3.0, along '
+            . 'with the ServiceLocatorAwareInitializer. You will need to update your class to accept '
+            . 'all dependencies at creation, either via constructor arguments or setters, and use '
+            . 'a factory to perform the injections.',
+            get_class($this)
+        ), E_USER_DEPRECATED);
+
         return $this->serviceLocator;
     }
 
@@ -259,7 +268,7 @@ abstract class AbstractController implements
     public function getPluginManager()
     {
         if (!$this->plugins) {
-            $this->setPluginManager(new PluginManager());
+            $this->setPluginManager(new PluginManager(new ServiceManager()));
         }
 
         $this->plugins->setController($this);
@@ -320,7 +329,7 @@ abstract class AbstractController implements
     protected function attachDefaultListeners()
     {
         $events = $this->getEventManager();
-        $events->attach(MvcEvent::EVENT_DISPATCH, array($this, 'onDispatch'));
+        $events->attach(MvcEvent::EVENT_DISPATCH, [$this, 'onDispatch']);
     }
 
     /**
@@ -331,7 +340,7 @@ abstract class AbstractController implements
      */
     public static function getMethodFromAction($action)
     {
-        $method  = str_replace(array('.', '-', '_'), ' ', $action);
+        $method  = str_replace(['.', '-', '_'], ' ', $action);
         $method  = ucwords($method);
         $method  = str_replace(' ', '', $method);
         $method  = lcfirst($method);
