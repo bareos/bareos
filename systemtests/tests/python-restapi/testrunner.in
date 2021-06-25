@@ -23,7 +23,6 @@ start_test
 
 start_bareos
 
-#run_python_unittests "$@"
 function endpoint_check {
 # $1: method
 # $2: endpoint-url

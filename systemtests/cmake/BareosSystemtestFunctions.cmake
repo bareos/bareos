@@ -433,6 +433,7 @@ macro(prepare_test_python)
         "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"
         "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules:"
         "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules:"
+        "${CMAKE_SOURCE_DIR}/systemtests/python-modules:"
         "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
     )
   endif()
@@ -581,8 +582,17 @@ function(add_systemtest_from_directory tests_basedir prefix test_subdir)
 endfunction()
 
 macro(create_systemtest prefix test_subdir)
-  # Parameter: * prefix STRING * test_subdir STRING * DISABLED option * COMMENT
-  # "..." (optional) macro, not function, to be able to update BASEPORT.
+  # cmake-format: off
+  #
+  # Parameter:
+  #   * prefix STRING
+  #   * test_subdir STRING
+  #   * DISABLED option
+  #   * COMMENT "..." (optional)
+  #
+  # Made as a macro, not as a function to be able to update BASEPORT.
+  #
+  # cmake-format: on
   cmake_parse_arguments(ARG "DISABLED" "COMMENT" "" ${ARGN})
   set(test_basename "${prefix}${test_subdir}")
   if(ARG_DISABLED)
