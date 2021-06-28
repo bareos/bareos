@@ -23,11 +23,8 @@ JobName=backup-bareos-fd
 "${rscripts}"/setup
 
 shutdown_mysql_server(){
-if [ -z "${MYSQL_INSTALL_DB:-}" ] ; then
-  [ -f "mysql/mysqld.pid" ] && kill "$(cat mysql/mysqld.pid)" || :
-else
-  [ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
-fi
+[ -f "mysql/mysqld.pid" ] && kill "$(cat mysql/mysqld.pid)" || :
+[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
 }
 
 
