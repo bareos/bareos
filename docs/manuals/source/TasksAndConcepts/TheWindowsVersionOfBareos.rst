@@ -141,7 +141,7 @@ Commandline Switches
    install the Bareos Storage Daemon. :sinceVersion:`14.2.1: Windows Installation: INSTALLSTORAGE`
 
 /WRITELOGS
-   makes also non-debug installer write a log file. :sinceVersion:`14.2.1: Windows Installation: WRITELOGS`
+   makes the installer write a log file. :sinceVersion:`14.2.1: Windows Installation: WRITELOGS`
 
 /D=:file:`C:\specify\installation\directory`
    (Important: It has to be the last option!)

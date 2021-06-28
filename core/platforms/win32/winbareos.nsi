@@ -1,7 +1,7 @@
 ;
 ;   BAREOS - Backup Archiving REcovery Open Sourced
 ;
-;   Copyright (C) 2012-2020 Bareos GmbH & Co. KG
+;   Copyright (C) 2012-2021 Bareos GmbH & Co. KG
 ;
 ;   This program is Free Software; you can redistribute it and/or
 ;   modify it under the terms of version three of the GNU Affero General Public
@@ -531,17 +531,6 @@ Section -SetPasswords
 SectionEnd
 
 
-!If ${WIN_DEBUG} == yes
-# install sourcecode if WIN_DEBUG is yes
-Section Sourcecode SEC_SOURCE
-   SectionIn 1 2 3 4
-   SetShellVarContext all
-   SetOutPath "C:\"
-   SetOverwrite ifnewer
-   File /r "bareos-${VERSION}"
-SectionEnd
-!Endif
-
 SubSection "File Daemon (Client)" SUBSEC_FD
 
 Section "File Daemon and base libs" SEC_FD
@@ -1048,6 +1037,12 @@ SectionEnd
 
 SubSectionEnd # Consoles Subsection
 
+Section /o Sourcecode SEC_SOURCE
+   SetShellVarContext all
+   SetOutPath "C:\"
+   SetOverwrite ifnewer
+   File /r "bareos-${VERSION}"
+SectionEnd
 
 
 ; Section descriptions
@@ -1090,9 +1085,7 @@ ${EndIf}
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the Tray Icon to monitor the Bareos File Daemon"
 
   ; Sourcecode
-!If ${WIN_DEBUG} == yes
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SOURCE} "Sourcecode for debugging will be installed into C:\bareos-${VERSION}"
-!Endif
 
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
@@ -1353,10 +1346,6 @@ Function .onInit
   IfErrors 0 +2         # error is set if NOT found
     StrCpy $WriteLogs "no"
   ClearErrors
-
-!If ${WIN_DEBUG} == yes
-    StrCpy $WriteLogs "yes"
-!EndIf
 
   StrCmp $WriteLogs "yes" 0 +3
      LogSet on # enable nsis-own logging to $INSTDIR\install.log, needs INSTDIR defined
