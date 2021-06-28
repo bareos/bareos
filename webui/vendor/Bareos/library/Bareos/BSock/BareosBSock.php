@@ -217,7 +217,7 @@ class BareosBSock implements BareosBSockInterface
       $str_length += 4;
       while($this->socket && $str_length > 0) {
          $send = fwrite($this->socket, $msg, $str_length);
-         if($send === 0) {
+         if($send === 0 || $send === false) {
             fclose($this->socket);
             $this->socket = null;
             return false;
