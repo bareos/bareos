@@ -19,6 +19,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1205]: PHP 7.3 issue with compact() in HeadLink.php [PR #833] (backport of [PR #829])
 - reorder acquire on migrate/copy to avoid possible deadlock [PR #828]
 - [Issue #1324]: Infinite loop when trying to log in with invalid account [PR #864] (backport of [PR #840])
+- [Issue #579]: Unable to connect to the director from webui via ipv6 [PR #871] (backport of [PR #868])
 
 ### Added
 - added choice for the drive number in the truncate command [PR #837]

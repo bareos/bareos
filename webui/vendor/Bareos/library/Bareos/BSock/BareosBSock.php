@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2014-2019 Bareos GmbH & Co. KG
+ * @copyright Copyright (c) 2014-2021 Bareos GmbH & Co. KG
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -467,13 +467,10 @@ class BareosBSock implements BareosBSockInterface
       $port = $this->config['port'];
       $remote = "tcp://" . $this->config['host'] . ":" . $port;
 
-      // set default stream context options
-      $opts = array(
-         'socket' => array(
-            'bindto' => '0:0',
-         ),
-      );
+      // set stream context options
+      $opts = array();
 
+      // create stream context
       $context = stream_context_create($opts);
 
       try {
