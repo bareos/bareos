@@ -97,6 +97,15 @@ OS:
            - python-bareos
 
   Fedora:
+    "34":
+      TYPE: rpm
+      IMAGE: fedora34
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - python-bareos
     "33":
       TYPE: rpm
       IMAGE: fedora33
