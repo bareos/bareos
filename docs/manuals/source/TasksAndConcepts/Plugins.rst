@@ -1849,19 +1849,22 @@ Prerequisites
 ^^^^^^^^^^^^^
 
 This plugin is a Bareos Python plugin.
-It requires |postgresql| >= 9 and the Python module **psycopg2** to be installed.
-Best use Python >= 3.
+It requires |postgresql| >= 9 and the Python module **pg8000** to be installed.
+
+Since :sinceVersion:`21: PostgreSQL Plugin` the plugin was changed to the Python module **pg8000** instead of **psycopg2** and using Python >= 3 is mandatory. The minimum required version of **pg8000** is 1.16. If a distribution provided package exists and is the same or newer version, it can be used. Otherwise it must be installed using the command :command:`pip3 install pg8000`.
+
+
 
 The plugin must be installed on the same host where the |postgresql| database runs.
 
 **You have to enable PostgreSQL WAL-Archiving** - the process and the plugin depend on it.
 
 As a minimum this requires that you create an WAL archive directory
-and matching settings in your |postgresql| configuration file **postgres.conf**.
+and matching settings in your |postgresql| configuration file **postgresql.conf**.
 In our examples we assume the WAL archive directory as :file:`/var/lib/pgsql/wal_archive/`.
 
 .. code-block:: cfg
-   :caption: postgres.conf
+   :caption: postgresql.conf
 
    ...
    # wal_level default is replica
@@ -1943,6 +1946,8 @@ ignoreSubdirs
 switchWal
    If set to *true* (default), the plugin will let Postgres write a new wal file, if the current Log Sequence Number (LSN) is greater than the LSN from the previous job to make sure changes will go into the backup. Default: *true*
 
+switchWalTimeout
+   Timeout in seconds to wait for WAL archiving after WAL switch, default 60 seconds.
 
 
 Restore
@@ -1958,10 +1963,10 @@ This example describes how to restore to the latest possible consistent point in
 PostgreSQL >= 12
 ''''''''''''''''
 
-Beginning with |postgresql| >= 12 the configuration must be done in your |postgresql| configuration file :file:`postgres.conf`:
+Beginning with |postgresql| >= 12 the configuration must be done in your |postgresql| configuration file :file:`postgresql.conf`:
 
 .. code-block:: cfg
-   :caption: postgres.conf
+   :caption: postgresql.conf
 
    ...
    restore_command = 'cp /var/lib/pgsql/wal_archive/%f %p'

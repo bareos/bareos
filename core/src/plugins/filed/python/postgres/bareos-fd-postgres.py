@@ -44,18 +44,18 @@ def load_bareos_plugin(plugindef):
     This function is called by the Bareos-FD to load the plugin
     We use it to instantiate the plugin class
     """
-    if version_info.major >= 3 and version_info.minor >= 8:
-        bareosfd.JobMessage(
-            M_FATAL,
-            "Need Python version < 3.8 (current version: {}.{}.{})\n".format(
-                version_info.major, version_info.minor, version_info.micro
-            ),
-        )
-        return bRC_Error
+    # if version_info.major >= 3 and version_info.minor >= 8:
+    #     bareosfd.JobMessage(
+    #         M_FATAL,
+    #         "Need Python version < 3.8 (current version: {}.{}.{})\n".format(
+    #             version_info.major, version_info.minor, version_info.micro
+    #         ),
+    #     )
+    #     return bRC_Error
 
     # Check for needed python modules
     try:
-        import psycopg2
+        import pg8000
     except Exception as e:
         bareosfd.JobMessage(
             M_FATAL,
