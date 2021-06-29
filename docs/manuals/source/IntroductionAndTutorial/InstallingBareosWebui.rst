@@ -262,6 +262,7 @@ The configuration file :file:`/etc/bareos-webui/directors.ini` should look simil
    enabled = "yes"
 
    ; Fill in the IP-Address or FQDN of you director.
+   ; E.g. alice.example.com, 127.0.0.1 or [::1]
    diraddress = "localhost"
 
    ; Default value is 9101
