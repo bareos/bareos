@@ -44,13 +44,13 @@ class BareosDirPluginBaseclass(object):
         bareosdir.RegisterEvents(events)
 
         # get some static Bareos values
-        self.jobName = bareosdir.GetValue(brDirVariable["bDirVarJobName"])
-        self.jobLevel = chr(bareosdir.GetValue(brDirVariable["bDirVarLevel"]))
-        self.jobType = bareosdir.GetValue(brDirVariable["bDirVarType"])
-        self.jobId = int(bareosdir.GetValue(brDirVariable["bDirVarJobId"]))
-        self.jobClient = bareosdir.GetValue(brDirVariable["bDirVarClient"])
-        self.jobStatus = bareosdir.GetValue(brDirVariable["bDirVarJobStatus"])
-        self.Priority = bareosdir.GetValue(brDirVariable["bDirVarPriority"])
+        self.jobName = bareosdir.GetValue(bDirVarJobName)
+        self.jobLevel = chr(bareosdir.GetValue(bDirVarLevel))
+        self.jobType = bareosdir.GetValue(bDirVarType)
+        self.jobId = int(bareosdir.GetValue(bDirVarJobId))
+        self.jobClient = bareosdir.GetValue(bDirVarClient)
+        self.jobStatus = bareosdir.GetValue(bDirVarJobStatus)
+        self.Priority = bareosdir.GetValue(bDirVarPriority)
 
         bareosdir.DebugMessage(
             100,
@@ -105,7 +105,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
         """
         if event == bDirEventJobInit:
             self.jobInitTime = time.time()
-            self.jobStatus = chr(bareosdir.GetValue(brDirVariable["bDirVarJobStatus"]))
+            self.jobStatus = chr(bareosdir.GetValue(bDirVarJobStatus))
             bareosdir.DebugMessage(
                 100,
                 "bDirEventJobInit event triggered at Unix time %s\n"
@@ -114,7 +114,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
 
         elif event == bDirEventJobStart:
             self.jobStartTime = time.time()
-            self.jobStatus = chr(bareosdir.GetValue(brDirVariable["bDirVarJobStatus"]))
+            self.jobStatus = chr(bareosdir.GetValue(bDirVarJobStatus))
             bareosdir.DebugMessage(
                 100,
                 "bDirEventJobStart event triggered at Unix time %s\n"
@@ -136,15 +136,15 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
                 100,
                 "bDirEventJobEnd event triggered at Unix time %s\n" % (self.jobEndTime),
             )
-            self.jobLevel = chr(bareosdir.GetValue(brDirVariable["bDirVarLevel"]))
-            self.jobStatus = chr(bareosdir.GetValue(brDirVariable["bDirVarJobStatus"]))
-            self.jobErrors = int(bareosdir.GetValue(brDirVariable["bDirVarJobErrors"]))
-            self.jobBytes = int(bareosdir.GetValue(brDirVariable["bDirVarJobBytes"]))
-            self.jobFiles = int(bareosdir.GetValue(brDirVariable["bDirVarJobFiles"]))
-            self.jobNumVols = int(bareosdir.GetValue(brDirVariable["bDirVarNumVols"]))
-            self.jobPool = bareosdir.GetValue(brDirVariable["bDirVarPool"])
-            self.jobStorage = bareosdir.GetValue(brDirVariable["bDirVarStorage"])
-            self.jobMediaType = bareosdir.GetValue(brDirVariable["bDirVarMediaType"])
+            self.jobLevel = chr(bareosdir.GetValue(bDirVarLevel))
+            self.jobStatus = chr(bareosdir.GetValue(bDirVarJobStatus))
+            self.jobErrors = int(bareosdir.GetValue(bDirVarJobErrors))
+            self.jobBytes = int(bareosdir.GetValue(bDirVarJobBytes))
+            self.jobFiles = int(bareosdir.GetValue(bDirVarJobFiles))
+            self.jobNumVols = int(bareosdir.GetValue(bDirVarNumVols))
+            self.jobPool = bareosdir.GetValue(bDirVarPool)
+            self.jobStorage = bareosdir.GetValue(bDirVarStorage)
+            self.jobMediaType = bareosdir.GetValue(bDirVarMediaType)
 
             self.jobTotalTime = self.jobEndTime - self.jobInitTime
             self.jobRunningTime = self.jobEndTime - self.jobRunTime
