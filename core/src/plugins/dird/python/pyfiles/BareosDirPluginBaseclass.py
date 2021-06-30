@@ -37,10 +37,10 @@ class BareosDirPluginBaseclass(object):
         bareosdir.DebugMessage(100, "Constructor called in module %s\n" % (__name__))
         events = []
 
-        events.append(bDirEventType["bDirEventJobStart"])
-        events.append(bDirEventType["bDirEventJobEnd"])
-        events.append(bDirEventType["bDirEventJobInit"])
-        events.append(bDirEventType["bDirEventJobRun"])
+        events.append(bDirEventJobStart)
+        events.append(bDirEventJobEnd)
+        events.append(bDirEventJobInit)
+        events.append(bDirEventJobRun)
         bareosdir.RegisterEvents(events)
 
         # get some static Bareos values
@@ -103,7 +103,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
         You may first call this method in your derived class to get the
         job attributes read and then only adjust where useful.
         """
-        if event == bDirEventType["bDirEventJobInit"]:
+        if event == bDirEventJobInit:
             self.jobInitTime = time.time()
             self.jobStatus = chr(bareosdir.GetValue(brDirVariable["bDirVarJobStatus"]))
             bareosdir.DebugMessage(
@@ -112,7 +112,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
                 % (self.jobInitTime),
             )
 
-        elif event == bDirEventType["bDirEventJobStart"]:
+        elif event == bDirEventJobStart:
             self.jobStartTime = time.time()
             self.jobStatus = chr(bareosdir.GetValue(brDirVariable["bDirVarJobStatus"]))
             bareosdir.DebugMessage(
@@ -121,7 +121,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
                 % (self.jobStartTime),
             )
 
-        elif event == bDirEventType["bDirEventJobRun"]:
+        elif event == bDirEventJobRun:
             # Now the jobs starts running, after eventually waiting some time,
             # e.g for other jobs to finish
             self.jobRunTime = time.time()
@@ -130,7 +130,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
                 "bDirEventJobRun event triggered at Unix time %s\n" % (self.jobRunTime),
             )
 
-        elif event == bDirEventType["bDirEventJobEnd"]:
+        elif event == bDirEventJobEnd:
             self.jobEndTime = time.time()
             bareosdir.DebugMessage(
                 100,
