@@ -65,7 +65,7 @@ If you like to use the MSSQL-Plugin to backing up your Databases you need to con
 
    .. warning::
 
-      If you set the databases into the mentionend mode you have to consider some maintance facts. The database doesn't shrink or delete the logs unanttended, so you have to shrink them manual once a week and you have to truncate the logs once in a month.
+      If you set the databases into the mentionend mode you have to consider some maintenance facts. The database doesn't shrink or delete the logs unanttended, so you have to shrink them manual once a week and you have to truncate the logs once in a month.
 
 -  | Security and Access
    | For connections you can use a SQL-User or a integrated systemaccount (Windows NT user). Both connection types are supported.
@@ -101,7 +101,7 @@ Install the Bareos filedaemon including the component "Bareos FileDameon Plugins
 Manual install
 ''''''''''''''
 
-After downloading the plugin you need to copy it into :file:`C:\Program Files\Bareos\Plugins`. Then you need to define the plugin directory and which plugin the bareos-filedaemon should use. You have to edit the bareos-filedaemon resource in :file:`C:\Program Data\bareos-fd.conf` as follows:
+After downloading the plugin you need to copy it into :file:`C:\\Program Files\\Bareos\\Plugins`. Then you need to define the plugin directory and which plugin the bareos-filedaemon should use. You have to edit the bareos-filedaemon resource in :file:`C:\\Program Data\\bareos-fd.conf` as follows:
 
 .. code-block:: bareosconfig
    :caption: MSSQL plugin configuration
@@ -276,7 +276,7 @@ At least you gain a full backup which contains the follow:
 
 
 After your first full backup you will be able to also run differential and incremental backups.
-Differntial FileSet example:
+Differential FileSet example:
 
 
 
@@ -314,14 +314,29 @@ replace=<yes|no>
    With this option you can replace the database if it still exist.
 
 instance
-   Defines the server instance whithin the database is running.
+   Defines the server instance within the database is running.
 
 database
    Defines the database you want to backup.
 
-If you want to restore the actual backup to a set of backup files which you can use to restore a database under an new name or perform any kind of special operations using for example the sql management studio, you can use a where setting for the restore other then ’/’. When the where is set to ’/’ it will restore to the Virtual Device Interface (VDI).
+Restore to local files
+''''''''''''''''''''''
+Sometimes it is desirable to restore the backup **into local files** instead of
+restoring directly to the database server. This is useful to restore the
+database **under a different name**, or perform any kind of special operations
+using the sql management studio.
 
-When you specify for restore a where path which is lets say ’c:/temp’ the plugin will restore the selected backup files under a relocated path under c:/temp/@MSSQL@/...
+If the *where* parameter is set **to a directory** instead of '/', the plugin will
+restore the backup as files into the given directory.
+
+Example: If *where* is set to  **’c:/temp’**, the plugin will restore the selected backup
+files under a relocated path under c:/temp/@MSSQL@/...
+
+If *where* is set to ’/’ it will restore to the Virtual Device Interface (VDI).
+
+
+Restore to database
+'''''''''''''''''''
 
 Example for a full restore:
 
