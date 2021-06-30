@@ -25,7 +25,6 @@
 # Functions taken and adapted from bareos-dir.py
 
 from bareosdir import *
-from bareos_dir_consts import *
 import BareosDirPluginBaseclass
 from socket import socket, AF_INET, SOCK_STREAM
 import time
@@ -34,12 +33,11 @@ import time
 class BareosDirPluginGraphiteSender(BareosDirPluginBaseclass.BareosDirPluginBaseclass):
     ''' Bareos DIR python plugin Nagios / Icinga  sender class '''
 
-    def parse_plugin_definition(self, context, plugindef):
+    def parse_plugin_definition(self, plugindef):
         '''
         Check, if mandatory monitoringHost is set and set default for other unset parameters
         '''
-        super(BareosDirPluginGraphiteSender, self).parse_plugin_definition(
-            context, plugindef)
+        super(BareosDirPluginGraphiteSender, self).parse_plugin_definition(plugindef)
         # monitoring Host is mandatory
         if 'collectorHost' not in self.options:
             self.collectorHost = "graphite"
@@ -55,24 +53,24 @@ class BareosDirPluginGraphiteSender(BareosDirPluginBaseclass.BareosDirPluginBase
             self.metricPrefix = self.options['metricPrefix']
         # we return OK in anyway, we do not want to produce Bareos errors just because of failing
         # Nagios notifications
-        return bRCs['bRC_OK']
+        return bRCs[b'bRC_OK']
 
-    def handle_plugin_event(self, context, event):
+    def handle_plugin_event(self, event):
         '''
         This method is calle for every registered event
         '''
 
         # We first call the method from our superclass to get job attributes read
-        super(BareosDirPluginGraphiteSender, self).handle_plugin_event(context, event)
+        super(BareosDirPluginGraphiteSender, self).handle_plugin_event(event)
 
         if event == bDirEventType['bDirEventJobEnd']:
             # This event is called at the end of a job, here evaluate the results
-            self.evaluateJobStatus(context)
-            self.transmitResult(context)
+            self.evaluateJobStatus()
+            self.transmitResult()
 
-        return bRCs['bRC_OK']
+        return bRCs[b'bRC_OK']
 
-    def evaluateJobStatus(self, context):
+    def evaluateJobStatus(self):
         '''
         Depending on the jobStatus we compute monitoring status and monitoring message
         You may overload this method to adjust messages
@@ -92,14 +90,14 @@ class BareosDirPluginGraphiteSender(BareosDirPluginBaseclass.BareosDirPluginBase
         else:
             self.metrics['bareos.jobs.{}.status.other'.format(job)] = 1
 
-        DebugMessage(context, 100, "Graphite metrics: {}\n".format(self.metrics))
+        DebugMessage(100, "Graphite metrics: {}\n".format(self.metrics))
 
-    def transmitResult(self, context):
+    def transmitResult(self):
         '''
         Here we send the result to the Icinga / Nagios server using NSCA
         Overload this method if you want ot submit your changes on a different way
         '''
-        DebugMessage(context, 100, "Submitting metrics to {}:{}".format(self.collectorHost,
+        DebugMessage(100, "Submitting metrics to {}:{}".format(self.collectorHost,
                                                                         self.collectorPort))
         try:
             sock = socket(AF_INET, SOCK_STREAM)
@@ -111,7 +109,7 @@ class BareosDirPluginGraphiteSender(BareosDirPluginBaseclass.BareosDirPluginBase
                                                                    time=int(time.time())))
             sock.close()
         except Exception as e:
-            JobMessage(context, bJobMessageType['M_WARNING'],
+            JobMessage(bJobMessageType['M_WARNING'],
                        "Plugin {} could not transmit check result to {}:{}: {}\n".format(self.__class__,
                                                                                          self.collectorHost,
                                                                                          self.collectorPort,
