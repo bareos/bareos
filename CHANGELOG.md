@@ -49,6 +49,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - added external repo bareos-contrib as subtree [PR #752]
 - add "copy button" to code snippets in documentation for easy copying [PR #802]
 - added multicolumn prompt selection for selection of more than 20 items [PR #731]
+- packages: Build also for openSUSE Leap 15.3 [PR #870]
 
 ### Changed
 - core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]

@@ -31,6 +31,16 @@ OS:
            - python-bareos
 
   openSUSE:
+    "Leap_15.3":
+      TYPE: rpm
+      IMAGE: opensuse-leap153
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+       x86_64:
+          - bareos
+          - python-bareos
+
     "Leap_15.2":
       TYPE: rpm
       IMAGE: opensuse-leap152
