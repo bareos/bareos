@@ -142,6 +142,12 @@ class AuthController extends AbstractActionController
          return $this->createNewLoginForm($form, $multi_dird_env, $apicheck, $this->bsock);
       }
 
+      $versioncheck = $this->checkVersionCompatibilityDIRD();
+
+      if($versioncheck !== true) {
+         return $this->createNewLoginForm($form, $multi_dird_env, $versioncheck, $this->bsock);
+      }
+
       $aclcheck = $this->checkACLStatusDIRD();
 
       if(!$aclcheck) {
@@ -206,6 +212,25 @@ class AuthController extends AbstractActionController
             'err_msg' => $err_msg
          )
       );
+   }
+
+   /**
+    * DIRD version compatibility check
+    *
+    * @return mixed
+    */
+   private function checkVersionCompatibilityDIRD() {
+      include 'version.php'; // provides bareos_full_version (installed ui version)
+      $dird_version_array = $this->getDirectorModel()->getDirectorVersion($this->bsock);
+      $dird_version = $dird_version_array['version'];
+      // compare major version
+      $dird_major_version = explode('.', $dird_version)[0];
+      $ui_major_version = explode('.', $bareos_full_version)[0];
+      if($dird_major_version !== $ui_major_version) {
+        $err_msg = 'Error: Bareos WebUI ('.$bareos_full_version.') requires a Director of the same major release ('.$dird_major_version.'). The Director version is '.$dird_version.'.';
+        return $err_msg;
+      }
+      return true;
    }
 
    /**
