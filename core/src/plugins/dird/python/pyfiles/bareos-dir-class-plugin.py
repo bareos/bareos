@@ -44,7 +44,7 @@ def load_bareos_plugin(plugindef):
     BareosDirWrapper.bareos_dir_plugin_object = (
         BareosDirPluginBaseclass.BareosDirPluginBaseclass(plugindef)
     )
-    return bareos_dir_consts.bRCs["bRC_OK"]
+    return bareosdir.bRC_OK
 
 
 # the rest is done in the Plugin module

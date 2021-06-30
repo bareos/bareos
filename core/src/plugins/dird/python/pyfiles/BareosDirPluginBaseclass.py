@@ -79,7 +79,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
         """
         Called with the plugin options from the bareos configfiles
         You should overload this method with your own and do option checking
-        here, return bRCs['bRC_Error'], if options are not ok
+        here, return bRC_Error, if options are not ok
         or better call super.parse_plugin_definition in your own class and
         make sanity check on self.options afterwards
         """
@@ -94,7 +94,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
                 continue
             else:
                 self.options[key] = val
-        return bRCs["bRC_OK"]
+        return bRC_OK
 
     def handle_plugin_event(self, event):
         """
@@ -152,7 +152,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
             if self.jobRunningTime > 0:
                 self.throughput = self.jobBytes / self.jobRunningTime
 
-        return bRCs["bRC_OK"]
+        return bRC_OK
 
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4
