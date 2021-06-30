@@ -25,7 +25,7 @@
 # Functions taken and adapted from bareos-dir.py
 
 import bareosdir
-from bareos_dir_consts import bDirEventType, brDirVariable, bRCs
+from bareosdir import *
 import time
 
 

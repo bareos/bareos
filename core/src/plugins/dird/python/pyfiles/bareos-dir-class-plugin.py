@@ -23,7 +23,7 @@
 #
 
 # Provided by the Bareos Dir Python plugin interface
-import bareos_dir_consts
+import bareosdir
 
 # This module contains the wrapper functions called by the Bareos-Dir, the
 # functions call the corresponding methods from your plugin class
