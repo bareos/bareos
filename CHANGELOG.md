@@ -48,6 +48,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - added external repo bareos-contrib as subtree [PR #752]
 - add "copy button" to code snippets in documentation for easy copying [PR #802]
 - added multicolumn prompt selection for selection of more than 20 items [PR #731]
+- add script devtools/dist-tarball.sh to produce the same tarball from a cloned repo everywhere [PR #861]
 
 ### Changed
 - core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]
@@ -79,6 +80,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Windows release package now ships source code as optional component, so there is no need for a debug-package anymore [PR #858]
 - packages: Build also for Fedora_34 [PR #869]
 - postgresql filedaemon plugin: switched from psycopg2 to pg8000, dropped support for python2.
+- version information was moved from core/cmake/ and webui/cmake/ directories into the toplevel cmake/ directory [PR #861]
 
 ### Deprecated
 
@@ -101,6 +103,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 [Issue #1205]: https://bugs.bareos.org/view.php?id=1205
 [Issue #1316]: https://bugs.bareos.org/view.php?id=1316
+[Issue #1324]: https://bugs.bareos.org/view.php?id=1324
 [Issue #1329]: https://bugs.bareos.org/view.php?id=1329
 [PR #552]: https://github.com/bareos/bareos/pull/552
 [PR #694]: https://github.com/bareos/bareos/pull/694
@@ -151,7 +154,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #826]: https://github.com/bareos/bareos/pull/826
 [PR #828]: https://github.com/bareos/bareos/pull/828
 [PR #829]: https://github.com/bareos/bareos/pull/829
+[PR #840]: https://github.com/bareos/bareos/pull/840
 [PR #844]: https://github.com/bareos/bareos/pull/844
 [PR #850]: https://github.com/bareos/bareos/pull/850
 [PR #858]: https://github.com/bareos/bareos/pull/858
+[PR #861]: https://github.com/bareos/bareos/pull/861
+[PR #869]: https://github.com/bareos/bareos/pull/869
 [unreleased]: https://github.com/bareos/bareos/tree/master
