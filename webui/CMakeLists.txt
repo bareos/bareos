@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -30,14 +30,6 @@ set(CMAKE_MODULE_PATH
 include(BareosLocalBuildDefinitions OPTIONAL
         RESULT_VARIABLE BareosLocalBuildDefinitionsFile
 )
-
-if(NOT DEFINED VERSION_STRING)
-  # try to get version info from version.h
-  include(BareosExtractVersionInfo)
-else()
-  # we got VERSION_STRING from cmake commandline
-  set(BAREOS_FULL_VERSION ${VERSION_STRING})
-endif()
 
 if(BAREOS_FULL_VERSION STREQUAL "")
   message(FATAL_ERROR BAREOS_FULL_VERSION is not set)

@@ -99,7 +99,7 @@ cscope.out
 compile_commands.json
 
 # generated version files
-*/cmake/BareosVersion.cmake
+cmake/BareosVersion.cmake
 
 # JetBrains Pycharm
 .idea

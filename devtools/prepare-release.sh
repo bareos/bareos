@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -174,12 +174,12 @@ This script will do the following:
 
   1. Create release commit
   1a. create empty commit with version timestamp
-  1b. generate and add */cmake/BareosVersion.cmake
+  1b. generate and add cmake/BareosVersion.cmake
   1c. update CHANGELOG.md to reflect new release
   1d. amend commit from a. with changes from b. and c.
 
   2. Clean up after release commit
-  2a. remove */cmake/BareosVersion.cmake
+  2a. remove cmake/BareosVersion.cmake
   2b. commit the removed files
 
   3. Set up a new base for future work (not for pre-releases)
@@ -209,7 +209,7 @@ log_info "if you want to rollback the commits" \
 
 # we start with a temporary commit so write_version_files.cmake will then see
 # the timestamp of that commit. This makes sure we have $release_ts written to
-# the BareosVersion.cmake files
+# the BareosVersion.cmake file
 "$git" commit \
   --quiet \
   --allow-empty \
@@ -227,7 +227,7 @@ fi
   --no-all \
   --force \
   -- \
-  ./*/cmake/BareosVersion.cmake \
+  ./cmake/BareosVersion.cmake \
   ./CHANGELOG.md
 
 "$git" commit \
@@ -237,7 +237,7 @@ fi
   --date="$release_ts" \
   -m "$release_message" \
   -- \
-  ./*/cmake/BareosVersion.cmake \
+  ./cmake/BareosVersion.cmake \
   ./CHANGELOG.md
 
 release_commit="$(git rev-parse HEAD)"
@@ -245,12 +245,12 @@ log_info "commit for release tag will be $release_commit"
 
 "$git" rm \
   -- \
-  ./*/cmake/BareosVersion.cmake
+  ./cmake/BareosVersion.cmake
 
 "$git" commit \
   --quiet \
   --date="$release_ts" \
-  -m "Remove */cmake/BareosVersion.cmake after release"
+  -m "Remove cmake/BareosVersion.cmake after release"
 
 if [ "$wip_enable" -eq 1 ]; then
   ./devtools/new-changelog-release.sh unreleased

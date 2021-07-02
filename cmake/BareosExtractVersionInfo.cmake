@@ -1,6 +1,6 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2017-2019 Bareos GmbH & Co. KG
+# Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or modify it under
 # the terms of version three of the GNU Affero General Public License as
@@ -79,7 +79,7 @@ else()
 endif()
 
 # extract  db version from cats.h
-file(STRINGS ${CMAKE_CURRENT_LIST_DIR}/../src/cats/cats.h DB_VERSION_STRING
+file(STRINGS ${PROJECT_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
      REGEX .*BDB_VERSION.*
 )
 string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
