@@ -43,6 +43,12 @@ else()
   add_subdirectory(tests)
 endif()
 
+if(NOT benchmark_FOUND)
+  message(STATUS "Skipping benchmarking as google benchmark was not found")
+else()
+  add_subdirectory(benchmarks)
+endif()
+
 add_subdirectory(console)
 if(${HAVE_LMDB})
   add_subdirectory(lmdb)
