@@ -197,7 +197,7 @@ The encoding of the bareos database must be :strong:`SQL_ASCII`. The command :co
     template1 | postgres | UTF8
    (4 rows)
 
-The owner of the database may vary. The Bareos database maintance scripts don’t change the default owner of the Bareos database, so it stays at the PostgreSQL administration user. The :command:`grant_bareos_privileges` script grant the required permissions to the Bareos database user. In contrast, when installing (not updating) using :ref:`dbconfig <section-dbconfig>`, the database owner will be identical with the Bareos database user.
+The owner of the database may vary. The Bareos database maintenance scripts don’t change the default owner of the Bareos database, so it stays at the PostgreSQL administration user. The :command:`grant_bareos_privileges` script grant the required permissions to the Bareos database user. In contrast, when installing (not updating) using :ref:`dbconfig <section-dbconfig>`, the database owner will be identical with the Bareos database user.
 
 By default, using PostgreSQL ident, a Unix user can access a database of the same name. Therefore the user **bareos** can access the database :file:`bareos`.
 
