@@ -6,3 +6,4 @@ Build And Test Bareos
    BuildAndTestBareos/documentation.rst
    BuildAndTestBareos/systemtests.rst
    BuildAndTestBareos/HintsForBuildingBareos.rst
+   BuildAndTestBareos/benchmarks.rst
