@@ -137,19 +137,16 @@ class AuthController extends AbstractActionController
       }
 
       $apicheck = $this->checkAPIStatusDIRD();
-
-      if(!$apicheck) {
+      if($apicheck !== true) {
          return $this->createNewLoginForm($form, $multi_dird_env, $apicheck, $this->bsock);
       }
 
       $versioncheck = $this->checkVersionCompatibilityDIRD();
-
       if($versioncheck !== true) {
          return $this->createNewLoginForm($form, $multi_dird_env, $versioncheck, $this->bsock);
       }
 
       $aclcheck = $this->checkACLStatusDIRD();
-
       if(!$aclcheck) {
          return $this->createNewLoginForm($form, $multi_dird_env, $aclcheck, $this->bsock);
       } else {
@@ -241,15 +238,18 @@ class AuthController extends AbstractActionController
    private function checkAPIStatusDIRD() {
 
       $err_msg_1 = 'Sorry, the user you are trying to login with has no permissions for the .api command. For further information, please read the <a href="https://docs.bareos.org/IntroductionAndTutorial/InstallingBareosWebui.html#configuration-of-profile-resources" target="_blank">Bareos documentation</a>.';
-      $err_msg_2 = 'Error: API 2 not available on 15.2.2 or greater and/or compile with jansson support.';
+      $err_msg_2 = 'Error: This Bareos Director does not support the required API 2 mode.';
 
       $result = $this->getDirectorModel()->sendDirectorCommand($this->bsock, ".api 2 compact=yes");
 
-      if(preg_match("/.api:/", $result)) {
+      // without permission for the api command, it returns:
+      // .api: is an invalid command.
+      if(preg_match('/.api:/', $result)) {
          return $err_msg_1;
       }
 
-      if(preg_match("/result/", $result)) {
+      // expected result: {"jsonrpc":"2.0","id":null,"result":{"api":2}}
+      if(!preg_match('/"api": *2/', $result)) {
          return $err_msg_2;
       }
 
