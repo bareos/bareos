@@ -3,7 +3,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2020-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2020-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -294,7 +294,7 @@ function formatJobStatus(data) {
       // Created no yet running
       case 'C':
          jobstatus_C = iJS._("Created but not yet running");
-         output = '<span class="label label-default" title="' + jobstatus_C + '">' + iJS._("Queued") + '</span>';
+         output = '<span class="label label-default" title="' + jobstatus_C + '">' + iJS._("Waiting") + '</span>';
          break;
       // Blocked
       case 'B':
@@ -364,12 +364,12 @@ function formatJobStatus(data) {
       // SD despooling attributes
       case 'a':
          jobstatus_a = iJS._("SD despooling attributes");
-         output = '<span class="label label-info" title="' + jobstatus_a + '">' + iJS._("SD despooling attributes") + '</span>';
+         output = '<span class="label label-info" title="' + jobstatus_a + '">' + iJS._("Running") + '</span>';
          break;
       // Doing batch insert file records
       case 'i':
          jobstatus_i = iJS._("Doing batch insert file records");
-         output = '<span class="label label-info" title="' + jobstatus_i + '">' + iJS._("Doing batch insert file records") + '</span>';
+         output = '<span class="label label-info" title="' + jobstatus_i + '">' + iJS._("Running") + '</span>';
          break;
       // Incomplete
       case 'I':
@@ -379,7 +379,7 @@ function formatJobStatus(data) {
       // Committing data
       case 'L':
          jobstatus_L = iJS._("Committing data (last despool)");
-         output = '<span class="label label-info" title="' + jobstatus_L + '">' + iJS._("Committing data") + '</span>';
+         output = '<span class="label label-info" title="' + jobstatus_L + '">' + iJS._("Running") + '</span>';
          break;
       // Terminated with warnings
       case 'W':
@@ -389,12 +389,12 @@ function formatJobStatus(data) {
       // Doing data despooling
       case 'l':
          jobstatus_l = iJS._("Doing data despooling");
-         output = '<span class="label label-info" title="' + jobstatus_l +'">' + iJS._("Doing data despooling") + '</span>';
+         output = '<span class="label label-info" title="' + jobstatus_l +'">' + iJS._("Running") + '</span>';
          break;
       // Queued waiting for device
       case 'q':
          jobstatus_q = iJS._("Queued waiting for device");
-         output = '<span class="label label-default" title="' + jobstatus_q + '">' + iJS._("Queued waiting for device") + '</span>';
+         output = '<span class="label label-default" title="' + jobstatus_q + '">' + iJS._("Waiting") + '</span>';
          break;
       default:
          output = '<span class="label label-primary">' + data + '</span>';
