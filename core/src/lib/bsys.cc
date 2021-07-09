@@ -627,7 +627,7 @@ void WriteStateFile(const char* dir, const char* progname, int port)
   } catch (const std::system_error& e) {
     BErrNo be;
     Dmsg3(100, "Could not seek filepointer. ERR=%s - %s\n",
-          sizeof(StateFileHeader), be.bstrerror(), e.code().message().c_str());
+          be.bstrerror(), e.code().message().c_str());
     return;
   } catch (const std::exception& e) {
     Dmsg0(100, "Could not seek filepointer. Some error occurred: %s\n",

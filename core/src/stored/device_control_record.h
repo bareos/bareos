@@ -80,8 +80,11 @@ class DeviceControlRecord {
   DeviceRecord* after_rec{};       /**< Pointer to record after translation */
   pthread_t tid{};                 /**< Thread running this dcr */
   bool spool_data{};         /**< Set to spool data */
-  int spool_fd{};            /**< Fd if spooling */
+  int spool_fd_a{};          /**< Fd part A if spooling */
+  int spool_fd_b{};          /**< Fd part B if spooling */
   bool spooling{};           /**< Set when actually spooling */
+  bool spooling_a{};         /**< Set when spooling to part A */
+  bool spooling_b{};         /**< Set when spooling to part B */
   bool despooling{};         /**< Set when despooling */
   bool despool_wait{};       /**< Waiting for despooling */
   bool NewVol{};             /**< Set if new Volume mounted */

@@ -55,7 +55,8 @@ DeviceControlRecord::DeviceControlRecord()
   int errstat;
 
   tid = pthread_self();
-  spool_fd = -1;
+  spool_fd_a = -1;
+  spool_fd_b = -1;
   if ((errstat = pthread_mutex_init(&mutex_, NULL)) != 0) {
     BErrNo be;
 
