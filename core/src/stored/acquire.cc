@@ -55,8 +55,6 @@ DeviceControlRecord::DeviceControlRecord()
   int errstat;
 
   tid = pthread_self();
-  spool_fd_a = -1;
-  spool_fd_b = -1;
   if ((errstat = pthread_mutex_init(&mutex_, NULL)) != 0) {
     BErrNo be;
 
@@ -69,6 +67,18 @@ DeviceControlRecord::DeviceControlRecord()
 
     Mmsg(errmsg, _("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
     Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
+  }
+
+  // TODO: Make configurable
+  active_spool_files = SPOOL_FILE_COUNT;
+  for (int i = 0; i < active_spool_files; i++) {
+    if ((errstat = pthread_mutex_init(&spool_fd_mutex[i], NULL)) != 0) {
+      BErrNo be;
+
+      Mmsg(errmsg, _("Unable to init spool file mutex %d: ERR=%s\n"),
+          i, be.bstrerror(errstat));
+      Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
+    }
   }
 }
 

@@ -58,6 +58,14 @@ class DeviceResource;
 struct DeviceBlock;
 struct DeviceRecord;
 
+enum spool_file
+{
+  SPOOL_FILE_A,
+  SPOOL_FILE_B,
+  SPOOL_FILE_COUNT,
+  SPOOL_FILE_INVALID = -1,
+};
+
 /* clang-format off */
 
 class DeviceControlRecord {
@@ -79,21 +87,21 @@ class DeviceControlRecord {
   DeviceRecord* before_rec{};      /**< Pointer to record before translation */
   DeviceRecord* after_rec{};       /**< Pointer to record after translation */
   pthread_t tid{};                 /**< Thread running this dcr */
-  bool spool_data{};         /**< Set to spool data */
-  int spool_fd_a{};          /**< Fd part A if spooling */
-  int spool_fd_b{};          /**< Fd part B if spooling */
-  bool spooling{};           /**< Set when actually spooling */
-  bool spooling_a{};         /**< Set when spooling to part A */
-  bool spooling_b{};         /**< Set when spooling to part B */
-  bool despooling{};         /**< Set when despooling */
-  bool despool_wait{};       /**< Waiting for despooling */
-  bool NewVol{};             /**< Set if new Volume mounted */
-  bool WroteVol{};           /**< Set if Volume written */
-  bool NewFile{};            /**< Set when EOF written */
-  bool reserved_volume{};    /**< Set if we reserved a volume */
-  bool any_volume{};         /**< Any OK for dir_find_next... */
-  bool attached_to_dev{};    /**< Set when attached to dev */
-  bool keep_dcr{};           /**< Do not free dcr in release_dcr */
+  bool spool_data{};               /**< Set to spool data */
+  int spool_fd[SPOOL_FILE_COUNT]{};/**< Fd part A/B if spooling */
+  int active_spool_files{};        /**< Set to the configured maximum spool files to use */
+  pthread_mutex_t spool_fd_mutex[SPOOL_FILE_COUNT]{};  /**< Spool FD access control */
+  bool spooling{};                 /**< Set when actually spooling */
+  spool_file current_spool_file{}; /**< Set when spooling to part A */
+  bool despooling{};               /**< Set when despooling */
+  bool despool_wait{};             /**< Waiting for despooling */
+  bool NewVol{};                   /**< Set if new Volume mounted */
+  bool WroteVol{};                 /**< Set if Volume written */
+  bool NewFile{};                  /**< Set when EOF written */
+  bool reserved_volume{};          /**< Set if we reserved a volume */
+  bool any_volume{};               /**< Any OK for dir_find_next... */
+  bool attached_to_dev{};          /**< Set when attached to dev */
+  bool keep_dcr{};                 /**< Do not free dcr in release_dcr */
   AutoXflateMode autodeflate{AutoXflateMode::IO_DIRECTION_NONE};
   AutoXflateMode autoinflate{AutoXflateMode::IO_DIRECTION_NONE};
   uint32_t VolFirstIndex{};        /**< First file index this Volume */

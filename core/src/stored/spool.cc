@@ -45,7 +45,7 @@ namespace storagedaemon {
 
 /* Forward referenced subroutines */
 static void MakeUniqueDataSpoolFilename(DeviceControlRecord* dcr,
-                                        POOLMEM*& name, const char* id);
+                                        POOLMEM*& name, char id);
 static bool OpenDataSpoolFile(DeviceControlRecord* dcr);
 static bool CloseDataSpoolFile(DeviceControlRecord* dcr, bool end_of_spool);
 static bool DespoolData(DeviceControlRecord* dcr, bool commit, int despool_fd);
@@ -126,7 +126,7 @@ bool BeginDataSpool(DeviceControlRecord* dcr)
     status = OpenDataSpoolFile(dcr);
     if (status) {
       dcr->spooling = true;
-      dcr->spooling_a = true;
+      dcr->current_spool_file = SPOOL_FILE_A;
       Jmsg(dcr->jcr, M_INFO, 0, _("Spooling data ...\n"));
       P(mutex);
       spool_stats.data_jobs++;
@@ -153,11 +153,11 @@ bool CommitDataSpool(DeviceControlRecord* dcr)
 
   if (dcr->spooling) {
     Dmsg0(100, "Committing spooled data\n");
-    if (dcr->spooling_a) {
-      status = DespoolData(dcr, true /*commit*/, dcr->spool_fd_a);
-    } else {
-      status = DespoolData(dcr, true /*commit*/, dcr->spool_fd_b);
-    }
+
+    P(dcr->spool_fd_mutex[dcr->current_spool_file]);
+    status = DespoolData(dcr, true /*commit*/, dcr->spool_fd[dcr->current_spool_file]);
+    V(dcr->spool_fd_mutex[dcr->current_spool_file]);
+
     if (!status) {
       Dmsg1(100, _("Bad return from despool WroteVol=%d\n"), dcr->WroteVol);
       CloseDataSpoolFile(dcr, true);
@@ -170,7 +170,7 @@ bool CommitDataSpool(DeviceControlRecord* dcr)
 }
 
 static void MakeUniqueDataSpoolFilename(DeviceControlRecord* dcr,
-                                        POOLMEM*& name, const char* id)
+                                        POOLMEM*& name, char id)
 {
   const char* dir;
 
@@ -180,28 +180,20 @@ static void MakeUniqueDataSpoolFilename(DeviceControlRecord* dcr,
     dir = working_directory;
   }
 
-  Mmsg(name, "%s/%s.data.%u.%s.%s.%s.spool", dir, my_name, dcr->jcr->JobId,
+  Mmsg(name, "%s/%s.data.%u.%s.%s.%c.spool", dir, my_name, dcr->jcr->JobId,
        dcr->jcr->Job, dcr->device_resource->resource_name_, id);
 }
 
 static bool OpenDataSpoolFile(DeviceControlRecord* dcr)
 {
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < dcr->active_spool_files; i++) {
     int spool_fd;
     POOLMEM* name = GetPoolMemory(PM_MESSAGE);
 
-    if (i == 0) {
-      MakeUniqueDataSpoolFilename(dcr, name, "a");
-    } else {
-      MakeUniqueDataSpoolFilename(dcr, name, "b");
-    }
+    MakeUniqueDataSpoolFilename(dcr, name, 'a' + i);
     if ((spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640))
         >= 0) {
-      if (i == 0) {
-        dcr->spool_fd_a = spool_fd;
-      } else {
-        dcr->spool_fd_b = spool_fd;
-      }
+      dcr->spool_fd[i] = spool_fd;
       dcr->jcr->impl->spool_attributes = true;
     } else {
       BErrNo be;
@@ -221,20 +213,18 @@ static bool CloseDataSpoolFile(DeviceControlRecord* dcr, bool end_of_spool)
 {
   POOLMEM* name = GetPoolMemory(PM_MESSAGE);
 
-  close(dcr->spool_fd_a);
-  close(dcr->spool_fd_b);
-  dcr->spool_fd_a = -1;
-  dcr->spool_fd_b = -1;
   dcr->spooling = false;
-  dcr->spooling_a = false;
-  dcr->spooling_b = false;
+  dcr->current_spool_file = SPOOL_FILE_INVALID;
+  for (int i = 0; i < dcr->active_spool_files; i++) {
+    P(dcr->spool_fd_mutex[i]);
+    close(dcr->spool_fd[i]);
+    dcr->spool_fd[i] = -1;
+    MakeUniqueDataSpoolFilename(dcr, name, 'a' + i);
+    SecureErase(dcr->jcr, name);
+    Dmsg1(100, "Deleted spool file: %s\n", name);
+    V(dcr->spool_fd_mutex[i]);
+  }
 
-  MakeUniqueDataSpoolFilename(dcr, name, "a");
-  SecureErase(dcr->jcr, name);
-  Dmsg1(100, "Deleted spool file: %s\n", name);
-  MakeUniqueDataSpoolFilename(dcr, name, "b");
-  SecureErase(dcr->jcr, name);
-  Dmsg1(100, "Deleted spool file: %s\n", name);
   FreePoolMemory(name);
 
   P(mutex);
@@ -522,8 +512,7 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
 {
   uint32_t wlen, hlen; /* length to write */
   bool despool = false;
-  int full_spool_fd = -1;
-  int curr_spool_fd = -1;
+  spool_file despool_file = SPOOL_FILE_INVALID;
   DeviceBlock* block = dcr->block;
 
   if (JobCanceled(dcr->jcr)) { return false; }
@@ -534,29 +523,26 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
 
   hlen = sizeof(spool_hdr);
   wlen = block->binbuf;
+
+  if (dcr->current_spool_file < SPOOL_FILE_A || dcr->current_spool_file >= dcr->active_spool_files) {
+    Pmsg0(000, _("Invalid spool file active.\n"));
+    return false;
+  }
+
   P(dcr->dev->spool_mutex);
   dcr->job_spool_size += hlen + wlen;
   dcr->dev->spool_size += hlen + wlen;
-  if (dcr->spooling_a) {
-    curr_spool_fd = dcr->spool_fd_a;
-  } else {
-    curr_spool_fd = dcr->spool_fd_b;
-  }
-  if ((dcr->max_job_spool_size > 0
+    if ((dcr->max_job_spool_size > 0
        && dcr->job_spool_size >= dcr->max_job_spool_size)
       || (dcr->dev->max_spool_size > 0
           && dcr->dev->spool_size >= dcr->dev->max_spool_size)) {
     Dmsg0(10, "Job max spool size reached, switching spool file");
     despool = true;
-    full_spool_fd = curr_spool_fd;
-    if (dcr->spooling_a) {
-      curr_spool_fd = dcr->spool_fd_b;
-      dcr->spooling_a = false;
-      dcr->spooling_b = true;
+    despool_file = dcr->current_spool_file;
+    if (dcr->current_spool_file < dcr->active_spool_files-1) {
+      dcr->current_spool_file = spool_file(int(dcr->current_spool_file) + 1);
     } else {
-      curr_spool_fd = dcr->spool_fd_a;
-      dcr->spooling_b = false;
-      dcr->spooling_a = true;
+      dcr->current_spool_file = SPOOL_FILE_A;
     }
   }
   V(dcr->dev->spool_mutex);
@@ -567,6 +553,7 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
   }
   V(mutex);
   if (despool) {
+    bool background_despool = (dcr->active_spool_files > 1);
     char ec1[30], ec2[30];
     if (dcr->max_job_spool_size > 0) {
       Jmsg(dcr->jcr, M_INFO, 0,
@@ -581,22 +568,39 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
            edit_uint64_with_commas(dcr->dev->spool_size, ec1),
            edit_uint64_with_commas(dcr->dev->max_spool_size, ec2));
     }
-    Jmsg(dcr->jcr, M_INFO, 0, _("Doing background despooling...\n"));
 
-    if (!DespoolData(dcr, false, full_spool_fd)) {
+    if (background_despool) {
+      Jmsg(dcr->jcr, M_INFO, 0, _("Doing background despooling...\n"));
+    } else {
+      Jmsg(dcr->jcr, M_INFO, 0, _("Only one active spool file, blocking spooling while despooling...\n"));
+    }
+
+    // ========== DESPOOL =============
+    P(dcr->spool_fd_mutex[despool_file]);
+    if (!DespoolData(dcr, false, dcr->spool_fd[despool_file])) {
       Pmsg0(000, _("Bad return from despool in WriteBlock.\n"));
       return false;
     }
+
     /* Despooling cleared these variables so reset them */
     P(dcr->dev->spool_mutex);
     dcr->job_spool_size += hlen + wlen;
     dcr->dev->spool_size += hlen + wlen;
     V(dcr->dev->spool_mutex);
-    Jmsg(dcr->jcr, M_INFO, 0, _("Spooling data again ...\n"));
+    V(dcr->spool_fd_mutex[despool_file]);
+    // ========== END DESPOOL =============
+
+    if (!background_despool) {
+      Jmsg(dcr->jcr, M_INFO, 0, _("Spooling data again ...\n"));
+    }
   }
 
-  if (!WriteSpoolHeader(dcr, curr_spool_fd)) { return false; }
-  if (!WriteSpoolData(dcr, curr_spool_fd)) { return false; }
+  P(dcr->spool_fd_mutex[dcr->current_spool_file]);
+
+  if (!WriteSpoolHeader(dcr, dcr->spool_fd[dcr->current_spool_file])) { return false; }
+  if (!WriteSpoolData(dcr, dcr->spool_fd[dcr->current_spool_file])) { return false; }
+
+  V(dcr->spool_fd_mutex[dcr->current_spool_file]);
 
   Dmsg2(800, "Wrote block FI=%d LI=%d\n", block->FirstIndex, block->LastIndex);
   EmptyBlock(block);
