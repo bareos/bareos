@@ -113,6 +113,7 @@ class DeviceControlRecord {
   uint32_t EndBlock{};             /**< Ending block written */
   int64_t VolMediaId{};            /**< MediaId */
   int64_t job_spool_size{};        /**< Current job spool size */
+  int64_t job_despool_size{};      /**< Current job despool size */
   int64_t max_job_spool_size{};    /**< Max job spool size */
   uint32_t VolMinBlocksize{};      /**< Minimum Blocksize */
   uint32_t VolMaxBlocksize{};      /**< Maximum Blocksize */
@@ -199,8 +200,10 @@ class DeviceControlRecord {
   bool IsTapePositionOk();
 
   // Methods in block.c
-  bool WriteBlockToDevice();
-  bool WriteBlockToDev();
+  bool WriteBlockToDevice() { return WriteBlockToDevice(block, false); }
+  bool WriteBlockToDevice(DeviceBlock* block, bool bypass_spool);
+  bool WriteBlockToDev() { return WriteBlockToDev(block); }
+  bool WriteBlockToDev(DeviceBlock* block);
 
   enum ReadStatus
   {
