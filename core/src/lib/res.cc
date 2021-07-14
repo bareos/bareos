@@ -1337,17 +1337,29 @@ void ConfigurationParser::StoreAddressesPort(LEX* lc,
         || token == BCT_IDENTIFIER)) {
     scan_err1(lc, _("Expected a port number or string, got: %s"), lc->str);
   }
+
+#ifdef HAVE_IPV6
   if (pass == 1
       && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                     IPADDR::R_SINGLE_PORT, htons(port),
-#ifdef HAVE_IPV6
-                     AF_INET6,
-#else
-                     AF_INET,
-#endif
-                     0, lc->str, errmsg, sizeof(errmsg))) {
+                     IPADDR::R_MULTIPLE, htons(port), AF_INET, 0, lc->str,
+                     errmsg, sizeof(errmsg))) {
     scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
   }
+
+  if (pass == 1
+      && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                     IPADDR::R_MULTIPLE, htons(port), AF_INET6, 0, lc->str,
+                     errmsg, sizeof(errmsg))) {
+    scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+  }
+#else
+  if (pass == 1
+      && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                     IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
+                     errmsg, sizeof(errmsg))) {
+    scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+  }
+#endif
 }
 
 // Generic store resource dispatcher.

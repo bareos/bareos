@@ -427,8 +427,8 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
   char buf[1024];
   unsigned short sport = str_to_int32(port);
 
-  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET,
-                  DIR_DEFAULT_ADDRESS, 0, buf, sizeof(buf))) {
+  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), 0, 0, 0, buf,
+                  sizeof(buf))) {
     Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
   }
 }
