@@ -235,6 +235,10 @@ class BareosLibcloudApi(object):
 
     def __del__(self):
         try:
+            if sys.stdout != None:
+                sys.stdout.close()
+            if sys.stderr != None:
+                sys.stderr.close()
             self._remove_tmp_dir()
             if sys.stdout != None:
                 sys.stdout.close()

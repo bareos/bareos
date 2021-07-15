@@ -93,6 +93,11 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             100, "BareosFdPluginLibcloud called with plugindef: %s" % (plugindef,)
         )
 
+        if version_info.major >= 3 and version_info.minor > 7:
+            jobmessage(M_FATAL_ERROR, "Need Python version < 3.8 for Bareos Libcloud (current version: %d.%d.%d)"
+                % (version_info.major, version_info.minor, version_info.micro,))
+            return
+
         super(BareosFdPluginLibcloud, self).__init__(plugindef)
         super(BareosFdPluginLibcloud, self).parse_plugin_definition(plugindef)
         self.options["fail_on_download_error"] = False
