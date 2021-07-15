@@ -327,8 +327,6 @@ static ResourceItem cat_items[] = {
    /* Turned off for the moment */
   { "MultipleConnections", CFG_TYPE_BIT, ITEM(res_cat, mult_db_connections), 0, 0, NULL, NULL, NULL },
   { "DisableBatchInsert", CFG_TYPE_BOOL, ITEM(res_cat, disable_batch_insert), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "Reconnect", CFG_TYPE_BOOL, ITEM(res_cat, try_reconnect), 0, CFG_ITEM_DEFAULT, "false",
-     "15.1.0-", "Try to reconnect a database connection when its dropped" },
   { "ExitOnFatal", CFG_TYPE_BOOL, ITEM(res_cat, exit_on_fatal), 0, CFG_ITEM_DEFAULT, "false",
      "15.1.0-", "Make any fatal error in the connection to the database exit the program" },
   { "MinConnections", CFG_TYPE_PINT32, ITEM(res_cat, pooling_min_connections), 0, CFG_ITEM_DEFAULT, "1", NULL,

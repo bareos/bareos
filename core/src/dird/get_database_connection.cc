@@ -32,6 +32,7 @@ namespace directordaemon {
 
 BareosDb* GetDatabaseConnection(JobControlRecord* jcr)
 {
+  bool try_reconnect = false;
   return DbSqlGetPooledConnection(
       jcr, jcr->impl->res.catalog->db_driver, jcr->impl->res.catalog->db_name,
       jcr->impl->res.catalog->db_user,
@@ -39,8 +40,7 @@ BareosDb* GetDatabaseConnection(JobControlRecord* jcr)
       jcr->impl->res.catalog->db_address, jcr->impl->res.catalog->db_port,
       jcr->impl->res.catalog->db_socket,
       jcr->impl->res.catalog->mult_db_connections,
-      jcr->impl->res.catalog->disable_batch_insert,
-      jcr->impl->res.catalog->try_reconnect,
+      jcr->impl->res.catalog->disable_batch_insert, try_reconnect,
       jcr->impl->res.catalog->exit_on_fatal);
 }
 

@@ -84,6 +84,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - packages: Build also for Fedora_34 [PR #869]
 - postgresql filedaemon plugin: switched from psycopg2 to pg8000, dropped support for python2.
 - version information was moved from core/cmake/ and webui/cmake/ directories into the toplevel cmake/ directory [PR #861]
+- reconnecting to the database is now automatic without the need to specify it in the catalog, except for ongoing jobs, reconnection for those is disabled.
 
 ### Deprecated
 
