@@ -25,7 +25,7 @@
 # Functions taken and adapted from bareos-dir.py
 
 import bareosdir
-from bareos_dir_consts import bDirEventType, brDirVariable, bRCs
+from bareosdir import *
 import time
 
 
@@ -37,20 +37,20 @@ class BareosDirPluginBaseclass(object):
         bareosdir.DebugMessage(100, "Constructor called in module %s\n" % (__name__))
         events = []
 
-        events.append(bDirEventType["bDirEventJobStart"])
-        events.append(bDirEventType["bDirEventJobEnd"])
-        events.append(bDirEventType["bDirEventJobInit"])
-        events.append(bDirEventType["bDirEventJobRun"])
+        events.append(bDirEventJobStart)
+        events.append(bDirEventJobEnd)
+        events.append(bDirEventJobInit)
+        events.append(bDirEventJobRun)
         bareosdir.RegisterEvents(events)
 
         # get some static Bareos values
-        self.jobName = bareosdir.GetValue(brDirVariable["bDirVarJobName"])
-        self.jobLevel = chr(bareosdir.GetValue(brDirVariable["bDirVarLevel"]))
-        self.jobType = bareosdir.GetValue(brDirVariable["bDirVarType"])
-        self.jobId = int(bareosdir.GetValue(brDirVariable["bDirVarJobId"]))
-        self.jobClient = bareosdir.GetValue(brDirVariable["bDirVarClient"])
-        self.jobStatus = bareosdir.GetValue(brDirVariable["bDirVarJobStatus"])
-        self.Priority = bareosdir.GetValue(brDirVariable["bDirVarPriority"])
+        self.jobName = bareosdir.GetValue(bDirVarJobName)
+        self.jobLevel = chr(bareosdir.GetValue(bDirVarLevel))
+        self.jobType = bareosdir.GetValue(bDirVarType)
+        self.jobId = int(bareosdir.GetValue(bDirVarJobId))
+        self.jobClient = bareosdir.GetValue(bDirVarClient)
+        self.jobStatus = bareosdir.GetValue(bDirVarJobStatus)
+        self.Priority = bareosdir.GetValue(bDirVarPriority)
 
         bareosdir.DebugMessage(
             100,
@@ -79,7 +79,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
         """
         Called with the plugin options from the bareos configfiles
         You should overload this method with your own and do option checking
-        here, return bRCs['bRC_Error'], if options are not ok
+        here, return bRC_Error, if options are not ok
         or better call super.parse_plugin_definition in your own class and
         make sanity check on self.options afterwards
         """
@@ -94,7 +94,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
                 continue
             else:
                 self.options[key] = val
-        return bRCs["bRC_OK"]
+        return bRC_OK
 
     def handle_plugin_event(self, event):
         """
@@ -103,25 +103,25 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
         You may first call this method in your derived class to get the
         job attributes read and then only adjust where useful.
         """
-        if event == bDirEventType["bDirEventJobInit"]:
+        if event == bDirEventJobInit:
             self.jobInitTime = time.time()
-            self.jobStatus = chr(bareosdir.GetValue(brDirVariable["bDirVarJobStatus"]))
+            self.jobStatus = chr(bareosdir.GetValue(bDirVarJobStatus))
             bareosdir.DebugMessage(
                 100,
                 "bDirEventJobInit event triggered at Unix time %s\n"
                 % (self.jobInitTime),
             )
 
-        elif event == bDirEventType["bDirEventJobStart"]:
+        elif event == bDirEventJobStart:
             self.jobStartTime = time.time()
-            self.jobStatus = chr(bareosdir.GetValue(brDirVariable["bDirVarJobStatus"]))
+            self.jobStatus = chr(bareosdir.GetValue(bDirVarJobStatus))
             bareosdir.DebugMessage(
                 100,
                 "bDirEventJobStart event triggered at Unix time %s\n"
                 % (self.jobStartTime),
             )
 
-        elif event == bDirEventType["bDirEventJobRun"]:
+        elif event == bDirEventJobRun:
             # Now the jobs starts running, after eventually waiting some time,
             # e.g for other jobs to finish
             self.jobRunTime = time.time()
@@ -130,21 +130,21 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
                 "bDirEventJobRun event triggered at Unix time %s\n" % (self.jobRunTime),
             )
 
-        elif event == bDirEventType["bDirEventJobEnd"]:
+        elif event == bDirEventJobEnd:
             self.jobEndTime = time.time()
             bareosdir.DebugMessage(
                 100,
                 "bDirEventJobEnd event triggered at Unix time %s\n" % (self.jobEndTime),
             )
-            self.jobLevel = chr(bareosdir.GetValue(brDirVariable["bDirVarLevel"]))
-            self.jobStatus = chr(bareosdir.GetValue(brDirVariable["bDirVarJobStatus"]))
-            self.jobErrors = int(bareosdir.GetValue(brDirVariable["bDirVarJobErrors"]))
-            self.jobBytes = int(bareosdir.GetValue(brDirVariable["bDirVarJobBytes"]))
-            self.jobFiles = int(bareosdir.GetValue(brDirVariable["bDirVarJobFiles"]))
-            self.jobNumVols = int(bareosdir.GetValue(brDirVariable["bDirVarNumVols"]))
-            self.jobPool = bareosdir.GetValue(brDirVariable["bDirVarPool"])
-            self.jobStorage = bareosdir.GetValue(brDirVariable["bDirVarStorage"])
-            self.jobMediaType = bareosdir.GetValue(brDirVariable["bDirVarMediaType"])
+            self.jobLevel = chr(bareosdir.GetValue(bDirVarLevel))
+            self.jobStatus = chr(bareosdir.GetValue(bDirVarJobStatus))
+            self.jobErrors = int(bareosdir.GetValue(bDirVarJobErrors))
+            self.jobBytes = int(bareosdir.GetValue(bDirVarJobBytes))
+            self.jobFiles = int(bareosdir.GetValue(bDirVarJobFiles))
+            self.jobNumVols = int(bareosdir.GetValue(bDirVarNumVols))
+            self.jobPool = bareosdir.GetValue(bDirVarPool)
+            self.jobStorage = bareosdir.GetValue(bDirVarStorage)
+            self.jobMediaType = bareosdir.GetValue(bDirVarMediaType)
 
             self.jobTotalTime = self.jobEndTime - self.jobInitTime
             self.jobRunningTime = self.jobEndTime - self.jobRunTime
@@ -152,7 +152,7 @@ Client = %s - jobStatus = %s - Priority = %s - BareosDirPluginBaseclass\n"
             if self.jobRunningTime > 0:
                 self.throughput = self.jobBytes / self.jobRunningTime
 
-        return bRCs["bRC_OK"]
+        return bRC_OK
 
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4
