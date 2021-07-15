@@ -58,6 +58,14 @@ class DeviceResource;
 struct DeviceBlock;
 struct DeviceRecord;
 
+enum spool_file
+{
+  SPOOL_FILE_A,
+  SPOOL_FILE_B,
+  SPOOL_FILE_COUNT,
+  SPOOL_FILE_INVALID = -1,
+};
+
 /* clang-format off */
 
 class DeviceControlRecord {
@@ -79,18 +87,21 @@ class DeviceControlRecord {
   DeviceRecord* before_rec{};      /**< Pointer to record before translation */
   DeviceRecord* after_rec{};       /**< Pointer to record after translation */
   pthread_t tid{};                 /**< Thread running this dcr */
-  bool spool_data{};         /**< Set to spool data */
-  int spool_fd{};            /**< Fd if spooling */
-  bool spooling{};           /**< Set when actually spooling */
-  bool despooling{};         /**< Set when despooling */
-  bool despool_wait{};       /**< Waiting for despooling */
-  bool NewVol{};             /**< Set if new Volume mounted */
-  bool WroteVol{};           /**< Set if Volume written */
-  bool NewFile{};            /**< Set when EOF written */
-  bool reserved_volume{};    /**< Set if we reserved a volume */
-  bool any_volume{};         /**< Any OK for dir_find_next... */
-  bool attached_to_dev{};    /**< Set when attached to dev */
-  bool keep_dcr{};           /**< Do not free dcr in release_dcr */
+  bool spool_data{};               /**< Set to spool data */
+  int spool_fd[SPOOL_FILE_COUNT]{};/**< Fd part A/B if spooling */
+  int active_spool_files{};        /**< Set to the configured maximum spool files to use */
+  pthread_mutex_t spool_fd_mutex[SPOOL_FILE_COUNT]{};  /**< Spool FD access control */
+  bool spooling{};                 /**< Set when actually spooling */
+  spool_file current_spool_file{}; /**< Set when spooling to part A */
+  bool despooling{};               /**< Set when despooling */
+  bool despool_wait{};             /**< Waiting for despooling */
+  bool NewVol{};                   /**< Set if new Volume mounted */
+  bool WroteVol{};                 /**< Set if Volume written */
+  bool NewFile{};                  /**< Set when EOF written */
+  bool reserved_volume{};          /**< Set if we reserved a volume */
+  bool any_volume{};               /**< Any OK for dir_find_next... */
+  bool attached_to_dev{};          /**< Set when attached to dev */
+  bool keep_dcr{};                 /**< Do not free dcr in release_dcr */
   AutoXflateMode autodeflate{AutoXflateMode::IO_DIRECTION_NONE};
   AutoXflateMode autoinflate{AutoXflateMode::IO_DIRECTION_NONE};
   uint32_t VolFirstIndex{};        /**< First file index this Volume */
@@ -102,6 +113,7 @@ class DeviceControlRecord {
   uint32_t EndBlock{};             /**< Ending block written */
   int64_t VolMediaId{};            /**< MediaId */
   int64_t job_spool_size{};        /**< Current job spool size */
+  int64_t job_despool_size{};      /**< Current job despool size */
   int64_t max_job_spool_size{};    /**< Max job spool size */
   uint32_t VolMinBlocksize{};      /**< Minimum Blocksize */
   uint32_t VolMaxBlocksize{};      /**< Maximum Blocksize */
@@ -188,8 +200,10 @@ class DeviceControlRecord {
   bool IsTapePositionOk();
 
   // Methods in block.c
-  bool WriteBlockToDevice();
-  bool WriteBlockToDev();
+  bool WriteBlockToDevice() { return WriteBlockToDevice(block, false); }
+  bool WriteBlockToDevice(DeviceBlock* block, bool bypass_spool);
+  bool WriteBlockToDev() { return WriteBlockToDev(block); }
+  bool WriteBlockToDev(DeviceBlock* block);
 
   enum ReadStatus
   {

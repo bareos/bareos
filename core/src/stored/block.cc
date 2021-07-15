@@ -560,7 +560,7 @@ static const bool no_tape_write_test = false;
  * Returns: true  on success or EOT
  *          false on hard error
  */
-bool DeviceControlRecord::WriteBlockToDev()
+bool DeviceControlRecord::WriteBlockToDev(DeviceBlock* block)
 {
   ssize_t status = 0;
   uint32_t wlen; /* length to write */
@@ -851,12 +851,12 @@ bool DeviceControlRecord::WriteBlockToDev()
  *        : false on failure
  *
  */
-bool DeviceControlRecord::WriteBlockToDevice()
+bool DeviceControlRecord::WriteBlockToDevice(DeviceBlock* block, bool bypass_spool)
 {
   bool status = true;
   DeviceControlRecord* dcr = this;
 
-  if (dcr->spooling) {
+  if (dcr->spooling && !bypass_spool) {
     status = WriteBlockToSpoolFile(dcr);
     return status;
   }
@@ -898,7 +898,7 @@ bool DeviceControlRecord::WriteBlockToDevice()
     }
   }
 
-  if (!dcr->WriteBlockToDev()) {
+  if (!dcr->WriteBlockToDev(block)) {
     if (JobCanceled(jcr) || jcr->is_JobType(JT_SYSTEM)) {
       status = false;
     } else {

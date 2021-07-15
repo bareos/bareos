@@ -45,15 +45,15 @@ namespace storagedaemon {
 
 /* Forward referenced subroutines */
 static void MakeUniqueDataSpoolFilename(DeviceControlRecord* dcr,
-                                        POOLMEM*& name);
+                                        POOLMEM*& name, char id);
 static bool OpenDataSpoolFile(DeviceControlRecord* dcr);
 static bool CloseDataSpoolFile(DeviceControlRecord* dcr, bool end_of_spool);
-static bool DespoolData(DeviceControlRecord* dcr, bool commit);
-static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr);
+static bool DespoolData(DeviceControlRecord* dcr, bool commit, int despool_fd);
+static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr, int despool_fd);
 static bool OpenAttrSpoolFile(JobControlRecord* jcr, BareosSocket* bs);
 static bool CloseAttrSpoolFile(JobControlRecord* jcr, BareosSocket* bs);
-static bool WriteSpoolHeader(DeviceControlRecord* dcr);
-static bool WriteSpoolData(DeviceControlRecord* dcr);
+static bool WriteSpoolHeader(DeviceControlRecord* dcr, int spool_fd);
+static bool WriteSpoolData(DeviceControlRecord* dcr, int spool_fd);
 
 struct spool_stats_t {
   uint32_t data_jobs; /* current jobs spooling data */
@@ -82,6 +82,11 @@ enum
   RB_EOT = 1,
   RB_ERROR,
   RB_OK
+};
+
+struct despool_thread_args {
+  spool_file despool_file;
+  DeviceControlRecord* dcr;
 };
 
 void ListSpoolStats(StatusPacket* sp)
@@ -126,6 +131,7 @@ bool BeginDataSpool(DeviceControlRecord* dcr)
     status = OpenDataSpoolFile(dcr);
     if (status) {
       dcr->spooling = true;
+      dcr->current_spool_file = SPOOL_FILE_A;
       Jmsg(dcr->jcr, M_INFO, 0, _("Spooling data ...\n"));
       P(mutex);
       spool_stats.data_jobs++;
@@ -152,7 +158,11 @@ bool CommitDataSpool(DeviceControlRecord* dcr)
 
   if (dcr->spooling) {
     Dmsg0(100, "Committing spooled data\n");
-    status = DespoolData(dcr, true /*commit*/);
+
+    P(dcr->spool_fd_mutex[dcr->current_spool_file]);
+    status = DespoolData(dcr, true /*commit*/, dcr->spool_fd[dcr->current_spool_file]);
+    V(dcr->spool_fd_mutex[dcr->current_spool_file]);
+
     if (!status) {
       Dmsg1(100, _("Bad return from despool WroteVol=%d\n"), dcr->WroteVol);
       CloseDataSpoolFile(dcr, true);
@@ -165,7 +175,7 @@ bool CommitDataSpool(DeviceControlRecord* dcr)
 }
 
 static void MakeUniqueDataSpoolFilename(DeviceControlRecord* dcr,
-                                        POOLMEM*& name)
+                                        POOLMEM*& name, char id)
 {
   const char* dir;
 
@@ -175,31 +185,32 @@ static void MakeUniqueDataSpoolFilename(DeviceControlRecord* dcr,
     dir = working_directory;
   }
 
-  Mmsg(name, "%s/%s.data.%u.%s.%s.spool", dir, my_name, dcr->jcr->JobId,
-       dcr->jcr->Job, dcr->device_resource->resource_name_);
+  Mmsg(name, "%s/%s.data.%u.%s.%s.%c.spool", dir, my_name, dcr->jcr->JobId,
+       dcr->jcr->Job, dcr->device_resource->resource_name_, id);
 }
 
 static bool OpenDataSpoolFile(DeviceControlRecord* dcr)
 {
-  int spool_fd;
-  POOLMEM* name = GetPoolMemory(PM_MESSAGE);
+  for (int i = 0; i < dcr->active_spool_files; i++) {
+    int spool_fd;
+    POOLMEM* name = GetPoolMemory(PM_MESSAGE);
 
-  MakeUniqueDataSpoolFilename(dcr, name);
-  if ((spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640))
-      >= 0) {
-    dcr->spool_fd = spool_fd;
-    dcr->jcr->impl->spool_attributes = true;
-  } else {
-    BErrNo be;
+    MakeUniqueDataSpoolFilename(dcr, name, 'a' + i);
+    if ((spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640))
+        >= 0) {
+      dcr->spool_fd[i] = spool_fd;
+      dcr->jcr->impl->spool_attributes = true;
+    } else {
+      BErrNo be;
 
-    Jmsg(dcr->jcr, M_FATAL, 0, _("Open data spool file %s failed: ERR=%s\n"),
-         name, be.bstrerror());
+      Jmsg(dcr->jcr, M_FATAL, 0, _("Open data spool file %s failed: ERR=%s\n"),
+           name, be.bstrerror());
+      FreePoolMemory(name);
+      return false;
+    }
+    Dmsg1(100, "Created spool file: %s\n", name);
     FreePoolMemory(name);
-    return false;
   }
-  Dmsg1(100, "Created spool file: %s\n", name);
-  FreePoolMemory(name);
-
   return true;
 }
 
@@ -207,13 +218,18 @@ static bool CloseDataSpoolFile(DeviceControlRecord* dcr, bool end_of_spool)
 {
   POOLMEM* name = GetPoolMemory(PM_MESSAGE);
 
-  close(dcr->spool_fd);
-  dcr->spool_fd = -1;
   dcr->spooling = false;
+  dcr->current_spool_file = SPOOL_FILE_INVALID;
+  for (int i = 0; i < dcr->active_spool_files; i++) {
+    P(dcr->spool_fd_mutex[i]);
+    close(dcr->spool_fd[i]);
+    dcr->spool_fd[i] = -1;
+    MakeUniqueDataSpoolFilename(dcr, name, 'a' + i);
+    SecureErase(dcr->jcr, name);
+    Dmsg1(100, "Deleted spool file: %s\n", name);
+    V(dcr->spool_fd_mutex[i]);
+  }
 
-  MakeUniqueDataSpoolFilename(dcr, name);
-  SecureErase(dcr->jcr, name);
-  Dmsg1(100, "Deleted spool file: %s\n", name);
   FreePoolMemory(name);
 
   P(mutex);
@@ -240,11 +256,10 @@ static const char* spool_name = "*spool*";
  * NB! This routine locks the device, but if committing will
  *     not unlock it. If not committing, it will be unlocked.
  */
-static bool DespoolData(DeviceControlRecord* dcr, bool commit)
+static bool DespoolData(DeviceControlRecord* dcr, bool commit, int despool_fd)
 {
   DeviceControlRecord* rdcr;
   bool ok = true;
-  DeviceBlock* block;
   JobControlRecord* jcr = dcr->jcr;
   int status;
   char ec1[50];
@@ -261,6 +276,10 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
    * are despooling because of user spool size max or some error
    * (e.g. filesystem full).
    */
+  // TODO XXX: These counters are not valid (they continue to grow and reset
+  // by the spooling thread when in background),
+  // we need to pass these in from the
+  // despool thread, or possibly derive them from how much we actually read.
   if (commit) {
     Jmsg(jcr, M_INFO, 0,
          _("Committing spooled data to Volume \"%s\". Despooling %s bytes "
@@ -276,7 +295,6 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   }
   jcr->sendJobStatus(JS_DataDespooling);
   dcr->despool_wait = true;
-  dcr->spooling = false;
   /*
    * We work with device blocked, but not locked so that other threads
    * e.g. reservations can lock the device structure.
@@ -286,7 +304,6 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   dcr->despooling = true;
 
   /*
-   * This is really quite kludgy and should be fixed some time.
    * We create a dev structure to read from the spool file
    * in rdev and rdcr.
    */
@@ -301,15 +318,12 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   rdev->device_resource = dcr->dev->device_resource;
   rdcr = dcr->get_new_spooling_dcr();
   SetupNewDcrDevice(jcr, rdcr, rdev.get(), NULL);
-  rdcr->spool_fd = dcr->spool_fd;
-  block = dcr->block;       /* save block */
-  dcr->block = rdcr->block; /* make read and write block the same */
 
-  Dmsg1(800, "read/write block size = %d\n", block->buf_len);
-  lseek(rdcr->spool_fd, 0, SEEK_SET); /* rewind */
+  Dmsg1(800, "read/write block size = %d\n", dcr->block->buf_len);
+  lseek(despool_fd, 0, SEEK_SET); /* rewind */
 
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
-  posix_fadvise(rdcr->spool_fd, 0, 0, POSIX_FADV_WILLNEED);
+  posix_fadvise(despool_fd, 0, 0, POSIX_FADV_WILLNEED);
 #endif
 
   /* Add run time, to get current wait time */
@@ -322,14 +336,14 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
       ok = false;
       break;
     }
-    status = ReadBlockFromSpoolFile(rdcr);
+    status = ReadBlockFromSpoolFile(rdcr, despool_fd);
     if (status == RB_EOT) {
       break;
     } else if (status == RB_ERROR) {
       ok = false;
       break;
     }
-    ok = dcr->WriteBlockToDevice();
+    ok = dcr->WriteBlockToDevice(rdcr->block, true /* bypass_spool */);
     if (!ok) {
       Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
             dcr->dev->print_name(), dcr->dev->bstrerror());
@@ -338,8 +352,8 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
       /* Force in case Incomplete set */
       jcr->forceJobStatus(JS_FatalError);
     }
-    Dmsg3(800, "Write block ok=%d FI=%d LI=%d\n", ok, block->FirstIndex,
-          block->LastIndex);
+    Dmsg3(800, "Write block ok=%d FI=%d LI=%d\n", ok, dcr->block->FirstIndex,
+          dcr->block->LastIndex);
   }
 
   /*
@@ -378,15 +392,13 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
        edit_uint64_with_suffix(jcr->impl->dcr->job_spool_size / despool_elapsed,
                                ec1));
 
-  dcr->block = block; /* reset block */
-
   // See if we are using secure erase.
   if (me->secure_erase_cmdline) {
     CloseDataSpoolFile(dcr, false);
     BeginDataSpool(dcr);
   } else {
-    lseek(rdcr->spool_fd, 0, SEEK_SET); /* rewind */
-    if (ftruncate(rdcr->spool_fd, 0) != 0) {
+    lseek(despool_fd, 0, SEEK_SET); /* rewind */
+    if (ftruncate(despool_fd, 0) != 0) {
       BErrNo be;
 
       Jmsg(jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"),
@@ -414,7 +426,6 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
   rdcr->jcr = NULL;
   rdcr->SetDev(NULL);
   FreeDeviceControlRecord(rdcr);
-  dcr->spooling = true; /* turn on spooling again */
   dcr->despooling = false;
 
   /*
@@ -434,7 +445,7 @@ static bool DespoolData(DeviceControlRecord* dcr, bool commit)
  *          RB_EOT when file done
  *          RB_ERROR on error
  */
-static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
+static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr, int despool_fd)
 {
   uint32_t rlen;
   ssize_t status;
@@ -443,7 +454,7 @@ static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
   JobControlRecord* jcr = dcr->jcr;
 
   rlen = sizeof(hdr);
-  status = read(dcr->spool_fd, (char*)&hdr, (size_t)rlen);
+  status = read(despool_fd, (char*)&hdr, (size_t)rlen);
   if (status == 0) {
     Dmsg0(100, "EOT on spool read.\n");
     return RB_EOT;
@@ -472,7 +483,7 @@ static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
     jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
     return RB_ERROR;
   }
-  status = read(dcr->spool_fd, (char*)block->buf, (size_t)rlen);
+  status = read(despool_fd, (char*)block->buf, (size_t)rlen);
   if (status != (ssize_t)rlen) {
     Pmsg2(000, _("Spool data read error. Wanted %u bytes, got %d\n"), rlen,
           status);
@@ -492,6 +503,31 @@ static int ReadBlockFromSpoolFile(DeviceControlRecord* dcr)
   return RB_OK;
 }
 
+
+/**
+ * Despooler thread.
+ *
+ * This may or may not run the background depending on device spool
+ * configuration.
+ */
+extern "C" void* despool_thread(void* arg) {
+  struct despool_thread_args* dta = (struct despool_thread_args*)arg;
+  spool_file despool_file = dta->despool_file;
+  DeviceControlRecord* dcr = dta->dcr;
+
+  P(dcr->spool_fd_mutex[despool_file]);
+  if (!DespoolData(dcr, false, dcr->spool_fd[despool_file])) {
+    Pmsg0(000, _("Bad return from despool in WriteBlock.\n"));
+    free(arg);
+    return (void*)false;
+  }
+
+  V(dcr->spool_fd_mutex[despool_file]);
+
+  free(arg);
+  return (void*)true;
+}
+
 /**
  * Write a block to the spool file
  *
@@ -502,6 +538,7 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
 {
   uint32_t wlen, hlen; /* length to write */
   bool despool = false;
+  spool_file despool_file = SPOOL_FILE_INVALID;
   DeviceBlock* block = dcr->block;
 
   if (JobCanceled(dcr->jcr)) { return false; }
@@ -512,14 +549,27 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
 
   hlen = sizeof(spool_hdr);
   wlen = block->binbuf;
+
+  if (dcr->current_spool_file < SPOOL_FILE_A || dcr->current_spool_file >= dcr->active_spool_files) {
+    Pmsg0(000, _("Invalid spool file active.\n"));
+    return false;
+  }
+
   P(dcr->dev->spool_mutex);
   dcr->job_spool_size += hlen + wlen;
   dcr->dev->spool_size += hlen + wlen;
-  if ((dcr->max_job_spool_size > 0
+    if ((dcr->max_job_spool_size > 0
        && dcr->job_spool_size >= dcr->max_job_spool_size)
       || (dcr->dev->max_spool_size > 0
           && dcr->dev->spool_size >= dcr->dev->max_spool_size)) {
+    Dmsg0(10, "Job max spool size reached, switching spool file");
     despool = true;
+    despool_file = dcr->current_spool_file;
+    if (dcr->current_spool_file < dcr->active_spool_files-1) {
+      dcr->current_spool_file = spool_file(int(dcr->current_spool_file) + 1);
+    } else {
+      dcr->current_spool_file = SPOOL_FILE_A;
+    }
   }
   V(dcr->dev->spool_mutex);
   P(mutex);
@@ -529,7 +579,12 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
   }
   V(mutex);
   if (despool) {
+    bool background_despool = (dcr->active_spool_files > 1);
     char ec1[30], ec2[30];
+    int status;
+    pthread_t despool_tid;
+    struct despool_thread_args* despool_args;
+
     if (dcr->max_job_spool_size > 0) {
       Jmsg(dcr->jcr, M_INFO, 0,
            _("User specified Job spool size reached: "
@@ -544,28 +599,56 @@ bool WriteBlockToSpoolFile(DeviceControlRecord* dcr)
            edit_uint64_with_commas(dcr->dev->max_spool_size, ec2));
     }
 
-    if (!DespoolData(dcr, false)) {
-      Pmsg0(000, _("Bad return from despool in WriteBlock.\n"));
+    if (background_despool) {
+      Jmsg(dcr->jcr, M_INFO, 0, _("Doing background despooling...\n"));
+    } else {
+      Jmsg(dcr->jcr, M_INFO, 0, _("Only one active spool file, blocking spooling while despooling...\n"));
+      dcr->spooling = false;
+    }
+
+    // Memory is returned by the despooler thread when done
+    despool_args = (struct despool_thread_args*)malloc(
+        sizeof(struct despool_thread_args));
+    despool_args->despool_file = despool_file;
+    despool_args->dcr = dcr;
+    if ((status = pthread_create(&despool_tid, NULL, despool_thread,
+                                 (void*)despool_args))
+        != 0) {
+      free(despool_args);
+      BErrNo be;
+      Emsg1(M_FATAL, 0, _("Failed to start despool thread: %s\n"), be.bstrerror(status));
       return false;
     }
-    /* Despooling cleared these variables so reset them */
-    P(dcr->dev->spool_mutex);
-    dcr->job_spool_size += hlen + wlen;
-    dcr->dev->spool_size += hlen + wlen;
-    V(dcr->dev->spool_mutex);
-    Jmsg(dcr->jcr, M_INFO, 0, _("Spooling data again ...\n"));
+
+    if (!background_despool) {
+      // TODO: We should probably join on the background threads as well to get
+      // their failure codes?
+      pthread_join(despool_tid, NULL);
+      Jmsg(dcr->jcr, M_INFO, 0, _("Spooling data again ...\n"));
+      dcr->spooling = true;
+    }
   }
 
+  P(dcr->spool_fd_mutex[dcr->current_spool_file]);
 
-  if (!WriteSpoolHeader(dcr)) { return false; }
-  if (!WriteSpoolData(dcr)) { return false; }
+  if (despool) {
+    // New spool file!
+    P(dcr->dev->spool_mutex);
+    dcr->job_spool_size = hlen + wlen;
+    dcr->dev->spool_size = hlen + wlen;
+    V(dcr->dev->spool_mutex);
+  }
+  if (!WriteSpoolHeader(dcr, dcr->spool_fd[dcr->current_spool_file])) { return false; }
+  if (!WriteSpoolData(dcr, dcr->spool_fd[dcr->current_spool_file])) { return false; }
+
+  V(dcr->spool_fd_mutex[dcr->current_spool_file]);
 
   Dmsg2(800, "Wrote block FI=%d LI=%d\n", block->FirstIndex, block->LastIndex);
   EmptyBlock(block);
   return true;
 }
 
-static bool WriteSpoolHeader(DeviceControlRecord* dcr)
+static bool WriteSpoolHeader(DeviceControlRecord* dcr, int spool_fd)
 {
   spool_hdr hdr;
   ssize_t status;
@@ -578,7 +661,7 @@ static bool WriteSpoolHeader(DeviceControlRecord* dcr)
 
   /* Write header */
   for (int retry = 0; retry <= 1; retry++) {
-    status = write(dcr->spool_fd, (char*)&hdr, sizeof(hdr));
+    status = write(spool_fd, (char*)&hdr, sizeof(hdr));
     if (status == -1) {
       BErrNo be;
 
@@ -595,11 +678,11 @@ static bool WriteSpoolHeader(DeviceControlRecord* dcr)
       /* If we wrote something, truncate it, then despool */
       if (status != -1) {
 #if defined(HAVE_WIN32)
-        boffset_t pos = _lseeki64(dcr->spool_fd, (__int64)0, SEEK_CUR);
+        boffset_t pos = _lseeki64(spool_fd, (__int64)0, SEEK_CUR);
 #else
-        boffset_t pos = lseek(dcr->spool_fd, 0, SEEK_CUR);
+        boffset_t pos = lseek(spool_fd, 0, SEEK_CUR);
 #endif
-        if (ftruncate(dcr->spool_fd, pos - status) != 0) {
+        if (ftruncate(spool_fd, pos - status) != 0) {
           BErrNo be;
 
           Jmsg(dcr->jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"),
@@ -607,7 +690,7 @@ static bool WriteSpoolHeader(DeviceControlRecord* dcr)
           /* Note, try continuing despite ftruncate problem */
         }
       }
-      if (!DespoolData(dcr, false)) {
+      if (!DespoolData(dcr, false, spool_fd)) {
         Jmsg(jcr, M_FATAL, 0, _("Fatal despooling error."));
         jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
         return false;
@@ -621,7 +704,7 @@ static bool WriteSpoolHeader(DeviceControlRecord* dcr)
   return false;
 }
 
-static bool WriteSpoolData(DeviceControlRecord* dcr)
+static bool WriteSpoolData(DeviceControlRecord* dcr, int spool_fd)
 {
   ssize_t status;
   DeviceBlock* block = dcr->block;
@@ -629,7 +712,7 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
 
   // Write data
   for (int retry = 0; retry <= 1; retry++) {
-    status = write(dcr->spool_fd, block->buf, (size_t)block->binbuf);
+    status = write(spool_fd, block->buf, (size_t)block->binbuf);
     if (status == -1) {
       BErrNo be;
 
@@ -641,11 +724,11 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
       // If we wrote something, truncate it and the header, then despool
       if (status != -1) {
 #if defined(HAVE_WIN32)
-        boffset_t pos = _lseeki64(dcr->spool_fd, (__int64)0, SEEK_CUR);
+        boffset_t pos = _lseeki64(spool_fd, (__int64)0, SEEK_CUR);
 #else
-        boffset_t pos = lseek(dcr->spool_fd, 0, SEEK_CUR);
+        boffset_t pos = lseek(spool_fd, 0, SEEK_CUR);
 #endif
-        if (ftruncate(dcr->spool_fd, pos - status - sizeof(spool_hdr)) != 0) {
+        if (ftruncate(spool_fd, pos - status - sizeof(spool_hdr)) != 0) {
           BErrNo be;
 
           Jmsg(dcr->jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"),
@@ -654,13 +737,13 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
         }
       }
 
-      if (!DespoolData(dcr, false)) {
+      if (!DespoolData(dcr, false, spool_fd)) {
         Jmsg(jcr, M_FATAL, 0, _("Fatal despooling error."));
         jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
         return false;
       }
 
-      if (!WriteSpoolHeader(dcr)) { return false; }
+      if (!WriteSpoolHeader(dcr, spool_fd)) { return false; }
 
       continue; /* try again */
     }
