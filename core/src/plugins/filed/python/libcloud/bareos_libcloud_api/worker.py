@@ -199,10 +199,12 @@ class Worker(ProcessBase):
         except LibcloudError as e:
             silentremove(tmpfilename)
             self.error_message(
-                "Error downloading object, skipping: %s"
+                "Error downloading object: %s"
                 % (task_object_full_name(task)),
                 e,
             )
+            if self._retry_task(task):
+                return CONTINUE
             return self._fail_job_or_continue_running()
         except Exception as e:
             silentremove(tmpfilename)
@@ -243,3 +245,10 @@ class Worker(ProcessBase):
         if self.fail_on_download_error:
             return FINISH_ON_ERROR
         return CONTINUE
+
+    def _retry_task(self, task):
+        task["download_retries"] -= 1
+        if task["download_retries"] > 0:
+            self.queue_try_put(self.input_queue, task)
+            return True
+        return False
