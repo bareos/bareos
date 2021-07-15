@@ -39,6 +39,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #871]: UI will not load complete [PR #880]
 
 ### Added
+- systemtests: allows multiple subtests per systemtest [PR #857]
+- systemtests: replaced the six reload-* tests by one test [PR #857]
+- systemtests: replaced fileset-multiple-include-blocks and fileset-multiple-options-blocks by fileset-multiple-blocks test [PR #857]
 - Add systemtests fileset-multiple-include-blocks, fileset-multiple-options-blocks, quota-softquota, sparse-file, truncate-command and block-size, (migrated from ``regress/``) [PR #780]
 - Add bvfs and dbcheck tests to python-bareos systemtest [PR #780]
 - systemtests for NDMP functionalities [PR #822]
@@ -58,7 +61,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - systemtests: define variable BackupDirectory globally [PR #780]
 - systemtests: run all systemstests with ``set -o pipefail`` [PR #780]
 - core: cleanup systemd service dependencies: Requires network.target, but start after the network-online.target [PR #700]
-- core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
 - core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
 - repaired or added all header guards in libdroplet [PR #765]
 - When using Python > 3.7 the postgres and libcloud plugins will cancel the job and write an error message [PR #769]

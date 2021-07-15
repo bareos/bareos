@@ -3,5 +3,5 @@
 
 #shellcheck source=../environment.in
 . ./environment
-"${scripts}"/bareos-config initialize_database_driver
+"${scripts}"/bareos-config initialize_database_driver >/dev/null
 "${rscripts}"/bareos "$@"

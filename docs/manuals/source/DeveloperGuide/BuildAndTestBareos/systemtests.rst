@@ -97,11 +97,17 @@ Systemtests use the locally compiled version of the bareos binaries
 and run tests on them. Preparations also have been made to run the
 tests on installed binaries (originating from packages).
 
-The tests were designed to be completely independent, so that they
-can be run in parallel without interfering with each other.
+Tests are structured in directories.
+Each test directory either contain
+a single test script, named :file:`testrunner`
+or multiple scripts named :file:`testrunner-*`
+together with optional scripts :file:`test-setup` and :file:`test-cleanup`.
+Having multiple test scripts combined reduces the overhead
+but makes the scripts slightly more complicated,
+as they must be able to run in arbitrary order.
 
-The Bareos Systemtest approach is intended to substitute the older :ref:`BareosRegressionTestingChapter` approach.
-
+Each test directory is designed to be independent,
+so that different tests can be run in parallel without interfering with each other.
 
 Run all system tests
 ^^^^^^^^^^^^^^^^^^^^
@@ -112,12 +118,24 @@ Run all system tests
    user@host:~$ cd bareos-local-tests/build
    user@host:~/bareos-local-tests/build$ ctest --show-only
    Test project ~/bareos-local-tests/build
-     Test  #1: system:backup-bareos-test
-     Test  #2: system:backup-bareos-passive-test
-     Test  #3: system:multiplied-device-test
-     Test  #4: system:virtualfull
-     Test  #5: system:virtualfull-bscan
-   ...
+     Test   #1: system:acl
+     Test   #2: system:ai-consolidate-ignore-duplicate-job
+     Test   #3: system:autochanger (Disabled)
+     Test   #4: system:bareos
+     Test   #5: system:bareos-acl
+     Test   #6: system:bconsole-pam (Disabled)
+     Test   #7: system:bconsole-status-client
+     ...
+     Test  #58: system:reload:setup
+     Test  #59: system:reload:add-client
+     Test  #60: system:reload:add-duplicate-job
+     Test  #61: system:reload:add-empty-job
+     Test  #62: system:reload:add-second-director
+     Test  #63: system:reload:add-uncommented-string
+     Test  #64: system:reload:unchanged-config
+     Test  #65: system:reload:cleanup
+     ...
+
 
 .. code-block:: shell-session
    :caption: Run all system tests
@@ -127,13 +145,13 @@ Run all system tests
 
    Running tests...
    Test project ~/bareos-local-tests/build
-         Start  1: system:backup-bareos-test
-    1/11 Test  #1: system:backup-bareos-test ...........   Passed   15.81 sec
-         Start  2: system:backup-bareos-passive-test
+         Start  1: system:acl
+    1/88 Test  #1: system:acl ...........   Passed   15.81 sec
+         Start  2: system:ai-consolidate-ignore-duplicate-job
    ...
 
 
-Instead of using :command:`make test` , :command:`ctest` can be directly invoked.
+Instead of using :command:`make test`, :command:`ctest` can be directly invoked.
 This offers some advantages, like being able to run multiple tests in parallel with
 :command:`ctest -j <number of parallel tests>`.
 Only jobs with names matching a certain regular expression can be run with
@@ -147,7 +165,7 @@ Run a single system test
    :caption: Run a single system test by ctest
 
    user@host:~$ cd bareos-local-tests/build
-   user@host:~/bareos-local-tests/build$ ctest --verbose --tests-regex backup-bareos-test
+   user@host:~/bareos-local-tests/build$ ctest --verbose --tests-regex acl
    UpdateCTestConfiguration  from :~/bareos-local-tests/build/DartConfiguration.tcl
    Parse Config file:~/bareos-local-tests/build/DartConfiguration.tcl
    UpdateCTestConfiguration  from :~/bareos-local-tests/build/DartConfiguration.tcl
@@ -160,24 +178,24 @@ Run a single system test
    Checking test dependency graph...
    Checking test dependency graph end
    test 1
-       Start 1: system:backup-bareos-test
+       Start 1: system:acl
 
-   1: Test command: ~/bareos-local-tests/build/systemtests/tests/backup-bareos-test/testrunner
+   1: Test command: ~/bareos-local-tests/build/systemtests/tests/acl/testrunner
    1: Test timeout computed to be: 1500
    1: creating database (postgresql)
    1: running ~/bareos-local-tests/build/systemtests/scripts/setup
    1:
    1:
-   1: === backup-bareos-test: starting at 16:09:46 ===
+   1: === acl: starting at 16:09:46 ===
    1: =
    1: =
    1: =
    1: =
-   1: === backup-bareos-test: OK at 16:09:56 ===
-   1/1 Test #1: system:backup-bareos-test ........   Passed   10.90 sec
+   1: === acl: OK at 16:09:56 ===
+   1/1 Test #1: system:acl ........   Passed   10.90 sec
 
    The following tests passed:
-           system:backup-bareos-test
+           system:acl
 
    100% tests passed, 0 tests failed out of 1
 
@@ -189,18 +207,18 @@ or change into a test directory and run :command:`testrunner` directly:
    :caption: Run a single system test by testrunner
 
    user@host:~$ cd bareos-local-tests/build
-   user@host:~/bareos-local-tests/build$ cd tests/backup-bareos-test
-   user@host:~/bareos-local-tests/build/tests/backup-bareos-test$ ./testrunner
+   user@host:~/bareos-local-tests/build$ cd tests/acl
+   user@host:~/bareos-local-tests/build/tests/acl$ ./testrunner
    creating database (postgresql)
    running ~/bareos-local-tests/build/systemtests/scripts/setup
 
 
-   === backup-bareos-test: starting at 15:03:20 ===
+   === acl: starting at 15:03:20 ===
    =
    =
    =
    =
-   === backup-bareos-test: OK at 15:03:35 ===
+   === acl: OK at 15:03:35 ===
 
 
 For verbose output, set ``export REGRESS_DEBUG=1`` before running :command:`testrunner`.
@@ -216,21 +234,21 @@ and a :command:`bconsole` session can be used to retrieve information:
    :caption: Doing manual tests in a test-environment
 
    user@host:~$ cd bareos-local-tests/build
-   user@host:~/bareos-local-tests/build$ cd tests/backup-bareos-test
-   user@host:~/bareos-local-tests/build/tests/backup-bareos-test$ bin/bareos status
+   user@host:~/bareos-local-tests/build$ cd tests/acl
+   user@host:~/bareos-local-tests/build/tests/acl$ bin/bareos status
    bareos-dir is stopped
    bareos-sd is stopped
    bareos-fd is stopped
-   user@host:~/bareos-local-tests/build/tests/backup-bareos-test$ bin/bareos start
+   user@host:~/bareos-local-tests/build/tests/acl$ bin/bareos start
    Starting the  Storage daemon
    Starting the  File daemon
    Starting the  Director daemon
    Checking Configuration and Database connection ...
-   user@host:~/bareos-local-tests/build/tests/backup-bareos-test$ bin/bareos status
+   user@host:~/bareos-local-tests/build/tests/acl$ bin/bareos status
    bareos-dir (pid 2782) is running...
    bareos-sd (pid 2761) is running...
    bareos-fd (pid 2770) is running...
-   user@host:~/bareos-local-tests/build/tests/backup-bareos-test$ bin/bconsole
+   user@host:~/bareos-local-tests/build/tests/acl$ bin/bconsole
    Connecting to Director localhost:42001
     Encryption: TLS_CHACHA20_POLY1305_SHA256
    1000 OK: bareos-dir Version: 19.1.2 (01 February 2019)
@@ -254,21 +272,21 @@ and a :command:`bconsole` session can be used to retrieve information:
 Add a systemtest
 ^^^^^^^^^^^^^^^^
 
-To add a systemtest it is advisable to copy one of the existing systemtests
+If possible extend a systemtest already containing multiple scripts
+by adding another :file:`testrunner-*` script to the test directory.
+
+If this is not reasonable, a new systemtest is best created
+by copying the existing systemtest
 that matches the desired type of the new systemtest most.
 
-The new test has to be listed in the CMakeLists.txt file in the systemtests
-folder.
+The new test directory has to be listed
+in :file:`systemtests/tests/CMakeLists.txt`.
 
-Taking into concern system dependencies it could be neccessary to disable
+Taking into concern system dependencies it could be necessary to disable
 a test if the appropriate prerequisites for a test are not met. In this case
 the test should be displayed as disabled when running the tests.
 
-Therefore CMakeLists.txt contains two lists of tests. One for enabled tests
-which will run properly and another for disabled tests.
-
-Each test has a script named *testrunner* which contains all code to run a
-systemtest.
+Adapt the test configuration and the :file:`testrunner` script to your requirements.
 
 Directory Structures
 ^^^^^^^^^^^^^^^^^^^^
@@ -282,7 +300,7 @@ Directory Structure (Source)
 
 ::
 
-      systemtests/tests/backup-bareos-test/
+      systemtests/tests/acl/
       |-- etc
       |   `-- bareos            -- bareos config for this test
       |       |-- bareos-dir.d
@@ -314,12 +332,21 @@ Directory Structure (Source)
       |           `-- storage
       `-- testrunner            -- the main script for this test
 
+      or
+
+      |-- test-cleanup          -- optional, falls back to ../../scripts/cleanup
+      |-- test-setup            -- optional, falls back to ../../scripts/start_bareos.sh
+      |-- testrunner-test1      -- script for test1
+      |-- testrunner-test2      -- script for test2
+      `-- ...                   -- more test scripts possible
+
+
 Directory Structure (Build)
 ''''''''''''''''''''''''''''
 
 ::
 
-      systemtests/tests/backup-bareos-test/
+      systemtests/tests/acl/
       |-- bin
       |-- etc
       |   `-- bareos

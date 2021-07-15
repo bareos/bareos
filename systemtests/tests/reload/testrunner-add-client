@@ -1,0 +1,37 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#trap read debug
+
+#shellcheck source=../environment.in
+. ./environment
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=./reload_test_functions
+. ./reload_test_functions
+
+TestName="$(get_test_name "$0")"
+export TestName
+export estat
+
+temporary_config_file="$config_directory_dir_additional_test_config/another_client.conf"
+bconsole_command_file="$tmp/bconsole_reload_command"
+console_logfile="$tmp/console.log"
+console_show_client_output_file="$tmp/list_of_clients.out"
+
+############################################
+start_test
+############################################
+
+remove_console_logfile
+
+setup_config
+#reload modified config
+add_another_client
+test_reload_will_not_crash_director
+find_added_client_in_config
+
+############################################
+end_test
+############################################

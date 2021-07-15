@@ -1,0 +1,39 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#trap read debug
+
+#shellcheck source=../environment.in
+. ./environment
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=./reload_test_functions
+. ./reload_test_functions
+
+TestName="$(get_test_name "$0")"
+export TestName
+export estat
+
+temporary_config_file="$config_directory_dir_additional_test_config/uncommented_string.conf"
+bconsole_command_file="$tmp/bconsole_reload_command"
+console_logfile="$tmp/console.log"
+
+
+
+############################################
+start_test
+############################################
+
+#cleanup possible leftover from last run
+remove_console_logfile
+
+setup_config
+#reload modified config
+add_uncommented_string_to_config
+test_reload_will_not_crash_director
+find_error_string_in_console_log 'This is an uncommented string that causes a config abort.'
+
+############################################
+end_test
+############################################

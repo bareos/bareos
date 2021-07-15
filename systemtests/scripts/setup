@@ -1,9 +1,9 @@
 #!/bin/sh
 #shellcheck source=../environment.in
 . ./environment
-
-"${scripts}/bareos-config" initialize_database_driver
 . "${rscripts}/functions"
+
+"${scripts}/bareos-config" initialize_database_driver >/dev/null
 
 print_debug "drop database \"${db_name}\" (${DBTYPE})"
 "${scripts}/drop_bareos_database" "${DBTYPE}" >/dev/null 2>&1
