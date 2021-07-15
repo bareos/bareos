@@ -264,7 +264,7 @@ $this->headTitle($title);
             }
             else {
                $('.running-jobs-container').empty();
-               $('.running-jobs-container').append('<?php echo $this->translate('There are no jobs running.'); ?>');
+               $('.running-jobs-container').append('<?php echo addslashes($this->translate('There are no jobs running.')); ?>');
             }
          },
          error: function() {
