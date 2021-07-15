@@ -23,7 +23,6 @@
 #
 
 # Provided by the Bareos Dir Python plugin interface
-import bareos_dir_consts
 
 # This module contains the wrapper functions called by the Bareos-Dir, the
 # functions call the corresponding methods from your plugin class
@@ -34,7 +33,7 @@ from BareosDirWrapper import *
 import BareosDirPluginGraphiteSender
 
 
-def load_bareos_plugin(context, plugindef):
+def load_bareos_plugin(plugindef):
     '''
     This function is called by the Bareos-Dir to load the plugin
     We use it to instantiate the plugin class
@@ -43,7 +42,7 @@ def load_bareos_plugin(context, plugindef):
     # holds the plugin class object
     BareosDirWrapper.bareos_dir_plugin_object = \
         BareosDirPluginGraphiteSender.BareosDirPluginGraphiteSender(
-            context, plugindef)
-    return bareos_dir_consts.bRCs['bRC_OK']
+            plugindef)
+    return bareosdir.bRCs[b'bRC_OK']
 
 # the rest is done in the Plugin module
