@@ -906,6 +906,7 @@ message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
 message("   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ")
 message("   GTest enabled:                ${GTest_FOUND}")
+message("   google benchmark enabled:     ${benchmark_FOUND}")
 message(
   "   Intl support:                 ${Intl_FOUND} ${INTLINCLUDE_DIRS} ${INTL_LIBRARIES}"
 )

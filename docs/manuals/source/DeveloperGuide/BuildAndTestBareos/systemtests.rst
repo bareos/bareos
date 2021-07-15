@@ -31,7 +31,7 @@ Configure (cmake) build settings
 
 .. note::
 
-   To buil bareos, at least **cmake version 3.12** is required.
+   To build bareos, at least **cmake version 3.12** is required.
 
 
 Bareos cmake configuration allows a lot of different defines to be set.
