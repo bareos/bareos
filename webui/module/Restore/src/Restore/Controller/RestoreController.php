@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -541,6 +541,15 @@ class RestoreController extends AbstractActionController
     }
   }
 
+  private function escapeNameString($n=null)
+  {
+    $n = preg_replace('/[\x00-\x1F\x7F]/', '', $n);
+    $replace_pairs = array('"' => '\"', '\\' => '\\\\');
+    $n = strtr($n, $replace_pairs);
+
+    return $n;
+  }
+
   /**
    * Builds a subtree as Json for JStree
    */
@@ -588,7 +597,7 @@ class RestoreController extends AbstractActionController
           --$dnum;
           $items .= '{';
           $items .= '"id":"-' . $dir['pathid'] . '"';
-          $items .= ',"text":"' . preg_replace('/[\x00-\x1F\x7F]/', '', str_replace('"', '\"', $dir["name"])) . '"';
+          $items .= ',"text":"' . $this->escapeNameString($dir["name"]) . '"';
           $items .= ',"icon":"glyphicon glyphicon-folder-close"';
           $items .= ',"state":""';
           $items .= ',"data":' . \Zend\Json\Json::encode($dir, \Zend\Json\Json::TYPE_OBJECT);
@@ -608,7 +617,7 @@ class RestoreController extends AbstractActionController
       foreach($this->files as $file) {
         $items .= '{';
         $items .= '"id":"' . $file["fileid"] . '"';
-        $items .= ',"text":"' . preg_replace('/[\x00-\x1F\x7F]/', '', str_replace('"', '\"', $file["name"])) . '"';
+        $items .= ',"text":"' . $this->escapeNameString($file["name"]) . '"';
         $items .= ',"icon":"glyphicon glyphicon-file"';
         $items .= ',"state":""';
         $items .= ',"data":' . \Zend\Json\Json::encode($file, \Zend\Json\Json::TYPE_OBJECT);
