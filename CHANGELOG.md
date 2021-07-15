@@ -84,6 +84,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - packages: Build also for Fedora_34 [PR #869]
 - postgresql filedaemon plugin: switched from psycopg2 to pg8000, dropped support for python2.
 - version information was moved from core/cmake/ and webui/cmake/ directories into the toplevel cmake/ directory [PR #861]
+- bareos is now set to listen to both IPv6 and IPv4 by default, instead of needing to specify it via a directive [PR #882]
 
 ### Deprecated
 

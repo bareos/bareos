@@ -30,6 +30,7 @@
 #define FD_DEFAULT_PORT "@fd_port@"
 #define SD_DEFAULT_PORT "@sd_port@"
 #define DIR_DEFAULT_PORT "@dir_port@"
+#define DIR_DEFAULT_ADDRESS "@dir_address@"
 #define NDMP_DEFAULT_PORT "10000"
 
 #if defined(HAVE_WIN32)

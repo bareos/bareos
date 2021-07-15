@@ -557,6 +557,11 @@ if(NOT DEFINED openssl)
   set(openssl ON)
 endif()
 
+# default hostname
+if(NOT DEFINED dir_address)
+  set(dir_address "::")
+endif()
+
 # ports
 if(NOT DEFINED dir_port)
   set(dir_port "9101")
