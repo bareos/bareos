@@ -8,7 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [20.0.2] - 2021-06-10
 
 ### Fixed
-- - docs: Adapted the documentation of the VMware plugin due to update to VDDK 7 [PR #845]
+- docs: Adapted the documentation of the VMware plugin due to update to VDDK 7 [PR #845]
 - fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option localvmdk=yes [PR #830]
 - fix possible read/write problems when using droplet with https [PR #773]
 - fix memory leak in python module constants [PR #781]
@@ -204,6 +204,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [20.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.0
 [20.0.1]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.1
 [20.0.2]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.2
+[Issue #579]: https://bugs.bareos.org/view.php?id=579
+[Issue #871]: https://bugs.bareos.org/view.php?id=871
 [Issue #1039]: https://bugs.bareos.org/view.php?id=1039
 [Issue #1174]: https://bugs.bareos.org/view.php?id=1174
 [Issue #1175]: https://bugs.bareos.org/view.php?id=1175
@@ -220,7 +222,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1246]: https://bugs.bareos.org/view.php?id=1246
 [Issue #1257]: https://bugs.bareos.org/view.php?id=1257
 [Issue #1281]: https://bugs.bareos.org/view.php?id=1281
+[Issue #1300]: https://bugs.bareos.org/view.php?id=1300
 [Issue #1316]: https://bugs.bareos.org/view.php?id=1316
+[Issue #1324]: https://bugs.bareos.org/view.php?id=1324
 [Issue #1329]: https://bugs.bareos.org/view.php?id=1329
 [PR #383]: https://github.com/bareos/bareos/pull/383
 [PR #384]: https://github.com/bareos/bareos/pull/384
@@ -359,4 +363,13 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #830]: https://github.com/bareos/bareos/pull/830
 [PR #833]: https://github.com/bareos/bareos/pull/833
 [PR #837]: https://github.com/bareos/bareos/pull/837
+[PR #840]: https://github.com/bareos/bareos/pull/840
+[PR #845]: https://github.com/bareos/bareos/pull/845
+[PR #864]: https://github.com/bareos/bareos/pull/864
+[PR #868]: https://github.com/bareos/bareos/pull/868
+[PR #871]: https://github.com/bareos/bareos/pull/871
+[PR #874]: https://github.com/bareos/bareos/pull/874
+[PR #878]: https://github.com/bareos/bareos/pull/878
+[PR #880]: https://github.com/bareos/bareos/pull/880
+[PR #884]: https://github.com/bareos/bareos/pull/884
 [unreleased]: https://github.com/bareos/bareos/tree/master
