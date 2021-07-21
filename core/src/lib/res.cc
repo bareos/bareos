@@ -1315,6 +1315,7 @@ void ConfigurationParser::StoreAddressesAddress(LEX* lc,
         || token == BCT_IDENTIFIER)) {
     scan_err1(lc, _("Expected an IP number or a hostname, got: %s"), lc->str);
   }
+
   if (pass == 1
       && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
                      IPADDR::R_SINGLE_ADDR, htons(port), AF_INET, lc->str, 0,
@@ -1338,28 +1339,45 @@ void ConfigurationParser::StoreAddressesPort(LEX* lc,
     scan_err1(lc, _("Expected a port number or string, got: %s"), lc->str);
   }
 
-#ifdef HAVE_IPV6
-  if (pass == 1
-      && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                     IPADDR::R_MULTIPLE, htons(port), AF_INET, 0, lc->str,
-                     errmsg, sizeof(errmsg))) {
-    scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+  bool has_address = false;
+  IPADDR* iaddr;
+  dlist<IPADDR>* addrs
+      = (dlist<IPADDR>*)(*(GetItemVariablePointer<dlist<IPADDR>**>(*item)));
+  foreach_dlist (iaddr, addrs) {
+    if (iaddr->GetType() == IPADDR::R_SINGLE) { has_address = true; }
   }
 
-  if (pass == 1
-      && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                     IPADDR::R_MULTIPLE, htons(port), AF_INET6, 0, lc->str,
-                     errmsg, sizeof(errmsg))) {
-    scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
-  }
+  if (has_address) {
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
+                       errmsg, sizeof(errmsg))) {
+      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+    }
+  } else {
+#ifdef HAVE_IPV6
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_SINGLE, htons(port), AF_INET, 0, lc->str,
+                       errmsg, sizeof(errmsg))) {
+      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+    }
+
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_SINGLE, htons(port), AF_INET6, 0, lc->str,
+                       errmsg, sizeof(errmsg))) {
+      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+    }
 #else
-  if (pass == 1
-      && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                     IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
-                     errmsg, sizeof(errmsg))) {
-    scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
-  }
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
+                       errmsg, sizeof(errmsg))) {
+      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+    }
 #endif
+  }
 }
 
 // Generic store resource dispatcher.
