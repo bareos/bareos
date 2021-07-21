@@ -5,6 +5,23 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+- [Issue #579]: Unable to connect to the director from webui via ipv6 [PR #871] (backport of [PR #868])
+- [Issue #1324]: Infinite loop when trying to log in with invalid account [PR #864] (backport of [PR #840])
+- [Issue #1300]: some job status are not categorized properly [PR #878] (backport of [PR #874])
+- [Issue #871]: UI will not load complete [PR #884] (backport of [PR #880])
+- [Issue #971]: Error building tree for filenames with backslashes [PR #894] (backport of [PR #892])
+- [Issue #1020]: Can not restore a client with spaces in its name [PR #894] (backport of [PR #893])
+
+### Added
+
+### Changed
+
+### Removed
+
+### Documentation
+
+
 ## [20.0.2] - 2021-06-10
 
 ### Fixed
@@ -18,10 +35,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix possible deadlock in storage backend on Solaris and FreeBSD [PR #818] (backport of [PR #809])
 - [Issue #1205]: PHP 7.3 issue with compact() in HeadLink.php [PR #833] (backport of [PR #829])
 - reorder acquire on migrate/copy to avoid possible deadlock [PR #828]
-- [Issue #1324]: Infinite loop when trying to log in with invalid account [PR #864] (backport of [PR #840])
-- [Issue #579]: Unable to connect to the director from webui via ipv6 [PR #871] (backport of [PR #868])
-- [Issue #1300]: some job status are not categorized properly [PR #878] (backport of [PR #874])
-- [Issue #871]: UI will not load complete [PR #884] (backport of [PR #880])
 
 ### Added
 - added choice for the drive number in the truncate command [PR #837]
@@ -206,6 +219,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [20.0.2]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.2
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
+[Issue #971]: https://bugs.bareos.org/view.php?id=971
+[Issue #1020]: https://bugs.bareos.org/view.php?id=1020
 [Issue #1039]: https://bugs.bareos.org/view.php?id=1039
 [Issue #1174]: https://bugs.bareos.org/view.php?id=1174
 [Issue #1175]: https://bugs.bareos.org/view.php?id=1175
@@ -372,4 +387,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #878]: https://github.com/bareos/bareos/pull/878
 [PR #880]: https://github.com/bareos/bareos/pull/880
 [PR #884]: https://github.com/bareos/bareos/pull/884
+[PR #892]: https://github.com/bareos/bareos/pull/892
+[PR #893]: https://github.com/bareos/bareos/pull/893
+[PR #894]: https://github.com/bareos/bareos/pull/894
 [unreleased]: https://github.com/bareos/bareos/tree/master
