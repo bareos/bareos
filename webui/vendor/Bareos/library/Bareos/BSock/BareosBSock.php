@@ -975,7 +975,7 @@ class BareosBSock implements BareosBSockInterface
          $debug = self::receive_message();
       }
 
-      if(self::send('restore file=?b2000'.$rnd.' client='.$client.' restoreclient='.$restoreclient.' restorejob="'.$restorejob.'" where='.$where.' replace='.$replace.' yes')) {
+      if(self::send('restore file=?b2000'.$rnd.' client="'.$client.'" restoreclient="'.$restoreclient.'" restorejob="'.$restorejob.'" where="'.$where.'" replace="'.$replace.'" yes')) {
          $result = self::receive_message();
       }
 
