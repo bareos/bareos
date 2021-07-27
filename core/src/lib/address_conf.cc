@@ -320,6 +320,55 @@ int GetFirstPortHostOrder(dlist<IPADDR>* addrs)
   }
 }
 
+bool RemoveDefaultAddresses(dlist<IPADDR>* addrs,
+                            IPADDR::i_type type,
+                            char* buf,
+                            int buflen)
+{
+  IPADDR* iaddr;
+  IPADDR* default_address = nullptr;
+  foreach_dlist (iaddr, addrs) {
+    if (iaddr->GetType() == IPADDR::R_DEFAULT) {
+      default_address = iaddr;
+      if (default_address) {
+        addrs->remove(default_address);
+        delete default_address;
+      }
+    } else if (iaddr->GetType() != type) {
+      Bsnprintf(buf, buflen,
+                _("the old style addresses cannot be mixed with new style"));
+      return false;
+    }
+  }
+  return true;
+}
+
+bool SetupPort(unsigned short& port,
+               int defaultport,
+               const char* port_str,
+               char* buf,
+               int buflen)
+{
+  if (!port_str || port_str[0] == '\0') {
+    port = defaultport;
+    return true;
+  } else {
+    int pnum = atol(port_str);
+    if (0 < pnum && pnum < 0xffff) {
+      port = htons(pnum);
+      return true;
+    } else {
+      struct servent* s = getservbyname(port_str, "tcp");
+      if (s) {
+        port = s->s_port;
+        return true;
+      } else {
+        Bsnprintf(buf, buflen, _("can't resolve service(%s)"), port_str);
+        return false;
+      }
+    }
+  }
+}
 
 int AddAddress(dlist<IPADDR>** out,
                IPADDR::i_type type,
@@ -346,39 +395,12 @@ int AddAddress(dlist<IPADDR>** out,
   type = (type == IPADDR::R_SINGLE_PORT || type == IPADDR::R_SINGLE_ADDR)
              ? IPADDR::R_SINGLE
              : type;
+
   if (type != IPADDR::R_DEFAULT) {
-    IPADDR* default_address = 0;
-    foreach_dlist (iaddr, addrs) {
-      if (iaddr->GetType() == IPADDR::R_DEFAULT) {
-        default_address = iaddr;
-      } else if (iaddr->GetType() != type) {
-        Bsnprintf(buf, buflen,
-                  _("the old style addresses cannot be mixed with new style"));
-        return 0;
-      }
-    }
-    if (default_address) {
-      addrs->remove(default_address);
-      delete default_address;
-    }
+    if (!RemoveDefaultAddresses(addrs, type, buf, buflen)) { return 0; }
   }
 
-  if (!port_str || port_str[0] == '\0') {
-    port = defaultport;
-  } else {
-    int pnum = atol(port_str);
-    if (0 < pnum && pnum < 0xffff) {
-      port = htons(pnum);
-    } else {
-      struct servent* s = getservbyname(port_str, "tcp");
-      if (s) {
-        port = s->s_port;
-      } else {
-        Bsnprintf(buf, buflen, _("can't resolve service(%s)"), port_str);
-        return 0;
-      }
-    }
-  }
+  if (!SetupPort(port, defaultport, port_str, buf, buflen)) { return 0; }
 
   const char* myerrstr;
   hostaddrs = BnetHost2IpAddrs(hostname_str, family, &myerrstr);
@@ -402,6 +424,17 @@ int AddAddress(dlist<IPADDR>** out,
     if (intype == IPADDR::R_SINGLE_PORT) { addr->SetPortNet(port); }
     if (intype == IPADDR::R_SINGLE_ADDR) {
       addr->CopyAddr((IPADDR*)(hostaddrs->first()));
+
+      IPADDR* other_address = 0;
+      foreach_dlist (iaddr, addrs) {
+        if (iaddr != addr) {
+          other_address = iaddr;
+          if (other_address) {
+            addrs->remove(other_address);
+            delete other_address;
+          }
+        }
+      }
     }
   } else {
     foreach_dlist (iaddr, hostaddrs) {
