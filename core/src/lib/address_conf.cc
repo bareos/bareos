@@ -347,19 +347,19 @@ int AddAddress(dlist<IPADDR>** out,
              ? IPADDR::R_SINGLE
              : type;
   if (type != IPADDR::R_DEFAULT) {
-    IPADDR* def = 0;
+    IPADDR* default_address = 0;
     foreach_dlist (iaddr, addrs) {
       if (iaddr->GetType() == IPADDR::R_DEFAULT) {
-        def = iaddr;
+        default_address = iaddr;
       } else if (iaddr->GetType() != type) {
         Bsnprintf(buf, buflen,
                   _("the old style addresses cannot be mixed with new style"));
         return 0;
       }
     }
-    if (def) {
-      addrs->remove(def);
-      delete def;
+    if (default_address) {
+      addrs->remove(default_address);
+      delete default_address;
     }
   }
 
@@ -427,7 +427,7 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
   char buf[1024];
   unsigned short sport = str_to_int32(port);
 
-  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf,
+  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), 0, 0, 0, buf,
                   sizeof(buf))) {
     Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
   }
