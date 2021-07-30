@@ -154,7 +154,7 @@ static void CheckEncryption(const BareosSocket* UA_sock, TlsPolicy tls_policy)
 
 static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
 {
-  debug_level = 10; // set debug level high enough so we can see error messages
+  debug_level = 10;  // set debug level high enough so we can see error messages
   InitSignalHandler();
   InitGlobals();
 
@@ -185,6 +185,176 @@ static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
 
   return true;
 }
+
+static void test_socket(int family, int port)
+{
+  int test_fd;
+  int option = 1;
+
+  EXPECT_TRUE((test_fd = socket(family, SOCK_STREAM, 0)) >= 0);
+
+  switch (family) {
+    case AF_INET:;
+      struct sockaddr_in v4_address;
+      v4_address.sin_family = family;
+      v4_address.sin_port = htons(port);
+      v4_address.sin_addr.s_addr = INADDR_ANY;
+
+
+      EXPECT_FALSE(
+          bind(test_fd, (struct sockaddr*)&v4_address, sizeof(v4_address))
+          == 0);
+
+      break;
+
+#ifdef HAVE_IPV6
+    case AF_INET6:
+      struct sockaddr_in6 v6_address;
+      v6_address.sin6_family = family;
+      v6_address.sin6_port = htons(port);
+      inet_pton(AF_INET6, "::", &v6_address.sin6_addr);
+
+      EXPECT_TRUE(setsockopt(test_fd, IPPROTO_IPV6, IPV6_V6ONLY,
+                             (sockopt_val_t)&option, sizeof(option))
+                  == 0);
+
+      EXPECT_FALSE(
+          bind(test_fd, (struct sockaddr*)&v6_address, sizeof(v6_address))
+          == 0);
+
+      break;
+#endif
+
+    default:
+      EXPECT_TRUE(false);
+      break;
+  }
+
+  close(test_fd);
+}
+
+static bool do_binding_test(std::string path_to_config, int family, int port)
+{
+  debug_level = 10;  // set debug level high enough so we can see error messages
+  InitSignalHandler();
+  InitGlobals();
+
+  PConfigParser director_config(DirectorPrepareResources(path_to_config));
+  if (!director_config) { return false; }
+
+  bool start_socket_server_ok
+      = directordaemon::StartSocketServer(directordaemon::me->DIRaddrs);
+  EXPECT_TRUE(start_socket_server_ok) << "Could not start SocketServer";
+  if (!start_socket_server_ok) { return false; }
+
+  test_socket(family, port);
+
+  directordaemon::StopSocketServer();
+  StopWatchdog();
+
+  return true;
+}
+
+static void check_addresses_list(std::string path_to_config,
+                                 std::vector<std::string> expected_addresses)
+{
+  char buff[1024];
+  IPADDR* addr;
+
+  std::vector<std::string> director_addresses;
+
+  debug_level = 10;  // set debug level high enough so we can see error messages
+  InitSignalHandler();
+  InitGlobals();
+
+  PConfigParser director_config(DirectorPrepareResources(path_to_config));
+  EXPECT_TRUE(director_config);
+
+  EXPECT_TRUE(directordaemon::me->DIRaddrs->size()
+              == static_cast<int>(expected_addresses.size()));
+
+  foreach_dlist (addr, directordaemon::me->DIRaddrs) {
+    addr->build_address_str(buff, sizeof(buff), true);
+
+    std::string theaddress = std::string(buff);
+    theaddress.pop_back();
+
+    director_addresses.push_back(theaddress);
+  }
+
+  std::sort(director_addresses.begin(), director_addresses.end());
+  std::sort(expected_addresses.begin(), expected_addresses.end());
+  EXPECT_EQ(director_addresses, expected_addresses);
+}
+
+TEST(port_and_addresses_setup, default_config_values)
+{
+  std::string path_to_config = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/dual_stacking/default_dir_values/");
+
+  std::vector<std::string> expected_addresses{"host[ipv6;::;9101]",
+                                              "host[ipv4;0.0.0.0;9101]"};
+
+  check_addresses_list(path_to_config, expected_addresses);
+
+  do_binding_test(path_to_config, AF_INET, 9101);
+
+#ifdef HAVE_IPV6
+  do_binding_test(path_to_config, AF_INET6, 9101);
+#endif
+}
+
+TEST(port_and_addresses_setup, dir_port_set)
+{
+  std::string path_to_config = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/dual_stacking/dir_port_set/");
+
+  std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;30013]",
+                                              "host[ipv6;::;30013]"};
+
+  check_addresses_list(path_to_config, expected_addresses);
+
+  do_binding_test(std::string(RELATIVE_PROJECT_SOURCE_DIR
+                              "/configs/dual_stacking/dir_port_set/"),
+                  AF_INET, 30013);
+
+#ifdef HAVE_IPV6
+  do_binding_test(std::string(RELATIVE_PROJECT_SOURCE_DIR
+                              "/configs/dual_stacking/dir_port_set/"),
+                  AF_INET6, 30013);
+#endif
+}
+
+TEST(port_and_addresses_setup, dir_v4address_set)
+{
+  std::string path_to_config = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR "/configs/dual_stacking/dir_v4address_set/");
+
+  std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;9101]"};
+
+  check_addresses_list(path_to_config, expected_addresses);
+
+  do_binding_test(std::string(RELATIVE_PROJECT_SOURCE_DIR
+                              "/configs/dual_stacking/dir_v4address_set/"),
+                  AF_INET, 9101);
+}
+
+TEST(port_and_addresses_setup, dir_v4address_and_port_set)
+{
+  std::string path_to_config
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR
+                    "/configs/dual_stacking/dir_v4address_and_port_set/");
+
+  std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;30012]"};
+
+  check_addresses_list(path_to_config, expected_addresses);
+
+  do_binding_test(
+      std::string(RELATIVE_PROJECT_SOURCE_DIR
+                  "/configs/dual_stacking/dir_v4address_and_port_set/"),
+      AF_INET, 30012);
+}
+
 
 TEST(bsock, console_director_connection_test_tls_psk)
 {
