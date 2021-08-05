@@ -43,7 +43,7 @@ return array(
                'route' => '/pool[/][:action][/][:id]',
                'constraints' => array(
                   'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                  'id' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                  'id' => '[a-zA-Z0-9][a-zA-Z0-9\._-]*',
                ),
                'defaults' => array(
                   'controller' => 'Pool\Controller\Pool',
@@ -54,7 +54,6 @@ return array(
          ),
       ),
    ),
-
    'view_manager' => array(
       'template_path_stack' => array(
          'pool' => __DIR__ . '/../view',
