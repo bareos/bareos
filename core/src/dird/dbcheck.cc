@@ -83,6 +83,7 @@ static void eliminate_admin_records();
 static void eliminate_restore_records();
 static void repair_bad_paths();
 static void repair_bad_filenames();
+static void eliminate_orphaned_storage_records();
 static void run_all_commands();
 
 struct dbcheck_cmdstruct {
@@ -107,6 +108,8 @@ static struct dbcheck_cmdstruct commands[] = {
     {eliminate_orphaned_client_records, "Check for orphaned Client records",
      true},
     {eliminate_orphaned_job_records, "Check for orphaned Job records", true},
+    {eliminate_orphaned_storage_records, "Check for orphaned storage records",
+     true},
     {eliminate_admin_records, "Check for all Admin records", true},
     {eliminate_restore_records, "Check for all Restore records", true},
     {run_all_commands, "Run ALL checks", false},
@@ -680,6 +683,131 @@ static void eliminate_orphaned_job_records()
     printf(_("Deleting Log records of orphaned Job records.\n"));
     fflush(stdout);
     DeleteIdList("DELETE FROM Log WHERE JobId=%s", &id_list);
+  }
+}
+
+static std::vector<int> get_deletable_storageids(
+    ID_LIST orphaned_storage_ids_list,
+    std::vector<std::string> orphaned_storage_names_list)
+{
+  std::vector<int> storage_ids_to_delete;
+  NameList volume_names;
+
+  for (int i = 0; i < orphaned_storage_ids_list.num_ids; i++) {
+    std::string media_query = "SELECT volumename FROM Media WHERE StorageId="
+                              + std::to_string(orphaned_storage_ids_list.Id[i]);
+
+    if (!MakeNameList(media_query.c_str(), &volume_names)) { exit(1); }
+
+    if (volume_names.num_ids > 0) {
+      for (int j = 0; j < volume_names.num_ids; ++j) {
+        printf(
+            _("Warning: Orphaned storage '%s' with id '%ld' is being used by "
+              "Media with volumename '%s'. The orphaned Storage will only be "
+              "removed if you either delete or modify the related Media.\n"),
+            orphaned_storage_names_list[i].c_str(),
+            orphaned_storage_ids_list.Id[i], volume_names.name[j]);
+      }
+    }
+
+    NameList device_names;
+    std::string device_query
+        = "SELECT name FROM Device WHERE StorageId="
+          + std::to_string(orphaned_storage_ids_list.Id[i]);
+
+    if (!MakeNameList(device_query.c_str(), &device_names)) { exit(1); }
+
+    if (device_names.num_ids > 0) {
+      for (int j = 0; j < device_names.num_ids; ++j) {
+        printf(
+            _("Warning: Orphaned storage '%s' with id '%ld' is being used by "
+              "Device named '%s'. The orphaned Storage will only be "
+              "removed if you either delete or modify the related Device.\n"),
+            orphaned_storage_names_list[i].c_str(),
+            orphaned_storage_ids_list.Id[i], device_names.name[j]);
+      }
+    }
+
+    if (volume_names.num_ids == 0 && device_names.num_ids == 0) {
+      storage_ids_to_delete.push_back(orphaned_storage_ids_list.Id[i]);
+    }
+  }
+
+  return storage_ids_to_delete;
+}
+
+static std::vector<std::string> get_orphaned_storages_names()
+{
+  BareosResource* storage_ressource
+      = my_config->res_head_[R_STORAGE - my_config->r_first_];
+  std::vector<std::string> storage_names_list;
+  while (storage_ressource != nullptr) {
+    storage_names_list.push_back(
+        std::string(storage_ressource->resource_name_));
+    storage_ressource = storage_ressource->next_;
+  };
+
+  std::string query = "SELECT name FROM Storage";
+
+  if (!MakeNameList(query.c_str(), &name_list)) { exit(1); }
+
+  std::vector<std::string> orphaned_storage_names_list;
+
+  for (int i = 0; i < name_list.num_ids; ++i) {
+    if (std::find(storage_names_list.begin(), storage_names_list.end(),
+                  std::string(name_list.name[i]))
+        == storage_names_list.end()) {
+      orphaned_storage_names_list.push_back(name_list.name[i]);
+    }
+  }
+
+  printf(_("Found %zu orphaned Storage records.\n"),
+         orphaned_storage_names_list.size());
+
+  return orphaned_storage_names_list;
+}
+
+static void eliminate_orphaned_storage_records()
+{
+  printf(_("Checking for orphaned Storage entries.\n"));
+  fflush(stdout);
+
+  std::vector<std::string> orphaned_storage_names_list
+      = get_orphaned_storages_names();
+
+  std::vector<int> storages_to_be_deleted;
+
+  if (orphaned_storage_names_list.size() > 0) {
+    if (verbose && yes_no(_("Print orhpaned storages? (yes/no): "))) {
+      for (auto const& storage : orphaned_storage_names_list) {
+        printf("'%s'\n", storage.c_str());
+      }
+      fflush(stdout);
+    }
+
+    std::string query = "SELECT StorageId FROM Storage WHERE Name in (";
+    for (const auto& orphaned_element : orphaned_storage_names_list) {
+      query += "'" + orphaned_element + "',";
+    }
+    query.pop_back();
+    query += ")";
+
+    if (!MakeIdList(query.c_str(), &id_list)) { exit(1); }
+
+    storages_to_be_deleted
+        = get_deletable_storageids(id_list, orphaned_storage_names_list);
+  }
+  if (quit) { return; }
+  if (fix && storages_to_be_deleted.size() > 0) {
+    printf(_("Deleting %zu orphaned storage records.\n"),
+           storages_to_be_deleted.size());
+    fflush(stdout);
+    for (auto const& storageid : storages_to_be_deleted) {
+      std::string delete_query
+          = "DELETE FROM storage WHERE StorageId=" + std::to_string(storageid);
+      if (verbose) { printf(_("Deleting: %s\n"), delete_query.c_str()); }
+      db->SqlQuery(delete_query.c_str(), NULL, NULL);
+    }
   }
 }
 
