@@ -39,6 +39,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #871]: UI will not load complete [PR #880]
 - [Issue #1020]: Can not restore a client with spaces in its name [PR #893]
 - [Issue #971]: Error building tree for filenames with backslashes [PR #892]
+- [Issue #1251]: Error when displaying pool detail [PR #903]
 
 ### Added
 - Add systemtests fileset-multiple-include-blocks, fileset-multiple-options-blocks, quota-softquota, sparse-file, truncate-command and block-size, (migrated from ``regress/``) [PR #780]
@@ -111,6 +112,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #971]: https://bugs.bareos.org/view.php?id=971
 [Issue #1020]: https://bugs.bareos.org/view.php?id=1020
 [Issue #1205]: https://bugs.bareos.org/view.php?id=1205
+[Issue #1251]: https://bugs.bareos.org/view.php?id=1251
 [Issue #1300]: https://bugs.bareos.org/view.php?id=1300
 [Issue #1316]: https://bugs.bareos.org/view.php?id=1316
 [Issue #1324]: https://bugs.bareos.org/view.php?id=1324
@@ -175,4 +177,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #880]: https://github.com/bareos/bareos/pull/880
 [PR #892]: https://github.com/bareos/bareos/pull/892
 [PR #893]: https://github.com/bareos/bareos/pull/893
+[PR #903]: https://github.com/bareos/bareos/pull/903
 [unreleased]: https://github.com/bareos/bareos/tree/master
