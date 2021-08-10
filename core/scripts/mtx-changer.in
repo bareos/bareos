@@ -123,10 +123,13 @@ make_err_file() {
 wait_for_drive() {
   i=0
   while [ $i -le 300 ]; do  # Wait max 300 seconds
-    if mt -f $1 status 2>&1 | grep "${ready}" >/dev/null 2>&1; then
+    debug "Doing mt -f $1 status ..."
+    drivestatus=$(mt -f "$1" status 2>&1)
+    if echo "${drivestatus}" | grep "${ready}" >/dev/null 2>&1; then
       break
     fi
-    debug "Device $1 - not ready, retrying..."
+    debug "${drivestatus}"
+    debug "Device $1 - not ready, retrying ..."
     sleep 1
     i=`expr $i + 1`
   done
