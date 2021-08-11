@@ -837,7 +837,7 @@ class RestoreController extends AbstractActionController
   {
     if(!$this->clientModel) {
       $sm = $this->getServiceLocator();
-      $this->clientModel = $sm->get('CLient\Model\ClientModel');
+      $this->clientModel = $sm->get('Client\Model\ClientModel');
     }
     return $this->clientModel;
   }
