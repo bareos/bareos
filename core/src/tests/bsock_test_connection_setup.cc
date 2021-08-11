@@ -292,15 +292,15 @@ TEST(port_and_addresses_setup, default_config_values)
   std::string path_to_config = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/dual_stacking/default_dir_values/");
 
-  std::vector<std::string> expected_addresses{"host[ipv6;::;9101]",
-                                              "host[ipv4;0.0.0.0;9101]"};
+  std::vector<std::string> expected_addresses{"host[ipv6;::;29999]",
+                                              "host[ipv4;0.0.0.0;29999]"};
 
   check_addresses_list(path_to_config, expected_addresses);
 
-  do_binding_test(path_to_config, AF_INET, 9101);
+  do_binding_test(path_to_config, AF_INET, 29999);
 
 #ifdef HAVE_IPV6
-  do_binding_test(path_to_config, AF_INET6, 9101);
+  do_binding_test(path_to_config, AF_INET6, 29999);
 #endif
 }
 
@@ -330,13 +330,13 @@ TEST(port_and_addresses_setup, dir_v4address_set)
   std::string path_to_config = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/dual_stacking/dir_v4address_set/");
 
-  std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;9101]"};
+  std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;29998]"};
 
   check_addresses_list(path_to_config, expected_addresses);
 
   do_binding_test(std::string(RELATIVE_PROJECT_SOURCE_DIR
                               "/configs/dual_stacking/dir_v4address_set/"),
-                  AF_INET, 9101);
+                  AF_INET, 29998);
 }
 
 TEST(port_and_addresses_setup, dir_v4address_and_port_set)
