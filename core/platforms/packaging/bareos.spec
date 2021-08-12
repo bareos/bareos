@@ -68,6 +68,11 @@ BuildRequires: libtirpc-devel
 %define build_mysql 0
 %endif
 
+# remove mysql from Leap 15.3
+%if 0%{?is_opensuse} && 0%{?sle_version} >= 150300
+%define build_mysql 0
+%endif
+
 #
 # SUSE (openSUSE, SLES) specific settings
 #
