@@ -522,7 +522,7 @@ bool ChunkedDevice::FlushChunk(bool release_chunk, bool move_to_next_chunk)
     retval = EnqueueChunk(&request);
   } else {
     // no multithreading
-    Dmsg1(100, "Try to flush chunk number: %d", request.chunk);
+    Dmsg1(100, "Try to flush chunk number: %d\n", request.chunk);
     retval = FlushRemoteChunk(&request);
   }
 

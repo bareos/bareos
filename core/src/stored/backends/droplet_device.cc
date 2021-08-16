@@ -644,6 +644,7 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
       default:
         Mmsg2(errmsg, _("Failed to read %s using dpl_fget(): ERR=%s.\n"),
               chunk_name.c_str(), dpl_status_str(status));
+        Dmsg1(100, "%s", errmsg);
         dev_errno = DropletErrnoToSystemErrno(status);
         Bmicrosleep(INFLIGT_RETRY_TIME, 0);
         ++tries;
