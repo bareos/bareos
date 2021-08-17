@@ -31,6 +31,7 @@
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include <algorithm>
 
 using namespace directordaemon;
 
