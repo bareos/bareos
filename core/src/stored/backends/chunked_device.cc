@@ -824,7 +824,7 @@ ssize_t chunked_device::ReadChunked(int fd, void* buffer, size_t count)
         /*
          * See how much is left in this chunk.
          */
-        if (offset_ < current_chunk_->end_offset) {
+        if (offset_ <= current_chunk_->end_offset) {
           wanted_offset = (offset_ % current_chunk_->chunk_size);
           bytes_left = MIN((ssize_t)(count - offset),
                            (ssize_t)(current_chunk_->buflen - wanted_offset));
@@ -960,7 +960,7 @@ ssize_t chunked_device::WriteChunked(int fd, const void* buffer, size_t count)
         /*
          * See how much is left in this chunk.
          */
-        if (offset_ < current_chunk_->end_offset) {
+        if (offset_ <= current_chunk_->end_offset) {
           wanted_offset = (offset_ % current_chunk_->chunk_size);
           bytes_left =
               MIN((ssize_t)(count - offset),
