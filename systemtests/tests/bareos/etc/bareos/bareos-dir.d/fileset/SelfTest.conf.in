@@ -12,6 +12,7 @@ FileSet {
       fstype = ufs
       fstype = xfs
       fstype = zfs
+      fstype = btrfs
     }
    #File = "@sbindir@"
     File=<@tmpdir@/file-list
