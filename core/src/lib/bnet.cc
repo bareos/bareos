@@ -284,7 +284,6 @@ const char* resolv_host(int family, const char* host, dlist<IPADDR>* addr_list)
          */
         addr->SetAddr4(&(((struct sockaddr_in*)rp->ai_addr)->sin_addr));
         break;
-#  ifdef HAVE_IPV6
       case AF_INET6:
         addr = new IPADDR(rp->ai_addr->sa_family);
         addr->SetType(IPADDR::R_MULTIPLE);
@@ -298,7 +297,6 @@ const char* resolv_host(int family, const char* host, dlist<IPADDR>* addr_list)
          */
         addr->SetAddr6(&(((struct sockaddr_in6*)rp->ai_addr)->sin6_addr));
         break;
-#  endif
       default:
         continue;
     }
@@ -363,13 +361,11 @@ static const char* resolv_host(int family, const char* host, dlist* addr_list)
           addr->SetType(IPADDR::R_MULTIPLE);
           addr->SetAddr4((struct in_addr*)*p);
           break;
-#  ifdef HAVE_IPV6
         case AF_INET6:
           addr = new IPADDR(hp->h_addrtype);
           addr->SetType(IPADDR::R_MULTIPLE);
           addr->SetAddr6((struct in6_addr*)*p);
           break;
-#  endif
         default:
           continue;
       }
@@ -397,9 +393,7 @@ dlist<IPADDR>* BnetHost2IpAddrs(const char* host,
   struct in_addr inaddr;
   IPADDR* addr = 0;
   const char* errmsg;
-#ifdef HAVE_IPV6
   struct in6_addr inaddr6;
-#endif
 
   dlist<IPADDR>* addr_list = new dlist<IPADDR>(addr, &addr->link);
   if (!host || host[0] == '\0') {
@@ -407,22 +401,18 @@ dlist<IPADDR>* BnetHost2IpAddrs(const char* host,
       addr_list->append(add_any(family));
     } else {
       addr_list->append(add_any(AF_INET));
-#ifdef HAVE_IPV6
       addr_list->append(add_any(AF_INET6));
-#endif
     }
   } else if (inet_aton(host, &inaddr)) { /* MA Bug 4 */
     addr = new IPADDR(AF_INET);
     addr->SetType(IPADDR::R_MULTIPLE);
     addr->SetAddr4(&inaddr);
     addr_list->append(addr);
-#ifdef HAVE_IPV6
   } else if (inet_pton(AF_INET6, host, &inaddr6) == 1) {
     addr = new IPADDR(AF_INET6);
     addr->SetType(IPADDR::R_MULTIPLE);
     addr->SetAddr6(&inaddr6);
     addr_list->append(addr);
-#endif
   } else {
     if (family != 0) {
       errmsg = resolv_host(family, host, addr_list);
@@ -432,13 +422,11 @@ dlist<IPADDR>* BnetHost2IpAddrs(const char* host,
         return 0;
       }
     } else {
-#ifdef HAVE_IPV6
       /* We try to resolv host for ipv6 and ipv4, the connection procedure
        * will try to reach the host for each protocols. We report only "Host
        * not found" ipv4 message (no need to have ipv6 and ipv4 messages).
        */
       resolv_host(AF_INET6, host, addr_list);
-#endif
       errmsg = resolv_host(AF_INET, host, addr_list);
 
       if (addr_list->size() == 0) {

@@ -54,7 +54,6 @@ define CONFIGURE_COMMON
   -Dscsi-crypto=yes \
   -Dlmdb=yes \
   -Dndmp=yes \
-  -Dipv6=yes \
   -Dacl=yes \
   -Dxattr=yes \
   -Dpostgresql=yes \

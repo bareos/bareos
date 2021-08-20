@@ -138,9 +138,6 @@
 /* Define to 1 if OpenSSL library is available */
 #define HAVE_OPENSSL 1
 
-/* Define to 1 if IPv6 support should be enabled */
-#define HAVE_IPV6 1
-
 /* Define to 1 if you have the `getaddrinfo' function. */
 #define HAVE_GETADDRINFO 1
 

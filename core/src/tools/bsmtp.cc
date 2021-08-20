@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -164,9 +164,7 @@ static void usage()
             "Usage: %s [-f from] [-h mailhost] [-s subject] [-c copy] "
             "[recipient ...]\n"
             "       -4          forces bsmtp to use IPv4 addresses only.\n"
-#ifdef HAVE_IPV6
             "       -6          forces bsmtp to use IPv6 addresses only.\n"
-#endif
             "       -8          set charset to UTF-8\n"
             "       -a          use any ip protocol for address resolution\n"
             "       -c          set the Cc: field\n"
@@ -261,11 +259,7 @@ int main(int argc, char* argv[])
   struct hostent* hp;
   struct sockaddr_in sin;
 #endif
-#ifdef HAVE_IPV6
   const char* options = "468ac:d:f:h:r:s:l:?";
-#else
-  const char* options = "48ac:d:f:h:r:s:l:?";
-#endif
 
   setlocale(LC_ALL, "en_US");
   tzset();
@@ -281,11 +275,9 @@ int main(int argc, char* argv[])
         default_resolv_type = RESOLV_PROTO_IPV4;
         break;
 
-#ifdef HAVE_IPV6
       case '6':
         default_resolv_type = RESOLV_PROTO_IPV6;
         break;
-#endif
 
       case '8':
         content_utf8 = true;
@@ -435,11 +427,9 @@ lookup_host:
     case RESOLV_PROTO_IPV4:
       hints.ai_family = AF_INET;
       break;
-#  ifdef HAVE_IPV6
     case RESOLV_PROTO_IPV6:
       hints.ai_family = AF_INET6;
       break;
-#  endif
     default:
       hints.ai_family = AF_UNSPEC;
       break;

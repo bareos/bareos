@@ -54,15 +54,11 @@ class IPADDR {
   union {
     struct sockaddr dontuse;
     struct sockaddr_in dontuse4;
-#ifdef HAVE_IPV6
     struct sockaddr_in6 dontuse6;
-#endif
   } saddrbuf;
   struct sockaddr* saddr = nullptr;
   struct sockaddr_in* saddr4 = nullptr;
-#ifdef HAVE_IPV6
   struct sockaddr_in6* saddr6 = nullptr;
-#endif
  public:
   void SetType(i_type o);
   i_type GetType() const;
@@ -75,9 +71,7 @@ class IPADDR {
   void CopyAddr(IPADDR* src);
   void SetAddrAny();
   void SetAddr4(struct in_addr* ip4);
-#ifdef HAVE_IPV6
   void SetAddr6(struct in6_addr* ip6);
-#endif
   const char* GetAddress(char* outputbuf, int outlen);
   void BuildConfigString(OutputFormatterResource& send,
                                       bool inherited);

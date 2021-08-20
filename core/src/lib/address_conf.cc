@@ -42,12 +42,7 @@
 #endif
 
 IPADDR::IPADDR()
-    : type(R_UNDEFINED)
-    , saddr(nullptr)
-    , saddr4(nullptr)
-#ifdef HAVE_IPV6
-    , saddr6(nullptr)
-#endif
+    : type(R_UNDEFINED), saddr(nullptr), saddr4(nullptr), saddr6(nullptr)
 {
   memset(&saddrbuf, 0, sizeof(saddrbuf));
 }
@@ -58,40 +53,28 @@ IPADDR::IPADDR(const IPADDR& src) : IPADDR()
   memcpy(&saddrbuf, &src.saddrbuf, sizeof(saddrbuf));
   saddr = &saddrbuf.dontuse;
   saddr4 = &saddrbuf.dontuse4;
-#ifdef HAVE_IPV6
   saddr6 = &saddrbuf.dontuse6;
-#endif
 }
 
 IPADDR::IPADDR(int af) : IPADDR()
 {
   type = R_EMPTY;
-#ifdef HAVE_IPV6
   if (!(af == AF_INET6 || af == AF_INET)) {
     Emsg1(M_ERROR_TERM, 0, _("Only ipv4 and ipv6 are supported (%d)\n"), af);
   }
-#else
-  if (af != AF_INET) {
-    Emsg1(M_ERROR_TERM, 0, _("Only ipv4 is supported (%d)\n"), af);
-  }
-#endif
 
   memset(&saddrbuf, 0, sizeof(saddrbuf));
   saddr = &saddrbuf.dontuse;
   saddr4 = &saddrbuf.dontuse4;
-#ifdef HAVE_IPV6
   saddr6 = &saddrbuf.dontuse6;
-#endif
   saddr->sa_family = af;
   switch (af) {
     case AF_INET:
       saddr4->sin_port = 0xffff;
       break;
-#ifdef HAVE_IPV6
     case AF_INET6:
       saddr6->sin6_port = 0xffff;
       break;
-#endif
   }
 
   SetAddrAny();
@@ -106,12 +89,9 @@ unsigned short IPADDR::GetPortNetOrder() const
   unsigned short port = 0;
   if (saddr->sa_family == AF_INET) {
     port = saddr4->sin_port;
-  }
-#ifdef HAVE_IPV6
-  else {
+  } else {
     port = saddr6->sin6_port;
   }
-#endif
   return port;
 }
 
@@ -119,12 +99,9 @@ void IPADDR::SetPortNet(unsigned short port)
 {
   if (saddr->sa_family == AF_INET) {
     saddr4->sin_port = port;
-  }
-#ifdef HAVE_IPV6
-  else {
+  } else {
     saddr6->sin6_port = port;
   }
-#endif
 }
 
 int IPADDR::GetFamily() const { return saddr->sa_family; }
@@ -133,34 +110,24 @@ struct sockaddr* IPADDR::get_sockaddr() { return saddr; }
 
 int IPADDR::GetSockaddrLen()
 {
-#ifdef HAVE_IPV6
   return saddr->sa_family == AF_INET ? sizeof(*saddr4) : sizeof(*saddr6);
-#else
-  return sizeof(*saddr4);
-#endif
 }
 void IPADDR::CopyAddr(IPADDR* src)
 {
   if (saddr->sa_family == AF_INET) {
     saddr4->sin_addr.s_addr = src->saddr4->sin_addr.s_addr;
-  }
-#ifdef HAVE_IPV6
-  else {
+  } else {
     saddr6->sin6_addr = src->saddr6->sin6_addr;
   }
-#endif
 }
 
 void IPADDR::SetAddrAny()
 {
   if (saddr->sa_family == AF_INET) {
     saddr4->sin_addr.s_addr = INADDR_ANY;
-  }
-#ifdef HAVE_IPV6
-  else {
+  } else {
     saddr6->sin6_addr = in6addr_any;
   }
-#endif
 }
 
 void IPADDR::SetAddr4(struct in_addr* ip4)
@@ -173,7 +140,6 @@ void IPADDR::SetAddr4(struct in_addr* ip4)
   saddr4->sin_addr = *ip4;
 }
 
-#ifdef HAVE_IPV6
 void IPADDR::SetAddr6(struct in6_addr* ip6)
 {
   if (saddr->sa_family != AF_INET6) {
@@ -183,20 +149,15 @@ void IPADDR::SetAddr6(struct in6_addr* ip6)
   }
   saddr6->sin6_addr = *ip6;
 }
-#endif
 
 const char* IPADDR::GetAddress(char* outputbuf, int outlen)
 {
   outputbuf[0] = '\0';
 #ifdef HAVE_INET_NTOP
-#  ifdef HAVE_IPV6
   inet_ntop(saddr->sa_family,
             saddr->sa_family == AF_INET ? (void*)&(saddr4->sin_addr)
                                         : (void*)&(saddr6->sin6_addr),
             outputbuf, outlen);
-#  else
-  inet_ntop(saddr->sa_family, (void*)&(saddr4->sin_addr), outputbuf, outlen);
-#  endif
 #else
   bstrncpy(outputbuf, inet_ntoa(saddr4->sin_addr), outlen);
 #endif
@@ -494,12 +455,9 @@ int SockaddrGetPortNetOrder(const struct sockaddr* client_addr)
 {
   if (client_addr->sa_family == AF_INET) {
     return ((struct sockaddr_in*)client_addr)->sin_port;
-  }
-#ifdef HAVE_IPV6
-  else {
+  } else {
     return ((struct sockaddr_in6*)client_addr)->sin6_port;
   }
-#endif
   return -1;
 }
 
@@ -507,12 +465,9 @@ int SockaddrGetPort(const struct sockaddr* client_addr)
 {
   if (client_addr->sa_family == AF_INET) {
     return ntohs(((struct sockaddr_in*)client_addr)->sin_port);
-  }
-#ifdef HAVE_IPV6
-  else {
+  } else {
     return ntohs(((struct sockaddr_in6*)client_addr)->sin6_port);
   }
-#endif
   return -1;
 }
 
@@ -521,13 +476,9 @@ char* SockaddrToAscii(const struct sockaddr* sa, char* buf, int len)
 #ifdef HAVE_INET_NTOP
   /* MA Bug 5 the problem was that i mixed up sockaddr and in_addr */
   inet_ntop(sa->sa_family,
-#  ifdef HAVE_IPV6
             sa->sa_family == AF_INET
                 ? (void*)&(((struct sockaddr_in*)sa)->sin_addr)
                 : (void*)&(((struct sockaddr_in6*)sa)->sin6_addr),
-#  else
-            (void*)&(((struct sockaddr_in*)sa)->sin_addr),
-#  endif /* HAVE_IPV6 */
             buf, len);
 #else
   bstrncpy(buf, inet_ntoa(((struct sockaddr_in*)sa)->sin_addr), len);

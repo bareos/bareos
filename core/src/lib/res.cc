@@ -1215,17 +1215,11 @@ void ConfigurationParser::StoreAddresses(LEX* lc,
     }
     if (Bstrcasecmp("ip", lc->str) || Bstrcasecmp("ipv4", lc->str)) {
       family = AF_INET;
-#ifdef HAVE_IPV6
     } else if (Bstrcasecmp("ipv6", lc->str)) {
       family = AF_INET6;
     } else {
       scan_err1(lc, _("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str);
     }
-#else
-    } else {
-      scan_err1(lc, _("Expected a string [ip|ipv4], got: %s"), lc->str);
-    }
-#endif
     token = LexGetToken(lc, BCT_SKIP_EOL);
     if (token != BCT_EQUALS) {
       scan_err1(lc, _("Expected a equal =, got: %s"), lc->str);
@@ -1356,21 +1350,12 @@ void ConfigurationParser::StoreAddressesPort(LEX* lc,
       scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
     }
   } else {
-#ifdef HAVE_IPV6
     if (pass == 1
         && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
                        IPADDR::R_SINGLE, htons(port), 0, 0, lc->str, errmsg,
                        sizeof(errmsg))) {
       scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
     }
-#else
-    if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                       IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
-                       errmsg, sizeof(errmsg))) {
-      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
-    }
-#endif
   }
 }
 
