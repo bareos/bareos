@@ -126,6 +126,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Removed outdated support for platforms Alpha, BSDi, Gentoo, Irix and Mandrake.
 - Removed language support files for the core daemons, as these files are outdated and not used at all.
 - Removed package lists for platforms no longer built: Fedora_30.x86_64, RHEL_6.x86_64, SLE_12_SP4.x86_64, openSUSE_Leap_15.0.x86_64, openSUSE_Leap_15.1.x86_64.
+- Removed support for IPv4-only build. IPv6 now is required for building bareos. [PR #913]
 
 ### Security
 
