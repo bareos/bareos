@@ -129,7 +129,7 @@ OS:
   Debian:
     "11":
       TYPE: deb
-      IMAGE: "debian10"
+      IMAGE: "debian11"
       ARCH:
         - x86_64
       PROJECTPACKAGES:
