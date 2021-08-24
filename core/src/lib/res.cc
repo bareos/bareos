@@ -1356,24 +1356,27 @@ void ConfigurationParser::StoreAddressesPort(LEX* lc,
     }
   } else {
 #ifdef HAVE_IPV6
-    if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                       IPADDR::R_SINGLE, htons(port), AF_INET, 0, lc->str,
-                       errmsg, sizeof(errmsg))) {
-      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+    if (GetIPV6OnlyValue() == 1) {
+      if (pass == 1
+          && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                         IPADDR::R_SINGLE, htons(port), 0, 0, lc->str, errmsg,
+                         sizeof(errmsg))) {
+        scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+      }
+    } else {
+      if (pass == 1
+          && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                         IPADDR::R_SINGLE, htons(port), AF_INET6, 0, lc->str,
+                         errmsg, sizeof(errmsg))) {
+        scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+      }
     }
 
-    if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                       IPADDR::R_SINGLE, htons(port), AF_INET6, 0, lc->str,
-                       errmsg, sizeof(errmsg))) {
-      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
-    }
 #else
     if (pass == 1
         && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                       IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
-                       errmsg, sizeof(errmsg))) {
+                       IPADDR::R_SINGLE, htons(port), 0, 0, lc->str, errmsg,
+                       sizeof(errmsg))) {
       scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
     }
 #endif

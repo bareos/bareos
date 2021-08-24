@@ -190,21 +190,6 @@ static int OpenSocketAndBind(IPADDR* ipaddr,
     return -2;
   }
 
-  if (ipaddr->GetFamily() == AF_INET6) {
-    int ipv6only_option_value = 1;
-    socklen_t option_len = sizeof(int);
-
-    if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
-                   (sockopt_val_t)&ipv6only_option_value, option_len)
-        < 0) {
-      BErrNo be;
-      Emsg1(M_WARNING, 0, _("Cannot set IPV6_V6ONLY on socket: %s\n"),
-            be.bstrerror());
-
-      return -2;
-    }
-  }
-
   tries = 0;
 
   do {

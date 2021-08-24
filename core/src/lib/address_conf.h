@@ -89,12 +89,13 @@ class IPADDR {
 /* clang-format on */
 
 void InitDefaultAddresses(dlist<IPADDR>** addr, const char* port);
+void EmptyAddressList(dlist<IPADDR>* addrs);
 void FreeAddresses(dlist<IPADDR>* addrs);
 
 const char* GetFirstAddress(dlist<IPADDR>* addrs, char* outputbuf, int outlen);
 int GetFirstPortNetOrder(dlist<IPADDR>* addrs);
 int GetFirstPortHostOrder(dlist<IPADDR>* addrs);
-
+int GetIPV6OnlyValue();
 int AddAddress(dlist<IPADDR>** out,
                IPADDR::i_type type,
                unsigned short defaultport,
