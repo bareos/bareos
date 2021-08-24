@@ -410,7 +410,7 @@ int AddAddress(dlist<IPADDR>** out,
     return 0;
   }
 
-  if (intype == IPADDR::R_SINGLE_PORT) {
+  if (intype == IPADDR::R_SINGLE_PORT || intype == IPADDR::R_SINGLE_ADDR) {
     IPADDR* addr;
     if (addrs->size()) {
       addr = (IPADDR*)addrs->first();
@@ -421,22 +421,21 @@ int AddAddress(dlist<IPADDR>** out,
       addr->SetAddrAny();
       addrs->append(addr);
     }
-    addr->SetPortNet(port);
-  } else if (intype == IPADDR::R_SINGLE_ADDR) {
-    IPADDR* addr = nullptr;
+    if (intype == IPADDR::R_SINGLE_PORT) { addr->SetPortNet(port); }
+    if (intype == IPADDR::R_SINGLE_ADDR) {
+      addr->CopyAddr((IPADDR*)(hostaddrs->first()));
 
-    int datport = defaultport;
-    if (addrs->size()) {
-      addr = (IPADDR*)addrs->first();
-      datport = addr->GetPortNetOrder();
-      EmptyAddressList(addrs);
+      IPADDR* other_address = 0;
+      foreach_dlist (iaddr, addrs) {
+        if (iaddr != addr) {
+          other_address = iaddr;
+          if (other_address) {
+            addrs->remove(other_address);
+            delete other_address;
+          }
+        }
+      }
     }
-
-    addr = new IPADDR(family);
-    addr->SetType(type);
-    addr->SetPortNet(datport);
-    addr->CopyAddr((IPADDR*)(hostaddrs->first()));
-    addrs->append(addr);
   } else {
     foreach_dlist (iaddr, hostaddrs) {
       IPADDR* clone;
@@ -456,57 +455,14 @@ int AddAddress(dlist<IPADDR>** out,
   return 1;
 }
 
-int GetIPV6OnlyValue()
-{
-  int fd = -1;
-  fd = socket(AF_INET6, SOCK_STREAM, 0);
-  int ipv6only_option_value = -1;
-  socklen_t option_len = sizeof(int);
-
-  getsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&ipv6only_option_value,
-             &option_len);
-
-  close(fd);
-  if (ipv6only_option_value < 0) {
-    Emsg1(M_ERROR_TERM, 0, _("Can't extract IPV6ONLY value from socket.\n"));
-  }
-  return ipv6only_option_value;
-}
-
 void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
 {
   char buf[1024];
   unsigned short sport = str_to_int32(port);
 
-#ifdef HAVE_IPV6
-
-  if (GetIPV6OnlyValue() == 1) {
-    if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), 0, 0, 0, buf,
-                    sizeof(buf))) {
-      Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
-    }
-  } else {
-    if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET6, 0, 0, buf,
-                    sizeof(buf))) {
-      Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
-    }
-  }
-#else
-  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf,
+  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), 0, 0, 0, buf,
                   sizeof(buf))) {
     Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
-  }
-#endif
-}
-void EmptyAddressList(dlist<IPADDR>* addrs)
-{
-  IPADDR* iaddr;
-  IPADDR* nam;
-  foreach_dlist (iaddr, addrs) {
-    if (iaddr) {
-      addrs->remove(iaddr);
-      delete iaddr;
-    }
   }
 }
 
