@@ -11,7 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix a bug where the restore browser would not recognize globbing wildcards in paths [PR #801]
 - fix shutdown of the Storage Daemon backends, especially call UnlockDoor on tape devices [PR #809]
 - fix possible deadlock in storage backend on Solaris and FreeBSD [PR #809]
-- [bug-0001194]: when doing an accurate incremental backup, if there is a database error, a full backup is done instead of reporting the error [PR #810]
+- [Issue #1194]: when doing an accurate incremental backup, if there is a database error, a full backup is done instead of reporting the error [PR #810]
 - fix a bug in a date function that leads to errors on the 31st day of a month [PR #782]
 - fix possible read/write problems when using droplet with https [PR #765]
 - fix "configure add" handling of quoted strings [PR #764]
@@ -41,6 +41,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #971]: Error building tree for filenames with backslashes [PR #892]
 - [Issue #1251]: Error when displaying pool detail [PR #903]
 - [Issue #1369]: webui tries to load a nonexistent file [PR #900]
+- fix lost byte in ChunkedDevice [PR #910]
 
 ### Added
 - Add systemtests fileset-multiple-include-blocks, fileset-multiple-options-blocks, quota-softquota, sparse-file, truncate-command and block-size, (migrated from ``regress/``) [PR #780]
@@ -112,6 +113,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
 [Issue #971]: https://bugs.bareos.org/view.php?id=971
 [Issue #1020]: https://bugs.bareos.org/view.php?id=1020
+[Issue #1194]: https://bugs.bareos.org/view.php?id=1194
 [Issue #1205]: https://bugs.bareos.org/view.php?id=1205
 [Issue #1251]: https://bugs.bareos.org/view.php?id=1251
 [Issue #1300]: https://bugs.bareos.org/view.php?id=1300
@@ -181,4 +183,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #893]: https://github.com/bareos/bareos/pull/893
 [PR #900]: https://github.com/bareos/bareos/pull/900
 [PR #903]: https://github.com/bareos/bareos/pull/903
+[PR #910]: https://github.com/bareos/bareos/pull/910
 [unreleased]: https://github.com/bareos/bareos/tree/master
