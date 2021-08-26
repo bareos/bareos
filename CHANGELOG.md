@@ -15,6 +15,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1235]: Special characters not escaped in translations [PR #898] (backport of [PR #887] [PR #888] [PR #889] [PR #890])
 - [Issue #1251]: Error when displaying pool detail [PR #904] (backport of [PR #903])
 - [Issue #1369]: webui tries to load a nonexistent file [PR #901] (backport of [PR #900])
+- fix lost byte in ChunkedDevice (backport of [PR #910])
 
 ### Added
 
@@ -405,4 +406,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #901]: https://github.com/bareos/bareos/pull/901
 [PR #903]: https://github.com/bareos/bareos/pull/903
 [PR #904]: https://github.com/bareos/bareos/pull/904
+[PR #910]: https://github.com/bareos/bareos/pull/910
 [unreleased]: https://github.com/bareos/bareos/tree/master
