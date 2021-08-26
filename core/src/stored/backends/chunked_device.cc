@@ -522,7 +522,7 @@ bool ChunkedDevice::FlushChunk(bool release_chunk, bool move_to_next_chunk)
     retval = EnqueueChunk(&request);
   } else {
     // no multithreading
-    Dmsg1(100, "Try to flush chunk number: %d", request.chunk);
+    Dmsg1(100, "Try to flush chunk number: %d\n", request.chunk);
     retval = FlushRemoteChunk(&request);
   }
 
@@ -703,7 +703,7 @@ ssize_t ChunkedDevice::ReadChunked(int fd, void* buffer, size_t count)
 
       bytes_left
           = MIN((ssize_t)count, (current_chunk_->buflen - wanted_offset));
-      Dmsg2(200, "Reading %d bytes at offset %d from chunk buffer\n",
+      Dmsg2(200, "Reading complete %d byte read-request from chunk offset %d\n",
             bytes_left, wanted_offset);
 
       if (bytes_left < 0) {
@@ -729,14 +729,16 @@ ssize_t ChunkedDevice::ReadChunked(int fd, void* buffer, size_t count)
        */
       while (retval < (ssize_t)count) {
         // See how much is left in this chunk.
-        if (offset_ < current_chunk_->end_offset) {
+        if (offset_ <= current_chunk_->end_offset) {
           wanted_offset = (offset_ % current_chunk_->chunk_size);
           bytes_left = MIN((ssize_t)(count - offset),
                            (ssize_t)(current_chunk_->buflen - wanted_offset));
 
           if (bytes_left > 0) {
-            Dmsg2(200, "Reading %d bytes at offset %d from chunk buffer\n",
-                  bytes_left, wanted_offset);
+            Dmsg2(200,
+                  "Reading %d bytes of %d byte read-request from end of chunk "
+                  "at offset %d\n",
+                  bytes_left, count, wanted_offset);
 
             memcpy(((char*)buffer + offset),
                    current_chunk_->buffer + wanted_offset, bytes_left);
@@ -771,8 +773,9 @@ ssize_t ChunkedDevice::ReadChunked(int fd, void* buffer, size_t count)
                            (ssize_t)(current_chunk_->buflen));
 
           if (bytes_left > 0) {
-            Dmsg2(200, "Reading %d bytes at offset %d from chunk buffer\n",
-                  bytes_left, 0);
+            Dmsg2(200,
+                  "Reading %d bytes of %d byte read-request from next chunk\n",
+                  bytes_left, count);
 
             memcpy(((char*)buffer + offset), current_chunk_->buffer,
                    bytes_left);
@@ -832,8 +835,8 @@ ssize_t ChunkedDevice::WriteChunked(int fd, const void* buffer, size_t count)
         && current_chunk_->end_offset >= (boffset_t)((offset_ + count) - 1)) {
       wanted_offset = (offset_ % current_chunk_->chunk_size);
 
-      Dmsg2(200, "Writing %d bytes at offset %d in chunk buffer\n", count,
-            wanted_offset);
+      Dmsg2(200, "Writing complete %d byte write-request to chunk offset %d\n",
+            count, wanted_offset);
 
       memcpy(current_chunk_->buffer + wanted_offset, buffer, count);
 
@@ -855,7 +858,7 @@ ssize_t ChunkedDevice::WriteChunked(int fd, const void* buffer, size_t count)
        */
       while (retval < (ssize_t)count) {
         // See how much is left in this chunk.
-        if (offset_ < current_chunk_->end_offset) {
+        if (offset_ <= current_chunk_->end_offset) {
           wanted_offset = (offset_ % current_chunk_->chunk_size);
           bytes_left
               = MIN((ssize_t)(count - offset),
@@ -864,8 +867,10 @@ ssize_t ChunkedDevice::WriteChunked(int fd, const void* buffer, size_t count)
                               + 1));
 
           if (bytes_left > 0) {
-            Dmsg2(200, "Writing %d bytes at offset %d in chunk buffer\n",
-                  bytes_left, wanted_offset);
+            Dmsg2(200,
+                  "Writing %d bytes of %d byte write-request to end of chunk "
+                  "at offset %d\n",
+                  bytes_left, count, wanted_offset);
 
             memcpy(current_chunk_->buffer + wanted_offset,
                    ((char*)buffer + offset), bytes_left);
@@ -894,8 +899,9 @@ ssize_t ChunkedDevice::WriteChunked(int fd, const void* buffer, size_t count)
                                     - current_chunk_->start_offset)
                                    + 1));
         if (bytes_left > 0) {
-          Dmsg2(200, "Writing %d bytes at offset %d in chunk buffer\n",
-                bytes_left, 0);
+          Dmsg2(200,
+                "Writing %d bytes of %d byte write-request to next chunk\n",
+                bytes_left, count);
 
           memcpy(current_chunk_->buffer, ((char*)buffer + offset), bytes_left);
           current_chunk_->buflen = bytes_left;

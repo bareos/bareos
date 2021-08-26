@@ -717,7 +717,7 @@ static dpl_status_t posix_get(const char* path,
     int range_len;
 
     offset = range->start;
-    range_len = range->start - range->end;
+    range_len = range->end - range->start;
     if (data_len < range_len) {
       ret = DPL_EINVAL;
       goto end;
@@ -753,7 +753,7 @@ static dpl_status_t posix_get(const char* path,
     goto end;
   }
 
-  if (data_len != cc) {
+  if (length != cc) {
     ret = DPL_FAILURE;
     goto end;
   }

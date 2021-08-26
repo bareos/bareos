@@ -38,7 +38,9 @@ macro(bareos_gtest_add_tests testname)
     message("NOT DISABELING ${found_tests}")
   endif()
 
-  set_tests_properties(${found_tests} PROPERTIES TIMEOUT 120)
+  set_tests_properties(
+    ${found_tests} PROPERTIES TIMEOUT 120 SKIP_RETURN_CODE 77
+  )
   if(HAVE_WIN32)
     set_tests_properties(
       ${found_tests} PROPERTIES ENVIRONMENT "WINEPATH=${WINEPATH}"
@@ -291,7 +293,9 @@ if(NOT client-only)
 endif() # NOT client-only
 
 bareos_add_test(thread_list LINK_LIBRARIES bareos GTest::gtest_main)
-set_tests_properties(gtest:thread_list.thread_list_startup_and_shutdown PROPERTIES LABELS broken)
+set_tests_properties(
+  gtest:thread_list.thread_list_startup_and_shutdown PROPERTIES LABELS broken
+)
 
 bareos_add_test(
   thread_specific_data LINK_LIBRARIES bareos Threads::Threads GTest::gtest_main
@@ -329,7 +333,10 @@ if(NOT client-only)
 endif()
 
 if(NOT client-only)
-  bareos_add_test(sd_backend LINK_LIBRARIES ${LINK_LIBRARIES} GTest::gmock)
+  bareos_add_test(sd_backend LINK_LIBRARIES ${LINK_LIBRARIES})
+  if(TARGET droplet)
+    target_compile_definitions(sd_backend PRIVATE HAVE_DROPLET)
+  endif()
 endif()
 
 if(NOT client-only)
