@@ -57,8 +57,6 @@ define CONFIGURE_COMMON
   -Dacl=yes \
   -Dxattr=yes \
   -Dpostgresql=yes \
-  -Dmysql=yes \
-  -Dsqlite3=yes \
   -Dopenssl=yes \
   -Ddir-user=$(DIRECTOR_DAEMON_USER) \
   -Ddir-group=$(DAEMON_GROUP) \
@@ -109,9 +107,8 @@ override_dh_strip:
 	dh_strip --dbg-package=bareos-dbg
 
 override_dh_install:
-	chrpath -d $(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-mysql* \
-		$(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-postgresql* \
-		$(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-sqlite3*
+	chrpath -d \
+		$(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-postgresql*
 	dh_install
 
 override_dh_installinit:

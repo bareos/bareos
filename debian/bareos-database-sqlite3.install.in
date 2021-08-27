@@ -1,3 +1,0 @@
-@backenddir@/libbareoscats-sqlite3.so*
-@scriptdir@/ddl/*/sqlite3*.sql
-/usr/share/dbconfig-common/data/bareos-database-common/upgrade/sqlite3/*
