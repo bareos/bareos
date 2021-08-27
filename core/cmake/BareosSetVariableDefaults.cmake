@@ -472,16 +472,6 @@ if(NOT client-only)
     list(APPEND db_backends postgresql)
   endif()
 
-  if(${sqlite3})
-    set(HAVE_SQLITE3 1)
-    list(APPEND db_backends sqlite3)
-  endif()
-
-  if(${mysql})
-    set(HAVE_MYSQL 1)
-    list(APPEND db_backends mysql)
-  endif()
-
   if(NOT DEFINED default_db_backend)
     # set first entry as default db backend if not already defined
     list(GET db_backends 0 default_db_backend)
