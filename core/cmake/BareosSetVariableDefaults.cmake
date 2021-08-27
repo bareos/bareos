@@ -444,45 +444,11 @@ endif()
 if(NOT DEFINED client-only)
   set(client-only OFF)
   set(build_client_only OFF)
+  set(postgresql ON)
 else()
   set(client-only ON)
   set(build_client_only ON)
-endif()
-
-# postgresql
-if(NOT DEFINED postgresql)
   set(postgresql OFF)
-endif()
-
-# mysql
-if(NOT DEFINED mysql)
-  set(mysql OFF)
-endif()
-
-# sqlite3
-if(NOT DEFINED sqlite3)
-  set(sqlite3 OFF)
-endif()
-
-if(NOT sqlite3)
-  if(NOT mysql)
-    if(NOT postgresql)
-      if(NOT client-only)
-        message(
-          FATAL_ERROR
-            "No database backend was chosen, please choose at least one from \n"
-            " - postgresql (-Dpostgresql=yes)\n"
-            " - mysqli     (-Dmysql=yes)     \n"
-            " - sqlite3    (-Dsqlite3=yes)   \n"
-            " or select client only build     (-Dclient-only=yes)   \n"
-        )
-      endif()
-    endif()
-  endif()
-endif()
-
-if(NOT mysql)
-  set(MYSQL_INCLUDE_DIR "")
 endif()
 
 if(NOT postgresql)
