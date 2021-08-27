@@ -6,9 +6,7 @@ i386/bareos-bconsole
 i386/bareos-client
 i386/bareos-common
 i386/bareos-database-common
-i386/bareos-database-mysql
 i386/bareos-database-postgresql
-i386/bareos-database-sqlite3
 i386/bareos-database-tools
 i386/bareos-dbg
 i386/bareos-director

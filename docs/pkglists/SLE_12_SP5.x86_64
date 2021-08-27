@@ -1,9 +1,7 @@
 debug/x86_64/bareos-bconsole-debuginfo
 debug/x86_64/bareos-common-debuginfo
 debug/x86_64/bareos-database-common-debuginfo
-debug/x86_64/bareos-database-mysql-debuginfo
 debug/x86_64/bareos-database-postgresql-debuginfo
-debug/x86_64/bareos-database-sqlite3-debuginfo
 debug/x86_64/bareos-database-tools-debuginfo
 debug/x86_64/bareos-debugsource
 debug/x86_64/bareos-director-debuginfo
@@ -31,9 +29,7 @@ x86_64/bareos-bconsole
 x86_64/bareos-client
 x86_64/bareos-common
 x86_64/bareos-database-common
-x86_64/bareos-database-mysql
 x86_64/bareos-database-postgresql
-x86_64/bareos-database-sqlite3
 x86_64/bareos-database-tools
 x86_64/bareos-director
 x86_64/bareos-director-python-plugins-common
