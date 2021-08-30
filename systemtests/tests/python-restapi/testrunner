@@ -68,6 +68,8 @@ while [ $i -lt $maxTry ] && [ $found == "false" ]; do
     fi
 done
     if [ $found == "false" ]; then
+        printf "NOT FOUND\n" >> ${tmp}/../log/curl.log
+        printf -- "--------------------------------------\n\n" >> ${tmp}/../log/curl.log
         print_debug "ERROR getting endpoint $2 with method $1 in $maxTry tries, expected output: \"$3\""
         exit 1
     fi
@@ -96,8 +98,8 @@ endpoint_check GET "configuration/pools/Full" Full "" 1
 endpoint_check POST "configuration/schedules" mysched.$$ "-d '{\"name\":\"mysched.$$\",\"enabled\":\"no\"}'" 1
 endpoint_check GET "configuration/schedules" mysched "" 1
 # On some endpoints director returns empty strings, in this case we grep for http status code 204 (empty document by intention)
-endpoint_check PUT "control/schedules/disable/mysched.$$" 204 "" 1
-endpoint_check PUT "control/schedules/enable/mysched.$$" 204 "" 1
+endpoint_check PUT "control/schedules/disable/mysched.$$" 200 "" 1
+endpoint_check PUT "control/schedules/enable/mysched.$$" 200 "" 1
 endpoint_check GET "configuration/storages" File  "" 1
 endpoint_check GET "configuration/storages/File" File  "" 1
 endpoint_check GET "configuration/consoles" admin-tls  "" 1
@@ -111,8 +113,8 @@ endpoint_check GET "configuration/users" myuser$$  "" 1
 endpoint_check GET "configuration/users/myuser$$" myuser$$  "" 1
 endpoint_check GET "control/clients" bareos-fd "" 1
 endpoint_check GET "control/clients/1" test2-fd "" 1
-endpoint_check PUT "control/clients/disable/bareos-fd" 204 "" 1
-endpoint_check PUT "control/clients/enable/bareos-fd" 204 "" 1
+endpoint_check PUT "control/clients/disable/bareos-fd" 200 "" 1
+endpoint_check PUT "control/clients/enable/bareos-fd" 200 "" 1
 endpoint_check POST "control/jobs/run" jobid "-d '{\"jobControl\":{\"job\":\"backup-bareos-fd\",\"joblevel\":\"Full\"}}'" 1
 endpoint_check POST "control/jobs/run" jobid "-d '{\"jobControl\":{\"job\":\"backup-bareos-fd\",\"joblevel\":\"Full\"}}'" 1
 endpoint_check PUT "control/jobs/cancel/2" 200 "" 1
@@ -132,9 +134,9 @@ endpoint_check DELETE "control/jobs/1" "deleted" "" 1
 endpoint_check DELETE "control/jobs/63535" "No job" "" 1
 endpoint_check GET "control/volumes" "volumes" "" 1
 # label volume fails inside centos7 container - TODO find out why
-endpoint_check POST "control/volumes" 204 "-d '{\"volume\":\"Full-$$\",\"pool\":\"Full\",\"storage\":\"File\"}'" 5
+endpoint_check POST "control/volumes" 200 "-d '{\"volume\":\"Full-$$\",\"pool\":\"Full\",\"storage\":\"File\"}'" 5
 endpoint_check PATCH "control/volumes/Full-$$" "Recycle" "-d '{\"pool\":\"Full\",\"volstatus\":\"Recycle\"}'" 5
-endpoint_check PUT "control/volumes/Full-$$" 204 "-d '{\"volume\":\"Full-00$$\",\"storage\":\"File\",\"pool\":\"Full\",\"encrypt\":\"yes\"}'" 5
+endpoint_check PUT "control/volumes/Full-$$" 200 "-d '{\"volume\":\"Full-00$$\",\"storage\":\"File\",\"pool\":\"Full\",\"encrypt\":\"yes\"}'" 5
 endpoint_check GET "control/volumes/1" "mediaid" "" 1
 endpoint_check GET "control/volumes/188" "No volume" "" 1
 endpoint_check GET "control/pools" "pools" "" 1
