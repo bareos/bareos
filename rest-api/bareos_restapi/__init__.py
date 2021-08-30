@@ -4,7 +4,7 @@
 #
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -291,8 +291,7 @@ def switch_resource(
                 % (componentType, resourceName, CONFIG_DIRECTOR_NAME, e)
             },
         )
-    # json result from director is empty
-    response.status_code = 204
+    response.status_code = 200
     return (True, responseDict)
 
 
@@ -506,10 +505,6 @@ def enable_client(
         componentType="client",
         enable=True,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 
@@ -531,10 +526,6 @@ def disable_client(
         componentType="client",
         enable=False,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 
@@ -826,10 +817,6 @@ def enable_job(
         componentType="job",
         enable=True,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 
@@ -851,10 +838,6 @@ def disable_job(
         componentType="job",
         enable=False,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 
@@ -1273,7 +1256,7 @@ def read_volume(
     return {"message": "No volume with id %d found" % volume_id}
 
 
-@app.post("/control/volumes", status_code=204, tags=["volumes", "control"])
+@app.post("/control/volumes", status_code=200, tags=["volumes", "control"])
 def label_volume(
     *,
     response: Response,
@@ -1416,7 +1399,7 @@ def import_volume(
     return responseDict
 
 
-@app.put("/control/volumes/{volume_name}", status_code=204, tags=["volumes", "control"])
+@app.put("/control/volumes/{volume_name}", status_code=200, tags=["volumes", "control"])
 def relabel_volume(
     *,
     response: Response,
@@ -1443,7 +1426,7 @@ def relabel_volume(
             % (CONFIG_DIRECTOR_NAME, e)
         }
     # Director delivers empty response
-    response.status_code = 204
+    response.status_code = 200
     return responseDict
 
 
@@ -1681,10 +1664,6 @@ def enable_schedule(
         componentType="schedule",
         enable=True,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 
@@ -1706,10 +1685,6 @@ def disable_schedule(
         componentType="schedule",
         enable=False,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 
