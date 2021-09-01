@@ -410,7 +410,7 @@ int AddAddress(dlist<IPADDR>** out,
     return 0;
   }
 
-  if (intype == IPADDR::R_SINGLE_PORT || intype == IPADDR::R_SINGLE_ADDR) {
+  if (intype == IPADDR::R_SINGLE_PORT) {
     IPADDR* addr;
     if (addrs->size()) {
       addr = (IPADDR*)addrs->first();
@@ -421,21 +421,24 @@ int AddAddress(dlist<IPADDR>** out,
       addr->SetAddrAny();
       addrs->append(addr);
     }
-    if (intype == IPADDR::R_SINGLE_PORT) { addr->SetPortNet(port); }
-    if (intype == IPADDR::R_SINGLE_ADDR) {
-      addr->CopyAddr((IPADDR*)(hostaddrs->first()));
+    addr->SetPortNet(port);
 
-      IPADDR* other_address = 0;
-      foreach_dlist (iaddr, addrs) {
-        if (iaddr != addr) {
-          other_address = iaddr;
-          if (other_address) {
-            addrs->remove(other_address);
-            delete other_address;
-          }
-        }
-      }
+  } else if (intype == IPADDR::R_SINGLE_ADDR) {
+    IPADDR* addr = nullptr;
+    int addr_port = defaultport;
+
+    if (addrs->size()) {
+      addr = (IPADDR*)addrs->first();
+      addr_port = addr->GetPortNetOrder();
+      EmptyAddressList(addrs);
     }
+
+    addr = new IPADDR(family);
+    addr->SetType(type);
+    addr->SetPortNet(addr_port);
+    addr->CopyAddr((IPADDR*)(hostaddrs->first()));
+    addrs->append(addr);
+
   } else {
     foreach_dlist (iaddr, hostaddrs) {
       IPADDR* clone;
@@ -463,6 +466,17 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
   if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), 0, 0, 0, buf,
                   sizeof(buf))) {
     Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
+  }
+}
+
+void EmptyAddressList(dlist<IPADDR>* addrs)
+{
+  IPADDR* iaddr;
+  foreach_dlist (iaddr, addrs) {
+    if (iaddr) {
+      addrs->remove(iaddr);
+      delete iaddr;
+    }
   }
 }
 

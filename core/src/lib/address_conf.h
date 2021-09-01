@@ -89,6 +89,7 @@ class IPADDR {
 /* clang-format on */
 
 void InitDefaultAddresses(dlist<IPADDR>** addr, const char* port);
+void EmptyAddressList(dlist<IPADDR>* addrs);
 void FreeAddresses(dlist<IPADDR>* addrs);
 
 const char* GetFirstAddress(dlist<IPADDR>* addrs, char* outputbuf, int outlen);
