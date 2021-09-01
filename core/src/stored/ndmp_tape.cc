@@ -1214,6 +1214,19 @@ extern "C" void* ndmp_thread_server(void* arg)
             be.bstrerror());
     }
 
+    if (ipaddr->GetFamily() == AF_INET6) {
+      int ipv6only_option_value = 1;
+      socklen_t option_len = sizeof(int);
+
+      if (setsockopt(fd_ptr->fd, IPPROTO_IPV6, IPV6_V6ONLY,
+                     (sockopt_val_t)&ipv6only_option_value, option_len)
+          < 0) {
+        BErrNo be;
+        Emsg1(M_WARNING, 0, _("Cannot set IPV6_V6ONLY on socket: %s\n"),
+              be.bstrerror());
+      }
+    }
+
     tmax = 30 * (60 / 5); /* wait 30 minutes max */
     for (tlog = 0;
          bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0;
