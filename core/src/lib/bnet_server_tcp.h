@@ -56,6 +56,12 @@ void BnetThreadServerTcp(
     std::function<void*(void* bsock)> UserAgentShutdownCallback = nullptr,
     std::function<void()> CustomCallback = nullptr);
 
+void RemoveDuplicateAddresses(dlist<IPADDR>* addr_list);
+
+int OpenSocketAndBind(IPADDR* ipaddr,
+                      dlist<IPADDR>* addr_list,
+                      uint16_t port_number);
+
 void BnetStopAndWaitForThreadServerTcp(pthread_t tid);
 
 #endif  // BAREOS_LIB_BNET_SERVER_TCP_H_

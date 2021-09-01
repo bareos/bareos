@@ -122,7 +122,7 @@ class BNetThreadServerCleanupObject {
   ThreadList& thread_list_;
 };
 
-static void RemoveDuplicateAddresses(dlist<IPADDR>* addr_list)
+void RemoveDuplicateAddresses(dlist<IPADDR>* addr_list)
 {
   IPADDR* ipaddr = nullptr;
   IPADDR* next = nullptr;
@@ -153,9 +153,9 @@ static void LogAllAddresses(dlist<IPADDR>* addr_list)
         BuildAddressesString(addr_list, buf.data(), buf.size()));
 }
 
-static int OpenSocketAndBind(IPADDR* ipaddr,
-                             dlist<IPADDR>* addr_list,
-                             uint16_t port_number)
+int OpenSocketAndBind(IPADDR* ipaddr,
+                      dlist<IPADDR>* addr_list,
+                      uint16_t port_number)
 {
   int fd = -1;
   int tries = 0;
