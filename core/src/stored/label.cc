@@ -1054,13 +1054,14 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
               _("%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d\n"),
               type, dev->file, dev->block_num, rec->VolSessionId,
               rec->VolSessionTime, label.JobId);
-        Pmsg7(-1,
-              _("   Date=%s Level=%c Type=%c Files=%s Bytes=%s Errors=%d "
-                "Status=%c\n"),
-              dt, label.JobLevel, label.JobType,
-              edit_uint64_with_commas(label.JobFiles, ed1),
-              edit_uint64_with_commas(label.JobBytes, ed2), label.JobErrors,
-              (char)label.JobStatus);
+        Pmsg7(
+            -1,
+            _("   Job=%s Date=%s Level=%c Type=%c Files=%s Bytes=%s Errors=%d "
+              "Status=%c\n"),
+            label.Job, dt, label.JobLevel, label.JobType,
+            edit_uint64_with_commas(label.JobFiles, ed1),
+            edit_uint64_with_commas(label.JobBytes, ed2), label.JobErrors,
+            (char)label.JobStatus);
         break;
       case EOM_LABEL:
       case PRE_LABEL:
