@@ -187,10 +187,11 @@ static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
   return true;
 }
 
-static void create_and_bind_v4socket(int test_fd, int family, int port)
+static void create_and_bind_v4socket(int test_fd, int port)
 {
-  EXPECT_TRUE((test_fd = socket(AF_INET, SOCK_STREAM, 0)) >= 0);
+  int family = AF_INET;
 
+  EXPECT_TRUE((test_fd = socket(AF_INET, SOCK_STREAM, 0)) >= 0);
 
   struct sockaddr_in v4_address;
   v4_address.sin_family = family;
@@ -202,14 +203,16 @@ static void create_and_bind_v4socket(int test_fd, int family, int port)
                == 0);
 }
 
-static void create_and_bind_v6socket(int test_fd, int family, int port)
+static void create_and_bind_v6socket(int test_fd, int port)
 {
-  EXPECT_TRUE((test_fd = socket(AF_INET6, SOCK_STREAM, 0)) >= 0);
+  int family = AF_INET6;
+
+  EXPECT_TRUE((test_fd = socket(family, SOCK_STREAM, 0)) >= 0);
 
   struct sockaddr_in6 v6_address;
   v6_address.sin6_family = family;
   v6_address.sin6_port = htons(port);
-  inet_pton(AF_INET6, "::", &v6_address.sin6_addr);
+  inet_pton(family, "::", &v6_address.sin6_addr);
 
 
   EXPECT_FALSE(bind(test_fd, (struct sockaddr*)&v6_address, sizeof(v6_address))
@@ -217,25 +220,25 @@ static void create_and_bind_v6socket(int test_fd, int family, int port)
 }
 
 // Only to check port binding, not full addresses
-static void test_socket(int family, int port)
+static void test_sockets(int family, int port)
 {
   int v4_fd = -1;
   int v6_fd = -1;
 
   if (family == 0) {
-    create_and_bind_v4socket(v4_fd, AF_INET, port);
-    create_and_bind_v6socket(v6_fd, AF_INET6, port);
+    create_and_bind_v4socket(v4_fd, port);
+    create_and_bind_v6socket(v6_fd, port);
 
   } else {
     switch (family) {
       case AF_INET:
-        create_and_bind_v4socket(v4_fd, family, port);
+        create_and_bind_v4socket(v4_fd, port);
 
         break;
 
 #ifdef HAVE_IPV6
       case AF_INET6:
-        create_and_bind_v6socket(v6_fd, family, port);
+        create_and_bind_v6socket(v6_fd, port);
         break;
 #endif
       default:
@@ -262,7 +265,7 @@ static bool do_binding_test(std::string path_to_config, int family, int port)
   EXPECT_TRUE(start_socket_server_ok) << "Could not start SocketServer";
   if (!start_socket_server_ok) { return false; }
 
-  test_socket(family, port);
+  test_sockets(family, port);
 
   directordaemon::StopSocketServer();
   StopWatchdog();
@@ -308,19 +311,12 @@ TEST(port_and_addresses_setup, default_config_values)
 
 #ifdef HAVE_IPV6
 
-  if (GetIPV6OnlyValue() == 1) {
-    std::vector<std::string> expected_addresses{"host[ipv6;::;9101]",
-                                                "host[ipv4;0.0.0.0;9101]"};
-    check_addresses_list(path_to_config, expected_addresses);
+  std::vector<std::string> expected_addresses{"host[ipv6;::;9101]",
+                                              "host[ipv4;0.0.0.0;9101]"};
+  check_addresses_list(path_to_config, expected_addresses);
 
-    do_binding_test(path_to_config, 0, 9101);
+  do_binding_test(path_to_config, 0, 9101);
 
-  } else {
-    std::vector<std::string> expected_addresses{"host[ipv6;::;9101]"};
-    check_addresses_list(path_to_config, expected_addresses);
-
-    do_binding_test(path_to_config, AF_INET6, 9101);
-  }
 #else
   std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;9101]"};
   check_addresses_list(path_to_config, expected_addresses);
@@ -337,20 +333,13 @@ TEST(port_and_addresses_setup, dir_port_set)
 
 #ifdef HAVE_IPV6
 
-  if (GetIPV6OnlyValue() == 1) {
-    std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;29998]",
-                                                "host[ipv6;::;29998]"};
+  std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;29998]",
+                                              "host[ipv6;::;29998]"};
 
-    check_addresses_list(path_to_config, expected_addresses);
+  check_addresses_list(path_to_config, expected_addresses);
 
-    do_binding_test(path_to_config, 0, 29998);
+  do_binding_test(path_to_config, 0, 29998);
 
-  } else {
-    std::vector<std::string> expected_addresses{"host[ipv6;::;29998]"};
-    check_addresses_list(path_to_config, expected_addresses);
-
-    do_binding_test(path_to_config, AF_INET6, 29998);
-  }
 #else
   std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;30013]"};
 
@@ -370,11 +359,30 @@ TEST(port_and_addresses_setup, dir_v4address_set)
   check_addresses_list(path_to_config, expected_addresses);
 }
 
+
+/*The next two tests are the same in terms of functionnality, but there is a
+ slight difference in the order of directive setup (DirAddress and DirPort).
+ This comes because as per the current state of config parsing, behavior is
+ different when one comes before the other in the config file, or the inverse.*/
+
 TEST(port_and_addresses_setup, dir_v4address_and_port_set)
 {
   std::string path_to_config
       = std::string(RELATIVE_PROJECT_SOURCE_DIR
                     "/configs/dual_stacking/dir_v4address_and_port_set/");
+
+  std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;29996]"};
+
+  check_addresses_list(path_to_config, expected_addresses);
+
+  do_binding_test(path_to_config, AF_INET, 29996);
+}
+
+TEST(port_and_addresses_setup, dir_v4port_and_address_set)
+{
+  std::string path_to_config
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR
+                    "/configs/dual_stacking/dir_v4port_and_address_set/");
 
   std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;29997]"};
 
