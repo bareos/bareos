@@ -11,5 +11,5 @@
     rotate 6
     notifempty
     missingok
-    @logrotate_su@
+    su bareos bareos
 }
