@@ -227,6 +227,12 @@ class SeleniumTest(unittest.TestCase):
                     + "-"
                     + SeleniumTest.testname
                 )
+                # Set some options to improve reliability
+                # https://stackoverflow.com/a/55307841/11755457
+                opt.add_argument("--disable-extensions")
+                opt.add_argument("--dns-prefetch-disable")
+                opt.add_argument("--disable-gpu")
+
                 # test in headless mode?
                 if self.chromeheadless:
                     opt.add_argument("--headless")
