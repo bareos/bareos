@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -356,16 +356,15 @@ dlist* native_get_vol_list(UaContext* ua,
       field5 = nullptr;
     }
 
+    vl = (vol_list_t*)malloc(sizeof(vol_list_t));
+    {
+      *vl = vol_list_t{};
+    }
     /*
      * See if this is a parsable string from either list or listall
      * e.g. at least f1:f2
      */
     if (!field1 || !field2) { goto parse_error; }
-
-    vl = (vol_list_t*)malloc(sizeof(vol_list_t));
-    {
-      *vl = vol_list_t{};
-    }
 
     if (scan && !listall) {
       /*
