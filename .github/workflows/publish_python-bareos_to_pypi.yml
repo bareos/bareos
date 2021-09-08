@@ -1,23 +1,14 @@
-name: "python-bareos -> https://test.pypi.org/"
-
-#
-# build a python-bareos dev package
-# for every change in master,
-# affecting python-bareos.
-#
+name: "[Release] python-bareos -> https://pypi.org/"
 
 on:
   push:
-    branches:
-      - master
-    paths:
-      - python-bareos/**
-      - .github/workflows/publish-to-test-pypi.yml
+    tags:
+      - Release/*
 
 jobs:
   build-and-publish:
-    name: "Build python-bareos and publish it to https://test.pypi.org/"
-    runs-on: ubuntu-18.04
+    name: "Build python-bareos and publish it to https://pypi.org/"
+    runs-on: ubuntu-20.04
 
     steps:
     - name: "Checkout source"
@@ -30,7 +21,7 @@ jobs:
       run:  git fetch --tag
 
     - name: "Set up Python"
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: 3.7
 
@@ -51,9 +42,8 @@ jobs:
       with:
         path: python-bareos/dist/
 
-    - name: "Publish to test.pypi.org"
-      uses: pypa/gh-action-pypi-publish@v1.1.0
+    - name: "Publish to pypi.org"
+      uses: pypa/gh-action-pypi-publish@v1.4.2
       with:
-        repository_url: https://test.pypi.org/legacy/
-        password: ${{ secrets.test_pypi_password }}
+        password: ${{ secrets.pypi_password }}
         packages_dir: python-bareos/dist/
