@@ -43,6 +43,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1369]: webui tries to load a nonexistent file [PR #900]
 - fix lost byte in ChunkedDevice [PR #910]
 - fix director crash on "update slots" when there is a parsing issue with the autochanger or tape devices [PR #919]
+- [Issue #1232]: bareos logrotate errors, reintroduce su directive in logrotate [PR #918]
 
 ### Added
 - Add systemtests fileset-multiple-include-blocks, fileset-multiple-options-blocks, quota-softquota, sparse-file, truncate-command and block-size, (migrated from ``regress/``) [PR #780]
@@ -119,6 +120,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1020]: https://bugs.bareos.org/view.php?id=1020
 [Issue #1194]: https://bugs.bareos.org/view.php?id=1194
 [Issue #1205]: https://bugs.bareos.org/view.php?id=1205
+[Issue #1232]: https://bugs.bareos.org/view.php?id=1232
 [Issue #1251]: https://bugs.bareos.org/view.php?id=1251
 [Issue #1300]: https://bugs.bareos.org/view.php?id=1300
 [Issue #1316]: https://bugs.bareos.org/view.php?id=1316
@@ -181,11 +183,16 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #861]: https://github.com/bareos/bareos/pull/861
 [PR #868]: https://github.com/bareos/bareos/pull/868
 [PR #869]: https://github.com/bareos/bareos/pull/869
+[PR #870]: https://github.com/bareos/bareos/pull/870
 [PR #874]: https://github.com/bareos/bareos/pull/874
 [PR #880]: https://github.com/bareos/bareos/pull/880
 [PR #892]: https://github.com/bareos/bareos/pull/892
 [PR #893]: https://github.com/bareos/bareos/pull/893
 [PR #900]: https://github.com/bareos/bareos/pull/900
 [PR #903]: https://github.com/bareos/bareos/pull/903
+[PR #907]: https://github.com/bareos/bareos/pull/907
 [PR #910]: https://github.com/bareos/bareos/pull/910
+[PR #914]: https://github.com/bareos/bareos/pull/914
+[PR #918]: https://github.com/bareos/bareos/pull/918
+[PR #919]: https://github.com/bareos/bareos/pull/919
 [unreleased]: https://github.com/bareos/bareos/tree/master
