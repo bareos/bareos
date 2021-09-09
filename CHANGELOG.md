@@ -17,6 +17,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1369]: webui tries to load a nonexistent file [PR #901] (backport of [PR #900])
 - fix lost byte in ChunkedDevice (backport of [PR #910])
 - fix director crash on "update slots" when there is a parsing issue with the autochanger or tape devices [PR #919]
+- [Issue #1232]: bareos logrotate errors, reintroduce su directive in logrotate ([backport of PR #918])
 
 ### Added
 - packages: Build also for Debian_11 [PR #915]
