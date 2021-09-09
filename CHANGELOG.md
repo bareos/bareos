@@ -63,6 +63,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - systemtest:bareos test now also runs on btrfs filesystem [PR #907]
 - packages: Build also for Fedora_34 [PR #869]
 - packages: Build also for Debian_11 [PR #914]
+- add job name in End Job Session output in bls tool [PR #916]
 
 ### Changed
 - core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]
