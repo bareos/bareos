@@ -18,6 +18,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix lost byte in ChunkedDevice (backport of [PR #910])
 
 ### Added
+- packages: Build also for Debian_11 [PR #915]
 
 ### Changed
 
