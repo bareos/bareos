@@ -42,6 +42,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1251]: Error when displaying pool detail [PR #903]
 - [Issue #1369]: webui tries to load a nonexistent file [PR #900]
 - fix lost byte in ChunkedDevice [PR #910]
+- fix director crash on "update slots" when there is a parsing issue with the autochanger or tape devices [PR #919]
 
 ### Added
 - Add systemtests fileset-multiple-include-blocks, fileset-multiple-options-blocks, quota-softquota, sparse-file, truncate-command and block-size, (migrated from ``regress/``) [PR #780]
