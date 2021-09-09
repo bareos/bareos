@@ -23,6 +23,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - packages: Build also for Debian_11 [PR #915]
 
 ### Changed
+- add job name in End Job Session output in bls tool [PR #916]
 
 ### Removed
 
@@ -241,6 +242,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1211]: https://bugs.bareos.org/view.php?id=1211
 [Issue #1220]: https://bugs.bareos.org/view.php?id=1220
 [Issue #1227]: https://bugs.bareos.org/view.php?id=1227
+[Issue #1232]: https://bugs.bareos.org/view.php?id=1232
 [Issue #1235]: https://bugs.bareos.org/view.php?id=1235
 [Issue #1246]: https://bugs.bareos.org/view.php?id=1246
 [Issue #1251]: https://bugs.bareos.org/view.php?id=1251
@@ -410,4 +412,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #903]: https://github.com/bareos/bareos/pull/903
 [PR #904]: https://github.com/bareos/bareos/pull/904
 [PR #910]: https://github.com/bareos/bareos/pull/910
+[PR #915]: https://github.com/bareos/bareos/pull/915
+[PR #916]: https://github.com/bareos/bareos/pull/916
+[PR #919]: https://github.com/bareos/bareos/pull/919
 [unreleased]: https://github.com/bareos/bareos/tree/master
