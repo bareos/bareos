@@ -653,14 +653,14 @@ Since :sinceVersion:`17.2.4: VMware Plugin: vcthumbprint`: as the Plugin is usin
 .. code-block:: shell-session
    :caption: Example Retrieving vCenter SSL Certificate Thumbprint
 
-   echo -n | openssl s_client -connect vcenter.example.org:443 2>/dev/null | openssl x509 -noout -fingerprint -sha1
+   echo -n | openssl s_client -connect vcenter.example.org:443 2>/dev/null | openssl x509 -noout -fingerprint -sha1  | tr -d ":"
 
 The result would look like this:
 
 .. code-block:: shell-session
    :caption: Example Result Thumbprint
 
-   SHA1 Fingerprint=CC:81:81:84:A3:CF:53:ED:63:B1:46:EF:97:13:4A:DF:A5:9F:37:89
+   SHA1 Fingerprint=AABBCCDDEEFF11223344556677889900AABBCCDD
 
 For additional security, there is a now plugin option :command:`vcthumbprint`, that can optionally be added. It must be given without colons like in the following example:
 
@@ -676,7 +676,7 @@ For additional security, there is a now plugin option :command:`vcthumbprint`, t
                 ":vcserver=vcenter.example.org"
                 ":vcuser=bakadm@vsphere.local"
                 ":vcpass=Bak.Adm-1234"
-                ":vcthumbprint=56F597FE60521773D073A2ED47CE07282CE6FE9C"
+                ":vcthumbprint=AABBCCDDEEFF11223344556677889900AABBCCDD"
        ...
 
 For ease of use (but less secure) when the :command:`vcthumbprint` is not given, the plugin will retrieve the thumbprint.
@@ -1024,6 +1024,25 @@ After the restore process has finished, the restored VMDK files can be found und
    drwxr-x--x. 3 root root       4096 Feb 25 15:47 ..
    -rw-------. 1 root root 2075197440 Feb 25 15:19 stephand-test02_1.vmdk
    -rw-------. 1 root root 6012731392 Feb 25 15:19 stephand-test02.vmdk
+
+Debugging in case of problems
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the backup or restore fails, it is possible to get verbose information by adding
+the plugin option :strong:`vadp_dumper_verbose=yes`
+
+.. code-block:: shell-session
+   :caption: debug vadp_dumper
+
+       Plugin = "python"
+                ":module_path=/usr/lib64/bareos/plugins"
+                ":module_name=bareos-fd-vmware"
+                ":dc=mydc1:folder=/webservers"
+                ":vmname=websrv1"
+                ":vcserver=vcenter.example.org"
+                ":vcuser=bakadm@vsphere.local"
+                ":vcpass=Bak.Adm-1234"
+                ":vadp_dumper_verbose=yes"
 
 .. _oVirtPlugin:
 
