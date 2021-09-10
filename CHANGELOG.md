@@ -24,6 +24,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - add job name in End Job Session output in bls tool [PR #916]
+- add chromedriver options to improve reliability of selenium tests [PR #920]
 
 ### Removed
 
