@@ -95,6 +95,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Windows release package now ships source code as optional component, so there is no need for a debug-package anymore [PR #858]
 - postgresql filedaemon plugin: switched from psycopg2 to pg8000, dropped support for python2.
 - version information was moved from core/cmake/ and webui/cmake/ directories into the toplevel cmake/ directory [PR #861]
+- add chromedriver options to improve reliability of selenium tests [PR #920]
 
 ### Deprecated
 
@@ -196,4 +197,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #914]: https://github.com/bareos/bareos/pull/914
 [PR #918]: https://github.com/bareos/bareos/pull/918
 [PR #919]: https://github.com/bareos/bareos/pull/919
+[PR #920]: https://github.com/bareos/bareos/pull/920
 [unreleased]: https://github.com/bareos/bareos/tree/master
