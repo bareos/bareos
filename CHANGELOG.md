@@ -96,6 +96,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - postgresql filedaemon plugin: switched from psycopg2 to pg8000, dropped support for python2.
 - version information was moved from core/cmake/ and webui/cmake/ directories into the toplevel cmake/ directory [PR #861]
 - add chromedriver options to improve reliability of selenium tests [PR #920]
+- docs: Describe how to get debugging info when using the VMware plugin [PR #921]
 
 ### Deprecated
 
