@@ -33,6 +33,7 @@
 
 #include "lib/address_conf.h"
 #include "lib/watchdog.h"
+#include "lib/berrno.h"
 
 
 namespace directordaemon {
@@ -75,7 +76,7 @@ static PConfigParser DirectorPrepareResources(const std::string& path_to_config)
   return director_config;
 }
 
-static void create_and_bind_v4socket(int test_fd, int port)
+static bool create_and_bind_v4socket(int test_fd, int port)
 {
   int family = AF_INET;
 
@@ -87,11 +88,14 @@ static void create_and_bind_v4socket(int test_fd, int port)
   v4_address.sin_addr.s_addr = INADDR_ANY;
 
 
-  EXPECT_FALSE(bind(test_fd, (struct sockaddr*)&v4_address, sizeof(v4_address))
-               == 0);
+  if (bind(test_fd, (struct sockaddr*)&v4_address, sizeof(v4_address)) == 0) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
-static void create_and_bind_v6socket(int test_fd, int port)
+static bool create_and_bind_v6socket(int test_fd, int port)
 {
   int family = AF_INET6;
 
@@ -102,33 +106,46 @@ static void create_and_bind_v6socket(int test_fd, int port)
   v6_address.sin6_port = htons(port);
   inet_pton(family, "::", &v6_address.sin6_addr);
 
+  int ipv6only_option_value = 1;
+  socklen_t option_len = sizeof(int);
 
-  EXPECT_FALSE(bind(test_fd, (struct sockaddr*)&v6_address, sizeof(v6_address))
-               == 0);
+  if (setsockopt(test_fd, IPPROTO_IPV6, IPV6_V6ONLY,
+                 (sockopt_val_t)&ipv6only_option_value, option_len)
+      < 0) {
+    BErrNo be;
+    Emsg1(M_WARNING, 0, _("Cannot set IPV6_V6ONLY on socket: %s\n"),
+          be.bstrerror());
+
+    return false;
+  }
+
+
+  if (bind(test_fd, (struct sockaddr*)&v6_address, sizeof(v6_address)) == 0) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 // Only to check port binding, not full addresses
-static void test_sockets(int family, int port)
+static bool test_sockets(int family, int port)
 {
   int v4_fd = -1;
   int v6_fd = -1;
+  bool result = true;
 
   if (family == 0) {
-    create_and_bind_v4socket(v4_fd, port);
-    create_and_bind_v6socket(v6_fd, port);
+    result = create_and_bind_v4socket(v4_fd, port)
+             && create_and_bind_v6socket(v6_fd, port);
 
   } else {
     switch (family) {
       case AF_INET:
-        create_and_bind_v4socket(v4_fd, port);
-
+        result = create_and_bind_v4socket(v4_fd, port);
         break;
-
-#ifdef HAVE_IPV6
       case AF_INET6:
-        create_and_bind_v6socket(v6_fd, port);
+        result = create_and_bind_v6socket(v6_fd, port);
         break;
-#endif
       default:
         EXPECT_TRUE(false);
         break;
@@ -137,12 +154,17 @@ static void test_sockets(int family, int port)
 
   close(v4_fd);
   close(v6_fd);
+  return result;
 }
 
-static bool do_binding_test(std::string path_to_config, int family, int port)
+static bool try_binding_director_port(std::string path_to_config,
+                                      int family,
+                                      int port)
 {
   debug_level = 10;  // set debug level high enough so we can see error messages
   InitGlobals();
+
+  bool result = false;
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   if (!director_config) { return false; }
@@ -152,12 +174,12 @@ static bool do_binding_test(std::string path_to_config, int family, int port)
   EXPECT_TRUE(start_socket_server_ok) << "Could not start SocketServer";
   if (!start_socket_server_ok) { return false; }
 
-  test_sockets(family, port);
+  result = test_sockets(family, port);
 
   directordaemon::StopSocketServer();
   StopWatchdog();
 
-  return true;
+  return result;
 }
 
 static void check_addresses_list(std::string path_to_config,
@@ -192,53 +214,38 @@ static void check_addresses_list(std::string path_to_config,
 TEST(addresses_and_ports_setup, default_config_values)
 {
   InitGlobals();
-  std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/dual_stacking/default_dir_values/");
-
-#ifdef HAVE_IPV6
+  std::string path_to_config
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR
+                    "/configs/addresses-and-ports/default-dir-values/");
 
   std::vector<std::string> expected_addresses{"host[ipv6;::;9101]",
                                               "host[ipv4;0.0.0.0;9101]"};
   check_addresses_list(path_to_config, expected_addresses);
 
-  do_binding_test(path_to_config, 0, 9101);
-
-#else
-  std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;9101]"};
-  check_addresses_list(path_to_config, expected_addresses);
-
-  do_binding_test(path_to_config, AF_INET, 9101);
-#endif
+  EXPECT_FALSE(try_binding_director_port(path_to_config, 0, 9101));
 }
 
-TEST(addresses_and_ports_setup, dir_port_set)
+TEST(addresses_and_ports_setup, OLD_STYLE_dir_port_set)
 {
   InitGlobals();
-  std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/dual_stacking/dir_port_set/");
-
-#ifdef HAVE_IPV6
+  std::string path_to_config
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR
+                    "/configs/addresses-and-ports/old-style/dir-port-set/");
 
   std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;29998]",
                                               "host[ipv6;::;29998]"};
 
   check_addresses_list(path_to_config, expected_addresses);
 
-  do_binding_test(path_to_config, 0, 29998);
-
-#else
-  std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;30013]"};
-
-  check_addresses_list(path_to_config, expected_addresses);
-
-  do_binding_test(path_to_config, AF_INET, 30013);
-#endif
+  EXPECT_FALSE(try_binding_director_port(path_to_config, 0, 29998));
 }
 
-TEST(addresses_and_ports_setup, dir_v4address_set)
+TEST(addresses_and_ports_setup, OLD_STYLE_dir_v4address_set)
 {
+  InitGlobals();
   std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/dual_stacking/dir_v4address_set/");
+      RELATIVE_PROJECT_SOURCE_DIR
+      "/configs/addresses-and-ports/old-style/dir-v4address-set/");
 
   std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;9101]"};
 
@@ -252,28 +259,77 @@ TEST(addresses_and_ports_setup, dir_v4address_set)
  different when DirPort comes before DirAddress in the config file, and vice
  versa.*/
 
-TEST(addresses_and_ports_setup, dir_v4address_and_port_set)
+TEST(addresses_and_ports_setup, OLD_STYLE_dir_v4port_and_address_set)
 {
-  std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR
-                    "/configs/dual_stacking/dir_v4address_and_port_set/");
-
-  std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;29996]"};
-
-  check_addresses_list(path_to_config, expected_addresses);
-
-  do_binding_test(path_to_config, AF_INET, 29996);
-}
-
-TEST(addresses_and_ports_setup, dir_v4port_and_address_set)
-{
-  std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR
-                    "/configs/dual_stacking/dir_v4port_and_address_set/");
+  InitGlobals();
+  std::string path_to_config = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR
+      "/configs/addresses-and-ports/old-style/dir-v4port-and-address-set/");
 
   std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;29997]"};
 
   check_addresses_list(path_to_config, expected_addresses);
 
-  do_binding_test(path_to_config, AF_INET, 29997);
+  EXPECT_FALSE(try_binding_director_port(path_to_config, AF_INET, 29997));
+}
+
+TEST(addresses_and_ports_setup, OLD_STYLE_dir_v4address_and_port_set)
+{
+  InitGlobals();
+  std::string path_to_config = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR
+      "/configs/addresses-and-ports/old-style/dir-v4address-and-port-set/");
+
+  std::vector<std::string> expected_addresses{"host[ipv4;127.0.0.1;29996]"};
+
+  check_addresses_list(path_to_config, expected_addresses);
+}
+
+TEST(addresses_and_ports_setup, NEW_STYLE_dir_v6_address_set)
+{
+  InitGlobals();
+  std::string path_to_config
+      = std::string(RELATIVE_PROJECT_SOURCE_DIR
+                    "/configs/addresses-and-ports/new-style/dir-v6-address/");
+
+  std::vector<std::string> expected_addresses{"host[ipv6;::;29995]"};
+
+  check_addresses_list(path_to_config, expected_addresses);
+}
+
+TEST(addresses_and_ports_setup, NEW_STYLE_dir_v6_and_v4_address_set)
+{
+  InitGlobals();
+  std::string path_to_config = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR
+      "/configs/addresses-and-ports/new-style/dir-v6-and-v4-addresses/");
+
+  std::vector<std::string> expected_addresses{"host[ipv6;::;29994]",
+                                              "host[ipv4;127.0.0.1;29994]"};
+
+  check_addresses_list(path_to_config, expected_addresses);
+}
+
+TEST(addresses_and_ports_setup, NEW_STYLE_dir_ip_v4_address_set)
+{
+  InitGlobals();
+  std::string path_to_config = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR
+      "/configs/addresses-and-ports/new-style/dir-ip-v4-address/");
+
+  std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;29992]"};
+
+  check_addresses_list(path_to_config, expected_addresses);
+}
+
+TEST(addresses_and_ports_setup, NEW_STYLE_dir_ip_v6_address_set)
+{
+  InitGlobals();
+  std::string path_to_config = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR
+      "/configs/addresses-and-ports/new-style/dir-ip-v6-address/");
+
+  std::vector<std::string> expected_addresses{"host[ipv6;::;29993]"};
+
+  check_addresses_list(path_to_config, expected_addresses);
 }
