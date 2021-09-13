@@ -1,9 +1,9 @@
 #ifndef VERSION
-#define VERSION "18.2.11"
+#define VERSION "18.2.12"
 #endif
 
-#define BDATE   "11 June 2021"
-#define LSMDATE "11Jun21"
+#define BDATE   "13 September 2021"
+#define LSMDATE "13Sep21"
 
 #ifndef BAREOS_BINARY_INFO
 #define BAREOS_BINARY_INFO "self-compiled"
