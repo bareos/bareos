@@ -21,6 +21,43 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 Bareos-19.2
 -----------
 
+.. _bareos-19211-releasenotes:
+
+.. _bareos-19.2.11:
+
+Bareos-19.2.11
+~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+.. list-table:: Bareos 19.2.11 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 2021-09-13
+   * - **Database Version**
+     - 2192
+   * - **URL**
+     - https://download.bareos.com/bareos/release/19.2/
+
+Bugs Fixed
+^^^^^^^^^^
+* Fix a crash in director when getting malformed input from mtx-changer
+* Fix a problem in chunked device / droplet backend that could lead to data loss
+* :mantis:`1235`: Special characters not escaped in translations
+* :mantis:`1369`: Webui tries to load a non-existing file
+* :mantis:`1251`: Error when displaying pool detail
+* :mantis:`1020`: Cannot restore a client with spaces in its name
+* :mantis:`971`: Error building tree for filenames with backslashes
+* :mantis:`579`: Unable to connect to the director from webui via ipv6
+* :mantis:`1324`: Fix infinite loop when trying to log into webui with invalid account
+
+Other Improvements
+^^^^^^^^^^^^^^^^^^
+* Fix permission problem with logrotate by adding the su directive to the configuration file.
+
+
 .. _bareos-19210-releasenotes:
 
 .. _bareos-19.2.10:
