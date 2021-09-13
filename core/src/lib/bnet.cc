@@ -417,11 +417,7 @@ dlist<IPADDR>* BnetHost2IpAddrs(const char* host,
     addr->SetAddr4(&inaddr);
     addr_list->append(addr);
 #ifdef HAVE_IPV6
-#  ifndef HAVE_WIN32
   } else if (inet_pton(AF_INET6, host, &inaddr6) == 1) {
-#  else
-  } else if (p_InetPton && p_InetPton(AF_INET6, host, &inaddr6) == 1) {
-#  endif
     addr = new IPADDR(AF_INET6);
     addr->SetType(IPADDR::R_MULTIPLE);
     addr->SetAddr6(&inaddr6);
