@@ -438,9 +438,14 @@ class BareosFdPluginVz7CtFs(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(
                         100,
             "ENTERING start_restore_job() entry point in Python called\n")
+        if not self.check_plugin_options():
+            bareosfd.JobMessage(
+                                bareosfd.M_FATAL,
+                "mandatory options uuid and/or name are not specified")
+            return bareosfd.bRC_Error
         if self.restore == 'ct':
             return self.start_restore_ct_job()
-        elif self.restore == 'file':
+        elif self.restore == 'files':
             return self.start_restore_files_job()
         else:
             bareosfd.JobMessage(
@@ -452,12 +457,6 @@ class BareosFdPluginVz7CtFs(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         '''
          Check if files can be restored on this host
         '''
-        if not self.check_plugin_options():
-            bareosfd.JobMessage(
-                                bareosfd.M_FATAL,
-                "mandatory options uuid and/or name are not specified")
-            return bareosfd.bRC_Error
-
         ct_list = self.get_cts()
         index = 0
         # check wether ct exists and name and uuid match
@@ -501,12 +500,6 @@ class BareosFdPluginVz7CtFs(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         '''
         Check if the CT can be restored on this host
         '''
-        # check parameters
-        if not self.check_plugin_options():
-            bareosfd.JobMessage(
-                                bareosfd.M_FATAL,
-                "mandatory options uuid and/or name are not specified")
-            return bareosfd.bRC_Error
         ct_list = self.get_cts()
         for ct_hash in ct_list:
             if ct_hash['name'] == self.options['name']:
