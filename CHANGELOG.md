@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [20.0.3] - 2021-09-14
 
 ### Fixed
 - [Issue #579]: Unable to connect to the director from webui via ipv6 [PR #871] (backport of [PR #868])
@@ -226,6 +226,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [20.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.0
 [20.0.1]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.1
 [20.0.2]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.2
+[20.0.3]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.3
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
 [Issue #971]: https://bugs.bareos.org/view.php?id=971
@@ -416,4 +417,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #915]: https://github.com/bareos/bareos/pull/915
 [PR #916]: https://github.com/bareos/bareos/pull/916
 [PR #919]: https://github.com/bareos/bareos/pull/919
-[unreleased]: https://github.com/bareos/bareos/tree/master
+[PR #920]: https://github.com/bareos/bareos/pull/920
+[PR #922]: https://github.com/bareos/bareos/pull/922
