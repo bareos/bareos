@@ -146,7 +146,7 @@ void SchedulerPrivate::WaitForJobsToRun()
 
     if (now >= next_job.runtime) {
       auto run_job = prioritised_job_item_queue.TakeOutTopItem();
-      if (!run_job.is_valid) {
+      if (!run_job.is_valid || !run_job.job->enabled) {
         continue;  // check queue again
       }
       JobControlRecord* jcr = TryCreateJobControlRecord(run_job);

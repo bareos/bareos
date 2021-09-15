@@ -44,6 +44,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix lost byte in ChunkedDevice [PR #910]
 - fix director crash on "update slots" when there is a parsing issue with the autochanger or tape devices [PR #919]
 - [Issue #1232]: bareos logrotate errors, reintroduce su directive in logrotate [PR #918]
+- fix scheduler running disabled jobs after executing the disable command [PR #924]
 
 ### Added
 - Add systemtests fileset-multiple-include-blocks, fileset-multiple-options-blocks, quota-softquota, sparse-file, truncate-command and block-size, (migrated from ``regress/``) [PR #780]
@@ -199,4 +200,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #918]: https://github.com/bareos/bareos/pull/918
 [PR #919]: https://github.com/bareos/bareos/pull/919
 [PR #920]: https://github.com/bareos/bareos/pull/920
+[PR #924]: https://github.com/bareos/bareos/pull/924
 [unreleased]: https://github.com/bareos/bareos/tree/master
