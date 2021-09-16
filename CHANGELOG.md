@@ -45,6 +45,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix director crash on "update slots" when there is a parsing issue with the autochanger or tape devices [PR #919]
 - [Issue #1232]: bareos logrotate errors, reintroduce su directive in logrotate [PR #918]
 - fix scheduler running disabled jobs after executing the disable command [PR #924]
+- [Issue #1334]: After deleting storage from the configuration, it still persists in the catalog db [PR #912]
 
 ### Added
 - systemtests: allows multiple subtests per systemtest [PR #857]
@@ -68,6 +69,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - packages: Build also for Fedora_34 [PR #869]
 - packages: Build also for Debian_11 [PR #914]
 - add job name in End Job Session output in bls tool [PR #916]
+- added check for orphaned storages in dbcheck [PR #912]
+- added option to delete selected storage in bconsole if it is orphaned [PR #912]
 
 ### Changed
 - core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]
@@ -198,6 +201,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #903]: https://github.com/bareos/bareos/pull/903
 [PR #907]: https://github.com/bareos/bareos/pull/907
 [PR #910]: https://github.com/bareos/bareos/pull/910
+[PR #912]: https://github.com/bareos/bareos/pull/912
 [PR #914]: https://github.com/bareos/bareos/pull/914
 [PR #918]: https://github.com/bareos/bareos/pull/918
 [PR #919]: https://github.com/bareos/bareos/pull/919
