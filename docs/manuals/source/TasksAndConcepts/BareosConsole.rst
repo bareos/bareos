@@ -202,7 +202,7 @@ catalog
 catalogs
    Used in the show command. Takes no arguments.
 
-client | fd
+client | fd
    Used to specify a client (or filedaemon).
 
 clients
@@ -220,7 +220,7 @@ days
 devices
    Used in the show command. Takes no arguments.
 
-director | dir | directors
+director | dir | directors
    Used in the show and status command. Takes no arguments.
 
 directory
@@ -264,7 +264,7 @@ jobid
 
    JobId can be used on the :bcommand:`rerun` command to select all jobs failed after and including the given jobid for rerunning.
 
-job | jobname
+job | jobname
    The Job or Jobname keyword refers to the name you specified in the Job resource, and hence it refers to any number of Jobs that ran. It is typically useful if you want to list all jobs of a particular name.
 
 level
@@ -282,7 +282,7 @@ messages
 media
    Used in the list and llist commands. Takes no arguments.
 
-nextvolume | nextvol
+nextvolume | nextvol
    Used in the list and llist commands. Takes no arguments.
 
 on
@@ -306,7 +306,7 @@ limit
 schedules
    Used in the show command. Takes no arguments.
 
-storage | store | sd
+storage | store | sd
    Used to specify the name of a storage daemon.
 
 storages
@@ -510,7 +510,7 @@ configure
 delete
    :index:`\ <single: Console; Command; delete>`\  The delete command is used to delete a Volume, Pool or Job record from the Catalog as well as all associated catalog Volume records that were created. This command operates only on the Catalog database and has no effect on the actual data written to a Volume. This command can be dangerous and we strongly recommend that you do not use it unless you know what you are doing.
 
-   If the keyword Volume appears on the command line, the named Volume will be deleted from the catalog, if the keyword Pool appears on the command line, a Pool will be deleted, and if the keyword Job appears on the command line, a Job and all its associated records (File and JobMedia) will be deleted from the catalog.
+   If the keyword Volume appears on the command line, the named Volume will be deleted from the catalog. If the keyword Pool appears on the command line, a Pool will be deleted. If the keyword Job appears on the command line, a Job and all its associated records (File and JobMedia) will be deleted from the catalog. If the keyword storage appears on the command line, the orphaned storage with the selected name will be deleted.
 
    The full form of this command is:
 
@@ -521,8 +521,9 @@ delete
       delete volume=<volume-name> pool=<pool-name>
       delete JobId=<job-id> JobId=<job-id2> ...
       delete Job JobId=n,m,o-r,t ...
+      delete storage=<storage-name>
 
-   The first form deletes a Pool record from the catalog database. The second form deletes a Volume record from the specified pool in the catalog database. The third form deletes the specified Job record from the catalog database. The last form deletes JobId records for JobIds n, m, o, p, q, r, and t. Where each one of the n,m,... is, of course, a number. That is a "delete jobid" accepts lists and ranges of jobids.
+   The first form deletes a Pool record from the catalog database. The second form deletes a Volume record from the specified pool in the catalog database. The third form deletes the specified Job record from the catalog database. The fourth form deletes JobId records for JobIds n, m, o, p, q, r, and t. Where each one of the n,m,... is, of course, a number. That is a "delete jobid" accepts lists and ranges of jobids. The last form deletes the selected storage from the database, only if it is orphaned, meaning if still persists in the database even though its configuration has been removed and there are no volumes or devices associated with it anymore.
 
 disable
    :index:`\ <single: Console; Command; disable>`\  This command permits you to disable a Job for automatic scheduling. The job may have been previously enabled with the Job resource Enabled directive or using the console enable command. The next time the Director is reloaded or restarted, the Enable/Disable state will be set to the value in the Job resource (default enabled) as defined in the |dir| configuration.
