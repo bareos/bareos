@@ -1,110 +1,79 @@
 .. _BareosSystemtestsChapter:
 
-Build Bareos for systemtests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This following shell script will show how to build the **Bareos test-environment** from source.
-
-.. code-block:: bash
-  :caption: Example shell script
-
-  #!/bin/sh
-
-  mkdir bareos-local-tests
-  cd bareos-local-tests
-  git clone https://github.com/bareos/bareos.git
-
-  mkdir build
-  cd build
-
-  # configure build environment
-  cmake -Dpostgresql=yes -Dtraymonitor=yes ../bareos
-
-  # build Bareos
-  make
-
-  # run system tests
-  make test
-
-Configure (cmake) build settings
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. note::
-
-   To buil bareos, at least **cmake version 3.12** is required.
-
-
-Bareos cmake configuration allows a lot of different defines to be set.
-For the test-environment, we use the minimal defines required to run the tests.
-
-When interested in the cmake defines for the Bareos production packages,
-please refer to the corresponding build descriptions:
-
-  * Debian Packages: `debian/rules <https://github.com/bareos/bareos/blob/master/core/debian/rules>`__
-  * RPM Packages: `core/platforms/packaging/bareos.spec <https://github.com/bareos/bareos/blob/master/core/platforms/packaging/bareos.spec>`__
-
-
-Using ccache (compiler cache)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Bareos can be built using ccache and using it will improve build times for repeated builds a lot.
-Running cmake will autodetect and use ccache if it is available.
-To get the most out of ccache, you should configure it to work correctly with Bareos.
-
-base_dir
-   Set this to a common directory where your checked out sources and cmake binary-dir live.
-   Your homedirectoy is probably a good starting point.
-   This setting lets ccache ignore the path to files below this ``base_dir``.
-   This makes sure you will get a cache hit even if the path to the source files changes.
-hash_dir
-   By disabling this, the current working directory will be ignored.
-   In case of cmake the working directory does not matter, so ignoring this should be safe and will improve cache hits
-sloppiness = file_macro
-   This makes sure the value that ``__FILE__`` expands to is ignored when caching.
-   You may end up with binaries that contain other paths in ``__FILE__``, but Bareos only uses this to determine a relative path so this should not hurt.
-   If you're using a modern compiler that supports ``-ffile-prefix-map`` this should not be required anymore.
-
-.. code-block:: ini
-  :caption: Example ccache.conf
-
-  base_dir = /path/to/common/topdir
-  hash_dir = false
-  sloppiness = file_macro
-
-Prepare the PostgreSQL database for systemtests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This is an example how to configure the PostgreSQL server to use for systemtests.
-
-.. code-block:: shell-session
-  :caption: Configure a PostgreSQL Server for systemtests
-
-  su postgres
-  createuser regress -s
-  psql --command='CREATE DATABASE regress OWNER regress TEMPLATE template0;'
-
-  # insert authentication methods for database user 'regress'
-  # BEFORE the general rules into file pg_hba.conf
-  #
-  # local   all             regress                                 trust
-  # host    all             regress         127.0.0.1/32            trust
-  # host    all             regress         ::1/128                 trust
-
 Systemtests
-~~~~~~~~~~~
+===========
 
 Systemtests use the locally compiled version of the bareos binaries
 and run tests on them. Preparations also have been made to run the
 tests on installed binaries (originating from packages).
 
+Prepare the PostgreSQL database for systemtests
+-----------------------------------------------
+
+The |dir| requires a database backend. The default database is |postgresql|.
+To run systemtests, some preparations are required.
+
+The system user running the Bareos systemtests
+must be given permission to create databases and database user.
+
+.. code-block:: shell-session
+   :caption: Configure a PostgreSQL Server for systemtests
+
+   user@host:~$ sudo -u postgres createuser --createdb --createrole $USER
+
+
+Each systemtest creates its own database.
+The test scripts also create the database user **regress**
+which needs access all created databases.
+To achieve this, add the following lines to the :file:`pg_hba.conf` file:
+
+.. code-block:: cfg
+   :caption: Allow access to all local databases for PostgresSQL user regress
+
+   # insert authentication methods for database user 'regress'
+   # BEFORE the general rules into file pg_hba.conf
+   local   all             regress                                 trust
+
+
+Make sure, to restart the |postgresql| server.
+
+
+Build Bareos for Systemtests
+----------------------------
+
+This following shell script will show how to build the Bareos test-environment from source.
+
+.. code-block:: bash
+   :caption: Example shell script
+
+   #!/bin/sh
+
+   mkdir bareos-local-tests
+   cd bareos-local-tests
+   git clone https://github.com/bareos/bareos.git
+
+   mkdir build
+   cd build
+
+   # configure build environment
+   cmake -Dpostgresql=yes -Dtraymonitor=yes ../bareos
+
+   # build Bareos
+   make
+
+   # run system tests
+   make test
+
+
+Running Systemtests
+-------------------
+
 The tests were designed to be completely independent, so that they
 can be run in parallel without interfering with each other.
 
-The Bareos Systemtest approach is intended to substitute the older :ref:`BareosRegressionTestingChapter` approach.
-
 
 Run all system tests
-^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: shell-session
    :caption: List available ctests
@@ -141,7 +110,7 @@ Only jobs with names matching a certain regular expression can be run with
 Please refer to the ctest documentation.
 
 Run a single system test
-^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: shell-session
    :caption: Run a single system test by ctest
@@ -252,7 +221,7 @@ and a :command:`bconsole` session can be used to retrieve information:
    *
 
 Add a systemtest
-^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~
 
 To add a systemtest it is advisable to copy one of the existing systemtests
 that matches the desired type of the new systemtest most.
@@ -271,7 +240,7 @@ Each test has a script named *testrunner* which contains all code to run a
 systemtest.
 
 Directory Structures
-^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~
 
 Running cmake in the systemtest subdirectory will create the tests in the
 build tree that is party symmetrical to the source tree as you can see on the
