@@ -54,6 +54,8 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
+#include "dird/dbcheck_utils.h"
+
 namespace directordaemon {
 
 /* Imported subroutines */
@@ -154,6 +156,7 @@ static bool DeleteJobIdRange(UaContext* ua, char* tok);
 static bool DeleteVolume(UaContext* ua);
 static bool DeletePool(UaContext* ua);
 static void DeleteJob(UaContext* ua);
+static void DeleteStorage(UaContext* ua);
 static bool DoTruncate(UaContext* ua,
                        MediaDbRecord& mr,
                        drive_number_t drive_number);
@@ -185,7 +188,7 @@ static struct ua_cmdstruct commands[] = {
     {NT_(".users"), DotUsersCmd, _("List all user resources"), NULL, true,
      false},
     {NT_(".defaults"), DotDefaultsCmd, _("Get default settings"),
-     NT_("job=<job-name> | client=<client-name> | storage=<storage-name | "
+     NT_("job=<job-name> | client=<client-name> | storage=<storage-name> | "
          "pool=<pool-name>"),
      false, false},
 #ifdef DEVELOPER
@@ -286,8 +289,8 @@ static struct ua_cmdstruct commands[] = {
      NT_("pool=<pool-name>"), false, true},
     {NT_("delete"), DeleteCmd, _("Delete volume, pool or job"),
      NT_("[volume=<vol-name> [yes] | volume pool=<pool-name> [yes] | "
-         "pool=<pool-name> | jobid=<jobid> | jobid=<jobid1,jobid2,...> | "
-         "jobid=<jobid1-jobid9>]"),
+         "storage storage=<storage-name> | pool=<pool-name> | jobid=<jobid> | "
+         "jobid=<jobid1,jobid2,...> | jobid=<jobid1-jobid9>]"),
      true, true},
     {NT_("disable"), DisableCmd, _("Disable a job/client/schedule"),
      NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true,
@@ -2252,7 +2255,7 @@ static bool ReloadCmd(UaContext* ua, const char* cmd)
 static bool DeleteCmd(UaContext* ua, const char* cmd)
 {
   static const char* keywords[]
-      = {NT_("volume"), NT_("pool"), NT_("jobid"), NULL};
+      = {NT_("volume"), NT_("pool"), NT_("jobid"), NT_("storage"), NULL};
 
   if (!OpenClientDb(ua, true)) { return true; }
   ua->send->ObjectStart("deleted");
@@ -2276,12 +2279,63 @@ static bool DeleteCmd(UaContext* ua, const char* cmd)
     case 2:
       DeleteJob(ua);
       break;
+    case 3:
+      DeleteStorage(ua);
+      break;
     default:
       ua->WarningMsg(_("Nothing done.\n"));
       break;
   }
   ua->send->ObjectEnd("deleted");
   return true;
+}
+
+static void DeleteStorage(UaContext* ua)
+{
+  std::string given_storagename;
+  if (FindArgWithValue(ua, NT_("storage")) <= 0) {
+    if (GetCmd(ua, _("Enter storage to delete: "))) {
+      given_storagename = ua->cmd;
+    }
+  } else {
+    given_storagename = ua->argv[FindArgWithValue(ua, NT_("storage"))];
+  }
+
+  std::vector<std::string> orphaned_storages
+      = get_orphaned_storages_names(ua->db);
+
+  ua->SendMsg(_("Found %zu orphaned Storage records.\n"),
+              orphaned_storages.size());
+
+  if (std::find(orphaned_storages.begin(), orphaned_storages.end(),
+                given_storagename)
+      == orphaned_storages.end()) {
+    ua->ErrorMsg(
+        _("The given storage name '%s' either does not exist at all, "
+          "or exists but the matching configuration file is not yet deleted. "
+          "If the storage configuration file is still available, it must be "
+          "first deleted from the bareos configurations in order to eliminate "
+          "it from the database.\n"),
+        given_storagename.c_str());
+    return;
+  }
+
+  std::vector<int> storages_to_be_deleted;
+  if (orphaned_storages.size() > 0) {
+    for (int i = orphaned_storages.size() - 1; i >= 0; i--) {
+      if (orphaned_storages[i] != given_storagename) {
+        orphaned_storages.erase(orphaned_storages.begin() + i);
+      }
+    }
+    storages_to_be_deleted
+        = get_deletable_storageids(ua->db, orphaned_storages);
+  }
+
+  if (storages_to_be_deleted.size() > 0) {
+    ua->SendMsg(_("Deleting %zu orphaned storage record(s).\n"),
+                storages_to_be_deleted.size());
+    delete_storages(ua->db, storages_to_be_deleted);
+  }
 }
 
 /**
