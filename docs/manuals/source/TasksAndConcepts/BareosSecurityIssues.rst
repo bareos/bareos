@@ -23,6 +23,7 @@ Bareos Security Issues
 
 -  You can restrict what IP addresses Bareos will bind to by using the appropriate DirAddress, FDAddress, or SDAddress records in the respective daemon configuration files.
 
+-  The new systemd service uses the systemd default service type 'Simple', which will log startup errors to systemd-journal. This is particularly useful to debug starting errors. However this could also leak some sensitive information to the journal. Though the access to the systemd journal is sensitive and as such per default restricted, you might want to verify that your installation is strict enough.
 
 
 .. _section-SecureEraseCommand:

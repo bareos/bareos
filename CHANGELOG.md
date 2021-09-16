@@ -75,6 +75,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - add job name in End Job Session output in bls tool [PR #916]
 - added check for orphaned storages in dbcheck [PR #912]
 - added option to delete selected storage in bconsole if it is orphaned [PR #912]
+- docs: BareosSecurityIssues add remark about new systemd service (non forking) logged information into systemd-journal
 
 ### Changed
 - core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]
