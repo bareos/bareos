@@ -118,8 +118,8 @@ if(HAVE_WIN32)
   )
 endif()
 
-set(DBCHKSRCS dbcheck.cc dird_conf.cc dird_globals.cc ua_acl.cc ua_audit.cc
-              run_conf.cc inc_conf.cc
+set(DBCHKSRCS dbcheck.cc dbcheck_utils.cc dird_conf.cc dird_globals.cc
+              ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc
 )
 if(HAVE_WIN32)
   list(APPEND DBCHKSRCS ../win32/dird/dbcheckres.rc)
