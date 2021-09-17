@@ -1,15 +1,16 @@
 #!/bin/bash
 set -e
+set -o pipefail
 set -u
 #
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
+#shellcheck source=environment-local.in
+. ./environment-local
 
-JobName=backup-bareos-fd
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
@@ -24,51 +25,50 @@ start_test
 start_bareos
 
 function endpoint_check {
-# $1: method
-# $2: endpoint-url
+# $1: method (POST, GET)
+# $2: endpoint_url
 # $3: string to grep for
 # $4: extra curl options
 # $5: repeat n times with a pause of 1 second between tries to get the result
 
-if [ -z "$5" ]; then
-    maxTry=1
-else
-    maxTry=$5
-fi
+method="$1"
+endpoint_url="$2"
+search="$3"
+curl_extra_options="${4:-}"
+maxTry=${5:-1}
 
-url="http://127.0.0.1:@restapi_port@/$2"
-echo "curl -w \"\n%{http_code}\n\" -s -X $1 $url -H \"accept: application/json\" -H  \"Authorization: Bearer $TOKEN\" \"$4\" " >> ${tmp}/../log/curl.log
+url="${REST_API_URL}/$2"
+
+printf \
+'curl --silent --show-error --write-out "%s" \
+  -H "Content-Type: application/json" \
+  -H "accept: application/json" \
+  -H "Authorization: Bearer %s" \
+  -X %s \
+  %s \
+  %s\n\n
+' "\n%{http_code}\n" "$TOKEN" "$method" "$url" "$curl_extra_options" > ${tmp}/curl.sh
+
 # curl doesn't like empty string "" as option, will exit with code 3
 i=0
 found="false"
-while [ $i -lt $maxTry ] && [ $found == "false" ]
-do
-    if [ -z "$4" ]
-    then
-        curl -w "\n%{http_code}\n" -s -X $1 $url -H "accept: application/json" -H  "Authorization: Bearer $TOKEN" > ${tmp}/curl.out
-    else
-        curl -w "\n%{http_code}\n" -s -X $1 $url -H "accept: application/json" -H  "Authorization: Bearer $TOKEN" "$4" > ${tmp}/curl.out
-    fi
+while [ $i -lt $maxTry ] && [ $found == "false" ]; do
+    cat ${tmp}/curl.sh >> ${tmp}/../log/curl.log
+    source ${tmp}/curl.sh > ${tmp}/curl.out
     cat ${tmp}/curl.out >> ${tmp}/../log/curl.log
-    echo "Search for \"$3\"" >> ${tmp}/../log/curl.log
-    set +e
-    grep -q "$3" ${tmp}/curl.out
-    resultCode=$?
-    set -e
-    echo $resultCode >> ${tmp}/../log/curl.log
-    echo "------------" >> ${tmp}/../log/curl.log
-
-    if [ $resultCode -ne 0 ]
-      then print_debug "ERROR getting endpoint $2 with method $1, try $i of $maxTry"
-      else found=true
-    fi
-    if [ $maxTry -gt 1 ] && [ $found == "false" ]; then
+    printf 'Searching for "%s": ' "$search" >> ${tmp}/../log/curl.log
+    if grep -q "$search" ${tmp}/curl.out; then
+        found="true"
+        printf "found\n" >> ${tmp}/../log/curl.log
+        printf -- "--------------------------------------\n\n" >> ${tmp}/../log/curl.log
+    else
+        print_debug "ERROR getting endpoint $2 with method $1, try $i of $maxTry"
+        i=$[$i+1]
         sleep 1
     fi
-    i=$[$i+1]
 done
     if [ $found == "false" ]; then
-        print_debug "ERROR getting endpoint $2 with method $1 in $maxTry tries, expectected output: \"$3\""
+        print_debug "ERROR getting endpoint $2 with method $1 in $maxTry tries, expected output: \"$3\""
         exit 1
     fi
 }
@@ -78,14 +78,12 @@ done
 ## TODO: error handling / make sure api gets stopped
 mkdir -p etc/bareos/bareos-dir.d/schedule
 mkdir -p etc/bareos/bareos-dir.d/user
-cd api
-./startapi.sh
-sleep 3
-echo "api started"
-TOKEN=`curl -X POST "http://127.0.0.1:@restapi_port@/token" -H  "accept: application/json" -H  "Content-Type: application/x-www-form-urlencoded" -d "grant_type=&username=admin-tls&password=secret&scope=&client_id=&client_secret=" | grep access_token | cut -d '"' -f 4`
-#echo $TOKEN
-endpoint_check POST "configuration/clients" newClient.$$ "-d {\"name\":\"newClient.$$-fd\",\"address\": \"127.0.0.1\", \"password\": \"string\"}" 1
+
+api/restapi.sh start
+
+TOKEN=$(api/curl-auth.sh)
 endpoint_check GET "configuration/clients/bareos-fd" bareos-fd "" 1
+endpoint_check POST "configuration/clients" newClient.$$ "-d '{\"name\":\"newClient.$$-fd\", \"address\": \"127.0.0.1\", \"password\": \"string\"}'" 1
 endpoint_check GET "configuration/clients" newClient "" 1
 endpoint_check GET "configuration/jobs" backup-bareos-fd "" 1
 endpoint_check GET "configuration/jobs/backup-bareos-fd" backup-bareos-fd "" 1
@@ -95,7 +93,7 @@ endpoint_check GET "configuration/jobdefs" DefaultJob "" 1
 endpoint_check GET "configuration/jobdefs/DefaultJob" DefaultJob "" 1
 endpoint_check GET "configuration/pools" Full "" 1
 endpoint_check GET "configuration/pools/Full" Full "" 1
-endpoint_check POST "configuration/schedules" mysched.$$ "-d {\"name\":\"mysched.$$\",\"enabled\":\"no\"}" 1
+endpoint_check POST "configuration/schedules" mysched.$$ "-d '{\"name\":\"mysched.$$\",\"enabled\":\"no\"}'" 1
 endpoint_check GET "configuration/schedules" mysched "" 1
 # On some endpoints director returns empty strings, in this case we grep for http status code 204 (empty document by intention)
 endpoint_check PUT "control/schedules/disable/mysched.$$" 204 "" 1
@@ -108,19 +106,19 @@ endpoint_check GET "configuration/profiles" operator  "" 1
 endpoint_check GET "configuration/profiles/operator" operator  "" 1
 endpoint_check GET "configuration/profiles" operator  "" 1
 endpoint_check GET "configuration/profiles/operator" operator  "" 1
-endpoint_check POST "configuration/users" string "-d {\"name\":\"myuser$$\",\"description\":\"string\"}" 1
+endpoint_check POST "configuration/users" string "-d '{\"name\":\"myuser$$\",\"description\":\"string\"}'" 1
 endpoint_check GET "configuration/users" myuser$$  "" 1
 endpoint_check GET "configuration/users/myuser$$" myuser$$  "" 1
 endpoint_check GET "control/clients" bareos-fd "" 1
 endpoint_check GET "control/clients/1" test2-fd "" 1
 endpoint_check PUT "control/clients/disable/bareos-fd" 204 "" 1
 endpoint_check PUT "control/clients/enable/bareos-fd" 204 "" 1
-endpoint_check POST "control/jobs/run" jobid "-d {\"jobControl\":{\"job\":\"backup-bareos-fd\",\"joblevel\":\"Full\"}}" 1
-endpoint_check POST "control/jobs/run" jobid "-d {\"jobControl\":{\"job\":\"backup-bareos-fd\",\"joblevel\":\"Full\"}}" 1
+endpoint_check POST "control/jobs/run" jobid "-d '{\"jobControl\":{\"job\":\"backup-bareos-fd\",\"joblevel\":\"Full\"}}'" 1
+endpoint_check POST "control/jobs/run" jobid "-d '{\"jobControl\":{\"job\":\"backup-bareos-fd\",\"joblevel\":\"Full\"}}'" 1
 endpoint_check PUT "control/jobs/cancel/2" 200 "" 1
 endpoint_check POST "control/jobs/rerun/2" "jobid" "" 1
 # try non-existing job
-endpoint_check GET "control/jobs/26544" "not found" "" 1
+endpoint_check GET "control/jobs/999999" "not found" "" 1
 endpoint_check GET "control/jobs/1" "jobstatus" "" 1
 endpoint_check GET "control/jobs/totals" "jobs" "" 1
 endpoint_check GET "control/jobs" "jobs" "" 1
@@ -128,16 +126,15 @@ endpoint_check GET "control/jobs/logs/1" "joblog" "" 1
 endpoint_check GET "control/jobs/files/1" "filenames" "" 1
 # sometimes Full hasn't finished, we retry until restore works
 sleep 3
-endpoint_check POST "control/jobs/restore" "jobid" "-d {\"jobControl\":{\"client\":\"bareos-fd\",\"selectAllDone\":\"yes\"}}" 10
-# TODO: loop here until jobid 1 has finished instead of sleep
+endpoint_check POST "control/jobs/restore" "jobid" "-d '{\"jobControl\":{\"client\":\"bareos-fd\",\"selectAllDone\":\"yes\"}}'" 10
 # TODO: loop here until jobid 1 has finished instead of sleep
 endpoint_check DELETE "control/jobs/1" "deleted" "" 1
 endpoint_check DELETE "control/jobs/63535" "No job" "" 1
 endpoint_check GET "control/volumes" "volumes" "" 1
 # label volume fails inside centos7 container - TODO find out why
-endpoint_check POST "control/volumes" 204 "-d {\"volume\":\"Full-$$\",\"pool\":\"Full\",\"storage\":\"File\"} " 5
-endpoint_check PATCH "control/volumes/Full-$$" "Recycle" "-d {\"pool\":\"Full\",\"volstatus\":\"Recycle\"} " 5
-endpoint_check PUT "control/volumes/Full-$$" 204 "-d {\"volume\":\"Full-00$$\",\"storage\":\"File\",\"pool\":\"Full\",\"encrypt\":\"yes\"} " 5
+endpoint_check POST "control/volumes" 204 "-d '{\"volume\":\"Full-$$\",\"pool\":\"Full\",\"storage\":\"File\"}'" 5
+endpoint_check PATCH "control/volumes/Full-$$" "Recycle" "-d '{\"pool\":\"Full\",\"volstatus\":\"Recycle\"}'" 5
+endpoint_check PUT "control/volumes/Full-$$" 204 "-d '{\"volume\":\"Full-00$$\",\"storage\":\"File\",\"pool\":\"Full\",\"encrypt\":\"yes\"}'" 5
 endpoint_check GET "control/volumes/1" "mediaid" "" 1
 endpoint_check GET "control/volumes/188" "No volume" "" 1
 endpoint_check GET "control/pools" "pools" "" 1
@@ -147,8 +144,7 @@ endpoint_check GET "control/directors/version" "bareos-dir" "" 1
 endpoint_check GET "control/directors/time" "year" "" 1
 endpoint_check PUT "control/directors/reload" "success" "" 1
 
-./stopapi.sh
-cd -
+api/restapi.sh stop
 
 #check_for_zombie_jobs storage=File client=bareos-fd
 

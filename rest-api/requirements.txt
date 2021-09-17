@@ -1,13 +1,10 @@
-dataclasses
 fastapi
+packaging
+passlib
 pydantic
 python-bareos
-# This will require gcc and some headerfiles
-#sslpsk
-starlette==0.13.6
 python-jose
-uvicorn
+# python-multipart: used by fastapi
 python-multipart
-passlib
-packaging
 pyyaml
+uvicorn

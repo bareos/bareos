@@ -14,23 +14,23 @@ a Bareos director.
 
 ### Installation
 
-Copy the rest-api directory to any place outside the source-tree and change into it.
-
-Change into the copied directory with _requirements.txt_, _bareos-restapi.py_ and _api.ini_
-* We recommend to create a dedicated Python environment for the installation:
+We recommend to create a dedicated Python environment for the installation in an own directory:
 
 ```
 python3 -m venv env
 # Activate the virtual environment inside the directory
 source env/bin/activate
 # Install dependencies into the virtual environment
-pip install -r requirements.txt
+pip install -i https://test.pypi.org/simple/ python-bareos-restapi
 ```
 
-Note: _requirements.txt_ contains a list of needed Python-modules, which will get installed by pip. The module _sslpsk==1.0.0_ is commented, because it requires an installed gcc and header files to be installed. Uncomment, if you want encrypted communication between the API and the Bareos director.
+Note: The optional module _sslpsk_ can be installed manually, if you want encrypted communication between the API and the Bareos director.
 
 ### Configuration
-Configure your Bareos Server in _api.ini_ adapting these 3 lines of configuration, so that it points to your director:
+
+The module directory contains a sample ini-file. Change into this directory (something like */lib/python3.x/site-packages/bareosRestapiModels* on most operating systems) and copy _api.ini.sample_ to _api.ini_ and adapt it to your director. Make sure to generate an own secret-key for the _JWT_ section.
+
+Your director configuration in _api.ini_ should look like:
 ```
 [Director]
 Name=bareos-dir
@@ -38,12 +38,13 @@ Address=127.0.0.1
 Port=9101
 ```
 
-Note: you will need a _named console_ (user/password) to acces the Bareos director using this API. Read more about Consoles here:
+Note: you will need a *named console* (user/password) to acces the Bareos director using this API. Read more about Consoles here:
 https://docs.bareos.org/Configuration/Director.html#console-resource
 
-TODO: add possibility to connect to a choice of directors
 
 ### Start the backend server
+
+From inside the module directory run:
 
 ```
 uvicorn bareos-restapi:app --reload
@@ -63,4 +64,7 @@ The Swagger documentation also contains CURL statements for all available endpoi
 
 The API will be extended by some methods provided by the Bareos console, that are not yet implemented. It is also planned to add delete / update options for configuration in the director and REST API. If you are interested in support and / or funding enhancements, please visit https://www.bareos.com
 
-TODO: response model are not defined / documented yet.
+TODO: 
+- define and document response model
+- add possibility to connect to a choice of directors
+- add start-script with ini-file name as parameter

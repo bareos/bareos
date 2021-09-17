@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+#
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2020-2020 Bareos GmbH & Co. KG
@@ -22,20 +24,20 @@
 # Author: Maik Aussendorf
 #
 
+import configparser
 from datetime import datetime, timedelta
-from typing import Optional, List
 from fastapi import Depends, FastAPI, HTTPException, status, Response, Path, Body, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
-from passlib.context import CryptContext
-from pydantic import BaseModel, Field, PositiveInt
-from enum import Enum
-import pathlib
+import os
 from packaging import version
-import bareos.bsock
-import configparser
+from passlib.context import CryptContext
+from pydantic import BaseModel
+from typing import Optional
 import yaml
-from bareosRestapiModels import *
+
+import bareos.bsock
+from bareos_restapi.models import *
 
 # Read config from api.ini
 config = configparser.ConfigParser()
@@ -52,7 +54,10 @@ ACCESS_TOKEN_EXPIRE_MINUTES = config.getint("JWT", "access_token_expire_minutes"
 userDirectors = {}
 users_db = {}
 
-with open("metatags.yaml", "r") as stream:
+# Load metatags.yaml from the same directory.
+with open(
+    os.path.dirname(os.path.realpath(__file__)) + "/metatags.yaml", "r"
+) as stream:
     tags_metadata = yaml.safe_load(stream)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
