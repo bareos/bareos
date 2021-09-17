@@ -29,9 +29,9 @@ cd $(dirname "$BASH_SOURCE")
 . ../environment-local
 
 if [ "${PYTHONPATH:-}" ]; then
-    export PYTHONPATH=${CMAKE_SOURCE_DIR}/rest-api/:$PYTHONPATH
+    export PYTHONPATH=${CMAKE_SOURCE_DIR}/restapi/:$PYTHONPATH
 else
-    export PYTHONPATH=${CMAKE_SOURCE_DIR}/rest-api/
+    export PYTHONPATH=${CMAKE_SOURCE_DIR}/restapi/
 fi
 
 start()

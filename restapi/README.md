@@ -21,7 +21,7 @@ python3 -m venv env
 # Activate the virtual environment inside the directory
 source env/bin/activate
 # Install dependencies into the virtual environment
-pip install -i https://test.pypi.org/simple/ python-bareos-restapi
+pip install bareos-restapi
 ```
 
 Note: The optional module _sslpsk_ can be installed manually, if you want encrypted communication between the API and the Bareos director.

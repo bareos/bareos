@@ -11,7 +11,7 @@ on:
     branches:
       - master
     paths:
-      - rest-api/**
+      - restapi/**
       - .github/workflows/publish_restapi_to_test-pypi.yml
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
     - name: "Build python package"
       run: |
         pip install --user wheel
-        cd rest-api
+        cd restapi
         # sdist mangles around with version information.
         # We replace ~pre with dev, as this will not be modified.
         # (pre will be replaced with rc).
@@ -49,11 +49,11 @@ jobs:
       # creating an artifact is not required for publishing to pypi.
       uses: actions/upload-artifact@v2
       with:
-        path: rest-api/dist/
+        path: restapi/dist/
 
     - name: "Publish to test.pypi.org"
       uses: pypa/gh-action-pypi-publish@v1.4.2
       with:
         repository_url: https://test.pypi.org/legacy/
         password: ${{ secrets.restapi_test_pypi_password }}
-        packages_dir: rest-api/dist/
+        packages_dir: restapi/dist/
