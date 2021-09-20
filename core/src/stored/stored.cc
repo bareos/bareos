@@ -127,8 +127,8 @@ int main(int argc, char* argv[])
   bool export_config = false;
   bool export_config_schema = false;
   pthread_t thid;
-  char* uid = NULL;
-  char* gid = NULL;
+  char* uid = nullptr;
+  char* gid = nullptr;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -137,8 +137,8 @@ int main(int argc, char* argv[])
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-sd");
-  InitMsg(NULL, NULL);
-  daemon_start_time = time(NULL);
+  InitMsg(nullptr, nullptr);
+  daemon_start_time = time(nullptr);
 
   // Sanity checks
   if (TAPE_BSIZE % B_DEV_BSIZE != 0 || TAPE_BSIZE / B_DEV_BSIZE == 0) {
@@ -154,7 +154,7 @@ int main(int argc, char* argv[])
   while ((ch = getopt(argc, argv, "c:d:fg:mpstu:vx:z:?")) != -1) {
     switch (ch) {
       case 'c': /* configuration file */
-        if (configfile != NULL) { free(configfile); }
+        if (configfile != nullptr) { free(configfile); }
         configfile = strdup(optarg);
         break;
 
@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
   if (!no_signals) { InitSignals(TerminateStored); }
 
   if (argc) {
-    if (configfile != NULL) { free(configfile); }
+    if (configfile != nullptr) { free(configfile); }
     configfile = strdup(*argv);
     argc--;
     argv++;
@@ -254,7 +254,7 @@ int main(int argc, char* argv[])
   }
 
   if (export_config) {
-    my_config->DumpResources(PrintMessage, NULL);
+    my_config->DumpResources(PrintMessage, nullptr);
     goto bail_out;
   }
 
@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
   }
 
   if (InitCrypto() != 0) {
-    Jmsg((JobControlRecord*)NULL, M_ERROR_TERM, 0,
+    Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
          _("Cryptography library initialization failed.\n"));
   }
 
@@ -287,7 +287,7 @@ int main(int argc, char* argv[])
     TerminateStored(0);
   }
 
-  MyNameIs(0, (char**)NULL, me->resource_name_); /* Set our real name */
+  MyNameIs(0, (char**)nullptr, me->resource_name_); /* Set our real name */
 
   CreatePidFile(me->pid_directory, "bareos-sd",
                 GetFirstPortHostOrder(me->SDaddrs));
@@ -307,12 +307,12 @@ int main(int argc, char* argv[])
    */
   vol_session_time = (uint32_t)daemon_start_time;
   if (vol_session_time == 0) { /* paranoid */
-    Jmsg0(NULL, M_ABORT, 0, _("Volume Session Time is ZERO!\n"));
+    Jmsg0(nullptr, M_ABORT, 0, _("Volume Session Time is ZERO!\n"));
   }
 
   // Start the device allocation thread
   CreateVolumeLists(); /* do before device_init */
-  if (pthread_create(&thid, NULL, device_initialization, NULL) != 0) {
+  if (pthread_create(&thid, nullptr, device_initialization, nullptr) != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, _("Unable to create thread. ERR=%s\n"), be.bstrerror());
   }
@@ -349,21 +349,21 @@ static int CheckResources()
   bool OK = true;
   const std::string& configfile = my_config->get_base_config_path();
 
-  if (my_config->GetNextRes(R_STORAGE, (BareosResource*)me) != NULL) {
-    Jmsg1(NULL, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
+  if (my_config->GetNextRes(R_STORAGE, (BareosResource*)me) != nullptr) {
+    Jmsg1(nullptr, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
           configfile.c_str());
     OK = false;
   }
 
-  if (my_config->GetNextRes(R_DIRECTOR, NULL) == NULL) {
-    Jmsg1(NULL, M_ERROR, 0,
+  if (my_config->GetNextRes(R_DIRECTOR, nullptr) == nullptr) {
+    Jmsg1(nullptr, M_ERROR, 0,
           _("No Director resource defined in %s. Cannot continue.\n"),
           configfile.c_str());
     OK = false;
   }
 
-  if (my_config->GetNextRes(R_DEVICE, NULL) == NULL) {
-    Jmsg1(NULL, M_ERROR, 0,
+  if (my_config->GetNextRes(R_DEVICE, nullptr) == nullptr) {
+    Jmsg1(nullptr, M_ERROR, 0,
           _("No Device resource defined in %s. Cannot continue.\n"),
           configfile.c_str());
     OK = false;
@@ -375,9 +375,9 @@ static int CheckResources()
   }
 
   if (!me->messages) {
-    me->messages = (MessagesResource*)my_config->GetNextRes(R_MSGS, NULL);
+    me->messages = (MessagesResource*)my_config->GetNextRes(R_MSGS, nullptr);
     if (!me->messages) {
-      Jmsg1(NULL, M_ERROR, 0,
+      Jmsg1(nullptr, M_ERROR, 0,
             _("No Messages resource defined in %s. Cannot continue.\n"),
             configfile.c_str());
       OK = false;
@@ -385,7 +385,7 @@ static int CheckResources()
   }
 
   if (!me->working_directory) {
-    Jmsg1(NULL, M_ERROR, 0,
+    Jmsg1(nullptr, M_ERROR, 0,
           _("No Working Directory defined in %s. Cannot continue.\n"),
           configfile.c_str());
     OK = false;
@@ -394,7 +394,8 @@ static int CheckResources()
   StorageResource* store = me;
   if (store->IsTlsConfigured()) {
     if (!have_tls) {
-      Jmsg(NULL, M_FATAL, 0, _("TLS required but not compiled into Bareos.\n"));
+      Jmsg(nullptr, M_FATAL, 0,
+           _("TLS required but not compiled into Bareos.\n"));
       OK = false;
     }
   }
@@ -403,7 +404,7 @@ static int CheckResources()
   foreach_res (device_resource, R_DEVICE) {
     if (device_resource->drive_crypto_enabled
         && BitIsSet(CAP_LABEL, device_resource->cap_bits)) {
-      Jmsg(NULL, M_FATAL, 0,
+      Jmsg(nullptr, M_FATAL, 0,
            _("LabelMedia enabled is incompatible with tape crypto on Device "
              "\"%s\" in %s.\n"),
            device_resource->resource_name_, configfile.c_str());
@@ -414,8 +415,8 @@ static int CheckResources()
   if (OK) { OK = InitAutochangers(); }
 
   if (OK) {
-    CloseMsg(NULL);              /* close temp message handler */
-    InitMsg(NULL, me->messages); /* open daemon message handler */
+    CloseMsg(nullptr);              /* close temp message handler */
+    InitMsg(nullptr, me->messages); /* open daemon message handler */
     SetWorkingDirectory(me->working_directory);
     if (me->secure_erase_cmdline) {
       SetSecureEraseCmdline(me->secure_erase_cmdline);
@@ -476,11 +477,11 @@ static void CleanUpOldFiles()
 #ifdef USE_READDIR_R
   entry = (struct dirent*)malloc(sizeof(struct dirent) + name_max + 1000);
   while (1) {
-    if ((Readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+    if ((Readdir_r(dp, entry, &result) != 0) || (result == nullptr)) {
 #else
   while (1) {
     result = readdir(dp);
-    if (result == NULL) {
+    if (result == nullptr) {
 #endif
       break;
     }
@@ -493,11 +494,11 @@ static void CleanUpOldFiles()
     }
 
     /* Unlink files that match regex */
-    if (regexec(&preg1, result->d_name, 0, NULL, 0) == 0) {
+    if (regexec(&preg1, result->d_name, 0, nullptr, 0) == 0) {
       PmStrcpy(cleanup, basename);
       PmStrcat(cleanup, result->d_name);
       Dmsg1(500, "Unlink: %s\n", cleanup);
-      SecureErase(NULL, cleanup);
+      SecureErase(nullptr, cleanup);
     }
   }
 #ifdef USE_READDIR_R
@@ -533,7 +534,7 @@ extern "C" void* device_initialization(void* arg)
   jcr->setJobType(JT_SYSTEM);
 
   // Initialize job start condition variable
-  errstat = pthread_cond_init(&jcr->impl->job_start_wait, NULL);
+  errstat = pthread_cond_init(&jcr->impl->job_start_wait, nullptr);
   if (errstat != 0) {
     BErrNo be;
     Jmsg1(jcr, M_ABORT, 0,
@@ -542,7 +543,7 @@ extern "C" void* device_initialization(void* arg)
   }
 
   // Initialize job end condition variable
-  errstat = pthread_cond_init(&jcr->impl->job_end_wait, NULL);
+  errstat = pthread_cond_init(&jcr->impl->job_end_wait, nullptr);
   if (errstat != 0) {
     BErrNo be;
     Jmsg1(jcr, M_ABORT, 0,
@@ -553,17 +554,17 @@ extern "C" void* device_initialization(void* arg)
   foreach_res (device_resource, R_DEVICE) {
     Dmsg1(90, "calling FactoryCreateDevice %s\n",
           device_resource->archive_device_string);
-    dev = FactoryCreateDevice(NULL, device_resource);
+    dev = FactoryCreateDevice(nullptr, device_resource);
     Dmsg1(10, "SD init done %s\n", device_resource->archive_device_string);
     if (!dev) {
-      Jmsg1(NULL, M_ERROR, 0, _("Could not initialize %s\n"),
+      Jmsg1(nullptr, M_ERROR, 0, _("Could not initialize %s\n"),
             device_resource->archive_device_string);
       continue;
     }
 
     dcr = new StorageDaemonDeviceControlRecord;
     jcr->impl->dcr = dcr;
-    SetupNewDcrDevice(jcr, dcr, dev, NULL);
+    SetupNewDcrDevice(jcr, dcr, dev, nullptr);
     jcr->impl->dcr->SetWillWrite();
     GeneratePluginEvent(jcr, bSdEventDeviceInit, dcr);
     if (dev->AttachedToAutochanger()) {
@@ -574,11 +575,11 @@ extern "C" void* device_initialization(void* arg)
     if (BitIsSet(CAP_ALWAYSOPEN, device_resource->cap_bits)) {
       Dmsg1(20, "calling FirstOpenDevice %s\n", dev->print_name());
       if (!FirstOpenDevice(dcr)) {
-        Jmsg1(NULL, M_ERROR, 0, _("Could not open device %s\n"),
+        Jmsg1(nullptr, M_ERROR, 0, _("Could not open device %s\n"),
               dev->print_name());
         Dmsg1(20, "Could not open device %s\n", dev->print_name());
         FreeDeviceControlRecord(dcr);
-        jcr->impl->dcr = NULL;
+        jcr->impl->dcr = nullptr;
         continue;
       }
     }
@@ -590,18 +591,18 @@ extern "C" void* device_initialization(void* arg)
           VolumeUnused(dcr); /* mark volume "released" */
           break;
         default:
-          Jmsg1(NULL, M_WARNING, 0, _("Could not mount device %s\n"),
+          Jmsg1(nullptr, M_WARNING, 0, _("Could not mount device %s\n"),
                 dev->print_name());
           break;
       }
     }
     FreeDeviceControlRecord(dcr);
-    jcr->impl->dcr = NULL;
+    jcr->impl->dcr = nullptr;
   }
   FreeJcr(jcr);
   init_done = true;
   UnlockRes(my_config);
-  return NULL;
+  return nullptr;
 }
 
 // Clean up and then exit
@@ -698,11 +699,11 @@ static
 
   if (configfile) {
     free(configfile);
-    configfile = NULL;
+    configfile = nullptr;
   }
   if (my_config) {
     delete my_config;
-    my_config = NULL;
+    my_config = nullptr;
   }
 
   if (debug_level > 10) { PrintMemoryPoolStats(); }
