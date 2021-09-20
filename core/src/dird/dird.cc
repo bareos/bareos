@@ -89,11 +89,11 @@ void StoreReplace(LEX* lc, ResourceItem* item, int index, int pass);
 void StoreMigtype(LEX* lc, ResourceItem* item, int index, int pass);
 void InitDeviceResources();
 
-static char* runjob = NULL;
+static char* runjob = nullptr;
 static bool background = true;
 static bool test_config = false;
 struct resource_table_reference;
-static alist<resource_table_reference*>* reload_table = NULL;
+static alist<resource_table_reference*>* reload_table = nullptr;
 
 /* Globals Imported */
 extern ResourceItem job_items[];
@@ -218,8 +218,8 @@ int main(int argc, char* argv[])
   bool no_signals = false;
   bool export_config = false;
   bool export_config_schema = false;
-  char* uid = NULL;
-  char* gid = NULL;
+  char* uid = nullptr;
+  char* gid = nullptr;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -228,15 +228,15 @@ int main(int argc, char* argv[])
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-dir");
-  InitMsg(NULL, NULL); /* initialize message handler */
-  daemon_start_time = time(NULL);
+  InitMsg(nullptr, nullptr); /* initialize message handler */
+  daemon_start_time = time(nullptr);
 
   console_command = RunConsoleCommand;
 
   while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:vx:z:?")) != -1) {
     switch (ch) {
       case 'c': /* specify config file */
-        if (configfile != NULL) { free(configfile); }
+        if (configfile != nullptr) { free(configfile); }
         configfile = strdup(optarg);
         break;
 
@@ -263,7 +263,7 @@ int main(int argc, char* argv[])
         break;
 
       case 'r': /* run job */
-        if (runjob != NULL) { free(runjob); }
+        if (runjob != nullptr) { free(runjob); }
         if (optarg) { runjob = strdup(optarg); }
         break;
 
@@ -309,7 +309,7 @@ int main(int argc, char* argv[])
   if (!no_signals) { InitSignals(TerminateDird); }
 
   if (argc) {
-    if (configfile != NULL) { free(configfile); }
+    if (configfile != nullptr) { free(configfile); }
     configfile = strdup(*argv);
     argc--;
     argv++;
@@ -334,7 +334,7 @@ int main(int argc, char* argv[])
   my_config->ParseConfig();
 
   if (export_config) {
-    my_config->DumpResources(PrintMessage, NULL);
+    my_config->DumpResources(PrintMessage, nullptr);
     goto bail_out;
   }
 
@@ -345,7 +345,7 @@ int main(int argc, char* argv[])
     }
   }
   if (InitCrypto() != 0) {
-    Jmsg((JobControlRecord*)NULL, M_ERROR_TERM, 0,
+    Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
          _("Cryptography library initialization failed.\n"));
     goto bail_out;
   }
@@ -380,7 +380,7 @@ int main(int argc, char* argv[])
   mode = (test_config) ? CHECK_CONNECTION : UPDATE_AND_FIX;
 
   if (!CheckCatalog(mode)) {
-    Jmsg((JobControlRecord*)NULL, M_ERROR_TERM, 0,
+    Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
          _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
     goto bail_out;
@@ -398,13 +398,13 @@ int main(int argc, char* argv[])
   }
 
   if (!InitializeSqlPooling()) {
-    Jmsg((JobControlRecord*)NULL, M_ERROR_TERM, 0,
+    Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
          _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
     goto bail_out;
   }
 
-  MyNameIs(0, NULL, me->resource_name_); /* set user defined name */
+  MyNameIs(0, nullptr, me->resource_name_); /* set user defined name */
 
   CleanUpOldFiles();
 
@@ -486,11 +486,11 @@ static
   TermJobServer();
 
   if (runjob) { free(runjob); }
-  if (configfile != NULL) { free(configfile); }
+  if (configfile != nullptr) { free(configfile); }
   if (debug_level > 5) { PrintMemoryPoolStats(); }
   if (my_config) {
     delete my_config;
-    my_config = NULL;
+    my_config = nullptr;
   }
 
   TermMsg(); /* Terminate message handler */
@@ -515,7 +515,7 @@ extern "C" void SighandlerReloadConfig(int sig, siginfo_t* siginfo, void* ptr)
      * Note: don't use Jmsg here, as it could produce a race condition
      * on multiple parallel reloads
      */
-    Qmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
+    Qmsg(nullptr, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
     return;
   }
   is_reloading = true;
@@ -541,7 +541,7 @@ static bool InitSighandlerSighup()
   action.sa_sigaction = SighandlerReloadConfig;
   action.sa_mask = block_mask;
   action.sa_flags = SA_SIGINFO;
-  sigaction(SIGHUP, &action, NULL);
+  sigaction(SIGHUP, &action, nullptr);
 
   retval = true;
 #endif
@@ -560,7 +560,7 @@ bool DoReloadConfig()
      * Note: don't use Jmsg here, as it could produce a race condition
      * on multiple parallel reloads
      */
-    Qmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
+    Qmsg(nullptr, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
     return false;
   }
   is_reloading = true;
@@ -583,9 +583,9 @@ bool DoReloadConfig()
 
   if (!ok || !CheckResources() || !CheckCatalog(UPDATE_CATALOG)
       || !InitializeSqlPooling()) {
-    Jmsg(NULL, M_ERROR, 0, _("Please correct the configuration in %s\n"),
+    Jmsg(nullptr, M_ERROR, 0, _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
-    Jmsg(NULL, M_ERROR, 0, _("Resetting to previous configuration.\n"));
+    Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
 
     resource_table_reference temp_config;
     temp_config.res_table = my_config->SaveResources();
@@ -597,7 +597,7 @@ bool DoReloadConfig()
     }
 
     // me is changed above by CheckResources()
-    me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
+    me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
     my_config->own_resource_ = me;
 
     FreeSavedResources(&temp_config);
@@ -607,7 +607,7 @@ bool DoReloadConfig()
 
     JobControlRecord* jcr;
     int num_running_jobs = 0;
-    resource_table_reference* new_table = NULL;
+    resource_table_reference* new_table = nullptr;
 
     Scheduler::GetMainScheduler().ClearQueue();
     foreach_jcr (jcr) {
@@ -680,11 +680,11 @@ static bool CheckResources()
 
   LockRes(my_config);
 
-  job = (JobResource*)my_config->GetNextRes(R_JOB, NULL);
-  me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
+  job = (JobResource*)my_config->GetNextRes(R_JOB, nullptr);
+  me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
   my_config->own_resource_ = me;
   if (!me) {
-    Jmsg(NULL, M_FATAL, 0,
+    Jmsg(nullptr, M_FATAL, 0,
          _("No Director resource defined in %s\n"
            "Without that I don't know who I am :-(\n"),
          configfile.c_str());
@@ -701,9 +701,9 @@ static bool CheckResources()
 
     // See if message resource is specified.
     if (!me->messages) {
-      me->messages = (MessagesResource*)my_config->GetNextRes(R_MSGS, NULL);
+      me->messages = (MessagesResource*)my_config->GetNextRes(R_MSGS, nullptr);
       if (!me->messages) {
-        Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"),
+        Jmsg(nullptr, M_FATAL, 0, _("No Messages resource defined in %s\n"),
              configfile.c_str());
         OK = false;
         goto bail_out;
@@ -714,15 +714,16 @@ static bool CheckResources()
     if (!me->optimize_for_size && !me->optimize_for_speed) {
       me->optimize_for_size = true;
     } else if (me->optimize_for_size && me->optimize_for_speed) {
-      Jmsg(NULL, M_FATAL, 0,
+      Jmsg(nullptr, M_FATAL, 0,
            _("Cannot optimize for speed and size define only one in %s\n"),
            configfile.c_str());
       OK = false;
       goto bail_out;
     }
 
-    if (my_config->GetNextRes(R_DIRECTOR, (BareosResource*)me) != NULL) {
-      Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
+    if (my_config->GetNextRes(R_DIRECTOR, (BareosResource*)me) != nullptr) {
+      Jmsg(nullptr, M_FATAL, 0,
+           _("Only one Director resource permitted in %s\n"),
            configfile.c_str());
       OK = false;
       goto bail_out;
@@ -730,7 +731,7 @@ static bool CheckResources()
 
     if (me->IsTlsConfigured()) {
       if (!have_tls) {
-        Jmsg(NULL, M_FATAL, 0,
+        Jmsg(nullptr, M_FATAL, 0,
              _("TLS required but not compiled into BAREOS.\n"));
         OK = false;
         goto bail_out;
@@ -739,7 +740,7 @@ static bool CheckResources()
   }
 
   if (!job) {
-    Jmsg(NULL, M_FATAL, 0, _("No Job records defined in %s\n"),
+    Jmsg(nullptr, M_FATAL, 0, _("No Job records defined in %s\n"),
          configfile.c_str());
     OK = false;
     goto bail_out;
@@ -753,7 +754,7 @@ static bool CheckResources()
   // Loop over Jobs
   foreach_res (job, R_JOB) {
     if (job->MaxFullConsolidations && job->JobType != JT_CONSOLIDATE) {
-      Jmsg(NULL, M_FATAL, 0,
+      Jmsg(nullptr, M_FATAL, 0,
            _("MaxFullConsolidations configured in job %s which is not of job "
              "type \"consolidate\" in file %s\n"),
            job->resource_name_, configfile.c_str());
@@ -765,7 +766,7 @@ static bool CheckResources()
         && (job->AlwaysIncremental || job->AlwaysIncrementalJobRetention
             || job->AlwaysIncrementalKeepNumber
             || job->AlwaysIncrementalMaxFullAge)) {
-      Jmsg(NULL, M_FATAL, 0,
+      Jmsg(nullptr, M_FATAL, 0,
            _("AlwaysIncremental configured in job %s which is not of job type "
              "\"backup\" in file %s\n"),
            job->resource_name_, configfile.c_str());
@@ -778,7 +779,7 @@ static bool CheckResources()
   foreach_res (cons, R_CONSOLE) {
     if (cons->IsTlsConfigured()) {
       if (!have_tls) {
-        Jmsg(NULL, M_FATAL, 0,
+        Jmsg(nullptr, M_FATAL, 0,
              _("TLS required but not configured in BAREOS.\n"));
         OK = false;
         goto bail_out;
@@ -798,7 +799,7 @@ static bool CheckResources()
 
     if (client->IsTlsConfigured()) {
       if (!have_tls) {
-        Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured.\n"));
+        Jmsg(nullptr, M_FATAL, 0, _("TLS required but not configured.\n"));
         OK = false;
         goto bail_out;
       }
@@ -809,7 +810,7 @@ static bool CheckResources()
   foreach_res (store, R_STORAGE) {
     if (store->IsTlsConfigured()) {
       if (!have_tls) {
-        Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured.\n"));
+        Jmsg(nullptr, M_FATAL, 0, _("TLS required but not configured.\n"));
         OK = false;
         goto bail_out;
       }
@@ -836,8 +837,8 @@ static bool CheckResources()
   }
 
   if (OK) {
-    CloseMsg(NULL);              /* close temp message handler */
-    InitMsg(NULL, me->messages); /* open daemon message handler */
+    CloseMsg(nullptr);              /* close temp message handler */
+    InitMsg(nullptr, me->messages); /* open daemon message handler */
     if (me->secure_erase_cmdline) {
       SetSecureEraseCmdline(me->secure_erase_cmdline);
     }
@@ -866,7 +867,7 @@ static bool InitializeSqlPooling(void)
             catalog->pooling_min_connections, catalog->pooling_max_connections,
             catalog->pooling_increment_connections,
             catalog->pooling_idle_timeout, catalog->pooling_validate_timeout)) {
-      Jmsg(NULL, M_FATAL, 0,
+      Jmsg(nullptr, M_FATAL, 0,
            _("Could not setup sql pooling for Catalog \"%s\", database "
              "\"%s\".\n"),
            catalog->resource_name_, catalog->db_name);
@@ -941,11 +942,11 @@ static void CleanUpOldFiles()
 #ifdef USE_READDIR_R
   entry = (struct dirent*)malloc(sizeof(struct dirent) + name_max + 1000);
   while (1) {
-    if ((Readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+    if ((Readdir_r(dp, entry, &result) != 0) || (result == nullptr)) {
 #else
   while (1) {
     result = readdir(dp);
-    if (result == NULL) {
+    if (result == nullptr) {
 #endif
 
       break;
@@ -958,11 +959,11 @@ static void CleanUpOldFiles()
     }
 
     /* Unlink files that match regexes */
-    if (regexec(&preg1, result->d_name, 0, NULL, 0) == 0) {
+    if (regexec(&preg1, result->d_name, 0, nullptr, 0) == 0) {
       PmStrcpy(cleanup, basename);
       PmStrcat(cleanup, result->d_name);
       Dmsg1(100, "Unlink: %s\n", cleanup);
-      SecureErase(NULL, cleanup);
+      SecureErase(nullptr, cleanup);
     }
   }
 
