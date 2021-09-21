@@ -1,8 +1,8 @@
-#!/bin/sh
-#
-# Run a simple backup
-#   then restore it.
-#
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -16,7 +16,7 @@ JobName=backup-s3-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-"${SYSTEMTESTS_DIR}"/scripts/start_minio.sh "$MINIO_PORT" "$TestName"
+"${rscripts}"/start_minio.sh "$MINIO_PORT" "$TestName"
 
 # shortcut for s3cmd
 S3="${S3CMD} --no-check-certificate --config ${S3CFG}"
@@ -26,10 +26,6 @@ $S3 mb S3://backup
 
 # Fill ${BackupDirectory} with data.
 setup_data
-
-if [ "$1" == "init" ]; then
-  exit 0
-fi
 
 start_test
 
@@ -64,5 +60,6 @@ stop_bareos
 check_two_logs
 check_restore_diff "${BackupDirectory}"
 
-"${SYSTEMTESTS_DIR}"/scripts/stop_minio.sh "$TestName"
+"${rscripts}"/stop_minio.sh "$TestName"
+
 end_test
