@@ -51,6 +51,7 @@ extern bool PrintMessage(void* sock, const char* fmt, ...);
 static bool CheckResources();
 
 static bool foreground = false;
+static char* pidfile_path = nullptr;
 
 static void usage()
 {
@@ -66,6 +67,9 @@ static void usage()
         "        -g <group>  run as group <group>\n"
         "        -k          keep readall capabilities\n"
         "        -m          print kaboom output (for debugging)\n"
+#if !defined(HAVE_WIN32)
+        "        -p <file>   full path to pidfile (default: none)\n"
+#endif
         "        -r          restore only mode\n"
         "        -s          no signals (for debugging)\n"
         "        -t          test configuration file and exit\n"
@@ -110,7 +114,13 @@ int main(int argc, char* argv[])
   InitMsg(nullptr, nullptr);
   daemon_start_time = time(nullptr);
 
-  while ((ch = getopt(argc, argv, "bc:d:fg:kmrstu:vx:z:?")) != -1) {
+#if HAVE_WIN32
+  std::string allowed_parameters("bc:d:fg:kmrstu:vx:z:?");
+#else
+  std::string allowed_parameters("bc:d:fg:kmrp:stu:vx:z:?");
+#endif
+
+  while ((ch = getopt(argc, argv, allowed_parameters.c_str())) != -1) {
     switch (ch) {
       case 'b':
         backup_only_mode = true;
@@ -144,6 +154,10 @@ int main(int argc, char* argv[])
 
       case 'm': /* print kaboom output */
         prt_kaboom = true;
+        break;
+
+      case 'p':
+        pidfile_path = strdup(optarg);
         break;
 
       case 'r':
@@ -189,6 +203,14 @@ int main(int argc, char* argv[])
   argc -= optind;
   argv += optind;
 
+  if (foreground && pidfile_path) {
+    Emsg0(M_WARNING, 0,
+          "Options -p and -f cannot be used together. You cannot create a "
+          "pid file when in foreground mode.\n");
+
+    exit(0);
+  }
+
   if (argc) {
     if (configfile != nullptr) free(configfile);
     configfile = strdup(*argv);
@@ -200,6 +222,13 @@ int main(int argc, char* argv[])
   if (!uid && keep_readall_caps) {
     Emsg0(M_ERROR_TERM, 0, _("-k option has no meaning without -u option.\n"));
   }
+
+  int pidfile_fd = -1;
+#if !defined(HAVE_WIN32)
+  if (!foreground && !test_config && pidfile_path) {
+    pidfile_fd = CreatePidFile("bareos-fd", pidfile_path);
+  }
+#endif
 
   // See if we want to drop privs.
   if (geteuid() == 0) { drop(uid, gid, keep_readall_caps); }
@@ -217,7 +246,8 @@ int main(int argc, char* argv[])
     my_config = InitFdConfig(configfile, M_ERROR_TERM);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
-    goto bail_out;
+
+    exit(0);
   }
 
   my_config = InitFdConfig(configfile, M_ERROR_TERM);
@@ -225,22 +255,23 @@ int main(int argc, char* argv[])
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);
-    goto bail_out;
-  }
 
-  if (!foreground && !test_config) {
-    daemon_start();
-    InitStackDump(); /* set new pid */
-  }
-
-  if (InitCrypto() != 0) {
-    Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
-    TerminateFiled(1);
+    exit(0);
   }
 
   if (!CheckResources()) {
     Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"),
           my_config->get_base_config_path().c_str());
+    TerminateFiled(1);
+  }
+
+  if (!foreground && !test_config) {
+    daemon_start("bareos-fd", pidfile_fd, pidfile_path);
+    InitStackDump(); /* set new pid */
+  }
+
+  if (InitCrypto() != 0) {
+    Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
     TerminateFiled(1);
   }
 
@@ -266,8 +297,6 @@ int main(int argc, char* argv[])
   }
 
   /* Maximum 1 daemon at a time */
-  CreatePidFile(me->pid_directory, "bareos-fd",
-                GetFirstPortHostOrder(me->FDaddrs));
   ReadStateFile(me->working_directory, "bareos-fd",
                 GetFirstPortHostOrder(me->FDaddrs));
   LoadFdPlugins(me->plugin_directory, me->plugin_names);
@@ -289,7 +318,6 @@ int main(int argc, char* argv[])
 
   TerminateFiled(0);
 
-bail_out:
   exit(0);
 }
 
@@ -314,8 +342,7 @@ void TerminateFiled(int sig)
   FlushMntentCache();
   WriteStateFile(me->working_directory, "bareos-fd",
                  GetFirstPortHostOrder(me->FDaddrs));
-  DeletePidFile(me->pid_directory, "bareos-fd",
-                GetFirstPortHostOrder(me->FDaddrs));
+  DeletePidFile(pidfile_path);
 
   if (configfile != nullptr) { free(configfile); }
 

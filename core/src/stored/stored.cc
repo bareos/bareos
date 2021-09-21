@@ -84,6 +84,7 @@ extern "C" void* device_initialization(void* arg);
 
 /* Global static variables */
 static bool foreground = 0;
+static char* pidfile_path = nullptr;
 
 static void usage()
 {
@@ -96,8 +97,11 @@ static void usage()
         "        -dt         print timestamp in debug output\n"
         "        -f          run in foreground (for debugging)\n"
         "        -g <group>  run as group <group>\n"
+        "        -i          ignore I/O errors\n"
         "        -m          print kaboom output (for debugging)\n"
-        "        -p          proceed despite I/O errors\n"
+#if !defined(HAVE_WIN32)
+        "        -p <file>   full path to pidfile (default: none)\n"
+#endif
         "        -s          no signals (for debugging)\n"
         "        -t          test - read configuration and exit\n"
         "        -u <user>   run as user <user>\n"
@@ -151,7 +155,13 @@ int main(int argc, char* argv[])
           TAPE_BSIZE);
   }
 
-  while ((ch = getopt(argc, argv, "c:d:fg:mpstu:vx:z:?")) != -1) {
+#if HAVE_WIN32
+  std::string allowed_parameters("c:d:fg:imstu:vx:z:?");
+#else
+  std::string allowed_parameters("c:d:fg:imp:stu:vx:z:?");
+#endif
+
+  while ((ch = getopt(argc, argv, allowed_parameters.c_str())) != -1) {
     switch (ch) {
       case 'c': /* configuration file */
         if (configfile != nullptr) { free(configfile); }
@@ -179,8 +189,12 @@ int main(int argc, char* argv[])
         prt_kaboom = true;
         break;
 
-      case 'p': /* proceed in spite of I/O errors */
+      case 'i': /* ignore I/O errors */
         forge_on = true;
+        break;
+
+      case 'p':
+        pidfile_path = strdup(optarg);
         break;
 
       case 's': /* no signals */
@@ -222,6 +236,14 @@ int main(int argc, char* argv[])
   argc -= optind;
   argv += optind;
 
+  if (foreground && pidfile_path) {
+    Emsg0(M_WARNING, 0,
+          "Options -p and -f cannot be used together. You cannot create a "
+          "pid file when in foreground mode.\n");
+
+    exit(0);
+  }
+
   if (!no_signals) { InitSignals(TerminateStored); }
 
   if (argc) {
@@ -232,6 +254,13 @@ int main(int argc, char* argv[])
   }
   if (argc) { usage(); }
 
+  int pidfile_fd = -1;
+#if !defined(HAVE_WIN32)
+  if (!foreground && !test_config && pidfile_path) {
+    pidfile_fd = CreatePidFile("bareos-sd", pidfile_path);
+  }
+#endif
+
   // See if we want to drop privs.
   if (geteuid() == 0) { drop(uid, gid, false); }
 
@@ -241,7 +270,8 @@ int main(int argc, char* argv[])
     my_config = InitSdConfig(configfile, M_ERROR_TERM);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
-    goto bail_out;
+
+    return 0;
   }
 
   my_config = InitSdConfig(configfile, M_ERROR_TERM);
@@ -249,29 +279,30 @@ int main(int argc, char* argv[])
 
   if (forge_on) {
     my_config->AddWarning(
-        "Running with '-p' is for testing and emergency recovery purposes "
+        "Running with '-i' is for testing and emergency recovery purposes "
         "only");
   }
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);
-    goto bail_out;
-  }
 
-  if (!foreground && !test_config) {
-    daemon_start();  /* become daemon */
-    InitStackDump(); /* pick up new pid */
-  }
-
-  if (InitCrypto() != 0) {
-    Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
-         _("Cryptography library initialization failed.\n"));
+    return 0;
   }
 
   if (!CheckResources()) {
     Jmsg((JobControlRecord*)NULL, M_ERROR_TERM, 0,
          _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
+  }
+
+  if (!foreground && !test_config) {
+    daemon_start("bareos-sd", pidfile_fd, pidfile_path); /* become daemon */
+    InitStackDump();                                     /* pick up new pid */
+  }
+
+  if (InitCrypto() != 0) {
+    Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
+         _("Cryptography library initialization failed.\n"));
   }
 
   InitReservationsLock();
@@ -289,8 +320,6 @@ int main(int argc, char* argv[])
 
   MyNameIs(0, (char**)nullptr, me->resource_name_); /* Set our real name */
 
-  CreatePidFile(me->pid_directory, "bareos-sd",
-                GetFirstPortHostOrder(me->SDaddrs));
   ReadStateFile(me->working_directory, "bareos-sd",
                 GetFirstPortHostOrder(me->SDaddrs));
   ReadCryptoCache(me->working_directory, "bareos-sd",
@@ -339,7 +368,6 @@ int main(int argc, char* argv[])
   /* to keep compiler quiet */
   TerminateStored(0);
 
-bail_out:
   return 0;
 }
 
@@ -672,8 +700,7 @@ static
 
   WriteStateFile(me->working_directory, "bareos-sd",
                  GetFirstPortHostOrder(me->SDaddrs));
-  DeletePidFile(me->pid_directory, "bareos-sd",
-                GetFirstPortHostOrder(me->SDaddrs));
+  DeletePidFile(pidfile_path);
 
   Dmsg1(200, "In TerminateStored() sig=%d\n", sig);
 

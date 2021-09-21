@@ -95,6 +95,8 @@ static bool test_config = false;
 struct resource_table_reference;
 static alist<resource_table_reference*>* reload_table = nullptr;
 
+static char* pidfile_path = nullptr;
+
 /* Globals Imported */
 extern ResourceItem job_items[];
 
@@ -187,6 +189,9 @@ static void usage()
         "        -f          run in foreground (for debugging)\n"
         "        -g <group>  run as group <group>\n"
         "        -m          print kaboom output (for debugging)\n"
+#if !defined(HAVE_WIN32)
+        "        -p <file>   full path to pidfile (default: none)\n"
+#endif
         "        -r <job>    run <job> now\n"
         "        -s          no signals (for debugging)\n"
         "        -t          test - read configuration and exit\n"
@@ -233,7 +238,13 @@ int main(int argc, char* argv[])
 
   console_command = RunConsoleCommand;
 
-  while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:vx:z:?")) != -1) {
+#if HAVE_WIN32
+  std::string allowed_parameters("c:d:fg:mr:stu:vx:z:?");
+#else
+  std::string allowed_parameters("c:d:fg:mr:p:stu:vx:z:?");
+#endif
+
+  while ((ch = getopt(argc, argv, allowed_parameters.c_str())) != -1) {
     switch (ch) {
       case 'c': /* specify config file */
         if (configfile != nullptr) { free(configfile); }
@@ -260,6 +271,10 @@ int main(int argc, char* argv[])
 
       case 'm': /* print kaboom output */
         prt_kaboom = true;
+        break;
+
+      case 'p':
+        pidfile_path = strdup(optarg);
         break;
 
       case 'r': /* run job */
@@ -306,6 +321,14 @@ int main(int argc, char* argv[])
   argc -= optind;
   argv += optind;
 
+  if (!background && pidfile_path) {
+    Emsg0(M_WARNING, 0,
+          "Options -p and -f cannot be used together. You cannot create a "
+          "pid file when in foreground mode.\n");
+
+    exit(0);
+  }
+
   if (!no_signals) { InitSignals(TerminateDird); }
 
   if (argc) {
@@ -316,6 +339,12 @@ int main(int argc, char* argv[])
   }
   if (argc) { usage(); }
 
+  int pidfile_fd = -1;
+#if !defined(HAVE_WIN32)
+  if (!test_config && background && pidfile_path) {
+    pidfile_fd = CreatePidFile("bareos-dir", pidfile_path);
+  }
+#endif
   // See if we want to drop privs.
   if (geteuid() == 0) {
     drop(uid, gid, false); /* reduce privileges if requested */
@@ -327,7 +356,9 @@ int main(int argc, char* argv[])
     my_config = InitDirConfig(configfile, M_ERROR_TERM);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
-    goto bail_out;
+
+    TerminateDird(0);
+    return 0;
   }
 
   my_config = InitDirConfig(configfile, M_ERROR_TERM);
@@ -335,32 +366,37 @@ int main(int argc, char* argv[])
 
   if (export_config) {
     my_config->DumpResources(PrintMessage, nullptr);
-    goto bail_out;
-  }
 
-  if (!test_config) { /* we don't need to do this block in test mode */
-    if (background) {
-      daemon_start();
-      InitStackDump(); /* grab new pid */
-    }
-  }
-  if (InitCrypto() != 0) {
-    Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
-         _("Cryptography library initialization failed.\n"));
-    goto bail_out;
+    TerminateDird(0);
+    return 0;
   }
 
   if (!CheckResources()) {
     Jmsg((JobControlRecord*)NULL, M_ERROR_TERM, 0,
          _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
-    goto bail_out;
+
+    TerminateDird(0);
+    return 0;
+  }
+
+  if (!test_config) { /* we don't need to do this block in test mode */
+    if (background) {
+      daemon_start("bareos-dir", pidfile_fd, pidfile_path);
+      InitStackDump(); /* grab new pid */
+    }
+  }
+
+  if (InitCrypto() != 0) {
+    Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
+         _("Cryptography library initialization failed.\n"));
+
+    TerminateDird(0);
+    return 0;
   }
 
   if (!test_config) { /* we don't need to do this block in test mode */
     /* Create pid must come after we are a daemon -- so we have our final pid */
-    CreatePidFile(me->pid_directory, "bareos-dir",
-                  GetFirstPortHostOrder(me->DIRaddrs));
     ReadStateFile(me->working_directory, "bareos-dir",
                   GetFirstPortHostOrder(me->DIRaddrs));
   }
@@ -383,7 +419,9 @@ int main(int argc, char* argv[])
     Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
          _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
-    goto bail_out;
+
+    TerminateDird(0);
+    return 0;
   }
 
   if (test_config) {
@@ -401,7 +439,9 @@ int main(int argc, char* argv[])
     Jmsg((JobControlRecord*)nullptr, M_ERROR_TERM, 0,
          _("Please correct the configuration in %s\n"),
          my_config->get_base_config_path().c_str());
-    goto bail_out;
+
+    TerminateDird(0);
+    return 0;
   }
 
   MyNameIs(0, nullptr, me->resource_name_); /* set user defined name */
@@ -443,7 +483,6 @@ int main(int argc, char* argv[])
     Scheduler::GetMainScheduler().Run();
   }
 
-bail_out:
   TerminateDird(0);
   return 0;
 }
@@ -479,8 +518,7 @@ static
   if (!test_config && me) { /* we don't need to do this block in test mode */
     WriteStateFile(me->working_directory, "bareos-dir",
                    GetFirstPortHostOrder(me->DIRaddrs));
-    DeletePidFile(me->pid_directory, "bareos-dir",
-                  GetFirstPortHostOrder(me->DIRaddrs));
+    DeletePidFile(pidfile_path);
   }
   Scheduler::GetMainScheduler().Terminate();
   TermJobServer();

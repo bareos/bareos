@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,6 @@
 #ifndef BAREOS_LIB_DAEMON_H_
 #define BAREOS_LIB_DAEMON_H_
 
-void daemon_start();
+void daemon_start(const char* progname, int pidfile_fd, char* pidfilepath);
 
 #endif  // BAREOS_LIB_DAEMON_H_
