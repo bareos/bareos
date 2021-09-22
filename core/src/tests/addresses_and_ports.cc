@@ -252,6 +252,18 @@ TEST(addresses_and_ports_setup, OLD_STYLE_dir_v4address_set)
   check_addresses_list(path_to_config, expected_addresses);
 }
 
+TEST(addresses_and_ports_setup, OLD_STYLE_dir_v6address_set)
+{
+  InitGlobals();
+  std::string path_to_config = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR
+      "/configs/addresses-and-ports/old-style/dir-v6address-set/");
+
+  std::vector<std::string> expected_addresses{"host[ipv6;::1;9101]"};
+
+  check_addresses_list(path_to_config, expected_addresses);
+}
+
 
 /*The next two tests are the same in terms of functionnality, but there is a
  slight difference in the order of directive setup (DirAddress and DirPort).
