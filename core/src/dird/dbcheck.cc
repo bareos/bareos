@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,25 +33,11 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
+#include "dbcheck_utils.h"
+
 using namespace directordaemon;
 
 extern bool ParseDirConfig(const char* configfile, int exit_code);
-
-typedef struct s_id_ctx {
-  int64_t* Id; /* ids to be modified */
-  int num_ids; /* ids stored */
-  int max_ids; /* size of array */
-  int num_del; /* number deleted */
-  int tot_ids; /* total to process */
-} ID_LIST;
-
-typedef struct s_name_ctx {
-  char** name; /* list of names */
-  int num_ids; /* ids stored */
-  int max_ids; /* size of array */
-  int num_del; /* number deleted */
-  int tot_ids; /* total to process */
-} NameList;
 
 // Global variables
 static bool fix = false;
@@ -66,8 +52,6 @@ static const char* idx_tmp_name;
 static const char* backend_directory = PATH_BAREOS_BACKENDDIR;
 #endif
 
-#define MAX_ID_LIST_LEN 10000000
-
 // Forward referenced functions
 static void set_quit();
 static void toggle_modify();
@@ -80,6 +64,7 @@ static void eliminate_orphaned_fileset_records();
 static void eliminate_orphaned_client_records();
 static void eliminate_orphaned_job_records();
 static void eliminate_admin_records();
+static void eliminate_orphaned_storage_records();
 static void eliminate_restore_records();
 static void repair_bad_paths();
 static void repair_bad_filenames();
@@ -107,6 +92,8 @@ static struct dbcheck_cmdstruct commands[] = {
     {eliminate_orphaned_client_records, "Check for orphaned Client records",
      true},
     {eliminate_orphaned_job_records, "Check for orphaned Job records", true},
+    {eliminate_orphaned_storage_records, "Check for orphaned storage records",
+     true},
     {eliminate_admin_records, "Check for all Admin records", true},
     {eliminate_restore_records, "Check for all Restore records", true},
     {run_all_commands, "Run ALL checks", false},
@@ -147,10 +134,10 @@ static char* GetCmd(const char* prompt)
 
   printf("%s", prompt);
   fflush(stdout);
-  if (fgets(cmd, sizeof(cmd), stdin) == NULL) {
+  if (fgets(cmd, sizeof(cmd), stdin) == nullptr) {
     printf("\n");
     quit = true;
-    return NULL;
+    return nullptr;
   }
   StripTrailingJunk(cmd);
   return cmd;
@@ -196,7 +183,7 @@ static void PrintCatalogDetails(CatalogResource* catalog,
   POOLMEM* catalog_details = GetPoolMemory(PM_MESSAGE);
 
   // Instantiate a BareosDb class and see what db_type gets assigned to it.
-  db = db_init_database(NULL, catalog->db_driver, catalog->db_name,
+  db = db_init_database(nullptr, catalog->db_driver, catalog->db_name,
                         catalog->db_user, catalog->db_password.value,
                         catalog->db_address, catalog->db_port,
                         catalog->db_socket, catalog->mult_db_connections,
@@ -205,59 +192,10 @@ static void PrintCatalogDetails(CatalogResource* catalog,
   if (db) {
     printf("%sdb_type=%s\nworking_dir=%s\n", catalog->display(catalog_details),
            db->GetType(), working_directory);
-    db->CloseDatabase(NULL);
+    db->CloseDatabase(nullptr);
   }
   FreePoolMemory(catalog_details);
 }
-
-static int PrintNameHandler(void* ctx, int num_fields, char** row)
-{
-  if (row[0]) { printf("%s\n", row[0]); }
-  return 0;
-}
-
-static int GetNameHandler(void* ctx, int num_fields, char** row)
-{
-  POOLMEM* name = (POOLMEM*)ctx;
-
-  if (row[0]) { PmStrcpy(name, row[0]); }
-  return 0;
-}
-
-static int PrintJobHandler(void* ctx, int num_fields, char** row)
-{
-  printf(_("JobId=%s Name=\"%s\" StartTime=%s\n"), NPRT(row[0]), NPRT(row[1]),
-         NPRT(row[2]));
-  return 0;
-}
-
-static int PrintJobmediaHandler(void* ctx, int num_fields, char** row)
-{
-  printf(_("Orphaned JobMediaId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
-         NPRT(row[1]), NPRT(row[2]));
-  return 0;
-}
-
-static int PrintFileHandler(void* ctx, int num_fields, char** row)
-{
-  printf(_("Orphaned FileId=%s JobId=%s Volume=\"%s\"\n"), NPRT(row[0]),
-         NPRT(row[1]), NPRT(row[2]));
-  return 0;
-}
-
-static int PrintFilesetHandler(void* ctx, int num_fields, char** row)
-{
-  printf(_("Orphaned FileSetId=%s FileSet=\"%s\" MD5=%s\n"), NPRT(row[0]),
-         NPRT(row[1]), NPRT(row[2]));
-  return 0;
-}
-
-static int PrintClientHandler(void* ctx, int num_fields, char** row)
-{
-  printf(_("Orphaned ClientId=%s Name=\"%s\"\n"), NPRT(row[0]), NPRT(row[1]));
-  return 0;
-}
-
 /**
  * database index handling functions
  *
@@ -275,12 +213,12 @@ typedef struct s_idx_list {
 // Drop temporary index
 static bool DropTmpIdx(const char* idx_name, const char* table_name)
 {
-  if (idx_tmp_name != NULL) {
+  if (idx_tmp_name != nullptr) {
     printf(_("Drop temporary index.\n"));
     fflush(stdout);
     Bsnprintf(buf, sizeof(buf), "DROP INDEX %s ON %s", idx_name, table_name);
     if (verbose) { printf("%s\n", buf); }
-    if (!db->SqlQuery(buf, NULL, NULL)) {
+    if (!db->SqlQuery(buf, nullptr, nullptr)) {
       printf("%s\n", db->strerror());
       return false;
     } else {
@@ -288,42 +226,8 @@ static bool DropTmpIdx(const char* idx_name, const char* table_name)
     }
     fflush(stdout);
   }
-  idx_tmp_name = NULL;
+  idx_tmp_name = nullptr;
   return true;
-}
-
-
-// Called here with each id to be added to the list
-static int IdListHandler(void* ctx, int num_fields, char** row)
-{
-  ID_LIST* lst = (ID_LIST*)ctx;
-
-  if (lst->num_ids == MAX_ID_LIST_LEN) { return 1; }
-  if (lst->num_ids == lst->max_ids) {
-    if (lst->max_ids == 0) {
-      lst->max_ids = 10000;
-      lst->Id = (int64_t*)malloc(sizeof(int64_t) * lst->max_ids);
-    } else {
-      lst->max_ids = (lst->max_ids * 3) / 2;
-      lst->Id = (int64_t*)realloc(lst->Id, sizeof(int64_t) * lst->max_ids);
-    }
-  }
-  lst->Id[lst->num_ids++] = str_to_int64(row[0]);
-  return 0;
-}
-
-// Construct record id list
-static int MakeIdList(const char* query, ID_LIST* id_list)
-{
-  id_list->num_ids = 0;
-  id_list->num_del = 0;
-  id_list->tot_ids = 0;
-
-  if (!db->SqlQuery(query, IdListHandler, (void*)id_list)) {
-    printf("%s", db->strerror());
-    return 0;
-  }
-  return 1;
 }
 
 // Delete all entries in the list
@@ -334,57 +238,9 @@ static int DeleteIdList(const char* query, ID_LIST* id_list)
   for (int i = 0; i < id_list->num_ids; i++) {
     Bsnprintf(buf, sizeof(buf), query, edit_int64(id_list->Id[i], ed1));
     if (verbose) { printf(_("Deleting: %s\n"), buf); }
-    db->SqlQuery(buf, NULL, NULL);
+    db->SqlQuery(buf, nullptr, nullptr);
   }
   return 1;
-}
-
-// Called here with each name to be added to the list
-static int NameListHandler(void* ctx, int num_fields, char** row)
-{
-  NameList* name = (NameList*)ctx;
-
-  if (name->num_ids == MAX_ID_LIST_LEN) { return 1; }
-  if (name->num_ids == name->max_ids) {
-    if (name->max_ids == 0) {
-      name->max_ids = 10000;
-      name->name = (char**)malloc(sizeof(char*) * name->max_ids);
-    } else {
-      name->max_ids = (name->max_ids * 3) / 2;
-      name->name = (char**)realloc(name->name, sizeof(char*) * name->max_ids);
-    }
-  }
-  name->name[name->num_ids++] = strdup(row[0]);
-  return 0;
-}
-
-// Construct name list
-static int MakeNameList(const char* query, NameList* name_list)
-{
-  name_list->num_ids = 0;
-  name_list->num_del = 0;
-  name_list->tot_ids = 0;
-
-  if (!db->SqlQuery(query, NameListHandler, (void*)name_list)) {
-    printf("%s", db->strerror());
-    return 0;
-  }
-  return 1;
-}
-
-// Print names in the list
-static void PrintNameList(NameList* name_list)
-{
-  for (int i = 0; i < name_list->num_ids; i++) {
-    printf("%s\n", name_list->name[i]);
-  }
-}
-
-// Free names in the list
-static void FreeNameList(NameList* name_list)
-{
-  for (int i = 0; i < name_list->num_ids; i++) { free(name_list->name[i]); }
-  name_list->num_ids = 0;
 }
 
 static void eliminate_duplicate_paths()
@@ -400,7 +256,7 @@ static void eliminate_duplicate_paths()
       = "SELECT Path, count(Path) as Count FROM Path "
         "GROUP BY Path HAVING count(Path) > 1";
 
-  if (!MakeNameList(query, &name_list)) { exit(1); }
+  if (!MakeNameList(db, query, &name_list)) { exit(1); }
   printf(_("Found %d duplicate Path records.\n"), name_list.num_ids);
   fflush(stdout);
   if (name_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
@@ -411,12 +267,12 @@ static void eliminate_duplicate_paths()
     // Loop through list of duplicate names
     for (int i = 0; i < name_list.num_ids; i++) {
       // Get all the Ids of each name
-      db->EscapeString(NULL, esc_name, name_list.name[i],
+      db->EscapeString(nullptr, esc_name, name_list.name[i],
                        strlen(name_list.name[i]));
       Bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'",
                 esc_name);
       if (verbose > 1) { printf("%s\n", buf); }
-      if (!MakeIdList(buf, &id_list)) { exit(1); }
+      if (!MakeIdList(db, buf, &id_list)) { exit(1); }
       if (verbose) {
         printf(_("Found %d for: %s\n"), id_list.num_ids, name_list.name[i]);
       }
@@ -427,10 +283,10 @@ static void eliminate_duplicate_paths()
                   edit_int64(id_list.Id[0], ed1),
                   edit_int64(id_list.Id[j], ed2));
         if (verbose > 1) { printf("%s\n", buf); }
-        db->SqlQuery(buf, NULL, NULL);
+        db->SqlQuery(buf, nullptr, nullptr);
         Bsnprintf(buf, sizeof(buf), "DELETE FROM Path WHERE PathId=%s", ed2);
         if (verbose > 2) { printf("%s\n", buf); }
-        db->SqlQuery(buf, NULL, NULL);
+        db->SqlQuery(buf, nullptr, nullptr);
       }
     }
     fflush(stdout);
@@ -449,7 +305,7 @@ static void eliminate_orphaned_jobmedia_records()
 
   printf(_("Checking for orphaned JobMedia entries.\n"));
   fflush(stdout);
-  if (!MakeIdList(query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(1); }
   // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
     printf(_("Found %d orphaned JobMedia records.\n"), id_list.num_ids);
@@ -462,7 +318,7 @@ static void eliminate_orphaned_jobmedia_records()
             "JobMedia,Media "
             "WHERE JobMedia.JobMediaId=%s AND Media.MediaId=JobMedia.MediaId",
             edit_int64(id_list.Id[i], ed1));
-        if (!db->SqlQuery(buf, PrintJobmediaHandler, NULL)) {
+        if (!db->SqlQuery(buf, PrintJobmediaHandler, nullptr)) {
           printf("%s\n", db->strerror());
         }
       }
@@ -475,7 +331,7 @@ static void eliminate_orphaned_jobmedia_records()
     } else {
       break; /* get out if not updating db */
     }
-    if (!MakeIdList(query, &id_list)) { exit(1); }
+    if (!MakeIdList(db, query, &id_list)) { exit(1); }
   }
   fflush(stdout);
 }
@@ -490,7 +346,7 @@ static void eliminate_orphaned_file_records()
   printf(_("Checking for orphaned File entries. This may take some time!\n"));
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(1); }
   // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
     printf(_("Found %d orphaned File records.\n"), id_list.num_ids);
@@ -501,7 +357,7 @@ static void eliminate_orphaned_file_records()
                   "SELECT File.FileId,File.JobId,File.Name FROM File "
                   "WHERE File.FileId=%s",
                   edit_int64(id_list.Id[i], ed1));
-        if (!db->SqlQuery(buf, PrintFileHandler, NULL)) {
+        if (!db->SqlQuery(buf, PrintFileHandler, nullptr)) {
           printf("%s\n", db->strerror());
         }
       }
@@ -513,7 +369,7 @@ static void eliminate_orphaned_file_records()
     } else {
       break; /* get out if not updating db */
     }
-    if (!MakeIdList(query, &id_list)) { exit(1); }
+    if (!MakeIdList(db, query, &id_list)) { exit(1); }
   }
   fflush(stdout);
 }
@@ -524,14 +380,14 @@ static void eliminate_orphaned_path_records()
   PoolMem query(PM_MESSAGE);
 
   lctx.count = 0;
-  idx_tmp_name = NULL;
+  idx_tmp_name = nullptr;
 
   db->FillQuery(query, BareosDb::SQL_QUERY::get_orphaned_paths_0);
 
   printf(_("Checking for orphaned Path entries. This may take some time!\n"));
   if (verbose > 1) { printf("%s\n", query.c_str()); }
   fflush(stdout);
-  if (!MakeIdList(query.c_str(), &id_list)) { exit(1); }
+  if (!MakeIdList(db, query.c_str(), &id_list)) { exit(1); }
   // Loop doing 300000 at a time
   while (id_list.num_ids != 0) {
     printf(_("Found %d orphaned Path records.\n"), id_list.num_ids);
@@ -541,7 +397,7 @@ static void eliminate_orphaned_path_records()
         char ed1[50];
         Bsnprintf(buf, sizeof(buf), "SELECT Path FROM Path WHERE PathId=%s",
                   edit_int64(id_list.Id[i], ed1));
-        db->SqlQuery(buf, PrintNameHandler, NULL);
+        db->SqlQuery(buf, PrintNameHandler, nullptr);
       }
       fflush(stdout);
     }
@@ -553,7 +409,7 @@ static void eliminate_orphaned_path_records()
     } else {
       break; /* get out if not updating db */
     }
-    if (!MakeIdList(query.c_str(), &id_list)) { exit(1); }
+    if (!MakeIdList(db, query.c_str(), &id_list)) { exit(1); }
   }
 }
 
@@ -568,7 +424,7 @@ static void eliminate_orphaned_fileset_records()
         "WHERE Job.FileSetId IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(1); }
   printf(_("Found %d orphaned FileSet records.\n"), id_list.num_ids);
   fflush(stdout);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
@@ -578,7 +434,7 @@ static void eliminate_orphaned_fileset_records()
                 "SELECT FileSetId,FileSet,MD5 FROM FileSet "
                 "WHERE FileSetId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintFilesetHandler, NULL)) {
+      if (!db->SqlQuery(buf, PrintFilesetHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -611,7 +467,7 @@ static void eliminate_orphaned_client_records()
         "WHERE Job.ClientId IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(1); }
   printf(_("Found %d orphaned Client records.\n"), id_list.num_ids);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
     for (int i = 0; i < id_list.num_ids; i++) {
@@ -620,7 +476,7 @@ static void eliminate_orphaned_client_records()
                 "SELECT ClientId,Name FROM Client "
                 "WHERE ClientId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintClientHandler, NULL)) {
+      if (!db->SqlQuery(buf, PrintClientHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -653,7 +509,7 @@ static void eliminate_orphaned_job_records()
         "WHERE Client.Name IS NULL";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(1); }
   printf(_("Found %d orphaned Job records.\n"), id_list.num_ids);
   fflush(stdout);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
@@ -663,7 +519,7 @@ static void eliminate_orphaned_job_records()
                 "SELECT JobId,Name,StartTime FROM Job "
                 "WHERE JobId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintJobHandler, NULL)) {
+      if (!db->SqlQuery(buf, PrintJobHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -683,6 +539,39 @@ static void eliminate_orphaned_job_records()
   }
 }
 
+static void eliminate_orphaned_storage_records()
+{
+  printf(_("Checking for orphaned Storage entries.\n"));
+  fflush(stdout);
+
+  std::vector<std::string> orphaned_storage_names_list
+      = get_orphaned_storages_names(db);
+
+  printf(_("Found %zu orphaned Storage records.\n"),
+         orphaned_storage_names_list.size());
+
+  std::vector<int> storages_to_be_deleted;
+
+  if (orphaned_storage_names_list.size() > 0) {
+    if (verbose && yes_no(_("Print orhpaned storages? (yes/no): "))) {
+      for (auto const& storage : orphaned_storage_names_list) {
+        printf("'%s'\n", storage.c_str());
+      }
+      fflush(stdout);
+    }
+
+    storages_to_be_deleted
+        = get_deletable_storageids(db, orphaned_storage_names_list);
+  }
+  if (quit) { return; }
+  if (fix && storages_to_be_deleted.size() > 0) {
+    printf(_("Deleting %zu orphaned storage records.\n"),
+           storages_to_be_deleted.size());
+    fflush(stdout);
+    delete_storages(db, storages_to_be_deleted);
+  }
+}
+
 static void eliminate_admin_records()
 {
   const char* query;
@@ -693,7 +582,7 @@ static void eliminate_admin_records()
         "WHERE Job.Type='D'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(1); }
   printf(_("Found %d Admin Job records.\n"), id_list.num_ids);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
     for (int i = 0; i < id_list.num_ids; i++) {
@@ -702,7 +591,7 @@ static void eliminate_admin_records()
                 "SELECT JobId,Name,StartTime FROM Job "
                 "WHERE JobId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintJobHandler, NULL)) {
+      if (!db->SqlQuery(buf, PrintJobHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -726,7 +615,7 @@ static void eliminate_restore_records()
         "WHERE Job.Type='R'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(1); }
   printf(_("Found %d Restore Job records.\n"), id_list.num_ids);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
     for (int i = 0; i < id_list.num_ids; i++) {
@@ -735,7 +624,7 @@ static void eliminate_restore_records()
                 "SELECT JobId,Name,StartTime FROM Job "
                 "WHERE JobId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintJobHandler, NULL)) {
+      if (!db->SqlQuery(buf, PrintJobHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -760,14 +649,14 @@ static void repair_bad_filenames()
         "WHERE Name LIKE '%/'";
   if (verbose > 1) { printf("%s\n", query); }
   fflush(stdout);
-  if (!MakeIdList(query, &id_list)) { exit(1); }
+  if (!MakeIdList(db, query, &id_list)) { exit(1); }
   printf(_("Found %d bad Filename records.\n"), id_list.num_ids);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
     for (i = 0; i < id_list.num_ids; i++) {
       char ed1[50];
       Bsnprintf(buf, sizeof(buf), "SELECT Name FROM File WHERE FileId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintNameHandler, NULL)) {
+      if (!db->SqlQuery(buf, PrintNameHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -796,12 +685,12 @@ static void repair_bad_filenames()
         esc_name[1] = 0;
       } else {
         name[len - 1] = 0;
-        db->EscapeString(NULL, esc_name, name, len);
+        db->EscapeString(nullptr, esc_name, name, len);
       }
       Bsnprintf(buf, sizeof(buf), "UPDATE File SET Name='%s' WHERE FileId=%s",
                 esc_name, edit_int64(id_list.Id[i], ed1));
       if (verbose > 1) { printf("%s\n", buf); }
-      db->SqlQuery(buf, NULL, NULL);
+      db->SqlQuery(buf, nullptr, nullptr);
     }
     FreePoolMemory(name);
   }
@@ -817,7 +706,7 @@ static void repair_bad_paths()
   db->FillQuery(query, BareosDb::SQL_QUERY::get_bad_paths_0);
   if (verbose > 1) { printf("%s\n", query.c_str()); }
   fflush(stdout);
-  if (!MakeIdList(query.c_str(), &id_list)) { exit(1); }
+  if (!MakeIdList(db, query.c_str(), &id_list)) { exit(1); }
   printf(_("Found %d bad Path records.\n"), id_list.num_ids);
   fflush(stdout);
   if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
@@ -825,7 +714,7 @@ static void repair_bad_paths()
       char ed1[50];
       Bsnprintf(buf, sizeof(buf), "SELECT Path FROM Path WHERE PathId=%s",
                 edit_int64(id_list.Id[i], ed1));
-      if (!db->SqlQuery(buf, PrintNameHandler, NULL)) {
+      if (!db->SqlQuery(buf, PrintNameHandler, nullptr)) {
         printf("%s\n", db->strerror());
       }
     }
@@ -851,11 +740,11 @@ static void repair_bad_paths()
       }
       // Add trailing slash
       len = PmStrcat(name, "/");
-      db->EscapeString(NULL, esc_name, name, len);
+      db->EscapeString(nullptr, esc_name, name, len);
       Bsnprintf(buf, sizeof(buf), "UPDATE Path SET Path='%s' WHERE PathId=%s",
                 esc_name, edit_int64(id_list.Id[i], ed1));
       if (verbose > 1) { printf("%s\n", buf); }
-      db->SqlQuery(buf, NULL, NULL);
+      db->SqlQuery(buf, nullptr, nullptr);
     }
     fflush(stdout);
     FreePoolMemory(name);
@@ -924,12 +813,12 @@ static void do_interactive_mode()
 int main(int argc, char* argv[])
 {
   int ch;
-  const char* db_driver = NULL;
+  const char* db_driver = nullptr;
   const char *user, *password, *db_name, *dbhost;
   int dbport = 0;
   bool print_catalog = false;
-  char* configfile = NULL;
-  char* catalogname = NULL;
+  char* configfile = nullptr;
+  char* catalogname = nullptr;
   char* endptr;
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
   std::vector<std::string> backend_directories;
@@ -941,7 +830,7 @@ int main(int argc, char* argv[])
   textdomain("bareos");
 
   MyNameIs(argc, argv, "dbcheck");
-  InitMsg(NULL, NULL); /* setup message handler */
+  InitMsg(nullptr, nullptr); /* setup message handler */
 
   memset(&id_list, 0, sizeof(id_list));
   memset(&name_list, 0, sizeof(name_list));
@@ -989,7 +878,7 @@ int main(int argc, char* argv[])
   OSDependentInit();
 
   if (configfile || (argc == 0)) {
-    CatalogResource* catalog = NULL;
+    CatalogResource* catalog = nullptr;
     int found = 0;
     if (argc > 0) {
       Pmsg0(0, _("Warning skipping the additional parameters for working "
@@ -1023,7 +912,7 @@ int main(int argc, char* argv[])
       exit(1);
     } else {
       LockRes(my_config);
-      me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
+      me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
       my_config->own_resource_ = me;
       UnlockRes(my_config);
       if (!me) {
@@ -1047,7 +936,7 @@ int main(int argc, char* argv[])
       password = catalog->db_password.value;
       dbhost = catalog->db_address;
       db_driver = catalog->db_driver;
-      if (dbhost && dbhost[0] == 0) { dbhost = NULL; }
+      if (dbhost && dbhost[0] == 0) { dbhost = nullptr; }
       dbport = catalog->db_port;
     }
   } else {
@@ -1061,7 +950,7 @@ int main(int argc, char* argv[])
     db_name = "bareos";
     user = db_name;
     password = "";
-    dbhost = NULL;
+    dbhost = nullptr;
 
     if (argc == 2) {
       db_name = argv[1];
@@ -1101,9 +990,9 @@ int main(int argc, char* argv[])
   }
 
   // Open database
-  db = db_init_database(NULL, db_driver, db_name, user, password, dbhost,
-                        dbport, NULL, false, false, false, false);
-  if (!db->OpenDatabase(NULL)) {
+  db = db_init_database(nullptr, db_driver, db_name, user, password, dbhost,
+                        dbport, nullptr, false, false, false, false);
+  if (!db->OpenDatabase(nullptr)) {
     Emsg1(M_FATAL, 0, "%s", db->strerror());
     return 1;
   }
@@ -1120,9 +1009,9 @@ int main(int argc, char* argv[])
   // Drop temporary index idx_tmp_name
   DropTmpIdx("idxPIchk", "File");
 
-  db->CloseDatabase(NULL);
+  db->CloseDatabase(nullptr);
   DbFlushBackends();
-  CloseMsg(NULL);
+  CloseMsg(nullptr);
   TermMsg();
 
   return 0;

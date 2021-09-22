@@ -1148,27 +1148,26 @@ If the :strong:`-b` option is specified, :command:`bareos-dbcheck` will run in b
 
 .. code-block:: shell-session
 
-   Hello, this is the database check/correct program.
-   Modify database is off. Verbose is off.
-   Please select the function you want to perform.
-        1) Toggle modify database flag
-        2) Toggle verbose flag
-        3) Repair bad Filename records
-        4) Repair bad Path records
-        5) Eliminate duplicate Filename records
-        6) Eliminate duplicate Path records
-        7) Eliminate orphaned Jobmedia records
-        8) Eliminate orphaned File records
-        9) Eliminate orphaned Path records
-       10) Eliminate orphaned Filename records
-       11) Eliminate orphaned FileSet records
-       12) Eliminate orphaned Client records
-       13) Eliminate orphaned Job records
-       14) Eliminate all Admin records
-       15) Eliminate all Restore records
-       16) All (3-15)
-       17) Quit
-   Select function number:
+    Hello, this is the Bareos database check/correct program.
+    Modify database is off. Verbose is off.
+    Please select the function you want to perform.
+         0) Quit
+         1) Toggle modify database flag
+         2) Toggle verbose flag
+         3) Check for bad Filename records
+         4) Check for bad Path records
+         5) Check for duplicate Path records
+         6) Check for orphaned Jobmedia records
+         7) Check for orphaned File records
+         8) Check for orphaned Path records
+         9) Check for orphaned FileSet records
+        10) Check for orphaned Client records
+        11) Check for orphaned Job records
+        12) Check for orphaned storage records
+        13) Check for all Admin records
+        14) Check for all Restore records
+        15) Run ALL checks
+    Select function number:
 
 By entering 1 or 2, you can toggle the modify database flag (:strong:`-f` option) and the verbose flag (:strong:`-v`). It can be helpful and reassuring to turn off the modify database flag, then select one or more of the consistency checks (items 3 through 13) to see what will be done, then toggle the modify flag on and re-run the check.
 
@@ -1198,6 +1197,8 @@ The inconsistencies examined are the following:
 -  Orphaned Client records. These records can remain in the database long after you have removed a client.
 
 -  Orphaned Job records. If no client is defined for a job or you do not run a job for a long time, you can accumulate old job records. This option allow you to remove jobs that are not attached to any client (and thus useless).
+
+-  Orphaned storage records. If you delete a storage configuration file from the bareos configurations folder, you end up with unused storages in the database that can cause certain visual inconsistencies. This option allows you to delete these orphaned storages, but you have to make sure first that they are not used by any Media or Device.
 
 -  All Admin records. This command will remove all Admin records, regardless of their age.
 
