@@ -250,8 +250,8 @@ class CatalogResource : public BareosResource {
   uint32_t mult_db_connections = 0; /**< Set if multiple connections wanted */
   bool disable_batch_insert
       = false;                /**< Set if batch inserts should be disabled */
-  bool try_reconnect = false; /**< Try to reconnect a database connection when
-                         its dropped */
+  bool try_reconnect = true;  /**< Try to reconnect a database connection when
+                          it is dropped */
   bool exit_on_fatal = false; /**< Make any fatal error in the connection to the
                          database exit the program */
   uint32_t pooling_min_connections

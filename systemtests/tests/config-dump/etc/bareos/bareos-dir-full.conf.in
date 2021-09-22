@@ -932,7 +932,7 @@ Catalog {
   # DbSocket =
   # MultipleConnections = No
   # DisableBatchInsert = No
-  # Reconnect = No
+  # Reconnect = Yes
   # ExitOnFatal = No
   # MinConnections = 1
   # MaxConnections = 5

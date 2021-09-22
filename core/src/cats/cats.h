@@ -497,7 +497,7 @@ class BareosDb : public BareosDbQueryEnum {
   uint32_t ref_count_ = 0;                /**< Reference count */
   bool connected_ = false;                /**< Connection made to db */
   bool have_batch_insert_ = false;        /**< Have batch insert support ? */
-  bool try_reconnect_ = false;   /**< Try reconnecting DB connection ? */
+  bool try_reconnect_ = true;    /**< Try reconnecting DB connection ? */
   bool exit_on_fatal_ = false;   /**< Exit on FATAL DB errors ? */
   char* db_driver_ = nullptr;    /**< Database driver */
   char* db_driverdir_ = nullptr; /**< Database driver dir */

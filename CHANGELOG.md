@@ -5,6 +5,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- If you are relying on the fact that Bareos doesn't try to reconnect automatically on a database drop, you now have to specify it explicitly in the Catalog configuration with a `Reconnect = no` directive. [PR #860]
+
 ### Fixed
 - docs: Adapted the documentation of the VMware plugin due to update to VDDK 7 [PR #844]
 - fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option localvmdk=yes [PR #826]
@@ -100,6 +104,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - version information was moved from core/cmake/ and webui/cmake/ directories into the toplevel cmake/ directory [PR #861]
 - add chromedriver options to improve reliability of selenium tests [PR #920]
 - docs: Describe how to get debugging info when using the VMware plugin [PR #921]
+- reconnecting to the database is now automatic per default without the need to specify it in the catalog [PR #860]
 
 ### Deprecated
 
@@ -186,6 +191,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #844]: https://github.com/bareos/bareos/pull/844
 [PR #850]: https://github.com/bareos/bareos/pull/850
 [PR #858]: https://github.com/bareos/bareos/pull/858
+[PR #860]: https://github.com/bareos/bareos/pull/860
 [PR #861]: https://github.com/bareos/bareos/pull/861
 [PR #868]: https://github.com/bareos/bareos/pull/868
 [PR #869]: https://github.com/bareos/bareos/pull/869
