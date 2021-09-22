@@ -2311,11 +2311,9 @@ static void DeleteStorage(UaContext* ua)
                 given_storagename)
       == orphaned_storages.end()) {
     ua->ErrorMsg(
-        _("The given storage name '%s' either does not exist at all, "
-          "or exists but the matching configuration file is not yet deleted. "
-          "If the storage configuration file is still available, it must be "
-          "first deleted from the bareos configurations in order to eliminate "
-          "it from the database.\n"),
+        _("The given storage '%s' either does not exist at all, or still "
+          "exists in the configuration. In order to remove a storage "
+          "from the catalog, its configuration must be removed first.\n"),
         given_storagename.c_str());
     return;
   }

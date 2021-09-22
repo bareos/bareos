@@ -182,11 +182,10 @@ std::vector<int> get_deletable_storageids(
       for (int volumename = 0; volumename < volume_names.num_ids;
            ++volumename) {
         Emsg3(M_WARNING, 0,
-              _("Orphaned storage '%s' with id '%lld' is being used by Media "
-                "with volumename '%s'. The orphaned Storage will only be "
-                "removed if you either delete or modify the related Media.\n"),
+              _("Orphaned storage '%s' is being used by volume '%s'. "
+                "An orphaned storage will only be removed when it is "
+                "no longer referenced.\n"),
               orphaned_storage_names_list[orphaned_storage_id].c_str(),
-              orphaned_storage_ids_list.Id[orphaned_storage_id],
               volume_names.name[volumename]);
       }
     }
@@ -202,11 +201,10 @@ std::vector<int> get_deletable_storageids(
       for (int devicename = 0; devicename < device_names.num_ids;
            ++devicename) {
         Emsg3(M_WARNING, 0,
-              _("Orphaned storage '%s' with id '%lld' is being used by "
-                "Device with name '%s'. The orphaned Storage will only be "
-                "removed if you either delete or modify the related Device.\n"),
+              _("Orphaned storage '%s' is being used by device '%s'. "
+                "An orphaned storage will only be removed when it is "
+                "no longer referenced.\n"),
               orphaned_storage_names_list[orphaned_storage_id].c_str(),
-              orphaned_storage_ids_list.Id[orphaned_storage_id],
               device_names.name[devicename]);
       }
     }

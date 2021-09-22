@@ -161,7 +161,7 @@ if test $? -ne 0 ; then
 fi
 
 # make sure storage 'File' cannot be deleted
-grep "The given storage name 'File' either does not exist at all, or exists but the matching configuration file is not yet deleted" "${tmp}"/log4.out >/dev/null 2>&1
+grep "The given storage 'File' either does not exist at all, or still exists in the configuration." "${tmp}"/log4.out >/dev/null 2>&1
 if test $? -ne 0 ; then
   echo "The delete command failed for an existing storage."
   estat=1;
@@ -169,7 +169,7 @@ fi
 
 
 # make sure extra storages fakestorage1 cannot be deleted
-grep "Orphaned storage 'fakestorage1' with id '.' is being used by Media with volumename 'fakevolume'" "${tmp}"/log4.out >/dev/null 2>&1
+grep "Orphaned storage 'fakestorage1' is being used by volume 'fakevolume'" "${tmp}"/log4.out >/dev/null 2>&1
 if test $? -ne 0 ; then
   echo "The delete command failed to detect fakestorages related to other medias."
   estat=1;
