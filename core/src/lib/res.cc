@@ -1318,7 +1318,8 @@ void ConfigurationParser::StoreAddressesAddress(LEX* lc,
 
   if (pass == 1
       && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                     IPADDR::R_SINGLE_ADDR, htons(port), AF_INET, lc->str, 0,
+                     IPADDR::R_SINGLE_ADDR, htons(port),
+                     strchr(lc->str, ':') ? AF_INET6 : AF_INET, lc->str, 0,
                      errmsg, sizeof(errmsg))) {
     scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
   }
