@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Breaking Changes
 
 - If you are relying on the fact that Bareos doesn't try to reconnect automatically on a database drop, you now have to specify it explicitly in the Catalog configuration with a `Reconnect = no` directive. [PR #860]
+- when setting an IPv6 address using the `[DIR|SD|FD] Addresses` directive, now bareos only listens on IPv6 instead of both IPv4 and IPv6 on dual-stack. If you were using the `[DIR|SD|FD] Addresses` directive to create a dual-stack socket that would listen on both IPv6 AND IPv4, it will not work that way anymore. You should now also explicitly specify the IPv4 address in the directive [PR #882]
 
 ### Fixed
 - docs: Adapted the documentation of the VMware plugin due to update to VDDK 7 [PR #844]
@@ -110,6 +111,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - add chromedriver options to improve reliability of selenium tests [PR #920]
 - docs: Describe how to get debugging info when using the VMware plugin [PR #921]
 - reconnecting to the database is now automatic per default without the need to specify it in the catalog [PR #860]
+- bareos is now set to listen to both IPv6 and IPv4 by default, instead of needing to specify it via a directive [PR #882]
+- bareos is now able to create IPv6 addresses with the `DirAddress` directive [PR #882]
 
 ### Deprecated
 
@@ -203,6 +206,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #870]: https://github.com/bareos/bareos/pull/870
 [PR #874]: https://github.com/bareos/bareos/pull/874
 [PR #880]: https://github.com/bareos/bareos/pull/880
+[PR #882]: https://github.com/bareos/bareos/pull/882
 [PR #892]: https://github.com/bareos/bareos/pull/892
 [PR #893]: https://github.com/bareos/bareos/pull/893
 [PR #900]: https://github.com/bareos/bareos/pull/900
