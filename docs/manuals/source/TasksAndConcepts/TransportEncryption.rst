@@ -347,8 +347,8 @@ However, it is also possible to disable transport encryption and use cleartext t
     ...
   }
 
-|bareosFD| configuration
-^^^^^^^^^^^^^^^^^^^^^^^^
+|bareosFD| configuration before 18.2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: ini
   :caption: :file:`/etc/bareos/bareos-fd.d/client/bareos-fd.conf`

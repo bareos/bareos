@@ -616,8 +616,8 @@ It is included in Bareos since :sinceVersion:`19: oVirt Plugin`.
 
 .. _oVirtPlugin-status:
 
-Status
-^^^^^^
+Status of oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^
 
 The Plugin can currently only take full backups of VM disks because
 the oVirt/RHV API does not yet provide methods for incremental backups.
@@ -641,8 +641,8 @@ of the engine server.
 
 .. _oVirtPlugin-requirements:
 
-Requirements
-^^^^^^^^^^^^
+Requirements of oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The plugin is currently only available for Red Hat Enterprise Linux 7 and CentOS 7. It requires the
 Python oVirt Engine SDK version 4, Red Hat Subscriptions customers can find the package
@@ -659,8 +659,8 @@ QEMU GA provides VSS support thus live snapshots attempt to quiesce whenever pos
 
 .. _oVirtPlugin-installation:
 
-Installation
-^^^^^^^^^^^^
+Installation of oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The installation is done by installing the package **bareos-filedaemon-ovirt-python-plugin**:
 
@@ -668,8 +668,8 @@ The installation is done by installing the package **bareos-filedaemon-ovirt-pyt
 
 .. _oVirtPlugin-configuration:
 
-Configuration
-^^^^^^^^^^^^^
+Configuration of oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As the Plugin needs access to the oVirt API, an account with appropriate privileges must be used.
 The default **admin@internal** user works, as it has all privileges. Using an account with
@@ -837,8 +837,8 @@ ovirt_sdk_debug_log
 
 .. _oVirtPlugin-backup
 
-Backup
-^^^^^^
+Backup with oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 To manually run a backup, use the following command in |bconsole|:
 
@@ -871,8 +871,8 @@ To manually run a backup, use the following command in |bconsole|:
 
 .. _oVirtPlugin-restore
 
-Restore
-^^^^^^^
+Restore with oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 An example restore dialogue could look like this:
 
@@ -1053,8 +1053,8 @@ The key features of XtraBackup are:
 Incremental backups only work for INNODB tables, when using MYISAM, only full backups can be created.
 
 
-Prerequisites
-'''''''''''''
+Prerequisites of percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Install the XtraBackup tool from Percona. Documentation and packages are available here: https://www.percona.com/software/mysql-database/percona-XtraBackup. The plugin was successfully tested with XtraBackup versions 2.3.5 and 2.4.4.
 
@@ -1063,13 +1063,13 @@ As it is a Python plugin, it will also require to have the package **bareos-file
 For authentication the :file:`.mycnf` file of the user running the |fd| is used. Before proceeding, make sure that XtraBackup can connect to the database and create backups.
 
 
-Installation
-''''''''''''
+Installation of percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Make sure you have met the prerequisites, after that install the package **bareos-filedaemon-percona_XtraBackup-python-plugin**.
 
-Configuration
-'''''''''''''
+Configuration of percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Activate your plugin directory in the |fd| configuration. See :ref:`fdPlugins` for more about plugins in general.
 
@@ -1114,8 +1114,8 @@ You can append options to the plugin call as key=value pairs, separated by ’:�
 
 -  :strong:`strictIncremental`: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) wasn’t increased since last backup. This is to ensure, that eventual changes to MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full bakcup of these tables. If set to true, no data will be written into backup, if the LSN wasn’t changed.
 
-Restore
-'''''''
+Restore with percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client under the default restore location:
 
@@ -1276,8 +1276,8 @@ The volume label is unencrypted, so a volume can also be recognized by a non-enc
 
 .. _configuration-1:
 
-Configuration
-^^^^^^^^^^^^^
+Configuration of the scsicrypto-sd plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SCSI crypto setup
 '''''''''''''''''
