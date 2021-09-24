@@ -109,8 +109,8 @@ modifications of it based on two week cycles or longer.
 
 .. _advantages-1:
 
-Advantages
-~~~~~~~~~~
+Advantages of Daily Tape Rotation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  All the data is stored on a single tape, so recoveries are simple and faster.
 
@@ -118,8 +118,8 @@ Advantages
 
 .. _disadvantages-1:
 
-Disadvantages
-~~~~~~~~~~~~~
+Disadvantages of Daily Tape Rotation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -  The tape must be changed every day requiring a lot of operator intervention.
 
@@ -135,8 +135,8 @@ Disadvantages
 
 .. _practical-details-1:
 
-Practical Details
-~~~~~~~~~~~~~~~~~
+Practical Details of Daily Tape Rotation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The simplest way to "force" Bareos to use a different tape each day is to define a different Pool for each day of the the week a backup is done. In addition, you will need to specify appropriate Job and File retention periods so that Bareos will relabel and overwrite the tape each week rather than appending to it. Nic Bellamy has supplied an actual working model of this which we include here.
 

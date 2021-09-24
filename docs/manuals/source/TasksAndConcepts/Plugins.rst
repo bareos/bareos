@@ -809,6 +809,899 @@ Changes in bareos-dir.conf
 
    -  :config:option:`dir/director/KeyEncryptionKey`\  = :strong:`passphrase`
 
+   *<input>restore</input>
+
+   First you select one or more JobIds that contain files
+   to be restored. You will be presented several methods
+   of specifying the JobIds. Then you will be allowed to
+   select which files from those JobIds are to be restored.
+
+   To select the JobIds, you have the following choices:
+        1: List last 20 Jobs run
+        2: List Jobs where a given File is saved
+        3: Enter list of comma separated JobIds to select
+        4: Enter SQL list command
+        5: Select the most recent backup for a client
+        6: Select backup for a client before a specified time
+        7: Enter a list of files to restore
+        8: Enter a list of files to restore before a specified time
+        9: Find the JobIds of the most recent backup for a client
+       10: Find the JobIds for a backup for a client before a specified time
+       11: Enter a list of directories to restore for found JobIds
+       12: Select full restore to a specified Job date
+       13: Cancel
+   Select item:  (1-13): <input>5</input>
+   Defined Clients:
+        1: bareos1-fd
+        2: bareos2-fd
+        3: bareos3-fd
+        4: bareos4-fd
+        5: bareos-fd
+   Select the Client (1-5): <input>5</input>
+   Automatically selected FileSet: testvm1_fileset
+   +-------+-------+----------+-------------+---------------------+------------+
+   | jobid | level | jobfiles | jobbytes    | starttime           | volumename |
+   +-------+-------+----------+-------------+---------------------+------------+
+   |     1 | F     |        9 | 564,999,361 | 2019-12-16 17:41:26 | Full-0001  |
+   +-------+-------+----------+-------------+---------------------+------------+
+   You have selected the following JobId: 1
+
+   Building directory tree for JobId(s) 1 ...
+   5 files inserted into the tree.
+
+   You are now entering file selection mode where you add (mark) and
+   remove (unmark) files to be restored. No files are initially added, unless
+   you used the "all" keyword on the command line.
+   Enter "done" to leave this mode.
+
+   cwd is: /
+   $ <input>mark *</input>
+   5 files marked.
+   $ <input>done</input>
+   Bootstrap records written to /var/lib/bareos/bareos-dir.restore.3.bsr
+
+   The job will require the following
+      Volume(s)                 Storage(s)                SD Device(s)
+   ===========================================================================
+
+       Full-0001                 File                      FileStorage
+
+   Volumes marked with "*" are online.
+
+
+   5 files selected to be restored.
+
+   Run Restore job
+   JobName:         RestoreFiles
+   Bootstrap:       /var/lib/bareos/bareos-dir.restore.3.bsr
+   Where:           /tmp/bareos-restores
+   Replace:         Always
+   FileSet:         LinuxAll
+   Backup Client:   bareos-fd
+   Restore Client:  bareos-fd
+   Format:          Native
+   Storage:         File
+   When:            2019-12-16 20:58:31
+   Catalog:         MyCatalog
+   Priority:        10
+   Plugin Options:  *None*
+   OK to run? (yes/mod/no): <input>mod</input>
+   Parameters to modify:
+        1: Level
+        2: Storage
+        3: Job
+        4: FileSet
+        5: Restore Client
+        6: Backup Format
+        7: When
+        8: Priority
+        9: Bootstrap
+       10: Where
+       11: File Relocation
+       12: Replace
+       13: JobId
+       14: Plugin Options
+   Select parameter to modify (1-14): <input>14</input>
+   Please enter Plugin Options string: python:storage_domain=hosted_storage:vm_name=testvm1restore
+   Run Restore job
+   JobName:         RestoreFiles
+   Bootstrap:       /var/lib/bareos/bareos-dir.restore.3.bsr
+   Where:           /tmp/bareos-restores
+   Replace:         Always
+   FileSet:         LinuxAll
+   Backup Client:   bareos-fd
+   Restore Client:  bareos-fd
+   Format:          Native
+   Storage:         File
+   When:            2019-12-16 20:58:31
+   Catalog:         MyCatalog
+   Priority:        10
+   Plugin Options:  <input>python:storage_domain=hosted_storage:vm_name=testvm1restore</input>
+   OK to run? (yes/mod/no): <input>yes</input>
+   Job queued. JobId=2
+
+By using the above Plugin Options, the new VM **testvm1restore** is created and the disks
+are created in the storage domain **hosted_storage** with the same cpu and memory parameters
+as the backed up VM.
+
+When omitting the **vm_name** Parameter, the VM name will be taken from the backed up metadata
+and the plugin will restore to the same VM if it still exists.
+
+
+When restoring disks of an existing VM, the option **overwrite=yes** must be explictly
+passed to force overwriting. To prevent from accidentally overwriting an existing VM,
+the plugin will return an error message if this option is not passed.
+
+.. _oVirtPlugin-restore-to-local-image:
+
+Restore to local disk image
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Instead of restoring to an existing or new VM, it is possible to restore the disk image
+as image files on the system running the Bareos FD. To perform such a restore, the
+following Plugin Option must be entered:
+
+.. code-block:: bconsole
+   :caption: Example: running a oVirt Plugin backup job
+
+   *<input>restore</input>
+
+   First you select one or more JobIds that contain files
+   to be restored. You will be presented several methods
+   ...
+   Plugin Options:  <input>python:local=yes</input>
+   OK to run? (yes/mod/no): <input>yes</input>
+   Job queued. JobId=2
+
+Anything else from the restore dialogue is the same.
+
+This will create disk image files that could be examined for example by using
+the **guestfish** tool (see http://libguestfs.org/guestfish.1.html). This tool
+can also be used to extract single files from the disk image.
+
+.. _LibcloudPlugin:
+
+Apache Libcloud Plugin
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. index::
+   pair: Plugin; libcloud
+
+The Libcloud plugin can be used to backup objects from cloud storages via the *Simple Storage Service* (**S3**) protocol. The plugin code is based on the work of Alexandre Bruyelles.
+
+.. _LibcloudPlugin-status:
+
+Status of Libcloud Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The status of the Libcloud plugin is **experimental**. It can automatically recurse nested Buckets and backup all included Objects
+on a S3 storage. However, **restore of objects cannot be done directly back to the storage**. A restore will write these objects
+*as files on a filesystem*.
+
+.. _LibcloudPlugin-requirements:
+
+Requirements of Libcloud Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To use the Apache Libcloud backend you need to have the Libcloud module available for Python 2.
+
+The plugin needs several options to run properly, the plugin options in the fileset resource and an additional configuration file. Both is described below.
+
+.. _LibcloudPlugin-installation:
+
+Installation of Libcloud Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The installation is done by installing the package **bareos-filedaemon-libcloud-python-plugin**.
+
+
+.. _LibcloudPlugin-configuration:
+
+Configuration of Libcloud Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bareosconfig
+   :caption: /etc/bareos/bareos-dir.d/fileset/PluginTest.conf
+
+   FileSet {
+     Name = "PluginTest"
+     Description = "Test the Plugin functionality with a Python Plugin."
+     Include {
+       Options {
+         signature = MD5
+       }
+       Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-libcloud:config_file=/etc/bareos/libcloud_config.ini:buckets_include=user_data:buckets_exclude=tmp"
+     }
+   }
+
+.. note::
+
+   Replace 'lib64' by 'lib' where necessary
+
+.. note::
+
+   The Plugin options string can currently not be split over multiple lines in the configuration file.
+
+The plugin options, separated by a colon:
+
+module_path
+   Path to the bareos modules
+
+module_name=bareos-fd-libcloud
+   This is the name of the plugin module
+
+config_file
+   The plugin needs additional parameters, this is the path to the config file (see below)
+
+buckets_include
+   Comma-separated list of buckets to include in backup
+
+buckets_exclude
+   Comma-separated list of buckets to exclude from backup
+
+
+And the job as follows:
+
+.. code-block:: bareosconfig
+   :caption: /etc/bareos/bareos-dir.d/job/testvm1_job.conf
+
+   Job {
+      Name = "testlibcloud_job"
+      JobDefs = "DefaultJob"
+      FileSet = "PluginTest"
+   }
+
+And the plugin config file as follows:
+
+.. code-block:: bareosconfig
+   :caption: /etc/bareos/libcloud_config.ini
+
+   [host]
+   hostname=127.0.0.1
+   port=9000
+   tls=false
+   provider=S3
+
+   [credentials]
+   username=admin
+   password=admin
+
+   [misc]
+   nb_worker=20
+   queue_size=1000
+   prefetch_size=250*1024*1024
+   temporary_download_directory=/dev/shm/bareos_libcloud
+
+.. note::
+
+   Do not use quotes in the above config file, it is processed by the Python ConfigParser module and the quotes would not be stripped from the string.
+
+Mandatory Plugin Options:
+
+These options in the config file are mandatory:
+
+hostname
+   The hostname/ip address of the storage backend server
+
+port
+   The portnumber for the backend server
+
+tls
+   Use Transport encryption, if supported by the backend
+
+provider
+   The provider string, currently only 'S3'
+
+username
+   The username to use for backups
+
+password
+   The password for the backup user
+
+nb_worker
+   The number of worker processes who can preload data from objects simultaneously
+   before they are given to the plugin process that does the backup
+
+queue_size
+   The maximum size in numbers of objects of the internal communication queue
+   between the processes
+
+prefetch_size
+   The maximum object size in bytes that should be preloaded from the workers; objects
+   larger than this size are loaded by the plugin process itself
+
+temporary_download_directory
+   The local path where the worker processes put their temporarily downloaded files to;
+   the filedaemon process needs read and write access to this path
+
+
+Optional Plugin Options:
+
+This option in the config file is optional:
+
+fail_on_download_error
+   When this option is enabled, any error during a file download will fail the backup job.
+   By default a warning will be issued and the next file will be backed up.
+
+job_message_after_each_number_of_objects
+   When running a backup, put a jobmessage after each count of "job_message_after_number_of_objects"
+   to the joblog or no message if parameter equals 0; default is 100.
+
+
+
+.. _PerconaXtrabackupPlugin:
+.. _backup-mysql-XtraBackup:
+
+Percona XtraBackup Plugin
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. index::
+   single: Plugin; MySQL Backup
+   single: Percona XtraBackup
+   single: XtraBackup
+   single: Plugin; MariaDB Backup
+
+This plugin uses Perconas XtraBackup tool, to make full and incremental backups of |mysql| databases.
+
+The key features of XtraBackup are:
+
+- Incremental backups
+- Backups that complete quickly and reliably
+- Uninterrupted transaction processing during backups
+- Savings on disk space and network bandwidth
+- Higher uptime due to faster restore time
+
+Incremental backups only work for INNODB tables, when using MYISAM, only full backups can be created.
+
+
+Prerequisites of percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Install the XtraBackup tool from Percona. Documentation and packages are available here: https://www.percona.com/software/mysql-database/percona-XtraBackup. The plugin was successfully tested with XtraBackup versions 2.3.5 and 2.4.4.
+
+For authentication the :file:`.mycnf` file of the user running the |fd| is used. Before proceeding, make sure that XtraBackup can connect to the database and create backups.
+
+
+Installation of percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Make sure you have met the prerequisites, after that install the package **bareos-filedaemon-percona_XtraBackup-python-plugin**.
+
+Configuration of percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Activate your plugin directory in the |fd| configuration. See :ref:`fdPlugins` for more about plugins in general.
+
+.. code-block:: bareosconfig
+   :caption: bareos-fd.d/client/myself.conf
+
+   Client {
+     ...
+     Plugin Directory = /usr/lib64/bareos/plugins
+     Plugin Names = "python"
+   }
+
+Now include the plugin as command-plugin in the Fileset resource:
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/fileset/mysql.conf
+
+   FileSet {
+       Name = "mysql"
+       Include  {
+           Options {
+               compression=GZIP
+               signature = MD5
+           }
+           File = /etc
+           #...
+           Plugin = "python"
+                    ":module_path=/usr/lib64/bareos/plugins"
+                    ":module_name=bareos-fd-percona-xtrabackup"
+                    ":mycnf=/root/.my.cnf"
+       }
+   }
+
+If used this way, the plugin will call XtraBackup to create a backup of all databases in the xbstream format. This stream will be processed by Bareos. If job level is incremental, XtraBackup will perform an incremental backup since the last backup – for InnoDB tables. If you have MyISAM tables, you will get a full backup of those.
+
+You can append options to the plugin call as key=value pairs, separated by ’:’. The following options are available:
+
+-  With :strong:`mycnf` you can make XtraBackup use a special mycnf-file with login credentials.
+
+-  :strong:`dumpbinary` lets you modify the default command XtraBackup.
+
+-  :strong:`dumpoptions` to modify the options for XtraBackup. Default setting is: :command:`--backup --datadir=/var/lib/mysql/ --stream=xbstream --extra-lsndir=/tmp/individual_tempdir`
+
+-  :strong:`restorecommand` to modify the command for restore. Default setting is: :command:`xbstream -x -C`
+
+-  :strong:`strictIncremental`: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) was not increased since last backup. This is to ensure, that eventual changes to MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full backup of these tables. If set to true, no data will be written into backup, if the LSN was not changed.
+
+Restore with percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client under the default restore location:
+
+:file:`/tmp/bareos-restores/_percona/`
+
+Each restore job gets an own subdirectory, because Percona expects an empty directory. In that subdirectory, a new directory is created for every backup job that was part of the Full-Incremental sequence.
+
+The naming scheme is: :file:`fromLSN_toLSN_jobid`
+
+Example:
+
+::
+
+   /tmp/bareos-restores/_percona/351/
+   |-- 00000000000000000000_00000000000010129154_0000000334
+   |-- 00000000000010129154_00000000000010142295_0000000335
+   |-- 00000000000010142295_00000000000010201260_0000000338
+
+This example shows the restore tree for restore job with ID 351. First subdirectory has all files from the first full backup job with ID 334. It starts at LSN 0 and goes until LSN 10129154.
+
+Next line is the first incremental job with ID 335, starting at LSN 10129154 until 10142295. The third line is the 2nd incremental job with ID 338.
+
+To further prepare the restored files, use the :command:`XtraBackup --prepare` command. Read https://www.percona.com/doc/percona-xtrabackup/2.4/backup_scenarios/incremental_backup.html for more information.
+
+
+Troubleshooting
+'''''''''''''''
+If things don't work as expected, make sure that
+
+- the |fd| (FD) works in general, so that you can make simple file backups and restores
+- the Bareos FD Python plugins work in general, try one of
+  the shipped simple sample plugins
+- Make sure *XtraBackup* works as user root, MySQL access needs to be
+  configured properly
+
+
+.. _plugin-postgresql-fd:
+
+PostgreSQL Plugin
+~~~~~~~~~~~~~~~~~
+
+.. index::
+   single: Plugin; PostgreSQL Backup
+
+The PostgreSQL plugin supports an online (Hot) backup of database files and database transaction logs (WAL) archiving. With online database and transaction logs the backup plugin can perform Point-In-Time-Restore up to a single selected transaction or date/time.
+
+This plugin uses the standard API |postgresql| backup  routines based on *pg_start_backup()* and *pg_stop_backup()*.
+
+The key features are:
+
+* Incremental backups
+* Point in time recovery
+* Backups that complete quickly and reliably
+* Uninterrupted transaction processing during backups
+* Savings on disk space and network bandwidth
+* Higher uptime due to faster restore time
+
+
+Concept
+^^^^^^^
+
+Please make sure to read the |postgresql| documentation about the backup and restore process: https://www.postgresql.org/docs/current/continuous-archiving.html
+
+This is just a short outline of the tasks performed by the plugin.
+
+#. Notify |postgresql| that we want to start backup the database files using the *SELECT pg_start_backup()* statement
+#. Backup database files
+#. Notify |postgresql| when done with file backups using the *SELECT pg_stop_backup()* statement
+#. |postgresql| will write *Write-Ahead-Logfiles* (WAL) into the WAL Archive directory. These transaction logs contain transactions done while the file backup proceeded
+#. Backup fresh created WAL files
+
+Incremental and Differential backups will only have to backup WAL files created since last reference backup.
+
+The restore basically works like this:
+
+#. Restore all files to the original |postgresql| location
+#. Configure |postgresql| for the recovery (see below)
+#. Start |postgresql|
+#. |postgresql| will restore the latest possible consistent point in time. You can manage to restore to any other point in in time available in the WAL files, please refer to the |postgresql| documentation for more details.
+
+
+Prerequisites for the PostgreSQL Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This plugin is a Bareos Python plugin.
+It requires |postgresql| >= 9 and the Python module **pg8000** to be installed.
+
+Since :sinceVersion:`21: PostgreSQL Plugin` the plugin was changed to the Python module **pg8000** instead of **psycopg2** and using Python >= 3 is mandatory. The minimum required version of **pg8000** is 1.16. If a distribution provided package exists and is the same or newer version, it can be used. Otherwise it must be installed using the command :command:`pip3 install pg8000`.
+
+
+
+The plugin must be installed on the same host where the |postgresql| database runs.
+
+**You have to enable PostgreSQL WAL-Archiving** - the process and the plugin depend on it.
+
+As a minimum this requires that you create an WAL archive directory
+and matching settings in your |postgresql| configuration file **postgresql.conf**.
+In our examples we assume the WAL archive directory as :file:`/var/lib/pgsql/wal_archive/`.
+
+.. code-block:: cfg
+   :caption: postgresql.conf
+
+   ...
+   # wal_level default is replica
+   wal_level = replica
+   archive_mode = on
+   archive_command = 'test ! -f /var/lib/pgsql/wal_archive/%f && cp %p /var/lib/pgsql/wal_archive/%f'
+   ...
+
+Please refer to the |postgresql| documentation for details.
+
+.. note::
+
+   While the PostgreSQL plugin backups only the required files from the WAL archive directory,
+   old files are not removed automatically.
+
+
+Installation of the PostgreSQL Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Make sure you have met the prerequisites, after that install the package **bareos-filedaemon-postgres-python-plugin**.
+
+
+Configuration of the PostgreSQL Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Activate your plugin directory in the |fd| configuration. See :ref:`fdPlugins` for more about plugins in general.
+
+.. code-block:: bareosconfig
+   :caption: bareos-fd.d/client/myself.conf
+
+   Client {
+     ...
+     Plugin Directory = /usr/lib64/bareos/plugins
+     Plugin Names = "python3"
+   }
+
+Now include the plugin as command-plugin in the fileset resource and define a job using this fileset:
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/fileset/postgres.conf
+
+   FileSet {
+       Name = "postgres"
+       Include  {
+           Options {
+               compression=GZIP
+               signature = MD5
+           }
+           Plugin = "python"
+                    ":module_path=/usr/lib64/bareos/plugins"
+                    ":module_name=bareos-fd-postgres"
+                    ":postgresDataDir=/var/lib/pgsql/data"
+                    ":walArchive=/var/lib/pgsql/wal_archive/"
+       }
+   }
+
+
+
+You can append options to the plugin call as key=value pairs, separated by ``:``. The following options are available:
+
+postgresDataDir
+   the Postgres data directory. Default: :file:`/var/lib/pgsql/data`
+
+walArchive
+   directory where Postgres archives the WAL files as defined in your :file:`postgresql.conf` with the *archive_command* directive. This is a **mandatory** option, there is no default set.
+
+dbuser
+   with this user the plugin will try to connect to the database. Default: *root*
+
+dbname
+   there needs to be a named database for the connection. Default: *postgres*
+
+dbHost
+   useful, if socket is not in default location. Specify socket-directory with a leading / here
+
+ignoreSubdirs
+   a list of comma separated directories below the *postgresDataDir*, that will not be backed up. Default: *pg_wal,pg_log,pg_xlog*
+
+switchWal
+   If set to *true* (default), the plugin will let Postgres write a new wal file, if the current Log Sequence Number (LSN) is greater than the LSN from the previous job to make sure changes will go into the backup. Default: *true*
+
+switchWalTimeout
+   Timeout in seconds to wait for WAL archiving after WAL switch, default 60 seconds.
+
+
+
+Restore with the PostgreSQL Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client under the default restore location according to the options set:
+
+-   :file:`<restore prefix>/<postgresDataDir>/`
+-   :file:`<restore prefix>/<walArchive>/`
+
+This example describes how to restore to the latest possible consistent point in time. You can manage to restore to any other point in in time available in the WAL files, please refer to the |postgresql| documentation for more details.
+
+PostgreSQL >= 12
+''''''''''''''''
+
+Beginning with |postgresql| >= 12 the configuration must be done in your |postgresql| configuration file :file:`postgresql.conf`:
+
+.. code-block:: cfg
+   :caption: postgresql.conf
+
+   ...
+   restore_command = 'cp /var/lib/pgsql/wal_archive/%f %p'
+   ...
+
+Additionally a (empty) file named :file:`recovery.signal` must be created in your |postgresql| datadir.
+
+
+PostgreSQL < 12
+'''''''''''''''
+
+For |postgresql| < 12 you need to place a minimal :file:`recovery.conf` in your |postgresql| datadir.
+
+Example:
+
+.. code-block:: cfg
+   :caption: recovery.conf
+
+   restore_command = 'cp /var/lib/pgsql/wal_archive/%f %p'
+
+
+Where :file:`/var/lib/pgsql/wal_archive/` is the *walArchive* directory.
+
+
+Initiate the Recovery Process
+'''''''''''''''''''''''''''''
+
+Make sure that the user **postgres** is allowed to rename the recovery marker file (:file:`recovery.signal` or :file:`recovery.conf`),
+as the file will be renamed during the recovery process.
+You might have to adapt your SELINUX configuration for this.
+
+Starting the |postgresql| server shall now initiate the recovery process.
+
+
+Troubleshooting the PostgreSQL Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If things don't work as expected, make sure that
+
+- the |fd| (FD) works in general, so that you can make simple file backups and restores
+- the Bareos FD Python plugins work in general, try one of
+  the shipped simple sample plugins
+- check your Postgres data directory for a file named backup_label. If it exists, another backup-process is already running. This file contains an entry like *LABEL: SomeLabel*. If the backup was triggered by this plugin, the label will look like: *LABEL: Bareos.pgplugin.jobid.<jobid>*.
+  You may want to stop it using the *SELECT pg_stop_backup()* statement.
+- make sure your *dbuser* can connect to the database *dbname* and is allowed to issue the following statements matching your |postgresql| version:
+
+  .. code-block:: sql
+
+     SELECT current_setting('server_version_num');
+     -- Postgres version >= 9
+     SELECT pg_start_backup();
+     SELECT pg_backup_start_time();
+     SELECT pg_stop_backup();
+     -- Postgres version >=10:
+     SELECT pg_current_wal_lsn();
+     SELECT pg_switch_wal();
+     -- Postgres version 9 only:
+     SELECT pg_current_xlog_location();
+     SELECT pg_switch_xlog();
+
+
+
+.. _sdPlugins:
+
+Storage Daemon Plugins
+----------------------
+
+.. _plugin-autoxflate-sd:
+
+autoxflate-sd
+~~~~~~~~~~~~~
+
+:index:`\ <single: Plugin; autoxflate-sd>`\
+
+This plugin is part of the **bareos-storage** package.
+
+The autoxflate-sd plugin can inflate (decompress) and deflate (compress) the data being written to or read from a device. It can also do both.
+
+.. image:: /include/images/autoxflate-functionblocks.*
+   :width: 80.0%
+
+
+
+
+Therefore the autoxflate plugin inserts a inflate and a deflate function block into the stream going to the device (called OUT) and coming from the device (called IN).
+
+Each stream passes first the inflate function block, then the deflate function block.
+
+The inflate blocks are controlled by the setting of the :config:option:`sd/device/AutoInflate`\  directive.
+
+The deflate blocks are controlled by the setting of the :config:option:`sd/device/AutoDeflate`\ , :config:option:`sd/device/AutoDeflateAlgorithm`\  and :config:option:`sd/device/AutoDeflateLevel`\  directives.
+
+The inflate blocks, if enabled, will uncompress data if it is compressed using the algorithm that was used during compression.
+
+The deflate blocks, if enabled, will compress uncompressed data with the algorithm and level configured in the according directives.
+
+The series connection of the inflate and deflate function blocks makes the plugin very flexible.
+
+Scenarios where this plugin can be used are for example:
+
+-  client computers with weak cpus can do backups without compression and let the sd do the compression when writing to disk
+
+-  compressed backups can be recompressed to a different compression format (e.g. gzip |rarr| lzo) using migration jobs
+
+-  client backups can be compressed with compression algorithms that the client itself does not support
+
+Multi-core cpus will be utilized when using parallel jobs as the compression is done in each jobs’ thread.
+
+When the autoxflate plugin is configured, it will write some status information into the joblog.
+
+.. code-block:: bareosmessage
+   :caption: used compression algorithm
+
+   autodeflation: compressor on device FileStorage is FZ4H
+
+.. code-block:: bareosmessage
+   :caption: configured inflation and deflation blocks
+
+   autoxflate-sd.c: FileStorage OUT:[SD->inflate=yes->deflate=yes->DEV] IN:[DEV->inflate=yes->deflate=yes->SD]
+
+.. code-block:: bareosmessage
+   :caption: overall deflation/inflation ratio
+
+   autoxflate-sd.c: deflate ratio: 50.59%
+
+Additional :config:option:`sd/storage/AutoXflateOnReplication`\  can be configured at the Storage resource.
+
+scsicrypto-sd
+~~~~~~~~~~~~~
+
+:index:`\ <single: Plugin; scsicrypto-sd>`\
+
+This plugin is part of the **bareos-storage-tape** package.
+
+General
+^^^^^^^
+
+.. _LTOHardwareEncryptionGeneral:
+
+LTO Hardware Encryption
+'''''''''''''''''''''''
+
+Modern tape-drives, for example LTO (from LTO4 onwards) support hardware encryption. There are several ways of using encryption with these drives. The following three types of key management are available for encrypting drives. The transmission of the keys to the volumes is accomplished by either of the three:
+
+-  A backup application that supports Application Managed Encryption (AME)
+
+-  A tape library that supports Library Managed Encryption (LME)
+
+-  A Key Management Appliance (KMA)
+
+We added support for Application Managed Encryption (AME) scheme, where on labeling a crypto key is generated for a volume and when the volume is mounted, the crypto key is loaded. When finally the volume is unmounted, the key is cleared from the memory of the Tape Drive using the SCSI SPOUT command set.
+
+If you have implemented Library Managed Encryption (LME) or a Key Management Appliance (KMA), there is no need to have support from Bareos on loading and clearing the encryption keys, as either the Library knows the per volume encryption keys itself, or it will ask the KMA for the encryption key when it needs it. For big installations you might consider using a KMA, but the Application Managed Encryption implemented in Bareos should also scale rather well and have a low overhead as the keys are
+only loaded and cleared when needed.
+
+The scsicrypto-sd plugin
+''''''''''''''''''''''''
+
+The :command:`scsicrypto-sd` hooks into the :strong:`unload`, :strong:`label read`, :strong:`label write` and :strong:`label verified` events for loading and clearing the key. It checks whether it it needs to clear the drive by either using an internal state (if it loaded a key before) or by checking the state of a special option that first issues an encrytion status query. If there is a connection to the director
+and the volume information is not available, it will ask the director for the data on the currently loaded volume. If no connection is available, a cache will be used which should contain the most recently mounted volumes. If an encryption key is available, it will be loaded into the drive’s memory.
+
+Changes in the director
+'''''''''''''''''''''''
+
+The director has been extended with additional code for handling hardware data encryption. The extra keyword **encrypt** on the label of a volume will force the director to generate a new semi-random passphrase for the volume, which will be stored in the database as part of the media information.
+
+A passphrase is always stored in the database base64-encoded. When a so called **Key Encryption Key** is set in the config of the director, the passphrase is first wrapped using RFC3394 key wrapping and then base64-encoded. By using key wrapping, the keys in the database are safe against people sniffing the info, as the data is still encrypted using the Key Encryption Key (which in essence is just an extra passphrase of the same length as the volume passphrases used).
+
+When the storage daemon needs to mount the volume, it will ask the director for the volume information and that protocol is extended with the exchange of the base64-wrapped encryption key (passphrase). The storage daemon provides an extra config option in which it records the Key Encryption Key of the particular director, and as such can unwrap the key sent into the original passphrase.
+
+As can be seen from the above info we don’t allow the user to enter a passphrase, but generate a semi-random passphrase using the openssl random functions (if available) and convert that into a readable ASCII stream of letters, numbers and most other characters, apart from the quotes and space etc. This will produce much stronger passphrases than when requesting the info from a user. As we store this information in the database, the user never has to enter these passphrases.
+
+The volume label is written in unencrypted form to the volume, so we can always recognize a Bareos volume. When the key is loaded onto the drive, we set the decryption mode to mixed, so we can read both unencrypted and encrypted data from the volume. When no key or the wrong key has been loaded, the drive will give an IO error when trying to read the volume. For disaster recovery you can store the Key Encryption Key and the content of the wrapped encryption keys somewhere safe and the
+:ref:`bscrypto <bscrypto>` tool together with the scsicrypto-sd plugin can be used to get access to your volumes, in case you ever lose your complete environment.
+
+If you don’t want to use the scsicrypto-sd plugin when doing DR and you are only reading one volume, you can also set the crypto key using the bscrypto tool. Because we use the mixed decryption mode, in which you can read both encrypted and unencrypted data from a volume, you can set the right encryption key before reading the volume label.
+
+If you need to read more than one volume, you better use the scsicrypto-sd plugin with tools like bscan/bextract, as the plugin will then auto-load the correct encryption key when it loads the volume, similiarly to what the storage daemon does when performing backups and restores.
+
+The volume label is unencrypted, so a volume can also be recognized by a non-encrypted installation, but it won’t be able to read the actual data from it. Using an encrypted volume label doesn’t add much security (there is no security-related info in the volume label anyhow) and it makes it harder to recognize either a labeled volume with encrypted data or an unlabeled new volume (both would return an IO-error on read of the label.)
+
+.. _configuration-1:
+
+Configuration of the scsicrypto-sd plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+SCSI crypto setup
+'''''''''''''''''
+
+The initial setup of SCSI crypto looks something like this:
+
+-  Generate a Key Encryption Key e.g.
+
+   .. code-block:: shell-session
+
+      bscrypto -g -
+
+For details see :ref:`bscrypto <bscrypto>`.
+
+Security Setup
+''''''''''''''
+
+Some security levels need to be increased for the storage daemon to be able to use the low level SCSI interface for setting and getting the encryption status on a tape device.
+
+The following additional security is needed for the following operating systems:
+
+Linux (SG_IO ioctl interface):
+
+
+The user running the storage daemon needs the following additional capabilities: :index:`\ <single: Platform; Linux; Privileges>`\
+
+-  :strong:`CAP_SYS_RAWIO` (see capabilities(7))
+
+   -  On older kernels you might need :strong:`CAP_SYS_ADMIN`. Try :strong:`CAP_SYS_RAWIO` first and if that doesn’t work try :strong:`CAP_SYS_ADMIN`
+
+-  If you are running the storage daemon as another user than root (which has the :strong:`CAP_SYS_RAWIO` capability), you need to add it to the current set of capabilities.
+
+-  If you are using systemd, you could add this additional capability to the CapabilityBoundingSet parameter.
+
+   -  For systemd add the following to the bareos-sd.service: :strong:`Capabilities=cap_sys_rawio+ep`
+
+You can also set up the extra capability on :command:`bscrypto` and :command:`bareos-sd` by running the following commands:
+
+.. code-block:: shell-session
+
+   setcap cap_sys_rawio=ep bscrypto
+   setcap cap_sys_rawio=ep bareos-sd
+
+Check the setting with
+
+.. code-block:: shell-session
+
+   getcap -v bscrypto
+   getcap -v bareos-sd
+
+:command:`getcap` and :command:`setcap` are part of libcap-progs.
+
+If :command:`bareos-sd` does not have the appropriate capabilities, all other tape operations may still work correctly, but you will get "Unable to perform SG\_IO ioctl" errors.
+
+Solaris (USCSI ioctl interface):
+
+
+The user running the storage daemon needs the following additional privileges: :index:`\ <single: Platform; Solaris; Privileges>`\
+
+-  :strong:`PRIV_SYS_DEVICES` (see privileges(5))
+
+If you are running the storage daemon as another user than root (which has the :strong:`PRIV_SYS_DEVICES` privilege), you need to add it to the current set of privileges. This can be set up by setting this either as a project for the user, or as a set of extra privileges in the SMF definition starting the storage daemon. The SMF setup is the cleanest one.
+
+For SMF make sure you have something like this in the instance block:
+
+.. code-block:: bareosconfig
+
+   <method_context working_directory=":default"> <method_credential user="bareos" group="bareos" privileges="basic,sys_devices"/> </method_context>
+
+Changes in bareos-sd configuration
+''''''''''''''''''''''''''''''''''
+
+-  Set the Key Encryption Key
+
+   -  :config:option:`sd/director/KeyEncryptionKey = passphrase`
+
+-  Enable the loading of storage daemon plugins
+
+   -  :config:option:`sd/storage/PluginDirectory = path_to_sd_plugins`
+
+-  Enable the SCSI encryption option
+
+   -  :config:option:`sd/device/DriveCryptoEnabled = yes`
+
+-  Enable this, if you want the plugin to probe the encryption status of the drive when it needs to clear a pending key
+
+   -  :config:option:`sd/device/QueryCryptoStatus = yes`
+
+Changes in bareos-dir configuration
+'''''''''''''''''''''''''''''''''''
+
+-  Set the Key Encryption Key
+
+   -  :config:option:`dir/director/KeyEncryptionKey = passphrase`
+
 Testing
 ^^^^^^^
 
