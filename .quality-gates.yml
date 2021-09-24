@@ -7,7 +7,7 @@ coverage:
     unstable: 12
 
 docs:
-  warnings_unhealthy: 80
+  warnings_unhealthy: 90
   warnings_healthy: 40
 
 default:
