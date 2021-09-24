@@ -26,7 +26,7 @@ Bareos-19.2
 .. _bareos-19.2.11:
 
 Bareos-19.2.11
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 General Information
 ^^^^^^^^^^^^^^^^^^^
@@ -63,7 +63,7 @@ Other Improvements
 .. _bareos-19.2.10:
 
 Bareos-19.2.10
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 General Information
 ^^^^^^^^^^^^^^^^^^^
