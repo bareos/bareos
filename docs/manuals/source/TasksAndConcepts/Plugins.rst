@@ -1068,8 +1068,8 @@ It is included in Bareos since :sinceVersion:`19: oVirt Plugin`.
 
 .. _oVirtPlugin-status:
 
-Status
-^^^^^^
+Status of oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^
 
 The Plugin can currently only take full backups of VM disks.
 
@@ -1099,8 +1099,8 @@ was adapted to the modernized Bareos Python plugin API.
 
 .. _oVirtPlugin-requirements:
 
-Requirements
-^^^^^^^^^^^^
+Requirements of oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The plugin is currently only available for Red Hat Enterprise Linux and CentOS 7 and 8. It requires the
 Python oVirt Engine SDK version 4, Red Hat Subscriptions customers can find the package
@@ -1134,8 +1134,8 @@ QEMU GA provides VSS support thus live snapshots attempt to quiesce whenever pos
 
 .. _oVirtPlugin-installation:
 
-Installation
-^^^^^^^^^^^^
+Installation of oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The installation is done by installing the package **bareos-filedaemon-ovirt-python-plugin**:
 
@@ -1146,8 +1146,8 @@ The installation is done by installing the package **bareos-filedaemon-ovirt-pyt
 
 .. _oVirtPlugin-configuration:
 
-Configuration
-^^^^^^^^^^^^^
+Configuration of oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As the Plugin needs access to the oVirt API, an account with appropriate privileges must be used.
 The default **admin@internal** user works, as it has all privileges. Using an account with
@@ -1330,8 +1330,8 @@ ovirt_sdk_debug_log
 
 .. _oVirtPlugin-backup:
 
-Backup
-^^^^^^
+Backup with oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 To manually run a backup, use the following command in |bconsole|:
 
@@ -1364,8 +1364,8 @@ To manually run a backup, use the following command in |bconsole|:
 
 .. _oVirtPlugin-restore:
 
-Restore
-^^^^^^^
+Restore with oVirt Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 An example restore dialogue could look like this:
 
@@ -1534,8 +1534,8 @@ The Libcloud plugin can be used to backup objects from cloud storages via the *S
 
 .. _LibcloudPlugin-status:
 
-Status
-^^^^^^
+Status of Libcloud Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The status of the Libcloud plugin is **experimental**. It can automatically recurse nested Buckets and backup all included Objects
 on a S3 storage. However, **restore of objects cannot be done directly back to the storage**. A restore will write these objects
@@ -1543,8 +1543,8 @@ on a S3 storage. However, **restore of objects cannot be done directly back to t
 
 .. _LibcloudPlugin-requirements:
 
-Requirements
-^^^^^^^^^^^^
+Requirements of Libcloud Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To use the Apache Libcloud backend you need to have the Libcloud module available for Python 2.
 
@@ -1552,16 +1552,16 @@ The plugin needs several options to run properly, the plugin options in the file
 
 .. _LibcloudPlugin-installation:
 
-Installation
-^^^^^^^^^^^^
+Installation of Libcloud Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The installation is done by installing the package **bareos-filedaemon-libcloud-python-plugin**.
 
 
 .. _LibcloudPlugin-configuration:
 
-Configuration
-^^^^^^^^^^^^^
+Configuration of Libcloud Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bareosconfig
    :caption: /etc/bareos/bareos-dir.d/fileset/PluginTest.conf
@@ -1717,21 +1717,21 @@ The key features of XtraBackup are:
 Incremental backups only work for INNODB tables, when using MYISAM, only full backups can be created.
 
 
-Prerequisites
-^^^^^^^^^^^^^
+Prerequisites of percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Install the XtraBackup tool from Percona. Documentation and packages are available here: https://www.percona.com/software/mysql-database/percona-XtraBackup. The plugin was successfully tested with XtraBackup versions 2.3.5 and 2.4.4.
 
 For authentication the :file:`.mycnf` file of the user running the |fd| is used. Before proceeding, make sure that XtraBackup can connect to the database and create backups.
 
 
-Installation
-^^^^^^^^^^^^
+Installation of percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Make sure you have met the prerequisites, after that install the package **bareos-filedaemon-percona_XtraBackup-python-plugin**.
 
-Configuration
-^^^^^^^^^^^^^
+Configuration of percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Activate your plugin directory in the |fd| configuration. See :ref:`fdPlugins` for more about plugins in general.
 
@@ -1779,8 +1779,8 @@ You can append options to the plugin call as key=value pairs, separated by â€™:â
 
 -  :strong:`strictIncremental`: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) was not increased since last backup. This is to ensure, that eventual changes to MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full backup of these tables. If set to true, no data will be written into backup, if the LSN was not changed.
 
-Restore
-^^^^^^^
+Restore with percona XtraBackup Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client under the default restore location:
 
@@ -1862,8 +1862,8 @@ The restore basically works like this:
 #. |postgresql| will restore the latest possible consistent point in time. You can manage to restore to any other point in in time available in the WAL files, please refer to the |postgresql| documentation for more details.
 
 
-Prerequisites
-^^^^^^^^^^^^^
+Prerequisites for the PostgreSQL Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This plugin is a Bareos Python plugin.
 It requires |postgresql| >= 9, Python 2 and the Python module **psycopg2**.
@@ -1895,14 +1895,14 @@ Please refer to the |postgresql| documentation for details.
    old files are not removed automatically.
 
 
-Installation
-^^^^^^^^^^^^
+Installation of the PostgreSQL Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Make sure you have met the prerequisites, after that install the package **bareos-filedaemon-postgres-python-plugin**.
 
 
-Configuration
-^^^^^^^^^^^^^
+Configuration of the PostgreSQL Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Activate your plugin directory in the |fd| configuration. See :ref:`fdPlugins` for more about plugins in general.
 
@@ -1962,8 +1962,9 @@ switchWal
 
 
 
-Restore
-^^^^^^^
+
+Restore with the PostgreSQL Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client under the default restore location according to the options set:
 
@@ -2013,8 +2014,8 @@ You might have to adapt your SELINUX configuration for this.
 Starting the |postgresql| server shall now initiate the recovery process.
 
 
-Troubleshooting
-^^^^^^^^^^^^^^^
+Troubleshooting the PostgreSQL Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If things don't work as expected, make sure that
 
@@ -2162,8 +2163,8 @@ The volume label is unencrypted, so a volume can also be recognized by a non-enc
 
 .. _configuration-1:
 
-Configuration
-^^^^^^^^^^^^^
+Configuration of the scsicrypto-sd plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 SCSI crypto setup
 '''''''''''''''''
