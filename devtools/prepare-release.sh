@@ -10,7 +10,7 @@ version_regexp='([[:digit:]]+\.){2}[[:digit:]]+(~[[:alnum:]]+)?'
 # "18.2.7"
 stable_version_regexp='([[:digit:]]+\.){2}[[:digit:]]+'
 
-topdir="$(dirname "$0")"
+topdir="$(realpath "$(dirname "$0")/..")"
 prog="$(basename "$0")"
 
 git="${GIT:-$(type -p git)}"
@@ -118,6 +118,7 @@ fi
 
 release_tag="Release/${version/\~/-}"
 release_ts="$(date --utc --iso-8601=seconds | sed --expression='s/T/ /;s/+.*$//')"
+release_date="$(sed --expression='s/ .*$//' <<< "$release_ts")"
 release_message="Release $version"
 
 # Only if we are preparing a stable release
@@ -197,10 +198,16 @@ if ! confirm "Should we proceed with the above changes applied?"; then
   exit 0
 fi
 
+if [ "$wip_enable" -eq 1 ]; then
+  ./devtools/new-changelog-release.sh "$version" "$release_date"
+  ./devtools/update-changelog-links.sh
+fi
+
 "$git" add \
   --no-all \
   -- \
-  "$version_h"
+  "$version_h" \
+  ./CHANGELOG.md
 
 "$git" commit \
   --quiet \
@@ -208,12 +215,20 @@ fi
   --date="$release_ts" \
   -m "$release_message" \
   -- \
-  "$version_h"
+  "$version_h" \
+  ./CHANGELOG.md
 
 release_commit="$(git rev-parse HEAD)"
 log_info "commit for release tag will be $release_commit"
 
 if [ "$wip_enable" -eq 1 ]; then
+  ./devtools/new-changelog-release.sh unreleased
+  ./devtools/update-changelog-links.sh
+  "$git" add \
+    --no-all \
+    -- \
+    ./CHANGELOG.md
+
   "$git" commit \
     --quiet \
     --allow-empty \
