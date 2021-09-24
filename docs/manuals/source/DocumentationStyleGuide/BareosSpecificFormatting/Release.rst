@@ -101,7 +101,7 @@ This refers to :ref:`bareos-17.2.7`\ .
    --------------------------------
 
    TODO: required?
-   
+
   If you want to display the release notes of a bareos unstable release, the following formatting should be used:
 
 .. \newcommand{\releasenoteUnstable}[2]{
