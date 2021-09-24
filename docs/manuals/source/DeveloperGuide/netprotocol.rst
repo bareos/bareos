@@ -288,38 +288,38 @@ Detailed Diagram
 Restore of a Single File
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Overview
-^^^^^^^^
+Overview single file restore
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. uml:: netprotocol/restore_of_one_file_overview.puml
 
-Detailed Diagram
-^^^^^^^^^^^^^^^^
+Detailed Diagram single file restore
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. uml:: netprotocol/restore_of_one_file.puml
 
 Migration of a Single Volume
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Overview
-^^^^^^^^
+Overview single volume migration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. uml:: netprotocol/migration_of_one_volume_overview.puml
 
-Detailed Diagram
-^^^^^^^^^^^^^^^^
+Detailed Diagram single volume migration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. uml:: netprotocol/migration_of_one_volume.puml
 
 Verify of a Single File (Mode: Volume to Catalog)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Overview
-^^^^^^^^
+Overview single file verify
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. uml:: netprotocol/verify_one_file_volume_to_catalog_overview.puml
 
-Detailed Diagram
-^^^^^^^^^^^^^^^^
+Detailed Diagram single file verify
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. uml:: netprotocol/verify_one_file_volume_to_catalog.puml
