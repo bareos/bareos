@@ -275,7 +275,6 @@ extern t_SHGetFolderPath p_SHGetFolderPath;
 typedef INT(WSAAPI* t_InetPton)(INT Family,
                                 PCTSTR pszAddrString,
                                 PVOID pAddrBuf);
-extern t_InetPton p_InetPton;
 
 #endif
 #endif  // BAREOS_WIN32_INCLUDE_WINAPI_H_

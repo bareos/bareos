@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,6 +66,7 @@ static void InitGlobals()
   console::director_resource = nullptr;
   console::console_resource = nullptr;
   console::me = nullptr;
+  InitMsg(NULL, NULL);
 }
 
 typedef std::unique_ptr<ConfigurationParser> PConfigParser;
@@ -154,7 +155,7 @@ static void CheckEncryption(const BareosSocket* UA_sock, TlsPolicy tls_policy)
 
 static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
 {
-  debug_level = 10; // set debug level high enough so we can see error messages
+  debug_level = 10;  // set debug level high enough so we can see error messages
   InitSignalHandler();
   InitGlobals();
 

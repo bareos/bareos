@@ -320,6 +320,55 @@ int GetFirstPortHostOrder(dlist<IPADDR>* addrs)
   }
 }
 
+bool RemoveDefaultAddresses(dlist<IPADDR>* addrs,
+                            IPADDR::i_type type,
+                            char* buf,
+                            int buflen)
+{
+  IPADDR* iaddr;
+  IPADDR* default_address = nullptr;
+  foreach_dlist (iaddr, addrs) {
+    if (iaddr->GetType() == IPADDR::R_DEFAULT) {
+      default_address = iaddr;
+      if (default_address) {
+        addrs->remove(default_address);
+        delete default_address;
+      }
+    } else if (iaddr->GetType() != type) {
+      Bsnprintf(buf, buflen,
+                _("the old style addresses cannot be mixed with new style"));
+      return false;
+    }
+  }
+  return true;
+}
+
+bool SetupPort(unsigned short& port,
+               int defaultport,
+               const char* port_str,
+               char* buf,
+               int buflen)
+{
+  if (!port_str || port_str[0] == '\0') {
+    port = defaultport;
+    return true;
+  } else {
+    int pnum = atol(port_str);
+    if (0 < pnum && pnum < 0xffff) {
+      port = htons(pnum);
+      return true;
+    } else {
+      struct servent* s = getservbyname(port_str, "tcp");
+      if (s) {
+        port = s->s_port;
+        return true;
+      } else {
+        Bsnprintf(buf, buflen, _("can't resolve service(%s)"), port_str);
+        return false;
+      }
+    }
+  }
+}
 
 int AddAddress(dlist<IPADDR>** out,
                IPADDR::i_type type,
@@ -346,39 +395,12 @@ int AddAddress(dlist<IPADDR>** out,
   type = (type == IPADDR::R_SINGLE_PORT || type == IPADDR::R_SINGLE_ADDR)
              ? IPADDR::R_SINGLE
              : type;
+
   if (type != IPADDR::R_DEFAULT) {
-    IPADDR* def = 0;
-    foreach_dlist (iaddr, addrs) {
-      if (iaddr->GetType() == IPADDR::R_DEFAULT) {
-        def = iaddr;
-      } else if (iaddr->GetType() != type) {
-        Bsnprintf(buf, buflen,
-                  _("the old style addresses cannot be mixed with new style"));
-        return 0;
-      }
-    }
-    if (def) {
-      addrs->remove(def);
-      delete def;
-    }
+    if (!RemoveDefaultAddresses(addrs, type, buf, buflen)) { return 0; }
   }
 
-  if (!port_str || port_str[0] == '\0') {
-    port = defaultport;
-  } else {
-    int pnum = atol(port_str);
-    if (0 < pnum && pnum < 0xffff) {
-      port = htons(pnum);
-    } else {
-      struct servent* s = getservbyname(port_str, "tcp");
-      if (s) {
-        port = s->s_port;
-      } else {
-        Bsnprintf(buf, buflen, _("can't resolve service(%s)"), port_str);
-        return 0;
-      }
-    }
-  }
+  if (!SetupPort(port, defaultport, port_str, buf, buflen)) { return 0; }
 
   const char* myerrstr;
   hostaddrs = BnetHost2IpAddrs(hostname_str, family, &myerrstr);
@@ -388,7 +410,7 @@ int AddAddress(dlist<IPADDR>** out,
     return 0;
   }
 
-  if (intype == IPADDR::R_SINGLE_PORT || intype == IPADDR::R_SINGLE_ADDR) {
+  if (intype == IPADDR::R_SINGLE_PORT) {
     IPADDR* addr;
     if (addrs->size()) {
       addr = (IPADDR*)addrs->first();
@@ -399,10 +421,24 @@ int AddAddress(dlist<IPADDR>** out,
       addr->SetAddrAny();
       addrs->append(addr);
     }
-    if (intype == IPADDR::R_SINGLE_PORT) { addr->SetPortNet(port); }
-    if (intype == IPADDR::R_SINGLE_ADDR) {
-      addr->CopyAddr((IPADDR*)(hostaddrs->first()));
+    addr->SetPortNet(port);
+
+  } else if (intype == IPADDR::R_SINGLE_ADDR) {
+    IPADDR* addr = nullptr;
+    int addr_port = defaultport;
+
+    if (addrs->size()) {
+      addr = (IPADDR*)addrs->first();
+      addr_port = addr->GetPortNetOrder();
+      EmptyAddressList(addrs);
     }
+
+    addr = new IPADDR(family);
+    addr->SetType(type);
+    addr->SetPortNet(addr_port);
+    addr->CopyAddr((IPADDR*)(hostaddrs->first()));
+    addrs->append(addr);
+
   } else {
     foreach_dlist (iaddr, hostaddrs) {
       IPADDR* clone;
@@ -427,9 +463,20 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
   char buf[1024];
   unsigned short sport = str_to_int32(port);
 
-  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), AF_INET, 0, 0, buf,
+  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), 0, 0, 0, buf,
                   sizeof(buf))) {
     Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
+  }
+}
+
+void EmptyAddressList(dlist<IPADDR>* addrs)
+{
+  IPADDR* iaddr;
+  foreach_dlist (iaddr, addrs) {
+    if (iaddr) {
+      addrs->remove(iaddr);
+      delete iaddr;
+    }
   }
 }
 

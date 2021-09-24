@@ -53,6 +53,7 @@
 #  include "lib/address_conf.h"
 #  include "lib/attribs.h"
 #  include "lib/berrno.h"
+#  include "lib/bnet_server_tcp.h"
 #  include "lib/edit.h"
 #  include "lib/bpoll.h"
 #  include "lib/parse_conf.h"
@@ -1169,14 +1170,7 @@ extern "C" void* ndmp_thread_server(void* arg)
   ntsa = (struct ndmp_thread_server_args*)arg;
   if (!ntsa) { return NULL; }
 
-  // Remove any duplicate addresses.
-  for (ipaddr = (IPADDR*)ntsa->addr_list->first(); ipaddr;
-       ipaddr = (IPADDR*)ntsa->addr_list->next(ipaddr)) {
-    for (next = (IPADDR*)ntsa->addr_list->next(ipaddr); next;
-         next = (IPADDR*)ntsa->addr_list->next(next)) {
-      if (IsSameIpAddress(ipaddr, next)) { ntsa->addr_list->remove(next); }
-    }
-  }
+  RemoveDuplicateAddresses(ntsa->addr_list);
 
   char allbuf[256 * 10];
   Dmsg1(100, "Addresses %s\n",
@@ -1190,45 +1184,20 @@ extern "C" void* ndmp_thread_server(void* arg)
     fd_ptr = (s_sockfd*)alloca(sizeof(s_sockfd));
     fd_ptr->port = ipaddr->GetPortNetOrder();
 
-    // Open a TCP socket
-    for (tlog = 60;
-         (fd_ptr->fd = socket(ipaddr->GetFamily(), SOCK_STREAM, 0)) < 0;
-         tlog -= 10) {
-      if (tlog <= 0) {
-        BErrNo be;
-        char curbuf[256];
-        Emsg3(M_ABORT, 0,
-              _("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
-              be.bstrerror(), ipaddr->build_address_str(curbuf, sizeof(curbuf)),
-              BuildAddressesString(ntsa->addr_list, allbuf, sizeof(allbuf)));
-      }
-      Bmicrosleep(10, 0);
-    }
+    fd_ptr->fd = OpenSocketAndBind(ipaddr, ntsa->addr_list, fd_ptr->port);
 
-    // Reuse old sockets
-    if (setsockopt(fd_ptr->fd, SOL_SOCKET, SO_REUSEADDR, (sockopt_val_t)&turnon,
-                   sizeof(turnon))
-        < 0) {
+    if (fd_ptr->fd < 0) {
       BErrNo be;
-      Emsg1(M_WARNING, 0, _("Cannot set SO_REUSEADDR on socket: %s\n"),
+      char tmp[1024];
+#  ifdef HAVE_WIN32
+      Emsg2(M_ERROR, 0, _("Cannot bind address %s port %d: ERR=%u.\n"),
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(fd_ptr->port),
+            WSAGetLastError());
+#  else
+      Emsg2(M_ERROR, 0, _("Cannot bind address %s port %d: ERR=%s.\n"),
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(fd_ptr->port),
             be.bstrerror());
-    }
-
-    tmax = 30 * (60 / 5); /* wait 30 minutes max */
-    for (tlog = 0;
-         bind(fd_ptr->fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0;
-         tlog -= 5) {
-      BErrNo be;
-      if (tlog <= 0) {
-        tlog = 2 * 60; /* Complain every 2 minutes */
-        Emsg2(M_WARNING, 0, _("Cannot bind port %d: ERR=%s: Retrying ...\n"),
-              ntohs(fd_ptr->port), be.bstrerror());
-      }
-      Bmicrosleep(5, 0);
-      if (--tmax <= 0) {
-        Emsg2(M_ABORT, 0, _("Cannot bind port %d: ERR=%s.\n"),
-              ntohs(fd_ptr->port), be.bstrerror());
-      }
+#  endif
     }
     listen(fd_ptr->fd, me->MaxConnections); /* tell system we are ready */
     sockfds.push_back(fd_ptr);

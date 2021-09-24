@@ -186,4 +186,7 @@
 /* Define to 1 if you have the `glob' function. */
 #define HAVE_GLOB 1
 
+/* Define to 1 if you have the `inet_ntop' function. */
+#define HAVE_INET_NTOP 1
+
 #endif  // BAREOS_WIN32_COMPAT_INCLUDE_MINGWCONFIG_H_

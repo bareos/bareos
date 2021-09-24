@@ -1315,9 +1315,11 @@ void ConfigurationParser::StoreAddressesAddress(LEX* lc,
         || token == BCT_IDENTIFIER)) {
     scan_err1(lc, _("Expected an IP number or a hostname, got: %s"), lc->str);
   }
+
   if (pass == 1
       && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                     IPADDR::R_SINGLE_ADDR, htons(port), AF_INET, lc->str, 0,
+                     IPADDR::R_SINGLE_ADDR, htons(port),
+                     strchr(lc->str, ':') ? AF_INET6 : AF_INET, lc->str, 0,
                      errmsg, sizeof(errmsg))) {
     scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
   }
@@ -1337,11 +1339,38 @@ void ConfigurationParser::StoreAddressesPort(LEX* lc,
         || token == BCT_IDENTIFIER)) {
     scan_err1(lc, _("Expected a port number or string, got: %s"), lc->str);
   }
-  if (pass == 1
-      && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                     IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
-                     errmsg, sizeof(errmsg))) {
-    scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+
+  bool has_address = false;
+  IPADDR* iaddr;
+  dlist<IPADDR>* addrs
+      = (dlist<IPADDR>*)(*(GetItemVariablePointer<dlist<IPADDR>**>(*item)));
+  foreach_dlist (iaddr, addrs) {
+    if (iaddr->GetType() == IPADDR::R_SINGLE) { has_address = true; }
+  }
+
+  if (has_address) {
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
+                       errmsg, sizeof(errmsg))) {
+      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+    }
+  } else {
+#ifdef HAVE_IPV6
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_SINGLE, htons(port), 0, 0, lc->str, errmsg,
+                       sizeof(errmsg))) {
+      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+    }
+#else
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
+                       errmsg, sizeof(errmsg))) {
+      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+    }
+#endif
   }
 }
 

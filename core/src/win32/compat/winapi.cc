@@ -105,7 +105,6 @@ t_CreateProcessW p_CreateProcessW = NULL;
 t_GetLogicalDriveStringsA p_GetLogicalDriveStringsA = NULL;
 t_GetLogicalDriveStringsW p_GetLogicalDriveStringsW = NULL;
 
-t_InetPton p_InetPton = NULL;
 
 void InitWinAPIWrapper()
 {
@@ -258,9 +257,6 @@ void InitWinAPIWrapper()
           = (t_SHGetFolderPath)GetProcAddress(hLib, "SHGetFolderPathA");
     }
   }
-
-  hLib = LoadLibraryA("WS2_32.DLL");
-  if (hLib) { p_InetPton = (t_InetPton)GetProcAddress(hLib, "InetPtonA"); }
 
   atexit(Win32TSDCleanup);
 }

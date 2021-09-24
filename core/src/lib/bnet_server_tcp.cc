@@ -122,7 +122,7 @@ class BNetThreadServerCleanupObject {
   ThreadList& thread_list_;
 };
 
-static void RemoveDuplicateAddresses(dlist<IPADDR>* addr_list)
+void RemoveDuplicateAddresses(dlist<IPADDR>* addr_list)
 {
   IPADDR* ipaddr = nullptr;
   IPADDR* next = nullptr;
@@ -153,9 +153,9 @@ static void LogAllAddresses(dlist<IPADDR>* addr_list)
         BuildAddressesString(addr_list, buf.data(), buf.size()));
 }
 
-static int OpenSocketAndBind(IPADDR* ipaddr,
-                             dlist<IPADDR>* addr_list,
-                             uint16_t port_number)
+int OpenSocketAndBind(IPADDR* ipaddr,
+                      dlist<IPADDR>* addr_list,
+                      uint16_t port_number)
 {
   int fd = -1;
   int tries = 0;
@@ -190,14 +190,39 @@ static int OpenSocketAndBind(IPADDR* ipaddr,
     return -2;
   }
 
+  if (ipaddr->GetFamily() == AF_INET6) {
+    int ipv6only_option_value = 1;
+    socklen_t option_len = sizeof(int);
+
+    if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
+                   (sockopt_val_t)&ipv6only_option_value, option_len)
+        < 0) {
+      BErrNo be;
+      Emsg1(M_WARNING, 0, _("Cannot set IPV6_V6ONLY on socket: %s\n"),
+            be.bstrerror());
+
+      return -2;
+    }
+  }
+
   tries = 0;
 
   do {
     ++tries;
     if (bind(fd, ipaddr->get_sockaddr(), ipaddr->GetSockaddrLen()) < 0) {
       BErrNo be;
-      Emsg2(M_WARNING, 0, _("Cannot bind port %d: ERR=%s: Retrying ...\n"),
-            ntohs(port_number), be.bstrerror());
+      char tmp[1024];
+#ifdef HAVE_WIN32
+      Emsg2(M_WARNING, 0,
+            _("Cannot bind address %s port %d ERR=%u. Retrying...\n"),
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(port_number),
+            WSAGetLastError());
+#else
+      Emsg2(M_WARNING, 0,
+            _("Cannot bind address %s port %d ERR=%s. Retrying...\n"),
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(port_number),
+            be.bstrerror());
+#endif
       Bmicrosleep(5, 0);
     } else {
       // success
@@ -251,8 +276,16 @@ void BnetThreadServerTcp(
 
     if (fd_ptr->fd < 0) {
       BErrNo be;
-      Emsg2(M_ERROR, 0, _("Cannot bind port %d: ERR=%s.\n"),
-            ntohs(fd_ptr->port), be.bstrerror());
+      char tmp[1024];
+#ifdef HAVE_WIN32
+      Emsg2(M_ERROR, 0, _("Cannot bind address %s port %d: ERR=%u.\n"),
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(fd_ptr->port),
+            WSAGetLastError());
+#else
+      Emsg2(M_ERROR, 0, _("Cannot bind address %s port %d: ERR=%s.\n"),
+            ipaddr->GetAddress(tmp, sizeof(tmp) - 1), ntohs(fd_ptr->port),
+            be.bstrerror());
+#endif
       if (server_state) { server_state->store(BnetServerState::kError); }
       return;
     }
