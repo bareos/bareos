@@ -632,8 +632,8 @@ The :file:`/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/
 
    scp /etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf root@client2.example.com:/etc/bareos/bareos-fd.d/director/
 
-Manual configuration
-^^^^^^^^^^^^^^^^^^^^
+Manual configuration of client
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Alternatively you can configure your resources manually. On the |dir| create the file
 

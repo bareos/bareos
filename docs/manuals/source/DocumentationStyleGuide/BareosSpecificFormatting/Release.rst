@@ -55,32 +55,6 @@ Note
 Until defined otherwise, you should use ``:sinceVersion:`` instead of these.
 
 
-Release Notes
--------------
-
-If you want to display the release notes of a Bareos stable release, use the following template:
-
-.. \newcommand{\releasenote}[2]{
-    \subsection*{bareos-#1}
-    \addcontentsline{toc}{subsection}{\protect\numberline{}#1}%
-    \label{bareos-#1}
-    \index[general]{bareos-#1!Release Notes}%
-    #2
-   }
-
-.. literalinclude:: /DocumentationStyleGuide/example/releasenotes-template.rst.inc
-
-Example:
-
-.. literalinclude:: /DocumentationStyleGuide/example/releasenotes-17.2.7.rst.inc
-
-
-See the output at :ref:`bareos-17.2.7`\ .
-
-.. COMMENT include:: /DocumentationStyleGuide/example/releasenotes.rst.inc
-
-
-
 Reference to a Release
 ----------------------
 
@@ -90,27 +64,11 @@ To refer to a release, use::
 
 Example:
 
-  This refers to :ref:`bareos-17.2.7`\ .
+  This refers to :ref:`bareos-20.0.0`\ .
 
 Output:
 
-This refers to :ref:`bareos-17.2.7`\ .
-
-
-.. Release Notes - Unstable Version
-   --------------------------------
-
-   TODO: required?
-
-  If you want to display the release notes of a bareos unstable release, the following formatting should be used:
-
-.. \newcommand{\releasenoteUnstable}[2]{
-    \subsection*{\textit{bareos-#1 (unstable)}}
-    %\addcontentsline{toc}{subsection}{\protect\numberline{}#1}%
-    %\index[general]{bareos-#1!Release Notes}%
-    #2
-   }
-
+This refers to :ref:`bareos-20.0.0`\ .
 
 
 URLs
