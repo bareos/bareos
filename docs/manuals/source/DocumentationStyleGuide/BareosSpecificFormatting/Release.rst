@@ -64,11 +64,11 @@ To refer to a release, use::
 
 Example:
 
-  This refers to :ref:`bareos-20.0.0`\ .
+  This refers to :ref:`Release 20.0.0`\ .
 
 Output:
 
-This refers to :ref:`bareos-20.0.0`\ .
+This refers to :ref:`Release 20.0.0`\ .
 
 
 URLs
