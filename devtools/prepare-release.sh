@@ -10,7 +10,7 @@ version_regexp='([[:digit:]]+\.){2}[[:digit:]]+(~[[:alnum:]]+)?'
 # "18.2.7"
 stable_version_regexp='([[:digit:]]+\.){2}[[:digit:]]+'
 
-topdir="$(dirname "$0")"
+topdir="$(realpath "$(dirname "$0")/..")"
 prog="$(basename "$0")"
 
 git="${GIT:-$(type -p git)}"
@@ -111,6 +111,7 @@ fi
 
 release_tag="Release/${version/\~/-}"
 release_ts="$(date --utc --iso-8601=seconds | sed --expression='s/T/ /;s/+.*$//')"
+release_date="$(sed --expression='s/ .*$//' <<< "$release_ts")"
 release_message="Release $version"
 
 # Only if we are preparing a stable release
@@ -182,11 +183,17 @@ log_info "if you want to rollback the commits" \
 
 "$cmake" -DVERSION_STRING="$version" -P write_version_files.cmake
 
+if [ "$wip_enable" -eq 1 ]; then
+  ./devtools/new-changelog-release.sh "$version" "$release_date"
+  ./devtools/update-changelog-links.sh
+fi
+
 "$git" add \
   --no-all \
   --force \
   -- \
-  ./*/cmake/BareosVersion.cmake
+  ./*/cmake/BareosVersion.cmake \
+  ./CHANGELOG.md
 
 "$git" commit \
   --quiet \
@@ -195,7 +202,8 @@ log_info "if you want to rollback the commits" \
   --date="$release_ts" \
   -m "$release_message" \
   -- \
-  ./*/cmake/BareosVersion.cmake
+  ./*/cmake/BareosVersion.cmake \
+  ./CHANGELOG.md
 
 release_commit="$(git rev-parse HEAD)"
 log_info "commit for release tag will be $release_commit"
@@ -210,6 +218,13 @@ log_info "commit for release tag will be $release_commit"
   -m "Remove */cmake/BareosVersion.cmake after release"
 
 if [ "$wip_enable" -eq 1 ]; then
+  ./devtools/new-changelog-release.sh unreleased
+  ./devtools/update-changelog-links.sh
+  "$git" add \
+    --no-all \
+    -- \
+    ./CHANGELOG.md
+
   "$git" commit \
     --quiet \
     --allow-empty \
