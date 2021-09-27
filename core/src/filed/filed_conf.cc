@@ -93,7 +93,6 @@ static ResourceItem cli_items[] = {
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL},
   {"PidDirectory", CFG_TYPE_DIR, ITEM(res_client, pid_directory), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_PIDDIR, NULL, NULL},
-  {"SubSysDirectory", CFG_TYPE_DIR, ITEM(res_client, subsys_directory), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
   {"PluginDirectory", CFG_TYPE_DIR, ITEM(res_client, plugin_directory), 0, 0, NULL, NULL, NULL},
   {"PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_client, plugin_names), 0, 0, NULL, NULL, NULL},
   {"ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_client, scripts_directory), 0, 0, NULL, NULL, NULL},
@@ -372,7 +371,6 @@ static void FreeResource(BareosResource* res, int type)
       assert(p);
       if (p->working_directory) { free(p->working_directory); }
       if (p->pid_directory) { free(p->pid_directory); }
-      if (p->subsys_directory) { free(p->subsys_directory); }
       if (p->scripts_directory) { free(p->scripts_directory); }
       if (p->plugin_directory) { free(p->plugin_directory); }
       if (p->plugin_names) { delete p->plugin_names; }
