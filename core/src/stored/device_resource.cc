@@ -72,7 +72,6 @@ DeviceResource::DeviceResource()
     , mount_point(nullptr)
     , mount_command(nullptr)
     , unmount_command(nullptr)
-    , write_part_command(nullptr)
     , free_space_command(nullptr)
     , count(1)
     , multiplied_device_resource(nullptr)
@@ -99,7 +98,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
     , mount_point(nullptr)
     , mount_command(nullptr)
     , unmount_command(nullptr)
-    , write_part_command(nullptr)
     , free_space_command(nullptr)
     , temporarily_swapped_numbered_name(nullptr) /* should not copy */
 {
@@ -154,9 +152,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   if (other.mount_command) { mount_command = strdup(other.mount_command); }
   if (other.unmount_command) {
     unmount_command = strdup(other.unmount_command);
-  }
-  if (other.write_part_command) {
-    write_part_command = strdup(other.write_part_command);
   }
   if (other.free_space_command) {
     free_space_command = strdup(other.free_space_command);
@@ -214,7 +209,6 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   mount_point = rhs.mount_point;
   mount_command = rhs.mount_command;
   unmount_command = rhs.unmount_command;
-  write_part_command = rhs.write_part_command;
   free_space_command = rhs.free_space_command;
   count = rhs.count;
   multiplied_device_resource = rhs.multiplied_device_resource;

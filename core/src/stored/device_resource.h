@@ -80,7 +80,6 @@ class DeviceResource : public BareosResource {
   char* mount_point;        /**< Mount point for require mount devices */
   char* mount_command;      /**< Mount command */
   char* unmount_command;    /**< Unmount command */
-  char* write_part_command; /**< Write part command */
   char* free_space_command; /**< Free space command */
   uint32_t count;           /**< Total number of multiplied devices */
   DeviceResource* multiplied_device_resource; /**< Copied from this device */
