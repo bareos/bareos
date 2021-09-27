@@ -199,7 +199,6 @@ static ResourceItem dev_items[] = {
   {"MaximumSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_spool_size), 0, 0, NULL, NULL, NULL},
   {"MaximumJobSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_job_spool_size), 0, 0, NULL, NULL, NULL},
   {"DriveIndex", CFG_TYPE_PINT16, ITEM(res_dev, drive_index), 0, 0, NULL, NULL, NULL},
-  {"MaximumPartSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_part_size), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
   {"MountPoint", CFG_TYPE_STRNAME, ITEM(res_dev, mount_point), 0, 0, NULL, NULL, NULL},
   {"MountCommand", CFG_TYPE_STRNAME, ITEM(res_dev, mount_command), 0, 0, NULL, NULL, NULL},
   {"UnmountCommand", CFG_TYPE_STRNAME, ITEM(res_dev, unmount_command), 0, 0, NULL, NULL, NULL},

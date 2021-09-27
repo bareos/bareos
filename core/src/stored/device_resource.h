@@ -77,7 +77,6 @@ class DeviceResource : public BareosResource {
   int64_t max_spool_size;  /**< Max spool size for all jobs */
   int64_t max_job_spool_size; /**< Max spool size for any single job */
 
-  int64_t max_part_size;    /**< Max part size */
   char* mount_point;        /**< Mount point for require mount devices */
   char* mount_command;      /**< Mount command */
   char* unmount_command;    /**< Unmount command */

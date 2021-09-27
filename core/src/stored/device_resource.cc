@@ -69,7 +69,6 @@ DeviceResource::DeviceResource()
     , max_spool_size(0)
     , max_job_spool_size(0)
 
-    , max_part_size(0)
     , mount_point(nullptr)
     , mount_command(nullptr)
     , unmount_command(nullptr)
@@ -151,7 +150,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   max_spool_size = other.max_spool_size;
   max_job_spool_size = other.max_job_spool_size;
 
-  max_part_size = other.max_part_size;
   if (other.mount_point) { mount_point = strdup(other.mount_point); }
   if (other.mount_command) { mount_command = strdup(other.mount_command); }
   if (other.unmount_command) {
@@ -213,7 +211,6 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   max_spool_size = rhs.max_spool_size;
   max_job_spool_size = rhs.max_job_spool_size;
 
-  max_part_size = rhs.max_part_size;
   mount_point = rhs.mount_point;
   mount_command = rhs.mount_command;
   unmount_command = rhs.unmount_command;
