@@ -118,7 +118,6 @@ class DirectorResource
   char* plugin_directory = nullptr;     /* Plugin Directory */
   alist<const char*>* plugin_names = nullptr; /* Plugin names to load */
   char* pid_directory = nullptr;              /* PidDirectory */
-  char* subsys_directory = nullptr;           /* SubsysDirectory */
   std::vector<std::string> backend_directories;
   MessagesResource* messages = nullptr; /* Daemon message handler */
   uint32_t MaxConcurrentJobs = 0; /* Max concurrent jobs for whole director */

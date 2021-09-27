@@ -134,7 +134,6 @@ static ResourceItem dir_items[] = {
   { "BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_dir, backend_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_BACKENDDIR, NULL, NULL },
 #endif
   { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir, subscriptions), 0, CFG_ITEM_DEFAULT, "0", "12.4.4-", NULL },
-  { "SubSysDirectory", CFG_TYPE_DIR, ITEM(res_dir, subsys_directory), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
   { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dir, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
   { "MaximumConnections", CFG_TYPE_PINT32, ITEM(res_dir, MaxConnections), 0, CFG_ITEM_DEFAULT, "30", NULL, NULL },
   { "MaximumConsoleConnections", CFG_TYPE_PINT32, ITEM(res_dir, MaxConsoleConnections), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL },
@@ -3812,7 +3811,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->plugin_directory) { free(p->plugin_directory); }
       if (p->plugin_names) { delete p->plugin_names; }
       if (p->pid_directory) { free(p->pid_directory); }
-      if (p->subsys_directory) { free(p->subsys_directory); }
       if (p->password_.value) { free(p->password_.value); }
       if (p->query_file) { free(p->query_file); }
       if (p->DIRaddrs) { FreeAddresses(p->DIRaddrs); }
