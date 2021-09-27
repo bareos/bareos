@@ -238,8 +238,6 @@ static ResourceItem cli_items[] = {
      "If enabled, the Storage Daemon will initiate the network connection to the Client. If disabled, the Client will initiate the network connection to the Storage Daemon." },
   { "ConnectionFromDirectorToClient", CFG_TYPE_BOOL, ITEM(res_client, conn_from_dir_to_fd), 0, CFG_ITEM_DEFAULT, "true", "16.2.2",
      "Let the Director initiate the network connection to the Client." },
-  { "AllowClientConnect", CFG_TYPE_BOOL, ITEM(res_client, conn_from_fd_to_dir), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_ALIAS, NULL, NULL,
-     "Alias of \"Connection From Client To Director\"." },
   { "ConnectionFromClientToDirector", CFG_TYPE_BOOL, ITEM(res_client, conn_from_fd_to_dir), 0, CFG_ITEM_DEFAULT, "false", "16.2.2",
      "The Director will accept incoming network connection from this Client." },
   { "Enabled", CFG_TYPE_BOOL, ITEM(res_client, enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
