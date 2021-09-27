@@ -64,7 +64,6 @@ DeviceResource::DeviceResource()
     , autodeflate(AutoXflateMode::IO_DIRECTION_NONE)
     , autoinflate(AutoXflateMode::IO_DIRECTION_NONE)
     , vol_poll_interval(300)
-    , max_volume_size(0)
     , max_file_size(1000000000)
     , volume_capacity(0)
     , max_spool_size(0)
@@ -147,7 +146,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   autodeflate = other.autodeflate;
   autoinflate = other.autoinflate;
   vol_poll_interval = other.vol_poll_interval;
-  max_volume_size = other.max_volume_size;
   max_file_size = other.max_file_size;
   volume_capacity = other.volume_capacity;
   max_spool_size = other.max_spool_size;
@@ -210,7 +208,6 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   autodeflate = rhs.autodeflate;
   autoinflate = rhs.autoinflate;
   vol_poll_interval = rhs.vol_poll_interval;
-  max_volume_size = rhs.max_volume_size;
   max_file_size = rhs.max_file_size;
   volume_capacity = rhs.volume_capacity;
   max_spool_size = rhs.max_spool_size;

@@ -276,7 +276,7 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
 
   dev->min_block_size = device_resource->min_block_size;
   dev->max_block_size = device_resource->max_block_size;
-  dev->max_volume_size = device_resource->max_volume_size;
+  dev->max_volume_size = 0;
   dev->max_file_size = device_resource->max_file_size;
   dev->max_concurrent_jobs = device_resource->max_concurrent_jobs;
   dev->volume_capacity = device_resource->volume_capacity;

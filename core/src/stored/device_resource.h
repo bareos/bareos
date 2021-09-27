@@ -72,7 +72,6 @@ class DeviceResource : public BareosResource {
   AutoXflateMode autoinflate; /**< auto inflation in this IO direction */
   utime_t
       vol_poll_interval;   /**< Interval between polling volume during mount */
-  int64_t max_volume_size; /**< Max bytes to put on one volume */
   int64_t max_file_size;   /**< Max file size in bytes */
   int64_t volume_capacity; /**< Advisory capacity */
   int64_t max_spool_size;  /**< Max spool size for all jobs */
