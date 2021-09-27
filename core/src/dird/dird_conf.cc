@@ -415,7 +415,6 @@ ResourceItem job_items[] = {
   { "CancelRunningDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelRunningDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "SaveFileHistory", CFG_TYPE_BOOL, ITEM(res_job, SaveFileHist), 0, CFG_ITEM_DEFAULT, "true", "14.2.0-", NULL },
   { "FileHistorySize", CFG_TYPE_SIZE64, ITEM(res_job, FileHistSize), 0, CFG_ITEM_DEFAULT, "10000000", "15.2.4-", NULL },
-  { "PluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, FdPluginOptions), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_ALIAS, NULL, "-12.4.0", NULL },
   { "FdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, FdPluginOptions), 0, 0, NULL, NULL, NULL },
   { "SdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, SdPluginOptions), 0, 0, NULL, NULL, NULL },
   { "DirPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, DirPluginOptions), 0, 0, NULL, NULL, NULL },
