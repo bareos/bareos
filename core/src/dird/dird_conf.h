@@ -130,10 +130,8 @@ class DirectorResource
   bool optimize_for_size = false;  /* Optimize daemon for minimum memory size */
   bool optimize_for_speed = false; /* Optimize daemon for speed which may need
                               more memory */
-  bool omit_defaults = false; /* Omit config variables with default values when
-                         dumping the config */
-  bool ndmp_snooping = false; /* NDMP Protocol specific snooping enabled */
-  bool auditing = false;      /* Auditing enabled */
+  bool ndmp_snooping = false;      /* NDMP Protocol specific snooping enabled */
+  bool auditing = false;           /* Auditing enabled */
   alist<const char*>* audit_events
       = nullptr;                   /* Specific audit events to enable */
   uint32_t ndmp_loglevel = 0;      /* NDMP Protocol specific loglevel to use */
