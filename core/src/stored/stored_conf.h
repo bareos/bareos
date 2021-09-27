@@ -103,7 +103,6 @@ class StorageResource
   dlist<IPADDR>* NDMPaddrs = nullptr;
   char* working_directory = nullptr; /**< Working directory for checkpoints */
   char* pid_directory = nullptr;
-  char* subsys_directory = nullptr;
   char* plugin_directory = nullptr; /**< Plugin directory */
   alist<const char*>* plugin_names = nullptr;
   char* scripts_directory = nullptr;
