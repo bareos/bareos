@@ -487,14 +487,44 @@ function formatFilesetName(value, row, index, basePath) {
    return '<a href="' + basePath + '/fileset/details/' + row.filesetid + '">' + row.fileset + '</a>';
 }
 
-function formatLogMessage(value) {
-   var msg = (value).replace(/\n/g, "<br />");
+function wrapKeywordDanger(keyword) {
+  return `<span class="bg-danger text-danger">${keyword}</span>`
+}
 
-   msg = msg.replace(/(e)rror(s?)/gi, '<span class="bg-danger text-danger">$1rror$2</span>');
-   msg = msg.replace(/(w)arning(s?)/gi, '<span class="bg-warning text-warning">$1arning$2</span>');
-   msg = msg.replace(/jobid=([0-9]*)/gi, '<a class="bg-info text-info" href="' +  basePath + '/job/details/$1">JobId=$1</a>');
+function wrapKeywordWarning(keyword) {
+  return `<span class="bg-warning text-warning">${keyword}</span>`
+}
+
+function wrapJobId(jobid) {
+  return `<a class="bg-info text-info" href="` + basePath + `/job/details/${jobid}">JobId=${jobid}</a>`
+}
+
+function keywordHighlight(msg) {
+
+   const danger_keywords = ["error", "err", "cannot"];
+   const warning_keywords = ["warning"];
+
+   danger_keywords.forEach(keyword => {
+      let regex = new RegExp("\\b"+keyword+"(s?)\\b", "gi")
+      msg = msg.replace(regex, wrapKeywordDanger('$&'))
+   })
+
+   warning_keywords.forEach(keyword => {
+      let regex = new RegExp("\\b"+keyword+"(s?)\\b", "gi")
+      msg = msg.replace(regex, wrapKeywordWarning('$&'))
+   })
 
    return msg;
+}
+
+function formatLogMessage(msg) {
+
+   let m = (msg).replace(/\n/g, "<br />");
+
+   m = keywordHighlight(m);
+   m = m.replace(/jobid=([0-9]*)/gi, wrapJobId('$1'));
+
+   return m;
 }
 
 function formatAutochangerStatus(value) {
