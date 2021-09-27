@@ -404,7 +404,6 @@ ResourceItem job_items[] = {
   { "RescheduleTimes", CFG_TYPE_PINT32, ITEM(res_job, RescheduleTimes), 0, CFG_ITEM_DEFAULT, "5", NULL, NULL },
   { "Priority", CFG_TYPE_PINT32, ITEM(res_job, Priority), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
   { "AllowMixedPriority", CFG_TYPE_BOOL, ITEM(res_job, allow_mixed_priority), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "WritePartAfterJob", CFG_TYPE_BOOL, ITEM(res_job, write_part_after_job), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
   { "SelectionPattern", CFG_TYPE_STR, ITEM(res_job, selection_pattern), 0, 0, NULL, NULL, NULL },
   { "RunScript", CFG_TYPE_RUNSCRIPT, ITEM(res_job, RunScripts), 0, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
   { "SelectionType", CFG_TYPE_MIGTYPE, ITEM(res_job, selection_type), 0, 0, NULL, NULL, NULL },

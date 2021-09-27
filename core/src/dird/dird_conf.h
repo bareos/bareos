@@ -488,7 +488,6 @@ class JobResource : public BareosResource {
   bool spool_data = false;          /**< Set to spool data in SD */
   bool rerun_failed_levels = false; /**< Upgrade to rerun failed levels */
   bool PreferMountedVolumes = false; /**< Prefer vols mounted rather than new one */
-  bool write_part_after_job = false; /**< Set to write part after job in SD */
   bool enabled = false;              /**< Set if job enabled */
   bool accurate = false;             /**< Set if it is an accurate backup job */
   bool AllowDuplicateJobs = false;   /**< Allow duplicate jobs */
