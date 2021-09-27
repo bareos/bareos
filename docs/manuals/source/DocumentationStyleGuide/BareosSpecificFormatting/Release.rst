@@ -55,22 +55,6 @@ Note
 Until defined otherwise, you should use ``:sinceVersion:`` instead of these.
 
 
-Reference to a Release
-----------------------
-
-To refer to a release, use::
-
-    :ref:`bareos-<VERSION>`
-
-Example:
-
-  This refers to :ref:`Release 20.0.0`\ .
-
-Output:
-
-This refers to :ref:`Release 20.0.0`\ .
-
-
 URLs
 ----
 
