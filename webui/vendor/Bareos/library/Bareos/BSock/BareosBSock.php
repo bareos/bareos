@@ -69,6 +69,7 @@ class BareosBSock implements BareosBSockInterface
       'port' => null,
       'password' => null,
       'console_name' => null,
+      'UsePamAuthentication' => false,
       'pam_password' => null,
       'pam_username' => null,
       'tls_verify_peer' => null,
@@ -565,6 +566,9 @@ class BareosBSock implements BareosBSockInterface
       }
 
       if (!self::login()) {
+         if ($this->config['UsePamAuthentication'] === true) {
+            error_log("AUTH: failed to connect to PAM console '" . $this->config['console_name'] . "' on DIR");
+         }
          return false;
       }
 
@@ -573,15 +577,20 @@ class BareosBSock implements BareosBSockInterface
          error_log($recv);
       }
 
-      if (!strncasecmp($recv, "1001", 4)) {
-          $pam_answer = "4002".chr(0x1e).$this->config['pam_username'].chr(0x1e).$this->config['pam_password'];
-          if (!self::send($pam_answer)) {
-            error_log("Send failed for pam credentials");
+      if ($this->config['UsePamAuthentication'] === true) {
+          if (!strncasecmp($recv, "1000", 4)) {
+            error_log("AUTH: '" . $this->config['console_name'] . "' is not a defined PAM console on DIR");
             return false;
-          }
-          $recv = self::receive();
-          if($this->config['debug']) {
-             error_log($recv);
+          } elseif (!strncasecmp($recv, "1001", 4)) {
+             $pam_answer = "4002".chr(0x1e).$this->config['pam_username'].chr(0x1e).$this->config['pam_password'];
+             if (!self::send($pam_answer)) {
+               error_log("Send failed for pam credentials");
+               return false;
+             }
+             $recv = self::receive();
+             if($this->config['debug']) {
+                error_log($recv);
+             }
           }
       }
 

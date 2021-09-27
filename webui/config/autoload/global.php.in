@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2019 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -225,6 +225,7 @@ function read_directors_ini($directors, $directors_ini)
 
          if(array_key_exists('pam_console_name', $instance) && isset($instance['pam_console_name'])) {
             $arr[key($directors)]['console_name'] = $instance['pam_console_name'];
+            $arr[key($directors)]['UsePamAuthentication'] = true;
          }
          else {
             $arr[key($directors)]['console_name'] = null;
@@ -232,10 +233,12 @@ function read_directors_ini($directors, $directors_ini)
 
          if(array_key_exists('pam_console_password', $instance) && isset($instance['pam_console_password'])) {
             $arr[key($directors)]['password'] = $instance['pam_console_password'];
+            $arr[key($directors)]['UsePamAuthentication'] = true;
          }
          else {
             $arr[key($directors)]['password'] = null;
          }
+
       }
 
       next($directors);
