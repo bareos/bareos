@@ -286,7 +286,6 @@ static ResourceItem store_items[] = {
   { "CacheStatusInterval", CFG_TYPE_TIME, ITEM(res_store, cache_status_interval), 0, CFG_ITEM_DEFAULT, "30", NULL, NULL },
   { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
   { "MaximumConcurrentReadJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentReadJobs), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "SddPort", CFG_TYPE_PINT32, ITEM(res_store, SDDport), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
   { "PairedStorage", CFG_TYPE_RES, ITEM(res_store, paired_storage), R_STORAGE, 0, NULL, NULL, NULL },
   { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store, max_bandwidth), 0, 0, NULL, NULL, NULL },
   { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store, collectstats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },

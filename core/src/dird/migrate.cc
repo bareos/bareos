@@ -1452,11 +1452,6 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
 
     if (!StartStorageDaemonMessageThread(mig_jcr)) { goto bail_out; }
 
-    // Send Storage daemon address to the other Storage daemon
-    if (write_storage->SDDport == 0) {
-      write_storage->SDDport = write_storage->SDport;
-    }
-
     // TLS Requirement
     tls_need = write_storage->IsTlsConfigured() ? TlsPolicy::kBnetTlsAuto
                                                 : TlsPolicy::kBnetTlsNone;
@@ -1465,7 +1460,7 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
         = StorageAddressToContact(read_storage, write_storage);
 
     Mmsg(command, replicatecmd, mig_jcr->JobId, mig_jcr->Job,
-         connection_target_address, write_storage->SDDport, tls_need,
+         connection_target_address, write_storage->SDport, tls_need,
          mig_jcr->sd_auth_key);
 
     if (!jcr->store_bsock->fsend(command.c_str())) { goto bail_out; }

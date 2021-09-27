@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -493,9 +493,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
   char* connection_target_address;
 
   if (!jcr->passive_client) {
-    // Send Storage daemon address to the File daemon
-    if (store->SDDport == 0) { store->SDDport = store->SDport; }
-
     // TLS Requirement
 
     TlsPolicy tls_policy;
@@ -511,7 +508,7 @@ bool DoNativeBackup(JobControlRecord* jcr)
 
     connection_target_address = StorageAddressToContact(client, store);
 
-    fd->fsend(storaddrcmd, connection_target_address, store->SDDport,
+    fd->fsend(storaddrcmd, connection_target_address, store->SDport,
               tls_policy);
     if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
       Dmsg0(200, "Error from active client on storeaddrcmd\n");

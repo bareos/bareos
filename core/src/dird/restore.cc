@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -220,7 +220,6 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
        * then wait for File daemon to make connection
        * with Storage daemon.
        */
-      if (store->SDDport == 0) { store->SDDport = store->SDport; }
 
       // TLS Requirement
 
@@ -237,7 +236,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
 
       connection_target_address = StorageAddressToContact(client, store);
 
-      fd->fsend(storaddrcmd, connection_target_address, store->SDDport,
+      fd->fsend(storaddrcmd, connection_target_address, store->SDport,
                 tls_policy, jcr->sd_auth_key);
       memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
 

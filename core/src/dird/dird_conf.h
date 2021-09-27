@@ -331,7 +331,6 @@ class StorageResource
   uint32_t Protocol = 0;      /* Protocol to use to connect */
   uint32_t AuthType = 0;      /* Authentication Type to use for protocol */
   uint32_t SDport = 0;        /* Port where Directors connect */
-  uint32_t SDDport = 0;       /* Data port for File daemon */
   char* address = nullptr;    /* Hostname for remote access to Storage */
   char* lanaddress = nullptr; /* Hostname for remote access to Storage if behind
                        NAT in LAN */

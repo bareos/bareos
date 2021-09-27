@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -316,7 +316,6 @@ bool DoVerify(JobControlRecord* jcr)
         StorageResource* store = jcr->impl->res.read_storage;
 
         // Send Storage daemon address to the File daemon
-        if (store->SDDport == 0) { store->SDDport = store->SDport; }
 
         TlsPolicy tls_policy;
         if (jcr->impl->res.client->connection_successful_handshake_
@@ -329,7 +328,7 @@ bool DoVerify(JobControlRecord* jcr)
 
         Dmsg1(200, "Tls Policy for active client is: %d\n", tls_policy);
 
-        fd->fsend(storaddrcmd, store->address, store->SDDport, tls_policy,
+        fd->fsend(storaddrcmd, store->address, store->SDport, tls_policy,
                   jcr->sd_auth_key);
         if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
           goto bail_out;
