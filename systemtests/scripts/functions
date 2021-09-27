@@ -527,7 +527,7 @@ stop_bareos()
 
 run_python_unittests()
 {
-    if  PYTHONRESULT=$($PYTHON_EXECUTABLE -m unittest discover -v); then
+    if  PYTHONRESULT=$($PYTHON_EXECUTABLE -m unittest -v "$@"); then
         print_debug "$PYTHONRESULT"
     else
         set_error "$PYTHONRESULT"
