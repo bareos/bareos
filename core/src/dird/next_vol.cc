@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -232,13 +232,6 @@ bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
            _("Max Volume bytes=%s exceeded. Marking Volume \"%s\" as Full.\n"),
            edit_uint64_with_commas(mr->MaxVolBytes, ed1), mr->VolumeName);
       bstrncpy(mr->VolStatus, "Full", sizeof(mr->VolStatus));
-      expired = true;
-    } else if (mr->VolBytes > 0 && jcr->impl->res.pool->use_volume_once) {
-      // Volume should only be used once
-      Jmsg(jcr, M_INFO, 0,
-           _("Volume used once. Marking Volume \"%s\" as Used.\n"),
-           mr->VolumeName);
-      bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
       expired = true;
     } else if (mr->MaxVolJobs > 0 && mr->MaxVolJobs <= mr->VolJobs) {
       // Max Jobs written to volume

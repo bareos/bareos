@@ -467,7 +467,6 @@ static ResourceItem pool_items[] = {
   { "LabelType", CFG_TYPE_LABEL, ITEM(res_pool, LabelType), 0, 0, NULL, NULL, NULL },
   { "CleaningPrefix", CFG_TYPE_STRNAME, ITEM(res_pool, cleaning_prefix), 0, CFG_ITEM_DEFAULT, "CLN", NULL, NULL },
   { "UseCatalog", CFG_TYPE_BOOL, ITEM(res_pool, use_catalog), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "UseVolumeOnce", CFG_TYPE_BOOL, ITEM(res_pool, use_volume_once), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
   { "PurgeOldestVolume", CFG_TYPE_BOOL, ITEM(res_pool, purge_oldest_volume), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "ActionOnPurge", CFG_TYPE_ACTIONONPURGE, ITEM(res_pool, action_on_purge), 0, 0, NULL, NULL, NULL },
   { "RecycleOldestVolume", CFG_TYPE_BOOL, ITEM(res_pool, recycle_oldest_volume), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },

@@ -619,7 +619,6 @@ class PoolResource : public BareosResource {
       = nullptr;            /* Where is device -- list of Storage to be used */
   bool use_catalog = false; /* Maintain catalog for media */
   bool catalog_files = false;          /* Maintain file entries in catalog */
-  bool use_volume_once = false;        /* Write on volume only once */
   bool purge_oldest_volume = false;    /* Purge oldest volume */
   bool recycle_oldest_volume = false;  /* Attempt to recycle oldest volume */
   bool recycle_current_volume = false; /* Attempt recycle of current volume */
