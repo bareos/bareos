@@ -202,7 +202,6 @@ static ResourceItem dev_items[] = {
   {"MountPoint", CFG_TYPE_STRNAME, ITEM(res_dev, mount_point), 0, 0, NULL, NULL, NULL},
   {"MountCommand", CFG_TYPE_STRNAME, ITEM(res_dev, mount_command), 0, 0, NULL, NULL, NULL},
   {"UnmountCommand", CFG_TYPE_STRNAME, ITEM(res_dev, unmount_command), 0, 0, NULL, NULL, NULL},
-  {"FreeSpaceCommand", CFG_TYPE_STRNAME, ITEM(res_dev, free_space_command), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
   {"LabelType", CFG_TYPE_LABEL, ITEM(res_dev, label_type), 0, 0, NULL, NULL, NULL},
   {"NoRewindOnClose", CFG_TYPE_BOOL, ITEM(res_dev, norewindonclose), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
   {"DriveTapeAlertEnabled", CFG_TYPE_BOOL, ITEM(res_dev, drive_tapealert_enabled), 0, 0, NULL, NULL, NULL},
@@ -930,7 +929,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->mount_point) { free(p->mount_point); }
       if (p->mount_command) { free(p->mount_command); }
       if (p->unmount_command) { free(p->unmount_command); }
-      if (p->free_space_command) { free(p->free_space_command); }
       delete p;
       break;
     }
