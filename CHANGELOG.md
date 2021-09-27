@@ -51,6 +51,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1232]: bareos logrotate errors, reintroduce su directive in logrotate [PR #918]
 - fix scheduler running disabled jobs after executing the disable command [PR #924]
 - [Issue #1334]: After deleting storage from the configuration, it still persists in the catalog db [PR #912]
+- [Issue #1191]: The web interface runs under any login and password [PR #936]
 
 ### Added
 - systemtests: allows multiple subtests per systemtest [PR #857]
@@ -137,6 +138,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
 [Issue #971]: https://bugs.bareos.org/view.php?id=971
 [Issue #1020]: https://bugs.bareos.org/view.php?id=1020
+[Issue #1191]: https://bugs.bareos.org/view.php?id=1191
 [Issue #1194]: https://bugs.bareos.org/view.php?id=1194
 [Issue #1205]: https://bugs.bareos.org/view.php?id=1205
 [Issue #1232]: https://bugs.bareos.org/view.php?id=1232
@@ -220,4 +222,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #920]: https://github.com/bareos/bareos/pull/920
 [PR #924]: https://github.com/bareos/bareos/pull/924
 [PR #927]: https://github.com/bareos/bareos/pull/927
+[PR #936]: https://github.com/bareos/bareos/pull/936
 [unreleased]: https://github.com/bareos/bareos/tree/master
