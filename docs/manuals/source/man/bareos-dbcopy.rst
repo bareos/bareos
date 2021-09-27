@@ -1,5 +1,3 @@
-.. _program-bareos-dbcopy:
-
 bareos-dbcopy
 =============
 
