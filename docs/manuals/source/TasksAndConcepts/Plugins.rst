@@ -427,8 +427,7 @@ Opposite to the :ref:`Rados Backend <SdBackendRados>` that is used to store data
 Rados Plugin
 ~~~~~~~~~~~~
 
-.. comment::
-   .. deprecated:: 20.0.0
+.. deprecated:: 20.0.0
 
 :index:`\ <single: Plugin; ceph; rados>`\  :index:`\ <single: Ceph; Rados Plugin>`\
 
