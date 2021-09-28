@@ -99,13 +99,6 @@
           "equals": true,
           "versions": "12.4.4-"
         },
-        "SubSysDirectory": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0"
-        },
         "MaximumConcurrentJobs": {
           "datatype": "PINT32",
           "code": 0,
@@ -177,14 +170,6 @@
           "code": 0,
           "default_value": "false",
           "equals": true
-        },
-        "OmitDefaults": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "default_value": "true",
-          "deprecated": true,
-          "equals": true,
-          "description": "Omit config variables with default values when dumping the config."
         },
         "KeyEncryptionKey": {
           "datatype": "AUTOPASSWORD",
@@ -418,14 +403,6 @@
           "equals": true,
           "versions": "16.2.2",
           "description": "Let the Director initiate the network connection to the Client."
-        },
-        "AllowClientConnect": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "alias": true,
-          "deprecated": true,
-          "equals": true,
-          "description": "Alias of \"Connection From Client To Director\"."
         },
         "ConnectionFromClientToDirector": {
           "datatype": "BOOLEAN",
@@ -792,33 +769,6 @@
           "code": 0,
           "equals": true
         },
-        "FullMaxWaitTime": {
-          "datatype": "TIME",
-          "code": 0,
-          "alias": true,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0",
-          "description": "This directive has been deprecated in favor of \"Full Max Runtime\"."
-        },
-        "IncrementalMaxWaitTime": {
-          "datatype": "TIME",
-          "code": 0,
-          "alias": true,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0",
-          "description": "This directive has been deprecated in favor of \"Incremental Max Runtime\"."
-        },
-        "DifferentialMaxWaitTime": {
-          "datatype": "TIME",
-          "code": 0,
-          "alias": true,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0",
-          "description": "This directive has been deprecated in favor of \"Differential Max Runtime\"."
-        },
         "FullMaxRuntime": {
           "datatype": "TIME",
           "code": 0,
@@ -987,13 +937,6 @@
           "default_value": "false",
           "equals": true
         },
-        "WritePartAfterJob": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0"
-        },
         "SelectionPattern": {
           "datatype": "STRING",
           "code": 0,
@@ -1058,14 +1001,6 @@
           "default_value": "10000000",
           "equals": true,
           "versions": "15.2.4-"
-        },
-        "PluginOptions": {
-          "datatype": "STRING_LIST",
-          "code": 0,
-          "alias": true,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0"
         },
         "FdPluginOptions": {
           "datatype": "STRING_LIST",
@@ -1322,33 +1257,6 @@
           "code": 0,
           "equals": true
         },
-        "FullMaxWaitTime": {
-          "datatype": "TIME",
-          "code": 0,
-          "alias": true,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0",
-          "description": "This directive has been deprecated in favor of \"Full Max Runtime\"."
-        },
-        "IncrementalMaxWaitTime": {
-          "datatype": "TIME",
-          "code": 0,
-          "alias": true,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0",
-          "description": "This directive has been deprecated in favor of \"Incremental Max Runtime\"."
-        },
-        "DifferentialMaxWaitTime": {
-          "datatype": "TIME",
-          "code": 0,
-          "alias": true,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0",
-          "description": "This directive has been deprecated in favor of \"Differential Max Runtime\"."
-        },
         "FullMaxRuntime": {
           "datatype": "TIME",
           "code": 0,
@@ -1517,13 +1425,6 @@
           "default_value": "false",
           "equals": true
         },
-        "WritePartAfterJob": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0"
-        },
         "SelectionPattern": {
           "datatype": "STRING",
           "code": 0,
@@ -1588,14 +1489,6 @@
           "default_value": "10000000",
           "equals": true,
           "versions": "15.2.4-"
-        },
-        "PluginOptions": {
-          "datatype": "STRING_LIST",
-          "code": 0,
-          "alias": true,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0"
         },
         "FdPluginOptions": {
           "datatype": "STRING_LIST",
@@ -1802,13 +1695,6 @@
           "code": 0,
           "default_value": "0",
           "equals": true
-        },
-        "SddPort": {
-          "datatype": "PINT32",
-          "code": 0,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0"
         },
         "PairedStorage": {
           "datatype": "RES",
@@ -2152,13 +2038,6 @@
           "code": 0,
           "default_value": "true",
           "equals": true
-        },
-        "UseVolumeOnce": {
-          "datatype": "BOOLEAN",
-          "code": 0,
-          "deprecated": true,
-          "equals": true,
-          "versions": "-12.4.0"
         },
         "PurgeOldestVolume": {
           "datatype": "BOOLEAN",

@@ -209,12 +209,6 @@
           "platform_specific": true,
           "equals": true
         },
-        "SubSysDirectory": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "deprecated": true,
-          "equals": true
-        },
         "PluginDirectory": {
           "datatype": "DIRECTORY",
           "code": 0,
@@ -500,12 +494,6 @@
           "code": 0,
           "default_value": "/var/lib/bareos",
           "platform_specific": true,
-          "equals": true
-        },
-        "SubSysDirectory": {
-          "datatype": "DIRECTORY",
-          "code": 0,
-          "deprecated": true,
           "equals": true
         },
         "PluginDirectory": {
