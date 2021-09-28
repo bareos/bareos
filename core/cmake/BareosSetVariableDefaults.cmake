@@ -415,12 +415,6 @@ if(NOT DEFINED ndmp)
   set(ndmp ON)
 endif()
 
-# ipv6
-if((NOT DEFINED ipv6) OR (${ipv6}))
-  set(ipv6 ON)
-  set(HAVE_IPV6 1)
-endif()
-
 # acl
 if(NOT DEFINED acl)
   set(acl ON)
@@ -739,5 +733,8 @@ endif()
 
 # gfapi-fd
 if(NOT DEFINED gfapi_fd_testvolume)
-  set(gfapi_fd_testvolume testvol PARENT_SCOPE)
+  set(gfapi_fd_testvolume
+      testvol
+      PARENT_SCOPE
+  )
 endif()

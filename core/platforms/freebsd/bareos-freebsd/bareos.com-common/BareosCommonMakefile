@@ -108,7 +108,6 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dscsi-crypto=no\
   -Dlmdb=yes\
   -Dndmp=yes\
-  -Dipv6=yes\
   -Dacl=yes\
   -Dxattr=yes\
   -Dpostgresql=yes\

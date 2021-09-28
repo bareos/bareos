@@ -159,9 +159,7 @@ extern "C" {
  */
 #  include <winsock2.h>
 #  include <windows.h>
-#  if defined(HAVE_IPV6)
-#    include <ws2tcpip.h>
-#  endif
+#  include <ws2tcpip.h>
 #endif
 
 

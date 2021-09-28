@@ -1005,7 +1005,6 @@ cmake  .. \
   -Dscsi-crypto=yes \
   -Dlmdb=yes \
   -Dndmp=yes \
-  -Dipv6=yes \
   -Dacl=yes \
   -Dxattr=yes \
 %if 0%{?build_bat}
