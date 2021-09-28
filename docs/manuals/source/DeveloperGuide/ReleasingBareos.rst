@@ -47,7 +47,7 @@ The script will also prepare all git commits that are required to release the ne
 
 .. important::
 
-   All changes are only done to you local git repository. For pushing these changes see :ref:`DeveloperGuide/ReleasingBareos:Publishing the release`.
+   All changes are only done to you local git repository. For pushing these changes see :ref:`publishing-the-release`.
 
 
 Special considerations for major versions
@@ -75,6 +75,7 @@ The commit that contains the above changes should then be tagged as the new WIP-
 For example ``git add CHANGELOG.md docs/manuals/source/conf.py`` followed by ``git commit -m 'Start development of X.Y.Z'``.
 That commit can now be tagged with a new WIP-tag using ``git tag WIP/X.Y.Z-pre``.
 
+.. _publishing-the-release:
 
 Publishing the release
 ----------------------

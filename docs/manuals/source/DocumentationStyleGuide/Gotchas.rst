@@ -45,6 +45,8 @@ making it really hard to find typos in this kind of references.
 
   * :config:option:`dir/job/ThisIsaDeadEntry`
 
+.. _documentationstyleguide/gotchas:toctree vs include:
+
 toctree vs include
 ------------------
 
