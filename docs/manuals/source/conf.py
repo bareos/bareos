@@ -97,7 +97,6 @@ extensions = [
     "limitation",
     "sphinx_issues",
     "sphinx.ext.autodoc",  # Core Sphinx library for auto html doc generation from docstrings
-    "sphinx.ext.autosectionlabel",
     "sphinx.ext.autosummary",  # Create neat summary tables for modules/classes/methods etc
     "sphinx.ext.coverage",
     "sphinx.ext.intersphinx",  # Link to other project's documentation (see mapping below)
