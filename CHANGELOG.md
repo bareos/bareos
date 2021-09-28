@@ -118,6 +118,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - bareos is now able to create IPv6 addresses with the `DirAddress` directive [PR #882]
 - Disable autotosectionlabel plugin in documentation and add required labels [PR #942]
 - webui: improve log message keyword highlighting [PR #937]
+- webui: change retention/expiration column to only show retention on volume tables [PR #943]
 
 ### Deprecated
 
@@ -265,5 +266,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #937]: https://github.com/bareos/bareos/pull/937
 [PR #938]: https://github.com/bareos/bareos/pull/938
 [PR #942]: https://github.com/bareos/bareos/pull/942
+[PR #943]: https://github.com/bareos/bareos/pull/943
 [PR #944]: https://github.com/bareos/bareos/pull/944
 [unreleased]: https://github.com/bareos/bareos/tree/master
