@@ -150,8 +150,8 @@ To view and test the currently configured settings, use following commands:
    25-Apr 16:25 bareos-dir ERROR TERMINATION
    Please correct the configuration in /etc/bareos/bareos-dir.d/*/*.conf
 
-PostgreSQL
-^^^^^^^^^^
+PostgreSQL configuration
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 On most distributions, PostgreSQL uses ident to allow access to the database system. The database administrator account is the Unix user **postgres**. Normally, this user can access the database without password, as the ident mechanism is used to identify the user.
 
@@ -440,8 +440,8 @@ You can use the following Job resource in your nightly :config:option:`dir/job =
    }
 
 
-PostgreSQL
-----------
+PostgreSQL Database
+-------------------
 
 :index:`\ <single: Database; PostgreSQL>`\  :index:`\ <single: PostgreSQL>`\
 

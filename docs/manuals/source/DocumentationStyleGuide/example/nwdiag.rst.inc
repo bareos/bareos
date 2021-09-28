@@ -15,16 +15,3 @@
          app01;
      }
    }
-
-.. nwdiag::
-
-   nwdiag {
-     inet [shape = cloud];
-     inet -- router;
-
-     network {
-       router;
-       web01;
-       web02;
-     }
-   }
