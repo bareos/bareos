@@ -1,5 +1,3 @@
-.. _section-webui:
-
 .. _section-install-webui:
 
 Installing Bareos Webui
