@@ -22,11 +22,11 @@ dirport	= @dirport@
 ; Set catalog to explicit value if you have multiple catalogs
 ;catalog = "MyCatalog"
 
-; Set the console name and password for a dedicated pam console;
-; the counterpart console-config in the director must have set
-; UsePamAuthentication = yes
-;pam_console_name = "admin"
-;pam_console_password = "admin"
+; Set the console name and password for a dedicated pam console.
+; Make sure, that "UsePamAuthentication = yes" is set in the
+; counterpart Director console configuration.
+;pam_console_name = "username"
+;pam_console_password = "password"
 
 ; TLS verify peer
 ; Possible values: true or false
@@ -71,6 +71,8 @@ enabled = "no"
 diraddress = "192.168.120.1"
 dirport = @dirport@
 ;catalog = "MyCatalog"
+;pam_console_name = "username"
+;pam_console_password = "password"
 ;tls_verify_peer = false
 ;server_can_do_tls = false
 ;server_requires_tls = false
