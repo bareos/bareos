@@ -112,7 +112,6 @@ This refers to :ref:`bareos-17.2.7`\ .
    }
 
 
-
 URLs
 ----
 

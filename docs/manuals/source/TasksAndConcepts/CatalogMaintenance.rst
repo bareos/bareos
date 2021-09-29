@@ -150,8 +150,8 @@ To view and test the currently configured settings, use following commands:
    25-Apr 16:25 bareos-dir ERROR TERMINATION
    Please correct the configuration in /etc/bareos/bareos-dir.d/*/*.conf
 
-PostgreSQL
-^^^^^^^^^^
+PostgreSQL configuration
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 On most distributions, PostgreSQL uses ident to allow access to the database system. The database administrator account is the Unix user **postgres**. Normally, this user can access the database without password, as the ident mechanism is used to identify the user.
 
@@ -596,7 +596,7 @@ File Retention = <time-period-specification>
 
    Since File records in the database account for probably 80 percent of the size of the database, you should carefully determine exactly what File Retention period you need. Once the File records have been removed from the database, you will no longer be able to restore individual files in a Job. However, as long as the Job record still exists, you will be able to restore all files in the job.
 
-   Retention periods are specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years on the record. See the :ref:`Configuration chapter <Time>` of this manual for additional details of modifier specification.
+   Retention periods are specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years on the record. See the :ref:`Configuration chapter <DataTypeTime>` of this manual for additional details of modifier specification.
 
    The default File retention period is 60 days.
 
@@ -606,7 +606,7 @@ Job Retention = <time-period-specification>
 
    As mentioned above, once the File records are removed from the database, you will no longer be able to restore individual files from the Job. However, as long as the Job record remains in the database, you will be able to restore all the files backed up for the Job. As a consequence, it is generally a good idea to retain the Job records much longer than the File records.
 
-   The retention period is specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years. See the :ref:`Configuration chapter <Time>` of this manual for additional details of modifier specification.
+   The retention period is specified in seconds, but as a convenience, there are a number of modifiers that permit easy specification in terms of minutes, hours, days, weeks, months, quarters, or years. See the :ref:`Configuration chapter <DataTypeTime>` of this manual for additional details of modifier specification.
 
    The default Job Retention period is 180 days.
 
@@ -660,8 +660,8 @@ You can use the following Job resource in your nightly :config:option:`dir/job =
    }
 
 
-PostgreSQL
-----------
+PostgreSQL Database
+-------------------
 
 :index:`\ <single: Database; PostgreSQL>`\  :index:`\ <single: PostgreSQL>`\ 
 

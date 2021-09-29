@@ -13,12 +13,12 @@ Additionally, the following table gives an overview on the available package ver
 .. csv-table::
    :header: "Operating Systems", "Version", "Client Daemon", "Director Daemon" , "Storage Daemon"
 
-   :strong:`Linux`  :index:`\ <single: Platform; Linux>`\ 
-   Arch Linux :index:`\ <single: Platform; Arch Linux>`\ , `X <https://aur.archlinux.org/pkgbase/bareos/>`_,      `X <https://aur.archlinux.org/pkgbase/bareos/>`_, `X <https://aur.archlinux.org/pkgbase/bareos/>`_
+   :strong:`Linux`  :index:`\ <single: Platform; Linux>`\
+   Arch Linux :index:`\ <single: Platform; Arch Linux>`\ , `X <https://aur.archlinux.org/pkgbase/bareos/>`__,      `X <https://aur.archlinux.org/pkgbase/bareos/>`__, `X <https://aur.archlinux.org/pkgbase/bareos/>`__
    CentOS, current, v12.4, v12.4, v12.4
    Debian, current, v12.4, v12.4, v12.4
    Fedora, current, v12.4, v12.4, v12.4
-   Gentoo :index:`\ <single: Platform; Gentoo>`\ , `X <https://packages.gentoo.org/package/app-backup/bareos>`_,     `X <https://packages.gentoo.org/package/app-backup/bareos>`_, `X <https://packages.gentoo.org/package/app-backup/bareos>`_
+   Gentoo :index:`\ <single: Platform; Gentoo>`\ , `X <https://packages.gentoo.org/package/app-backup/bareos>`__,     `X <https://packages.gentoo.org/package/app-backup/bareos>`__, `X <https://packages.gentoo.org/package/app-backup/bareos>`__
    openSUSE, current, v12.4, v12.4, v12.4
    RHEL,     current, v12.4, v12.4, v12.4
    SLES,     current, v12.4, v12.4, v12.4
@@ -35,7 +35,7 @@ Additionally, the following table gives an overview on the available package ver
    :ref:`Mac OS X/Darwin <section-macosx>`, v14.2                                                                                                                                                      
 
    :strong:`BSD`                                                                                                                                                                                                                        
-   FreeBSD :index:`\ <single: Platform; FreeBSD>`\ , >= 5.0, `X <http://www.freshports.org/sysutils/bareos-client/>`_, `X <http://www.freshports.org/sysutils/bareos-server/>`_, `X <http://www.freshports.org/sysutils/bareos-server/>`_
+   FreeBSD :index:`\ <single: Platform; FreeBSD>`\ , >= 5.0, `X <http://www.freshports.org/sysutils/bareos-client/>`__, `X <http://www.freshports.org/sysutils/bareos-server/>`__, `X <http://www.freshports.org/sysutils/bareos-server/>`__
    OpenBSD, , X
    NetBSD,  , X                                                                                                                                                            
    :strong:`Unix`                                                                                                                                                                                                                       
