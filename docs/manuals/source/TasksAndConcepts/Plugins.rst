@@ -835,7 +835,7 @@ ovirt_sdk_debug_log
    example by adding **ovirt_sdk_debug_log=/var/log/bareos/ovirt-sdk-debug.log**.
 
 
-.. _oVirtPlugin-backup
+.. _oVirtPlugin-backup:
 
 Backup with oVirt Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -869,7 +869,7 @@ To manually run a backup, use the following command in |bconsole|:
    full level backups for jobs using this plugin.
 
 
-.. _oVirtPlugin-restore
+.. _oVirtPlugin-restore:
 
 Restore with oVirt Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1002,7 +1002,7 @@ When restoring disks of an existing VM, the option **overwrite=yes** must be exp
 passed to force overwriting. To prevent from accidentally overwriting an existing VM,
 the plugin will return an error message if this option is not passed.
 
-.. _oVirtPlugin-restore-to-local-image
+.. _oVirtPlugin-restore-to-local-image:
 
 Restore to local disk image
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
