@@ -27,13 +27,13 @@ As there are lots of configuration options that will change the job execution in
 
 When such a job is run, the |dir| connects to the |sd| and does the initial job setup, then the |dir| connects to the |fd| to setup and start the job there. The |fd| then connects to the |sd| and sends it data there.
 
-Overview
-~~~~~~~~
+Overview simple backup job
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. uml:: /DeveloperGuide/jobexec/backup-short.puml
 
 
-Detailed View
-~~~~~~~~~~~~~
+Detailed View simple backup job
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. uml:: /DeveloperGuide/jobexec/backup-long.puml
 
 
@@ -44,12 +44,12 @@ None of the data is transferred over the network.
 
 When such a job is run, the |dir| connects to the |sd| and tells is what data to read from which volume and what volume the records should be written to.
 
-Overview
-~~~~~~~~
+Overview local copy job
+~~~~~~~~~~~~~~~~~~~~~~~
 .. uml:: /DeveloperGuide/jobexec/localcopy-short.puml
 
-Detailed View
-~~~~~~~~~~~~~
+Detailed View local copy job
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. uml:: /DeveloperGuide/jobexec/localcopy-long.puml
 
 
@@ -62,10 +62,10 @@ The main difference is what the director writes to the catalog after the job is 
 When such a remote copy or migrate job is run, the |dir| connects to the reading |sd| and then to the writing |sd|.
 The writing |sd| is put into listen-mode while the writing |sd| will essentially run a restore where the data is sent to the writing |sd|.
 
-Overview
-~~~~~~~~
+Overview remote copy job
+~~~~~~~~~~~~~~~~~~~~~~~~
 .. uml:: /DeveloperGuide/jobexec/remotecopy-short.puml
 
-Detailed View
-~~~~~~~~~~~~~
+Detailed View remote copy job
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. uml:: /DeveloperGuide/jobexec/remotecopy-long.puml
