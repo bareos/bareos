@@ -312,7 +312,6 @@ dpl_status_t dpl_posix_list_bucket(dpl_ctx_t* ctx,
   int iret;
   char path[MAXPATHLEN];
   char objpath[MAXPATHLEN];
-  struct dirent entry, *entryp;
   struct stat st;
   dpl_vec_t* common_prefixes = NULL;
   dpl_vec_t* objects = NULL;
@@ -348,14 +347,9 @@ dpl_status_t dpl_posix_list_bucket(dpl_ctx_t* ctx,
     ret = DPL_ENOMEM;
     goto end;
   }
-
+  struct dirent *entryp;
   while (1) {
-    iret = readdir_r(dir, &entry, &entryp);
-    if (0 != iret) {
-      ret = dpl_posix_map_errno();
-      perror("readdir");
-      goto end;
-    }
+    entryp = readdir(dir);
 
     if (!entryp) break;
 
