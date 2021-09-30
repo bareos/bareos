@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,7 @@
 #
 
 # Provided by the Bareos SD Python plugin interface
-import bareos_sd_consts
+import bareossd
 
 # This module contains the wrapper functions called by the Bareos-SD, the
 # functions call the corresponding methods from your plugin class
@@ -47,7 +47,7 @@ def load_bareos_plugin(plugindef):
     BareosSdWrapper.bareos_sd_plugin_object = (
         BareosSdPluginBaseclass.BareosSdPluginBaseclass(plugindef)
     )
-    return bareos_sd_consts.bRCs["bRC_OK"]
+    return bareossd.bRC_OK
 
 
 # the rest is done in the Plugin module
