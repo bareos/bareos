@@ -52,6 +52,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix scheduler running disabled jobs after executing the disable command [PR #924]
 - [Issue #1334]: After deleting storage from the configuration, it still persists in the catalog db [PR #912]
 - [Issue #1191]: The web interface runs under any login and password [PR #936]
+- Adapt Python DIR and SD plugin Baseclasses to the modernized Python plugin API [PR #923]
 
 ### Added
 - systemtests: allows multiple subtests per systemtest [PR #857]
