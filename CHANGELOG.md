@@ -82,6 +82,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: BareosSecurityIssues add remark about new systemd service (non forking) logged information into systemd-journal [PR #927]
 
 ### Changed
+- systemtest python-bareos: split tests in separate files [PR #944]
 - core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]
 - systemtests: define variable BackupDirectory globally [PR #780]
 - systemtests: run all systemstests with ``set -o pipefail`` [PR #780]
@@ -262,4 +263,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #936]: https://github.com/bareos/bareos/pull/936
 [PR #938]: https://github.com/bareos/bareos/pull/938
 [PR #942]: https://github.com/bareos/bareos/pull/942
+[PR #944]: https://github.com/bareos/bareos/pull/944
 [unreleased]: https://github.com/bareos/bareos/tree/master
