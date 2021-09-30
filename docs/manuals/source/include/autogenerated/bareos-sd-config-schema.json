@@ -209,11 +209,6 @@
           "platform_specific": true,
           "equals": true
         },
-        "SubSysDirectory": {
-          "datatype": "DIRECTORY",
-          "code": 8,
-          "equals": true
-        },
         "BackendDirectory": {
           "datatype": "DIRECTORY_LIST",
           "code": 0,
@@ -728,12 +723,6 @@
           "code": 0,
           "equals": true
         },
-        "MaximumVolumeSize": {
-          "datatype": "SIZE64",
-          "code": 0,
-          "deprecated": true,
-          "equals": true
-        },
         "MaximumFileSize": {
           "datatype": "SIZE64",
           "code": 0,
@@ -770,12 +759,6 @@
           "code": 0,
           "equals": true
         },
-        "MaximumPartSize": {
-          "datatype": "SIZE64",
-          "code": 0,
-          "deprecated": true,
-          "equals": true
-        },
         "MountPoint": {
           "datatype": "STRNAME",
           "code": 0,
@@ -789,18 +772,6 @@
         "UnmountCommand": {
           "datatype": "STRNAME",
           "code": 0,
-          "equals": true
-        },
-        "WritePartCommand": {
-          "datatype": "STRNAME",
-          "code": 0,
-          "deprecated": true,
-          "equals": true
-        },
-        "FreeSpaceCommand": {
-          "datatype": "STRNAME",
-          "code": 0,
-          "deprecated": true,
           "equals": true
         },
         "LabelType": {

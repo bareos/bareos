@@ -696,7 +696,7 @@ static bool CheckResources()
       me->MaxConnections = me->MaxConsoleConnections + 10;
     }
 
-    my_config->omit_defaults_ = me->omit_defaults;
+    my_config->omit_defaults_ = true;
     SetWorkingDirectory(me->working_directory);
 
     // See if message resource is specified.

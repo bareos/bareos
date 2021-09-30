@@ -134,7 +134,6 @@ static ResourceItem dir_items[] = {
   { "BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_dir, backend_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_BACKENDDIR, NULL, NULL },
 #endif
   { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir, subscriptions), 0, CFG_ITEM_DEFAULT, "0", "12.4.4-", NULL },
-  { "SubSysDirectory", CFG_TYPE_DIR, ITEM(res_dir, subsys_directory), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
   { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dir, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
   { "MaximumConnections", CFG_TYPE_PINT32, ITEM(res_dir, MaxConnections), 0, CFG_ITEM_DEFAULT, "30", NULL, NULL },
   { "MaximumConsoleConnections", CFG_TYPE_PINT32, ITEM(res_dir, MaxConsoleConnections), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL },
@@ -147,8 +146,6 @@ static ResourceItem dir_items[] = {
   { "VerId", CFG_TYPE_STR, ITEM(res_dir, verid), 0, 0, NULL, NULL, NULL },
   { "OptimizeForSize", CFG_TYPE_BOOL, ITEM(res_dir, optimize_for_size), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "OptimizeForSpeed", CFG_TYPE_BOOL, ITEM(res_dir, optimize_for_speed), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "OmitDefaults", CFG_TYPE_BOOL, ITEM(res_dir, omit_defaults), 0, CFG_ITEM_DEFAULT | CFG_ITEM_DEPRECATED, "true",
-      NULL, "Omit config variables with default values when dumping the config." },
   { "KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir, keyencrkey), 1, 0, NULL, NULL, NULL },
   { "NdmpSnooping", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_snooping), 0, 0, NULL, "13.2.0-", NULL },
   { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_dir, ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4", "13.2.0-", NULL },
@@ -241,8 +238,6 @@ static ResourceItem cli_items[] = {
      "If enabled, the Storage Daemon will initiate the network connection to the Client. If disabled, the Client will initiate the network connection to the Storage Daemon." },
   { "ConnectionFromDirectorToClient", CFG_TYPE_BOOL, ITEM(res_client, conn_from_dir_to_fd), 0, CFG_ITEM_DEFAULT, "true", "16.2.2",
      "Let the Director initiate the network connection to the Client." },
-  { "AllowClientConnect", CFG_TYPE_BOOL, ITEM(res_client, conn_from_fd_to_dir), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_ALIAS, NULL, NULL,
-     "Alias of \"Connection From Client To Director\"." },
   { "ConnectionFromClientToDirector", CFG_TYPE_BOOL, ITEM(res_client, conn_from_fd_to_dir), 0, CFG_ITEM_DEFAULT, "false", "16.2.2",
      "The Director will accept incoming network connection from this Client." },
   { "Enabled", CFG_TYPE_BOOL, ITEM(res_client, enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
@@ -291,16 +286,11 @@ static ResourceItem store_items[] = {
   { "CacheStatusInterval", CFG_TYPE_TIME, ITEM(res_store, cache_status_interval), 0, CFG_ITEM_DEFAULT, "30", NULL, NULL },
   { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
   { "MaximumConcurrentReadJobs", CFG_TYPE_PINT32, ITEM(res_store, MaxConcurrentReadJobs), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-  { "SddPort", CFG_TYPE_PINT32, ITEM(res_store, SDDport), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
   { "PairedStorage", CFG_TYPE_RES, ITEM(res_store, paired_storage), R_STORAGE, 0, NULL, NULL, NULL },
   { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store, max_bandwidth), 0, 0, NULL, NULL, NULL },
   { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store, collectstats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "NdmpChangerDevice", CFG_TYPE_STRNAME, ITEM(res_store, ndmp_changer_device), 0, 0, NULL, "16.2.4-",
      "Allows direct control of a Storage Daemon Auto Changer device by the Director. Only used in NDMP_NATIVE environments." },
-   // TapeDevice has never been used in production and intended for NDMP_NATIVE only.
-   // Instead of TapeDevice, the required Devices should be configured using the Device directive.
-   //{ "TapeDevice", CFG_TYPE_ALIST_STR, ITEM(res_store, tape_devices), 0, CFG_ITEM_ALIAS | CFG_ITEM_DEPRECATED, NULL, "16.2.4-17.2.2",
-   //  "Allows direct control of Storage Daemon Tape devices by the Director. Only used in NDMP_NATIVE environments." },
    TLS_COMMON_CONFIG(res_store),
    TLS_CERT_CONFIG(res_store),
   {nullptr, 0, 0, nullptr, 0, 0, nullptr, nullptr, nullptr}
@@ -383,12 +373,6 @@ ResourceItem job_items[] = {
   { "MaximumBandwidth", CFG_TYPE_SPEED, ITEM(res_job, max_bandwidth), 0, 0, NULL, NULL, NULL },
   { "MaxRunSchedTime", CFG_TYPE_TIME, ITEM(res_job, MaxRunSchedTime), 0, 0, NULL, NULL, NULL },
   { "MaxRunTime", CFG_TYPE_TIME, ITEM(res_job, MaxRunTime), 0, 0, NULL, NULL, NULL },
-  { "FullMaxWaitTime", CFG_TYPE_TIME, ITEM(res_job, FullMaxRunTime), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_ALIAS, NULL, "-12.4.0",
-     "This directive has been deprecated in favor of \"Full Max Runtime\"." },
-  { "IncrementalMaxWaitTime", CFG_TYPE_TIME, ITEM(res_job, IncMaxRunTime), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_ALIAS, NULL, "-12.4.0",
-     "This directive has been deprecated in favor of \"Incremental Max Runtime\"." },
-  { "DifferentialMaxWaitTime", CFG_TYPE_TIME, ITEM(res_job, DiffMaxRunTime), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_ALIAS, NULL, "-12.4.0",
-     "This directive has been deprecated in favor of \"Differential Max Runtime\"." },
   { "FullMaxRuntime", CFG_TYPE_TIME, ITEM(res_job, FullMaxRunTime), 0, 0, NULL, NULL, NULL },
   { "IncrementalMaxRuntime", CFG_TYPE_TIME, ITEM(res_job, IncMaxRunTime), 0, 0, NULL, NULL, NULL },
   { "DifferentialMaxRuntime", CFG_TYPE_TIME, ITEM(res_job, DiffMaxRunTime), 0, 0, NULL, NULL, NULL },
@@ -420,7 +404,6 @@ ResourceItem job_items[] = {
   { "RescheduleTimes", CFG_TYPE_PINT32, ITEM(res_job, RescheduleTimes), 0, CFG_ITEM_DEFAULT, "5", NULL, NULL },
   { "Priority", CFG_TYPE_PINT32, ITEM(res_job, Priority), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
   { "AllowMixedPriority", CFG_TYPE_BOOL, ITEM(res_job, allow_mixed_priority), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-  { "WritePartAfterJob", CFG_TYPE_BOOL, ITEM(res_job, write_part_after_job), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
   { "SelectionPattern", CFG_TYPE_STR, ITEM(res_job, selection_pattern), 0, 0, NULL, NULL, NULL },
   { "RunScript", CFG_TYPE_RUNSCRIPT, ITEM(res_job, RunScripts), 0, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
   { "SelectionType", CFG_TYPE_MIGTYPE, ITEM(res_job, selection_type), 0, 0, NULL, NULL, NULL },
@@ -432,7 +415,6 @@ ResourceItem job_items[] = {
   { "CancelRunningDuplicates", CFG_TYPE_BOOL, ITEM(res_job, CancelRunningDuplicates), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "SaveFileHistory", CFG_TYPE_BOOL, ITEM(res_job, SaveFileHist), 0, CFG_ITEM_DEFAULT, "true", "14.2.0-", NULL },
   { "FileHistorySize", CFG_TYPE_SIZE64, ITEM(res_job, FileHistSize), 0, CFG_ITEM_DEFAULT, "10000000", "15.2.4-", NULL },
-  { "PluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, FdPluginOptions), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_ALIAS, NULL, "-12.4.0", NULL },
   { "FdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, FdPluginOptions), 0, 0, NULL, NULL, NULL },
   { "SdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, SdPluginOptions), 0, 0, NULL, NULL, NULL },
   { "DirPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job, DirPluginOptions), 0, 0, NULL, NULL, NULL },
@@ -485,7 +467,6 @@ static ResourceItem pool_items[] = {
   { "LabelType", CFG_TYPE_LABEL, ITEM(res_pool, LabelType), 0, 0, NULL, NULL, NULL },
   { "CleaningPrefix", CFG_TYPE_STRNAME, ITEM(res_pool, cleaning_prefix), 0, CFG_ITEM_DEFAULT, "CLN", NULL, NULL },
   { "UseCatalog", CFG_TYPE_BOOL, ITEM(res_pool, use_catalog), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-  { "UseVolumeOnce", CFG_TYPE_BOOL, ITEM(res_pool, use_volume_once), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
   { "PurgeOldestVolume", CFG_TYPE_BOOL, ITEM(res_pool, purge_oldest_volume), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
   { "ActionOnPurge", CFG_TYPE_ACTIONONPURGE, ITEM(res_pool, action_on_purge), 0, 0, NULL, NULL, NULL },
   { "RecycleOldestVolume", CFG_TYPE_BOOL, ITEM(res_pool, recycle_oldest_volume), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
@@ -3812,7 +3793,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->plugin_directory) { free(p->plugin_directory); }
       if (p->plugin_names) { delete p->plugin_names; }
       if (p->pid_directory) { free(p->pid_directory); }
-      if (p->subsys_directory) { free(p->subsys_directory); }
       if (p->password_.value) { free(p->password_.value); }
       if (p->query_file) { free(p->query_file); }
       if (p->DIRaddrs) { FreeAddresses(p->DIRaddrs); }

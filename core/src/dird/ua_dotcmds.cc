@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1532,8 +1532,6 @@ bool DotDefaultsCmd(UaContext* ua, const char* cmd)
       ua->send->ObjectKeyValue(
           "label_format", "%s=", (pool->label_format ? pool->label_format : ""),
           "%s\n");
-      ua->send->ObjectKeyValue("use_volume_once", "%s=", pool->use_volume_once,
-                               "%d\n");
       ua->send->ObjectKeyValue(
           "purge_oldest_volume=", "%s=", pool->purge_oldest_volume, "%d\n");
       ua->send->ObjectKeyValue("recycle_oldest_volume",

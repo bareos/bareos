@@ -93,7 +93,6 @@ class ClientResource
   dlist<IPADDR>* FDsrc_addr = nullptr; /* Address to source connections from */
   char* working_directory = nullptr;
   char* pid_directory = nullptr;
-  char* subsys_directory = nullptr;
   char* plugin_directory = nullptr; /* Plugin directory */
   alist<const char*>* plugin_names = nullptr;
   char* scripts_directory = nullptr;

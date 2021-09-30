@@ -129,6 +129,34 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Removed language support files for the core daemons, as these files are outdated and not used at all.
 - Removed package lists for platforms no longer built: Fedora_30.x86_64, RHEL_6.x86_64, SLE_12_SP4.x86_64, openSUSE_Leap_15.0.x86_64, openSUSE_Leap_15.1.x86_64.
 - Removed support for IPv4-only build. IPv6 now is required for building bareos. [PR #913]
+- Remove deprecated directives [PR #938]
+  - Director
+    - Director resource
+      - `Omit Defaults`
+      - `Sub Sys Directory`
+    - Storage resource
+      - `Sdd Port`
+    - Pool resource
+      - `Use Volume Once`
+    - Job resource
+      - `Write Part After Job`
+      - Alias `Differential Max Wait Time` for `Differential Max Runtime`
+      - Alias `Full Max Wait Time` for `Full Max Runtime`
+      - Alias `Incremental Max Wait Time` for `Incremental Max Runtime`
+      - Alias `Plugin Options` for `Fd Plugin Options`
+    - Client resource
+      - Alias `Allow Client Connect` for `Connection From Client To Director`
+  - Storage Daemon
+    - Device resource
+      - `Free Space Command`
+      - `Maximum Part Size`
+      - `Write Part Command`
+      - `Maximum Volume Size`
+    - Storage resource
+      - `Sub Sys Directory`
+  - File Daemon
+    - Client resource
+      - `Sub Sys Directory`
 
 ### Security
 
@@ -149,6 +177,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1316]: https://bugs.bareos.org/view.php?id=1316
 [Issue #1324]: https://bugs.bareos.org/view.php?id=1324
 [Issue #1329]: https://bugs.bareos.org/view.php?id=1329
+[Issue #1334]: https://bugs.bareos.org/view.php?id=1334
 [Issue #1369]: https://bugs.bareos.org/view.php?id=1369
 [PR #552]: https://github.com/bareos/bareos/pull/552
 [PR #694]: https://github.com/bareos/bareos/pull/694
@@ -202,6 +231,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #840]: https://github.com/bareos/bareos/pull/840
 [PR #844]: https://github.com/bareos/bareos/pull/844
 [PR #850]: https://github.com/bareos/bareos/pull/850
+[PR #857]: https://github.com/bareos/bareos/pull/857
 [PR #858]: https://github.com/bareos/bareos/pull/858
 [PR #860]: https://github.com/bareos/bareos/pull/860
 [PR #861]: https://github.com/bareos/bareos/pull/861
@@ -218,11 +248,15 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #907]: https://github.com/bareos/bareos/pull/907
 [PR #910]: https://github.com/bareos/bareos/pull/910
 [PR #912]: https://github.com/bareos/bareos/pull/912
+[PR #913]: https://github.com/bareos/bareos/pull/913
 [PR #914]: https://github.com/bareos/bareos/pull/914
+[PR #916]: https://github.com/bareos/bareos/pull/916
 [PR #918]: https://github.com/bareos/bareos/pull/918
 [PR #919]: https://github.com/bareos/bareos/pull/919
 [PR #920]: https://github.com/bareos/bareos/pull/920
+[PR #921]: https://github.com/bareos/bareos/pull/921
 [PR #924]: https://github.com/bareos/bareos/pull/924
 [PR #927]: https://github.com/bareos/bareos/pull/927
 [PR #936]: https://github.com/bareos/bareos/pull/936
+[PR #938]: https://github.com/bareos/bareos/pull/938
 [unreleased]: https://github.com/bareos/bareos/tree/master

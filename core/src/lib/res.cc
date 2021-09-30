@@ -1828,8 +1828,8 @@ void BareosResource::PrintResourceItem(ResourceItem& item,
     return;
   }
 
-  if ((item.flags & CFG_ITEM_REQUIRED) || !my_config.omit_defaults_) {
-    // Always print required items or if my_config.omit_defaults_ is false
+  if (item.flags & CFG_ITEM_REQUIRED) {
+    // Always print required items
     print_item = true;
   }
 

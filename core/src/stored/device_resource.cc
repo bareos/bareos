@@ -64,18 +64,14 @@ DeviceResource::DeviceResource()
     , autodeflate(AutoXflateMode::IO_DIRECTION_NONE)
     , autoinflate(AutoXflateMode::IO_DIRECTION_NONE)
     , vol_poll_interval(300)
-    , max_volume_size(0)
     , max_file_size(1000000000)
     , volume_capacity(0)
     , max_spool_size(0)
     , max_job_spool_size(0)
 
-    , max_part_size(0)
     , mount_point(nullptr)
     , mount_command(nullptr)
     , unmount_command(nullptr)
-    , write_part_command(nullptr)
-    , free_space_command(nullptr)
     , count(1)
     , multiplied_device_resource(nullptr)
 
@@ -101,8 +97,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
     , mount_point(nullptr)
     , mount_command(nullptr)
     , unmount_command(nullptr)
-    , write_part_command(nullptr)
-    , free_space_command(nullptr)
     , temporarily_swapped_numbered_name(nullptr) /* should not copy */
 {
   if (other.media_type) { media_type = strdup(other.media_type); }
@@ -147,23 +141,15 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   autodeflate = other.autodeflate;
   autoinflate = other.autoinflate;
   vol_poll_interval = other.vol_poll_interval;
-  max_volume_size = other.max_volume_size;
   max_file_size = other.max_file_size;
   volume_capacity = other.volume_capacity;
   max_spool_size = other.max_spool_size;
   max_job_spool_size = other.max_job_spool_size;
 
-  max_part_size = other.max_part_size;
   if (other.mount_point) { mount_point = strdup(other.mount_point); }
   if (other.mount_command) { mount_command = strdup(other.mount_command); }
   if (other.unmount_command) {
     unmount_command = strdup(other.unmount_command);
-  }
-  if (other.write_part_command) {
-    write_part_command = strdup(other.write_part_command);
-  }
-  if (other.free_space_command) {
-    free_space_command = strdup(other.free_space_command);
   }
   count = other.count;
   multiplied_device_resource = other.multiplied_device_resource;
@@ -210,18 +196,14 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   autodeflate = rhs.autodeflate;
   autoinflate = rhs.autoinflate;
   vol_poll_interval = rhs.vol_poll_interval;
-  max_volume_size = rhs.max_volume_size;
   max_file_size = rhs.max_file_size;
   volume_capacity = rhs.volume_capacity;
   max_spool_size = rhs.max_spool_size;
   max_job_spool_size = rhs.max_job_spool_size;
 
-  max_part_size = rhs.max_part_size;
   mount_point = rhs.mount_point;
   mount_command = rhs.mount_command;
   unmount_command = rhs.unmount_command;
-  write_part_command = rhs.write_part_command;
-  free_space_command = rhs.free_space_command;
   count = rhs.count;
   multiplied_device_resource = rhs.multiplied_device_resource;
   multiplied_device_resource_base_name

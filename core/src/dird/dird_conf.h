@@ -118,7 +118,6 @@ class DirectorResource
   char* plugin_directory = nullptr;     /* Plugin Directory */
   alist<const char*>* plugin_names = nullptr; /* Plugin names to load */
   char* pid_directory = nullptr;              /* PidDirectory */
-  char* subsys_directory = nullptr;           /* SubsysDirectory */
   std::vector<std::string> backend_directories;
   MessagesResource* messages = nullptr; /* Daemon message handler */
   uint32_t MaxConcurrentJobs = 0; /* Max concurrent jobs for whole director */
@@ -131,10 +130,8 @@ class DirectorResource
   bool optimize_for_size = false;  /* Optimize daemon for minimum memory size */
   bool optimize_for_speed = false; /* Optimize daemon for speed which may need
                               more memory */
-  bool omit_defaults = false; /* Omit config variables with default values when
-                         dumping the config */
-  bool ndmp_snooping = false; /* NDMP Protocol specific snooping enabled */
-  bool auditing = false;      /* Auditing enabled */
+  bool ndmp_snooping = false;      /* NDMP Protocol specific snooping enabled */
+  bool auditing = false;           /* Auditing enabled */
   alist<const char*>* audit_events
       = nullptr;                   /* Specific audit events to enable */
   uint32_t ndmp_loglevel = 0;      /* NDMP Protocol specific loglevel to use */
@@ -334,7 +331,6 @@ class StorageResource
   uint32_t Protocol = 0;      /* Protocol to use to connect */
   uint32_t AuthType = 0;      /* Authentication Type to use for protocol */
   uint32_t SDport = 0;        /* Port where Directors connect */
-  uint32_t SDDport = 0;       /* Data port for File daemon */
   char* address = nullptr;    /* Hostname for remote access to Storage */
   char* lanaddress = nullptr; /* Hostname for remote access to Storage if behind
                        NAT in LAN */
@@ -492,7 +488,6 @@ class JobResource : public BareosResource {
   bool spool_data = false;          /**< Set to spool data in SD */
   bool rerun_failed_levels = false; /**< Upgrade to rerun failed levels */
   bool PreferMountedVolumes = false; /**< Prefer vols mounted rather than new one */
-  bool write_part_after_job = false; /**< Set to write part after job in SD */
   bool enabled = false;              /**< Set if job enabled */
   bool accurate = false;             /**< Set if it is an accurate backup job */
   bool AllowDuplicateJobs = false;   /**< Allow duplicate jobs */
@@ -624,7 +619,6 @@ class PoolResource : public BareosResource {
       = nullptr;            /* Where is device -- list of Storage to be used */
   bool use_catalog = false; /* Maintain catalog for media */
   bool catalog_files = false;          /* Maintain file entries in catalog */
-  bool use_volume_once = false;        /* Write on volume only once */
   bool purge_oldest_volume = false;    /* Purge oldest volume */
   bool recycle_oldest_volume = false;  /* Attempt to recycle oldest volume */
   bool recycle_current_volume = false; /* Attempt recycle of current volume */

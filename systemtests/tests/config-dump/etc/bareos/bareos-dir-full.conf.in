@@ -16,7 +16,6 @@ Director {
   ScriptsDirectory = "@tmpdir@"
   BackendDirectory = "@backenddir@"
   Subscriptions = 10
-  SubSysDirectory = "@tmpdir@"
   MaximumConcurrentJobs = 100
   MaximumConnections = 300
   MaximumConsoleConnections = 200
@@ -486,7 +485,6 @@ Job {
   RescheduleTimes = 10
   Priority = 100
   AllowMixedPriority = Yes
-  WritePartAfterJob = Yes
   SelectionPattern = "select * from jobs;"
   RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
   RunAfterJob = "/usr/lib/bareos/scripts/delete_catalog_backup"

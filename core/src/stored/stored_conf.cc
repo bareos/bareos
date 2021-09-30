@@ -83,7 +83,6 @@ static ResourceItem store_items[] = {
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL},
   {"PidDirectory", CFG_TYPE_DIR, ITEM(res_store, pid_directory), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_PIDDIR, NULL, NULL},
-  {"SubSysDirectory", CFG_TYPE_DIR, ITEM(res_store, subsys_directory), CFG_ITEM_DEPRECATED, 0, NULL, NULL, NULL},
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
   {"BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_store, backend_directories), 0,
       CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_BACKENDDIR, NULL, NULL},
@@ -193,7 +192,6 @@ static ResourceItem dev_items[] = {
       "64512" /* DEFAULT_BLOCK_SIZE */, NULL, NULL},
   {"MinimumBlockSize", CFG_TYPE_PINT32, ITEM(res_dev, min_block_size), 0, 0, NULL, NULL, NULL},
   {"MaximumBlockSize", CFG_TYPE_MAXBLOCKSIZE, ITEM(res_dev, max_block_size), 0, 0, NULL, NULL, NULL},
-  {"MaximumVolumeSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_volume_size), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
   {"MaximumFileSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_file_size), 0, CFG_ITEM_DEFAULT, "1000000000", NULL, NULL},
   {"VolumeCapacity", CFG_TYPE_SIZE64, ITEM(res_dev, volume_capacity), 0, 0, NULL, NULL, NULL},
   {"MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dev, max_concurrent_jobs), 0, 0, NULL, NULL, NULL},
@@ -201,12 +199,9 @@ static ResourceItem dev_items[] = {
   {"MaximumSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_spool_size), 0, 0, NULL, NULL, NULL},
   {"MaximumJobSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_job_spool_size), 0, 0, NULL, NULL, NULL},
   {"DriveIndex", CFG_TYPE_PINT16, ITEM(res_dev, drive_index), 0, 0, NULL, NULL, NULL},
-  {"MaximumPartSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_part_size), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
   {"MountPoint", CFG_TYPE_STRNAME, ITEM(res_dev, mount_point), 0, 0, NULL, NULL, NULL},
   {"MountCommand", CFG_TYPE_STRNAME, ITEM(res_dev, mount_command), 0, 0, NULL, NULL, NULL},
   {"UnmountCommand", CFG_TYPE_STRNAME, ITEM(res_dev, unmount_command), 0, 0, NULL, NULL, NULL},
-  {"WritePartCommand", CFG_TYPE_STRNAME, ITEM(res_dev, write_part_command), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
-  {"FreeSpaceCommand", CFG_TYPE_STRNAME, ITEM(res_dev, free_space_command), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL},
   {"LabelType", CFG_TYPE_LABEL, ITEM(res_dev, label_type), 0, 0, NULL, NULL, NULL},
   {"NoRewindOnClose", CFG_TYPE_BOOL, ITEM(res_dev, norewindonclose), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL},
   {"DriveTapeAlertEnabled", CFG_TYPE_BOOL, ITEM(res_dev, drive_tapealert_enabled), 0, 0, NULL, NULL, NULL},
@@ -911,7 +906,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->NDMPaddrs) { FreeAddresses(p->NDMPaddrs); }
       if (p->working_directory) { free(p->working_directory); }
       if (p->pid_directory) { free(p->pid_directory); }
-      if (p->subsys_directory) { free(p->subsys_directory); }
       if (p->plugin_directory) { free(p->plugin_directory); }
       if (p->plugin_names) { delete p->plugin_names; }
       if (p->scripts_directory) { free(p->scripts_directory); }
@@ -935,8 +929,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->mount_point) { free(p->mount_point); }
       if (p->mount_command) { free(p->mount_command); }
       if (p->unmount_command) { free(p->unmount_command); }
-      if (p->write_part_command) { free(p->write_part_command); }
-      if (p->free_space_command) { free(p->free_space_command); }
       delete p;
       break;
     }
