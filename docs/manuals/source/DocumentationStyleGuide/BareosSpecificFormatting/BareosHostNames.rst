@@ -1,3 +1,5 @@
+.. _documentationstyleguide/bareosspecificformatting/bareoshostnames:bareos host names:
+
 Bareos Host Names
 =================
 

@@ -109,6 +109,7 @@ The output should look like this:
 
 ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup``
 
+.. _documentationstyleguide/specificformatting:environment variable:
 
 Environment Variable
 --------------------
@@ -232,6 +233,8 @@ or
 **Recycle = yes**
 
 
+
+.. _documentationstyleguide/specificformatting:operating system:
 
 Operating System
 ----------------

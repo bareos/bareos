@@ -1,5 +1,9 @@
+.. _documentationstyleguide/bareosspecificformatting/bareosconfiguration:bareos configuration:
+
 Bareos Configuration
 ====================
+
+.. _documentationstyleguide/bareosspecificformatting/bareosconfiguration:bareos configuration resource:
 
 Bareos Configuration Resource
 -----------------------------
@@ -68,6 +72,7 @@ This will get displayed as
 
 :config:option:`dir/job`
 
+.. _documentationstyleguide/bareosspecificformatting/bareosconfiguration:resource name:
 
 Resource Name
 -------------
@@ -84,6 +89,8 @@ This will get displayed as
 
 Resource Directive
 ------------------
+
+.. _documentationstyleguide/bareosspecificformatting/bareosconfiguration:resource directive definition:
 
 Resource Directive Definition
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -114,6 +121,8 @@ the corresponding file in the :file:`manually_added_config_directive_description
       * :file:`manually_added_config_directive_descriptions/fd-client-AllowBandwidthBursting.rst.inc`
 
 
+
+.. _documentationstyleguide/bareosspecificformatting/bareosconfiguration:reference to a resource directive:
 
 Reference to a Resource Directive
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,6 +155,7 @@ For example:
 
 
 
+.. _documentationstyleguide/bareosspecificformatting/bareosconfiguration:resource directive with value:
 
 Resource Directive With Value
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

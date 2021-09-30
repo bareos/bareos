@@ -1,3 +1,5 @@
+.. _documentationstyleguide/commonnames:common names:
+
 Common Names
 ============
 

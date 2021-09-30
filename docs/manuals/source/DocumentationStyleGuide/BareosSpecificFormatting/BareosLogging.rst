@@ -1,3 +1,5 @@
+.. _documentationstyleguide/bareosspecificformatting/bareoslogging:bareos logging:
+
 Bareos Logging
 ==============
 

@@ -115,6 +115,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - reconnecting to the database is now automatic per default without the need to specify it in the catalog [PR #860]
 - bareos is now set to listen to both IPv6 and IPv4 by default, instead of needing to specify it via a directive [PR #882]
 - bareos is now able to create IPv6 addresses with the `DirAddress` directive [PR #882]
+- Disable autotosectionlabel plugin in documentation and add required labels [PR #942]
 
 ### Deprecated
 
@@ -255,8 +256,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #919]: https://github.com/bareos/bareos/pull/919
 [PR #920]: https://github.com/bareos/bareos/pull/920
 [PR #921]: https://github.com/bareos/bareos/pull/921
+[PR #923]: https://github.com/bareos/bareos/pull/923
 [PR #924]: https://github.com/bareos/bareos/pull/924
 [PR #927]: https://github.com/bareos/bareos/pull/927
 [PR #936]: https://github.com/bareos/bareos/pull/936
 [PR #938]: https://github.com/bareos/bareos/pull/938
+[PR #942]: https://github.com/bareos/bareos/pull/942
 [unreleased]: https://github.com/bareos/bareos/tree/master
