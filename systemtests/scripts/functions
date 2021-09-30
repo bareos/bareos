@@ -527,8 +527,7 @@ stop_bareos()
 
 run_python_unittests()
 {
-    PYTHON_UNITTEST_SCRIPT=${1:-python-bareos-unittest.py}
-    if  PYTHONRESULT=$($PYTHON_EXECUTABLE "${cwd}/${PYTHON_UNITTEST_SCRIPT}" -v); then
+    if  PYTHONRESULT=$($PYTHON_EXECUTABLE -m unittest -v "$@"); then
         print_debug "$PYTHONRESULT"
     else
         set_error "$PYTHONRESULT"

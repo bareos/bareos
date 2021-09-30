@@ -6,10 +6,5 @@ Director {
   Name = @basename@-dir
   DIRport = @dir_port@
   Address = @hostname@
-  Password = ""
-}
-
-Console {
-  Name = PamConsole
-  Password = "secret"
+  Password = "@dir_password@"
 }

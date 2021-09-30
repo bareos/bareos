@@ -1,0 +1,19 @@
+#
+# Bareos User Agent (or Console) Configuration File for PAM Console.
+#
+# Requires an additional credentials file. Example:
+#
+# bin/bconsole -c etc/bareos/bconsole-pam.conf -p etc/user1.cred
+#
+
+Director {
+  Name = @basename@-dir
+  DIRport = @dir_port@
+  Address = @hostname@
+  Password = ""
+}
+
+Console {
+  Name = PamConsole
+  Password = "secret"
+}

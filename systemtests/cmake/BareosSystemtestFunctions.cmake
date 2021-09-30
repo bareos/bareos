@@ -27,6 +27,9 @@ macro(create_systemtests_directory)
 
   configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
+  configurefilestosystemtest(
+    "systemtests" "scripts" "run_python_unittests.sh" @ONLY ""
+  )
   configurefilestosystemtest("systemtests" "scripts" "setup" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "start_bareos.sh" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "start_minio.sh" @ONLY "")
@@ -433,6 +436,7 @@ macro(prepare_test_python)
         "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"
         "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_name}modules:"
         "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_name}modules:"
+        "${CMAKE_SOURCE_DIR}/systemtests/python-modules:"
         "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
     )
   endif()
@@ -505,18 +509,30 @@ function(add_disabled_systemtest PREFIX TEST_NAME)
 endfunction()
 
 function(add_systemtest name file)
-  cmake_parse_arguments(PARSE_ARGV 2 ARG "" "WORKING_DIRECTORY" "")
+  cmake_parse_arguments(PARSE_ARGV 2 ARG "PYTHON" "WORKING_DIRECTORY" "")
   message(STATUS "      * ${name}")
+
   if(ARG_WORKING_DIRECTORY)
     set(directory "${ARG_WORKING_DIRECTORY}")
   else()
     get_filename_component(directory ${file} DIRECTORY)
   endif()
-  add_test(
-    NAME ${name}
-    COMMAND ${file}
-    WORKING_DIRECTORY ${directory}
-  )
+
+  if(ARG_PYTHON)
+    get_filename_component(filename_without_ext ${file} NAME_WE)
+    add_test(
+      NAME ${name}
+      COMMAND ${PROJECT_BINARY_DIR}/scripts/run_python_unittests.sh
+              ${filename_without_ext}
+      WORKING_DIRECTORY ${directory}
+    )
+  else()
+    add_test(
+      NAME ${name}
+      COMMAND ${file}
+      WORKING_DIRECTORY ${directory}
+    )
+  endif()
   set_tests_properties(
     ${name} PROPERTIES TIMEOUT "${SYSTEMTEST_TIMEOUT}" COST 1.0
                        SKIP_RETURN_CODE 77
@@ -566,6 +582,25 @@ function(add_systemtest_from_directory tests_basedir prefix test_subdir)
     )
   endforeach()
 
+  # add all Python unittests named "test_*.py*" as tests.
+  file(
+    GLOB all_tests
+    LIST_DIRECTORIES false
+    RELATIVE "${test_dir}"
+    CONFIGURE_DEPENDS "${test_dir}/test_*.py"
+  )
+  foreach(testfilename ${all_tests})
+    string(REPLACE ".py" "" test0 ${testfilename})
+    string(REPLACE "test_" "" test ${test0})
+    add_systemtest(${test_basename}:${test} ${test_dir}/${testfilename} PYTHON)
+    set_tests_properties(
+      "${test_basename}:${test}"
+      PROPERTIES FIXTURES_REQUIRED "${test_basename}-fixture"
+                 # use RESOURCE_LOCK to run tests sequential
+                 RESOURCE_LOCK "${test_basename}-lock"
+    )
+  endforeach()
+
   if(NOT EXISTS ${test_dir}/test-cleanup)
     create_symlink(
       "${PROJECT_BINARY_DIR}/scripts/cleanup" "${test_dir}/test-cleanup"
@@ -581,8 +616,17 @@ function(add_systemtest_from_directory tests_basedir prefix test_subdir)
 endfunction()
 
 macro(create_systemtest prefix test_subdir)
-  # Parameter: * prefix STRING * test_subdir STRING * DISABLED option * COMMENT
-  # "..." (optional) macro, not function, to be able to update BASEPORT.
+  # cmake-format: off
+  #
+  # Parameter:
+  #   * prefix STRING
+  #   * test_subdir STRING
+  #   * DISABLED option
+  #   * COMMENT "..." (optional)
+  #
+  # Made as a macro, not as a function to be able to update BASEPORT.
+  #
+  # cmake-format: on
   cmake_parse_arguments(ARG "DISABLED" "COMMENT" "" ${ARGN})
   set(test_basename "${prefix}${test_subdir}")
   if(ARG_DISABLED)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -30,47 +30,19 @@ import bareos.bsock
 from bareos.bsock.protocolversions import ProtocolVersions
 import bareos.exceptions
 
-
-class PythonBareosBase(unittest.TestCase):
-    director_address = "localhost"
-    director_port = 9101
-    director_extra_options = {}
-    director_root_password = "secret"
-    director_operator_username = "admin"
-    director_operator_password = "secret"
-    console_pam_username = u"PamConsole-notls"
-    console_pam_password = u"secret"
-    client = "bareos-fd"
-    # restorefile = '/usr/sbin/bconsole'
-    # path to store logging files
-    backup_directory = "tmp/data/"
-    debug = False
-    logpath = "{}/PythonBareosTest.log".format(os.getcwd())
-
-    def setUp(self):
-        # Configure the logger, for information about the timings set it to INFO
-        logging.basicConfig(
-            filename=self.logpath,
-            format="%(levelname)s %(module)s.%(funcName)s: %(message)s",
-            level=logging.INFO,
-        )
-        logger = logging.getLogger()
-        if self.debug:
-            logger.setLevel(logging.DEBUG)
-        logger.debug("setUp")
-
-    def tearDown(self):
-        logger = logging.getLogger()
-        logger.debug("tearDown\n\n\n")
-
-    def get_name_of_test(self):
-        return self.id().split(".", 1)[1]
+import bareos_unittest
 
 
-class PythonBareosPamLoginTest(PythonBareosBase):
+class PamLoginTest(bareos_unittest.Base):
     """
     Requires Bareos Console Protocol >= 18.2.
     """
+
+    @classmethod
+    def setUpClass(cls):
+        super(PythonBareosPamLoginTest, cls).setUpClass()
+        cls.console_pam_username = u"PamConsole-notls"
+        cls.console_pam_password = u"secret"
 
     def test_pam_login_notls(self):
 
@@ -102,18 +74,15 @@ class PythonBareosPamLoginTest(PythonBareosBase):
         pam_username = u"user1"
         pam_password = u"user1"
 
-        console_pam_username = u"PamConsole"
-        console_pam_password = u"secret"
-
         #
         # login as console_pam_username
         #
-        bareos_password = bareos.bsock.Password(console_pam_password)
+        bareos_password = bareos.bsock.Password(self.console_pam_password)
         director = bareos.bsock.DirectorConsole(
             address=self.director_address,
             port=self.director_port,
-            name=console_pam_username,
-            password=bareos_password,
+            name=self.console_pam_username,
+            password=console_pam_password,
             pam_username=pam_username,
             pam_password=pam_password,
             **self.director_extra_options
@@ -187,13 +156,12 @@ class PythonBareosPamLoginTest(PythonBareosBase):
         pam_username = u"user1"
         pam_password = u"user1"
 
-        bareos_password = bareos.bsock.Password(self.director_operator_password)
         with self.assertRaises(bareos.exceptions.AuthenticationError):
             director = bareos.bsock.DirectorConsole(
                 address=self.director_address,
                 port=self.director_port,
-                name=self.director_operator_username,
-                password=bareos_password,
+                name=self.get_operator_username(),
+                password=self.get_operator_password(),
                 pam_username=pam_username,
                 pam_password=pam_password,
                 **self.director_extra_options
@@ -221,46 +189,3 @@ class PythonBareosPamLoginTest(PythonBareosBase):
                 **self.director_extra_options
             )
             result = director.call("whoami").decode("utf-8")
-
-
-def get_env():
-    """
-    Get attributes as environment variables,
-    if not available or set use defaults.
-    """
-
-    director_root_password = os.environ.get("dir_password")
-    if director_root_password:
-        PythonBareosBase.director_root_password = director_root_password
-
-    director_port = os.environ.get("BAREOS_DIRECTOR_PORT")
-    if director_port:
-        PythonBareosBase.director_port = director_port
-
-    backup_directory = os.environ.get("BackupDirectory")
-    if backup_directory:
-        PythonBareosBase.backup_directory = backup_directory
-
-    tls_version_str = os.environ.get("PYTHON_BAREOS_TLS_VERSION")
-    if tls_version_str is not None:
-        tls_version_parser = bareos.bsock.TlsVersionParser()
-        tls_version = tls_version_parser.get_protocol_version_from_string(
-            tls_version_str
-        )
-        if tls_version is not None:
-            PythonBareosBase.director_extra_options["tls_version"] = tls_version
-        else:
-            print(
-                "Environment variable PYTHON_BAREOS_TLS_VERSION has invalid value ({}). Valid values: {}".format(
-                    tls_version_str,
-                    ", ".join(tls_version_parser.get_protocol_versions()),
-                )
-            )
-
-    if os.environ.get("REGRESS_DEBUG"):
-        PythonBareosBase.debug = True
-
-
-if __name__ == "__main__":
-    get_env()
-    unittest.main()
