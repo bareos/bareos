@@ -96,7 +96,7 @@ The name and media type must correspond to those settings in the |dir| :ref:`Dir
 
 .. limitation:: Droplet Backend does not support block interleaving
 
-  The current implementation has a known Bug that may lead to bogus data on your S3 volumes when you set :config:option:`sd/device/MaximumConccurentJobs` to a value other than 1.
+  The current implementation has a known Bug that may lead to bogus data on your S3 volumes when you set :config:option:`sd/device/MaximumConcurrentJobs` to a value other than 1.
   Because of this the default for a backend of type Droplet is set to 1 and the |sd| will refuse to start if you set it to a value greater than 1.
 
 
