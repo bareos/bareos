@@ -472,7 +472,12 @@ void CreatePidFile(char* dir, const char* progname, int port)
   if ((pidfd = open(fname, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0640))
       >= 0) {
     len = sprintf(pidbuf, "%d\n", (int)getpid());
-    write(pidfd, pidbuf, len);
+    ssize_t bytes_written = write(pidfd, pidbuf, len);
+    if (bytes_written == 0) {
+      BErrNo be;
+      Emsg2(M_ERROR_TERM, 0, _("Could not write to pid file. %s ERR=%s\n"),
+            fname, be.bstrerror());
+    }
     close(pidfd);
     del_pid_file_ok = true; /* we created it so we can delete it */
   } else {
@@ -626,8 +631,8 @@ void WriteStateFile(const char* dir, const char* progname, int port)
     file.write(reinterpret_cast<char*>(&state_hdr), sizeof(StateFileHeader));
   } catch (const std::system_error& e) {
     BErrNo be;
-    Dmsg3(100, "Could not seek filepointer. ERR=%s - %s\n",
-          be.bstrerror(), e.code().message().c_str());
+    Dmsg3(100, "Could not seek filepointer. ERR=%s - %s\n", be.bstrerror(),
+          e.code().message().c_str());
     return;
   } catch (const std::exception& e) {
     Dmsg0(100, "Could not seek filepointer. Some error occurred: %s\n",
