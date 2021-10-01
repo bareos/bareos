@@ -57,6 +57,21 @@
 #include "lib/watchdog.h"
 #include "include/jcr.h"
 
+// macros that check for the return value of read() and write()
+// to avoid warnings about unused results.
+#define READ(FD, BUF, COUNT)                                   \
+  if (read(FD, BUF, COUNT) < 0) {                              \
+    BErrNo be;                                                 \
+    Emsg1(M_FATAL, 0, _("read failed: %s\n"), be.bstrerror()); \
+  }
+
+#define WRITE(FD, BUF, COUNT)                                   \
+  if (write(FD, BUF, COUNT) < 0) {                              \
+    BErrNo be;                                                  \
+    Emsg1(M_FATAL, 0, _("write failed: %s\n"), be.bstrerror()); \
+  }
+
+
 namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);
 }
@@ -428,7 +443,7 @@ static void FillBuffer(fill_mode_t mode, char* buf, uint32_t len)
     case FILL_RANDOM:
       fd = open("/dev/urandom", O_RDONLY);
       if (fd != -1) {
-        read(fd, buf, len);
+        READ(fd, buf, len);
         close(fd);
       } else {
         uint32_t* p = (uint32_t*)buf;
@@ -2274,15 +2289,15 @@ static void fillcmd()
   sprintf(buf, "%s/btape.state", working_directory);
   fd = open(buf, O_CREAT | O_TRUNC | O_WRONLY, 0640);
   if (fd >= 0) {
-    write(fd, &btape_state_level, sizeof(btape_state_level));
-    write(fd, &simple, sizeof(simple));
-    write(fd, &last_block_num1, sizeof(last_block_num1));
-    write(fd, &last_block_num2, sizeof(last_block_num2));
-    write(fd, &last_file1, sizeof(last_file1));
-    write(fd, &last_file2, sizeof(last_file2));
-    write(fd, last_block1->buf, last_block1->buf_len);
-    write(fd, last_block2->buf, last_block2->buf_len);
-    write(fd, first_block->buf, first_block->buf_len);
+    WRITE(fd, &btape_state_level, sizeof(btape_state_level));
+    WRITE(fd, &simple, sizeof(simple));
+    WRITE(fd, &last_block_num1, sizeof(last_block_num1));
+    WRITE(fd, &last_block_num2, sizeof(last_block_num2));
+    WRITE(fd, &last_file1, sizeof(last_file1));
+    WRITE(fd, &last_file2, sizeof(last_file2));
+    WRITE(fd, last_block1->buf, last_block1->buf_len);
+    WRITE(fd, last_block2->buf, last_block2->buf_len);
+    WRITE(fd, first_block->buf, first_block->buf_len);
     close(fd);
     Pmsg2(0, _("Wrote state file last_block_num1=%d last_block_num2=%d\n"),
           last_block_num1, last_block_num2);
@@ -2341,15 +2356,15 @@ static void unfillcmd()
   fd = open(buf, O_RDONLY);
   if (fd >= 0) {
     uint32_t state_level;
-    read(fd, &state_level, sizeof(btape_state_level));
-    read(fd, &simple, sizeof(simple));
-    read(fd, &last_block_num1, sizeof(last_block_num1));
-    read(fd, &last_block_num2, sizeof(last_block_num2));
-    read(fd, &last_file1, sizeof(last_file1));
-    read(fd, &last_file2, sizeof(last_file2));
-    read(fd, last_block1->buf, last_block1->buf_len);
-    read(fd, last_block2->buf, last_block2->buf_len);
-    read(fd, first_block->buf, first_block->buf_len);
+    READ(fd, &state_level, sizeof(btape_state_level));
+    READ(fd, &simple, sizeof(simple));
+    READ(fd, &last_block_num1, sizeof(last_block_num1));
+    READ(fd, &last_block_num2, sizeof(last_block_num2));
+    READ(fd, &last_file1, sizeof(last_file1));
+    READ(fd, &last_file2, sizeof(last_file2));
+    READ(fd, last_block1->buf, last_block1->buf_len);
+    READ(fd, last_block2->buf, last_block2->buf_len);
+    READ(fd, first_block->buf, first_block->buf_len);
     close(fd);
     if (state_level != btape_state_level) {
       Pmsg0(-1, _("\nThe state file level has changed. You must redo\n"
