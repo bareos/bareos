@@ -28,7 +28,7 @@ if(Python2_FOUND)
     COMPONENT filedaemon
   )
   target_link_libraries(python-fd ${Python2_LIBRARIES} bareos)
-  target_include_directories(python-fd PUBLIC SYSTEM ${Python2_INCLUDE_DIRS})
+  target_include_directories(python-fd SYSTEM PUBLIC ${Python2_INCLUDE_DIRS})
   target_compile_definitions(python-fd PUBLIC PY2MODDIR=\"${Python2_SITELIB}\")
   target_compile_options(python-fd PUBLIC ${Python2_CCSHARED})
   add_dependencies(bareos-fd python-fd)
@@ -46,7 +46,7 @@ if(Python3_FOUND)
     COMPONENT filedaemon
   )
   target_link_libraries(python3-fd ${Python3_LIBRARIES} bareos)
-  target_include_directories(python3-fd PUBLIC SYSTEM ${Python3_INCLUDE_DIRS})
+  target_include_directories(python3-fd SYSTEM PUBLIC ${Python3_INCLUDE_DIRS})
   target_compile_definitions(python3-fd PUBLIC PY3MODDIR=\"${Python3_SITELIB}\")
   add_dependencies(bareos-fd python3-fd)
   add_dependencies(python3-fd bareosfd-python3-module)
@@ -58,7 +58,7 @@ if(Python2_FOUND)
     bareosfd-python2-module-tester ${Python2_LIBRARIES} bareos
   )
   target_include_directories(
-    bareosfd-python2-module-tester PUBLIC SYSTEM ${Python2_INCLUDE_DIRS}
+    bareosfd-python2-module-tester SYSTEM PUBLIC ${Python2_INCLUDE_DIRS}
   )
   target_compile_options(
     bareosfd-python2-module-tester PUBLIC ${Python2_CCSHARED}
@@ -83,7 +83,7 @@ if(Python3_FOUND AND NOT HAVE_WIN32)
     bareosfd-python3-module-tester ${Python3_LIBRARIES} bareos
   )
   target_include_directories(
-    bareosfd-python3-module-tester PUBLIC SYSTEM ${Python3_INCLUDE_DIRS}
+    bareosfd-python3-module-tester SYSTEM PUBLIC ${Python3_INCLUDE_DIRS}
   )
 
   add_test(NAME bareosfd-python3-module-tester
