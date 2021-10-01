@@ -167,7 +167,7 @@ static int TryAutoloadDevice(JobControlRecord* jcr,
                              const char* VolName);
 static void SendDirBusyMessage(BareosSocket* dir, Device* dev);
 
-struct s_cmds {
+struct s_sd_dir_cmds {
   const char* cmd;
   bool (*func)(JobControlRecord* jcr);
   bool monitoraccess; /* set if monitors can access this cmd */
@@ -179,7 +179,7 @@ struct s_cmds {
  * Keywords are sorted first longest match when the keywords start with the same
  * string.
  */
-static struct s_cmds cmds[] = {
+static struct s_sd_dir_cmds cmds[] = {
     // { "action_on_purge",  ActionOnPurgeCmd, false },
     {"autochanger", ChangerCmd, false},
     {"bootstrap", BootstrapCmd, false},

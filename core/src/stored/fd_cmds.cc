@@ -64,13 +64,13 @@ static bool ReadCloseSession(JobControlRecord* jcr);
 
 /* Exported function */
 
-struct s_cmds {
+struct s_fd_cmds {
   const char* cmd;
   bool (*func)(JobControlRecord* jcr);
 };
 
 // The following are the recognized commands from the File daemon
-static struct s_cmds fd_cmds[] = {
+static struct s_fd_cmds fd_cmds[] = {
     {"append open", AppendOpenSession}, {"append data", AppendDataCmd},
     {"append end", AppendEndSession},   {"append close", AppendCloseSession},
     {"read open", ReadOpenSession},     {"read data", ReadDataCmd},

@@ -60,13 +60,13 @@ static bool StartReplicationSession(JobControlRecord* jcr);
 static bool ReplicateData(JobControlRecord* jcr);
 static bool EndReplicationSession(JobControlRecord* jcr);
 
-struct s_cmds {
+struct s_sd_cmds {
   const char* cmd;
   bool (*func)(JobControlRecord* jcr);
 };
 
 // The following are the recognized commands from the Remote Storage daemon
-static struct s_cmds sd_cmds[] = {
+static struct s_sd_cmds sd_cmds[] = {
     {"start replicate", StartReplicationSession},
     {"replicate data", ReplicateData},
     {"end replicate", EndReplicationSession},

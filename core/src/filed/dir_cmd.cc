@@ -142,7 +142,7 @@ static void SetStorageAuthKeyAndTlsPolicy(JobControlRecord* jcr,
 
 /* Exported functions */
 
-struct s_cmds {
+struct s_fd_dir_cmds {
   const char* cmd;
   bool (*func)(JobControlRecord*);
   bool monitoraccess; /* specify if monitors have access to this function */
@@ -154,7 +154,7 @@ struct s_cmds {
  * Keywords are sorted first longest match when the keywords start with the same
  * string.
  */
-static struct s_cmds cmds[] = {
+static struct s_fd_dir_cmds cmds[] = {
     {"accurate", AccurateCmd, false},
     {"backup", BackupCmd, false},
     {"bootstrap", BootstrapCmd, false},
