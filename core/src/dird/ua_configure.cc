@@ -81,9 +81,12 @@ static inline bool configure_write_resource(const char* filename,
 
   if ((fd = open(filename, flags, 0640)) >= 0) {
     len = strlen(content);
-    write(fd, content, len);
+    if (write(fd, content, len) < 0) {
+      result = false;
+    } else {
+      result = true;
+    }
     close(fd);
-    result = true;
   }
 
   return result;
