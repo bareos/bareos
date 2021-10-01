@@ -283,7 +283,11 @@ int main(int argc, char* const* argv)
         goto bail_out;
       }
     }
-    read(kfd, wrapdata, sizeof(wrapdata));
+    if (read(kfd, wrapdata, sizeof(wrapdata))) {
+      fprintf(stderr, _("Cannot read from keyfile %s\n"), wrap_keyfile);
+      retval = 1;
+      goto bail_out;
+    }
     if (kfd > 0) { close(kfd); }
     StripTrailingJunk(wrapdata);
     Dmsg1(10, "Wrapped keydata = %s\n", wrapdata);
@@ -356,7 +360,10 @@ int main(int argc, char* const* argv)
     if (kfd > 1) {
       close(kfd);
     } else {
-      write(kfd, "\n", 1);
+      if (write(kfd, "\n", 1) == 0) {
+        free(passphrase);
+        goto bail_out;
+      }
     }
     free(passphrase);
     goto bail_out;
@@ -381,7 +388,11 @@ int main(int argc, char* const* argv)
         goto bail_out;
       }
     }
-    read(kfd, keydata, sizeof(keydata));
+    if (read(kfd, keydata, sizeof(keydata)) == 0) {
+      fprintf(stderr, _("Cannot read from keyfile %s\n"), keyfile);
+      retval = 1;
+      goto bail_out;
+    }
     if (kfd > 0) { close(kfd); }
     StripTrailingJunk(keydata);
     Dmsg1(10, "Keydata = %s\n", keydata);
@@ -495,7 +506,11 @@ int main(int argc, char* const* argv)
         goto bail_out;
       }
     }
-    read(kfd, keydata, sizeof(keydata));
+    if (read(kfd, keydata, sizeof(keydata)) == 0) {
+      fprintf(stderr, _("Cannot read from keyfile %s\n"), keyfile);
+      retval = 1;
+      goto bail_out;
+    }
     if (kfd > 0) { close(kfd); }
     StripTrailingJunk(keydata);
 
