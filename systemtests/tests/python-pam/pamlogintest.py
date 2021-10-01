@@ -40,7 +40,7 @@ class PamLoginTest(bareos_unittest.Base):
 
     @classmethod
     def setUpClass(cls):
-        super(PythonBareosPamLoginTest, cls).setUpClass()
+        super(PamLoginTest, cls).setUpClass()
         cls.console_pam_username = u"PamConsole-notls"
         cls.console_pam_password = u"secret"
 
