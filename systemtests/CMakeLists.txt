@@ -24,7 +24,6 @@ project(bareos-systemtests)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(BareosSystemtestFunctions)
-include(CMakePrintHelpers)
 
 # set the data encryption and signature keys
 set(pki_keypair ${CMAKE_CURRENT_SOURCE_DIR}/pki/fd.pem)
@@ -130,27 +129,18 @@ set(bindir ${PROJECT_BINARY_DIR}/bin)
 
 set(BAREOS_CONFIG_DIR ${conf})
 set(db_name "regress")
-set(db_password "")
 set(db_port "5432")
-set(db_user "regress")
-set(dir_password "dir_password")
-set(dumps ${PROJECT_BINARY_DIR}/dumps)
-set(fd_password "fd_password")
+set(db_user "${systemtest_db_user}")
+set(db_password "${systemtest_db_password}")
 
-set(job_email "job_email")
 set(logdir "log")
-set(mon_dir_password "mon_dir_password")
-set(mon_fd_password "mon_fd_password")
-set(mon_sd_password "mon_sd_password")
 set(python_plugin_module_src_test_dir_relative "python-modules")
+set(dumps ${PROJECT_BINARY_DIR}/dumps)
 set(plugindirtmp ${PROJECT_BINARY_DIR}/plugindirtmp)
 set(rscripts ${PROJECT_BINARY_DIR}/scripts)
-
 set(sbindir ${PROJECT_BINARY_DIR}/sbin)
-
 set(scriptdir ${PROJECT_BINARY_DIR}/scripts)
 set(scripts ${PROJECT_BINARY_DIR}/scripts)
-set(sd_password "sd_password")
 set(smtp_host "smtp_host")
 set(src ${PROJECT_BINARY_DIR}/src)
 set(subsysdir ${PROJECT_BINARY_DIR}/subsysdir)

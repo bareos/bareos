@@ -275,6 +275,7 @@ endfunction()
 macro(check_for_pamtest)
   message(STATUS "Looking for pam test requirements ...")
   bareosfindlibraryandheaders("pam" "security/pam_appl.h" "")
+  bareosfindlibrary("pam_wrapper")
   find_program(PAMTESTER pamtester)
 
   set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
@@ -450,11 +451,10 @@ macro(prepare_test test_subdir)
   set(basename ${TEST_NAME})
 
   # db parameters
-  set(db_password "")
+
   # db_name is regress-${TEST_NAME} replacing - by _
   string(REPLACE "-" "_" db_name "regress-${TEST_NAME}")
   # set(db_name "regress-${TEST_NAME}")
-  set(db_user "regress")
   set(db_address "$current_test_directory/database/tmp")
 
   set(job_email root@localhost)

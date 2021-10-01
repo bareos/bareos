@@ -264,6 +264,16 @@ if(NOT DEFINED db_password)
   set(db_password "")
 endif()
 
+set(systemtest_db_user
+    "regress"
+    CACHE STRING "Database user for the systemtests"
+)
+
+set(systemtest_db_password
+    ""
+    CACHE STRING "Database password for the systemtests"
+)
+
 # dir-user
 if(NOT DEFINED dir-user)
   set(dir-user "")

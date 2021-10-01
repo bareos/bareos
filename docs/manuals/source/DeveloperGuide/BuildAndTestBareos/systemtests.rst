@@ -14,28 +14,12 @@ The |dir| requires a database backend. The default database is |postgresql|.
 To run systemtests, some preparations are required.
 
 The system user running the Bareos systemtests
-must be given permission to create databases and database user.
+must be given permission to create databases and database user:
 
 .. code-block:: shell-session
    :caption: Configure a PostgreSQL Server for systemtests
 
    user@host:~$ sudo -u postgres createuser --createdb --createrole $USER
-
-
-Each systemtest creates its own database.
-The test scripts also create the database user **regress**
-which needs access all created databases.
-To achieve this, add the following lines to the :file:`pg_hba.conf` file:
-
-.. code-block:: cfg
-   :caption: Allow access to all local databases for PostgresSQL user regress
-
-   # insert authentication methods for database user 'regress'
-   # BEFORE the general rules into file pg_hba.conf
-   local   all             regress                                 trust
-
-
-Make sure, to restart the |postgresql| server.
 
 
 Build Bareos for Systemtests
@@ -56,7 +40,7 @@ This following shell script will show how to build the Bareos test-environment f
    cd build
 
    # configure build environment
-   cmake -Dpostgresql=yes -Dtraymonitor=yes ../bareos
+   cmake -Dpostgresql=yes -Dsystemtest_db_user=$USER -Dtraymonitor=yes ../bareos
 
    # build Bareos
    make

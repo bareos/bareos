@@ -191,8 +191,6 @@ if(NOT ${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
   find_package(GTest 1.8 CONFIG)
 endif()
 
-bareosfindlibrary("pam_wrapper")
-
 if(${HAVE_CAP})
   set(HAVE_LIBCAP 1)
 endif()
