@@ -52,7 +52,7 @@
 
 #define RETURN_RUNTIME_ERROR_IF_BAREOS_PLUGIN_CTX_UNSET()            \
   if (!plugin_ctx) {                                                 \
-    PyErr_SetString(PyExc_RuntimeError, AT " :plugin_ctx is unset"); \
+    PyErr_SetString(PyExc_RuntimeError, AT ": plugin_ctx is unset"); \
     return NULL;                                                     \
   }
 
