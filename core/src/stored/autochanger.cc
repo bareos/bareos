@@ -555,20 +555,20 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
   }
 
   // The Volume we want is on another device.
-  if (dev->IsBusy()) {
+  if (dev->IsBusy() || dev->IsBlocked()) {
     Dmsg4(100, "Vol %s for dev=%s in use dev=%s slot=%hd\n", dcr->VolumeName,
           dcr->dev->print_name(), dev->print_name(), slot);
   }
 
   for (int i = 0; i < 3; i++) {
-    if (dev->IsBusy()) {
+    if (dev->IsBusy() || dev->IsBlocked()) {
       WaitForDevice(dcr->jcr, retries);
       continue;
     }
     break;
   }
 
-  if (dev->IsBusy()) {
+  if (dev->IsBusy() || dev->IsBlocked()) {
     Jmsg(dcr->jcr, M_WARNING, 0,
          _("Volume \"%s\" wanted on %s is in use by device %s\n"),
          dcr->VolumeName, dcr->dev->print_name(), dev->print_name());
