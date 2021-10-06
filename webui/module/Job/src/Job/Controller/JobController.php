@@ -128,6 +128,8 @@ class JobController extends AbstractActionController
             );
           } else {
             $result = $this->getJobModel()->rerunJob($this->bsock, $jobid);
+            $jobid = rtrim( substr( $result, strrpos($result, "=") + 1 ) );
+            return $this->redirect()->toRoute('job', array('action' => 'details', 'id' => $jobid));
           }
         }
         catch(Exception $e) {
