@@ -302,7 +302,7 @@ static int conf_cb_func(void* cb_arg, const char* var, char* value)
       return -1;
     }
   } else if (!strcmp(var, "aws_region")) {
-    strncpy(ctx->aws_region, value, sizeof(ctx->aws_region));
+    strncpy(ctx->aws_region, value, sizeof(ctx->aws_region)-1);
   } else if (!strcmp(var, "ssl_cert_file")) {
     free(ctx->ssl_cert_file);
     if (value[0] != '/') {

@@ -151,10 +151,10 @@ dpl_status_t dpl_req_set_resource(dpl_req_t* req, const char* resource)
       if (!req->ctx->preserve_root_path)
         npath[0] = '\0';
       else
-        strncpy(npath, resource, sizeof(npath));
+        strncpy(npath, resource, sizeof(npath)-1);
     } else {
       if (!req->ctx->preserve_root_path)
-        strncpy(npath, req->ctx->base_path, sizeof(npath));
+        strncpy(npath, req->ctx->base_path, sizeof(npath)-1);
       else {
         snprintf(npath, sizeof(npath), "%s%s", req->ctx->base_path, resource);
       }
