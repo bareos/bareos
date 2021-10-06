@@ -646,6 +646,7 @@ try_compile(
   ${PROJECT_SOURCE_DIR}/src/compile_tests/trivially_copyable.cc
 )
 
+set(build_benchmarks "${benchmarks}")
 set(ndmp "${ndmp}")
 set(lmdb "${lmdb}")
 set(build_client_only "${client-only}")

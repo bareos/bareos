@@ -45,17 +45,6 @@ set(LINK_LIBRARIES stored_objects dird_objects console_objects bareossd bareos
                    bareoscats bareossql bareosfind
 )
 
-set (ENABLED_BENCHMARKS
-#    restore_browser_stress_test
-    )
-
-foreach(BENCHMARK ${ENABLED_BENCHMARKS})
-    add_test(
-        NAME "bench:${BENCHMARK}"
-        COMMAND ${BENCHMARK}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        )
-endforeach()
 
 bareos_add_benchmark(
   restore_browser_stress_test

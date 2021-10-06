@@ -48,11 +48,6 @@ enum HIGH_FILE_NUMBERS
   hundred_thousand = 100'000,
   million = 1'000'000,
   ten_million = 10'000'000,
-  /*
-   * Over ten million files requires quiet a bit a ram, so if you are going to
-   * use the next numbers, make sure you have enough ressources, otherwise the
-   * benchmark will crash
-   */
   hundred_million = 100'000'000,
   billion = 1'000'000'000
 };
@@ -161,5 +156,11 @@ BENCHMARK(BM_populatetree)
 BENCHMARK(BM_markallfiles)
     ->Arg(HIGH_FILE_NUMBERS::ten_million)
     ->Unit(benchmark::kSecond);
+
+/*
+ * Over ten million files requires quiet a bit a ram, so if you are going to
+ * use the higher numbers, make sure you have enough ressources, otherwise the
+ * benchmark will crash
+ */
 
 BENCHMARK_MAIN();
