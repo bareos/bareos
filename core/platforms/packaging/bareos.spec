@@ -142,9 +142,14 @@ BuildRequires: devtoolset-8-gcc
 BuildRequires: devtoolset-8-gcc-c++
 %endif
 
-%if 0%{?suse_version}
+%if 0%{?sle_version} >= 150300
+BuildRequires: gcc10
+BuildRequires: gcc10-c++
+%else
+  %if 0%{?suse_version}
 BuildRequires: gcc9
 BuildRequires: gcc9-c++
+  %endif
 %endif
 
 %if 0%{?systemd_support}
@@ -958,11 +963,18 @@ pushd %{CMAKE_BUILDDIR}
 source /opt/rh/devtoolset-8/enable
 %endif
 
-# use gcc9 on SuSE
-%if 0%{?suse_version}
+# use modern compiler on suse
+%if 0%{?sle_version} >= 150300
+CC=gcc-10  ; export CC
+CXX=g++-10 ; export CXX
+%else
+  %if 0%{?suse_version}
 CC=gcc-9  ; export CC
 CXX=g++-9 ; export CXX
+  %endif
 %endif
+
+
 
 CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ;
 CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
