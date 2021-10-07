@@ -57,7 +57,7 @@ $this->headTitle($title);
    <th><?php echo $this->translate("Type"); ?></th>
    <th><?php echo $this->translate("Last written"); ?></th>
    <th><?php echo $this->translate("Status"); ?></th>
-   <th><?php echo $this->translate("Retention/Expiration"); ?></th>
+   <th><?php echo $this->translate("Retention"); ?></th>
    <th><?php echo $this->translate("Maximum bytes"); ?></div></th>
    <th><?php echo $this->translate("Current bytes"); ?></div></th>
 </thead>
@@ -215,7 +215,7 @@ $this->headTitle($title);
             {
                field: 'retention',
                formatter: function(value, row, index) {
-                  return formatExpiration(row.volstatus, row.lastwritten, row.volretention);
+                  return formatRetention(row.volretention);
                }
             },
             {
