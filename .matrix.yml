@@ -58,6 +58,16 @@ OS:
            - python-bareos
 
   openSUSE:
+    "Leap_15.3":
+      TYPE: rpm
+      IMAGE: opensuse-leap153
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+       x86_64:
+          - bareos
+          - python-bareos
+
     "Leap_15.2":
       TYPE: rpm
       IMAGE: opensuse-leap152
@@ -97,6 +107,18 @@ OS:
 
 
   SLE:
+
+    "15_SP3":
+      TYPE: rpm
+      IMAGE: sle153
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-webui
+           - libfastlz
+           - python-bareos
 
     "15_SP2":
       TYPE: rpm

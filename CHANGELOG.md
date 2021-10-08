@@ -23,6 +23,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Added
 - packages: Build also for Debian_11 [PR #915]
+- packages: Build also for SLE_15_SP3 and openSUSE_15.3 [PR #945]
 
 ### Changed
 - add job name in End Job Session output in bls tool [PR #916]
