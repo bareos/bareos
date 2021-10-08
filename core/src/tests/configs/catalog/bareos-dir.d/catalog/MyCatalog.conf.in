@@ -2,8 +2,8 @@ Catalog {
   Name = postgresql
   dbdriver = "postgresql"
   dbname = "regress_catalog"
-  dbuser = "regress"
-  dbpassword = ""
+  dbuser = "@systemtest_db_user@"
+  dbpassword = "@systemtest_db_password@"
 }
 
 Catalog {
@@ -18,6 +18,6 @@ Catalog {
   Name = mysql
   dbdriver = "mysql"
   dbname = "regress_catalog"
-  dbuser = "regress"
-  dbpassword = ""
+  dbuser = "@systemtest_db_user@"
+  dbpassword = "@systemtest_db_password@"
 }

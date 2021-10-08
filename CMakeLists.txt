@@ -31,6 +31,7 @@ add_custom_target(
 
 set(default_build_type "Debug")
 
+include(CMakePrintHelpers)
 find_package(Git)
 include(BareosVersionFromGit)
 include(BareosExtractVersionInfo)

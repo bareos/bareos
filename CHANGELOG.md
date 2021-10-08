@@ -55,6 +55,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Adapt Python DIR and SD plugin Baseclasses to the modernized Python plugin API [PR #923]
 
 ### Added
+- systemtests: make database credentials configurable [PR #950]
 - systemtests: allows multiple subtests per systemtest [PR #857]
 - systemtests: replaced the six reload-* tests by one test [PR #857]
 - systemtests: replaced fileset-multiple-include-blocks and fileset-multiple-options-blocks by fileset-multiple-blocks test [PR #857]
