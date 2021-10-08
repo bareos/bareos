@@ -586,8 +586,8 @@ dpl_status_t dpl_cdmi_parse_list_bucket(dpl_ctx_t* ctx,
     goto end;
   }
 
-  json_object_object_get_ex(obj, "children", &children);
-  if (NULL == children) {
+  json_bool children_found = json_object_object_get_ex(obj, "children", &children);
+  if (NULL == children || !children_found) {
     ret = DPL_FAILURE;
     goto end;
   }
