@@ -75,6 +75,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - systemtest:bareos test now also runs on btrfs filesystem [PR #907]
 - packages: Build also for Fedora_34 [PR #869]
 - packages: Build also for Debian_11 [PR #914]
+- packages: Build also for SLE_15_SP3 [PR #952]
 - add job name in End Job Session output in bls tool [PR #916]
 - added check for orphaned storages in dbcheck [PR #912]
 - added option to delete selected storage in bconsole if it is orphaned [PR #912]
