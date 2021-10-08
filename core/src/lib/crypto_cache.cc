@@ -311,7 +311,7 @@ void DumpCryptoCache(int fd)
   len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, _("Volumename"),
              max_key_length, _("EncryptionKey"), _("Added"), _("Expires"));
 
-  if (write(fd, msg.c_str(), len) == 0) {
+  if (write(fd, msg.c_str(), len) <= 0) {
     BErrNo be;
     Dmsg1(000, "write error: ERR=%s\n", be.bstrerror());
   }
@@ -321,7 +321,7 @@ void DumpCryptoCache(int fd)
     len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, cce->VolumeName,
                max_key_length, cce->EncryptionKey, dt1, dt2);
 
-    if (write(fd, msg.c_str(), len) == 0) {
+    if (write(fd, msg.c_str(), len) <= 0) {
       BErrNo be;
       Dmsg1(000, "write error: ERR=%s\n", be.bstrerror());
     }

@@ -473,7 +473,7 @@ void CreatePidFile(char* dir, const char* progname, int port)
       >= 0) {
     len = sprintf(pidbuf, "%d\n", (int)getpid());
     ssize_t bytes_written = write(pidfd, pidbuf, len);
-    if (bytes_written == 0) {
+    if (bytes_written < len) {
       BErrNo be;
       Emsg2(M_ERROR_TERM, 0, _("Could not write to pid file. %s ERR=%s\n"),
             fname, be.bstrerror());
