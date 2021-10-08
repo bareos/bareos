@@ -485,12 +485,7 @@ static char* item_generator(const char* text,
   while (items && list_index < items_list_size) {
     name = (char*)items->list[list_index];
     list_index++;
-
-    if (bstrncmp(name, text, len)) {
-      char* ret = (char*)malloc(strlen(name) + 1);
-      strcpy(ret, name);
-      return ret;
-    }
+    if (bstrncmp(name, text, len)) { return strdup(name); }
   }
 
   /* no match */
