@@ -925,14 +925,14 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
             continue; /* device is not available */
           }
           if (drive == kInvalidDriveNumber
-              || drive == device_resource->dev->drive) {
+              || drive == device_resource->dev->drive_index) {
             Dmsg1(20, "Found changer device %s\n",
                   device_resource->resource_name_);
             found = true;
             break;
           }
           Dmsg3(100, "Device %s drive wrong: want=%hd got=%hd skipping\n",
-                devname.c_str(), drive, device_resource->dev->drive);
+                devname.c_str(), drive, device_resource->dev->drive_index);
 
           if (changer->device_resources->current()
               == changer->device_resources->size()) {

@@ -60,13 +60,11 @@ bool InitAutochangers()
 {
   bool OK = true;
   AutochangerResource* changer;
-  drive_number_t logical_drive_number;
 
   // Ensure that the media_type for each device is the same
   foreach_res (changer, R_AUTOCHANGER) {
     DeviceResource* device_resource = nullptr;
 
-    logical_drive_number = 0;
     foreach_alist (device_resource, changer->device_resources) {
       /*
        * If the device does not have a changer name or changer command
@@ -93,9 +91,6 @@ bool InitAutochangers()
              device_resource->resource_name_);
         OK = false;
       }
-
-      // Give the drive in the autochanger a logical drive number.
-      device_resource->drive = logical_drive_number++;
     }
   }
 
@@ -294,7 +289,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
   Device* dev = dcr->dev;
   PoolMem results(PM_MESSAGE);
   uint32_t timeout = dcr->device_resource->max_changer_wait;
-  drive_number_t drive = dcr->dev->drive;
+  drive_number_t drive_index = dcr->dev->drive_index;
 
   if (!dev->AttachedToAutochanger()) { return kInvalidSlotNumber; }
 
@@ -320,7 +315,8 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
    */
   if (!dev->poll && debug_level >= 1) {
     Jmsg(jcr, M_INFO, 0,
-         _("3301 Issuing autochanger \"loaded? drive %hd\" command.\n"), drive);
+         _("3301 Issuing autochanger \"loaded? drive %hd\" command.\n"),
+         drive_index);
   }
 
   changer = GetPoolMemory(PM_FNAME);
@@ -338,7 +334,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
       if (!dev->poll && debug_level >= 1) {
         Jmsg(jcr, M_INFO, 0,
              _("3302 Autochanger \"loaded? drive %hd\", result is Slot %hd.\n"),
-             drive, loaded_slot);
+             drive_index, loaded_slot);
       }
       dev->SetSlotNumber(loaded_slot);
     } else {
@@ -347,7 +343,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
         Jmsg(jcr, M_INFO, 0,
              _("3302 Autochanger \"loaded? drive %hd\", result: nothing "
                "loaded.\n"),
-             drive);
+             drive_index);
       }
       dev->SetSlotNumber(0);
     }
@@ -357,7 +353,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
     Jmsg(jcr, M_INFO, 0,
          _("3991 Bad autochanger \"loaded? drive %hd\" command: "
            "ERR=%s.\nResults=%s\n"),
-         drive, be.bstrerror(), results.c_str());
+         drive_index, be.bstrerror(), results.c_str());
     loaded_slot = kInvalidSlotNumber; /* force unload */
   }
 
@@ -464,7 +460,7 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
     Jmsg(
         jcr, M_INFO, 0,
         _("3307 Issuing autochanger \"unload slot %hd, drive %hd\" command.\n"),
-        loaded_slot, dev->drive);
+        loaded_slot, dev->drive_index);
     slot = dcr->VolCatInfo.Slot;
     dcr->VolCatInfo.Slot = loaded_slot;
     changer = edit_device_codes(
@@ -480,7 +476,7 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
       Jmsg(jcr, M_INFO, 0,
            _("3995 Bad autochanger \"unload slot %hd, drive %hd\": "
              "ERR=%s\nResults=%s\n"),
-           loaded_slot, dev->drive, be.bstrerror(), results.c_str());
+           loaded_slot, dev->drive_index, be.bstrerror(), results.c_str());
       retval = false;
       dev->InvalidateSlotNumber(); /* unknown */
     } else {
@@ -631,10 +627,10 @@ bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
 
   Jmsg(jcr, M_INFO, 0,
        _("3307 Issuing autochanger \"unload slot %hd, drive %hd\" command.\n"),
-       dev->GetSlot(), dev->drive);
+       dev->GetSlot(), dev->drive_index);
 
   Dmsg2(100, "Issuing autochanger \"unload slot %hd, drive %hd\" command.\n",
-        dev->GetSlot(), dev->drive);
+        dev->GetSlot(), dev->drive_index);
 
   ChangerCmd = edit_device_codes(
       dcr, ChangerCmd, dcr->device_resource->changer_command, "unload");
@@ -652,10 +648,10 @@ bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
     be.SetErrno(status);
     Jmsg(jcr, M_INFO, 0,
          _("3997 Bad autochanger \"unload slot %hd, drive %hd\": ERR=%s.\n"),
-         dev->GetSlot(), dev->drive, be.bstrerror());
+         dev->GetSlot(), dev->drive_index, be.bstrerror());
 
     Dmsg3(100, "Bad autochanger \"unload slot %hd, drive %hd\": ERR=%s.\n",
-          dev->GetSlot(), dev->drive, be.bstrerror());
+          dev->GetSlot(), dev->drive_index, be.bstrerror());
     retval = false;
     dev->InvalidateSlotNumber(); /* unknown */
   } else {

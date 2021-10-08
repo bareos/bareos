@@ -225,7 +225,6 @@ class Device {
   bool norewindonclose{};     /**< Don't rewind tape drive on close */
   bool initiated{};           /**< Set when FactoryCreateDevice() called */
   int label_type{};           /**< Bareos/ANSI/IBM label types */
-  drive_number_t drive{};     /**< Autochanger logical drive number (base 0) */
   drive_number_t drive_index{}; /**< Autochanger physical drive index (base 0) */
   POOLMEM* archive_device_string{};  /**< Physical device name */
   POOLMEM* dev_options{};     /**< Device specific options */

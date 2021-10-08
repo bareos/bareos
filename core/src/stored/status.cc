@@ -561,10 +561,11 @@ static void SendBlockedStatus(Device* dev, StatusPacket* sp)
   if (dev->AttachedToAutochanger()) {
     if (dev->GetSlot() > 0) {
       len = Mmsg(msg, _("    Slot %hd %s loaded in drive %hd.\n"),
-                 dev->GetSlot(), dev->IsOpen() ? "is" : "was last", dev->drive);
+                 dev->GetSlot(), dev->IsOpen() ? "is" : "was last",
+                 dev->drive_index);
       sp->send(msg, len);
     } else if (dev->GetSlot() <= 0) {
-      len = Mmsg(msg, _("    Drive %hd is not loaded.\n"), dev->drive);
+      len = Mmsg(msg, _("    Drive %hd is not loaded.\n"), dev->drive_index);
       sp->send(msg, len);
     }
   }

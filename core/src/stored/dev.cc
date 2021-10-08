@@ -285,7 +285,6 @@ Device* FactoryCreateDevice(JobControlRecord* jcr,
   dev->max_open_vols = device_resource->max_open_vols;
   dev->vol_poll_interval = device_resource->vol_poll_interval;
   dev->max_spool_size = device_resource->max_spool_size;
-  dev->drive = device_resource->drive;
   dev->drive_index = device_resource->drive_index;
   dev->autoselect = device_resource->autoselect;
   dev->norewindonclose = device_resource->norewindonclose;

@@ -52,7 +52,6 @@ class DeviceResource : public BareosResource {
   bool query_crypto_status;     /**< Query device for crypto status */
   bool collectstats;            /**< Set if statistics should be collected */
   bool eof_on_error_is_eot;     /**< Interpret EOF during read error as EOT */
-  drive_number_t drive;         /**< Autochanger logical drive number */
   drive_number_t drive_index;   /**< Autochanger physical drive index */
   char cap_bits[CAP_BYTES];     /**< Capabilities of this device */
   utime_t max_changer_wait;     /**< Changer timeout */

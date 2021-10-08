@@ -47,7 +47,6 @@ DeviceResource::DeviceResource()
     , query_crypto_status(false)
     , collectstats(false)
     , eof_on_error_is_eot(false)
-    , drive(0)
     , drive_index(0)
     , cap_bits{0}
     , max_changer_wait(300)
@@ -124,7 +123,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   query_crypto_status = other.query_crypto_status;
   collectstats = other.collectstats;
   eof_on_error_is_eot = other.eof_on_error_is_eot;
-  drive = other.drive;
   drive_index = other.drive_index;
   memcpy(cap_bits, other.cap_bits, CAP_BYTES);
   max_changer_wait = other.max_changer_wait;
@@ -179,7 +177,6 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   query_crypto_status = rhs.query_crypto_status;
   collectstats = rhs.collectstats;
   eof_on_error_is_eot = rhs.eof_on_error_is_eot;
-  drive = rhs.drive;
   drive_index = rhs.drive_index;
   memcpy(cap_bits, rhs.cap_bits, CAP_BYTES);
   max_changer_wait = rhs.max_changer_wait;
