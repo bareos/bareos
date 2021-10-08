@@ -60,11 +60,13 @@ bool InitAutochangers()
 {
   bool OK = true;
   AutochangerResource* changer;
+  drive_number_t drive_index;
 
   // Ensure that the media_type for each device is the same
   foreach_res (changer, R_AUTOCHANGER) {
     DeviceResource* device_resource = nullptr;
 
+    drive_index = 0;
     foreach_alist (device_resource, changer->device_resources) {
       /*
        * If the device does not have a changer name or changer command
@@ -91,6 +93,9 @@ bool InitAutochangers()
              device_resource->resource_name_);
         OK = false;
       }
+
+      // Give the drive in the autochanger a drive index.
+      device_resource->drive_index = drive_index++;
     }
   }
 
