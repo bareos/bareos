@@ -22,9 +22,10 @@ check_pymodule_available(3 fastapi)
 check_pymodule_available(3 uvicorn)
 find_program(CURL curl)
 
-# python-restapi-test does not work on installed files and needs some modules
+# restapi does not work on installed files and needs some modules
 if(PYTHON_EXECUTABLE
    AND CURL
+   AND PYTHON
    AND PYMODULE_3_FASTAPI_FOUND
    AND PYMODULE_3_UVICORN_FOUND
    AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES
