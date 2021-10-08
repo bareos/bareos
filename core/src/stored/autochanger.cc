@@ -94,8 +94,10 @@ bool InitAutochangers()
         OK = false;
       }
 
-      // Give the drive in the autochanger a drive index.
-      device_resource->drive_index = drive_index++;
+      // set the drive index if it is not already set via configuration
+      if (!(device_resource->drive_index == kInvalidSlotNumber)) {
+        device_resource->drive_index = drive_index++;
+      }
     }
   }
 
@@ -163,10 +165,10 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
   if (!IsSlotNumberValid(wanted_slot)) {
     // Suppress info when polling
     if (!dev->poll) {
-      Jmsg(
-          jcr, M_INFO, 0,
-          _("No slot defined in catalog (slot=%hd) for Volume \"%s\" on %s.\n"),
-          wanted_slot, dcr->getVolCatName(), dev->print_name());
+      Jmsg(jcr, M_INFO, 0,
+           _("No slot defined in catalog (slot=%hd) for Volume \"%s\" on "
+             "%s.\n"),
+           wanted_slot, dcr->getVolCatName(), dev->print_name());
       Jmsg(jcr, M_INFO, 0,
            _("Cartridge change or \"update slots\" may be required.\n"));
     }
@@ -219,10 +221,10 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
       // Load the desired volume.
       Dmsg2(100, "Doing changer load slot %hd %s\n", wanted_slot,
             dev->print_name());
-      Jmsg(
-          jcr, M_INFO, 0,
-          _("3304 Issuing autochanger \"load slot %hd, drive %hd\" command.\n"),
-          wanted_slot, drive);
+      Jmsg(jcr, M_INFO, 0,
+           _("3304 Issuing autochanger \"load slot %hd, drive %hd\" "
+             "command.\n"),
+           wanted_slot, drive);
       dcr->VolCatInfo.Slot = wanted_slot; /* slot to be loaded */
       changer = edit_device_codes(
           dcr, changer, dcr->device_resource->changer_command, "load");
@@ -230,10 +232,10 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
       Dmsg1(200, "Run program=%s\n", changer);
       status = RunProgramFullOutput(changer, timeout, results.addr());
       if (status == 0) {
-        Jmsg(
-            jcr, M_INFO, 0,
-            _("3305 Autochanger \"load slot %hd, drive %hd\", status is OK.\n"),
-            wanted_slot, drive);
+        Jmsg(jcr, M_INFO, 0,
+             _("3305 Autochanger \"load slot %hd, drive %hd\", status is "
+               "OK.\n"),
+             wanted_slot, drive);
         Dmsg2(100, "load slot %hd, drive %hd, status is OK.\n", wanted_slot,
               drive);
         dev->SetSlotNumber(wanted_slot); /* set currently loaded slot */
@@ -338,7 +340,8 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
       // Suppress info when polling
       if (!dev->poll && debug_level >= 1) {
         Jmsg(jcr, M_INFO, 0,
-             _("3302 Autochanger \"loaded? drive %hd\", result is Slot %hd.\n"),
+             _("3302 Autochanger \"loaded? drive %hd\", result is Slot "
+               "%hd.\n"),
              drive_index, loaded_slot);
       }
       dev->SetSlotNumber(loaded_slot);
@@ -462,10 +465,10 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
     PoolMem results(PM_MESSAGE);
     POOLMEM* changer = GetPoolMemory(PM_FNAME);
 
-    Jmsg(
-        jcr, M_INFO, 0,
-        _("3307 Issuing autochanger \"unload slot %hd, drive %hd\" command.\n"),
-        loaded_slot, dev->drive_index);
+    Jmsg(jcr, M_INFO, 0,
+         _("3307 Issuing autochanger \"unload slot %hd, drive %hd\" "
+           "command.\n"),
+         loaded_slot, dev->drive_index);
     slot = dcr->VolCatInfo.Slot;
     dcr->VolCatInfo.Slot = loaded_slot;
     changer = edit_device_codes(
@@ -492,8 +495,8 @@ bool UnloadAutochanger(DeviceControlRecord* dcr,
   }
 
   /*
-   * Only unlock the changer if the lock_set is false e.g. changer not locked by
-   * calling function.
+   * Only unlock the changer if the lock_set is false e.g. changer not locked
+   * by calling function.
    */
   if (!lock_set) { UnlockChanger(dcr); }
 
@@ -666,8 +669,8 @@ bool UnloadDev(DeviceControlRecord* dcr, Device* dev, bool lock_set)
   if (retval) { dev->ClearUnload(); }
 
   /*
-   * Only unlock the changer if the lock_set is false e.g. changer not locked by
-   * calling function.
+   * Only unlock the changer if the lock_set is false e.g. changer not locked
+   * by calling function.
    */
   if (!lock_set) { UnlockChanger(dcr); }
 
