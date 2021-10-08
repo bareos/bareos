@@ -131,6 +131,16 @@ BuildRequires: devtoolset-7-gcc
 BuildRequires: devtoolset-7-gcc-c++
 %endif
 
+%if 0%{?sle_version} >= 150300
+BuildRequires: gcc10
+BuildRequires: gcc10-c++
+%else
+  %if 0%{?suse_version}
+BuildRequires: gcc9
+BuildRequires: gcc9-c++
+  %endif
+%endif
+
 %if 0%{?systemd_support}
 BuildRequires: systemd
 # see https://en.opensuse.org/openSUSE:Systemd_packaging_guidelines
@@ -979,6 +989,16 @@ pushd %{CMAKE_BUILDDIR}
 # use Developer Toolset 7 compiler as standard is too old
 %if 0%{?centos_version} == 600 || 0%{?rhel_version} == 600
 export PATH=/opt/rh/devtoolset-7/root/usr/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+%endif
+# use modern compiler on suse
+%if 0%{?sle_version} >= 150300
+CC=gcc-10  ; export CC
+CXX=g++-10 ; export CXX
+%else
+  %if 0%{?suse_version}
+CC=gcc-9  ; export CC
+CXX=g++-9 ; export CXX
+  %endif
 %endif
 
 CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ;
