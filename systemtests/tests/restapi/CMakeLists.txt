@@ -31,9 +31,6 @@ if(PYTHON_EXECUTABLE
    AND NOT RUN_SYSTEMTESTS_ON_INSTALLED_FILES
 )
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-  set_tests_properties(
-    ${SYSTEMTEST_PREFIX}${BASENAME} PROPERTIES LABELS "broken"
-  )
 else()
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
 endif()
