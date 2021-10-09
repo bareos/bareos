@@ -198,7 +198,7 @@ static ResourceItem dev_items[] = {
   {"SpoolDirectory", CFG_TYPE_DIR, ITEM(res_dev, spool_directory), 0, 0, NULL, NULL, NULL},
   {"MaximumSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_spool_size), 0, 0, NULL, NULL, NULL},
   {"MaximumJobSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev, max_job_spool_size), 0, 0, NULL, NULL, NULL},
-  {"DriveIndex", CFG_TYPE_PINT16, ITEM(res_dev, drive_index), 0, kInvalidSlotNumber, NULL, NULL, NULL},
+  {"DriveIndex", CFG_TYPE_PINT16, ITEM(res_dev, drive_index), 0, CFG_ITEM_DEFAULT, std::to_string(kInvalidSlotNumber).c_str(), NULL, NULL},
   {"MountPoint", CFG_TYPE_STRNAME, ITEM(res_dev, mount_point), 0, 0, NULL, NULL, NULL},
   {"MountCommand", CFG_TYPE_STRNAME, ITEM(res_dev, mount_command), 0, 0, NULL, NULL, NULL},
   {"UnmountCommand", CFG_TYPE_STRNAME, ITEM(res_dev, unmount_command), 0, 0, NULL, NULL, NULL},
