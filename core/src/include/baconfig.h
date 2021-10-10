@@ -258,7 +258,7 @@ typedef uint16_t slot_flags_t;
 
 constexpr slot_number_t kInvalidSlotNumber
     = std::numeric_limits<slot_number_t>::max();
-constexpr slot_number_t kInvalidDriveNumber
+constexpr drive_number_t kInvalidDriveNumber
     = std::numeric_limits<drive_number_t>::max();
 
 inline bool IsSlotNumberValid(slot_number_t slot)
