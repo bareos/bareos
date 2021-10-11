@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,7 +23,14 @@ if(HAVE_FREEBSD_OS)
 endif()
 
 add_library(bareoslmdb SHARED mdb.c midl.c)
-target_compile_options(bareoslmdb PRIVATE -Wno-missing-braces)
+target_compile_options(
+  bareoslmdb PRIVATE -Wno-missing-braces -Wno-stringop-overflow
+)
+# for at least Fedora 33 we need to set target_link_options so
+# lto doesn't complain either
+target_link_options(
+  bareoslmdb PRIVATE -Wno-stringop-overflow
+)
 
 # empty the include_directories
 set_property(TARGET bareoslmdb PROPERTY INCLUDE_DIRECTORIES "")
