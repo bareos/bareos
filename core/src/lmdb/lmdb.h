@@ -180,11 +180,7 @@ typedef	int	mdb_mode_t;
 typedef	mode_t	mdb_mode_t;
 #endif
 
-#ifdef _WIN32
-# define MDB_FMT_Z	"I"
-#else
-# define MDB_FMT_Z	"z"			/**< printf/scanf format modifier for size_t */
-#endif
+#define MDB_FMT_Z	"z"			/**< printf/scanf format modifier for size_t */
 
 #ifndef MDB_VL32
 /** Unsigned type used for mapsize, entry counts and page/transaction IDs.
