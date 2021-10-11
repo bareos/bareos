@@ -1582,15 +1582,23 @@ void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring)
 }
 
 /*
+ * we don't add the callbacks for openssl > 1.1.0
+ * so if any of the callbacks is actually used (i.e. any of the openssl macros
+ * does use the callback name instead of evaluating to nothing), then we will
+ * get a compile error
+ * we will get a compile error
+ */
+#  if OPENSSL_VERSION_NUMBER < 0x10100000L
+/*
  * Return an OpenSSL thread ID
  *  Returns: thread ID
  *
  */
 [[maybe_unused]] static unsigned long GetOpensslThreadId(void)
 {
-#  ifdef HAVE_WIN32
+#    ifdef HAVE_WIN32
   return (unsigned long)getpid();
-#  else
+#    else
   /*
    * Comparison without use of pthread_equal() is mandated by the OpenSSL API
    *
@@ -1598,7 +1606,7 @@ void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring)
    *   emulation code, which defines pthread_t as a structure.
    */
   return ((unsigned long)pthread_self());
-#  endif /* not HAVE_WIN32 */
+#    endif /* not HAVE_WIN32 */
 }
 
 // Allocate a dynamic OpenSSL mutex
@@ -1661,6 +1669,7 @@ openssl_create_dynamic_mutex(const char* file, int line)
     V(mutexes[i]);
   }
 }
+#  endif
 
 /*
  * Initialize OpenSSL thread support
