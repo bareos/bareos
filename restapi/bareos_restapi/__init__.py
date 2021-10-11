@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+#
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -22,20 +24,20 @@
 # Author: Maik Aussendorf
 #
 
+import configparser
 from datetime import datetime, timedelta
-from typing import Optional, List
 from fastapi import Depends, FastAPI, HTTPException, status, Response, Path, Body, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
-from passlib.context import CryptContext
-from pydantic import BaseModel, Field, PositiveInt
-from enum import Enum
-import pathlib
+import os
 from packaging import version
-import bareos.bsock
-import configparser
+from passlib.context import CryptContext
+from pydantic import BaseModel
+from typing import Optional
 import yaml
-from bareosRestapiModels import *
+
+import bareos.bsock
+from bareos_restapi.models import *
 
 # Read config from api.ini
 config = configparser.ConfigParser()
@@ -52,7 +54,10 @@ ACCESS_TOKEN_EXPIRE_MINUTES = config.getint("JWT", "access_token_expire_minutes"
 userDirectors = {}
 users_db = {}
 
-with open("metatags.yaml", "r") as stream:
+# Load metatags.yaml from the same directory.
+with open(
+    os.path.dirname(os.path.realpath(__file__)) + "/metatags.yaml", "r"
+) as stream:
     tags_metadata = yaml.safe_load(stream)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -286,8 +291,7 @@ def switch_resource(
                 % (componentType, resourceName, CONFIG_DIRECTOR_NAME, e)
             },
         )
-    # json result from director is empty
-    response.status_code = 204
+    response.status_code = 200
     return (True, responseDict)
 
 
@@ -501,10 +505,6 @@ def enable_client(
         componentType="client",
         enable=True,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 
@@ -526,10 +526,6 @@ def disable_client(
         componentType="client",
         enable=False,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 
@@ -821,10 +817,6 @@ def enable_job(
         componentType="job",
         enable=True,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 
@@ -846,10 +838,6 @@ def disable_job(
         componentType="job",
         enable=False,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 
@@ -1268,7 +1256,7 @@ def read_volume(
     return {"message": "No volume with id %d found" % volume_id}
 
 
-@app.post("/control/volumes", status_code=204, tags=["volumes", "control"])
+@app.post("/control/volumes", status_code=200, tags=["volumes", "control"])
 def label_volume(
     *,
     response: Response,
@@ -1411,7 +1399,7 @@ def import_volume(
     return responseDict
 
 
-@app.put("/control/volumes/{volume_name}", status_code=204, tags=["volumes", "control"])
+@app.put("/control/volumes/{volume_name}", status_code=200, tags=["volumes", "control"])
 def relabel_volume(
     *,
     response: Response,
@@ -1438,7 +1426,7 @@ def relabel_volume(
             % (CONFIG_DIRECTOR_NAME, e)
         }
     # Director delivers empty response
-    response.status_code = 204
+    response.status_code = 200
     return responseDict
 
 
@@ -1676,10 +1664,6 @@ def enable_schedule(
         componentType="schedule",
         enable=True,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 
@@ -1701,10 +1685,6 @@ def disable_schedule(
         componentType="schedule",
         enable=False,
     )
-    if result:
-        response.status_code = 204  # ok, but empty return-string
-    else:
-        response.status_code = 500
     return jsonMessage
 
 

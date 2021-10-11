@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-publish:
     name: "Build python-bareos and publish it to https://pypi.org/"
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     steps:
     - name: "Checkout source"
@@ -21,7 +21,7 @@ jobs:
       run:  git fetch --tag
 
     - name: "Set up Python"
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: 3.7
 
@@ -43,7 +43,7 @@ jobs:
         path: python-bareos/dist/
 
     - name: "Publish to pypi.org"
-      uses: pypa/gh-action-pypi-publish@v1.1.0
+      uses: pypa/gh-action-pypi-publish@v1.4.2
       with:
         password: ${{ secrets.pypi_password }}
         packages_dir: python-bareos/dist/
