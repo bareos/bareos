@@ -11,6 +11,12 @@ export TestName
 #shellcheck source=environment-local.in
 . ./environment-local
 
+requirements="${CMAKE_SOURCE_DIR}/restapi/requirements.txt"
+
+"${PYTHON_EXECUTABLE}" -c \
+  "import pkg_resources;pkg_resources.require(open('$requirements',mode='r'))" \
+  || exit 77
+
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
