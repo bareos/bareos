@@ -92,6 +92,64 @@ static inline backend_interface_mapping_t* lookup_backend_interface_mapping(
   return NULL;
 }
 
+static backend_shared_library_t* load_backend(JobControlRecord* jcr,
+                                              const char* library_name,
+                                              int type_id)
+{
+#    ifndef HAVE_WIN32
+  struct stat st;
+  if (stat(library_name, &st) == -1) { return nullptr; }
+#    endif
+  void* dl_handle = dlopen(library_name, RTLD_NOW);
+  if (!dl_handle) {
+    std::string error{dlerror()};
+    Jmsg(jcr, M_ERROR, 0, _("Unable to load shared library: %s ERR=%s\n"),
+         library_name, error.c_str());
+    Dmsg2(100, _("Unable to load shared library: %s ERR=%s\n"), library_name,
+          error.c_str());
+    return nullptr;
+  }
+
+  // Lookup the backend_instantiate function.
+  t_backend_instantiate backend_instantiate
+      = (t_backend_instantiate)dlsym(dl_handle, "backend_instantiate");
+  if (backend_instantiate == NULL) {
+    std::string error{dlerror()};
+    Jmsg(jcr, M_ERROR, 0,
+         _("Lookup of backend_instantiate in shared library %s failed: "
+           "ERR=%s\n"),
+         library_name, error.c_str());
+    Dmsg2(100,
+          _("Lookup of backend_instantiate in shared library %s failed: "
+            "ERR=%s\n"),
+          library_name, error.c_str());
+    dlclose(dl_handle);
+    return nullptr;
+  }
+
+  // Lookup the flush_backend function.
+  t_flush_backend flush_backend
+      = (t_flush_backend)dlsym(dl_handle, "flush_backend");
+  if (flush_backend == NULL) {
+    std::string error{dlerror()};
+    Jmsg(jcr, M_ERROR, 0,
+         _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
+         library_name, error.c_str());
+    Dmsg2(100,
+          _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
+          library_name, error.c_str());
+    dlclose(dl_handle);
+    return nullptr;
+  }
+  backend_shared_library_t* backend_shared_library
+      = (backend_shared_library_t*)malloc(sizeof(backend_shared_library_t));
+  backend_shared_library->interface_type_id = type_id;
+  backend_shared_library->handle = dl_handle;
+  backend_shared_library->backend_instantiate = backend_instantiate;
+  backend_shared_library->flush_backend = flush_backend;
+  return backend_shared_library;
+}
+
 BareosDb* db_init_database(JobControlRecord* jcr,
                            const char* db_driver,
                            const char* db_name,
@@ -106,21 +164,10 @@ BareosDb* db_init_database(JobControlRecord* jcr,
                            bool exit_on_fatal,
                            bool need_private)
 {
-  void* dl_handle = NULL;
   PoolMem shared_library_name(PM_FNAME);
   PoolMem error(PM_FNAME);
   backend_interface_mapping_t* backend_interface_mapping;
   backend_shared_library_t* backend_shared_library = nullptr;
-  t_backend_instantiate backend_instantiate;
-  t_flush_backend flush_backend;
-
-  /*
-   * For dynamic loading catalog backends there must be a list of backend dirs
-   * set.
-   */
-  if (backend_dirs.empty()) {
-    Jmsg(jcr, M_ERROR_TERM, 0, _("Catalog Backends Dir not configured.\n"));
-  }
 
   if (!db_driver) {
     Jmsg(jcr, M_ERROR_TERM, 0,
@@ -154,83 +201,39 @@ BareosDb* db_init_database(JobControlRecord* jcr,
    * This is a new backend try to use dynamic loading to load the backend
    * library.
    */
+
+#    if defined HAVE_WIN32
+  Mmsg(shared_library_name, "libbareoscats-%s%s",
+       backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
+  backend_shared_library
+      = load_backend(jcr, shared_library_name.c_str(),
+                     backend_interface_mapping->interface_type_id);
+#    else
+  if (backend_dirs.empty()) {
+    Jmsg(jcr, M_ERROR_TERM, 0, _("Catalog Backends Dir not configured.\n"));
+  }
+
   for (const auto& backend_dir : backend_dirs) {
-#    ifndef HAVE_WIN32
     Mmsg(shared_library_name, "%s/libbareoscats-%s%s", backend_dir.c_str(),
          backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
     Dmsg3(100, "db_init_database: checking backend %s/libbareoscats-%s%s\n",
           backend_dir.c_str(), backend_interface_mapping->interface_name,
           DYN_LIB_EXTENSION);
 
-    // Make sure the shared library with this name exists.
-    struct stat st;
-    if (stat(shared_library_name.c_str(), &st) == 0) {
-#    else
-    Mmsg(shared_library_name, "libbareoscats-%s%s",
-         backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
-    {
-#    endif
-      dl_handle = dlopen(shared_library_name.c_str(), RTLD_NOW);
-      if (!dl_handle) {
-        PmStrcpy(error, dlerror());
-        Jmsg(jcr, M_ERROR, 0, _("Unable to load shared library: %s ERR=%s\n"),
-             shared_library_name.c_str(), error.c_str());
-        Dmsg2(100, _("Unable to load shared library: %s ERR=%s\n"),
-              shared_library_name.c_str(), error.c_str());
-        continue;
-      }
-
-      // Lookup the backend_instantiate function.
-      backend_instantiate
-          = (t_backend_instantiate)dlsym(dl_handle, "backend_instantiate");
-      if (backend_instantiate == NULL) {
-        PmStrcpy(error, dlerror());
-        Jmsg(jcr, M_ERROR, 0,
-             _("Lookup of backend_instantiate in shared library %s failed: "
-               "ERR=%s\n"),
-             shared_library_name.c_str(), error.c_str());
-        Dmsg2(100,
-              _("Lookup of backend_instantiate in shared library %s failed: "
-                "ERR=%s\n"),
-              shared_library_name.c_str(), error.c_str());
-        dlclose(dl_handle);
-        dl_handle = NULL;
-        continue;
-      }
-
-      // Lookup the flush_backend function.
-      flush_backend = (t_flush_backend)dlsym(dl_handle, "flush_backend");
-      if (flush_backend == NULL) {
-        PmStrcpy(error, dlerror());
-        Jmsg(jcr, M_ERROR, 0,
-             _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
-             shared_library_name.c_str(), error.c_str());
-        Dmsg2(
-            100,
-            _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
-            shared_library_name.c_str(), error.c_str());
-        dlclose(dl_handle);
-        dl_handle = NULL;
-        continue;
-      }
-
+    if (nullptr != (backend_shared_library
+         = load_backend(jcr, shared_library_name.c_str(),
+                        backend_interface_mapping->interface_type_id))) {
       // We found the shared library and it has the right entry points.
       break;
     }
   }
+#    endif
 
-  if (dl_handle) {
+  if (backend_shared_library) {
     /*
      * Create a new loaded shared library entry and tack it onto the list of
      * loaded backend shared libs.
      */
-    backend_shared_library
-        = (backend_shared_library_t*)malloc(sizeof(backend_shared_library_t));
-    backend_shared_library->interface_type_id
-        = backend_interface_mapping->interface_type_id;
-    backend_shared_library->handle = dl_handle;
-    backend_shared_library->backend_instantiate = backend_instantiate;
-    backend_shared_library->flush_backend = flush_backend;
 
     if (loaded_backends == NULL) {
       loaded_backends
