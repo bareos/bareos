@@ -192,7 +192,7 @@ dpl_addr_t* dpl_addrlist_get_byname_nolock(dpl_addrlist_t* addrlist,
   new_host = strdup(host);
   if (new_host == NULL) return NULL;
 
-  dpl_set_addr_family_from_host(host, new_host, &af);
+  dpl_set_addr_family_from_host(host, new_host, strlen(new_host)+1, &af);
 
   ret = dpl_gethostbyname2_r(new_host, af, &hret, hbuf, sizeof(hbuf), &hresult,
                              &herr);
@@ -590,7 +590,7 @@ dpl_status_t dpl_addrlist_add(dpl_addrlist_t* addrlist,
     return DPL_FAILURE;
   }
 
-  dpl_set_addr_family_from_host(host, new_host, &af);
+  dpl_set_addr_family_from_host(host, new_host, strlen(new_host)+1, &af);
 
   ret = dpl_gethostbyname2_r(new_host, af, hret, hbuf, 1024, &hresult, &herr);
 

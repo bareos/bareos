@@ -146,7 +146,10 @@ int dpl_gethostbyname2_r(const char* name,
 
 // Warning: new_host str size must be equal or greater than host str size
 
-void dpl_set_addr_family_from_host(const char* host, char* new_host, int* af)
+void dpl_set_addr_family_from_host(const char* host,
+                                   char* new_host,
+                                   size_t new_host_len,
+                                   int* af)
 {
   size_t host_len = strlen(host);
   if (host_len >= 2 && host[0] == '[' && host[host_len - 1] == ']') {
@@ -155,7 +158,7 @@ void dpl_set_addr_family_from_host(const char* host, char* new_host, int* af)
 
     *af = AF_INET6;
   } else {
-    strncpy(new_host, host, strlen(new_host));
+    strncpy(new_host, host, new_host_len);
 
     *af = AF_INET;
   }

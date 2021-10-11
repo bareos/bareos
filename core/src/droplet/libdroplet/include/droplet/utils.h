@@ -243,7 +243,7 @@ int dpl_gethostbyname2_r(const char* name,
                          size_t buflen,
                          struct hostent** result,
                          int* h_errnop);
-void dpl_set_addr_family_from_host(const char* host, char* new_host, int* af);
+void dpl_set_addr_family_from_host(const char* host, char* new_host, size_t new_host_size, int* af);
 void dpl_dump_init(struct dpl_dump_ctx* ctx, int binary);
 void dpl_dump_line(struct dpl_dump_ctx* ctx,
                    unsigned int off,
