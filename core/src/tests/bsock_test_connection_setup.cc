@@ -48,10 +48,12 @@ bool DoReloadConfig() { return false; }
 
 static void InitSignalHandler()
 {
+#if !defined(HAVE_WIN32)
   struct sigaction sig = {};
   sig.sa_handler = SIG_IGN;
   sigaction(SIGUSR2, &sig, nullptr);
   sigaction(SIGPIPE, &sig, nullptr);
+#endif
 }
 
 static void InitGlobals()
