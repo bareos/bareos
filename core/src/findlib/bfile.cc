@@ -376,12 +376,9 @@ extern "C" HANDLE get_osfhandle(int fd);
 
 void binit(BareosWinFilePacket* bfd)
 {
-  memset(bfd, 0, sizeof(BareosWinFilePacket));
+  new (bfd) BareosWinFilePacket();
   bfd->fid = -1;
-  bfd->mode = BF_CLOSED;
   bfd->use_backup_api = have_win32_api();
-  bfd->cmd_plugin = false;
-  bfd->pvContext = NULL;
 }
 
 /**
