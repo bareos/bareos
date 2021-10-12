@@ -36,7 +36,10 @@ if(HAVE_WIN32)
   link_directories(
     ${PROJECT_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}
   )
-  add_definitions(-DMS_WIN${WINDOWS_BITS})
+  if(WINDOWS_BITS EQUAL 64)
+    # work around https://bugs.python.org/issue4709
+    add_definitions(-DMS_WIN64)
+  endif()
 endif()
 
 include_directories(${OPENSSL_INCLUDE_DIR})
