@@ -397,9 +397,6 @@ extern char win_os[];
 // Define to 1 if you have the `prctl' function
 #cmakedefine HAVE_PRCTL @HAVE_PRCTL@
 
-// Define to 1 if you have the `putenv' function
-#cmakedefine HAVE_PUTENV @HAVE_PUTENV@
-
 // Define to 1 if you have the <pwd.h> header file
 #cmakedefine HAVE_PWD_H @HAVE_PWD_H@
 
@@ -426,9 +423,6 @@ extern char win_os[];
 
 // Define to 1 if you have the `setea' function
 #cmakedefine HAVE_SETEA @HAVE_SETEA@
-
-// Define to 1 if you have the `setenv' function
-#cmakedefine HAVE_SETENV @HAVE_SETENV@
 
 // Define to 1 if you have the `setproplist' function
 #cmakedefine HAVE_SETPROPLIST @HAVE_SETPROPLIST@

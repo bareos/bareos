@@ -78,12 +78,6 @@
 /* Define to 1 if you have the <resolv.h> header file. */
 /* #undef HAVE_RESOLV_H */
 
-/* Define to 1 if you have the `setenv' function. */
-/* #undef HAVE_SETENV */
-
-/* Define to 1 if you have the `putenv' function. */
-#define HAVE_PUTENV 1
-
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 #if (defined _MSC_VER) && (_MSC_VER >= 1400)  // VC8+
