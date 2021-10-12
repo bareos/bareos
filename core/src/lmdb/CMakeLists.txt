@@ -25,12 +25,11 @@ endif()
 add_library(bareoslmdb SHARED mdb.c midl.c)
 target_compile_options(
   bareoslmdb PRIVATE -Wno-missing-braces -Wno-stringop-overflow
+                     -Wno-return-local-addr
 )
-# for at least Fedora 33 we need to set target_link_options so
-# lto doesn't complain either
-target_link_options(
-  bareoslmdb PRIVATE -Wno-stringop-overflow
-)
+# for at least Fedora 33 we need to set target_link_options so lto doesn't
+# complain either
+target_link_options(bareoslmdb PRIVATE -Wno-stringop-overflow)
 
 # empty the include_directories
 set_property(TARGET bareoslmdb PROPERTY INCLUDE_DIRECTORIES "")
