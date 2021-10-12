@@ -944,7 +944,7 @@ static bool job_cmd(JobControlRecord* jcr)
    */
   return dir->fsend(OKjob, kBareosVersionStrings.Full,
                     kBareosVersionStrings.ShortDate,
-                    kBareosVersionStrings.GetOsInfo(), PLATFORM);
+                    kBareosVersionStrings.GetOsInfo(), BAREOS_PLATFORM);
 }
 
 static bool RunbeforeCmd(JobControlRecord* jcr)

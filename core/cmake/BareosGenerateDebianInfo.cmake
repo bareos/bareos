@@ -95,7 +95,7 @@ if(GENERATE_DEBIAN_CONTROL)
     )
   endif()
 
-  if(${PLATFORM} MATCHES "univention")
+  if(${BAREOS_PLATFORM} MATCHES "univention")
     # only required for univention
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.univention-bareos
          DEBIAN_CONTROL_UNIVENTION_BAREOS
