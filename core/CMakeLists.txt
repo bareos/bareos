@@ -256,8 +256,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   if(${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
   endif()
-  # Solaris 11.4 has all md5 functions on openssl declared deprecated
-  # this produces a lot of useless warnings, so disable them
+  # Solaris 11.4 has all md5 functions on openssl declared deprecated this
+  # produces a lot of useless warnings, so disable them
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 endif()
 
@@ -345,25 +345,27 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
 endif()
 include(BareosFindStaticCodeAnalysisTools)
 
-if(NOT client-only)
+if(NOT client-only
+   AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS"
+   AND CMAKE_SIZEOF_VOID_P EQUAL 8
+)
   # droplet does not build on solaris because of sys/cdefs.h: No such file or
-  # directory
-  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/droplet/CMakeLists.txt)
-      message(
-        FATAL_ERROR
-          "Please checkout the libdroplet submodule via \n \"git submodule update --init --recursive\""
-      )
-    endif()
-    add_subdirectory(src/droplet)
-    if(TARGET droplet)
-      set_target_properties(
-        droplet
-        PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
-                   SOVERSION "${BAREOS_VERSION_MAJOR}"
-                   PREFIX "libbareos"
-      )
-    endif()
+  # directory it is also not safe on 32-bit systems, so we only build it on
+  # 64-bit
+  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/droplet/CMakeLists.txt)
+    message(
+      FATAL_ERROR
+        "Please checkout the libdroplet submodule via \n \"git submodule update --init --recursive\""
+    )
+  endif()
+  add_subdirectory(src/droplet)
+  if(TARGET droplet)
+    set_target_properties(
+      droplet
+      PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                 SOVERSION "${BAREOS_VERSION_MAJOR}"
+                 PREFIX "libbareos"
+    )
   endif()
 endif()
 
