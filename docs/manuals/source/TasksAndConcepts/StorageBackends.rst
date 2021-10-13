@@ -333,7 +333,7 @@ GFAPI Storage Backend
 
 **GFAPI** (GlusterFS)
 
-A GlusterFS Storage can be used as Storage backend of Bareos. Prerequistes are a working GlusterFS storage system and the package **bareos-storage-glusterfs**. See http://www.gluster.org/ for more information regarding GlusterFS installation and configuration and specifically `https://gluster.readthedocs.org/en/latest/Administrator Guide/Bareos/ <https://gluster.readthedocs.org/en/latest/Administrator Guide/Bareos/>`__ for Bareos integration. You can use following snippet to
+A GlusterFS Storage can be used as Storage backend of Bareos. Prerequistes are a working GlusterFS storage system and the package **bareos-storage-glusterfs**. See http://www.gluster.org/ for more information regarding GlusterFS installation and configuration and specifically `https://docs.gluster.org/en/latest/Administrator-Guide/Bareos/ <https://docs.gluster.org/en/latest/Administrator-Guide/Bareos/>`__ for Bareos integration. You can use following snippet to
 configure it as storage device:
 
 
