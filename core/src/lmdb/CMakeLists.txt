@@ -29,7 +29,9 @@ target_compile_options(
 )
 # for at least Fedora 33 we need to set target_link_options so lto doesn't
 # complain either
-target_link_options(bareoslmdb PRIVATE -Wno-stringop-overflow)
+if(NOT HAVE_DARWIN_OS OR NOT HAVE_FREEBSD_OS)
+  target_link_options(bareoslmdb PRIVATE -Wno-stringop-overflow)
+endif()
 
 # empty the include_directories
 set_property(TARGET bareoslmdb PROPERTY INCLUDE_DIRECTORIES "")
