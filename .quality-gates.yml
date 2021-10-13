@@ -7,105 +7,105 @@ coverage:
     unstable: 40
 
 docs:
-  warnings_unhealthy: 72
-  warnings_healthy: 36
+  warnings_unhealthy: 1
+  warnings_healthy: 0
 
 default:
   ctest_unstable: 0
-  warnings_unhealthy: 0
+  warnings_unhealthy: 1
   warnings_healthy: 0
 
-xUbuntu_16.04:
-  ctest_unstable: 0
-  warnings_unhealthy: 100
-  warnings_healthy: 50
+# xUbuntu_16.04:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 100
+#   warnings_healthy: 50
 
-xUbuntu:
-  ctest_unstable: 0
-  warnings_unhealthy: 60
-  warnings_healthy: 30
+# xUbuntu:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 60
+#   warnings_healthy: 30
 
-openSUSE:
-  ctest_unstable: 0
-  warnings_unhealthy: 52
-  warnings_healthy: 24
+# openSUSE:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 52
+#   warnings_healthy: 24
 
-Univention:
-  ctest_unstable: 0
-  warnings_unhealthy: 50
-  warnings_healthy: 25
+# Univention:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 50
+#   warnings_healthy: 25
 
-Debian:
-  ctest_unstable: 0
-  warnings_unhealthy: 50
-  warnings_healthy: 25
+# Debian:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 50
+#   warnings_healthy: 25
 
-Debian_9.0:
-  ctest_unstable: 0
-  warnings_unhealthy: 70
-  warnings_healthy: 35
+# Debian_9.0:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 70
+#   warnings_healthy: 35
 
-SLE:
-  ctest_unstable: 0
-  warnings_unhealthy: 52
-  warnings_healthy: 24
+# SLE:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 52
+#   warnings_healthy: 24
 
-SLE_12_SP4:
-  ctest_unstable: 0
-  warnings_unhealthy: 64
-  warnings_healthy: 32
+# SLE_12_SP4:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 64
+#   warnings_healthy: 32
 
-SLE_12_SP5:
-  ctest_unstable: 0
-  warnings_unhealthy: 64
-  warnings_healthy: 32
+# SLE_12_SP5:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 64
+#   warnings_healthy: 32
 
-RHEL_8:
-  ctest_unstable: 0
-  warnings_unhealthy: 48
-  warnings_healthy: 24
+# RHEL_8:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 48
+#   warnings_healthy: 24
 
-CentOS_8:
-  ctest_unstable: 0
-  warnings_unhealthy: 48
-  warnings_healthy: 24
+# CentOS_8:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 48
+#   warnings_healthy: 24
 
-RHEL_7:
-  ctest_unstable: 0
-  warnings_unhealthy: 39
-  warnings_healthy: 19
+# RHEL_7:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 39
+#   warnings_healthy: 19
 
-CentOS_7:
-  ctest_unstable: 0
-  warnings_unhealthy: 39
-  warnings_healthy: 19
+# CentOS_7:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 39
+#   warnings_healthy: 19
 
-Fedora:
-  ctest_unstable: 0
-  warnings_unhealthy: 56
-  warnings_healthy: 28
+# Fedora:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 56
+#   warnings_healthy: 28
 
-Fedora_33:
-  ctest_unstable: 0
-  warnings_unhealthy: 69
-  warnings_healthy: 34
+# Fedora_33:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 69
+#   warnings_healthy: 34
 
-FreeBSD:
-  ctest_unstable: 0
-  warnings_unhealthy: 20
-  warnings_healthy: 10
+# FreeBSD:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 20
+#   warnings_healthy: 10
 
-MacOS:
-  ctest_unstable: 0
-  warnings_unhealthy: 13
-  warnings_healthy: 6
+# MacOS:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 13
+#   warnings_healthy: 6
 
-Solaris:
-  ctest_unstable: 0
-  warnings_unhealthy: 30
-  warnings_healthy: 15
+# Solaris:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 30
+#   warnings_healthy: 15
 
-win:
-  ctest_unstable: 0
-  warnings_unhealthy: 62
-  warnings_healthy: 30
+# win:
+#   ctest_unstable: 0
+#   warnings_unhealthy: 62
+#   warnings_healthy: 30
