@@ -127,6 +127,9 @@ if(${compiler_has_no_unknown_pragmas})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
 endif()
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+
 # warn on sign-conversion include(CheckCCompilerFlag)
 # CHECK_C_COMPILER_FLAG(-Wsign-conversion c_compiler_will_warn_sign_conversion)
 #
