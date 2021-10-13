@@ -23,14 +23,14 @@ if(HAVE_FREEBSD_OS)
 endif()
 
 add_library(bareoslmdb SHARED mdb.c midl.c)
-target_compile_options(
-  bareoslmdb PRIVATE -Wno-missing-braces -Wno-stringop-overflow
-                     -Wno-return-local-addr
-)
-# for at least Fedora 33 we need to set target_link_options so lto doesn't
-# complain either
-if(NOT HAVE_DARWIN_OS OR NOT HAVE_FREEBSD_OS)
+target_compile_options(bareoslmdb PRIVATE -Wno-missing-braces)
+
+# set target_link_options so lto doesn't complain either
+if(${CMAKE_COMPILER_IS_GNUCC})
   target_link_options(bareoslmdb PRIVATE -Wno-stringop-overflow)
+  target_compile_options(
+    bareoslmdb PRIVATE -Wno-stringop-overflow -Wno-return-local-addr
+  )
 endif()
 
 # empty the include_directories
