@@ -347,7 +347,7 @@ dpl_status_t dpl_posix_list_bucket(dpl_ctx_t* ctx,
     ret = DPL_ENOMEM;
     goto end;
   }
-  struct dirent *entryp;
+  struct dirent* entryp;
   while (1) {
     entryp = readdir(dir);
 

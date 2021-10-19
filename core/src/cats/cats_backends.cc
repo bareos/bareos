@@ -220,9 +220,10 @@ BareosDb* db_init_database(JobControlRecord* jcr,
           backend_dir.c_str(), backend_interface_mapping->interface_name,
           DYN_LIB_EXTENSION);
 
-    if (nullptr != (backend_shared_library
-         = load_backend(jcr, shared_library_name.c_str(),
-                        backend_interface_mapping->interface_type_id))) {
+    if (nullptr
+        != (backend_shared_library
+            = load_backend(jcr, shared_library_name.c_str(),
+                           backend_interface_mapping->interface_type_id))) {
       // We found the shared library and it has the right entry points.
       break;
     }
