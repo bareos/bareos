@@ -8,4 +8,8 @@ Client {
   #
   # Plugin Directory = "@plugindir@"
   # Plugin Names = ""
+  # FDAddresses = {
+  #   ipv6 = { addr = :: ; port = 9102 }
+  #   ipv4 = { addr = 0.0.0.0 ; port = 9102 }
+  # }
 }
