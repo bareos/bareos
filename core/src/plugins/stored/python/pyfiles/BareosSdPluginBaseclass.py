@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,6 @@
 # Functions taken and adapted from bareos-sd.py
 
 import bareossd
-from bareossd import bsdEventType, bsdrVariable, bRCs
 import time
 
 
@@ -37,14 +36,14 @@ class BareosSdPluginBaseclass(object):
         bareossd.DebugMessage(100, "Constructor called in module %s\n" % (__name__))
         events = []
 
-        events.append(bsdEventType["bsdEventJobStart"])
-        events.append(bsdEventType["bsdEventJobEnd"])
+        events.append(bareossd.bsdEventJobStart)
+        events.append(bareossd.bsdEventJobEnd)
         bareossd.RegisterEvents(events)
 
         # get some static Bareos values
-        self.jobName = bareossd.GetValue(bsdrVariable["bsdVarJobName"])
-        self.jobLevel = chr(bareossd.GetValue(bsdrVariable["bsdVarLevel"]))
-        self.jobId = int(bareossd.GetValue(bsdrVariable["bsdVarJobId"]))
+        self.jobName = bareossd.GetValue(bareossd.bsdVarJobName)
+        self.jobLevel = chr(bareossd.GetValue(bareossd.bsdVarLevel))
+        self.jobId = int(bareossd.GetValue(bareossd.bsdVarJobId))
 
         bareossd.DebugMessage(
             100,
@@ -53,7 +52,7 @@ class BareosSdPluginBaseclass(object):
         )
 
     def __str__(self):
-        return "<$%:jobName=%s jobId=%s Level=%s>" % (
+        return "<$%s:jobName=%s jobId=%s Level=%s>" % (
             self.__class__,
             self.jobName,
             self.jobId,
@@ -79,7 +78,7 @@ class BareosSdPluginBaseclass(object):
                 continue
             else:
                 self.options[key] = val
-        return bRCs["bRC_OK"]
+        return bareossd.bRC_OK
 
     def handle_plugin_event(self, event):
         """
@@ -88,7 +87,7 @@ class BareosSdPluginBaseclass(object):
         You may first call this method in your derived class to get the
         job attributes read and then only adjust where useful.
         """
-        if event == bsdEventType["bsdEventJobStart"]:
+        if event == bareossd.bsdEventJobStart:
             self.jobStartTime = time.time()
             bareossd.DebugMessage(
                 100,
@@ -96,14 +95,14 @@ class BareosSdPluginBaseclass(object):
                 % (self.jobStartTime),
             )
 
-        elif event == bsdEventType["bsdEventJobEnd"]:
+        elif event == bareossd.bsdEventJobEnd:
             self.jobEndTime = time.time()
             bareossd.DebugMessage(
                 100,
                 "bsdEventJobEnd event triggered at Unix time %s\n" % (self.jobEndTime),
             )
-            self.jobBytes = int(bareossd.GetValue(bsdrVariable["bsdVarJobBytes"]))
-            self.jobFiles = int(bareossd.GetValue(bsdrVariable["bsdVarJobFiles"]))
+            self.jobBytes = int(bareossd.GetValue(bareossd.bsdVarJobBytes))
+            self.jobFiles = int(bareossd.GetValue(bareossd.bsdVarJobFiles))
             self.jobRunningTime = self.jobEndTime - self.jobStartTime
             self.throughput = 0
             if self.jobRunningTime > 0:
@@ -114,7 +113,7 @@ class BareosSdPluginBaseclass(object):
                     % (self.jobRunningTime, self.throughput),
                 )
 
-        return bRCs["bRC_OK"]
+        return bareossd.bRC_OK
 
 
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4

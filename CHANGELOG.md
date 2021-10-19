@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+- Adapt Python DIR and SD plugin Baseclasses to the modernized Python plugin API [PR #957] (backport of [PR #923])
+
 ## [20.0.3] - 2021-09-14
 
 ### Fixed
