@@ -205,8 +205,7 @@
         "PidDirectory": {
           "datatype": "DIRECTORY",
           "code": 0,
-          "default_value": "/var/lib/bareos",
-          "platform_specific": true,
+          "deprecated": true,
           "equals": true
         },
         "PluginDirectory": {
@@ -492,8 +491,7 @@
         "PidDirectory": {
           "datatype": "DIRECTORY",
           "code": 0,
-          "default_value": "/var/lib/bareos",
-          "platform_specific": true,
+          "deprecated": true,
           "equals": true
         },
         "PluginDirectory": {
