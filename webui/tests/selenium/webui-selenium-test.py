@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -403,6 +403,8 @@ class SeleniumTest(unittest.TestCase):
         self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
         # Press on rerun button
         self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-repeat")
+        # Accept confirmation dialog
+        self.driver.switch_to.alert.accept()
         if self.profile == "readonly":
             self.wait_and_click(By.LINK_TEXT, "Back")
         else:
