@@ -599,7 +599,7 @@ bool Do_a_command(UaContext* ua)
       }
 
       // Check if this command is authorized in RunScript
-      if (ua->runscript && !commands[i].use_in_rs) {
+      if (ua->runscript && !commands[i].allowed_in_runscript) {
         ua->ErrorMsg(_("Can't use %s command in a runscript"), ua->argk[0]);
         break;
       }
