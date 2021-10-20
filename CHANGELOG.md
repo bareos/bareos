@@ -85,6 +85,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - contrib: Add Python DIR plugin for prometheus metrics [PR #911]
 - docs: added "Hardware Sizing" chapter [PR #926]
 - bench: added a benchmarks tool with google-benchmark, with an initial benchmark for the restore command [PR #883]
+- database: Add index on jobmedia mediaid,jobid [PR #958]
 
 ### Changed
 - systemtest python-bareos: split tests in separate files [PR #944]
