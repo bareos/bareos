@@ -185,6 +185,8 @@ set(PYFILES
     pyfiles/bareos-fd-local-fileset.py
     ldap/bareos-fd-ldap.py
     ldap/BareosFdPluginLDAP.py
+    mariabackup/BareosFdPluginMariabackup.py
+    mariabackup/bareos-fd-mariabackup.py
     ovirt/bareos-fd-ovirt.py
     ovirt/BareosFdPluginOvirt.py
     percona-xtrabackup/bareos-fd-percona-xtrabackup.py

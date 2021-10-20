@@ -589,7 +589,13 @@ Summary:    Percona xtrabackup Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
-#Requires:   python-percona
+
+%package    filedaemon-mariabackup-python-plugin
+Summary:    Mariabackup Python plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+Requires:   bareos-filedaemon-python-plugin = %{version}
+
 
 %package    storage-python2-plugin
 Summary:    Python plugin for Bareos Storage daemon
@@ -701,10 +707,17 @@ This package contains the Libcloud python plugin for the file daemon
 %{dscr}
 
 This package contains the PostgreSQL python plugin for the file daemon
+
 %description filedaemon-percona-xtrabackup-python-plugin
 %{dscr}
 
 This package contains the Percona python plugin for the file daemon
+
+%description filedaemon-mariabackup-python-plugin
+%{dscr}
+
+This package contains the Mariabackup python plugin for the file daemon
+
 
 %description storage-python2-plugin
 %{dscr}
@@ -1656,9 +1669,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-percona-xtrabackup.py*
 %{plugin_dir}/BareosFdPluginPerconaXtraBackup.py*
-##attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/fileset/plugin-percona-xtrabackup.conf.example
-##attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/job/backup-percona-xtrabackup.conf.example
-##attr(0640, #{director_daemon_user}, #{daemon_group}) #{_sysconfdir}/#{name}/bareos-dir.d/job/restore-percona-xtrabackup.conf.example
+
+%files filedaemon-mariabackup-python-plugin
+%defattr(-, root, root)
+%{plugin_dir}/bareos-fd-mariabackup.py*
+%{plugin_dir}/BareosFdPluginMariabackup.py*
+
 
 %files director-python2-plugin
 %defattr(-, root, root)
@@ -1943,11 +1959,6 @@ a2enmod php5 &> /dev/null || true
 %post_backup_file /etc/%{name}/bareos-dir.d/plugin-python-ldap.conf
 %posttrans filedaemon-ldap-python-plugin
 %posttrans_restore_file /etc/%{name}/bareos-dir.d/plugin-python-ldap.conf
-
-#post filedaemon-percona-xtrabackup-python-plugin
-#post_backup_file /etc/#{name}/bareos-dir.d/plugin-python-percona-xtrabackup.conf
-#posttrans filedaemon-percona-xtrabackup-python-plugin
-#posttrans_restore_file /etc/#{name}/bareos-dir.d/plugin-python-percona-xtrabackup.conf
 
 %endif
 

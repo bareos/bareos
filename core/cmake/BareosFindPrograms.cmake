@@ -60,13 +60,8 @@ find_program(GCORE gcore)
 find_program(GDB gdb)
 find_program(DBX dbx)
 find_program(MDB mdb)
-find_program(XTRABACKUP xtrabackup)
 find_program(S3CMD s3cmd)
 find_program(MINIO minio)
-
-find_program(MYSQL mysql)
-find_program(MYSQLD mysqld PATH /opt/mysql/bin)
-find_program(MYSQL_INSTALL_DB mysql_install_db)
 
 if(POLICY CMP0109)
   cmake_policy(SET CMP0109 NEW)
@@ -77,3 +72,72 @@ else()
       PARENT_SCOPE
   )
 endif(POLICY CMP0109)
+
+# To test backups of mysql with percona xtrabackup, and mariadb with
+# mariabackup, we need to find the specific binaries in order to run our test
+# databases:
+
+# For mysql: XTRABACKUP_BINARY MYSQL_DAEMON_BINARY MYSQL_CLIENT_BINARY
+
+if(NOT DEFINED XTRABACKUP_BINARY)
+  find_program(XTRABACKUP_BINARY xtrabackup)
+endif()
+
+macro(find_program_and_verify_version_string variable program
+      version_substr_wanted path_to_search no_default_path
+)
+
+  string(TOUPPER ${program} program_uppercase)
+  message(CHECK_START
+          "Looking for ${program} in version ${version_substr_wanted}"
+  )
+  list(APPEND CMAKE_MESSAGE_INDENT "  ")
+  find_program(${variable} ${program} PATH ${path_to_search} ${no_default_path})
+  if(${variable})
+    execute_process(
+      COMMAND ${${variable}} --version
+      OUTPUT_VARIABLE VERSION_STRING
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    message(STATUS "CANDIDATE IS ${VERSION_STRING}")
+    if(${VERSION_STRING} MATCHES ${version_substr_wanted})
+      message(CHECK_PASS "OK")
+    else()
+      message(CHECK_PASS "NOT OK:  it is not ${version_substr_wanted}")
+      unset(${variable})
+    endif()
+  endif()
+  list(POP_BACK CMAKE_MESSAGE_INDENT "  ")
+endmacro()
+
+find_program_and_verify_version_string(MYSQL_DAEMON_BINARY mysqld MySQL "" "")
+find_program_and_verify_version_string(MYSQL_CLIENT_BINARY mysql MySQL "" "")
+
+message(STATUS "XTRABACKUP_BINARY: ${XTRABACKUP_BINARY}")
+message(STATUS "MYSQL_DAEMON_BINARY:${MYSQL_DAEMON_BINARY}")
+message(STATUS "MYSQL_CLIENT_BINARY:${MYSQL_CLIENT_BINARY}")
+
+# For mariadb: MARIABACKUP_BINARY MARIADB_DAEMON_BINARY MARIADB_CLIENT_BINARY
+# MARIADB_MYSQL_INSTALL_DB_SCRIPT
+
+if(NOT DEFINED MARIABACKUP_BINARY)
+  find_program(MARIABACKUP_BINARY mariabackup)
+endif()
+
+find_program_and_verify_version_string(
+  MARIADB_DAEMON_BINARY mysqld MariaDB "/usr/libexec" ""
+)
+find_program_and_verify_version_string(
+  MARIADB_CLIENT_BINARY mysql MariaDB "" ""
+)
+
+if(NOT DEFINED MARIADB_MYSQL_INSTALL_DB_SCRIPT)
+  find_program(MARIADB_MYSQL_INSTALL_DB_SCRIPT mysql_install_db)
+endif()
+
+message(STATUS "MARIABACKUP_BINARY: ${MARIABACKUP_BINARY}")
+message(STATUS "MARIADB_DAEMON_BINARY:${MARIADB_DAEMON_BINARY}")
+message(STATUS "MARIADB_CLIENT_BINARY: ${MARIADB_CLIENT_BINARY}")
+message(
+  STATUS "MARIADB_MYSQL_INSTALL_DB_SCRIPT: ${MARIADB_MYSQL_INSTALL_DB_SCRIPT}"
+)

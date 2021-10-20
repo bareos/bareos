@@ -1,0 +1,165 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# This systemtest tests the mariadb plugin functionality
+# of the Bareos FD by using the supplied module
+#   BareosFdPluginMariabackup.py
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+if [ "$USER" == "root"  ]; then
+ echo "This test cannot be run as user root."
+ exit 1;
+fi
+
+JobName=backup-bareos-fd
+#shellcheck source=../environment.in
+. ./environment
+MYQL_CLIENT="${MARIADB_CLIENT_BINARY} --defaults-file=mysqldefaults --user=$USER"
+MARIABACKUP="${MARIABACKUP_BINARY} --defaults-file=mysqldefaults"
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+shutdown_mysql_server(){
+[ -f "mysql/mysqld.pid" ] && kill "$(cat mysql/mysqld.pid)" || :
+[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
+}
+
+startup_mysql_server(){
+${MARIADB_DAEMON_BINARY} --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
+
+tries=60
+echo "waiting for mysql server to start"
+while ! $MYQL_CLIENT <<< "select version();"  > /dev/null 2>&1; do
+  [ $((tries-=1)) -eq 0 ] && {
+    echo "Could not start mysql server"
+    cat mysql/mysql.log
+    shutdown_mysql_server
+    exit 1
+  }
+  echo -n "."
+  sleep 1
+done
+
+}
+
+
+
+shutdown_mysql_server
+
+rm -Rf mysql/data/*
+mkdir -p mysql/data/
+# directory for socket, depending on length (socket length is limited)
+rm -Rf  ${dbHost}
+mkdir -p ${dbHost}
+
+
+# initialize mysql db
+
+if [ "${MARIADB_MYSQL_INSTALL_DB_SCRIPT}" = "MARIADB_MYSQL_INSTALL_DB_SCRIPT-NOTFOUND" ]; then
+	${MARIADB_DAEMON_BINARY} --defaults-file=mysqldefaults --initialize-insecure --user="$USER" > mysql/mysql_init.log
+else
+	mysql_install_db --auth-root-authentication-method=socket  --user="$USER" --auth-root-socket-user=$USER --defaults-file=mysqldefaults > mysql/mysql_init.log
+fi
+#
+mariabackup_test_db="${db_name}_mariabackup"
+
+
+start_test
+
+startup_mysql_server
+
+echo "create database ${mariabackup_test_db}" | $MYQL_CLIENT
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYQL_CLIENT "${mariabackup_test_db}"
+echo "insert into test (data) VALUES ('test entry 1') " | $MYQL_CLIENT "${mariabackup_test_db}"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/log1.out
+run job=$JobName yes
+wait JobName=$JobName
+status dir
+
+run job=$JobName level=Incremental yes
+wait JobName=$JobName
+status dir
+
+
+END_OF_DATA
+
+# insert data and run incremental
+echo "insert into test (data) VALUES ('test entry 2') " | $MYQL_CLIENT "${mariabackup_test_db}"
+
+run_bareos "$@"
+
+cat <<END_OF_DATA2 >"$tmp/bconcmds"
+# run incremental again without any new data
+run job=$JobName yes
+wait JobName=$JobName
+status dir
+wait
+messages
+quit
+END_OF_DATA2
+run_bareos "$@"
+
+cat <<END_OF_DATA3 >"$tmp/bconcmds"
+restore client=bareos-fd fileset=MariaBackupTest yes restorejob=RestoreFile select all done
+@$out $tmp/log2.out
+wait
+END_OF_DATA3
+
+run_bareos "$@"
+
+shutdown_mysql_server
+
+
+# Check if mariabackup has extracted some files at least
+# TODO: verify that mariabackup --prepare works and eventually do complete datbase restore
+ls -lR  "$tmp/bareos-restores/_mariabackup/"
+if [ -z "$(ls -A "$tmp"/bareos-restores/_mariabackup/)" ]; then
+       echo "No restore data found"
+       estat=1
+fi
+
+
+# create new empty data dir
+rm -Rf mysql/data/*
+mkdir -p mysql/data/
+
+TARGETDIR=$(find ./tmp/bareos-restores/_mariabackup/4/ -type d  -name '*001')
+INCDIR1=$(find ./tmp/bareos-restores/_mariabackup/4/ -type d  -name '*002')
+INCDIR2=$(find ./tmp/bareos-restores/_mariabackup/4/ -type d  -name '*002')
+
+${MARIABACKUP} --prepare --target-dir=${TARGETDIR}
+# after prepare a file is left in data dir, this seems to be a bug
+rm -Rf mysql/data/*
+${MARIABACKUP} --copy-back --target-dir=${TARGETDIR}  --incremental-dir=${INCDIR1}  --incremental-dir=${INCDIR2}
+
+
+startup_mysql_server
+
+if ! echo "SELECT * from test " | $MYQL_CLIENT "${mariabackup_test_db}" | grep "test entry 1"; then
+    echo "test entry 1 not found"
+    estat=2
+fi
+
+if ! echo "SELECT * from test " | $MYQL_CLIENT "${mariabackup_test_db}" | grep "test entry 2"; then
+    echo "test entry 2 not found"
+    estat=3
+fi
+
+shutdown_mysql_server
+
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+
+end_test

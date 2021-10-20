@@ -1,0 +1,2 @@
+@plugindir@/bareos-fd-mariabackup.py*
+@plugindir@/BareosFdPluginMariabackup.py*
