@@ -651,23 +651,23 @@ strname
 
 
 
-.. _DataTypeNetAddress:
+.. _DataTypeAddress:
 
-net-address
-   :index:`\ <single: Data Type; net-address>`\
+ADDRESS
+   :index:`\ <single: Data Type; ADDRESS>`\
 
-   is either a domain name or an IP address specified as a dotted quadruple in string or quoted string format. This directive only permits a single address to be specified. The :strong:`NetPort` must be specificly separated. If multiple net-addresses are needed, please assess if it is also possible to specify :strong:`NetAddresses` (plural).
+   is either a domain name or an IP address specified as a dotted quadruple in string or quoted string format. This directive only permits a single address to be specified. The :strong:`NetPort` must be specificly separated. If multiple ADDRESSES are needed, please assess if it is also possible to specify :strong:`Addresses` (plural).
 
 
-.. _DataTypeNetAddresses:
+.. _DataTypeAddresses:
 
-net-addresses
-   :index:`\ <single: Data Type; net-addresses>`\
+ADDRESSES
+   :index:`\ <single: Data Type; ADDRESSES>`\
 
-   Specify a set of net-addresses and net-ports. Probably the simplest way to explain this is to show an example:
+   Specify a set of ADDRESSES and net-ports. Probably the simplest way to explain this is to show an example:
 
    .. code-block:: bareosconfig
-      :caption: net-addresses
+      :caption: ADDRESSES
 
       Addresses  = {
           ip = { addr = 1.2.3.4; port = 1205;}
