@@ -665,10 +665,30 @@ ADDRESS
 ADDRESSES
    :index:`\ <single: Data Type; ADDRESSES>`\
 
-   Specify a set of ADDRESSES and ports. Probably the simplest way to explain this is to show an example:
+   Specify a set of ADDRESSES and ports. Probably the simplest way to explain this is to show an example.
+   The following example makes the director listen for connections on all interfaces both on ipv4 and ipv6.
+
 
    .. code-block:: bareosconfig
-      :caption: ADDRESSES
+      :caption: listen on ipv4 and ipv6 for director < bareos 21
+
+      DIRAddresses = {
+         ipv6 = { addr = :: ; port = 9101 }
+         ipv4 = { addr = 0.0.0.0 ; port = 9101 }
+      }
+
+.. note::
+
+   Since Bareos :sinceVersion:`21: listen on both ipv4 and ipv6 per default`, this is not required anymore as all daemons will per default listen on all interfaces both on ipv4 and ipv6.
+
+
+..
+
+
+   The following example shows all of the features the ADDRESSES parser:
+
+   .. code-block:: bareosconfig
+      :caption:  showing ADDRESSES features
 
       Addresses  = {
           ip = { addr = 1.2.3.4; port = 1205;}
@@ -688,7 +708,6 @@ ADDRESSES
               addr = server.example.com
           }
       }
-
    where ip, ip4, ip6, addr, and port are all keywords. Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification). Also, the port can be specified as a number or as the mnemonic value from the :file:`/etc/services` file. If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6. If ip4 is specified, then only IPv4
    resolutions will be permitted, and likewise with ip6.
 
@@ -907,6 +926,13 @@ DIRECTORY_LIST
 
   Description of DIRECTORY_LIST
 
+.. _DataTypeRESOURCE_LIST:
+
+RESOURCE_LIST
+
+  :index:`\ <single: Data Type; RESOURCE_LIST>`\
+
+  Description of RESOURCE_LIST
 
 .. _DataTypeDIRECTORY_OR_COMMAND:
 
