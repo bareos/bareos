@@ -170,7 +170,7 @@ do
       postgresql)
          PGOPTIONS='--client-min-messages=warning' psql -f ${temp_sql_schema} -d ${db_name} $*
          retval=$?
-         if [ $retval -eq 0 ] && [ ${end_version} -eq 2192 ]; then
+         if [ $retval -eq 0 ] && [ ${end_version} -eq 2210 ]; then
              PGSQLVERSION=`PGOPTIONS='--client-min-messages=warning' psql -d template1 -c 'SELECT version()' $* 2>/dev/null | \
                     awk '/PostgreSQL/ { print $2 }' | \
                     cut -d '.' -f 1,2`

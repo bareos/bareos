@@ -210,6 +210,7 @@ CREATE TABLE JobMedia (
    VolIndex INTEGER UNSIGNED DEFAULT 0,
    PRIMARY KEY(JobMediaId),
    INDEX (JobId, MediaId)
+   INDEX (MediaId, JobId)
 );
 
 CREATE TABLE Media (
@@ -459,5 +460,5 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2192;
-INSERT INTO Version (VersionId) VALUES (2192);
+DELETE FROM Version WHERE VersionId<=2210;
+INSERT INTO Version (VersionId) VALUES (2210);

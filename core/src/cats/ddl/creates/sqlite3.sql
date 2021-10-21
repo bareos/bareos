@@ -164,6 +164,7 @@ CREATE TABLE JobMedia (
    PRIMARY KEY(JobMediaId)
 );
 CREATE INDEX inx7 ON JobMedia (JobId, MediaId);
+CREATE INDEX inx71 ON JobMedia (JobId, MediaId);
 
 
 CREATE TABLE Media (
@@ -468,8 +469,8 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2192;
-INSERT INTO Version (VersionId) VALUES (2192);
+DELETE FROM Version WHERE VersionId<=2210;
+INSERT INTO Version (VersionId) VALUES (2210);
 
 PRAGMA default_cache_size = 100000;
 PRAGMA synchronous = NORMAL;
