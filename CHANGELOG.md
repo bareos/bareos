@@ -121,6 +121,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Disable autotosectionlabel plugin in documentation and add required labels [PR #942]
 - webui: improve log message keyword highlighting [PR #937]
 - webui: change retention/expiration column to only show retention on volume tables [PR #943]
+- webui: introduce confirmation dialog on rerun and cancel job actions [PR #951]
 
 ### Deprecated
 
@@ -270,4 +271,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #942]: https://github.com/bareos/bareos/pull/942
 [PR #943]: https://github.com/bareos/bareos/pull/943
 [PR #944]: https://github.com/bareos/bareos/pull/944
+[PR #951]: https://github.com/bareos/bareos/pull/951
 [unreleased]: https://github.com/bareos/bareos/tree/master
