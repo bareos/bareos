@@ -21,7 +21,6 @@
 # Prometheus Exporter as Bareos python plugin
 # Functions taken and adapted from BareosDirPluginGraphiteSender.py
 
-from bareosdir import *
 import bareosdir
 import BareosDirPluginBaseclass
 from prometheus_client import CollectorRegistry, Gauge, Enum, Histogram, Info, push_to_gateway
@@ -114,10 +113,10 @@ class BareosDirPluginPrometheusExporter(BareosDirPluginBaseclass.BareosDirPlugin
             self.username = self.options['username']
             self.password = self.options['password']
             self.use_basic_auth = True
-            DebugMessage(100, "Using Basic auth with username={}\n".format(self.username))
+            bareosdir.DebugMessage(100, "Using Basic auth with username={}\n".format(self.username))
         else:
             self.use_basic_auth = False
-            DebugMessage(100, "Username/password missing, disabling basic auth\n")
+            bareosdir.DebugMessage(100, "Username/password missing, disabling basic auth\n")
 
         if 'use_tls' not in self.options:
             self.use_tls = False
@@ -131,7 +130,7 @@ class BareosDirPluginPrometheusExporter(BareosDirPluginBaseclass.BareosDirPlugin
 
         # we return OK in anyway, we do not want to produce Bareos errors just because of 
         # a failing metric exporter
-        return bRCs['bRC_OK']
+        return bareosdir.bRC_OK
 
     def handle_plugin_event(self, event):
         '''
@@ -141,11 +140,11 @@ class BareosDirPluginPrometheusExporter(BareosDirPluginBaseclass.BareosDirPlugin
         # We first call the method from our superclass to get job attributes read
         super(BareosDirPluginPrometheusExporter, self).handle_plugin_event(event)
 
-        if event == bDirEventJobEnd:
+        if event == bareosdir.bDirEventJobEnd:
             # This event is called at the end of a job, here evaluate the results
             self.push_job_information()
 
-        return bRCs['bRC_OK']
+        return bareosdir.bRC_OK
 
     def push_job_information(self):
         '''
@@ -201,15 +200,15 @@ class BareosDirPluginPrometheusExporter(BareosDirPluginBaseclass.BareosDirPlugin
         else:
             gateway = "{}:{}".format(self.gateway_host,self.gateway_port)
 
-        DebugMessage(100, "Submitting metrics to {}\n".format(gateway))
+        bareosdir.DebugMessage(100, "Submitting metrics to {}\n".format(gateway))
         try:
           if self.use_basic_auth:
             push_to_gateway('{}'.format(gateway), job='bareos', registry=registry, handler=self.authentication_handler)
           else:
               push_to_gateway('{}'.format(gateway), job='bareos', registry=registry)
         except Exception as excp:
-          DebugMessage(100, "Error: Submitting metrics to pushgateway '{}' failed.\n".format(gateway))
-          DebugMessage(100, "python error was: {}\n".format(excp))
-          JobMessage(M_INFO, "Failed to submit metrics to pushgateway\n")
+          bareosdir.DebugMessage(100, "Error: Submitting metrics to pushgateway '{}' failed.\n".format(gateway))
+          bareosdir.DebugMessage(100, "python error was: {}\n".format(excp))
+          bareosdir.JobMessage(bareosdir.M_INFO, "Failed to submit metrics to pushgateway\n")
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4

@@ -21,7 +21,6 @@
 
 # Provided by the Bareos Dir Python plugin interface
 import bareosdir
-from bareosdir import *
 
 # This module contains the wrapper functions called by the Bareos-Dir, the
 # functions call the corresponding methods from your plugin class
@@ -42,6 +41,6 @@ def load_bareos_plugin(plugindef):
     BareosDirWrapper.bareos_dir_plugin_object = \
         BareosDirPluginPrometheusExporter.BareosDirPluginPrometheusExporter(
             plugindef)
-    return bRC_OK
+    return bareosdir.bRC_OK
 
 # the rest is done in the Plugin module
