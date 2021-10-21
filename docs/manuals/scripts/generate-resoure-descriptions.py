@@ -498,7 +498,7 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
                 strings["required"] = "True"
                 result += "   :required: {required}\n".format(**strings)
 
-            result += "   :type: {datatype}\n".format(**strings)
+            result += "   :type: :ref:`{datatype}<DataType{datatype}>` \n".format(**strings)
 
             if data.get("default_value"):
                 result += "   :default: {default}\n".format(**strings)
