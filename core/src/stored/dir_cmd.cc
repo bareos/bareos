@@ -1743,7 +1743,7 @@ static bool PassiveCmd(JobControlRecord* jcr)
   if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &tls_policy)
       != 3) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Bad passiveclientcmd command: %s"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, _("Bad passiveclientcmd command: %s\n"), jcr->errmsg);
     goto bail_out;
   }
 
@@ -1819,7 +1819,7 @@ static bool PluginoptionsCmd(JobControlRecord* jcr)
   Dmsg1(100, "PluginOptionsCmd: %s", dir->msg);
   if (sscanf(dir->msg, pluginoptionscmd, plugin_options) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Bad pluginoptionscmd command: %s"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, _("Bad pluginoptionscmd command: %s\n"), jcr->errmsg);
     goto bail_out;
   }
 

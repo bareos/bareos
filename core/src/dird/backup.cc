@@ -740,7 +740,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Job record for Job report: ERR=%s"),
+         _("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
     jcr->setJobStatus(JS_ErrorTerminated);
   }
@@ -748,7 +748,7 @@ void NativeBackupCleanup(JobControlRecord* jcr, int TermCode)
   bstrncpy(cr.Name, jcr->impl->res.client->resource_name_, sizeof(cr.Name));
   if (!jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Client record for Job report: ERR=%s"),
+         _("Error getting Client record for Job report: ERR=%s\n"),
          jcr->db->strerror());
   }
 
@@ -928,7 +928,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
       }
       bstrncpy(mr.VolumeName, p, sizeof(mr.VolumeName));
       if (!jcr->db->GetMediaRecord(jcr, &mr)) {
-         Jmsg(jcr, M_WARNING, 0, _("Error getting Media record for Volume \"%s\": ERR=%s"),
+         Jmsg(jcr, M_WARNING, 0, _("Error getting Media record for Volume \"%s\": ERR=%s\n"),
               mr.VolumeName, jcr->db->strerror());
       }
    }

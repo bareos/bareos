@@ -128,7 +128,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
            _("Wrong Volume mounted on device %s: Wanted %s have %s\n"),
            dev->print_name(), VolName, dev->VolHdr.VolumeName);
       if (!dev->poll && jcr->impl->label_errors++ > 100) {
-        Jmsg(jcr, M_FATAL, 0, _("Too many tries: %s"), jcr->errmsg);
+        Jmsg(jcr, M_FATAL, 0, _("Too many tries: %s\n"), jcr->errmsg);
       }
       goto bail_out;
     }
@@ -208,7 +208,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
          dev->print_name(), dev->VolHdr.LabelType);
     Dmsg1(130, "%s", jcr->errmsg);
     if (!dev->poll && jcr->impl->label_errors++ > 100) {
-      Jmsg(jcr, M_FATAL, 0, _("Too many tries: %s"), jcr->errmsg);
+      Jmsg(jcr, M_FATAL, 0, _("Too many tries: %s\n"), jcr->errmsg);
     }
     Dmsg0(150, "return VOL_LABEL_ERROR\n");
     status = VOL_LABEL_ERROR;
@@ -231,7 +231,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
      *  => we are in a loop
      */
     if (!dev->poll && jcr->impl->label_errors++ > 100) {
-      Jmsg(jcr, M_FATAL, 0, "Too many tries: %s", jcr->errmsg);
+      Jmsg(jcr, M_FATAL, 0, "Too many tries: %s\n", jcr->errmsg);
     }
     Dmsg0(150, "return VOL_NAME_ERROR\n");
     status = VOL_NAME_ERROR;

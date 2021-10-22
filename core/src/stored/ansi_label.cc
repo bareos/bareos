@@ -435,7 +435,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
         }
       }
       if (!dev->weof(1)) {
-        Jmsg(jcr, M_FATAL, 0, _("Error writing EOF to tape. ERR=%s"),
+        Jmsg(jcr, M_FATAL, 0, _("Error writing EOF to tape. ERR=%s\n"),
              dev->errmsg);
         return false;
       }

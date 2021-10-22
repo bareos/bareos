@@ -337,7 +337,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr,
       Jmsg(jcr, M_FATAL, 0,
            _("\n"
              "     Storage daemon didn't accept Device \"%s\" because:\n     "
-             "%s"),
+             "%s\n"),
            device_name.c_str(), err_msg.c_str() /* sd->msg */);
     } else {
       Jmsg(jcr, M_FATAL, 0,

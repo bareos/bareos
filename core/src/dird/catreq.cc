@@ -334,7 +334,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
           jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex,
           jm.LastIndex);
     if (!jcr->db->CreateJobmediaRecord(jcr, &jm)) {
-      Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s"),
+      Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s\n"),
            jcr->db->strerror());
       bs->fsend(_("1992 Create JobMedia error\n"));
     } else {
@@ -586,7 +586,7 @@ static void UpdateAttribute(JobControlRecord* jcr,
             default:
               Jmsg(jcr, M_ERROR, 0,
                    _("Catalog error updating file digest. Unsupported digest "
-                     "stream type: %d"),
+                     "stream type: %d\n"),
                    Stream);
           }
 
@@ -604,14 +604,15 @@ static void UpdateAttribute(JobControlRecord* jcr,
 
             // Update BaseFile table
             if (!jcr->db->CreateAttributesRecord(jcr, ar)) {
-              Jmsg1(jcr, M_FATAL, 0, _("attribute create error. %s"),
+              Jmsg1(jcr, M_FATAL, 0, _("attribute create error. %s\n"),
                     jcr->db->strerror());
             }
             jcr->cached_attribute = false;
           } else {
             if (!jcr->db->AddDigestToFileRecord(jcr, ar->FileId, digestbuf,
                                                 type)) {
-              Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. %s"),
+              Jmsg(jcr, M_ERROR, 0,
+                   _("Catalog error updating file digest. %s\n"),
                    jcr->db->strerror());
             }
           }
