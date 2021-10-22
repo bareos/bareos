@@ -151,7 +151,7 @@ void SchedulerPrivate::WaitForJobsToRun()
       }
       JobControlRecord* jcr = TryCreateJobControlRecord(run_job);
       if (jcr != nullptr) {
-        Dmsg1(local_debuglevel, "Scheduler: Running job %s.",
+        Dmsg1(local_debuglevel, "Scheduler: Running job %s.\n",
               run_job.job->resource_name_);
         jcr->impl->job_trigger = next_job.job_trigger;
         ExecuteJobCallback_(jcr);
@@ -241,7 +241,7 @@ void SchedulerPrivate::AddJobToQueue(JobResource* job,
                                      time_t runtime,
                                      JobTrigger job_trigger)
 {
-  Dmsg1(local_debuglevel + 100, "Scheduler: Try AddJobToQueue %s.",
+  Dmsg1(local_debuglevel + 100, "Scheduler: Try AddJobToQueue %s.\n",
         job->resource_name_);
 
   if (run != nullptr) {
@@ -251,7 +251,7 @@ void SchedulerPrivate::AddJobToQueue(JobResource* job,
   if ((runtime + 59) < now) { return; }
 
   try {
-    Dmsg1(local_debuglevel + 100, "Scheduler: Put job %s into queue.",
+    Dmsg1(local_debuglevel + 100, "Scheduler: Put job %s into queue.\n",
           job->resource_name_);
 
     prioritised_job_item_queue.EmplaceItem(job, run, runtime, job_trigger);

@@ -117,7 +117,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     pr.PoolId = jr.PoolId;
     if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
       Jmsg(ua->jcr, M_WARNING, 0,
-           _("Error getting Pool record for Job rerun: ERR=%s\n",
+           _("Error getting Pool record for Job rerun: ERR=%s\n"),
            ua->db->strerror());
       goto bail_out;
     }
@@ -181,7 +181,7 @@ static inline bool reRunJob(UaContext* ua, JobId_t JobId, bool yes, utime_t now)
     fs.FileSetId = jr.FileSetId;
     if (!ua->db->GetFilesetRecord(ua->jcr, &fs)) {
       Jmsg(ua->jcr, M_WARNING, 0,
-           _("Error getting FileSet record for Job rerun: ERR=%s\n",
+           _("Error getting FileSet record for Job rerun: ERR=%s\n"),
            ua->db->strerror());
       goto bail_out;
     }

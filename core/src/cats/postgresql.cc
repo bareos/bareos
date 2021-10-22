@@ -820,10 +820,10 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char* query,
     goto bail_out;
   }
 
-  Dmsg0(500, "exec done");
+  Dmsg0(500, "exec done\n");
 
   if (PQresultStatus(pg_result) == PGRES_TUPLES_OK) {
-    Dmsg0(500, "getting value");
+    Dmsg0(500, "getting value\n");
     id = str_to_uint64(PQgetvalue(pg_result, 0, 0));
     Dmsg2(500, "got value '%s' which became %d\n", PQgetvalue(pg_result, 0, 0),
           id);

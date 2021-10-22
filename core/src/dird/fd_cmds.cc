@@ -961,7 +961,7 @@ bool SendPluginOptions(JobControlRecord* jcr)
   }
   if (jcr->impl->res.job && jcr->impl->res.job->FdPluginOptions
       && jcr->impl->res.job->FdPluginOptions->size()) {
-    Dmsg2(200, "dird: sendpluginoptions found FdPluginOptions in res.job");
+    Dmsg2(200, "dird: sendpluginoptions found FdPluginOptions in res.job\n");
     foreach_alist_index (i, plugin_options,
                          jcr->impl->res.job->FdPluginOptions) {
       PmStrcpy(cur_plugin_options, plugin_options);

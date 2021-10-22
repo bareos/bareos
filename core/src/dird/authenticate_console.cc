@@ -298,7 +298,7 @@ OptionResult ConsoleAuthenticatorFrom_18_2::AuthenticatePamUser()
 
     if (!ua_->UA_sock->ReceiveAndEvaluateResponseMessage(response_id,
                                                          message_arguments)) {
-      Dmsg2(100, "Could not evaluate response_id: %d - %d", response_id,
+      Dmsg2(100, "Could not evaluate response_id: %d - %d\n", response_id,
             message_arguments.JoinReadable().c_str());
       auth_success_ = false;
       return OptionResult::Completed;

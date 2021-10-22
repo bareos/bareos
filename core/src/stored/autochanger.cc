@@ -328,7 +328,7 @@ slot_number_t GetAutochangerLoadedSlot(DeviceControlRecord* dcr, bool lock_set)
                               dcr->device_resource->changer_command, "loaded");
   Dmsg1(100, "Run program=%s\n", changer);
   status = RunProgramFullOutput(changer, timeout, results.addr());
-  Dmsg3(100, "run_prog: %s stat=%d result=%s", changer, status,
+  Dmsg3(100, "run_prog: %s stat=%d result=%s\n", changer, status,
         results.c_str());
 
   if (status == 0) {

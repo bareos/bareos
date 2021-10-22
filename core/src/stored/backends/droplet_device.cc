@@ -651,7 +651,7 @@ bool DropletDevice::ReadRemoteChunk(chunk_io_request* request)
     }
   } while (!success && tries < NUMBER_OF_RETRIES);
 
-  if (tries == NUMBER_OF_RETRIES) { Dmsg0(100, "dpl_getattr timed out"); }
+  if (tries == NUMBER_OF_RETRIES) { Dmsg0(100, "dpl_getattr timed out\n"); }
 
   retval = success;
 

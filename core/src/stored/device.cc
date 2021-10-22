@@ -176,13 +176,13 @@ bool FixupDeviceBlockWriteError(DeviceControlRecord* dcr, int retries)
   Dmsg0(190, "Write overflow block to dev\n");
   if (!dcr->WriteBlockToDev()) {
     BErrNo be;
-    Dmsg1(0, _("WriteBlockToDevice overflow block failed. ERR=%s"),
+    Dmsg1(0, _("WriteBlockToDevice overflow block failed. ERR=%s\n"),
           be.bstrerror(dev->dev_errno));
     /* Note: recursive call */
     if (retries-- <= 0 || !FixupDeviceBlockWriteError(dcr, retries)) {
       Jmsg2(jcr, M_FATAL, 0,
             _("Catastrophic error. Cannot write overflow block to device %s. "
-              "ERR=%s"),
+              "ERR=%s\n"),
             dev->print_name(), be.bstrerror(dev->dev_errno));
       goto bail_out;
     }
