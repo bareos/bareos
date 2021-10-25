@@ -1,6 +1,5 @@
 # Provided by the Bareos FD Python plugin interface
 import bareosfd
-from bareosfd import *
 
 # This module contains the wrapper functions called by the Bareos-FD, the
 # functions call the corresponding methods from your plugin class
@@ -22,4 +21,4 @@ def load_bareos_plugin(plugindef):
     BareosFdWrapper.bareos_fd_plugin_object = \
         BareosFdPluginVz7CtFs.BareosFdPluginVz7CtFs(
             plugindef)
-    return bRC_OK
+    return bareosfd.bRC_OK
