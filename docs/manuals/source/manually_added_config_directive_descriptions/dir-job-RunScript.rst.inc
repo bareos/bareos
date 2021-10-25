@@ -4,7 +4,7 @@ The specified Command (see below for details) is run as an external program prio
 
 **Console** options are special commands that are sent to the director instead of the OS. At this time, console command outputs are redirected to log with the jobid 0.
 
-You can use following console command: ``delete``, ``disable``, ``enable``, ``estimate``, ``list``, ``llist``, ``memory``, ``prune``, ``purge``, ``reload``, ``status``, ``setdebug``, ``show``, ``time``, ``trace``, ``update``, ``version``, ``.client``, ``.jobs``, ``.pool``, ``.storage``. See :ref:`section-bconsole` for more information. You need to specify needed information on command line, nothing will be prompted. Example:
+You can use following console command: ``delete``, ``disable``, ``enable``, ``estimate``, ``list``, ``llist``, ``memory``, ``prune``, ``purge``, ``release``, ``reload``, ``status``, ``setdebug``, ``show``, ``time``, ``trace``, ``update``, ``version``, ``.client``, ``.jobs``, ``.pool``, ``.storage``. See :ref:`section-bconsole` for more information. You need to specify needed information on command line, nothing will be prompted. Example:
 
 
 
