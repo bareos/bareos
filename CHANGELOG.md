@@ -91,6 +91,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - database: Add index on jobmedia mediaid,jobid [PR #958]
 - contrib: Add Python FD Plugin for OpenVZ container [PR #908]
 - packages: Build also for Fedora_35 [PR #972]
+- cmake: check for chflags() function and enable FreeBSD File Flags support [PR #963]
 
 ### Changed
 - systemtest python-bareos: split tests in separate files [PR #944]
