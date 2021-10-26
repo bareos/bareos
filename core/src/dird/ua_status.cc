@@ -686,7 +686,7 @@ start_again:
        */
       if (job) {
         if (job->schedule && job->schedule->enabled && job->enabled
-            && job->client->enabled) {
+            && job->client && job->client->enabled) {
           if (!show_scheduled_preview(ua, job->schedule, overview,
                                       &max_date_len, time_to_check)) {
             goto start_again;
@@ -698,7 +698,7 @@ start_again:
           if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
 
           if (job->schedule && job->schedule->enabled && job->enabled
-              && job->client == client && job->client->enabled) {
+              && job->client && job->client == client && job->client->enabled) {
             if (!show_scheduled_preview(ua, job->schedule, overview,
                                         &max_date_len, time_to_check)) {
               job = NULL;
