@@ -209,7 +209,7 @@ CREATE TABLE JobMedia (
    JobBytes NUMERIC(20) DEFAULT 0,
    VolIndex INTEGER UNSIGNED DEFAULT 0,
    PRIMARY KEY(JobMediaId),
-   INDEX (JobId, MediaId)
+   INDEX (JobId, MediaId),
    INDEX (MediaId, JobId)
 );
 
