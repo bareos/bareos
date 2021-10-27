@@ -714,7 +714,8 @@ ADDRESSES
 .. _DataTypePort:
 
 port
-   :index:`\ <single: Data Type; port>`\
+   .. index::
+      single: Data Type; port
 
    Specify a network port (a positive integer in the range 1 to 65535).
 
