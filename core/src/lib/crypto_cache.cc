@@ -151,7 +151,12 @@ void WriteCryptoCache(const char* cache_file)
 
   crypto_cache_hdr.nr_entries = cached_crypto_keys->size();
   if (write(fd, &crypto_cache_hdr, sizeof(crypto_cache_hdr))
-      != sizeof(crypto_cache_hdr)) {}
+      != sizeof(crypto_cache_hdr)) {
+    BErrNo be;
+
+    Dmsg1(000, "Write hdr error: ERR=%s\n", be.bstrerror());
+    goto bail_out;
+  }
 
   foreach_dlist (cce, cached_crypto_keys) {
     if (write(fd, cce, sizeof(crypto_cache_entry_t))
