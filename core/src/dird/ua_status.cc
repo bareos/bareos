@@ -661,8 +661,10 @@ start_again:
     if (client || job) {
       // List specific schedule.
       if (job) {
-        if (job->schedule && job->schedule->enabled && job->enabled
-            && job->client && job->client->enabled) {
+        if (job->schedule && job->schedule->enabled && job->enabled) {
+          // skip if client is set but not enabled
+          if (job->client && !job->client->enabled) goto start_again;
+
           if (!show_scheduled_preview(ua, job->schedule, overview,
                                       &max_date_len, time_to_check)) {
             goto start_again;
@@ -673,8 +675,11 @@ start_again:
         foreach_res (job, R_JOB) {
           if (!ua->AclAccessOk(Job_ACL, job->resource_name_)) { continue; }
 
-          if (job->schedule && job->schedule->enabled && job->enabled
-              && job->client && job->client == client && job->client->enabled) {
+          if (job->schedule && job->schedule->enabled && job->enabled) {
+            // skip if client is set but not enabled
+            if (job->client && job->client == client && !job->client->enabled) {
+              continue;
+            }
             if (!show_scheduled_preview(ua, job->schedule, overview,
                                         &max_date_len, time_to_check)) {
               job = NULL;
