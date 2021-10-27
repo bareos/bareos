@@ -676,12 +676,11 @@ ADDRESSES
          ipv6 = { addr = :: ; port = 9101 }
       }
 
-.. note::
+  .. note::
 
-   Since Bareos :sinceVersion:`21: listen on both ipv4 and ipv6 per default` on two distinct sockets, this is not required anymore. This notation will be required if you want to restrict the addresses to listen on.
+     Since Bareos :sinceVersion:`21: listen on both ipv4 and ipv6 per default` on two distinct sockets, this is not required anymore. This notation will be required if you want to restrict the addresses to listen on.
 
 
-..
 
 
    The following example shows all of the features the ADDRESSES parser:
