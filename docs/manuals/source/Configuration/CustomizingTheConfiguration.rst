@@ -674,7 +674,6 @@ ADDRESSES
 
       DIRAddresses = {
          ipv6 = { addr = :: ; port = 9101 }
-         ipv4 = { addr = 0.0.0.0 ; port = 9101 }
       }
 
 .. note::
