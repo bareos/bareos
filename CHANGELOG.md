@@ -122,6 +122,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: improve log message keyword highlighting [PR #937]
 - webui: change retention/expiration column to only show retention on volume tables [PR #943]
 - webui: introduce confirmation dialog on rerun and cancel job actions [PR #951]
+- docs: update documentation of config data types [PR #962]
+
 
 ### Deprecated
 
