@@ -657,7 +657,7 @@ strname
 ADDRESS
    :index:`\ <single: Data Type; ADDRESS>`\
 
-   is either a domain name or an IP address specified as a dotted quadruple in string or quoted string format. This directive only permits a single address to be specified. The :strong:`NetPort` must be specificly separated. If multiple ADDRESSES are needed, please assess if it is also possible to specify :strong:`Addresses` (plural).
+   is either a domain name or an IP address specified as a dotted quadruple in string or an IP version 6 address specified as a semi-column separated syntax (::) or quoted string format. This directive only permits a single address to be specified. The :strong:`Port` must be specifically separated. If multiple ADDRESSES are needed, please assess if it is also possible to specify :strong:`Addresses` (plural).
 
 
 .. _DataTypeAddresses:
@@ -679,7 +679,7 @@ ADDRESSES
 
 .. note::
 
-   Since Bareos :sinceVersion:`21: listen on both ipv4 and ipv6 per default`, this is not required anymore as all daemons will per default listen on all interfaces both on ipv4 and ipv6.
+   Since Bareos :sinceVersion:`21: listen on both ipv4 and ipv6 per default` on two distinct sockets, this is not required anymore. This notation will be required if you want to restrict the addresses to listen on.
 
 
 ..
@@ -708,7 +708,7 @@ ADDRESSES
               addr = server.example.com
           }
       }
-   where ip, ip4, ip6, addr, and port are all keywords. Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification). Also, the port can be specified as a number or as the mnemonic value from the :file:`/etc/services` file. If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6. If ip4 is specified, then only IPv4
+   where ip, ipv4, ipv6, addr, and port are all keywords. Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification). Also, the port can be specified as a number or as the mnemonic value from the :file:`/etc/services` file. If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6. If ipv4 is specified, then only IPv4
    resolutions will be permitted, and likewise with ip6.
 
 
@@ -717,7 +717,7 @@ ADDRESSES
 port
    :index:`\ <single: Data Type; port>`\
 
-   Specify a network port (a positive integer).
+   Specify a network port (a positive integer in the range 1 to 65535).
 
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
