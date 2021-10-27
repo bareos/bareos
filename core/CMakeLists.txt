@@ -352,12 +352,6 @@ if(NOT client-only
   # droplet does not build on solaris because of sys/cdefs.h: No such file or
   # directory it is also not safe on 32-bit systems, so we only build it on
   # 64-bit
-  if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/src/droplet/CMakeLists.txt)
-    message(
-      FATAL_ERROR
-        "Please checkout the libdroplet submodule via \n \"git submodule update --init --recursive\""
-    )
-  endif()
   add_subdirectory(src/droplet)
   if(TARGET droplet)
     set_target_properties(
