@@ -521,8 +521,8 @@ acl
 
 .. _DataTypeAuthType:
 
-auth-type
-   :index:`\ <single: Data Type; auth-type>`\
+auth_type
+   :index:`\ <single: Data Type; auth_type>`\
 
    Specifies the authentication type that must be supplied when connecting to a backup protocol that uses a specific authentication type. Currently only used for :ref:`NDMPResource`.
 
@@ -589,7 +589,7 @@ name
    Please note that Bareos resource names as well as certain other names (e.g. Volume names) must contain only letters (including ISO accented letters), numbers, and a few special characters (space, underscore, ...). All other characters and punctuation are invalid.
 
 
-.. _DataTypePassword:
+.. _DataTypeAutoPassword:
 
 password
    :index:`\ <single: Data Type; password>`\
@@ -606,6 +606,7 @@ path
 
 
 .. _DataTypePositiveInteger:
+.. _DataTypePINT32:
 
 positive integer
    :index:`\ <single: Data Type; positive integer>`\
@@ -634,9 +635,9 @@ string
 
    Since Bareos :sinceVersion:`20: Multiline Strings` strings can be spread over multiple lines using quotes as shown in the example above.
 
-.. _DataTypeStringList:
+.. _DataTypeString_List:
 
-string-list
+string_list
    :index:`\ <single: Data Type; string list>`\
 
    Multiple strings, specified in multiple directives, or in a single directive, separated by commas (**,**).
@@ -651,23 +652,41 @@ strname
 
 
 
-.. _DataTypeNetAddress:
+.. _DataTypeAddress:
 
-net-address
-   :index:`\ <single: Data Type; net-address>`\
+ADDRESS
+   :index:`\ <single: Data Type; ADDRESS>`\
 
-   is either a domain name or an IP address specified as a dotted quadruple in string or quoted string format. This directive only permits a single address to be specified. The :strong:`NetPort` must be specificly separated. If multiple net-addresses are needed, please assess if it is also possible to specify :strong:`NetAddresses` (plural).
+   is either a domain name or an IP address specified as a dotted quadruple in string or an IP version 6 address specified as a semi-column separated syntax (::) or quoted string format. This directive only permits a single address to be specified. The :strong:`Port` must be specifically separated. If multiple ADDRESSES are needed, please assess if it is also possible to specify :strong:`Addresses` (plural).
 
 
-.. _DataTypeNetAddresses:
+.. _DataTypeAddresses:
 
-net-addresses
-   :index:`\ <single: Data Type; net-addresses>`\
+ADDRESSES
+   :index:`\ <single: Data Type; ADDRESSES>`\
 
-   Specify a set of net-addresses and net-ports. Probably the simplest way to explain this is to show an example:
+   Specify a set of ADDRESSES and ports. Probably the simplest way to explain this is to show an example.
+   The following example makes the director listen for connections on all interfaces both on ipv4 and ipv6.
+
 
    .. code-block:: bareosconfig
-      :caption: net-addresses
+      :caption: listen on ipv4 and ipv6 for director < bareos 21
+
+      DIRAddresses = {
+         ipv6 = { addr = :: ; port = 9101 }
+      }
+
+  .. note::
+
+     Since Bareos :sinceVersion:`21: listen on both ipv4 and ipv6 per default` on two distinct sockets, this is not required anymore. This notation will be required if you want to restrict the addresses to listen on.
+
+
+
+
+   The following example shows all of the features the ADDRESSES parser:
+
+   .. code-block:: bareosconfig
+      :caption:  showing ADDRESSES features
 
       Addresses  = {
           ip = { addr = 1.2.3.4; port = 1205;}
@@ -687,17 +706,17 @@ net-addresses
               addr = server.example.com
           }
       }
-
-   where ip, ip4, ip6, addr, and port are all keywords. Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification). Also, the port can be specified as a number or as the mnemonic value from the :file:`/etc/services` file. If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6. If ip4 is specified, then only IPv4
+   where ip, ipv4, ipv6, addr, and port are all keywords. Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification). Also, the port can be specified as a number or as the mnemonic value from the :file:`/etc/services` file. If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6. If ipv4 is specified, then only IPv4
    resolutions will be permitted, and likewise with ip6.
 
 
-.. _DataTypeNetPort:
+.. _DataTypePort:
 
-net-port
-   :index:`\ <single: Data Type; net-port>`\
+port
+   .. index::
+      single: Data Type; port
 
-   Specify a network port (a positive integer).
+   Specify a network port (a positive integer in the range 1 to 65535).
 
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
@@ -710,10 +729,10 @@ resource
    A resource defines a relation to the name of another resource.
 
 
-.. _DataTypeSize:
+.. _DataTypeSize64:
 
 size
-   :index:`\ <single: Data Type; size>`\
+   :index:`\ <single: Data Type; size64>`\
 
    A size specified as bytes. Typically, this is a floating point scientific input format followed by an optional modifier. The floating point input is stored as a 64 bit integer value. If a modifier is present, it must immediately follow the value with no intervening spaces. The following modifiers are permitted:
 
@@ -804,9 +823,9 @@ time
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 
-.. _DataTypeAuditCommandList:
+.. _DataTypeAudit_Command_List:
 
-audit-command-list
+audit_command_list
    :index:`\ <single: Data Type; audit command list>`\
 
    Specifies the commands that should be logged on execution (audited). E.g.
@@ -819,12 +838,280 @@ audit-command-list
    Based on the type :ref:`string-list <DataTypeStringList>`.
 
 
-.. _DataTypeYesNo:
+.. _DataTypeBoolean:
 
 yes|no
    :index:`\ <single: Data Type; \yesno>`\  :index:`\ <single: Data Type; boolean>`\
 
    Either a :strong:`yes` or a :strong:`no` (or :strong:`true` or :strong:`false`).
+
+
+.. _DataTypeACTION_ON_PURGE:
+
+ACTION_ON_PURGE
+
+  :index:`\ <single: Data Type; ACTION_ON_PURGE>`\
+
+  Description of ACTION_ON_PURGE
+
+
+.. _DataTypeAUTH_PROTOCOL_TYPE:
+
+AUTH_PROTOCOL_TYPE
+
+  :index:`\ <single: Data Type; AUTH_PROTOCOL_TYPE>`\
+
+  Description of AUTH_PROTOCOL_TYPE
+
+
+.. _DataTypeAUTH_TYPE:
+
+AUTH_TYPE
+
+  :index:`\ <single: Data Type; AUTH_TYPE>`\
+
+  Description of AUTH_TYPE
+
+
+.. _DataTypeBACKUP_LEVEL:
+
+BACKUP_LEVEL
+
+  :index:`\ <single: Data Type; BACKUP_LEVEL>`\
+
+  Description of BACKUP_LEVEL
+
+
+.. _DataTypeBIT:
+
+BIT
+
+  :index:`\ <single: Data Type; BIT>`\
+
+  Description of BIT
+
+
+.. _DataTypeCOMPRESSION_ALGORITHM:
+
+COMPRESSION_ALGORITHM
+
+  :index:`\ <single: Data Type; COMPRESSION_ALGORITHM>`\
+
+  Description of COMPRESSION_ALGORITHM
+
+
+.. _DataTypeDEVICE:
+
+DEVICE
+
+  :index:`\ <single: Data Type; DEVICE>`\
+
+  Description of DEVICE
+
+
+.. _DataTypeDEVICE_TYPE:
+
+DEVICE_TYPE
+
+  :index:`\ <single: Data Type; DEVICE_TYPE>`\
+
+  Description of DEVICE_TYPE
+
+.. _DataTypeDIRECTORY_LIST:
+
+DIRECTORY_LIST
+
+  :index:`\ <single: Data Type; DIRECTORY_LIST>`\
+
+  Description of DIRECTORY_LIST
+
+.. _DataTypeRESOURCE_LIST:
+
+RESOURCE_LIST
+
+  :index:`\ <single: Data Type; RESOURCE_LIST>`\
+
+  Description of RESOURCE_LIST
+
+.. _DataTypeDIRECTORY_OR_COMMAND:
+
+DIRECTORY_OR_COMMAND
+
+  :index:`\ <single: Data Type; DIRECTORY_OR_COMMAND>`\
+
+  Description of DIRECTORY_OR_COMMAND
+
+
+.. _DataTypeENCRYPTION_CIPHER:
+
+ENCRYPTION_CIPHER
+
+  :index:`\ <single: Data Type; ENCRYPTION_CIPHER>`\
+
+  Description of ENCRYPTION_CIPHER
+
+
+.. _DataTypeINCLUDE_EXCLUDE_ITEM:
+
+INCLUDE_EXCLUDE_ITEM
+
+  :index:`\ <single: Data Type; INCLUDE_EXCLUDE_ITEM>`\
+
+  Description of INCLUDE_EXCLUDE_ITEM
+
+
+.. _DataTypeINT32:
+
+INT32
+
+  :index:`\ <single: Data Type; INT32>`\
+
+  Description of INT32
+
+
+.. _DataTypeIO_DIRECTION:
+
+IO_DIRECTION
+
+  :index:`\ <single: Data Type; IO_DIRECTION>`\
+
+  Description of IO_DIRECTION
+
+
+.. _DataTypeJOB_TYPE:
+
+JOB_TYPE
+
+  :index:`\ <single: Data Type; JOB_TYPE>`\
+
+  Description of JOB_TYPE
+
+
+.. _DataTypeLABEL:
+
+LABEL
+
+  :index:`\ <single: Data Type; LABEL>`\
+
+  Description of LABEL
+
+
+.. _DataTypeMAX_BLOCKSIZE:
+
+MAX_BLOCKSIZE
+
+  :index:`\ <single: Data Type; MAX_BLOCKSIZE>`\
+
+  Description of MAX_BLOCKSIZE
+
+
+.. _DataTypeMD5PASSWORD:
+
+MD5PASSWORD
+
+  :index:`\ <single: Data Type; MD5PASSWORD>`\
+
+  Description of MD5PASSWORD
+
+
+.. _DataTypeMESSAGES:
+
+MESSAGES
+
+  :index:`\ <single: Data Type; MESSAGES>`\
+
+  Description of MESSAGES
+
+
+.. _DataTypeMIGRATION_TYPE:
+
+MIGRATION_TYPE
+
+  :index:`\ <single: Data Type; MIGRATION_TYPE>`\
+
+  Description of MIGRATION_TYPE
+
+
+.. _DataTypePINT16:
+
+PINT16
+
+  :index:`\ <single: Data Type; PINT16>`\
+
+  Description of PINT16
+
+
+.. _DataTypePLUGIN_NAMES:
+
+PLUGIN_NAMES
+
+  :index:`\ <single: Data Type; PLUGIN_NAMES>`\
+
+  Description of PLUGIN_NAMES
+
+
+.. _DataTypePOOLTYPE:
+
+POOLTYPE
+
+  :index:`\ <single: Data Type; POOLTYPE>`\
+
+  Description of POOLTYPE
+
+
+.. _DataTypePROTOCOL_TYPE:
+
+PROTOCOL_TYPE
+
+  :index:`\ <single: Data Type; PROTOCOL_TYPE>`\
+
+  Description of PROTOCOL_TYPE
+
+
+.. _DataTypeREPLACE_OPTION:
+
+REPLACE_OPTION
+
+  :index:`\ <single: Data Type; REPLACE_OPTION>`\
+
+  Description of REPLACE_OPTION
+
+
+.. _DataTypeRUNSCRIPT:
+
+RUNSCRIPT
+
+  :index:`\ <single: Data Type; RUNSCRIPT>`\
+
+  Description of RUNSCRIPT
+
+
+.. _DataTypeSCHEDULE_RUN_COMMAND:
+
+SCHEDULE_RUN_COMMAND
+
+  :index:`\ <single: Data Type; SCHEDULE_RUN_COMMAND>`\
+
+  Description of SCHEDULE_RUN_COMMAND
+
+
+.. _DataTypeSIZE32:
+
+SIZE32
+
+  :index:`\ <single: Data Type; SIZE32>`\
+
+  Description of SIZE32
+
+
+.. _DataTypeSTRINGLIST:
+
+STRINGLIST
+
+  :index:`\ <single: Data Type; STRINGLIST>`\
+
+  Description of STRINGLIST
+
 
 
 
