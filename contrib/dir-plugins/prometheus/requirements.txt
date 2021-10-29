@@ -1,0 +1,2 @@
+prometheus_client
+python-bareos
