@@ -81,9 +81,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - add job name in End Job Session output in bls tool [PR #916]
 - added check for orphaned storages in dbcheck [PR #912]
 - added option to delete selected storage in bconsole if it is orphaned [PR #912]
-- docs: BareosSecurityIssues add remark about new systemd service (non forking) logged information into systemd-journal
 - docs: BareosSecurityIssues add remark about new systemd service (non forking) logged information into systemd-journal [PR #927]
 - contrib: Add Python DIR plugin for prometheus metrics [PR #911]
+- docs: added "Hardware Sizing" chapter [PR #926]
 
 ### Changed
 - systemtest python-bareos: split tests in separate files [PR #944]
