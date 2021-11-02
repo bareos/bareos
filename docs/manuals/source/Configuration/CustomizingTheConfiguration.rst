@@ -706,8 +706,12 @@ ADDRESSES
               addr = server.example.com
           }
       }
-   where ip, ipv4, ipv6, addr, and port are all keywords. Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification). Also, the port can be specified as a number or as the mnemonic value from the :file:`/etc/services` file. If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6. If ipv4 is specified, then only IPv4
-   resolutions will be permitted, and likewise with ip6.
+
+   where ip, ipv4, ipv6, addr, and port are all keywords.
+   Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification).
+   Also, the port can be specified as a number or as the mnemonic value from the :file:`/etc/services` file.
+   If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6.
+   If ipv4 is specified, then only IPv4 resolutions will be permitted, and likewise with ipv6.
 
 
 .. _DataTypePort:
@@ -1084,6 +1088,15 @@ RUNSCRIPT
   :index:`\ <single: Data Type; RUNSCRIPT>`\
 
   Description of RUNSCRIPT
+
+
+.. _DataTypeRUNSCRIPT_SHORT:
+
+RUNSCRIPT_SHORT
+
+  :index:`\ <single: Data Type; RUNSCRIPT_SHORT>`\
+
+  Description of RUNSCRIPT_SHORT
 
 
 .. _DataTypeSCHEDULE_RUN_COMMAND:
