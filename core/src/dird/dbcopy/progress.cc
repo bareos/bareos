@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -134,7 +134,8 @@ static std::string FormatTime(time_point<system_clock> tp)
   std::time_t time = system_clock::to_time_t(tp);
   std::array<char, Progress::default_timestring_size> buffer{};
 
-  std::strftime(buffer.data(), buffer.size(), "%F %T", std::localtime(&time));
+  std::strftime(buffer.data(), buffer.size(), "%Y-%m-%d %H:%M:%S",
+                std::localtime(&time));
 
   return std::string(buffer.data());
 }

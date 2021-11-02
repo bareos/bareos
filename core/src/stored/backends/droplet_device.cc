@@ -215,7 +215,7 @@ bool DropletDevice::ForEachChunkInDirectoryRunCallback(
 {
   bool retval = true;
   dpl_status_t status;
-  dpl_status_t callback_status;
+  dpl_status_t callback_status = DPL_FAILURE;
   PoolMem path(PM_NAME);
 
   bool found = true;

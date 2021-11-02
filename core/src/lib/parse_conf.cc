@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -411,23 +411,6 @@ const char* ConfigurationParser::GetDefaultConfigDir()
 #endif
 }
 
-#ifdef HAVE_SETENV
-static inline void set_env(const char* key, const char* value)
-{
-  setenv(key, value, 1);
-}
-#elif HAVE_PUTENV
-static inline void set_env(const char* key, const char* value)
-{
-  PoolMem env_string;
-
-  Mmsg(env_string, "%s=%s", key, value);
-  putenv(strdup(env_string.c_str()));
-}
-#else
-static inline void set_env(const char* key, const char* value) {}
-#endif
-
 bool ConfigurationParser::GetConfigFile(PoolMem& full_path,
                                         const char* config_dir,
                                         const char* config_filename)
@@ -538,8 +521,6 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
     Jmsg1(nullptr, M_ERROR, 0, _("Failed to read config file \"%s\"\n"),
           cf_.c_str());
   }
-
-  if (found) { set_env("BAREOS_CFGDIR", config_dir_.c_str()); }
 
   return found;
 }

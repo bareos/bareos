@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -64,13 +64,13 @@ static bool ReadCloseSession(JobControlRecord* jcr);
 
 /* Exported function */
 
-struct s_cmds {
+struct s_fd_cmds {
   const char* cmd;
   bool (*func)(JobControlRecord* jcr);
 };
 
 // The following are the recognized commands from the File daemon
-static struct s_cmds fd_cmds[] = {
+static struct s_fd_cmds fd_cmds[] = {
     {"append open", AppendOpenSession}, {"append data", AppendDataCmd},
     {"append end", AppendEndSession},   {"append close", AppendCloseSession},
     {"read open", ReadOpenSession},     {"read data", ReadDataCmd},

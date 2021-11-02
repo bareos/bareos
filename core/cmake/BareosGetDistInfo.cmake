@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,7 @@ list(LENGTH DISTINFO DISTINFO_LENGTH)
 list(GET DISTINFO 0 PLATFORM)
 list(GET DISTINFO 1 DISTVER)
 
-set(PLATFORM ${PLATFORM})
+set(BAREOS_PLATFORM ${PLATFORM})
 set(DISTVER ${DISTVER})
 
 set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")

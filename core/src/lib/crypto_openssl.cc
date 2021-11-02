@@ -1582,15 +1582,23 @@ void OpensslPostErrors(JobControlRecord* jcr, int type, const char* errstring)
 }
 
 /*
+ * we don't add the callbacks for openssl > 1.1.0
+ * so if any of the callbacks is actually used (i.e. any of the openssl macros
+ * does use the callback name instead of evaluating to nothing), then we will
+ * get a compile error
+ * we will get a compile error
+ */
+#  if OPENSSL_VERSION_NUMBER < 0x10100000L
+/*
  * Return an OpenSSL thread ID
  *  Returns: thread ID
  *
  */
-static unsigned long GetOpensslThreadId(void)
+[[maybe_unused]] static unsigned long GetOpensslThreadId(void)
 {
-#  ifdef HAVE_WIN32
+#    ifdef HAVE_WIN32
   return (unsigned long)getpid();
-#  else
+#    else
   /*
    * Comparison without use of pthread_equal() is mandated by the OpenSSL API
    *
@@ -1598,13 +1606,12 @@ static unsigned long GetOpensslThreadId(void)
    *   emulation code, which defines pthread_t as a structure.
    */
   return ((unsigned long)pthread_self());
-#  endif /* not HAVE_WIN32 */
+#    endif /* not HAVE_WIN32 */
 }
 
 // Allocate a dynamic OpenSSL mutex
-static struct CRYPTO_dynlock_value* openssl_create_dynamic_mutex(
-    const char* file,
-    int line)
+[[maybe_unused]] static struct CRYPTO_dynlock_value*
+openssl_create_dynamic_mutex(const char* file, int line)
 {
   struct CRYPTO_dynlock_value* dynlock;
   int status;
@@ -1621,10 +1628,11 @@ static struct CRYPTO_dynlock_value* openssl_create_dynamic_mutex(
   return dynlock;
 }
 
-static void OpensslUpdateDynamicMutex(int mode,
-                                      struct CRYPTO_dynlock_value* dynlock,
-                                      const char* file,
-                                      int line)
+[[maybe_unused]] static void OpensslUpdateDynamicMutex(
+    int mode,
+    struct CRYPTO_dynlock_value* dynlock,
+    const char* file,
+    int line)
 {
   if (mode & CRYPTO_LOCK) {
     P(dynlock->mutex);
@@ -1633,9 +1641,10 @@ static void OpensslUpdateDynamicMutex(int mode,
   }
 }
 
-static void OpensslDestroyDynamicMutex(struct CRYPTO_dynlock_value* dynlock,
-                                       const char* file,
-                                       int line)
+[[maybe_unused]] static void OpensslDestroyDynamicMutex(
+    struct CRYPTO_dynlock_value* dynlock,
+    const char* file,
+    int line)
 {
   int status;
 
@@ -1649,10 +1658,10 @@ static void OpensslDestroyDynamicMutex(struct CRYPTO_dynlock_value* dynlock,
 }
 
 // (Un)Lock a static OpenSSL mutex
-static void openssl_update_static_mutex(int mode,
-                                        int i,
-                                        const char* file,
-                                        int line)
+[[maybe_unused]] static void openssl_update_static_mutex(int mode,
+                                                         int i,
+                                                         const char* file,
+                                                         int line)
 {
   if (mode & CRYPTO_LOCK) {
     P(mutexes[i]);
@@ -1660,6 +1669,7 @@ static void openssl_update_static_mutex(int mode,
     V(mutexes[i]);
   }
 }
+#  endif
 
 /*
  * Initialize OpenSSL thread support

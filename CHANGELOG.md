@@ -53,6 +53,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1334]: After deleting storage from the configuration, it still persists in the catalog db [PR #912]
 - [Issue #1191]: The web interface runs under any login and password [PR #936]
 - Adapt Python DIR and SD plugin Baseclasses to the modernized Python plugin API [PR #923]
+- Fixed all compiler warnings (on our default warning level) [PR #948]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]

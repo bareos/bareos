@@ -316,15 +316,20 @@ void DumpCryptoCache(int fd)
   len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, _("Volumename"),
              max_key_length, _("EncryptionKey"), _("Added"), _("Expires"));
 
-  write(fd, msg.c_str(), len);
-
+  if (write(fd, msg.c_str(), len) <= 0) {
+    BErrNo be;
+    Dmsg1(000, "write error: ERR=%s\n", be.bstrerror());
+  }
   foreach_dlist (cce, cached_crypto_keys) {
     bstrutime(dt1, sizeof(dt1), cce->added);
     bstrutime(dt2, sizeof(dt2), cce->added + CRYPTO_CACHE_MAX_AGE);
     len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, cce->VolumeName,
                max_key_length, cce->EncryptionKey, dt1, dt2);
 
-    write(fd, msg.c_str(), len);
+    if (write(fd, msg.c_str(), len) <= 0) {
+      BErrNo be;
+      Dmsg1(000, "write error: ERR=%s\n", be.bstrerror());
+    }
   }
 
   V(crypto_cache_lock);

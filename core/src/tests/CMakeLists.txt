@@ -328,7 +328,8 @@ if(NOT client-only)
   bareos_add_test(
     sd_reservation
     ${disable}
-    LINK_LIBRARIES ${LINK_LIBRARIES} GTest::gmock
+    LINK_LIBRARIES stored_objects bareossd bareos GTest::gtest_main
+                   GTest::gmock
   )
 endif()
 

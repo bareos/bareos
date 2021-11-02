@@ -2911,7 +2911,7 @@ static bool VersionCmd(UaContext* ua, const char* cmd)
   ua->send->ObjectKeyValue("bdate", kBareosVersionStrings.Date, "(%s) ");
   ua->send->ObjectKeyValue("operatingsystem", kBareosVersionStrings.GetOsInfo(),
                            "%s ");
-  ua->send->ObjectKeyValue("distname", PLATFORM, "%s ");
+  ua->send->ObjectKeyValue("distname", BAREOS_PLATFORM, "%s ");
   ua->send->ObjectKeyValue("distversion", kBareosVersionStrings.GetOsInfo(),
                            "%s ");
   ua->send->ObjectKeyValue("CustomVersionId", NPRTB(me->verid), "%s\n");

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -73,10 +73,8 @@ check_function_exists(openat HAVE_OPENAT)
 check_function_exists(poll HAVE_POLL)
 check_function_exists(posix_fadvise HAVE_POSIX_FADVISE)
 check_function_exists(prctl HAVE_PRCTL)
-check_function_exists(putenv HAVE_PUTENV)
 check_function_exists(readdir_r HAVE_READDIR_R)
 check_function_exists(setea HAVE_SETEA)
-check_function_exists(setenv HAVE_SETENV)
 check_function_exists(setproplist HAVE_SETPROPLIST)
 check_function_exists(setreuid HAVE_SETREUID)
 check_function_exists(setxattr HAVE_SETXATTR)

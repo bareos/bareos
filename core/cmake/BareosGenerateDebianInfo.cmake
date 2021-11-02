@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,7 +16,6 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
-
 
 if(GENERATE_DEBIAN_CONTROL)
 
@@ -46,10 +45,12 @@ if(GENERATE_DEBIAN_CONTROL)
   endif()
 
   if(TARGET droplet)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-droplet DEBIAN_CONTROL_STORAGE_DROPLET)
+    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-droplet
+         DEBIAN_CONTROL_STORAGE_DROPLET
+    )
   endif()
 
-  #python (2) plugins
+  # python (2) plugins
   if(Python2_FOUND)
     file(READ
          ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python2-plugin
@@ -95,7 +96,7 @@ if(GENERATE_DEBIAN_CONTROL)
     )
   endif()
 
-  if(${PLATFORM} MATCHES "univention")
+  if(${BAREOS_PLATFORM} MATCHES "univention")
     # only required for univention
     file(READ ${CMAKE_SOURCE_DIR}/debian/control.univention-bareos
          DEBIAN_CONTROL_UNIVENTION_BAREOS

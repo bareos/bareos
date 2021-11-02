@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -191,8 +191,9 @@ static void do_get_name_from_hello_test(const char* client_string_fmt,
                                         const BareosVersionNumber& version_test)
 {
   char bashed_client_name[20];
-  assert(strlen(client_name) <= 20);
+  assert(strlen(client_name) <= 19);
   strncpy(bashed_client_name, client_name, 20);
+  bashed_client_name[19] = '\0';
   BashSpaces(bashed_client_name);
 
   char output_text[64];

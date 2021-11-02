@@ -27,6 +27,7 @@
 
 #include "Python.h"
 #include "plugins/include/python3compat.h"
+#include <inttypes.h>
 class PoolMem;
 #define NbytesForBits(n) ((((n)-1) >> 3) + 1)
 typedef off_t boffset_t;
@@ -100,8 +101,8 @@ bRC bareosJobMsg(PluginContext* ctx,
                  const char* fmt,
                  ...)
 {
-  printf("bareosJobMsg file:%s line:%d type:%d time: %ld, fmt:%s\n", file, line,
-         type, (int64_t)mtime, fmt);
+  printf("bareosJobMsg file:%s line:%d type:%d time: %+" PRId64 ", fmt:%s\n",
+         file, line, type, (int64_t)mtime, fmt);
   return bRC_OK;
 };
 bRC bareosDebugMsg(PluginContext* ctx,
@@ -184,7 +185,7 @@ static filedaemon::CoreFunctions bareos_core_functions
 
 // create plugin context
 
-Plugin plugin = {(char*)"python-fd-module-teste", 123, NULL, NULL, NULL};
+Plugin plugin = {(char*)"python-fd-module-tester", 123, NULL, NULL, NULL};
 
 static PluginContext bareos_PluginContext = {0, &plugin, NULL, NULL};
 
