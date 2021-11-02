@@ -448,7 +448,7 @@ static struct ua_cmdstruct commands[] = {
          "\tvolume=<new-volume-name> pool=<pool-name> [ encrypt ]"),
      false, true},
     {NT_("release"), ReleaseCmd, _("Release storage"),
-     NT_("storage=<storage-name> [ drive=<drivenum> ] [ alldrives ]"), false,
+     NT_("storage=<storage-name> [ drive=<drivenum> ] [ alldrives ]"), true,
      true},
     {NT_("reload"), ReloadCmd, _("Reload conf file"), NT_(""), true, true},
     {NT_("rerun"), reRunCmd, _("Rerun a job"),
@@ -599,7 +599,7 @@ bool Do_a_command(UaContext* ua)
       }
 
       // Check if this command is authorized in RunScript
-      if (ua->runscript && !commands[i].use_in_rs) {
+      if (ua->runscript && !commands[i].allowed_in_runscript) {
         ua->ErrorMsg(_("Can't use %s command in a runscript"), ua->argk[0]);
         break;
       }

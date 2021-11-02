@@ -125,7 +125,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: change retention/expiration column to only show retention on volume tables [PR #943]
 - webui: introduce confirmation dialog on rerun and cancel job actions [PR #951]
 - docs: update documentation of config data types [PR #962]
-
+- Allow `release` command to be used in scripts [PR #961]
 
 ### Deprecated
 
@@ -276,4 +276,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #943]: https://github.com/bareos/bareos/pull/943
 [PR #944]: https://github.com/bareos/bareos/pull/944
 [PR #951]: https://github.com/bareos/bareos/pull/951
+[PR #961]: https://github.com/bareos/bareos/pull/961
 [unreleased]: https://github.com/bareos/bareos/tree/master
