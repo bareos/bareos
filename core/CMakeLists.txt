@@ -646,7 +646,9 @@ try_compile(
   ${PROJECT_SOURCE_DIR}/src/compile_tests/trivially_copyable.cc
 )
 
-set(build_benchmarks "${benchmarks}")
+option(BUILD_BENCHMARKS "Build benchmark binaries" OFF)
+mark_as_advanced(BUILD_BENCHMARKS)
+
 set(ndmp "${ndmp}")
 set(lmdb "${lmdb}")
 set(build_client_only "${client-only}")
@@ -908,7 +910,6 @@ message("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 message("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
 message("   PostgreSQL Version:           ${PostgreSQL_VERSION_STRING} ")
 message("   GTest enabled:                ${GTest_FOUND}")
-message("   google benchmark enabled:     ${benchmark_FOUND}")
 message(
   "   Intl support:                 ${Intl_FOUND} ${INTLINCLUDE_DIRS} ${INTL_LIBRARIES}"
 )
