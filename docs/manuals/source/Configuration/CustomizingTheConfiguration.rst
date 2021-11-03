@@ -654,22 +654,22 @@ strname
 
 .. _DataTypeAddress:
 
-ADDRESS
-   :index:`\ <single: Data Type; ADDRESS>`\
+address
+   :index:`\ <single: Data Type; address>`\
 
-   is either a domain name or an IP address specified as a dotted quadruple in string or an IP version 6 address specified as a semi-column separated syntax (::) or quoted string format. This directive only permits a single address to be specified. The :strong:`Port` must be specifically separated. If multiple ADDRESSES are needed, please assess if it is also possible to specify :strong:`Addresses` (plural).
+   is either a domain name or an IP address specified as a dotted quadruple in string or an IP version 6 address specified as a colon separated syntax (::) or quoted string format. This directive only permits a single address to be specified. The :strong:`Port` must be specifically separated. If multiple :strong:`Addresses` are needed, please assess if it is also possible to specify :strong:`Addresses` (plural).
 
 
 .. _DataTypeAddresses:
 
-ADDRESSES
-   :index:`\ <single: Data Type; ADDRESSES>`\
+addresses
+   :index:`\ <single: Data Type; addresses>`\
 
-   Specify a set of ADDRESSES and ports. Probably the simplest way to explain this is to show an example.
-   The following example makes the director listen for connections on all interfaces both on ipv4 and ipv6.
+  Specify a set of :strong:`Addresses` and :strong:`Ports`. Probably the simplest way to explain this is to show an example.
+  The following example makes the director listen for connections on all interfaces both on ipv4 and ipv6.
 
 
-   .. code-block:: bareosconfig
+  .. code-block:: bareosconfig
       :caption: listen on ipv4 and ipv6 for director < bareos 21
 
       DIRAddresses = {
@@ -680,38 +680,70 @@ ADDRESSES
 
      Since Bareos :sinceVersion:`21: listen on both ipv4 and ipv6 per default` on two distinct sockets, this is not required anymore. This notation will be required if you want to restrict the addresses to listen on.
 
-
-
-
-   The following example shows all of the features the ADDRESSES parser:
-
    .. code-block:: bareosconfig
-      :caption:  showing ADDRESSES features
+      :caption: listen on ipv4 and ipv6 for director > bareos 21 (default)
+
+      DIRAddresses = {
+         ipv4 = { addr = 0.0.0.0 ; port = 9101 }
+         ipv6 = { addr = :: ; port = 9101 }
+      }
+
+
+
+  The following example shows all of the features the :strong:`Addresses` parser:
+
+  .. code-block:: bareosconfig
+      :caption:  showing :strong:`Addresses` features
 
       Addresses  = {
           ip = { addr = 1.2.3.4; port = 1205;}
-          ipv4 = {
-              addr = 1.2.3.4; port = http;}
-          ipv6 = {
-              addr = 1.2.3.4;
-              port = 1205;
-          }
           ip = {
               addr = 1.2.3.4
               port = 1205
           }
+          ipv4 = {
+              addr = 1.2.3.4; port = http;}
+          ipv6 = {
+              addr = 2001:db8::;
+              port = 1205;
+          }
           ip = { addr = 1.2.3.4 }
-          ip = { addr = 201:220:222::2 }
+          ip = { addr = 2001:db8:: }
           ip = {
               addr = server.example.com
           }
       }
 
-   where ip, ipv4, ipv6, addr, and port are all keywords.
-   Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification).
-   Also, the port can be specified as a number or as the mnemonic value from the :file:`/etc/services` file.
-   If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6.
-   If ipv4 is specified, then only IPv4 resolutions will be permitted, and likewise with ipv6.
+  Where ip, ipv4, ipv6, addr, and port are all keywords.
+  Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification).
+  Also, the port can be specified as a number or as the mnemonic value from the :file:`/usr/etc/services` file.
+  If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6.
+  If ipv4 is specified, then only IPv4 resolutions will be permitted, and likewise with IPv6.
+
+
+
+  .. code-block:: bareosconfig
+      :caption:  Bareos > 21 : Listening on all IPv6 and only IPv4 localhost
+
+       Addresses  = {
+        ipv6 = { addr = :: }
+        ipv4 = { addr = 127.0.0.1 }
+      }
+
+  .. code-block:: bareosconfig
+      :caption:  Bareos > 21 : Listening only on IPv4
+
+       Addresses  = {
+        ipv4 = { addr = 0.0.0.0 }
+      }
+
+  .. code-block:: bareosconfig
+      :caption:  Bareos > 21 : Listening on specific IPv6 and none IPv4
+
+      Addresses  = {
+        ipv6 = { addr = ::1 }
+        ipv6 = { addr = 2001:0db8:0000:0000:ba4e:0s00:0000:ba3e;}
+      }
 
 
 .. _DataTypePort:
