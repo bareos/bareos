@@ -29,6 +29,9 @@
 %define python2_build_requires python-rpm-macros python2-rpm-macros python-devel python-setuptools
 %endif
 
+%if 0%{?fedora} >= 35
+%define skip_python2 1
+%endif
 
 %define python2_extra_package 1
 
