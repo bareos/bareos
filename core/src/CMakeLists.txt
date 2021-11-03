@@ -43,6 +43,10 @@ else()
   add_subdirectory(tests)
 endif()
 
+if(BUILD_BENCHMARKS)
+  add_subdirectory(benchmarks)
+endif()
+
 add_subdirectory(console)
 if(${HAVE_LMDB})
   add_subdirectory(lmdb)

@@ -84,6 +84,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: BareosSecurityIssues add remark about new systemd service (non forking) logged information into systemd-journal [PR #927]
 - contrib: Add Python DIR plugin for prometheus metrics [PR #911]
 - docs: added "Hardware Sizing" chapter [PR #926]
+- bench: added a benchmarks tool with google-benchmark, with an initial benchmark for the restore command [PR #883]
 
 ### Changed
 - systemtest python-bareos: split tests in separate files [PR #944]
@@ -252,6 +253,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #874]: https://github.com/bareos/bareos/pull/874
 [PR #880]: https://github.com/bareos/bareos/pull/880
 [PR #882]: https://github.com/bareos/bareos/pull/882
+[PR #883]: https://github.com/bareos/bareos/pull/883
 [PR #892]: https://github.com/bareos/bareos/pull/892
 [PR #893]: https://github.com/bareos/bareos/pull/893
 [PR #900]: https://github.com/bareos/bareos/pull/900
