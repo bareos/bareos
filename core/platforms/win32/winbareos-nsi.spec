@@ -174,9 +174,9 @@ for flavor in %{flavors}; do
       Qt5Core.dll \
       Qt5Gui.dll \
       Qt5Widgets.dll \
-      icui18n56.dll \
-      icudata56.dll \
-      icuuc56.dll \
+      icui*n*.dll \
+      icudata*.dll \
+      icuuc*.dll \
       libfreetype-6.dll \
       libglib-2.0-0.dll \
       libintl-8.dll \
