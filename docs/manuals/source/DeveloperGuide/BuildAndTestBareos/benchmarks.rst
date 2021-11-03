@@ -3,29 +3,32 @@
 Benchmarks
 ~~~~~~~~~~
 
-Benchmarks are introduced first for developers to test certain parts of the code when modifying performance critical code.
+Benchmarks are introduced first for developers to test certain parts of the code when modifying performance-critical code.
 This is done with the help of the Google Benchmark tool available at https://github.com/google/benchmark
-
-Benchmarking requires the installation of the Google Benchmark package (``dnf install google-benchmark`` on Fedora 33).
-
 
 Adding a benchmark
 ^^^^^^^^^^^^^^^^^^
 
 The new benchmark has to be listed in the CMakeLists.txt file in the benchmarks folder.
 
-Benchmarks can be included into the CTest tests by adding the name of the benchmark to the enabled benchmarks list.
 
+Building the benchmarks
+^^^^^^^^^^^^^^^^^^^^^^^
 
-Running available benchmarks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+First, you have to add the ``-DBUILD_BENCHMARKS=ON`` to the list of CMake parameters to be able to build the benchmarks.
 
-Build the bareos project, and binaries for the benchmarks will be created in the build directory under ``build/core/src/benchmarks/`` which you can execute and see how your bareos performs for the chosen benchmark.
+Benchmarking requires the installation of the Google Benchmark package (``dnf install google-benchmark google-benchmark-devel`` on Fedora).
 
-If you enabled the benchmarks with CTest, you can run them all with ``ctest -R bench: --verbose`` or ``ctest -R bench:<name_of_benchmark> --verbose`` if you want to run a specific benchmark.
-Adding the ``--verbose`` is important in order to see the time results.
+Running benchmarks
+^^^^^^^^^^^^^^^^^^
 
-Results can be written to a file with the ``--benchmark_out=<filename>`` option. Specify the output format with ``--benchmark_out_format={json|console|csv}``
+After building the bareos project, binaries for the benchmarks will be created in the build directory under ``build/core/src/benchmarks/``.
+
+The most obvious way to run the benchmarks would be to run the binaries directly.
+
+Another way to run the benchmarks would be to run ``make benchmarks`` inside the build directory, which will build and run all available benchmarks, and will write benchmark results in JSON files inside the benchmarks directory (same where you would find the binaries).
+
+As mentioned above, results can be written to a file. When running benchmarks independently, you can specify the output file path with the ``--benchmark_out=<filename>`` option, and the format with  ``--benchmark_out_format={json|console|csv}``.
 
 Example:
 
@@ -119,10 +122,10 @@ Example:
 Comparing benchmarks
 ^^^^^^^^^^^^^^^^^^^^
 
-Google Benchmark offers a comparison script in order two compare different benchmarks.
+Google Benchmark offers a comparison script to compare different benchmarks.
 To use this tool, you need to clone the Google Benchmark repository, the ``compare.py`` script is located in the ``benchmark/tools`` folder.
 
-The following shell session shows a basic usage of the tool (example is for marking 10 Million files in the restore browser):
+The following shell session shows basic usage of the tool (an example is for marking 10 Million files in the restore browser):
 
 .. code-block:: shell-session
    :caption: Comparing the same benchmark of two different builds
@@ -165,10 +168,10 @@ The following shell session shows a basic usage of the tool (example is for mark
    BM_populatetree                +0.1234         +0.1257            25            28            25            28
    BM_markfiles                   +0.0297         +0.0291             4             4             4             4
 
-What it does is for every benchmark from the first run it looks for the benchmark with exactly the same name in the second run, and then compares the results. If the names differ, the benchmark is omitted from the diff.
-As you can note, the values in Time and CPU columns are calculated as (new - old) / old.
+What it does is for every benchmark from the first run it looks for the benchmark with the same name in the second run, and then compares the results. If the names differ, the benchmark is omitted from the diff.
+As you can note, the values in Time and CPU columns are calculated as ``(new - old) / old``.
 
-The same could be done by comparing the json outputs of both benchmarks, or even by comparing a binary with a json output.
+The same could be done by comparing the JSON outputs of both benchmarks, or even by comparing a binary with a JSON output.
 
 Example:
 
@@ -181,3 +184,4 @@ Example:
    --------------------------------------------------------------------------------------------------------------
    BM_populatetree                -0.2390         -0.2390            26            20            26            20
    BM_markfiles                   -0.0338         -0.0322             3             3             3             3
+
