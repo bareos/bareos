@@ -87,6 +87,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: added "Hardware Sizing" chapter [PR #926]
 - bench: added a benchmarks tool with google-benchmark, with an initial benchmark for the restore command [PR #883]
 - database: Add index on jobmedia mediaid,jobid [PR #958]
+- contrib: Add Python FD Plugin for OpenVZ container [PR #908]
 
 ### Changed
 - systemtest python-bareos: split tests in separate files [PR #944]
