@@ -1,6 +1,5 @@
 JENKINS_TESTTYPES:
   - bareos-client-only
-  - bareos-mysql
   - bareos-postgresql
   - univention-bareos
 
