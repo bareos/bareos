@@ -663,7 +663,7 @@ start_again:
       if (job) {
         if (job->schedule && job->schedule->enabled && job->enabled) {
           // skip if client is set but not enabled
-          if (job->client && !job->client->enabled) goto start_again;
+          if (job->client && !job->client->enabled) { break; }
 
           if (!show_scheduled_preview(ua, job->schedule, overview,
                                       &max_date_len, time_to_check)) {
