@@ -86,6 +86,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - contrib: Add Python DIR plugin for prometheus metrics [PR #911]
 
 ### Changed
+- docs: Improve data-type subsubsection in CustomizingTheConfiguration [PR #968]
 - systemtest python-bareos: split tests in separate files [PR #944]
 - core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]
 - systemtests: define variable BackupDirectory globally [PR #780]
