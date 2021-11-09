@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - Adapt Python DIR and SD plugin Baseclasses to the modernized Python plugin API [PR #957] (backport of [PR #923])
+- Log LDAP info error (e.g. expired SSL cert error) [PR #970] (backport of [PR #956])
 
 ## [20.0.3] - 2021-09-14
 

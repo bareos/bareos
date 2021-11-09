@@ -256,7 +256,7 @@ class BareosLDAPWrapper:
         except ldap.INVALID_CREDENTIALS:
             bareosfd.JobMessage(
                 bareosfd.bJobMessageType["M_FATAL"],
-                "Failed to bind to LDAP uri %s\n" % (options["uri"]),
+                "Failed to bind to LDAP uri due to invalid credentials %s\n" % (options["uri"]),
             )
 
             return bareosfd.bRC_Error
@@ -264,8 +264,8 @@ class BareosLDAPWrapper:
             if type(e.message) == dict and "desc" in e.message:
                 bareosfd.JobMessage(
                     bareosfd.bJobMessageType["M_FATAL"],
-                    "Failed to bind to LDAP uri %s: %s\n"
-                    % (options["uri"], e.message["desc"]),
+                    "Failed to bind to LDAP uri %s: %s %s\n"
+                    % (options["uri"], e.message["desc"], e.message["info"]),
                 )
             else:
                 bareosfd.JobMessage(
