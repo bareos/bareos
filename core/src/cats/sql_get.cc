@@ -151,7 +151,7 @@ bool BareosDb::GetFileRecord(JobControlRecord* jcr,
           Mmsg3(errmsg,
                 _("GetFileRecord want 1 got rows=%d PathId=%s Filename=%s\n"),
                 num_rows, edit_int64(fdbr->PathId, ed1), esc_name);
-          Dmsg1(000, "=== Problem!  %s\n", errmsg);
+          Dmsg1(000, "=== Problem!  %s", errmsg);
         }
       }
     } else {

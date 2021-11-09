@@ -491,7 +491,7 @@ int DeviceControlRecord::CheckVolumeLabel(bool& ask, bool& autochanger)
         Jmsg(jcr, M_WARNING, 0,
              _("Director wanted Volume \"%s\".\n"
                "    Current Volume \"%s\" not acceptable because:\n"
-               "    %s\n"),
+               "    %s"),
              dcrVolCatInfo.VolCatName, dev->VolHdr.VolumeName,
              vol_info_msg.c_str());
         ask = true;

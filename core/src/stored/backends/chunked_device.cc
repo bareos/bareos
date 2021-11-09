@@ -542,7 +542,7 @@ bool ChunkedDevice::FlushChunk(bool release_chunk, bool move_to_next_chunk)
     if (release_chunk && io_threads_) { current_chunk_->buffer = NULL; }
   }
 
-  if (!retval) { Dmsg1(100, "%s\n", errmsg); }
+  if (!retval) { Dmsg1(100, "%s", errmsg); }
 
   return retval;
 }

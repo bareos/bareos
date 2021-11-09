@@ -338,7 +338,7 @@ static inline bool unSerBlockHeader(JobControlRecord* jcr,
             dev->file, dev->block_num, (unsigned)BlockNumber, block_len,
             BlockCheckSum, CheckSum);
       if (block->read_errors == 0 || verbose >= 2) {
-        Jmsg(jcr, M_ERROR, 0, "%s\n", dev->errmsg);
+        Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);
         DumpBlock(block, "with checksum error");
       }
       block->read_errors++;
@@ -399,7 +399,7 @@ static void RereadLastBlock(DeviceControlRecord* dcr)
       dcr->block = lblock;
       if (DeviceControlRecord::ReadStatus::Ok
           != dcr->ReadBlockFromDev(NO_BLOCK_NUMBER_CHECK)) {
-        Jmsg(jcr, M_ERROR, 0, _("Re-read last block at EOT failed. ERR=%s\n"),
+        Jmsg(jcr, M_ERROR, 0, _("Re-read last block at EOT failed. ERR=%s"),
              dev->errmsg);
       } else {
         /*
@@ -456,7 +456,7 @@ static bool TerminateWritingVolume(DeviceControlRecord* dcr)
     dev->VolCatInfo.VolCatErrors++;
     Jmsg(dcr->jcr, M_ERROR, 0,
          _("Error writing final EOF to tape. This Volume may not be readable.\n"
-           "%s\n"),
+           "%s"),
          dev->errmsg);
     ok = false;
     Dmsg0(50, "Error writing final EOF to volume.\n");
