@@ -59,7 +59,7 @@ class PhpMemoryArray implements RemoteLoaderInterface
 
         $textDomain = new TextDomain($this->messages[$textDomain][$locale]);
 
-        if (array_key_exists('', $textDomain)) {
+        if ($textDomain->offsetExists('')) {
             if (isset($textDomain['']['plural_forms'])) {
                 $textDomain->setPluralRule(
                     PluralRule::fromString($textDomain['']['plural_forms'])
