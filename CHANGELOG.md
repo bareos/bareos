@@ -56,6 +56,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fixed all compiler warnings (on our default warning level) [PR #948]
 - Log LDAP info error (e.g. expired SSL cert error) [PR #956]
 - Fix occassional "NULL volume name" error when non-busy, but blocked drive is unloaded [PR #973]
+- core: Fix PostgreSQL create table script by improving testing [PR #980]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
