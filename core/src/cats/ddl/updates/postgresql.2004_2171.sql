@@ -62,6 +62,6 @@ UPDATE Version SET VersionId = 2171;
 
 COMMIT;
 
-set client_min_messages = fatal;
+set client_min_messages = warning;
 
 ANALYSE;

@@ -39,6 +39,6 @@ ALTER TABLE Pool ADD COLUMN MaxBlockSize INTEGER DEFAULT 0;
 UPDATE Version SET VersionId = 2002;
 COMMIT;
 
-set client_min_messages = fatal;
+set client_min_messages = warning;
 
 ANALYSE;

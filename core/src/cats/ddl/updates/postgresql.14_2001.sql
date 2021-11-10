@@ -23,7 +23,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('L', 'Committing data', 15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
-   ('W', 'Terminated with warnings', 20);
+   ('W', 'Terminated with warning', 20);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('l', 'Doing data despooling', 15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
@@ -32,7 +32,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 UPDATE Version SET VersionId = 2001;
 COMMIT;
 
-set client_min_messages = fatal;
+set client_min_messages = warning;
 CREATE INDEX media_poolid_idx on Media (PoolId);
 
 ANALYSE;
