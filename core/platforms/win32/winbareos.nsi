@@ -1,7 +1,7 @@
 ;
 ;   BAREOS - Backup Archiving REcovery Open Sourced
 ;
-;   Copyright (C) 2012-2020 Bareos GmbH & Co. KG
+;   Copyright (C) 2012-2021 Bareos GmbH & Co. KG
 ;
 ;   This program is Free Software; you can redistribute it and/or
 ;   modify it under the terms of version three of the GNU Affero General Public
@@ -17,6 +17,9 @@
 ;   along with this program; if not, write to the Free Software
 ;   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 ;   02110-1301, USA.
+
+
+Unicode false
 
 RequestExecutionLevel admin
 
@@ -933,9 +936,9 @@ SectionIn 1 2 3
   File "Qt5Core.dll"
   File "Qt5Gui.dll"
   File "Qt5Widgets.dll"
-  File "icui18n67.dll"
-  File "icudata67.dll"
-  File "icuuc67.dll"
+  File "icui*n*.dll"
+  File "icudata*.dll"
+  File "icuuc*.dll"
   File "libfreetype-6.dll"
   File "libglib-2.0-0.dll"
   File "libintl-8.dll"
@@ -2171,9 +2174,9 @@ ConfDeleteSkip:
   Delete "$INSTDIR\Qt5Core.dll"
   Delete "$INSTDIR\Qt5Gui.dll"
   Delete "$INSTDIR\Qt5Widgets.dll"
-  Delete "$INSTDIR\icui18n67.dll"
-  Delete "$INSTDIR\icudata67.dll"
-  Delete "$INSTDIR\icuuc67.dll"
+  Delete "$INSTDIR\icui*n*.dll"
+  Delete "$INSTDIR\icudata*.dll"
+  Delete "$INSTDIR\icuuc*.dll"
   Delete "$INSTDIR\libfreetype-6.dll"
   Delete "$INSTDIR\libglib-2.0-0.dll"
   Delete "$INSTDIR\libintl-8.dll"
