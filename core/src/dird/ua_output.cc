@@ -1358,7 +1358,7 @@ bool CompleteJcrForJob(JobControlRecord* jcr,
   while (!jcr->db->GetPoolRecord(jcr, &pr)) { /* get by Name */
     /* Try to create the pool */
     if (CreatePool(jcr, jcr->db, jcr->impl->res.pool, POOL_OP_CREATE) < 0) {
-      Jmsg(jcr, M_FATAL, 0, _("Pool %s not in database. %s"), pr.Name,
+      Jmsg(jcr, M_FATAL, 0, _("Pool %s not in database. %s\n"), pr.Name,
            jcr->db->strerror());
       if (jcr->db) {
         DbSqlClosePooledConnection(jcr, jcr->db);

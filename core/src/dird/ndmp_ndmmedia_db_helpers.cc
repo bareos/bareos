@@ -85,7 +85,7 @@ void NdmmediaToBareosDbRecords(ndmmedia* media,
     bstrncpy(mr->VolStatus, NT_("Append"), sizeof(mr->VolStatus));
   }
 
-  Dmsg2(100, "Set Medium %s: to VolStatus %s", mr->VolumeName, mr->VolStatus);
+  Dmsg2(100, "Set Medium %s: to VolStatus %s\n", mr->VolumeName, mr->VolStatus);
 
   // Update LastWritten Timestamp
   mr->LastWritten = (utime_t)time(NULL);

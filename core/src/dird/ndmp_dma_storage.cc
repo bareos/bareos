@@ -143,7 +143,7 @@ bool do_ndmp_native_query_tape_and_robot_agents(JobControlRecord* jcr,
   if (!NdmpBuildStorageJob(jcr, store, true, /* Query Tape Agent */
                            true,             /* Query Robot Agent */
                            NDM_JOB_OP_QUERY_AGENTS, &ndmp_job)) {
-    Dmsg0(100, "error in NdmpBuildStorageJob");
+    Dmsg0(100, "error in NdmpBuildStorageJob\n");
     return false;
   }
 

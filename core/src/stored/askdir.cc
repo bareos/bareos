@@ -318,7 +318,7 @@ bool StorageDaemonDeviceControlRecord::DirUpdateVolumeInfo(
   if (!jcr->IsCanceled()) {
     if (!DoGetVolumeInfo(this)) {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
-      Dmsg2(debuglevel, _("Didn't get vol info vol=%s: ERR=%s"),
+      Dmsg2(debuglevel, _("Didn't get vol info vol=%s: ERR=%s\n"),
             vol->VolCatName, jcr->errmsg);
       goto bail_out;
     }

@@ -608,7 +608,7 @@ static bool WriteSpoolHeader(DeviceControlRecord* dcr)
         }
       }
       if (!DespoolData(dcr, false)) {
-        Jmsg(jcr, M_FATAL, 0, _("Fatal despooling error."));
+        Jmsg(jcr, M_FATAL, 0, _("Fatal despooling error.\n"));
         jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
         return false;
       }
@@ -655,7 +655,7 @@ static bool WriteSpoolData(DeviceControlRecord* dcr)
       }
 
       if (!DespoolData(dcr, false)) {
-        Jmsg(jcr, M_FATAL, 0, _("Fatal despooling error."));
+        Jmsg(jcr, M_FATAL, 0, _("Fatal despooling error.\n"));
         jcr->forceJobStatus(JS_FatalError); /* override any Incomplete */
         return false;
       }

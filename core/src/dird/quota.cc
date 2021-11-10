@@ -114,14 +114,14 @@ bool CheckHardquotas(JobControlRecord* jcr)
     if (jcr->impl->res.client->QuotaIncludeFailedJobs) {
       if (!jcr->db->get_quota_jobbytes(jcr, &jcr->impl->jr,
                                        jcr->impl->res.client->JobRetention)) {
-        Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"),
+        Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s\n"),
              jcr->db->strerror());
         goto bail_out;
       }
     } else {
       if (!jcr->db->get_quota_jobbytes_nofailed(
               jcr, &jcr->impl->jr, jcr->impl->res.client->JobRetention)) {
-        Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"),
+        Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s\n"),
              jcr->db->strerror());
         goto bail_out;
       }
@@ -170,7 +170,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
     if (jcr->impl->res.client->QuotaIncludeFailedJobs) {
       if (!jcr->db->get_quota_jobbytes(jcr, &jcr->impl->jr,
                                        jcr->impl->res.client->JobRetention)) {
-        Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"),
+        Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s\n"),
              jcr->db->strerror());
         goto bail_out;
       }
@@ -178,7 +178,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
     } else {
       if (!jcr->db->get_quota_jobbytes_nofailed(
               jcr, &jcr->impl->jr, jcr->impl->res.client->JobRetention)) {
-        Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"),
+        Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s\n"),
              jcr->db->strerror());
         goto bail_out;
       }
@@ -210,7 +210,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
         && jcr->impl->res.client->SoftQuotaGracePeriod) {
       Dmsg1(debuglevel, "UpdateQuotaGracetime: %d\n", now);
       if (!jcr->db->UpdateQuotaGracetime(jcr, &jcr->impl->jr)) {
-        Jmsg(jcr, M_WARNING, 0, _("Error setting Quota gracetime: ERR=%s"),
+        Jmsg(jcr, M_WARNING, 0, _("Error setting Quota gracetime: ERR=%s\n"),
              jcr->db->strerror());
       } else {
         Jmsg(jcr, M_ERROR, 0,
@@ -233,7 +233,7 @@ bool CheckSoftquotas(JobControlRecord* jcr)
        */
       if (jcr->impl->res.client->QuotaLimit < 1) {
         if (!jcr->db->UpdateQuotaSoftlimit(jcr, &jcr->impl->jr)) {
-          Jmsg(jcr, M_WARNING, 0, _("Error setting Quota Softlimit: ERR=%s"),
+          Jmsg(jcr, M_WARNING, 0, _("Error setting Quota Softlimit: ERR=%s\n"),
                jcr->db->strerror());
         }
         Jmsg(jcr, M_WARNING, 0,
@@ -250,7 +250,8 @@ bool CheckSoftquotas(JobControlRecord* jcr)
          */
         if (jcr->impl->res.client->QuotaLimit < 1) {
           if (!jcr->db->UpdateQuotaSoftlimit(jcr, &jcr->impl->jr)) {
-            Jmsg(jcr, M_WARNING, 0, _("Error setting Quota Softlimit: ERR=%s"),
+            Jmsg(jcr, M_WARNING, 0,
+                 _("Error setting Quota Softlimit: ERR=%s\n"),
                  jcr->db->strerror());
           }
           Jmsg(jcr, M_WARNING, 0,

@@ -853,8 +853,9 @@ static bRC pluginIO(PluginContext* ctx, struct io_pkt* io)
       io->io_errno = 0;
       break;
     case IO_SEEK:
-      Jmsg(ctx, M_ERROR, "rados-fd: Illegal Seek request on rados device.");
-      Dmsg(ctx, debuglevel, "rados-fd: Illegal Seek request on rados device.");
+      Jmsg(ctx, M_ERROR, "rados-fd: Illegal Seek request on rados device.\n");
+      Dmsg(ctx, debuglevel,
+           "rados-fd: Illegal Seek request on rados device.\n");
       io->io_errno = EINVAL;
       goto bail_out;
   }

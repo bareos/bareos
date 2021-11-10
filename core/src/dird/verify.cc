@@ -177,7 +177,7 @@ bool DoVerify(JobControlRecord* jcr)
       jcr->impl->previous_jr.JobId = verify_jobid;
       if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
         Jmsg(jcr, M_FATAL, 0,
-             _("Could not get job record for previous Job. ERR=%s"),
+             _("Could not get job record for previous Job. ERR=%s\n"),
              jcr->db->strerror());
         return false;
       }

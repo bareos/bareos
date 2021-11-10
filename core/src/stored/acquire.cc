@@ -645,7 +645,7 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
       bpipe = OpenBpipe(alert, 60 * 5, "r");
       if (bpipe) {
         while (bfgets(line, bpipe->rfd)) {
-          Jmsg(jcr, M_ALERT, 0, _("Alert: %s"), line);
+          Jmsg(jcr, M_ALERT, 0, _("Alert: %s\n"), line);
         }
         status = CloseBpipe(bpipe);
       } else {

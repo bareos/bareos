@@ -254,7 +254,7 @@ bool DoConsolidate(JobControlRecord* jcr)
 
         if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
           Jmsg(jcr, M_FATAL, 0,
-               _("Error getting Job record for first Job: ERR=%s"),
+               _("Error getting Job record for first Job: ERR=%s\n"),
                jcr->db->strerror());
           goto bail_out;
         }
@@ -333,7 +333,7 @@ void ConsolidateCleanup(JobControlRecord* jcr, int TermCode)
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Job record for Job report: ERR=%s"),
+         _("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
     jcr->setJobStatus(JS_ErrorTerminated);
   }

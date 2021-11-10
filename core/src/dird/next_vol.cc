@@ -269,7 +269,7 @@ bool HasVolumeExpired(JobControlRecord* jcr, MediaDbRecord* mr)
           mr->VolumeName);
     SetStorageidInMr(NULL, mr);
     if (!jcr->db->UpdateMediaRecord(jcr, mr)) {
-      Jmsg(jcr, M_ERROR, 0, _("Catalog error updating volume \"%s\". ERR=%s"),
+      Jmsg(jcr, M_ERROR, 0, _("Catalog error updating volume \"%s\". ERR=%s\n"),
            mr->VolumeName, jcr->db->strerror());
     }
   }
@@ -423,7 +423,7 @@ bool GetScratchVolume(JobControlRecord* jcr,
       bstrncpy(pr.Name, jcr->impl->res.pool->resource_name_, sizeof(pr.Name));
 
       if (!jcr->db->GetPoolRecord(jcr, &pr)) {
-        Jmsg(jcr, M_WARNING, 0, _("Unable to get Pool record: ERR=%s"),
+        Jmsg(jcr, M_WARNING, 0, _("Unable to get Pool record: ERR=%s\n"),
              jcr->db->strerror());
         goto bail_out;
       }

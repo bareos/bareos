@@ -224,7 +224,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   if (p) { *p = ','; }
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
-    Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for first Job: ERR=%s"),
+    Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for first Job: ERR=%s\n"),
          jcr->db->strerror());
     goto bail_out;
   }
@@ -252,7 +252,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Error getting Job record for previous Job: ERR=%s"),
+         _("Error getting Job record for previous Job: ERR=%s\n"),
          jcr->db->strerror());
     goto bail_out;
   }
@@ -397,7 +397,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   // Get the fully updated job record
   if (!jcr->db->GetJobRecord(jcr, &jcr->impl->jr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Job record for Job report: ERR=%s"),
+         _("Error getting Job record for Job report: ERR=%s\n"),
          jcr->db->strerror());
     jcr->setJobStatus(JS_ErrorTerminated);
   }
@@ -405,7 +405,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
   bstrncpy(cr.Name, jcr->impl->res.client->resource_name_, sizeof(cr.Name));
   if (!jcr->db->GetClientRecord(jcr, &cr)) {
     Jmsg(jcr, M_WARNING, 0,
-         _("Error getting Client record for Job report: ERR=%s"),
+         _("Error getting Client record for Job report: ERR=%s\n"),
          jcr->db->strerror());
   }
 

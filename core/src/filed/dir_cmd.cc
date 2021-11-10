@@ -892,7 +892,7 @@ static bool EstimateCmd(JobControlRecord* jcr)
 
   if (sscanf(dir->msg, Estimatecmd, &jcr->impl->listing) != 1) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Bad estimate command: %s"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, _("Bad estimate command: %s\n"), jcr->errmsg);
     dir->fsend(_("2992 Bad estimate command.\n"));
     return false;
   }
@@ -915,7 +915,7 @@ static bool job_cmd(JobControlRecord* jcr)
 
   if (!command.EvaluationSuccesful()) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Bad Job Command: %s"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, _("Bad Job Command: %s\n"), jcr->errmsg);
     dir->fsend(BADjob);
     return false;
   }
@@ -1488,7 +1488,7 @@ static bool SessionCmd(JobControlRecord* jcr)
              &jcr->impl->StartBlock, &jcr->impl->EndBlock)
       != 7) {
     PmStrcpy(jcr->errmsg, dir->msg);
-    Jmsg(jcr, M_FATAL, 0, _("Bad session command: %s"), jcr->errmsg);
+    Jmsg(jcr, M_FATAL, 0, _("Bad session command: %s\n"), jcr->errmsg);
     return false;
   }
 
@@ -1550,7 +1550,7 @@ static bool StorageCmd(JobControlRecord* jcr)
     if (sscanf(dir->msg, storaddrv0cmd, stored_addr, &stored_port, &tls_policy)
         != 3) {
       PmStrcpy(jcr->errmsg, dir->msg);
-      Jmsg(jcr, M_FATAL, 0, _("Bad storage command: %s"), jcr->errmsg);
+      Jmsg(jcr, M_FATAL, 0, _("Bad storage command: %s\n"), jcr->errmsg);
       goto bail_out;
     }
   }

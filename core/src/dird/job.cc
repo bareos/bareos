@@ -1187,7 +1187,7 @@ bool GetLevelSinceTime(JobControlRecord* jcr)
                  sizeof(jcr->impl->previous_jr.Job));
         if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
           Jmsg(jcr, M_FATAL, 0,
-               _("Could not get job record for previous Job. ERR=%s"),
+               _("Could not get job record for previous Job. ERR=%s\n"),
                jcr->db->strerror());
         }
       }
@@ -1429,7 +1429,7 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   jcr->impl->jr.JobErrors = jcr->JobErrors;
   jcr->impl->jr.HasBase = jcr->HasBase;
   if (!jcr->db->UpdateJobEndRecord(jcr, &jcr->impl->jr)) {
-    Jmsg(jcr, M_WARNING, 0, _("Error updating job record. %s"),
+    Jmsg(jcr, M_WARNING, 0, _("Error updating job record. %s\n"),
          jcr->db->strerror());
   }
 }

@@ -213,7 +213,7 @@ bool GetNameAndResourceTypeAndVersionFromHello(
   }
 
   if (!found) {
-    Dmsg1(100, "Client information not found: %s", input.c_str());
+    Dmsg1(100, "Client information not found: %s\n", input.c_str());
     return false;
   }
 
@@ -681,16 +681,13 @@ char* encode_mode(mode_t mode, char* buf)
 {
   char* cp = buf;
 
-  *cp++ = S_ISDIR(mode)
-              ? 'd'
-              : S_ISBLK(mode)
-                    ? 'b'
-                    : S_ISCHR(mode)
-                          ? 'c'
-                          : S_ISLNK(mode)
-                                ? 'l'
-                                : S_ISFIFO(mode) ? 'f'
-                                                 : S_ISSOCK(mode) ? 's' : '-';
+  *cp++ = S_ISDIR(mode)    ? 'd'
+          : S_ISBLK(mode)  ? 'b'
+          : S_ISCHR(mode)  ? 'c'
+          : S_ISLNK(mode)  ? 'l'
+          : S_ISFIFO(mode) ? 'f'
+          : S_ISSOCK(mode) ? 's'
+                           : '-';
   *cp++ = mode & S_IRUSR ? 'r' : '-';
   *cp++ = mode & S_IWUSR ? 'w' : '-';
   *cp++ = (mode & S_ISUID ? (mode & S_IXUSR ? 's' : 'S')

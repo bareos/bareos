@@ -592,7 +592,7 @@ static inline bool FindJobidsOfPoolUncopiedJobs(JobControlRecord* jcr,
   // Only a copy job is allowed
   if (!jcr->is_JobType(JT_COPY)) {
     Jmsg(jcr, M_FATAL, 0,
-         _("Selection Type 'pooluncopiedjobs' only applies to Copy Jobs"));
+         _("Selection Type 'pooluncopiedjobs' only applies to Copy Jobs\n"));
     goto bail_out;
   }
 
@@ -1053,7 +1053,7 @@ bool DoMigrationInit(JobControlRecord* jcr)
 
     if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
       Jmsg(jcr, M_FATAL, 0,
-           _("Could not get job record for JobId %s to %s. ERR=%s"),
+           _("Could not get job record for JobId %s to %s. ERR=%s\n"),
            edit_int64(jcr->impl->previous_jr.JobId, ed1), jcr->get_ActionName(),
            jcr->db->strerror());
       return false;
@@ -1835,7 +1835,7 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
 
     if (!jcr->db->GetJobRecord(jcr, &jcr->impl->jr)) {
       Jmsg(jcr, M_WARNING, 0,
-           _("Error getting Job record for Job report: ERR=%s"),
+           _("Error getting Job record for Job report: ERR=%s\n"),
            jcr->db->strerror());
       jcr->setJobStatus(JS_ErrorTerminated);
     }
@@ -1867,7 +1867,7 @@ void MigrationCleanup(JobControlRecord* jcr, int TermCode)
       bstrncpy(mr.VolumeName, p, sizeof(mr.VolumeName));
       if (!jcr->db->GetMediaRecord(jcr, &mr)) {
         Jmsg(jcr, M_WARNING, 0,
-             _("Error getting Media record for Volume \"%s\": ERR=%s"),
+             _("Error getting Media record for Volume \"%s\": ERR=%s\n"),
              mr.VolumeName, jcr->db->strerror());
       }
     }
