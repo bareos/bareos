@@ -45,12 +45,12 @@ mkdir -p ${dbHost}
 # initialize mysql db
 
 if [ "${MYSQL_INSTALL_DB}" = "MYSQL_INSTALL_DB-NOTFOUND" ]; then
-	mysqld --defaults-file=mysqldefaults --initialize-insecure --user="$USER" > mysql/mysql_init.log
+	${MYSQLD} --defaults-file=mysqldefaults --initialize-insecure --user="$USER" > mysql/mysql_init.log
 else
 	mysql_install_db --user="$USER" --defaults-file=mysqldefaults > mysql/mysql_init.log
 fi
 # start mysql server
-mysqld --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
+${MYSQLD} --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
 
 tries=60
 echo "waiting for mysql server to start"
