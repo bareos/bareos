@@ -55,6 +55,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Adapt Python DIR and SD plugin Baseclasses to the modernized Python plugin API [PR #923]
 - Fixed all compiler warnings (on our default warning level) [PR #948]
 - Log LDAP info error (e.g. expired SSL cert error) [PR #956]
+- Fix occassional "NULL volume name" error when non-busy, but blocked drive is unloaded [PR #973]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
@@ -264,6 +265,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #903]: https://github.com/bareos/bareos/pull/903
 [PR #907]: https://github.com/bareos/bareos/pull/907
 [PR #910]: https://github.com/bareos/bareos/pull/910
+[PR #911]: https://github.com/bareos/bareos/pull/911
 [PR #912]: https://github.com/bareos/bareos/pull/912
 [PR #913]: https://github.com/bareos/bareos/pull/913
 [PR #914]: https://github.com/bareos/bareos/pull/914
@@ -274,6 +276,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #921]: https://github.com/bareos/bareos/pull/921
 [PR #923]: https://github.com/bareos/bareos/pull/923
 [PR #924]: https://github.com/bareos/bareos/pull/924
+[PR #926]: https://github.com/bareos/bareos/pull/926
 [PR #927]: https://github.com/bareos/bareos/pull/927
 [PR #936]: https://github.com/bareos/bareos/pull/936
 [PR #937]: https://github.com/bareos/bareos/pull/937
@@ -281,6 +284,13 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #942]: https://github.com/bareos/bareos/pull/942
 [PR #943]: https://github.com/bareos/bareos/pull/943
 [PR #944]: https://github.com/bareos/bareos/pull/944
+[PR #948]: https://github.com/bareos/bareos/pull/948
+[PR #950]: https://github.com/bareos/bareos/pull/950
 [PR #951]: https://github.com/bareos/bareos/pull/951
+[PR #952]: https://github.com/bareos/bareos/pull/952
+[PR #956]: https://github.com/bareos/bareos/pull/956
+[PR #958]: https://github.com/bareos/bareos/pull/958
 [PR #961]: https://github.com/bareos/bareos/pull/961
+[PR #962]: https://github.com/bareos/bareos/pull/962
+[PR #973]: https://github.com/bareos/bareos/pull/973
 [unreleased]: https://github.com/bareos/bareos/tree/master
