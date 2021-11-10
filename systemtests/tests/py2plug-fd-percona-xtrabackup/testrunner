@@ -23,8 +23,9 @@ JobName=backup-bareos-fd
 "${rscripts}"/setup
 
 shutdown_mysql_server(){
-[ -f "mysql/mysqld.pid" ] && kill "$(cat mysql/mysqld.pid)" || :
-[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
+  [ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
+# kill running mysqld instance listening on our port
+sudo fuser "${test_db_port}"/tcp -k || :
 }
 
 
@@ -42,11 +43,7 @@ mkdir -p ${dbHost}
 
 # initialize mysql db
 
-if [ "${MYSQL_INSTALL_DB}" = "MYSQL_INSTALL_DB-NOTFOUND" ]; then
-	${MYSQLD} --defaults-file=mysqldefaults --initialize-insecure --user="$USER" > mysql/mysql_init.log
-else
-	mysql_install_db --user="$USER" --defaults-file=mysqldefaults > mysql/mysql_init.log
-fi
+${MYSQLD} --defaults-file=mysqldefaults --initialize-insecure --user="$USER" > mysql/mysql_init.log
 # start mysql server
 ${MYSQLD} --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
 
