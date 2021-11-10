@@ -212,6 +212,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Disable systemtests on non compatible systems [PR #387]
 - Update ovirt plugin documentation [PR #384]
 - Improve ovirt plugin
+- Adapt percona-xtrabackup test to work on updated test environment [PR #978]
 
 ### Deprecated
 - Using MySQL as a catalog backend is now deprecated [PR #564]
