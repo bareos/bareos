@@ -40,7 +40,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 UPDATE Version SET VersionId = 2001;
 COMMIT;
 
-set client_min_messages = fatal;
+set client_min_messages = warning;
 CREATE INDEX media_poolid_idx on Media (PoolId);
 
 
@@ -61,7 +61,7 @@ ALTER TABLE Pool ADD COLUMN MaxBlockSize INTEGER DEFAULT 0;
 UPDATE Version SET VersionId = 2002;
 COMMIT;
 
-set client_min_messages = fatal;
+set client_min_messages = warning;
 
 
 --
@@ -105,14 +105,14 @@ DROP TABLE CDImages;
 UPDATE Version SET VersionId = 2003;
 COMMIT;
 
-set client_min_messages = fatal;
+set client_min_messages = warning;
 
 
 ALTER TABLE FileSet ADD COLUMN FileSetText TEXT DEFAULT '';
 UPDATE Version SET VersionId = 2004;
 COMMIT;
 
-set client_min_messages = fatal;
+set client_min_messages = warning;
 
 
 ANALYSE;
