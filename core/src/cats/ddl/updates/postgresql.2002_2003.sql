@@ -43,6 +43,6 @@ DROP TABLE CDImages;
 UPDATE Version SET VersionId = 2003;
 COMMIT;
 
-set client_min_messages = fatal;
+set client_min_messages = warning;
 
 ANALYSE;

@@ -57,6 +57,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Log LDAP info error (e.g. expired SSL cert error) [PR #956]
 - Fix occassional "NULL volume name" error when non-busy, but blocked drive is unloaded [PR #973]
 - Adapt percona-xtrabackup test to work on updated test environment [PR #982]
+- Fix PostgreSQL create database script [PR #981]
+- Unify level use with set client_min_message instruction in SQL update scripts [PR #981]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]

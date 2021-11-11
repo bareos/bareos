@@ -4,5 +4,5 @@ BEGIN;
 CREATE INDEX job_media_media_id_job_id_idx ON jobmedia (mediaid, jobid);
 UPDATE Version SET VersionId = 2210;
 COMMIT;
-set client_min_messages = fatal;
+set client_min_messages = warning;
 ANALYSE;
