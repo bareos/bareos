@@ -465,7 +465,7 @@ ACL
 
    .. _section-CommandAclExample:
 
-   For clarification, we demonstrate the usage of ACLs by some examples for :config:option:`dir/console/CommandAcl`\ :
+   For clarification, we demonstrate the usage of ACLs by some examples for :config:option:`dir/console/CommandACL`\ :
 
    .. code-block:: bareosconfig
       :caption: Allow only the help command
