@@ -85,3 +85,5 @@ check_function_exists(unlinkat HAVE_UNLINKAT)
 check_function_exists(utimes HAVE_UTIMES)
 
 check_function_exists(glfs_readdirplus HAVE_GLFS_READDIRPLUS)
+
+check_function_exists(chflags HAVE_CHFLAGS)
