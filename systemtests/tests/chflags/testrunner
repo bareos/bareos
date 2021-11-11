@@ -1,0 +1,78 @@
+#!/bin/bash
+set -e
+set -o pipefail
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+BackupFile="${tmp}/file-with-chflags"
+RestoreFile="${tmp}/bareos-restores/${BackupFile}"
+
+# allow delition of test files
+[ -f "${BackupFile}" ] && chflags nosunlink "${BackupFile}"
+[ -f "${RestoreFile}" ] && chflags nosunlink "${RestoreFile}"
+
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+chflags_should="${tmp}/chflags_should.txt"
+chflags_is="${tmp}/chflags_is.txt"
+BackupDirectory="${tmp}/data"
+
+mkdir -p "${BackupDirectory}"
+touch "${BackupFile}"
+chflags sunlink "${BackupFile}"
+ls -lo "${BackupFile}" | cut -b -40 > ${chflags_should}
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=1000 client=bareos-fd trace=1
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos "$@"
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+
+ls -lo "${RestoreFile}" | cut -b -40 > "$chflags_is"
+
+diff -u "$chflags_should" "$chflags_is" || estat=1
+
+# allow deletion of files
+chflags nosunlink "${BackupFile}"
+chflags nosunlink "${RestoreFile}"
+
+end_test

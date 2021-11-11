@@ -674,6 +674,14 @@ else()
   list(APPEND SYSTEM_TESTS_DISABLED acl)
 endif()
 
+include(BareosCheckChflags)
+get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+if(CHFLAGS_WORKS)
+  list(APPEND SYSTEM_TESTS chflags)
+else()
+  list(APPEND SYSTEM_TESTS_DISABLED chflags)
+endif()
+
 if(TARGET droplet
    AND S3CMD
    AND MINIO

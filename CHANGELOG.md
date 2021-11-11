@@ -30,6 +30,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - packages: Build also for Debian_11 [PR #915]
 - packages: Build also for SLE_15_SP3 and openSUSE_15.3 [PR #945]
 - packages: Build also for Fedora_35 [PR #976]
+- cmake: check for chflags() function and enable FreeBSD File Flags support [PR #974]
 
 ### Changed
 - add job name in End Job Session output in bls tool [PR #916]
