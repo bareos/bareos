@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -592,23 +592,21 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
     Dmsg1(100, "Slot=%hd found in another device\n", slot);
   }
 
-  /*
-   * The Volume we want is on another device.
-   */
-  if (dev->IsBusy()) {
+  // The Volume we want is on another device.
+  if (dev->IsBusy() || dev->IsBlocked()) {
     Dmsg4(100, "Vol %s for dev=%s in use dev=%s slot=%hd\n", dcr->VolumeName,
           dcr->dev->print_name(), dev->print_name(), slot);
   }
 
   for (int i = 0; i < 3; i++) {
-    if (dev->IsBusy()) {
+    if (dev->IsBusy() || dev->IsBlocked()) {
       WaitForDevice(dcr->jcr, retries);
       continue;
     }
     break;
   }
 
-  if (dev->IsBusy()) {
+  if (dev->IsBusy() || dev->IsBlocked()) {
     Jmsg(dcr->jcr, M_WARNING, 0,
          _("Volume \"%s\" wanted on %s is in use by device %s\n"),
          dcr->VolumeName, dcr->dev->print_name(), dev->print_name());
