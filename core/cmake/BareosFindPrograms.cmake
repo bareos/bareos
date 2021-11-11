@@ -65,12 +65,15 @@ find_program(S3CMD s3cmd)
 find_program(MINIO minio)
 
 find_program(MYSQL mysql)
-find_program(MYSQLD mysqld)
+find_program(MYSQLD mysqld PATH /opt/mysql/bin)
 find_program(MYSQL_INSTALL_DB mysql_install_db)
 
 if(POLICY CMP0109)
   cmake_policy(SET CMP0109 NEW)
   find_program(SUDO sudo)
 else()
-  set(SUDO "/usr/bin/sudo" PARENT_SCOPE)
+  set(SUDO
+      "/usr/bin/sudo"
+      PARENT_SCOPE
+  )
 endif(POLICY CMP0109)
