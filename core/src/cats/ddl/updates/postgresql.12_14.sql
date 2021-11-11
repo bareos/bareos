@@ -21,7 +21,7 @@ ALTER TABLE File ADD COLUMN DeltaSeq smallint default 0;
 UPDATE Version SET VersionId=14;
 COMMIT;
 
-set client_min_messages = fatal;
+set client_min_messages = warning;
 CREATE INDEX media_poolid_idx on Media (PoolId);
 
 ANALYSE;

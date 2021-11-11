@@ -32,7 +32,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 UPDATE Version SET VersionId = 2001;
 COMMIT;
 
-set client_min_messages = fatal;
+set client_min_messages = warning;
 CREATE INDEX media_poolid_idx on Media (PoolId);
 
 ANALYSE;
