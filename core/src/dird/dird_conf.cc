@@ -161,25 +161,25 @@ static ResourceItem dir_items[] = {
 };
 
 #define USER_ACL(resource, ACL_lists) \
-  { "JobACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Job_ACL, 0, NULL, NULL,\
+  { "JobAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Job_ACL, 0, NULL, NULL,\
      "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources." },\
-  { "ClientACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Client_ACL, 0, NULL, NULL,\
+  { "ClientAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Client_ACL, 0, NULL, NULL,\
      "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources." },\
-  { "StorageACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Storage_ACL, 0, NULL, NULL,\
+  { "StorageAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Storage_ACL, 0, NULL, NULL,\
      "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources." },\
-  { "ScheduleACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Schedule_ACL, 0, NULL, NULL,\
+  { "ScheduleAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Schedule_ACL, 0, NULL, NULL,\
      "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources." },\
-  { "PoolACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Pool_ACL, 0, NULL, NULL,\
+  { "PoolAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Pool_ACL, 0, NULL, NULL,\
      "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources." },\
-  { "CommandACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Command_ACL, 0, NULL, NULL,\
+  { "CommandAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Command_ACL, 0, NULL, NULL,\
      "Lists the commands, this resource has access to. The special keyword *all* allows using commands." },\
-  { "FileSetACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), FileSet_ACL, 0, NULL, NULL,\
+  { "FileSetAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), FileSet_ACL, 0, NULL, NULL,\
      "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources." },\
-  { "CatalogACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Catalog_ACL, 0, NULL, NULL,\
+  { "CatalogAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Catalog_ACL, 0, NULL, NULL,\
      "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources." },\
-  { "WhereACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Where_ACL, 0, NULL, NULL,\
+  { "WhereAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), Where_ACL, 0, NULL, NULL,\
      "Specifies the base directories, where files could be restored. An empty string allows restores to all directories." },\
-  { "PluginOptionsACL", CFG_TYPE_ACL, ITEM(resource, ACL_lists), PluginOptions_ACL, 0, NULL, NULL,\
+  { "PluginOptionsAcl", CFG_TYPE_ACL, ITEM(resource, ACL_lists), PluginOptions_ACL, 0, NULL, NULL,\
      "Specifies the allowed plugin options. An empty strings allows all Plugin Options." }
 
 static ResourceItem profile_items[] = {
