@@ -25,6 +25,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix director crash on "update slots" when there is a parsing issue with the autochanger or tape devices [PR #919]
 - [Issue #1232]: bareos logrotate errors, reintroduce su directive in logrotate ([backport of PR #918])
 - Fix occasional "NULL volume name" error when non-busy, but blocked drive is unloaded [PR #975]
+- Fix PostgreSQL create database script [PR #983]
+- Unify level use with set client_min_message instruction in SQL update scripts [PR #983]
+
 
 ### Added
 - packages: Build also for Debian_11 [PR #915]
