@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,10 +43,16 @@ const char* BErrNo::bstrerror()
 {
   *buf_ = 0;
 #ifdef HAVE_WIN32
-  if (berrno_ & b_errno_win32) {
+  if (berrno_ & b_errno_win32 || berrno_ == 0) {
     FormatWin32Message();
     return (const char*)buf_;
   }
+
+  int windows_error_code = GetLastError();
+
+  char* msg = strerror(berrno_);
+  Mmsg(buf_, "%s (errno=%d | win_error=0x%08X)", msg, berrno_,
+       windows_error_code, berrno_ & b_errno_win32);
 #else
   int status = 0;
 
@@ -75,11 +81,13 @@ const char* BErrNo::bstrerror()
          get_signal_name(status));
     return buf_;
   }
-#endif
+
   /* Normal errno */
   if (b_strerror(berrno_, buf_, 1024) < 0) {
     return _("Invalid errno. No error message possible.");
   }
+#endif
+
   return buf_;
 }
 
@@ -87,12 +95,16 @@ void BErrNo::FormatWin32Message()
 {
 #ifdef HAVE_WIN32
   LPVOID msg;
-  FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
-                     | FORMAT_MESSAGE_IGNORE_INSERTS,
-                 NULL, GetLastError(),
-                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msg, 0,
-                 NULL);
-  PmStrcpy(buf_, (const char*)msg);
+  int windows_error_code = GetLastError();
+  if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
+                        | FORMAT_MESSAGE_IGNORE_INSERTS,
+                    NULL, windows_error_code,
+                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msg, 0,
+                    NULL)) {
+    PmStrcpy(buf_, (const char*)msg);
+  } else {
+    Mmsg(buf_, "Windows error 0x%08X", windows_error_code);
+  }
   LocalFree(msg);
 #endif
 }

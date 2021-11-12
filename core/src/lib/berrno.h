@@ -28,7 +28,6 @@
 #ifndef BAREOS_LIB_BERRNO_H_
 #define BAREOS_LIB_BERRNO_H_
 
-#include "lib/berrno.h"
 #include "include/bareos.h"
 
 // Extra bits set to interpret errno value differently from errno
