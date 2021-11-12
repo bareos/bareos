@@ -59,6 +59,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Adapt percona-xtrabackup test to work on updated test environment [PR #982]
 - Fix PostgreSQL create database script [PR #981]
 - Unify level use with set client_min_message instruction in SQL update scripts [PR #981]
+- Fixed issue with error messages not showing up properly on windows systems [PR #959]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
@@ -268,6 +269,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #900]: https://github.com/bareos/bareos/pull/900
 [PR #903]: https://github.com/bareos/bareos/pull/903
 [PR #907]: https://github.com/bareos/bareos/pull/907
+[PR #908]: https://github.com/bareos/bareos/pull/908
 [PR #910]: https://github.com/bareos/bareos/pull/910
 [PR #911]: https://github.com/bareos/bareos/pull/911
 [PR #912]: https://github.com/bareos/bareos/pull/912
@@ -294,7 +296,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #952]: https://github.com/bareos/bareos/pull/952
 [PR #956]: https://github.com/bareos/bareos/pull/956
 [PR #958]: https://github.com/bareos/bareos/pull/958
+[PR #959]: https://github.com/bareos/bareos/pull/959
 [PR #961]: https://github.com/bareos/bareos/pull/961
 [PR #962]: https://github.com/bareos/bareos/pull/962
+[PR #963]: https://github.com/bareos/bareos/pull/963
+[PR #972]: https://github.com/bareos/bareos/pull/972
 [PR #973]: https://github.com/bareos/bareos/pull/973
+[PR #982]: https://github.com/bareos/bareos/pull/982
 [unreleased]: https://github.com/bareos/bareos/tree/master
