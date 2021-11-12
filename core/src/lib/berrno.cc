@@ -87,12 +87,16 @@ void BErrNo::FormatWin32Message()
 {
 #ifdef HAVE_WIN32
   LPVOID msg;
-  FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
-                     | FORMAT_MESSAGE_IGNORE_INSERTS,
-                 NULL, GetLastError(),
-                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msg, 0,
-                 NULL);
-  PmStrcpy(buf_, (const char*)msg);
+  int windows_error_code = GetLastError();
+  if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
+                        | FORMAT_MESSAGE_IGNORE_INSERTS,
+                    NULL, windows_error_code,
+                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msg, 0,
+                    NULL)) {
+    PmStrcpy(buf_, (const char*)msg);
+  } else {
+    Mmsg(buf_, "Windows error 0x%08X", windows_error_code);
+  }
   LocalFree(msg);
 #endif
 }
