@@ -1415,13 +1415,15 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   }
 
   // Look for trace flag. -1 => not change
-  i = FindArgWithValue(ua, NT_("trace"));
-  if (i >= 0) {
-    trace_flag = atoi(ua->argv[i]);
-    if (trace_flag > 0) { trace_flag = 1; }
-  } else {
-    trace_flag = -1;
-  }
+ i = FindArgWithValue(ua, NT_("trace"));
+   if (i >= 0) {
+     trace_flag = atoi(ua->argv[i]);
+     if (trace_flag > 0) { trace_flag = 1; }
+   } else {
+      if (!GetPint(ua, _("Enter new trace value: "))) { return true; }
+      trace_flag = ua->pint32_val;
+   }
+   
 
   // Look for hangup (debug only) flag. -1 => not change
   i = FindArgWithValue(ua, NT_("hangup"));
