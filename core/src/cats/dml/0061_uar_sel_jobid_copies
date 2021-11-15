@@ -1,0 +1,5 @@
+SELECT DISTINCT JobId, StartTime
+  FROM Job
+ WHERE Type = 'C'
+   AND (PriorJobId IN (%s))
+ ORDER BY StartTime ASC

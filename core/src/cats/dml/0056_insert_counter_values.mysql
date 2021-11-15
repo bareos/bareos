@@ -1,0 +1,2 @@
+INSERT INTO Counters (Counter, Counters.MinValue, Counters.MaxValue, CurrentValue, WrapCounter)
+VALUES ('%s','%d','%d','%d','%s')

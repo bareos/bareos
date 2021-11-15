@@ -1,0 +1,2 @@
+INSERT INTO Counters (Counter, MinValue, MaxValue, CurrentValue, WrapCounter)
+VALUES ('%s','%d','%d','%d','%s')

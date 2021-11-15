@@ -1,0 +1,11 @@
+INSERT INTO Filename (Name)
+SELECT a.Name
+  FROM (
+      SELECT DISTINCT Name
+	FROM batch
+       ) AS a
+ WHERE NOT EXISTS (
+      SELECT Name
+	FROM Filename AS f
+       WHERE f.Name = a.Name
+       )

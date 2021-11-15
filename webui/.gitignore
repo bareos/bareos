@@ -1,0 +1,18 @@
+composer.lock
+config.ini
+*.swp
+*.cache
+Makefile
+config.log
+config.status
+
+# cmake generated files
+config/autoload/global.php
+install/configuration.ini
+install/directors.ini
+module/Application/view/layout/layout.phtml
+module/Application/view/layout/login.phtml
+tests/regress/webui-bsock-connection-test
+tests/regress/webui-bsock-connection-test-tls
+tests/regress/webui-bsock-connection-test-tls.php
+version.php

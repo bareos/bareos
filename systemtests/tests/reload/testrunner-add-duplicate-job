@@ -1,0 +1,43 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+#set -x
+#trap read debug
+
+#shellcheck source=../environment.in
+. ./environment
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=./reload_test_functions
+. ./reload_test_functions
+
+TestName="$(get_test_name "$0")"
+export TestName
+export estat
+
+temporary_job_config_file="$config_directory_dir_additional_test_config/new_duplicated_job.conf"
+bconsole_command_file="$tmp/bconsole_reload_command"
+console_logfile="$tmp/console.log"
+
+director_debug_level=""
+#director_debug_level="-d 200"
+
+
+
+############################################
+start_test
+############################################
+
+remove_console_logfile
+
+setup_config
+#reload modified config
+add_duplicate_job_to_config
+test_reload_will_not_crash_director
+find_error_string_in_console_log 'Attempt to define second Job resource named "backup-bareos-fd" is not permitted'
+
+############################################
+end_test
+############################################

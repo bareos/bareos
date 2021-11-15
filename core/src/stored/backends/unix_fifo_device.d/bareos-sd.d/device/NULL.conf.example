@@ -1,0 +1,20 @@
+#
+# example of a Storage daemon dummy device to test the backup.
+# This example is write-only, so obviously, there is no way to restore data.
+# In other cases, Fifo backends are often combined this by RunBeforeJobs,
+# to start a corresponding reader/writer program.
+#
+
+Device {
+  Name = NULL
+  Description = "Dummy device, write-only, for testing."
+  Archive Device = /dev/null
+  Device Type = fifo
+  Media Type = null
+  Label Media = yes
+  Random Access = no
+  Automatic Mount = no
+  Removable Media = no
+  Always Open = no
+  MaximumOpenWait = 60
+}

@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../environment.in
+. ./environment
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+export TestName="$(get_test_name "$0")"
+
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+bin/bareos start
+
+print_debug "$(bin/bconsole <<< "status dir")"

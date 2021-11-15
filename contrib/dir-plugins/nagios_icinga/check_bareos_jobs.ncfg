@@ -1,0 +1,91 @@
+# ---
+# NagiosGrapher Template for Bareos_job-related checks
+# ---
+
+# Usually backup jobs run on a daily basis, this means performance data are only transmitted once a day.
+# It may take up to 3 days before you actually get a graph.
+
+# EXTERNAL COMMAND: PROCESS_SERVICE_CHECK_RESULT;localhost;bareos_config;0;OK: Bareos job theseus-server-config.2014-11-24_11.09.24_09 on theseus-fd with id 15818 level I, 0 errors, 47577 jobBytes, 15 files terminated with status T|Errors=0;;;; Bytes=47577;;;; Files=15;;;; Throughput=3987B/s;;;; jobRuntime=11s;;;; jobTotalTime=13s;;;;
+
+define ngraph{
+	service_name		bareos_job
+	graph_perf_regex	Errors=(\d+)
+	graph_value		Errors
+	graph_units		
+	graph_legend		Errors per Job
+	rrd_plottype		AREA
+	rrd_color		ff0000
+	step			86400
+	page			Errors
+	heartbeat		120000
+}
+
+
+
+define ngraph{
+	service_name		bareos_job
+	graph_perf_regex	Files=(\d+)
+	graph_value		Files
+	graph_units		
+	graph_legend		Files per Job
+	rrd_plottype		AREA
+	rrd_color		0000ff
+	step			86400
+	page			Files
+	heartbeat		120000
+}
+
+define ngraph{
+	service_name		bareos_job
+	graph_perf_regex	Bytes=(\d+)
+	graph_value		Bytes
+	graph_units		B	
+	graph_legend		Bytes per Job
+	rrd_plottype		AREA
+	rrd_color		00ff00
+	step			86400
+	page			JobBytes
+	heartbeat		120000
+}
+
+define ngraph{
+	service_name	 	bareos_job	
+	graph_perf_regex	Throughput=(\d+)
+	graph_value		Throughput	
+	graph_units		B/s   
+	graph_legend		Bytes/s
+	rrd_plottype		AREA
+	rrd_color		00ff00
+	step			86400
+	page			Throughput
+	heartbeat		120000
+}
+
+
+define ngraph{
+        service_name            bareos_job
+        graph_perf_regex        jobRuntime=(\d+)
+	graph_value		jobRuntime
+	graph_units		Seconds
+	graph_legend		Effective Job Runtime
+	rrd_plottype            LINE3 
+        rrd_color               00ff00
+	page			Time
+        step                    86400
+        heartbeat               120000
+}
+
+define ngraph{
+        service_name            bareos_job
+        graph_perf_regex        jobTotalTime=(\d+)
+        graph_value             jobTotalTime
+        graph_units             Seconds
+        graph_legend            Job Total Time
+        rrd_plottype            AREA
+        rrd_color               ff0000
+	page			Time
+        step                    86400
+        heartbeat               120000
+}
+
+# [EOF]

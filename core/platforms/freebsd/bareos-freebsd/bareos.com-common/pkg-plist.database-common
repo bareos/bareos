@@ -1,0 +1,18 @@
+lib/libbareossql.so.%%DISTVERSION%%
+lib/libbareossql.so.%%LIBVERSION%%
+lib/libbareossql.so
+lib/libbareoscats.so.%%DISTVERSION%%
+lib/libbareoscats.so.%%LIBVERSION%%
+lib/libbareoscats.so
+@dir(bareos,bareos,755) /usr/lib/bareos/scripts/ddl
+@dir(bareos,bareos,755) /usr/lib/bareos/scripts/ddl/creates
+@dir(bareos,bareos,755) /usr/lib/bareos/scripts/ddl/drops
+@dir(bareos,bareos,755) /usr/lib/bareos/scripts/ddl/grants
+@dir(bareos,bareos,755) /usr/lib/bareos/scripts/ddl/updates
+/usr/lib/bareos/scripts/create_bareos_database
+/usr/lib/bareos/scripts/drop_bareos_database
+/usr/lib/bareos/scripts/drop_bareos_tables
+/usr/lib/bareos/scripts/grant_bareos_privileges
+/usr/lib/bareos/scripts/make_bareos_tables
+/usr/lib/bareos/scripts/update_bareos_tables
+/usr/lib/bareos/scripts/ddl/versions.map

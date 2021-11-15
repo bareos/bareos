@@ -1,0 +1,39 @@
+#!/bin/sh
+
+LIB=@scriptdir@/bareos-config-lib.sh
+
+if ! [ -r "$LIB" ]; then
+    echo "failed to read library $LIB"
+    exit 1
+fi
+. $LIB
+
+usage()
+{
+cat <<-EOT
+usage: $0 <function>
+EOT
+    exit 1
+}
+
+help()
+{
+    usage
+}
+
+# number of args passed
+args=$#
+
+# without parameter, nothing is done.
+# this allows this script to be sourced
+# to use its functions
+if [ $args -ge 1 ]; then
+    # executes given arguments
+    if is_function $1; then
+        "$@"
+    else
+        echo "failed to execute $*. Not found."
+        #usage
+        exit 127
+    fi
+fi

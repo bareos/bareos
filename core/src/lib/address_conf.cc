@@ -1,0 +1,500 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+// Written by Meno Abels, June MMIV
+/**
+ * @file
+ * Configuration file parser for IP-Addresse ipv4 and ipv6
+ */
+
+#include "include/bareos.h"
+#include "lib/address_conf.h"
+#include "lib/bnet.h"
+#include "lib/bsys.h"
+#include "lib/edit.h"
+#include "lib/output_formatter_resource.h"
+
+
+#ifdef HAVE_ARPA_NAMESER_H
+#  include <arpa/nameser.h>
+#endif
+#ifdef HAVE_RESOLV_H
+//#include <resolv.h>
+#endif
+
+IPADDR::IPADDR()
+    : type(R_UNDEFINED), saddr(nullptr), saddr4(nullptr), saddr6(nullptr)
+{
+  memset(&saddrbuf, 0, sizeof(saddrbuf));
+}
+
+IPADDR::IPADDR(const IPADDR& src) : IPADDR()
+{
+  type = src.type;
+  memcpy(&saddrbuf, &src.saddrbuf, sizeof(saddrbuf));
+  saddr = &saddrbuf.dontuse;
+  saddr4 = &saddrbuf.dontuse4;
+  saddr6 = &saddrbuf.dontuse6;
+}
+
+IPADDR::IPADDR(int af) : IPADDR()
+{
+  type = R_EMPTY;
+  if (!(af == AF_INET6 || af == AF_INET)) {
+    Emsg1(M_ERROR_TERM, 0, _("Only ipv4 and ipv6 are supported (%d)\n"), af);
+  }
+
+  memset(&saddrbuf, 0, sizeof(saddrbuf));
+  saddr = &saddrbuf.dontuse;
+  saddr4 = &saddrbuf.dontuse4;
+  saddr6 = &saddrbuf.dontuse6;
+  saddr->sa_family = af;
+  switch (af) {
+    case AF_INET:
+      saddr4->sin_port = 0xffff;
+      break;
+    case AF_INET6:
+      saddr6->sin6_port = 0xffff;
+      break;
+  }
+
+  SetAddrAny();
+}
+
+void IPADDR::SetType(i_type o) { type = o; }
+
+IPADDR::i_type IPADDR::GetType() const { return type; }
+
+unsigned short IPADDR::GetPortNetOrder() const
+{
+  unsigned short port = 0;
+  if (saddr->sa_family == AF_INET) {
+    port = saddr4->sin_port;
+  } else {
+    port = saddr6->sin6_port;
+  }
+  return port;
+}
+
+void IPADDR::SetPortNet(unsigned short port)
+{
+  if (saddr->sa_family == AF_INET) {
+    saddr4->sin_port = port;
+  } else {
+    saddr6->sin6_port = port;
+  }
+}
+
+int IPADDR::GetFamily() const { return saddr->sa_family; }
+
+struct sockaddr* IPADDR::get_sockaddr() { return saddr; }
+
+int IPADDR::GetSockaddrLen()
+{
+  return saddr->sa_family == AF_INET ? sizeof(*saddr4) : sizeof(*saddr6);
+}
+void IPADDR::CopyAddr(IPADDR* src)
+{
+  if (saddr->sa_family == AF_INET) {
+    saddr4->sin_addr.s_addr = src->saddr4->sin_addr.s_addr;
+  } else {
+    saddr6->sin6_addr = src->saddr6->sin6_addr;
+  }
+}
+
+void IPADDR::SetAddrAny()
+{
+  if (saddr->sa_family == AF_INET) {
+    saddr4->sin_addr.s_addr = INADDR_ANY;
+  } else {
+    saddr6->sin6_addr = in6addr_any;
+  }
+}
+
+void IPADDR::SetAddr4(struct in_addr* ip4)
+{
+  if (saddr->sa_family != AF_INET) {
+    Emsg1(M_ERROR_TERM, 0,
+          _("It was tried to assign a ipv6 address to a ipv4(%d)\n"),
+          saddr->sa_family);
+  }
+  saddr4->sin_addr = *ip4;
+}
+
+void IPADDR::SetAddr6(struct in6_addr* ip6)
+{
+  if (saddr->sa_family != AF_INET6) {
+    Emsg1(M_ERROR_TERM, 0,
+          _("It was tried to assign a ipv4 address to a ipv6(%d)\n"),
+          saddr->sa_family);
+  }
+  saddr6->sin6_addr = *ip6;
+}
+
+const char* IPADDR::GetAddress(char* outputbuf, int outlen)
+{
+  outputbuf[0] = '\0';
+#ifdef HAVE_INET_NTOP
+  inet_ntop(saddr->sa_family,
+            saddr->sa_family == AF_INET ? (void*)&(saddr4->sin_addr)
+                                        : (void*)&(saddr6->sin6_addr),
+            outputbuf, outlen);
+#else
+  bstrncpy(outputbuf, inet_ntoa(saddr4->sin_addr), outlen);
+#endif
+  return outputbuf;
+}
+
+void IPADDR::BuildConfigString(OutputFormatterResource& send, bool as_comment)
+{
+  char tmp[1024];
+  std::string formatstring;
+
+  switch (GetFamily()) {
+    case AF_INET:
+      send.SubResourceStart("ipv4", as_comment, "%s = {\n");
+      send.KeyString("addr", GetAddress(tmp, sizeof(tmp) - 1), as_comment);
+      send.KeyUnsignedInt("port", GetPortHostOrder(), as_comment);
+      send.SubResourceEnd("ipv4", as_comment);
+      break;
+    case AF_INET6:
+      send.SubResourceStart("ipv6", as_comment, "%s = {\n");
+      send.KeyString("addr", GetAddress(tmp, sizeof(tmp) - 1), as_comment);
+      send.KeyUnsignedInt("port", GetPortHostOrder(), as_comment);
+      send.SubResourceEnd("ipv6", as_comment);
+      break;
+    default:
+      break;
+  }
+}
+
+
+const char* IPADDR::build_address_str(char* buf,
+                                      int blen,
+                                      bool print_port /*=true*/)
+{
+  char tmp[1024];
+  if (print_port) {
+    switch (GetFamily()) {
+      case AF_INET:
+        Bsnprintf(buf, blen, "host[ipv4;%s;%hu] ",
+                  GetAddress(tmp, sizeof(tmp) - 1), GetPortHostOrder());
+        break;
+      case AF_INET6:
+        Bsnprintf(buf, blen, "host[ipv6;%s;%hu] ",
+                  GetAddress(tmp, sizeof(tmp) - 1), GetPortHostOrder());
+        break;
+      default:
+        break;
+    }
+  } else {
+    switch (GetFamily()) {
+      case AF_INET:
+        Bsnprintf(buf, blen, "host[ipv4;%s] ",
+                  GetAddress(tmp, sizeof(tmp) - 1));
+        break;
+      case AF_INET6:
+        Bsnprintf(buf, blen, "host[ipv6;%s] ",
+                  GetAddress(tmp, sizeof(tmp) - 1));
+        break;
+      default:
+        break;
+    }
+  }
+
+  return buf;
+}
+
+
+// check if two addresses are the same
+bool IsSameIpAddress(IPADDR* first, IPADDR* second)
+{
+  if (first == nullptr || second == nullptr) { return false; }
+  return (first->GetSockaddrLen() == second->GetSockaddrLen()
+          && memcmp(first->get_sockaddr(), second->get_sockaddr(),
+                    first->GetSockaddrLen())
+                 == 0);
+}
+
+
+const char* BuildAddressesString(dlist<IPADDR>* addrs,
+                                 char* buf,
+                                 int blen,
+                                 bool print_port /*=true*/)
+{
+  if (!addrs || addrs->size() == 0) {
+    bstrncpy(buf, "", blen);
+    return buf;
+  }
+  char* work = buf;
+  IPADDR* p;
+  foreach_dlist (p, addrs) {
+    char tmp[1024];
+    int len = Bsnprintf(work, blen, "%s",
+                        p->build_address_str(tmp, sizeof(tmp), print_port));
+    if (len < 0) break;
+    work += len;
+    blen -= len;
+  }
+  return buf;
+}
+
+const char* GetFirstAddress(dlist<IPADDR>* addrs, char* outputbuf, int outlen)
+{
+  return ((IPADDR*)(addrs->first()))->GetAddress(outputbuf, outlen);
+}
+
+int GetFirstPortNetOrder(dlist<IPADDR>* addrs)
+{
+  if (!addrs) {
+    return 0;
+  } else {
+    return ((IPADDR*)(addrs->first()))->GetPortNetOrder();
+  }
+}
+
+int GetFirstPortHostOrder(dlist<IPADDR>* addrs)
+{
+  if (!addrs) {
+    return 0;
+  } else {
+    return ((IPADDR*)(addrs->first()))->GetPortHostOrder();
+  }
+}
+
+bool RemoveDefaultAddresses(dlist<IPADDR>* addrs,
+                            IPADDR::i_type type,
+                            char* buf,
+                            int buflen)
+{
+  IPADDR* iaddr;
+  IPADDR* default_address = nullptr;
+  foreach_dlist (iaddr, addrs) {
+    if (iaddr->GetType() == IPADDR::R_DEFAULT) {
+      default_address = iaddr;
+      if (default_address) {
+        addrs->remove(default_address);
+        delete default_address;
+      }
+    } else if (iaddr->GetType() != type) {
+      Bsnprintf(buf, buflen,
+                _("the old style addresses cannot be mixed with new style"));
+      return false;
+    }
+  }
+  return true;
+}
+
+bool SetupPort(unsigned short& port,
+               int defaultport,
+               const char* port_str,
+               char* buf,
+               int buflen)
+{
+  if (!port_str || port_str[0] == '\0') {
+    port = defaultport;
+    return true;
+  } else {
+    int pnum = atol(port_str);
+    if (0 < pnum && pnum < 0xffff) {
+      port = htons(pnum);
+      return true;
+    } else {
+      struct servent* s = getservbyname(port_str, "tcp");
+      if (s) {
+        port = s->s_port;
+        return true;
+      } else {
+        Bsnprintf(buf, buflen, _("can't resolve service(%s)"), port_str);
+        return false;
+      }
+    }
+  }
+}
+
+int AddAddress(dlist<IPADDR>** out,
+               IPADDR::i_type type,
+               unsigned short defaultport,
+               int family,
+               const char* hostname_str,
+               const char* port_str,
+               char* buf,
+               int buflen)
+{
+  IPADDR* iaddr;
+  IPADDR* jaddr;
+  dlist<IPADDR>* hostaddrs;
+  unsigned short port;
+  IPADDR::i_type intype = type;
+
+  buf[0] = 0;
+  dlist<IPADDR>* addrs = (dlist<IPADDR>*)(*(out));
+  if (!addrs) {
+    IPADDR* tmp = 0;
+    addrs = *out = new dlist<IPADDR>(tmp, &tmp->link);
+  }
+
+  type = (type == IPADDR::R_SINGLE_PORT || type == IPADDR::R_SINGLE_ADDR)
+             ? IPADDR::R_SINGLE
+             : type;
+
+  if (type != IPADDR::R_DEFAULT) {
+    if (!RemoveDefaultAddresses(addrs, type, buf, buflen)) { return 0; }
+  }
+
+  if (!SetupPort(port, defaultport, port_str, buf, buflen)) { return 0; }
+
+  const char* myerrstr;
+  hostaddrs = BnetHost2IpAddrs(hostname_str, family, &myerrstr);
+  if (!hostaddrs) {
+    Bsnprintf(buf, buflen, _("can't resolve hostname(%s) %s"), hostname_str,
+              myerrstr);
+    return 0;
+  }
+
+  if (intype == IPADDR::R_SINGLE_PORT) {
+    IPADDR* addr;
+    if (addrs->size()) {
+      addr = (IPADDR*)addrs->first();
+    } else {
+      addr = new IPADDR(family);
+      addr->SetType(type);
+      addr->SetPortNet(defaultport);
+      addr->SetAddrAny();
+      addrs->append(addr);
+    }
+    addr->SetPortNet(port);
+
+  } else if (intype == IPADDR::R_SINGLE_ADDR) {
+    IPADDR* addr = nullptr;
+    int addr_port = defaultport;
+
+    if (addrs->size()) {
+      addr = (IPADDR*)addrs->first();
+      addr_port = addr->GetPortNetOrder();
+      EmptyAddressList(addrs);
+    }
+
+    addr = new IPADDR(family);
+    addr->SetType(type);
+    addr->SetPortNet(addr_port);
+    addr->CopyAddr((IPADDR*)(hostaddrs->first()));
+    addrs->append(addr);
+
+  } else {
+    foreach_dlist (iaddr, hostaddrs) {
+      IPADDR* clone;
+      /* for duplicates */
+      foreach_dlist (jaddr, addrs) {
+        if (IsSameIpAddress(iaddr, jaddr)) { goto skip; /* no price */ }
+      }
+      clone = new IPADDR(*iaddr);
+      clone->SetType(type);
+      clone->SetPortNet(port);
+      addrs->append(clone);
+    skip:
+      continue;
+    }
+  }
+  FreeAddresses(hostaddrs);
+  return 1;
+}
+
+void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
+{
+  char buf[1024];
+  unsigned short sport = str_to_int32(port);
+
+  if (!AddAddress(out, IPADDR::R_DEFAULT, htons(sport), 0, 0, 0, buf,
+                  sizeof(buf))) {
+    Emsg1(M_ERROR_TERM, 0, _("Can't add default address (%s)\n"), buf);
+  }
+}
+
+void EmptyAddressList(dlist<IPADDR>* addrs)
+{
+  IPADDR* iaddr;
+  foreach_dlist (iaddr, addrs) {
+    if (iaddr) {
+      addrs->remove(iaddr);
+      delete iaddr;
+    }
+  }
+}
+
+void FreeAddresses(dlist<IPADDR>* addrs)
+{
+  while (!addrs->empty()) {
+    IPADDR* ptr = (IPADDR*)addrs->first();
+    addrs->remove(ptr);
+    delete ptr;
+  }
+  delete addrs;
+}
+
+int SockaddrGetPortNetOrder(const struct sockaddr* client_addr)
+{
+  if (client_addr->sa_family == AF_INET) {
+    return ((struct sockaddr_in*)client_addr)->sin_port;
+  } else {
+    return ((struct sockaddr_in6*)client_addr)->sin6_port;
+  }
+  return -1;
+}
+
+int SockaddrGetPort(const struct sockaddr* client_addr)
+{
+  if (client_addr->sa_family == AF_INET) {
+    return ntohs(((struct sockaddr_in*)client_addr)->sin_port);
+  } else {
+    return ntohs(((struct sockaddr_in6*)client_addr)->sin6_port);
+  }
+  return -1;
+}
+
+char* SockaddrToAscii(const struct sockaddr* sa, char* buf, int len)
+{
+#ifdef HAVE_INET_NTOP
+  /* MA Bug 5 the problem was that i mixed up sockaddr and in_addr */
+  inet_ntop(sa->sa_family,
+            sa->sa_family == AF_INET
+                ? (void*)&(((struct sockaddr_in*)sa)->sin_addr)
+                : (void*)&(((struct sockaddr_in6*)sa)->sin6_addr),
+            buf, len);
+#else
+  bstrncpy(buf, inet_ntoa(((struct sockaddr_in*)sa)->sin_addr), len);
+#endif
+  return buf;
+}
+
+#ifdef HAVE_OLD_SOCKOPT
+int inet_aton(const char* cp, struct in_addr* inp)
+{
+  struct in_addr inaddr;
+
+  if ((inaddr.s_addr = InetAddr(cp)) != INADDR_NONE) {
+    inp->s_addr = inaddr.s_addr;
+    return 1;
+  }
+  return 0;
+}
+#endif

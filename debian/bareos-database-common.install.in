@@ -1,0 +1,10 @@
+@libdir@/libbareoscats.so*
+@libdir@/libbareossql.so*
+@scriptdir@/create_bareos_database
+@scriptdir@/drop_bareos_database
+@scriptdir@/drop_bareos_tables
+@scriptdir@/grant_bareos_privileges
+@scriptdir@/make_bareos_tables
+@scriptdir@/set_dbconfig_vars.sh
+@scriptdir@/update_bareos_tables
+@scriptdir@/ddl/versions.map

@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# PROVIDE: bareossd
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+#
+# bareos       This shell script takes care of starting and stopping
+#	       the bareos Storage daemon.
+#
+# chkconfig: 2345 90 9
+# description: Backup Archiving REcovery Open Sourced.
+#
+#
+. /etc/rc.subr
+
+name=bareossd
+rcvar=bareossd_enable
+
+command="@sbindir@/bareos-sd"
+
+load_rc_config $name
+run_rc_command "$1"

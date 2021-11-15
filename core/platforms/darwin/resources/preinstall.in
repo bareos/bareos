@@ -1,0 +1,16 @@
+#!/bin/sh
+# unload bareos file daemon before upgrading
+
+LOG=/tmp/bareos-preinstall.log
+exec >$LOG 2>&1
+date
+echo "Preinstall. Parameter: $*"
+
+for plist_file in org.bareos.bareos-fd.plist com.bareos.bareos-fd.plist bareos.bareos-fd.plist; do
+  if [ -f "$3/Library/LaunchDaemons/$plist_file" ]; then
+    /bin/launchctl unload -w "$3/Library/LaunchDaemons/$plist_file"
+    /bin/rm -f "$3/Library/LaunchDaemons/$plist_file"
+  fi
+done
+
+echo "finished"

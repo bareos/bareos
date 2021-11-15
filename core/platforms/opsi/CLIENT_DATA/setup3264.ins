@@ -1,0 +1,213 @@
+; Copyright (c) uib gmbh (www.uib.de)
+; This sourcecode is owned by uib
+; and published under the Terms of the General Public License.
+; credits: http://www.opsi.org/en/credits/
+
+[Actions]
+requiredWinstVersion >= "4.10.8.6"
+
+DefVar $MsiId32$
+DefVar $UninstallProgram32$
+DefVar $MsiId64$
+DefVar $UninstallProgram64$
+DefVar $LogDir$
+DefVar $ProductId$
+DefVar $ProductName$
+DefVar $ProductExe32$
+DefVar $ProductExe64$
+DefVar $MinimumSpace$
+DefVar $InstallDir$
+DefVar $InstallDir32$
+DefVar $InstallDir64$
+DefVar $ExitCode$
+DefVar $INST_SystemType$
+DefVar $INST_architecture$
+
+DefVar $filedaemon_full_name$
+DefVar $filedaemon_full_password$
+DefVar $filedaemon_monitor_name$
+DefVar $filedaemon_monitor_password$
+DefVar $filedaemon_client_address$
+DefVar $director_name$
+DefVar $director_address$
+DefVar $director_password$
+DefVar $keep_config$
+DefVar $auto_config$
+
+
+Set $INST_SystemType$ = GetSystemType
+Set $INST_architecture$ = GetProductProperty("install_architecture","system specific")
+
+Set $LogDir$ = "%SystemDrive%\tmp"
+
+
+; ----------------------------------------------------------------
+; - Please edit the following values                             -
+; ----------------------------------------------------------------
+;$ProductId$ should be the name of the product in opsi
+; therefore please: only lower letters, no umlauts,
+; no white space use '-' as a separator
+Set $ProductId$         = "winbareos"
+Set $ProductExe32$ = "data\winbareos-12.4.4-32-bit-r512.1.exe"
+Set $ProductExe64$ = "data\winbareos-12.4.4-64-bit-r512.1.exe"
+Set $MinimumSpace$      = "30 MB"
+; the path were we find the product after the installation
+Set $InstallDir$        = "%ProgramFilesDir%\Bareos"
+Set $InstallDir32$      = "%ProgramFiles32Dir%\Bareos"
+Set $InstallDir64$      = "%ProgramFiles64Dir%\Bareos"
+; ----------------------------------------------------------------
+
+if not(HasMinimumSpace ("%SystemDrive%", $MinimumSpace$))
+	LogError "Not enough space on %SystemDrive%, " + $MinimumSpace$ + " on drive %SystemDrive% needed for " + $ProductId$
+	isFatalError
+	; Stop process and set installation status to failed
+endif
+
+
+Set $auto_config$ = lower( GetProductProperty("auto_config", "true"))
+
+if $auto_config$ = "true"
+    set $ProductName$ = $ProductId$ + " (auto config)"
+else
+    set $keep_config$ = "/SILENTKEEPCONFIG"
+    set $ProductName$ = $ProductId$
+endif
+
+comment "Show product picture"
+ShowBitmap "%ScriptPath%\logo.png" $ProductName$
+
+if FileExists("%ScriptPath%\delsub3264.ins")
+    comment "Start uninstall sub section"
+    Sub "%ScriptPath%\delsub3264.ins"
+endif
+
+comment "installing"
+
+Set $filedaemon_full_password$ = GetProductProperty( "filedaemon_full_password", "filedaemon_full_password" )
+Set $filedaemon_monitor_password$ = GetProductProperty( "filedaemon_monitor_password", "filedaemon_monitor_password" )
+Set $director_name$ = GetProductProperty( "director_name", "director_name" )
+Set $director_address$ = GetProductProperty( "director_address", "director_address" )
+Set $director_password$ = GetProductProperty( "director_password", "director_password" )
+
+Set $filedaemon_full_name$ = GetProductProperty( "filedaemon_full_name", "" )
+if $filedaemon_full_name$ = ""
+    set $filedaemon_full_name$ = "%HostID%-fd"
+    opsiservicecall_set_product_property_filedaemon_full_name
+endif
+
+Set $filedaemon_monitor_name$ = GetProductProperty( "filedaemon_monitor_name", "filedaemon_monitor_name" )
+if $filedaemon_monitor_name$ = ""
+    set $filedaemon_monitor_name$ = "%HostID%-mon"
+    opsiservicecall_set_product_property_filedaemon_monitor_name
+endif
+
+Set $filedaemon_client_address$ = GetProductProperty( "filedaemon_client_address", "")
+if $filedaemon_client_address$ = ""
+    set $filedaemon_client_address$ = "%HostID%"
+    opsiservicecall_set_product_property_filedaemon_client_address
+endif
+
+
+
+if (($INST_SystemType$ = "x86 System") and ($INST_architecture$ = "system specific")) or ($INST_architecture$ = "both") or ($INST_architecture$ = "32 only")
+    Message "Installing " + $ProductId$ + " 32 Bit..."
+    comment "Start setup program"
+    Winbatch_install_32
+    Sub_check_exitcode
+    ;comment "Copy files"
+    ;Files_install_32 /32Bit
+    ;comment "Patch Registry"
+    ;Registry_install /32Bit
+    ;comment "Create shortcuts"
+    ;LinkFolder_install
+endif
+
+if ($INST_SystemType$ = "64 Bit System") and (($INST_architecture$ = "system specific") or ($INST_architecture$ = "both") or ($INST_architecture$ = "64 only"))
+    Message "Installing " + $ProductId$ + " 64 Bit..."
+    comment "Start setup program"
+    Winbatch_install_64
+    Sub_check_exitcode
+    ;comment "Copy files"
+    ;Files_install_64 /64Bit
+    ;comment "Patch Registry"
+    ;Registry_install /64Bit
+    ;comment "Create shortcuts"
+    ;LinkFolder_install
+endif
+
+;
+; end
+;
+
+
+
+; winbatch installer:
+; /S silent installl
+; /D destination path
+;       use this, otherwise it installs to "program files" for all languages.
+;       don't use " around argument, otherwise argument is ignored
+
+[Winbatch_install_32]
+"%ScriptPath%\$ProductExe32$" /S $keep_config$ /CLIENTNAME="$filedaemon_full_name$" /CLIENTPASSWORD="$filedaemon_full_password$" /DIRECTORNAME="$director_name$ /CLIENTADDRESS=$filedaemon_client_address$" /CLIENTMONITORPASSWORD="$filedaemon_monitor_password$" /DIRECTORADDRESS="$director_address$" /DIRECTORPASSWORD="$director_password$" /D=$InstallDir32$
+
+
+[Winbatch_install_64]
+"%ScriptPath%\$ProductExe64$" /S $keep_config$ /CLIENTNAME="$filedaemon_full_name$" /CLIENTPASSWORD="$filedaemon_full_password$" /DIRECTORNAME="$director_name$" /CLIENTADDRESS="$filedaemon_client_address$" /CLIENTMONITORPASSWORD="$filedaemon_monitor_password$" /DIRECTORADDRESS="$director_address$" /DIRECTORPASSWORD="$director_password$" /D=$InstallDir64$
+
+
+[opsiservicecall_set_product_property_filedaemon_full_name]
+"method": "setProductProperty",
+"params": [
+        '$ProductId$',
+        'filedaemon_full_name',
+        '$filedaemon_full_name$',
+        '%HostID%'
+]
+
+[opsiservicecall_set_product_property_filedaemon_monitor_name]
+"method": "setProductProperty",
+"params": [
+        '$ProductId$',
+        'filedaemon_monitor_name',
+        '$filedaemon_monitor_name$',
+        '%HostID%'
+]
+
+[opsiservicecall_set_product_property_filedaemon_client_address]
+"method": "setProductProperty",
+"params": [
+        '$ProductId$',
+        'filedaemon_client_address',
+        '$filedaemon_client_address$',
+        '%HostID%'
+]
+
+
+[Sub_check_exitcode]
+comment "Test for installation success via exit code"
+set $ExitCode$ = getLastExitCode
+; informations to exit codes see
+; http://msdn.microsoft.com/en-us/library/aa372835(VS.85).aspx
+; http://msdn.microsoft.com/en-us/library/aa368542.aspx
+if ($ExitCode$ = "0")
+	comment "Looks good: setup program gives exitcode zero"
+else
+	comment "Setup program gives a exitcode unequal zero: " + $ExitCode$
+	if ($ExitCode$ = "1605")
+		comment "ERROR_UNKNOWN_PRODUCT	1605	This action is only valid for products that are currently installed."
+		comment "Uninstall of a not installed product failed - no problem"
+	else
+		if ($ExitCode$ = "1641")
+			comment "looks good: setup program gives exitcode 1641"
+			comment "ERROR_SUCCESS_REBOOT_INITIATED	1641	The installer has initiated a restart. This message is indicative of a success."
+		else
+			if ($ExitCode$ = "3010")
+				comment "looks good: setup program gives exitcode 3010"
+				comment "ERROR_SUCCESS_REBOOT_REQUIRED	3010	A restart is required to complete the install. This message is indicative of a success."
+			else
+				logError "Fatal: Setup program gives an unknown exitcode unequal zero: " + $ExitCode$
+				isFatalError
+			endif
+		endif
+	endif
+endif

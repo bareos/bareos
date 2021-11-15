@@ -1,0 +1,2 @@
+@plugindir@/python3-sd.so
+@Python3_SITELIB@/bareossd.cpython*.so

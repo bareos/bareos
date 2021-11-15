@@ -1,0 +1,1 @@
+../../../../../module/Application/language/sk_SK.po

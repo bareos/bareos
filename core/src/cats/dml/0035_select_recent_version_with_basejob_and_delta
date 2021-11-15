@@ -1,0 +1,68 @@
+# We do the same thing than the query "select_recent_version_with_basejob",
+# but we include all delta parts.
+# If the file has been deleted, we can have irrelevant parts.
+#
+# The code that uses results should control the delta sequence with
+# the following rules:
+# First Delta = 0
+# Delta = Previous Delta + 1
+#
+# If we detect a gap, we can discard further pieces
+# If a file starts at 1 instead of 0, the file has been deleted, and further
+# pieces are useless.
+#
+# This control should be reset for each new file
+SELECT FileId,
+       Job.JobId AS JobId,
+       FileIndex,
+       File.PathId AS PathId,
+       File.Name AS Name,
+       LStat,
+       MD5,
+       File.DeltaSeq AS DeltaSeq,
+       File.Fhinfo AS Fhinfo,
+       File.Fhnode AS Fhnode,
+       Job.JobTDate AS JobTDate
+FROM Job,
+     File,
+
+  ( SELECT MAX(JobTDate) AS JobTDate,
+           PathId,
+           FileName,
+           DeltaSeq,
+           Fhinfo,
+           Fhnode
+   FROM
+     ( SELECT JobTDate,
+              PathId,
+              File.Name AS FileName,
+              DeltaSeq,
+              Fhinfo,
+              Fhnode
+      FROM File
+      JOIN Job USING (JobId)
+      WHERE File.JobId IN (%s)
+        UNION ALL
+        SELECT JobTDate,
+               PathId,
+               File.Name AS FileName,
+               DeltaSeq,
+               Fhinfo,
+               Fhnode
+        FROM BaseFiles
+        JOIN File USING (FileId)
+        JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s) ) AS tmp
+   GROUP BY PathId,
+            FileName,
+            DeltaSeq,
+            Fhinfo,
+            Fhnode) AS T1
+WHERE (Job.JobId IN
+         (SELECT DISTINCT BaseJobId
+          FROM BaseFiles
+          WHERE JobId IN (%s))
+       OR Job.JobId IN (%s))
+  AND T1.JobTDate = Job.JobTDate
+  AND Job.JobId = File.JobId
+  AND T1.PathId = File.PathId
+  AND T1.FileName = File.Name

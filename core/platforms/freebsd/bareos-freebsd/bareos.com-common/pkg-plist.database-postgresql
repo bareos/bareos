@@ -1,0 +1,16 @@
+/usr/lib/bareos/scripts/ddl/grants/postgresql.sql
+/usr/lib/bareos/scripts/ddl/grants/postgresql-readonly.sql
+/usr/lib/bareos/scripts/ddl/grants/postgresql-change_owner.dbconfig-template.sql
+/usr/lib/bareos/scripts/ddl/creates/postgresql.sql
+/usr/lib/bareos/scripts/ddl/drops/postgresql.sql
+/usr/lib/bareos/scripts/ddl/updates/postgresql.2002_2003.sql
+/usr/lib/bareos/scripts/ddl/updates/postgresql.11_12.sql
+/usr/lib/bareos/scripts/ddl/updates/postgresql.14_2001.sql
+/usr/lib/bareos/scripts/ddl/updates/postgresql.10_11.sql
+/usr/lib/bareos/scripts/ddl/updates/postgresql.2004_2171.sql
+/usr/lib/bareos/scripts/ddl/updates/postgresql.2003_2004.sql
+/usr/lib/bareos/scripts/ddl/updates/postgresql.2001_2002.sql
+/usr/lib/bareos/scripts/ddl/updates/postgresql.bee.1017_2004.sql
+/usr/lib/bareos/scripts/ddl/updates/postgresql.12_14.sql
+
+lib/libbareoscats-postgresql.so

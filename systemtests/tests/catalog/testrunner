@@ -1,0 +1,27 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+#shellcheck source=../environment.in
+. ./environment
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+exit_failure()
+{
+  estat=1
+  end_test
+}
+
+start_test
+
+${BAREOS_UNITTESTS_BINARY_DIR}/catalog || exit_failure
+
+end_test

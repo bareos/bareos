@@ -1,0 +1,41 @@
+Adding additional storage backends:
+
+- Creating a new backend:
+   - Create a new derived class of DEVICE e.g.
+
+      class whatever_device: public DEVICE {
+      private:
+         POOLMEM *m_virtual_filename;
+         boffset_t m_offset;
+
+      public:
+         whatever_device();
+         ~whatever_device();
+
+         /*
+          * Interface from DEVICE
+          */
+         int d_close(int);
+         int d_open(const char *pathname, int flags, int mode);
+         int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
+         boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence);
+         ssize_t d_read(int fd, void *buffer, size_t count);
+         ssize_t d_write(int fd, const void *buffer, size_t count);
+         bool d_truncate(DCR *dcr);
+      };
+
+      In file src/stored/backends/whatever_device.h
+   - Create a new class implementing the pure virtual methods.
+      In file src/stored/backends/whatever_device.c
+
+     There are plenty of examples.
+   - Add build rules to src/stored/backends/Makefile.in
+   - Add new backend to AVAILABLE_DEVICE_API_SRCS in src/stored/Makefile.in for non dynamic loading.
+
+- Glue code for loading and using the new backend
+   - Add new enum value to Device types enum in src/stored/dev.h
+   - Add new enum value to is_file() method of DEVICE class.
+   - Add new enum mapping to dev_types array in src/stored/stored_conf.c
+   - For static allocation of new backend add code to m_init_dev() in src/stored/dev.c
+     (In switch (device->dev_type) which dispatches based on device type)
+   - Add mapping for dynamic loading of backend to src/stored/sd_backends.h

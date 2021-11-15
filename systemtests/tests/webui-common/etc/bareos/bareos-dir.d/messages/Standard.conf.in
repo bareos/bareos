@@ -1,0 +1,11 @@
+Messages {
+  Name = Standard
+  Description = "Reasonable message delivery -- send most everything to email address and to the console."
+  operatorcommand = "@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
+  mailcommand = "@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
+  operator = @job_email@ = mount                                 # (#03)
+  mail = @job_email@ = all, !skipped, !saved, !audit             # (#02)
+  console = all, !skipped, !saved, !audit
+  append = "@logdir@/bareos.log" = all, !skipped, !saved, !audit
+  catalog = all, !skipped, !saved, !audit
+}

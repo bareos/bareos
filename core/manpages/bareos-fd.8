@@ -1,0 +1,73 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BAREOS\-FD 8 "6 December 2009" "Kern Sibbald" "Backup Archiving REcovery Open Sourced"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+.B bareos\-fd
+\- Bareos's File Daemon
+.SH SYNOPSIS
+.B bareos\-fd
+.RI [ options ]
+.br
+.SH DESCRIPTION
+This manual page documents briefly the
+.B bareos
+command.
+.br
+Bareos's File Daemon acts as the interface between the Bareos
+network backup system and the filesystems to be backed up: it is
+responsible for reading/writing/verifying the files to be
+backup'd/verified/restored. Network transfer can optionally be
+compressed.
+.SH OPTIONS
+.TP
+.BI \-b
+Enable backup only mode
+.TP
+.BI \-c\   path
+Specify the configuration file or directory to use.
+.TP
+.BI \-d\  nn
+Set debug level to \fInn\fP.
+.TP
+.BI \-dt
+Print timestamp in debug output.
+.TP
+.BI \-f
+Run in foreground (for debugging).
+.TP
+.BI \-g\  group
+Set the group/gid to run as.
+.TP
+.BI \-k
+Keep readall permission when dropping privileges.
+.TP
+.BI \-m
+Print kaboom output (for debugging)
+.TP
+.BI \-r
+Enable restore only mode
+.TP
+.BI \-s
+No signals (for debugging).
+.TP
+.B \-t
+Test the configuration file and report errors.
+.TP
+.BI \-u\  user
+Set the username/uid to run as.
+.TP
+.BI \-v
+Set verbose mode.
+.TP
+.B \-?
+Show version and usage of program.
+.SH SEE ALSO
+.BR bareos\-dir (8),
+.BR bareos\-sd (8).
+.br
+.SH AUTHOR
+This manual page was written by Jose Luis Tallon <jltallon@adv\-solutions.net>.

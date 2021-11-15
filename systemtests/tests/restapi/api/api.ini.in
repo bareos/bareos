@@ -1,0 +1,11 @@
+[Director]
+Name=bareos-dir
+Address=@hostname@
+Port=@dir_port@
+
+[JWT]
+# to get a string like this run:
+# openssl rand -hex 32
+secret_key = 936959a2a6902056b924669796c74aad13b9da2b5cf637b70e377b3d7c29c6fb
+algorithm = HS256
+access_token_expire_minutes = 30

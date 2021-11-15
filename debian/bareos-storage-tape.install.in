@@ -1,0 +1,13 @@
+/etc/bareos/mtx-changer.conf
+@configtemplatedir@/bareos-dir.d/storage/Tape.conf.example
+@configtemplatedir@/bareos-sd.d/autochanger/autochanger-0.conf.example
+@configtemplatedir@/bareos-sd.d/device/tapedrive-0.conf.example
+@backenddir@/libbareossd-gentape.so*
+@backenddir@/libbareossd-tape.so*
+@plugindir@/scsicrypto-sd.so
+@plugindir@/scsitapealert-sd.so
+@scriptdir@/mtx-changer
+/usr/share/man/man8/bscrypto.8*
+/usr/share/man/man8/btape.8*
+/usr/sbin/bscrypto
+/usr/sbin/btape

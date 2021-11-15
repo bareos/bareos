@@ -1,0 +1,120 @@
+On Debian based systems (Debian, Ubuntu, Univention Corporate Server),
+database configuration can be done with help of the dbconfig system.
+
+  * Package: dbconfig-common
+  * Homepage/Documentation: http://people.debian.org/~seanius/policy/dbconfig-common.html/
+
+Install/update scenarios:
+  * fresh install
+  * preinstalled 2001
+  * preinstalled 2002
+  * 12: 2001 -> 2002, 13: 2001 -> 2002: update from 12 to 13
+
+Behavior:
+  * config file: /etc/dbconfig-common/bareos.conf
+  * sql files stored at
+    * /usr/share/dbconfig-common/data/bareos-database-common/upgrade/pgsql/2001
+    * /usr/share/dbconfig-common/data/bareos-database-common/upgrade/pgsql/2002
+    * /usr/share/dbconfig-common/data/bareos-database-common/upgrade/mysql/2001
+    * /usr/share/dbconfig-common/data/bareos-database-common/upgrade/mysql/2002
+    * /usr/share/dbconfig-common/data/bareos-database-common/install/pgsql
+    * /usr/share/dbconfig-common/data/bareos-database-common/install/mysql
+
+Upgrade:
+  * bareos-database-common.postinst
+    * every file from /usr/share/dbconfig-common/data/bareos-database-common/upgrade/DATABASE/*, that is larger than parameter $2 (package version of replaced package) will be installed.
+        * even if the filename "is larger" than current package version
+        * dbconfig does not store the installed version. It uses only the old and the current package version.
+    * in Bareos, different branches can each do a database version update, example:
+      * 12.4.6: 2001
+      * 12.4.7: 2002
+      * 12.4.8: 2003
+      * 13.2.2: 2001
+      * 13.2.3: 2002
+      * 13.2.4: 2003
+      * using standard dbconfig this could result in following
+        * updating from 12.4.6 to 13.2.3 would result in a database update from
+          * 2001 (12.4.6) -> 2002 (12.4.7) -> 2003 (12.4.8) -> 2001 (13.2.2) ... => failure
+    * Bareos modifies the dbconfig behavior by not working with package versions, but database versions:
+      * bareos-database-common.config, bareos-database-common.postinst:
+        * instead of passing parameter $2 (old package version), this gots translated to database version with the help of a map file (versions.map).
+           * with the help of this, every database schema update is only be done once
+    * how to handle package update from version without dbconfig to version with it?
+      Bareos dbconfig will be introduced with some version >= 14.1.0.
+      The latest database version for 12.4 and 13.2 will be 2002.
+      Therefore we claim, that the first version using db_config will be 2003, even if it is only 2002. Using this, all existing database updates get applied.
+        if dpkg --compare-versions "$param2_orig" lt "14.1.0"; then
+            dbc_first_version="2003"
+            ...
+        fi
+
+Database Permissions by dbconfig:
+
+MySQL:
+    GRANT USAGE ON *.* TO 'bareos'@'localhost' IDENTIFIED BY PASSWORD '*3E80BB05233BE488EE70C1D6494E2F2DB00FEBB4'
+    GRANT ALL PRIVILEGES ON `bareos`.* TO 'bareos'@'localhost'
+
+PostgreSQL:
+    bareos will be the database owner
+
+Testing:
+# bareos-database-dbconfig
+#   ~/dbconf
+#     fakeroot debian/rules binary
+#  /var/lib/dpkg/info/*.postinst ...
+/var/log/dbconfig-common/dbc.log
+
+eval "`dbconfig-generate-include /etc/dbconfig-common/bareos-database-common.conf`"
+
+
+
+Behavior
+========
+
+noninteractive
+==============
+
+export DEBIAN_FRONTEND=noninteractive
+echo "bareos-database-common bareos-database-common/mysql/admin-pass select linuxlinux" | debconf-set-selections
+
+postgresql
+==========
+
+  * install
+    * /etc/dbconfig-common/bareos-database-common.conf created
+    * db: setup
+  * update from 12.4:
+    * updates db_version from 2001 to 2002.
+  * update from 13.2:
+    * db_version is already 2002. It detects, nothing to do.
+  * update dbconfig already configured
+    * ?
+
+mysql
+=====
+
+  * install
+    * /etc/dbconfig-common/bareos-database-common.conf created
+    * db: setup
+    * dbpass must be set to bareos-dir configuration
+  * update from 12.4:
+    * updates db_version from 2001 to 2002.
+  * update from 13.2:
+    * db_version is already 2002. It detects, nothing to do.
+  * update dbconfig already configured
+    * ?
+
+sqlite3
+=======
+
+  * install
+    * /etc/dbconfig-common/bareos-database-common.conf created
+    * db: setup
+    * creates link from /var/lib/bareos/bareos.db to bareos
+  * update from 12.4:
+    * updates db_version from 2001 to 2002.
+  * update from 13.2:
+    * db_version is already 2002. It detects, nothing to do.
+    * creates link from /var/lib/bareos/bareos.db to bareos
+  * update dbconfig already configured
+    * ?

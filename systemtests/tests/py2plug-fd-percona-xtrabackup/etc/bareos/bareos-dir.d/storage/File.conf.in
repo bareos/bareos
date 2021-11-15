@@ -1,0 +1,8 @@
+Storage {
+  Name = File
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = FileStorage
+  Media Type = File
+  SD Port = @sd_port@
+}

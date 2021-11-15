@@ -1,0 +1,71 @@
+[bareos/filestorage]
+Description[de]=Speicherort für Backup-Volumes (bareos)
+Description[en]=Directory for backup volumes (bareos)
+Type=str
+Categories=backup
+
+[bareos/backup_myself]
+Description[de]=Eigensicherung aktivieren (yes/no)
+Description[en]=Enable backup job for the server itself (yes/no)
+Type=bool
+Categories=backup
+
+[bareos/max_incr_volume_bytes]
+Description[de]=Maximale Größe (in GB) eines Volumes im Pool für Incremental-Backups
+Description[en]=Maximum size (in GB) of a volume for the incremental backup pool
+Type=int
+Categories=backup
+
+[bareos/max_incr_volumes]
+Description[de]=Maximale Anzahl der Volumes im Pool für Incremental-Backups
+Description[en]=Maximum number of volumes for the incremental backup pool
+Type=int
+Categories=backup
+
+[bareos/max_diff_volume_bytes]
+Description[de]=Maximale Größe (in GB) eines Volumes im Pool für Differential-Backups
+Description[en]=Maximum size (in GB) of a volume for the differential backup pool
+Type=int
+Categories=backup
+
+[bareos/max_diff_volumes]
+Description[de]=Maximale Anzahl der Volumes im Pool für Differential-Backups
+Description[en]=Maximum number of volumes for the differential backup pool
+Type=int
+Categories=backup
+
+[bareos/max_full_volume_bytes]
+Description[de]=Maximale Größe (in GB) eines Volumes im Pool für Full-Backups
+Description[en]=Maximum size (in GB) of a volume for the full backup pool
+Type=int
+Categories=backup
+
+[bareos/max_full_volumes]
+Description[de]=Maximale Anzahl der Volumes im Pool für Full-Backups
+Description[en]=Maximum number of volumes for the full backup pool
+Type=int
+Categories=backup
+
+[bareos/subscription/username]
+Description[de]=Benutzername für den bareos.com Zugang
+Description[en]=Username for accessing bareos.com
+Type=str
+Categories=backup
+
+[bareos/subscription/password]
+Description[de]=Passwort für den bareos.com Zugang
+Description[en]=Password for accessing bareos.com
+Type=str
+Categories=backup
+
+[bareos/webui/console/user1/username]
+Description[de]=Benutzername
+Description[en]=Username
+Type=str
+Categories=backup
+
+[bareos/webui/console/user1/password]
+Description[de]=Passwort
+Description[en]=Password
+Type=str
+Categories=backup

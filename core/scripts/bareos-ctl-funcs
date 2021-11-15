@@ -1,0 +1,190 @@
+#! /bin/sh
+
+# A function to find the pid of a program.
+pidofproc() {
+   pid=""
+   # Test syntax.
+   if [ $# = 0 ] ; then
+      echo "Usage: pidofproc {program} {port}"
+      return 1
+   fi
+
+   # Get base program name
+   base=`basename $1`
+
+   # First try PID file
+   if [ -f ${PIDDIR}/$base.$2.pid ] ; then
+      pid=`head -n 1 ${PIDDIR}/$base.$2.pid`
+      if [ "$pid" != "" ] ; then
+         echo $pid
+         return 0
+      fi
+   fi
+
+   # Next try "pidof"
+   if [ ! -z "${PIDOF}" -a -x "${PIDOF}" ] ; then
+      pid=`${PIDOF} $1`
+      if [ "$pid" != "" ] ; then
+         echo $pid
+         return 0
+      fi
+   fi
+
+   # Next try "pgrep"
+   if [ ! -z "${PGREP}" -a -x "${PGREP}" ] ; then
+      pid=`${PGREP} -f $base`
+      if [ "$pid" != "" ] ; then
+         echo $pid
+         return 0
+      fi
+   fi
+
+   # Finally try to extract it from ps
+   pid=`${PSCMD} | grep $base | ${AWK} '{ print $1 }' | tr '\n' ' '`
+   echo $pid
+   return 0
+}
+
+checkPid()
+{
+    pid="$1"
+    wait="${2:-0}"
+    waittext="${3:-}"
+    output=""
+
+    if [ -z "$pid" ]; then
+        return 1
+    fi
+
+    start=$(date +%s)
+    end=$(expr $start + $wait)
+
+    while [ "$(date +%s)" -lt "$end" ] && ${PS} -p "$pid" >/dev/null 2>&1; do
+        if [ "${waittext}" ]; then
+            printf "%s" "$waittext"
+            output="yes"
+        fi
+        # not all systems offer floating point numbers as sleep parameter, therefore try both.
+        sleep 0.1 || sleep 1
+    done
+    if [ "${output}" ]; then printf " "; fi
+    ${PS} -p "$pid" >/dev/null 2>&1
+    return $?
+}
+
+# A function to stop a program.
+killproc() {
+   RC=0
+   # Test syntax.
+   if [ $# = 0 ]; then
+      echo "Usage: killproc {program} {port} [signal]"
+      return 1
+   fi
+
+   notset=0
+   # check for third arg to be kill level
+   if [ "$3" != "" ] ; then
+      killlevel=$3
+   else
+      notset=1
+      killlevel="-9"
+   fi
+
+   # Get base program name
+   base=`basename $1`
+
+   # Find pid.
+   pid=`pidofproc $base $2`
+
+   # Kill it.
+   if checkPid "$pid"; then
+      if [ "$notset" = "1" ] ; then
+         # TERM first, then KILL if not dead
+         kill -TERM $pid 2>/dev/null
+         if checkPid "$pid" 3 "."; then
+            kill -KILL $pid 2>/dev/null
+         fi
+         if checkPid "$pid" 3 "_"; then
+            failure
+         else
+            success
+         fi
+      else
+         if kill $killlevel $pid 2>/dev/null; then
+            success "sent signal $killlevel"
+         else
+            failure
+         fi
+      fi
+   else
+      success "already stopped"
+   fi
+   # Remove pid file if any.
+   if [ "$notset" = "1" ]; then
+      rm -f "${PIDDIR}/$base.$2.pid"
+   fi
+   return $RC
+}
+
+# Function that checks if the configuration is OK and the Database can be connected
+checkcfg() {
+   RC=0
+   echo "Checking Configuration and Database connection ... "
+   if [ ! -z "${DIR_USER}" -a "${DIR_USER}" != "${USER}" ]; then
+      su -s /bin/sh "${DIR_USER}" -c "${BAREOS_DIRECTOR_BINARY}" ${OPTIONS} -f -t
+      RC=$?
+   else
+      "${BAREOS_DIRECTOR_BINARY}" ${OPTIONS} -f -t
+      RC=$?
+   fi
+   return $RC
+}
+
+status() {
+   # Test syntax.
+   if [ $# = 0 ] ; then
+      echo "Usage: status {program} {port}"
+      return 1
+   fi
+
+   # Get base program name
+   base=`basename $1`
+
+   # Find pid.
+   pid=`pidofproc $base $2`
+
+   if checkPid "$pid"; then
+       echo "$base (pid $pid) is running..."
+       return 0
+   fi
+
+   if [ -f ${PIDDIR}/$base.$2.pid ] ; then
+       echo "$base dead but pid file exists"
+       return 1
+   fi
+
+   # See if the subsys lock exists
+   if [ -f ${SUBSYSDIR}/$base ] ; then
+      echo "$base dead but subsys locked"
+      return 2
+   fi
+
+   echo "$base is stopped"
+
+   return 3
+}
+
+success() {
+   MESSAGE="OK"
+   if [ "$1" ]; then
+     MESSAGE="OK ($1)"
+   fi
+   echo $MESSAGE
+   return 0
+}
+
+failure() {
+   rc=$?
+   echo "failed (rc=$rc)"
+   return $rc
+}

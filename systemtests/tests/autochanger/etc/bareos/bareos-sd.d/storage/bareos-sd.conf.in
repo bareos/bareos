@@ -1,0 +1,15 @@
+Storage {
+  Name = bareos-sd
+  Maximum Concurrent Jobs = 20
+
+  # remove comment from "Plugin Directory" to load plugins from specified directory.
+  # if "Plugin Names" is defined, only the specified plugins will be loaded,
+  # otherwise all storage plugins (*-sd.so) from the "Plugin Directory".
+  #
+  # Plugin Directory = "@python_plugin_module_src_sd@"
+  # Plugin Names = ""
+  Working Directory =  "@working_dir@"
+  Pid Directory =  "@piddir@"
+  SD Port = @sd_port@
+  BackendDirectory = @sd_backenddir@
+}

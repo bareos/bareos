@@ -1,0 +1,39 @@
+{
+    "name": "zendframework/zend-version",
+    "description": " ",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "zf2",
+        "version"
+    ],
+    "homepage": "https://github.com/zendframework/zend-version",
+    "autoload": {
+        "psr-4": {
+            "Zend\\Version\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=5.3.23",
+        "zendframework/zend-json": "self.version"
+    },
+    "suggest": {
+        "zendframework/zend-http": "Allows use of Zend\\Http\\Client to check version information",
+        "zendframework/zend-json": "To check latest version hosted in GitHub"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.4-dev",
+            "dev-develop": "2.5-dev"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ZendTest\\Version\\": "test/"
+        }
+    },
+    "require-dev": {
+        "fabpot/php-cs-fixer": "1.7.*",
+        "satooshi/php-coveralls": "dev-master",
+        "phpunit/PHPUnit": "~4.0"
+    }
+}

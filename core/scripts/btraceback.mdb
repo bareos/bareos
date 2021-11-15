@@ -1,0 +1,24 @@
+# btraceback.mdb
+
+$G
+::echo "******** RUNNING LWPS/THREADS:"
+::echo
+::walk thread
+
+::echo
+::echo
+::echo "******** STACK TRACE OF CURRENT LWP:"
+::echo
+$C
+
+::echo
+::echo
+::echo "******** VARIABLES DUMP OF CURRENT LWP:"
+::echo
+
+::echo "******** STACK TRACE OF LWPS:"
+::walk thread | ::findstack
+
+::echo "******** VARIABLES DUMP OF LWPS:"
+
+::quit

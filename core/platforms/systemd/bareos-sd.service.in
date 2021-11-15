@@ -1,0 +1,24 @@
+#
+# Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+# Copyright (c) 2011 Free Software Foundation Europe e.V., Author: Bruno Friedmann
+#
+[Unit]
+Description=Bareos Storage Daemon service
+Documentation=man:bareos-sd(8)
+Requires=network.target nss-lookup.target time-sync.target
+After=network-online.target nss-lookup.target remote-fs.target time-sync.target
+
+[Service]
+Type=simple
+User=@sd_user@
+Group=@sd_group@
+WorkingDirectory=@working_dir@
+ExecStart=@sbindir@/bareos-sd -f
+# enable this for scsicrypto-sd
+# CapabilityBoundingSet=cap_sys_rawio+ep
+SuccessExitStatus=0 15
+Restart=on-failure
+
+[Install]
+Alias=bareos-storage.service
+WantedBy=multi-user.target

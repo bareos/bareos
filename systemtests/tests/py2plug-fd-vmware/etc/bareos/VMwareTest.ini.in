@@ -1,0 +1,9 @@
+[vmware_plugin_options]
+dc=@vmware_datacenter@
+folder=@vmware_folder@
+vmname=@vmware_vm_name@
+vcserver=@vmware_server@
+vcuser=@vmware_user@
+vcpass=@vmware_password@
+log_path=@logdir@
+vadp_dumper_verbose=yes

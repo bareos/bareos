@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -e
+set -u
+set -o pipefail
+
+for f in *;
+do
+echo "$f"
+   if [[ -x "$f" ]] && [[ ! -d "$f" ]] && [[ "$f" != $(basename "$0") ]]
+   then
+     ./"$f" --benchmark_out="$f".json --benchmark_out_format=json;
+   fi
+done

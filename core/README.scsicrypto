@@ -1,0 +1,323 @@
+Modern tape drives, e.g. LTO >= 4, support hardware encryption.
+
+There are several ways of using encryption with these drives
+The following three types of key management are available for
+doing encryption. The transmission of the keys to the volumes
+is accomplished by:
+
+- A backup application that supports Application Managed Encryption (AME)
+- A tape library that supports Library Managed Encryption (LME)
+- Using a Key Management Appliance (KMA).
+
+We added support for Application Managed Encryption (AME) scheme where
+on labeling a crypto key is generated for a volume and when the volume
+is mounted the crypto key is loaded and when unloaded the key is cleared
+from the memory of the Tape Drive using the SCSI SPOUT command set.
+
+If you have implemented Library Managed Encryption (LME) or
+a Key Management Appliance (KMA) there is no need to have support
+from Bareos on loading and clearing the encryption keys as either
+the Library knows the per volume encryption keys itself or it
+will ask the KMA for the encryption key when it needs it. For
+big installations you might consider using a KMA but the Application
+Managed Encryption implemented in Bareos should also scale rather
+well and has low overhead as the keys are only loaded and cleared
+when needed.
+
+How does it all work:
+
+- the libbareos library has some new features:
+   - crypto_wrap.c  - Implements a RFC3394 based wrapping of crypto keys
+   - crypto_cache.c - Implements a cache of wrapped crypto keys used when
+                      we cannot ask the director for the key e.g. on
+                      startup of the storage daemon.
+   - passphrase.c   - Implements generation of semi-random passphrases
+   - scsi_lli.c     - Implements a lowlevel interface to the tape drive for
+                      several ioctl interfaces available on some modern UNIX
+                      platforms. Current supported platforms are:
+                         - Linux (SG_IO ioctl interface) (tested)
+                         - Solaris (USCSI ioctl interface) (tested)
+                         - FreeBSD (libcam interface)
+                         - NetBSD (SCIOCCOMMAND ioctl interface)
+                         - OpenBSD (SCIOCCOMMAND ioctl interface)
+   - scsi_crypto.c  - Implements sending of SCSI Security Protocol IN (SPIN)
+                      and SCSI Security Protocol OUT (SPOUT) pages using
+                      the scsi_lli interface.
+
+- A new tool named bscrypto allows you to manipulate the tape drive.
+  It is mostly used for Disaster Recovery (DR) purposes. The storage
+  daemon and the btools (bls, bextract, bscan, btape, bextract) will
+  use a so called storage daemon plugin to perform the setting and
+  clearing of the encryption keys. To bootstrap the encryption support
+  and for populating things like the crypto cache with encryption keys
+  of volumes that you want to scan you need to use the bscrypto tool.
+
+  The bscrypto tools has the following capabilities:
+     - Generate a new passphrase
+        - to be used as a so called Key Encryption Key (KEK) for
+          wrapping a passphrase using RFC3394 key wrapping with aes-wrap
+          - or -
+        - for usage as a clear text encryption key loaded into the tape drive.
+     - Base64 encode a key if requested
+     - Generate a wrapped passphrase which performs the following steps:
+        - generate a semi random clear text passphrase
+        - wrap the passphrase using the Key Encryption Key using RFC3394
+        - base64 encode the wrapped key (as the wrapped key is binary, we
+          always need to base64-encode it in order to be able to pass the
+          data as part of the director to storage daemon protocol
+     - show the content of a wrapped or unwrapped keyfile
+       This can be used to reveal the content of the passphrase when
+       a passphrase is stored in the database and you have the urge to
+       change the Key Encryption Key. Normally I would urge people to not
+       change their Key Encryption Key as this means that you have to redo
+       all your stored encryption keys as they are stored in the database
+       wrapped using the Key Encryption Key available in the config during
+       the label phase of the volume
+     - Clear the crypto cache on the machine running the bareos-sd which keeps
+       a cache of used encryption keys which can be used when the bareos-sd is
+       restarted without the need to connect to the bareos-dir to retrieve the
+       encryption keys.
+     - Set the encryption key of the drive
+     - Clear the encryption key of the drive
+     - Show the encryption status of the drive
+     - Show the encryption status of the next block (e.g. volume)
+     - Populate the crypto cache with data
+
+- A new storage daemon plugin is added named scsicrypto-sd which
+  hooks into the "unload", "label read", "label write" and "label verified"
+  events for loading and clearing the key. It checks the drive if it
+  needs to clear it by either using a internal state if it loaded
+  a key before or when enabled via a special option which first issues
+  an encryption status query. When there is a connection to the director
+  and the volume information is not available it will ask the director
+  for the data on the currently loaded volume. When no connection is
+  available a cache is used which should contain the most recently mounted
+  volumes. When an encryption key is available it is loaded into the
+  drives memory.
+
+- The director is extended with additional code for handling
+  hardware data encryption. On a label of a volume the extra
+  keyword "encrypt" will force the director to generate a new
+  semi random passphrase for the volume and this passphrase
+  is stored in the database as part of the media information.
+
+  A passphrase is always stored in the database base64 encoded
+  and when a so called Key Encryption Key is set in the config
+  of the director the passphrase is first wrapped using RFC3394
+  key wrapping and then base64 encoded. By using key wrapping
+  the keys in the database are save against people sniffing
+  the info as the data is still encrypted using the Key
+  Encryption Key (which in essence is just an extra passphrase
+  of the same length as the volume passphrases used)
+
+  When the storage daemon needs to mount the volume it
+  will ask the director for the volume information and
+  that protocol is extended with the exchange of the
+  base64 wrapped encryption key (passphrase). The storage
+  daemon has an extra config option in which it records
+  the Key Encryption Key of the particular director and
+  as such can unwrap the key sended into the original
+  passphrase.
+
+  As can be seen from the above info we don't allow the
+  user to enter a passphrase but generate a semi random
+  passphrase using the openssl random functions (if available)
+  and convert that into a readable ASCII stream of letters,
+  numbers and most other characters other than the quotes
+  and space etc. This will give much stronger passphrase than
+  when requesting the info from a user, as we store things in
+  the database the user never has to enter these passphrases.
+
+  The volume label is written unencrypted to the volume so
+  we can always recognize a Bareos volume. When the key is
+  loaded onto the drive we set the decryption mode to mixed
+  so we can read both unencrypted and encrypted data from the
+  volume. When there is no key loaded or the wrong key is
+  loaded the drive will give an IO error when trying to
+  read the volume.
+
+  For disaster recovery you can store the Key Encryption Key
+  and the content of the wrapped encryption keys somewhere save
+  and the bscrypto tool together with the scsicrypto-sd plugin
+  can be used to get access to your volumes when you ever lose
+  your complete environment.
+
+  When you don't want to use the scsicrypto-sd plugin when
+  doing DR and you are only reading one volume you can also
+  set the crypto key using the bscrypto tool because we use
+  the mixed decryption mode you can set the right encryption
+  key before reading the volume label as in mixed mode you can
+  read both encrypted and unencrypted data from a volume.
+  When you need to read more then one volume you better use
+  the scsicrypto-sd plugin with things like bscan/bextract
+  as the plugin will then auto load the correct encryption
+  key when it loads the volume just as what the storage
+  daemon does when performing backups and restores.
+
+  The volume label is unencrypted so a volume can also be
+  recognized by a non encrypted installation but it won't be
+  able to read the actual data from it. Using an encrypted
+  volume label doesn't add much security (there is no security
+  related info in the volume label anyhow) and it makes it
+  harder to recognize either a labeled volume with encrypted
+  data v.s. a unlabeled new volume (both would return an
+  IO-error on read of the label.)
+
+The initial setup of SCSI crypto looks something like this:
+
+- Run configure with your normal configure options and
+  add the --enable-scsi-crypto option.
+- Build the Bareos programs and package/install them
+  in the normal way.
+- Generate a Key Encryption Key e.g.
+     bscrypto -g -
+
+  === Security Setup ===
+
+   Some security levels need to be increased for the storage
+   daemon to be able to use the low level SCSI interface for
+   setting and getting encryption status on a tape device.
+
+   The following additional security is needed for the following
+   operating systems:
+
+     - Linux (SG_IO ioctl interface)
+
+       The user running the storage daemon needs the following
+       additional capabilities:
+          CAP_SYS_RAWIO (See capabilities(7))
+
+       If bareos-sd does not have the appropriate capabilities, all
+       other tape operations may still work correctly, but you will
+       get "Unable to perform SG_IO ioctl" errors.
+
+       On older kernels it can be you need CAP_SYS_ADMIN try
+       CAP_SYS_RAWIO first and if that doesn't work try CAP_SYS_ADMIN
+
+       When you are running the storage daemon as another user
+       then root (which has the CAP_SYS_RAWIO capability) you
+       need to add it to the current set of capabilities.
+
+       When you are using systemd you could add this additional
+       capability to the CapabilityBoundingSet parameter.
+
+       For systemd add to the bareos-sd.service the following:
+
+       Capabilities=cap_sys_rawio+ep
+
+       You can also setup the extra capability on bscrypto and
+       bareos-sd by running the following cmd:
+
+       # setcap cap_sys_rawio=ep bscrypto
+       # setcap cap_sys_rawio=ep bareos-sd
+
+       Check the setting with
+
+       # getcap -v bscrypto
+       # getcap -v bareos-sd
+
+       getcap and setcap are part of libcap-progs which may not be
+       installed on your system.
+
+     - Solaris (USCSI ioctl interface)
+
+       The user running the storage daemon needs the following
+       additional privileges:
+          PRIV_SYS_DEVICES (See privileges(5))
+
+       When you are running the storage daemon as another user
+       then root (which has the PRIV_SYS_DEVICES privilege) you
+       need to add it to the current set of privileges.
+
+       This can be setup by setting this either as a project for
+       the user or as a extra privileges in the SMF definition
+       starting the storage daemon. The SMF setup is the cleanest.
+
+       For SMF make sure you have something like this in the instance
+       block.
+
+       <method_context working_directory=":default">
+          <method_credential user="bareos" group="bareos" privileges="basic,sys_devices"/>
+       </method_context>
+
+  === Changes in bareos-sd configuration files ===
+
+- Put the Key Encryption Key into the bareos-sd configuration
+  under the director entry in that config for the specific
+  director you are creating the config for. e.g.
+  Key Encryption Key = "<passphrase>"
+- Enable the loading of storage daemon plugins by
+  setting the plugin dir in the bareos-sd configuration e.g.
+  Plugin Directory = <path_to_sd_plugins>
+- Enable the SCSI encryption option in the device configuration
+  section of the drive in the bareos-sd configuration, e.g.
+  Drive Crypto Enabled = Yes
+- When you want the plugin to probe the drive for its encryption
+  status if it needs to clear a pending key enable the Query
+  Crypto Status option in the device configuration section of the
+  drive in the bareos-sd configuration, e.g.
+  Query Crypto Status = Yes
+
+  === Changes in bareos-dir configuration ===
+
+- Put the Key Encryption Key into the bareos-dir configuration file under
+  the director config item named Key Encryption Key e.g.
+  Key Encryption Key = "<passphrase>"
+
+- restart sd and dir
+- Label a volume with the encrypt option e.g.
+  label slots=1-5 barcodes encrypt
+
+For Disaster Recovery (DR) you need the following information:
+
+- Actual bareos-sd configuration with config options enabled as described
+  above, including things like a definition of a director with
+  the Key Encryption Key used for creating the encryption keys
+  of the volumes.
+- The actual keys used for encryption of the volumes.
+
+  This data needs to be available as a so called crypto cache
+  file which is used by the plugin when no connection to the
+  director can be made to do a lookup (most likely on DR).
+
+  Most of the times the needed information e.g. bootstrap info
+  is available on recently written volumes and most of the
+  time the encryption cache will contain the most recent data
+  so a recent copy of the bareos-sd.<portnr>.cryptoc file in
+  the workingdir is most of the time enough. You can also save
+  the info from database in a save place and use bscrypto to
+  populate this info (VolumeName<tab>EncryptKey) into the crypto
+  cache file used by bextract and bscan. You can use bscrypto
+  with the following flags to create a new or update an existing
+  crypto cache file e.g. :
+
+  # bscrypto -p /var/lib/bareos/bareos-sd.<portnr>.cryptoc
+
+- A valid BSR file with the location of the last save of the
+  database makes recovery much easier. Adding a post script
+  to the database save job could collect the needed info and
+  make sure its stored somewhere safe.
+- Recover the database in the normal way e.g. for postgresql:
+
+  # bextract -D <director_name> -V <volname> \
+             /dev/nst0 /tmp -b bootstrap.bsr
+  # /usr/lib64/bareos/create_bareos_database
+  # /usr/lib64/bareos/grant_bareos_privileges
+  # psql bareos < /tmp/var/lib/bareos/bareos.sql
+
+  Or something similar (change paths to follow where you
+  installed the software or where the package put it.)
+
+NOTE: As described at the beginning of this README there are different
+      types of key management:
+
+- A backup application that supports Application Managed Encryption (AME)
+- A tape library that supports Library Managed Encryption (LME)
+- Using a Key Management Appliance (KMA).
+
+If the Library is setup for LME or KMA it probably won't allow our AME setup
+and the scsi-crypto plugin will fail to set/clear the encryption key. To be
+able to use AME you need to "Modify Encryption Method" and set it to something
+like "Application Managed". If you decide to use LME or KMA you don't have to
+bother with the whole setup of AME which may for big libraries be easier, although
+the overhead of using AME even for very big libraries should be minimal.

@@ -1,0 +1,683 @@
+<?xml version="1.0" encoding="utf-8"  standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+ "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg 
+ width="800" height="600" 
+ viewBox="0 0 800 600"
+ xmlns="http://www.w3.org/2000/svg"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+>
+
+<title>Gnuplot</title>
+<desc>Produced by GNUPLOT 4.6 patchlevel 5 </desc>
+
+<g id="gnuplot_canvas">
+
+<rect x="0" y="0" width="800" height="600" fill="none"/>
+<defs>
+
+	<circle id='gpDot' r='0.5' stroke-width='0.5'/>
+	<path id='gpPt0' stroke-width='0.267' stroke='currentColor' d='M-1,0 h2 M0,-1 v2'/>
+	<path id='gpPt1' stroke-width='0.267' stroke='currentColor' d='M-1,-1 L1,1 M1,-1 L-1,1'/>
+	<path id='gpPt2' stroke-width='0.267' stroke='currentColor' d='M-1,0 L1,0 M0,-1 L0,1 M-1,-1 L1,1 M-1,1 L1,-1'/>
+	<rect id='gpPt3' stroke-width='0.267' stroke='currentColor' x='-1' y='-1' width='2' height='2'/>
+	<rect id='gpPt4' stroke-width='0.267' stroke='currentColor' fill='currentColor' x='-1' y='-1' width='2' height='2'/>
+	<circle id='gpPt5' stroke-width='0.267' stroke='currentColor' cx='0' cy='0' r='1'/>
+	<use xlink:href='#gpPt5' id='gpPt6' fill='currentColor' stroke='none'/>
+	<path id='gpPt7' stroke-width='0.267' stroke='currentColor' d='M0,-1.33 L-1.33,0.67 L1.33,0.67 z'/>
+	<use xlink:href='#gpPt7' id='gpPt8' fill='currentColor' stroke='none'/>
+	<use xlink:href='#gpPt7' id='gpPt9' stroke='currentColor' transform='rotate(180)'/>
+	<use xlink:href='#gpPt9' id='gpPt10' fill='currentColor' stroke='none'/>
+	<use xlink:href='#gpPt3' id='gpPt11' stroke='currentColor' transform='rotate(45)'/>
+	<use xlink:href='#gpPt11' id='gpPt12' fill='currentColor' stroke='none'/>
+</defs>
+<g style="fill:none; color:white; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+</g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+</g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M60.5,570.0 L778.9,570.0  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M60.5,570.0 L68.0,570.0 M778.9,570.0 L771.4,570.0  '/>	<g transform="translate(53.5,573.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text> 0</text>
+	</g>
+</g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M60.5,495.0 L778.9,495.0  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M60.5,495.0 L68.0,495.0 M778.9,495.0 L771.4,495.0  '/>	<g transform="translate(53.5,498.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text> 20</text>
+	</g>
+</g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M60.5,420.0 L778.9,420.0  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M60.5,420.0 L68.0,420.0 M778.9,420.0 L771.4,420.0  '/>	<g transform="translate(53.5,423.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text> 40</text>
+	</g>
+</g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M60.5,345.0 L778.9,345.0  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M60.5,345.0 L68.0,345.0 M778.9,345.0 L771.4,345.0  '/>	<g transform="translate(53.5,348.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text> 60</text>
+	</g>
+</g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M60.5,270.1 L778.9,270.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M60.5,270.1 L68.0,270.1 M778.9,270.1 L771.4,270.1  '/>	<g transform="translate(53.5,273.8)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text> 80</text>
+	</g>
+</g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M60.5,195.1 L778.9,195.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M60.5,195.1 L68.0,195.1 M778.9,195.1 L771.4,195.1  '/>	<g transform="translate(53.5,198.8)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text> 100</text>
+	</g>
+</g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M60.5,120.1 L67.5,120.1 M166.0,120.1 L778.9,120.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M60.5,120.1 L68.0,120.1 M778.9,120.1 L771.4,120.1  '/>	<g transform="translate(53.5,123.8)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text> 120</text>
+	</g>
+</g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M60.5,45.1 L778.9,45.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M60.5,45.1 L68.0,45.1 M778.9,45.1 L771.4,45.1  '/>	<g transform="translate(53.5,48.8)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text> 140</text>
+	</g>
+</g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M60.5,570.0 L60.5,45.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M60.5,570.0 L60.5,562.5 M60.5,45.1 L60.5,52.6  '/>	<g transform="translate(60.5,588.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:middle">
+		<text>09.01.16</text>
+	</g>
+	<path stroke='black'  d='M73.3,570.0 L73.3,566.3 M73.3,45.1 L73.3,48.8 M86.2,570.0 L86.2,566.3 M86.2,45.1 L86.2,48.8 
+		M99.0,570.0 L99.0,566.3 M99.0,45.1 L99.0,48.8 M111.8,570.0 L111.8,566.3 M111.8,45.1 L111.8,48.8 
+		M124.6,570.0 L124.6,566.3 M124.6,45.1 L124.6,48.8 M137.5,570.0 L137.5,566.3 M137.5,45.1 L137.5,48.8 
+		 '/></g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M150.3,570.0 L150.3,142.6 M150.3,52.6 L150.3,45.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M150.3,570.0 L150.3,562.5 M150.3,45.1 L150.3,52.6  '/>	<g transform="translate(150.3,588.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:middle">
+		<text>16.01.16</text>
+	</g>
+	<path stroke='black'  d='M163.1,570.0 L163.1,566.3 M163.1,45.1 L163.1,48.8 M176.0,570.0 L176.0,566.3 M176.0,45.1 L176.0,48.8 
+		M188.8,570.0 L188.8,566.3 M188.8,45.1 L188.8,48.8 M201.6,570.0 L201.6,566.3 M201.6,45.1 L201.6,48.8 
+		M214.4,570.0 L214.4,566.3 M214.4,45.1 L214.4,48.8 M227.3,570.0 L227.3,566.3 M227.3,45.1 L227.3,48.8 
+		 '/></g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M240.1,570.0 L240.1,45.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M240.1,570.0 L240.1,562.5 M240.1,45.1 L240.1,52.6  '/>	<g transform="translate(240.1,588.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:middle">
+		<text>23.01.16</text>
+	</g>
+	<path stroke='black'  d='M252.9,570.0 L252.9,566.3 M252.9,45.1 L252.9,48.8 M265.8,570.0 L265.8,566.3 M265.8,45.1 L265.8,48.8 
+		M278.6,570.0 L278.6,566.3 M278.6,45.1 L278.6,48.8 M291.4,570.0 L291.4,566.3 M291.4,45.1 L291.4,48.8 
+		M304.2,570.0 L304.2,566.3 M304.2,45.1 L304.2,48.8 M317.1,570.0 L317.1,566.3 M317.1,45.1 L317.1,48.8 
+		 '/></g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M329.9,570.0 L329.9,45.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M329.9,570.0 L329.9,562.5 M329.9,45.1 L329.9,52.6  '/>	<g transform="translate(329.9,588.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:middle">
+		<text>30.01.16</text>
+	</g>
+	<path stroke='black'  d='M342.7,570.0 L342.7,566.3 M342.7,45.1 L342.7,48.8 M355.6,570.0 L355.6,566.3 M355.6,45.1 L355.6,48.8 
+		M368.4,570.0 L368.4,566.3 M368.4,45.1 L368.4,48.8 M381.2,570.0 L381.2,566.3 M381.2,45.1 L381.2,48.8 
+		M394.0,570.0 L394.0,566.3 M394.0,45.1 L394.0,48.8 M406.9,570.0 L406.9,566.3 M406.9,45.1 L406.9,48.8 
+		 '/></g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M419.7,570.0 L419.7,45.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M419.7,570.0 L419.7,562.5 M419.7,45.1 L419.7,52.6  '/>	<g transform="translate(419.7,588.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:middle">
+		<text>06.02.16</text>
+	</g>
+	<path stroke='black'  d='M432.5,570.0 L432.5,566.3 M432.5,45.1 L432.5,48.8 M445.4,570.0 L445.4,566.3 M445.4,45.1 L445.4,48.8 
+		M458.2,570.0 L458.2,566.3 M458.2,45.1 L458.2,48.8 M471.0,570.0 L471.0,566.3 M471.0,45.1 L471.0,48.8 
+		M483.8,570.0 L483.8,566.3 M483.8,45.1 L483.8,48.8 M496.7,570.0 L496.7,566.3 M496.7,45.1 L496.7,48.8 
+		 '/></g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M509.5,570.0 L509.5,45.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M509.5,570.0 L509.5,562.5 M509.5,45.1 L509.5,52.6  '/>	<g transform="translate(509.5,588.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:middle">
+		<text>13.02.16</text>
+	</g>
+	<path stroke='black'  d='M522.3,570.0 L522.3,566.3 M522.3,45.1 L522.3,48.8 M535.2,570.0 L535.2,566.3 M535.2,45.1 L535.2,48.8 
+		M548.0,570.0 L548.0,566.3 M548.0,45.1 L548.0,48.8 M560.8,570.0 L560.8,566.3 M560.8,45.1 L560.8,48.8 
+		M573.6,570.0 L573.6,566.3 M573.6,45.1 L573.6,48.8 M586.5,570.0 L586.5,566.3 M586.5,45.1 L586.5,48.8 
+		 '/></g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M599.3,570.0 L599.3,45.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M599.3,570.0 L599.3,562.5 M599.3,45.1 L599.3,52.6  '/>	<g transform="translate(599.3,588.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:middle">
+		<text>20.02.16</text>
+	</g>
+	<path stroke='black'  d='M612.1,570.0 L612.1,566.3 M612.1,45.1 L612.1,48.8 M625.0,570.0 L625.0,566.3 M625.0,45.1 L625.0,48.8 
+		M637.8,570.0 L637.8,566.3 M637.8,45.1 L637.8,48.8 M650.6,570.0 L650.6,566.3 M650.6,45.1 L650.6,48.8 
+		M663.4,570.0 L663.4,566.3 M663.4,45.1 L663.4,48.8 M676.3,570.0 L676.3,566.3 M676.3,45.1 L676.3,48.8 
+		 '/></g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M689.1,570.0 L689.1,45.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M689.1,570.0 L689.1,562.5 M689.1,45.1 L689.1,52.6  '/>	<g transform="translate(689.1,588.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:middle">
+		<text>27.02.16</text>
+	</g>
+	<path stroke='black'  d='M701.9,570.0 L701.9,566.3 M701.9,45.1 L701.9,48.8 M714.8,570.0 L714.8,566.3 M714.8,45.1 L714.8,48.8 
+		M727.6,570.0 L727.6,566.3 M727.6,45.1 L727.6,48.8 M740.4,570.0 L740.4,566.3 M740.4,45.1 L740.4,48.8 
+		M753.2,570.0 L753.2,566.3 M753.2,45.1 L753.2,48.8 M766.1,570.0 L766.1,566.3 M766.1,45.1 L766.1,48.8 
+		 '/></g>
+<g style="fill:none; color:gray; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='gray' stroke-dasharray=' 2,4' class="gridline"  d='M778.9,570.0 L778.9,45.1  '/></g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M778.9,570.0 L778.9,562.5 M778.9,45.1 L778.9,52.6  '/>	<g transform="translate(778.9,588.7)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:middle">
+		<text>05.03.16</text>
+	</g>
+	<path stroke='black'  d='M60.5,45.1 L60.5,570.0 L778.9,570.0 L778.9,45.1 L60.5,45.1 Z  '/>	<g transform="translate(14.7,307.6) rotate(270)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:middle">
+		<text>MBytes</text>
+	</g>
+	<g transform="translate(419.7,26.3)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:middle">
+		<text>Data transferred per job</text>
+	</g>
+</g>
+	<g id="gnuplot_plot_1" ><title>gnuplot_plot_1</title>
+<g style="fill:none; color:red; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<g transform="translate(116.5,63.8)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text>virt1-F</text>
+	</g>
+	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '123.5,63.8 159.0,63.8 159.0,56.3 123.5,56.3 '/>
+	</g>
+	<path  d='M123.5,63.8 L159.0,63.8 L159.0,56.4 L123.5,56.4 L123.5,63.8 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '236.4,570.0 243.9,570.0 243.9,85.6 236.4,85.6 '/>
+	</g>
+	<path  d='M236.4,570.0 L236.4,85.7 L243.8,85.7 L243.8,570.0 L236.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '416.0,570.0 423.5,570.0 423.5,70.2 416.0,70.2 '/>
+	</g>
+	<path  d='M416.0,570.0 L416.0,70.3 L423.4,70.3 L423.4,570.0 L416.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '595.6,570.0 603.1,570.0 603.1,54.8 595.6,54.8 '/>
+	</g>
+	<path  d='M595.6,570.0 L595.6,54.9 L603.0,54.9 L603.0,570.0 L595.6,570.0 Z  '/></g>
+	</g>
+	<g id="gnuplot_plot_2" ><title>gnuplot_plot_2</title>
+<g style="fill:none; color:green; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<g transform="translate(116.5,78.8)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text>virt2-F</text>
+	</g>
+	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '123.5,78.8 159.0,78.8 159.0,71.3 123.5,71.3 '/>
+	</g>
+	<path  d='M123.5,78.8 L159.0,78.8 L159.0,71.4 L123.5,71.4 L123.5,78.8 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '236.4,570.0 243.9,570.0 243.9,247.0 236.4,247.0 '/>
+	</g>
+	<path  d='M236.4,570.0 L236.4,247.1 L243.8,247.1 L243.8,570.0 L236.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '416.0,570.0 423.5,570.0 423.5,236.8 416.0,236.8 '/>
+	</g>
+	<path  d='M416.0,570.0 L416.0,236.9 L423.4,236.9 L423.4,570.0 L416.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '595.6,570.0 603.1,570.0 603.1,226.5 595.6,226.5 '/>
+	</g>
+	<path  d='M595.6,570.0 L595.6,226.6 L603.0,226.6 L603.0,570.0 L595.6,570.0 Z  '/></g>
+	</g>
+	<g id="gnuplot_plot_3" ><title>gnuplot_plot_3</title>
+<g style="fill:none; color:blue; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<g transform="translate(116.5,93.8)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text>virt3-F</text>
+	</g>
+	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '123.5,93.8 159.0,93.8 159.0,86.3 123.5,86.3 '/>
+	</g>
+	<path  d='M123.5,93.8 L159.0,93.8 L159.0,86.4 L123.5,86.4 L123.5,93.8 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '236.4,570.0 243.9,570.0 243.9,408.5 236.4,408.5 '/>
+	</g>
+	<path  d='M236.4,570.0 L236.4,408.6 L243.8,408.6 L243.8,570.0 L236.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '416.0,570.0 423.5,570.0 423.5,403.3 416.0,403.3 '/>
+	</g>
+	<path  d='M416.0,570.0 L416.0,403.4 L423.4,403.4 L423.4,570.0 L416.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '595.6,570.0 603.1,570.0 603.1,398.2 595.6,398.2 '/>
+	</g>
+	<path  d='M595.6,570.0 L595.6,398.3 L603.0,398.3 L603.0,570.0 L595.6,570.0 Z  '/></g>
+	</g>
+	<g id="gnuplot_plot_4" ><title>gnuplot_plot_4</title>
+<g style="fill:none; color:cyan; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<g transform="translate(116.5,108.8)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text>virt1-I</text>
+	</g>
+	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '123.5,108.8 159.0,108.8 159.0,101.3 123.5,101.3 '/>
+	</g>
+	<path  d='M123.5,108.8 L159.0,108.8 L159.0,101.4 L123.5,101.4 L123.5,108.8 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '82.4,570.0 90.0,570.0 90.0,567.7 82.4,567.7 '/>
+	</g>
+	<path  d='M82.4,570.0 L82.4,567.8 L89.9,567.8 L89.9,570.0 L82.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '95.3,570.0 102.8,570.0 102.8,566.6 95.3,566.6 '/>
+	</g>
+	<path  d='M95.3,570.0 L95.3,566.7 L102.7,566.7 L102.7,570.0 L95.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '108.1,570.0 115.6,570.0 115.6,565.5 108.1,565.5 '/>
+	</g>
+	<path  d='M108.1,570.0 L108.1,565.6 L115.5,565.6 L115.5,570.0 L108.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '120.9,570.0 128.5,570.0 128.5,564.4 120.9,564.4 '/>
+	</g>
+	<path  d='M120.9,570.0 L120.9,564.5 L128.4,564.5 L128.4,570.0 L120.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '133.8,570.0 141.3,570.0 141.3,563.3 133.8,563.3 '/>
+	</g>
+	<path  d='M133.8,570.0 L133.8,563.4 L141.2,563.4 L141.2,570.0 L133.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '146.6,570.0 154.1,570.0 154.1,562.2 146.6,562.2 '/>
+	</g>
+	<path  d='M146.6,570.0 L146.6,562.3 L154.0,562.3 L154.0,570.0 L146.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '159.4,570.0 166.9,570.0 166.9,561.1 159.4,561.1 '/>
+	</g>
+	<path  d='M159.4,570.0 L159.4,561.2 L166.8,561.2 L166.8,570.0 L159.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '172.2,570.0 179.8,570.0 179.8,560.0 172.2,560.0 '/>
+	</g>
+	<path  d='M172.2,570.0 L172.2,560.1 L179.7,560.1 L179.7,570.0 L172.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '185.1,570.0 192.6,570.0 192.6,558.9 185.1,558.9 '/>
+	</g>
+	<path  d='M185.1,570.0 L185.1,559.0 L192.5,559.0 L192.5,570.0 L185.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '197.9,570.0 205.4,570.0 205.4,557.8 197.9,557.8 '/>
+	</g>
+	<path  d='M197.9,570.0 L197.9,557.9 L205.3,557.9 L205.3,570.0 L197.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '210.7,570.0 218.3,570.0 218.3,556.7 210.7,556.7 '/>
+	</g>
+	<path  d='M210.7,570.0 L210.7,556.8 L218.2,556.8 L218.2,570.0 L210.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '223.6,570.0 231.1,570.0 231.1,555.6 223.6,555.6 '/>
+	</g>
+	<path  d='M223.6,570.0 L223.6,555.7 L231.0,555.7 L231.0,570.0 L223.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '262.0,570.0 269.6,570.0 269.6,567.7 262.0,567.7 '/>
+	</g>
+	<path  d='M262.0,570.0 L262.0,567.8 L269.5,567.8 L269.5,570.0 L262.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '274.9,570.0 282.4,570.0 282.4,566.6 274.9,566.6 '/>
+	</g>
+	<path  d='M274.9,570.0 L274.9,566.7 L282.3,566.7 L282.3,570.0 L274.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '287.7,570.0 295.2,570.0 295.2,565.5 287.7,565.5 '/>
+	</g>
+	<path  d='M287.7,570.0 L287.7,565.6 L295.1,565.6 L295.1,570.0 L287.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '300.5,570.0 308.1,570.0 308.1,564.4 300.5,564.4 '/>
+	</g>
+	<path  d='M300.5,570.0 L300.5,564.5 L308.0,564.5 L308.0,570.0 L300.5,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '313.4,570.0 320.9,570.0 320.9,563.3 313.4,563.3 '/>
+	</g>
+	<path  d='M313.4,570.0 L313.4,563.4 L320.8,563.4 L320.8,570.0 L313.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '326.2,570.0 333.7,570.0 333.7,562.2 326.2,562.2 '/>
+	</g>
+	<path  d='M326.2,570.0 L326.2,562.3 L333.6,562.3 L333.6,570.0 L326.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '339.0,570.0 346.5,570.0 346.5,561.1 339.0,561.1 '/>
+	</g>
+	<path  d='M339.0,570.0 L339.0,561.2 L346.4,561.2 L346.4,570.0 L339.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '351.8,570.0 359.4,570.0 359.4,560.0 351.8,560.0 '/>
+	</g>
+	<path  d='M351.8,570.0 L351.8,560.1 L359.3,560.1 L359.3,570.0 L351.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '364.7,570.0 372.2,570.0 372.2,558.9 364.7,558.9 '/>
+	</g>
+	<path  d='M364.7,570.0 L364.7,559.0 L372.1,559.0 L372.1,570.0 L364.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '377.5,570.0 385.0,570.0 385.0,557.8 377.5,557.8 '/>
+	</g>
+	<path  d='M377.5,570.0 L377.5,557.9 L384.9,557.9 L384.9,570.0 L377.5,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '390.3,570.0 397.9,570.0 397.9,556.7 390.3,556.7 '/>
+	</g>
+	<path  d='M390.3,570.0 L390.3,556.8 L397.8,556.8 L397.8,570.0 L390.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '403.2,570.0 410.7,570.0 410.7,555.6 403.2,555.6 '/>
+	</g>
+	<path  d='M403.2,570.0 L403.2,555.7 L410.6,555.7 L410.6,570.0 L403.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '441.6,570.0 449.2,570.0 449.2,567.7 441.6,567.7 '/>
+	</g>
+	<path  d='M441.6,570.0 L441.6,567.8 L449.1,567.8 L449.1,570.0 L441.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '454.5,570.0 462.0,570.0 462.0,566.6 454.5,566.6 '/>
+	</g>
+	<path  d='M454.5,570.0 L454.5,566.7 L461.9,566.7 L461.9,570.0 L454.5,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '467.3,570.0 474.8,570.0 474.8,565.5 467.3,565.5 '/>
+	</g>
+	<path  d='M467.3,570.0 L467.3,565.6 L474.7,565.6 L474.7,570.0 L467.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '480.1,570.0 487.7,570.0 487.7,564.4 480.1,564.4 '/>
+	</g>
+	<path  d='M480.1,570.0 L480.1,564.5 L487.6,564.5 L487.6,570.0 L480.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '493.0,570.0 500.5,570.0 500.5,563.3 493.0,563.3 '/>
+	</g>
+	<path  d='M493.0,570.0 L493.0,563.4 L500.4,563.4 L500.4,570.0 L493.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '505.8,570.0 513.3,570.0 513.3,562.2 505.8,562.2 '/>
+	</g>
+	<path  d='M505.8,570.0 L505.8,562.3 L513.2,562.3 L513.2,570.0 L505.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '518.6,570.0 526.1,570.0 526.1,561.1 518.6,561.1 '/>
+	</g>
+	<path  d='M518.6,570.0 L518.6,561.2 L526.0,561.2 L526.0,570.0 L518.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '531.4,570.0 539.0,570.0 539.0,560.0 531.4,560.0 '/>
+	</g>
+	<path  d='M531.4,570.0 L531.4,560.1 L538.9,560.1 L538.9,570.0 L531.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '544.3,570.0 551.8,570.0 551.8,558.9 544.3,558.9 '/>
+	</g>
+	<path  d='M544.3,570.0 L544.3,559.0 L551.7,559.0 L551.7,570.0 L544.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '557.1,570.0 564.6,570.0 564.6,557.8 557.1,557.8 '/>
+	</g>
+	<path  d='M557.1,570.0 L557.1,557.9 L564.5,557.9 L564.5,570.0 L557.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '569.9,570.0 577.5,570.0 577.5,556.7 569.9,556.7 '/>
+	</g>
+	<path  d='M569.9,570.0 L569.9,556.8 L577.4,556.8 L577.4,570.0 L569.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '582.8,570.0 590.3,570.0 590.3,555.6 582.8,555.6 '/>
+	</g>
+	<path  d='M582.8,570.0 L582.8,555.7 L590.2,555.7 L590.2,570.0 L582.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '621.2,570.0 628.8,570.0 628.8,567.7 621.2,567.7 '/>
+	</g>
+	<path  d='M621.2,570.0 L621.2,567.8 L628.7,567.8 L628.7,570.0 L621.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '634.1,570.0 641.6,570.0 641.6,566.6 634.1,566.6 '/>
+	</g>
+	<path  d='M634.1,570.0 L634.1,566.7 L641.5,566.7 L641.5,570.0 L634.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '646.9,570.0 654.4,570.0 654.4,565.5 646.9,565.5 '/>
+	</g>
+	<path  d='M646.9,570.0 L646.9,565.6 L654.3,565.6 L654.3,570.0 L646.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '659.7,570.0 667.3,570.0 667.3,564.4 659.7,564.4 '/>
+	</g>
+	<path  d='M659.7,570.0 L659.7,564.5 L667.2,564.5 L667.2,570.0 L659.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '672.6,570.0 680.1,570.0 680.1,563.3 672.6,563.3 '/>
+	</g>
+	<path  d='M672.6,570.0 L672.6,563.4 L680.0,563.4 L680.0,570.0 L672.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '685.4,570.0 692.9,570.0 692.9,562.2 685.4,562.2 '/>
+	</g>
+	<path  d='M685.4,570.0 L685.4,562.3 L692.8,562.3 L692.8,570.0 L685.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '698.2,570.0 705.7,570.0 705.7,561.1 698.2,561.1 '/>
+	</g>
+	<path  d='M698.2,570.0 L698.2,561.2 L705.6,561.2 L705.6,570.0 L698.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '711.0,570.0 718.6,570.0 718.6,560.0 711.0,560.0 '/>
+	</g>
+	<path  d='M711.0,570.0 L711.0,560.1 L718.5,560.1 L718.5,570.0 L711.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '723.9,570.0 731.4,570.0 731.4,558.9 723.9,558.9 '/>
+	</g>
+	<path  d='M723.9,570.0 L723.9,559.0 L731.3,559.0 L731.3,570.0 L723.9,570.0 Z  '/></g>
+	</g>
+	<g id="gnuplot_plot_5" ><title>gnuplot_plot_5</title>
+<g style="fill:none; color:#157545; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<g transform="translate(116.5,123.8)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text>virt2-I</text>
+	</g>
+	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '123.5,123.8 159.0,123.8 159.0,116.3 123.5,116.3 '/>
+	</g>
+	<path  d='M123.5,123.8 L159.0,123.8 L159.0,116.4 L123.5,116.4 L123.5,123.8 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '82.4,570.0 90.0,570.0 90.0,568.4 82.4,568.4 '/>
+	</g>
+	<path  d='M82.4,570.0 L82.4,568.5 L89.9,568.5 L89.9,570.0 L82.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '95.3,570.0 102.8,570.0 102.8,567.7 95.3,567.7 '/>
+	</g>
+	<path  d='M95.3,570.0 L95.3,567.8 L102.7,567.8 L102.7,570.0 L95.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '108.1,570.0 115.6,570.0 115.6,567.0 108.1,567.0 '/>
+	</g>
+	<path  d='M108.1,570.0 L108.1,567.1 L115.5,567.1 L115.5,570.0 L108.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '120.9,570.0 128.5,570.0 128.5,566.2 120.9,566.2 '/>
+	</g>
+	<path  d='M120.9,570.0 L120.9,566.3 L128.4,566.3 L128.4,570.0 L120.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '133.8,570.0 141.3,570.0 141.3,565.5 133.8,565.5 '/>
+	</g>
+	<path  d='M133.8,570.0 L133.8,565.6 L141.2,565.6 L141.2,570.0 L133.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '146.6,570.0 154.1,570.0 154.1,564.8 146.6,564.8 '/>
+	</g>
+	<path  d='M146.6,570.0 L146.6,564.9 L154.0,564.9 L154.0,570.0 L146.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '159.4,570.0 166.9,570.0 166.9,564.0 159.4,564.0 '/>
+	</g>
+	<path  d='M159.4,570.0 L159.4,564.1 L166.8,564.1 L166.8,570.0 L159.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '172.2,570.0 179.8,570.0 179.8,563.3 172.2,563.3 '/>
+	</g>
+	<path  d='M172.2,570.0 L172.2,563.4 L179.7,563.4 L179.7,570.0 L172.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '185.1,570.0 192.6,570.0 192.6,562.6 185.1,562.6 '/>
+	</g>
+	<path  d='M185.1,570.0 L185.1,562.7 L192.5,562.7 L192.5,570.0 L185.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '197.9,570.0 205.4,570.0 205.4,561.8 197.9,561.8 '/>
+	</g>
+	<path  d='M197.9,570.0 L197.9,561.9 L205.3,561.9 L205.3,570.0 L197.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '210.7,570.0 218.3,570.0 218.3,561.1 210.7,561.1 '/>
+	</g>
+	<path  d='M210.7,570.0 L210.7,561.2 L218.2,561.2 L218.2,570.0 L210.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '223.6,570.0 231.1,570.0 231.1,560.4 223.6,560.4 '/>
+	</g>
+	<path  d='M223.6,570.0 L223.6,560.5 L231.0,560.5 L231.0,570.0 L223.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '262.0,570.0 269.6,570.0 269.6,568.4 262.0,568.4 '/>
+	</g>
+	<path  d='M262.0,570.0 L262.0,568.5 L269.5,568.5 L269.5,570.0 L262.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '274.9,570.0 282.4,570.0 282.4,567.7 274.9,567.7 '/>
+	</g>
+	<path  d='M274.9,570.0 L274.9,567.8 L282.3,567.8 L282.3,570.0 L274.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '287.7,570.0 295.2,570.0 295.2,567.0 287.7,567.0 '/>
+	</g>
+	<path  d='M287.7,570.0 L287.7,567.1 L295.1,567.1 L295.1,570.0 L287.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '300.5,570.0 308.1,570.0 308.1,566.2 300.5,566.2 '/>
+	</g>
+	<path  d='M300.5,570.0 L300.5,566.3 L308.0,566.3 L308.0,570.0 L300.5,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '313.4,570.0 320.9,570.0 320.9,565.5 313.4,565.5 '/>
+	</g>
+	<path  d='M313.4,570.0 L313.4,565.6 L320.8,565.6 L320.8,570.0 L313.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '326.2,570.0 333.7,570.0 333.7,564.8 326.2,564.8 '/>
+	</g>
+	<path  d='M326.2,570.0 L326.2,564.9 L333.6,564.9 L333.6,570.0 L326.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '339.0,570.0 346.5,570.0 346.5,564.0 339.0,564.0 '/>
+	</g>
+	<path  d='M339.0,570.0 L339.0,564.1 L346.4,564.1 L346.4,570.0 L339.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '351.8,570.0 359.4,570.0 359.4,563.3 351.8,563.3 '/>
+	</g>
+	<path  d='M351.8,570.0 L351.8,563.4 L359.3,563.4 L359.3,570.0 L351.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '364.7,570.0 372.2,570.0 372.2,562.6 364.7,562.6 '/>
+	</g>
+	<path  d='M364.7,570.0 L364.7,562.7 L372.1,562.7 L372.1,570.0 L364.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '377.5,570.0 385.0,570.0 385.0,561.8 377.5,561.8 '/>
+	</g>
+	<path  d='M377.5,570.0 L377.5,561.9 L384.9,561.9 L384.9,570.0 L377.5,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '390.3,570.0 397.9,570.0 397.9,561.1 390.3,561.1 '/>
+	</g>
+	<path  d='M390.3,570.0 L390.3,561.2 L397.8,561.2 L397.8,570.0 L390.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '403.2,570.0 410.7,570.0 410.7,560.4 403.2,560.4 '/>
+	</g>
+	<path  d='M403.2,570.0 L403.2,560.5 L410.6,560.5 L410.6,570.0 L403.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '441.6,570.0 449.2,570.0 449.2,568.4 441.6,568.4 '/>
+	</g>
+	<path  d='M441.6,570.0 L441.6,568.5 L449.1,568.5 L449.1,570.0 L441.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '454.5,570.0 462.0,570.0 462.0,567.7 454.5,567.7 '/>
+	</g>
+	<path  d='M454.5,570.0 L454.5,567.8 L461.9,567.8 L461.9,570.0 L454.5,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '467.3,570.0 474.8,570.0 474.8,567.0 467.3,567.0 '/>
+	</g>
+	<path  d='M467.3,570.0 L467.3,567.1 L474.7,567.1 L474.7,570.0 L467.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '480.1,570.0 487.7,570.0 487.7,566.2 480.1,566.2 '/>
+	</g>
+	<path  d='M480.1,570.0 L480.1,566.3 L487.6,566.3 L487.6,570.0 L480.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '493.0,570.0 500.5,570.0 500.5,565.5 493.0,565.5 '/>
+	</g>
+	<path  d='M493.0,570.0 L493.0,565.6 L500.4,565.6 L500.4,570.0 L493.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '505.8,570.0 513.3,570.0 513.3,564.8 505.8,564.8 '/>
+	</g>
+	<path  d='M505.8,570.0 L505.8,564.9 L513.2,564.9 L513.2,570.0 L505.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '518.6,570.0 526.1,570.0 526.1,564.0 518.6,564.0 '/>
+	</g>
+	<path  d='M518.6,570.0 L518.6,564.1 L526.0,564.1 L526.0,570.0 L518.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '531.4,570.0 539.0,570.0 539.0,563.3 531.4,563.3 '/>
+	</g>
+	<path  d='M531.4,570.0 L531.4,563.4 L538.9,563.4 L538.9,570.0 L531.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '544.3,570.0 551.8,570.0 551.8,562.6 544.3,562.6 '/>
+	</g>
+	<path  d='M544.3,570.0 L544.3,562.7 L551.7,562.7 L551.7,570.0 L544.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '557.1,570.0 564.6,570.0 564.6,561.8 557.1,561.8 '/>
+	</g>
+	<path  d='M557.1,570.0 L557.1,561.9 L564.5,561.9 L564.5,570.0 L557.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '569.9,570.0 577.5,570.0 577.5,561.1 569.9,561.1 '/>
+	</g>
+	<path  d='M569.9,570.0 L569.9,561.2 L577.4,561.2 L577.4,570.0 L569.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '582.8,570.0 590.3,570.0 590.3,560.4 582.8,560.4 '/>
+	</g>
+	<path  d='M582.8,570.0 L582.8,560.5 L590.2,560.5 L590.2,570.0 L582.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '621.2,570.0 628.8,570.0 628.8,568.4 621.2,568.4 '/>
+	</g>
+	<path  d='M621.2,570.0 L621.2,568.5 L628.7,568.5 L628.7,570.0 L621.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '634.1,570.0 641.6,570.0 641.6,567.7 634.1,567.7 '/>
+	</g>
+	<path  d='M634.1,570.0 L634.1,567.8 L641.5,567.8 L641.5,570.0 L634.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '646.9,570.0 654.4,570.0 654.4,567.0 646.9,567.0 '/>
+	</g>
+	<path  d='M646.9,570.0 L646.9,567.1 L654.3,567.1 L654.3,570.0 L646.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '659.7,570.0 667.3,570.0 667.3,566.2 659.7,566.2 '/>
+	</g>
+	<path  d='M659.7,570.0 L659.7,566.3 L667.2,566.3 L667.2,570.0 L659.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '672.6,570.0 680.1,570.0 680.1,565.5 672.6,565.5 '/>
+	</g>
+	<path  d='M672.6,570.0 L672.6,565.6 L680.0,565.6 L680.0,570.0 L672.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '685.4,570.0 692.9,570.0 692.9,564.8 685.4,564.8 '/>
+	</g>
+	<path  d='M685.4,570.0 L685.4,564.9 L692.8,564.9 L692.8,570.0 L685.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '698.2,570.0 705.7,570.0 705.7,564.0 698.2,564.0 '/>
+	</g>
+	<path  d='M698.2,570.0 L698.2,564.1 L705.6,564.1 L705.6,570.0 L698.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '711.0,570.0 718.6,570.0 718.6,563.3 711.0,563.3 '/>
+	</g>
+	<path  d='M711.0,570.0 L711.0,563.4 L718.5,563.4 L718.5,570.0 L711.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '723.9,570.0 731.4,570.0 731.4,562.6 723.9,562.6 '/>
+	</g>
+	<path  d='M723.9,570.0 L723.9,562.7 L731.3,562.7 L731.3,570.0 L723.9,570.0 Z  '/></g>
+	</g>
+	<g id="gnuplot_plot_6" ><title>gnuplot_plot_6</title>
+<g style="fill:none; color:#000094; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<g transform="translate(116.5,138.8)" style="stroke:none; fill:black; font-family:Droid Sans; font-size:10.00pt; text-anchor:end">
+		<text>virt3-I</text>
+	</g>
+	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '123.5,138.8 159.0,138.8 159.0,131.3 123.5,131.3 '/>
+	</g>
+	<path  d='M123.5,138.8 L159.0,138.8 L159.0,131.4 L123.5,131.4 L123.5,138.8 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '82.4,570.0 90.0,570.0 90.0,569.2 82.4,569.2 '/>
+	</g>
+	<path  d='M82.4,570.0 L82.4,569.3 L89.9,569.3 L89.9,570.0 L82.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '95.3,570.0 102.8,570.0 102.8,568.8 95.3,568.8 '/>
+	</g>
+	<path  d='M95.3,570.0 L95.3,568.9 L102.7,568.9 L102.7,570.0 L95.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '108.1,570.0 115.6,570.0 115.6,568.4 108.1,568.4 '/>
+	</g>
+	<path  d='M108.1,570.0 L108.1,568.5 L115.5,568.5 L115.5,570.0 L108.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '120.9,570.0 128.5,570.0 128.5,568.1 120.9,568.1 '/>
+	</g>
+	<path  d='M120.9,570.0 L120.9,568.2 L128.4,568.2 L128.4,570.0 L120.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '133.8,570.0 141.3,570.0 141.3,567.7 133.8,567.7 '/>
+	</g>
+	<path  d='M133.8,570.0 L133.8,567.8 L141.2,567.8 L141.2,570.0 L133.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '146.6,570.0 154.1,570.0 154.1,567.3 146.6,567.3 '/>
+	</g>
+	<path  d='M146.6,570.0 L146.6,567.4 L154.0,567.4 L154.0,570.0 L146.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '159.4,570.0 166.9,570.0 166.9,567.0 159.4,567.0 '/>
+	</g>
+	<path  d='M159.4,570.0 L159.4,567.1 L166.8,567.1 L166.8,570.0 L159.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '172.2,570.0 179.8,570.0 179.8,566.6 172.2,566.6 '/>
+	</g>
+	<path  d='M172.2,570.0 L172.2,566.7 L179.7,566.7 L179.7,570.0 L172.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '185.1,570.0 192.6,570.0 192.6,566.2 185.1,566.2 '/>
+	</g>
+	<path  d='M185.1,570.0 L185.1,566.3 L192.5,566.3 L192.5,570.0 L185.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '197.9,570.0 205.4,570.0 205.4,565.9 197.9,565.9 '/>
+	</g>
+	<path  d='M197.9,570.0 L197.9,566.0 L205.3,566.0 L205.3,570.0 L197.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '210.7,570.0 218.3,570.0 218.3,565.5 210.7,565.5 '/>
+	</g>
+	<path  d='M210.7,570.0 L210.7,565.6 L218.2,565.6 L218.2,570.0 L210.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '223.6,570.0 231.1,570.0 231.1,565.1 223.6,565.1 '/>
+	</g>
+	<path  d='M223.6,570.0 L223.6,565.2 L231.0,565.2 L231.0,570.0 L223.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '262.0,570.0 269.6,570.0 269.6,569.2 262.0,569.2 '/>
+	</g>
+	<path  d='M262.0,570.0 L262.0,569.3 L269.5,569.3 L269.5,570.0 L262.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '274.9,570.0 282.4,570.0 282.4,568.8 274.9,568.8 '/>
+	</g>
+	<path  d='M274.9,570.0 L274.9,568.9 L282.3,568.9 L282.3,570.0 L274.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '287.7,570.0 295.2,570.0 295.2,568.4 287.7,568.4 '/>
+	</g>
+	<path  d='M287.7,570.0 L287.7,568.5 L295.1,568.5 L295.1,570.0 L287.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '300.5,570.0 308.1,570.0 308.1,568.1 300.5,568.1 '/>
+	</g>
+	<path  d='M300.5,570.0 L300.5,568.2 L308.0,568.2 L308.0,570.0 L300.5,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '313.4,570.0 320.9,570.0 320.9,567.7 313.4,567.7 '/>
+	</g>
+	<path  d='M313.4,570.0 L313.4,567.8 L320.8,567.8 L320.8,570.0 L313.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '326.2,570.0 333.7,570.0 333.7,567.3 326.2,567.3 '/>
+	</g>
+	<path  d='M326.2,570.0 L326.2,567.4 L333.6,567.4 L333.6,570.0 L326.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '339.0,570.0 346.5,570.0 346.5,567.0 339.0,567.0 '/>
+	</g>
+	<path  d='M339.0,570.0 L339.0,567.1 L346.4,567.1 L346.4,570.0 L339.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '351.8,570.0 359.4,570.0 359.4,566.6 351.8,566.6 '/>
+	</g>
+	<path  d='M351.8,570.0 L351.8,566.7 L359.3,566.7 L359.3,570.0 L351.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '364.7,570.0 372.2,570.0 372.2,566.2 364.7,566.2 '/>
+	</g>
+	<path  d='M364.7,570.0 L364.7,566.3 L372.1,566.3 L372.1,570.0 L364.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '377.5,570.0 385.0,570.0 385.0,565.9 377.5,565.9 '/>
+	</g>
+	<path  d='M377.5,570.0 L377.5,566.0 L384.9,566.0 L384.9,570.0 L377.5,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '390.3,570.0 397.9,570.0 397.9,565.5 390.3,565.5 '/>
+	</g>
+	<path  d='M390.3,570.0 L390.3,565.6 L397.8,565.6 L397.8,570.0 L390.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '403.2,570.0 410.7,570.0 410.7,565.1 403.2,565.1 '/>
+	</g>
+	<path  d='M403.2,570.0 L403.2,565.2 L410.6,565.2 L410.6,570.0 L403.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '441.6,570.0 449.2,570.0 449.2,569.2 441.6,569.2 '/>
+	</g>
+	<path  d='M441.6,570.0 L441.6,569.3 L449.1,569.3 L449.1,570.0 L441.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '454.5,570.0 462.0,570.0 462.0,568.8 454.5,568.8 '/>
+	</g>
+	<path  d='M454.5,570.0 L454.5,568.9 L461.9,568.9 L461.9,570.0 L454.5,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '467.3,570.0 474.8,570.0 474.8,568.4 467.3,568.4 '/>
+	</g>
+	<path  d='M467.3,570.0 L467.3,568.5 L474.7,568.5 L474.7,570.0 L467.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '480.1,570.0 487.7,570.0 487.7,568.1 480.1,568.1 '/>
+	</g>
+	<path  d='M480.1,570.0 L480.1,568.2 L487.6,568.2 L487.6,570.0 L480.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '493.0,570.0 500.5,570.0 500.5,567.7 493.0,567.7 '/>
+	</g>
+	<path  d='M493.0,570.0 L493.0,567.8 L500.4,567.8 L500.4,570.0 L493.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '505.8,570.0 513.3,570.0 513.3,567.3 505.8,567.3 '/>
+	</g>
+	<path  d='M505.8,570.0 L505.8,567.4 L513.2,567.4 L513.2,570.0 L505.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '518.6,570.0 526.1,570.0 526.1,567.0 518.6,567.0 '/>
+	</g>
+	<path  d='M518.6,570.0 L518.6,567.1 L526.0,567.1 L526.0,570.0 L518.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '531.4,570.0 539.0,570.0 539.0,566.6 531.4,566.6 '/>
+	</g>
+	<path  d='M531.4,570.0 L531.4,566.7 L538.9,566.7 L538.9,570.0 L531.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '544.3,570.0 551.8,570.0 551.8,566.2 544.3,566.2 '/>
+	</g>
+	<path  d='M544.3,570.0 L544.3,566.3 L551.7,566.3 L551.7,570.0 L544.3,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '557.1,570.0 564.6,570.0 564.6,565.9 557.1,565.9 '/>
+	</g>
+	<path  d='M557.1,570.0 L557.1,566.0 L564.5,566.0 L564.5,570.0 L557.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '569.9,570.0 577.5,570.0 577.5,565.5 569.9,565.5 '/>
+	</g>
+	<path  d='M569.9,570.0 L569.9,565.6 L577.4,565.6 L577.4,570.0 L569.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '582.8,570.0 590.3,570.0 590.3,565.1 582.8,565.1 '/>
+	</g>
+	<path  d='M582.8,570.0 L582.8,565.2 L590.2,565.2 L590.2,570.0 L582.8,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '621.2,570.0 628.8,570.0 628.8,569.2 621.2,569.2 '/>
+	</g>
+	<path  d='M621.2,570.0 L621.2,569.3 L628.7,569.3 L628.7,570.0 L621.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '634.1,570.0 641.6,570.0 641.6,568.8 634.1,568.8 '/>
+	</g>
+	<path  d='M634.1,570.0 L634.1,568.9 L641.5,568.9 L641.5,570.0 L634.1,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '646.9,570.0 654.4,570.0 654.4,568.4 646.9,568.4 '/>
+	</g>
+	<path  d='M646.9,570.0 L646.9,568.5 L654.3,568.5 L654.3,570.0 L646.9,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '659.7,570.0 667.3,570.0 667.3,568.1 659.7,568.1 '/>
+	</g>
+	<path  d='M659.7,570.0 L659.7,568.2 L667.2,568.2 L667.2,570.0 L659.7,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '672.6,570.0 680.1,570.0 680.1,567.7 672.6,567.7 '/>
+	</g>
+	<path  d='M672.6,570.0 L672.6,567.8 L680.0,567.8 L680.0,570.0 L672.6,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '685.4,570.0 692.9,570.0 692.9,567.3 685.4,567.3 '/>
+	</g>
+	<path  d='M685.4,570.0 L685.4,567.4 L692.8,567.4 L692.8,570.0 L685.4,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '698.2,570.0 705.7,570.0 705.7,567.0 698.2,567.0 '/>
+	</g>
+	<path  d='M698.2,570.0 L698.2,567.1 L705.6,567.1 L705.6,570.0 L698.2,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '711.0,570.0 718.6,570.0 718.6,566.6 711.0,566.6 '/>
+	</g>
+	<path  d='M711.0,570.0 L711.0,566.7 L718.5,566.7 L718.5,570.0 L711.0,570.0 Z  '/>	<g style = 'stroke:none; shape-rendering:crispEdges'>
+		<polygon fill = 'currentColor' fill-opacity = '0.250000' points = '723.9,570.0 731.4,570.0 731.4,566.2 723.9,566.2 '/>
+	</g>
+	<path  d='M723.9,570.0 L723.9,566.3 L731.3,566.3 L731.3,570.0 L723.9,570.0 Z  '/></g>
+	</g>
+<g style="fill:none; color:black; stroke:currentColor; stroke-width:1.00; stroke-linecap:butt; stroke-linejoin:miter">
+	<path stroke='black'  d='M60.5,45.1 L60.5,570.0 L778.9,570.0 L778.9,45.1 L60.5,45.1 Z  '/></g>
+</g>
+</svg>
+

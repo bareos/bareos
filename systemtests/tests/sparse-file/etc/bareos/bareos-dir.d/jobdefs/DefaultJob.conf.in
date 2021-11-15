@@ -1,0 +1,15 @@
+JobDefs {
+  Name = "DefaultJob"
+  Type = Backup
+  Level = Incremental
+  Client = bareos-fd
+  FileSet = "FS_TESTJOB"
+  Storage = File1
+  Messages = Standard
+  Pool = Incremental
+  Priority = 10
+  Write Bootstrap = "@working_dir@/%c.bsr"
+  Full Backup Pool = Full                  # write Full Backups into "Full" Pool
+  Differential Backup Pool = Differential  # write Diff Backups into "Differential" Pool
+  Incremental Backup Pool = Incremental    # write Incr Backups into "Incremental" Pool
+}

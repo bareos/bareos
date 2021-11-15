@@ -1,0 +1,16 @@
+#
+# Bareos User Agent (or Console) Configuration File
+#
+
+Director {
+  Name = @basename@-dir
+  DIRport = @dir_port@
+  Password = "@dir_password@"
+  Address = @hostname@
+}
+
+Console {
+  Name = bareos-acl-status-conf
+  Password = "@dir_password@"
+  Director = @basename@-dir
+}

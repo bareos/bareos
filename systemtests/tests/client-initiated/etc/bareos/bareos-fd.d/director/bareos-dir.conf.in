@@ -1,0 +1,8 @@
+Director {
+  Name = bareos-dir
+  Password = "@fd_password@"
+  Address = @hostname@
+  Port = @dir_port@
+  Connection From Director To Client = no
+  Connection From Client To Director = yes
+}

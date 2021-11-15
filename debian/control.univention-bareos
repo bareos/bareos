@@ -1,0 +1,19 @@
+Package: univention-bareos
+Architecture: all
+# univention-postgresql is required to be configured before bareos-database-common (bareos-database-postgresql)
+Pre-Depends: univention-postgresql
+Depends: bareos (= ${binary:Version}),
+ bareos-database-postgresql,
+ bareos-webui,
+ univention-config,
+ univention-join (>> 5.0.20-1.436),
+ univention-postgresql,
+ shell-univention-lib (>> 2.0.17-1.125)
+# Older versions do require the package univention-bareos-schema,
+# which does no longer exist.
+Provides:  univention-bareos-schema
+Replaces:  univention-bareos-schema
+Description: Backup Archiving Recovery Open Sourced - UCS integration
+ This package integrates the Bareos backup solution into
+ UCS. The package provides automatic configuration of the
+ Bareos director, local file daemon and storage daemon.

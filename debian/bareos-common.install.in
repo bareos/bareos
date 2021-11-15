@@ -1,0 +1,16 @@
+@libdir@/libbareos.so*
+@libdir@/libbareosfastlz.so*
+@libdir@/libbareosfind.so*
+@libdir@/libbareoslmdb.so*
+@libdir@/libbareosndmp.so*
+@libdir@/libbareossd.so*
+@scriptdir@/bareos-config
+@scriptdir@/bareos-config-lib.sh
+@scriptdir@/bareos-explorer
+@scriptdir@/btraceback.gdb
+/usr/bin/bsmtp
+/usr/sbin/bsmtp
+/usr/sbin/btraceback
+/usr/share/man/man1/bsmtp.1*
+/usr/share/man/man8/btraceback.8*
+/var/lib/bareos/

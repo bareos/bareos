@@ -1,0 +1,37 @@
+#
+# Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+# Copyright (c) 2011 Free Software Foundation Europe e.V., Author: Bruno Friedmann
+#
+[Unit]
+Description=Bareos Director Daemon service
+Documentation=man:bareos-dir(8)
+Requires=network.target nss-lookup.target time-sync.target
+After=network-online.target nss-lookup.target remote-fs.target time-sync.target postgresql.service mysql.service mariadb.service
+# Dependency about the database
+# We let administrators decide if they need it (if local db instance)
+# Wants=@DEFAULT_DB_TYPE@.service
+# Check if working dir exist and is a directory
+ConditionPathIsDirectory=@working_dir@
+
+[Service]
+Type=simple
+User=@dir_user@
+Group=@dir_group@
+WorkingDirectory=@working_dir@
+ExecStart=@sbindir@/bareos-dir -f
+SuccessExitStatus=0 15
+ExecReload=@sbindir@/bareos-dir -t -f
+ExecReload=/bin/kill -HUP $MAINPID
+#Restart=on-failure
+# Allow unlimited restarts,
+# required for automatic restarting on Univention Corporate Servers (UCS).
+# Since systemd >= 230 this is a deprecated in favor for:
+# [Unit]
+# StartLimitIntervalSec=0
+# However, as this also have to work for systems with older version of systemd,
+# we stick to this old setting.
+StartLimitInterval=0
+
+[Install]
+Alias=bareos-director.service
+WantedBy=multi-user.target

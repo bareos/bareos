@@ -1,0 +1,75 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Backup and restore a file with extended attributes.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+BackupFile="${tmp}/file-with-xattr"
+RestoreFile="${tmp}/bareos-restores/${BackupFile}"
+
+xattr_should="${tmp}/xattr_should.txt"
+xattr_is="${tmp}/xattr_is.txt"
+
+mkdir -p "${BackupDirectory}"
+touch "${BackupFile}"
+setfattr --name=user.bareosattr1 --value=value1 "${BackupFile}"
+setfattr --name=user.bareosattr2 --value=value2 "${BackupFile}"
+
+getfattr --name=user.bareosattr1 --only-values "${BackupFile}" >"$xattr_should"
+echo '-- SEPERATOR --' >>"$xattr_should"
+getfattr --name=user.bareosattr2 --only-values "${BackupFile}" >>"$xattr_should"
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File pool=Full
+setdebug level=1000 client=bareos-fd trace=1
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos "$@"
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+
+getfattr --name=user.bareosattr1 --only-values "${RestoreFile}" >"$xattr_is"
+echo '-- SEPERATOR --' >>"$xattr_is"
+getfattr --name=user.bareosattr2 --only-values "${RestoreFile}" >>"$xattr_is"
+
+diff -u "$xattr_should" "$xattr_is" || estat=1
+
+end_test

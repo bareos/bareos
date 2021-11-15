@@ -1,0 +1,16 @@
+SELECT Job.JobId,
+       File.FileIndex
+FROM Job,
+     File,
+     Path,
+     Client
+WHERE Job.JobId IN (%s)
+  AND Job.JobId=File.JobId
+  AND Job.StartTime<='%s'
+  AND Path.Path='%s'
+  AND File.Name='%s'
+  AND Client.Name='%s'
+  AND Job.ClientId=Client.ClientId
+  AND Path.PathId=File.PathId
+ORDER BY Job.StartTime DESC
+LIMIT 1

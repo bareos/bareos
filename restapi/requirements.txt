@@ -1,0 +1,10 @@
+fastapi
+packaging
+passlib
+pydantic
+python-bareos
+python-jose
+# python-multipart: used by fastapi
+python-multipart
+pyyaml
+uvicorn

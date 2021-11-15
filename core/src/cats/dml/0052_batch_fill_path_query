@@ -1,0 +1,6 @@
+INSERT INTO Path (Path)
+SELECT DISTINCT Path
+  FROM batch
+EXCEPT
+SELECT Path
+  FROM Path

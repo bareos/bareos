@@ -1,0 +1,5 @@
+SELECT SUM(JobBytes)
+  FROM Job
+ WHERE ClientId  =  %s
+   AND JobId     != %s
+   AND SchedTime >  '%s'

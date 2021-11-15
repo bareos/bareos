@@ -1,0 +1,916 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:osb="http://www.openswatchbook.org/uri/2009/osb"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="297mm"
+   height="210mm"
+   viewBox="0 0 1052.3622 744.09448"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="ndmp-cfg.svg">
+  <defs
+     id="defs4">
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="marker23345"
+       style="overflow:visible;"
+       inkscape:isstock="true">
+      <path
+         id="path23347"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#ff0000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:0"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+    <linearGradient
+       id="linearGradient22908"
+       osb:paint="solid">
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="0"
+         id="stop22910" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient22894"
+       osb:paint="solid">
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="0"
+         id="stop22896" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient21440"
+       osb:paint="solid">
+      <stop
+         style="stop-color:#b3b3b3;stop-opacity:1;"
+         offset="0"
+         id="stop21442" />
+    </linearGradient>
+    <marker
+       inkscape:stockid="Arrow1Lstart"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="marker9001"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         id="path9003"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#ff0000;stroke-width:1pt;stroke-opacity:1;fill:#ffffff;fill-opacity:1"
+         transform="scale(0.8) translate(12.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow2Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow2Lend"
+       style="overflow:visible;"
+       inkscape:isstock="true">
+      <path
+         id="path4347"
+         style="fill-rule:evenodd;stroke-width:0.625;stroke-linejoin:round;stroke:#ff0000;stroke-opacity:1;fill:#ffffff;fill-opacity:1"
+         d="M 8.7185878,4.0337352 L -2.2072895,0.016013256 L 8.7185884,-4.0017078 C 6.9730900,-1.6296469 6.9831476,1.6157441 8.7185878,4.0337352 z "
+         transform="scale(1.1) rotate(180) translate(1,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lend"
+       style="overflow:visible;"
+       inkscape:isstock="true">
+      <path
+         id="path4329"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:1"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lstart"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lstart"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         id="path4326"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#ff0000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:0"
+         transform="scale(0.8) translate(12.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow2Lend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow2Lend-4"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path4347-4"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.625;stroke-linejoin:round;stroke-opacity:1"
+         d="M 8.7185878,4.0337352 -2.2072895,0.01601326 8.7185884,-4.0017078 c -1.7454984,2.3720609 -1.7354408,5.6174519 -6e-7,8.035443 z"
+         transform="matrix(-1.1,0,0,-1.1,-1.1,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow2Lend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow2Lend-4-8"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path4347-4-5"
+         style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#ff0000;stroke-width:0.625;stroke-linejoin:round;stroke-opacity:1"
+         d="M 8.7185878,4.0337352 -2.2072895,0.01601326 8.7185884,-4.0017078 c -1.7454984,2.3720609 -1.7354408,5.6174519 -6e-7,8.035443 z"
+         transform="matrix(-1.1,0,0,-1.1,-1.1,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lstart"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker9001-8"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path9003-6"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1"
+         transform="matrix(0.8,0,0,0.8,10,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow2Lend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow2Lend-4-8-0"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path4347-4-5-9"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:0.625;stroke-linejoin:round;stroke-opacity:1"
+         d="M 8.7185878,4.0337352 -2.2072895,0.01601326 8.7185884,-4.0017078 c -1.7454984,2.3720609 -1.7354408,5.6174519 -6e-7,8.035443 z"
+         transform="matrix(-1.1,0,0,-1.1,-1.1,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lstart"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Lstart-0"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path4326-1"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 Z"
+         style="fill:#000000;fill-opacity:0;fill-rule:evenodd;stroke:#ff0000;stroke-width:1pt;stroke-opacity:1"
+         transform="matrix(0.8,0,0,0.8,10,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker23345-9"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path23347-8"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 Z"
+         style="fill:#000000;fill-opacity:0;fill-rule:evenodd;stroke:#ff0000;stroke-width:1pt;stroke-opacity:1"
+         transform="matrix(-0.8,0,0,-0.8,-10,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lstart"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Lstart-0-8"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path4326-1-7"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 Z"
+         style="fill:#000000;fill-opacity:0;fill-rule:evenodd;stroke:#ff0000;stroke-width:1pt;stroke-opacity:1"
+         transform="matrix(0.8,0,0,0.8,10,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="marker23345-9-8"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path23347-8-3"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 Z"
+         style="fill:#000000;fill-opacity:0;fill-rule:evenodd;stroke:#ff0000;stroke-width:1pt;stroke-opacity:1"
+         transform="matrix(-0.8,0,0,-0.8,-10,0)" />
+    </marker>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.1033545"
+     inkscape:cx="526.1811"
+     inkscape:cy="372.04724"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     showguides="true"
+     inkscape:snap-text-baseline="false"
+     inkscape:snap-others="true"
+     inkscape:snap-grids="true"
+     inkscape:snap-to-guides="false"
+     inkscape:snap-page="false"
+     inkscape:window-width="1744"
+     inkscape:window-height="1002"
+     inkscape:window-x="2092"
+     inkscape:window-y="77"
+     inkscape:window-maximized="0"
+     objecttolerance="1"
+     guidetolerance="20"
+     inkscape:snap-perpendicular="false"
+     gridtolerance="10"
+     inkscape:guide-bbox="true"
+     inkscape:snap-global="true"
+     inkscape:snap-bbox="true"
+     inkscape:snap-nodes="true"
+     inkscape:bbox-paths="true"
+     inkscape:bbox-nodes="true"
+     inkscape:snap-bbox-edge-midpoints="true"
+     inkscape:snap-bbox-midpoints="true"
+     inkscape:snap-intersection-paths="true"
+     inkscape:object-nodes="false"
+     inkscape:snap-smooth-nodes="false"
+     inkscape:snap-midpoints="false"
+     inkscape:object-paths="false">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3382"
+       dotted="true" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Ebene 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-308.26772)">
+    <rect
+       style="fill:#00ffff;fill-opacity:1;stroke:#000000;stroke-width:2.97783279;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect3336-5"
+       width="352.02216"
+       height="537.02216"
+       x="141.48892"
+       y="403.85114"
+       ry="20.007326" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:22.5px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="159.60876"
+       y="368.94058"
+       id="text3338-9"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3340-5"
+         x="159.60876"
+         y="368.94058">Bareos Director Daemon</tspan><tspan
+         sodipodi:role="line"
+         x="159.60876"
+         y="397.06558"
+         id="tspan23044">configuration</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:22.5px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="692.46619"
+       y="363.65494"
+       id="text3338-4"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3340-7"
+         x="692.46619"
+         y="363.65494">Bareos Storage  Daemon</tspan><tspan
+         sodipodi:role="line"
+         x="692.46619"
+         y="391.77994"
+         id="tspan23046">configuration</tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 440.48123,793.4876 0,0"
+       id="path3514"
+       inkscape:connector-type="polyline"
+       inkscape:connector-curvature="0" />
+    <rect
+       style="fill:#cccccc;fill-opacity:1;stroke:#000000;stroke-width:1.57213199;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect3336-5-3"
+       width="343.42786"
+       height="153.42786"
+       x="654.78607"
+       y="753.14825"
+       ry="11.24991" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:22.5px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="696.20215"
+       y="718.94055"
+       id="text3338-4-8"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3340-7-1"
+         x="696.20215"
+         y="718.94055">Storage Device </tspan><tspan
+         sodipodi:role="line"
+         x="696.20215"
+         y="747.06555"
+         id="tspan21381">NDMP configuration</tspan></text>
+    <rect
+       style="fill:#00ffff;fill-opacity:1;stroke:#000000;stroke-width:2.07149076;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect3336-5-9"
+       width="347.92847"
+       height="262.9285"
+       x="650.03577"
+       y="403.39795"
+       ry="20.401167" />
+    <rect
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:2.57583976;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect21438-9"
+       width="322.42416"
+       height="157.42416"
+       x="156.28792"
+       y="773.65015"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.91316891px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="160.61525"
+       y="790.44482"
+       id="text21333"
+       sodipodi:linespacing="125%"
+       transform="scale(1.0198808,0.98050675)"><tspan
+         sodipodi:role="line"
+         x="160.61525"
+         y="790.44482"
+         id="tspan21339" /><tspan
+         sodipodi:role="line"
+         x="160.61525"
+         y="806.5863"
+         id="tspan21341">Client {</tspan><tspan
+         sodipodi:role="line"
+         x="160.61525"
+         y="822.72772"
+         id="tspan21343">  Name = &lt;ndmp_data_server&gt;-ndmp</tspan><tspan
+         sodipodi:role="line"
+         x="160.61525"
+         y="838.8692"
+         id="tspan21345">  Address = ... </tspan><tspan
+         sodipodi:role="line"
+         x="160.61525"
+         y="855.01068"
+         id="tspan21347">  Port = 10000</tspan><tspan
+         sodipodi:role="line"
+         x="160.61525"
+         y="871.1521"
+         id="tspan21349">  Protocol = NDMPv4 </tspan><tspan
+         sodipodi:role="line"
+         x="160.61525"
+         y="887.29358"
+         id="tspan21351">  Auth Type = Clear  </tspan><tspan
+         sodipodi:role="line"
+         x="160.61525"
+         y="903.43506"
+         id="tspan21353">  Username = &quot;ndmp&quot;</tspan><tspan
+         sodipodi:role="line"
+         x="160.61525"
+         y="919.57654"
+         id="tspan21355">  Password = &quot;test&quot; </tspan><tspan
+         sodipodi:role="line"
+         x="160.61525"
+         y="935.71796"
+         id="tspan21357">}</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:22.5px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="210"
+       y="532.36218"
+       id="text21359"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan21361"
+         x="210"
+         y="532.36218"></tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:2.19852853;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect21438-3-9"
+       width="327.80145"
+       height="112.80148"
+       x="665.0993"
+       y="783.46149"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.5px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="700.10291"
+       y="826.85925"
+       id="text21367"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="700.10291"
+         y="826.85925"
+         id="tspan21371">username = ndmp</tspan><tspan
+         sodipodi:role="line"
+         x="700.10291"
+         y="842.48425"
+         id="tspan21375">password = test</tspan><tspan
+         sodipodi:role="line"
+         x="700.10291"
+         y="858.10925"
+         id="tspan21379">address = ...</tspan><tspan
+         sodipodi:role="line"
+         x="700.10291"
+         y="873.73425"
+         id="tspan21377" /></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:2.42466259;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect21438"
+       width="324.54739"
+       height="138.57533"
+       x="154.24028"
+       y="415.27655"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.5px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="168.02795"
+       y="417.58667"
+       id="text21383"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="168.02795"
+         y="417.58667"
+         id="tspan21389" /><tspan
+         sodipodi:role="line"
+         x="168.02795"
+         y="433.21167"
+         id="tspan21391">Storage {</tspan><tspan
+         sodipodi:role="line"
+         x="168.02795"
+         y="448.83667"
+         id="tspan21393">  Name = File</tspan><tspan
+         sodipodi:role="line"
+         x="168.02795"
+         y="464.46167"
+         id="tspan21395">  Address = ...</tspan><tspan
+         sodipodi:role="line"
+         x="168.02795"
+         y="480.08667"
+         id="tspan21397">  SDPort = 9103</tspan><tspan
+         sodipodi:role="line"
+         x="168.02795"
+         y="495.71167"
+         id="tspan21399">  Password = ... </tspan><tspan
+         sodipodi:role="line"
+         x="168.02795"
+         y="511.33667"
+         id="tspan21401">  Device = FileStorage</tspan><tspan
+         sodipodi:role="line"
+         x="168.02795"
+         y="526.96167"
+         id="tspan21403">  Media Type = File</tspan><tspan
+         sodipodi:role="line"
+         x="168.02795"
+         y="542.58667"
+         id="tspan21405">}</tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:2.87733555;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect21438-34"
+       width="324.09473"
+       height="195.42065"
+       x="154.46661"
+       y="563.50287"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.5px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="158.02795"
+       y="579.4137"
+       id="text21412"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan21414"
+         x="158.02795"
+         y="579.4137">Storage {</tspan><tspan
+         sodipodi:role="line"
+         x="158.02795"
+         y="595.0387"
+         id="tspan21416">  Name = NDMPFile</tspan><tspan
+         sodipodi:role="line"
+         x="158.02795"
+         y="610.6637"
+         id="tspan21418">  Address = ... </tspan><tspan
+         sodipodi:role="line"
+         x="158.02795"
+         y="626.2887"
+         id="tspan21420">  Port = 10000</tspan><tspan
+         sodipodi:role="line"
+         x="158.02795"
+         y="641.9137"
+         id="tspan21422">  Protocol = NDMPv4</tspan><tspan
+         sodipodi:role="line"
+         x="158.02795"
+         y="657.5387"
+         id="tspan21424">  Auth Type = Clear</tspan><tspan
+         sodipodi:role="line"
+         x="158.02795"
+         y="673.1637"
+         id="tspan21426">  Username = ndmp</tspan><tspan
+         sodipodi:role="line"
+         x="158.02795"
+         y="688.7887"
+         id="tspan21428">  Password = test</tspan><tspan
+         sodipodi:role="line"
+         x="158.02795"
+         y="704.4137"
+         id="tspan21430">  Device = FileStorage</tspan><tspan
+         sodipodi:role="line"
+         x="158.02795"
+         y="720.0387"
+         id="tspan21432">  Media Type = File</tspan><tspan
+         sodipodi:role="line"
+         x="158.02795"
+         y="735.6637"
+         id="tspan21434">  PairedStorage = File</tspan><tspan
+         sodipodi:role="line"
+         x="158.02795"
+         y="751.2887"
+         id="tspan21436">}</tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:2.07209396;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect21438-3"
+       width="302.92789"
+       height="108.42789"
+       x="670.03607"
+       y="538.39832"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.5px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="677.15735"
+       y="562.05945"
+       id="text22959"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan22961"
+         x="677.15735"
+         y="562.05945">Ndmp {</tspan><tspan
+         sodipodi:role="line"
+         x="677.15735"
+         y="577.68445"
+         id="tspan22963">  Name = ...-ndmp-dma</tspan><tspan
+         sodipodi:role="line"
+         x="677.15735"
+         y="593.30945"
+         id="tspan22965">  Username = ndmp</tspan><tspan
+         sodipodi:role="line"
+         x="677.15735"
+         y="608.93445"
+         id="tspan22967">  Password = test</tspan><tspan
+         sodipodi:role="line"
+         x="677.15735"
+         y="624.55945"
+         id="tspan22969">  AuthType = Clear</tspan><tspan
+         sodipodi:role="line"
+         x="677.15735"
+         y="640.18445"
+         id="tspan22971">}</tspan></text>
+    <rect
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:2.06737185;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect21438-3-0"
+       width="302.93268"
+       height="107.93261"
+       x="670.03363"
+       y="418.3959"
+       ry="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.5px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="672.64441"
+       y="439.6492"
+       id="text23032"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan23034"
+         x="672.64441"
+         y="439.6492">Storage {</tspan><tspan
+         sodipodi:role="line"
+         x="672.64441"
+         y="455.2742"
+         id="tspan23036">   Name = ....</tspan><tspan
+         sodipodi:role="line"
+         x="672.64441"
+         y="470.8992"
+         id="tspan23038">   ...</tspan><tspan
+         sodipodi:role="line"
+         x="672.64441"
+         y="486.5242"
+         id="tspan23040">   NDMP Enable = yes</tspan><tspan
+         sodipodi:role="line"
+         x="672.64441"
+         y="502.1492"
+         id="tspan23042">}</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.5px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#008080;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
+       x="1050"
+       y="382.36221"
+       id="text23082"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan23084"
+         x="1050"
+         y="382.36221" /></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="806.49512"
+       y="442.55753"
+       id="text23086"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="806.49512"
+         y="442.55753"
+         id="tspan35009">enable NDMP </tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="821.57715"
+       y="577.66492"
+       id="text23086-0"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan23088-2"
+         x="821.57715"
+         y="577.66492">credentials for </tspan><tspan
+         sodipodi:role="line"
+         x="821.57715"
+         y="602.66492"
+         id="tspan38508">NDMP Agent </tspan><tspan
+         sodipodi:role="line"
+         x="821.57715"
+         y="627.66492"
+         id="tspan38512">in SD</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="336.78223"
+       y="829.59851"
+       id="text23086-0-6"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="336.78223"
+         y="829.59851"
+         id="tspan23146">NDMP access </tspan><tspan
+         sodipodi:role="line"
+         x="336.78223"
+         y="854.59851"
+         id="tspan37147">parameters</tspan><tspan
+         sodipodi:role="line"
+         x="336.78223"
+         y="879.59851"
+         id="tspan37145">for storage </tspan><tspan
+         sodipodi:role="line"
+         x="336.78223"
+         y="904.59851"
+         id="tspan37149">system</tspan></text>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot23172"
+       style="fill:black;stroke:none;stroke-opacity:1;stroke-width:1px;stroke-linejoin:miter;stroke-linecap:butt;fill-opacity:1;font-family:sans-serif;font-style:normal;font-weight:normal;font-size:12.5px;line-height:125%;letter-spacing:0px;word-spacing:0px;-inkscape-font-specification:'sans-serif, Normal';font-stretch:normal;font-variant:normal;text-anchor:start;text-align:start;writing-mode:lr"><flowRegion
+         id="flowRegion23174"><rect
+           id="rect23176"
+           width="150"
+           height="70"
+           x="-110"
+           y="294.09448" /></flowRegion><flowPara
+         id="flowPara23178"></flowPara></flowRoot>    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="306.79688"
+       y="447.55753"
+       id="text23086-0-6-4"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="306.79688"
+         y="447.55753"
+         id="tspan23146-3">native bareos </tspan><tspan
+         sodipodi:role="line"
+         x="306.79688"
+         y="472.55753"
+         id="tspan23184">storage definition</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="296.79688"
+       y="645.0575"
+       id="text23086-0-6-4-7"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="296.79688"
+         y="645.0575"
+         id="tspan23146-3-7">NDMP bareos </tspan><tspan
+         sodipodi:role="line"
+         x="296.79688"
+         y="670.0575"
+         id="tspan23228">storage definition</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:20px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="819"
+       y="787.26453"
+       id="text23086-0-5"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan23088-2-0"
+         x="819"
+         y="787.26453"> </tspan><tspan
+         sodipodi:role="line"
+         x="819"
+         y="812.26453"
+         id="tspan23108-5">NDMP AGENT </tspan><tspan
+         sodipodi:role="line"
+         x="819"
+         y="837.26453"
+         id="tspan23114-0">in Storage Device</tspan><tspan
+         sodipodi:role="line"
+         x="819"
+         y="862.26453"
+         id="tspan23271">- Credentials</tspan><tspan
+         sodipodi:role="line"
+         x="819"
+         y="887.26453"
+         id="tspan23273">- Address</tspan></text>
+    <path
+       style="fill:#000000;fill-opacity:0;fill-rule:evenodd;stroke:#ff0000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-start:url(#Arrow1Lstart);marker-end:url(#marker23345)"
+       d="m 479.12991,863.97387 c 55.39043,-3.33163 126.06483,-28.83188 186.39522,-26.22791"
+       id="path23277"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:#000000;fill-opacity:0;fill-rule:evenodd;stroke:#ff0000;stroke-width:1.28564918px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-start:url(#Arrow1Lstart-0);marker-end:url(#marker23345-9)"
+       d="M 169.46784,444.77294 C -54.185159,442.84553 -54.185159,731.87641 157.29342,729.10693"
+       id="path23277-0"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:#000000;fill-opacity:0;fill-rule:evenodd;stroke:#ff0000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-start:url(#Arrow1Lstart-0-8);marker-end:url(#marker23345-9-8)"
+       d="m 480.53388,659.83095 c 128.54024,1.5375 51.80343,-63.35146 190.76513,-66.93349"
+       id="path23277-0-5"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="503.29346"
+       y="572.34509"
+       id="text23086-0-6-4-8"
+       sodipodi:linespacing="125%"
+       inkscape:transform-center-x="-40.784716"
+       inkscape:transform-center-y="-81.569426"><tspan
+         sodipodi:role="line"
+         x="503.29346"
+         y="572.34509"
+         id="tspan23184-2">Primary Storage Device</tspan><tspan
+         sodipodi:role="line"
+         x="503.29346"
+         y="584.84509"
+         id="tspan37932">will connect with this info  to</tspan><tspan
+         sodipodi:role="line"
+         x="503.29346"
+         y="597.34509"
+         id="tspan37934">SD Tape Agent</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="504.61426"
+       y="813.49744"
+       id="text23086-0-6-4-8-8"
+       sodipodi:linespacing="125%"
+       inkscape:transform-center-x="-40.784716"
+       inkscape:transform-center-y="-81.569426"><tspan
+         sodipodi:role="line"
+         x="504.61426"
+         y="813.49744"
+         id="tspan37934-2">DMA in Director connects</tspan><tspan
+         sodipodi:role="line"
+         x="504.61426"
+         y="825.99744"
+         id="tspan38504">to Primary Storage with this</tspan><tspan
+         sodipodi:role="line"
+         x="504.61426"
+         y="838.49744"
+         id="tspan38506">Information</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="319.85107"
+       y="699.95984"
+       id="text23086-0-6-4-8-0"
+       sodipodi:linespacing="125%"
+       inkscape:transform-center-x="-40.784716"
+       inkscape:transform-center-y="-81.569426"><tspan
+         sodipodi:role="line"
+         x="319.85107"
+         y="699.95984"
+         id="tspan38542">Recieves  Data via NDMP</tspan><tspan
+         sodipodi:role="line"
+         x="319.85107"
+         y="712.45984"
+         id="tspan38569">from Primary Storage and</tspan><tspan
+         sodipodi:role="line"
+         x="319.85107"
+         y="724.95984"
+         id="tspan38573">wites it into native storage</tspan><tspan
+         sodipodi:role="line"
+         x="319.85107"
+         y="737.45984"
+         id="tspan38575">device</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="330"
+       y="489.95987"
+       id="text23086-0-6-4-8-0-2"
+       sodipodi:linespacing="125%"
+       inkscape:transform-center-x="-40.784716"
+       inkscape:transform-center-y="-81.569426"><tspan
+         sodipodi:role="line"
+         x="330"
+         y="489.95987"
+         id="tspan37934-3-1">Writes data to bareos</tspan><tspan
+         sodipodi:role="line"
+         x="330"
+         y="502.45987"
+         id="tspan38542-0">volumes</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ff0000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="6.3208008"
+       y="582.34509"
+       id="text23086-0-6-4-8-1"
+       sodipodi:linespacing="125%"
+       inkscape:transform-center-x="-40.784716"
+       inkscape:transform-center-y="-81.569426"><tspan
+         sodipodi:role="line"
+         x="6.3208008"
+         y="582.34509"
+         id="tspan37934-7">Storage Pairing:</tspan><tspan
+         sodipodi:role="line"
+         x="6.3208008"
+         y="594.84509"
+         id="tspan38605">NDMP from NDMP Storage</tspan><tspan
+         sodipodi:role="line"
+         x="6.3208008"
+         y="607.34509"
+         id="tspan38607">is stored in native Storage</tspan></text>
+  </g>
+</svg>

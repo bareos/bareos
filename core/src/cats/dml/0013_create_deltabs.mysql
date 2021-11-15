@@ -1,0 +1,5 @@
+CREATE TEMPORARY TABLE
+       DelCandidates (
+          JobId INTEGER UNSIGNED NOT NULL, PurgedFiles TINYINT, FileSetId INTEGER UNSIGNED, JobFiles INTEGER UNSIGNED, JobStatus
+          BINARY(1)
+       )

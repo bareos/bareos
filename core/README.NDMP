@@ -1,0 +1,367 @@
+Embedding full NDMP support in BAREOS.
+
+No filed plugin but a proper implementation with support in
+the director to act as a NDMP DMA (Data Management Application)
+and for NDMP tape agent support in the storage daemon for saving
+data using the NDMP protocol.
+
+This code is based on the NDMJOB NDMP reference implementation
+of Traakan, Inc., Los Altos, CA which has a BSD style license
+(2 clause one).
+
+http://www.traakan.com/ndmjob/index.html
+
+We imported the latest actively supported version of this
+reference NDMP code from the Amanda project. Instead of
+basing it on glib what Amanda has done we reverted some changes
+back to the way the latest spinnaker sources of the NDMJOB code
+deliver things with per OS specific code.
+
+The robot and tape simulator are rewritten versions from NDMJOB
+with support for registering callbacks in the calling code. This
+way we can implement virtual tape and robot functionality in the
+storage daemon for handling NDMP backups.
+
+There is also some code added for registering authentication
+callbacks in the calling code. This way we can perform clear
+text and md5 based authentication against the internal config
+data we keep in BAREOS native resources.
+
+The core fileindex handling code is rewritten to use callback
+functions for doing the real work. This way we can hook in
+internal functions into the core file indexing process which
+happens after a backup and before a restore to fill the
+files which have been backed up or restored.
+
+Some missing initialization, commission and decommission is
+added although it is empty it is better to have a consistent
+coding path/style for everything. Added extra destroy method
+as for some agents a decommission means make it ready for a next
+run and we want something that does a tear down and cleanup
+of anything dynamically allocated during a NDMP run.
+
+We also added support for telling the initialization upfront
+what NDMP services it should support. (e.g. DATA MANAGEMENT
+APPLICATION (DMA), DATA AGENT, TAPE AGENT or ROBOT AGENT)
+so when we accept a connection in the storage daemon via
+ndmp_tape we only allow the client to use our NDMP TAPE AGENT
+and not the ROBOT, DMA and DATA AGENT. See ndm_session structure
+members ..._agent_enabled.
+
+We also rewrote some of the internal structures. Normally
+a NDMP session is described by a so called ndm_session struct
+which is a whopping 1442392 bytes (almost 1.4 Mb) in size.
+The coders decided they would allocate each array up front
+and as such the total structure is huge. This is not very
+handy when using it as a base for a shared library as we want
+to support all agents but possibly not at the same time
+(even most likely not at the same time.)
+
+So the new ndm_session struct has pointers to the individual
+members and storage is only allocated when things are needed
+we also only allocate buffers at the time we need them not
+upfront. For things like directory names or other pathnames
+we just strdup the actual string and free it on decommission
+of the data, this saves a lot when PATH_MAX = 1024 bytes and
+you stuff a directory path of lets say 30 bytes.
+
+The DMA and DATA AGENT also keep track of an list of environment
+variables and a name list structure. In the original code the
+environment variable list can have a maximum of 1024 entries
+and 10240 entries for the name list and that is allocated as
+one big array of either 1024 or 10240 entries. This is
+madness we rewrote the list code to use a normal linked
+list so we only need the space to store the actual number
+of nodes of each list. There is a enumerate function which
+returns a memory chunk with all entries concatenated which
+is used for the rpc calls. We keep track of this enumerate
+buffer in the list descriptor and when the list is torn down
+it is freed. (We cannot free it earlier as it is needed
+as buffer for the returning rpc call.) This lingering of
+a buffer should be no problem as it should be moderate in
+size now and not the whopping 1024 or 10240 entries anymore.
+
+The media table is also rewritten to a linked list and not
+a fixed list of 40 entries as it was in the old code.
+
+This has significant size advantages to give an idea:
+
+   ndm_control_agent, original size 523000 bytes, new size 928 bytes
+   ndm_data_agent, original size 553232 bytes, new size 304 bytes
+   ndm_tape_agent, original size 263388 bytes, new size 228 bytes
+   ndm_plumbing, original size 102592 bytes, new size 20 bytes
+
+As we initialize some things now later we needed to add some
+extra checks and things may core dump due to dereferencing
+a null pointer. We decided to take that as a risk and fix
+those problems which we encounter them. Adding extra checks
+all over the place checking if things are not initialized is
+also gross overkill and as NDMP is a nice state machine we
+probably can get away by putting checks in strategic places.
+
+The test routines are put into an extra define named
+NDMOS_OPTION_NO_TEST_AGENTS so one can disable them for a
+production shared library.
+
+Extra support for getaddrinfo() is added to the library
+which supercedes the old and by POSIX deprecated gethostbyname()
+interface. Also the implementation of poll() is completed and
+we now also check the return info from poll() and set the
+channel ready flag if we detect something on a channel. This
+way the poll() handler should be on par with the select()
+based poller.
+
+The ndmjob program code is also included and you can build
+the ndmjob binary using the new shared library. Currently
+it is mostly for testing the new code in the shared library.
+
+The ndmjob program code is rewritten to also use linked list
+whereever possible without the need to completely rewrite the
+code.
+
+The NDMJOB header files are made C++ aware so we can compile
+the shared lib a pure C-code (which it essentially also is)
+and use it from BAREOS.
+
+The config engine of the director and storage daemon have been
+made aware of the NDMP protocol. Currently there is support for
+creating NDMP protocol based Backup and Restore Jobs. The storage
+resource is extended with a protocol and authentication type field
+which can be used by the NDMP DMA coded in ndmp_dma.c. A Client
+also has those two fields. When a storage daemon used in the NDMP
+backup/restore is in real life an BAREOS storage daemon an extra
+field named paired storage is part of the storage resource and is
+used by the DMA to contact the storage daemon via the native protocol
+to be able to simulate a NDMP save or restore via the normal
+BAREOS infrastructure. Via the native protocol we reserve
+things like drives etc so the virtual NDMP tape client can
+save its data, the native link is also used for things like
+getting the next volume to load etc.
+
+The job start code for backup and restore is modified to check
+for the job protocol and dispatch to the native routines when
+it is a native backup or to the NDMP routines when it is any NDMP job.
+
+The NDMP tape agent lives in ndmp_tape.c in the storage
+daemon it creates an extra listening thread which handles NDMP
+connections. Its based on the BAREOS bnet_server_thread code but
+put somewhat on a diet as for NDMP we don't need all the bells
+and whistles from the bsock class so we implemented a light weight
+ndmp connection structure. This structure is passed as handle to
+the connection handler and could be seen as local hook data and
+can be extended along the way to keep some state information on
+the NDMP session related to internal BAREOS resources.
+
+A ndmp backup configuration looks somethings like this:
+
+Configuration in bareos-dir configuration:
+
+Replace <ndmp_data_server> with the hostname of the storage device
+you are backing up e.g. the DATA AGENT in NDMP terms.
+
+#
+# Use the DUMP protocol (e.g. UNIX DUMP comparable to tar/cpio)
+# Generates FileHandle Information which can be used for single file
+# restore.
+#
+JobDefs {
+  Name = "DefaultNDMPJob"
+  Type = Backup
+  Protocol = NDMP
+  Level = Incremental
+  Client = <ndmp_data_server>-ndmp
+  Backup Format = dump
+  FileSet = "NDMP Fileset"
+  Schedule = "WeeklyCycle"
+  Storage = NDMPFile
+  Messages = Standard
+  Pool = NDMPFile
+  Priority = 10
+  Write Bootstrap = "/var/opt/bareos/run/bareos/%c.bsr"
+}
+
+#
+# A special restore Job which has the protocol set right etc.
+#
+JobDefs {
+  Name = "DefaultNDMPRestoreJob"
+  Client = <ndmp_data_server>-ndmp
+  Type = Restore
+  Protocol = NDMP
+  Backup Format = dump
+  FileSet = "NDMP Fileset"
+  Storage = NDMPFile
+  Pool = Default
+  Messages = Standard
+  Where = /
+}
+
+#
+# A NDMP Backup Job using the JobDef above.
+#
+Job {
+  Name = "BackupNDMPDump"
+  JobDefs = "DefaultNDMPJob"
+}
+
+#
+# Use the NETAPP SMTAPE protocol e.g. same protocol is used as replication protocol
+# between two NETAPP storage boxes. Doesn't allow single file restore all or nothing
+# restore of whole NETAPP volume.
+#
+Job {
+  Name = "BackupNDMPSMTape"
+  JobDefs = "DefaultNDMPJob"
+  Backup Format = smtape
+  Client = <ndmp_data_server>-ndmp
+  FileSet = "NDMP SMtape Fileset"
+}
+
+#
+# A NDMP restore Job using the JobDef above.
+#
+Job {
+  Name = "NDMPRestoreDump"
+  JobDefs = "DefaultNDMPRestoreJob"
+}
+
+#
+# A NDMP restore Job using the JobDef above but for restoring a SMTAPE type of NDMP backup.
+#
+Job {
+  Name = "NDMPRestoreSMTape"
+  JobDefs = "DefaultNDMPRestoreJob"
+  Backup Format = smtape
+  FileSet = "NDMP SMtape Restore Fileset"
+}
+
+Fileset {
+  Name = "NDMP Fileset"
+  Include {
+    Options {
+       meta = "USER=root"
+    }
+    File = /export/home/...
+  }
+}
+
+#
+# A NDMP Backup using SMPTAPE of a NetAPP storage box.
+#
+Fileset {
+  Name = "NDMP SMtape Fileset"
+  Include {
+    Options {
+       meta = "SMTAPE_DELETE_SNAPSHOT=Y"
+    }
+    File = /vol/vol1
+  }
+}
+
+#
+# A NDMP Restore using SMPTAPE of a NetAPP storage box.
+#
+Fileset {
+  Name = "NDMP SMtape Restore Fileset"
+  Include {
+    Options {
+       meta = "SMTAPE_BREAK_MIRROR=Y"
+    }
+    File = /vol/vol1
+  }
+}
+
+#
+# A NDMP Client.
+#
+Client {
+  Name = <ndmp_data_server>-ndmp
+  Address = ...
+  Port = 10000
+  Protocol = NDMPv4                   # Need to specify protocol before password as protocol determines password encoding used.
+  Auth Type = Clear                   # Clear == Clear Text, MD5 == Challenge protocol
+  Username = "ndmp"                   # username of the NDMP user on the DATA AGENT e.g. storage box being backed up.
+  Password = "test"                   # password of the NDMP user on the DATA AGENT e.g. storage box being backed up.
+}
+
+#
+# Your normal Bareos SD definition should be already in your config.
+#
+Storage {
+  Name = File
+  Address = ...                       # N.B. Use a fully qualified name here
+  SDPort = 9103
+  Password = ...
+  Device = FileStorage
+  Media Type = File
+}
+
+#
+# Same storage daemon but via NDMP protocol.
+# We link via the PairedStorage config option the Bareos SD instance definition to a NDMP TAPE AGENT.
+#
+Storage {
+  Name = NDMPFile
+  Address = ...                       # N.B. Use a fully qualified name here
+  Port = 10000
+  Protocol = NDMPv4                   # Need to specify protocol before password as protocol determines password encoding used.
+  Auth Type = Clear                   # Clear == Clear Text, MD5 == Challenge protocol
+  Username = ndmp                     # username of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
+  Password = test                     # password of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
+  Device = FileStorage
+  Media Type = File
+  PairedStorage = File
+}
+
+#
+# Your normal File based backup pool normally already defined.
+#
+Pool {
+  Name = File
+  Pool Type = Backup
+  Recycle = yes
+  AutoPrune = yes
+  Storage = File
+  Volume Retention = 365 days         # one year
+  Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
+  Maximum Volumes = 100               # Limit number of Volumes in Pool
+}
+
+#
+# Separate Pool for NDMP data so upgrading of Jobs works and selects the right storage.
+#
+Pool {
+  Name = NDMPFile
+  Pool Type = Backup
+  Recycle = yes
+  AutoPrune = yes
+  Storage = NDMPFile
+  Volume Retention = 365 days         # one year
+  Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
+  Maximum Volumes = 100               # Limit number of Volumes in Pool
+}
+
+Configuration in bareos-sd configuration:
+
+#
+# Normal SD config block, should enable the NDMP protocol here otherwise it won't listen
+# on port 10000.
+#
+Storage {
+   Name = ....
+   ...
+   NDMP Enable = yes
+}
+
+#
+# This entry gives the DMA in the Director access to the bareos SD via the NDMP protocol.
+# This option is used via the NDMP protocol to open the right TAPE AGENT connection to your
+# Bareos SD via the NDMP protocol. The initialization of the SD is done via the native protocol
+# and is handled via the PairedStorage keyword.
+#
+Ndmp {
+  Name = ...-ndmp-dma                # Can be any name but normally you should use the name of the Director here.
+  Username = ndmp                    # Same username as you specified in the NDMPFile storage definition.
+  Password = test                    # Same password as you specified in the NDMPFile storage definition.
+  AuthType = Clear                   # Clear == Clear Text, MD5 == Challenge protocol
+}

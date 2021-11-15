@@ -1,0 +1,15 @@
+Please run the following commands to setup the bareos databases:
+
+su postgres -c /usr/lib/bareos/scripts/create_bareos_database
+su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
+su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
+
+Start the bareos director daemon with
+
+service bareos-dir onestart
+
+or enable the autostart of the  bareos director service
+
+in /etc/rc.config by adding:
+
+bareosdir_enable=YES

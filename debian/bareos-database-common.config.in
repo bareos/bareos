@@ -1,0 +1,103 @@
+#!/bin/sh
+
+set -e
+
+. /usr/share/debconf/confmodule
+
+#set -x
+#echo "bareos-database-common.config: $@" >&2
+
+if [ -r @scriptdir@/bareos-config-lib.sh ]; then
+    . @scriptdir@/bareos-config-lib.sh
+    if [ -f /usr/share/dbconfig-common/dpkg/config ]; then
+        . /usr/share/dbconfig-common/dpkg/config
+
+        dbc_debug=1
+        # prevent errors by using || true
+        dbc_dbname=`get_database_name bareos` || true
+        dbc_dbuser=`get_database_user bareos` || true
+
+        # only required for sqlite3
+        dbc_basepath=`get_working_dir`
+
+        # convert Bareos databases types into dbconfig_dbtypes
+        dbc_dbtypes=""
+        DB_INSTALLED=`get_databases_installed`
+        if echo "$DB_INSTALLED" | grep -q postgresql; then dbc_dbtypes="${dbc_dbtypes}pgsql, "; fi
+        if echo "$DB_INSTALLED" | grep -q mysql     ; then dbc_dbtypes="${dbc_dbtypes}mysql, "; fi
+        if echo "$DB_INSTALLED" | grep -q sqlite3   ; then dbc_dbtypes="${dbc_dbtypes}sqlite3, "; fi
+        # remove trailing ,
+        dbc_dbtypes=`echo ${dbc_dbtypes} | sed 's/, *$//'`
+
+        # action
+        if [ $# -gt 0 ]; then
+            param1="$1"
+            shift
+        fi
+        # $2: when action is "configure": most-recently-configured-version
+        if [ $# -gt 0 ]; then
+            param2="$1"
+            param2_orig=$param2
+            shift
+        fi
+
+        # When upgrading from an older version (param2),
+        # do not pass the version number of the old package.
+        # Instead we pass the database version number of the old package.
+        if [ "$param2" ]; then
+            case "$param1" in
+                configure|reconfigure)
+                    param2=`get_database_version_by_release "$param2"`
+
+                    # dbconfig is available since Bareos version >= 14.1.0.
+                    if dpkg --compare-versions "$param2_orig" lt "14.1.0"; then
+                        bareos_migrate_to_dbconfig="yes"
+                        dbc_first_version="2003"
+                        dbc_load_include="sh:/usr/lib/bareos/scripts/set_dbconfig_vars.sh"
+                        # empty passwords require special treatment, see below
+                        bareos_database_password=`get_database_password` || true
+                        # if password is given, set authmethod to password,
+                        # otherwise postgresql configuration will stay at default "ident" method.
+                        if [ "${bareos_database_password}" ]; then
+                            dbc_authmethod_user="password"
+                        fi
+                    fi
+                    ;;
+                *)
+                    ;;
+            esac
+        fi
+
+        dbc_go bareos-database-common $param1 $param2 $@
+
+        if [ "$bareos_migrate_to_dbconfig" = "yes" ]; then
+            # TODO: check if settings app-pass to "" is really required.
+            #       Or is it only required for "DEBIAN_FRONTEND=noninteractive" ?
+            case "`get_database_driver`" in
+                postgresql)
+                    if [ -z "${bareos_database_password}" ]; then
+                        #db_set bareos-database-common/pgsql/authmethod-user "ident"
+                        # workaround: if an empty database password is defined, explicitly set it
+                        db_set bareos-database-common/pgsql/app-pass ""
+                    fi
+                    ;;
+                mysql)
+                    if [ -z "${bareos_database_password}" ]; then
+                        # workaround: if an empty mysql password is defined, explicitly set it
+                        db_set bareos-database-common/mysql/app-pass ""
+                    fi
+                    ;;
+                sqlite3)
+                    # dbconfig expects sqlite files as "dbname.db"
+                    # while Bareos expects them as "dbname".
+                    # A link is created, so that both names matches.
+                    if [ -e "${dbc_basepath}/${dbc_dbname}.db" ]; then
+                        if ! [ -e "${dbc_basepath}/${dbc_dbname}" ]; then
+                            ln -s "${dbc_basepath}/${dbc_dbname}.db" "${dbc_basepath}/${dbc_dbname}"
+                        fi
+                    fi
+                    ;;
+            esac
+        fi
+    fi
+fi

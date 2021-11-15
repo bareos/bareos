@@ -1,0 +1,4 @@
+#
+# PAM settings for service bareos.
+#
+auth        required     pam_exec.so  expose_authtok debug quiet log=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/log/pam_exec_check.log @PROJECT_BINARY_DIR@/tests/@TEST_NAME@/bin/pam_exec_check.sh

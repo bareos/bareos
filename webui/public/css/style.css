@@ -1,0 +1,122 @@
+/*
+ *  BAREOS® - Backup Archiving REcovery Open Sourced
+ *
+ *  Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+ *
+ *  This program is Free Software; you can redistribute it and/or
+ *  modify it under the terms of version three of the GNU Affero General Public
+ *  License as published by the Free Software Foundation and included
+ *  in the file LICENSE.
+ *
+ *  This program is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ *  Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ *  02110-1301, USA.
+ */
+
+/* Custom page styles */
+body {
+	padding-top: 60px;
+	padding-bottom: 30px;
+	/* Margin bottom by footer height */
+	margin-bottom: 25px;
+}
+
+/* Sticky footer styles */
+.footer {
+	position: fixed;
+	bottom: 0;
+	width: 100%;
+	z-index: 1000;
+	border-top: 1px solid #eee;
+	/* Fixed height for the footer */
+	height: 25px;
+	background-color: #f5f5f5;
+}
+
+/* Sidebar navigation */
+.nav-sidebar {
+  margin-right: -21px; /* 20px padding + 1px border */
+  margin-bottom: 20px;
+  margin-left: -20px;
+}
+.nav-sidebar > li > a {
+  padding-right: 20px;
+  padding-left: 20px;
+}
+.nav-sidebar > .active > a,
+.nav-sidebar > .active > a:hover,
+.nav-sidebar > .active > a:focus {
+  color: #fff;
+  background-color: #428bca;
+}
+
+/* Hide for mobile, show later */
+.sidebar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+   .sidebar {
+    position: fixed;
+    top: 51px;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+    display: block;
+    padding: 20px;
+    overflow-x: hidden;
+    overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+    background-color: #fafafa;
+    border-right: 1px solid #eee;
+   }
+}
+
+/*
+ * Main content
+ */
+.main {
+  padding: 20px;
+}
+
+@media (min-width: 768px) {
+  .main {
+    padding-right: 40px;
+    padding-left: 40px;
+  }
+}
+
+.main .page-header {
+  margin-top: 0;
+}
+
+.spinner {
+   position: fixed;
+   left: 0px;
+   top: 0px;
+   width: 100%;
+   height: 100%;
+   z-index: 10000;
+   background: url(spinner.gif) center no-repeat #fff;
+   opacity: 0.5;
+}
+
+.code {
+    font-family: monospace;
+}
+
+.bootstrap-table .table.table-no-bordered > thead > tr > th,
+.bootstrap-table .table.table-no-bordered > tbody > tr > td {
+    border-right: 2px solid transparent!important;
+}
+.bootstrap-table .table.table-no-bordered > tbody > tr > td:last-child {
+    border-right: none!important;
+}
+.fixed-table-container.table-no-bordered {
+    border: 1px solid transparent!important;
+}

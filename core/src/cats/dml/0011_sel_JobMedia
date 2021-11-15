@@ -1,0 +1,5 @@
+SELECT DISTINCT JobMedia.JobId
+  FROM JobMedia, Job
+ WHERE MediaId      = %s
+   AND Job.JobId    = JobMedia.JobId
+   AND Job.JobTDate < %s

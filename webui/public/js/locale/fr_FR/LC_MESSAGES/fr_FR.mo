@@ -1,0 +1,1 @@
+../../../../../module/Application/language/fr_FR.mo
