@@ -1,0 +1,14 @@
+[Director]
+Name=bareos-dir
+Address=127.0.0.1
+Port=9101
+
+[JWT]
+# to get a string like this run:
+# Secret key for JWT encryption. Warning: this is an example, do not use in production
+# Use
+# openssl rand -hex 32
+# to generate your own key
+# secret_key = 936959a2a6902056b924669796c74aad13b9da2b5cf637b70e377b3d7c29c6fb
+algorithm = HS256
+access_token_expire_minutes = 30

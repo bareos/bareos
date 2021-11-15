@@ -1,0 +1,118 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH bpluginfo "8" "July 2012" "bpluginfo" "Backup Archiving REcovery Open Sourced"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+bpluginfo \- Bareos Plugin information utility
+.SH SYNOPSIS
+.B bplufinfo
+.RI [ options ]
+.I plugin_filename.so
+.br
+.SH DESCRIPTION
+.LP
+The main purpose of
+.B bpluginfo
+is to display different information about Bareos plugin. You can use it to
+check a plugin name, author, license and short description. You can use
+.B \-f
+option to display API implemented by the plugin. Some plugins may require
+additional '-a' option for validating a Bareos Daemons API. In most cases it
+is not required.
+.PP
+.SH OPTIONS
+A summary of options is included below.
+.TP
+.B \-h
+Show usage of the program.
+.TP
+.BI \-v
+Verbose information printing all available data from the plugin, including
+plugin header and implemented API.
+.TP
+.BI \-i
+Display short information from plugin header only. This is a default option.
+Option incompatible with
+.B \-f
+option.
+.TP
+.BI \-f
+Display information about implemented API functions.
+.TP
+.BI \-a\ <api>
+You can supply the plugin initialization function with a particular Bareos
+API number. Without this option a default API number is '1'. Option require
+a numeric argument.
+.SH RETURN CODE
+.BR bpluginfo
+returns 0 on success, and non-zero on error.
+.TP
+You can check return code to find what was a cause of the error.
+ * 0 - success
+ * 1 - cannot load a plugin
+ * 2 - cannot find a loadPlugin function
+ * 3 - cannot find an unloadPlugin function
+ * 10 - not enough memory
+.SH EXAMPLE USAGE
+This is an example of bplufinfo usage with verbose option (-v) and default plugin.
+.LP
+.sp
+.RS
+.nf
+
+\fB$ bpluginfo -v /usr/lib/bareos/plugins/python-fd.so
+
+Plugin type:            Bareos File Daemon plugin
+Plugin magic:           *FDPluginData*
+Plugin version:         2
+Plugin release date:    October 2013
+Plugin author:          Marco van Wieringen
+Plugin licence:         Bareos AGPLv3
+Plugin description:     Python File Daemon Plugin
+Plugin API version:     8
+Plugin usage:
+python:module_path=<path-to-python-modules>:module_name=<python-module-to-load>:...
+
+Plugin functions:
+ newPlugin()
+ freePlugin()
+ getPluginValue()
+ setPluginValue()
+ handlePluginEvent()
+ startBackupFile()
+ endBackupFile()
+ startRestoreFile()
+ endRestoreFile()
+ pluginIO()
+ createFile()
+ setFileAttributes()
+ checkFile()
+.fi
+.RE
+
+.SH AUTHOR
+Written by Radoslaw Korzeniewski (c) Inteos Sp. z o.o.
+.SH BUGS
+Does not handle all required Bareos functions callbacks which can lead to
+utility crash.
+.\".SH TODO"
+
+.PP
+
+.PP
+
+.SH "REPORTING BUGS"
+Report bugs to <support@inteos.pl>.
+.SH COPYRIGHT
+Copyright \(co 2012 Free Software Foundation Europe e.V.
+.br
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH "SEE ALSO"
+.BR bareos-dir,
+.BR bareos-sd,
+.BR bareos-fd,
+.BR "Bareos Plugins API"

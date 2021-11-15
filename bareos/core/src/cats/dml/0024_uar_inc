@@ -1,0 +1,15 @@
+INSERT INTO temp
+SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName,
+       JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime
+  FROM Job, JobMedia, Media, FileSet
+ WHERE Job.JobTDate     > %s
+   AND Job.StartTime    < '%s'
+   AND Job.ClientId     = %s
+   AND Media.Enabled    = 1
+   AND JobMedia.JobId   = Job.JobId
+   AND JobMedia.MediaId = Media.MediaId
+   AND Job.Level        = 'I'
+   AND JobStatus IN ('T','W')
+   AND Type             = 'B'
+   AND Job.FileSetId    = FileSet.FileSetId
+   AND FileSet.FileSet  = '%s' %s

@@ -1,0 +1,59 @@
+; Copyright (c) uib gmbh (www.uib.de)
+; This sourcecode is owned by uib gmbh
+; and published under the Terms of the General Public License.
+; credits: http://www.opsi.org/en/credits/
+
+[Actions]
+requiredWinstVersion >= "4.10.8.6"
+
+DefVar $MsiId32$
+DefVar $UninstallProgram32$
+DefVar $MsiId64$
+DefVar $UninstallProgram64$
+DefVar $LogDir$
+DefVar $ExitCode$
+DefVar $ProductId$
+DefVar $ProductName$
+DefVar $InstallDir32$
+DefVar $InstallDir64$
+DefVar $LicenseRequired$
+DefVar $LicensePool$
+DefVar $auto_config$
+DefVar $keep_config$
+DefVar $INST_SystemType$
+DefVar $INST_architecture$
+
+Set $INST_SystemType$ = GetSystemType
+set $INST_architecture$ = GetProductProperty("install_architecture","system specific")
+
+
+Set $LogDir$ = "%SystemDrive%\tmp"
+
+; ----------------------------------------------------------------
+; - Please edit the following values                             -
+; ----------------------------------------------------------------
+Set $ProductId$       = "bareos"
+Set $InstallDir32$    = "%ProgramFiles32Dir%\Bareos"
+Set $InstallDir64$    = "%ProgramFiles64Dir%\Bareos"
+;Set $LicenseRequired$ = "false"
+;Set $LicensePool$     = "p_" + $ProductId$
+; ----------------------------------------------------------------
+
+Set $auto_config$ = lower( GetProductProperty("auto_config", "true"))
+
+if $auto_config$ = "true"
+    set $ProductName$ = $ProductId$ + " (auto config)"
+else
+    set $keep_config$ = "/SILENTKEEPCONFIG"
+    set $ProductName$ = $ProductId$
+endif
+
+comment "Show product picture"
+ShowBitmap "%ScriptPath%\logo.png" $ProductId$
+
+Message "Uninstalling " + $ProductId$ + " ..."
+
+if FileExists("%ScriptPath%\delsub3264.ins")
+	comment "Start uninstall sub section"
+	Sub "%ScriptPath%\delsub3264.ins"
+endif

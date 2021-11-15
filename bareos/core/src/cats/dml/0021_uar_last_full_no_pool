@@ -1,0 +1,11 @@
+INSERT INTO temp1
+SELECT Job.JobId, JobTdate
+  FROM Job, FileSet
+ WHERE Job.ClientId    = %s
+   AND Job.StartTime   < '%s'
+   AND Level           = 'F'
+   AND JobStatus IN ('T','W')
+   AND Type            = 'B'
+   AND Job.FileSetId   = FileSet.FileSetId
+   AND FileSet.FileSet = '%s'
+ ORDER BY Job.JobTDate DESC LIMIT 1

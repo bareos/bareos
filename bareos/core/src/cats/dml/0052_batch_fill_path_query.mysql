@@ -1,0 +1,11 @@
+INSERT INTO Path (Path)
+SELECT a.Path
+  FROM (
+      SELECT DISTINCT Path
+	FROM batch
+       ) AS a
+ WHERE NOT EXISTS (
+      SELECT Path
+	FROM Path AS p
+       WHERE p.Path = a.Path
+       )

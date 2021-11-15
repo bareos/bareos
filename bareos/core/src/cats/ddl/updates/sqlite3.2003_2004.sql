@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE FileSet ADD COLUMN FileSetText TEXT DEFAULT '';
+
+UPDATE Version SET VersionId = 2004;
+COMMIT;

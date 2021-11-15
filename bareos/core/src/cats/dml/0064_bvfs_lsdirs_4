@@ -1,0 +1,21 @@
+#
+# for .bvfs_lsdirs
+#
+# create a union of special dirs and sub dirs
+# to contain the full directory listing.
+# Apply sorting and limits to the UNION.
+#
+# parameter:
+#   %s SQL Query for special dirs (bvfs_ls_special_dirs_3)
+#   %s SQL query for sub dirs (bvfs_ls_sub_dirs_5)
+#   %d limit
+#   %d offset
+#
+# row: 0    1       2     3      4      5
+# row: 'D', PathId, Path, JobId, LStat, FileId
+%s
+UNION
+%s
+ORDER BY Path ASC,JobId DESC
+LIMIT %d
+OFFSET %d

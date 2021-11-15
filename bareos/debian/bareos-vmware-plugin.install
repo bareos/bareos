@@ -1,0 +1,3 @@
+/usr/lib/bareos/plugins/BareosFdPluginVMware.py
+/usr/lib/bareos/plugins/bareos-fd-vmware.py
+/usr/sbin/vmware_cbt_tool.py

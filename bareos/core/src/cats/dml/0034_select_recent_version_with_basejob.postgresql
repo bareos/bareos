@@ -1,0 +1,42 @@
+SELECT DISTINCT ON (Name,
+                    PathId) JobTDate,
+                   JobId,
+                   FileId,
+                   FileIndex,
+                   PathId,
+                   FileName AS Name,
+                   LStat,
+                   MD5,
+                   DeltaSeq,
+                   Fhinfo,
+                   Fhnode
+FROM
+  (SELECT FileId,
+          JobId,
+          PathId,
+          Name AS FileName,
+          FileIndex,
+          LStat,
+          MD5,
+          DeltaSeq,
+          Fhinfo,
+          Fhnode
+   FROM File
+   WHERE JobId IN (%s)
+     UNION ALL
+     SELECT File.FileId,
+            File.JobId,
+            PathId,
+            File.Name AS FileName,
+            File.FileIndex,
+            LStat,
+            MD5,
+            DeltaSeq,
+            Fhinfo,
+            Fhnode
+     FROM BaseFiles
+     JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
+JOIN Job USING (JobId)
+ORDER BY Name,
+         PathId,
+         JobTDate DESC

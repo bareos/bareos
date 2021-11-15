@@ -1,0 +1,181 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+set -u
+
+start_bareos_dir()
+{
+    BAREOS_DIR_EXTRA_OPTIONS="$@"
+
+    output=/dev/null
+    BAREOS_DIR_OPTIONS=""
+    if is_debug; then
+        #BAREOS_DIR_OPTIONS="-d 200"
+        output=/dev/stdout
+        "${BAREOS_DIRECTOR_BINARY}" ${BAREOS_DIR_EXTRA_OPTIONS} -f ${BAREOS_DIR_OPTIONS} >$output 2>&1 &
+    else
+        "${BAREOS_DIRECTOR_BINARY}" ${BAREOS_DIR_EXTRA_OPTIONS} -f                       >$output 2>&1 &
+    fi
+    dir_pid=$!
+
+    sleep 1
+
+    if ! ${rscripts}/bareos-ctl-dir status >/dev/null; then
+        set_error "Director does not run anymore. This should not happen."
+        exit 1
+    fi
+}
+
+remove_bconsole_commands_from_output()
+{
+    FILE="$1"
+    # remove first and last line from file
+    sed -i'.bak' -e '1d' -e '$ d' ${FILE}
+}
+
+strip_config()
+{
+    # removes files that are known to differ.
+    # Password: will be shown as MD5
+    # DbDriver: postgresql is default, therefore verbose prepend a comment sign.
+    source="$1"
+
+    if ! [ -e "${configfile}" ]; then
+        set_error "strip_config: File \"${configfile}\" does not exist."
+        exit 1
+    fi
+
+    grep -v -e "Password = " -e "DbDriver = " "${source}"
+}
+
+dump_config()
+{
+    # start bareos-dir with config file
+    # and export it in 4 different formats:
+    #   plain
+    #   plain-verbose
+    #   json
+    #   json-verbose
+    configfile="$1"
+    ext="$2"
+
+    if ! [ -e "${configfile}" ]; then
+        set_error "Director config file \"${configfile}\" does not exist."
+        exit 1
+    fi
+
+    DESC="dump_config ${configfile} ext=${ext}"
+    print_debug "*** start $DESC"
+
+    "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" -xc > $tmp/bareos-dir-xc-${ext}.conf
+
+    start_bareos_dir -c "${configfile}"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log-${ext}.out
+status director
+@$out $tmp/bareos-dir-show-${ext}.conf
+show all
+@$out $tmp/bareos-dir-show-verbose-${ext}.conf
+show all verbose
+@$out
+.api json
+@$out $tmp/bareos-dir-show-${ext}.json
+show all
+@$out $tmp/bareos-dir-show-verbose-${ext}.json
+show all verbose
+@$out
+quit
+END_OF_DATA
+
+    run_bconsole
+
+    remove_bconsole_commands_from_output "$tmp/bareos-dir-show-${ext}.conf"
+    remove_bconsole_commands_from_output "$tmp/bareos-dir-show-verbose-${ext}.conf"
+    remove_bconsole_commands_from_output "$tmp/bareos-dir-show-${ext}.json"
+    remove_bconsole_commands_from_output "$tmp/bareos-dir-show-verbose-${ext}.json"
+
+    stop_bareos > $output 2>&1
+
+    if ${rscripts}/bareos-ctl-dir status >/dev/null; then
+        set_error "Director is not stopped."
+        exit 1
+    fi
+
+    print_debug "*** end   $DESC"
+}
+
+diff_files()
+{
+    file1="$1"
+    file2="$2"
+    base1="$(basename "$file1" .conf)"
+    base2="$(basename "$file2" .conf)"
+    difffile="${tmp}/${base1}_${base2}.diff"
+    # --ignore-space-change could be replaced by --ignore-trailing-space,
+    # however, the FreeBSD version of diff does not support this option.
+    DIFF_CMD='diff --ignore-blank-lines --ignore-space-change "${file1}" "${file2}"'
+    if ! eval "$DIFF_CMD" > "${difffile}"; then
+        echo "Differences found. Output of:"
+        eval "echo $DIFF_CMD"
+        cat "${difffile}"
+        set_error "Differences between $file1 and $file2."
+        exit 1
+    fi
+}
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+start_test
+
+${scripts}/bareos-config initialize_database_driver
+
+# bareos-dir-19.2.7-xc.conf:
+# output of bareos-dir -xc (manually adapted)
+# from a default installation of version 19.2.7
+dump_config "${conf}/bareos-dir-19.2.7-xc.conf" "1"
+
+dump_config "${tmp}/bareos-dir-show-1.conf" "2"
+
+# bareos-dir-full.conf:
+# configuration with as many config directives set.
+dump_config "${conf}/bareos-dir-full.conf" "full1"
+
+dump_config "${tmp}/bareos-dir-show-verbose-full1.conf" "full2"
+
+
+# compare config export from
+# bareos-dir-19.2.7-xc
+# with re-exported version.
+diff_files "$tmp/bareos-dir-show-1.conf" "$tmp/bareos-dir-show-2.conf"
+
+# compare verbose config export from
+# bareos-dir-19.2.7-xc
+# with re-exported version.
+diff_files "$tmp/bareos-dir-show-verbose-1.conf" "$tmp/bareos-dir-show-verbose-2.conf"
+
+# Don't compare directly,
+# as there are known differences.
+strip_config "${conf}/bareos-dir-full.conf" > "${tmp}/bareos-dir-full-stripped.conf"
+strip_config "${tmp}/bareos-dir-show-verbose-full1.conf" > "${tmp}/bareos-dir-show-verbose-full1-stripped.conf"
+diff_files "${tmp}/bareos-dir-full-stripped.conf" "${tmp}/bareos-dir-show-verbose-full1-stripped.conf"
+
+# Compare export and re-export from bareos-dir-full.conf.
+diff_files "${tmp}/bareos-dir-show-full1.conf" "$tmp/bareos-dir-show-full2.conf"
+
+# Compare export and re-export from bareos-dir-full.conf(verbose versions).
+diff_files "${tmp}/bareos-dir-show-verbose-full1.conf" "$tmp/bareos-dir-show-verbose-full2.conf"
+
+end_test

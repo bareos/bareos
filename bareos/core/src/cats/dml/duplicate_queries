@@ -1,0 +1,41 @@
+#!/bin/sh
+
+trap "rm -f /tmp/aa /tmp/bb; exit 0" HUP INT QUIT TERM
+
+#
+# See what we have to do
+#
+if [ $# -gt 0 ]; then
+   query_files="$*"
+else
+   query_files=`ls -1 0*`
+fi
+
+#
+# See if a query is unique
+#
+for i in ${query_files}
+do
+   #
+   # Create a query without comments
+   #
+   cat $i | sed -e "/^#.*/d" > /tmp/aa
+   for j in 0*
+   do
+      if [ $i = $j ]; then
+         continue
+      fi
+      #
+      # Create a query without comments
+      #
+      cat $j | sed -e "/^#.*/d" > /tmp/bb
+
+      cmp -s /tmp/aa /tmp/bb
+      if [ $? = 0 ]; then
+         echo "$i ==> $j"
+      fi
+
+      rm -f /tmp/bb
+   done
+   rm -f /tmp/aa
+done

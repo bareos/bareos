@@ -1,0 +1,5 @@
+Client {
+  Name = @basename@-fd
+  Address = @hostname@
+  Password = "@mon_fd_password@"          # password for FileDaemon
+}

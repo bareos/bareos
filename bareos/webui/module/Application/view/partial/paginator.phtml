@@ -1,0 +1,60 @@
+<?php if($this->pageCount): ?>
+
+<div>
+
+   <ul class="pagination">
+
+      <!-- previous page link -->
+      <?php if(isset($this->previous)): ?>
+      <li>
+         <a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->previous; ?>"><span aria-hidden="true">&laquo;</span></a>
+      </li>
+      <?php else: ?>
+      <li class="disabled">
+         <a href="#"><span aria-hidden="true">&laquo;</span></a>
+      </li>
+      <?php endif; ?>
+
+      <!-- first page link -->
+      <?php if(isset($this->first)): ?>
+      <li>
+         <a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->first; ?>">first</a>
+      </li>
+      <?php endif; ?>
+
+      <!-- numbered page links -->
+      <?php foreach($this->pagesInRange as $page): ?>
+         <?php if($page != $this->current): ?>
+            <li>
+               <a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $page; ?>"><?php echo $page; ?></a>
+            </li>
+         <?php else: ?>
+            <li class="active">
+               <a href="#"><?php echo $page; ?></a>
+            </li>
+         <?php endif; ?>
+      <?php endforeach; ?>
+
+      <!-- last page link -->
+      <?php if(isset($this->last)): ?>
+      <li>
+         <a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->last; ?>">last</a>
+      </li>
+      <?php endif; ?>
+
+      <!-- next page link -->
+      <?php if(isset($this->next)): ?>
+         <li>
+            <a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->next; ?>"><span aria-hidden="true">&raquo;</span></a>
+         </li>
+      <?php else: ?>
+         <li class="disabled">
+            <a href="#"><span aria-hidden="true">&raquo;</span></a>
+         </li>
+      <?php endif; ?>
+
+   </ul>
+
+</div>
+
+<?php endif; ?>

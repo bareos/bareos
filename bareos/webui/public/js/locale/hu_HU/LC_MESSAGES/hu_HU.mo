@@ -1,0 +1,1 @@
+../../../../../module/Application/language/hu_HU.mo

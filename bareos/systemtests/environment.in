@@ -1,0 +1,156 @@
+
+CMAKE_SOURCE_DIR=@CMAKE_SOURCE_DIR@
+CMAKE_BINARY_DIR=@CMAKE_BINARY_DIR@
+PROJECT_SOURCE_DIR=@PROJECT_SOURCE_DIR@
+PROJECT_BINARY_DIR=@PROJECT_BINARY_DIR@
+bin=@bin@
+sbin=@sbin@
+
+BAREOS_UNITTESTS_BINARY_DIR=$CMAKE_BINARY_DIR/core/src/tests
+
+current_test_directory=${PROJECT_BINARY_DIR}/tests/@TEST_NAME@
+
+conf=${current_test_directory}/etc/bareos
+export confdir=${conf}
+configs=${conf}
+
+export config_directory_dir_additional_test_config=@config_directory_dir_additional_test_config@
+
+working=${current_test_directory}/working
+working_dir=${working}
+tmp=${current_test_directory}/tmp
+export BackupDirectory="${tmp}/data"
+systemtests_s3_use_https=@systemtests_s3_use_https@
+
+
+
+dumps=${current_test_directory}/dumps
+rscripts=${PROJECT_BINARY_DIR}/scripts
+scripts=@scripts@
+cats=${PROJECT_BINARY_DIR}/cats
+src=${PROJECT_BINARY_DIR}/src
+tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
+
+DBTYPE=${DBTYPE:-@db_backend_to_test@}
+
+archivedir=@archivedir@
+logdir=@logdir@
+
+export backenddir=@backenddir@
+export sd_backenddir=@sd_backenddir@
+
+export dir_password=@dir_password@
+export sd_password=@sd_password@
+export fd_password=@fd_password@
+
+# exported variables used by start/stop and other bareos scripts
+# to override the defaults
+export BAREOS_CONFIG_DIR=${conf}
+export BAREOS_LOG_DIR=${logdir}
+export BAREOS_SCRIPTS_DIR=${scripts}
+export BAREOS_SBIN_DIR=${sbin}
+export BAREOS_WORKING_DIR=${working}
+export BASEPORT=@BASEPORT@
+export BAREOS_DIRECTOR_PORT=@dir_port@
+export BAREOS_STORAGE_PORT=@sd_port@
+export BAREOS_STORAGE2_PORT=@sd2_port@
+export BAREOS_FD_PORT=@fd_port@
+export MINIO_PORT=@minio_port@
+
+export BAREOS_DIRECTOR_BINARY=@BAREOS_DIR_BINARY@
+export BAREOS_FILEDAEMON_BINARY=@BAREOS_FD_BINARY@
+export BAREOS_STORAGEDAEMON_BINARY=@BAREOS_SD_BINARY@
+export BAREOS_BSCAN_BINARY=@BSCAN_BINARY@
+export BAREOS_BLS_BINARY=@BLS_BINARY@
+export BAREOS_BCONSOLE_BINARY=@BCONSOLE_BINARY@
+export BAREOS_DBCOPY_BINARY=@BAREOS_DBCOPY_BINARY@
+export BAREOS_BEXTRACT_BINARY=@BEXTRACT_BINARY@
+export BAREOS_DBCHECK_BINARY=@BAREOS_DBCHECK_BINARY@
+
+
+export PIDDIR=@piddir@
+
+export archivedir
+
+export scripts
+export DBTYPE
+export tmp
+
+# DB parameters
+export db_name=@db_name@
+export db_user=@db_user@
+export db_password=@db_password@
+
+# TLS_VERSION = v1.2 is a workaround,
+# By default, sslpsk should negotiate the highest
+# TLS protocol version.
+# This fails with the current version (1.0.0) of sslpsk.
+export PYTHON_BAREOS_TLS_VERSION="v1.2"
+
+export PAM_WRAPPER_LIBRARIES=@PAM_WRAPPER_LIBRARIES@
+
+#
+# Selenium test
+#
+
+export BAREOS_WEBUI_CONFDIR=@WEBUICONFDIR@
+
+export BAREOS_WEBUI_BROWSER=chrome
+export BAREOS_WEBUI_CHROMEDRIVER_PATH=@CHROMEDRIVER@
+
+export BAREOS_WEBUI_BASE_URL=http://localhost:@php_port@/
+export BAREOS_WEBUI_USERNAME=@BAREOS_WEBUI_PROFILE@
+export BAREOS_WEBUI_PASSWORD=@BAREOS_WEBUI_PROFILE@
+export BAREOS_WEBUI_CLIENT_NAME=bareos-fd
+export BAREOS_WEBUI_RESTOREFILE=${PROJECT_BINARY_DIR}
+export BAREOS_WEBUI_LOG_PATH=${logdir}
+export BAREOS_WEBUI_DELAY=1
+export BAREOS_WEBUI_PUBLIC_DIR=@BAREOS_WEBUI_PUBLIC_DIR@
+
+export PYTHON_EXECUTABLE=@PYTHON_EXECUTABLE@
+
+#
+# oVirt Plugin Test
+#
+
+export OVIRT_SERVER=@ovirt_server@
+
+# Real postgres binaries are hidden on debian, instead there are wrappers
+# which we do not want for our tests.
+# If there are multiple version, select the first.
+if [ -d /usr/lib/postgresql  ]; then
+  POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql -name psql | sort | head -n 1))
+  export PATH=$POSTGRES_BINARY_DIR:$PATH
+else
+  export PATH=/sbin:/usr/sbin:$PATH
+fi
+export PYTHONPATH=@pythonpath@
+
+gfapi_fd_host=@gfapi_fd_host@
+
+dbHost="@dbHost@"
+test_db_port=@test_db_port@
+# enable deprecated database handling in scripts
+export BAREOS_TEST_RUNNING=yes
+
+MINIO=@MINIO@
+S3CMD="@S3CMD@"
+S3CFG="${current_test_directory}/etc/s3cfg"
+
+SYSTEMTEST_LDAP_ADDRESS="@SYSTEMTEST_LDAP_ADDRESS@"
+SYSTEMTEST_LDAP_BASEDN="@SYSTEMTEST_LDAP_BASEDN@"
+SYSTEMTEST_LDAP_BINDDN="@SYSTEMTEST_LDAP_BINDDN@"
+SYSTEMTEST_LDAP_PASSWORD="@SYSTEMTEST_LDAP_PASSWORD@"
+
+LANG=en_US.UTF-8
+
+# path to real postgres binaries, NOT debian wrappers
+POSTGRES_BIN_PATH=@POSTGRES_BIN_PATH@
+
+MYSQL=@MYSQL@
+MYSQLD=@MYSQLD@
+MYSQL_INSTALL_DB=@MYSQL_INSTALL_DB@
+
+SUDO=@SUDO@
+IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT=@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
+NDMP_DATA_AGENT_ADDRESS=@ndmp_data_agent_address@

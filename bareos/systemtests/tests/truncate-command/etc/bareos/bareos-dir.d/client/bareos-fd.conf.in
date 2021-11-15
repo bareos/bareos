@@ -1,0 +1,16 @@
+Client {
+  Name = bareos-fd
+  Description = "Client resource of the Director itself."
+  Address = @hostname@
+  Password = "@fd_password@"          # password for FileDaemon
+  FD PORT = @fd_port@
+  
+  #
+  # Quota
+  #
+  Soft Quota = 25 mb
+  Soft Quota Grace Period = 5 second
+  # Strict Quotas = Yes
+  # Hard Quota = 150 mb
+  # Quota Include Failed Jobs = yes  
+}

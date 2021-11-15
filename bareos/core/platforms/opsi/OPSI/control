@@ -1,0 +1,175 @@
+[Package]
+version: $PackageVersion
+depends:
+incremental: False
+
+[Product]
+type: localboot
+id: winbareos
+name: Bareos File Daemon
+description: backup and restore client
+advice:
+version: $ProductVersion
+priority: 0
+licenseRequired: False
+productClasses:
+setupScript: setup3264.ins
+uninstallScript: uninstall3264.ins
+updateScript:
+alwaysScript:
+onceScript:
+customScript:
+userLoginScript:
+
+[ProductProperty]
+type: unicode
+name: auto_config
+multivalue: False
+editable: False
+description: if true, Bareos configuration gets generated from Opsi properties
+values: ["false", "true"]
+default: ["true"]
+
+[ProductProperty]
+type: unicode
+name: filedaemon_full_name
+multivalue: False
+editable: True
+description: filedaemon bareos name. Leave empty for HostID-fd
+default: [""]
+
+[ProductProperty]
+type: unicode
+name: filedaemon_full_password
+multivalue: False
+editable: True
+description: password used by director to connect to this filedaemon
+default: ["filedaemon_full_password"]
+
+[ProductProperty]
+type: unicode
+name: filedaemon_client_address
+multivalue: False
+editable: True
+description: FQDN of the Bareos File Daemon. Default is the detected HostID.
+default: [""]
+
+[ProductProperty]
+type: unicode
+name: filedaemon_monitor_name
+multivalue: False
+editable: True
+description: Name used by monitoring (eg. Tray Monitor) to connect to this Bareos File Daemon. Default is HostID-mon.
+default: [""]
+
+[ProductProperty]
+type: unicode
+name: filedaemon_monitor_password
+multivalue: False
+editable: True
+description: password used by monitoring (eg. Tray Monitor) to connect to this Bareos File Daemon.
+default: ["filedaemon_monitor_password"]
+
+[ProductProperty]
+type: unicode
+name: director_address
+multivalue: False
+editable: True
+description: FQDN/IP of the Bareos Director. Used by the locally initiated console connections.
+default: ["director_address"]
+
+[ProductProperty]
+type: unicode
+name: director_name
+multivalue: False
+editable: True
+description: Name of the Bareos Director. Used by the locally initiated console connections.
+default: ["bareos-dir"]
+
+[ProductProperty]
+type: unicode
+name: director_password
+multivalue: False
+editable: True
+description: Password of the Bareos Director. Used by the locally initiated console connections.
+default: ["director_password"]
+
+[ProductProperty]
+type: unicode
+name: jobdefs
+multivalue: False
+editable: True
+description: Only used by Bareos OPSI integration script: use a predefined job definitions (JobDefs).
+default: ["DefaultJob"]
+
+[ProductProperty]
+type: unicode
+name: fileset
+multivalue: False
+editable: True
+description: Only used by Bareos OPSI integration script: if set, let the backup job use this explicitly defined FileSet.
+default: ["Windows All Drives"]
+
+#[ProductProperty]
+#type: BoolProductProperty
+#name: ConnectionFromDirectorToClient
+#multivalue: False
+#editable: False
+#description: Network connections are initiated from the Director to the Client.
+#values: ["false", "true"]
+#default: ["true"]
+
+#[ProductProperty]
+#type: BoolProductProperty
+#name: ConnectionFromClientToDirector
+#multivalue: False
+#editable: False
+#description: Network connections are initiated from the Client to the Director.
+#values: ["false", "true"]
+#default: ["false"]
+
+[ProductProperty]
+type: unicode
+name: install_architecture
+multivalue: False
+editable: False
+description: which architecture (32/64 bit) has to be installed
+values: ["32 only", "64 only", "both", "system specific"]
+default: ["system specific"]
+
+[Changelog]
+20180222, Joerg Steffens
+  * cleanup
+  * add ProductProperty jobdefs and fileset.
+
+20130627, Daniel Neuberger
+  * added ProductProperty Update_KeepConfig
+
+20130215, Joerg Steffens
+  * adapted to be build with http://build.opensuse.org
+
+20130129, Daniel Neuberger
+  * inital Bareos
+  * added properties filedaemon_client_address
+  * added Variables in setup
+  * added silent installation in Setup
+
+20120710, 5.2.10-3, Joerg Steffens
+  * write properties filedaemon_full_name and filedaemon_monitor_name back to opsi server
+  * added properties fileset and jobdefs
+
+20120704, 5.2.10-2, Joerg Steffens
+  * uninstall
+  * properties
+  * generate bareos-fd.conf
+
+20120702, 5.2.10-1, Joerg Steffens
+  * initial
+
+opsi-template (4.0.1-5) stable; urgency=low
+
+	* added /nocancel at Inno example
+	* added login.ins for 'user profile management'
+	* moved changelog to control file
+
+ -- detlef oertel <d.oertel@uib.de>  Mon, 02 Jan 2012 16:01:53 +0200

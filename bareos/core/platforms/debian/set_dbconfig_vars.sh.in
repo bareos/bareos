@@ -1,0 +1,52 @@
+#!/bin/sh
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2014-2015 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+
+# This script is intended to be sourced by
+# bareos-database-common postinstall script
+# on Debian based distributions.
+# It helps to configure dbconfig
+# when migrating to dbconfig.
+
+LIB=/usr/lib/bareos/scripts/bareos-config-lib.sh
+
+if ! [ -r "$LIB" ]; then
+    echo "failed to read library $LIB" >&2
+else
+    . $LIB
+
+    #dbc_dbserver=
+    #dbc_dbport=
+    dbname=`get_database_name @db_name@`
+    dbuser=`get_database_user @db_user@`
+    dbpass=`get_database_password`
+    case "`get_database_driver`" in
+        postgresql)
+            dbtype="pgsql"
+            ;;
+        mysql)
+            dbtype="mysql"
+            ;;
+        sqlite3)
+            dbtype="sqlite3"
+            basepath="`get_working_dir`"
+            ;;
+    esac
+fi

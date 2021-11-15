@@ -1,0 +1,7 @@
+Job {
+  Name = "restore-ldap"
+  JobDefs = "DefaultJob"
+  Type = Restore
+  Fileset= "plugin-ldap"
+  # Client = "ldaphost-fd"
+}

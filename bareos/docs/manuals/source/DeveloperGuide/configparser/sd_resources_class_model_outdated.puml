@@ -1,0 +1,215 @@
+.. uml::
+  :caption: Old Class Diagram of Storage Daemon Resource Classes
+
+  @startuml
+
+  !define STRUCT_COLOR (S,#FF7700)
+  !define UNION_COLOR (U,#3377FF)
+
+  package lib/resource_item.h {
+  class ResourceItem << STRUCT_COLOR >>  {
+    const char* name;
+    const int type;
+    union {
+      char** value; /* Where to store the item */
+      std::string** strValue;
+      uint16_t* ui16value;
+      uint32_t* ui32value;
+      int16_t* i16value;
+      int32_t* i32value;
+      uint64_t* ui64value;
+      int64_t* i64value;
+      bool* boolvalue;
+      utime_t* utimevalue;
+      s_password* pwdvalue;
+      CommonResourceHeader** resvalue;
+      alist** alistvalue;
+      dlist** dlistvalue;
+      char* bitvalue;
+    };
+    int32_t code;
+    uint32_t flags;
+    const char* default_value;
+    const char* versions;
+    const char* description;
+  }
+  }
+
+  package tls_conf.h {
+  class TlsConfig {
+    s_password password_;
+    TlsConfigCert tls_cert_;
+    std::string* cipherlist_;
+    bool authenticate_;
+    bool tls_enable_;
+    bool tls_require_;
+
+    TlsResource();
+    bool IsTlsConfigured() const;
+    TlsPolicy GetPolicy() const;
+    int SelectTlsPolicy(TlsPolicy remote_policy) const;
+  }
+  }
+
+  package parse_conf.h {
+  class ResourceTable << STRUCT_COLOR >>  {
+    const char* name;
+    ResourceItem* items;
+    uint32_t rcode;
+    uint32_t size;
+    std::function<void*(void* res)> initres;
+  }
+  }
+
+  package bareos_resource.h {
+  class BareosResource {
+    CommonResourceHeader hdr;
+
+    inline char* name() const { return hdr.name; }
+    bool PrintConfig(PoolMem& buf, \nconst ConfigurationParser&my_config, \nbool hide_sensitive_data = false, \nbool verbose = false);
+
+    BareosResource();
+    BareosResource& operator=(const BareosResource& rhs)
+  }
+  }
+
+  package common_resource_header.h {
+  class CommonResourceHeader {
+    CommonResourceHeader* next;
+    char* name;
+    char* desc;
+    uint32_t rcode;
+    int32_t refcnt;
+    char item_present[MAX_RES_ITEMS];
+    char inherit_content[MAX_RES_ITEMS];
+    CommonResourceHeader()
+    CommonResourceHeader(const CommonResourceHeader& other)
+    CommonResourceHeader& operator=(const CommonResourceHeader& rhs)
+  }
+  }
+
+  BareosResource <|-- TlsConfig
+  BareosResource "1"*-->"1" CommonResourceHeader
+
+
+  package autochanger_resource.cc {
+  class AutochangerResource {
+    AutochangerResource();
+    AutochangerResource& operator=(const AutochangerResource& rhs);
+    bool PrintConfigToBuffer(PoolMem& buf);
+
+    alist* device;
+    char* changer_name;
+    char* changer_command;
+    brwlock_t changer_lock;
+  }
+  }
+
+  package lib/messages_resource.h {
+  class MessagesResource {
+    char* mail_cmd;
+    char* operator_cmd;
+    char* timestamp_format;
+    DEST* dest_chain;
+    char SendMsg[NbytesForBits(M_MAX + 1)];
+
+   private:
+    bool in_use_;
+    bool closing_;
+
+    void ClearInUse()
+    void SetInUse()
+    void SetClosing()
+    bool GetClosing()
+    void ClearClosing()
+    bool IsClosing()
+
+    void WaitNotInUse();
+    void lock();
+    void unlock();
+    bool PrintConfig(PoolMem& buff,
+                     bool hide_sensitive_data = false,
+                     bool verbose = false);
+  }
+  }
+
+  package stored_conf.h {
+
+  class StorageResource {
+    dlist* SDaddrs;
+    dlist* SDsrc_addr;
+    dlist* NDMPaddrs;
+    ...
+  }
+
+  class DirectorResource {
+    char* address;
+    bool monitor;
+    uint64_t max_bandwidth_per_job;
+    s_password keyencrkey;
+  }
+
+  class NdmpResource {
+    CommonResourceHeader hdr;
+
+    uint32_t AuthType;
+    uint32_t LogLevel;
+    char* username;
+    s_password password;
+  }
+
+  class DeviceResource {
+    char* media_type;
+    char* device_name;
+    char* device_options;
+    ...
+    DeviceResource();
+    DeviceResource(const DeviceResource& other);
+    DeviceResource& operator=(const DeviceResource& rhs);
+    bool PrintConfigToBuffer(PoolMem& buf);
+    void CreateAndAssignSerialNumber(uint16_t number);
+    void MultipliedDeviceRestoreBaseName();
+    void MultipliedDeviceRestoreNumberedName();
+  }
+
+  class UnionOfResources << UNION_COLOR >> {
+    DirectorResource res_dir;
+    NdmpResource res_ndmp;
+    StorageResource res_store;
+    DeviceResource res_dev;
+    MessagesResource res_msgs;
+    AutochangerResource res_changer;
+    CommonResourceHeader hdr;
+
+    UnionOfResources()
+    ~UnionOfResources()
+  }
+  UnionOfResources "1"*--"1" DirectorResource
+  UnionOfResources "1"*--"1" NdmpResource
+  UnionOfResources "1"*--"1" StorageResource
+  UnionOfResources "1"*--"1" CommonResourceHeader
+  UnionOfResources "1"*--"1" MessagesResource
+  UnionOfResources "1"*--"1" AutochangerResource
+  NdmpResource "1"*--"1" CommonResourceHeader
+  }
+
+  package stored_conf.cc {
+  hide members
+  hide circle
+
+  store_items "1"*-->"1..*" ResourceItem
+  dir_items "1"*-->"1..*" ResourceItem
+  ndmp_items "1"*-->"1..*" ResourceItem
+  dev_items "1"*-->"1..*" ResourceItem
+  changer_items "1"*-->"1..*" ResourceItem
+
+  resources "1"*-->"1..*" ResourceTable
+  res_all "1"*-->"1..*" UnionOfResources
+
+  TlsConfig <|-- DirectorResource
+  TlsConfig <|-- StorageResource
+  BareosResource <|-- MessagesResource
+  BareosResource <|-- AutochangerResource
+  }
+
+  @enduml

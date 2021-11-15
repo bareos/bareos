@@ -1,0 +1,1 @@
+This directive specifies the maximum number of volumes (tapes or files) contained in the pool. This directive is optional, if omitted or set to zero, any number of volumes will be permitted. In general, this directive is useful to ensure that the number of volumes does not become too numerous when using automatic labeling.

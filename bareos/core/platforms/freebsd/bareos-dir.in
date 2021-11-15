@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# PROVIDE: bareosdir
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+#
+# bareos       This shell script takes care of starting and stopping
+#	       the bareos Director daemon
+#
+# chkconfig: 2345 90 9
+# description: Backup Archiving REcovery Open Sourced.
+#
+#
+. /etc/rc.subr
+
+name=bareosdir
+rcvar=bareosdir_enable
+
+extra_commands=reload
+command="@sbindir@/bareos-dir"
+
+load_rc_config $name
+run_rc_command "$1"

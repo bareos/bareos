@@ -1,0 +1,68 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH BCONSOLE 1 "2019-08-16" "Backup Archiving REcovery Open Sourced" "Bareos Console"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.SH NAME
+ bconsole \- Bareos's management Console
+.SH SYNOPSIS
+.B bconsole
+.RI [options]
+.br
+.SH DESCRIPTION
+This manual page documents briefly the
+.B bconsole
+command.
+.PP
+.SH OPTIONS
+.TP
+.BI \-D\  dir
+Select a Director.
+.TP
+.BI \-l
+List defined Directors.
+.TP
+.BI \-c\  path
+Specify the configuration file or directory to use.
+.TP
+.BI \-p\  file
+Specify pam credentials file
+(first line: username, second line: password).
+.TP
+.BI \-o
+Send pam credentials over unencrypted connection.
+.TP
+.BI \-d\  nn
+Set debug level to \fInn\fP.
+.TP
+.BI \-dt
+Print timestamp in debug output.
+.TP
+.BI \-s
+No signals (for debugging).
+.TP
+.BI \-u\  nn
+Set command execution timeout to \fInn\fP seconds.
+.TP
+.BI \-t
+Test the configuration file and report errors.
+.TP
+.BI \-xc
+Print configuration and exit.
+.TP
+.BI \-xs
+Print configuration file schema in JSON format and exit.
+.TP
+.BI \-?
+Show version and usage of program.
+.SH SEE ALSO
+.BR bareos\-dir (8),
+.BR bls (1),
+.BR bextract (1).
+.br
+.SH AUTHOR
+This manual page was written by Jose Luis Tallon
+.nh
+<jltallon@adv\-solutions.net> and others.

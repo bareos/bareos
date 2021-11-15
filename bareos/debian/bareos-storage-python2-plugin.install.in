@@ -1,0 +1,2 @@
+@plugindir@/python-sd.so
+@Python2_SITELIB@/bareossd.so

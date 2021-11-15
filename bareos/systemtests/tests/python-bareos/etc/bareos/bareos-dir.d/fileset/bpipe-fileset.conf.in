@@ -1,0 +1,23 @@
+FileSet {
+  Name = bpipe-fileset
+  Include {
+    Options {
+       signature = MD5
+       xattrsupport = no           # Prevent problems on FreeBSD
+    }
+
+    #
+    # test different target files for bpipe
+    #
+    Plugin = "bpipe:file=/bpipe-file-in-root.txt:reader=find @tmpdir@:writer=sh -c 'cat >@tmpdir@/root-bpipefile.txt'"
+    Plugin = "bpipe:file=BPIPE-ROOT/bpipe-dir-as-root-test.txt:reader=find @tmpdir@:writer=sh -c 'cat >@tmpdir@/root-bpipe-subdir.txt'"
+    Plugin = "bpipe:file=BPIPE-ROOT/subdir/at-bpipe-dir-as-root-with-subdir-test.txt:reader=find @tmpdir@:writer=sh -c 'cat >@tmpdir@/bpipe-subdir.txt'"
+    Plugin = "bpipe:file=/BPIPE-DIR/bpipe-dir-in-root-test.txt:reader=find @tmpdir@:writer=sh -c 'cat >@tmpdir@/root-bpipe.txt'"
+    Plugin = "bpipe:file=/BPIPE-DIR/subdir/bpipe-dir-in-subdir-in-root-test.txt:reader=find @tmpdir@:writer=sh -c 'cat >@tmpdir@/root-bpipe-subdir.txt'"
+
+    #
+    # also backup normal file list
+    #
+    File = <@tmpdir@/file-list
+  }
+}

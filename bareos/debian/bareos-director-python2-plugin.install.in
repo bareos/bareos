@@ -1,0 +1,2 @@
+@plugindir@/python-dir.so
+@Python2_SITELIB@/bareosdir.so

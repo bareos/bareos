@@ -1,0 +1,68 @@
+#!/bin/bash
+set -e
+set -o pipefail
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+BackupFile="${tmp}/file-with-acl"
+RestoreFile="${tmp}/bareos-restores/${BackupFile}"
+
+acl_should="${tmp}/acl_should.txt"
+acl_is="${tmp}/acl_is.txt"
+
+mkdir -p "${BackupDirectory}"
+touch "${BackupFile}"
+setfacl -m user:0:r-x "${BackupFile}"
+getfacl "${BackupFile}" | grep -vF file: >"$acl_should"
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=1000 client=bareos-fd trace=1
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos "$@"
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+
+getfacl "${RestoreFile}" | grep -vF file: >"$acl_is"
+
+diff -u "$acl_should" "$acl_is" || estat=1
+
+end_test

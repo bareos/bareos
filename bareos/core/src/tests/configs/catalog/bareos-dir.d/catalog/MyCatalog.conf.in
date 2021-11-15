@@ -1,0 +1,23 @@
+Catalog {
+  Name = postgresql
+  dbdriver = "postgresql"
+  dbname = "regress_catalog"
+  dbuser = "@systemtest_db_user@"
+  dbpassword = "@systemtest_db_password@"
+}
+
+Catalog {
+  Name = sqlite3
+  dbdriver = "sqlite3"
+  dbname = "regress_catalog"
+  dbuser = ""
+  dbpassword = ""
+}
+
+Catalog {
+  Name = mysql
+  dbdriver = "mysql"
+  dbname = "regress_catalog"
+  dbuser = "@systemtest_db_user@"
+  dbpassword = "@systemtest_db_password@"
+}

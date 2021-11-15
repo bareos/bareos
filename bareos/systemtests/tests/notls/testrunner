@@ -1,0 +1,68 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=1000 storage=File trace=1
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName yes
+run job=$JobName yes
+run job=$JobName yes
+run job=$JobName yes
+run job=$JobName yes
+run job=$JobName yes
+run job=$JobName yes
+run job=$JobName yes
+run job=$JobName yes
+run job=$JobName yes
+status director
+status client
+status storage=File
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos "$@"
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+check_restore_diff ${BackupDirectory}
+end_test

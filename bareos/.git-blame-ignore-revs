@@ -1,0 +1,28 @@
+# Revisions to ignore for git blame and check-sources copyright fix
+800eea76c57ba82a60074c2689f33d08f3de0d93
+96ddd8d327d00b0940a67ac11a06972d36217a84
+9fa9d982b6d2d865eb77aee231b32084d4def0e1
+d33dedd219c814da57634ff57f0ca71493cac75d
+9acddd9f7b293a6f68eeedfa8fbf3131fbdd4e66
+32297b0c59decb6f5f70a12e18d9be0d7b2bf005
+6884a70b64b23abe63240d339fda715965be6717
+48170045db75559e23da257e141dda8424db09ef
+325f94d995f20e52b0d086fa83242cbcfc1a1da8
+df358c4437cb087b9b2c58410accaf89a7fe90d4
+aa367252d4a57e65c0ca728940a63d0029e992c0
+
+# check-sources bulk change for copyrights
+95f301603d14bab6d0938c1a21fb1aaaab313d0a
+
+# check-sources bulk change for clang-format
+31e3618dff5026edb7cf583d1456197b55177b5a
+# check-sources bulk change for cmake-format
+0f01df3131a354adcda4ad16759dde57df7ec7a6
+# check-sources bulk change for black
+e91d96ef5d1abf97c68541a4e2cb74cf40f6ff1f
+# check-sources bulk change for whitespace
+84a44ca6cc4d3bd4fcbe428c6433722cae251d35
+# bulk-changes for to collapse 3-line comments
+b77b0dceb157ddf02965c1b057e2572717046ae4
+930d1a6cf4ed353d4be0dd96344846379bcfdefe
+e9a60dd6a79521ea447ce937ee5dc804a3cf396b

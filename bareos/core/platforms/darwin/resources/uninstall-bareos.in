@@ -1,0 +1,31 @@
+#!/bin/sh
+
+echo "Bareos uninstaller"
+echo
+echo "If you continue this program, Bareos and all of its configuration will"
+echo "be removed from this system."
+echo "Press Ctrl-C to cancel or press Enter to continue deinstallation."
+read
+
+# Remove startup item
+echo "* Bareos startup item... "
+if [ -f /Library/LaunchDaemons/com.bareos.bareos-fd.plist ]; then
+	sudo launchctl unload /Library/LaunchDaemons/com.bareos.bareos-fd.plist
+	sudo rm /Library/LaunchDaemons/com.bareos.bareos-fd.plist
+	echo "  + removed successfully"
+else
+  echo "  - not found, nothing to remove"
+fi
+
+echo "* Bareos file daemon... "
+if [ -d "/usr/local/bareos" ]; then
+  sudo rm -r "/usr/local/bareos"
+	echo "  + removed successfully"
+else
+  echo "  - not found, nothing to remove"
+fi
+
+echo "* Installer receipt... "
+sudo pkgutil --forget com.bareos.bareos.common
+sudo pkgutil --forget com.bareos.bareos.filedaemon
+sudo pkgutil --forget com.bareos.bareos.bconsole

@@ -1,0 +1,3 @@
+bin/bconsole
+@sample %%ETCDIR%%/bconsole.conf.sample
+sbin/bconsole

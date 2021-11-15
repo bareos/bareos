@@ -1,0 +1,79 @@
+#! /bin/sh
+#
+# bareos-ctl-fd  This shell script takes care of starting and stopping
+#		 the Bareos File daemon.
+#
+# description: Backup Archiving REcovery Open Sourced.
+#
+
+export PSCMD="@PSCMD@"
+export PS="ps"
+export AWK="@AWK@"
+export PIDOF="@PIDOF@"
+export PGREP="@PGREP@"
+
+PIDDIR=${PIDDIR:-@piddir@}
+SUBSYSDIR=@subsysdir@
+BAREOS_FILEDAEMON_BINARY=${BAREOS_FILEDAEMON_BINARY:-@sbindir@/bareos-fd}
+export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
+BAREOS_FD_PORT=${BAREOS_FD_PORT:-@fd_port@}
+BAREOS_FD_USER=${BAREOS_FD_USER:-@fd_user@}
+BAREOS_FD_GROUP=${BAREOS_FD_GROUP:-@fd_group@}
+BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
+
+#
+# Source the generic functions.
+#
+. "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
+
+
+case "$1" in
+    start)
+        if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
+            echo "Starting the Bareos File daemon"
+            OPTIONS=''
+            if [ "${BAREOS_FD_USER}" != '' ]; then
+                OPTIONS="${OPTIONS} -u ${BAREOS_FD_USER}"
+            fi
+
+            if [ "${BAREOS_FD_GROUP}" != '' ]; then
+                OPTIONS="${OPTIONS} -g ${BAREOS_FD_GROUP}"
+            fi
+
+            if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
+                OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
+            fi
+
+            if [ "x${VALGRIND_FD}" = "x1" ]; then
+                valgrind --leak-check=full ${BAREOS_FILEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
+            else
+                ${BAREOS_FILEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
+            fi
+        fi
+        ;;
+
+    stop)
+        if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
+            printf "Stopping the Bareos File daemon: "
+            killproc ${BAREOS_FILEDAEMON_BINARY} ${BAREOS_FD_PORT}
+        fi
+        ;;
+
+    restart)
+        $0 stop
+        sleep 5
+        $0 start
+        ;;
+
+    status)
+        [ -x ${BAREOS_FILEDAEMON_BINARY} ] && status ${BAREOS_FILEDAEMON_BINARY} ${BAREOS_FD_PORT}
+        exit $?
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit 0

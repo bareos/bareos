@@ -1,0 +1,70 @@
+@startuml
+participant d as "Director"
+participant s as "Storage Daemon"
+group Initiate dir to sd connection
+  d -> s : Hello
+  s -> d : CRAM-MD5 Challenge
+  d -> s : CRAM-MD5 Response
+  alt success
+    s -> d : 1000 OK auth
+  else failure
+    s -> d : 1999 Authorization failed.
+  end
+  d -> s : CRAM-MD5 Challenge
+  s -> d : CRAM-MD5 Response
+  alt success
+    d -> s : 1000 OK auth
+  else failure
+    d -> s : 1999 Authorization failed.
+  end
+end
+loop each option
+  d -> s : pluginoptions %s
+  s -> d : 2000 OK plugin options
+end
+alt if reschedulung
+  d -> s : cancel Job=%s
+  s -> d : 3000 JobId=%ld Job="%s" marked to be %s.
+end
+d -> s : JobId=%s [...]
+s -> d : 3000 OK Job SDid=%d SDtime=%d Authorization=%100s
+d -> s : getSecureEraseCmd
+s -> d : 2000 OK SDSecureEraseCmd %s
+loop each read_storage
+  d -> s : use storage=%s media_type=%s pool_name=%s pool_type=%s append=0 copy=%d stripe=%d
+  loop each device
+    d -> s : use device=%s
+  end
+  d -> s : BNET_EOD
+end
+d -> s : BNET_EOD
+s -> d : 3000 OK use device device=%s
+loop each write_storage
+  d -> s : use storage=%s media_type=%s pool_name=%s pool_type=%s append=1 copy=%d stripe=%d
+  loop each device
+    d -> s : use device=%s
+  end
+  d -> s : BNET_EOD
+end
+d -> s : BNET_EOD
+s -> d : 3000 OK use device device=%s
+d -> s : run
+' done till here
+== Message thread for SD communication spawned ==
+s -> d : Status Job=%s JobStatus=82
+note right
+  82 is numeric for 'R' which
+  means waiting for filedaemon
+end note
+
+loop each queued message
+  s -> d : Jmsg Job=%s type=%d level=%lld %s
+end
+s -> d : Status Job=%s JobStatus=%d
+note right
+  the current job status is transmitted
+end note
+s -> d : 3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u
+== Message thread for SD communication exits ==
+s -> d : BNET_EOD
+@enduml
