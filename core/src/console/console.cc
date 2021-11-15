@@ -465,7 +465,6 @@ static char* item_generator(const char* text,
                             cpl_item_t type)
 {
   static std::size_t list_index, len;
-  const std::size_t items_list_size = items->list.size();
   const char* name;
 
 
@@ -482,7 +481,7 @@ static char* item_generator(const char* text,
     }
   }
 
-  while (items && list_index < items_list_size) {
+  while (items && list_index < static_cast<size_t>(items->list.size())) {
     name = (char*)items->list[list_index];
     list_index++;
     if (bstrncmp(name, text, len)) { return strdup(name); }
@@ -942,7 +941,6 @@ int main(int argc, char* argv[])
           usage();
         }
         break;
-
       case 'z': /* switch network debugging on */
         if (!BnetDump::EvaluateCommandLineArgs(optarg)) { exit(1); }
         break;
