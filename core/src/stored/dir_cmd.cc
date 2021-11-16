@@ -109,6 +109,10 @@ static char derrmsg[] = "3900 Invalid command:";
 static char OKsetdebugv0[] = "3000 OK setdebug=%d tracefile=%s\n";
 static char OKsetdebugv1[]
     = "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s\n";
+static char OKsetdebugv01[]
+    = "3000 OK setdebug=%d trace=%d timestamp=%d\n";
+static char OKsetdebugv12[]
+    = "3000 OK setdebug=%d trace=%d timestamp=%d\n";
 static char OKsetdevice[] = "3000 OK setdevice=%s autoselect=%d\n";
 static char invalid_cmd[]
     = "3997 Invalid command for a Director with Monitor directive enabled.\n";
@@ -431,15 +435,28 @@ static bool SetdebugCmd(JobControlRecord* jcr)
 
   debug_level = level;
   SetTrace(trace_flag);
+  char * msg = OKsetdebugv1;
   if (scan == 3) {
     SetTimestamp(timestamp_flag);
+    if(trace_flag > 0) {
     Dmsg4(50, "level=%d trace=%d timestamp=%d tracefilename=%s\n", level,
           GetTrace(), GetTimestamp(), tracefilename.c_str());
-    return dir->fsend(OKsetdebugv1, level, GetTrace(), GetTimestamp(),
+    } else {
+      msg = OKsetdebugv12;
+      Dmsg4(50, "level=%d trace=%d timestamp=%d\n", level,
+            GetTrace(), GetTimestamp());
+    }
+    return dir->fsend(msg, level, GetTrace(), GetTimestamp(),
                       tracefilename.c_str());
   } else {
+    msg = OKsetdebugv0;
+    if(trace_flag > 0) {
     Dmsg3(50, "level=%d trace=%d\n", level, GetTrace(), tracefilename.c_str());
-    return dir->fsend(OKsetdebugv0, level, tracefilename.c_str());
+    } else {
+      msg = OKsetdebugv01;
+      Dmsg3(50, "level=%d trace=%d\n", level, GetTrace());
+    }
+    return dir->fsend(msg, level, tracefilename.c_str());
   }
 }
 

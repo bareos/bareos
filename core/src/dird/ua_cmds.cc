@@ -1376,9 +1376,14 @@ static void DoDirectorSetdebug(UaContext* ua,
   SetTimestamp(timestamp_flag);
   Mmsg(tracefilename, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
   if (ua) {
+    if(trace_flag > 0) {
     ua->SendMsg("level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s\n",
                 level, GetTrace(), GetHangup(), GetTimestamp(),
                 tracefilename.c_str());
+    } else {
+      ua->SendMsg("level=%d trace=%d hangup=%d timestamp=%d\n",
+                  level, GetTrace(), GetHangup(), GetTimestamp());
+    }
   }
 }
 
@@ -1420,7 +1425,9 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
     trace_flag = atoi(ua->argv[i]);
     if (trace_flag > 0) { trace_flag = 1; }
   } else {
-    trace_flag = -1;
+    if (!GetPint(ua, _("Enter new debug trace: "))) { return true; }
+    trace_flag = ua->pint32_val;
+    if (trace_flag > 0) { trace_flag = 1; }
   }
 
   // Look for hangup (debug only) flag. -1 => not change

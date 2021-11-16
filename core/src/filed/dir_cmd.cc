@@ -240,6 +240,10 @@ static char OKsetdebugv0[]
     = "2000 OK setdebug=%d trace=%d hangup=%d tracefile=%s\n";
 static char OKsetdebugv1[]
     = "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s\n";
+static char OKsetdebugv12[]
+    = "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d\n";
+static char OKsetdebugv01[]
+    = "2000 OK setdebug=%d trace=%d hangup=%d\n";
 static char BADjob[] = "2901 Bad Job\n";
 static char EndJob[]
     = "2800 End Job TermCode=%d JobFiles=%u ReadBytes=%s"
@@ -860,16 +864,30 @@ static bool SetdebugCmd(JobControlRecord* jcr)
 
   SetTrace(trace_flag);
   SetHangup(hangup_flag);
+  char * msg = OKsetdebugv1;
   if (scan == 4) {
     SetTimestamp(timestamp_flag);
+    if(trace_flag > 0) {
     Dmsg5(50, "level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s\n",
           level, GetTrace(), GetHangup(), GetTimestamp(),
           tracefilename.c_str());
-    return dir->fsend(OKsetdebugv1, level, GetTrace(), GetHangup(),
+    } else {
+      msg = OKsetdebugv12;
+      Dmsg5(50, "level=%d trace=%d hangup=%d timestamp=%d\n",
+            level, GetTrace(), GetHangup(), GetTimestamp());
+    }
+    return dir->fsend(msg, level, GetTrace(), GetHangup(),
                       GetTimestamp(), tracefilename.c_str());
   } else {
+    msg = OKsetdebugv0;
+    if(trace_flag > 0) {
     Dmsg4(50, "level=%d trace=%d hangup=%d tracefilename=%s\n", level,
           GetTrace(), GetHangup(), tracefilename.c_str());
+    } else {
+      msg = OKsetdebugv01;
+      Dmsg4(50, "level=%d trace=%d hangup=%d\n", level,
+            GetTrace(), GetHangup());
+    }
     return dir->fsend(OKsetdebugv0, level, GetTrace(), GetHangup(),
                       tracefilename.c_str());
   }
