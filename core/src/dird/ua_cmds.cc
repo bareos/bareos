@@ -1397,6 +1397,7 @@ void DoAllSetDebug(UaContext* ua,
 static bool SetdebugCmd(UaContext* ua, const char* cmd)
 {
   int i;
+  int j;
   int level;
   int trace_flag;
   int hangup_flag;
@@ -1414,14 +1415,16 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
     level = ua->pint32_val;
   }
 
-  // Look for trace flag. -1 => not change
-  i = FindArgWithValue(ua, NT_("trace"));
-  if (i >= 0) {
-    trace_flag = atoi(ua->argv[i]);
-    if (trace_flag > 0) { trace_flag = 1; }
-  } else {
-    trace_flag = -1;
-  }
+  //The work of the candidate  Alaa Mzoughi to enable trace file
+   j = FindArgWithValue(ua, NT_("trace"));
+
+
+   if (j >= 0) {
+     trace_flag = atoi(ua->argv[j]); }
+   if (trace_flag < 0) {
+     if (!GetPint(ua, _("Enter new debug Trace"))) { return true; }
+     trace_flag = ua->pint32_val;
+   }
 
   // Look for hangup (debug only) flag. -1 => not change
   i = FindArgWithValue(ua, NT_("hangup"));
