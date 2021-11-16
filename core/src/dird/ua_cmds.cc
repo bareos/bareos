@@ -1407,6 +1407,7 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   Dmsg1(120, "setdebug:%s:\n", cmd);
 
   level = -1;
+  trace_flag = -1;
   i = FindArgWithValue(ua, NT_("level"));
   if (i >= 0) { level = atoi(ua->argv[i]); }
   if (level < 0) {
@@ -1418,9 +1419,13 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   i = FindArgWithValue(ua, NT_("trace"));
   if (i >= 0) {
     trace_flag = atoi(ua->argv[i]);
-    if (trace_flag > 0) { trace_flag = 1; }
+    if (trace_flag > 0) {
+      trace_flag = 1;
+    } else {
+      trace_flag = 0;
+    }
   } else {
-    trace_flag = -1;
+    trace_flag = 1;
   }
 
   // Look for hangup (debug only) flag. -1 => not change
