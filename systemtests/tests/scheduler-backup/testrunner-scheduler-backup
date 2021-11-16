@@ -14,12 +14,6 @@ export TestName
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
-
-
-# Fill ${BackupDirectory} with data.
-setup_data
 
 start_test
 
@@ -27,8 +21,9 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
 @$out $tmp/log1.out
-setdebug level=100 storage=File
-label volume=TestVolume001 storage=File pool=Full
+setdebug level=100 storage=File trace=1
+setdebug level=100 director trace=1
+setdebug level=100 client trace=1
 status director
 status client
 status storage=File
@@ -46,9 +41,8 @@ messages
 quit
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole
 check_for_zombie_jobs storage=File
-stop_bareos
 
 check_two_logs
 check_restore_diff ${BackupDirectory}
