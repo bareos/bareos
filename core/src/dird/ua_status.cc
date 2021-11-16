@@ -503,6 +503,11 @@ static bool DoSubscriptionStatus(UaContext* ua)
   int available;
   bool retval = false;
 
+  if (!OpenDb(ua)) {
+    ua->ErrorMsg("Failed to open db.\n");
+    goto bail_out;
+  }
+
   // See if we need to check.
   if (me->subscriptions == 0) {
     ua->SendMsg(_("No subscriptions configured in director.\n"));
@@ -522,6 +527,46 @@ static bool DoSubscriptionStatus(UaContext* ua)
     } else {
       ua->SendMsg(_("Ok: available subscriptions: %d (%d/%d) (used/total)\n"),
                   available, me->subscriptions_used, me->subscriptions);
+
+
+      PoolMem query(PM_MESSAGE);
+      ua->SendMsg(_("\nUnits overview:\n"));
+      ua->send->ObjectStart("units-overview");
+      ua->db->FillQuery(
+          query, BareosDb::SQL_QUERY::subscription_sel_backup_unit_overview);
+      ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
+      ua->send->ObjectEnd("units-overview");
+
+      ua->SendMsg(_("\nTotal backup units required to subscribe:\n"));
+      ua->send->ObjectStart("total-units-required");
+      ua->db->FillQuery(
+          query, BareosDb::SQL_QUERY::subscription_sel_backup_unit_total);
+      ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
+      ua->send->ObjectEnd("total-units-required");
+
+      ua->SendMsg(
+          _("\nClients/Filesets that cannot be categorized for backup units "
+            "yet:\n"));
+      ua->send->ObjectStart("filesets-not-catogorized");
+      ua->db->FillQuery(
+          query,
+          BareosDb::SQL_QUERY::subscription_sel_unclassified_client_fileset);
+      ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
+      ua->send->ObjectEnd("filesets-not-catogorized");
+
+      ua->SendMsg(
+          _("\nAmount of data that cannot be categorized for backup units "
+            "yet:\n"));
+      ua->send->ObjectStart("data-not-categorized");
+
+      ua->db->FillQuery(
+          query,
+          BareosDb::SQL_QUERY::subscription_sel_unclassified_amount_data);
+      ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
+
+      ua->send->ObjectEnd("data-not-categorized");
+
+
       retval = true;
     }
   }
