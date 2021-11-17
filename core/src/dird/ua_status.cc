@@ -533,14 +533,14 @@ static bool DoSubscriptionStatus(UaContext* ua)
       ua->SendMsg(_("\nUnits overview:\n"));
       ua->send->ObjectStart("units-overview");
       ua->db->FillQuery(
-          query, BareosDb::SQL_QUERY::subscription_sel_backup_unit_overview);
+          query, BareosDb::SQL_QUERY::subscription_select_backup_unit_overview);
       ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
       ua->send->ObjectEnd("units-overview");
 
       ua->SendMsg(_("\nTotal backup units required to subscribe:\n"));
       ua->send->ObjectStart("total-units-required");
       ua->db->FillQuery(
-          query, BareosDb::SQL_QUERY::subscription_sel_backup_unit_total);
+          query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total);
       ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
       ua->send->ObjectEnd("total-units-required");
 
@@ -550,7 +550,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
       ua->send->ObjectStart("filesets-not-catogorized");
       ua->db->FillQuery(
           query,
-          BareosDb::SQL_QUERY::subscription_sel_unclassified_client_fileset);
+          BareosDb::SQL_QUERY::subscription_select_unclassified_client_fileset);
       ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
       ua->send->ObjectEnd("filesets-not-catogorized");
 
@@ -561,7 +561,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
 
       ua->db->FillQuery(
           query,
-          BareosDb::SQL_QUERY::subscription_sel_unclassified_amount_data);
+          BareosDb::SQL_QUERY::subscription_select_unclassified_amount_data);
       ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
 
       ua->send->ObjectEnd("data-not-categorized");

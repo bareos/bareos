@@ -1035,7 +1035,7 @@ const char *BareosDbMysql::query_definitions[] = {
 "UNLOCK TABLES "
 ,
 
-/* 0080_subscription_sel_backup_unit_overview
+/* 0080_subscription_select_backup_unit_overview
 * List clients/filesets with backup units required to subscribe this installation
 */
 "SELECT * "
@@ -1043,7 +1043,7 @@ const char *BareosDbMysql::query_definitions[] = {
 "ORDER BY client, fileset; "
 ,
 
-/* 0081_subscription_sel_backup_unit_total
+/* 0081_subscription_select_backup_unit_total
 * Show total backup units required to subscribe this installation
 */
 "SELECT "
@@ -1060,7 +1060,7 @@ const char *BareosDbMysql::query_definitions[] = {
   "FROM backup_unit_overview; "
 ,
 
-/* 0082_subscription_sel_unclassified_client_fileset
+/* 0082_subscription_select_unclassified_client_fileset
 * List clients/filesets that cannot be categorized for backup units yet
 */
 "SELECT client, fileset, filesettext "
@@ -1069,7 +1069,7 @@ const char *BareosDbMysql::query_definitions[] = {
 "ORDER BY client, fileset; "
 ,
 
-/* 0083_subscription_sel_unclassified_amount_data
+/* 0083_subscription_select_unclassified_amount_data
 * Show amount of data that cannot be categorized for backup units yet
 */
 "SELECT "
