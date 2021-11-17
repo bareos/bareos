@@ -60,6 +60,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fix PostgreSQL create database script [PR #981]
 - Unify level use with set client_min_message instruction in SQL update scripts [PR #981]
 - Fixed issue with error messages not showing up properly on windows systems [PR #959]
+- Fixed libdroplet xattr.h include issue by using sys/xattr.h [PR #985]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
