@@ -173,6 +173,17 @@ OS:
            - bareos-webui
            - python-bareos
 
+  Rocky:
+    "8":
+      TYPE: rpm
+      IMAGE: rocky8
+      ARCH:
+      - x86_64
+      PROJECTPACKAGES:
+        x86_64:
+           - bareos
+           - bareos-vmware
+           - python-bareos
   CentOS:
     "8":
       TYPE: rpm
