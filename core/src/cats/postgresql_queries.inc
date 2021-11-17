@@ -1014,15 +1014,17 @@ const char *BareosDbPostgresql::query_definitions[] = {
 "COMMIT "
 ,
 
-/* 0080_subscription_sel_backup_unit_overview */
-"--List clients/filesets with backup units required to subscribe this installation "
+/* 0080_subscription_sel_backup_unit_overview
+ * List clients/filesets with backup units required to subscribe this installation
+ */
 "SELECT * "
 "FROM backup_unit_overview "
 "ORDER BY client, fileset; "
 ,
 
-/* 0081_subscription_sel_backup_unit_total */
-"-- Show total backup units required to subscribe this installation "
+/* 0081_subscription_sel_backup_unit_total
+ * Show total backup units required to subscribe this installation
+ */
 "SELECT "
   "COUNT(client) AS clients, "
   "SUM(db_units) AS db_units, "
@@ -1037,16 +1039,18 @@ const char *BareosDbPostgresql::query_definitions[] = {
   "FROM backup_unit_overview; "
 ,
 
-/* 0082_subscription_sel_unclassified_client_fileset */
-"--List clients/filesets that cannot be categorized for backup units yet "
+/* 0082_subscription_sel_unclassified_client_fileset
+ * List clients/filesets that cannot be categorized for backup units yet
+ */
 "SELECT client, fileset, filesettext "
 "FROM latest_full_size_categorized "
 "WHERE unknown_mb > 0 "
 "ORDER BY client, fileset; "
 ,
 
-/* 0083_subscription_sel_unclassified_amount_data */
-"--Show amount of data that cannot be categorized for backup units yet "
+/* 0083_subscription_sel_unclassified_amount_data
+ * Show amount of data that cannot be categorized for backup units yet
+ */
 "SELECT "
   "SUM(unknown_mb) AS unknown_mb, "
   "ROUND(sum(unknown_mb)/sum(total_mb) * 100, 2) AS unknown_percentage "
