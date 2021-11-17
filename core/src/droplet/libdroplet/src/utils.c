@@ -33,8 +33,7 @@
  * https://github.com/scality/Droplet
  */
 #include <dropletp.h>
-#include <linux/xattr.h>
-#include <attr/xattr.h>
+#include <sys/xattr.h>
 #include <errno.h>
 
 /** @file */
