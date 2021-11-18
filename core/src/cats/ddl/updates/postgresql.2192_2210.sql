@@ -5,6 +5,7 @@ CREATE INDEX job_media_media_id_job_id_idx ON jobmedia (mediaid, jobid);
 UPDATE Version SET VersionId = 2210;
 
 -- subscription status part
+DROP VIEW IF EXISTS backup_unit_overview;
 DROP VIEW IF EXISTS latest_full_size_categorized;
 
 CREATE VIEW latest_full_size_categorized AS
@@ -80,8 +81,6 @@ WHERE jobid IN (
   GROUP BY j.clientid, f.fileset
 )
 ;
-
-DROP VIEW IF EXISTS backup_unit_overview;
 
 CREATE VIEW backup_unit_overview AS
 SELECT

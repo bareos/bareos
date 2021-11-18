@@ -485,7 +485,9 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 --   but prevents errors if create script is called multiple times
 DELETE FROM Version WHERE VersionId<=2210;
 INSERT INTO Version (VersionId) VALUES (2210);
+
 -- subscription status part
+DROP VIEW IF EXISTS backup_unit_overview;
 DROP VIEW IF EXISTS latest_full_size_categorized;
 
 CREATE VIEW latest_full_size_categorized AS
@@ -561,8 +563,6 @@ WHERE jobid IN (
   GROUP BY j.clientid, f.fileset
 )
 ;
-
-DROP VIEW IF EXISTS backup_unit_overview;
 
 CREATE VIEW backup_unit_overview AS
 SELECT
