@@ -8,6 +8,17 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - Adapt Python DIR and SD plugin Baseclasses to the modernized Python plugin API [PR #957] (backport of [PR #923])
 - Log LDAP info error (e.g. expired SSL cert error) [PR #970] (backport of [PR #956])
+- Fix occasional "NULL volume name" error when non-busy, but blocked drive is unloaded [PR #975]
+- Fix PostgreSQL create database script [PR #983]
+- Unify level use with set client_min_message instruction in SQL update scripts [PR #983]
+
+### Added
+- packages: Build also for SLE_15_SP3 and openSUSE_15.3 [PR #945]
+- packages: Build also for Fedora_35 [PR #976]
+- cmake: check for chflags() function and enable FreeBSD File Flags support [PR #974]
+
+### Changed
+- Adapt percona-xtrabackup test to work on updated test environment [PR #978]
 
 ## [20.0.3] - 2021-09-14
 
@@ -23,17 +34,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1369]: webui tries to load a nonexistent file [PR #901] (backport of [PR #900])
 - fix lost byte in ChunkedDevice (backport of [PR #910])
 - fix director crash on "update slots" when there is a parsing issue with the autochanger or tape devices [PR #919]
-- [Issue #1232]: bareos logrotate errors, reintroduce su directive in logrotate ([backport of PR #918])
-- Fix occasional "NULL volume name" error when non-busy, but blocked drive is unloaded [PR #975]
-- Fix PostgreSQL create database script [PR #983]
-- Unify level use with set client_min_message instruction in SQL update scripts [PR #983]
-
+- [Issue #1232]: bareos logrotate errors, reintroduce su directive in logrotate (backport of [PR #918])
 
 ### Added
 - packages: Build also for Debian_11 [PR #915]
-- packages: Build also for SLE_15_SP3 and openSUSE_15.3 [PR #945]
-- packages: Build also for Fedora_35 [PR #976]
-- cmake: check for chflags() function and enable FreeBSD File Flags support [PR #974]
 
 ### Changed
 - add job name in End Job Session output in bls tool [PR #916]
@@ -219,7 +223,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Disable systemtests on non compatible systems [PR #387]
 - Update ovirt plugin documentation [PR #384]
 - Improve ovirt plugin
-- Adapt percona-xtrabackup test to work on updated test environment [PR #978]
 
 ### Deprecated
 - Using MySQL as a catalog backend is now deprecated [PR #564]
@@ -430,7 +433,18 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #910]: https://github.com/bareos/bareos/pull/910
 [PR #915]: https://github.com/bareos/bareos/pull/915
 [PR #916]: https://github.com/bareos/bareos/pull/916
+[PR #918]: https://github.com/bareos/bareos/pull/918
 [PR #919]: https://github.com/bareos/bareos/pull/919
 [PR #920]: https://github.com/bareos/bareos/pull/920
 [PR #922]: https://github.com/bareos/bareos/pull/922
+[PR #923]: https://github.com/bareos/bareos/pull/923
+[PR #945]: https://github.com/bareos/bareos/pull/945
+[PR #956]: https://github.com/bareos/bareos/pull/956
+[PR #957]: https://github.com/bareos/bareos/pull/957
+[PR #970]: https://github.com/bareos/bareos/pull/970
+[PR #974]: https://github.com/bareos/bareos/pull/974
+[PR #975]: https://github.com/bareos/bareos/pull/975
+[PR #976]: https://github.com/bareos/bareos/pull/976
+[PR #978]: https://github.com/bareos/bareos/pull/978
+[PR #983]: https://github.com/bareos/bareos/pull/983
 [unreleased]: https://github.com/bareos/bareos/tree/master
