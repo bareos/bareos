@@ -61,6 +61,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Unify level use with set client_min_message instruction in SQL update scripts [PR #981]
 - Fixed issue with error messages not showing up properly on windows systems [PR #959]
 - Fixed libdroplet xattr.h include issue by using sys/xattr.h [PR #985]
+- Fixed crash on bconsole when using autcomplete with tab [PR #969]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
@@ -301,6 +302,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #961]: https://github.com/bareos/bareos/pull/961
 [PR #962]: https://github.com/bareos/bareos/pull/962
 [PR #963]: https://github.com/bareos/bareos/pull/963
+[PR #969]: https://github.com/bareos/bareos/pull/969
 [PR #972]: https://github.com/bareos/bareos/pull/972
 [PR #973]: https://github.com/bareos/bareos/pull/973
 [PR #982]: https://github.com/bareos/bareos/pull/982
