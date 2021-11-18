@@ -1,0 +1,44 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Emulate a tab button press and see if autocomplete works
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+case "$(uname)" in
+  FreeBSD)
+    script_opts=("$tmp/log3.out" bin/bconsole)
+    ;;
+  Linux)
+    script_opts=(--return --command bin/bconsole "$tmp/log3.out")
+    ;;
+  *)
+    echo "don't know how to call 'script' on your platform. Skipping test"
+    exit 77
+    ;;
+esac
+
+start_test
+
+printf "c\t\t\nexit\n" | script "${script_opts[@]}"
+
+# on RHEL 7 the output file is not always flushed when the command returns
+# so we wait a second if the file has zero length
+if [ ! -s "$tmp"/log3.out ]; then
+  sleep 1
+fi
+
+if ! grep "cancel     configure  create" "$tmp"/log3.out; then
+  echo "autocomplete error" >&2
+  estat=1
+fi
+end_test

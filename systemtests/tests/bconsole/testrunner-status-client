@@ -15,9 +15,6 @@ export TestName
 JobName=bconsole-status-client
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
-
 
 start_test
 rm -f "$tmp/log2.out"
@@ -33,8 +30,10 @@ messages
 quit
 END_OF_DATA
 
-run_bareos "$@"
-stop_bareos
+# Start the bareos daemons
+# and run the bconsole commands from ${tmp}/bconcmds
+# Further bconsole commands can be executed by "run_bconsole".
+run_bconsole
 
 # if log2.out has not been written, bconsole crashed or disconnected
 # after status client command
