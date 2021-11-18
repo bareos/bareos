@@ -48,7 +48,7 @@ COMMIT;
 CREATE INDEX basefiles_jobid_idx ON BaseFiles ( JobId );
 
 -- suppress output for index modification
-SET client_min_messages TO 'fatal';
+set client_min_messages = error;
 
 -- Remove bad PostgreSQL index
 DROP INDEX file_fp_idx;
