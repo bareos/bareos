@@ -39,8 +39,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <sys/types.h>
-#include <linux/xattr.h>
-#include <attr/xattr.h>
+#include <sys/xattr.h>
 #include <utime.h>
 #include <pwd.h>
 #include <grp.h>

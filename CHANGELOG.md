@@ -19,6 +19,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - Adapt percona-xtrabackup test to work on updated test environment [PR #978]
+- Fixed libdroplet xattr.h include issue by using sys/xattr.h [PR #991]
 
 ## [20.0.3] - 2021-09-14
 
