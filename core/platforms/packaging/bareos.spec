@@ -445,7 +445,7 @@ Provides:   %{name}-catalog-postgresql
 Provides:   %{name}-database-backend
 
 %package    database-tools
-Summary:    Bareos CLI tools with database dependencies (bareos-dbcheck, bareos-dbcopy, bscan)
+Summary:    Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common = %{version}
 Requires:   %{name}-database-common = %{version}
@@ -1041,7 +1041,6 @@ for F in  \
     %{_mandir}/man1/bsmtp.1.gz \
     %{_mandir}/man1/bwild.1.gz \
     %{_mandir}/man8/bareos-dbcheck.8.gz \
-    %{_mandir}/man8/bareos-dbcopy.8.gz \
     %{_mandir}/man8/bareos-dir.8.gz \
     %{_mandir}/man8/bareos-sd.8.gz \
     %{_mandir}/man8/bareos.8.gz \
@@ -1491,10 +1490,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 # dbtools with link to db libs (dbcheck, bscan, dbcopy)
 %defattr(-, root, root)
 %{_sbindir}/bareos-dbcheck
-%{_sbindir}/bareos-dbcopy
 %{_sbindir}/bscan
 %{_mandir}/man8/bareos-dbcheck.8.gz
-%{_mandir}/man8/bareos-dbcopy.8.gz
 %{_mandir}/man8/bscan.8.gz
 
 %files tools
