@@ -97,6 +97,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - contrib: Add Python FD Plugin for OpenVZ container [PR #908]
 - packages: Build also for Fedora_35 [PR #972]
 - cmake: check for chflags() function and enable FreeBSD File Flags support [PR #963]
+- plugin: added mariabackup python plugin, added systemtest for mariabackup and updated systemtest for percona-xtrabackup [PR #967]
+
 
 ### Changed
 - systemtest python-bareos: split tests in separate files [PR #944]
