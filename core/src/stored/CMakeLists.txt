@@ -235,7 +235,7 @@ target_link_libraries(bextract PRIVATE bareossd bareosfind bareos)
 
 add_executable(bscan ${BSCANSRCS})
 target_link_libraries(
-  bscan PRIVATE bareos bareossd bareosfind bareossql bareoscats
+  bscan PRIVATE bareos bareossd bareosfind bareossql bareoscats-postgresql
 )
 
 add_executable(btape ${BTAPESRCS})

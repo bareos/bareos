@@ -49,51 +49,10 @@ set_target_properties(
   bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                        SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
-target_link_libraries(bareossql bareoscats bareos)
-
-# TODO: install default db backend
-
-# if we have only one database backend, we do not create the dummy libbareoscats
-# but instead we create a symlink to the db backend lib
-
 list(LENGTH db_backends nr_db_backends)
 
-add_library(bareoscats SHARED ${LIBBAREOSCATS_SRCS})
-target_link_libraries(bareoscats bareos)
-set_target_properties(
-  bareoscats PROPERTIES VERSION ${BAREOS_NUMERIC_VERSION}
-                        SOVERSION "${BAREOS_VERSION_MAJOR}"
-)
-install(TARGETS bareoscats DESTINATION ${libdir})
-
-if(HAVE_SQLITE3)
-  add_library(bareoscats-sqlite3 MODULE ${SQLITE_SRCS})
-  target_link_libraries(bareoscats-sqlite3 bareossql bareos sqlite3)
-  install(TARGETS bareoscats-sqlite3 DESTINATION ${backenddir})
-
-  install(
-    DIRECTORY ddl
-    DESTINATION ${scriptdir}
-    FILES_MATCHING
-    PATTERN *sqlite3*.sql
-  )
-endif()
-
-if(HAVE_MYSQL)
-  add_library(bareoscats-mysql MODULE ${MYSQL_SRCS})
-  target_link_libraries(bareoscats-mysql bareossql bareos ${MYSQL_LIBRARIES})
-  install(TARGETS bareoscats-mysql DESTINATION ${backenddir})
-
-  install(
-    DIRECTORY ddl
-    DESTINATION ${scriptdir}
-    FILES_MATCHING
-    PATTERN *mysql*.sql
-  )
-endif()
-
 if(HAVE_POSTGRESQL)
-  add_library(bareoscats-postgresql MODULE ${POSTGRESQL_SRCS})
+  add_library(bareoscats-postgresql SHARED ${POSTGRESQL_SRCS})
   target_link_libraries(
     bareoscats-postgresql bareossql bareos ${PostgreSQL_LIBRARY}
   )

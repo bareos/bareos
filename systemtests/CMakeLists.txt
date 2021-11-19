@@ -83,7 +83,6 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     bareos-dbcheck
     bareos-fd
     bareos-sd
-    bareos-dbcopy
     bcopy
     btape
     bextract
