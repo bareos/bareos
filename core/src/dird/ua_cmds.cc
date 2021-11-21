@@ -1394,6 +1394,8 @@ void DoAllSetDebug(UaContext* ua,
 }
 
 // setdebug level=nn all trace=1/0 timestamp=1/0
+//I edited the SetdebugCmd function so it propmts the user for a trace property
+//the funtion is now as following:
 static bool SetdebugCmd(UaContext* ua, const char* cmd)
 {
   int i;
@@ -1416,11 +1418,15 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
 
   // Look for trace flag. -1 => not change
   i = FindArgWithValue(ua, NT_("trace"));
+  
   if (i >= 0) {
     trace_flag = atoi(ua->argv[i]);
     if (trace_flag > 0) { trace_flag = 1; }
   } else {
-    trace_flag = -1;
+    // trace_flag = -1;
+    //Here I prompt the user instead of setting the trace_flag value to -1
+    if (!GetPint(ua, _("Enable trace? (1:yes, 0:no, -1: keep previous state): "))) { return true; }
+    trace_flag = ua->pint32_val;
   }
 
   // Look for hangup (debug only) flag. -1 => not change
