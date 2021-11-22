@@ -37,8 +37,6 @@ if [ -f /etc/default/$NAME ]; then
    . /etc/default/$NAME
 fi
 
-PIDFILE=@piddir@/${NAME}.${BPORT}.pid
-
 if [ "x${BUSER}" != "x" ]; then
    USERGRP="--chuid ${BUSER}"
    if [ "x${BGROUP}" != "x" ]; then
@@ -49,7 +47,7 @@ fi
 case "$1" in
    start)
       echo -n "Starting ${DESC}: "
-      start-stop-daemon --start --quiet --pidfile ${PIDFILE} ${USERGRP} --exec ${DAEMON} -- ${BOPTIONS}
+      start-stop-daemon --start --quiet ${USERGRP} --exec ${DAEMON} -- ${BOPTIONS}
       RETVAL=$?
       echo "${NAME}"
       ;;

@@ -12,16 +12,7 @@ pidofproc() {
    # Get base program name
    base=`basename $1`
 
-   # First try PID file
-   if [ -f ${PIDDIR}/$base.$2.pid ] ; then
-      pid=`head -n 1 ${PIDDIR}/$base.$2.pid`
-      if [ "$pid" != "" ] ; then
-         echo $pid
-         return 0
-      fi
-   fi
-
-   # Next try "pidof"
+   # First try "pidof"
    if [ ! -z "${PIDOF}" -a -x "${PIDOF}" ] ; then
       pid=`${PIDOF} $1`
       if [ "$pid" != "" ] ; then
@@ -119,10 +110,6 @@ killproc() {
    else
       success "already stopped"
    fi
-   # Remove pid file if any.
-   if [ "$notset" = "1" ]; then
-      rm -f "${PIDDIR}/$base.$2.pid"
-   fi
    return $RC
 }
 
@@ -156,11 +143,6 @@ status() {
    if checkPid "$pid"; then
        echo "$base (pid $pid) is running..."
        return 0
-   fi
-
-   if [ -f ${PIDDIR}/$base.$2.pid ] ; then
-       echo "$base dead but pid file exists"
-       return 1
    fi
 
    # See if the subsys lock exists

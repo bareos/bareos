@@ -21,7 +21,6 @@ BACSDBIN=@sbindir@
 BACSDCFG=@confdir@
 BACDIRBIN=@sbindir@
 BACDIRCFG=@confdir@
-PIDDIR=@piddir@
 SUBSYSDIR=@subsysdir@
 
 DIR_PORT=@dir_port@
@@ -91,10 +90,6 @@ killproc() {
     else
 	failure "$base shutdown"
     fi
-    # Remove pid file if any.
-    if [ "$notset" = "1" ]; then
-	rm -f ${PIDDIR}/$base.$2.pid
-    fi
     return $RC
 }
 
@@ -110,23 +105,14 @@ pidofproc() {
     # Get base program name
     base=`basename $1`
 
-    # First try PID file
-    if [ -f ${PIDDIR}/$base.$2.pid ] ; then
-	pid=`head -1 ${PIDDIR}/$base.$2.pid`
-	if [ "$pid" != "" ] ; then
-	    echo $pid
-	    return 0
-	fi
+    # First try "pidof"
+    if [ -x /sbin/pidof ] ; then
+        pid=`/sbin/pidof $1`
     fi
-
-    # Next try "pidof"
-   if [ -x /sbin/pidof ] ; then
-       pid=`/sbin/pidof $1`
-   fi
-   if [ "$pid" != "" ] ; then
-       echo $pid
-       return 0
-   fi
+    if [ "$pid" != "" ] ; then
+        echo $pid
+        return 0
+    fi
 
     # Finally try to extract it from ps
     ${PSCMD} | grep $1 | awk '{ print $1 }' | tr '\n' ' '
@@ -161,14 +147,6 @@ status() {
        fi
    fi
 
-    # Next try the PID files
-    if [ -f ${PIDDIR}/$base.$2.pid ] ; then
-	pid=`head -1 ${PIDDIR}/$base.$2.pid`
-	if [ "$pid" != "" ] ; then
-	    echo "$base not running, but pid file exists"
-	    return 1
-	fi
-    fi
     # See if the subsys lock exists
     if [ -f ${SUBSYSDIR}/$base ] ; then
 	echo "$base not running, but subsys locked"
