@@ -22,28 +22,22 @@ include_directories(${PostgreSQL_INCLUDE_DIR})
 
 add_definitions(-D_BDB_PRIV_INTERFACE_)
 
-set(LIBBAREOSSQL_SRCS
-    bvfs.cc
-    cats.cc
-    sql.cc
-    sql_create.cc
-    sql_delete.cc
-    sql_find.cc
-    sql_get.cc
-    sql_list.cc
-    sql_pooling.cc
-    sql_query.cc
-    sql_update.cc
+add_library(bareossql SHARED)
+target_sources(
+  bareossql
+  PRIVATE bvfs.cc
+          cats.cc
+          sql.cc
+          sql_create.cc
+          sql_delete.cc
+          sql_find.cc
+          sql_get.cc
+          sql_list.cc
+          sql_pooling.cc
+          sql_query.cc
+          sql_update.cc
 )
-set(LIBBAREOSCATS_SRCS cats_backends.cc)
-
-set(SQLITE_SRCS sqlite.cc ${LIBBAREOSCATS_SRCS})
-
-set(MYSQL_SRCS mysql.cc mysql_batch.cc ${LIBBAREOSCATS_SRCS})
-
-set(POSTGRESQL_SRCS postgresql.cc postgresql_batch.cc ${LIBBAREOSCATS_SRCS})
-
-add_library(bareossql SHARED ${LIBBAREOSSQL_SRCS})
+target_link_libraries(bareossql PUBLIC bareoscats-postgresql)
 
 set_target_properties(
   bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
@@ -51,20 +45,20 @@ set_target_properties(
 )
 list(LENGTH db_backends nr_db_backends)
 
-if(HAVE_POSTGRESQL)
-  add_library(bareoscats-postgresql SHARED ${POSTGRESQL_SRCS})
-  target_link_libraries(
-    bareoscats-postgresql bareossql bareos ${PostgreSQL_LIBRARY}
-  )
-  install(TARGETS bareoscats-postgresql DESTINATION ${backenddir})
+add_library(bareoscats-postgresql SHARED)
+target_sources(
+  bareoscats-postgresql PRIVATE postgresql.cc postgresql_batch.cc
+                                cats_backends.cc
+)
+target_link_libraries(bareoscats-postgresql ${PostgreSQL_LIBRARY})
+install(TARGETS bareoscats-postgresql DESTINATION ${backenddir})
 
-  install(
-    DIRECTORY ddl
-    DESTINATION ${scriptdir}
-    FILES_MATCHING
-    PATTERN *postgresql*.sql
-  )
-endif()
+install(
+  DIRECTORY ddl
+  DESTINATION ${scriptdir}
+  FILES_MATCHING
+  PATTERN *postgresql*.sql
+)
 
 install(TARGETS bareossql DESTINATION ${libdir})
 
