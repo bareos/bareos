@@ -113,7 +113,7 @@ static Attributes* attr;
 static time_t lasttime = 0;
 
 static const char* backend_directory = PATH_BAREOS_BACKENDDIR;
-static const char* db_driver = "NULL";
+static const char* db_driver = "postgresql";
 static const char* db_name = "bareos";
 static const char* db_user = "bareos";
 static const char* db_password = "";
@@ -140,8 +140,8 @@ static void usage()
   fprintf(
       stderr,
       _("Usage: bscan [ options ] <device-name>\n"
-        "       -B <drivername>   specify the database driver name (default "
-        "NULL) <postgresql|mysql|sqlite3>\n"
+        "       -B <driver name>  exists for backwards compatibility and is "
+        "ignored\n"
         "       -b <bootstrap>    specify a bootstrap file\n"
         "       -c <path>         specify a Storage configuration file or "
         "directory\n"
@@ -169,7 +169,7 @@ static void usage()
         "configuration file)\n"
         "       -?                print this message\n\n"
         "example:\n"
-        "bscan -B postgresql -V Full-0001 FileStorage\n"),
+        "bscan -V Full-0001 FileStorage\n"),
       backend_directory);
   exit(1);
 }
@@ -205,7 +205,6 @@ int main(int argc, char* argv[])
         break;
 
       case 'B':
-        db_driver = optarg;
         break;
 
       case 'b':
