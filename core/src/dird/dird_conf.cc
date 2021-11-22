@@ -309,7 +309,7 @@ static ResourceItem cat_items[] = {
   { "User", CFG_TYPE_STR, ITEM(res_cat, db_user), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
   { "DbName", CFG_TYPE_STR, ITEM(res_cat, db_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
-  { "DbDriver", CFG_TYPE_STR, ITEM(res_cat, db_driver), 0, CFG_ITEM_DEFAULT, "postgresql", NULL, NULL },
+  { "DbDriver", CFG_TYPE_STR, ITEM(res_cat, db_driver), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_DEFAULT, "postgresql", NULL, NULL },
 #else
   { "DbDriver", CFG_TYPE_STR, ITEM(res_cat, db_driver), 0, 0, NULL, NULL, NULL },
 #endif
