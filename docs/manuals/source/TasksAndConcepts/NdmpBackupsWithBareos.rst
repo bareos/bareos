@@ -392,7 +392,7 @@ For NDMP Backups, we always need two storages that are paired together. The defa
      Media Type = File
    }
 
-We now add a paired storage to the already existing :config:option:`Dir/ = File`\  storage:
+We now add a paired storage to the already existing :config:option:`Dir/Storage = File`\  storage:
 
 .. code-block:: bareosconfig
 

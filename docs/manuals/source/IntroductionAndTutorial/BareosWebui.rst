@@ -132,7 +132,7 @@ the jobs :strong:`backup-bareos-fd` and :strong:`backup-example-fd`.
    :config:option:`dir/profile/ClientACL`,
    :config:option:`dir/profile/PoolACL`,
    :config:option:`dir/profile/StorageACL` and
-   :config:option:`dir/profile/FilesetACL` settings.
+   :config:option:`dir/profile/FileSetACL` settings.
 
 Users of this profile are also able to do a restore from within the |webui| by
 having access to the RestoreFiles job resource, the required Bvfs API commands
