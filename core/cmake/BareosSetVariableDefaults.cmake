@@ -117,11 +117,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(plugindir ${CMAKE_INSTALL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
   endif()
 
-  # piddir
-  if(NOT DEFINED piddir)
-    set(piddir ${workingdir})
-  endif()
-
   # bsrdir
   if(NOT DEFINED bsrdir)
     set(bsrdir ${workingdir})
@@ -220,11 +215,6 @@ else() # IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   # plugindir
   if(NOT DEFINED plugindir)
     set(plugindir ${CMAKE_INSTALL_FULL_LIBDIR}/${CMAKE_PROJECT_NAME}/plugins)
-  endif()
-
-  # piddir
-  if(NOT DEFINED piddir)
-    set(piddir ${workingdir})
   endif()
 
   # bsrdir
