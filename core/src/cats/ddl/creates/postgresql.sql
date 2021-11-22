@@ -557,7 +557,7 @@ WHERE jobid IN (
   INNER JOIN fileset f
     ON j.filesetid = f.filesetid
   WHERE level = 'F'
-    AND j.jobstatus = 'T'
+    AND j.jobstatus IN ('T','W')
     AND j.type = 'B'
     AND j.jobbytes > 0
   GROUP BY j.clientid, f.fileset
