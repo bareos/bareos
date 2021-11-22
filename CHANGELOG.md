@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [20.0.4] - 2021-11-22
 
 ### Fixed
 - Adapt Python DIR and SD plugin Baseclasses to the modernized Python plugin API [PR #957] (backport of [PR #923])
@@ -245,6 +245,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [20.0.1]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.1
 [20.0.2]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.2
 [20.0.3]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.3
+[20.0.4]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.4
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
 [Issue #971]: https://bugs.bareos.org/view.php?id=971
@@ -448,4 +449,4 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #976]: https://github.com/bareos/bareos/pull/976
 [PR #978]: https://github.com/bareos/bareos/pull/978
 [PR #983]: https://github.com/bareos/bareos/pull/983
-[unreleased]: https://github.com/bareos/bareos/tree/master
+[PR #991]: https://github.com/bareos/bareos/pull/991
