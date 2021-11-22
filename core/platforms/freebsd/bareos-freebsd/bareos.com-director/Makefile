@@ -18,6 +18,7 @@ LIB_DEPENDS+=  libbareoslmdb.so:sysutils/bareos.com-common
 LIB_DEPENDS+=  libbareosfind.so:sysutils/bareos.com-common
 
 LIB_DEPENDS+=  libbareossql.so:sysutils/bareos.com-database-common
+LIB_DEPENDS+=  libbareoscats.so:sysutils/bareos.com-database-common
 
 USES=ssl
 

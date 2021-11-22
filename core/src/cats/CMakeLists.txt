@@ -37,12 +37,22 @@ target_sources(
           sql_query.cc
           sql_update.cc
 )
-target_link_libraries(bareossql PUBLIC bareoscats-postgresql)
+target_link_libraries(bareossql PUBLIC bareoscats)
 
 set_target_properties(
   bareossql PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                        SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
+
+add_library(bareoscats SHARED)
+target_sources(bareoscats PRIVATE cats_backends.cc)
+target_link_libraries(bareoscats bareos)
+set_target_properties(
+  bareoscats PROPERTIES VERSION ${BAREOS_NUMERIC_VERSION}
+                        SOVERSION "${BAREOS_VERSION_MAJOR}"
+)
+install(TARGETS bareoscats DESTINATION ${libdir})
+
 list(LENGTH db_backends nr_db_backends)
 
 add_library(bareoscats-postgresql SHARED)
@@ -51,7 +61,7 @@ target_sources(
                                 cats_backends.cc
 )
 target_link_libraries(
-  bareoscats-postgresql PRIVATE bareos ${PostgreSQL_LIBRARY}
+  bareoscats-postgresql PRIVATE bareos bareossql ${PostgreSQL_LIBRARY}
 )
 install(TARGETS bareoscats-postgresql DESTINATION ${backenddir})
 

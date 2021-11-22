@@ -1467,6 +1467,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 # catalog independent files
 %defattr(-, root, root)
 %{library_dir}/libbareossql*.so.*
+%{library_dir}/libbareoscats*.so.*
 %dir %{script_dir}/ddl
 %dir %{script_dir}/ddl/creates
 %dir %{script_dir}/ddl/drops

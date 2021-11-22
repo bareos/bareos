@@ -705,6 +705,7 @@ SectionIn 2 3
   File "bsmtp.exe"
   File "bregex.exe"
   File "bwild.exe"
+  File "libbareoscats.dll"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
@@ -2042,6 +2043,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libbareosfind.dll"
   Delete "$INSTDIR\libbareoslmdb.dll"
   Delete "$INSTDIR\libbareossql.dll"
+  Delete "$INSTDIR\libbareoscats.dll"
   Delete "$INSTDIR\libbareoscats-postgresql.dll"
 
   Delete "$INSTDIR\libcrypto-*.dll"
