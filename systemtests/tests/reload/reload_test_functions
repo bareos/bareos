@@ -118,7 +118,6 @@ Director {                            # define myself
   Auditing = yes
 #  Backend Directory = @backenddir@
   Working Directory =  "@working_dir@"
-  Pid Directory =  "@piddir@"
 }
 END_OF_DATA4
 }

@@ -8,6 +8,5 @@ Client {
   #
 
   Working Directory =  "@working_dir@"
-  Pid Directory =  "@piddir@"
   FD Port = @fd_port@
 }

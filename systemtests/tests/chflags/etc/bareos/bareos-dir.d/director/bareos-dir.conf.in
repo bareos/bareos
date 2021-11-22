@@ -8,6 +8,5 @@ Director {                            # define myself
 
   Backend Directory = @backenddir@
   Working Directory =  "@working_dir@"
-  Pid Directory =  "@piddir@"
   DirPort = @dir_port@
 }
