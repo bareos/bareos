@@ -85,7 +85,7 @@ Multiple Storage daemons are not currently supported for Jobs, if you do want to
 
 .. warning::
 
-  Bareos uses only :config:option:`dir/job/Client` and :config:option:`dir/job/Fileset` to determine which jobids belong together.
+  Bareos uses only :config:option:`dir/job/Client` and :config:option:`dir/job/FileSet` to determine which jobids belong together.
   If job A and B have the same client and fileset defined, the resulting jobids will be intermixed as follows:
 
   #. When a job determines its predecessor to determine its required level and since-time, it will consider all jobs with the same client and fileset.

@@ -2112,7 +2112,7 @@ When the autoxflate plugin is configured, it will write some status information 
 
    autoxflate-sd.c: deflate ratio: 50.59%
 
-Additional :config:option:`sd/storage/AutoXflateOnReplication`\  can be configured at the Storage resource.
+Additional :config:option:`sd/storage/AutoXFlateOnReplication`\  can be configured at the Storage resource.
 
 scsicrypto-sd
 ~~~~~~~~~~~~~
