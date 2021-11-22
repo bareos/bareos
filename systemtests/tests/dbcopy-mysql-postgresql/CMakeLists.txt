@@ -19,11 +19,5 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
-if(mysql
-   AND postgresql
-   AND dynamic-cats-backends
-)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-else()
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
-endif()
+# cannot run, as mysql is disabled now
+create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
