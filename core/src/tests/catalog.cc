@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,8 +53,7 @@ int main(int argc, char** argv)
 
 class CatalogTest : public ::testing::Test {
  protected:
-  std::set<std::string> testable_catalog_backends{"postgresql", "sqlite3",
-                                                  "mysql"};
+  std::set<std::string> testable_catalog_backends{"postgresql"};
   std::string catalog_backend_name;
   std::string backend_dir;
   std::string config_dir;
