@@ -50,7 +50,9 @@ target_sources(
   bareoscats-postgresql PRIVATE postgresql.cc postgresql_batch.cc
                                 cats_backends.cc
 )
-target_link_libraries(bareoscats-postgresql ${PostgreSQL_LIBRARY})
+target_link_libraries(
+  bareoscats-postgresql PRIVATE bareos ${PostgreSQL_LIBRARY}
+)
 install(TARGETS bareoscats-postgresql DESTINATION ${backenddir})
 
 install(
