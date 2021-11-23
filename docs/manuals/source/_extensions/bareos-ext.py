@@ -267,6 +267,80 @@ def get_config_directive(text):
     return result
 
 
+class ConfigDatatype(ObjectDescription):
+
+    parse_node = None
+    has_arguments = True
+
+    doc_field_types = [
+        Field("values", label="Values", has_arg=False, names=("values",)),
+        Field("multi", label="Multiple", has_arg=False, names=("multi",)),
+        Field("quotes", label="Quotes", has_arg=False, names=("quotes",)),
+        Field("see", label="See also", has_arg=False, names=("see",)),
+    ]
+
+    def handle_signature(self, signature, signode):
+        logger = logging.getLogger(__name__)
+        name = signature.upper()
+        signode.clear()
+        signode += addnodes.desc_name(signature, name)
+        # logger.debug('handle_signature({}), name={}'.format(sig, name))
+        return name
+
+    def add_target_and_index(self, name, signature, signode):
+        """
+        Usage:
+
+        .. config:datatype:: ACL
+
+           :quotes: yes
+
+           Multiline description ...
+
+        To refer to this description, use
+        :config:datatype:`ACL`.
+        """
+
+        uppername = signature.upper()
+        lowername = signature.lower()
+        targetname = u"datatype-{}".format(lowername)
+        signode["ids"].append(targetname)
+        self.state.document.note_explicit_target(signode)
+
+        # Generic index entries
+        self.indexnode["entries"].append(
+            ("single", u"Data Type; {}".format(uppername), targetname, targetname, None)
+        )
+
+        self.env.domaindata["config"]["objects"][self.objtype, lowername] = (
+            self.env.docname,
+            targetname,
+        )
+
+
+class ConfigDatatypeXRefRole(XRefRole):
+    """
+    Cross-referencing role for configuration options (adds an index entry).
+    """
+
+    def __init__(self, *args, **kwargs):
+        # generate warning, when reference target is not found.
+        super(ConfigDatatypeXRefRole, self).__init__(
+            warn_dangling=True, *args, **kwargs
+        )
+
+    def process_link(self, env, refnode, has_explicit_title, title, target):
+
+        logger = logging.getLogger(__name__)
+
+        if has_explicit_title:
+            return title, target
+        # logger.debug('process_link, title={}, target={}'.format(title, target))
+        upper = title.upper()
+        lower = title.lower()
+        return upper, lower
+
+
 class ConfigOption(ObjectDescription):
     parse_node = None
 
@@ -454,11 +528,20 @@ class ConfigFileDomain(Domain):
     label = "Config"
 
     object_types = {
+        "datatype": ObjType("config datatype", "datatype"),
         "option": ObjType("config option", "option"),
         "section": ObjType("config section", "section"),
     }
-    directives = {"option": ConfigOption, "section": ConfigSection}
-    roles = {"option": ConfigOptionXRefRole(), "section": ConfigSectionXRefRole()}
+    directives = {
+        "datatype": ConfigDatatype,
+        "option": ConfigOption,
+        "section": ConfigSection,
+    }
+    roles = {
+        "datatype": ConfigDatatypeXRefRole(),
+        "option": ConfigOptionXRefRole(),
+        "section": ConfigSectionXRefRole(),
+    }
 
     initial_data = {"objects": {}}  # (type, name) -> docname, labelid
 
