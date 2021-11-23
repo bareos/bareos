@@ -498,7 +498,7 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
                 strings["required"] = "True"
                 result += "   :required: {required}\n".format(**strings)
 
-            result += "   :type: :ref:`{datatype}<DataType{datatype}>` \n".format(**strings)
+            result += "   :type: :config:datatype:`{datatype}`\n".format(**strings)
 
             if data.get("default_value"):
                 result += "   :default: {default}\n".format(**strings)
@@ -558,11 +558,9 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
             strings["directive_link"] = link % strings
 
             if data.get("equals"):
-                strings["datatype"] = "= %(datatype)s" % {"datatype": data["datatype"]}
+                strings["datatype"] = "= :config:datatype:`{datatype}`\ ".format(**data)
             else:
-                strings["datatype"] = "\{ %(datatype)s \}" % {
-                    "datatype": data["datatype"]
-                }
+                strings["datatype"] = "{{ :config:datatype:`{datatype}`\ }}".format(**data)
 
             extra = []
             if data.get("alias"):
@@ -577,9 +575,6 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
                 strings["mc"] = "** "
             strings["extra"] = ", ".join(extra)
 
-            strings["t_datatype"] = '"{}"'.format(
-                self.getStringsWithModifiers("datatype", strings)
-            )
             strings["t_default"] = '"{}"'.format(
                 self.getStringsWithModifiers("default", strings)
             )
@@ -589,7 +584,7 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
 
             # result+='   %(directive_link)-60s, %(t_datatype)-20s, %(t_default)-20s, %(t_extra)s\n' % ( strings )
             result += (
-                "   %(directive_link)-60s, %(t_datatype)s, %(t_default)s, %(t_extra)s\n"
+                "   %(directive_link)-60s, %(datatype)s, %(t_default)s, %(t_extra)s\n"
                 % (strings)
             )
 
