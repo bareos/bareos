@@ -8,17 +8,8 @@ Catalog Maintenance
 Catalog Database
 ----------------
 
-Bareos stores its catalog in a database. Different database backends are offered:
-
--  PostgreSQL (recommended)
-
--  MariaDB/MySQL (deprecated)
-
--  Sqlite (deprecated)
-
-What database will be used, can be configured in the |dir| configuration, see the :ref:`DirectorResourceCatalog`.
-
-The database often runs on the same server as the |dir|. However, it is also possible to run it on a different system. This might require some more manual configuration, a PostgreSQL example can be found in :ref:`catalog-maintenance-remote-psql`.
+Bareos stores its catalog in a PostgreSQL database.
+The database often runs on the same server as the |dir|. However, it is also possible to run it on a different system. This might require some more manual configuration, an example can be found in :ref:`catalog-maintenance-remote-psql`.
 
 
 .. _section-dbconfig:
@@ -43,8 +34,6 @@ If you decided to use **dbconfig-common**, the next question will only be asked,
 
 
 
-
-Depending on the selected database backend, more questions about how to access the database will be asked. Often, the default values are suitable.
 
 The **dbconfig-common** configuration (and credentials) is done by the **bareos-database-common** package. Settings are stored in the file :file:`/etc/dbconfig-common/bareos-database-common.conf`. If you need to repeat this step, you can use the :command:`dpkg-reconfigure bareos-database-common` command.
 

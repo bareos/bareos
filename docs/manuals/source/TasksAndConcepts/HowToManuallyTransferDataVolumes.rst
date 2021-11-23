@@ -94,7 +94,7 @@ Then we need to create a backup on the remote machine onto a portable disk which
 
 On remote machine:
 
--  Install full Bareos server on remote server (sd, fd, dir). Using the Sqlite backend is sufficient.
+-  Install full Bareos server on remote server (sd, fd, dir).
 
 -  Add the client to the remote backup server.
 
@@ -110,6 +110,6 @@ Transport the newly created volume over to the director machine (e.g. via extern
 
 Shutdown Director on local director machine.
 
-Import data form volume via :command:`bscan`, you need to set which database backend is used: :command:`bscan -B sqlite3 FileStorage -V Transfer-0001 -s -S`
+Import data form volume via :command:`bscan`, you need to set which database backend is used: :command:`bscan FileStorage -V Transfer-0001 -s -S`
 
 If the import was successfully completed, test if an incremental job really only backs up the minimum amount of data.

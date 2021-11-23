@@ -146,7 +146,7 @@ As an example, suppose we query for the current set of tapes to restore all file
 
 ::
 
-   Using default Catalog name=MySQL DB=bareos
+   Using default Catalog name=MyCatalog DB=bareos
    *query
    Available queries:
         1: List Job totals:

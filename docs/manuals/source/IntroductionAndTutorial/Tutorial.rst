@@ -9,7 +9,7 @@ This chapter will guide you through running Bareos. To do so, we assume you have
 
 The general flow of running Bareos is:
 
-#. Start the Database (if using |postgresql| or |mysql|)
+#. Start the Database
 
 #.
 
@@ -26,11 +26,6 @@ The general flow of running Bareos is:
 #. Add a second client.
 
 Each of these steps is described in more detail below.
-
-Starting the Database
----------------------
-
-If you are using |postgresql| or |mysql| as the Bareos database, you should start it before you install Bareos. If you are using |sqlite| you need do nothing. |sqlite| is automatically started by the |dir|.
 
 Installing Bareos
 -----------------

@@ -153,15 +153,11 @@ Restoring a Bareos Server
 
 Above, we considered how to recover a client machine where a valid Bareos server was running on another machine. However, what happens if your server goes down and you no longer have a running Director, Catalog, or Storage daemon? There are several solutions:
 
-#. Bring up static versions of your Director, Catalog, and Storage daemon on the damaged machine.
-
 #. Move your server to another machine.
 
 #. Use a Hot Spare Server on another Machine.
 
-The first option, is very difficult because it requires you to have created a static version of the Director and the Storage daemon as well as the Catalog. If the Catalog uses MySQL or PostgreSQL, this may or may not be possible. In addition, to loading all these programs on a bare system (quite possible), you will need to make sure you have a valid driver for your tape drive.
-
-The second suggestion is probably a much simpler solution, and one I have done myself. To do so, you might want to consider the following steps:
+Consider the following steps:
 
 -  Install the same database server as on the original system.
 
@@ -173,7 +169,7 @@ The second suggestion is probably a much simpler solution, and one I have done m
 
 -  If you have the Bootstrap file, you should now be back up and running, if you do not have a Bootstrap file, continue with the suggestions below.
 
--  Using bscan scan the last set of backup tapes into your MySQL, PostgreSQL or SQLite database.
+-  Using bscan scan the last set of backup tapes into your catalog database.
 
 -  Start Bareos, and using the Console restore command, restore the last valid copy of the Bareos database and the Bareos configuration files.
 

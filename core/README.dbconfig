@@ -50,10 +50,6 @@ Upgrade:
 
 Database Permissions by dbconfig:
 
-MySQL:
-    GRANT USAGE ON *.* TO 'bareos'@'localhost' IDENTIFIED BY PASSWORD '*3E80BB05233BE488EE70C1D6494E2F2DB00FEBB4'
-    GRANT ALL PRIVILEGES ON `bareos`.* TO 'bareos'@'localhost'
-
 PostgreSQL:
     bareos will be the database owner
 

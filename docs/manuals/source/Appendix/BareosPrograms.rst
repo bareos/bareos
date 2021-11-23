@@ -610,7 +610,7 @@ It is called:
 .. code-block:: shell-session
 
    Usage: bscan [options] <Bareos-archive>
-          -B <driver name>  specify the database driver name (default NULL) <postgresql|mysql|sqlite>
+          -B <driver name>  exists for backwards compatibility and is ignored
           -b bootstrap      specify a bootstrap file
           -c <file>         specify configuration file
           -d <nn>           set debug level to nn
@@ -632,11 +632,9 @@ It is called:
           -w <dir>          specify working directory (default from conf file)
           -?                print this message
 
-As Bareos supports loading its database backend dynamically you need to specify the right database driver to use using the -B option.
+If you have provided security on your database, you may need to supply either the database name (-b option), the user name (-u option), and/or the password (-p) options.
 
-If you are using MySQL or PostgreSQL, there is no need to supply a working directory since in that case, bscan knows where the databases are. However, if you have provided security on your database, you may need to supply either the database name (-b option), the user name (-u option), and/or the password (-p) options.
-
-NOTE: before :command:`bscan` can work, it needs at least a bare bones valid database. If your database exists but some records are missing because they were pruned, then you are all set. If your database was lost or destroyed, then you must first ensure that you have the SQL program running (MySQL or PostgreSQL), then you must create the Bareos database (normally named bareos), and you must create the Bareos tables. This is explained in :ref:`section-CreateDatabase`
+NOTE: before :command:`bscan` can work, it needs at least a bare bones valid database. If your database exists but some records are missing because they were pruned, then you are all set. If your database was lost or destroyed, then you must first ensure that you have PostgreSQL running, then you must create the Bareos database (normally named bareos), and you must create the Bareos tables. This is explained in :ref:`section-CreateDatabase`
 chapter of the manual. Finally, before scanning into an empty database, you must start and stop the Director with the appropriate Bareos-dir.conf file so that it can create the Client and Storage records which are not stored on the Volumes. Without these records, scanning is unable to connect the Job records to the proper client.
 
 Forgetting for the moment the extra complications of a full rebuild of your catalog, let’s suppose that you did a backup to Volumes "Vol001" and "Vol002", then sometime later all records of one or both those Volumes were pruned or purged from the database. By using bscan you can recreate the catalog entries for those Volumes and then use the restore command in the Console to restore whatever you want. A command something like:
@@ -705,7 +703,7 @@ Starting with a single Volume named TestVolume1, you run a command such as:
 
 If there is more than one volume, simply append it to the first one separating it with a vertical bar. You may need to precede the vertical bar with a forward slash escape the shell – e.g. TestVolume1|TestVolume2. The -v option was added for verbose output (this can be omitted if desired). The -s option that tells :command:`bscan` to store information in the database. The physical device name /dev/nst0 is specified after all the options.
 
-For example, after having done a full backup of a directory, then two incrementals, I reinitialized the SQLite database as described above, and using the bootstrap.bsr file noted above, I entered the following command:
+For example, after having done a full backup of a directory, then two incrementals, I reinitialized the catalog database as described above, and using the bootstrap.bsr file noted above, I entered the following command:
 
 .. code-block:: shell-session
 
@@ -1118,7 +1116,7 @@ If not, problems of reading the Bareos configuration or accessing the database c
           -B                print catalog configuration and exit
           -d <nn>           set debug level to <nn>
           -dt               print a timestamp in debug output
-          -D <driver name>  specify the database driver name (default NULL) <postgresql|mysql|sqlite>
+          -D <driver name>  exists for backwards compatibility and is ignored
           -f                fix inconsistencies
           -v                verbose
           -?                print this message
@@ -1131,7 +1129,7 @@ If the :strong:`-B` option is specified, :command:`bareos-dbcheck` will print ou
 
    # <input>bareos-dbcheck -B</input>
    catalog=MyCatalog
-   db_type=SQLite
+   db_type=postgresql
    db_name=bareos
    db_driver=
    db_user=bareos
@@ -1203,8 +1201,6 @@ The inconsistencies examined are the following:
 -  All Admin records. This command will remove all Admin records, regardless of their age.
 
 -  All Restore records. This command will remove all Restore records, regardless of their age.
-
-If you are using MySQL, :command:`bareos-dbcheck` in interactive mode will ask you if you want to create temporary indexes to speed up orphaned Path and Filename elimination. In batch mode (:strong:`-b`) the temporary indexes will be created without asking.
 
 If you are using bvfs (e.g. used by :ref:`bareos-webui <section-webui>`), don’t eliminate orphaned path, else you will have to rebuild ``brestore_pathvisibility``\  and ``brestore_pathhierarchy``\  indexes.
 

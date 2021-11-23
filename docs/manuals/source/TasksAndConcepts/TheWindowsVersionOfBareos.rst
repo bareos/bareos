@@ -35,14 +35,6 @@ During installation you can decide, what Bareos components you want to install.
 
 Typically, you only want to install the Bareos Client (|fd|) and optionally some interface tools on a Windows system. Normally, we recommend to let the server components run on a Linux or other Unix system. However, it is possible, to run the |dir|, |sd| and |webui| on a Windows systems. You should be aware about following limitations:
 
-.. limitation:: Windows: |dir| does not support MySQL database backend.
-
-
-   When running the Director on Windows, only PostgreSQL (and SQLite) database backends are supported.
-   SQLite is best suited for test environments.
-
-
-
 
 .. limitation:: Windows: Storage Daemon only supports backup to disk, not to tape.
 

@@ -77,10 +77,6 @@ However, this script requires administration access to the database. Depending o
 
       If you're updating to Bareos <= 13.2.3 and have configured the Bareos database during install using Bareos environment variables (``db_name``\ , ``db_user``\  or ``db_password``\ , see :ref:`CatMaintenanceChapter`), make sure to have these variables defined in the same way when calling the update and grant scripts. Newer versions of Bareos read these variables from the Director configuration file \configFileDirUnix. However, make sure that the user running the database scripts has read access to this file (or set the environment variables). The **postgres** user normally does not have the required permissions.
 
-PostgreSQL
-^^^^^^^^^^
-
-If your are using PostgreSQL and your PostgreSQL administrator is **postgres** (default), use following commands:
 
 .. code-block:: shell-session
    :caption: Update PostgreSQL database schema
@@ -89,29 +85,5 @@ If your are using PostgreSQL and your PostgreSQL administrator is **postgres** (
    su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
 
 The :command:`grant_bareos_privileges` command is required, if new databases tables are introduced. It does not hurt to run it multiple times.
-
-After this, restart the Bareos Director and verify it starts without problems.
-
-MySQL/MariaDB
-^^^^^^^^^^^^^
-
-Make sure, that **root** has direct access to the local MySQL server. Check if the command :command:`mysql` without parameter connects to the database. If not, you may be required to adapt your local MySQL configuration file :file:`~/.my.cnf`. It should look similar to this:
-
-.. code-block:: cfg
-   :caption: MySQL credentials file .my.cnf
-
-   [client]
-   host=localhost
-   user=root
-   password=<input>YourPasswordForAccessingMysqlAsRoot</input>
-
-If you are able to connect via the :command:`mysql` to the database, run the following script from the Unix prompt:
-
-.. code-block:: shell-session
-   :caption: Update MySQL database schema
-
-   /usr/lib/bareos/scripts/update_bareos_tables
-
-Currently on MySQL is it not necessary to run :command:`grant_bareos_privileges`, because access to the database is already given using wildcards.
 
 After this, restart the Bareos Director and verify it starts without problems.
