@@ -53,8 +53,36 @@ END_OF_DATA
 
 run_bareos "$@"
 
+# Consolidating zero-file incremental backups
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log2.out
+
+run job=$JobName level=Incremental yes
+wait
+run job=$JobName level=Incremental yes
+wait
+run job=$JobName level=Incremental yes
+wait
+messages
+
+run job=Consolidate yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
 stop_bareos
 
 check_job_canceled
+
+if ! grep "purged JobIds 6,4,7,8 as they were consolidated into Job 11" "$tmp"/log2.out; then
+  echo "Zero file backups were not consolidated. Check $tmp/log2.out" >&2
+  estat=1
+fi
 
 end_test
