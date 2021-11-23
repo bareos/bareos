@@ -1387,7 +1387,6 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
          "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
          "FROM Job JOIN FileSet USING (FileSetId) "
          "WHERE ClientId = %s "
-         "AND JobFiles > 0 "
          "AND Level='I' AND JobStatus IN ('T','W') AND Type='B' "
          "AND StartTime > (SELECT EndTime FROM btemp3%s ORDER BY EndTime DESC "
          "LIMIT 1) "
