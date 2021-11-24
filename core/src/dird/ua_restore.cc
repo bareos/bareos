@@ -321,7 +321,6 @@ bool RestoreCmd(UaContext* ua, const char* cmd)
   ParseUaArgs(ua);
   RunCmd(ua, ua->cmd);
   free_rx(&rx);
-  GarbageCollectMemory(); /* release unused memory */
   return true;
 
 bail_out:
@@ -332,7 +331,6 @@ bail_out:
   if (regexp) { free(regexp); }
 
   free_rx(&rx);
-  GarbageCollectMemory(); /* release unused memory */
   return false;
 }
 
@@ -1164,13 +1162,6 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     PmStrcat(rx->JobIds, ",");
     PmStrcat(rx->JobIds, rx->BaseJobIds);
   }
-
-  /*
-   * At this point, the tree is built, so we can garbage collect
-   * any memory released by the SQL engine that RedHat has
-   * not returned to the OS :-(
-   */
-  GarbageCollectMemory();
 
   /*
    * Look at the first JobId on the list (presumably the oldest) and

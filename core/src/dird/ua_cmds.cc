@@ -2529,7 +2529,6 @@ static bool DeletePool(UaContext* ua)
 
 static bool MemoryCmd(UaContext* ua, const char* cmd)
 {
-  GarbageCollectMemory();
   ListDirStatusHeader(ua);
   return true;
 }

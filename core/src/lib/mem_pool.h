@@ -49,12 +49,6 @@ void FreePoolMemory(POOLMEM* buf);
     }                            \
   } while (0)
 
-void GarbageCollectMemoryPool();
-void CloseMemoryPool();
-void PrintMemoryPoolStats();
-
-void GarbageCollectMemory();
-
 enum
 {
   PM_NOPOOL = 0,  /* Nonpooled memory */

@@ -46,8 +46,7 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
 
   delete my_config;
 
-  TermMsg();         /* Terminate message handler */
-  CloseMemoryPool(); /* release free memory in pool */
+  TermMsg(); /* Terminate message handler */
 }
 
 TEST(ConfigParser_Dir, runscript_test)
@@ -64,8 +63,7 @@ TEST(ConfigParser_Dir, runscript_test)
 
   delete my_config;
 
-  TermMsg();         /* Terminate message handler */
-  CloseMemoryPool(); /* release free memory in pool */
+  TermMsg(); /* Terminate message handler */
 }
 
 void test_config_directive_type(
@@ -96,8 +94,7 @@ void test_config_directive_type(
 
   delete my_config;
 
-  TermMsg();         /* Terminate message handler */
-  CloseMemoryPool(); /* release free memory in pool */
+  TermMsg(); /* Terminate message handler */
 }
 
 

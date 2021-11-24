@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,8 +47,7 @@ TEST(ConfigParser, test_filed_config)
 
   delete my_config;
 
-  TermMsg();         /* Terminate message handler */
-  CloseMemoryPool(); /* release free memory in pool */
+  TermMsg(); /* Terminate message handler */
 }
 
 }  // namespace filedaemon

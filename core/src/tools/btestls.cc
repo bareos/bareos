@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -189,7 +189,6 @@ int main(int argc, char* const* argv)
   FreeJcr(jcr);
   RecentJobResultsList::Cleanup();
   CleanupJcrChain();
-  CloseMemoryPool();
   exit(0);
 }
 

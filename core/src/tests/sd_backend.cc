@@ -105,10 +105,6 @@ void sd::TearDown()
 
   TermMsg();
   TermReservationsLock();
-
-  CloseMemoryPool();
-  debug_level = 0;
-  CloseMemoryPool();
 }
 
 // Test that load and unloads a tape device.

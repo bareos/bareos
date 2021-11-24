@@ -497,7 +497,6 @@ void* process_director_commands(JobControlRecord* jcr, BareosSocket* dir)
 
   FreeJcr(jcr); /* destroy JobControlRecord record */
   Dmsg0(100, "Done with FreeJcr\n");
-  GarbageCollectMemoryPool();
 
 #ifdef HAVE_WIN32
   AllowOsSuspensions();

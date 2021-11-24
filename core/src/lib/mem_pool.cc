@@ -48,10 +48,8 @@
 
 // Memory allocation control structures and storage.
 struct abufhead {
-  int32_t ablen;         /* Buffer length in bytes */
-  int32_t pool;          /* pool */
-  struct abufhead* next; /* pointer to next free buffer */
-  int32_t bnet_size;     /* dummy for BnetSend() */
+  int32_t ablen;     /* Buffer length in bytes */
+  int32_t bnet_size; /* dummy for BnetSend() */
 };
 
 constexpr int32_t HEAD_SIZE{BALIGN(sizeof(struct abufhead))};
@@ -102,8 +100,6 @@ POOLMEM* GetPoolMemory(int pool)
   }
 
   buf->ablen = alloc_size;
-  buf->pool = pool;
-  buf->next = NULL;
   return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
 }
 
@@ -119,8 +115,6 @@ POOLMEM* GetMemory(int32_t size)
   }
 
   buf->ablen = size;
-  buf->pool = 0;
-  buf->next = NULL;
   return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
 }
 
@@ -164,22 +158,6 @@ void FreePoolMemory(POOLMEM* obuf)
 
   free((char*)buf);
 }
-
-
-void GarbageCollectMemoryPool() {}
-
-/* Release all freed pooled memory */
-void CloseMemoryPool() {}
-
-/*
- * Garbage collect and trim memory if possible
- * This should be called after all big memory usages if possible.
- */
-void GarbageCollectMemory() {}
-
-
-// Print staticstics on memory pool usage
-void PrintMemoryPoolStats() { Pmsg0(-1, "Memory pooling disabled\n"); }
 
 /*
  * Concatenate a string (str) onto a pool memory buffer pm

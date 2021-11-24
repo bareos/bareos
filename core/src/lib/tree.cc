@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,8 +38,7 @@ static TREE_NODE* search_and_insert_tree_node(char* fname,
                                               int type,
                                               TREE_ROOT* root,
                                               TREE_NODE* parent);
-template <typename T>
-static T* tree_alloc(TREE_ROOT* root, int size);
+template <typename T> static T* tree_alloc(TREE_ROOT* root, int size);
 
 // NOTE !!!!! we turn off Debug messages for performance reasons.
 #undef Dmsg0
@@ -132,8 +131,7 @@ void TreeRemoveNode(TREE_ROOT* root, TREE_NODE* node)
  * Keep the pointers properly aligned by allocating
  * sizes that are aligned.
  */
-template <typename T>
-static T* tree_alloc(TREE_ROOT* root, int size)
+template <typename T> static T* tree_alloc(TREE_ROOT* root, int size)
 {
   T* buf;
   int asize = BALIGN(size);
@@ -173,7 +171,6 @@ void FreeTree(TREE_ROOT* root)
   Dmsg3(100, "Total size=%u blocks=%u freed_blocks=%u\n", root->total_size,
         root->blocks, freed_blocks);
   free(root);
-  GarbageCollectMemory();
   return;
 }
 

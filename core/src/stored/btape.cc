@@ -371,8 +371,6 @@ static void TerminateBtape(int status)
     my_config = NULL;
   }
 
-  if (debug_level > 10) { PrintMemoryPoolStats(); }
-
   if (this_block) {
     FreeBlock(this_block);
     this_block = NULL;
@@ -382,7 +380,6 @@ static void TerminateBtape(int status)
   TermMsg();
   RecentJobResultsList::Cleanup();
   CleanupJcrChain();
-  CloseMemoryPool(); /* free memory in pool */
 
   exit(status);
 }
