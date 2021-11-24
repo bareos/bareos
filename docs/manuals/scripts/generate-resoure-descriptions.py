@@ -143,6 +143,11 @@ class BareosConfigurationSchema:
             result.append(token)
         return " ".join(result)
 
+    def isValidCamelCase(self, key):
+        if key in ("EnableVSS", "AutoXFlateOnReplication"):
+            return True
+        return re.match("^([A-Z][a-z]+)+$", key) is not None
+
     def getDatatype(self, name):
         return self.json["datatype"][name]
 
@@ -256,7 +261,6 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
         description = ""
         if data.get("description"):
             description = self.indent(data.get("description"), 3)
-            # .replace('_','\_')
         return description
 
     def getConvertedResourceDirectives(self, daemon, resourcename):
@@ -346,6 +350,13 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
         for key in sorted(filter(None, subtree.keys())):
             data = BareosConfigurationSchemaDirective(subtree[key])
 
+            if not self.isValidCamelCase(key):
+                raise ValueError(
+                    "The directive {} from {}/{} is not valid CamelCase.".format(
+                        key, daemon, resourcename
+                    )
+                )
+
             strings = {
                 "key": self.convertCamelCase2Spaces(key),
                 "extra": [],
@@ -362,7 +373,9 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
             if data.get("equals"):
                 strings["datatype"] = "= :config:datatype:`{datatype}`\ ".format(**data)
             else:
-                strings["datatype"] = "{{ :config:datatype:`{datatype}`\ }}".format(**data)
+                strings["datatype"] = "{{ :config:datatype:`{datatype}`\ }}".format(
+                    **data
+                )
 
             extra = []
             if data.get("alias"):
