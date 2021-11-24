@@ -10,11 +10,15 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
+if [ "$USER" == "root"  ]; then
+ echo "This test cannot be run as user root."
+ exit 1;
+fi
 
 JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
-MYQL_CLIENT="${MYSQL} --defaults-file=mysqldefaults --user=root"
+MYQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=mysqldefaults --user=root"
 
 JobName=backup-bareos-fd
 #shellcheck source=../scripts/functions
@@ -22,30 +26,15 @@ JobName=backup-bareos-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
+
+XTRABACKUP="${XTRABACKUP_BINARY} --defaults-file=mysqldefaults"
+
 shutdown_mysql_server(){
-  [ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
-# kill running mysqld instance listening on our port
-sudo fuser "${test_db_port}"/tcp -k || :
+[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
 }
 
-
-shutdown_mysql_server
-
-# kill running mysqld instance listening on our port
-sudo fuser "${test_db_port}"/tcp -k || :
-
-rm -Rf mysql/data/*
-mkdir -p mysql/data/
-# directory for socket, depending on length (socket length is limited)
-rm -Rf  ${dbHost}
-mkdir -p ${dbHost}
-
-
-# initialize mysql db
-
-${MYSQLD} --defaults-file=mysqldefaults --initialize-insecure --user="$USER" > mysql/mysql_init.log
-# start mysql server
-${MYSQLD} --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
+startup_mysql_server(){
+"${MYSQL_DAEMON_BINARY}" --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
 
 tries=60
 echo "waiting for mysql server to start"
@@ -60,7 +49,26 @@ while ! $MYQL_CLIENT <<< "select version();"  > /dev/null 2>&1; do
   sleep 1
 done
 
+}
+
+
+
+shutdown_mysql_server
+
+rm -Rf mysql/data/*
+mkdir -p mysql/data/
+# directory for socket, depending on length (socket length is limited)
+rm -Rf  ${dbHost}
+mkdir -p ${dbHost}
+
+
+# initialize mysql db
+
+${MYSQL_DAEMON_BINARY} --defaults-file=mysqldefaults --initialize-insecure --user="$USER" > mysql/mysql_init.log
+
+startup_mysql_server
 xtrabackup_test_db="${db_name}_xtrabackup"
+
 
 start_test
 
@@ -78,10 +86,12 @@ run job=$JobName level=Incremental yes
 wait JobName=$JobName
 status dir
 
-# insert data and run incremental
-insert into test (data) VALUES ('test entry 2')
 
 END_OF_DATA
+
+# insert data and run incremental
+echo "insert into test (data) VALUES ('test entry 2') " | $MYQL_CLIENT "${xtrabackup_test_db}"
+
 run_bareos "$@"
 
 cat <<END_OF_DATA2 >"$tmp/bconcmds"
@@ -115,6 +125,33 @@ if [ -z "$(ls -A "$tmp"/bareos-restores/_percona/)" ]; then
 fi
 
 
+# create new empty data dir
+rm -Rf mysql/data/*
+mkdir -p mysql/data/
+
+TARGETDIR=$(find ./tmp/bareos-restores/_percona/4/ -type d  -name '*001')
+INCDIR1=$(find ./tmp/bareos-restores/_percona/4/ -type d  -name '*002')
+INCDIR2=$(find ./tmp/bareos-restores/_percona/4/ -type d  -name '*002')
+
+${XTRABACKUP} --prepare --target-dir=${TARGETDIR}
+# after prepare a file is left in data dir, this seems to be a bug
+rm -Rf mysql/data/*
+${XTRABACKUP} --copy-back --target-dir=${TARGETDIR}  --incremental-dir=${INCDIR1}  --incremental-dir=${INCDIR2}
+
+
+startup_mysql_server
+
+if ! echo "SELECT * from test " | $MYQL_CLIENT "${xtrabackup_test_db}" | grep "test entry 1"; then
+    echo "test entry 1 not found"
+    estat=2
+fi
+
+if ! echo "SELECT * from test " | $MYQL_CLIENT "${xtrabackup_test_db}" | grep "test entry 2"; then
+    echo "test entry 2 not found"
+    estat=3
+fi
+
+shutdown_mysql_server
 
 check_for_zombie_jobs storage=File
 stop_bareos

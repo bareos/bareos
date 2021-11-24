@@ -17,20 +17,46 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-if(TARGET python-fd AND XTRABACKUP)
+# This test requires the following variables to be set:
+#
+# -D XTRABACKUP_BINARY=/usr/bin/xtrabackup \ -D
+# MYSQL_DAEMON_BINARY=/opt/mysql/bin/mysqld \ -D
+# MYSQL_CLIENT_BINARY=/usr/bin/mysql \
+
+if(TARGET python-fd
+   AND XTRABACKUP_BINARY
+   AND MYSQL_DAEMON_BINARY
+   AND MYSQL_CLIENT_BINARY
+)
   create_systemtest(${SYSTEMTEST_PREFIX} "py2plug-fd-percona-xtrabackup")
 else()
   create_systemtest(
-    ${SYSTEMTEST_PREFIX} "py2plug-fd-percona-xtrabackup" DISABLED COMMENT
-    "no python-fd or XTRABACKUP not set"
+    ${SYSTEMTEST_PREFIX}
+    "py2plug-fd-percona-xtrabackup"
+    DISABLED
+    COMMENT
+    "
+    no python-fd or XTRABACKUP_BINARY,MYSQL_DAEMON_BINARY or MYSQL_CLIENT_BINARY not set.)
+    example:
+    cmake -D XTRABACKUP_BINARY=/usr/bin/xtrabackup
+    -D MYSQL_DAEMON_BINARY=/opt/mysql/bin/mysqld
+    -D MYSQL_CLIENT_BINARY=/usr/bin/mysql"
   )
 endif()
 
-if(TARGET python3-fd AND XTRABACKUP)
+if(TARGET python3-fd AND XTRABACKUP_BINARY)
   create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-percona-xtrabackup")
 else()
   create_systemtest(
-    ${SYSTEMTEST_PREFIX} "py3plug-fd-percona-xtrabackup" DISABLED COMMENT
-    "no python3-fd or XTRABACKUP not set"
+    ${SYSTEMTEST_PREFIX}
+    "py3plug-fd-percona-xtrabackup"
+    DISABLED
+    COMMENT
+    "
+    no python3-fd or XTRABACKUP_BINARY,MYSQL_DAEMON_BINARY or MYSQL_CLIENT_BINARY not set.)
+    example:
+    cmake -D XTRABACKUP_BINARY=/usr/bin/xtrabackup
+    -D MYSQL_DAEMON_BINARY=/opt/mysql/bin/mysqld
+    -D MYSQL_CLIENT_BINARY=/usr/bin/mysql"
   )
 endif()

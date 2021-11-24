@@ -32,6 +32,18 @@ Description: Backup Archiving Recovery Open Sourced - file daemon Percona XtraBa
  .
  This package provides the Percona XtraBackup Python plugin for the filedaemon.
 
+Package:        bareos-filedaemon-mariabackup-python-plugin
+Architecture:   any
+Section:        python
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugin (= ${binary:Version}), ${misc:Depends}
+Recommends:     bareos-filedaemon-python3-plugin
+Description: Backup Archiving Recovery Open Sourced - file daemon Mariabackup plugin
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides the Mariabackup Python plugin for the filedaemon.
+
 Package:        bareos-filedaemon-postgresql-python-plugin
 Architecture:   any
 Section:        python
