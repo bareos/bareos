@@ -418,6 +418,8 @@ In general, if you want spaces in a name to the right of the first equal sign (=
 
 Within a quoted string, any character following a backslash (\) is taken as itself (handy for inserting backslashes and double quotes (")).
 
+.. _section-MultilineString:
+
 .. note::
 
    Since Bareos :sinceVersion:`20: Multiline Strings` strings can be spread over multiple lines using quotes like this:
@@ -452,6 +454,8 @@ Data Types
 When parsing the resource directives, Bareos classifies the data according to the types listed below.
 
 .. config:datatype:: ACL
+
+   :multi: yes
 
    This directive defines what is permitted to be accessed. It does this by using a list of regular expressions, separated by commas (:strong:`,`) or using multiple directives. If :strong:`!` is prepended, the expression is negated. The special keyword :strong:`*all*` allows unrestricted access.
 
@@ -517,15 +521,16 @@ When parsing the resource directives, Bareos classifies the data according to th
          Command ACL = *all*, !sqlquery
 
 
+
 .. config:datatype:: ACTION_ON_PURGE
 
-   Action to perform on Purge. Mostly truncate
+   Action to perform on Purge, mostly **truncate**.
 
 
    
 .. config:datatype:: ADDRESS
 
-   Is either a domain name or an IP address specified as a dotted quadruple in string or an IP version 6 address specified as a colon separated syntax (::) or quoted string format. This directive only permits a single address to be specified. The :strong:`Port` must be specifically separated. If multiple :strong:`Addresses` are needed, please assess if it is also possible to specify :strong:`Addresses` (plural).
+   Is either a domain name or an IP address specified as a dotted quadruple in string or an IP version 6 address specified as a colon separated syntax (::) or quoted string format. This directive only permits a single address to be specified. The :strong:`Port` must be specifically separated. If multiple :strong:`Addresses` are needed, please assess if it is also possible to specify :config:datatype:`ADDRESSES` (plural).
 
 
 
@@ -533,24 +538,24 @@ When parsing the resource directives, Bareos classifies the data according to th
 
    Specify a set of Addresses and Ports. Probably the simplest way to explain this is to show an example.
 
-   The following example makes the director listen for connections on all interfaces both on ipv4 and ipv6.
+   The following example makes the director listen for connections on all interfaces both on IPv4 and IPv6.
 
 
    .. code-block:: bareosconfig
-       :caption: listen on ipv4 and ipv6 for director < bareos 21
+       :caption: Listen on IPv4 and IPv6 for Bareos < 21
 
-       DIRAddresses = {
+       DirAddresses = {
           ipv6 = { addr = :: ; port = 9101 }
        }
 
    .. note::
 
-      Since Bareos :sinceVersion:`21: listen on both ipv4 and ipv6 per default` on two distinct sockets, this is not required anymore. This notation will be required if you want to restrict the addresses to listen on.
+      Since Bareos :sinceVersion:`21: listen on both IPv4 and IPv6 per default` on two distinct sockets, this is not required anymore. This notation will be required if you want to restrict the addresses to listen on.
 
    .. code-block:: bareosconfig
-       :caption: listen on ipv4 and ipv6 for director > bareos 21 (default)
+       :caption: Listen on IPv4 and IPv6 for Bareos >= 21 (default)
 
-       DIRAddresses = {
+       DirAddresses = {
           ipv4 = { addr = 0.0.0.0 ; port = 9101 }
           ipv6 = { addr = :: ; port = 9101 }
        }
@@ -560,7 +565,7 @@ When parsing the resource directives, Bareos classifies the data according to th
    The following example shows all of the features the Addresses parser:
 
    .. code-block:: bareosconfig
-       :caption:  showing Addresses features
+       :caption:  Showing Addresses features
 
        Addresses  = {
            ip = { addr = 1.2.3.4; port = 1205;}
@@ -590,7 +595,7 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 
    .. code-block:: bareosconfig
-       :caption:  Bareos > 21 : Listening on all IPv6 and only IPv4 localhost
+       :caption:  Bareos >= 21 : Listening on all IPv6 and only IPv4 localhost
 
         Addresses  = {
          ipv6 = { addr = :: }
@@ -598,14 +603,14 @@ When parsing the resource directives, Bareos classifies the data according to th
        }
 
    .. code-block:: bareosconfig
-       :caption:  Bareos > 21 : Listening only on IPv4
+       :caption:  Bareos >= 21 : Listening only on IPv4
 
         Addresses  = {
          ipv4 = { addr = 0.0.0.0 }
        }
 
    .. code-block:: bareosconfig
-       :caption:  Bareos > 21 : Listening on specific IPv6 and none IPv4
+       :caption:  Bareos >= 21 : Listening on specific IPv6 and none IPv4
 
        Addresses  = {
          ipv6 = { addr = ::1 }
@@ -626,9 +631,10 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: AUTH_PROTOCOL_TYPE
 
+   :values: **Native** | **NDMPV2** | **NDMPV3** | **NDMPV4**
    :see: :config:datatype:`PROTOCOL_TYPE`
    
-   The following string values are allowed: `Native` (The native Bareos protocol), `NDMP` (The NDMP protocol).
+   Either select the native Bareos protocol or a NDMP protocol.
 
 
 
@@ -641,8 +647,6 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 
 .. config:datatype:: AUTOPASSWORD
-
-   :see: :config:datatype:`PASSWORD`
 
    This is a Bareos password and it is stored internally in MD5 hashed format.
 
@@ -658,7 +662,7 @@ When parsing the resource directives, Bareos classifies the data according to th
    For verify job
       `InitCatalog`, `Catalog`, `VolumeToCatalog`, `DiskToCatalog`
 
-   :config:option:`dir/job/Level`
+   See details at :config:option:`dir/job/Level`.
 
 
 
@@ -677,21 +681,20 @@ When parsing the resource directives, Bareos classifies the data according to th
 
    The following values are allowed: `GZIP` (GZIP1 to GZIP9), `LZO`, `LZFAST` (deprecated :sinceVersion:`19.2.: lzfast`, `LZ4`, `LZ4HC`.
 
-   See :ref:`DirectorResourceFileSet`
+   See :config:option:`dir/fileset/include/options/compression`.
 
 
 
 .. config:datatype:: DEVICE
 
-   See :ref:`Storage Device <StorageResourceDevice>`.
-
+   See :config:option:`dir/storage/Device`.
 
 
 .. config:datatype:: DEVICE_TYPE
 
    The following values are allowed: `Tape`, `File`, `FIFO`, `GFAPI`,  `Rados` (Ceph Object Store)  deprecated :sinceVersion:`20.0.0: Rados`, `Droplet` :sinceVersion:`17.2.7: libdroplet`.
 
-   See :ref:`Storage Device <StorageResourceDevice>`.
+   See :config:option:`sd/device/DeviceType`.
 
 
 
@@ -702,6 +705,8 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 
 .. config:datatype:: DIRECTORY_LIST
+
+   :multi: yes
 
    A list of directories.
 
@@ -727,6 +732,7 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: INT32
 
+   :values: -2147483648 - +2147483647
    :quotes: no
 
    A signed 32 bit integer value.
@@ -737,12 +743,14 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: IO_DIRECTION
 
+   :values: **in** | **out** | **both**
+
    String indicating sens of IO can be `in` or `out` or `both`
 
 
 .. config:datatype:: JOB_TYPE
 
-   The following values are allowed: `Backup`, `Restore`, `Verify`, `Admin`, `Migrate`, `Copy`, `Consolidate`
+   :values: **Backup** | **Restore** | **Verify** | **Admin** | **Migrate** | **Copy** | **Consolidate**
 
    See :config:option:`dir/job/Type`
 
@@ -750,11 +758,13 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: LABEL
 
-   Quoted string for volume label
+   Quoted string for volume label.
 
 
 
 .. config:datatype:: MAX_BLOCKSIZE
+
+   :quotes: no
 
    Positive integer
 
@@ -770,7 +780,7 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: MESSAGES
 
-   see :ref:`DirectorResourceMessages`
+   See :ref:`DirectorResourceMessages`.
 
 
 
@@ -778,7 +788,7 @@ When parsing the resource directives, Bareos classifies the data according to th
 
    The following values are allowed: `SmallestVolume`, `OldestVolume`, `Client`, `Volume`, `Job`, `SQLQuery`, `PoolOccupancy`, `PoolTime`, `PoolUncopiedJobs`
 
-   See See :config:option:`dir/job/SelectionType`
+   See :config:option:`dir/job/SelectionType`.
 
 
 
@@ -792,6 +802,9 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: PINT16
 
+   :values: 0 - 65535
+   :quotes: no
+   
    A positive 16 bit unsigned integer value.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
@@ -799,6 +812,9 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: PINT32
 
+   :values: 0 - 4294967295 
+   :quotes: no
+   
    A positive 32 bit unsigned integer value.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
@@ -821,7 +837,10 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: PORT
 
-   Specify a network port (a positive integer in the range 1 to 65535).
+   :values: 1 - 65535
+   :quotes: no
+
+   Specify a network network port.
 
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
@@ -831,18 +850,18 @@ When parsing the resource directives, Bareos classifies the data according to th
 
    :see: :config:datatype:`AUTH_PROTOCOL_TYPE`
 
-    The protocol to run a the job. Following protocols are available:
+   The protocol to run a the job. Following protocols are available:
 
-    Native
+   Native
         Native Bareos job protocol.
 
-    NDMP
+   NDMP
         Deprecated. Alias for |ndmpbareos|.
 
-    NDMP_BAREOS
+   NDMP_BAREOS
         Since Bareos :sinceVersion:`17.2.3: NDMP BAREOS`. See :ref:`section-NdmpBareos`.
 
-    NDMP_NATIVE
+   NDMP_NATIVE
         Since Bareos :sinceVersion:`17.2.3: NDMP NATIVE`. See :ref:`section-NdmpNative`.
 
 
@@ -863,6 +882,7 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: RESOURCE_LIST
 
+   :multi: yes
    :see: :config:datatype:`RES`
 
    A list of resource.
@@ -871,15 +891,19 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: RUNSCRIPT
 
-   See :config:option:`dir/job/RunScript`
+   :multi: yes
+
+   See :config:option:`dir/job/RunScript`.
 
 
 
 .. config:datatype:: RUNSCRIPT_SHORT
 
-   String command
+   :multi: yes
 
-   See :config:option:`dir/job/RunScript`
+   String command.
+
+   See :config:option:`dir/job/RunScript`.
 
 
 
@@ -893,6 +917,7 @@ When parsing the resource directives, Bareos classifies the data according to th
 .. config:datatype:: SIZE32
 
    :quotes: no
+   :see: :config:datatype:`SIZE64`
 
    A size specified as bytes. Typically, this is a floating point scientific input format followed by an optional modifier. The floating point input is stored as a 32 bit integer value.
 
@@ -958,10 +983,13 @@ When parsing the resource directives, Bareos classifies the data according to th
 
    A quoted string containing virtually any character including spaces, or a non-quoted string. A string may be of any length. Strings are typically values that correspond to filenames, directories, or system command names. A backslash (\) turns the next character into itself, so to include a double quote in a string, you precede the double quote with a backslash. Likewise to include a backslash.
 
-   Since Bareos :sinceVersion:`20: Multiline Strings` strings can be spread over multiple lines using quotes.
+   Strings can be spread over :ref:`multiple lines <section-MultilineString>` using quotes.
 
 
 .. config:datatype:: STRING_LIST
+
+   :multi: yes
+   :see: :config:datatype:`STRING`
 
    Multiple :config:datatype:`STRING`, specified in multiple directives, or in a single directive, separated by commas (**,**).
 
@@ -1006,10 +1034,14 @@ When parsing the resource directives, Bareos classifies the data according to th
 
    The specification of a time may have as many number/modifier parts as you wish. For example:
 
-   ::
+   .. code-block:: bareosconfig
 
       1 week 2 days 3 hours 10 mins
-      or
+      
+   or
+      
+   .. code-block:: bareosconfig
+   
       1 month 2 days 30 sec
 
 
