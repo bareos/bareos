@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,10 @@
 
 #ifndef BAREOS_LIB_MEM_POOL_H_
 #define BAREOS_LIB_MEM_POOL_H_
+
+#include <stdarg.h>
+#include <string.h>
+#include <include/bc_types.h>
 
 POOLMEM* GetPoolMemory(int pool);
 POOLMEM* GetMemory(int32_t size);

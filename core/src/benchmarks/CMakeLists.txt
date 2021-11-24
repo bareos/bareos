@@ -59,3 +59,8 @@ bareos_add_benchmark(
   restore_browser_stress_test LINK_LIBRARIES bareos dird_objects bareosfind
   bareoscats bareossql benchmark::benchmark_main
 )
+
+bareos_add_benchmark(
+  poolmem_fragmentation LINK_LIBRARIES bareos benchmark::benchmark_main
+  Threads::Threads
+)
