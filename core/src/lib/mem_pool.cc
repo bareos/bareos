@@ -83,7 +83,13 @@ constexpr int32_t HEAD_SIZE{BALIGN(sizeof(struct abufhead))};
   abort();
 }
 
-POOLMEM* GetPoolMemory(int pool)
+static abufhead* GetPmHeader(POOLMEM* pm_ptr) noexcept
+{
+  ASSERT(pm_ptr);
+  return static_cast<abufhead*>(static_cast<void*>(pm_ptr - HEAD_SIZE));
+}
+
+POOLMEM* GetPoolMemory(int pool) noexcept
 {
   static constexpr int32_t pool_init_size[] = {
       256,                 /* PM_NOPOOL no pooling */
@@ -94,74 +100,48 @@ POOLMEM* GetPoolMemory(int pool)
       4096,                /* PM_BSOCK message buffer */
       128                  /* PM_RECORD message buffer */
   };
-  const int32_t alloc_size = pool_init_size[pool];
-
-  struct abufhead* buf;
-  if ((buf = (struct abufhead*)malloc(alloc_size + HEAD_SIZE)) == NULL) {
-    MemPoolErrorMessage(__FILE__, __LINE__,
-                        _("Out of memory requesting %d bytes\n"), alloc_size);
-    return NULL;
-  }
-
-  buf->ablen = alloc_size;
-  return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
+  return GetMemory(pool_init_size[pool]);
 }
 
-/* Get nonpool memory of size requested */
-POOLMEM* GetMemory(int32_t size)
+POOLMEM* GetMemory(int32_t size) noexcept
 {
-  struct abufhead* buf;
-
-  if ((buf = (struct abufhead*)malloc(size + HEAD_SIZE)) == NULL) {
-    MemPoolErrorMessage(__FILE__, __LINE__,
-                        _("Out of memory requesting %d bytes\n"), size);
-    return NULL;
-  }
-
-  buf->ablen = size;
-  return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
-}
-
-/* Return the size of a memory buffer */
-int32_t SizeofPoolMemory(POOLMEM* obuf)
-{
-  char* cp = (char*)obuf;
-
-  ASSERT(obuf);
-  cp -= HEAD_SIZE;
-  return ((struct abufhead*)cp)->ablen;
-}
-
-/* Realloc pool memory buffer */
-POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size)
-{
-  ASSERT(obuf);
-  void* buf = realloc((char*)obuf - HEAD_SIZE, size + HEAD_SIZE);
+  char* buf = static_cast<char*>(malloc(size + HEAD_SIZE));
   if (buf == NULL) {
     MemPoolErrorMessage(__FILE__, __LINE__,
                         _("Out of memory requesting %d bytes\n"), size);
     return NULL;
   }
-
-  ((struct abufhead*)buf)->ablen = size;
-  return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
+  POOLMEM* pm_ptr = static_cast<POOLMEM*>(buf + HEAD_SIZE);
+  GetPmHeader(pm_ptr)->ablen = size;
+  return pm_ptr;
 }
 
-POOLMEM* CheckPoolMemorySize(POOLMEM* obuf, int32_t size)
+int32_t SizeofPoolMemory(POOLMEM* obuf) noexcept
 {
-  ASSERT(obuf);
+  return GetPmHeader(obuf)->ablen;
+}
+
+POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size) noexcept
+{
+  struct abufhead* old_abuf_ptr = GetPmHeader(obuf);
+  char* buf = static_cast<char*>(realloc(old_abuf_ptr, size + HEAD_SIZE));
+  if (buf == NULL) {
+    MemPoolErrorMessage(__FILE__, __LINE__,
+                        _("Out of memory requesting %d bytes\n"), size);
+    return NULL;
+  }
+  POOLMEM* new_pm_ptr = static_cast<POOLMEM*>(buf + HEAD_SIZE);
+  GetPmHeader(new_pm_ptr)->ablen = size;
+  return new_pm_ptr;
+}
+
+POOLMEM* CheckPoolMemorySize(POOLMEM* obuf, int32_t size) noexcept
+{
   if (size <= SizeofPoolMemory(obuf)) { return obuf; }
   return ReallocPoolMemory(obuf, size);
 }
 
-/* Free a memory buffer */
-void FreePoolMemory(POOLMEM* obuf)
-{
-  ASSERT(obuf);
-  struct abufhead* buf = (struct abufhead*)((char*)obuf - HEAD_SIZE);
-
-  free((char*)buf);
-}
+void FreePoolMemory(POOLMEM* obuf) noexcept { free(GetPmHeader(obuf)); }
 
 /*
  * Concatenate a string (str) onto a pool memory buffer pm
@@ -300,33 +280,9 @@ int PmMemcpy(PoolMem*& pm, const char* data, int32_t n)
 /* ==============  CLASS PoolMem   ============== */
 
 // Return the size of a memory buffer
-int32_t PoolMem::MaxSize()
-{
-  int32_t size;
-  char* cp = mem;
+int32_t PoolMem::MaxSize() { return GetPmHeader(mem)->ablen; }
 
-  cp -= HEAD_SIZE;
-  size = ((struct abufhead*)cp)->ablen;
-
-  return size;
-}
-
-void PoolMem::ReallocPm(int32_t size)
-{
-  char* cp = mem;
-  char* buf;
-
-  cp -= HEAD_SIZE;
-  buf = (char*)realloc(cp, size + HEAD_SIZE);
-  if (buf == NULL) {
-    MemPoolErrorMessage(__FILE__, __LINE__,
-                        _("Out of memory requesting %d bytes\n"), size);
-    return;
-  }
-
-  ((struct abufhead*)buf)->ablen = size;
-  mem = buf + HEAD_SIZE;
-}
+void PoolMem::ReallocPm(int32_t size) { mem = ReallocPoolMemory(mem, size); }
 
 int PoolMem::strcat(PoolMem& str) { return strcat(str.c_str()); }
 
@@ -379,7 +335,7 @@ again:
   va_copy(ap, arg_ptr);
   len = ::Bvsnprintf(mem, maxlen, fmt, ap);
   va_end(ap);
-  if (len < 0 || len >= maxlen) {
+  if (len >= maxlen) {
     ReallocPm(maxlen + maxlen / 2);
     goto again;
   }

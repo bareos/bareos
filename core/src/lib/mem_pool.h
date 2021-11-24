@@ -32,13 +32,13 @@
 #include <string.h>
 #include "include/bc_types.h"
 
-POOLMEM* GetPoolMemory(int pool);
-POOLMEM* GetMemory(int32_t size);
-int32_t SizeofPoolMemory(POOLMEM* buf);
-POOLMEM* ReallocPoolMemory(POOLMEM* buf, int32_t size);
-POOLMEM* CheckPoolMemorySize(POOLMEM* buf, int32_t size);
-#define FreeMemory(x) FreePoolMemory(x)
-void FreePoolMemory(POOLMEM* buf);
+POOLMEM* GetPoolMemory(int pool) noexcept;
+POOLMEM* GetMemory(int32_t size) noexcept;
+int32_t SizeofPoolMemory(POOLMEM* buf) noexcept;
+POOLMEM* ReallocPoolMemory(POOLMEM* buf, int32_t size) noexcept;
+POOLMEM* CheckPoolMemorySize(POOLMEM* buf, int32_t size) noexcept;
+void FreePoolMemory(POOLMEM* buf) noexcept;
+inline void FreeMemory(POOLMEM* buf) noexcept { FreePoolMemory(buf); }
 
 // Macro to simplify free/reset pointers
 #define FreeAndNullPoolMemory(a) \
