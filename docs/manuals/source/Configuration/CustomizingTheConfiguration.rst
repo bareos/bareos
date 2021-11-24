@@ -451,11 +451,7 @@ Data Types
 
 When parsing the resource directives, Bareos classifies the data according to the types listed below.
 
-.. _DataTypeACL:
-
-ACL
-   .. index::
-      single: Data Type; ACL
+.. config:datatype:: ACL
 
    This directive defines what is permitted to be accessed. It does this by using a list of regular expressions, separated by commas (:strong:`,`) or using multiple directives. If :strong:`!` is prepended, the expression is negated. The special keyword :strong:`*all*` allows unrestricted access.
 
@@ -521,29 +517,19 @@ ACL
          Command ACL = *all*, !sqlquery
 
 
-.. _DataTypeACTION_ON_PURGE:
-
-ACTION_ON_PURGE
-   .. index::
-      single: Data Type; ACTION_ON_PURGE
+.. config:datatype:: ACTION_ON_PURGE
 
    Action to perform on Purge. Mostly truncate
 
 
-.. _DataTypeADDRESS:
-
-ADDRESS
-   .. index::
-      single: Data Type; ADDRESS
+   
+.. config:datatype:: ADDRESS
 
    Is either a domain name or an IP address specified as a dotted quadruple in string or an IP version 6 address specified as a colon separated syntax (::) or quoted string format. This directive only permits a single address to be specified. The :strong:`Port` must be specifically separated. If multiple :strong:`Addresses` are needed, please assess if it is also possible to specify :strong:`Addresses` (plural).
 
 
-.. _DataTypeADDRESSES:
 
-ADDRESSES
-   .. index::
-      single: Data Type; ADDRESSES
+.. config:datatype:: ADDRESSES
 
    Specify a set of Addresses and Ports. Probably the simplest way to explain this is to show an example.
 
@@ -627,11 +613,8 @@ ADDRESSES
        }
 
 
-.. _DataTypeAudit_Command_List:
 
-AUDIT_COMMAND_LIST
-   .. index::
-      single: Data Type; AUDIT_COMMAND_LIST
+.. config:datatype:: AUDIT_COMMAND_LIST
 
    Specifies the commands that should be logged on execution (audited). E.g.
 
@@ -640,48 +623,32 @@ AUDIT_COMMAND_LIST
        Audit Events = label
        Audit Events = restore
 
-   Based on the type :ref:`STRINGLIST<DataTypeSTRINGLIST>`.
 
+.. config:datatype:: AUTH_PROTOCOL_TYPE
 
-.. _DataTypeAUTH_PROTOCOL_TYPE:
-.. _DataTypePROTOCOL_TYPE:
-
-AUTH_PROTOCOL_TYPE PROTOCOL_TYPE
-   .. index::
-      single: Data Type; AUTH_PROTOCOL_TYPE
-      single: Data Type; PROTOCOL_TYPE
-
+   :see: :config:datatype:`PROTOCOL_TYPE`
+   
    The following string values are allowed: `Native` (The native Bareos protocol), `NDMP` (The NDMP protocol).
 
 
-.. _DataTypeAuthType:
-.. _DataTypeAUTH_TYPE:
 
-AUTH_TYPE
-   .. index::
-      single: Data Type; AUTH_TYPE
+.. config:datatype:: AUTH_TYPE
 
    Specifies the authentication type that must be supplied when connecting to a backup protocol that uses a specific authentication type. Currently only used for :ref:`NDMPResource`.
 
    The following values are allowed: `None` (Use no password), `Clear` (Use clear text password), `MD5` (Use MD5 hashing).
 
 
-.. _DataTypeAUTOPASSWORD:
-.. _DataTypePASSWORD:
 
-AUTOPASSWORD PASSWORD
-   .. index::
-      single: Data Type; AUTOPASSWORD
-      single: Data Type; PASSWORD
+.. config:datatype:: AUTOPASSWORD
+
+   :see: :config:datatype:`PASSWORD`
 
    This is a Bareos password and it is stored internally in MD5 hashed format.
 
 
-.. _DataTypeBACKUP_LEVEL:
 
-BACKUP_LEVEL
-   .. index::
-      single: Data Type; BACKUP_LEVEL
+.. config:datatype:: BACKUP_LEVEL
 
    The following string values are allowed:
 
@@ -693,247 +660,157 @@ BACKUP_LEVEL
 
    :config:option:`dir/job/Level`
 
-.. _DataTypeBIT:
-.. _DataTypeBOOLEAN:
-.. _DataTypeTRUEFALSE:
-.. _DataTypeYESNO:
 
-BIT, BOOLEAN, TRUE|FALSE, YES|NO
-   .. index::
-      single: Data Type; BIT
-      single: Data Type; BOOLEAN
-      single: Data Type; YESNO
-      single: Data Type; YES|NO
-      single: Data Type; TRUEFALSE
+
+.. config:datatype:: BIT
 
    Either a :strong:`yes` or a :strong:`no` or a :strong:`true` or a :strong:`false`.
 
 
-.. _DataTypeCLEARPASSWORD:
 
-CLEARPASSWORD
-   .. index::
-      single: Data Type; CLEARPASSWORD
+.. config:datatype:: BOOLEAN
 
-   Clear text format of password.
+   Either a :strong:`yes` or a :strong:`no` or a :strong:`true` or a :strong:`false`.
 
 
-.. _DataTypeCOMPRESSION_ALGORITHM:
-
-COMPRESSION_ALGORITHM
-   .. index::
-      single: Data Type; COMPRESSION_ALGORITHM
+.. config:datatype:: COMPRESSION_ALGORITHM
 
    The following values are allowed: `GZIP` (GZIP1 to GZIP9), `LZO`, `LZFAST` (deprecated :sinceVersion:`19.2.: lzfast`, `LZ4`, `LZ4HC`.
 
    See :ref:`DirectorResourceFileSet`
 
-.. _DataTypeDEVICE:
 
-DEVICE
-   .. index::
-      single: Data Type; DEVICE
+
+.. config:datatype:: DEVICE
 
    See :ref:`Storage Device <StorageResourceDevice>`.
 
 
-.. _DataTypeDEVICE_TYPE:
 
-DEVICE_TYPE
-   .. index::
-      single: Data Type; DEVICE_TYPE
+.. config:datatype:: DEVICE_TYPE
 
    The following values are allowed: `Tape`, `File`, `FIFO`, `GFAPI`,  `Rados` (Ceph Object Store)  deprecated :sinceVersion:`20.0.0: Rados`, `Droplet` :sinceVersion:`17.2.7: libdroplet`.
 
    See :ref:`Storage Device <StorageResourceDevice>`.
 
-.. _DataTypeDIRECTORY_LIST:
 
-DIRECTORY_LIST
-   .. index::
-      single: Data Type; DIRECTORY_LIST
+
+.. config:datatype:: DIRECTORY
+
+   A directory.
+
+
+
+.. config:datatype:: DIRECTORY_LIST
 
    A list of directories.
 
-.. _DataTypeDIRECTORY_OR_COMMAND:
 
-DIRECTORY_OR_COMMAND
-   .. index::
-      single: Data Type; DIRECTORY_OR_COMMAND
+   
+.. config:datatype:: DIRECTORY_OR_COMMAND
 
    A directory, and or a command using substitution.
 
 
-.. _DataTypeENCRYPTION_CIPHER:
 
-ENCRYPTION_CIPHER
-   .. index::
-      single: Data Type; ENCRYPTION_CIPHER
+.. config:datatype:: ENCRYPTION_CIPHER
 
    String list of cipher to use for encryption.
 
 
-.. _DataTypeINCLUDE_EXCLUDE_ITEM:
 
-INCLUDE_EXCLUDE_ITEM
-   .. index::
-      single: Data Type; INCLUDE_EXCLUDE_ITEM
+.. config:datatype:: INCLUDE_EXCLUDE_ITEM
 
    The :ref:`Include <fileset-include>` or :ref:`Exclude <fileset-exclude>` resource must contain a list of directories and/or files to be processed, excluded in the backup job.
 
 
-.. _DataTypeINTEGER:
-.. _DataTypeINT32:
-.. _DataTypeINT16:
 
+.. config:datatype:: INT32
 
-INTEGER INT16 INT32
-   .. index::
-      single: Data Type; INTEGER
-      single: Data Type; INT32
-      single: Data Type; INT16
+   :quotes: no
 
-   A signed 16 or 32 bit integer value.
+   A signed 32 bit integer value.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
 
-.. _DataTypeIO_DIRECTION:
 
-IO_DIRECTION
-   .. index::
-      single: Data Type; IO_DIRECTION
+.. config:datatype:: IO_DIRECTION
 
    String indicating sens of IO can be `in` or `out` or `both`
 
 
-.. _DataTypeJOB_TYPE:
-
-JOB_TYPE
-   .. index::
-      single: Data Type; JOB_TYPE
+.. config:datatype:: JOB_TYPE
 
    The following values are allowed: `Backup`, `Restore`, `Verify`, `Admin`, `Migrate`, `Copy`, `Consolidate`
 
    See :config:option:`dir/job/Type`
 
 
-.. _DataTypeJOBPROTOCOL:
 
-JOB PROTOCOL
-   .. index::
-      single: Data Type; JOB PROTOCOL
-
-   The protocol to run a the job. Following protocols are available:
-
-   Native
-      Native Bareos job protocol.
-
-   NDMP
-      Deprecated. Alias for |ndmpbareos|.
-
-   NDMP_BAREOS
-      Since Bareos :sinceVersion:`17.2.3: NDMP BAREOS`. See :ref:`section-NdmpBareos`.
-
-   NDMP_NATIVE
-      Since Bareos :sinceVersion:`17.2.3: NDMP NATIVE`. See :ref:`section-NdmpNative`.
-
-
-.. _DataTypeLABEL:
-
-LABEL
-   .. index::
-      single: Data Type; LABEL
+.. config:datatype:: LABEL
 
    Quoted string for volume label
 
-.. _DataTypeLongInteger:
-.. _DataTypeINT64:
-
-LONG INTEGER / INT64
-   .. index::
-      single: Data Type; LONG INTEGER
-      single: Data Type; INT64
-
-   A 64 bit integer value. Typically these are values such as bytes that can exceed 4 billion and thus require a 64 bit value.
-
-   Don’t use quotes around the number, see :ref:`section-Quotes`.
 
 
-.. _DataTypeNAME:
-
-NAME
-   .. index::
-      single: Data Type; NAME
-
-   A keyword or name consisting of alphanumeric characters, including the hyphen, underscore, and dollar characters. The first character of a name must be a letter. A name has a maximum length currently set to 127 bytes.
-
-   Please note that Bareos resource names as well as certain other names (e.g. Volume names) must contain only letters (including ISO accented letters), numbers, and a few special characters (space, underscore, ...). All other characters and punctuation are invalid.
-
-
-.. _DataTypeMAX_BLOCKSIZE:
-
-MAX_BLOCKSIZE
-   .. index::
-      single: Data Type; MAX_BLOCKSIZE
+.. config:datatype:: MAX_BLOCKSIZE
 
    Positive integer
 
    If no value or zero is specified, the Storage daemon will use a default block size of 64,512 bytes (126 * 512).
 
 
-.. _DataTypeMD5PASSWORD:
 
-MD5PASSWORD
-   .. index::
-      single: Data Type; MD5PASSWORD
+.. config:datatype:: MD5PASSWORD
 
    MD5 hashed format of password.
 
 
-.. _DataTypeMESSAGES:
 
-MESSAGES
-   .. index::
-      single: Data Type; MESSAGES
+.. config:datatype:: MESSAGES
 
    see :ref:`DirectorResourceMessages`
 
 
-.. _DataTypeMIGRATION_TYPE:
 
-MIGRATION_TYPE
-   .. index::
-      single: Data Type; MIGRATION_TYPE
+.. config:datatype:: MIGRATION_TYPE
 
    The following values are allowed: `SmallestVolume`, `OldestVolume`, `Client`, `Volume`, `Job`, `SQLQuery`, `PoolOccupancy`, `PoolTime`, `PoolUncopiedJobs`
 
    See See :config:option:`dir/job/SelectionType`
 
 
-.. _DataTypeDirectory:
 
-PATH
-   .. index::
-      single: Data Type; PATH
+.. config:datatype:: NAME
 
-   A path is either a quoted or non-quoted string. A path will be passed to your standard shell for expansion when it is scanned. Thus constructs such as $HOME are interpreted to be their correct values. The path can either reference to a file or a directory.
+   A keyword or name consisting of alphanumeric characters, including the hyphen, underscore, and dollar characters. The first character of a name must be a letter. A name has a maximum length currently set to 127 bytes.
+
+   Please note that Bareos resource names as well as certain other names (e.g. Volume names) must contain only letters (including ISO accented letters), numbers, and a few special characters (space, underscore, ...). All other characters and punctuation are invalid.
 
 
-.. _DataTypePLUGIN_NAMES:
 
-PLUGIN_NAMES
-   .. index::
-      single: Data Type; PLUGIN_NAMES
+.. config:datatype:: PINT16
+
+   A positive 16 bit unsigned integer value.
+
+   Don’t use quotes around the number, see :ref:`section-Quotes`.
+
+
+.. config:datatype:: PINT32
+
+   A positive 32 bit unsigned integer value.
+
+   Don’t use quotes around the number, see :ref:`section-Quotes`.
+
+
+
+.. config:datatype:: PLUGIN_NAMES
 
    List of plugins, that should get loaded from `Plugin Directory`
 
 
-.. _DataTypePOOLTYPE:
-
-POOLTYPE
-   .. index::
-      single: Data Type; POOLTYPE
+.. config:datatype:: POOLTYPE
 
    The following values are allowed: `Backup`, `Archive`, `Cloned`, `Migration`, `Copy`, `Save`
 
@@ -942,149 +819,87 @@ POOLTYPE
       Only `Backup` is currently implemented.
 
 
-.. _DataTypePORT:
-
-PORT
-   .. index::
-      single: Data Type; PORT
+.. config:datatype:: PORT
 
    Specify a network port (a positive integer in the range 1 to 65535).
 
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 
-.. _DataTypePositiveInteger:
-.. _DataTypePINT16:
-.. _DataTypePINT32:
-.. _DataTypePINT64:
 
-POSITIVE INTEGER (PINT16, PINT32, PINT64)
-   .. index::
-      single: Data Type; POSITIVE INTEGER
-      single: Data Type; PINT16
-      single: Data Type; PINT32
-      single: Data Type; PINT64
+.. config:datatype:: PROTOCOL_TYPE
 
-   A positive 16, 32 or 64 bit (unsigned) integer value.
+   :see: :config:datatype:`AUTH_PROTOCOL_TYPE`
 
-   Don’t use quotes around the number, see :ref:`section-Quotes`.
+    The protocol to run a the job. Following protocols are available:
+
+    Native
+        Native Bareos job protocol.
+
+    NDMP
+        Deprecated. Alias for |ndmpbareos|.
+
+    NDMP_BAREOS
+        Since Bareos :sinceVersion:`17.2.3: NDMP BAREOS`. See :ref:`section-NdmpBareos`.
+
+    NDMP_NATIVE
+        Since Bareos :sinceVersion:`17.2.3: NDMP NATIVE`. See :ref:`section-NdmpNative`.
 
 
-.. _DataTypeREPLACE_OPTION:
 
-REPLACE_OPTION
-   .. index::
-      single: Data Type; REPLACE_OPTION
+.. config:datatype:: REPLACE_OPTION
 
    The following values are allowed: `always`, `ifnewer`, `ifolder`, `never`.
 
    See :config:option:`dir/job/Replace`
 
 
-.. _DataTypeRESOURCE:
-.. _DataTypeRES:
 
-RESOURCE / RES
-   .. index::
-      single: Data Type; RESOURCE
-      single: Data Type; RES
+.. config:datatype:: RES
 
    A resource defines a relation to the name of another resource.
 
 
-.. _DataTypeRESOURCE_LIST:
 
-RESOURCE_LIST
-   .. index::
-      single: Data Type; RESOURCE_LIST
+.. config:datatype:: RESOURCE_LIST
+
+   :see: :config:datatype:`RES`
 
    A list of resource.
 
 
-.. _DataTypeRUNSCRIPT:
 
-RUNSCRIPT
-   .. index::
-      single: Data Type; RUNSCRIPT
+.. config:datatype:: RUNSCRIPT
 
    See :config:option:`dir/job/RunScript`
 
 
-.. _DataTypeRUNSCRIPT_BOOLEAN:
 
-RUNSCRIPT_BOOLEAN
-   .. index::
-      single: Data Type; RUNSCRIPT_BOOLEAN
-
-   Boolean type see :ref:`BOOLEAN<DataTypeBOOLEAN>`.
-
-
-.. _DataTypeRUNSCRIPT_COMMAND:
-
-RUNSCRIPT_COMMAND
-   .. index::
-      single: Data Type; RUNSCRIPT_COMMAND
-
-   String command to be executed
-   See :config:option:`dir/job/RunScript`
-
-
-.. _DataTypeRUNSCRIPT_SHORT:
-
-RUNSCRIPT_SHORT
-   .. index::
-      single: Data Type; RUNSCRIPT_SHORT
+.. config:datatype:: RUNSCRIPT_SHORT
 
    String command
 
    See :config:option:`dir/job/RunScript`
 
 
-.. _DataTypeRUNSCRIPT_TARGET:
 
-RUNSCRIPT_TARGET
-   .. index::
-      single: Data Type; RUNSCRIPT_TARGET
-
-   String value of Client
-
-
-.. _DataTypeRUNSCRIPT_WHEN:
-
-RUNSCRIPT_WHEN
-   .. index::
-      single: Data Type; RUNSCRIPT_WHEN
-
-   The following values are allowed: `Never`, `Before`, `After`, `Always`, `AfterVSS`.
-
-   See :config:option:`dir/job/RunScript`
-
-
-.. _DataTypeSCHEDULE_RUN_COMMAND:
-
-SCHEDULE_RUN_COMMAND
-   .. index::
-      single: Data Type; SCHEDULE_RUN_COMMAND
+.. config:datatype:: SCHEDULE_RUN_COMMAND
 
    String line for schedule.
 
    See :config:option:`dir/schedule/Run`
 
 
-.. _DataTypeSIZE32:
+.. config:datatype:: SIZE32
 
-SIZE32
-   .. index::
-      single: Data Type; SIZE32
+   :quotes: no
 
    A size specified as bytes. Typically, this is a floating point scientific input format followed by an optional modifier. The floating point input is stored as a 32 bit integer value.
 
 
-.. _DataTypeSIZE64:
+.. config:datatype:: SIZE64
 
-SIZE64
-   .. index::
-      single: Data Type; SIZE64
+   :quotes: no
 
    A size specified as bytes. Typically, this is a floating point scientific input format followed by an optional modifier. The floating point input is stored as a 64 bit integer value. If a modifier is present, it must immediately follow the value with no intervening spaces. The following modifiers are permitted:
 
@@ -1127,56 +942,38 @@ SIZE64
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 
-.. _DataTypeSPEED:
+.. config:datatype:: SPEED
 
-SPEED
-   .. index::
-      single: Data Type; SPEED
+   :quotes: no
 
    The speed parameter can be specified as k/s, kb/s, m/s or mb/s.
 
-   See unit explanation at :ref:`SIZE64<DataTypeSIZE64>` per second.
+   See unit explanation at :config:datatype:`SIZE64`.
 
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 
 
-.. _DataTypeSTRING:
-
-STRING
-   .. index::
-      single: Data Type; STRING
+.. config:datatype:: STRING
 
    A quoted string containing virtually any character including spaces, or a non-quoted string. A string may be of any length. Strings are typically values that correspond to filenames, directories, or system command names. A backslash (\) turns the next character into itself, so to include a double quote in a string, you precede the double quote with a backslash. Likewise to include a backslash.
 
    Since Bareos :sinceVersion:`20: Multiline Strings` strings can be spread over multiple lines using quotes.
 
 
-.. _DataTypeSTRING_LIST:
-.. _DataTypeSTRINGLIST:
+.. config:datatype:: STRING_LIST
 
-STRING_LIST / STRINGLIST
-   .. index::
-      single: Data Type; STRING_LIST
-      single: Data Type; STRINGLIST
-
-   Multiple :ref:`STRING<DataTypeSTRING>`, specified in multiple directives, or in a single directive, separated by commas (**,**).
+   Multiple :config:datatype:`STRING`, specified in multiple directives, or in a single directive, separated by commas (**,**).
 
 
-.. _DataTypeStrname:
-
-STRNAME
-   .. index::
-      single: Data Type; STRNAME
+.. config:datatype:: STRNAME
 
    is similar to a :strong:`Name`, except that the name may be quoted and can thus contain additional characters including spaces.
 
 
-.. _DataTypeTime:
+.. config:datatype:: TIME
 
-TIME
-   .. index::
-      single: Data Type; TIME
+   :quotes: no
 
    A time or duration specified in seconds. The time is stored internally as a 64 bit integer value, but it is specified in two parts: a number part and a modifier part. The number can be an integer or a floating point number. If it is entered in floating point notation, it will be rounded to the nearest integer. The modifier is mandatory and follows the number part, either with or without
    intervening spaces. The following modifiers are permitted:
