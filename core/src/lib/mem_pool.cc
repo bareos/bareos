@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,6 +19,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+/*
+ * Historically, the following was may have been true, but nowadays operating
+ * systems are a lot better at handling memory than we are, so the pooling has
+ * been removed.
+ *
+ * Andreas Rogge
+ */
 /*
  * BAREOS memory pool routines.
  *
@@ -39,48 +46,6 @@
 #include "include/bareos.h"
 #include "lib/util.h"
 
-#define HEAD_SIZE BALIGN(sizeof(struct abufhead))
-
-struct s_pool_ctl {
-  int32_t size;              /* default size */
-  int32_t max_allocated;     /* max allocated */
-  int32_t max_used;          /* max buffers used */
-  int32_t in_use;            /* number in use */
-  struct abufhead* free_buf; /* pointer to free buffers */
-};
-
-// Bareos Name length plus extra
-#define NLEN (MAX_NAME_LENGTH + 2)
-
-// Bareos Record length
-#define RLEN 128
-
-/* #define STRESS_TEST_POOL */
-
-// Define default Pool buffer sizes
-#ifndef STRESS_TEST_POOL
-static struct s_pool_ctl pool_ctl[] = {
-    {256, 256, 0, 0, NULL},   /* PM_NOPOOL no pooling */
-    {NLEN, NLEN, 0, 0, NULL}, /* PM_NAME Bareos name */
-    {256, 256, 0, 0, NULL},   /* PM_FNAME filename buffers */
-    {512, 512, 0, 0, NULL},   /* PM_MESSAGE message buffer */
-    {1024, 1024, 0, 0, NULL}, /* PM_EMSG error message buffer */
-    {4096, 4096, 0, 0, NULL}, /* PM_BSOCK message buffer */
-    {RLEN, RLEN, 0, 0, NULL}  /* PM_RECORD message buffer */
-};
-#else
-// This is used ONLY when stress testing the code
-static struct s_pool_ctl pool_ctl[] = {
-    {20, 20, 0, 0, NULL},     /* PM_NOPOOL no pooling */
-    {NLEN, NLEN, 0, 0, NULL}, /* PM_NAME Bareos name */
-    {20, 20, 0, 0, NULL},     /* PM_FNAME filename buffers */
-    {20, 20, 0, 0, NULL},     /* PM_MESSAGE message buffer */
-    {20, 20, 0, 0, NULL},     /* PM_EMSG error message buffer */
-    {20, 20, 0, 0, NULL}      /* PM_BSOCK message buffer */
-    {RLEN, RLEN, 0, 0, NULL}  /* PM_RECORD message buffer */
-};
-#endif
-
 // Memory allocation control structures and storage.
 struct abufhead {
   int32_t ablen;         /* Buffer length in bytes */
@@ -89,8 +54,7 @@ struct abufhead {
   int32_t bnet_size;     /* dummy for BnetSend() */
 };
 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
+constexpr int32_t HEAD_SIZE{BALIGN(sizeof(struct abufhead))};
 
 /*
  * Special version of error reporting using a static buffer so we don't use
@@ -119,32 +83,27 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 POOLMEM* GetPoolMemory(int pool)
 {
+  static constexpr int32_t pool_init_size[] = {
+      256,                 /* PM_NOPOOL no pooling */
+      MAX_NAME_LENGTH + 2, /* PM_NAME Bareos name */
+      256,                 /* PM_FNAME filename buffers */
+      512,                 /* PM_MESSAGE message buffer */
+      1024,                /* PM_EMSG error message buffer */
+      4096,                /* PM_BSOCK message buffer */
+      128                  /* PM_RECORD message buffer */
+  };
+  const int32_t alloc_size = pool_init_size[pool];
+
   struct abufhead* buf;
-
-  P(mutex);
-  if (pool_ctl[pool].free_buf) {
-    buf = pool_ctl[pool].free_buf;
-    pool_ctl[pool].free_buf = buf->next;
-    V(mutex);
-    return (POOLMEM*)((char*)buf + HEAD_SIZE);
-  }
-
-  if ((buf = (struct abufhead*)malloc(pool_ctl[pool].size + HEAD_SIZE))
-      == NULL) {
-    V(mutex);
+  if ((buf = (struct abufhead*)malloc(alloc_size + HEAD_SIZE)) == NULL) {
     MemPoolErrorMessage(__FILE__, __LINE__,
-                        _("Out of memory requesting %d bytes\n"),
-                        pool_ctl[pool].size);
+                        _("Out of memory requesting %d bytes\n"), alloc_size);
     return NULL;
   }
 
-  buf->ablen = pool_ctl[pool].size;
+  buf->ablen = alloc_size;
   buf->pool = pool;
   buf->next = NULL;
-  pool_ctl[pool].in_use++;
-  pool_ctl[pool].max_used
-      = std::max(pool_ctl[pool].in_use, pool_ctl[pool].max_used);
-  V(mutex);
   return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
 }
 
@@ -162,10 +121,6 @@ POOLMEM* GetMemory(int32_t size)
   buf->ablen = size;
   buf->pool = 0;
   buf->next = NULL;
-  P(mutex);
-  pool_ctl[0].in_use++;
-  pool_ctl[0].max_used = std::max(pool_ctl[0].in_use, pool_ctl[0].max_used);
-  V(mutex);
   return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
 }
 
@@ -191,12 +146,6 @@ POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size)
   }
 
   ((struct abufhead*)buf)->ablen = size;
-  const int pool = ((struct abufhead*)buf)->pool;
-  P(mutex);
-  if (size > pool_ctl[pool].max_allocated) {
-    pool_ctl[pool].max_allocated = size;
-  }
-  V(mutex);
   return (POOLMEM*)(((char*)buf) + HEAD_SIZE);
 }
 
@@ -213,104 +162,24 @@ void FreePoolMemory(POOLMEM* obuf)
   ASSERT(obuf);
   struct abufhead* buf = (struct abufhead*)((char*)obuf - HEAD_SIZE);
 
-  const int pool = buf->pool;
-
-  if (pool == 0) {
-    free((char*)buf); /* free nonpooled memory */
-    P(mutex);
-    pool_ctl[0].in_use--;
-    V(mutex);
-    return;
-  }
-  P(mutex);
-  struct abufhead* next;
-  for (next = pool_ctl[pool].free_buf; next; next = next->next) {
-    if (next == buf) {  // attempt to free twice
-      V(mutex);
-      ASSERT(next != buf);
-    }
-  }
-  // otherwise link it to the free pool chain
-  pool_ctl[pool].in_use--;
-  buf->next = pool_ctl[pool].free_buf;
-  pool_ctl[pool].free_buf = buf;
-  V(mutex);
+  free((char*)buf);
 }
 
-/*
- * Clean up memory pool periodically
- *
- */
-static time_t last_garbage_collection = 0;
-const int garbage_interval = 24 * 60 * 60; /* garbage collect every 24 hours */
 
-void GarbageCollectMemoryPool()
-{
-  time_t now;
-
-  P(mutex);
-  if (last_garbage_collection == 0) {
-    last_garbage_collection = time(NULL);
-    V(mutex);
-    return;
-  }
-  now = time(NULL);
-  if (now >= last_garbage_collection + garbage_interval) {
-    last_garbage_collection = now;
-    V(mutex);
-    GarbageCollectMemory();
-  } else {
-    V(mutex);
-  }
-}
+void GarbageCollectMemoryPool() {}
 
 /* Release all freed pooled memory */
-void CloseMemoryPool()
-{
-  P(mutex);
-  for (int i = 1; i <= PM_MAX; i++) {
-    abufhead* buf = pool_ctl[i].free_buf;
-    while (buf) {
-      abufhead* next = buf->next;
-      free(buf);
-      buf = next;
-    }
-    pool_ctl[i].free_buf = NULL;
-  }
-  V(mutex);
-
-  if (debug_level >= 1) { PrintMemoryPoolStats(); }
-}
+void CloseMemoryPool() {}
 
 /*
  * Garbage collect and trim memory if possible
  * This should be called after all big memory usages if possible.
  */
-void GarbageCollectMemory() { CloseMemoryPool(); /* release free chain */ }
+void GarbageCollectMemory() {}
 
-static const char* pool_name(int pool)
-{
-  static char buf[30];
-  static const char* name[] = {"NoPool", "NAME  ",        "FNAME ", "MSG   ",
-                               "EMSG  ", "BareosSocket ", "RECORD"};
-
-  if (pool >= 0 && pool <= PM_MAX) { return name[pool]; }
-  sprintf(buf, "%-6d", pool);
-
-  return buf;
-}
 
 // Print staticstics on memory pool usage
-void PrintMemoryPoolStats()
-{
-  Pmsg0(-1, "Pool   Maxsize  Maxused  Inuse\n");
-  for (int i = 0; i <= PM_MAX; i++) {
-    Pmsg4(-1, "%5s  %7d  %7d  %5d\n", pool_name(i), pool_ctl[i].max_allocated,
-          pool_ctl[i].max_used, pool_ctl[i].in_use);
-  }
-
-  Pmsg0(-1, "\n");
-}
+void PrintMemoryPoolStats() { Pmsg0(-1, "Memory pooling disabled\n"); }
 
 /*
  * Concatenate a string (str) onto a pool memory buffer pm
@@ -464,25 +333,17 @@ void PoolMem::ReallocPm(int32_t size)
 {
   char* cp = mem;
   char* buf;
-  int pool;
 
-  P(mutex);
   cp -= HEAD_SIZE;
   buf = (char*)realloc(cp, size + HEAD_SIZE);
   if (buf == NULL) {
-    V(mutex);
     MemPoolErrorMessage(__FILE__, __LINE__,
                         _("Out of memory requesting %d bytes\n"), size);
     return;
   }
 
   ((struct abufhead*)buf)->ablen = size;
-  pool = ((struct abufhead*)buf)->pool;
-  if (size > pool_ctl[pool].max_allocated) {
-    pool_ctl[pool].max_allocated = size;
-  }
   mem = buf + HEAD_SIZE;
-  V(mutex);
 }
 
 int PoolMem::strcat(PoolMem& str) { return strcat(str.c_str()); }
