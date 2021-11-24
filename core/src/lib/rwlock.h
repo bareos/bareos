@@ -32,6 +32,8 @@
 #ifndef BAREOS_LIB_RWLOCK_H_
 #define BAREOS_LIB_RWLOCK_H_
 
+#include <pthread.h>
+
 typedef struct s_rwlock_tag {
   pthread_mutex_t mutex;
   pthread_cond_t read;  /* wait for read */

@@ -31,6 +31,9 @@
 #ifndef BAREOS_INCLUDE_BACONFIG_H_
 #define BAREOS_INCLUDE_BACONFIG_H_
 
+#include <arpa/inet.h>
+#include <string.h>
+
 #include "lib/message.h"
 
 /* Bareos common configuration defines */
@@ -601,9 +604,6 @@ int Getdomainname(char* name, int len);
 }
 #  endif /* __cplusplus */
 #endif   /* HAVE_OSF1_OS */
-
-/** Determine endianes */
-static inline bool bigendian() { return htonl(1) == 1L; }
 
 #ifndef __GNUC__
 #  define __PRETTY_FUNCTION__ __func__

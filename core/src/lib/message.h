@@ -29,6 +29,7 @@
 #ifndef BAREOS_LIB_MESSAGE_H_
 #define BAREOS_LIB_MESSAGE_H_
 
+#include "include/bc_types.h"
 #include "lib/bits.h"
 #include "lib/dlink.h"
 #include "lib/rwlock.h"

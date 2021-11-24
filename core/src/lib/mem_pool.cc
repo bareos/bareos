@@ -42,9 +42,13 @@
  *
  * Kern E. Sibbald
  */
+#include "lib/mem_pool.h"
 
-#include "include/bareos.h"
+#include <stdarg.h>
+#include <string.h>
+
 #include "lib/util.h"
+#include "include/baconfig.h"
 
 // Memory allocation control structures and storage.
 struct abufhead {
