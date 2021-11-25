@@ -143,6 +143,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: update documentation of config data types [PR #962]
 - Allow `release` command to be used in scripts [PR #961]
 - webui: format total jobs and total files language-sensitive [PR #996]
+- webui: optimize bvfs update cache calls [PR #999]
 
 ### Deprecated
 
