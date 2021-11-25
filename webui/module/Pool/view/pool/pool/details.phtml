@@ -118,6 +118,12 @@ $this->headTitle($title);
       <?php echo $this->translate("Status"); ?>
    </th>
    <th
+      data-field="inchanger"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("In changer"); ?>">
+      <?php echo $this->translate("In changer"); ?>
+   </th>
+   <th
       data-field="retention"
       data-filter-control="input"
       data-filter-control-placeholder="<?php echo $this->translate("Retention"); ?>">
@@ -264,6 +270,13 @@ $this->headTitle($title);
             {
                field: 'volstatus',
                sortable: true,
+            },
+            {
+               field: 'inchanger',
+               sortable: true,
+               formatter: function(value) {
+                  return formatInchanger(value);
+               }
             },
             {
                field: 'retention',
