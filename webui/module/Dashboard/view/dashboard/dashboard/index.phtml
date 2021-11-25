@@ -121,9 +121,15 @@ $this->headTitle($title);
          columns: [
             {
                field: 'jobs',
+               formatter : function(value) {
+                 return new Intl.NumberFormat().format(value);
+               }
             },
             {
                field: 'files',
+               formatter : function(value) {
+                 return new Intl.NumberFormat().format(value);
+               }
             },
             {
                field: 'bytes',
