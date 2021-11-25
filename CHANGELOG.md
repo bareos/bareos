@@ -11,6 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - when setting an IPv6 address using the `[DIR|SD|FD] Addresses` directive, now bareos only listens on IPv6 instead of both IPv4 and IPv6 on dual-stack. If you were using the `[DIR|SD|FD] Addresses` directive to create a dual-stack socket that would listen on both IPv6 AND IPv4, it will not work that way anymore. You should now also explicitly specify the IPv4 address in the directive [PR #882]
 
 ### Fixed
+- docs: Fix links to configuration directives and issue warnings on dangling links [PR #968]
 - docs: Adapted the documentation of the VMware plugin due to update to VDDK 7 [PR #844]
 - fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option localvmdk=yes [PR #826]
 - fix a bug where the restore browser would not recognize globbing wildcards in paths [PR #801]
@@ -86,7 +87,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - contrib: Add Python DIR plugin for prometheus metrics [PR #911]
 
 ### Changed
-- docs: Improve data-type subsubsection in CustomizingTheConfiguration [PR #968]
+- docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #968]
+- docs: Improve data-type subsubsection in CustomizingTheConfiguration. Add a special Sphinx directive for them (``config:datatype``) [PR #968]
 - systemtest python-bareos: split tests in separate files [PR #944]
 - core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]
 - systemtests: define variable BackupDirectory globally [PR #780]
