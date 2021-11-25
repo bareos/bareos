@@ -160,15 +160,7 @@ int PmStrcat(POOLMEM*& pm, const char* str)
   return pmlen + len - 1;
 }
 
-int PmStrcat(POOLMEM*& pm, PoolMem& str)
-{
-  int pmlen = strlen(pm);
-  int len = strlen(str.c_str()) + 1;
-
-  pm = CheckPoolMemorySize(pm, pmlen + len);
-  memcpy(pm + pmlen, str.c_str(), len);
-  return pmlen + len - 1;
-}
+int PmStrcat(POOLMEM*& pm, PoolMem& str) { return PmStrcat(pm, str.c_str()); }
 
 int PmStrcat(PoolMem& pm, const char* str)
 {
@@ -183,18 +175,7 @@ int PmStrcat(PoolMem& pm, const char* str)
   return pmlen + len - 1;
 }
 
-int PmStrcat(PoolMem*& pm, const char* str)
-{
-  int pmlen = strlen(pm->c_str());
-  int len;
-
-  if (!str) str = "";
-
-  len = strlen(str) + 1;
-  pm->check_size(pmlen + len);
-  memcpy(pm->c_str() + pmlen, str, len);
-  return pmlen + len - 1;
-}
+int PmStrcat(PoolMem*& pm, const char* str) { return PmStrcat(*pm, str); }
 
 /*
  * Copy a string (str) into a pool memory buffer pm
@@ -212,14 +193,7 @@ int PmStrcpy(POOLMEM*& pm, const char* str)
   return len - 1;
 }
 
-int PmStrcpy(POOLMEM*& pm, PoolMem& str)
-{
-  int len = strlen(str.c_str()) + 1;
-
-  pm = CheckPoolMemorySize(pm, len);
-  memcpy(pm, str.c_str(), len);
-  return len - 1;
-}
+int PmStrcpy(POOLMEM*& pm, PoolMem& str) { return PmStrcpy(pm, str.c_str()); }
 
 int PmStrcpy(PoolMem& pm, const char* str)
 {
@@ -233,17 +207,7 @@ int PmStrcpy(PoolMem& pm, const char* str)
   return len - 1;
 }
 
-int PmStrcpy(PoolMem*& pm, const char* str)
-{
-  int len;
-
-  if (!str) str = "";
-
-  len = strlen(str) + 1;
-  pm->check_size(len);
-  memcpy(pm->c_str(), str, len);
-  return len - 1;
-}
+int PmStrcpy(PoolMem*& pm, const char* str) { return PmStrcpy(*pm, str); }
 
 /*
  * Copy data into a pool memory buffer pm
@@ -258,9 +222,7 @@ int PmMemcpy(POOLMEM*& pm, const char* data, int32_t n)
 
 int PmMemcpy(POOLMEM*& pm, PoolMem& data, int32_t n)
 {
-  pm = CheckPoolMemorySize(pm, n);
-  memcpy(pm, data.c_str(), n);
-  return n;
+  return PmMemcpy(pm, data.c_str(), n);
 }
 
 int PmMemcpy(PoolMem& pm, const char* data, int32_t n)
@@ -272,46 +234,23 @@ int PmMemcpy(PoolMem& pm, const char* data, int32_t n)
 
 int PmMemcpy(PoolMem*& pm, const char* data, int32_t n)
 {
-  pm->check_size(n);
-  memcpy(pm->c_str(), data, n);
-  return n;
+  return PmMemcpy(*pm, data, n);
 }
 
 /* ==============  CLASS PoolMem   ============== */
 
 // Return the size of a memory buffer
-int32_t PoolMem::MaxSize() { return GetPmHeader(mem)->ablen; }
+int32_t PoolMem::MaxSize() { return SizeofPoolMemory(mem); }
 
 void PoolMem::ReallocPm(int32_t size) { mem = ReallocPoolMemory(mem, size); }
 
-int PoolMem::strcat(PoolMem& str) { return strcat(str.c_str()); }
+int PoolMem::strcat(PoolMem& str) { return PmStrcat(*this, str.c_str()); }
 
-int PoolMem::strcat(const char* str)
-{
-  int pmlen = strlen();
-  int len;
+int PoolMem::strcat(const char* str) { return PmStrcat(*this, str); }
 
-  if (!str) str = "";
+int PoolMem::strcpy(PoolMem& str) { return PmStrcpy(*this, str.c_str()); }
 
-  len = ::strlen(str) + 1;
-  check_size(pmlen + len);
-  memcpy(mem + pmlen, str, len);
-  return pmlen + len - 1;
-}
-
-int PoolMem::strcpy(PoolMem& str) { return strcpy(str.c_str()); }
-
-int PoolMem::strcpy(const char* str)
-{
-  int len;
-
-  if (!str) str = "";
-
-  len = ::strlen(str) + 1;
-  check_size(len);
-  memcpy(mem, str, len);
-  return len - 1;
-}
+int PoolMem::strcpy(const char* str) { return PmStrcpy(*this, str); }
 
 void PoolMem::toLower() { lcase(mem); }
 
