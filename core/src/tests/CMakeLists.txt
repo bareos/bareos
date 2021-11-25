@@ -435,3 +435,5 @@ if(NOT client-only)
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
 endif() # NOT client-only
+
+bareos_add_test(test_poolmem LINK_LIBRARIES bareos GTest::gtest_main)
