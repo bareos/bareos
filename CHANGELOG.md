@@ -99,6 +99,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - packages: Build also for Fedora_35 [PR #972]
 - cmake: check for chflags() function and enable FreeBSD File Flags support [PR #963]
 - plugin: added mariabackup python plugin, added systemtest for mariabackup and updated systemtest for percona-xtrabackup [PR #967]
+- webui: add inchanger column to volume tables [PR #998]
 
 
 ### Changed
