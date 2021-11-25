@@ -139,6 +139,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: introduce confirmation dialog on rerun and cancel job actions [PR #951]
 - docs: update documentation of config data types [PR #962]
 - Allow `release` command to be used in scripts [PR #961]
+- webui: format total jobs and total files language-sensitive [PR #996]
 
 ### Deprecated
 
@@ -306,4 +307,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #972]: https://github.com/bareos/bareos/pull/972
 [PR #973]: https://github.com/bareos/bareos/pull/973
 [PR #982]: https://github.com/bareos/bareos/pull/982
+[PR #996]: https://github.com/bareos/bareos/pull/996
 [unreleased]: https://github.com/bareos/bareos/tree/master
