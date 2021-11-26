@@ -14,7 +14,7 @@ Conventional Backup Scheme Drawbacks
 
 To better understand the advantages of the Always Incremental Backup scheme, we first analyze the way that the conventional Incremental - Differential - Full Backup Scheme works.
 
-The following figure shows the jobs available for restore over time. Red are full backups, green are differential backups and blue are incremental Backups. When you look for a data at the horizontal axis, you see what backup jobs are available for a restore at this given time.
+The following figure shows the jobs available for restore over time. Red are full backups, green are differential backups and blue are incremental Backups. When you look for data at the horizontal axis, you see what backup jobs are available for a restore at this given time.
 
 .. image:: /include/images/inc-diff-full-jobs_available.*
 
@@ -32,23 +32,23 @@ Depending on the retention periods, old jobs are removed to save space for newer
 
 
 
-The problem with this way of removing jobs is the fact that jobs are removed from the system which existing jobs depend on.
+The problem with this way of removing jobs is the fact that jobs are removed from the system on which existing jobs depend.
 
 Always Incremental Concept
 --------------------------
 
 The Always Incremental Backup Scheme does only incremental backups of clients, which reduces the amount of data transferred over the network to a minimum.
 
-.. limitation:: Always Incremental Backup: Only suitable for file based backups.
+.. limitation:: Always Incremental Backup: Only suitable for file-based backups.
 
-   Always Incremental backups are only suitable for file based backups. Other data can not be combined on the server side (e.g. vmware plugings, NDMP, ...)
+   Always Incremental backups are only suitable for file-based backups. Other data can not be combined on the server-side (e.g. VMWare plugings, NDMP, ...)
 
 
 
 
 The Always Incremental Backup Scheme works as follows:
 
-Client Backups are always run as incremental backups. This would usually lead to an unlimited chain of incremental backups that are depend on each other.
+Client Backups are always run as incremental backups. This would usually lead to an unlimited chain of incremental backups that depend on each other.
 
 To avoid this problem, existing incremental backups older than a configurable age are consolidated into a new backup.
 
@@ -58,7 +58,7 @@ These two steps are then executed every day:
 
 -  Consolidation of the jobs older than maximum configure age
 
-Deleted files will be in the backup forever, if they are not detected as deleted using :config:option:`dir/job/Accurate`\  backup.
+Deleted files will be in the backup forever if they are not detected as deleted using :config:option:`dir/job/Accurate`\  backup.
 
 The Always Incremental Backup Scheme does not provide the option to have other longer retention periods for the backups.
 
@@ -68,13 +68,13 @@ For Longterm Storage of data longer than the Always Incremental Job Retention, t
 
 -  A virtual Full Job can be configured that creates a virtual full backup into a longterm pool consolidating all existing backups into a new one.
 
-The implementation with copy jobs is easy to implement and automatically copies all jobs that need to be copied in a single configured resource. The disadvantage of the copy job approach is the fact that at a certain point in time, the data that is copied for long term archive is already "always incremental job retention" old, so that the data in the longterm storage is not the current data that is available from the client.
+The implementation with copy jobs is easy to implement and automatically copies all jobs that need to be copied in a single configured resource. The disadvantage of the copy job approach is the fact that at a certain point in time, the data that is copied for long term archive is already "always incremental job retention" old so that the data in the longterm storage is not the current data that is available from the client.
 
-The solution using virtual full jobs to create longterm storage has the disadvantage, that for every backup job the a new longterm job needs to be created.
+The solution using virtual full jobs to create longterm storage has the disadvantage, that for every backup job a new longterm job needs to be created.
 
 The big advantage is that the current data will be transferred into the longterm storage.
 
-The way that bareos determines on what base the next incremental job will be done, would choose the longterm storage job to be taken as basis for the next incremental backup which is not what is intended. Therefore, the jobtype of the longterm job is updated to "archive", so that it is not taken as base for then next incrementals and the always incremental job will stand alone.
+The way that bareos determines on what base the next incremental job will be done, would choose the longterm storage job to be taken as the basis for the next incremental backup which is not what is intended. Therefore, the jobtype of the longterm job is updated to "archive", so that it is not taken as the base for the next incrementals and the always incremental job will stand alone.
 
 How to configure in Bareos
 --------------------------
@@ -125,7 +125,7 @@ Consolidate Job
    }
 
 :config:option:`dir/job/Type = Consolidate`\
-   configures a job to be a consolidate job. This type have been introduced with the Always Incremental feature. When used, it automatically trigger the consolidation of incremental jobs that need to be consolidated.
+   configures a job to be a consolidate job. This type has been introduced with the Always Incremental feature. When used, it automatically triggers the consolidation of incremental jobs that need to be consolidated.
 
 :config:option:`dir/job/Accurate = yes`\
    let the generated virtual backup job keep the accurate information.
@@ -151,7 +151,7 @@ Virtual backup jobs of a consolidation are not affected by :config:option:`dir/j
 Storages and Pools
 ~~~~~~~~~~~~~~~~~~
 
-For the Always Incremental Backup Scheme at least two storages are needed. See :ref:`section-MultipleStorageDevices` how to setup multiple storages.
+For the Always Incremental Backup Scheme, at least two storages are needed. See :ref:`section-MultipleStorageDevices` how to setup multiple storages.
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.d/pool/AI-Incremental.conf
@@ -261,7 +261,7 @@ The following image shows the available backups for each day:
 
 -  The backup cycle starts with a full backup of the client.
 
--  Every day a incremental backup is done and is additionally available.
+-  Every day an incremental backup is done and is additionally available.
 
 -  When the age of the oldest incremental reaches :config:option:`dir/job/AlwaysIncrementalJobRetention`\ , the consolidation job consolidates the oldest incremental with the full backup before to a new full backup.
 
@@ -307,7 +307,7 @@ The following figure shows the Data Volume being moved during the normal always 
 
 -  The red bar shows the amount of the first full backup being copied from the client.
 
--  The blue bars show the amount of the daily incremental backups. They are so little that the can barely be seen.
+-  The blue bars show the amount of the daily incremental backups. They are so little that they can barely be seen.
 
 -  The green bars show the amount of data being moved every day during the consolidation jobs.
 
@@ -320,7 +320,7 @@ The following figure shows the Data Volume being moved during the normal always 
 Always Incremental Max Full Age
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To be able to cope with this problem, the directive :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  was added. When :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  is configured, in daily operation the Full Backup is left untouched while the incrementals are consolidated as usual. Only if the Full Backup is older than :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\ , the full backup will also be part of
+To be able to cope with this problem, the directive :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  was added. When :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  is configured, in daily operation, the Full Backup is left untouched while the incrementals are consolidated as usual. Only if the Full Backup is older than :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\ , the full backup will also be part of
 the consolidation.
 
 Depending on the setting of the :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\ , the amount of daily data being moved can be reduced without losing the advantages of the always incremental Backup Scheme.
@@ -376,7 +376,7 @@ This is of course not desirable so the directive :config:option:`dir/job/MaxFull
 
 If :config:option:`dir/job/MaxFullConsolidations`\  is configured, the consolidation job will not start more than the specified Consolidations that include the Full Backup.
 
-This leads to a better load balancing of full backup consolidations over different days. The value should configured so that the consolidation jobs are completed before the next normal backup run starts.
+This leads to a better load balancing of full backup consolidations over different days. The value should be configured so that the consolidation jobs are completed before the next normal backup run starts.
 
 The number of always incremental jobs, the interval that the jobs are triggered and the setting of :config:option:`dir/job/AlwaysIncrementalMaxFullAge`\  influence the value that makes sense for :config:option:`dir/job/MaxFullConsolidations`\ .
 

@@ -62,6 +62,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fixed issue with error messages not showing up properly on windows systems [PR #959]
 - Fixed libdroplet xattr.h include issue by using sys/xattr.h [PR #985]
 - Fixed crash on bconsole when using autcomplete with tab [PR #969]
+- [Issue #1374] Include zero-file incremental backups in always-incremental consolidation [PR #995]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
@@ -206,6 +207,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1329]: https://bugs.bareos.org/view.php?id=1329
 [Issue #1334]: https://bugs.bareos.org/view.php?id=1334
 [Issue #1369]: https://bugs.bareos.org/view.php?id=1369
+[Issue #1374]: https://bugs.bareos.org/view.php?id=1374
 [PR #552]: https://github.com/bareos/bareos/pull/552
 [PR #694]: https://github.com/bareos/bareos/pull/694
 [PR #700]: https://github.com/bareos/bareos/pull/700
@@ -309,5 +311,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #972]: https://github.com/bareos/bareos/pull/972
 [PR #973]: https://github.com/bareos/bareos/pull/973
 [PR #982]: https://github.com/bareos/bareos/pull/982
+[PR #995]: https://github.com/bareos/bareos/pull/995
 [PR #996]: https://github.com/bareos/bareos/pull/996
 [unreleased]: https://github.com/bareos/bareos/tree/master
