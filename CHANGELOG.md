@@ -8,5 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Fixed
+- fix crash in "status scheduler" command when job->client is unset [PR #1002]
+
+### Added
+
+### Changed
 
 [unreleased]: https://github.com/bareos/bareos/tree/master
