@@ -5,6 +5,13 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+- [Issue #1374] Include zero-file incremental backups in always-incremental consolidation [PR #1000]
+
+### Added
+
+### Changed
+
 ## [20.0.4] - 2021-11-22
 
 ### Fixed
