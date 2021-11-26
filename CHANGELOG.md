@@ -63,6 +63,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fixed libdroplet xattr.h include issue by using sys/xattr.h [PR #985]
 - Fixed crash on bconsole when using autcomplete with tab [PR #969]
 - [Issue #1374] Include zero-file incremental backups in always-incremental consolidation [PR #995]
+- fix crash in "status scheduler" command when job->client is unset [PR #965]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
