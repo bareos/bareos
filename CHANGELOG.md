@@ -7,6 +7,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - [Issue #1374] Include zero-file incremental backups in always-incremental consolidation [PR #1000]
+- fix crash in "status scheduler" command when job->client is unset [PR #1001]
 
 ### Added
 
