@@ -1038,8 +1038,8 @@ static inline bool PyXattrPacketToNative(PyXattrPacket* pXattrPacket,
     char* buf;
 
     xp->value_length = PyByteArray_Size(pXattrPacket->value);
-    if (xp->name_length <= 0
-        || !(buf = PyByteArray_AsString(pXattrPacket->name))) {
+    if (xp->value_length <= 0
+        || !(buf = PyByteArray_AsString(pXattrPacket->value))) {
       return false;
     }
 
