@@ -208,6 +208,17 @@ function formatRecycle(data) {
    return r;
 }
 
+function formatInchanger(data) {
+   var r;
+   if(data == 1) {
+      r = '<span class="label label-success">' + iJS._("Yes") + '</span>';
+   }
+   else {
+      r = '<span class="label label-default">' + iJS._("No") + '</span>';
+   }
+   return r;
+}
+
 function formatJobStatus(data) {
    var output;
    switch(data) {
