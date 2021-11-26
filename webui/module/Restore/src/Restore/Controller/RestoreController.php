@@ -123,6 +123,7 @@ class RestoreController extends AbstractActionController
     if($this->restore_params['client'] != null) {
       try {
         $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
+        $this->updateBvfsCache();
       }
       catch(Exception $e) {
         echo $e->getMessage();
@@ -315,6 +316,7 @@ class RestoreController extends AbstractActionController
     if ($this->restore_params['client'] != null) {
       try {
         $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
+        $this->updateBvfsCache();
       } catch (Exception $e) {
         echo $e->getMessage();
       }
@@ -558,10 +560,6 @@ class RestoreController extends AbstractActionController
     $this->bsock = $this->getServiceLocator()->get('director');
     $this->setRestoreParams();
     $this->getJobIds();
-
-    if($this->restore_params['id'] === null || $this->restore_params['id'] === "#") {
-      $this->updateBvfsCache();
-    }
 
     $this->getDirectories();
     $this->getFiles();
