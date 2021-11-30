@@ -234,10 +234,12 @@ if(NOT client-only)
   )
 endif() # NOT client-only
 
-bareos_add_test(
-  test_config_parser_console LINK_LIBRARIES console_objects bareos bareosfind
-                                            GTest::gtest_main
-)
+if(ENABLE_BCONSOLE)
+  bareos_add_test(
+    test_config_parser_console LINK_LIBRARIES console_objects bareos bareosfind
+                                              GTest::gtest_main
+  )
+endif()
 
 if(NOT client-only)
   bareos_add_test(
