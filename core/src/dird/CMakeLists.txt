@@ -18,6 +18,9 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+if(NOT ENABLE_JANSSON)
+  message(FATAL_ERROR "Bareos Director requires Jansson support")
+endif()
 find_package(Jansson REQUIRED)
 
 set(DIRDSRCS dird.cc)

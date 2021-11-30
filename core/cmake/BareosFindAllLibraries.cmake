@@ -209,5 +209,10 @@ if(${ZLIB_FOUND})
 endif()
 
 find_package(Readline)
-find_package(Jansson)
+
+option(ENABLE_JANSSON "Build with Jansson library (required for director)" ON)
+if(ENABLE_JANSSON)
+  find_package(Jansson)
+endif()
+
 include(thread)
