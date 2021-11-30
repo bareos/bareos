@@ -173,7 +173,7 @@ OS:
            - bareos-webui
            - python-bareos
 
-  Rocky:
+  EL:
     "8":
       TYPE: rpm
       IMAGE: rocky8
@@ -185,17 +185,6 @@ OS:
            - bareos-vmware
            - python-bareos
   CentOS:
-    "8":
-      TYPE: rpm
-      IMAGE: centos8
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-vmware
-           - python-bareos
-
     "7":
       TYPE: rpm
       IMAGE: centos7
