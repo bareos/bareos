@@ -26,8 +26,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "mem_pool.h"
-class JobControlRecord;
+#include "bsnprintf.h"
 
+class JobControlRecord;
 
 char* bstrinlinecpy(char* dest, const char* src);
 char* bstrncpy(char* dest, const char* src, int maxlen);
@@ -39,8 +40,6 @@ bool bstrncmp(const char* s1, const char* s2, int n);
 bool Bstrcasecmp(const char* s1, const char* s2);
 bool bstrncasecmp(const char* s1, const char* s2, int n);
 int cstrlen(const char* str);
-int Bsnprintf(char* str, int32_t size, const char* format, ...);
-int Bvsnprintf(char* str, int32_t size, const char* format, va_list ap);
 int PoolSprintf(char* pool_buf, const char* fmt, ...);
 int CreatePidFile(const char* progname, const char* pidfile_path);
 void WritePidFile(int pidfile_fd,

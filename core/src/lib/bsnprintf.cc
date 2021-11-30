@@ -35,6 +35,7 @@
 
 #include "include/bareos.h"
 #include <wchar.h>
+#include "lib/bsnprintf.h"
 
 #define FP_OUTPUT 1 /* BAREOS uses floating point */
 
@@ -51,7 +52,6 @@
 #  define LDOUBLE double
 #endif
 
-int Bvsnprintf(char* buffer, int32_t maxlen, const char* format, va_list args);
 static int32_t fmtstr(char* buffer,
                       int32_t currlen,
                       int32_t maxlen,
