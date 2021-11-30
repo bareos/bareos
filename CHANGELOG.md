@@ -11,6 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - when setting an IPv6 address using the `[DIR|SD|FD] Addresses` directive, now bareos only listens on IPv6 instead of both IPv4 and IPv6 on dual-stack. If you were using the `[DIR|SD|FD] Addresses` directive to create a dual-stack socket that would listen on both IPv6 AND IPv4, it will not work that way anymore. You should now also explicitly specify the IPv4 address in the directive [PR #882]
 
 ### Fixed
+- docs: Fix links to configuration directives and issue warnings on dangling links [PR #1008]
 - docs: Adapted the documentation of the VMware plugin due to update to VDDK 7 [PR #844]
 - fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option localvmdk=yes [PR #826]
 - fix a bug where the restore browser would not recognize globbing wildcards in paths [PR #801]
@@ -104,6 +105,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 
 ### Changed
+- docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]
+- docs: Improve data-type subsubsection in CustomizingTheConfiguration. Add a special Sphinx directive for them (``config:datatype``) [PR #1008]
 - systemtest python-bareos: split tests in separate files [PR #944]
 - core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]
 - systemtests: define variable BackupDirectory globally [PR #780]
@@ -310,10 +313,17 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #961]: https://github.com/bareos/bareos/pull/961
 [PR #962]: https://github.com/bareos/bareos/pull/962
 [PR #963]: https://github.com/bareos/bareos/pull/963
+[PR #965]: https://github.com/bareos/bareos/pull/965
+[PR #967]: https://github.com/bareos/bareos/pull/967
 [PR #969]: https://github.com/bareos/bareos/pull/969
 [PR #972]: https://github.com/bareos/bareos/pull/972
 [PR #973]: https://github.com/bareos/bareos/pull/973
+[PR #981]: https://github.com/bareos/bareos/pull/981
 [PR #982]: https://github.com/bareos/bareos/pull/982
+[PR #985]: https://github.com/bareos/bareos/pull/985
 [PR #995]: https://github.com/bareos/bareos/pull/995
 [PR #996]: https://github.com/bareos/bareos/pull/996
+[PR #998]: https://github.com/bareos/bareos/pull/998
+[PR #999]: https://github.com/bareos/bareos/pull/999
+[PR #1008]: https://github.com/bareos/bareos/pull/1008
 [unreleased]: https://github.com/bareos/bareos/tree/master

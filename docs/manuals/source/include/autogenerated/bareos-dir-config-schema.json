@@ -2310,61 +2310,61 @@
           "equals": true,
           "description": "Additional information about the resource. Only used for UIs."
         },
-        "JobACL": {
+        "JobAcl": {
           "datatype": "ACL",
           "code": 0,
           "equals": true,
           "description": "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources."
         },
-        "ClientACL": {
+        "ClientAcl": {
           "datatype": "ACL",
           "code": 1,
           "equals": true,
           "description": "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources."
         },
-        "StorageACL": {
+        "StorageAcl": {
           "datatype": "ACL",
           "code": 2,
           "equals": true,
           "description": "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources."
         },
-        "ScheduleACL": {
+        "ScheduleAcl": {
           "datatype": "ACL",
           "code": 3,
           "equals": true,
           "description": "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources."
         },
-        "PoolACL": {
+        "PoolAcl": {
           "datatype": "ACL",
           "code": 4,
           "equals": true,
           "description": "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources."
         },
-        "CommandACL": {
+        "CommandAcl": {
           "datatype": "ACL",
           "code": 5,
           "equals": true,
           "description": "Lists the commands, this resource has access to. The special keyword *all* allows using commands."
         },
-        "FileSetACL": {
+        "FileSetAcl": {
           "datatype": "ACL",
           "code": 6,
           "equals": true,
           "description": "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources."
         },
-        "CatalogACL": {
+        "CatalogAcl": {
           "datatype": "ACL",
           "code": 7,
           "equals": true,
           "description": "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources."
         },
-        "WhereACL": {
+        "WhereAcl": {
           "datatype": "ACL",
           "code": 8,
           "equals": true,
           "description": "Specifies the base directories, where files could be restored. An empty string allows restores to all directories."
         },
-        "PluginOptionsACL": {
+        "PluginOptionsAcl": {
           "datatype": "ACL",
           "code": 9,
           "equals": true,
@@ -2389,61 +2389,61 @@
           "equals": true,
           "required": true
         },
-        "JobACL": {
+        "JobAcl": {
           "datatype": "ACL",
           "code": 0,
           "equals": true,
           "description": "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources."
         },
-        "ClientACL": {
+        "ClientAcl": {
           "datatype": "ACL",
           "code": 1,
           "equals": true,
           "description": "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources."
         },
-        "StorageACL": {
+        "StorageAcl": {
           "datatype": "ACL",
           "code": 2,
           "equals": true,
           "description": "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources."
         },
-        "ScheduleACL": {
+        "ScheduleAcl": {
           "datatype": "ACL",
           "code": 3,
           "equals": true,
           "description": "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources."
         },
-        "PoolACL": {
+        "PoolAcl": {
           "datatype": "ACL",
           "code": 4,
           "equals": true,
           "description": "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources."
         },
-        "CommandACL": {
+        "CommandAcl": {
           "datatype": "ACL",
           "code": 5,
           "equals": true,
           "description": "Lists the commands, this resource has access to. The special keyword *all* allows using commands."
         },
-        "FileSetACL": {
+        "FileSetAcl": {
           "datatype": "ACL",
           "code": 6,
           "equals": true,
           "description": "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources."
         },
-        "CatalogACL": {
+        "CatalogAcl": {
           "datatype": "ACL",
           "code": 7,
           "equals": true,
           "description": "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources."
         },
-        "WhereACL": {
+        "WhereAcl": {
           "datatype": "ACL",
           "code": 8,
           "equals": true,
           "description": "Specifies the base directories, where files could be restored. An empty string allows restores to all directories."
         },
-        "PluginOptionsACL": {
+        "PluginOptionsAcl": {
           "datatype": "ACL",
           "code": 9,
           "equals": true,
@@ -2563,61 +2563,61 @@
           "code": 0,
           "equals": true
         },
-        "JobACL": {
+        "JobAcl": {
           "datatype": "ACL",
           "code": 0,
           "equals": true,
           "description": "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources."
         },
-        "ClientACL": {
+        "ClientAcl": {
           "datatype": "ACL",
           "code": 1,
           "equals": true,
           "description": "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources."
         },
-        "StorageACL": {
+        "StorageAcl": {
           "datatype": "ACL",
           "code": 2,
           "equals": true,
           "description": "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources."
         },
-        "ScheduleACL": {
+        "ScheduleAcl": {
           "datatype": "ACL",
           "code": 3,
           "equals": true,
           "description": "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources."
         },
-        "PoolACL": {
+        "PoolAcl": {
           "datatype": "ACL",
           "code": 4,
           "equals": true,
           "description": "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources."
         },
-        "CommandACL": {
+        "CommandAcl": {
           "datatype": "ACL",
           "code": 5,
           "equals": true,
           "description": "Lists the commands, this resource has access to. The special keyword *all* allows using commands."
         },
-        "FileSetACL": {
+        "FileSetAcl": {
           "datatype": "ACL",
           "code": 6,
           "equals": true,
           "description": "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources."
         },
-        "CatalogACL": {
+        "CatalogAcl": {
           "datatype": "ACL",
           "code": 7,
           "equals": true,
           "description": "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources."
         },
-        "WhereACL": {
+        "WhereAcl": {
           "datatype": "ACL",
           "code": 8,
           "equals": true,
           "description": "Specifies the base directories, where files could be restored. An empty string allows restores to all directories."
         },
-        "PluginOptionsACL": {
+        "PluginOptionsAcl": {
           "datatype": "ACL",
           "code": 9,
           "equals": true,

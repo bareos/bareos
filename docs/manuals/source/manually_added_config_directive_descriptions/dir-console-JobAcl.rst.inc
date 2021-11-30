@@ -3,5 +3,5 @@ This directive is used to specify a list of Job resource names that can be acces
 .. literalinclude:: /include/config/DirConsoleJobACL1.conf
    :language: bareosconfig
 
- With the above specification, the console can
+With the above specification, the console can
 access the Director’s resources for the jobs named on the :strong:`Job ACL`\  directives, but for no others.

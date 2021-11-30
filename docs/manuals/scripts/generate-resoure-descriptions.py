@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -143,6 +143,11 @@ class BareosConfigurationSchema:
             result.append(token)
         return " ".join(result)
 
+    def isValidCamelCase(self, key):
+        if key in ("EnableVSS", "AutoXFlateOnReplication"):
+            return True
+        return re.match("^([A-Z][a-z]+)+$", key) is not None
+
     def getDatatype(self, name):
         return self.json["datatype"][name]
 
@@ -239,208 +244,10 @@ class BareosConfigurationSchemaDirective(dict):
         return dict.get(self, key, default)
 
 
-class BareosConfigurationSchema2Latex(BareosConfigurationSchema):
-    def getConvertedResources(self, daemon):
-        result = "\\begin{itemize}\n"
-        for i in self.getResources(daemon):
-            if i:
-                result += "  \\item " + i + "\n"
-        result += "\\end{itemize}\n"
-        return result
-
-    def getLatexDatatypeRef(self, datatype):
-        DataType = "".join([x.capitalize() for x in datatype.split("_")])
-        return "\\dt{%(DataType)s}" % {"DataType": DataType}
-
-    def getLatexDefaultValue(self, data):
-        default = ""
-        if data.get("default_value"):
-            default = data.get("default_value")
-            if data.get("platform_specific"):
-                default += " \\textit{\\small(platform specific)}"
-        return default
-
-    def getLatexDescription(self, data):
-        description = ""
-        if data.get("description"):
-            description = data.get("description").replace("_", "\_")
-        return description
-
-    def getLatexTable(
-        self,
-        subtree,
-        latexDefine="define%(key)s",
-        latexLink="\\hyperlink{key%(key)s}{%(key)s}",
-    ):
-        result = "\\begin{center}\n"
-        result += "\\begin{longtable}{ l | l | l | l }\n"
-        result += "\\hline \n"
-        result += "\\multicolumn{1}{ c|}{\\textbf{%(name)-80s}} &\n" % {
-            "name": "configuration directive name"
-        }
-        result += "\\multicolumn{1}{|c|}{\\textbf{%(type)-80s}} &\n" % {
-            "type": "type of data"
-        }
-        result += "\\multicolumn{1}{|c|}{\\textbf{%(default)-80s}} &\n" % {
-            "default": "default value"
-        }
-        result += "\\multicolumn{1}{|c }{\\textbf{%(remark)-80s}} \\\\ \n" % {
-            "remark": "remark"
-        }
-        result += "\\hline \n"
-        result += "\\hline \n"
-
-        for key in sorted(filter(None, subtree.keys())):
-            data = BareosConfigurationSchemaDirective(subtree[key])
-
-            strings = {
-                "key": self.convertCamelCase2Spaces(key),
-                "mc": "}",
-                "extra": [],
-                "default": self.getLatexDefaultValue(data),
-            }
-
-            strings["directive_link"] = latexLink % strings
-
-            strings["datatype"] = self.getLatexDatatypeRef(data["datatype"])
-            if data.get("equals"):
-                strings["datatype"] = "= %(datatype)s" % {
-                    "datatype": strings["datatype"]
-                }
-            else:
-                strings["datatype"] = "\{ %(datatype)s \}" % {
-                    "datatype": strings["datatype"]
-                }
-
-            extra = []
-            if data.get("alias"):
-                extra.append("alias")
-                strings["mo"] = "\\textit{"
-            if data.get("deprecated"):
-                extra.append("deprecated")
-                strings["mo"] = "\\textit{"
-            if data.get("required"):
-                extra.append("required")
-                strings["mo"] = "\\textbf{"
-            strings["extra"] = ", ".join(extra)
-
-            define = "\\csgdef{resourceDirectiveDefined" + latexDefine + "}{yes}"
-            strings["define"] = define % strings
-            strings["t_directive"] = self.getStringsWithModifiers(
-                "directive_link", strings
-            )
-            strings["t_datatype"] = self.getStringsWithModifiers("datatype", strings)
-            strings["t_default"] = self.getStringsWithModifiers("default", strings)
-            strings["t_extra"] = self.getStringsWithModifiers("extra", strings)
-
-            result += "%(define)-80s\n" % (strings)
-            result += "%(t_directive)-80s &\n" % (strings)
-            result += "%(t_datatype)-80s &\n" % (strings)
-            result += "%(t_default)-80s &\n" % (strings)
-            result += "%(t_extra)s\n" % (strings)
-            result += "\\\\ \n\n" % (strings)
-
-        result += "\\hline \n"
-        result += "\\end{longtable}\n"
-        result += "\\end{center}\n"
-        result += "\n"
-        return result
-
-    def writeResourceDirectivesTable(self, daemon, resourcename, filename=None):
-        ds = daemonName.getShort(daemon)
-        self.open(filename, "w")
-        self.out.write(
-            self.getLatexTable(
-                self.json["resource"][daemon][resourcename],
-                latexDefine=ds + resourcename + "%(key)s",
-                latexLink="\\linkResourceDirective*{"
-                + ds
-                + "}{"
-                + resourcename
-                + "}{%(key)s}",
-            )
-        )
-        self.close()
-
-    def writeDatatypeOptionsTable(self, filename=None):
-        self.open(filename, "w")
-        self.out.write(
-            self.getLatexTable(
-                self.getDatatype("OPTIONS")["values"],
-                latexDefine="DatatypeOptions%(key)s",
-            )
-        )
-        self.close()
-
-    def getConvertedResourceDirectives(self, daemon, resourcename):
-        result = "\\begin{description}\n\n"
-        for directive in self.getResourceDirectives(daemon, resourcename):
-            data = self.getResourceDirective(daemon, resourcename, directive)
-
-            strings = {
-                "daemon": daemonName.getShort(daemon),
-                "resource": resourcename,
-                "directive": self.convertCamelCase2Spaces(directive),
-                "datatype": self.getLatexDatatypeRef(data["datatype"]),
-                "default": self.getLatexDefaultValue(data),
-                "version": data.get("start_version", ""),
-                "description": self.getLatexDescription(data),
-                "required": "",
-            }
-
-            if data.get("alias"):
-                if not strings["description"]:
-                    strings["description"] = "\\textit{This directive is an alias.}"
-            if data.get("deprecated"):
-                # overwrites start_version
-                strings["version"] = "deprecated"
-            if data.get("required"):
-                strings["required"] = "required"
-
-            result += (
-                "\\resourceDirective{%(daemon)s}{%(resource)s}{%(directive)s}{%(datatype)s}{%(required)s}{%(default)s}{%(version)s}{%(description)s}\n\n"
-                % (strings)
-            )
-        result += "\\end{description}\n\n"
-        return result
-
-    def writeResourceDirectives(self, daemon, resourcename, filename=None):
-        self.open(filename, "w")
-        self.out.write(self.getConvertedResourceDirectives(daemon, resourcename))
-        self.close()
-
-    def getResourceDirectiveDefs(self, daemon, resourcename):
-        result = ""
-        for directive in self.getResourceDirectives(daemon, resourcename):
-            data = self.getResourceDirective(daemon, resourcename, directive)
-
-            strings = {
-                "daemon": daemonName.getShort(daemon),
-                "resource": resourcename,
-                "directive": self.convertCamelCase2Spaces(directive),
-            }
-
-            result += (
-                "\\defDirective{%(daemon)s}{%(resource)s}{%(directive)s}{}{}{%%\n"
-                % (strings)
-            )
-            result += "}\n\n"
-        return result
-
-    def writeResourceDirectiveDefs(self, daemon, resourcename, filename=None):
-        self.open(filename, "w")
-        self.out.write(self.getResourceDirectiveDefs(daemon, resourcename))
-        self.close()
-
-
 class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
     def indent(self, text, amount, ch=" "):
         padding = amount * ch
         return "".join(padding + line for line in text.splitlines(True))
-
-    def getLatexDatatypeRef(self, datatype):
-        DataType = "".join([x.capitalize() for x in datatype.split("_")])
-        return "\\dt{%(DataType)s}" % {"DataType": DataType}
 
     def getDefaultValue(self, data):
         default = ""
@@ -454,7 +261,6 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
         description = ""
         if data.get("description"):
             description = self.indent(data.get("description"), 3)
-            # .replace('_','\_')
         return description
 
     def getConvertedResourceDirectives(self, daemon, resourcename):
@@ -498,7 +304,7 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
                 strings["required"] = "True"
                 result += "   :required: {required}\n".format(**strings)
 
-            result += "   :type: :ref:`{datatype}<DataType{datatype}>` \n".format(**strings)
+            result += "   :type: :config:datatype:`{datatype}`\n".format(**strings)
 
             if data.get("default_value"):
                 result += "   :default: {default}\n".format(**strings)
@@ -544,6 +350,13 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
         for key in sorted(filter(None, subtree.keys())):
             data = BareosConfigurationSchemaDirective(subtree[key])
 
+            if not self.isValidCamelCase(key):
+                raise ValueError(
+                    "The directive {} from {}/{} is not valid CamelCase.".format(
+                        key, daemon, resourcename
+                    )
+                )
+
             strings = {
                 "key": self.convertCamelCase2Spaces(key),
                 "extra": [],
@@ -558,11 +371,11 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
             strings["directive_link"] = link % strings
 
             if data.get("equals"):
-                strings["datatype"] = "= %(datatype)s" % {"datatype": data["datatype"]}
+                strings["datatype"] = "= :config:datatype:`{datatype}`\ ".format(**data)
             else:
-                strings["datatype"] = "\{ %(datatype)s \}" % {
-                    "datatype": data["datatype"]
-                }
+                strings["datatype"] = "{{ :config:datatype:`{datatype}`\ }}".format(
+                    **data
+                )
 
             extra = []
             if data.get("alias"):
@@ -577,9 +390,6 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
                 strings["mc"] = "** "
             strings["extra"] = ", ".join(extra)
 
-            strings["t_datatype"] = '"{}"'.format(
-                self.getStringsWithModifiers("datatype", strings)
-            )
             strings["t_default"] = '"{}"'.format(
                 self.getStringsWithModifiers("default", strings)
             )
@@ -589,7 +399,7 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
 
             # result+='   %(directive_link)-60s, %(t_datatype)-20s, %(t_default)-20s, %(t_extra)s\n' % ( strings )
             result += (
-                "   %(directive_link)-60s, %(t_datatype)s, %(t_default)s, %(t_extra)s\n"
+                "   %(directive_link)-60s, %(datatype)s, %(t_default)s, %(t_extra)s\n"
                 % (strings)
             )
 
@@ -621,57 +431,6 @@ class BareosConfigurationSchema2Sphinx(BareosConfigurationSchema):
             )
         )
         self.close()
-
-
-def createLatex(data):
-    logger = logging.getLogger()
-
-    logger.info("Create LaTex files ...")
-
-    latex = BareosConfigurationSchema2Latex(data)
-
-    for daemon in latex.getDaemons():
-
-        # pprint(schema.getResources(daemon))
-        for resource in latex.getResources(daemon):
-            logger.info("daemon: " + daemon + ", resource: " + resource)
-
-            # pprint(schema.getResource(daemon,resource))
-            latex.writeResourceDirectives(
-                daemon,
-                resource,
-                "source/include/autogenerated/"
-                + daemon.lower()
-                + "-resource-"
-                + resource.lower()
-                + "-description.tex",
-            )
-            latex.writeResourceDirectiveDefs(
-                daemon,
-                resource,
-                "source/include/autogenerated/"
-                + daemon.lower()
-                + "-resource-"
-                + resource.lower()
-                + "-defDirective.tex",
-            )
-            latex.writeResourceDirectivesTable(
-                daemon,
-                resource,
-                "source/include/autogenerated/"
-                + daemon.lower()
-                + "-resource-"
-                + resource.lower()
-                + "-table.tex",
-            )
-
-    if latex.getDatatypes():
-        print(latex.getDatatypes())
-        # print(schema.getDatatype( "OPTIONS" ))
-        # print(latex.getLatexTable( schema.getDatatype( "OPTIONS" )["values"], latexDefine="%(key)s", latexLink="\\linkResourceDirective{%(key)s}" ))
-        latex.writeDatatypeOptionsTable(
-            filename="source/include/autogenerated/datatype-options-table.tex"
-        )
 
 
 def createSphinx(data):
@@ -724,9 +483,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "-d", "--debug", action="store_true", help="enable debugging output"
     )
-    parser.add_argument("--latex", action="store_true", help="Create LaTex files.")
     parser.add_argument(
-        "--sphinx", action="store_true", help="Create RST files for Sphinx."
+        "--sphinx", action="store_true", help="Deprecated. Now the default."
     )
     parser.add_argument("filename", help="json data file")
     args = parser.parse_args()
@@ -740,12 +498,4 @@ if __name__ == "__main__":
         data = json.load(data_file)
     # pprint(data)
 
-    if not args.latex:
-        # default is sphinx
-        args.sphinx = True
-
-    if args.latex:
-        createLatex(data)
-
-    if args.sphinx:
-        createSphinx(data)
+    createSphinx(data)

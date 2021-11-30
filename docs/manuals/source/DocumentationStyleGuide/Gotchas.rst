@@ -37,14 +37,6 @@ the displayed text will not alter.
 There will not even be a warning during Sphinx build,
 making it really hard to find typos in this kind of references.
 
-* valid reference:
-
-  * :config:option:`dir/job/AlwaysIncrementalJobRetention`
-
-* invalid reference:
-
-  * :config:option:`dir/job/ThisIsaDeadEntry`
-
 .. _documentationstyleguide/gotchas:toctree vs include:
 
 toctree vs include

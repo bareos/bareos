@@ -391,7 +391,7 @@ Resource Directive Keyword
 A resource directive keyword is the part before the equal sign (:file:`=`) in a :ref:`section-ConfigurationResourceDirective`. The following sections will list all available directives by Bareos component resources.
 
 Upper and Lower Case and Spaces
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Case (upper/lower) and spaces are ignored in the resource directive keywords.
 
@@ -405,18 +405,20 @@ Resource Directive Value
 A resource directive value is the part after the equal sign (:file:`=`) in a :ref:`section-ConfigurationResourceDirective`.
 
 Spaces
-^^^^^^
+~~~~~~
 
 Spaces after the equal sign and before the first character of the value are ignored. Other spaces within a value may be significant (not ignored) and may require quoting.
 
 .. _section-Quotes:
 
 Quotes
-^^^^^^
+~~~~~~
 
 In general, if you want spaces in a name to the right of the first equal sign (=), you must enclose that name within double quotes. Otherwise quotes are not generally necessary because once defined, quoted strings and unquoted strings are all equal.
 
 Within a quoted string, any character following a backslash (\) is taken as itself (handy for inserting backslashes and double quotes (")).
+
+.. _section-MultilineString:
 
 .. note::
 
@@ -433,16 +435,17 @@ Within a quoted string, any character following a backslash (\) is taken as itse
 
    If the configure directive is used to define a number, the number is never to be put between surrounding quotes. This is even true if the number is specified together with its unit, like :strong:`365 days`.
 
+.. _section-Numbers:
 
 Numbers
-^^^^^^^
+~~~~~~~
 
 Numbers are not to be quoted, see :ref:`section-Quotes`. Also do not prepend numbers by zeros (0), as these are not parsed in the expected manner (write 1 instead of 01).
 
-.. _DataTypes:
+.. _section-DataTypes:
 
 Data Types
-^^^^^^^^^^
+~~~~~~~~~~
 
 .. index::
    single: Configuration; Data Types
@@ -450,10 +453,9 @@ Data Types
 
 When parsing the resource directives, Bareos classifies the data according to the types listed below.
 
-.. _DataTypeAcl:
+.. config:datatype:: ACL
 
-acl
-   :index:`\ <single: Data Type; acl>`\
+   :multi: yes
 
    This directive defines what is permitted to be accessed. It does this by using a list of regular expressions, separated by commas (:strong:`,`) or using multiple directives. If :strong:`!` is prepended, the expression is negated. The special keyword :strong:`*all*` allows unrestricted access.
 
@@ -463,7 +465,7 @@ acl
 
    .. _section-CommandAclExample:
 
-   For clarification, we demonstrate the usage of ACLs by some examples for :config:option:`dir/console/CommandAcl`\ :
+   For clarification, we demonstrate the usage of ACLs by some examples for :config:option:`dir/console/CommandACL`\ :
 
    .. code-block:: bareosconfig
       :caption: Allow only the help command
@@ -519,224 +521,410 @@ acl
          Command ACL = *all*, !sqlquery
 
 
-.. _DataTypeAuthType:
 
-auth_type
-   :index:`\ <single: Data Type; auth_type>`\
+.. config:datatype:: ACTION_ON_PURGE
+
+   Action to perform on Purge, mostly **truncate**.
+
+
+   
+.. config:datatype:: ADDRESS
+
+   Is either a domain name or an IP address specified as a dotted quadruple in string or an IP version 6 address specified as a colon separated syntax (::) or quoted string format. This directive only permits a single address to be specified. The :strong:`Port` must be specifically separated. If multiple :strong:`Addresses` are needed, please assess if it is also possible to specify :config:datatype:`ADDRESSES` (plural).
+
+
+
+.. config:datatype:: ADDRESSES
+
+   Specify a set of Addresses and Ports. Probably the simplest way to explain this is to show an example.
+
+   The following example makes the director listen for connections on all interfaces both on IPv4 and IPv6.
+
+
+   .. code-block:: bareosconfig
+       :caption: Listen on IPv4 and IPv6 for Bareos < 21
+
+       DirAddresses = {
+          ipv6 = { addr = :: ; port = 9101 }
+       }
+
+   .. note::
+
+      Since Bareos :sinceVersion:`21: listen on both IPv4 and IPv6 per default` on two distinct sockets, this is not required anymore. This notation will be required if you want to restrict the addresses to listen on.
+
+   .. code-block:: bareosconfig
+       :caption: Listen on IPv4 and IPv6 for Bareos >= 21 (default)
+
+       DirAddresses = {
+          ipv4 = { addr = 0.0.0.0 ; port = 9101 }
+          ipv6 = { addr = :: ; port = 9101 }
+       }
+
+
+
+   The following example shows all of the features the Addresses parser:
+
+   .. code-block:: bareosconfig
+       :caption:  Showing Addresses features
+
+       Addresses  = {
+           ip = { addr = 1.2.3.4; port = 1205;}
+           ip = {
+               addr = 1.2.3.4
+               port = 1205
+           }
+           ipv4 = {
+               addr = 1.2.3.4; port = http;}
+           ipv6 = {
+               addr = 2001:db8::;
+               port = 1205;
+           }
+           ip = { addr = 1.2.3.4 }
+           ip = { addr = 2001:db8:: }
+           ip = {
+               addr = server.example.com
+           }
+       }
+
+   Where ip, ipv4, ipv6, addr, and port are all keywords.
+   Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification).
+   Also, the port can be specified as a number or as the mnemonic value from the :file:`/usr/etc/services` file.
+   If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6.
+   If ipv4 is specified, then only IPv4 resolutions will be permitted, and likewise with IPv6.
+
+
+
+   .. code-block:: bareosconfig
+       :caption:  Bareos >= 21 : Listening on all IPv6 and only IPv4 localhost
+
+        Addresses  = {
+         ipv6 = { addr = :: }
+         ipv4 = { addr = 127.0.0.1 }
+       }
+
+   .. code-block:: bareosconfig
+       :caption:  Bareos >= 21 : Listening only on IPv4
+
+        Addresses  = {
+         ipv4 = { addr = 0.0.0.0 }
+       }
+
+   .. code-block:: bareosconfig
+       :caption:  Bareos >= 21 : Listening on specific IPv6 and none IPv4
+
+       Addresses  = {
+         ipv6 = { addr = ::1 }
+         ipv6 = { addr = 2001:0db8:0000:0000:ba4e:0s00:0000:ba3e;}
+       }
+
+
+
+.. config:datatype:: AUDIT_COMMAND_LIST
+
+   Specifies the commands that should be logged on execution (audited). E.g.
+
+   .. code-block:: bareosconfig
+
+       Audit Events = label
+       Audit Events = restore
+
+
+.. config:datatype:: AUTH_PROTOCOL_TYPE
+
+   :values: **Native** | **NDMPV2** | **NDMPV3** | **NDMPV4**
+   :see: :config:datatype:`PROTOCOL_TYPE`
+   
+   Either select the native Bareos protocol or a NDMP protocol.
+
+
+
+.. config:datatype:: AUTH_TYPE
 
    Specifies the authentication type that must be supplied when connecting to a backup protocol that uses a specific authentication type. Currently only used for :ref:`NDMPResource`.
 
-   The following values are allowed:
-
-   None
-      Use no password
-
-   Clear
-      Use clear text password
-
-   MD5
-      Use MD5 hashing
+   The following values are allowed: `None` (Use no password), `Clear` (Use clear text password), `MD5` (Use MD5 hashing).
 
 
-.. _DataTypeInteger:
 
-integer
-   :index:`\ <single: Data Type; integer>`\
+.. config:datatype:: AUTOPASSWORD
+
+   This is a Bareos password and it is stored internally in MD5 hashed format.
 
 
-   A 32 bit integer value. It may be positive or negative.
+
+.. config:datatype:: BACKUP_LEVEL
+
+   The following string values are allowed:
+
+   For backup job
+      `Full`, `Differential`, `Incremental`, `VirtualFull`
+
+   For verify job
+      `InitCatalog`, `Catalog`, `VolumeToCatalog`, `DiskToCatalog`
+
+   See details at :config:option:`dir/job/Level`.
+
+
+
+.. config:datatype:: BIT
+
+   Either a :strong:`yes` or a :strong:`no` or a :strong:`true` or a :strong:`false`.
+
+
+
+.. config:datatype:: BOOLEAN
+
+   Either a :strong:`yes` or a :strong:`no` or a :strong:`true` or a :strong:`false`.
+
+
+.. config:datatype:: COMPRESSION_ALGORITHM
+
+   The following values are allowed: `GZIP` (GZIP1 to GZIP9), `LZO`, `LZFAST` (deprecated :sinceVersion:`19.2.: lzfast`, `LZ4`, `LZ4HC`.
+
+   See :config:option:`dir/fileset/include/options/compression`.
+
+
+
+.. config:datatype:: DEVICE
+
+   See :config:option:`dir/storage/Device`.
+
+
+.. config:datatype:: DEVICE_TYPE
+
+   The following values are allowed: `Tape`, `File`, `FIFO`, `GFAPI`,  `Rados` (Ceph Object Store)  deprecated :sinceVersion:`20.0.0: Rados`, `Droplet` :sinceVersion:`17.2.7: libdroplet`.
+
+   See :config:option:`sd/device/DeviceType`.
+
+
+
+.. config:datatype:: DIRECTORY
+
+   A directory.
+
+
+
+.. config:datatype:: DIRECTORY_LIST
+
+   :multi: yes
+
+   A list of directories.
+
+
+   
+.. config:datatype:: DIRECTORY_OR_COMMAND
+
+   A directory, and or a command using substitution.
+
+
+
+.. config:datatype:: ENCRYPTION_CIPHER
+
+   String list of cipher to use for encryption.
+
+
+
+.. config:datatype:: INCLUDE_EXCLUDE_ITEM
+
+   The :ref:`Include <fileset-include>` or :ref:`Exclude <fileset-exclude>` resource must contain a list of directories and/or files to be processed, excluded in the backup job.
+
+
+
+.. config:datatype:: INT32
+
+   :values: -2147483648 - +2147483647
+   :quotes: no
+
+   A signed 32 bit integer value.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
 
-.. _DataTypeLongInteger:
 
-long integer
-   :index:`\ <single: Data Type; long integer>`\
+.. config:datatype:: IO_DIRECTION
 
-   A 64 bit integer value. Typically these are values such as bytes that can exceed 4 billion and thus require a 64 bit value.
+   :values: **in** | **out** | **both**
 
-   Don’t use quotes around the number, see :ref:`section-Quotes`.
+   String indicating sens of IO can be `in` or `out` or `both`
 
 
-.. _DataTypeJobProtocol:
+.. config:datatype:: JOB_TYPE
 
-job protocol
-   :index:`\ <single: Data Type; job protocol>`\
+   :values: **Backup** | **Restore** | **Verify** | **Admin** | **Migrate** | **Copy** | **Consolidate**
 
-   The protocol to run a the job. Following protocols are available:
-
-   Native
-      Native Bareos job protocol.
-
-   NDMP
-      Deprecated. Alias for |ndmpbareos|.
-
-   NDMP_BAREOS
-      Since Bareos :sinceVersion:`17.2.3: NDMP BAREOS`. See :ref:`section-NdmpBareos`.
-
-   NDMP_NATIVE
-      Since Bareos :sinceVersion:`17.2.3: NDMP NATIVE`. See :ref:`section-NdmpNative`.
+   See :config:option:`dir/job/Type`
 
 
-.. _DataTypeName:
 
-name
-   :index:`\ <single: Data Type; name>`\
+.. config:datatype:: LABEL
+
+   Quoted string for volume label.
+
+
+
+.. config:datatype:: MAX_BLOCKSIZE
+
+   :quotes: no
+
+   Positive integer
+
+   If no value or zero is specified, the Storage daemon will use a default block size of 64,512 bytes (126 * 512).
+
+
+
+.. config:datatype:: MD5PASSWORD
+
+   MD5 hashed format of password.
+
+
+
+.. config:datatype:: MESSAGES
+
+   See :ref:`DirectorResourceMessages`.
+
+
+
+.. config:datatype:: MIGRATION_TYPE
+
+   The following values are allowed: `SmallestVolume`, `OldestVolume`, `Client`, `Volume`, `Job`, `SQLQuery`, `PoolOccupancy`, `PoolTime`, `PoolUncopiedJobs`
+
+   See :config:option:`dir/job/SelectionType`.
+
+
+
+.. config:datatype:: NAME
 
    A keyword or name consisting of alphanumeric characters, including the hyphen, underscore, and dollar characters. The first character of a name must be a letter. A name has a maximum length currently set to 127 bytes.
 
    Please note that Bareos resource names as well as certain other names (e.g. Volume names) must contain only letters (including ISO accented letters), numbers, and a few special characters (space, underscore, ...). All other characters and punctuation are invalid.
 
 
-.. _DataTypeAutoPassword:
 
-password
-   :index:`\ <single: Data Type; password>`\
+.. config:datatype:: PINT16
 
-   This is a Bareos password and it is stored internally in MD5 hashed format.
-
-
-.. _DataTypeDirectory:
-
-path
-   :index:`\ <single: Data Type; path>`\
-
-   A path is either a quoted or non-quoted string. A path will be passed to your standard shell for expansion when it is scanned. Thus constructs such as $HOME are interpreted to be their correct values. The path can either reference to a file or a directory.
-
-
-.. _DataTypePositiveInteger:
-.. _DataTypePINT32:
-
-positive integer
-   :index:`\ <single: Data Type; positive integer>`\
-
-   A 32 bit positive integer value.
+   :values: 0 - 65535
+   :quotes: no
+   
+   A positive 16 bit unsigned integer value.
 
    Don’t use quotes around the number, see :ref:`section-Quotes`.
 
 
-.. _DataTypeSpeed:
+.. config:datatype:: PINT32
 
-speed
-   :index:`\ <single: Data Type; speed>`\
+   :values: 0 - 4294967295 
+   :quotes: no
+   
+   A positive 32 bit unsigned integer value.
 
-   The speed parameter can be specified as k/s, kb/s, m/s or mb/s.
-
-   Don’t use quotes around the parameter, see :ref:`section-Quotes`.
-
-
-.. _DataTypeString:
-
-string
-   :index:`\ <single: Data Type; string>`\
-
-   A quoted string containing virtually any character including spaces, or a non-quoted string. A string may be of any length. Strings are typically values that correspond to filenames, directories, or system command names. A backslash (\) turns the next character into itself, so to include a double quote in a string, you precede the double quote with a backslash. Likewise to include a backslash.
-
-   Since Bareos :sinceVersion:`20: Multiline Strings` strings can be spread over multiple lines using quotes as shown in the example above.
-
-.. _DataTypeString_List:
-
-string_list
-   :index:`\ <single: Data Type; string list>`\
-
-   Multiple strings, specified in multiple directives, or in a single directive, separated by commas (**,**).
-
-
-.. _DataTypeStrname:
-
-strname
-   :index:`\ <single: Data Type; strname>`\
-
-   is similar to a :strong:`Name`, except that the name may be quoted and can thus contain additional characters including spaces.
+   Don’t use quotes around the number, see :ref:`section-Quotes`.
 
 
 
-.. _DataTypeAddress:
+.. config:datatype:: PLUGIN_NAMES
 
-ADDRESS
-   :index:`\ <single: Data Type; ADDRESS>`\
-
-   is either a domain name or an IP address specified as a dotted quadruple in string or an IP version 6 address specified as a semi-column separated syntax (::) or quoted string format. This directive only permits a single address to be specified. The :strong:`Port` must be specifically separated. If multiple ADDRESSES are needed, please assess if it is also possible to specify :strong:`Addresses` (plural).
+   List of plugins, that should get loaded from `Plugin Directory`
 
 
-.. _DataTypeAddresses:
+.. config:datatype:: POOLTYPE
 
-ADDRESSES
-   :index:`\ <single: Data Type; ADDRESSES>`\
+   The following values are allowed: `Backup`, `Archive`, `Cloned`, `Migration`, `Copy`, `Save`
 
-   Specify a set of ADDRESSES and ports. Probably the simplest way to explain this is to show an example.
-   The following example makes the director listen for connections on all interfaces both on ipv4 and ipv6.
+   .. note::
 
-
-   .. code-block:: bareosconfig
-      :caption: listen on ipv4 and ipv6 for director < bareos 21
-
-      DIRAddresses = {
-         ipv6 = { addr = :: ; port = 9101 }
-      }
-
-  .. note::
-
-     Since Bareos :sinceVersion:`21: listen on both ipv4 and ipv6 per default` on two distinct sockets, this is not required anymore. This notation will be required if you want to restrict the addresses to listen on.
+      Only `Backup` is currently implemented.
 
 
+.. config:datatype:: PORT
 
+   :values: 1 - 65535
+   :quotes: no
 
-   The following example shows all of the features the ADDRESSES parser:
-
-   .. code-block:: bareosconfig
-      :caption:  showing ADDRESSES features
-
-      Addresses  = {
-          ip = { addr = 1.2.3.4; port = 1205;}
-          ipv4 = {
-              addr = 1.2.3.4; port = http;}
-          ipv6 = {
-              addr = 1.2.3.4;
-              port = 1205;
-          }
-          ip = {
-              addr = 1.2.3.4
-              port = 1205
-          }
-          ip = { addr = 1.2.3.4 }
-          ip = { addr = 201:220:222::2 }
-          ip = {
-              addr = server.example.com
-          }
-      }
-
-   where ip, ipv4, ipv6, addr, and port are all keywords.
-   Note, that the address can be specified as either a dotted quadruple, or in IPv6 colon notation, or as a symbolic name (only in the ip specification).
-   Also, the port can be specified as a number or as the mnemonic value from the :file:`/etc/services` file.
-   If a port is not specified, the default one will be used. If an ip section is specified, the resolution can be made either by IPv4 or IPv6.
-   If ipv4 is specified, then only IPv4 resolutions will be permitted, and likewise with ipv6.
-
-
-.. _DataTypePort:
-
-port
-   .. index::
-      single: Data Type; port
-
-   Specify a network port (a positive integer in the range 1 to 65535).
+   Specify a network network port.
 
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 
-.. _DataTypeRes:
 
-resource
-   :index:`\ <single: Data Type; resource>`\
+.. config:datatype:: PROTOCOL_TYPE
+
+   :see: :config:datatype:`AUTH_PROTOCOL_TYPE`
+
+   The protocol to run a the job. Following protocols are available:
+
+   Native
+        Native Bareos job protocol.
+
+   NDMP
+        Deprecated. Alias for |ndmpbareos|.
+
+   NDMP_BAREOS
+        Since Bareos :sinceVersion:`17.2.3: NDMP BAREOS`. See :ref:`section-NdmpBareos`.
+
+   NDMP_NATIVE
+        Since Bareos :sinceVersion:`17.2.3: NDMP NATIVE`. See :ref:`section-NdmpNative`.
+
+
+
+.. config:datatype:: REPLACE_OPTION
+
+   The following values are allowed: `always`, `ifnewer`, `ifolder`, `never`.
+
+   See :config:option:`dir/job/Replace`
+
+
+
+.. config:datatype:: RES
 
    A resource defines a relation to the name of another resource.
 
 
-.. _DataTypeSize64:
 
-size
-   :index:`\ <single: Data Type; size64>`\
+.. config:datatype:: RESOURCE_LIST
+
+   :multi: yes
+   :see: :config:datatype:`RES`
+
+   A list of resource.
+
+
+
+.. config:datatype:: RUNSCRIPT
+
+   :multi: yes
+
+   See :config:option:`dir/job/RunScript`.
+
+
+
+.. config:datatype:: RUNSCRIPT_SHORT
+
+   :multi: yes
+
+   String command.
+
+   See :config:option:`dir/job/RunScript`.
+
+
+
+.. config:datatype:: SCHEDULE_RUN_COMMAND
+
+   String line for schedule.
+
+   See :config:option:`dir/schedule/Run`
+
+
+.. config:datatype:: SIZE32
+
+   :quotes: no
+   :see: :config:datatype:`SIZE64`
+
+   A size specified as bytes. Typically, this is a floating point scientific input format followed by an optional modifier. The floating point input is stored as a 32 bit integer value.
+
+
+.. config:datatype:: SIZE64
+
+   :quotes: no
 
    A size specified as bytes. Typically, this is a floating point scientific input format followed by an optional modifier. The floating point input is stored as a 64 bit integer value. If a modifier is present, it must immediately follow the value with no intervening spaces. The following modifiers are permitted:
 
@@ -779,10 +967,41 @@ size
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 
-.. _DataTypeTime:
+.. config:datatype:: SPEED
 
-time
-   :index:`\ <single: Data Type; time>`\
+   :quotes: no
+
+   The speed parameter can be specified as k/s, kb/s, m/s or mb/s.
+
+   See unit explanation at :config:datatype:`SIZE64`.
+
+   Don’t use quotes around the parameter, see :ref:`section-Quotes`.
+
+
+
+.. config:datatype:: STRING
+
+   A quoted string containing virtually any character including spaces, or a non-quoted string. A string may be of any length. Strings are typically values that correspond to filenames, directories, or system command names. A backslash (\) turns the next character into itself, so to include a double quote in a string, you precede the double quote with a backslash. Likewise to include a backslash.
+
+   Strings can be spread over :ref:`multiple lines <section-MultilineString>` using quotes.
+
+
+.. config:datatype:: STRING_LIST
+
+   :multi: yes
+   :see: :config:datatype:`STRING`
+
+   Multiple :config:datatype:`STRING`, specified in multiple directives, or in a single directive, separated by commas (**,**).
+
+
+.. config:datatype:: STRNAME
+
+   is similar to a :strong:`Name`, except that the name may be quoted and can thus contain additional characters including spaces.
+
+
+.. config:datatype:: TIME
+
+   :quotes: no
 
    A time or duration specified in seconds. The time is stored internally as a 64 bit integer value, but it is specified in two parts: a number part and a modifier part. The number can be an integer or a floating point number. If it is entered in floating point notation, it will be rounded to the nearest integer. The modifier is mandatory and follows the number part, either with or without
    intervening spaces. The following modifiers are permitted:
@@ -815,11 +1034,15 @@ time
 
    The specification of a time may have as many number/modifier parts as you wish. For example:
 
-   ::
+   .. code-block:: bareosconfig
 
       1 week 2 days 3 hours 10 mins
+      
+   or
+      
+   .. code-block:: bareosconfig
+   
       1 month 2 days 30 sec
-
 
 
    are valid date specifications.
@@ -827,318 +1050,19 @@ time
    Don’t use quotes around the parameter, see :ref:`section-Quotes`.
 
 
-.. _DataTypeAudit_Command_List:
-
-audit_command_list
-   :index:`\ <single: Data Type; audit command list>`\
-
-   Specifies the commands that should be logged on execution (audited). E.g.
-
-   .. code-block:: bareosconfig
-
-      Audit Events = label
-      Audit Events = restore
-
-   Based on the type :ref:`string-list <DataTypeStringList>`.
-
-
-.. _DataTypeBoolean:
-
-yes|no
-   :index:`\ <single: Data Type; \yesno>`\  :index:`\ <single: Data Type; boolean>`\
-
-   Either a :strong:`yes` or a :strong:`no` (or :strong:`true` or :strong:`false`).
-
-
-.. _DataTypeACTION_ON_PURGE:
-
-ACTION_ON_PURGE
-
-  :index:`\ <single: Data Type; ACTION_ON_PURGE>`\
-
-  Description of ACTION_ON_PURGE
-
-
-.. _DataTypeAUTH_PROTOCOL_TYPE:
-
-AUTH_PROTOCOL_TYPE
-
-  :index:`\ <single: Data Type; AUTH_PROTOCOL_TYPE>`\
-
-  Description of AUTH_PROTOCOL_TYPE
-
-
-.. _DataTypeAUTH_TYPE:
-
-AUTH_TYPE
-
-  :index:`\ <single: Data Type; AUTH_TYPE>`\
-
-  Description of AUTH_TYPE
-
-
-.. _DataTypeBACKUP_LEVEL:
-
-BACKUP_LEVEL
-
-  :index:`\ <single: Data Type; BACKUP_LEVEL>`\
-
-  Description of BACKUP_LEVEL
-
-
-.. _DataTypeBIT:
-
-BIT
-
-  :index:`\ <single: Data Type; BIT>`\
-
-  Description of BIT
-
-
-.. _DataTypeCOMPRESSION_ALGORITHM:
-
-COMPRESSION_ALGORITHM
-
-  :index:`\ <single: Data Type; COMPRESSION_ALGORITHM>`\
-
-  Description of COMPRESSION_ALGORITHM
-
-
-.. _DataTypeDEVICE:
-
-DEVICE
-
-  :index:`\ <single: Data Type; DEVICE>`\
-
-  Description of DEVICE
-
-
-.. _DataTypeDEVICE_TYPE:
-
-DEVICE_TYPE
-
-  :index:`\ <single: Data Type; DEVICE_TYPE>`\
-
-  Description of DEVICE_TYPE
-
-.. _DataTypeDIRECTORY_LIST:
-
-DIRECTORY_LIST
-
-  :index:`\ <single: Data Type; DIRECTORY_LIST>`\
-
-  Description of DIRECTORY_LIST
-
-.. _DataTypeRESOURCE_LIST:
-
-RESOURCE_LIST
-
-  :index:`\ <single: Data Type; RESOURCE_LIST>`\
-
-  Description of RESOURCE_LIST
-
-.. _DataTypeDIRECTORY_OR_COMMAND:
-
-DIRECTORY_OR_COMMAND
-
-  :index:`\ <single: Data Type; DIRECTORY_OR_COMMAND>`\
-
-  Description of DIRECTORY_OR_COMMAND
-
-
-.. _DataTypeENCRYPTION_CIPHER:
-
-ENCRYPTION_CIPHER
-
-  :index:`\ <single: Data Type; ENCRYPTION_CIPHER>`\
-
-  Description of ENCRYPTION_CIPHER
-
-
-.. _DataTypeINCLUDE_EXCLUDE_ITEM:
-
-INCLUDE_EXCLUDE_ITEM
-
-  :index:`\ <single: Data Type; INCLUDE_EXCLUDE_ITEM>`\
-
-  Description of INCLUDE_EXCLUDE_ITEM
-
-
-.. _DataTypeINT32:
-
-INT32
-
-  :index:`\ <single: Data Type; INT32>`\
-
-  Description of INT32
-
-
-.. _DataTypeIO_DIRECTION:
-
-IO_DIRECTION
-
-  :index:`\ <single: Data Type; IO_DIRECTION>`\
-
-  Description of IO_DIRECTION
-
-
-.. _DataTypeJOB_TYPE:
-
-JOB_TYPE
-
-  :index:`\ <single: Data Type; JOB_TYPE>`\
-
-  Description of JOB_TYPE
-
-
-.. _DataTypeLABEL:
-
-LABEL
-
-  :index:`\ <single: Data Type; LABEL>`\
-
-  Description of LABEL
-
-
-.. _DataTypeMAX_BLOCKSIZE:
-
-MAX_BLOCKSIZE
-
-  :index:`\ <single: Data Type; MAX_BLOCKSIZE>`\
-
-  Description of MAX_BLOCKSIZE
-
-
-.. _DataTypeMD5PASSWORD:
-
-MD5PASSWORD
-
-  :index:`\ <single: Data Type; MD5PASSWORD>`\
-
-  Description of MD5PASSWORD
-
-
-.. _DataTypeMESSAGES:
-
-MESSAGES
-
-  :index:`\ <single: Data Type; MESSAGES>`\
-
-  Description of MESSAGES
-
-
-.. _DataTypeMIGRATION_TYPE:
-
-MIGRATION_TYPE
-
-  :index:`\ <single: Data Type; MIGRATION_TYPE>`\
-
-  Description of MIGRATION_TYPE
-
-
-.. _DataTypePINT16:
-
-PINT16
-
-  :index:`\ <single: Data Type; PINT16>`\
-
-  Description of PINT16
-
-
-.. _DataTypePLUGIN_NAMES:
-
-PLUGIN_NAMES
-
-  :index:`\ <single: Data Type; PLUGIN_NAMES>`\
-
-  Description of PLUGIN_NAMES
-
-
-.. _DataTypePOOLTYPE:
-
-POOLTYPE
-
-  :index:`\ <single: Data Type; POOLTYPE>`\
-
-  Description of POOLTYPE
-
-
-.. _DataTypePROTOCOL_TYPE:
-
-PROTOCOL_TYPE
-
-  :index:`\ <single: Data Type; PROTOCOL_TYPE>`\
-
-  Description of PROTOCOL_TYPE
-
-
-.. _DataTypeREPLACE_OPTION:
-
-REPLACE_OPTION
-
-  :index:`\ <single: Data Type; REPLACE_OPTION>`\
-
-  Description of REPLACE_OPTION
-
-
-.. _DataTypeRUNSCRIPT:
-
-RUNSCRIPT
-
-  :index:`\ <single: Data Type; RUNSCRIPT>`\
-
-  Description of RUNSCRIPT
-
-
-.. _DataTypeRUNSCRIPT_SHORT:
-
-RUNSCRIPT_SHORT
-
-  :index:`\ <single: Data Type; RUNSCRIPT_SHORT>`\
-
-  Description of RUNSCRIPT_SHORT
-
-
-.. _DataTypeSCHEDULE_RUN_COMMAND:
-
-SCHEDULE_RUN_COMMAND
-
-  :index:`\ <single: Data Type; SCHEDULE_RUN_COMMAND>`\
-
-  Description of SCHEDULE_RUN_COMMAND
-
-
-.. _DataTypeSIZE32:
-
-SIZE32
-
-  :index:`\ <single: Data Type; SIZE32>`\
-
-  Description of SIZE32
-
-
-.. _DataTypeSTRINGLIST:
-
-STRINGLIST
-
-  :index:`\ <single: Data Type; STRINGLIST>`\
-
-  Description of STRINGLIST
-
-
 
 
 .. _VarsChapter:
 
 Variable Expansion
-^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~
 
 Depending on the directive, Bareos will expand to the following variables:
 
 .. _section-VariableExpansionVolumeLabels:
 
 Variable Expansion on Volume Labels
-'''''''''''''''''''''''''''''''''''
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When labeling a new volume (see :config:option:`dir/pool/LabelFormat`\ ), following Bareos internal variables can be used:
 
@@ -1170,7 +1094,7 @@ Additional, normal environment variables can be used, e.g. **$HOME** oder **$HOS
 With the exception of Job specific variables, you can trigger the variable expansion by using the :ref:`var command <var>`.
 
 Variable Expansion in Autochanger Commands
-''''''''''''''''''''''''''''''''''''''''''
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 At the configuration of autochanger commands the following variables can be used:
 
@@ -1188,7 +1112,7 @@ At the configuration of autochanger commands the following variables can be used
 ============= ===================
 
 Variable Expansion in Mount Commands
-''''''''''''''''''''''''''''''''''''
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 At the configuration of mount commands the following variables can be used:
 
@@ -1202,12 +1126,12 @@ At the configuration of mount commands the following variables can be used:
 ============= ===================
 
 Variable Expansion on RunScripts
-''''''''''''''''''''''''''''''''
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Variable Expansion on RunScripts is described at :config:option:`dir/job/RunScript`\ .
 
 Variable Expansion in Mail and Operator Commands
-''''''''''''''''''''''''''''''''''''''''''''''''
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 At the configuration of mail and operator commands the following variables can be used:
 

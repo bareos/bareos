@@ -545,7 +545,7 @@ After configuring the server-side you can either transfer the necessary configur
 Option 1: Copy the director resource from the Bareos Director to the Client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Assuming your client has the DNS entry :strong:`client2.example.com` and has been added to |dir| as :config:option:`bareos-dir/client = client2-fd`\ :
+Assuming your client has the DNS entry :strong:`client2.example.com` and has been added to |dir| as :config:option:`dir/client = client2-fd`\ :
 
 .. code-block:: shell-session
 

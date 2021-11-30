@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +32,8 @@ from docutils import nodes
 from pprint import pformat
 import re
 
+# import logging
+
 #
 # modifies the default rule for rendering
 # .. config::option:
@@ -57,7 +59,7 @@ import re
 # index:  Configuration Directive; {directive} ({daemon}->{resource})
 
 # TODO
-# currently only adapted option. section must still be adapted.
+# :config:section: is not fully implemented.
 
 
 def uppercaseFirstLetter(text):
@@ -67,6 +69,16 @@ def uppercaseFirstLetter(text):
             resulttext = text[0].upper() + text[1:]
             return resulttext
     return text
+
+
+def convertToCamelCase(inputvalue):
+    # Cover corner cases where multiple uppercase letters are correct.
+    if inputvalue == "AutoXFlateOnReplication":
+        return inputvalue
+    cc = ""
+    for i in re.split(r"([A-Z]+[a-z0-9]*)", inputvalue):
+        cc += i.capitalize()
+    return cc.replace(" ", "")
 
 
 def convertCamelCase2Spaces(valueCC):
@@ -125,28 +137,29 @@ def get_config_directive(text):
     logger = logging.getLogger(__name__)
 
     templates = {
-        1: {"shortid": u"{Daemon}", "display": u"{Daemon}"},
+        1: {"shortid": u"{Daemon}", "signature": u"{Dmn}", "display": u"{Daemon}"},
         2: {
             "shortid": u"{Resource}",
+            "signature": u"{dmn}/{resource}",
             # Resource-Type
             "display": u"{Resource} ({Dmn})",
             # Resource-Name
             "displayWithValue": u"{value} ({Dmn}->{Resource})",
+            "internaltargettemplate": u"{dmn}/{resource}/Name",
+            # "internaltargettemplate": u"{Component}Resource{Resource}",
         },
         3: {
             "shortid": u"{Directive}",
+            "signature": u"{dmn}/{resource}/{CamelCaseDirective}",
             "display": u"{Directive} ({Dmn}->{Resource})",
             "displayWithValue": u"{Directive} ({Dmn}->{Resource}) = {value}",
             "indextemplate": u"Configuration Directive; {Directive} ({Dmn}->{Resource})",
             "internaltargettemplate": u"{dmn}/{resource}/{CamelCaseDirective}",
-            # Latex: directiveDirJobCancel%20Lower%20Level%20Duplicates
-            # The follow targettemplate will create identical anchors as Latex,
-            # but as the base URL is likly it be different, it does not help (and still looks ugly).
-            # targettemplate = u'directive{dmn}{resource}{directive}'
             "targettemplate": u"config-{Dmn}_{Resource}_{CamelCaseDirective}",
         },
         4: {
             "shortid": u"{Sub1}",
+            "signature": u"{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}",
             "display": u"{Sub1} ({Dmn}->{Resource}->{Directive})",
             "displayWithValue": u"{Sub1} ({Dmn}->{Resource}->{Directive}) = {value}",
             "indextemplate": u"Configuration Directive; {Sub1} ({Dmn}->{Resource}->{Directive})",
@@ -155,6 +168,7 @@ def get_config_directive(text):
         },
         5: {
             "shortid": u"{Sub2}",
+            "signature": u"{dmn}/{resource}/{CamelCaseDirective}/{CamelCaseSub1}/{CamelCaseSub2}",
             "display": u"{Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1})",
             "displayWithValue": u"{Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1}) = {value}",
             "indextemplate": u"Configuration Directive; {Sub2} ({Dmn}->{Resource}->{Directive}->{Sub1})",
@@ -163,7 +177,7 @@ def get_config_directive(text):
         },
     }
 
-    result = {"signature": text}
+    result = {}
 
     try:
         key, value = text.split("=", 1)
@@ -177,25 +191,30 @@ def get_config_directive(text):
 
     if components >= 1:
         daemon = inputComponent[0].lower()
-        if daemon == "director" or daemon == "dir":
+        if daemon == "director" or daemon == "dir" or daemon == "bareos-dir":
             result["Daemon"] = "Director"
+            result["Component"] = "Director"
             result["dmn"] = "dir"
             result["Dmn"] = "Dir"
         elif daemon == "storage daemon" or daemon == "storage" or daemon == "sd":
             result["Daemon"] = "Storage Daemon"
+            result["Component"] = "Storage"
             result["dmn"] = "sd"
             result["Dmn"] = "Sd"
         elif daemon == "file daemon" or daemon == "file" or daemon == "fd":
             result["Daemon"] = "File Daemon"
+            result["Component"] = "Client"
             result["dmn"] = "fd"
             result["Dmn"] = "Fd"
         elif daemon == "bconsole" or daemon == "console":
             result["Daemon"] = "Console"
+            result["Component"] = "Console"
             result["dmn"] = "console"
             result["Dmn"] = "Console"
         else:
             # TODO: raise
             result["Daemon"] = "UNKNOWN"
+            result["Component"] = "UNKNOWN"
             result["dmn"] = "UNKNOWN"
             result["Dmn"] = "UNKNOWN"
 
@@ -203,37 +222,39 @@ def get_config_directive(text):
         result["resource"] = inputComponent[1].replace(" ", "").lower()
         result["Resource"] = inputComponent[1].replace(" ", "").capitalize()
 
-    if components >= 3:
-        # input_directive should be without spaces.
-        # However, we make sure, by removing all spaces.
-        result["CamelCaseDirective"] = uppercaseFirstLetter(
-            inputComponent[2].replace(" ", "")
-        )
-        result["Directive"] = convertCamelCase2Spaces(result["CamelCaseDirective"])
+        if components >= 3:
+            # input_directive should be without spaces.
+            # However, we make sure, by removing all spaces.
+            result["CamelCaseDirective"] = convertToCamelCase(inputComponent[2])
+            result["Directive"] = convertCamelCase2Spaces(result["CamelCaseDirective"])
 
-        if components >= 4:
-            # e.g. fileset include/exclude directive
-            # dir/fileset/include/File
-            result["CamelCaseSub1"] = uppercaseFirstLetter(
-                inputComponent[3].replace(" ", "")
+            if components >= 4:
+                # e.g. fileset include/exclude directive
+                # dir/fileset/include/File
+                result["CamelCaseSub1"] = uppercaseFirstLetter(
+                    inputComponent[3].replace(" ", "")
+                )
+                result["Sub1"] = convertCamelCase2Spaces(result["CamelCaseSub1"])
+
+            if components >= 5:
+                # e.g. fileset include options
+                # dir/fileset/include/options/basejob
+                result["CamelCaseSub2"] = uppercaseFirstLetter(
+                    inputComponent[4].replace(" ", "")
+                )
+                result["Sub2"] = convertCamelCase2Spaces(result["CamelCaseSub2"])
+
+            result["indexentry"] = templates[components]["indextemplate"].format(
+                **result
             )
-            result["Sub1"] = convertCamelCase2Spaces(result["CamelCaseSub1"])
-
-        if components >= 5:
-            # e.g. fileset include options
-            # dir/fileset/include/options/basejob
-            result["CamelCaseSub2"] = uppercaseFirstLetter(
-                inputComponent[4].replace(" ", "")
-            )
-            result["Sub2"] = convertCamelCase2Spaces(result["CamelCaseSub2"])
-
-        result["indexentry"] = templates[components]["indextemplate"].format(**result)
-        result["target"] = templates[components]["targettemplate"].format(**result)
+            result["target"] = templates[components]["targettemplate"].format(**result)
         result["internaltarget"] = templates[components][
             "internaltargettemplate"
         ].format(**result)
 
     result["shortid"] = templates[components]["shortid"].format(**result)
+    result["signature"] = templates[components]["signature"].format(**result)
+
     if "value" in result:
         result["displayname"] = templates[components]["displayWithValue"].format(
             **result
@@ -244,6 +265,80 @@ def get_config_directive(text):
     # logger.debug('[bareos] ' + pformat(result))
 
     return result
+
+
+class ConfigDatatype(ObjectDescription):
+
+    parse_node = None
+    has_arguments = True
+
+    doc_field_types = [
+        Field("values", label="Values", has_arg=False, names=("values",)),
+        Field("multi", label="Multiple", has_arg=False, names=("multi",)),
+        Field("quotes", label="Quotes", has_arg=False, names=("quotes",)),
+        Field("see", label="See also", has_arg=False, names=("see",)),
+    ]
+
+    def handle_signature(self, signature, signode):
+        logger = logging.getLogger(__name__)
+        name = signature.upper()
+        signode.clear()
+        signode += addnodes.desc_name(signature, name)
+        # logger.debug('handle_signature({}), name={}'.format(sig, name))
+        return name
+
+    def add_target_and_index(self, name, signature, signode):
+        """
+        Usage:
+
+        .. config:datatype:: ACL
+
+           :quotes: yes
+
+           Multiline description ...
+
+        To refer to this description, use
+        :config:datatype:`ACL`.
+        """
+
+        uppername = signature.upper()
+        lowername = signature.lower()
+        targetname = u"datatype-{}".format(lowername)
+        signode["ids"].append(targetname)
+        self.state.document.note_explicit_target(signode)
+
+        # Generic index entries
+        self.indexnode["entries"].append(
+            ("single", u"Data Type; {}".format(uppername), targetname, targetname, None)
+        )
+
+        self.env.domaindata["config"]["objects"][self.objtype, lowername] = (
+            self.env.docname,
+            targetname,
+        )
+
+
+class ConfigDatatypeXRefRole(XRefRole):
+    """
+    Cross-referencing role for configuration options (adds an index entry).
+    """
+
+    def __init__(self, *args, **kwargs):
+        # generate warning, when reference target is not found.
+        super(ConfigDatatypeXRefRole, self).__init__(
+            warn_dangling=True, *args, **kwargs
+        )
+
+    def process_link(self, env, refnode, has_explicit_title, title, target):
+
+        logger = logging.getLogger(__name__)
+
+        if has_explicit_title:
+            return title, target
+        # logger.debug('process_link, title={}, target={}'.format(title, target))
+        upper = title.upper()
+        lower = title.lower()
+        return upper, lower
 
 
 class ConfigOption(ObjectDescription):
@@ -261,12 +356,13 @@ class ConfigOption(ObjectDescription):
     ]
 
     def handle_signature(self, sig, signode):
+        logger = logging.getLogger(__name__)
         directive = get_config_directive(sig)
         signode.clear()
         # only show the directive (not daemon and resource type)
         signode += addnodes.desc_name(sig, directive["shortid"])
-        # normalize whitespace like XRefRole does
-        name = ws_re.sub("", sig)
+        name = directive["signature"]
+        # logger.debug('handle_signature({}), name={}'.format(sig, name))
         return name
 
     def add_target_and_index(self, name, sig, signode):
@@ -282,7 +378,8 @@ class ConfigOption(ObjectDescription):
 
            Multiline description ...
 
-        The first argument specifies the directive and must be givenin following syntax:
+        The first argument specifies the directive
+        and must be given in following syntax:
         config::option:: <dir|sd|fd|console>/<resourcetype_lower_case>/<DirectiveInCamelCase>
 
         doc_field_types are only written when they should be displayed:
@@ -299,6 +396,7 @@ class ConfigOption(ObjectDescription):
 
         directive = get_config_directive(sig)
 
+        sig = directive["signature"]
         targetname = directive["target"]
         signode["ids"].append(targetname)
         self.state.document.note_explicit_target(signode)
@@ -320,6 +418,10 @@ class ConfigOptionXRefRole(XRefRole):
     """
     Cross-referencing role for configuration options (adds an index entry).
     """
+
+    def __init__(self, *args, **kwargs):
+        # generate warning, when reference target is not found.
+        super(ConfigOptionXRefRole, self).__init__(warn_dangling=True, *args, **kwargs)
 
     def result_nodes(self, document, env, node, is_ref):
         logger = logging.getLogger(__name__)
@@ -351,6 +453,7 @@ class ConfigOptionXRefRole(XRefRole):
         logger = logging.getLogger(__name__)
 
         if has_explicit_title:
+            # logger.debug('process_link, explicit_title: ' + pformat(directive))
             return title, target
 
         directive = get_config_directive(title)
@@ -358,8 +461,10 @@ class ConfigOptionXRefRole(XRefRole):
         # logger.debug('process_link: ' + pformat(directive))
 
         if "internaltarget" in directive:
+            # logger.debug('process_link, internaltarget='+directive["internaltarget"])
             return directive["displayname"], directive["internaltarget"]
         else:
+            # logger.debug('process_link, target=' + target)
             return directive["displayname"], target
 
 
@@ -423,11 +528,20 @@ class ConfigFileDomain(Domain):
     label = "Config"
 
     object_types = {
+        "datatype": ObjType("config datatype", "datatype"),
         "option": ObjType("config option", "option"),
         "section": ObjType("config section", "section"),
     }
-    directives = {"option": ConfigOption, "section": ConfigSection}
-    roles = {"option": ConfigOptionXRefRole(), "section": ConfigSectionXRefRole()}
+    directives = {
+        "datatype": ConfigDatatype,
+        "option": ConfigOption,
+        "section": ConfigSection,
+    }
+    roles = {
+        "datatype": ConfigDatatypeXRefRole(),
+        "option": ConfigOptionXRefRole(),
+        "section": ConfigSectionXRefRole(),
+    }
 
     initial_data = {"objects": {}}  # (type, name) -> docname, labelid
 
@@ -440,14 +554,22 @@ class ConfigFileDomain(Domain):
             del self.data["objects"][key]
 
     def resolve_xref(self, env, fromdocname, builder, typ, target, node, contnode):
+        logger = logging.getLogger(__name__)
         docname, labelid = self.data["objects"].get((typ, target), ("", ""))
+        # logger.debug("resolve_xref 1: typ={}, target={}, docname={}, labelid={}".format(typ, target, docname, labelid))
         if not docname:
+            # logger.debug("resolve_xref: None")
             return None
         else:
-            return make_refnode(builder, fromdocname, docname, labelid, contnode)
+            # logger.debug("resolve_xref: docname={}, labelid={}".format(docname, labelid))
+            ref = make_refnode(builder, fromdocname, docname, labelid, contnode)
+            # logger.debug("resolve_xref ref: " + str(ref))
+            return ref
 
     def get_objects(self):
+        logger = logging.getLogger(__name__)
         for (type, name), info in self.data["objects"].items():
+            # logger.debug("get_objects(name={}, dispname={}, type={}, docname={}, anchor={})".format(name, name, type, info[0], info[1]))
             yield (
                 name,
                 name,
@@ -573,6 +695,10 @@ def sinceVersion():
 
 
 def setup(app):
+    # logging.basicConfig(filename="/tmp/build/sphinx-bareos.log", level=logging.DEBUG)
+    # logger = logging.getLogger(__name__)
+    # logger.info("start")
+
     app.add_domain(ConfigFileDomain)
     app.add_role("bcommand", bcommand())
     app.add_role("os", os())
