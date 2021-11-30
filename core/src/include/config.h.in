@@ -463,6 +463,9 @@ extern char win_os[];
 // Define to 1 if you have the <sys/capability.h> header file
 #cmakedefine HAVE_SYS_CAPABILITY_H @HAVE_SYS_CAPABILITY_H@
 
+// Define if you want to use cap_* functions
+#cmakedefine ENABLE_CAPABILITY
+
 // Define to 1 if you have the <sys/ea.h> header file
 #cmakedefine HAVE_SYS_EA_H @HAVE_SYS_EA_H@
 

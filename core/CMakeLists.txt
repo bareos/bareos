@@ -627,14 +627,9 @@ set(have_crypto "${HAVE_CRYPTO}")
 set(have_openssl "${HAVE_OPENSSL}")
 set(have_zlib "${ZLIB_FOUND}")
 
-set(HAVE_CAPABILITY
-    "${HAVE_CAPABILITY_H}"
-    CACHE BOOL "compile with capability support"
+option(ENABLE_CAPABILITY "Enable keep readall capability in filedaemon"
+       "${HAVE_CAPABILITY_H}"
 )
-if("${HAVE_CAPABILITY}")
-  set(CAPABILITY_LIBS cap)
-  message(STATUS "CAPABILITY set")
-endif()
 
 try_compile(
   HAVE_IS_TRIVIALLY_COPYABLE ${CMAKE_BINARY_DIR}/compile_tests
