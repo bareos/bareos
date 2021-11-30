@@ -143,8 +143,6 @@ Proceed with the following steps:
 
 -  Adapt configs (not complete)
 
-   -  With bacula the default setting for pid files was :file:`/var/run`, which may not work if the bareos-director runs as user bareos. Best way is to comment out the entry :command:`Pid Directory = "/var/run"` in your director config. Bareos will set a working default value (supposed to be :file:`/var/lib/bareos/`)
-
 PostgreSQL
 ^^^^^^^^^^
 

@@ -51,6 +51,7 @@ extern bool PrintMessage(void* sock, const char* fmt, ...);
 static bool CheckResources();
 
 static bool foreground = false;
+static char* pidfile_path = nullptr;
 
 static void usage()
 {
@@ -66,6 +67,9 @@ static void usage()
         "        -g <group>  run as group <group>\n"
         "        -k          keep readall capabilities\n"
         "        -m          print kaboom output (for debugging)\n"
+#if !defined(HAVE_WIN32)
+        "        -p <file>   full path to pidfile (default: none)\n"
+#endif
         "        -r          restore only mode\n"
         "        -s          no signals (for debugging)\n"
         "        -t          test configuration file and exit\n"
@@ -97,8 +101,8 @@ int main(int argc, char* argv[])
   bool export_config = false;
   bool export_config_schema = false;
   bool keep_readall_caps = false;
-  char* uid = NULL;
-  char* gid = NULL;
+  char* uid = nullptr;
+  char* gid = nullptr;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -107,17 +111,23 @@ int main(int argc, char* argv[])
 
   InitStackDump();
   MyNameIs(argc, argv, "bareos-fd");
-  InitMsg(NULL, NULL);
-  daemon_start_time = time(NULL);
+  InitMsg(nullptr, nullptr);
+  daemon_start_time = time(nullptr);
 
-  while ((ch = getopt(argc, argv, "bc:d:fg:kmrstu:vx:z:?")) != -1) {
+#if HAVE_WIN32
+  std::string allowed_parameters("bc:d:fg:kmrstu:vx:z:?");
+#else
+  std::string allowed_parameters("bc:d:fg:kmrp:stu:vx:z:?");
+#endif
+
+  while ((ch = getopt(argc, argv, allowed_parameters.c_str())) != -1) {
     switch (ch) {
       case 'b':
         backup_only_mode = true;
         break;
 
       case 'c': /* configuration file */
-        if (configfile != NULL) { free(configfile); }
+        if (configfile != nullptr) { free(configfile); }
         configfile = strdup(optarg);
         break;
 
@@ -144,6 +154,10 @@ int main(int argc, char* argv[])
 
       case 'm': /* print kaboom output */
         prt_kaboom = true;
+        break;
+
+      case 'p':
+        pidfile_path = strdup(optarg);
         break;
 
       case 'r':
@@ -189,8 +203,16 @@ int main(int argc, char* argv[])
   argc -= optind;
   argv += optind;
 
+  if (foreground && pidfile_path) {
+    Emsg0(M_WARNING, 0,
+          "Options -p and -f cannot be used together. You cannot create a "
+          "pid file when in foreground mode.\n");
+
+    exit(0);
+  }
+
   if (argc) {
-    if (configfile != NULL) free(configfile);
+    if (configfile != nullptr) free(configfile);
     configfile = strdup(*argv);
     argc--;
     argv++;
@@ -200,6 +222,13 @@ int main(int argc, char* argv[])
   if (!uid && keep_readall_caps) {
     Emsg0(M_ERROR_TERM, 0, _("-k option has no meaning without -u option.\n"));
   }
+
+  int pidfile_fd = -1;
+#if !defined(HAVE_WIN32)
+  if (!foreground && !test_config && pidfile_path) {
+    pidfile_fd = CreatePidFile("bareos-fd", pidfile_path);
+  }
+#endif
 
   // See if we want to drop privs.
   if (geteuid() == 0) { drop(uid, gid, keep_readall_caps); }
@@ -217,30 +246,32 @@ int main(int argc, char* argv[])
     my_config = InitFdConfig(configfile, M_ERROR_TERM);
     PrintConfigSchemaJson(buffer);
     printf("%s\n", buffer.c_str());
-    goto bail_out;
+
+    exit(0);
   }
 
   my_config = InitFdConfig(configfile, M_ERROR_TERM);
   my_config->ParseConfig();
 
   if (export_config) {
-    my_config->DumpResources(PrintMessage, NULL);
-    goto bail_out;
-  }
+    my_config->DumpResources(PrintMessage, nullptr);
 
-  if (!foreground && !test_config) {
-    daemon_start();
-    InitStackDump(); /* set new pid */
-  }
-
-  if (InitCrypto() != 0) {
-    Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
-    TerminateFiled(1);
+    exit(0);
   }
 
   if (!CheckResources()) {
     Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"),
           my_config->get_base_config_path().c_str());
+    TerminateFiled(1);
+  }
+
+  if (!foreground && !test_config) {
+    daemon_start("bareos-fd", pidfile_fd, pidfile_path);
+    InitStackDump(); /* set new pid */
+  }
+
+  if (InitCrypto() != 0) {
+    Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
     TerminateFiled(1);
   }
 
@@ -266,8 +297,6 @@ int main(int argc, char* argv[])
   }
 
   /* Maximum 1 daemon at a time */
-  CreatePidFile(me->pid_directory, "bareos-fd",
-                GetFirstPortHostOrder(me->FDaddrs));
   ReadStateFile(me->working_directory, "bareos-fd",
                 GetFirstPortHostOrder(me->FDaddrs));
   LoadFdPlugins(me->plugin_directory, me->plugin_names);
@@ -289,7 +318,6 @@ int main(int argc, char* argv[])
 
   TerminateFiled(0);
 
-bail_out:
   exit(0);
 }
 
@@ -314,15 +342,14 @@ void TerminateFiled(int sig)
   FlushMntentCache();
   WriteStateFile(me->working_directory, "bareos-fd",
                  GetFirstPortHostOrder(me->FDaddrs));
-  DeletePidFile(me->pid_directory, "bareos-fd",
-                GetFirstPortHostOrder(me->FDaddrs));
+  DeletePidFile(pidfile_path);
 
-  if (configfile != NULL) { free(configfile); }
+  if (configfile != nullptr) { free(configfile); }
 
   if (debug_level > 0) { PrintMemoryPoolStats(); }
   if (my_config) {
     delete my_config;
-    my_config = NULL;
+    my_config = nullptr;
   }
   TermMsg();
   CleanupCrypto();
@@ -343,7 +370,7 @@ static bool CheckResources()
 
   LockRes(my_config);
 
-  me = (ClientResource*)my_config->GetNextRes(R_CLIENT, NULL);
+  me = (ClientResource*)my_config->GetNextRes(R_CLIENT, nullptr);
   my_config->own_resource_ = me;
   if (!me) {
     Emsg1(M_FATAL, 0,
@@ -357,14 +384,14 @@ static bool CheckResources()
       me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
     }
 
-    if (my_config->GetNextRes(R_CLIENT, (BareosResource*)me) != NULL) {
+    if (my_config->GetNextRes(R_CLIENT, (BareosResource*)me) != nullptr) {
       Emsg1(M_FATAL, 0, _("Only one Client resource permitted in %s\n"),
             configfile.c_str());
       OK = false;
     }
-    MyNameIs(0, NULL, me->resource_name_);
+    MyNameIs(0, nullptr, me->resource_name_);
     if (!me->messages) {
-      me->messages = (MessagesResource*)my_config->GetNextRes(R_MSGS, NULL);
+      me->messages = (MessagesResource*)my_config->GetNextRes(R_MSGS, nullptr);
       if (!me->messages) {
         Emsg1(M_FATAL, 0, _("No Messages resource defined in %s\n"),
               configfile.c_str());
@@ -373,7 +400,7 @@ static bool CheckResources()
     }
     if (me->pki_encrypt || me->pki_sign) {
 #ifndef HAVE_CRYPTO
-      Jmsg(NULL, M_FATAL, 0,
+      Jmsg(nullptr, M_FATAL, 0,
            _("PKI encryption/signing enabled but not compiled into Bareos.\n"));
       OK = false;
 #endif
@@ -408,8 +435,8 @@ static bool CheckResources()
           OK = false;
         }
 
-        if (!CryptoKeypairLoadKey(me->pki_keypair, me->pki_keypair_file, NULL,
-                                  NULL)) {
+        if (!CryptoKeypairLoadKey(me->pki_keypair, me->pki_keypair_file,
+                                  nullptr, nullptr)) {
           Emsg2(M_FATAL, 0,
                 _("Failed to load private key for File"
                   " daemon \"%s\" in %s.\n"),
@@ -439,7 +466,8 @@ static bool CheckResources()
 
               /* Attempt to load a private key, if available */
               if (CryptoKeypairHasKey(filepath)) {
-                if (!CryptoKeypairLoadKey(keypair, filepath, NULL, NULL)) {
+                if (!CryptoKeypairLoadKey(keypair, filepath, nullptr,
+                                          nullptr)) {
                   Emsg3(M_FATAL, 0,
                         _("Failed to load private key from file %s for File"
                           " daemon \"%s\" in %s.\n"),
@@ -497,7 +525,7 @@ static bool CheckResources()
 
   /* Verify that a director record exists */
   LockRes(my_config);
-  director = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, NULL);
+  director = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
   UnlockRes(my_config);
   if (!director) {
     Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"),
@@ -508,8 +536,8 @@ static bool CheckResources()
   UnlockRes(my_config);
 
   if (OK) {
-    CloseMsg(NULL);              /* close temp message handler */
-    InitMsg(NULL, me->messages); /* open user specified message handler */
+    CloseMsg(nullptr);              /* close temp message handler */
+    InitMsg(nullptr, me->messages); /* open user specified message handler */
     if (me->secure_erase_cmdline) {
       SetSecureEraseCmdline(me->secure_erase_cmdline);
     }

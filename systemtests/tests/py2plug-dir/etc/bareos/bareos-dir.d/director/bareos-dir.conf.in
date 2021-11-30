@@ -22,6 +22,5 @@ Director {                            # define myself
   Plugin Directory = "@DIR_PLUGINS_DIR_TO_TEST@"
   Plugin Names = "@python_module_name@"
   Working Directory =  "@working_dir@"
-  Pid Directory =  "@piddir@"
   DirPort = @dir_port@
 }

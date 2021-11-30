@@ -21,6 +21,8 @@
 #ifndef BAREOS_LIB_BSYS_H_
 #define BAREOS_LIB_BSYS_H_
 
+#include <sys/types.h>
+
 char* bstrinlinecpy(char* dest, const char* src);
 char* bstrncpy(char* dest, const char* src, int maxlen);
 char* bstrncpy(char* dest, PoolMem& src, int maxlen);
@@ -34,8 +36,11 @@ int cstrlen(const char* str);
 int Bsnprintf(char* str, int32_t size, const char* format, ...);
 int Bvsnprintf(char* str, int32_t size, const char* format, va_list ap);
 int PoolSprintf(char* pool_buf, const char* fmt, ...);
-void CreatePidFile(char* dir, const char* progname, int port);
-int DeletePidFile(char* dir, const char* progname, int port);
+int CreatePidFile(const char* progname, const char* pidfile_path);
+void WritePidFile(int pidfile_fd,
+                  const char* pidfile_path,
+                  const char* progname);
+int DeletePidFile(const char* pidfile_path);
 void drop(char* uid, char* gid, bool keep_readall_caps);
 int Bmicrosleep(int32_t sec, int32_t usec);
 char* bfgets(char* s, int size, FILE* fd);

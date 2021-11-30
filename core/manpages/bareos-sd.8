@@ -22,7 +22,7 @@ network backup system and a tape drive/autochanger or filesystem where
 the backups will be stored.
 .SH OPTIONS
 .TP
-.BI \-c\   path
+.BI \-c\  path
 Specify the configuration file or directory to use.
 .TP
 .BI \-d\  nn
@@ -37,11 +37,14 @@ Run in foreground (for debugging).
 .BI \-g\  group
 Set the group/gid to run as.
 .TP
-.BI \-p
-Proceed in spite of I/O errors
+.BI \-i
+Ignore I/O errors.
 .TP
 .BI \-m
 Print kaboom output (for debugging)
+.TP
+.BI \-p\  path
+Specify the full path to the pidfile.
 .TP
 .BI \-s
 No signals (for debugging).

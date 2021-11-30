@@ -65,6 +65,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fixed crash on bconsole when using autcomplete with tab [PR #969]
 - [Issue #1374] Include zero-file incremental backups in always-incremental consolidation [PR #995]
 - fix crash in "status scheduler" command when job->client is unset [PR #965]
+- [Issue #847]: fix for CVE-2017-14610 PID files that could be exploited on certain systems [PR #928]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
@@ -151,6 +152,16 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: optimize bvfs update cache calls [PR #999]
 
 ### Deprecated
+- Deprecated directives [PR #928]
+  - Director
+    - Director resource
+      - `Pid Directory`
+  - Storage Daemon
+    - Storage resource
+      - `Pid Directory`
+  - File Daemon
+    - Client resource
+      - `Pid Directory`
 
 ### Removed
 - Remove regression tests (``regress/`` directory). Tests still relevant tests have been migrated into systemtests [PR #780]
@@ -193,12 +204,14 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
       - `Sub Sys Directory`
 
 ### Security
+- PID files are now created before dropping privileges and before the parent process exits. [PR #928]
 
 ### Documentation
 - Restore error "could not hard link" documented: what is the cause and how it can be avoided or solved. [PR #759]
 - Developer guide: add small chapter about c++ exceptions. [PR #777]
 
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
+[Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
 [Issue #971]: https://bugs.bareos.org/view.php?id=971
 [Issue #1020]: https://bugs.bareos.org/view.php?id=1020
@@ -297,6 +310,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #924]: https://github.com/bareos/bareos/pull/924
 [PR #926]: https://github.com/bareos/bareos/pull/926
 [PR #927]: https://github.com/bareos/bareos/pull/927
+[PR #928]: https://github.com/bareos/bareos/pull/928
 [PR #936]: https://github.com/bareos/bareos/pull/936
 [PR #937]: https://github.com/bareos/bareos/pull/937
 [PR #938]: https://github.com/bareos/bareos/pull/938

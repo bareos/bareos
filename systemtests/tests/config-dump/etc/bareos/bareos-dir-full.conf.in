@@ -10,7 +10,6 @@ Director {
   }
   QueryFile = "@scriptdir@/query.sql"
   WorkingDirectory = "@working_dir@"
-  PidDirectory = "@piddir@"
   PluginDirectory = "@tmpdir@"
   # PluginNames =
   ScriptsDirectory = "@tmpdir@"

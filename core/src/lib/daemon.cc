@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,7 +38,10 @@
 
 #if defined(HAVE_WIN32)
 
-void daemon_start() { return; }
+void daemon_start(const char* progname, int pidfile_fd, char* pidfile_path)
+{
+  return;
+}
 
 #else  // !HAVE_WIN32
 
@@ -61,22 +64,7 @@ static void SetupStdFileDescriptors()
 }
 #  endif  // DEVELOPER
 
-static void CloseNonStdFileDescriptors()
-{
-  constexpr int min_fd_to_be_closed = STDERR_FILENO + 1;
-
-#  if defined(HAVE_FCNTL_F_CLOSEM)
-  fcntl(min_fd_to_be_closed, F_CLOSEM);
-#  elif defined(HAVE_CLOSEFROM)
-  closefrom(min_fd_to_be_closed);
-#  else
-  for (int i = sysconf(_SC_OPEN_MAX) - 1; i >= min_fd_to_be_closed; i--) {
-    close(i);
-  }
-#  endif
-}
-
-void daemon_start()
+void daemon_start(const char* progname, int pidfile_fd, char* pidfile_path)
 {
   Dmsg0(900, "Enter daemon_start\n");
 
@@ -84,8 +72,10 @@ void daemon_start()
     case 0:
       setsid();
       umask(umask(0) | S_IWGRP | S_IROTH | S_IWOTH);
+
+      if (pidfile_path) { WritePidFile(pidfile_fd, pidfile_path, progname); }
       SetupStdFileDescriptors();
-      CloseNonStdFileDescriptors();
+
       break;
     case -1: {
       BErrNo be;
@@ -99,4 +89,4 @@ void daemon_start()
 
   Dmsg0(900, "Exit daemon_start\n");
 }
-#endif /* defined(HAVE_WIN32) */
+#endif    /* defined(HAVE_WIN32) */

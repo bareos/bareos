@@ -124,7 +124,7 @@ static ResourceItem dir_items[] = {
   { "DirSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir,  DIRsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   { "QueryFile", CFG_TYPE_DIR, ITEM(res_dir, query_file), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_dir, working_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_WORKINGDIR, NULL, NULL },
-  { "PidDirectory", CFG_TYPE_DIR, ITEM(res_dir, pid_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, PATH_BAREOS_PIDDIR, NULL, NULL },
+  { "PidDirectory", CFG_TYPE_DIR, ITEM(res_dir, pid_directory), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
   { "PluginDirectory", CFG_TYPE_DIR, ITEM(res_dir, plugin_directory), 0, 0, NULL,
      "14.2.0-", "Plugins are loaded from this directory. To load only specific plugins, use 'Plugin Names'." },
   { "PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_dir, plugin_names), 0, 0, NULL,

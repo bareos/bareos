@@ -39,6 +39,7 @@
 
 #include <fstream>
 #include <type_traits>
+#include <sys/file.h>
 
 static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t timer = PTHREAD_COND_INITIALIZER;
@@ -417,92 +418,145 @@ int b_strerror(int errnum, char* buf, size_t bufsiz)
 }
 
 #if !defined(HAVE_WIN32)
-static bool del_pid_file_ok = false;
-#endif
-
-// Create a standard "Unix" pid file.
-void CreatePidFile(char* dir, const char* progname, int port)
+static void LockPidFile(const char* progname,
+                        int pidfile_fd,
+                        const char* pidfile_path)
 {
-#if !defined(HAVE_WIN32)
-  int pidfd = -1;
-  int len;
-  int oldpid;
-  char pidbuf[20];
-  POOLMEM* fname = GetPoolMemory(PM_FNAME);
-  struct stat statp;
+  struct flock fl;
 
-  Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
-  if (stat(fname, &statp) == 0) {
-    /* File exists, see what we have */
-    *pidbuf = 0;
-    if ((pidfd = open(fname, O_RDONLY | O_BINARY, 0)) < 0
-        || read(pidfd, &pidbuf, sizeof(pidbuf)) < 0
-        || sscanf(pidbuf, "%d", &oldpid) != 1) {
+  fl.l_type = F_WRLCK;
+  fl.l_whence = SEEK_SET;
+  fl.l_start = 0;
+  fl.l_len = 0;
+
+  if (fcntl(pidfile_fd, F_SETLK, &fl)) {
+    if (errno == EAGAIN || errno == EACCES) {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, _("Cannot open pid file. %s ERR=%s\n"), fname,
-            be.bstrerror());
+      Emsg2(M_ERROR_TERM, 0,
+            _("PID file '%s' is locked; probably '%s' is already running. "),
+            pidfile_path, progname);
+
     } else {
-      /*
-       * Some OSes (IRIX) don't bother to clean out the old pid files after a
-       * crash, and since they use a deterministic algorithm for assigning PIDs,
-       * we can have pid conflicts with the old PID file after a reboot. The
-       * intent the following code is to check if the oldpid read from the pid
-       * file is the same as the currently executing process's pid,
-       * and if oldpid == getpid(), skip the attempt to
-       * kill(oldpid,0), since the attempt is guaranteed to succeed,
-       * but the success won't actually mean that there is an
-       * another BAREOS process already running.
-       * For more details see bug #797.
-       */
-      if ((oldpid != (int)getpid())
-          && (kill(oldpid, 0) != -1 || errno != ESRCH)) {
-        Emsg3(M_ERROR_TERM, 0,
-              _("%s is already running. pid=%d\nCheck file %s\n"), progname,
-              oldpid, fname);
-      }
-    }
-
-    if (pidfd >= 0) { close(pidfd); }
-
-    // He is not alive, so take over file ownership
-    unlink(fname); /* remove stale pid file */
-  }
-
-  // Create new pid file
-  if ((pidfd = open(fname, O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0640))
-      >= 0) {
-    len = sprintf(pidbuf, "%d\n", (int)getpid());
-    ssize_t bytes_written = write(pidfd, pidbuf, len);
-    if (bytes_written < len) {
       BErrNo be;
-      Emsg2(M_ERROR_TERM, 0, _("Could not write to pid file. %s ERR=%s\n"),
-            fname, be.bstrerror());
+      Emsg2(M_ERROR_TERM, 0, _("Unable to lock PID file '%s'. ERR=%s\n"),
+            pidfile_path, be.bstrerror());
     }
-    close(pidfd);
-    del_pid_file_ok = true; /* we created it so we can delete it */
-  } else {
-    BErrNo be;
-    Emsg2(M_ERROR_TERM, 0, _("Could not open pid file. %s ERR=%s\n"), fname,
-          be.bstrerror());
   }
-  FreePoolMemory(fname);
-#endif
 }
 
+static void UnlockPidFile(int pidfile_fd, const char* pidfile_path)
+{
+  struct flock fl;
+
+  fl.l_type = F_UNLCK;
+  fl.l_whence = SEEK_SET;
+  fl.l_start = 0;
+  fl.l_len = 0;
+
+  if (fcntl(pidfile_fd, F_SETLK, &fl)) {
+    BErrNo be;
+    Emsg2(M_ERROR_TERM, 0, _("Unable to unlock PID file '%s'. ERR=%s\n"),
+          pidfile_path, be.bstrerror());
+  }
+}
+#endif  // HAVE_WIN32
+/*
+   The content of this function (CreatePidFile) was inspired and modified to fit
+   current needs from filelock/create_pid_file.c (Listing 55-4, page 1143), an
+   example to accompany the book, The Linux Programming Interface.
+
+   The original source code file of filelock/create_pid_file.c is copyright
+   2010, Michael Kerrisk, and is licensed under the GNU Lesser General Public
+   License, version 3.
+*/
+
+#define CPF_CLOEXEC 1
+
+#if !defined(HAVE_WIN32)
+int CreatePidFile(const char* progname, const char* pidfile_path)
+{
+  int pidfd;
+
+  pidfd = open(pidfile_path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+  if (pidfd == -1) {
+    BErrNo be;
+    Emsg2(M_ERROR_TERM, 0, _("Cannot open pid file. %s ERR=%s\n"), pidfile_path,
+          be.bstrerror());
+  }
+
+  int flags;
+  if (CPF_CLOEXEC) {
+    /* Set the close-on-exec file descriptor flag */
+
+    /* Instead of the following steps, we could (on Linux) have opened the
+       file with O_CLOEXEC flag. However, not all systems support open()
+       O_CLOEXEC (which was standardized only in SUSv4), so instead we use
+       fcntl() to set the close-on-exec flag after opening the file */
+
+    flags = fcntl(pidfd, F_GETFD); /* Fetch flags */
+    if (flags == -1) {
+      BErrNo be;
+      Emsg2(M_ERROR_TERM, 0, _("Could not get flags for PID file %s. ERR=%s\n"),
+            pidfile_path, be.bstrerror());
+    }
+
+    flags |= FD_CLOEXEC; /* Turn on FD_CLOEXEC */
+
+    if (fcntl(pidfd, F_SETFD, flags) == -1) /* Update flags */ {
+      BErrNo be;
+      Emsg2(M_ERROR_TERM, 0, _("Could not get flags for PID file %s. ERR=%s\n"),
+            pidfile_path, be.bstrerror());
+    }
+  }
+
+  // Locking and unlocking only to check if there is already an instance of
+  // bareos running
+  LockPidFile(progname, pidfd, pidfile_path);
+  UnlockPidFile(pidfd, pidfile_path);
+  return pidfd;
+}
+#endif
+
+/*
+   The content of this function (WritePidFile) was inspired and modified to fit
+   current needs from filelock/create_pid_file.c (Listing 55-4, page 1143), an
+   example to accompany the book, The Linux Programming Interface.
+
+   The original source code file of filelock/create_pid_file.c is copyright
+   2010, Michael Kerrisk, and is licensed under the GNU Lesser General Public
+   License, version 3.
+*/
+#if !defined(HAVE_WIN32)
+void WritePidFile(int pidfile_fd,
+                  const char* pidfile_path,
+                  const char* progname)
+{
+  const int buf_size = 100;
+  char buf[buf_size];
+
+  LockPidFile(progname, pidfile_fd, pidfile_path);
+
+  if (ftruncate(pidfile_fd, 0) == -1) {
+    BErrNo be;
+    Emsg2(M_ERROR_TERM, 0, _("Could not truncate PID file '%s'. ERR=%s\n"),
+          pidfile_path, be.bstrerror());
+  }
+
+  snprintf(buf, buf_size, "%d\n", getpid());
+  if (write(pidfile_fd, buf, strlen(buf))
+      != static_cast<ssize_t>(strlen(buf))) {
+    BErrNo be;
+    Emsg2(M_ERROR_TERM, 0, _("Writing to PID file '%s'. ERR=%s\n"),
+          pidfile_path, be.bstrerror());
+  }
+}
+#endif
+
 // Delete the pid file if we created it
-int DeletePidFile(char* dir, const char* progname, int port)
+int DeletePidFile(const char* pidfile_path)
 {
 #if !defined(HAVE_WIN32)
-  POOLMEM* fname = GetPoolMemory(PM_FNAME);
-
-  if (!del_pid_file_ok) {
-    FreePoolMemory(fname);
-    return 0;
-  }
-  del_pid_file_ok = false;
-  Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
-  unlink(fname);
-  FreePoolMemory(fname);
+  unlink(pidfile_path);
 #endif
   return 1;
 }
