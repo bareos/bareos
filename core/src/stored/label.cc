@@ -187,9 +187,7 @@ int ReadDevVolumeLabel(DeviceControlRecord* dcr)
    * make sure we have the right Volume.
    */
   if (dev->VolHdr.VerNum != BareosTapeVersion
-      && dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion1
-      && dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion2
-      && dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion3) {
+      && dev->VolHdr.VerNum != OldCompatibleBareosTapeVersion1) {
     Mmsg(jcr->errmsg,
          _("Volume on %s has wrong Bareos version. Wanted %d got %d\n"),
          dev->print_name(), BareosTapeVersion, dev->VolHdr.VerNum);
@@ -483,7 +481,6 @@ static void CreateVolumeLabelRecord(DeviceControlRecord* dcr,
                                     DeviceRecord* rec)
 {
   ser_declare;
-  struct date_time dt;
   JobControlRecord* jcr = dcr->jcr;
   char buf[100];
 
@@ -495,20 +492,13 @@ static void CreateVolumeLabelRecord(DeviceControlRecord* dcr,
 
   ser_uint32(dev->VolHdr.VerNum);
 
-  if (dev->VolHdr.VerNum >= 11) {
-    SerBtime(dev->VolHdr.label_btime);
-    dev->VolHdr.write_btime = GetCurrentBtime();
-    SerBtime(dev->VolHdr.write_btime);
-    dev->VolHdr.write_date = 0;
-    dev->VolHdr.write_time = 0;
-  } else {
-    /* OLD WAY DEPRECATED */
-    ser_float64(dev->VolHdr.label_date);
-    ser_float64(dev->VolHdr.label_time);
-    get_current_time(&dt);
-    dev->VolHdr.write_date = dt.julian_day_number;
-    dev->VolHdr.write_time = dt.julian_day_fraction;
-  }
+  // make sure this volume wasn't written by bacula 1.26 or earlier
+  ASSERT(dev->VolHdr.VerNum >= 11);
+  SerBtime(dev->VolHdr.label_btime);
+  dev->VolHdr.write_btime = GetCurrentBtime();
+  SerBtime(dev->VolHdr.write_btime);
+  dev->VolHdr.write_date = 0;
+  dev->VolHdr.write_time = 0;
   ser_float64(dev->VolHdr.write_date); /* 0 if VerNum >= 11 */
   ser_float64(dev->VolHdr.write_time); /* 0  if VerNum >= 11 */
 
@@ -820,8 +810,6 @@ void DumpVolumeLabel(Device* dev)
   uint32_t File;
   const char* LabelType;
   char buf[30];
-  struct tm tm;
-  struct date_time dt;
 
   debug_level = 1;
   File = dev->file;
@@ -868,17 +856,11 @@ void DumpVolumeLabel(Device* dev)
          dev->VolHdr.PoolName, dev->VolHdr.MediaType, dev->VolHdr.PoolType,
          dev->VolHdr.HostName);
 
-  if (dev->VolHdr.VerNum >= 11) {
-    char dt[50];
-    bstrftime(dt, sizeof(dt), BtimeToUtime(dev->VolHdr.label_btime));
-    Pmsg1(-1, _("Date label written: %s\n"), dt);
-  } else {
-    dt.julian_day_number = dev->VolHdr.label_date;
-    dt.julian_day_fraction = dev->VolHdr.label_time;
-    TmDecode(&dt, &tm);
-    Pmsg5(-1, _("Date label written: %04d-%02d-%02d at %02d:%02d\n"),
-          tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min);
-  }
+  // make sure this volume wasn't written by bacula 1.26 or earlier
+  ASSERT(dev->VolHdr.VerNum >= 11);
+  char dt[50];
+  bstrftime(dt, sizeof(dt), BtimeToUtime(dev->VolHdr.label_btime));
+  Pmsg1(-1, _("Date label written: %s\n"), dt);
 
 bail_out:
   debug_level = dbl;
@@ -887,8 +869,6 @@ bail_out:
 static void DumpSessionLabel(DeviceRecord* rec, const char* type)
 {
   int dbl;
-  struct date_time dt;
-  struct tm tm;
   Session_Label label;
   char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], ec6[30], ec7[30];
 
@@ -936,17 +916,11 @@ static void DumpSessionLabel(DeviceRecord* rec, const char* type)
           edit_uint64_with_commas(label.EndFile, ec6),
           edit_uint64_with_commas(label.JobErrors, ec7), label.JobStatus);
   }
-  if (label.VerNum >= 11) {
-    char dt[50];
-    bstrftime(dt, sizeof(dt), BtimeToUtime(label.write_btime));
-    Pmsg1(-1, _("Date written      : %s\n"), dt);
-  } else {
-    dt.julian_day_number = label.write_date;
-    dt.julian_day_fraction = label.write_time;
-    TmDecode(&dt, &tm);
-    Pmsg5(-1, _("Date written      : %04d-%02d-%02d at %02d:%02d\n"),
-          tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min);
-  }
+  // make sure this volume wasn't written by bacula 1.26 or earlier
+  ASSERT(label.VerNum >= 11);
+  char dt[50];
+  bstrftime(dt, sizeof(dt), BtimeToUtime(label.write_btime));
+  Pmsg1(-1, _("Date written      : %s\n"), dt);
 
   debug_level = dbl;
 }

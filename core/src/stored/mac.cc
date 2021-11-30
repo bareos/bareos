@@ -135,9 +135,6 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
         static Session_Label the_label;
         static Session_Label* label = &the_label;
 
-        struct date_time dt;
-        struct tm tm;
-
         UnserSessionLabel(label, rec);
 
         if (jcr->is_JobType(JT_MIGRATE) || jcr->is_JobType(JT_COPY)) {
@@ -151,16 +148,10 @@ static bool CloneRecordInternally(DeviceControlRecord* dcr, DeviceRecord* rec)
         jcr->setJobLevel(label->JobLevel);
         Dmsg1(200, "joblevel from SOS_LABEL is now %c\n", label->JobLevel);
 
-        if (label->VerNum >= 11) {
-          jcr->sched_time = BtimeToUnix(label->write_btime);
+        // make sure this volume wasn't written by bacula 1.26 or earlier
+        ASSERT(label->VerNum >= 11);
+        jcr->sched_time = BtimeToUnix(label->write_btime);
 
-        } else {
-          dt.julian_day_number = label->write_date;
-          dt.julian_day_fraction = label->write_time;
-          TmDecode(&dt, &tm);
-          tm.tm_isdst = 0;
-          jcr->sched_time = mktime(&tm);
-        }
         jcr->start_time = jcr->sched_time;
 
         /* write the SOS Label with the existing timestamp infos */
