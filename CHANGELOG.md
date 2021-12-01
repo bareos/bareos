@@ -103,7 +103,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - cmake: check for chflags() function and enable FreeBSD File Flags support [PR #963]
 - plugin: added mariabackup python plugin, added systemtest for mariabackup and updated systemtest for percona-xtrabackup [PR #967]
 - webui: add inchanger column to volume tables [PR #998]
-
+- webui and console: add job duration column in job listings [PR #1007]
 
 ### Changed
 - docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]
@@ -341,5 +341,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #997]: https://github.com/bareos/bareos/pull/997
 [PR #998]: https://github.com/bareos/bareos/pull/998
 [PR #999]: https://github.com/bareos/bareos/pull/999
+[PR #1007]: https://github.com/bareos/bareos/pull/1007
 [PR #1008]: https://github.com/bareos/bareos/pull/1008
 [unreleased]: https://github.com/bareos/bareos/tree/master
