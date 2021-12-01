@@ -22,9 +22,9 @@ set -e
 set -u
 echo "PRETEST: running $0 script"
 echo "PRETEST: @TEST_INFO_TEXT@"
-echo "PRETEST: executing @BAREOS_DIR_TO_TEST@ -?"
-if ! @BAREOS_DIR_TO_TEST@ -? 2>&1 | grep Version >/dev/null; then
-    echo "PRETEST:  ERROR: could not start director. Forgot to build before testing?"
+echo "PRETEST: checking for executable @BAREOS_DIR_TO_TEST@"
+if [ ! -x "@BAREOS_DIR_TO_TEST@" ]; then
+    echo "PRETEST:  ERROR: could not find director executable. Forgot to build?"
     exit 1
 fi
 
