@@ -104,7 +104,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - plugin: added mariabackup python plugin, added systemtest for mariabackup and updated systemtest for percona-xtrabackup [PR #967]
 - webui: add inchanger column to volume tables [PR #998]
 - webui and console: add job duration column in job listings [PR #1007]
-- packages: Build also for Rocky_8 [PR #992]
+- packages: Build EL_8 packages instead of CentOS_8 for RHEL 8 derivates (Alma, Rocky, CentOS Stream)[PR #992]
 
 ### Changed
 - docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]
