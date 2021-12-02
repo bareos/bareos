@@ -34,6 +34,8 @@ lib/libbareoslmdb.so
 lib/libbareosndmp.so.%%DISTVERSION%%
 lib/libbareosndmp.so.%%LIBVERSION%%
 lib/libbareosndmp.so
+lib/libbareossd.so.%%DISTVERSION%%
+lib/libbareossd.so.%%LIBVERSION%%
 lib/libbareossd.so
 @dir(bareos,bareos,755) /usr/lib/bareos
 @dir(bareos,bareos,755) /usr/lib/bareos/scripts
