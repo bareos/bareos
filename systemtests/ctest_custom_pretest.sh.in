@@ -51,17 +51,6 @@ if [ -n "$postgresql" ]; then
   fi
 fi
 
-mysql=@mysql@
-if [ -n "$mysql" ]; then
-  echo -n "PRETEST: checking mysql connection ... "
-  if ! mysql <<< "SELECT version()" 2>&1 >/dev/null; then
-    echo "could not connect mysql server"
-    exit 1
-  else
-    echo "OK"
-  fi
-fi
-
 nr_killed=0
 for pidfile in $(find . -name \*.pid); do
   ((nr_killed=nr_killed+1))
