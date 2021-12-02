@@ -28,13 +28,8 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   )
 endif()
 
-if(POLICY CMP0054)
-  cmake_policy(SET CMP0054 NEW)
-endif(POLICY CMP0054)
-
-if(POLICY CMP0057)
-  cmake_policy(SET CMP0057 NEW)
-endif(POLICY CMP0057)
+cmake_policy(SET CMP0054 NEW)
+cmake_policy(SET CMP0057 NEW)
 
 if(POLICY CMP0109)
   cmake_policy(SET CMP0109 NEW)
