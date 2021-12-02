@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -675,12 +675,11 @@ const char* volume_status_to_str(const char* status)
   return _("Invalid volume status");
 }
 
-
 // Encode the mode bits into a 10 character string like LS does
 char* encode_mode(mode_t mode, char* buf)
 {
   char* cp = buf;
-
+  // clang-format off
   *cp++ = S_ISDIR(mode)    ? 'd'
           : S_ISBLK(mode)  ? 'b'
           : S_ISCHR(mode)  ? 'c'
@@ -688,6 +687,7 @@ char* encode_mode(mode_t mode, char* buf)
           : S_ISFIFO(mode) ? 'f'
           : S_ISSOCK(mode) ? 's'
                            : '-';
+  // clang-format on
   *cp++ = mode & S_IRUSR ? 'r' : '-';
   *cp++ = mode & S_IWUSR ? 'w' : '-';
   *cp++ = (mode & S_ISUID ? (mode & S_IXUSR ? 's' : 'S')
@@ -751,9 +751,9 @@ int DoShellExpansion(char* name, int name_len)
     } else {
       status = 1; /* error */
     }
+    if (status == 0) { bstrncpy(name, line, name_len); }
     FreePoolMemory(cmd);
     FreePoolMemory(line);
-    if (status == 0) { bstrncpy(name, line, name_len); }
   }
   return 1;
 }

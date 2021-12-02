@@ -25,6 +25,12 @@
 #ifndef BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_H_
 #define BAREOS_WIN32_COMPAT_INCLUDE_COMPAT_H_
 
+#include <windows.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include "include/bc_types.h"
+
 // Copyright transferred from Raider Solutions, Inc to
 //   Kern Sibbald and John Walker by express permission.
 //
@@ -264,7 +270,6 @@ int utime(const char* filename, struct utimbuf* buf);
 
 struct timespec;
 int readdir(unsigned int fd, struct dirent* dirp, unsigned int count);
-int nanosleep(const struct timespec* rqtp, struct timespec* rmtp);
 long int random(void);
 void srandom(unsigned int seed);
 int lstat(const char* filename, struct stat* sb);

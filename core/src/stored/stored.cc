@@ -733,11 +733,9 @@ static
     my_config = nullptr;
   }
 
-  if (debug_level > 10) { PrintMemoryPoolStats(); }
   TermMsg();
   CleanupCrypto();
   TermReservationsLock();
-  CloseMemoryPool();
 
   exit(sig);
 }

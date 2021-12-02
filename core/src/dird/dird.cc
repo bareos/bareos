@@ -525,7 +525,6 @@ static
 
   if (runjob) { free(runjob); }
   if (configfile != nullptr) { free(configfile); }
-  if (debug_level > 5) { PrintMemoryPoolStats(); }
   if (my_config) {
     delete my_config;
     my_config = nullptr;
@@ -533,7 +532,6 @@ static
 
   TermMsg(); /* Terminate message handler */
   CleanupCrypto();
-  CloseMemoryPool(); /* release free memory in pool */
 
   exit(sig);
 }

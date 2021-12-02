@@ -346,14 +346,12 @@ void TerminateFiled(int sig)
 
   if (configfile != nullptr) { free(configfile); }
 
-  if (debug_level > 0) { PrintMemoryPoolStats(); }
   if (my_config) {
     delete my_config;
     my_config = nullptr;
   }
   TermMsg();
   CleanupCrypto();
-  CloseMemoryPool(); /* release free memory in pool */
   exit(sig);
 }
 } /* namespace filedaemon */

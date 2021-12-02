@@ -110,10 +110,6 @@ void ReservationTest::TearDown()
 
   TermMsg();
   TermReservationsLock();
-
-  CloseMemoryPool();
-  debug_level = 0;
-  CloseMemoryPool();
 }
 
 /* wrap JobControlRecord into something we can put into a unique_ptr */

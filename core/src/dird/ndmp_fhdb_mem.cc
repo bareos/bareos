@@ -225,7 +225,6 @@ static inline void NdmpFhdbFreeTree(N_TREE_ROOT* root)
         root->blocks, freed_blocks);
 
   free(root);
-  GarbageCollectMemory();
 
   return;
 }

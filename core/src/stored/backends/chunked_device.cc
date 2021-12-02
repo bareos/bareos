@@ -111,9 +111,6 @@ void ChunkedDevice::FreeChunkbuffer(char* buffer)
         buffer);
 
   free(buffer);
-
-  // As we released a big memory chunk let the garbage collector run.
-  GarbageCollectMemory();
 }
 
 // Free a chunk_io_request.

@@ -21,7 +21,13 @@
 #ifndef BAREOS_LIB_BSYS_H_
 #define BAREOS_LIB_BSYS_H_
 
+#include <stddef.h>
+#include <stdio.h>
+#include <sys/stat.h>
 #include <sys/types.h>
+#include "mem_pool.h"
+class JobControlRecord;
+
 
 char* bstrinlinecpy(char* dest, const char* src);
 char* bstrncpy(char* dest, const char* src, int maxlen);

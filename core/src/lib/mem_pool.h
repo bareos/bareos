@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,13 +28,17 @@
 #ifndef BAREOS_LIB_MEM_POOL_H_
 #define BAREOS_LIB_MEM_POOL_H_
 
-POOLMEM* GetPoolMemory(int pool);
-POOLMEM* GetMemory(int32_t size);
-int32_t SizeofPoolMemory(POOLMEM* buf);
-POOLMEM* ReallocPoolMemory(POOLMEM* buf, int32_t size);
-POOLMEM* CheckPoolMemorySize(POOLMEM* buf, int32_t size);
-#define FreeMemory(x) FreePoolMemory(x)
-void FreePoolMemory(POOLMEM* buf);
+#include <stdarg.h>
+#include <string.h>
+#include "include/bc_types.h"
+
+POOLMEM* GetPoolMemory(int pool) noexcept;
+POOLMEM* GetMemory(int32_t size) noexcept;
+int32_t SizeofPoolMemory(POOLMEM* buf) noexcept;
+POOLMEM* ReallocPoolMemory(POOLMEM* buf, int32_t size) noexcept;
+POOLMEM* CheckPoolMemorySize(POOLMEM* buf, int32_t size) noexcept;
+void FreePoolMemory(POOLMEM* buf) noexcept;
+inline void FreeMemory(POOLMEM* buf) noexcept { FreePoolMemory(buf); }
 
 // Macro to simplify free/reset pointers
 #define FreeAndNullPoolMemory(a) \
@@ -44,12 +48,6 @@ void FreePoolMemory(POOLMEM* buf);
       (a) = NULL;                \
     }                            \
   } while (0)
-
-void GarbageCollectMemoryPool();
-void CloseMemoryPool();
-void PrintMemoryPoolStats();
-
-void GarbageCollectMemory();
 
 enum
 {

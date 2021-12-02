@@ -150,6 +150,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Allow `release` command to be used in scripts [PR #961]
 - webui: format total jobs and total files language-sensitive [PR #996]
 - webui: optimize bvfs update cache calls [PR #999]
+- Replace complicated memory pool allocator with plain malloc() [PR #997]
 
 ### Deprecated
 - Deprecated directives [PR #928]
@@ -337,6 +338,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #985]: https://github.com/bareos/bareos/pull/985
 [PR #995]: https://github.com/bareos/bareos/pull/995
 [PR #996]: https://github.com/bareos/bareos/pull/996
+[PR #997]: https://github.com/bareos/bareos/pull/997
 [PR #998]: https://github.com/bareos/bareos/pull/998
 [PR #999]: https://github.com/bareos/bareos/pull/999
 [PR #1008]: https://github.com/bareos/bareos/pull/1008
