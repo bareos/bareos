@@ -18,16 +18,12 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-set(MAN1 bconsole.1)
+set(MAN1 bconsole.1 bsmtp.1)
 
-set(MAN8 bareos-fd.8 bareos.8)
+set(MAN8 bareos-fd.8 bareos.8 btraceback.8)
 
 if(NOT client-only)
-  set(MAN1-server
-      bareos-tray-monitor.1
-      # bat.1
-      bsmtp.1 bwild.1 bregex.1
-  )
+  set(MAN1-server bareos-tray-monitor.1 bwild.1 bregex.1)
 
   set(MAN8-server
       bareos-dir.8
@@ -38,7 +34,6 @@ if(NOT client-only)
       bls.8
       bscan.8
       btape.8
-      btraceback.8
       bpluginfo.8
       bscrypto.8
   )
