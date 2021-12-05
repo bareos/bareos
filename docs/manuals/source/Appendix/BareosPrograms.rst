@@ -89,17 +89,6 @@ bareos-webui
 
 For further information regarding the Bareos Webui, please refer to :ref:`section-webui`.
 
-bat
-~~~
-
-:index:`\ <single: Command; bat>`\
-
-.. _bat:
-
-
-
-The Bacula/Bareos Administration Tool (:command:`bat`) has been a native GUI for Bareos. It has been marked deprecated since :sinceVersion:`15.2.0: bat vs. bareos-webui`. Since Bareos :sinceVersion:`17.2.0: bat: removed from core distribution` it is no longer part of Bareos. We encourage the use of |webui| instead.
-
 .. _section-VolumeUtilityCommands:
 
 Volume Utility Commands
