@@ -1,0 +1,75 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+JobName=bconsole-status-client
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+
+start_test
+
+rm -f "$tmp/log3.out"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+run job=backup-bareos-fd yes
+wait
+@$out $tmp/log3.out
+status subscriptions
+
+quit
+END_OF_DATA
+
+run_bconsole
+
+if ! grep "Ok: available subscriptions: 9 (1/10) (used/total)" "$tmp"/log3.out; then
+  echo "General message not found in $tmp/log3.out" >&2
+  estat=1
+fi
+
+#unit overview
+if ! grep "| client    | fileset          | db_units | vm_units | filer_units | normal_units |" "$tmp"/log3.out; then
+  echo "Wrong overview fields in $tmp/log3.out" >&2
+  estat=1
+fi
+
+if ! grep "| bareos-fd | <all file-based> |          |          |             | 1            |" "$tmp"/log3.out; then
+  echo "Wrong overview data in $tmp/log3.out" >&2
+  estat=1
+fi
+
+# total backup subscriptions
+if ! grep "| clients | db_units | vm_units | filer_units | normal_units | total_units " "$tmp"/log3.out; then
+  echo "Wrong total backup subscriptions fields in $tmp/log3.out" >&2
+  estat=1
+fi
+
+if ! grep "|       1 |          |          |             | 1            |           1 |" "$tmp"/log3.out; then
+  echo "Wrong total backup subscriptions data in $tmp/log3.out" >&2
+  estat=1
+fi
+
+# Amout of data that cannot be categorized
+if ! grep "| unknown_mb | unknown_percentage |" "$tmp"/log3.out; then
+  echo "Wrong non categorized data fields in $tmp/log3.out" >&2
+  estat=1
+fi
+
+if ! grep "|            |                    |" "$tmp"/log3.out; then
+  echo "Wrong non categorized data amounts in $tmp/log3.out" >&2
+  estat=1
+fi
+
+end_test
