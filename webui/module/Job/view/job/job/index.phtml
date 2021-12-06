@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -112,6 +112,13 @@ $this->headTitle($title);
       data-filter-control="input"
       data-filter-control-placeholder="<?php echo $this->translate("End"); ?>">
       <?php echo $this->translate("End"); ?>
+   </th>
+   <th
+      data-field="duration"
+      data-width="100"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Duration"); ?>">
+      <?php echo $this->translate("Duration"); ?>
    </th>
    <th
       data-field="jobfiles"
@@ -375,6 +382,10 @@ $this->headTitle($title);
             {
                field: 'endtime',
                sortable: true
+            },
+            {
+               field: 'duration',
+               sortable: true,
             },
             {
                field: 'jobfiles',

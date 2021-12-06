@@ -3,7 +3,12 @@
 #                   (all filters starts with "AND ...")
 
 SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client,
-Job.StartTime,Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
+Job.StartTime,
+CASE
+  WHEN endtime IS NOT NULL THEN endtime - starttime
+  ELSE CURRENT_TIMESTAMP(0) - starttime
+  END as Duration,
+Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId
 LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
