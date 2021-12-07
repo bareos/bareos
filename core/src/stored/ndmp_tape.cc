@@ -136,15 +136,13 @@ static inline int NativeToNdmpLoglevel(int debuglevel, NIS* nis)
   // Lookup the initial default log_level from the default StorageResource.
   nis->LogLevel = me->ndmploglevel;
 
-  /*
-   * NDMP loglevels run from 0 - 9 so we take a look at the
+  /* NDMP loglevels run from 0 - 9 so we take a look at the
    * current debug level and divide it by 100 to get a proper
    * value. If the debuglevel is below the wanted initial level
    * we set the loglevel to the wanted initial level. As the
    * debug logging takes care of logging messages that are
    * unwanted we can set the loglevel higher and still don't
-   * get debug messages.
-   */
+   * get debug messages.  */
   level = debuglevel / 100;
   if (level < nis->LogLevel) { level = nis->LogLevel; }
 
@@ -178,8 +176,7 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
     if (nis->jcr) {
       // Look at the tag field to see what is logged.
       if (bstrncmp(tag + 1, "LM", 2)) {
-        /*
-         * *LM* messages. E.g. log message NDMP protocol msgs.
+        /* *LM* messages. E.g. log message NDMP protocol msgs.
          * First character of the tag is the agent sending the
          * message e.g. 'D' == Data Agent
          *              'T' == Tape Agent
@@ -191,8 +188,7 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
          * 'd' - debug message
          * 'e' - error message
          * 'w' - warning message
-         * '?' - unknown message level
-         */
+         * '?' - unknown message level */
         switch (*(tag + 3)) {
           case 'n':
             Jmsg(nis->jcr, M_INFO, 0, "%s\n", msg);
@@ -215,11 +211,9 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
     }
   }
 
-  /*
-   * Print any debug message we convert the NDMP level back to an internal
+  /* Print any debug message we convert the NDMP level back to an internal
    * level and let the normal debug logging handle if it needs to be printed
-   * or not.
-   */
+   * or not. */
   internal_level = level * 100;
   Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, level, msg);
 }
@@ -312,10 +306,8 @@ static inline bool bndmp_write_data_to_block(JobControlRecord* jcr,
     Dmsg0(100, "No dcr->rec defined, bailing out\n");
     return retval;
   }
-  /*
-   * Keep track of the original data buffer and restore it on exit from this
-   * function.
-   */
+  /* Keep track of the original data buffer and restore it on exit from this
+   * function. */
   rec_data = dcr->rec->data;
 
   dcr->rec->VolSessionId = jcr->VolSessionId;
@@ -360,10 +352,8 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
     // See if there are any records left to process.
     if (!IsBlockEmpty(rctx->rec)) {
       if (!ReadNextRecordFromBlock(dcr, rctx, &done)) {
-        /*
-         * When the done flag is set to true we are done reading all
-         * records or end of block read next block.
-         */
+        /* When the done flag is set to true we are done reading all
+         * records or end of block read next block. */
         continue;
       }
     } else {
@@ -373,10 +363,8 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
         return false;
       }
 
-      /*
-       * Get a new record for each Job as defined by VolSessionId and
-       * VolSessionTime
-       */
+      /* Get a new record for each Job as defined by VolSessionId and
+       * VolSessionTime */
       if (!rctx->rec || rctx->rec->VolSessionId != dcr->block->VolSessionId
           || rctx->rec->VolSessionTime != dcr->block->VolSessionTime) {
         ReadContextSetRecord(dcr, rctx);
@@ -387,10 +375,8 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
       rctx->lastFileIndex = READ_NO_FILEINDEX;
 
       if (!ReadNextRecordFromBlock(dcr, rctx, &done)) {
-        /*
-         * When the done flag is set to true we are done reading all
-         * records or end of block read next block.
-         */
+        // When the done flag is set to true we are done reading all
+        // records or end of block read next block.
         continue;
       }
     }
@@ -475,16 +461,14 @@ static inline bool BndmpCreateVirtualFile(JobControlRecord* jcr, char* filename)
   EncodeStat(attribs.c_str(), &statp, sizeof(statp), dcr->FileIndex,
              STREAM_UNIX_ATTRIBUTES);
 
-  /*
-   * Generate a file attributes stream.
+  /* Generate a file attributes stream.
    *   File_index
    *   File type
    *   Filename (full path)
    *   Encoded attributes
    *   Link name (if type==FT_LNK or FT_LNKSAVED)
    *   Encoded extended-attributes (for Win32)
-   *   Delta Sequence Number
-   */
+   *   Delta Sequence Number */
   size = Mmsg(data, "%ld %d %s%c%s%c%s%c%s%c%d%c",
               dcr->FileIndex,     /* File_index */
               FT_REG,             /* File type */
@@ -548,33 +532,25 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
     return NDMP9_NO_DEVICE_ERR;
   }
 
-  /*
-   * When we found a JobControlRecord with the wanted security key it also
+  /* When we found a JobControlRecord with the wanted security key it also
    * implictly means the authentication succeeded as the connecting NDMP session
-   * only knows the exact security key as it was inserted by the director.
-   */
+   * only knows the exact security key as it was inserted by the director.  */
   jcr->authenticated = true;
 
-  /*
-   * There is a native storage daemon session waiting for the FD to connect.
+  /* There is a native storage daemon session waiting for the FD to connect.
    * In NDMP terms this is the same as a FD connecting so wake any waiting
-   * threads.
-   */
+   * threads.  */
   pthread_cond_signal(&jcr->impl->job_start_wait);
 
-  /*
-   * Save the JobControlRecord to ndm_session binding so everything furher
+  /* Save the JobControlRecord to ndm_session binding so everything furher
    * knows which JobControlRecord belongs to which NDMP session. We have
    * a special ndmp_session_handle which we can use to track
-   * session specific information.
-   */
+   * session specific information.  */
   handle = (struct ndmp_session_handle*)sess->session_handle;
 
-  /*
-   * If we already have a JobControlRecord binding for this connection we
+  /* If we already have a JobControlRecord binding for this connection we
    * release it here as we are about to establish a new binding (e.g. second
-   * NDMP save for the same job) and we should end up with the same binding.
-   */
+   * NDMP save for the same job) and we should end up with the same binding. */
   if (handle->jcr) { FreeJcr(handle->jcr); }
   handle->jcr = jcr;
 
@@ -610,18 +586,13 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
     // Setup internal system for writing data.
     Dmsg1(100, "Start append data. res=%d\n", dcr->dev->NumReserved());
 
-    /*
-     * One NDMP backup Job can be one or more save sessions so we keep
-     * track if we already acquired the storage.
-     */
+    /* One NDMP backup Job can be one or more save sessions so we keep
+     * track if we already acquired the storage. */
     if (!jcr->impl->acquired_storage) {
       // Actually acquire the device which we reserved.
       if (!AcquireDeviceForAppend(dcr)) { goto bail_out; }
 
-      /*
-       * Let any SD plugin know now its time to setup the record translation
-       * infra.
-       */
+      // Let any SD plugin setup the record translation
       if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr)
           != bRC_OK) {
         goto bail_out;
@@ -635,11 +606,9 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       // Change the Job to running state.
       jcr->sendJobStatus(JS_Running);
 
-      /*
-       * As we only generate very limited attributes info e.g. one
+      /* As we only generate very limited attributes info e.g. one
        * set per NDMP backup stream we only setup data spooling and not
-       * attribute spooling.
-       */
+       * attribute spooling.*/
 
       if (!BeginDataSpool(dcr)) { goto bail_out; }
 
@@ -662,16 +631,15 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       jcr->JobFiles++;
     }
 
-    /*
-     * Create a virtual file name @NDMP/<filesystem>%<dumplevel> or
-     * @NDMP/<filesystem> and save the attributes to the director.
-     */
+    /* Create a virtual file name @NDMP/<filesystem>%<dumplevel> or
+     * @NDMP/<filesystem> and save the attributes to the director. */
     Mmsg(virtual_filename, "/@NDMP%s", filesystem);
     if (!BndmpCreateVirtualFile(jcr, virtual_filename.c_str())) {
       Jmsg0(jcr, M_FATAL, 0, _("Creating virtual file attributes failed.\n"));
       goto bail_out;
     }
   } else {
+    // will read
     bool ok = true;
     READ_CTX* rctx;
 
@@ -690,10 +658,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
       // Ready device for reading
       if (!AcquireDeviceForRead(dcr)) { goto bail_out; }
 
-      /*
-       * Let any SD plugin know now its time to setup the record translation
-       * infra.
-       */
+      // Let any SD plugin setup the record translation
       if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr)
           != bRC_OK) {
         goto bail_out;
@@ -774,10 +739,8 @@ extern "C" ndmp9_error BndmpTapeClose(struct ndm_session* sess)
 
   err = NDMP9_NO_ERR;
   if (NDMTA_TAPE_IS_WRITABLE(ta)) {
-    /*
-     * Write a separator record so on restore we can recognize the different
-     * NDMP datastreams from each other.
-     */
+    /* Write a separator record so on restore we can recognize the different
+     * NDMP datastreams from each other.  */
     if (!bndmp_write_data_to_block(jcr, STREAM_NDMP_SEPARATOR, ndmp_separator,
                                    13)) {
       err = NDMP9_IO_ERR;
@@ -957,10 +920,8 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
   DeviceControlRecord* dcr = jcr->impl->dcr;
   char ec[50];
 
-  /*
-   * Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
-   * and the subsequent Jmsg() editing will break
-   */
+  /* Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
+   * and the subsequent Jmsg() editing will break */
   int32_t job_elapsed = time(NULL) - jcr->run_time;
 
   if (job_elapsed <= 0) { job_elapsed = 1; }
@@ -971,18 +932,14 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
        edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec));
 
   if (dcr) {
-    /*
-     * Check if we can still write. This may not be the case
-     *  if we are at the end of the tape or we got a fatal I/O error.
-     */
+    /* Check if we can still write. This may not be the case
+     *  if we are at the end of the tape or we got a fatal I/O error. */
     if (dcr->dev && dcr->dev->CanWrite()) {
       Dmsg1(200, "Write EOS label JobStatus=%c\n", jcr->JobStatus);
 
       if (!WriteSessionLabel(dcr, EOS_LABEL)) {
-        /*
-         * Print only if JobStatus JS_Terminated and not cancelled to avoid
-         * spurious messages
-         */
+        /* Print only if JobStatus JS_Terminated and not cancelled to avoid
+         * spurious messages */
         if (jcr->is_JobStatus(JS_Terminated) && !jcr->IsJobCanceled()) {
           Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
                 dcr->dev->bstrerror());
@@ -994,10 +951,8 @@ void EndOfNdmpBackup(JobControlRecord* jcr)
 
       // Flush out final partial block of this session
       if (!dcr->WriteBlockToDevice()) {
-        /*
-         * Print only if JobStatus JS_Terminated and not cancelled to avoid
-         * spurious messages
-         */
+        /* Print only if JobStatus JS_Terminated and not cancelled to avoid
+         * spurious messages */
         if (jcr->is_JobStatus(JS_Terminated) && !jcr->IsJobCanceled()) {
           Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
                 dcr->dev->print_name(), dcr->dev->bstrerror());
@@ -1072,8 +1027,7 @@ extern "C" void* HandleNdmpConnectionRequest(ConfigurationParser* config,
 
   RegisterCallbackHooks(sess);
 
-  /*
-   * We duplicate some of the code from the ndma server session handling
+  /* We duplicate some of the code from the ndma server session handling
    * available in the NDMJOB NDMP library e.g. we do not enter via
    * ndma_daemon_session() and then continue to ndma_server_session() which is
    * the normal entry point into the library as the ndma_daemon_session()
@@ -1081,13 +1035,10 @@ extern "C" void* HandleNdmpConnectionRequest(ConfigurationParser* config,
    * connection and the ndma_server_session() function tries to get peername and
    * socket names before eventually establishing the NDMP connection. We already
    * do all of that ourself via proven code implemented in ndmp_thread_server
-   * which is calling us.
-   */
+   * which is calling us. */
 
-  /*
-   * Make the ndm_session usable for a new connection e.g. initialize and
-   * commission.
-   */
+  /* Make the ndm_session usable for a new connection e.g. initialize and
+   * commission.  */
   sess->tape_agent_enabled = 1;
   sess->data_agent_enabled = 1;
 
