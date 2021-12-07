@@ -398,40 +398,51 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
     // See if we are processing some sort of label?
     if (rctx->rec->FileIndex < 0) { continue; }
 
-    /*
-     * Here we should have read a record from the block which contains some
-     * data. Its either:
-     *
-     * - STREAM_UNIX_ATTRIBUTES
-     *      Which is the start of the dump when we encounter that we just read
-     * the next record.
-     * - STREAM_FILE_DATA
-     *      Normal NDMP data.
-     * - STREAM_NDMP_SEPARATOR
-     *      End of NDMP data stream.
-     *
-     * anything other means a corrupted stream of records and means we give an
-     * EOF.
-     */
-    switch (rctx->rec->maskedStream) {
-      case STREAM_UNIX_ATTRIBUTES:
+    DeviceRecord* rec = rctx->rec;
+    // Perform record translations only if data is compressed
+    // as NDMP needs to be decompressed in any case
+    if (rctx->rec->maskedStream == STREAM_COMPRESSED_DATA) {
+      dcr->before_rec = rctx->rec;
+      dcr->after_rec = NULL;
+
+      if (GeneratePluginEvent(jcr, bSdEventReadRecordTranslation, dcr,
+                              /* reverse= */ true)
+          != bRC_OK) {
+        ok = false;
         continue;
-      case STREAM_FILE_DATA:
-        if (wanted_data_length < rctx->rec->data_len) {
+      }
+      if (dcr->after_rec) {  // translation happened?
+        rec = dcr->after_rec;
+      } else {  // use original record
+        rec = dcr->before_rec;
+      }
+
+      Jmsg1(jcr, M_INFO, 0, _("rctx->rec is at %p.\n"), rctx->rec);
+      if (rec != rctx->rec) {
+        Dmsg1(400, _("recstream: %d, rctxstream: %d .\n"), rec->maskedStream,
+              rctx->rec->maskedStream);
+      }
+    }  // not compressed, go on
+
+    switch (rec->maskedStream) {
+      case STREAM_UNIX_ATTRIBUTES:  // Start of the dump, read the next record.
+        continue;
+      case STREAM_FILE_DATA:  // Normal NDMP data.
+        if (wanted_data_length < rec->data_len) {
           Jmsg0(jcr, M_FATAL, 0,
-                _("Data read from volume bigger then NDMP databuffer, please "
+                _("Data read from volume bigger than NDMP databuffer, please "
                   "increase the NDMP blocksize.\n"));
           return false;
         }
-        memcpy(data, rctx->rec->data, rctx->rec->data_len);
-        *data_length = rctx->rec->data_len;
+        memcpy(data, rec->data, rec->data_len);
+        *data_length = rec->data_len;
         return true;
-      case STREAM_NDMP_SEPARATOR:
+      case STREAM_NDMP_SEPARATOR:  // End of NDMP data stream
         *data_length = 0;
         return true;
-      default:
+      default:  // corrupted stream of records, give an EOF
         Jmsg1(jcr, M_ERROR, 0, _("Encountered an unknown stream type %d\n"),
-              rctx->rec->maskedStream);
+              rec->maskedStream);
         *data_length = 0;
         return true;
     }
