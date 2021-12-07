@@ -271,7 +271,7 @@ bool BareosDb::UpdateDB(const char* file,
                         int line,
                         JobControlRecord* jcr,
                         const char* UpdateCmd,
-                        int nr_afr)
+                        int expected_minimum_number_affected_rows)
 {
   int num_rows;
 
@@ -283,9 +283,9 @@ bool BareosDb::UpdateDB(const char* file,
     return false;
   }
 
-  if (nr_afr > 0) {
+  if (expected_minimum_number_affected_rows > 0) {
     num_rows = SqlAffectedRows();
-    if (num_rows < nr_afr) {
+    if (num_rows < expected_minimum_number_affected_rows) {
       char ed1[30];
       msg_(file, line, errmsg, _("Update failed: affected_rows=%s for %s\n"),
            edit_uint64(num_rows, ed1), UpdateCmd);

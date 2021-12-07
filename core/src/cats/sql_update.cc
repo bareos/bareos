@@ -462,7 +462,7 @@ void BareosDb::MakeInchangerUnique(JobControlRecord* jcr, MediaDbRecord* mr)
            mr->Slot, edit_int64(mr->StorageId, ed1), mr->VolumeName);
     }
     Dmsg1(100, "%s\n", cmd);
-    UPDATE_DB_NO_AFR(jcr, cmd);
+    UPDATE_DB_NO_AFFECTED_ROWS(jcr, cmd);
   }
 }
 

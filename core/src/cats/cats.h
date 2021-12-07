@@ -600,7 +600,7 @@ class BareosDb : public BareosDbQueryEnum {
                 int line,
                 JobControlRecord* jcr,
                 const char* UpdateCmd,
-                int nr_afr);
+                int expected_minimum_number_affected_rows);
   int GetSqlRecordMax(JobControlRecord* jcr);
   void SplitPathAndFile(JobControlRecord* jcr, const char* fname);
   void ListDashes(OutputFormatter* send);
@@ -1004,7 +1004,8 @@ class BareosDb : public BareosDbQueryEnum {
 
 /* Use for better error location printing */
 #define UPDATE_DB(jcr, cmd) UpdateDB(__FILE__, __LINE__, jcr, cmd, 1)
-#define UPDATE_DB_NO_AFR(jcr, cmd) UpdateDB(__FILE__, __LINE__, jcr, cmd, 0)
+#define UPDATE_DB_NO_AFFECTED_ROWS(jcr, cmd) \
+  UpdateDB(__FILE__, __LINE__, jcr, cmd, 0)
 #define INSERT_DB(jcr, cmd) InsertDB(__FILE__, __LINE__, jcr, cmd)
 #define QUERY_DB(jcr, cmd) QueryDB(__FILE__, __LINE__, jcr, cmd)
 #define DELETE_DB(jcr, cmd) DeleteDB(__FILE__, __LINE__, jcr, cmd)
