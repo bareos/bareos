@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core cats: Add IF EXISTS in drop table statements fix for bug #1409 (Allow usage of ExitOnFatal) [PR #1035]
 - sql_get.cc: fix error logging in GetJobRecord() for jobname #1042
 - webui: fix empty job timeline issue if date.timezone is not set in php.ini [PR #1051]
+- Fix for wrong update message when updating all volumes from all pools with no existing volumes [PR #1015]
 
 ### Added
 - tests: simplify test coverage analysis [PR #1010]
