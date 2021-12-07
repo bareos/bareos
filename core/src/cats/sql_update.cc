@@ -423,7 +423,7 @@ bool BareosDb::UpdateMediaDefaults(JobControlRecord* jcr, MediaDbRecord* mr)
 
   Dmsg1(400, "%s\n", cmd);
 
-  retval = UPDATE_DB(jcr, cmd);
+  retval = UPDATE_DB_NO_AFFECTED_ROWS(jcr, cmd);
 
   DbUnlock(this);
   return retval;
