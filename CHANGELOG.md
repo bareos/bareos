@@ -104,6 +104,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - plugin: added mariabackup python plugin, added systemtest for mariabackup and updated systemtest for percona-xtrabackup [PR #967]
 - webui: add inchanger column to volume tables [PR #998]
 - webui and console: add job duration column in job listings [PR #1007]
+- packages: Build also for Rocky_8 [PR #992]
 
 ### Changed
 - docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]
@@ -336,6 +337,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #981]: https://github.com/bareos/bareos/pull/981
 [PR #982]: https://github.com/bareos/bareos/pull/982
 [PR #985]: https://github.com/bareos/bareos/pull/985
+[PR #992]: https://github.com/bareos/bareos/pull/992
 [PR #995]: https://github.com/bareos/bareos/pull/995
 [PR #996]: https://github.com/bareos/bareos/pull/996
 [PR #997]: https://github.com/bareos/bareos/pull/997
