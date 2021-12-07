@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -471,10 +471,8 @@ static bool decompress_with_zlib(JobControlRecord* jcr,
     compress_len = jcr->compress.inflate_buffer_size;
   }
 
-  /*
-   * See if this is a compressed stream with the new compression header or an
-   * old one.
-   */
+  // See if this is a compressed stream with the new compression header or an
+  // old one.
   if (with_header) {
     cbuf = (const unsigned char*)*data + sizeof(comp_stream_header);
     real_compress_len = *length - sizeof(comp_stream_header);
