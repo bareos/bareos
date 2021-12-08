@@ -21,6 +21,8 @@ cmake_minimum_required(VERSION 3.0)
 
 project(bareos-docs NONE)
 
+set_directory_properties(PROPERTIES CLEAN_NO_CUSTOM 1)
+
 # commands building json files ######
 add_custom_command(
   OUTPUT

@@ -71,7 +71,8 @@ rst_epilog = """
 .. |traymonitor| replace:: Bareos Traymonitor
 .. |bareosWebui| replace:: Bareos Webui
 .. |webui| replace:: Bareos WebUI
-.. |mysql| replace:: MySQL/MariaDB
+.. |mariadb| replace:: MariaDB
+.. |mysql| replace:: MySQL
 .. |postgresql| replace:: PostgreSQL
 .. |sqlite| replace:: Sqlite
 .. |vmware| replace:: VMware
