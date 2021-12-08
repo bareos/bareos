@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -534,6 +534,46 @@ class JobController extends AbstractActionController
     }
   }
 
+  public function timelineAction()
+  {
+    $this->RequestURIPlugin()->setRequestURI();
+
+    if(!$this->SessionTimeoutPlugin()->isValid()) {
+      return $this->redirect()->toRoute(
+        'auth',
+        array(
+          'action' => 'login'
+        ),
+        array(
+          'query' => array(
+            'req' => $this->RequestURIPlugin()->getRequestURI(),
+            'dird' => $_SESSION['bareos']['director']
+          )
+        )
+      );
+    }
+
+    $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
+      $module_config['console_commands']['Job']['mandatory']
+    );
+    if(count($invalid_commands) > 0) {
+      $this->acl_alert = true;
+      return new ViewModel(
+        array(
+          'acl_alert' => $this->acl_alert,
+          'invalid_commands' => implode(",", $invalid_commands)
+        )
+      );
+    }
+
+    $this->bsock = $this->getServiceLocator()->get('director');
+
+    // TODO
+
+    return new ViewModel();
+  }
+
   public function getDataAction()
   {
     $this->RequestURIPlugin()->setRequestURI();
@@ -560,6 +600,8 @@ class JobController extends AbstractActionController
     $jobname = $this->params()->fromQuery('jobname');
     $status = $this->params()->fromQuery('status');
     $period = $this->params()->fromQuery('period');
+    $client = $this->params()->fromQuery('client');
+    $clients = $this->params()->fromQUery('clients');
 
     try {
       $this->bsock = $this->getServiceLocator()->get('director');
@@ -615,6 +657,88 @@ class JobController extends AbstractActionController
         $result = $this->getJobModel()->getJobMedia($this->bsock, $jobid);
       }
       catch(Exception $e) {
+        echo $e->getMessage();
+      }
+    }
+    elseif($data == "timeline") {
+      try {
+        $result = [];
+        $c = explode(",", $clients);
+
+        foreach($c as $client) {
+          $result = array_merge($result, $this->getJobModel()->getClientJobsForPeriod($this->bsock, $client, $period));
+        }
+
+        $jobs = array();
+
+        foreach($result as $job) {
+
+          $starttime = new \DateTime($job['starttime']);
+          $endtime = new \DateTime($job['endtime']);
+          $schedtime = new \DateTime($job['schedtime']);
+
+          $starttime = $starttime->format('U')*1000;
+          $endtime = $endtime->format('U')*1000;
+          $schedtime = $schedtime->format('U')*1000;
+
+          switch($job['jobstatus']) {
+            // SUCESS
+            case 'T':
+              $fillcolor = "#5cb85c";
+              break;
+            // WARNING
+            case 'A':
+            case 'W':
+              $fillcolor = "#f0ad4e";
+              break;
+            // RUNNING
+            case 'R':
+            case 'l':
+              $fillcolor = "#5bc0de";
+              $endtime = new \DateTime(null);
+              $endtime = $endtime->format('U')*1000;
+              break;
+            // FAILED
+            case 'E':
+            case 'e':
+            case 'f':
+              $fillcolor = "#d9534f";
+              break;
+            // WAITING
+            case 'F':
+            case 'S':
+            case 's':
+            case 'M':
+            case 'm':
+            case 'j':
+            case 'C':
+            case 'c':
+            case 'd':
+            case 't':
+            case 'p':
+            case 'q':
+              $fillcolor = "#555555";
+              $endtime = new \DateTime(null);
+              $endtime = $endtime->format('U')*1000;
+              break;
+            default:
+              $fillcolor = "#555555";
+              break;
+            }
+
+            // workaround to display short job runs <= 1 sec.
+            if($starttime === $endtime) {
+              $endtime += 1000;
+            }
+
+            $item = '{"x":"'.$job['client'].'","y":["'.$starttime.'","'.$endtime.'"],"fillColor":"'.$fillcolor.'","name":"'.$job['name'].'","jobid":"'.$job['jobid'].'","starttime":"'.$job['starttime'].'","endtime":"'.$job['endtime'].'","schedtime":"'.$job['schedtime'].'"}';
+            array_push($jobs, json_decode($item));
+
+        }
+
+        $result = $jobs;
+
+      } catch(Exception $e) {
         echo $e->getMessage();
       }
     }

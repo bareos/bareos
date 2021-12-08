@@ -136,6 +136,23 @@ class JobModel
       }
    }
 
+   public function getClientJobsForPeriod(&$bsock=null, $client=null, $period=null)
+   {
+     if(isset($bsock, $client, $period)) {
+       $cmd = 'llist jobs client="'.$client.'" days='.$period;
+       $result = $bsock->send_command($cmd, 2);
+       $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+       if (empty($jobs['result'])) {
+         return false;
+       } else {
+         return $jobs['result']['jobs'];
+       }
+     }
+     else {
+       throw new \Exception('Missing argument.');
+     }
+   }
+
    /**
     * Get a single Job
     *
