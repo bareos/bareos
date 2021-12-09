@@ -1,139 +1,11 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: bareos-webui\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-12-09 10:32+0100\n"
-"Language: sk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: POEditor.com\n"
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:36
-msgid ""
-"<b>Access denied</b><br><br>Permission to execute the following commands is "
-"required:<br><br><kbd>"
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
-msgid "Access denied"
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:40
-#, php-format
-msgid ""
-"Read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> on how to "
-"configure ACL settings in your Console/Profile resources."
-msgstr ""
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:42
-#, fuzzy
-msgid "Back"
-msgstr "Zálohy"
-
-#: ../module/Application/view/error/index.phtml:4
-msgid "An error occurred"
-msgstr "Vyskytla sa chyba"
-
-#: ../module/Application/view/error/index.phtml:11
-#: ../module/Application/view/error/404.phtml:55
-msgid "Additional information"
-msgstr "Podrobnejšie informácie"
-
-#: ../module/Application/view/error/index.phtml:14
-#: ../module/Application/view/error/index.phtml:38
-#: ../module/Application/view/error/404.phtml:58
-#: ../module/Application/view/error/404.phtml:82
-msgid "File"
-msgstr "Súbor"
-
-#: ../module/Application/view/error/index.phtml:18
-#: ../module/Application/view/error/index.phtml:42
-#: ../module/Application/view/error/404.phtml:62
-#: ../module/Application/view/error/404.phtml:86
-#: ../module/Job/view/job/job/details.phtml:88
-msgid "Message"
-msgstr "Správa"
-
-#: ../module/Application/view/error/index.phtml:22
-#: ../module/Application/view/error/index.phtml:46
-#: ../module/Application/view/error/404.phtml:66
-#: ../module/Application/view/error/404.phtml:90
-msgid "Stack trace"
-msgstr "Stack odchytávanie"
-
-#: ../module/Application/view/error/index.phtml:32
-#: ../module/Application/view/error/404.phtml:76
-msgid "Previous exceptions"
-msgstr "Predchádzajúca výnimka"
-
-#: ../module/Application/view/error/index.phtml:61
-#: ../module/Application/view/error/404.phtml:105
-msgid "No Exception available"
-msgstr "Nedostená výnimka"
-
-#: ../module/Application/view/error/404.phtml:3
-msgid "A 404 error occurred"
-msgstr "Vyskytla sa chyba 404"
-
-#: ../module/Application/view/error/404.phtml:12
-msgid "The requested controller was unable to dispatch the request."
-msgstr "Požadovaný ovládač nemohol odoslať požiadavku."
-
-#: ../module/Application/view/error/404.phtml:15
-msgid ""
-"The requested controller could not be mapped to an existing controller class."
-msgstr ""
-"Požadovaný ovládač nemôže byť namapovaný na už existujúcu triedu ovládača."
-
-#: ../module/Application/view/error/404.phtml:18
-msgid "The requested controller was not dispatchable."
-msgstr "Požadovaný ovládač nebolo možné odoslať."
-
-#: ../module/Application/view/error/404.phtml:21
-msgid "The requested URL could not be matched by routing."
-msgstr "Požadovanú adresu URL nie je možné správne namapovať."
-
-#: ../module/Application/view/error/404.phtml:24
-msgid "We cannot determine at this time why a 404 was generated."
-msgstr "Momentálne sa nedá zistiť príčina vyskytnutia chyby 404."
-
-#: ../module/Application/view/error/404.phtml:36
-msgid "Controller"
-msgstr "Ovládač"
-
-#: ../module/Application/view/error/404.phtml:43
-#, php-format
-msgid "resolves to %s"
-msgstr "vyriešených %s"
-
-#: ../module/Application/view/layout/layout.phtml:148
-msgid "Console"
-msgstr "Konzola"
-
-#: ../module/Application/view/layout/layout.phtml:156
-msgid "Documentation"
-msgstr "Dokumentácia"
-
-#: ../module/Application/view/layout/layout.phtml:157
-msgid "Mailinglists"
-msgstr "Zoznam adresátov"
-
-#: ../module/Application/view/layout/layout.phtml:158
-msgid "Bugtracker"
-msgstr "Odchytávač chýb"
-
-#: ../module/Application/view/layout/layout.phtml:159
-msgid "Support"
-msgstr "Podpora"
-
-#: ../module/Application/view/layout/layout.phtml:160
-msgid "Subscription"
-msgstr "Predplatné"
-
-#: ../module/Application/view/layout/layout.phtml:162
-msgid "Logout"
-msgstr "Odhlásiť"
+"Project-Id-Version: bareos-webui\n"
+"Language: sk\n"
 
 #: ../module/Application/config/module.config.php:127
 #: ../module/Dashboard/view/dashboard/dashboard/index.phtml:26
@@ -229,6 +101,220 @@ msgstr "Množstvo"
 msgid "Director"
 msgstr "Riaditeľ"
 
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:37
+msgid "Sorry, it seems you are not authorized to run this module. If you think this is an error, please contact your local administrator."
+msgstr "Prepáčte, vyzerá to, že nemáte oprávnenie spustiť tento modul. Ak si myslíte, že došlo k chybe, kontaktujte Vášho administrátora."
+
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "Prečítajte si prosím <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos documentation</a> pre viac informácií ako nastavitť Command ACL vo Vašej Konzole/Profile. Nasleduje zoskupenie potrebných príkazov, ktoré môžu byť použité v Command ACL pre korektné spustenie tohoto modulu:"
+
+#: ../module/Application/view/error/404.phtml:3
+msgid "A 404 error occurred"
+msgstr "Vyskytla sa chyba 404"
+
+#: ../module/Application/view/error/404.phtml:12
+msgid "The requested controller was unable to dispatch the request."
+msgstr "Požadovaný ovládač nemohol odoslať požiadavku."
+
+#: ../module/Application/view/error/404.phtml:15
+msgid "The requested controller could not be mapped to an existing controller class."
+msgstr "Požadovaný ovládač nemôže byť namapovaný na už existujúcu triedu ovládača."
+
+#: ../module/Application/view/error/404.phtml:18
+msgid "The requested controller was not dispatchable."
+msgstr "Požadovaný ovládač nebolo možné odoslať."
+
+#: ../module/Application/view/error/404.phtml:21
+msgid "The requested URL could not be matched by routing."
+msgstr "Požadovanú adresu URL nie je možné správne namapovať."
+
+#: ../module/Application/view/error/404.phtml:24
+msgid "We cannot determine at this time why a 404 was generated."
+msgstr "Momentálne sa nedá zistiť príčina vyskytnutia chyby 404."
+
+#: ../module/Application/view/error/404.phtml:36
+msgid "Controller"
+msgstr "Ovládač"
+
+#: ../module/Application/view/error/404.phtml:43
+msgid "resolves to %s"
+msgstr "vyriešených %s"
+
+#: ../module/Application/view/error/index.phtml:11
+#: ../module/Application/view/error/404.phtml:55
+msgid "Additional information"
+msgstr "Podrobnejšie informácie"
+
+#: ../module/Application/view/error/index.phtml:14
+#: ../module/Application/view/error/index.phtml:38
+#: ../module/Application/view/error/404.phtml:58
+#: ../module/Application/view/error/404.phtml:82
+msgid "File"
+msgstr "Súbor"
+
+#: ../module/Application/view/error/index.phtml:18
+#: ../module/Application/view/error/index.phtml:42
+#: ../module/Application/view/error/404.phtml:62
+#: ../module/Application/view/error/404.phtml:86
+#: ../module/Job/view/job/job/details.phtml:88
+msgid "Message"
+msgstr "Správa"
+
+#: ../module/Application/view/error/index.phtml:22
+#: ../module/Application/view/error/index.phtml:46
+#: ../module/Application/view/error/404.phtml:66
+#: ../module/Application/view/error/404.phtml:90
+msgid "Stack trace"
+msgstr "Stack odchytávanie"
+
+#: ../module/Application/view/error/index.phtml:32
+#: ../module/Application/view/error/404.phtml:76
+msgid "Previous exceptions"
+msgstr "Predchádzajúca výnimka"
+
+#: ../module/Application/view/error/index.phtml:61
+#: ../module/Application/view/error/404.phtml:105
+msgid "No Exception available"
+msgstr "Nedostená výnimka"
+
+#: ../module/Application/view/error/index.phtml:4
+msgid "An error occurred"
+msgstr "Vyskytla sa chyba"
+
+#: ../module/Application/view/layout/layout.phtml:156
+msgid "Documentation"
+msgstr "Dokumentácia"
+
+#: ../module/Application/view/layout/layout.phtml:157
+msgid "Mailinglists"
+msgstr "Zoznam adresátov"
+
+#: ../module/Application/view/layout/layout.phtml:158
+msgid "Bugtracker"
+msgstr "Odchytávač chýb"
+
+#: ../module/Application/view/layout/layout.phtml:159
+msgid "Support"
+msgstr "Podpora"
+
+#: ../module/Application/view/layout/layout.phtml:160
+msgid "Subscription"
+msgstr "Predplatné"
+
+#: ../module/Application/view/layout/layout.phtml:162
+msgid "Logout"
+msgstr "Odhlásiť"
+
+#: ../module/Job/view/job/job/actions.phtml:32
+#: ../module/Job/view/job/job/run.phtml:32
+#: ../module/Job/view/job/job/details.phtml:32
+#: ../module/Job/view/job/job/index.phtml:32
+#: ../module/Schedule/view/schedule/schedule/details.phtml:32
+#: ../module/Schedule/view/schedule/schedule/index.phtml:32
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
+#: ../module/Schedule/view/schedule/schedule/status.phtml:31
+#: ../module/Client/view/client/client/index.phtml:32
+#: ../module/Client/view/client/client/status.phtml:32
+#: ../module/Client/view/client/client/details.phtml:32
+msgid "Show"
+msgstr "Zobraziť"
+
+#: ../module/Client/view/client/client/status.phtml:45
+msgid "Client Status"
+msgstr "Stav Klienta"
+
+#: ../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "Detaily klienta"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:56
+#: ../module/Job/src/Job/Form/RunJobForm.php:73
+#: ../module/Job/view/job/job/details.phtml:59
+#: ../module/Job/view/job/job/index.phtml:85
+#: ../module/Job/view/job/job/index.phtml:86
+#: ../module/Media/view/media/media/details.phtml:104
+#: ../module/Media/view/media/media/details.phtml:105
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:95
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:112
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
+#: ../module/Client/view/client/client/details.phtml:45
+msgid "Client"
+msgstr "Klient"
+
+#: ../module/Pool/view/pool/pool/index.phtml:61
+#: ../module/Pool/view/pool/pool/index.phtml:62
+#: ../module/Pool/view/pool/pool/details.phtml:56
+#: ../module/Pool/view/pool/pool/details.phtml:93
+#: ../module/Pool/view/pool/pool/details.phtml:94
+#: ../module/Media/view/media/media/details.phtml:55
+#: ../module/Media/view/media/media/index.phtml:61
+#: ../module/Media/view/media/media/index.phtml:62
+#: ../module/Restore/view/restore/restore/index.phtml:386
+#: ../module/Restore/view/restore/restore/versions.phtml:530
+#: ../module/Fileset/view/fileset/fileset/details.phtml:48
+#: ../module/Storage/view/storage/storage/index.phtml:61
+#: ../module/Storage/view/storage/storage/index.phtml:62
+#: ../module/Schedule/view/schedule/schedule/index.phtml:82
+#: ../module/Schedule/view/schedule/schedule/index.phtml:83
+#: ../module/Client/view/client/client/index.phtml:59
+#: ../module/Client/view/client/client/index.phtml:60
+#: ../module/Client/view/client/client/details.phtml:52
+msgid "Name"
+msgstr "Názov"
+
+#: ../module/Client/view/client/client/index.phtml:71
+#: ../module/Client/view/client/client/index.phtml:72
+#: ../module/Client/view/client/client/details.phtml:53
+msgid "Version"
+msgstr "Verzia"
+
+#: ../module/Client/view/client/client/details.phtml:54
+msgid "Autoprune"
+msgstr "Auto skratka"
+
+#: ../module/Client/view/client/client/details.phtml:55
+msgid "Fileretention"
+msgstr "Retenčnýsúbor"
+
+#: ../module/Client/view/client/client/details.phtml:56
+msgid "Jobretention"
+msgstr "Úloha retencie"
+
+#: ../module/Job/view/job/job/actions.phtml:33
+#: ../module/Job/view/job/job/actions.phtml:93
+#: ../module/Job/view/job/job/run.phtml:33
+#: ../module/Job/view/job/job/details.phtml:33
+#: ../module/Job/view/job/job/details.phtml:66
+#: ../module/Job/view/job/job/index.phtml:33
+#: ../module/Job/view/job/job/index.phtml:152
+#: ../module/Storage/view/storage/storage/details.phtml:113
+#: ../module/Storage/view/storage/storage/details.phtml:129
+#: ../module/Storage/view/storage/storage/details.phtml:162
+#: ../module/Storage/view/storage/storage/index.phtml:71
+#: ../module/Schedule/view/schedule/schedule/index.phtml:92
+#: ../module/Client/view/client/client/index.phtml:81
+#: ../module/Client/view/client/client/details.phtml:57
+#: ../module/Client/view/client/client/details.phtml:152
+msgid "Actions"
+msgstr "Akcie"
+
+#: ../module/Client/view/client/client/details.phtml:69
+#, fuzzy
+msgid "Last successful backups"
+msgstr "Posledné zálohy"
+
+#: ../module/Job/view/job/job/details.phtml:57
+#: ../module/Job/view/job/job/index.phtml:73
+#: ../module/Job/view/job/job/index.phtml:74
+#: ../module/Media/view/media/media/details.phtml:92
+#: ../module/Media/view/media/media/details.phtml:93
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:42
+#: ../module/Client/view/client/client/details.phtml:86
+#: ../module/Client/view/client/client/details.phtml:87
+msgid "Job ID"
+msgstr "ID Úlohy"
+
 #: ../module/Job/src/Job/Form/JobForm.php:53
 #: ../module/Job/view/job/job/actions.phtml:83
 #: ../module/Job/view/job/job/actions.phtml:84
@@ -242,6 +328,259 @@ msgstr "Riaditeľ"
 #: ../module/Client/view/client/client/details.phtml:93
 msgid "Job name"
 msgstr "Názov Úlohy"
+
+#: ../module/Job/view/job/job/details.phtml:87
+msgid "Timestamp"
+msgstr "Časová značka"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:127
+#: ../module/Job/src/Job/Form/RunJobForm.php:143
+#: ../module/Job/view/job/job/details.phtml:151
+#: ../module/Job/view/job/job/index.phtml:306
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:184
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:199
+#: ../module/Fileset/view/fileset/fileset/details.phtml:39
+#: ../module/Client/view/client/client/details.phtml:119
+#: ../module/Client/view/client/client/details.phtml:120
+msgid "Fileset"
+msgstr "Súborvý set"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:232
+#: ../module/Job/src/Job/Form/RunJobForm.php:248
+#: ../module/Job/view/job/job/details.phtml:61
+#: ../module/Job/view/job/job/index.phtml:99
+#: ../module/Job/view/job/job/index.phtml:100
+#: ../module/Media/view/media/media/details.phtml:116
+#: ../module/Media/view/media/media/details.phtml:117
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:44
+#: ../module/Client/view/client/client/details.phtml:126
+#: ../module/Client/view/client/client/details.phtml:127
+msgid "Level"
+msgstr "Úroveň"
+
+#: ../module/Job/view/job/job/details.phtml:62
+#: ../module/Job/view/job/job/index.phtml:127
+#: ../module/Job/view/job/job/index.phtml:128
+#: ../module/Media/view/media/media/details.phtml:122
+#: ../module/Media/view/media/media/details.phtml:123
+#: ../module/Dashboard/view/partial/JobTotals.phtml:41
+#: ../module/Client/view/client/client/details.phtml:133
+#: ../module/Client/view/client/client/details.phtml:134
+msgid "Files"
+msgstr "Súborov"
+
+#: ../module/Job/view/job/job/details.phtml:63
+#: ../module/Job/view/job/job/index.phtml:134
+#: ../module/Job/view/job/job/index.phtml:135
+#: ../module/Media/view/media/media/details.phtml:128
+#: ../module/Media/view/media/media/details.phtml:129
+#: ../module/Storage/view/storage/storage/details.phtml:154
+#: ../module/Dashboard/view/partial/JobTotals.phtml:42
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:48
+#: ../module/Client/view/client/client/details.phtml:140
+#: ../module/Client/view/client/client/details.phtml:141
+msgid "Bytes"
+msgstr "Bytov"
+
+#: ../module/Job/src/Job/Form/JobForm.php:95
+#: ../module/Job/view/job/job/actions.phtml:89
+#: ../module/Job/view/job/job/actions.phtml:90
+#: ../module/Job/view/job/job/details.phtml:65
+#: ../module/Job/view/job/job/index.phtml:148
+#: ../module/Job/view/job/job/index.phtml:149
+#: ../module/Director/view/director/director/index.phtml:33
+#: ../module/Director/view/director/director/messages.phtml:32
+#: ../module/Pool/view/pool/pool/details.phtml:117
+#: ../module/Pool/view/pool/pool/details.phtml:118
+#: ../module/Media/view/media/media/details.phtml:59
+#: ../module/Media/view/media/media/index.phtml:85
+#: ../module/Media/view/media/media/index.phtml:86
+#: ../module/Storage/view/storage/storage/details.phtml:157
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:40
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:41
+#: ../module/Schedule/view/schedule/schedule/index.phtml:88
+#: ../module/Schedule/view/schedule/schedule/index.phtml:89
+#: ../module/Client/view/client/client/index.phtml:77
+#: ../module/Client/view/client/client/index.phtml:78
+#: ../module/Client/view/client/client/details.phtml:147
+#: ../module/Client/view/client/client/details.phtml:148
+#: ../public/js/bootstrap-table-formatter.js:504
+#: ../public/js/bootstrap-table-formatter.js:529
+#: ../public/js/bootstrap-table-formatter.js:623
+msgid "Status"
+msgstr "Stav"
+
+#: ../module/Client/view/client/client/details.phtml:221
+msgid "Show Files"
+msgstr "Ukázať Súbory"
+
+#: ../module/Job/view/job/job/actions.phtml:55
+#: ../module/Job/view/job/job/details.phtml:135
+#: ../module/Job/view/job/job/index.phtml:177
+#: ../module/Job/view/job/job/index.phtml:198
+#: ../module/Pool/view/pool/pool/details.phtml:177
+#: ../module/Media/view/media/media/details.phtml:183
+#: ../module/Media/view/media/media/index.phtml:145
+#: ../module/Restore/view/restore/restore/index.phtml:53
+#: ../module/Restore/view/restore/restore/index.phtml:76
+#: ../module/Restore/view/restore/restore/versions.phtml:53
+#: ../module/Restore/view/restore/restore/versions.phtml:77
+#: ../module/Storage/view/storage/storage/details.phtml:57
+#: ../module/Schedule/view/schedule/schedule/index.phtml:55
+#: ../module/Client/view/client/client/index.phtml:117
+msgid "Close"
+msgstr "Zatvoriť"
+
+#: ../module/Media/view/media/media/details.phtml:405
+#: ../public/js/bootstrap-table-formatter.js:364
+msgid "Enabled"
+msgstr "Povolené"
+
+#: ../public/js/bootstrap-table-formatter.js:366
+msgid "Disabled"
+msgstr "Zakázané"
+
+#: ../public/js/bootstrap-table-formatter.js:505
+#: ../public/js/bootstrap-table-formatter.js:535
+#: ../public/js/bootstrap-table-formatter.js:613
+msgid "Disable"
+msgstr "Zakázať"
+
+#: ../public/js/bootstrap-table-formatter.js:506
+#: ../public/js/bootstrap-table-formatter.js:536
+#: ../public/js/bootstrap-table-formatter.js:612
+msgid "Enable"
+msgstr "Povoliť"
+
+#: ../module/Dashboard/view/partial/JobTotals.phtml:31
+#, fuzzy
+msgid "Job Totals"
+msgstr "Zoznam úloh"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
+msgid "Most recent job status per job name"
+msgstr "Najčastejšie stavy úloh podľa názvu úlohy"
+
+#: ../module/Job/view/job/job/details.phtml:163
+#: ../module/Job/view/job/job/index.phtml:106
+#: ../module/Job/view/job/job/index.phtml:107
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:45
+#: ../module/Client/view/client/client/details.phtml:99
+#: ../module/Client/view/client/client/details.phtml:100
+msgid "Start"
+msgstr "Štart"
+
+#: ../module/Job/view/job/job/details.phtml:167
+#: ../module/Job/view/job/job/index.phtml:113
+#: ../module/Job/view/job/job/index.phtml:114
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:46
+#: ../module/Client/view/client/client/details.phtml:106
+#: ../module/Client/view/client/client/details.phtml:107
+msgid "End"
+msgstr "Ukončenie"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:31
+msgid "Jobs started during the past 24 hours"
+msgstr "Úloha bola spustená behom posledných 24 hodín"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:46
+#: ../public/js/bootstrap-table-formatter.js:247
+#: ../public/js/bootstrap-table-formatter.js:248
+#: ../public/js/bootstrap-table-formatter.js:323
+#: ../public/js/bootstrap-table-formatter.js:328
+#: ../public/js/bootstrap-table-formatter.js:338
+#: ../public/js/bootstrap-table-formatter.js:348
+msgid "Running"
+msgstr "Beží"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:57
+#: ../public/js/bootstrap-table-formatter.js:253
+#: ../public/js/bootstrap-table-formatter.js:273
+#: ../public/js/bootstrap-table-formatter.js:278
+#: ../public/js/bootstrap-table-formatter.js:283
+#: ../public/js/bootstrap-table-formatter.js:288
+#: ../public/js/bootstrap-table-formatter.js:293
+#: ../public/js/bootstrap-table-formatter.js:298
+#: ../public/js/bootstrap-table-formatter.js:303
+#: ../public/js/bootstrap-table-formatter.js:308
+#: ../public/js/bootstrap-table-formatter.js:313
+#: ../public/js/bootstrap-table-formatter.js:318
+#: ../public/js/bootstrap-table-formatter.js:353
+msgid "Waiting"
+msgstr "Čaká"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:68
+#, fuzzy
+msgid "Successful"
+msgstr "Hotovo"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:90
+#, fuzzy
+msgid "Failed"
+msgstr "Chyba"
+
+#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
+msgid "Current Director messages"
+msgstr "Aktualne správy Riaditeľa"
+
+#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
+#, fuzzy
+msgid "Running Jobs"
+msgstr "Beží"
+
+#: ../module/Job/view/job/job/details.phtml:81
+#: ../module/Director/view/director/director/index.phtml:34
+#: ../module/Director/view/director/director/messages.phtml:33
+msgid "Messages"
+msgstr "Správy"
+
+#: ../module/Application/view/layout/layout.phtml:148
+msgid "Console"
+msgstr "Konzola"
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "bconsole (batch-mode), please handle with care."
+msgstr "bconsole (dávkový-mód), prosím, zaobchádzajte s ním opatrne."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "All commands have to be a one liner, dialogs are not working."
+msgstr "Všetky príkazy musia byť v jednom riadku, dialógy nefungujú."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "Type help for a list of commands."
+msgstr "Zadaj help pre zobrazenie príkazov."
+
+#: ../module/Director/view/director/director/index.phtml:47
+msgid "Director Status"
+msgstr "Stav Riaditeľa zálohovania"
+
+#: ../module/Director/view/director/director/messages.phtml:43
+msgid "Refresh"
+msgstr "Obnoviť"
+
+#: ../module/Director/view/director/director/messages.phtml:50
+msgid "Director messages"
+msgstr "Správy riaditeľa zálohovania"
+
+#: ../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr "Sety Súborov"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:26
+msgid "Fileset details"
+msgstr "Detaily Filesetu"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:47
+msgid "Id"
+msgstr "Id"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:49
+msgid "MD5 checksum"
+msgstr "MD5 kontrola"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:50
+msgid "Creation time"
+msgstr "Dátum vytvorenia"
 
 #: ../module/Job/src/Job/Form/JobForm.php:60
 msgid "jobname"
@@ -279,34 +618,6 @@ msgstr "neobmedzene"
 msgid "period"
 msgstr "perióda"
 
-#: ../module/Job/src/Job/Form/JobForm.php:95
-#: ../module/Job/view/job/job/actions.phtml:89
-#: ../module/Job/view/job/job/actions.phtml:90
-#: ../module/Job/view/job/job/details.phtml:65
-#: ../module/Job/view/job/job/index.phtml:148
-#: ../module/Job/view/job/job/index.phtml:149
-#: ../module/Director/view/director/director/index.phtml:33
-#: ../module/Director/view/director/director/messages.phtml:32
-#: ../module/Pool/view/pool/pool/details.phtml:117
-#: ../module/Pool/view/pool/pool/details.phtml:118
-#: ../module/Media/view/media/media/details.phtml:59
-#: ../module/Media/view/media/media/index.phtml:85
-#: ../module/Media/view/media/media/index.phtml:86
-#: ../module/Storage/view/storage/storage/details.phtml:157
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:40
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:41
-#: ../module/Schedule/view/schedule/schedule/index.phtml:88
-#: ../module/Schedule/view/schedule/schedule/index.phtml:89
-#: ../module/Client/view/client/client/index.phtml:77
-#: ../module/Client/view/client/client/index.phtml:78
-#: ../module/Client/view/client/client/details.phtml:147
-#: ../module/Client/view/client/client/details.phtml:148
-#: ../public/js/bootstrap-table-formatter.js:504
-#: ../public/js/bootstrap-table-formatter.js:529
-#: ../public/js/bootstrap-table-formatter.js:623
-msgid "Status"
-msgstr "Stav"
-
 #: ../module/Job/src/Job/Form/JobForm.php:97
 msgid "all"
 msgstr "všetko"
@@ -327,42 +638,11 @@ msgstr "neúspešne ukončené"
 msgid "terminated successfully"
 msgstr "úspešne ukončené"
 
-#: ../module/Job/src/Job/Form/JobForm.php:102
-#, fuzzy
-msgid "warning"
-msgstr "beží"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:56
-#: ../module/Job/src/Job/Form/RunJobForm.php:73
-#: ../module/Job/view/job/job/details.phtml:59
-#: ../module/Job/view/job/job/index.phtml:85
-#: ../module/Job/view/job/job/index.phtml:86
-#: ../module/Media/view/media/media/details.phtml:104
-#: ../module/Media/view/media/media/details.phtml:105
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:95
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:112
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
-#: ../module/Client/view/client/client/details.phtml:45
-msgid "Client"
-msgstr "Klient"
-
 #: ../module/Job/src/Job/Form/RunJobForm.php:92
 #: ../module/Job/src/Job/Form/RunJobForm.php:108
 #: ../module/Job/view/job/job/details.phtml:49
 msgid "Job"
 msgstr "Úloha"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:127
-#: ../module/Job/src/Job/Form/RunJobForm.php:143
-#: ../module/Job/view/job/job/details.phtml:151
-#: ../module/Job/view/job/job/index.phtml:306
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:184
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:199
-#: ../module/Fileset/view/fileset/fileset/details.phtml:39
-#: ../module/Client/view/client/client/details.phtml:119
-#: ../module/Client/view/client/client/details.phtml:120
-msgid "Fileset"
-msgstr "Súborvý set"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:162
 #: ../module/Job/src/Job/Form/RunJobForm.php:178
@@ -374,22 +654,14 @@ msgstr "Súborvý set"
 msgid "Storage"
 msgstr "Úložisko"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:232
-#: ../module/Job/src/Job/Form/RunJobForm.php:248
-#: ../module/Job/view/job/job/details.phtml:61
-#: ../module/Job/view/job/job/index.phtml:99
-#: ../module/Job/view/job/job/index.phtml:100
-#: ../module/Media/view/media/media/details.phtml:116
-#: ../module/Media/view/media/media/details.phtml:117
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:44
-#: ../module/Client/view/client/client/details.phtml:126
-#: ../module/Client/view/client/client/details.phtml:127
-msgid "Level"
-msgstr "Úroveň"
+#: ../module/Job/src/Job/Form/RunJobForm.php:380
+#: ../module/Storage/src/Storage/Form/StorageForm.php:93
+msgid "Submit"
+msgstr "Odoslať"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:266
-msgid "Priority"
-msgstr ""
+#: ../module/Job/view/job/job/actions.phtml:69
+msgid "Job Actions"
+msgstr "Akcie Úloh"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:281
 #: ../module/Job/src/Job/Form/RunJobForm.php:297
@@ -409,124 +681,11 @@ msgstr ""
 msgid "Type"
 msgstr "Typ"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:315
-#: ../module/Job/src/Job/Form/RunJobForm.php:331
-#, fuzzy
-msgid "Next Pool"
-msgstr "Skupina"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:365
-msgid "When"
-msgstr ""
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:380
-#: ../module/Storage/src/Storage/Form/StorageForm.php:93
-msgid "Submit"
-msgstr "Odoslať"
-
-#: ../module/Job/view/job/job/actions.phtml:32
-#: ../module/Job/view/job/job/run.phtml:32
-#: ../module/Job/view/job/job/details.phtml:32
-#: ../module/Job/view/job/job/index.phtml:32
-#: ../module/Schedule/view/schedule/schedule/details.phtml:32
-#: ../module/Schedule/view/schedule/schedule/index.phtml:32
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
-#: ../module/Schedule/view/schedule/schedule/status.phtml:31
-#: ../module/Client/view/client/client/index.phtml:32
-#: ../module/Client/view/client/client/status.phtml:32
-#: ../module/Client/view/client/client/details.phtml:32
-msgid "Show"
-msgstr "Zobraziť"
-
-#: ../module/Job/view/job/job/actions.phtml:33
-#: ../module/Job/view/job/job/actions.phtml:93
-#: ../module/Job/view/job/job/run.phtml:33
-#: ../module/Job/view/job/job/details.phtml:33
-#: ../module/Job/view/job/job/details.phtml:66
-#: ../module/Job/view/job/job/index.phtml:33
-#: ../module/Job/view/job/job/index.phtml:152
-#: ../module/Storage/view/storage/storage/details.phtml:113
-#: ../module/Storage/view/storage/storage/details.phtml:129
-#: ../module/Storage/view/storage/storage/details.phtml:162
-#: ../module/Storage/view/storage/storage/index.phtml:71
-#: ../module/Schedule/view/schedule/schedule/index.phtml:92
-#: ../module/Client/view/client/client/index.phtml:81
-#: ../module/Client/view/client/client/details.phtml:57
-#: ../module/Client/view/client/client/details.phtml:152
-msgid "Actions"
-msgstr "Akcie"
-
-#: ../module/Job/view/job/job/actions.phtml:55
-#: ../module/Job/view/job/job/details.phtml:135
-#: ../module/Job/view/job/job/index.phtml:177
-#: ../module/Job/view/job/job/index.phtml:198
-#: ../module/Pool/view/pool/pool/details.phtml:177
-#: ../module/Media/view/media/media/details.phtml:183
-#: ../module/Media/view/media/media/index.phtml:145
-#: ../module/Restore/view/restore/restore/index.phtml:53
-#: ../module/Restore/view/restore/restore/index.phtml:76
-#: ../module/Restore/view/restore/restore/versions.phtml:53
-#: ../module/Restore/view/restore/restore/versions.phtml:77
-#: ../module/Storage/view/storage/storage/details.phtml:57
-#: ../module/Schedule/view/schedule/schedule/index.phtml:55
-#: ../module/Client/view/client/client/index.phtml:117
-msgid "Close"
-msgstr "Zatvoriť"
-
-#: ../module/Job/view/job/job/actions.phtml:69
-msgid "Job Actions"
-msgstr "Akcie Úloh"
-
-#: ../module/Job/view/job/job/details.phtml:57
-#: ../module/Job/view/job/job/index.phtml:73
-#: ../module/Job/view/job/job/index.phtml:74
-#: ../module/Media/view/media/media/details.phtml:92
-#: ../module/Media/view/media/media/details.phtml:93
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:42
-#: ../module/Client/view/client/client/details.phtml:86
-#: ../module/Client/view/client/client/details.phtml:87
-msgid "Job ID"
-msgstr "ID Úlohy"
-
-#: ../module/Job/view/job/job/details.phtml:62
-#: ../module/Job/view/job/job/index.phtml:127
-#: ../module/Job/view/job/job/index.phtml:128
-#: ../module/Media/view/media/media/details.phtml:122
-#: ../module/Media/view/media/media/details.phtml:123
-#: ../module/Dashboard/view/partial/JobTotals.phtml:41
-#: ../module/Client/view/client/client/details.phtml:133
-#: ../module/Client/view/client/client/details.phtml:134
-msgid "Files"
-msgstr "Súborov"
-
-#: ../module/Job/view/job/job/details.phtml:63
-#: ../module/Job/view/job/job/index.phtml:134
-#: ../module/Job/view/job/job/index.phtml:135
-#: ../module/Media/view/media/media/details.phtml:128
-#: ../module/Media/view/media/media/details.phtml:129
-#: ../module/Storage/view/storage/storage/details.phtml:154
-#: ../module/Dashboard/view/partial/JobTotals.phtml:42
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:48
-#: ../module/Client/view/client/client/details.phtml:140
-#: ../module/Client/view/client/client/details.phtml:141
-msgid "Bytes"
-msgstr "Bytov"
-
 #: ../module/Job/view/job/job/details.phtml:64
 #: ../module/Job/view/job/job/index.phtml:141
 #: ../module/Job/view/job/job/index.phtml:142
 msgid "Errors"
 msgstr "Chyby"
-
-#: ../module/Job/view/job/job/details.phtml:81
-#: ../module/Director/view/director/director/index.phtml:34
-#: ../module/Director/view/director/director/messages.phtml:33
-msgid "Messages"
-msgstr "Správy"
-
-#: ../module/Job/view/job/job/details.phtml:87
-msgid "Timestamp"
-msgstr "Časová značka"
 
 #: ../module/Job/view/job/job/details.phtml:98
 #, fuzzy
@@ -565,73 +724,56 @@ msgstr "Prijatá chyba od riaditeľa zálohovania:"
 #: ../module/Media/view/media/media/index.phtml:142
 #, fuzzy
 msgid "Failed to send result as json. Maybe the result message is too long?"
-msgstr ""
-"Nepodarilo sa odoslať výsledok ako JSON. Možno je vysledná správa príliš "
-"dlhá?"
+msgstr "Nepodarilo sa odoslať výsledok ako JSON. Možno je vysledná správa príliš dlhá?"
 
 #: ../module/Job/view/job/job/details.phtml:159
 #: ../module/Job/view/job/job/index.phtml:314
 msgid "Scheduled"
 msgstr "Naplánované"
 
-#: ../module/Job/view/job/job/details.phtml:163
-#: ../module/Job/view/job/job/index.phtml:106
-#: ../module/Job/view/job/job/index.phtml:107
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:45
-#: ../module/Client/view/client/client/details.phtml:99
-#: ../module/Client/view/client/client/details.phtml:100
-msgid "Start"
+#: ../module/Job/view/job/job/details.phtml:188
+#, fuzzy
+msgid "Start Block"
 msgstr "Štart"
 
-#: ../module/Job/view/job/job/details.phtml:167
-#: ../module/Job/view/job/job/index.phtml:113
-#: ../module/Job/view/job/job/index.phtml:114
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:46
-#: ../module/Client/view/client/client/details.phtml:106
-#: ../module/Client/view/client/client/details.phtml:107
-msgid "End"
-msgstr "Ukončenie"
-
-#: ../module/Job/view/job/job/details.phtml:171
-#: ../module/Job/view/job/job/index.phtml:120
-#: ../module/Job/view/job/job/index.phtml:121
-#: ../module/Media/view/media/media/details.phtml:146
-#: ../module/Media/view/media/media/details.phtml:147
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:47
-#: ../module/Client/view/client/client/details.phtml:113
-#: ../module/Client/view/client/client/details.phtml:114
+#: ../module/Job/view/job/job/details.phtml:192
 #, fuzzy
-msgid "Duration"
-msgstr "Expirácia"
+msgid "End Block"
+msgstr "Koniec bloku"
+
+#: ../public/js/bootstrap-table-formatter.js:547
+msgid "Rerun"
+msgstr "Odznova"
+
+#: ../module/Restore/view/restore/restore/index.phtml:97
+#: ../module/Restore/view/restore/restore/versions.phtml:98
+#: ../module/Storage/view/storage/storage/details.phtml:88
+#: ../public/js/bootstrap-table-formatter.js:549
+msgid "Cancel"
+msgstr "Zrušiť"
 
 #: ../module/Job/view/job/job/index.phtml:48
 #: ../module/Client/view/client/client/details.phtml:71
 msgid "Job list"
 msgstr "Zoznam úloh"
 
-#: ../module/Job/view/job/job/index.phtml:56
-#, fuzzy
-msgid "Clear search filters"
-msgstr "Vyberte prosím fileset"
+#: ../module/Job/view/job/job/index.phtml:110
+msgid "Please try to reduce the amount of data to display, e.g. reduce time period."
+msgstr "Prosím, pokúste sa znížiť množstvo dát, ktorá sa zobrazí, napr. skrátiť časový interval."
 
-#: ../module/Job/view/job/job/index.phtml:172
-#, fuzzy
-msgid "Please try to reduce the amount of data to display."
-msgstr ""
-"Prosím, pokúste sa znížiť množstvo dát, ktorá sa zobrazí, napr. skrátiť "
-"časový interval."
+#: ../module/Media/view/media/media/details.phtml:26
+msgid "Volume details"
+msgstr "Detaily množstva"
 
-#: ../module/Director/view/director/director/index.phtml:47
-msgid "Director Status"
-msgstr "Stav Riaditeľa zálohovania"
-
-#: ../module/Director/view/director/director/messages.phtml:43
-msgid "Refresh"
-msgstr "Obnoviť"
-
-#: ../module/Director/view/director/director/messages.phtml:50
-msgid "Director messages"
-msgstr "Správy riaditeľa zálohovania"
+#: ../module/Pool/view/pool/pool/index.phtml:32
+#: ../module/Pool/view/pool/pool/details.phtml:32
+#: ../module/Media/view/media/media/details.phtml:32
+#: ../module/Media/view/media/media/index.phtml:32
+#: ../module/Storage/view/storage/storage/details.phtml:32
+#: ../module/Storage/view/storage/storage/index.phtml:32
+#: ../module/Storage/view/storage/storage/status.phtml:32
+msgid "Devices"
+msgstr "Zariadenia"
 
 #: ../module/Pool/view/pool/pool/index.phtml:26
 #: ../module/Pool/view/pool/pool/index.phtml:33
@@ -645,65 +787,6 @@ msgstr "Správy riaditeľa zálohovania"
 msgid "Pools"
 msgstr "Skupiny"
 
-#: ../module/Pool/view/pool/pool/index.phtml:32
-#: ../module/Pool/view/pool/pool/details.phtml:32
-#: ../module/Media/view/media/media/details.phtml:32
-#: ../module/Media/view/media/media/index.phtml:32
-#: ../module/Storage/view/storage/storage/details.phtml:32
-#: ../module/Storage/view/storage/storage/index.phtml:32
-#: ../module/Storage/view/storage/storage/status.phtml:32
-msgid "Devices"
-msgstr "Zariadenia"
-
-#: ../module/Pool/view/pool/pool/index.phtml:61
-#: ../module/Pool/view/pool/pool/index.phtml:62
-#: ../module/Pool/view/pool/pool/details.phtml:56
-#: ../module/Pool/view/pool/pool/details.phtml:93
-#: ../module/Pool/view/pool/pool/details.phtml:94
-#: ../module/Media/view/media/media/details.phtml:55
-#: ../module/Media/view/media/media/index.phtml:61
-#: ../module/Media/view/media/media/index.phtml:62
-#: ../module/Restore/view/restore/restore/index.phtml:386
-#: ../module/Restore/view/restore/restore/versions.phtml:530
-#: ../module/Fileset/view/fileset/fileset/details.phtml:48
-#: ../module/Storage/view/storage/storage/index.phtml:61
-#: ../module/Storage/view/storage/storage/index.phtml:62
-#: ../module/Schedule/view/schedule/schedule/index.phtml:82
-#: ../module/Schedule/view/schedule/schedule/index.phtml:83
-#: ../module/Client/view/client/client/index.phtml:59
-#: ../module/Client/view/client/client/index.phtml:60
-#: ../module/Client/view/client/client/details.phtml:52
-msgid "Name"
-msgstr "Názov"
-
-#: ../module/Pool/view/pool/pool/index.phtml:79
-#: ../module/Pool/view/pool/pool/index.phtml:80
-#: ../module/Pool/view/pool/pool/details.phtml:59
-msgid "Maximum volumes"
-msgstr "Maximálna veľkosť"
-
-#: ../module/Pool/view/pool/pool/index.phtml:85
-#: ../module/Pool/view/pool/pool/index.phtml:86
-#: ../module/Pool/view/pool/pool/details.phtml:60
-msgid "Volume retention"
-msgstr "Počet retencií"
-
-#: ../module/Pool/view/pool/pool/index.phtml:91
-#: ../module/Pool/view/pool/pool/index.phtml:92
-#: ../module/Pool/view/pool/pool/details.phtml:61
-msgid "Maximum volume jobs"
-msgstr "Maximálny počet úloh"
-
-#: ../module/Pool/view/pool/pool/index.phtml:97
-#: ../module/Pool/view/pool/pool/index.phtml:98
-#: ../module/Pool/view/pool/pool/details.phtml:62
-msgid "Maximum volume bytes"
-msgstr "Maximálne množstvo bytov"
-
-#: ../module/Pool/view/pool/pool/details.phtml:26
-msgid "Pool details"
-msgstr "Detaily Skupiny"
-
 #: ../module/Pool/view/pool/pool/details.phtml:111
 #: ../module/Pool/view/pool/pool/details.phtml:112
 #: ../module/Pool/view/pool/pool/details.phtml:319
@@ -716,22 +799,13 @@ msgstr "Detaily Skupiny"
 msgid "Last written"
 msgstr "Poslený zapis"
 
-#: ../module/Pool/view/pool/pool/details.phtml:123
-#: ../module/Pool/view/pool/pool/details.phtml:124
-#: ../module/Media/view/media/media/details.phtml:381
 #: ../module/Media/view/media/media/index.phtml:91
 #: ../module/Media/view/media/media/index.phtml:92
-msgid "In changer"
-msgstr "V zmene"
-
-#: ../module/Pool/view/pool/pool/details.phtml:129
-#: ../module/Pool/view/pool/pool/details.phtml:130
 #: ../module/Media/view/media/media/details.phtml:60
-#: ../module/Media/view/media/media/index.phtml:97
-#: ../module/Media/view/media/media/index.phtml:98
-#, fuzzy
-msgid "Retention"
-msgstr "Úloha retencie"
+#: ../module/Pool/view/pool/pool/details.phtml:123
+#: ../module/Pool/view/pool/pool/details.phtml:124
+msgid "Retention/Expiration"
+msgstr "Retencia/Expirácia"
 
 #: ../module/Pool/view/pool/pool/details.phtml:135
 #: ../module/Pool/view/pool/pool/details.phtml:136
@@ -748,6 +822,20 @@ msgstr "Maximum bytov"
 #: ../module/Media/view/media/media/index.phtml:110
 msgid "Current bytes"
 msgstr "Aktuálne byty"
+
+#: ../module/Media/view/media/media/details.phtml:78
+msgid "Jobs on volume"
+msgstr "Úlohy v objeme"
+
+#: ../module/Media/view/media/media/details.phtml:134
+#: ../module/Media/view/media/media/details.phtml:135
+msgid "Starttime"
+msgstr "Čas začatia"
+
+#: ../module/Media/view/media/media/details.phtml:140
+#: ../module/Media/view/media/media/details.phtml:141
+msgid "Endtime"
+msgstr "Čas ukončnia"
 
 #: ../module/Pool/view/pool/pool/details.phtml:311
 #: ../module/Media/view/media/media/details.phtml:337
@@ -772,24 +860,6 @@ msgstr "Počet úloh"
 #: ../module/Media/view/media/media/index.phtml:264
 msgid "Recycle"
 msgstr "Odstrániť"
-
-#: ../module/Media/view/media/media/details.phtml:26
-msgid "Volume details"
-msgstr "Detaily množstva"
-
-#: ../module/Media/view/media/media/details.phtml:78
-msgid "Jobs on volume"
-msgstr "Úlohy v objeme"
-
-#: ../module/Media/view/media/media/details.phtml:134
-#: ../module/Media/view/media/media/details.phtml:135
-msgid "Starttime"
-msgstr "Čas začatia"
-
-#: ../module/Media/view/media/media/details.phtml:140
-#: ../module/Media/view/media/media/details.phtml:141
-msgid "Endtime"
-msgstr "Čas ukončnia"
 
 #: ../module/Media/view/media/media/details.phtml:357
 msgid "Volume writes"
@@ -817,6 +887,14 @@ msgstr "Veľkosť počas trvania"
 msgid "Volume Pool Id"
 msgstr "Veľkost Id Skupiny"
 
+#: ../module/Pool/view/pool/pool/details.phtml:123
+#: ../module/Pool/view/pool/pool/details.phtml:124
+#: ../module/Media/view/media/media/details.phtml:381
+#: ../module/Media/view/media/media/index.phtml:91
+#: ../module/Media/view/media/media/index.phtml:92
+msgid "In changer"
+msgstr "V zmene"
+
 #: ../module/Media/view/media/media/details.phtml:385
 msgid "Volume Files"
 msgstr "Pošet Súborov"
@@ -836,11 +914,6 @@ msgstr "Objem bytov"
 #: ../module/Media/view/media/media/details.phtml:401
 msgid "Volume errors"
 msgstr "Počet chýb"
-
-#: ../module/Media/view/media/media/details.phtml:405
-#: ../public/js/bootstrap-table-formatter.js:364
-msgid "Enabled"
-msgstr "Povolené"
 
 #: ../module/Media/view/media/media/details.phtml:409
 msgid "Max. volume files"
@@ -887,28 +960,41 @@ msgstr "Id recyklovanej skupiny"
 msgid "Comment"
 msgstr "Popis"
 
+#: ../module/Pool/view/pool/pool/details.phtml:26
+msgid "Pool details"
+msgstr "Detaily Skupiny"
+
+#: ../module/Pool/view/pool/pool/index.phtml:79
+#: ../module/Pool/view/pool/pool/index.phtml:80
+#: ../module/Pool/view/pool/pool/details.phtml:59
+msgid "Maximum volumes"
+msgstr "Maximálna veľkosť"
+
+#: ../module/Pool/view/pool/pool/index.phtml:85
+#: ../module/Pool/view/pool/pool/index.phtml:86
+#: ../module/Pool/view/pool/pool/details.phtml:60
+msgid "Volume retention"
+msgstr "Počet retencií"
+
+#: ../module/Pool/view/pool/pool/index.phtml:91
+#: ../module/Pool/view/pool/pool/index.phtml:92
+#: ../module/Pool/view/pool/pool/details.phtml:61
+msgid "Maximum volume jobs"
+msgstr "Maximálny počet úloh"
+
+#: ../module/Pool/view/pool/pool/index.phtml:97
+#: ../module/Pool/view/pool/pool/index.phtml:98
+#: ../module/Pool/view/pool/pool/details.phtml:62
+msgid "Maximum volume bytes"
+msgstr "Maximálne množstvo bytov"
+
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:59
 msgid "Backup jobs"
 msgstr "Úlohy záloh"
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:60
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:77
-#, fuzzy
-msgid "Please choose a backup"
-msgstr "Vyberte prosím fileset"
-
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:76
 msgid "Backups"
 msgstr "Zálohy"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:96
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:113
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:132
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:149
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:166
-#, fuzzy
-msgid "Please choose a client"
-msgstr "Vyberte prosím fileset"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:131
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:148
@@ -929,12 +1015,6 @@ msgstr "Vyberte prosím fileset"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:250
 msgid "Restore job"
 msgstr "Obnoviť úlohu"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:234
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:251
-#, fuzzy
-msgid "Please choose a restore job"
-msgstr "Vyberte prosím fileset"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:270
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:289
@@ -1016,18 +1096,6 @@ msgstr "napr. / alebo /tmp/bareos-restores/"
 msgid "Related jobs for a most recent full restore"
 msgstr "Súvisiace úlohy pre najčastejšie úplné obnovenia"
 
-#: ../module/Restore/view/restore/restore/index.phtml:32
-#: ../module/Restore/view/restore/restore/versions.phtml:32
-#, fuzzy
-msgid "Restore multiple files"
-msgstr "Obnoviť na klienta"
-
-#: ../module/Restore/view/restore/restore/index.phtml:33
-#: ../module/Restore/view/restore/restore/versions.phtml:33
-#, fuzzy
-msgid "Restore specific file version"
-msgstr "Obnoviť na klienta"
-
 #: ../module/Restore/view/restore/restore/index.phtml:49
 #: ../module/Restore/view/restore/restore/versions.phtml:49
 #, fuzzy
@@ -1040,51 +1108,10 @@ msgstr "Prijatá chyba od riaditeľa zálohovania:"
 msgid "Director message"
 msgstr "Správa od Riaditeľa"
 
-#: ../module/Restore/view/restore/restore/index.phtml:75
-#: ../module/Restore/view/restore/restore/versions.phtml:76
-#, fuzzy
-msgid "Job report"
-msgstr "Zoznam úloh"
-
-#: ../module/Restore/view/restore/restore/index.phtml:89
-#: ../module/Restore/view/restore/restore/versions.phtml:90
-msgid "Confirm restore job submit"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:97
-#: ../module/Restore/view/restore/restore/versions.phtml:98
-#: ../module/Storage/view/storage/storage/details.phtml:88
-#: ../public/js/bootstrap-table-formatter.js:549
-msgid "Cancel"
-msgstr "Zrušiť"
-
-#: ../module/Restore/view/restore/restore/index.phtml:98
-#: ../module/Restore/view/restore/restore/index.phtml:117
-#: ../module/Restore/view/restore/restore/versions.phtml:99
-#: ../module/Restore/view/restore/restore/versions.phtml:118
-msgid "OK"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:114
-msgid "No files or directories selected to restore!"
-msgstr ""
-
 #: ../module/Restore/view/restore/restore/index.phtml:164
 #: ../module/Restore/view/restore/restore/versions.phtml:162
 msgid "File selection"
 msgstr "Výber súboru"
-
-#: ../module/Restore/view/restore/restore/index.phtml:392
-msgid "Mode"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:400
-msgid "User"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/index.phtml:408
-msgid "Group"
-msgstr ""
 
 #: ../module/Restore/view/restore/restore/index.phtml:416
 #: ../module/Restore/view/restore/restore/versions.phtml:194
@@ -1092,48 +1119,18 @@ msgstr ""
 msgid "Size"
 msgstr "Veľkosť"
 
-#: ../module/Restore/view/restore/restore/index.phtml:424
-#: ../module/Restore/view/restore/restore/versions.phtml:193
-#: ../module/Restore/view/restore/restore/versions.phtml:544
-msgid "Last modification"
-msgstr ""
+#: ../../../module/Restore/view/restore/restore/index.phtml:321
+msgid "Date"
+msgstr "Dátum"
 
-#: ../module/Restore/view/restore/restore/versions.phtml:115
-msgid "No file selected to restore!"
-msgstr ""
+#: ../module/Storage/view/storage/storage/details.phtml:126
+#: ../module/Storage/src/Storage/Form/StorageForm.php:77
+msgid "Drive"
+msgstr "Jednotka"
 
-#: ../module/Restore/view/restore/restore/versions.phtml:172
-msgid "Selected file"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/versions.phtml:180
-msgid "Available versions"
-msgstr ""
-
-#: ../module/Restore/view/restore/restore/versions.phtml:195
-#, fuzzy
-msgid "Checksum"
-msgstr "MD5 kontrola"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:26
-msgid "Fileset details"
-msgstr "Detaily Filesetu"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:47
-msgid "Id"
-msgstr "Id"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:49
-msgid "MD5 checksum"
-msgstr "MD5 kontrola"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:50
-msgid "Creation time"
-msgstr "Dátum vytvorenia"
-
-#: ../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
-msgstr "Sety Súborov"
+#: ../module/Storage/view/storage/storage/status.phtml:47
+msgid "Storage Status"
+msgstr "Stav Úložiska"
 
 #: ../module/Storage/view/storage/storage/details.phtml:26
 msgid "Storage details"
@@ -1163,11 +1160,6 @@ msgstr "Importovať všetko"
 #: ../module/Storage/view/storage/storage/details.phtml:121
 msgid "Drives"
 msgstr "Jednotky"
-
-#: ../module/Storage/view/storage/storage/details.phtml:126
-#: ../module/Storage/src/Storage/Form/StorageForm.php:77
-msgid "Drive"
-msgstr "Jednotka"
 
 #: ../module/Storage/view/storage/storage/details.phtml:127
 msgid "Loaded"
@@ -1214,82 +1206,9 @@ msgstr "Zariadenie Úložiska"
 msgid "Autochanger"
 msgstr "Autozmena"
 
-#: ../module/Storage/view/storage/storage/status.phtml:47
-msgid "Storage Status"
-msgstr "Stav Úložiska"
-
-#: ../module/Dashboard/view/partial/JobTotals.phtml:31
-#, fuzzy
-msgid "Job Totals"
-msgstr "Zoznam úloh"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:31
-msgid "Jobs started during the past 24 hours"
-msgstr "Úloha bola spustená behom posledných 24 hodín"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:46
-#: ../public/js/bootstrap-table-formatter.js:247
-#: ../public/js/bootstrap-table-formatter.js:248
-#: ../public/js/bootstrap-table-formatter.js:323
-#: ../public/js/bootstrap-table-formatter.js:328
-#: ../public/js/bootstrap-table-formatter.js:338
-#: ../public/js/bootstrap-table-formatter.js:348
-msgid "Running"
-msgstr "Beží"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:57
-#: ../public/js/bootstrap-table-formatter.js:253
-#: ../public/js/bootstrap-table-formatter.js:273
-#: ../public/js/bootstrap-table-formatter.js:278
-#: ../public/js/bootstrap-table-formatter.js:283
-#: ../public/js/bootstrap-table-formatter.js:288
-#: ../public/js/bootstrap-table-formatter.js:293
-#: ../public/js/bootstrap-table-formatter.js:298
-#: ../public/js/bootstrap-table-formatter.js:303
-#: ../public/js/bootstrap-table-formatter.js:308
-#: ../public/js/bootstrap-table-formatter.js:313
-#: ../public/js/bootstrap-table-formatter.js:318
-#: ../public/js/bootstrap-table-formatter.js:353
-msgid "Waiting"
-msgstr "Čaká"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:68
-#, fuzzy
-msgid "Successful"
-msgstr "Hotovo"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
-#: ../public/js/bootstrap-table-formatter.js:343
-#, fuzzy
-msgid "Warning"
-msgstr "beží"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:90
-#, fuzzy
-msgid "Failed"
-msgstr "Chyba"
-
-#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
-msgid "Current Director messages"
-msgstr "Aktualne správy Riaditeľa"
-
-#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
-#, fuzzy
-msgid "Running Jobs"
-msgstr "Beží"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
-msgid "Most recent job status per job name"
-msgstr "Najčastejšie stavy úloh podľa názvu úlohy"
-
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:269
-msgid ""
-"Not enough data to estimate progress or statistics collection is disabled."
-msgstr ""
-
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:277
-msgid "There are no jobs running."
-msgstr ""
+#: ../public/js/bootstrap-table-formatter.js:624
+msgid "Manage autochanger"
+msgstr "Manažment autozmeny"
 
 #: ../module/Schedule/view/schedule/schedule/details.phtml:26
 #: ../module/Schedule/view/schedule/schedule/details.phtml:47
@@ -1307,55 +1226,6 @@ msgstr "Stav Plánovača"
 #: ../module/Schedule/view/schedule/schedule/status.phtml:46
 msgid "Status Scheduler"
 msgstr "Stav Plánovača"
-
-#: ../module/Client/view/client/client/index.phtml:65
-#: ../module/Client/view/client/client/index.phtml:66
-msgid "OS"
-msgstr ""
-
-#: ../module/Client/view/client/client/index.phtml:71
-#: ../module/Client/view/client/client/index.phtml:72
-#: ../module/Client/view/client/client/details.phtml:53
-msgid "Version"
-msgstr "Verzia"
-
-#: ../module/Client/view/client/client/status.phtml:45
-msgid "Client Status"
-msgstr "Stav Klienta"
-
-#: ../module/Client/view/client/client/details.phtml:26
-msgid "Client details"
-msgstr "Detaily klienta"
-
-#: ../module/Client/view/client/client/details.phtml:54
-msgid "Autoprune"
-msgstr "Auto skratka"
-
-#: ../module/Client/view/client/client/details.phtml:55
-msgid "Fileretention"
-msgstr "Retenčnýsúbor"
-
-#: ../module/Client/view/client/client/details.phtml:56
-msgid "Jobretention"
-msgstr "Úloha retencie"
-
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "bconsole (batch-mode), please handle with care."
-msgstr "bconsole (dávkový-mód), prosím, zaobchádzajte s ním opatrne."
-
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "All commands have to be a one liner, dialogs are not working."
-msgstr "Všetky príkazy musia byť v jednom riadku, dialógy nefungujú."
-
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "Type help for a list of commands."
-msgstr "Zadaj help pre zobrazenie príkazov."
-
-#: ../public/js/bootstrap-table-formatter.js:25
-#: ../public/js/bootstrap-table-formatter.js:546
-#, fuzzy
-msgid "View Job Details"
-msgstr "Zoznam úloh"
 
 #: ../public/js/bootstrap-table-formatter.js:44
 #, fuzzy
@@ -1468,13 +1338,27 @@ msgstr "pred mesiacom"
 msgid "day(s)"
 msgstr "deň(i)"
 
-#: ../public/js/bootstrap-table-formatter.js:129
-msgid "hour(s)"
-msgstr ""
+#: ../public/js/bootstrap-table-formatter.js:140
+#: ../public/js/bootstrap-table-formatter.js:170
+msgid "Used"
+msgstr "Použité"
 
-#: ../public/js/bootstrap-table-formatter.js:132
-msgid "second(s)"
-msgstr ""
+#: ../public/js/bootstrap-table-formatter.js:152
+msgid "expired"
+msgstr "expirované"
+
+#: ../public/js/bootstrap-table-formatter.js:156
+msgid "expires in 1 day"
+msgstr "vyprší za 1 deň"
+
+#: ../public/js/bootstrap-table-formatter.js:160
+#, fuzzy
+msgid "expires in"
+msgstr "Expirácia"
+
+#: ../public/js/bootstrap-table-formatter.js:160
+msgid "days"
+msgstr "dní"
 
 #: ../public/js/bootstrap-table-formatter.js:150
 msgid "today"
@@ -1502,37 +1386,19 @@ msgstr "Povolené"
 msgid "disabled"
 msgstr "Zakázané"
 
-#: ../public/js/bootstrap-table-formatter.js:227
-msgid "Non-fatal error"
-msgstr ""
-
 #: ../public/js/bootstrap-table-formatter.js:228
 #: ../public/js/bootstrap-table-formatter.js:233
 #: ../public/js/bootstrap-table-formatter.js:238
 msgid "Failure"
 msgstr "Chyba"
 
-#: ../public/js/bootstrap-table-formatter.js:232
-#, fuzzy
-msgid "Job terminated in error"
-msgstr "Ukončenie zlyhalo"
-
-#: ../public/js/bootstrap-table-formatter.js:237
-msgid "Fatal error"
-msgstr ""
-
-#: ../public/js/bootstrap-table-formatter.js:242
-#, fuzzy
-msgid "Terminated normally"
-msgstr "Ukončenie zlyhalo"
-
 #: ../public/js/bootstrap-table-formatter.js:243
 msgid "Success"
 msgstr "Hotovo"
 
-#: ../public/js/bootstrap-table-formatter.js:252
-msgid "Created but not yet running"
-msgstr ""
+#: ../public/js/bootstrap-table-formatter.js:297
+msgid "Queued"
+msgstr "Vo fronte"
 
 #: ../public/js/bootstrap-table-formatter.js:257
 #: ../public/js/bootstrap-table-formatter.js:258
@@ -1540,64 +1406,14 @@ msgstr ""
 msgid "Blocked"
 msgstr "Koniec bloku"
 
-#: ../public/js/bootstrap-table-formatter.js:262
-#, fuzzy
-msgid "Verify differences"
-msgstr "Overiť nájdené rozdiely"
-
 #: ../public/js/bootstrap-table-formatter.js:263
 msgid "Verify found differences"
 msgstr "Overiť nájdené rozdiely"
-
-#: ../public/js/bootstrap-table-formatter.js:267
-#, fuzzy
-msgid "Canceled by user"
-msgstr "Zrušiť"
 
 #: ../public/js/bootstrap-table-formatter.js:268
 #, fuzzy
 msgid "Canceled"
 msgstr "Zrušiť"
-
-#: ../public/js/bootstrap-table-formatter.js:272
-msgid "Waiting on File daemon"
-msgstr ""
-
-#: ../public/js/bootstrap-table-formatter.js:277
-msgid "Waiting on the Storage daemon"
-msgstr ""
-
-#: ../public/js/bootstrap-table-formatter.js:282
-msgid "Waiting for new media"
-msgstr ""
-
-#: ../public/js/bootstrap-table-formatter.js:287
-msgid "Waiting for Mount"
-msgstr ""
-
-#: ../public/js/bootstrap-table-formatter.js:292
-msgid "Waiting for storage resource"
-msgstr ""
-
-#: ../public/js/bootstrap-table-formatter.js:297
-msgid "Waiting for job resource"
-msgstr ""
-
-#: ../public/js/bootstrap-table-formatter.js:302
-msgid "Waiting for Client resource"
-msgstr ""
-
-#: ../public/js/bootstrap-table-formatter.js:307
-msgid "Waiting for maximum jobs"
-msgstr ""
-
-#: ../public/js/bootstrap-table-formatter.js:312
-msgid "Waiting for start time"
-msgstr ""
-
-#: ../public/js/bootstrap-table-formatter.js:317
-msgid "Waiting for higher priority jobs to finish"
-msgstr ""
 
 #: ../public/js/bootstrap-table-formatter.js:322
 msgid "SD despooling attributes"
@@ -1607,13 +1423,62 @@ msgstr "SD skupinové atribúty"
 msgid "Doing batch insert file records"
 msgstr "Robím dávkové vkladanie nahratých súborov"
 
+#: ../public/js/bootstrap-table-formatter.js:333
+msgid "Incomplete"
+msgstr "Nekompletné"
+
+#: ../public/js/bootstrap-table-formatter.js:382
+msgid "Committing data"
+msgstr "Odovzdávam dáta"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
+#: ../public/js/bootstrap-table-formatter.js:343
+#, fuzzy
+msgid "Warning"
+msgstr "beží"
+
+#: ../public/js/bootstrap-table-formatter.js:347
+msgid "Doing data despooling"
+msgstr "Vykonávam dátový rozklad"
+
+#: ../public/js/bootstrap-table-formatter.js:352
+msgid "Queued waiting for device"
+msgstr "Čaká na zariadenie vo fronte"
+
+#: ../public/js/bootstrap-table-formatter.js:25
+#: ../public/js/bootstrap-table-formatter.js:546
+#, fuzzy
+msgid "View Job Details"
+msgstr "Zoznam úloh"
+
+#: ../module/Job/src/Job/Form/JobForm.php:102
+#, fuzzy
+msgid "warning"
+msgstr "beží"
+
+#: ../public/js/bootstrap-table-formatter.js:232
+#, fuzzy
+msgid "Job terminated in error"
+msgstr "Ukončenie zlyhalo"
+
+#: ../public/js/bootstrap-table-formatter.js:242
+#, fuzzy
+msgid "Terminated normally"
+msgstr "Ukončenie zlyhalo"
+
+#: ../public/js/bootstrap-table-formatter.js:262
+#, fuzzy
+msgid "Verify differences"
+msgstr "Overiť nájdené rozdiely"
+
+#: ../public/js/bootstrap-table-formatter.js:267
+#, fuzzy
+msgid "Canceled by user"
+msgstr "Zrušiť"
+
 #: ../public/js/bootstrap-table-formatter.js:332
 #, fuzzy
 msgid "Incomplete Job"
-msgstr "Nekompletné"
-
-#: ../public/js/bootstrap-table-formatter.js:333
-msgid "Incomplete"
 msgstr "Nekompletné"
 
 #: ../public/js/bootstrap-table-formatter.js:337
@@ -1626,114 +1491,24 @@ msgstr "Odovzdávam dáta"
 msgid "Terminated normally with warnings"
 msgstr "Ukončenie zlyhalo"
 
-#: ../public/js/bootstrap-table-formatter.js:347
-msgid "Doing data despooling"
-msgstr "Vykonávam dátový rozklad"
-
-#: ../public/js/bootstrap-table-formatter.js:352
-msgid "Queued waiting for device"
-msgstr "Čaká na zariadenie vo fronte"
-
-#: ../public/js/bootstrap-table-formatter.js:366
-msgid "Disabled"
-msgstr "Zakázané"
-
-#: ../public/js/bootstrap-table-formatter.js:505
-#: ../public/js/bootstrap-table-formatter.js:535
-#: ../public/js/bootstrap-table-formatter.js:613
-msgid "Disable"
-msgstr "Zakázať"
-
-#: ../public/js/bootstrap-table-formatter.js:506
-#: ../public/js/bootstrap-table-formatter.js:536
-#: ../public/js/bootstrap-table-formatter.js:612
-msgid "Enable"
-msgstr "Povoliť"
-
-#: ../public/js/bootstrap-table-formatter.js:507
-msgid "Download update"
-msgstr ""
-
-#: ../public/js/bootstrap-table-formatter.js:547
-msgid "Rerun"
-msgstr "Odznova"
-
-#: ../public/js/bootstrap-table-formatter.js:624
-msgid "Manage autochanger"
-msgstr "Manažment autozmeny"
-
-#~ msgid ""
-#~ "Sorry, it seems you are not authorized to run this module. If you think "
-#~ "this is an error, please contact your local administrator."
-#~ msgstr ""
-#~ "Prepáčte, vyzerá to, že nemáte oprávnenie spustiť tento modul. Ak si "
-#~ "myslíte, že došlo k chybe, kontaktujte Vášho administrátora."
-
-#~ msgid ""
-#~ "Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
-#~ "main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
-#~ "documentation</a> for any additional information on how to configure the "
-#~ "Command ACL directive of your Console/Profile resources. Following is a "
-#~ "list of required commands which need to be in your Command ACL to run "
-#~ "this module properly:"
-#~ msgstr ""
-#~ "Prečítajte si prosím <a href=\"http://doc.bareos.org/master/html/bareos-"
-#~ "manual-main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
-#~ "documentation</a> pre viac informácií ako nastavitť Command ACL vo Vašej "
-#~ "Konzole/Profile. Nasleduje zoskupenie potrebných príkazov, ktoré môžu byť "
-#~ "použité v Command ACL pre korektné spustenie tohoto modulu:"
-
+#: ../module/Restore/view/restore/restore/index.phtml:32
+#: ../module/Restore/view/restore/restore/versions.phtml:32
 #, fuzzy
-#~ msgid "Last successful backups"
-#~ msgstr "Posledné zálohy"
+msgid "Restore multiple files"
+msgstr "Obnoviť na klienta"
 
-#~ msgid "Show Files"
-#~ msgstr "Ukázať Súbory"
-
+#: ../module/Restore/view/restore/restore/index.phtml:75
+#: ../module/Restore/view/restore/restore/versions.phtml:76
 #, fuzzy
-#~ msgid "Start Block"
-#~ msgstr "Štart"
+msgid "Job report"
+msgstr "Zoznam úloh"
 
+#: ../module/Restore/view/restore/restore/versions.phtml:195
 #, fuzzy
-#~ msgid "End Block"
-#~ msgstr "Koniec bloku"
+msgid "Checksum"
+msgstr "MD5 kontrola"
 
-#~ msgid "Retention/Expiration"
-#~ msgstr "Retencia/Expirácia"
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> for any additional information on how to configure the Command ACL directive of your Console/Profile resources. Following is a list of required commands which need to be in your Command ACL to run this module properly:"
+msgstr "Prečítajte si prosím <a href=\"%s\" target=\"_blank\">Bareos documentation</a> pre viac informácií ako nastavitť Command ACL vo Vašej Konzole/Profile. Nasleduje zoskupenie potrebných príkazov, ktoré môžu byť použité v Command ACL pre korektné spustenie tohoto modulu:"
 
-#~ msgid "Date"
-#~ msgstr "Dátum"
-
-#~ msgid "Used"
-#~ msgstr "Použité"
-
-#~ msgid "expired"
-#~ msgstr "expirované"
-
-#~ msgid "expires in 1 day"
-#~ msgstr "vyprší za 1 deň"
-
-#, fuzzy
-#~ msgid "expires in"
-#~ msgstr "Expirácia"
-
-#~ msgid "days"
-#~ msgstr "dní"
-
-#~ msgid "Queued"
-#~ msgstr "Vo fronte"
-
-#~ msgid "Committing data"
-#~ msgstr "Odovzdávam dáta"
-
-#~ msgid ""
-#~ "Please read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> "
-#~ "for any additional information on how to configure the Command ACL "
-#~ "directive of your Console/Profile resources. Following is a list of "
-#~ "required commands which need to be in your Command ACL to run this module "
-#~ "properly:"
-#~ msgstr ""
-#~ "Prečítajte si prosím <a href=\"%s\" target=\"_blank\">Bareos "
-#~ "documentation</a> pre viac informácií ako nastavitť Command ACL vo Vašej "
-#~ "Konzole/Profile. Nasleduje zoskupenie potrebných príkazov, ktoré môžu byť "
-#~ "použité v Command ACL pre korektné spustenie tohoto modulu:"
