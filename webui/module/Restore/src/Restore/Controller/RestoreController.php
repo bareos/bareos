@@ -47,6 +47,7 @@ class RestoreController extends AbstractActionController
   protected $restore_params = null;
 
   protected $acl_alert = false;
+  protected $ndmp_advice_note = false;
 
   private $directories = null;
   private $files = null;
@@ -147,6 +148,10 @@ class RestoreController extends AbstractActionController
       $errors = 'No backups of client <strong>'.$this->restore_params['client'].'</strong> found.';
     }
 
+    if(isset($this->restore_params['client'])) {
+      $this->ndmp_advice_note = $this->isNDMPBackupClient($this->restore_params['client']);
+    }
+
     // Create the form
     $form = new RestoreForm(
       $this->restore_params,
@@ -217,7 +222,8 @@ class RestoreController extends AbstractActionController
           'restore_params' => $this->restore_params,
           'form' => $form,
           'result' => $result,
-          'errors' => $errors
+          'errors' => $errors,
+          'ndmp_advice_note' => $this->ndmp_advice_note
         ));
 
       }
@@ -229,7 +235,8 @@ class RestoreController extends AbstractActionController
           'restore_params' => $this->restore_params,
           'form' => $form,
           'result' => $result,
-          'errors' => $errors
+          'errors' => $errors,
+          'ndmp_advice_note' => $this->ndmp_advice_note
         ));
 
       }
@@ -243,7 +250,8 @@ class RestoreController extends AbstractActionController
         'restore_params' => $this->restore_params,
         'form' => $form,
         'result' => $result,
-        'errors' => $errors
+        'errors' => $errors,
+        'ndmp_advice_note' => $this->ndmp_advice_note
       ));
 
     }
@@ -338,6 +346,10 @@ class RestoreController extends AbstractActionController
       $errors = 'No backups of client <strong>' . $this->restore_params['client'] . '</strong> found.';
     }
 
+    if(isset($this->restore_params['client'])) {
+      $this->ndmp_advice_note = $this->isNDMPBackupClient($this->restore_params['client']);
+    }
+
     // Create the form
     $form = new RestoreForm(
       $this->restore_params,
@@ -409,6 +421,7 @@ class RestoreController extends AbstractActionController
           'form' => $form,
           'result' => $result,
           'errors' => $errors,
+          'ndmp_advice_note' => $this->ndmp_advice_note,
           'checked_files' => '',
           'checked_directories' => ''
         ));
@@ -421,7 +434,8 @@ class RestoreController extends AbstractActionController
           'restore_params' => $this->restore_params,
           'form' => $form,
           'result' => $result,
-          'errors' => $errors
+          'errors' => $errors,
+          'ndmp_advice_note' => $this->ndmp_advice_note
         ));
 
       }
@@ -434,7 +448,8 @@ class RestoreController extends AbstractActionController
         'restore_params' => $this->restore_params,
         'form' => $form,
         'result' => $result,
-        'errors' => $errors
+        'errors' => $errors,
+        'ndmp_advice_note' => $this->ndmp_advice_note
       ));
 
     }
@@ -799,6 +814,18 @@ class RestoreController extends AbstractActionController
 
     return $response;
 
+  }
+
+  private function isNDMPBackupClient($client=null)
+  {
+    try {
+        $this->bsock = $this->getServiceLocator()->get('director');
+        $result = $this->getRestoreModel()->isNDMPBackupClient($this->bsock, $client);
+        return $result;
+    }
+    catch(Exception $e) {
+        echo $e->getMessage();
+    }
   }
 
   /**

@@ -278,4 +278,23 @@ class RestoreModel
          throw new \Exception('Missing argument');
       }
    }
+
+   public function isNDMPBackupClient(&$bsock=null, $client=null)
+   {
+      if(isset($bsock)) {
+        if($client != null) {
+          $cmd = 'show client='.$client;
+          $result = $bsock->send_command($cmd, 0);
+          $keywords = array('NDMPv2','NDMPv3','NDMPv4');
+          foreach($keywords as $keyword) {
+            if(stripos($result, $keyword) !== false) {
+              return true;
+            }
+          }
+          return false;
+        } else {
+          throw new \Exception('Missing argument');
+        }
+      }
+   }
 }

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -121,6 +121,25 @@ $this->headTitle($title);
    </div>
 </div>
 <!-- modal-004 end -->
+
+<!-- modal-005 start -->
+<div id="modal-005" class="modal fade modal-005" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+   <div class="modal-header">
+   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+   <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Notification"); ?></h4>
+      </div>
+      <div class="modal-body">
+         <p><?php echo $this->translate("Restoring NDMP backups is currently not supported by Bareos WebUI. Please use the bconsole instead."); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button id="modal-005-btn-ok" type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("OK"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-005 end -->
 
 <div class="panel panel-default">
    <div class="panel-heading">
@@ -597,6 +616,12 @@ $(document).ready(function () {
 
    if (result.length > 0) {
       $("#modal-002").modal();
+   }
+
+   var ndmp_advice_note = '<?php echo $this->ndmp_advice_note; ?>';
+
+   if(ndmp_advice_note) {
+      $("#modal-005").modal();
    }
 
    $('#checked_files').val('');
