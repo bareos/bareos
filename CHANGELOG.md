@@ -106,6 +106,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: add inchanger column to volume tables [PR #998]
 - webui and console: add job duration column in job listings [PR #1007]
 - packages: Build EL_8 packages instead of CentOS_8 for RHEL 8 derivates (Alma, Rocky, CentOS Stream)[PR #992]
+- webui: provide a notification that NDMP restores are NOT supported by webui [PR #1020]
 
 ### Changed
 - docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]
