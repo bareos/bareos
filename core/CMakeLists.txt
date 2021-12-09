@@ -357,6 +357,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall")
 
 include(BareosSetVariableDefaults)
+option(ENABLE_BCONSOLE "Build bconsole binary" ON)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
   set(ENABLE_NLS 0)
@@ -639,8 +640,6 @@ if(NOT openssl)
   unset(HAVE_TLS)
 endif()
 
-set(largefile_support "")
-
 if("${PAM_FOUND}")
   set(HAVE_PAM 1)
 endif()
@@ -858,7 +857,6 @@ message("   Storage DaemonGroup:          ${sd_group} ")
 message("   File Daemon User:             ${fd_user} ")
 message("   File Daemon Group:            ${fd_group} ")
 message(" ")
-message("   Large file support:           ${largefile_support}")
 message(
   "   readline support:             ROOT_DIR:${Readline_ROOT_DIR} INCLUDE_DIR:${Readline_INCLUDE_DIR} LIBRARY:${Readline_LIBRARY}
  "
@@ -890,8 +888,6 @@ message("   enable-lockmgr:               ${lockmgr} ")
 message("   tray-monitor support:         ${HAVE_TRAYMONITOR} ")
 message("   test-plugin support:          ${HAVE_TEST_PLUGIN} ")
 message("   client-only:                  ${build_client_only} ")
-message("   build-dird:                   ${build_dird} ")
-message("   build-stored:                 ${build_stored} ")
 message("   Plugin support:               ${have_plugins} ")
 message("   AFS support:                  ${have_afs} ")
 message("   ACL support:                  ${HAVE_ACL} ${ACL_LIBRARIES}")

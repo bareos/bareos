@@ -47,7 +47,6 @@ if(BUILD_BENCHMARKS)
   add_subdirectory(benchmarks)
 endif()
 
-option(ENABLE_BCONSOLE "Build bconsole binary" ON)
 if(ENABLE_BCONSOLE)
   add_subdirectory(console)
 endif()
