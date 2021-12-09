@@ -1,141 +1,38 @@
 msgid ""
 msgstr ""
+"Project-Id-Version: bareos-webui\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-12-09 10:32+0100\n"
+"Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: POEditor.com\n"
-"Project-Id-Version: bareos-webui\n"
-"Language: tr\n"
 
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:26
-#: ../module/Application/config/module.config.php:126
-msgid "Dashboard"
-msgstr "Pano"
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:36
+msgid ""
+"<b>Access denied</b><br><br>Permission to execute the following commands is "
+"required:<br><br><kbd>"
+msgstr ""
 
-#: ../module/Dashboard/view/partial/JobTotals.phtml:40
-#: ../module/Application/config/module.config.php:131
-msgid "Jobs"
-msgstr "emir"
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid "Access denied"
+msgstr ""
 
-#: ../module/Schedule/view/schedule/schedule/index.phtml:33
-#: ../module/Schedule/view/schedule/schedule/details.phtml:33
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:33
-#: ../module/Schedule/view/schedule/schedule/status.phtml:32
-#: ../module/Application/config/module.config.php:136
-msgid "Overview"
-msgstr "paneli"
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:40
+#, php-format
+msgid ""
+"Read the <a href=\"%s\" target=\"_blank\">Bareos documentation</a> on how to "
+"configure ACL settings in your Console/Profile resources."
+msgstr ""
 
-#: ../module/Job/view/job/job/run.phtml:34
-#: ../module/Job/view/job/job/index.phtml:34
-#: ../module/Job/view/job/job/details.phtml:34
-#: ../module/Job/view/job/job/actions.phtml:34
-#: ../module/Application/config/module.config.php:141
-#: ../public/js/bootstrap-table-formatter.js:625
-msgid "Run"
-msgstr "Çalıştır"
+#: ../module/Application/src/Application/View/Helper/ACLAlert.php:42
+msgid "Back"
+msgstr "Geri"
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:525
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:539
-#: ../module/Restore/view/restore/restore/index.phtml:26
-#: ../module/Restore/view/restore/restore/versions.phtml:26
-#: ../module/Application/config/module.config.php:148
-#: ../public/js/bootstrap-table-formatter.js:53
-#: ../public/js/bootstrap-table-formatter.js:517
-#: ../public/js/bootstrap-table-formatter.js:542
-#: ../public/js/bootstrap-table-formatter.js:562
-msgid "Restore"
-msgstr "restorasyon"
-
-#: ../module/Application/config/module.config.php:153
-#: ../module/Client/view/client/client/index.phtml:26
-#: ../module/Client/view/client/client/index.phtml:45
-msgid "Clients"
-msgstr "İstemciler"
-
-#: ../module/Schedule/view/schedule/schedule/index.phtml:26
-#: ../module/Schedule/view/schedule/schedule/index.phtml:68
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:26
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:47
-#: ../module/Application/config/module.config.php:158
-msgid "Schedules"
-msgstr "programları"
-
-#: ../module/Application/config/module.config.php:163
-#: ../module/Storage/view/storage/storage/index.phtml:26
-msgid "Storages"
-msgstr "hafızalar"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:197
-#: ../module/Job/src/Job/Form/RunJobForm.php:213
-#: ../module/Job/view/job/job/index.phtml:303
-#: ../module/Job/view/job/job/details.phtml:155
-#: ../module/Application/config/module.config.php:168
-#: ../module/Application/config/module.config.php:173
-#: ../module/Storage/src/Storage/Form/StorageForm.php:61
-#: ../module/Storage/view/storage/storage/details.phtml:159
-#: ../module/Pool/view/pool/pool/details.phtml:48
-msgid "Pool"
-msgstr "Pool"
-
-#: ../module/Media/view/media/media/index.phtml:26
-#: ../module/Media/view/media/media/index.phtml:34
-#: ../module/Media/view/media/media/index.phtml:47
-#: ../module/Media/view/media/media/details.phtml:34
-#: ../module/Application/config/module.config.php:178
-#: ../module/Application/config/module.config.php:183
-#: ../module/Storage/view/storage/storage/index.phtml:34
-#: ../module/Storage/view/storage/storage/details.phtml:34
-#: ../module/Storage/view/storage/storage/status.phtml:34
-#: ../module/Pool/view/pool/pool/index.phtml:34
-#: ../module/Pool/view/pool/pool/index.phtml:73
-#: ../module/Pool/view/pool/pool/index.phtml:74
-#: ../module/Pool/view/pool/pool/details.phtml:34
-#: ../module/Pool/view/pool/pool/details.phtml:58
-#: ../module/Pool/view/pool/pool/details.phtml:79
-msgid "Volumes"
-msgstr "hafıza kartları"
-
-#: ../module/Application/config/module.config.php:190
-#: ../module/Director/view/director/director/index.phtml:27
-#: ../module/Director/view/director/director/messages.phtml:26
-msgid "Director"
-msgstr "Director"
-
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:37
-msgid "Sorry, it seems you are not authorized to run this module. If you think this is an error, please contact your local administrator."
-msgstr "Ürgünüm. Bu modülü çalıştırma yetkiniz yok. Bunun bir hata olduğunu düşünüyorsanız lütfen yöneticinizle iletişim kurun."
-
-#: ../module/Application/view/error/404.phtml:3
-msgid "A 404 error occurred"
-msgstr "Bir 404 hatası oluştu"
-
-#: ../module/Application/view/error/404.phtml:12
-msgid "The requested controller was unable to dispatch the request."
-msgstr "İstenen denetleyici isteği sevk edemedi."
-
-#: ../module/Application/view/error/404.phtml:15
-msgid "The requested controller could not be mapped to an existing controller class."
-msgstr "İstenen denetleyici mevcut bir kontrol sınıfıyla eşlenemedi."
-
-#: ../module/Application/view/error/404.phtml:18
-msgid "The requested controller was not dispatchable."
-msgstr "İstenen denetleyici sevk edilebilir değildi."
-
-#: ../module/Application/view/error/404.phtml:21
-msgid "The requested URL could not be matched by routing."
-msgstr "İstenen URL yönlendirici ile eşleştirilemedi."
-
-#: ../module/Application/view/error/404.phtml:24
-msgid "We cannot determine at this time why a 404 was generated."
-msgstr "Şu anda neden bir 404 oluşturulduğunu belirleyemiyoruz."
-
-#: ../module/Application/view/error/404.phtml:36
-msgid "Controller"
-msgstr "Controller"
-
-#: ../module/Application/view/error/404.phtml:43
-msgid "resolves to %s"
-msgstr "çözümlenen %s"
+#: ../module/Application/view/error/index.phtml:4
+msgid "An error occurred"
+msgstr "Bir hata oluştu"
 
 #: ../module/Application/view/error/index.phtml:11
 #: ../module/Application/view/error/404.phtml:55
@@ -149,11 +46,11 @@ msgstr "bilgi"
 msgid "File"
 msgstr "Dosya"
 
-#: ../module/Job/view/job/job/details.phtml:88
 #: ../module/Application/view/error/index.phtml:18
 #: ../module/Application/view/error/index.phtml:42
 #: ../module/Application/view/error/404.phtml:62
 #: ../module/Application/view/error/404.phtml:86
+#: ../module/Job/view/job/job/details.phtml:88
 msgid "Message"
 msgstr "mesajlar"
 
@@ -174,9 +71,43 @@ msgstr "Önceki istisnalar"
 msgid "No Exception available"
 msgstr "İstisna yok"
 
-#: ../module/Application/view/error/index.phtml:4
-msgid "An error occurred"
-msgstr "Bir hata oluştu"
+#: ../module/Application/view/error/404.phtml:3
+msgid "A 404 error occurred"
+msgstr "Bir 404 hatası oluştu"
+
+#: ../module/Application/view/error/404.phtml:12
+msgid "The requested controller was unable to dispatch the request."
+msgstr "İstenen denetleyici isteği sevk edemedi."
+
+#: ../module/Application/view/error/404.phtml:15
+msgid ""
+"The requested controller could not be mapped to an existing controller class."
+msgstr "İstenen denetleyici mevcut bir kontrol sınıfıyla eşlenemedi."
+
+#: ../module/Application/view/error/404.phtml:18
+msgid "The requested controller was not dispatchable."
+msgstr "İstenen denetleyici sevk edilebilir değildi."
+
+#: ../module/Application/view/error/404.phtml:21
+msgid "The requested URL could not be matched by routing."
+msgstr "İstenen URL yönlendirici ile eşleştirilemedi."
+
+#: ../module/Application/view/error/404.phtml:24
+msgid "We cannot determine at this time why a 404 was generated."
+msgstr "Şu anda neden bir 404 oluşturulduğunu belirleyemiyoruz."
+
+#: ../module/Application/view/error/404.phtml:36
+msgid "Controller"
+msgstr "Controller"
+
+#: ../module/Application/view/error/404.phtml:43
+#, php-format
+msgid "resolves to %s"
+msgstr "çözümlenen %s"
+
+#: ../module/Application/view/layout/layout.phtml:148
+msgid "Console"
+msgstr "konsol"
 
 #: ../module/Application/view/layout/layout.phtml:156
 msgid "Documentation"
@@ -202,380 +133,113 @@ msgstr "Abonelik"
 msgid "Logout"
 msgstr "Oturumu Kapat"
 
-#: ../module/Job/view/job/job/run.phtml:32
-#: ../module/Job/view/job/job/index.phtml:32
-#: ../module/Job/view/job/job/details.phtml:32
-#: ../module/Job/view/job/job/actions.phtml:32
-#: ../module/Schedule/view/schedule/schedule/index.phtml:32
-#: ../module/Schedule/view/schedule/schedule/details.phtml:32
-#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
-#: ../module/Schedule/view/schedule/schedule/status.phtml:31
-#: ../module/Client/view/client/client/index.phtml:32
-#: ../module/Client/view/client/client/details.phtml:32
-#: ../module/Client/view/client/client/status.phtml:32
-msgid "Show"
-msgstr "Görüntüle"
+#: ../module/Application/config/module.config.php:127
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:26
+msgid "Dashboard"
+msgstr "Pano"
 
-#: ../module/Client/view/client/client/status.phtml:45
-msgid "Client Status"
-msgstr "İstemci Durumu"
+#: ../module/Application/config/module.config.php:132
+#: ../module/Dashboard/view/partial/JobTotals.phtml:40
+msgid "Jobs"
+msgstr "emir"
 
-#: ../module/Client/view/client/client/details.phtml:26
-msgid "Client details"
-msgstr "İstemci detayları"
+#: ../module/Application/config/module.config.php:137
+#: ../module/Schedule/view/schedule/schedule/details.phtml:33
+#: ../module/Schedule/view/schedule/schedule/index.phtml:33
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:33
+#: ../module/Schedule/view/schedule/schedule/status.phtml:32
+msgid "Overview"
+msgstr "paneli"
 
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
-#: ../module/Job/src/Job/Form/RunJobForm.php:56
-#: ../module/Job/src/Job/Form/RunJobForm.php:73
-#: ../module/Job/view/job/job/index.phtml:85
-#: ../module/Job/view/job/job/index.phtml:86
-#: ../module/Job/view/job/job/details.phtml:59
-#: ../module/Media/view/media/media/details.phtml:104
-#: ../module/Media/view/media/media/details.phtml:105
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:95
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:112
-#: ../module/Client/view/client/client/details.phtml:45
-msgid "Client"
-msgstr "İstemci"
+#: ../module/Application/config/module.config.php:142
+#: ../module/Job/view/job/job/actions.phtml:34
+#: ../module/Job/view/job/job/run.phtml:34
+#: ../module/Job/view/job/job/details.phtml:34
+#: ../module/Job/view/job/job/index.phtml:34
+#: ../public/js/bootstrap-table-formatter.js:611
+msgid "Run"
+msgstr "Çalıştır"
 
-#: ../module/Media/view/media/media/index.phtml:61
-#: ../module/Media/view/media/media/index.phtml:62
-#: ../module/Media/view/media/media/details.phtml:55
-#: ../module/Schedule/view/schedule/schedule/index.phtml:82
-#: ../module/Schedule/view/schedule/schedule/index.phtml:83
-#: ../module/Restore/view/restore/restore/index.phtml:386
-#: ../module/Restore/view/restore/restore/versions.phtml:530
-#: ../module/Storage/view/storage/storage/index.phtml:61
-#: ../module/Storage/view/storage/storage/index.phtml:62
-#: ../module/Client/view/client/client/index.phtml:59
-#: ../module/Client/view/client/client/index.phtml:60
-#: ../module/Client/view/client/client/details.phtml:52
-#: ../module/Fileset/view/fileset/fileset/details.phtml:48
-#: ../module/Pool/view/pool/pool/index.phtml:61
-#: ../module/Pool/view/pool/pool/index.phtml:62
-#: ../module/Pool/view/pool/pool/details.phtml:56
-#: ../module/Pool/view/pool/pool/details.phtml:93
-#: ../module/Pool/view/pool/pool/details.phtml:94
-msgid "Name"
-msgstr "Isim"
+#: ../module/Application/config/module.config.php:149
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:525
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:539
+#: ../module/Restore/view/restore/restore/index.phtml:26
+#: ../module/Restore/view/restore/restore/versions.phtml:26
+#: ../public/js/bootstrap-table-formatter.js:53
+#: ../public/js/bootstrap-table-formatter.js:503
+#: ../public/js/bootstrap-table-formatter.js:528
+#: ../public/js/bootstrap-table-formatter.js:548
+msgid "Restore"
+msgstr "restorasyon"
 
-#: ../module/Client/view/client/client/index.phtml:71
-#: ../module/Client/view/client/client/index.phtml:72
-#: ../module/Client/view/client/client/details.phtml:53
-msgid "Version"
-msgstr "Sürüm"
+#: ../module/Application/config/module.config.php:154
+#: ../module/Client/view/client/client/index.phtml:26
+#: ../module/Client/view/client/client/index.phtml:45
+msgid "Clients"
+msgstr "İstemciler"
 
-#: ../module/Client/view/client/client/details.phtml:54
-msgid "Autoprune"
-msgstr "Otomatik temizlemek"
+#: ../module/Application/config/module.config.php:159
+#: ../module/Schedule/view/schedule/schedule/index.phtml:26
+#: ../module/Schedule/view/schedule/schedule/index.phtml:68
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:26
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:47
+msgid "Schedules"
+msgstr "programları"
 
-#: ../module/Client/view/client/client/details.phtml:55
-msgid "Fileretention"
-msgstr "File tutmamak"
+#: ../module/Application/config/module.config.php:164
+#: ../module/Storage/view/storage/storage/index.phtml:26
+msgid "Storages"
+msgstr "hafızalar"
 
-#: ../module/Client/view/client/client/details.phtml:56
-msgid "Jobretention"
-msgstr "emir tutmamak"
+#: ../module/Application/config/module.config.php:169
+#: ../module/Application/config/module.config.php:174
+#: ../module/Job/src/Job/Form/RunJobForm.php:197
+#: ../module/Job/src/Job/Form/RunJobForm.php:213
+#: ../module/Job/view/job/job/details.phtml:155
+#: ../module/Job/view/job/job/index.phtml:310
+#: ../module/Pool/view/pool/pool/details.phtml:48
+#: ../module/Storage/view/storage/storage/details.phtml:159
+#: ../module/Storage/src/Storage/Form/StorageForm.php:61
+msgid "Pool"
+msgstr "Pool"
 
-#: ../module/Job/view/job/job/run.phtml:33
-#: ../module/Job/view/job/job/index.phtml:33
-#: ../module/Job/view/job/job/index.phtml:145
-#: ../module/Job/view/job/job/details.phtml:33
-#: ../module/Job/view/job/job/details.phtml:66
-#: ../module/Job/view/job/job/actions.phtml:33
-#: ../module/Job/view/job/job/actions.phtml:93
-#: ../module/Schedule/view/schedule/schedule/index.phtml:92
-#: ../module/Storage/view/storage/storage/index.phtml:71
-#: ../module/Storage/view/storage/storage/details.phtml:113
-#: ../module/Storage/view/storage/storage/details.phtml:129
-#: ../module/Storage/view/storage/storage/details.phtml:162
-#: ../module/Client/view/client/client/index.phtml:81
-#: ../module/Client/view/client/client/details.phtml:57
-#: ../module/Client/view/client/client/details.phtml:145
-msgid "Actions"
-msgstr "Eylemler"
+#: ../module/Application/config/module.config.php:179
+#: ../module/Application/config/module.config.php:184
+#: ../module/Pool/view/pool/pool/index.phtml:34
+#: ../module/Pool/view/pool/pool/index.phtml:73
+#: ../module/Pool/view/pool/pool/index.phtml:74
+#: ../module/Pool/view/pool/pool/details.phtml:34
+#: ../module/Pool/view/pool/pool/details.phtml:58
+#: ../module/Pool/view/pool/pool/details.phtml:79
+#: ../module/Media/view/media/media/details.phtml:34
+#: ../module/Media/view/media/media/index.phtml:26
+#: ../module/Media/view/media/media/index.phtml:34
+#: ../module/Media/view/media/media/index.phtml:47
+#: ../module/Storage/view/storage/storage/details.phtml:34
+#: ../module/Storage/view/storage/storage/index.phtml:34
+#: ../module/Storage/view/storage/storage/status.phtml:34
+msgid "Volumes"
+msgstr "hafıza kartları"
 
-#: ../module/Client/view/client/client/details.phtml:69
-msgid "Last successful backups"
-msgstr "Letzte Sicherungen"
+#: ../module/Application/config/module.config.php:191
+#: ../module/Director/view/director/director/index.phtml:27
+#: ../module/Director/view/director/director/messages.phtml:26
+msgid "Director"
+msgstr "Director"
 
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:42
-#: ../module/Job/view/job/job/index.phtml:73
-#: ../module/Job/view/job/job/index.phtml:74
-#: ../module/Job/view/job/job/details.phtml:57
-#: ../module/Media/view/media/media/details.phtml:92
-#: ../module/Media/view/media/media/details.phtml:93
-#: ../module/Client/view/client/client/details.phtml:86
-#: ../module/Client/view/client/client/details.phtml:87
-msgid "Job ID"
-msgstr "emir ID"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:39
 #: ../module/Job/src/Job/Form/JobForm.php:53
-#: ../module/Job/view/job/job/index.phtml:79
-#: ../module/Job/view/job/job/index.phtml:80
-#: ../module/Job/view/job/job/details.phtml:58
 #: ../module/Job/view/job/job/actions.phtml:83
 #: ../module/Job/view/job/job/actions.phtml:84
+#: ../module/Job/view/job/job/details.phtml:58
+#: ../module/Job/view/job/job/index.phtml:79
+#: ../module/Job/view/job/job/index.phtml:80
 #: ../module/Media/view/media/media/details.phtml:98
 #: ../module/Media/view/media/media/details.phtml:99
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:39
 #: ../module/Client/view/client/client/details.phtml:92
 #: ../module/Client/view/client/client/details.phtml:93
 msgid "Job name"
 msgstr "emir isim"
-
-#: ../module/Job/view/job/job/details.phtml:87
-msgid "Timestamp"
-msgstr "Zaman damgası"
-
-#: ../module/Job/src/Job/Form/RunJobForm.php:127
-#: ../module/Job/src/Job/Form/RunJobForm.php:143
-#: ../module/Job/view/job/job/index.phtml:299
-#: ../module/Job/view/job/job/details.phtml:151
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:184
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:199
-#: ../module/Client/view/client/client/details.phtml:112
-#: ../module/Client/view/client/client/details.phtml:113
-#: ../module/Fileset/view/fileset/fileset/details.phtml:39
-msgid "Fileset"
-msgstr "Fileset"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:44
-#: ../module/Job/src/Job/Form/RunJobForm.php:232
-#: ../module/Job/src/Job/Form/RunJobForm.php:248
-#: ../module/Job/view/job/job/index.phtml:99
-#: ../module/Job/view/job/job/index.phtml:100
-#: ../module/Job/view/job/job/details.phtml:61
-#: ../module/Media/view/media/media/details.phtml:116
-#: ../module/Media/view/media/media/details.phtml:117
-#: ../module/Client/view/client/client/details.phtml:119
-#: ../module/Client/view/client/client/details.phtml:120
-msgid "Level"
-msgstr "Seviye"
-
-#: ../module/Dashboard/view/partial/JobTotals.phtml:41
-#: ../module/Job/view/job/job/index.phtml:120
-#: ../module/Job/view/job/job/index.phtml:121
-#: ../module/Job/view/job/job/details.phtml:62
-#: ../module/Media/view/media/media/details.phtml:122
-#: ../module/Media/view/media/media/details.phtml:123
-#: ../module/Client/view/client/client/details.phtml:126
-#: ../module/Client/view/client/client/details.phtml:127
-msgid "Files"
-msgstr "Dosyalar"
-
-#: ../module/Dashboard/view/partial/JobTotals.phtml:42
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:47
-#: ../module/Job/view/job/job/index.phtml:127
-#: ../module/Job/view/job/job/index.phtml:128
-#: ../module/Job/view/job/job/details.phtml:63
-#: ../module/Media/view/media/media/details.phtml:128
-#: ../module/Media/view/media/media/details.phtml:129
-#: ../module/Storage/view/storage/storage/details.phtml:154
-#: ../module/Client/view/client/client/details.phtml:133
-#: ../module/Client/view/client/client/details.phtml:134
-msgid "Bytes"
-msgstr "Bytes"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:40
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:41
-#: ../module/Job/src/Job/Form/JobForm.php:95
-#: ../module/Job/view/job/job/index.phtml:141
-#: ../module/Job/view/job/job/index.phtml:142
-#: ../module/Job/view/job/job/details.phtml:65
-#: ../module/Job/view/job/job/actions.phtml:89
-#: ../module/Job/view/job/job/actions.phtml:90
-#: ../module/Media/view/media/media/index.phtml:85
-#: ../module/Media/view/media/media/index.phtml:86
-#: ../module/Media/view/media/media/details.phtml:59
-#: ../module/Schedule/view/schedule/schedule/index.phtml:88
-#: ../module/Schedule/view/schedule/schedule/index.phtml:89
-#: ../module/Storage/view/storage/storage/details.phtml:157
-#: ../module/Client/view/client/client/index.phtml:77
-#: ../module/Client/view/client/client/index.phtml:78
-#: ../module/Client/view/client/client/details.phtml:140
-#: ../module/Client/view/client/client/details.phtml:141
-#: ../module/Director/view/director/director/index.phtml:33
-#: ../module/Director/view/director/director/messages.phtml:32
-#: ../module/Pool/view/pool/pool/details.phtml:117
-#: ../module/Pool/view/pool/pool/details.phtml:118
-#: ../public/js/bootstrap-table-formatter.js:518
-#: ../public/js/bootstrap-table-formatter.js:543
-#: ../public/js/bootstrap-table-formatter.js:637
-msgid "Status"
-msgstr "Durum"
-
-#: ../module/Client/view/client/client/details.phtml:221
-msgid "Show Files"
-msgstr "Dosyaları göster"
-
-#: ../module/Job/view/job/job/index.phtml:170
-#: ../module/Job/view/job/job/index.phtml:191
-#: ../module/Job/view/job/job/details.phtml:135
-#: ../module/Job/view/job/job/actions.phtml:55
-#: ../module/Media/view/media/media/index.phtml:139
-#: ../module/Media/view/media/media/details.phtml:177
-#: ../module/Schedule/view/schedule/schedule/index.phtml:55
-#: ../module/Restore/view/restore/restore/index.phtml:53
-#: ../module/Restore/view/restore/restore/index.phtml:76
-#: ../module/Restore/view/restore/restore/versions.phtml:53
-#: ../module/Restore/view/restore/restore/versions.phtml:77
-#: ../module/Storage/view/storage/storage/details.phtml:57
-#: ../module/Client/view/client/client/index.phtml:117
-#: ../module/Pool/view/pool/pool/details.phtml:171
-msgid "Close"
-msgstr "Kapat"
-
-#: ../module/Media/view/media/media/details.phtml:395
-#: ../public/js/bootstrap-table-formatter.js:408
-msgid "Enabled"
-msgstr "Etkin"
-
-#: ../public/js/bootstrap-table-formatter.js:410
-msgid "Disabled"
-msgstr "Pasif"
-
-#: ../public/js/bootstrap-table-formatter.js:519
-#: ../public/js/bootstrap-table-formatter.js:549
-#: ../public/js/bootstrap-table-formatter.js:627
-msgid "Disable"
-msgstr "Pasifleştir"
-
-#: ../public/js/bootstrap-table-formatter.js:520
-#: ../public/js/bootstrap-table-formatter.js:550
-#: ../public/js/bootstrap-table-formatter.js:626
-msgid "Enable"
-msgstr "Etkinleştir"
-
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:259
-msgid "Not enough data to estimate progress or statistics collection is disabled."
-msgstr "Devre dışı bırakılan ilerleme süreci veya istatistik toplama için yeterli veri yok."
-
-#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:267
-msgid "There are no jobs running."
-msgstr "Çalışan görev yok."
-
-#: ../module/Dashboard/view/partial/JobTotals.phtml:31
-#, fuzzy
-msgid "Job Totals"
-msgstr "emir listesi"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
-msgid "Most recent job status per job name"
-msgstr "İş adına göre en son iş durumu"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:45
-#: ../module/Job/view/job/job/index.phtml:106
-#: ../module/Job/view/job/job/index.phtml:107
-#: ../module/Job/view/job/job/details.phtml:163
-#: ../module/Client/view/client/client/details.phtml:99
-#: ../module/Client/view/client/client/details.phtml:100
-msgid "Start"
-msgstr "başlangıç"
-
-#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:46
-#: ../module/Job/view/job/job/index.phtml:113
-#: ../module/Job/view/job/job/index.phtml:114
-#: ../module/Job/view/job/job/details.phtml:167
-#: ../module/Client/view/client/client/details.phtml:106
-#: ../module/Client/view/client/client/details.phtml:107
-msgid "End"
-msgstr "sonuç"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:31
-msgid "Jobs started during the past 24 hours"
-msgstr "Işler son 24 saat içinde başladı"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:46
-#: ../public/js/bootstrap-table-formatter.js:291
-#: ../public/js/bootstrap-table-formatter.js:292
-msgid "Running"
-msgstr "Çalışan"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:57
-#: ../public/js/bootstrap-table-formatter.js:317
-#: ../public/js/bootstrap-table-formatter.js:322
-#: ../public/js/bootstrap-table-formatter.js:327
-#: ../public/js/bootstrap-table-formatter.js:332
-#: ../public/js/bootstrap-table-formatter.js:337
-#: ../public/js/bootstrap-table-formatter.js:342
-#: ../public/js/bootstrap-table-formatter.js:347
-#: ../public/js/bootstrap-table-formatter.js:352
-#: ../public/js/bootstrap-table-formatter.js:357
-#: ../public/js/bootstrap-table-formatter.js:362
-msgid "Waiting"
-msgstr "Bekleyen"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:68
-msgid "Successful"
-msgstr "Başarılı"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:90
-msgid "Failed"
-msgstr "Başarısız"
-
-#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
-msgid "Current Director messages"
-msgstr "Geçerli director mesajları"
-
-#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
-#, fuzzy
-msgid "Running Jobs"
-msgstr "çalışma"
-
-#: ../module/Job/view/job/job/details.phtml:81
-#: ../module/Director/view/director/director/index.phtml:34
-#: ../module/Director/view/director/director/messages.phtml:33
-msgid "Messages"
-msgstr "mesaj"
-
-#: ../module/Application/view/layout/layout.phtml:148
-msgid "Console"
-msgstr "konsol"
-
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "bconsole (batch-mode), please handle with care."
-msgstr "bconsole (toplu işlem modu), lütfen dikkatli olun."
-
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "All commands have to be a one liner, dialogs are not working."
-msgstr "Her satırda bir komut olmalı, diyaloglar çalışmıyor."
-
-#: ../module/Console/view/console/console/index.phtml:36
-msgid "Type help for a list of commands."
-msgstr "Komutların bir listesi için help yazın."
-
-#: ../module/Director/view/director/director/index.phtml:47
-msgid "Director Status"
-msgstr "Director"
-
-#: ../module/Director/view/director/director/messages.phtml:43
-msgid "Refresh"
-msgstr "Yenile"
-
-#: ../module/Director/view/director/director/messages.phtml:50
-msgid "Director messages"
-msgstr "Director Mesajlar"
-
-#: ../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
-msgstr "Filesets"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:26
-msgid "Fileset details"
-msgstr "Fileset detaylar"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:47
-msgid "Id"
-msgstr "Id"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:49
-msgid "MD5 checksum"
-msgstr "MD5 sağlama"
-
-#: ../module/Fileset/view/fileset/fileset/details.phtml:50
-msgid "Creation time"
-msgstr "Yaratılış zamanı"
 
 #: ../module/Job/src/Job/Form/JobForm.php:60
 #, fuzzy
@@ -614,6 +278,34 @@ msgstr "sınırsız"
 msgid "period"
 msgstr "dönemi"
 
+#: ../module/Job/src/Job/Form/JobForm.php:95
+#: ../module/Job/view/job/job/actions.phtml:89
+#: ../module/Job/view/job/job/actions.phtml:90
+#: ../module/Job/view/job/job/details.phtml:65
+#: ../module/Job/view/job/job/index.phtml:148
+#: ../module/Job/view/job/job/index.phtml:149
+#: ../module/Director/view/director/director/index.phtml:33
+#: ../module/Director/view/director/director/messages.phtml:32
+#: ../module/Pool/view/pool/pool/details.phtml:117
+#: ../module/Pool/view/pool/pool/details.phtml:118
+#: ../module/Media/view/media/media/details.phtml:59
+#: ../module/Media/view/media/media/index.phtml:85
+#: ../module/Media/view/media/media/index.phtml:86
+#: ../module/Storage/view/storage/storage/details.phtml:157
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:40
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:41
+#: ../module/Schedule/view/schedule/schedule/index.phtml:88
+#: ../module/Schedule/view/schedule/schedule/index.phtml:89
+#: ../module/Client/view/client/client/index.phtml:77
+#: ../module/Client/view/client/client/index.phtml:78
+#: ../module/Client/view/client/client/details.phtml:147
+#: ../module/Client/view/client/client/details.phtml:148
+#: ../public/js/bootstrap-table-formatter.js:504
+#: ../public/js/bootstrap-table-formatter.js:529
+#: ../public/js/bootstrap-table-formatter.js:623
+msgid "Status"
+msgstr "Durum"
+
 #: ../module/Job/src/Job/Form/JobForm.php:97
 msgid "all"
 msgstr "herşey"
@@ -634,25 +326,93 @@ msgstr "başarısız"
 msgid "terminated successfully"
 msgstr "Başarıyla sonlandırıldı"
 
+#: ../module/Job/src/Job/Form/JobForm.php:102
+#, fuzzy
+msgid "warning"
+msgstr "çalışma"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:56
+#: ../module/Job/src/Job/Form/RunJobForm.php:73
+#: ../module/Job/view/job/job/details.phtml:59
+#: ../module/Job/view/job/job/index.phtml:85
+#: ../module/Job/view/job/job/index.phtml:86
+#: ../module/Media/view/media/media/details.phtml:104
+#: ../module/Media/view/media/media/details.phtml:105
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:95
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:112
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:43
+#: ../module/Client/view/client/client/details.phtml:45
+msgid "Client"
+msgstr "İstemci"
+
 #: ../module/Job/src/Job/Form/RunJobForm.php:92
 #: ../module/Job/src/Job/Form/RunJobForm.php:108
 #: ../module/Job/view/job/job/details.phtml:49
 msgid "Job"
 msgstr "emir"
 
+#: ../module/Job/src/Job/Form/RunJobForm.php:127
+#: ../module/Job/src/Job/Form/RunJobForm.php:143
+#: ../module/Job/view/job/job/details.phtml:151
+#: ../module/Job/view/job/job/index.phtml:306
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:184
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:199
+#: ../module/Fileset/view/fileset/fileset/details.phtml:39
+#: ../module/Client/view/client/client/details.phtml:119
+#: ../module/Client/view/client/client/details.phtml:120
+msgid "Fileset"
+msgstr "Fileset"
+
 #: ../module/Job/src/Job/Form/RunJobForm.php:162
 #: ../module/Job/src/Job/Form/RunJobForm.php:178
-#: ../module/Media/view/media/media/index.phtml:67
-#: ../module/Media/view/media/media/index.phtml:68
-#: ../module/Media/view/media/media/details.phtml:56
 #: ../module/Pool/view/pool/pool/details.phtml:99
 #: ../module/Pool/view/pool/pool/details.phtml:100
+#: ../module/Media/view/media/media/details.phtml:56
+#: ../module/Media/view/media/media/index.phtml:67
+#: ../module/Media/view/media/media/index.phtml:68
 msgid "Storage"
 msgstr "depolama"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:232
+#: ../module/Job/src/Job/Form/RunJobForm.php:248
+#: ../module/Job/view/job/job/details.phtml:61
+#: ../module/Job/view/job/job/index.phtml:99
+#: ../module/Job/view/job/job/index.phtml:100
+#: ../module/Media/view/media/media/details.phtml:116
+#: ../module/Media/view/media/media/details.phtml:117
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:44
+#: ../module/Client/view/client/client/details.phtml:126
+#: ../module/Client/view/client/client/details.phtml:127
+msgid "Level"
+msgstr "Seviye"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:266
 msgid "Priority"
 msgstr "Öncelik"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:281
+#: ../module/Job/src/Job/Form/RunJobForm.php:297
+#: ../module/Job/view/job/job/details.phtml:60
+#: ../module/Job/view/job/job/index.phtml:92
+#: ../module/Job/view/job/job/index.phtml:93
+#: ../module/Pool/view/pool/pool/index.phtml:67
+#: ../module/Pool/view/pool/pool/index.phtml:68
+#: ../module/Pool/view/pool/pool/details.phtml:57
+#: ../module/Pool/view/pool/pool/details.phtml:105
+#: ../module/Pool/view/pool/pool/details.phtml:106
+#: ../module/Media/view/media/media/details.phtml:57
+#: ../module/Media/view/media/media/details.phtml:110
+#: ../module/Media/view/media/media/details.phtml:111
+#: ../module/Media/view/media/media/index.phtml:73
+#: ../module/Media/view/media/media/index.phtml:74
+msgid "Type"
+msgstr "türü"
+
+#: ../module/Job/src/Job/Form/RunJobForm.php:315
+#: ../module/Job/src/Job/Form/RunJobForm.php:331
+#, fuzzy
+msgid "Next Pool"
+msgstr "Pool"
 
 #: ../module/Job/src/Job/Form/RunJobForm.php:365
 msgid "When"
@@ -663,34 +423,110 @@ msgstr "Zamanı"
 msgid "Submit"
 msgstr "göndermek"
 
+#: ../module/Job/view/job/job/actions.phtml:32
+#: ../module/Job/view/job/job/run.phtml:32
+#: ../module/Job/view/job/job/details.phtml:32
+#: ../module/Job/view/job/job/index.phtml:32
+#: ../module/Schedule/view/schedule/schedule/details.phtml:32
+#: ../module/Schedule/view/schedule/schedule/index.phtml:32
+#: ../module/Schedule/view/schedule/schedule/overview.phtml:32
+#: ../module/Schedule/view/schedule/schedule/status.phtml:31
+#: ../module/Client/view/client/client/index.phtml:32
+#: ../module/Client/view/client/client/status.phtml:32
+#: ../module/Client/view/client/client/details.phtml:32
+msgid "Show"
+msgstr "Görüntüle"
+
+#: ../module/Job/view/job/job/actions.phtml:33
+#: ../module/Job/view/job/job/actions.phtml:93
+#: ../module/Job/view/job/job/run.phtml:33
+#: ../module/Job/view/job/job/details.phtml:33
+#: ../module/Job/view/job/job/details.phtml:66
+#: ../module/Job/view/job/job/index.phtml:33
+#: ../module/Job/view/job/job/index.phtml:152
+#: ../module/Storage/view/storage/storage/details.phtml:113
+#: ../module/Storage/view/storage/storage/details.phtml:129
+#: ../module/Storage/view/storage/storage/details.phtml:162
+#: ../module/Storage/view/storage/storage/index.phtml:71
+#: ../module/Schedule/view/schedule/schedule/index.phtml:92
+#: ../module/Client/view/client/client/index.phtml:81
+#: ../module/Client/view/client/client/details.phtml:57
+#: ../module/Client/view/client/client/details.phtml:152
+msgid "Actions"
+msgstr "Eylemler"
+
+#: ../module/Job/view/job/job/actions.phtml:55
+#: ../module/Job/view/job/job/details.phtml:135
+#: ../module/Job/view/job/job/index.phtml:177
+#: ../module/Job/view/job/job/index.phtml:198
+#: ../module/Pool/view/pool/pool/details.phtml:177
+#: ../module/Media/view/media/media/details.phtml:183
+#: ../module/Media/view/media/media/index.phtml:145
+#: ../module/Restore/view/restore/restore/index.phtml:53
+#: ../module/Restore/view/restore/restore/index.phtml:76
+#: ../module/Restore/view/restore/restore/versions.phtml:53
+#: ../module/Restore/view/restore/restore/versions.phtml:77
+#: ../module/Storage/view/storage/storage/details.phtml:57
+#: ../module/Schedule/view/schedule/schedule/index.phtml:55
+#: ../module/Client/view/client/client/index.phtml:117
+msgid "Close"
+msgstr "Kapat"
+
 #: ../module/Job/view/job/job/actions.phtml:69
 #, fuzzy
 msgid "Job Actions"
 msgstr "emir eylemler"
 
-#: ../module/Job/src/Job/Form/RunJobForm.php:281
-#: ../module/Job/src/Job/Form/RunJobForm.php:297
-#: ../module/Job/view/job/job/index.phtml:92
-#: ../module/Job/view/job/job/index.phtml:93
-#: ../module/Job/view/job/job/details.phtml:60
-#: ../module/Media/view/media/media/index.phtml:73
-#: ../module/Media/view/media/media/index.phtml:74
-#: ../module/Media/view/media/media/details.phtml:57
-#: ../module/Media/view/media/media/details.phtml:110
-#: ../module/Media/view/media/media/details.phtml:111
-#: ../module/Pool/view/pool/pool/index.phtml:67
-#: ../module/Pool/view/pool/pool/index.phtml:68
-#: ../module/Pool/view/pool/pool/details.phtml:57
-#: ../module/Pool/view/pool/pool/details.phtml:105
-#: ../module/Pool/view/pool/pool/details.phtml:106
-msgid "Type"
-msgstr "türü"
+#: ../module/Job/view/job/job/details.phtml:57
+#: ../module/Job/view/job/job/index.phtml:73
+#: ../module/Job/view/job/job/index.phtml:74
+#: ../module/Media/view/media/media/details.phtml:92
+#: ../module/Media/view/media/media/details.phtml:93
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:42
+#: ../module/Client/view/client/client/details.phtml:86
+#: ../module/Client/view/client/client/details.phtml:87
+msgid "Job ID"
+msgstr "emir ID"
 
+#: ../module/Job/view/job/job/details.phtml:62
+#: ../module/Job/view/job/job/index.phtml:127
+#: ../module/Job/view/job/job/index.phtml:128
+#: ../module/Media/view/media/media/details.phtml:122
+#: ../module/Media/view/media/media/details.phtml:123
+#: ../module/Dashboard/view/partial/JobTotals.phtml:41
+#: ../module/Client/view/client/client/details.phtml:133
+#: ../module/Client/view/client/client/details.phtml:134
+msgid "Files"
+msgstr "Dosyalar"
+
+#: ../module/Job/view/job/job/details.phtml:63
 #: ../module/Job/view/job/job/index.phtml:134
 #: ../module/Job/view/job/job/index.phtml:135
+#: ../module/Media/view/media/media/details.phtml:128
+#: ../module/Media/view/media/media/details.phtml:129
+#: ../module/Storage/view/storage/storage/details.phtml:154
+#: ../module/Dashboard/view/partial/JobTotals.phtml:42
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:48
+#: ../module/Client/view/client/client/details.phtml:140
+#: ../module/Client/view/client/client/details.phtml:141
+msgid "Bytes"
+msgstr "Bytes"
+
 #: ../module/Job/view/job/job/details.phtml:64
+#: ../module/Job/view/job/job/index.phtml:141
+#: ../module/Job/view/job/job/index.phtml:142
 msgid "Errors"
 msgstr "hata"
+
+#: ../module/Job/view/job/job/details.phtml:81
+#: ../module/Director/view/director/director/index.phtml:34
+#: ../module/Director/view/director/director/messages.phtml:33
+msgid "Messages"
+msgstr "mesaj"
+
+#: ../module/Job/view/job/job/details.phtml:87
+msgid "Timestamp"
+msgstr "Zaman damgası"
 
 #: ../module/Job/view/job/job/details.phtml:98
 #, fuzzy
@@ -704,275 +540,138 @@ msgstr "hafıza kartları"
 msgid "Volume"
 msgstr "hafıza Kartı"
 
-#: ../module/Job/view/job/job/index.phtml:162
 #: ../module/Job/view/job/job/details.phtml:128
-#: ../module/Media/view/media/media/index.phtml:132
-#: ../module/Media/view/media/media/details.phtml:170
+#: ../module/Job/view/job/job/index.phtml:169
+#: ../module/Pool/view/pool/pool/details.phtml:170
+#: ../module/Media/view/media/media/details.phtml:176
+#: ../module/Media/view/media/media/index.phtml:138
 #: ../module/Restore/view/restore/restore/index.phtml:46
 #: ../module/Restore/view/restore/restore/versions.phtml:46
-#: ../module/Pool/view/pool/pool/details.phtml:164
 msgid "Failed to retrieve data from Bareos director"
 msgstr "Bareos yöneticisinden veri kurtarma başarısız oldu"
 
-#: ../module/Job/view/job/job/index.phtml:166
 #: ../module/Job/view/job/job/details.phtml:131
-#: ../module/Media/view/media/media/index.phtml:135
-#: ../module/Media/view/media/media/details.phtml:173
-#: ../module/Pool/view/pool/pool/details.phtml:167
+#: ../module/Job/view/job/job/index.phtml:173
+#: ../module/Pool/view/pool/pool/details.phtml:173
+#: ../module/Media/view/media/media/details.phtml:179
+#: ../module/Media/view/media/media/index.phtml:141
 msgid "Error message received from director:"
 msgstr "Yöneticiden hata mesajı alındı:"
 
-#: ../module/Job/view/job/job/index.phtml:167
 #: ../module/Job/view/job/job/details.phtml:132
-#: ../module/Media/view/media/media/index.phtml:136
-#: ../module/Media/view/media/media/details.phtml:174
-#: ../module/Pool/view/pool/pool/details.phtml:168
+#: ../module/Job/view/job/job/index.phtml:174
+#: ../module/Pool/view/pool/pool/details.phtml:174
+#: ../module/Media/view/media/media/details.phtml:180
+#: ../module/Media/view/media/media/index.phtml:142
 msgid "Failed to send result as json. Maybe the result message is too long?"
 msgstr "Sonuç json olarak gönderilemedi. Sonuç mesajı çok uzun olabilir mi?"
 
-#: ../module/Job/view/job/job/index.phtml:307
 #: ../module/Job/view/job/job/details.phtml:159
+#: ../module/Job/view/job/job/index.phtml:314
 msgid "Scheduled"
 msgstr "tarifeli"
 
-#: ../module/Job/view/job/job/details.phtml:180
-msgid "First Index"
-msgstr "İlk İndeks"
-
-#: ../module/Job/view/job/job/details.phtml:184
-msgid "Last Index"
-msgstr "Son İndeks"
-
-#: ../module/Job/view/job/job/details.phtml:188
-#, fuzzy
-msgid "Start Block"
+#: ../module/Job/view/job/job/details.phtml:163
+#: ../module/Job/view/job/job/index.phtml:106
+#: ../module/Job/view/job/job/index.phtml:107
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:45
+#: ../module/Client/view/client/client/details.phtml:99
+#: ../module/Client/view/client/client/details.phtml:100
+msgid "Start"
 msgstr "başlangıç"
 
-#: ../module/Job/view/job/job/details.phtml:192
-msgid "End Block"
-msgstr "Blok Sonu"
+#: ../module/Job/view/job/job/details.phtml:167
+#: ../module/Job/view/job/job/index.phtml:113
+#: ../module/Job/view/job/job/index.phtml:114
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:46
+#: ../module/Client/view/client/client/details.phtml:106
+#: ../module/Client/view/client/client/details.phtml:107
+msgid "End"
+msgstr "sonuç"
 
-#: ../public/js/bootstrap-table-formatter.js:561
-msgid "Rerun"
-msgstr "tekrarlamak"
-
-#: ../module/Restore/view/restore/restore/index.phtml:97
-#: ../module/Restore/view/restore/restore/versions.phtml:98
-#: ../module/Storage/view/storage/storage/details.phtml:88
-#: ../public/js/bootstrap-table-formatter.js:563
-msgid "Cancel"
-msgstr "İptal"
+#: ../module/Job/view/job/job/details.phtml:171
+#: ../module/Job/view/job/job/index.phtml:120
+#: ../module/Job/view/job/job/index.phtml:121
+#: ../module/Media/view/media/media/details.phtml:146
+#: ../module/Media/view/media/media/details.phtml:147
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:47
+#: ../module/Client/view/client/client/details.phtml:113
+#: ../module/Client/view/client/client/details.phtml:114
+#, fuzzy
+msgid "Duration"
+msgstr "son"
 
 #: ../module/Job/view/job/job/index.phtml:48
 #: ../module/Client/view/client/client/details.phtml:71
 msgid "Job list"
 msgstr "emir listesi"
 
-#: ../module/Job/view/job/job/index.phtml:110
-msgid "Please try to reduce the amount of data to display, e.g. reduce time period."
-msgstr "Lütfen görüntülenecek veri miktarını azaltmaya çalışın. Örneğin; zaman aralığını kısaltın."
+#: ../module/Job/view/job/job/index.phtml:56
+#, fuzzy
+msgid "Clear search filters"
+msgstr "Lütfen bir dosya kümesi seçin"
 
-#: ../module/Media/view/media/media/details.phtml:26
-msgid "Volume details"
-msgstr "medya detaylar"
+#: ../module/Job/view/job/job/index.phtml:172
+#, fuzzy
+msgid "Please try to reduce the amount of data to display."
+msgstr ""
+"Lütfen görüntülenecek veri miktarını azaltmaya çalışın. Örneğin; zaman "
+"aralığını kısaltın."
 
-#: ../module/Media/view/media/media/index.phtml:32
-#: ../module/Media/view/media/media/details.phtml:32
-#: ../module/Storage/view/storage/storage/index.phtml:32
-#: ../module/Storage/view/storage/storage/details.phtml:32
-#: ../module/Storage/view/storage/storage/status.phtml:32
-#: ../module/Pool/view/pool/pool/index.phtml:32
-#: ../module/Pool/view/pool/pool/details.phtml:32
-msgid "Devices"
-msgstr "cihazlar"
+#: ../module/Director/view/director/director/index.phtml:47
+msgid "Director Status"
+msgstr "Director"
 
-#: ../module/Media/view/media/media/index.phtml:33
-#: ../module/Media/view/media/media/details.phtml:33
-#: ../module/Storage/view/storage/storage/index.phtml:33
-#: ../module/Storage/view/storage/storage/details.phtml:33
-#: ../module/Storage/view/storage/storage/status.phtml:33
+#: ../module/Director/view/director/director/messages.phtml:43
+msgid "Refresh"
+msgstr "Yenile"
+
+#: ../module/Director/view/director/director/messages.phtml:50
+msgid "Director messages"
+msgstr "Director Mesajlar"
+
 #: ../module/Pool/view/pool/pool/index.phtml:26
 #: ../module/Pool/view/pool/pool/index.phtml:33
 #: ../module/Pool/view/pool/pool/index.phtml:47
 #: ../module/Pool/view/pool/pool/details.phtml:33
+#: ../module/Media/view/media/media/details.phtml:33
+#: ../module/Media/view/media/media/index.phtml:33
+#: ../module/Storage/view/storage/storage/details.phtml:33
+#: ../module/Storage/view/storage/storage/index.phtml:33
+#: ../module/Storage/view/storage/storage/status.phtml:33
 msgid "Pools"
 msgstr "Pools"
 
-#: ../module/Media/view/media/media/index.phtml:79
-#: ../module/Media/view/media/media/index.phtml:80
-#: ../module/Media/view/media/media/index.phtml:243
-#: ../module/Media/view/media/media/details.phtml:58
-#: ../module/Media/view/media/media/details.phtml:335
-#: ../module/Storage/view/storage/storage/details.phtml:155
-#: ../module/Pool/view/pool/pool/details.phtml:111
-#: ../module/Pool/view/pool/pool/details.phtml:112
-#: ../module/Pool/view/pool/pool/details.phtml:306
-msgid "Last written"
-msgstr "Son yazılmış"
+#: ../module/Pool/view/pool/pool/index.phtml:32
+#: ../module/Pool/view/pool/pool/details.phtml:32
+#: ../module/Media/view/media/media/details.phtml:32
+#: ../module/Media/view/media/media/index.phtml:32
+#: ../module/Storage/view/storage/storage/details.phtml:32
+#: ../module/Storage/view/storage/storage/index.phtml:32
+#: ../module/Storage/view/storage/storage/status.phtml:32
+msgid "Devices"
+msgstr "cihazlar"
 
-#: ../module/Media/view/media/media/index.phtml:91
-#: ../module/Media/view/media/media/index.phtml:92
-#: ../module/Media/view/media/media/details.phtml:60
-#: ../module/Pool/view/pool/pool/details.phtml:123
-#: ../module/Pool/view/pool/pool/details.phtml:124
-msgid "Retention/Expiration"
-msgstr "tutma/son"
-
-#: ../module/Media/view/media/media/index.phtml:97
-#: ../module/Media/view/media/media/index.phtml:98
-#: ../module/Media/view/media/media/details.phtml:61
-#: ../module/Pool/view/pool/pool/details.phtml:129
-#: ../module/Pool/view/pool/pool/details.phtml:130
-msgid "Maximum bytes"
-msgstr "maksimum bytes"
-
-#: ../module/Media/view/media/media/index.phtml:103
-#: ../module/Media/view/media/media/index.phtml:104
-#: ../module/Media/view/media/media/details.phtml:62
-#: ../module/Pool/view/pool/pool/details.phtml:135
-#: ../module/Pool/view/pool/pool/details.phtml:136
-msgid "Current bytes"
-msgstr "Şu an kullanılan bytes"
-
-#: ../module/Media/view/media/media/details.phtml:78
-msgid "Jobs on volume"
-msgstr "medyaya emir"
-
-#: ../module/Media/view/media/media/details.phtml:134
-#: ../module/Media/view/media/media/details.phtml:135
-msgid "Starttime"
-msgstr "başlangıç"
-
-#: ../module/Media/view/media/media/details.phtml:140
-#: ../module/Media/view/media/media/details.phtml:141
-msgid "Endtime"
-msgstr "sonuç"
-
-#: ../module/Media/view/media/media/index.phtml:235
-#: ../module/Media/view/media/media/details.phtml:327
-#: ../module/Pool/view/pool/pool/details.phtml:298
-msgid "Label date"
-msgstr "Label tarih"
-
-#: ../module/Media/view/media/media/index.phtml:239
-#: ../module/Media/view/media/media/details.phtml:331
-#: ../module/Pool/view/pool/pool/details.phtml:302
-msgid "First written"
-msgstr "Ilk yazılmış"
-
-#: ../module/Media/view/media/media/index.phtml:247
-#: ../module/Media/view/media/media/details.phtml:339
-#: ../module/Pool/view/pool/pool/details.phtml:310
-msgid "Volume jobs"
-msgstr "medya görev"
-
-#: ../module/Media/view/media/media/index.phtml:251
-#: ../module/Media/view/media/media/details.phtml:343
-#: ../module/Pool/view/pool/pool/details.phtml:314
-msgid "Recycle"
-msgstr "Geri dönüşüm"
-
-#: ../module/Media/view/media/media/details.phtml:347
-#, fuzzy
-msgid "Volume writes"
-msgstr "Birim Dosyaları"
-
-#: ../module/Media/view/media/media/details.phtml:351
-#: ../module/Storage/view/storage/storage/details.phtml:111
-#: ../module/Storage/view/storage/storage/details.phtml:152
-msgid "Slot"
-msgstr "yer"
-
-#: ../module/Media/view/media/media/details.phtml:355
-msgid "Media Id"
-msgstr "Medya ID"
-
-#: ../module/Media/view/media/media/details.phtml:359
-msgid "Volume Blocks"
-msgstr "Birim Blokları"
-
-#: ../module/Media/view/media/media/details.phtml:363
-msgid "Volume use duration"
-msgstr "Birim kullanım süresi"
-
-#: ../module/Media/view/media/media/details.phtml:367
-msgid "Volume Pool Id"
-msgstr "Birim Havuzu Id"
-
-#: ../module/Media/view/media/media/details.phtml:371
-msgid "In changer"
-msgstr "Değiştiricide"
-
-#: ../module/Media/view/media/media/details.phtml:375
-msgid "Volume Files"
-msgstr "Birim Dosyaları"
-
-#: ../module/Media/view/media/media/details.phtml:379
-msgid "Max. volume jobs"
-msgstr "Maksimum birim görevleri"
-
-#: ../module/Media/view/media/media/details.phtml:383
-#, fuzzy
-msgid "Volume mounts"
-msgstr "medya görev"
-
-#: ../module/Media/view/media/media/details.phtml:387
-msgid "Volume capacity bytes"
-msgstr "Birim kapasitesi bytes"
-
-#: ../module/Media/view/media/media/details.phtml:391
-msgid "Volume errors"
-msgstr "Birim hataları"
-
-#: ../module/Media/view/media/media/details.phtml:399
-msgid "Max. volume files"
-msgstr "Maksimum birim dosyaları"
-
-#: ../module/Media/view/media/media/details.phtml:403
-msgid "Endfile"
-msgstr "Son dosya"
-
-#: ../module/Media/view/media/media/details.phtml:407
-msgid "Endblock"
-msgstr "Son blok"
-
-#: ../module/Media/view/media/media/details.phtml:411
-msgid "Labeltype"
-msgstr "Etiket türü"
-
-#: ../module/Media/view/media/media/details.phtml:415
-msgid "Device Id"
-msgstr "Cihaz Id"
-
-#: ../module/Media/view/media/media/details.phtml:419
-msgid "Location Id"
-msgstr "Konum Id"
-
-#: ../module/Media/view/media/media/details.phtml:423
-msgid "Recycle count"
-msgstr "Geri dönüşüm sayısı"
-
-#: ../module/Media/view/media/media/details.phtml:427
-msgid "Initial write"
-msgstr "Başlangıçta yaz"
-
-#: ../module/Media/view/media/media/details.phtml:431
-#, fuzzy
-msgid "Scratch Pool Id"
-msgstr "Geri dönüşüm"
-
-#: ../module/Media/view/media/media/details.phtml:435
-#, fuzzy
-msgid "Recycle Pool Id"
-msgstr "Geri dönüşüm"
-
-#: ../module/Media/view/media/media/details.phtml:439
-msgid "Comment"
-msgstr "yorum"
-
-#: ../module/Pool/view/pool/pool/details.phtml:26
-msgid "Pool details"
-msgstr "Pool detaylar"
+#: ../module/Pool/view/pool/pool/index.phtml:61
+#: ../module/Pool/view/pool/pool/index.phtml:62
+#: ../module/Pool/view/pool/pool/details.phtml:56
+#: ../module/Pool/view/pool/pool/details.phtml:93
+#: ../module/Pool/view/pool/pool/details.phtml:94
+#: ../module/Media/view/media/media/details.phtml:55
+#: ../module/Media/view/media/media/index.phtml:61
+#: ../module/Media/view/media/media/index.phtml:62
+#: ../module/Restore/view/restore/restore/index.phtml:386
+#: ../module/Restore/view/restore/restore/versions.phtml:530
+#: ../module/Fileset/view/fileset/fileset/details.phtml:48
+#: ../module/Storage/view/storage/storage/index.phtml:61
+#: ../module/Storage/view/storage/storage/index.phtml:62
+#: ../module/Schedule/view/schedule/schedule/index.phtml:82
+#: ../module/Schedule/view/schedule/schedule/index.phtml:83
+#: ../module/Client/view/client/client/index.phtml:59
+#: ../module/Client/view/client/client/index.phtml:60
+#: ../module/Client/view/client/client/details.phtml:52
+msgid "Name"
+msgstr "Isim"
 
 #: ../module/Pool/view/pool/pool/index.phtml:79
 #: ../module/Pool/view/pool/pool/index.phtml:80
@@ -998,13 +697,217 @@ msgstr "medya başına maksimum emir"
 msgid "Maximum volume bytes"
 msgstr "medya başına maksimum bytes"
 
+#: ../module/Pool/view/pool/pool/details.phtml:26
+msgid "Pool details"
+msgstr "Pool detaylar"
+
+#: ../module/Pool/view/pool/pool/details.phtml:111
+#: ../module/Pool/view/pool/pool/details.phtml:112
+#: ../module/Pool/view/pool/pool/details.phtml:319
+#: ../module/Media/view/media/media/details.phtml:58
+#: ../module/Media/view/media/media/details.phtml:345
+#: ../module/Media/view/media/media/index.phtml:79
+#: ../module/Media/view/media/media/index.phtml:80
+#: ../module/Media/view/media/media/index.phtml:256
+#: ../module/Storage/view/storage/storage/details.phtml:155
+msgid "Last written"
+msgstr "Son yazılmış"
+
+#: ../module/Pool/view/pool/pool/details.phtml:123
+#: ../module/Pool/view/pool/pool/details.phtml:124
+#: ../module/Media/view/media/media/details.phtml:381
+#: ../module/Media/view/media/media/index.phtml:91
+#: ../module/Media/view/media/media/index.phtml:92
+msgid "In changer"
+msgstr "Değiştiricide"
+
+#: ../module/Pool/view/pool/pool/details.phtml:129
+#: ../module/Pool/view/pool/pool/details.phtml:130
+#: ../module/Media/view/media/media/details.phtml:60
+#: ../module/Media/view/media/media/index.phtml:97
+#: ../module/Media/view/media/media/index.phtml:98
+#, fuzzy
+msgid "Retention"
+msgstr "emir tutmamak"
+
+#: ../module/Pool/view/pool/pool/details.phtml:135
+#: ../module/Pool/view/pool/pool/details.phtml:136
+#: ../module/Media/view/media/media/details.phtml:61
+#: ../module/Media/view/media/media/index.phtml:103
+#: ../module/Media/view/media/media/index.phtml:104
+msgid "Maximum bytes"
+msgstr "maksimum bytes"
+
+#: ../module/Pool/view/pool/pool/details.phtml:141
+#: ../module/Pool/view/pool/pool/details.phtml:142
+#: ../module/Media/view/media/media/details.phtml:62
+#: ../module/Media/view/media/media/index.phtml:109
+#: ../module/Media/view/media/media/index.phtml:110
+msgid "Current bytes"
+msgstr "Şu an kullanılan bytes"
+
+#: ../module/Pool/view/pool/pool/details.phtml:311
+#: ../module/Media/view/media/media/details.phtml:337
+#: ../module/Media/view/media/media/index.phtml:248
+msgid "Label date"
+msgstr "Label tarih"
+
+#: ../module/Pool/view/pool/pool/details.phtml:315
+#: ../module/Media/view/media/media/details.phtml:341
+#: ../module/Media/view/media/media/index.phtml:252
+msgid "First written"
+msgstr "Ilk yazılmış"
+
+#: ../module/Pool/view/pool/pool/details.phtml:323
+#: ../module/Media/view/media/media/details.phtml:349
+#: ../module/Media/view/media/media/index.phtml:260
+msgid "Volume jobs"
+msgstr "medya görev"
+
+#: ../module/Pool/view/pool/pool/details.phtml:327
+#: ../module/Media/view/media/media/details.phtml:353
+#: ../module/Media/view/media/media/index.phtml:264
+msgid "Recycle"
+msgstr "Geri dönüşüm"
+
+#: ../module/Media/view/media/media/details.phtml:26
+msgid "Volume details"
+msgstr "medya detaylar"
+
+#: ../module/Media/view/media/media/details.phtml:78
+msgid "Jobs on volume"
+msgstr "medyaya emir"
+
+#: ../module/Media/view/media/media/details.phtml:134
+#: ../module/Media/view/media/media/details.phtml:135
+msgid "Starttime"
+msgstr "başlangıç"
+
+#: ../module/Media/view/media/media/details.phtml:140
+#: ../module/Media/view/media/media/details.phtml:141
+msgid "Endtime"
+msgstr "sonuç"
+
+#: ../module/Media/view/media/media/details.phtml:357
+#, fuzzy
+msgid "Volume writes"
+msgstr "Birim Dosyaları"
+
+#: ../module/Media/view/media/media/details.phtml:361
+#: ../module/Storage/view/storage/storage/details.phtml:111
+#: ../module/Storage/view/storage/storage/details.phtml:152
+msgid "Slot"
+msgstr "yer"
+
+#: ../module/Media/view/media/media/details.phtml:365
+msgid "Media Id"
+msgstr "Medya ID"
+
+#: ../module/Media/view/media/media/details.phtml:369
+msgid "Volume Blocks"
+msgstr "Birim Blokları"
+
+#: ../module/Media/view/media/media/details.phtml:373
+msgid "Volume use duration"
+msgstr "Birim kullanım süresi"
+
+#: ../module/Media/view/media/media/details.phtml:377
+msgid "Volume Pool Id"
+msgstr "Birim Havuzu Id"
+
+#: ../module/Media/view/media/media/details.phtml:385
+msgid "Volume Files"
+msgstr "Birim Dosyaları"
+
+#: ../module/Media/view/media/media/details.phtml:389
+msgid "Max. volume jobs"
+msgstr "Maksimum birim görevleri"
+
+#: ../module/Media/view/media/media/details.phtml:393
+#, fuzzy
+msgid "Volume mounts"
+msgstr "medya görev"
+
+#: ../module/Media/view/media/media/details.phtml:397
+msgid "Volume capacity bytes"
+msgstr "Birim kapasitesi bytes"
+
+#: ../module/Media/view/media/media/details.phtml:401
+msgid "Volume errors"
+msgstr "Birim hataları"
+
+#: ../module/Media/view/media/media/details.phtml:405
+#: ../public/js/bootstrap-table-formatter.js:364
+msgid "Enabled"
+msgstr "Etkin"
+
+#: ../module/Media/view/media/media/details.phtml:409
+msgid "Max. volume files"
+msgstr "Maksimum birim dosyaları"
+
+#: ../module/Media/view/media/media/details.phtml:413
+msgid "Endfile"
+msgstr "Son dosya"
+
+#: ../module/Media/view/media/media/details.phtml:417
+msgid "Endblock"
+msgstr "Son blok"
+
+#: ../module/Media/view/media/media/details.phtml:421
+msgid "Labeltype"
+msgstr "Etiket türü"
+
+#: ../module/Media/view/media/media/details.phtml:425
+msgid "Device Id"
+msgstr "Cihaz Id"
+
+#: ../module/Media/view/media/media/details.phtml:429
+msgid "Location Id"
+msgstr "Konum Id"
+
+#: ../module/Media/view/media/media/details.phtml:433
+msgid "Recycle count"
+msgstr "Geri dönüşüm sayısı"
+
+#: ../module/Media/view/media/media/details.phtml:437
+msgid "Initial write"
+msgstr "Başlangıçta yaz"
+
+#: ../module/Media/view/media/media/details.phtml:441
+#, fuzzy
+msgid "Scratch Pool Id"
+msgstr "Geri dönüşüm"
+
+#: ../module/Media/view/media/media/details.phtml:445
+#, fuzzy
+msgid "Recycle Pool Id"
+msgstr "Geri dönüşüm"
+
+#: ../module/Media/view/media/media/details.phtml:449
+msgid "Comment"
+msgstr "yorum"
+
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:59
 msgid "Backup jobs"
 msgstr "emirler backup"
 
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:60
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:77
+#, fuzzy
+msgid "Please choose a backup"
+msgstr "Lütfen bir istemci seçin"
+
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:76
 msgid "Backups"
 msgstr "backups"
+
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:96
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:113
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:132
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:149
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:166
+msgid "Please choose a client"
+msgstr "Lütfen bir istemci seçin"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:131
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:148
@@ -1026,6 +929,12 @@ msgstr "Lütfen bir dosya kümesi seçin"
 msgid "Restore job"
 msgstr "Geri yükleme görevi"
 
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:234
+#: ../module/Restore/src/Restore/Form/RestoreForm.php:251
+#, fuzzy
+msgid "Please choose a restore job"
+msgstr "Lütfen bir dosya kümesi seçin"
+
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:270
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:289
 msgid "Merge all client filesets"
@@ -1035,8 +944,9 @@ msgstr "Tüm istemci kümelerini birleştir"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:291
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:313
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:332
-#: ../public/js/bootstrap-table-formatter.js:258
-#: ../public/js/bootstrap-table-formatter.js:503
+#: ../public/js/bootstrap-table-formatter.js:203
+#: ../public/js/bootstrap-table-formatter.js:214
+#: ../public/js/bootstrap-table-formatter.js:489
 msgid "Yes"
 msgstr "Evet"
 
@@ -1044,14 +954,17 @@ msgstr "Evet"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:292
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:314
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:333
-#: ../public/js/bootstrap-table-formatter.js:261
-#: ../public/js/bootstrap-table-formatter.js:501
+#: ../public/js/bootstrap-table-formatter.js:206
+#: ../public/js/bootstrap-table-formatter.js:217
+#: ../public/js/bootstrap-table-formatter.js:487
 msgid "No"
 msgstr "Hayır"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:311
 msgid "Merge all related jobs to last full backup of selected backup job"
-msgstr "İlgili tüm görevleri, seçilen yedekleme görevinin son tam yedeği olarak birleştirin"
+msgstr ""
+"İlgili tüm görevleri, seçilen yedekleme görevinin son tam yedeği olarak "
+"birleştirin"
 
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:330
 msgid "Merge jobs"
@@ -1072,7 +985,7 @@ msgstr "her zaman"
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:355
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:377
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:398
-#: ../public/js/bootstrap-table-formatter.js:196
+#: ../public/js/bootstrap-table-formatter.js:141
 msgid "never"
 msgstr "asla"
 
@@ -1100,19 +1013,19 @@ msgstr "İstemcideki geri yükleme konumu"
 msgid "e.g. / or /tmp/bareos-restores/"
 msgstr "örneğin; / veya /tmp/bareos-geriyukleme/"
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:439
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:456
-msgid "Path"
-msgstr "Yol"
-
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:475
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:492
-msgid "Limit"
-msgstr "Limit"
-
 #: ../module/Restore/src/Restore/Form/RestoreForm.php:487
 msgid "Related jobs for a most recent full restore"
 msgstr "En son tam yedekleme için ilgili görevler"
+
+#: ../module/Restore/view/restore/restore/index.phtml:32
+#: ../module/Restore/view/restore/restore/versions.phtml:32
+msgid "Restore multiple files"
+msgstr "Birçok dosyayı geri yükle"
+
+#: ../module/Restore/view/restore/restore/index.phtml:33
+#: ../module/Restore/view/restore/restore/versions.phtml:33
+msgid "Restore specific file version"
+msgstr "Belirli bir dosyayı geri dön"
 
 #: ../module/Restore/view/restore/restore/index.phtml:49
 #: ../module/Restore/view/restore/restore/versions.phtml:49
@@ -1125,10 +1038,51 @@ msgstr "Hata mesajı alındı:"
 msgid "Director message"
 msgstr "Director mesajları"
 
+#: ../module/Restore/view/restore/restore/index.phtml:75
+#: ../module/Restore/view/restore/restore/versions.phtml:76
+#, fuzzy
+msgid "Job report"
+msgstr "emir listesi"
+
+#: ../module/Restore/view/restore/restore/index.phtml:89
+#: ../module/Restore/view/restore/restore/versions.phtml:90
+msgid "Confirm restore job submit"
+msgstr ""
+
+#: ../module/Restore/view/restore/restore/index.phtml:97
+#: ../module/Restore/view/restore/restore/versions.phtml:98
+#: ../module/Storage/view/storage/storage/details.phtml:88
+#: ../public/js/bootstrap-table-formatter.js:549
+msgid "Cancel"
+msgstr "İptal"
+
+#: ../module/Restore/view/restore/restore/index.phtml:98
+#: ../module/Restore/view/restore/restore/index.phtml:117
+#: ../module/Restore/view/restore/restore/versions.phtml:99
+#: ../module/Restore/view/restore/restore/versions.phtml:118
+msgid "OK"
+msgstr "Tamam"
+
+#: ../module/Restore/view/restore/restore/index.phtml:114
+msgid "No files or directories selected to restore!"
+msgstr "Geri yüklenecek dizin ya da dosya seçilmedi!"
+
 #: ../module/Restore/view/restore/restore/index.phtml:164
 #: ../module/Restore/view/restore/restore/versions.phtml:162
 msgid "File selection"
 msgstr "Dosya seçimi"
+
+#: ../module/Restore/view/restore/restore/index.phtml:392
+msgid "Mode"
+msgstr ""
+
+#: ../module/Restore/view/restore/restore/index.phtml:400
+msgid "User"
+msgstr ""
+
+#: ../module/Restore/view/restore/restore/index.phtml:408
+msgid "Group"
+msgstr ""
 
 #: ../module/Restore/view/restore/restore/index.phtml:416
 #: ../module/Restore/view/restore/restore/versions.phtml:194
@@ -1136,19 +1090,47 @@ msgstr "Dosya seçimi"
 msgid "Size"
 msgstr "büyüklük"
 
-#: ../../../module/Restore/view/restore/restore/index.phtml:321
-msgid "Date"
-msgstr "zaman"
+#: ../module/Restore/view/restore/restore/index.phtml:424
+#: ../module/Restore/view/restore/restore/versions.phtml:193
+#: ../module/Restore/view/restore/restore/versions.phtml:544
+msgid "Last modification"
+msgstr "Son değişiklik"
 
-#: ../module/Storage/src/Storage/Form/StorageForm.php:77
-#: ../module/Storage/view/storage/storage/details.phtml:126
-msgid "Drive"
-msgstr "sürücü"
+#: ../module/Restore/view/restore/restore/versions.phtml:115
+msgid "No file selected to restore!"
+msgstr "Geri yüklenecek dosya seçilmedi!"
 
-#: ../module/Storage/view/storage/storage/status.phtml:47
-#, fuzzy
-msgid "Storage Status"
-msgstr "hafıza durumu"
+#: ../module/Restore/view/restore/restore/versions.phtml:172
+msgid "Selected file"
+msgstr "Dosya seçildi"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:180
+msgid "Available versions"
+msgstr "Mevcut sürümer"
+
+#: ../module/Restore/view/restore/restore/versions.phtml:195
+msgid "Checksum"
+msgstr "Sağlama"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:26
+msgid "Fileset details"
+msgstr "Fileset detaylar"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:47
+msgid "Id"
+msgstr "Id"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:49
+msgid "MD5 checksum"
+msgstr "MD5 sağlama"
+
+#: ../module/Fileset/view/fileset/fileset/details.phtml:50
+msgid "Creation time"
+msgstr "Yaratılış zamanı"
+
+#: ../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr "Filesets"
 
 #: ../module/Storage/view/storage/storage/details.phtml:26
 msgid "Storage details"
@@ -1178,6 +1160,11 @@ msgstr "Hepsini almak"
 #: ../module/Storage/view/storage/storage/details.phtml:121
 msgid "Drives"
 msgstr "sürücüler"
+
+#: ../module/Storage/view/storage/storage/details.phtml:126
+#: ../module/Storage/src/Storage/Form/StorageForm.php:77
+msgid "Drive"
+msgstr "sürücü"
 
 #: ../module/Storage/view/storage/storage/details.phtml:127
 msgid "Loaded"
@@ -1224,10 +1211,83 @@ msgstr "hafıza sürücüler"
 msgid "Autochanger"
 msgstr "Otomatik değiştirici"
 
-#: ../public/js/bootstrap-table-formatter.js:638
+#: ../module/Storage/view/storage/storage/status.phtml:47
 #, fuzzy
-msgid "Manage autochanger"
-msgstr "Otomatik değiştiriciyi yönet"
+msgid "Storage Status"
+msgstr "hafıza durumu"
+
+#: ../module/Dashboard/view/partial/JobTotals.phtml:31
+#, fuzzy
+msgid "Job Totals"
+msgstr "emir listesi"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:31
+msgid "Jobs started during the past 24 hours"
+msgstr "Işler son 24 saat içinde başladı"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:46
+#: ../public/js/bootstrap-table-formatter.js:247
+#: ../public/js/bootstrap-table-formatter.js:248
+#: ../public/js/bootstrap-table-formatter.js:323
+#: ../public/js/bootstrap-table-formatter.js:328
+#: ../public/js/bootstrap-table-formatter.js:338
+#: ../public/js/bootstrap-table-formatter.js:348
+msgid "Running"
+msgstr "Çalışan"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:57
+#: ../public/js/bootstrap-table-formatter.js:253
+#: ../public/js/bootstrap-table-formatter.js:273
+#: ../public/js/bootstrap-table-formatter.js:278
+#: ../public/js/bootstrap-table-formatter.js:283
+#: ../public/js/bootstrap-table-formatter.js:288
+#: ../public/js/bootstrap-table-formatter.js:293
+#: ../public/js/bootstrap-table-formatter.js:298
+#: ../public/js/bootstrap-table-formatter.js:303
+#: ../public/js/bootstrap-table-formatter.js:308
+#: ../public/js/bootstrap-table-formatter.js:313
+#: ../public/js/bootstrap-table-formatter.js:318
+#: ../public/js/bootstrap-table-formatter.js:353
+msgid "Waiting"
+msgstr "Bekleyen"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:68
+msgid "Successful"
+msgstr "Başarılı"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
+#: ../public/js/bootstrap-table-formatter.js:343
+#, fuzzy
+msgid "Warning"
+msgstr "çalışma"
+
+#: ../module/Dashboard/view/partial/JobsPast24h.phtml:90
+msgid "Failed"
+msgstr "Başarısız"
+
+#: ../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
+msgid "Current Director messages"
+msgstr "Geçerli director mesajları"
+
+#: ../module/Dashboard/view/partial/RunningJobs.phtml:31
+#, fuzzy
+msgid "Running Jobs"
+msgstr "çalışma"
+
+#: ../module/Dashboard/view/partial/JobsLastStatus.phtml:31
+msgid "Most recent job status per job name"
+msgstr "İş adına göre en son iş durumu"
+
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:269
+msgid ""
+"Not enough data to estimate progress or statistics collection is disabled."
+msgstr ""
+"Devre dışı bırakılan ilerleme süreci veya istatistik toplama için yeterli "
+"veri yok."
+
+#: ../module/Dashboard/view/dashboard/dashboard/index.phtml:277
+msgid "There are no jobs running."
+msgstr "Çalışan görev yok."
 
 #: ../module/Schedule/view/schedule/schedule/details.phtml:26
 #: ../module/Schedule/view/schedule/schedule/details.phtml:47
@@ -1235,8 +1295,8 @@ msgstr "Otomatik değiştiriciyi yönet"
 msgid "Schedule Details"
 msgstr "program detaylar"
 
-#: ../module/Schedule/view/schedule/schedule/index.phtml:34
 #: ../module/Schedule/view/schedule/schedule/details.phtml:34
+#: ../module/Schedule/view/schedule/schedule/index.phtml:34
 #: ../module/Schedule/view/schedule/schedule/overview.phtml:34
 #: ../module/Schedule/view/schedule/schedule/status.phtml:33
 msgid "Scheduler status"
@@ -1247,6 +1307,55 @@ msgstr "program status"
 #, fuzzy
 msgid "Status Scheduler"
 msgstr "program durumu"
+
+#: ../module/Client/view/client/client/index.phtml:65
+#: ../module/Client/view/client/client/index.phtml:66
+msgid "OS"
+msgstr ""
+
+#: ../module/Client/view/client/client/index.phtml:71
+#: ../module/Client/view/client/client/index.phtml:72
+#: ../module/Client/view/client/client/details.phtml:53
+msgid "Version"
+msgstr "Sürüm"
+
+#: ../module/Client/view/client/client/status.phtml:45
+msgid "Client Status"
+msgstr "İstemci Durumu"
+
+#: ../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "İstemci detayları"
+
+#: ../module/Client/view/client/client/details.phtml:54
+msgid "Autoprune"
+msgstr "Otomatik temizlemek"
+
+#: ../module/Client/view/client/client/details.phtml:55
+msgid "Fileretention"
+msgstr "File tutmamak"
+
+#: ../module/Client/view/client/client/details.phtml:56
+msgid "Jobretention"
+msgstr "emir tutmamak"
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "bconsole (batch-mode), please handle with care."
+msgstr "bconsole (toplu işlem modu), lütfen dikkatli olun."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "All commands have to be a one liner, dialogs are not working."
+msgstr "Her satırda bir komut olmalı, diyaloglar çalışmıyor."
+
+#: ../module/Console/view/console/console/index.phtml:36
+msgid "Type help for a list of commands."
+msgstr "Komutların bir listesi için help yazın."
+
+#: ../public/js/bootstrap-table-formatter.js:25
+#: ../public/js/bootstrap-table-formatter.js:546
+#, fuzzy
+msgid "View Job Details"
+msgstr "emir listesi"
 
 #: ../public/js/bootstrap-table-formatter.js:44
 #, fuzzy
@@ -1301,8 +1410,6 @@ msgid "Consolidate"
 msgstr "konsol"
 
 #: ../public/js/bootstrap-table-formatter.js:92
-#: ../public/js/bootstrap-table-formatter.js:140
-#: ../public/js/bootstrap-table-formatter.js:170
 msgid "Full"
 msgstr "Tam Yedekleme"
 
@@ -1313,6 +1420,10 @@ msgstr "Fark Yedekleme"
 #: ../public/js/bootstrap-table-formatter.js:96
 msgid "Incremental"
 msgstr "Artımlı Yedekleme"
+
+#: ../public/js/bootstrap-table-formatter.js:98
+msgid "VirtualFull"
+msgstr ""
 
 #: ../public/js/bootstrap-table-formatter.js:100
 msgid "Base"
@@ -1365,199 +1476,240 @@ msgstr "saat"
 msgid "second(s)"
 msgstr "saniye"
 
-#: ../public/js/bootstrap-table-formatter.js:140
-#: ../public/js/bootstrap-table-formatter.js:170
-msgid "Used"
-msgstr "Kullanılmış"
-
-#: ../public/js/bootstrap-table-formatter.js:152
-msgid "expired"
-msgstr "abgelaufen"
-
-#: ../public/js/bootstrap-table-formatter.js:156
-#, fuzzy
-msgid "expires in 1 day"
-msgstr "läuft ab in"
-
-#: ../public/js/bootstrap-table-formatter.js:160
-msgid "expires in"
-msgstr "läuft ab in"
-
-#: ../public/js/bootstrap-table-formatter.js:160
-msgid "days"
-msgstr "Tage"
-
-#: ../public/js/bootstrap-table-formatter.js:205
+#: ../public/js/bootstrap-table-formatter.js:150
 msgid "today"
 msgstr "bugün"
 
-#: ../public/js/bootstrap-table-formatter.js:208
+#: ../public/js/bootstrap-table-formatter.js:153
 #, fuzzy
 msgid "day(s) ago"
 msgstr "gün önce"
 
-#: ../public/js/bootstrap-table-formatter.js:211
+#: ../public/js/bootstrap-table-formatter.js:156
 msgid "month(s) ago"
 msgstr "ay önce"
 
-#: ../public/js/bootstrap-table-formatter.js:214
+#: ../public/js/bootstrap-table-formatter.js:159
 msgid "year(s) ago"
 msgstr "yıl önce"
 
-#: ../public/js/bootstrap-table-formatter.js:247
+#: ../public/js/bootstrap-table-formatter.js:192
 msgid "enabled"
 msgstr "etkin"
 
-#: ../public/js/bootstrap-table-formatter.js:250
+#: ../public/js/bootstrap-table-formatter.js:195
 msgid "disabled"
 msgstr "pasif"
 
-#: ../public/js/bootstrap-table-formatter.js:272
-#: ../public/js/bootstrap-table-formatter.js:277
-#: ../public/js/bootstrap-table-formatter.js:282
+#: ../public/js/bootstrap-table-formatter.js:227
+msgid "Non-fatal error"
+msgstr "Ölümcül olmayan hata"
+
+#: ../public/js/bootstrap-table-formatter.js:228
+#: ../public/js/bootstrap-table-formatter.js:233
+#: ../public/js/bootstrap-table-formatter.js:238
 #, fuzzy
 msgid "Failure"
 msgstr "Başarısız"
 
-#: ../public/js/bootstrap-table-formatter.js:287
-msgid "Success"
-msgstr "Başarılı"
-
-#: ../public/js/bootstrap-table-formatter.js:297
-msgid "Queued"
-msgstr "Sıraya dizilmiş"
-
-#: ../public/js/bootstrap-table-formatter.js:301
-#: ../public/js/bootstrap-table-formatter.js:302
-msgid "Blocked"
-msgstr "Engellenmiş"
-
-#: ../public/js/bootstrap-table-formatter.js:307
-msgid "Verify found differences"
-msgstr "Bulunan farkları doğrulayın"
-
-#: ../public/js/bootstrap-table-formatter.js:312
-#, fuzzy
-msgid "Canceled"
-msgstr "iptal etmek"
-
-#: ../public/js/bootstrap-table-formatter.js:377
-msgid "Incomplete"
-msgstr "Eksik"
-
-#: ../module/Dashboard/view/partial/JobsPast24h.phtml:79
-#: ../public/js/bootstrap-table-formatter.js:387
-#, fuzzy
-msgid "Warning"
-msgstr "çalışma"
-
-#: ../public/js/bootstrap-table-formatter.js:25
-#: ../public/js/bootstrap-table-formatter.js:560
-#, fuzzy
-msgid "View Job Details"
-msgstr "emir listesi"
-
-#: ../module/Job/src/Job/Form/JobForm.php:102
-#, fuzzy
-msgid "warning"
-msgstr "çalışma"
-
-#: ../public/js/bootstrap-table-formatter.js:271
-msgid "Non-fatal error"
-msgstr "Ölümcül olmayan hata"
-
-#: ../public/js/bootstrap-table-formatter.js:276
+#: ../public/js/bootstrap-table-formatter.js:232
 msgid "Job terminated in error"
 msgstr "Görev hatayla sonlandırıldı"
 
-#: ../public/js/bootstrap-table-formatter.js:281
+#: ../public/js/bootstrap-table-formatter.js:237
 msgid "Fatal error"
 msgstr "Ölümcül hata"
 
-#: ../public/js/bootstrap-table-formatter.js:286
+#: ../public/js/bootstrap-table-formatter.js:242
 #, fuzzy
 msgid "Terminated normally"
 msgstr "başarısızlık"
 
-#: ../public/js/bootstrap-table-formatter.js:296
+#: ../public/js/bootstrap-table-formatter.js:243
+msgid "Success"
+msgstr "Başarılı"
+
+#: ../public/js/bootstrap-table-formatter.js:252
 msgid "Created but not yet running"
 msgstr "Oluşturuldu; ancak, henüz çalışmıyor"
 
-#: ../public/js/bootstrap-table-formatter.js:306
+#: ../public/js/bootstrap-table-formatter.js:257
+#: ../public/js/bootstrap-table-formatter.js:258
+msgid "Blocked"
+msgstr "Engellenmiş"
+
+#: ../public/js/bootstrap-table-formatter.js:262
 msgid "Verify differences"
 msgstr "Farklılıkları doğrula"
 
-#: ../public/js/bootstrap-table-formatter.js:311
+#: ../public/js/bootstrap-table-formatter.js:263
+msgid "Verify found differences"
+msgstr "Bulunan farkları doğrulayın"
+
+#: ../public/js/bootstrap-table-formatter.js:267
 msgid "Canceled by user"
 msgstr "Kullanıcı tarafından iptal edildi"
 
-#: ../public/js/bootstrap-table-formatter.js:376
+#: ../public/js/bootstrap-table-formatter.js:268
+#, fuzzy
+msgid "Canceled"
+msgstr "iptal etmek"
+
+#: ../public/js/bootstrap-table-formatter.js:272
+msgid "Waiting on File daemon"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:277
+msgid "Waiting on the Storage daemon"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:282
+msgid "Waiting for new media"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:287
+msgid "Waiting for Mount"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:292
+msgid "Waiting for storage resource"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:297
+msgid "Waiting for job resource"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:302
+msgid "Waiting for Client resource"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:307
+msgid "Waiting for maximum jobs"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:312
+msgid "Waiting for start time"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:317
+msgid "Waiting for higher priority jobs to finish"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:322
+msgid "SD despooling attributes"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:327
+msgid "Doing batch insert file records"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:332
 msgid "Incomplete Job"
 msgstr "Tamamlanmamış Görev"
 
-#: ../public/js/bootstrap-table-formatter.js:386
+#: ../public/js/bootstrap-table-formatter.js:333
+msgid "Incomplete"
+msgstr "Eksik"
+
+#: ../public/js/bootstrap-table-formatter.js:337
+msgid "Committing data (last despool)"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:342
 #, fuzzy
 msgid "Terminated normally with warnings"
 msgstr "başarısızlık"
 
-#: ../module/Restore/view/restore/restore/index.phtml:32
-#: ../module/Restore/view/restore/restore/versions.phtml:32
-msgid "Restore multiple files"
-msgstr "Birçok dosyayı geri yükle"
+#: ../public/js/bootstrap-table-formatter.js:347
+msgid "Doing data despooling"
+msgstr ""
 
-#: ../module/Restore/view/restore/restore/index.phtml:33
-#: ../module/Restore/view/restore/restore/versions.phtml:33
-msgid "Restore specific file version"
-msgstr "Belirli bir dosyayı geri dön"
+#: ../public/js/bootstrap-table-formatter.js:352
+msgid "Queued waiting for device"
+msgstr ""
 
-#: ../module/Restore/view/restore/restore/index.phtml:75
-#: ../module/Restore/view/restore/restore/versions.phtml:76
+#: ../public/js/bootstrap-table-formatter.js:366
+msgid "Disabled"
+msgstr "Pasif"
+
+#: ../public/js/bootstrap-table-formatter.js:505
+#: ../public/js/bootstrap-table-formatter.js:535
+#: ../public/js/bootstrap-table-formatter.js:613
+msgid "Disable"
+msgstr "Pasifleştir"
+
+#: ../public/js/bootstrap-table-formatter.js:506
+#: ../public/js/bootstrap-table-formatter.js:536
+#: ../public/js/bootstrap-table-formatter.js:612
+msgid "Enable"
+msgstr "Etkinleştir"
+
+#: ../public/js/bootstrap-table-formatter.js:507
+msgid "Download update"
+msgstr ""
+
+#: ../public/js/bootstrap-table-formatter.js:547
+msgid "Rerun"
+msgstr "tekrarlamak"
+
+#: ../public/js/bootstrap-table-formatter.js:624
 #, fuzzy
-msgid "Job report"
-msgstr "emir listesi"
+msgid "Manage autochanger"
+msgstr "Otomatik değiştiriciyi yönet"
 
-#: ../module/Restore/view/restore/restore/index.phtml:98
-#: ../module/Restore/view/restore/restore/index.phtml:117
-#: ../module/Restore/view/restore/restore/versions.phtml:99
-#: ../module/Restore/view/restore/restore/versions.phtml:118
-msgid "OK"
-msgstr "Tamam"
+#~ msgid ""
+#~ "Sorry, it seems you are not authorized to run this module. If you think "
+#~ "this is an error, please contact your local administrator."
+#~ msgstr ""
+#~ "Ürgünüm. Bu modülü çalıştırma yetkiniz yok. Bunun bir hata olduğunu "
+#~ "düşünüyorsanız lütfen yöneticinizle iletişim kurun."
 
-#: ../module/Restore/view/restore/restore/index.phtml:114
-msgid "No files or directories selected to restore!"
-msgstr "Geri yüklenecek dizin ya da dosya seçilmedi!"
+#~ msgid "Last successful backups"
+#~ msgstr "Letzte Sicherungen"
 
-#: ../module/Restore/view/restore/restore/index.phtml:424
-#: ../module/Restore/view/restore/restore/versions.phtml:193
-#: ../module/Restore/view/restore/restore/versions.phtml:544
-msgid "Last modification"
-msgstr "Son değişiklik"
+#~ msgid "Show Files"
+#~ msgstr "Dosyaları göster"
 
-#: ../module/Restore/view/restore/restore/versions.phtml:115
-msgid "No file selected to restore!"
-msgstr "Geri yüklenecek dosya seçilmedi!"
+#~ msgid "First Index"
+#~ msgstr "İlk İndeks"
 
-#: ../module/Restore/view/restore/restore/versions.phtml:172
-msgid "Selected file"
-msgstr "Dosya seçildi"
+#~ msgid "Last Index"
+#~ msgstr "Son İndeks"
 
-#: ../module/Restore/view/restore/restore/versions.phtml:180
-msgid "Available versions"
-msgstr "Mevcut sürümer"
+#, fuzzy
+#~ msgid "Start Block"
+#~ msgstr "başlangıç"
 
-#: ../module/Restore/view/restore/restore/versions.phtml:195
-msgid "Checksum"
-msgstr "Sağlama"
+#~ msgid "End Block"
+#~ msgstr "Blok Sonu"
 
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:96
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:113
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:132
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:149
-#: ../module/Restore/src/Restore/Form/RestoreForm.php:166
-msgid "Please choose a client"
-msgstr "Lütfen bir istemci seçin"
+#~ msgid "Retention/Expiration"
+#~ msgstr "tutma/son"
 
-#: ../module/Application/src/Application/View/Helper/ACLAlert.php:42
-msgid "Back"
-msgstr "Geri"
+#~ msgid "Path"
+#~ msgstr "Yol"
 
+#~ msgid "Limit"
+#~ msgstr "Limit"
+
+#~ msgid "Date"
+#~ msgstr "zaman"
+
+#~ msgid "Used"
+#~ msgstr "Kullanılmış"
+
+#~ msgid "expired"
+#~ msgstr "abgelaufen"
+
+#, fuzzy
+#~ msgid "expires in 1 day"
+#~ msgstr "läuft ab in"
+
+#~ msgid "expires in"
+#~ msgstr "läuft ab in"
+
+#~ msgid "days"
+#~ msgstr "Tage"
+
+#~ msgid "Queued"
+#~ msgstr "Sıraya dizilmiş"
