@@ -17,9 +17,6 @@ DH_VERBOSE = 1
 # This has to be exported to make some magic below work.
 DH_OPTIONS = -v
 
-
-
-
 DAEMON_USER = bareos
 DAEMON_GROUP = bareos
 DIRECTOR_DAEMON_USER = $(DAEMON_USER)
@@ -46,6 +43,8 @@ define CONFIGURE_COMMON
   -Dbsrdir=/var/lib/bareos \
   -Dlogdir=/var/log/bareos \
   -Dsubsysdir=/var/lock \
+  -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
+  -Dwebuiconfdir=/etc/bareos-webui \
   -Dreadline=yes \
   -Dbatch-insert=yes \
   -Ddynamic-debian-package-list=yes\
@@ -84,17 +83,15 @@ endif
 ifeq ($(DEB_HOST_ARCH_OS),hurd)
 CONFIGURE_COMMON       += -Dscsi-crypto=no -Dndmp=no
 endif
-CONFIGURE_CLIENT_ONLY = $(CONFIGURE_COMMON) -Dclient-only=yes
-CONFIGURE_FULL        = $(CONFIGURE_COMMON) -Dpython=yes -Dtraymonitor=yes -DSHARE_INSTALL_PREFIX:PATH=/usr/share -Dwebuiconfdir=/etc/bareos-webui
 
 override_dh_auto_configure:
-	@if [ "`lsb_release --short  --id`" = "Ubuntu" ] && [ "`lsb_release --short  --release`" = "8.04" ]; then \
-		echo "configure common configuration"; \
-		dh_auto_configure -- $(CONFIGURE_COMMON); \
-	else \
-		echo "configure full configuration"; \
-		dh_auto_configure -- $(CONFIGURE_FULL); \
-	fi
+ifeq (build-universal-client,$(filter build-universal-client,$(DEB_BUILD_OPTIONS)))
+	echo "configuring universal client"
+	dh_auto_configure -- $(CONFIGURE_COMMON) -DBUILD_UNIVERSAL_CLIENT=yes
+else
+	echo "configure full configuration"
+	dh_auto_configure -- $(CONFIGURE_COMMON) -Dpython=yes -Dtraymonitor=yes
+endif
 
 override_dh_fixperms:
 	# all files in /etc/bareos
@@ -104,17 +101,22 @@ override_dh_fixperms:
 		--exclude var/log/bareos/
 
 override_dh_strip:
+ifeq (build-universal-client,$(filter build-universal-client,$(DEB_BUILD_OPTIONS)))
+	dh_strip --dbg-package=bareos-universal-client-dbg
+else
 	dh_strip --dbg-package=bareos-dbg
+endif
 
 override_dh_install:
-	chrpath -d \
-		$(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-postgresql*
+	chrpath -d $(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-postgresql* || true
 	dh_install
 
 override_dh_installinit:
-	dh_installinit --package=bareos-director   --name=bareos-dir --no-start
-	dh_installinit --package=bareos-storage    --name=bareos-sd  --no-start
-	dh_installinit --package=bareos-filedaemon --name=bareos-fd
+ifeq (build-universal-client,$(filter build-universal-client,$(DEB_BUILD_OPTIONS)))
+	dh_installsystemd --name bareos-filedaemon
+else
+	dh_installsystemd
+endif
 
 override_dh_makeshlibs:
 	dh_makeshlibs -n
@@ -126,7 +128,7 @@ override_dh_auto_test:
 # see https://www.debian.org/doc/debian-policy/ch-source.html#s-debianrules-options
 # No tabs allowed before ifeq.
 ifneq (nocheck,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	cd obj-$(DEB_BUILD_GNU_TYPE) && ls Testing/*/Test.xml || REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
+	cd cmake-build && ls Testing/*/Test.xml || REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
 else
 	@echo "ctest: skipped"
 endif
@@ -137,9 +139,7 @@ override_dh_shlibdeps:
 
 
 %:
-	PARALLEL="--parallel"; \
-	if dh --list | grep -q systemd; then WITH="--with"; SYSTEMD="systemd"; fi; \
-	dh $@ $$PARALLEL $$WITH $$SYSTEMD
+	dh $@ --builddirectory=cmake-build
 
 gen-debian-copyright:
 	(cd debian; make copyright)

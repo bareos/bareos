@@ -64,215 +64,24 @@ Homepage: http://www.bareos.org/
 
 
 
-Package:        bareos
-Architecture:   any
-Depends:        bareos-director (= ${binary:Version}), bareos-storage (= ${binary:Version}), bareos-client (= ${binary:Version}), ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - metapackage
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- It is efficient and relatively easy to use, while offering many advanced
- storage management features that make it easy to find and recover lost or
- damaged files. Due to its modular design, Bareos is scalable from small
- single computer systems to networks of hundreds of machines.
- .
- This metapackage installs the entire suite of Bareos applications: job
- scheduling, storage control, node connector, and administrative console.
+@DEBIAN_CONTROL_BAREOS@
+@DEBIAN_CONTROL_BAREOS_BCONSOLE@
 
-Package:        bareos-bconsole
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Conflicts:      bacula-console
-Replaces:       bacula-console
-Description: Backup Archiving Recovery Open Sourced - text console
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- The management console allows the administrator or user to
- communicate with the Bareos Director.
- .
- This package provides the text-interface version of the console.
+@DEBIAN_CONTROL_BAREOS_CLIENT@
 
+@DEBIAN_CONTROL_BAREOS_COMMON@
 
-Package:        bareos-client
-Architecture:   any
-Depends:        bareos-bconsole (>= ${binary:Version}), bareos-filedaemon (>= ${binary:Version}), ${misc:Depends}
-Suggests:       bareos-traymonitor
-Description: Backup Archiving Recovery Open Sourced - client metapackage
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- The package is a metapackage for client installations (file daemon and
- console).
+@DEBIAN_CONTROL_BAREOS_DATABASE@
 
+@DEBIAN_CONTROL_BAREOS_DBG@
 
-Package:        bareos-common
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        gawk, openssl, ${shlibs:Depends}, ${misc:Depends}
-Conflicts:      bacula-director-common, bacula-common
-Description: Backup Archiving Recovery Open Sourced - common files
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides files that are useful for other Bareos packages.
+@DEBIAN_CONTROL_BAREOS_DIRECTOR@
 
+@DEBIAN_CONTROL_BAREOS_FILEDAEMON@
 
-Package:        bareos-database-common
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-database-postgresql (= ${binary:Version}), dbconfig-common, lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - common catalog files
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides generic abstraction libs and files to connect the Bareos
- Director daemon to a database.
+@DEBIAN_CONTROL_BAREOS_STORAGE@
 
-
-Package:        bareos-database-postgresql
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        lsb-base (>= 3.2-13), postgresql-client, ${shlibs:Depends}, ${misc:Depends}
-Recommends:     dbconfig-pgsql
-Suggests:       postgresql
-Description: Backup Archiving Recovery Open Sourced - PostgreSQL backend
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the functionality to connect the Bareos Director
- daemon to a PostgreSQL database.
-
-Package:        bareos-database-tools
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-database-common (= ${binary:Version}), lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
-Conflicts:      bacula-sd-mysql, bacula-sd-pgsql, bacula-sd-sqlite3
-Description: Backup Archiving Recovery Open Sourced - database tools
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides tools that requires access to the Bareos database.
-
-
-Package: bareos-dbg
-Architecture: any
-Section: debug
-Priority: extra
-Depends:
-    bareos-storage (= ${binary:Version}) | bareos-bconsole (= ${binary:Version}) | bareos-common (= ${binary:Version}) | bareos-database-common (= ${binary:Version}) | bareos-database-postgresql (= ${binary:Version}) | bareos-database-tools (= ${binary:Version}) | bareos-director (= ${binary:Version}) | bareos-filedaemon (= ${binary:Version}) | bareos-storage (= ${binary:Version}) | bareos-storage-tape (= ${binary:Version}) | bareos-storage-fifo (= ${binary:Version}) | bareos-tools (= ${binary:Version}),
-    ${misc:Depends}
-Conflicts: bacula-sd-dbg, bacula-sd-mysql-dbg, bacula-sd-pgsql-dbg, bacula-sd-sqlite3-dbg
-Description: Backup Archiving Recovery Open Sourced - debugging symbols
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides debugging symbols for Bareos.
-
-
-Package:        bareos-director
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        bareos-common (= ${binary:Version}), bareos-database-common (= ${binary:Version}), bareos-database-tools, lsb-base (>= 3.2-13), lsof, bsd-mailx | mailx, ${shlibs:Depends}, ${misc:Depends}
-Recommends:     logrotate
-Conflicts:      bacula-director
-Replaces:       bacula-director
-Description: Backup Archiving Recovery Open Sourced - director daemon
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- The Bareos Director service supervises all the backup, restore, verify and
- archive operations. It can run as a daemon or as a foreground service which
- administrators can use to schedule backups and recover files.
- .
- This package contains the Bareos Director daemon.
-
-
-Package:        bareos-filedaemon
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        bareos-common (= ${binary:Version}), lsb-base (>= 3.2-13), lsof, ${shlibs:Depends}, ${misc:Depends}
-Conflicts:      bacula-fd
-Replaces:       bacula-fd
-Description: Backup Archiving Recovery Open Sourced - file daemon
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- The file daemon has to be installed on the machine to be backed up. It is
- responsible for providing the file attributes and data when requested by
- the Director, and also for the file system-dependent part of restoration.
- .
- This package contains the Bareos File daemon.
-
-
-Package:        bareos-storage
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        bareos-common (= ${binary:Version}), lsb-base (>= 3.2-13), lsof, ${shlibs:Depends}, ${misc:Depends}
-Recommends:     bareos-tools
-Conflicts:      bacula-sd
-Replaces:       bacula-sd
-Breaks:         bareos-storage-tape (<< 14.2.6~)
-Description: Backup Archiving Recovery Open Sourced - storage daemon
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- The storage daemon performs the storage and recovery of the file
- attributes and data to the physical media; in other words, it is
- responsible for reading and writing the backups.
- .
- It runs on the machine which has access to the backup device(s) - usually
- a tape drive, but alternatively other storage media, such as files.
-
-
-Package:        bareos-storage-fifo
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-storage (= ${binary:Version}), lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - storage daemon FIFO backend
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package contains the Storage backend for FIFO files.
- This package is only required, when a resource "Archive Device = fifo"
- should be used by the Bareos Storage Daemon.
-
-
-Package:        bareos-storage-tape
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        bareos-common (= ${binary:Version}), bareos-storage (= ${binary:Version}), lsb-base (>= 3.2-13), mtx, ${shlibs:Depends}, ${misc:Depends}
-Recommends:     mt-st
-Suggests:       scsitools, sg3-utils
-Breaks:         bareos-storage (<< 14.2.6~)
-Replaces:       bareos-storage (<< 14.2.6~)
-Description: Backup Archiving Recovery Open Sourced - storage daemon tape support
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- The storage daemon performs the storage and recovery of the file
- attributes and data to the physical media; in other words, it is
- responsible for reading and writing the backups.
- .
- It runs on the machine which has access to the backup device(s) - usually
- a tape drive, but alternatively other storage media, such as files.
- .
- This adds the tape specific support files for the storage daemon.
-
-
-Package:        bareos-tools
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Conflicts:	bacula-sd, bacula-sd-mysql, bacula-sd-pgsql, bacula-sd-sqlite3
-Description: Backup Archiving Recovery Open Sourced - common tools
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides some additional tools, mostly to work directly with
- Bareos storage volumes.
-
+@DEBIAN_CONTROL_BAREOS_TOOLS@
 
 @DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN@
 
