@@ -44,8 +44,12 @@ ClientResource* select_enable_disable_client_resource(UaContext* ua,
 FilesetResource* select_fileset_resource(UaContext* ua);
 ScheduleResource* select_enable_disable_schedule_resource(UaContext* ua,
                                                           bool enable);
-bool SelectPoolAndMediaDbr(UaContext* ua, PoolDbRecord* pr, MediaDbRecord* mr);
+
+bool SelectPoolForMediaDbr(UaContext* ua, PoolDbRecord* pr, MediaDbRecord* mr);
 bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr);
+bool SelectMediaDbrByName(UaContext* ua,
+                          MediaDbRecord* mr,
+                          const char* volumename);
 bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk = "pool");
 bool SelectStorageDbr(UaContext* ua,
                       StorageDbRecord* pr,
