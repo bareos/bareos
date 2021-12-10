@@ -530,7 +530,7 @@ Problem
    My database is broken.
 
 Solution
-   For SQLite, use the vacuum command to try to fix the database. For either MySQL or PostgreSQL, see the vendor’s documentation. They have specific tools that check and repair databases, see the :ref:`CatMaintenanceChapter` sections of this manual for links to vendor information.
+   See the PostgreSQL documentation. They have specific tools that check and repair databases, see the :ref:`CatMaintenanceChapter` sections of this manual for links to vendor information.
 
    Assuming the above does not resolve the problem, you will need to restore or rebuild your catalog. Note, if it is a matter of some inconsistencies in the Bareos tables rather than a broken database, then running :ref:`bareos-dbcheck <bareos-dbcheck>` might help, but you will need to ensure that your database indexes are properly setup.
 
@@ -790,7 +790,7 @@ Solution
 
    There are basically three steps to take:
 
-   #. Ensure that your SQL server is running (MySQL or PostgreSQL) and that the Bareos database (normally bareos) exists. See the :ref:`section-CreateDatabase` chapter of the manual.
+   #. Ensure that your PostgreSQL server is running and that the Bareos database (normally bareos) exists. See the :ref:`section-CreateDatabase` chapter of the manual.
 
    #. Ensure that the Bareos databases are created. This is also described at the above link.
 

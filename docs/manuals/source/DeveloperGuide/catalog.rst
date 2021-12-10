@@ -9,42 +9,20 @@ services and as such is not targeted at end users but rather at
 developers and system administrators who want or need to know more of
 the working details of **Bareos**.
 
-Currently, we prefer the usage of PostgreSQL. Therefore our support
-for SQLite or other databases could be discontinued in the future.
-PostgreSQL was chosen because it is a full-featured, very mature database,
-and because Dan Langille did the Bareos driver for it.
-
-SQLite was chosen because it is small, efficient, and can be directly
-embedded in **Bareos** thus requiring much less effort from the system
-administrator or person building **Bareos**. In our testing SQLite has
-performed very well, and for the functions that we use, it has never
-encountered any errors except that it does not appear to handle
-databases larger than 2GBytes. That said, we would not recommend it for
-serious production use. Nonetheless SQLite is very suitable for test
-environments.
-
-Bareos **requires** one of the three databases (MySQL, PostgreSQL, or SQLite)
-to run. Therefore it is mandatory to specify one of them for the cmake
-configuration step, i.e.: ``-Dpostgresql=yes``.
+We only support PostgreSQL. 
+Support for SQLite or MySQL has been discontinued in :sinceVersion:`21.0.0:MySQL backend removed`.
+PostgreSQL was chosen because it is a full-featured, very mature database.
 
 Filenames and Maximum Filename Length
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In general, either MySQL, PostgreSQL or SQLite permit storing arbitrary
-long path names and file names in the catalog database. In practice,
-there still may be one or two places in the catalog interface code that
-restrict the maximum path length to 512 characters and the maximum file
-name length to 512 characters. These restrictions are believed to have
-been removed. Please note, these restrictions apply only to the catalog
-database and thus to your ability to list online the files saved during
-any job. All information received and stored by the Storage daemon
-(normally on tape) allows and handles arbitrarily long path and
-filenames.
+In general, PostgreSQL permit storing arbitrary long path names and file names in the catalog database. 
+However, PostgreSQL limits the maximum length of an index item to 2730, which will affect the length of a path (without the filename) that can be stored in the catalog database. Nevertheless, the 2730 is not a hard limit as PostgreSQL will apply some lossless compression to strings before adding them to its index.
+
+The guarantee is, that you will be able to store paths at least 2730 bytes long. You may or may not run into PostgreSQL index errors when using longer paths.
 
 Database Table Design
 ~~~~~~~~~~~~~~~~~~~~~
-
-All discussions that follow pertain to the PostgreSQL database.
 
 Because the catalog database may contain very large amounts of data for
 large sites, we have made a modest attempt to normalize the data tables

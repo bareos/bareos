@@ -80,11 +80,9 @@ Catalog
 ~~~~~~~
 
 The Catalog services are comprised of the software programs responsible for maintaining the file indexes and volume databases for all files backed up. The Catalog services permit the system administrator or user to quickly locate and restore any desired file. The Catalog services sets Bareos apart from simple backup programs like tar and bru, because the catalog maintains a record of all Volumes used, all Jobs run, and all Files saved, permitting efficient restoration and Volume management.
-Bareos currently supports three different databases, MySQL, PostgreSQL, and SQLite, one of which must be chosen when building Bareos.
+Bareos supports PostgreSQL.
 
-The three SQL databases currently supported (MySQL, PostgreSQL or SQLite) provide quite a number of features, including rapid indexing, arbitrary queries, and security. Although the Bareos project plans to support other major SQL databases, the current Bareos implementation interfaces only to MySQL, PostgreSQL and SQLite.
-
-To perform a successful save or restore, the following four daemons must be configured and running: the Director daemon, the File daemon, the Storage daemon, and the Catalog service (MySQL, PostgreSQL or SQLite).
+To perform a successful save or restore, the following four daemons must be configured and running: the Director daemon, the File daemon, the Storage daemon, and the PostgreSQL server for the Catalog service.
 
 .. _section-version-numbers:
 
@@ -113,9 +111,7 @@ bareos-bconsole                      Bareos administration console (CLI)
 bareos-client                        Bareos client Meta-All-In-One package
 bareos-common                        Common files, required by multiple Bareos packages
 bareos-database-common               Generic abstraction libs and files to connect to a database
-bareos-database-mysql                Libs and tools for mysql catalog
 bareos-database-postgresql           Libs and tools for postgresql catalog
-bareos-database-sqlite3              Libs and tools for sqlite3 catalog
 bareos-database-tools                Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
 bareos-director                      Bareos Director daemon
 bareos-director-python-plugin        Python plugin for Bareos Director daemon
@@ -147,7 +143,7 @@ Additionally, packages containing debug information are available. These are nam
 
 Not all packages are required to run Bareos.
 
--  For the Bareos Director, the package **bareos-director** and one of **bareos-database-postgresql**, **bareos-database-mysql** or **bareos-database-sqlite3** are required. It is recommended to use **bareos-database-postgresql**.
+-  For the Bareos Director, the package **bareos-director** and **bareos-database-postgresql** are required.
 
 -  For the |sd|, the package **bareos-storage** is required. If you plan to connect tape drives to the storage director, also install the package **bareos-storage-tape**. This is kept separately, because it has additional dependencies for tape tools.
 
@@ -345,9 +341,9 @@ What is Implemented
 
    -  Catalog database facility for remembering Volumes, Pools, Jobs, and Files backed up.
 
-   -  Support for PostgreSQL, MySQL and SQLite Catalog databases.
+   -  Support for PostgreSQL Catalog databases.
 
-   -  User extensible queries to the PostgreSQL, MySQL and SQLite databases.
+   -  User extensible queries to the PostgreSQL database.
 
 -  Advanced Volume and Pool Management
 

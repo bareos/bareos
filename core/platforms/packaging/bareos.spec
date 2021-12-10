@@ -38,8 +38,6 @@ Vendor: 	The Bareos Team
 # default settings
 %define client_only 0
 %define build_qt_monitor 1
-%define build_sqlite3 1
-%define build_mysql 1
 %define glusterfs 0
 %define droplet 1
 %define have_git 1
@@ -63,22 +61,11 @@ BuildRequires: rpcgen
 BuildRequires: libtirpc-devel
 %endif
 
-# remove mysql from fedora >= 34
-%if 0%{?fedora} >= 34
-%define build_mysql 0
-%endif
-
-# remove mysql from Leap 15.3
-%if 0%{?is_opensuse} && 0%{?sle_version} >= 150300
-%define build_mysql 0
-%endif
-
 #
 # SUSE (openSUSE, SLES) specific settings
 #
 %if 0%{?sles_version} == 10
 %define build_qt_monitor 0
-%define build_sqlite3 0
 %define have_git 0
 %define python_plugins 0
 %endif
@@ -105,7 +92,6 @@ BuildRequires: libtirpc-devel
 %define RHEL4 1
 %define client_only 1
 %define build_qt_monitor 0
-%define build_sqlite3 0
 %define have_git 0
 %define python_plugins 0
 %endif
@@ -210,16 +196,6 @@ BuildRequires: libacl-devel
 BuildRequires: pkgconfig
 BuildRequires: lzo-devel
 BuildRequires: logrotate
-%if 0%{?build_sqlite3}
-%if 0%{?suse_version}
-BuildRequires: sqlite3-devel
-%else
-BuildRequires: sqlite-devel
-%endif
-%endif
-%if 0%{?build_mysql}
-BuildRequires: mysql-devel
-%endif
 BuildRequires: postgresql-devel
 BuildRequires: openssl
 BuildRequires: libcap-devel
@@ -468,32 +444,8 @@ Requires:   %{name}-database-common = %{version}
 Provides:   %{name}-catalog-postgresql
 Provides:   %{name}-database-backend
 
-%if 0%{?build_mysql}
-%package    database-mysql
-Summary:    Libs & tools for mysql catalog
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-database-common = %{version}
-Provides:   %{name}-catalog-mysql
-Provides:   %{name}-database-backend
-%endif
-
-%if 0%{?build_sqlite3}
-%package    database-sqlite3
-Summary:    Libs & tools for sqlite3 catalog
-Group:      Productivity/Archiving/Backup
-%if 0%{?suse_version}
-Requires:   sqlite3
-%endif
-%if 0%{?fedora_version}
-Requires:   sqlite
-%endif
-Requires:   %{name}-database-common = %{version}
-Provides:   %{name}-catalog-sqlite3
-Provides:   %{name}-database-backend
-%endif
-
 %package    database-tools
-Summary:    Bareos CLI tools with database dependencies (bareos-dbcheck, bareos-dbcopy, bscan)
+Summary:    Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common = %{version}
 Requires:   %{name}-database-common = %{version}
@@ -918,20 +870,6 @@ This package contains the shared libraries that abstract the catalog interface
 
 This package contains the shared library to access postgresql as catalog db.
 
-%if 0%{?build_mysql}
-%description database-mysql
-%{dscr}
-
-This package contains the shared library to use mysql as catalog db.
-%endif
-
-%if 0%{?build_sqlite3}
-%description database-sqlite3
-%{dscr}
-
-This package contains the shared library to use sqlite as catalog db.
-%endif
-
 %description database-tools
 %{dscr}
 
@@ -1041,12 +979,6 @@ cmake  .. \
   -Dclient-only=yes \
 %endif
   -Dpostgresql=yes \
-%if 0%{?build_mysql}
-  -Dmysql=yes \
-%endif
-%if 0%{?build_sqlite3}
-  -Dsqlite3=yes \
-%endif
   -Ddir-user=%{director_daemon_user} \
   -Ddir-group=%{daemon_group} \
   -Dsd-user=%{storage_daemon_user} \
@@ -1109,7 +1041,6 @@ for F in  \
     %{_mandir}/man1/bsmtp.1.gz \
     %{_mandir}/man1/bwild.1.gz \
     %{_mandir}/man8/bareos-dbcheck.8.gz \
-    %{_mandir}/man8/bareos-dbcopy.8.gz \
     %{_mandir}/man8/bareos-dir.8.gz \
     %{_mandir}/man8/bareos-sd.8.gz \
     %{_mandir}/man8/bareos.8.gz \
@@ -1556,30 +1487,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{script_dir}/ddl/*/postgresql*.sql
 %{backend_dir}/libbareoscats-postgresql.so*
 
-%if 0%{?build_mysql}
-%files database-mysql
-# mysql catalog files
-%defattr(-, root, root)
-%{script_dir}/ddl/*/mysql*.sql
-%{backend_dir}/libbareoscats-mysql.so*
-%endif
-
-%if 0%{?build_sqlite3}
-%files database-sqlite3
-# sqlite3 catalog files
-%defattr(-, root, root)
-%{script_dir}/ddl/*/sqlite3*.sql
-%{backend_dir}/libbareoscats-sqlite3.so*
-%endif
-
 %files database-tools
 # dbtools with link to db libs (dbcheck, bscan, dbcopy)
 %defattr(-, root, root)
 %{_sbindir}/bareos-dbcheck
-%{_sbindir}/bareos-dbcopy
 %{_sbindir}/bscan
 %{_mandir}/man8/bareos-dbcheck.8.gz
-%{_mandir}/man8/bareos-dbcopy.8.gz
 %{_mandir}/man8/bscan.8.gz
 
 %files tools
@@ -1983,22 +1896,6 @@ a2enmod php5 &> /dev/null || true
 
 %postun database-postgresql
 /sbin/ldconfig
-
-%if 0%{?build_mysql}
-%post database-mysql
-/sbin/ldconfig
-
-%postun database-mysql
-/sbin/ldconfig
-%endif
-
-%if 0%{?build_sqlite3}
-%post database-sqlite3
-/sbin/ldconfig
-
-%postun database-sqlite3
-/sbin/ldconfig
-%endif
 
 
 %if 0%{?build_qt_monitor}

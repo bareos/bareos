@@ -117,8 +117,8 @@ static void usage()
           "file\n"
           "       -d  <nnn>         set debug level to <nnn>\n"
           "       -dt               print a timestamp in debug output\n"
-          "       -D  <driver name> specify the database driver name (default "
-          "NULL) <postgresql|mysql|sqlite3>\n"
+          "       -D  <driver name> exists for backwards compatibility and is "
+          "ignored\n"
           "       -f                fix inconsistencies\n"
           "       -v                verbose\n"
           "       -?                print this message\n\n");
@@ -813,7 +813,7 @@ static void do_interactive_mode()
 int main(int argc, char* argv[])
 {
   int ch;
-  const char* db_driver = nullptr;
+  const char* db_driver = "postgresql";
   const char *user, *password, *db_name, *dbhost;
   int dbport = 0;
   bool print_catalog = false;
@@ -850,8 +850,8 @@ int main(int argc, char* argv[])
         configfile = optarg;
         break;
 
-      case 'D': /* db_driver */
-        db_driver = optarg;
+      case 'D':
+        /* ignored */
         break;
       case 'd': /* debug level */
         if (*optarg == 't') {

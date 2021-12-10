@@ -79,7 +79,7 @@ Example:
 
    * <input>status dir</input>
    backup1.example.com-dir Version: 15.3.0 (24 August 2015) x86_64-suse-linux-gnu suse openSUSE 13.2 (Harlequin) (x86_64)
-   Daemon started 08-Sep-15 12:50. Jobs: run=0, running=0 mode=0 db=sqlite3
+   Daemon started 08-Sep-15 12:50. Jobs: run=0, running=0 mode=0 db=postgresql
     Heap: heap=290,816 smbytes=89,166 max_bytes=89,166 bufs=334 max_bufs=335
     secure erase command='/usr/bin/wipe -V'
 

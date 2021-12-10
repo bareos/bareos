@@ -42,34 +42,9 @@ The public key to verify the repository is also in repository directory (:file:`
 
 Section :ref:`section-InstallBareosPackages` describes how to add the software repository to your system.
 
-
-.. _section-ChooseDatabaseBackend:
-
-Decide about the Database Backend
----------------------------------
-
-Bareos offers the following database backends:
-
-PostgreSQL
-   This is the preferred default database backend. It is contained in package **bareos-database-postgresql**.
-   If you need to think about which backend to use, this is your choice!
-
-MariaDB/MySQL
-   .. deprecated:: 19.0.0
-
-   This backend is provided only for backwards compatibility with existing MariaDB/MySQL deployments.
-   It is contained in package **bareos-database-mysql**.
-   **This is not the right choice for a new deployment.**
-
-SQLite
-   .. deprecated:: 20.0.0
-
-   This backend is for testing purposes only.
-   It is contained in package **bareos-database-sqlite3**.
-   **Do not use this in production.**
-
+Bareos requires a PostgreSQL database as its catalog.
+The backend is contained in package **bareos-database-postgresql**.
 The Bareos database packages have their dependencies only to the database client packages, therefore the database itself must be installed manually.
-
 
 
 .. _section-InstallBareosPackages:

@@ -980,10 +980,9 @@ Migrate |mysql| to |postgresql|
    see: dbcopy; bareos-dbcopy
 
 
-Since Bareos :sinceVersion:`19.0.0: MySQL Backend is deprecated` the use of |mysql| databases with
-Bareos is deprecated. Therefore Bareos provides a tool to conveniently copy the
-whole contents to a new |postgresql| database: :ref:`program-bareos-dbcopy`. This
-chapter describes how to do a migration using bareos-dbcopy.
+Since Bareos :sinceVersion:`21.0.0: MySQL backend removed` the |mysql| database backend is not shipped anymore.
+Therefore you will need to upgrade to Bareos 20 first and then copy the whole contents to a new |postgresql| database using :ref:`program-bareos-dbcopy`.
+This chapter describes how to do a migration using bareos-dbcopy.
 
 Make a backup of your old database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

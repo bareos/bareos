@@ -155,9 +155,7 @@ target_link_libraries(
 add_executable(bareos-dir)
 target_sources(bareos-dir PRIVATE dird.cc)
 
-target_link_libraries(
-  bareos-dir PRIVATE dird_objects bareoscats bareossql bareosfind
-)
+target_link_libraries(bareos-dir PRIVATE dird_objects bareossql bareosfind)
 
 if(HAVE_WIN32)
   target_sources(
@@ -178,13 +176,12 @@ if(HAVE_PAM)
   target_link_libraries(dird_objects PRIVATE ${PAM_LIBRARIES})
 endif()
 
-add_subdirectory(dbcopy)
+# add_subdirectory(dbcopy)
 
 add_executable(bareos-dbcheck ${DBCHKSRCS})
 
 target_link_libraries(
-  bareos-dbcheck PRIVATE bareossql bareos bareosfind bareoscats
-                         ${OPENSSL_LIBRARIES}
+  bareos-dbcheck PRIVATE bareossql bareos bareosfind ${OPENSSL_LIBRARIES}
 )
 
 # is not built by default

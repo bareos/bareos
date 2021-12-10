@@ -9,6 +9,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 - If you are relying on the fact that Bareos doesn't try to reconnect automatically on a database drop, you now have to specify it explicitly in the Catalog configuration with a `Reconnect = no` directive. [PR #860]
 - when setting an IPv6 address using the `[DIR|SD|FD] Addresses` directive, now bareos only listens on IPv6 instead of both IPv4 and IPv6 on dual-stack. If you were using the `[DIR|SD|FD] Addresses` directive to create a dual-stack socket that would listen on both IPv6 AND IPv4, it will not work that way anymore. You should now also explicitly specify the IPv4 address in the directive [PR #882]
+- Support for MySQL and SQLite catalog backends has been removed [PR #949]
 
 ### Fixed
 - docs: Fix links to configuration directives and issue warnings on dangling links [PR #1008]
@@ -177,6 +178,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Removed language support files for the core daemons, as these files are outdated and not used at all.
 - Removed package lists for platforms no longer built: Fedora_30.x86_64, RHEL_6.x86_64, SLE_12_SP4.x86_64, openSUSE_Leap_15.0.x86_64, openSUSE_Leap_15.1.x86_64.
 - Removed support for IPv4-only build. IPv6 now is required for building bareos. [PR #913]
+- Remove MySQL and SQLite catalog backends [PR #949]
 - Remove deprecated directives [PR #938]
   - Director
     - Director resource

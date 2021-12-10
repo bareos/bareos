@@ -17,15 +17,10 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
         dbc_dbname=`get_database_name bareos` || true
         dbc_dbuser=`get_database_user bareos` || true
 
-        # only required for sqlite3
-        dbc_basepath=`get_working_dir`
-
         # convert Bareos databases types into dbconfig_dbtypes
         dbc_dbtypes=""
         DB_INSTALLED=`get_databases_installed`
         if echo "$DB_INSTALLED" | grep -q postgresql; then dbc_dbtypes="${dbc_dbtypes}pgsql, "; fi
-        if echo "$DB_INSTALLED" | grep -q mysql     ; then dbc_dbtypes="${dbc_dbtypes}mysql, "; fi
-        if echo "$DB_INSTALLED" | grep -q sqlite3   ; then dbc_dbtypes="${dbc_dbtypes}sqlite3, "; fi
         # remove trailing ,
         dbc_dbtypes=`echo ${dbc_dbtypes} | sed 's/, *$//'`
 
@@ -73,31 +68,11 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
         if [ "$bareos_migrate_to_dbconfig" = "yes" ]; then
             # TODO: check if settings app-pass to "" is really required.
             #       Or is it only required for "DEBIAN_FRONTEND=noninteractive" ?
-            case "`get_database_driver`" in
-                postgresql)
-                    if [ -z "${bareos_database_password}" ]; then
-                        #db_set bareos-database-common/pgsql/authmethod-user "ident"
-                        # workaround: if an empty database password is defined, explicitly set it
-                        db_set bareos-database-common/pgsql/app-pass ""
-                    fi
-                    ;;
-                mysql)
-                    if [ -z "${bareos_database_password}" ]; then
-                        # workaround: if an empty mysql password is defined, explicitly set it
-                        db_set bareos-database-common/mysql/app-pass ""
-                    fi
-                    ;;
-                sqlite3)
-                    # dbconfig expects sqlite files as "dbname.db"
-                    # while Bareos expects them as "dbname".
-                    # A link is created, so that both names matches.
-                    if [ -e "${dbc_basepath}/${dbc_dbname}.db" ]; then
-                        if ! [ -e "${dbc_basepath}/${dbc_dbname}" ]; then
-                            ln -s "${dbc_basepath}/${dbc_dbname}.db" "${dbc_basepath}/${dbc_dbname}"
-                        fi
-                    fi
-                    ;;
-            esac
+            if [ -z "${bareos_database_password}" ]; then
+                #db_set bareos-database-common/pgsql/authmethod-user "ident"
+                # workaround: if an empty database password is defined, explicitly set it
+                db_set bareos-database-common/pgsql/app-pass ""
+            fi
         fi
     fi
 fi

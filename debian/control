@@ -36,7 +36,7 @@ Build-Depends: acl-dev,
  libwrap0-dev,
  libx11-dev,
  libxml2-dev,
- libsqlite3-dev, default-libmysqlclient-dev | libmysqlclient-dev, libpq-dev,
+ libpq-dev,
  libjansson-dev,
  libjson-c-dev,
  logrotate,
@@ -122,7 +122,7 @@ Description: Backup Archiving Recovery Open Sourced - common files
 Package:        bareos-database-common
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-database-postgresql (= ${binary:Version}) | bareos-database-mysql (= ${binary:Version}) | bareos-database-sqlite3 (= ${binary:Version}), dbconfig-common, lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), bareos-database-postgresql (= ${binary:Version}), dbconfig-common, lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - common catalog files
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -144,32 +144,6 @@ Description: Backup Archiving Recovery Open Sourced - PostgreSQL backend
  This package provides the functionality to connect the Bareos Director
  daemon to a PostgreSQL database.
 
-
-Package:        bareos-database-mysql
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
-Suggests:       default-mysql-server | mysql-server
-Description: Backup Archiving Recovery Open Sourced - MySQL backend
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the functionality to connect the Bareos Director
- daemon to a MySQL compatible database.
-
-
-Package:        bareos-database-sqlite3
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        sqlite3, lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - SQLite backend
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the functionality to connect the Bareos Director
- daemon to a SQLite database.
-
-
 Package:        bareos-database-tools
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
@@ -187,7 +161,7 @@ Architecture: any
 Section: debug
 Priority: extra
 Depends:
-    bareos-storage (= ${binary:Version}) | bareos-bconsole (= ${binary:Version}) | bareos-common (= ${binary:Version}) | bareos-database-common (= ${binary:Version}) | bareos-database-mysql (= ${binary:Version}) | bareos-database-postgresql (= ${binary:Version}) | bareos-database-sqlite3 (= ${binary:Version}) | bareos-database-tools (= ${binary:Version}) | bareos-director (= ${binary:Version}) | bareos-filedaemon (= ${binary:Version}) | bareos-storage (= ${binary:Version}) | bareos-storage-tape (= ${binary:Version}) | bareos-storage-fifo (= ${binary:Version}) | bareos-tools (= ${binary:Version}),
+    bareos-storage (= ${binary:Version}) | bareos-bconsole (= ${binary:Version}) | bareos-common (= ${binary:Version}) | bareos-database-common (= ${binary:Version}) | bareos-database-postgresql (= ${binary:Version}) | bareos-database-tools (= ${binary:Version}) | bareos-director (= ${binary:Version}) | bareos-filedaemon (= ${binary:Version}) | bareos-storage (= ${binary:Version}) | bareos-storage-tape (= ${binary:Version}) | bareos-storage-fifo (= ${binary:Version}) | bareos-tools (= ${binary:Version}),
     ${misc:Depends}
 Conflicts: bacula-sd-dbg, bacula-sd-mysql-dbg, bacula-sd-pgsql-dbg, bacula-sd-sqlite3-dbg
 Description: Backup Archiving Recovery Open Sourced - debugging symbols

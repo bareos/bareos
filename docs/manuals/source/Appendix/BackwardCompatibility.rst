@@ -90,59 +90,6 @@ The required commands should look something like this:
    usermod  -l bareos bacula
    groupmod -n bareos bacula
 
-MySQL
-^^^^^
-
-Proceed with the following steps:
-
--  Stop bacula services
-
--  Backup your catalog database:
-
-   .. code-block:: shell-session
-
-      mysqldump bacula > /tmp/bacula_5.2.sql
-
--  Make the user bareos have the same userid and the group bareos the same groupid as the user/group bacula had before. This will solve a lot of rights problems.
-
--  Install Bareos packages
-
--  Run the update script on the old bacula database:
-
-   .. code-block:: shell-session
-
-      export db_name=bacula
-      /usr/lib/bareos/update_bareos_tables
-      unset db_name
-
--  Backup upgraded DB:
-
-   .. code-block:: shell-session
-
-      mysqldump bacula > /tmp/bacula.sql
-
--  Create bareos database:
-
-   .. code-block:: shell-session
-
-      /usr/lib/bareos/create_bareos_database
-
--  Insert backed up db into new database:
-
-   .. code-block:: shell-session
-
-      cat /tmp/bacula.sql | mysql bareos
-
--  Grant permissions:
-
-   .. code-block:: shell-session
-
-      /usr/lib/bareos/grant_mysql_privileges
-
--  Adapt file permissions to bareos, if you have any file storage
-
--  Adapt configs (not complete)
-
 PostgreSQL
 ^^^^^^^^^^
 
