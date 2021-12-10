@@ -1079,6 +1079,27 @@ bool BareosDb::GetQueryDbids(JobControlRecord* jcr,
 
 
 /**
+ * Get all volumes names
+ *
+ * Returns: false: on failure
+ *          true:  on success
+ */
+bool BareosDb::GetAllVolumeNames(db_list_ctx* volumenames)
+{
+  PoolMem query(PM_MESSAGE);
+  volumenames->clear();
+  Mmsg(query,
+       "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName");
+
+  if (!SqlQueryWithHandler(query.c_str(), DbListHandler, volumenames)) {
+    Emsg1(M_ERROR, 0, "Could not retrieve volume names: ERR=%s\n",
+          sql_strerror());
+    return false;
+  }
+  return true;
+}
+
+/**
  * Get Media Record
  *
  * Returns: false: on failure
