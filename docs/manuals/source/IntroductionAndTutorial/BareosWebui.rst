@@ -348,3 +348,12 @@ Restore a specific file version
 
 .. image:: /include/images/bareos-webui-restore-2.*
    :width: 80%
+
+Limitations
+~~~~~~~~~~~
+
+.. note::
+
+   Restoring NDMP backups is currently not supported by Bareos WebUI.
+   Please use the bconsole instead.
+
