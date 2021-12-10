@@ -151,6 +151,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: format total jobs and total files language-sensitive [PR #996]
 - webui: optimize bvfs update cache calls [PR #999]
 - Replace complicated memory pool allocator with plain malloc() [PR #997]
+- webui: update localization [PR #1018]
 
 ### Deprecated
 - Deprecated directives [PR #928]
