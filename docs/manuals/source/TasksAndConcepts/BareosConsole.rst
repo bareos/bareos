@@ -899,10 +899,9 @@ prune
 
       prune files [client=<client>] [pool=<pool>] [yes] |
             jobs [client=<client>] [pool=<pool>] [jobtype=<jobtype>] [yes] |
-            volume [=volume] [pool=<pool>] [yes] |
+            volume [all] [=volume] [pool=<pool>] [yes] |
             stats [yes] |
-            directory [=directory] [client=<client>] [recursive] [yes] |
-            all volumes [pool=<pool>]
+            directory [=directory] [client=<client>] [recursive] [yes]
 
    For a Volume to be pruned, the volume status must be **Full**, **Used** or **Append** otherwise the pruning will not take place.
    Jobs that did not affect any file (jobs that just did nothing, e.g. an incremental backup that did not have any new files to backup) will not be pruned.

@@ -115,9 +115,11 @@ static bool PruneAllVolumes(UaContext* ua,
     std::string msg("Volume");
     msg.append(" (" + volume + ")");
     if (!ConfirmRetention(ua, &mr.VolRetention, msg.c_str())) {
-      result &= PruneVolume(ua, &mr);
+      result = false;
       continue;
     }
+
+    result &= PruneVolume(ua, &mr);
   }
 
   return result;
@@ -135,8 +137,8 @@ bool PruneCmd(UaContext* ua, const char* cmd)
   const char* permission_denied_message
       = _("Permission denied: need full %s permission.\n");
   static const char* keywords[]
-      = {NT_("Files"),     NT_("Jobs"), NT_("Volume"), NT_("Stats"),
-         NT_("Directory"), NT_("all"),  NULL};
+      = {NT_("Files"), NT_("Jobs"),      NT_("Volume"),
+         NT_("Stats"), NT_("Directory"), NULL};
 
   /*
    * All prune commands might target jobs that reside on different storages.
@@ -157,7 +159,7 @@ bool PruneCmd(UaContext* ua, const char* cmd)
 
   // First search args
   kw = FindArgKeyword(ua, keywords);
-  if (kw < 0 || kw > 5) {
+  if (kw < 0 || kw > 4) {
     // No args, so ask user
     kw = DoKeywordPrompt(ua, _("Choose item to prune"), keywords);
   }
@@ -214,23 +216,34 @@ bool PruneCmd(UaContext* ua, const char* cmd)
       return PruneJobs(ua, client, pool, jobtype);
     }
     case 2: /* prune volume */
+      if (FindArg(ua, "all") >= 0) {
+        if ((FindArgWithValue(ua, NT_("pool")) >= 0)
+            || ua->AclHasRestrictions(Pool_ACL)) {
+          pool = get_pool_resource(ua);
+        } else {
+          pool = nullptr;
+        }
+        return PruneAllVolumes(ua, pool, pr, mr);
+      } else {
+        if (ua->AclHasRestrictions(Client_ACL)) {
+          ua->ErrorMsg(permission_denied_message, "client");
+          return false;
+        }
+        if (!SelectMediaDbr(ua, &mr)) { return false; }
+        if (!SelectPoolForMediaDbr(ua, &pr, &mr)) { return false; }
 
-      if (ua->AclHasRestrictions(Client_ACL)) {
-        ua->ErrorMsg(permission_denied_message, "client");
-        return false;
+        if (mr.Enabled == VOL_ARCHIVED) {
+          ua->ErrorMsg(
+              _("Cannot prune Volume \"%s\" because it is archived.\n"),
+              mr.VolumeName);
+          return false;
+        }
+
+        if (!ConfirmRetention(ua, &mr.VolRetention, "Volume")) { return false; }
+
+        return PruneVolume(ua, &mr);
       }
-      if (!SelectMediaDbr(ua, &mr)) { return false; }
-      if (!SelectPoolForMediaDbr(ua, &pr, &mr)) { return false; }
 
-      if (mr.Enabled == VOL_ARCHIVED) {
-        ua->ErrorMsg(_("Cannot prune Volume \"%s\" because it is archived.\n"),
-                     mr.VolumeName);
-        return false;
-      }
-
-      if (!ConfirmRetention(ua, &mr.VolRetention, "Volume")) { return false; }
-
-      return PruneVolume(ua, &mr);
     case 3: /* prune stats */
       if (!me->stats_retention) { return false; }
 
@@ -263,17 +276,6 @@ bool PruneCmd(UaContext* ua, const char* cmd)
       }
 
       return PruneDirectory(ua, client);
-
-    case 5: /* prune all */
-      if (FindArg(ua, "volumes") >= 0) {
-        if ((FindArgWithValue(ua, NT_("pool")) >= 0)
-            || ua->AclHasRestrictions(Pool_ACL)) {
-          pool = get_pool_resource(ua);
-        } else {
-          pool = nullptr;
-        }
-        return PruneAllVolumes(ua, pool, pr, mr);
-      }
 
     default:
       break;

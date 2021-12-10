@@ -82,7 +82,7 @@ update volume=TestVolume003 volstatus=Used
 
 @sleep 6
 
-prune all volumes yes
+prune volume all yes
 wait
 messages
 
@@ -112,7 +112,7 @@ wait
 update volume=TestVolume004 volstatus=Used
 update volume=TestVolumeIncremental volstatus=Used
 
-prune all volumes pool=Incremental yes
+prune volume all pool=Incremental yes
 
 wait
 messages
