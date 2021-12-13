@@ -109,11 +109,51 @@ restore jobid=${j} pool="${pool}" where=${tmp}/bareos_restores_${j} select all d
 EOF
 done
 
-echo "wait" >> bconsole_restore_jobs
-echo "messages" >> bconsole_restore_jobs
-
 # start all the restore jobs
 bin/bconsole < bconsole_restore_jobs
+
+testdevice0=tapedrive-0-.dev.tape.by-id.scsi-350223344ab000100-nst
+testdevice1=tapedrive-1-.dev.tape.by-id.scsi-350223344ab000200-nst
+
+# set devices to `autoselect = no` and wait for jobs to finish
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/log-label-release-autoselect-no.out
+setdevice storage=Tape-0  device=$testdevice0 autoselect=no
+wait
+messages
+
+label barcodes slot=8 drive=0 pool=Full-0 storage=Tape-0 yes
+setdevice storage=Tape-0  device=$testdevice0 autoselect=yes
+wait
+
+quit
+END_OF_DATA
+
+run_bconsole
+
+# Redo the backups, and check if drive 0 is still being used
+
+rm -f bconsole_backup_jobs
+echo "@$out $tmp/log-second-backups.out" >> bconsole_backup_jobs
+
+spooling="spooldata=yes"
+for i in $(seq ${NUMBER_OF_TEST_ROUNDS}); do
+  for j in $(seq ${NUMBER_OF_POOLS}); do
+    cat << EOF >> bconsole_backup_jobs
+run job=backup-bareos-fd level=Full storage=Tape-0 pool=Full-$(( j -1 )) ${spooling} yes
+status dir
+EOF
+    if [ $(( NUMBER_OF_SPOOLING_JOBS_PER_ROUND -j )) -le 0 ]; then
+      spooling=""
+    fi
+  done
+done
+
+echo "wait" >> bconsole_backup_jobs
+echo "messages" >> bconsole_backup_jobs
+
+# start all the jobs
+bin/bconsole < bconsole_backup_jobs
 
 check_for_zombie_jobs storage=Tape-0
 
@@ -125,6 +165,44 @@ for j in ${list_of_jobids}; do
      "$src" "$dst"
 done
 
+
+#testing for labeling and releasing when device is on autoselect=no
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $tmp/log-label-release-autoselect-no.out
+setdevice storage=Tape-0  device=$testdevice1 autoselect=no
+release storage=Tape-0 drive=1
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
 stop_bareos
+
+# check the that the labeling went through
+if  ! grep "Slot 8 successfully created." "$tmp"/log-label-release-autoselect-no.out &&
+      grep "3999 Device \"autochanger-0\" not found or could not be opened."
+ then
+  echo "Labeling of a device with autoselect=no was not successful. Check $tmp/log-label-release-autoselect-no.out" >&2
+  estat=1
+fi
+
+#check that release went through
+if ! grep "3921 Device \"\"tapedrive-1-.dev.tape.by-id.scsi-350223344ab000200-nst\" (/dev/tape/by-id/scsi-350223344ab000200-nst)\" already released."  "$tmp"/log-label-release-autoselect-no.out &&
+     grep "3999 Device \"autochanger-0\" not found or could not be opened." "$tmp"/log-label-release-autoselect-no.out
+   then
+  echo "Error releasing device. Check $tmp/log-label-release-autoselect-no.out" >&2
+  estat=1
+fi
+
+#check that the tapedrive works normally again after the manipulations
+if  ! grep "Using Device \"tapedrive-0" "$tmp"/log-second-backups.out; then
+  echo "An autoselected device was not used. Check $tmp/log-second-backups.out" >&2
+  estat=1
+fi
+
+
 end_test
 exit 0
