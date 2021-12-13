@@ -67,6 +67,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1374] Include zero-file incremental backups in always-incremental consolidation [PR #995]
 - fix crash in "status scheduler" command when job->client is unset [PR #965]
 - [Issue #847]: fix for CVE-2017-14610 PID files that could be exploited on certain systems [PR #928]
+- webui: fix a layout corner case where top navbar is hiding navtabs [PR #1022]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
