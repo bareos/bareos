@@ -804,7 +804,6 @@ message(
 )
 message("   Build platform:               ${BAREOS_PLATFORM}")
 message("   Source code location:         ${srcdir} ")
-message("   Modify Debian Control file:   ${GENERATE_DEBIAN_CONTROL} ")
 message("   Install binaries:             ${bindir} ")
 message("   Install system binaries:      ${sbindir} ")
 message("   Install libraries:            ${libdir} ")

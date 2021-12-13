@@ -1,14 +1,3 @@
-#
-# when using
-# configure --enable-dynamic-debian-package-list
-# the file debian/control will be generated (overwritten)
-# from configure by the template debian/control.in.
-# While this makes building more flexible,
-# it does not comply with Debian Packaging Policy.
-# Therefore when building packages for Debian.org,
-# the statical debian/control will be used.
-#
-
 # we use conditional build-depends based on build profiles
 # to get the right build-depends just fill DEB_BUILD_PROFILES
 # with your distribution and codename (i.e. "debian buster"
@@ -61,60 +50,3 @@ Standards-Version: 3.9.6
 Vcs-Git: git://github.com/bareos/bareos.git -b master
 Vcs-Browser: https://github.com/bareos/bareos/tree/master
 Homepage: http://www.bareos.org/
-
-
-
-@DEBIAN_CONTROL_BAREOS@
-@DEBIAN_CONTROL_BAREOS_BCONSOLE@
-
-@DEBIAN_CONTROL_BAREOS_CLIENT@
-
-@DEBIAN_CONTROL_BAREOS_COMMON@
-
-@DEBIAN_CONTROL_BAREOS_DATABASE@
-
-@DEBIAN_CONTROL_BAREOS_DBG@
-
-@DEBIAN_CONTROL_BAREOS_DIRECTOR@
-
-@DEBIAN_CONTROL_BAREOS_FILEDAEMON@
-
-@DEBIAN_CONTROL_BAREOS_STORAGE@
-
-@DEBIAN_CONTROL_BAREOS_TOOLS@
-
-@DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN@
-
-@DEBIAN_CONTROL_DIRECTOR_PYTHON3_PLUGIN@
-
-@DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGINS_COMMON@
-
-@DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN@
-
-@DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN@
-
-@DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN@
-
-@DEBIAN_CONTROL_FILEDAEMON_PYTHON3_PLUGIN@
-
-@DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGINS_COMMON@
-
-@DEBIAN_CONTROL_STORAGE_CEPH@
-
-@DEBIAN_CONTROL_STORAGE_DROPLET@
-
-@DEBIAN_CONTROL_STORAGE_GLUSTERFS@
-
-@DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN@
-
-@DEBIAN_CONTROL_STORAGE_PYTHON3_PLUGIN@
-
-@DEBIAN_CONTROL_STORAGEDAEMON_PYTHON_PLUGINS_COMMON@
-
-@DEBIAN_CONTROL_TRAYMONITOR@
-
-@DEBIAN_CONTROL_UNIVENTION_BAREOS@
-
-@DEBIAN_CONTROL_BAREOS_WEBUI@
-
-@DEBIAN_CONTROL_VMWARE@

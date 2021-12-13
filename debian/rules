@@ -47,7 +47,6 @@ define CONFIGURE_COMMON
   -Dwebuiconfdir=/etc/bareos-webui \
   -Dreadline=yes \
   -Dbatch-insert=yes \
-  -Ddynamic-debian-package-list=yes\
   -Ddynamic-cats-backends=yes \
   -Ddynamic-storage-backends=yes \
   -Dscsi-crypto=yes \
@@ -92,6 +91,7 @@ else
 	echo "configure full configuration"
 	dh_auto_configure -- $(CONFIGURE_COMMON) -Dpython=yes -Dtraymonitor=yes
 endif
+	cmake --build cmake-build/ -- generate-debian-control
 
 override_dh_fixperms:
 	# all files in /etc/bareos

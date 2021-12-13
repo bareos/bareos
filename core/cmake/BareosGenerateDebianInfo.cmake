@@ -17,161 +17,110 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+# always add "src" package snippet
+set(DEBIAN_CONTROL_SNIPPETS "src")
+
 if(BUILD_UNIVERSAL_CLIENT)
-  file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-universal-client
-       DEBIAN_CONTROL_BAREOS_FILEDAEMON
-  )
-  file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-universal-client-dbg
-       DEBIAN_CONTROL_BAREOS_DBG
-  )
+  list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-universal-client")
+  list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-universal-client-dbg")
 else()
+  if(NOT client-only)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos")
+  endif()
+  if(ENABLE_BCONSOLE)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-bconsole")
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-client")
+  endif()
+  list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-common")
+  if(NOT client-only)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-database")
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-dbg")
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director")
+  endif()
+  list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon")
+  if(NOT client-only)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage")
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-tools")
+  endif()
+
+  if(NOT client-only
+     AND ENABLE_PYTHON
+     AND (Python2_FOUND OR Python3_FOUND)
+  )
+    if(Python2_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python2-plugin")
+    endif()
+    if(Python3_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python3-plugin")
+    endif()
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python-plugins-common")
+  endif()
+
+  if(HAVE_CEPHFS)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-ceph-plugin")
+  endif()
+  if(HAVE_GLUSTERFS)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-glusterfs-plugin")
+  endif()
+  if(ENABLE_PYTHON AND (Python2_FOUND OR Python3_FOUND))
+    if(Python2_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-python2-plugin")
+    endif()
+    if(Python3_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-python3-plugin")
+    endif()
+    list(APPEND DEBIAN_CONTROL_SNIPPETS
+         "bareos-filedaemon-python-plugins-common"
+    )
+  endif()
+
+  if(NOT client-only AND HAVE_CEPHFS)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-ceph")
+  endif()
+  if(NOT client-only AND TARGET droplet)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-droplet")
+  endif()
+  if(NOT client-only AND HAVE_GLUSTERFS)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-glusterfs")
+  endif()
+  if(NOT client-only
+     AND ENABLE_PYTHON
+     AND (Python2_FOUND OR Python3_FOUND)
+  )
+    if(Python2_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python2-plugin")
+    endif()
+    if(Python3_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python3-plugin")
+    endif()
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python-plugins-common")
+  endif()
+
+  if(HAVE_TRAYMONITOR)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-traymonitor")
+  endif()
+
+  if(${BAREOS_PLATFORM} MATCHES "univention")
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "univention-bareos")
+  endif()
 
   if(NOT client-only)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos DEBIAN_CONTROL_BAREOS)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-database
-         DEBIAN_CONTROL_BAREOS_DATABASE
-    )
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director
-         DEBIAN_CONTROL_BAREOS_DIRECTOR
-    )
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage
-         DEBIAN_CONTROL_BAREOS_STORAGE
-    )
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-tools
-         DEBIAN_CONTROL_BAREOS_TOOLS
-    )
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui")
   endif()
 
-  file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon
-       DEBIAN_CONTROL_BAREOS_FILEDAEMON
-  )
-  file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-common
-       DEBIAN_CONTROL_BAREOS_COMMON
-  )
-  file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-dbg
-       DEBIAN_CONTROL_BAREOS_DBG
-  )
-
-  if(ENABLE_BCONSOLE)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-client
-         DEBIAN_CONTROL_BAREOS_CLIENT
-    )
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-bconsole
-         DEBIAN_CONTROL_BAREOS_BCONSOLE
-    )
+  if(NOT client-only AND VIXDISKLIB_FOUND)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "vmware")
   endif()
 
-  if(GENERATE_DEBIAN_CONTROL)
-
-    if(HAVE_TRAYMONITOR)
-      file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-traymonitor
-           DEBIAN_CONTROL_TRAYMONITOR
-      )
-    endif()
-
-    if(HAVE_GLUSTERFS)
-      file(READ
-           ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-glusterfs-plugin
-           DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN
-      )
-      if(NOT client-only)
-        file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-glusterfs
-             DEBIAN_CONTROL_STORAGE_GLUSTERFS
-        )
-      endif()
-    endif()
-
-    if(HAVE_CEPHFS)
-      file(READ
-           ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-ceph-plugin
-           DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN
-      )
-      if(NOT client-only)
-        file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-ceph
-             DEBIAN_CONTROL_STORAGE_CEPH
-        )
-      endif()
-    endif()
-
-    if(NOT client-only AND TARGET droplet)
-      file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-droplet
-           DEBIAN_CONTROL_STORAGE_DROPLET
-      )
-    endif()
-
-    # python (2) plugins
-    if(ENABLE_PYTHON AND Python2_FOUND)
-      file(READ
-           ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python2-plugin
-           DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN
-      )
-      if(NOT client-only)
-        file(READ
-             ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python2-plugin
-             DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN
-        )
-        file(READ
-             ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python2-plugin
-             DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN
-        )
-      endif()
-    endif()
-
-    # python 3 plugins
-    if(ENABLE_PYTHON AND Python3_FOUND)
-      file(READ
-           ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python3-plugin
-           DEBIAN_CONTROL_FILEDAEMON_PYTHON3_PLUGIN
-      )
-      if(NOT client-only)
-        file(READ
-             ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python3-plugin
-             DEBIAN_CONTROL_STORAGE_PYTHON3_PLUGIN
-        )
-        file(READ
-             ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python3-plugin
-             DEBIAN_CONTROL_DIRECTOR_PYTHON3_PLUGIN
-        )
-      endif()
-    endif()
-
-    # python plugin common files
-    if(ENABLE_PYTHON AND (Python2_FOUND OR Python3_FOUND))
-      file(
-        READ
-        ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python-plugins-common
-        DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGINS_COMMON
-      )
-      if(NOT client-only)
-        file(
-          READ
-          ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python-plugins-common
-          DEBIAN_CONTROL_STORAGEDAEMON_PYTHON_PLUGINS_COMMON
-        )
-        file(
-          READ
-          ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python-plugins-common
-          DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGINS_COMMON
-        )
-      endif()
-    endif()
-
-    if(${BAREOS_PLATFORM} MATCHES "univention")
-      # only required for univention
-      file(READ ${CMAKE_SOURCE_DIR}/debian/control.univention-bareos
-           DEBIAN_CONTROL_UNIVENTION_BAREOS
-      )
-    endif()
-
-    if(NOT client-only)
-      file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-webui
-           DEBIAN_CONTROL_BAREOS_WEBUI
-      )
-    endif()
-
-    if(NOT client-only AND VIXDISKLIB_FOUND)
-      file(READ ${CMAKE_SOURCE_DIR}/debian/control.vmware DEBIAN_CONTROL_VMWARE)
-    endif()
-
-  endif()
 endif()
+
+configure_file(
+  ${CMAKE_SOURCE_DIR}/core/cmake/generate-debian-control.cmake.in
+  ${CMAKE_BINARY_DIR}/generate-debian-control.cmake @ONLY
+)
+
+add_custom_target(
+  generate-debian-control
+  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/generate-debian-control.cmake
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/debian"
+)
