@@ -1632,7 +1632,12 @@ void UaContext::SendMsg(const char* fmt, ...)
   va_start(arg_ptr, fmt);
   message.Bvsprintf(fmt, arg_ptr);
   va_end(arg_ptr);
-  send->message(NULL, message);
+
+  if (console_is_connected) {
+    send->message(NULL, message);
+  } else { /* No UA, send to Job */
+    Jmsg(jcr, M_INFO, 0, "%s", message.c_str());
+  }
 }
 
 void UaContext::SendRawMsg(const char* msg) { SendMsg(msg); }
@@ -1655,7 +1660,11 @@ void UaContext::ErrorMsg(const char* fmt, ...)
   va_start(arg_ptr, fmt);
   message.Bvsprintf(fmt, arg_ptr);
   va_end(arg_ptr);
-  send->message(MSG_TYPE_ERROR, message);
+  if (console_is_connected) {
+    send->message(MSG_TYPE_ERROR, message);
+  } else { /* No UA, send to Job */
+    Jmsg(jcr, M_INFO, 0, "%s", message.c_str());
+  }
 }
 
 /**
@@ -1676,7 +1685,11 @@ void UaContext::WarningMsg(const char* fmt, ...)
   va_start(arg_ptr, fmt);
   message.Bvsprintf(fmt, arg_ptr);
   va_end(arg_ptr);
-  send->message(MSG_TYPE_WARNING, message);
+  if (console_is_connected) {
+    send->message(MSG_TYPE_WARNING, message);
+  } else { /* No UA, send to Job */
+    Jmsg(jcr, M_INFO, 0, "%s", message.c_str());
+  }
 }
 
 /**
@@ -1696,7 +1709,11 @@ void UaContext::InfoMsg(const char* fmt, ...)
   va_start(arg_ptr, fmt);
   message.Bvsprintf(fmt, arg_ptr);
   va_end(arg_ptr);
-  send->message(MSG_TYPE_INFO, message);
+  if (console_is_connected) {
+    send->message(MSG_TYPE_INFO, message);
+  } else { /* No UA, send to Job */
+    Jmsg(jcr, M_INFO, 0, "%s", message.c_str());
+  }
 }
 
 

@@ -529,10 +529,7 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
     goto bail_out;
   }
 
-  //   edit_utime(now-period, ed1, sizeof(ed1));
-  //   Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Jobs older than %s secs.\n"),
-  //   ed1);
-  Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Files.\n"));
+  ua->SendMsg(_("Begin pruning Files.\n"));
   /* Select Jobs -- for counting */
   Mmsg(query, "SELECT COUNT(1) FROM Job %s WHERE PurgedFiles=0 %s",
        sql_from.c_str(), sql_where.c_str());
@@ -691,7 +688,7 @@ static bool PruneBackupJobs(UaContext* ua,
   if (!CreateTempTables(ua)) { goto bail_out; }
 
   edit_utime(period, ed1, sizeof(ed1));
-  Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Jobs older than %s.\n"), ed1);
+  ua->SendMsg(_("Begin pruning Jobs older than %s.\n"), ed1);
 
   del.max_ids = 100;
   del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
@@ -859,28 +856,26 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
 
 
     int NumJobsToBePruned = GetPruneListForVolume(ua, mr, &del);
-    Jmsg(ua->jcr, M_INFO, 0,
-         _("Pruning volume %s: %d Jobs have expired and can be pruned.\n"),
-         mr->VolumeName, NumJobsToBePruned);
+    ua->SendMsg(
+        _("Pruning volume %s: %d Jobs have expired and can be pruned.\n"),
+        mr->VolumeName, NumJobsToBePruned);
     Dmsg1(050, "Num pruned = %d\n", NumJobsToBePruned);
     if (NumJobsToBePruned != 0) { PurgeJobListFromCatalog(ua, del); }
     VolumeIsNowEmtpy = IsVolumePurged(ua, mr);
 
     if (!VolumeIsNowEmtpy) {
-      Jmsg(ua->jcr, M_INFO, 0,
-           _("Volume \"%s\" still contains jobs after pruning.\n"),
-           mr->VolumeName);
+      ua->SendMsg(_("Volume \"%s\" still contains jobs after pruning.\n"),
+                  mr->VolumeName);
     } else {
-      Jmsg(ua->jcr, M_INFO, 0,
-           _("Volume \"%s\" contains no jobs after pruning.\n"),
-           mr->VolumeName);
+      ua->SendMsg(_("Volume \"%s\" contains no jobs after pruning.\n"),
+                  mr->VolumeName);
     }
   } else {
-    Jmsg(ua->jcr, M_INFO, 0,
-         _("Pruning volume %s: cannot prune as Volstatus is %s but needs to "
-           "be "
-           "Full or Used.\n"),
-         mr->VolumeName, mr->VolStatus);
+    ua->SendMsg(
+        _("Pruning volume %s: cannot prune as Volstatus is %s but needs to "
+          "be "
+          "Full or Used.\n"),
+        mr->VolumeName, mr->VolStatus);
   }
 
   DbUnlock(ua->db);
@@ -918,11 +913,11 @@ int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
   }
   int NumJobsToBePruned = ExcludeRunningJobsFromList(del);
   if (NumJobsToBePruned > 0) {
-    Jmsg(ua->jcr, M_INFO, 0,
-         _("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs "
-           "that "
-           "will be pruned\n"),
-         mr->VolumeName, VolRetention, NumJobsToBePruned);
+    ua->SendMsg(
+        _("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs "
+          "that "
+          "will be pruned\n"),
+        mr->VolumeName, VolRetention, NumJobsToBePruned);
   }
   return NumJobsToBePruned;
 }

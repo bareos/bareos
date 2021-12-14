@@ -90,6 +90,8 @@ class UaContext {
 
  private:
   ua_cmdstruct* cmddef; /**< Definition of the currently executed command */
+  bool console_is_connected;  // is this ua connected to a console (and not
+                              // a fake for a running job)
 
   bool AclAccessOk(int acl,
                    const char* item,
@@ -101,7 +103,7 @@ class UaContext {
   void SetCommandDefinition(ua_cmdstruct* cmdstruct) { cmddef = cmdstruct; }
 
  public:
-  UaContext();
+  UaContext(bool console_connected = true);
   void signal(int sig) { UA_sock->signal(sig); }
   bool execute(ua_cmdstruct* cmd);
 
