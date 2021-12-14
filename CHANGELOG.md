@@ -68,6 +68,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix crash in "status scheduler" command when job->client is unset [PR #965]
 - [Issue #847]: fix for CVE-2017-14610 PID files that could be exploited on certain systems [PR #928]
 - webui: fix a layout corner case where top navbar is hiding navtabs [PR #1022]
+- webui: client details now can be displayed for client names containing dots [PR #1023]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
