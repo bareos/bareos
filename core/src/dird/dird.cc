@@ -823,16 +823,8 @@ static bool CheckResources()
     }
   }
 
-  me->subscriptions_used = 0;
   ClientResource* client;
   foreach_res (client, R_CLIENT) {
-    /*
-     * Count the number of clients
-     *
-     * Only used as indication not an enforced limit.
-     */
-    me->subscriptions_used++;
-
     if (client->IsTlsConfigured()) {
       if (!have_tls) {
         Jmsg(nullptr, M_FATAL, 0, _("TLS required but not configured.\n"));
