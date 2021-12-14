@@ -185,11 +185,7 @@ bool StatusCmd(UaContext* ua, const char* cmd)
       DoSchedulerStatus(ua);
       return true;
     } else if (bstrncasecmp(ua->argk[i], NT_("sub"), 3)) {
-      if (DoSubscriptionStatus(ua)) {
-        return true;
-      } else {
-        return false;
-      }
+      return DoSubscriptionStatus(ua);
     } else if (bstrncasecmp(ua->argk[i], NT_("conf"), 4)) {
       DoConfigurationStatus(ua);
       return true;
@@ -500,79 +496,68 @@ static bool show_scheduled_preview(UaContext* ua,
  */
 static bool DoSubscriptionStatus(UaContext* ua)
 {
-  int available;
-  bool retval = false;
-
   if (!OpenDb(ua)) {
     ua->ErrorMsg("Failed to open db.\n");
-    goto bail_out;
+    return false;
   }
 
-  // See if we need to check.
-  if (me->subscriptions == 0) {
-    ua->SendMsg(_("No subscriptions configured in director.\n"));
-    retval = true;
-    goto bail_out;
+  const bool kw_detail = (FindArg(ua, NT_("detail")) > 0);
+  const bool kw_unknown = (FindArg(ua, NT_("unknown")) > 0);
+  const bool kw_all = (FindArg(ua, NT_("all")) > 0);
+
+  if (kw_detail && kw_unknown) {
+    ua->ErrorMsg("Cannot combine keywords 'detail' and 'unknown'.\n");
+    return false;
+  } else if (kw_all && kw_detail) {
+    ua->ErrorMsg("Cannot combine keywords 'all' and 'detail'.\n");
+    return false;
+  } else if (kw_all && kw_unknown) {
+    ua->ErrorMsg("Cannot combine keywords 'all' and 'unknown'.\n");
+    return false;
   }
 
-  if (me->subscriptions_used <= 0) {
-    ua->ErrorMsg(_("No clients defined.\n"));
-    goto bail_out;
-  } else {
-    available = me->subscriptions - me->subscriptions_used;
-    if (available < 0) {
-      ua->SendMsg(
-          _("Warning! No available subscriptions: %d (%d/%d) (used/total)\n"),
-          available, me->subscriptions_used, me->subscriptions);
-    } else {
-      ua->SendMsg(_("Ok: available subscriptions: %d (%d/%d) (used/total)\n"),
-                  available, me->subscriptions_used, me->subscriptions);
-
-
-      PoolMem query(PM_MESSAGE);
-      ua->SendMsg(_("\nUnits overview:\n"));
-      ua->send->ObjectStart("units-overview");
-      ua->db->FillQuery(
-          query, BareosDb::SQL_QUERY::subscription_select_backup_unit_overview);
-      ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
-      ua->send->ObjectEnd("units-overview");
-
-      ua->SendMsg(_("\nTotal backup units required to subscribe:\n"));
-      ua->send->ObjectStart("total-units-required");
-      ua->db->FillQuery(
-          query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total);
-      ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
-      ua->send->ObjectEnd("total-units-required");
-
-      ua->SendMsg(
-          _("\nClients/Filesets that cannot be categorized for backup units "
-            "yet:\n"));
-      ua->send->ObjectStart("filesets-not-catogorized");
-      ua->db->FillQuery(
-          query,
-          BareosDb::SQL_QUERY::subscription_select_unclassified_client_fileset);
-      ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
-      ua->send->ObjectEnd("filesets-not-catogorized");
-
-      ua->SendMsg(
-          _("\nAmount of data that cannot be categorized for backup units "
-            "yet:\n"));
-      ua->send->ObjectStart("data-not-categorized");
-
-      ua->db->FillQuery(
-          query,
-          BareosDb::SQL_QUERY::subscription_select_unclassified_amount_data);
-      ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
-
-      ua->send->ObjectEnd("data-not-categorized");
-
-
-      retval = true;
-    }
+  if (kw_all || kw_detail) {
+    ua->SendMsg(_("\nDetailed backup unit report:\n"));
+    ua->send->ObjectStart("unit-detail");
+    ua->db->ListSqlQuery(
+        ua->jcr, BareosDb::SQL_QUERY::subscription_select_backup_unit_overview_0,
+        ua->send, HORZ_LIST, true);
+    ua->send->ObjectEnd("unit-detail");
   }
+  if (kw_all || kw_detail || !kw_unknown) {
+    ua->SendMsg(_("\nBackup unit totals:\n"));
+    ua->send->ObjectStart("total-units-required");
 
-bail_out:
-  return retval;
+    PoolMem query(PM_MESSAGE);
+    ua->db->FillQuery(query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total_1,
+                      me->subscriptions);
+    ua->db->ListSqlQuery(
+        ua->jcr, query.c_str(),
+        ua->send, VERT_LIST, true);
+    ua->send->ObjectEnd("total-units-required");
+  }
+  if (kw_all || kw_unknown) {
+    ua->SendMsg(
+        _("\nClients/Filesets that cannot be categorized for backup units "
+          "yet:\n"));
+    ua->send->ObjectStart("filesets-not-catogorized");
+    ua->db->ListSqlQuery(
+        ua->jcr,
+        BareosDb::SQL_QUERY::subscription_select_unclassified_client_fileset_0,
+        ua->send, HORZ_LIST, true);
+    ua->send->ObjectEnd("filesets-not-catogorized");
+
+    ua->SendMsg(
+        _("\nAmount of data that cannot be categorized for backup units "
+          "yet:\n"));
+    ua->send->ObjectStart("data-not-categorized");
+    ua->db->ListSqlQuery(
+        ua->jcr,
+        BareosDb::SQL_QUERY::subscription_select_unclassified_amount_data_0,
+        ua->send, VERT_LIST, true);
+    ua->send->ObjectEnd("data-not-categorized");
+  }
+  return true;
 }
 
 static void DoConfigurationStatus(UaContext* ua)

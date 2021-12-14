@@ -1,0 +1,13 @@
+SELECT * FROM (
+  SELECT *
+  FROM backup_unit_overview
+  ORDER BY client, fileset
+) subq_a
+UNION ALL
+SELECT 'TOTAL' as client,
+       NULL as fileset,
+       SUM(db_units) as db_units,
+       SUM(vm_units) as vm_units,
+       SUM(filer_units) as filer_units,
+       SUM(normal_units) as normal_units
+FROM backup_unit_overview;

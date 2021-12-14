@@ -1,0 +1,10 @@
+SELECT
+  *, configured - used as remaining
+FROM (SELECT
+  COALESCE(SUM(db_units), 0)
+    + COALESCE(SUM(vm_units), 0)
+    + COALESCE(SUM(filer_units), 0)
+    + COALESCE(SUM(normal_units), 0)
+    AS used,
+  %d AS configured
+  FROM backup_unit_overview) subquery_a;
