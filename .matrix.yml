@@ -2,8 +2,24 @@ JENKINS_TESTTYPES:
   - bareos-client-only
   - bareos-postgresql
   - univention-bareos
+  - bareos-universal-client
 
 OS:
+  ULC_deb:
+    "OpenSSL_1.1":
+      TYPE: scripted
+      IMAGE: debian9.0
+      BUILD_SCRIPT: CD/deb/build-ulc.sh
+      FINISH_SCRIPT: CD/deb/finish-ulc.sh
+      ARCH:
+        - i586
+        - x86_64
+      PROJECTPACKAGES:
+        i586:
+          - bareos
+        x86_64:
+          - bareos
+
   xUbuntu:
     "20.04":
       TYPE: deb
