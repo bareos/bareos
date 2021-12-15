@@ -19,57 +19,31 @@ JobName=bconsole-status-client
 
 start_test
 
-rm -f "$tmp/log3.out"
+rm -f "$tmp"/status-subscription*.txt
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
-messages
-run job=backup-bareos-fd yes
-wait
-@$out $tmp/log3.out
+use
+@$out $tmp/status-subscriptions.txt
 status subscriptions
+@$out $tmp/status-subscriptions-detail.txt
+status subscriptions detail
+@$out $tmp/status-subscriptions-unknown.txt
+status subscriptions unknown
 
 quit
 END_OF_DATA
 
 run_bconsole
 
-if ! grep "Ok: available subscriptions: 9 (1/10) (used/total)" "$tmp"/log3.out; then
-  echo "General message not found in $tmp/log3.out" >&2
-  estat=1
-fi
+# remove lines starting with @ so output is comparable
+sed -i -e '/^@/d' "$tmp"/status-subscription*.txt
 
-#unit overview
-if ! grep "| client    | fileset          | db_units | vm_units | filer_units | normal_units |" "$tmp"/log3.out; then
-  echo "Wrong overview fields in $tmp/log3.out" >&2
-  estat=1
-fi
-
-if ! grep "| bareos-fd | <all file-based> |          |          |             | 1            |" "$tmp"/log3.out; then
-  echo "Wrong overview data in $tmp/log3.out" >&2
-  estat=1
-fi
-
-# total backup subscriptions
-if ! grep "| clients | db_units | vm_units | filer_units | normal_units | total_units " "$tmp"/log3.out; then
-  echo "Wrong total backup subscriptions fields in $tmp/log3.out" >&2
-  estat=1
-fi
-
-if ! grep "|       1 |          |          |             | 1            |           1 |" "$tmp"/log3.out; then
-  echo "Wrong total backup subscriptions data in $tmp/log3.out" >&2
-  estat=1
-fi
-
-# Amout of data that cannot be categorized
-if ! grep "| unknown_mb | unknown_percentage |" "$tmp"/log3.out; then
-  echo "Wrong non categorized data fields in $tmp/log3.out" >&2
-  estat=1
-fi
-
-if ! grep "|            |                    |" "$tmp"/log3.out; then
-  echo "Wrong non categorized data amounts in $tmp/log3.out" >&2
-  estat=1
-fi
+for f in status-subscriptions status-subscriptions-detail status-subscriptions-unknown; do
+  if ! diff -u expected/$f.txt "$tmp/$f.txt"; then
+    echo "Output $f does not match expectation!" >&2
+    estat=1
+  fi
+done
 
 end_test
