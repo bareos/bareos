@@ -70,6 +70,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: fix a layout corner case where top navbar is hiding navtabs [PR #1022]
 - webui: client details now can be displayed for client names containing dots [PR #1023]
 - dird: avoid crash in job listing when "current" and "count" are both specified at the same time [PR #1026]
+- Fixed issue with `llist jobs last current enable` that would not display correct data [PR #1025]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
@@ -363,5 +364,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1020]: https://github.com/bareos/bareos/pull/1020
 [PR #1022]: https://github.com/bareos/bareos/pull/1022
 [PR #1023]: https://github.com/bareos/bareos/pull/1023
+[PR #1025]: https://github.com/bareos/bareos/pull/1025
 [PR #1026]: https://github.com/bareos/bareos/pull/1026
 [unreleased]: https://github.com/bareos/bareos/tree/master
