@@ -160,8 +160,18 @@ bool PruneCmd(UaContext* ua, const char* cmd)
   // First search args
   kw = FindArgKeyword(ua, keywords);
   if (kw < 0 || kw > 4) {
-    // No args, so ask user
-    kw = DoKeywordPrompt(ua, _("Choose item to prune"), keywords);
+    // No args, so check known equivalents
+    for (int i = 1; i < ua->argc; i++) {
+      if (bstrncasecmp(ua->argk[i], NT_("Volume"), 6)) {
+        kw = 2;
+        break;
+      }
+    }
+
+    if (kw < 0 || kw > 4) {
+      // still nothing? ask user
+      kw = DoKeywordPrompt(ua, _("Choose item to prune"), keywords);
+    }
   }
 
   switch (kw) {
