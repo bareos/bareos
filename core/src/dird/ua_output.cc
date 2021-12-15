@@ -591,29 +591,29 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
     switch (llist) {
       case VERT_LIST:
-        if (!count) {
+        if (!count) {  // count result is one column, no filtering
           SetAclFilter(ua, 2, Job_ACL);      /* JobName */
           SetAclFilter(ua, 7, Client_ACL);   /* ClientName */
           SetAclFilter(ua, 21, Pool_ACL);    /* PoolName */
           SetAclFilter(ua, 24, FileSet_ACL); /* FilesetName */
-        }
-        if (current) {
-          SetResFilter(ua, 2, R_JOB);      /* JobName */
-          SetResFilter(ua, 7, R_CLIENT);   /* ClientName */
-          SetResFilter(ua, 21, R_POOL);    /* PoolName */
-          SetResFilter(ua, 24, R_FILESET); /* FilesetName */
+          if (current) {
+            SetResFilter(ua, 2, R_JOB);      /* JobName */
+            SetResFilter(ua, 7, R_CLIENT);   /* ClientName */
+            SetResFilter(ua, 21, R_POOL);    /* PoolName */
+            SetResFilter(ua, 24, R_FILESET); /* FilesetName */
+          }
         }
         if (enabled) { SetEnabledFilter(ua, 2, R_JOB); /* JobName */ }
         if (disabled) { SetDisabledFilter(ua, 2, R_JOB); /* JobName */ }
         break;
       default:
-        if (!count) {
+        if (!count) {  // count result is one column, no filtering
           SetAclFilter(ua, 1, Job_ACL);    /* JobName */
           SetAclFilter(ua, 2, Client_ACL); /* ClientName */
-        }
-        if (current) {
-          SetResFilter(ua, 1, R_JOB);    /* JobName */
-          SetResFilter(ua, 2, R_CLIENT); /* ClientName */
+          if (current) {
+            SetResFilter(ua, 1, R_JOB);    /* JobName */
+            SetResFilter(ua, 2, R_CLIENT); /* ClientName */
+          }
         }
         if (enabled) { SetEnabledFilter(ua, 1, R_JOB); /* JobName */ }
         if (disabled) { SetDisabledFilter(ua, 1, R_JOB); /* JobName */ }
