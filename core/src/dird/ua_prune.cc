@@ -116,7 +116,7 @@ static bool PruneAllVolumes(UaContext* ua,
     msg.append(" (" + volume + ")");
     if (!ConfirmRetention(ua, &mr.VolRetention, msg.c_str())) {
       result = false;
-      continue;
+      break;
     }
 
     result &= PruneVolume(ua, &mr);
