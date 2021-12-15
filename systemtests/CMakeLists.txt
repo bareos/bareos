@@ -214,6 +214,7 @@ configure_file(
 message(STATUS "Looking for webui test requirements ...")
 
 set(AVAILABLE_WEBUI_SELENIUM_TESTS
+    "admin-client_link_on_dashboard"
     "admin-client_disabling"
     "admin-rerun_job"
     "admin-restore"
