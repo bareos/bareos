@@ -892,14 +892,14 @@ prune
    :index:`\ <single: Console; Command; prune>`
 
    The Prune command allows you to safely remove expired database records from Jobs, Volumes and Statistics. This command works only on the Catalog database and does not affect data written to Volumes. In all cases, the Prune command applies a retention period to the specified records. You can Prune expired File entries from Job records; you can Prune expired Job records from the database, and you can Prune
-   both expired Job and File records from specified Volumes.
+   both expired Job and File records from specified Volumes. Volumes can be pruned separately by specifying the desired volume to prune, or all volumes can be pruned at once with the ``all`` option.
 
    .. code-block:: bconsole
       :caption: prune
 
       prune files [client=<client>] [pool=<pool>] [yes] |
             jobs [client=<client>] [pool=<pool>] [jobtype=<jobtype>] [yes] |
-            volume [all] [=volume] [pool=<pool>] [yes] |
+            volume [=volume] [pool=<pool>] [all] [yes] |
             stats [yes] |
             directory [=directory] [client=<client>] [recursive] [yes]
 
