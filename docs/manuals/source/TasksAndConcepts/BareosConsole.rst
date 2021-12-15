@@ -1269,6 +1269,7 @@ status
 
    Now, here it should be clear that if a job were running that wanted to use the Autochanger (with two devices), it would block because the user unmounted the device. The real problem for the Job I started using the "File" device is that the device is blocked waiting for media – that is Bareos needs you to label a Volume.
 
+status scheduler
    The command :bcommand:`status scheduler` (:sinceVersion:`12.4.4: status scheduler`) can be used to check when a certain schedule will trigger. This gives more information than :bcommand:`status director`.
 
    Called without parameters, :bcommand:`status scheduler` shows a preview for all schedules for the next 14 days. It first shows a list of the known schedules and the jobs that will be triggered by these jobs, and next, a table with date (including weekday), schedule name and applied overrides is displayed:
@@ -1331,17 +1332,8 @@ status
    days=number
       of days shows only the number of days in the scheduler preview. Positive numbers show the future, negative numbers show the past. days can be combined with the other selection criteria. days= can be combined with the other selection criteria.
 
-   In case you are running a maintained version of Bareos, the command :bcommand:`status subscriptions` (:sinceVersion:`12.4.4: status subscriptions`) can help you to keep the overview over the subscriptions that are used.
-
-   To enable this functionality, just add the configuration :config:option:`dir/director/Subscriptions`\  directive and specify the number of subscribed clients, for example:
-
-   .. code-block:: bareosconfig
-      :caption: enable subscription check
-
-      Director {
-         ...
-         Subscriptions = 50
-      }
+status subscriptions
+   In case you have a service contract for Bareos, the command :bcommand:`status subscriptions` (:sinceVersion:`12.4.4: status subscriptions`) can help you to keep the overview over the subscriptions that are used.
 
    Using the console command :bcommand:`status subscriptions`, the status of the subscriptions can be checked any time interactively:
 
@@ -1349,30 +1341,77 @@ status
       :caption: status subscriptions
 
       *<input>status subscriptions</input>
-      Ok: available subscriptions: 8 (42/50) (used/total)
+      Automatically selected Catalog: MyCatalog
+      Using Catalog "MyCatalog"
+      
+      Backup unit totals:
+             used: 42
+       configured: 100
+        remaining: 58
 
-   Also, the number of subscriptions is checked after every job. If the number of clients is bigger than the configured limit, a Job warning is created a message like this:
+   This shows the backup units that are used by your current setup.
+   It also shows the value configured in :config:option:`dir/director/Subscriptions` and the difference between the two (i.e. how many units you have remaining).
+   You can configure :config:option:`dir/director/Subscriptions` to the amount of units you have subscribed.
+   However, this does not have any effect on the system outside of the :bcommand:`status subscriptions` and is completely optional.
+   
+   If you need more detailed information which client uses how many backup units, you can use :bcommand:`status subscriptions detail` which will show a detailed list of clients and filesets and the amount of backup units each of these consumes.
 
    .. code-block:: bconsole
-      :caption: subscriptions warning
+      :caption: status subscriptions detail
+      
+      *<input>status subscriptions detail</input>
 
-      JobId 7: Warning: Subscriptions exceeded: (used/total) (51/50)
+      Detailed backup unit report:
+      +------------------+------------------+----------+----------+-------------+--------------+
+      | client           | fileset          | db_units | vm_units | filer_units | normal_units |
+      +------------------+------------------+----------+----------+-------------+--------------+
+      | bareos-fd        | <all file-based> |          |          |             | 1            |
+      | dbsrv1-fd        | <all file-based> |          |          |             | 1            |
+      | dbsrv1-fd        | mssql-dev-db     |        1 |          |             |              |
+      | dbsrv1-fd        | mssql-prod-db    |        1 |          |             |              |
+      | dbsrv2-fd        | mariadb-crm-db   |        1 |          |             |              |
+      | dbsrv2-fd        | mariadb-web-db   |        1 |          |             |              |
+      | filesrv-fd       | <all file-based> |          |          |             | 24           |
+      | netapp-ndmp      | <all file-based> |          |          | 7           | 1            |
+      | vcenter-proxy-fd | vm-cisrv         |          |        1 |             |              |
+      | vcenter-proxy-fd | vm-crmsrv        |          |        1 |             |              |
+      | vcenter-proxy-fd | vm-printsrv      |          |        1 |             |              |
+      | websrv-fd        | <all file-based> |          |          |             | 1            |
+      | TOTAL            |                  |        4 |        3 | 7           | 28           |
+      +------------------+------------------+----------+----------+-------------+--------------+
+      
+      Backup unit totals:
+             used: 42
+       configured: 100
+        remaining: 58
 
-   Please note: Nothing else than the warning is issued, no enforcement on backup, restore or any other operation will happen.
+   Some clients and/or filesets may not be listed in the detailed report and also not be accounted.
+   You can get a list of these systems and filesets with :bcommand:`status subscriptions unknown`.
 
-   Setting the value for :config:option:`dir/director/Subscriptions = 0`\  disables this functionality:
+   .. code-block:: bconsole
+      :caption: status subscriptions unknown
+      
+      *<input>status subscriptions unknown</input>
+      
+      Clients/Filesets that cannot be categorized for backup units yet:
+      +----------------------+-----------------------------------------+-------------+
+      | client               | fileset                                 | filesettext |
+      +----------------------+-----------------------------------------+-------------+
+      | websrv-fd            | Archive Set                             | <empty>     |
+      | legayc-system-fd     | very-old-filset                         | <empty>     |
+      +----------------------+-----------------------------------------+-------------+
+      
+      Amount of data that cannot be categorized for backup units yet:
+               unknown_mb: 1510970
+       unknown_percentage: 2.50
 
-   .. code-block:: bareosconfig
-      :caption: disable subscription check
+   .. limitation:: status subscription provides only an approximation
 
-      Director {
-         ...
-         Subscriptions = 0
-      }
+     The backup units determined by :bcommand:`status subscription` are an approximation that covers the basics.
+     If you back up the same files with different filesets, this data would be accounted twice.
+     When you back up a VM using a plugin and with a filedaemon installed inside of the VM, that will also be accounted twice.
 
-   Not configuring the directive at all also disables it, as the default value for the Subscriptions directive is zero.
-
-
+status configuration
    Using the console command :bcommand:`status configuration` will show a list of deprecated configuration settings that were detected when loading the director's configuration. Be sure to enable access to the "configuration" command by using the according command ACL.
 
 time
