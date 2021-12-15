@@ -155,6 +155,11 @@ class UaContext {
   void WarningMsg(const char* fmt, ...);
   void InfoMsg(const char* fmt, ...);
   void SendCmdUsage(const char* fmt, ...);
+
+  void vSendMsg(int signal,
+                const char* messagetype,
+                const char* fmt,
+                va_list arg_ptr);
 };
 
 // Context for InsertTreeHandler()
