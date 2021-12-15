@@ -1627,8 +1627,7 @@ void UaContext::vSendMsg(int signal,
   PoolMem message;
   send->SendBuffer();
   if (signal) {
-    BareosSocket* bs = UA_sock;
-    if (bs && api) bs->signal(signal);
+    if (UA_sock && api) UA_sock->signal(signal);
   }
   message.Bvsprintf(fmt, arg_ptr);
   if (console_is_connected) {
