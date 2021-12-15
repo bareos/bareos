@@ -496,6 +496,12 @@ static bool show_scheduled_preview(UaContext* ua,
  */
 static bool DoSubscriptionStatus(UaContext* ua)
 {
+  if (!ua->AclAccessOk(Command_ACL, "configure")) {
+    ua->ErrorMsg(_("%s %s: is an invalid command or needs access right to the"
+                   " \"configure\" command.\n"),
+                 ua->argk[0], ua->argk[1]);
+    return false;
+  }
   if (!OpenDb(ua)) {
     ua->ErrorMsg("Failed to open db.\n");
     return false;
