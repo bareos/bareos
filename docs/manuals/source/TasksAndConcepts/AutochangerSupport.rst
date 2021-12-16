@@ -1,7 +1,7 @@
 .. _AutochangersChapter:
 
-Autochanger Support
-===================
+Autochanger & Tape drive Support
+================================
 
 :index:`\ <single: Support; Autochanger>`\  :index:`\ <single: Autochanger; Support>`\
 
