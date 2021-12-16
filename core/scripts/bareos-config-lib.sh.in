@@ -1114,5 +1114,5 @@ init()
     initialize_local_hostname
     #initialize_director_hostname
     initialize_passwords
-    initialize_database_driver
+    #initialize_database_driver
 }
