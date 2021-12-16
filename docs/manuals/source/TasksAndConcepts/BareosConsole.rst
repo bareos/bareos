@@ -1333,7 +1333,7 @@ status scheduler
       of days shows only the number of days in the scheduler preview. Positive numbers show the future, negative numbers show the past. days can be combined with the other selection criteria. days= can be combined with the other selection criteria.
 
 status subscriptions
-   In case you have a service contract for Bareos, the command :bcommand:`status subscriptions` (:sinceVersion:`12.4.4: status subscriptions`) can help you to keep the overview over the subscriptions that are used.
+   In case you have a service contract for Bareos, the command :bcommand:`status subscriptions`  can help you to keep the overview over the subscriptions that are used.
 
    Using the console command :bcommand:`status subscriptions`, the status of the subscriptions can be checked any time interactively:
 
