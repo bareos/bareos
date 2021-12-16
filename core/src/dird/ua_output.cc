@@ -594,13 +594,13 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
         if (!count) {  // count result is one column, no filtering
           SetAclFilter(ua, 2, Job_ACL);      /* JobName */
           SetAclFilter(ua, 7, Client_ACL);   /* ClientName */
-          SetAclFilter(ua, 21, Pool_ACL);    /* PoolName */
-          SetAclFilter(ua, 24, FileSet_ACL); /* FilesetName */
+          SetAclFilter(ua, 22, Pool_ACL);    /* PoolName */
+          SetAclFilter(ua, 25, FileSet_ACL); /* FilesetName */
           if (current) {
             SetResFilter(ua, 2, R_JOB);      /* JobName */
             SetResFilter(ua, 7, R_CLIENT);   /* ClientName */
-            SetResFilter(ua, 21, R_POOL);    /* PoolName */
-            SetResFilter(ua, 24, R_FILESET); /* FilesetName */
+            SetResFilter(ua, 22, R_POOL);    /* PoolName */
+            SetResFilter(ua, 25, R_FILESET); /* FilesetName */
           }
         }
         if (enabled) { SetEnabledFilter(ua, 2, R_JOB); /* JobName */ }
@@ -647,13 +647,13 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
           case VERT_LIST:
             SetAclFilter(ua, 2, Job_ACL);      /* JobName */
             SetAclFilter(ua, 7, Client_ACL);   /* ClientName */
-            SetAclFilter(ua, 21, Pool_ACL);    /* PoolName */
-            SetAclFilter(ua, 24, FileSet_ACL); /* FilesetName */
+            SetAclFilter(ua, 22, Pool_ACL);    /* PoolName */
+            SetAclFilter(ua, 25, FileSet_ACL); /* FilesetName */
             if (current) {
               SetResFilter(ua, 2, R_JOB);      /* JobName */
               SetResFilter(ua, 7, R_CLIENT);   /* ClientName */
-              SetResFilter(ua, 21, R_POOL);    /* PoolName */
-              SetResFilter(ua, 24, R_FILESET); /* FilesetName */
+              SetResFilter(ua, 22, R_POOL);    /* PoolName */
+              SetResFilter(ua, 25, R_FILESET); /* FilesetName */
             }
             if (enabled) { SetEnabledFilter(ua, 2, R_JOB); /* JobName */ }
             if (disabled) { SetDisabledFilter(ua, 2, R_JOB); /* JobName */ }
@@ -950,10 +950,10 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       switch (llist) {
         case VERT_LIST:
           SetAclFilter(ua, 2, Job_ACL);   /* JobName */
-          SetAclFilter(ua, 21, Pool_ACL); /* PoolName */
+          SetAclFilter(ua, 22, Pool_ACL); /* PoolName */
           if (current) {
             SetResFilter(ua, 2, R_JOB);   /* JobName */
-            SetResFilter(ua, 21, R_POOL); /* PoolName */
+            SetResFilter(ua, 22, R_POOL); /* PoolName */
           }
           if (enabled) { SetEnabledFilter(ua, 2, R_JOB); /* JobName */ }
           if (disabled) { SetDisabledFilter(ua, 2, R_JOB); /* JobName */ }
