@@ -35,8 +35,6 @@ JobName=backup-bareos-fd
 
 start_test
 
-${scripts}/bareos-config initialize_database_driver
-
 export PAM_WRAPPER=1
 export PAM_WRAPPER_SERVICE_DIR=${current_test_directory}/etc/pam.d/bareos
 # PAM_WRAPPER creates extra environments in /tmp/pam.*/
