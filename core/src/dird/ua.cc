@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,7 +27,7 @@
 
 namespace directordaemon {
 
-UaContext::UaContext()
+UaContext::UaContext(bool console_connected)
     : UA_sock(nullptr)
     , sd(nullptr)
     , jcr(nullptr)
@@ -58,6 +58,7 @@ UaContext::UaContext()
     , int64_val(0)
     , send(nullptr)
     , cmddef(nullptr)
+    , console_is_connected(console_connected)
 {
   for (int i = 0; i < MAX_CMD_ARGS; i++) argk[i] = nullptr;
   for (int i = 0; i < MAX_CMD_ARGS; i++) argv[i] = nullptr;
@@ -84,7 +85,6 @@ UaContext* new_ua_context(JobControlRecord* jcr)
   ua->verbose = true;
   ua->automount = true;
   ua->send = new OutputFormatter(sprintit, ua, filterit, ua);
-
   return ua;
 }
 

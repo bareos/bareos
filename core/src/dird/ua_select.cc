@@ -762,9 +762,9 @@ bool SelectPoolDbr(UaContext* ua, PoolDbRecord* pr, const char* argk)
 }
 
 // Select a Pool and a Media (Volume) record from the database
-bool SelectPoolAndMediaDbr(UaContext* ua, PoolDbRecord* pr, MediaDbRecord* mr)
+bool SelectPoolForMediaDbr(UaContext* ua, PoolDbRecord* pr, MediaDbRecord* mr)
 {
-  if (!SelectMediaDbr(ua, mr)) { return false; }
+  if (!mr) { return false; }
 
   new (pr) PoolDbRecord();  // placement new instead of memset
 
@@ -861,6 +861,28 @@ bool SelectStorageDbr(UaContext* ua, StorageDbRecord* sr, const char* argk)
   return true;
 }
 
+bool SelectMediaDbrByName(UaContext* ua,
+                          MediaDbRecord* mr,
+                          const char* volumename)
+{
+  new (mr) MediaDbRecord();
+  POOLMEM* err = GetPoolMemory(PM_FNAME);
+  if (IsNameValid(volumename, err)) {
+    bstrncpy(mr->VolumeName, volumename, sizeof(mr->VolumeName));
+  } else {
+    PmStrcpy(err, ua->db->strerror());
+    FreePoolMemory(err);
+    return false;
+  }
+
+  bstrncpy(mr->VolumeName, volumename, sizeof(mr->VolumeName));
+  if (!ua->db->GetMediaRecord(ua->jcr, mr)) {
+    ua->ErrorMsg("%s", ua->db->strerror());
+    return false;
+  }
+  return true;
+}
+
 // Select a Media (Volume) record from the database
 bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
 {
@@ -870,6 +892,7 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
 
   *err = 0;
   new (mr) MediaDbRecord();  // placement new instead of memset
+
   i = FindArgWithValue(ua, NT_("volume"));
   if (i >= 0) {
     if (IsNameValid(ua->argv[i], err)) {
@@ -900,6 +923,7 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
       goto bail_out;
     }
   }
+
 
   if (!ua->db->GetMediaRecord(ua->jcr, mr)) {
     PmStrcpy(err, ua->db->strerror());
@@ -1126,8 +1150,8 @@ std::string FormatMulticolumnPrompts(const UaContext* ua,
  * Display prompts and get user's choice
  *
  * Returns: -1 on error
- *           index base 0 on success, and choice is copied to prompt if not NULL
- *           prompt is set to the chosen prompt item string
+ *           index base 0 on success, and choice is copied to prompt if not
+ * NULL prompt is set to the chosen prompt item string
  */
 int DoPrompt(UaContext* ua,
              const char* automsg,
@@ -1528,9 +1552,9 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
         JobId_t JobId = str_to_int64(ua->argv[i]);
         if (!JobId) { continue; }
         if (!(jcr = get_jcr_by_id(JobId))) {
-          ua->ErrorMsg(
-              _("JobId %s is not running. Use Job name to %s inactive jobs.\n"),
-              ua->argv[i], _(reason));
+          ua->ErrorMsg(_("JobId %s is not running. Use Job name to %s "
+                         "inactive jobs.\n"),
+                       ua->argv[i], _(reason));
           continue;
         }
       } else if (Bstrcasecmp(ua->argk[i], NT_("job"))) {
@@ -1568,8 +1592,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
   }
 
   /*
-   * If we didn't select any Jobs using jobid, job or ujobid keywords try other
-   * selections.
+   * If we didn't select any Jobs using jobid, job or ujobid keywords try
+   * other selections.
    */
   if (cnt == 0) {
     char buf[1000];
@@ -1622,8 +1646,9 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
           }
 
           if (selection_criterium == none) {
-            ua->ErrorMsg(_(
-                "Illegal state either created, blocked, waiting or running\n"));
+            ua->ErrorMsg(
+                _("Illegal state either created, blocked, waiting or "
+                  "running\n"));
             goto bail_out;
           }
         }
@@ -1672,8 +1697,8 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
       }
 
       /*
-       * Only ask for confirmation when not in batch mode and there is no yes on
-       * the cmdline.
+       * Only ask for confirmation when not in batch mode and there is no yes
+       * on the cmdline.
        */
       if (!ua->batch && FindArg(ua, NT_("yes")) == -1) {
         if (!GetYesno(ua, _("Confirm cancel (yes/no): ")) || !ua->pint32_val) {

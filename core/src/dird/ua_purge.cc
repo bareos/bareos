@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -370,8 +370,8 @@ void PurgeJobListFromCatalog(UaContext* ua, del_ctx& del)
                    std::back_inserter(jobids),
                    [](JobId_t jobid) { return std::to_string(jobid); });
 
-    Jmsg(ua->jcr, M_INFO, 0, _("Purging the following JobIds: %s\n"),
-         jobids.Join(',').c_str());
+    ua->SendMsg(_("Purging the following JobIds: %s\n"),
+                jobids.Join(',').c_str());
     PurgeJobsFromCatalog(ua, jobids.Join(',').c_str());
   }
 }
@@ -857,9 +857,9 @@ bool MarkMediaPurged(UaContext* ua, MediaDbRecord* mr)
 
     // job
     if (jcr->JobId > 0) {
-      Jmsg(jcr, M_INFO, 0,
-           _("All records pruned from Volume \"%s\"; marking it \"Purged\"\n"),
-           mr->VolumeName);
+      ua->SendMsg(
+          _("All records pruned from Volume \"%s\"; marking it \"Purged\"\n"),
+          mr->VolumeName);
     }
 
     return true;

@@ -108,6 +108,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui and console: add job duration column in job listings [PR #1007]
 - packages: Build EL_8 packages instead of CentOS_8 for RHEL 8 derivates (Alma, Rocky, CentOS Stream)[PR #992]
 - webui: provide a notification that NDMP restores are NOT supported by webui [PR #1020]
+- console: prune command gained support to prune multiple volumes at once [PR #966]
 
 ### Changed
 - docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]
@@ -325,6 +326,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #943]: https://github.com/bareos/bareos/pull/943
 [PR #944]: https://github.com/bareos/bareos/pull/944
 [PR #948]: https://github.com/bareos/bareos/pull/948
+[PR #949]: https://github.com/bareos/bareos/pull/949
 [PR #950]: https://github.com/bareos/bareos/pull/950
 [PR #951]: https://github.com/bareos/bareos/pull/951
 [PR #952]: https://github.com/bareos/bareos/pull/952
@@ -335,6 +337,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #962]: https://github.com/bareos/bareos/pull/962
 [PR #963]: https://github.com/bareos/bareos/pull/963
 [PR #965]: https://github.com/bareos/bareos/pull/965
+[PR #966]: https://github.com/bareos/bareos/pull/966
 [PR #967]: https://github.com/bareos/bareos/pull/967
 [PR #969]: https://github.com/bareos/bareos/pull/969
 [PR #972]: https://github.com/bareos/bareos/pull/972
@@ -350,4 +353,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #999]: https://github.com/bareos/bareos/pull/999
 [PR #1007]: https://github.com/bareos/bareos/pull/1007
 [PR #1008]: https://github.com/bareos/bareos/pull/1008
+[PR #1018]: https://github.com/bareos/bareos/pull/1018
+[PR #1020]: https://github.com/bareos/bareos/pull/1020
+[PR #1022]: https://github.com/bareos/bareos/pull/1022
 [unreleased]: https://github.com/bareos/bareos/tree/master

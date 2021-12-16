@@ -709,6 +709,7 @@ class BareosDb : public BareosDbQueryEnum {
                                FileDbRecord* fdbr);
   int GetFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr);
   bool GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr);
+  bool GetAllVolumeNames(db_list_ctx* volumenames);
   int GetNumMediaRecords(JobControlRecord* jcr);
   int GetNumPoolRecords(JobControlRecord* jcr);
   int GetPoolIds(JobControlRecord* jcr, int* num_ids, DBId_t** ids);

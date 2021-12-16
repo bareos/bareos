@@ -90,6 +90,41 @@ int FileDeleteHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
+static bool PruneAllVolumes(UaContext* ua,
+                            PoolResource* pool,
+                            PoolDbRecord pr,
+                            MediaDbRecord mr)
+{
+  bool result = true;
+  db_list_ctx volumenames;
+  if (!ua->db->GetAllVolumeNames(&volumenames)) { return false; }
+  for (const auto& volume : volumenames) {
+    if (!SelectMediaDbrByName(ua, &mr, volume.c_str())) { return false; }
+    if (!SelectPoolForMediaDbr(ua, &pr, &mr)) { return false; }
+    if (pool) {
+      if (strcmp(pool->resource_name_, pr.Name)) { continue; }
+    }
+
+    if (mr.Enabled == VOL_ARCHIVED) {
+      ua->ErrorMsg(_("Cannot prune Volume \"%s\" because it is archived.\n"),
+                   mr.VolumeName);
+      result = false;
+      continue;
+    }
+
+    std::string msg("Volume");
+    msg.append(" (" + volume + ")");
+    if (!ConfirmRetention(ua, &mr.VolRetention, msg.c_str())) {
+      result = false;
+      break;
+    }
+
+    result &= PruneVolume(ua, &mr);
+  }
+
+  return result;
+}
+
 // Prune records from database
 bool PruneCmd(UaContext* ua, const char* cmd)
 {
@@ -125,8 +160,18 @@ bool PruneCmd(UaContext* ua, const char* cmd)
   // First search args
   kw = FindArgKeyword(ua, keywords);
   if (kw < 0 || kw > 4) {
-    // No args, so ask user
-    kw = DoKeywordPrompt(ua, _("Choose item to prune"), keywords);
+    // No args, so check known equivalents
+    for (int i = 1; i < ua->argc; i++) {
+      if (bstrncasecmp(ua->argk[i], NT_("Volume"), 6)) {
+        kw = 2;
+        break;
+      }
+    }
+
+    if (kw < 0 || kw > 4) {
+      // still nothing? ask user
+      kw = DoKeywordPrompt(ua, _("Choose item to prune"), keywords);
+    }
   }
 
   switch (kw) {
@@ -181,23 +226,34 @@ bool PruneCmd(UaContext* ua, const char* cmd)
       return PruneJobs(ua, client, pool, jobtype);
     }
     case 2: /* prune volume */
+      if (FindArg(ua, "all") >= 0) {
+        if ((FindArgWithValue(ua, NT_("pool")) >= 0)
+            || ua->AclHasRestrictions(Pool_ACL)) {
+          pool = get_pool_resource(ua);
+        } else {
+          pool = nullptr;
+        }
+        return PruneAllVolumes(ua, pool, pr, mr);
+      } else {
+        if (ua->AclHasRestrictions(Client_ACL)) {
+          ua->ErrorMsg(permission_denied_message, "client");
+          return false;
+        }
+        if (!SelectMediaDbr(ua, &mr)) { return false; }
+        if (!SelectPoolForMediaDbr(ua, &pr, &mr)) { return false; }
 
-      if (ua->AclHasRestrictions(Client_ACL)) {
-        ua->ErrorMsg(permission_denied_message, "client");
-        return false;
+        if (mr.Enabled == VOL_ARCHIVED) {
+          ua->ErrorMsg(
+              _("Cannot prune Volume \"%s\" because it is archived.\n"),
+              mr.VolumeName);
+          return false;
+        }
+
+        if (!ConfirmRetention(ua, &mr.VolRetention, "Volume")) { return false; }
+
+        return PruneVolume(ua, &mr);
       }
 
-      if (!SelectPoolAndMediaDbr(ua, &pr, &mr)) { return false; }
-
-      if (mr.Enabled == VOL_ARCHIVED) {
-        ua->ErrorMsg(_("Cannot prune Volume \"%s\" because it is archived.\n"),
-                     mr.VolumeName);
-        return false;
-      }
-
-      if (!ConfirmRetention(ua, &mr.VolRetention, "Volume")) { return false; }
-
-      return PruneVolume(ua, &mr);
     case 3: /* prune stats */
       if (!me->stats_retention) { return false; }
 
@@ -230,6 +286,7 @@ bool PruneCmd(UaContext* ua, const char* cmd)
       }
 
       return PruneDirectory(ua, client);
+
     default:
       break;
   }
@@ -256,7 +313,8 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
     }
   }
 
-  // See if we need to recursively remove all directories under a certain path.
+  // See if we need to recursively remove all directories under a certain
+  // path.
   recursive = FindArg(ua, NT_("recursive")) >= 0;
 
   // Get the directory to prune.
@@ -481,10 +539,7 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
     goto bail_out;
   }
 
-  //   edit_utime(now-period, ed1, sizeof(ed1));
-  //   Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Jobs older than %s secs.\n"),
-  //   ed1);
-  Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Files.\n"));
+  ua->SendMsg(_("Begin pruning Files.\n"));
   /* Select Jobs -- for counting */
   Mmsg(query, "SELECT COUNT(1) FROM Job %s WHERE PurgedFiles=0 %s",
        sql_from.c_str(), sql_where.c_str());
@@ -593,7 +648,6 @@ static int JobSelectHandler(void* ctx, int num_fields, char** row)
   res->ClientId = str_to_int64(row[4]);
   lst->append(res);
 
-  // Dmsg2(150, "row=%d val=%d\n", del->num_ids-1, del->JobId[del->num_ids-1]);
   return 0;
 }
 
@@ -644,7 +698,7 @@ static bool PruneBackupJobs(UaContext* ua,
   if (!CreateTempTables(ua)) { goto bail_out; }
 
   edit_utime(period, ed1, sizeof(ed1));
-  Jmsg(ua->jcr, M_INFO, 0, _("Begin pruning Jobs older than %s.\n"), ed1);
+  ua->SendMsg(_("Begin pruning Jobs older than %s.\n"), ed1);
 
   del.max_ids = 100;
   del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
@@ -812,27 +866,26 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
 
 
     int NumJobsToBePruned = GetPruneListForVolume(ua, mr, &del);
-    Jmsg(ua->jcr, M_INFO, 0,
-         _("Pruning volume %s: %d Jobs have expired and can be pruned.\n"),
-         mr->VolumeName, NumJobsToBePruned);
+    ua->SendMsg(
+        _("Pruning volume %s: %d Jobs have expired and can be pruned.\n"),
+        mr->VolumeName, NumJobsToBePruned);
     Dmsg1(050, "Num pruned = %d\n", NumJobsToBePruned);
     if (NumJobsToBePruned != 0) { PurgeJobListFromCatalog(ua, del); }
     VolumeIsNowEmtpy = IsVolumePurged(ua, mr);
 
     if (!VolumeIsNowEmtpy) {
-      Jmsg(ua->jcr, M_INFO, 0,
-           _("Volume \"%s\" still contains jobs after pruning.\n"),
-           mr->VolumeName);
+      ua->SendMsg(_("Volume \"%s\" still contains jobs after pruning.\n"),
+                  mr->VolumeName);
     } else {
-      Jmsg(ua->jcr, M_INFO, 0,
-           _("Volume \"%s\" contains no jobs after pruning.\n"),
-           mr->VolumeName);
+      ua->SendMsg(_("Volume \"%s\" contains no jobs after pruning.\n"),
+                  mr->VolumeName);
     }
   } else {
-    Jmsg(ua->jcr, M_INFO, 0,
-         _("Pruning volume %s: cannot prune as Volstatus is %s but needs to be "
-           "Full or Used.\n"),
-         mr->VolumeName, mr->VolStatus);
+    ua->SendMsg(
+        _("Pruning volume %s: cannot prune as Volstatus is %s but needs to "
+          "be "
+          "Full or Used.\n"),
+        mr->VolumeName, mr->VolStatus);
   }
 
   DbUnlock(ua->db);
@@ -870,10 +923,11 @@ int GetPruneListForVolume(UaContext* ua, MediaDbRecord* mr, del_ctx* del)
   }
   int NumJobsToBePruned = ExcludeRunningJobsFromList(del);
   if (NumJobsToBePruned > 0) {
-    Jmsg(ua->jcr, M_INFO, 0,
-         _("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs that "
-           "will be pruned\n"),
-         mr->VolumeName, VolRetention, NumJobsToBePruned);
+    ua->SendMsg(
+        _("Volume \"%s\" has Volume Retention of %d sec. and has %d jobs "
+          "that "
+          "will be pruned\n"),
+        mr->VolumeName, VolRetention, NumJobsToBePruned);
   }
   return NumJobsToBePruned;
 }

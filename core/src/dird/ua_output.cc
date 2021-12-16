@@ -1617,6 +1617,26 @@ bool bsendmsg(void* ctx, const char* fmt, ...)
  * The following UA methods are mainly intended for GUI
  * programs
  */
+
+void UaContext::vSendMsg(int signal,
+                         const char* messagetype,
+                         const char* fmt,
+                         va_list arg_ptr)
+{
+  /* send current buffer */
+  PoolMem message;
+  send->SendBuffer();
+  if (signal) {
+    if (UA_sock && api) UA_sock->signal(signal);
+  }
+  message.Bvsprintf(fmt, arg_ptr);
+  if (console_is_connected) {
+    send->message(messagetype, message);
+  } else { /* No UA, send to Job */
+    Jmsg(jcr, M_INFO, 0, "%s", message.c_str());
+  }
+}
+
 /**
  * This is a message that should be displayed on the user's
  *  console.
@@ -1624,15 +1644,9 @@ bool bsendmsg(void* ctx, const char* fmt, ...)
 void UaContext::SendMsg(const char* fmt, ...)
 {
   va_list arg_ptr;
-  PoolMem message;
-
-  /* send current buffer */
-  send->SendBuffer();
-
   va_start(arg_ptr, fmt);
-  message.Bvsprintf(fmt, arg_ptr);
+  vSendMsg(0, NULL, fmt, arg_ptr);
   va_end(arg_ptr);
-  send->message(NULL, message);
 }
 
 void UaContext::SendRawMsg(const char* msg) { SendMsg(msg); }
@@ -1645,17 +1659,9 @@ void UaContext::SendRawMsg(const char* msg) { SendMsg(msg); }
 void UaContext::ErrorMsg(const char* fmt, ...)
 {
   va_list arg_ptr;
-  BareosSocket* bs = UA_sock;
-  PoolMem message;
-
-  /* send current buffer */
-  send->SendBuffer();
-
-  if (bs && api) bs->signal(BNET_ERROR_MSG);
   va_start(arg_ptr, fmt);
-  message.Bvsprintf(fmt, arg_ptr);
+  vSendMsg(BNET_ERROR_MSG, MSG_TYPE_ERROR, fmt, arg_ptr);
   va_end(arg_ptr);
-  send->message(MSG_TYPE_ERROR, message);
 }
 
 /**
@@ -1666,17 +1672,9 @@ void UaContext::ErrorMsg(const char* fmt, ...)
 void UaContext::WarningMsg(const char* fmt, ...)
 {
   va_list arg_ptr;
-  BareosSocket* bs = UA_sock;
-  PoolMem message;
-
-  /* send current buffer */
-  send->SendBuffer();
-
-  if (bs && api) bs->signal(BNET_WARNING_MSG);
   va_start(arg_ptr, fmt);
-  message.Bvsprintf(fmt, arg_ptr);
+  vSendMsg(BNET_WARNING_MSG, MSG_TYPE_WARNING, fmt, arg_ptr);
   va_end(arg_ptr);
-  send->message(MSG_TYPE_WARNING, message);
 }
 
 /**
@@ -1686,17 +1684,9 @@ void UaContext::WarningMsg(const char* fmt, ...)
 void UaContext::InfoMsg(const char* fmt, ...)
 {
   va_list arg_ptr;
-  BareosSocket* bs = UA_sock;
-  PoolMem message;
-
-  /* send current buffer */
-  send->SendBuffer();
-
-  if (bs && api) bs->signal(BNET_INFO_MSG);
   va_start(arg_ptr, fmt);
-  message.Bvsprintf(fmt, arg_ptr);
+  vSendMsg(BNET_INFO_MSG, MSG_TYPE_INFO, fmt, arg_ptr);
   va_end(arg_ptr);
-  send->message(MSG_TYPE_INFO, message);
 }
 
 

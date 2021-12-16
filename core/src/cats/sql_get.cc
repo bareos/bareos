@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1077,6 +1077,27 @@ bool BareosDb::GetQueryDbids(JobControlRecord* jcr,
   return ok;
 }
 
+
+/**
+ * Get all volumes names
+ *
+ * Returns: false: on failure
+ *          true:  on success
+ */
+bool BareosDb::GetAllVolumeNames(db_list_ctx* volumenames)
+{
+  PoolMem query(PM_MESSAGE);
+  volumenames->clear();
+  Mmsg(query,
+       "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName");
+
+  if (!SqlQueryWithHandler(query.c_str(), DbListHandler, volumenames)) {
+    Emsg1(M_ERROR, 0, "Could not retrieve volume names: ERR=%s\n",
+          sql_strerror());
+    return false;
+  }
+  return true;
+}
 
 /**
  * Get Media Record
