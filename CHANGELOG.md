@@ -113,6 +113,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: provide a notification that NDMP restores are NOT supported by webui [PR #1020]
 - console: prune command gained support to prune multiple volumes at once [PR #966]
 - webui: introduce a job timeline chart [PR #1017]
+- systemtests: add a test for the jobs last status table in webui [PR #1024]
 
 ### Changed
 - docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]
@@ -364,6 +365,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1020]: https://github.com/bareos/bareos/pull/1020
 [PR #1022]: https://github.com/bareos/bareos/pull/1022
 [PR #1023]: https://github.com/bareos/bareos/pull/1023
+[PR #1024]: https://github.com/bareos/bareos/pull/1024
 [PR #1025]: https://github.com/bareos/bareos/pull/1025
 [PR #1026]: https://github.com/bareos/bareos/pull/1026
 [unreleased]: https://github.com/bareos/bareos/tree/master

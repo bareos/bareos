@@ -293,6 +293,12 @@ class SeleniumTest(unittest.TestCase):
         self.login()
         self.logout()
 
+    def test_client_link_on_dashboard(self):
+        self.login()
+        self.select_navbar_element("dashboard")
+        self.wait_and_click(By.LINK_TEXT, self.client)
+        self.logout()
+
     def test_client_disabling(self):
         # This test navigates to clients, ensures client is enabled,
         # disables it, closes a possible modal, goes to dashboard and reenables client.
