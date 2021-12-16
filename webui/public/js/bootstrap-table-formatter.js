@@ -34,7 +34,7 @@ function formatJobName(value, basePath, displayRange) {
 }
 
 function formatClientName(value, basePath) {
-   return '<a href="' + basePath + '/client/details/' + value + '">' + value + '</a>';
+   return '<a href="' + basePath + '/client/details?client=' + value + '">' + value + '</a>';
 }
 
 function formatJobType(data) {
@@ -433,10 +433,6 @@ function formatUpdateStatus(value, row, index) {
 
 function formatScheduleName(value, basePath) {
    return '<a href="' + basePath + '/schedule/details?schedule=' + value + '">' + value + '</a>';
-}
-
-function formatClientName(value, basePath) {
-   return '<a href="' + basePath + '/client/details/' + value + '">' + value + '</a>';
 }
 
 function formatFilesetName(value, row, index, basePath) {

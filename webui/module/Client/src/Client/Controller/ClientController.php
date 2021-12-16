@@ -195,7 +195,7 @@ class ClientController extends AbstractActionController
 
     return new ViewModel(
       array(
-        'client' => $this->params()->fromRoute('id')
+        'client' => $this->params()->fromQuery('client')
       )
     );
   }
