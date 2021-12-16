@@ -46,13 +46,25 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
             esac
         fi
 
-        # dbc_pgsql_createdb_encoding: required for postgresql
+        # The Bareos catalog should be created with following settings:
+        # Encoding: SQL_ASCII
+        # Collate:  C
+        # Ctype: C
+        # While all recent versions of dbconfig support the parameter Encoding,
+        # Collate and Ctype are only supported in dbconfig >= 2.0.21.
+        # On older versions, these setting is ignored.
         dbc_pgsql_createdb_encoding="SQL_ASCII"
+        dbc_pgsql_createdb_collate="C"
+        dbc_pgsql_createdb_ctype="C"
 
         # dbc_dbfile_owner: only required for sqlite3
         dbc_dbfile_owner=`get_user_dir`:`get_group_dir`
 
-        # substitution is only done on installs, not on updates!
+        # While substitution on install is supported
+        # by all recent versions of dbconfig
+        # substitution on update requires dbconfig >= 2.0.9.
+        # As this has not been available on all platforms,
+        # we use our own substitution mechanism.
         #dbc_sql_substitutions="yes"
 
         # run dbconfig
