@@ -5,6 +5,7 @@ Director {                            # define myself
   Password = "@dir_password@"         # Console password
   Messages = Daemon
   Auditing = yes
+  Subscriptions = 10
 
   # Enable the Heartbeat if you experience connection losses
   # (eg. because of your router or firewall configuration).

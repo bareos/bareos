@@ -1,0 +1,49 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a simple backup
+#   then restore it.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+JobName=bconsole-status-client
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+
+start_test
+
+rm -f "$tmp"/status-subscription*.txt
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+use
+@$out $tmp/status-subscriptions.txt
+status subscriptions
+@$out $tmp/status-subscriptions-detail.txt
+status subscriptions detail
+@$out $tmp/status-subscriptions-unknown.txt
+status subscriptions unknown
+
+quit
+END_OF_DATA
+
+run_bconsole
+
+# remove lines starting with @ so output is comparable
+sed -i -e '/^@/d' "$tmp"/status-subscription*.txt
+
+for f in status-subscriptions status-subscriptions-detail status-subscriptions-unknown; do
+  if ! diff -u expected/$f.txt "$tmp/$f.txt"; then
+    echo "Output $f does not match expectation!" >&2
+    estat=1
+  fi
+done
+
+end_test

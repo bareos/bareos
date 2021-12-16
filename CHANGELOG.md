@@ -154,6 +154,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: introduce confirmation dialog on rerun and cancel job actions [PR #951]
 - docs: update documentation of config data types [PR #962]
 - Allow `release` command to be used in scripts [PR #961]
+- Show more details about subscriptions and units data with `status subscriptions` [PR #989]
 - webui: format total jobs and total files language-sensitive [PR #996]
 - webui: optimize bvfs update cache calls [PR #999]
 - Replace complicated memory pool allocator with plain malloc() [PR #997]
@@ -346,6 +347,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #981]: https://github.com/bareos/bareos/pull/981
 [PR #982]: https://github.com/bareos/bareos/pull/982
 [PR #985]: https://github.com/bareos/bareos/pull/985
+[PR #989]: https://github.com/bareos/bareos/pull/989
 [PR #992]: https://github.com/bareos/bareos/pull/992
 [PR #995]: https://github.com/bareos/bareos/pull/995
 [PR #996]: https://github.com/bareos/bareos/pull/996

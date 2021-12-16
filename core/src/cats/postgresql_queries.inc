@@ -1014,5 +1014,48 @@ const char *BareosDbPostgresql::query_definitions[] = {
 "COMMIT "
 ,
 
+/* 0080_subscription_select_backup_unit_overview_0 */
+"SELECT * FROM ( "
+  "SELECT * "
+  "FROM backup_unit_overview "
+  "ORDER BY client, fileset "
+") subq_a "
+"UNION ALL "
+"SELECT 'TOTAL' as client, "
+       "NULL as fileset, "
+       "SUM(db_units) as db_units, "
+       "SUM(vm_units) as vm_units, "
+       "SUM(filer_units) as filer_units, "
+       "SUM(normal_units) as normal_units "
+"FROM backup_unit_overview; "
+,
+
+/* 0081_subscription_select_backup_unit_total_1 */
+"SELECT "
+  "*, configured - used as remaining "
+"FROM (SELECT "
+  "COALESCE(SUM(db_units), 0) "
+    "+ COALESCE(SUM(vm_units), 0) "
+    "+ COALESCE(SUM(filer_units), 0) "
+    "+ COALESCE(SUM(normal_units), 0) "
+    "AS used, "
+  "%d AS configured "
+  "FROM backup_unit_overview) subquery_a; "
+,
+
+/* 0082_subscription_select_unclassified_client_fileset_0 */
+"SELECT client, fileset, filesettext "
+"FROM latest_full_size_categorized "
+"WHERE unknown_mb > 0 "
+"ORDER BY client, fileset; "
+,
+
+/* 0083_subscription_select_unclassified_amount_data_0 */
+"SELECT "
+  "SUM(unknown_mb) AS unknown_mb, "
+  "ROUND(sum(unknown_mb)/sum(total_mb) * 100, 2) AS unknown_percentage "
+"FROM latest_full_size_categorized; "
+,
+
 NULL
 };

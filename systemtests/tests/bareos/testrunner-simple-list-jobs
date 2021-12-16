@@ -23,8 +23,6 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
 @$out $tmp/log-list-jobs.out
-run job=$JobName yes
-wait
 list jobs
 quit
 END_OF_DATA

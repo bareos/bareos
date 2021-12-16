@@ -29,3 +29,5 @@ GRANT SELECT ON NDMPJobEnvironment TO @DB_USER@;
 GRANT SELECT ON DeviceStats TO @DB_USER@;
 GRANT SELECT ON JobStats TO @DB_USER@;
 GRANT SELECT ON TapeAlerts TO @DB_USER@;
+GRANT SELECT ON backup_unit_overview TO @DB_USER@;
+GRANT SELECT ON latest_full_size_categorized TO @DB_USER@;

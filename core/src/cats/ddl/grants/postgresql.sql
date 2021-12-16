@@ -47,3 +47,7 @@ GRANT SELECT, UPDATE ON location_locationid_seq TO @DB_USER@;
 GRANT SELECT, UPDATE ON locationlog_loclogid_seq TO @DB_USER@;
 GRANT SELECT, UPDATE ON log_logid_seq TO @DB_USER@;
 GRANT SELECT, UPDATE ON restoreobject_restoreobjectid_seq TO @DB_USER@;
+
+-- For views
+GRANT ALL ON backup_unit_overview TO @DB_USER@;
+GRANT ALL ON latest_full_size_categorized TO @DB_USER@;

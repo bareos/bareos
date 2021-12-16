@@ -87,7 +87,11 @@ class BareosDbQueryEnum {
     list_volumes_select_long_0 = 76,
     bvfs_lock_pathhierarchy_0 = 77,
     bvfs_unlock_tables_0 = 78,
-    SQL_QUERY_NUMBER = 79
+    subscription_select_backup_unit_overview_0 = 79,
+    subscription_select_backup_unit_total_1 = 80,
+    subscription_select_unclassified_client_fileset_0 = 81,
+    subscription_select_unclassified_amount_data_0 = 82,
+    SQL_QUERY_NUMBER = 83
   };
 };
 
