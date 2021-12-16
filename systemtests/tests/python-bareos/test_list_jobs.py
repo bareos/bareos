@@ -77,8 +77,8 @@ class PythonBareosListJobsTest(bareos_unittest.Base):
             "jobstatus",
         ]
         self.assertEqual(
-            list(result["jobs"][0].keys()),
-            expected_list_keys,
+            list(result["jobs"][0].keys()).sort(),
+            expected_list_keys.sort(),
         )
         reg = re.compile("..:..:..")
         self.assertTrue(re.match(reg, result["jobs"][0]["duration"]))
@@ -115,8 +115,8 @@ class PythonBareosListJobsTest(bareos_unittest.Base):
             "fileset",
         ]
         self.assertEqual(
-            list(result["jobs"][0].keys()),
-            expected_long_list_keys,
+            list(result["jobs"][0].keys()).sort(),
+            expected_long_list_keys.sort(),
         )
 
         # Long list with options
@@ -168,8 +168,8 @@ class PythonBareosListJobsTest(bareos_unittest.Base):
             "fileset",
         ]
         self.assertEqual(
-            list(result["jobs"][0].keys()),
-            expected_long_list_last_keys,
+            list(result["jobs"][0].keys()).sort(),
+            expected_long_list_last_keys.sort(),
         )
 
         result = director.call("llist jobs last current")
