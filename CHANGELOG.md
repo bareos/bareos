@@ -69,6 +69,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #847]: fix for CVE-2017-14610 PID files that could be exploited on certain systems [PR #928]
 - webui: fix a layout corner case where top navbar is hiding navtabs [PR #1022]
 - webui: client details now can be displayed for client names containing dots [PR #1023]
+- dird: avoid crash in job listing when "current" and "count" are both specified at the same time [PR #1026]
 
 ### Added
 - systemtests: make database credentials configurable [PR #950]
@@ -357,7 +358,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #999]: https://github.com/bareos/bareos/pull/999
 [PR #1007]: https://github.com/bareos/bareos/pull/1007
 [PR #1008]: https://github.com/bareos/bareos/pull/1008
+[PR #1017]: https://github.com/bareos/bareos/pull/1017
 [PR #1018]: https://github.com/bareos/bareos/pull/1018
 [PR #1020]: https://github.com/bareos/bareos/pull/1020
 [PR #1022]: https://github.com/bareos/bareos/pull/1022
+[PR #1023]: https://github.com/bareos/bareos/pull/1023
+[PR #1026]: https://github.com/bareos/bareos/pull/1026
 [unreleased]: https://github.com/bareos/bareos/tree/master
