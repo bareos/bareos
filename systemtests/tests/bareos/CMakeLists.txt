@@ -26,9 +26,11 @@ set_tests_properties(
 )
 set_tests_properties(
   system:bareos:status-subscriptions
-  PROPERTIES FIXTURES_REQUIRED "system:bareos:backup-job-fixture;system:bareos-fixture"
+  PROPERTIES FIXTURES_REQUIRED
+             "system:bareos:backup-job-fixture;system:bareos-fixture"
 )
 set_tests_properties(
   system:bareos:simple-list-jobs
-  PROPERTIES FIXTURES_REQUIRED "system:bareos:backup-job-fixture;system:bareos-fixture"
+  PROPERTIES FIXTURES_REQUIRED
+             "system:bareos:backup-job-fixture;system:bareos-fixture"
 )

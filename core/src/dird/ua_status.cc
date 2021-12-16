@@ -526,7 +526,8 @@ static bool DoSubscriptionStatus(UaContext* ua)
     ua->SendMsg(_("\nDetailed backup unit report:\n"));
     ua->send->ObjectStart("unit-detail");
     ua->db->ListSqlQuery(
-        ua->jcr, BareosDb::SQL_QUERY::subscription_select_backup_unit_overview_0,
+        ua->jcr,
+        BareosDb::SQL_QUERY::subscription_select_backup_unit_overview_0,
         ua->send, HORZ_LIST, true);
     ua->send->ObjectEnd("unit-detail");
   }
@@ -535,11 +536,10 @@ static bool DoSubscriptionStatus(UaContext* ua)
     ua->send->ObjectStart("total-units-required");
 
     PoolMem query(PM_MESSAGE);
-    ua->db->FillQuery(query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total_1,
-                      me->subscriptions);
-    ua->db->ListSqlQuery(
-        ua->jcr, query.c_str(),
-        ua->send, VERT_LIST, true);
+    ua->db->FillQuery(
+        query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total_1,
+        me->subscriptions);
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, VERT_LIST, true);
     ua->send->ObjectEnd("total-units-required");
   }
   if (kw_all || kw_unknown) {
