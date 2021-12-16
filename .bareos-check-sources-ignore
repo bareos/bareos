@@ -9,6 +9,7 @@ devtools/pip-tools/check_sources.egg-info/*
 webui/vendor
 webui/module/Application/language
 webui/public/js/*.min.*
+webui/public/js/apexcharts.js
 webui/public/js/partials/*.min.*
 webui/public/js/bootstrap-select.js.map
 webui/public/css/*.min.*
