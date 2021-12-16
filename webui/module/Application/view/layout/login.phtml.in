@@ -62,6 +62,22 @@ echo $this->doctype();
 
 <body>
 
+   <style>
+      .panel-default, .panel {
+         background-color: transparent;
+         border-width: 0px;
+         -webkit-box-shadow: none;
+         -moz-box-shadow: none;
+         box-shadow: none;
+      }
+      html {
+         min-height: 100%;
+      }
+      body {
+         background: linear-gradient(#ffffff, #0075be);
+      }
+   </style>
+
    <?php
       include 'version.php';
    ?>
