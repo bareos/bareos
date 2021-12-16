@@ -118,6 +118,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Add support for Universal Linux Client [PR #1019]
 
 ### Changed
+- core: remove deprecated config directive `dbdriver` from all config files, templates and from automatic configuration during install [PR #1027]
 - Debian: Old SysV init scripts have been removed. Bareos daemons are controlled by systemd [PR #1019]
 - Debian: Bareos Director and SD will be automatically started after installation. The FD has already been started in earlier releases [PR #1019]
 - docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]
