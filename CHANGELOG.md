@@ -110,6 +110,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - packages: Build EL_8 packages instead of CentOS_8 for RHEL 8 derivates (Alma, Rocky, CentOS Stream)[PR #992]
 - webui: provide a notification that NDMP restores are NOT supported by webui [PR #1020]
 - console: prune command gained support to prune multiple volumes at once [PR #966]
+- webui: introduce a job timeline chart [PR #1017]
 
 ### Changed
 - docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]

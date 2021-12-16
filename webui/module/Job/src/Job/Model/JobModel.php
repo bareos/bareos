@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -134,6 +134,23 @@ class JobModel
       } else {
          throw new \Exception('Missing argument.');
       }
+   }
+
+   public function getClientJobsForPeriod(&$bsock=null, $client=null, $period=null)
+   {
+     if(isset($bsock, $client, $period)) {
+       $cmd = 'llist jobs client="'.$client.'" days='.$period;
+       $result = $bsock->send_command($cmd, 2);
+       $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+       if (empty($jobs['result'])) {
+         return false;
+       } else {
+         return $jobs['result']['jobs'];
+       }
+     }
+     else {
+       throw new \Exception('Missing argument.');
+     }
    }
 
    /**
