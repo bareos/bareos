@@ -6,8 +6,8 @@ SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Lev
 Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime,
 Job.EndTime, Job.RealEndTime,
 CASE
-  WHEN endtime IS NOT NULL THEN endtime - starttime
-  ELSE CURRENT_TIMESTAMP(0) - starttime
+  WHEN Job.endtime IS NOT NULL THEN Job.endtime - Job.starttime
+  ELSE CURRENT_TIMESTAMP(0) - Job.starttime
   END as Duration,
 Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,
 Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId,
