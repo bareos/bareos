@@ -69,29 +69,33 @@ RHEL, CentOS, Fedora
    single: Platform; RHEL
    single: Platform; CentOS
    single: Platform; Fedora
+   single: Platform; EL
 
 Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library package.
 On RHEL 7 it is available through the RHEL Server Optional channel.
-On CentOS 7 and Fedora is it included in the main repository.
+
+The EL_8 repository is intended for RHEL 8 derivates,
+like AlmaLinux, CentOS Stream, Oracle and Rocky Linux.
+
 
 .. code-block:: sh
-   :caption: Shell example script for Bareos installation on RHEL / CentOS / Fedora
+   :caption: Shell example script for Bareos installation on RHEL / EL / Fedora
 
    #!/bin/sh
 
    # See https://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=RHEL_8
+   DIST=EL_8
    # or
+   # DIST=RHEL_8
    # DIST=RHEL_7
-   # DIST=CentOS_8
    # DIST=CentOS_7
-   # DIST=Fedora_33
-   # DIST=Fedora_32
-   # DIST=Fedora_31
+   # DIST=Fedora_35
+   # DIST=Fedora_34
 
-   RELEASE=release/20
+
+   RELEASE=release/21
    # RELEASE=experimental/nightly
 
    # add the Bareos repository
@@ -120,12 +124,14 @@ SUSE Linux Enterprise Server (SLES), openSUSE
    # See https://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=SLE_15_SP2
+   DIST=SLE_15_SP3
    # or
+   # DIST=SLE_15_SP2
    # DIST=SLE_12_SP5
+   # DIST=openSUSE_Leap_15.3
    # DIST=openSUSE_Leap_15.2
 
-   RELEASE=release/20
+   RELEASE=release/21
    # or
    # RELEASE=experimental/nightly
 
@@ -158,14 +164,14 @@ Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library pa
    # See https://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=Debian_10
+   DIST=Debian_11
    # or
+   # DIST=Debian_10
    # DIST=Debian_9.0
    # DIST=xUbuntu_20.04
    # DIST=xUbuntu_18.04
-   # DIST=xUbuntu_16.04
 
-   RELEASE=release/20
+   RELEASE=release/21
    # or
    # RELEASE=experimental/nightly
 
@@ -200,12 +206,11 @@ Install on FreeBSD based Distributions
    # See https://download.bareos.org/bareos/release/
    # for applicable releases and distributions
 
-   DIST=FreeBSD_12.2
+   DIST=FreeBSD_13.0
    # or
-   # DIST=FreeBSD_12.1
-   # DIST=FreeBSD_11.4
+   # DIST=FreeBSD_12.2
 
-   RELEASE=release/20
+   RELEASE=release/21
    # or
    # RELEASE=experimental/nightly
 
