@@ -340,25 +340,17 @@ static void DoAllStatus(UaContext* ua)
 
 void ListDirStatusHeader(UaContext* ua)
 {
-  int len, cnt;
-  CatalogResource* catalog;
+  int len;
   char dt[MAX_TIME_LENGTH];
-  PoolMem msg(PM_FNAME), dbdrivers(PM_FNAME);
+  PoolMem msg(PM_FNAME);
 
-  cnt = 0;
-  foreach_res (catalog, R_CATALOG) {
-    if (cnt) { dbdrivers.strcat(" "); }
-    dbdrivers.strcat(catalog->db_driver);
-    cnt++;
-  }
   ua->SendMsg(_("%s Version: %s (%s) %s\n"), my_name,
               kBareosVersionStrings.Full, kBareosVersionStrings.Date,
               kBareosVersionStrings.GetOsInfo());
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-  ua->SendMsg(
-      _("Daemon started %s. Jobs: run=%d, running=%d db:%s, %s binary\n"), dt,
-      num_jobs_run, JobCount(), dbdrivers.c_str(),
-      kBareosVersionStrings.BinaryInfo);
+  ua->SendMsg(_("Daemon started %s. Jobs: run=%d, running=%d db:postgresql, %s "
+                "binary\n"),
+              dt, num_jobs_run, JobCount(), kBareosVersionStrings.BinaryInfo);
 
   if (me->secure_erase_cmdline) {
     ua->SendMsg(_(" secure erase command='%s'\n"), me->secure_erase_cmdline);
