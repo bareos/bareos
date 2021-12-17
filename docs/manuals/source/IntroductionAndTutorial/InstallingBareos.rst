@@ -57,6 +57,7 @@ The package **bareos** is only a meta package which contains dependencies on the
 The following code snippets are shell scripts that can be used as orientation how to download the package repositories and install bareos. The release version number for **bareos** and the corresponding Linux distribution have to be updated for your needs, respectively.
 
 **See** https://download.bareos.org/bareos/release/ **for applicable releases and distributions.**
+See :ref:`section-UniversalLinuxClient` if your distribution is not present.
 
 Install on RedHat based Linux Distributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

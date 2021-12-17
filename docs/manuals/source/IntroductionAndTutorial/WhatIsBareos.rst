@@ -137,7 +137,7 @@ bareos-webui                         Bareos Web User Interface
 python-bareos                        Backup Archiving REcovery Open Sourced - Python module
 ==================================== =========================================================================
 
-Not all packages (especially optional backends and plugins) are available on all platforms. For details, see :ref:`section-packages`.
+Not all packages (especially optional backends and plugins) are available on all platforms.
 
 Additionally, packages containing debug information are available. These are named differently depending on the distribution (**bareos-debuginfo** or **bareos-dbg** or ...).
 
