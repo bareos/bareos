@@ -510,9 +510,9 @@ Mac OS X
 
 Bareos for MacOS X is available either
 
--  via the `Homebrew project <https://brew.sh/>`_ (http://formulae.brew.sh/formula/bareos-client) or
+-  via the `Homebrew project <https://brew.sh/>`_ (https://formulae.brew.sh/formula/bareos-client) or
 
--  as pkg file from http://download.bareos.org/bareos/release/latest/MacOS/.
+-  as pkg file from https://download.bareos.org/bareos/release/.
 
 However, you have to choose upfront, which client you want to use. Otherwise conflicts do occur.
 
@@ -527,7 +527,7 @@ The Bareos installer package for Mac OS X contains the |fd| for Mac OS X 10.5 or
 
 On your local Mac, you must be an admin user. The main user is an admin user.
 
-Download the :file:`bareos-client*.pkg` installer package from http://download.bareos.org/bareos/release/latest/MacOS/.
+Download the :file:`bareos-*.pkg` installer package from https://download.bareos.org/bareos/release/.
 
 Find the .pkg you just downloaded. Install the .pkg by holding the CTRL key, left-clicking the installer and choosing "open".
 
