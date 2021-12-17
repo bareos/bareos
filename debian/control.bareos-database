@@ -1,0 +1,35 @@
+Package:        bareos-database-common
+Architecture:   any
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        bareos-common (= ${binary:Version}), bareos-database-postgresql (= ${binary:Version}), dbconfig-common, lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
+Description: Backup Archiving Recovery Open Sourced - common catalog files
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides generic abstraction libs and files to connect the Bareos
+ Director daemon to a database.
+
+
+Package:        bareos-database-postgresql
+Architecture:   any
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        lsb-base (>= 3.2-13), postgresql-client, ${shlibs:Depends}, ${misc:Depends}
+Recommends:     dbconfig-pgsql
+Suggests:       postgresql
+Description: Backup Archiving Recovery Open Sourced - PostgreSQL backend
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides the functionality to connect the Bareos Director
+ daemon to a PostgreSQL database.
+
+Package:        bareos-database-tools
+Architecture:   any
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        bareos-common (= ${binary:Version}), bareos-database-common (= ${binary:Version}), lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
+Conflicts:      bacula-sd-mysql, bacula-sd-pgsql, bacula-sd-sqlite3
+Description: Backup Archiving Recovery Open Sourced - database tools
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides tools that requires access to the Bareos database.

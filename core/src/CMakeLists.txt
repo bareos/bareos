@@ -47,7 +47,10 @@ if(BUILD_BENCHMARKS)
   add_subdirectory(benchmarks)
 endif()
 
-add_subdirectory(console)
+if(ENABLE_BCONSOLE)
+  add_subdirectory(console)
+endif()
+
 if(${HAVE_LMDB})
   add_subdirectory(lmdb)
 endif()

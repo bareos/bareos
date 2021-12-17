@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - If you are relying on the fact that Bareos doesn't try to reconnect automatically on a database drop, you now have to specify it explicitly in the Catalog configuration with a `Reconnect = no` directive. [PR #860]
 - when setting an IPv6 address using the `[DIR|SD|FD] Addresses` directive, now bareos only listens on IPv6 instead of both IPv4 and IPv6 on dual-stack. If you were using the `[DIR|SD|FD] Addresses` directive to create a dual-stack socket that would listen on both IPv6 AND IPv4, it will not work that way anymore. You should now also explicitly specify the IPv4 address in the directive [PR #882]
 - Support for MySQL and SQLite catalog backends has been removed [PR #949]
+- Bareos no longer supports Bacula tape formats <= 10 (Bacula < 1.26 which was released 2002) [PR #1019]
 
 ### Fixed
 - docs: Fix links to configuration directives and issue warnings on dangling links [PR #1008]
@@ -114,8 +115,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - console: prune command gained support to prune multiple volumes at once [PR #966]
 - webui: introduce a job timeline chart [PR #1017]
 - systemtests: add a test for the jobs last status table in webui [PR #1024]
+- Add support for Universal Linux Client [PR #1019]
 
 ### Changed
+- Debian: Old SysV init scripts have been removed. Bareos daemons are controlled by systemd [PR #1019]
+- Debian: Bareos Director and SD will be automatically started after installation. The FD has already been started in earlier releases [PR #1019]
 - docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]
 - docs: Improve data-type subsubsection in CustomizingTheConfiguration. Add a special Sphinx directive for them (``config:datatype``) [PR #1008]
 - systemtest python-bareos: split tests in separate files [PR #944]
@@ -362,6 +366,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1008]: https://github.com/bareos/bareos/pull/1008
 [PR #1017]: https://github.com/bareos/bareos/pull/1017
 [PR #1018]: https://github.com/bareos/bareos/pull/1018
+[PR #1019]: https://github.com/bareos/bareos/pull/1019
 [PR #1020]: https://github.com/bareos/bareos/pull/1020
 [PR #1022]: https://github.com/bareos/bareos/pull/1022
 [PR #1023]: https://github.com/bareos/bareos/pull/1023

@@ -79,6 +79,7 @@ debian/bareos-storage.service
 debian/bareos-tools.install
 debian/bareos-traymonitor.install
 debian/bareos-traymonitor.postinst
+debian/bareos-universal-client.install
 debian/univention-bareos.postinst
 
 # generated sample-configuration

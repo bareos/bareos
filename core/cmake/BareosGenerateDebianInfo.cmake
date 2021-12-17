@@ -17,98 +17,110 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-if(GENERATE_DEBIAN_CONTROL)
+# always add "src" package snippet
+set(DEBIAN_CONTROL_SNIPPETS "src")
 
-  if(HAVE_TRAYMONITOR)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-traymonitor
-         DEBIAN_CONTROL_TRAYMONITOR
-    )
+if(BUILD_UNIVERSAL_CLIENT)
+  list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-universal-client")
+  list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-universal-client-dbg")
+else()
+  if(NOT client-only)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos")
+  endif()
+  if(ENABLE_BCONSOLE)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-bconsole")
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-client")
+  endif()
+  list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-common")
+  if(NOT client-only)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-database")
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-dbg")
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director")
+  endif()
+  list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon")
+  if(NOT client-only)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage")
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-tools")
   endif()
 
-  if(HAVE_GLUSTERFS)
-    file(READ
-         ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-glusterfs-plugin
-         DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN
-    )
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-glusterfs
-         DEBIAN_CONTROL_STORAGE_GLUSTERFS
-    )
+  if(NOT client-only
+     AND ENABLE_PYTHON
+     AND (Python2_FOUND OR Python3_FOUND)
+  )
+    if(Python2_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python2-plugin")
+    endif()
+    if(Python3_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python3-plugin")
+    endif()
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python-plugins-common")
   endif()
 
   if(HAVE_CEPHFS)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-ceph-plugin
-         DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN
-    )
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-ceph
-         DEBIAN_CONTROL_STORAGE_CEPH
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-ceph-plugin")
+  endif()
+  if(HAVE_GLUSTERFS)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-glusterfs-plugin")
+  endif()
+  if(ENABLE_PYTHON AND (Python2_FOUND OR Python3_FOUND))
+    if(Python2_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-python2-plugin")
+    endif()
+    if(Python3_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-python3-plugin")
+    endif()
+    list(APPEND DEBIAN_CONTROL_SNIPPETS
+         "bareos-filedaemon-python-plugins-common"
     )
   endif()
 
-  if(TARGET droplet)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-droplet
-         DEBIAN_CONTROL_STORAGE_DROPLET
-    )
+  if(NOT client-only AND HAVE_CEPHFS)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-ceph")
+  endif()
+  if(NOT client-only AND TARGET droplet)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-droplet")
+  endif()
+  if(NOT client-only AND HAVE_GLUSTERFS)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-glusterfs")
+  endif()
+  if(NOT client-only
+     AND ENABLE_PYTHON
+     AND (Python2_FOUND OR Python3_FOUND)
+  )
+    if(Python2_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python2-plugin")
+    endif()
+    if(Python3_FOUND)
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python3-plugin")
+    endif()
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-python-plugins-common")
   endif()
 
-  # python (2) plugins
-  if(Python2_FOUND)
-    file(READ
-         ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python2-plugin
-         DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN
-    )
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python2-plugin
-         DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN
-    )
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python2-plugin
-         DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN
-    )
-  endif()
-
-  # python 3 plugins
-  if(Python3_FOUND)
-    file(READ
-         ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python3-plugin
-         DEBIAN_CONTROL_FILEDAEMON_PYTHON3_PLUGIN
-    )
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python3-plugin
-         DEBIAN_CONTROL_STORAGE_PYTHON3_PLUGIN
-    )
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python3-plugin
-         DEBIAN_CONTROL_DIRECTOR_PYTHON3_PLUGIN
-    )
-  endif()
-
-  # python plugin common files
-  if(Python2_FOUND OR Python3_FOUND)
-    file(
-      READ
-      ${CMAKE_SOURCE_DIR}/debian/control.bareos-filedaemon-python-plugins-common
-      DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGINS_COMMON
-    )
-    file(READ
-         ${CMAKE_SOURCE_DIR}/debian/control.bareos-storage-python-plugins-common
-         DEBIAN_CONTROL_STORAGEDAEMON_PYTHON_PLUGINS_COMMON
-    )
-    file(
-      READ
-      ${CMAKE_SOURCE_DIR}/debian/control.bareos-director-python-plugins-common
-      DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGINS_COMMON
-    )
+  if(HAVE_TRAYMONITOR)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-traymonitor")
   endif()
 
   if(${BAREOS_PLATFORM} MATCHES "univention")
-    # only required for univention
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.univention-bareos
-         DEBIAN_CONTROL_UNIVENTION_BAREOS
-    )
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "univention-bareos")
   endif()
 
-  file(READ ${CMAKE_SOURCE_DIR}/debian/control.bareos-webui
-       DEBIAN_CONTROL_BAREOS_WEBUI
-  )
+  if(NOT client-only)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-webui")
+  endif()
 
-  if(VIXDISKLIB_FOUND)
-    file(READ ${CMAKE_SOURCE_DIR}/debian/control.vmware DEBIAN_CONTROL_VMWARE)
+  if(NOT client-only AND VIXDISKLIB_FOUND)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "vmware")
   endif()
 
 endif()
+
+configure_file(
+  ${CMAKE_SOURCE_DIR}/core/cmake/generate-debian-control.cmake.in
+  ${CMAKE_BINARY_DIR}/generate-debian-control.cmake @ONLY
+)
+
+add_custom_target(
+  generate-debian-control
+  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/generate-debian-control.cmake
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/debian"
+)

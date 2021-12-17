@@ -1089,28 +1089,15 @@ static bool CreateFileAttributesRecord(BareosDb* db,
 // For each Volume we see, we create a Medium record
 static bool CreateMediaRecord(BareosDb* db, MediaDbRecord* mr, Volume_Label* vl)
 {
-  struct date_time dt;
-  struct tm tm;
-
   // We mark Vols as Archive to keep them from being re-written
   bstrncpy(mr->VolStatus, "Archive", sizeof(mr->VolStatus));
   mr->VolRetention = 365 * 3600 * 24; /* 1 year */
   mr->Enabled = 1;
-  if (vl->VerNum >= 11) {
-    mr->set_first_written = true; /* Save FirstWritten during update_media */
-    mr->FirstWritten = BtimeToUtime(vl->write_btime);
-    mr->LabelDate = BtimeToUtime(vl->label_btime);
-  } else {
-    // DEPRECATED DO NOT USE
-    dt.julian_day_number = vl->write_date;
-    dt.julian_day_fraction = vl->write_time;
-    TmDecode(&dt, &tm);
-    mr->FirstWritten = mktime(&tm);
-    dt.julian_day_number = vl->label_date;
-    dt.julian_day_fraction = vl->label_time;
-    TmDecode(&dt, &tm);
-    mr->LabelDate = mktime(&tm);
-  }
+  // make sure this volume wasn't written by bacula 1.26 or earlier
+  ASSERT(vl->VerNum >= 11);
+  mr->set_first_written = true; /* Save FirstWritten during update_media */
+  mr->FirstWritten = BtimeToUtime(vl->write_btime);
+  mr->LabelDate = BtimeToUtime(vl->label_btime);
   lasttime = mr->LabelDate;
 
   if (mr->VolJobs == 0) { mr->VolJobs = 1; }
@@ -1241,8 +1228,6 @@ static JobControlRecord* CreateJobRecord(BareosDb* db,
                                          DeviceRecord* rec)
 {
   JobControlRecord* mjcr;
-  struct date_time dt;
-  struct tm tm;
 
   jr->JobId = label->JobId;
   jr->JobType = label->JobType;
@@ -1250,15 +1235,9 @@ static JobControlRecord* CreateJobRecord(BareosDb* db,
   jr->JobStatus = JS_Created;
   bstrncpy(jr->Name, label->JobName, sizeof(jr->Name));
   bstrncpy(jr->Job, label->Job, sizeof(jr->Job));
-  if (label->VerNum >= 11) {
-    jr->SchedTime = BtimeToUnix(label->write_btime);
-  } else {
-    dt.julian_day_number = label->write_date;
-    dt.julian_day_fraction = label->write_time;
-    TmDecode(&dt, &tm);
-    jr->SchedTime = mktime(&tm);
-  }
-
+  // make sure this volume wasn't written by bacula 1.26 or earlier
+  ASSERT(label->VerNum >= 11);
+  jr->SchedTime = BtimeToUnix(label->write_btime);
   jr->StartTime = jr->SchedTime;
   jr->JobTDate = (utime_t)jr->SchedTime;
   jr->VolSessionId = rec->VolSessionId;
@@ -1294,8 +1273,6 @@ static bool UpdateJobRecord(BareosDb* db,
                             Session_Label* elabel,
                             DeviceRecord* rec)
 {
-  struct date_time dt;
-  struct tm tm;
   JobControlRecord* mjcr;
 
   mjcr = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
@@ -1305,14 +1282,9 @@ static bool UpdateJobRecord(BareosDb* db,
     return false;
   }
 
-  if (elabel->VerNum >= 11) {
-    jr->EndTime = BtimeToUnix(elabel->write_btime);
-  } else {
-    dt.julian_day_number = elabel->write_date;
-    dt.julian_day_fraction = elabel->write_time;
-    TmDecode(&dt, &tm);
-    jr->EndTime = mktime(&tm);
-  }
+  // make sure this volume wasn't written by bacula 1.26 or earlier
+  ASSERT(elabel->VerNum >= 11);
+  jr->EndTime = BtimeToUnix(elabel->write_btime);
 
   lasttime = jr->EndTime;
   mjcr->end_time = jr->EndTime;

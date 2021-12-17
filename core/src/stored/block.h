@@ -60,8 +60,6 @@ class Device; /* for forward reference */
 #define OlderBaculaId "Bacula 0.9 mortal\n"
 #define BareosTapeVersion 20
 #define OldCompatibleBareosTapeVersion1 11
-#define OldCompatibleBareosTapeVersion2 10
-#define OldCompatibleBareosTapeVersion3 9
 
 /**
  * This is the Media structure for a block header

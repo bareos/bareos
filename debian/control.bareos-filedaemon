@@ -1,0 +1,15 @@
+Package:        bareos-filedaemon
+Architecture:   any
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
+Depends:        bareos-common (= ${binary:Version}), lsb-base (>= 3.2-13), lsof, ${shlibs:Depends}, ${misc:Depends}
+Conflicts:      bacula-fd
+Replaces:       bacula-fd, bareos-universal-client
+Description: Backup Archiving Recovery Open Sourced - file daemon
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ The file daemon has to be installed on the machine to be backed up. It is
+ responsible for providing the file attributes and data when requested by
+ the Director, and also for the file system-dependent part of restoration.
+ .
+ This package contains the Bareos File daemon.

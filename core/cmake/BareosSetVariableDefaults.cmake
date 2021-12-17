@@ -550,12 +550,6 @@ if(NOT DEFINED developer)
   set(developer OFF)
 endif()
 
-if(DEFINED dynamic-debian-package-list)
-  set(GENERATE_DEBIAN_CONTROL ON)
-else()
-  set(GENERATE_DEBIAN_CONTROL OFF)
-endif()
-
 if(NOT DEFINED coverage)
   set(coverage OFF)
 endif()

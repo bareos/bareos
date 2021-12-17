@@ -205,6 +205,10 @@ endif()
 
 add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
 target_link_libraries(bareossd PRIVATE bareos Threads::Threads)
+set_target_properties(
+  bareossd PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
+                      SOVERSION "${BAREOS_VERSION_MAJOR}"
+)
 
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
   target_link_libraries(bareossd PRIVATE ${LIBBAREOSSD_LIBRARIES})

@@ -1,0 +1,52 @@
+# we use conditional build-depends based on build profiles
+# to get the right build-depends just fill DEB_BUILD_PROFILES
+# with your distribution and codename (i.e. "debian buster"
+# or "ubuntu xenial") and you'll get the full build-depends.
+# Otherwise you will just get the common build-depends and
+# might miss a feature or two.
+
+Source: bareos
+Section: admin
+Priority: optional
+Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
+Build-Depends: acl-dev,
+ apache2 | httpd,
+ bc,
+ chrpath,
+ cmake (>= 3.12.0) | cmake-mozilla,
+ debhelper (>= 7.0.50~),
+ dpkg-dev (>= 1.13.19),
+ libacl1-dev,
+ libcap-dev [linux-any],
+ liblzo2-dev,
+ qtbase5-dev,
+ libreadline-dev,
+ libssl-dev,
+ libwrap0-dev,
+ libx11-dev,
+ libxml2-dev,
+ libpq-dev,
+ libjansson-dev,
+ libjson-c-dev,
+ logrotate,
+ lsb-release,
+ mtx [!hurd-any],
+ ncurses-dev,
+ pkg-config,
+ po-debconf (>= 0.8.2),
+ python-dev,
+ zlib1g-dev,
+ systemd,
+ dh-systemd <buster> <stretch> <xenial> <bionic>,
+ librados-dev <bullseye> <buster> <stretch> <xenial> <bionic>,
+ libradosstriper-dev <bullseye> <buster> <stretch> <xenial> <bionic>,
+ libcephfs-dev <bullseye> <buster> <stretch> <xenial> <bionic>,
+ glusterfs-common <bullseye> <buster> <stretch> <xenial> <bionic>,
+ ucslint <univention>,
+ univention-config-dev <univention>,
+ wget <univention>
+Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools, libqt4-dev
+Standards-Version: 3.9.6
+Vcs-Git: git://github.com/bareos/bareos.git -b master
+Vcs-Browser: https://github.com/bareos/bareos/tree/master
+Homepage: http://www.bareos.org/

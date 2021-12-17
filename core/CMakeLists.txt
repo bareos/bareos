@@ -28,13 +28,8 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   )
 endif()
 
-if(POLICY CMP0054)
-  cmake_policy(SET CMP0054 NEW)
-endif(POLICY CMP0054)
-
-if(POLICY CMP0057)
-  cmake_policy(SET CMP0057 NEW)
-endif(POLICY CMP0057)
+cmake_policy(SET CMP0054 NEW)
+cmake_policy(SET CMP0057 NEW)
 
 if(POLICY CMP0109)
   cmake_policy(SET CMP0109 NEW)
@@ -59,6 +54,29 @@ endif(CCACHE_FOUND)
 #
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+option(ENABLE_STATIC_RUNTIME_LIBS "Link C and C++ runtime libraries statically"
+       OFF
+)
+if(ENABLE_STATIC_RUNTIME_LIBS)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
+  else()
+    message(
+      FATAL_ERROR
+        "Cannot (yet) do static runtime-libraries on ${CMAKE_C_COMPILER_ID}"
+    )
+  endif()
+endif()
+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18.0)
+  include(CheckLinkerFlag)
+  check_linker_flag(CXX "-Wl,--as-needed" LD_SUPPORTS_AS_NEEDED)
+  if(LD_SUPPORTS_AS_NEEDED AND NOT CMAKE_LINK_WHAT_YOU_USE)
+    add_link_options("-Wl,--as-needed")
+  endif()
+endif()
 
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
@@ -339,6 +357,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall")
 
 include(BareosSetVariableDefaults)
+option(ENABLE_BCONSOLE "Build bconsole binary" ON)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
   set(ENABLE_NLS 0)
@@ -621,8 +640,6 @@ if(NOT openssl)
   unset(HAVE_TLS)
 endif()
 
-set(largefile_support "")
-
 if("${PAM_FOUND}")
   set(HAVE_PAM 1)
 endif()
@@ -632,14 +649,9 @@ set(have_crypto "${HAVE_CRYPTO}")
 set(have_openssl "${HAVE_OPENSSL}")
 set(have_zlib "${ZLIB_FOUND}")
 
-set(HAVE_CAPABILITY
-    "${HAVE_CAPABILITY_H}"
-    CACHE BOOL "compile with capability support"
+option(ENABLE_CAPABILITY "Enable keep readall capability in filedaemon"
+       "${HAVE_CAPABILITY_H}"
 )
-if("${HAVE_CAPABILITY}")
-  set(CAPABILITY_LIBS cap)
-  message(STATUS "CAPABILITY set")
-endif()
 
 try_compile(
   HAVE_IS_TRIVIALLY_COPYABLE ${CMAKE_BINARY_DIR}/compile_tests
@@ -792,7 +804,6 @@ message(
 )
 message("   Build platform:               ${BAREOS_PLATFORM}")
 message("   Source code location:         ${srcdir} ")
-message("   Modify Debian Control file:   ${GENERATE_DEBIAN_CONTROL} ")
 message("   Install binaries:             ${bindir} ")
 message("   Install system binaries:      ${sbindir} ")
 message("   Install libraries:            ${libdir} ")
@@ -845,7 +856,6 @@ message("   Storage DaemonGroup:          ${sd_group} ")
 message("   File Daemon User:             ${fd_user} ")
 message("   File Daemon Group:            ${fd_group} ")
 message(" ")
-message("   Large file support:           ${largefile_support}")
 message(
   "   readline support:             ROOT_DIR:${Readline_ROOT_DIR} INCLUDE_DIR:${Readline_INCLUDE_DIR} LIBRARY:${Readline_LIBRARY}
  "
@@ -877,8 +887,6 @@ message("   enable-lockmgr:               ${lockmgr} ")
 message("   tray-monitor support:         ${HAVE_TRAYMONITOR} ")
 message("   test-plugin support:          ${HAVE_TEST_PLUGIN} ")
 message("   client-only:                  ${build_client_only} ")
-message("   build-dird:                   ${build_dird} ")
-message("   build-stored:                 ${build_stored} ")
 message("   Plugin support:               ${have_plugins} ")
 message("   AFS support:                  ${have_afs} ")
 message("   ACL support:                  ${HAVE_ACL} ${ACL_LIBRARIES}")

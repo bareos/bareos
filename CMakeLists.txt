@@ -49,6 +49,46 @@ enable_testing()
 set(CMAKE_CTEST_COMMAND ctest -V)
 include(CTest)
 
+option(BUILD_UNIVERSAL_CLIENT
+       "Override build-options to produce a limited, but universal client" OFF
+)
+if(BUILD_UNIVERSAL_CLIENT)
+  if(CMAKE_VERSION VERSION_LESS 3.18.0)
+    message(
+      FATAL_ERROR "Building the universal client requires at least CMake 3.18"
+    )
+  endif()
+  set(ENABLE_PYTHON
+      OFF
+      CACHE BOOL "" FORCE
+  )
+  set(ENABLE_GFAPI_FD
+      OFF
+      CACHE BOOL "" FORCE
+  )
+  set(ENABLE_JANSSON
+      OFF
+      CACHE BOOL "" FORCE
+  )
+  set(ENABLE_LZO
+      OFF
+      CACHE BOOL "" FORCE
+  )
+  set(ENABLE_CAPABILITY
+      OFF
+      CACHE BOOL "" FORCE
+  )
+  set(ENABLE_BCONSOLE
+      OFF
+      CACHE BOOL "" FORCE
+  )
+  set(ENABLE_STATIC_RUNTIME_LIBS
+      ON
+      CACHE BOOL "" FORCE
+  )
+  set(client-only ON)
+endif()
+
 if(docs-build-json)
   # check for wrong combinations of build flags
   if(docs-only)

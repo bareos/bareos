@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,30 +21,6 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 set(DESTSTARTDIR "${sysconfdir}/init.d/")
 
 message(STATUS "installing startfiles to ${DESTSTARTDIR}")
-
-# Install autostart fd
-install(
-  FILES "${CMAKE_SOURCE_DIR}/debian/bareos-filedaemon.bareos-fd.init"
-  DESTINATION "${DESTSTARTDIR}/bareos-fd"
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-              WORLD_READ WORLD_EXECUTE
-)
-
-# Install autostart sd
-install(
-  FILES "${CMAKE_SOURCE_DIR}/debian/bareos-storage.bareos-sd.init"
-  DESTINATION "${DESTSTARTDIR}/bareos-sd"
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-              WORLD_READ WORLD_EXECUTE
-)
-
-# Install autostart dir
-install(
-  FILES "${CMAKE_SOURCE_DIR}/debian/bareos-director.bareos-dir.init"
-  DESTINATION "${DESTSTARTDIR}/bareos-dir"
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-              WORLD_READ WORLD_EXECUTE
-)
 
 # logrotate
 
