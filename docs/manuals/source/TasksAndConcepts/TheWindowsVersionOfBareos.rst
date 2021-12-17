@@ -115,10 +115,10 @@ Commandline Switches
    sets the database admin password, default=\ *none*. :sinceVersion:`14.2.1: Windows Installation: DBADMINPASSWORD`
 
 /DIRECTORADDRESS
-   sets network address of the director for bconsole or bat access
+   sets network address of the director for bconsole access
 
 /DIRECTORNAME
-   sets the name of the director to access the client and of the director to accessed by bconsole and bat
+   sets the name of the director to access the client and of the director to accessed by bconsole
 
 /DIRECTORPASSWORD
    set the password to access the director
