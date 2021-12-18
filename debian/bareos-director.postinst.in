@@ -31,7 +31,6 @@ permissions()
 case "$1" in
     configure)
         if /usr/lib/bareos/scripts/bareos-config deploy_config "@configtemplatedir@" "@confdir@" "bareos-dir"; then
-            /usr/lib/bareos/scripts/bareos-config initialize_database_driver
             /usr/lib/bareos/scripts/bareos-config apply_dbconfig_settings
         fi
         permissions

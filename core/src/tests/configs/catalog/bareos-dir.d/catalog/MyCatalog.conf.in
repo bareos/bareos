@@ -1,6 +1,5 @@
 Catalog {
   Name = postgresql
-  dbdriver = "postgresql"
   dbname = "regress_catalog"
   dbuser = "@systemtest_db_user@"
   dbpassword = "@systemtest_db_password@"

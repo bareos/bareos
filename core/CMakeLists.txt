@@ -421,8 +421,6 @@ set(CMAKE_INSTALL_RPATH "${libdir}")
 
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-set(dbdriver sqlite3)
-
 # manual definitions
 set(BAREOS "Bareos")
 set(LOCALEDIR \"${CMAKE_INSTALL_LOCALEDIR}\")

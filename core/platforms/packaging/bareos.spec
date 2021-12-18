@@ -10,7 +10,7 @@ Release: 	0
 Group: 		Productivity/Archiving/Backup
 License: 	AGPL-3.0
 BuildRoot: 	%{_tmppath}/%{name}-root
-URL: 		http://www.bareos.org/
+URL: 		https://www.bareos.org/
 Vendor: 	The Bareos Team
 #Packager: 	{_packager}
 
@@ -1787,7 +1787,6 @@ a2enmod php5 &> /dev/null || true
 %post_backup_file /etc/%{name}/bareos-dir.conf
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
-%{script_dir}/bareos-config initialize_database_driver
 %if 0%{?suse_version} >= 1210
 %service_add_post bareos-dir.service
 /bin/systemctl enable bareos-dir.service >/dev/null 2>&1 || true

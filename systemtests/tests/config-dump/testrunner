@@ -140,8 +140,6 @@ JobName=backup-bareos-fd
 
 start_test
 
-${scripts}/bareos-config initialize_database_driver
-
 # bareos-dir-19.2.7-xc.conf:
 # output of bareos-dir -xc (manually adapted)
 # from a default installation of version 19.2.7

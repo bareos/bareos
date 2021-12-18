@@ -13,8 +13,7 @@ Description: Backup Archiving Recovery Open Sourced - common catalog files
 Package:        bareos-database-postgresql
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        lsb-base (>= 3.2-13), postgresql-client, ${shlibs:Depends}, ${misc:Depends}
-Recommends:     dbconfig-pgsql
+Depends:        dbconfig-pgsql | dbconfig-no-thanks, lsb-base (>= 3.2-13), postgresql-client, ${shlibs:Depends}, ${misc:Depends}
 Suggests:       postgresql
 Description: Backup Archiving Recovery Open Sourced - PostgreSQL backend
  Bareos is a set of programs to manage backup, recovery and verification of
@@ -22,6 +21,7 @@ Description: Backup Archiving Recovery Open Sourced - PostgreSQL backend
  .
  This package provides the functionality to connect the Bareos Director
  daemon to a PostgreSQL database.
+
 
 Package:        bareos-database-tools
 Architecture:   any
