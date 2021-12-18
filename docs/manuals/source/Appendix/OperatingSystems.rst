@@ -73,7 +73,7 @@ built in a way to have minimal dependencies to other libraries.
    The **Universal Linux Client** depends on the **OpenSSL** library
    of the host in order to utilize security updates for this library.
 
-It incorperates all functionality for normal backup and restore operations,
+It incorporates all functionality for normal backup and restore operations,
 however it has only limited plugin support.
 
 Currently it is provided as a Debian package.
