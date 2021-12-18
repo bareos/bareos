@@ -82,7 +82,7 @@ However, it it planed to provide it also in other formats.
 The ULC components come in extra repositories (names starting with **ULC_**)
 at https://download.bareos.org/bareos/release/
 and consists of only a single package per platform.
-Therfore you can either add the repository to your system
+Therefore you can either add the repository to your system
 or only download and install the single package file.
 There will be different repositories depending on packaging standard
 and remaining dependencies.
