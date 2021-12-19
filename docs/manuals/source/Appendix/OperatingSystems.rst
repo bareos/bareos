@@ -77,16 +77,32 @@ It incorporates all functionality for normal backup and restore operations,
 however it has only limited plugin support.
 
 Currently it is provided as a Debian package.
-However, it it planed to provide it also in other formats.
+However, it is planed to provide it also in other formats.
 
-The ULC components come in extra repositories (names starting with **ULC_**)
-at https://download.bareos.org/bareos/release/
-and consists of only a single package per platform.
-Therefore you can either add the repository to your system
-or only download and install the single package file.
+The ULC have extra repositories, their names starting with **ULC_**
+(e.g. **ULC_deb_OpenSSL_1.1**)
+at https://download.bareos.org/bareos/release/.
 There will be different repositories depending on packaging standard
 and remaining dependencies.
+These repositories contain the **bareos-universal-client** package
+and sometimes their corresponding debug package.
+You can either add the repository to your system
+or only download and install the package file.
 
+One of ULC's goals is to support new platforms
+for which native packages are not yet available.
+As soon as native packages are available,
+their repository can be added
+and on an update the ULC package
+will be seamlessly replaced by the normal |fd| package.
+No change to the Bareos configuration is required.
+
+.. warning::
+
+   While ULC packages are designed to run on as many Linux platforms as possible,
+   they should only be used
+   if this platform is not directly supported by the Bareos project.
+   When available, native packages should be preferred.
 
 Feature overview:
 
@@ -94,7 +110,7 @@ Feature overview:
   * Repository based installation
   * Minimal dependencies to system libraries (except OpenSSL)
   * Uses host OpenSSL library
-  * Replacable by normal |fd|. No configuration change required.
+  * Replaceable by the normal |fd|. No configuration change required.
 
 
 .. _section-UniventionCorporateServer:
