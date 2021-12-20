@@ -1,4 +1,4 @@
-# temporay files
+# temporary files
 *~
 
 # Compiled Object files
@@ -81,6 +81,8 @@ debian/bareos-traymonitor.install
 debian/bareos-traymonitor.postinst
 debian/bareos-universal-client.install
 debian/univention-bareos.postinst
+debian/bareos-universal-client.postinst
+debian/bareos-universal-client.preinst
 
 # generated sample-configuration
 core/src/plugins/filed/python/ldap/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example

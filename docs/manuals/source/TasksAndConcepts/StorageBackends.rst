@@ -36,7 +36,7 @@ The **bareos-storage-droplet** backend (:sinceVersion:`17.2.7: Droplet`) can be 
 Requirements
 ~~~~~~~~~~~~
 
--  The Bareos package **bareos-storage-droplet** is not available on all platforms. Please refer to :ref:`section-packages`.
+-  The Bareos package **bareos-storage-droplet** is not available on all platforms.
 
 -  Droplet S3:
 
