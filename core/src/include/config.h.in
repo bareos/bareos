@@ -559,6 +559,9 @@ extern char win_os[];
 // Directory for daemon files
 #cmakedefine PATH_BAREOS_WORKINGDIR @PATH_BAREOS_WORKINGDIR@
 
+// Default path for Bareos Python modules
+#cmakedefine PYTHON_MODULE_PATH "@PYTHON_MODULE_PATH@"
+
 #define BAREOS_PLATFORM "@PLATFORM@"
 #define DISTVER "@DISTVER@"
 
