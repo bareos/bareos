@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [20.0.5] - 2021-12-20
 
 ### Fixed
 - [Issue #1374] Include zero-file incremental backups in always-incremental consolidation [PR #1000]
@@ -248,6 +248,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [20.0.2]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.2
 [20.0.3]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.3
 [20.0.4]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.4
+[20.0.5]: https://github.com/bareos/bareos/releases/tag/Release%2F20.0.5
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
 [Issue #971]: https://bugs.bareos.org/view.php?id=971
@@ -276,6 +277,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [Issue #1324]: https://bugs.bareos.org/view.php?id=1324
 [Issue #1329]: https://bugs.bareos.org/view.php?id=1329
 [Issue #1369]: https://bugs.bareos.org/view.php?id=1369
+[Issue #1374]: https://bugs.bareos.org/view.php?id=1374
 [PR #383]: https://github.com/bareos/bareos/pull/383
 [PR #384]: https://github.com/bareos/bareos/pull/384
 [PR #385]: https://github.com/bareos/bareos/pull/385
@@ -452,4 +454,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #978]: https://github.com/bareos/bareos/pull/978
 [PR #983]: https://github.com/bareos/bareos/pull/983
 [PR #991]: https://github.com/bareos/bareos/pull/991
-[unreleased]: https://github.com/bareos/bareos/tree/master
+[PR #1000]: https://github.com/bareos/bareos/pull/1000
+[PR #1001]: https://github.com/bareos/bareos/pull/1001
