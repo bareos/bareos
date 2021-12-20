@@ -9,10 +9,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #1374] Include zero-file incremental backups in always-incremental consolidation [PR #1000]
 - fix crash in "status scheduler" command when job->client is unset [PR #1001]
 
-### Added
-
-### Changed
-
 ## [20.0.4] - 2021-11-22
 
 ### Fixed
@@ -54,10 +50,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - add job name in End Job Session output in bls tool [PR #916]
 - add chromedriver options to improve reliability of selenium tests [PR #920]
 - docs: Describe how to get debugging info when using the VMware plugin [PR #922]
-### Removed
-
-### Documentation
-
 
 ## [20.0.2] - 2021-06-10
 
