@@ -116,6 +116,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: introduce a job timeline chart [PR #1017]
 - systemtests: add a test for the jobs last status table in webui [PR #1024]
 - Add support for Universal Linux Client [PR #1019]
+- docs: add documentation about Unified Linux Client [PR #1028]
 
 ### Changed
 - Debian: Old SysV init scripts have been removed. Bareos daemons are controlled by systemd [PR #1019]
@@ -373,4 +374,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1024]: https://github.com/bareos/bareos/pull/1024
 [PR #1025]: https://github.com/bareos/bareos/pull/1025
 [PR #1026]: https://github.com/bareos/bareos/pull/1026
+[PR #1028]: https://github.com/bareos/bareos/pull/1028
 [unreleased]: https://github.com/bareos/bareos/tree/master
