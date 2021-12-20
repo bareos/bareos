@@ -1,15 +1,5 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
-#
-# Sample debian/rules that uses debhelper.
-#
-# This file was originally written by Joey Hess and Craig Small.
-# As a special exception, when this file is copied by dh-make into a
-# dh-make output file, you may use that output file without restriction.
-# This special exception was added by Craig Small in version 0.37 of dh-make.
-#
-# Modified to make a template file for a multi-binary package with separated
-# build-arch and build-indep targets  by Bill Allombert 2001
 
 # Uncomment this to turn on verbose mode.
 DH_VERBOSE = 1
@@ -93,12 +83,14 @@ else
 endif
 	cmake --build cmake-build/ -- generate-debian-control
 
+
 override_dh_fixperms:
 	# all files in /etc/bareos
 	dh_fixperms \
 		--exclude etc/bareos/ \
 		--exclude var/lib/bareos/ \
 		--exclude var/log/bareos/
+
 
 override_dh_strip:
 ifeq (build-universal-client,$(filter build-universal-client,$(DEB_BUILD_OPTIONS)))
@@ -107,16 +99,27 @@ else
 	dh_strip --dbg-package=bareos-dbg
 endif
 
+
 override_dh_install:
 	chrpath -d $(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-postgresql* || true
 	dh_install
 
-override_dh_installinit:
+
+override_dh_systemd_enable:
 ifeq (build-universal-client,$(filter build-universal-client,$(DEB_BUILD_OPTIONS)))
-	dh_installsystemd --name bareos-filedaemon
+	dh_systemd_enable --name bareos-filedaemon
 else
-	dh_installsystemd
+	dh_systemd_enable
 endif
+
+
+override_dh_installinit:
+	# Skipped. Only use systemd configuration.
+
+
+override_dh_systemd_start:
+	dh_systemd_start bareos-filedaemon.service --no-start --restart-after-upgrade
+
 
 override_dh_makeshlibs:
 	dh_makeshlibs -n
@@ -140,6 +143,7 @@ override_dh_shlibdeps:
 
 %:
 	dh $@ --builddirectory=cmake-build
+
 
 gen-debian-copyright:
 	(cd debian; make copyright)
