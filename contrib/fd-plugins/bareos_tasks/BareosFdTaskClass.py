@@ -23,8 +23,8 @@ from StringIO import StringIO
 from fcntl import fcntl, F_GETFL, F_SETFL
 from pwd import getpwnam
 
-from bareosfd import JobMessage, DebugMessage, StatPacket, GetValue
-from bareos_fd_consts import bRCs, bIOPS, bJobMessageType, bFileType, bVariable
+#import bareosfd
+from bareosfd import JobMessage, DebugMessage, StatPacket, GetValue, bRCs, bIOPS, bJobMessageType, bFileType, bVariable, M_ERROR, M_INFO
 from BareosFdPluginBaseclass import BareosFdPluginBaseclass
 
 
@@ -237,8 +237,8 @@ class BareosFdTaskClass(BareosFdPluginBaseclass):
     debug_level = 100
     plugin_name = 'unknown'
 
-    def __init__(self, context, plugin_def):
-        BareosFdPluginBaseclass.__init__(self, context, plugin_def)
+    def __init__(self, plugin_def):
+        BareosFdPluginBaseclass.__init__(self, plugin_def)
         self.config = None
         self.folder = None
         self.job_type = None
@@ -246,67 +246,68 @@ class BareosFdTaskClass(BareosFdPluginBaseclass):
         self.tasks = list()
 
     def log_format(self, message):
-        return '{0}: {1}\n'.format(self.plugin_name, message.lower())
+        return '{0}: {1}\n'.format(self.plugin_name, message)
 
-    def job_message(self, context, level, message):
-        self.debug_message(context, message)
-        JobMessage(context, level, self.log_format(message))
+    def job_message(self, level, message):
+        self.debug_message(message)
+        JobMessage(level, self.log_format(message))
 
-    def debug_message(self, context, message):
-        DebugMessage(context, self.debug_level, self.log_format(message))
+    def debug_message(self, message):
+        DebugMessage(self.debug_level, self.log_format(message))
 
     def prepare_tasks(self):
         raise Exception('need to be override')
 
-    def parse_plugin_definition(self, context, plugin_def):
-        BareosFdPluginBaseclass.parse_plugin_definition(self, context, plugin_def)
-        self.job_type = GetValue(context, bVariable['bVarType'])
+    def parse_plugin_definition(self, plugin_def):
+        BareosFdPluginBaseclass.parse_plugin_definition(self, plugin_def)
+        self.job_type = GetValue(bVariable['bVarType'])
         self.config = PluginConfig(**self.options)
         self.folder = self.config.get('folder', '@{0}'.format(self.plugin_name.upper()))
         try:
             self.prepare_tasks()
-        except TaskException, _:
+        except TaskException as e:
+            self.job_message(M_ERROR, str(e))
             return bRCs['bRC_Error']
 
-        self.debug_message(context, '{0} task created'.format(len(self.tasks)))
+        self.debug_message('{0} tasks created'.format(len(self.tasks)))
         return bRCs['bRC_OK']
 
-    def start_backup_file(self, context, save_pkt):
+    def start_backup_file(self, save_pkt):
 
         if not len(self.tasks):
-            self.job_message(context, bJobMessageType['M_WARNING'], 'no tasks defined')
+            self.job_message(bJobMessageType['M_WARNING'], 'no tasks defined')
             return bRCs['bRC_Skip']
 
         self.task = self.tasks.pop()
         stat_pkt = StatPacket()
-        stat_pkt.size = self.task.get_size()
-        stat_pkt.blksize = self.task.get_block_size()
+        stat_pkt.st_size = self.task.get_size()
+        stat_pkt.st_blksize = self.task.get_block_size()
         save_pkt.statp = stat_pkt
-        save_pkt.fname = os.path.join('/', self.folder, self.task.get_filename())
+        save_pkt.fname = os.path.join(self.folder, self.task.get_filename())
         save_pkt.type = bFileType['FT_REG']
 
         return bRCs['bRC_OK']
 
-    def plugin_io(self, context, iop):
+    def plugin_io(self, iop):
         if self.job_type == bJobType['BACKUP']:
 
             if iop.func == bIOPS['IO_OPEN']:
                 try:
-                    self.job_message(context, bJobMessageType['M_INFO'], '{0} started'.format(self.task.get_name()))
+                    self.job_message(bJobMessageType['M_INFO'], '{0} started'.format(self.task.get_name()))
                     self.task.task_pool()
                     self.task.task_open()
                 except TaskException, e:
-                    self.job_message(context, bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
+                    self.job_message(bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
                     return bRCs['bRC_Error']
                 return bRCs['bRC_OK']
 
             elif iop.func == bIOPS['IO_CLOSE']:
                 try:
-                    self.job_message(context, bJobMessageType['M_INFO'], '{0} done'.format(self.task.get_name()))
+                    self.job_message(bJobMessageType['M_INFO'], '{0} done'.format(self.task.get_name()))
                     self.task.task_pool()
                     self.task.task_close()
                 except TaskException, e:
-                    self.job_message(context, bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
+                    self.job_message(bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
                     return bRCs['bRC_Error']
                 return bRCs['bRC_OK']
 
@@ -317,17 +318,17 @@ class BareosFdTaskClass(BareosFdPluginBaseclass):
                     iop.buf = bytearray(iop.count)
                     iop.status = self.task.task_read(iop.buf)
                 except TaskException, e:
-                    self.job_message(context, bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
+                    self.job_message(bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
                     return bRCs['bRC_Error']
                 return bRCs['bRC_OK']
 
-        return BareosFdPluginBaseclass.plugin_io(self, context, iop)
+        return super(BareosFdTaskClass).plugin_io(self, iop)
 
-    def end_backup_file(self, context):
+    def end_backup_file(self):
         result = self.task.task_wait()
 
         if result:
-            self.job_message(context, bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_details(), result))
+            self.job_message(bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_details(), result))
             return bRCs['bRC_Error']
 
         self.tasks.extend(self.task.get_next_tasks())

@@ -19,14 +19,15 @@
 
 import shlex
 
-from BareosFdTaskClass import TaskProcess, BareosFdTaskClass
+import bareosfd
+from bareos_tasks.BareosFdTaskClass import TaskProcess, BareosFdTaskClass
 
 
 class TaskQueryDatabase(TaskProcess):
 
     def __init__(self, psql=None, pg_user=None):
         self.run_as_user = pg_user
-        psql_options = '--expanded --no-align'
+        psql_options = 'postgres --expanded --no-align'
         self.command = [psql if psql else 'psql'] + shlex.split(psql_options)
         super(TaskQueryDatabase, self).__init__()
 
@@ -68,6 +69,10 @@ class TaskDumpDatabase(TaskProcess):
         return '{0}-{1}'.format(self.task_name, self.database)
 
     def get_size(self):
+        # This does not return the size of the dump file, but the current required disk space.
+        # However, as the need the size before the dump command is executed,
+        # this is the best estimation we got.
+        # However, there will be warnings about incorrect sizes on restore.
         return TaskQueryDatabase(self.psql, self.run_as_user).get_database_size(self.database)
 
 
@@ -83,6 +88,7 @@ class BareosFdPgSQLClass(BareosFdTaskClass):
         pg_user = self.options.get('pg_user', 'postgres')
 
         databases = self.config.get_list('databases', TaskQueryDatabase(psql, pg_user).get_databases())
+        self.job_message(bareosfd.M_INFO, "databases: {}".format(databases))
 
         if 'exclude' in self.config:
             exclude = self.config.get_list('exclude')

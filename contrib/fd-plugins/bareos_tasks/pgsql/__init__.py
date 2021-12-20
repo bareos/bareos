@@ -17,12 +17,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import bareosfd
 import BareosFdWrapper
-from bareos_fd_consts import bRCs
-from BareosFdWrapper import *
 from BareosFdPgSQLClass import BareosFdPgSQLClass
 
 
-def load_bareos_plugin(context, plugin_def):
-    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPgSQLClass(context, plugin_def)
-    return bRCs['bRC_OK']
+def load_bareos_plugin(plugin_def):
+    BareosFdWrapper.bareos_fd_plugin_object = BareosFdPgSQLClass(plugin_def)
+    bareosfd.bRC_OK

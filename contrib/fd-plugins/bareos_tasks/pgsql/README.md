@@ -56,7 +56,7 @@ Virtual folder used in catalog. Default: *@PGSQL*
 Command (with or without full path) to *psql* tool. Default: *psql*
 
 #### pg_dump
-Command (with or without full path) to *pg_dup* tool. Default: *pg_dump*
+Command (with or without full path) to *pg_dump* tool. Default: *pg_dump*
 
 #### pg_dump_options
 Options to be used with the *pg_dump* tool. Default: *--no-owner --no-acl*
