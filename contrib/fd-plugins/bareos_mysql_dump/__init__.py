@@ -5,14 +5,14 @@
 # License: AGPLv3
 
 # Provided by the Bareos FD Python plugin interface
-from bareosfd import *
+import bareosfd
 
 # This module contains the wrapper functions called by the Bareos-FD, the functions call the corresponding
 # methods from your plugin class
-from BareosFdWrapper import *
+import BareosFdWrapper
 
 # This module contains the used plugin class
-from BareosFdMySQLclass import *
+import BareosFdMySQLclass
 
 def load_bareos_plugin(plugindef):
     '''
@@ -20,7 +20,7 @@ def load_bareos_plugin(plugindef):
     We use it to instantiate the plugin class
     '''
     # BareosFdWrapper.bareos_fd_plugin_object is the module attribute that holds the plugin class object
-    BareosFdWrapper.bareos_fd_plugin_object = BareosFdMySQLclass (plugindef);
-    return bRC_OK
+    BareosFdWrapper.bareos_fd_plugin_object = BareosFdMySQLclass(plugindef);
+    return bareosfd.bRC_OK
 
 # the rest is done in the Plugin module
