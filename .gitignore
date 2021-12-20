@@ -80,6 +80,8 @@ debian/bareos-tools.install
 debian/bareos-traymonitor.install
 debian/bareos-traymonitor.postinst
 debian/bareos-universal-client.install
+debian/bareos-universal-client.postinst
+debian/bareos-universal-client.preinst
 debian/univention-bareos.postinst
 debian/bareos-universal-client.postinst
 debian/bareos-universal-client.preinst
