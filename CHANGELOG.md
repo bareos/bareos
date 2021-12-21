@@ -5,26 +5,35 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
-### Breaking Changes
+* 300+ PRs
+* 1.000+ commits since Bareos 20
+* 30 contributors
+* 72.170 line added
+* 318.812 lines removed
 
-- If you are relying on the fact that Bareos doesn't try to reconnect automatically on a database drop, you now have to specify it explicitly in the Catalog configuration with a `Reconnect = no` directive. [PR #860]
-- when setting an IPv6 address using the `[DIR|SD|FD] Addresses` directive, now bareos only listens on IPv6 instead of both IPv4 and IPv6 on dual-stack. If you were using the `[DIR|SD|FD] Addresses` directive to create a dual-stack socket that would listen on both IPv6 AND IPv4, it will not work that way anymore. You should now also explicitly specify the IPv4 address in the directive [PR #882]
-- Support for MySQL and SQLite catalog backends has been removed [PR #949]
-- Bareos no longer supports Bacula tape formats <= 10 (Bacula < 1.26 which was released 2002) [PR #1019]
+### Breaking Changes
+- Bareos now automatically reconnects to the catalog database after the connection was lost. To keep the old behaviour, set `Reconnect = no`  in your Catalog resource. [PR #860]
+- Bareos now listens on IPv4 and IPv6 by default. If you currently use `[DIR|SD|FD] Address` or `[DIR|SD|FD] Address`, you may need to update your configuration to get the same behaviour as before. [PR #882]
+- Support for MySQL and SQLite catalog backends has been removed. Switch to PostgreSQL via `bareos-dbcopy` on Bareos 20 before upgrading. [PR #949]
+- Bareos no longer supports Bacula tape formats <= 10 (Bacula <= 1.26 which was released 2002). [PR #1019]
+- Deprecated configuration directives have been removed. If you have any configuration settings deprecated in Bareos 20, you will need to remove these before upgrading. [PR #938]
 
 ### Fixed
-- docs: Fix links to configuration directives and issue warnings on dangling links [PR #1008]
-- docs: Adapted the documentation of the VMware plugin due to update to VDDK 7 [PR #844]
-- fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option localvmdk=yes [PR #826]
+- [Issue #1374] Include zero-file incremental backups in always-incremental consolidation [PR #995]
+- [Issue #847]: fix for [CVE-2017-14610](https://github.com/bareos/bareos/security/advisories/GHSA-426r-vgh8-vrw8) PID files that could be exploited on certain systems [PR #928]
+- [Issue #1194]: when doing an accurate incremental backup, if there is a database error, a full backup is done instead of reporting the error [PR #810]
+- fix a bug in VMware plugin where VMDK Files were created with wrong size when using the option `localvmdk=yes` [PR #826]
 - fix a bug where the restore browser would not recognize globbing wildcards in paths [PR #801]
+- [Issue #1329]: If CommandACL limits any command, no messages can be read but "you have messages" is displayed. [PR #763]
+- fix lost byte in ChunkedDevice [PR #910]
+- fix director crash on "update slots" when there is a parsing issue with the autochanger or tape devices [PR #919]
+- Fix occassional "NULL volume name" error when non-busy, but blocked drive is unloaded [PR #973]
+- reorder acquire on migrate/copy to avoid possible deadlock [PR #828]
+- fix scheduler running disabled jobs after executing the disable command [PR #924]
 - fix shutdown of the Storage Daemon backends, especially call UnlockDoor on tape devices [PR #809]
 - fix possible deadlock in storage backend on Solaris and FreeBSD [PR #809]
-- [Issue #1194]: when doing an accurate incremental backup, if there is a database error, a full backup is done instead of reporting the error [PR #810]
-- fix a bug in a date function that leads to errors on the 31st day of a month [PR #782]
 - fix possible read/write problems when using droplet with https [PR #765]
 - fix "configure add" handling of quoted strings [PR #764]
-- fix config-dump systemtest [PR #736]
-- fix systemtests daemon control scripts [PR #762]
 - fix invalid file descriptor issue in the libcloud plugin [PR #702]
 - fix crash when loading both python-fd and python3-fd plugins [PR #730]
 - fix parallel python plugin jobs [PR #729]
@@ -35,11 +44,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix volume-pruning to be reliable on all test platforms [PR #761]
 - fix memory leak in python module constants [PR #778]
 - fix systemtests: reduce the number of broken tests [PR #771] [PR #791]
-- [Issue #1329]: If CommandACL limits any command, no messages can be read but "you have messages" is displayed. [PR #763]
 - fix gfapi-fd: avoid possible crash on second glfs_close() call [PR #792]
-- docs: declare shell scripts code blocks as "sh" instead of "shell-session" [PR #802]
 - [Issue #1205]: PHP 7.3 issue with compact() in HeadLink.php [PR #829]
-- reorder acquire on migrate/copy to avoid possible deadlock [PR #828]
 - fix drive parameter handling on big endian architectures [PR #850]
 - [Issue #1324]: Infinite loop when trying to log in with invalid account [PR #840]
 - [Issue #579]: Unable to connect to the director from webui via ipv6 [PR #868]
@@ -49,47 +55,51 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [Issue #971]: Error building tree for filenames with backslashes [PR #892]
 - [Issue #1251]: Error when displaying pool detail [PR #903]
 - [Issue #1369]: webui tries to load a nonexistent file [PR #900]
-- fix lost byte in ChunkedDevice [PR #910]
-- fix director crash on "update slots" when there is a parsing issue with the autochanger or tape devices [PR #919]
 - [Issue #1232]: bareos logrotate errors, reintroduce su directive in logrotate [PR #918]
-- fix scheduler running disabled jobs after executing the disable command [PR #924]
 - [Issue #1334]: After deleting storage from the configuration, it still persists in the catalog db [PR #912]
 - [Issue #1191]: The web interface runs under any login and password [PR #936]
 - Adapt Python DIR and SD plugin Baseclasses to the modernized Python plugin API [PR #923]
 - Fixed all compiler warnings (on our default warning level) [PR #948]
 - Log LDAP info error (e.g. expired SSL cert error) [PR #956]
-- Fix occassional "NULL volume name" error when non-busy, but blocked drive is unloaded [PR #973]
 - Adapt percona-xtrabackup test to work on updated test environment [PR #982]
-- Fix PostgreSQL create database script [PR #981]
-- Unify level use with set client_min_message instruction in SQL update scripts [PR #981]
+- fix crash in "status scheduler" command when job->client is unset [PR #965]
+- webui: fix a layout corner case where top navbar is hiding navtabs [PR #1022]
+- webui: client details now can be displayed for client names containing dots [PR #1023]
 - Fixed issue with error messages not showing up properly on windows systems [PR #959]
 - Fixed libdroplet xattr.h include issue by using sys/xattr.h [PR #985]
 - Fixed crash on bconsole when using autcomplete with tab [PR #969]
-- [Issue #1374] Include zero-file incremental backups in always-incremental consolidation [PR #995]
-- fix crash in "status scheduler" command when job->client is unset [PR #965]
-- [Issue #847]: fix for CVE-2017-14610 PID files that could be exploited on certain systems [PR #928]
-- webui: fix a layout corner case where top navbar is hiding navtabs [PR #1022]
-- webui: client details now can be displayed for client names containing dots [PR #1023]
+- Fix PostgreSQL create database script [PR #981]
+- Unify level use with set client_min_message instruction in SQL update scripts [PR #981]
 - dird: avoid crash in job listing when "current" and "count" are both specified at the same time [PR #1026]
 - Fixed issue with `llist jobs last current enable` that would not display correct data [PR #1025]
+- fix a bug in a date function that leads to errors on the 31st day of a month [PR #782]
+- fix config-dump systemtest [PR #736]
+- fix systemtests daemon control scripts [PR #762]
+
 
 ### Added
+- plugin: added mariabackup python plugin, added systemtest for mariabackup and updated systemtest for percona-xtrabackup [PR #967]
+- Build the package **bareos-filedaemon-postgresql-python-plugin** also for Debian, Ubuntu and UCS (deb packages) [PR #723].
+- add `reload` commands to systemd service [PR #694]
+- add multicolumn prompt selection for selection of more than 20 items [PR #731]
+- add choice for the drive number in the truncate command [PR #823]
+- support for shorter date formats, where shorter dates are compensated with lowest value possible to make a full date [PR #707]
+- added option to delete selected storage in bconsole if it is orphaned [PR #912]
+- webui: add inchanger column to volume tables [PR #998]
+- webui and console: add job duration column in job listings [PR #1007]
+- console: prune command gained support to prune multiple volumes at once [PR #966]
+- webui: introduce a job timeline chart [PR #1017]
+- add support for Universal Linux Client [PR #1019]
 - systemtests: make database credentials configurable [PR #950]
 - systemtests: allows multiple subtests per systemtest [PR #857]
 - systemtests: replaced the six reload-* tests by one test [PR #857]
 - systemtests: replaced fileset-multiple-include-blocks and fileset-multiple-options-blocks by fileset-multiple-blocks test [PR #857]
-- Add systemtests fileset-multiple-include-blocks, fileset-multiple-options-blocks, quota-softquota, sparse-file, truncate-command and block-size, (migrated from ``regress/``) [PR #780]
-- Add bvfs and dbcheck tests to python-bareos systemtest [PR #780]
+- systemtests: add systemtests fileset-multiple-include-blocks, fileset-multiple-options-blocks, quota-softquota, sparse-file, truncate-command and block-size, (migrated from ``regress/``) [PR #780]
+- add bvfs and dbcheck tests to python-bareos systemtest [PR #780]
 - systemtests for NDMP functionalities [PR #822]
-- added choice for the drive number in the truncate command [PR #823]
 - systemtests for S3 functionalities (droplet, libcloud) now use https [PR #765]
-- added reload commands to systemd service [PR #694]
-- Build the package **bareos-filedaemon-postgresql-python-plugin** also for Debian, Ubuntu and UCS (deb packages) [PR #723].
-- added an informative debugmessage when a dynamic backend cannot be loaded [PR #740]
-- support for shorter date formats, where shorter dates are compensated with lowest value possible to make a full date [PR #707]
-- added external repo bareos-contrib as subtree [PR #752]
-- add "copy button" to code snippets in documentation for easy copying [PR #802]
-- added multicolumn prompt selection for selection of more than 20 items [PR #731]
+- add an informative debugmessage when a dynamic backend cannot be loaded [PR #740]
+- add external repo bareos-contrib as subtree [PR #752]
 - add script devtools/dist-tarball.sh to produce the same tarball from a cloned repo everywhere [PR #861]
 - packages: Build also for openSUSE Leap 15.3 [PR #870]
 - systemtest:bareos test now also runs on btrfs filesystem [PR #907]
@@ -98,43 +108,36 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - packages: Build also for SLE_15_SP3 [PR #952]
 - add job name in End Job Session output in bls tool [PR #916]
 - added check for orphaned storages in dbcheck [PR #912]
-- added option to delete selected storage in bconsole if it is orphaned [PR #912]
-- docs: BareosSecurityIssues add remark about new systemd service (non forking) logged information into systemd-journal [PR #927]
 - contrib: Add Python DIR plugin for prometheus metrics [PR #911]
-- docs: added "Hardware Sizing" chapter [PR #926]
 - bench: added a benchmarks tool with google-benchmark, with an initial benchmark for the restore command [PR #883]
 - database: Add index on jobmedia mediaid,jobid [PR #958]
 - contrib: Add Python FD Plugin for OpenVZ container [PR #908]
 - packages: Build also for Fedora_35 [PR #972]
 - cmake: check for chflags() function and enable FreeBSD File Flags support [PR #963]
-- plugin: added mariabackup python plugin, added systemtest for mariabackup and updated systemtest for percona-xtrabackup [PR #967]
-- webui: add inchanger column to volume tables [PR #998]
-- webui and console: add job duration column in job listings [PR #1007]
 - packages: Build EL_8 packages instead of CentOS_8 for RHEL 8 derivates (Alma, Rocky, CentOS Stream)[PR #992]
 - webui: provide a notification that NDMP restores are NOT supported by webui [PR #1020]
-- console: prune command gained support to prune multiple volumes at once [PR #966]
-- webui: introduce a job timeline chart [PR #1017]
 - systemtests: add a test for the jobs last status table in webui [PR #1024]
-- Add support for Universal Linux Client [PR #1019]
-- docs: add documentation about Unified Linux Client [PR #1028]
 
 ### Changed
-- core: remove deprecated config directive `dbdriver` from all config files, templates and from automatic configuration during install [PR #1027]
-- Debian: Old SysV init scripts have been removed. Bareos daemons are controlled by systemd [PR #1019]
-- Debian: unify daemon (Dir,SD,FD) start behavior with RPM based distributions. Don't start any daemon after installation. Enable all daemons. Only restart FD after upgrade (before: FD has been started after installation, No daemon have been restarted on upgrade) [PR #1019] [PR #1029]
-- docs: check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]
-- docs: Improve data-type subsubsection in CustomizingTheConfiguration. Add a special Sphinx directive for them (``config:datatype``) [PR #1008]
-- systemtest python-bareos: split tests in separate files [PR #944]
 - core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]
+- debian: unify daemon (Dir,SD,FD) start behavior with RPM based distributions. Don't start any daemon after installation. Enable all daemons. Only restart FD after upgrade (before: FD has been started after installation, No daemon have been restarted on upgrade) [PR #1019] [PR #1029]
+- core: cleanup systemd service dependencies: Requires network.target, but start after the network-online.target [PR #700]
+- Enable c++17 support [PR #741]
+- postgresql filedaemon plugin: switched from psycopg2 to pg8000, dropped support for python2.
+- reconnecting to the database is now automatic per default without the need to specify it in the catalog [PR #860]
+- bareos is now set to listen to both IPv6 and IPv4 by default, instead of needing to specify it via a directive [PR #882]
+- bareos is now able to create IPv6 addresses with the `DirAddress` directive [PR #882]
+- show more details about subscriptions and units data with `status subscriptions` [PR #989]
+- webui: optimize bvfs update cache calls [PR #999]
+- replace complicated memory pool allocator with plain malloc() [PR #997]
+- systemtest python-bareos: split tests in separate files [PR #944]
 - systemtests: define variable BackupDirectory globally [PR #780]
 - systemtests: run all systemstests with ``set -o pipefail`` [PR #780]
-- core: cleanup systemd service dependencies: Requires network.target, but start after the network-online.target [PR #700]
 - core: Make the jansson library mandatory when compiling the Bareos Director [PR #793]
 - repaired or added all header guards in libdroplet [PR #765]
 - When using Python > 3.7 the postgres and libcloud plugins will cancel the job and write an error message [PR #769]
 - bstrncpy: workaround when used with overlapping strings [PR #736]
 - Disabled test "statefile" for big endian, use temporary state files for all other architectures [PR #757]
-- Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page
 - Package **bareos-database-postgresql**: add recommendation for package **dbconfig-pgsql**.
 - Adapt the init scripts for some platform to not refer to a specific (outdated) configuration file, but to use the default config file instead.
 - scripts: cleaned up code for postgresql db creation [PR #709]
@@ -142,7 +145,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - py2lug-fd-ovirt systemtest: use ovirt-plugin.ini config file [PR #729]
 - Ctest now runs in scripted mode. [PR #742]
 - storage daemon: class Device: rename dev_name to archive_device_string (as the value stored here is the value of the "Archive Device" directive) [PR #744]
-- Enable c++17 support [PR #741]
 - webui: Localization updated [PR #776]
 - running cmake for the core-directory only is now forbidden [PR #767]
 - dird: ignore duplicate job checking on virtual fulls started by consolidation [PR #552]
@@ -151,30 +153,22 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fedora34: do not build mysql db backend, adapt pkglist [PR #819]
 - bscan and bareos systemtests: also test bextract and bls binaries, use autoxflate plugin and FSType fileset options [PR #790]
 - Windows release package now ships source code as optional component, so there is no need for a debug-package anymore [PR #858]
-- postgresql filedaemon plugin: switched from psycopg2 to pg8000, dropped support for python2.
 - version information was moved from core/cmake/ and webui/cmake/ directories into the toplevel cmake/ directory [PR #861]
 - add chromedriver options to improve reliability of selenium tests [PR #920]
-- docs: Describe how to get debugging info when using the VMware plugin [PR #921]
-- reconnecting to the database is now automatic per default without the need to specify it in the catalog [PR #860]
-- bareos is now set to listen to both IPv6 and IPv4 by default, instead of needing to specify it via a directive [PR #882]
-- bareos is now able to create IPv6 addresses with the `DirAddress` directive [PR #882]
-- Disable autotosectionlabel plugin in documentation and add required labels [PR #942]
 - webui: improve log message keyword highlighting [PR #937]
 - webui: change retention/expiration column to only show retention on volume tables [PR #943]
 - webui: introduce confirmation dialog on rerun and cancel job actions [PR #951]
-- docs: update documentation of config data types [PR #962]
 - Allow `release` command to be used in scripts [PR #961]
-- Show more details about subscriptions and units data with `status subscriptions` [PR #989]
 - webui: format total jobs and total files language-sensitive [PR #996]
-- webui: optimize bvfs update cache calls [PR #999]
-- Replace complicated memory pool allocator with plain malloc() [PR #997]
 - webui: update localization [PR #1018]
 
 ### Deprecated
-- Deprecated directives [PR #928]
+- Deprecated directives [PR #928] [PR #949]
   - Director
     - Director resource
       - `Pid Directory`
+    - Catalog resource
+      - `Db Driver`
   - Storage Daemon
     - Storage resource
       - `Pid Directory`
@@ -183,16 +177,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
       - `Pid Directory`
 
 ### Removed
-- Remove regression tests (``regress/`` directory). Tests still relevant tests have been migrated into systemtests [PR #780]
-- Removed outdated configuration files (example files).
-- Removed package **bareos-devel**.
-- Removed package **bareos-regress** and **bareos-regress-config**. The package **bareos-regress** has not been build for a long time.
-- Removed unused script **breload**.
-- Removed some workaround for Ubuntu 8.04.
-- Removed outdated support for platforms Alpha, BSDi, Gentoo, Irix and Mandrake.
-- Removed language support files for the core daemons, as these files are outdated and not used at all.
-- Removed package lists for platforms no longer built: Fedora_30.x86_64, RHEL_6.x86_64, SLE_12_SP4.x86_64, openSUSE_Leap_15.0.x86_64, openSUSE_Leap_15.1.x86_64.
-- Removed support for IPv4-only build. IPv6 now is required for building bareos. [PR #913]
 - Remove MySQL and SQLite catalog backends [PR #949]
 - Remove deprecated directives [PR #938]
   - Director
@@ -222,13 +206,39 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
   - File Daemon
     - Client resource
       - `Sub Sys Directory`
+- Debian: Old SysV init scripts have been removed. Bareos daemons are controlled by systemd [PR #1019]
+- Removed language support files for the core daemons, as these files are outdated and not used at all.
+- core: remove deprecated config directive `dbdriver` from all config files, templates and from automatic configuration during install [PR #1027]
+- Remove regression tests (``regress/`` directory). Tests still relevant tests have been migrated into systemtests [PR #780]
+- Removed support for IPv4-only build. IPv6 now is required for building bareos. [PR #913]
+- Removed package lists for platforms no longer built: Fedora_30.x86_64, RHEL_6.x86_64, SLE_12_SP4.x86_64, openSUSE_Leap_15.0.x86_64, openSUSE_Leap_15.1.x86_64.
+- Removed outdated support for platforms Alpha, BSDi, Gentoo, Irix and Mandrake.
+- Removed outdated configuration files (example files).
+- Removed package **bareos-devel**.
+- Removed package **bareos-regress** and **bareos-regress-config**. The package **bareos-regress** has not been build for a long time.
+- Removed unused script **breload**.
+- Removed some workaround for Ubuntu 8.04.
 
 ### Security
-- PID files are now created before dropping privileges and before the parent process exits. [PR #928]
+- [CVE-2017-14610](https://github.com/bareos/bareos/security/advisories/GHSA-426r-vgh8-vrw8): PID files are now created before dropping privileges and before the parent process exits. [PR #928]
 
 ### Documentation
+- add documentation about Unified Linux Client [PR #1028]
+- added "Hardware Sizing" chapter [PR #926]
+- Improve data-type subsubsection in CustomizingTheConfiguration. Add a special Sphinx directive for them (``config:datatype``) [PR #1008]
+- add "copy button" to code snippets in documentation for easy copying [PR #802]
 - Restore error "could not hard link" documented: what is the cause and how it can be avoided or solved. [PR #759]
 - Developer guide: add small chapter about c++ exceptions. [PR #777]
+- Fix links to configuration directives and issue warnings on dangling links [PR #1008]
+- Adapted the documentation of the VMware plugin due to update to VDDK 7 [PR #844]
+- declare shell scripts code blocks as "sh" instead of "shell-session" [PR #802]
+- BareosSecurityIssues add remark about new systemd service (non forking) logged information into systemd-journal [PR #927]
+- check if configuration directives are defined as CamelCase in core. Otherwise building the documentation will fail with an error [PR #1008]
+- Describe how to get debugging info when using the VMware plugin [PR #921]
+- Disable autotosectionlabel plugin in documentation and add required labels [PR #942]
+- update documentation of config data types [PR #962]
+- Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page
+
 
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
@@ -375,5 +385,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1024]: https://github.com/bareos/bareos/pull/1024
 [PR #1025]: https://github.com/bareos/bareos/pull/1025
 [PR #1026]: https://github.com/bareos/bareos/pull/1026
+[PR #1027]: https://github.com/bareos/bareos/pull/1027
 [PR #1028]: https://github.com/bareos/bareos/pull/1028
+[PR #1029]: https://github.com/bareos/bareos/pull/1029
 [unreleased]: https://github.com/bareos/bareos/tree/master
