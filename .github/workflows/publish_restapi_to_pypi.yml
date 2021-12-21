@@ -46,4 +46,4 @@ jobs:
       uses: pypa/gh-action-pypi-publish@v1.4.2
       with:
         password: ${{ secrets.restapi_pypi_password }}
-        packages_dir: python-bareos/dist/
+        packages_dir: restapi/dist/
