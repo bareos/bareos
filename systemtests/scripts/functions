@@ -720,7 +720,7 @@ check_restore_diff()
    else
      DIFFTOOL='diff'
    fi
-   OUT="$($DIFFTOOL --no-dereference -ur --exclude="fifo*" "${dest}" "${tmp}/bareos-restores/${dest}")"
+   OUT="$(LANG=C $DIFFTOOL --no-dereference -ur --exclude="fifo*" "${dest}" "${tmp}/bareos-restores/${dest}")"
    result=$(( result + $?))
    if is_debug; then
        printf "%s\n" "$OUT"
