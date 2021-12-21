@@ -21,6 +21,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Deprecated configuration directives have been removed. If you have any configuration settings deprecated in Bareos 20, you will need to remove these before upgrading. [PR #938]
 
 ### Fixed
+- debian: Let dbconfig create the Bareos catalog also with LC_COLLATE='C' and LC_CTYPE='C'. The create_bareos_database script did always do so. Requires dbconfig >= 2.0.21 [PR #1031]
 - [Issue #1374] Include zero-file incremental backups in always-incremental consolidation [PR #995]
 - [Issue #847]: fix for [CVE-2017-14610](https://github.com/bareos/bareos/security/advisories/GHSA-426r-vgh8-vrw8) PID files that could be exploited on certain systems [PR #928]
 - [Issue #1194]: when doing an accurate incremental backup, if there is a database error, a full backup is done instead of reporting the error [PR #810]
