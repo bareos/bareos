@@ -122,7 +122,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - core: systemd service: change daemon type from forking to simple and start daemons in foreground [PR #824]
-- debian: unify daemon (Dir,SD,FD) start behavior with RPM based distributions. Don't start any daemon after installation. Enable all daemons. Only restart FD after upgrade (before: FD has been started after installation, No daemon have been restarted on upgrade) [PR #1019] [PR #1029]
+- debian: unify daemon (Dir,SD,FD) start behavior with RPM based distributions. Don't start any daemon after installation. Enable all daemons. Only restart FD after upgrade (before: FD has been started after installation, No daemon have been restarted on upgrade) [PR #1019] and [PR #1029]
 - core: cleanup systemd service dependencies: Requires network.target, but start after the network-online.target [PR #700]
 - Enable c++17 support [PR #741]
 - postgresql filedaemon plugin: switched from psycopg2 to pg8000, dropped support for python2.
@@ -165,7 +165,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: update localization [PR #1018]
 
 ### Deprecated
-- Deprecated directives [PR #928] [PR #949]
+- Deprecated directives [PR #928] and [PR #949]
   - Director
     - Director resource
       - `Pid Directory`
