@@ -90,8 +90,8 @@ SELECT DISTINCT Job.JobId,VolumeName
 # 8
 :List Volumes to Restore All Files
 *Enter Client Name:
-!DROP TABLE temp;
-!DROP TABLE temp2;
+!DROP TABLE IF EXISTS temp;
+!DROP TABLE IF EXISTS temp2;
 CREATE TABLE temp (JobId BIGINT NOT NULL,
  JobTDate BIGINT,
  ClientId BIGINT,
@@ -135,8 +135,8 @@ INSERT INTO temp2 SELECT DISTINCT Job.JobId,Job.StartTime,Media.VolumeName,
  AND JobMedia.MediaId=Media.MediaId;
 # list results
 SELECT DISTINCT VolumeName from temp2;
-!DROP TABLE temp;
-!DROP TABLE temp2;
+!DROP TABLE IF EXISTS temp;
+!DROP TABLE IF EXISTS temp2;
 
 # 9
 :List Pool Attributes for a selected Pool
