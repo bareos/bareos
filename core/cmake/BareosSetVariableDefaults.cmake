@@ -430,11 +430,6 @@ if(NOT DEFINED build_ndmjob)
   set(build_ndmjob OFF)
 endif()
 
-# bat
-if(NOT DEFINED bat)
-  set(bat OFF)
-endif()
-
 # traymonitor
 if(NOT DEFINED traymonitor)
   set(HAVE_TRAYMONITOR 0)

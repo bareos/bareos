@@ -10,7 +10,6 @@ Naming
         * bareos-fd
         * bareos-traymonitor
         * bconsole
-        * bat (only legacy config file: bat.conf)
 
     * $COMPONENT refers to one of the listed Components.
 

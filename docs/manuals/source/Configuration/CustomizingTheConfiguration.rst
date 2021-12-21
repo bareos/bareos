@@ -53,8 +53,6 @@ In this section, the following naming is used:
 
    -  bconsole
 
-   -  bat (only legacy config file: bat.conf)
-
    -  Bareos tools, like :ref:`section-VolumeUtilityCommands` and others.
 
 -  :file:`COMPONENT` refers to one of the listed components.

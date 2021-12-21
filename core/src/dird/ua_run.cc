@@ -1582,7 +1582,6 @@ static bool DisplayJobParameters(UaContext* ua,
         }
 
       } else {
-        /* ***FIXME*** This needs to be fixed for bat */
         if (ua->api) ua->signal(BNET_RUN_CMD);
         ua->SendMsg(_("Run Restore job\n"
                       "JobName:    %s\n"

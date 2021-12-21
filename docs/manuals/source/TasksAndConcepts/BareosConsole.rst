@@ -1581,7 +1581,7 @@ There is a list of commands that are prefixed with a period (.). These commands 
 Special At (@) Commands
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Normally, all commands entered to the Console program are immediately forwarded to the Director, which may be on another machine, to be executed. However, there is a small list of at commands, all beginning with an at character (@), that will not be sent to the Director, but rather interpreted by the Console program directly. Note, these commands are implemented only in the TTY console program and not in the Bat Console. These commands are:
+Normally, all commands entered to the Console program are immediately forwarded to the Director, which may be on another machine, to be executed. However, there is a small list of at commands, all beginning with an at character (@), that will not be sent to the Director, but rather interpreted by the :command:`bconsole` program directly. These commands are:
 
 @input <filename>
    :index:`\ <single: Console; Command; @input <filename>>`\  Read and execute the commands contained in the file specified.
