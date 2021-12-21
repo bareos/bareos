@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Breaking Changes
 
 ### Fixed
+- fix wrong `packages_dir` in restapi workflow, so restapi packages will be released to PyPI [PR #1033]
 
 ### Added
 
