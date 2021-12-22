@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Breaking Changes
 
 ### Fixed
+- debian: Let dbconfig create the Bareos catalog also with LC_COLLATE='C' and LC_CTYPE='C'. The create_bareos_database script did always do so. Requires dbconfig >= 2.0.21 [PR #1031]
 - fix wrong `packages_dir` in restapi workflow, so restapi packages will be released to PyPI [PR #1033]
 
 ### Added
