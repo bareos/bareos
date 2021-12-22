@@ -10,7 +10,7 @@ You need the packages *bareos-filedaemon-python-plugin* installed on your client
 
 ## Installation
 1. Make sure you have met the prerequisites.
-2. Install the files  *BareosFdTaskClass.py*, *oracle/BareosFdOracleClass.py* and *oracle/bareos-fd-oracle.py* in your Bareos plugin directory (usually */usr/lib/bareos/plugins*)
+2. Make the *bareos_tasks* directory available at the path specified with *module_path*
 
 ## Configuration
 
@@ -32,9 +32,12 @@ FileSet {
                     compression = LZ4
                     signature = MD5
             }
-            File = /etc
-            #...
-            Plugin = "python:module_path=/usr/lib/bareos/plugins:module_name=bareos-fd-oracle:db_sid=DBSID:db_user=DBUSER:db_password=DBPASSWORD"
+            Plugin = "python:"
+                     "module_path=/usr/lib/bareos/plugins:"
+                     "module_name=bareos_tasks.oracle:"
+                     "db_sid=DBSID:"
+                     "db_user=DBUSER:"
+                     "db_password=DBPASSWORD"
         }
     }
 }
@@ -42,11 +45,16 @@ FileSet {
 
 ### Options
 You can append options to the plugin call as key=value pairs, separated by ':'.
-Please read more about the Bareos Python Plugin Interface here: http://doc.bareos.org/master/html/bareos-manual-main-reference.html#Python-fdPlugin
+Please read more about the Bareos Python Plugin Interface here: https://docs.bareos.org/TasksAndConcepts/Plugins.html#python-fd-plugin
 
 Example plugin options:
 ```
-    Plugin = "python:module_path=/usr/lib/bareos/plugins:module_name=bareos-fd-oracle:db_sid=MAIN:db_user=oracle:db_password=secret"
+    Plugin = "python:"
+             "module_path=/usr/lib/bareos/plugins:"
+             "module_name=bareos_tasks.oracle:"
+             "db_sid=MAIN:"
+             "db_user=oracle:"
+             "db_password=secret"
 ```
 
 #### folder

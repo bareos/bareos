@@ -19,12 +19,12 @@
 
 import os
 import subprocess
-from StringIO import StringIO
 from fcntl import fcntl, F_GETFL, F_SETFL
 from pwd import getpwnam
+from io import BytesIO
 
 #import bareosfd
-from bareosfd import JobMessage, DebugMessage, StatPacket, GetValue, bRCs, bIOPS, bJobMessageType, bFileType, bVariable, M_ERROR, M_INFO
+from bareosfd import JobMessage, DebugMessage, StatPacket, GetValue, bRCs, bIOPS, bJobMessageType, bFileType, bVariable, bVarType, M_ERROR, M_INFO
 from BareosFdPluginBaseclass import BareosFdPluginBaseclass
 
 
@@ -94,7 +94,7 @@ class Task(object):
         return 0
 
 
-class TaskStringIO(Task):
+class TaskIO(Task):
     file_extension = 'log'
 
     def __init__(self, task_name, data):
@@ -105,9 +105,8 @@ class TaskStringIO(Task):
         self.data.seek(0)
 
     def task_read(self, buf):
-        chunk = self.data.read(len(buf))
-        buf[:len(chunk)] = chunk
-        return len(chunk)
+        written = self.data.readinto(buf)
+        return written
 
 
 class TaskProcess(Task):
@@ -117,7 +116,7 @@ class TaskProcess(Task):
     command = list()
     use_stdout = True
     use_stderr = True
-    stderr_buffer = StringIO()
+    stderr_buffer = BytesIO()
 
     def get_details(self):
         sep = ' '
@@ -126,24 +125,31 @@ class TaskProcess(Task):
     def get_next_tasks(self):
         tasks = list()
         if self.use_stderr:
-            tasks.append(TaskStringIO(self.get_name() + '-stderr', self.stderr_buffer))
+            tasks.append(TaskIO(self.get_name() + '-stderr', self.stderr_buffer))
         return tasks
 
-    def pre_run_execute(self):
-        if self.run_as_user:
-            item = getpwnam(self.run_as_user)
-            os.chdir(item.pw_dir)
-            os.setgid(item.pw_gid)
-            os.setuid(item.pw_uid)
+    #def pre_run_execute(self):
+        #if self.run_as_user:
+            #item = getpwnam(self.run_as_user)
+            #os.chdir(item.pw_dir)
+            #os.setgid(item.pw_gid)
+            #os.setuid(item.pw_uid)
 
-        for key, value in self.run_environ.items():
-            os.environ[key] = value
+        #for key, value in self.run_environ.items():
+            #os.environ[key] = value
 
     def execute_command(self, command):
+        # previous version did use the subprocess parameter
+        # preexec_fn=self.pre_run_execute,
+        # however, this is no longer supported in subinterpreters:
+        # RuntimeError: preexec_fn not supported within subinterpreters
+        # Therefore "sudo" is used.
+        sudo = []
+        if self.run_as_user:
+            sudo = [ "sudo", "-u", self.run_as_user ]
         try:
-            return subprocess.check_output(command, shell=False, bufsize=-1,
-                                           preexec_fn=self.pre_run_execute)
-        except (subprocess.CalledProcessError, OSError, ValueError), e:
+            return subprocess.check_output(sudo + command, shell=False, bufsize=-1)
+        except (subprocess.CalledProcessError, OSError, ValueError) as e:
             raise TaskException(e)
 
     def pool(self):
@@ -154,14 +160,22 @@ class TaskProcess(Task):
                 pass
 
     def task_open(self):
+        # previous version did use the subprocess parameter
+        # preexec_fn=self.pre_run_execute,
+        # however, this is no longer supported in subinterpreters:
+        # RuntimeError: preexec_fn not supported within subinterpreters
+        # Therefore "sudo" is used.        
+        sudo = []
+        if self.run_as_user:
+            sudo = [ "sudo", "-u", self.run_as_user ]
         try:
-            self.process = subprocess.Popen(self.command, shell=False, bufsize=-1,
+            self.process = subprocess.Popen(sudo + self.command, shell=False, bufsize=-1,
                                             stdout=subprocess.PIPE if self.use_stdout else None,
-                                            stderr=subprocess.PIPE if self.use_stderr else None,
-                                            preexec_fn=self.pre_run_execute)
+                                            stderr=subprocess.PIPE if self.use_stderr else None)
+                                            #preexec_fn=self.pre_run_execute)
             if self.use_stderr:
                 fcntl(self.process.stderr, F_SETFL, fcntl(self.process.stderr, F_GETFL) | os.O_NONBLOCK)
-        except (subprocess.CalledProcessError, OSError, ValueError), e:
+        except (subprocess.CalledProcessError, OSError, ValueError) as e:
             raise TaskException('invalid command: {0} {1}'.format(self.command, e))
 
     def task_read(self, buf):
@@ -169,7 +183,7 @@ class TaskProcess(Task):
             raise TaskException('pipe closed')
         try:
             return self.process.stdout.readinto(buf)
-        except IOError, e:
+        except IOError as e:
             raise TaskException(e)
 
     def task_wait(self):
@@ -210,7 +224,7 @@ class TaskProcessFIFO(TaskProcess):
 
         try:
             return self.fifo.readinto(buf)
-        except IOError, e:
+        except IOError as e:
             raise TaskException(e)
 
     def task_close(self):
@@ -260,23 +274,23 @@ class BareosFdTaskClass(BareosFdPluginBaseclass):
 
     def parse_plugin_definition(self, plugin_def):
         BareosFdPluginBaseclass.parse_plugin_definition(self, plugin_def)
-        self.job_type = GetValue(bVariable['bVarType'])
+        self.job_type = GetValue(bVarType)
         self.config = PluginConfig(**self.options)
         self.folder = self.config.get('folder', '@{0}'.format(self.plugin_name.upper()))
         try:
             self.prepare_tasks()
         except TaskException as e:
             self.job_message(M_ERROR, str(e))
-            return bRCs['bRC_Error']
+            return bRCs[b'bRC_Error']
 
         self.debug_message('{0} tasks created'.format(len(self.tasks)))
-        return bRCs['bRC_OK']
+        return bRCs[b'bRC_OK']
 
     def start_backup_file(self, save_pkt):
 
         if not len(self.tasks):
-            self.job_message(bJobMessageType['M_WARNING'], 'no tasks defined')
-            return bRCs['bRC_Skip']
+            self.job_message(bJobMessageType[b'M_WARNING'], 'no tasks defined')
+            return bRCs[b'bRC_Skip']
 
         self.task = self.tasks.pop()
         stat_pkt = StatPacket()
@@ -284,52 +298,52 @@ class BareosFdTaskClass(BareosFdPluginBaseclass):
         stat_pkt.st_blksize = self.task.get_block_size()
         save_pkt.statp = stat_pkt
         save_pkt.fname = os.path.join(self.folder, self.task.get_filename())
-        save_pkt.type = bFileType['FT_REG']
+        save_pkt.type = bFileType[b'FT_REG']
 
-        return bRCs['bRC_OK']
+        return bRCs[b'bRC_OK']
 
     def plugin_io(self, iop):
         if self.job_type == bJobType['BACKUP']:
 
-            if iop.func == bIOPS['IO_OPEN']:
+            if iop.func == bIOPS[b'IO_OPEN']:
                 try:
-                    self.job_message(bJobMessageType['M_INFO'], '{0} started'.format(self.task.get_name()))
+                    self.job_message(bJobMessageType[b'M_INFO'], '{0} started'.format(self.task.get_name()))
                     self.task.task_pool()
                     self.task.task_open()
-                except TaskException, e:
-                    self.job_message(bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
+                except TaskException as e:
+                    self.job_message(bJobMessageType[b'M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
                     return bRCs['bRC_Error']
-                return bRCs['bRC_OK']
+                return bRCs[b'bRC_OK']
 
-            elif iop.func == bIOPS['IO_CLOSE']:
+            elif iop.func == bIOPS[b'IO_CLOSE']:
                 try:
-                    self.job_message(bJobMessageType['M_INFO'], '{0} done'.format(self.task.get_name()))
+                    self.job_message(bJobMessageType[b'M_INFO'], '{0} done'.format(self.task.get_name()))
                     self.task.task_pool()
                     self.task.task_close()
-                except TaskException, e:
-                    self.job_message(bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
+                except TaskException as e:
+                    self.job_message(bJobMessageType[b'M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
                     return bRCs['bRC_Error']
-                return bRCs['bRC_OK']
+                return bRCs[b'bRC_OK']
 
-            elif iop.func == bIOPS['IO_READ']:
+            elif iop.func == bIOPS[b'IO_READ']:
                 try:
                     self.task.task_pool()
                     iop.io_errno = 0
                     iop.buf = bytearray(iop.count)
                     iop.status = self.task.task_read(iop.buf)
-                except TaskException, e:
-                    self.job_message(bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
+                except TaskException as e:
+                    self.job_message(bJobMessageType[b'M_ERROR'], '{0} {1}'.format(self.task.get_name(), e))
                     return bRCs['bRC_Error']
-                return bRCs['bRC_OK']
+                return bRCs[b'bRC_OK']
 
-        return super(BareosFdTaskClass).plugin_io(self, iop)
+        return super(BareosFdTaskClass, self).plugin_io(iop)
 
     def end_backup_file(self):
         result = self.task.task_wait()
 
         if result:
-            self.job_message(bJobMessageType['M_ERROR'], '{0} {1}'.format(self.task.get_details(), result))
-            return bRCs['bRC_Error']
+            self.job_message(bJobMessageType[b'M_ERROR'], '{0} {1}'.format(self.task.get_details(), result))
+            return bRCs[b'bRC_Error']
 
         self.tasks.extend(self.task.get_next_tasks())
-        return bRCs['bRC_More'] if len(self.tasks) else bRCs['bRC_OK']
+        return bRCs[b'bRC_More'] if len(self.tasks) else bRCs[b'bRC_OK']

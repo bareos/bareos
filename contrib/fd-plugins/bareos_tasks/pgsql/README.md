@@ -1,6 +1,6 @@
 # Bareos FileDaemon PostgreSQL Plugin
 This plugin makes backup of any database found in a PostgreSQL. Each databases is stored in an individual files.
-For restore select the needed database file, found in */@PGSQL* in the catalog.
+For restore select the needed database file, found in *@PGSQL* in the catalog.
 
 ## Prerequisites
 The *pg_dump* and *psql* command must be installed and user *postgres* must have read-access to the databases.
@@ -10,7 +10,7 @@ You need the packages *bareos-filedaemon-python-plugin* installed on your client
 
 ## Installation
 1. Make sure you have met the prerequisites.
-2. Install the files  *BareosFdTaskClass.py*, *psql/BareosFdPgSQLClass.py* and *psql/bareos-fd-pgsql.py* in your Bareos plugin directory (usually */usr/lib/bareos/plugins*)
+2. Make the *bareos_tasks* directory available at the path specified with *module_path*
 
 ## Configuration
 
@@ -32,9 +32,9 @@ FileSet {
                 compression = LZ4
                 signature = MD5
             }
-            File = /etc
-            #...
-            Plugin = "python:module_path=/usr/lib/bareos/plugins:module_name=bareos-fd-pgsql"
+            Plugin = "python:"
+                     "module_path=/usr/lib/bareos/plugins:"
+                     "module_name=bareos_tasks.pgsql"
         }
     }
 }
@@ -42,11 +42,14 @@ FileSet {
 
 ### Options
 You can append options to the plugin call as key=value pairs, separated by ':'.
-Please read more about the Bareos Python Plugin Interface here: http://doc.bareos.org/master/html/bareos-manual-main-reference.html#Python-fdPlugin
+Please read more about the Bareos Python Plugin Interface here: https://docs.bareos.org/TasksAndConcepts/Plugins.html#python-fd-plugin
 
 Example plugin options:
 ```
-    Plugin = "python:module_path=/usr/lib/bareos/plugins:module_name=bareos-fd-pgsql:databases=db001,db002"
+    Plugin = "python:"
+             "module_path=/usr/lib/bareos/plugins:"
+             "module_name=bareos_tasks.pgsql:"
+             "databases=db001,db002"
 ```
 
 #### folder

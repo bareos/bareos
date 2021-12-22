@@ -18,7 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import socket
-from BareosFdTaskClass import TaskProcess, BareosFdTaskClass
+from bareos_tasks.BareosFdTaskClass import TaskProcess, BareosFdTaskClass
 
 
 class TaskHostBackup(TaskProcess):

@@ -19,7 +19,7 @@
 
 import shlex
 
-from BareosFdTaskClass import TaskProcess, BareosFdTaskClass
+from bareos_tasks.BareosFdTaskClass import TaskProcess, BareosFdTaskClass
 
 
 class TaskQueryDatabase(TaskProcess):

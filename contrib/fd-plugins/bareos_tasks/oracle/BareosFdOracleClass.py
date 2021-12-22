@@ -20,7 +20,7 @@
 import os
 import shlex
 
-from BareosFdTaskClass import BareosFdTaskClass, TaskProcessFIFO
+from bareos_tasks.BareosFdTaskClass import BareosFdTaskClass, TaskProcessFIFO
 
 
 class TaskDumpDatabase(TaskProcessFIFO):
@@ -28,11 +28,11 @@ class TaskDumpDatabase(TaskProcessFIFO):
     file_extension = 'dump'
 
     def __init__(self, db_sid, db_user, db_password, ora_home, ora_exp, ora_user, ora_exp_options):
-        self.database = db_user + '-' + db_sid
+        self.database = "{}-{}".format(db_user, db_sid)
         self.run_as_user = ora_user
         self.run_environ = dict(ORACLE_SID=db_sid, ORACLE_HOME=ora_home)
         ora_exp = os.path.join(ora_home, 'bin/', ora_exp)
-        db_credential = db_user + '/' + db_password
+        db_credential = "{}/{}".format(db_user, db_password)
         self.command = [ora_exp, db_credential] + shlex.split(ora_exp_options) + ['file=' + self.fifo_path]
         super(TaskDumpDatabase, self).__init__()
 

@@ -18,8 +18,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import bareosfd
-import BareosFdWrapper
 from BareosFdPgSQLClass import BareosFdPgSQLClass
+
+# This module contains the wrapper functions called by the Bareos-FD, the
+# functions call the corresponding methods from your plugin class
+import BareosFdWrapper
+from BareosFdWrapper import *
 
 
 def load_bareos_plugin(plugin_def):
