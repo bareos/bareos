@@ -2,7 +2,7 @@ On Debian based systems (Debian, Ubuntu, Univention Corporate Server),
 database configuration can be done with help of the dbconfig system.
 
   * Package: dbconfig-common
-  * Homepage/Documentation: http://people.debian.org/~seanius/policy/dbconfig-common.html/
+  * Documentation: https://www.debian.org/doc/manuals/dbconfig-common/
 
 Install/update scenarios:
   * fresh install
@@ -84,7 +84,7 @@ postgresql
   * update from 13.2:
     * db_version is already 2002. It detects, nothing to do.
   * update dbconfig already configured
-    * ?
+
 
 mysql
 =====
@@ -98,7 +98,7 @@ mysql
   * update from 13.2:
     * db_version is already 2002. It detects, nothing to do.
   * update dbconfig already configured
-    * ?
+
 
 sqlite3
 =======
@@ -113,4 +113,3 @@ sqlite3
     * db_version is already 2002. It detects, nothing to do.
     * creates link from /var/lib/bareos/bareos.db to bareos
   * update dbconfig already configured
-    * ?
