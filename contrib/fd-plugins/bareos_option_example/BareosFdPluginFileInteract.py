@@ -21,7 +21,7 @@ class BareosFdPluginFileInteract(BareosFdPluginBaseclass):
     def handle_backup_file(self, savepkt):
         bareosfd.DebugMessage(100, "handle_backup_file called with " + str(savepkt) + "\n");
         bareosfd.DebugMessage(100, "fname: " + savepkt.fname + " Type: " + str(savepkt.type) + "\n");
-        if (savepkt.type == bFileType['FT_REG']):
+        if (savepkt.type == bareosfd.FT_REG):
             bareosfd.DebugMessage(100, "regular file, do something now...\n");
             # Add your stuff here.
 

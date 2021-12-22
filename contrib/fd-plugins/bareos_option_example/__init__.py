@@ -9,6 +9,7 @@ import bareosfd
 # This module contains the wrapper functions called by the Bareos-FD, the functions call the corresponding
 # methods from your plugin class
 import BareosFdWrapper
+from BareosFdWrapper import *
 
 # This module contains the used plugin class
 from BareosFdPluginFileInteract import BareosFdPluginFileInteract

@@ -3,7 +3,7 @@ Sample for an option plugin. The method handle_backup_file gets called for each 
 as template for your option plugin to implement some extra action on files.
 
 ## Prerequisites
-You need the package bareos-filedaemon-python-plugin installed on your client.
+You need the package `bareos-filedaemon-python-plugin` installed on your client.
 
 ## Configuration
 
@@ -24,7 +24,9 @@ FileSet {
                 Options {
                         compression=GZIP
                         signature = MD5
-                        Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-file-interact"
+                        Plugin = "python:"
+                                 "module_path=/usr/lib64/bareos/plugins:"
+                                 "module_name=bareos_option_example"
                 }
                 File = /etc
                 #...
