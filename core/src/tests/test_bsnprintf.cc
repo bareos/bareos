@@ -18,7 +18,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#include "gtest/gtest.h"
+#if defined(HAVE_MINGW)
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
+#else
+#  include "gtest/gtest.h"
+#  include "include/bareos.h"
+#endif
 #include "lib/bsnprintf.h"
 #include <string.h>
 
