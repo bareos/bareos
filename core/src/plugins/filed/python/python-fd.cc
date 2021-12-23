@@ -62,10 +62,16 @@ static const int debuglevel = 150;
 #define PLUGIN_DATE "May 2020"
 #define PLUGIN_VERSION "4"
 #define PLUGIN_DESCRIPTION "Python File Daemon Plugin"
-#define PLUGIN_USAGE                                                     \
-  PLUGIN_NAME                                                            \
-  ":module_path=<path-to-python-modules>:module_name=<python-module-to-" \
-  "load>:..."
+#define PLUGIN_USAGE                                                           \
+  PLUGIN_NAME                                                                  \
+  ":module_name=<python-module-to-load>:module_path=<path-to-python-modules>:" \
+  "...\n"                                                                      \
+  "\n"                                                                         \
+  "  module_name: The name of the Python module.\n"                            \
+  "  module_path: Python search path for the module.\n"                        \
+  "               The path '" PYTHON_MODULE_PATH                               \
+  "' is always checked for modules.\n"                                         \
+  "  Additional parameters are plugin specific."
 
 /* Forward referenced functions */
 static bRC newPlugin(PluginContext* plugin_ctx);

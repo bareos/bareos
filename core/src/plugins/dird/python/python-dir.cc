@@ -63,10 +63,18 @@ static const int debuglevel = 150;
 #define PLUGIN_DATE "May 2020"
 #define PLUGIN_VERSION "4"
 #define PLUGIN_DESCRIPTION "Python Director Daemon Plugin"
-#define PLUGIN_USAGE                                                     \
-  PLUGIN_NAME                                                            \
-  ":instance=<instance_id>:module_path=<path-to-python-modules>:module_" \
-  "name=<python-module-to-load>"
+#define PLUGIN_USAGE                                                           \
+  PLUGIN_NAME                                                                  \
+  ":module_name=<python-module-to-load>:module_path=<path-to-python-modules>:" \
+  "instance=<instance_id>:...\n"                                               \
+  "\n"                                                                         \
+  "  module_name: The name of the Python module.\n"                            \
+  "  module_path: Python search path for the module.\n"                        \
+  "               The path '" PYTHON_MODULE_PATH                               \
+  "' is always checked for modules.\n"                                         \
+  "  instance:    Default is ’0’.\n"                                       \
+  "               Increment the number, when using more than one plugin.\n"    \
+  "  Additional parameters are plugin specific."
 
 
 /* Forward referenced functions */
