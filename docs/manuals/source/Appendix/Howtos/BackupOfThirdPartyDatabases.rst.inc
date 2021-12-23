@@ -890,8 +890,14 @@ Configure the plugin in the |dir|:
            signature = MD5
            compression = lz4
          }
-         Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:db=test,wikidb"
-         #Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:mysqlhost=dbhost:mysqluser=bareos:mysqlpassword=bareos"
+         Plugin = "python3"
+                  ":module_name=bareos-fd-mysql"
+                  ":db=test,wikidb"
+         #Plugin = "python3"
+         #         ":module_name=bareos-fd-mysql"
+         #         ":mysqlhost=dbhost"
+         #         ":mysqluser=bareos"
+         #         ":mysqlpassword=bareos"         
        }
    }
 

@@ -57,7 +57,6 @@ Single Python Plugin Loading Example:
      # Load the class based plugin with testoption=testparam
      Dir Plugin Options = "python"
                           ":instance=0"
-                          ":module_path=/usr/lib64/bareos/plugins"
                           ":module_name=bareos-dir-class-plugins"
                           ":testoption=testparam"
      # ...
@@ -83,12 +82,10 @@ Multiple Python Plugin Loading Example:
      # Load the class based plugin with testoption=testparam
      Dir Plugin Options = "python"
                           ":instance=0"
-                          ":module_path=/usr/lib64/bareos/plugins"
                           ":module_name=bareos-dir-class-plugins"
                           ":testoption=testparam1"
      Dir Plugin Options = "python"
                           ":instance=1"
-                          ":module_path=/usr/lib64/bareos/plugins"
                           ":module_name=bareos-dir-class-plugins"
                           ":testoption=testparam2"
      # ...

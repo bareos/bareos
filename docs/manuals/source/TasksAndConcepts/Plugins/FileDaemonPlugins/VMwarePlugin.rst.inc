@@ -85,7 +85,7 @@ Make sure to add or enable the following settings in your |fd| configuration:
      ...
    }
 
-Note: Depending on Platform, the Plugin Directory may also be :file:`/usr/lib64/bareos/plugins`
+Note: Depending on the platform, the Plugin Directory may also be :file:`/usr/lib64/bareos/plugins`
 
 To define the backup of a VM in Bareos, a job definition and a fileset resource must be added to the Bareos director configuration. In vCenter, VMs are usually organized in datacenters and folders. The following example shows how to configure the backup of the VM named *websrv1* in the datacenter *mydc1* folder *webservers* on the vCenter server :command:`vcenter.example.org`:
 
@@ -107,7 +107,6 @@ To define the backup of a VM in Bareos, a job definition and a fileset resource 
             Compression = GZIP
        }
        Plugin = "python"
-                ":module_path=/usr/lib64/bareos/plugins"
                 ":module_name=bareos-fd-vmware"
                 ":dc=mydc1:folder=/webservers"
                 ":vmname=websrv1"
@@ -134,7 +133,10 @@ to
 .. code-block:: bareosconfig
    :caption: python:module\_path for Bareos >= 17.2.0
 
-   Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:...
+   Plugin = "python"
+            ":module_path=/usr/lib64/bareos/plugins"
+            ":module_name=bareos-fd-vmware"
+            ":..."
 
 or install the **bareos-vmware-plugin-compat** package which includes compatibility symbolic links.
 
@@ -158,8 +160,7 @@ For additional security, there is a now plugin option :command:`vcthumbprint`, t
    :caption: bareos-dir.conf: VMware Plugin Options with vcthumbprint
 
        ...
-       Plugin = "pythoni"
-                ":module_path=/usr/lib64/bareos/plugins"
+       Plugin = "python"
                 ":module_name=bareos-fd-vmware"
                 ":dc=mydc1:folder=/webservers"
                 ":vmname=websrv1"
@@ -184,7 +185,6 @@ To try forcing a given transport method, the plugin option :command:`transport` 
 
        ...
        Plugin = "python"
-                ":module_path=/usr/lib64/bareos/plugins"
                 ":module_name=bareos-fd-vmware"
                 ":dc=mydc1"
                 ":folder=/webservers"
@@ -212,7 +212,6 @@ Since :sinceVersion:`17.2.8: VMware Plugin: non-ascii characters` it is possible
             Compression = GZIP
        }
        Plugin = "python"
-                ":module_path=/usr/lib64/bareos/plugins"
                 ":module_name=bareos-fd-vmware"
                 ":dc=mydc1"
                 ":folder=/Test/Test Folder/Test vApp"
@@ -232,7 +231,6 @@ Since :sinceVersion:`17.2.8: VMware Plugin: non-ascii characters` it is possible
             Compression = GZIP
        }
        Plugin = "python"
-                ":module_path=/usr/lib64/bareos/plugins"
                 ":module_name=bareos-fd-vmware"
                 ":dc=mydc1"
                 ":folder=/Test/Test Folder/Test vApp"
@@ -255,7 +253,6 @@ Before this, it was only possible specify VMs contained in vApps by using the in
        ...
 
        Plugin = "python"
-                ":module_path=/usr/lib64/bareos/plugins"
                 ":module_name=bareos-fd-vmware"
                 ":dc=mydc1"
                 ":uuid=502b112f-3954-d761-be08-5570c8a780e2"
@@ -281,7 +278,6 @@ Since :sinceVersion:`20: VMware Plugin: config file` it is optionally possible t
             Compression = GZIP
        }
        Plugin = "python"
-                ":module_path=/usr/lib64/bareos/plugins"
                 ":module_name=bareos-fd-vmware"
                 ":dc=mydc1"
                 ":folder=/webservers"
@@ -486,7 +482,6 @@ Before, all Python plugin must be repeated and the additional be added, like:
    :caption: /etc/bareos/vmware-plugin.ini
 
    "python"
-   ":module_path=/usr/lib64/bareos/plugins"
    ":module_name=bareos-fd-vmware"
    ":dc=dass5"
    ":folder=/"
@@ -525,7 +520,6 @@ the plugin option :strong:`vadp_dumper_verbose=yes`
    :caption: debug vadp_dumper
 
        Plugin = "python"
-                ":module_path=/usr/lib64/bareos/plugins"
                 ":module_name=bareos-fd-vmware"
                 ":dc=mydc1:folder=/webservers"
                 ":vmname=websrv1"
