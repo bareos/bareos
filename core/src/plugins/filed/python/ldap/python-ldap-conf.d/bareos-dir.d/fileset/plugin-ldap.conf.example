@@ -8,6 +8,10 @@ FileSet {
     # adapt the LDAP settings to your environment.
     # uri and basedn are mandantory,
     # base_dn and password are optional.
-    Plugin = "python:module_path=@plugindir@:module_name=bareos-fd-ldap:uri=ldap\\://localhost:basedn=dc=example,dc=com:bind_dn=cn=admin,dc=example,dc=com:password=secret"
+    Plugin = "python"
+             ":module_name=bareos-fd-ldap"
+             ":uri=ldap\\://localhost:basedn=dc=example,dc=com"
+             ":bind_dn=cn=admin,dc=example,dc=com"
+             ":password=secret"
   }
 }
