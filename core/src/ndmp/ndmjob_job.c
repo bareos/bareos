@@ -429,7 +429,7 @@ int jndex_tattle(void)
   char buf[100];
   struct ndmmedia* me;
   struct ndm_env_entry* nev;
-  int i;
+  int i=0;
 
   for (me = ji_media.head; me; me = me->next) {
     ndmmedia_to_str(me, buf);
