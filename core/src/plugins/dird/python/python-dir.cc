@@ -136,6 +136,7 @@ static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
   bRC retval = bRC_Error;
 
   if (!plugin_priv_ctx) { goto bail_out; }
+  Bareosdir_set_plugin_context(bareos_plugin_ctx);
 
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
   retval = Bareosdir_PyGetPluginValue(bareos_plugin_ctx, var, value);
@@ -155,6 +156,7 @@ static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
   bRC retval = bRC_Error;
 
   if (!plugin_priv_ctx) { return bRC_Error; }
+  Bareosdir_set_plugin_context(bareos_plugin_ctx);
 
   PyEval_AcquireThread(plugin_priv_ctx->interpreter);
   retval = Bareosdir_PySetPluginValue(bareos_plugin_ctx, var, value);
@@ -302,6 +304,8 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
       = (plugin_private_context*)plugin_ctx->plugin_private_context;
 
   if (!plugin_priv_ctx) { goto bail_out; }
+
+  Bareosdir_set_plugin_context(plugin_ctx);
 
   /*
    * First handle some events internally before calling python if it
