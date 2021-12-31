@@ -90,7 +90,7 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
 using namespace directordaemon;
 
 /* variables storing bareos pointers */
-PluginContext* plugin_context = NULL;
+thread_local PluginContext* plugin_context = NULL;
 
 MOD_INIT(bareosdir)
 {
