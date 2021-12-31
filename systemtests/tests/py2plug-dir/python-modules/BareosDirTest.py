@@ -22,6 +22,7 @@
 import bareosdir
 import BareosDirPluginBaseclass
 
+from time import time
 from sys import version_info
 
 
@@ -52,21 +53,31 @@ class BareosDirTest(BareosDirPluginBaseclass.BareosDirPluginBaseclass):
 
     def handle_plugin_event(self, event):
         super(BareosDirTest, self).handle_plugin_event(event)
+        job_name = repr(bareosdir.GetValue(bareosdir.bDirVarJobName))
+        job_id = repr(bareosdir.GetValue(bareosdir.bDirVarJobId))
+        microtime = round(time() * 1000)
+        msg_f = "%s Job:" + job_name + " JobId: " + job_id + " Time: " + repr(microtime) + "\n"
+
         if event == bareosdir.bDirEventJobStart:
-            self.toFile("bDirEventJobStart\n")
+            self.toFile(msg_f % "bDirEventJobStart")
 
         elif event == bareosdir.bDirEventJobEnd:
-            self.toFile("bDirEventJobEnd\n")
+            self.toFile(msg_f % "bDirEventJobEnd")
 
         elif event == bareosdir.bDirEventJobInit:
-            self.toFile("bDirEventJobInit\n")
+            self.toFile(msg_f % "bDirEventJobInit")
 
         elif event == bareosdir.bDirEventJobRun:
-            self.toFile("bDirEventJobRun\n")
+            self.toFile(msg_f % "bDirEventJobRun")
 
         return bareosdir.bRC_OK
 
     def toFile(self, text):
+        bareosdir.DebugMessage(
+            100,
+            "Writing string '%s' to '%s'\n"
+            % (text, self.outputfile),
+        )
         doc = open(self.outputfile, "a")
         doc.write(text)
         doc.close()
