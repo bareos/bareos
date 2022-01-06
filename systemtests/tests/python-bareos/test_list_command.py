@@ -40,7 +40,7 @@ import bareos.exceptions
 import bareos_unittest
 
 
-class PythonBareosListJobsTest(bareos_unittest.Base):
+class PythonBareosListCommandTest(bareos_unittest.Base):
     def test_list_jobs(self):
         """
         verifying `list jobs` and `llist jobs ...` outputs correct data
@@ -233,4 +233,75 @@ class PythonBareosListJobsTest(bareos_unittest.Base):
         self.assertNotEqual(
             result["jobs"][0]["count"],
             "",
+        )
+
+    def test_list_media(self):
+        """
+        verifying `list media` and `llist media ...` outputs correct data
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        director.call("run job=backup-bareos-fd yes")
+        director.call("wait")
+
+# check for expected keys
+        result = director.call("list media")
+        expected_list_media_keys = [
+            "mediaid",
+            "volumename",
+            "volstatus",
+            "enabled",
+            "volbytes",
+            "volfiles",
+            "volretention",
+            "recycle",
+            "slot",
+            "inchanger",
+            "mediatype",
+            "lastwritten",
+            "storage",
+        ]
+        self.assertEqual(
+            list(result["volumes"]["full"][0].keys()).sort(),
+            expected_list_media_keys.sort(),
+        )
+
+        # check expected behavior when asking for specific volume by name
+        result = director.call("list media=Full-0001")
+        self.assertEqual(
+            result["volume"]["volumename"],
+            "Full-0001",
+        )
+
+        # check expected behavior when asking for specific volume by mediaid
+        result = director.call("list mediaid=1")
+        self.assertEqual(
+            result["volume"]["volumename"],
+            "Full-0001",
+        )
+        self.assertEqual(
+            result["volume"]["mediaid"],
+            "1",
+        )
+
+        result = director.call("llist mediaid=1")
+        self.assertEqual(
+            result["volume"]["volumename"],
+            "Full-0001",
+        )
+
+        self.assertEqual(
+            result["volume"]["mediaid"],
+            "1",
         )
