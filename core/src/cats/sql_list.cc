@@ -252,6 +252,9 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
     } else if (mdbr->PoolId > 0) {
       query.bsprintf("%s WHERE PoolId=%s ORDER BY MediaId %s", select.c_str(),
                      edit_int64(mdbr->PoolId, ed1), range);
+    } else if (mdbr->MediaId > 0) {
+      query.bsprintf("%s WHERE MediaId=%s ORDER BY MediaId %s", select.c_str(),
+                     edit_int64(mdbr->MediaId, ed1), range);
     } else {
       query.bsprintf("%s ORDER BY MediaId %s", select.c_str(), range);
     }

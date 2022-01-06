@@ -978,6 +978,15 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
              || Bstrcasecmp(ua->argk[1], NT_("volume"))
              || Bstrcasecmp(ua->argk[1], NT_("volumes"))) {
     return DoListMedia(ua, llist, optionslist);
+  } else if ((Bstrcasecmp(ua->argk[1], NT_("mediaid"))
+              || Bstrcasecmp(ua->argk[1], NT_("volumeid")))
+             && ua->argv[1]) {
+    MediaDbRecord mr;
+    mr.MediaId = str_to_int64(ua->argv[1]);
+    ua->send->ObjectStart("volume");
+    ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
+                             optionslist.count, ua->send, llist);
+    ua->send->ObjectEnd("volume");
   } else if (Bstrcasecmp(ua->argk[1], NT_("nextvol"))
              || Bstrcasecmp(ua->argk[1], NT_("nextvolume"))) {
     int days;
