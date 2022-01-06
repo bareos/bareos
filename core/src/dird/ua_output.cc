@@ -498,14 +498,132 @@ static void SetQueryRange(PoolMem& query_range, UaContext* ua, JobDbRecord* jr)
   }
 }
 
+struct ListCmdOptions {
+  bool count;
+  bool last;
+  bool current;
+  bool enabled;
+  bool disabled;
+};
+
+static bool DoListMedia(UaContext* ua,
+                        e_list_type llist,
+                        ListCmdOptions optionslist)
+{
+  MediaDbRecord mr;
+  PoolDbRecord pr;
+  JobDbRecord jr;
+
+  PoolMem query_range;
+
+  PmStrcpy(query_range, "");
+  SetQueryRange(query_range, ua, &jr);
+
+  // List MEDIA or VOLUMES
+  int jobid = GetJobidFromCmdline(ua);
+  if (jobid > 0) {
+    ua->db->ListVolumesOfJobid(ua->jcr, jobid, ua->send, llist);
+  } else if (jobid == 0) {
+    // List a specific volume?
+    if (ua->argv[1]) {
+      bstrncpy(mr.VolumeName, ua->argv[1], sizeof(mr.VolumeName));
+      ua->send->ObjectStart("volume");
+      ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
+                               optionslist.count, ua->send, llist);
+      ua->send->ObjectEnd("volume");
+    } else {
+      /*
+       * If no job or jobid keyword found, then we list all media
+       * Is a specific pool wanted?
+       */
+      int i = FindArgWithValue(ua, NT_("pool"));
+      if (i >= 0) {
+        bstrncpy(pr.Name, ua->argv[i], sizeof(pr.Name));
+
+        if (!GetPoolDbr(ua, &pr)) {
+          ua->ErrorMsg(_("Pool %s doesn't exist.\n"), ua->argv[i]);
+          return true;
+        }
+
+        SetQueryRange(query_range, ua, &jr);
+
+        mr.PoolId = pr.PoolId;
+        ua->send->ArrayStart("volumes");
+        ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
+                                 optionslist.count, ua->send, llist);
+        ua->send->ArrayEnd("volumes");
+        return true;
+      } else {
+        int num_pools;
+        uint32_t* ids = nullptr;
+
+        // List all volumes, flat
+        if (FindArg(ua, NT_("all")) > 0) {
+          /*
+           * The result of "list media all"
+           * does not contain the Pool information,
+           * therefore checking the Pool_ACL is not possible.
+           * For this reason, we prevent this command.
+           */
+          if (ua->AclHasRestrictions(Pool_ACL) && (llist != VERT_LIST)) {
+            ua->ErrorMsg(
+                _("Restricted permission. Use the commands 'list media' or "
+                  "'llist media all' instead\n"));
+            return false;
+          }
+          ua->send->ArrayStart("volumes");
+          SetAclFilter(ua, 4, Pool_ACL); /* PoolName */
+          if (optionslist.current) {
+            SetResFilter(ua, 4, R_POOL); /* PoolName */
+          }
+          ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
+                                   optionslist.count, ua->send, llist);
+          ua->send->ArrayEnd("volumes");
+        } else {
+          // List Volumes in all pools
+          if (!ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
+            ua->ErrorMsg(_("Error obtaining pool ids. ERR=%s\n"),
+                         ua->db->strerror());
+            return true;
+          }
+
+          if (num_pools <= 0) {
+            if (ids) { free(ids); }
+            return true;
+          }
+
+          ua->send->ObjectStart("volumes");
+          for (i = 0; i < num_pools; i++) {
+            pr.PoolId = ids[i];
+            if (ua->db->GetPoolRecord(ua->jcr, &pr)) {
+              if (ua->AclAccessOk(Pool_ACL, pr.Name, false)) {
+                ua->send->Decoration("Pool: %s\n", pr.Name);
+                ua->send->ArrayStart(pr.Name);
+                mr.PoolId = ids[i];
+                ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
+                                         optionslist.count, ua->send, llist);
+                ua->send->ArrayEnd(pr.Name);
+              }
+            }
+          }
+          ua->send->ObjectEnd("volumes");
+          free(ids);
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+
 static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 {
   JobDbRecord jr;
-  PoolDbRecord pr;
   utime_t now;
-  MediaDbRecord mr;
   int days = 0, hours = 0, jobstatus = 0, joblevel = 0;
-  bool count, last, current, enabled, disabled;
+  ListCmdOptions optionslist;
+
   int i, d, h, jobid;
   time_t schedtime = 0;
   char* clientname = NULL;
@@ -539,11 +657,11 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     schedtime = now - secs_in_hour * hours; /* Hours in the past */
   }
 
-  current = FindArg(ua, NT_("current")) >= 0;
-  enabled = FindArg(ua, NT_("enabled")) >= 0;
-  disabled = FindArg(ua, NT_("disabled")) >= 0;
-  count = FindArg(ua, NT_("count")) >= 0;
-  last = FindArg(ua, NT_("last")) >= 0;
+  optionslist.current = FindArg(ua, NT_("current")) >= 0;
+  optionslist.enabled = FindArg(ua, NT_("enabled")) >= 0;
+  optionslist.disabled = FindArg(ua, NT_("disabled")) >= 0;
+  optionslist.count = FindArg(ua, NT_("count")) >= 0;
+  optionslist.last = FindArg(ua, NT_("last")) >= 0;
 
   PmStrcpy(query_range, "");
   SetQueryRange(query_range, ua, &jr);
@@ -591,32 +709,40 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
     switch (llist) {
       case VERT_LIST:
-        if (!count) {  // count result is one column, no filtering
+        if (!optionslist.count) {  // count result is one column, no filtering
           SetAclFilter(ua, 2, Job_ACL);      /* JobName */
           SetAclFilter(ua, 7, Client_ACL);   /* ClientName */
           SetAclFilter(ua, 22, Pool_ACL);    /* PoolName */
           SetAclFilter(ua, 25, FileSet_ACL); /* FilesetName */
-          if (current) {
+          if (optionslist.current) {
             SetResFilter(ua, 2, R_JOB);      /* JobName */
             SetResFilter(ua, 7, R_CLIENT);   /* ClientName */
             SetResFilter(ua, 22, R_POOL);    /* PoolName */
             SetResFilter(ua, 25, R_FILESET); /* FilesetName */
           }
         }
-        if (enabled) { SetEnabledFilter(ua, 2, R_JOB); /* JobName */ }
-        if (disabled) { SetDisabledFilter(ua, 2, R_JOB); /* JobName */ }
+        if (optionslist.enabled) {
+          SetEnabledFilter(ua, 2, R_JOB); /* JobName */
+        }
+        if (optionslist.disabled) {
+          SetDisabledFilter(ua, 2, R_JOB); /* JobName */
+        }
         break;
       default:
-        if (!count) {  // count result is one column, no filtering
+        if (!optionslist.count) {  // count result is one column, no filtering
           SetAclFilter(ua, 1, Job_ACL);    /* JobName */
           SetAclFilter(ua, 2, Client_ACL); /* ClientName */
-          if (current) {
+          if (optionslist.current) {
             SetResFilter(ua, 1, R_JOB);    /* JobName */
             SetResFilter(ua, 2, R_CLIENT); /* ClientName */
           }
         }
-        if (enabled) { SetEnabledFilter(ua, 1, R_JOB); /* JobName */ }
-        if (disabled) { SetDisabledFilter(ua, 1, R_JOB); /* JobName */ }
+        if (optionslist.enabled) {
+          SetEnabledFilter(ua, 1, R_JOB); /* JobName */
+        }
+        if (optionslist.disabled) {
+          SetDisabledFilter(ua, 1, R_JOB); /* JobName */
+        }
         break;
     }
 
@@ -624,7 +750,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
     ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
                            jobstatus, joblevel, volumename, poolname, schedtime,
-                           last, count, ua->send, llist);
+                           optionslist.last, optionslist.count, ua->send,
+                           llist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
     // List JOBTOTALS
     ua->db->ListJobTotals(ua->jcr, &jr, ua->send);
@@ -649,24 +776,32 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
             SetAclFilter(ua, 7, Client_ACL);   /* ClientName */
             SetAclFilter(ua, 22, Pool_ACL);    /* PoolName */
             SetAclFilter(ua, 25, FileSet_ACL); /* FilesetName */
-            if (current) {
+            if (optionslist.current) {
               SetResFilter(ua, 2, R_JOB);      /* JobName */
               SetResFilter(ua, 7, R_CLIENT);   /* ClientName */
               SetResFilter(ua, 22, R_POOL);    /* PoolName */
               SetResFilter(ua, 25, R_FILESET); /* FilesetName */
             }
-            if (enabled) { SetEnabledFilter(ua, 2, R_JOB); /* JobName */ }
-            if (disabled) { SetDisabledFilter(ua, 2, R_JOB); /* JobName */ }
+            if (optionslist.enabled) {
+              SetEnabledFilter(ua, 2, R_JOB); /* JobName */
+            }
+            if (optionslist.disabled) {
+              SetDisabledFilter(ua, 2, R_JOB); /* JobName */
+            }
             break;
           default:
             SetAclFilter(ua, 1, Job_ACL);    /* JobName */
             SetAclFilter(ua, 2, Client_ACL); /* ClientName */
-            if (current) {
+            if (optionslist.current) {
               SetResFilter(ua, 1, R_JOB);    /* JobName */
               SetResFilter(ua, 2, R_CLIENT); /* ClientName */
             }
-            if (enabled) { SetEnabledFilter(ua, 1, R_JOB); /* JobName */ }
-            if (disabled) { SetDisabledFilter(ua, 1, R_JOB); /* JobName */ }
+            if (optionslist.enabled) {
+              SetEnabledFilter(ua, 1, R_JOB); /* JobName */
+            }
+            if (optionslist.disabled) {
+              SetDisabledFilter(ua, 1, R_JOB); /* JobName */
+            }
             break;
         }
 
@@ -674,7 +809,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
 
         ua->db->ListJobRecords(ua->jcr, &jr, query_range.c_str(), clientname,
                                jobstatus, joblevel, volumename, poolname,
-                               schedtime, last, count, ua->send, llist);
+                               schedtime, optionslist.last, optionslist.count,
+                               ua->send, llist);
       }
     }
   } else if (Bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
@@ -710,7 +846,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
       jr.FileSetId = filesetid;
 
       SetAclFilter(ua, 1, FileSet_ACL); /* FilesetName */
-      if (current) { SetResFilter(ua, 1, R_FILESET); /* FilesetName */ }
+      if (optionslist.current) {
+        SetResFilter(ua, 1, R_FILESET); /* FilesetName */
+      }
 
       SetQueryRange(query_range, ua, &jr);
 
@@ -723,7 +861,9 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   } else if (Bstrcasecmp(ua->argk[1], NT_("filesets"))) {
     // List FILESETs
     SetAclFilter(ua, 1, FileSet_ACL); /* FilesetName */
-    if (current) { SetResFilter(ua, 1, R_FILESET); /* FilesetName */ }
+    if (optionslist.current) {
+      SetResFilter(ua, 1, R_FILESET); /* FilesetName */
+    }
 
     SetQueryRange(query_range, ua, &jr);
 
@@ -742,8 +882,8 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     // List JOBLOG
     jobid = GetJobidFromCmdline(ua);
     if (jobid >= 0) {
-      ua->db->ListJoblogRecords(ua->jcr, jobid, query_range.c_str(), count,
-                                ua->send, llist);
+      ua->db->ListJoblogRecords(ua->jcr, jobid, query_range.c_str(),
+                                optionslist.count, ua->send, llist);
     } else {
       ua->ErrorMsg(
           _("jobid not found in db, access to job or client denied by ACL, or "
@@ -784,7 +924,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
     if (ua->argv[1]) { bstrncpy(pr.Name, ua->argv[1], sizeof(pr.Name)); }
 
     SetAclFilter(ua, 1, Pool_ACL); /* PoolName */
-    if (current) { SetResFilter(ua, 1, R_POOL); /* PoolName */ }
+    if (optionslist.current) { SetResFilter(ua, 1, R_POOL); /* PoolName */ }
 
     SetQueryRange(query_range, ua, &jr);
 
@@ -792,9 +932,13 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   } else if (Bstrcasecmp(ua->argk[1], NT_("clients"))) {
     // List CLIENTS
     SetAclFilter(ua, 1, Client_ACL); /* ClientName */
-    if (current) { SetResFilter(ua, 1, R_CLIENT); /* ClientName */ }
-    if (enabled) { SetEnabledFilter(ua, 1, R_CLIENT); /* ClientName */ }
-    if (disabled) { SetDisabledFilter(ua, 1, R_CLIENT); /* ClientName */ }
+    if (optionslist.current) { SetResFilter(ua, 1, R_CLIENT); /* ClientName */ }
+    if (optionslist.enabled) {
+      SetEnabledFilter(ua, 1, R_CLIENT); /* ClientName */
+    }
+    if (optionslist.disabled) {
+      SetDisabledFilter(ua, 1, R_CLIENT); /* ClientName */
+    }
 
     SetQueryRange(query_range, ua, &jr);
 
@@ -802,9 +946,13 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   } else if (Bstrcasecmp(ua->argk[1], NT_("client")) && ua->argv[1]) {
     // List CLIENT=xxx
     SetAclFilter(ua, 1, Client_ACL); /* ClientName */
-    if (current) { SetResFilter(ua, 1, R_CLIENT); /* ClientName */ }
-    if (enabled) { SetEnabledFilter(ua, 1, R_CLIENT); /* ClientName */ }
-    if (disabled) { SetDisabledFilter(ua, 1, R_CLIENT); /* ClientName */ }
+    if (optionslist.current) { SetResFilter(ua, 1, R_CLIENT); /* ClientName */ }
+    if (optionslist.enabled) {
+      SetEnabledFilter(ua, 1, R_CLIENT); /* ClientName */
+    }
+    if (optionslist.disabled) {
+      SetDisabledFilter(ua, 1, R_CLIENT); /* ClientName */
+    }
 
     SetQueryRange(query_range, ua, &jr);
 
@@ -812,9 +960,15 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   } else if (Bstrcasecmp(ua->argk[1], NT_("storages"))) {
     // List STORAGES
     SetAclFilter(ua, 1, Storage_ACL); /* StorageName */
-    if (current) { SetResFilter(ua, 1, R_STORAGE); /* StorageName */ }
-    if (enabled) { SetEnabledFilter(ua, 1, R_STORAGE); /* StorageName */ }
-    if (disabled) { SetDisabledFilter(ua, 1, R_STORAGE); /* StorageName */ }
+    if (optionslist.current) {
+      SetResFilter(ua, 1, R_STORAGE); /* StorageName */
+    }
+    if (optionslist.enabled) {
+      SetEnabledFilter(ua, 1, R_STORAGE); /* StorageName */
+    }
+    if (optionslist.disabled) {
+      SetDisabledFilter(ua, 1, R_STORAGE); /* StorageName */
+    }
 
     SetQueryRange(query_range, ua, &jr);
 
@@ -823,99 +977,7 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
   } else if (Bstrcasecmp(ua->argk[1], NT_("media"))
              || Bstrcasecmp(ua->argk[1], NT_("volume"))
              || Bstrcasecmp(ua->argk[1], NT_("volumes"))) {
-    // List MEDIA or VOLUMES
-    jobid = GetJobidFromCmdline(ua);
-    if (jobid > 0) {
-      ua->db->ListVolumesOfJobid(ua->jcr, jobid, ua->send, llist);
-    } else if (jobid == 0) {
-      // List a specific volume?
-      if (ua->argv[1]) {
-        bstrncpy(mr.VolumeName, ua->argv[1], sizeof(mr.VolumeName));
-        ua->send->ObjectStart("volume");
-        ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(), count,
-                                 ua->send, llist);
-        ua->send->ObjectEnd("volume");
-      } else {
-        /*
-         * If no job or jobid keyword found, then we list all media
-         * Is a specific pool wanted?
-         */
-        i = FindArgWithValue(ua, NT_("pool"));
-        if (i >= 0) {
-          bstrncpy(pr.Name, ua->argv[i], sizeof(pr.Name));
-
-          if (!GetPoolDbr(ua, &pr)) {
-            ua->ErrorMsg(_("Pool %s doesn't exist.\n"), ua->argv[i]);
-            return true;
-          }
-
-          SetQueryRange(query_range, ua, &jr);
-
-          mr.PoolId = pr.PoolId;
-          ua->send->ArrayStart("volumes");
-          ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(), count,
-                                   ua->send, llist);
-          ua->send->ArrayEnd("volumes");
-          return true;
-        } else {
-          int num_pools;
-          uint32_t* ids = nullptr;
-
-          // List all volumes, flat
-          if (FindArg(ua, NT_("all")) > 0) {
-            /*
-             * The result of "list media all"
-             * does not contain the Pool information,
-             * therefore checking the Pool_ACL is not possible.
-             * For this reason, we prevent this command.
-             */
-            if (ua->AclHasRestrictions(Pool_ACL) && (llist != VERT_LIST)) {
-              ua->ErrorMsg(
-                  _("Restricted permission. Use the commands 'list media' or "
-                    "'llist media all' instead\n"));
-              return false;
-            }
-            ua->send->ArrayStart("volumes");
-            SetAclFilter(ua, 4, Pool_ACL); /* PoolName */
-            if (current) { SetResFilter(ua, 4, R_POOL); /* PoolName */ }
-            ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(), count,
-                                     ua->send, llist);
-            ua->send->ArrayEnd("volumes");
-          } else {
-            // List Volumes in all pools
-            if (!ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
-              ua->ErrorMsg(_("Error obtaining pool ids. ERR=%s\n"),
-                           ua->db->strerror());
-              return true;
-            }
-
-            if (num_pools <= 0) {
-              if (ids) { free(ids); }
-              return true;
-            }
-
-            ua->send->ObjectStart("volumes");
-            for (i = 0; i < num_pools; i++) {
-              pr.PoolId = ids[i];
-              if (ua->db->GetPoolRecord(ua->jcr, &pr)) {
-                if (ua->AclAccessOk(Pool_ACL, pr.Name, false)) {
-                  ua->send->Decoration("Pool: %s\n", pr.Name);
-                  ua->send->ArrayStart(pr.Name);
-                  mr.PoolId = ids[i];
-                  ua->db->ListMediaRecords(ua->jcr, &mr, query_range.c_str(),
-                                           count, ua->send, llist);
-                  ua->send->ArrayEnd(pr.Name);
-                }
-              }
-            }
-            ua->send->ObjectEnd("volumes");
-            free(ids);
-          }
-        }
-      }
-    }
-
-    return true;
+    return DoListMedia(ua, llist, optionslist);
   } else if (Bstrcasecmp(ua->argk[1], NT_("nextvol"))
              || Bstrcasecmp(ua->argk[1], NT_("nextvolume"))) {
     int days;
@@ -951,18 +1013,26 @@ static bool DoListCmd(UaContext* ua, const char* cmd, e_list_type llist)
         case VERT_LIST:
           SetAclFilter(ua, 2, Job_ACL);   /* JobName */
           SetAclFilter(ua, 22, Pool_ACL); /* PoolName */
-          if (current) {
+          if (optionslist.current) {
             SetResFilter(ua, 2, R_JOB);   /* JobName */
             SetResFilter(ua, 22, R_POOL); /* PoolName */
           }
-          if (enabled) { SetEnabledFilter(ua, 2, R_JOB); /* JobName */ }
-          if (disabled) { SetDisabledFilter(ua, 2, R_JOB); /* JobName */ }
+          if (optionslist.enabled) {
+            SetEnabledFilter(ua, 2, R_JOB); /* JobName */
+          }
+          if (optionslist.disabled) {
+            SetDisabledFilter(ua, 2, R_JOB); /* JobName */
+          }
           break;
         default:
           SetAclFilter(ua, 1, Job_ACL); /* JobName */
-          if (current) { SetResFilter(ua, 1, R_JOB); /* JobName */ }
-          if (enabled) { SetEnabledFilter(ua, 1, R_JOB); /* JobName */ }
-          if (disabled) { SetDisabledFilter(ua, 1, R_JOB); /* JobName */ }
+          if (optionslist.current) { SetResFilter(ua, 1, R_JOB); /* JobName */ }
+          if (optionslist.enabled) {
+            SetEnabledFilter(ua, 1, R_JOB); /* JobName */
+          }
+          if (optionslist.disabled) {
+            SetDisabledFilter(ua, 1, R_JOB); /* JobName */
+          }
           break;
       }
 
