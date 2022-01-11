@@ -255,7 +255,7 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
         director.call("run job=backup-bareos-fd yes")
         director.call("wait")
 
-# check for expected keys
+        # check for expected keys
         result = director.call("list media")
         expected_list_media_keys = [
             "mediaid",
@@ -278,30 +278,136 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
         )
 
         # check expected behavior when asking for specific volume by name
-        result = director.call("list media=Full-0001")
+        director.call("label volume=test_volume0001 pool=Full")
+        director.call("wait")
+        result = director.call("list media=test_volume0001")
         self.assertEqual(
             result["volume"]["volumename"],
-            "Full-0001",
+            "test_volume0001",
+        )
+        result = director.call("list volume=test_volume0001")
+        self.assertEqual(
+            result["volume"]["volumename"],
+            "test_volume0001",
         )
 
         # check expected behavior when asking for specific volume by mediaid
-        result = director.call("list mediaid=1")
-        self.assertEqual(
-            result["volume"]["volumename"],
-            "Full-0001",
-        )
+        result = director.call("list mediaid=2")
         self.assertEqual(
             result["volume"]["mediaid"],
-            "1",
+            "2",
         )
-
-        result = director.call("llist mediaid=1")
-        self.assertEqual(
-            result["volume"]["volumename"],
-            "Full-0001",
-        )
-
+        result = director.call("list volumeid=2")
         self.assertEqual(
             result["volume"]["mediaid"],
-            "1",
+            "2",
+        )
+
+        result = director.call("llist mediaid=2")
+        self.assertEqual(
+            result["volume"]["mediaid"],
+            "2",
+        )
+        result = director.call("llist volumeid=2")
+        self.assertEqual(
+            result["volume"]["mediaid"],
+            "2",
+        )
+        director.call("delete volume=test_volume0001 yes")
+
+    def test_list_pool(self):
+        """
+        verifying `list pool` and `llist pool ...` outputs correct data
+        """
+        logger = logging.getLogger()
+
+        username = self.get_operator_username()
+        password = self.get_operator_password(username)
+
+        director = bareos.bsock.DirectorConsoleJson(
+            address=self.director_address,
+            port=self.director_port,
+            name=username,
+            password=password,
+            **self.director_extra_options
+        )
+
+        director.call("run job=backup-bareos-fd yes")
+        director.call("wait")
+
+        result = director.call("list pool")
+        expected_list_media_keys = [
+            "poolid",
+            "name",
+            "numvols",
+            "maxvols",
+            "pooltype",
+            "labelformat",
+        ]
+        self.assertEqual(
+            list(result["pools"][0].keys()).sort(),
+            expected_list_media_keys.sort(),
+        )
+
+        # check expected behavior when asking for specific volume by name
+        result = director.call("list pool=Incremental")
+        self.assertEqual(
+            result["pools"][0]["name"],
+            "Incremental",
+        )
+
+        result = director.call("llist pool")
+        expected_list_media_keys = [
+            "poolid",
+            "name",
+            "numvols",
+            "maxvols",
+            "useonce",
+            "usecatalog",
+            "acceptanyvolume",
+            "volretention",
+            "voluseduration",
+            "maxvoljobs",
+            "maxvolbytes",
+            "autoprune",
+            "recycle",
+            "pooltype",
+            "labelformat",
+            "enabled",
+            "scratchpoolid",
+            "recyclepoolid",
+            "labeltype",
+        ]
+        self.assertEqual(
+            list(result["pools"][0].keys()).sort(),
+            expected_list_media_keys.sort(),
+        )
+
+        # check expected behavior when asking for specific volume by name
+        result = director.call("llist pool=Incremental")
+        self.assertEqual(
+            result["pools"][0]["name"],
+            "Incremental",
+        )
+
+        result = director.call("list poolid=3")
+        self.assertEqual(
+            result["pools"][0]["name"],
+            "Full",
+        )
+
+        self.assertEqual(
+            result["pools"][0]["poolid"],
+            "3",
+        )
+
+        result = director.call("llist poolid=3")
+        self.assertEqual(
+            result["pools"][0]["name"],
+            "Full",
+        )
+
+        self.assertEqual(
+            result["pools"][0]["poolid"],
+            "3",
         )
