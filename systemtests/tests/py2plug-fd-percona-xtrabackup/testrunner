@@ -18,7 +18,7 @@ fi
 JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
-MYQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=mysqldefaults --user=root"
+MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=mysqldefaults --user=root"
 
 JobName=backup-bareos-fd
 #shellcheck source=../scripts/functions
@@ -38,7 +38,7 @@ startup_mysql_server(){
 
 tries=60
 echo "waiting for mysql server to start"
-while ! $MYQL_CLIENT <<< "select version();"  > /dev/null 2>&1; do
+while ! $MYSQL_CLIENT <<< "select version();"  > /dev/null 2>&1; do
   [ $((tries-=1)) -eq 0 ] && {
     echo "Could not start mysql server"
     cat mysql/mysql.log
@@ -72,9 +72,9 @@ xtrabackup_test_db="${db_name}_xtrabackup"
 
 start_test
 
-echo "create database ${xtrabackup_test_db}" | $MYQL_CLIENT
-echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYQL_CLIENT "${xtrabackup_test_db}"
-echo "insert into test (data) VALUES ('test entry 1') " | $MYQL_CLIENT "${xtrabackup_test_db}"
+echo "create database ${xtrabackup_test_db}" | $MYSQL_CLIENT
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYSQL_CLIENT "${xtrabackup_test_db}"
+echo "insert into test (data) VALUES ('test entry 1') " | $MYSQL_CLIENT "${xtrabackup_test_db}"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $tmp/log1.out
@@ -90,7 +90,7 @@ status dir
 END_OF_DATA
 
 # insert data and run incremental
-echo "insert into test (data) VALUES ('test entry 2') " | $MYQL_CLIENT "${xtrabackup_test_db}"
+echo "insert into test (data) VALUES ('test entry 2') " | $MYSQL_CLIENT "${xtrabackup_test_db}"
 
 run_bareos "$@"
 
@@ -141,12 +141,12 @@ ${XTRABACKUP} --copy-back --target-dir=${TARGETDIR}  --incremental-dir=${INCDIR1
 
 startup_mysql_server
 
-if ! echo "SELECT * from test " | $MYQL_CLIENT "${xtrabackup_test_db}" | grep "test entry 1"; then
+if ! echo "SELECT * from test " | $MYSQL_CLIENT "${xtrabackup_test_db}" | grep "test entry 1"; then
     echo "test entry 1 not found"
     estat=2
 fi
 
-if ! echo "SELECT * from test " | $MYQL_CLIENT "${xtrabackup_test_db}" | grep "test entry 2"; then
+if ! echo "SELECT * from test " | $MYSQL_CLIENT "${xtrabackup_test_db}" | grep "test entry 2"; then
     echo "test entry 2 not found"
     estat=3
 fi
