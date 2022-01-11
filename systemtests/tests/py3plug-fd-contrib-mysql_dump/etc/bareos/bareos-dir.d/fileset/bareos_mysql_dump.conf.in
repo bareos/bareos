@@ -1,0 +1,14 @@
+FileSet {
+  Name = "bareos_mysql_dump"
+  Description = "Test the Plugin functionality."
+  Include {
+    Options {
+      signature = MD5
+    }
+    Plugin = "@python_module_name@"
+      ":module_name=bareos_mysql_dump"
+      ":defaultsfile=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mysqldefaults"
+      ":mysqluser=root"
+      # ":mysqlpassword=secret"
+  }
+}

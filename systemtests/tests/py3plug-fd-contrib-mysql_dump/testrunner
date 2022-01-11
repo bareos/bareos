@@ -1,0 +1,161 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# This systemtest tests the Percona plugin functionality
+# of the Bareos FD by using the supplied module
+#   BareosFdPluginPerconaXtraBackup.py
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+if [ "$USER" == "root"  ]; then
+ echo "This test cannot be run as user root."
+ exit 1;
+fi
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=mysqldefaults --user=root"
+MYSQL_DAEMON_PID=""
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+get_mysql_pid()
+{
+    if [ "${MYSQL_DAEMON_PID}" ]; then
+        echo "${MYSQL_DAEMON_PID}"
+    elif [ -f "mysql/mysqld.pid" ]; then
+        cat "mysql/mysqld.pid"
+    elif [ -f "mysql/data/${HOSTNAME}.pid" ]; then
+        cat "mysql/data/${HOSTNAME}.pid"
+    fi
+}
+
+shutdown_mysql_server()
+{
+    local PID=$(get_mysql_pid)
+    if [ "$PID" ]; then
+        kill $PID
+        wait $PID
+    fi
+}
+
+startup_mysql_server()
+{
+    "${MYSQL_DAEMON_BINARY}" --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
+    MYSQL_DAEMON_PID=$!
+
+    tries=60
+    echo "waiting for mysql server to start"
+    while ! $MYSQL_CLIENT <<< "select version();"  > /dev/null 2>&1; do
+        [ $((tries-=1)) -eq 0 ] && {
+            echo "Could not start mysql server"
+            cat mysql/mysql.log
+            shutdown_mysql_server
+            exit 1
+        }
+        echo -n "."
+        sleep 1
+    done
+}
+
+
+start_test
+
+shutdown_mysql_server
+
+rm -Rf mysql/data/*
+mkdir -p mysql/data/
+# directory for socket, depending on length (socket length is limited)
+rm -Rf  ${dbHost}
+mkdir -p ${dbHost}
+
+
+# initialize mysql db
+${MYSQL_DAEMON_BINARY} --defaults-file=mysqldefaults --initialize-insecure --user="$USER" > mysql/mysql_init.log
+
+startup_mysql_server
+
+test_db_name="${db_name}_test"
+
+
+echo "create database ${test_db_name}" | $MYSQL_CLIENT
+echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYSQL_CLIENT "${test_db_name}"
+echo "insert into test (data) VALUES ('test entry 1') " | $MYSQL_CLIENT "${test_db_name}"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/log1.out
+run job=$JobName yes
+wait JobName=$JobName
+status dir
+
+run job=$JobName level=Incremental yes
+wait JobName=$JobName
+status dir
+
+END_OF_DATA
+
+# insert data and run incremental
+echo "insert into test (data) VALUES ('test entry 2') " | $MYSQL_CLIENT "${test_db_name}"
+
+run_bareos "$@"
+
+cat <<END_OF_DATA2 >"$tmp/bconcmds"
+# run incremental again without any new data
+run job=$JobName yes
+wait JobName=$JobName
+status dir
+wait
+messages
+quit
+END_OF_DATA2
+
+run_bareos "$@"
+
+cat <<END_OF_DATA3 >"$tmp/bconcmds"
+restore restorejob=RestoreFile client=bareos-fd fileset=bareos_mysql_dump yes select all done
+@$out $tmp/log2.out
+wait
+END_OF_DATA3
+
+run_bareos "$@"
+
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+
+# Check if some files are restored
+ls -lR "$tmp/bareos-restores/_mysqlbackups_/"
+if [ -z "$(ls -A "$tmp/bareos-restores/_mysqlbackups_/")" ]; then
+       echo "No restore data found"
+       estat=1
+fi
+
+# delete database
+$MYSQL_CLIENT <<< "DROP DATABASE ${test_db_name};"
+
+if $MYSQL_CLIENT "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" 2>/dev/null; then
+    echo "database ${test_db_name} should be deleted and command should fail."
+    estat=2
+fi
+
+# restore db
+$MYSQL_CLIENT < "$tmp/bareos-restores/_mysqlbackups_/${test_db_name}.sql"
+
+if ! $MYSQL_CLIENT "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" >/dev/null; then
+    echo "test entry not found after restore"
+    estat=3
+fi
+
+shutdown_mysql_server
+
+end_test
