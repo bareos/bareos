@@ -433,6 +433,7 @@ macro(prepare_test_python)
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ovirt:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/postgres:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/pyfiles:"
+        "${CMAKE_SOURCE_DIR}/contrib/fd-plugins:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles:"
         "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles:"
         "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_name}modules:"
