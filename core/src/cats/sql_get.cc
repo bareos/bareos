@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -242,9 +242,9 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   SQL_ROW row;
   char ed1[50];
   char esc[MAX_ESCAPE_NAME_LENGTH];
-
+  bool search_by_jobname = (jr->JobId == 0);
   DbLock(this);
-  if (jr->JobId == 0) {
+  if (search_by_jobname) {
     EscapeString(jcr, esc, jr->Job, strlen(jr->Job));
     Mmsg(cmd,
          "SELECT VolSessionId,VolSessionTime,"
@@ -264,8 +264,14 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   }
 
   if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+
   if ((row = SqlFetchRow()) == NULL) {
-    Mmsg1(errmsg, _("No Job found for JobId %s\n"), edit_int64(jr->JobId, ed1));
+    if (search_by_jobname) {
+      Mmsg1(errmsg, _("No Job found for JobName %s\n"), esc);
+    } else {
+      Mmsg1(errmsg, _("No Job found for JobId %s\n"),
+            edit_int64(jr->JobId, ed1));
+    }
     SqlFreeResult();
     goto bail_out;
   }
