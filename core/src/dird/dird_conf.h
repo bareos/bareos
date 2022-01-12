@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -131,7 +131,10 @@ class DirectorResource
   bool optimize_for_speed = false; /* Optimize daemon for speed which may need
                               more memory */
   bool ndmp_snooping = false;      /* NDMP Protocol specific snooping enabled */
-  bool auditing = false;           /* Auditing enabled */
+  bool ndmp_fhinfo_set_zero_for_invalid_u_quad
+      = false;  // Workaround for Isilon 9.1.0.0 not accepting -1 as value for
+                // FhInfo (which is the tape offset)
+  bool auditing = false; /* Auditing enabled */
   alist<const char*>* audit_events
       = nullptr;                  /* Specific audit events to enable */
   uint32_t ndmp_loglevel = 0;     /* NDMP Protocol specific loglevel to use */
