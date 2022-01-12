@@ -32,6 +32,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - git: set merge strategy for CHANGELOG.md to union [PR #1062]
 - webui: add timeline chart by jobs [PR #1059]
 - stored: enable labeling of tapes in drives even if `autoselect=no` [PR #1021] 
+- dir, stored: start statistics threads only if needed [PR #1040]
 
 ### Deprecated
 
