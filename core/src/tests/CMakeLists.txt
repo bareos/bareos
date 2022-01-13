@@ -427,3 +427,4 @@ if(NOT client-only)
 endif() # NOT client-only
 
 bareos_add_test(test_poolmem LINK_LIBRARIES bareos GTest::gtest_main)
+bareos_add_test(test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main)

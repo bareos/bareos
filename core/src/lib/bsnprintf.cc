@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,7 @@
 
 #include "include/bareos.h"
 #include <wchar.h>
+#include "lib/bsnprintf.h"
 
 #define FP_OUTPUT 1 /* BAREOS uses floating point */
 
@@ -51,7 +52,6 @@
 #  define LDOUBLE double
 #endif
 
-int Bvsnprintf(char* buffer, int32_t maxlen, const char* format, va_list args);
 static int32_t fmtstr(char* buffer,
                       int32_t currlen,
                       int32_t maxlen,

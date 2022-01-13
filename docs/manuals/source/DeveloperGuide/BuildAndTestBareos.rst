@@ -7,3 +7,4 @@ Build And Test Bareos
    BuildAndTestBareos/systemtests.rst
    BuildAndTestBareos/HintsForBuildingBareos.rst
    BuildAndTestBareos/benchmarks.rst
+   BuildAndTestBareos/coverage.rst

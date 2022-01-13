@@ -13,7 +13,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core cats: Add IF EXISTS in drop table statements fix for bug #1409 (Allow usage of ExitOnFatal) [PR #1035]
 
 ### Added
-- doc: Add chapter for mariabackup db plugin [PR #1016]
+- tests: simplify test coverage analysis [PR #1010]
+- docs: Add chapter for mariabackup db plugin [PR #1016]
 
 ### Changed
 
@@ -25,6 +26,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Documentation
 
+[PR #1010]: https://github.com/bareos/bareos/pull/1010
 [PR #1016]: https://github.com/bareos/bareos/pull/1016
 [PR #1031]: https://github.com/bareos/bareos/pull/1031
 [PR #1033]: https://github.com/bareos/bareos/pull/1033

@@ -21,6 +21,7 @@ must be given permission to create databases and database user:
 
    user@host:~$ sudo -u postgres createuser --createdb --createrole $USER
 
+.. _build-for-systemtest:
 
 Build Bareos for Systemtests
 ----------------------------
