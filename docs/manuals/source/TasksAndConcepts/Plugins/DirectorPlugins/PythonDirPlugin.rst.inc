@@ -1,5 +1,7 @@
 .. _director-python-plugin:
 
+.. _section-python-dir Plugin:
+
 python-dir Plugin
 ~~~~~~~~~~~~~~~~~
 

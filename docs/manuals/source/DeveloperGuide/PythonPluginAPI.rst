@@ -1,5 +1,7 @@
-Python Plugins
---------------
+.. _section-Python Plugin API:
+
+Python Plugin API
+-----------------
 
 .. index::
    pair: Plugin; Python
@@ -10,111 +12,24 @@ Python programming language. With the Python plugins, it is possible to implemen
 Bareos Plugins by writing Python code.
 
 For each daemon there exists a Daemon Python Plugin which is a plugin implementing
-the C API for Bareos plugins.
+the C API for Bareos plugins,
+see :ref:`section-python-fd Plugin`, :ref:`section-python-sd Plugin` and :ref:`section-python-dir Plugin`.
 
 This Python plugin can be configured via the usual plugin configuration mechanism
 which python files to load. The python files then implement the plugin
 functionality.
 
-Examples for such Python Plugins are the VMware Python Plugin or the oVirt Python Plugin.
 
+Description of the Bareos Python plugin API for Bareos >= 20
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Modernization of the Python plugin API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 For Bareos :sinceVersion:`20: Python API`, the Bareos Python API was refactored and
 adapted to support both Python version *2* and Python version *3*.
 
-Description of the Bareos Python plugin API for Bareos < 20
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In  Bareos < 20, the Bareos Python plugin API consists of a Bareos daemon
-plugin (**python-fd**, **python-sd**, **python-dir**). These plugins are
-shared objects that are loaded by the corresponding daemon during startup.
-
-
-.. uml::
-  :caption: Bareos Python Plugin Architecture for Bareos < 20
-
-  package "Bareos Daemon" {
-  [Core]
-  }
-
-  package "Daemon Python Plugin (shared library)" {
-  [Python Extension Module]
-  [Python Interpreter]
-  }
-
-  package "Python Plugin Scripts" {
-  [Python Plugin Files]
-  [Python Constants File]
-  }
-
-  [Core] <-> [Python Interpreter] : Bareos Plugin API
-
-  [Python Interpreter] <-> [Python Extension Module] : use
-  [Python Extension Module] <-> [Python Plugin Files] : Python Plugin API
-  [Python Plugin Files] -> [Python Constants File] : imports
-
-
-This plugin then creates an **internal Python extension module** and starts a **Python 2**
-interpreter being able to access the Python module.
-
-The **internal Python extension module** allows the Python plugin to call functions
-implemented in Python, and implements callback functions that can be called
-from the Python code into the core. It also implements the data types that are
-exchanged via the Bareos plugin interface.
-
-Finally, the Python interpreter loads the Python script configured in the
-**Plugin string** of the file set and executes it. This Python script is the
-Bareos plugin implemented in Python.
-
-As the **internal Python extension module** is only created inside of the Python
-plugin, debugging and testing is a challenge.
-
-Definitions of constants required for the Python plugins callbacks into the
-Bareos core are stored in a Python file called
-*bareos_[fd|sd|dir]_consts*, for example *bareos_fd_consts.py*.
-
-This file contained the required definitions in form of dictionaries, like the
-following example:
-
-.. code-block:: python
-   :caption: bareos_fd_consts: definition as dictionary
-
-    bRCs = dict(
-        bRC_OK=0,
-        bRC_Stop=1,
-        bRC_Error=2,
-        bRC_More=3,
-        bRC_Term=4,
-        bRC_Seen=5,
-        bRC_Core=6,
-        bRC_Skip=7,
-        bRC_Cancel=8,
-    )
-
-
-To access these values, every Python plugin needs to import this file and
-access the values via the dictionary like in the following example:
-
-.. code-block:: python
-   :caption: bareos_fd_consts: accessing
-
-   import bareos_fd_consts
-   ... # more code
-   return bareos_fd_consts.bRCs["bRC_OK"]
-
-
-The API also always carries a **context** variable which is part of
-every function call between the Bareos core and Python, so that every function
-being called from the core has an context which needs to be given back to every
-call that goes into the core.
-
-
-Description of the new Bareos Python plugin API for Bareos >= 20
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Since Bareos :sinceVersion:`20: Python3`, two Python plugins exist for
-each Bareos daemon, where the **python-** prefix means that the plugin supports
-Python 2, and the **python3-** prefix supports Python 3.
+Two Python plugins exist for each Bareos daemon,
+where the **python-** prefix means that the plugin supports
+Python 2
+and the **python3-** prefix supports Python 3.
 
 The following six plugins now exist:
 
@@ -124,9 +39,9 @@ The following six plugins now exist:
    ===============  =========== ============
     Python Version  Python 2    Python 3
    ===============  =========== ============
-    filedaemon      python-fd   python3-fd
-    storage daemon  python-sd   python3-sd
-    director        python-dir  python3-dir
+    |fd|            python-fd   python3-fd
+    |sd|            python-sd   python3-sd
+    |dir|           python-dir  python3-dir
    ===============  =========== ============
 
 The functionality of the former *internal Python extension module* is now implemented
@@ -242,8 +157,97 @@ that was always transferred between the core and the Python Plugin and back was
 The members of the **bareosfd.stat_pkt** type have been renamed with the
 **st_** prefix to match with the member names of Pythons' **os.stat_result**.
 
-Porting existing Python plugins
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+Description of the Bareos Python plugin API for Bareos < 20
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In  Bareos < 20, the Bareos Python plugin API consists of a Bareos daemon
+plugin (**python-fd**, **python-sd**, **python-dir**). These plugins are
+shared objects that are loaded by the corresponding daemon during startup.
+
+
+.. uml::
+  :caption: Bareos Python Plugin Architecture for Bareos < 20
+
+  package "Bareos Daemon" {
+  [Core]
+  }
+
+  package "Daemon Python Plugin (shared library)" {
+  [Python Extension Module]
+  [Python Interpreter]
+  }
+
+  package "Python Plugin Scripts" {
+  [Python Plugin Files]
+  [Python Constants File]
+  }
+
+  [Core] <-> [Python Interpreter] : Bareos Plugin API
+
+  [Python Interpreter] <-> [Python Extension Module] : use
+  [Python Extension Module] <-> [Python Plugin Files] : Python Plugin API
+  [Python Plugin Files] -> [Python Constants File] : imports
+
+
+This plugin then creates an **internal Python extension module** and starts a **Python 2**
+interpreter being able to access the Python module.
+
+The **internal Python extension module** allows the Python plugin to call functions
+implemented in Python, and implements callback functions that can be called
+from the Python code into the core. It also implements the data types that are
+exchanged via the Bareos plugin interface.
+
+Finally, the Python interpreter loads the Python script configured in the
+**Plugin string** of the file set and executes it. This Python script is the
+Bareos plugin implemented in Python.
+
+As the **internal Python extension module** is only created inside of the Python
+plugin, debugging and testing is a challenge.
+
+Definitions of constants required for the Python plugins callbacks into the
+Bareos core are stored in a Python file called
+*bareos_[fd|sd|dir]_consts*, for example *bareos_fd_consts.py*.
+
+This file contained the required definitions in form of dictionaries, like the
+following example:
+
+.. code-block:: python
+   :caption: bareos_fd_consts: definition as dictionary
+
+    bRCs = dict(
+        bRC_OK=0,
+        bRC_Stop=1,
+        bRC_Error=2,
+        bRC_More=3,
+        bRC_Term=4,
+        bRC_Seen=5,
+        bRC_Core=6,
+        bRC_Skip=7,
+        bRC_Cancel=8,
+    )
+
+
+To access these values, every Python plugin needs to import this file and
+access the values via the dictionary like in the following example:
+
+.. code-block:: python
+   :caption: bareos_fd_consts: accessing
+
+   import bareos_fd_consts
+   ... # more code
+   return bareos_fd_consts.bRCs["bRC_OK"]
+
+
+The API also always carries a **context** variable which is part of
+every function call between the Bareos core and Python, so that every function
+being called from the core has an context which needs to be given back to every
+call that goes into the core.
+
+
+Porting existing Python plugins to Bareos >= 20
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Porting existing Python plugin from Version 19 to 20 requires is not very hard
 and requires the following steps:
@@ -259,41 +263,8 @@ and requires the following steps:
 
    Adapt the code to run on Python 2 **and** Python 3
       It is important to make sure the code works both for Python 2 and 3.
-      While the c++ code and the Python api have been reorganized, the Python
+      While the C++ code and the Python api have been reorganized, the Python
       plugin code itself is the same being run with Python 2 or 3.  Existing
       plugins have been ported and the current Python 2 version support
       already a lot of things required by Python 3.
       For more details see `Python 3 Porting Guide, strings chapter: <https://portingguide.readthedocs.io/en/latest/strings.html>`_
-
-
-
-Switching to Python 3
-^^^^^^^^^^^^^^^^^^^^^
-
-Switching to use the Python 3 plugin, the following needs to be changed:
-  * Set `Plugin Names = "python3"` to make sure the Python3 plugin is loaded.
-  * Adapt the Plugin setting in the fileset to use Python3: `Plugin = "python3:module_path ...`
-
-.. warning::
-
-   It is not possible to load the python2 and python3 plugins at the same time.
-
-
-Recovering old backups
-^^^^^^^^^^^^^^^^^^^^^^^
-When doing backups, the plugin parameter string is stored into the backup stream.
-During restore, this string is used to determine the plugin that will handle this
-data.
-
-To be able to restore backups created with Python plugins using the
-**python3-fd** plugin that were created using the **python-fd** plugin,
-the code determining the plugin that will handle the data also matches for
-the basename of the current available plugins without the last character.
-
-So backups created with the **python** plugin (which uses Python 2) can be restored
-with the **python3** plugin (which uses Python 3).
-
-.. warning::
-
-   It is not possible to use the python plugin to restore backups created with
-   the python3 plugin. Once switched, you need to stay on python3.

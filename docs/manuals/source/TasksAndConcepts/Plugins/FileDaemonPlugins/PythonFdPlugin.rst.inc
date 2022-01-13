@@ -1,3 +1,5 @@
+.. _section-python-fd Plugin:
+
 python-fd Plugin
 ~~~~~~~~~~~~~~~~
 
