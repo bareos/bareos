@@ -71,7 +71,8 @@ rst_epilog = """
 .. |traymonitor| replace:: Bareos Traymonitor
 .. |bareosWebui| replace:: Bareos Webui
 .. |webui| replace:: Bareos WebUI
-.. |mysql| replace:: MySQL/MariaDB
+.. |mariadb| replace:: MariaDB
+.. |mysql| replace:: MySQL
 .. |postgresql| replace:: PostgreSQL
 .. |sqlite| replace:: Sqlite
 .. |vmware| replace:: VMware
@@ -338,7 +339,6 @@ import re
 # settings for sphinxcontrib-versioning
 scv_whitelist_branches = (
     re.compile(r"^master$"),
-    re.compile(r"^bareos-18.2$"),
     re.compile(r"^bareos-19.2$"),
     re.compile(r"^bareos-2.$"),
 )
