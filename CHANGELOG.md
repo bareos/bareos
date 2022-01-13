@@ -12,6 +12,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix wrong `packages_dir` in restapi workflow, so restapi packages will be released to PyPI [PR #1033]
 
 ### Added
+- doc: Add chapter for mariabackup db plugin [PR #1016]
 
 ### Changed
 
@@ -23,4 +24,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Documentation
 
+[PR #1016]: https://github.com/bareos/bareos/pull/1016
+[PR #1031]: https://github.com/bareos/bareos/pull/1031
+[PR #1033]: https://github.com/bareos/bareos/pull/1033
 [unreleased]: https://github.com/bareos/bareos/tree/master
