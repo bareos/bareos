@@ -10,6 +10,7 @@ Developer Guide
    DeveloperGuide/gitworkflow.rst
    DeveloperGuide/messages.rst
    DeveloperGuide/pluginAPI.rst
+   DeveloperGuide/PythonPlugins.rst
    DeveloperGuide/platformsupport.rst
    DeveloperGuide/daemonprotocol.rst
    DeveloperGuide/file.rst
