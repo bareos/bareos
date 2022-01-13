@@ -214,11 +214,11 @@ const char *BareosDbSqlite::query_definitions[] = {
 ,
 
 /* 0018_uar_del_temp */
-"DROP TABLE temp "
+"DROP TABLE IF EXISTS temp "
 ,
 
 /* 0019_uar_del_temp1 */
-"DROP TABLE temp1 "
+"DROP TABLE IF EXISTS temp1 "
 ,
 
 /* 0020_uar_last_full */
