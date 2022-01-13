@@ -5,6 +5,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+- doc: backport chapter for mariabackup db plugin [PR #1044]
+
 ## [21.0.0] - 2021-12-21
 
 * 300+ PRs
@@ -393,4 +395,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1027]: https://github.com/bareos/bareos/pull/1027
 [PR #1028]: https://github.com/bareos/bareos/pull/1028
 [PR #1029]: https://github.com/bareos/bareos/pull/1029
+[PR #1031]: https://github.com/bareos/bareos/pull/1031
+[PR #1044]: https://github.com/bareos/bareos/pull/1044
 [unreleased]: https://github.com/bareos/bareos/tree/master

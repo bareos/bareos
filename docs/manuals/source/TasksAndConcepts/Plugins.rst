@@ -1907,7 +1907,7 @@ You can append options to the plugin call as key=value pairs, separated by â€™:â
 
 -  :strong:`restorecommand` to modify the command for restore. Default setting is: :command:`mbstream -x -C`
 
--  :strong:`strictIncremental`: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) was not increased since last backup. This is to ensure, that eventual changes to MYISAM/ARIA/Rocks tables get into the backup. MYISAM/ARIA/Rocks does not support incremental backups, you will always get a full backup of these tables. If set to true, no data will be written into backup, if the LSN was not changed.
+-  :strong:`strictIncremental`: By default (false), an incremental backup will create data even if the Log Sequence Number (LSN) was not increased since last backup. This is to ensure that eventual changes to MYISAM/ARIA/Rocks tables get into the backup. MYISAM/ARIA/Rocks does not support incremental backups, you will always get a full backup of these tables. If set to true, no data will be written into backup, if the LSN was not changed.
 
 
 Restore with mariabackup Plugin
