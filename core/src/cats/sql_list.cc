@@ -103,42 +103,43 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
                                OutputFormatter* sendit,
                                e_list_type type)
 {
-  char esc[MAX_ESCAPE_NAME_LENGTH];
+  char escaped_pool_name[MAX_ESCAPE_NAME_LENGTH];
+
+  PoolMem query(PM_MESSAGE);
+  PoolMem select(PM_MESSAGE);
 
   DbLock(this);
-  EscapeString(jcr, esc, pdbr->Name, strlen(pdbr->Name));
+  EscapeString(jcr, escaped_pool_name, pdbr->Name, strlen(pdbr->Name));
 
   if (type == VERT_LIST) {
+    Mmsg(select,
+         "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
+         "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
+         "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
+         "RecyclePoolId,LabelType ");
     if (pdbr->Name[0] != 0) {
-      Mmsg(cmd,
-           "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
-           "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
-           "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
-           "RecyclePoolId,LabelType "
-           "FROM Pool WHERE Name='%s'",
-           esc);
+      query.bsprintf("%s FROM Pool WHERE Name='%s'", select.c_str(),
+                     escaped_pool_name);
+    } else if (pdbr->PoolId > 0) {
+      query.bsprintf("%s FROM Pool WHERE poolid=%d", select.c_str(),
+                     pdbr->PoolId);
     } else {
-      Mmsg(cmd,
-           "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
-           "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
-           "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
-           "RecyclePoolId,LabelType "
-           "FROM Pool ORDER BY PoolId");
+      query.bsprintf("%s FROM Pool ORDER BY PoolId", select.c_str());
     }
   } else {
+    Mmsg(select, "SELECT PoolId,Name,NumVols,MaxVols,PoolType,LabelFormat ");
     if (pdbr->Name[0] != 0) {
-      Mmsg(cmd,
-           "SELECT PoolId,Name,NumVols,MaxVols,PoolType,LabelFormat "
-           "FROM Pool WHERE Name='%s'",
-           esc);
+      query.bsprintf("%s FROM Pool WHERE Name='%s'", select.c_str(),
+                     escaped_pool_name);
+    } else if (pdbr->PoolId > 0) {
+      query.bsprintf("%s FROM Pool WHERE poolid=%d", select.c_str(),
+                     pdbr->PoolId);
     } else {
-      Mmsg(cmd,
-           "SELECT PoolId,Name,NumVols,MaxVols,PoolType,LabelFormat "
-           "FROM Pool ORDER BY PoolId");
+      query.bsprintf("%s FROM Pool ORDER BY PoolId", select.c_str());
     }
   }
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, query.c_str())) { goto bail_out; }
 
   sendit->ArrayStart("pools");
   ListResult(jcr, sendit, type);
