@@ -288,12 +288,19 @@ bool RemoveDefaultAddresses(dlist<IPADDR>* addrs,
 {
   IPADDR* iaddr;
   IPADDR* default_address = nullptr;
+  IPADDR* todelete = nullptr;
+
   foreach_dlist (iaddr, addrs) {
+    if (todelete) {
+      delete (todelete);
+      todelete = nullptr;
+    }
     if (iaddr->GetType() == IPADDR::R_DEFAULT) {
       default_address = iaddr;
       if (default_address) {
         addrs->remove(default_address);
-        delete default_address;
+        todelete = default_address;  // delete after the next pointer was used
+                                     // (during foreach_dlist())
       }
     } else if (iaddr->GetType() != type) {
       Bsnprintf(buf, buflen,
