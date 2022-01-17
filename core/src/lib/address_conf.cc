@@ -347,9 +347,9 @@ int AddAddress(dlist<IPADDR>** out,
                char* buf,
                int buflen)
 {
-  IPADDR* iaddr;
-  IPADDR* jaddr;
-  dlist<IPADDR>* hostaddrs;
+  IPADDR* iaddr = nullptr;
+  IPADDR* jaddr = nullptr;
+  dlist<IPADDR>* hostaddrs = nullptr;
   unsigned short port;
   IPADDR::i_type intype = type;
 
@@ -406,17 +406,21 @@ int AddAddress(dlist<IPADDR>** out,
 
   } else {
     foreach_dlist (iaddr, hostaddrs) {
-      IPADDR* clone;
+      bool sameaddress = false;
       /* for duplicates */
       foreach_dlist (jaddr, addrs) {
-        if (IsSameIpAddress(iaddr, jaddr)) { goto skip; /* no price */ }
+        if (IsSameIpAddress(iaddr, jaddr)) {
+          sameaddress = true;
+          break;
+        }
       }
-      clone = new IPADDR(*iaddr);
-      clone->SetType(type);
-      clone->SetPortNet(port);
-      addrs->append(clone);
-    skip:
-      continue;
+      if (!sameaddress) {
+        IPADDR* clone = nullptr;
+        clone = new IPADDR(*iaddr);
+        clone->SetType(type);
+        clone->SetPortNet(port);
+        addrs->append(clone);
+      }
     }
   }
   FreeAddresses(hostaddrs);
