@@ -481,9 +481,13 @@ class RestoreController extends AbstractActionController
     $this->setRestoreParams();
     $this->layout('layout/json');
 
-    return new ViewModel(array(
-      'items' => $this->buildSubtree()
-    ));
+    if($this->restore_params['client'] != null) {
+      $items = $this->buildSubtree();
+    } else {
+      $items = "{}";
+    }
+
+    return new ViewModel(array('items' => $items));
   }
 
   /**
