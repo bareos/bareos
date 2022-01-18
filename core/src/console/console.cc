@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -345,7 +345,7 @@ static char* get_first_keyword()
  */
 static char* get_previous_keyword(int current_point, int nb)
 {
-  int i, end = -1, start, inquotes = 0;
+  int i, end = -1, start = 0, inquotes = 0;
   char* s = NULL;
 
   while (nb-- >= 0) {
