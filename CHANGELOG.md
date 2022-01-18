@@ -27,6 +27,10 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Documentation
 
+- split the very long `Plugins.rst` file into one file per Bareos plugin [PR #1046]
+
+
+
 [PR #1010]: https://github.com/bareos/bareos/pull/1010
 [PR #1016]: https://github.com/bareos/bareos/pull/1016
 [PR #1031]: https://github.com/bareos/bareos/pull/1031
