@@ -770,7 +770,13 @@ list
       list jobmedia job=<job-name>
       list files jobid=<id>
       list files job=<job-name>
+      list media jobid=<jobid>
+      list media ujobid=<complete_name>
+      list media pool=<pool-name>
+      list media=<media_name>
+      list mediaid=<mediaid>
       list pools
+      list poolid=<poolid>
       list clients
       list jobtotals
       list volumes
@@ -778,6 +784,7 @@ list
       list volumes pool=<pool-name>
       list volumes job=<job-name>
       list volume=<volume-name>
+      list volumeid=<volumeid>
       list nextvolume job=<job-name>
       list nextvol job=<job-name>
       list nextvol job=<job-name> days=nnn
