@@ -359,10 +359,12 @@ static struct ua_cmdstruct commands[] = {
          "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
          "pools |\n"
          "pool=<pool-name> |\n"
+         "poolid=<poolid> |\n"
          "storages |\n"
          "volumes [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> "
          "| all ] [count] |\n"
          "volume=<volume-name> |\n"
+         "volumeid=<volumeid> | mediaid=<volumeid> |\n"
          "[current] | [enabled | disabled] |\n"
          "[limit=<number> [offset=<number>]]"),
      true, true},
@@ -393,9 +395,11 @@ static struct ua_cmdstruct commands[] = {
          "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
          "pools |\n"
          "pool=<pool-name> |\n"
+         "poolid=<poolid> |\n"
          "volumes [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> "
          "| all ] |\n"
          "volume=<volume-name> |\n"
+         "volumeid=<volumeid> | mediaid=<volumeid> |\n"
          "[ current ] | [ enabled ] | [disabled] |\n"
          "[ limit=<num> [ offset=<number> ] ]"),
      true, true},
