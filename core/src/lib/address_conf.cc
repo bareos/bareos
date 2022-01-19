@@ -299,14 +299,17 @@ bool RemoveDefaultAddresses(dlist<IPADDR>* addrs,
       default_address = iaddr;
       if (default_address) {
         addrs->remove(default_address);
-        todelete = default_address;  // delete after the next pointer was used
-                                     // (during foreach_dlist())
+        todelete = default_address;
       }
     } else if (iaddr->GetType() != type) {
       Bsnprintf(buf, buflen,
                 _("the old style addresses cannot be mixed with new style"));
       return false;
     }
+  }
+  if (todelete) {
+    delete (todelete);
+    todelete = nullptr;
   }
   return true;
 }
