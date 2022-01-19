@@ -68,7 +68,6 @@ System Requirements
 
 -  On SUSE Linux Enterprise 12 you need the additional SUSE Linux Enterprise Module for Web Scripting 12.
 
-
 Installation
 ------------
 
@@ -549,3 +548,16 @@ If you prefer to use |webui| on Nginx with php5-fpm instead of Apache, a basic w
    }
 
 This will make the |webui| accessible at http://bareos:9100/ (assuming your DNS resolve the hostname :strong:`bareos` to the NGINX server).
+
+php.ini settings
+~~~~~~~~~~~~~~~~
+
+-  The |webui| relies on date functions. Set the date.timezone directive according to the timezone of your |dir|.
+
+   .. code-block:: php
+
+      [Date]
+      ; Defines the default timezone used by the date functions
+      ; http://php.net/date.timezone
+      date.timezone = Europe/Berlin
+
