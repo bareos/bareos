@@ -12,6 +12,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix wrong `packages_dir` in restapi workflow, so restapi packages will be released to PyPI [PR #1033]
 - core cats: Add IF EXISTS in drop table statements fix for bug #1409 (Allow usage of ExitOnFatal) [PR #1035]
 - sql_get.cc: fix error logging in GetJobRecord() for jobname #1042
+- webui: fix empty job timeline issue if date.timezone is not set in php.ini [PR #1051]
 
 ### Added
 - tests: simplify test coverage analysis [PR #1010]
