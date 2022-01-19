@@ -436,12 +436,21 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
 
 void EmptyAddressList(dlist<IPADDR>* addrs)
 {
-  IPADDR* iaddr;
+  IPADDR* iaddr = nullptr;
+  IPADDR* addrtodelete = nullptr;
   foreach_dlist (iaddr, addrs) {
-    if (iaddr) {
-      addrs->remove(iaddr);
-      delete iaddr;
+    if (addrtodelete) {
+      delete (addrtodelete);
+      addrtodelete = nullptr;
     }
+    if (iaddr) {
+      addrtodelete = iaddr;
+      addrs->remove(iaddr);
+    }
+  }
+  if (addrtodelete) {
+    delete (addrtodelete);
+    addrtodelete = nullptr;
   }
 }
 
