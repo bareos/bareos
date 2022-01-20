@@ -560,4 +560,3 @@ php.ini settings
       ; Defines the default timezone used by the date functions
       ; http://php.net/date.timezone
       date.timezone = Europe/Berlin
-
