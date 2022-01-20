@@ -5,7 +5,17 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
-- doc: backport chapter for mariabackup db plugin [PR #1044]
+### Fixed
+- fix empty job timeline issue if date.timezone is not set in php.ini [PR #1053] (backport of [PR #1051])
+
+### Added
+
+### Changed
+
+### Removed
+
+### Documentation
+- backport chapter for mariabackup db plugin [PR #1044]
 
 ## [21.0.0] - 2021-12-21
 
