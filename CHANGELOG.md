@@ -229,6 +229,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [CVE-2017-14610](https://github.com/bareos/bareos/security/advisories/GHSA-426r-vgh8-vrw8): PID files are now created before dropping privileges and before the parent process exits. [PR #928]
 
 ### Documentation
+- split the very long `Plugins.rst` file into one file per Bareos plugin [PR #1052]
 - add documentation about Unified Linux Client [PR #1028]
 - added "Hardware Sizing" chapter [PR #926]
 - Improve data-type subsubsection in CustomizingTheConfiguration. Add a special Sphinx directive for them (``config:datatype``) [PR #1008]
