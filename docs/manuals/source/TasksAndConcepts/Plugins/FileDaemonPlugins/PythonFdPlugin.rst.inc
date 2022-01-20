@@ -6,7 +6,17 @@ python-fd Plugin
 .. index::
    single: Plugin; Python; File Daemon
 
-The **python-fd** plugin behaves similar to the :ref:`director-python-plugin`. Base plugins and an example get installed via the package **bareos-filedaemon-python-plugin**. Configuration is done in the :ref:`DirectorResourceFileSet` on the director.
+The **python-fd** plugin behaves similar to the :ref:`director-python-plugin`.
+Configuration is done in the :ref:`DirectorResourceFileSet` on the |dir|.
+
+To load a Python plugin you need
+
+module_name
+    The file (or directory) name of your plugin (without the suffix .py)
+module_path
+    Plugin path (optional, only required when using non default paths)
+
+Plugin specific options can be added as key-value pairs, each pair separated by ’:’ key=value.
 
 
 
@@ -27,7 +37,7 @@ Command plugins are used to replace or extend the FileSet definition in the File
          Signature = MD5
        }
        File = "/etc"
-       Plugin = "python"
+       Plugin = "python3"
                 ":module_path=/usr/lib/bareos/plugins"
                 ":module_name=bareos-fd-mysql"
      }
@@ -53,7 +63,7 @@ Example:
      Include {
        Options {
          Signature = MD5 # calculate md5 checksum per file
-         Plugin = "python"
+         Plugin = "python3"
                   ":module_path=/usr/lib/bareos/plugins"
                   ":module_name=bareos-fd-file-interact"
        }
