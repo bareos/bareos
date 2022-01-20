@@ -671,6 +671,11 @@ class JobController extends AbstractActionController
 
         $jobs = array();
 
+        // Ensure a proper date.timezone setting for the job timeline.
+        // Surpress a possible error thrown by date_default_timezone_get()
+        // in older PHP versions with @ in front of the function call.
+        date_default_timezone_set(@date_default_timezone_get());
+
         foreach($result as $job) {
 
           $starttime = new \DateTime($job['starttime']);
