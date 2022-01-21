@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@
 #endif
 
 #include "dird/ua_select.h"
+#include "include/jcr.h"
 
 using namespace directordaemon;
 
@@ -34,10 +35,18 @@ namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
-TEST(multicolumprompts, test0)
-{
-  UaContext ua;
+class MulticolumPrompts : public ::testing::Test {
+ protected:
+  void SetUp() override { ua = new_ua_context(&jcr); }
 
+  void TearDown() override { FreeUaContext(ua); }
+
+  JobControlRecord jcr{};
+  UaContext* ua{};
+};
+
+TEST_F(MulticolumPrompts, FormatForAnyNumberOfLinesAndStandardWidth)
+{
   const char* list[] = {
       _("bareos1"),  _("bareos2"),  _("bareos3"),  _("bareos4"),  _("bareos5"),
       _("bareos6"),  _("bareos7"),  _("bareos8"),  _("bareos9"),  _("bareos10"),
@@ -45,10 +54,10 @@ TEST(multicolumprompts, test0)
 
       nullptr};
 
-  StartPrompt(&ua, "start");
-  for (int i = 0; list[i]; ++i) { AddPrompt(&ua, list[i]); }
+  StartPrompt(ua, "start");
+  for (int i = 0; list[i]; ++i) { AddPrompt(ua, list[i]); }
 
-  std::string output = FormatMulticolumnPrompts(&ua, 80, 1);
+  std::string output = FormatMulticolumnPrompts(ua, 80, 1);
 
   EXPECT_STREQ(output.c_str(),
                " 1: bareos1   2: bareos2   3: bareos3   4: bareos4   5: "
@@ -58,10 +67,8 @@ TEST(multicolumprompts, test0)
                "13: bareos13 14: bareos14 15: bareos15\n");
 }
 
-TEST(multicolumprompts, test1)
+TEST_F(MulticolumPrompts, FormatForMoreThan10LinesAndStandardWidth)
 {
-  UaContext ua;
-
   const char* list[]
       = {_("List last 20 Jobs run"),
          _("List Jobs where a given File is saved"),
@@ -77,10 +84,10 @@ TEST(multicolumprompts, test1)
          _("Select full restore to a specified Job date"),
          _("Cancel"),
          nullptr};
-  StartPrompt(&ua, "start");
-  for (int i = 0; list[i]; ++i) { AddPrompt(&ua, list[i]); }
+  StartPrompt(ua, "start");
+  for (int i = 0; list[i]; ++i) { AddPrompt(ua, list[i]); }
 
-  std::string output = FormatMulticolumnPrompts(&ua, 80, 20);
+  std::string output = FormatMulticolumnPrompts(ua, 80, 20);
 
   EXPECT_STREQ(
       output.c_str(),
@@ -99,10 +106,8 @@ TEST(multicolumprompts, test1)
       "13: Cancel\n");
 }
 
-TEST(multicolumprompts, test2)
+TEST_F(MulticolumPrompts, FormatForAnyNumberOfLinesAndHugeWidth)
 {
-  UaContext ua;
-
   const char* list[]
       = {_("List last 20 Jobs run"),
          _("List Jobs where a given File is saved"),
@@ -118,10 +123,10 @@ TEST(multicolumprompts, test2)
          _("Select full restore to a specified Job date"),
          _("Cancel"),
          nullptr};
-  StartPrompt(&ua, "start");
-  for (int i = 0; list[i]; ++i) { AddPrompt(&ua, list[i]); }
+  StartPrompt(ua, "start");
+  for (int i = 0; list[i]; ++i) { AddPrompt(ua, list[i]); }
 
-  std::string output = FormatMulticolumnPrompts(&ua, 5000, 1);
+  std::string output = FormatMulticolumnPrompts(ua, 5000, 1);
 
   EXPECT_STREQ(
       output.c_str(),
@@ -140,10 +145,8 @@ TEST(multicolumprompts, test2)
       "13: Cancel\n");
 }
 
-TEST(multicolumprompts, test3)
+TEST_F(MulticolumPrompts, FormatForMoreThan10LinesAndSmallerThanStandardWidth)
 {
-  UaContext ua;
-
   const char* list[] = {
       _("bareos1"),  _("bareos2"),  _("bareos3"),  _("bareos4"),  _("bareos5"),
       _("bareos6"),  _("bareos7"),  _("bareos8"),  _("bareos9"),  _("bareos10"),
@@ -151,10 +154,10 @@ TEST(multicolumprompts, test3)
 
       nullptr};
 
-  StartPrompt(&ua, "start");
-  for (int i = 0; list[i]; ++i) { AddPrompt(&ua, list[i]); }
+  StartPrompt(ua, "start");
+  for (int i = 0; list[i]; ++i) { AddPrompt(ua, list[i]); }
 
-  std::string output = FormatMulticolumnPrompts(&ua, 60, 10);
+  std::string output = FormatMulticolumnPrompts(ua, 60, 10);
 
   EXPECT_STREQ(output.c_str(),
                " 1: bareos1   2: bareos2   3: bareos3   4: bareos4\n"
@@ -163,16 +166,14 @@ TEST(multicolumprompts, test3)
                "13: bareos13 14: bareos14 15: bareos15\n");
 }
 
-TEST(multicolumprompts, test4)
+TEST_F(MulticolumPrompts, FormatPromptsContainingSpacesAndRegularPrompts)
 {
-  UaContext ua;
-
   const char* list[] = {_(""), _("Listsaved"), _("Cancel"), nullptr};
 
-  StartPrompt(&ua, "start");
-  for (int i = 0; list[i]; ++i) { AddPrompt(&ua, list[i]); }
+  StartPrompt(ua, "start");
+  for (int i = 0; list[i]; ++i) { AddPrompt(ua, list[i]); }
 
-  std::string output = FormatMulticolumnPrompts(&ua, 80, 1);
+  std::string output = FormatMulticolumnPrompts(ua, 80, 1);
 
   EXPECT_STREQ(output.c_str(),
                "1:           "
@@ -180,16 +181,14 @@ TEST(multicolumprompts, test4)
                "3: Cancel\n");
 }
 
-TEST(multicolumprompts, test5)
+TEST_F(MulticolumPrompts, FormatPromptsContainingSpaces)
 {
-  UaContext ua;
-
   const char* list[] = {_(""), _(" "), _("  "), nullptr};
 
-  StartPrompt(&ua, "start");
-  for (int i = 0; list[i]; ++i) { AddPrompt(&ua, list[i]); }
+  StartPrompt(ua, "start");
+  for (int i = 0; list[i]; ++i) { AddPrompt(ua, list[i]); }
 
-  std::string output = FormatMulticolumnPrompts(&ua, 80, 20);
+  std::string output = FormatMulticolumnPrompts(ua, 80, 20);
 
   EXPECT_STREQ(output.c_str(),
                "1: \n"
