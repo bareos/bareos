@@ -317,8 +317,7 @@ If you are not interested in this additional functionality, the commands describ
 Prepare Bareos database
 -----------------------
 
-We assume that you have already your database installed and basically running.
-Using the PostgreSQL database backend is recommended.
+We assume that you already have your PostgreSQL database server installed and basically running.
 
 For details, see chapter :ref:`CatMaintenanceChapter`.
 
@@ -349,7 +348,7 @@ For details see :ref:`section-dbconfig`.
 Other Platforms
 ~~~~~~~~~~~~~~~
 
-If your are using PostgreSQL and your PostgreSQL administration user is **postgres** (default), use the following commands:
+If your PostgreSQL administration user is **postgres** (default), use the following commands:
 
 .. code-block:: shell-session
    :caption: Setup Bareos catalog with PostgreSQL
