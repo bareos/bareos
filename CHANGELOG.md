@@ -18,7 +18,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Breaking Changes
 - Bareos now automatically reconnects to the catalog database after the connection was lost. To keep the old behaviour, set `Reconnect = no`  in your Catalog resource. [PR #860]
 - Bareos now listens on IPv4 and IPv6 by default. If you currently use `[DIR|SD|FD] Address` or `[DIR|SD|FD] Address`, you may need to update your configuration to get the same behaviour as before. [PR #882]
-- Support for MySQL and SQLite catalog backends has been removed. Switch to PostgreSQL via `bareos-dbcopy` on Bareos 20 before upgrading. [PR #949]
+- Support for MySQL and SQLite catalog backends has been removed. Switch to PostgreSQL via `bareos-dbcopy` on Bareos 20 before upgrading. See https://docs.bareos.org/Appendix/Howtos.html#section-migrationmysqltopostgresql [PR #949]
 - Bareos no longer supports Bacula tape formats <= 10 (Bacula <= 1.26 which was released 2002). [PR #1019]
 - Deprecated configuration directives have been removed. If you have any configuration settings deprecated in Bareos 20, you will need to remove these before upgrading. [PR #938]
 
@@ -229,6 +229,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - [CVE-2017-14610](https://github.com/bareos/bareos/security/advisories/GHSA-426r-vgh8-vrw8): PID files are now created before dropping privileges and before the parent process exits. [PR #928]
 
 ### Documentation
+- cleanup update section [PR #1055]
+- clarifies MySQL catalog migration process [PR #1055]
+- split `Howtos.rst` file into one file per section [PR #1055]
 - split the very long `Plugins.rst` file into one file per Bareos plugin [PR #1052]
 - add documentation about Unified Linux Client [PR #1028]
 - added "Hardware Sizing" chapter [PR #926]
@@ -397,5 +400,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1028]: https://github.com/bareos/bareos/pull/1028
 [PR #1029]: https://github.com/bareos/bareos/pull/1029
 [PR #1031]: https://github.com/bareos/bareos/pull/1031
+[PR #1033]: https://github.com/bareos/bareos/pull/1033
 [PR #1044]: https://github.com/bareos/bareos/pull/1044
+[PR #1052]: https://github.com/bareos/bareos/pull/1052
+[PR #1055]: https://github.com/bareos/bareos/pull/1055
 [unreleased]: https://github.com/bareos/bareos/tree/master
