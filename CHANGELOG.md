@@ -29,6 +29,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Documentation
 
+- cleanup update section [PR #1054]
+- clarifies MySQL catalog migration process [PR #1054]
+- split `Howtos.rst` file into one file per section [PR #1054]
 - split the very long `Plugins.rst` file into one file per Bareos plugin [PR #1046]
 
 
