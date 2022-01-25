@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -143,6 +143,11 @@ endif()
 check_cxx_compiler_flag(-Wno-unknown-pragmas compiler_has_no_unknown_pragmas)
 if(${compiler_has_no_unknown_pragmas})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
+endif()
+
+check_cxx_compiler_flag(-Winvalid-offsetof compiler_has_invalid_offsetof)
+if(compiler_has_invalid_offsetof)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-offsetof")
 endif()
 
 # warn on sign-conversion include(CheckCCompilerFlag)
