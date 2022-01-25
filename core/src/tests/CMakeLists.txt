@@ -168,8 +168,16 @@ endif()
 if(NOT client-only)
   bareos_add_test(
     test_dir_plugins
-    ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
-    LINK_LIBRARIES bareos bareossql GTest::gtest_main
+    ADDITIONAL_SOURCES
+      ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/dird_conf.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/dird_globals.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/run_conf.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/inc_conf.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/ua_acl.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/ua_audit.cc
+    LINK_LIBRARIES bareos bareossql bareosfind GTest::gtest_main
+                   ${OPENSSL_LIBRARIES}
   )
 endif() # NOT client-only
 
