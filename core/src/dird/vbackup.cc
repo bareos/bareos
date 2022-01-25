@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -482,7 +482,7 @@ static bool CreateBootstrapFile(JobControlRecord* jcr, char* jobids)
   rx.JobIds = jobids;
 
   if (!jcr->db->OpenBatchConnection(jcr)) {
-    Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connexion");
+    Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connection");
     return false;
   }
 

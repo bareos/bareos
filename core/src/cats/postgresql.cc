@@ -634,8 +634,10 @@ retry_query:
       retval = true;
       break;
     case PGRES_FATAL_ERROR:
-      Dmsg1(50, "Result status fatal: %s\n", query);
-      if (exit_on_fatal_) { Emsg0(M_ERROR_TERM, 0, "Fatal database error\n"); }
+      Dmsg1(50, "Result status fatal: %s, %s\n", query, sql_strerror());
+      if (exit_on_fatal_) {
+        Emsg1(M_ERROR_TERM, 0, "Fatal database error: %s\n", sql_strerror());
+      }
 
       if (try_reconnect_ && !transaction_) {
         /*
