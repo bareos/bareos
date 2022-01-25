@@ -234,6 +234,71 @@ get_database_utility_path()
     fi
 }
 
+export  SCSICRYPTO_CMDS="/usr/sbin/bareos-sd /usr/sbin/bscrypto /usr/sbin/btape /usr/sbin/bextract /usr/sbin/bls"
+[ ${os_type} = Linux ] && \
+check_scsicrypto_capabilities()
+{
+  export CAP_MISSING_CONF=0
+  # Check capabilities status of needed binaries
+  if ( [ "$(command -v getcap)" = "" ] || [ "$(command -v setcap)" = "" ] ); then
+      error "getcap and setcap commands are mandatory"
+      return 1
+  fi
+  for C in ${SCSICRYPTO_CMDS};do
+    R=$(setcap -v cap_sys_rawio=ep ${C})
+    if [ ${?} -ne 0 ];then
+       warn "${R}"
+       export CAP_MISSING_CONF=1
+    fi
+  done
+  if [ ${CAP_MISSING_CONF} -ne 0 ];then
+    warn "one of the tools are not configured for scsi crypto."
+    warn "run set_scsicrypto_capabilities to fix capabilities."
+  else
+    info "All tools have capabilities set."
+  fi
+}
+[ ${os_type} != Linux ] && \
+check_scsicrypto_capabilities()
+{
+   error "check_scsicrypto_capabilities() is not supported on this platform"
+   return 1
+}
+
+[ ${os_type} = Linux ] && \
+set_scsicrypto_capabilities()
+{
+  for C in ${SCSICRYPTO_CMDS};do
+    R=$(setcap cap_sys_rawio+ep ${C})
+    if [ ${?} -ne 0 ];then
+       error "setcap ${C} has failed - ${R}"
+       return 1
+    fi
+  done
+}
+[ ${os_type} != Linux ] && \
+set_scsicrypto_capabilities()
+{
+   error "set_scsicrypto_capabilities() is not supported on this platform"
+   return 1
+}
+
+[ ${os_type} = Linux ] && \
+unset_scsicrypto_capabilities()
+{
+  for C in ${SCSICRYPTO_CMDS};do
+    setcap -r ${C}
+    #Erreur message are show directly
+  done
+}
+[ ${os_type} != Linux ] && \
+unset_scsicrypto_capabilities()
+{
+   error "unset_scsicrypto_capabilities() is not supported on this platform"
+   return 1
+}
+
+
 [ ${os_type} = Linux ] && \
 setup_sd_user()
 {
