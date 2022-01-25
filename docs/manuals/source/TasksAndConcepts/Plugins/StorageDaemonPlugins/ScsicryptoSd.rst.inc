@@ -49,7 +49,7 @@ The volume label is written in unencrypted form to the volume, so we can always 
 
 If you don’t want to use the scsicrypto-sd plugin when doing DR and you are only reading one volume, you can also set the crypto key using the bscrypto tool. Because we use the mixed decryption mode, in which you can read both encrypted and unencrypted data from a volume, you can set the right encryption key before reading the volume label.
 
-If you need to read more than one volume, you better use the scsicrypto-sd plugin with tools like bscan/bextract, as the plugin will then auto-load the correct encryption key when it loads the volume, similiarly to what the storage daemon does when performing backups and restores.
+If you need to read more than one volume, you better use the scsicrypto-sd plugin with tools like bscan/bextract, as the plugin will then auto-load the correct encryption key when it loads the volume, similarly to what the storage daemon does when performing backups and restores.
 
 The volume label is unencrypted, so a volume can also be recognized by a non-encrypted installation, but it won’t be able to read the actual data from it. Using an encrypted volume label doesn’t add much security (there is no security-related info in the volume label anyhow) and it makes it harder to recognize either a labeled volume with encrypted data or an unlabeled new volume (both would return an IO-error on read of the label.)
 
@@ -83,29 +83,73 @@ Linux (SG_IO ioctl interface):
 
 The user running the storage daemon needs the following additional capabilities: :index:`\ <single: Platform; Linux; Privileges>`\
 
--  :strong:`CAP_SYS_RAWIO` (see capabilities(7))
+-  :strong:`CAP_SYS_RAWIO+EP` (see capabilities(7))
 
    -  On older kernels you might need :strong:`CAP_SYS_ADMIN`. Try :strong:`CAP_SYS_RAWIO` first and if that doesn’t work try :strong:`CAP_SYS_ADMIN`
 
 -  If you are running the storage daemon as another user than root (which has the :strong:`CAP_SYS_RAWIO` capability), you need to add it to the current set of capabilities.
 
--  If you are using systemd, you could add this additional capability to the CapabilityBoundingSet parameter.
+-  If you are using systemd, you could add this additional capability to the AmbientCapabilities=CAP_SYS_RAWIO parameter.
 
-   -  For systemd add the following to the bareos-sd.service: :strong:`Capabilities=cap_sys_rawio+ep`
+   -  For systemd add the following to the bareos-sd.service: :strong:`AmbientCapabilities=CAP_SYS_RAWIO`
+   -  To check status of capabilities of the running daemon you can use the :command:`getpcaps` followed by the pid of bareos-sd.
 
-You can also set up the extra capability on :command:`bscrypto` and :command:`bareos-sd` by running the following commands:
+.. warning::
+
+   As of systemd version 249 There's no mechanism to pass restricted flag (+ep), so the result will always be full CAP_SYS_RAWIO (eip)
+
+You can also set up the extra capability on :command:`bscrypto`,:command:`bareos-sd`,:command:`bls`,:command:`bextract` and :command:`btape` by running the following commands:
 
 .. code-block:: shell-session
 
-   setcap cap_sys_rawio=ep bscrypto
-   setcap cap_sys_rawio=ep bareos-sd
+   setcap cap_sys_rawio=ep /usr/sbin/bscrypto
+   setcap cap_sys_rawio=ep /usr/sbin/bareos-sd
+   setcap cap_sys_rawio=ep /usr/sbin/bls
+   setcap cap_sys_rawio=ep /usr/sbin/bextract
+   setcap cap_sys_rawio=ep /usr/sbin/btape
+
+
+With our helper
+
+.. code-block:: shell-session
+
+   /usr/lib/bareos/script/bareos-config.sh set_scsicrypto_capabilities
+
+Remove the setting with
+
+.. code-block:: shell-session
+
+   getcap -v /usr/sbin/bscrypto
+   getcap -v /usr/sbin/bareos-sd
+   getcap -v /usr/sbin/bls
+   getcap -v /usr/sbin/bextract
+   getcap -v /usr/sbin/btape
+
+
+With our helper
+
+.. code-block:: shell-session
+
+   /usr/lib/bareos/script/bareos-config.sh unset_scsicrypto_capabilities
+
 
 Check the setting with
 
 .. code-block:: shell-session
 
-   getcap -v bscrypto
-   getcap -v bareos-sd
+   getcap -v /usr/sbin/bscrypto
+   getcap -v /usr/sbin/bareos-sd
+   getcap -v /usr/sbin/bls
+   getcap -v /usr/sbin/bextract
+   getcap -v /usr/sbin/btape
+
+
+With our helper
+
+.. code-block:: shell-session
+
+   /usr/lib/bareos/script/bareos-config.sh check_scsicrypto_capabilities
+
 
 :command:`getcap` and :command:`setcap` are part of libcap-progs.
 
