@@ -234,68 +234,58 @@ get_database_utility_path()
     fi
 }
 
-export  SCSICRYPTO_CMDS="${BAREOS_SBIN_DIR}/bareos-sd ${BAREOS_SBIN_DIR}/bscrypto ${BAREOS_SBIN_DIR}/btape ${BAREOS_SBIN_DIR}/bextract ${BAREOS_SBIN_DIR}/bls"
-[ ${os_type} = Linux ] && \
+_scsicrypto_cmds="bareos-sd bscrypto btape bextract bls"
 check_scsicrypto_capabilities()
 {
-  export CAP_MISSING_CONF=0
-  # Check capabilities status of needed binaries
+  if [ "${os_type}" != "Linux" ];then
+      error "check_scsicrypto_capabilities() is not supported on this platform"
+      return 1
+  fi
+  cap_missing_conf=0
   if ( [ "$(command -v getcap)" = "" ] || [ "$(command -v setcap)" = "" ] ); then
       error "getcap and setcap commands are mandatory"
       return 1
   fi
-  for C in ${SCSICRYPTO_CMDS};do
-    R=$(setcap -v cap_sys_rawio=ep ${C})
-    if [ ${?} -ne 0 ];then
-       warn "${R}"
-       export CAP_MISSING_CONF=1
+  for c in ${_scsicrypto_cmds};do
+    if ! r="$(setcap -v cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
+       warn "${r}"
+       cap_missing_conf=1
     fi
   done
-  if [ ${CAP_MISSING_CONF} -ne 0 ];then
+  if [ ${cap_missing_conf} -ne 0 ];then
     warn "one of the tools are not configured for scsi crypto."
     warn "run set_scsicrypto_capabilities to fix capabilities."
   else
-    info "All tools have capabilities set."
+    info "All tools have cap_sys_rawio=ep set."
   fi
 }
-[ ${os_type} != Linux ] && \
-check_scsicrypto_capabilities()
-{
-   error "check_scsicrypto_capabilities() is not supported on this platform"
-   return 1
-}
 
-[ ${os_type} = Linux ] && \
 set_scsicrypto_capabilities()
 {
-  for C in ${SCSICRYPTO_CMDS};do
-    R=$(setcap cap_sys_rawio+ep ${C})
-    if [ ${?} -ne 0 ];then
-       error "setcap ${C} has failed - ${R}"
+  if [ "${os_type}" != "Linux" ];then
+      error "set_scsicrypto_capabilities() is not supported on this platform"
+      return 1
+  fi
+  for c in ${_scsicrypto_cmds};do
+    if ! r="$(setcap cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
+       error "setcap on ${c} has failed - ${r}"
        return 1
     fi
   done
 }
-[ ${os_type} != Linux ] && \
-set_scsicrypto_capabilities()
-{
-   error "set_scsicrypto_capabilities() is not supported on this platform"
-   return 1
-}
 
-[ ${os_type} = Linux ] && \
 unset_scsicrypto_capabilities()
 {
-  for C in ${SCSICRYPTO_CMDS};do
-    setcap -r ${C}
-    #Erreur message are show directly
+  if [ "${os_type}" != "Linux" ];then
+      error "unset_scsicrypto_capabilities() is not supported on this platform"
+      return 1
+  fi
+  for c in ${_scsicrypto_cmds};do
+    if ! r="$(setcap -r "${BAREOS_SBIN_DIR}/${c}")"; then
+       error "setcap -r on ${c} has failed - ${r}"
+       return 1
+    fi
   done
-}
-[ ${os_type} != Linux ] && \
-unset_scsicrypto_capabilities()
-{
-   error "unset_scsicrypto_capabilities() is not supported on this platform"
-   return 1
 }
 
 
