@@ -234,7 +234,7 @@ get_database_utility_path()
     fi
 }
 
-export  SCSICRYPTO_CMDS="/usr/sbin/bareos-sd /usr/sbin/bscrypto /usr/sbin/btape /usr/sbin/bextract /usr/sbin/bls"
+export  SCSICRYPTO_CMDS="${BAREOS_SBIN_DIR}/bareos-sd ${BAREOS_SBIN_DIR}/bscrypto ${BAREOS_SBIN_DIR}/btape ${BAREOS_SBIN_DIR}/bextract ${BAREOS_SBIN_DIR}/bls"
 [ ${os_type} = Linux ] && \
 check_scsicrypto_capabilities()
 {
