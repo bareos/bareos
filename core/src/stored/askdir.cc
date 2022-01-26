@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,8 +23,8 @@
 // Kern Sibbald, December 2000
 /**
  * @file
- * Subroutines to handle Catalog reqests sent to the Director
- * Reqests/commands from the Director are handled in dircmd.c
+ * Subroutines to handle Catalog requests sent to the Director
+ * Requests/commands from the Director are handled in dircmd.c
  */
 
 #include "include/bareos.h"
