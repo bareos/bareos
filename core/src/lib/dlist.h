@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,9 +23,6 @@
 /**
  * @file
  * Doubly linked list  -- dlist
- *
- * See the end of the file for the dlistString class which
- * facilitates storing strings in a dlist.
  */
 
 #ifndef BAREOS_LIB_DLIST_H_
@@ -33,6 +30,7 @@
 
 #include "include/bareos.h"
 #include "lib/dlink.h"
+#include "lib/dlist_string.h"
 #include "lib/message.h"
 #include "lib/message_severity.h"
 
@@ -364,34 +362,4 @@ template <typename T> class dlist {
   T* first() const { return head; }
   T* last() const { return tail; }
 };
-
-/**
- * C string helper routines for dlist
- *   The string (char *) is kept in the node
- *
- *   Kern Sibbald, February 2007
- *
- */
-class dlistString {
- public:
-  char* c_str() { return str_; }
-
- private:
-#ifdef __clang__
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wunused-private-field"
-#endif
-  dlink<char> link_;
-#ifdef __clang__
-#  pragma clang diagnostic pop
-#endif
-  char str_[1];
-  /* !!! Don't put anything after this as this space is used
-   *     to hold the string in inline
-   */
-};
-
-extern dlistString* new_dlistString(const char* str, int len);
-extern dlistString* new_dlistString(const char* str);
-
 #endif  // BAREOS_LIB_DLIST_H_
