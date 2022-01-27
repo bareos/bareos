@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -118,7 +118,7 @@ void FreeDlist(dlist<ListItem>* list)
   delete (list);
 }
 
-void test_dlist_dynamic()
+TEST(dlist, dynamic)
 {
   dlist<ListItem>* list = NULL;
   ListItem* item = NULL;
@@ -174,8 +174,7 @@ TEST(dlist, dlist)
   int count;
   int index = 0;
 
-  jcr_chain = (dlist<MYJCR>*)malloc(sizeof(dlist<MYJCR>));
-  jcr_chain->init(jcr, &jcr->link);
+  jcr_chain = new dlist<MYJCR>(jcr, &jcr->link);
 
   for (int i = 0; i < 20; i++) {
     sprintf(buf, "%d", i);
@@ -199,8 +198,7 @@ TEST(dlist, dlist)
     index--;
     free(jcr->buf);
   }
-  jcr_chain->destroy();
-  free(jcr_chain);
+  delete jcr_chain;
 
   /* The following may seem a bit odd, but we create a chaing
    *  of jcr objects.  Within a jcr object, there is a buf
@@ -278,16 +276,20 @@ TEST(dlist, dlist)
     jcr->buf = NULL;
   }
   delete jcr_chain;
+}
 
+TEST(dlist, dlistString)
+{
   /* Finally, do a test using the dlistString string helper, which
    *  allocates a dlist node and stores the string directly in
    *  it.
    */
+  char buf[30];
+  int count{0};
   auto chain = std::make_unique<dlist<dlistString>>();
   chain->append(new_dlistString("This is a long test line"));
 #define CNT 6
   strcpy(buf, "ZZZ");
-  count = 0;
   for (int i = 0; i < CNT; i++) {
     for (int j = 0; j < CNT; j++) {
       for (int k = 0; k < CNT; k++) {
@@ -305,6 +307,4 @@ TEST(dlist, dlist)
   foreach_dlist (node, chain) {
   }
   chain->destroy();
-
-  test_dlist_dynamic();
 }
