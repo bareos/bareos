@@ -85,20 +85,29 @@ Linux (SG_IO ioctl interface):
   single: Platform; Linux; Privileges
 
 To perform the operations required for **scsicrypto**, the programs must either run as user **root** or the additional capability :strong:`CAP_SYS_RAWIO+EP` must be set.
-The |sd| normally runs a user **bareos**. Running it as **root** is not recommended.
+The |sd| normally runs as user **bareos**. Running it as **root** is not recommended.
+
+If :command:`bareos-sd` does not have the appropriate capabilities, all other tape operations may still work correctly, but you will get "Unable to perform SG\_IO ioctl" errors.
 
 -  :strong:`CAP_SYS_RAWIO+EP` (see capabilities(7))
 
--  If you are using systemd, you could add this additional capability to the AmbientCapabilities=CAP_SYS_RAWIO parameter.
-
-   -  For systemd add the following to the bareos-sd.service: :strong:`AmbientCapabilities=CAP_SYS_RAWIO`
-   -  To check status of capabilities of the running daemon you can use the :command:`getpcaps` followed by the pid of bareos-sd.
+-  For systemd add the following to the bareos-sd.service: :strong:`AmbientCapabilities=CAP_SYS_RAWIO`.
+   To check status of capabilities of the running daemon you can use the :command:`getpcaps` followed by the pid of bareos-sd.
 
 .. warning::
 
    As of systemd version 249 There's no mechanism to pass restricted flag (+ep), so the result will always be full CAP_SYS_RAWIO (eip)
 
-You can also set up the extra capability on :command:`bscrypto`,:command:`bareos-sd`,:command:`bls`,:command:`bextract` and :command:`btape` by running the following commands:
+You can also set up the extra capability on :command:`bareos-sd`, :command:`bcopy`, :command:`bextract`, :command:`bls`, :command:`bscan`, :command:`bscrypto`, :command:`btape` by running the following commands:
+
+Check the setting with our helper
+
+.. code-block:: shell-session
+
+   /usr/lib/bareos/script/bareos-config.sh set_scsicrypto_capabilities
+
+
+Check the setting manually
 
 .. code-block:: shell-session
 
@@ -111,14 +120,13 @@ You can also set up the extra capability on :command:`bscrypto`,:command:`bareos
    setcap cap_sys_rawio=ep /usr/sbin/btape
 
 
-With our helper
+Remove the setting with our helper
 
 .. code-block:: shell-session
 
-   /usr/lib/bareos/script/bareos-config.sh set_scsicrypto_capabilities
+   /usr/lib/bareos/script/bareos-config.sh unset_scsicrypto_capabilities
 
-
-Remove the setting with
+Check the setting manually
 
 .. code-block:: shell-session
 
@@ -131,14 +139,14 @@ Remove the setting with
    setcap -r /usr/sbin/btape
 
 
-With our helper
+Check the setting with our helper
 
 .. code-block:: shell-session
 
-   /usr/lib/bareos/script/bareos-config.sh unset_scsicrypto_capabilities
+   /usr/lib/bareos/script/bareos-config.sh check_scsicrypto_capabilities
 
 
-Check the setting with
+Check the setting manually
 
 .. code-block:: shell-session
 
@@ -151,21 +159,19 @@ Check the setting with
    getcap -v /usr/sbin/btape
 
 
-With our helper
-
-.. code-block:: shell-session
-
-   /usr/lib/bareos/script/bareos-config.sh check_scsicrypto_capabilities
-
-
 :command:`getcap` and :command:`setcap` are part of libcap-progs.
 
-If :command:`bareos-sd` does not have the appropriate capabilities, all other tape operations may still work correctly, but you will get "Unable to perform SG\_IO ioctl" errors.
 
 .. warning::
 
-Our actual packaging doesn't respect the capabilities settings you could have add to your system.
-If you are using scsicrypto we recommend to set again capabilities after any software update.
+   Adding capabilities like cap_sys_rawio to binaries can increase their abuse, so we recommend also to restrict a bit more their ownership to 0750.
+   Doing so restrict execution to only root or any member of bareos group.
+
+
+.. note::
+
+   Since :sinceVersion:`21.0.1: scscicrypto capabilities handling` during package update post-install will react according to file `.enable-capabilities` presence in your bareos config dir, setting back the previously set capabilities if present.
+   Before it is mandatory to setup capabilities manually after each update.
 
 
 Solaris (USCSI ioctl interface):
