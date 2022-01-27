@@ -18,6 +18,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - tests: simplify test coverage analysis [PR #1010]
 - docs: Add chapter for mariabackup db plugin [PR #1016]
 - dird: extend the list command to be able to query volumes and pools by ID [PR #1041]
+- systemtests: wait for mariadb shutdown [PR #1048]
 
 ### Changed
 

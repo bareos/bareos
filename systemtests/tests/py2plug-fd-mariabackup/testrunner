@@ -28,8 +28,12 @@ JobName=backup-bareos-fd
 "${rscripts}"/setup
 
 shutdown_mysql_server(){
-[ -f "mysql/mysqld.pid" ] && kill "$(cat mysql/mysqld.pid)" || :
-[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
+for f in mysql/mysqld.pid "mysql/data/${HOSTNAME}.pid"; do
+  [ ! -r "$f" ] && continue
+  pid="$(cat "$f")"
+  kill "$pid"
+  wait "$pid"
+done
 }
 
 startup_mysql_server(){
