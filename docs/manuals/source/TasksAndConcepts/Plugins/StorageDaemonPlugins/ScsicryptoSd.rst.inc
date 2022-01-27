@@ -83,14 +83,11 @@ Linux (SG_IO ioctl interface):
 
 .. index::
   single: Platform; Linux; Privileges
- 
-To perform the operations required for **scsicrypto**, the programs must either run as user **root** or the additional capability :strong:`CAP_SYS_RAWIO` must be set.
+
+To perform the operations required for **scsicrypto**, the programs must either run as user **root** or the additional capability :strong:`CAP_SYS_RAWIO+EP` must be set.
 The |sd| normally runs a user **bareos**. Running it as **root** is not recommended.
 
 -  :strong:`CAP_SYS_RAWIO+EP` (see capabilities(7))
-
-   -  On older kernels you might need :strong:`CAP_SYS_ADMIN`. Try :strong:`CAP_SYS_RAWIO` first and if that doesn’t work try :strong:`CAP_SYS_ADMIN`
-
 
 -  If you are using systemd, you could add this additional capability to the AmbientCapabilities=CAP_SYS_RAWIO parameter.
 
@@ -105,10 +102,12 @@ You can also set up the extra capability on :command:`bscrypto`,:command:`bareos
 
 .. code-block:: shell-session
 
-   setcap cap_sys_rawio=ep /usr/sbin/bscrypto
    setcap cap_sys_rawio=ep /usr/sbin/bareos-sd
-   setcap cap_sys_rawio=ep /usr/sbin/bls
+   setcap cap_sys_rawio=ep /usr/sbin/bcopy
    setcap cap_sys_rawio=ep /usr/sbin/bextract
+   setcap cap_sys_rawio=ep /usr/sbin/bls
+   setcap cap_sys_rawio=ep /usr/sbin/bscan
+   setcap cap_sys_rawio=ep /usr/sbin/bscrypto
    setcap cap_sys_rawio=ep /usr/sbin/btape
 
 
@@ -118,15 +117,18 @@ With our helper
 
    /usr/lib/bareos/script/bareos-config.sh set_scsicrypto_capabilities
 
+
 Remove the setting with
 
 .. code-block:: shell-session
 
-   getcap -v /usr/sbin/bscrypto
-   getcap -v /usr/sbin/bareos-sd
-   getcap -v /usr/sbin/bls
-   getcap -v /usr/sbin/bextract
-   getcap -v /usr/sbin/btape
+   setcap -r /usr/sbin/bareos-sd
+   setcap -r /usr/sbin/bcopy
+   setcap -r /usr/sbin/bextract
+   setcap -r /usr/sbin/bls
+   setcap -r /usr/sbin/bscan
+   setcap -r /usr/sbin/bscrypto
+   setcap -r /usr/sbin/btape
 
 
 With our helper
@@ -140,10 +142,12 @@ Check the setting with
 
 .. code-block:: shell-session
 
-   getcap -v /usr/sbin/bscrypto
    getcap -v /usr/sbin/bareos-sd
-   getcap -v /usr/sbin/bls
+   getcap -v /usr/sbin/bcopy
    getcap -v /usr/sbin/bextract
+   getcap -v /usr/sbin/bls
+   getcap -v /usr/sbin/bscan
+   getcap -v /usr/sbin/bscrypto
    getcap -v /usr/sbin/btape
 
 
@@ -158,10 +162,19 @@ With our helper
 
 If :command:`bareos-sd` does not have the appropriate capabilities, all other tape operations may still work correctly, but you will get "Unable to perform SG\_IO ioctl" errors.
 
+.. warning::
+
+Our actual packaging doesn't respect the capabilities settings you could have add to your system.
+If you are using scsicrypto we recommend to set again capabilities after any software update.
+
+
 Solaris (USCSI ioctl interface):
 
 
-The user running the storage daemon needs the following additional privileges: :index:`\ <single: Platform; Solaris; Privileges>`\
+The user running the storage daemon needs the following additional privileges:
+
+.. index::
+  single: Platform; Solaris; Privileges
 
 -  :strong:`PRIV_SYS_DEVICES` (see privileges(5))
 

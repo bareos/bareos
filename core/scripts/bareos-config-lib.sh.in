@@ -235,16 +235,21 @@ get_database_utility_path()
 }
 
 _scsicrypto_cmds="bareos-sd bcopy bextract bls bscan bscrypto btape"
+_scsicrypto_config_file="${BAREOS_CONFIG_DIR}/.enable-capabilities"
 check_scsicrypto_capabilities()
 {
   if [ "${os_type}" != "Linux" ];then
       error "check_scsicrypto_capabilities() is not supported on this platform"
       return 1
   fi
-  cap_missing_conf=0
   if ( [ "$(command -v getcap)" = "" ] || [ "$(command -v setcap)" = "" ] ); then
       error "getcap and setcap commands are mandatory"
       return 1
+  fi
+  if [ -f "${_scsicrypto_config_file}" ];then
+    cap_missing_conf=0
+  else
+    cap_missing_conf=1
   fi
   for c in ${_scsicrypto_cmds};do
     if ! r="$(setcap -v cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
@@ -253,8 +258,8 @@ check_scsicrypto_capabilities()
     fi
   done
   if [ ${cap_missing_conf} -ne 0 ];then
-    warn "one of the tools are not configured for scsi crypto."
-    warn "run set_scsicrypto_capabilities to fix capabilities."
+    warn "One of the tools are not configured for scsi crypto."
+    warn "Run set_scsicrypto_capabilities to fix capabilities."
   else
     info "All tools have cap_sys_rawio=ep set."
   fi
@@ -270,8 +275,14 @@ set_scsicrypto_capabilities()
     if ! r="$(setcap cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
        error "setcap on ${c} has failed - ${r}"
        return 1
+    else
+      if ! r="$(chmod 0750 "${BAREOS_SBIN_DIR}/${c}")"; then
+         error "Adjusting chmod failed on ${c}"
+         return 1
+      fi
     fi
   done
+  echo "cap_sys_rawio+ep capabilities enabled" > "${_scsicrypto_config_file}"
 }
 
 unset_scsicrypto_capabilities()
@@ -284,8 +295,14 @@ unset_scsicrypto_capabilities()
     if ! r="$(setcap -r "${BAREOS_SBIN_DIR}/${c}")"; then
        error "setcap -r on ${c} has failed - ${r}"
        return 1
+    else
+      if ! r="$(chmod 0755 "${BAREOS_SBIN_DIR}/${c}")"; then
+         error "Ajusting chmod failed on ${c}"
+         return 1
+      fi
     fi
   done
+  rm -f "${_scsicrypto_config_file}"
 }
 
 
