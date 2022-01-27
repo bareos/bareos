@@ -64,12 +64,8 @@ template <typename T> class dlist {
  public:
   dlist() : head(nullptr), tail(nullptr), num_items(0)
   {
-    if constexpr (std::is_same<T, void>::value) {
-      loffset = 0;
-    } else {
-      static_assert(offsetof(T, link) < INT16_MAX);
-      loffset = offsetof(T, link);
-    }
+    static_assert(offsetof(T, link) < INT16_MAX);
+    loffset = offsetof(T, link);
   }
   ~dlist() { destroy(); }
 
