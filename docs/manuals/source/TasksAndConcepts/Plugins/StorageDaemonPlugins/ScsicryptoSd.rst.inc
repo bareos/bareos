@@ -81,7 +81,11 @@ The following additional security is needed for the following operating systems:
 Linux (SG_IO ioctl interface):
 
 
-The user running the storage daemon needs the following additional capabilities: :index:`\ <single: Platform; Linux; Privileges>`\
+.. index::
+  single: Platform; Linux; Privileges
+ 
+To perform the operations required for **scsicrypto**, the programs must either run as user **root** or the additional capability :strong:`CAP_SYS_RAWIO` must be set.
+The |sd| normally runs a user **bareos**. Running it as **root** is not recommended.
 
 -  :strong:`CAP_SYS_RAWIO+EP` (see capabilities(7))
 
