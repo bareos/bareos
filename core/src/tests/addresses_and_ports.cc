@@ -26,9 +26,6 @@
 #include "lib/watchdog.h"
 #include "lib/berrno.h"
 
-
-static void cleanup() { TermMsg(); }
-
 static bool create_and_bind_v4socket(int test_fd, int port)
 {
   int family = AF_INET;
@@ -130,7 +127,6 @@ static bool try_binding_director_port(std::string path_to_config,
   directordaemon::StopSocketServer();
   StopWatchdog();
 
-  cleanup();
   return result;
 }
 
@@ -157,8 +153,6 @@ static void check_addresses_list(std::string path_to_config,
   std::sort(director_addresses.begin(), director_addresses.end());
   std::sort(expected_addresses.begin(), expected_addresses.end());
   EXPECT_EQ(director_addresses, expected_addresses);
-
-  cleanup();
 }
 
 class AddressesAndPortsSetup : public ::testing::Test {
