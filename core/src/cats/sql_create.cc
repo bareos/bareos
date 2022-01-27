@@ -139,7 +139,7 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
     // Worked, now update the Media record with the EndFile and EndBlock
     Mmsg(cmd, "UPDATE Media SET EndFile=%u, EndBlock=%u WHERE MediaId=%u",
          jm->EndFile, jm->EndBlock, jm->MediaId);
-    if (!UPDATE_DB(jcr, cmd)) {
+    if (UPDATE_DB(jcr, cmd) == -1) {
       Mmsg2(errmsg, _("Update Media record %s failed: ERR=%s\n"), cmd,
             sql_strerror());
     } else {
@@ -483,7 +483,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
            "UPDATE Media SET LabelDate='%s' "
            "WHERE MediaId=%d",
            dt, mr->MediaId);
-      retval = UPDATE_DB(jcr, cmd);
+      retval = UPDATE_DB(jcr, cmd) > 0;
     }
     /*
      * Make sure that if InChanger is non-zero any other identical slot

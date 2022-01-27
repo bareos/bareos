@@ -596,11 +596,10 @@ class BareosDb : public BareosDbQueryEnum {
                int line,
                JobControlRecord* jcr,
                const char* DeleteCmd);
-  bool UpdateDB(const char* file,
-                int line,
-                JobControlRecord* jcr,
-                const char* UpdateCmd,
-                int expected_minimum_number_affected_rows);
+  int UpdateDB(const char* file,
+               int line,
+               JobControlRecord* jcr,
+               const char* UpdateCmd);
   int GetSqlRecordMax(JobControlRecord* jcr);
   void SplitPathAndFile(JobControlRecord* jcr, const char* fname);
   void ListDashes(OutputFormatter* send);
@@ -1003,9 +1002,7 @@ class BareosDb : public BareosDbQueryEnum {
 #define BATCH_FLUSH 800000
 
 /* Use for better error location printing */
-#define UPDATE_DB(jcr, cmd) UpdateDB(__FILE__, __LINE__, jcr, cmd, 1)
-#define UPDATE_DB_NO_AFFECTED_ROWS(jcr, cmd) \
-  UpdateDB(__FILE__, __LINE__, jcr, cmd, 0)
+#define UPDATE_DB(jcr, cmd) UpdateDB(__FILE__, __LINE__, jcr, cmd)
 #define INSERT_DB(jcr, cmd) InsertDB(__FILE__, __LINE__, jcr, cmd)
 #define QUERY_DB(jcr, cmd) QueryDB(__FILE__, __LINE__, jcr, cmd)
 #define DELETE_DB(jcr, cmd) DeleteDB(__FILE__, __LINE__, jcr, cmd)

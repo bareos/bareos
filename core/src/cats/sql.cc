@@ -267,37 +267,21 @@ bool BareosDb::InsertDB(const char* file,
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::UpdateDB(const char* file,
-                        int line,
-                        JobControlRecord* jcr,
-                        const char* UpdateCmd,
-                        int expected_minimum_number_affected_rows)
+int BareosDb::UpdateDB(const char* file,
+                       int line,
+                       JobControlRecord* jcr,
+                       const char* UpdateCmd)
 {
-  int num_rows;
-
   if (!SqlQuery(UpdateCmd)) {
     msg_(file, line, errmsg, _("update %s failed:\n%s\n"), UpdateCmd,
          sql_strerror());
     j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
     if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", UpdateCmd); }
-    return false;
-  }
-
-  if (expected_minimum_number_affected_rows > 0) {
-    num_rows = SqlAffectedRows();
-    if (num_rows < expected_minimum_number_affected_rows) {
-      char ed1[30];
-      msg_(file, line, errmsg, _("Update failed: affected_rows=%s for %s\n"),
-           edit_uint64(num_rows, ed1), UpdateCmd);
-      if (verbose) {
-        //          j_msg(file, line, jcr, M_INFO, 0, "%s\n", UpdateCmd);
-      }
-      return false;
-    }
+    return -1;
   }
 
   changes++;
-  return true;
+  return SqlAffectedRows();
 }
 
 /**
