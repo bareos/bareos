@@ -73,7 +73,7 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
   if (!SqlQuery(query, QF_STORE_RESULT)) {
     Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
     if (verbose) { sendit->Decoration(errmsg); }
-    goto bail_out;
+    return retval;
   }
 
   sendit->ArrayStart(description);
@@ -82,7 +82,6 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
   SqlFreeResult();
   retval = true;
 
-bail_out:
   return retval;
 }
 
@@ -138,7 +137,7 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
     }
   }
 
-  if (!QUERY_DB(jcr, query.c_str())) { goto bail_out; }
+  if (!QUERY_DB(jcr, query.c_str())) { return; }
 
   sendit->ArrayStart("pools");
   ListResult(jcr, sendit, type);
@@ -146,7 +145,6 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -172,7 +170,7 @@ void BareosDb::ListClientRecords(JobControlRecord* jcr,
          clientfilter.c_str());
   }
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("clients");
   ListResult(jcr, sendit, type);
@@ -180,7 +178,6 @@ void BareosDb::ListClientRecords(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -192,7 +189,7 @@ void BareosDb::ListStorageRecords(JobControlRecord* jcr,
 
   Mmsg(cmd, "SELECT StorageId,Name,AutoChanger FROM Storage");
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("storages");
   ListResult(jcr, sendit, type);
@@ -200,7 +197,6 @@ void BareosDb::ListStorageRecords(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -262,13 +258,12 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
 
   DbLocker _{this};
 
-  if (!QUERY_DB(jcr, query.c_str())) { goto bail_out; }
+  if (!QUERY_DB(jcr, query.c_str())) { return; }
 
   ListResult(jcr, sendit, type);
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -311,15 +306,13 @@ void BareosDb::ListJobmediaRecords(JobControlRecord* jcr,
            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId");
     }
   }
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobmedia");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("jobmedia");
 
   SqlFreeResult();
-
-bail_out:
   return;
 }
 
@@ -347,7 +340,7 @@ void BareosDb::ListVolumesOfJobid(JobControlRecord* jcr,
          "AND JobMedia.JobId=%s",
          edit_int64(JobId, ed1));
   }
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("volumes");
   ListResult(jcr, sendit, type);
@@ -355,7 +348,6 @@ void BareosDb::ListVolumesOfJobid(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -383,7 +375,7 @@ void BareosDb::ListCopiesRecords(JobControlRecord* jcr,
        "WHERE Job.Type = '%c' %s ORDER BY Job.PriorJobId DESC %s",
        (char)JT_JOB_COPY, str_jobids.c_str(), range);
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   if (SqlNumRows()) {
     if (JobIds && JobIds[0]) {
@@ -399,7 +391,6 @@ void BareosDb::ListCopiesRecords(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -454,7 +445,7 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
 
   DbLocker _{this};
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("log");
   ListResult(jcr, sendit, type);
@@ -462,7 +453,6 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -493,7 +483,7 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
     }
   }
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("joblog");
   ListResult(jcr, sendit, type);
@@ -501,7 +491,6 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -524,7 +513,7 @@ void BareosDb::ListJobstatisticsRecords(JobControlRecord* jcr,
        "WHERE JobStats.JobId=%s "
        "ORDER BY JobStats.SampleTime ",
        edit_int64(JobId, ed1));
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobstats");
   ListResult(jcr, sendit, type);
@@ -532,7 +521,6 @@ void BareosDb::ListJobstatisticsRecords(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -617,7 +605,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     }
   }
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobs");
   ListResult(jcr, sendit, type);
@@ -625,7 +613,6 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -640,7 +627,7 @@ void BareosDb::ListJobTotals(JobControlRecord* jcr,
        "SELECT count(*) AS Jobs,sum(JobFiles) "
        "AS Files,sum(JobBytes) AS Bytes,Name AS Job FROM Job GROUP BY Name");
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobs");
   ListResult(jcr, sendit, HORZ_LIST);
@@ -653,7 +640,7 @@ void BareosDb::ListJobTotals(JobControlRecord* jcr,
        "SELECT COUNT(*) AS Jobs,sum(JobFiles) "
        "AS Files,sum(JobBytes) As Bytes FROM Job");
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ObjectStart("jobtotals");
   ListResult(jcr, sendit, HORZ_LIST);
@@ -661,7 +648,6 @@ void BareosDb::ListJobTotals(JobControlRecord* jcr,
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -701,12 +687,11 @@ void BareosDb::ListFilesForJob(JobControlRecord* jcr,
   }
 
   sendit->ArrayStart("filenames");
-  if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { goto bail_out; }
+  if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { return; }
   sendit->ArrayEnd("filenames");
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -738,12 +723,11 @@ void BareosDb::ListBaseFilesForJob(JobControlRecord* jcr,
   }
 
   sendit->ArrayStart("files");
-  if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { goto bail_out; }
+  if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { return; }
   sendit->ArrayEnd("files");
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 
@@ -796,14 +780,13 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
          range);
   }
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
   sendit->ArrayStart("filesets");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("filesets");
 
   SqlFreeResult();
 
-bail_out:
   return;
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \

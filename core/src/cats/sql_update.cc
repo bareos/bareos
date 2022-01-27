@@ -201,7 +201,7 @@ bool BareosDb::UpdateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
 
   DbLocker _{this};
   tcr = *cr;
-  if (!CreateClientRecord(jcr, &tcr)) { goto bail_out; }
+  if (!CreateClientRecord(jcr, &tcr)) { return retval; }
 
   EscapeString(jcr, esc_clientname, cr->Name, strlen(cr->Name));
   EscapeString(jcr, esc_uname, cr->Uname, strlen(cr->Uname));
@@ -213,7 +213,6 @@ bool BareosDb::UpdateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
 
   retval = UPDATE_DB(jcr, cmd) > 0;
 
-bail_out:
   return retval;
 }
 

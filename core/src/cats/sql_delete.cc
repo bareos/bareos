@@ -68,15 +68,15 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
     if (num_rows == 0) {
       Mmsg(errmsg, _("No pool record %s exists\n"), pr->Name);
       SqlFreeResult();
-      goto bail_out;
+      return retval;
     } else if (num_rows != 1) {
       Mmsg(errmsg, _("Expecting one pool record, got %d\n"), num_rows);
       SqlFreeResult();
-      goto bail_out;
+      return retval;
     }
     if ((row = SqlFetchRow()) == NULL) {
       Mmsg1(errmsg, _("Error fetching row %s\n"), sql_strerror());
-      goto bail_out;
+      return retval;
     }
     pr->PoolId = str_to_int64(row[0]);
     SqlFreeResult();
@@ -95,7 +95,6 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
 
   retval = true;
 
-bail_out:
   return retval;
 }
 
@@ -193,7 +192,7 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   bool retval = false;
 
   DbLocker _{this};
-  if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { goto bail_out; }
+  if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { return retval; }
   /* Do purge if not already purged */
   if (!bstrcmp(mr->VolStatus, "Purged")) {
     /* Delete associated records */
@@ -204,7 +203,6 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   SqlQuery(cmd);
   retval = true;
 
-bail_out:
   return retval;
 }
 
@@ -219,16 +217,15 @@ bool BareosDb::PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   bool retval = false;
 
   DbLocker _{this};
-  if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { goto bail_out; }
+  if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { return retval; }
 
   DoMediaPurge(this, mr); /* Note, always purge */
 
   strcpy(mr->VolStatus, "Purged");
-  if (!UpdateMediaRecord(jcr, mr)) { goto bail_out; }
+  if (!UpdateMediaRecord(jcr, mr)) { return retval; }
 
   retval = true;
 
-bail_out:
   return retval;
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES */

@@ -303,20 +303,19 @@ bool BareosDbPostgresql::ValidateConnection(void)
   if (!SqlQueryWithoutHandler("SELECT 1", true)) {
     // Try resetting the connection.
     PQreset(db_handle_);
-    if (PQstatus(db_handle_) != CONNECTION_OK) { goto bail_out; }
+    if (PQstatus(db_handle_) != CONNECTION_OK) { return retval; }
 
     SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
     SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
     SqlQueryWithoutHandler("SET standard_conforming_strings=on");
 
     // Retry the null query.
-    if (!SqlQueryWithoutHandler("SELECT 1", true)) { goto bail_out; }
+    if (!SqlQueryWithoutHandler("SELECT 1", true)) { return retval; }
   }
 
   SqlFreeResult();
   retval = true;
 
-bail_out:
   return retval;
 }
 
@@ -559,7 +558,7 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
     Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
     Dmsg0(500, "SqlQueryWithHandler failed\n");
     retval = false;
-    goto bail_out;
+    return retval;
   }
 
   Dmsg0(500, "SqlQueryWithHandler succeeded. checking handler\n");
@@ -575,7 +574,6 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
 
   Dmsg0(500, "SqlQueryWithHandler finished\n");
 
-bail_out:
   return retval;
 }
 

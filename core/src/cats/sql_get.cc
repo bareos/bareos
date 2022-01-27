@@ -262,7 +262,7 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
          edit_int64(jr->JobId, ed1));
   }
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return retval; }
 
   if ((row = SqlFetchRow()) == NULL) {
     if (search_by_jobname) {
@@ -272,7 +272,7 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
             edit_int64(jr->JobId, ed1));
     }
     SqlFreeResult();
-    goto bail_out;
+    return retval;
   }
 
   jr->VolSessionId = str_to_uint64(row[0]);
@@ -310,7 +310,6 @@ bool BareosDb::GetJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   SqlFreeResult();
   retval = true;
 
-bail_out:
   return retval;
 }
 
@@ -832,7 +831,7 @@ bool BareosDb::GetCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
         Mmsg1(errmsg, _("error fetching Counter row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
         SqlFreeResult();
-        goto bail_out;
+        return retval;
       }
       cr->MinValue = str_to_int64(row[0]);
       cr->MaxValue = str_to_int64(row[1]);
@@ -844,14 +843,13 @@ bool BareosDb::GetCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
       }
       SqlFreeResult();
       retval = true;
-      goto bail_out;
+      return retval;
     }
     SqlFreeResult();
   } else {
     Mmsg(errmsg, _("Counter record: %s not found in Catalog.\n"), cr->Counter);
   }
 
-bail_out:
   return retval;
 }
 
@@ -1007,13 +1005,13 @@ bool BareosDb::GetMediaIds(JobControlRecord* jcr,
   if (!PrepareMediaSqlQuery(jcr, mr, volumes)) {
     Mmsg(errmsg, _("Media id select failed: invalid parameter"));
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
-    goto bail_out;
+    return ok;
   }
 
   if (!QUERY_DB(jcr, cmd)) {
     Mmsg(errmsg, _("Media id select failed: ERR=%s\n"), sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
-    goto bail_out;
+    return ok;
   }
 
   *num_ids = SqlNumRows();
@@ -1024,7 +1022,7 @@ bool BareosDb::GetMediaIds(JobControlRecord* jcr,
   }
   SqlFreeResult();
   ok = true;
-bail_out:
+
   return ok;
 }
 
@@ -1108,7 +1106,7 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
     Mmsg(cmd, "SELECT count(*) from Media");
     mr->MediaId = GetSqlRecordMax(jcr);
     retval = true;
-    goto bail_out;
+    return retval;
   }
   if (mr->MediaId != 0) { /* find by id */
     Mmsg(cmd,
@@ -1224,7 +1222,6 @@ bool BareosDb::GetMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
     }
   }
 
-bail_out:
   return retval;
 }
 
@@ -1666,24 +1663,23 @@ int BareosDb::GetNdmpLevelMapping(JobControlRecord* jcr,
         Mmsg1(errmsg, _("error fetching row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
         SqlFreeResult();
-        goto bail_out;
+        return dumplevel;
       } else {
         dumplevel = str_to_uint64(row[0]);
         dumplevel++; /* select next dumplevel */
         SqlFreeResult();
-        goto bail_out;
+        return dumplevel;
       }
     } else {
       Mmsg(errmsg, _("NDMP Dump Level record not found in Catalog.\n"));
       SqlFreeResult();
-      goto bail_out;
+      return dumplevel;
     }
   } else {
     Mmsg(errmsg, _("NDMP Dump Level record not found in Catalog.\n"));
-    goto bail_out;
+    return dumplevel;
   }
 
-bail_out:
   return dumplevel;
 }
 
