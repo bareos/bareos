@@ -449,7 +449,7 @@ void UpgradeCopies(UaContext* ua, const char* jobs)
 {
   PoolMem query(PM_MESSAGE);
 
-  DbLock(ua->db);
+  DbLocker _{ua->db};
 
   /* Do it in two times for mysql */
   ua->db->FillQuery(query, BareosDb::SQL_QUERY::uap_upgrade_copies_oldest_job,
@@ -467,8 +467,6 @@ void UpgradeCopies(UaContext* ua, const char* jobs)
 
   Mmsg(query, "DROP TABLE cpy_tmp");
   ua->db->SqlQuery(query.c_str());
-
-  DbUnlock(ua->db);
 }
 
 // Remove all records from catalog for a list of JobIds

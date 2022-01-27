@@ -299,7 +299,7 @@ bool BareosDbPostgresql::ValidateConnection(void)
   bool retval = false;
 
   // Perform a null query to see if the connection is still valid.
-  DbLock(this);
+  DbLocker _{this};
   if (!SqlQueryWithoutHandler("SELECT 1", true)) {
     // Try resetting the connection.
     PQreset(db_handle_);
@@ -317,7 +317,6 @@ bool BareosDbPostgresql::ValidateConnection(void)
   retval = true;
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -447,7 +446,7 @@ void BareosDbPostgresql::StartTransaction(JobControlRecord* jcr)
    */
   if (!allow_transactions_) { return; }
 
-  DbLock(this);
+  DbLocker _{this};
   // Allow only 25,000 changes per transaction
   if (transaction_ && changes > 25000) { EndTransaction(jcr); }
   if (!transaction_) {
@@ -455,7 +454,6 @@ void BareosDbPostgresql::StartTransaction(JobControlRecord* jcr)
     Dmsg0(400, "Start PosgreSQL transaction\n");
     transaction_ = true;
   }
-  DbUnlock(this);
 }
 
 void BareosDbPostgresql::EndTransaction(JobControlRecord* jcr)
@@ -470,14 +468,13 @@ void BareosDbPostgresql::EndTransaction(JobControlRecord* jcr)
 
   if (!allow_transactions_) { return; }
 
-  DbLock(this);
+  DbLocker _{this};
   if (transaction_) {
     SqlQueryWithoutHandler("COMMIT"); /* end transaction */
     transaction_ = false;
     Dmsg1(400, "End PostgreSQL transaction changes=%d\n", changes);
   }
   changes = 0;
-  DbUnlock(this);
 }
 
 /**
@@ -503,7 +500,7 @@ bool BareosDbPostgresql::BigSqlQuery(const char* query,
     return false;
   }
 
-  DbLock(this);
+  DbLocker _{this};
 
   if (!in_transaction) { /* CURSOR needs transaction */
     SqlQueryWithoutHandler("BEGIN");
@@ -541,7 +538,6 @@ bail_out:
     SqlQueryWithoutHandler("COMMIT"); /* end transaction */
   }
 
-  DbUnlock(this);
   return retval;
 }
 
@@ -558,7 +554,7 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
 
   Dmsg1(500, "SqlQueryWithHandler starts with '%s'\n", query);
 
-  DbLock(this);
+  DbLocker _{this};
   if (!SqlQueryWithoutHandler(query, QF_STORE_RESULT)) {
     Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
     Dmsg0(500, "SqlQueryWithHandler failed\n");
@@ -580,7 +576,6 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
   Dmsg0(500, "SqlQueryWithHandler finished\n");
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -683,7 +678,7 @@ ok_out:
 
 void BareosDbPostgresql::SqlFreeResult(void)
 {
-  DbLock(this);
+  DbLocker _{this};
   if (result_) {
     PQclear(result_);
     result_ = NULL;
@@ -697,7 +692,6 @@ void BareosDbPostgresql::SqlFreeResult(void)
     fields_ = NULL;
   }
   num_rows_ = num_fields_ = 0;
-  DbUnlock(this);
 }
 
 SQL_ROW BareosDbPostgresql::SqlFetchRow(void)

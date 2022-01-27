@@ -102,7 +102,7 @@ void PruneVolumes(JobControlRecord* jcr,
   prune_list.JobId = (JobId_t*)malloc(sizeof(JobId_t) * prune_list.max_ids);
 
   ua = new_ua_context(jcr);
-  DbLock(jcr->db);
+  DbLocker _{jcr->db};
 
   edit_int64(mr->PoolId, ed1);
 
@@ -226,7 +226,6 @@ void PruneVolumes(JobControlRecord* jcr,
 
 bail_out:
   Dmsg0(100, "Leave prune volumes\n");
-  DbUnlock(jcr->db);
   FreeUaContext(ua);
   if (prune_list.JobId) { free(prune_list.JobId); }
   return;

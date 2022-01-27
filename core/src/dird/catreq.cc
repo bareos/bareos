@@ -212,7 +212,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
      * of a Storage daemon Job Session, when labeling/relabeling a
      * Volume, or when an EOF mark is written.
      */
-    DbLock(jcr->db);
+    DbLocker _{jcr->db};
     Dmsg3(400, "Update media %s oldStat=%s newStat=%s\n", sdmr.VolumeName,
           mr.VolStatus, sdmr.VolStatus);
     bstrncpy(mr.VolumeName, sdmr.VolumeName,
@@ -314,7 +314,6 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     }
 
   bail_out:
-    DbUnlock(jcr->db);
 
     Dmsg1(400, ">CatReq response: %s", bs->msg);
     Dmsg1(400, "Leave catreq jcr 0x%x\n", jcr);

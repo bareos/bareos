@@ -1007,6 +1007,14 @@ class BareosDb : public BareosDbQueryEnum {
 #define QUERY_DB(jcr, cmd) QueryDB(__FILE__, __LINE__, jcr, cmd)
 #define DELETE_DB(jcr, cmd) DeleteDB(__FILE__, __LINE__, jcr, cmd)
 
+class DbLocker {
+  BareosDb* db_handle_;
+
+ public:
+  DbLocker(BareosDb* db_handle) : db_handle_(db_handle) { DbLock(db_handle_); }
+  ~DbLocker() { DbUnlock(db_handle_); }
+};
+
 // Pooled backend connection.
 struct SqlPoolEntry {
   int id = 0; /**< Unique ID, connection numbering can have holes and the pool

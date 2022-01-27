@@ -478,7 +478,7 @@ static bool prune_set_filter(UaContext* ua,
   Mmsg(tmp, " AND JobTDate < %s ", ed1);
   PmStrcat(*add_where, tmp.c_str());
 
-  DbLock(ua->db);
+  DbLocker _{ua->db};
   if (client) {
     ua->db->EscapeString(ua->jcr, ed2, client->resource_name_,
                          strlen(client->resource_name_));
@@ -496,7 +496,6 @@ static bool prune_set_filter(UaContext* ua,
     PmStrcat(*add_from, " JOIN Pool USING(PoolId) ");
   }
   Dmsg2(150, "f=%s w=%s\n", add_from->c_str(), add_where->c_str());
-  DbUnlock(ua->db);
   return true;
 }
 
@@ -533,7 +532,7 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
     return false;
   }
 
-  DbLock(ua->db);
+  DbLocker _{ua->db};
   /* Specify JobTDate and Pool.Name= and/or Client.Name= in the query */
   if (!prune_set_filter(ua, client, pool, period, &sql_from, &sql_where)) {
     goto bail_out;
@@ -578,7 +577,6 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
               client->resource_name_);
 
 bail_out:
-  DbUnlock(ua->db);
   if (del.JobId) { free(del.JobId); }
   return 1;
 }
@@ -686,7 +684,7 @@ static bool PruneBackupJobs(UaContext* ua,
     return false;
   }
 
-  DbLock(ua->db);
+  DbLocker _{ua->db};
   if (!prune_set_filter(ua, client, pool, period, &sql_from, &sql_where)) {
     goto bail_out;
   }
@@ -822,7 +820,6 @@ static bool PruneBackupJobs(UaContext* ua,
 
 bail_out:
   DropTempTables(ua);
-  DbUnlock(ua->db);
   if (del.JobId) { free(del.JobId); }
   if (del.PurgedFiles) { free(del.PurgedFiles); }
   if (jobids_check) { delete jobids_check; }
@@ -857,7 +854,7 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
   del.max_ids = 10000;
   del.JobId = (JobId_t*)malloc(sizeof(JobId_t) * del.max_ids);
 
-  DbLock(ua->db);
+  DbLocker _{ua->db};
 
   /* Prune only Volumes with status "Full", or "Used" */
   if (bstrcmp(mr->VolStatus, "Full") || bstrcmp(mr->VolStatus, "Used")) {
@@ -888,7 +885,6 @@ bool PruneVolume(UaContext* ua, MediaDbRecord* mr)
         mr->VolumeName, mr->VolStatus);
   }
 
-  DbUnlock(ua->db);
   if (del.JobId) { free(del.JobId); }
   return VolumeIsNowEmtpy;
 }

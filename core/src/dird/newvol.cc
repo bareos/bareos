@@ -65,7 +65,7 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
   PoolDbRecord pr;
 
   // See if we can create a new Volume
-  DbLock(jcr->db);
+  DbLocker _{jcr->db};
   pr.PoolId = mr->PoolId;
   if (!jcr->db->GetPoolRecord(jcr, &pr)) { goto bail_out; }
   if (pr.MaxVols == 0 || pr.NumVols < pr.MaxVols) {
@@ -110,7 +110,6 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
   }
 
 bail_out:
-  DbUnlock(jcr->db);
   return retval;
 }
 

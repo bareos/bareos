@@ -56,7 +56,7 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   int num_rows;
   char esc[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc, pr->Name, strlen(pr->Name));
   Mmsg(cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc);
   Dmsg1(10, "selectpool: %s\n", cmd);
@@ -96,7 +96,6 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   retval = true;
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -193,7 +192,7 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
 {
   bool retval = false;
 
-  DbLock(this);
+  DbLocker _{this};
   if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { goto bail_out; }
   /* Do purge if not already purged */
   if (!bstrcmp(mr->VolStatus, "Purged")) {
@@ -206,7 +205,6 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   retval = true;
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -220,7 +218,7 @@ bool BareosDb::PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
 {
   bool retval = false;
 
-  DbLock(this);
+  DbLocker _{this};
   if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { goto bail_out; }
 
   DoMediaPurge(this, mr); /* Note, always purge */
@@ -231,7 +229,6 @@ bool BareosDb::PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   retval = true;
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES */

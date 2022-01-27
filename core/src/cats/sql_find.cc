@@ -64,7 +64,7 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
   char ed1[50], ed2[50];
   char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
   PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
   job[0] = 0;
@@ -141,7 +141,6 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
   retval = true;
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -156,7 +155,7 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
   std::vector<char> esc_jobname(MAX_ESCAPE_NAME_LENGTH);
   std::vector<char> esc_clientname(MAX_ESCAPE_NAME_LENGTH);
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(nullptr, esc_jobname.data(), job_basename.c_str(),
                job_basename.size());
   EscapeString(nullptr, esc_clientname.data(), client_name.c_str(),
@@ -205,7 +204,6 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
   retval = SqlFindResult::kSuccess;
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -229,7 +227,7 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
   char ed1[50], ed2[50];
   char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
   PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
   job[0] = 0;
@@ -259,7 +257,6 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
   retval = true;
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -281,7 +278,7 @@ bool BareosDb::FindFailedJobSince(JobControlRecord* jcr,
   char ed1[50], ed2[50];
   char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
 
   /* Differential is since last Full backup */
@@ -303,7 +300,6 @@ bool BareosDb::FindFailedJobSince(JobControlRecord* jcr,
   retval = true;
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -324,7 +320,7 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
   char ed1[50];
   char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   /* Find last full */
   Dmsg2(100, "JobLevel=%d JobType=%d\n", jr->JobLevel, jr->JobType);
   if (jr->JobLevel == L_VERIFY_CATALOG) {
@@ -375,7 +371,6 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
   retval = true;
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -431,7 +426,7 @@ int BareosDb::FindNextVolume(JobControlRecord* jcr,
   char esc_type[MAX_ESCAPE_NAME_LENGTH];
   char esc_status[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
 
   EscapeString(jcr, esc_type, mr->MediaType, strlen(mr->MediaType));
   EscapeString(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
@@ -601,7 +596,6 @@ retry_fetch:
   }
 
 bail_out:
-  DbUnlock(this);
   Dmsg1(050, "Rtn numrows=%d\n", num_rows);
 
   return num_rows;

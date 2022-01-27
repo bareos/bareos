@@ -246,7 +246,7 @@ bool BareosDbSqlite::ValidateConnection(void)
 {
   bool retval;
 
-  DbLock(this);
+  DbLocker _{this};
   if (SqlQueryWithoutHandler("SELECT 1", true)) {
     SqlFreeResult();
     retval = true;
@@ -257,7 +257,6 @@ bool BareosDbSqlite::ValidateConnection(void)
   }
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -279,7 +278,7 @@ void BareosDbSqlite::StartTransaction(JobControlRecord* jcr)
 
   if (!allow_transactions_) { return; }
 
-  DbLock(this);
+  DbLocker _{this};
   // Allow only 10,000 changes per transaction
   if (transaction_ && changes > 10000) { EndTransaction(jcr); }
   if (!transaction_) {
@@ -287,7 +286,6 @@ void BareosDbSqlite::StartTransaction(JobControlRecord* jcr)
     Dmsg0(400, "Start SQLite transaction\n");
     transaction_ = true;
   }
-  DbUnlock(this);
 }
 
 void BareosDbSqlite::EndTransaction(JobControlRecord* jcr)
@@ -302,14 +300,13 @@ void BareosDbSqlite::EndTransaction(JobControlRecord* jcr)
 
   if (!allow_transactions_) { return; }
 
-  DbLock(this);
+  DbLocker _{this};
   if (transaction_) {
     SqlQueryWithoutHandler("COMMIT"); /* end transaction */
     transaction_ = false;
     Dmsg1(400, "End SQLite transaction changes=%d\n", changes);
   }
   changes = 0;
-  DbUnlock(this);
 }
 
 struct rh_data {
@@ -356,7 +353,7 @@ bool BareosDbSqlite::SqlQueryWithHandler(const char* query,
 
   Dmsg1(500, "SqlQueryWithHandler starts with '%s'\n", query);
 
-  DbLock(this);
+  DbLocker _{this};
   if (lowlevel_errmsg_) {
     sqlite3_free(lowlevel_errmsg_);
     lowlevel_errmsg_ = NULL;
@@ -381,7 +378,6 @@ bool BareosDbSqlite::SqlQueryWithHandler(const char* query,
   retval = true;
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -415,7 +411,7 @@ bool BareosDbSqlite::SqlQueryWithoutHandler(const char* query, int flags)
 
 void BareosDbSqlite::SqlFreeResult(void)
 {
-  DbLock(this);
+    DbLocker _{this};
   if (fields_) {
     free(fields_);
     fields_ = NULL;
@@ -426,7 +422,6 @@ void BareosDbSqlite::SqlFreeResult(void)
   }
   col_names_ = NULL;
   num_rows_ = num_fields_ = 0;
-  DbUnlock(this);
 }
 
 SQL_ROW BareosDbSqlite::SqlFetchRow(void)
@@ -554,7 +549,7 @@ bool BareosDbSqlite::SqlBatchStartFileTable(JobControlRecord* jcr)
 {
   bool retval;
 
-  DbLock(this);
+  DbLocker _{this};
   retval = SqlQueryWithoutHandler(
       "CREATE TEMPORARY TABLE batch ("
       "FileIndex integer,"
@@ -567,7 +562,6 @@ bool BareosDbSqlite::SqlBatchStartFileTable(JobControlRecord* jcr)
       "Fhinfo TEXT,"
       "Fhnode TEXT "
       ")");
-  DbUnlock(this);
 
   return retval;
 }

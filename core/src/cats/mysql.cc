@@ -268,7 +268,7 @@ bool BareosDbMysql::ValidateConnection(void)
    * the server. We also catch a changing threadid which means
    * a reconnect has taken place.
    */
-  DbLock(this);
+  DbLocker _{this};
   mysql_threadid = mysql_thread_id(db_handle_);
   if (mysql_ping(db_handle_) == 0) {
     Dmsg2(500,
@@ -291,7 +291,6 @@ bool BareosDbMysql::ValidateConnection(void)
   }
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -389,7 +388,7 @@ bool BareosDbMysql::SqlQueryWithHandler(const char* query,
 
   Dmsg1(500, "SqlQueryWithHandler starts with %s\n", query);
 
-  DbLock(this);
+  DbLocker _{this};
 
 retry_query:
   status = mysql_query(db_handle_, query);
@@ -453,7 +452,6 @@ retry_query:
   retval = true;
 
 bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -542,7 +540,7 @@ retry_query:
 
 void BareosDbMysql::SqlFreeResult(void)
 {
-  DbLock(this);
+    DbLocker _{this};
   if (result_) {
     mysql_free_result(result_);
     result_ = NULL;
@@ -552,7 +550,6 @@ void BareosDbMysql::SqlFreeResult(void)
     fields_ = NULL;
   }
   num_rows_ = num_fields_ = 0;
-  DbUnlock(this);
 }
 
 SQL_ROW BareosDbMysql::SqlFetchRow(void)

@@ -39,7 +39,7 @@ bool BareosDbMysql::SqlBatchStartFileTable(JobControlRecord* jcr)
 {
   bool retval;
 
-  DbLock(this);
+  DbLocker _{this};
   retval = SqlQuery(
       "CREATE TEMPORARY TABLE batch ("
       "FileIndex integer,"
@@ -51,7 +51,6 @@ bool BareosDbMysql::SqlBatchStartFileTable(JobControlRecord* jcr)
       "DeltaSeq integer,"
       "Fhinfo NUMERIC(20),"
       "Fhnode NUMERIC(20) )");
-  DbUnlock(this);
 
   // Keep track of the number of changes in batch mode.
   changes = 0;

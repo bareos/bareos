@@ -327,7 +327,7 @@ void UpdateVolPool(UaContext* ua,
   if (!GetPoolDbr(ua, &pr)) { return; }
   mr->PoolId = pr.PoolId; /* set new PoolId */
 
-  DbLock(ua->db);
+  DbLocker _{ua->db};
   Mmsg(query, "UPDATE Media SET PoolId=%s WHERE MediaId=%s",
        edit_int64(mr->PoolId, ed1), edit_int64(mr->MediaId, ed2));
   if (!ua->db->SqlQuery(query.c_str())) {
@@ -343,7 +343,6 @@ void UpdateVolPool(UaContext* ua,
       ua->ErrorMsg("%s", ua->db->strerror());
     }
   }
-  DbUnlock(ua->db);
 }
 
 // Modify the RecyclePool of a Volume
@@ -366,7 +365,7 @@ void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
     poolname = _("*None*");
   }
 
-  DbLock(ua->db);
+  DbLocker _{ua->db};
   Mmsg(query, "UPDATE Media SET RecyclePoolId=%s WHERE MediaId=%s",
        edit_int64(mr->RecyclePoolId, ed1), edit_int64(mr->MediaId, ed2));
   if (!ua->db->SqlQuery(query.c_str())) {
@@ -374,7 +373,6 @@ void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
   } else {
     ua->InfoMsg(_("New RecyclePool is: %s\n"), poolname);
   }
-  DbUnlock(ua->db);
 }
 
 // Modify the Storage in which this Volume is located
@@ -388,14 +386,12 @@ void UpdateVolStorage(UaContext* ua, char* val, MediaDbRecord* mr)
   if (!GetStorageDbr(ua, &sr)) { return; }
   mr->StorageId = sr.StorageId; /* set new StorageId */
 
-  DbLock(ua->db);
+  DbLocker _{ua->db};
   Mmsg(query, "UPDATE Media SET StorageId=%s WHERE MediaId=%s",
        edit_int64(mr->StorageId, ed1), edit_int64(mr->MediaId, ed2));
   if (!ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   }
-
-  DbUnlock(ua->db);
 }
 
 // Refresh the Volume information from the Pool record
@@ -1289,12 +1285,11 @@ void UpdateInchangerForExport(UaContext* ua,
 
     Dmsg4(100, "Before make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
-    DbLock(ua->db);
+    DbLocker _{ua->db};
 
     // Set InChanger to zero for this Slot
     ua->db->MakeInchangerUnique(ua->jcr, &mr);
 
-    DbUnlock(ua->db);
     Dmsg4(100, "After make unique: Vol=%s slot=%d inchanger=%d sid=%d\n",
           mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
   }
