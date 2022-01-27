@@ -91,7 +91,6 @@ The |sd| normally runs a user **bareos**. Running it as **root** is not recommen
 
    -  On older kernels you might need :strong:`CAP_SYS_ADMIN`. Try :strong:`CAP_SYS_RAWIO` first and if that doesn’t work try :strong:`CAP_SYS_ADMIN`
 
--  If you are running the storage daemon as another user than root (which has the :strong:`CAP_SYS_RAWIO` capability), you need to add it to the current set of capabilities.
 
 -  If you are using systemd, you could add this additional capability to the AmbientCapabilities=CAP_SYS_RAWIO parameter.
 
