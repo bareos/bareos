@@ -59,7 +59,12 @@ template <typename T> class dlist {
   uint32_t num_items{0};
 
  public:
+  dlist() = default;
   ~dlist() { destroy(); }
+  dlist(const dlist<T>& other) = delete;
+  dlist(dlist<T>&& other) = delete;
+  dlist<T>& operator=(const dlist<T>& other) = delete;
+  dlist<T>& operator=(dlist<T>&& other) = delete;
 
   void prepend(T* item)
   {
