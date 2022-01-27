@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,7 @@
  */
 
 #include "lib/dlist.h"
+#include "lib/dlist_string.h"
 
 /* String helpers for dlist usage */
 
@@ -39,7 +40,7 @@ dlistString* new_dlistString(const char* str)
 dlistString* new_dlistString(const char* str, int len)
 {
   dlistString* node;
-  node = (dlistString*)malloc(sizeof(dlink<char*>) + len + 1);
+  node = (dlistString*)malloc(sizeof(dlistString) + len);
   bstrncpy(node->c_str(), str, len + 1);
   return node;
 }

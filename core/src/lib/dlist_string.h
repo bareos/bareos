@@ -35,7 +35,7 @@ class dlistString {
  public:
   char* c_str() { return str_; }
 
-  dlink<char> link;
+  dlink<dlistString> link;
 
  private:
   char str_[1];
