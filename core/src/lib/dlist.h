@@ -34,8 +34,6 @@
 #include "lib/message.h"
 #include "lib/message_severity.h"
 
-/* In case you want to specifically specify the offset to the link */
-#define OFFSET(item, link) (int)((char*)(link) - (char*)(item))
 /**
  * There is a lot of extra casting here to work around the fact
  * that some compilers (Sun and Visual C++) do not accept
@@ -56,17 +54,11 @@
 #endif
 
 template <typename T> class dlist {
-  T* head;
-  T* tail;
-  int16_t loffset;
-  uint32_t num_items;
+  T* head{nullptr};
+  T* tail{nullptr};
+  uint32_t num_items{0};
 
  public:
-  dlist() : head(nullptr), tail(nullptr), num_items(0)
-  {
-    static_assert(offsetof(T, link) < INT16_MAX);
-    loffset = offsetof(T, link);
-  }
   ~dlist() { destroy(); }
 
   void prepend(T* item)
@@ -92,20 +84,12 @@ template <typename T> class dlist {
     num_items++;
   }
 
-  void SetPrev(T* item, T* prev)
-  {
-    ((dlink<T>*)(((char*)item) + loffset))->prev = prev;
-  }
+  void SetPrev(T* item, T* prev) { item->link.prev = prev; }
+  void SetNext(T* item, T* next) { item->link.next = next; }
 
-  void SetNext(T* item, T* next)
-  {
-    ((dlink<T>*)(((char*)item) + loffset))->next = next;
-  }
-
-  T* get_prev(T* item) { return ((dlink<T>*)(((char*)item) + loffset))->prev; }
-
-  T* get_next(T* item) { return ((dlink<T>*)(((char*)item) + loffset))->next; }
-  dlink<T>* get_link(T* item) { return (dlink<T>*)(((char*)item) + loffset); }
+  T* get_prev(T* item) { return item->link.prev; }
+  T* get_next(T* item) { return item->link.next; }
+  dlink<T>* get_link(T* item) { return &item->link; }
   void InsertBefore(T* item, T* where)
   {
     dlink<T>* where_link = get_link(where);
