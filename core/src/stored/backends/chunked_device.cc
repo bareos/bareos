@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -282,10 +282,8 @@ int ChunkedDevice::NrInflightChunks()
 }
 
 // Call back function for comparing two chunk_io_requests.
-static int CompareChunkIoRequest(void* item1, void* item2)
+static int CompareChunkIoRequest(ocbuf_item* ocbuf1, ocbuf_item* ocbuf2)
 {
-  storagedaemon::ocbuf_item* ocbuf1 = (storagedaemon::ocbuf_item*)item1;
-  storagedaemon::ocbuf_item* ocbuf2 = (storagedaemon::ocbuf_item*)item2;
   chunk_io_request* chunk1 = (chunk_io_request*)ocbuf1->data;
   chunk_io_request* chunk2 = (chunk_io_request*)ocbuf2->data;
 

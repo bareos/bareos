@@ -52,7 +52,7 @@ int ordered_circbuf::init(int capacity)
     delete data_;
   }
   static_assert(offsetof(ocbuf_item, link) == 0);
-  data_ = new dlist<void>();
+  data_ = new dlist<ocbuf_item>();
 
   return 0;
 }
@@ -72,8 +72,8 @@ void ordered_circbuf::destroy()
 // Enqueue a new item into the ordered circular buffer.
 void* ordered_circbuf::enqueue(void* data,
                                uint32_t data_size,
-                               int compare(void* item1, void* item2),
-                               void update(void* item1, void* item2),
+                               int compare(ocbuf_item*, ocbuf_item*),
+                               void update(void*, void*),
                                bool use_reserved_slot,
                                bool no_signal)
 {

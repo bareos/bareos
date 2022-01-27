@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2017 Planets Communications B.V.
-   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,7 +39,7 @@ enum oc_peek_types
 };
 
 struct ocbuf_item {
-  dlink<void> link;
+  dlink<ocbuf_item> link;
   uint32_t data_size = 0;
   void* data = nullptr;
 };
@@ -54,8 +54,8 @@ class ordered_circbuf {
   pthread_cond_t notfull_
       = PTHREAD_COND_INITIALIZER; /* Full -> not full condition */
   pthread_cond_t notempty_
-      = PTHREAD_COND_INITIALIZER; /* Empty -> not empty condition */
-  dlist<void>* data_ = nullptr;   /* Circular buffer of pointers */
+      = PTHREAD_COND_INITIALIZER;     /* Empty -> not empty condition */
+  dlist<ocbuf_item>* data_ = nullptr; /* Circular buffer of pointers */
 
  public:
   ordered_circbuf(int capacity = OQSIZE);
@@ -64,8 +64,8 @@ class ordered_circbuf {
   void destroy();
   void* enqueue(void* data,
                 uint32_t data_size,
-                int compare(void* item1, void* item2),
-                void update(void* item1, void* item2),
+                int compare(ocbuf_item*, ocbuf_item*),
+                void update(void*, void*),
                 bool use_reserved_slot = false,
                 bool no_signal = false);
   void* dequeue(bool reserve_slot = false,
