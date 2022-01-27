@@ -70,26 +70,23 @@ template <typename T> class dlist {
    *   then there is no need to specify the link address
    *   since the offset is zero.
    */
-  dlist(T* item, dlink<T>* link) { init(item, link); }
+  dlist(T* item, dlink<T>* link) : dlist()
+  {
+    ASSERT(loffset == (int)((char*)link - (char*)item));
+  }
 
   /* Constructor with link at head of item */
-  dlist(void) : head(nullptr), tail(nullptr), loffset(0), num_items(0) {}
-  ~dlist() { destroy(); }
-  void init(T* item, dlink<T>* link)
+  dlist(void) : head(nullptr), tail(nullptr), num_items(0)
   {
-    head = tail = NULL;
-    loffset = (int)((char*)link - (char*)item);
-    if (loffset < 0 || loffset > 5000) {
-      Emsg0(M_ABORT, 0, "Improper dlist initialization.\n");
+    if constexpr (std::is_same<T, void>::value) {
+      loffset = 0;
+    } else {
+      static_assert(offsetof(T, link) < INT16_MAX);
+      loffset = offsetof(T, link);
     }
-    num_items = 0;
   }
-  void init()
-  {
-    head = tail = nullptr;
-    loffset = 0;
-    num_items = 0;
-  }
+  ~dlist() { destroy(); }
+
   void prepend(T* item)
   {
     SetNext(item, head);
