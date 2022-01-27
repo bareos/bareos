@@ -62,21 +62,7 @@ template <typename T> class dlist {
   uint32_t num_items;
 
  public:
-  /**
-   * Constructor called with the address of a
-   *   member of the list (not the list head), and
-   *   the address of the link within that member.
-   * If the link is at the beginning of the list member,
-   *   then there is no need to specify the link address
-   *   since the offset is zero.
-   */
-  dlist(T* item, dlink<T>* link) : dlist()
-  {
-    ASSERT(loffset == (int)((char*)link - (char*)item));
-  }
-
-  /* Constructor with link at head of item */
-  dlist(void) : head(nullptr), tail(nullptr), num_items(0)
+  dlist() : head(nullptr), tail(nullptr), num_items(0)
   {
     if constexpr (std::is_same<T, void>::value) {
       loffset = 0;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -347,11 +347,8 @@ int AddAddress(dlist<IPADDR>** out,
   IPADDR::i_type intype = type;
 
   buf[0] = 0;
-  dlist<IPADDR>* addrs = (dlist<IPADDR>*)(*(out));
-  if (!addrs) {
-    IPADDR* tmp = 0;
-    addrs = *out = new dlist<IPADDR>(tmp, &tmp->link);
-  }
+  dlist<IPADDR>* addrs = *(out);
+  if (!addrs) { addrs = *out = new dlist<IPADDR>(); }
 
   type = (type == IPADDR::R_SINGLE_PORT || type == IPADDR::R_SINGLE_ADDR)
              ? IPADDR::R_SINGLE

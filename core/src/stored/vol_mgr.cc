@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -799,12 +799,9 @@ bool FreeVolume(Device* dev)
 // Create the Volume list
 void CreateVolumeLists()
 {
-  VolumeReservationItem* vol = NULL;
-  if (vol_list == NULL) {
-    vol_list = new dlist<VolumeReservationItem>(vol, &vol->link);
-  }
+  if (vol_list == NULL) { vol_list = new dlist<VolumeReservationItem>(); }
   if (read_vol_list == NULL) {
-    read_vol_list = new dlist<VolumeReservationItem>(vol, &vol->link);
+    read_vol_list = new dlist<VolumeReservationItem>();
   }
 }
 
@@ -919,7 +916,7 @@ dlist<VolumeReservationItem>* dup_vol_list(JobControlRecord* jcr)
   Dmsg0(debuglevel, "lock volumes\n");
 
   Dmsg0(debuglevel, "duplicate vol list\n");
-  temp_vol_list = new dlist<VolumeReservationItem>(vol, &vol->link);
+  temp_vol_list = new dlist<VolumeReservationItem>();
   foreach_vol (vol) {
     VolumeReservationItem *nvol, *tvol;
 

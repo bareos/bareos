@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -627,7 +627,7 @@ static bool regex_find_jobids(JobControlRecord* jcr,
   bool ok = false;
   PoolMem query(PM_MESSAGE);
 
-  item_chain = new dlist<uitem>(item, &item->link);
+  item_chain = new dlist<uitem>();
   if (!jcr->impl->res.job->selection_pattern) {
     Jmsg(jcr, M_FATAL, 0, _("No %s %s selection pattern specified.\n"),
          jcr->get_OperationName(), type);

@@ -119,14 +119,13 @@ static char* rec_state_bits_to_str(DeviceRecord* rec)
  */
 READ_CTX* new_read_context(void)
 {
-  DeviceRecord* rec = NULL;
   READ_CTX* rctx;
 
   rctx = (READ_CTX*)malloc(sizeof(READ_CTX));
   READ_CTX empty_READ_CTX;
   *rctx = empty_READ_CTX;
 
-  rctx->recs = new dlist<DeviceRecord>(rec, &rec->link);
+  rctx->recs = new dlist<DeviceRecord>();
   return rctx;
 }
 

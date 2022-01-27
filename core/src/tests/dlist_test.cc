@@ -174,7 +174,7 @@ TEST(dlist, dlist)
   int count;
   int index = 0;
 
-  jcr_chain = new dlist<MYJCR>(jcr, &jcr->link);
+  jcr_chain = new dlist<MYJCR>();
 
   for (int i = 0; i < 20; i++) {
     sprintf(buf, "%d", i);
@@ -204,7 +204,7 @@ TEST(dlist, dlist)
    *  of jcr objects.  Within a jcr object, there is a buf
    *  that points to a malloced string containing data
    */
-  jcr_chain = new dlist<MYJCR>(jcr, &jcr->link);
+  jcr_chain = new dlist<MYJCR>();
   for (int i = 0; i < 20; i++) {
     sprintf(buf, "%d", i);
     jcr = (MYJCR*)malloc(sizeof(MYJCR));
@@ -232,7 +232,7 @@ TEST(dlist, dlist)
 
 
   /* Now do a binary insert for the list */
-  jcr_chain = new dlist<MYJCR>(jcr, &jcr->link);
+  jcr_chain = new dlist<MYJCR>();
 #define CNT 6
   strcpy(buf, "ZZZ");
   count = 0;

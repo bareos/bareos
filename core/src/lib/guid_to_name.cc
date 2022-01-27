@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Kern Sibbald
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,10 +47,9 @@ struct guitem {
 guid_list* new_guid_list()
 {
   guid_list* list;
-  guitem* item = nullptr;
   list = (guid_list*)malloc(sizeof(guid_list));
-  list->uid_list = new dlist<guitem>(item, &item->link);
-  list->gid_list = new dlist<guitem>(item, &item->link);
+  list->uid_list = new dlist<guitem>();
+  list->gid_list = new dlist<guitem>();
   return list;
 }
 

@@ -190,9 +190,7 @@ JobControlRecord::JobControlRecord()
 {
   Dmsg0(100, "Construct JobControlRecord\n");
 
-  MessageQueueItem* item = nullptr;
-  msg_queue
-      = new dlist<MessageQueueItem>(item, &item->link);  // calculate offset
+  msg_queue = new dlist<MessageQueueItem>();
 
   int status;
   if ((status = pthread_mutex_init(&msg_queue_mutex, nullptr)) != 0) {
@@ -908,9 +906,8 @@ bool InitJcrSubsystem(int timeout)
 
 void InitJcrChain()
 {
-  JobControlRecord* jcr = nullptr;
   if (!job_control_record_chain) {
-    job_control_record_chain = new dlist<JobControlRecord>(jcr, &jcr->link);
+    job_control_record_chain = new dlist<JobControlRecord>();
   }
 }
 

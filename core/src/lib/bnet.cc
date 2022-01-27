@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -391,11 +391,10 @@ dlist<IPADDR>* BnetHost2IpAddrs(const char* host,
                                 const char** errstr)
 {
   struct in_addr inaddr;
-  IPADDR* addr = 0;
   const char* errmsg;
   struct in6_addr inaddr6;
 
-  dlist<IPADDR>* addr_list = new dlist<IPADDR>(addr, &addr->link);
+  dlist<IPADDR>* addr_list = new dlist<IPADDR>();
   if (!host || host[0] == '\0') {
     if (family != 0) {
       addr_list->append(add_any(family));
@@ -404,12 +403,12 @@ dlist<IPADDR>* BnetHost2IpAddrs(const char* host,
       addr_list->append(add_any(AF_INET6));
     }
   } else if (inet_aton(host, &inaddr)) { /* MA Bug 4 */
-    addr = new IPADDR(AF_INET);
+    IPADDR* addr = new IPADDR(AF_INET);
     addr->SetType(IPADDR::R_MULTIPLE);
     addr->SetAddr4(&inaddr);
     addr_list->append(addr);
   } else if (inet_pton(AF_INET6, host, &inaddr6) == 1) {
-    addr = new IPADDR(AF_INET6);
+    IPADDR* addr = new IPADDR(AF_INET6);
     addr->SetType(IPADDR::R_MULTIPLE);
     addr->SetAddr6(&inaddr6);
     addr_list->append(addr);
