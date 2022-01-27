@@ -6,6 +6,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Fixed
+- debian: add missing python plugin dependencies [PR #1045]
 - fix empty job timeline issue if date.timezone is not set in php.ini [PR #1053] (backport of [PR #1051])
 
 ### Added
@@ -412,6 +413,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1031]: https://github.com/bareos/bareos/pull/1031
 [PR #1033]: https://github.com/bareos/bareos/pull/1033
 [PR #1044]: https://github.com/bareos/bareos/pull/1044
+[PR #1045]: https://github.com/bareos/bareos/pull/1045
+[PR #1051]: https://github.com/bareos/bareos/pull/1051
 [PR #1052]: https://github.com/bareos/bareos/pull/1052
+[PR #1053]: https://github.com/bareos/bareos/pull/1053
 [PR #1055]: https://github.com/bareos/bareos/pull/1055
 [unreleased]: https://github.com/bareos/bareos/tree/master
