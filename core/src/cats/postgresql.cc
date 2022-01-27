@@ -296,27 +296,24 @@ void BareosDbPostgresql::CloseDatabase(JobControlRecord* jcr)
 
 bool BareosDbPostgresql::ValidateConnection(void)
 {
-  bool retval = false;
-
   // Perform a null query to see if the connection is still valid.
   DbLocker _{this};
   if (!SqlQueryWithoutHandler("SELECT 1", true)) {
     // Try resetting the connection.
     PQreset(db_handle_);
-    if (PQstatus(db_handle_) != CONNECTION_OK) { return retval; }
+    if (PQstatus(db_handle_) != CONNECTION_OK) { return false; }
 
     SqlQueryWithoutHandler("SET datestyle TO 'ISO, YMD'");
     SqlQueryWithoutHandler("SET cursor_tuple_fraction=1");
     SqlQueryWithoutHandler("SET standard_conforming_strings=on");
 
     // Retry the null query.
-    if (!SqlQueryWithoutHandler("SELECT 1", true)) { return retval; }
+    if (!SqlQueryWithoutHandler("SELECT 1", true)) { return false; }
   }
 
   SqlFreeResult();
-  retval = true;
 
-  return retval;
+  return true;
 }
 
 /**
@@ -549,7 +546,6 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
                                              void* ctx)
 {
   SQL_ROW row;
-  bool retval = true;
 
   Dmsg1(500, "SqlQueryWithHandler starts with '%s'\n", query);
 
@@ -557,8 +553,7 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
   if (!SqlQueryWithoutHandler(query, QF_STORE_RESULT)) {
     Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
     Dmsg0(500, "SqlQueryWithHandler failed\n");
-    retval = false;
-    return retval;
+    return false;
   }
 
   Dmsg0(500, "SqlQueryWithHandler succeeded. checking handler\n");
@@ -574,7 +569,7 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
 
   Dmsg0(500, "SqlQueryWithHandler finished\n");
 
-  return retval;
+  return true;
 }
 
 /**

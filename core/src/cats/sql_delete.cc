@@ -51,7 +51,6 @@
  */
 bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
 {
-  bool retval = false;
   SQL_ROW row;
   int num_rows;
   char esc[MAX_ESCAPE_NAME_LENGTH];
@@ -68,15 +67,15 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
     if (num_rows == 0) {
       Mmsg(errmsg, _("No pool record %s exists\n"), pr->Name);
       SqlFreeResult();
-      return retval;
+      return false;
     } else if (num_rows != 1) {
       Mmsg(errmsg, _("Expecting one pool record, got %d\n"), num_rows);
       SqlFreeResult();
-      return retval;
+      return false;
     }
     if ((row = SqlFetchRow()) == NULL) {
       Mmsg1(errmsg, _("Error fetching row %s\n"), sql_strerror());
-      return retval;
+      return false;
     }
     pr->PoolId = str_to_int64(row[0]);
     SqlFreeResult();
@@ -93,9 +92,7 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   pr->PoolId = DELETE_DB(jcr, cmd);
   Dmsg1(200, "Deleted %d Pool records\n", pr->PoolId);
 
-  retval = true;
-
-  return retval;
+  return true;
 }
 
 #  define MAX_DEL_LIST_LEN 1000000
@@ -189,10 +186,8 @@ static int DoMediaPurge(BareosDb* mdb, MediaDbRecord* mr)
  */
 bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
 {
-  bool retval = false;
-
   DbLocker _{this};
-  if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { return retval; }
+  if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { return false; }
   /* Do purge if not already purged */
   if (!bstrcmp(mr->VolStatus, "Purged")) {
     /* Delete associated records */
@@ -201,9 +196,8 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
 
   Mmsg(cmd, "DELETE FROM Media WHERE MediaId=%d", mr->MediaId);
   SqlQuery(cmd);
-  retval = true;
 
-  return retval;
+  return true;
 }
 
 /**
@@ -214,18 +208,14 @@ bool BareosDb::DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
  */
 bool BareosDb::PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
 {
-  bool retval = false;
-
   DbLocker _{this};
-  if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { return retval; }
+  if (mr->MediaId == 0 && !GetMediaRecord(jcr, mr)) { return false; }
 
   DoMediaPurge(this, mr); /* Note, always purge */
 
   strcpy(mr->VolStatus, "Purged");
-  if (!UpdateMediaRecord(jcr, mr)) { return retval; }
+  if (!UpdateMediaRecord(jcr, mr)) { return false; }
 
-  retval = true;
-
-  return retval;
+  return true;
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES */
