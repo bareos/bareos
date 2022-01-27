@@ -234,7 +234,7 @@ get_database_utility_path()
     fi
 }
 
-_scsicrypto_cmds="bareos-sd bscrypto btape bextract bls"
+_scsicrypto_cmds="bareos-sd bcopy bextract bls bscan bscrypto btape"
 check_scsicrypto_capabilities()
 {
   if [ "${os_type}" != "Linux" ];then
