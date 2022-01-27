@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,13 @@
 #include "find.h"
 #include "findlib/find_one.h"
 #include "lib/util.h"
+
+#if defined(HAVE_DARWIN_OS)
+/* the MacOS linker wants symbols for the destructors of these two types, so we
+ * have to force template instantiation. */
+template class alist<findFOPTS*>;
+template class dlist<dlistString>;
+#endif
 
 static const int debuglevel = 450;
 
@@ -456,13 +463,9 @@ int TermFindFiles(FindFilesPacket* ff)
 // Allocate a new include/exclude block.
 findIncludeExcludeItem* allocate_new_incexe(void)
 {
-  findIncludeExcludeItem* incexe;
-
-  incexe = (findIncludeExcludeItem*)malloc(sizeof(findIncludeExcludeItem));
-  *incexe = findIncludeExcludeItem{};
-  incexe->opts_list.init(1, true);
-  incexe->name_list.init();
-  incexe->plugin_list.init();
+  findIncludeExcludeItem* incexe
+      = (findIncludeExcludeItem*)malloc(sizeof(findIncludeExcludeItem));
+  new (incexe) findIncludeExcludeItem{};
 
   return incexe;
 }
