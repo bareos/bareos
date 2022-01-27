@@ -132,7 +132,7 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
   /* clang-format on */
 
   Dmsg0(300, cmd);
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create JobMedia record %s failed: ERR=%s\n"), cmd,
           sql_strerror());
   } else {
@@ -668,7 +668,7 @@ bool BareosDb::CreateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   FillQuery(SQL_QUERY::insert_counter_values, esc, cr->MinValue, cr->MaxValue,
             cr->CurrentValue, cr->WrapCounter);
 
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB Counters record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1045,7 +1045,7 @@ bool BareosDb::CreateBaseFileAttributesRecord(JobControlRecord* jcr,
   Mmsg(cmd, "INSERT INTO basefile%lld (Path, Name) VALUES ('%s','%s')",
        (uint64_t)jcr->JobId, esc_path, esc_name);
 
-  retval = INSERT_DB(jcr, cmd);
+  retval = INSERT_DB(jcr, cmd) == 1;
   DbUnlock(this);
 
   return retval;
@@ -1210,7 +1210,7 @@ bool BareosDb::CreateQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr)
        " VALUES ('%s', '%s', %s)",
        edit_uint64(cr->ClientId, ed1), "0", "0");
 
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB Quota record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1262,7 +1262,7 @@ bool BareosDb::CreateNdmpLevelMapping(JobControlRecord* jcr,
        " VALUES ('%s', '%s', '%s', %s)",
        edit_uint64(jr->ClientId, ed1), edit_uint64(jr->FileSetId, ed2),
        esc_name, "0");
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB NDMP Level Map record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1301,7 +1301,7 @@ bool BareosDb::CreateNdmpEnvironmentString(JobControlRecord* jcr,
        " VALUES ('%s', '%s', '%s', '%s')",
        edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2), esc_envname,
        esc_envvalue);
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg,
           _("Create DB NDMP Job Environment record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
@@ -1341,7 +1341,7 @@ bool BareosDb::CreateJobStatistics(JobControlRecord* jcr,
        edit_uint64(jsr->JobBytes, ed3), edit_int64(jsr->DeviceId, ed4));
   Dmsg1(200, "Create job stats: %s\n", cmd);
 
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB JobStats record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1399,7 +1399,7 @@ bool BareosDb::CreateDeviceStatistics(JobControlRecord* jcr,
 
   Dmsg1(200, "Create device stats: %s\n", cmd);
 
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB DeviceStats record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
@@ -1444,7 +1444,7 @@ bool BareosDb::CreateTapealertStatistics(JobControlRecord* jcr,
 
   Dmsg1(200, "Create tapealert: %s\n", cmd);
 
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB TapeAlerts record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);

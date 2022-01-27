@@ -588,10 +588,10 @@ class BareosDb : public BareosDbQueryEnum {
                int line,
                JobControlRecord* jcr,
                const char* select_cmd);
-  bool InsertDB(const char* file,
-                int line,
-                JobControlRecord* jcr,
-                const char* select_cmd);
+  int InsertDB(const char* file,
+               int line,
+               JobControlRecord* jcr,
+               const char* select_cmd);
   int DeleteDB(const char* file,
                int line,
                JobControlRecord* jcr,
