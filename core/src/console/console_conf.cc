@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,7 @@ static ConsoleResource* res_cons;
 /* clang-format off */
 
 static ResourceItem cons_items[] = {
-  { "Name", CFG_TYPE_NAME, (std::size_t)&res_cons->resource_name_, reinterpret_cast<BareosResource**>(&res_cons), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
+  { "Name", CFG_TYPE_NAME, ITEM(res_cons, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
   { "Description", CFG_TYPE_STR, ITEM(res_cons, description_), 0, 0, NULL, NULL, NULL },
   { "RcFile", CFG_TYPE_DIR, ITEM(res_cons, rc_file), 0, 0, NULL, NULL, NULL },
   { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons, history_file), 0, 0, NULL, NULL, NULL },
