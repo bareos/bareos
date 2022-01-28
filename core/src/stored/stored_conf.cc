@@ -111,7 +111,7 @@ static ResourceItem store_items[] = {
   {"AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_store, jcr_watchdog_time), 0, 0, NULL, NULL, NULL},
   {"CollectDeviceStatistics", CFG_TYPE_BOOL, ITEM(res_store, collect_dev_stats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"CollectJobStatistics", CFG_TYPE_BOOL, ITEM(res_store, collect_job_stats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
-  {"StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_store, stats_collect_interval), 0, CFG_ITEM_DEFAULT, "30", NULL, NULL},
+  {"StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_store, stats_collect_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL},
   {"DeviceReserveByMediaType", CFG_TYPE_BOOL, ITEM(res_store, device_reserve_by_mediatype), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"FileDeviceConcurrentRead", CFG_TYPE_BOOL, ITEM(res_store, filedevice_concurrent_read), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL},
   {"SecureEraseCommand", CFG_TYPE_STR, ITEM(res_store, secure_erase_cmdline), 0, 0, NULL, "15.2.1-",

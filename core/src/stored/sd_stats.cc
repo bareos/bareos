@@ -408,7 +408,7 @@ extern "C" void* statistics_thread_runner(void* arg)
   return NULL;
 }
 
-int StartStatisticsThread(void)
+bool StartStatisticsThread(void)
 {
   int status;
 
@@ -441,7 +441,7 @@ int StartStatisticsThread(void)
 
   statistics_initialized = true;
 
-  return 0;
+  return true;
 }
 
 void StopStatisticsThread()

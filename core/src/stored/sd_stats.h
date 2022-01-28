@@ -23,7 +23,7 @@
 
 namespace storagedaemon {
 
-int StartStatisticsThread(void);
+bool StartStatisticsThread(void);
 void StopStatisticsThread();
 void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now);
 void UpdateJobStatistics(JobControlRecord* jcr, utime_t now);
