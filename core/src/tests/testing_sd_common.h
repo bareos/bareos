@@ -10,4 +10,4 @@ void InitSdGlobals();
 
 PConfigParser StoragePrepareResources(const std::string& path_to_config);
 
-#endif // TESTING_SD_COMMON_H
+#endif  // TESTING_SD_COMMON_H

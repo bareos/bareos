@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -128,10 +128,7 @@ add_definitions(
   -DRELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\"
 )
 
-set(COMMON_SRC
-    testing_dir_common.cc
-    testing_sd_common.cc
-    )
+set(COMMON_SRC testing_dir_common.cc testing_sd_common.cc)
 
 add_library(testing_common STATIC ${COMMON_SRC})
 
@@ -440,16 +437,14 @@ bareos_add_test(test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main)
 
 if(NOT client-only)
   bareos_add_test(
-    dir_statistics_thread
-    LINK_LIBRARIES testing_common dird_objects bareos
-    bareossql bareosfind GTest::gtest_main
+    dir_statistics_thread LINK_LIBRARIES testing_common dird_objects bareos
+                                         bareossql bareosfind GTest::gtest_main
   )
 endif() # NOT client-only
 
 if(NOT client-only)
   bareos_add_test(
-    sd_statistics_thread
-    LINK_LIBRARIES testing_common dird_objects bareos
-    bareossql bareosfind GTest::gtest_main
+    sd_statistics_thread LINK_LIBRARIES testing_common dird_objects bareos
+                                        bareossql bareosfind GTest::gtest_main
   )
 endif() # NOT client-only
