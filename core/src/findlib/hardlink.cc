@@ -45,8 +45,8 @@ CurLink* lookup_hardlink(JobControlRecord* jcr,
   binary_search_key[0] = dev;
   binary_search_key[1] = ino;
 
-  hl = (CurLink*)ff_pkt->linkhash->lookup((uint8_t*)binary_search_key,
-                                          sizeof(binary_search_key));
+  hl = (CurLink*)ff_pkt->linkhash->lookup(htable_binary_key{
+      (uint8_t*)binary_search_key, sizeof(binary_search_key)});
 
   return hl;
 }
@@ -83,7 +83,8 @@ CurLink* new_hardlink(JobControlRecord* jcr,
   new_key = (uint8_t*)ff_pkt->linkhash->hash_malloc(sizeof(binary_search_key));
   memcpy(new_key, binary_search_key, sizeof(binary_search_key));
 
-  ff_pkt->linkhash->insert(new_key, sizeof(binary_search_key), hl);
+  ff_pkt->linkhash->insert(
+      htable_binary_key{new_key, sizeof(binary_search_key)}, hl);
 
   return hl;
 }

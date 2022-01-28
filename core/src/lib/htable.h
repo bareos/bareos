@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,10 +42,6 @@
 
 #include "include/config.h"
 
-#ifdef HAVE_HPUX_OS
-#  pragma pack(push, 4)
-#endif
-
 typedef enum
 {
   KEY_TYPE_CHAR = 1,
@@ -76,11 +72,7 @@ struct h_mem {
   char first[1];      /* First byte */
 };
 
-#ifdef HAVE_HPUX_OS
-#  pragma pack(pop)
-#endif
-
-class htable {
+class htableImpl {
   hlink** table = nullptr;  /* Hash table */
   int loffset = 0;          /* Link offset in item */
   hlink* walkptr = nullptr; /* Table walk pointer */
@@ -105,13 +97,13 @@ class htable {
   void grow_table();                              /* Grow the table */
 
  public:
-  htable() = default;
-  htable(void* item,
-         void* link,
-         int tsize = 31,
-         int nr_pages = 0,
-         int nr_entries = 4);
-  ~htable() { destroy(); }
+  htableImpl() = default;
+  htableImpl(void* item,
+             void* link,
+             int tsize = 31,
+             int nr_pages = 0,
+             int nr_entries = 4);
+  ~htableImpl() { destroy(); }
   void init(void* item,
             void* link,
             int tsize = 31,
@@ -128,9 +120,57 @@ class htable {
   void* first(); /* Get first item in table */
   void* next();  /* Get next item in table */
   void destroy();
-  void stats();                /* Print stats about the table */
+
+ private:
+  void stats(); /* Print stats about the table */
+ public:
   uint32_t size();             /* Return size of table */
   char* hash_malloc(int size); /* Malloc bytes for a hash entry */
-  void HashBigFree();          /* Free all hash allocated big buffers */
+ private:
+  void HashBigFree(); /* Free all hash allocated big buffers */
 };
+
+struct htable_binary_key {
+  uint8_t* ptr;
+  uint32_t len;
+};
+
+class htable {
+  std::unique_ptr<htableImpl> pimpl;
+
+ public:
+  htable() { pimpl = std::make_unique<htableImpl>(); }
+  htable(void* item,
+         void* link,
+         int tsize = 31,
+         int nr_pages = 0,
+         int nr_entries = 4)
+  {
+    pimpl
+        = std::make_unique<htableImpl>(item, link, tsize, nr_pages, nr_entries);
+  }
+  void* lookup(char* key) { return pimpl->lookup(key); }
+  bool insert(char* key, void* item) { return pimpl->insert(key, item); }
+
+  void* lookup(uint32_t key) { return pimpl->lookup(key); }
+  bool insert(uint32_t key, void* item) { return pimpl->insert(key, item); }
+
+  void* lookup(uint64_t key) { return pimpl->lookup(key); }
+  bool insert(uint64_t key, void* item) { return pimpl->insert(key, item); }
+
+  void* lookup(htable_binary_key key)
+  {
+    return pimpl->lookup(key.ptr, key.len);
+  }
+  bool insert(htable_binary_key key, void* item)
+  {
+    return pimpl->insert(key.ptr, key.len, item);
+  }
+
+  char* hash_malloc(int size) { return pimpl->hash_malloc(size); }
+  void* first() { return pimpl->first(); }
+  void* next() { return pimpl->next(); }
+  uint32_t size() { return pimpl->size(); }
+};
+
 #endif  // BAREOS_LIB_HTABLE_H_

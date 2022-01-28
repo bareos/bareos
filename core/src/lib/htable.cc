@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -61,7 +61,7 @@ static const int debuglevel = 500;
 // htable (Hash Table) class.
 
 // This subroutine gets a big buffer.
-void htable::MallocBigBuf(int size)
+void htableImpl::MallocBigBuf(int size)
 {
   struct h_mem* hmem;
 
@@ -76,7 +76,7 @@ void htable::MallocBigBuf(int size)
 }
 
 // This routine frees the whole tree.
-void htable::HashBigFree()
+void htableImpl::HashBigFree()
 {
   struct h_mem *hmem, *rel;
 
@@ -89,7 +89,7 @@ void htable::HashBigFree()
 }
 
 // Normal hash malloc routine that gets a "small" buffer from the big buffer
-char* htable::hash_malloc(int size)
+char* htableImpl::hash_malloc(int size)
 {
   int mb_size;
   char* buf;
@@ -114,7 +114,7 @@ char* htable::hash_malloc(int size)
  * Create hash of key, stored in hash then
  * create and return the pseudo random bucket index
  */
-void htable::HashIndex(char* key)
+void htableImpl::HashIndex(char* key)
 {
   hash = 0;
   for (char* p = key; *p; p++) {
@@ -126,7 +126,7 @@ void htable::HashIndex(char* key)
   Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%d\n", hash, index);
 }
 
-void htable::HashIndex(uint32_t key)
+void htableImpl::HashIndex(uint32_t key)
 {
   hash = key;
 
@@ -135,7 +135,7 @@ void htable::HashIndex(uint32_t key)
   Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%d\n", hash, index);
 }
 
-void htable::HashIndex(uint64_t key)
+void htableImpl::HashIndex(uint64_t key)
 {
   hash = key;
 
@@ -144,7 +144,7 @@ void htable::HashIndex(uint64_t key)
   Dmsg2(debuglevel, "Leave HashIndex hash=0x%llx index=%d\n", hash, index);
 }
 
-void htable::HashIndex(uint8_t* key, uint32_t keylen)
+void htableImpl::HashIndex(uint8_t* key, uint32_t keylen)
 {
   hash = 0;
   for (uint8_t* p = key; keylen--; p++) {
@@ -157,22 +157,26 @@ void htable::HashIndex(uint8_t* key, uint32_t keylen)
 }
 
 // tsize is the estimated number of entries in the hash table
-htable::htable(void* item, void* link, int tsize, int nr_pages, int nr_entries)
+htableImpl::htableImpl(void* item,
+                       void* link,
+                       int tsize,
+                       int nr_pages,
+                       int nr_entries)
 {
   init(item, link, tsize, nr_pages, nr_entries);
 }
 
-void htable::init(void* item,
-                  void* link,
-                  int tsize,
-                  int nr_pages,
-                  int nr_entries)
+void htableImpl::init(void* item,
+                      void* link,
+                      int tsize,
+                      int nr_pages,
+                      int nr_entries)
 {
   int pwr;
   int pagesize;
   int buffer_size;
 
-  memset(this, 0, sizeof(htable));
+  memset(this, 0, sizeof(htableImpl));
   if (tsize < 31) { tsize = 31; }
   tsize >>= 2;
   for (pwr = 0; tsize; pwr++) { tsize >>= 1; }
@@ -205,7 +209,7 @@ void htable::init(void* item,
   Dmsg1(100, "Allocated big buffer of %ld bytes\n", buffer_size);
 }
 
-uint32_t htable::size() { return num_items; }
+uint32_t htableImpl::size() { return num_items; }
 
 /*
  * Take each hash link and walk down the chain of items
@@ -216,7 +220,7 @@ uint32_t htable::size() { return num_items; }
  *  hot either -- as it means unused or wasted space.
  */
 #define MAX_COUNT 20
-void htable::stats()
+void htableImpl::stats()
 {
   int hits[MAX_COUNT];
   int max = 0;
@@ -243,16 +247,16 @@ void htable::stats()
   printf("total blocks malloced = %d\n", blocks);
 }
 
-void htable::grow_table()
+void htableImpl::grow_table()
 {
-  htable* big;
+  htableImpl* big;
   hlink* cur;
   void* next_item;
 
   Dmsg1(100, "Grow called old size = %d\n", buckets);
 
   // Setup a bigger table.
-  big = (htable*)malloc(sizeof(htable));
+  big = (htableImpl*)malloc(sizeof(htableImpl));
   big->hash = hash;
   big->total_size = total_size;
   big->extend_length = extend_length;
@@ -316,13 +320,13 @@ void htable::grow_table()
   }
 
   free(table);
-  memcpy(this, big, sizeof(htable)); /* Move everything across */
+  memcpy(this, big, sizeof(htableImpl)); /* Move everything across */
   free(big);
 
   Dmsg0(100, "Exit grow.\n");
 }
 
-bool htable::insert(char* key, void* item)
+bool htableImpl::insert(char* key, void* item)
 {
   hlink* hp;
 
@@ -356,7 +360,7 @@ bool htable::insert(char* key, void* item)
   return true;
 }
 
-bool htable::insert(uint32_t key, void* item)
+bool htableImpl::insert(uint32_t key, void* item)
 {
   hlink* hp;
 
@@ -390,7 +394,7 @@ bool htable::insert(uint32_t key, void* item)
   return true;
 }
 
-bool htable::insert(uint64_t key, void* item)
+bool htableImpl::insert(uint64_t key, void* item)
 {
   hlink* hp;
 
@@ -424,7 +428,7 @@ bool htable::insert(uint64_t key, void* item)
   return true;
 }
 
-bool htable::insert(uint8_t* key, uint32_t key_len, void* item)
+bool htableImpl::insert(uint8_t* key, uint32_t key_len, void* item)
 {
   hlink* hp;
 
@@ -456,7 +460,7 @@ bool htable::insert(uint8_t* key, uint32_t key_len, void* item)
   return true;
 }
 
-void* htable::lookup(char* key)
+void* htableImpl::lookup(char* key)
 {
   HashIndex(key);
   for (hlink* hp = table[index]; hp; hp = (hlink*)hp->next) {
@@ -470,7 +474,7 @@ void* htable::lookup(char* key)
   return NULL;
 }
 
-void* htable::lookup(uint32_t key)
+void* htableImpl::lookup(uint32_t key)
 {
   HashIndex(key);
   for (hlink* hp = table[index]; hp; hp = (hlink*)hp->next) {
@@ -484,7 +488,7 @@ void* htable::lookup(uint32_t key)
   return NULL;
 }
 
-void* htable::lookup(uint64_t key)
+void* htableImpl::lookup(uint64_t key)
 {
   HashIndex(key);
   for (hlink* hp = table[index]; hp; hp = (hlink*)hp->next) {
@@ -498,7 +502,7 @@ void* htable::lookup(uint64_t key)
   return NULL;
 }
 
-void* htable::lookup(uint8_t* key, uint32_t key_len)
+void* htableImpl::lookup(uint8_t* key, uint32_t key_len)
 {
   HashIndex(key, key_len);
   for (hlink* hp = table[index]; hp; hp = (hlink*)hp->next) {
@@ -512,7 +516,7 @@ void* htable::lookup(uint8_t* key, uint32_t key_len)
   return NULL;
 }
 
-void* htable::next()
+void* htableImpl::next()
 {
   Dmsg1(debuglevel, "Enter next: walkptr=%p\n", walkptr);
   if (walkptr) { walkptr = (hlink*)(walkptr->next); }
@@ -535,7 +539,7 @@ void* htable::next()
   return NULL;
 }
 
-void* htable::first()
+void* htableImpl::first()
 {
   Dmsg0(debuglevel, "Enter first\n");
   walkptr = table[0]; /* get first bucket */
@@ -559,7 +563,7 @@ void* htable::first()
 }
 
 /* Destroy the table and its contents */
-void htable::destroy()
+void htableImpl::destroy()
 {
   HashBigFree();
 
