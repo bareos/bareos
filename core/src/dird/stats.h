@@ -23,7 +23,7 @@
 
 namespace directordaemon {
 
-int StartStatisticsThread(void);
+bool StartStatisticsThread(void);
 void StopStatisticsThread();
 void stats_job_started();
 

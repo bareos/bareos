@@ -307,11 +307,19 @@ bail_out:
   return NULL;
 }
 
-int StartStatisticsThread(void)
+bool StartStatisticsThread(void)
 {
+  StorageResource* storage;
+  bool collectstatistics = false;
+  foreach_res (storage, R_STORAGE) {
+    if (storage->collectstats) {
+      collectstatistics = true;
+      break;
+    }
+  }
   int status;
 
-  if (!me->stats_collect_interval) { return 0; }
+  if (!me->stats_collect_interval || !collectstatistics) { return 0; }
 
   quit = false;
 
@@ -322,7 +330,7 @@ int StartStatisticsThread(void)
 
   statistics_initialized = true;
 
-  return 0;
+  return true;
 }
 
 void StopStatisticsThread()
