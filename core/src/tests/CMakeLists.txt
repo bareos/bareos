@@ -428,3 +428,12 @@ endif() # NOT client-only
 
 bareos_add_test(test_poolmem LINK_LIBRARIES bareos GTest::gtest_main)
 bareos_add_test(test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main)
+
+if(NOT client-only)
+  bareos_add_test(
+    dir_statistics_thread
+    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
+                   $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
+  )
+endif() # NOT client-only
+
