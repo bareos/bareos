@@ -49,8 +49,7 @@ class pathid_cache {
  public:
   pathid_cache()
   {
-    hlink link;
-    cache_ppathid = new htable<char*, hlink>(&link, &link, NITEMS);
+    cache_ppathid = new htable<char*, hlink>(NITEMS);
     max_node = NITEMS;
     nodes = (hlink*)malloc(max_node * sizeof(hlink));
     nb_node = 0;

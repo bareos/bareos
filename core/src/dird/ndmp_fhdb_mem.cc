@@ -415,7 +415,6 @@ static inline void add_out_of_order_metadata(NIS* nis,
                                              ndmp9_u_quad node)
 {
   N_TREE_NODE* nt_node;
-  OOO_MD* md_entry = NULL;
   MetadataTable* meta_data
       = ((struct fhdb_state_mem*)nis->fhdb_state)->out_of_order_metadata;
 
@@ -432,19 +431,13 @@ static inline void add_out_of_order_metadata(NIS* nis,
 
   // See if we already allocated the htable.
   if (!meta_data) {
-    uint32_t nr_pages, nr_items, item_size;
-
-    nr_pages = MIN_PAGES;
-    item_size = sizeof(OOO_MD);
-    nr_items = (nr_pages * B_PAGE_SIZE) / item_size;
-
-    meta_data = new MetadataTable(md_entry, &md_entry->link, nr_items);
+    meta_data = new MetadataTable();
     ((struct fhdb_state_mem*)nis->fhdb_state)->out_of_order_metadata
         = meta_data;
   }
 
   // Create a new entry and insert it into the hash with the node number as key.
-  md_entry = (OOO_MD*)meta_data->hash_malloc(sizeof(OOO_MD));
+  OOO_MD* md_entry = (OOO_MD*)meta_data->hash_malloc(sizeof(OOO_MD));
   md_entry->dir_node = dir_node;
   md_entry->nt_node = nt_node;
 

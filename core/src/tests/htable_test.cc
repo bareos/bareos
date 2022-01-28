@@ -52,18 +52,19 @@ struct HTABLEJCR {
 #endif
 TEST(htable, htable)
 {
+#ifdef TEST_SMALL_HTABLE
   using JcrTable = htable<decltype(HTABLEJCR::key), HTABLEJCR>;
+#else
+  using JcrTable
+      = htable<decltype(HTABLEJCR::key), HTABLEJCR, htableBufferSize::medium>;
+#endif
   char mkey[30];
   JcrTable* jcrtbl;
   HTABLEJCR *save_jcr = NULL, *item;
   HTABLEJCR* jcr = NULL;
   int count = 0;
 
-#ifndef TEST_SMALL_HTABLE
-  jcrtbl = new JcrTable(jcr, &jcr->link, NITEMS);
-#else
-  jcrtbl = new JcrTable(jcr, &jcr->link, NITEMS, 128);
-#endif
+  jcrtbl = new JcrTable(NITEMS);
   for (int i = 0; i < NITEMS; i++) {
 #ifndef TEST_NON_CHAR
     int len;

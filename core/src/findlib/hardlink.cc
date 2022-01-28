@@ -58,16 +58,13 @@ CurLink* new_hardlink(JobControlRecord* jcr,
                       dev_t dev)
 {
   int len;
-  CurLink* hl = NULL;
   uint64_t binary_search_key[2];
   uint8_t* new_key;
 
-  if (!ff_pkt->linkhash) {
-    ff_pkt->linkhash = new LinkHash(hl, &hl->link, 10000);
-  }
+  if (!ff_pkt->linkhash) { ff_pkt->linkhash = new LinkHash(10000); }
 
   len = strlen(fname) + 1;
-  hl = (CurLink*)ff_pkt->linkhash->hash_malloc(sizeof(CurLink) + len);
+  CurLink* hl = (CurLink*)ff_pkt->linkhash->hash_malloc(sizeof(CurLink) + len);
   hl->digest = NULL;     /* Set later */
   hl->digest_stream = 0; /* Set later */
   hl->digest_len = 0;    /* Set later */

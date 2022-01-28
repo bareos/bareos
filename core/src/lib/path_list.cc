@@ -29,11 +29,7 @@
 #define debuglevel 50
 
 // Initialize the path hash table
-PathList* path_list_init()
-{
-  CurDir* elt = NULL;
-  return new PathList(elt, &elt->link, 10000);
-}
+PathList* path_list_init() { return new PathList(10000); }
 
 /*
  * Add a path to the hash when we create a directory with the replace=NEVER

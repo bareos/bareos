@@ -98,7 +98,7 @@ class htableImpl {
 
  public:
   htableImpl() = default;
-  htableImpl(void* item, void* link, int tsize = 31, int nr_pages = 0);
+  htableImpl(int t_loffset, int tsize = 31, int nr_pages = 0);
   ~htableImpl() { destroy(); }
   void init(int tsize = 31, int nr_pages = 0);
   bool insert(char* key, void* item);
@@ -140,20 +140,27 @@ template <typename Key,
 class htable {
   std::unique_ptr<htableImpl> pimpl;
 
- public:
-  htable() { pimpl = std::make_unique<htableImpl>(); }
-  htable(T* item, hlink* link, int tsize = 31)
+  static constexpr int get_nr_pages(htableBufferSize bufsize)
   {
-    int nr_pages = 0;
-    if constexpr (BufferSize == htableBufferSize::large) {
-      nr_pages = 0;
-    } else if constexpr (BufferSize == htableBufferSize::medium) {
-      nr_pages = 512;
-    } else if constexpr (BufferSize == htableBufferSize::small) {
-      nr_pages = 1;
+    switch (bufsize) {
+      case htableBufferSize::small:
+        return 1;
+      case htableBufferSize::medium:
+        return 512;
+      case htableBufferSize::large:
+        return 0;
     }
+  }
 
-    pimpl = std::make_unique<htableImpl>(item, link, tsize, nr_pages);
+ public:
+  htable(int tsize = 31)
+  {
+    constexpr int nr_pages = get_nr_pages(BufferSize);
+    if constexpr (std::is_same<T, hlink>::value) {
+      pimpl = std::make_unique<htableImpl>(0, tsize, nr_pages);
+    } else {
+      pimpl = std::make_unique<htableImpl>(offsetof(T, link), tsize, nr_pages);
+    }
   }
   T* lookup(Key key)
   {

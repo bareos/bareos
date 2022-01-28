@@ -155,10 +155,10 @@ void htableImpl::HashIndex(uint8_t* key, uint32_t keylen)
 }
 
 // tsize is the estimated number of entries in the hash table
-htableImpl::htableImpl(void* item, void* link, int tsize, int nr_pages)
+htableImpl::htableImpl(int t_loffset, int tsize, int nr_pages)
 {
   init(tsize, nr_pages);
-  loffset = (char*)link - (char*)item;
+  loffset = t_loffset;
 }
 
 void htableImpl::init(int tsize, int nr_pages)
