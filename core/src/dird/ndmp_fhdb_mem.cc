@@ -111,7 +111,7 @@ struct ooo_metadata {
 };
 typedef struct ooo_metadata OOO_MD;
 
-using MetadataTable = htable<uint64_t, OOO_MD>;
+using MetadataTable = htable<uint64_t, OOO_MD, htableBufferSize::small>;
 
 struct fhdb_state_mem {
   N_TREE_ROOT* fhdb_root;
@@ -438,8 +438,7 @@ static inline void add_out_of_order_metadata(NIS* nis,
     item_size = sizeof(OOO_MD);
     nr_items = (nr_pages * B_PAGE_SIZE) / item_size;
 
-    meta_data
-        = new MetadataTable(md_entry, &md_entry->link, nr_items, nr_pages);
+    meta_data = new MetadataTable(md_entry, &md_entry->link, nr_items);
     ((struct fhdb_state_mem*)nis->fhdb_state)->out_of_order_metadata
         = meta_data;
   }

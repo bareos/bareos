@@ -108,7 +108,7 @@ struct s_hl_entry {
 };
 typedef struct s_hl_entry HL_ENTRY;
 
-using HardlinkTable = htable<uint64_t, HL_ENTRY>;
+using HardlinkTable = htable<uint64_t, HL_ENTRY, htableBufferSize::small>;
 
 struct s_tree_root {
   s_tree_root()

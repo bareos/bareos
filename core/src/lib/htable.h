@@ -127,13 +127,32 @@ struct htable_binary_key {
   uint32_t len;
 };
 
-template <typename Key, typename T> class htable {
+enum class htableBufferSize
+{
+  small,
+  medium,
+  large
+};
+
+template <typename Key,
+          typename T,
+          enum htableBufferSize BufferSize = htableBufferSize::large>
+class htable {
   std::unique_ptr<htableImpl> pimpl;
 
  public:
   htable() { pimpl = std::make_unique<htableImpl>(); }
-  htable(T* item, hlink* link, int tsize = 31, int nr_pages = 0)
+  htable(T* item, hlink* link, int tsize = 31)
   {
+    int nr_pages = 0;
+    if constexpr (BufferSize == htableBufferSize::large) {
+      nr_pages = 0;
+    } else if constexpr (BufferSize == htableBufferSize::medium) {
+      nr_pages = 512;
+    } else if constexpr (BufferSize == htableBufferSize::small) {
+      nr_pages = 1;
+    }
+
     pimpl = std::make_unique<htableImpl>(item, link, tsize, nr_pages);
   }
   T* lookup(Key key)
