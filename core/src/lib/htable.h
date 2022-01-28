@@ -98,17 +98,9 @@ class htableImpl {
 
  public:
   htableImpl() = default;
-  htableImpl(void* item,
-             void* link,
-             int tsize = 31,
-             int nr_pages = 0,
-             int nr_entries = 4);
+  htableImpl(void* item, void* link, int tsize = 31, int nr_pages = 0);
   ~htableImpl() { destroy(); }
-  void init(void* item,
-            void* link,
-            int tsize = 31,
-            int nr_pages = 0,
-            int nr_entries = 4);
+  void init(int tsize = 31, int nr_pages = 0);
   bool insert(char* key, void* item);
   bool insert(uint32_t key, void* item);
   bool insert(uint64_t key, void* item);
@@ -140,14 +132,9 @@ template <typename Key, typename T> class htable {
 
  public:
   htable() { pimpl = std::make_unique<htableImpl>(); }
-  htable(T* item,
-         void* link,
-         int tsize = 31,
-         int nr_pages = 0,
-         int nr_entries = 4)
+  htable(T* item, hlink* link, int tsize = 31, int nr_pages = 0)
   {
-    pimpl
-        = std::make_unique<htableImpl>(item, link, tsize, nr_pages, nr_entries);
+    pimpl = std::make_unique<htableImpl>(item, link, tsize, nr_pages);
   }
   T* lookup(Key key)
   {

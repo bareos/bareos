@@ -43,10 +43,6 @@
 #include <cinttypes>
 #include "include/config.h"
 
-#ifdef HAVE_HPUX_OS
-#  pragma pack(4)
-#endif
-
 #include "include/bareos.h"
 #include "lib/htable.h"
 
@@ -95,7 +91,9 @@ char* htableImpl::hash_malloc(int size)
   char* buf;
   int asize = BALIGN(size);
 
-  if (mem_block->rem < asize) {
+  if (!mem_block) {
+    MallocBigBuf(extend_length);
+  } else if (mem_block->rem < asize) {
     if (total_size >= (extend_length / 2)) {
       mb_size = extend_length;
     } else {
@@ -157,56 +155,43 @@ void htableImpl::HashIndex(uint8_t* key, uint32_t keylen)
 }
 
 // tsize is the estimated number of entries in the hash table
-htableImpl::htableImpl(void* item,
-                       void* link,
-                       int tsize,
-                       int nr_pages,
-                       int nr_entries)
+htableImpl::htableImpl(void* item, void* link, int tsize, int nr_pages)
 {
-  init(item, link, tsize, nr_pages, nr_entries);
+  init(tsize, nr_pages);
+  loffset = (char*)link - (char*)item;
 }
 
-void htableImpl::init(void* item,
-                      void* link,
-                      int tsize,
-                      int nr_pages,
-                      int nr_entries)
+void htableImpl::init(int tsize, int nr_pages)
 {
-  int pwr;
-  int pagesize;
-  int buffer_size;
-
   memset(this, 0, sizeof(htableImpl));
   if (tsize < 31) { tsize = 31; }
   tsize >>= 2;
+
+  int pwr;
   for (pwr = 0; tsize; pwr++) { tsize >>= 1; }
-  loffset = (char*)link - (char*)item;
-  mask = ~((~0) << pwr); /* 3 bits => table size = 8 */
-  rshift = 30 - pwr;     /* Start using bits 28, 29, 30 */
-  buckets = 1 << pwr;    /* Hash table size -- power of two */
-  max_items
-      = buckets * nr_entries; /* Allow average nr_entries entries per chain */
+  rshift = 30 - pwr;  /* Start using bits 28, 29, 30 */
+  buckets = 1 << pwr; /* Hash table size -- power of two */
+
+  mask = buckets - 1;      /* 3 bits => table size = 8 */
+  max_items = buckets * 4; /* Allow average nr_entries entries per chain */
   table = (hlink**)malloc(buckets * sizeof(hlink*));
   memset(table, 0, buckets * sizeof(hlink*));
 
 #ifdef HAVE_GETPAGESIZE
-  pagesize = getpagesize();
+  int pagesize = getpagesize();
 #else
-  pagesize = B_PAGE_SIZE;
+  int pagesize = B_PAGE_SIZE;
 #endif
   if (nr_pages == 0) {
-    buffer_size = MAX_BUF_SIZE;
+    extend_length = MAX_BUF_SIZE;
   } else {
-    buffer_size = pagesize * nr_pages;
-    if (buffer_size > MAX_BUF_SIZE) {
-      buffer_size = MAX_BUF_SIZE;
-    } else if (buffer_size < MIN_BUF_SIZE) {
-      buffer_size = MIN_BUF_SIZE;
+    extend_length = pagesize * nr_pages;
+    if (extend_length > MAX_BUF_SIZE) {
+      extend_length = MAX_BUF_SIZE;
+    } else if (extend_length < MIN_BUF_SIZE) {
+      extend_length = MIN_BUF_SIZE;
     }
   }
-  MallocBigBuf(buffer_size);
-  extend_length = buffer_size;
-  Dmsg1(100, "Allocated big buffer of %ld bytes\n", buffer_size);
 }
 
 uint32_t htableImpl::size() { return num_items; }
