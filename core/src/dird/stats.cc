@@ -37,6 +37,7 @@
 #include "lib/bnet.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/berrno.h"
 
 namespace directordaemon {
 
@@ -319,13 +320,22 @@ bool StartStatisticsThread(void)
   }
   int status;
 
-  if (!me->stats_collect_interval || !collectstatistics) { return 0; }
+  if (!me->stats_collect_interval || !collectstatistics) {
+    Emsg1(M_INFO, 0,
+          _("Director Statistics Thread will not be started. Modify your "
+            "configuration if you want to activate it.\n"));
+
+    return false;
+  }
 
   quit = false;
 
   if ((status = pthread_create(&statistics_tid, NULL, statistics_thread, NULL))
       != 0) {
-    return status;
+    BErrNo be;
+    Emsg1(M_ERROR_TERM, 0,
+          _("Director Statistics Thread could not be started. ERR=%s\n"),
+          be.bstrerror());
   }
 
   statistics_initialized = true;

@@ -34,6 +34,7 @@
 #include "include/jcr.h"
 #include "lib/parse_conf.h"
 #include "lib/bsock.h"
+#include "lib/berrno.h"
 
 namespace storagedaemon {
 
@@ -415,7 +416,10 @@ bool StartStatisticsThread(void)
   // First see if device and job stats collection is enabled.
   if (!me->stats_collect_interval
       || (!me->collect_dev_stats && !me->collect_job_stats)) {
-    return 0;
+    Emsg1(M_INFO, 0,
+          _("Director Statistics Thread was not started. Modify your "
+            "configuration if you want to activate it.\n"));
+    return false;
   }
 
   /*
@@ -430,13 +434,21 @@ bool StartStatisticsThread(void)
       if (device_resource->collectstats) { cnt++; }
     }
 
-    if (cnt == 0) { return 0; }
+    if (cnt == 0) {
+      Emsg1(M_INFO, 0,
+            _("Director Statistics Thread was not started. Modify your "
+              "configuration if you want to activate it.\n"));
+      return false;
+    }
   }
 
   if ((status
        = pthread_create(&statistics_tid, NULL, statistics_thread_runner, NULL))
       != 0) {
-    return status;
+    BErrNo be;
+    Emsg1(M_ERROR_TERM, 0,
+          _("Director Statistics Thread could not be started. ERR=%s\n"),
+          be.bstrerror());
   }
 
   statistics_initialized = true;
