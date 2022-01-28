@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -50,8 +50,7 @@ class pathid_cache {
   pathid_cache()
   {
     hlink link;
-    cache_ppathid = (htable*)malloc(sizeof(htable));
-    cache_ppathid->init(&link, &link, NITEMS);
+    cache_ppathid = new htable(&link, &link, NITEMS);
     max_node = NITEMS;
     nodes = (hlink*)malloc(max_node * sizeof(hlink));
     nb_node = 0;
@@ -79,8 +78,7 @@ class pathid_cache {
 
   ~pathid_cache()
   {
-    cache_ppathid->destroy();
-    free(cache_ppathid);
+    delete cache_ppathid;
     delete table_node;
   }
 

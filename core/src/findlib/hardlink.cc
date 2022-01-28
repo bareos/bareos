@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,8 +63,7 @@ CurLink* new_hardlink(JobControlRecord* jcr,
   uint8_t* new_key;
 
   if (!ff_pkt->linkhash) {
-    ff_pkt->linkhash = (htable*)malloc(sizeof(htable));
-    ff_pkt->linkhash->init(hl, &hl->link, 10000, 480);
+    ff_pkt->linkhash = new htable(hl, &hl->link, 10000, 480);
   }
 
   len = strlen(fname) + 1;

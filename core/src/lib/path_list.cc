@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,15 +36,8 @@ typedef struct PrivateCurDir {
 // Initialize the path hash table
 htable* path_list_init()
 {
-  htable* path_list;
   CurDir* elt = NULL;
-
-  path_list = (htable*)malloc(sizeof(htable));
-
-  // Hard to know in advance how many directories will be stored in this hash
-  path_list->init(elt, &elt->link, 10000);
-
-  return path_list;
+  return new htable(elt, &elt->link, 10000);
 }
 
 /*
@@ -101,8 +94,4 @@ bool PathListLookup(htable* path_list, const char* fname)
   return found;
 }
 
-void FreePathList(htable* path_list)
-{
-  path_list->destroy();
-  free(path_list);
-}
+void FreePathList(htable* path_list) { delete path_list; }

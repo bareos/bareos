@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,12 +58,10 @@ TEST(htable, htable)
   HTABLEJCR* jcr = NULL;
   int count = 0;
 
-  jcrtbl = (htable*)malloc(sizeof(htable));
-
 #ifndef TEST_SMALL_HTABLE
-  jcrtbl->init(jcr, &jcr->link, NITEMS);
+  jcrtbl = new htable(jcr, &jcr->link, NITEMS);
 #else
-  jcrtbl->init(jcr, &jcr->link, NITEMS, 128);
+  jcrtbl = new htable(jcr, &jcr->link, NITEMS, 128);
 #endif
   for (int i = 0; i < NITEMS; i++) {
 #ifndef TEST_NON_CHAR
@@ -86,9 +84,8 @@ TEST(htable, htable)
     count++;
   }
 
-  jcrtbl->destroy();
+  delete jcrtbl;
   EXPECT_EQ(count, NITEMS);
-  free(jcrtbl);
 }
 
 struct RbListJobControlRecord {

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -435,8 +435,7 @@ static inline void add_out_of_order_metadata(NIS* nis,
     item_size = sizeof(OOO_MD);
     nr_items = (nr_pages * B_PAGE_SIZE) / item_size;
 
-    meta_data = (htable*)malloc(sizeof(htable));
-    meta_data->init(md_entry, &md_entry->link, nr_items, nr_pages);
+    meta_data = new htable(md_entry, &md_entry->link, nr_items, nr_pages);
     ((struct fhdb_state_mem*)nis->fhdb_state)->out_of_order_metadata
         = meta_data;
   }
@@ -630,14 +629,12 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog* ixlog,
         Jmsg(nis->jcr, M_FATAL, 0,
              _("NDMP protocol error, FHDB unable to process out of order "
                "metadata.\n"));
-        meta_data->destroy();
-        free(meta_data);
+        delete meta_data;
         ((struct fhdb_state_mem*)nis->fhdb_state)->out_of_order_metadata = NULL;
         return 1;
       }
 
-      meta_data->destroy();
-      free(meta_data);
+      delete meta_data;
       ((struct fhdb_state_mem*)nis->fhdb_state)->out_of_order_metadata = NULL;
     }
 
