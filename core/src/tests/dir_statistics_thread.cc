@@ -28,9 +28,6 @@ class DirStatisticsThread : public ::testing::Test {
 
 static void test_starting_statistics_thread(std::string path_to_config)
 {
-  debug_level = 10;  // set debug level high enough so we can see error messages
-  InitDirGlobals();
-
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   if (!director_config) { return; }
 
@@ -40,25 +37,26 @@ static void test_starting_statistics_thread(std::string path_to_config)
 TEST_F(DirStatisticsThread, default_collect_statistics)
 {
   std::string path_to_config = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/statistics_thread/default_config");
+      RELATIVE_PROJECT_SOURCE_DIR
+      "/configs/statistics_thread/dir_statistics_thread/default_config");
 
   test_starting_statistics_thread(path_to_config);
 }
 
 TEST_F(DirStatisticsThread, only_interval_set)
 {
-  std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR
-                    "/configs/statistics_thread/only_interval_set");
+  std::string path_to_config = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR
+      "/configs/statistics_thread/dir_statistics_thread/only_collect_set");
 
   test_starting_statistics_thread(path_to_config);
 }
 
 TEST_F(DirStatisticsThread, only_collect_set)
 {
-  std::string path_to_config
-      = std::string(RELATIVE_PROJECT_SOURCE_DIR
-                    "/configs/statistics_thread/only_interval_set");
+  std::string path_to_config = std::string(
+      RELATIVE_PROJECT_SOURCE_DIR
+      "/configs/statistics_thread/dir_statistics_thread/only_interval_set");
 
   test_starting_statistics_thread(path_to_config);
 }
