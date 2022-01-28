@@ -135,12 +135,12 @@ struct htable_binary_key {
   uint32_t len;
 };
 
-class htable {
+template <typename Key, typename T> class htable {
   std::unique_ptr<htableImpl> pimpl;
 
  public:
   htable() { pimpl = std::make_unique<htableImpl>(); }
-  htable(void* item,
+  htable(T* item,
          void* link,
          int tsize = 31,
          int nr_pages = 0,
@@ -149,27 +149,26 @@ class htable {
     pimpl
         = std::make_unique<htableImpl>(item, link, tsize, nr_pages, nr_entries);
   }
-  void* lookup(char* key) { return pimpl->lookup(key); }
-  bool insert(char* key, void* item) { return pimpl->insert(key, item); }
-
-  void* lookup(uint32_t key) { return pimpl->lookup(key); }
-  bool insert(uint32_t key, void* item) { return pimpl->insert(key, item); }
-
-  void* lookup(uint64_t key) { return pimpl->lookup(key); }
-  bool insert(uint64_t key, void* item) { return pimpl->insert(key, item); }
-
-  void* lookup(htable_binary_key key)
+  T* lookup(Key key)
   {
-    return pimpl->lookup(key.ptr, key.len);
+    if constexpr (std::is_same<Key, htable_binary_key>::value) {
+      return (T*)pimpl->lookup(key.ptr, key.len);
+    } else {
+      return (T*)pimpl->lookup(key);
+    }
   }
-  bool insert(htable_binary_key key, void* item)
+  bool insert(Key key, T* item)
   {
-    return pimpl->insert(key.ptr, key.len, item);
+    if constexpr (std::is_same<Key, htable_binary_key>::value) {
+      return pimpl->insert(key.ptr, key.len, item);
+    } else {
+      return pimpl->insert(key, item);
+    }
   }
 
   char* hash_malloc(int size) { return pimpl->hash_malloc(size); }
-  void* first() { return pimpl->first(); }
-  void* next() { return pimpl->next(); }
+  T* first() { return (T*)pimpl->first(); }
+  T* next() { return (T*)pimpl->next(); }
   uint32_t size() { return pimpl->size(); }
 };
 

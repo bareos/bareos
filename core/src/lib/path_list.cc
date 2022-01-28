@@ -28,23 +28,18 @@
 
 #define debuglevel 50
 
-typedef struct PrivateCurDir {
-  hlink link;
-  char fname[1];
-} CurDir;
-
 // Initialize the path hash table
-htable* path_list_init()
+PathList* path_list_init()
 {
   CurDir* elt = NULL;
-  return new htable(elt, &elt->link, 10000);
+  return new PathList(elt, &elt->link, 10000);
 }
 
 /*
  * Add a path to the hash when we create a directory with the replace=NEVER
  * option
  */
-bool PathListAdd(htable* path_list, uint32_t len, const char* fname)
+bool PathListAdd(PathList* path_list, uint32_t len, const char* fname)
 {
   CurDir* item;
 
@@ -63,7 +58,7 @@ bool PathListAdd(htable* path_list, uint32_t len, const char* fname)
   return true;
 }
 
-bool PathListLookup(htable* path_list, const char* fname)
+bool PathListLookup(PathList* path_list, const char* fname)
 {
   int len;
   bool found = false;
@@ -94,4 +89,4 @@ bool PathListLookup(htable* path_list, const char* fname)
   return found;
 }
 
-void FreePathList(htable* path_list) { delete path_list; }
+void FreePathList(PathList* path_list) { delete path_list; }

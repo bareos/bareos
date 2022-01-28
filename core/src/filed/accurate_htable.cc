@@ -44,7 +44,7 @@ BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(
   number_of_previous_files_ = number_of_files;
 
   CurFile* elt = NULL;
-  file_list_ = new htable(elt, &elt->link, number_of_previous_files_);
+  file_list_ = new FileList(elt, &elt->link, number_of_previous_files_);
   seen_bitmap_ = (char*)malloc(NbytesForBits(number_of_previous_files_));
   ClearAllBits(number_of_previous_files_, seen_bitmap_);
 }

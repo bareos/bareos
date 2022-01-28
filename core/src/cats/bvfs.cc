@@ -44,13 +44,13 @@ class pathid_cache {
   int nb_node;
   int max_node;
   alist<hlink*>* table_node;
-  htable* cache_ppathid;
+  htable<char*, hlink>* cache_ppathid;
 
  public:
   pathid_cache()
   {
     hlink link;
-    cache_ppathid = new htable(&link, &link, NITEMS);
+    cache_ppathid = new htable<char*, hlink>(&link, &link, NITEMS);
     max_node = NITEMS;
     nodes = (hlink*)malloc(max_node * sizeof(hlink));
     nb_node = 0;

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -100,6 +100,16 @@ struct s_tree_node {
 };
 typedef struct s_tree_node TREE_NODE;
 
+/* hardlink hashtable entry */
+struct s_hl_entry {
+  uint64_t key;
+  hlink link;
+  TREE_NODE* node;
+};
+typedef struct s_hl_entry HL_ENTRY;
+
+using HardlinkTable = htable<uint64_t, HL_ENTRY>;
+
 struct s_tree_root {
   s_tree_root()
       : type{false}
@@ -138,17 +148,9 @@ struct s_tree_root {
   int cached_path_len{};       /* length of cached path */
   char* cached_path{};         /* cached current path */
   TREE_NODE* cached_parent{};  /* cached parent for above path */
-  htable hardlinks;            /* references to first occurence of hardlinks */
+  HardlinkTable hardlinks;     /* references to first occurence of hardlinks */
 };
 typedef struct s_tree_root TREE_ROOT;
-
-/* hardlink hashtable entry */
-struct s_hl_entry {
-  uint64_t key;
-  hlink link;
-  TREE_NODE* node;
-};
-typedef struct s_hl_entry HL_ENTRY;
 
 #ifdef HAVE_HPUX_OS
 #  pragma pack(pop)

@@ -63,7 +63,7 @@ CurLink* new_hardlink(JobControlRecord* jcr,
   uint8_t* new_key;
 
   if (!ff_pkt->linkhash) {
-    ff_pkt->linkhash = new htable(hl, &hl->link, 10000, 480);
+    ff_pkt->linkhash = new LinkHash(hl, &hl->link, 10000, 480);
   }
 
   len = strlen(fname) + 1;

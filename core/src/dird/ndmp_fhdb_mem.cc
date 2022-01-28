@@ -111,10 +111,13 @@ struct ooo_metadata {
 };
 typedef struct ooo_metadata OOO_MD;
 
+using MetadataTable = htable<uint64_t, OOO_MD>;
+
 struct fhdb_state_mem {
   N_TREE_ROOT* fhdb_root;
-  htable* out_of_order_metadata;
+  MetadataTable* out_of_order_metadata;
 };
+
 
 /**
  * Lightweight version of Bareos tree functions for holding the NDMP
@@ -413,7 +416,7 @@ static inline void add_out_of_order_metadata(NIS* nis,
 {
   N_TREE_NODE* nt_node;
   OOO_MD* md_entry = NULL;
-  htable* meta_data
+  MetadataTable* meta_data
       = ((struct fhdb_state_mem*)nis->fhdb_state)->out_of_order_metadata;
 
   nt_node = ndmp_fhdb_new_tree_node(fhdb_root);
@@ -435,7 +438,8 @@ static inline void add_out_of_order_metadata(NIS* nis,
     item_size = sizeof(OOO_MD);
     nr_items = (nr_pages * B_PAGE_SIZE) / item_size;
 
-    meta_data = new htable(md_entry, &md_entry->link, nr_items, nr_pages);
+    meta_data
+        = new MetadataTable(md_entry, &md_entry->link, nr_items, nr_pages);
     ((struct fhdb_state_mem*)nis->fhdb_state)->out_of_order_metadata
         = meta_data;
   }
@@ -445,7 +449,7 @@ static inline void add_out_of_order_metadata(NIS* nis,
   md_entry->dir_node = dir_node;
   md_entry->nt_node = nt_node;
 
-  meta_data->insert((uint64_t)node, (void*)md_entry);
+  meta_data->insert((uint64_t)node, md_entry);
 
   Dmsg2(100,
         "bndmp_fhdb_mem_add_dir: Added out of order metadata entry for node "
@@ -499,7 +503,7 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog* ixlog,
 }
 
 // This tries recursivly to add the missing parents to the tree.
-static N_TREE_NODE* insert_metadata_parent_node(htable* meta_data,
+static N_TREE_NODE* insert_metadata_parent_node(MetadataTable* meta_data,
                                                 N_TREE_ROOT* fhdb_root,
                                                 uint64_t dir_node)
 {
@@ -553,7 +557,7 @@ static N_TREE_NODE* insert_metadata_parent_node(htable* meta_data,
  * tree. Only used for NDMP DMAs which are sending their metadata fully at
  * random.
  */
-static inline bool ProcessOutOfOrderMetadata(htable* meta_data,
+static inline bool ProcessOutOfOrderMetadata(MetadataTable* meta_data,
                                              N_TREE_ROOT* fhdb_root)
 {
   OOO_MD* md_entry;
@@ -612,7 +616,7 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog* ixlog,
     N_TREE_ROOT* fhdb_root;
     N_TREE_NODE* wanted_node;
     PoolMem attribs(PM_FNAME);
-    htable* meta_data
+    MetadataTable* meta_data
         = ((struct fhdb_state_mem*)nis->fhdb_state)->out_of_order_metadata;
 
     Dmsg1(100, "bndmp_fhdb_mem_add_node: New node [%llu]\n", node);

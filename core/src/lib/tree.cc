@@ -92,7 +92,7 @@ TREE_ROOT* new_tree(int count)
   root->type = TN_ROOT;
   root->fname = "";
   HL_ENTRY* entry = NULL;
-  new (&root->hardlinks) htable(entry, &entry->link, 0, 1);
+  new (&root->hardlinks) HardlinkTable(entry, &entry->link, 0, 1);
   return root;
 }
 

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,11 +21,18 @@
 #ifndef BAREOS_LIB_PATH_LIST_H_
 #define BAREOS_LIB_PATH_LIST_H_
 
-class htable;
+#include "htable.h"
 
-htable* path_list_init();
-bool PathListLookup(htable* path_list, const char* fname);
-bool PathListAdd(htable* path_list, uint32_t len, const char* fname);
-void FreePathList(htable* path_list);
+typedef struct PrivateCurDir {
+  hlink link;
+  char fname[1];
+} CurDir;
+
+using PathList = htable<char*, CurDir>;
+
+PathList* path_list_init();
+bool PathListLookup(PathList* path_list, const char* fname);
+bool PathListAdd(PathList* path_list, uint32_t len, const char* fname);
+void FreePathList(PathList* path_list);
 
 #endif  // BAREOS_LIB_PATH_LIST_H_
