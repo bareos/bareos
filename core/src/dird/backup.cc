@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -586,9 +586,10 @@ bool DoNativeBackup(JobControlRecord* jcr)
   if (!response(jcr, fd, OKbackup, "Backup", DISPLAY_ERROR)) { goto bail_out; }
 
   status = WaitForJobTermination(jcr);
-  jcr->db_batch->WriteBatchFileRecords(
-      jcr); /* used by bulk batch file insert */
-
+  if (jcr->batch_started) {
+    jcr->db_batch->WriteBatchFileRecords(
+        jcr); /* used by bulk batch file insert */
+  }
   if (jcr->HasBase && !jcr->db->CommitBaseFileAttributesRecord(jcr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
   }
