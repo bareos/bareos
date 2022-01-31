@@ -429,7 +429,9 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
       case STREAM_COMPRESSED_DATA:  // Got compressed data ndmp cannot handle
         Jmsg0(jcr, M_ERROR, 0,
               _("Encountered STREAM_COMPRESSED_DATA which cannot be handled by "
-                "NDMP.\n"));
+                "NDMP. Make sure read device device will inflate and not "
+                "deflate when reading. "
+                "(IN:[DEV->inflate=yes->deflate=no->SD])\n"));
         return false;
       default:  // corrupted stream of records, give an EOF
         Jmsg1(jcr, M_ERROR, 0, _("Encountered an unknown stream type %d\n"),
