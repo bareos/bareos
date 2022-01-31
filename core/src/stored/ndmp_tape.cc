@@ -331,6 +331,7 @@ bail_out:
   return retval;
 }
 
+
 /**
  * Read a record using the native routines.
  *
