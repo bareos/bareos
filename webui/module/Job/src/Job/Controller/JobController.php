@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -569,7 +569,43 @@ class JobController extends AbstractActionController
 
     $this->bsock = $this->getServiceLocator()->get('director');
 
-    // TODO
+    return new ViewModel();
+  }
+
+  public function timelinejobsAction()
+  {
+    $this->RequestURIPlugin()->setRequestURI();
+
+    if(!$this->SessionTimeoutPlugin()->isValid()) {
+      return $this->redirect()->toRoute(
+        'auth',
+        array(
+          'action' => 'login'
+        ),
+        array(
+          'query' => array(
+            'req' => $this->RequestURIPlugin()->getRequestURI(),
+            'dird' => $_SESSION['bareos']['director']
+          )
+        )
+      );
+    }
+
+    $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
+      $module_config['console_commands']['Job']['mandatory']
+    );
+    if(count($invalid_commands) > 0) {
+      $this->acl_alert = true;
+      return new ViewModel(
+        array(
+          'acl_alert' => $this->acl_alert,
+          'invalid_commands' => implode(",", $invalid_commands)
+        )
+      );
+    }
+
+    $this->bsock = $this->getServiceLocator()->get('director');
 
     return new ViewModel();
   }
@@ -598,6 +634,7 @@ class JobController extends AbstractActionController
     $data = $this->params()->fromQuery('data');
     $jobid = $this->params()->fromQuery('jobid');
     $jobname = $this->params()->fromQuery('jobname');
+    $jobs = $this->params()->fromQuery('jobs');
     $status = $this->params()->fromQuery('status');
     $period = $this->params()->fromQuery('period');
     $client = $this->params()->fromQuery('client');
@@ -636,6 +673,24 @@ class JobController extends AbstractActionController
         echo $e->getMessage();
       }
     }
+    elseif($data == "all-job-resources") {
+      try {
+        $jobs_B = $this->getJobModel()->getJobsByType($this->bsock, 'B'); // Backup Job
+        $jobs_D = $this->getJobModel()->getJobsByType($this->bsock, 'D'); // Admin Job
+        $jobs_A = $this->getJobModel()->getJobsByType($this->bsock, 'A'); // Archive Job
+        $jobs_c = $this->getJobModel()->getJobsByType($this->bsock, 'c'); // Copy Job
+        $jobs_g = $this->getJobModel()->getJobsByType($this->bsock, 'g'); // Migration Job
+        $jobs_O = $this->getJobModel()->getJobsByType($this->bsock, 'O'); // Always Incremental Consolidate Job
+        $jobs_V = $this->getJobModel()->getJobsByType($this->bsock, 'V'); // Verify Job
+        $jobs_R = $this->getJobModel()->getJobsByType($this->bsock, 'R'); // Restore Job
+        $result = array_merge(
+          $jobs_B,$jobs_D,$jobs_A,$jobs_c,$jobs_g,$jobs_O,$jobs_V,$jobs_R
+        );
+      }
+      catch(Exception $e) {
+        echo $e->getMessages();
+      }
+    }
     elseif($data == "details") {
       try {
         $result = $this->getJobModel()->getJob($this->bsock, $jobid);
@@ -660,7 +715,7 @@ class JobController extends AbstractActionController
         echo $e->getMessage();
       }
     }
-    elseif($data == "timeline") {
+    elseif($data == "client-timeline") {
       try {
         $result = [];
         $c = explode(",", $clients);
@@ -736,7 +791,7 @@ class JobController extends AbstractActionController
               $endtime += 1000;
             }
 
-            $item = '{"x":"'.$job['client'].'","y":["'.$starttime.'","'.$endtime.'"],"fillColor":"'.$fillcolor.'","name":"'.$job['name'].'","jobid":"'.$job['jobid'].'","starttime":"'.$job['starttime'].'","endtime":"'.$job['endtime'].'","schedtime":"'.$job['schedtime'].'"}';
+            $item = '{"x":"'.$job['client'].'","y":["'.$starttime.'","'.$endtime.'"],"fillColor":"'.$fillcolor.'","name":"'.$job['name'].'","jobid":"'.$job['jobid'].'","starttime":"'.$job['starttime'].'","endtime":"'.$job['endtime'].'","schedtime":"'.$job['schedtime'].'","client":"'.$job['client'].'"}';
             array_push($jobs, json_decode($item));
 
         }
@@ -745,6 +800,93 @@ class JobController extends AbstractActionController
 
       } catch(Exception $e) {
         echo $e->getMessage();
+      }
+    }
+    elseif($data="job-timeline") {
+      try {
+        $result = [];
+        $j = explode(",", $jobs);
+
+        foreach($j as $jobname) {
+          $result = array_merge($result, $this->getJobModel()->getJobsForPeriodByJobname($this->bsock, $jobname, $period));
+        }
+
+        $jobs = array();
+
+        // Ensure a proper date.timezone setting for the job timeline.
+        // Surpress a possible error thrown by date_default_timezone_get()
+        // in older PHP versions with @ in front of the function call.
+        date_default_timezone_set(@date_default_timezone_get());
+
+        foreach($result as $job) {
+
+          $starttime = new \DateTime($job['starttime']);
+          $endtime = new \DateTime($job['endtime']);
+          $schedtime = new \DateTime($job['schedtime']);
+
+          $starttime = $starttime->format('U')*1000;
+          $endtime = $endtime->format('U')*1000;
+          $schedtime = $schedtime->format('U')*1000;
+
+          switch($job['jobstatus']) {
+            // SUCESS
+            case 'T':
+              $fillcolor = "#5cb85c";
+              break;
+            // WARNING
+            case 'A':
+            case 'W':
+              $fillcolor = "#f0ad4e";
+              break;
+            // RUNNING
+            case 'R':
+            case 'l':
+              $fillcolor = "#5bc0de";
+              $endtime = new \DateTime(null);
+              $endtime = $endtime->format('U')*1000;
+              break;
+            // FAILED
+            case 'E':
+            case 'e':
+            case 'f':
+              $fillcolor = "#d9534f";
+              break;
+            // WAITING
+            case 'F':
+            case 'S':
+            case 's':
+            case 'M':
+            case 'm':
+            case 'j':
+            case 'C':
+            case 'c':
+            case 'd':
+            case 't':
+            case 'p':
+            case 'q':
+              $fillcolor = "#555555";
+              $endtime = new \DateTime(null);
+              $endtime = $endtime->format('U')*1000;
+              break;
+            default:
+              $fillcolor = "#555555";
+              break;
+            }
+
+            // workaround to display short job runs <= 1 sec.
+            if($starttime === $endtime) {
+              $endtime += 1000;
+            }
+
+            $item = '{"x":"'.$job['name'].'","y":["'.$starttime.'","'.$endtime.'"],"fillColor":"'.$fillcolor.'","name":"'.$job['name'].'","jobid":"'.$job['jobid'].'","starttime":"'.$job['starttime'].'","endtime":"'.$job['endtime'].'","schedtime":"'.$job['schedtime'].'","client":"'.$job['client'].'"}';
+            array_push($jobs, json_decode($item));
+
+        }
+
+        $result = $jobs;
+
+      } catch(Exception $e) {
+        echo $e->getMessages();
       }
     }
 
