@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -41,14 +41,14 @@ $this->headTitle($title);
 
 <!-- modal-004 start -->
 <div id="modal-004" class="modal fade modal-004" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-sm">
     <div class="modal-content">
    <div class="modal-header">
    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
    <h4 class="modal-title" id="myModalLabel"></h4>
       </div>
       <div class="modal-body">
-         <p><?php echo $this->translate("No client has been selected!"); ?></p>
+         <p><?php echo $this->translate("Please select at least one client."); ?></p>
       </div>
       <div class="modal-footer">
          <button id="modal-004-btn-ok" type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("OK"); ?></button>
@@ -63,24 +63,40 @@ $this->headTitle($title);
   <div class="col-md-3">
     <div class="panel panel-default">
       <div class="panel-heading">
-        <h3 class="panel-title"><?php echo $this->translate('Clients'); ?></h3>
+        <h3 class="panel-title"><?php echo $this->translate('Selection'); ?></h3>
       </div>
       <div class="panel-body">
+
         <div class="col-md-11"><input id="rangeslider" style="width: 100%;"></div>
+        <br />
+
+        <ul class="nav nav-tabs">
+          <li class="active"><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>">Clients</a></li>
+          <li><a href="<?php echo $this->url('job', array('action'=>'timelinejobs')); ?>">Jobs</a></li>
+        </ul>
+        <br />
+
+        <div class="tab-content">
+
+        <div id="clients-tab" class="tab-pane fade in active">
           <table
-             class="table table-no-bordered table-hover"
-             id="clients"
-             data-filter-control="true">
+            class="table table-no-bordered table-hover"
+            id="clients"
+            data-filter-control="true">
             <thead class="bg-primary">
-               <th></th>
-               <th data-field="name"><?php echo $this->translate("Name"); ?></th>
+              <th></th>
+              <th data-field="name"><?php echo $this->translate("Name"); ?></th>
             </thead>
           </table>
           <div id="custom-toolbar">
             <br /><br />
-            <button id="button" class="btn btn-primary" onclick="updateChart()">Update timeline</button>
+            <button id="button" class="btn btn-primary" onclick="showClientChart()">Show</button>
             <br /><br />
           </div>
+        </div>
+
+        </div>
+
       </div>
     </div>
   </div>
@@ -88,7 +104,7 @@ $this->headTitle($title);
   <div class="col-md-9">
     <div class="panel panel-default">
       <div class="panel-heading">
-        <h3 class="panel-title"><?php echo $this->translate('Job timeline'); ?></h3>
+        <h3 class="panel-title"><?php echo $this->translate('Timeline'); ?></h3>
         <ul class="list-inline panel-actions">
           <li><a href="#" id="panel-fullscreen" role="button" title="Toggle fullscreen"><i class="glyphicon glyphicon-resize-full"></i></a></li>
         </ul>
@@ -134,16 +150,16 @@ $this->headTitle($title);
   color:#333;
 }
 .panel-fullscreen {
-    display: block;
-    z-index: 9999;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    right: 0;
-    left: 0;
-    bottom: 0;
-    overflow: auto;
+  display: block;
+  z-index: 9999;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  overflow: auto;
 }
 </style>
 
@@ -155,7 +171,7 @@ $this->headTitle($title);
   var options = {
     series: [],
     noData: {
-      text: 'No data'
+      text: 'Please select at least one client.'
     },
     chart: {
       height: 600,
@@ -194,7 +210,7 @@ $this->headTitle($title);
           var data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
           return '<div style="background: #000; color: #fff; padding: 5px 5px 5px 5px;">' +
           '<b>Job</b>: ' + data.name + '</br>' +
-          '<b>Client</b>: ' + data.x + '</br>' +
+          '<b>Client</b>: ' + data.client + '</br>' +
           '<b>Job Id</b>: ' + data.jobid + '</br>' +
           '<b>Scheduled</b>: ' + data.schedtime + '</br>' +
           '<b>Start</b>: ' + data.starttime + '</br>' +
@@ -231,26 +247,13 @@ $this->headTitle($title);
   var chart = new ApexCharts(document.querySelector("#timeline-chart"), options);
   chart.render();
 
-/*
-  function addSeriesToChart(c, p) {
-    var url = "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=timeline&client=" + c + "&period='; ?>" + p;
-
-    $.getJSON(url, function(response) {
-      chart.appendSeries({
-        name: c,
-        data: response
-      });
-    });
-  }
-*/
-
   function updateChartOptions(currenttime, p) {
     let max = currenttime + (60 * 60 * 1000) // current timestamp + 1h
     let min = currenttime - (60 * 60 * 24 * 1000) * p // current timestamp - 24h * p (period)
 
     chart.updateOptions({
       noData: {
-        text: 'Loading ...'
+        text: 'Loading ...',
       },
       xaxis: {
         min: min,
@@ -266,7 +269,19 @@ $this->headTitle($title);
     });
   }
 
-  function updateChart() {
+  function changeNoDataText(d) {
+    let msg = "Loading ...";
+    if(!d) {
+      msg = "No data available";
+    }
+    chart.updateOptions({
+      noData: {
+        text: msg
+      }
+    });
+  }
+
+  function showClientChart() {
 
       let selection = $('#clients').bootstrapTable('getSelections');
 
@@ -288,9 +303,12 @@ $this->headTitle($title);
           data: []
         }]);
 
-        let url = "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=timeline&clients=" + s + "&period='; ?>" + p;
+        let url = "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=client-timeline&clients=" + s + "&period='; ?>" + p;
 
         $.getJSON(url, function(response) {
+          if(response.length === 0) {
+            changeNoDataText(false);
+          }
           chart.updateSeries([{
             //name: 'current_selection',
             data: response
@@ -328,7 +346,7 @@ $this->headTitle($title);
       $('#clients').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-         cookieIdTable: 'client_clients',
+         cookieIdTable: 'timeline_clients',
          url: '<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>',
          method: 'get',
          dataType: 'json',
@@ -391,7 +409,7 @@ $this->headTitle($title);
 
       attachClientsTable();
 
-      //Toggle timeline to fullscreen
+      // Timeline fullscreen toggle
       $("#panel-fullscreen").click(function (e) {
         e.preventDefault();
 
