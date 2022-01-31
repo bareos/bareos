@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -348,7 +348,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
 
   if (!rctx) { return false; }
 
-  while (!done) {
+  while (ok && !done) {
     // See if there are any records left to process.
     if (!IsBlockEmpty(rctx->rec)) {
       if (!ReadNextRecordFromBlock(dcr, rctx, &done)) {
@@ -436,7 +436,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
 
   if (done) { *data_length = 0; }
 
-  return true;
+  return ok;
 }
 
 // Generate virtual file attributes for the whole NDMP stream.
