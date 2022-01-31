@@ -46,67 +46,9 @@
 #include "include/bareos.h"
 #include "lib/htable.h"
 
-#define B_PAGE_SIZE 4096
-#define MIN_PAGES 32
-#define MAX_PAGES 2400
-#define MIN_BUF_SIZE (MIN_PAGES * B_PAGE_SIZE) /* 128 Kb */
-#define MAX_BUF_SIZE (MAX_PAGES * B_PAGE_SIZE) /* approx 10MB */
-
 static const int debuglevel = 500;
 
 // htable (Hash Table) class.
-
-// This subroutine gets a big buffer.
-void htableImpl::MallocBigBuf(int size)
-{
-  struct h_mem* hmem;
-
-  hmem = (struct h_mem*)malloc(size);
-  total_size += size;
-  blocks++;
-  hmem->next = mem_block;
-  mem_block = hmem;
-  hmem->mem = mem_block->first;
-  hmem->rem = (char*)hmem + size - hmem->mem;
-  Dmsg3(100, "malloc buf=%p size=%d rem=%d\n", hmem, size, hmem->rem);
-}
-
-// This routine frees the whole tree.
-void htableImpl::HashBigFree()
-{
-  struct h_mem *hmem, *rel;
-
-  for (hmem = mem_block; hmem;) {
-    rel = hmem;
-    hmem = hmem->next;
-    Dmsg1(100, "free malloc buf=%p\n", rel);
-    free(rel);
-  }
-}
-
-// Normal hash malloc routine that gets a "small" buffer from the big buffer
-char* htableImpl::hash_malloc(int size)
-{
-  int mb_size;
-  char* buf;
-  int asize = BALIGN(size);
-
-  if (!mem_block) {
-    MallocBigBuf(extend_length);
-  } else if (mem_block->rem < asize) {
-    if (total_size >= (extend_length / 2)) {
-      mb_size = extend_length;
-    } else {
-      mb_size = extend_length / 2;
-    }
-    MallocBigBuf(mb_size);
-    Dmsg1(100, "Created new big buffer of %ld bytes\n", mb_size);
-  }
-  mem_block->rem -= asize;
-  buf = mem_block->mem;
-  mem_block->mem += asize;
-  return buf;
-}
 
 /*
  * Create hash of key, stored in hash then
@@ -155,13 +97,13 @@ void htableImpl::HashIndex(uint8_t* key, uint32_t keylen)
 }
 
 // tsize is the estimated number of entries in the hash table
-htableImpl::htableImpl(int t_loffset, int tsize, int nr_pages)
+htableImpl::htableImpl(int t_loffset, int tsize)
 {
-  init(tsize, nr_pages);
+  init(tsize);
   loffset = t_loffset;
 }
 
-void htableImpl::init(int tsize, int nr_pages)
+void htableImpl::init(int tsize)
 {
   memset(this, 0, sizeof(htableImpl));
   if (tsize < 31) { tsize = 31; }
@@ -176,22 +118,6 @@ void htableImpl::init(int tsize, int nr_pages)
   max_items = buckets * 4; /* Allow average nr_entries entries per chain */
   table = (hlink**)malloc(buckets * sizeof(hlink*));
   memset(table, 0, buckets * sizeof(hlink*));
-
-#ifdef HAVE_GETPAGESIZE
-  int pagesize = getpagesize();
-#else
-  int pagesize = B_PAGE_SIZE;
-#endif
-  if (nr_pages == 0) {
-    extend_length = MAX_BUF_SIZE;
-  } else {
-    extend_length = pagesize * nr_pages;
-    if (extend_length > MAX_BUF_SIZE) {
-      extend_length = MAX_BUF_SIZE;
-    } else if (extend_length < MIN_BUF_SIZE) {
-      extend_length = MIN_BUF_SIZE;
-    }
-  }
 }
 
 uint32_t htableImpl::size() { return num_items; }
@@ -228,8 +154,6 @@ void htableImpl::stats()
   printf("buckets=%d num_items=%d max_items=%d\n", buckets, num_items,
          max_items);
   printf("max hits in a bucket = %d\n", max);
-  printf("total bytes malloced = %" PRIu64 "\n", total_size);
-  printf("total blocks malloced = %d\n", blocks);
 }
 
 void htableImpl::grow_table()
@@ -243,11 +167,7 @@ void htableImpl::grow_table()
   // Setup a bigger table.
   big = (htableImpl*)malloc(sizeof(htableImpl));
   big->hash = hash;
-  big->total_size = total_size;
-  big->extend_length = extend_length;
   big->index = index;
-  big->blocks = blocks;
-  big->mem_block = mem_block;
   big->loffset = loffset;
   big->mask = mask << 1 | 1;
   big->rshift = rshift - 1;
@@ -550,8 +470,6 @@ void* htableImpl::first()
 /* Destroy the table and its contents */
 void htableImpl::destroy()
 {
-  HashBigFree();
-
   free(table);
   table = NULL;
   Dmsg0(100, "Done destroy.\n");

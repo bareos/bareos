@@ -111,7 +111,7 @@ struct ooo_metadata {
 };
 typedef struct ooo_metadata OOO_MD;
 
-using MetadataTable = htable<uint64_t, OOO_MD, htableBufferSize::small>;
+using MetadataTable = htable<uint64_t, OOO_MD, MonotonicBuffer::Size::Small>;
 
 struct fhdb_state_mem {
   N_TREE_ROOT* fhdb_root;

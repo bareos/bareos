@@ -55,8 +55,8 @@ TEST(htable, htable)
 #ifdef TEST_SMALL_HTABLE
   using JcrTable = htable<decltype(HTABLEJCR::key), HTABLEJCR>;
 #else
-  using JcrTable
-      = htable<decltype(HTABLEJCR::key), HTABLEJCR, htableBufferSize::medium>;
+  using JcrTable = htable<decltype(HTABLEJCR::key), HTABLEJCR,
+                          MonotonicBuffer::Size::Medium>;
 #endif
   char mkey[30];
   JcrTable* jcrtbl;

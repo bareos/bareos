@@ -186,7 +186,8 @@ struct CurLink {
   char name[1];          /**< The name */
 };
 
-using LinkHash = htable<htable_binary_key, CurLink, htableBufferSize::medium>;
+using LinkHash
+    = htable<htable_binary_key, CurLink, MonotonicBuffer::Size::Medium>;
 
 
 /**

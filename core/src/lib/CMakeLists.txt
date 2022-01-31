@@ -70,6 +70,7 @@ set(BAREOS_SRCS
     message.cc
     messages_resource.cc
     mntent_cache.cc
+    monotonic_buffer.cc
     output_formatter.cc
     output_formatter_resource.cc
     passphrase.cc

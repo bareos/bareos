@@ -41,6 +41,7 @@
 
 
 #include "include/config.h"
+#include "monotonic_buffer.h"
 
 typedef enum
 {
@@ -65,42 +66,29 @@ struct hlink {
   uint64_t hash;       /* Hash for this key */
 };
 
-struct h_mem {
-  struct h_mem* next; /* Next buffer */
-  int32_t rem;        /* Remaining bytes in big_buffer */
-  char* mem;          /* Memory pointer */
-  char first[1];      /* First byte */
-};
-
 class htableImpl {
-  hlink** table = nullptr;  /* Hash table */
-  int loffset = 0;          /* Link offset in item */
-  hlink* walkptr = nullptr; /* Table walk pointer */
-  uint64_t hash = 0;        /* Temp storage */
-  uint64_t total_size = 0;  /* Total bytes malloced */
-  uint32_t extend_length
-      = 0; /* Number of bytes to allocate when extending buffer */
-  uint32_t walk_index = 0;           /* Table walk index */
-  uint32_t num_items = 0;            /* Current number of items */
-  uint32_t max_items = 0;            /* Maximum items before growing */
-  uint32_t buckets = 0;              /* Size of hash table */
-  uint32_t index = 0;                /* Temp storage */
-  uint32_t mask = 0;                 /* "Remainder" mask */
-  uint32_t rshift = 0;               /* Amount to shift down */
-  uint32_t blocks = 0;               /* Blocks malloced */
-  struct h_mem* mem_block = nullptr; /* Malloc'ed memory block chain */
-  void MallocBigBuf(int size);       /* Get a big buffer */
-  void HashIndex(char* key);         /* Produce hash key,index */
-  void HashIndex(uint32_t key);      /* Produce hash key,index */
-  void HashIndex(uint64_t key);      /* Produce hash key,index */
+  hlink** table = nullptr;      /* Hash table */
+  int loffset = 0;              /* Link offset in item */
+  hlink* walkptr = nullptr;     /* Table walk pointer */
+  uint64_t hash = 0;            /* Temp storage */
+  uint32_t walk_index = 0;      /* Table walk index */
+  uint32_t num_items = 0;       /* Current number of items */
+  uint32_t max_items = 0;       /* Maximum items before growing */
+  uint32_t buckets = 0;         /* Size of hash table */
+  uint32_t index = 0;           /* Temp storage */
+  uint32_t mask = 0;            /* "Remainder" mask */
+  uint32_t rshift = 0;          /* Amount to shift down */
+  void HashIndex(char* key);    /* Produce hash key,index */
+  void HashIndex(uint32_t key); /* Produce hash key,index */
+  void HashIndex(uint64_t key); /* Produce hash key,index */
   void HashIndex(uint8_t* key, uint32_t key_len); /* Produce hash key,index */
   void grow_table();                              /* Grow the table */
 
  public:
   htableImpl() = default;
-  htableImpl(int t_loffset, int tsize = 31, int nr_pages = 0);
+  htableImpl(int t_loffset, int tsize = 31);
   ~htableImpl() { destroy(); }
-  void init(int tsize = 31, int nr_pages = 0);
+  void init(int tsize = 31);
   bool insert(char* key, void* item);
   bool insert(uint32_t key, void* item);
   bool insert(uint64_t key, void* item);
@@ -112,14 +100,8 @@ class htableImpl {
   void* first(); /* Get first item in table */
   void* next();  /* Get next item in table */
   void destroy();
-
- private:
-  void stats(); /* Print stats about the table */
- public:
-  uint32_t size();             /* Return size of table */
-  char* hash_malloc(int size); /* Malloc bytes for a hash entry */
- private:
-  void HashBigFree(); /* Free all hash allocated big buffers */
+  void stats();    /* Print stats about the table */
+  uint32_t size(); /* Return size of table */
 };
 
 struct htable_binary_key {
@@ -127,47 +109,28 @@ struct htable_binary_key {
   uint32_t len;
 };
 
-enum class htableBufferSize
-{
-  small,
-  medium,
-  large
-};
-
 template <typename Key,
           typename T,
-          enum htableBufferSize BufferSize = htableBufferSize::large>
+          enum MonotonicBuffer::Size BufferSize = MonotonicBuffer::Size::Large>
 class htable {
   std::unique_ptr<htableImpl> pimpl;
-
-  static constexpr int get_nr_pages(htableBufferSize bufsize)
-  {
-    switch (bufsize) {
-      case htableBufferSize::small:
-        return 1;
-      case htableBufferSize::medium:
-        return 512;
-      case htableBufferSize::large:
-        return 0;
-    }
-  }
+  MonotonicBuffer monobuf{BufferSize};
 
  public:
   htable(int tsize = 31)
   {
-    constexpr int nr_pages = get_nr_pages(BufferSize);
     if constexpr (std::is_same<T, hlink>::value) {
-      pimpl = std::make_unique<htableImpl>(0, tsize, nr_pages);
+      pimpl = std::make_unique<htableImpl>(0, tsize);
     } else {
-      pimpl = std::make_unique<htableImpl>(offsetof(T, link), tsize, nr_pages);
+      pimpl = std::make_unique<htableImpl>(offsetof(T, link), tsize);
     }
   }
   T* lookup(Key key)
   {
     if constexpr (std::is_same<Key, htable_binary_key>::value) {
-      return (T*)pimpl->lookup(key.ptr, key.len);
+      return static_cast<T*>(pimpl->lookup(key.ptr, key.len));
     } else {
-      return (T*)pimpl->lookup(key);
+      return static_cast<T*>(pimpl->lookup(key));
     }
   }
   bool insert(Key key, T* item)
@@ -179,9 +142,12 @@ class htable {
     }
   }
 
-  char* hash_malloc(int size) { return pimpl->hash_malloc(size); }
-  T* first() { return (T*)pimpl->first(); }
-  T* next() { return (T*)pimpl->next(); }
+  char* hash_malloc(int size)
+  {
+    return static_cast<char*>(monobuf.allocate(size));
+  }
+  T* first() { return static_cast<T*>(pimpl->first()); }
+  T* next() { return static_cast<T*>(pimpl->next()); }
   uint32_t size() { return pimpl->size(); }
 };
 
