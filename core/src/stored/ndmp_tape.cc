@@ -385,9 +385,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
     if (rctx->rec->FileIndex < 0) { continue; }
 
     DeviceRecord* rec = rctx->rec;
-    // Perform record translations only if data is compressed
-    // as NDMP needs to be decompressed in any case
-    //    if (rctx->rec->maskedStream == STREAM_COMPRESSED_DATA) {
+
     dcr->before_rec = rctx->rec;
     dcr->after_rec = NULL;
 
@@ -408,7 +406,6 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
       Dmsg1(400, _("recstream: %d, rctxstream: %d .\n"), rec->maskedStream,
             rctx->rec->maskedStream);
     }
-    //    }  // not compressed, go on
 
     switch (rec->maskedStream) {
       case STREAM_UNIX_ATTRIBUTES:  // Start of the dump, read the next record.
