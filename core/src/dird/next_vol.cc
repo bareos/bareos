@@ -88,7 +88,7 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
   InChanger = store->autochanger;
 
   // Find the Next Volume for Append
-  DbLock(jcr->db);
+  DbLocker _{jcr->db};
   while (1) {
     //  1. Look for volume with "Append" status.
     SetStorageidInMr(store, mr);
@@ -206,7 +206,6 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
     break;
   }
 
-  DbUnlock(jcr->db);
   Dmsg1(debuglevel, "return ok=%d find_next_vol\n", ok);
 
   return ok;

@@ -186,7 +186,7 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
   char jobid[50];
   edit_uint64(JobId, jobid);
 
-  DbLock(this);
+  DbLocker _{this};
   StartTransaction(jcr);
 
   Mmsg(cmd, "SELECT 1 FROM Job WHERE JobId = %s AND HasCache=1", jobid);
@@ -305,7 +305,6 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
 
 bail_out:
   EndTransaction(jcr);
-  DbUnlock(this);
 
   return retval;
 }
@@ -315,7 +314,7 @@ void BareosDb::BvfsUpdateCache(JobControlRecord* jcr)
   uint32_t nb = 0;
   db_list_ctx jobids_list;
 
-  DbLock(this);
+  DbLocker _{this};
 
   Mmsg(cmd,
        "SELECT JobId from Job "
@@ -335,8 +334,6 @@ void BareosDb::BvfsUpdateCache(JobControlRecord* jcr)
   nb = DELETE_DB(jcr, cmd);
   Dmsg1(dbglevel, "Affected row(s) = %d\n", nb);
   EndTransaction(jcr);
-
-  DbUnlock(this);
 }
 
 // Update the bvfs cache for given jobids (1,2,3,4)
@@ -375,13 +372,11 @@ int BareosDb::BvfsLsDirs(PoolMem& query, void* ctx)
 
   Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
 
-  DbLock(this);
+  DbLocker _{this};
 
   SqlQuery(query.c_str(), PathHandler, ctx);
   // FIXME: SqlNumRows() is always 0 after SqlQuery.
   // nb_record = SqlNumRows();
-
-  DbUnlock(this);
 
   return nb_record;
 }
@@ -394,11 +389,10 @@ int BareosDb::BvfsBuildLsFileQuery(PoolMem& query,
 
   Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
 
-  DbLock(this);
+  DbLocker _{this};
   SqlQuery(query.c_str(), ResultHandler, ctx);
   // FIXME: SqlNumRows() is always 0 after SqlQuery.
   // nb_record = SqlNumRows();
-  DbUnlock(this);
 
   return nb_record;
 }
@@ -536,9 +530,8 @@ void Bvfs::update_cache() { db->BvfsUpdatePathHierarchyCache(jcr, jobids); }
 // Change the current directory, returns true if the path exists
 bool Bvfs::ChDir(const char* path)
 {
-  DbLock(db);
+  DbLocker _{db};
   ChDir(db->GetPathRecord(jcr, path));
-  DbUnlock(db);
 
   return pwd_id != 0;
 }
@@ -591,9 +584,8 @@ DBId_t Bvfs::get_root()
 {
   int p;
 
-  DbLock(db);
+  DbLocker _{db};
   p = db->GetPathRecord(jcr, "");
-  DbUnlock(db);
 
   return p;
 }
@@ -787,7 +779,7 @@ bool Bvfs::compute_restore_list(char* fileid,
   }
   if (!CheckTemp(output_table)) { return false; }
 
-  DbLock(db);
+  DbLocker _{db};
 
   /* Cleanup old tables first */
   Mmsg(query, "DROP TABLE btemp%s", output_table);
@@ -933,7 +925,6 @@ bool Bvfs::compute_restore_list(char* fileid,
 bail_out:
   Mmsg(query, "DROP TABLE btemp%s", output_table);
   db->SqlQuery(query.c_str());
-  DbUnlock(db);
   return retval;
 }
 

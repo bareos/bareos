@@ -130,12 +130,11 @@ bool BareosDb::SqlQuery(const char* query, int flags)
 
   Dmsg2(debuglevel, "called: %s with query %s\n", __PRETTY_FUNCTION__, query);
 
-  DbLock(this);
+  DbLocker _{this};
   retval = SqlQueryWithoutHandler(query, flags);
   if (!retval) {
     Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
   }
-  DbUnlock(this);
 
   return retval;
 }
@@ -148,12 +147,11 @@ bool BareosDb::SqlQuery(const char* query,
 
   Dmsg2(debuglevel, "called: %s with query %s\n", __PRETTY_FUNCTION__, query);
 
-  DbLock(this);
+  DbLocker _{this};
   retval = SqlQueryWithHandler(query, ResultHandler, ctx);
   if (!retval) {
     Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
   }
-  DbUnlock(this);
 
   return retval;
 }

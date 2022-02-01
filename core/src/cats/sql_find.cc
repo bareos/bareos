@@ -59,12 +59,11 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
                                 POOLMEM*& stime,
                                 char* job)
 {
-  bool retval = false;
   SQL_ROW row;
   char ed1[50], ed2[50];
   char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
   PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
   job[0] = 0;
@@ -94,12 +93,12 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
       if (!QUERY_DB(jcr, cmd)) {
         Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
               sql_strerror(), cmd);
-        goto bail_out;
+        return false;
       }
       if ((row = SqlFetchRow()) == NULL) {
         SqlFreeResult();
         Mmsg(errmsg, _("No prior Full backup Job record found.\n"));
-        goto bail_out;
+        return false;
       }
       SqlFreeResult();
       /* Now edit SQL command for Incremental Job */
@@ -112,7 +111,7 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
            edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
     } else {
       Mmsg1(errmsg, _("Unknown level=%d\n"), jr->JobLevel);
-      goto bail_out;
+      return false;
     }
   } else {
     Dmsg1(100, "Submitting: %s\n", cmd);
@@ -124,25 +123,22 @@ bool BareosDb::FindJobStartTime(JobControlRecord* jcr,
     PmStrcpy(stime, ""); /* set EOS */
     Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
-    goto bail_out;
+    return false;
   }
 
   if ((row = SqlFetchRow()) == NULL) {
     Mmsg2(errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
           cmd);
     SqlFreeResult();
-    goto bail_out;
+    return false;
   }
   Dmsg2(100, "Got start time: %s, job: %s\n", row[0], row[1]);
   PmStrcpy(stime, row[0]);
   bstrncpy(job, row[1], MAX_NAME_LENGTH);
 
   SqlFreeResult();
-  retval = true;
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return true;
 }
 
 BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
@@ -151,12 +147,10 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
     std::string client_name,
     std::vector<char>& stime_out)
 {
-  auto retval = SqlFindResult::kError;
-
   std::vector<char> esc_jobname(MAX_ESCAPE_NAME_LENGTH);
   std::vector<char> esc_clientname(MAX_ESCAPE_NAME_LENGTH);
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(nullptr, esc_jobname.data(), job_basename.c_str(),
                job_basename.size());
   EscapeString(nullptr, esc_clientname.data(), client_name.c_str(),
@@ -179,8 +173,7 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
   if (!QUERY_DB(jcr, cmd)) {
     Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
-    retval = SqlFindResult::kError;
-    goto bail_out;
+    return SqlFindResult::kError;
   }
 
   SQL_ROW row;
@@ -188,8 +181,7 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
     Mmsg2(errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(),
           cmd);
     SqlFreeResult();
-    retval = SqlFindResult::kEmptyResultSet;
-    goto bail_out;
+    return SqlFindResult::kEmptyResultSet;
   }
 
   Dmsg2(100, "Got start time: %s\n", row[0]);
@@ -202,11 +194,7 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
 
   SqlFreeResult();
 
-  retval = SqlFindResult::kSuccess;
-
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return SqlFindResult::kSuccess;
 }
 
 /**
@@ -224,12 +212,11 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
                                     char* job,
                                     int JobLevel)
 {
-  bool retval = false;
   SQL_ROW row;
   char ed1[50], ed2[50];
   char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
   PmStrcpy(stime, "0000-00-00 00:00:00"); /* default */
   job[0] = 0;
@@ -244,23 +231,20 @@ bool BareosDb::FindLastJobStartTime(JobControlRecord* jcr,
   if (!QUERY_DB(jcr, cmd)) {
     Mmsg2(errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
           sql_strerror(), cmd);
-    goto bail_out;
+    return false;
   }
   if ((row = SqlFetchRow()) == NULL) {
     SqlFreeResult();
     Mmsg(errmsg, _("No prior Full backup Job record found.\n"));
-    goto bail_out;
+    return false;
   }
   Dmsg1(100, "Got start time: %s\n", row[0]);
   PmStrcpy(stime, row[0]);
   bstrncpy(job, row[1], MAX_NAME_LENGTH);
 
   SqlFreeResult();
-  retval = true;
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return true;
 }
 
 /**
@@ -276,12 +260,11 @@ bool BareosDb::FindFailedJobSince(JobControlRecord* jcr,
                                   POOLMEM* stime,
                                   int& JobLevel)
 {
-  bool retval = false;
   SQL_ROW row;
   char ed1[50], ed2[50];
   char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc_jobname, jr->Name, strlen(jr->Name));
 
   /* Differential is since last Full backup */
@@ -292,19 +275,16 @@ bool BareosDb::FindFailedJobSince(JobControlRecord* jcr,
        "ORDER BY StartTime DESC LIMIT 1",
        jr->JobType, L_FULL, L_DIFFERENTIAL, esc_jobname,
        edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2), stime);
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return false; }
 
   if ((row = SqlFetchRow()) == NULL) {
     SqlFreeResult();
-    goto bail_out;
+    return false;
   }
   JobLevel = (int)*row[0];
   SqlFreeResult();
-  retval = true;
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return true;
 }
 
 /**
@@ -319,12 +299,11 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
                              const char* Name,
                              JobDbRecord* jr)
 {
-  bool retval = false;
   SQL_ROW row;
   char ed1[50];
   char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   /* Find last full */
   Dmsg2(100, "JobLevel=%d JobType=%d\n", jr->JobLevel, jr->JobType);
   if (jr->JobLevel == L_VERIFY_CATALOG) {
@@ -354,14 +333,14 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
     }
   } else {
     Mmsg1(errmsg, _("Unknown Job level=%d\n"), jr->JobLevel);
-    goto bail_out;
+    return false;
   }
   Dmsg1(100, "Query: %s\n", cmd);
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return false; }
   if ((row = SqlFetchRow()) == NULL) {
     Mmsg1(errmsg, _("No Job found for: %s.\n"), cmd);
     SqlFreeResult();
-    goto bail_out;
+    return false;
   }
 
   jr->JobId = str_to_int64(row[0]);
@@ -370,13 +349,10 @@ bool BareosDb::FindLastJobid(JobControlRecord* jcr,
   Dmsg1(100, "db_get_last_jobid: got JobId=%d\n", jr->JobId);
   if (jr->JobId <= 0) {
     Mmsg1(errmsg, _("No Job found for: %s\n"), cmd);
-    goto bail_out;
+    return false;
   }
-  retval = true;
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return true;
 }
 
 /**
@@ -431,7 +407,7 @@ int BareosDb::FindNextVolume(JobControlRecord* jcr,
   char esc_type[MAX_ESCAPE_NAME_LENGTH];
   char esc_status[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
 
   EscapeString(jcr, esc_type, mr->MediaType, strlen(mr->MediaType));
   EscapeString(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
@@ -498,7 +474,10 @@ retry_fetch:
   }
 
   Dmsg1(100, "fnextvol=%s\n", cmd);
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) {
+    Dmsg1(050, "Rtn numrows=%d\n", num_rows);
+    return num_rows;
+  }
 
   num_rows = SqlNumRows();
   if (item > num_rows || item < 1) {
@@ -507,7 +486,8 @@ retry_fetch:
           _("Request for Volume item %d greater than max %d or less than 1\n"),
           item, num_rows);
     num_rows = 0;
-    goto bail_out;
+    Dmsg1(050, "Rtn numrows=%d\n", num_rows);
+    return num_rows;
   }
 
   for (int i = 0; i < item; i++) {
@@ -516,7 +496,8 @@ retry_fetch:
       Mmsg1(errmsg, _("No Volume record found for item %d.\n"), i);
       SqlFreeResult();
       num_rows = 0;
-      goto bail_out;
+      Dmsg1(050, "Rtn numrows=%d\n", num_rows);
+      return num_rows;
     }
 
     /*
@@ -531,7 +512,8 @@ retry_fetch:
       if (num_rows <= 0) {
         Dmsg1(50, "No more volumes in result, bailing out\n", row[1]);
         SqlFreeResult();
-        goto bail_out;
+        Dmsg1(050, "Rtn numrows=%d\n", num_rows);
+        return num_rows;
       }
       continue;
     }
@@ -600,10 +582,7 @@ retry_fetch:
     goto retry_fetch;
   }
 
-bail_out:
-  DbUnlock(this);
   Dmsg1(050, "Rtn numrows=%d\n", num_rows);
-
   return num_rows;
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \

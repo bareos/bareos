@@ -236,10 +236,10 @@ bool BareosDb::QueryDB(const char* file,
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::InsertDB(const char* file,
-                        int line,
-                        JobControlRecord* jcr,
-                        const char* select_cmd)
+int BareosDb::InsertDB(const char* file,
+                       int line,
+                       JobControlRecord* jcr,
+                       const char* select_cmd)
 {
   int num_rows;
 
@@ -248,7 +248,7 @@ bool BareosDb::InsertDB(const char* file,
          sql_strerror());
     j_msg(file, line, jcr, M_FATAL, 0, "%s", errmsg);
     if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
-    return false;
+    return -1;
   }
   num_rows = SqlAffectedRows();
   if (num_rows != 1) {
@@ -256,10 +256,10 @@ bool BareosDb::InsertDB(const char* file,
     msg_(file, line, errmsg, _("Insertion problem: affected_rows=%s\n"),
          edit_uint64(num_rows, ed1));
     if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd); }
-    return false;
+    return num_rows;
   }
   changes++;
-  return true;
+  return num_rows;
 }
 
 /**
@@ -267,37 +267,21 @@ bool BareosDb::InsertDB(const char* file,
  * Returns: false on failure
  *          true on success
  */
-bool BareosDb::UpdateDB(const char* file,
-                        int line,
-                        JobControlRecord* jcr,
-                        const char* UpdateCmd,
-                        int nr_afr)
+int BareosDb::UpdateDB(const char* file,
+                       int line,
+                       JobControlRecord* jcr,
+                       const char* UpdateCmd)
 {
-  int num_rows;
-
   if (!SqlQuery(UpdateCmd)) {
     msg_(file, line, errmsg, _("update %s failed:\n%s\n"), UpdateCmd,
          sql_strerror());
     j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
     if (verbose) { j_msg(file, line, jcr, M_INFO, 0, "%s\n", UpdateCmd); }
-    return false;
-  }
-
-  if (nr_afr > 0) {
-    num_rows = SqlAffectedRows();
-    if (num_rows < nr_afr) {
-      char ed1[30];
-      msg_(file, line, errmsg, _("Update failed: affected_rows=%s for %s\n"),
-           edit_uint64(num_rows, ed1), UpdateCmd);
-      if (verbose) {
-        //          j_msg(file, line, jcr, M_INFO, 0, "%s\n", UpdateCmd);
-      }
-      return false;
-    }
+    return -1;
   }
 
   changes++;
-  return true;
+  return SqlAffectedRows();
 }
 
 /**

@@ -61,13 +61,12 @@ static bool PerformFullNameSubstitution(JobControlRecord* jcr,
  */
 bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
 {
-  bool retval = false;
   PoolDbRecord pr;
 
   // See if we can create a new Volume
-  DbLock(jcr->db);
+  DbLocker _{jcr->db};
   pr.PoolId = mr->PoolId;
-  if (!jcr->db->GetPoolRecord(jcr, &pr)) { goto bail_out; }
+  if (!jcr->db->GetPoolRecord(jcr, &pr)) { return false; }
   if (pr.MaxVols == 0 || pr.NumVols < pr.MaxVols) {
     *mr = MediaDbRecord{};
     SetPoolDbrDefaultsInMediaDbr(mr, &pr);
@@ -81,18 +80,18 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
       // Check for special characters
       if (IsVolumeNameLegal(NULL, pr.LabelFormat)) {
         // No special characters, so apply simple algorithm
-        if (!CreateSimpleName(jcr, mr, &pr)) { goto bail_out; }
+        if (!CreateSimpleName(jcr, mr, &pr)) { return false; }
       } else {
         // Found special characters, so try full substitution
-        if (!PerformFullNameSubstitution(jcr, mr, &pr)) { goto bail_out; }
+        if (!PerformFullNameSubstitution(jcr, mr, &pr)) { return false; }
         if (!IsVolumeNameLegal(NULL, mr->VolumeName)) {
           Jmsg(jcr, M_ERROR, 0, _("Illegal character in Volume name \"%s\"\n"),
                mr->VolumeName);
-          goto bail_out;
+          return false;
         }
       }
     } else {
-      goto bail_out;
+      return false;
     }
     pr.NumVols++;
     mr->Enabled = VOL_ENABLED;
@@ -102,16 +101,13 @@ bool newVolume(JobControlRecord* jcr, MediaDbRecord* mr, StorageResource* store)
       Jmsg(jcr, M_INFO, 0, _("Created new Volume \"%s\" in catalog.\n"),
            mr->VolumeName);
       Dmsg1(90, "Created new Volume=%s\n", mr->VolumeName);
-      retval = true;
-      goto bail_out;
+      return true;
     } else {
       Jmsg(jcr, M_ERROR, 0, "%s", jcr->db->strerror());
     }
   }
 
-bail_out:
-  DbUnlock(jcr->db);
-  return retval;
+  return false;
 }
 
 static bool CreateSimpleName(JobControlRecord* jcr,

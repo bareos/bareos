@@ -66,25 +66,20 @@ bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
                             const char* description,
                             bool verbose)
 {
-  bool retval = false;
-
-  DbLock(this);
+  DbLocker _{this};
 
   if (!SqlQuery(query, QF_STORE_RESULT)) {
     Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
     if (verbose) { sendit->Decoration(errmsg); }
-    goto bail_out;
+    return false;
   }
 
   sendit->ArrayStart(description);
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd(description);
   SqlFreeResult();
-  retval = true;
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return true;
 }
 
 bool BareosDb::ListSqlQuery(JobControlRecord* jcr,
@@ -108,7 +103,7 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
   PoolMem query(PM_MESSAGE);
   PoolMem select(PM_MESSAGE);
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, escaped_pool_name, pdbr->Name, strlen(pdbr->Name));
 
   if (type == VERT_LIST) {
@@ -139,16 +134,13 @@ void BareosDb::ListPoolRecords(JobControlRecord* jcr,
     }
   }
 
-  if (!QUERY_DB(jcr, query.c_str())) { goto bail_out; }
+  if (!QUERY_DB(jcr, query.c_str())) { return; }
 
   sendit->ArrayStart("pools");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("pools");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 void BareosDb::ListClientRecords(JobControlRecord* jcr,
@@ -156,7 +148,7 @@ void BareosDb::ListClientRecords(JobControlRecord* jcr,
                                  OutputFormatter* sendit,
                                  e_list_type type)
 {
-  DbLock(this);
+  DbLocker _{this};
   PoolMem clientfilter(PM_MESSAGE);
 
   if (clientname) { clientfilter.bsprintf("WHERE Name = '%s'", clientname); }
@@ -173,36 +165,30 @@ void BareosDb::ListClientRecords(JobControlRecord* jcr,
          clientfilter.c_str());
   }
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("clients");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("clients");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 void BareosDb::ListStorageRecords(JobControlRecord* jcr,
                                   OutputFormatter* sendit,
                                   e_list_type type)
 {
-  DbLock(this);
+  DbLocker _{this};
 
   Mmsg(cmd, "SELECT StorageId,Name,AutoChanger FROM Storage");
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("storages");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("storages");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 /**
@@ -261,16 +247,13 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
     }
   }
 
-  DbLock(this);
+  DbLocker _{this};
 
-  if (!QUERY_DB(jcr, query.c_str())) { goto bail_out; }
+  if (!QUERY_DB(jcr, query.c_str())) { return; }
 
   ListResult(jcr, sendit, type);
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 
@@ -281,7 +264,7 @@ void BareosDb::ListJobmediaRecords(JobControlRecord* jcr,
 {
   char ed1[50];
 
-  DbLock(this);
+  DbLocker _{this};
   if (type == VERT_LIST) {
     if (JobId > 0) { /* do by JobId */
       Mmsg(cmd,
@@ -312,16 +295,13 @@ void BareosDb::ListJobmediaRecords(JobControlRecord* jcr,
            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId");
     }
   }
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobmedia");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("jobmedia");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 
@@ -334,7 +314,7 @@ void BareosDb::ListVolumesOfJobid(JobControlRecord* jcr,
 
   if (JobId <= 0) { return; }
 
-  DbLock(this);
+  DbLocker _{this};
   if (type == VERT_LIST) {
     Mmsg(cmd,
          "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName "
@@ -348,16 +328,13 @@ void BareosDb::ListVolumesOfJobid(JobControlRecord* jcr,
          "AND JobMedia.JobId=%s",
          edit_int64(JobId, ed1));
   }
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("volumes");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("volumes");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 
@@ -374,7 +351,7 @@ void BareosDb::ListCopiesRecords(JobControlRecord* jcr,
          JobIds, JobIds);
   }
 
-  DbLock(this);
+  DbLocker _{this};
   Mmsg(cmd,
        "SELECT DISTINCT Job.PriorJobId AS JobId, Job.Job, "
        "Job.JobId AS CopyJobId, Media.MediaType "
@@ -384,7 +361,7 @@ void BareosDb::ListCopiesRecords(JobControlRecord* jcr,
        "WHERE Job.Type = '%c' %s ORDER BY Job.PriorJobId DESC %s",
        (char)JT_JOB_COPY, str_jobids.c_str(), range);
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   if (SqlNumRows()) {
     if (JobIds && JobIds[0]) {
@@ -399,9 +376,6 @@ void BareosDb::ListCopiesRecords(JobControlRecord* jcr,
   }
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 void BareosDb::ListLogRecords(JobControlRecord* jcr,
@@ -453,18 +427,15 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
     type = RAW_LIST;
   }
 
-  DbLock(this);
+  DbLocker _{this};
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("log");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("log");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
@@ -478,7 +449,7 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
 
   if (JobId <= 0) { return; }
 
-  DbLock(this);
+  DbLocker _{this};
   if (count) {
     FillQuery(SQL_QUERY::list_joblog_count_1, edit_int64(JobId, ed1));
   } else {
@@ -494,16 +465,13 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
     }
   }
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("joblog");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("joblog");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 /**
@@ -518,23 +486,20 @@ void BareosDb::ListJobstatisticsRecords(JobControlRecord* jcr,
   char ed1[50];
 
   if (JobId <= 0) { return; }
-  DbLock(this);
+  DbLocker _{this};
   Mmsg(cmd,
        "SELECT DeviceId, SampleTime, JobId, JobFiles, JobBytes "
        "FROM JobStats "
        "WHERE JobStats.JobId=%s "
        "ORDER BY JobStats.SampleTime ",
        edit_int64(JobId, ed1));
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobstats");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("jobstats");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 void BareosDb::ListJobRecords(JobControlRecord* jcr,
@@ -600,7 +565,7 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     PmStrcat(selection, temp.c_str());
   }
 
-  DbLock(this);
+  DbLocker _{this};
 
   if (count) {
     FillQuery(SQL_QUERY::list_jobs_count, selection.c_str(), range);
@@ -618,30 +583,27 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
     }
   }
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobs");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("jobs");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 void BareosDb::ListJobTotals(JobControlRecord* jcr,
                              JobDbRecord* jr,
                              OutputFormatter* sendit)
 {
-  DbLock(this);
+  DbLocker _{this};
 
   // List by Job
   Mmsg(cmd,
        "SELECT count(*) AS Jobs,sum(JobFiles) "
        "AS Files,sum(JobBytes) AS Bytes,Name AS Job FROM Job GROUP BY Name");
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ArrayStart("jobs");
   ListResult(jcr, sendit, HORZ_LIST);
@@ -654,16 +616,13 @@ void BareosDb::ListJobTotals(JobControlRecord* jcr,
        "SELECT COUNT(*) AS Jobs,sum(JobFiles) "
        "AS Files,sum(JobBytes) As Bytes FROM Job");
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
 
   sendit->ObjectStart("jobtotals");
   ListResult(jcr, sendit, HORZ_LIST);
   sendit->ObjectEnd("jobtotals");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 void BareosDb::ListFilesForJob(JobControlRecord* jcr,
@@ -673,7 +632,7 @@ void BareosDb::ListFilesForJob(JobControlRecord* jcr,
   char ed1[50];
   ListContext lctx(jcr, this, sendit, NF_LIST);
 
-  DbLock(this);
+  DbLocker _{this};
 
   if (GetTypeIndex() == SQL_TYPE_MYSQL) {
     Mmsg(cmd,
@@ -702,13 +661,10 @@ void BareosDb::ListFilesForJob(JobControlRecord* jcr,
   }
 
   sendit->ArrayStart("filenames");
-  if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { goto bail_out; }
+  if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { return; }
   sendit->ArrayEnd("filenames");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 void BareosDb::ListBaseFilesForJob(JobControlRecord* jcr,
@@ -718,7 +674,7 @@ void BareosDb::ListBaseFilesForJob(JobControlRecord* jcr,
   char ed1[50];
   ListContext lctx(jcr, this, sendit, NF_LIST);
 
-  DbLock(this);
+  DbLocker _{this};
 
   if (GetTypeIndex() == SQL_TYPE_MYSQL) {
     Mmsg(cmd,
@@ -739,13 +695,10 @@ void BareosDb::ListBaseFilesForJob(JobControlRecord* jcr,
   }
 
   sendit->ArrayStart("files");
-  if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { goto bail_out; }
+  if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { return; }
   sendit->ArrayEnd("files");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 
 void BareosDb::ListFilesets(JobControlRecord* jcr,
@@ -756,7 +709,7 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
 {
   char esc[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   if (jr->Name[0] != 0) {
     EscapeString(jcr, esc, jr->Name, strlen(jr->Name));
     Mmsg(cmd,
@@ -797,15 +750,12 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
          range);
   }
 
-  if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
+  if (!QUERY_DB(jcr, cmd)) { return; }
   sendit->ArrayStart("filesets");
   ListResult(jcr, sendit, type);
   sendit->ArrayEnd("filesets");
 
   SqlFreeResult();
-
-bail_out:
-  DbUnlock(this);
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
           HAVE_DBI */

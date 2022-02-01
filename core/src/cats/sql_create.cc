@@ -50,8 +50,6 @@ static const int dbglevel = 100;
  */
 bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
 {
-  bool retval = false;
-  ;
   PoolMem buf;
   char dt[MAX_TIME_LENGTH];
   time_t stime;
@@ -61,7 +59,7 @@ bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
   char esc_ujobname[MAX_ESCAPE_NAME_LENGTH];
   char esc_jobname[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
 
   stime = jr->SchedTime;
   ASSERT(stime != 0);
@@ -91,11 +89,10 @@ bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
     Mmsg2(errmsg, _("Create DB Job record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
   } else {
-    retval = true;
+    return true;
   }
-  DbUnlock(this);
 
-  return retval;
+  return false;
 }
 
 /**
@@ -105,11 +102,10 @@ bool BareosDb::CreateJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
  */
 bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
 {
-  bool retval = false;
   int count;
   char ed1[50], ed2[50], ed3[50];
 
-  DbLock(this);
+  DbLocker _{this};
 
   Mmsg(cmd, "SELECT count(*) from JobMedia WHERE JobId=%s",
        edit_int64(jm->JobId, ed1));
@@ -132,23 +128,22 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
   /* clang-format on */
 
   Dmsg0(300, cmd);
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create JobMedia record %s failed: ERR=%s\n"), cmd,
           sql_strerror());
   } else {
     // Worked, now update the Media record with the EndFile and EndBlock
     Mmsg(cmd, "UPDATE Media SET EndFile=%u, EndBlock=%u WHERE MediaId=%u",
          jm->EndFile, jm->EndBlock, jm->MediaId);
-    if (!UPDATE_DB(jcr, cmd)) {
+    if (UPDATE_DB(jcr, cmd) == -1) {
       Mmsg2(errmsg, _("Update Media record %s failed: ERR=%s\n"), cmd,
             sql_strerror());
     } else {
-      retval = true;
+      return true;
     }
   }
-  DbUnlock(this);
-  Dmsg0(300, "Return from JobMedia\n");
-  return retval;
+
+  return false;
 }
 
 /**
@@ -165,7 +160,7 @@ bool BareosDb::CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   int num_rows;
 
   Dmsg0(200, "In create pool\n");
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc_poolname, pr->Name, strlen(pr->Name));
   EscapeString(jcr, esc_lf, pr->LabelFormat, strlen(pr->LabelFormat));
   Mmsg(cmd, "SELECT PoolId,Name FROM Pool WHERE Name='%s'", esc_poolname);
@@ -176,7 +171,8 @@ bool BareosDb::CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
     if (num_rows > 0) {
       Mmsg1(errmsg, _("pool record %s already exists\n"), pr->Name);
       SqlFreeResult();
-      goto bail_out;
+      Dmsg0(500, "Create Pool: done\n");
+      return retval;
     }
     SqlFreeResult();
   }
@@ -214,8 +210,6 @@ bool BareosDb::CreatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
     retval = true;
   }
 
-bail_out:
-  DbUnlock(this);
   Dmsg0(500, "Create Pool: done\n");
   return retval;
 }
@@ -227,14 +221,13 @@ bail_out:
  */
 bool BareosDb::CreateDeviceRecord(JobControlRecord* jcr, DeviceDbRecord* dr)
 {
-  bool retval = false;
   SQL_ROW row;
   char ed1[30], ed2[30];
   char esc[MAX_ESCAPE_NAME_LENGTH];
   int num_rows;
 
   Dmsg0(200, "In create Device\n");
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc, dr->Name, strlen(dr->Name));
   Mmsg(cmd,
        "SELECT DeviceId,Name FROM Device WHERE Name='%s' AND StorageId = %s",
@@ -253,7 +246,7 @@ bool BareosDb::CreateDeviceRecord(JobControlRecord* jcr, DeviceDbRecord* dr)
         Mmsg1(errmsg, _("error fetching Device row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
         SqlFreeResult();
-        goto bail_out;
+        return false;
       }
       dr->DeviceId = str_to_int64(row[0]);
       if (row[1]) {
@@ -262,8 +255,7 @@ bool BareosDb::CreateDeviceRecord(JobControlRecord* jcr, DeviceDbRecord* dr)
         dr->Name[0] = 0; /* no name */
       }
       SqlFreeResult();
-      retval = true;
-      goto bail_out;
+      return true;
     }
     SqlFreeResult();
   }
@@ -277,12 +269,10 @@ bool BareosDb::CreateDeviceRecord(JobControlRecord* jcr, DeviceDbRecord* dr)
     Mmsg2(errmsg, _("Create db Device record %s failed: ERR=%s\n"), cmd,
           sql_strerror());
   } else {
-    retval = true;
+    return true;
   }
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return false;
 }
 
 /**
@@ -293,11 +283,10 @@ bail_out:
 bool BareosDb::CreateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
 {
   SQL_ROW row;
-  bool retval = false;
   int num_rows;
   char esc[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc, sr->Name, strlen(sr->Name));
   Mmsg(cmd, "SELECT StorageId,AutoChanger FROM Storage WHERE Name='%s'", esc);
 
@@ -315,13 +304,12 @@ bool BareosDb::CreateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
         Mmsg1(errmsg, _("error fetching Storage row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
         SqlFreeResult();
-        goto bail_out;
+        return false;
       }
       sr->StorageId = str_to_int64(row[0]);
       sr->AutoChanger = atoi(row[1]); /* bool */
       SqlFreeResult();
-      retval = true;
-      goto bail_out;
+      return true;
     }
     SqlFreeResult();
   }
@@ -338,12 +326,10 @@ bool BareosDb::CreateStorageRecord(JobControlRecord* jcr, StorageDbRecord* sr)
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
   } else {
     sr->created = true;
-    retval = true;
+    return true;
   }
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return false;
 }
 
 /**
@@ -354,12 +340,11 @@ bail_out:
 bool BareosDb::CreateMediatypeRecord(JobControlRecord* jcr,
                                      MediaTypeDbRecord* mr)
 {
-  bool retval = false;
   int num_rows;
   char esc[MAX_ESCAPE_NAME_LENGTH];
 
   Dmsg0(200, "In create mediatype\n");
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc, mr->MediaType, strlen(mr->MediaType));
   Mmsg(cmd, "SELECT MediaTypeId,MediaType FROM MediaType WHERE MediaType='%s'",
        esc);
@@ -370,7 +355,7 @@ bool BareosDb::CreateMediatypeRecord(JobControlRecord* jcr,
     if (num_rows > 0) {
       Mmsg1(errmsg, _("mediatype record %s already exists\n"), mr->MediaType);
       SqlFreeResult();
-      goto bail_out;
+      return false;
     }
     SqlFreeResult();
   }
@@ -388,14 +373,10 @@ bool BareosDb::CreateMediatypeRecord(JobControlRecord* jcr,
   if (mr->MediaTypeId == 0) {
     Mmsg2(errmsg, _("Create db mediatype record %s failed: ERR=%s\n"), cmd,
           sql_strerror());
-    goto bail_out;
+    return false;
   } else {
-    retval = true;
+    return true;
   }
-
-bail_out:
-  DbUnlock(this);
-  return retval;
 }
 
 /**
@@ -413,7 +394,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
   char esc_mtype[MAX_ESCAPE_NAME_LENGTH];
   char esc_status[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc_medianame, mr->VolumeName, strlen(mr->VolumeName));
   EscapeString(jcr, esc_mtype, mr->MediaType, strlen(mr->MediaType));
   EscapeString(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
@@ -426,7 +407,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
     if (num_rows > 0) {
       Mmsg1(errmsg, _("Volume \"%s\" already exists.\n"), mr->VolumeName);
       SqlFreeResult();
-      goto bail_out;
+      return retval;
     }
     SqlFreeResult();
   }
@@ -483,7 +464,7 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
            "UPDATE Media SET LabelDate='%s' "
            "WHERE MediaId=%d",
            dt, mr->MediaId);
-      retval = UPDATE_DB(jcr, cmd);
+      retval = UPDATE_DB(jcr, cmd) > 0;
     }
     /*
      * Make sure that if InChanger is non-zero any other identical slot
@@ -492,8 +473,6 @@ bool BareosDb::CreateMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr)
     MakeInchangerUnique(jcr, mr);
   }
 
-bail_out:
-  DbUnlock(this);
   return retval;
 }
 
@@ -504,14 +483,13 @@ bail_out:
  */
 bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
 {
-  bool retval = false;
   SQL_ROW row;
   char ed1[50], ed2[50];
   int num_rows;
   char esc_clientname[MAX_ESCAPE_NAME_LENGTH];
   char esc_uname[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   EscapeString(jcr, esc_clientname, cr->Name, strlen(cr->Name));
   EscapeString(jcr, esc_uname, cr->Uname, strlen(cr->Uname));
   Mmsg(cmd, "SELECT ClientId,Uname FROM Client WHERE Name='%s'",
@@ -529,7 +507,7 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
         Mmsg1(errmsg, _("error fetching Client row: %s\n"), sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
         SqlFreeResult();
-        goto bail_out;
+        return false;
       }
       cr->ClientId = str_to_int64(row[0]);
       if (row[1]) {
@@ -538,8 +516,7 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
         cr->Uname[0] = 0; /* no name */
       }
       SqlFreeResult();
-      retval = true;
-      goto bail_out;
+      return true;
     }
     SqlFreeResult();
   }
@@ -560,12 +537,10 @@ bool BareosDb::CreateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr)
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
   } else {
-    retval = true;
+    return true;
   }
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return false;
 }
 
 /**
@@ -652,33 +627,29 @@ bail_out:
  */
 bool BareosDb::CreateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
 {
-  bool retval = false;
   char esc[MAX_ESCAPE_NAME_LENGTH];
   CounterDbRecord mcr;
 
-  DbLock(this);
+  DbLocker _{this};
   bstrncpy(mcr.Counter, cr->Counter, sizeof(mcr.Counter));
   if (GetCounterRecord(jcr, &mcr)) {
     memcpy(cr, &mcr, sizeof(CounterDbRecord));
-    retval = true;
-    goto bail_out;
+    return true;
   }
   EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
 
   FillQuery(SQL_QUERY::insert_counter_values, esc, cr->MinValue, cr->MaxValue,
             cr->CurrentValue, cr->WrapCounter);
 
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB Counters record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
   } else {
-    retval = true;
+    return true;
   }
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return false;
 }
 
 /**
@@ -689,13 +660,12 @@ bail_out:
  */
 bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
 {
-  bool retval = false;
   SQL_ROW row;
   int num_rows, len;
   char esc_fs[MAX_ESCAPE_NAME_LENGTH];
   char esc_md5[MAX_ESCAPE_NAME_LENGTH];
 
-  DbLock(this);
+  DbLocker _{this};
   fsr->created = false;
   EscapeString(jcr, esc_fs, fsr->FileSet, strlen(fsr->FileSet));
   EscapeString(jcr, esc_md5, fsr->MD5, strlen(fsr->MD5));
@@ -717,7 +687,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
               sql_strerror());
         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
         SqlFreeResult();
-        goto bail_out;
+        return false;
       }
       fsr->FileSetId = str_to_int64(row[0]);
       if (row[1] == NULL) {
@@ -726,8 +696,7 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
         bstrncpy(fsr->cCreateTime, row[1], sizeof(fsr->cCreateTime));
       }
       SqlFreeResult();
-      retval = true;
-      goto bail_out;
+      return true;
     }
     SqlFreeResult();
   }
@@ -760,15 +729,11 @@ bool BareosDb::CreateFilesetRecord(JobControlRecord* jcr, FileSetDbRecord* fsr)
     Mmsg2(errmsg, _("Create DB FileSet record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
-    goto bail_out;
+    return false;
   } else {
     fsr->created = true;
-    retval = true;
+    return true;
   }
-
-bail_out:
-  DbUnlock(this);
-  return retval;
 }
 
 /**
@@ -911,27 +876,22 @@ bool BareosDb::CreateBatchFileAttributesRecord(JobControlRecord* jcr,
 bool BareosDb::CreateFileAttributesRecord(JobControlRecord* jcr,
                                           AttributesDbRecord* ar)
 {
-  bool retval = false;
-
-  DbLock(this);
+  DbLocker _{this};
   Dmsg1(dbglevel, "Fname=%s\n", ar->fname);
   Dmsg0(dbglevel, "put_file_into_catalog\n");
 
   SplitPathAndFile(jcr, ar->fname);
 
-  if (!CreatePathRecord(jcr, ar)) { goto bail_out; }
+  if (!CreatePathRecord(jcr, ar)) { return false; }
   Dmsg1(dbglevel, "CreatePathRecord: %s\n", esc_name);
 
   /* Now create master File record */
-  if (!CreateFileRecord(jcr, ar)) { goto bail_out; }
+  if (!CreateFileRecord(jcr, ar)) { return false; }
   Dmsg0(dbglevel, "CreateFileRecord OK\n");
 
   Dmsg2(dbglevel, "CreateAttributes Path=%s File=%s\n", path, fname);
-  retval = true;
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return true;
 }
 
 /**
@@ -1029,11 +989,10 @@ bool BareosDb::CreateAttributesRecord(JobControlRecord* jcr,
 bool BareosDb::CreateBaseFileAttributesRecord(JobControlRecord* jcr,
                                               AttributesDbRecord* ar)
 {
-  bool retval;
   Dmsg1(dbglevel, "create_base_file Fname=%s\n", ar->fname);
   Dmsg0(dbglevel, "put_base_file_into_catalog\n");
 
-  DbLock(this);
+  DbLocker _{this};
   SplitPathAndFile(jcr, ar->fname);
 
   esc_name = CheckPoolMemorySize(esc_name, fnl * 2 + 1);
@@ -1045,10 +1004,7 @@ bool BareosDb::CreateBaseFileAttributesRecord(JobControlRecord* jcr,
   Mmsg(cmd, "INSERT INTO basefile%lld (Path, Name) VALUES ('%s','%s')",
        (uint64_t)jcr->JobId, esc_path, esc_name);
 
-  retval = INSERT_DB(jcr, cmd);
-  DbUnlock(this);
-
-  return retval;
+  return INSERT_DB(jcr, cmd) == 1;
 }
 
 void BareosDb::CleanupBaseFile(JobControlRecord* jcr)
@@ -1072,7 +1028,7 @@ bool BareosDb::CommitBaseFileAttributesRecord(JobControlRecord* jcr)
   bool retval;
   char ed1[50];
 
-  DbLock(this);
+  DbLocker _{this};
 
   /* clang-format off */
   Mmsg(cmd,
@@ -1090,7 +1046,6 @@ bool BareosDb::CommitBaseFileAttributesRecord(JobControlRecord* jcr)
   jcr->nb_base_files_used = SqlAffectedRows();
   CleanupBaseFile(jcr);
 
-  DbUnlock(this);
   return retval;
 }
 
@@ -1105,28 +1060,23 @@ bool BareosDb::CommitBaseFileAttributesRecord(JobControlRecord* jcr)
  */
 bool BareosDb::CreateBaseFileList(JobControlRecord* jcr, const char* jobids)
 {
-  bool retval = false;
   PoolMem buf(PM_MESSAGE);
 
-  DbLock(this);
+  DbLocker _{this};
 
   if (!*jobids) {
     Mmsg(errmsg, _("ERR=JobIds are empty\n"));
-    goto bail_out;
+    return false;
   }
 
   FillQuery(SQL_QUERY::create_temp_basefile, (uint64_t)jcr->JobId);
-  if (!SqlQuery(cmd)) { goto bail_out; }
+  if (!SqlQuery(cmd)) { return false; }
 
   FillQuery(buf, SQL_QUERY::select_recent_version, jobids, jobids);
   FillQuery(SQL_QUERY::create_temp_new_basefile, (uint64_t)jcr->JobId,
             buf.c_str());
 
-  retval = SqlQuery(cmd);
-
-bail_out:
-  DbUnlock(this);
-  return retval;
+  return SqlQuery(cmd);
 }
 
 /**
@@ -1141,7 +1091,7 @@ bool BareosDb::CreateRestoreObjectRecord(JobControlRecord* jcr,
   int plug_name_len;
   POOLMEM* esc_plug_name = GetPoolMemory(PM_MESSAGE);
 
-  DbLock(this);
+  DbLocker _{this};
 
   Dmsg1(dbglevel, "Oname=%s\n", ro->object_name);
   Dmsg0(dbglevel, "put_object_into_catalog\n");
@@ -1175,7 +1125,6 @@ bool BareosDb::CreateRestoreObjectRecord(JobControlRecord* jcr,
   } else {
     retval = true;
   }
-  DbUnlock(this);
   FreePoolMemory(esc_plug_name);
   return retval;
 }
@@ -1187,11 +1136,10 @@ bool BareosDb::CreateRestoreObjectRecord(JobControlRecord* jcr,
  */
 bool BareosDb::CreateQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr)
 {
-  bool retval = false;
   char ed1[50];
   int num_rows;
 
-  DbLock(this);
+  DbLocker _{this};
   Mmsg(cmd, "SELECT ClientId FROM Quota WHERE ClientId='%s'",
        edit_uint64(cr->ClientId, ed1));
 
@@ -1199,8 +1147,7 @@ bool BareosDb::CreateQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr)
     num_rows = SqlNumRows();
     if (num_rows == 1) {
       SqlFreeResult();
-      retval = true;
-      goto bail_out;
+      return true;
     }
     SqlFreeResult();
   }
@@ -1210,17 +1157,14 @@ bool BareosDb::CreateQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr)
        " VALUES ('%s', '%s', %s)",
        edit_uint64(cr->ClientId, ed1), "0", "0");
 
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB Quota record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
+    return false;
   } else {
-    retval = true;
+    return true;
   }
-
-bail_out:
-  DbUnlock(this);
-  return retval;
 }
 
 /**
@@ -1232,11 +1176,10 @@ bool BareosDb::CreateNdmpLevelMapping(JobControlRecord* jcr,
                                       JobDbRecord* jr,
                                       char* filesystem)
 {
-  bool retval = false;
   char ed1[50], ed2[50];
   int num_rows;
 
-  DbLock(this);
+  DbLocker _{this};
 
   esc_name = CheckPoolMemorySize(esc_name, strlen(filesystem) * 2 + 1);
   EscapeString(jcr, esc_name, filesystem, strlen(filesystem));
@@ -1251,8 +1194,7 @@ bool BareosDb::CreateNdmpLevelMapping(JobControlRecord* jcr,
     num_rows = SqlNumRows();
     if (num_rows == 1) {
       SqlFreeResult();
-      retval = true;
-      goto bail_out;
+      return true;
     }
     SqlFreeResult();
   }
@@ -1262,17 +1204,14 @@ bool BareosDb::CreateNdmpLevelMapping(JobControlRecord* jcr,
        " VALUES ('%s', '%s', '%s', %s)",
        edit_uint64(jr->ClientId, ed1), edit_uint64(jr->FileSetId, ed2),
        esc_name, "0");
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB NDMP Level Map record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
+    return false;
   } else {
-    retval = true;
+    return true;
   }
-
-bail_out:
-  DbUnlock(this);
-  return retval;
 }
 
 /**
@@ -1285,14 +1224,13 @@ bool BareosDb::CreateNdmpEnvironmentString(JobControlRecord* jcr,
                                            char* name,
                                            char* value)
 {
-  bool retval = false;
   char ed1[50], ed2[50];
   char esc_envname[MAX_ESCAPE_NAME_LENGTH];
   char esc_envvalue[MAX_ESCAPE_NAME_LENGTH];
 
   Jmsg(jcr, M_INFO, 0, "NDMP Environment: %s=%s\n", name, value);
 
-  DbLock(this);
+  DbLocker _{this};
 
   EscapeString(jcr, esc_envname, name, strlen(name));
   EscapeString(jcr, esc_envvalue, value, strlen(value));
@@ -1301,17 +1239,15 @@ bool BareosDb::CreateNdmpEnvironmentString(JobControlRecord* jcr,
        " VALUES ('%s', '%s', '%s', '%s')",
        edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2), esc_envname,
        esc_envvalue);
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg,
           _("Create DB NDMP Job Environment record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
+    return false;
   } else {
-    retval = true;
+    return true;
   }
-
-  DbUnlock(this);
-  return retval;
 }
 
 /**
@@ -1323,11 +1259,10 @@ bool BareosDb::CreateJobStatistics(JobControlRecord* jcr,
                                    JobStatisticsDbRecord* jsr)
 {
   time_t stime;
-  bool retval = false;
   char dt[MAX_TIME_LENGTH];
   char ed1[50], ed2[50], ed3[50], ed4[50];
 
-  DbLock(this);
+  DbLocker _{this};
 
   stime = jsr->SampleTime;
   ASSERT(stime != 0);
@@ -1341,18 +1276,14 @@ bool BareosDb::CreateJobStatistics(JobControlRecord* jcr,
        edit_uint64(jsr->JobBytes, ed3), edit_int64(jsr->DeviceId, ed4));
   Dmsg1(200, "Create job stats: %s\n", cmd);
 
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB JobStats record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
-    goto bail_out;
+    return false;
   } else {
-    retval = true;
+    return true;
   }
-
-bail_out:
-  DbUnlock(this);
-  return retval;
 }
 
 /**
@@ -1364,12 +1295,11 @@ bool BareosDb::CreateDeviceStatistics(JobControlRecord* jcr,
                                       DeviceStatisticsDbRecord* dsr)
 {
   time_t stime;
-  bool retval = false;
   char dt[MAX_TIME_LENGTH];
   char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
   char ed7[50], ed8[50], ed9[50], ed10[50], ed11[50], ed12[50];
 
-  DbLock(this);
+  DbLocker _{this};
 
   stime = dsr->SampleTime;
   ASSERT(stime != 0);
@@ -1399,18 +1329,15 @@ bool BareosDb::CreateDeviceStatistics(JobControlRecord* jcr,
 
   Dmsg1(200, "Create device stats: %s\n", cmd);
 
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB DeviceStats record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
-    goto bail_out;
-  } else {
-    retval = true;
-  }
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+    return false;
+  } else {
+    return true;
+  }
 }
 
 /**
@@ -1422,11 +1349,10 @@ bool BareosDb::CreateTapealertStatistics(JobControlRecord* jcr,
                                          TapealertStatsDbRecord* tsr)
 {
   time_t stime;
-  bool retval = false;
   char dt[MAX_TIME_LENGTH];
   char ed1[50], ed2[50];
 
-  DbLock(this);
+  DbLocker _{this};
 
   stime = tsr->SampleTime;
   ASSERT(stime != 0);
@@ -1444,18 +1370,15 @@ bool BareosDb::CreateTapealertStatistics(JobControlRecord* jcr,
 
   Dmsg1(200, "Create tapealert: %s\n", cmd);
 
-  if (!INSERT_DB(jcr, cmd)) {
+  if (INSERT_DB(jcr, cmd) != 1) {
     Mmsg2(errmsg, _("Create DB TapeAlerts record %s failed. ERR=%s\n"), cmd,
           sql_strerror());
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
-    goto bail_out;
-  } else {
-    retval = true;
-  }
 
-bail_out:
-  DbUnlock(this);
-  return retval;
+    return false;
+  } else {
+    return true;
+  }
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
           HAVE_DBI */
