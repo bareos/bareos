@@ -387,28 +387,28 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
     DeviceRecord* rec = rctx->rec;
     // Perform record translations only if data is compressed
     // as NDMP needs to be decompressed in any case
-    if (rctx->rec->maskedStream == STREAM_COMPRESSED_DATA) {
-      dcr->before_rec = rctx->rec;
-      dcr->after_rec = NULL;
+    //    if (rctx->rec->maskedStream == STREAM_COMPRESSED_DATA) {
+    dcr->before_rec = rctx->rec;
+    dcr->after_rec = NULL;
 
-      if (GeneratePluginEvent(jcr, bSdEventReadRecordTranslation, dcr,
-                              /* reverse= */ true)
-          != bRC_OK) {
-        ok = false;
-        continue;
-      }
-      if (dcr->after_rec) {  // translation happened?
-        rec = dcr->after_rec;
-      } else {  // use original record
-        rec = dcr->before_rec;
-      }
+    if (GeneratePluginEvent(jcr, bSdEventReadRecordTranslation, dcr,
+                            /* reverse= */ true)
+        != bRC_OK) {
+      ok = false;
+      continue;
+    }
+    if (dcr->after_rec) {  // translation happened?
+      rec = dcr->after_rec;
+    } else {  // use original record
+      rec = dcr->before_rec;
+    }
 
-      Jmsg1(jcr, M_INFO, 0, _("rctx->rec is at %p.\n"), rctx->rec);
-      if (rec != rctx->rec) {
-        Dmsg1(400, _("recstream: %d, rctxstream: %d .\n"), rec->maskedStream,
-              rctx->rec->maskedStream);
-      }
-    }  // not compressed, go on
+    Jmsg1(jcr, M_INFO, 0, _("rctx->rec is at %p.\n"), rctx->rec);
+    if (rec != rctx->rec) {
+      Dmsg1(400, _("recstream: %d, rctxstream: %d .\n"), rec->maskedStream,
+            rctx->rec->maskedStream);
+    }
+    //    }  // not compressed, go on
 
     switch (rec->maskedStream) {
       case STREAM_UNIX_ATTRIBUTES:  // Start of the dump, read the next record.
@@ -426,6 +426,11 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
       case STREAM_NDMP_SEPARATOR:  // End of NDMP data stream
         *data_length = 0;
         return true;
+      case STREAM_COMPRESSED_DATA:  // Got compressed data ndmp cannot handle
+        Jmsg0(jcr, M_ERROR, 0,
+              _("Encountered STREAM_COMPRESSED_DATA which cannot be handled by "
+                "NDMP.\n"));
+        return false;
       default:  // corrupted stream of records, give an EOF
         Jmsg1(jcr, M_ERROR, 0, _("Encountered an unknown stream type %d\n"),
               rec->maskedStream);
