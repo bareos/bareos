@@ -84,30 +84,82 @@ Linux (SG_IO ioctl interface):
 .. index::
   single: Platform; Linux; Privileges
 
-To perform the operations required for **scsicrypto**, the programs must either run as user **root** or the additional capability :strong:`CAP_SYS_RAWIO+EP` must be set.
+To perform the operations required for **scsicrypto**, the programs must either run as user **root** or the additional capability :strong:`CAP_SYS_RAWIO+EP` (see capabilities(7)) must be set.
 The |sd| normally runs as user **bareos**. Running it as **root** is not recommended.
 
 If :command:`bareos-sd` does not have the appropriate capabilities, all other tape operations may still work correctly, but you will get "Unable to perform SG\_IO ioctl" errors.
 
--  :strong:`CAP_SYS_RAWIO+EP` (see capabilities(7))
+**systemd** (not recommended)
 
--  For systemd add the following to the bareos-sd.service: :strong:`AmbientCapabilities=CAP_SYS_RAWIO`.
-   To check status of capabilities of the running daemon you can use the :command:`getpcaps` followed by the pid of bareos-sd.
+
+To add the capabilities to bareos-sd.service you can add in file `/etc/systemd/system/bareos-sd.d/override.conf` a section containing the :strong:`AmbientCapabilities=CAP_SYS_RAWIO` line.
+The easiest way to create this file is to use the following instructions as root.
+
+.. code-block:: shell-session
+
+   systemctl edit bareos-sd.service
+
+Fill the file with the following content, then save and exit
+
+.. code-block::
+
+   ### Editing /etc/systemd/system/bareos-storage.service.d/override.conf
+   ### Anything between here and the comment below will become the new contents of the file
+
+   [Service]
+   AmbientCapabilities=CAP_SYS_RAWIO
+
+
+Reload systemd configuration and restart bareos-sd
+
+.. code-block:: shell-session
+
+   systemctl daemon-reload
+
+   systemctl restart bareos-sd
+
+   systemctl status bareos-sd
+      ● bareos-storage.service - Bareos Storage Daemon service
+      Loaded: loaded (/lib/systemd/system/bareos-storage.service; enabled; vendor preset: enabled)
+      Drop-In: /etc/systemd/system/bareos-storage.service.d
+      └─override.conf
+      Active: active (running) since Tue 2022-02-01 15:12:49 CET; 5s ago
+      Docs: man:bareos-sd(8)
+      Main PID: 11142 (bareos-sd)
+      Tasks: 2 (limit: 2298)
+      Memory: 1.1M
+      CPU: 8ms
+      CGroup: /system.slice/bareos-storage.service
+      └─11142 /usr/sbin/bareos-sd -f
+
+      systemd[1]: Started Bareos Storage Daemon service.
+
+
+To check status of capabilities of the running daemon you can use the :command:`getpcaps` followed by the pid of bareos-sd.
+
+.. code-block:: shell-session
+
+   root:~# getpcaps 11142
+   11142: cap_sys_rawio=eip
+
 
 .. warning::
 
    As of systemd version 249 There's no mechanism to pass restricted flag (+ep), so the result will always be full CAP_SYS_RAWIO (eip)
 
+
+**setcap binaries** (recommended)
+
 You can also set up the extra capability on :command:`bareos-sd`, :command:`bcopy`, :command:`bextract`, :command:`bls`, :command:`bscan`, :command:`bscrypto`, :command:`btape` by running the following commands:
 
-Check the setting with our helper
+Set the setting with our helper
 
 .. code-block:: shell-session
 
    /usr/lib/bareos/script/bareos-config.sh set_scsicrypto_capabilities
 
 
-Check the setting manually
+Set the setting manually
 
 .. code-block:: shell-session
 
@@ -126,7 +178,7 @@ Remove the setting with our helper
 
    /usr/lib/bareos/script/bareos-config.sh unset_scsicrypto_capabilities
 
-Check the setting manually
+Remove the setting manually
 
 .. code-block:: shell-session
 
@@ -164,8 +216,9 @@ Check the setting manually
 
 .. warning::
 
-   Adding capabilities like cap_sys_rawio to binaries can increase their abuse, so we recommend also to restrict a bit more their ownership to 0750.
-   Doing so restrict execution to only root or any member of bareos group.
+   Adding capabilities like cap_sys_rawio to binaries can increase their abuse.
+   We recommend also to restrict a bit more their ownership to root as owner and bareos as group, plus setting chmod to 0750. Doing so will restrict execution to only root or any member of bareos group.
+   All those step are done for you by our helper.
 
 
 .. note::
