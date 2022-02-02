@@ -127,6 +127,7 @@ $this->headTitle($title);
 </div>
 
 <?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/timeline.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/apexcharts.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-slider.min.css');
@@ -206,7 +207,7 @@ $this->headTitle($title);
       show: true
     },
     tooltip: {
-        custom: function({series, seriesIndex, dataPointIndex, w}) {
+      custom: function({series, seriesIndex, dataPointIndex, w}) {
           var data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
           return '<div style="background: #000; color: #fff; padding: 5px 5px 5px 5px;">' +
           '<b>Job</b>: ' + data.name + '</br>' +
@@ -216,7 +217,7 @@ $this->headTitle($title);
           '<b>Start</b>: ' + data.starttime + '</br>' +
           '<b>End</b>: ' + data.endtime+ '</br>' +
           '</div>';
-        }
+      }
     },
     grid: {
       row: {
@@ -246,40 +247,6 @@ $this->headTitle($title);
 
   var chart = new ApexCharts(document.querySelector("#timeline-chart"), options);
   chart.render();
-
-  function updateChartOptions(currenttime, p) {
-    let max = currenttime + (60 * 60 * 1000) // current timestamp + 1h
-    let min = currenttime - (60 * 60 * 24 * 1000) * p // current timestamp - 24h * p (period)
-
-    chart.updateOptions({
-      noData: {
-        text: 'Loading ...',
-      },
-      xaxis: {
-        min: min,
-        max: max,
-      },
-      events: {
-        beforeZoom: function(ctx) {
-          // we need to reset min/max before zoom
-          ctx.w.config.xaxis.min = undefined
-          ctx.w.config.xaxis.max = undefined
-        }
-      }
-    });
-  }
-
-  function changeNoDataText(d) {
-    let msg = "Loading ...";
-    if(!d) {
-      msg = "No data available";
-    }
-    chart.updateOptions({
-      noData: {
-        text: msg
-      }
-    });
-  }
 
   function showClientChart() {
 
@@ -381,54 +348,31 @@ $this->headTitle($title);
       });
    }
 
-   var rsLabel1 = "1 " + iJS._("day");
-   var rsLabel2 = "3 " + iJS._("days");
-   var rsLabel3 = "7 " + iJS._("days");
-   var rsLabel4 = "14 " + iJS._("days");
-   var rsLabel5 = "31 " + iJS._("days");
-
-   $("#rangeslider").bootstrapSlider({
-      ticks: [1,3,7,14,31],
-      ticks_labels: [rsLabel1, rsLabel2, rsLabel3, rsLabel4, rsLabel5],
-      ticks_positions: [0,25,50,75,100],
-      step: 1,
-      lock_to_ticks: true,
-      tooltip: "hide",
-      handle: "round",
-      value: 1
-   });
-
-   function getSliderValue() {
-      let range = document.getElementById("rangeslider");
-      return range.value;
-   }
-
   $(document).ready(function() {
-      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
-      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+    setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+    setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-      attachClientsTable();
+    attachClientsTable();
 
-      // Timeline fullscreen toggle
-      $("#panel-fullscreen").click(function (e) {
-        e.preventDefault();
+    // Timeline fullscreen toggle
+    $("#panel-fullscreen").click(function (e) {
+      e.preventDefault();
 
-        var $this = $(this);
+      var $this = $(this);
 
-        if ($this.children('i').hasClass('glyphicon-resize-full'))
-        {
-            $this.children('i').removeClass('glyphicon-resize-full');
-            $this.children('i').addClass('glyphicon-resize-small');
-        }
-        else if ($this.children('i').hasClass('glyphicon-resize-small'))
-        {
-            $this.children('i').removeClass('glyphicon-resize-small');
-            $this.children('i').addClass('glyphicon-resize-full');
-        }
-        $(this).closest('.panel').toggleClass('panel-fullscreen');
-      });
-
-   });
+      if ($this.children('i').hasClass('glyphicon-resize-full'))
+      {
+          $this.children('i').removeClass('glyphicon-resize-full');
+          $this.children('i').addClass('glyphicon-resize-small');
+      }
+      else if ($this.children('i').hasClass('glyphicon-resize-small'))
+      {
+          $this.children('i').removeClass('glyphicon-resize-small');
+          $this.children('i').addClass('glyphicon-resize-full');
+      }
+      $(this).closest('.panel').toggleClass('panel-fullscreen');
+    });
+  });
 
 </script>
 
