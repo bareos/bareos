@@ -75,6 +75,11 @@ TEST(bsnprintf, len_param)
   // truncate the string by parameter
   EXPECT_EQ(Bsnprintf(dest, 100, "-%.*s-", 5, "Some String"), 7);
   EXPECT_STREQ(dest, "-Some -");
+
+  // fixed length string value with no null-terminator
+  const char fixed_str[] = {'a', 'b', 'c', 'd', 'e', 'f'};
+  EXPECT_EQ(Bsnprintf(dest, 100, "-%.*s-", 6, fixed_str), 8);
+  EXPECT_STREQ(dest, "-abcdef-");
 }
 
 TEST(bsnprintf, char)

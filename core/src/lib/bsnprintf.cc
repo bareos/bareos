@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -457,8 +457,11 @@ static int32_t fmtstr(char* buffer,
   } else if (max < 0) {
     max = maxlen;
   }
-  strln = strlen(value);
-  if (strln > max) { strln = max; /* truncate to max */ }
+  if (max > 0) {
+    strln = strnlen(value, max);
+  } else {
+    strln = strlen(value);
+  }
   padlen = min - strln;
   if (padlen < 0) { padlen = 0; }
   if (flags & DP_F_MINUS) { padlen = -padlen; /* Left Justify */ }
@@ -467,7 +470,7 @@ static int32_t fmtstr(char* buffer,
     outch(' ');
     --padlen;
   }
-  while (*value && (cnt < max)) {
+  while ((cnt < max) && *value) {
     ch = *value++;
     outch(ch);
     ++cnt;
