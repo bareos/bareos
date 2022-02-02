@@ -117,9 +117,9 @@ static void start_bareos_server(std::promise<bool>* promise,
   std::unique_ptr<BareosSocket> bs(create_new_bareos_socket(newsockfd));
 
   char* name = (char*)console_name.c_str();
-  s_password* password = new (s_password);
-  password->encoding = p_encoding_md5;
-  password->value = (char*)console_password.c_str();
+  s_password password;
+  password.encoding = p_encoding_md5;
+  password.value = (char*)console_password.c_str();
 
   bool success = false;
   if (bs->recv() <= 0) {
@@ -130,7 +130,7 @@ static void start_bareos_server(std::promise<bool>* promise,
           bs->message_length);
   } else {
     Dmsg1(10, "Cons->Dir: %s", bs->msg);
-    if (!bs->AuthenticateInboundConnection(NULL, nullptr, name, *password,
+    if (!bs->AuthenticateInboundConnection(NULL, nullptr, name, password,
                                            dir_cons_config.get())) {
       Dmsg0(10, "Server: inbound auth failed\n");
     } else {
@@ -195,9 +195,9 @@ static bool connect_to_server(std::string console_name,
 
   char* name = (char*)console_name.c_str();
 
-  s_password* password = new (s_password);
-  password->encoding = p_encoding_md5;
-  password->value = (char*)console_password.c_str();
+  s_password password;
+  password.encoding = p_encoding_md5;
+  password.value = (char*)console_password.c_str();
 
   std::shared_ptr<BareosSocketTCP> UA_sock(new BareosSocketTCP);
   UA_sock->sleep_time_after_authentication_error = 0;
@@ -214,7 +214,7 @@ static bool connect_to_server(std::string console_name,
     uint32_t response_id = kMessageIdUnknown;
     BStringList response_args;
     if (!UA_sock->ConsoleAuthenticateWithDirector(
-            &jcr, name, *password, cons_dir_config.get(), console_name,
+            &jcr, name, password, cons_dir_config.get(), console_name,
             response_args, response_id)) {
       Emsg0(M_ERROR, 0, "Authenticate Failed\n");
     } else {
