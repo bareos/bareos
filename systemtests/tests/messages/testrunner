@@ -38,7 +38,7 @@ rm -f "$mail_file"
 rm -f "$operator_file"
 
 function exit_error() {
-  [ "$1" == "" ] || echo "$1"
+  [ "${1:-}" == "" ] || echo "$1"
   estat=1
   end_test
   exit 1

@@ -819,6 +819,7 @@ void DispatchMessage(JobControlRecord* jcr,
               break;
             }
             d->mail_filename_ = name;
+            FreePoolMemory(name);
           }
           fputs(dt, d->file_pointer_);
           len = strlen(msg) + dtlen;
