@@ -1762,6 +1762,12 @@ if [ -e %1.rpmupdate.%{version}.keep ]; then \
    rm %1.rpmupdate.%{version}.keep; \
 fi; \
 %nil
+
+%define post_scsicrypto() \
+if [ -f "%{_sysconfdir}/%{name}/.enable-cap_sys_rawio" ]; then \
+   %{script_dir}/bareos-config set_scsicrypto_capabilities; \
+fi\
+%nil
 %post webui
 
 %if 0%{?suse_version} >= 1110
@@ -1797,6 +1803,9 @@ a2enmod php5 &> /dev/null || true
 %posttrans director
 %posttrans_restore_file /etc/%{name}/bareos-dir.conf
 
+%post tools
+%post_scsicrypto
+
 %post storage
 %post_backup_file /etc/%{name}/bareos-sd.conf
 # pre script has already generated the storage daemon user,
@@ -1804,6 +1813,7 @@ a2enmod php5 &> /dev/null || true
 %{script_dir}/bareos-config setup_sd_user
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
+%post_scsicrypto
 %if 0%{?suse_version} >= 1210
 %service_add_post bareos-sd.service
 /bin/systemctl enable bareos-sd.service >/dev/null 2>&1 || true
@@ -1833,10 +1843,11 @@ a2enmod php5 &> /dev/null || true
 
 %post storage-tape
 %post_backup_file /etc/%{name}/bareos-sd.d/device-tape-with-autoloader.conf
+%post_scsicrypto
 
 %posttrans storage-tape
 %posttrans_restore_file /etc/%{name}/bareos-sd.d/device-tape-with-autoloader.conf
-
+%post_scsicrypto
 
 %post filedaemon
 %post_backup_file /etc/%{name}/bareos-fd.conf
@@ -1892,6 +1903,9 @@ a2enmod php5 &> /dev/null || true
 
 %post database-postgresql
 /sbin/ldconfig
+
+%post database-tools
+%post_scsicrypto
 
 %postun database-postgresql
 /sbin/ldconfig
