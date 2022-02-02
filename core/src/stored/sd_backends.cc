@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,10 +43,55 @@
 namespace storagedaemon {
 
 struct BackendDeviceLibraryDescriptor {
+ public:
   DeviceType device_type{DeviceType::B_UNKNOWN_DEV};
 
+ private:
   void* dynamic_library_handle{};
-  BackendInterface* backend_interface;
+  BackendInterface* backend_interface{};
+
+ public:
+  BackendDeviceLibraryDescriptor(DeviceType t_device_type,
+                                 void* t_dynamic_library_handle,
+                                 BackendInterface* t_backend_interface)
+      : device_type(t_device_type)
+      , dynamic_library_handle(t_dynamic_library_handle)
+      , backend_interface(t_backend_interface)
+  {
+  }
+
+  ~BackendDeviceLibraryDescriptor()
+  {
+    FlushDevice();
+    delete backend_interface;
+    dlclose(dynamic_library_handle);
+  }
+
+  BackendDeviceLibraryDescriptor(const BackendDeviceLibraryDescriptor& other)
+      = delete;
+  BackendDeviceLibraryDescriptor& operator=(
+      const BackendDeviceLibraryDescriptor& other)
+      = delete;
+  BackendDeviceLibraryDescriptor(BackendDeviceLibraryDescriptor&& other)
+  {
+    device_type = other.device_type;
+    std::swap(dynamic_library_handle, other.dynamic_library_handle);
+    std::swap(backend_interface, other.backend_interface);
+  }
+  BackendDeviceLibraryDescriptor& operator=(
+      BackendDeviceLibraryDescriptor&& other)
+  {
+    device_type = other.device_type;
+    std::swap(dynamic_library_handle, other.dynamic_library_handle);
+    std::swap(backend_interface, other.backend_interface);
+    return *this;
+  }
+
+  Device* GetDevice(JobControlRecord* jcr, DeviceType device_type)
+  {
+    return backend_interface->GetDevice(jcr, device_type);
+  }
+  void FlushDevice() { backend_interface->FlushDevice(); }
 };
 
 const std::map<DeviceType, const char*> device_type_to_name_mapping = {
@@ -88,15 +133,12 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
 
   for (const auto& b : loaded_backends) {
     if (b->device_type == device_type) {
-      return b->backend_interface->GetDevice(jcr, device_type);
+      return b->GetDevice(jcr, device_type);
     }
   }
 
-  // backend not loaded yet
-
-  t_backend_base GetBackend;
-
-  void* dynamic_library_handle = nullptr;
+  t_backend_base GetBackend{nullptr};
+  void* dynamic_library_handle{nullptr};
 
   for (const auto& backend_dir : backend_directories) {
     if (dynamic_library_handle != nullptr) { break; }
@@ -146,31 +188,29 @@ Device* InitBackendDevice(JobControlRecord* jcr, DeviceType device_type)
     }
   }
 
-  if (dynamic_library_handle == nullptr) {  // none of the backends was loaded
+  if (dynamic_library_handle == nullptr) {
     Jmsg(jcr, M_ERROR_TERM, 0,
          _("Unable to load any shared library for libbareossd-%s%s\n"),
          interface_name, DYN_LIB_EXTENSION);
     return nullptr;
   }
+  if (!GetBackend) {
+    Jmsg(jcr, M_ERROR_TERM, 0,
+         _("Unable to locate GetBackend() function in shared backend library "
+           "for libbareossd-%s%s\n"),
+         interface_name, DYN_LIB_EXTENSION);
+    return nullptr;
+  }
 
-  auto b = std::make_unique<BackendDeviceLibraryDescriptor>();
-  b->device_type = device_type;
-  b->dynamic_library_handle = dynamic_library_handle;
-  b->backend_interface = GetBackend();
+  auto b = std::make_unique<BackendDeviceLibraryDescriptor>(
+      device_type, dynamic_library_handle, GetBackend());
 
-  Device* d = b->backend_interface->GetDevice(jcr, device_type);
+  Device* d = b->GetDevice(jcr, device_type);
   loaded_backends.push_back(std::move(b));
   return d;
 }
 
-void FlushAndCloseBackendDevices()
-{
-  for (const auto& b : loaded_backends) {
-    b->backend_interface->FlushDevice();
-    dlclose(b->dynamic_library_handle);
-  }
-  loaded_backends.clear();
-}
+void FlushAndCloseBackendDevices() { loaded_backends.clear(); }
 
 } /* namespace storagedaemon */
 
