@@ -89,63 +89,12 @@ The |sd| normally runs as user **bareos**. Running it as **root** is not recomme
 
 If :command:`bareos-sd` does not have the appropriate capabilities, all other tape operations may still work correctly, but you will get "Unable to perform SG\_IO ioctl" errors.
 
-**systemd** (not recommended)
+.. note::
 
+    Since :sinceVersion:`21.0.1: scscicrypto capabilities handling` during package update post-install will react according to file :file:`.enable-cap_sys_rawio` presence in your bareos config dir, setting back the previously set capabilities if present.
+    This mean if you want capabilities automatically setup during package install, you can just create the :file:`/etc/bareos/.enable-cap_sys_rawio` file.
 
-To add the capabilities to bareos-sd.service you can add in file :file:`/etc/systemd/system/bareos-sd.d/override.conf` a section containing the :strong:`AmbientCapabilities=CAP_SYS_RAWIO` line.
-The easiest way to create this file is to use the following instructions as root.
-
-.. code-block:: shell-session
-
-   systemctl edit bareos-sd.service
-
-Fill the file with the following content, then save and exit
-
-.. code-block:: cfg
-
-   ### Editing /etc/systemd/system/bareos-storage.service.d/override.conf
-   ### Anything between here and the comment below will become the new contents of the file
-
-   [Service]
-   AmbientCapabilities=CAP_SYS_RAWIO
-
-
-Reload systemd configuration and restart bareos-sd
-
-.. code-block:: shell-session
-
-   systemctl daemon-reload
-
-   systemctl restart bareos-sd
-
-   systemctl status bareos-sd
-      ● bareos-storage.service - Bareos Storage Daemon service
-      Loaded: loaded (/lib/systemd/system/bareos-storage.service; enabled; vendor preset: enabled)
-      Drop-In: /etc/systemd/system/bareos-storage.service.d
-      └─override.conf
-      Active: active (running) since Tue 2022-02-01 15:12:49 CET; 5s ago
-      Docs: man:bareos-sd(8)
-      Main PID: 11142 (bareos-sd)
-      Tasks: 2 (limit: 2298)
-      Memory: 1.1M
-      CPU: 8ms
-      CGroup: /system.slice/bareos-storage.service
-      └─11142 /usr/sbin/bareos-sd -f
-
-      systemd[1]: Started Bareos Storage Daemon service.
-
-
-To check status of capabilities of the running daemon you can use the :command:`getpcaps` followed by the pid of bareos-sd.
-
-.. code-block:: shell-session
-
-   root:~# getpcaps 11142
-   11142: cap_sys_rawio=eip
-
-
-.. warning::
-
-   As of systemd version 249 There's no mechanism to pass restricted flag (+ep), so the result will always be full CAP_SYS_RAWIO (eip)
+    Before :sinceVersion:`21.0.1: scscicrypto capabilities handling` it is mandatory to setup capabilities manually after each update (see below).
 
 
 **setcap binaries** (recommended)
@@ -221,10 +170,63 @@ Check the setting manually
    All those step are done for you by our helper.
 
 
-.. note::
+   **systemd** (not recommended)
 
-   Since :sinceVersion:`21.0.1: scscicrypto capabilities handling` during package update post-install will react according to file :file:`.enable-cap_sys_rawio` presence in your bareos config dir, setting back the previously set capabilities if present.
-   Before it is mandatory to setup capabilities manually after each update.
+To add the capabilities to bareos-sd.service you can add in file :file:`/etc/systemd/system/bareos-sd.d/override.conf` a section containing the :strong:`AmbientCapabilities=CAP_SYS_RAWIO` line.
+The easiest way to create this file is to use the following instructions as root.
+
+.. code-block:: shell-session
+
+   systemctl edit bareos-sd.service
+
+Fill the file with the following content, then save and exit
+
+.. code-block:: cfg
+
+   ### Editing /etc/systemd/system/bareos-storage.service.d/override.conf
+   ### Anything between here and the comment below will become the new contents of the file
+
+   [Service]
+   AmbientCapabilities=CAP_SYS_RAWIO
+
+
+Reload systemd configuration and restart bareos-sd
+
+.. code-block:: shell-session
+
+   systemctl daemon-reload
+
+   systemctl restart bareos-sd
+
+   systemctl status bareos-sd
+      ● bareos-storage.service - Bareos Storage Daemon service
+      Loaded: loaded (/lib/systemd/system/bareos-storage.service; enabled; vendor preset: enabled)
+      Drop-In: /etc/systemd/system/bareos-storage.service.d
+      └─override.conf
+      Active: active (running) since Tue 2022-02-01 15:12:49 CET; 5s ago
+      Docs: man:bareos-sd(8)
+      Main PID: 11142 (bareos-sd)
+      Tasks: 2 (limit: 2298)
+      Memory: 1.1M
+      CPU: 8ms
+      CGroup: /system.slice/bareos-storage.service
+      └─11142 /usr/sbin/bareos-sd -f
+
+      systemd[1]: Started Bareos Storage Daemon service.
+
+
+To check status of capabilities of the running daemon you can use the :command:`getpcaps` followed by the pid of bareos-sd.
+
+.. code-block:: shell-session
+
+   root:~# getpcaps 11142
+   11142: cap_sys_rawio=eip
+
+
+.. warning::
+
+   As of systemd version 249 There's no mechanism to pass restricted flag (+ep), so the result will always be full CAP_SYS_RAWIO (eip)
+
 
 
 Solaris (USCSI ioctl interface):

@@ -252,9 +252,11 @@ check_scsicrypto_capabilities()
     cap_missing_conf=1
   fi
   for c in ${_scsicrypto_cmds};do
-    if ! r="$(setcap -v cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
-       warn "${r}"
-       cap_missing_conf=1
+    if [ -x "${BAREOS_SBIN_DIR}/${c}" ]; then
+      if ! r="$(setcap -v cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
+        warn "${r}"
+        cap_missing_conf=1
+      fi
     fi
   done
   if [ ${cap_missing_conf} -ne 0 ];then
@@ -272,18 +274,20 @@ set_scsicrypto_capabilities()
       return 1
   fi
   for c in ${_scsicrypto_cmds};do
-    # Need to affect the bareos group (debian)
-    if ! r="$(chgrp "${STORAGE_DAEMON_GROUP}" "${BAREOS_SBIN_DIR}/${c}")"; then
-        error "Setting group to ${STORAGE_DAEMON_GROUP} failed on ${c}"
+    if [ -x "${BAREOS_SBIN_DIR}/${c}" ]; then
+      # Need to affect the bareos group (debian)
+      if ! r="$(chgrp "${STORAGE_DAEMON_GROUP}" "${BAREOS_SBIN_DIR}/${c}")"; then
+          error "Setting group to ${STORAGE_DAEMON_GROUP} failed on ${c}"
+          return 1
+      fi
+      if ! r="$(chmod o-rwx "${BAREOS_SBIN_DIR}/${c}")"; then
+          error "Setting chmod o-rwx failed on ${c}"
+          return 1
+      fi
+      if ! r="$(setcap cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
+        error "setcap on ${c} has failed - ${r}"
         return 1
-    fi
-    if ! r="$(chmod o-rwx "${BAREOS_SBIN_DIR}/${c}")"; then
-        error "Setting chmod o-rwx failed on ${c}"
-        return 1
-    fi
-    if ! r="$(setcap cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
-       error "setcap on ${c} has failed - ${r}"
-       return 1
+      fi
     fi
   done
   echo "cap_sys_rawio+ep capabilities enabled on $(date "+%F %X")" > "${_scsicrypto_config_file}"
@@ -296,17 +300,19 @@ unset_scsicrypto_capabilities()
       return 1
   fi
   for c in ${_scsicrypto_cmds};do
-    if ! r="$(setcap -r "${BAREOS_SBIN_DIR}/${c}")"; then
-       error "setcap -r on ${c} has failed - ${r}"
-       return 1
-    fi
-    if ! r="$(chmod o+rx "${BAREOS_SBIN_DIR}/${c}")"; then
-        error "Restoring chmod o+rx failed on ${c}"
-        return 1
-    fi
-    if ! r="$(chgrp root "${BAREOS_SBIN_DIR}/${c}")"; then
-        error "Restoring group to root failed on ${c}"
-        return 1
+    if [ -x "${BAREOS_SBIN_DIR}/${c}" ]; then
+      if ! r="$(setcap -r "${BAREOS_SBIN_DIR}/${c}")"; then
+          # Don't fail if binary did had capabilities set.
+          warning "setcap -r on ${c} has failed - ${r}"
+      fi
+      if ! r="$(chmod o+rx "${BAREOS_SBIN_DIR}/${c}")"; then
+          warning "Restoring chmod o+rx failed on ${c}"
+          return 1
+      fi
+      if ! r="$(chgrp root "${BAREOS_SBIN_DIR}/${c}")"; then
+          warning "Restoring group to root failed on ${c}"
+          return 1
+      fi
     fi
   done
   rm -f "${_scsicrypto_config_file}"
