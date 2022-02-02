@@ -223,7 +223,7 @@ Check the setting manually
 
 .. note::
 
-   Since :sinceVersion:`21.0.1: scscicrypto capabilities handling` during package update post-install will react according to file `.enable-capabilities` presence in your bareos config dir, setting back the previously set capabilities if present.
+   Since :sinceVersion:`21.0.1: scscicrypto capabilities handling` during package update post-install will react according to file :file:`.enable-cap_sys_rawio` presence in your bareos config dir, setting back the previously set capabilities if present.
    Before it is mandatory to setup capabilities manually after each update.
 
 

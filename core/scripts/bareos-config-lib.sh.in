@@ -235,7 +235,7 @@ get_database_utility_path()
 }
 
 _scsicrypto_cmds="bareos-sd bcopy bextract bls bscan bscrypto btape"
-_scsicrypto_config_file="${BAREOS_CONFIG_DIR}/.enable-capabilities"
+_scsicrypto_config_file="${BAREOS_CONFIG_DIR}/.enable-cap_sys_rawio"
 check_scsicrypto_capabilities()
 {
   if [ "${os_type}" != "Linux" ];then
@@ -286,7 +286,7 @@ set_scsicrypto_capabilities()
        return 1
     fi
   done
-  echo "cap_sys_rawio+ep capabilities enabled" > "${_scsicrypto_config_file}"
+  echo "cap_sys_rawio+ep capabilities enabled on $(date "+%F %X")" > "${_scsicrypto_config_file}"
 }
 
 unset_scsicrypto_capabilities()
