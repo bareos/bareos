@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -455,7 +455,6 @@ static void StripTrailingSlash(char* arg)
 
 static int MarkElements(UaContext* ua, TreeContext* tree)
 {
-  TREE_NODE* node;
   int count = 0;
 
   for (int i = 1; i < ua->argc; i++) {
@@ -480,7 +479,9 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
 
       std::string fullpath_pattern{};
       if (ua->argk[i][0] != '/') {
-        fullpath_pattern = tree_getpath(tree->node);
+        POOLMEM* path = tree_getpath(tree->node);
+        fullpath_pattern.append(path);
+        FreePoolMemory(path);
       }
 
       fullpath_pattern.append(given_path_pattern);
@@ -488,12 +489,21 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
       POOLMEM* node_filename = GetPoolMemory(PM_FNAME);
       POOLMEM* node_path = GetPoolMemory(PM_FNAME);
 
-      for (node = (strcmp(tree_getpath(tree->node), "/") == 0)
-                      ? FirstTreeNode(tree->root)
-                      : tree->node;
-           node; node = NextTreeNode(node)) {
-        SplitPathAndFilename(tree_getpath(node), node_path, &pnl, node_filename,
-                             &fnl);
+      TREE_NODE* node{nullptr};
+      {
+        POOLMEM* path = tree_getpath(tree->node);
+        if (strcmp(path, "/") == 0) {
+          node = FirstTreeNode(tree->root);
+        } else {
+          node = tree->node;
+        }
+        FreePoolMemory(path);
+      }
+
+      for (; node; node = NextTreeNode(node)) {
+        POOLMEM* path = tree_getpath(node);
+        SplitPathAndFilename(path, node_path, &pnl, node_filename, &fnl);
+        FreePoolMemory(path);
 
         if (fnmatch(fullpath_pattern.c_str(), node_path, 0) == 0) {
           if (fnmatch(given_file_pattern, node->fname, 0) == 0) {
@@ -508,6 +518,7 @@ static int MarkElements(UaContext* ua, TreeContext* tree)
       FreePoolMemory(node_path);
     } else {
       // Only a pattern without a / so do things relative to CWD.
+      TREE_NODE* node;
       foreach_child (node, tree->node) {
         if (fnmatch(ua->argk[i], node->fname, 0) == 0) {
           count += SetExtract(ua, node, tree, true);

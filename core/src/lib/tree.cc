@@ -91,7 +91,6 @@ TREE_ROOT* new_tree(int count)
   root->cached_path = GetPoolMemory(PM_FNAME);
   root->type = TN_ROOT;
   root->fname = "";
-  new (&root->hardlinks) HardlinkTable();
   return root;
 }
 
