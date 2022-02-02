@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -377,8 +377,9 @@ bool DropletDevice::CheckRemoteConnection()
 
   auto status = check_path("bareos-test/");
 
-  const char* h = dpl_addrlist_get(ctx_->addrlist);
+  char* h = dpl_addrlist_get(ctx_->addrlist);
   std::string hostaddr{h != nullptr ? h : "???"};
+  free(h);
 
   switch (status) {
     case DPL_SUCCESS:
@@ -894,7 +895,10 @@ bool DropletDevice::initialize()
     }
 
     // If a bucketname was defined set it in the context.
-    if (bucketname_) { ctx_->cur_bucket = strdup(bucketname_); }
+    if (bucketname_) {
+      free(ctx_->cur_bucket);
+      ctx_->cur_bucket = strdup(bucketname_);
+    }
   }
 
   return true;
