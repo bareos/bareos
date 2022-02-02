@@ -130,6 +130,7 @@ $this->headTitle($title);
    echo $this->headScript()->prependFile($this->basePath() . '/js/timeline.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/apexcharts.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/timeline.css');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-slider.min.css');
    //echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table-filter-control.min.css');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
@@ -140,29 +141,6 @@ $this->headTitle($title);
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
 ?>
-
-<style>
-.panel-actions {
-  margin-top: -20px;
-  margin-bottom: 0;
-  text-align: right;
-}
-.panel-actions a {
-  color:#333;
-}
-.panel-fullscreen {
-  display: block;
-  z-index: 9999;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  right: 0;
-  left: 0;
-  bottom: 0;
-  overflow: auto;
-}
-</style>
 
 <script>
 
