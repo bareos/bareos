@@ -151,6 +151,7 @@ static void SchedulerJobCallback(JobControlRecord* jcr)
 
   // add job-name to map
   test_results.job_names[jcr->impl->res.job->resource_name_]++;
+  FreeJcr(jcr);
 }
 
 class MockDatabase : public BareosDb {
