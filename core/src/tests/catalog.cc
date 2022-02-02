@@ -119,6 +119,7 @@ void CatalogTest::SetUp()
 
 void CatalogTest::TearDown()
 {
+  db->CloseDatabase(jcr);
   DbSqlPoolDestroy();
   DbFlushBackends();
 
@@ -136,8 +137,6 @@ void CatalogTest::TearDown()
 TEST_F(CatalogTest, database)
 {
   std::vector<char> stime;
-  auto jcr = directordaemon::NewDirectorJcr();
-
   auto result = db->FindLastJobStartTimeForJobAndClient(jcr, "backup-bareos-fd",
                                                         "bareos-fd", stime);
 
