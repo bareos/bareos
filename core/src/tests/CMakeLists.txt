@@ -321,6 +321,13 @@ if(HAVE_EXECINFO_H
    AND HAVE_BACKTRACE_SYMBOLS
 )
   bareos_add_test(test_backtrace LINK_LIBRARIES bareos GTest::gtest_main)
+  # Backtrace doesn't work correctly when ASan is enabled, do we shoudn't test
+  # in that case
+  if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address")
+    set_tests_properties(
+      gtest:Backtrace.test_backtrace PROPERTIES DISABLED TRUE
+    )
+  endif()
 endif() # HAVE_EXECINFO_H ..
 
 if(NOT client-only)
