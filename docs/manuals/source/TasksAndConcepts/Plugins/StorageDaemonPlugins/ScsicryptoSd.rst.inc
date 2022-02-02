@@ -92,7 +92,7 @@ If :command:`bareos-sd` does not have the appropriate capabilities, all other ta
 **systemd** (not recommended)
 
 
-To add the capabilities to bareos-sd.service you can add in file `/etc/systemd/system/bareos-sd.d/override.conf` a section containing the :strong:`AmbientCapabilities=CAP_SYS_RAWIO` line.
+To add the capabilities to bareos-sd.service you can add in file :file:`/etc/systemd/system/bareos-sd.d/override.conf` a section containing the :strong:`AmbientCapabilities=CAP_SYS_RAWIO` line.
 The easiest way to create this file is to use the following instructions as root.
 
 .. code-block:: shell-session
@@ -101,7 +101,7 @@ The easiest way to create this file is to use the following instructions as root
 
 Fill the file with the following content, then save and exit
 
-.. code-block::
+.. code-block:: cfg
 
    ### Editing /etc/systemd/system/bareos-storage.service.d/override.conf
    ### Anything between here and the comment below will become the new contents of the file
