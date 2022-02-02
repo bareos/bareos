@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -204,6 +204,7 @@ static bool RunOneItem(TimerThread::Timer* p,
       = std::chrono::steady_clock::now();
 
   bool remove_from_list = false;
+  next_timer_run = min(p->scheduled_run_timepoint, next_timer_run);
   if (p->is_active && last_timer_run_timepoint > p->scheduled_run_timepoint) {
     LogMessage(p);
     p->user_callback(p);
@@ -215,7 +216,6 @@ static bool RunOneItem(TimerThread::Timer* p,
       p->scheduled_run_timepoint = last_timer_run_timepoint + p->interval;
     }
   }
-  next_timer_run = min(p->scheduled_run_timepoint, next_timer_run);
   return remove_from_list;
 }
 
