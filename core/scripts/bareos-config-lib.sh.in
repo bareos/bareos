@@ -301,16 +301,16 @@ unset_scsicrypto_capabilities()
   fi
   for c in ${_scsicrypto_cmds};do
     if [ -x "${BAREOS_SBIN_DIR}/${c}" ]; then
-      if ! r="$(setcap -r "${BAREOS_SBIN_DIR}/${c}")"; then
+      if ! r="$(setcap -q -r "${BAREOS_SBIN_DIR}/${c}")"; then
           # Don't fail if binary did had capabilities set.
-          warning "setcap -r on ${c} has failed - ${r}"
+          warn "setcap -r on ${c} has failed - ${r}"
       fi
       if ! r="$(chmod o+rx "${BAREOS_SBIN_DIR}/${c}")"; then
-          warning "Restoring chmod o+rx failed on ${c}"
+          error "Restoring chmod o+rx failed on ${c}"
           return 1
       fi
       if ! r="$(chgrp root "${BAREOS_SBIN_DIR}/${c}")"; then
-          warning "Restoring group to root failed on ${c}"
+          error "Restoring group to root failed on ${c}"
           return 1
       fi
     fi
