@@ -59,7 +59,7 @@ static ResourceItem cons_items[] = {
   { "RcFile", CFG_TYPE_DIR, ITEM(res_cons, rc_file), 0, 0, NULL, NULL, NULL },
   { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons, history_file), 0, 0, NULL, NULL, NULL },
   { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons, history_length), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
-  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons, password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "Director", CFG_TYPE_STR, ITEM(res_cons, director), 0, 0, NULL, NULL, NULL },
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   TLS_COMMON_CONFIG(res_cons),
@@ -148,6 +148,7 @@ static void FreeResource(BareosResource* res, int type)
       if (p->rc_file) { free(p->rc_file); }
       if (p->history_file) { free(p->history_file); }
       if (p->password_.value) { free(p->password_.value); }
+      if (p->director) { free(p->director); }
       delete p;
       break;
     }

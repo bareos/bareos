@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -64,8 +64,8 @@ console::ConsoleResource* CreateAndInitializeNewConsoleResource()
   cons->tls_cert_.ca_certfile_ = CERTDIR "/bareos-ca.pem";
   cons->tls_cert_.verify_peer_ = false;
   cons->resource_name_ = (char*)"clientname";
-  cons->password.encoding = p_encoding_md5;
-  cons->password.value = (char*)"verysecretpassword";
+  cons->password_.encoding = p_encoding_md5;
+  cons->password_.value = (char*)"verysecretpassword";
   return cons;
 }
 } /* namespace console */
