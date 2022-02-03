@@ -301,6 +301,8 @@ extern "C" void* statistics_thread(void* arg)
   }  // while(!quit)
 
 bail_out:
+  jcr->db->CloseDatabase(jcr);
+  jcr->db = nullptr;
   FreeJcr(jcr);
 
   Dmsg0(200, "Finished statistics thread\n");
