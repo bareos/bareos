@@ -22,6 +22,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - systemtests: wait for mariadb shutdown [PR #1048]
 
 ### Changed
+- webui: remove an unnecessary .bvfs_get_jobids and buildSubtree() call [PR #1050]
 
 ### Deprecated
 

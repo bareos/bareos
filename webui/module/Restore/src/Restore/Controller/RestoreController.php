@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -93,44 +93,12 @@ class RestoreController extends AbstractActionController
     $errors = null;
     $result = null;
 
-    if($this->restore_params['jobid'] == null && $this->restore_params['client'] != null) {
-      try {
-        $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
-        if(empty($latestbackup)) {
-          $this->restore_params['jobid'] = null;
-        }
-        else {
-          $this->restore_params['jobid'] = $latestbackup[0]['jobid'];
-        }
-      }
-      catch(Exception $e) {
-        echo $e->getMessage();
-      }
-    }
-
-    if(isset($this->restore_params['mergejobs']) && $this->restore_params['mergejobs'] == 1) {
-      $jobids = $this->restore_params['jobid'];
-    }
-    else {
-      try {
-        $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'], $this->restore_params['mergefilesets']);
-        $this->restore_params['jobids'] = $jobids;
-      }
-      catch(Exception $e) {
-        echo $e->getMessage();
-      }
-    }
-
     if($this->restore_params['client'] != null) {
-      try {
-        $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
-        $this->updateBvfsCache();
-      }
-      catch(Exception $e) {
-        echo $e->getMessage();
-      }
-    }
-    else {
+      $this->handleJobId();
+      $this->handleJobMerge();
+      $backups = $this->getClientBackups();
+      $this->updateBvfsCache();
+    } else {
       $backups = null;
     }
 
@@ -158,7 +126,7 @@ class RestoreController extends AbstractActionController
       $clients,
       $filesets,
       $restorejobresources,
-      $jobids,
+      $this->restore_params['jobids'],
       $backups
     );
 
@@ -297,39 +265,12 @@ class RestoreController extends AbstractActionController
     $errors = null;
     $result = null;
 
-    if ($this->restore_params['jobid'] == null && $this->restore_params['client'] != null) {
-      try {
-        $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
-        if (empty($latestbackup)) {
-          $this->restore_params['jobid'] = null;
-        } else {
-          $this->restore_params['jobid'] = $latestbackup[0]['jobid'];
-        }
-      } catch (Exception $e) {
-        echo $e->getMessage();
-      }
-    }
-
-    if (isset($this->restore_params['mergejobs']) && $this->restore_params['mergejobs'] == 1) {
-      $jobids = $this->restore_params['jobid'];
+    if($this->restore_params['client'] != null) {
+      $this->handleJobId();
+      $this->handleJobMerge();
+      $backups = $this->getClientBackups();
+      $this->updateBvfsCache();
     } else {
-      try {
-        $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'], $this->restore_params['mergefilesets']);
-        $this->restore_params['jobids'] = $jobids;
-      } catch (Exception $e) {
-        echo $e->getMessage();
-      }
-    }
-
-    if ($this->restore_params['client'] != null) {
-      try {
-        $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
-        $this->updateBvfsCache();
-      } catch (Exception $e) {
-        echo $e->getMessage();
-      }
-    }
-    else {
       $backups = null;
     }
 
@@ -356,7 +297,7 @@ class RestoreController extends AbstractActionController
       $clients,
       $filesets,
       $restorejobresources,
-      $jobids,
+      $this->restore_params['jobids'],
       $backups
     );
 
@@ -456,6 +397,44 @@ class RestoreController extends AbstractActionController
 
   }
 
+  private function handleJobId()
+  {
+    if($this->restore_params['jobid'] == null) {
+      try {
+        $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
+        if (empty($latestbackup)) {
+          $this->restore_params['jobid'] = null;
+        } else {
+          $this->restore_params['jobid'] = $latestbackup[0]['jobid'];
+        }
+      } catch (Exception $e) {
+        echo $e->getMessage();
+      }
+    }
+  }
+
+  private function handleJobMerge()
+  {
+    if(isset($this->restore_params['mergejobs']) && $this->restore_params['mergejobs'] == 1) {
+      $this->restore_params['jobids'] = $this->restore_params['jobid'];
+    } else {
+      try {
+        $this->restore_params['jobids'] = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'], $this->restore_params['mergefilesets']);
+      } catch (Exception $e) {
+        echo $e->getMessage();
+      }
+    }
+  }
+
+  private function getClientBackups()
+  {
+    try {
+      return $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
+    } catch (Exception $e) {
+      echo $e->getMessage();
+    }
+  }
+
   /**
    * Delivers a subtree as Json for JStree
    */
@@ -481,9 +460,13 @@ class RestoreController extends AbstractActionController
     $this->setRestoreParams();
     $this->layout('layout/json');
 
-    return new ViewModel(array(
-      'items' => $this->buildSubtree()
-    ));
+    if($this->restore_params['client'] != null) {
+      $items = $this->buildSubtree();
+    } else {
+      $items = "{}";
+    }
+
+    return new ViewModel(array('items' => $items));
   }
 
   /**
