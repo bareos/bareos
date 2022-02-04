@@ -29,6 +29,7 @@ Director {
   # OptimizeForSpeed = No
   NdmpSnooping = Yes
   NdmpLogLevel = 40
+  # NdmpNamelistFhinfoSetZeroForInvalidUquad = No
   AbsoluteJobTimeout = 10
   Auditing = Yes
   AuditEvents = "item11", "item12", ".*"

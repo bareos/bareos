@@ -188,6 +188,13 @@
           "equals": true,
           "versions": "13.2.0-"
         },
+        "NdmpNamelistFhinfoSetZeroForInvalidUquad": {
+          "datatype": "BOOLEAN",
+          "code": 0,
+          "default_value": "false",
+          "equals": true,
+          "versions": "20.0.6-"
+        },
         "AbsoluteJobTimeout": {
           "datatype": "PINT32",
           "code": 0,
