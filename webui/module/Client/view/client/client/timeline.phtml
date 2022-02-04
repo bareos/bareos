@@ -29,51 +29,49 @@ $this->headTitle($title);
 ?>
 
 <ul class="nav nav-tabs">
-   <li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
-   <li><a href="<?php echo $this->url('job', array('action'=>'actions')); ?>"><?php echo $this->translate('Actions'); ?></a></li>
-   <li><a href="<?php echo $this->url('job', array('action'=>'run')); ?>"><?php echo $this->translate('Run'); ?></a></li>
-   <li class="active"><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Timeline'); ?></a></li>
+  <li><a href="<?php echo $this->url('job', array('action' => 'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
+  <li><a href="<?php echo $this->url('job', array('action' => 'actions')); ?>"><?php echo $this->translate('Actions'); ?></a></li>
+  <li><a href="<?php echo $this->url('job', array('action' => 'run')); ?>"><?php echo $this->translate('Run'); ?></a></li>
+  <li class="active"><a href="<?php echo $this->url('job', array('action' => 'timeline')); ?>"><?php echo $this->translate('Timeline'); ?></a></li>
 </ul>
 
 <br />
 
-<?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
+<?php if ($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands);
+elseif (!$this->acl_alert) : ?>
 
-<!-- modal-004 start -->
-<div id="modal-004" class="modal fade modal-004" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
-  <div class="modal-dialog modal-sm">
-    <div class="modal-content">
-   <div class="modal-header">
-   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-   <h4 class="modal-title" id="myModalLabel"></h4>
-      </div>
-      <div class="modal-body">
-         <p><?php echo $this->translate("Please select at least one client."); ?></p>
-      </div>
-      <div class="modal-footer">
-         <button id="modal-004-btn-ok" type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("OK"); ?></button>
+  <!-- modal-004 start -->
+  <div id="modal-004" class="modal fade modal-004" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="myModalLabel"></h4>
+        </div>
+        <div class="modal-body">
+          <p><?php echo $this->translate("Please select at least one client."); ?></p>
+        </div>
+        <div class="modal-footer">
+          <button id="modal-004-btn-ok" type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("OK"); ?></button>
+        </div>
       </div>
     </div>
   </div>
-</div>
-<!-- modal-004 end -->
+  <!-- modal-004 end -->
 
-<div class="row">
+  <div class="row">
 
-  <div class="col-md-3">
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        <h3 class="panel-title"><?php echo $this->translate('Selection'); ?></h3>
-      </div>
-      <div class="panel-body">
+    <div class="col-md-3">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title"><?php echo $this->translate('Selection'); ?></h3>
+        </div>
+        <div class="panel-body">
 
-        <div class="col-md-11"><input id="rangeslider" style="width: 100%;"></div>
-        <br />
+          <div class="col-md-11"><input id="rangeslider" style="width: 100%;"></div>
+          <br />
 
-          <table
-            class="table table-no-bordered table-hover"
-            id="clients"
-            data-filter-control="true">
+          <table class="table table-no-bordered table-hover" id="clients" data-filter-control="true">
             <thead class="bg-primary">
               <th></th>
               <th data-field="name"><?php echo $this->translate("Name"); ?></th>
@@ -86,136 +84,140 @@ $this->headTitle($title);
             <br /><br />
           </div>
 
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-9">
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        <h3 class="panel-title"><?php echo $this->translate('Timeline'); ?></h3>
-        <ul class="list-inline panel-actions">
-          <li><a href="#" id="panel-fullscreen" role="button" title="Toggle fullscreen"><i class="glyphicon glyphicon-resize-full"></i></a></li>
-        </ul>
-      </div>
-      <div class="panel-body">
-        <div id="timeline-chart"></div>
-        <div id="legend">
-          <ul>
-            <li style="color: #5cb85c; display: inline;">&#x25CF; <?php echo $this->translate("Successful"); ?></li>
-            <li style="color: #f0ad4e; display: inline;">&#x25CF; <?php echo $this->translate("Warning"); ?></li>
-            <li style="color: #5bc0de; display: inline;">&#x25CF; <?php echo $this->translate("Running"); ?></li>
-            <li style="color: #555555; display: inline;">&#x25CF; <?php echo $this->translate("Waiting"); ?></li>
-            <li style="color: #d9534f; display: inline;">&#x25CF; <?php echo $this->translate("Failed"); ?></li>
-          </ul>
         </div>
       </div>
     </div>
+
+    <div class="col-md-9">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title"><?php echo $this->translate('Timeline'); ?></h3>
+          <ul class="list-inline panel-actions">
+            <li><a href="#" id="panel-fullscreen" role="button" title="Toggle fullscreen"><i class="glyphicon glyphicon-resize-full"></i></a></li>
+          </ul>
+        </div>
+        <div class="panel-body">
+          <div id="timeline-chart"></div>
+          <div id="legend">
+            <ul>
+              <li style="color: #5cb85c; display: inline;">&#x25CF; <?php echo $this->translate("Successful"); ?></li>
+              <li style="color: #f0ad4e; display: inline;">&#x25CF; <?php echo $this->translate("Warning"); ?></li>
+              <li style="color: #5bc0de; display: inline;">&#x25CF; <?php echo $this->translate("Running"); ?></li>
+              <li style="color: #555555; display: inline;">&#x25CF; <?php echo $this->translate("Waiting"); ?></li>
+              <li style="color: #d9534f; display: inline;">&#x25CF; <?php echo $this->translate("Failed"); ?></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-</div>
+  <?php
+  echo $this->headScript()->prependFile($this->basePath() . '/js/timeline.js');
+  echo $this->headScript()->prependFile($this->basePath() . '/js/apexcharts.min.js');
+  echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+  echo $this->headLink()->prependStylesheet($this->basePath() . '/css/timeline.css');
+  echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-slider.min.css');
+  //echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table-filter-control.min.css');
+  echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+  echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-slider.min.js');
+  echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-formatter.js');
+  //echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-filter-control.min.js');
+  echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+  echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+  echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
+  ?>
 
-<?php
-   echo $this->headScript()->prependFile($this->basePath() . '/js/timeline.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/apexcharts.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/timeline.css');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-slider.min.css');
-   //echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table-filter-control.min.css');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-slider.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-formatter.js');
-   //echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-filter-control.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
-?>
+  <script>
+    var p;
+    var currenttime;
 
-<script>
-
-  var p;
-  var currenttime;
-
-  var options = {
-    series: [],
-    noData: {
-      text: 'Please select at least one client.'
-    },
-    chart: {
-      height: 600,
-      type: 'rangeBar',
-      toolbar: {
-        tools: {
-          reset: false,
-          customIcons: [{
-            icon: '<span class="glyphicon glyphicon-home" aria-hidden="true"></span>',
-            index: 4,
-            title: 'Reset Zoom',
-            click: function (chart, options, e) {
-              updateChartOptions(currenttime, p);
-            }
-          }]
+    var options = {
+      series: [],
+      noData: {
+        text: 'Please select at least one client.'
+      },
+      chart: {
+        height: 600,
+        type: 'rangeBar',
+        toolbar: {
+          tools: {
+            reset: false,
+            customIcons: [{
+              icon: '<span class="glyphicon glyphicon-home" aria-hidden="true"></span>',
+              index: 4,
+              title: 'Reset Zoom',
+              click: function(chart, options, e) {
+                updateChartOptions(currenttime, p);
+              }
+            }]
+          }
+        },
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true
         }
-      },
-    },
-    plotOptions: {
-      bar: {
-        horizontal: true
-      }
-    },
-    xaxis: {
-      type: 'datetime',
-      labels: {
-        datetimeUTC: true,
-        format: 'dd MMM HH:mm'
-      },
-    },
-    marker: {
-      show: true
-    },
-    tooltip: {
-      custom: function({series, seriesIndex, dataPointIndex, w}) {
-          var data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
-          return '<div style="background: #000; color: #fff; padding: 5px 5px 5px 5px;">' +
-          '<b>Job</b>: ' + data.name + '</br>' +
-          '<b>Client</b>: ' + data.client + '</br>' +
-          '<b>Job Id</b>: ' + data.jobid + '</br>' +
-          '<b>Scheduled</b>: ' + data.schedtime + '</br>' +
-          '<b>Start</b>: ' + data.starttime + '</br>' +
-          '<b>End</b>: ' + data.endtime+ '</br>' +
-          '</div>';
-      }
-    },
-    grid: {
-      row: {
-          colors: ['#e5e5e5', 'transparent'],
-          opacity: 0.5
-      },
-      column: {
-          colors: ['#f8f8f8', 'transparent'],
       },
       xaxis: {
-        lines: {
-          show: true
+        type: 'datetime',
+        labels: {
+          datetimeUTC: true,
+          format: 'dd MMM HH:mm'
+        },
+      },
+      marker: {
+        show: true
+      },
+      tooltip: {
+        custom: function({
+          series,
+          seriesIndex,
+          dataPointIndex,
+          w
+        }) {
+          var data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
+          return '<div style="background: #000; color: #fff; padding: 5px 5px 5px 5px;">' +
+            '<b>Job</b>: ' + data.name + '</br>' +
+            '<b>Client</b>: ' + data.client + '</br>' +
+            '<b>Job Id</b>: ' + data.jobid + '</br>' +
+            '<b>Scheduled</b>: ' + data.schedtime + '</br>' +
+            '<b>Start</b>: ' + data.starttime + '</br>' +
+            '<b>End</b>: ' + data.endtime + '</br>' +
+            '</div>';
         }
-      }
-    },
-    fill: {
-      type: 'solid',
-      opacity: 0.6
-    },
-    plotOptions: {
-      bar: {
-        horizontal: true,
-        barHeight: '80%'
-      }
-    },
-  };
+      },
+      grid: {
+        row: {
+          colors: ['#e5e5e5', 'transparent'],
+          opacity: 0.5
+        },
+        column: {
+          colors: ['#f8f8f8', 'transparent'],
+        },
+        xaxis: {
+          lines: {
+            show: true
+          }
+        }
+      },
+      fill: {
+        type: 'solid',
+        opacity: 0.6
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true,
+          barHeight: '80%'
+        }
+      },
+    };
 
-  var chart = new ApexCharts(document.querySelector("#timeline-chart"), options);
-  chart.render();
+    var chart = new ApexCharts(document.querySelector("#timeline-chart"), options);
+    chart.render();
 
-  function showClientChart() {
+    function showClientChart() {
 
       let selection = $('#clients').bootstrapTable('getSelections');
 
@@ -227,7 +229,7 @@ $this->headTitle($title);
 
       let s = clients.join();
 
-      if(s.length === 0) {
+      if (s.length === 0) {
         $("#modal-004").modal();
       } else {
         p = getSliderValue();
@@ -240,7 +242,7 @@ $this->headTitle($title);
         let url = "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=client-timeline&clients=" + s + "&period='; ?>" + p;
 
         $.getJSON(url, function(response) {
-          if(response.length === 0) {
+          if (response.length === 0) {
             changeNoDataText(false);
           }
           chart.updateSeries([{
@@ -252,7 +254,7 @@ $this->headTitle($title);
         let timezoneoffset = new Date().getTimezoneOffset() * 60 * 1000;
         currenttime = new Date().getTime();
 
-        if(timezoneoffset <= 0) {
+        if (timezoneoffset <= 0) {
           currenttime += Math.abs(timezoneoffset);
         } else {
           currenttime -= Math.abs(timezoneoffset);
@@ -260,87 +262,82 @@ $this->headTitle($title);
 
         chart.addXaxisAnnotation({
           x: currenttime,
-            label: {
-              borderColor: '#000000',
-              style: {
-                color: '#ffffff',
-                background: '#000000',
-              },
-              text: 'now'
-            }
+          label: {
+            borderColor: '#000000',
+            style: {
+              color: '#ffffff',
+              background: '#000000',
+            },
+            text: 'now'
+          }
         });
 
         updateChartOptions(currenttime, p);
       }
-  }
+    }
 
-  var basePath = "<?php echo $this->basePath(); ?>";
+    var basePath = "<?php echo $this->basePath(); ?>";
 
-  function attachClientsTable() {
+    function attachClientsTable() {
       $('#clients').bootstrapTable({
-         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
-         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-         cookieIdTable: 'timeline_clients',
-         url: '<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>',
-         method: 'get',
-         dataType: 'json',
-         pagination : false,
-         sidePagination: 'client',
-         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
-         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-         search: true,
-         searchAlign: 'left',
-         showPaginationSwitch: false,
-         showRefresh: false,
-         sortName: 'name',
-         sortOrder: 'asc',
-         checkboxHeader: true,
-         clickToSelect: true,
-         virtualScroll: true,
-         height: 400,
-         sortable: false,
-         columns: [
-            {
-               field: 'state',
-               checkbox: true
-            },
-            {
-               field: 'name',
-               sortable: true,
-               formatter: function(value) {
-                  return formatClientName(value, basePath);
-               }
+        locale: '<?php echo str_replace('_', '-', $_SESSION['bareos']['locale']); ?>',
+        cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+        cookieIdTable: 'timeline_clients',
+        url: '<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>',
+        method: 'get',
+        dataType: 'json',
+        pagination: false,
+        sidePagination: 'client',
+        pageList: [<?php echo $_SESSION['bareos']['dt_lengthmenu']; ?>],
+        pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+        search: true,
+        searchAlign: 'left',
+        showPaginationSwitch: false,
+        showRefresh: false,
+        sortName: 'name',
+        sortOrder: 'asc',
+        checkboxHeader: true,
+        clickToSelect: true,
+        virtualScroll: true,
+        height: 400,
+        sortable: false,
+        columns: [{
+            field: 'state',
+            checkbox: true
+          },
+          {
+            field: 'name',
+            sortable: true,
+            formatter: function(value) {
+              return formatClientName(value, basePath);
             }
-         ]
+          }
+        ]
       });
-   }
+    }
 
-  $(document).ready(function() {
-    setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
-    setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+    $(document).ready(function() {
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-    attachClientsTable();
+      attachClientsTable();
 
-    // Timeline fullscreen toggle
-    $("#panel-fullscreen").click(function (e) {
-      e.preventDefault();
+      // Timeline fullscreen toggle
+      $("#panel-fullscreen").click(function(e) {
+        e.preventDefault();
 
-      var $this = $(this);
+        var $this = $(this);
 
-      if ($this.children('i').hasClass('glyphicon-resize-full'))
-      {
+        if ($this.children('i').hasClass('glyphicon-resize-full')) {
           $this.children('i').removeClass('glyphicon-resize-full');
           $this.children('i').addClass('glyphicon-resize-small');
-      }
-      else if ($this.children('i').hasClass('glyphicon-resize-small'))
-      {
+        } else if ($this.children('i').hasClass('glyphicon-resize-small')) {
           $this.children('i').removeClass('glyphicon-resize-small');
           $this.children('i').addClass('glyphicon-resize-full');
-      }
-      $(this).closest('.panel').toggleClass('panel-fullscreen');
+        }
+        $(this).closest('.panel').toggleClass('panel-fullscreen');
+      });
     });
-  });
-
-</script>
+  </script>
 
 <?php endif; ?>
