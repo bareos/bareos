@@ -52,6 +52,13 @@ static char OK_replicate[] = "3000 OK replicate data\n";
 
 void PossibleIncompleteJob(JobControlRecord* jcr, int32_t last_file_index) {}
 
+static void DoCheckpoint(JobControlRecord* jcr)
+{
+  Jmsg0(jcr, M_INFO, 0, _("Doing checkpoint.\n"));
+  jcr->impl->dcr->DirAskToUpdateFileList(jcr);
+  jcr->impl->dcr->DirCreateJobmediaRecord(false);
+};
+
 // Append Data sent from File daemon
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 {
@@ -78,13 +85,18 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   if (!bs->SetBufferSize(dcr->device_resource->max_network_buffer_size,
                          BNET_SETBUF_WRITE)) {
     Jmsg0(jcr, M_FATAL, 0, _("Unable to set network buffer size.\n"));
-    goto bail_out;
+    jcr->setJobStatus(JS_ErrorTerminated);
+    return false;
   }
 
-  if (!AcquireDeviceForAppend(dcr)) { goto bail_out; }
+  if (!AcquireDeviceForAppend(dcr)) {
+    jcr->setJobStatus(JS_ErrorTerminated);
+    return false;
+  }
 
   if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) != bRC_OK) {
-    goto bail_out;
+    jcr->setJobStatus(JS_ErrorTerminated);
+    return false;
   }
 
   jcr->sendJobStatus(JS_Running);
@@ -94,11 +106,15 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   }
   Dmsg1(50, "Begin append device=%s\n", dev->print_name());
 
-  if (!BeginDataSpool(dcr)) { goto bail_out; }
+  if (!BeginDataSpool(dcr)) {
+    jcr->setJobStatus(JS_ErrorTerminated);
+    return false;
+  }
 
   if (!BeginAttributeSpool(jcr)) {
     DiscardDataSpool(dcr);
-    goto bail_out;
+    jcr->setJobStatus(JS_ErrorTerminated);
+    return false;
   }
 
   Dmsg0(100, "Just after AcquireDeviceForAppend\n");
@@ -144,6 +160,12 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
    */
   dcr->VolFirstIndex = dcr->VolLastIndex = 0;
   jcr->run_time = time(NULL); /* start counting time for rates */
+
+  auto now
+      = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  int checkpointinterval = 10;
+  time_t next_checkpoint_time = now + checkpointinterval;
+
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
     /*
      * Read Stream header from the daemon.
@@ -246,6 +268,20 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       ok = false;
       break;
     }
+
+
+    if (checkpointinterval) {
+      now = std::chrono::system_clock::to_time_t(
+          std::chrono::system_clock::now());
+      if (now > next_checkpoint_time) {
+        next_checkpoint_time = now + checkpointinterval;
+        Emsg2(M_INFO, 0,
+              _("Doing checkpoint after 10 seconds: now: %d nextcheckpoint: "
+                "%d\n"),
+              now, next_checkpoint_time);
+        DoCheckpoint(jcr);
+      }
+    }
   }
 
   // Create Job status for end of session label
@@ -326,10 +362,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   Dmsg1(100, "return from DoAppendData() ok=%d\n", ok);
   return ok;
-
-bail_out:
-  jcr->setJobStatus(JS_ErrorTerminated);
-  return false;
 }
 
 // Send attributes and digest to Director for Catalog
