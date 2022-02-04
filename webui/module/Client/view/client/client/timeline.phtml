@@ -48,7 +48,7 @@ $this->headTitle($title);
    <h4 class="modal-title" id="myModalLabel"></h4>
       </div>
       <div class="modal-body">
-         <p><?php echo $this->translate("Please select at least one job."); ?></p>
+         <p><?php echo $this->translate("Please select at least one client."); ?></p>
       </div>
       <div class="modal-footer">
          <button id="modal-004-btn-ok" type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("OK"); ?></button>
@@ -71,17 +71,17 @@ $this->headTitle($title);
         <br />
 
         <ul class="nav nav-tabs">
-          <li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>">Clients</a></li>
-          <li class="active"><a href="<?php echo $this->url('job', array('action'=>'timelinejobs')); ?>">Jobs</a></li>
+          <li class="active"><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>">Clients</a></li>
+          <li><a href="<?php echo $this->url('job', array('action'=>'timelinejobs')); ?>">Jobs</a></li>
         </ul>
         <br />
 
         <div class="tab-content">
 
-        <div id="jobs-tab" class="tab-pane fade in active">
+        <div id="clients-tab" class="tab-pane fade in active">
           <table
             class="table table-no-bordered table-hover"
-            id="jobs"
+            id="clients"
             data-filter-control="true">
             <thead class="bg-primary">
               <th></th>
@@ -90,7 +90,7 @@ $this->headTitle($title);
           </table>
           <div id="custom-toolbar">
             <br /><br />
-            <button id="button" class="btn btn-primary" onclick="showJobChart()">Show</button>
+            <button id="button" class="btn btn-primary" onclick="showClientChart()">Show</button>
             <br /><br />
           </div>
         </div>
@@ -150,7 +150,7 @@ $this->headTitle($title);
   var options = {
     series: [],
     noData: {
-      text: 'Please select at least one job.'
+      text: 'Please select at least one client.'
     },
     chart: {
       height: 600,
@@ -185,7 +185,7 @@ $this->headTitle($title);
       show: true
     },
     tooltip: {
-        custom: function({series, seriesIndex, dataPointIndex, w}) {
+      custom: function({series, seriesIndex, dataPointIndex, w}) {
           var data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
           return '<div style="background: #000; color: #fff; padding: 5px 5px 5px 5px;">' +
           '<b>Job</b>: ' + data.name + '</br>' +
@@ -195,7 +195,7 @@ $this->headTitle($title);
           '<b>Start</b>: ' + data.starttime + '</br>' +
           '<b>End</b>: ' + data.endtime+ '</br>' +
           '</div>';
-        }
+      }
     },
     grid: {
       row: {
@@ -226,17 +226,17 @@ $this->headTitle($title);
   var chart = new ApexCharts(document.querySelector("#timeline-chart"), options);
   chart.render();
 
-  function showJobChart() {
+  function showClientChart() {
 
-      let selection = $('#jobs').bootstrapTable('getSelections');
+      let selection = $('#clients').bootstrapTable('getSelections');
 
-      const jobs = [];
+      const clients = [];
 
       selection.forEach(function(element) {
-        jobs.push(element.name);
+        clients.push(element.name);
       });
 
-      let s = jobs.join();
+      let s = clients.join();
 
       if(s.length === 0) {
         $("#modal-004").modal();
@@ -248,10 +248,9 @@ $this->headTitle($title);
           data: []
         }]);
 
-        let url = "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=job-timeline&jobs=" + s + "&period='; ?>" + p;
+        let url = "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=client-timeline&clients=" + s + "&period='; ?>" + p;
 
         $.getJSON(url, function(response) {
-          console.log(response.length);
           if(response.length === 0) {
             changeNoDataText(false);
           }
@@ -288,12 +287,12 @@ $this->headTitle($title);
 
   var basePath = "<?php echo $this->basePath(); ?>";
 
-   function attachJobsTable() {
-      $('#jobs').bootstrapTable({
+  function attachClientsTable() {
+      $('#clients').bootstrapTable({
          locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
          cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-         cookieIdTable: 'timeline_jobs',
-         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=all-job-resources'; ?>',
+         cookieIdTable: 'timeline_clients',
+         url: '<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>',
          method: 'get',
          dataType: 'json',
          pagination : false,
@@ -320,7 +319,7 @@ $this->headTitle($title);
                field: 'name',
                sortable: true,
                formatter: function(value) {
-                  return formatJobName(value, basePath);
+                  return formatClientName(value, basePath);
                }
             }
          ]
@@ -328,31 +327,30 @@ $this->headTitle($title);
    }
 
   $(document).ready(function() {
-      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
-      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+    setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+    setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-      attachJobsTable();
+    attachClientsTable();
 
-      // Timeline fullscreen toggle
-      $("#panel-fullscreen").click(function (e) {
-        e.preventDefault();
+    // Timeline fullscreen toggle
+    $("#panel-fullscreen").click(function (e) {
+      e.preventDefault();
 
-        var $this = $(this);
+      var $this = $(this);
 
-        if ($this.children('i').hasClass('glyphicon-resize-full'))
-        {
-            $this.children('i').removeClass('glyphicon-resize-full');
-            $this.children('i').addClass('glyphicon-resize-small');
-        }
-        else if ($this.children('i').hasClass('glyphicon-resize-small'))
-        {
-            $this.children('i').removeClass('glyphicon-resize-small');
-            $this.children('i').addClass('glyphicon-resize-full');
-        }
-        $(this).closest('.panel').toggleClass('panel-fullscreen');
-      });
-
-   });
+      if ($this.children('i').hasClass('glyphicon-resize-full'))
+      {
+          $this.children('i').removeClass('glyphicon-resize-full');
+          $this.children('i').addClass('glyphicon-resize-small');
+      }
+      else if ($this.children('i').hasClass('glyphicon-resize-small'))
+      {
+          $this.children('i').removeClass('glyphicon-resize-small');
+          $this.children('i').addClass('glyphicon-resize-full');
+      }
+      $(this).closest('.panel').toggleClass('panel-fullscreen');
+    });
+  });
 
 </script>
 
