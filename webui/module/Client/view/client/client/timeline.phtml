@@ -70,15 +70,6 @@ $this->headTitle($title);
         <div class="col-md-11"><input id="rangeslider" style="width: 100%;"></div>
         <br />
 
-        <ul class="nav nav-tabs">
-          <li class="active"><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>">Clients</a></li>
-          <li><a href="<?php echo $this->url('job', array('action'=>'timelinejobs')); ?>">Jobs</a></li>
-        </ul>
-        <br />
-
-        <div class="tab-content">
-
-        <div id="clients-tab" class="tab-pane fade in active">
           <table
             class="table table-no-bordered table-hover"
             id="clients"
@@ -88,14 +79,12 @@ $this->headTitle($title);
               <th data-field="name"><?php echo $this->translate("Name"); ?></th>
             </thead>
           </table>
+
           <div id="custom-toolbar">
             <br /><br />
             <button id="button" class="btn btn-primary" onclick="showClientChart()">Show</button>
             <br /><br />
           </div>
-        </div>
-
-        </div>
 
       </div>
     </div>
