@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,13 +22,13 @@ if(AUTOCHANGER_TEST_ENABLED)
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
   # Make sure these tests run sequentially.
   set_tests_properties(
-    ${SYSTEMTEST_PREFIX}autochanger:backup-restore PROPERTIES RESOURCE_LOCK
-                                               autochanger_resource
+    ${SYSTEMTEST_PREFIX}autochanger:backup-restore
+    PROPERTIES RESOURCE_LOCK autochanger_resource
   )
-set_tests_properties(
-  ${SYSTEMTEST_PREFIX}autochanger:label-release-autoselect PROPERTIES RESOURCE_LOCK
-                                             autochanger_resource
-)
+  set_tests_properties(
+    ${SYSTEMTEST_PREFIX}autochanger:label-release-autoselect
+    PROPERTIES RESOURCE_LOCK autochanger_resource
+  )
 else()
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
 endif()
