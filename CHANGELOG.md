@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1049]
 
 ### Changed
+- webui: add timeline chart by jobs [PR #1063]
 
 ### Removed
 

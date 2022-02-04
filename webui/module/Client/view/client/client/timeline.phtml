@@ -29,10 +29,8 @@ $this->headTitle($title);
 ?>
 
 <ul class="nav nav-tabs">
-  <li><a href="<?php echo $this->url('job', array('action' => 'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
-  <li><a href="<?php echo $this->url('job', array('action' => 'actions')); ?>"><?php echo $this->translate('Actions'); ?></a></li>
-  <li><a href="<?php echo $this->url('job', array('action' => 'run')); ?>"><?php echo $this->translate('Run'); ?></a></li>
-  <li class="active"><a href="<?php echo $this->url('job', array('action' => 'timeline')); ?>"><?php echo $this->translate('Timeline'); ?></a></li>
+   <li><a href="<?php echo $this->url('client', array('action'=>'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('client', array('action'=>'timeline')); ?>"><?php echo $this->translate('Timeline'); ?></a></li>
 </ul>
 
 <br />
@@ -49,7 +47,7 @@ elseif (!$this->acl_alert) : ?>
           <h4 class="modal-title" id="myModalLabel"></h4>
         </div>
         <div class="modal-body">
-          <p><?php echo $this->translate("Please select at least one job."); ?></p>
+          <p><?php echo $this->translate("Please select at least one client."); ?></p>
         </div>
         <div class="modal-footer">
           <button id="modal-004-btn-ok" type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $this->translate("OK"); ?></button>
@@ -71,7 +69,7 @@ elseif (!$this->acl_alert) : ?>
           <div class="col-md-11"><input id="rangeslider" style="width: 100%;"></div>
           <br />
 
-          <table class="table table-no-bordered table-hover" id="jobs" data-filter-control="true">
+          <table class="table table-no-bordered table-hover" id="clients" data-filter-control="true">
             <thead class="bg-primary">
               <th></th>
               <th data-field="name"><?php echo $this->translate("Name"); ?></th>
@@ -80,7 +78,7 @@ elseif (!$this->acl_alert) : ?>
 
           <div id="custom-toolbar">
             <br /><br />
-            <button id="button" class="btn btn-primary" onclick="showJobChart()">Show</button>
+            <button id="button" class="btn btn-primary" onclick="showClientChart()">Show</button>
             <br /><br />
           </div>
 
@@ -136,7 +134,7 @@ elseif (!$this->acl_alert) : ?>
     var options = {
       series: [],
       noData: {
-        text: 'Please select at least one job.'
+        text: 'Please select at least one client.'
       },
       chart: {
         height: 600,
@@ -217,17 +215,17 @@ elseif (!$this->acl_alert) : ?>
     var chart = new ApexCharts(document.querySelector("#timeline-chart"), options);
     chart.render();
 
-    function showJobChart() {
+    function showClientChart() {
 
-      let selection = $('#jobs').bootstrapTable('getSelections');
+      let selection = $('#clients').bootstrapTable('getSelections');
 
-      const jobs = [];
+      const clients = [];
 
       selection.forEach(function(element) {
-        jobs.push(element.name);
+        clients.push(element.name);
       });
 
-      let s = jobs.join();
+      let s = clients.join();
 
       if (s.length === 0) {
         $("#modal-004").modal();
@@ -239,10 +237,9 @@ elseif (!$this->acl_alert) : ?>
           data: []
         }]);
 
-        let url = "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=job-timeline&jobs=" + s + "&period='; ?>" + p;
+        let url = "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=client-timeline&clients=" + s + "&period='; ?>" + p;
 
         $.getJSON(url, function(response) {
-          console.log(response.length);
           if (response.length === 0) {
             changeNoDataText(false);
           }
@@ -279,12 +276,12 @@ elseif (!$this->acl_alert) : ?>
 
     var basePath = "<?php echo $this->basePath(); ?>";
 
-    function attachJobsTable() {
-      $('#jobs').bootstrapTable({
+    function attachClientsTable() {
+      $('#clients').bootstrapTable({
         locale: '<?php echo str_replace('_', '-', $_SESSION['bareos']['locale']); ?>',
         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-        cookieIdTable: 'timeline_jobs',
-        url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=all-job-resources'; ?>',
+        cookieIdTable: 'timeline_clients',
+        url: '<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>',
         method: 'get',
         dataType: 'json',
         pagination: false,
@@ -310,7 +307,7 @@ elseif (!$this->acl_alert) : ?>
             field: 'name',
             sortable: true,
             formatter: function(value) {
-              return formatJobName(value, basePath);
+              return formatClientName(value, basePath);
             }
           }
         ]
@@ -321,7 +318,7 @@ elseif (!$this->acl_alert) : ?>
       setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
       setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-      attachJobsTable();
+      attachClientsTable();
 
       // Timeline fullscreen toggle
       $("#panel-fullscreen").click(function(e) {
@@ -338,7 +335,6 @@ elseif (!$this->acl_alert) : ?>
         }
         $(this).closest('.panel').toggleClass('panel-fullscreen');
       });
-
     });
   </script>
 

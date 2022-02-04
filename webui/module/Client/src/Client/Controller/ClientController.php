@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -37,6 +37,7 @@ class ClientController extends AbstractActionController
    */
   protected $clientModel = null;
   protected $directorModel = null;
+  protected $jobModel = null;
   protected $bsock = null;
   protected $acl_alert = false;
 
@@ -258,6 +259,44 @@ class ClientController extends AbstractActionController
     );
   }
 
+  public function timelineAction()
+  {
+    $this->RequestURIPlugin()->setRequestURI();
+
+    if(!$this->SessionTimeoutPlugin()->isValid()) {
+      return $this->redirect()->toRoute(
+        'auth',
+        array(
+          'action' => 'login'
+        ),
+        array(
+          'query' => array(
+            'req' => $this->RequestURIPlugin()->getRequestURI(),
+            'dird' => $_SESSION['bareos']['director']
+          )
+        )
+      );
+    }
+
+    $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
+    $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
+      $module_config['console_commands']['Job']['mandatory']
+    );
+    if(count($invalid_commands) > 0) {
+      $this->acl_alert = true;
+      return new ViewModel(
+        array(
+          'acl_alert' => $this->acl_alert,
+          'invalid_commands' => implode(",", $invalid_commands)
+        )
+      );
+    }
+
+    $this->bsock = $this->getServiceLocator()->get('director');
+
+    return new ViewModel();
+  }
+
   public function getDataAction()
   {
     $this->RequestURIPlugin()->setRequestURI();
@@ -281,6 +320,8 @@ class ClientController extends AbstractActionController
 
     $data = $this->params()->fromQuery('data');
     $client = $this->params()->fromQuery('client');
+    $clients = $this->params()->fromQuery('clients');
+    $period = $this->params()->fromQuery('period');
 
     if($data == "all") {
       try {
@@ -464,6 +505,95 @@ class ClientController extends AbstractActionController
         echo $e->getMessage();
       }
     }
+    elseif($data == "client-timeline") {
+      try {
+        $result = [];
+        $c = explode(",", $clients);
+
+        $this->bsock = $this->getServiceLocator()->get('director');
+        foreach($c as $client) {
+          $result = array_merge($result, $this->getJobModel()->getClientJobsForPeriod($this->bsock, $client, $period));
+        }
+        $this->bsock->disconnect();
+
+        $jobs = array();
+
+        // Ensure a proper date.timezone setting for the job timeline.
+        // Surpress a possible error thrown by date_default_timezone_get()
+        // in older PHP versions with @ in front of the function call.
+        date_default_timezone_set(@date_default_timezone_get());
+
+        foreach($result as $job) {
+
+          $starttime = new \DateTime($job['starttime']);
+          $endtime = new \DateTime($job['endtime']);
+          $schedtime = new \DateTime($job['schedtime']);
+
+          $starttime = $starttime->format('U')*1000;
+          $endtime = $endtime->format('U')*1000;
+          $schedtime = $schedtime->format('U')*1000;
+
+          switch($job['jobstatus']) {
+            // SUCESS
+            case 'T':
+              $fillcolor = "#5cb85c";
+              break;
+            // WARNING
+            case 'A':
+            case 'W':
+              $fillcolor = "#f0ad4e";
+              break;
+            // RUNNING
+            case 'R':
+            case 'l':
+              $fillcolor = "#5bc0de";
+              $endtime = new \DateTime(null);
+              $endtime = $endtime->format('U')*1000;
+              break;
+            // FAILED
+            case 'E':
+            case 'e':
+            case 'f':
+              $fillcolor = "#d9534f";
+              break;
+            // WAITING
+            case 'F':
+            case 'S':
+            case 's':
+            case 'M':
+            case 'm':
+            case 'j':
+            case 'C':
+            case 'c':
+            case 'd':
+            case 't':
+            case 'p':
+            case 'q':
+              $fillcolor = "#555555";
+              $endtime = new \DateTime(null);
+              $endtime = $endtime->format('U')*1000;
+              break;
+            default:
+              $fillcolor = "#555555";
+              break;
+            }
+
+            // workaround to display short job runs <= 1 sec.
+            if($starttime === $endtime) {
+              $endtime += 1000;
+            }
+
+            $item = '{"x":"'.$job['client'].'","y":["'.$starttime.'","'.$endtime.'"],"fillColor":"'.$fillcolor.'","name":"'.$job['name'].'","jobid":"'.$job['jobid'].'","starttime":"'.$job['starttime'].'","endtime":"'.$job['endtime'].'","schedtime":"'.$job['schedtime'].'","client":"'.$job['client'].'"}';
+            array_push($jobs, json_decode($item));
+
+        }
+
+        $result = $jobs;
+
+      } catch(Exception $e) {
+        echo $e->getMessage();
+      }
+    }
 
     $response = $this->getResponse();
     $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
@@ -501,5 +631,14 @@ class ClientController extends AbstractActionController
       $this->directorModel = $sm->get('Director\Model\DirectorModel');
     }
     return $this->directorModel;
+  }
+
+  public function getJobModel()
+  {
+    if(!$this->jobModel) {
+      $sm = $this->getServiceLocator();
+      $this->jobModel = $sm->get('Job\Model\JobModel');
+    }
+    return $this->jobModel;
   }
 }
