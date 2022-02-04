@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -140,11 +140,13 @@ static inline int set_files_to_restore(JobControlRecord* jcr,
         if (bstrncmp(restore_pathname.c_str(), ndmp_filesystem, len)) {
           AddToNamelist(job, restore_pathname.c_str() + len, restore_prefix,
                         (char*)"", (char*)"", NDMP_INVALID_U_QUAD,
-                        NDMP_INVALID_U_QUAD);
+                        NDMP_INVALID_U_QUAD,
+                        me->ndmp_fhinfo_set_zero_for_invalid_u_quad);
         } else {
           AddToNamelist(job, restore_pathname.c_str(), restore_prefix,
                         (char*)"", (char*)"", NDMP_INVALID_U_QUAD,
-                        NDMP_INVALID_U_QUAD);
+                        NDMP_INVALID_U_QUAD,
+                        me->ndmp_fhinfo_set_zero_for_invalid_u_quad);
         }
         cnt++;
       }
@@ -338,7 +340,8 @@ static inline bool fill_restore_environment(JobControlRecord* jcr,
        * There is no specific filename selected so restore everything.
        */
       AddToNamelist(job, (char*)"", destination_path.c_str(), (char*)"",
-                    (char*)"", NDMP_INVALID_U_QUAD, NDMP_INVALID_U_QUAD);
+                    (char*)"", NDMP_INVALID_U_QUAD, NDMP_INVALID_U_QUAD,
+                    me->ndmp_fhinfo_set_zero_for_invalid_u_quad);
     }
   }
 

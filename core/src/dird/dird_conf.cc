@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -156,6 +156,7 @@ static ResourceItem dir_items[] = {
   { "KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir, keyencrkey), 1, 0, NULL, NULL, NULL },
   { "NdmpSnooping", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_snooping), 0, 0, NULL, "13.2.0-", NULL },
   { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_dir, ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4", "13.2.0-", NULL },
+  { "NdmpNamelistFhinfoSetZeroForInvalidUquad", CFG_TYPE_BOOL, ITEM(res_dir, ndmp_fhinfo_set_zero_for_invalid_u_quad), 0, CFG_ITEM_DEFAULT, "false", "20.0.6-", NULL },
   { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_dir, jcr_watchdog_time), 0, 0, NULL, "14.2.0-", NULL },
   { "Auditing", CFG_TYPE_BOOL, ITEM(res_dir, auditing), 0, CFG_ITEM_DEFAULT, "false", "14.2.0-", NULL },
   { "AuditEvents", CFG_TYPE_AUDIT, ITEM(res_dir, audit_events), 0, 0, NULL, "14.2.0-", NULL },

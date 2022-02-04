@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Added
+- ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1058]
+
 ## [20.0.5] - 2021-12-20
 
 ### Fixed
@@ -458,4 +461,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #991]: https://github.com/bareos/bareos/pull/991
 [PR #1000]: https://github.com/bareos/bareos/pull/1000
 [PR #1001]: https://github.com/bareos/bareos/pull/1001
+[PR #1058]: https://github.com/bareos/bareos/pull/1058
 [unreleased]: https://github.com/bareos/bareos/tree/master
