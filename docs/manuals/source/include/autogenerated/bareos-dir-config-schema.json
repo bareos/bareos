@@ -208,7 +208,7 @@
           "datatype": "BOOLEAN",
           "code": 0,
           "equals": true,
-          "versions": "21.0.1-"
+          "versions": "20.0.6-"
         },
         "AbsoluteJobTimeout": {
           "datatype": "PINT32",
