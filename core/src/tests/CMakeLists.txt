@@ -444,7 +444,8 @@ endif() # NOT client-only
 
 if(NOT client-only)
   bareos_add_test(
-    sd_statistics_thread LINK_LIBRARIES testing_common dird_objects bareos
-                                        bareossql bareosfind GTest::gtest_main
+    sd_statistics_thread
+    LINK_LIBRARIES testing_common dird_objects bareos bareossql bareosfind
+                   Threads::Threads GTest::gtest_main
   )
 endif() # NOT client-only
