@@ -27,6 +27,7 @@ macro(create_systemtests_directory)
 
   configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
+  configurefilestosystemtest("systemtests" "scripts" "mysql.sh" @ONLY "")
   configurefilestosystemtest(
     "systemtests" "scripts" "run_python_unittests.sh" @ONLY ""
   )

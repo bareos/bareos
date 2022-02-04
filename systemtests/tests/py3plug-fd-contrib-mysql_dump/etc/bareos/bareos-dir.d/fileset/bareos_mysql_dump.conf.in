@@ -7,8 +7,6 @@ FileSet {
     }
     Plugin = "@python_module_name@"
       ":module_name=bareos_mysql_dump"
-      ":defaultsfile=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/mysqldefaults"
-      ":mysqluser=root"
-      # ":mysqlpassword=secret"
+      ":defaultsfile=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/my.cnf"
   }
 }

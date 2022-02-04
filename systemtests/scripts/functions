@@ -236,6 +236,13 @@ print_debug()
    fi
 }
 
+printf_debug()
+{
+   if is_debug; then
+     printf "$@" >&2
+   fi
+}
+
 write_stdin_to_file()
 {
   FILE="$1"
@@ -506,6 +513,27 @@ kill_process() {
   else
     echo "$1 is not a valid pid to kill" >&2
   fi
+}
+
+waitpid()
+{
+    # loop until the process no longer exists, or it's a zombie.
+    local PID=$1
+    local RC=1
+    printf_debug "waiting for pid %s " "$PID"
+    local command=""
+    command=$(ps -p $PID -o command=) || true
+    printf_debug "(%s) " "$command"
+    while s=$(ps -p $PID -o s=) && [[ "$s" && "$s" != 'Z' ]]; do
+        printf_debug "."
+        sleep 1
+    done
+    if [ -z "$s" ]; then
+        printf_debug " OK"
+        RC=0
+    fi
+    printf_debug "\n"
+    return $RC
 }
 
 stop_bareos()

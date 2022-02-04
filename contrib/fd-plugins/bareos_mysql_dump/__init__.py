@@ -13,7 +13,7 @@ import BareosFdWrapper
 from BareosFdWrapper import *
 
 # This module contains the used plugin class
-from BareosFdMySQLclass import BareosFdMySQLclass
+from bareos_mysql_dump.BareosFdMySQLclass import BareosFdMySQLclass
 
 def load_bareos_plugin(plugindef):
     '''

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -50,6 +50,8 @@ endif()
 if(TARGET python3-fd
    AND MARIABACKUP_BINARY
    AND MARIADB_DAEMON_BINARY
+   AND MARIADB_CLIENT_BINARY
+   AND MARIADB_MYSQL_INSTALL_DB_SCRIPT
 )
   create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-mariabackup")
 else()
@@ -59,7 +61,7 @@ else()
     DISABLED
     COMMENT
     "
-    no python-fd or MARIABACKUP_BINARY,MARIADB_DAEMON_BINARY,MARIADB_CLIENT_BINARY or MARIADB_MYSQL_INSTALL_DB_SCRIPT not set.
+    no python3-fd or MARIABACKUP_BINARY,MARIADB_DAEMON_BINARY,MARIADB_CLIENT_BINARY or MARIADB_MYSQL_INSTALL_DB_SCRIPT not set.
     example:
     cmake -D MARIABACKUP_BINARY=/usr/bin/mariabackup \
     -D MARIADB_DAEMON_BINARY=/usr/libexec/mysqld \

@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 
 # originally contributed by:
-#Copyright 2014 Battelle Memorial Institute
-#Written by Evan Felix
-
+# Copyright 2014 Battelle Memorial Institute
+# Written by Evan Felix
 # With additions from Maik Aussendorf, Bareos GmbH & Co. KG 2015
 
 # This program is Free Software; you can redistribute it and/or
@@ -22,13 +21,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-
 from bareosfd import *
 import os
 from subprocess import *
 from  BareosFdPluginBaseclass import *
 import BareosFdWrapper
-
 
 class BareosFdMySQLclass(BareosFdPluginBaseclass):
     '''

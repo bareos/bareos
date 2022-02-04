@@ -18,59 +18,24 @@ fi
 JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
-MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=mysqldefaults --user=root"
+MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=mysqldefaults"
 
 JobName=backup-bareos-fd
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
+#shellcheck source=../scripts/mysql.sh
+. "${rscripts}"/mysql.sh
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
 
 XTRABACKUP="${XTRABACKUP_BINARY} --defaults-file=mysqldefaults"
-
-shutdown_mysql_server(){
-[ -f "mysql/data/${HOSTNAME}.pid" ] && kill "$(cat mysql/data/${HOSTNAME}.pid)" || :
-}
-
-startup_mysql_server(){
-"${MYSQL_DAEMON_BINARY}" --defaults-file=mysqldefaults >mysql/mysql.log 2>&1 &
-
-tries=60
-echo "waiting for mysql server to start"
-while ! $MYSQL_CLIENT <<< "select version();"  > /dev/null 2>&1; do
-  [ $((tries-=1)) -eq 0 ] && {
-    echo "Could not start mysql server"
-    cat mysql/mysql.log
-    shutdown_mysql_server
-    exit 1
-  }
-  echo -n "."
-  sleep 1
-done
-
-}
-
-
-
-shutdown_mysql_server
-
-rm -Rf mysql/data/*
-mkdir -p mysql/data/
-# directory for socket, depending on length (socket length is limited)
-rm -Rf  ${dbHost}
-mkdir -p ${dbHost}
-
-
-# initialize mysql db
-
-${MYSQL_DAEMON_BINARY} --defaults-file=mysqldefaults --initialize-insecure --user="$USER" > mysql/mysql_init.log
-
-startup_mysql_server
 xtrabackup_test_db="${db_name}_xtrabackup"
 
-
 start_test
+
+mysql_init
+mysql_server_start
 
 echo "create database ${xtrabackup_test_db}" | $MYSQL_CLIENT
 echo "CREATE TABLE test ( id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW())  " | $MYSQL_CLIENT "${xtrabackup_test_db}"
@@ -113,7 +78,7 @@ END_OF_DATA3
 
 run_bareos "$@"
 
-shutdown_mysql_server
+mysql_server_stop
 
 
 # Check if xtrabackup has extracted some files at least
@@ -139,7 +104,7 @@ rm -Rf mysql/data/*
 ${XTRABACKUP} --copy-back --target-dir=${TARGETDIR}  --incremental-dir=${INCDIR1}  --incremental-dir=${INCDIR2}
 
 
-startup_mysql_server
+mysql_server_start
 
 if ! echo "SELECT * from test " | $MYSQL_CLIENT "${xtrabackup_test_db}" | grep "test entry 1"; then
     echo "test entry 1 not found"
@@ -151,7 +116,7 @@ if ! echo "SELECT * from test " | $MYSQL_CLIENT "${xtrabackup_test_db}" | grep "
     estat=3
 fi
 
-shutdown_mysql_server
+mysql_server_stop
 
 check_for_zombie_jobs storage=File
 stop_bareos
