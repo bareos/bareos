@@ -62,10 +62,13 @@ Command (with or without full path) to *mysql* tool. Default: *mysql*
 Command (with or without full path) to *mysqldump* tool. Default: *mysqldump*
 
 #### mysql_dump_options
-Options to be used with the *mysqldump* tool. Default: *--no-owner --no-acl*
+Options to be used with the *mysqldump* tool. Default: *--events --single-transaction --add-drop-database --databases*
 
-#### mysql_user
-Username of the system user running the *mysql* and *mysqldump* tools. Default: *root*
+#### user
+Username of the system user running the *mysql* and *mysqldump* tools. Default: *root* (as the bareos-fd normally runs as user *root*)
+
+#### defaultsfile
+This parameter allows to specify a defaultsfile that shall be used for mysql (client) and mysqldump command line utilities.
 
 #### databases
 Comma separated list of database names to backup, if unset all databases (except 'performance_schema' and 'information_schema') are dumped. Default: unset

@@ -24,15 +24,19 @@ from bareos_tasks.BareosFdTaskClass import TaskProcess, BareosFdTaskClass
 
 class TaskQueryDatabase(TaskProcess):
 
-    def __init__(self, mysql=None, mysql_user=None):
-        self.run_as_user = mysql_user
-        mysql_options = '--batch --skip-column-names'
-        self.command = [mysql if mysql else 'mysql'] + shlex.split(mysql_options)
+    def __init__(self, mysql=None, system_user=None, defaultsfile=None):
+        self.run_as_user = system_user
+        mysql_options = [ '--batch', '--skip-column-names' ]
+        self.command = [mysql if mysql else 'mysql']
+        if defaultsfile:
+            # defaults-file must be the first option
+            self.command.append('--defaults-file={}'.format(defaultsfile))
+        self.command += mysql_options
         super(TaskQueryDatabase, self).__init__()
 
     def execute_query(self, query):
         data = self.execute_command(self.command + ['--execute=' + query])
-        return list(map(lambda x: x.split('\t'), data.splitlines()))
+        return list(map(lambda x: x.split('\t'), data.decode('utf-8').splitlines()))
 
     def get_database_size(self, database):
         query = 'SELECT SUM(DATA_LENGTH + INDEX_LENGTH) FROM information_schema.TABLES WHERE TABLE_SCHEMA = \"{0}\";'.format(database)
@@ -53,18 +57,24 @@ class TaskDumpDatabase(TaskProcess):
     task_name = 'dump-database'
     file_extension = 'sql'
 
-    def __init__(self, database, mysql=None, mysql_dump=None, mysql_user=None, mysql_dump_options=''):
+    def __init__(self, database, mysql=None, mysql_dump=None, system_user=None, defaultsfile=None, mysql_dump_options=''):
         self.database = database
         self.mysql = mysql
-        self.run_as_user = mysql_user
-        self.command = [mysql_dump if mysql_dump else 'mysqldump'] + shlex.split(mysql_dump_options) + [self.database]
+        self.run_as_user = system_user
+        self.defaultsfile = defaultsfile
+
+        self.command = [mysql_dump if mysql_dump else 'mysqldump']
+        if defaultsfile:
+            # defaults-file must be the first option
+            self.command.append('--defaults-file={}'.format(defaultsfile))
+        self.command += shlex.split(mysql_dump_options) + [self.database]
         super(TaskDumpDatabase, self).__init__()
 
     def get_name(self):
         return '{0}-{1}'.format(self.task_name, self.database)
 
     def get_size(self):
-        return TaskQueryDatabase(self.mysql, self.run_as_user).get_database_size(self.database)
+        return TaskQueryDatabase(self.mysql, self.run_as_user, self.defaultsfile).get_database_size(self.database)
 
 
 class BareosFdMySQLClass(BareosFdTaskClass):
@@ -75,14 +85,20 @@ class BareosFdMySQLClass(BareosFdTaskClass):
 
         mysql = self.options.get('mysql', 'mysql')
         mysql_dump = self.options.get('mysql_dump', 'mysqldump')
-        mysql_dump_options = self.options.get('mysql_dump_options', '--events --single-transaction --add-drop-database')
-        mysql_user = self.options.get('mysql_user')
+        mysql_dump_options = self.options.get('mysql_dump_options', '--events --single-transaction --add-drop-database --databases')
+        defaultsfile = self.options.get('defaultsfile')
+        system_user = self.options.get('user')
+        if not system_user:
+            # fallback to old (Bareos <= 19.2) parameter name
+            system_user = self.options.get('mysql_user')
 
-        databases = self.config.get_list('databases', TaskQueryDatabase(mysql, mysql_user).get_databases())
+        self.debug_message("defaultsfile={}".format(defaultsfile))
+
+        databases = self.config.get_list('databases', TaskQueryDatabase(mysql, system_user, defaultsfile).get_databases())
 
         if 'exclude' in self.config:
             exclude = self.config.get_list('exclude')
             databases = filter(lambda x: x not in exclude, databases)
 
         for database in databases:
-            self.tasks.append(TaskDumpDatabase(database, mysql, mysql_dump, mysql_user, mysql_dump_options))
+            self.tasks.append(TaskDumpDatabase(database, mysql, mysql_dump, system_user, defaultsfile, mysql_dump_options))
