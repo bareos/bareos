@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -87,7 +87,8 @@ void AddToNamelist(struct ndm_job_param* job,
                    char* name,
                    char* other_name,
                    uint64_t node,
-                   uint64_t fhinfo)
+                   uint64_t fhinfo,
+                   bool set_zero_for_invalid_u_quad)
 {
   ndmp9_name nl;
   PoolMem destination_path;
@@ -108,15 +109,17 @@ void AddToNamelist(struct ndm_job_param* job,
   nl.name = name;
   nl.other_name = other_name;
 
-
   // add fh_node and fh_info for DAR for native NDMP backup
   nl.node = node;
 
   if (fhinfo) {
     nl.fh_info.value = fhinfo;
+    // check if we need to set 0 instead of NDMP_INVALID_U_QUAD
+    if (set_zero_for_invalid_u_quad && fhinfo == NDMP_INVALID_U_QUAD) {
+      nl.fh_info.value = 0;
+    }
     nl.fh_info.valid = NDMP9_VALIDITY_VALID;
   }
-
   ndma_store_nlist(&job->nlist_tab, &nl);
 }
 

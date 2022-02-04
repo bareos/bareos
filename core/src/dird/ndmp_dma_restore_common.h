@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,7 +34,8 @@ void AddToNamelist(struct ndm_job_param* job,
                    char* name,
                    char* other_name,
                    uint64_t node,
-                   uint64_t fhinfo);
+                   uint64_t fhinfo,
+                   bool set_zero_for_invalid_u_quad = false);
 int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
                                 struct ndm_job_param* job,
                                 int32_t FileIndex,
