@@ -37,6 +37,7 @@ class ClientController extends AbstractActionController
    */
   protected $clientModel = null;
   protected $directorModel = null;
+  protected $jobModel = null;
   protected $bsock = null;
   protected $acl_alert = false;
 
@@ -630,5 +631,14 @@ class ClientController extends AbstractActionController
       $this->directorModel = $sm->get('Director\Model\DirectorModel');
     }
     return $this->directorModel;
+  }
+
+  public function getJobModel()
+  {
+    if(!$this->jobModel) {
+      $sm = $this->getServiceLocator();
+      $this->jobModel = $sm->get('Job\Model\JobModel');
+    }
+    return $this->jobModel;
   }
 }
