@@ -1,0 +1,44 @@
+/*
+ *  BAREOS® - Backup Archiving REcovery Open Sourced
+ *
+ *  Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+ *
+ *  This program is Free Software; you can redistribute it and/or
+ *  modify it under the terms of version three of the GNU Affero General Public
+ *  License as published by the Free Software Foundation and included
+ *  in the file LICENSE.
+ *
+ *  This program is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ *  Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ *  02110-1301, USA.
+ */
+
+.panel-actions {
+  margin-top: -20px;
+  margin-bottom: 0;
+  text-align: right;
+}
+
+.panel-actions a {
+  color:#333;
+}
+
+.panel-fullscreen {
+  display: block;
+  z-index: 9999;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  overflow: auto;
+}
+
