@@ -62,7 +62,11 @@ static char Create_job_media[]
     = "CatReq Job=%s CreateJobMedia"
       " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u"
       " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%s\n";
+
+static char Update_filelist[] = "Catreq Job=%s UpdateFileList\n";
+
 static char FileAttributes[] = "UpdCat Job=%s FileAttributes ";
+
 
 /* Responses received from the Director */
 static char OK_media[]
@@ -616,6 +620,20 @@ get_out:
   jcr->sendJobStatus(JS_Running);
   Dmsg0(debuglevel, "leave DirAskSysopToMountVolume\n");
   return true;
+}
+
+bool DeviceControlRecord::DirAskToUpdateFileList(JobControlRecord* jcr)
+{
+  BareosSocket* dir = jcr->dir_bsock;
+
+  dir->msg = CheckPoolMemorySize(dir->msg,
+                                 sizeof(Update_filelist) + MAX_NAME_LENGTH);
+  dir->message_length
+      = Bsnprintf(dir->msg, sizeof(Update_filelist) + MAX_NAME_LENGTH + 1,
+                  Update_filelist, jcr->Job);
+
+  Dmsg1(1800, ">dird %s", dir->msg); /* Attributes */
+  return dir->send();
 }
 
 // Dummy methods for everything but SD and BTAPE.

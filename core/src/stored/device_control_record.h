@@ -153,6 +153,7 @@ class DeviceControlRecord {
   virtual bool DirAskSysopToMountVolume(int mode);
   virtual bool DirAskSysopToCreateAppendableVolume() { return true; }
   virtual bool DirGetVolumeInfo(enum get_vol_info_rw writing);
+  virtual bool DirAskToUpdateFileList(JobControlRecord* jcr);
 
   // Methods in lock.c
   void dblock(int why);

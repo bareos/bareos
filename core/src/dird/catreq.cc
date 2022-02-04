@@ -66,6 +66,8 @@ static char Create_job_media[]
       " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
       " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%lld\n";
 
+static char Update_filelist[] = "Catreq Job=%s UpdateFileList\n";
+
 // Responses sent to Storage daemon
 static char OK_media[]
     = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
@@ -340,6 +342,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       Dmsg0(400, "JobMedia record created\n");
       bs->fsend(OK_create);
     }
+  } else if (sscanf(bs->msg, Update_filelist, &Job) == 1) {
+    Dmsg0(0, "Updating fileset\n");
+    jcr->db_batch->WriteBatchFileRecords(jcr);
   } else {
     omsg = GetMemory(bs->message_length + 1);
     PmStrcpy(omsg, bs->msg);

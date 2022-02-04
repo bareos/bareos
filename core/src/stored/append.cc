@@ -354,5 +354,4 @@ bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec)
   }
   return true;
 }
-
 } /* namespace storagedaemon */
