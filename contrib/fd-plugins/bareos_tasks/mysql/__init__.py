@@ -18,11 +18,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import BareosFdWrapper
-from bareosfd import bRCs
+from bareosfd import bRC_OK
 from BareosFdWrapper import *
-from BareosFdMySQLClass import BareosFdMySQLClass
+from bareos_tasks.mysql.BareosFdMySQLClass import BareosFdMySQLClass
 
 
 def load_bareos_plugin(plugin_def):
     BareosFdWrapper.bareos_fd_plugin_object = BareosFdMySQLClass(plugin_def)
-    return bRCs['bRC_OK']
+    return bRC_OK
