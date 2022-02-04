@@ -10,6 +10,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - fix empty job timeline issue if date.timezone is not set in php.ini [PR #1053] (backport of [PR #1051])
 
 ### Added
+- ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1049]
 
 ### Changed
 
@@ -414,6 +415,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1033]: https://github.com/bareos/bareos/pull/1033
 [PR #1044]: https://github.com/bareos/bareos/pull/1044
 [PR #1045]: https://github.com/bareos/bareos/pull/1045
+[PR #1049]: https://github.com/bareos/bareos/pull/1049
 [PR #1051]: https://github.com/bareos/bareos/pull/1051
 [PR #1052]: https://github.com/bareos/bareos/pull/1052
 [PR #1053]: https://github.com/bareos/bareos/pull/1053
