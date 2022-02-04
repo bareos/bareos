@@ -709,7 +709,6 @@ bail_out:
 bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
 {
   ssize_t n;
-  bool retval = false;
   char buf1[100], buf2[100];
   DeviceBlock* block = dcr->block;
 
@@ -745,7 +744,7 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
            * the header did not fit into the block, so flush the current
            * block and come back to st_header and try again on the next block.
            */
-          goto bail_out;
+          return false;
         }
 
         if (BlockWriteNavail(block) == 0) {
@@ -755,7 +754,7 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
            * continuation header.
            */
           rec->state = st_header_cont;
-          goto bail_out;
+          return false;
         }
 
         /*
@@ -789,7 +788,7 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
            * so flush the block and start the next block with
            * data bytes
            */
-          goto bail_out; /* Partial transfer */
+          return false; /* Partial transfer */
         }
 
         continue;
@@ -820,26 +819,23 @@ bool WriteRecordToBlock(DeviceControlRecord* dcr, DeviceRecord* rec)
              * continuation header
              */
             rec->state = st_header_cont;
-            goto bail_out;
+            return false;
           }
         }
 
         rec->remainder = 0; /* did whole transfer */
         rec->state = st_none;
-        retval = true;
-        goto bail_out;
+        return true;
 
       default:
         Emsg1(M_ABORT, 0, _("Something went wrong. Unknown state %d.\n"),
               rec->state);
         rec->state = st_none;
-        retval = true;
-        goto bail_out;
+        return true;
     }
   }
 
-bail_out:
-  return retval;
+  return false;
 }
 
 /**
