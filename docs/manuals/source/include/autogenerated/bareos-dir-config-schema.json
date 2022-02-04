@@ -207,6 +207,7 @@
         "NdmpNamelistFhinfoSetZeroForInvalidUquad": {
           "datatype": "BOOLEAN",
           "code": 0,
+          "default_value": "false",
           "equals": true,
           "versions": "20.0.6-"
         },
