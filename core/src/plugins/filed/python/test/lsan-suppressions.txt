@@ -1,0 +1,6 @@
+leak:Py_InitializeEx
+leak:PyObject_Call
+leak:PyObject_Malloc
+leak:PyList_New
+leak:_PyEval_EvalFrameDefault
+leak:PyImport_Cleanup

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -64,6 +64,7 @@ if(Python2_FOUND)
       ENVIRONMENT
       "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/pythonmodules:${CMAKE_CURRENT_SOURCE_DIR}/test"
       LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
+      "ASAN_OPTIONS=detect_leaks=0 verify_asan_link_order=0"
   )
 endif()
 
@@ -117,5 +118,6 @@ if(Python3_FOUND)
       ENVIRONMENT
       "PYTHONPATH=${CMAKE_CURRENT_BINARY_DIR}/python3modules:${CMAKE_CURRENT_SOURCE_DIR}/test"
       LD_LIBRARY_PATH=${CMAKE_CURRENT_BINARY_DIR}/../../lib
+      "ASAN_OPTIONS=detect_leaks=0 verify_asan_link_order=0"
   )
 endif()
