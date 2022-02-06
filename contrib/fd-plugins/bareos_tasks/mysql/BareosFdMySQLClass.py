@@ -41,7 +41,10 @@ class TaskQueryDatabase(TaskProcess):
     def get_database_size(self, database):
         query = 'SELECT SUM(DATA_LENGTH + INDEX_LENGTH) FROM information_schema.TABLES WHERE TABLE_SCHEMA = \"{0}\";'.format(database)
         items = self.execute_query(query)
-        size = int(items[0][0])
+        try:
+            size = int(items[0][0])
+        except ValueError:
+            size = 0
         return size
 
     def get_databases(self):
