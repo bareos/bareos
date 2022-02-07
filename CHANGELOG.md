@@ -35,6 +35,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - Adapt percona-xtrabackup test to work on updated test environment [PR #978]
 - Fixed libdroplet xattr.h include issue by using sys/xattr.h [PR #991]
+- stored: enable labeling of tapes in drives even if `autoselect=no` [PR #1064] (backport of [PR #1021]) 
 
 ## [20.0.3] - 2021-09-14
 
@@ -465,7 +466,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #991]: https://github.com/bareos/bareos/pull/991
 [PR #1000]: https://github.com/bareos/bareos/pull/1000
 [PR #1001]: https://github.com/bareos/bareos/pull/1001
+[PR #1021]: https://github.com/bareos/bareos/pull/1021
 [PR #1045]: https://github.com/bareos/bareos/pull/1045
 [PR #1058]: https://github.com/bareos/bareos/pull/1058
 [PR #1061]: https://github.com/bareos/bareos/pull/1061
+[PR #1064]: https://github.com/bareos/bareos/pull/1064
 [unreleased]: https://github.com/bareos/bareos/tree/master
