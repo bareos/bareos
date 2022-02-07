@@ -49,22 +49,18 @@ Configuration of Libcloud Plugin
        Options {
          signature = MD5
        }
-       Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-libcloud:config_file=/etc/bareos/libcloud_config.ini:buckets_include=user_data:buckets_exclude=tmp"
+       Plugin = "python"
+                ":module_name=bareos-fd-libcloud"
+                ":config_file=/etc/bareos/libcloud_config.ini"
+                ":buckets_include=user_data"
+                ":buckets_exclude=tmp"
      }
    }
-
-.. note::
-
-   Replace 'lib64' by 'lib' where necessary
-
-.. note::
-
-   The Plugin options string can currently not be split over multiple lines in the configuration file.
 
 The plugin options, separated by a colon:
 
 module_path
-   Path to the bareos modules
+   Path to the bareos modules (optional)
 
 module_name=bareos-fd-libcloud
    This is the name of the plugin module

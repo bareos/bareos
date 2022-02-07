@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2021 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,7 @@ import bareosfd
 from bareosfd import *
 import os
 import stat
+import sys
 import time
 
 
@@ -40,6 +41,10 @@ class BareosFdPluginBaseclass(object):
             100,
             "Constructor called in module %s with plugindef=%s\n"
             % (__name__, plugindef),
+        )
+        bareosfd.DebugMessage(
+            100,
+            "{}::__init__:  sys.path={}\n".format(__name__, str(sys.path)),
         )
         events = []
         events.append(bEventJobEnd)
@@ -64,12 +69,9 @@ class BareosFdPluginBaseclass(object):
         self.FNAME = "undef"
         self.filetype = "undef"
         self.file = None
-        bareosfd.DebugMessage(
-            100, "FDName = %s - BareosFdPluginBaseclass\n" % (self.fdname)
-        )
-        bareosfd.DebugMessage(
-            100, "WorkingDir: %s JobId: %s\n" % (self.workingdir, self.jobId)
-        )
+        bareosfd.DebugMessage(100, "FDName = %s\n" % (self.fdname))
+        bareosfd.DebugMessage(100, "WorkingDir: %s\n" % (self.workingdir))
+        bareosfd.DebugMessage(100, "JobId: %s\n" % (self.jobId))
         self.mandatory_options = mandatory_options
 
     def __str__(self):

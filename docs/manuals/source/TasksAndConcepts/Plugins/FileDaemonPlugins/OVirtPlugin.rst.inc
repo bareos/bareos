@@ -138,7 +138,6 @@ example to backup the VM **testvm1**, configure the fileset as follows:
             Compression = LZ4
          }
          Plugin = "python"
-                  ":module_path=/usr/lib64/bareos/plugins"
                   ":module_name=bareos-fd-ovirt"
                   ":ca=/etc/bareos/ovirt-ca.cert"
                   ":server=engine.example.com"
@@ -177,7 +176,6 @@ Optionally, it is possible to use a configuration file on the system running the
             Compression = LZ4
          }
          Plugin = "python"
-                  ":module_path=/usr/lib64/bareos/plugins"
                   ":module_name=bareos-fd-ovirt"
                   ":ca=/etc/bareos/ovirt-ca.cert"
                   ":server=engine.example.com"
@@ -203,10 +201,6 @@ Currently the config file can only be used for credentials. If **username** and 
 
 Mandatory Plugin Options:
 
-module_path
-   Path to the plugin, when installed from Bareos packages, this is always
-   :file:`/usr/lib64/bareos/plugins`
-
 module_name
    Always :file:`bareos-fd-ovirt`
 
@@ -229,6 +223,9 @@ storage_domain
    The target storage domain name (only for restore)
 
 Optional Plugin Options:
+
+module_path
+   Additional search path for the plugin.
 
 uuid
    Instead of specifying the VM to be backed up by name (using option **vm_name**), the VM

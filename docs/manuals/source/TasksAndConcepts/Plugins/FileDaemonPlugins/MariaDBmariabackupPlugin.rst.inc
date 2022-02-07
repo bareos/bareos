@@ -55,7 +55,6 @@ Now include the plugin as command-plugin in the Fileset resource:
            }
            #...
            Plugin = "python"
-                    ":module_path=/usr/lib64/bareos/plugins"
                     ":module_name=bareos-fd-mariabackup"
                     ":mycnf=/root/.my.cnf"
        }

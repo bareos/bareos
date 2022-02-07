@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,8 +45,8 @@ static inline void StripBackSlashes(char* value)
  */
 static inline bool ParseBoolean(const char* argument_value)
 {
-  if (Bstrcasecmp(argument_value, "yes") ||
-      Bstrcasecmp(argument_value, "true")) {
+  if (Bstrcasecmp(argument_value, "yes")
+      || Bstrcasecmp(argument_value, "true")) {
     return true;
   } else {
     return false;
@@ -78,11 +78,11 @@ static inline void SetString(char** destination, char* value)
  * return "".join(traceback.format_exception(sys.exc_type,
  *    sys.exc_value, sys.exc_traceback))
  */
-static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype)
+static std::string GetStringFromPyErrorHandler()
 {
   PyObject *type, *value, *traceback;
   PyObject* tracebackModule;
-  char* error_string;
+  std::string error_string;
 
   PyErr_Fetch(&type, &value, &traceback);
   PyErr_NormalizeException(&type, &value, &traceback);
@@ -91,37 +91,43 @@ static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype)
   if (tracebackModule != NULL) {
     PyObject *tbList, *emptyString, *strRetval;
 
-    tbList =
-        PyObject_CallMethod(tracebackModule, (char*)"format_exception",
-                            (char*)"OOO", type, value == NULL ? Py_None : value,
-                            traceback == NULL ? Py_None : traceback);
+    tbList = PyObject_CallMethod(tracebackModule, (char*)"format_exception",
+                                 (char*)"OOO", type,
+                                 value == NULL ? Py_None : value,
+                                 traceback == NULL ? Py_None : traceback);
 
     emptyString = PyUnicode_FromString("");
-    strRetval =
-        PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
+    strRetval
+        = PyObject_CallMethod(emptyString, (char*)"join", (char*)"O", tbList);
 
-    error_string = strdup(PyUnicode_AsUTF8(strRetval));
+    error_string = std::string(PyUnicode_AsUTF8(strRetval));
 
     Py_DECREF(tbList);
     Py_DECREF(emptyString);
     Py_DECREF(strRetval);
     Py_DECREF(tracebackModule);
   } else {
-    error_string = strdup("Unable to import traceback module.");
+    error_string = std::string("Unable to import traceback module.");
   }
 
   Py_DECREF(type);
   Py_XDECREF(value);
   Py_XDECREF(traceback);
 
+  return error_string;
+}
+
+
+static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype)
+{
+  std::string error_string = GetStringFromPyErrorHandler();
+
   Dmsg(bareos_plugin_ctx, debuglevel, PYTHON_MODULE_NAME_QUOTED ": %s\n",
-       error_string);
+       error_string.c_str());
   if (msgtype) {
     Jmsg(bareos_plugin_ctx, msgtype, PYTHON_MODULE_NAME_QUOTED ": %s\n",
-         error_string);
+         error_string.c_str());
   }
-
-  free(error_string);
 }
 
 // Convert a return value into a bRC enum value.
@@ -135,4 +141,5 @@ static inline PyObject* ConvertbRCRetvalToPythonRetval(bRC retval)
 {
   return (PyObject*)PyLong_FromLong((int)retval);
 }
+
 // vim: set ft=c

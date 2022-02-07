@@ -19,6 +19,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fix for wrong update message when updating all volumes from all pools with no existing volumes [PR #1015]
 
 ### Added
+- Python plugins: add default module_path to search path [PR #1038]
 - tests: simplify test coverage analysis [PR #1010]
 - docs: Add chapter for mariabackup db plugin [PR #1016]
 - dird: extend the list command to be able to query volumes and pools by ID [PR #1041]

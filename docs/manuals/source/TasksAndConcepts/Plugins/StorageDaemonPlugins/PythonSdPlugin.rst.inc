@@ -1,3 +1,5 @@
+.. _section-python-sd Plugin:
+
 python-sd Plugin
 ~~~~~~~~~~~~~~~~
 

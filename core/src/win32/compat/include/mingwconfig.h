@@ -144,6 +144,9 @@
 /* Directory for backend drivers */
 #define PATH_BAREOS_BACKENDDIR "."
 
+/* Default path for Bareos Python modules */
+#define PYTHON_MODULE_PATH "."
+
 /* Define to 1 if dynamic loading of catalog backends is enabled */
 #define HAVE_DYNAMIC_CATS_BACKENDS 1
 

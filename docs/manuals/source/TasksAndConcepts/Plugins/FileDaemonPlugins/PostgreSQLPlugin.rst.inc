@@ -112,7 +112,6 @@ Now include the plugin as command-plugin in the fileset resource and define a jo
                signature = MD5
            }
            Plugin = "python"
-                    ":module_path=/usr/lib64/bareos/plugins"
                     ":module_name=bareos-fd-postgres"
                     ":postgresDataDir=/var/lib/pgsql/data"
                     ":walArchive=/var/lib/pgsql/wal_archive/"
