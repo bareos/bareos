@@ -25,28 +25,18 @@ on_error() {
 trap 'on_error' ERR
 
 
-stop_bareos
-sleep 1
+# remove jobs from previous runs
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/log-purge.out
+purge jobs yes
+2
+wait
+messages
+quit
+END_OF_DATA
 
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+run_bconsole
 
-
-if ! ./invalidate_tapes.sh ${1:-}
-then
-  echo "Could not invalidate tapes"
-  exit 1
-fi
-
-if ! ./create_autochanger_configs.sh ${1:-}
-then
-  echo "Could not create autochanger configs"
-  exit 1
-fi
-
-
-echo "Starting bareos"
-start_bareos
 
 echo "Set debug on the Tape-Storage daemon"
 tracefile="$(echo "setdebug level=200 trace=1 storage=Tape-0" | bin/bconsole | grep "^3000" | awk -F"tracefile=" '{print $2}' )"
@@ -57,13 +47,9 @@ for i in $(seq ${NUMBER_OF_POOLS}); do
   pool=$(( i -1 )) #counts from 0
   for j in $(seq ${NUMBER_OF_TAPES_PER_POOL}); do
     slot=$(( j + pool * NUMBER_OF_TAPES_PER_POOL )) #counts from 1
-    echo "label barcodes slot=${slot} drive=0 pool=Full-${pool} storage=Tape-0 yes" | bin/bconsole | grep "OK label"
+    echo "label barcodes slot=${slot} drive=0 pool=Full-${pool} storage=Tape-0 yes" | bin/bconsole | grep -E "(OK label|already exists)"
   done
 done
-
-
-# setup backup data
-setup_data
 
 
 # create the test backup jobs
@@ -101,12 +87,15 @@ if [ "${list_of_jobids}" -eq 0 ]; then
   exit 1
 fi
 
+
 rm -f bconsole_restore_jobs
+poolnumber=$((NUMBER_OF_POOLS));
 for j in ${list_of_jobids}; do
-  pool="Full-$(( j -1 ))"
+  pool="Full-$((poolnumber -1))"
   cat << EOF >> bconsole_restore_jobs
 restore jobid=${j} pool="${pool}" where=${tmp}/bareos_restores_${j} select all done yes
 EOF
+   poolnumber=$((poolnumber -1))
 done
 
 echo "wait" >> bconsole_restore_jobs
@@ -114,8 +103,6 @@ echo "messages" >> bconsole_restore_jobs
 
 # start all the restore jobs
 bin/bconsole < bconsole_restore_jobs
-
-check_for_zombie_jobs storage=Tape-0
 
 # does not compare fifo files
 for j in ${list_of_jobids}; do
@@ -125,6 +112,5 @@ for j in ${list_of_jobids}; do
      "$src" "$dst"
 done
 
-stop_bareos
 end_test
 exit 0

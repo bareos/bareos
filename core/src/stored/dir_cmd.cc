@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -920,11 +920,7 @@ static DeviceControlRecord* FindDevice(JobControlRecord* jcr,
                  device_resource->resource_name_, devname.c_str());
             continue;
           }
-          if (!device_resource->dev->autoselect) {
-            Dmsg1(100, "Device %s not autoselect skipped.\n", devname.c_str());
-            continue; /* device is not available */
-          }
-          if (drive == kInvalidDriveNumber
+          if ((drive == kInvalidDriveNumber && device_resource->dev->autoselect)
               || drive == device_resource->dev->drive) {
             Dmsg1(20, "Found changer device %s\n",
                   device_resource->resource_name_);
