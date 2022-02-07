@@ -180,6 +180,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Allow `release` command to be used in scripts [PR #961]
 - webui: format total jobs and total files language-sensitive [PR #996]
 - webui: update localization [PR #1018]
+- stored: enable labeling of tapes in drives even if `autoselect=no` [PR #1065] (backport of [PR #1021])
 
 ### Deprecated
 - Deprecated directives [PR #928] and [PR #949]
@@ -404,6 +405,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1018]: https://github.com/bareos/bareos/pull/1018
 [PR #1019]: https://github.com/bareos/bareos/pull/1019
 [PR #1020]: https://github.com/bareos/bareos/pull/1020
+[PR #1021]: https://github.com/bareos/bareos/pull/1021
 [PR #1022]: https://github.com/bareos/bareos/pull/1022
 [PR #1023]: https://github.com/bareos/bareos/pull/1023
 [PR #1024]: https://github.com/bareos/bareos/pull/1024
@@ -421,4 +423,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1052]: https://github.com/bareos/bareos/pull/1052
 [PR #1053]: https://github.com/bareos/bareos/pull/1053
 [PR #1055]: https://github.com/bareos/bareos/pull/1055
+[PR #1063]: https://github.com/bareos/bareos/pull/1063
+[PR #1065]: https://github.com/bareos/bareos/pull/1065
 [unreleased]: https://github.com/bareos/bareos/tree/master
