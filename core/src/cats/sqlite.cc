@@ -409,7 +409,7 @@ bool BareosDbSqlite::SqlQueryWithoutHandler(const char* query, int flags)
 
 void BareosDbSqlite::SqlFreeResult(void)
 {
-    DbLocker _{this};
+  DbLocker _{this};
   if (fields_) {
     free(fields_);
     fields_ = NULL;

@@ -538,7 +538,7 @@ retry_query:
 
 void BareosDbMysql::SqlFreeResult(void)
 {
-    DbLocker _{this};
+  DbLocker _{this};
   if (result_) {
     mysql_free_result(result_);
     result_ = NULL;
