@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -233,6 +233,91 @@ get_database_utility_path()
         echo "${bindir}"
     fi
 }
+
+_scsicrypto_cmds="bareos-sd bcopy bextract bls bscan bscrypto btape"
+_scsicrypto_config_file="${BAREOS_CONFIG_DIR}/.enable-cap_sys_rawio"
+check_scsicrypto_capabilities()
+{
+  if [ "${os_type}" != "Linux" ];then
+      error "check_scsicrypto_capabilities() is not supported on this platform"
+      return 1
+  fi
+  if ( [ "$(command -v getcap)" = "" ] || [ "$(command -v setcap)" = "" ] ); then
+      error "getcap and setcap commands are mandatory"
+      return 1
+  fi
+  if [ -f "${_scsicrypto_config_file}" ];then
+    cap_missing_conf=0
+  else
+    cap_missing_conf=1
+  fi
+  for c in ${_scsicrypto_cmds};do
+    if [ -x "${BAREOS_SBIN_DIR}/${c}" ]; then
+      if ! r="$(setcap -v cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
+        warn "${r}"
+        cap_missing_conf=1
+      fi
+    fi
+  done
+  if [ ${cap_missing_conf} -ne 0 ];then
+    warn "One of the tools are not configured for scsi crypto."
+    warn "Run set_scsicrypto_capabilities to fix capabilities."
+  else
+    info "All tools have cap_sys_rawio=ep set."
+  fi
+}
+
+set_scsicrypto_capabilities()
+{
+  if [ "${os_type}" != "Linux" ];then
+      error "set_scsicrypto_capabilities() is not supported on this platform"
+      return 1
+  fi
+  for c in ${_scsicrypto_cmds};do
+    if [ -x "${BAREOS_SBIN_DIR}/${c}" ]; then
+      # Need to affect the bareos group (debian)
+      if ! r="$(chgrp "${STORAGE_DAEMON_GROUP}" "${BAREOS_SBIN_DIR}/${c}")"; then
+          error "Setting group to ${STORAGE_DAEMON_GROUP} failed on ${c}"
+          return 1
+      fi
+      if ! r="$(chmod o-rwx "${BAREOS_SBIN_DIR}/${c}")"; then
+          error "Setting chmod o-rwx failed on ${c}"
+          return 1
+      fi
+      if ! r="$(setcap cap_sys_rawio=ep "${BAREOS_SBIN_DIR}/${c}")"; then
+        error "setcap on ${c} has failed - ${r}"
+        return 1
+      fi
+    fi
+  done
+  echo "cap_sys_rawio+ep capabilities enabled on $(date "+%F %X")" > "${_scsicrypto_config_file}"
+}
+
+unset_scsicrypto_capabilities()
+{
+  if [ "${os_type}" != "Linux" ];then
+      error "unset_scsicrypto_capabilities() is not supported on this platform"
+      return 1
+  fi
+  for c in ${_scsicrypto_cmds};do
+    if [ -x "${BAREOS_SBIN_DIR}/${c}" ]; then
+      if ! r="$(setcap -q -r "${BAREOS_SBIN_DIR}/${c}")"; then
+          # Don't fail if binary had capabilities set.
+          warn "setcap -r on ${c} has failed - ${r}"
+      fi
+      if ! r="$(chmod o+rx "${BAREOS_SBIN_DIR}/${c}")"; then
+          error "Restoring chmod o+rx failed on ${c}"
+          return 1
+      fi
+      if ! r="$(chgrp root "${BAREOS_SBIN_DIR}/${c}")"; then
+          error "Restoring group to root failed on ${c}"
+          return 1
+      fi
+    fi
+  done
+  rm -f "${_scsicrypto_config_file}"
+}
+
 
 [ ${os_type} = Linux ] && \
 setup_sd_user()

@@ -37,6 +37,7 @@ debian/bareos-database-common.postinst
 debian/bareos-database-postgresql.dirs
 debian/bareos-database-postgresql.install
 debian/bareos-database-tools.install
+debian/bareos-database-tools.postinst
 debian/bareos-director-python-plugin.install
 debian/bareos-director-python-plugins-common.install
 debian/bareos-director-python2-plugin.install
@@ -76,7 +77,9 @@ debian/bareos-storage.install
 debian/bareos-storage.postinst
 debian/bareos-storage.preinst
 debian/bareos-storage.service
+debian/bareos-storage-tape.postinst
 debian/bareos-tools.install
+debian/bareos-tools.postinst
 debian/bareos-traymonitor.install
 debian/bareos-traymonitor.postinst
 debian/bareos-universal-client.install
