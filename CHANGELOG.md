@@ -11,7 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Added
 - ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1049]
-- packaging: installation and upgrade will check for the presence of :file:`.enable-cap_sys_rawio` in your bareos config dir and will configure the required cap_sys_rawio capabilities [PR #1060] backport from original pull request [PR #1057]
+- packaging: installation and upgrade will check for the presence of :file:`.enable-cap_sys_rawio` in your bareos config dir and will configure the required cap_sys_rawio capabilities [PR #1066] backport from original pull request [PR #1057]
 
 ### Changed
 - webui: add timeline chart by jobs [PR #1063]
@@ -424,6 +424,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1052]: https://github.com/bareos/bareos/pull/1052
 [PR #1053]: https://github.com/bareos/bareos/pull/1053
 [PR #1055]: https://github.com/bareos/bareos/pull/1055
+[PR #1057]: https://github.com/bareos/bareos/pull/1057
 [PR #1063]: https://github.com/bareos/bareos/pull/1063
 [PR #1065]: https://github.com/bareos/bareos/pull/1065
+[PR #1066]: https://github.com/bareos/bareos/pull/1066
 [unreleased]: https://github.com/bareos/bareos/tree/master
