@@ -91,8 +91,8 @@ If :command:`bareos-sd` does not have the appropriate capabilities, all other ta
 
 .. note::
 
-    Since :sinceVersion:`21.0.1: scscicrypto capabilities handling` during package update post-install will react according to file :file:`.enable-cap_sys_rawio` presence in your bareos config dir, setting back the previously set capabilities if present.
-    This mean if you want capabilities automatically setup during package install, you can just create the :file:`/etc/bareos/.enable-cap_sys_rawio` file.
+    Since :sinceVersion:`21.0.1: scscicrypto capabilities handling` package installation and upgrade will check for the presence of :file:`.enable-cap_sys_rawio` in your bareos config dir and will configure the required capabilities.
+    If you want capabilities automatically set up during package install, you can just create :file:`/etc/bareos/.enable-cap_sys_rawio`.
 
     Before :sinceVersion:`21.0.1: scscicrypto capabilities handling` it is mandatory to setup capabilities manually after each update (see below).
 
@@ -166,8 +166,8 @@ Check the setting manually
 .. warning::
 
    Adding capabilities like cap_sys_rawio to binaries can increase their abuse.
-   We recommend also to restrict a bit more their ownership to root as owner and bareos as group, plus setting chmod to 0750. Doing so will restrict execution to only root or any member of bareos group.
-   All those step are done for you by our helper.
+   We also recommend to restrict a bit more their ownership to root as owner and bareos as group, plus setting chmod to 0750. Doing so will restrict execution root and members of group bareos.
+   All these steps are done for you by our helper.
 
 
    **systemd** (not recommended)
