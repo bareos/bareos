@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -302,7 +302,7 @@ unset_scsicrypto_capabilities()
   for c in ${_scsicrypto_cmds};do
     if [ -x "${BAREOS_SBIN_DIR}/${c}" ]; then
       if ! r="$(setcap -q -r "${BAREOS_SBIN_DIR}/${c}")"; then
-          # Don't fail if binary did had capabilities set.
+          # Don't fail if binary had capabilities set.
           warn "setcap -r on ${c} has failed - ${r}"
       fi
       if ! r="$(chmod o+rx "${BAREOS_SBIN_DIR}/${c}")"; then
