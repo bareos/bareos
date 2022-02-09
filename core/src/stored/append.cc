@@ -166,6 +166,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   int checkpointinterval = 10;
   time_t next_checkpoint_time = now + checkpointinterval;
 
+  std::vector<storagedaemon::DeviceRecord> devicerecords_table{};
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
     /*
      * Read Stream header from the daemon.
@@ -249,13 +250,28 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         break;
       }
 
-      SendAttrsToDir(jcr, dcr->rec);
+      DeviceRecord devicerecord_copy = *dcr->rec;
+
+      // get a copy of the data rather than the pointer to the socket message
+      devicerecord_copy.data = GetMemory(dcr->rec->data_len);
+      PmMemcpy(devicerecord_copy.data, dcr->rec->data, dcr->rec->data_len);
+      devicerecords_table.push_back(devicerecord_copy);
+
+
       Dmsg0(650, "Enter bnet_get\n");
     }
     Dmsg2(650, "End read loop with %s. Stat=%d\n", what, n);
 
     // Restore the original data pointer.
     dcr->rec->data = rec_data;
+
+    if (dcr->VolLastIndex == static_cast<uint32_t>(dcr->block->LastIndex)) {
+      for (auto devicerecord : devicerecords_table) {
+        SendAttrsToDir(jcr, &devicerecord);
+        FreeMemory(devicerecord.data);
+      }
+      devicerecords_table.clear();
+    }
 
     if (bs->IsError()) {
       if (!jcr->IsJobCanceled()) {
@@ -268,7 +284,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       ok = false;
       break;
     }
-
 
     if (checkpointinterval) {
       now = std::chrono::system_clock::to_time_t(
@@ -327,6 +342,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       }
       jcr->setJobStatus(JS_ErrorTerminated);
       ok = false;
+    } else {
+      // Send attributes of the final partial block of the session
+      for (auto devicerecord : devicerecords_table) {
+        SendAttrsToDir(jcr, &devicerecord);
+        FreeMemory(devicerecord.data);
+      }
+      devicerecords_table.clear();
     }
   }
 
