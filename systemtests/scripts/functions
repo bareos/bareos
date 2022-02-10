@@ -675,6 +675,10 @@ check_log()
          -e "Encoding error for database" \
          -e "^Could not find Client" \
          -e "ERR=" \
+         -e "JobStatus=.*Error" \
+         -e "jobstatus: E" \
+         -e "jobstatus: e" \
+         -e "jobstatus: f" \
          "$LOG"
    then
       bstat=1
@@ -682,7 +686,7 @@ check_log()
 
    if grep \
          -e "^  Termination: .*Restore Error" \
-         -e "^  Termination: *Restore OK -- warning " \
+         -e "^  Termination: *Restore OK -- warning" \
          -e "^  Termination: .*Verify Differences" \
          "$LOG"
    then
