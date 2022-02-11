@@ -278,17 +278,18 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
         )
 
         # check expected behavior when asking for specific volume by name
-        director.call("label volume=test_volume0001 pool=Full")
+        test_volume = "test_volume0001"
+        director.call("label volume={} pool=Full".format(test_volume))
         director.call("wait")
         result = director.call("list media=test_volume0001")
         self.assertEqual(
             result["volume"]["volumename"],
-            "test_volume0001",
+            test_volume,
         )
-        result = director.call("list volume=test_volume0001")
+        result = director.call("list volume={}".format(test_volume))
         self.assertEqual(
             result["volume"]["volumename"],
-            "test_volume0001",
+            test_volume,
         )
 
         # check expected behavior when asking for specific volume by mediaid
@@ -314,6 +315,7 @@ class PythonBareosListCommandTest(bareos_unittest.Base):
             "2",
         )
         director.call("delete volume=test_volume0001 yes")
+        os.remove("storage/{}".format(test_volume))
 
     def test_list_pool(self):
         """
