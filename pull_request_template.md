@@ -17,11 +17,11 @@ If you have any questions or problems, please give a comment in the PR.
 ### Checklist for the _reviewer_ of the PR (will be processed by the Bareos team)
 
 ##### General
-
 - [ ] PR name is meaningful
 - [ ] Purpose of the PR is understood
 - [ ] Separate commit for this PR in the CHANGELOG.md, PR number referenced is same
 - [ ] Commit descriptions are understandable and well formatted
+- [ ] If backport: add original PR number and target branch at top of this file: **Backport of PR#000 to bareos-2x**
 
 ##### Source code quality
 
