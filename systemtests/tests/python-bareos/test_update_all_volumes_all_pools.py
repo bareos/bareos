@@ -73,11 +73,19 @@ class PythonBareosUpdateAllVolumesAllPools(bareos_unittest.Json):
             directorJson,
             "pools",
             newrandompoolname,
-            "pool={}".format(newrandompoolname)
+            "pool={}".format(newrandompoolname),
         )
         directorRegular.call("reload")
         directorRegular.call("update volume")
-        directorRegular.call("13") # choosing the `All Volumes from pool` option
-        result = directorRegular.call("1") # choosing the `arandompool` option
+        directorRegular.call("13")  # choosing the `All Volumes from pool` option
+        result = directorRegular.call("1")  # choosing the `arandompool` option
 
-        self.assertEqual(result.decode(), "All Volume defaults updated from \"{}\" Pool record.\n".format(newrandompoolname))
+        self.assertEqual(
+            result.decode(),
+            'All Volume defaults updated from "{}" Pool record.\n'.format(
+                newrandompoolname
+            ),
+        )
+
+        directorRegular.call("delete pool={} yes".format(newrandompoolname))
+        os.remove("etc/bareos/bareos-dir.d/pool/{}.conf".format(newrandompoolname))
