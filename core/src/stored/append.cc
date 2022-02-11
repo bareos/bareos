@@ -25,11 +25,9 @@
  * Append code for Storage daemon
  */
 
-#include "include/bareos.h"
+#include "stored/append.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
-#include "stored/append.h"
-#include "stored/device_control_record.h"
 #include "stored/fd_cmds.h"
 #include "stored/jcr_private.h"
 #include "stored/label.h"
@@ -37,7 +35,6 @@
 #include "lib/bget_msg.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
-#include "lib/bsock.h"
 #include "lib/berrno.h"
 #include "lib/berrno.h"
 
@@ -52,12 +49,90 @@ static char OK_replicate[] = "3000 OK replicate data\n";
 
 void PossibleIncompleteJob(JobControlRecord* jcr, int32_t last_file_index) {}
 
+FileData::~FileData()
+{
+  for (auto devicerecord : device_records_) { FreeMemory(devicerecord.data); }
+}
+FileData::FileData(const FileData& other) : fileindex_(other.fileindex_)
+{
+  for (auto device : other.device_records_) {
+    this->CreateNewDeviceRecord(&device);
+  }
+}
+
+FileData& FileData::operator=(const FileData& other)
+{
+  this->fileindex_ = other.fileindex_;
+  for (auto device : other.device_records_) {
+    this->CreateNewDeviceRecord(&device);
+  }
+
+  return *this;
+}
+
+void FileData::AddRecord(DeviceRecord devicerecord)
+{
+  device_records_.push_back(devicerecord);
+}
+
+void FileData::SendAttributesToDirector(JobControlRecord* jcr)
+{
+  for (auto devicerecord : device_records_) {
+    SendAttrsToDir(jcr, &devicerecord);
+  }
+}
+void FileData::Reset(int32_t index)
+{
+  fileindex_ = index;
+  for (auto devicerecord : device_records_) { FreeMemory(devicerecord.data); }
+  device_records_.clear();
+}
+void FileData::CreateNewDeviceRecord(DeviceRecord* record)
+{
+  DeviceRecord devicerecord_copy{*record};
+
+  // get a copy of the data rather than a pointer to the previous data
+  devicerecord_copy.data = GetMemory(record->data_len);
+  PmMemcpy(devicerecord_copy.data, record->data, record->data_len);
+  device_records_.push_back(devicerecord_copy);
+}
+
+static void DoFileListCheckpoint(JobControlRecord* jcr)
+{
+  Jmsg0(jcr, M_INFO, 0, _("Doing File List checkpoint.\n"));
+  jcr->impl->dcr->DirAskToUpdateFileList(jcr);
+}
+
+static void DoJobmediaCheckpoint(JobControlRecord* jcr)
+{
+  Jmsg0(jcr, M_INFO, 0, _("Doing Jobmedia checkpoint.\n"));
+  jcr->impl->dcr->DirCreateJobmediaRecord(false);
+}
+
 static void DoCheckpoint(JobControlRecord* jcr)
 {
-  Jmsg0(jcr, M_INFO, 0, _("Doing checkpoint.\n"));
-  jcr->impl->dcr->DirAskToUpdateFileList(jcr);
-  jcr->impl->dcr->DirCreateJobmediaRecord(false);
-};
+  DoFileListCheckpoint(jcr);
+  DoJobmediaCheckpoint(jcr);
+}
+
+static time_t DoTimedCheckpoint(JobControlRecord* jcr,
+                                time_t checkpoint_time,
+                                time_t checkpoint_interval)
+{
+  time_t now
+      = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  if (now > checkpoint_time) {
+    checkpoint_time = now + checkpoint_interval;
+    Emsg2(M_INFO, 0,
+          _("Doing checkpoint after 10 seconds: now: %d nextcheckpoint: "
+            "%d\n"),
+          now, checkpoint_time);
+    DoCheckpoint(jcr);
+  }
+
+  return checkpoint_time;
+}
+
 
 // Append Data sent from File daemon
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
@@ -166,7 +241,11 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   int checkpointinterval = 10;
   time_t next_checkpoint_time = now + checkpointinterval;
 
-  std::vector<storagedaemon::DeviceRecord> devicerecords_table{};
+  std::vector<FileData> processed_files{};
+  int64_t current_volumeid = dcr->VolMediaId;
+
+  FileData file_currently_processed;
+
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
     /*
      * Read Stream header from the daemon.
@@ -218,9 +297,14 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     break;
 
   fi_checked:
+
     if (file_index != last_file_index) {
       jcr->JobFiles = file_index;
       last_file_index = file_index;
+      if (file_currently_processed.GetFileIndex() > 0) {
+        processed_files.push_back(file_currently_processed);
+      }
+      file_currently_processed.Reset(file_index);
     }
 
     /*
@@ -250,13 +334,22 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         break;
       }
 
-      DeviceRecord devicerecord_copy = *dcr->rec;
+      if (dcr->VolLastIndex == static_cast<uint32_t>(dcr->block->LastIndex)) {
+        for (auto file : processed_files) {
+          file.SendAttributesToDirector(jcr);
+        }
+        processed_files.clear();
+      }
 
-      // get a copy of the data rather than the pointer to the socket message
-      devicerecord_copy.data = GetMemory(dcr->rec->data_len);
-      PmMemcpy(devicerecord_copy.data, dcr->rec->data, dcr->rec->data_len);
-      devicerecords_table.push_back(devicerecord_copy);
+      if (dcr->VolMediaId != current_volumeid) {
+        DoFileListCheckpoint(jcr);
+        current_volumeid = dcr->VolMediaId;
+      } else if (checkpointinterval) {
+        next_checkpoint_time
+            = DoTimedCheckpoint(jcr, next_checkpoint_time, checkpointinterval);
+      }
 
+      file_currently_processed.CreateNewDeviceRecord(dcr->rec);
 
       Dmsg0(650, "Enter bnet_get\n");
     }
@@ -264,14 +357,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
     // Restore the original data pointer.
     dcr->rec->data = rec_data;
-
-    if (dcr->VolLastIndex == static_cast<uint32_t>(dcr->block->LastIndex)) {
-      for (auto devicerecord : devicerecords_table) {
-        SendAttrsToDir(jcr, &devicerecord);
-        FreeMemory(devicerecord.data);
-      }
-      devicerecords_table.clear();
-    }
 
     if (bs->IsError()) {
       if (!jcr->IsJobCanceled()) {
@@ -283,19 +368,6 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       }
       ok = false;
       break;
-    }
-
-    if (checkpointinterval) {
-      now = std::chrono::system_clock::to_time_t(
-          std::chrono::system_clock::now());
-      if (now > next_checkpoint_time) {
-        next_checkpoint_time = now + checkpointinterval;
-        Emsg2(M_INFO, 0,
-              _("Doing checkpoint after 10 seconds: now: %d nextcheckpoint: "
-                "%d\n"),
-              now, next_checkpoint_time);
-        DoCheckpoint(jcr);
-      }
     }
   }
 
@@ -344,11 +416,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       ok = false;
     } else {
       // Send attributes of the final partial block of the session
-      for (auto devicerecord : devicerecords_table) {
-        SendAttrsToDir(jcr, &devicerecord);
-        FreeMemory(devicerecord.data);
-      }
-      devicerecords_table.clear();
+      processed_files.push_back(file_currently_processed);
+      for (auto file : processed_files) { file.SendAttributesToDirector(jcr); }
+      processed_files.clear();
     }
   }
 

@@ -21,7 +21,30 @@
 #ifndef BAREOS_STORED_APPEND_H_
 #define BAREOS_STORED_APPEND_H_
 
+
+#include "include/bareos.h"
+#include "lib/bsock.h"
+#include "stored/device_control_record.h"
+
 namespace storagedaemon {
+
+class FileData {
+ public:
+  FileData() = default;
+  ~FileData();
+  FileData(const FileData& other);
+  FileData& operator=(const FileData& other);
+
+  void AddRecord(DeviceRecord devicerecord);
+  void SendAttributesToDirector(JobControlRecord* jcr);
+  void Reset(int32_t index);
+  void CreateNewDeviceRecord(DeviceRecord* record);
+  int32_t GetFileIndex() { return fileindex_; }
+
+ private:
+  int32_t fileindex_{-1};
+  std::vector<DeviceRecord> device_records_;
+};
 
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what);
 bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec);

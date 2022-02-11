@@ -843,7 +843,6 @@ bool DeviceControlRecord::WriteBlockToDev()
   return true;
 }
 
-
 /**
  * Write a block to the device, with locking and unlocking
  *
