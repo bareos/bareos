@@ -29,6 +29,7 @@
 #include "stored/stored.h"
 #include "stored/acquire.h"
 #include "stored/fd_cmds.h"
+#include "stored/stored_globals.h"
 #include "stored/jcr_private.h"
 #include "stored/label.h"
 #include "stored/spool.h"
@@ -238,7 +239,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   auto now
       = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  int checkpointinterval = 10;
+  time_t checkpointinterval = me->checkpoint_interval;
   time_t next_checkpoint_time = now + checkpointinterval;
 
   std::vector<FileData> processed_files{};
