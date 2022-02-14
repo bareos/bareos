@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -177,13 +177,21 @@ bool DoConsolidate(JobControlRecord* jcr)
       Dmsg1(10, "consolidate candidates:  %s.\n",
             jobids_ctx.GetAsString().c_str());
 
+      db_list_ctx zero_file_jobs = jcr->db->FilterZeroFileJobs(jobids_ctx);
+      if (zero_file_jobs.size() > 0) {
+        Jmsg(jcr, M_INFO, 0, "%s: purging empty jobids %s\n",
+             job->resource_name_, zero_file_jobs.Join(", ").c_str());
+        jcr->db->PurgeJobs(zero_file_jobs.GetAsString().c_str());
+      }
+      incrementals_total = jobids_ctx.size() - 1;
       /**
-       * Consolidation of zero or one job does not make sense, we leave it like
-       * it is
+       * Consolidation of zero or one job does not make sense, we leave it
+       * like it is
        */
       if (incrementals_total < 1) {
         Jmsg(jcr, M_INFO, 0,
-             _("%s: less than two jobs to consolidate found, doing nothing.\n"),
+             _("%s: less than two jobs to consolidate found, doing "
+               "nothing.\n"),
              job->resource_name_);
         continue;
       }

@@ -1293,6 +1293,27 @@ bool BareosDb::GetUsedBaseJobids(JobControlRecord* jcr,
   return SqlQueryWithHandler(query.c_str(), DbListHandler, result);
 }
 
+/*
+ * Remove the jobs that have JobFiles == 0 from the supplied jobid list
+ * and return them in another list
+ */
+db_list_ctx BareosDb::FilterZeroFileJobs(db_list_ctx& jobids)
+{
+  std::string query{"SELECT JobId FROM Job WHERE JobFiles = 0 AND JobId IN ("};
+  query += jobids.Join(",") + ")";
+
+  db_list_ctx zero_file_jobs;
+  if (!SqlQueryWithHandler(query.c_str(), DbListHandler, &zero_file_jobs)) {
+    throw new BareosSqlError(sql_strerror());
+  }
+  for (auto& remove_jobid : zero_file_jobs) {
+    jobids.erase(std::remove(jobids.begin(), jobids.end(), remove_jobid),
+                 jobids.end());
+  }
+
+  return zero_file_jobs;
+}
+
 /**
  * The decision do change an incr/diff was done before
  * Full : do nothing
