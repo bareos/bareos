@@ -10,10 +10,10 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -23,6 +23,9 @@ JobName=backup-bareos-fd
 
 # Fill ${BackupDirectory} with data.
 setup_data
+
+# clean out logfile
+rm -f log/bareos.log
 
 start_test
 
@@ -51,9 +54,7 @@ messages
 list jobs
 @# make sure we really restore the virtualfull
 purge volume=TestVolume001
-delete volume=TestVolume001
 purge volume=TestVolume002
-delete volume=TestVolume002
 status director
 status client
 status storage=File
@@ -78,8 +79,70 @@ END_OF_DATA
 run_bconsole "$tmp/bconcmds2"
 
 check_for_zombie_jobs storage=File
+check_restore_diff "${BackupDirectory}"
+
+
+cat <<END_OF_DATA >"$tmp/bconcmds3"
+@$out /dev/null
+messages
+@$out $tmp/log3.out
+run job=$JobName level=Full yes
+wait
+messages
+list jobs
+@exec "sh -c 'touch ${tmp}/data/*.c'"
+run job=$JobName level=Incremental yes
+wait
+run job=$JobName level=Incremental yes
+wait
+run job=$JobName level=Incremental yes
+wait
+messages
+purge files jobid=5 yes
+list jobs
+@$out $tmp/log4.out
+run job=$JobName jobid=7,8 level=VirtualFull yes
+wait
+messages
+@$out $tmp/log5.out
+run job=$JobName jobid=3,2,6 level=VirtualFull yes
+wait
+messages
+@$out $tmp/log6.out
+run job=$JobName jobid=3,5,6 level=VirtualFull yes
+wait
+messages
+list jobs
+quit
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds3"
+check_for_zombie_jobs storage=File
+check_two_logs
 stop_bareos
 
-check_two_logs
-check_restore_diff "${BackupDirectory}"
+if ! grep -q "Consolidating JobIds 1,2 containing 74 files" "$tmp/log1.out"; then
+  echo "Consolidation message was not emitted" >&2
+  cat "$tmp/log1.out"
+  estat=1
+fi
+
+if ! grep -q "Fatal error: Could not create bootstrap file" "$tmp/log4.out"; then
+  echo "Job with no files contained did not fail as expected" >&2
+  cat "$tmp/log4.out"
+  estat=1
+fi
+
+if ! grep -q "Termination:.*Backup Error" "$tmp/log5.out"; then
+  echo "Consolidating missing jobids did not fail as expected" >&2
+  cat "$tmp/log5.out"
+  estat=1
+fi
+
+if ! grep -q "Termination:.*Backup Error" "$tmp/log6.out"; then
+  echo "Consolidating jobs with pruned files did not fail as expected" >&2
+  cat "$tmp/log6.out"
+  estat=1
+fi
+
 end_test
