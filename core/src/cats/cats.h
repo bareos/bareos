@@ -488,6 +488,11 @@ typedef struct sql_field {
 } SQL_FIELD;
 #endif
 
+class BareosSqlError : public std::runtime_error {
+ public:
+  BareosSqlError(const char* what) : std::runtime_error(what) {}
+};
+
 class BareosDb : public BareosDbQueryEnum {
  protected:
   brwlock_t lock_; /**< Transaction lock */
@@ -741,6 +746,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool AccurateGetJobids(JobControlRecord* jcr,
                          JobDbRecord* jr,
                          db_list_ctx* jobids);
+  db_list_ctx FilterZeroFileJobs(db_list_ctx& jobids);
   bool GetUsedBaseJobids(JobControlRecord* jcr,
                          const char* jobids,
                          db_list_ctx* result);
@@ -1017,8 +1023,8 @@ struct SqlPoolEntry {
   int id = 0; /**< Unique ID, connection numbering can have holes and the pool
              is not sorted on it */
   int reference_count = 0; /**< Reference count for this entry */
-  time_t last_update = 0; /**< When was this connection last updated either used
-                         or put back on the pool */
+  time_t last_update = 0;  /**< When was this connection last updated either
+                          used  or put back on the pool */
   BareosDb* db_handle = nullptr; /**< Connection handle to the database */
   dlink<SqlPoolEntry> link;      /**< list management */
 };
@@ -1034,8 +1040,8 @@ struct SqlPoolDescriptor {
   int max_connections
       = 0; /**< Maximum number of connections in the connection pool
             */
-  int increment_connections = 0; /**< Increase/Decrease the number of connection
-                                in the pool with this value */
+  int increment_connections = 0; /**< Increase/Decrease the number of
+                                connection in the pool with this value */
   int idle_timeout = 0;     /**< Number of seconds to wait before tearing down a
                            connection */
   int validate_timeout = 0; /**< Number of seconds after which an idle
