@@ -759,8 +759,6 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
     return true;
   }
 
-  if (JobCanceled(jcr)) { goto bail_out; }
-
   Dmsg1(50, "db_create_file_record changes=%u\n", changes);
 
   jcr->JobStatus = JS_AttrInserting;
@@ -773,8 +771,6 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
     Jmsg1(jcr, M_FATAL, 0, "Batch end %s\n", errmsg);
     goto bail_out;
   }
-
-  if (JobCanceled(jcr)) { goto bail_out; }
 
   if (!jcr->db_batch->SqlQuery(SQL_QUERY::batch_lock_path_query)) {
     Jmsg1(jcr, M_FATAL, 0, "Lock Path table %s\n", errmsg);
