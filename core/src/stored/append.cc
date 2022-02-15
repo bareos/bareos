@@ -110,7 +110,7 @@ static void DoJobmediaCheckpoint(JobControlRecord* jcr)
   jcr->impl->dcr->DirCreateJobmediaRecord(false);
 }
 
-static void DoCheckpoint(JobControlRecord* jcr)
+void DoBackupCheckpoint(JobControlRecord* jcr)
 {
   DoFileListCheckpoint(jcr);
   DoJobmediaCheckpoint(jcr);
@@ -128,7 +128,7 @@ static time_t DoTimedCheckpoint(JobControlRecord* jcr,
           _("Doing checkpoint after 10 seconds: now: %d nextcheckpoint: "
             "%d\n"),
           now, checkpoint_time);
-    DoCheckpoint(jcr);
+    DoBackupCheckpoint(jcr);
   }
 
   return checkpoint_time;

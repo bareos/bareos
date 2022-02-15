@@ -40,6 +40,7 @@
  */
 
 #include "include/bareos.h"
+#include "stored/append.h"
 #include "stored/stored.h"
 #include "stored/acquire.h"
 #include "stored/authenticate.h"
@@ -515,6 +516,9 @@ static bool CancelCmd(JobControlRecord* cjcr)
       goto bail_out;
     }
   }
+
+  Jmsg0(jcr, M_INFO, 0, _("Job being canceled, doing checkpoint:\n"));
+  DoBackupCheckpoint(jcr);
 
   oldStatus = jcr->JobStatus;
   jcr->setJobStatus(status);
