@@ -1123,20 +1123,49 @@ std::string FormatMulticolumnPrompts(const UaContext* ua,
 
   std::string output{};
 
-  for (int i = 1; i < ua->num_prompts; i++) {
-    std::string prompt = ua->prompt[i];
+  const int number_output_lines
+      = (ua->num_prompts + prompts_perline - 1) / prompts_perline;
+  std::cout << "number_output_lines = " << ua->num_prompts << "/ "
+            << prompts_perline << "= " << number_output_lines << std::endl;
+  int current_line = 1;
+  int current_column = 1;
+  // for (int i = 1; i < ua->num_prompts; i++) {
+  for (int i = 1; i < number_output_lines * prompts_perline; i++) {
     if (ua->num_prompts > min_lines_threshold) {
-      if (i % prompts_perline == 0 || i == ua->num_prompts - 1) {
+      current_line = ((i - 1) / prompts_perline);
+      current_column = (i - 1) % prompts_perline;
+      int index = current_line + 1 + (current_column) * (number_output_lines);
+      std::string prompt;
+      // if (i % prompts_perline == 0 || i == ua->num_prompts - 1) {
+      if (i % prompts_perline == 0) {
+        if (index < ua->num_prompts) {
+          prompt = ua->prompt[index];
+          snprintf(formatted_prompt.data(), max_formatted_prompt_length,
+                   "%*d: %s\n", max_prompt_index_length, index, prompt.c_str());
+        } else {
+          snprintf(formatted_prompt.data(), max_formatted_prompt_length, "\n");
+        }
+        // add last column with newline
+      } else {
+        // add next column
+        if (index < ua->num_prompts) {
+          prompt = ua->prompt[index];
+          snprintf(formatted_prompt.data(), max_formatted_prompt_length,
+                   "%*d: %-*s ", max_prompt_index_length, index,
+                   max_prompt_length, prompt.c_str());
+        } else {
+          snprintf(formatted_prompt.data(), max_formatted_prompt_length, "\n");
+        }
+      }
+
+    } else {
+      if (i < ua->num_prompts) {
+        std::string prompt = ua->prompt[i];
         snprintf(formatted_prompt.data(), max_formatted_prompt_length,
                  "%*d: %s\n", max_prompt_index_length, i, prompt.c_str());
       } else {
-        snprintf(formatted_prompt.data(), max_formatted_prompt_length,
-                 "%*d: %-*s ", max_prompt_index_length, i, max_prompt_length,
-                 prompt.c_str());
+        snprintf(formatted_prompt.data(), max_formatted_prompt_length, "\n");
       }
-    } else {
-      snprintf(formatted_prompt.data(), max_formatted_prompt_length,
-               "%*d: %s\n", max_prompt_index_length, i, prompt.c_str());
     }
 
     output += formatted_prompt.data();
