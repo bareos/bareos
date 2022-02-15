@@ -1,12 +1,12 @@
 #!/bin/sh
 
-LIB=@scriptdir@/bareos-config-lib.sh
+LIB="@scriptdir@/bareos-config-lib.sh"
 
-if ! [ -r "$LIB" ]; then
-    echo "failed to read library $LIB"
+if ! [ -r "${LIB}" ]; then
+    echo "failed to read library ${LIB}"
     exit 1
 fi
-. $LIB
+. "${LIB}"
 
 usage()
 {
@@ -29,7 +29,7 @@ args=$#
 # to use its functions
 if [ $args -ge 1 ]; then
     # executes given arguments
-    if is_function $1; then
+    if is_function "$1"; then
         "$@"
     else
         echo "failed to execute $*. Not found."
