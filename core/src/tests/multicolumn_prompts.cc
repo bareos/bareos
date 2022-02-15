@@ -59,12 +59,11 @@ TEST_F(MulticolumPrompts, FormatForAnyNumberOfLinesAndStandardWidth)
 
   std::string output = FormatMulticolumnPrompts(ua, 80, 1);
 
-  EXPECT_STREQ(output.c_str(),
-               " 1: bareos1   2: bareos2   3: bareos3   4: bareos4   5: "
-               "bareos5   6: bareos6\n"
-               " 7: bareos7   8: bareos8   9: bareos9  10: bareos10 11: "
-               "bareos11 12: bareos12\n"
-               "13: bareos13 14: bareos14 15: bareos15\n");
+  EXPECT_STREQ(
+      output.c_str(),
+      " 1: bareos1   4: bareos4   7: bareos7  10: bareos10 13: bareos13 \n"
+      " 2: bareos2   5: bareos5   8: bareos8  11: bareos11 14: bareos14 \n"
+      " 3: bareos3   6: bareos6   9: bareos9  12: bareos12 15: bareos15 ");
 }
 
 TEST_F(MulticolumPrompts, FormatForMoreThan10LinesAndStandardWidth)
@@ -160,10 +159,10 @@ TEST_F(MulticolumPrompts, FormatForMoreThan10LinesAndSmallerThanStandardWidth)
   std::string output = FormatMulticolumnPrompts(ua, 60, 10);
 
   EXPECT_STREQ(output.c_str(),
-               " 1: bareos1   2: bareos2   3: bareos3   4: bareos4\n"
-               " 5: bareos5   6: bareos6   7: bareos7   8: bareos8\n"
-               " 9: bareos9  10: bareos10 11: bareos11 12: bareos12\n"
-               "13: bareos13 14: bareos14 15: bareos15\n");
+               " 1: bareos1   5: bareos5   9: bareos9  13: bareos13\n"
+               " 2: bareos2   6: bareos6  10: bareos10 14: bareos14\n"
+               " 3: bareos3   7: bareos7  11: bareos11 15: bareos15\n"
+               " 4: bareos4   8: bareos8  12: bareos12\n");
 }
 
 TEST_F(MulticolumPrompts, FormatPromptsContainingSpacesAndRegularPrompts)
