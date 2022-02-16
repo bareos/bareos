@@ -1,0 +1,1 @@
+:index:`\ <single: Broken pipe>`\  This is the interval at which Backup checkpoints are executed. While the storage daemon is appending data to volumes, it does checkpoints that update backup Metadata in the Catalog.
