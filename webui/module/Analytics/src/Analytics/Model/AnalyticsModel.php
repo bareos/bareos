@@ -27,4 +27,31 @@ namespace Analytics\Model;
 
 class AnalyticsModel
 {
+  public function getJobTotals(&$bsock=null)
+   {
+      if(isset($bsock)) {
+         $cmd = 'list jobtotals';
+         $result = $bsock->send_command($cmd, 2);
+         $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         $children = array("children" => $jobtotals['result']['jobs']);
+         return $children;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function getOverallJobTotals(&$bsock=null)
+   {
+      if(isset($bsock)) {
+         $cmd = 'list jobtotals';
+         $result = $bsock->send_command($cmd, 2);
+         $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         $result = $jobtotals['result']['jobtotals'];
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
 }
