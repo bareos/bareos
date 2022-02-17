@@ -21,8 +21,6 @@
 # 02110-1301, USA.
 #
 # shell script to grant privileges to the bareos database
-# for PostgreSQL, Ingres, MySQL, or SQLite.
-#
 
 #
 # Source the Bareos config functions.
@@ -40,6 +38,22 @@ db_user="${db_user:-$(get_database_user @db_user@)}"
 db_password="${db_password-$(get_database_password @db_password@)}"
 temp_sql_grants="/tmp/grants.sql.$$"
 
+# Check if some parameters are given, try to detect old usage with db_type
+if [ $# -gt 0 ]; then
+  case "$1" in
+      postgresql)
+         warn "Parameter db_type is no more needed"
+         shift
+         ;;
+      *)
+         error "db_type $1 is not more supported, only postgresql"
+         exit 1
+         ;;
+   esac
+fi
+
+# Below this line no additional parameters is allowed in command ($*)
+
 info "Granting ${db_type} tables"
 
 
@@ -49,7 +63,7 @@ then
     exit 1
 fi
 
-PGOPTIONS='--client-min-messages=warning' psql -f "${temp_sql_grants}" -d "${db_name}" "$*"
+PGOPTIONS='--client-min-messages=warning' psql -f "${temp_sql_grants}" -d "${db_name}"
 retval=$?
 
 rm -f "${temp_sql_grants}"

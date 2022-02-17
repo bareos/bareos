@@ -35,9 +35,23 @@ cd /
 db_name="${db_name:-$(get_database_name @db_name@)}"
 db_type="$(get_database_driver_default)"
 
+# Check if some parameters are given, try to detect old usage with db_type
+if [ $# -gt 0 ]; then
+  case "$1" in
+      postgresql)
+         warn "Parameter db_type is no more needed"
+         shift
+         ;;
+      *)
+         error "db_type $1 is not more supported, only postgresql"
+         exit 1
+         ;;
+   esac
+fi
+
 info "Dropping ${db_type} database"
 
-dropdb "$*" "${db_name}"
+dropdb "${db_name}"
 retval=$?
 
 if [ ${retval} -eq 0 ]; then
