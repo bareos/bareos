@@ -152,16 +152,15 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   int32_t n, file_index, stream, last_file_index, job_elapsed;
   bool ok = true;
   char buf1[100];
-  DeviceControlRecord* dcr = jcr->impl->dcr;
   Device* dev;
   POOLMEM* rec_data;
   char ec[50];
 
-  if (!dcr) {
+  if (!jcr->impl->dcr) {
     Jmsg0(jcr, M_FATAL, 0, _("DeviceControlRecord is NULL!!!\n"));
     return false;
   }
-  dev = dcr->dev;
+  dev = jcr->impl->dcr->dev;
   if (!dev) {
     Jmsg0(jcr, M_FATAL, 0, _("Device is NULL!!!\n"));
     return false;
@@ -169,19 +168,21 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   Dmsg1(100, "Start append data. res=%d\n", dev->NumReserved());
 
-  if (!bs->SetBufferSize(dcr->device_resource->max_network_buffer_size,
-                         BNET_SETBUF_WRITE)) {
+  if (!bs->SetBufferSize(
+          jcr->impl->dcr->device_resource->max_network_buffer_size,
+          BNET_SETBUF_WRITE)) {
     Jmsg0(jcr, M_FATAL, 0, _("Unable to set network buffer size.\n"));
     jcr->setJobStatus(JS_ErrorTerminated);
     return false;
   }
 
-  if (!AcquireDeviceForAppend(dcr)) {
+  if (!AcquireDeviceForAppend(jcr->impl->dcr)) {
     jcr->setJobStatus(JS_ErrorTerminated);
     return false;
   }
 
-  if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, dcr) != bRC_OK) {
+  if (GeneratePluginEvent(jcr, bSdEventSetupRecordTranslation, jcr->impl->dcr)
+      != bRC_OK) {
     jcr->setJobStatus(JS_ErrorTerminated);
     return false;
   }
@@ -193,13 +194,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   }
   Dmsg1(50, "Begin append device=%s\n", dev->print_name());
 
-  if (!BeginDataSpool(dcr)) {
+  if (!BeginDataSpool(jcr->impl->dcr)) {
     jcr->setJobStatus(JS_ErrorTerminated);
     return false;
   }
 
   if (!BeginAttributeSpool(jcr)) {
-    DiscardDataSpool(dcr);
+    DiscardDataSpool(jcr->impl->dcr);
     jcr->setJobStatus(JS_ErrorTerminated);
     return false;
   }
@@ -210,7 +211,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   }
 
   // Write Begin Session Record
-  if (!WriteSessionLabel(dcr, SOS_LABEL)) {
+  if (!WriteSessionLabel(jcr->impl->dcr, SOS_LABEL)) {
     Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
           dev->bstrerror());
     jcr->setJobStatus(JS_ErrorTerminated);
@@ -245,7 +246,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
    * file. 1. for the Attributes, 2. for the file data if any,
    * and 3. for the MD5 if any.
    */
-  dcr->VolFirstIndex = dcr->VolLastIndex = 0;
+  jcr->impl->dcr->VolFirstIndex = jcr->impl->dcr->VolLastIndex = 0;
   jcr->run_time = time(NULL); /* start counting time for rates */
 
   auto now
@@ -254,10 +255,10 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   time_t next_checkpoint_time = now + checkpointinterval;
 
   std::vector<FileData> processed_files{};
-  int64_t current_volumeid = dcr->VolMediaId;
+  int64_t current_volumeid = jcr->impl->dcr->VolMediaId;
 
   FileData file_currently_processed;
-  uint32_t current_block_number = dcr->block->BlockNumber;
+  uint32_t current_block_number = jcr->impl->dcr->block->BlockNumber;
 
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
     /*
@@ -324,40 +325,43 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      * We save the original data pointer from the record so we can restore
      * that after the loop ends.
      */
-    rec_data = dcr->rec->data;
+    rec_data = jcr->impl->dcr->rec->data;
     while ((n = BgetMsg(bs)) > 0 && !jcr->IsJobCanceled()) {
-      dcr->rec->VolSessionId = jcr->VolSessionId;
-      dcr->rec->VolSessionTime = jcr->VolSessionTime;
-      dcr->rec->FileIndex = file_index;
-      dcr->rec->Stream = stream;
-      dcr->rec->maskedStream = stream & STREAMMASK_TYPE; /* strip high bits */
-      dcr->rec->data_len = bs->message_length;
-      dcr->rec->data = bs->msg; /* use message buffer */
+      jcr->impl->dcr->rec->VolSessionId = jcr->VolSessionId;
+      jcr->impl->dcr->rec->VolSessionTime = jcr->VolSessionTime;
+      jcr->impl->dcr->rec->FileIndex = file_index;
+      jcr->impl->dcr->rec->Stream = stream;
+      jcr->impl->dcr->rec->maskedStream
+          = stream & STREAMMASK_TYPE; /* strip high bits */
+      jcr->impl->dcr->rec->data_len = bs->message_length;
+      jcr->impl->dcr->rec->data = bs->msg; /* use message buffer */
 
       Dmsg4(850, "before writ_rec FI=%d SessId=%d Strm=%s len=%d\n",
-            dcr->rec->FileIndex, dcr->rec->VolSessionId,
-            stream_to_ascii(buf1, dcr->rec->Stream, dcr->rec->FileIndex),
-            dcr->rec->data_len);
+            jcr->impl->dcr->rec->FileIndex, jcr->impl->dcr->rec->VolSessionId,
+            stream_to_ascii(buf1, jcr->impl->dcr->rec->Stream,
+                            jcr->impl->dcr->rec->FileIndex),
+            jcr->impl->dcr->rec->data_len);
 
-      ok = dcr->WriteRecord();
+      ok = jcr->impl->dcr->WriteRecord();
       if (!ok) {
         Dmsg2(90, "Got WriteBlockToDev error on device %s. %s\n",
-              dcr->dev->print_name(), dcr->dev->bstrerror());
+              jcr->impl->dcr->dev->print_name(),
+              jcr->impl->dcr->dev->bstrerror());
         break;
       }
 
-      if (current_block_number != dcr->block->BlockNumber) {
-        current_block_number = dcr->block->BlockNumber;
+      if (current_block_number != jcr->impl->dcr->block->BlockNumber) {
+        current_block_number = jcr->impl->dcr->block->BlockNumber;
         SaveFullyProcessedFiles(jcr, processed_files);
       }
 
-      file_currently_processed.AddDeviceRecord(dcr->rec);
+      file_currently_processed.AddDeviceRecord(jcr->impl->dcr->rec);
 
-      if (dcr->VolMediaId != current_volumeid) {
+      if (jcr->impl->dcr->VolMediaId != current_volumeid) {
         Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
         UpdateFileList(jcr);
         UpdateJobrecord(jcr);
-        current_volumeid = dcr->VolMediaId;
+        current_volumeid = jcr->impl->dcr->VolMediaId;
       } else if (checkpointinterval) {
         next_checkpoint_time
             = DoTimedCheckpoint(jcr, next_checkpoint_time, checkpointinterval);
@@ -368,7 +372,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     Dmsg2(650, "End read loop with %s. Stat=%d\n", what, n);
 
     // Restore the original data pointer.
-    dcr->rec->data = rec_data;
+    jcr->impl->dcr->rec->data = rec_data;
 
     if (bs->IsError()) {
       if (!jcr->IsJobCanceled()) {
@@ -403,7 +407,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
    * if we are at the end of the tape or we got a fatal I/O error.
    */
   if (ok || dev->CanWrite()) {
-    if (!WriteSessionLabel(dcr, EOS_LABEL)) {
+    if (!WriteSessionLabel(jcr->impl->dcr, EOS_LABEL)) {
       // Print only if ok and not cancelled to avoid spurious messages
       if (ok && !jcr->IsJobCanceled()) {
         Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
@@ -416,7 +420,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     Dmsg0(90, "back from write_end_session_label()\n");
 
     // Flush out final partial block of this session
-    if (!dcr->WriteBlockToDevice()) {
+    if (!jcr->impl->dcr->WriteBlockToDevice()) {
       // Print only if ok and not cancelled to avoid spurious messages
       if (ok && !jcr->IsJobCanceled()) {
         Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
@@ -434,14 +438,14 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   }
 
   if (!ok && !jcr->is_JobStatus(JS_Incomplete)) {
-    DiscardDataSpool(dcr);
+    DiscardDataSpool(jcr->impl->dcr);
   } else {
     // Note: if commit is OK, the device will remain blocked
-    CommitDataSpool(dcr);
+    CommitDataSpool(jcr->impl->dcr);
   }
 
   // Release the device -- and send final Vol info to DIR and unlock it.
-  ReleaseDevice(dcr);
+  ReleaseDevice(jcr->impl->dcr);
 
   /*
    * Don't use time_t for job_elapsed as time_t can be 32 or 64 bits,
