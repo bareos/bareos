@@ -192,6 +192,11 @@ return array(
             'id' => 'topnavbar-director',
             'route' => 'director',
          ),
+         array(
+            'label' => _('Analytics'),
+            'id' => 'topnavbar-analytics',
+            'route' => 'analytics',
+         ),
       ),
    ),
 );
