@@ -296,21 +296,16 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      * An incomplete job can start the file_index at any number.
      * otherwise, it must start at 1.
      */
-    if (jcr->rerunning && file_index > 0 && last_file_index == 0) {
-      goto fi_checked;
+    if (!(jcr->rerunning && file_index > 0 && last_file_index == 0)
+        && !(file_index > 0
+             && (file_index == last_file_index
+                 || file_index == last_file_index + 1))) {
+      Jmsg3(jcr, M_FATAL, 0, _("FI=%d from %s not positive or sequential=%d\n"),
+            file_index, what, last_file_index);
+      PossibleIncompleteJob(jcr, last_file_index);
+      ok = false;
+      break;
     }
-    if (file_index > 0
-        && (file_index == last_file_index
-            || file_index == last_file_index + 1)) {
-      goto fi_checked;
-    }
-    Jmsg3(jcr, M_FATAL, 0, _("FI=%d from %s not positive or sequential=%d\n"),
-          file_index, what, last_file_index);
-    PossibleIncompleteJob(jcr, last_file_index);
-    ok = false;
-    break;
-
-  fi_checked:
 
     if (file_index != last_file_index) {
       last_file_index = file_index;
