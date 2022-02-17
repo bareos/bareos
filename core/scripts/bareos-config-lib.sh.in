@@ -445,10 +445,6 @@ deploy_config()
    if [ $RC -eq 0 ]; then
       initialize_local_hostname
       initialize_passwords
-# @TODO debug
-      # There's a flaw here, if storage got installed after bareos-dir (root:bareos)
-      # the chown move to bareos:bareos ?
-      # This can be call bad practice especially the -R
       if [ "${DAEMON_USER}" ] && [ "${DAEMON_GROUP}" ]; then
          chown -R "${DAEMON_USER}":"${DAEMON_GROUP}" "${DEST}"
       fi
