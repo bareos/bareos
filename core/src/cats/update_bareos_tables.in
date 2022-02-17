@@ -37,16 +37,29 @@ temp_sql_schema="/tmp/tables.sql.$$"
 
 SHOW_WARNING="yes"
 
-if [ "$1" = "-f" ]; then
-   FORCE="yes"
-   shift || true
+# Check if some parameters are given, try to detect old usage with db_type
+if [ $# -gt 0 ]; then
+  case "$1" in
+      -f)
+        FORCE="yes"
+        shift || true
+        ;;
+      postgresql)
+         warn "Parameter db_type is no more needed"
+         shift
+         ;;
+      *)
+         error "db_type $1 is not more supported, only postgresql"
+         exit 1
+         ;;
+   esac
 fi
-
+# Below this line no additional parameters is allowed in command ($*)
 info "Updating ${db_type} tables"
 
 while true
 do
-    DBVERSION=$(PGOPTIONS='--client-min-messages=warning' psql -d "${db_name}" -t --pset format=unaligned -c "SELECT MAX(VersionId) FROM Version;" "$@")
+    DBVERSION=$(PGOPTIONS='--client-min-messages=warning' psql -d "${db_name}" -t --pset format=unaligned -c "SELECT MAX(VersionId) FROM Version;")
     if [ -z "${DBVERSION}" ]; then
         error "Unable to determine version of Bareos ${db_type} database"
         exit 1
@@ -103,7 +116,7 @@ do
 
     info "Upgrading database schema from version ${start_version} to ${end_version}"
 
-    PGOPTIONS='--client-min-messages=warning' psql -f "${temp_sql_schema}" -d "${db_name}" "$*"
+    PGOPTIONS='--client-min-messages=warning' psql -f "${temp_sql_schema}" -d "${db_name}"
     retval=$?
     if [ "${retval}" -eq 0 ] && [ "${end_version}" -eq 2210 ]; then
         if ! r="$(PGOPTIONS='--client-min-messages=warning' psql -d "${db_name}" -c 'ALTER SEQUENCE basefiles_baseid_seq AS BIGINT')" ; then

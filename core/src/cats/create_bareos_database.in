@@ -36,18 +36,33 @@ cd /
 db_name="${db_name:-$(get_database_name @db_name@)}"
 db_type="$(get_database_driver_default)"
 
+# Check if some parameters are given, try to detect old usage with db_type
+if [ $# -gt 0 ]; then
+  case "$1" in
+      postgresql)
+         warn "Parameter db_type is no more needed"
+         shift
+         ;;
+      *)
+         error "db_type $1 is not more supported, only postgresql"
+         exit 1
+         ;;
+   esac
+fi
+
+# Below this line no external or additional parameters are supported.
 info "Creating ${db_type} database"
 
 # use SQL_ASCII to be able to put any filename into
 # the database even those created with unusual character sets
-PGOPTIONS='--client-min-messages=warning' psql -f - -d template1 "$*" << END-OF-DATA
+PGOPTIONS='--client-min-messages=warning' psql -f - -d template1 << END-OF-DATA
 \set ON_ERROR_STOP on
 CREATE DATABASE ${db_name} ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;
 ALTER DATABASE ${db_name} SET datestyle TO 'ISO, YMD';
 END-OF-DATA
 retval=$?
 
-if PGOPTIONS='--client-min-messages=warning' psql --list --tuples-only --no-align "$*" | grep "^${db_name}|.*|SQL_ASCII|C|C" >/dev/null
+if PGOPTIONS='--client-min-messages=warning' psql --list --tuples-only --no-align | grep "^${db_name}|.*|SQL_ASCII|C|C" >/dev/null
 then
     info "Database encoding OK"
 else
