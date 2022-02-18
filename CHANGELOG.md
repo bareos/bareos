@@ -18,6 +18,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - sql_get.cc: fix error logging in GetJobRecord() for jobname #1042
 - webui: fix empty job timeline issue if date.timezone is not set in php.ini [PR #1051]
 - Fix for wrong update message when updating all volumes from all pools with no existing volumes [PR #1015]
+- Fix context confusion in Director's Python plugins [PR #1047]
 
 ### Added
 - Python plugins: add default module_path to search path [PR #1038]
@@ -58,6 +59,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1041]: https://github.com/bareos/bareos/pull/1041
 [PR #1043]: https://github.com/bareos/bareos/pull/1043
 [PR #1046]: https://github.com/bareos/bareos/pull/1046
+[PR #1047]: https://github.com/bareos/bareos/pull/1047
 [PR #1048]: https://github.com/bareos/bareos/pull/1048
 [PR #1050]: https://github.com/bareos/bareos/pull/1050
 [PR #1051]: https://github.com/bareos/bareos/pull/1051
