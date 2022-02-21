@@ -35,7 +35,7 @@
 
 namespace console {
 
-static BareosResource* sres_head[R_LAST - R_FIRST + 1];
+static BareosResource* sres_head[R_NUM];
 static BareosResource** res_head = sres_head;
 
 static bool SaveResource(int type, ResourceItem* items, int pass);
@@ -169,7 +169,7 @@ static void FreeResource(BareosResource* res, int type)
 
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  int rindex = type - R_FIRST;
+  int rindex = type;
   int i;
   int error = 0;
 
@@ -261,10 +261,10 @@ static void ConfigReadyCallback(ConfigurationParser& my_config) {}
 ConfigurationParser* InitConsConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
-      R_FIRST, R_LAST, resources, res_head, default_config_filename.c_str(),
-      "bconsole.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
-      DumpResource, FreeResource);
+      configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code, R_NUM,
+      resources, res_head, default_config_filename.c_str(), "bconsole.d",
+      ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
+      FreeResource);
   if (config) { config->r_own_ = R_CONSOLE; }
   return config;
 }
@@ -282,7 +282,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_t* bconsole = json_object();
   json_object_set(json_resource_object, "bconsole", bconsole);
 
-  ResourceTable* resources = my_config->resources_;
+  ResourceTable* resources = my_config->resource_definitions_;
   for (; resources->name; ++resources) {
     json_object_set(bconsole, resources->name, json_items(resources->items));
   }

@@ -92,11 +92,10 @@ ConfigurationParser::ConfigurationParser()
     , print_res_(nullptr)
     , err_type_(0)
     , omit_defaults_(false)
-    , r_first_(0)
-    , r_last_(0)
+    , r_num_(0)
     , r_own_(0)
     , own_resource_(nullptr)
-    , resources_(0)
+    , resource_definitions_(0)
     , res_head_(nullptr)
     , SaveResourceCb_(nullptr)
     , DumpResourceCb_(nullptr)
@@ -116,9 +115,8 @@ ConfigurationParser::ConfigurationParser(
     STORE_RES_HANDLER* StoreRes,
     PRINT_RES_HANDLER* print_res,
     int32_t err_type,
-    int32_t r_first,
-    int32_t r_last,
-    ResourceTable* resources,
+    int32_t r_num,
+    ResourceTable* resource_definitions,
     BareosResource** res_head,
     const char* config_default_filename,
     const char* config_include_dir,
@@ -138,9 +136,8 @@ ConfigurationParser::ConfigurationParser(
   store_res_ = StoreRes;
   print_res_ = print_res;
   err_type_ = err_type;
-  r_first_ = r_first;
-  r_last_ = r_last;
-  resources_ = resources;
+  r_num_ = r_num;
+  resource_definitions_ = resource_definitions;
   res_head_ = res_head;
   config_default_filename_
       = config_default_filename == nullptr ? "" : config_default_filename;
@@ -158,11 +155,9 @@ ConfigurationParser::ConfigurationParser(
 ConfigurationParser::~ConfigurationParser()
 {
   if (res_head_) {
-    for (int i = r_first_; i <= r_last_; i++) {
-      if (res_head_[i - r_first_]) {
-        FreeResourceCb_(res_head_[i - r_first_], i);
-      }
-      res_head_[i - r_first_] = nullptr;
+    for (int i = 0; i <= r_num_ - 1; i++) {
+      if (res_head_[i]) { FreeResourceCb_(res_head_[i], i); }
+      res_head_[i] = nullptr;
     }
   }
 }
@@ -282,12 +277,12 @@ bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
 bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
                                                  int rcode)
 {
-  int rindex = rcode - r_first_;
+  int rindex = rcode;
 
   if (!new_resource->resource_name_) {
     Emsg1(M_ERROR, 0,
           _("Name item is required in %s resource, but not found.\n"),
-          resources_[rindex].name);
+          resource_definitions_[rindex].name);
     return false;
   }
 
@@ -303,7 +298,7 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
         Emsg2(M_ERROR, 0,
               _("Attempt to define second %s resource named \"%s\" is not "
                 "permitted.\n"),
-              resources_[rindex].name, new_resource->resource_name_);
+              resource_definitions_[rindex].name, new_resource->resource_name_);
         return false;
       }
       last = current;
@@ -318,8 +313,10 @@ bool ConfigurationParser::AppendToResourcesChain(BareosResource* new_resource,
 
 int ConfigurationParser::GetResourceTableIndex(const char* resource_type_name)
 {
-  for (int i = 0; resources_[i].name; i++) {
-    if (Bstrcasecmp(resources_[i].name, resource_type_name)) { return i; }
+  for (int i = 0; resource_definitions_[i].name; i++) {
+    if (Bstrcasecmp(resource_definitions_[i].name, resource_type_name)) {
+      return i;
+    }
   }
 
   return -1;
@@ -327,9 +324,9 @@ int ConfigurationParser::GetResourceTableIndex(const char* resource_type_name)
 
 int ConfigurationParser::GetResourceCode(const char* resource_type_name)
 {
-  for (int i = 0; resources_[i].name; i++) {
-    if (Bstrcasecmp(resources_[i].name, resource_type_name)) {
-      return resources_[i].rcode;
+  for (int i = 0; resource_definitions_[i].name; i++) {
+    if (Bstrcasecmp(resource_definitions_[i].name, resource_type_name)) {
+      return resource_definitions_[i].rcode;
     }
   }
 
@@ -340,7 +337,7 @@ ResourceTable* ConfigurationParser::GetResourceTable(
     const char* resource_type_name)
 {
   int res_table_index = GetResourceTableIndex(resource_type_name);
-  return &resources_[res_table_index];
+  return &resource_definitions_[res_table_index];
 }
 
 int ConfigurationParser::GetResourceItemIndex(ResourceItem* resource_items_,
@@ -516,9 +513,9 @@ bool ConfigurationParser::FindConfigPath(PoolMem& full_path)
   return found;
 }
 
-BareosResource** ConfigurationParser::SaveResources()
+BareosResource** ConfigurationParser::CopyResourceTable()
 {
-  int num = r_last_ - r_first_ + 1;
+  int num = r_num_;
   BareosResource** res
       = (BareosResource**)malloc(num * sizeof(BareosResource*));
 
@@ -532,7 +529,7 @@ BareosResource** ConfigurationParser::SaveResources()
 
 bool ConfigurationParser::RemoveResource(int rcode, const char* name)
 {
-  int rindex = rcode - r_first_;
+  int rindex = rcode;
   BareosResource* last;
 
   /*
@@ -541,7 +538,7 @@ bool ConfigurationParser::RemoveResource(int rcode, const char* name)
    * Note: this is intended for removing a resource that has just been added,
    * but proven to be incorrect (added by console command "configure add").
    * For a general approach, a check if this resource is referenced by other
-   * resources must be added. If it is referenced, don't remove it.
+   * resource_definitions must be added. If it is referenced, don't remove it.
    */
   last = nullptr;
   for (BareosResource* res = res_head_[rindex]; res; res = res->next_) {
@@ -603,10 +600,10 @@ void ConfigurationParser::DumpResources(bool sendit(void* sock,
                                         void* sock,
                                         bool hide_sensitive_data)
 {
-  for (int i = r_first_; i <= r_last_; i++) {
-    if (res_head_[i - r_first_]) {
-      DumpResourceCb_(i, res_head_[i - r_first_], sendit, sock,
-                      hide_sensitive_data, false);
+  for (int i = 0; i <= r_num_ - 1; i++) {
+    if (res_head_[i]) {
+      DumpResourceCb_(i, res_head_[i], sendit, sock, hide_sensitive_data,
+                      false);
     }
   }
 }

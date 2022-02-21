@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -55,7 +55,7 @@
 
 static const std::string default_config_filename("tray-monitor.conf");
 
-static BareosResource* sres_head[R_LAST - R_FIRST + 1];
+static BareosResource* sres_head[R_NUM];
 static BareosResource** res_head = sres_head;
 
 static bool SaveResource(int type, ResourceItem* items, int pass);
@@ -161,14 +161,14 @@ static ResourceItem con_font_items[] = {
 
 /*
  * This is the master resource definition.
- * It must have one item for each of the resources.
+ * It must have one item for each of the resource_definitions.
  *
  * NOTE!!! keep it in the same order as the R_codes
- *   or eliminate all resources[rindex].name
+ *   or eliminate all resource_definitions[rindex].name
  *
  *  name items rcode res_head
  */
-static ResourceTable resources[] = {
+static ResourceTable resource_definitions[] = {
   {"Monitor", "Monitors", mon_items, R_MONITOR, sizeof(MonitorResource),
       []() { res_monitor = new MonitorResource(); }, reinterpret_cast<BareosResource**>(&res_monitor)},
   {"Director", "Directors", dir_items, R_DIRECTOR, sizeof(DirectorResource),
@@ -275,7 +275,7 @@ static void FreeResource(BareosResource* res, int type)
  */
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  int rindex = type - R_FIRST;
+  int rindex = type;
   int i;
   int error = 0;
 
@@ -285,19 +285,19 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
       if (!BitIsSet(i, (*items[i].allocated_resource)->item_present_)) {
         Emsg2(M_ERROR_TERM, 0,
               _("%s item is required in %s resource, but not found.\n"),
-              items[i].name, resources[rindex].name);
+              items[i].name, resource_definitions[rindex].name);
       }
     }
     /* If this triggers, take a look at lib/parse_conf.h */
     if (i >= MAX_RES_ITEMS) {
       Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"),
-            resources[rindex].name);
+            resource_definitions[rindex].name);
     }
   }
 
   /*
    * During pass 2 in each "store" routine, we looked up pointers
-   * to all the resources referrenced in the current resource, now we
+   * to all the resource_definitions referrenced in the current resource, now we
    * must copy their addresses from the static record to the allocated
    * record.
    */
@@ -319,7 +319,7 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
 
     /* resource_name_ was already deep copied during 1. pass
      * as matter of fact the remaining allocated memory is
-     * redundant and would not be freed in the dynamic resources;
+     * redundant and would not be freed in the dynamic resource_definitions;
      *
      * currently, this is the best place to free that */
 
@@ -384,8 +384,8 @@ static void ConfigReadyCallback(ConfigurationParser& my_config) {}
 ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code,
-      R_FIRST, R_LAST, resources, res_head, default_config_filename.c_str(),
+      configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code, R_NUM,
+      resource_definitions, res_head, default_config_filename.c_str(),
       "tray-monitor.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
       DumpResource, FreeResource);
   if (config) { config->r_own_ = R_MONITOR; }
@@ -396,7 +396,7 @@ ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
 #ifdef HAVE_JANSSON
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
-  ResourceTable* resources = my_config->resources_;
+  ResourceTable* resource_definitions = my_config->resource_definitions_;
 
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
@@ -409,8 +409,8 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_t* bareos_tray_monitor = json_object();
   json_object_set(resource, "bareos-tray-monitor", bareos_tray_monitor);
 
-  for (int r = 0; resources[r].name; r++) {
-    ResourceTable resource = my_config->resources_[r];
+  for (int r = 0; resource_definitions[r].name; r++) {
+    ResourceTable resource = my_config->resource_definitions_[r];
     json_object_set(bareos_tray_monitor, resource.name,
                     json_items(resource.items));
   }

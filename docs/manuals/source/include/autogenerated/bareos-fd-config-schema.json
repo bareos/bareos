@@ -238,7 +238,7 @@
         },
         "Messages": {
           "datatype": "RES",
-          "code": 1003,
+          "code": 2,
           "equals": true
         },
         "SdConnectTimeout": {
@@ -524,7 +524,7 @@
         },
         "Messages": {
           "datatype": "RES",
-          "code": 1003,
+          "code": 2,
           "equals": true
         },
         "SdConnectTimeout": {

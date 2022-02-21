@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -279,10 +279,9 @@ bool ConfigParserStateMachine::InitParserPass()
 void ConfigParserStateMachine::DumpResourcesAfterSecondPass()
 {
   if (debug_level >= 900 && parser_pass_number_ == 2) {
-    for (int i = my_config_.r_first_; i <= my_config_.r_last_; i++) {
-      my_config_.DumpResourceCb_(i,
-                                 my_config_.res_head_[i - my_config_.r_first_],
-                                 PrintMessage, nullptr, false, false);
+    for (int i = 0; i <= my_config_.r_num_ - 1; i++) {
+      my_config_.DumpResourceCb_(i, my_config_.res_head_[i], PrintMessage,
+                                 nullptr, false, false);
     }
   }
 }

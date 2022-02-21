@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -92,7 +92,7 @@ BareosResource* ConfigurationParser::GetResWithName(int rcode,
                                                     bool lock) const
 {
   BareosResource* res;
-  int rindex = rcode - r_first_;
+  int rindex = rcode;
 
   if (lock) { LockRes(this); }
 
@@ -116,7 +116,7 @@ BareosResource* ConfigurationParser::GetNextRes(int rcode,
                                                 BareosResource* res) const
 {
   BareosResource* nres;
-  int rindex = rcode - r_first_;
+  int rindex = rcode;
 
   if (res == NULL) {
     nres = res_head_[rindex];
@@ -129,19 +129,19 @@ BareosResource* ConfigurationParser::GetNextRes(int rcode,
 
 const char* ConfigurationParser::ResToStr(int rcode) const
 {
-  if (rcode < r_first_ || rcode > r_last_) {
+  if (rcode < 0 || rcode > r_num_ - 1) {
     return _("***UNKNOWN***");
   } else {
-    return resources_[rcode - r_first_].name;
+    return resource_definitions_[rcode].name;
   }
 }
 
 const char* ConfigurationParser::ResGroupToStr(int rcode) const
 {
-  if (rcode < r_first_ || rcode > r_last_) {
+  if (rcode < 0 || rcode > r_num_ - 1) {
     return _("***UNKNOWN***");
   } else {
-    return resources_[rcode - r_first_].groupname;
+    return resource_definitions_[rcode].groupname;
   }
 }
 
@@ -2034,17 +2034,16 @@ bool BareosResource::PrintConfig(OutputFormatterResource& send,
   int rindex;
 
   // If entry is not used, then there is nothing to print.
-  if (rcode_ < (uint32_t)my_config.r_first_ || refcnt_ <= 0) { return true; }
-
-  rindex = rcode_ - my_config.r_first_;
+  if (rcode_ < 0 || refcnt_ <= 0) { return true; }
+  rindex = rcode_;
 
   // don't dump internal resources.
   if ((internal_) && (!verbose)) { return true; }
   // Make sure the resource class has any items.
-  if (!my_config.resources_[rindex].items) { return true; }
-  items = my_config.resources_[rindex].items;
+  if (!my_config.resource_definitions_[rindex].items) { return true; }
+  items = my_config.resource_definitions_[rindex].items;
 
-  *my_config.resources_[rindex].allocated_resource_ = this;
+  *my_config.resource_definitions_[rindex].allocated_resource_ = this;
 
   send.ResourceStart(my_config.ResGroupToStr(rcode_),
                      my_config.ResToStr(rcode_), resource_name_, internal_);
