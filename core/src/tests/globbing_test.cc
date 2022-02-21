@@ -37,25 +37,6 @@ namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
-void InitContexts(UaContext*& ua, TreeContext* tree)
-{
-  ua = (UaContext*)malloc(sizeof(UaContext));
-  ua = new (ua) UaContext();
-  ua->cmd = GetPoolMemory(PM_FNAME);
-  ua->args = GetPoolMemory(PM_FNAME);
-  ua->errmsg = GetPoolMemory(PM_FNAME);
-  ua->verbose = true;
-  ua->automount = true;
-  ua->send = new OutputFormatter(sprintit, ua, filterit, ua);
-
-  tree->root = new_tree(1);
-  tree->ua = ua;
-  tree->all = false;
-  tree->FileEstimate = 100;
-  tree->DeltaCount = 1;
-  tree->node = (TREE_NODE*)tree->root;
-}
-
 int FakeCdCmd(UaContext* ua, TreeContext* tree, std::string path)
 {
   std::string command = "cd " + path;
@@ -71,15 +52,6 @@ int FakeMarkCmd(UaContext* ua, TreeContext* tree, std::string path)
 
   ParseArgsOnly(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
   return MarkElements(ua, tree);
-}
-
-int FakelsCmd(UaContext* ua, TreeContext* tree, std::string path)
-{
-  std::string command = "ls " + path;
-  PmStrcpy(ua->cmd, command.c_str());
-
-  ParseArgsOnly(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
-  return lscmd(ua, tree);
 }
 
 void PopulateTree(std::vector<std::string> files, TreeContext* tree)
@@ -106,24 +78,32 @@ void PopulateTree(std::vector<std::string> files, TreeContext* tree)
   }
 }
 
-void DestroyTree(TreeContext* tree) { FreeTree(tree->root); }
+class Globbing : public testing::Test {
+ protected:
+  void SetUp() override
+  {
+    tree.root = new_tree(1);
+    tree.node = (TREE_NODE*)tree.root;
+    me = new DirectorResource;
+    me->optimize_for_size = true;
+    me->optimize_for_speed = false;
+    ua = new_ua_context(&jcr);
+  }
 
+  void TearDown() override
+  {
+    FreeUaContext(ua);
+    FreeTree(tree.root);
+    delete me;
+  }
 
-TEST(globbing, globbing_in_markcmd)
-{
-  /*The director resource is created in order for certain functions to access
-    certain global variables*/
-  me = new DirectorResource;
-  me->optimize_for_size = true;
-  me->optimize_for_speed = false;
-
-  /* creating a ua context is usually done with
-   * new_ua_context(JobControlRecord jcr) but database handling make it break in
-   * this environment, while not being necessary for the test*/
+  JobControlRecord jcr{};
   UaContext* ua{nullptr};
   TreeContext tree;
-  InitContexts(ua, &tree);
+};
 
+TEST_F(Globbing, globbing_in_markcmd)
+{
   const std::vector<std::string> files
       = {"/some/weirdfiles/normalefile",
          "/some/weirdfiles/nottooweird",
@@ -209,7 +189,4 @@ TEST(globbing, globbing_in_markcmd)
    */
   //  EXPECT_EQ(FakeMarkCmd(&ua, tree, "{*tory1,*tory2}/file1"), 1);
   //  EXPECT_EQ(fnmatch("{*tory1,*tory2}", "subdirectory1", 0), 0);
-  FreeUaContext(ua);
-  DestroyTree(&tree);
-  delete me;
 }
