@@ -773,6 +773,13 @@ get_database_param()
     return $rc
 }
 
+get_database_catalog()
+{
+    DEFAULT="${1-}"
+    get_database_param "catalog" "$DEFAULT"
+    return $?
+}
+
 get_database_driver()
 {
 # Candidate to be removed as the dbdriver is not more in config files.
@@ -781,11 +788,24 @@ get_database_driver()
     return $?
 }
 
-
 get_database_address()
 {
     DEFAULT="${1-}"
     get_database_param "dbaddress" "$DEFAULT"
+    return $?
+}
+
+get_database_socket()
+{
+    DEFAULT="${1-}"
+    get_database_param "dbsocket" "$DEFAULT"
+    return $?
+}
+
+get_database_port()
+{
+    DEFAULT="${1-}"
+    get_database_param "dbport" "$DEFAULT"
     return $?
 }
 
