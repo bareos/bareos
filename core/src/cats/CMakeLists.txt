@@ -81,7 +81,6 @@ install(
         grant_bareos_privileges
         drop_bareos_tables
         drop_bareos_database
-        make_catalog_backup.pl
         make_catalog_backup
         delete_catalog_backup
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE

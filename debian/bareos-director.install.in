@@ -1,7 +1,6 @@
 /etc/logrotate.d/bareos-dir
 @scriptdir@/delete_catalog_backup
 @scriptdir@/make_catalog_backup
-@scriptdir@/make_catalog_backup.pl
 @scriptdir@/query.sql
 @configtemplatedir@/bareos-dir.d/catalog/MyCatalog.conf
 @configtemplatedir@/bareos-dir.d/client/bareos-fd.conf

@@ -184,7 +184,7 @@ Job {
   # RescheduleTimes = 5
   Priority = 11
   # AllowMixedPriority = no
-  run before job = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+  run before job = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
   run after job = "/usr/lib/bareos/scripts/delete_catalog_backup"
   # Accurate = no
   # AllowDuplicateJobs = yes

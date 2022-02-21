@@ -486,7 +486,7 @@ Job {
   Priority = 100
   AllowMixedPriority = Yes
   SelectionPattern = "select * from jobs;"
-  RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+  RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
   RunAfterJob = "/usr/lib/bareos/scripts/delete_catalog_backup"
   RunScript {
     Command = "/etc/init.d/apache stop"
@@ -659,7 +659,7 @@ Job {
   Priority = 11
   # AllowMixedPriority = No
   # SelectionPattern =
-  RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+  RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
   RunAfterJob = "/usr/lib/bareos/scripts/delete_catalog_backup"
   # Accurate = No
   # AllowDuplicateJobs = Yes

@@ -61,7 +61,7 @@ Job {
   JobDefs = "DefaultJob"
   WriteBootstrap = "|/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root"
   Priority = 11
-  run before job = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+  run before job = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
   run after job = "/usr/lib/bareos/scripts/delete_catalog_backup"
 }
 

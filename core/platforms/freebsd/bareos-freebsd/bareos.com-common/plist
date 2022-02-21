@@ -33,7 +33,6 @@
 /usr/lib/bareos/scripts/grant_bareos_privileges
 /usr/lib/bareos/scripts/make_bareos_tables
 /usr/lib/bareos/scripts/make_catalog_backup
-/usr/lib/bareos/scripts/make_catalog_backup.pl
 /usr/lib/bareos/scripts/mtx-changer
 /usr/lib/bareos/scripts/query.sql
 /usr/lib/bareos/scripts/update_bareos_tables

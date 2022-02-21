@@ -408,7 +408,7 @@ The following code snippet is an example how to run the cache update process in 
      JobDefs = "DefaultJob"
      WriteBootstrap = "|/usr/sbin/bsmtp -h localhost -f "(Bareos) " -s "Bootstrap for Job %j" root@localhost"
      Priority = 100
-     run before job = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+     run before job = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
      run after job = "/usr/lib/bareos/scripts/delete_catalog_backup"
      Run Script {
        Console = ".bvfs_update"

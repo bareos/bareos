@@ -3,7 +3,9 @@
 Catalog Maintenance
 ===================
 
-:index:`\ <single: Maintenance; Catalog>`\  :index:`\ <single: Catalog Maintenance>`\
+.. index::
+   single: Maintenance; Catalog
+   single: Catalog Maintenance
 
 Catalog Database
 ----------------
@@ -17,8 +19,9 @@ The database often runs on the same server as the |dir|. However, it is also pos
 dbconfig-common (Debian)
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Platform; Debian; dbconfig-common>`
-:index:`\ <single: Platform; Ubuntu; dbconfig-common>`
+.. index::
+   single: Platform; Debian; dbconfig-common
+   single: Platform; Ubuntu; dbconfig-common
 
 Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian (and Ubuntu) based packages support the **dbconfig-common** mechanism to create and update the Bareos database, according to the user choices.
 
@@ -75,13 +78,7 @@ Bareos comes with a number of scripts to prepare and update the databases. All t
 The database preparation scripts have following configuration options:
 
 db_type
-   -  command line parameter $1
-
-   -  :config:option:`dir/catalog/DbDriver`\  from the configuration
-
-   -  installed database backends
-
-   -  fallback: postgresql
+   -  default: postgresql
 
 db_name
    -  environment variable ``db_name``\
@@ -152,7 +149,7 @@ If this works on your system can be verified by
    su - postgres
    psql
 
-If your database is configured to require a password, this must be definied in the file `:file:`~/.pgpass` <http://www.postgresql.org/docs/8.2/static/libpq-pgpass.html>`_ in the following syntax: :strong:`HOST:PORT:DATABASE:USER:PASSWORD`, e.g.
+If your database is configured to require a password, this must be defined in the file `:file:`~/.pgpass` <https://postgresql.org/docs/current/static/libpq-pgpass.html>`_ in the following syntax: :strong:`HOST:PORT:DATABASE:USER:PASSWORD`, e.g.
 
 .. code-block:: cfg
    :caption: PostgreSQL access credentials
@@ -300,7 +297,7 @@ Set the PostgreSQL server IP as :config:option:`dir/catalog/DbAddress`\  in :ref
    db_type=PostgreSQL
    working_dir=/var/lib/bareos
 
-If **dbconfig-common** did not succeed or you choosed not to use it, run the Bareos database preparation scripts with:
+If **dbconfig-common** did not succeed or you choose not to use it, run the Bareos database preparation scripts with:
 
 .. code-block:: shell-session
    :caption: Setup Bareos catalog database
@@ -316,8 +313,9 @@ Retention Periods
 Database Size
 ~~~~~~~~~~~~~
 
-:index:`\ <single: Size; Database>`
-:index:`\ <single: Database Size>`
+.. index::
+   single: Size; Database
+   single: Database Size
 
 As mentioned above, if you do not do automatic pruning, your Catalog will grow each time you run a Job. Normally, you should decide how long you want File records to be maintained in the Catalog and set the File Retention period to that time. Then you can either wait and see how big your Catalog gets or make a calculation assuming approximately 154 bytes for each File saved and knowing the number of Files that are saved during each backup and the number of Clients you backup.
 
@@ -353,14 +351,20 @@ database size will remain constant.
 Setting Retention Periods
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Setting Retention Periods>`\  :index:`\ <single: Periods; Setting Retention>`\
+.. index::
+   single: Setting Retention Periods
+   single: Periods; Setting Retention
 
 Bareos uses three Retention periods: the File Retention period, the Job Retention period, and the Volume Retention period. Of these three, the File Retention period is by far the most important in determining how large your database will become.
 
 The File Retention and the Job Retention are specified in each Client resource as is shown below. The Volume Retention period is specified in the Pool resource, and the details are given in the next chapter of this manual.
 
 File Retention = <time-period-specification>
-   :index:`\ <single: File Retention>`\  :index:`\ <single: Retention; File>`\  The File Retention record defines the length of time that Bareos will keep File records in the Catalog database. When this time period expires, and if AutoPrune is set to yes, Bareos will prune (remove) File records that are older than the specified File Retention period. The pruning will occur at the end of a backup Job for the given Client. Note that the Client database record contains a copy of the
+.. index::
+   single: File Retention
+   single: Retention; File
+
+   The File Retention record defines the length of time that Bareos will keep File records in the Catalog database. When this time period expires, and if AutoPrune is set to yes, Bareos will prune (remove) File records that are older than the specified File Retention period. The pruning will occur at the end of a backup Job for the given Client. Note that the Client database record contains a copy of the
    File and Job retention periods, but Bareos uses the current values found in the Director’s Client resource to do the pruning.
 
    Since File records in the database account for probably 80 percent of the size of the database, you should carefully determine exactly what File Retention period you need. Once the File records have been removed from the database, you will no longer be able to restore individual files in a Job. However, as long as the Job record still exists, you will be able to restore all files in the job.
@@ -370,7 +374,11 @@ File Retention = <time-period-specification>
    The default File retention period is 60 days.
 
 Job Retention = <time-period-specification>
-   :index:`\ <single: Job; Retention>`\  :index:`\ <single: Retention; Job>`\  The Job Retention record defines the length of time that Bareos will keep Job records in the Catalog database. When this time period expires, and if AutoPrune is set to yes Bareos will prune (remove) Job records that are older than the specified Job Retention period. Note, if a Job record is selected for pruning, all associated File and JobMedia records will also be pruned regardless of the File Retention
+.. index::
+   single: Job; Retention
+   single: Retention; Job
+
+   The Job Retention record defines the length of time that Bareos will keep Job records in the Catalog database. When this time period expires, and if AutoPrune is set to yes Bareos will prune (remove) Job records that are older than the specified Job Retention period. Note, if a Job record is selected for pruning, all associated File and JobMedia records will also be pruned regardless of the File Retention
    period set. As a consequence, you normally will set the File retention period to be less than the Job retention period.
 
    As mentioned above, once the File records are removed from the database, you will no longer be able to restore individual files from the Job. However, as long as the Job record remains in the database, you will be able to restore all the files backed up for the Job. As a consequence, it is generally a good idea to retain the Job records much longer than the File records.
@@ -380,14 +388,20 @@ Job Retention = <time-period-specification>
    The default Job Retention period is 180 days.
 
 :config:option:`dir/client/AutoPrune`\
-   :index:`\ <single: AutoPrune>`\  :index:`\ <single: Job; Retention; AutoPrune>`\  If set to yes, Bareos will automatically apply the File retention period and the Job retention period for the Client at the end of the Job. If you turn this off by setting it to no, your Catalog will grow each time you run a Job.
+   .. index::
+      single: AutoPrune
+      single: Job; Retention; AutoPrune
+
+   If set to yes, Bareos will automatically apply the File retention period and the Job retention period for the Client at the end of the Job. If you turn this off by setting it to no, your Catalog will grow each time you run a Job.
 
 .. _section-JobStatistics:
 
 Job Statistics
 ^^^^^^^^^^^^^^
 
-:index:`\ <single: Statistics>`\  :index:`\ <single: Job; Statistics>`\
+.. index::
+   single: Statistics
+   single: Job; Statistics
 
 Bareos catalog contains lot of information about your IT infrastructure, how many files, their size, the number of video or music files etc. Using Bareos catalog during the day to get them permit to save resources on your servers.
 
@@ -432,14 +446,17 @@ You can use the following Job resource in your nightly :config:option:`dir/job =
 PostgreSQL Database
 -------------------
 
-:index:`\ <single: Database; PostgreSQL>`\  :index:`\ <single: PostgreSQL>`\
+.. index::
+   single: Database; PostgreSQL
+   single: PostgreSQL
 
 .. _CompactingPostgres:
 
 Compacting Your PostgreSQL Database
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:index:`\ <single: Database; PostgreSQL; Compacting>`\
+.. index::
+   single: Database; PostgreSQL; Compacting
 
 Over time, as noted above, your database will tend to grow until Bareos starts deleting old expired records based on retention periods. After that starts, it is expected that the database size remains constant, provided that the amount of clients and files being backed up is constant.
 
@@ -462,16 +479,16 @@ Depending on the size of your database, this will take more or less time and a f
 
 Except from special cases PostgreSQL does not need to be dumped/restored to keep the database efficient. A normal process of vacuuming will prevent the database from getting too large. If you want to fine-tweak the database storage, commands such as VACUUM, VACUUM FULL, REINDEX, and CLUSTER exist specifically to keep you from having to do a dump/restore.
 
-More details on this subject can be found in the PostgreSQL documentation. The page http://www.postgresql.org/docs/ contains links to the documentation for all PostgreSQL versions. The section *Routine Vacuuming* explains how VACUUM works and why it is required, see http://www.postgresql.org/docs/current/static/routine-vacuuming.html for the current PostgreSQL version.
+More details on this subject can be found in the PostgreSQL documentation. The page https://www.postgresql.org/docs/ contains links to the documentation for all PostgreSQL versions. The section *Routine Vacuuming* explains how VACUUM works and why it is required, see http://www.postgresql.org/docs/current/static/routine-vacuuming.html for the current PostgreSQL version.
 
 .. _PostgresSize:
 
 What To Do When The Database Keeps Growing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Especially when a high number of files are beeing backed up or when working with high retention periods, it is probable that autovacuuming will not work. When starting to use Bareos with an empty Database, it is normal that the file table and other tables grow, but the growth rate should drop as soon as jobs are deleted by retention or pruning. The file table is usually the largest table in Bareos.
+Especially when a high number of files are being backed up or when working with high retention periods, it is probable that autovacuuming will not work. When starting to use Bareos with an empty Database, it is normal that the file table and other tables grow, but the growth rate should drop as soon as jobs are deleted by retention or pruning. The file table is usually the largest table in Bareos.
 
-The reason for autovacuuming not beeing triggered is then probably the default setting of ``autovacuum_vacuum_scale_factor = 0.2``, the current value can be shown with the following query or looked up in ``postgresql.conf``:
+The reason for autovacuuming not being triggered is then probably the default setting of ``autovacuum_vacuum_scale_factor = 0.2``, the current value can be shown with the following query or looked up in ``postgresql.conf``:
 
 .. code-block:: shell-session
    :caption: SQL statement to show the autovacuum\_vacuum\_scale\_factor parameter
@@ -484,7 +501,7 @@ The reason for autovacuuming not beeing triggered is then probably the default s
 
 In essence, this means that a VACUUM is only triggered when 20% of table size are obsolete. Consequently, the larger the table is, the less frequently VACUUM will be triggered by autovacuum. This make sense because vacuuming has a performance impact. While it is possible to override the autovacuum parameters on a table-by-table basis, it can then still be triggered at any time.
 
-To learn more details about autovacuum see http://www.postgresql.org/docs/current/static/routine-vacuuming.html#AUTOVACUUM
+To learn more details about autovacuum see https://www.postgresql.org/docs/current/static/routine-vacuuming.html#AUTOVACUUM
 
 The following example shows how to configure running VACUUM on the file table by using an admin-job in Bareos. The job will be scheduled to run at a time that should not run in parallel with normal backup jobs, here by scheduling it to run after the BackupCatalog job.
 
@@ -644,9 +661,9 @@ Assuming that you start all your nightly backup jobs at 1:05 am (and that they r
      Messages = Standard
      Pool = Default
      # This creates an ASCII copy of the catalog
-     # Arguments to make_catalog_backup.pl are:
-     #  make_catalog_backup.pl <catalog-name>
-     RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup.pl MyCatalog"
+     # Arguments to make_catalog_backup are:
+     #  make_catalog_backup <catalog-name>
+     RunBeforeJob = "/usr/lib/bareos/scripts/make_catalog_backup MyCatalog"
      # This deletes the copy of the catalog
      RunAfterJob  = "/usr/lib/bareos/scripts/delete_catalog_backup"
      # This sends the bootstrap via mail for disaster recovery.
