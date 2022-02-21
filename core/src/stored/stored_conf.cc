@@ -48,7 +48,7 @@
 
 namespace storagedaemon {
 
-static BareosResource* sres_head[R_LAST - R_FIRST + 1];
+static BareosResource* sres_head[R_NUM];
 static BareosResource** res_head = sres_head;
 
 static void FreeResource(BareosResource* sres, int type);
@@ -562,9 +562,9 @@ ConfigurationParser* InitSdConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
       configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
-      exit_code, R_FIRST, R_LAST, resources, res_head,
-      default_config_filename.c_str(), "bareos-sd.d", ConfigBeforeCallback,
-      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
+      exit_code, R_NUM, resources, res_head, default_config_filename.c_str(),
+      "bareos-sd.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
+      DumpResource, FreeResource);
   if (config) { config->r_own_ = R_STORAGE; }
   return config;
 }
@@ -597,7 +597,7 @@ bool ParseSdConfig(const char* configfile, int exit_code)
 #ifdef HAVE_JANSSON
 bool PrintConfigSchemaJson(PoolMem& buffer)
 {
-  ResourceTable* resources = my_config->resources_;
+  ResourceTable* resources = my_config->resource_definitions_;
 
   json_t* json = json_object();
   json_object_set_new(json, "format-version", json_integer(2));
@@ -611,7 +611,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
   json_object_set(resource, "bareos-sd", bareos_sd);
 
   for (int r = 0; resources[r].name; r++) {
-    ResourceTable resource = my_config->resources_[r];
+    ResourceTable resource = my_config->resource_definitions_[r];
     json_object_set(bareos_sd, resource.name, json_items(resource.items));
   }
 
@@ -708,7 +708,7 @@ static void DumpResource(int type,
 
 static bool SaveResource(int type, ResourceItem* items, int pass)
 {
-  int rindex = type - R_FIRST;
+  int rindex = type;
   int i;
   int error = 0;
 

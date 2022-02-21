@@ -18,7 +18,7 @@
         },
         "Messages": {
           "datatype": "RES",
-          "code": 1010,
+          "code": 9,
           "equals": true
         },
         "DirPort": {
@@ -391,7 +391,7 @@
         },
         "Catalog": {
           "datatype": "RES",
-          "code": 1006,
+          "code": 5,
           "equals": true
         },
         "Passive": {
@@ -632,81 +632,81 @@
         },
         "Messages": {
           "datatype": "RES",
-          "code": 1010,
+          "code": 9,
           "equals": true,
           "required": true
         },
         "Storage": {
           "datatype": "RESOURCE_LIST",
-          "code": 1005,
+          "code": 4,
           "equals": true
         },
         "Pool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true,
           "required": true
         },
         "FullBackupPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "VirtualFullBackupPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "IncrementalBackupPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "DifferentialBackupPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "NextPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "Client": {
           "datatype": "RES",
-          "code": 1002,
+          "code": 1,
           "equals": true
         },
         "FileSet": {
           "datatype": "RES",
-          "code": 1008,
+          "code": 7,
           "equals": true
         },
         "Schedule": {
           "datatype": "RES",
-          "code": 1007,
+          "code": 6,
           "equals": true
         },
         "VerifyJob": {
           "datatype": "RES",
-          "code": 1004,
+          "code": 3,
           "alias": true,
           "equals": true
         },
         "JobToVerify": {
           "datatype": "RES",
-          "code": 1004,
+          "code": 3,
           "equals": true
         },
         "Catalog": {
           "datatype": "RES",
-          "code": 1006,
+          "code": 5,
           "equals": true,
           "versions": "13.4.0-"
         },
         "JobDefs": {
           "datatype": "RES",
-          "code": 1003,
+          "code": 2,
           "equals": true
         },
         "Run": {
@@ -1025,7 +1025,7 @@
         },
         "Base": {
           "datatype": "RESOURCE_LIST",
-          "code": 1004,
+          "code": 3,
           "equals": true
         },
         "MaxConcurrentCopies": {
@@ -1120,81 +1120,81 @@
         },
         "Messages": {
           "datatype": "RES",
-          "code": 1010,
+          "code": 9,
           "equals": true,
           "required": true
         },
         "Storage": {
           "datatype": "RESOURCE_LIST",
-          "code": 1005,
+          "code": 4,
           "equals": true
         },
         "Pool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true,
           "required": true
         },
         "FullBackupPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "VirtualFullBackupPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "IncrementalBackupPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "DifferentialBackupPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "NextPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "Client": {
           "datatype": "RES",
-          "code": 1002,
+          "code": 1,
           "equals": true
         },
         "FileSet": {
           "datatype": "RES",
-          "code": 1008,
+          "code": 7,
           "equals": true
         },
         "Schedule": {
           "datatype": "RES",
-          "code": 1007,
+          "code": 6,
           "equals": true
         },
         "VerifyJob": {
           "datatype": "RES",
-          "code": 1004,
+          "code": 3,
           "alias": true,
           "equals": true
         },
         "JobToVerify": {
           "datatype": "RES",
-          "code": 1004,
+          "code": 3,
           "equals": true
         },
         "Catalog": {
           "datatype": "RES",
-          "code": 1006,
+          "code": 5,
           "equals": true,
           "versions": "13.4.0-"
         },
         "JobDefs": {
           "datatype": "RES",
-          "code": 1003,
+          "code": 2,
           "equals": true
         },
         "Run": {
@@ -1513,7 +1513,7 @@
         },
         "Base": {
           "datatype": "RESOURCE_LIST",
-          "code": 1004,
+          "code": 3,
           "equals": true
         },
         "MaxConcurrentCopies": {
@@ -1649,7 +1649,7 @@
         },
         "Device": {
           "datatype": "DEVICE",
-          "code": 1014,
+          "code": 13,
           "equals": true,
           "required": true
         },
@@ -1704,7 +1704,7 @@
         },
         "PairedStorage": {
           "datatype": "RES",
-          "code": 1005,
+          "code": 4,
           "equals": true
         },
         "MaximumBandwidthPerJob": {
@@ -2123,12 +2123,12 @@
         },
         "NextPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "Storage": {
           "datatype": "RESOURCE_LIST",
-          "code": 1005,
+          "code": 4,
           "equals": true
         },
         "AutoPrune": {
@@ -2145,17 +2145,17 @@
         },
         "RecyclePool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "ScratchPool": {
           "datatype": "RES",
-          "code": 1009,
+          "code": 8,
           "equals": true
         },
         "Catalog": {
           "datatype": "RES",
-          "code": 1006,
+          "code": 5,
           "equals": true
         },
         "FileRetention": {
@@ -2294,12 +2294,12 @@
         },
         "WrapCounter": {
           "datatype": "RES",
-          "code": 1011,
+          "code": 10,
           "equals": true
         },
         "Catalog": {
           "datatype": "RES",
-          "code": 1006,
+          "code": 5,
           "equals": true
         }
       },
@@ -2458,7 +2458,7 @@
         },
         "Profile": {
           "datatype": "RESOURCE_LIST",
-          "code": 1012,
+          "code": 11,
           "equals": true,
           "versions": "14.2.3-",
           "description": "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. First the console ACL is checked then any profile the console is linked to."
@@ -2632,7 +2632,7 @@
         },
         "Profile": {
           "datatype": "RESOURCE_LIST",
-          "code": 1012,
+          "code": 11,
           "equals": true,
           "versions": "14.2.3-",
           "description": "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. First the console ACL is checked then any profile the console is linked to."

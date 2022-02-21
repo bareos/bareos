@@ -42,15 +42,14 @@ static const std::string default_config_filename("bconsole.conf");
 
 enum
 {
-  R_CONSOLE = 1001,
+  R_CONSOLE = 0,
   R_DIRECTOR,
-  R_FIRST = R_CONSOLE,
-  R_LAST = R_DIRECTOR /* Keep this updated */
+  R_NUM  /* number of entries */
 };
 
 enum
 {
-  R_NAME = 1020,
+  R_NAME = 0,
   R_ADDRESS,
   R_PASSWORD,
   R_TYPE,

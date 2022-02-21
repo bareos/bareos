@@ -107,12 +107,12 @@ struct resource_table_reference {
 
 static void FreeSavedResources(resource_table_reference* table)
 {
-  int num = my_config->r_last_ - my_config->r_first_ + 1;
+  int num = my_config->r_num_;
 
   if (!table->res_table) { return; }
 
   for (int j = 0; j < num; j++) {
-    my_config->FreeResourceCb_(table->res_table[j], my_config->r_first_ + j);
+    my_config->FreeResourceCb_(table->res_table[j], j);
   }
   free(table->res_table);
 }
@@ -608,7 +608,7 @@ bool DoReloadConfig()
 
   DbSqlPoolFlush();
 
-  prev_config.res_table = my_config->SaveResources();
+  prev_config.res_table = my_config->CopyResourceTable();
   prev_config.JobCount = 0;
 
   Dmsg0(100, "Reloading config file\n");
@@ -617,30 +617,9 @@ bool DoReloadConfig()
   my_config->ClearWarnings();
   bool ok = my_config->ParseConfig();
 
-  if (!ok || !CheckResources() || !CheckCatalog(UPDATE_CATALOG)
-      || !InitializeSqlPooling()) {
-    Jmsg(nullptr, M_ERROR, 0, _("Please correct the configuration in %s\n"),
-         my_config->get_base_config_path().c_str());
-    Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
-
-    resource_table_reference temp_config;
-    temp_config.res_table = my_config->SaveResources();
-
-    int num_rcodes = my_config->r_last_ - my_config->r_first_ + 1;
-    for (int i = 0; i < num_rcodes; i++) {
-      // restore original config
-      my_config->res_head_[i] = prev_config.res_table[i];
-    }
-
-    // me is changed above by CheckResources()
-    me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
-    my_config->own_resource_ = me;
-
-    FreeSavedResources(&temp_config);
-    goto bail_out;
-
-  } else {  // parse config ok
-
+  // parse config successful
+  if (ok && CheckResources() && CheckCatalog(UPDATE_CATALOG)
+      && InitializeSqlPooling()) {
     JobControlRecord* jcr;
     int num_running_jobs = 0;
     resource_table_reference* new_table = nullptr;
@@ -674,9 +653,28 @@ bool DoReloadConfig()
       FreeSavedResources(&prev_config);
     }
     StartStatisticsThread();
+
+
+  } else {  // parse config failed
+    Jmsg(nullptr, M_ERROR, 0, _("Please correct the configuration in %s\n"),
+         my_config->get_base_config_path().c_str());
+    Jmsg(nullptr, M_ERROR, 0, _("Resetting to previous configuration.\n"));
+
+    resource_table_reference temp_config;
+    temp_config.res_table = my_config->CopyResourceTable();
+
+    int num_rcodes = my_config->r_num_;
+    for (int i = 0; i < num_rcodes; i++) {
+      // restore original config
+      my_config->res_head_[i] = prev_config.res_table[i];
+    }
+
+    // me is changed above by CheckResources()
+    me = (DirectorResource*)my_config->GetNextRes(R_DIRECTOR, nullptr);
+    my_config->own_resource_ = me;
+    FreeSavedResources(&temp_config);
   }
 
-bail_out:
   UnlockRes(my_config);
   UnlockJobs();
   is_reloading = false;

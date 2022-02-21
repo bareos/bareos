@@ -47,7 +47,7 @@ static std::string default_config_filename("bareos-dir.conf");
 // Resource codes -- they must be sequential for indexing
 enum
 {
-  R_DIRECTOR = 1001,
+  R_DIRECTOR = 0,
   R_CLIENT,
   R_JOBDEFS,
   R_JOB,
@@ -62,14 +62,13 @@ enum
   R_CONSOLE,
   R_DEVICE,
   R_USER,
-  R_FIRST = R_DIRECTOR,
-  R_LAST = R_USER /* keep this updated */
+  R_NUM /* Number of entries */
 };
 
 // Some resource attributes
 enum
 {
-  R_NAME = 1020,
+  R_NAME = 0,
   R_ADDRESS,
   R_PASSWORD,
   R_TYPE,
