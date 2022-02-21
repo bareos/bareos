@@ -20,112 +20,35 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-# This script dumps your Bareos catalog in ASCII format
-# It works for MySQL, SQLite, and PostgreSQL
+# This script dumps your PostgreSQL Bareos catalog in ASCII format
 #
-#  $1 is the name of the database to be backed up and the name
-#     of the output file (default = bareos).
-#  $2 is the user name with which to access the database
-#     (default = bareos).
-#  $3 is the password with which to access the database or "" if no password
-#     (default ""). WARNING!!! Passing the password via the command line is
-#     insecure and should not be used since any user can display the command
-#     line arguments and the environment using ps.  Please consult your
-#     MySQL or PostgreSQL manual for secure methods of specifying the
-#     password.
-#  $4 is the host on which the database is located
-#     (default "")
-#  $5 is the type of database
-#
+#  $1 is the Catalog Name ressource you want to backup
 
 #
 # Source the Bareos config functions.
 #
 . @scriptdir@/bareos-config-lib.sh
 
-working_dir=`get_working_dir`
-default_db_type=`get_database_driver_default`
 
 #
-# See if the fifth argument is a valid backend name.
-# If so the user overrides the default database backend.
+# Warn user if arguments are more than one
 #
-if [ $# -ge 5 ]; then
-   case $5 in
-     sqlite3)
-       db_type=$5
-       ;;
-     mysql)
-       db_type=$5
-       ;;
-     postgresql)
-       db_type=$5
-       ;;
-     *)
-       ;;
-   esac
+if [ $# -ge 1 ]; then
+    warn "Script signature has changed : usage $0 CatalogName"
+    exit 1
+fi
+catalog="$(echo "$1" | tr "[:upper:]" "[:lower:]")"
+
+if ! bareos-dbcheck -C ${catalog}; then
+    warn "Unknown catalog name given, checking default"
+    catalog=$(get_database_catalog)
 fi
 
-#
-# If no new db_type is gives use the default db_type.
-#
-if [ -z "${db_type}" ]; then
-   db_type="${default_db_type}"
-fi
+working_dir="$(get_working_dir)"
+db_name="$(get_database_name)"
+db_user="$(get_database_user)"
 
-cd ${working_dir}
-rm -f $1.sql
+rm -f "${working_dir}/${db_name}.sql"
+PGOPTIONS='--client-min-messages=warning' pg_dump --clean --if-exists --encoding=SQL_ASCII --user="${db_user}" --file="${working_dir}/${db_name}.sql" "${db_name}"
 
-bindir=`get_database_utility_path ${db_type}`
-if [ ! -z "${bindir}" ]; then
-   PATH="$bindir:$PATH"
-fi
-
-case ${db_type} in
-  sqlite3)
-    echo ".dump" | sqlite3 $1.db > $1.sql
-    ;;
-  mysql)
-    if test $# -gt 2; then
-       MYSQLPASSWORD=" --password=$3"
-    else
-       MYSQLPASSWORD=""
-    fi
-    if test $# -gt 3; then
-       MYSQLHOST=" --host=$4"
-    else
-       MYSQLHOST=""
-    fi
-    mysqldump -u ${2}${MYSQLPASSWORD}${MYSQLHOST} -f --opt $1 > $1.sql
-    ;;
-  postgresql)
-    if test $# -gt 2; then
-      PGPASSWORD=$3
-      export PGPASSWORD
-    fi
-    if test $# -gt 3; then
-      PGHOST=" --host=$4"
-    else
-      PGHOST=""
-    fi
-    # you could also add --compress for compression.  See man pg_dump
-    pg_dump -c $PGHOST -U $2 $1 > $1.sql
-    ;;
-esac
-#
-#  To read back a MySQL database use:
-#     cd @working_dir@
-#     rm -f ${BINDIR}/../var/bareos/*
-#     mysql <bareos.sql
-#
-#  To read back a SQLite database use:
-#     cd @working_dir@
-#     rm -f bareos.db
-#     sqlite bareos.db <bareos.sql
-#
-#  To read back a PostgreSQL database use:
-#     cd @working_dir@
-#     dropdb bareos
-#     createdb bareos -T template0 -E SQL_ASCII
-#     psql bareos <bareos.sql
-#
+return $?
