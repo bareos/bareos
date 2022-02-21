@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -92,7 +92,6 @@ void InitForTest()
 
   working_directory = "/tmp";
   MyNameIs(0, NULL, "bsock_test");
-  InitMsg(NULL, NULL);
 }
 
 static void clone_a_server_socket(BareosSocket* bs)

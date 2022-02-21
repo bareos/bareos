@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,7 +35,6 @@ namespace directordaemon {
 TEST(ConfigParser_Dir, bareos_configparser_tests)
 {
   OSDependentInit();
-  InitMsg(NULL, NULL); /* initialize message handler */
 
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
@@ -45,14 +44,11 @@ TEST(ConfigParser_Dir, bareos_configparser_tests)
   my_config->DumpResources(PrintMessage, NULL);
 
   delete my_config;
-
-  TermMsg(); /* Terminate message handler */
 }
 
 TEST(ConfigParser_Dir, runscript_test)
 {
   OSDependentInit();
-  InitMsg(NULL, NULL); /* initialize message handler */
 
   std::string path_to_config_file = std::string(
       RELATIVE_PROJECT_SOURCE_DIR "/configs/runscript-tests/bareos-dir.conf");
@@ -62,8 +58,6 @@ TEST(ConfigParser_Dir, runscript_test)
   my_config->DumpResources(PrintMessage, NULL);
 
   delete my_config;
-
-  TermMsg(); /* Terminate message handler */
 }
 
 void test_config_directive_type(
@@ -73,7 +67,6 @@ void test_config_directive_type(
       ::testing::UnitTest::GetInstance()->current_test_info()->name());
 
   OSDependentInit();
-  InitMsg(NULL, NULL); /* initialize message handler */
 
   std::string path_to_config_file
       = std::string(RELATIVE_PROJECT_SOURCE_DIR
@@ -93,8 +86,6 @@ void test_config_directive_type(
   test_func(me);
 
   delete my_config;
-
-  TermMsg(); /* Terminate message handler */
 }
 
 
