@@ -360,9 +360,9 @@ Bareos uses three Retention periods: the File Retention period, the Job Retentio
 The File Retention and the Job Retention are specified in each Client resource as is shown below. The Volume Retention period is specified in the Pool resource, and the details are given in the next chapter of this manual.
 
 File Retention = <time-period-specification>
-.. index::
-   single: File Retention
-   single: Retention; File
+   .. index::
+      single: File Retention
+      single: Retention; File
 
    The File Retention record defines the length of time that Bareos will keep File records in the Catalog database. When this time period expires, and if AutoPrune is set to yes, Bareos will prune (remove) File records that are older than the specified File Retention period. The pruning will occur at the end of a backup Job for the given Client. Note that the Client database record contains a copy of the
    File and Job retention periods, but Bareos uses the current values found in the Director’s Client resource to do the pruning.
@@ -374,9 +374,9 @@ File Retention = <time-period-specification>
    The default File retention period is 60 days.
 
 Job Retention = <time-period-specification>
-.. index::
-   single: Job; Retention
-   single: Retention; Job
+   .. index::
+      single: Job; Retention
+      single: Retention; Job
 
    The Job Retention record defines the length of time that Bareos will keep Job records in the Catalog database. When this time period expires, and if AutoPrune is set to yes Bareos will prune (remove) Job records that are older than the specified Job Retention period. Note, if a Job record is selected for pruning, all associated File and JobMedia records will also be pruned regardless of the File Retention
    period set. As a consequence, you normally will set the File retention period to be less than the Job retention period.
