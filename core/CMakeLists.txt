@@ -55,6 +55,19 @@ endif(CCACHE_FOUND)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
+if(ENABLE_SANITIZERS)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover")
+  else()
+    message(
+      FATAL_ERROR
+        "Cannot (yet) compile with sanitizers on ${CMAKE_C_COMPILER_ID}"
+    )
+  endif()
+endif()
+
 option(ENABLE_STATIC_RUNTIME_LIBS "Link C and C++ runtime libraries statically"
        OFF
 )
