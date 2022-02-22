@@ -33,13 +33,13 @@
 #
 # Warn user if arguments are more than one
 #
-if [ $# -ge 1 ]; then
+if [ $# -ne 1 ]; then
     warn "Script signature has changed : usage $0 CatalogName"
     exit 1
 fi
 catalog="$(echo "$1" | tr "[:upper:]" "[:lower:]")"
 
-if ! bareos-dbcheck -C ${catalog}; then
+if ! bareos-dbcheck -C ${catalog} 2>&1>/dev/null; then
     warn "Unknown catalog name given, checking default"
     catalog=$(get_database_catalog)
 fi
@@ -48,7 +48,8 @@ working_dir="$(get_working_dir)"
 db_name="$(get_database_name)"
 db_user="$(get_database_user)"
 
+cd "${working_dir}"
 rm -f "${working_dir}/${db_name}.sql"
-PGOPTIONS='--client-min-messages=warning' pg_dump --clean --if-exists --encoding=SQL_ASCII --user="${db_user}" --file="${working_dir}/${db_name}.sql" "${db_name}"
+PGOPTIONS='--client-min-messages=warning' pg_dump --format=plain --encoding=SQL_ASCII --clean --if-exists --user="${db_user}" --file="${working_dir}/${db_name}.sql" "${db_name}"
 
-return $?
+exit $?
