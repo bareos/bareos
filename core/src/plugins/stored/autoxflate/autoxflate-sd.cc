@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,7 @@
  * Storage Daemon plugin that handles automatic deflation/inflation of data.
  */
 #include "include/bareos.h"
+#include "include/protocol_types.h"
 #include "stored/stored.h"
 #include "stored/device_control_record.h"
 
@@ -309,7 +310,20 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
 
   // Unpack the arguments passed in.
   dcr = (DeviceControlRecord*)value;
-  if (!dcr) { return bRC_Error; }
+  if (!dcr || !dcr->jcr) { return bRC_Error; }
+
+  // When doing NDMP restore we must inflate the data before sending it to the
+  // client. Thus, if configured differently, we enforce the required settings.
+  if (dcr->jcr->getJobProtocol() == PT_NDMP_BAREOS
+      && dcr->jcr->is_JobType(JT_RESTORE)
+      && (AutoxflateModeContainsIn(dcr->autodeflate)
+          || !AutoxflateModeContainsIn(dcr->autoinflate))) {
+    dcr->autoinflate = AutoXflateMode::IO_DIRECTION_IN;
+    dcr->autodeflate = AutoXflateMode::IO_DIRECTION_NONE;
+    Jmsg(ctx, M_INFO,
+         _("autoxflate-sd: overriding settings on %s for NDMP restore\n"),
+         dcr->dev_name);
+  }
 
   // Give jobmessage info what is configured
   switch (dcr->autodeflate) {
