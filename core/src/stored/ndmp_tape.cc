@@ -425,7 +425,7 @@ static inline bool bndmp_read_data_from_block(JobControlRecord* jcr,
         *data_length = 0;
         return true;
       case STREAM_COMPRESSED_DATA:  // Got compressed data ndmp cannot handle
-        Jmsg0(jcr, M_ERROR, 0,
+        Jmsg0(jcr, M_FATAL, 0,
               _("Encountered STREAM_COMPRESSED_DATA which cannot be handled by "
                 "NDMP. Make sure read device device will inflate and not "
                 "deflate when reading. "
