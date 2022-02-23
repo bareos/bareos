@@ -30,7 +30,128 @@ $this->headTitle($title);
 
 <?php if($this->acl_alert) : echo $this->ACLAlert($this->invalid_commands); elseif(!$this->acl_alert) : ?>
 
+<ul class="nav nav-tabs">
+   <li class="active"><a href="<?php echo $this->url('analytics', array('action'=>'index')); ?>"><?php echo $this->translate('Stored Data'); ?></a></li>
+</ul>
+
+<br />
+
+<div class="row">
+
+  <div class="col-md-2">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><?php echo $this->translate('Overall'); ?></h3>
+      </div>
+      <div class="panel-body">
+        <div id="overall-jobtotals"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-10">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><?php echo $this->translate('Backup jobs'); ?></h3>
+      </div>
+      <div class="panel-body">
+        <div id="graph-jobtotals"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<?php
+  echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-formatter.js');
+  echo $this->headScript()->prependFile($this->basePath() . '/js/d3/d3.min.js');
+?>
+
+<style>
+</style>
+
 <script>
+
+  $.ajax({
+    url: '<?php echo $this->url('analytics', array('action' => 'getData'), null) . '?data=overall-jobtotals'; ?>',
+    dataType: 'json',
+    timeout: 10000,
+    success: function(data) {
+      $("#overall-jobtotals").append("<div><strong>Backups: </strong>" + Intl.NumberFormat().format(data.jobs) + "</div>");
+      $("#overall-jobtotals").append("<div><strong>Files: </strong>" + Intl.NumberFormat().format(data.files) + "</div>");
+      $("#overall-jobtotals").append("<div><strong>Size: </strong>" + formatBytes(data.bytes) + "</div>");
+    },
+    error: function() {
+      $("#overall-jobtotals").empty();
+      $("#overall-jobtotals").append('Error fetching data.');
+    },
+    timeout: function() {
+      $("#overall-jobtotals").empty();
+      $("#overall-jobtotals").append('Timeout fetching data.');
+    },
+    parsererror: function() {
+      $("#overall-jobtotals").empty();
+      $("#overall-jobtotals").append('Error parsing data.');
+    }
+  })
+
+  const margin = {top: 10, right: 10, bottom: 10, left: 10},
+    width = 1024 - margin.left - margin.right,
+    height = 768 - margin.top - margin.bottom;
+
+  const svg = d3.select("#graph-jobtotals")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+  d3.json("<?php echo $this->url('analytics', array('action' => 'getData'), null) . '?data=jobtotals'; ?>").then(function(data) {
+
+    const root = d3.hierarchy(data).sum(d => d.bytes).sort((a, b) => b.value - a.value)
+
+    const opacity = d3.scaleLinear()
+      .domain([0, d3.max(root.children).value])
+      .range([0.5, 1])
+
+    d3.treemap()
+      .size([width, height])
+      .padding(1)
+      .tile(d3.treemapSquarify.ratio(2))
+      (root)
+
+    svg.selectAll("rect")
+      .data(root.leaves())
+      .join("rect")
+      .attr('x', d => d.x0)
+      .attr('y', d => d.y0)
+      .attr('width', d => d.x1 - d.x0)
+      .attr('height', d => d.y1 - d.y0)
+      .style("fill", "#337ab7")
+      .style("opacity", d => opacity(d.data.bytes))
+      .attr('data-html', "true")
+      .attr('data-toggle', "tooltip")
+      .append("title").text(
+        d => "Job:" + d.data.job + "\n" +
+        "Backups: " + Intl.NumberFormat().format(d.data.jobs) + "\n" +
+        "Size: " + formatBytes(d.data.bytes) + "\n" +
+        "Files: " + Intl.NumberFormat().format(d.data.files)
+      )
+
+    const labels = svg.selectAll(".label")
+      .data(root.leaves()
+      .filter(f => f.x1 - f.x0 > 128 && f.y1 - f.y0 > 24), d => d.data.job)
+
+    labels.enter().append("text")
+      .attr("class", "label")
+      .attr("dy", 15)
+      .attr("dx", 5)
+      .attr("transform", d => `translate(${d.x0}, ${d.y0})`)
+      .html(d => `<tspan style='font-weight: 800'>${d.data.job}</tspan>`)
+      .style("fill", "white")
+
+  })
+
 </script>
 
 <?php endif; ?>
