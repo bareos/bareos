@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - debian: add missing python plugin dependencies [PR #1045]
 - fix empty job timeline issue if date.timezone is not set in php.ini [PR #1053] (backport of [PR #1051])
+- Fix context confusion in Director's Python plugins [PR #1076]
 
 ### Added
 - ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1049]
@@ -429,6 +430,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1063]: https://github.com/bareos/bareos/pull/1063
 [PR #1065]: https://github.com/bareos/bareos/pull/1065
 [PR #1066]: https://github.com/bareos/bareos/pull/1066
+[PR #1076]: https://github.com/bareos/bareos/pull/1076
 [PR #1079]: https://github.com/bareos/bareos/pull/1079
 [PR #1080]: https://github.com/bareos/bareos/pull/1080
 [unreleased]: https://github.com/bareos/bareos/tree/master
