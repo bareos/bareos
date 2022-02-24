@@ -47,6 +47,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - split `Howtos.rst` file into one file per section [PR #1054]
 - split the very long `Plugins.rst` file into one file per Bareos plugin [PR #1046]
 - rework SD plugin scsicrypto linux sg_io ioctl subsection for cap_sys_rawio [PR #1057]
+- improve action Python plugin documentation, by removing File in Fileset example [PR #1079]
 
 
 [PR #1010]: https://github.com/bareos/bareos/pull/1010
@@ -68,4 +69,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1057]: https://github.com/bareos/bareos/pull/1057
 [PR #1059]: https://github.com/bareos/bareos/pull/1059
 [PR #1062]: https://github.com/bareos/bareos/pull/1062
+[PR #1079]: https://github.com/bareos/bareos/pull/1079
 [unreleased]: https://github.com/bareos/bareos/tree/master

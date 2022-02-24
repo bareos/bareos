@@ -36,7 +36,6 @@ Command plugins are used to replace or extend the FileSet definition in the File
        Options {
          Signature = MD5
        }
-       File = "/etc"
        Plugin = "python3"
                 ":module_path=/usr/lib/bareos/plugins"
                 ":module_name=bareos-fd-mysql"
@@ -46,7 +45,7 @@ Command plugins are used to replace or extend the FileSet definition in the File
 .. index::
    single: MySQL; Backup
 
-This example uses the :ref:`MySQL plugin <backup-mysql-python>` to backup MySQL dumps in addition to :file:`/etc`.
+This example uses the :ref:`MySQL plugin <backup-mysql-python>` to backup MySQL dumps.
 
 Option Plugins
 ^^^^^^^^^^^^^^
