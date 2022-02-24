@@ -110,6 +110,18 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
   return UPDATE_DB(jcr, cmd) > 0;
 }
 
+bool BareosDb::UpdateRunningJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
+{
+  char ed1[50], ed2[50];
+
+  DbLocker _{this};
+  Mmsg(cmd, "UPDATE Job SET JobBytes=%s,JobFiles=%u WHERE JobId=%s",
+       edit_uint64(jr->JobBytes, ed1), jr->JobFiles,
+       edit_int64(jcr->JobId, ed2));
+
+  return UPDATE_DB(jcr, cmd) > 0;
+}
+
 // Update Long term statistics with all jobs that were run before age seconds
 int BareosDb::UpdateStats(JobControlRecord* jcr, utime_t age)
 {
@@ -161,18 +173,33 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
   JobTDate = ttime;
 
   DbLocker _{this};
-  Mmsg(
-      cmd,
-      "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
-      "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,"
-      "VolSessionId=%u,"
-      "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
-      "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE JobId=%s",
-      (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
-      edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
-      jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
-      jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2), rdt, PriorJobId,
-      jr->HasBase, jr->PurgedFiles, edit_int64(jr->JobId, ed3));
+  if (jr->JobFiles > 0) {
+    Mmsg(cmd,
+         "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
+         "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,"
+         "VolSessionId=%u,"
+         "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
+         "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE "
+         "JobId=%s",
+         (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
+         edit_uint64(jr->JobBytes, ed1), edit_uint64(jr->ReadBytes, ed4),
+         jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
+         jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2), rdt, PriorJobId,
+         jr->HasBase, jr->PurgedFiles, edit_int64(jr->JobId, ed3));
+  } else {
+    Mmsg(cmd,
+         "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
+         "ClientId=%u,ReadBytes=%s,JobErrors=%u,"
+         "VolSessionId=%u,"
+         "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
+         "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE "
+         "JobId=%s",
+         (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
+         edit_uint64(jr->ReadBytes, ed4), jr->JobErrors, jr->VolSessionId,
+         jr->VolSessionTime, jr->PoolId, jr->FileSetId,
+         edit_uint64(JobTDate, ed2), rdt, PriorJobId, jr->HasBase,
+         jr->PurgedFiles, edit_int64(jr->JobId, ed3));
+  }
 
   return UPDATE_DB(jcr, cmd) > 0;
 }

@@ -98,22 +98,30 @@ void FileData::CreateNewDeviceRecord(DeviceRecord* record)
   device_records_.push_back(devicerecord_copy);
 }
 
-static void DoFileListCheckpoint(JobControlRecord* jcr)
+static void UpdateFileList(JobControlRecord* jcr)
 {
   Jmsg0(jcr, M_INFO, 0, _("Doing File List checkpoint.\n"));
   jcr->impl->dcr->DirAskToUpdateFileList(jcr);
 }
 
-static void DoJobmediaCheckpoint(JobControlRecord* jcr)
+static void UpdateJobmediaRecord(JobControlRecord* jcr)
 {
   Jmsg0(jcr, M_INFO, 0, _("Doing Jobmedia checkpoint.\n"));
   jcr->impl->dcr->DirCreateJobmediaRecord(false);
 }
 
+static void UpdateJobrecord(JobControlRecord* jcr)
+{
+  Jmsg0(jcr, M_INFO, 0, _("Doing Job record checkpoint.\n"));
+
+  jcr->impl->dcr->DirAskToUpdateJobRecord(jcr);
+}
+
 void DoBackupCheckpoint(JobControlRecord* jcr)
 {
-  DoFileListCheckpoint(jcr);
-  DoJobmediaCheckpoint(jcr);
+  UpdateJobrecord(jcr);
+  UpdateFileList(jcr);
+  UpdateJobmediaRecord(jcr);
 }
 
 static time_t DoTimedCheckpoint(JobControlRecord* jcr,
@@ -300,7 +308,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   fi_checked:
 
     if (file_index != last_file_index) {
-      jcr->JobFiles = file_index;
+      jcr->JobFiles = last_file_index;
       last_file_index = file_index;
       if (file_currently_processed.GetFileIndex() > 0) {
         processed_files.push_back(file_currently_processed);
@@ -335,6 +343,8 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         break;
       }
 
+      file_currently_processed.CreateNewDeviceRecord(dcr->rec);
+
       if (dcr->VolLastIndex == static_cast<uint32_t>(dcr->block->LastIndex)) {
         for (auto file : processed_files) {
           file.SendAttributesToDirector(jcr);
@@ -343,14 +353,13 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       }
 
       if (dcr->VolMediaId != current_volumeid) {
-        DoFileListCheckpoint(jcr);
+        UpdateFileList(jcr);
+        UpdateJobrecord(jcr);
         current_volumeid = dcr->VolMediaId;
       } else if (checkpointinterval) {
         next_checkpoint_time
             = DoTimedCheckpoint(jcr, next_checkpoint_time, checkpointinterval);
       }
-
-      file_currently_processed.CreateNewDeviceRecord(dcr->rec);
 
       Dmsg0(650, "Enter bnet_get\n");
     }
@@ -420,6 +429,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
       processed_files.push_back(file_currently_processed);
       for (auto file : processed_files) { file.SendAttributesToDirector(jcr); }
       processed_files.clear();
+      jcr->JobFiles = last_file_index;
     }
   }
 

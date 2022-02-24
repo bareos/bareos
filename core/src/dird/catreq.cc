@@ -68,6 +68,10 @@ static char Create_job_media[]
 
 static char Update_filelist[] = "Catreq Job=%s UpdateFileList\n";
 
+static char Update_jobrecord[]
+    = "Catreq Job=%127s UpdateJobRecord "
+      "JobBytes=%u JobFiles=%u\n";
+
 // Responses sent to Storage daemon
 static char OK_media[]
     = "1000 OK VolName=%s VolJobs=%u VolFiles=%u"
@@ -106,6 +110,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
 {
   MediaDbRecord mr, sdmr;
   JobMediaDbRecord jm;
+  JobDbRecord jr{};
   char Job[MAX_NAME_LENGTH];
   char pool_name[MAX_NAME_LENGTH];
   PoolMem unwanted_volumes(PM_MESSAGE);
@@ -344,7 +349,22 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     }
   } else if (sscanf(bs->msg, Update_filelist, &Job) == 1) {
     Dmsg0(0, "Updating fileset\n");
-    jcr->db_batch->WriteBatchFileRecords(jcr);
+
+    if (!jcr->db_batch->WriteBatchFileRecords(jcr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Catalog error updating File table. %s\n"),
+           jcr->db_batch->strerror());
+      bs->fsend(_("1992 Update File table error\n"));
+    }
+
+  } else if (sscanf(bs->msg, Update_jobrecord, &Job, &jr.JobBytes, &jr.JobFiles)
+             == 3) {
+    Dmsg0(0, "Updating job record\n");
+
+    if (!jcr->db->UpdateRunningJobRecord(jcr, &jr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Job record. %s\n"),
+           jcr->db->strerror());
+      bs->fsend(_("1992 Update job record error\n"));
+    }
   } else {
     omsg = GetMemory(bs->message_length + 1);
     PmStrcpy(omsg, bs->msg);

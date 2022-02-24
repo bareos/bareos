@@ -65,6 +65,9 @@ static char Create_job_media[]
 
 static char Update_filelist[] = "Catreq Job=%s UpdateFileList\n";
 
+static char Update_jobrecord[]
+    = "Catreq Job=%s UpdateJobRecord JobBytes=%u JobFiles=%u\n";
+
 static char FileAttributes[] = "UpdCat Job=%s FileAttributes ";
 
 
@@ -622,7 +625,8 @@ get_out:
   return true;
 }
 
-bool DeviceControlRecord::DirAskToUpdateFileList(JobControlRecord* jcr)
+bool StorageDaemonDeviceControlRecord::DirAskToUpdateFileList(
+    JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
 
@@ -635,6 +639,22 @@ bool DeviceControlRecord::DirAskToUpdateFileList(JobControlRecord* jcr)
   Dmsg1(1800, ">dird %s", dir->msg); /* Attributes */
   return dir->send();
 }
+
+bool StorageDaemonDeviceControlRecord::DirAskToUpdateJobRecord(
+    JobControlRecord* jcr)
+{
+  BareosSocket* dir = jcr->dir_bsock;
+
+  dir->msg = CheckPoolMemorySize(dir->msg,
+                                 sizeof(Update_jobrecord) + MAX_NAME_LENGTH);
+  dir->message_length
+      = Bsnprintf(dir->msg, sizeof(Update_jobrecord) + MAX_NAME_LENGTH + 1,
+                  Update_jobrecord, jcr->Job, jcr->JobBytes, jcr->JobFiles);
+
+  Dmsg1(1800, ">dird %s", dir->msg); /* Attributes */
+  return dir->send();
+}
+
 
 // Dummy methods for everything but SD and BTAPE.
 bool DeviceControlRecord::DirAskSysopToMountVolume(int /*mode*/)

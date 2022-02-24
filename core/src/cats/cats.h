@@ -893,6 +893,7 @@ class BareosDb : public BareosDbQueryEnum {
 
   /* sql_update.c */
   bool UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr);
+  bool UpdateRunningJobRecord(JobControlRecord* jcr, JobDbRecord* jr);
   bool UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr);
   bool UpdateClientRecord(JobControlRecord* jcr, ClientDbRecord* cr);
   bool UpdatePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr);
