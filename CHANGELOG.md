@@ -11,6 +11,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Added
 - ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1058]
 
+### Security
+- webui: update jquery from v3.2.0 to v3.6.0 [PR #1085]
 
 ## [20.0.5] - 2021-12-20
 
