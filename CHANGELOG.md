@@ -12,6 +12,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Breaking Changes
 
 ### Fixed
+- NDMP_BAREOS: support autoxflate plugin [PR #1013]
 - debian: Let dbconfig create the Bareos catalog also with LC_COLLATE='C' and LC_CTYPE='C'. The create_bareos_database script did always do so. Requires dbconfig >= 2.0.21 [PR #1031]
 - fix wrong `packages_dir` in restapi workflow, so restapi packages will be released to PyPI [PR #1033]
 - core cats: Add IF EXISTS in drop table statements fix for bug #1409 (Allow usage of ExitOnFatal) [PR #1035]
