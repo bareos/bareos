@@ -20,6 +20,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: fix empty job timeline issue if date.timezone is not set in php.ini [PR #1051]
 - Fix for wrong update message when updating all volumes from all pools with no existing volumes [PR #1015]
 - Fix context confusion in Director's Python plugins [PR #1047]
+- Fix several cases of undefined behaviour, memory corruption and memory leaks [PR #1060]
 
 ### Added
 - Python plugins: add default module_path to search path [PR #1038]
