@@ -7,6 +7,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Fixed
 - debian: add missing python plugin dependencies [PR #1061] (backport of [PR #1045])
+- Fix context confusion in Director's Python plugins [PR #1077]
+
 
 ### Added
 - ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1058]
@@ -471,4 +473,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1058]: https://github.com/bareos/bareos/pull/1058
 [PR #1061]: https://github.com/bareos/bareos/pull/1061
 [PR #1064]: https://github.com/bareos/bareos/pull/1064
+[PR #1077]: https://github.com/bareos/bareos/pull/1077
 [unreleased]: https://github.com/bareos/bareos/tree/master
