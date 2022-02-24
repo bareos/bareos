@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,14 +18,20 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef BAREOS_DIRD_STATS_H_
-#define BAREOS_DIRD_STATS_H_
 
-namespace directordaemon {
+#ifndef TESTING_COMMON_H
+#define TESTING_COMMON_H
 
-bool StartStatisticsThread(void);
-void StopStatisticsThread();
-void stats_job_started();
+#if defined(HAVE_MINGW)
+#  include "include/bareos.h"
+#  include "gtest/gtest.h"
+#else
+#  include "gtest/gtest.h"
+#endif
 
-} /* namespace directordaemon */
-#endif  // BAREOS_DIRD_STATS_H_
+#include "lib/parse_conf.h"
+
+typedef std::unique_ptr<ConfigurationParser> PConfigParser;
+
+
+#endif  // TESTING_COMMON_H

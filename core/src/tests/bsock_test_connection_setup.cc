@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,19 +18,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#endif
+
+#include "testing_dir_common.h"
 
 #include "console/console_conf.h"
 #include "console/console_globals.h"
 #include "console/connect_to_director.h"
 #include "dird/socket_server.h"
-#include "dird/dird_conf.h"
-#include "dird/dird_globals.h"
 
 #include "lib/tls_openssl.h"
 #include "lib/bsock.h"
@@ -41,10 +35,6 @@
 
 #include "include/jcr.h"
 #include <signal.h>
-
-namespace directordaemon {
-bool DoReloadConfig() { return false; }
-}  // namespace directordaemon
 
 static void InitSignalHandler()
 {
@@ -71,8 +61,6 @@ static void InitGlobals()
   InitMsg(NULL, NULL);
 }
 
-typedef std::unique_ptr<ConfigurationParser> PConfigParser;
-
 static PConfigParser ConsolePrepareResources(const std::string& path_to_config)
 {
   const char* console_configfile = path_to_config.c_str();
@@ -98,29 +86,6 @@ static PConfigParser ConsolePrepareResources(const std::string& path_to_config)
   EXPECT_EQ(console::console_resource, nullptr);  // no console resource present
 
   return console_config;
-}
-
-static PConfigParser DirectorPrepareResources(const std::string& path_to_config)
-{
-  PConfigParser director_config(
-      directordaemon::InitDirConfig(path_to_config.c_str(), M_INFO));
-  directordaemon::my_config
-      = director_config.get(); /* set the director global variable */
-
-  EXPECT_NE(director_config.get(), nullptr);
-  if (!director_config) { return nullptr; }
-
-  bool parse_director_config_ok = director_config->ParseConfig();
-  EXPECT_TRUE(parse_director_config_ok) << "Could not parse director config";
-  if (!parse_director_config_ok) { return nullptr; }
-
-  Dmsg0(200, "Start UA server\n");
-  directordaemon::me
-      = (directordaemon::DirectorResource*)director_config->GetNextRes(
-          directordaemon::R_DIRECTOR, nullptr);
-  directordaemon::my_config->own_resource_ = directordaemon::me;
-
-  return director_config;
 }
 
 typedef std::unique_ptr<BareosSocket, std::function<void(BareosSocket*)>>

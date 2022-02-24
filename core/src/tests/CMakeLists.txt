@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -127,6 +127,12 @@ endif() # HAVE_WIN32
 add_definitions(
   -DRELATIVE_PROJECT_SOURCE_DIR=\"${RELATIVE_PROJECT_SOURCE_DIR}\"
 )
+
+set(COMMON_SRC testing_dir_common.cc testing_sd_common.cc)
+
+add_library(testing_common STATIC ${COMMON_SRC})
+
+target_link_libraries(testing_common PRIVATE ${LINK_LIBRARIES})
 
 if(NOT client-only)
   bareos_add_test(
@@ -343,7 +349,7 @@ if(NOT client-only)
   bareos_add_test(
     bsock_test_connection_setup
     ADDITIONAL_SOURCES ${SSL_UNIT_TEST_FILES}
-    LINK_LIBRARIES ${LINK_LIBRARIES}
+    LINK_LIBRARIES testing_common ${LINK_LIBRARIES}
   )
 
   bareos_add_test(bool_string LINK_LIBRARIES bareos GTest::gtest_main)
@@ -413,7 +419,7 @@ endif() # NOT client-only
 if(NOT client-only)
   bareos_add_test(
     addresses_and_ports
-    LINK_LIBRARIES bareos dird_objects bareosfind bareossql
+    LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
 endif() # NOT client-only
@@ -428,3 +434,18 @@ endif() # NOT client-only
 
 bareos_add_test(test_poolmem LINK_LIBRARIES bareos GTest::gtest_main)
 bareos_add_test(test_bsnprintf LINK_LIBRARIES bareos GTest::gtest_main)
+
+if(NOT client-only)
+  bareos_add_test(
+    dir_statistics_thread LINK_LIBRARIES testing_common dird_objects bareos
+                                         bareossql bareosfind GTest::gtest_main
+  )
+endif() # NOT client-only
+
+if(NOT client-only)
+  bareos_add_test(
+    sd_statistics_thread
+    LINK_LIBRARIES testing_common dird_objects bareos bareossql bareosfind
+                   Threads::Threads GTest::gtest_main
+  )
+endif() # NOT client-only

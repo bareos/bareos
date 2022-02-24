@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2014-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,6 +37,7 @@
 #include "lib/bnet.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "lib/berrno.h"
 
 namespace directordaemon {
 
@@ -307,22 +308,39 @@ bail_out:
   return NULL;
 }
 
-int StartStatisticsThread(void)
+bool StartStatisticsThread(void)
 {
+  StorageResource* storage;
+  bool collectstatistics = false;
+  foreach_res (storage, R_STORAGE) {
+    if (storage->collectstats) {
+      collectstatistics = true;
+      break;
+    }
+  }
   int status;
 
-  if (!me->stats_collect_interval) { return 0; }
+  if (!me->stats_collect_interval || !collectstatistics) {
+    Emsg1(M_INFO, 0,
+          _("Director Statistics Thread will not be started. Modify your "
+            "configuration if you want to activate it.\n"));
+
+    return false;
+  }
 
   quit = false;
 
   if ((status = pthread_create(&statistics_tid, NULL, statistics_thread, NULL))
       != 0) {
-    return status;
+    BErrNo be;
+    Emsg1(M_ERROR_TERM, 0,
+          _("Director Statistics Thread could not be started. ERR=%s\n"),
+          be.bstrerror());
   }
 
   statistics_initialized = true;
 
-  return 0;
+  return true;
 }
 
 void StopStatisticsThread()

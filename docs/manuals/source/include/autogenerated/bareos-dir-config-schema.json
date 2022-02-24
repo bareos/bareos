@@ -149,7 +149,7 @@
         "StatisticsCollectInterval": {
           "datatype": "PINT32",
           "code": 0,
-          "default_value": "150",
+          "default_value": "0",
           "equals": true,
           "versions": "14.2.0-"
         },
