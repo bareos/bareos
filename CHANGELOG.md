@@ -20,6 +20,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Documentation
 - backport chapter for mariabackup db plugin [PR #1044]
+- backport python action plugin example improvement [PR #1080] (backport of [PR #1079])
 
 ## [21.0.0] - 2021-12-21
 
@@ -428,4 +429,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1063]: https://github.com/bareos/bareos/pull/1063
 [PR #1065]: https://github.com/bareos/bareos/pull/1065
 [PR #1066]: https://github.com/bareos/bareos/pull/1066
+[PR #1079]: https://github.com/bareos/bareos/pull/1079
+[PR #1080]: https://github.com/bareos/bareos/pull/1080
 [unreleased]: https://github.com/bareos/bareos/tree/master
