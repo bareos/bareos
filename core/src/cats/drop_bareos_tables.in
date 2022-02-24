@@ -38,22 +38,10 @@ db_name="${db_name:-$(get_database_name @db_name@)}"
 bareos_sql_ddl="$(get_database_ddl_dir)"
 temp_sql_schema="/tmp/drops.sql.$$"
 
-# Check if some parameters are given, try to detect old usage with db_type
 if [ $# -gt 0 ]; then
-  case "$1" in
-      postgresql)
-         warn "Parameter db_type is no more needed"
-         shift
-         ;;
-      *)
-         error "db_type $1 is not more supported, only postgresql"
-         exit 1
-         ;;
-   esac
+  check_parameters "$*"
 fi
-
 # Below this line no additional parameters is allowed in command ($*)
-
 info "Dropping ${db_type} tables"
 
 sql_definitions="${bareos_sql_ddl}/drops/postgresql.sql"

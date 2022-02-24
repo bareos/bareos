@@ -96,6 +96,27 @@ error()
     echo "Error: $*" >&2
 }
 
+check_parameters()
+{
+# Check if some parameters are given, try to detect old usage with db_type
+if [ $# -gt 0 ]; then
+  case "$1" in
+      -f)
+        FORCE="yes"
+        shift || true
+        ;;
+      postgresql)
+         warn "Parameter db_type is no more needed"
+         shift
+         ;;
+      *)
+         error "db_type $1 is no more supported, only postgresql"
+         exit 1
+         ;;
+   esac
+fi
+}
+
 get_config_lib_file()
 {
     # can be used in following way:
