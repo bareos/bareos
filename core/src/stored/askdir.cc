@@ -66,7 +66,7 @@ static char Create_job_media[]
 static char Update_filelist[] = "Catreq Job=%s UpdateFileList\n";
 
 static char Update_jobrecord[]
-    = "Catreq Job=%s UpdateJobRecord JobBytes=%u JobFiles=%u\n";
+    = "Catreq Job=%s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
 
 static char FileAttributes[] = "UpdCat Job=%s FileAttributes ";
 
@@ -649,7 +649,7 @@ bool StorageDaemonDeviceControlRecord::DirAskToUpdateJobRecord(
                                  sizeof(Update_jobrecord) + MAX_NAME_LENGTH);
   dir->message_length
       = Bsnprintf(dir->msg, sizeof(Update_jobrecord) + MAX_NAME_LENGTH + 1,
-                  Update_jobrecord, jcr->Job, jcr->JobBytes, jcr->JobFiles);
+                  Update_jobrecord, jcr->Job, jcr->JobFiles, jcr->JobBytes);
 
   Dmsg1(1800, ">dird %s", dir->msg); /* Attributes */
   return dir->send();

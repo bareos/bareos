@@ -69,8 +69,7 @@ static char Create_job_media[]
 static char Update_filelist[] = "Catreq Job=%s UpdateFileList\n";
 
 static char Update_jobrecord[]
-    = "Catreq Job=%127s UpdateJobRecord "
-      "JobBytes=%u JobFiles=%u\n";
+    = "Catreq Job=%127s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
 
 // Responses sent to Storage daemon
 static char OK_media[]
@@ -356,7 +355,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       bs->fsend(_("1992 Update File table error\n"));
     }
 
-  } else if (sscanf(bs->msg, Update_jobrecord, &Job, &jr.JobBytes, &jr.JobFiles)
+  } else if (sscanf(bs->msg, Update_jobrecord, &Job, &jr.JobFiles, &jr.JobBytes)
              == 3) {
     Dmsg0(0, "Updating job record\n");
 

@@ -28,7 +28,6 @@ slowjob="slow-backup-bareos-fd"
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
-wait
 @$out $tmp/checkpoints-slow-job.out
 run job=$slowjob level=Full yes
 quit
@@ -36,7 +35,7 @@ END_OF_DATA
 
 run_bconsole
 
-sleep 10
+sleep 14
 
 slowjobid=$(grep 'Job queued. JobId=' $tmp/checkpoints-slow-job.out | sed -n -e 's/^.*JobId=//p')
 
