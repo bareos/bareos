@@ -23,6 +23,8 @@
 	if (typeof define === 'function' && define.amd) {
 		// AMD. Register as an anonymous module.
 		define(['jquery', 'jstree'], factory);
+	} else if(typeof module !== 'undefined' && module.exports) {
+		module.exports = factory(require('jquery'));
 	} else {
 		// Browser globals
 		factory(jQuery);
@@ -192,6 +194,7 @@
 					resizable : s.resizable,
 					draggable : s.draggable,
 					stateful: s.stateful,
+					headerAsTitle: s.headerAsTitle || false,
 					indent: 0,
 					sortOrder: 'text',
 					sortAsc: true,
@@ -245,7 +248,7 @@
 				if (!styled) {
 					styled = true;
 					styles = [
-						'.jstree-grid-cell {vertical-align: top; overflow:hidden;margin-left:0;position:relative;width: 100%;padding-left:7px;white-space: nowrap;}',
+						'.jstree-grid-cell {vertical-align: top; overflow:hidden;margin-left:0;position:relative;width: 100%;padding-left:7px;white-space: nowrap;-ms-scroll-limit: 0 0 0 0;}',
 						'.jstree-grid-cell span {margin-right:0px;margin-right:0px;*display:inline;*+display:inline;white-space: nowrap;}',
 						'.jstree-grid-separator {position:absolute; top:0; right:0; height:24px; margin-left: -2px; border-width: 0 2px 0 0; *display:inline; *+display:inline; margin-right:0px;width:0px;}',
 						'.jstree-grid-header-cell {overflow: hidden; white-space: nowrap;padding: 1px 3px 2px 5px; cursor: default;}',
@@ -258,7 +261,7 @@
 						'.jstree-grid-wrapper {table-layout: fixed; width: 100%; overflow: auto; position: relative;}',
 						'.jstree-grid-midwrapper {display: table-row;}',
 						'.jstree-grid-width-auto {width:auto;display:block;}',
-						'.jstree-grid-column {display: table-cell; overflow: hidden;}',
+						'.jstree-grid-column {display: table-cell; overflow: hidden;-ms-scroll-limit: 0 0 0 0;}',
 						'.jstree-grid-ellipsis {text-overflow: ellipsis;}',
 						'.jstree-grid-col-0 {width: 100%;}'
 					];
@@ -398,7 +401,11 @@
 										continue;
 									}
 									col = cols[i];
-									matched = f.search(getCellData(col.value,node)).isMatch;
+									var cellData = getCellData(col.value,node) ;
+									if ( ( cellData == null ) || ( cellData == '' ) ) {
+										continue ;
+									}
+									matched = f.search(cellData).isMatch;
 									if (matched) {
 										break;
 									}
@@ -673,6 +680,7 @@
 				cl = cols[i].headerClass || "";
 				ccl = cols[i].columnClass || "";
 				val = cols[i].header || "";
+				headerTitle = cols[i].headerTitle || "";
 				do {
 					coluuid = String(Math.floor(Math.random()*10000));
 				} while(this.colrefs[coluuid] !== undefined);
@@ -700,6 +708,14 @@
 				if (this.settings.core.themes.ellipsis === true){
 				  last.addClass('jstree-grid-ellipsis');
 				}
+
+				// add title and strip out HTML
+				var title = gs.headerAsTitle && !headerTitle ? val : (headerTitle ? headerTitle : "");
+				title = title.replace(htmlstripre, '');
+				if (title) {
+					last.attr("title",title);
+				}
+
 				last.prependTo(col);
 				last.attr(COL_DATA_ATTR, name);
 				totalWidth += last.outerWidth();
@@ -865,7 +881,7 @@
       // if the columns are not detached, then detach them
       if (this._domManipulation == null) {
         var cols = this._gridSettings.columns || [], treecol = this._gridSettings.treecol, mw = this.midWrapper;
-        this._domManipulation = { id: id, columns: {} };
+        this._domManipulation = { id: id, oldActiveElement: document.activeElement, columns: {} };
         for (var i = 0, len = cols.length; i < len; i++) {
           //if (treecol === i) {
           //  continue;
@@ -887,6 +903,7 @@
           //}
           mw[0].appendChild(this._domManipulation.columns[i]);
         }
+        if (this._domManipulation.oldActiveElement !== document.activeElement) { $(this._domManipulation.oldActiveElement).focus(); }
         this._domManipulation = null;
       }
       return true;
@@ -1357,3 +1374,4 @@
 		// need to do alternating background colors or borders
 	};
 }));
+
