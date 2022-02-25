@@ -182,7 +182,7 @@ $this->headTitle($title);
                   echo '</strong>';
             ?>
                <div class="panel panel-default">
-               <div id="filebrowser"></div>
+               <div id="filebrowser" style="width: 100%; height: 60vH;"></div>
                </div>
          </div>
 
@@ -505,74 +505,78 @@ $("#filebrowser").bind("loading.jstree", function() {
    displayBvfsCacheUpdateInfo();
 });
 
-$('#filebrowser').jstree({
-   'plugins': ["grid", "state", "sort", "search", "types"],
-   'core': {
-      'animation': false,
-      'force_text': true,
-      'error': function (e) {
-         $('#filebrowser').html(
-            "<h4>There was an error while loading data for this tree.</h4>" +
-            "<p><b>Error: </b>" + e.error + "</p>" +
-            "<p><b>Plugin: </b>" + e.plugin + "</p>" +
-            "<p><b>Reason: </b> " + e.reason + "</p>" +
-            "<p><b>Data:</b></p>" +
-            "<pre><code>" + e.data + "</code></pre>"
-         );
-         displayBvfsCacheUpdateInfo();
+function showFileTree() {
+   $('#filebrowser').jstree({
+      'plugins': ["grid", "state", "sort", "search", "types"],
+      'core': {
+         'animation': false,
+         'force_text': true,
+         'error': function (e) {
+            $('#filebrowser').html(
+               "<h4>There was an error while loading data for this tree.</h4>" +
+               "<p><b>Error: </b>" + e.error + "</p>" +
+               "<p><b>Plugin: </b>" + e.plugin + "</p>" +
+               "<p><b>Reason: </b> " + e.reason + "</p>" +
+               "<p><b>Data:</b></p>" +
+               "<pre><code>" + e.data + "</code></pre>"
+            );
+            displayBvfsCacheUpdateInfo();
+         },
+         'multiple': false,
+         'data': {
+            'url': '<?php echo $this->basePath() . "/restore/filebrowser?jobid=" . $this->restore_params['jobid'] . "&client=" . $this->restore_params['client'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
+            'dataType': 'json',
+            'data': function (node) {
+               return {
+                  'id': node.id,
+                  'state': {'checkbox_disabled': true}
+               };
+            },
+            timeout: <?php echo $_SESSION['bareos']['filetree_refresh_timeout']; ?>,
+         },
       },
-      'multiple': false,
-      'data': {
-         'url': '<?php echo $this->basePath() . "/restore/filebrowser?jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
-         'dataType': 'json',
-         'data': function (node) {
-            return {
-               'id': node.id,
-               'state': {'checkbox_disabled': true}
-            };
-         },
-         timeout: <?php echo $_SESSION['bareos']['filetree_refresh_timeout']; ?>,
+      'state' : {
+         'key': 'versions'
       },
-   },
-   'state' : {
-      'key': 'versions'
-   },
-   'grid': {
-      width: '100%',
-      height: '60vh',
-      fixedHeader: true,
-      resizable: false,
-      columns: [
-         {
-            width: '100%',
-            height: '100%',
-            header: '<?php echo $this->translate("Name"); ?>',
-            headerClass: 'jsTreeGridHeader',
-            title: "_DATA_"
-         },
-         {
-            width: 120,
-            header: '<?php echo $this->translate("Size"); ?>',
-            headerClass: 'jsTreeGridHeader',
-            value: function (node) {
-               return formatJSTreeGridSizeItem(node);
+      'grid': {
+         width: '100%',
+         height: '60vh',
+         fixedHeader: true,
+         resizable: false,
+         columns: [
+            {
+               width: '100%',
+               height: '100%',
+               header: '<?php echo $this->translate("Name"); ?>',
+               headerClass: 'jsTreeGridHeader',
+               title: "_DATA_"
+            },
+            {
+               width: 120,
+               header: '<?php echo $this->translate("Size"); ?>',
+               headerClass: 'jsTreeGridHeader',
+               value: function (node) {
+                  if(node.data === null) return null;
+                  return formatJSTreeGridSizeItem(node);
+               }
+            },
+            {
+               width: 150,
+               header: '<?php echo $this->translate("Last modification"); ?>',
+               headerClass: 'jsTreeGridHeader',
+               value: function (node) {
+                  if(node.data === null) return null;
+                  return formatJSTreeGridLastModItem(node.data.stat.mtime);
+               }
             }
-         },
-         {
-            width: 150,
-            header: '<?php echo $this->translate("Last modification"); ?>',
-            headerClass: 'jsTreeGridHeader',
-            value: function (node) {
-               return formatJSTreeGridLastModItem(node.data.stat.mtime);
-            }
-         }
-      ],
-   },
-   'search': {
-      "case_sensitive": false,
-      "show_only_matches": false
-   }
-});
+         ],
+      },
+      'search': {
+         "case_sensitive": false,
+         "show_only_matches": false
+      }
+   });
+}
 
 $('#jobid').change(function (event) {
    window.location.href = window.location.pathname + '?' + updateRestoreParams('jobid', this.value);
@@ -607,6 +611,10 @@ initTreeHandler();
 $(document).ready(function () {
 
    var errors = '<?php echo str_replace(array("\n", "\r"), "", $this->errors); ?>';
+
+   if($('#client').val() !== "") {
+      showFileTree();
+   }
 
    if (errors.length > 0) {
       $("#modal-001").modal();
