@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -515,6 +515,45 @@ bool BareosDb::UpdateNdmpLevelMapping(JobControlRecord* jcr,
        edit_uint64(jr->FileSetId, ed3), esc_name);
 
   return UPDATE_DB(jcr, cmd) > 0;
+}
+
+/**
+ * Change the type of the next copy job to backup.
+ * We need to upgrade the next copy of a normal job,
+ * and also upgrade the next copy when the normal job
+ * already have been purged.
+ *
+ *   JobId: 1   PriorJobId: 0    (original)
+ *   JobId: 2   PriorJobId: 1    (first copy)
+ *   JobId: 3   PriorJobId: 1    (second copy)
+ *
+ *   JobId: 2   PriorJobId: 1    (first copy, now regular backup)
+ *   JobId: 3   PriorJobId: 1    (second copy)
+ *
+ *  => Search through PriorJobId in jobid and
+ *                    PriorJobId in PriorJobId (jobid)
+ */
+void BareosDb::UpgradeCopies(const char* jobids)
+{
+  PoolMem query(PM_MESSAGE);
+
+  DbLocker _{this};
+
+  /* Do it in two times for mysql */
+  FillQuery(query, BareosDb::SQL_QUERY::uap_upgrade_copies_oldest_job,
+            JT_JOB_COPY, jobids, jobids);
+
+  SqlQuery(query.c_str());
+
+  /* Now upgrade first copy to Backup */
+  Mmsg(query,
+       "UPDATE Job SET Type='B' " /* JT_JOB_COPY => JT_BACKUP  */
+       "WHERE JobId IN ( SELECT JobId FROM cpy_tmp )");
+
+  SqlQuery(query.c_str());
+
+  Mmsg(query, "DROP TABLE cpy_tmp");
+  SqlQuery(query.c_str());
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || \
           HAVE_DBI */

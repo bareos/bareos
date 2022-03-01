@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -650,6 +650,8 @@ class BareosDb : public BareosDbQueryEnum {
   bool DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pool_dbr);
   bool DeleteMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr);
   bool PurgeMediaRecord(JobControlRecord* jcr, MediaDbRecord* mr);
+  void PurgeFiles(const char* jobids);
+  void PurgeJobs(const char* jobids);
 
   /* sql_find.c */
 
@@ -904,6 +906,7 @@ class BareosDb : public BareosDbQueryEnum {
   bool MarkFileRecord(JobControlRecord* jcr, FileId_t FileId, JobId_t JobId);
   void MakeInchangerUnique(JobControlRecord* jcr, MediaDbRecord* mr);
   int UpdateStats(JobControlRecord* jcr, utime_t age);
+  void UpgradeCopies(const char* jobids);
 
   /* Low level methods */
   bool MatchDatabase(const char* db_driver,
