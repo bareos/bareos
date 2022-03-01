@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,6 +25,7 @@
  * Storage Daemon plugin that handles automatic deflation/inflation of data.
  */
 #include "include/bareos.h"
+#include "include/protocol_types.h"
 #include "stored/stored.h"
 #include "stored/device_control_record.h"
 
@@ -110,6 +111,36 @@ struct plugin_ctx {
 
 static int const debuglevel = 200;
 
+
+// Does the mode contain OUT
+static bool AutoxflateModeContainsOut(AutoXflateMode mode)
+{
+  return (mode == AutoXflateMode::IO_DIRECTION_OUT
+          || mode == AutoXflateMode::IO_DIRECTION_INOUT);
+}
+
+// Does the mode contain IN
+static bool AutoxflateModeContainsIn(AutoXflateMode mode)
+{
+  return (mode == AutoXflateMode::IO_DIRECTION_IN
+          || mode == AutoXflateMode::IO_DIRECTION_INOUT);
+}
+
+// what streams can be decompressed by the plugin
+static bool IsCompressedStreamWeHandle(int streamtype)
+{
+  return (streamtype == STREAM_COMPRESSED_DATA
+          || streamtype == STREAM_WIN32_COMPRESSED_DATA
+          || streamtype == STREAM_SPARSE_COMPRESSED_DATA);
+}
+
+// what streams can be compressed by the plugin
+static bool IsUncompressedStreamWeHandle(int streamtype)
+{
+  return (streamtype == STREAM_FILE_DATA || streamtype == STREAM_WIN32_DATA
+          || streamtype == STREAM_SPARSE_DATA);
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -174,7 +205,7 @@ static bRC newPlugin(PluginContext* ctx)
    * bSdEventSetupRecordTranslation - Setup the buffers for doing record
    * translation. bSdEventReadRecordTranslation - Perform read-side record
    * translation. bSdEventWriteRecordTranslation - Perform write-side record
-   * translantion.
+   * translation.
    */
   bareos_core_functions->registerBareosEvents(
       ctx, 4, bSdEventJobEnd, bSdEventSetupRecordTranslation,
@@ -279,7 +310,20 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
 
   // Unpack the arguments passed in.
   dcr = (DeviceControlRecord*)value;
-  if (!dcr) { return bRC_Error; }
+  if (!dcr || !dcr->jcr) { return bRC_Error; }
+
+  // When doing NDMP restore we must inflate the data before sending it to the
+  // client. Thus, if configured differently, we enforce the required settings.
+  if (dcr->jcr->getJobProtocol() == PT_NDMP_BAREOS
+      && dcr->jcr->is_JobType(JT_RESTORE)
+      && (AutoxflateModeContainsIn(dcr->autodeflate)
+          || !AutoxflateModeContainsIn(dcr->autoinflate))) {
+    dcr->autoinflate = AutoXflateMode::IO_DIRECTION_IN;
+    dcr->autodeflate = AutoXflateMode::IO_DIRECTION_NONE;
+    Jmsg(ctx, M_INFO,
+         _("autoxflate-sd: overriding settings on %s for NDMP restore\n"),
+         dcr->dev_name);
+  }
 
   // Give jobmessage info what is configured
   switch (dcr->autodeflate) {
@@ -330,29 +374,14 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
       break;
   }
 
-  // Setup auto deflation/inflation of streams when enabled for this device.
-  switch (dcr->autodeflate) {
-    case AutoXflateMode::IO_DIRECTION_NONE:
-      break;
-    case AutoXflateMode::IO_DIRECTION_OUT:
-    case AutoXflateMode::IO_DIRECTION_INOUT:
-      if (!SetupAutoDeflation(ctx, dcr)) { return bRC_Error; }
-      did_setup = true;
-      break;
-    default:
-      break;
+  if (AutoxflateModeContainsOut(dcr->autodeflate)) {
+    if (!SetupAutoDeflation(ctx, dcr)) { return bRC_Error; }
+    did_setup = true;
   }
 
-  switch (dcr->autoinflate) {
-    case AutoXflateMode::IO_DIRECTION_NONE:
-      break;
-    case AutoXflateMode::IO_DIRECTION_OUT:
-    case AutoXflateMode::IO_DIRECTION_INOUT:
-      if (!SetupAutoInflation(ctx, dcr)) { return bRC_Error; }
-      did_setup = true;
-      break;
-    default:
-      break;
+  if (AutoxflateModeContainsIn(dcr->autoinflate)) {
+    if (!SetupAutoInflation(ctx, dcr)) { return bRC_Error; }
+    did_setup = true;
   }
 
   if (did_setup) {
@@ -368,30 +397,20 @@ static bRC setup_record_translation(PluginContext* ctx, void* value)
 static bRC handle_read_translation(PluginContext* ctx, void* value)
 {
   DeviceControlRecord* dcr;
-  bool swap_record = false;
+  bool record_was_swapped = false;
 
   // Unpack the arguments passed in.
   dcr = (DeviceControlRecord*)value;
   if (!dcr) { return bRC_Error; }
 
   // See if we need to perform auto deflation/inflation of streams.
-  switch (dcr->autoinflate) {
-    case AutoXflateMode::IO_DIRECTION_IN:
-    case AutoXflateMode::IO_DIRECTION_INOUT:
-      swap_record = AutoInflateRecord(ctx, dcr);
-      break;
-    default:
-      break;
+  if (AutoxflateModeContainsIn(dcr->autoinflate)) {
+    record_was_swapped = AutoInflateRecord(ctx, dcr);
   }
 
-  if (!swap_record) {
-    switch (dcr->autodeflate) {
-      case AutoXflateMode::IO_DIRECTION_IN:
-      case AutoXflateMode::IO_DIRECTION_INOUT:
-        swap_record = AutoDeflateRecord(ctx, dcr);
-        break;
-      default:
-        break;
+  if (!record_was_swapped) {
+    if (AutoxflateModeContainsOut(dcr->autodeflate)) {
+      record_was_swapped = AutoDeflateRecord(ctx, dcr);
     }
   }
 
@@ -401,33 +420,21 @@ static bRC handle_read_translation(PluginContext* ctx, void* value)
 static bRC handle_write_translation(PluginContext* ctx, void* value)
 {
   DeviceControlRecord* dcr;
-  bool swap_record = false;
+  bool record_was_swapped = false;
 
   // Unpack the arguments passed in.
   dcr = (DeviceControlRecord*)value;
   if (!dcr) { return bRC_Error; }
 
   // See if we need to perform auto deflation/inflation of streams.
-  switch (dcr->autoinflate) {
-    case AutoXflateMode::IO_DIRECTION_OUT:
-    case AutoXflateMode::IO_DIRECTION_INOUT:
-      swap_record = AutoInflateRecord(ctx, dcr);
-      break;
-    default:
-      break;
+  if (AutoxflateModeContainsOut(dcr->autoinflate)) {
+    record_was_swapped = AutoInflateRecord(ctx, dcr);
   }
-
-  if (!swap_record) {
-    switch (dcr->autodeflate) {
-      case AutoXflateMode::IO_DIRECTION_OUT:
-      case AutoXflateMode::IO_DIRECTION_INOUT:
-        swap_record = AutoDeflateRecord(ctx, dcr);
-        break;
-      default:
-        break;
+  if (!record_was_swapped) {
+    if (AutoxflateModeContainsOut(dcr->autodeflate)) {
+      record_was_swapped = AutoDeflateRecord(ctx, dcr);
     }
   }
-
   return bRC_OK;
 }
 
@@ -447,10 +454,8 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
     goto bail_out;
   }
 
-  /*
-   * See if we need to create a new compression buffer or make sure the existing
-   * is big enough.
-   */
+  // See if we need to create a new compression buffer or make sure the
+  // existing is big enough.
   if (!jcr->compress.deflate_buffer) {
     jcr->compress.deflate_buffer = GetMemory(compress_buf_size);
     jcr->compress.deflate_buffer_size = compress_buf_size;
@@ -507,7 +512,8 @@ static bool SetupAutoDeflation(PluginContext* ctx, DeviceControlRecord* dcr)
       pZfastStream = (zfast_stream*)jcr->compress.workset.pZFAST;
       if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor)) != Z_OK) {
         Jmsg(ctx, M_FATAL,
-             _("autoxflate-sd: Compression fastlzlibSetCompressor error: %d\n"),
+             _("autoxflate-sd: Compression fastlzlibSetCompressor error: "
+               "%d\n"),
              zstat);
         jcr->setJobStatus(JS_ErrorTerminated);
         goto bail_out;
@@ -536,10 +542,8 @@ static bool SetupAutoInflation(PluginContext* ctx, DeviceControlRecord* dcr)
 
   SetupDecompressionBuffers(jcr, &decompress_buf_size);
   if (decompress_buf_size > 0) {
-    /*
-     * See if we need to create a new compression buffer or make sure the
-     * existing is big enough.
-     */
+    // See if we need to create a new compression buffer or make sure the
+    // existing is big enough.
     if (!jcr->compress.inflate_buffer) {
       jcr->compress.inflate_buffer = GetMemory(decompress_buf_size);
       jcr->compress.inflate_buffer_size = decompress_buf_size;
@@ -575,13 +579,10 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { goto bail_out; }
 
-  /*
-   * See what our starting point is. When dcr->after_rec is set we already have
-   * a translated record by another SD plugin. Then we use that translated
-   * record as the starting point otherwise we start at dcr->before_rec. When an
-   * earlier translation already happened we can free that record when we have a
-   * success full translation here as that record is of no use anymore.
-   */
+  // When dcr->after_rec is set we already have a translated record by another
+  // SD plugin which we need to translate and to free after successful
+  // translation.
+  // Otherwise we start from dcr->before_rec.
   if (dcr->after_rec) {
     rec = dcr->after_rec;
     intermediate_value = true;
@@ -589,35 +590,14 @@ static bool AutoDeflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
     rec = dcr->before_rec;
   }
 
-  /*
-   * We only do autocompression for the following stream types:
-   *
-   * - STREAM_FILE_DATA
-   * - STREAM_WIN32_DATA
-   * - STREAM_SPARSE_DATA
-   */
-  switch (rec->maskedStream) {
-    case STREAM_FILE_DATA:
-    case STREAM_WIN32_DATA:
-    case STREAM_SPARSE_DATA:
-      break;
-    default:
-      goto bail_out;
-  }
+  if (!IsUncompressedStreamWeHandle(rec->maskedStream)) { goto bail_out; }
 
-  /*
-   * Clone the data from the original DeviceRecord to the converted one.
-   * As we use the compression buffers for the data we need a new
-   * DeviceRecord without a new memory buffer so we call new_record here
-   * with the with_data boolean set explicitly to false.
-   */
-  nrec = bareos_core_functions->new_record(false);
+  // Clone the data from the original DeviceRecord to the converted one.
+  nrec = bareos_core_functions->new_record(/* with_data = */ false);
   bareos_core_functions->CopyRecordState(nrec, rec);
 
-  /*
-   * Setup the converted DeviceRecord to point with its data buffer to the
-   * compression buffer.
-   */
+  // Setup the converted DeviceRecord to point with its data buffer to the
+  // compression buffer.
   nrec->data = dcr->jcr->compress.deflate_buffer;
   switch (rec->maskedStream) {
     case STREAM_FILE_DATA:
@@ -707,10 +687,8 @@ bail_out:
   return retval;
 }
 
-/**
- * Inflate (uncompress) the content of a read record and return the data as an
- * alternative datastream.
- */
+// Inflate (uncompress) the content of a read record and return the data as an
+// alternative datastream.
 static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
 {
   DeviceRecord *rec, *nrec;
@@ -721,51 +699,25 @@ static bool AutoInflateRecord(PluginContext* ctx, DeviceControlRecord* dcr)
   p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { goto bail_out; }
 
-  /*
-   * See what our starting point is. When dcr->after_rec is set we already have
-   * a translated record by another SD plugin. Then we use that translated
-   * record as the starting point otherwise we start at dcr->before_rec. When an
-   * earlier translation already happened we can free that record when we have a
-   * success full translation here as that record is of no use anymore.
-   */
+  // When dcr->after_rec is set we already have a translated record by another
+  // SD plugin which we need to translate and to free after successful
+  // translation.
+  // Otherwise we start from dcr->before_rec.
   if (dcr->after_rec) {
     rec = dcr->after_rec;
     intermediate_value = true;
   } else {
     rec = dcr->before_rec;
   }
+  if (!IsCompressedStreamWeHandle(rec->maskedStream)) { goto bail_out; }
 
-  /*
-   * We only do auto inflation for the following stream types:
-   *
-   * - STREAM_COMPRESSED_DATA
-   * - STREAM_WIN32_COMPRESSED_DATA
-   * - STREAM_SPARSE_COMPRESSED_DATA
-   */
-  switch (rec->maskedStream) {
-    case STREAM_COMPRESSED_DATA:
-    case STREAM_WIN32_COMPRESSED_DATA:
-    case STREAM_SPARSE_COMPRESSED_DATA:
-      break;
-    default:
-      goto bail_out;
-  }
-
-  /*
-   * Clone the data from the original DeviceRecord to the converted one.
-   * As we use the compression buffers for the data we need a new
-   * DeviceRecord without a new memory buffer so we call new_record here
-   * with the with_data boolean set explicitly to false.
-   */
-  nrec = bareos_core_functions->new_record(false);
+  // Clone the data from the original DeviceRecord to the converted one.
+  nrec = bareos_core_functions->new_record(/* with_data = */ false);
   bareos_core_functions->CopyRecordState(nrec, rec);
 
-  /*
-   * Setup the converted record to point to the original data.
-   * The DecompressData function will decompress that data and
-   * then update the pointers with the data in the compression buffer
-   * and with the length of the decompressed data.
-   */
+  // Setup the converted record to point to the original data. The
+  // DecompressData function will decompress the data in the
+  // compression buffer and set the length of the decompressed data.
   nrec->data = rec->data;
   nrec->data_len = rec->data_len;
 

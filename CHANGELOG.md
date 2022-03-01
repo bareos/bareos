@@ -6,6 +6,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ## [Unreleased]
 
 ### Fixed
+- NDMP_BAREOS: support autoxflate plugin [PR #1090] (backport of [PR #1013])
 - debian: add missing python plugin dependencies [PR #1045]
 - fix empty job timeline issue if date.timezone is not set in php.ini [PR #1053] (backport of [PR #1051])
 
@@ -403,6 +404,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #999]: https://github.com/bareos/bareos/pull/999
 [PR #1007]: https://github.com/bareos/bareos/pull/1007
 [PR #1008]: https://github.com/bareos/bareos/pull/1008
+[PR #1013]: https://github.com/bareos/bareos/pull/1013
 [PR #1017]: https://github.com/bareos/bareos/pull/1017
 [PR #1018]: https://github.com/bareos/bareos/pull/1018
 [PR #1019]: https://github.com/bareos/bareos/pull/1019
@@ -431,4 +433,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1066]: https://github.com/bareos/bareos/pull/1066
 [PR #1079]: https://github.com/bareos/bareos/pull/1079
 [PR #1080]: https://github.com/bareos/bareos/pull/1080
+[PR #1090]: https://github.com/bareos/bareos/pull/1090
 [unreleased]: https://github.com/bareos/bareos/tree/master

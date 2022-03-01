@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -476,16 +476,6 @@ bool ReadRecords(DeviceControlRecord* dcr,
          */
         rec = (dcr->after_rec) ? dcr->after_rec : dcr->before_rec;
         ok = RecordCb(dcr, rec);
-
-        /*
-         * We can just release the translated record here as the record may not
-         * be changed by the record callback so any changes made don't need to
-         * be copied back to the original DeviceRecord.
-         */
-        if (dcr->after_rec) {
-          FreeRecord(dcr->after_rec);
-          dcr->after_rec = NULL;
-        }
       }
     }
     Dmsg2(debuglevel, "After end recs in block. pos=%u:%u\n", dcr->dev->file,
