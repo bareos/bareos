@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -680,7 +680,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_ACL_HURD_DEFAULT_ACL:
     case STREAM_ACL_HURD_ACCESS_ACL:
       if (extract) {
-        PmStrcpy(acl_data.last_fname, attr->fname);
+        PmStrcpy(acl_data.last_fname, attr->ofname);
         PushDelayedDataStream(rec->maskedStream, rec->data, rec->data_len);
       }
       break;
@@ -697,7 +697,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
     case STREAM_XATTR_LINUX:
     case STREAM_XATTR_NETBSD:
       if (extract) {
-        PmStrcpy(xattr_data.last_fname, attr->fname);
+        PmStrcpy(xattr_data.last_fname, attr->ofname);
         PushDelayedDataStream(rec->maskedStream, rec->data, rec->data_len);
       }
       break;

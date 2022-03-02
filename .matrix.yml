@@ -8,15 +8,12 @@ OS:
   ULC_deb:
     "OpenSSL_1.1":
       TYPE: scripted
-      IMAGE: debian9.0
+      IMAGE: "ubuntu18.04"
       BUILD_SCRIPT: CD/deb/build-ulc.sh
       FINISH_SCRIPT: CD/deb/finish-ulc.sh
       ARCH:
-        - i586
         - x86_64
       PROJECTPACKAGES:
-        i586:
-          - bareos
         x86_64:
           - bareos
 
@@ -65,19 +62,6 @@ OS:
        x86_64:
           - bareos
           - python-bareos
-
-  Univention:
-    "4.4":
-      TYPE: deb
-      IMAGE: univention4.4
-      ARCH:
-      - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - python-bareos
-
 
   SLE:
     "15_SP3":
@@ -171,22 +155,6 @@ OS:
            - bareos
            - bareos-webui
            - bareos-vmware
-           - python-bareos
-    "9.0":
-      TYPE: deb
-      IMAGE: "debian9.0"
-      ARCH:
-        - i586
-        - x86_64
-      PROJECTPACKAGES:
-        x86_64:
-           - bareos
-           - bareos-webui
-           - bareos-vmware
-           - python-bareos
-        i586:
-           - bareos
-           - bareos-webui
            - python-bareos
 
   EL:

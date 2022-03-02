@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,12 +54,12 @@ static ConsoleResource* res_cons;
 /* clang-format off */
 
 static ResourceItem cons_items[] = {
-  { "Name", CFG_TYPE_NAME, (std::size_t)&res_cons->resource_name_, reinterpret_cast<BareosResource**>(&res_cons), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
+  { "Name", CFG_TYPE_NAME, ITEM(res_cons, resource_name_), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
   { "Description", CFG_TYPE_STR, ITEM(res_cons, description_), 0, 0, NULL, NULL, NULL },
   { "RcFile", CFG_TYPE_DIR, ITEM(res_cons, rc_file), 0, 0, NULL, NULL, NULL },
   { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons, history_file), 0, 0, NULL, NULL, NULL },
   { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons, history_length), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
-  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons, password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+  { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons, password_), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
   { "Director", CFG_TYPE_STR, ITEM(res_cons, director), 0, 0, NULL, NULL, NULL },
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons, heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
   TLS_COMMON_CONFIG(res_cons),
@@ -148,6 +148,7 @@ static void FreeResource(BareosResource* res, int type)
       if (p->rc_file) { free(p->rc_file); }
       if (p->history_file) { free(p->history_file); }
       if (p->password_.value) { free(p->password_.value); }
+      if (p->director) { free(p->director); }
       delete p;
       break;
     }

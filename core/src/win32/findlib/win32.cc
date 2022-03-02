@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -138,58 +138,6 @@ int get_win32_driveletters(findFILESET* fileset, char* szDrives)
   }
 
   return nCount;
-}
-
-/**
- * For VSS we need to know which windows virtual mountpoints are used, because
- * we create a snapshot of all used drives and virtual mountpoints. This
- * function returns the number of used virtual mountpoints and fills szVmps with
- * a list of all virtual mountpoints.
- */
-int get_win32_virtualmountpoints(findFILESET* fileset,
-                                 dlist<dlistString>** szVmps)
-{
-  int i, cnt;
-  char* fname;
-  struct stat sb;
-  dlistString* node;
-  findIncludeExcludeItem* incexe;
-  POOLMEM* devicename;
-
-  cnt = 0;
-  if (fileset) {
-    devicename = GetPoolMemory(PM_FNAME);
-    for (i = 0; i < fileset->include_list.size(); i++) {
-      incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
-      // Look through all files and check
-      foreach_dlist (node, &incexe->name_list) {
-        fname = node->c_str();
-
-        // See if the entry has the FILE_ATTRIBUTE_VOLUME_MOUNT_POINT flag set.
-        if (stat(fname, &sb) == 0) {
-          if (!(sb.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT)) { continue; }
-        } else {
-          continue;
-        }
-
-        if (win32_get_vmp_devicename(fname, devicename)) {
-          // See if we need to allocate a new dlist.
-          if (!cnt) {
-            if (!*szVmps) {
-              *szVmps = (dlist<dlistString>*)malloc(sizeof(dlist<dlistString>));
-              (*szVmps)->init();
-            }
-          }
-
-          (*szVmps)->append(new_dlistString(devicename));
-          cnt++;
-        }
-      }
-    }
-    FreePoolMemory(devicename);
-  }
-
-  return cnt;
 }
 
 static inline bool WantedDriveType(const char* drive,

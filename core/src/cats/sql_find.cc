@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -157,7 +157,7 @@ BareosDb::SqlFindResult BareosDb::FindLastJobStartTimeForJobAndClient(
                client_name.size());
 
   constexpr const char* default_time{"0000-00-00 00:00:00"};
-  stime_out.resize(strlen(default_time));
+  stime_out.resize(strlen(default_time) + 1);
   strcpy(stime_out.data(), default_time);
 
   Mmsg(cmd,

@@ -915,24 +915,27 @@ struct robot_state {
 
 static void robot_state_init(struct robot_state* rs)
 {
-  int i;
-
   /* invent some nice data, with some nice voltags and whatnot */
 
   NDMOS_API_BZERO(rs, sizeof(*rs));
 
   /* (nothing to do for MTEs) */
 
-  for (i = 0; i < STORAGE_COUNT; i++) {
+  for (uint8_t i = 0; i < STORAGE_COUNT; i++) {
     struct element_state* es = &rs->storage[i];
     es->full = 1;
 
     es->medium_type = 1; /* data */
     es->source_element = 0;
-    snprintf(es->pvoltag, sizeof(es->pvoltag),
-             "PTAG%02XXX                        ", i);
-    snprintf(es->avoltag, sizeof(es->avoltag),
-             "ATAG%02XXX                        ", i);
+
+    // write into a null-terminated string buffer, copy to
+    // destination buffer that will not be null-terminated
+    char buf[100];
+    sprintf(buf, "PTAG%02XXX                          ", i);
+    memmove(es->pvoltag, buf, sizeof(es->pvoltag));
+    sprintf(buf, "ATAG%02XXX                          ", i);
+    memmove(es->avoltag, buf, sizeof(es->avoltag));
+
   }
 
   /* (i/e are all empty) */
@@ -993,7 +996,7 @@ static int robot_state_move(struct ndm_session* sess,
   char dest_filename[NDMOS_CONST_PATH_MAX];
   struct element_state* dest_elt;
   struct stat st;
-  char pos[NDMOS_CONST_PATH_MAX];
+  char pos[NDMOS_CONST_PATH_MAX+4];
 
   /* TODO: audit that the tape device is not using this volume right now */
 

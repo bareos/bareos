@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,9 +43,7 @@ BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(
   filenr_ = 0;
   number_of_previous_files_ = number_of_files;
 
-  CurFile* elt = NULL;
-  file_list_ = (htable*)malloc(sizeof(htable));
-  file_list_->init(elt, &elt->link, number_of_previous_files_);
+  file_list_ = new FileList(number_of_previous_files_);
   seen_bitmap_ = (char*)malloc(NbytesForBits(number_of_previous_files_));
   ClearAllBits(number_of_previous_files_, seen_bitmap_);
 }
@@ -176,11 +174,8 @@ bool BareosAccurateFilelistHtable::SendDeletedList()
 
 void BareosAccurateFilelistHtable::destroy()
 {
-  if (file_list_) {
-    file_list_->destroy();
-    free(file_list_);
-    file_list_ = NULL;
-  }
+  delete file_list_;
+  file_list_ = nullptr;
 
   if (seen_bitmap_) {
     free(seen_bitmap_);

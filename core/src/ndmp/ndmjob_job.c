@@ -429,18 +429,17 @@ int jndex_tattle(void)
   char buf[100];
   struct ndmmedia* me;
   struct ndm_env_entry* nev;
-  int i;
 
   for (me = ji_media.head; me; me = me->next) {
     ndmmedia_to_str(me, buf);
-    ndmjob_log(3, "ji me[%d] %s", i, buf);
+    ndmjob_log(3, "ji me[] %s", buf);
   }
 
   for (nev = ji_environment.head; nev; nev = nev->next) {
-    ndmjob_log(3, "ji env[%d] %s=%s", i, nev->pval.name, nev->pval.value);
+    ndmjob_log(3, "ji env[] %s=%s", nev->pval.name, nev->pval.value);
   }
 
-  for (i = 0; (i < n_file_arg) && (i < NDM_MAX_NLIST); i++) {
+  for (int i = 0; (i < n_file_arg) && (i < NDM_MAX_NLIST); i++) {
     if (nlist[i].fh_info.valid) {
       ndmjob_log(3, "ji fil[%d] fi=%lld %s", i, nlist[i].fh_info.value,
                  file_arg[i]);

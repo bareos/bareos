@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -200,10 +200,12 @@ uint32_t SerializeXattrStream(JobControlRecord* jcr,
     if (current_xattr->value_length > 0 && current_xattr->value) {
       SerBytes(current_xattr->value, current_xattr->value_length);
 
-      Dmsg3(100, "Backup xattr named %s, value %.*s\n", current_xattr->name,
+      Dmsg3(100, "Backup xattr named %.*s, value %.*s\n",
+            current_xattr->name_length, current_xattr->name,
             current_xattr->value_length, current_xattr->value);
     } else {
-      Dmsg1(100, "Backup empty xattr named %s\n", current_xattr->name);
+      Dmsg1(100, "Backup empty xattr named %.*s\n", current_xattr->name_length,
+            current_xattr->name);
     }
   }
 
@@ -275,11 +277,13 @@ BxattrExitCode UnSerializeXattrStream(JobControlRecord* jcr,
       current_xattr->value = (char*)malloc(current_xattr->value_length);
       UnserBytes(current_xattr->value, current_xattr->value_length);
 
-      Dmsg3(100, "Restoring xattr named %s, value %*s\n", current_xattr->name,
+      Dmsg3(100, "Restoring xattr named %.*s, value %.*s\n",
+            current_xattr->name_length, current_xattr->name,
             current_xattr->value_length, current_xattr->value);
     } else {
       current_xattr->value = NULL;
-      Dmsg1(100, "Restoring empty xattr named %s\n", current_xattr->name);
+      Dmsg1(100, "Restoring empty xattr named %.*s\n",
+            current_xattr->name_length, current_xattr->name);
     }
 
     xattr_value_list->append(current_xattr);

@@ -168,8 +168,16 @@ endif()
 if(NOT client-only)
   bareos_add_test(
     test_dir_plugins
-    ADDITIONAL_SOURCES ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
-    LINK_LIBRARIES bareos bareossql GTest::gtest_main
+    ADDITIONAL_SOURCES
+      ${PROJECT_SOURCE_DIR}/src/dird/dir_plugins.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/dird_conf.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/dird_globals.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/run_conf.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/inc_conf.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/ua_acl.cc
+      ${PROJECT_SOURCE_DIR}/src/dird/ua_audit.cc
+    LINK_LIBRARIES bareos bareossql bareosfind GTest::gtest_main
+                   ${OPENSSL_LIBRARIES}
   )
 endif() # NOT client-only
 
@@ -313,6 +321,13 @@ if(HAVE_EXECINFO_H
    AND HAVE_BACKTRACE_SYMBOLS
 )
   bareos_add_test(test_backtrace LINK_LIBRARIES bareos GTest::gtest_main)
+  # Backtrace doesn't work correctly when ASan is enabled, do we shoudn't test
+  # in that case
+  if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address")
+    set_tests_properties(
+      gtest:Backtrace.test_backtrace PROPERTIES DISABLED TRUE
+    )
+  endif()
 endif() # HAVE_EXECINFO_H ..
 
 if(NOT client-only)

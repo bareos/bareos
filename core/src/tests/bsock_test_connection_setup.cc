@@ -58,7 +58,6 @@ static void InitGlobals()
   console::director_resource = nullptr;
   console::console_resource = nullptr;
   console::me = nullptr;
-  InitMsg(NULL, NULL);
 }
 
 static PConfigParser ConsolePrepareResources(const std::string& path_to_config)
@@ -150,7 +149,6 @@ static bool do_connection_test(std::string path_to_config, TlsPolicy tls_policy)
 
   directordaemon::StopSocketServer();
   StopWatchdog();
-
   return true;
 }
 

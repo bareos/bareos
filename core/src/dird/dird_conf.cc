@@ -3701,13 +3701,13 @@ static void DumpResource(int type,
   bool recurse = true;
   UaContext* ua = (UaContext*)sock;
   OutputFormatter* output_formatter = nullptr;
-  OutputFormatter* output_formatter_local = nullptr;
+  std::unique_ptr<OutputFormatter> output_formatter_local;
   if (ua) {
     output_formatter = ua->send;
   } else {
     output_formatter_local
-        = new OutputFormatter(sendit, nullptr, nullptr, nullptr);
-    output_formatter = output_formatter_local;
+        = std::make_unique<OutputFormatter>(sendit, nullptr, nullptr, nullptr);
+    output_formatter = output_formatter_local.get();
   }
 
   OutputFormatterResource output_formatter_resource
@@ -3767,7 +3767,6 @@ bail_out:
   if (recurse && res->next_) {
     DumpResource(type, res->next_, sendit, sock, hide_sensitive_data, verbose);
   }
-  if (output_formatter_local) { delete output_formatter_local; }
 }
 
 static void FreeResource(BareosResource* res, int type)

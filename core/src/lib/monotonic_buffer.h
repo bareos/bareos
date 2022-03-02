@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,33 +18,28 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
 
-#include "lib/parse_conf.h"
-#include "console/console_globals.h"
-#include "console/console_conf.h"
+#ifndef BAREOS_LIB_MONOTONIC_BUFFER_H_
+#define BAREOS_LIB_MONOTONIC_BUFFER_H_
+#include <cstddef>
 
-namespace console {
+class MonotonicBuffer {
+ public:
+  enum class Size
+  {
+    Small,
+    Medium,
+    Large
+  };
 
-TEST(ConfigParser, test_console_config)
-{
-  OSDependentInit();
+ private:
+  struct Allocation;
+  Allocation* mem_block_{nullptr};
+  Size grow_size_;
 
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
-
-  my_config = InitConsConfig(path_to_config_file.c_str(), M_ERROR_TERM);
-  my_config->ParseConfig();
-
-  my_config->DumpResources(PrintMessage, NULL);
-
-  delete my_config;
-}
-
-}  // namespace console
+ public:
+  MonotonicBuffer(Size grow_size = Size::Large) : grow_size_(grow_size) {}
+  ~MonotonicBuffer();
+  void* allocate(size_t size);
+};
+#endif  // BAREOS_LIB_MONOTONIC_BUFFER_H_

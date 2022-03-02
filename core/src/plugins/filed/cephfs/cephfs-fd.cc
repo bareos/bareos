@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2015 Planets Communications B.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -118,8 +118,8 @@ struct plugin_ctx {
   POOLMEM* link_target;   /* Target symlink points to */
   POOLMEM* xattr_list;    /* List of xattrs */
   alist<dir_stack_entry*>* dir_stack; /* Stack of directories when recursing */
-  htable* path_list; /* Hash table with directories created on restore. */
-  struct dirent de;  /* Current directory entry being processed. */
+  PathList* path_list; /* Hash table with directories created on restore. */
+  struct dirent de;    /* Current directory entry being processed. */
   struct ceph_mount_info* cmount; /* CEPHFS mountpoint */
   struct ceph_dir_result* cdir;   /* CEPHFS directory handle */
   int cfd;                        /* CEPHFS file handle */

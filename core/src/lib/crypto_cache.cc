@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,7 +75,7 @@ void ReadCryptoCache(const char* cache_file)
   }
 
   if (!cached_crypto_keys) {
-    cached_crypto_keys = new dlist<crypto_cache_entry_t>(cce, &cce->link);
+    cached_crypto_keys = new dlist<crypto_cache_entry_t>();
   }
 
   // Read as many crypto cache entries as available.
@@ -207,7 +207,7 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
 
   // See if there are any cached encryption keys.
   if (!cached_crypto_keys) {
-    cached_crypto_keys = new dlist<crypto_cache_entry_t>(cce, &cce->link);
+    cached_crypto_keys = new dlist<crypto_cache_entry_t>();
 
     cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
     bstrncpy(cce->VolumeName, VolumeName, sizeof(cce->VolumeName));

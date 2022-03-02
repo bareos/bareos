@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -91,8 +91,6 @@ TREE_ROOT* new_tree(int count)
   root->cached_path = GetPoolMemory(PM_FNAME);
   root->type = TN_ROOT;
   root->fname = "";
-  HL_ENTRY* entry = NULL;
-  root->hardlinks.init(entry, &entry->link, 0, 1);
   return root;
 }
 
@@ -157,7 +155,7 @@ void FreeTree(TREE_ROOT* root)
   struct s_mem *mem, *rel;
   uint32_t freed_blocks = 0;
 
-  root->hardlinks.destroy();
+  std::destroy_at(&root->hardlinks);
   for (mem = root->mem; mem;) {
     rel = mem;
     mem = mem->next;

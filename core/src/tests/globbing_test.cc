@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,23 +37,6 @@ namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
-void InitContexts(UaContext* ua, TreeContext* tree)
-{
-  ua->cmd = GetPoolMemory(PM_FNAME);
-  ua->args = GetPoolMemory(PM_FNAME);
-  ua->errmsg = GetPoolMemory(PM_FNAME);
-  ua->verbose = true;
-  ua->automount = true;
-  ua->send = new OutputFormatter(sprintit, ua, filterit, ua);
-
-  tree->root = new_tree(1);
-  tree->ua = ua;
-  tree->all = false;
-  tree->FileEstimate = 100;
-  tree->DeltaCount = 1;
-  tree->node = (TREE_NODE*)tree->root;
-}
-
 int FakeCdCmd(UaContext* ua, TreeContext* tree, std::string path)
 {
   std::string command = "cd " + path;
@@ -71,29 +54,21 @@ int FakeMarkCmd(UaContext* ua, TreeContext* tree, std::string path)
   return MarkElements(ua, tree);
 }
 
-int FakelsCmd(UaContext* ua, TreeContext* tree, std::string path)
-{
-  std::string command = "ls " + path;
-  PmStrcpy(ua->cmd, command.c_str());
-
-  ParseArgsOnly(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
-  return lscmd(ua, tree);
-}
-
 void PopulateTree(std::vector<std::string> files, TreeContext* tree)
 {
   int pnl, fnl;
-  char* filename = GetPoolMemory(PM_FNAME);
-  char* path = GetPoolMemory(PM_FNAME);
+  PoolMem filename{PM_FNAME};
+  PoolMem path{PM_FNAME};
 
   for (auto file : files) {
-    SplitPathAndFilename(file.c_str(), path, &pnl, filename, &fnl);
+    SplitPathAndFilename(file.c_str(), path.addr(), &pnl, filename.addr(),
+                         &fnl);
 
-    char* row0 = path;
-    char* row1 = filename;
+    char* row0 = path.c_str();
+    char* row1 = filename.c_str();
     char row2[] = "1";
     char row3[] = "2";
-    char row4[] = "ff";
+    char row4[] = "P0A CF2xg IGk B Po Po A 3Y BAA I BhjA7I BU+HEc BhjA7I A A C";
     char row5[] = "0";
     char row6[] = "0";
     char row7[] = "0";
@@ -103,22 +78,32 @@ void PopulateTree(std::vector<std::string> files, TreeContext* tree)
   }
 }
 
+class Globbing : public testing::Test {
+ protected:
+  void SetUp() override
+  {
+    tree.root = new_tree(1);
+    tree.node = (TREE_NODE*)tree.root;
+    me = new DirectorResource;
+    me->optimize_for_size = true;
+    me->optimize_for_speed = false;
+    ua = new_ua_context(&jcr);
+  }
 
-TEST(globbing, globbing_in_markcmd)
-{
-  /*The director resource is created in order for certain functions to access
-    certain global variables*/
-  me = new DirectorResource;
-  me->optimize_for_size = true;
-  me->optimize_for_speed = false;
+  void TearDown() override
+  {
+    FreeUaContext(ua);
+    FreeTree(tree.root);
+    delete me;
+  }
 
-  /* creating a ua context is usually done with
-   * new_ua_context(JobControlRecord jcr) but database handling make it break in
-   * this environment, while not being necessary for the test*/
-  UaContext ua;
+  JobControlRecord jcr{};
+  UaContext* ua{nullptr};
   TreeContext tree;
-  InitContexts(&ua, &tree);
+};
 
+TEST_F(Globbing, globbing_in_markcmd)
+{
   const std::vector<std::string> files
       = {"/some/weirdfiles/normalefile",
          "/some/weirdfiles/nottooweird",
@@ -157,47 +142,45 @@ TEST(globbing, globbing_in_markcmd)
   PopulateTree(files, &tree);
 
   // testing full paths
-  FakeCdCmd(&ua, &tree, "/");
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "*"), files.size());
+  FakeCdCmd(ua, &tree, "/");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "*"), files.size());
 
   EXPECT_EQ(
-      FakeMarkCmd(&ua, &tree, "/testingwildcards/lonesubdirectory/whatever"),
-      1);
+      FakeMarkCmd(ua, &tree, "/testingwildcards/lonesubdirectory/whatever"), 1);
 
   EXPECT_EQ(
-      FakeMarkCmd(&ua, &tree, "testingwildcards/lonesubdirectory/whatever"), 1);
+      FakeMarkCmd(ua, &tree, "testingwildcards/lonesubdirectory/whatever"), 1);
 
   // Using full path while being in a different folder than root
-  FakeCdCmd(&ua, &tree, "/some/weirdfiles/");
+  FakeCdCmd(ua, &tree, "/some/weirdfiles/");
   EXPECT_EQ(
-      FakeMarkCmd(&ua, &tree, "/testingwildcards/lonesubdirectory/whatever"),
-      1);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "/testingwildcards/sub*"), 6);
+      FakeMarkCmd(ua, &tree, "/testingwildcards/lonesubdirectory/whatever"), 1);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "/testingwildcards/sub*"), 6);
 
   EXPECT_EQ(
-      FakeMarkCmd(&ua, &tree, "testingwildcards/lonesubdirectory/whatever"), 0);
+      FakeMarkCmd(ua, &tree, "testingwildcards/lonesubdirectory/whatever"), 0);
 
   // Testing patterns in different folders
-  FakeCdCmd(&ua, &tree, "/some/weirdfiles/");
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "nope"), 0);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "potato"), 1);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "potato*"), 2);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "lonesubdirectory/*"), 1);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "subdirectory2/*"), 2);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "sub*/*"), 6);
+  FakeCdCmd(ua, &tree, "/some/weirdfiles/");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "nope"), 0);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "potato"), 1);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "potato*"), 2);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "lonesubdirectory/*"), 1);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "subdirectory2/*"), 2);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "sub*/*"), 6);
 
-  FakeCdCmd(&ua, &tree, "/some/");
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "w*/sub*/*"), 12);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "wei*/sub*/*"), 6);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "wei*/subroza/*"), 0);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "w*efiles/sub*/*"), 6);
+  FakeCdCmd(ua, &tree, "/some/");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "w*/sub*/*"), 12);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "wei*/sub*/*"), 6);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "wei*/subroza/*"), 0);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "w*efiles/sub*/*"), 6);
 
-  FakeCdCmd(&ua, &tree, "/testingwildcards/");
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "p?tato"), 1);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "subdirectory?/file1"), 1);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "subdirectory?/file?"), 6);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "subdirectory?/file[!2,!3]"), 4);
-  EXPECT_EQ(FakeMarkCmd(&ua, &tree, "su[a,b,c]directory?/file1"), 1);
+  FakeCdCmd(ua, &tree, "/testingwildcards/");
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "p?tato"), 1);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "subdirectory?/file1"), 1);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "subdirectory?/file?"), 6);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "subdirectory?/file[!2,!3]"), 4);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "su[a,b,c]directory?/file1"), 1);
 
   /* The following two tests are commented out because they should be working
    * correctly, but as the second test suggests, fnmatch (which is the main
@@ -206,6 +189,4 @@ TEST(globbing, globbing_in_markcmd)
    */
   //  EXPECT_EQ(FakeMarkCmd(&ua, tree, "{*tory1,*tory2}/file1"), 1);
   //  EXPECT_EQ(fnmatch("{*tory1,*tory2}", "subdirectory1", 0), 0);
-
-  delete me;
 }

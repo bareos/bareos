@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -54,6 +54,19 @@ endif(CCACHE_FOUND)
 #
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
+if(ENABLE_SANITIZERS)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover")
+  else()
+    message(
+      FATAL_ERROR
+        "Cannot (yet) compile with sanitizers on ${CMAKE_C_COMPILER_ID}"
+    )
+  endif()
+endif()
 
 option(ENABLE_STATIC_RUNTIME_LIBS "Link C and C++ runtime libraries statically"
        OFF
@@ -143,6 +156,11 @@ endif()
 check_cxx_compiler_flag(-Wno-unknown-pragmas compiler_has_no_unknown_pragmas)
 if(${compiler_has_no_unknown_pragmas})
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
+endif()
+
+check_cxx_compiler_flag(-Winvalid-offsetof compiler_has_invalid_offsetof)
+if(compiler_has_invalid_offsetof)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-offsetof")
 endif()
 
 # warn on sign-conversion include(CheckCCompilerFlag)

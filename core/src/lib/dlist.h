@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,9 +23,6 @@
 /**
  * @file
  * Doubly linked list  -- dlist
- *
- * See the end of the file for the dlistString class which
- * facilitates storing strings in a dlist.
  */
 
 #ifndef BAREOS_LIB_DLIST_H_
@@ -33,11 +30,10 @@
 
 #include "include/bareos.h"
 #include "lib/dlink.h"
+#include "lib/dlist_string.h"
 #include "lib/message.h"
 #include "lib/message_severity.h"
 
-/* In case you want to specifically specify the offset to the link */
-#define OFFSET(item, link) (int)((char*)(link) - (char*)(item))
 /**
  * There is a lot of extra casting here to work around the fact
  * that some compilers (Sun and Visual C++) do not accept
@@ -58,40 +54,18 @@
 #endif
 
 template <typename T> class dlist {
-  T* head;
-  T* tail;
-  int16_t loffset;
-  uint32_t num_items;
+  T* head{nullptr};
+  T* tail{nullptr};
+  uint32_t num_items{0};
 
  public:
-  /**
-   * Constructor called with the address of a
-   *   member of the list (not the list head), and
-   *   the address of the link within that member.
-   * If the link is at the beginning of the list member,
-   *   then there is no need to specify the link address
-   *   since the offset is zero.
-   */
-  dlist(T* item, dlink<T>* link) { init(item, link); }
-
-  /* Constructor with link at head of item */
-  dlist(void) : head(nullptr), tail(nullptr), loffset(0), num_items(0) {}
+  dlist() = default;
   ~dlist() { destroy(); }
-  void init(T* item, dlink<T>* link)
-  {
-    head = tail = NULL;
-    loffset = (int)((char*)link - (char*)item);
-    if (loffset < 0 || loffset > 5000) {
-      Emsg0(M_ABORT, 0, "Improper dlist initialization.\n");
-    }
-    num_items = 0;
-  }
-  void init()
-  {
-    head = tail = nullptr;
-    loffset = 0;
-    num_items = 0;
-  }
+  dlist(const dlist<T>& other) = delete;
+  dlist(dlist<T>&& other) = delete;
+  dlist<T>& operator=(const dlist<T>& other) = delete;
+  dlist<T>& operator=(dlist<T>&& other) = delete;
+
   void prepend(T* item)
   {
     SetNext(item, head);
@@ -115,20 +89,12 @@ template <typename T> class dlist {
     num_items++;
   }
 
-  void SetPrev(T* item, T* prev)
-  {
-    ((dlink<T>*)(((char*)item) + loffset))->prev = prev;
-  }
+  void SetPrev(T* item, T* prev) { item->link.prev = prev; }
+  void SetNext(T* item, T* next) { item->link.next = next; }
 
-  void SetNext(T* item, T* next)
-  {
-    ((dlink<T>*)(((char*)item) + loffset))->next = next;
-  }
-
-  T* get_prev(T* item) { return ((dlink<T>*)(((char*)item) + loffset))->prev; }
-
-  T* get_next(T* item) { return ((dlink<T>*)(((char*)item) + loffset))->next; }
-  dlink<T>* get_link(T* item) { return (dlink<T>*)(((char*)item) + loffset); }
+  T* get_prev(T* item) { return item->link.prev; }
+  T* get_next(T* item) { return item->link.next; }
+  dlink<T>* get_link(T* item) { return &item->link; }
   void InsertBefore(T* item, T* where)
   {
     dlink<T>* where_link = get_link(where);
@@ -364,34 +330,4 @@ template <typename T> class dlist {
   T* first() const { return head; }
   T* last() const { return tail; }
 };
-
-/**
- * C string helper routines for dlist
- *   The string (char *) is kept in the node
- *
- *   Kern Sibbald, February 2007
- *
- */
-class dlistString {
- public:
-  char* c_str() { return str_; }
-
- private:
-#ifdef __clang__
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wunused-private-field"
-#endif
-  dlink<char> link_;
-#ifdef __clang__
-#  pragma clang diagnostic pop
-#endif
-  char str_[1];
-  /* !!! Don't put anything after this as this space is used
-   *     to hold the string in inline
-   */
-};
-
-extern dlistString* new_dlistString(const char* str, int len);
-extern dlistString* new_dlistString(const char* str);
-
 #endif  // BAREOS_LIB_DLIST_H_

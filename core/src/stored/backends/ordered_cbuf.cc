@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2017 Planets Communications B.V.
-   Copyright (C) 2017-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,8 +31,6 @@ namespace storagedaemon {
 // Initialize a new ordered circular buffer.
 int ordered_circbuf::init(int capacity)
 {
-  struct ocbuf_item* item = NULL;
-
   if (pthread_mutex_init(&lock_, NULL) != 0) { return -1; }
 
   if (pthread_cond_init(&notfull_, NULL) != 0) {
@@ -53,7 +51,8 @@ int ordered_circbuf::init(int capacity)
     data_->destroy();
     delete data_;
   }
-  data_ = new dlist<void>(item, &item->link);
+  static_assert(offsetof(ocbuf_item, link) == 0);
+  data_ = new dlist<ocbuf_item>();
 
   return 0;
 }
@@ -73,8 +72,8 @@ void ordered_circbuf::destroy()
 // Enqueue a new item into the ordered circular buffer.
 void* ordered_circbuf::enqueue(void* data,
                                uint32_t data_size,
-                               int compare(void* item1, void* item2),
-                               void update(void* item1, void* item2),
+                               int compare(ocbuf_item*, ocbuf_item*),
+                               void update(void*, void*),
                                bool use_reserved_slot,
                                bool no_signal)
 {

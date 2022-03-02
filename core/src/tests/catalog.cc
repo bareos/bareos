@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,8 +68,6 @@ class CatalogTest : public ::testing::Test {
 
 void CatalogTest::SetUp()
 {
-  InitMsg(nullptr, nullptr);
-
   // get environment
   {
     catalog_backend_name = getenv_std_string("DBTYPE");
@@ -121,6 +119,7 @@ void CatalogTest::SetUp()
 
 void CatalogTest::TearDown()
 {
+  db->CloseDatabase(jcr);
   DbSqlPoolDestroy();
   DbFlushBackends();
 
@@ -138,8 +137,6 @@ void CatalogTest::TearDown()
 TEST_F(CatalogTest, database)
 {
   std::vector<char> stime;
-  auto jcr = directordaemon::NewDirectorJcr();
-
   auto result = db->FindLastJobStartTimeForJobAndClient(jcr, "backup-bareos-fd",
                                                         "bareos-fd", stime);
 

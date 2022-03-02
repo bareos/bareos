@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -147,7 +147,7 @@ struct plugin_ctx {
   POOLMEM* dirent_buffer; /* Temporary buffer for current dirent structure */
 #endif
   alist<dir_stack_entry*>* dir_stack; /* Stack of directories when recursing */
-  htable* path_list;      /* Hash table with directories created on restore. */
+  PathList* path_list;    /* Hash table with directories created on restore. */
   glfs_t* glfs;           /* Gluster volume handle */
   glfs_fd_t* gdir;        /* Gluster directory handle */
   glfs_fd_t* gfd;         /* Gluster file handle */

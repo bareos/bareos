@@ -108,12 +108,8 @@ static dlist<job_statistics_t>* job_statistics = NULL;
 
 static inline void setup_statistics()
 {
-  device_statistics_t* dev_stats = NULL;
-  job_statistics_t* job_stats = NULL;
-
-  device_statistics
-      = new dlist<device_statistics_t>(dev_stats, &dev_stats->link);
-  job_statistics = new dlist<job_statistics_t>(job_stats, &job_stats->link);
+  device_statistics = new dlist<device_statistics_t>();
+  job_statistics = new dlist<job_statistics_t>();
 }
 
 void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
@@ -152,8 +148,7 @@ void UpdateDeviceTapealert(const char* devname, uint64_t flags, utime_t now)
   tape_alert->flags = flags;
 
   if (!dev_stats->device_tapealerts) {
-    dev_stats->device_tapealerts
-        = new dlist<device_tapealert_item>(tape_alert, &tape_alert->link);
+    dev_stats->device_tapealerts = new dlist<device_tapealert_item>();
   }
 
   P(mutex);
@@ -228,8 +223,7 @@ static inline void UpdateDeviceStatistics(const char* devname,
 
 
   if (!dev_stats->device_statistics) {
-    dev_stats->device_statistics
-        = new dlist<device_statistic_item>(dev_stat, &dev_stat->link);
+    dev_stats->device_statistics = new dlist<device_statistic_item>();
   }
 
   P(mutex);
@@ -307,8 +301,7 @@ void UpdateJobStatistics(JobControlRecord* jcr, utime_t now)
   }
 
   if (!job_stats->job_statistics) {
-    job_stats->job_statistics
-        = new dlist<jobstatistic_item>(job_stat, &job_stat->link);
+    job_stats->job_statistics = new dlist<jobstatistic_item>();
   }
 
   P(mutex);

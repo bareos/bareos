@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -80,7 +80,6 @@ bool IsWatchdog()
 int StartWatchdog(void)
 {
   int status;
-  watchdog_t* dummy = NULL;
   int errstat;
 
   if (wd_is_init) { return 0; }
@@ -92,8 +91,8 @@ int StartWatchdog(void)
     Jmsg1(NULL, M_ABORT, 0, _("Unable to initialize watchdog lock. ERR=%s\n"),
           be.bstrerror(errstat));
   }
-  wd_queue = new dlist<watchdog_t>(dummy, &dummy->link);
-  wd_inactive = new dlist<watchdog_t>(dummy, &dummy->link);
+  wd_queue = new dlist<watchdog_t>();
+  wd_inactive = new dlist<watchdog_t>();
   wd_is_init = true;
 
   if ((status = pthread_create(&wd_tid, NULL, watchdog_thread, NULL)) != 0) {

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,6 +76,7 @@ TEST(poolmem, alloc)
   EXPECT_NE(pm6, pm5);
   EXPECT_EQ(SizeofPoolMemory(pm6), 128);
 
+  FreePoolMemory(pm0);
   FreePoolMemory(pm1);
   FreePoolMemory(pm2);
   FreePoolMemory(pm3);

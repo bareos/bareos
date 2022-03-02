@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -124,18 +124,17 @@ static struct s_keyw keyw[] = {{NT_("on"), s_none, 0},
 
 static bool have_hour, have_mday, have_wday, have_month, have_wom;
 static bool have_at, have_woy;
-static RunResource* res_run;
 
-static void set_defaults()
+static void set_defaults(RunResource& res_run)
 {
   have_hour = have_mday = have_wday = have_month = have_wom = have_woy = false;
   have_at = false;
-  SetBitRange(0, 23, res_run->date_time_bitfield.hour);
-  SetBitRange(0, 30, res_run->date_time_bitfield.mday);
-  SetBitRange(0, 6, res_run->date_time_bitfield.wday);
-  SetBitRange(0, 11, res_run->date_time_bitfield.month);
-  SetBitRange(0, 4, res_run->date_time_bitfield.wom);
-  SetBitRange(0, 53, res_run->date_time_bitfield.woy);
+  SetBitRange(0, 23, res_run.date_time_bitfield.hour);
+  SetBitRange(0, 30, res_run.date_time_bitfield.mday);
+  SetBitRange(0, 6, res_run.date_time_bitfield.wday);
+  SetBitRange(0, 11, res_run.date_time_bitfield.month);
+  SetBitRange(0, 4, res_run.date_time_bitfield.wom);
+  SetBitRange(0, 53, res_run.date_time_bitfield.woy);
 }
 
 // Keywords (RHS) permitted in Run records
@@ -175,11 +174,9 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
   bool found;
   utime_t utime;
   BareosResource* res;
+  RunResource res_run;
 
   lc->options |= LOPT_NO_IDENT; /* Want only "strings" */
-
-  // Clear local copy of run record
-  res_run = new RunResource;
 
   // Scan for Job level "full", "incremental", ...
   for (found = true; found;) {
@@ -196,12 +193,12 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           case 's': /* Data spooling */
             token = LexGetToken(lc, BCT_NAME);
             if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-              res_run->spool_data = true;
-              res_run->spool_data_set = true;
+              res_run.spool_data = true;
+              res_run.spool_data_set = true;
             } else if (Bstrcasecmp(lc->str, "no")
                        || Bstrcasecmp(lc->str, "false")) {
-              res_run->spool_data = false;
-              res_run->spool_data_set = true;
+              res_run.spool_data = false;
+              res_run.spool_data_set = true;
             } else {
               scan_err1(lc, _("Expect a YES or NO, got: %s"), lc->str);
               return;
@@ -211,8 +208,8 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             token = LexGetToken(lc, BCT_NAME);
             for (j = 0; joblevels[j].level_name; j++) {
               if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
-                res_run->level = joblevels[j].level;
-                res_run->job_type = joblevels[j].job_type;
+                res_run.level = joblevels[j].level;
+                res_run.job_type = joblevels[j].job_type;
                 j = 0;
                 break;
               }
@@ -225,7 +222,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             break;
           case 'p': /* Priority */
             token = LexGetToken(lc, BCT_PINT32);
-            if (pass == 2) { res_run->Priority = lc->u.pint32_val; }
+            if (pass == 2) { res_run.Priority = lc->u.pint32_val; }
             break;
           case 'P': /* Pool */
           case 'f': /* FullPool */
@@ -243,22 +240,22 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
               }
               switch (RunFields[i].token) {
                 case 'P':
-                  res_run->pool = (PoolResource*)res;
+                  res_run.pool = (PoolResource*)res;
                   break;
                 case 'f':
-                  res_run->full_pool = (PoolResource*)res;
+                  res_run.full_pool = (PoolResource*)res;
                   break;
                 case 'v':
-                  res_run->vfull_pool = (PoolResource*)res;
+                  res_run.vfull_pool = (PoolResource*)res;
                   break;
                 case 'i':
-                  res_run->inc_pool = (PoolResource*)res;
+                  res_run.inc_pool = (PoolResource*)res;
                   break;
                 case 'd':
-                  res_run->diff_pool = (PoolResource*)res;
+                  res_run.diff_pool = (PoolResource*)res;
                   break;
                 case 'n':
-                  res_run->next_pool = (PoolResource*)res;
+                  res_run.next_pool = (PoolResource*)res;
                   break;
               }
             }
@@ -273,7 +270,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
                           lc->str);
                 return;
               }
-              res_run->storage = (StorageResource*)res;
+              res_run.storage = (StorageResource*)res;
             }
             break;
           case 'M': /* Messages */
@@ -286,7 +283,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
                           lc->str);
                 return;
               }
-              res_run->msgs = (MessagesResource*)res;
+              res_run.msgs = (MessagesResource*)res;
             }
             break;
           case 'm': /* Max run sched time */
@@ -295,19 +292,19 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
               scan_err1(lc, _("expected a time period, got: %s"), lc->str);
               return;
             }
-            res_run->MaxRunSchedTime = utime;
-            res_run->MaxRunSchedTime_set = true;
+            res_run.MaxRunSchedTime = utime;
+            res_run.MaxRunSchedTime_set = true;
             break;
           case 'a': /* Accurate */
             token = LexGetToken(lc, BCT_NAME);
             if (strcasecmp(lc->str, "yes") == 0
                 || strcasecmp(lc->str, "true") == 0) {
-              res_run->accurate = true;
-              res_run->accurate_set = true;
+              res_run.accurate = true;
+              res_run.accurate_set = true;
             } else if (strcasecmp(lc->str, "no") == 0
                        || strcasecmp(lc->str, "false") == 0) {
-              res_run->accurate = false;
-              res_run->accurate_set = true;
+              res_run.accurate = false;
+              res_run.accurate_set = true;
             } else {
               scan_err1(lc, _("Expect a YES or NO, got: %s"), lc->str);
             }
@@ -327,8 +324,8 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
     if (!found) {
       for (j = 0; joblevels[j].level_name; j++) {
         if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
-          res_run->level = joblevels[j].level;
-          res_run->job_type = joblevels[j].job_type;
+          res_run.level = joblevels[j].level;
+          res_run.job_type = joblevels[j].job_type;
           found = true;
           break;
         }
@@ -341,7 +338,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
    * Default is: daily at 0:0
    */
   state = s_none;
-  set_defaults();
+  set_defaults(res_run);
 
   for (; token != BCT_EOL; (token = LexGetToken(lc, BCT_ALL))) {
     int len;
@@ -407,38 +404,38 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
         continue;
       case s_mday: /* Day of month */
         if (!have_mday) {
-          ClearBitRange(0, 30, res_run->date_time_bitfield.mday);
+          ClearBitRange(0, 30, res_run.date_time_bitfield.mday);
           have_mday = true;
         }
-        SetBit(code, res_run->date_time_bitfield.mday);
+        SetBit(code, res_run.date_time_bitfield.mday);
         break;
       case s_month: /* Month of year */
         if (!have_month) {
-          ClearBitRange(0, 11, res_run->date_time_bitfield.month);
+          ClearBitRange(0, 11, res_run.date_time_bitfield.month);
           have_month = true;
         }
-        SetBit(code, res_run->date_time_bitfield.month);
+        SetBit(code, res_run.date_time_bitfield.month);
         break;
       case s_wday: /* Week day */
         if (!have_wday) {
-          ClearBitRange(0, 6, res_run->date_time_bitfield.wday);
+          ClearBitRange(0, 6, res_run.date_time_bitfield.wday);
           have_wday = true;
         }
-        SetBit(code, res_run->date_time_bitfield.wday);
+        SetBit(code, res_run.date_time_bitfield.wday);
         break;
       case s_wom: /* Week of month 1st, ... */
         if (!have_wom) {
-          ClearBitRange(0, 4, res_run->date_time_bitfield.wom);
+          ClearBitRange(0, 4, res_run.date_time_bitfield.wom);
           have_wom = true;
         }
-        SetBit(code, res_run->date_time_bitfield.wom);
+        SetBit(code, res_run.date_time_bitfield.wom);
         break;
       case s_woy:
         if (!have_woy) {
-          ClearBitRange(0, 53, res_run->date_time_bitfield.woy);
+          ClearBitRange(0, 53, res_run.date_time_bitfield.woy);
           have_woy = true;
         }
-        SetBit(code, res_run->date_time_bitfield.woy);
+        SetBit(code, res_run.date_time_bitfield.woy);
         break;
       case s_time: /* Time */
         if (!have_at) {
@@ -446,7 +443,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           return;
         }
         if (!have_hour) {
-          ClearBitRange(0, 23, res_run->date_time_bitfield.hour);
+          ClearBitRange(0, 23, res_run.date_time_bitfield.hour);
         }
         //       Dmsg1(000, "s_time=%s\n", lc->str);
         p = strchr(lc->str, ':');
@@ -484,17 +481,17 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           scan_err0(lc, _("Bad time specification."));
           return;
         }
-        SetBit(code, res_run->date_time_bitfield.hour);
-        res_run->minute = code2;
+        SetBit(code, res_run.date_time_bitfield.hour);
+        res_run.minute = code2;
         have_hour = true;
         break;
       case s_at:
         have_at = true;
         break;
       case s_last:
-        res_run->date_time_bitfield.last_week_of_month = true;
+        res_run.date_time_bitfield.last_week_of_month = true;
         if (!have_wom) {
-          ClearBitRange(0, 4, res_run->date_time_bitfield.wom);
+          ClearBitRange(0, 4, res_run.date_time_bitfield.wom);
           have_wom = true;
         }
         break;
@@ -520,13 +517,13 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             return;
           }
           if (!have_mday) {
-            ClearBitRange(0, 30, res_run->date_time_bitfield.mday);
+            ClearBitRange(0, 30, res_run.date_time_bitfield.mday);
             have_mday = true;
           }
           // Set the bits according to the modulo specification.
           for (i = 0; i < 31; i++) {
             if (i % code2 == 0) {
-              SetBit(i + code, res_run->date_time_bitfield.mday);
+              SetBit(i + code, res_run.date_time_bitfield.mday);
             }
           }
         } else if (strlen(lc->str) == 3 && strlen(p) == 3
@@ -546,13 +543,13 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             return;
           }
           if (!have_woy) {
-            ClearBitRange(0, 53, res_run->date_time_bitfield.woy);
+            ClearBitRange(0, 53, res_run.date_time_bitfield.woy);
             have_woy = true;
           }
           // Set the bits according to the modulo specification.
           for (i = 0; i < 54; i++) {
             if (i % code2 == 0) {
-              SetBit(i + code - 1, res_run->date_time_bitfield.woy);
+              SetBit(i + code - 1, res_run.date_time_bitfield.woy);
             }
           }
         } else {
@@ -578,14 +575,14 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             return;
           }
           if (!have_mday) {
-            ClearBitRange(0, 30, res_run->date_time_bitfield.mday);
+            ClearBitRange(0, 30, res_run.date_time_bitfield.mday);
             have_mday = true;
           }
           if (code < code2) {
-            SetBitRange(code, code2, res_run->date_time_bitfield.mday);
+            SetBitRange(code, code2, res_run.date_time_bitfield.mday);
           } else {
-            SetBitRange(code, 30, res_run->date_time_bitfield.mday);
-            SetBitRange(0, code2, res_run->date_time_bitfield.mday);
+            SetBitRange(code, 30, res_run.date_time_bitfield.mday);
+            SetBitRange(0, code2, res_run.date_time_bitfield.mday);
           }
         } else if (strlen(lc->str) == 3 && strlen(p) == 3
                    && (lc->str[0] == 'w' || lc->str[0] == 'W')
@@ -599,14 +596,14 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
             return;
           }
           if (!have_woy) {
-            ClearBitRange(0, 53, res_run->date_time_bitfield.woy);
+            ClearBitRange(0, 53, res_run.date_time_bitfield.woy);
             have_woy = true;
           }
           if (code < code2) {
-            SetBitRange(code, code2, res_run->date_time_bitfield.woy);
+            SetBitRange(code, code2, res_run.date_time_bitfield.woy);
           } else {
-            SetBitRange(code, 53, res_run->date_time_bitfield.woy);
-            SetBitRange(0, code2, res_run->date_time_bitfield.woy);
+            SetBitRange(code, 53, res_run.date_time_bitfield.woy);
+            SetBitRange(0, code2, res_run.date_time_bitfield.woy);
           }
         } else {
           // lookup first half of keyword range (week days or months).
@@ -641,59 +638,59 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
           }
           if (state == s_wday) {
             if (!have_wday) {
-              ClearBitRange(0, 6, res_run->date_time_bitfield.wday);
+              ClearBitRange(0, 6, res_run.date_time_bitfield.wday);
               have_wday = true;
             }
             if (code < code2) {
-              SetBitRange(code, code2, res_run->date_time_bitfield.wday);
+              SetBitRange(code, code2, res_run.date_time_bitfield.wday);
             } else {
-              SetBitRange(code, 6, res_run->date_time_bitfield.wday);
-              SetBitRange(0, code2, res_run->date_time_bitfield.wday);
+              SetBitRange(code, 6, res_run.date_time_bitfield.wday);
+              SetBitRange(0, code2, res_run.date_time_bitfield.wday);
             }
           } else if (state == s_month) {
             if (!have_month) {
-              ClearBitRange(0, 11, res_run->date_time_bitfield.month);
+              ClearBitRange(0, 11, res_run.date_time_bitfield.month);
               have_month = true;
             }
             if (code < code2) {
-              SetBitRange(code, code2, res_run->date_time_bitfield.month);
+              SetBitRange(code, code2, res_run.date_time_bitfield.month);
             } else {
               // This is a bit odd, but we accept it anyway
-              SetBitRange(code, 11, res_run->date_time_bitfield.month);
-              SetBitRange(0, code2, res_run->date_time_bitfield.month);
+              SetBitRange(code, 11, res_run.date_time_bitfield.month);
+              SetBitRange(0, code2, res_run.date_time_bitfield.month);
             }
           } else {
             // Must be position
             if (!have_wom) {
-              ClearBitRange(0, 4, res_run->date_time_bitfield.wom);
+              ClearBitRange(0, 4, res_run.date_time_bitfield.wom);
               have_wom = true;
             }
             if (code < code2) {
-              SetBitRange(code, code2, res_run->date_time_bitfield.wom);
+              SetBitRange(code, code2, res_run.date_time_bitfield.wom);
             } else {
-              SetBitRange(code, 4, res_run->date_time_bitfield.wom);
-              SetBitRange(0, code2, res_run->date_time_bitfield.wom);
+              SetBitRange(code, 4, res_run.date_time_bitfield.wom);
+              SetBitRange(0, code2, res_run.date_time_bitfield.wom);
             }
           }
         }
         break;
       case s_hourly:
         have_hour = true;
-        SetBitRange(0, 23, res_run->date_time_bitfield.hour);
+        SetBitRange(0, 23, res_run.date_time_bitfield.hour);
         break;
       case s_weekly:
         have_mday = have_wom = have_woy = true;
-        SetBitRange(0, 30, res_run->date_time_bitfield.mday);
-        SetBitRange(0, 4, res_run->date_time_bitfield.wom);
-        SetBitRange(0, 53, res_run->date_time_bitfield.woy);
+        SetBitRange(0, 30, res_run.date_time_bitfield.mday);
+        SetBitRange(0, 4, res_run.date_time_bitfield.wom);
+        SetBitRange(0, 53, res_run.date_time_bitfield.woy);
         break;
       case s_daily:
         have_mday = true;
-        SetBitRange(0, 6, res_run->date_time_bitfield.wday);
+        SetBitRange(0, 6, res_run.date_time_bitfield.wday);
         break;
       case s_monthly:
         have_month = true;
-        SetBitRange(0, 11, res_run->date_time_bitfield.month);
+        SetBitRange(0, 11, res_run.date_time_bitfield.month);
         break;
       default:
         scan_err0(lc, _("Unexpected run state\n"));
@@ -710,8 +707,7 @@ void StoreRun(LEX* lc, ResourceItem* item, int index, int pass)
     RunResource** run = GetItemVariablePointer<RunResource**>(*item);
     RunResource* tail;
 
-    RunResource* nrun = res_run;
-    res_run = nullptr;
+    RunResource* nrun = new RunResource(std::move(res_run));
 
     nrun->next = NULL;
 

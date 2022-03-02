@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,33 +18,33 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#if defined(HAVE_MINGW)
-#  include "include/bareos.h"
-#  include "gtest/gtest.h"
-#else
-#  include "gtest/gtest.h"
-#  include "include/bareos.h"
-#endif
 
-#include "lib/parse_conf.h"
-#include "console/console_globals.h"
-#include "console/console_conf.h"
+#ifndef BAREOS_LIB_DLIST_STRING_H_
+#define BAREOS_LIB_DLIST_STRING_H_
 
-namespace console {
+#include "lib/dlink.h"
 
-TEST(ConfigParser, test_console_config)
-{
-  OSDependentInit();
+/**
+ * C string helper routines for dlist
+ *   The string (char *) is kept in the node
+ *
+ *   Kern Sibbald, February 2007
+ *
+ */
+class dlistString {
+ public:
+  char* c_str() { return str_; }
 
-  std::string path_to_config_file = std::string(
-      RELATIVE_PROJECT_SOURCE_DIR "/configs/bareos-configparser-tests");
+  dlink<dlistString> link;
 
-  my_config = InitConsConfig(path_to_config_file.c_str(), M_ERROR_TERM);
-  my_config->ParseConfig();
+ private:
+  char str_[1];
+  /* !!! Don't put anything after this as this space is used
+   *     to hold the string in inline
+   */
+};
 
-  my_config->DumpResources(PrintMessage, NULL);
+extern dlistString* new_dlistString(const char* str, int len);
+extern dlistString* new_dlistString(const char* str);
 
-  delete my_config;
-}
-
-}  // namespace console
+#endif  // BAREOS_LIB_DLIST_STRING_H_

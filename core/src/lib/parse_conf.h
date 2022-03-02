@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,10 +43,17 @@ class ConfigParserStateMachine;
 class ConfigurationParser;
 
 /* For storing name_addr items in res_items table */
-/* clang-format off */
-#define ITEM(c, m) ((std::size_t)&c->m), reinterpret_cast<BareosResource**>(&c)
-#define ITEMC(c)   0,   reinterpret_cast<BareosResource**>(&c)
-/* clang-format on */
+
+/* using offsetof on non-standard-layout types is conditionally supported. As
+ * all the compiler we're currently using support this, it should be safe to
+ * use. It is at least safer to use than the undefined behaviour we previously
+ * utilized.
+ */
+#define ITEM(c, m)                                     \
+  offsetof(std::remove_pointer<decltype(c)>::type, m), \
+      reinterpret_cast<BareosResource**>(&c)
+#define ITEMC(c) 0, reinterpret_cast<BareosResource**>(&c)
+
 /*
  * Master Resource configuration structure definition
  * This is the structure that defines the resources that are available to

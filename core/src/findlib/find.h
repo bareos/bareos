@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -61,6 +61,7 @@
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
 #  endif
 #endif
+
 // For options FO_xxx values see src/fileopts.h
 enum
 {
@@ -185,6 +186,10 @@ struct CurLink {
   char name[1];          /**< The name */
 };
 
+using LinkHash
+    = htable<htable_binary_key, CurLink, MonotonicBuffer::Size::Medium>;
+
+
 /**
  * Definition of the FindFiles packet passed as the
  * first argument to the FindFiles callback subroutine.
@@ -250,7 +255,7 @@ struct FindFilesPacket {
   alist<const char*> drivetypes;       /**< Allowed drive types */
 
   // List of all hard linked files found
-  htable* linkhash{nullptr};       /**< Hard linked files */
+  LinkHash* linkhash{nullptr};       /**< Hard linked files */
   struct CurLink* linked{nullptr}; /**< Set if this file is hard linked */
 
   /*

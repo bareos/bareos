@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,8 +39,6 @@
 
 namespace directordaemon {
 
-DirectorResource* me = nullptr;
-
 bool DbGetPoolRecord(JobControlRecord*, BareosDb*, PoolDbRecord*);
 bool DbGetPoolRecord(JobControlRecord*, BareosDb*, PoolDbRecord*)
 {
@@ -56,8 +54,6 @@ TEST(dir, dir_plugins)
   JobControlRecord mjcr1, mjcr2;
   JobControlRecord* jcr1 = &mjcr1;
   JobControlRecord* jcr2 = &mjcr2;
-
-  InitMsg(NULL, NULL);
 
   OSDependentInit();
   (void)!getcwd(plugin_dir, sizeof(plugin_dir) - 1);
@@ -80,8 +76,6 @@ TEST(dir, dir_plugins)
   FreePlugins(jcr2);
 
   UnloadDirPlugins();
-
-  TermMsg();
 }
 
 } /* namespace directordaemon */

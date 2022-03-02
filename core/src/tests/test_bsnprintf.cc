@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,6 +75,11 @@ TEST(bsnprintf, len_param)
   // truncate the string by parameter
   EXPECT_EQ(Bsnprintf(dest, 100, "-%.*s-", 5, "Some String"), 7);
   EXPECT_STREQ(dest, "-Some -");
+
+  // fixed length string value with no null-terminator
+  const char fixed_str[] = {'a', 'b', 'c', 'd', 'e', 'f'};
+  EXPECT_EQ(Bsnprintf(dest, 100, "-%.*s-", 6, fixed_str), 8);
+  EXPECT_STREQ(dest, "-abcdef-");
 }
 
 TEST(bsnprintf, char)
@@ -103,18 +108,17 @@ TEST(bsnprintf, pointer)
 {
   char dest[100];
   void* null = nullptr;
-  void* ones = static_cast<void*>(static_cast<char*>(null) - 1);
+  void* ones = reinterpret_cast<void*>(UINTPTR_MAX);
 
   EXPECT_EQ(Bsnprintf(dest, 100, "%p", null), 1);
   EXPECT_STREQ(dest, "0");
-
-#if UINTPTR_MAX == 0xFFFFFFFF
-  EXPECT_EQ(Bsnprintf(dest, 100, "%p", ones), 8);
-  EXPECT_STREQ(dest, "ffffffff");
-#else
-  EXPECT_EQ(Bsnprintf(dest, 100, "%p", ones), 16);
-  EXPECT_STREQ(dest, "ffffffffffffffff");
-#endif
+  if constexpr (sizeof(void*) == 4) {
+    EXPECT_EQ(Bsnprintf(dest, 100, "%p", ones), 8);
+    EXPECT_STREQ(dest, "ffffffff");
+  } else {
+    EXPECT_EQ(Bsnprintf(dest, 100, "%p", ones), 16);
+    EXPECT_STREQ(dest, "ffffffffffffffff");
+  }
 }
 
 TEST(bsnprintf, integers)

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,8 +51,8 @@ BareosSocket* ConnectToDirector(JobControlRecord& jcr,
   TlsResource* local_tls_resource;
   if (console_resource) {
     name = console_resource->resource_name_;
-    ASSERT(console_resource->password.encoding == p_encoding_md5);
-    password = &console_resource->password;
+    ASSERT(console_resource->password_.encoding == p_encoding_md5);
+    password = &console_resource->password_;
     local_tls_resource = console_resource;
   } else { /* default console */
     name = "*UserAgent*";

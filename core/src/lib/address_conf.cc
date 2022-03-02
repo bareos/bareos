@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -288,18 +288,28 @@ bool RemoveDefaultAddresses(dlist<IPADDR>* addrs,
 {
   IPADDR* iaddr;
   IPADDR* default_address = nullptr;
+  IPADDR* todelete = nullptr;
+
   foreach_dlist (iaddr, addrs) {
+    if (todelete) {
+      delete (todelete);
+      todelete = nullptr;
+    }
     if (iaddr->GetType() == IPADDR::R_DEFAULT) {
       default_address = iaddr;
       if (default_address) {
         addrs->remove(default_address);
-        delete default_address;
+        todelete = default_address;
       }
     } else if (iaddr->GetType() != type) {
       Bsnprintf(buf, buflen,
                 _("the old style addresses cannot be mixed with new style"));
       return false;
     }
+  }
+  if (todelete) {
+    delete (todelete);
+    todelete = nullptr;
   }
   return true;
 }
@@ -340,18 +350,15 @@ int AddAddress(dlist<IPADDR>** out,
                char* buf,
                int buflen)
 {
-  IPADDR* iaddr;
-  IPADDR* jaddr;
-  dlist<IPADDR>* hostaddrs;
+  IPADDR* iaddr = nullptr;
+  IPADDR* jaddr = nullptr;
+  dlist<IPADDR>* hostaddrs = nullptr;
   unsigned short port;
   IPADDR::i_type intype = type;
 
   buf[0] = 0;
-  dlist<IPADDR>* addrs = (dlist<IPADDR>*)(*(out));
-  if (!addrs) {
-    IPADDR* tmp = 0;
-    addrs = *out = new dlist<IPADDR>(tmp, &tmp->link);
-  }
+  dlist<IPADDR>* addrs = *(out);
+  if (!addrs) { addrs = *out = new dlist<IPADDR>(); }
 
   type = (type == IPADDR::R_SINGLE_PORT || type == IPADDR::R_SINGLE_ADDR)
              ? IPADDR::R_SINGLE
@@ -402,17 +409,21 @@ int AddAddress(dlist<IPADDR>** out,
 
   } else {
     foreach_dlist (iaddr, hostaddrs) {
-      IPADDR* clone;
+      bool sameaddress = false;
       /* for duplicates */
       foreach_dlist (jaddr, addrs) {
-        if (IsSameIpAddress(iaddr, jaddr)) { goto skip; /* no price */ }
+        if (IsSameIpAddress(iaddr, jaddr)) {
+          sameaddress = true;
+          break;
+        }
       }
-      clone = new IPADDR(*iaddr);
-      clone->SetType(type);
-      clone->SetPortNet(port);
-      addrs->append(clone);
-    skip:
-      continue;
+      if (!sameaddress) {
+        IPADDR* clone = nullptr;
+        clone = new IPADDR(*iaddr);
+        clone->SetType(type);
+        clone->SetPortNet(port);
+        addrs->append(clone);
+      }
     }
   }
   FreeAddresses(hostaddrs);
@@ -432,12 +443,21 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
 
 void EmptyAddressList(dlist<IPADDR>* addrs)
 {
-  IPADDR* iaddr;
+  IPADDR* iaddr = nullptr;
+  IPADDR* addrtodelete = nullptr;
   foreach_dlist (iaddr, addrs) {
-    if (iaddr) {
-      addrs->remove(iaddr);
-      delete iaddr;
+    if (addrtodelete) {
+      delete (addrtodelete);
+      addrtodelete = nullptr;
     }
+    if (iaddr) {
+      addrtodelete = iaddr;
+      addrs->remove(iaddr);
+    }
+  }
+  if (addrtodelete) {
+    delete (addrtodelete);
+    addrtodelete = nullptr;
   }
 }
 

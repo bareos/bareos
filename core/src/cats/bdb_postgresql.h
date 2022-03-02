@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,8 +33,9 @@ struct AttributesDbRecord;
 class JobControlRecord;
 
 class BareosDbPostgresql : public BareosDbPrivateInterface {
- private:
+ public:
   dlink<BareosDbPostgresql> link; /**< Queue control */
+ private:
   PGconn* db_handle_;
   PGresult* result_;
   POOLMEM* buf_; /**< Buffer to manipulate queries */

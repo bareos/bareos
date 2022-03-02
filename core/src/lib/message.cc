@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -819,6 +819,7 @@ void DispatchMessage(JobControlRecord* jcr,
               break;
             }
             d->mail_filename_ = name;
+            FreePoolMemory(name);
           }
           fputs(dt, d->file_pointer_);
           len = strlen(msg) + dtlen;
@@ -1559,6 +1560,7 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
   }
 
   item = (MessageQueueItem*)malloc(sizeof(MessageQueueItem));
+  new (item) MessageQueueItem();
   item->type_ = type;
   item->mtime_ = time(NULL);
   item->msg_ = strdup(buf.c_str());
