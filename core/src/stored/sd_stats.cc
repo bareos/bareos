@@ -409,9 +409,6 @@ bool StartStatisticsThread(void)
   // First see if device and job stats collection is enabled.
   if (!me->stats_collect_interval
       || (!me->collect_dev_stats && !me->collect_job_stats)) {
-    Emsg1(M_INFO, 0,
-          _("Director Statistics Thread was not started. Modify your "
-            "configuration if you want to activate it.\n"));
     return false;
   }
 
@@ -427,12 +424,7 @@ bool StartStatisticsThread(void)
       if (device_resource->collectstats) { cnt++; }
     }
 
-    if (cnt == 0) {
-      Emsg1(M_INFO, 0,
-            _("Director Statistics Thread was not started. Modify your "
-              "configuration if you want to activate it.\n"));
-      return false;
-    }
+    if (cnt == 0) { return false; }
   }
 
   if ((status

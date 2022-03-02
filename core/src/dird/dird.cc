@@ -467,8 +467,6 @@ int main(int argc, char* argv[])
   DbgJcrAddHook(
       DbDebugPrint); /* used to debug BareosDb connexion after fatal signal */
 
-  //   InitDeviceResources();
-
   StartStatisticsThread();
 
   Dmsg0(200, "Start UA server\n");

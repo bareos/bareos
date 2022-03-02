@@ -322,13 +322,7 @@ bool StartStatisticsThread(void)
   }
   int status;
 
-  if (!me->stats_collect_interval || !collectstatistics) {
-    Emsg1(M_INFO, 0,
-          _("Director Statistics Thread will not be started. Modify your "
-            "configuration if you want to activate it.\n"));
-
-    return false;
-  }
+  if (!me->stats_collect_interval || !collectstatistics) { return false; }
 
   quit = false;
 
