@@ -36,6 +36,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: enable labeling of tapes in drives even if `autoselect=no` [PR #1021] 
 - dir, stored: start statistics threads only if needed [PR #1040]
 - gitignore: cleanup .gitignore files [PR #1067]
+- webui: update jstree from v3.3.8 to v3.3.12 [PR #1088]
 
 ### Deprecated
 
