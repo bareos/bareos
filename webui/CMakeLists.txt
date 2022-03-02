@@ -127,7 +127,7 @@ if(NOT client-only)
   install(FILES version.php init_autoloader.php
           DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui
   )
-  install(DIRECTORY tests config data module public vendor
+  install(DIRECTORY tests config module public vendor
           DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui
   )
 
