@@ -171,8 +171,8 @@ do
          PGOPTIONS='--client-min-messages=warning' psql -f "${temp_sql_schema}" -d "${db_name}" $*
          retval=$?
          if [ $retval -eq 0 ] && [ ${end_version} -eq 2210 ]; then
-             if ! r="$(PGOPTIONS='--client-min-messages=warning' psql -d "${db_name}" -c 'ALTER SEQUENCE basefiles_baseid_seq AS BIGINT')" ; then
-                warn "WARNING: Failed to update sequence basefiles_baseid_seq ${r}"
+             if ! alter_sequence_result="$(PGOPTIONS='--client-min-messages=warning' psql -d "${db_name}" -c 'ALTER SEQUENCE basefiles_baseid_seq AS BIGINT')" ; then
+                warn "WARNING: Failed to update sequence basefiles_baseid_seq ${alter_sequence_result}"
              fi
          fi
          ;;

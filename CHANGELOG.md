@@ -12,6 +12,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fix context confusion in Director's Python plugins [PR #1076]
 - webui: fix deprecated notice required param follows optional param [PR #1100]
 - webui: fix undefined array key warning [PR #1102]
+- core cats: Remove PGSQLVERSION if block in update_bareos_tables to support all PG versions [PR #1075] (part backport of [PR #1073])
 
 ### Added
 - ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1049]
@@ -437,8 +438,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1063]: https://github.com/bareos/bareos/pull/1063
 [PR #1065]: https://github.com/bareos/bareos/pull/1065
 [PR #1066]: https://github.com/bareos/bareos/pull/1066
+[PR #1073]: https://github.com/bareos/bareos/pull/1073
+[PR #1075]: https://github.com/bareos/bareos/pull/1075
 [PR #1076]: https://github.com/bareos/bareos/pull/1076
 [PR #1079]: https://github.com/bareos/bareos/pull/1079
 [PR #1080]: https://github.com/bareos/bareos/pull/1080
+[PR #1084]: https://github.com/bareos/bareos/pull/1084
 [PR #1090]: https://github.com/bareos/bareos/pull/1090
 [unreleased]: https://github.com/bareos/bareos/tree/master
