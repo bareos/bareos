@@ -44,6 +44,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Removed
 
 ### Security
+- webui: update jquery from v3.2.0 to v3.6.0 [PR #1083]
 
 ### Documentation
 
