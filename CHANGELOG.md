@@ -19,6 +19,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Removed
 
+### Security
+- webui: update jquery from v3.2.0 to v3.6.0 [PR #1084]
+
 ### Documentation
 - backport chapter for mariabackup db plugin [PR #1044]
 - backport python action plugin example improvement [PR #1080] (backport of [PR #1079])
