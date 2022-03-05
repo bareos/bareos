@@ -229,9 +229,9 @@ BuildRequires: python3-devel >= 3.4
 %if 0%{?suse_version}
 
 # suse_version:
+#   1500: SLE_15
 #   1315: SLE_12
 #   1110: SLE_11
-#   1010: SLE_10
 
 BuildRequires: distribution-release
 BuildRequires: pwdutils
