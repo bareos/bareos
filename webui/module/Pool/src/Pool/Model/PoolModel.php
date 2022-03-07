@@ -149,7 +149,11 @@ class PoolModel
 
          $matches = [];
          preg_match('/\s*Next\s*Pool\s*=\s*("|\')?(?<value>.*)(?(1)\1|)/i', $result, $matches);
-         return $matches["value"];
+         if(array_key_exists('value', $matches)) {
+           return $matches["value"];
+         } else {
+           return null;
+         }
       }
       else {
          throw new \Exception('Missing argument.');
