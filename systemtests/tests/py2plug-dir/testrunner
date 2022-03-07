@@ -16,11 +16,9 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-JobName=backup-bareos-fd
 #shellcheck source=../environment.in
 . ./environment
 
-JobName=backup-bareos-fd
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
@@ -39,9 +37,12 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
 @$out $tmp/log1.out
-setdebug level=200 dir
+setdebug level=200 trace=1 dir
 label volume=TestVolume001 storage=File pool=Full
-run job=$JobName yes
+run job=backup-bareos-fd1 yes
+run job=backup-bareos-fd2 yes
+run job=backup-bareos-fd3 yes
+run job=backup-bareos-fd4 yes
 status director
 status client
 status storage=File
@@ -55,8 +56,15 @@ check_for_zombie_jobs storage=File
 stop_bareos
 
 for i in bDirEventJobStart bDirEventJobInit bDirEventJobRun bDirEventJobEnd; do
-  if ! grep -q "$i" ${tmp}/test-plugin.log; then
+  if ! grep -q "$i" ${tmp}/test-plugin1.log; then
     set_error "Failed to find logged event $i"
+  fi
+done
+
+for i in 1 2 3 4; do
+  num="$(grep -c -F "Job:'backup-bareos-fd$i." "${tmp}/test-plugin$i.log")"
+  if [ $num -ne 4 ]; then
+    set_error "Mismatched job context on plugin event in backup-bareos-fd$i"
   fi
 done
 
