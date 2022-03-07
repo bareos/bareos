@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -775,11 +775,7 @@ bail_out:
          job_elapsed / 3600, job_elapsed % 3600 / 60, job_elapsed % 60,
          edit_uint64_with_suffix(jcr->JobBytes / job_elapsed, ec1));
 
-    /*
-     * Release the device -- and send final Vol info to DIR
-     */
-    ReleaseDevice(jcr->impl->dcr);
-
+    // send final Vol info to DIR
     if (!ok || JobCanceled(jcr)) {
       DiscardAttributeSpool(jcr);
     } else {
@@ -787,6 +783,9 @@ bail_out:
     }
   }
 
+  if (!jcr->impl->remote_replicate && jcr->impl->dcr) {
+    if (!ReleaseDevice(jcr->impl->dcr)) { ok = false; }
+  }
   if (jcr->impl->read_dcr) {
     if (!ReleaseDevice(jcr->impl->read_dcr)) { ok = false; }
   }
