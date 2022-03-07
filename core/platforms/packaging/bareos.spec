@@ -237,6 +237,8 @@ BuildRequires: distribution-release
 BuildRequires: pwdutils
 BuildRequires: tcpd-devel
 BuildRequires: update-desktop-files
+BuildRequires: pkgconfig(libxml-2.0)
+BuildRequires: pkgconfig(json-c)
 
 %if 0%{?suse_version} > 1010
 # link identical files
