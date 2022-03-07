@@ -3,7 +3,7 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-# Copyright (C) 2013-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -168,21 +168,12 @@ do
          retval=$?
          ;;
       postgresql)
-         PGOPTIONS='--client-min-messages=warning' psql -f ${temp_sql_schema} -d ${db_name} $*
+         PGOPTIONS='--client-min-messages=warning' psql -f "${temp_sql_schema}" -d "${db_name}" $*
          retval=$?
          if [ $retval -eq 0 ] && [ ${end_version} -eq 2210 ]; then
-             PGSQLVERSION=`PGOPTIONS='--client-min-messages=warning' psql -d template1 -c 'SELECT version()' $* 2>/dev/null | \
-                    awk '/PostgreSQL/ { print $2 }' | \
-                    cut -d '.' -f 1,2`
-             case ${PGSQLVERSION} in
-                 10.*|11.*|12.*)
-                     PGOPTIONS='--client-min-messages=warning' psql -d ${db_name} -c 'ALTER SEQUENCE basefiles_baseid_seq AS BIGINT'
-                     result=$?
-                     if [ $result -ne 0 ]; then
-                         echo "WARNING: Failed to update sequence basefiles_baseid_seq"
-                     fi
-                     ;;
-             esac
+             if ! alter_sequence_result="$(PGOPTIONS='--client-min-messages=warning' psql -d "${db_name}" -c 'ALTER SEQUENCE basefiles_baseid_seq AS BIGINT')" ; then
+                warn "WARNING: Failed to update sequence basefiles_baseid_seq ${alter_sequence_result}"
+             fi
          fi
          ;;
    esac
