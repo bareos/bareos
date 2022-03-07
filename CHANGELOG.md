@@ -8,7 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - debian: add missing python plugin dependencies [PR #1061] (backport of [PR #1045])
 - Fix context confusion in Director's Python plugins [PR #1077]
-
+- webui: fix undefined array key warning [PR #1103]
 
 ### Added
 - ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1058]
