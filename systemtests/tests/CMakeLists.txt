@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -31,8 +31,8 @@ add_subdirectory(chflags)
 add_subdirectory(client-initiated)
 add_subdirectory(config-dump)
 add_subdirectory(config-syntax-crash)
+add_subdirectory(copy)
 add_subdirectory(copy-archive-job)
-add_subdirectory(copy-bscan)
 add_subdirectory(copy-remote-bscan)
 add_subdirectory(dbcopy-mysql-postgresql)
 add_subdirectory(deprecation)
