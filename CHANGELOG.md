@@ -25,6 +25,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: fix deprecated notice required param follows optional param [PR #1097]
 - webui: fix uncaught TypeError if node.data is null [PR #1087]
 - core cats: Add DROP VIEWS instruction in drop_bareos_table script [PR #1092]
+- Don't keep volume open after acquiring a read-storage failed in migrate/copy/virtual full [PR #1106]
 
 ### Added
 - Python plugins: add default module_path to search path [PR #1038]
