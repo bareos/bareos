@@ -1,0 +1,43 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName=02-copy
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+log="$tmp/$TestName.log"
+
+check_log() {
+  if ! grep -q "$@" "$log"; then
+    echo "'$*' not found in $log" >&2
+    estat=1
+  fi
+}
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log
+label volume=TestCopyVolume001 storage=File2 pool=FullCopy
+run copy yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+check_for_zombie_jobs storage=File
+
+check_log -F 'Catalog record for Volume "TestCopyVolume001", Slot 0 successfully created.'
+check_log 'Termination:.*Copying OK'
+
+end_test

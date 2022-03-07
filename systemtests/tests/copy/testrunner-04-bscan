@@ -1,0 +1,59 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName=04-bscan
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+log="$tmp/$TestName.log"
+
+check_log() {
+  if ! grep -q "$@" "$log"; then
+    echo "'$*' not found in $log" >&2
+    estat=1
+  fi
+}
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log
+delete volume=TestVolume001 yes
+delete volume=TestCopyVolume001 yes
+quit
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+run_bscan_db -vv -d100 -s -V TestCopyVolume001 FileStorage
+ret=$?
+if [ $ret -ne 0 ]; then
+  estat=1
+else
+  cat <<END_OF_DATA >"$tmp/bconcmds2"
+@#
+@# now do a restore
+@#
+@$out $log
+wait
+restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+  run_bconsole "$tmp/bconcmds2"
+  check_log "Termination:.*Restore OK"
+  check_restore_diff "${BackupDirectory}"
+fi
+
+check_for_zombie_jobs storage=File
+end_test
