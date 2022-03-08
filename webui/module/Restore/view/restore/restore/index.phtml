@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -179,15 +179,13 @@ $this->headTitle($title);
 
    <div class="col-md-9">
       <?php
-               echo '<strong>';
-               echo $this->translate("File selection");
-               echo '</strong>';
-             ?>
-             <div class="panel panel-default">
-                 <div id="filebrowser"></div>
-             </div>
-             <?php
+         echo '<strong>';
+         echo $this->translate("File selection");
+         echo '</strong>';
       ?>
+      <div class="panel panel-default">
+         <div id="filebrowser" style="width: 100%; height: 60vH;"></div>
+      </div>
    </div>
 
 </div>
@@ -365,94 +363,101 @@ $this->headTitle($title);
       $('#spinner').fadeOut('slow');
    });
 
-   $('#filebrowser').jstree({
-      'plugins' : [ "grid", "checkbox", "state", "sort", "search", "types" ],
-      'core' : {
-         'animation': false,
-         'force_text': true,
-         'error': function (e) {
-            $('#filebrowser').html(
-               "<h4>There was an error while loading data for this tree.</h4>" +
-               "<p><b>Error: </b>" + e.error + "</p>" +
-               "<p><b>Plugin: </b>" + e.plugin + "</p>" +
-               "<p><b>Reason: </b> " + e.reason + "</p>" +
-               "<p><b>Data:</b></p>" +
-               "<pre><code>" + e.data + "</code></pre>"
-            );
-            displayBvfsCacheUpdateInfo();
+   function showFileTree() {
+      $('#filebrowser').jstree({
+         'plugins' : [ "grid", "checkbox", "state", "sort", "search", "types" ],
+         'core' : {
+            'animation': false,
+            'force_text': true,
+            'error': function (e) {
+               $('#filebrowser').html(
+                  "<h4>There was an error while loading data for this tree.</h4>" +
+                  "<p><b>Error: </b>" + e.error + "</p>" +
+                  "<p><b>Plugin: </b>" + e.plugin + "</p>" +
+                  "<p><b>Reason: </b> " + e.reason + "</p>" +
+                  "<p><b>Data:</b></p>" +
+                  "<pre><code>" + e.data + "</code></pre>"
+               );
+               displayBvfsCacheUpdateInfo();
+            },
+            'data' :{
+               'url' : '<?php echo $this->basePath() . "/restore/filebrowser?jobid=" . $this->restore_params['jobid'] . "&client=" . $this->restore_params['client'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
+               'dataType' : 'json',
+               'data' : function (node) {
+                  return { 'id' : node.id };
+               },
+               timeout: <?php echo $_SESSION['bareos']['filetree_refresh_timeout']; ?>,
+            },
          },
-         'data' :{
-            'url' : '<?php echo $this->basePath() . "/restore/filebrowser?jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
-            'dataType' : 'json',
-            'data' : function (node) {
-               return { 'id' : node.id };
-            },
-            timeout: <?php echo $_SESSION['bareos']['filetree_refresh_timeout']; ?>,
+         'state' : {
+            'key': 'restore'
          },
-      },
-       'state' : {
-           'key': 'restore'
-       },
-      'grid' : {
-         width: '100%',
-         height: '60vh',
-         fixedHeader: true,
-         resizable: false,
-         columns: [
-            {
-               width: '100%',
-               height: '100%',
-               header: '<?php echo $this->translate("Name"); ?>',
-               headerClass: 'jsTreeGridHeader',
-               title: "_DATA_"
-            },
-            {
-               width: 100,
-               header: '<?php echo $this->translate("Mode"); ?>',
-               headerClass: 'jsTreeGridHeader',
-               value: function(node) {
-                  return formatJSTreeGridModeItem(node.data.stat.mode);
+         'grid' : {
+            width: '100%',
+            height: '60vh',
+            fixedHeader: true,
+            resizable: false,
+            columns: [
+               {
+                  width: '100%',
+                  height: '100%',
+                  header: '<?php echo $this->translate("Name"); ?>',
+                  headerClass: 'jsTreeGridHeader',
+                  title: "_DATA_"
+               },
+               {
+                  width: 100,
+                  header: '<?php echo $this->translate("Mode"); ?>',
+                  headerClass: 'jsTreeGridHeader',
+                  value: function(node) {
+                     if(node.data === null) return null;
+                     return formatJSTreeGridModeItem(node.data.stat.mode);
+                  }
+               },
+               {
+                  width: 120,
+                  header: '<?php echo $this->translate("User"); ?>',
+                  headerClass: 'jsTreeGridHeader',
+                  value: function(node) {
+                     if(node.data === null) return null;
+                     return formatJSTreeGridUserItem(node);
+                  }
+               },
+               {
+                  width: 120,
+                  header: '<?php echo $this->translate("Group"); ?>',
+                  headerClass: 'jsTreeGridHeader',
+                  value: function(node) {
+                     if(node.data === null) return null;
+                     return formatJSTreeGridGroupItem(node);
+                  }
+               },
+               {
+                  width: 120,
+                  header: '<?php echo $this->translate("Size"); ?>',
+                  headerClass: 'jsTreeGridHeader',
+                  value: function(node) {
+                     if(node.data === null) return null;
+                     return formatJSTreeGridSizeItem(node);
+                  }
+               },
+               {
+                  width: 150,
+                  header: '<?php echo $this->translate("Last modification"); ?>',
+                  headerClass: 'jsTreeGridHeader',
+                  value: function(node) {
+                     if(node.data === null) return null;
+                     return formatJSTreeGridLastModItem(node.data.stat.mtime);
+                  }
                }
-            },
-            {
-               width: 120,
-               header: '<?php echo $this->translate("User"); ?>',
-               headerClass: 'jsTreeGridHeader',
-               value: function(node) {
-                  return formatJSTreeGridUserItem(node);
-               }
-            },
-            {
-               width: 120,
-               header: '<?php echo $this->translate("Group"); ?>',
-               headerClass: 'jsTreeGridHeader',
-               value: function(node) {
-                  return formatJSTreeGridGroupItem(node);
-               }
-            },
-            {
-               width: 120,
-               header: '<?php echo $this->translate("Size"); ?>',
-               headerClass: 'jsTreeGridHeader',
-               value: function(node) {
-                  return formatJSTreeGridSizeItem(node);
-               }
-            },
-            {
-               width: 150,
-               header: '<?php echo $this->translate("Last modification"); ?>',
-               headerClass: 'jsTreeGridHeader',
-               value: function(node) {
-                  return formatJSTreeGridLastModItem(node.data.stat.mtime);
-               }
-            }
-         ],
-      },
-      'search' : {
-         "case_sensitive" : false,
-         "show_only_matches" : false
-      }
-   });
+            ],
+         },
+         'search' : {
+            "case_sensitive" : false,
+            "show_only_matches" : false
+         }
+      });
+   }
 
    $('#jobid').change(function(event) {
       window.location.href = window.location.pathname + '?' + updateRestoreParams('jobid', this.value);
@@ -485,6 +490,10 @@ $this->headTitle($title);
    $(document).ready(function(){
 
       var errors = '<?php echo str_replace(array("\n","\r"), "", $this->errors); ?>';
+
+      if($('#client').val() !== "") {
+         showFileTree();
+      }
 
       if(errors.length > 0) {
          $("#modal-001").modal();
