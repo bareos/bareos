@@ -128,7 +128,7 @@ BuildRequires: devtoolset-8-gcc
 BuildRequires: devtoolset-8-gcc-c++
 %endif
 
-%if 0%{?sle_version} >= 150300
+%if 0%{?sle_version} >= 150300 || 0%{?suse_version} > 1500
 BuildRequires: gcc10
 BuildRequires: gcc10-c++
 %else
@@ -229,14 +229,16 @@ BuildRequires: python3-devel >= 3.4
 %if 0%{?suse_version}
 
 # suse_version:
+#   1500: SLE_15
 #   1315: SLE_12
 #   1110: SLE_11
-#   1010: SLE_10
 
 BuildRequires: distribution-release
 BuildRequires: pwdutils
 BuildRequires: tcpd-devel
 BuildRequires: update-desktop-files
+BuildRequires: pkgconfig(libxml-2.0)
+BuildRequires: pkgconfig(json-c)
 
 %if 0%{?suse_version} > 1010
 # link identical files
@@ -915,7 +917,7 @@ source /opt/rh/devtoolset-8/enable
 %endif
 
 # use modern compiler on suse
-%if 0%{?sle_version} >= 150300
+%if 0%{?sle_version} >= 150300 || 0%{?suse_version} > 1500
 CC=gcc-10  ; export CC
 CXX=g++-10 ; export CXX
 %else
@@ -1605,7 +1607,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 
 %files storage-python2-plugin
 %defattr(-, root, root)
-%{plugin_dir}/python*-sd.so
+%{plugin_dir}/python-sd.so
 %{python2_sitelib}/bareossd*.so
 
 %files storage-python3-plugin
