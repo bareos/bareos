@@ -23,6 +23,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fix several cases of undefined behaviour, memory corruption and memory leaks [PR #1060]
 - webui: fix undefined array key warning [PR #1098]
 - webui: fix deprecated notice required param follows optional param [PR #1097]
+- webui: fix uncaught TypeError if node.data is null [PR #1087]
 
 ### Added
 - Python plugins: add default module_path to search path [PR #1038]
