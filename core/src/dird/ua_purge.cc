@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -321,25 +321,7 @@ static bool PurgeJobsFromClient(UaContext* ua, ClientResource* client)
 // Remove File records from a list of JobIds
 void PurgeFilesFromJobs(UaContext* ua, const char* jobs)
 {
-  PoolMem query(PM_MESSAGE);
-
-  Mmsg(query, "DELETE FROM File WHERE JobId IN (%s)", jobs);
-  ua->db->SqlQuery(query.c_str());
-  Dmsg1(050, "Delete File sql=%s\n", query.c_str());
-
-  Mmsg(query, "DELETE FROM BaseFiles WHERE JobId IN (%s)", jobs);
-  ua->db->SqlQuery(query.c_str());
-  Dmsg1(050, "Delete BaseFiles sql=%s\n", query.c_str());
-
-  /*
-   * Now mark Job as having files purged. This is necessary to
-   * avoid having too many Jobs to process in future prunings. If
-   * we don't do this, the number of JobId's in our in memory list
-   * could grow very large.
-   */
-  Mmsg(query, "UPDATE Job SET PurgedFiles=1 WHERE JobId IN (%s)", jobs);
-  ua->db->SqlQuery(query.c_str());
-  Dmsg1(050, "Mark purged sql=%s\n", query.c_str());
+  ua->db->PurgeFiles(jobs);
 }
 
 /**
@@ -447,68 +429,13 @@ static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client)
  */
 void UpgradeCopies(UaContext* ua, const char* jobs)
 {
-  PoolMem query(PM_MESSAGE);
-
-  DbLock(ua->db);
-
-  /* Do it in two times for mysql */
-  ua->db->FillQuery(query, BareosDb::SQL_QUERY::uap_upgrade_copies_oldest_job,
-                    JT_JOB_COPY, jobs, jobs);
-
-  ua->db->SqlQuery(query.c_str());
-  Dmsg1(050, "Upgrade copies Log sql=%s\n", query.c_str());
-
-  /* Now upgrade first copy to Backup */
-  Mmsg(query,
-       "UPDATE Job SET Type='B' " /* JT_JOB_COPY => JT_BACKUP  */
-       "WHERE JobId IN ( SELECT JobId FROM cpy_tmp )");
-
-  ua->db->SqlQuery(query.c_str());
-
-  Mmsg(query, "DROP TABLE cpy_tmp");
-  ua->db->SqlQuery(query.c_str());
-
-  DbUnlock(ua->db);
+  ua->db->UpgradeCopies(jobs);
 }
 
 // Remove all records from catalog for a list of JobIds
 void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
 {
-  PoolMem query(PM_MESSAGE);
-
-  /* Delete (or purge) records associated with the job */
-  PurgeFilesFromJobs(ua, jobs);
-
-  Mmsg(query, "DELETE FROM JobMedia WHERE JobId IN (%s)", jobs);
-  ua->db->SqlQuery(query.c_str());
-  Dmsg1(050, "Delete JobMedia sql=%s\n", query.c_str());
-
-  Mmsg(query, "DELETE FROM Log WHERE JobId IN (%s)", jobs);
-  ua->db->SqlQuery(query.c_str());
-  Dmsg1(050, "Delete Log sql=%s\n", query.c_str());
-
-  Mmsg(query, "DELETE FROM RestoreObject WHERE JobId IN (%s)", jobs);
-  ua->db->SqlQuery(query.c_str());
-  Dmsg1(050, "Delete RestoreObject sql=%s\n", query.c_str());
-
-  Mmsg(query, "DELETE FROM PathVisibility WHERE JobId IN (%s)", jobs);
-  ua->db->SqlQuery(query.c_str());
-  Dmsg1(050, "Delete PathVisibility sql=%s\n", query.c_str());
-
-  Mmsg(query, "DELETE FROM NDMPJobEnvironment WHERE JobId IN (%s)", jobs);
-  ua->db->SqlQuery(query.c_str());
-  Dmsg1(050, "Delete NDMPJobEnvironment sql=%s\n", query.c_str());
-
-  Mmsg(query, "DELETE FROM JobStats WHERE JobId IN (%s)", jobs);
-  ua->db->SqlQuery(query.c_str());
-  Dmsg1(050, "Delete JobStats sql=%s\n", query.c_str());
-
-  UpgradeCopies(ua, jobs);
-
-  /* Now remove the Job record itself */
-  Mmsg(query, "DELETE FROM Job WHERE JobId IN (%s)", jobs);
-  ua->db->SqlQuery(query.c_str());
-  Dmsg1(050, "Delete Job sql=%s\n", query.c_str());
+  ua->db->PurgeJobs(jobs);
 }
 
 void PurgeFilesFromVolume(UaContext* ua, MediaDbRecord* mr) {

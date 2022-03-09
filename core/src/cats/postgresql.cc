@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -634,8 +634,10 @@ retry_query:
       retval = true;
       break;
     case PGRES_FATAL_ERROR:
-      Dmsg1(50, "Result status fatal: %s\n", query);
-      if (exit_on_fatal_) { Emsg0(M_ERROR_TERM, 0, "Fatal database error\n"); }
+      Dmsg1(50, "Result status fatal: %s, %s\n", query, sql_strerror());
+      if (exit_on_fatal_) {
+        Emsg1(M_ERROR_TERM, 0, "Fatal database error: %s\n", sql_strerror());
+      }
 
       if (try_reconnect_ && !transaction_) {
         /*

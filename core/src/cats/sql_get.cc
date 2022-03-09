@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
  */
 
 #include "include/bareos.h"
+#include <algorithm>
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
@@ -1318,6 +1319,27 @@ bool BareosDb::GetUsedBaseJobids(JobControlRecord* jcr,
        "   AND Job.JobId IN (%s) ",
        jobids);
   return SqlQueryWithHandler(query.c_str(), DbListHandler, result);
+}
+
+/*
+ * Remove the jobs that have JobFiles == 0 from the supplied jobid list
+ * and return them in another list
+ */
+db_list_ctx BareosDb::FilterZeroFileJobs(db_list_ctx& jobids)
+{
+  std::string query{"SELECT JobId FROM Job WHERE JobFiles = 0 AND JobId IN ("};
+  query += jobids.Join(",") + ")";
+
+  db_list_ctx zero_file_jobs;
+  if (!SqlQueryWithHandler(query.c_str(), DbListHandler, &zero_file_jobs)) {
+    throw new BareosSqlError(sql_strerror());
+  }
+  for (auto& remove_jobid : zero_file_jobs) {
+    jobids.erase(std::remove(jobids.begin(), jobids.end(), remove_jobid),
+                 jobids.end());
+  }
+
+  return zero_file_jobs;
 }
 
 /**
