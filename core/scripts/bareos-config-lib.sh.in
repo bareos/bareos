@@ -756,42 +756,47 @@ get_database_param()
     PARAM="${1-}"
     DEFAULT="${2-}"
 
-    # use || to prevent errors
-    rc=0
-    if ! DBCHECK_OUTPUT="$("${BAREOS_SBIN_DIR}"/bareos-dbcheck -c "${BAREOS_CONFIG_DIR}" -B)"
+    # Check if PARAM is valid
+    case "${PARAM}" in
+        "dbdriver")
+            echo "postgresql"
+            ;;
+        "dbaddress")
+            NEEDLE="DbAddress"
+            ;;
+        "dbsocket")
+            NEEDLE="DbSocket"
+            ;;
+        "dbname")
+            NEEDLE="DbName"
+            ;;
+        "dbuser")
+            NEEDLE="DbUser"
+            ;;
+        "dbpassword")
+            NEEDLE="DbPassword"
+            ;;
+        *)
+            if [ -n "${DEFAULT}" ]; then
+                echo "${DEFAULT}"
+            fi
+            ;;
+    esac
+    # Retrieve NEEDLE line in catalog section output    
+    if ! VALUE="$(bareos-dir -u bareos -g bareos -xc | \
+            awk '/Catalog \{/ {p=1; next}; /\}/ {p=0}; {if ((p==1) $0 ~ ENVIRON["NEEDLE"]) print $0}' | \
+            sed -e "s/*[[:space:]]$//" -e "s/^\(.*\)\([[:space:]]=[[:space:]]\)\(.*\)$/\3/" -e "s/\"//g")"
     then
-        temp_log="/tmp/bareos-config.$$.log"
-        {
-        echo "${DBCHECK_OUTPUT}"
-        echo "Error: executing bareos-dbcheck -B"
-        echo ""
-        } >> "${temp_log}"
-
         # if default value is given, return it anyway
         if [ -n "${DEFAULT}" ]; then
-            #info "unable to get \"${PARAM}\" from config, using default value \"${DEFAULT}\". Check $temp_log"
             echo "${DEFAULT}"
         fi
-        #else
-        #    info "unable to get \"${PARAM}\" from config, this is usually not an error. Check $temp_log"
-        #fi
         return 1
-    fi
-
-    # if $temp_log exists, but have only size 0, remove it.
-    if [ -f "${temp_log}" ] && [ ! -s "${temp_log}" ]; then
-        rm -f ${temp_log}
-    fi
-
-    # DBCHECK gets the database parameter from the Director config file in a standard format,
-    # however, it writes "db_name" (like the environment variables)
-    # instead of "dbname" like in the config file.
-    # Replace "db_" by "db" to be compatible with the config file.
-    VALUE="$(echo "${DBCHECK_OUTPUT}" | sed "s/^db_/db/" | sed -n "s/^${PARAM}=//p")"
+    fi 
 
     [ -z "${VALUE}" ] && VALUE="${DEFAULT}"
     echo "${VALUE}"
-    return $rc
+    return 0
 }
 
 get_database_driver()
@@ -840,17 +845,8 @@ get_databases_installed()
 
 get_database_driver_default()
 {
-    if [ -n "${DBTYPE}" ]; then
-      DBDRIVER="${DBTYPE}";
-    else
-      DBDRIVER=$(get_database_driver)
-    fi
-
-    if [ -z "${DBDRIVER}" ]; then
-        DBDRIVER="postgresql"
-    fi
-
-    echo "${DBDRIVER}"
+    echo "postgresql"
+    return 0
 }
 
 initialize_database_driver()
@@ -968,9 +964,9 @@ translate_sql_files()
     for i in $(find "$SOURCE_DIR" -name "${db_type}*.sql" -print | cut -d'/' -f2-); do
         dest_file="${DEST_DIR}/${i}"
         mkdir -p "$(dirname "${dest_file}")"
-        get_translated_sql_file "${SOURCE_DIR}/${i}" > "${dest_file}"
         # in case of errors, remove file
-        if [ $? != 0 ]; then
+        if ! get_translated_sql_file "${SOURCE_DIR}/${i}" > "${dest_file}"
+        then
             rm -f "${dest_file}"
         fi
     done
