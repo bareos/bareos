@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -297,7 +297,7 @@ macro(check_for_pamtest)
      AND PAMTESTER
      AND PAM_EXEC_AVAILABLE
      AND PAM_FOUND
-     AND PYTHON
+     AND PYTHON_EXECUTABLE
   )
     set(ENABLE_BCONSOLE_PAM_TEST TRUE)
     message(STATUS "OK: all requirements for pam tests were met.")

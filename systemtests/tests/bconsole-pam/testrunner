@@ -46,15 +46,23 @@ export PAM_WRAPPER_SERVICE_DIR=${current_test_directory}/etc/pam.d/bareos
 
 # PAM_WRAPPER_LIBRARIES has to set be cmake
 
+# check if we linked to libasan, if so we'll need to preload that library first
+libasan="$(ldd "${BAREOS_DIRECTOR_BINARY}" | awk '/libasan.so/ { print $3 }')"
+
+preload_libs="${PAM_WRAPPER_LIBRARIES}"
+if [ -n "$libasan" ]; then
+  preload_libs="${libasan}:${preload_libs}"
+fi
+
 output=/dev/null
 BAREOS_DIR_OPTIONS=""
 if is_debug; then
     export PAM_WRAPPER_DEBUGLEVEL=4
     BAREOS_DIR_OPTIONS="-d 200"
     output=/dev/stdout
-    LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f "${BAREOS_DIR_OPTIONS}" >$output 2>&1 &
+    LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f "${BAREOS_DIR_OPTIONS}" >$output 2>&1 &
 else
-    LD_PRELOAD=${PAM_WRAPPER_LIBRARIES} "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f                       >$output 2>&1 &
+    LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f                       >$output 2>&1 &
 fi
 
 sleep 1
