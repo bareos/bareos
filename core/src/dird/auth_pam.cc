@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -165,6 +165,38 @@ static int PamLocalCallback(int num_msg,
   return PAM_SUCCESS;
 }
 
+static int DoPamAuth(struct pam_handle* pamh,
+                     const char* username,
+                     std::string& authenticated_username)
+{
+  int err = pam_set_item(pamh, PAM_RUSER, username);
+  if (err != PAM_SUCCESS) {
+    Dmsg1(debuglevel, "PAM set_item failed: %s\n", pam_strerror(pamh, err));
+    return err;
+  }
+
+  err = pam_authenticate(pamh, 0);
+  if (err != PAM_SUCCESS) {
+    Dmsg1(debuglevel, "PAM authentication failed: %s\n",
+          pam_strerror(pamh, err));
+    return err;
+  }
+
+#if defined(__sun)
+  void* data;
+#else
+  const void* data;
+#endif
+  err = pam_get_item(pamh, PAM_USER, &data);
+  if (err != PAM_SUCCESS) {
+    Dmsg1(debuglevel, "PAM get_item failed: %s\n", pam_strerror(pamh, err));
+    return err;
+  } else {
+    if (data) { authenticated_username = static_cast<const char*>(data); }
+  }
+  return err;
+}
+
 bool PamAuthenticateUser(BareosSocket* UA_sock,
                          const std::string& username_in,
                          const std::string& password_in,
@@ -189,34 +221,7 @@ bool PamAuthenticateUser(BareosSocket* UA_sock,
     return false;
   }
 
-  err = pam_set_item(pamh, PAM_RUSER, username);
-  if (err != PAM_SUCCESS) {
-    Dmsg1(debuglevel, "PAM set_item failed: %s\n", pam_strerror(pamh, err));
-    return false;
-  }
-
-  err = pam_authenticate(pamh, 0);
-  if (err != PAM_SUCCESS) {
-    Dmsg1(debuglevel, "PAM authentication failed: %s\n",
-          pam_strerror(pamh, err));
-    return false;
-  }
-
-#if defined(__sun)
-  void* data;
-#else
-  const void* data;
-#endif
-  err = pam_get_item(pamh, PAM_USER, &data);
-  if (err != PAM_SUCCESS) {
-    Dmsg1(debuglevel, "PAM get_item failed: %s\n", pam_strerror(pamh, err));
-    return false;
-  } else {
-    if (data) {
-      const char* temp_str = static_cast<const char*>(data);
-      authenticated_username = temp_str;
-    }
-  }
+  err = DoPamAuth(pamh, username, authenticated_username);
 
   if (pam_end(pamh, err) != PAM_SUCCESS) {
     Dmsg1(debuglevel, "PAM end failed: %s\n", pam_strerror(pamh, err));
