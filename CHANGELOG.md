@@ -42,6 +42,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - gitignore: cleanup .gitignore files [PR #1067]
 - webui: update jstree from v3.3.8 to v3.3.12 [PR #1088]
 - webui: update jstree-grid plugin [PR #1089]
+- Consolidation now purges candidate jobs with no files instead of ignoring them [PR #1056]
 
 ### Deprecated
 

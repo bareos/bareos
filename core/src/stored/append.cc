@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -132,7 +132,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
    * - Multiple records of data
    * - EOD record
    *
-   * The Stream header is just used to sychronize things, and
+   * The Stream header is just used to synchronize things, and
    * none of the stream header is written to tape.
    * The Multiple records of data, contain first the Attributes,
    * then after another stream header, the file data, then
