@@ -22,6 +22,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - webui: add timeline chart by jobs [PR #1063]
 - Consolidation now purges candidate jobs with no files instead of ignoring them [PR #1107]
+- Virtual Full will now terminate if one if the input jobs had its files pruned [PR #1108]
 
 ### Removed
 

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,5 +25,12 @@ int DbStrtimeHandler(void* ctx, int num_fields, char** row);
 int DbListHandler(void* ctx, int num_fields, char** row);
 void DbDebugPrint(JobControlRecord* jcr, FILE* fp);
 int DbIntHandler(void* ctx, int num_fields, char** row);
+
+// This template allows you to easily use an object with operator() or a lambda
+//      SqlQuery(query, ObjectHandler<decltype(obj)>, &obj)
+template <typename T> int ObjectHandler(void* ctx, int num_fields, char** row)
+{
+  return static_cast<T*>(ctx)->operator()(num_fields, row) ? 0 : 1;
+}
 
 #endif  // BAREOS_CATS_SQL_H_

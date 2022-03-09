@@ -51,12 +51,69 @@
 #include "lib/edit.h"
 #include "lib/util.h"
 #include "include/make_unique.h"
+#include "cats/sql.h"
+
+#include <algorithm>
+#include <vector>
+#include <string>
 
 namespace directordaemon {
 
 static const int dbglevel = 10;
 
-static bool CreateBootstrapFile(JobControlRecord* jcr, char* jobids);
+static bool CreateBootstrapFile(JobControlRecord& jcr,
+                                const std::string& jobids);
+
+class JobConsistencyChecker {
+  enum
+  {
+    col_JobId = 0,
+    col_Type = 1,
+    col_ClientId = 2,
+    col_FilesetId = 3,
+    col_PurgedFiles = 4
+  };
+
+ public:
+  std::vector<std::string> JobList;
+  std::vector<std::string> JobsWithPurgedFiles;
+
+  bool operator()(int num_fields, char** row)
+  {
+    assert(num_fields == 5);
+    JobList.push_back(row[col_JobId]);
+    if (row[col_PurgedFiles][0] != '0') {
+      JobsWithPurgedFiles.push_back(row[col_JobId]);
+    }
+    return true;
+  }
+  bool CheckNumJobs(size_t t_NumJobs) { return JobList.size() == t_NumJobs; }
+  std::vector<std::string> JobListDiff(std::vector<std::string> FullJobList)
+  {
+    std::sort(FullJobList.begin(), FullJobList.end());
+    std::sort(JobList.begin(), JobList.end());
+    std::vector<std::string> diff;
+    std::set_difference(FullJobList.begin(), FullJobList.end(), JobList.begin(),
+                        JobList.end(), std::inserter(diff, diff.begin()));
+    return diff;
+  }
+  bool CheckPurgedFiles() { return JobsWithPurgedFiles.empty(); }
+};
+
+std::string GetVfJobids(JobControlRecord& jcr)
+{
+  // See if we already got a list of jobids to use.
+  if (jcr.impl->vf_jobids) {
+    Dmsg1(10, "jobids=%s\n", jcr.impl->vf_jobids);
+    return jcr.impl->vf_jobids;
+  } else {
+    db_list_ctx jobids_ctx;
+    jcr.db->AccurateGetJobids(&jcr, &jcr.impl->jr, &jobids_ctx);
+    Dmsg1(10, "consolidate candidates:  %s.\n",
+          jobids_ctx.GetAsString().c_str());
+    return jobids_ctx.GetAsString();
+  }
+}
 
 // Called here before the job is run to do the job specific setup.
 bool DoNativeVbackupInit(JobControlRecord* jcr)
@@ -158,12 +215,6 @@ bool DoNativeVbackupInit(JobControlRecord* jcr)
  */
 bool DoNativeVbackup(JobControlRecord* jcr)
 {
-  char* p;
-  BareosSocket* sd;
-  char* jobids;
-  char ed1[100];
-  int JobLevel_of_first_job;
-
   if (!jcr->impl->res.read_storage_list) {
     Jmsg(jcr, M_FATAL, 0, _("No storage for reading given.\n"));
     return false;
@@ -182,9 +233,8 @@ bool DoNativeVbackup(JobControlRecord* jcr)
         ((StorageResource*)jcr->impl->res.write_storage_list->first())
             ->resource_name_);
 
-  // Print Job Start message
-  Jmsg(jcr, M_INFO, 0, _("Start Virtual Backup JobId %s, Job=%s\n"),
-       edit_uint64(jcr->JobId, ed1), jcr->Job);
+  Jmsg(jcr, M_INFO, 0, _("Start Virtual Backup JobId %lu, Job=%s\n"),
+       jcr->JobId, jcr->Job);
 
   if (!jcr->accurate) {
     Jmsg(jcr, M_WARNING, 0,
@@ -192,46 +242,53 @@ bool DoNativeVbackup(JobControlRecord* jcr)
            "backup.\n"));
   }
 
-  // See if we already got a list of jobids to use.
-  if (jcr->impl->vf_jobids) {
-    Dmsg1(10, "jobids=%s\n", jcr->impl->vf_jobids);
-    jobids = strdup(jcr->impl->vf_jobids);
-
-  } else {
-    db_list_ctx jobids_ctx;
-    jcr->db->AccurateGetJobids(jcr, &jcr->impl->jr, &jobids_ctx);
-    Dmsg1(10, "consolidate candidates:  %s.\n",
-          jobids_ctx.GetAsString().c_str());
-
-    if (jobids_ctx.empty()) {
-      Jmsg(jcr, M_FATAL, 0, _("No previous Jobs found.\n"));
-      return false;
-    }
-
-    jobids = strdup(jobids_ctx.GetAsString().c_str());
+  std::string jobids = GetVfJobids(*jcr);
+  std::vector<std::string> jobid_list = split_string(jobids, ',');
+  if (jobid_list.empty()) {
+    Jmsg(jcr, M_FATAL, 0, _("No previous Jobs found.\n"));
+    return false;
   }
 
-  Jmsg(jcr, M_INFO, 0, _("Consolidating JobIds %s\n"), jobids);
+  using namespace std::string_literals;
+  JobConsistencyChecker cc;
+  std::string query = "SELECT JobId, Type, ClientId, FilesetId, PurgedFiles "s
+                      + "FROM Job WHERE JobId IN ("s + jobids + ")"s;
 
-  // Find oldest Jobid, get the db record and find its level
-  p = strchr(jobids, ','); /* find oldest jobid */
-  if (p) { *p = '\0'; }
-  jcr->impl->previous_jr = JobDbRecord{};
-  jcr->impl->previous_jr.JobId = str_to_int64(jobids);
-  Dmsg1(10, "Previous JobId=%s\n", jobids);
+  jcr->db->SqlQuery(query.c_str(), ObjectHandler<decltype(cc)>, &cc);
 
-  // See if we need to restore the stripped ','
-  if (p) { *p = ','; }
+  if (!cc.CheckNumJobs(jobid_list.size())) {
+    for (auto& missing_job : cc.JobListDiff(jobid_list)) {
+      Jmsg(jcr, M_ERROR, 0, "JobId %s is not present in the catalog\n",
+           missing_job.c_str());
+    }
+    Jmsg(jcr, M_FATAL, 0, "Jobs missing from catalog. Cannot continue.\n");
+    return false;
+  }
+  if (!cc.CheckPurgedFiles()) {
+    for (auto& purged_files_job : cc.JobsWithPurgedFiles) {
+      Jmsg(jcr, M_ERROR, 0,
+           "Files for JobId %s have been purged from the catalog\n",
+           purged_files_job.c_str());
+    }
+    Jmsg(jcr, M_FATAL, 0,
+         "At least one job's files were pruned from the catalog.\n");
+    return false;
+  }
 
-  if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
+  // Find first Jobid, get the db record and find its level
+  JobDbRecord tmp_jr{};
+  tmp_jr.JobId = str_to_int64(jobid_list.front().c_str());
+  Dmsg1(10, "Previous JobId=%s\n", jobid_list.front().c_str());
+
+  if (!jcr->db->GetJobRecord(jcr, &tmp_jr)) {
     Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for first Job: ERR=%s\n"),
          jcr->db->strerror());
-    goto bail_out;
+    return false;
   }
 
-  JobLevel_of_first_job = jcr->impl->previous_jr.JobLevel;
-  Dmsg2(10, "Level of first consolidated job %d: %s\n",
-        jcr->impl->previous_jr.JobId, job_level_to_str(JobLevel_of_first_job));
+  int JobLevel_of_first_job = tmp_jr.JobLevel;
+  Dmsg2(10, "Level of first consolidated job %d: %s\n", tmp_jr.JobId,
+        job_level_to_str(JobLevel_of_first_job));
 
   /*
    * Now we find the newest job that ran and store its info in
@@ -239,28 +296,24 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    * values from that job so that anything changed after that
    * time will be picked up on the next backup.
    */
-  p = strrchr(jobids, ','); /* find newest jobid */
-  if (p) {
-    p++;
-  } else {
-    p = jobids;
-  }
-
   jcr->impl->previous_jr = JobDbRecord{};
-  jcr->impl->previous_jr.JobId = str_to_int64(p);
-  Dmsg1(10, "Previous JobId=%s\n", p);
+  jcr->impl->previous_jr.JobId = str_to_int64(jobid_list.back().c_str());
+  Dmsg1(10, "Previous JobId=%s\n", jobid_list.back().c_str());
 
   if (!jcr->db->GetJobRecord(jcr, &jcr->impl->previous_jr)) {
     Jmsg(jcr, M_FATAL, 0,
          _("Error getting Job record for previous Job: ERR=%s\n"),
          jcr->db->strerror());
-    goto bail_out;
+    return false;
   }
 
-  if (!CreateBootstrapFile(jcr, jobids)) {
+  if (!CreateBootstrapFile(*jcr, jobids)) {
     Jmsg(jcr, M_FATAL, 0, _("Could not create bootstrap file\n"));
-    goto bail_out;
+    return false;
   }
+
+  Jmsg(jcr, M_INFO, 0, _("Consolidating JobIds %s containing %d files\n"),
+       jobids.c_str(), jcr->impl->ExpectedFiles);
 
   /*
    * Open a message channel connection with the Storage
@@ -271,15 +324,14 @@ bool DoNativeVbackup(JobControlRecord* jcr)
 
   // Start conversation with Storage daemon
   if (!ConnectToStorageDaemon(jcr, 10, me->SDConnectTimeout, true)) {
-    goto bail_out;
+    return false;
   }
-  sd = jcr->store_bsock;
 
   // Now start a job with the Storage daemon
   if (!StartStorageDaemonJob(jcr, jcr->impl->res.read_storage_list,
                              jcr->impl->res.write_storage_list,
                              /* send_bsr */ true)) {
-    goto bail_out;
+    return false;
   }
   Dmsg0(100, "Storage daemon connection OK\n");
 
@@ -301,7 +353,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   // Update job start record
   if (!jcr->db->UpdateJobStartRecord(jcr, &jcr->impl->jr)) {
     Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
-    goto bail_out;
+    return false;
   }
 
   // Declare the job started to start the MaxRunTime check
@@ -312,10 +364,10 @@ bool DoNativeVbackup(JobControlRecord* jcr)
    * to avoid two threads from using the BareosSocket structure at
    * the same time.
    */
-  if (!sd->fsend("run")) { goto bail_out; }
+  if (!jcr->store_bsock->fsend("run")) { return false; }
 
   // Now start a Storage daemon message thread
-  if (!StartStorageDaemonMessageThread(jcr)) { goto bail_out; }
+  if (!StartStorageDaemonMessageThread(jcr)) { return false; }
 
   jcr->setJobStatus(JS_Running);
 
@@ -327,7 +379,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
   jcr->setJobStatus(jcr->impl->SDJobStatus);
   jcr->db_batch->WriteBatchFileRecords(
       jcr); /* used by bulk batch file insert */
-  if (!jcr->is_JobStatus(JS_Terminated)) { goto bail_out; }
+  if (!jcr->is_JobStatus(JS_Terminated)) { return false; }
 
   NativeVbackupCleanup(jcr, jcr->JobStatus, JobLevel_of_first_job);
 
@@ -336,18 +388,12 @@ bool DoNativeVbackup(JobControlRecord* jcr)
       && jcr->impl->res.job->AlwaysIncrementalJobRetention) {
     UaContext* ua;
     ua = new_ua_context(jcr);
-    PurgeJobsFromCatalog(ua, jobids);
+    PurgeJobsFromCatalog(ua, jobids.c_str());
     Jmsg(jcr, M_INFO, 0,
-         _("purged JobIds %s as they were consolidated into Job %s\n"), jobids,
-         edit_uint64(jcr->JobId, ed1));
+         _("purged JobIds %s as they were consolidated into Job %lu\n"),
+         jobids.c_str(), jcr->JobId);
   }
-
-  free(jobids);
   return true;
-
-bail_out:
-  free(jobids);
-  return false;
 }
 
 // Release resources allocated during backup.
@@ -472,33 +518,32 @@ static int InsertBootstrapHandler(void* ctx, int num_fields, char** row)
   return 0;
 }
 
-static bool CreateBootstrapFile(JobControlRecord* jcr, char* jobids)
+static bool CreateBootstrapFile(JobControlRecord& jcr,
+                                const std::string& jobids)
 {
-  RestoreContext rx;
-  UaContext* ua;
-
-  rx.bsr = std::make_unique<RestoreBootstrapRecord>();
-  ua = new_ua_context(jcr);
-  rx.JobIds = jobids;
-
-  if (!jcr->db->OpenBatchConnection(jcr)) {
-    Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connection");
+  if (!jcr.db->OpenBatchConnection(&jcr)) {
+    Jmsg0(&jcr, M_FATAL, 0, "Can't get batch sql connexion");
     return false;
   }
 
-  if (!jcr->db_batch->GetFileList(jcr, jobids, false /* don't use md5 */,
-                                  true /* use delta */, InsertBootstrapHandler,
-                                  (void*)rx.bsr.get())) {
-    Jmsg(jcr, M_ERROR, 0, "%s", jcr->db_batch->strerror());
+  PoolMem jobids_pm{jobids};
+  RestoreContext rx;
+  rx.bsr = std::make_unique<RestoreBootstrapRecord>();
+  rx.JobIds = jobids_pm.addr();
+
+  if (!jcr.db_batch->GetFileList(&jcr, rx.JobIds, false /* don't use md5 */,
+                                 true /* use delta */, InsertBootstrapHandler,
+                                 (void*)rx.bsr.get())) {
+    Jmsg(&jcr, M_ERROR, 0, "%s", jcr.db_batch->strerror());
   }
 
+  UaContext* ua = new_ua_context(&jcr);
   AddVolumeInformationToBsr(ua, rx.bsr.get());
-  jcr->impl->ExpectedFiles = WriteBsrFile(ua, rx);
-  if (debug_level >= 10) {
-    Dmsg1(000, "Found %d files to consolidate.\n", jcr->impl->ExpectedFiles);
-  }
+  jcr.impl->ExpectedFiles = WriteBsrFile(ua, rx);
+  Dmsg1(10, "Found %d files to consolidate.\n", jcr.impl->ExpectedFiles);
   FreeUaContext(ua);
   rx.bsr.reset(nullptr);
-  return jcr->impl->ExpectedFiles != 0;
+  return jcr.impl->ExpectedFiles != 0;
 }
+
 } /* namespace directordaemon */
