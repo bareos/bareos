@@ -24,6 +24,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - webui: fix undefined array key warning [PR #1098]
 - webui: fix deprecated notice required param follows optional param [PR #1097]
 - webui: fix uncaught TypeError if node.data is null [PR #1087]
+- core cats: Add DROP VIEWS instruction in drop_bareos_table script [PR #1092]
 
 ### Added
 - Python plugins: add default module_path to search path [PR #1038]
@@ -60,6 +61,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 
 [PR #1010]: https://github.com/bareos/bareos/pull/1010
+[PR #1013]: https://github.com/bareos/bareos/pull/1013
 [PR #1015]: https://github.com/bareos/bareos/pull/1015
 [PR #1016]: https://github.com/bareos/bareos/pull/1016
 [PR #1021]: https://github.com/bareos/bareos/pull/1021
@@ -67,6 +69,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1033]: https://github.com/bareos/bareos/pull/1033
 [PR #1035]: https://github.com/bareos/bareos/pull/1035
 [PR #1038]: https://github.com/bareos/bareos/pull/1038
+[PR #1040]: https://github.com/bareos/bareos/pull/1040
 [PR #1041]: https://github.com/bareos/bareos/pull/1041
 [PR #1043]: https://github.com/bareos/bareos/pull/1043
 [PR #1046]: https://github.com/bareos/bareos/pull/1046
@@ -77,6 +80,15 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1054]: https://github.com/bareos/bareos/pull/1054
 [PR #1057]: https://github.com/bareos/bareos/pull/1057
 [PR #1059]: https://github.com/bareos/bareos/pull/1059
+[PR #1060]: https://github.com/bareos/bareos/pull/1060
 [PR #1062]: https://github.com/bareos/bareos/pull/1062
+[PR #1067]: https://github.com/bareos/bareos/pull/1067
 [PR #1079]: https://github.com/bareos/bareos/pull/1079
+[PR #1083]: https://github.com/bareos/bareos/pull/1083
+[PR #1087]: https://github.com/bareos/bareos/pull/1087
+[PR #1088]: https://github.com/bareos/bareos/pull/1088
+[PR #1089]: https://github.com/bareos/bareos/pull/1089
+[PR #1092]: https://github.com/bareos/bareos/pull/1092
+[PR #1097]: https://github.com/bareos/bareos/pull/1097
+[PR #1098]: https://github.com/bareos/bareos/pull/1098
 [unreleased]: https://github.com/bareos/bareos/tree/master

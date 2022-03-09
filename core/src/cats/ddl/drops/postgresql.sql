@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS backup_unit_overview;
+DROP VIEW IF EXISTS latest_full_size_categorized;
 -- DROP TABLE IF EXISTS unsavedfiles;
 DROP TABLE IF EXISTS basefiles;
 DROP TABLE IF EXISTS jobmedia;
