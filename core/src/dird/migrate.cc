@@ -1495,11 +1495,13 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     WaitForStorageDaemonTermination(jcr);
     WaitForStorageDaemonTermination(mig_jcr);
     jcr->setJobStatus(jcr->impl->SDJobStatus);
-    mig_jcr->db_batch->WriteBatchFileRecords(mig_jcr);
+    if (mig_jcr->batch_started) {
+      mig_jcr->db_batch->WriteBatchFileRecords(mig_jcr);
+    }
   } else {
     WaitForStorageDaemonTermination(jcr);
     jcr->setJobStatus(jcr->impl->SDJobStatus);
-    jcr->db_batch->WriteBatchFileRecords(jcr);
+    if (jcr->batch_started) { jcr->db_batch->WriteBatchFileRecords(jcr); }
   }
 
 bail_out:
