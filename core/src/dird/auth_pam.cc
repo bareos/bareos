@@ -182,6 +182,13 @@ static int DoPamAuth(struct pam_handle* pamh,
     return err;
   }
 
+  err = pam_acct_mgmt(pamh, 0);
+  if (err != PAM_SUCCESS) {
+    Dmsg1(debuglevel, "PAM authorization failed: %s\n",
+          pam_strerror(pamh, err));
+    return err;
+  }
+
 #if defined(__sun)
   void* data;
 #else
