@@ -33,6 +33,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - docs: Add chapter for mariabackup db plugin [PR #1016]
 - dird: extend the list command to be able to query volumes and pools by ID [PR #1041]
 - systemtests: wait for mariadb shutdown [PR #1048]
+- webui: analytics module: show stored data per jobname in treemap [PR #1082]
 
 ### Changed
 - webui: remove an unnecessary .bvfs_get_jobids and buildSubtree() call [PR #1050]
