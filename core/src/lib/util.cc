@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,7 +34,9 @@
 #include "include/version_numbers.h"
 
 #include <algorithm>
+#include <sstream>
 #include <string>
+#include <vector>
 
 // Various BAREOS Utility subroutines
 
@@ -773,8 +775,7 @@ void MakeSessionKey(char* key, char* seed, int mode)
   MD5_CTX md5c;
   unsigned char md5key[16], md5key1[16];
   char s[1024];
-
-#define ss sizeof(s)
+  constexpr int32_t ss = sizeof(s);
 
   s[0] = 0;
   if (seed != NULL) { bstrncat(s, seed, sizeof(s)); }
@@ -1126,4 +1127,13 @@ bool pm_append(void* pm_string, const char* fmt, ...)
   pm->strcat(additionalstring);
 
   return true;
+}
+
+std::vector<std::string> split_string(const std::string& str, char delim)
+{
+  std::istringstream ss(str);
+  std::vector<std::string> parts;
+  std::string part;
+  while (std::getline(ss, part, delim)) { parts.push_back(part); }
+  return parts;
 }

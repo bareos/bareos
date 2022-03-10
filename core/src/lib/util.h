@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,5 +76,6 @@ std::string getenv_std_string(std::string env_var);
 void StringToLowerCase(std::string& s);
 void StringToLowerCase(std::string& out, const std::string& in);
 bool pm_append(void* pm_string, const char* fmt, ...);
+std::vector<std::string> split_string(const std::string& str, char delim);
 
 #endif  // BAREOS_LIB_UTIL_H_

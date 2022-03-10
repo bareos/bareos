@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,7 @@
 
 #include <stdarg.h>
 #include <string.h>
+#include <string>
 #include "include/bc_types.h"
 
 POOLMEM* GetPoolMemory(int pool) noexcept;
@@ -71,17 +72,18 @@ class PoolMem {
     mem = GetPoolMemory(PM_NAME);
     *mem = 0;
   }
-  PoolMem(int pool)
+  explicit PoolMem(int pool)
   {
     mem = GetPoolMemory(pool);
     *mem = 0;
   }
-  PoolMem(const char* str)
+  explicit PoolMem(const char* str)
   {
     mem = GetPoolMemory(PM_NAME);
     *mem = 0;
     strcpy(str);
   }
+  explicit PoolMem(const std::string& str) : PoolMem(str.c_str()) {}
   ~PoolMem()
   {
     FreePoolMemory(mem);
