@@ -19,11 +19,13 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Added
 - ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1049]
 - packaging: installation and upgrade will check for the presence of :file:`.enable-cap_sys_rawio` in your bareos config dir and will configure the required cap_sys_rawio capabilities [PR #1066] backport from original pull request [PR #1057]
+- webui: add timeline chart by jobs [PR #1063]
 
 ### Changed
 - webui: add timeline chart by jobs [PR #1063]
 - Consolidation now purges candidate jobs with no files instead of ignoring them [PR #1107]
 - Virtual Full will now terminate if one if the input jobs had its files pruned [PR #1108]
+- Don't keep volume open after acquiring a read-storage failed in migrate/copy/virtual full  [PR #1113]
 
 ### Removed
 
@@ -278,6 +280,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page
 
 
+=======
 [21.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F21.0.0
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
@@ -449,5 +452,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1080]: https://github.com/bareos/bareos/pull/1080
 [PR #1084]: https://github.com/bareos/bareos/pull/1084
 [PR #1090]: https://github.com/bareos/bareos/pull/1090
-=======
+[PR #1095]: https://github.com/bareos/bareos/pull/1095
+[PR #1096]: https://github.com/bareos/bareos/pull/1096
+[PR #1100]: https://github.com/bareos/bareos/pull/1100
+[PR #1102]: https://github.com/bareos/bareos/pull/1102
+[PR #1107]: https://github.com/bareos/bareos/pull/1107
+[PR #1108]: https://github.com/bareos/bareos/pull/1108
+[PR #1113]: https://github.com/bareos/bareos/pull/1113
 [unreleased]: https://github.com/bareos/bareos/tree/master

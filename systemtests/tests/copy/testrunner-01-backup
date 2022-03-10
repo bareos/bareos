@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName=01-backup
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+log="$tmp/$TestName.log"
+
+check_log() {
+  if ! grep -q "$@" "$log"; then
+    echo "'$*' not found in $log" >&2
+    estat=1
+  fi
+}
+
+setup_data
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $log
+label volume=TestVolume001 storage=File pool=Full
+run job=backup-bareos-fd yes
+wait
+update volume=TestVolume001 volstatus=Used
+messages
+quit
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+check_for_zombie_jobs storage=File
+
+check_log -F 'Catalog record for Volume "TestVolume001", Slot 0 successfully created.'
+check_log 'Termination:.*Backup OK'
+
+end_test

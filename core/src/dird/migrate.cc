@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1495,11 +1495,13 @@ static inline bool DoActualMigration(JobControlRecord* jcr)
     WaitForStorageDaemonTermination(jcr);
     WaitForStorageDaemonTermination(mig_jcr);
     jcr->setJobStatus(jcr->impl->SDJobStatus);
-    mig_jcr->db_batch->WriteBatchFileRecords(mig_jcr);
+    if (mig_jcr->batch_started) {
+      mig_jcr->db_batch->WriteBatchFileRecords(mig_jcr);
+    }
   } else {
     WaitForStorageDaemonTermination(jcr);
     jcr->setJobStatus(jcr->impl->SDJobStatus);
-    jcr->db_batch->WriteBatchFileRecords(jcr);
+    if (jcr->batch_started) { jcr->db_batch->WriteBatchFileRecords(jcr); }
   }
 
 bail_out:
