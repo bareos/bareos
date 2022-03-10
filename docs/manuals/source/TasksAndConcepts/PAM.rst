@@ -69,11 +69,23 @@ Fedora 28 example:
    :caption: :file:`/etc/pam.d/bareos`
 
    auth       required     pam_unix.so
+   account    required     pam_unix.so
 
 
 .. warning::
 
    The |dir| runs as user **bareos**. However, some PAM modules require more priviliges. E.g. **pam_unix** requires access to the file :file:`/etc/shadow`, which is normally not permitted. Make sure you verify your system accordingly.
+
+
+Upgrading from previous versions
+''''''''''''''''''''''''''''''''
+Previous versions of Bareos only used PAM authentication (who is the user) but not PAM authorization (what is the user allowed to do).
+As a result configuring the account management group in PAM had no effect in these versions so that, for example, a disabled user might still be able to log in.
+
+If on an existing installation ``account`` is not configured at all, the **login will always fail** after upgrading from an affected version.
+
+We strongly suggest that you configure proper authorization on production systems.
+We strictly advise against the possibility to regain the old behaviour by configuring ``account required pam_permit.so``.
 
 Bareos Console
 ^^^^^^^^^^^^^^
