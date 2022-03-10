@@ -15,6 +15,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core cats: Remove PGSQLVERSION if block in update_bareos_tables to support all PG versions [PR #1075] (part backport of [PR #1073])
 - webui: fix uncaught TypeError if node.data is null [PR #1096]
 - core cats: Add DROP VIEWS instructions in drop_bareos_table script [PR #1095]
+- webui: show DIR message if ACL prevents a job rerun [PR #1111]
 
 ### Added
 - ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1049]
