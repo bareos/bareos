@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2021 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -53,6 +53,7 @@ $this->headTitle($title);
 
 <thead class="bg-primary">
    <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Pool"); ?></th>
    <th><?php echo $this->translate("Storage"); ?></th>
    <th><?php echo $this->translate("Type"); ?></th>
    <th><?php echo $this->translate("Last written"); ?></th>
@@ -202,6 +203,12 @@ $this->headTitle($title);
          columns: [
             {
                field: 'volumename',
+            },
+            {
+               field: 'pool',
+               formatter: function(value) {
+                  return formatPoolName(value, basePath);
+               }
             },
             {
                field: 'storage',
