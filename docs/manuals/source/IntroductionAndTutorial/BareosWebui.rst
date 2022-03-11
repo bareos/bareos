@@ -82,6 +82,12 @@ the module will not work.
    :exclude: {11: '-'}
    :file: ../../../../webui/module/Application/config/commands.csv
 
+.. csv-filter:: Analytics Module
+   :header-rows: 1
+   :included_cols: 0,12
+   :exclude: {12: '-'}
+   :file: ../../../../webui/module/Application/config/commands.csv
+
 A complete overview of bconsole command usage in the |webui| can be found in
 the Developer Guide chapter ":ref:`section-dev-webui-command-usage-in-modules`".
 
