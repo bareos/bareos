@@ -74,7 +74,7 @@ echo $this->doctype();
          min-height: 100%;
       }
       body {
-         background: linear-gradient(#ffffff, #0075be);
+         background: linear-gradient(#0075be 50%, #ffd700 50%);
       }
    </style>
 
