@@ -75,13 +75,24 @@ Pamtester will ask for a password.
 After providing this,
 it will print if the user can be authenticated successfully (output: "pamtester: successfully authenticated") or not.
 
+Also the account management phase can be tested:
+
+::
+
+   # switch to user bareos, to run with the same priviliges as bareos-dir
+   su - bareos -s /bin/bash
+
+   # use pamtester to test the PAM account management of the bareos service
+   pamtester bareos USER_TO_TEST acct_mgmt
+
+
 Testing PAM Authentication of the Bareos Director
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 After PAM has been successfully tested using pamtester,
 it can be tested using the bareos-dir.
 
-Configure the Bareos Director as described by https://docs.bareos.org/master/TasksAndConcepts/PAM.html#configuration.
+Configure the Bareos Director as described by https://docs.bareos.org/TasksAndConcepts/PAM.html#configuration.
 
 Create a bconsole configuration file, name it :file:`bconsole-pam.conf`.
 
@@ -132,7 +143,7 @@ parameters to an already existing one if heading for PAM usage only.
    pam_console_name     = "pam-webui"
    pam_console_password = "secret"
 
-PAM users require a dedicated User Resource, see https://docs.bareos.org/master/Configuration/Director.html#user-resource .
+PAM users require a dedicated User Resource, see https://docs.bareos.org/Configuration/Director.html#user-resource .
 
 A User Resource for a user named `alice` in the file :file:`/etc/bareos/bareos-dir.d/user/alice.conf` could
 look like folllowing::
@@ -154,7 +165,7 @@ The PAM script ``pam_exec_add_bareos_user.py`` can circumvent this.
 
 It can be integrated into the Bareos PAM configuration by ``pam_exec`` .
 
-This version of the script requires at least Bareos >= 19.2.4.
+This version of the script requires Bareos >= 19.2.12 or >= 20.0.6 or >= 21.1.0.
 
 Installation
 ^^^^^^^^^^^^
@@ -163,7 +174,7 @@ Installation
 * Install ``python-bareos``.
 * Copy ``pam_exec_add_bareos_user.py`` to :file:`/usr/local/bin/`.
 
-Create a Bareos console for user pam-adduser:
+Create a Bareos console for user pam-adduser (:file:`pam-adduser.conf`):
 
 ::
 
@@ -180,8 +191,10 @@ This example uses pam_ldap to authenticate.
 
 ::
 
-   auth     requisite           pam_ldap.so
-   auth     [default=ignore]    pam_exec.so /usr/local/bin/pam_exec_add_bareos_user.py --name pam-adduser --password secret --profile webui-admin
+   auth     required            pam_ldap.so
+   account  requisite           pam_ldap.so
+   account  [default=ignore]    pam_exec.so /usr/bin/python3 /usr/local/bin/pam_exec_add_bareos_user.py --name pam-adduser --password secret --profile webui-admin
+
 
 Make sure, an unsuccessful authentication ends before pam_exec.so.
 In this example, this is done by the *requisite* keyword (when not successful, stop executing the PAM stack).
