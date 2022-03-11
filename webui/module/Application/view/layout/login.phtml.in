@@ -76,6 +76,9 @@ echo $this->doctype();
       body {
          background: linear-gradient(#0075be 50%, #ffd700 50%);
       }
+      p, a:link, a:visited, a:hover, a:active {
+         color: #000;
+      }
    </style>
 
    <?php
@@ -87,7 +90,7 @@ echo $this->doctype();
       <br /><br /><br />
       <?php echo $this->content; ?>
       <br />
-      <p class="text-muted">
+      <p>
          <a href="@BareosComSubscriptionLink@" title="@BareosComSubscriptionLink@" target="_blank">@BareosGetOfficialBinariesAndSupportOnBareosComLoginPage@</a><br/>
          Version <?php echo $bareos_full_version; ?> &copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>,<br />
          GNU Affero General Public License Version 3
