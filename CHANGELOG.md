@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Breaking Changes
+- when using PAM Bareos will now check authorization, too. If authorization is not configured, login will fail. See [updated documentation](https://docs.bareos.org/TasksAndConcepts/PAM.html#configuration) on how to proceed [PR #1119].
+
 ### Fixed
 - debian: add missing python plugin dependencies [PR #1061] (backport of [PR #1045])
 - Fix context confusion in Director's Python plugins [PR #1077]
@@ -16,6 +19,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Security
 - webui: update jquery from v3.2.0 to v3.6.0 [PR #1085]
+- dird: check authorization on PAM login [PR #1119] [CVE-2022-24755](https://github.com/bareos/bareos/security/advisories/GHSA-4979-8ffj-4q26)
+- dird: fix memory leak on failed PAM login [PR #1119] [CVE-2022-24756](https://github.com/bareos/bareos/security/advisories/GHSA-jh55-4wgw-xc9j)
 
 ### Changed
 - Don't keep volume open after acquiring a read-storage failed in migrate/copy/virtual full [PR #1114]
@@ -481,4 +486,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1061]: https://github.com/bareos/bareos/pull/1061
 [PR #1064]: https://github.com/bareos/bareos/pull/1064
 [PR #1077]: https://github.com/bareos/bareos/pull/1077
+[PR #1085]: https://github.com/bareos/bareos/pull/1085
+[PR #1101]: https://github.com/bareos/bareos/pull/1101
+[PR #1103]: https://github.com/bareos/bareos/pull/1103
+[PR #1114]: https://github.com/bareos/bareos/pull/1114
+[PR #1119]: https://github.com/bareos/bareos/pull/1119
 [unreleased]: https://github.com/bareos/bareos/tree/master
