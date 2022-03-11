@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -61,6 +61,22 @@ echo $this->doctype();
    </head>
 
 <body>
+
+   <style>
+      .panel-default, .panel {
+         background-color: transparent;
+         border-width: 0px;
+         -webkit-box-shadow: none;
+         -moz-box-shadow: none;
+         box-shadow: none;
+      }
+      html {
+         min-height: 100%;
+      }
+      body {
+         background: linear-gradient(#0075be 50%, #ffd700 50%);
+      }
+   </style>
 
    <?php
       include 'version.php';
