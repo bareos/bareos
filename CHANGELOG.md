@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Breaking Changes
+- when using PAM Bareos will now check authorization, too. If authorization is not configured, login will fail. See [updated documentation](https://docs.bareos.org/TasksAndConcepts/PAM.html#configuration) on how to proceed [PR #1121].
+
 ### Fixed
 - fix crash in "status scheduler" command when job->client is unset [PR #1002]
 
@@ -18,5 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Security
 - webui: update jquery from v3.2.0 to v3.6.0 [PR #1086]
+- dird: check authorization on PAM login [PR #1121] [CVE-2022-24755](https://github.com/bareos/bareos/security/advisories/GHSA-4979-8ffj-4q26)
+- dird: fix memory leak on failed PAM login [PR #1121] [CVE-2022-24756](https://github.com/bareos/bareos/security/advisories/GHSA-jh55-4wgw-xc9j)
 
+[PR #1002]: https://github.com/bareos/bareos/pull/1002
+[PR #1086]: https://github.com/bareos/bareos/pull/1086
+[PR #1121]: https://github.com/bareos/bareos/pull/1121
 [unreleased]: https://github.com/bareos/bareos/tree/master
