@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Breaking Changes
+- when using PAM Bareos will now check authorization, too. If authorization is not configured, login will fail. See [updated documentation](https://docs.bareos.org/TasksAndConcepts/PAM.html#configuration) on how to proceed [PR #1118].
+
 ### Fixed
 - NDMP_BAREOS: support autoxflate plugin [PR #1090] (backport of [PR #1013])
 - debian: add missing python plugin dependencies [PR #1045]
@@ -32,6 +35,8 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Security
 - webui: update jquery from v3.2.0 to v3.6.0 [PR #1084]
+- dird: check authorization on PAM login [PR #1118] [CVE-2022-24755](https://github.com/bareos/bareos/security/advisories/GHSA-4979-8ffj-4q26)
+- dird: fix memory leak on failed PAM login [PR #1118] [CVE-2022-24756](https://github.com/bareos/bareos/security/advisories/GHSA-jh55-4wgw-xc9j)
 
 ### Documentation
 - backport chapter for mariabackup db plugin [PR #1044]
@@ -460,4 +465,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1107]: https://github.com/bareos/bareos/pull/1107
 [PR #1108]: https://github.com/bareos/bareos/pull/1108
 [PR #1113]: https://github.com/bareos/bareos/pull/1113
+[PR #1118]: https://github.com/bareos/bareos/pull/1118
 [unreleased]: https://github.com/bareos/bareos/tree/master
