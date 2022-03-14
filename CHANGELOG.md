@@ -13,6 +13,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fix context confusion in Director's Python plugins [PR #1077]
 - webui: fix deprecated notice required param follows optional param [PR #1101]
 - webui: fix undefined array key warning [PR #1103]
+- webui: show DIR message if ACL prevents a job rerun [PR #1112]
 
 ### Added
 - ndmp: introduce workaround for isilon 9.1.0.0 'Invalid nlist.tape_offset -1' error [PR #1058]

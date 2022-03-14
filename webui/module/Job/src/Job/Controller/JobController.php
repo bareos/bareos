@@ -90,6 +90,7 @@ class JobController extends AbstractActionController
     }
 
     $form = new JobForm($jobs, $jobname, $period, $status);
+    $result = null;
 
     $action = $this->params()->fromQuery('action');
     if(empty($action)) {
@@ -113,7 +114,6 @@ class JobController extends AbstractActionController
       if($action == "rerun") {
         try {
           $jobid = $this->params()->fromQuery('jobid');
-          $result = null;
           $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
           $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
             $module_config['console_commands']['Job']['optional']
@@ -128,6 +128,10 @@ class JobController extends AbstractActionController
             );
           } else {
             $result = $this->getJobModel()->rerunJob($this->bsock, $jobid);
+            if(!preg_match("/authorization/i", $result)) {
+              $jobid = rtrim( substr( $result, strrpos($result, "=") + 1 ) );
+              return $this->redirect()->toRoute('job', array('action' => 'details', 'id' => $jobid));
+            }
           }
         }
         catch(Exception $e) {
