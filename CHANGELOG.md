@@ -31,6 +31,19 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Consolidation now purges candidate jobs with no files instead of ignoring them [PR #1107]
 - Virtual Full will now terminate if one if the input jobs had its files pruned [PR #1108]
 - Don't keep volume open after acquiring a read-storage failed in migrate/copy/virtual full  [PR #1113]
+- webui: remove an unnecessary .bvfs_get_jobids and buildSubtree() call [PR #1050]
+- git: set merge strategy for CHANGELOG.md to union [PR #1062]
+- webui: add timeline chart by jobs [PR #1059]
+- stored: enable labeling of tapes in drives even if `autoselect=no` [PR #1021] 
+- dir, stored: start statistics threads only if needed [PR #1040]
+- gitignore: cleanup .gitignore files [PR #1067]
+- webui: update jstree from v3.3.8 to v3.3.12 [PR #1088]
+- webui: update jstree-grid plugin [PR #1089]
+- Consolidation now purges candidate jobs with no files instead of ignoring them [PR #1056]
+- Virtual Full will now terminate if one if the input jobs had its files pruned [PR #1070]
+- webui: new login screen background and adapted logo to support Ukraine  [PR #1117]
+
+### Deprecated
 
 ### Removed
 
