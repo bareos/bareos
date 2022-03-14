@@ -25,6 +25,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - Don't keep volume open after acquiring a read-storage failed in migrate/copy/virtual full [PR #1114]
+- webui: new login screen background and adapted logo to support Ukraine  [PR #1123]
 
 
 ## [20.0.5] - 2021-12-20
