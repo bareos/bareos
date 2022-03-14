@@ -25,6 +25,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - packaging: installation and upgrade will check for the presence of :file:`.enable-cap_sys_rawio` in your bareos config dir and will configure the required cap_sys_rawio capabilities [PR #1066] backport from original pull request [PR #1057]
 - webui: add timeline chart by jobs [PR #1063]
 - webui: analytics module: show stored data per jobname in treemap [PR #1116]
+- webui: add pool column to volume lists [PR #1125]
 
 ### Changed
 - webui: add timeline chart by jobs [PR #1063]
