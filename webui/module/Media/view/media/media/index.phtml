@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2020 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2022 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -60,6 +60,12 @@ $this->headTitle($title);
       data-filter-control="input"
       data-filter-control-placeholder="<?php echo $this->translate("Name"); ?>">
       <?php echo $this->translate("Name"); ?>
+   </th>
+   <th
+      data-field="pool"
+      data-filter-control="input"
+      data-filter-control-placeholder="<?php echo $this->translate("Pool"); ?>">
+      <?php echo $this->translate("Pool"); ?>
    </th>
    <th
       data-field="storage"
@@ -180,6 +186,13 @@ $this->headTitle($title);
                sortable: true,
                formatter: function(value) {
                   return formatVolumeName(value, basePath);
+               }
+            },
+            {
+               field: 'pool',
+               sortable: true,
+               formatter: function(value) {
+                  return formatPoolName(value, basePath);
                }
             },
             {
