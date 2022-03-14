@@ -21,6 +21,45 @@ The feature overview for a release are shown at the :ref:`genindex` of this docu
 Bareos-19.2
 -----------
 
+.. _bareos-19212-releasenotes:
+
+.. _bareos-19.2.12:
+
+Bareos-19.2.12
+~~~~~~~~~~~~~~
+
+General Information
+^^^^^^^^^^^^^^^^^^^
+.. list-table:: Bareos 19.2.12 Release Information
+   :header-rows: 0
+   :widths: auto
+
+   * - **Release Date**
+     - 2022-03-14
+   * - **Database Version**
+     - 2192
+   * - **URL**
+     - https://download.bareos.com/bareos/release/19.2/
+
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* When using PAM Bareos will now check authorization, too. If authorization is not configured, login will fail. See :ref:`updated documentation <PAM-Configuration>` on how to proceed.
+* Removed Support for EOL RHEL 6 and CentOS 6
+
+Bugs Fixed
+^^^^^^^^^^
+* fix crash in "status scheduler" command when job->client is unset
+
+Security
+^^^^^^^^
+* webui: update jquery from v3.2.0 to v3.6.0
+* dird: check authorization on PAM login (`CVE-2022-24755 <https://github.com/bareos/bareos/security/advisories/GHSA-4979-8ffj-4q26>`_)
+* dird: fix memory leak on failed PAM login (`CVE-2022-24756 <https://github.com/bareos/bareos/security/advisories/GHSA-jh55-4wgw-xc9j>`_)
+
+Other Improvements
+^^^^^^^^^^^^^^^^^^
+* webui: introduce support Ukraine theme
+
 .. _bareos-19211-releasenotes:
 
 .. _bareos-19.2.11:

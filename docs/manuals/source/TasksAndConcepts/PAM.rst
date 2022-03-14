@@ -55,6 +55,8 @@ More technical details can be found in the Bareos Developer Guide: :ref:`PAMDeve
   console <-> director: Shutdown TLS
   console <-> director: Finish TCP connection
 
+.. _PAM-Configuration:
+
 Configuration
 -------------
 To enable PAM authentication two systems have to be configured. The PAM module in the operating system and the Bareos Console.
