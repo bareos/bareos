@@ -161,7 +161,7 @@ int Bmicrosleep(int32_t sec, int32_t usec)
   int status;
 
   timeout.tv_sec = sec;
-  timeout.tv_nsec = usec * 1000;
+  timeout.tv_nsec = static_cast<decltype(timeout.tv_nsec)>(usec) * 1000l;
 
 #ifdef HAVE_NANOSLEEP
   status = nanosleep(&timeout, NULL);
@@ -171,7 +171,7 @@ int Bmicrosleep(int32_t sec, int32_t usec)
 
   // Do it the old way
   gettimeofday(&tv, &tz);
-  timeout.tv_nsec += tv.tv_usec * 1000;
+  timeout.tv_nsec += static_cast<decltype(timeout.tv_nsec)>(tv.tv_usec) * 1000l;
   timeout.tv_sec += tv.tv_sec;
   while (timeout.tv_nsec >= 1000000000) {
     timeout.tv_nsec -= 1000000000;
