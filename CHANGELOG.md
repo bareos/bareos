@@ -299,7 +299,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fixed broken link in https://docs.bareos.org/IntroductionAndTutorial/WhatIsBareos.html documentation page
 
 
-=======
 [21.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F21.0.0
 [21.1.0]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.0
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
