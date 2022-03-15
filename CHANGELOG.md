@@ -44,10 +44,6 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Virtual Full will now terminate if one if the input jobs had its files pruned [PR #1070]
 - webui: new login screen background and adapted logo to support Ukraine  [PR #1117]
 
-### Deprecated
-
-### Removed
-
 ### Security
 - webui: update jquery from v3.2.0 to v3.6.0 [PR #1084]
 - dird: check authorization on PAM login [PR #1118] [CVE-2022-24755](https://github.com/bareos/bareos/security/advisories/GHSA-4979-8ffj-4q26)
