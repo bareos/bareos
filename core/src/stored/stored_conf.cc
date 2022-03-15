@@ -632,16 +632,18 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
   // Resources
   json_t* resource = json_object();
-  json_object_set(json, "resource", resource);
+  json_object_set_new(json, "resource", resource);
   json_t* bareos_sd = json_object();
-  json_object_set(resource, "bareos-sd", bareos_sd);
+  json_object_set_new(resource, "bareos-sd", bareos_sd);
 
   for (int r = 0; resources[r].name; r++) {
     ResourceTable resource = my_config->resource_definitions_[r];
-    json_object_set(bareos_sd, resource.name, json_items(resource.items));
+    json_object_set_new(bareos_sd, resource.name, json_items(resource.items));
   }
 
-  PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
+  char* const json_str = json_dumps(json, JSON_INDENT(2));
+  PmStrcat(buffer, json_str);
+  free(json_str);
   json_decref(json);
 
   return true;
@@ -803,7 +805,9 @@ static bool SaveResource(int type, ResourceItem* items, int pass)
           p->device_resources = res_changer->device_resources;
 
           DeviceResource* q = nullptr;
-          foreach_alist (q, p->device_resources) { q->changer_res = p; }
+          foreach_alist (q, p->device_resources) {
+            q->changer_res = p;
+          }
 
           int errstat;
           if ((errstat = RwlInit(&p->changer_lock, PRIO_SD_ACH_ACCESS)) != 0) {

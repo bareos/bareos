@@ -276,16 +276,18 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
   // Resources
   json_t* resource = json_object();
-  json_object_set(json, "resource", resource);
+  json_object_set_new(json, "resource", resource);
   json_t* bareos_fd = json_object();
-  json_object_set(resource, "bareos-fd", bareos_fd);
+  json_object_set_new(resource, "bareos-fd", bareos_fd);
 
   for (int r = 0; resources[r].name; r++) {
     ResourceTable resource = my_config->resource_definitions_[r];
-    json_object_set(bareos_fd, resource.name, json_items(resource.items));
+    json_object_set_new(bareos_fd, resource.name, json_items(resource.items));
   }
 
-  PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
+  char* const json_str = json_dumps(json, JSON_INDENT(2));
+  PmStrcat(buffer, json_str);
+  free(json_str);
   json_decref(json);
 
   return true;

@@ -819,18 +819,18 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
   // Resources
   json_t* resource = json_object();
-  json_object_set(json, "resource", resource);
+  json_object_set_new(json, "resource", resource);
   json_t* bareos_dir = json_object();
-  json_object_set(resource, "bareos-dir", bareos_dir);
+  json_object_set_new(resource, "bareos-dir", bareos_dir);
 
   for (int r = 0; resources[r].name; r++) {
     ResourceTable resource = my_config->resource_definitions_[r];
-    json_object_set(bareos_dir, resource.name, json_items(resource.items));
+    json_object_set_new(bareos_dir, resource.name, json_items(resource.items));
   }
 
   // Datatypes
   json_t* json_datatype_obj = json_object();
-  json_object_set(json, "datatype", json_datatype_obj);
+  json_object_set_new(json, "datatype", json_datatype_obj);
 
   int d = 0;
   while (GetDatatype(d)->name != NULL) {
@@ -838,62 +838,74 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
     switch (datatype->number) {
       case CFG_TYPE_RUNSCRIPT:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_datatype(CFG_TYPE_RUNSCRIPT, runscript_items));
+        json_object_set_new(json_datatype_obj,
+                            DatatypeToString(datatype->number),
+                            json_datatype(CFG_TYPE_RUNSCRIPT, runscript_items));
         break;
       case CFG_TYPE_INCEXC:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_incexc(CFG_TYPE_INCEXC));
+        json_object_set_new(json_datatype_obj,
+                            DatatypeToString(datatype->number),
+                            json_incexc(CFG_TYPE_INCEXC));
         break;
       case CFG_TYPE_OPTIONS:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_options(CFG_TYPE_OPTIONS));
+        json_object_set_new(json_datatype_obj,
+                            DatatypeToString(datatype->number),
+                            json_options(CFG_TYPE_OPTIONS));
         break;
       case CFG_TYPE_PROTOCOLTYPE:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_datatype(CFG_TYPE_PROTOCOLTYPE, backupprotocols));
+        json_object_set_new(
+            json_datatype_obj, DatatypeToString(datatype->number),
+            json_datatype(CFG_TYPE_PROTOCOLTYPE, backupprotocols));
         break;
       case CFG_TYPE_AUTHPROTOCOLTYPE:
-        json_object_set(
+        json_object_set_new(
             json_datatype_obj, DatatypeToString(datatype->number),
             json_datatype(CFG_TYPE_AUTHPROTOCOLTYPE, authprotocols));
         break;
       case CFG_TYPE_AUTHTYPE:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_datatype(CFG_TYPE_AUTHTYPE, authmethods));
+        json_object_set_new(json_datatype_obj,
+                            DatatypeToString(datatype->number),
+                            json_datatype(CFG_TYPE_AUTHTYPE, authmethods));
         break;
       case CFG_TYPE_LEVEL:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_datatype(CFG_TYPE_LEVEL, joblevels));
+        json_object_set_new(json_datatype_obj,
+                            DatatypeToString(datatype->number),
+                            json_datatype(CFG_TYPE_LEVEL, joblevels));
         break;
       case CFG_TYPE_JOBTYPE:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_datatype(CFG_TYPE_JOBTYPE, jobtypes));
+        json_object_set_new(json_datatype_obj,
+                            DatatypeToString(datatype->number),
+                            json_datatype(CFG_TYPE_JOBTYPE, jobtypes));
         break;
       case CFG_TYPE_MIGTYPE:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_datatype(CFG_TYPE_MIGTYPE, migtypes));
+        json_object_set_new(json_datatype_obj,
+                            DatatypeToString(datatype->number),
+                            json_datatype(CFG_TYPE_MIGTYPE, migtypes));
         break;
       case CFG_TYPE_REPLACE:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_datatype(CFG_TYPE_REPLACE, ReplaceOptions));
+        json_object_set_new(json_datatype_obj,
+                            DatatypeToString(datatype->number),
+                            json_datatype(CFG_TYPE_REPLACE, ReplaceOptions));
         break;
       case CFG_TYPE_ACTIONONPURGE:
-        json_object_set(
+        json_object_set_new(
             json_datatype_obj, DatatypeToString(datatype->number),
             json_datatype(CFG_TYPE_ACTIONONPURGE, ActionOnPurgeOptions));
         break;
       case CFG_TYPE_POOLTYPE:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_datatype(CFG_TYPE_POOLTYPE, PoolTypes));
+        json_object_set_new(json_datatype_obj,
+                            DatatypeToString(datatype->number),
+                            json_datatype(CFG_TYPE_POOLTYPE, PoolTypes));
         break;
       case CFG_TYPE_RUN:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_datatype(CFG_TYPE_RUN, RunFields));
+        json_object_set_new(json_datatype_obj,
+                            DatatypeToString(datatype->number),
+                            json_datatype(CFG_TYPE_RUN, RunFields));
         break;
       default:
-        json_object_set(json_datatype_obj, DatatypeToString(datatype->number),
-                        json_datatype(datatype->number));
+        json_object_set_new(json_datatype_obj,
+                            DatatypeToString(datatype->number),
+                            json_datatype(datatype->number));
         break;
     }
     d++;
@@ -905,8 +917,9 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
    * - FS_option_kw: from inc_conf. Replaced by CFG_TYPE_OPTIONS",
    * options_items.
    */
-
-  PmStrcat(buffer, json_dumps(json, JSON_INDENT(2)));
+  char* const json_str = json_dumps(json, JSON_INDENT(2));
+  PmStrcat(buffer, json_str);
+  free(json_str);
   json_decref(json);
 
   return true;
@@ -1058,7 +1071,9 @@ static void PropagateResource(ResourceItem* items,
               *new_list = new alist<const char*>(10, owned_by_alist);
             }
 
-            foreach_alist (str, orig_list) { (*new_list)->append(strdup(str)); }
+            foreach_alist (str, orig_list) {
+              (*new_list)->append(strdup(str));
+            }
 
             SetBit(i, dest->item_present_);
             SetBit(i, dest->inherit_content_);
@@ -1080,7 +1095,9 @@ static void PropagateResource(ResourceItem* items,
               *new_list = new alist<BareosResource*>(10, not_owned_by_alist);
             }
 
-            foreach_alist (res, orig_list) { (*new_list)->append(res); }
+            foreach_alist (res, orig_list) {
+              (*new_list)->append(res);
+            }
 
             SetBit(i, dest->item_present_);
             SetBit(i, dest->inherit_content_);
@@ -1104,7 +1121,9 @@ static void PropagateResource(ResourceItem* items,
               *new_list = new alist<const char*>(10, owned_by_alist);
             }
 
-            foreach_alist (str, orig_list) { (*new_list)->append(strdup(str)); }
+            foreach_alist (str, orig_list) {
+              (*new_list)->append(strdup(str));
+            }
 
             SetBit(i, dest->item_present_);
             SetBit(i, dest->inherit_content_);
@@ -2472,7 +2491,9 @@ static bool PopulateJobdefaults()
   bool retval = true;
 
   // Propagate the content of a JobDefs to another.
-  foreach_res (jobdefs, R_JOBDEFS) { PropagateJobdefs(R_JOBDEFS, jobdefs); }
+  foreach_res (jobdefs, R_JOBDEFS) {
+    PropagateJobdefs(R_JOBDEFS, jobdefs);
+  }
 
   // Propagate the content of the JobDefs to the actual Job.
   foreach_res (job, R_JOB) {
