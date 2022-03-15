@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [21.1.0] - 2022-03-15
 
 ### Breaking Changes
 - when using PAM Bareos will now check authorization, too. If authorization is not configured, login will fail. See [updated documentation](https://docs.bareos.org/TasksAndConcepts/PAM.html#configuration) on how to proceed [PR #1118].
@@ -299,6 +299,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 =======
 [21.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F21.0.0
+[21.1.0]: https://github.com/bareos/bareos/releases/tag/Release%2F21.1.0
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -451,23 +452,32 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1029]: https://github.com/bareos/bareos/pull/1029
 [PR #1031]: https://github.com/bareos/bareos/pull/1031
 [PR #1033]: https://github.com/bareos/bareos/pull/1033
+[PR #1040]: https://github.com/bareos/bareos/pull/1040
 [PR #1044]: https://github.com/bareos/bareos/pull/1044
 [PR #1045]: https://github.com/bareos/bareos/pull/1045
 [PR #1049]: https://github.com/bareos/bareos/pull/1049
+[PR #1050]: https://github.com/bareos/bareos/pull/1050
 [PR #1051]: https://github.com/bareos/bareos/pull/1051
 [PR #1052]: https://github.com/bareos/bareos/pull/1052
 [PR #1053]: https://github.com/bareos/bareos/pull/1053
 [PR #1055]: https://github.com/bareos/bareos/pull/1055
+[PR #1056]: https://github.com/bareos/bareos/pull/1056
 [PR #1057]: https://github.com/bareos/bareos/pull/1057
+[PR #1059]: https://github.com/bareos/bareos/pull/1059
+[PR #1062]: https://github.com/bareos/bareos/pull/1062
 [PR #1063]: https://github.com/bareos/bareos/pull/1063
 [PR #1065]: https://github.com/bareos/bareos/pull/1065
 [PR #1066]: https://github.com/bareos/bareos/pull/1066
+[PR #1067]: https://github.com/bareos/bareos/pull/1067
+[PR #1070]: https://github.com/bareos/bareos/pull/1070
 [PR #1073]: https://github.com/bareos/bareos/pull/1073
 [PR #1075]: https://github.com/bareos/bareos/pull/1075
 [PR #1076]: https://github.com/bareos/bareos/pull/1076
 [PR #1079]: https://github.com/bareos/bareos/pull/1079
 [PR #1080]: https://github.com/bareos/bareos/pull/1080
 [PR #1084]: https://github.com/bareos/bareos/pull/1084
+[PR #1088]: https://github.com/bareos/bareos/pull/1088
+[PR #1089]: https://github.com/bareos/bareos/pull/1089
 [PR #1090]: https://github.com/bareos/bareos/pull/1090
 [PR #1095]: https://github.com/bareos/bareos/pull/1095
 [PR #1096]: https://github.com/bareos/bareos/pull/1096
@@ -475,6 +485,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1102]: https://github.com/bareos/bareos/pull/1102
 [PR #1107]: https://github.com/bareos/bareos/pull/1107
 [PR #1108]: https://github.com/bareos/bareos/pull/1108
+[PR #1111]: https://github.com/bareos/bareos/pull/1111
 [PR #1113]: https://github.com/bareos/bareos/pull/1113
+[PR #1116]: https://github.com/bareos/bareos/pull/1116
+[PR #1117]: https://github.com/bareos/bareos/pull/1117
 [PR #1118]: https://github.com/bareos/bareos/pull/1118
-[unreleased]: https://github.com/bareos/bareos/tree/master
+[PR #1125]: https://github.com/bareos/bareos/pull/1125
