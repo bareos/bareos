@@ -35,6 +35,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - core cats: Add DROP VIEWS instruction in drop_bareos_table script [PR #1092]
 - Don't keep volume open after acquiring a read-storage failed in migrate/copy/virtual full [PR #1106]
 - webui: show DIR message if ACL prevents a job rerun [PR #1110]
+- webui: fix restore file tree rendering [PR #1127]
 
 ### Changed
 - webui: remove an unnecessary .bvfs_get_jobids and buildSubtree() call [PR #1050]
