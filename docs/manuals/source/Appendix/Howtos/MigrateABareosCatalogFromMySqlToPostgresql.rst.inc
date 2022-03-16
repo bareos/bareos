@@ -183,9 +183,6 @@ tasks need to be done:
 
 The migration is now completed.
 
-   Please run bareos-dbcopy as user **bareos** to avoid problems with access rights.
-   To start the shell as user **bareos** you can use this command:
-
 .. note::
 
    Once you are ready to upgrade to :sinceVersion:`21.0.0: PostgreSQL`, **remove** the package
