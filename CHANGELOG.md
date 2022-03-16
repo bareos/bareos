@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+- webui: fix restore file tree rendering [PR #1128]
+
 ## [21.1.0] - 2022-03-15
 
 ### Breaking Changes
