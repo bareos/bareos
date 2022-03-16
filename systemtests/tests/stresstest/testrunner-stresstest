@@ -1,0 +1,68 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a backup and cancel it.
+# Check that metadata is still saved with checkpoints.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+backupjob=backup-bareos-fd
+
+backup_log=$tmp/strees-backup.out
+restore_log=$tmp/stress-restore.out
+csvlog=csvfile.csv
+
+rm -f $backup_log
+rm -f $restore_log
+rm -f $csvlog
+
+echo "runnumber,duration" >> $csvlog
+
+cat << END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $backup_log
+run job=${backupjob} level=Full yes
+wait
+messages
+quit
+END_OF_DATA
+
+start_test
+
+for i in {1..10}; do
+    rm -f $backup_log
+    run_bconsole
+    elapsedtime=$(grep 'Elapsed time:       ' $backup_log | sed -n -e 's/^.*time:       //p')
+    echo "$i,${elapsedtime}" >> $csvlog
+    rm storage/*
+done
+
+#cat << END_OF_DATA> "$tmp/bconcmds"
+#@ $out $restore_log
+#restore jobid = 1 all done
+# 1
+#yes
+#wait
+#messages
+#quit
+#END_OF_DATA
+
+#run_bconsole
+
+#diffr = $(diff  - qr ~/Documents/alotoffiles tmp/restore1/home/alaa/Documents/alotoffiles)
+#echo $diffr
+#if["${diffr}" != ""]; then
+#  echo "bad diff backup"
+#  fi
+
+end_test
