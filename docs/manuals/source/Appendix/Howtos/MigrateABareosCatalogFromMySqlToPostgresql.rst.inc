@@ -30,7 +30,12 @@ Make a backup of your old database
 Prepare the new database
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Firstly, create a new |postgresql| database as described in :ref:`section-CreateDatabase`.
+.. warning::
+
+   Don't start the |dir| before completing the migration.
+   Otherwise the |dir| will already insert data into the new |postgresql| catalog while :command:`bareos-dbcopy` will skip every table already containing data.
+
+Firstly, create a new |postgresql| database as described in :ref:`section-CreateDatabase`,
 You have to give the dbtype to the script, so the right db engine is used.
 
 .. code-block:: shell-session
@@ -44,12 +49,6 @@ You have to give the dbtype to the script, so the right db engine is used.
 Both |mysql| and |postgresql| need to have the same Bareos database scheme version,
 i.e. have the schema from the identical Bareos version
 (this should be the case automatically, when upgrading the |mysql| catalog to Bareos 20 and creating a Bareos 20 |postgresql| catalog).
-
-.. warning::
-
-   Don't start the |dir| before completing the migration.
-   Otherwise the |dir| will already insert data into the new |postgresql| catalog while :command:`bareos-dbcopy` will skip every table already containing data.
-
 
 Add the new |postgresql| database to the current |dir| configuration,
 but **do not remove** the |mysql| database from the config, yet.
