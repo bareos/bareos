@@ -67,7 +67,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - split the very long `Plugins.rst` file into one file per Bareos plugin [PR #1046]
 - rework SD plugin scsicrypto linux sg_io ioctl subsection for cap_sys_rawio [PR #1057]
 - improve action Python plugin documentation, by removing File in Fileset example [PR #1079]
-- Improve Mysql - PostgreSQL howto [PR #1093] fixing [BUG #1429]
+- improve Mysql - PostgreSQL howto [PR #1093] fixing [BUG #1429]
 
 [PR #1010]: https://github.com/bareos/bareos/pull/1010
 [PR #1013]: https://github.com/bareos/bareos/pull/1013
