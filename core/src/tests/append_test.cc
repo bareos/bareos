@@ -43,7 +43,7 @@ TEST_F(AppendFileDataTest, FileDataIsEmptyOnInitialization)
   EXPECT_TRUE(file.GetDeviceRecords().empty());
 }
 
-TEST_F(AppendFileDataTest, AddDeviceRecordAddsRecordCorrectly)
+TEST_F(AppendFileDataTest, AddDeviceRecordCopiesDataContentNotPointer)
 {
   POOLMEM* test_msg = GetPoolMemory(PM_MESSAGE);
   PmStrcpy(test_msg, "a random message");

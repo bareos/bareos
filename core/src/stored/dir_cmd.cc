@@ -517,7 +517,8 @@ static bool CancelCmd(JobControlRecord* cjcr)
     }
   }
 
-  Jmsg0(jcr, M_INFO, 0, _("Job being canceled, doing checkpoint:\n"));
+  Jmsg(jcr, M_INFO, 0,
+       _("Received cancel command, doing backup checkpoint:\n"));
   DoBackupCheckpoint(jcr);
 
   oldStatus = jcr->JobStatus;

@@ -92,28 +92,31 @@ void FileData::AddDeviceRecord(DeviceRecord* record)
 
 static void UpdateFileList(JobControlRecord* jcr)
 {
-  Jmsg0(jcr, M_INFO, 0, _("Doing File List checkpoint.\n"));
+  Dmsg0(100, _("... update file list\n"));
   jcr->impl->dcr->DirAskToUpdateFileList(jcr);
 }
 
 static void UpdateJobmediaRecord(JobControlRecord* jcr)
 {
-  Jmsg0(jcr, M_INFO, 0, _("Doing Jobmedia checkpoint.\n"));
+  Dmsg0(100, _("... create job media record\n"));
   jcr->impl->dcr->DirCreateJobmediaRecord(false);
 }
 
 static void UpdateJobrecord(JobControlRecord* jcr)
 {
-  Jmsg0(jcr, M_INFO, 0, _("Doing Job record checkpoint.\n"));
-
+  Dmsg2(100, _("... update job record: %llu bytes %lu files\n"), jcr->JobBytes,
+        jcr->JobFiles);
   jcr->impl->dcr->DirAskToUpdateJobRecord(jcr);
 }
 
 void DoBackupCheckpoint(JobControlRecord* jcr)
 {
+  Jmsg(jcr, M_INFO, 0,
+       _("Checkpoint: Syncing current backup status to catalog\n"));
   UpdateJobrecord(jcr);
   UpdateFileList(jcr);
   UpdateJobmediaRecord(jcr);
+  Jmsg(jcr, M_INFO, 0, _("Checkpoint completed\n"));
 }
 
 static time_t DoTimedCheckpoint(JobControlRecord* jcr,
@@ -124,9 +127,9 @@ static time_t DoTimedCheckpoint(JobControlRecord* jcr,
       = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   if (now > checkpoint_time) {
     checkpoint_time = now + checkpoint_interval;
-    Jmsg1(jcr, M_INFO, 0,
-          _("Doing timed backup checkpoint. Next checkpoint in %d seconds\n"),
-          checkpoint_interval);
+    Jmsg(jcr, M_INFO, 0,
+         _("Doing timed backup checkpoint. Next checkpoint in %d seconds\n"),
+         checkpoint_interval);
     DoBackupCheckpoint(jcr);
   }
 
