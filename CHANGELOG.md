@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+- dir: fix crash when there are no jobs to consolidate [PR #1132]
+
 ## [21.1.1] - 2022-03-16
 
 ### Fixed
