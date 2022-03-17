@@ -36,6 +36,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Don't keep volume open after acquiring a read-storage failed in migrate/copy/virtual full [PR #1106]
 - webui: show DIR message if ACL prevents a job rerun [PR #1110]
 - webui: fix restore file tree rendering [PR #1127]
+- dir: fix crash when there are no jobs to consolidate [PR #1131]
 
 ### Changed
 - webui: remove an unnecessary .bvfs_get_jobids and buildSubtree() call [PR #1050]
@@ -101,10 +102,14 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1088]: https://github.com/bareos/bareos/pull/1088
 [PR #1089]: https://github.com/bareos/bareos/pull/1089
 [PR #1092]: https://github.com/bareos/bareos/pull/1092
+[PR #1093]: https://github.com/bareos/bareos/pull/1093
 [PR #1097]: https://github.com/bareos/bareos/pull/1097
 [PR #1098]: https://github.com/bareos/bareos/pull/1098
 [PR #1106]: https://github.com/bareos/bareos/pull/1106
 [PR #1110]: https://github.com/bareos/bareos/pull/1110
 [PR #1115]: https://github.com/bareos/bareos/pull/1115
-[PR #1093]: https://github.com/bareos/bareos/pull/1093
+[PR #1120]: https://github.com/bareos/bareos/pull/1120
+[PR #1122]: https://github.com/bareos/bareos/pull/1122
+[PR #1127]: https://github.com/bareos/bareos/pull/1127
+[PR #1131]: https://github.com/bareos/bareos/pull/1131
 [unreleased]: https://github.com/bareos/bareos/tree/master
