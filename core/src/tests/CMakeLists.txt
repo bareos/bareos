@@ -150,6 +150,12 @@ if(NOT client-only)
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql testing_common
                    $<$<BOOL:HAVE_PAM>:${PAM_LIBRARIES}> GTest::gtest_main
   )
+
+  bareos_add_test(
+    append_test LINK_LIBRARIES bareos stored_objects bareossd bareosfind
+                               GTest::gtest_main
+  )
+
   bareos_add_test(
     berrno_test
     LINK_LIBRARIES bareos dird_objects bareosfind bareossql

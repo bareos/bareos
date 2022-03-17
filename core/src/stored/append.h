@@ -25,6 +25,7 @@
 #include "include/bareos.h"
 #include "lib/bsock.h"
 #include "stored/device_control_record.h"
+#include "stored/record.h"
 
 namespace storagedaemon {
 
@@ -35,11 +36,14 @@ class FileData {
   FileData(const FileData& other);
   FileData& operator=(const FileData& other);
 
-  void AddRecord(DeviceRecord devicerecord);
   void SendAttributesToDirector(JobControlRecord* jcr);
-  void Reset(int32_t index);
-  void CreateNewDeviceRecord(DeviceRecord* record);
-  int32_t GetFileIndex() { return fileindex_; }
+  void Initialize(int32_t index);
+  void AddDeviceRecord(DeviceRecord* record);
+  inline int32_t GetFileIndex() { return fileindex_; }
+  inline std::vector<DeviceRecord> GetDeviceRecords()
+  {
+    return device_records_;
+  }
 
  private:
   int32_t fileindex_{-1};

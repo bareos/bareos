@@ -54,26 +54,18 @@ FileData::~FileData()
 {
   for (auto devicerecord : device_records_) { FreeMemory(devicerecord.data); }
 }
+
 FileData::FileData(const FileData& other) : fileindex_(other.fileindex_)
 {
-  for (auto device : other.device_records_) {
-    this->CreateNewDeviceRecord(&device);
-  }
+  for (auto device : other.device_records_) { this->AddDeviceRecord(&device); }
 }
 
 FileData& FileData::operator=(const FileData& other)
 {
   this->fileindex_ = other.fileindex_;
-  for (auto device : other.device_records_) {
-    this->CreateNewDeviceRecord(&device);
-  }
+  for (auto device : other.device_records_) { this->AddDeviceRecord(&device); }
 
   return *this;
-}
-
-void FileData::AddRecord(DeviceRecord devicerecord)
-{
-  device_records_.push_back(devicerecord);
 }
 
 void FileData::SendAttributesToDirector(JobControlRecord* jcr)
@@ -82,13 +74,13 @@ void FileData::SendAttributesToDirector(JobControlRecord* jcr)
     SendAttrsToDir(jcr, &devicerecord);
   }
 }
-void FileData::Reset(int32_t index)
+void FileData::Initialize(int32_t index)
 {
   fileindex_ = index;
   for (auto devicerecord : device_records_) { FreeMemory(devicerecord.data); }
   device_records_.clear();
 }
-void FileData::CreateNewDeviceRecord(DeviceRecord* record)
+void FileData::AddDeviceRecord(DeviceRecord* record)
 {
   DeviceRecord devicerecord_copy{*record};
 
@@ -132,16 +124,24 @@ static time_t DoTimedCheckpoint(JobControlRecord* jcr,
       = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   if (now > checkpoint_time) {
     checkpoint_time = now + checkpoint_interval;
-    Emsg2(M_INFO, 0,
-          _("Doing checkpoint after 10 seconds: now: %d nextcheckpoint: "
-            "%d\n"),
-          now, checkpoint_time);
+    Jmsg1(jcr, M_INFO, 0,
+          _("Doing timed backup checkpoint. Next checkpoint in %d seconds\n"),
+          checkpoint_interval);
     DoBackupCheckpoint(jcr);
   }
 
   return checkpoint_time;
 }
 
+static void SaveFullyProcessedFiles(JobControlRecord* jcr,
+                                    std::vector<FileData>& processed_files)
+{
+  if (!processed_files.empty()) {
+    for (auto file : processed_files) { file.SendAttributesToDirector(jcr); }
+    jcr->JobFiles = processed_files.back().GetFileIndex();
+    processed_files.clear();
+  }
+}
 
 // Append Data sent from File daemon
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
@@ -254,6 +254,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   int64_t current_volumeid = dcr->VolMediaId;
 
   FileData file_currently_processed;
+  uint32_t current_block_number = dcr->block->BlockNumber;
 
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
     /*
@@ -308,12 +309,11 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   fi_checked:
 
     if (file_index != last_file_index) {
-      jcr->JobFiles = last_file_index;
       last_file_index = file_index;
       if (file_currently_processed.GetFileIndex() > 0) {
         processed_files.push_back(file_currently_processed);
       }
-      file_currently_processed.Reset(file_index);
+      file_currently_processed.Initialize(file_index);
     }
 
     /*
@@ -343,16 +343,15 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         break;
       }
 
-      file_currently_processed.CreateNewDeviceRecord(dcr->rec);
-
-      if (dcr->VolLastIndex == static_cast<uint32_t>(dcr->block->LastIndex)) {
-        for (auto file : processed_files) {
-          file.SendAttributesToDirector(jcr);
-        }
-        processed_files.clear();
+      if (current_block_number != dcr->block->BlockNumber) {
+        current_block_number = dcr->block->BlockNumber;
+        SaveFullyProcessedFiles(jcr, processed_files);
       }
 
+      file_currently_processed.AddDeviceRecord(dcr->rec);
+
       if (dcr->VolMediaId != current_volumeid) {
+        Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
         UpdateFileList(jcr);
         UpdateJobrecord(jcr);
         current_volumeid = dcr->VolMediaId;
@@ -427,9 +426,7 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     } else {
       // Send attributes of the final partial block of the session
       processed_files.push_back(file_currently_processed);
-      for (auto file : processed_files) { file.SendAttributesToDirector(jcr); }
-      processed_files.clear();
-      jcr->JobFiles = last_file_index;
+      SaveFullyProcessedFiles(jcr, processed_files);
     }
   }
 
