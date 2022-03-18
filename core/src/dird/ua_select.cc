@@ -1112,63 +1112,58 @@ std::string FormatMulticolumnPrompts(const UaContext* ua,
     }
   }
 
-  const int extra_formatting_characters = 4;
+  const short int colon_after_index = 1;
+  const short int space_between_colon_and_prompt = 1;
+  const short int space_after_prompt = 1;
+  const short int extra_character_room_for_snprintf = 1;
+
+  constexpr const short int extra_formatting_characters
+      = colon_after_index + space_between_colon_and_prompt + space_after_prompt
+        + extra_character_room_for_snprintf;
+
   const int max_formatted_prompt_length = max_prompt_length
                                           + max_prompt_index_length
                                           + extra_formatting_characters;
   const int prompts_perline
       = std::max(1, window_width / (max_formatted_prompt_length - 1));
 
-  std::vector<char> formatted_prompt(max_formatted_prompt_length);
-
-  std::string output{};
-
   const int number_output_lines
       = (ua->num_prompts + prompts_perline - 1) / prompts_perline;
-  std::cout << "number_output_lines = " << ua->num_prompts << "/ "
-            << prompts_perline << "= " << number_output_lines << std::endl;
-  int current_line = 1;
-  int current_column = 1;
-  // for (int i = 1; i < ua->num_prompts; i++) {
-  for (int i = 1; i < number_output_lines * prompts_perline; i++) {
-    if (ua->num_prompts > min_lines_threshold) {
-      current_line = ((i - 1) / prompts_perline);
-      current_column = (i - 1) % prompts_perline;
-      int index = current_line + 1 + (current_column) * (number_output_lines);
-      std::string prompt;
-      // if (i % prompts_perline == 0 || i == ua->num_prompts - 1) {
-      if (i % prompts_perline == 0) {
-        if (index < ua->num_prompts) {
-          prompt = ua->prompt[index];
-          snprintf(formatted_prompt.data(), max_formatted_prompt_length,
-                   "%*d: %s\n", max_prompt_index_length, index, prompt.c_str());
-        } else {
-          snprintf(formatted_prompt.data(), max_formatted_prompt_length, "\n");
-        }
-        // add last column with newline
-      } else {
-        // add next column
-        if (index < ua->num_prompts) {
-          prompt = ua->prompt[index];
-          snprintf(formatted_prompt.data(), max_formatted_prompt_length,
-                   "%*d: %-*s ", max_prompt_index_length, index,
-                   max_prompt_length, prompt.c_str());
-        } else {
-          snprintf(formatted_prompt.data(), max_formatted_prompt_length, "\n");
-        }
+
+  std::vector<char> formatted_prompt(max_formatted_prompt_length);
+  std::vector<std::vector<char>> formatted_prompts_container;
+
+  std::string output{};
+  int index = 0;
+
+  if (ua->num_prompts > min_lines_threshold
+      && window_width > max_formatted_prompt_length * 2) {
+    for (int i = 1; i < ua->num_prompts; i++) {
+      {
+        snprintf(formatted_prompt.data(), max_formatted_prompt_length,
+                 "%*d: %-*s ", max_prompt_index_length, i, max_prompt_length,
+                 ua->prompt[i]);
       }
 
-    } else {
-      if (i < ua->num_prompts) {
-        std::string prompt = ua->prompt[i];
+      formatted_prompts_container.push_back(formatted_prompt);
+    }
+    for (int i = 0; i < number_output_lines; i++) {
+      index = i;
+      while (static_cast<size_t>(index) < formatted_prompts_container.size()) {
+        output.append(formatted_prompts_container[index].data());
+        index += number_output_lines;
+      }
+
+      output.append("\n");
+    }
+  } else {
+    for (int i = 1; i < ua->num_prompts; i++) {
+      {
         snprintf(formatted_prompt.data(), max_formatted_prompt_length,
-                 "%*d: %s\n", max_prompt_index_length, i, prompt.c_str());
-      } else {
-        snprintf(formatted_prompt.data(), max_formatted_prompt_length, "\n");
+                 "%*d: %s\n", max_prompt_index_length, i, ua->prompt[i]);
+        output.append(formatted_prompt.data());
       }
     }
-
-    output += formatted_prompt.data();
   }
 
   return output;
