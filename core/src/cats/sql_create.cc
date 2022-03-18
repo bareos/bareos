@@ -109,7 +109,7 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
 
   /* clang-format off */
   Mmsg(cmd,
-       "UPDATE JobMedia SET LastIndex=%u, EndFile=%u, EndBlock=%u, JobBytes=%s "
+       "UPDATE JobMedia SET LastIndex=%lu, EndFile=%lu, EndBlock=%lu, JobBytes=%s "
        "WHERE JobId=%s AND MediaId=%s",
        jm->LastIndex,
        jm->EndFile,
@@ -138,7 +138,7 @@ bool BareosDb::CreateJobmediaRecord(JobControlRecord* jcr, JobMediaDbRecord* jm)
     Mmsg(cmd,
          "INSERT INTO JobMedia (JobId,MediaId,FirstIndex,LastIndex,"
          "StartFile,EndFile,StartBlock,EndBlock,VolIndex,JobBytes) "
-         "VALUES (%s,%s,%u,%u,%u,%u,%u,%u,%u,%s)",
+         "VALUES (%s,%s,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%s)",
          edit_int64(jm->JobId, ed1),
          edit_int64(jm->MediaId, ed2),
          jm->FirstIndex, jm->LastIndex,

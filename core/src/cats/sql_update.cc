@@ -100,8 +100,8 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
   DbLocker _{this};
   Mmsg(cmd,
        "UPDATE Job SET JobStatus='%c',Level='%c',StartTime='%s',"
-       "ClientId=%s,JobTDate=%s,PoolId=%s,FileSetId=%s,VolSessionId=%u,"
-       "VolSessionTime=%u WHERE JobId=%s",
+       "ClientId=%s,JobTDate=%s,PoolId=%s,FileSetId=%s,VolSessionId=%lu,"
+       "VolSessionTime=%lu WHERE JobId=%s",
        (char)(jcr->JobStatus), (char)(jr->JobLevel), dt,
        edit_int64(jr->ClientId, ed1), edit_uint64(JobTDate, ed2),
        edit_int64(jr->PoolId, ed3), edit_int64(jr->FileSetId, ed4),
@@ -113,12 +113,9 @@ bool BareosDb::UpdateJobStartRecord(JobControlRecord* jcr, JobDbRecord* jr)
 
 bool BareosDb::UpdateRunningJobRecord(JobControlRecord* jcr, JobDbRecord* jr)
 {
-  char ed1[50], ed2[50];
-
   DbLocker _{this};
-  Mmsg(cmd, "UPDATE Job SET JobBytes=%s,JobFiles=%u WHERE JobId=%s",
-       edit_uint64(jr->JobBytes, ed1), jr->JobFiles,
-       edit_int64(jcr->JobId, ed2));
+  Mmsg(cmd, "UPDATE Job SET JobBytes=%llu,JobFiles=%lu WHERE JobId=%lu",
+       jr->JobBytes, jr->JobFiles, jcr->JobId);
 
   return UPDATE_DB(jcr, cmd) > 0;
 }
@@ -177,9 +174,9 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
   if (jr->JobFiles > 0) {
     Mmsg(cmd,
          "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
-         "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,"
-         "VolSessionId=%u,"
-         "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
+         "ClientId=%lu,JobBytes=%s,ReadBytes=%s,JobFiles=%lu,JobErrors=%lu,"
+         "VolSessionId=%lu,"
+         "VolSessionTime=%lu,PoolId=%lu,FileSetId=%lu,JobTDate=%s,"
          "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE "
          "JobId=%s",
          (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,
@@ -190,9 +187,9 @@ bool BareosDb::UpdateJobEndRecord(JobControlRecord* jcr, JobDbRecord* jr)
   } else {
     Mmsg(cmd,
          "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
-         "ClientId=%u,ReadBytes=%s,JobErrors=%u,"
-         "VolSessionId=%u,"
-         "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
+         "ClientId=%u,ReadBytes=%s,JobErrors=%lu,"
+         "VolSessionId=%lu,"
+         "VolSessionTime=%lu,PoolId=%lu,FileSetId=%lu,JobTDate=%s,"
          "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE "
          "JobId=%s",
          (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId,

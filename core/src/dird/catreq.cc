@@ -66,7 +66,7 @@ static char Create_job_media[]
       " FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
       " StartBlock=%u EndBlock=%u Copy=%d Strip=%d MediaId=%lld\n";
 
-static char Update_filelist[] = "Catreq Job=%s UpdateFileList\n";
+static char Update_filelist[] = "Catreq Job=%127s UpdateFileList\n";
 
 static char Update_jobrecord[]
     = "Catreq Job=%127s UpdateJobRecord JobFiles=%lu JobBytes=%llu\n";
