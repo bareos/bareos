@@ -35,9 +35,9 @@ namespace directordaemon {
 bool DoReloadConfig() { return false; }
 }  // namespace directordaemon
 
-TEST(multicolumprompts, test0)
-{
-  UaContext ua;
+class PromptsFormatting : public ::testing::Test {
+ protected:
+  void SetUp() override { ua = new_ua_context(&jcr); }
 
   void TearDown() override { FreeUaContext(ua); }
 
@@ -53,13 +53,12 @@ TEST(multicolumprompts, test0)
   UaContext* ua{};
 };
 
-TEST_F(MulticolumPrompts, ReturnsNothingOnAnEmptyList)
+TEST_F(PromptsFormatting, ReturnsNothingOnAnEmptyList)
 {
   const char* list[] = {nullptr};
   PopulateUaWithPrompts(ua, list);
 
-  std::string output
-      = FormatMulticolumnPrompts(ua, window_width, lines_threshold);
+  std::string output = FormatPrompts(ua, window_width, lines_threshold);
 
   /* clang-format off */
   EXPECT_STREQ(
@@ -68,13 +67,12 @@ TEST_F(MulticolumPrompts, ReturnsNothingOnAnEmptyList)
   /* clang-format on */
 }
 
-TEST_F(MulticolumPrompts, ReturnsSingleElementWhenOnlyOnePromptIsAvailable)
+TEST_F(PromptsFormatting, ReturnsSingleElementWhenOnlyOnePromptIsAvailable)
 {
   const char* list[] = {_("bareos1"), nullptr};
   PopulateUaWithPrompts(ua, list);
 
-  std::string output
-      = FormatMulticolumnPrompts(ua, window_width, lines_threshold);
+  std::string output = FormatPrompts(ua, window_width, lines_threshold);
 
   /* clang-format off */
   EXPECT_STREQ(
@@ -83,7 +81,7 @@ TEST_F(MulticolumPrompts, ReturnsSingleElementWhenOnlyOnePromptIsAvailable)
   /* clang-format on */
 }
 
-TEST_F(MulticolumPrompts, Formatting10Elements_StandardWidthNoThreshold)
+TEST_F(PromptsFormatting, Formatting10Elements_StandardWidthNoThreshold)
 {
   const char* list[] = {_("bareos1"), _("bareos2"),  _("bareos3"), _("bareos4"),
                         _("bareos5"), _("bareos6"),  _("bareos7"), _("bareos8"),
@@ -92,8 +90,7 @@ TEST_F(MulticolumPrompts, Formatting10Elements_StandardWidthNoThreshold)
   PopulateUaWithPrompts(ua, list);
 
   lines_threshold = 0;
-  std::string output
-      = FormatMulticolumnPrompts(ua, window_width, lines_threshold);
+  std::string output = FormatPrompts(ua, window_width, lines_threshold);
 
   /* clang-format off */
   EXPECT_STREQ(
@@ -104,7 +101,7 @@ TEST_F(MulticolumPrompts, Formatting10Elements_StandardWidthNoThreshold)
   /* clang-format on */
 }
 
-TEST_F(MulticolumPrompts, Formatting15Elements_StandardWidthNoThreshold)
+TEST_F(PromptsFormatting, Formatting15Elements_StandardWidthNoThreshold)
 {
   const char* list[] = {
       _("bareos1"),  _("bareos2"),  _("bareos3"),  _("bareos4"),  _("bareos5"),
@@ -116,8 +113,7 @@ TEST_F(MulticolumPrompts, Formatting15Elements_StandardWidthNoThreshold)
   PopulateUaWithPrompts(ua, list);
 
   lines_threshold = 0;
-  std::string output
-      = FormatMulticolumnPrompts(ua, window_width, lines_threshold);
+  std::string output = FormatPrompts(ua, window_width, lines_threshold);
   /* clang-format off */
   EXPECT_STREQ(
       output.c_str(),
@@ -127,7 +123,7 @@ TEST_F(MulticolumPrompts, Formatting15Elements_StandardWidthNoThreshold)
   /* clang-format on */
 }
 
-TEST_F(MulticolumPrompts, Formatting16Elements_StandardWidthNoThreshold)
+TEST_F(PromptsFormatting, Formatting16Elements_StandardWidthNoThreshold)
 {
   const char* list[] = {
       _("bareos1"),  _("bareos2"),  _("bareos3"),  _("bareos4"),  _("bareos5"),
@@ -138,8 +134,7 @@ TEST_F(MulticolumPrompts, Formatting16Elements_StandardWidthNoThreshold)
   PopulateUaWithPrompts(ua, list);
 
   lines_threshold = 0;
-  std::string output
-      = FormatMulticolumnPrompts(ua, window_width, lines_threshold);
+  std::string output = FormatPrompts(ua, window_width, lines_threshold);
 
   /* clang-format off */
   EXPECT_STREQ(
@@ -150,7 +145,7 @@ TEST_F(MulticolumPrompts, Formatting16Elements_StandardWidthNoThreshold)
   /* clang-format on */
 }
 
-TEST_F(MulticolumPrompts, Formatting21Elements_StandardWidthNoThreshold)
+TEST_F(PromptsFormatting, Formatting21Elements_StandardWidthNoThreshold)
 {
   const char* list[] = {
       _("bareos1"),  _("bareos2"),  _("bareos3"),  _("bareos4"),  _("bareos5"),
@@ -162,8 +157,7 @@ TEST_F(MulticolumPrompts, Formatting21Elements_StandardWidthNoThreshold)
   PopulateUaWithPrompts(ua, list);
 
   lines_threshold = 0;
-  std::string output
-      = FormatMulticolumnPrompts(ua, window_width, lines_threshold);
+  std::string output = FormatPrompts(ua, window_width, lines_threshold);
 
   /* clang-format off */
   EXPECT_STREQ(
@@ -175,15 +169,14 @@ TEST_F(MulticolumPrompts, Formatting21Elements_StandardWidthNoThreshold)
   /* clang-format on */
 }
 
-TEST_F(MulticolumPrompts,
+TEST_F(PromptsFormatting,
        NoMulticolumnformattingWhenNumberOfElementsLessThanThreshold)
 {
   const char* list[] = {_("List last 20 Jobs run"), _("Cancel"), nullptr};
 
   PopulateUaWithPrompts(ua, list);
 
-  std::string output
-      = FormatMulticolumnPrompts(ua, window_width, lines_threshold);
+  std::string output = FormatPrompts(ua, window_width, lines_threshold);
 
   /* clang-format off */
   EXPECT_STREQ(
@@ -193,7 +186,7 @@ TEST_F(MulticolumPrompts,
   /* clang-format on */
 }
 
-TEST_F(MulticolumPrompts, FormatsForVeryLargeWidth)
+TEST_F(PromptsFormatting, FormatsForVeryLargeWidth)
 {
   const char* list[]
       = {_("List last 20 Jobs run"),
@@ -215,8 +208,7 @@ TEST_F(MulticolumPrompts, FormatsForVeryLargeWidth)
 
   window_width = 5000;
   lines_threshold = 10;
-  std::string output
-      = FormatMulticolumnPrompts(ua, window_width, lines_threshold);
+  std::string output = FormatPrompts(ua, window_width, lines_threshold);
 
   /* clang-format off */
   EXPECT_STREQ(
@@ -237,7 +229,7 @@ TEST_F(MulticolumPrompts, FormatsForVeryLargeWidth)
   /* clang-format on */
 }
 
-TEST_F(MulticolumPrompts, Format15Elements_SmallWidth10LineThreshold)
+TEST_F(PromptsFormatting, Format15Elements_SmallWidth10LineThreshold)
 {
   const char* list[] = {
       _("bareos1"),  _("bareos2"),  _("bareos3"),  _("bareos4"),  _("bareos5"),
@@ -250,8 +242,7 @@ TEST_F(MulticolumPrompts, Format15Elements_SmallWidth10LineThreshold)
 
   window_width = 60;
   lines_threshold = 10;
-  std::string output
-      = FormatMulticolumnPrompts(ua, window_width, lines_threshold);
+  std::string output = FormatPrompts(ua, window_width, lines_threshold);
 
   /* clang-format off */
   EXPECT_STREQ(output.c_str(),
@@ -262,7 +253,7 @@ TEST_F(MulticolumPrompts, Format15Elements_SmallWidth10LineThreshold)
   /* clang-format on */
 }
 
-TEST_F(MulticolumPrompts, Formatting_NoWidth)
+TEST_F(PromptsFormatting, Formatting_NoWidth)
 {
   const char* list[]
       = {_("bareos1"), _("bareos2"),  _("bareos3"),  _("bareos4"),
@@ -272,8 +263,7 @@ TEST_F(MulticolumPrompts, Formatting_NoWidth)
   PopulateUaWithPrompts(ua, list);
 
   window_width = 0;
-  std::string output
-      = FormatMulticolumnPrompts(ua, window_width, lines_threshold);
+  std::string output = FormatPrompts(ua, window_width, lines_threshold);
 
   /* clang-format off */
   EXPECT_STREQ(output.c_str(),
@@ -291,7 +281,7 @@ TEST_F(MulticolumPrompts, Formatting_NoWidth)
   /* clang-format on */
 }
 
-TEST_F(MulticolumPrompts,
+TEST_F(PromptsFormatting,
        FormatPromptsContainingSpacesAndRegularPrompts_StandartWidthNoThreshold)
 {
   const char* list[] = {_(""), _("Listsaved"), _("Cancel"), nullptr};
@@ -299,8 +289,7 @@ TEST_F(MulticolumPrompts,
   PopulateUaWithPrompts(ua, list);
 
   lines_threshold = 0;
-  std::string output
-      = FormatMulticolumnPrompts(ua, window_width, lines_threshold);
+  std::string output = FormatPrompts(ua, window_width, lines_threshold);
 
   /* clang-format off */
   EXPECT_STREQ(output.c_str(),
@@ -310,14 +299,14 @@ TEST_F(MulticolumPrompts,
   /* clang-format on */
 }
 
-TEST_F(MulticolumPrompts,
+TEST_F(PromptsFormatting,
        FormatPromptsContainingOnlySpacesPrompts_StandartWidthNoThreshold)
 {
   const char* list[] = {_(""), _(" "), _("  "), nullptr};
 
   PopulateUaWithPrompts(ua, list);
 
-  std::string output = FormatMulticolumnPrompts(&ua, 80, 20);
+  std::string output = FormatPrompts(ua, 80, 20);
 
   /* clang-format off */
   EXPECT_STREQ(output.c_str(),
