@@ -50,6 +50,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Consolidation now purges candidate jobs with no files instead of ignoring them [PR #1056]
 - Virtual Full will now terminate if one if the input jobs had its files pruned [PR #1070]
 - webui: new login screen background and adapted logo to support Ukraine  [PR #1122]
+- console: multicolumn output: fill columns first [PR #1072]
 
 ### Deprecated
 
@@ -95,6 +96,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #1062]: https://github.com/bareos/bareos/pull/1062
 [PR #1067]: https://github.com/bareos/bareos/pull/1067
 [PR #1070]: https://github.com/bareos/bareos/pull/1070
+[PR #1072]: https://github.com/bareos/bareos/pull/1072
 [PR #1079]: https://github.com/bareos/bareos/pull/1079
 [PR #1082]: https://github.com/bareos/bareos/pull/1082
 [PR #1083]: https://github.com/bareos/bareos/pull/1083
