@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1093,14 +1093,13 @@ void AddPrompt(UaContext* ua, std::string&& prompt)
   AddPrompt(ua, p.c_str());
 }
 
-
 /**
  * Formats the prompts of a UaContext to be displayed in a multicolumn output
  * when possible
  */
-std::string FormatMulticolumnPrompts(const UaContext* ua,
-                                     const int window_width,
-                                     const int min_lines_threshold)
+std::string FormatPrompts(const UaContext* ua,
+                          const int window_width,
+                          const int min_lines_threshold)
 {
   unsigned int max_prompt_length = 1;
 
@@ -1134,7 +1133,6 @@ std::string FormatMulticolumnPrompts(const UaContext* ua,
   std::vector<std::vector<char>> formatted_prompts_container;
 
   std::string output{};
-  int index = 0;
 
   if (ua->num_prompts > min_lines_threshold
       && window_width > max_formatted_prompt_length * 2) {
@@ -1147,6 +1145,8 @@ std::string FormatMulticolumnPrompts(const UaContext* ua,
 
       formatted_prompts_container.push_back(formatted_prompt);
     }
+
+    int index = 0;
     for (int i = 0; i < number_output_lines; i++) {
       index = i;
       while (static_cast<size_t>(index) < formatted_prompts_container.size()) {
@@ -1204,8 +1204,7 @@ int DoPrompt(UaContext* ua,
   if (ua->batch) {
     // First print the choices he wanted to make
     ua->SendMsg(ua->prompt[0]);
-    ua->SendMsg(FormatMulticolumnPrompts(ua, window_width, min_lines_threshold)
-                    .c_str());
+    ua->SendMsg(FormatPrompts(ua, window_width, min_lines_threshold).c_str());
 
     // Now print error message
     ua->SendMsg(_("Your request has multiple choices for \"%s\". Selection is "
@@ -1225,8 +1224,7 @@ int DoPrompt(UaContext* ua,
       ua->SendMsg("%s", ua->prompt[i]);
     }
   } else {
-    ua->SendMsg(FormatMulticolumnPrompts(ua, window_width, min_lines_threshold)
-                    .c_str());
+    ua->SendMsg(FormatPrompts(ua, window_width, min_lines_threshold).c_str());
   }
 
 
