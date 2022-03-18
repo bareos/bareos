@@ -29,25 +29,23 @@
 
 namespace storagedaemon {
 
-class FileData {
+class ProcessedFile {
  public:
-  FileData() = default;
-  ~FileData();
-  FileData(const FileData& other);
-  FileData& operator=(const FileData& other);
+  ProcessedFile() = default;
+  ~ProcessedFile();
+  ProcessedFile(const ProcessedFile& other);
+  ProcessedFile& operator=(const ProcessedFile& other);
 
   void SendAttributesToDirector(JobControlRecord* jcr);
   void Initialize(int32_t index);
-  void AddDeviceRecord(DeviceRecord* record);
+  void AddAttribute(DeviceRecord* record);
   inline int32_t GetFileIndex() { return fileindex_; }
-  inline std::vector<DeviceRecord> GetDeviceRecords()
-  {
-    return device_records_;
-  }
+  inline std::vector<DeviceRecord> GetAttributes() { return attributes_; }
+
 
  private:
   int32_t fileindex_{-1};
-  std::vector<DeviceRecord> device_records_;
+  std::vector<DeviceRecord> attributes_;
 };
 
 bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what);

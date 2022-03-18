@@ -29,21 +29,21 @@
 #include "stored/append.h"
 
 
-class AppendFileDataTest : public testing::Test {
+class AppendProcessedFileTest : public testing::Test {
  public:
   int32_t arbitrary_index{1};
-  storagedaemon::FileData file{};
+  storagedaemon::ProcessedFile file{};
   void SetUp() override { file.Initialize(arbitrary_index); }
 };
 
-TEST_F(AppendFileDataTest, FileDataIsEmptyOnInitialization)
+TEST_F(AppendProcessedFileTest, ProcessedFileIsEmptyOnInitialization)
 {
   file.Initialize(20);
   EXPECT_EQ(file.GetFileIndex(), 20);
-  EXPECT_TRUE(file.GetDeviceRecords().empty());
+  EXPECT_TRUE(file.GetAttributes().empty());
 }
 
-TEST_F(AppendFileDataTest, AddDeviceRecordCopiesDataContentNotPointer)
+TEST_F(AppendProcessedFileTest, AddDeviceRecordCopiesDataContentNotPointer)
 {
   POOLMEM* test_msg = GetPoolMemory(PM_MESSAGE);
   PmStrcpy(test_msg, "a random message");
@@ -51,11 +51,11 @@ TEST_F(AppendFileDataTest, AddDeviceRecordCopiesDataContentNotPointer)
   storagedaemon::DeviceRecord dr;
   dr.data = test_msg;
   dr.data_len = strlen(test_msg) - 1;
-  file.AddDeviceRecord(&dr);
+  file.AddAttribute(&dr);
 
-  EXPECT_FALSE(file.GetDeviceRecords().empty());
-  EXPECT_NE(file.GetDeviceRecords().front().data, dr.data);
-  EXPECT_EQ(*file.GetDeviceRecords().front().data, *dr.data);
+  EXPECT_FALSE(file.GetAttributes().empty());
+  EXPECT_NE(file.GetAttributes().front().data, dr.data);
+  EXPECT_EQ(*file.GetAttributes().front().data, *dr.data);
 
   FreePoolMemory(test_msg);
 }

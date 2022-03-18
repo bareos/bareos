@@ -50,35 +50,44 @@ static char OK_replicate[] = "3000 OK replicate data\n";
 
 void PossibleIncompleteJob(JobControlRecord* jcr, int32_t last_file_index) {}
 
-FileData::~FileData()
+ProcessedFile::~ProcessedFile()
 {
-  for (auto devicerecord : device_records_) { FreeMemory(devicerecord.data); }
+  for (auto devicerecord : attributes_) { FreeMemory(devicerecord.data); }
 }
 
-FileData::FileData(const FileData& other) : fileindex_(other.fileindex_)
+ProcessedFile::ProcessedFile(const ProcessedFile& other)
+    : fileindex_(other.fileindex_)
 {
-  for (auto device : other.device_records_) { this->AddDeviceRecord(&device); }
+  for (auto device : other.attributes_) { this->AddAttribute(&device); }
 }
 
-FileData& FileData::operator=(const FileData& other)
+ProcessedFile& ProcessedFile::operator=(const ProcessedFile& other)
 {
   this->fileindex_ = other.fileindex_;
-  for (auto device : other.device_records_) { this->AddDeviceRecord(&device); }
+  for (auto device : other.attributes_) { this->AddAttribute(&device); }
 
   return *this;
 }
 
-void FileData::SendAttributesToDirector(JobControlRecord* jcr)
+void ProcessedFile::SendAttributesToDirector(JobControlRecord* jcr)
 {
-  for (auto devicerecord : device_records_) {
-    SendAttrsToDir(jcr, &devicerecord);
-  }
+  for (auto attribute : attributes_) { SendAttrsToDir(jcr, &attribute); }
 }
-void FileData::Initialize(int32_t index)
+void ProcessedFile::Initialize(int32_t index)
 {
   fileindex_ = index;
-  for (auto devicerecord : device_records_) { FreeMemory(devicerecord.data); }
-  device_records_.clear();
+  for (auto devicerecord : attributes_) { FreeMemory(devicerecord.data); }
+  attributes_.clear();
+}
+
+void ProcessedFile::AddAttribute(DeviceRecord* record)
+{
+  DeviceRecord devicerecord_copy{*record};
+
+  // get a copy of the data rather than a pointer to the previous data
+  devicerecord_copy.data = GetMemory(record->data_len);
+  PmMemcpy(devicerecord_copy.data, record->data, record->data_len);
+  attributes_.push_back(devicerecord_copy);
 }
 
 static bool IsAttribute(DeviceRecord* record)
@@ -87,18 +96,6 @@ static bool IsAttribute(DeviceRecord* record)
          || record->maskedStream == STREAM_UNIX_ATTRIBUTES_EX
          || record->maskedStream == STREAM_RESTORE_OBJECT
          || CryptoDigestStreamType(record->maskedStream) != CRYPTO_DIGEST_NONE;
-}
-
-void FileData::AddDeviceRecord(DeviceRecord* record)
-{
-  if (IsAttribute(record)) {
-    DeviceRecord devicerecord_copy{*record};
-
-    // get a copy of the data rather than a pointer to the previous data
-    devicerecord_copy.data = GetMemory(record->data_len);
-    PmMemcpy(devicerecord_copy.data, record->data, record->data_len);
-    device_records_.push_back(devicerecord_copy);
-  }
 }
 
 static void UpdateFileList(JobControlRecord* jcr)
@@ -148,7 +145,7 @@ static time_t DoTimedCheckpoint(JobControlRecord* jcr,
 }
 
 static void SaveFullyProcessedFiles(JobControlRecord* jcr,
-                                    std::vector<FileData>& processed_files)
+                                    std::vector<ProcessedFile>& processed_files)
 {
   if (!processed_files.empty()) {
     for (auto file : processed_files) { file.SendAttributesToDirector(jcr); }
@@ -262,13 +259,12 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
   auto now
       = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  time_t checkpointinterval = me->checkpoint_interval;
-  time_t next_checkpoint_time = now + checkpointinterval;
+  time_t next_checkpoint_time = now + me->checkpoint_interval;
 
-  std::vector<FileData> processed_files{};
+  std::vector<ProcessedFile> processed_files{};
   int64_t current_volumeid = jcr->impl->dcr->VolMediaId;
 
-  FileData file_currently_processed;
+  ProcessedFile file_currently_processed;
   uint32_t current_block_number = jcr->impl->dcr->block->BlockNumber;
 
   for (last_file_index = 0; ok && !jcr->IsJobCanceled();) {
@@ -361,16 +357,18 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
         SaveFullyProcessedFiles(jcr, processed_files);
       }
 
-      file_currently_processed.AddDeviceRecord(jcr->impl->dcr->rec);
+      if (IsAttribute(jcr->impl->dcr->rec)) {
+        file_currently_processed.AddAttribute(jcr->impl->dcr->rec);
+      }
 
       if (jcr->impl->dcr->VolMediaId != current_volumeid) {
         Jmsg0(jcr, M_INFO, 0, _("Volume changed, doing checkpoint:\n"));
         UpdateFileList(jcr);
         UpdateJobrecord(jcr);
         current_volumeid = jcr->impl->dcr->VolMediaId;
-      } else if (checkpointinterval) {
-        next_checkpoint_time
-            = DoTimedCheckpoint(jcr, next_checkpoint_time, checkpointinterval);
+      } else if (me->checkpoint_interval) {
+        next_checkpoint_time = DoTimedCheckpoint(jcr, next_checkpoint_time,
+                                                 me->checkpoint_interval);
       }
 
       Dmsg0(650, "Enter bnet_get\n");
