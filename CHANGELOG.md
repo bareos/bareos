@@ -64,6 +64,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Documentation
 - backport chapter for mariabackup db plugin [PR #1044]
 - backport python action plugin example improvement [PR #1080] (backport of [PR #1079])
+- backport howto improve dbcopy migration [PR #1094]
 
 ## [21.0.0] - 2021-12-21
 

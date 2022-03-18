@@ -30,21 +30,29 @@ Make a backup of your old database
 Prepare the new database
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Firstly, create a new |postgresql| database as described in :ref:`section-CreateDatabase`.
-Add the new |postgresql| database to the current |dir| configuration,
-but **do not remove** the |mysql| database from the config, yet.
-Both catalog resources must be present
-during the migration process.
-
-Both |mysql| and |postgresql| need to have the same Bareos database scheme version,
-i.e. have the schema from the identical Bareos version
-(this should be the case automatically, when upgrading the |mysql| catalog to Bareos 20 and creating a Bareos 20 |postgresql| catalog).
-
 .. warning::
 
    Don't start the |dir| before completing the migration.
    Otherwise the |dir| will already insert data into the new |postgresql| catalog while :command:`bareos-dbcopy` will skip every table already containing data.
 
+Firstly, create a new |postgresql| database as described in :ref:`section-CreateDatabase`,
+You have to give the dbtype to the script, so the right db engine is used.
+
+.. code-block:: shell-session
+   :caption: Run creating script with db type specified
+
+   su - postgres /usr/lib/bareos/scripts/create_bareos_database postgresql
+   su - postgres /usr/lib/bareos/scripts/make_bareos_tables postgresql
+   su - postgres /usr/lib/bareos/scripts/grant_bareos_privileges postgresql
+
+
+Both |mysql| and |postgresql| need to have the same Bareos database scheme version,
+i.e. have the schema from the identical Bareos version
+(this should be the case automatically, when upgrading the |mysql| catalog to Bareos 20 and creating a Bareos 20 |postgresql| catalog).
+
+Add the new |postgresql| database to the current |dir| configuration,
+but **do not remove** the |mysql| database from the config, yet.
+Both catalog resources must be present during the migration process.
 
 These are the catalog resources used in this example:
 
@@ -76,28 +84,31 @@ Run bareos-dbcopy
 ~~~~~~~~~~~~~~~~~
 
 Once the databases are running you can start to copy the contents from |mysql|
-to |postgresql|. Depending on the size of your database the copy process can run
-up to several hours. In our tests with a database containing 160 Million rows
-in the file table took about 5 hours to copy (the testsystem was equipped with SSDs).
+to |postgresql|.
 
 .. note::
 
    Please run bareos-dbcopy as user **bareos** to avoid problems with access rights.
-   To start the shell as user **bareos** you can use this command:
-   ``su -s /bin/bash - bareos``
-
+   See example below how to start the shell as user **bareos** and run dbcopy.
 
 .. code-block:: shell-session
-   :caption: Run the bareos-dbcopy command
+   :caption: Run the bareos-dbcopy command as bareos user
 
-   # run this command as user bareos:
+   # Start the shell as bareos user
+   su -s /bin/bash - bareos
+
+   # run the command as user bareos:
    bareos-dbcopy -c <path-to-bareos-config> MyCatalog MyCatalog-psql
+
+
+Depending on the size of your database the copy process can run up to several hours.
+In our tests with a database containing 160 Million rows in the file table took about
+5 hours to copy (the testsystem was equipped with SSDs).
 
 
 *bareos-dbcopy* will then examine the databases and copy the tables one by one.
 The *file table* is by far the largest table and usually takes the longest time
 to copy.
-
 
 
 .. code-block:: shell-session
@@ -171,3 +182,9 @@ tasks need to be done:
 * start the |dir|
 
 The migration is now completed.
+
+.. note::
+
+   Once you are ready to upgrade to :sinceVersion:`21.0.0: PostgreSQL`, **remove** the package
+   **bareos-database-mysql** from your installation.
+   We've made the upgrade process failing on purpose to avoid unattended upgrade.
