@@ -39,6 +39,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - dir: fix crash when there are no jobs to consolidate [PR #1131]
 
 ### Changed
+- Qmsg: in case of syslog logging use adapted log priority instead of always LOG_ERR [PR #1134]
 - webui: remove an unnecessary .bvfs_get_jobids and buildSubtree() call [PR #1050]
 - git: set merge strategy for CHANGELOG.md to union [PR #1062]
 - webui: add timeline chart by jobs [PR #1059]
