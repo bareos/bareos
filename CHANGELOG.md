@@ -51,6 +51,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Virtual Full will now terminate if one if the input jobs had its files pruned [PR #1070]
 - webui: new login screen background and adapted logo to support Ukraine  [PR #1122]
 - console: multicolumn output: fill columns first [PR #1072]
+- cats: include only jobtypes in `list jobtotals` that write data to volumes [PR #1135]
 
 ### Deprecated
 
