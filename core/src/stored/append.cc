@@ -80,14 +80,25 @@ void FileData::Initialize(int32_t index)
   for (auto devicerecord : device_records_) { FreeMemory(devicerecord.data); }
   device_records_.clear();
 }
+
+static bool IsAttribute(DeviceRecord* record)
+{
+  return record->maskedStream == STREAM_UNIX_ATTRIBUTES
+         || record->maskedStream == STREAM_UNIX_ATTRIBUTES_EX
+         || record->maskedStream == STREAM_RESTORE_OBJECT
+         || CryptoDigestStreamType(record->maskedStream) != CRYPTO_DIGEST_NONE;
+}
+
 void FileData::AddDeviceRecord(DeviceRecord* record)
 {
-  DeviceRecord devicerecord_copy{*record};
+  if (IsAttribute(record)) {
+    DeviceRecord devicerecord_copy{*record};
 
-  // get a copy of the data rather than a pointer to the previous data
-  devicerecord_copy.data = GetMemory(record->data_len);
-  PmMemcpy(devicerecord_copy.data, record->data, record->data_len);
-  device_records_.push_back(devicerecord_copy);
+    // get a copy of the data rather than a pointer to the previous data
+    devicerecord_copy.data = GetMemory(record->data_len);
+    PmMemcpy(devicerecord_copy.data, record->data, record->data_len);
+    device_records_.push_back(devicerecord_copy);
+  }
 }
 
 static void UpdateFileList(JobControlRecord* jcr)
@@ -469,22 +480,17 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 // Send attributes and digest to Director for Catalog
 bool SendAttrsToDir(JobControlRecord* jcr, DeviceRecord* rec)
 {
-  if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES
-      || rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX
-      || rec->maskedStream == STREAM_RESTORE_OBJECT
-      || CryptoDigestStreamType(rec->maskedStream) != CRYPTO_DIGEST_NONE) {
-    if (!jcr->impl->no_attributes) {
-      BareosSocket* dir = jcr->dir_bsock;
-      if (AreAttributesSpooled(jcr)) { dir->SetSpooling(); }
-      Dmsg0(850, "Send attributes to dir.\n");
-      if (!jcr->impl->dcr->DirUpdateFileAttributes(rec)) {
-        Jmsg(jcr, M_FATAL, 0, _("Error updating file attributes. ERR=%s\n"),
-             dir->bstrerror());
-        dir->ClearSpooling();
-        return false;
-      }
+  if (!jcr->impl->no_attributes) {
+    BareosSocket* dir = jcr->dir_bsock;
+    if (AreAttributesSpooled(jcr)) { dir->SetSpooling(); }
+    Dmsg0(850, "Send attributes to dir.\n");
+    if (!jcr->impl->dcr->DirUpdateFileAttributes(rec)) {
+      Jmsg(jcr, M_FATAL, 0, _("Error updating file attributes. ERR=%s\n"),
+           dir->bstrerror());
       dir->ClearSpooling();
+      return false;
     }
+    dir->ClearSpooling();
   }
   return true;
 }
