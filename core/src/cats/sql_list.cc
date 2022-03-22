@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2019 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -633,9 +633,11 @@ void BareosDb::ListJobTotals(JobControlRecord* jcr,
   DbLock(this);
 
   // List by Job
+  // JobTypes BACKUP(B),ARCHIVE(A,a), JOB_COPY(C)
   Mmsg(cmd,
-       "SELECT count(*) AS Jobs,sum(JobFiles) "
-       "AS Files,sum(JobBytes) AS Bytes,Name AS Job FROM Job GROUP BY Name");
+       "SELECT COUNT(*) AS Jobs, SUM(JobFiles) "
+       "AS Files, SUM(JobBytes) AS Bytes, Name AS Job FROM Job WHERE Type IN "
+       "('B','A','a','C') GROUP BY Name");
 
   if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
 
@@ -646,9 +648,11 @@ void BareosDb::ListJobTotals(JobControlRecord* jcr,
   SqlFreeResult();
 
   // Do Grand Total
+  // JobTypes BACKUP(B),ARCHIVE(A,a), JOB_COPY(C)
   Mmsg(cmd,
-       "SELECT COUNT(*) AS Jobs,sum(JobFiles) "
-       "AS Files,sum(JobBytes) As Bytes FROM Job");
+       "SELECT COUNT(*) AS Jobs, SUM(JobFiles) "
+       "AS Files, SUM(JobBytes) AS Bytes FROM Job WHERE Type IN "
+       "('B','A','a','C')");
 
   if (!QUERY_DB(jcr, cmd)) { goto bail_out; }
 
