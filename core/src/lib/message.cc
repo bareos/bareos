@@ -1530,6 +1530,57 @@ int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...)
   }
 }
 
+// convert bareos message type to syslog log priority
+static int MessageTypeToLogPriority(int message_type)
+{
+  {
+    switch (message_type) {
+      case M_ABORT:
+        return LOG_EMERG;
+      case M_TERM:
+        return LOG_EMERG;
+
+      case M_DEBUG:
+        return LOG_DEBUG;
+      case M_FATAL:
+        return LOG_ALERT;
+
+      case M_ERROR:
+        return LOG_ERR;
+      case M_ERROR_TERM:
+        return LOG_ERR;
+
+      case M_WARNING:
+        return LOG_WARNING;
+
+      case M_INFO:
+        return LOG_INFO;
+      case M_SAVED:
+        return LOG_INFO;
+      case M_NOTSAVED:
+        return LOG_INFO;
+      case M_SKIPPED:
+        return LOG_INFO;
+      case M_MOUNT:
+        return LOG_INFO;
+
+      case M_RESTORED:
+        return LOG_INFO;
+      case M_SECURITY:
+        return LOG_INFO;
+      case M_ALERT:
+        return LOG_INFO;
+      case M_VOLMGMT:
+        return LOG_INFO;
+      case M_AUDIT:
+        return LOG_INFO;
+
+      default:
+        return LOG_ERR;
+    }
+  }
+}
+
 /*
  * We queue messages rather than print them directly. This
  * is generally used in low level routines (msg handler, bnet)
@@ -1567,7 +1618,7 @@ void Qmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 
   // If no jcr  or no JobId or no queue or dequeuing send to syslog
   if (!jcr || !jcr->JobId || !jcr->msg_queue || jcr->dequeuing_msgs) {
-    syslog(LOG_DAEMON | LOG_ERR, "%s", item->msg_);
+    syslog(LOG_DAEMON | MessageTypeToLogPriority(type), "%s", item->msg_);
     free(item->msg_);
     item->msg_ = nullptr;
     free(item);
