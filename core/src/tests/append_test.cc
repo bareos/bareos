@@ -33,12 +33,15 @@ class AppendProcessedFileTest : public testing::Test {
  public:
   int32_t arbitrary_index{1};
   storagedaemon::ProcessedFile file{};
-  void SetUp() override { file.Initialize(arbitrary_index); }
+  void SetUp() override
+  {
+    file = storagedaemon::ProcessedFile{arbitrary_index};
+  }
 };
 
 TEST_F(AppendProcessedFileTest, ProcessedFileIsEmptyOnInitialization)
 {
-  file.Initialize(20);
+  file = storagedaemon::ProcessedFile{20};
   EXPECT_EQ(file.GetFileIndex(), 20);
   EXPECT_TRUE(file.GetAttributes().empty());
 }

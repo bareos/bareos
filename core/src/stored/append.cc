@@ -69,15 +69,25 @@ ProcessedFile& ProcessedFile::operator=(const ProcessedFile& other)
   return *this;
 }
 
-void ProcessedFile::SendAttributesToDirector(JobControlRecord* jcr)
+ProcessedFile::ProcessedFile(ProcessedFile&& other)
+    : fileindex_(other.fileindex_), attributes_(std::move(other.attributes_))
+{
+  other.fileindex_ = 0;
+}
+
+ProcessedFile& ProcessedFile::operator=(ProcessedFile&& other)
+{
+  this->fileindex_ = other.fileindex_;
+  this->attributes_ = std::move(other.attributes_);
+
+  other.fileindex_ = 0;
+
+  return *this;
+}
+
+void ProcessedFile::SendAttributesToDirector(JobControlRecord* jcr) const
 {
   for (auto attribute : attributes_) { SendAttrsToDir(jcr, &attribute); }
-}
-void ProcessedFile::Initialize(int32_t index)
-{
-  fileindex_ = index;
-  for (auto devicerecord : attributes_) { FreeMemory(devicerecord.data); }
-  attributes_.clear();
 }
 
 void ProcessedFile::AddAttribute(DeviceRecord* record)
@@ -148,7 +158,9 @@ static void SaveFullyProcessedFiles(JobControlRecord* jcr,
                                     std::vector<ProcessedFile>& processed_files)
 {
   if (!processed_files.empty()) {
-    for (auto file : processed_files) { file.SendAttributesToDirector(jcr); }
+    for (const auto& file : processed_files) {
+      file.SendAttributesToDirector(jcr);
+    }
     jcr->JobFiles = processed_files.back().GetFileIndex();
     processed_files.clear();
   }
@@ -303,11 +315,16 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
      * An incomplete job can start the file_index at any number.
      * otherwise, it must start at 1.
      */
-    if (!(jcr->rerunning && file_index > 0 && last_file_index == 0)
-        && !(file_index > 0
-             && (file_index == last_file_index
-                 || file_index == last_file_index + 1))) {
-      Jmsg3(jcr, M_FATAL, 0, _("FI=%d from %s not positive or sequential=%d\n"),
+
+    bool incomplete_job_rerun_fileindex_positive
+        = jcr->rerunning && file_index > 0 && last_file_index == 0;
+    bool fileindex_is_sequential = file_index > 0
+                                   && (file_index == last_file_index
+                                       || file_index == last_file_index + 1);
+
+    if (!incomplete_job_rerun_fileindex_positive && !fileindex_is_sequential) {
+      Jmsg3(jcr, M_FATAL, 0,
+            _("FileIndex=%d from %s not positive or sequential=%d\n"),
             file_index, what, last_file_index);
       PossibleIncompleteJob(jcr, last_file_index);
       ok = false;
@@ -317,9 +334,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
     if (file_index != last_file_index) {
       last_file_index = file_index;
       if (file_currently_processed.GetFileIndex() > 0) {
-        processed_files.push_back(file_currently_processed);
+        processed_files.push_back(std::move(file_currently_processed));
       }
-      file_currently_processed.Initialize(file_index);
+      file_currently_processed = ProcessedFile{file_index};
     }
 
     /*

@@ -32,15 +32,17 @@ namespace storagedaemon {
 class ProcessedFile {
  public:
   ProcessedFile() = default;
+  ProcessedFile(int32_t fileindex);
   ~ProcessedFile();
   ProcessedFile(const ProcessedFile& other);
   ProcessedFile& operator=(const ProcessedFile& other);
+  ProcessedFile(ProcessedFile&& other);
+  ProcessedFile& operator=(ProcessedFile&& other);
 
-  void SendAttributesToDirector(JobControlRecord* jcr);
-  void Initialize(int32_t index);
+  void SendAttributesToDirector(JobControlRecord* jcr) const;
   void AddAttribute(DeviceRecord* record);
-  inline int32_t GetFileIndex() { return fileindex_; }
-  inline std::vector<DeviceRecord> GetAttributes() { return attributes_; }
+  int32_t GetFileIndex() { return fileindex_; }
+  std::vector<DeviceRecord> GetAttributes() { return attributes_; }
 
 
  private:
