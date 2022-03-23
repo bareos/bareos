@@ -131,10 +131,10 @@ static time_t DoTimedCheckpoint(JobControlRecord* jcr,
                                 time_t checkpoint_time,
                                 time_t checkpoint_interval)
 {
-  time_t now
+  const time_t now
       = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   if (now > checkpoint_time) {
-    checkpoint_time = now + checkpoint_interval;
+    while (checkpoint_time <= now) { checkpoint_time += checkpoint_interval; }
     Jmsg(jcr, M_INFO, 0,
          _("Doing timed backup checkpoint. Next checkpoint in %d seconds\n"),
          checkpoint_interval);
