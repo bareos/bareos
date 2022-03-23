@@ -109,7 +109,6 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
 {
   MediaDbRecord mr, sdmr;
   JobMediaDbRecord jm;
-  JobDbRecord jr{};
   char Job[MAX_NAME_LENGTH];
   char pool_name[MAX_NAME_LENGTH];
   PoolMem unwanted_volumes(PM_MESSAGE);
@@ -131,6 +130,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
 
     return;
   }
+
+  uint32_t update_jobfiles = 0;
+  uint64_t update_jobbytes = 0;
 
   // Find next appendable medium for SD
   unwanted_volumes.check_size(bs->message_length);
@@ -347,7 +349,7 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       bs->fsend(OK_create);
     }
   } else if (sscanf(bs->msg, Update_filelist, &Job) == 1) {
-    Dmsg0(0, "Updating fileset\n");
+    Dmsg0(0, "Updating filelist\n");
 
     if (!jcr->db_batch->WriteBatchFileRecords(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Catalog error updating File table. %s\n"),
@@ -355,11 +357,13 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
       bs->fsend(_("1992 Update File table error\n"));
     }
 
-  } else if (sscanf(bs->msg, Update_jobrecord, &Job, &jr.JobFiles, &jr.JobBytes)
+  } else if (sscanf(bs->msg, Update_jobrecord, &Job, &update_jobfiles,
+                    &update_jobbytes)
              == 3) {
     Dmsg0(0, "Updating job record\n");
 
-    if (!jcr->db->UpdateRunningJobRecord(jcr, &jr)) {
+    if (!jcr->db->UpdateRunningJobRecord(jcr, update_jobfiles,
+                                         update_jobbytes)) {
       Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Job record. %s\n"),
            jcr->db->strerror());
       bs->fsend(_("1992 Update job record error\n"));
