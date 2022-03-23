@@ -517,9 +517,11 @@ static bool CancelCmd(JobControlRecord* cjcr)
     }
   }
 
-  Jmsg(jcr, M_INFO, 0,
-       _("Received cancel command, doing backup checkpoint:\n"));
-  DoBackupCheckpoint(jcr);
+  if (me->checkpoint_interval) {
+    Jmsg(jcr, M_INFO, 0,
+         _("Received cancel command, doing backup checkpoint:\n"));
+    DoBackupCheckpoint(jcr);
+  }
 
   oldStatus = jcr->JobStatus;
   jcr->setJobStatus(status);
@@ -1034,7 +1036,8 @@ static bool MountCmd(JobControlRecord* jcr)
           } else {
             dir->fsend(
                 _("3905 Device %s open but no Bareos volume is mounted.\n"
-                  "If this is not a blank tape, try unmounting and remounting "
+                  "If this is not a blank tape, try unmounting and "
+                  "remounting "
                   "the Volume.\n"),
                 dev->print_name());
           }
@@ -1725,7 +1728,8 @@ static bool RunCmd(JobControlRecord* jcr)
 {
   Dmsg1(200, "Run_cmd: %s\n", jcr->dir_bsock->msg);
 
-  // If we do not need the FD, we are doing a migrate, copy, or virtual backup.
+  // If we do not need the FD, we are doing a migrate, copy, or virtual
+  // backup.
   if (jcr->NoClientUsed()) {
     return DoMacRun(jcr);
   } else {
