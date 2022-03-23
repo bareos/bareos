@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1093,14 +1093,13 @@ void AddPrompt(UaContext* ua, std::string&& prompt)
   AddPrompt(ua, p.c_str());
 }
 
-
 /**
  * Formats the prompts of a UaContext to be displayed in a multicolumn output
  * when possible
  */
-std::string FormatMulticolumnPrompts(const UaContext* ua,
-                                     const int window_width,
-                                     const int min_lines_threshold)
+std::string FormatPrompts(const UaContext* ua,
+                          const int window_width,
+                          const int min_lines_threshold)
 {
   unsigned int max_prompt_length = 1;
 
@@ -1112,34 +1111,59 @@ std::string FormatMulticolumnPrompts(const UaContext* ua,
     }
   }
 
-  const int extra_formatting_characters = 4;
+  const short int colon_after_index = 1;
+  const short int space_between_colon_and_prompt = 1;
+  const short int space_after_prompt = 1;
+  const short int extra_character_room_for_snprintf = 1;
+
+  constexpr const short int extra_formatting_characters
+      = colon_after_index + space_between_colon_and_prompt + space_after_prompt
+        + extra_character_room_for_snprintf;
+
   const int max_formatted_prompt_length = max_prompt_length
                                           + max_prompt_index_length
                                           + extra_formatting_characters;
   const int prompts_perline
       = std::max(1, window_width / (max_formatted_prompt_length - 1));
 
+  const int number_output_lines
+      = (ua->num_prompts + prompts_perline - 1) / prompts_perline;
+
   std::vector<char> formatted_prompt(max_formatted_prompt_length);
+  std::vector<std::vector<char>> formatted_prompts_container;
 
   std::string output{};
 
-  for (int i = 1; i < ua->num_prompts; i++) {
-    std::string prompt = ua->prompt[i];
-    if (ua->num_prompts > min_lines_threshold) {
-      if (i % prompts_perline == 0 || i == ua->num_prompts - 1) {
-        snprintf(formatted_prompt.data(), max_formatted_prompt_length,
-                 "%*d: %s\n", max_prompt_index_length, i, prompt.c_str());
-      } else {
+  if (ua->num_prompts > min_lines_threshold
+      && window_width > max_formatted_prompt_length * 2) {
+    for (int i = 1; i < ua->num_prompts; i++) {
+      {
         snprintf(formatted_prompt.data(), max_formatted_prompt_length,
                  "%*d: %-*s ", max_prompt_index_length, i, max_prompt_length,
-                 prompt.c_str());
+                 ua->prompt[i]);
       }
-    } else {
-      snprintf(formatted_prompt.data(), max_formatted_prompt_length,
-               "%*d: %s\n", max_prompt_index_length, i, prompt.c_str());
+
+      formatted_prompts_container.push_back(formatted_prompt);
     }
 
-    output += formatted_prompt.data();
+    int index = 0;
+    for (int i = 0; i < number_output_lines; i++) {
+      index = i;
+      while (static_cast<size_t>(index) < formatted_prompts_container.size()) {
+        output.append(formatted_prompts_container[index].data());
+        index += number_output_lines;
+      }
+
+      output.append("\n");
+    }
+  } else {
+    for (int i = 1; i < ua->num_prompts; i++) {
+      {
+        snprintf(formatted_prompt.data(), max_formatted_prompt_length,
+                 "%*d: %s\n", max_prompt_index_length, i, ua->prompt[i]);
+        output.append(formatted_prompt.data());
+      }
+    }
   }
 
   return output;
@@ -1180,8 +1204,7 @@ int DoPrompt(UaContext* ua,
   if (ua->batch) {
     // First print the choices he wanted to make
     ua->SendMsg(ua->prompt[0]);
-    ua->SendMsg(FormatMulticolumnPrompts(ua, window_width, min_lines_threshold)
-                    .c_str());
+    ua->SendMsg(FormatPrompts(ua, window_width, min_lines_threshold).c_str());
 
     // Now print error message
     ua->SendMsg(_("Your request has multiple choices for \"%s\". Selection is "
@@ -1201,8 +1224,7 @@ int DoPrompt(UaContext* ua,
       ua->SendMsg("%s", ua->prompt[i]);
     }
   } else {
-    ua->SendMsg(FormatMulticolumnPrompts(ua, window_width, min_lines_threshold)
-                    .c_str());
+    ua->SendMsg(FormatPrompts(ua, window_width, min_lines_threshold).c_str());
   }
 
 
