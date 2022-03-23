@@ -5,6 +5,11 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+
+### Changed
+- cats: include only jobtypes in list jobtotals that write data to volumes [PR #1136]
+
 ## [21.1.2] - 2022-03-17
 
 ### Fixed
