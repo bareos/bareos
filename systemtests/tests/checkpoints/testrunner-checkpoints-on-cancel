@@ -1,0 +1,102 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Run a backup and cancel it.
+# Check that metadata is still saved with checkpoints.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+backup_log=$tmp/cancel-backup-checkpoints.out
+restore_log=$tmp/cancel-restore-checkpoints.out
+
+rm -f $backup_log
+rm -f $restore_log
+
+slowjob="slow-backup-bareos-fd"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out /dev/null
+messages
+@$out $backup_log
+run job=$slowjob level=Full yes
+quit
+END_OF_DATA
+
+run_bconsole
+
+sleep 14
+
+slowjobid=$(grep 'Job queued. JobId=' $backup_log | sed -n -e 's/^.*JobId=//p')
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $backup_log
+cancel job=slow-backup-bareos-fd
+yes
+wait
+messages
+@$out $restore_log
+restore jobid=${slowjobid} where=$tmp/checkpoint-restores all done yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+# Check that a timed checkpoint was triggered
+if ! grep "Doing timed backup checkpoint. Next checkpoint in 3 seconds" "$backup_log"; then
+  echo "Timed checkpoint was not triggered on time!" >&2
+  estat=1
+fi
+
+if ! grep "Volume changed, doing checkpoint:" "$backup_log"; then
+    echo "Checkpoint was not triggered on volume changes!" >&2
+    estat=1
+fi
+
+# Check that a cancel was triggered
+if ! grep "Termination:            Backup Canceled" "$backup_log"; then
+  echo "Job was not canceled!" >&2
+  estat=1
+fi
+
+NumberOfBackedUpFiles=$(grep 'FD Files Written:       ' $backup_log | sed -n -e 's/^.*Written:       //p')
+
+# Check that part of the files were written despite the cancel
+if [ $NumberOfBackedUpFiles -le 0 ]; then
+  echo "Checkpoint files were not correctly saved! Number of backed up files: ${NumberOfBackedUpFiles}" >&2
+  estat=1
+fi
+
+# Check that the restore of a canceled backup works fine
+if ! grep "Termination:            Restore OK" "$restore_log" ||
+   ! grep "Files Restored:         ${NumberOfBackedUpFiles}" "$restore_log"
+  then
+  echo "Restore of canceled job did not go well!" >&2
+  estat=1
+fi
+
+# Certain systems do not support multiple types for find (-type f,l)
+NumberOfFilesRestored=$(find $tmp/checkpoint-restores/$tmp -type f | wc -l)
+NumberOfLinksRestored=$(find $tmp/checkpoint-restores/$tmp -type l | wc -l)
+NumberOfDirectoriesRestored=$(find $tmp/checkpoint-restores/$tmp -type d | wc -l)
+RestoredItems=$(expr $NumberOfFilesRestored + $NumberOfLinksRestored + $NumberOfDirectoriesRestored)
+
+# Check that the restored files are actually there
+if [ ${RestoredItems} -lt ${NumberOfBackedUpFiles} ]; then
+  echo "Actual restored items count not met. Items (files, links, directories) found = ${RestoredItems} , backed up files = ${NumberOfBackedUpFiles}" >&2
+  estat=1
+fi
+
+end_test
