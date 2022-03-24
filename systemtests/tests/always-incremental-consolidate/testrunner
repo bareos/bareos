@@ -5,7 +5,7 @@
 # the last incremental is kept 
 # (job->AlwaysIncrementalKeepNumber default is 1)
 #
-# Run a batch of 3 incrementals with no files 
+# Run a batch of 3 incrementals with no files
 # Run consolidation : jobid with no files will get purged
 #
 # Run a batch of 3 incrementals the second with no files
