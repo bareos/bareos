@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2022 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -132,4 +132,8 @@ def setup(app):
     app.add_directive("limitation", LimitationDirective)
 
     # identifies the version of our extension
-    return {"version": "0.2"}
+    return {
+        "version": "0.2",
+        "parallel_read_safe": False,
+        "parallel_write_safe": True
+    }
