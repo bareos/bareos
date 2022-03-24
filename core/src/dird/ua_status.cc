@@ -755,13 +755,10 @@ static void DoDirectorStatus(UaContext* ua)
 {
   ListDirStatusHeader(ua);
 
-  // List scheduled Jobs
   ListScheduledJobs(ua);
 
-  // List running jobs
   ListRunningJobs(ua);
 
-  // List terminated jobs
   ListTerminatedJobs(ua);
 
   ListConnectedClients(ua);
